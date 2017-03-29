@@ -1,6 +1,6 @@
 #include <string>
 #include <iostream>
-#include "zst_node.h"
+#include "zst_instrument.h"
 
 using namespace Showtime;
 

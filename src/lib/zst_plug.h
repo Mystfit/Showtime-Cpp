@@ -30,11 +30,23 @@ extern "C"
 				QUERYABLE
 			};
 
-			ZstPlug(string name, string ownerName, PlugMode mode, const string args[], function<void(string)> callback);
+			//Constructor
+			ZstPlug();
 
-		protected:
+			//Plug factory
+			DLL_EXPORT ZstPlug* create_plug(string name, string ownerName, PlugMode mode, const string args[], function<void(string)> callback);
+			DLL_EXPORT string get_name();
+
+
 		private:
-			PlugMode m_plugMode;
+			string m_name;
+			string origin;
+			PlugMode m_plug_mode;
+			
+			//Inputs
+			string args[];
+			
+			//Outputs
 		};
 
 

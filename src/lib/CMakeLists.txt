@@ -1,8 +1,9 @@
 set(SOURCE_FILES 
- "zst_node.h"
- "zst_method.h"
- "zst_node.cpp"
- "zst_method.cpp"
+ "zst_instrument.h"
+ "zst_plug.h"
+ 
+ "zst_instrument.cpp"
+ "zst_plug.cpp"
 )
 
 find_package(ZeroMQ REQUIRED)

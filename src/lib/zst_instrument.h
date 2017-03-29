@@ -13,10 +13,16 @@ extern "C"
 
 	namespace Showtime {
 
-		class ZstNode {
+		class ZstInstrument {
 		public:
-			ZstNode();
-			DLL_EXPORT ZstNode* createNode();
+
+			enum ReplyCodes {
+
+			};
+
+
+			ZstInstrument();
+			DLL_EXPORT ZstInstrument* create_node();
 		};
 	}
 
