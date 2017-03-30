@@ -2,8 +2,9 @@
 
 #include <string>
 #include <map>
+#include <vector>
 #include <functional>
-
+#include <memory>
  
 #ifdef EXPORTS_API
 	#define DLL_EXPORT __declspec(dllexport)
@@ -13,12 +14,11 @@
   
 #ifdef __cplusplus		//if C++ is used convert it to C to prevent C++'s name mangling of method names
 
-using namespace std;
 
 extern "C"
 {
 #endif
-
+	using namespace std;
 	namespace Showtime {
 
 		class ZstPlug {
@@ -26,27 +26,26 @@ extern "C"
 		public:
 			enum PlugMode {
 				READABLE = 0,
-				WRITEABLE,
-				QUERYABLE
+				WRITEABLE
 			};
 
 			//Constructor
-			ZstPlug();
-
-			//Plug factory
-			DLL_EXPORT ZstPlug* create_plug(string name, string ownerName, PlugMode mode, const string args[], function<void(string)> callback);
+			ZstPlug(string name, PlugMode mode);
+			
+			//Accessors
 			DLL_EXPORT string get_name();
-
+			DLL_EXPORT PlugMode get_mode();
 
 		private:
 			string m_name;
-			string origin;
 			PlugMode m_plug_mode;
 			
 			//Inputs
-			string args[];
+			vector<string> m_args;
 			
 			//Outputs
+			string m_output;
+			bool m_outputReady = false;
 		};
 
 
