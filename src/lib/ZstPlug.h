@@ -5,11 +5,13 @@
 #include <vector>
 #include <functional>
 #include <memory>
+#include "ZstExports.h"
+
  
 #ifdef EXPORTS_API
-	#define DLL_EXPORT __declspec(dllexport)
+	#define ZST_EXPORT __declspec(dllexport)
 #else
-	#define DLL_EXPORT __declspec(dllimport)
+	#define ZST_EXPORT __declspec(dllimport)
 #endif
   
 #ifdef __cplusplus		//if C++ is used convert it to C to prevent C++'s name mangling of method names
@@ -33,8 +35,8 @@ extern "C"
 			ZstPlug(string name, PlugMode mode);
 			
 			//Accessors
-			DLL_EXPORT string get_name();
-			DLL_EXPORT PlugMode get_mode();
+			ZST_EXPORT string get_name();
+			ZST_EXPORT PlugMode get_mode();
 
 		private:
 			string m_name;
@@ -45,7 +47,7 @@ extern "C"
 			
 			//Outputs
 			string m_output;
-			bool m_outputReady = false;
+			bool m_output_ready = false;
 		};
 
 

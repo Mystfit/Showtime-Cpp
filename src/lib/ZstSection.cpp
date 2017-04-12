@@ -4,10 +4,19 @@
 
 using namespace Showtime;
 
-
 ZstSection::ZstSection(string name)
 {
 	m_name = name;
+
+	string stage_addr = "tcp://127.0.0.1:6000";
+
+	m_toStage = zsock_new_req((">" + stage_addr).c_str());
+	m_fromStage = zsock_new_rep("@tcp://127.0.0.1:*");
+
+	m_graph_in = zsock_new_sub(">tcp://127.0.0.1", "");
+	m_graph_out = zsock_new_pub("@tcp://127.0.0.1:*", "");
+
+	m_loop = zloop_new();
 }
 
 

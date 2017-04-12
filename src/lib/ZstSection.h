@@ -3,48 +3,46 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include "ZstExports.h"
+#include "czmq.h"
 #include "ZstInstrument.h"
-
-
-#ifdef EXPORTS_API
-#define DLL_EXPORT __declspec(dllexport)
-#else
-#define DLL_EXPORT __declspec(dllimport)
-#endif
 
 using namespace std;
 
-#ifdef __cplusplus		//if C++ is used convert it to C to prevent C++'s name mangling of method names
-extern "C"
-{
-#endif
+namespace Showtime {
 
-	namespace Showtime {
+	class ZstSection
+	{
+	public:
+		ZstSection(string name);
+		ZST_EXPORT ~ZstSection();
 
-		class ZstSection
-		{
-		public:
-			ZstSection(string name);
-			DLL_EXPORT ~ZstSection();
+		//Factory
+		ZST_EXPORT static unique_ptr<ZstSection> create_section(string name);
 
-			//Factory
-			DLL_EXPORT static unique_ptr<ZstSection> create_section(string name);
+		// Creates a new instrument
+		ZST_EXPORT shared_ptr<ZstInstrument> create_instrument(string name);
 
-			// Creates a new instrument
-			DLL_EXPORT shared_ptr<ZstInstrument> create_instrument(string name);
+		// Removes and destroys an instrument
+		ZST_EXPORT void destroy_instrument(ZstInstrument& instrument);
 
-			// Removes and destroys an instrument
-			DLL_EXPORT void destroy_instrument(ZstInstrument& instrument);
+		//List of all instruments owned by this section
+		ZST_EXPORT vector<shared_ptr<ZstInstrument>>& get_instruments();
 
-			//List of all instruments owned by this section
-			DLL_EXPORT vector<shared_ptr<ZstInstrument>>& get_instruments();
+	private:
+		//Name property
+		string m_name;
 
-		private:
-			string m_name;
-			vector<shared_ptr<ZstInstrument>> m_instruments;
-		};
-	}
+		//All instruments owned by this section
+		vector<shared_ptr<ZstInstrument>> m_instruments;
 
-#ifdef __cplusplus
+
+		//Zeromq members
+		zloop_t *m_loop;	
+		zsock_t *m_toStage;		//Reqests sent to the stage
+		zsock_t *m_fromStage;	//Requests from the stage
+		zsock_t *m_graph_out;	//Pub for sending graph updates
+		zsock_t *m_graph_in;	//Sub for receiving graph updates
+	};
 }
-#endif
+

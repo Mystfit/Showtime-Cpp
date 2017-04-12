@@ -2,12 +2,14 @@
 
 #include <string>
 #include <memory>
+#include "ZstExports.h"
+
 #include "ZstPlug.h"
 
 #ifdef EXPORTS_API
-	#define DLL_EXPORT __declspec(dllexport)
+	#define ZST_EXPORT __declspec(dllexport)
 #else
-	#define DLL_EXPORT __declspec(dllimport)
+	#define ZST_EXPORT __declspec(dllimport)
 #endif
   
 #ifdef __cplusplus		//if C++ is used convert it to C to prevent C++'s name mangling of method names
@@ -25,13 +27,13 @@ extern "C"
 			~ZstInstrument();
 
 			//Plug factory
-			DLL_EXPORT shared_ptr<ZstPlug> create_plug(string name, ZstPlug::PlugMode plugMode);
+			ZST_EXPORT shared_ptr<ZstPlug> create_plug(string name, ZstPlug::PlugMode plugMode);
 
 			//Accessors
-			DLL_EXPORT string get_name();
+			ZST_EXPORT string get_name();
 
-			DLL_EXPORT vector<shared_ptr<ZstPlug>> get_outputs();
-			DLL_EXPORT vector<shared_ptr<ZstPlug>> get_inputs();
+			ZST_EXPORT vector<shared_ptr<ZstPlug>> get_outputs();
+			ZST_EXPORT vector<shared_ptr<ZstPlug>> get_inputs();
 
 
 		private:
