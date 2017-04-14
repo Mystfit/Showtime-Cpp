@@ -6,43 +6,29 @@
 
 #include "ZstPlug.h"
 
-#ifdef EXPORTS_API
-	#define ZST_EXPORT __declspec(dllexport)
-#else
-	#define ZST_EXPORT __declspec(dllimport)
-#endif
-  
-#ifdef __cplusplus		//if C++ is used convert it to C to prevent C++'s name mangling of method names
-extern "C"
-{
-#endif
+namespace Showtime {
 
-	namespace Showtime {
+    using namespace std;
 
-		using namespace std;
+    class ZstInstrument {
+    public:
+        ZstInstrument(string name);
+        ~ZstInstrument();
 
-		class ZstInstrument {
-		public:
-			ZstInstrument(string name);
-			~ZstInstrument();
+        //Plug factory
+        ZST_EXPORT shared_ptr<ZstPlug> create_plug(string name, ZstPlug::PlugMode plugMode);
 
-			//Plug factory
-			ZST_EXPORT shared_ptr<ZstPlug> create_plug(string name, ZstPlug::PlugMode plugMode);
+        //Accessors
+        ZST_EXPORT string get_name();
 
-			//Accessors
-			ZST_EXPORT string get_name();
-
-			ZST_EXPORT vector<shared_ptr<ZstPlug>> get_outputs();
-			ZST_EXPORT vector<shared_ptr<ZstPlug>> get_inputs();
+        ZST_EXPORT vector<shared_ptr<ZstPlug> > get_outputs();
+        ZST_EXPORT vector<shared_ptr<ZstPlug> > get_inputs();
 
 
-		private:
-			string m_name;
-			vector<shared_ptr<ZstPlug>> m_outputs;
-			vector<shared_ptr<ZstPlug>> m_inputs;
-		};
-	}
-
-#ifdef __cplusplus
+    private:
+        string m_name;
+        vector<shared_ptr<ZstPlug> > m_outputs;
+        vector<shared_ptr<ZstPlug> > m_inputs;
+    };
 }
-#endif
+

@@ -1,10 +1,12 @@
-set(SOURCE_FILES 
- "ZstInstrument.h"
- "ZstPlug.h"
- "ZstSection.h"
- "ZstExports.h"
- "ZstStage.h"
- 
+set(ZST_HEADERS 
+ ${BASEPATH}/ZstInstrument.h
+ ${BASEPATH}/ZstPlug.h
+ ${BASEPATH}/ZstSection.h
+ ${BASEPATH}/ZstExports.h
+ ${BASEPATH}/ZstStage.h
+)
+
+set(ZST_SOURCE 
  "ZstInstrument.cpp"
  "ZstPlug.cpp"
  "ZstSection.cpp"
@@ -16,9 +18,12 @@ include_directories(
 	${CZMQ_INCLUDE_DIRS}
 )
 
-add_definitions(-DEXPORTS_API)
+IF(WIN32)
+	add_definitions(-DEXPORTS_API)
+ENDIF(WIN32)
 
-add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES})
+
+add_library(${PROJECT_NAME} SHARED ${ZST_HEADERS} ${ZST_SOURCE})
 
 target_link_libraries(${PROJECT_NAME} 
 	${ZeroMQ_LIBRARIES}

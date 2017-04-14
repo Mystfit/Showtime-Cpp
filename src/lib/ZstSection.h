@@ -27,14 +27,14 @@ namespace Showtime {
 		ZST_EXPORT void destroy_instrument(ZstInstrument& instrument);
 
 		//List of all instruments owned by this section
-		ZST_EXPORT vector<shared_ptr<ZstInstrument>>& get_instruments();
+		ZST_EXPORT vector<shared_ptr<ZstInstrument> >& get_instruments();
 
 	private:
 		//Name property
 		string m_name;
 
 		//All instruments owned by this section
-		vector<shared_ptr<ZstInstrument>> m_instruments;
+		vector<shared_ptr<ZstInstrument> > m_instruments;
 
 
 		//Zeromq members

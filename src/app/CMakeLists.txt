@@ -4,10 +4,14 @@ set(SOURCE_FILES
 )
 
 include_directories(
-	../lib
+	${BASEPATH}
 	${ZeroMQ_INCLUDE_DIRS}
 	${CZMQ_INCLUDE_DIRS}
 )
+
+IF(WIN32)
+	add_definitions(-DIMPORTS_API)
+ENDIF(WIN32)
 
 add_executable (ShowtimeNodeTest ZstSectionTest.cpp) 
 add_executable (ShowtimeStage ZstStageRunner.cpp) 

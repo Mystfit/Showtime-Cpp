@@ -1,5 +1,3 @@
-#pragma once
- 
 #include "ZstInstrument.h" 
 
 using namespace Showtime;
@@ -32,12 +30,12 @@ string ZstInstrument::get_name()
 	return m_name;
 }
 
-vector<shared_ptr<ZstPlug>> Showtime::ZstInstrument::get_outputs()
+vector<shared_ptr<ZstPlug> > Showtime::ZstInstrument::get_outputs()
 {
 	return m_outputs;
 }
 
-vector<shared_ptr<ZstPlug>> Showtime::ZstInstrument::get_inputs()
+vector<shared_ptr<ZstPlug> > Showtime::ZstInstrument::get_inputs()
 {
 	return m_inputs;
 }
