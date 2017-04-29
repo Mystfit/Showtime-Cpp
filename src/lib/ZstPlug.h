@@ -5,37 +5,35 @@
 #include <vector>
 #include <functional>
 #include <memory>
-#include "ZstUtils.h"
- 
+#include "ZstExports.h"
+
 using namespace std;
-namespace Showtime {
+namespace Showtime {    
 
-	class ZstPlug {
+    class ZstPlug {
 
-	public:
-		enum PlugMode {
-			READABLE = 0,
-			WRITEABLE
-		};
+    public:
+        enum PlugMode {
+            READABLE = 0,
+            WRITEABLE
+        };
 
-		//Constructor
-		ZstPlug(string name, PlugMode mode);
-			
-		//Accessors
-		DLL_EXPORT string get_name();
-		DLL_EXPORT PlugMode get_mode();
+        //Constructor
+        ZstPlug(string name, PlugMode mode);
+        
+        //Accessors
+        ZST_EXPORT string get_name();
+        ZST_EXPORT PlugMode get_mode();
 
-	private:
-		string m_name;
-		PlugMode m_plug_mode;
-			
-		//Inputs
-		vector<string> m_args;
-			
-		//Outputs
-		string m_output;
-		bool m_outputReady = false;
-	};
-
-
+    private:
+        string m_name;
+        PlugMode m_plug_mode;
+        
+        //Inputs
+        vector<string> m_args;
+        
+        //Outputs
+        string m_output;
+        bool m_output_ready = false;
+    };
 }

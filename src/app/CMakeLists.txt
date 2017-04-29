@@ -1,14 +1,24 @@
 set(SOURCE_FILES 
  "ZstSectionTest.cpp"
- "ZstStage.cpp"
+ "ZstStageRunner.cpp"
 )
 
-include_directories(${ZST_ROOT})
+include_directories(
+	${BASEPATH}
+	${ZeroMQ_INCLUDE_DIRS}
+	${CZMQ_INCLUDE_DIRS}
+    ${MSGPACK_INCLUDE_DIRS}
+)
 
-add_executable (ShowtimeNodeTest ZstSectionTest.cpp ${ZST_HEADERS}) 
-add_executable (ShowtimeStage ZstStage.cpp ${ZST_HEADERS}) 
+IF(WIN32)
+	add_definitions(-DIMPORTS_API)
+ENDIF(WIN32)
+
+add_executable (ShowtimeNodeTest ZstSectionTest.cpp) 
+add_executable (ShowtimeStage ZstStageRunner.cpp) 
 
 add_dependencies(ShowtimeNodeTest ${PROJECT_NAME})
+add_dependencies(ShowtimeStage ${PROJECT_NAME})
 
 target_link_libraries(ShowtimeNodeTest ${PROJECT_NAME})
 target_link_libraries(ShowtimeStage ${PROJECT_NAME})

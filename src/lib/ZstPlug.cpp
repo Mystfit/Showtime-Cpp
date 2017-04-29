@@ -1,5 +1,3 @@
-#pragma once
- 
 #include "ZstPlug.h"
 
 using namespace Showtime;

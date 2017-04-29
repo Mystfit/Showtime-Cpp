@@ -1,0 +1,37 @@
+#include <string>
+#include <iostream>
+#include "ZstSection.h"
+#include "ZstStage.h"
+#include "czmq.h"
+
+using namespace Showtime;
+
+int main(int argc,char **argv){
+
+
+	zsock_t *router = zsock_new_router("@tcp://127.0.0.1:6000");
+	zsock_t *pub = zsock_new_pub("@tcp://127.0.0.1:*");
+
+	zloop *m_reactor = zloop_new();
+	zloop_set_verbose(m_reactor, true);
+	zloop_set_nonstop(m_reactor, true);
+
+	zmq_pollitem_t poller = { m_section_router, 0, ZMQ_POLLIN };
+	zloop_poller(m_reactor, &poller, s_handle_router, NULL);
+	zloop_start(m_reactor);
+
+
+	//ZstStage *stage = ZstStage::create_stage();
+
+	//zsock_t *req = zsock_new_req(">tcp://127.0.0.1:6000");
+
+
+	//stage->start();
+
+
+	while (true) {
+		//cout << "Sending hello" << endl;
+		//zstr_send(req, "Hello world!");
+	}
+
+}

@@ -1,0 +1,28 @@
+#include "ZstStage.h"
+
+using namespace Showtime;
+
+ZstStage::ZstStage()
+{
+	m_section_router = zsock_new_router(("@tcp://127.0.0.1:" + to_string(router_port)).c_str());
+	m_section_requests = zsock_new_req("");
+	m_reactor = zloop_new();
+	zloop_set_verbose(m_reactor, true);
+	
+	zmq_pollitem_t poller = { m_section_router, 0, ZMQ_POLLIN };
+	zloop_poller(m_reactor, &poller, &s_handle_router);
+}
+
+ZstStage::~ZstStage()
+{
+}
+
+ZstStage* ZstStage::create_stage()
+{
+	return new ZstStage();
+}
+
+int Showtime::ZstStage::s_handle_router(zloop_t * loop, zmq_pollitem_t * poller, void * arg)
+{
+	return 0;
+}

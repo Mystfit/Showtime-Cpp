@@ -1,12 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
 
-# Install Hunter dependency tool
-include("modules/HunterGate.cmake")
-HunterGate(
-    URL "https://github.com/ruslo/hunter/archive/v0.18.30.tar.gz"
-    SHA1 "6fc9258f984aed303eb960a95e36e19f2e7e83be"
-)
-
 project(Showtime)
 
 # Include hunter dependencies
@@ -20,5 +13,15 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# Add source dir
+# Use C11
+set(CMAKE_CXX_STANDARD 11)
+set(CXX_STANDARD_REQUIRED)
+
+set(BASEPATH ${CMAKE_SOURCE_DIR}/src/lib)
+
+# Packages
+find_package(ZeroMQ REQUIRED)
+find_package(czmq REQUIRED)
+find_package(MsgPack)
+
 add_subdirectory(src)
