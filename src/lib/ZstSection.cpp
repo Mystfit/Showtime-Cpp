@@ -65,20 +65,29 @@ void ZstSection::start_heartbeat(){
 }
 
 int ZstSection::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
-    ((ZstSection*)arg)->send_heartbeat();
+    ((ZstSection*)arg)->ping_stage();
 }
 
-void ZstSection::send_heartbeat(){
+chrono::milliseconds ZstSection::ping_stage(){
     Messages::Heartbeat beat;
-    auto now = chrono::system_clock::now().time_since_epoch();
+    
+    chrono::time_point<chrono::system_clock> start, end;
+    start = std::chrono::system_clock::now();
+    
     beat.from = m_name;
-    beat.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
+    beat.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(start.time_since_epoch()).count();
     zmsg_t * msg = Messages::build_heartbeat_message(beat);
     zmsg_send(&msg, m_stage);
-    cout << "Sent heartbeat" << endl;
+    cout << "Sent heartbeat ping" << endl;
     
     zmsg_t *responseMsg = zmsg_recv(m_stage);
-    cout << "Client received heartbeat ack" << endl;
+    
+    end = chrono::system_clock::now();
+    
+    chrono::milliseconds delta = chrono::duration_cast<chrono::milliseconds>(end - start);
+
+    cout << "Client received heartbeat ping ack. Roundtrip was " <<  delta.count() << "ms" << endl;
+    return delta;
 }
 
 

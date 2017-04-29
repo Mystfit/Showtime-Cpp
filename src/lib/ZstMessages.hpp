@@ -18,7 +18,6 @@ namespace Showtime{
         enum MessageIds{
             OK,
             ERROR,
-            STAGE_PING,                     //to stage
             STAGE_REGISTER_SECTION,         //to stage
             STAGE_REGISTER_PLUG,            //to stage
             STAGE_REGISTER_CONNECTION,      //to stage

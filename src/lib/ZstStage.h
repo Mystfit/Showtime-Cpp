@@ -33,12 +33,12 @@ namespace Showtime {
         void start_server();
         
         //Message handlers
-        void register_section(zmsg_t * msg);
-        void register_plug(zmsg_t * msg);
-        void section_heartbeat(zmsg_t * msg);
-        void section_heartbeat_ack(zsock_t * socket, zframe_t * identity);
-        void reply_pong_test(zsock_t * socket, zframe_t * incoming_identity);
-
+        void register_section_handler(zmsg_t * msg);
+        void register_plug_handler(zmsg_t * msg);
+        void section_heartbeat_handler(zmsg_t * msg);
+        
+        //Replies
+        void send_section_heartbeat_ack(zsock_t * socket, zframe_t * identity);
         
         //Graph lists
         vector<tuple<string, string>> m_section_endpoints;

@@ -1,3 +1,5 @@
+enable_testing()
+
 set(ZST_HEADERS 
  ${BASEPATH}/ZstInstrument.h
  ${BASEPATH}/ZstPlug.h
@@ -32,3 +34,5 @@ target_link_libraries(${PROJECT_NAME}
 	${CZMQ_LIBRARIES}
     ${MSGPACK_LIBRARIES}
 )
+
+add_test( section_heartbeat Exename arg1 arg2 ... )

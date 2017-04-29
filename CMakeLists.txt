@@ -2,10 +2,6 @@ cmake_minimum_required(VERSION 3.0)
 
 project(Showtime)
 
-# Include hunter dependencies
-hunter_add_package(ZeroMQ)
-find_package(ZeroMQ CONFIG REQUIRED)
-
 # Set build locations
 set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/install)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/modules)
@@ -25,3 +21,7 @@ find_package(czmq REQUIRED)
 find_package(MsgPack)
 
 add_subdirectory(src)
+
+add_subdirectory(tests)
+enable_testing()
+add_test(NAME section_test COMMAND SectionTest)

@@ -9,9 +9,14 @@ using namespace Showtime;
 
 int main(int argc,char **argv){
     
+    //Set up
     ZstStage *stage = ZstStage::create_stage();
 
-	ZstSection *section = ZstSection::create_section("test_section");
+	ZstSection *section = ZstSection::create_section("test_section_1");
+    
+    assert(section->ping_stage().count() < 10);
+    
+    
     //section->register_to_stage();
   
 

@@ -33,7 +33,10 @@ namespace Showtime {
 		ZST_EXPORT vector<ZstInstrument*>& get_instruments();
         
         ZST_EXPORT void register_to_stage();
+        
+        ZST_EXPORT chrono::milliseconds ping_stage();
 
+        
 	private:
 		//Name property
 		string m_name;
@@ -54,6 +57,5 @@ namespace Showtime {
         static int s_heartbeat_timer(zloop_t *loop, int timer_id, void *arg);
         
         void start_client();
-        void send_heartbeat();
 	};
 }
