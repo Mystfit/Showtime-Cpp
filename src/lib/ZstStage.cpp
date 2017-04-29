@@ -7,11 +7,9 @@ ZstStage::ZstStage()
 	m_section_router = zsock_new_router("@tcp://*:6000");
 
     m_graph_update_pub = zsock_new_pub("@tcp://*:6001");
-    m_poller = zpoller_new (m_section_router, NULL);
     m_loop = zloop_new();
     
-    zloop_reader(m_loop, m_section_router, s_handle_router, NULL);
-    
+    zloop_reader(m_loop, m_section_router, s_handle_router, this);
 
     m_loop_actor = zactor_new(thread_loop_func, this);
 }
@@ -36,52 +34,84 @@ void ZstStage::thread_loop_func(zsock_t *pipe, void *args)
 
     ZstStage* stage = (ZstStage*)args;
     cout << "Starting stage event loop" << endl;
-    stage->start();
-
-//    while(true){
-//        cout << "Loop" << endl;
-//        stage->event_loop();
-//    }
+    stage->start_server();
     
-    cout << "Loop exit" << endl;
+    cout << "Server exited" << endl;
 }
 
-void ZstStage::event_loop(){
-
-//    zsock_t *sock = (zsock_t*)zpoller_wait (m_poller, -1);
-//    assert(sock != NULL);
-//    cout << "Received: " << zstr_recv(sock) << endl;
-//    cout << "boop" << endl;
-}
-
-void ZstStage::start(){
+void ZstStage::start_server(){
     zloop_start(m_loop);
 }
 
 int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 {
+    ZstStage *stage = (ZstStage*)arg;
+    
+    //Receive waiting message
 	zmsg_t *msg = zmsg_recv(socket);
     
-    cout << "Server received message of " << zmsg_size(msg) << " frames" << endl;
-
+    //Get identity
     zframe_t *identity = zmsg_pop(msg);
-    zframe_print(identity, "Identity was ");
     
+    //Remove spacer
     zmsg_pop(msg);
-    string clientGreeting = zmsg_popstr(msg);
     
-    cout << "Greeting was " << clientGreeting << endl;
+    //Get message type
+    char * msg_type_str = zmsg_popstr(msg);
+    int converted_msg_id = atoi(msg_type_str);
+    Messages::MessageIds message_type = (Messages::MessageIds)converted_msg_id;
     
-    zmsg_t *responseMsg = zmsg_new();
-    zmsg_add(responseMsg, identity);
-    zmsg_add(responseMsg, zframe_new_empty());
-    zmsg_addstr(responseMsg, "pong");
+    cout << "Recv" << endl;
     
-    cout << "Responding with pong" << endl;
-    
-    zmsg_send(&responseMsg, socket);
-    
-    cout << "Sent" << endl;
+    switch (message_type) {
+        case Messages::MessageIds::STAGE_REGISTER_SECTION:
+            stage->register_section(msg);
+            break;
+        case Messages::MessageIds::STAGE_PING:
+            stage->reply_pong_test(socket, identity);
+            break;
+        case Messages::MessageIds::SECTION_HEARTBEAT:
+            stage->section_heartbeat(msg);
+            stage->section_heartbeat_ack(socket, identity);
+            break;
+        default:
+            cout << "Didn't understand received message type of " << message_type << endl;
+            break;
+    }
 
 	return 0;
 }
+
+void ZstStage::register_section(zmsg_t * msg){
+    Messages::RegisterSection section_args = Messages::unpack_message_struct<Messages::RegisterSection>(msg);
+    cout << "Registering new section " << section_args.name << endl;
+    m_section_endpoints.push_back(tuple<string, string>(section_args.name, section_args.endpoint));
+}
+
+void ZstStage::reply_pong_test(zsock_t * socket, zframe_t * incoming_identity){
+    //Build pong response
+    zmsg_t *responseMsg = zmsg_new();
+    zmsg_add(responseMsg, incoming_identity);
+    zmsg_add(responseMsg, zframe_new_empty());
+    zmsg_addstr(responseMsg, "pong");
+    
+    zmsg_send(&responseMsg, socket);
+}
+
+void ZstStage::section_heartbeat(zmsg_t * msg){
+    Messages::Heartbeat heartbeat_args = Messages::unpack_message_struct<Messages::Heartbeat>(msg);
+    cout << "Received heartbeat from " << heartbeat_args.from << ". Timestamp: " << heartbeat_args.timestamp << endl;
+}
+
+void ZstStage::section_heartbeat_ack(zsock_t * socket, zframe_t * identity){
+    zmsg_t *responseMsg = zmsg_new();
+    zmsg_add(responseMsg, identity);
+    zmsg_add(responseMsg, zframe_new_empty());
+    zmsg_add(responseMsg, Messages::build_message_id_frame(Messages::MessageIds::OK));
+    zmsg_send(&responseMsg, socket);
+    cout << "Sending heartbeat ack" << endl;
+}
+
+
+
+

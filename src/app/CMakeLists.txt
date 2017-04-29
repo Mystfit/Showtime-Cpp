@@ -7,6 +7,7 @@ include_directories(
 	${BASEPATH}
 	${ZeroMQ_INCLUDE_DIRS}
 	${CZMQ_INCLUDE_DIRS}
+    ${MSGPACK_INCLUDE_DIRS}
 )
 
 IF(WIN32)

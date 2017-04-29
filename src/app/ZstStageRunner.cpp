@@ -12,7 +12,8 @@ int main(int argc,char **argv){
 	ZstStage *stage = ZstStage::create_stage();
 
 	zsock_t *req = zsock_new_req(">tcp://127.0.0.1:6000");
-    
+    zsock_set_identity(req, "showtime_client");
+    cout << "Set req identity to " << zsock_identity(req) << endl;
     cout << "Starting greeting loop" << endl;
     
 	while (true) {

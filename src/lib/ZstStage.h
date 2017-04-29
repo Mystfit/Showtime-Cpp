@@ -1,9 +1,11 @@
 #pragma once
 #include "ZstExports.h"
+#include "ZstMessages.hpp"
 #include "czmq.h"
 #include <string>
 #include <vector>
 #include <iostream>
+#include <tuple>
 
 using namespace std;
 
@@ -16,7 +18,7 @@ namespace Showtime {
 
 		int dealer_port = 6000;
 		int router_port = 6001;
-
+       
 	private:
 
 		static void thread_loop_func(zsock_t *pipe, void *args);
@@ -28,14 +30,24 @@ namespace Showtime {
         vector<zsock_t*> m_section_pipes;
         
         //Let's get it started in HAH
-        void start();
+        void start_server();
+        
+        //Message handlers
+        void register_section(zmsg_t * msg);
+        void register_plug(zmsg_t * msg);
+        void section_heartbeat(zmsg_t * msg);
+        void section_heartbeat_ack(zsock_t * socket, zframe_t * identity);
+        void reply_pong_test(zsock_t * socket, zframe_t * incoming_identity);
 
         
+        //Graph lists
+        vector<tuple<string, string>> m_section_endpoints;
+        
         //Polling
-        zpoller_t *m_poller;
         zloop_t *m_loop;
         zactor_t *m_loop_actor;
 
 		static int s_handle_router(zloop_t *loop, zsock_t *sock, void *arg);
+        
 	};
 }

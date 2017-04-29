@@ -7,10 +7,15 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+# Use C11
+set(CMAKE_CXX_STANDARD 11)
+set(CXX_STANDARD_REQUIRED)
+
 set(BASEPATH ${CMAKE_SOURCE_DIR}/src/lib)
 
 # Packages
 find_package(ZeroMQ REQUIRED)
 find_package(czmq REQUIRED)
+find_package(MsgPack)
 
 add_subdirectory(src)

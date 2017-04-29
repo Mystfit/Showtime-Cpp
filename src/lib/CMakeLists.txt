@@ -4,6 +4,7 @@ set(ZST_HEADERS
  ${BASEPATH}/ZstSection.h
  ${BASEPATH}/ZstExports.h
  ${BASEPATH}/ZstStage.h
+ ${BASEPATH}/ZstMessages.hpp
 )
 
 set(ZST_SOURCE 
@@ -16,6 +17,7 @@ set(ZST_SOURCE
 include_directories(
 	${ZeroMQ_INCLUDE_DIRS}
 	${CZMQ_INCLUDE_DIRS}
+    ${MSGPACK_INCLUDE_DIRS}
 )
 
 IF(WIN32)
@@ -28,4 +30,5 @@ add_library(${PROJECT_NAME} SHARED ${ZST_HEADERS} ${ZST_SOURCE})
 target_link_libraries(${PROJECT_NAME} 
 	${ZeroMQ_LIBRARIES}
 	${CZMQ_LIBRARIES}
+    ${MSGPACK_LIBRARIES}
 )
