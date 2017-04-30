@@ -66,6 +66,7 @@ void ZstSection::start_heartbeat(){
 
 int ZstSection::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
     ((ZstSection*)arg)->send_heartbeat();
+	return 0;
 }
 
 void ZstSection::send_heartbeat(){
