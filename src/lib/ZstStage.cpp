@@ -60,7 +60,7 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
     char * msg_type_str = zmsg_popstr(msg);
     int converted_msg_id = atoi(msg_type_str);
     Messages::MessageIds message_type = (Messages::MessageIds)converted_msg_id;
-        
+    
     switch (message_type) {
         case Messages::MessageIds::STAGE_REGISTER_SECTION:
             stage->register_section_handler(msg);

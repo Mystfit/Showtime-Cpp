@@ -12,12 +12,13 @@ using namespace std;
 namespace Showtime {
 	class ZstStage {
 	public:
+        int dealer_port = 6000;
+        int router_port = 6001;
+        
 		ZstStage();
 		ZST_EXPORT ~ZstStage();
 		ZST_EXPORT static ZstStage* create_stage();
-
-		int dealer_port = 6000;
-		int router_port = 6001;
+        ZST_EXPORT vector<tuple<string, string>> get_endpoints;
        
 	private:
 
@@ -47,6 +48,7 @@ namespace Showtime {
         zloop_t *m_loop;
         zactor_t *m_loop_actor;
 
+        //Incoming router socket handler
 		static int s_handle_router(zloop_t *loop, zsock_t *sock, void *arg);
         
 	};

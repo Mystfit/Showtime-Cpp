@@ -17,7 +17,7 @@ namespace Showtime{
         //Message ID index
         enum MessageIds{
             OK,
-            ERROR,
+            ERR,
             STAGE_REGISTER_SECTION,         //to stage
             STAGE_REGISTER_PLUG,            //to stage
             STAGE_REGISTER_CONNECTION,      //to stage
@@ -29,7 +29,7 @@ namespace Showtime{
         
         //Build a message id from the message ID enum
         static zframe_t * build_message_id_frame(MessageIds msg_id){
-            char id[1];
+            char id[2];
             sprintf(id, "%d", (int)msg_id);
             return zframe_from(id);
         }

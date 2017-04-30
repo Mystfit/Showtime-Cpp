@@ -26,7 +26,6 @@ IF(WIN32)
 	add_definitions(-DEXPORTS_API)
 ENDIF(WIN32)
 
-
 add_library(${PROJECT_NAME} SHARED ${ZST_HEADERS} ${ZST_SOURCE})
 
 target_link_libraries(${PROJECT_NAME} 
@@ -36,3 +35,6 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 add_test( section_heartbeat Exename arg1 arg2 ... )
+
+# SWIG bindings
+add_subdirectory(bindings)

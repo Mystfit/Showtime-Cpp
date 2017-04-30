@@ -19,6 +19,8 @@ set(BASEPATH ${CMAKE_SOURCE_DIR}/src/lib)
 find_package(ZeroMQ REQUIRED)
 find_package(czmq REQUIRED)
 find_package(MsgPack)
+find_package(SWIG)
+include(UseSWIG)
 
 add_subdirectory(src)
 
