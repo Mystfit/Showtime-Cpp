@@ -1,11 +1,18 @@
 #include "ZstSection.h"
 #include "ZstInstrument.h"
 
-using namespace Showtime;
+using namespace std;
 
-ZstSection::ZstSection(string name)
-{
-	m_name = name;
+ZstSection* ZstSection::create_section(string name){
+    return new ZstSection(name);
+}
+
+ZstSection::~ZstSection(){
+    
+}
+
+ZstSection::ZstSection(string name){
+    m_name = name;
 
 	string stage_addr = "tcp://127.0.0.1:6000";
 
@@ -16,20 +23,11 @@ ZstSection::ZstSection(string name)
 	m_graph_out = zsock_new_pub("@tcp://*:*");
 
 	m_loop = zloop_new();
-    start_heartbeat();
-}
-
-
-ZstSection::~ZstSection()
-{
+    start_client();
 }
 
 void ZstSection::start_client(){
-}
-
-ZstSection* Showtime::ZstSection::create_section(string name)
-{
-	return new ZstSection(name);
+    start_heartbeat();
 }
 
 ZstInstrument* ZstSection::create_instrument(string name)
@@ -44,16 +42,16 @@ void ZstSection::destroy_instrument(ZstInstrument& instrument)
 {
 }
 
-vector<ZstInstrument*>& Showtime::ZstSection::get_instruments()
+vector<ZstInstrument*>& ZstSection::get_instruments()
 {
 	return m_instruments;
 }
 
 void ZstSection::register_to_stage(){
-    Messages::RegisterSection args;
+    ZstMessages::RegisterSection args;
     args.name = m_name;
     args.endpoint = "some_endpoint_name";
-    zmsg_t * msg = Messages::build_register_section_message(args);
+    zmsg_t * msg = ZstMessages::build_register_section_message(args);
     zmsg_send(&msg, m_stage);
     
     //Wait for ack
@@ -69,14 +67,14 @@ int ZstSection::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
 }
 
 chrono::milliseconds ZstSection::ping_stage(){
-    Messages::Heartbeat beat;
+    ZstMessages::Heartbeat beat;
     
     chrono::time_point<chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
     
     beat.from = m_name;
     beat.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(start.time_since_epoch()).count();
-    zmsg_t * msg = Messages::build_heartbeat_message(beat);
+    zmsg_t * msg = ZstMessages::build_heartbeat_message(beat);
     zmsg_send(&msg, m_stage);
     cout << "Sent heartbeat ping" << endl;
     

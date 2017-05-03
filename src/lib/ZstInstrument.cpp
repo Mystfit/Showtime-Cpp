@@ -1,6 +1,6 @@
 #include "ZstInstrument.h" 
 
-using namespace Showtime;
+using namespace std;
 
 ZstInstrument::ZstInstrument(string name)
 {
@@ -11,7 +11,7 @@ ZstInstrument::~ZstInstrument()
 {
 }
 
-ZstPlug* Showtime::ZstInstrument::create_plug(string name, ZstPlug::PlugMode plugMode)
+ZstPlug* ZstInstrument::create_plug(string name, ZstPlug::PlugMode plugMode)
 {
 	ZstPlug* plug = new ZstPlug(name, plugMode);
 
@@ -30,12 +30,12 @@ string ZstInstrument::get_name()
 	return m_name;
 }
 
-vector<ZstPlug*> Showtime::ZstInstrument::get_outputs()
+vector<ZstPlug*> ZstInstrument::get_outputs()
 {
 	return m_outputs;
 }
 
-vector<ZstPlug*> Showtime::ZstInstrument::get_inputs()
+vector<ZstPlug*> ZstInstrument::get_inputs()
 {
 	return m_inputs;
 }

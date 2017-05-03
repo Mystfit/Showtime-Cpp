@@ -5,29 +5,25 @@
 #include "ZstExports.h"
 #include "ZstPlug.h"
 
-namespace Showtime {
+class ZstInstrument {
+public:
+    ZstInstrument(std::string name);
+    ~ZstInstrument();
 
-    using namespace std;
+    //Plug factory
+    ZST_EXPORT ZstPlug* create_plug(std::string name, ZstPlug::PlugMode plugMode);
 
-    class ZstInstrument {
-    public:
-        ZstInstrument(string name);
-        ~ZstInstrument();
+    //Accessors
+    ZST_EXPORT std::string get_name();
 
-        //Plug factory
-        ZST_EXPORT ZstPlug* create_plug(string name, ZstPlug::PlugMode plugMode);
-
-        //Accessors
-        ZST_EXPORT string get_name();
-
-        ZST_EXPORT vector<ZstPlug*> get_outputs();
-        ZST_EXPORT vector<ZstPlug*> get_inputs();
+    ZST_EXPORT std::vector<ZstPlug*> get_outputs();
+    ZST_EXPORT std::vector<ZstPlug*> get_inputs();
 
 
-    private:
-        string m_name;
-        vector<ZstPlug*> m_outputs;
-        vector<ZstPlug*> m_inputs;
-    };
-}
+private:
+    std::string m_name;
+    std::vector<ZstPlug*> m_outputs;
+    std::vector<ZstPlug*> m_inputs;
+};
+
 

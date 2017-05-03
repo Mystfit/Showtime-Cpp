@@ -1,6 +1,6 @@
 #include "ZstPlug.h"
 
-using namespace Showtime;
+using namespace std;
 
 ZstPlug::ZstPlug(string name, PlugMode mode)
 {

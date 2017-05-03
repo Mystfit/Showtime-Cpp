@@ -5,8 +5,6 @@
 #include "ZstPlug.h"
 #include "ZstStage.h"
 
-using namespace Showtime;
-
 int main(int argc,char **argv){
     
     //Set up
