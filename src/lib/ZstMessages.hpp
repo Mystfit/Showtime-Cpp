@@ -16,6 +16,7 @@ namespace ZstMessages{
         OK,
         ERR,
         STAGE_REGISTER_SECTION,         //to stage
+        STAGE_REGISTER_SECTION_ACK,     //from stage
         STAGE_REGISTER_PLUG,            //to stage
         STAGE_REGISTER_CONNECTION,      //to stage
         STAGE_REMOVE_ITEM,              //to stage
@@ -31,6 +32,19 @@ namespace ZstMessages{
         return zframe_from(id);
     }
     
+    static MessageIds pop_message_id(zmsg_t * msg){
+        return (ZstMessages::MessageIds)atoi(zmsg_popstr(msg));
+    }
+    
+    //Pack a msgpack struct to a buffer
+    template <typename T>
+    static msgpack::sbuffer pack_message_struct(T msgdata){
+        msgpack::sbuffer sbuf;
+        msgpack::pack(sbuf, msgdata);
+        return sbuf;
+    }
+    
+    
     //Unpack a msgpack stream to a message struct
     template <typename T>
     static T unpack_message_struct(zmsg_t * msg) {
@@ -42,35 +56,50 @@ namespace ZstMessages{
         result.get().convert(rvec);
         return rvec;
     }
+
+    template <typename T>
+    static zmsg_t * build_message(MessageIds message_id, T message_args, zframe_t * target_identity = NULL){
+        zmsg_t *msg = zmsg_new();
+        if(target_identity){
+            zmsg_add(msg, target_identity);
+            zmsg_add(msg, zframe_new_empty());
+        }
+        
+        zmsg_add(msg, build_message_id_frame(message_id));
+        zmsg_addstr(msg, ZstMessages::pack_message_struct<T>(message_args).data());
+        return msg;
+    }
     
-    //--
-    //Section registration messages
-    //--
+    
+    //Special message property enums
+    
+    enum class PlugDirection{
+        INPUT,
+        OUTPUT
+    };
+    
+    enum GraphItemUpdateType{
+        ARRIVING,
+        LEAVING
+    };
+
+    
+    //Message structs
+    //---------------
+    struct OK{
+        bool empty;
+        MSGPACK_DEFINE(empty);
+    };
+    
     struct RegisterSection{
         std::string name;
         std::string endpoint;
         MSGPACK_DEFINE(name, endpoint);
     };
     
-    static zmsg_t* build_register_section_message(RegisterSection args){
-        //Pack payload
-        msgpack::sbuffer sbuf;
-        msgpack::pack(sbuf, args);
-        
-        //Build message
-        zmsg_t *msg = zmsg_new();
-        zmsg_add(msg, build_message_id_frame(MessageIds::STAGE_REGISTER_SECTION));
-        zmsg_addstr(msg, sbuf.data());
-        return msg;
-    };
-
-    
-    //--
-    //Plug registration messages
-    //--
-    enum class PlugDirection{
-        INPUT,
-        OUTPUT
+    struct RegisterSectionAck{
+        int assigned_stage_port;
+        MSGPACK_DEFINE(assigned_stage_port);
     };
     
     struct RegisterPlug{
@@ -79,111 +108,29 @@ namespace ZstMessages{
         PlugDirection direction;
         MSGPACK_DEFINE(address, primitive, direction);
     };
-    
-    static zmsg_t* build_register_plug_message(RegisterPlug args){
-        //Pack payload
-        msgpack::sbuffer sbuf;
-        msgpack::pack(sbuf, args);
-        
-        //Build message
-        zmsg_t *msg = zmsg_new();
-        zmsg_add(msg, build_message_id_frame(MessageIds::STAGE_REGISTER_PLUG));
-        zmsg_addstr(msg, sbuf.data());
-        return msg;
-    };
-    
 
-    //--
-    //Connection registration messages
-    //--
     struct RegisterConnection{
         std::string from;
         std::string to;
         MSGPACK_DEFINE(from, to);
     };
     
-    static zmsg_t* build_register_connection_message(RegisterConnection args){
-        //Pack payload
-        msgpack::sbuffer sbuf;
-        msgpack::pack(sbuf, args);
-        
-        //Build message
-        zmsg_t *msg = zmsg_new();
-        zmsg_add(msg, build_message_id_frame(MessageIds::STAGE_REGISTER_CONNECTION));
-        zmsg_addstr(msg, sbuf.data());
-        return msg;
-    };
-    
-    
-    //--
-    //Graph update messages
-    //--
-    enum GraphItemUpdateType{
-        ARRIVING,
-        LEAVING
-    };
-
     struct GraphUpdates{
         std::vector<std::tuple<int, GraphItemUpdateType> > updates;
         MSGPACK_DEFINE_ARRAY(updates);
     };
-    
-    static zmsg_t* build_graph_update_message(GraphUpdates args){
-        //Pack payload
-        msgpack::sbuffer sbuf;
-        msgpack::pack(sbuf, args);
-        
-        //Build message
-        zmsg_t *msg = zmsg_new();
-        zmsg_add(msg, build_message_id_frame(MessageIds::STAGE_GRAPH_UPDATES));
-        zmsg_addstr(msg, sbuf.data());
-        return msg;
-    };
-    
-    
-    //--
-    //Plug output messages
-    //--
+
     struct PlugOutput{
         std::string from;
         std::string value;
         MSGPACK_DEFINE(from, value);
     };
     
-    static zmsg_t* build_plug_output_message(GraphUpdates args){
-        //Pack payload
-        msgpack::sbuffer sbuf;
-        msgpack::pack(sbuf, args);
-        
-        //Build message
-        zmsg_t *msg = zmsg_new();
-        zmsg_add(msg, build_message_id_frame(MessageIds::SECTION_UPDATE_PLUG));
-        zmsg_addstr(msg, sbuf.data());
-        return msg;
-    };
-
-    
-    //--
-    //Heartbeat messages
-    //--
     struct Heartbeat {
         std::string from;
         uint timestamp;
         MSGPACK_DEFINE(from, timestamp);
     };
-    
-    static zmsg_t* build_heartbeat_message(Heartbeat args){
-        //Pack payload
-        msgpack::sbuffer sbuf;
-        msgpack::pack(sbuf, args);
-        
-        //Build message
-        zmsg_t *msg = zmsg_new();
-        zframe_t *id = build_message_id_frame(MessageIds::SECTION_HEARTBEAT);
-        zmsg_add(msg, id);
-        zmsg_addstr(msg, sbuf.data());
-        return msg;
-    }
 }
 
 

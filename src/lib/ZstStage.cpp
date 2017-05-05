@@ -1,17 +1,16 @@
 #include "ZstStage.h"
 
 using namespace std;
+using namespace ZstMessages;
 
 ZstStage::ZstStage()
 {
 	m_section_router = zsock_new_router("@tcp://*:6000");
-
     m_graph_update_pub = zsock_new_pub("@tcp://*:6001");
-    m_loop = zloop_new();
     
+    m_loop = zloop_new();
     zloop_reader(m_loop, m_section_router, s_handle_router, this);
-
-    m_loop_actor = zactor_new(thread_loop_func, this);
+    m_loop_actor = zactor_new(actor_thread_func, this);
 }
 
 ZstStage::~ZstStage()
@@ -26,20 +25,19 @@ ZstStage* ZstStage::create_stage()
 }
 
 
-void ZstStage::thread_loop_func(zsock_t *pipe, void *args)
+void ZstStage::actor_thread_func(zsock_t *pipe, void *args)
 {
-    zsock_signal (pipe, 0);
-
     cout << "Starting stage actor" << endl;
+    zsock_signal (pipe, 0);
 
     ZstStage* stage = (ZstStage*)args;
     cout << "Starting stage event loop" << endl;
-    stage->start_server();
+    stage->start_server_event_loop();
     
     cout << "Server exited" << endl;
 }
 
-void ZstStage::start_server(){
+void ZstStage::start_server_event_loop(){
     zloop_start(m_loop);
 }
 
@@ -57,17 +55,15 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
     zmsg_pop(msg);
     
     //Get message type
-    char * msg_type_str = zmsg_popstr(msg);
-    int converted_msg_id = atoi(msg_type_str);
-    ZstMessages::MessageIds message_type = (ZstMessages::MessageIds)converted_msg_id;
+    MessageIds message_type = pop_message_id(msg);
     
     switch (message_type) {
-        case ZstMessages::MessageIds::STAGE_REGISTER_SECTION:
-            stage->register_section_handler(msg);
+        case MessageIds::STAGE_REGISTER_SECTION:
+            stage->register_section_handler(socket, identity, msg);
             break;
-        case ZstMessages::MessageIds::SECTION_HEARTBEAT:
-            stage->section_heartbeat_handler(msg);
-            stage->send_section_heartbeat_ack(socket, identity);
+        case MessageIds::SECTION_HEARTBEAT:
+            stage->section_heartbeat_handler(socket, identity, msg);
+            
             break;
         default:
             cout << "Didn't understand received message type of " << message_type << endl;
@@ -77,25 +73,36 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 	return 0;
 }
 
-void ZstStage::register_section_handler(zmsg_t * msg){
-    ZstMessages::RegisterSection section_args = ZstMessages::unpack_message_struct<ZstMessages::RegisterSection>(msg);
+void ZstStage::register_section_handler(zsock_t * socket, zframe_t * identity, zmsg_t * msg){
+    RegisterSection section_args = unpack_message_struct<RegisterSection>(msg);
     cout << "Registering new section " << section_args.name << endl;
-    m_section_endpoints.push_back(tuple<string, string>(section_args.name, section_args.endpoint));
+    
+    zsock_t * section_pipe = zsock_new_pair("@tcp://127.0.0.1:*");
+    m_section_pipes[section_args.name] = section_pipe;
+    char *last_endpoint = zsock_last_endpoint(section_pipe);
+
+    //Find endpoint port
+    RegisterSectionAck ack_args;
+    std::cmatch matches;
+    regex endpoint_expr("(?:tcp?)(?::\/\/)([^:]*):([0-9]{5})?(.*)");
+    std::regex_match ( last_endpoint, matches, endpoint_expr, std::regex_constants::match_default );
+    ack_args.assigned_stage_port = std::atoi(matches.str(2).c_str());
+    cout << "Sending port " << ack_args.assigned_stage_port << endl;
+    
+    zmsg_t *ackmsg = build_message<RegisterSectionAck>(MessageIds::STAGE_REGISTER_SECTION_ACK, ack_args ,identity);
+    zmsg_send(&ackmsg, socket);
 }
 
-void ZstStage::section_heartbeat_handler(zmsg_t * msg){
-    ZstMessages::Heartbeat heartbeat_args = ZstMessages::unpack_message_struct<ZstMessages::Heartbeat>(msg);
+
+void ZstStage::section_heartbeat_handler(zsock_t * socket, zframe_t * identity, zmsg_t * msg){
+    Heartbeat heartbeat_args = unpack_message_struct<Heartbeat>(msg);
     cout << "Received heartbeat from " << heartbeat_args.from << ". Timestamp: " << heartbeat_args.timestamp << endl;
+    
+    zmsg_t *ackmsg = build_message(MessageIds::OK, NULL ,identity);
+    zmsg_send(&ackmsg, socket);
 }
 
-void ZstStage::send_section_heartbeat_ack(zsock_t * socket, zframe_t * identity){
-    zmsg_t *responseMsg = zmsg_new();
-    zmsg_add(responseMsg, identity);
-    zmsg_add(responseMsg, zframe_new_empty());
-    zmsg_add(responseMsg, ZstMessages::build_message_id_frame(ZstMessages::MessageIds::OK));
-    zmsg_send(&responseMsg, socket);
-    cout << "Sending heartbeat ack" << endl;
-}
+
 
 
 

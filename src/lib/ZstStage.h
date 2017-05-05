@@ -6,34 +6,20 @@
 #include <vector>
 #include <iostream>
 #include <tuple>
+#include <map>
+#include <regex>
 
 class ZstStage {
 public:
-    int dealer_port = 6000;
-    int router_port = 6001;
+    //int dealer_port = 6000;
+    //int router_port = 6001;
     
     ZST_EXPORT ~ZstStage();
     ZST_EXPORT static ZstStage* create_stage();
-    ZST_EXPORT std::vector<std::tuple<std::string, std::string>> get_endpoints;
+    //ZST_EXPORT std::vector<std::tuple<std::string, std::string>> get_endpoints;
     
 private:
     ZstStage();
-
-    static void thread_loop_func(zsock_t *pipe, void *args);
-    void event_loop();
-    
-    //Pipes
-    zsock_t *m_section_router;
-    zsock_t *m_graph_update_pub;
-    std::vector<zsock_t*> m_section_pipes;
-    
-    //Let's get it started in HAH
-    void start_server();
-    
-    //Message handlers
-    void register_section_handler(zmsg_t * msg);
-    void register_plug_handler(zmsg_t * msg);
-    void section_heartbeat_handler(zmsg_t * msg);
     
     //Replies
     void send_section_heartbeat_ack(zsock_t * socket, zframe_t * identity);
@@ -41,11 +27,29 @@ private:
     //Graph lists
     std::vector<std::tuple<std::string, std::string>> m_section_endpoints;
     
-    //Polling
+    //Client actors
     zloop_t *m_loop;
     zactor_t *m_loop_actor;
+    static void actor_thread_func(zsock_t *pipe, void *args);
+    
+    //Let's get it started in HAH
+    void start_server_event_loop();
+
+    //Pipes
+    zsock_t *m_section_router;
+    zsock_t *m_graph_update_pub;
+    //std::vector<zsock_t*> m_section_pipes;
+    std::map<std::string, zsock_t *> m_section_pipes;
     
     //Incoming router socket handler
     static int s_handle_router(zloop_t *loop, zsock_t *sock, void *arg);
+    
+    //Message handlers
+    void register_section_handler(zsock_t * socket, zframe_t * identity, zmsg_t * msg);
+    void register_plug_handler(zsock_t * socket, zframe_t * identity, zmsg_t * msg);
+    void section_heartbeat_handler(zsock_t * socket, zframe_t * identity, zmsg_t * msg);
+    
+    //Registration
+    void register_section(ZstMessages::RegisterSection section_args);
 };
 
