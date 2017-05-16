@@ -1,4 +1,4 @@
-set(SOURCE_FILES 
+set(SECTION_SOURCE_FILES 
  "ZstSectionTest.cpp"
 )
 
@@ -13,6 +13,9 @@ IF(WIN32)
 	add_definitions(-DIMPORTS_API)
 ENDIF(WIN32)
 
-add_executable (SectionTest ZstSectionTest.cpp) 
+# Section test executable
+add_executable (SectionTest ${SECTION_SOURCE_FILES}) 
 add_dependencies(SectionTest ${PROJECT_NAME})
 target_link_libraries(SectionTest ${PROJECT_NAME})
+add_test(NAME section_test COMMAND SectionTest)
+

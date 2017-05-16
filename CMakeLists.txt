@@ -24,6 +24,6 @@ include(UseSWIG)
 
 add_subdirectory(src)
 
-add_subdirectory(tests)
 enable_testing()
+add_subdirectory(tests)
 add_test(NAME section_test COMMAND SectionTest)

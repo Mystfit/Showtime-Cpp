@@ -6,43 +6,50 @@
 #include <chrono>
 #include "ZstExports.h"
 #include "czmq.h"
-#include "ZstInstrument.h"
 #include "ZstMessages.hpp"
+#include "ZstPlug.h"
 
-class ZstSection
+class ZstPerformance
 {
 public:
     //Factory
-    ZST_EXPORT static ZstSection* create_section(std::string name);
-    ZST_EXPORT ~ZstSection();
-
-    // Creates a new instrument
-    ZST_EXPORT ZstInstrument* create_instrument(std::string name);
-
-    // Removes and destroys an instrument
-    ZST_EXPORT void destroy_instrument(ZstInstrument& instrument);
-
-    //List of all instruments owned by this section
-    ZST_EXPORT std::vector<ZstInstrument*>& get_instruments();
+    ZST_EXPORT static ZstPerformance* create_performer(std::string performer_name);
+    ZST_EXPORT ~ZstPerformance();
     
+    //Accessors
+    ZST_EXPORT std::string get_performer_name();
+    
+    //Lists
+    ZST_EXPORT std::vector<ZstPlug*> get_all_plugs();
+    ZST_EXPORT std::vector<ZstPlug*> get_instrument_plugs(std::string instrument);
+
+    //Stage methods
     ZST_EXPORT void register_to_stage();
-    
     ZST_EXPORT std::chrono::milliseconds ping_stage();
+    
+    ZST_EXPORT ZstPlug* create_plug(std::string name, std::string instrument, ZstPlug::PlugDirection direction);
+    ZST_EXPORT void destroy_plug(ZstPlug *plug);
+    
+    
+    ZST_EXPORT std::vector<ZstPlugAddress> get_plug_addresses(std::string section = "", std::string instrument = "");
+
+
 
 private:
-    ZstSection(std::string name);
+    ZstPerformance(std::string name);
 
     //Name property
-    std::string m_name;
+    std::string m_performer_name;
 
-    //All instruments owned by this section
-    std::vector<ZstInstrument*> m_instruments;
+    //All plugs owned by this section
+    std::map<std::string, std::vector<ZstPlug*>> m_plugs;
     
     //Default ports
     int m_stage_req_port = 6000;
     int m_stage_pipe_port = -1;
     
     //Stage actor
+    void start();
     zloop_t *m_loop;
     zactor_t *m_loop_actor;
     static void actor_thread_func(zsock_t *pipe, void *args);
@@ -58,10 +65,10 @@ private:
     
     //Socket handlers
     static int s_handle_graph_in(zloop_t *loop, zsock_t *sock, void *arg);
-    static int s_handle_reply(zloop_t *loop, zsock_t *sock, void *arg);
+    static int s_handle_stage_pipe(zloop_t *loop, zsock_t *sock, void *arg);
     
     //Heartbeat timer
     static int s_heartbeat_timer(zloop_t *loop, int timer_id, void *arg);
-    
 };
+
 

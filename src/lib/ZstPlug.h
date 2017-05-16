@@ -10,21 +10,22 @@
 class ZstPlug {
 
 public:
-    enum PlugMode {
-        READABLE = 0,
-        WRITEABLE
+    enum PlugDirection {
+        INPUT = 0,
+        OUTPUT
     };
 
     //Constructor
-    ZstPlug(std::string name, PlugMode mode);
+    ZstPlug(std::string name, std::string instrument, PlugDirection mode);
     
     //Accessors
     ZST_EXPORT std::string get_name();
-    ZST_EXPORT PlugMode get_mode();
+    ZST_EXPORT PlugDirection get_mode();
 
 private:
     std::string m_name;
-    PlugMode m_plug_mode;
+    std::string m_instrument;
+    PlugDirection m_plug_mode;
     
     //Inputs
     std::vector<std::string> m_args;
@@ -33,4 +34,3 @@ private:
     std::string m_output;
     bool m_output_ready = false;
 };
-

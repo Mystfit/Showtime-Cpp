@@ -6,23 +6,34 @@
 #include <msgpack.hpp>
 #include <stdio.h>
 
-
+#include "ZstPlug.h"
 #include "ZstExports.h"
 #include "czmq.h"
+
+
+//Graph strucutre
+struct ZstPlugAddress{
+    std::string performer;
+    std::string instrument;
+    std::string name;
+    MSGPACK_DEFINE(performer, instrument, name);
+};
 
 namespace ZstMessages{
     //Message ID index
     enum MessageIds{
         OK,
         ERR,
-        STAGE_REGISTER_SECTION,         //to stage
-        STAGE_REGISTER_SECTION_ACK,     //from stage
+        STAGE_REGISTER_PERFORMER,         //to stage
+        STAGE_REGISTER_PERFORMER_ACK,     //from stage
         STAGE_REGISTER_PLUG,            //to stage
         STAGE_REGISTER_CONNECTION,      //to stage
         STAGE_REMOVE_ITEM,              //to stage
         STAGE_GRAPH_UPDATES,            //from stage
-        SECTION_UPDATE_PLUG,            //to sections
-        SECTION_HEARTBEAT               //to stage
+        STAGE_LIST_PLUGS,
+        STAGE_LIST_PLUGS_ACK,
+        PERFORMER_UPDATE_PLUG,            //to performers
+        PERFORMER_HEARTBEAT               //to stage
     };
     
     //Build a message id from the message ID enum
@@ -32,31 +43,25 @@ namespace ZstMessages{
         return zframe_from(id);
     }
     
+    //Pops message id from fromt of message
     static MessageIds pop_message_id(zmsg_t * msg){
         return (ZstMessages::MessageIds)atoi(zmsg_popstr(msg));
     }
     
-    //Pack a msgpack struct to a buffer
-    template <typename T>
-    static msgpack::sbuffer pack_message_struct(T msgdata){
-        msgpack::sbuffer sbuf;
-        msgpack::pack(sbuf, msgdata);
-        return sbuf;
-    }
-    
-    
     //Unpack a msgpack stream to a message struct
     template <typename T>
     static T unpack_message_struct(zmsg_t * msg) {
-        T rvec;
+        T converted_struct;
         msgpack::object_handle result;
         
-        std::string msg_payload = zmsg_popstr(msg);
-        unpack(result, msg_payload.c_str(), msg_payload.size());
-        result.get().convert(rvec);
-        return rvec;
+        zframe_t * payload = zmsg_pop(msg);
+        
+        unpack(result, (char*)zframe_data(payload), zframe_size(payload));
+        result.get().convert(converted_struct);
+        return converted_struct;
     }
-
+    
+    //Creates a msgpacked message
     template <typename T>
     static zmsg_t * build_message(MessageIds message_id, T message_args, zframe_t * target_identity = NULL){
         zmsg_t *msg = zmsg_new();
@@ -66,18 +71,16 @@ namespace ZstMessages{
         }
         
         zmsg_add(msg, build_message_id_frame(message_id));
-        zmsg_addstr(msg, ZstMessages::pack_message_struct<T>(message_args).data());
+        
+        msgpack::sbuffer buf;
+        msgpack::pack(buf, message_args);
+        zframe_t *payload = zframe_new(buf.data(), buf.size());
+        zmsg_add(msg, payload);
         return msg;
     }
     
     
     //Special message property enums
-    
-    enum class PlugDirection{
-        INPUT,
-        OUTPUT
-    };
-    
     enum GraphItemUpdateType{
         ARRIVING,
         LEAVING
@@ -86,27 +89,29 @@ namespace ZstMessages{
     
     //Message structs
     //---------------
-    struct OK{
+    struct OKAck{
         bool empty;
         MSGPACK_DEFINE(empty);
     };
     
-    struct RegisterSection{
+    struct RegisterPerformer{
         std::string name;
         std::string endpoint;
         MSGPACK_DEFINE(name, endpoint);
     };
     
-    struct RegisterSectionAck{
+    struct RegisterPerformerAck{
         int assigned_stage_port;
         MSGPACK_DEFINE(assigned_stage_port);
     };
     
     struct RegisterPlug{
-        std::string address;
+        std::string performer;
+        std::string instrument;
+        std::string name;
         int primitive;
-        PlugDirection direction;
-        MSGPACK_DEFINE(address, primitive, direction);
+        ZstPlug::PlugDirection direction;
+        MSGPACK_DEFINE(performer, instrument, name, primitive, direction);
     };
 
     struct RegisterConnection{
@@ -131,9 +136,28 @@ namespace ZstMessages{
         uint timestamp;
         MSGPACK_DEFINE(from, timestamp);
     };
+    
+    struct ListPlugs{
+        std::string performer;
+        std::string instrument;
+        MSGPACK_DEFINE(performer, instrument);
+    };
+    
+    struct ListPlugsAck{
+        std::vector<ZstPlugAddress> plugs;
+        MSGPACK_DEFINE_ARRAY(plugs);
+    };
+    
+    struct ConnectInputPlugToOutput{
+        
+    };
+    
+    struct ConnectInputPlugToOutputAck{
+        
+    };
 }
 
 
 //Enums for MsgPack
-MSGPACK_ADD_ENUM(ZstMessages::PlugDirection);
+MSGPACK_ADD_ENUM(ZstPlug::PlugDirection);
 MSGPACK_ADD_ENUM(ZstMessages::GraphItemUpdateType);

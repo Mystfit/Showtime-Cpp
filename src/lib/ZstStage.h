@@ -1,6 +1,8 @@
 #pragma once
 #include "ZstExports.h"
 #include "ZstMessages.hpp"
+#include "ZstPlug.h"
+#include "ZstPerformance.h"
 #include "czmq.h"
 #include <string>
 #include <vector>
@@ -9,6 +11,12 @@
 #include <map>
 #include <regex>
 
+struct ZstPerformerRef{
+    std::string name;
+    zsock_t * pipe;
+    std::vector<ZstPlugAddress> plugs;
+};
+
 class ZstStage {
 public:
     //int dealer_port = 6000;
@@ -16,40 +24,38 @@ public:
     
     ZST_EXPORT ~ZstStage();
     ZST_EXPORT static ZstStage* create_stage();
-    //ZST_EXPORT std::vector<std::tuple<std::string, std::string>> get_endpoints;
+    ZST_EXPORT ZstPerformerRef get_performer_ref(std::string performer_name);
     
 private:
     ZstStage();
-    
-    //Replies
-    void send_section_heartbeat_ack(zsock_t * socket, zframe_t * identity);
-    
-    //Graph lists
-    std::vector<std::tuple<std::string, std::string>> m_section_endpoints;
     
     //Client actors
     zloop_t *m_loop;
     zactor_t *m_loop_actor;
     static void actor_thread_func(zsock_t *pipe, void *args);
     
+    //Stage pipes
+    zsock_t *m_section_router;
+    zsock_t *m_graph_update_pub;
+    
     //Let's get it started in HAH
     void start_server_event_loop();
 
-    //Pipes
-    zsock_t *m_section_router;
-    zsock_t *m_graph_update_pub;
-    //std::vector<zsock_t*> m_section_pipes;
-    std::map<std::string, zsock_t *> m_section_pipes;
-    
     //Incoming router socket handler
     static int s_handle_router(zloop_t *loop, zsock_t *sock, void *arg);
-    
+    static int s_handle_section_pipe(zloop_t *loop, zsock_t *sock, void *arg);
+
     //Message handlers
     void register_section_handler(zsock_t * socket, zframe_t * identity, zmsg_t * msg);
     void register_plug_handler(zsock_t * socket, zframe_t * identity, zmsg_t * msg);
     void section_heartbeat_handler(zsock_t * socket, zframe_t * identity, zmsg_t * msg);
+    void list_plugs_handler(zsock_t * socket, zframe_t * identity, zmsg_t * msg);
+    void connect_plugs_handler(zsock_t * socket, zframe_t * identity, zmsg_t * msg);
     
-    //Registration
-    void register_section(ZstMessages::RegisterSection section_args);
+    //Acks
+    void send_section_heartbeat_ack(zsock_t * socket, zframe_t * identity);
+    
+    //Graph storage
+    std::map<std::string, ZstPerformerRef> m_performer_refs;
 };
 
