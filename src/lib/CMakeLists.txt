@@ -1,16 +1,19 @@
 enable_testing()
 
 set(ZST_HEADERS 
+ ${BASEPATH}/ZstActor.h	
  ${BASEPATH}/ZstPlug.h
- ${BASEPATH}/ZstPerformer.h
+ ${BASEPATH}/ZstPerformance.h
  ${BASEPATH}/ZstExports.h
  ${BASEPATH}/ZstStage.h
- ${BASEPATH}/ZstMessages.hpp
+ ${BASEPATH}/ZstMessages.h
 )
 
 set(ZST_SOURCE 
+ "ZstActor.cpp"
+ "ZstMessages.cpp"
  "ZstPlug.cpp"
- "ZstSection.cpp"
+ "ZstPerformance.cpp"
  "ZstStage.cpp"
 )
 

@@ -6,10 +6,11 @@
 #include <chrono>
 #include "ZstExports.h"
 #include "czmq.h"
-#include "ZstMessages.hpp"
+#include "ZstMessages.h"
 #include "ZstPlug.h"
+#include "ZstActor.h"
 
-class ZstPerformance
+class ZstPerformance : public ZstActor
 {
 public:
     //Factory
@@ -27,13 +28,9 @@ public:
     ZST_EXPORT void register_to_stage();
     ZST_EXPORT std::chrono::milliseconds ping_stage();
     
-    ZST_EXPORT ZstPlug* create_plug(std::string name, std::string instrument, ZstPlug::PlugDirection direction);
+    ZST_EXPORT ZstPlug* create_plug(std::string name, std::string instrument, ZstPlug::Direction direction);
     ZST_EXPORT void destroy_plug(ZstPlug *plug);
-    
-    
-    ZST_EXPORT std::vector<ZstPlugAddress> get_plug_addresses(std::string section = "", std::string instrument = "");
-
-
+    ZST_EXPORT std::vector<ZstPlug::Address> get_all_plug_addresses(std::string section = "", std::string instrument = "");
 
 private:
     ZstPerformance(std::string name);
@@ -50,12 +47,7 @@ private:
     
     //Stage actor
     void start();
-    zloop_t *m_loop;
-    zactor_t *m_loop_actor;
-    static void actor_thread_func(zsock_t *pipe, void *args);
-
-    //Start section event loop
-    void start_client_event_loop();
+	void stop();
     
     //Zeromq pipes
     zsock_t *m_stage_requests;		//Reqests sent to the stage server
@@ -66,7 +58,7 @@ private:
     //Socket handlers
     static int s_handle_graph_in(zloop_t *loop, zsock_t *sock, void *arg);
     static int s_handle_stage_pipe(zloop_t *loop, zsock_t *sock, void *arg);
-    
+
     //Heartbeat timer
     static int s_heartbeat_timer(zloop_t *loop, int timer_id, void *arg);
 };

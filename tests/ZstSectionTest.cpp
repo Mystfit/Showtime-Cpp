@@ -8,13 +8,14 @@ ZstStage *stage;
 ZstPerformance *performer_a;
 ZstPerformance *performer_b;
 
+void test_performer_init() {
+	performer_a->self_test();
+}
+
 //Test stage creation and performer
 void test_stage_registration(){
     //Test stage connection
     assert(performer_a->ping_stage().count() >= 0);
-    
-    //Test performer registration
-    performer_a->register_to_stage();
     
     ZstPerformerRef testperformer = stage->get_performer_ref("test_performer_1");
     assert(testperformer.name == "test_performer_1");
@@ -30,8 +31,8 @@ void test_stage_registration(){
 
 void test_create_plugs(){
     //Create new plugs
-    ZstPlug *outputPlug = performer_a->create_plug("test_output_plug", "test_instrument", ZstPlug::PlugDirection::OUTPUT);
-    ZstPlug *inputPlug = performer_a->create_plug("test_input_plug", "test_instrument", ZstPlug::PlugDirection::INPUT);
+    ZstPlug *outputPlug = performer_a->create_plug("test_output_plug", "test_instrument", ZstPlug::Direction::OUTPUT);
+    ZstPlug *inputPlug = performer_a->create_plug("test_input_plug", "test_instrument", ZstPlug::Direction::INPUT);
 
     //Check stage registered plugs successfully
     ZstPerformerRef stagePerformerRef = stage->get_performer_ref(performer_a->get_performer_name());
@@ -49,29 +50,57 @@ void test_create_plugs(){
     assert(localplugs[1]->get_name() == stagePerformerRef.plugs[1].name);
     
     //Query stage for remote plugs
-    std::vector<ZstPlugAddress> plugs = performer_a->get_plug_addresses();
+    std::vector<ZstPlug::Address> plugs = performer_a->get_all_plug_addresses();
     assert(plugs.size() > 0);
-    plugs = performer_a->get_plug_addresses("test_performer_1");
+    plugs = performer_a->get_all_plug_addresses("test_performer_1");
     assert(plugs.size() > 0);
-    plugs = performer_a->get_plug_addresses("non_existing_performer");
+    plugs = performer_a->get_all_plug_addresses("non_existing_performer");
     assert(plugs.size() == 0);
-    plugs = performer_a->get_plug_addresses("test_performer_1", "test_instrument");
+    plugs = performer_a->get_all_plug_addresses("test_performer_1", "test_instrument");
     assert(plugs.size() > 0);
+
+	performer_a->destroy_plug(outputPlug);
+	std::vector<ZstPlug::Address> plug_addresses = stage->get_performer_ref("test_performer_1").plugs;
+	assert(plug_addresses.size() == 1);
+	assert(performer_a->get_instrument_plugs("test_instrument").size()== 1);
+	
+	performer_a->destroy_plug(inputPlug);
+	stagePerformerRef = stage->get_performer_ref("test_performer_1");
+	assert(stagePerformerRef.plugs.empty());
+	assert(performer_a->get_instrument_plugs("test_instrument").empty());
 }
 
 void test_query_stage(){
     
 }
 
+void test_cleanup() {
+	//Cleanup
+	delete performer_a;
+	delete performer_b;
+	delete stage;
+}
+
 int main(int argc,char **argv){
     stage = ZstStage::create_stage();
-    
 	performer_a = ZstPerformance::create_performer("test_performer_1");
     
+	test_performer_init();
     test_stage_registration();
     test_create_plugs();
     test_query_stage();
-    
+	test_cleanup();
+
+	std::cout << "Shutting down..." << std::endl;
+
+	zsys_shutdown();
+
+	std::cout << "Performer test completed" << std::endl;
+
+#ifdef WIN32
+	system("pause");
+#endif
+
 	return 0;
 }
 
