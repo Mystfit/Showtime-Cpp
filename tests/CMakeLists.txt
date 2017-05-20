@@ -3,7 +3,7 @@ set(SECTION_SOURCE_FILES
 )
 
 include_directories(
-	${BASEPATH}
+	${Showtime_INCLUDE_DIRS}
 	${ZeroMQ_INCLUDE_DIRS}
 	${CZMQ_INCLUDE_DIRS}
     ${MSGPACK_INCLUDE_DIRS}

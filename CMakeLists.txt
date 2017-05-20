@@ -13,7 +13,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_CXX_STANDARD 11)
 set(CXX_STANDARD_REQUIRED)
 
-set(BASEPATH ${CMAKE_SOURCE_DIR}/src/lib)
+# Set showtime include directories
+set(Showtime_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include)
 
 # Packages
 find_package(ZeroMQ REQUIRED)
