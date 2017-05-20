@@ -23,7 +23,8 @@ public:
         STAGE_LIST_PLUGS,
         STAGE_LIST_PLUGS_ACK,
         PERFORMER_UPDATE_PLUG,            //to performers
-        PERFORMER_HEARTBEAT               //to stage
+        PERFORMER_HEARTBEAT,               //to stage
+		PERFORMER_REGISTER_CONNECTION
     };
 
 	//Special message property enums
@@ -38,6 +39,11 @@ public:
         bool empty;
         MSGPACK_DEFINE(empty);
     };
+
+	struct ErrorAck {
+		std::string err;
+		MSGPACK_DEFINE(err);
+	};
     
     struct RegisterPerformer{
         std::string name;
@@ -96,6 +102,18 @@ public:
         std::vector<ZstPlug::Address> plugs;
         MSGPACK_DEFINE_ARRAY(plugs);
     };
+
+	struct ConnectPlugs {
+		ZstPlug::Address first;
+		ZstPlug::Address second;
+		MSGPACK_DEFINE(first, second);
+	};
+
+	struct PerformerConnection {
+		std::string endpoint;
+		ZstPlug::Address output_plug;
+		MSGPACK_DEFINE(endpoint, output_plug);
+	};
     
 
 	//---------------------------------------

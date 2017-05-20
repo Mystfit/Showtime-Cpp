@@ -97,7 +97,11 @@ void ZstPerformance::register_to_stage(){
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
     if(message_type == ZstMessages::Kind::STAGE_REGISTER_PERFORMER_ACK){
 		ZstMessages::RegisterPerformerAck register_ack = ZstMessages::unpack_message_struct<ZstMessages::RegisterPerformerAck>(responseMsg);
-        m_stage_pipe = zsock_new_pair((">tcp://127.0.0.1:" + std::to_string(register_ack.assigned_stage_port)).c_str());
+        
+		char *ip = "127.0.0.1";
+		char addr[30];
+		sprintf(addr, ">tcp://%s:%d", ip, register_ack.assigned_stage_port);
+		m_stage_pipe = zsock_new_pair(addr);
         
 		//Attach pipe handler to loop
 		attach_pipe_listener(m_stage_pipe, s_handle_stage_pipe, this);
@@ -138,9 +142,10 @@ chrono::milliseconds ZstPerformance::ping_stage(){
 ZstPlug* ZstPerformance::create_plug(std::string name, std::string instrument, ZstPlug::Direction direction){
     
 	ZstMessages::RegisterPlug plug_args;
-    plug_args.performer = m_performer_name;
+	plug_args.performer = get_performer_name();
     plug_args.name = name;
     plug_args.instrument = instrument;
+	plug_args.direction = direction;
     
     zmsg_t * msg = ZstMessages::build_message<ZstMessages::RegisterPlug>(ZstMessages::Kind::STAGE_REGISTER_PLUG, plug_args);
     zmsg_send(&msg, m_stage_requests);
@@ -198,3 +203,22 @@ std::vector<ZstPlug::Address> ZstPerformance::get_all_plug_addresses(string perf
 
     return plugResponse.plugs;
 }
+
+void ZstPerformance::connect_plugs(ZstPlug::Address a, ZstPlug::Address b)
+{
+	ZstMessages::ConnectPlugs plug_args;
+	plug_args.first = a;
+	plug_args.second = b;
+
+	zmsg_t * msg = ZstMessages::build_message<ZstMessages::ConnectPlugs>(ZstMessages::Kind::STAGE_REGISTER_CONNECTION, plug_args);
+	zmsg_send(&msg, m_stage_requests);
+	zmsg_t *responseMsg = zmsg_recv(m_stage_requests);
+
+	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
+	if (message_type != ZstMessages::Kind::OK) {
+		ZstMessages::ErrorAck ack = ZstMessages::unpack_message_struct<ZstMessages::ErrorAck>(responseMsg);
+
+		throw runtime_error("Plug deletion responded with message other than OK. Got " + ack.err);
+	}
+}
+

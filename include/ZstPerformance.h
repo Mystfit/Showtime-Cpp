@@ -32,6 +32,8 @@ public:
     ZST_EXPORT void destroy_plug(ZstPlug *plug);
     ZST_EXPORT std::vector<ZstPlug::Address> get_all_plug_addresses(std::string section = "", std::string instrument = "");
 
+	ZST_EXPORT void connect_plugs(ZstPlug::Address a, ZstPlug::Address b);
+
 private:
     ZstPerformance(std::string name);
 

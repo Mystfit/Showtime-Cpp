@@ -70,9 +70,15 @@ void test_create_plugs(){
 	assert(performer_a->get_instrument_plugs("test_instrument").empty());
 }
 
-void test_query_stage(){
-    
+
+void test_connect_plugs() {
+	//Test plugs connncted between performers
+	ZstPlug *outputPlug = performer_a->create_plug("test_output_plug", "test_instrument", ZstPlug::Direction::OUTPUT);
+	ZstPlug *inputPlug = performer_b->create_plug("test_input_plug", "test_instrument", ZstPlug::Direction::INPUT);
+
+	performer_a->connect_plugs(outputPlug->get_address(), inputPlug->get_address());
 }
+
 
 void test_cleanup() {
 	//Cleanup
@@ -84,11 +90,12 @@ void test_cleanup() {
 int main(int argc,char **argv){
     stage = ZstStage::create_stage();
 	performer_a = ZstPerformance::create_performer("test_performer_1");
+	performer_b = ZstPerformance::create_performer("test_performer_2");
     
-	test_performer_init();
-    test_stage_registration();
-    test_create_plugs();
-    test_query_stage();
+	//test_performer_init();
+    //test_stage_registration();
+    //test_create_plugs();
+	test_connect_plugs();
 	test_cleanup();
 
 	std::cout << "Shutting down..." << std::endl;

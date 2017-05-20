@@ -79,6 +79,9 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 		case ZstMessages::Kind::STAGE_DESTROY_PLUG:
 			stage->destroy_plug_handler(socket, identity, msg);
 			break;
+		case ZstMessages::Kind::STAGE_REGISTER_CONNECTION:
+			stage->connect_plugs_handler(socket, identity, msg);
+			break;
         default:
             cout << "Didn't understand received message type of " << message_type << endl;
             break;
@@ -139,6 +142,7 @@ void ZstStage::register_section_handler(zsock_t * socket, zframe_t * identity, z
     zmsg_send(&ackmsg, sectionRef.pipe);
 }
 
+
 void ZstStage::register_plug_handler(zsock_t *socket, zframe_t *identity, zmsg_t *msg){
 	ZstMessages::RegisterPlug plug_args = ZstMessages::unpack_message_struct<ZstMessages::RegisterPlug>(msg);
     
@@ -151,12 +155,14 @@ void ZstStage::register_plug_handler(zsock_t *socket, zframe_t *identity, zmsg_t
     plugRef.name = plug_args.name;
     plugRef.instrument = plug_args.instrument;
     plugRef.performer = plug_args.performer;
+	plugRef.direction = plug_args.direction;
     
     m_performer_refs[plug_args.performer].plugs.push_back(plugRef);
     
     zmsg_t *ackmsg = ZstMessages::build_message<ZstMessages::OKAck>(ZstMessages::Kind::OK, ZstMessages::OKAck() ,identity);
     zmsg_send(&ackmsg, socket);
 }
+
 
 void ZstStage::section_heartbeat_handler(zsock_t * socket, zframe_t * identity, zmsg_t * msg){
 	ZstMessages::Heartbeat heartbeat_args = ZstMessages::unpack_message_struct<ZstMessages::Heartbeat>(msg);
@@ -165,6 +171,7 @@ void ZstStage::section_heartbeat_handler(zsock_t * socket, zframe_t * identity, 
     zmsg_t *ackmsg = ZstMessages::build_message(ZstMessages::Kind::OK, NULL ,identity);
     zmsg_send(&ackmsg, socket);
 }
+
 
 void ZstStage::list_plugs_handler(zsock_t *socket, zframe_t *identity, zmsg_t *msg){
 	ZstMessages::ListPlugs plug_query_args = ZstMessages::unpack_message_struct<ZstMessages::ListPlugs>(msg);
@@ -198,6 +205,7 @@ void ZstStage::list_plugs_handler(zsock_t *socket, zframe_t *identity, zmsg_t *m
     zmsg_send(&ackmsg, socket);
 }
 
+
 void ZstStage::destroy_plug_handler(zsock_t * socket, zframe_t * identity, zmsg_t * msg)
 {
 	ZstMessages::DestroyPlug plug_destroy_args = ZstMessages::unpack_message_struct<ZstMessages::DestroyPlug>(msg);
@@ -209,4 +217,48 @@ void ZstStage::destroy_plug_handler(zsock_t * socket, zframe_t * identity, zmsg_
 	
 	zmsg_t *ackmsg = ZstMessages::build_message<ZstMessages::OKAck>(ZstMessages::Kind::OK, ZstMessages::OKAck(), identity);
 	zmsg_send(&ackmsg, socket);
+}
+
+
+void ZstStage::connect_plugs_handler(zsock_t * socket, zframe_t * identity, zmsg_t * msg)
+{
+	ZstMessages::ConnectPlugs plug_args = ZstMessages::unpack_message_struct<ZstMessages::ConnectPlugs>(msg);
+	cout << "STAGE: Received connect plug request" << endl;
+
+	ZstPerformerRef &perfB = get_performer_ref(plug_args.second.performer);
+
+	zmsg_t *ackmsg;
+	ZstPlug::Address input, output;
+
+	if (plug_args.first.direction == ZstPlug::Direction::OUTPUT && plug_args.second.direction == ZstPlug::Direction::INPUT) {
+		connect_plugs(get_performer_ref(plug_args.second.performer), plug_args.first);
+	}
+	else if (plug_args.first.direction == ZstPlug::Direction::INPUT && plug_args.second.direction == ZstPlug::Direction::OUTPUT){
+		connect_plugs(get_performer_ref(plug_args.first.performer), plug_args.second);
+	}
+	else {
+		ZstMessages::ErrorAck ack;
+		ack.err = "Can't attach input->input or output->output";
+		ackmsg = ZstMessages::build_message<ZstMessages::ErrorAck>(ZstMessages::Kind::ERR, ack, identity);
+		zmsg_send(&ackmsg, socket);
+		return;
+	}
+	
+	ackmsg = ZstMessages::build_message<ZstMessages::OKAck>(ZstMessages::Kind::OK, ZstMessages::OKAck(), identity);
+	zmsg_send(&ackmsg, socket);
+}
+
+
+void ZstStage::connect_plugs(const ZstPerformerRef & input_performer, ZstPlug::Address output_plug)
+{
+	//Need to get to the input performer and tell it to initiate a connection to the output performer
+	//Will the performer need to return information back to the output?
+	//The stage will dispatch a graph update, so will the client need to do this? Probably not
+
+	ZstMessages::PerformerConnection perf_args;
+	perf_args.endpoint = zsock_last_endpoint(input_performer.pipe);
+	perf_args.output_plug = output_plug;
+
+	zmsg_t *connectMsg = ZstMessages::build_message<ZstMessages::PerformerConnection>(ZstMessages::Kind::PERFORMER_REGISTER_CONNECTION, perf_args, NULL);
+	zmsg_send(&connectMsg, input_performer.pipe);
 }

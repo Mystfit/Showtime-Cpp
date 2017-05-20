@@ -26,8 +26,7 @@ public:
 		{
 			return (performer == other.performer) &&
 				(instrument == other.instrument) &&
-				(name == other.name) &&
-				(direction == other.direction);
+				(name == other.name);
 		}
 		MSGPACK_DEFINE(performer, instrument, name, direction);
 	};

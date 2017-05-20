@@ -45,11 +45,11 @@ private:
     void list_plugs_handler(zsock_t * socket, zframe_t * identity, zmsg_t * msg);
     void connect_plugs_handler(zsock_t * socket, zframe_t * identity, zmsg_t * msg);
 	void destroy_plug_handler(zsock_t * socket, zframe_t * identity, zmsg_t * msg);
-
-    //Acks
-    void send_section_heartbeat_ack(zsock_t * socket, zframe_t * identity);
     
     //Graph storage
     std::map<std::string, ZstPerformerRef> m_performer_refs;
+
+	//Plug connections
+	void connect_plugs(const ZstPerformerRef & input_performer, ZstPlug::Address output_plug);
 };
 

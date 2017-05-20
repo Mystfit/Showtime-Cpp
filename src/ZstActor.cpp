@@ -5,6 +5,7 @@ using namespace std;
 ZstActor::ZstActor()
 {
 	m_loop = zloop_new();
+	zloop_set_verbose(m_loop, true);
 }
 
 ZstActor::~ZstActor()

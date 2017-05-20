@@ -39,6 +39,6 @@ ZstPlug::Address ZstPlug::get_address()
 	address.performer = m_performer;
 	address.instrument = m_instrument;
 	address.name = m_name;
-	//address.direction = m_direction;
+	address.direction = m_direction;
 	return address;
 }
