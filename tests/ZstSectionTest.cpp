@@ -31,8 +31,8 @@ void test_stage_registration(){
 
 void test_create_plugs(){
     //Create new plugs
-    ZstPlug *outputPlug = performer_a->create_plug("test_output_plug", "test_instrument", ZstPlug::Direction::OUTPUT);
-    ZstPlug *inputPlug = performer_a->create_plug("test_input_plug", "test_instrument", ZstPlug::Direction::INPUT);
+    ZstPlug *outputPlug = performer_a->create_plug("test_output_plug", "test_instrument", PlugDirection::OUTPUT);
+    ZstPlug *inputPlug = performer_a->create_plug("test_input_plug", "test_instrument", PlugDirection::INPUT);
 
     //Check stage registered plugs successfully
     ZstPerformerRef stagePerformerRef = stage->get_performer_ref(performer_a->get_performer_name());
@@ -50,7 +50,7 @@ void test_create_plugs(){
     assert(localplugs[1]->get_name() == stagePerformerRef.plugs[1].name);
     
     //Query stage for remote plugs
-    std::vector<ZstPlug::Address> plugs = performer_a->get_all_plug_addresses();
+    std::vector<PlugAddress> plugs = performer_a->get_all_plug_addresses();
     assert(plugs.size() > 0);
     plugs = performer_a->get_all_plug_addresses("test_performer_1");
     assert(plugs.size() > 0);
@@ -60,7 +60,7 @@ void test_create_plugs(){
     assert(plugs.size() > 0);
 
 	performer_a->destroy_plug(outputPlug);
-	std::vector<ZstPlug::Address> plug_addresses = stage->get_performer_ref("test_performer_1").plugs;
+	std::vector<PlugAddress> plug_addresses = stage->get_performer_ref("test_performer_1").plugs;
 	assert(plug_addresses.size() == 1);
 	assert(performer_a->get_instrument_plugs("test_instrument").size()== 1);
 	
@@ -73,10 +73,15 @@ void test_create_plugs(){
 
 void test_connect_plugs() {
 	//Test plugs connncted between performers
-	ZstPlug *outputPlug = performer_a->create_plug("test_output_plug", "test_instrument", ZstPlug::Direction::OUTPUT);
-	ZstPlug *inputPlug = performer_b->create_plug("test_input_plug", "test_instrument", ZstPlug::Direction::INPUT);
+	ZstPlug *outputPlug = performer_a->create_plug("test_output_plug", "test_instrument", PlugDirection::OUTPUT);
+	ZstPlug *inputPlug = performer_b->create_plug("test_input_plug", "test_instrument", PlugDirection::INPUT);
 
 	performer_a->connect_plugs(outputPlug->get_address(), inputPlug->get_address());
+    sleep(1);
+    
+    StringOutput strOut;
+    strOut.out = "D4V3, 1S THIS YOU";
+    performer_a->fire_plug<StringOutput>(outputPlug, strOut);
 }
 
 

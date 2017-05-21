@@ -8,45 +8,79 @@
 #include <msgpack.hpp>
 #include "ZstExports.h"
 
+enum PlugDirection {
+    INPUT = 0,
+    OUTPUT
+};
+
+//Plug output types
+struct IntOutput{
+    int out;
+    MSGPACK_DEFINE(out);
+};
+
+struct FloatOutput{
+    float out;
+    MSGPACK_DEFINE(out);
+};
+
+struct StringOutput{
+    std::string out;
+    MSGPACK_DEFINE(out);
+};
+
+/*
+struct ListIntOutput{
+    int out[];
+    MSGPACK_DEFINE_ARRAY(out);
+};
+
+struct ListFloatOutput{
+    float out[];
+    MSGPACK_DEFINE_ARRAY(out);
+};
+ */
+
+struct PlugAddress {
+    std::string performer;
+    std::string instrument;
+    std::string name;
+    PlugDirection direction;
+    
+    inline bool operator==(const PlugAddress& other)
+    {
+        return (performer == other.performer) &&
+        (instrument == other.instrument) &&
+        (name == other.name);
+    }
+    std::string to_s(){
+        return performer+"/"+instrument+"/"+name+"/"+std::to_string(direction);
+    }
+    MSGPACK_DEFINE(performer, instrument, name, direction);
+};
+
+
 class ZstPlug {
 
 public:
-    enum Direction {
-        INPUT = 0,
-        OUTPUT
-    };
-
-	struct Address {
-		std::string performer;
-		std::string instrument;
-		std::string name;
-		ZstPlug::Direction direction;
-		
-		inline bool operator==(const Address& other)
-		{
-			return (performer == other.performer) &&
-				(instrument == other.instrument) &&
-				(name == other.name);
-		}
-		MSGPACK_DEFINE(performer, instrument, name, direction);
-	};
-
     //Constructor
-    ZstPlug(std::string name, std::string instrument, std::string performer, Direction direction);
+    ZstPlug(std::string name, std::string instrument, std::string performer, PlugDirection direction);
 	~ZstPlug();
     
     //Accessors
     ZST_EXPORT std::string get_name();
 	ZST_EXPORT std::string get_instrument();
-	ZST_EXPORT std::string get_performer();
-    ZST_EXPORT Direction get_direction();
-	ZST_EXPORT Address get_address();
+    ZST_EXPORT std::string get_performer();
+    ZST_EXPORT PlugDirection get_direction();
+	ZST_EXPORT PlugAddress get_address();
+    
+    ZST_EXPORT void fire(const void * value);
 
 private:
     std::string m_name;
+    std::string m_performer;
     std::string m_instrument;
-	std::string m_performer;
-    Direction m_direction;
+    PlugDirection m_direction;
     
     //Inputs
     std::vector<std::string> m_args;
@@ -56,5 +90,5 @@ private:
     bool m_output_ready = false;
 };
 
-MSGPACK_ADD_ENUM(ZstPlug::Direction);
+MSGPACK_ADD_ENUM(PlugDirection);
 

@@ -60,18 +60,18 @@ public:
         std::string performer;
         std::string instrument;
         std::string name;
-        ZstPlug::Direction direction;
+        PlugDirection direction;
         MSGPACK_DEFINE(performer, instrument, name, direction);
     };
 
     struct DestroyPlug {
-        ZstPlug::Address address;
+        PlugAddress address;
         MSGPACK_DEFINE(address);
     };
 
     struct RegisterConnection{
-        ZstPlug::Address from;
-        ZstPlug::Address to;
+        PlugAddress from;
+        PlugAddress to;
         MSGPACK_DEFINE(from, to);
     };
     
@@ -81,7 +81,7 @@ public:
     };
 
     struct PlugOutput{
-        std::string from;
+        PlugAddress from;
         std::string value;
         MSGPACK_DEFINE(from, value);
     };
@@ -99,19 +99,19 @@ public:
     };
     
     struct ListPlugsAck{
-        std::vector<ZstPlug::Address> plugs;
+        std::vector<PlugAddress> plugs;
         MSGPACK_DEFINE_ARRAY(plugs);
     };
 
 	struct ConnectPlugs {
-		ZstPlug::Address first;
-		ZstPlug::Address second;
+		PlugAddress first;
+		PlugAddress second;
 		MSGPACK_DEFINE(first, second);
 	};
 
 	struct PerformerConnection {
 		std::string endpoint;
-		ZstPlug::Address output_plug;
+		PlugAddress output_plug;
 		MSGPACK_DEFINE(endpoint, output_plug);
 	};
     
@@ -144,21 +144,28 @@ public:
 
 	//Creates a msgpacked message
 	template <typename T>
-	static zmsg_t * build_message(Kind message_id, T message_args, zframe_t * target_identity = NULL) {
+	static zmsg_t * build_message(Kind message_id, T message_args) {
 		zmsg_t *msg = zmsg_new();
-		if (target_identity) {
-			zmsg_add(msg, target_identity);
-			zmsg_add(msg, zframe_new_empty());
-		}
-
 		zmsg_add(msg, build_message_kind_frame(message_id));
 
 		msgpack::sbuffer buf;
 		msgpack::pack(buf, message_args);
 		zframe_t *payload = zframe_new(buf.data(), buf.size());
-		zmsg_add(msg, payload);
+		zmsg_append(msg, &payload);
 		return msg;
 	}
+    
+    template <typename T>
+    static zmsg_t * build_graph_message(PlugAddress from, T data) {
+        zmsg_t *msg = zmsg_new();
+        zmsg_addstr(msg, from.to_s().c_str());
+        
+        msgpack::sbuffer buf;
+        msgpack::pack(buf, data);
+        zframe_t *payload = zframe_new(buf.data(), buf.size());
+        zmsg_append(msg, &payload);
+        return msg;
+    }
 };
 
 //Enums for MsgPack

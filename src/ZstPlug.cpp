@@ -2,8 +2,9 @@
 
 using namespace std;
 
-ZstPlug::ZstPlug(string name, string instrument, string performer, Direction direction)
+ZstPlug::ZstPlug(string name, string instrument, string performer, PlugDirection direction)
 {
+    
 	m_direction = direction;
 	m_name = name;
     m_instrument = instrument;
@@ -23,19 +24,19 @@ std::string ZstPlug::get_instrument()
 	return m_instrument;
 }
 
-std::string ZstPlug::get_performer()
+string ZstPlug::get_performer()
 {
-	return m_performer;
+    return m_performer;
 }
 
-ZstPlug::Direction ZstPlug::get_direction()
+PlugDirection ZstPlug::get_direction()
 {
 	return m_direction;
 }
 
-ZstPlug::Address ZstPlug::get_address()
+PlugAddress ZstPlug::get_address()
 {
-	Address address;
+	PlugAddress address;
 	address.performer = m_performer;
 	address.instrument = m_instrument;
 	address.name = m_name;

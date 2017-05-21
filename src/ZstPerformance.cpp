@@ -8,16 +8,33 @@ ZstPerformance* ZstPerformance::create_performer(string performer_name){
 
 ZstPerformance::ZstPerformance(string name){
     m_performer_name = name;
-
-	string stage_addr = "tcp://127.0.0.1";
     
-    m_stage_requests = zsock_new_req((">" + stage_addr + ":" + std::to_string(m_stage_req_port)).c_str());
+    //Build endpoint addresses
+	string stage_addr = "0.0.0.0";
+    char stage_req_addr[30];
+    char stage_router_addr[30];
+    sprintf(stage_req_addr, "tcp://%s:%d", stage_addr.c_str(), STAGE_REP_PORT);
+    sprintf(stage_router_addr, "tcp://%s:%d", stage_addr.c_str(), STAGE_ROUTER_PORT);
+
+    //Stage request socket for querying the performance
+    m_stage_requests = zsock_new_req(stage_req_addr);
 	zsock_set_linger(m_stage_requests, 0);
+    
+    //Local dealer socket for receiving messages forwarded from other performers
+    m_stage_router = zsock_new(ZMQ_DEALER);
+    zsock_set_identity(m_stage_router, m_performer_name.c_str());
+    attach_pipe_listener(m_stage_router, s_handle_stage_router, this);
+    zsock_connect(m_stage_router, stage_router_addr);
 
-	m_graph_in = zsock_new_sub("", "");
+    //Graph input socket
+	m_graph_in = zsock_new(ZMQ_SUB);
 	zsock_set_linger(m_graph_in, 0);
-
+    attach_pipe_listener(m_graph_in, s_handle_graph_in, this);
+    
+    //Graph output socket
 	m_graph_out = zsock_new_pub("@tcp://*:*");
+    m_output_endpoint = zsock_last_endpoint(m_graph_out);
+    cout << "PERFORMER: " << m_performer_name << " endpoint is " << m_output_endpoint << endl;
 	zsock_set_linger(m_graph_out, 0);
     
 	start();
@@ -26,12 +43,16 @@ ZstPerformance::ZstPerformance(string name){
 ZstPerformance::~ZstPerformance(){
 	ZstActor::~ZstActor();
 	zsock_destroy(&m_stage_requests);
+    zsock_destroy(&m_stage_router);
 	zsock_destroy(&m_graph_in);
 	zsock_destroy(&m_graph_out);
-	if (m_stage_pipe) {
-		zsock_destroy(&m_stage_pipe);
-	}
 }
+
+
+
+// ---------------
+// Local accessors
+// ---------------
 
 string ZstPerformance::get_performer_name(){
     return m_performer_name;
@@ -63,20 +84,70 @@ void ZstPerformance::stop() {
 }
 
 
+// ------------
+// Send/Receive
+// ------------
+
+void ZstPerformance::send_to_stage(zmsg_t * msg){
+    zmsg_send(&msg, m_stage_requests);
+}
+
+void ZstPerformance::send_through_stage(zmsg_t * msg){
+    //Dealer socket doesn't add an empty frame to seperate identity chain and payload, so we handle it here
+    zframe_t * empty = zframe_new_empty();
+    zmsg_prepend(msg, &empty);
+    zmsg_send(&msg, m_stage_router);
+}
+
+void ZstPerformance::send_to_graph(zmsg_t * msg){
+    zmsg_send(&msg, m_graph_out);
+}
+
+zmsg_t * ZstPerformance::receive_from_stage(){
+    return zmsg_recv(m_stage_requests);
+}
+
+zmsg_t * ZstPerformance::receive_routed_from_stage(){
+    zmsg_t * msg = zmsg_recv(m_stage_router);
+ 
+    //Pop blank seperator frame
+    zmsg_pop(msg);
+    
+    return msg;
+}
+
+zmsg_t * ZstPerformance::receive_from_graph(){
+    return zmsg_recv(m_graph_in);
+}
+
+
+
+// ---------------
+// Socket handlers
+// ---------------
 int ZstPerformance::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg){
+    cout << "OMG I GOT A MESSAGE!!!" << endl;
+    ZstPerformance *performer = (ZstPerformance*)arg;
+    
+    zmsg_t *msg = performer->receive_from_graph();
+    string sender = zmsg_popstr(msg);
+    
 	return 0;
 }
 
-int ZstPerformance::s_handle_stage_pipe(zloop_t * loop, zsock_t * socket, void * arg){
-    ZstPerformance *section = (ZstPerformance*)arg;
+int ZstPerformance::s_handle_stage_router(zloop_t * loop, zsock_t * socket, void * arg){
+    ZstPerformance *performer = (ZstPerformance*)arg;
     
-    //Receive waiting message
-    zmsg_t *msg = zmsg_recv(socket);
+    zmsg_t *msg = performer->receive_routed_from_stage();
     
-    //Get message type
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(msg);
+    cout << "PERFORMER: Message from stage pipe: " << message_type << endl;
     
-    cout << "Message from stage pipe" << endl;
+    switch(message_type){
+        case ZstMessages::Kind::PERFORMER_REGISTER_CONNECTION:
+            performer->connect_performer_handler(socket, msg);
+            break;
+    }
     
     return 0;
 }
@@ -86,29 +157,33 @@ int ZstPerformance::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
 	return 0;
 }
 
+void ZstPerformance::connect_performer_handler(zsock_t * socket, zmsg_t * msg){
+    ZstMessages::PerformerConnection performer_args = ZstMessages::unpack_message_struct<ZstMessages::PerformerConnection>(msg);
+    
+    zsock_connect(m_graph_in, performer_args.endpoint.c_str());
+    zsock_set_subscribe(m_graph_in, "");
+    cout << "PERFORMER: " << m_performer_name << " connecting to " << performer_args.endpoint << ". My output endpoint is " << m_output_endpoint << endl;
+}
+
+
+
+// -------------
+// API Functions
+// -------------
+
 void ZstPerformance::register_to_stage(){
 	ZstMessages::RegisterPerformer args;
     args.name = m_performer_name;
-    args.endpoint = "some_endpoint_name";
-    zmsg_t * msg = ZstMessages::build_message<ZstMessages::RegisterPerformer>(ZstMessages::Kind::STAGE_REGISTER_PERFORMER, args);
-    zmsg_send(&msg, m_stage_requests);
+    args.endpoint = m_output_endpoint;
+    cout << "PERFORMER: Registering performer" << endl;
+    send_to_stage(ZstMessages::build_message<ZstMessages::RegisterPerformer>(ZstMessages::Kind::STAGE_REGISTER_PERFORMER, args));
     
-    zmsg_t *responseMsg = zmsg_recv(m_stage_requests);
+    zmsg_t *responseMsg = receive_from_stage();
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
-    if(message_type == ZstMessages::Kind::STAGE_REGISTER_PERFORMER_ACK){
-		ZstMessages::RegisterPerformerAck register_ack = ZstMessages::unpack_message_struct<ZstMessages::RegisterPerformerAck>(responseMsg);
-        
-		char *ip = "127.0.0.1";
-		char addr[30];
-		sprintf(addr, ">tcp://%s:%d", ip, register_ack.assigned_stage_port);
-		m_stage_pipe = zsock_new_pair(addr);
-        
-		//Attach pipe handler to loop
-		attach_pipe_listener(m_stage_pipe, s_handle_stage_pipe, this);
-        
-        cout << "Section successfully registered to stage. Port is " << register_ack.assigned_stage_port << endl;
+    if(message_type == ZstMessages::Kind::OK){
+        cout << "PERFORMER: Successfully registered to stage." << endl;
     } else {
-        throw runtime_error("Stage section registration responded with ERR");
+        throw runtime_error("PERFORMER: Stage performer registration responded with ERR");
     }
 }
 
@@ -121,39 +196,40 @@ chrono::milliseconds ZstPerformance::ping_stage(){
     
     beat.from = m_performer_name;
     beat.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(start.time_since_epoch()).count();
-    zmsg_t * msg = ZstMessages::build_message<ZstMessages::Heartbeat>(ZstMessages::Kind::PERFORMER_HEARTBEAT, beat);
-    zmsg_send(&msg, m_stage_requests);
+    send_to_stage(ZstMessages::build_message<ZstMessages::Heartbeat>(ZstMessages::Kind::PERFORMER_HEARTBEAT, beat));
+
+    //Get stage response
     zmsg_t *responseMsg = zmsg_recv(m_stage_requests);
-    
+
     //Get message type
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
     if(message_type == ZstMessages::Kind::OK){
         end = chrono::system_clock::now();
         delta = chrono::duration_cast<chrono::milliseconds>(end - start);
-        cout << "Client received heartbeat ping ack. Roundtrip was " <<  delta.count() << "ms" << endl;
+        cout << "PERFORMER: Client received heartbeat ping ack. Roundtrip was " <<  delta.count() << "ms" << endl;
     } else {
-        throw runtime_error("Stage ping responded with message other than OK");
+        throw runtime_error("PERFORMER: Stage ping responded with message other than OK");
     }
 
     return delta;
 }
 
 
-ZstPlug* ZstPerformance::create_plug(std::string name, std::string instrument, ZstPlug::Direction direction){
+ZstPlug* ZstPerformance::create_plug(std::string name, std::string instrument, PlugDirection direction){
     
 	ZstMessages::RegisterPlug plug_args;
 	plug_args.performer = get_performer_name();
     plug_args.name = name;
     plug_args.instrument = instrument;
 	plug_args.direction = direction;
-    
-    zmsg_t * msg = ZstMessages::build_message<ZstMessages::RegisterPlug>(ZstMessages::Kind::STAGE_REGISTER_PLUG, plug_args);
-    zmsg_send(&msg, m_stage_requests);
-    zmsg_t *responseMsg = zmsg_recv(m_stage_requests);
+    send_to_stage(ZstMessages::build_message<ZstMessages::RegisterPlug>(ZstMessages::Kind::STAGE_REGISTER_PLUG, plug_args));
+
+    //Response
+    zmsg_t *responseMsg = receive_from_stage();
     
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
     if(message_type != ZstMessages::Kind::OK){
-        throw runtime_error("Plug registration responded with message other than OK");
+        throw runtime_error("PERFORMER: Plug registration responded with message other than OK");
     }
 
     ZstPlug *plug = new ZstPlug(name, instrument, m_performer_name, direction);
@@ -161,64 +237,62 @@ ZstPlug* ZstPerformance::create_plug(std::string name, std::string instrument, Z
     return plug;
 }
 
+
 void ZstPerformance::destroy_plug(ZstPlug * plug)
 {
 	ZstMessages::DestroyPlug plug_args;
 	plug_args.address = plug->get_address();
-
-	zmsg_t * msg = ZstMessages::build_message<ZstMessages::DestroyPlug>(ZstMessages::Kind::STAGE_DESTROY_PLUG, plug_args);
-	zmsg_send(&msg, m_stage_requests);
+	send_to_stage(ZstMessages::build_message<ZstMessages::DestroyPlug>(ZstMessages::Kind::STAGE_DESTROY_PLUG, plug_args));
 	
-	zmsg_t *responseMsg = zmsg_recv(m_stage_requests);
+    zmsg_t *responseMsg = receive_from_stage();
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
 	if (message_type != ZstMessages::Kind::OK) {
-		throw runtime_error("Plug deletion responded with message other than OK");
+		throw runtime_error("PERFORMER: Plug deletion responded with message other than OK");
 	}
 	
 	m_plugs[plug->get_instrument()].erase(std::remove(m_plugs[plug->get_instrument()].begin(), m_plugs[plug->get_instrument()].end(), plug), m_plugs[plug->get_instrument()].end());
 	delete plug;
 }
 
-std::vector<ZstPlug::Address> ZstPerformance::get_all_plug_addresses(string performer, string instrument){
+
+std::vector<PlugAddress> ZstPerformance::get_all_plug_addresses(string performer, string instrument){
 	ZstMessages::ListPlugs plug_args;
     plug_args.performer = performer;
     plug_args.instrument = instrument;
-    
-    zmsg_t * msg = ZstMessages::build_message<ZstMessages::ListPlugs>(ZstMessages::Kind::STAGE_LIST_PLUGS, plug_args);
-    zmsg_send(&msg, m_stage_requests);
-    zmsg_t *responseMsg = zmsg_recv(m_stage_requests);
+    send_to_stage(ZstMessages::build_message<ZstMessages::ListPlugs>(ZstMessages::Kind::STAGE_LIST_PLUGS, plug_args));
+
+    zmsg_t *responseMsg = receive_from_stage();
     
 	ZstMessages::ListPlugsAck plugResponse;
     
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
     if(message_type == ZstMessages::Kind::STAGE_LIST_PLUGS_ACK){
         plugResponse = ZstMessages::unpack_message_struct<ZstMessages::ListPlugsAck>(responseMsg);
-        for(vector<ZstPlug::Address>::iterator plugIter = plugResponse.plugs.begin(); plugIter != plugResponse.plugs.end(); ++plugIter ){
-            cout << "Remote plug: " << plugIter->performer << "/" << plugIter->instrument << "/" << plugIter->name << endl;
+        for(vector<PlugAddress>::iterator plugIter = plugResponse.plugs.begin(); plugIter != plugResponse.plugs.end(); ++plugIter ){
+            cout << "PERFORMER: Remote plug: " << plugIter->performer << "/" << plugIter->instrument << "/" << plugIter->name << endl;
         }
     } else {
-        throw runtime_error("Plug registration responded with message other than STAGE_LIST_PLUGS_ACK");
+        throw runtime_error("PERFORMER: Plug registration responded with message other than STAGE_LIST_PLUGS_ACK");
     }
-    cout << "Total returned remote plugs: " << plugResponse.plugs.size() << endl;
+    cout << "PERFORMER: Total returned remote plugs: " << plugResponse.plugs.size() << endl;
 
     return plugResponse.plugs;
 }
 
-void ZstPerformance::connect_plugs(ZstPlug::Address a, ZstPlug::Address b)
+
+void ZstPerformance::connect_plugs(PlugAddress a, PlugAddress b)
 {
 	ZstMessages::ConnectPlugs plug_args;
 	plug_args.first = a;
 	plug_args.second = b;
-
-	zmsg_t * msg = ZstMessages::build_message<ZstMessages::ConnectPlugs>(ZstMessages::Kind::STAGE_REGISTER_CONNECTION, plug_args);
-	zmsg_send(&msg, m_stage_requests);
-	zmsg_t *responseMsg = zmsg_recv(m_stage_requests);
-
-	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
-	if (message_type != ZstMessages::Kind::OK) {
-		ZstMessages::ErrorAck ack = ZstMessages::unpack_message_struct<ZstMessages::ErrorAck>(responseMsg);
-
-		throw runtime_error("Plug deletion responded with message other than OK. Got " + ack.err);
-	}
+	send_to_stage(ZstMessages::build_message<ZstMessages::ConnectPlugs>(ZstMessages::Kind::STAGE_REGISTER_CONNECTION, plug_args));
+    
+    zmsg_t *responseMsg = receive_from_stage();
+    ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
+    if (message_type != ZstMessages::Kind::OK) {
+        throw runtime_error("PERFORMER: Plug connect responded with message other than OK");
+    }
 }
+
+
 

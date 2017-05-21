@@ -14,8 +14,8 @@
 
 struct ZstPerformerRef{
     std::string name;
-    zsock_t * pipe;
-    std::vector<ZstPlug::Address> plugs;
+    std::string endpoint;
+    std::vector<PlugAddress> plugs;
 };
 
 class ZstStage : public ZstActor{
@@ -31,25 +31,26 @@ private:
     ZstStage();
 
     //Stage pipes
-    zsock_t *m_section_router;
+    zsock_t *m_performer_router;
+    zsock_t *m_performer_requests;
     zsock_t *m_graph_update_pub;
 
     //Incoming router socket handler
     static int s_handle_router(zloop_t *loop, zsock_t *sock, void *arg);
-    static int s_handle_section_pipe(zloop_t *loop, zsock_t *sock, void *arg);
+    static int s_handle_performer_requests(zloop_t *loop, zsock_t *sock, void *arg);
 
     //Message handlers
-    void register_section_handler(zsock_t * socket, zframe_t * identity, zmsg_t * msg);
-    void register_plug_handler(zsock_t * socket, zframe_t * identity, zmsg_t * msg);
-    void section_heartbeat_handler(zsock_t * socket, zframe_t * identity, zmsg_t * msg);
-    void list_plugs_handler(zsock_t * socket, zframe_t * identity, zmsg_t * msg);
-    void connect_plugs_handler(zsock_t * socket, zframe_t * identity, zmsg_t * msg);
-	void destroy_plug_handler(zsock_t * socket, zframe_t * identity, zmsg_t * msg);
+    void register_performer_handler(zsock_t * socket, zmsg_t * msg);
+    void register_plug_handler(zsock_t * socket, zmsg_t * msg);
+    void section_heartbeat_handler(zsock_t * socket, zmsg_t * msg);
+    void list_plugs_handler(zsock_t * socket, zmsg_t * msg);
+    void connect_plugs_handler(zsock_t * socket, zmsg_t * msg);
+	void destroy_plug_handler(zsock_t * socket, zmsg_t * msg);
     
     //Graph storage
     std::map<std::string, ZstPerformerRef> m_performer_refs;
 
 	//Plug connections
-	void connect_plugs(const ZstPerformerRef & input_performer, ZstPlug::Address output_plug);
+	void connect_plugs(const ZstPerformerRef & input_performer, const ZstPerformerRef & output_performer, PlugAddress output_plug);
 };
 
