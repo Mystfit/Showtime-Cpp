@@ -60,7 +60,7 @@ public:
         std::string performer;
         std::string instrument;
         std::string name;
-        PlugDirection direction;
+        PlugDir direction;
         MSGPACK_DEFINE(performer, instrument, name, direction);
     };
 

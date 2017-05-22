@@ -10,11 +10,8 @@ ZstPerformance::ZstPerformance(string name){
     m_performer_name = name;
     
     //Build endpoint addresses
-	string stage_addr = "0.0.0.0";
     char stage_req_addr[30];
-    char stage_router_addr[30];
-    sprintf(stage_req_addr, "tcp://%s:%d", stage_addr.c_str(), STAGE_REP_PORT);
-    sprintf(stage_router_addr, "tcp://%s:%d", stage_addr.c_str(), STAGE_ROUTER_PORT);
+    sprintf(stage_req_addr, "tcp://%s:%d", m_stage_addr.c_str(), STAGE_REP_PORT);
 
     //Stage request socket for querying the performance
     m_stage_requests = zsock_new_req(stage_req_addr);
@@ -24,7 +21,11 @@ ZstPerformance::ZstPerformance(string name){
     m_stage_router = zsock_new(ZMQ_DEALER);
     zsock_set_identity(m_stage_router, m_performer_name.c_str());
     attach_pipe_listener(m_stage_router, s_handle_stage_router, this);
-    zsock_connect(m_stage_router, stage_router_addr);
+	
+	//Connect performer dealer to stage now that it's been registered successfully
+	char stage_router_addr[30];
+	sprintf(stage_router_addr, "tcp://%s:%d", m_stage_addr.c_str(), STAGE_ROUTER_PORT);
+	zsock_connect(m_stage_router, stage_router_addr);
 
     //Graph input socket
 	m_graph_in = zsock_new(ZMQ_SUB);
@@ -32,9 +33,8 @@ ZstPerformance::ZstPerformance(string name){
     attach_pipe_listener(m_graph_in, s_handle_graph_in, this);
     
     //Graph output socket
-	m_graph_out = zsock_new_pub("@tcp://*:*");
+	m_graph_out = zsock_new_pub("@tcp://127.0.0.1:*");
     m_output_endpoint = zsock_last_endpoint(m_graph_out);
-    cout << "PERFORMER: " << m_performer_name << " endpoint is " << m_output_endpoint << endl;
 	zsock_set_linger(m_graph_out, 0);
     
 	start();
@@ -132,6 +132,8 @@ int ZstPerformance::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * a
     zmsg_t *msg = performer->receive_from_graph();
     string sender = zmsg_popstr(msg);
     
+	//Do stuff with message args
+
 	return 0;
 }
 
@@ -182,6 +184,8 @@ void ZstPerformance::register_to_stage(){
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
     if(message_type == ZstMessages::Kind::OK){
         cout << "PERFORMER: Successfully registered to stage." << endl;
+
+
     } else {
         throw runtime_error("PERFORMER: Stage performer registration responded with ERR");
     }
@@ -215,7 +219,7 @@ chrono::milliseconds ZstPerformance::ping_stage(){
 }
 
 
-ZstPlug* ZstPerformance::create_plug(std::string name, std::string instrument, PlugDirection direction){
+ZstPlug* ZstPerformance::create_plug(std::string name, std::string instrument, PlugDir direction){
     
 	ZstMessages::RegisterPlug plug_args;
 	plug_args.performer = get_performer_name();

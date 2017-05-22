@@ -31,23 +31,19 @@ public:
     ZST_EXPORT void register_to_stage();
     ZST_EXPORT std::chrono::milliseconds ping_stage();
 
-    ZST_EXPORT ZstPlug* create_plug(std::string name, std::string instrument, PlugDirection direction);
+    ZST_EXPORT ZstPlug* create_plug(std::string name, std::string instrument, PlugDir direction);
     ZST_EXPORT void destroy_plug(ZstPlug *plug);
     ZST_EXPORT std::vector<PlugAddress> get_all_plug_addresses(std::string section = "", std::string instrument = "");
 
 	ZST_EXPORT void connect_plugs(PlugAddress a, PlugAddress b);
     
-    template<typename T>
-    void fire_plug(ZstPlug *plug, T data)
+    ZST_EXPORT void fire_plug(ZstPlug *plug)
     {
-        send_to_graph(ZstMessages::build_graph_message<T>(plug->get_address(), data));
+		zmsg_t * msg = zmsg_new();
+		zframe_t * hi = zframe_from("hi");
+		zmsg_append(msg, &hi);
+		send_to_graph(msg);
     }
-    //Plug primitive types
-    ZST_EXPORT template void fire_plug(ZstPlug *plug, IntOutput);
-    //ZST_EXPORT template void fire_plug(ZstPlug *plug, ListIntOutput);
-    ZST_EXPORT template void fire_plug(ZstPlug *plug, FloatOutput);
-    //ZST_EXPORT template void fire_plug(ZstPlug *plug, ListFloatOutput);
-    ZST_EXPORT template void fire_plug(ZstPlug *plug, StringOutput);
 
 private:
     ZstPerformance(std::string name);
@@ -55,6 +51,7 @@ private:
     //Name property
     std::string m_performer_name;
     std::string m_output_endpoint;
+	std::string m_stage_addr = "127.0.0.1";
 
     //All plugs owned by this section
     std::map<std::string, std::vector<ZstPlug*>> m_plugs;

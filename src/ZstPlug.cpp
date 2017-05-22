@@ -2,7 +2,7 @@
 
 using namespace std;
 
-ZstPlug::ZstPlug(string name, string instrument, string performer, PlugDirection direction)
+ZstPlug::ZstPlug(string name, string instrument, string performer, PlugDir direction)
 {
     
 	m_direction = direction;
@@ -29,7 +29,7 @@ string ZstPlug::get_performer()
     return m_performer;
 }
 
-PlugDirection ZstPlug::get_direction()
+PlugDir ZstPlug::get_direction()
 {
 	return m_direction;
 }

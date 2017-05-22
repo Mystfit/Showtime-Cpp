@@ -8,9 +8,9 @@
 #include <msgpack.hpp>
 #include "ZstExports.h"
 
-enum PlugDirection {
-    INPUT = 0,
-    OUTPUT
+enum PlugDir {
+    IN_JACK = 0,
+    OUT_JACK
 };
 
 //Plug output types
@@ -29,23 +29,11 @@ struct StringOutput{
     MSGPACK_DEFINE(out);
 };
 
-/*
-struct ListIntOutput{
-    int out[];
-    MSGPACK_DEFINE_ARRAY(out);
-};
-
-struct ListFloatOutput{
-    float out[];
-    MSGPACK_DEFINE_ARRAY(out);
-};
- */
-
 struct PlugAddress {
     std::string performer;
     std::string instrument;
     std::string name;
-    PlugDirection direction;
+    PlugDir direction;
     
     inline bool operator==(const PlugAddress& other)
     {
@@ -64,14 +52,14 @@ class ZstPlug {
 
 public:
     //Constructor
-    ZstPlug(std::string name, std::string instrument, std::string performer, PlugDirection direction);
+    ZstPlug(std::string name, std::string instrument, std::string performer, PlugDir direction);
 	~ZstPlug();
     
     //Accessors
     ZST_EXPORT std::string get_name();
 	ZST_EXPORT std::string get_instrument();
     ZST_EXPORT std::string get_performer();
-    ZST_EXPORT PlugDirection get_direction();
+    ZST_EXPORT PlugDir get_direction();
 	ZST_EXPORT PlugAddress get_address();
     
     ZST_EXPORT void fire(const void * value);
@@ -80,7 +68,7 @@ private:
     std::string m_name;
     std::string m_performer;
     std::string m_instrument;
-    PlugDirection m_direction;
+    PlugDir m_direction;
     
     //Inputs
     std::vector<std::string> m_args;
@@ -90,5 +78,5 @@ private:
     bool m_output_ready = false;
 };
 
-MSGPACK_ADD_ENUM(PlugDirection);
+MSGPACK_ADD_ENUM(PlugDir);
 

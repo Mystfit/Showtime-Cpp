@@ -31,8 +31,8 @@ void test_stage_registration(){
 
 void test_create_plugs(){
     //Create new plugs
-    ZstPlug *outputPlug = performer_a->create_plug("test_output_plug", "test_instrument", PlugDirection::OUTPUT);
-    ZstPlug *inputPlug = performer_a->create_plug("test_input_plug", "test_instrument", PlugDirection::INPUT);
+    ZstPlug *outputPlug = performer_a->create_plug("test_output_plug", "test_instrument", PlugDir::OUT_JACK);
+    ZstPlug *inputPlug = performer_a->create_plug("test_input_plug", "test_instrument", PlugDir::IN_JACK);
 
     //Check stage registered plugs successfully
     ZstPerformerRef stagePerformerRef = stage->get_performer_ref(performer_a->get_performer_name());
@@ -73,15 +73,13 @@ void test_create_plugs(){
 
 void test_connect_plugs() {
 	//Test plugs connncted between performers
-	ZstPlug *outputPlug = performer_a->create_plug("test_output_plug", "test_instrument", PlugDirection::OUTPUT);
-	ZstPlug *inputPlug = performer_b->create_plug("test_input_plug", "test_instrument", PlugDirection::INPUT);
+	ZstPlug *outputPlug = performer_a->create_plug("test_output_plug", "test_instrument", PlugDir::OUT_JACK);
+	ZstPlug *inputPlug = performer_b->create_plug("test_input_plug", "test_instrument", PlugDir::IN_JACK);
 
 	performer_a->connect_plugs(outputPlug->get_address(), inputPlug->get_address());
-    sleep(1);
+    Sleep(10);
     
-    StringOutput strOut;
-    strOut.out = "D4V3, 1S THIS YOU";
-    performer_a->fire_plug<StringOutput>(outputPlug, strOut);
+    performer_a->fire_plug(outputPlug);
 }
 
 

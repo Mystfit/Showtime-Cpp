@@ -62,6 +62,7 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
         default:
             break;
     }
+	return 0;
 }
 
 
@@ -209,10 +210,10 @@ void ZstStage::connect_plugs_handler(zsock_t * socket, zmsg_t * msg)
 	zmsg_t *ackmsg;
 	PlugAddress input, output;
 
-	if (plug_args.first.direction == PlugDirection::OUTPUT && plug_args.second.direction == PlugDirection::INPUT) {
+	if (plug_args.first.direction == PlugDir::OUT_JACK && plug_args.second.direction == PlugDir::IN_JACK) {
 		connect_plugs(get_performer_ref(plug_args.second.performer), get_performer_ref(plug_args.first.performer), plug_args.first);
 	}
-	else if (plug_args.first.direction == PlugDirection::INPUT && plug_args.second.direction == PlugDirection::OUTPUT){
+	else if (plug_args.first.direction == PlugDir::IN_JACK && plug_args.second.direction == PlugDir::OUT_JACK){
 		connect_plugs(get_performer_ref(plug_args.first.performer), get_performer_ref(plug_args.second.performer), plug_args.second);
 	}
 	else {
