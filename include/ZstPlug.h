@@ -62,7 +62,7 @@ public:
     ZST_EXPORT PlugDir get_direction();
 	ZST_EXPORT PlugAddress get_address();
     
-    ZST_EXPORT void fire(const void * value);
+    ZST_EXPORT void fire();
 
 private:
     std::string m_name;

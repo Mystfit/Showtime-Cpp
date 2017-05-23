@@ -19,7 +19,8 @@ set(Showtime_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include)
 # Packages
 find_package(ZeroMQ REQUIRED)
 find_package(czmq REQUIRED)
-find_package(MsgPack)
+find_package(MsgPack REQUIRED)
+find_package(Boost REQUIRED)
 find_package(SWIG)
 include(UseSWIG)
 

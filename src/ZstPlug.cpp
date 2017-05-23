@@ -1,4 +1,5 @@
 #include "ZstPlug.h"
+#include "Showtime.h"
 
 using namespace std;
 
@@ -42,4 +43,9 @@ PlugAddress ZstPlug::get_address()
 	address.name = m_name;
 	address.direction = m_direction;
 	return address;
+}
+
+void ZstPlug::fire()
+{
+	Showtime::instance().fire_plug(this);
 }

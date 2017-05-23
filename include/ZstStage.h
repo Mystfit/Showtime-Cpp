@@ -6,6 +6,8 @@
 #include <tuple>
 #include <map>
 #include <regex>
+#include <boost\uuid\uuid.hpp>
+#include <boost\uuid\uuid_io.hpp>
 #include "ZstActor.h"
 #include "ZstExports.h"
 #include "ZstMessages.h"
@@ -15,6 +17,7 @@
 struct ZstPerformerRef{
     std::string name;
     std::string endpoint;
+	std::string client_uuid;
     std::vector<PlugAddress> plugs;
 };
 

@@ -116,6 +116,7 @@ void ZstStage::register_performer_handler(zsock_t * socket, zmsg_t * msg){
     ZstPerformerRef performerRef;
     performerRef.name = performer_args.name;
     performerRef.endpoint = performer_args.endpoint;
+	performerRef.client_uuid = performer_args.client_uuid;
     m_performer_refs[performer_args.name] = performerRef;
     
     zmsg_t *ackmsg = ZstMessages::build_message<ZstMessages::OKAck>(ZstMessages::Kind::OK, ZstMessages::OKAck());
@@ -241,7 +242,7 @@ void ZstStage::connect_plugs(const ZstPerformerRef & input_performer, const ZstP
 
 	zmsg_t *connectMsg = ZstMessages::build_message<ZstMessages::PerformerConnection>(ZstMessages::Kind::PERFORMER_REGISTER_CONNECTION, perf_args);
     zframe_t * empty = zframe_new_empty();
-    zframe_t * identity = zframe_from(input_performer.name.c_str());
+    zframe_t * identity = zframe_from(input_performer.client_uuid.c_str());
     zmsg_prepend(connectMsg, &empty);
     zmsg_prepend(connectMsg, &identity);
 	zmsg_send(&connectMsg, m_performer_router);

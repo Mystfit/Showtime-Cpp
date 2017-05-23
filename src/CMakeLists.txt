@@ -1,10 +1,10 @@
 enable_testing()
 
 set(ZST_HEADERS 
- ${Showtime_INCLUDE_DIRS}/Showtime.h
- ${Showtime_INCLUDE_DIRS}/ZstPerformer.h
+ ${Showtime_INCLUDE_DIRS}/Showtime.h			
  ${Showtime_INCLUDE_DIRS}/ZstActor.h	
  ${Showtime_INCLUDE_DIRS}/ZstPlug.h
+ ${Showtime_INCLUDE_DIRS}/ZstPerformer.h
  ${Showtime_INCLUDE_DIRS}/ZstExports.h
  ${Showtime_INCLUDE_DIRS}/ZstStage.h
  ${Showtime_INCLUDE_DIRS}/ZstMessages.h
@@ -12,15 +12,16 @@ set(ZST_HEADERS
 
 set(ZST_SOURCE 
  "Showtime.cpp"
- "ZstPerformer.cpp"
  "ZstActor.cpp"
  "ZstMessages.cpp"
  "ZstPlug.cpp"
+ "ZstPerformer.cpp"
  "ZstStage.cpp"
 )
 
 include_directories(
 	${Showtime_INCLUDE_DIRS}
+	${Boost_INCLUDE_DIRS}
 	${ZeroMQ_INCLUDE_DIRS}
 	${CZMQ_INCLUDE_DIRS}
     ${MSGPACK_INCLUDE_DIRS}
@@ -34,6 +35,7 @@ add_library(${PROJECT_NAME} SHARED ${ZST_HEADERS} ${ZST_SOURCE})
 
 target_link_libraries(${PROJECT_NAME} 
 	${ZeroMQ_LIBRARIES}
+	${Boost_LIBRARIES}
 	${CZMQ_LIBRARIES}
     ${MSGPACK_LIBRARIES}
 )

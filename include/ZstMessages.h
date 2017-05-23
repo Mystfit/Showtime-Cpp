@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <msgpack.hpp>
 #include <czmq.h>
+#include <boost\uuid\uuid.hpp>
 #include "ZstPlug.h"
 
 class ZstMessages{
@@ -48,7 +49,8 @@ public:
     struct RegisterPerformer{
         std::string name;
         std::string endpoint;
-        MSGPACK_DEFINE(name, endpoint);
+		std::string client_uuid;
+        MSGPACK_DEFINE(name, endpoint, client_uuid);
     };
     
     struct RegisterPerformerAck{
