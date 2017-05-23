@@ -4,8 +4,9 @@
 #include <vector>
 #include <memory>
 #include <chrono>
-#include "ZstExports.h"
 #include "czmq.h"
+#include "ZstExports.h"
+#include "ZstPerformer.h"
 #include "ZstMessages.h"
 #include "ZstActor.h"
 #include "ZstPlug.h"
@@ -13,13 +14,17 @@
 #define STAGE_REP_PORT 6000
 #define STAGE_ROUTER_PORT 6001
 
-class ZstPerformance : public ZstActor
+class Showtime : public ZstActor
 {
 public:
-    //Factory
-    ZST_EXPORT static ZstPerformance* create_performer(std::string performer_name);
-    ZST_EXPORT ~ZstPerformance();
+    ZST_EXPORT Showtime & instance(){
+        static Showtime performance_singleton;
+        return performance_singleton;
+    }
+    ZST_EXPORT ~Showtime();
     
+    ZST_EXPORT static void join(std::string stage_address, std::string performer_name);
+
     //Accessors
     ZST_EXPORT std::string get_performer_name();
     
@@ -46,7 +51,7 @@ public:
     }
 
 private:
-    ZstPerformance(std::string name);
+    Showtime();
 
     //Name property
     std::string m_performer_name;

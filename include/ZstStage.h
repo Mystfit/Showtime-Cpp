@@ -10,7 +10,7 @@
 #include "ZstExports.h"
 #include "ZstMessages.h"
 #include "ZstPlug.h"
-#include "ZstPerformance.h"
+#include "Showtime.h"
 
 struct ZstPerformerRef{
     std::string name;

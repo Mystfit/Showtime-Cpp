@@ -1,19 +1,21 @@
 enable_testing()
 
 set(ZST_HEADERS 
+ ${Showtime_INCLUDE_DIRS}/Showtime.h
+ ${Showtime_INCLUDE_DIRS}/ZstPerformer.h
  ${Showtime_INCLUDE_DIRS}/ZstActor.h	
  ${Showtime_INCLUDE_DIRS}/ZstPlug.h
- ${Showtime_INCLUDE_DIRS}/ZstPerformance.h
  ${Showtime_INCLUDE_DIRS}/ZstExports.h
  ${Showtime_INCLUDE_DIRS}/ZstStage.h
  ${Showtime_INCLUDE_DIRS}/ZstMessages.h
 )
 
 set(ZST_SOURCE 
+ "Showtime.cpp"
+ "ZstPerformer.cpp"
  "ZstActor.cpp"
  "ZstMessages.cpp"
  "ZstPlug.cpp"
- "ZstPerformance.cpp"
  "ZstStage.cpp"
 )
 

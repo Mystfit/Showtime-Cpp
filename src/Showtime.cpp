@@ -1,52 +1,54 @@
-#include "ZstPerformance.h"
+#include "Showtime.h"
 
 using namespace std;
 
-ZstPerformance* ZstPerformance::create_performer(string performer_name){
-    return new ZstPerformance(performer_name);
+Showtime::Showtime(){
 }
 
-ZstPerformance::ZstPerformance(string name){
-    m_performer_name = name;
+Showtime::~Showtime(){
+    ZstActor::~ZstActor();
+    zsock_destroy(&m_stage_requests);
+    zsock_destroy(&m_stage_router);
+    zsock_destroy(&m_graph_in);
+    zsock_destroy(&m_graph_out);
+}
+
+void Showtime::join(string stage_address, string performer_name){
+    m_performer_name = performer_name;
+    m_stage_addr = stage_address;
     
     //Build endpoint addresses
     char stage_req_addr[30];
     sprintf(stage_req_addr, "tcp://%s:%d", m_stage_addr.c_str(), STAGE_REP_PORT);
-
+    
     //Stage request socket for querying the performance
     m_stage_requests = zsock_new_req(stage_req_addr);
-	zsock_set_linger(m_stage_requests, 0);
+    zsock_set_linger(m_stage_requests, 0);
     
     //Local dealer socket for receiving messages forwarded from other performers
     m_stage_router = zsock_new(ZMQ_DEALER);
     zsock_set_identity(m_stage_router, m_performer_name.c_str());
     attach_pipe_listener(m_stage_router, s_handle_stage_router, this);
-	
-	//Connect performer dealer to stage now that it's been registered successfully
-	char stage_router_addr[30];
-	sprintf(stage_router_addr, "tcp://%s:%d", m_stage_addr.c_str(), STAGE_ROUTER_PORT);
-	zsock_connect(m_stage_router, stage_router_addr);
-
+    
+    //Connect performer dealer to stage now that it's been registered successfully
+    char stage_router_addr[30];
+    sprintf(stage_router_addr, "tcp://%s:%d", m_stage_addr.c_str(), STAGE_ROUTER_PORT);
+    zsock_connect(m_stage_router, stage_router_addr);
+    
     //Graph input socket
-	m_graph_in = zsock_new(ZMQ_SUB);
-	zsock_set_linger(m_graph_in, 0);
+    m_graph_in = zsock_new(ZMQ_SUB);
+    zsock_set_linger(m_graph_in, 0);
     attach_pipe_listener(m_graph_in, s_handle_graph_in, this);
     
     //Graph output socket
-	m_graph_out = zsock_new_pub("@tcp://127.0.0.1:*");
+    m_graph_out = zsock_new_pub("@tcp://*:*");
     m_output_endpoint = zsock_last_endpoint(m_graph_out);
-	zsock_set_linger(m_graph_out, 0);
+    zsock_set_linger(m_graph_out, 0);
     
-	start();
+    start();
 }
 
-ZstPerformance::~ZstPerformance(){
-	ZstActor::~ZstActor();
-	zsock_destroy(&m_stage_requests);
-    zsock_destroy(&m_stage_router);
-	zsock_destroy(&m_graph_in);
-	zsock_destroy(&m_graph_out);
-}
+
 
 
 
@@ -54,11 +56,11 @@ ZstPerformance::~ZstPerformance(){
 // Local accessors
 // ---------------
 
-string ZstPerformance::get_performer_name(){
+string Showtime::get_performer_name(){
     return m_performer_name;
 }
 
-std::vector<ZstPlug*> ZstPerformance::get_all_plugs(){
+std::vector<ZstPlug*> Showtime::get_all_plugs(){
     vector<ZstPlug*> plugs;
     
     for(map<string,vector<ZstPlug*>>::iterator instrumentIter = m_plugs.begin(); instrumentIter != m_plugs.end(); ++instrumentIter) {
@@ -69,17 +71,17 @@ std::vector<ZstPlug*> ZstPerformance::get_all_plugs(){
     return plugs;
 }
 
-std::vector<ZstPlug*> ZstPerformance::get_instrument_plugs(std::string instrument){
+std::vector<ZstPlug*> Showtime::get_instrument_plugs(std::string instrument){
     return m_plugs[instrument];
 }
 
 
-void ZstPerformance::start(){
+void Showtime::start(){
 	ZstActor::start();
     register_to_stage();
 }
 
-void ZstPerformance::stop() {
+void Showtime::stop() {
 	ZstActor::stop();
 }
 
@@ -88,26 +90,26 @@ void ZstPerformance::stop() {
 // Send/Receive
 // ------------
 
-void ZstPerformance::send_to_stage(zmsg_t * msg){
+void Showtime::send_to_stage(zmsg_t * msg){
     zmsg_send(&msg, m_stage_requests);
 }
 
-void ZstPerformance::send_through_stage(zmsg_t * msg){
+void Showtime::send_through_stage(zmsg_t * msg){
     //Dealer socket doesn't add an empty frame to seperate identity chain and payload, so we handle it here
     zframe_t * empty = zframe_new_empty();
     zmsg_prepend(msg, &empty);
     zmsg_send(&msg, m_stage_router);
 }
 
-void ZstPerformance::send_to_graph(zmsg_t * msg){
+void Showtime::send_to_graph(zmsg_t * msg){
     zmsg_send(&msg, m_graph_out);
 }
 
-zmsg_t * ZstPerformance::receive_from_stage(){
+zmsg_t * Showtime::receive_from_stage(){
     return zmsg_recv(m_stage_requests);
 }
 
-zmsg_t * ZstPerformance::receive_routed_from_stage(){
+zmsg_t * Showtime::receive_routed_from_stage(){
     zmsg_t * msg = zmsg_recv(m_stage_router);
  
     //Pop blank seperator frame
@@ -116,7 +118,7 @@ zmsg_t * ZstPerformance::receive_routed_from_stage(){
     return msg;
 }
 
-zmsg_t * ZstPerformance::receive_from_graph(){
+zmsg_t * Showtime::receive_from_graph(){
     return zmsg_recv(m_graph_in);
 }
 
@@ -125,9 +127,9 @@ zmsg_t * ZstPerformance::receive_from_graph(){
 // ---------------
 // Socket handlers
 // ---------------
-int ZstPerformance::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg){
+int Showtime::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg){
     cout << "OMG I GOT A MESSAGE!!!" << endl;
-    ZstPerformance *performer = (ZstPerformance*)arg;
+    Showtime *performer = (Showtime*)arg;
     
     zmsg_t *msg = performer->receive_from_graph();
     string sender = zmsg_popstr(msg);
@@ -137,8 +139,8 @@ int ZstPerformance::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * a
 	return 0;
 }
 
-int ZstPerformance::s_handle_stage_router(zloop_t * loop, zsock_t * socket, void * arg){
-    ZstPerformance *performer = (ZstPerformance*)arg;
+int Showtime::s_handle_stage_router(zloop_t * loop, zsock_t * socket, void * arg){
+    Showtime *performer = (Showtime*)arg;
     
     zmsg_t *msg = performer->receive_routed_from_stage();
     
@@ -154,12 +156,12 @@ int ZstPerformance::s_handle_stage_router(zloop_t * loop, zsock_t * socket, void
     return 0;
 }
 
-int ZstPerformance::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
-    ((ZstPerformance*)arg)->ping_stage();
+int Showtime::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
+    ((Showtime*)arg)->ping_stage();
 	return 0;
 }
 
-void ZstPerformance::connect_performer_handler(zsock_t * socket, zmsg_t * msg){
+void Showtime::connect_performer_handler(zsock_t * socket, zmsg_t * msg){
     ZstMessages::PerformerConnection performer_args = ZstMessages::unpack_message_struct<ZstMessages::PerformerConnection>(msg);
     
     zsock_connect(m_graph_in, performer_args.endpoint.c_str());
@@ -173,7 +175,7 @@ void ZstPerformance::connect_performer_handler(zsock_t * socket, zmsg_t * msg){
 // API Functions
 // -------------
 
-void ZstPerformance::register_to_stage(){
+void Showtime::register_to_stage(){
 	ZstMessages::RegisterPerformer args;
     args.name = m_performer_name;
     args.endpoint = m_output_endpoint;
@@ -191,7 +193,7 @@ void ZstPerformance::register_to_stage(){
     }
 }
 
-chrono::milliseconds ZstPerformance::ping_stage(){
+chrono::milliseconds Showtime::ping_stage(){
 	ZstMessages::Heartbeat beat;
     
     chrono::milliseconds delta = chrono::milliseconds(-1);
@@ -219,7 +221,7 @@ chrono::milliseconds ZstPerformance::ping_stage(){
 }
 
 
-ZstPlug* ZstPerformance::create_plug(std::string name, std::string instrument, PlugDir direction){
+ZstPlug* Showtime::create_plug(std::string name, std::string instrument, PlugDir direction){
     
 	ZstMessages::RegisterPlug plug_args;
 	plug_args.performer = get_performer_name();
@@ -242,7 +244,7 @@ ZstPlug* ZstPerformance::create_plug(std::string name, std::string instrument, P
 }
 
 
-void ZstPerformance::destroy_plug(ZstPlug * plug)
+void Showtime::destroy_plug(ZstPlug * plug)
 {
 	ZstMessages::DestroyPlug plug_args;
 	plug_args.address = plug->get_address();
@@ -259,7 +261,7 @@ void ZstPerformance::destroy_plug(ZstPlug * plug)
 }
 
 
-std::vector<PlugAddress> ZstPerformance::get_all_plug_addresses(string performer, string instrument){
+std::vector<PlugAddress> Showtime::get_all_plug_addresses(string performer, string instrument){
 	ZstMessages::ListPlugs plug_args;
     plug_args.performer = performer;
     plug_args.instrument = instrument;
@@ -284,7 +286,7 @@ std::vector<PlugAddress> ZstPerformance::get_all_plug_addresses(string performer
 }
 
 
-void ZstPerformance::connect_plugs(PlugAddress a, PlugAddress b)
+void Showtime::connect_plugs(PlugAddress a, PlugAddress b)
 {
 	ZstMessages::ConnectPlugs plug_args;
 	plug_args.first = a;

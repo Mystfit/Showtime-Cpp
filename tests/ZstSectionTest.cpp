@@ -1,12 +1,13 @@
 #include <string>
 #include <iostream>
-#include "ZstPerformance.h"
+#include "Showtime.h"
 #include "ZstPlug.h"
+#include "ZstPerformer.h"
 #include "ZstStage.h"
 
 ZstStage *stage;
-ZstPerformance *performer_a;
-ZstPerformance *performer_b;
+Showtime *performer_a;
+Showtime *performer_b;
 
 void test_performer_init() {
 	performer_a->self_test();
@@ -77,9 +78,12 @@ void test_connect_plugs() {
 	ZstPlug *inputPlug = performer_b->create_plug("test_input_plug", "test_instrument", PlugDir::IN_JACK);
 
 	performer_a->connect_plugs(outputPlug->get_address(), inputPlug->get_address());
-    Sleep(10);
     
-    performer_a->fire_plug(outputPlug);
+#ifdef WIN32
+    Sleep(100);
+#else
+    sleep(1);
+#endif
 }
 
 
@@ -92,8 +96,10 @@ void test_cleanup() {
 
 int main(int argc,char **argv){
     stage = ZstStage::create_stage();
-	performer_a = ZstPerformance::create_performer("test_performer_1");
-	performer_b = ZstPerformance::create_performer("test_performer_2");
+    
+    
+    Showtime::join( "127.0.0.1", "test_performer_1");
+    Showtime::join( "127.0.0.1", "test_performer_2");
     
 	//test_performer_init();
     //test_stage_registration();
