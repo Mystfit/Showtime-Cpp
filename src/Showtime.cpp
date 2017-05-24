@@ -121,13 +121,18 @@ zmsg_t * Showtime::receive_from_graph(){
 // Socket handlers
 // ---------------
 int Showtime::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg){
-    cout << "OMG I GOT A MESSAGE!!!" << endl;
     Showtime *performer = (Showtime*)arg;
     
     zmsg_t *msg = performer->receive_from_graph();
     string sender = zmsg_popstr(msg);
-    
-	//Do stuff with message args
+
+	msgpack::object_handle result;
+	zframe_t * payload = zmsg_pop(msg);
+
+	unpack(result, (char*)zframe_data(payload), zframe_size(payload));
+	
+	//Do stuff with message payload
+	cout << "PERFORMER: Recieved graph message" << endl;
 
 	return 0;
 }
@@ -229,8 +234,13 @@ ZstPerformer * Showtime::get_performer(std::string performer)
 	return Showtime::instance().m_performers[performer];
 }
 
-
-ZstPlug* Showtime::create_plug(std::string performer, std::string name, std::string instrument, PlugDir direction){
+template ZST_EXPORT ZstIntPlug* Showtime::create_plug<ZstIntPlug>(std::string performer, std::string name, std::string instrument, PlugDir direction);
+template ZST_EXPORT ZstFloatPlug* Showtime::create_plug<ZstFloatPlug>(std::string performer, std::string name, std::string instrument, PlugDir direction);
+template ZST_EXPORT ZstIntArrayPlug* Showtime::create_plug<ZstIntArrayPlug>(std::string performer, std::string name, std::string instrument, PlugDir direction);
+template ZST_EXPORT ZstFloatArrayPlug* Showtime::create_plug<ZstFloatArrayPlug>(std::string performer, std::string name, std::string instrument, PlugDir direction);
+template ZST_EXPORT ZstStringPlug* Showtime::create_plug<ZstStringPlug>(std::string performer, std::string name, std::string instrument, PlugDir direction);
+template<typename T>
+T* Showtime::create_plug(std::string performer, std::string name, std::string instrument, PlugDir direction){
     
 	ZstMessages::RegisterPlug plug_args;
 	plug_args.performer = performer;
@@ -247,7 +257,7 @@ ZstPlug* Showtime::create_plug(std::string performer, std::string name, std::str
         throw runtime_error("PERFORMER: Plug registration responded with message other than OK");
     }
 
-    ZstPlug *plug = new ZstPlug(name, instrument, performer, direction);
+    T *plug = new T(name, instrument, performer, direction);
 	Showtime::instance().get_performer(performer)->add_plug(plug);
     return plug;
 }
@@ -300,22 +310,11 @@ void Showtime::connect_plugs(PlugAddress a, PlugAddress b)
 	ZstMessages::ConnectPlugs plug_args;
 	plug_args.first = a;
 	plug_args.second = b;
-	send_to_stage(ZstMessages::build_message<ZstMessages::ConnectPlugs>(ZstMessages::Kind::STAGE_REGISTER_CONNECTION, plug_args));
+	Showtime::instance().send_to_stage(ZstMessages::build_message<ZstMessages::ConnectPlugs>(ZstMessages::Kind::STAGE_REGISTER_CONNECTION, plug_args));
     
-    zmsg_t *responseMsg = receive_from_stage();
+    zmsg_t *responseMsg = Showtime::instance().receive_from_stage();
     ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
     if (message_type != ZstMessages::Kind::OK) {
         throw runtime_error("PERFORMER: Plug connect responded with message other than OK");
     }
 }
-
-void Showtime::fire_plug(ZstPlug * plug)
-{
-	zmsg_t * msg = zmsg_new();
-	zframe_t * hi = zframe_from("hi");
-	zmsg_append(msg, &hi);
-	send_to_graph(msg);
-}
-
-
-

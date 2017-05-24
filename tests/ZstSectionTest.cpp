@@ -32,8 +32,8 @@ void test_stage_registration(){
 
 void test_create_plugs(){
     //Create new plugs
-    ZstPlug *outputPlug = Showtime::create_plug("test_performer_1", "test_output_plug", "test_instrument", PlugDir::OUT_JACK);
-    ZstPlug *inputPlug = Showtime::create_plug("test_performer_1", "test_input_plug", "test_instrument", PlugDir::IN_JACK);
+	ZstIntPlug *outputPlug = Showtime::create_plug<ZstIntPlug>("test_performer_1", "test_output_plug", "test_instrument", PlugDir::OUT_JACK);
+	ZstIntPlug *inputPlug = Showtime::create_plug<ZstIntPlug>("test_performer_1", "test_input_plug", "test_instrument", PlugDir::IN_JACK);
 
     //Check stage registered plugs successfully
     ZstPerformerRef stagePerformerRef = stage->get_performer_ref("test_performer_1");
@@ -75,10 +75,10 @@ void test_create_plugs(){
 
 void test_connect_plugs() {
 	//Test plugs connected between performers
-	ZstPlug *outputPlug = Showtime::create_plug("test_performer_1", "test_output_plug", "test_instrument", PlugDir::OUT_JACK);
-	ZstPlug *inputPlug = Showtime::create_plug("test_performer_2", "test_input_plug", "test_instrument", PlugDir::IN_JACK);
+	ZstIntPlug *outputPlug = Showtime::create_plug<ZstIntPlug>("test_performer_1", "test_output_plug", "test_instrument", PlugDir::OUT_JACK);
+	ZstIntPlug *inputPlug = Showtime::create_plug<ZstIntPlug>("test_performer_2", "test_input_plug", "test_instrument", PlugDir::IN_JACK);
 
-	Showtime::instance().connect_plugs(outputPlug->get_address(), inputPlug->get_address());
+	Showtime::connect_plugs(outputPlug->get_address(), inputPlug->get_address());
     
 #ifdef WIN32
     Sleep(100);
@@ -87,7 +87,7 @@ void test_connect_plugs() {
 #endif
 
 	//Send!
-	outputPlug->fire();
+	outputPlug->fire(27);
 }
 
 

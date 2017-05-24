@@ -37,12 +37,15 @@ public:
 	ZST_EXPORT static ZstPerformer* create_performer(std::string name);
 	ZST_EXPORT static ZstPerformer * get_performer(std::string performer);
 
-    ZST_EXPORT static ZstPlug* create_plug(std::string performer, std::string name, std::string instrument, PlugDir direction);
+	template<typename T>
+    ZST_EXPORT static T* create_plug(std::string performer, std::string name, std::string instrument, PlugDir direction);
     ZST_EXPORT void destroy_plug(ZstPlug *plug);
     ZST_EXPORT std::vector<PlugAddress> get_all_plug_addresses(std::string section = "", std::string instrument = "");
-	ZST_EXPORT void connect_plugs(PlugAddress a, PlugAddress b);
+	ZST_EXPORT static void connect_plugs(PlugAddress a, PlugAddress b);
     
-	ZST_EXPORT void fire_plug(ZstPlug *plug);
+	//ZST_EXPORT void fire_plug(ZstPlug *plug, zframe_t * frame);
+	void send_to_graph(zmsg_t * msg);
+	zmsg_t * receive_from_graph();
 
 private:
     Showtime();
@@ -57,10 +60,9 @@ private:
 	void register_performer_to_stage(std::string);
 	void send_to_stage(zmsg_t * msg);
 	void send_through_stage(zmsg_t * msg);
-	void send_to_graph(zmsg_t * msg);
+
 	zmsg_t * receive_from_stage();
 	zmsg_t * receive_routed_from_stage();
-	zmsg_t * receive_from_graph();
 
 	//Socket handlers
 	static int s_handle_graph_in(zloop_t *loop, zsock_t *sock, void *arg);
