@@ -14,8 +14,9 @@ public:
     enum Kind{
         OK,
         ERR,
-        STAGE_REGISTER_PERFORMER,         //to stage
-        STAGE_REGISTER_PERFORMER_ACK,     //from stage
+		STAGE_REGISTER_ENDPOINT,
+		STAGE_REGISTER_ENDPOINT_ACK,         //to stage
+        STAGE_REGISTER_PERFORMER,     //from stage
         STAGE_REGISTER_PLUG,            //to stage
 		STAGE_DESTROY_PLUG,            //to stage
         STAGE_REGISTER_CONNECTION,      //to stage
@@ -45,17 +46,22 @@ public:
 		std::string err;
 		MSGPACK_DEFINE(err);
 	};
+
+	struct RegisterEndpoint {
+		std::string uuid;
+		std::string address;
+		MSGPACK_DEFINE(uuid, address);
+	};
+
+	struct RegisterEndpointAck {
+		std::string assigned_uuid;
+		MSGPACK_DEFINE(assigned_uuid);
+	};
     
     struct RegisterPerformer{
         std::string name;
-        std::string endpoint;
-		std::string client_uuid;
-        MSGPACK_DEFINE(name, endpoint, client_uuid);
-    };
-    
-    struct RegisterPerformerAck{
-        int assigned_stage_port;
-        MSGPACK_DEFINE(assigned_stage_port);
+		std::string endpoint_uuid;
+        MSGPACK_DEFINE(name);
     };
     
     struct RegisterPlug{

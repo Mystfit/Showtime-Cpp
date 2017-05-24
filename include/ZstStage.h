@@ -14,10 +14,15 @@
 #include "ZstPlug.h"
 #include "Showtime.h"
 
+struct ZstEndpointRef {
+	std::string client_starting_uuid;
+	std::string client_assigned_uuid;
+	std::string endpoint_address;
+	std::vector<ZstPerformerRef> performers;
+};
+
 struct ZstPerformerRef{
     std::string name;
-    std::string endpoint;
-	std::string client_uuid;
     std::vector<PlugAddress> plugs;
 };
 
@@ -43,6 +48,7 @@ private:
     static int s_handle_performer_requests(zloop_t *loop, zsock_t *sock, void *arg);
 
     //Message handlers
+	void register_endpoint_handler(zsock_t * socket, zmsg_t * msg);
     void register_performer_handler(zsock_t * socket, zmsg_t * msg);
     void register_plug_handler(zsock_t * socket, zmsg_t * msg);
     void section_heartbeat_handler(zsock_t * socket, zmsg_t * msg);
@@ -51,7 +57,7 @@ private:
 	void destroy_plug_handler(zsock_t * socket, zmsg_t * msg);
     
     //Graph storage
-    std::map<std::string, ZstPerformerRef> m_performer_refs;
+	std::map<std::string, ZstEndpointRef> m_endpoint_refs;
 
 	//Plug connections
 	void connect_plugs(const ZstPerformerRef & input_performer, const ZstPerformerRef & output_performer, PlugAddress output_plug);

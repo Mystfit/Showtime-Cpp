@@ -112,8 +112,6 @@ int main(int argc,char **argv){
 
 	std::cout << "Shutting down..." << std::endl;
 
-	zsys_shutdown();
-
 	std::cout << "Performer test completed" << std::endl;
 
 #ifdef WIN32

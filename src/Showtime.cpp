@@ -19,6 +19,7 @@ void Showtime::destroy() {
 	zsock_destroy(&m_stage_router);
 	zsock_destroy(&m_graph_in);
 	zsock_destroy(&m_graph_out);
+	zsys_shutdown();
 }
 
 Showtime & Showtime::instance()
@@ -43,13 +44,8 @@ void Showtime::init(string stage_address)
 	m_stage_requests = zsock_new_req(stage_req_addr);
 	zsock_set_linger(m_stage_requests, 0);
 
-	//UUID for our current client instance. Used by stage to route messages back to our client
-	m_client_uuid = boost::uuids::random_generator()();
-
 	//Local dealer socket for receiving messages forwarded from other performers
 	m_stage_router = zsock_new(ZMQ_DEALER);
-	zsock_set_identity(m_stage_router, boost::uuids::to_string(m_client_uuid).c_str());
-	attach_pipe_listener(m_stage_router, s_handle_stage_router, this);
 
 	//Graph input socket
 	m_graph_in = zsock_new(ZMQ_SUB);
@@ -173,25 +169,36 @@ void Showtime::connect_performer_handler(zsock_t * socket, zmsg_t * msg){
 // API Functions
 // -------------
 
-void Showtime::register_performer_to_stage(string performer){
-	ZstMessages::RegisterPerformer args;
-    args.name = performer;
-    args.endpoint = m_output_endpoint;
-	args.client_uuid = boost::uuids::to_string(m_client_uuid).c_str();
-    cout << "PERFORMER: Registering performer" << endl;
-    send_to_stage(ZstMessages::build_message<ZstMessages::RegisterPerformer>(ZstMessages::Kind::STAGE_REGISTER_PERFORMER, args));
-    
-    zmsg_t *responseMsg = receive_from_stage();
+void Showtime::register_endpoint_to_stage() {
+	ZstMessages::RegisterEndpoint args;
+	args.uuid = zuuid_str(m_startup_uuid);
+	args.address = m_output_endpoint;
+	cout << "PERFORMER: Registering performer" << endl;
+	send_to_stage(ZstMessages::build_message<ZstMessages::RegisterEndpoint>(ZstMessages::Kind::STAGE_REGISTER_ENDPOINT, args));
+
+	zmsg_t *responseMsg = receive_from_stage();
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
-    if(message_type == ZstMessages::Kind::OK){
+	
+	if (message_type == ZstMessages::Kind::STAGE_REGISTER_ENDPOINT_ACK) {
+		cout << "PERFORMER: Successfully registered endpoint to stage." << endl;
+
+		ZstMessages::RegisterEndpointAck endpoint_ack = ZstMessages::unpack_message_struct<ZstMessages::RegisterEndpointAck>(responseMsg);
+
 		//Connect performer dealer to stage now that it's been registered successfully
-        cout << "PERFORMER: Successfully registered to stage." << endl;
 		char stage_router_addr[30];
 		sprintf(stage_router_addr, "tcp://%s:%d", m_stage_addr.c_str(), STAGE_ROUTER_PORT);
+		
+		zsock_set_identity(m_stage_router, endpoint_ack.assigned_uuid.c_str());
+		attach_pipe_listener(m_stage_router, s_handle_stage_router, this);
 		zsock_connect(m_stage_router, stage_router_addr);
-    } else {
-        throw runtime_error("PERFORMER: Stage performer registration responded with ERR");
-    }
+	}
+	else {
+		throw runtime_error("PERFORMER: Stage performer registration responded with ERR");
+	}
+}
+
+void Showtime::register_performer_to_stage(string performer){
+	
 }
 
 chrono::milliseconds Showtime::ping_stage(){
@@ -201,7 +208,6 @@ chrono::milliseconds Showtime::ping_stage(){
     chrono::time_point<chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
     
-    beat.from = boost::uuids::to_string(m_client_uuid);
     beat.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(start.time_since_epoch()).count();
     send_to_stage(ZstMessages::build_message<ZstMessages::Heartbeat>(ZstMessages::Kind::PERFORMER_HEARTBEAT, beat));
 

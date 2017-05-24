@@ -4,9 +4,6 @@
 #include <vector>
 #include <memory>
 #include <chrono>
-#include <boost\uuid\uuid.hpp>
-#include <boost\uuid\uuid_generators.hpp>
-#include <boost\uuid\uuid_io.hpp>
 #include "czmq.h"
 #include "ZstExports.h"
 #include "ZstPlug.h"
@@ -57,6 +54,7 @@ private:
 	void start();
 	void stop();
 
+	void register_endpoint_to_stage();
 	void register_performer_to_stage(std::string);
 	void send_to_stage(zmsg_t * msg);
 	void send_through_stage(zmsg_t * msg);
@@ -76,6 +74,8 @@ private:
 
 	//Destruction
 	bool m_is_ending;
+
+	zuuid_t * m_startup_uuid;
 
     //Name property
     std::string m_output_endpoint;

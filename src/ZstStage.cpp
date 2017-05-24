@@ -77,6 +77,9 @@ int ZstStage::s_handle_performer_requests(zloop_t * loop, zsock_t * socket, void
     ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(msg);
     
     switch (message_type) {
+		case ZstMessages::Kind::STAGE_REGISTER_ENDPOINT:
+			stage->register_endpoint_handler(socket, msg);
+			break;
         case ZstMessages::Kind::STAGE_REGISTER_PERFORMER:
             stage->register_performer_handler(socket, msg);
             break;
@@ -104,23 +107,51 @@ int ZstStage::s_handle_performer_requests(zloop_t * loop, zsock_t * socket, void
 }
 
 
+void ZstStage::register_endpoint_handler(zsock_t * socket, zmsg_t * msg)
+{
+	ZstMessages::RegisterEndpoint endpoint_args = ZstMessages::unpack_message_struct<ZstMessages::RegisterEndpoint>(msg);
+	cout << "STAGE: Registering new endpoint UUID " << endpoint_args.uuid << endl;
+
+	if (m_endpoint_refs.count(endpoint_args.uuid) > 0) {
+		cout << "STAGE: Endpoint already registered!" << endl;
+		ZstMessages::ErrorAck err;
+		err.err = "Endpoint already registered";
+		zmsg_t *errmsg = ZstMessages::build_message<ZstMessages::ErrorAck>(ZstMessages::Kind::ERR, err);
+		zmsg_send(&errmsg, socket);
+		return;
+	}
+
+	ZstEndpointRef endpointRef;
+	endpointRef.client_starting_uuid = endpoint_args.uuid;
+	endpointRef.client_assigned_uuid = zuuid_str(zuuid_new());
+	endpointRef.endpoint_address = endpoint_args.address;
+	m_endpoint_refs[endpointRef.client_starting_uuid] = endpointRef;
+
+	ZstMessages::RegisterEndpointAck ack_params;
+	ack_params.assigned_uuid = endpointRef.client_assigned_uuid;
+
+	zmsg_t *ackmsg = ZstMessages::build_message<ZstMessages::RegisterEndpointAck>(ZstMessages::Kind::STAGE_REGISTER_ENDPOINT_ACK, ack_params);
+	zmsg_send(&ackmsg, socket);
+}
+
 void ZstStage::register_performer_handler(zsock_t * socket, zmsg_t * msg){
 	ZstMessages::RegisterPerformer performer_args = ZstMessages::unpack_message_struct<ZstMessages::RegisterPerformer>(msg);
-    
-    if(m_performer_refs.count(performer_args.name) > 0){
-        cout << "STAGE: Performer already registered!" << endl;
-        return;
-    }
-    cout << "STAGE: Registering new performer " << performer_args.name << endl;
+	cout << "STAGE: Registering new performer " << performer_args.name << endl;
 
-    ZstPerformerRef performerRef;
-    performerRef.name = performer_args.name;
-    performerRef.endpoint = performer_args.endpoint;
-	performerRef.client_uuid = performer_args.client_uuid;
-    m_performer_refs[performer_args.name] = performerRef;
-    
-    zmsg_t *ackmsg = ZstMessages::build_message<ZstMessages::OKAck>(ZstMessages::Kind::OK, ZstMessages::OKAck());
-    zmsg_send(&ackmsg, socket);
+	if (m_performer_refs.count(performer_args.name) > 0) {
+		cout << "STAGE: Performer already registered!" << endl;
+		
+		ZstMessages::ErrorAck err;
+		err.err = "Performer already registered";
+		zmsg_t *errmsg = ZstMessages::build_message<ZstMessages::ErrorAck>(ZstMessages::Kind::ERR, err);
+		zmsg_send(&errmsg, socket);
+		return;
+	}
+
+	ZstPerformerRef performerRef;
+	performerRef.name = performer_args.name;
+	//TODO:: Check if performer already exists
+	m_endpoint_refs[performer_args.endpoint_uuid].performers.push_back(performerRef);
 }
 
 
