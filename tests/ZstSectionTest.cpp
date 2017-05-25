@@ -18,16 +18,8 @@ void test_stage_registration(){
     //Test stage connection
     assert(Showtime::instance().ping_stage().count() >= 0);
     
-    ZstPerformerRef testperformer = stage->get_performer_ref("test_performer_1");
-    assert(testperformer.name == "test_performer_1");
-    
-    bool missingperformerException = false;
-    try{
-        stage->get_performer_ref("non_existing_performer");
-    } catch(std::out_of_range&){
-        missingperformerException = true;
-    }
-    assert(missingperformerException);
+    assert(stage->get_performer_ref_by_name("test_performer_1") != NULL);
+    assert(stage->get_performer_ref_by_name("non_existing_performer") == NULL);
 }
 
 void test_create_plugs(){
@@ -36,19 +28,18 @@ void test_create_plugs(){
 	ZstIntPlug *inputPlug = Showtime::create_plug<ZstIntPlug>("test_performer_1", "test_input_plug", "test_instrument", PlugDir::IN_JACK);
 
     //Check stage registered plugs successfully
-    ZstPerformerRef stagePerformerRef = stage->get_performer_ref("test_performer_1");
-    assert(stagePerformerRef.plugs.size() > 0);
-    assert(stagePerformerRef.plugs[0].name == outputPlug->get_name());
-    assert(stagePerformerRef.plugs.size() > 1);
-    assert(stagePerformerRef.plugs[1].name == inputPlug->get_name());
+    ZstPerformerRef *stagePerformerRef = stage->get_performer_ref_by_name("test_performer_1");
+    assert(stagePerformerRef->get_plug_by_name(outputPlug->get_name()) != NULL);
+    assert(stagePerformerRef->get_plug_by_name(inputPlug->get_name()) != NULL);
     
     //Check local client registered plugs correctly
-    assert(Showtime::get_performer("test_performer_1")->get_instrument_plugs("test_instrument")[0]->get_name() == stagePerformerRef.plugs[0].name);
+	ZstPlug *localPlug = Showtime::get_performer("test_performer_1")->get_instrument_plugs("test_instrument")[0];
+    assert(localPlug->get_name() == stagePerformerRef->get_plug_by_name(outputPlug->get_name())->get_address().name);
     
     std::vector<ZstPlug*> localplugs = Showtime::get_performer("test_performer_1")->get_plugs();
     assert(localplugs.size() > 1);
-    assert(localplugs[0]->get_name() == stagePerformerRef.plugs[0].name);
-    assert(localplugs[1]->get_name() == stagePerformerRef.plugs[1].name);
+    assert(stagePerformerRef->get_plug_by_name(localplugs[0]->get_name()) != NULL);
+    assert(stagePerformerRef->get_plug_by_name(localplugs[1]->get_name()) != NULL);
     
     //Query stage for remote plugs
     std::vector<PlugAddress> plugs = Showtime::instance().get_all_plug_addresses();
@@ -61,15 +52,16 @@ void test_create_plugs(){
     assert(plugs.size() > 0);
 
 	//Check plug destruction
+	std::string outputName = outputPlug->get_name();
+	std::string inputName = inputPlug->get_name();
+
 	Showtime::instance().destroy_plug(outputPlug);
-	std::vector<PlugAddress> plug_addresses = stage->get_performer_ref("test_performer_1").plugs;
-	assert(plug_addresses.size() == 1);
-	assert(Showtime::get_performer("test_performer_1")->get_instrument_plugs("test_instrument").size()== 1);
+	assert(stage->get_performer_ref_by_name("test_performer_1")->get_plug_by_name(outputName) == NULL);
+	assert(Showtime::get_performer("test_performer_1")->get_instrument_plugs("test_instrument").size() == 1);
 	
 	Showtime::instance().destroy_plug(inputPlug);
-	stagePerformerRef = stage->get_performer_ref("test_performer_2");
-	assert(stagePerformerRef.plugs.empty());
-	assert(Showtime::get_performer("test_performer_2")->get_instrument_plugs("test_instrument").empty());
+	assert(stage->get_performer_ref_by_name("test_performer_1")->get_plug_by_name(inputName) == NULL);
+	assert(Showtime::get_performer("test_performer_1")->get_instrument_plugs("test_instrument").empty());
 }
 
 
@@ -81,7 +73,7 @@ void test_connect_plugs() {
 	Showtime::connect_plugs(outputPlug->get_address(), inputPlug->get_address());
     
 #ifdef WIN32
-    Sleep(100);
+    Sleep(500);
 #else
     sleep(1);
 #endif

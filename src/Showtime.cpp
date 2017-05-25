@@ -3,6 +3,7 @@
 using namespace std;
 
 Showtime::Showtime(){
+	m_startup_uuid = zuuid_new();
 }
 
 Showtime::~Showtime(){
@@ -30,6 +31,7 @@ Showtime & Showtime::instance()
 
 void Showtime::join(string stage_address){
 	Showtime::instance().init(stage_address);
+	Showtime::instance().register_endpoint_to_stage();
 }
 
 void Showtime::init(string stage_address)
@@ -164,21 +166,21 @@ void Showtime::connect_performer_handler(zsock_t * socket, zmsg_t * msg){
 }
 
 
-
-// -------------
-// API Functions
-// -------------
+// ---------------
+// Socket handlers
+// ---------------
 
 void Showtime::register_endpoint_to_stage() {
 	ZstMessages::RegisterEndpoint args;
 	args.uuid = zuuid_str(m_startup_uuid);
 	args.address = m_output_endpoint;
-	cout << "PERFORMER: Registering performer" << endl;
+
+	cout << "PERFORMER: Registering endpoint" << endl;
 	send_to_stage(ZstMessages::build_message<ZstMessages::RegisterEndpoint>(ZstMessages::Kind::STAGE_REGISTER_ENDPOINT, args));
 
 	zmsg_t *responseMsg = receive_from_stage();
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
-	
+
 	if (message_type == ZstMessages::Kind::STAGE_REGISTER_ENDPOINT_ACK) {
 		cout << "PERFORMER: Successfully registered endpoint to stage." << endl;
 
@@ -187,7 +189,8 @@ void Showtime::register_endpoint_to_stage() {
 		//Connect performer dealer to stage now that it's been registered successfully
 		char stage_router_addr[30];
 		sprintf(stage_router_addr, "tcp://%s:%d", m_stage_addr.c_str(), STAGE_ROUTER_PORT);
-		
+
+		m_assigned_uuid = endpoint_ack.assigned_uuid;
 		zsock_set_identity(m_stage_router, endpoint_ack.assigned_uuid.c_str());
 		attach_pipe_listener(m_stage_router, s_handle_stage_router, this);
 		zsock_connect(m_stage_router, stage_router_addr);
@@ -197,9 +200,29 @@ void Showtime::register_endpoint_to_stage() {
 	}
 }
 
-void Showtime::register_performer_to_stage(string performer){
-	
+void Showtime::register_performer_to_stage(string performer) {
+	ZstMessages::RegisterPerformer register_args;
+
+	// Need to send back our assigned uuid so we can attach the new performer to our endpoint on the stage
+	register_args.endpoint_uuid = m_assigned_uuid;
+	register_args.name = performer;
+	send_to_stage(ZstMessages::build_message<ZstMessages::RegisterPerformer>(ZstMessages::Kind::STAGE_REGISTER_PERFORMER, register_args));
+
+	zmsg_t *responseMsg = receive_from_stage();
+
+	zmsg_print(responseMsg);
+	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
+
+	if (message_type != ZstMessages::Signal::OK) {
+		throw runtime_error("PERFORMER: Plug registration responded with message other than OK");
+	}
 }
+
+
+
+// -------------
+// API Functions
+// -------------
 
 chrono::milliseconds Showtime::ping_stage(){
 	ZstMessages::Heartbeat beat;
@@ -209,14 +232,14 @@ chrono::milliseconds Showtime::ping_stage(){
     start = std::chrono::system_clock::now();
     
     beat.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(start.time_since_epoch()).count();
-    send_to_stage(ZstMessages::build_message<ZstMessages::Heartbeat>(ZstMessages::Kind::PERFORMER_HEARTBEAT, beat));
+    send_to_stage(ZstMessages::build_message<ZstMessages::Heartbeat>(ZstMessages::Kind::ENDPOINT_HEARTBEAT, beat));
 
     //Get stage response
     zmsg_t *responseMsg = zmsg_recv(m_stage_requests);
 
     //Get message type
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
-    if(message_type == ZstMessages::Kind::OK){
+    if(message_type == ZstMessages::Kind::SIGNAL){
         end = chrono::system_clock::now();
         delta = chrono::duration_cast<chrono::milliseconds>(end - start);
         cout << "PERFORMER: Client received heartbeat ping ack. Roundtrip was " <<  delta.count() << "ms" << endl;
@@ -226,6 +249,7 @@ chrono::milliseconds Showtime::ping_stage(){
 
     return delta;
 }
+
 
 ZstPerformer * Showtime::create_performer(std::string name)
 {
@@ -249,17 +273,17 @@ template<typename T>
 T* Showtime::create_plug(std::string performer, std::string name, std::string instrument, PlugDir direction){
     
 	ZstMessages::RegisterPlug plug_args;
-	plug_args.performer = performer;
-    plug_args.name = name;
-    plug_args.instrument = instrument;
-	plug_args.direction = direction;
+	plug_args.address.performer = performer;
+	plug_args.address.name = name;
+	plug_args.address.instrument = instrument;
+	plug_args.address.direction = direction;
     Showtime::instance().send_to_stage(ZstMessages::build_message<ZstMessages::RegisterPlug>(ZstMessages::Kind::STAGE_REGISTER_PLUG, plug_args));
 
     //Response
     zmsg_t *responseMsg = Showtime::instance().receive_from_stage();
     
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
-    if(message_type != ZstMessages::Kind::OK){
+    if(message_type != ZstMessages::Signal::OK){
         throw runtime_error("PERFORMER: Plug registration responded with message other than OK");
     }
 
@@ -277,7 +301,7 @@ void Showtime::destroy_plug(ZstPlug * plug)
 	
     zmsg_t *responseMsg = receive_from_stage();
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
-	if (message_type != ZstMessages::Kind::OK) {
+	if (message_type != ZstMessages::Signal::OK) {
 		throw runtime_error("PERFORMER: Plug deletion responded with message other than OK");
 	}
 	
@@ -290,7 +314,7 @@ std::vector<PlugAddress> Showtime::get_all_plug_addresses(string performer, stri
 	ZstMessages::ListPlugs plug_args;
     plug_args.performer = performer;
     plug_args.instrument = instrument;
-    send_to_stage(ZstMessages::build_message<ZstMessages::ListPlugs>(ZstMessages::Kind::STAGE_LIST_PLUGS, plug_args));
+	send_to_stage(ZstMessages::build_message<ZstMessages::ListPlugs>(ZstMessages::Kind::STAGE_LIST_PLUGS, plug_args));
 
     zmsg_t *responseMsg = receive_from_stage();
     
@@ -320,7 +344,7 @@ void Showtime::connect_plugs(PlugAddress a, PlugAddress b)
     
     zmsg_t *responseMsg = Showtime::instance().receive_from_stage();
     ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
-    if (message_type != ZstMessages::Kind::OK) {
+    if (message_type != ZstMessages::Signal::OK) {
         throw runtime_error("PERFORMER: Plug connect responded with message other than OK");
     }
 }

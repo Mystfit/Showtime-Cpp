@@ -12,22 +12,31 @@ class ZstMessages{
 public:
     //Message ID index
     enum Kind{
-        OK,
-        ERR,
+        SIGNAL,
 		STAGE_REGISTER_ENDPOINT,
-		STAGE_REGISTER_ENDPOINT_ACK,         //to stage
-        STAGE_REGISTER_PERFORMER,     //from stage
-        STAGE_REGISTER_PLUG,            //to stage
-		STAGE_DESTROY_PLUG,            //to stage
-        STAGE_REGISTER_CONNECTION,      //to stage
-        STAGE_REMOVE_ITEM,              //to stage
-        STAGE_GRAPH_UPDATES,            //from stage
+		STAGE_REGISTER_ENDPOINT_ACK,   
+        STAGE_REGISTER_PERFORMER,     
+        STAGE_REGISTER_PLUG,          
+		STAGE_DESTROY_PLUG,           
+        STAGE_REGISTER_CONNECTION,     
+        STAGE_REMOVE_ITEM,             
+        STAGE_GRAPH_UPDATES,         
         STAGE_LIST_PLUGS,
         STAGE_LIST_PLUGS_ACK,
-        PERFORMER_UPDATE_PLUG,            //to performers
-        PERFORMER_HEARTBEAT,               //to stage
+        PERFORMER_UPDATE_PLUG,           
+        ENDPOINT_HEARTBEAT,             
 		PERFORMER_REGISTER_CONNECTION
     };
+
+	enum Signal {
+		OK = 0,
+		ERR_STAGE_ENDPOINT_NOT_FOUND,
+		ERR_STAGE_ENDPOINT_ALREADY_EXISTS,
+		ERR_STAGE_PERFORMER_NOT_FOUND,
+		ERR_STAGE_PERFORMER_ALREADY_EXISTS,
+		ERR_STAGE_PLUG_ALREADY_EXISTS,
+		ERR_STAGE_BAD_PLUG_CONNECT_REQUEST
+	};
 
 	//Special message property enums
 	enum GraphItemUpdateType {
@@ -42,9 +51,9 @@ public:
         MSGPACK_DEFINE(empty);
     };
 
-	struct ErrorAck {
-		std::string err;
-		MSGPACK_DEFINE(err);
+	struct SignalAck {
+		Signal sig;
+		MSGPACK_DEFINE(sig);
 	};
 
 	struct RegisterEndpoint {
@@ -61,15 +70,12 @@ public:
     struct RegisterPerformer{
         std::string name;
 		std::string endpoint_uuid;
-        MSGPACK_DEFINE(name);
+        MSGPACK_DEFINE(name, endpoint_uuid);
     };
     
     struct RegisterPlug{
-        std::string performer;
-        std::string instrument;
-        std::string name;
-        PlugDir direction;
-        MSGPACK_DEFINE(performer, instrument, name, direction);
+		PlugAddress address;
+        MSGPACK_DEFINE(address);
     };
 
     struct DestroyPlug {
@@ -178,3 +184,5 @@ public:
 
 //Enums for MsgPack
 MSGPACK_ADD_ENUM(ZstMessages::GraphItemUpdateType);
+MSGPACK_ADD_ENUM(ZstMessages::Signal);
+

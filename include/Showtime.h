@@ -76,11 +76,11 @@ private:
 	bool m_is_ending;
 
 	zuuid_t * m_startup_uuid;
+	std::string m_assigned_uuid;
 
     //Name property
     std::string m_output_endpoint;
 	std::string m_stage_addr = "127.0.0.1";
-	boost::uuids::uuid m_client_uuid;
 
     //All performers
     std::map<std::string, ZstPerformer*> m_performers;

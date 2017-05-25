@@ -4,7 +4,10 @@ set(ZST_HEADERS
  ${Showtime_INCLUDE_DIRS}/Showtime.h			
  ${Showtime_INCLUDE_DIRS}/ZstActor.h	
  ${Showtime_INCLUDE_DIRS}/ZstPlug.h
+ ${Showtime_INCLUDE_DIRS}/ZstPlugRef.h
  ${Showtime_INCLUDE_DIRS}/ZstPerformer.h
+ ${Showtime_INCLUDE_DIRS}/ZstPerformerRef.h
+ ${Showtime_INCLUDE_DIRS}/ZstEndpointRef.h
  ${Showtime_INCLUDE_DIRS}/ZstExports.h
  ${Showtime_INCLUDE_DIRS}/ZstStage.h
  ${Showtime_INCLUDE_DIRS}/ZstMessages.h
@@ -15,7 +18,10 @@ set(ZST_SOURCE
  "ZstActor.cpp"
  "ZstMessages.cpp"
  "ZstPlug.cpp"
+ "ZstPlugRef.cpp"
  "ZstPerformer.cpp"
+ "ZstPerformerRef.cpp"
+ "ZstEndpointRef.cpp"
  "ZstStage.cpp"
 )
 
