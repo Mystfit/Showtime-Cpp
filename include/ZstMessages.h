@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <msgpack.hpp>
 #include <czmq.h>
-#include <boost\uuid\uuid.hpp>
 #include "ZstPlug.h"
 
 class ZstMessages{
