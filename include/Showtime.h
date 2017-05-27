@@ -32,7 +32,7 @@ public:
 
 	//Performers are our local containers for plugs
 	ZST_EXPORT static ZstPerformer* create_performer(std::string name);
-	ZST_EXPORT static ZstPerformer * get_performer(std::string performer);
+	ZST_EXPORT static ZstPerformer * get_performer_by_name(std::string performer);
 
 	template<typename T>
     ZST_EXPORT static T* create_plug(std::string performer, std::string name, std::string instrument, PlugDir direction);
@@ -53,12 +53,14 @@ private:
 	//Stage actor
 	void start();
 	void stop();
-
+    
+    //Registration
 	void register_endpoint_to_stage();
 	void register_performer_to_stage(std::string);
+    
+    //Send and receive
 	void send_to_stage(zmsg_t * msg);
 	void send_through_stage(zmsg_t * msg);
-
 	zmsg_t * receive_from_stage();
 	zmsg_t * receive_routed_from_stage();
 
@@ -68,6 +70,7 @@ private:
 
 	//Message handlers
 	void connect_performer_handler(zsock_t * socket, zmsg_t * msg);
+    void broadcast_to_local_plugs(PlugAddress output_plug, msgpack::object obj);
 
 	//Heartbeat timer
 	static int s_heartbeat_timer(zloop_t *loop, int timer_id, void *arg);
@@ -84,6 +87,9 @@ private:
 
     //All performers
     std::map<std::string, ZstPerformer*> m_performers;
+    
+    //Active local plug connections
+    std::map<PlugAddress, std::vector<ZstPlug*>> m_plug_connections;
     
     //Zeromq pipes
     zsock_t *m_stage_requests;		//Reqests sent to the stage server

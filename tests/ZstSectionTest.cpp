@@ -26,6 +26,10 @@ void test_create_plugs(){
     //Create new plugs
 	ZstIntPlug *outputPlug = Showtime::create_plug<ZstIntPlug>("test_performer_1", "test_output_plug", "test_instrument", PlugDir::OUT_JACK);
 	ZstIntPlug *inputPlug = Showtime::create_plug<ZstIntPlug>("test_performer_1", "test_input_plug", "test_instrument", PlugDir::IN_JACK);
+    
+    //Check address equality
+    assert(outputPlug->get_address() == outputPlug->get_address());
+    assert(!(outputPlug->get_address() == inputPlug->get_address()));
 
     //Check stage registered plugs successfully
     ZstPerformerRef *stagePerformerRef = stage->get_performer_ref_by_name("test_performer_1");
@@ -33,10 +37,10 @@ void test_create_plugs(){
     assert(stagePerformerRef->get_plug_by_name(inputPlug->get_name()) != NULL);
     
     //Check local client registered plugs correctly
-	ZstPlug *localPlug = Showtime::get_performer("test_performer_1")->get_instrument_plugs("test_instrument")[0];
+	ZstPlug *localPlug = Showtime::get_performer_by_name("test_performer_1")->get_instrument_plugs("test_instrument")[0];
     assert(localPlug->get_name() == stagePerformerRef->get_plug_by_name(outputPlug->get_name())->get_address().name);
     
-    std::vector<ZstPlug*> localplugs = Showtime::get_performer("test_performer_1")->get_plugs();
+    std::vector<ZstPlug*> localplugs = Showtime::get_performer_by_name("test_performer_1")->get_plugs();
     assert(localplugs.size() > 1);
     assert(stagePerformerRef->get_plug_by_name(localplugs[0]->get_name()) != NULL);
     assert(stagePerformerRef->get_plug_by_name(localplugs[1]->get_name()) != NULL);
@@ -57,11 +61,11 @@ void test_create_plugs(){
 
 	Showtime::instance().destroy_plug(outputPlug);
 	assert(stage->get_performer_ref_by_name("test_performer_1")->get_plug_by_name(outputName) == NULL);
-	assert(Showtime::get_performer("test_performer_1")->get_instrument_plugs("test_instrument").size() == 1);
+	assert(Showtime::get_performer_by_name("test_performer_1")->get_instrument_plugs("test_instrument").size() == 1);
 	
 	Showtime::instance().destroy_plug(inputPlug);
 	assert(stage->get_performer_ref_by_name("test_performer_1")->get_plug_by_name(inputName) == NULL);
-	assert(Showtime::get_performer("test_performer_1")->get_instrument_plugs("test_instrument").empty());
+	assert(Showtime::get_performer_by_name("test_performer_1")->get_instrument_plugs("test_instrument").empty());
 }
 
 
@@ -71,7 +75,8 @@ void test_connect_plugs() {
 	ZstIntPlug *inputPlug = Showtime::create_plug<ZstIntPlug>("test_performer_2", "test_input_plug", "test_instrument", PlugDir::IN_JACK);
 
 	Showtime::connect_plugs(outputPlug->get_address(), inputPlug->get_address());
-    
+
+    //TODO: First connection, so need to wait for endpoint->stage->endpoint handshake to complete. Futures could help with this?
 #ifdef WIN32
     Sleep(500);
 #else
@@ -80,6 +85,14 @@ void test_connect_plugs() {
 
 	//Send!
 	outputPlug->fire(27);
+
+    //TODO: Need to sleep before we check the received plug value. This could removed when we switch to callbacks
+#ifdef WIN32
+    Sleep(500);
+#else
+    sleep(1);
+#endif
+    assert(inputPlug->get_value() == 27);
 }
 
 

@@ -125,7 +125,8 @@ public:
 	struct PerformerConnection {
 		std::string endpoint;
 		PlugAddress output_plug;
-		MSGPACK_DEFINE(endpoint, output_plug);
+        PlugAddress input_plug;
+		MSGPACK_DEFINE(endpoint, output_plug, input_plug);
 	};
     
 

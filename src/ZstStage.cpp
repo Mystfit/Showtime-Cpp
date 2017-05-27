@@ -328,17 +328,11 @@ void ZstStage::connect_plugs_handler(zsock_t * socket, zmsg_t * msg)
 	ZstMessages::ConnectPlugs plug_args = ZstMessages::unpack_message_struct<ZstMessages::ConnectPlugs>(msg);
 	cout << "STAGE: Received connect plug request" << endl;
 
-	ZstPerformerRef *perfA = get_performer_ref_by_name(plug_args.first.performer);
-	ZstPerformerRef *perfB = get_performer_ref_by_name(plug_args.second.performer);
-
-	zmsg_t *ackmsg;
-	PlugAddress input, output;
-
 	if (plug_args.first.direction == PlugDir::OUT_JACK && plug_args.second.direction == PlugDir::IN_JACK) {
-		connect_plugs(perfB, perfA, plug_args.first);
+		connect_plugs(plug_args.first, plug_args.second);
 	}
 	else if (plug_args.first.direction == PlugDir::IN_JACK && plug_args.second.direction == PlugDir::OUT_JACK) {
-		connect_plugs(perfA, perfB, plug_args.second);
+		connect_plugs(plug_args.second, plug_args.first);
 	}
 	else {
 		reply_with_signal(socket, ZstMessages::Signal::ERR_STAGE_BAD_PLUG_CONNECT_REQUEST);
@@ -348,15 +342,19 @@ void ZstStage::connect_plugs_handler(zsock_t * socket, zmsg_t * msg)
 	reply_with_signal(socket, ZstMessages::Signal::OK);
 }
 
-void ZstStage::connect_plugs(ZstPerformerRef * input_performer, ZstPerformerRef * output_performer, PlugAddress output_plug)
+void ZstStage::connect_plugs(PlugAddress output_plug, PlugAddress input_plug)
 {
 	//Need to get to the input performer and tell it to initiate a connection to the output performer
 	//Will the performer need to return information back to the output?
 	//The stage will dispatch a graph update, so will the client need to do this? Probably not
 
+    ZstPerformerRef * output_performer = get_performer_ref_by_name(output_plug.performer);
+    ZstPerformerRef * input_performer = get_performer_ref_by_name(input_plug.performer);
+    
 	ZstMessages::PerformerConnection perf_args;
 	perf_args.endpoint = get_performer_endpoint(output_performer)->endpoint_address;
 	perf_args.output_plug = output_plug;
+    perf_args.input_plug = input_plug;
 
 	zmsg_t *connectMsg = ZstMessages::build_message<ZstMessages::PerformerConnection>(ZstMessages::Kind::PERFORMER_REGISTER_CONNECTION, perf_args);
 	zframe_t * empty = zframe_new_empty();

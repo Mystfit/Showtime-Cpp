@@ -119,19 +119,20 @@ zmsg_t * Showtime::receive_from_graph(){
 // Socket handlers
 // ---------------
 int Showtime::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg){
-    Showtime *performer = (Showtime*)arg;
-    
-    zmsg_t *msg = performer->receive_from_graph();
-    string sender = zmsg_popstr(msg);
+    zmsg_t *msg = Showtime::instance().receive_from_graph();
+    cout << "PERFORMER: Recieved graph message" << endl;
+
+    PlugAddress sender = ZstPlug::address_from_str(zmsg_popstr(msg));
 
 	msgpack::object_handle result;
 	zframe_t * payload = zmsg_pop(msg);
 
 	unpack(result, (char*)zframe_data(payload), zframe_size(payload));
+    msgpack::object obj = result.get();
 	
-	//Do stuff with message payload
-	cout << "PERFORMER: Recieved graph message" << endl;
-
+    cout << "Endpoint received a published message: " << Showtime::instance().m_assigned_uuid << endl;
+    
+    Showtime::instance().broadcast_to_local_plugs(sender, obj);
 	return 0;
 }
 
@@ -160,8 +161,15 @@ int Showtime::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
 void Showtime::connect_performer_handler(zsock_t * socket, zmsg_t * msg){
     ZstMessages::PerformerConnection performer_args = ZstMessages::unpack_message_struct<ZstMessages::PerformerConnection>(msg);
     
+    //Connect to endpoint publisher
     zsock_connect(m_graph_in, performer_args.endpoint.c_str());
     zsock_set_subscribe(m_graph_in, "");
+    
+    //Register local connections so we can take the single published message and make sure each expecting internal input
+    //plug receives it
+    ZstPlug * input = get_performer_by_name(performer_args.input_plug.performer)->get_plug_by_name(performer_args.input_plug.name);
+    m_plug_connections[performer_args.output_plug].push_back(input);
+    
     cout << "PERFORMER: Connecting to " << performer_args.endpoint << ". My output endpoint is " << m_output_endpoint << endl;
 }
 
@@ -259,15 +267,15 @@ ZstPerformer * Showtime::create_performer(std::string name)
 	return perf;
 }
 
-ZstPerformer * Showtime::get_performer(std::string performer)
+ZstPerformer * Showtime::get_performer_by_name(std::string performer)
 {
 	return Showtime::instance().m_performers[performer];
 }
 
 template ZST_EXPORT ZstIntPlug* Showtime::create_plug<ZstIntPlug>(std::string performer, std::string name, std::string instrument, PlugDir direction);
 template ZST_EXPORT ZstFloatPlug* Showtime::create_plug<ZstFloatPlug>(std::string performer, std::string name, std::string instrument, PlugDir direction);
-template ZST_EXPORT ZstIntArrayPlug* Showtime::create_plug<ZstIntArrayPlug>(std::string performer, std::string name, std::string instrument, PlugDir direction);
-template ZST_EXPORT ZstFloatArrayPlug* Showtime::create_plug<ZstFloatArrayPlug>(std::string performer, std::string name, std::string instrument, PlugDir direction);
+template ZST_EXPORT ZstIntListPlug* Showtime::create_plug<ZstIntListPlug>(std::string performer, std::string name, std::string instrument, PlugDir direction);
+template ZST_EXPORT ZstFloatListPlug* Showtime::create_plug<ZstFloatListPlug>(std::string performer, std::string name, std::string instrument, PlugDir direction);
 template ZST_EXPORT ZstStringPlug* Showtime::create_plug<ZstStringPlug>(std::string performer, std::string name, std::string instrument, PlugDir direction);
 template<typename T>
 T* Showtime::create_plug(std::string performer, std::string name, std::string instrument, PlugDir direction){
@@ -288,7 +296,7 @@ T* Showtime::create_plug(std::string performer, std::string name, std::string in
     }
 
     T *plug = new T(name, instrument, performer, direction);
-	Showtime::instance().get_performer(performer)->add_plug(plug);
+	Showtime::instance().get_performer_by_name(performer)->add_plug(plug);
     return plug;
 }
 
@@ -348,3 +356,13 @@ void Showtime::connect_plugs(PlugAddress a, PlugAddress b)
         throw runtime_error("PERFORMER: Plug connect responded with message other than OK");
     }
 }
+
+
+void Showtime::broadcast_to_local_plugs(PlugAddress output_plug, msgpack::object obj){
+    
+    for(vector<ZstPlug*>::iterator plug_iter = m_plug_connections[output_plug].begin(); plug_iter != m_plug_connections[output_plug].end(); ++plug_iter ){
+        (*plug_iter)->recv(obj);
+    }
+}
+
+

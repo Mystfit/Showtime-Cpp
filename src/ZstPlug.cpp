@@ -70,21 +70,18 @@ void ZstPlug::fire()
 
 void ZstIntPlug::fire(int value)
 {
-	m_packer->pack_int(sizeof(PlugTypes::INT_PLUG));
 	m_packer->pack_int(value);
 	ZstPlug::fire();
 }
 
 void ZstFloatPlug::fire(float value)
 {
-	m_packer->pack_int(PlugTypes::FLOAT_PLUG);
 	m_packer->pack_float(value);
 	ZstPlug::fire();
 }
 
-void ZstIntArrayPlug::fire(std::vector<int> value)
+void ZstIntListPlug::fire(std::vector<int> value)
 {
-	m_packer->pack_int(PlugTypes::INT_ARR_PLUG);
 	m_packer->pack_array(value.size());
 	for (int i = 0; i < sizeof(value); ++i) {
 		m_packer->pack(value[i]);
@@ -92,9 +89,8 @@ void ZstIntArrayPlug::fire(std::vector<int> value)
 	ZstPlug::fire();
 }
 
-void ZstFloatArrayPlug::fire(std::vector<float> value)
+void ZstFloatListPlug::fire(std::vector<float> value)
 {
-	m_packer->pack_int(PlugTypes::FLOAT_ARR_PLUG);
 	m_packer->pack_array(value.size());
 	for (int i = 0; i < sizeof(value); ++i) {
 		m_packer->pack(value[i]);
@@ -104,9 +100,61 @@ void ZstFloatArrayPlug::fire(std::vector<float> value)
 
 void ZstStringPlug::fire(string value)
 {
-	m_packer->pack_int(PlugTypes::STRING_PLUG);
 	m_packer->pack_str(value.size());
 	m_packer->pack(value);
 	ZstPlug::fire();
+}
+
+
+void ZstIntPlug::recv(msgpack::object object){
+    int out;
+    object.convert<int>(out);
+    m_value = out;
+    cout << "Plug: " << get_name() << " Val: " << out << endl;
+}
+
+void ZstFloatPlug::recv(msgpack::object object){
+    float out;
+    object.convert<float>(out);
+    m_value = out;
+}
+
+void ZstIntListPlug::recv(msgpack::object object){
+    vector<int> out;
+    object.convert<vector<int>>(out);
+    m_value = out;
+}
+
+void ZstFloatListPlug::recv(msgpack::object object){
+    vector<float> out;
+    object.convert<vector<float>>(out);
+    m_value = out;
+}
+
+void ZstStringPlug::recv(msgpack::object object){
+    float out;
+    object.convert<float>(out);
+    m_value = out;
+}
+
+
+int ZstIntPlug::get_value(){
+    return m_value;
+}
+
+float ZstFloatPlug::get_value(){
+    return m_value;
+}
+
+vector<int> ZstIntListPlug::get_value(){
+    return m_value;
+}
+
+vector<float> ZstFloatListPlug::get_value(){
+    return m_value;
+}
+
+string ZstStringPlug::get_value(){
+    return m_value;
 }
 

@@ -62,6 +62,6 @@ private:
 	std::map<std::string, ZstEndpointRef*> m_endpoint_refs;
 
 	//Plug connections
-	void connect_plugs(ZstPerformerRef * input_performer, ZstPerformerRef * output_performer, PlugAddress output_plug);
+    void connect_plugs(PlugAddress output_plug, PlugAddress input_plug);
 };
 
