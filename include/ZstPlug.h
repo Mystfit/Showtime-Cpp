@@ -52,9 +52,8 @@ struct PlugAddress {
     MSGPACK_DEFINE(performer, instrument, name, direction);
 };
 
-
+class PlugCallback;
 class ZstPlug {
-
 public:
 	//Constructor
 	ZstPlug(std::string name, std::string instrument, std::string performer, PlugDir direction);
@@ -67,7 +66,16 @@ public:
 	ZST_EXPORT PlugDir get_direction();
 	ZST_EXPORT PlugAddress get_address();
     
-    static PlugAddress address_from_str(std::string s){
+    //Plug callbacks
+    ZST_EXPORT void attach_recv_callback(PlugCallback * callback);
+    ZST_EXPORT void destroy_recv_callback(PlugCallback * callback);
+    
+    //IO
+    ZST_EXPORT void fire();
+    virtual void recv(msgpack::object obj) = 0;
+
+    //Address conversion
+    ZST_EXPORT static PlugAddress address_from_str(std::string s){
         PlugAddress address;
         std::vector<std::string> tokens;
         Utils::str_split(s, tokens, "/");
@@ -77,14 +85,13 @@ public:
         address.direction = (PlugDir)std::atoi(tokens[3].c_str());
         return address;
     }
-    virtual void recv(msgpack::object obj) = 0;
-
 
 protected:
-	virtual void fire();
 	msgpack::sbuffer * m_buffer;
 	msgpack::packer<msgpack::sbuffer> * m_packer;
-
+    
+    void run_recv_callbacks();
+    std::vector<PlugCallback*> m_received_data_callbacks;
 private:
 	std::string m_name;
 	std::string m_performer;
@@ -99,6 +106,13 @@ enum PlugTypes {
 	FLOAT_PLUG,
 	FLOAT_ARR_PLUG,
 	STRING_PLUG
+};
+
+
+class PlugCallback{
+public:
+    //virtual ~PlugCallback() { std::cout << "Callback::~Callback()" << std:: endl; }
+    virtual void run(ZstPlug * plug) { std::cout << "PlugCallback::run()" << std::endl; }
 };
 
 

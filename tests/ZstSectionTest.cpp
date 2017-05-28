@@ -69,12 +69,53 @@ void test_create_plugs(){
 }
 
 
+class TestIntCallback : public PlugCallback{
+public:
+    //~TestCallback();
+    void run(ZstPlug* plug) override {
+        assert(((ZstIntPlug*)plug)->get_value() == 27);
+    };
+};
+
+class TestFloatCallback : public PlugCallback{
+public:
+    //~TestCallback();
+    void run(ZstPlug* plug) override {
+        assert(((ZstFloatPlug*)plug)->get_value() == 27.5f);
+    };
+};
+
+class TestIntListCallback : public PlugCallback{
+public:
+    //~TestCallback();
+    void run(ZstPlug* plug) override {
+        assert(((ZstIntListPlug*)plug)->get_value()[0] == 27);
+    };
+};
+
+class TestFloatListCallback : public PlugCallback{
+public:
+    //~TestCallback();
+    void run(ZstPlug* plug) override {
+        assert(((ZstFloatListPlug*)plug)->get_value()[0] == 27.5f);
+    };
+};
+
+class TestStringCallback : public PlugCallback{
+public:
+    //~TestCallback();
+    void run(ZstPlug* plug) override {
+        assert(((ZstStringPlug*)plug)->get_value() == "Twenty seven");
+    };
+};
+
+
 void test_connect_plugs() {
 	//Test plugs connected between performers
-	ZstIntPlug *outputPlug = Showtime::create_plug<ZstIntPlug>("test_performer_1", "test_output_plug", "test_instrument", PlugDir::OUT_JACK);
-	ZstIntPlug *inputPlug = Showtime::create_plug<ZstIntPlug>("test_performer_2", "test_input_plug", "test_instrument", PlugDir::IN_JACK);
-
-	Showtime::connect_plugs(outputPlug->get_address(), inputPlug->get_address());
+	ZstIntPlug *output_int_plug = Showtime::create_plug<ZstIntPlug>("test_performer_1", "output_int_plug", "test_instrument", PlugDir::OUT_JACK);
+	ZstIntPlug *input_int_plug = Showtime::create_plug<ZstIntPlug>("test_performer_2", "input_int_plug", "test_instrument", PlugDir::IN_JACK);
+    input_int_plug->attach_recv_callback(new TestIntCallback());
+	Showtime::connect_plugs(output_int_plug->get_address(), input_int_plug->get_address());
 
     //TODO: First connection, so need to wait for endpoint->stage->endpoint handshake to complete. Futures could help with this?
 #ifdef WIN32
@@ -82,17 +123,31 @@ void test_connect_plugs() {
 #else
     sleep(1);
 #endif
-
-	//Send!
-	outputPlug->fire(27);
-
-    //TODO: Need to sleep before we check the received plug value. This could removed when we switch to callbacks
-#ifdef WIN32
-    Sleep(500);
-#else
-    sleep(1);
-#endif
-    assert(inputPlug->get_value() == 27);
+	output_int_plug->fire(27);
+    
+    ZstFloatPlug *output_float_plug = Showtime::create_plug<ZstFloatPlug>("test_performer_1", "output_float_plug", "test_instrument", PlugDir::OUT_JACK);
+    ZstFloatPlug *input_float_plug = Showtime::create_plug<ZstFloatPlug>("test_performer_2", "input_float_plug", "test_instrument", PlugDir::IN_JACK);
+    input_float_plug->attach_recv_callback(new TestFloatCallback());
+    Showtime::connect_plugs(output_float_plug->get_address(), input_float_plug->get_address());
+    output_float_plug->fire(27.5f);
+    
+    ZstIntListPlug *output_intlist_plug = Showtime::create_plug<ZstIntListPlug>("test_performer_1", "output_intlist_plug", "test_instrument", PlugDir::OUT_JACK);
+    ZstIntListPlug *input_intlist_plug = Showtime::create_plug<ZstIntListPlug>("test_performer_2", "input_intlist_plug", "test_instrument", PlugDir::IN_JACK);
+    input_intlist_plug->attach_recv_callback(new TestIntListCallback());
+    Showtime::connect_plugs(output_intlist_plug->get_address(), input_intlist_plug->get_address());
+    output_intlist_plug->fire(std::vector<int>{27});
+    
+    ZstFloatListPlug *output_floatlist_plug = Showtime::create_plug<ZstFloatListPlug>("test_performer_1", "output_floatlist_plug", "test_instrument", PlugDir::OUT_JACK);
+    ZstFloatListPlug *input_floatlist_plug = Showtime::create_plug<ZstFloatListPlug>("test_performer_2", "input_floatlist_plug", "test_instrument", PlugDir::IN_JACK);
+    input_floatlist_plug->attach_recv_callback(new TestFloatListCallback());
+    Showtime::connect_plugs(output_floatlist_plug->get_address(), input_floatlist_plug->get_address());
+    output_floatlist_plug->fire(std::vector<float>{27.5f});
+    
+    ZstStringPlug *output_string_plug = Showtime::create_plug<ZstStringPlug>("test_performer_1", "output_string_plug", "test_instrument", PlugDir::OUT_JACK);
+    ZstStringPlug *input_string_plug = Showtime::create_plug<ZstStringPlug>("test_performer_2", "input_string_plug", "test_instrument", PlugDir::IN_JACK);
+    input_string_plug->attach_recv_callback(new TestStringCallback());
+    Showtime::connect_plugs(output_string_plug->get_address(), input_string_plug->get_address());
+    output_string_plug->fire(std::string("Twenty seven"));
 }
 
 

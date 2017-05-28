@@ -49,6 +49,23 @@ PlugAddress ZstPlug::get_address()
 	return address;
 }
 
+void ZstPlug::attach_recv_callback(PlugCallback *callback){
+    m_received_data_callbacks.push_back(callback);
+}
+
+void ZstPlug::destroy_recv_callback(PlugCallback *callback){
+    m_received_data_callbacks.erase(std::remove(m_received_data_callbacks.begin(), m_received_data_callbacks.end(), callback), m_received_data_callbacks.end());
+    delete callback;
+}
+
+void ZstPlug::run_recv_callbacks(){
+    if(m_received_data_callbacks.size() > 0){
+        for(vector<PlugCallback*>::iterator callback = m_received_data_callbacks.begin(); callback != m_received_data_callbacks.end(); ++callback){
+            (*callback)->run(this);
+        }
+    }
+}
+
 void ZstPlug::fire()
 {
 	zmsg_t * msg = zmsg_new();
@@ -100,7 +117,6 @@ void ZstFloatListPlug::fire(std::vector<float> value)
 
 void ZstStringPlug::fire(string value)
 {
-	m_packer->pack_str(value.size());
 	m_packer->pack(value);
 	ZstPlug::fire();
 }
@@ -110,31 +126,35 @@ void ZstIntPlug::recv(msgpack::object object){
     int out;
     object.convert<int>(out);
     m_value = out;
-    cout << "Plug: " << get_name() << " Val: " << out << endl;
+    run_recv_callbacks();
 }
 
 void ZstFloatPlug::recv(msgpack::object object){
     float out;
     object.convert<float>(out);
     m_value = out;
+    run_recv_callbacks();
 }
 
 void ZstIntListPlug::recv(msgpack::object object){
-    vector<int> out;
-    object.convert<vector<int>>(out);
-    m_value = out;
+    std::vector<int> out_arr;
+    object.convert<std::vector<int>>(out_arr);
+    m_value = out_arr;
+    run_recv_callbacks();
 }
 
 void ZstFloatListPlug::recv(msgpack::object object){
     vector<float> out;
     object.convert<vector<float>>(out);
     m_value = out;
+    run_recv_callbacks();
 }
 
 void ZstStringPlug::recv(msgpack::object object){
-    float out;
-    object.convert<float>(out);
+    string out;
+    object.convert<string>(out);
     m_value = out;
+    run_recv_callbacks();
 }
 
 
