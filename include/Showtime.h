@@ -35,10 +35,10 @@ public:
 	ZST_EXPORT static ZstPerformer * get_performer_by_name(std::string performer);
 
 	template<typename T>
-    ZST_EXPORT static T* create_plug(std::string performer, std::string name, std::string instrument, PlugDir direction);
+    ZST_EXPORT static T* create_plug(ZstURI uri);
     ZST_EXPORT void destroy_plug(ZstPlug *plug);
-    ZST_EXPORT std::vector<PlugAddress> get_all_plug_addresses(std::string section = "", std::string instrument = "");
-	ZST_EXPORT static void connect_plugs(PlugAddress a, PlugAddress b);
+    ZST_EXPORT std::vector<ZstURI> get_all_plug_addresses(std::string section = "", std::string instrument = "");
+	ZST_EXPORT static void connect_plugs(ZstURI a, ZstURI b);
     
 	//ZST_EXPORT void fire_plug(ZstPlug *plug, zframe_t * frame);
 	void send_to_graph(zmsg_t * msg);
@@ -70,7 +70,7 @@ private:
 
 	//Message handlers
 	void connect_performer_handler(zsock_t * socket, zmsg_t * msg);
-    void broadcast_to_local_plugs(PlugAddress output_plug, msgpack::object obj);
+    void broadcast_to_local_plugs(ZstURI output_plug, msgpack::object obj);
 
 	//Heartbeat timer
 	static int s_heartbeat_timer(zloop_t *loop, int timer_id, void *arg);
@@ -89,7 +89,7 @@ private:
     std::map<std::string, ZstPerformer*> m_performers;
     
     //Active local plug connections
-    std::map<PlugAddress, std::vector<ZstPlug*>> m_plug_connections;
+    std::map<ZstURI, std::vector<ZstPlug*>> m_plug_connections;
     
     //Zeromq pipes
     zsock_t *m_stage_requests;		//Reqests sent to the stage server

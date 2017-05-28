@@ -2,16 +2,15 @@
 
 using namespace std;
 
-ZstPlugRef::ZstPlugRef(PlugAddress address)
+ZstPlugRef::ZstPlugRef(ZstURI address) : m_address(address)
 {
-	m_address = address;
 }
 
 ZstPlugRef::~ZstPlugRef()
 {
 }
 
-PlugAddress ZstPlugRef::get_address()
+ZstURI ZstPlugRef::get_address()
 {
 	return m_address;
 }

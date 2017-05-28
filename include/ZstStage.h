@@ -9,7 +9,7 @@
 #include "ZstActor.h"
 #include "ZstExports.h"
 #include "ZstMessages.h"
-#include "ZstPlug.h"
+#include "ZstURI.h"
 #include "ZstPlugRef.h"
 #include "ZstPerformerRef.h"
 #include "ZstEndpointRef.h"
@@ -62,6 +62,6 @@ private:
 	std::map<std::string, ZstEndpointRef*> m_endpoint_refs;
 
 	//Plug connections
-    void connect_plugs(PlugAddress output_plug, PlugAddress input_plug);
+    void connect_plugs(ZstURI output_plug, ZstURI input_plug);
 };
 

@@ -257,7 +257,7 @@ void ZstStage::register_performer_handler(zsock_t * socket, zmsg_t * msg) {
 void ZstStage::register_plug_handler(zsock_t *socket, zmsg_t *msg) {
 	ZstMessages::RegisterPlug plug_args = ZstMessages::unpack_message_struct<ZstMessages::RegisterPlug>(msg);
 
-	ZstPerformerRef * performer = get_performer_ref_by_name(plug_args.address.performer);
+	ZstPerformerRef * performer = get_performer_ref_by_name(plug_args.address.performer());
 
 	if (performer == NULL) {
 		cout << "STAGE: Couldn't register plug. No performer registered to stage with name";
@@ -265,7 +265,7 @@ void ZstStage::register_plug_handler(zsock_t *socket, zmsg_t *msg) {
 		return;
 	}
 
-	cout << "STAGE: Registering new plug " << plug_args.address.name << endl;
+	cout << "STAGE: Registering new plug " << plug_args.address.name() << endl;
 
 	ZstPlugRef * plug = performer->create_plug(plug_args.address);
 
@@ -313,9 +313,9 @@ void ZstStage::destroy_plug_handler(zsock_t * socket, zmsg_t * msg)
 	ZstMessages::DestroyPlug plug_destroy_args = ZstMessages::unpack_message_struct<ZstMessages::DestroyPlug>(msg);
 	cout << "STAGE: Received destroy plug request" << endl;
 
-	ZstPerformerRef *performer = get_performer_ref_by_name(plug_destroy_args.address.performer);
+	ZstPerformerRef *performer = get_performer_ref_by_name(plug_destroy_args.address.performer());
 
-	performer->destroy_plug(performer->get_plug_by_name(plug_destroy_args.address.name));
+	performer->destroy_plug(performer->get_plug_by_name(plug_destroy_args.address.name()));
 
 	reply_with_signal(socket, ZstMessages::Signal::OK);
 }
@@ -328,10 +328,10 @@ void ZstStage::connect_plugs_handler(zsock_t * socket, zmsg_t * msg)
 	ZstMessages::ConnectPlugs plug_args = ZstMessages::unpack_message_struct<ZstMessages::ConnectPlugs>(msg);
 	cout << "STAGE: Received connect plug request" << endl;
 
-	if (plug_args.first.direction == PlugDir::OUT_JACK && plug_args.second.direction == PlugDir::IN_JACK) {
+	if (plug_args.first.direction() == ZstURI::Direction::OUT_JACK && plug_args.second.direction() == ZstURI::Direction::IN_JACK) {
 		connect_plugs(plug_args.first, plug_args.second);
 	}
-	else if (plug_args.first.direction == PlugDir::IN_JACK && plug_args.second.direction == PlugDir::OUT_JACK) {
+	else if (plug_args.first.direction() == ZstURI::Direction::IN_JACK && plug_args.second.direction() == ZstURI::Direction::OUT_JACK) {
 		connect_plugs(plug_args.second, plug_args.first);
 	}
 	else {
@@ -342,19 +342,19 @@ void ZstStage::connect_plugs_handler(zsock_t * socket, zmsg_t * msg)
 	reply_with_signal(socket, ZstMessages::Signal::OK);
 }
 
-void ZstStage::connect_plugs(PlugAddress output_plug, PlugAddress input_plug)
+void ZstStage::connect_plugs(ZstURI output_plug, ZstURI input_plug)
 {
 	//Need to get to the input performer and tell it to initiate a connection to the output performer
 	//Will the performer need to return information back to the output?
 	//The stage will dispatch a graph update, so will the client need to do this? Probably not
 
-    ZstPerformerRef * output_performer = get_performer_ref_by_name(output_plug.performer);
-    ZstPerformerRef * input_performer = get_performer_ref_by_name(input_plug.performer);
+    ZstPerformerRef * output_performer = get_performer_ref_by_name(output_plug.performer());
+    ZstPerformerRef * input_performer = get_performer_ref_by_name(input_plug.performer());
     
 	ZstMessages::PerformerConnection perf_args;
-	perf_args.endpoint = get_performer_endpoint(output_performer)->endpoint_address;
 	perf_args.output_plug = output_plug;
-    perf_args.input_plug = input_plug;
+	perf_args.input_plug = input_plug;
+	perf_args.endpoint = get_performer_endpoint(output_performer)->endpoint_address;
 
 	zmsg_t *connectMsg = ZstMessages::build_message<ZstMessages::PerformerConnection>(ZstMessages::Kind::PERFORMER_REGISTER_CONNECTION, perf_args);
 	zframe_t * empty = zframe_new_empty();

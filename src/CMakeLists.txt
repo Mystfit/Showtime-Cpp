@@ -2,6 +2,7 @@ enable_testing()
 
 set(ZST_HEADERS 
  ${Showtime_INCLUDE_DIRS}/Showtime.h
+ ${Showtime_INCLUDE_DIRS}/ZstURI.h
  ${Showtime_INCLUDE_DIRS}/ZstUtils.hpp
  ${Showtime_INCLUDE_DIRS}/ZstActor.h	
  ${Showtime_INCLUDE_DIRS}/ZstPlug.h
@@ -16,6 +17,7 @@ set(ZST_HEADERS
 
 set(ZST_SOURCE 
  "Showtime.cpp"
+ "ZstURI.cpp"
  "ZstUtils.cpp"
  "ZstActor.cpp"
  "ZstMessages.cpp"
