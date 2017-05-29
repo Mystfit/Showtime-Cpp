@@ -1,7 +1,12 @@
 #include "ZstURI.h"
 using namespace std;
 
-ZstURI::ZstURI(std::string performer, std::string name, std::string instrument, Direction direction) :
+ZstURI::ZstURI()
+{
+	//Empty URI
+}
+
+ZstURI::ZstURI(std::string performer, std::string instrument, std::string name, Direction direction) :
 	m_performer(performer),
 	m_instrument(instrument),
 	m_name(name),
@@ -40,17 +45,24 @@ ZstURI::Direction ZstURI::direction() const
 	return m_direction;
 }
 
-bool ZstURI::operator==(const ZstURI & other) const
+bool ZstURI::operator==(const ZstURI & other)
 {
 	return (m_performer == other.performer()) &&
 		(m_instrument == other.instrument()) &&
 		(m_name == other.name());
 }
 
-bool ZstURI::operator<(const ZstURI & a) const
+bool ZstURI::operator!=(const ZstURI & other)
 {
-	{ return to_str() < a.to_str(); }
+	return !((m_performer == other.performer()) &&
+		(m_instrument == other.instrument()) &&
+		(m_name == other.name()));
 }
+
+//bool ZstURI::operator<(const ZstURI& a, const ZstURI& b)
+//{
+//	
+//}
 
 string ZstURI::to_str() const{
 	return m_performer + "/" + m_instrument + "/" + m_name + "/" + std::to_string(m_direction);

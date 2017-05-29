@@ -9,6 +9,19 @@ ZstStage *stage;
 Showtime *performer_a;
 Showtime *performer_b;
 
+void test_URI() {
+	ZstURI uri_empty = ZstURI();
+	assert(uri_empty.performer().empty() && uri_empty.instrument().empty() && uri_empty.name().empty());
+
+	ZstURI uri_equal1 = ZstURI("perf", "ins", "someplug", ZstURI::Direction::OUT_JACK);
+	ZstURI uri_equal2 = ZstURI("perf", "ins", "someplug", ZstURI::Direction::OUT_JACK);
+	assert(uri_equal1 == uri_equal2);
+
+	ZstURI uri_notequal = ZstURI("perf", "anotherins", "someplug", ZstURI::Direction::IN_JACK);
+	assert(!(uri_equal1 == uri_notequal));
+	assert(uri_equal1 != uri_notequal);
+}
+
 void test_performer_init() {
 	Showtime::instance().self_test();
 }
@@ -80,8 +93,8 @@ public:
 
 void test_connect_plugs() {
 	//Test plugs connected between performers
-	ZstIntPlug *output_int_plug = Showtime::create_plug<ZstIntPlug>(ZstURI("test_performer_1", "output_int_plug", "test_instrument", ZstURI::Direction::OUT_JACK));
-	ZstIntPlug *input_int_plug = Showtime::create_plug<ZstIntPlug>(ZstURI("test_performer_2", "input_int_plug", "test_instrument", ZstURI::Direction::IN_JACK));
+	ZstIntPlug *output_int_plug = Showtime::create_plug<ZstIntPlug>(ZstURI("test_performer_1", "test_instrument", "output_int_plug", ZstURI::Direction::OUT_JACK));
+	ZstIntPlug *input_int_plug = Showtime::create_plug<ZstIntPlug>(ZstURI("test_performer_2", "test_instrument", "input_int_plug", ZstURI::Direction::IN_JACK));
     input_int_plug->attach_recv_callback(new TestIntCallback());
 	Showtime::connect_plugs(output_int_plug->get_URI(), input_int_plug->get_URI());
 
@@ -108,6 +121,7 @@ int main(int argc,char **argv){
 	ZstPerformer * performer_a = Showtime::create_performer("test_performer_1");
 	ZstPerformer * performer_b = Showtime::create_performer("test_performer_2");
     
+	test_URI();
 	test_performer_init();
     test_stage_registration();
     test_create_plugs();

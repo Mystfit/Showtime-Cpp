@@ -276,7 +276,9 @@ template ZST_EXPORT ZstIntPlug* Showtime::create_plug<ZstIntPlug>(ZstURI uri);
 template<typename T>
 T* Showtime::create_plug(ZstURI uri){
     
-    Showtime::instance().send_to_stage(ZstMessages::build_message<ZstMessages::RegisterPlug>(ZstMessages::Kind::STAGE_REGISTER_PLUG, ZstMessages::RegisterPlug(uri)));
+	ZstMessages::RegisterPlug plug_args;
+	plug_args.address = uri;
+    Showtime::instance().send_to_stage(ZstMessages::build_message<ZstMessages::RegisterPlug>(ZstMessages::Kind::STAGE_REGISTER_PLUG, plug_args));
 
     //Response
     zmsg_t *responseMsg = Showtime::instance().receive_from_stage();
