@@ -8,6 +8,14 @@ ZstURI::ZstURI(std::string performer, std::string name, std::string instrument, 
 	m_direction(direction) {
 }
 
+ZstURI::ZstURI(const ZstURI & copy) : 
+	m_performer(copy.performer()),
+	m_instrument(copy.instrument()),
+	m_name(copy.name()),
+	m_direction(copy.direction())
+{
+}
+
 ZstURI::~ZstURI()
 {
 }
