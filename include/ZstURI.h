@@ -44,24 +44,4 @@ private:
 	Direction m_direction = Direction::OUT_JACK;
 };
 
-namespace msgpack {
-	MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
-		namespace adaptor {
-			template <>
-			class as<ZstURI> {
-				ZstURI operator()(msgpack::object const& o) const {
-					if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
-					if (o.via.array.size != 4) throw msgpack::type_error();
-					return ZstURI(
-						o.via.array.ptr[0].as<std::string>(),
-						o.via.array.ptr[1].as<std::string>(), 
-						o.via.array.ptr[2].as<std::string>(), 
-						o.via.array.ptr[3].as<ZstURI::Direction>()
-					);
-				}
-			};
-		} // adaptor
-	} // MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS)
-} // msgpack
-
 MSGPACK_ADD_ENUM(ZstURI::Direction);
