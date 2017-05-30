@@ -1,9 +1,9 @@
-%module ZstStage
+%module ZstURI
 %{
 	#include "ZstExports.h"
-	#include "ZstStage.h"
+	#include "ZstURI.h"
 %}
 
 %include <windows.i>
 %include "ZstExports.h"
-%include "ZstStage.h"
+%include "ZstURI.h"

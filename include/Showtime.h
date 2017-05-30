@@ -41,8 +41,8 @@ public:
 	ZST_EXPORT static void connect_plugs(ZstURI a, ZstURI b);
     
 	//ZST_EXPORT void fire_plug(ZstPlug *plug, zframe_t * frame);
-	void send_to_graph(zmsg_t * msg);
-	zmsg_t * receive_from_graph();
+	ZST_EXPORT void send_to_graph(zmsg_t * msg);
+	ZST_EXPORT zmsg_t * receive_from_graph();
 
 private:
     Showtime();

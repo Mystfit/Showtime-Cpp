@@ -15,8 +15,8 @@ class PlugCallback;
 class ZstPlug {
 public:
 	//Constructor
-	ZstPlug(ZstURI uri);
-	~ZstPlug();
+	ZST_EXPORT ZstPlug(ZstURI uri);
+	ZST_EXPORT ~ZstPlug();
 
 	ZST_EXPORT ZstURI get_URI() const;
     
@@ -26,7 +26,7 @@ public:
     
     //IO
     ZST_EXPORT void fire();
-    virtual void recv(msgpack::object obj) = 0;
+	ZST_EXPORT virtual void recv(msgpack::object obj) = 0;
 
 protected:
 	msgpack::sbuffer * m_buffer;
@@ -62,7 +62,7 @@ class ZstIntPlug : public ZstPlug {
 public:
 	ZstIntPlug(ZstURI uri) : ZstPlug(uri) {};
 	ZST_EXPORT void fire(int value);
-    void recv(msgpack::object object) override;
+	ZST_EXPORT void recv(msgpack::object object) override;
     ZST_EXPORT int get_value();
 private:
     int m_last_value;

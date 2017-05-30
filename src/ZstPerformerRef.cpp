@@ -29,7 +29,7 @@ ZstPlugRef * ZstPerformerRef::create_plug(ZstURI address)
 
 	ZstPlugRef *plugRef = new ZstPlugRef(address);
 	m_plugs.push_back(plugRef);
-
+	return plugRef;
 }
 
 ZstPlugRef * ZstPerformerRef::get_plug_by_name(std::string plug_name)
