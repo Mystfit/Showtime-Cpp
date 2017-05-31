@@ -6,5 +6,4 @@
 
 %include <windows.i>
 %include "ZstExports.h"
-//%include "ZstStage.h"
-
+%include "ZstStage.h"

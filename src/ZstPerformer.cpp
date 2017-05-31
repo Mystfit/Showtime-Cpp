@@ -31,7 +31,7 @@ ZstPlug * ZstPerformer::get_plug_by_name(std::string plug_name)
 {
     vector<ZstPlug*> plugs = get_plugs();
     for (vector<ZstPlug*>::iterator plugIter = plugs.begin(); plugIter != plugs.end(); ++plugIter) {
-        if((*plugIter)->get_address().name == plug_name){
+        if((*plugIter)->get_URI().name() == plug_name){
             return (*plugIter);
         }
     }
@@ -41,10 +41,16 @@ ZstPlug * ZstPerformer::get_plug_by_name(std::string plug_name)
 
 void ZstPerformer::add_plug(ZstPlug * plug)
 {
-	m_plugs[plug->get_instrument()].push_back(plug);
+	m_plugs[plug->get_URI().instrument()].push_back(plug);
 }
 
 void ZstPerformer::remove_plug(ZstPlug * plug)
 {
-	m_plugs[plug->get_instrument()].erase(std::remove(m_plugs[plug->get_instrument()].begin(), m_plugs[plug->get_instrument()].end(), plug), m_plugs[plug->get_instrument()].end());
+	m_plugs[plug->get_URI().instrument()].erase(
+		std::remove(
+			m_plugs[plug->get_URI().instrument()].begin(), 
+			m_plugs[plug->get_URI().instrument()].end(), plug
+		), 
+		m_plugs[plug->get_URI().instrument()].end()
+	);
 }

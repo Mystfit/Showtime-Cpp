@@ -12,7 +12,7 @@ public:
 	~ZstPerformerRef();
 	std::string name;
 
-	ZstPlugRef * create_plug(PlugAddress address);
+	ZstPlugRef * create_plug(ZstURI address);
 	ZST_EXPORT ZstPlugRef * get_plug_by_name(std::string plug_name);
 	ZST_EXPORT std::vector<ZstPlugRef*> & get_plug_refs();
 	void destroy_plug(ZstPlugRef * plug);

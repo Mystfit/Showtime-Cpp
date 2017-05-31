@@ -1,2 +1,2 @@
-%module showtime_py
+%module showtime
 %include ../showtime.i

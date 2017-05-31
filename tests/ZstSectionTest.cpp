@@ -9,6 +9,19 @@ ZstStage *stage;
 Showtime *performer_a;
 Showtime *performer_b;
 
+void test_URI() {
+	ZstURI uri_empty = ZstURI();
+	assert(uri_empty.performer().empty() && uri_empty.instrument().empty() && uri_empty.name().empty());
+
+	ZstURI uri_equal1 = ZstURI("perf", "ins", "someplug", ZstURI::Direction::OUT_JACK);
+	ZstURI uri_equal2 = ZstURI("perf", "ins", "someplug", ZstURI::Direction::OUT_JACK);
+	assert(uri_equal1 == uri_equal2);
+
+	ZstURI uri_notequal = ZstURI("perf", "anotherins", "someplug", ZstURI::Direction::IN_JACK);
+	assert(!(uri_equal1 == uri_notequal));
+	assert(uri_equal1 != uri_notequal);
+}
+
 void test_performer_init() {
 	Showtime::instance().self_test();
 }
@@ -24,29 +37,29 @@ void test_stage_registration(){
 
 void test_create_plugs(){
     //Create new plugs
-	ZstIntPlug *outputPlug = Showtime::create_plug<ZstIntPlug>("test_performer_1", "test_output_plug", "test_instrument", PlugDir::OUT_JACK);
-	ZstIntPlug *inputPlug = Showtime::create_plug<ZstIntPlug>("test_performer_1", "test_input_plug", "test_instrument", PlugDir::IN_JACK);
+	ZstIntPlug *outputPlug = Showtime::create_plug<ZstIntPlug>(ZstURI("test_performer_1", "test_instrument", "test_output_plug", ZstURI::Direction::OUT_JACK));
+	ZstIntPlug *inputPlug = Showtime::create_plug<ZstIntPlug>(ZstURI("test_performer_1", "test_instrument", "test_input_plug", ZstURI::Direction::IN_JACK));
     
     //Check address equality
-    assert(outputPlug->get_address() == outputPlug->get_address());
-    assert(!(outputPlug->get_address() == inputPlug->get_address()));
+    assert(outputPlug->get_URI() == outputPlug->get_URI());
+    assert(!(outputPlug->get_URI() == inputPlug->get_URI()));
 
     //Check stage registered plugs successfully
     ZstPerformerRef *stagePerformerRef = stage->get_performer_ref_by_name("test_performer_1");
-    assert(stagePerformerRef->get_plug_by_name(outputPlug->get_name()) != NULL);
-    assert(stagePerformerRef->get_plug_by_name(inputPlug->get_name()) != NULL);
+    assert(stagePerformerRef->get_plug_by_name(outputPlug->get_URI().name()) != NULL);
+    assert(stagePerformerRef->get_plug_by_name(inputPlug->get_URI().name()) != NULL);
     
     //Check local client registered plugs correctly
 	ZstPlug *localPlug = Showtime::get_performer_by_name("test_performer_1")->get_instrument_plugs("test_instrument")[0];
-    assert(localPlug->get_name() == stagePerformerRef->get_plug_by_name(outputPlug->get_name())->get_address().name);
+    assert(localPlug->get_URI().name() == stagePerformerRef->get_plug_by_name(outputPlug->get_URI().name())->get_address().name());
     
     std::vector<ZstPlug*> localplugs = Showtime::get_performer_by_name("test_performer_1")->get_plugs();
     assert(localplugs.size() > 1);
-    assert(stagePerformerRef->get_plug_by_name(localplugs[0]->get_name()) != NULL);
-    assert(stagePerformerRef->get_plug_by_name(localplugs[1]->get_name()) != NULL);
+    assert(stagePerformerRef->get_plug_by_name(localplugs[0]->get_URI().name()) != NULL);
+    assert(stagePerformerRef->get_plug_by_name(localplugs[1]->get_URI().name()) != NULL);
     
     //Query stage for remote plugs
-    std::vector<PlugAddress> plugs = Showtime::instance().get_all_plug_addresses();
+    std::vector<ZstURI> plugs = Showtime::instance().get_all_plug_addresses();
     assert(plugs.size() > 0);
     plugs = Showtime::instance().get_all_plug_addresses("test_performer_1");
     assert(plugs.size() > 0);
@@ -56,8 +69,8 @@ void test_create_plugs(){
     assert(plugs.size() > 0);
 
 	//Check plug destruction
-	std::string outputName = outputPlug->get_name();
-	std::string inputName = inputPlug->get_name();
+	std::string outputName = outputPlug->get_URI().name();
+	std::string inputName = inputPlug->get_URI().name();
 
 	Showtime::instance().destroy_plug(outputPlug);
 	assert(stage->get_performer_ref_by_name("test_performer_1")->get_plug_by_name(outputName) == NULL);
@@ -77,45 +90,13 @@ public:
     };
 };
 
-class TestFloatCallback : public PlugCallback{
-public:
-    //~TestCallback();
-    void run(ZstPlug* plug) override {
-        assert(((ZstFloatPlug*)plug)->get_value() == 27.5f);
-    };
-};
-
-class TestIntListCallback : public PlugCallback{
-public:
-    //~TestCallback();
-    void run(ZstPlug* plug) override {
-        assert(((ZstIntListPlug*)plug)->get_value()[0] == 27);
-    };
-};
-
-class TestFloatListCallback : public PlugCallback{
-public:
-    //~TestCallback();
-    void run(ZstPlug* plug) override {
-        assert(((ZstFloatListPlug*)plug)->get_value()[0] == 27.5f);
-    };
-};
-
-class TestStringCallback : public PlugCallback{
-public:
-    //~TestCallback();
-    void run(ZstPlug* plug) override {
-        assert(((ZstStringPlug*)plug)->get_value() == "Twenty seven");
-    };
-};
-
 
 void test_connect_plugs() {
 	//Test plugs connected between performers
-	ZstIntPlug *output_int_plug = Showtime::create_plug<ZstIntPlug>("test_performer_1", "output_int_plug", "test_instrument", PlugDir::OUT_JACK);
-	ZstIntPlug *input_int_plug = Showtime::create_plug<ZstIntPlug>("test_performer_2", "input_int_plug", "test_instrument", PlugDir::IN_JACK);
+	ZstIntPlug *output_int_plug = Showtime::create_plug<ZstIntPlug>(ZstURI("test_performer_1", "test_instrument", "output_int_plug", ZstURI::Direction::OUT_JACK));
+	ZstIntPlug *input_int_plug = Showtime::create_plug<ZstIntPlug>(ZstURI("test_performer_2", "test_instrument", "input_int_plug", ZstURI::Direction::IN_JACK));
     input_int_plug->attach_recv_callback(new TestIntCallback());
-	Showtime::connect_plugs(output_int_plug->get_address(), input_int_plug->get_address());
+	Showtime::connect_plugs(output_int_plug->get_URI(), input_int_plug->get_URI());
 
     //TODO: First connection, so need to wait for endpoint->stage->endpoint handshake to complete. Futures could help with this?
 #ifdef WIN32
@@ -124,30 +105,6 @@ void test_connect_plugs() {
     sleep(1);
 #endif
 	output_int_plug->fire(27);
-    
-    ZstFloatPlug *output_float_plug = Showtime::create_plug<ZstFloatPlug>("test_performer_1", "output_float_plug", "test_instrument", PlugDir::OUT_JACK);
-    ZstFloatPlug *input_float_plug = Showtime::create_plug<ZstFloatPlug>("test_performer_2", "input_float_plug", "test_instrument", PlugDir::IN_JACK);
-    input_float_plug->attach_recv_callback(new TestFloatCallback());
-    Showtime::connect_plugs(output_float_plug->get_address(), input_float_plug->get_address());
-    output_float_plug->fire(27.5f);
-    
-    ZstIntListPlug *output_intlist_plug = Showtime::create_plug<ZstIntListPlug>("test_performer_1", "output_intlist_plug", "test_instrument", PlugDir::OUT_JACK);
-    ZstIntListPlug *input_intlist_plug = Showtime::create_plug<ZstIntListPlug>("test_performer_2", "input_intlist_plug", "test_instrument", PlugDir::IN_JACK);
-    input_intlist_plug->attach_recv_callback(new TestIntListCallback());
-    Showtime::connect_plugs(output_intlist_plug->get_address(), input_intlist_plug->get_address());
-    output_intlist_plug->fire(std::vector<int>{27});
-    
-    ZstFloatListPlug *output_floatlist_plug = Showtime::create_plug<ZstFloatListPlug>("test_performer_1", "output_floatlist_plug", "test_instrument", PlugDir::OUT_JACK);
-    ZstFloatListPlug *input_floatlist_plug = Showtime::create_plug<ZstFloatListPlug>("test_performer_2", "input_floatlist_plug", "test_instrument", PlugDir::IN_JACK);
-    input_floatlist_plug->attach_recv_callback(new TestFloatListCallback());
-    Showtime::connect_plugs(output_floatlist_plug->get_address(), input_floatlist_plug->get_address());
-    output_floatlist_plug->fire(std::vector<float>{27.5f});
-    
-    ZstStringPlug *output_string_plug = Showtime::create_plug<ZstStringPlug>("test_performer_1", "output_string_plug", "test_instrument", PlugDir::OUT_JACK);
-    ZstStringPlug *input_string_plug = Showtime::create_plug<ZstStringPlug>("test_performer_2", "input_string_plug", "test_instrument", PlugDir::IN_JACK);
-    input_string_plug->attach_recv_callback(new TestStringCallback());
-    Showtime::connect_plugs(output_string_plug->get_address(), input_string_plug->get_address());
-    output_string_plug->fire(std::string("Twenty seven"));
 }
 
 
@@ -164,6 +121,7 @@ int main(int argc,char **argv){
 	ZstPerformer * performer_a = Showtime::create_performer("test_performer_1");
 	ZstPerformer * performer_b = Showtime::create_performer("test_performer_2");
     
+	test_URI();
 	test_performer_init();
     test_stage_registration();
     test_create_plugs();

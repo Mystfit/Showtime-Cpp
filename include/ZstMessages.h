@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <msgpack.hpp>
 #include <czmq.h>
-#include "ZstPlug.h"
+#include "ZstURI.h"
 
 class ZstMessages{
 public:
@@ -73,18 +73,18 @@ public:
     };
     
     struct RegisterPlug{
-		PlugAddress address;
+		ZstURI address;
         MSGPACK_DEFINE(address);
     };
 
     struct DestroyPlug {
-        PlugAddress address;
+        ZstURI address;
         MSGPACK_DEFINE(address);
     };
 
     struct RegisterConnection{
-        PlugAddress from;
-        PlugAddress to;
+        ZstURI from;
+        ZstURI to;
         MSGPACK_DEFINE(from, to);
     };
     
@@ -94,7 +94,7 @@ public:
     };
 
     struct PlugOutput{
-        PlugAddress from;
+        ZstURI from;
         std::string value;
         MSGPACK_DEFINE(from, value);
     };
@@ -112,20 +112,20 @@ public:
     };
     
     struct ListPlugsAck{
-        std::vector<PlugAddress> plugs;
+        std::vector<ZstURI> plugs;
         MSGPACK_DEFINE_ARRAY(plugs);
     };
 
 	struct ConnectPlugs {
-		PlugAddress first;
-		PlugAddress second;
+		ZstURI first;
+		ZstURI second;
 		MSGPACK_DEFINE(first, second);
 	};
 
 	struct PerformerConnection {
 		std::string endpoint;
-		PlugAddress output_plug;
-        PlugAddress input_plug;
+		ZstURI output_plug;
+        ZstURI input_plug;
 		MSGPACK_DEFINE(endpoint, output_plug, input_plug);
 	};
     
@@ -170,9 +170,9 @@ public:
 	}
     
     template <typename T>
-    static zmsg_t * build_graph_message(PlugAddress from, T data) {
+    static zmsg_t * build_graph_message(ZstURI from, T data) {
         zmsg_t *msg = zmsg_new();
-        zmsg_addstr(msg, from.to_s().c_str());
+        zmsg_addstr(msg, from.to_str().c_str());
         
         msgpack::sbuffer buf;
         msgpack::pack(buf, data);
@@ -185,4 +185,3 @@ public:
 //Enums for MsgPack
 MSGPACK_ADD_ENUM(ZstMessages::GraphItemUpdateType);
 MSGPACK_ADD_ENUM(ZstMessages::Signal);
-

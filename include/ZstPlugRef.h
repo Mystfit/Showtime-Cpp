@@ -1,13 +1,13 @@
 #pragma once
 
 #include "ZstExports.h"
-#include "ZstPlug.h"
+#include "ZstURI.h"
 
 class ZstPlugRef {
 public:
-	ZstPlugRef(PlugAddress address);
+	ZstPlugRef(ZstURI address);
 	~ZstPlugRef();
-	ZST_EXPORT PlugAddress get_address();
+	ZST_EXPORT ZstURI get_address();
 private:
-	PlugAddress m_address;
+	ZstURI m_address;
 };
