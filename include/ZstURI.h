@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <msgpack.hpp>
-#include "ZstURI.h"
 #include "ZstUtils.hpp"
 #include "ZstExports.h"
 
