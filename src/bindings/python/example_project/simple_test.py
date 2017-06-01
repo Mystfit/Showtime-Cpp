@@ -1,5 +1,7 @@
+import time
 import showtime_py.showtime_py as showtime
-stage = showtime.ZstStage_create_stage()
+
+tage = showtime.ZstStage_create_stage()
 
 showtime.Showtime_join("127.0.0.1")
 showtime.Showtime_create_performer("bob")
@@ -12,15 +14,15 @@ class Callback(showtime.PlugCallback):
 
     def run(self, plug):
         print("You're an idiot")
+        plugB.remove_recv_callback(self)
 
-plugB.attach_recv_callback(Callback())
-
+plugB.attach_recv_callback(Callback().__disown__())
 showtime.Showtime_connect_plugs(plugA.get_URI(), plugB.get_URI())
-plugA.fire(27)
 
-import time
-time.sleep(1)
+time.sleep(0.1)
+plugA.fire(27)
+time.sleep(0.1)
 
 print("Plug final value: " + str(plugB.get_value()))
 
-showtime.destroy()
+showtime.Showtime_destroy()

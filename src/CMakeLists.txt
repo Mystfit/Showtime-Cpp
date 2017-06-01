@@ -53,4 +53,28 @@ target_link_libraries(${PROJECT_NAME}
 add_test( section_heartbeat Exename arg1 arg2 ... )
 
 # SWIG bindings
-add_subdirectory(bindings)
+option(BINDINGS_RUBY "Build python bindings" OFF)
+option(BINDINGS_PYTHON "Build ruby bindings" OFF)
+option(BINDINGS_DOTNET "Build C# bindings" OFF)
+
+if(BINDINGS_RUBY)
+	add_subdirectory(bindings/ruby)
+endif(BINDINGS_RUBY)
+
+if(BINDINGS_PYTHON)
+	INCLUDE(FindPythonInterp)
+	FIND_PACKAGE(PythonLibs 3.6 REQUIRED)
+	get_filename_component(PYTHON_DIR ${PYTHON_EXECUTABLE} DIRECTORY)
+	set(PYTHON_SITE_PACKAGES ${PYTHON_DIR}/lib/site-packages)
+
+	add_subdirectory(bindings/python)
+	install(TARGETS ${PROJECT_NAME} DESTINATION ${PYTHON_DIR})
+endif(BINDINGS_PYTHON)
+
+if(BINDINGS_RUBY)
+	add_subdirectory(bindings/ruby)
+endif(BINDINGS_RUBY)
+
+if(BINDINGS_DOTNET)
+	add_subdirectory(bindings/dotnet)
+endif(BINDINGS_DOTNET)

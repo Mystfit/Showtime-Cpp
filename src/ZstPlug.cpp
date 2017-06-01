@@ -29,10 +29,13 @@ void ZstPlug::destroy_recv_callback(PlugCallback *callback){
 }
 
 void ZstPlug::run_recv_callbacks(){
+	cout << "PERFORMER: Running input plug callbacks" << endl;
     if(m_received_data_callbacks.size() > 0){
+		//TODO: Acquire Python GIL here
         for(vector<PlugCallback*>::iterator callback = m_received_data_callbacks.begin(); callback != m_received_data_callbacks.end(); ++callback){
             (*callback)->run(this);
         }
+		//TODO: Release Python GIL here
     }
 }
 

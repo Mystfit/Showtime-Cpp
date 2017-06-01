@@ -20,7 +20,8 @@ class Showtime : public ZstActor
 {
 public:
 	ZST_EXPORT ~Showtime();
-	ZST_EXPORT void destroy();
+	ZST_EXPORT static void destroy();
+	ZST_EXPORT void destroy_singleton();
 	//Singleton accessor
 	ZST_EXPORT static Showtime & instance();
 

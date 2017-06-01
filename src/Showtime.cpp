@@ -15,6 +15,11 @@ Showtime::~Showtime(){
 }
 
 void Showtime::destroy() {
+	Showtime::instance().destroy_singleton();
+}
+
+void Showtime::destroy_singleton()
+{
 	ZstActor::~ZstActor();
 	zsock_destroy(&m_stage_requests);
 	zsock_destroy(&m_stage_router);
@@ -48,6 +53,7 @@ void Showtime::init(string stage_address)
 
 	//Local dealer socket for receiving messages forwarded from other performers
 	m_stage_router = zsock_new(ZMQ_DEALER);
+	attach_pipe_listener(m_stage_router, s_handle_stage_router, this);
 
 	//Graph input socket
 	m_graph_in = zsock_new(ZMQ_SUB);
@@ -148,6 +154,8 @@ int Showtime::s_handle_stage_router(zloop_t * loop, zsock_t * socket, void * arg
         case ZstMessages::Kind::PERFORMER_REGISTER_CONNECTION:
             performer->connect_performer_handler(socket, msg);
             break;
+		default:
+			cout << "Didn't understand message of type " << message_type << endl;
     }
     
     return 0;
@@ -190,9 +198,9 @@ void Showtime::register_endpoint_to_stage() {
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
 
 	if (message_type == ZstMessages::Kind::STAGE_REGISTER_ENDPOINT_ACK) {
-		cout << "PERFORMER: Successfully registered endpoint to stage." << endl;
 
 		ZstMessages::RegisterEndpointAck endpoint_ack = ZstMessages::unpack_message_struct<ZstMessages::RegisterEndpointAck>(responseMsg);
+		cout << "PERFORMER: Successfully registered endpoint to stage. UUID is " << endpoint_ack.assigned_uuid << endl;
 
 		//Connect performer dealer to stage now that it's been registered successfully
 		char stage_router_addr[30];
@@ -200,7 +208,6 @@ void Showtime::register_endpoint_to_stage() {
 
 		m_assigned_uuid = endpoint_ack.assigned_uuid;
 		zsock_set_identity(m_stage_router, endpoint_ack.assigned_uuid.c_str());
-		attach_pipe_listener(m_stage_router, s_handle_stage_router, this);
 		zsock_connect(m_stage_router, stage_router_addr);
 	}
 	else {

@@ -326,7 +326,7 @@ void ZstStage::destroy_plug_handler(zsock_t * socket, zmsg_t * msg)
 void ZstStage::connect_plugs_handler(zsock_t * socket, zmsg_t * msg)
 {
 	ZstMessages::ConnectPlugs plug_args = ZstMessages::unpack_message_struct<ZstMessages::ConnectPlugs>(msg);
-	cout << "STAGE: Received connect plug request" << endl;
+	cout << "STAGE: Received connect plug request for " << plug_args.first.to_str() << " and " << plug_args.second.to_str() << endl;
 
 	if (plug_args.first.direction() == ZstURI::Direction::OUT_JACK && plug_args.second.direction() == ZstURI::Direction::IN_JACK) {
 		connect_plugs(plug_args.first, plug_args.second);
@@ -335,6 +335,7 @@ void ZstStage::connect_plugs_handler(zsock_t * socket, zmsg_t * msg)
 		connect_plugs(plug_args.second, plug_args.first);
 	}
 	else {
+		cout << "STAGE: Bad plug connect request" << endl;
 		reply_with_signal(socket, ZstMessages::Signal::ERR_STAGE_BAD_PLUG_CONNECT_REQUEST);
 		return;
 	}
@@ -361,5 +362,7 @@ void ZstStage::connect_plugs(ZstURI output_plug, ZstURI input_plug)
 	zframe_t * identity = zframe_from(get_performer_endpoint(input_performer)->client_assigned_uuid.c_str());
 	zmsg_prepend(connectMsg, &empty);
 	zmsg_prepend(connectMsg, &identity);
+
+	cout << "STAGE: Sending plug connection request to " << get_performer_endpoint(input_performer)->client_assigned_uuid.c_str() << endl;
 	zmsg_send(&connectMsg, m_performer_router);
 }
