@@ -24,7 +24,7 @@ public:
     ZST_EXPORT void attach_recv_callback(PlugCallback * callback);
     ZST_EXPORT void destroy_recv_callback(PlugCallback * callback);
     
-    //IO
+	//IO
     ZST_EXPORT void fire();
 	ZST_EXPORT virtual void recv(msgpack::object obj) = 0;
 
@@ -32,7 +32,7 @@ protected:
 	msgpack::sbuffer * m_buffer;
 	msgpack::packer<msgpack::sbuffer> * m_packer;
     
-    void run_recv_callbacks();
+    virtual void run_recv_callbacks() = 0;
     std::vector<PlugCallback*> m_received_data_callbacks;
 private:
 	ZstURI m_uri;
@@ -60,6 +60,8 @@ public:
 // ----------------------
 class ZstIntPlug : public ZstPlug {
 public:
+	typedef int value_type;
+
 	ZstIntPlug(ZstURI uri) : ZstPlug(uri) {};
 	ZST_EXPORT void fire(int value);
 	ZST_EXPORT void recv(msgpack::object object) override;
@@ -67,4 +69,10 @@ public:
 private:
     int m_last_value;
     int m_value;
+};
+ 
+
+template <typename BASE, typename T = typename BASE::value_type>
+class ZstReactingPlug {
+
 };
