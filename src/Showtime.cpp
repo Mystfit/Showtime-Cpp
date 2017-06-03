@@ -1,4 +1,7 @@
 #include "Showtime.h"
+#ifdef USEPYTHON
+#include <python.h>
+#endif
 
 using namespace std;
 
@@ -75,6 +78,11 @@ void Showtime::init(string stage_address)
 // ---------------
 
 void Showtime::start(){
+#ifdef USEPYTHON
+	if (get_runtime_language() == RuntimeLanguage::PYTHON_RUNTIME) {
+		PyEval_InitThreads();
+	}
+#endif
 	ZstActor::start();
 }
 
@@ -117,6 +125,16 @@ zmsg_t * Showtime::receive_routed_from_stage(){
 
 zmsg_t * Showtime::receive_from_graph(){
     return zmsg_recv(m_graph_in);
+}
+
+void Showtime::set_runtime_language(Showtime::RuntimeLanguage runtime)
+{
+	m_runtime_language = runtime;
+}
+
+Showtime::RuntimeLanguage Showtime::get_runtime_language()
+{
+	return m_runtime_language;
 }
 
 

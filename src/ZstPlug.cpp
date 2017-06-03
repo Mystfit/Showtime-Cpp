@@ -1,5 +1,8 @@
 #include "ZstPlug.h"
 #include "Showtime.h"
+#ifdef USEPYTHON
+#include <python.h>
+#endif
 
 using namespace std;
 
@@ -30,12 +33,27 @@ void ZstPlug::destroy_recv_callback(PlugCallback *callback){
 
 void ZstPlug::run_recv_callbacks(){
 	cout << "PERFORMER: Running input plug callbacks" << endl;
+
     if(m_received_data_callbacks.size() > 0){
-		//TODO: Acquire Python GIL here
+#ifdef USEPYTHON
+		PyGILState_STATE gstate;
+		if (Showtime::instance().get_runtime_language() == Showtime::RuntimeLanguage::PYTHON_RUNTIME) {
+			cout << "PERFORMER: Host runtime is Python. Obtain GIL" << endl;
+			gstate = PyGILState_Ensure();
+		}
+		else {
+			cout << "PERFORMER: Host runtime is native." << endl;
+		}
+#endif
         for(vector<PlugCallback*>::iterator callback = m_received_data_callbacks.begin(); callback != m_received_data_callbacks.end(); ++callback){
             (*callback)->run(this);
         }
-		//TODO: Release Python GIL here
+#ifdef USEPYTHON
+		if (Showtime::instance().get_runtime_language() == Showtime::RuntimeLanguage::PYTHON_RUNTIME) {
+			cout << "PERFORMER: Release GIL" << endl;
+			PyGILState_Release(gstate);
+		}
+#endif
     }
 }
 
