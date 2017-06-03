@@ -1,4 +1,4 @@
-%module ZstPlug
+%module(threads="1") ZstPlug
 %{
 	#include "ZstExports.h"
 	#include "ZstPlug.h"

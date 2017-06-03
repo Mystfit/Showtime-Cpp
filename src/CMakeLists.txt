@@ -29,7 +29,7 @@ set(ZST_SOURCE
  "ZstStage.cpp"
 )
 
-include_directories(
+set(ZST_INCLUDES 
 	${Showtime_INCLUDE_DIRS}
 	${Boost_INCLUDE_DIRS}
 	${ZeroMQ_INCLUDE_DIRS}
@@ -37,25 +37,39 @@ include_directories(
     ${MSGPACK_INCLUDE_DIRS}
 )
 
-IF(WIN32)
-	add_definitions(-DEXPORTS_API)
-ENDIF(WIN32)
-
-add_library(${PROJECT_NAME} SHARED ${ZST_HEADERS} ${ZST_SOURCE})
-
-target_link_libraries(${PROJECT_NAME} 
+set(ZST_LINK_LIBS
 	${ZeroMQ_LIBRARIES}
 	${Boost_LIBRARIES}
 	${CZMQ_LIBRARIES}
     ${MSGPACK_LIBRARIES}
 )
 
-add_test( section_heartbeat Exename arg1 arg2 ... )
-
 # SWIG bindings
 option(BINDINGS_RUBY "Build python bindings" OFF)
 option(BINDINGS_PYTHON "Build ruby bindings" OFF)
 option(BINDINGS_DOTNET "Build C# bindings" OFF)
+
+if(BINDINGS_PYTHON)
+	add_definitions(-DUSEPYTHON)
+	FIND_PACKAGE(PythonLibs 3.6 REQUIRED)
+	list(APPEND ZST_INCLUDES ${PYTHON_INCLUDE_PATH})
+	list(APPEND ZST_LINK_LIBS ${PYTHON_LIBRARIES})
+
+ENDIF(BINDINGS_PYTHON)
+
+include_directories(${ZST_INCLUDES})
+
+IF(WIN32)
+	add_definitions(-DEXPORTS_API)
+ENDIF(WIN32)
+
+add_library(${PROJECT_NAME} SHARED ${ZST_HEADERS} ${ZST_SOURCE})
+
+target_link_libraries(${PROJECT_NAME} ${ZST_LINK_LIBS})
+
+add_test( section_heartbeat Exename arg1 arg2 ... )
+
+
 
 if(BINDINGS_RUBY)
 	add_subdirectory(bindings/ruby)
@@ -63,7 +77,6 @@ endif(BINDINGS_RUBY)
 
 if(BINDINGS_PYTHON)
 	INCLUDE(FindPythonInterp)
-	FIND_PACKAGE(PythonLibs 3.6 REQUIRED)
 	get_filename_component(PYTHON_DIR ${PYTHON_EXECUTABLE} DIRECTORY)
 	set(PYTHON_SITE_PACKAGES ${PYTHON_DIR}/lib/site-packages)
 

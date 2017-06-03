@@ -14,6 +14,7 @@
 #define STAGE_REP_PORT 6000
 #define STAGE_ROUTER_PORT 6001
 
+
 class ZstPlug;
 
 class Showtime : public ZstActor
@@ -24,6 +25,15 @@ public:
 	ZST_EXPORT void destroy_singleton();
 	//Singleton accessor
 	ZST_EXPORT static Showtime & instance();
+
+	//Runtime
+	enum RuntimeLanguage {
+		NATIVE,
+		PYTHON_RUNTIME,
+		DOTNET_RUNTIME
+	};
+	ZST_EXPORT void set_runtime_language(RuntimeLanguage runtime);
+	ZST_EXPORT RuntimeLanguage get_runtime_language();
 
 	//Init
     ZST_EXPORT static void join(std::string stage_address);
@@ -78,6 +88,9 @@ private:
 
 	//Destruction
 	bool m_is_ending;
+
+	//Active runtime
+	RuntimeLanguage m_runtime_language;
 
 	zuuid_t * m_startup_uuid;
 	std::string m_assigned_uuid;

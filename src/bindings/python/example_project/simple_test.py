@@ -1,7 +1,7 @@
 import time
 import showtime_py.showtime_py as showtime
 
-tage = showtime.ZstStage_create_stage()
+stage = showtime.ZstStage_create_stage()
 
 showtime.Showtime_join("127.0.0.1")
 showtime.Showtime_create_performer("bob")
