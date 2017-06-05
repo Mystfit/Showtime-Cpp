@@ -4,6 +4,7 @@
 #include "ZstPlug.h"
 #include "ZstPerformer.h"
 #include "ZstStage.h"
+#include "ZstEndpoint.h"
 
 ZstStage *stage;
 Showtime *performer_a;
@@ -23,13 +24,13 @@ void test_URI() {
 }
 
 void test_performer_init() {
-	Showtime::instance().self_test();
+	Showtime::endpoint().self_test();
 }
 
 //Test stage creation and performer
 void test_stage_registration(){
     //Test stage connection
-    assert(Showtime::instance().ping_stage().count() >= 0);
+    assert(Showtime::endpoint().ping_stage().count() >= 0);
     
     assert(stage->get_performer_ref_by_name("test_performer_1") != NULL);
     assert(stage->get_performer_ref_by_name("non_existing_performer") == NULL);
@@ -59,24 +60,24 @@ void test_create_plugs(){
     assert(stagePerformerRef->get_plug_by_name(localplugs[1]->get_URI().name()) != NULL);
     
     //Query stage for remote plugs
-    std::vector<ZstURI> plugs = Showtime::instance().get_all_plug_addresses();
+    std::vector<ZstURI> plugs = Showtime::endpoint().get_all_plug_addresses();
     assert(plugs.size() > 0);
-    plugs = Showtime::instance().get_all_plug_addresses("test_performer_1");
+    plugs = Showtime::endpoint().get_all_plug_addresses("test_performer_1");
     assert(plugs.size() > 0);
-    plugs = Showtime::instance().get_all_plug_addresses("non_existing_performer");
+    plugs = Showtime::endpoint().get_all_plug_addresses("non_existing_performer");
     assert(plugs.size() == 0);
-    plugs = Showtime::instance().get_all_plug_addresses("test_performer_1", "test_instrument");
+    plugs = Showtime::endpoint().get_all_plug_addresses("test_performer_1", "test_instrument");
     assert(plugs.size() > 0);
 
 	//Check plug destruction
 	std::string outputName = outputPlug->get_URI().name();
 	std::string inputName = inputPlug->get_URI().name();
 
-	Showtime::instance().destroy_plug(outputPlug);
+	Showtime::endpoint().destroy_plug(outputPlug);
 	assert(stage->get_performer_ref_by_name("test_performer_1")->get_plug_by_name(outputName) == NULL);
 	assert(Showtime::get_performer_by_name("test_performer_1")->get_instrument_plugs("test_instrument").size() == 1);
 	
-	Showtime::instance().destroy_plug(inputPlug);
+	Showtime::endpoint().destroy_plug(inputPlug);
 	assert(stage->get_performer_ref_by_name("test_performer_1")->get_plug_by_name(inputName) == NULL);
 	assert(Showtime::get_performer_by_name("test_performer_1")->get_instrument_plugs("test_instrument").empty());
 }
@@ -111,7 +112,7 @@ void test_connect_plugs() {
 void test_cleanup() {
 	//Test object destruction
 	delete stage;
-	Showtime::instance().destroy();
+	Showtime::endpoint().destroy();
 }
 
 int main(int argc,char **argv){

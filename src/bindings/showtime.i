@@ -19,7 +19,7 @@
 %include ZstPlug.i
 
 %feature("pythonprepend") Showtime::join %{
-	Showtime_instance().set_runtime_language(Showtime.PYTHON_RUNTIME);
+	Showtime_set_runtime_language(Showtime.PYTHON_RUNTIME);
 %} 
 %include Showtime.h
 %template(create_int_plug) Showtime::create_plug<ZstIntPlug>;

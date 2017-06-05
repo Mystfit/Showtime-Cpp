@@ -1,16 +1,14 @@
 #pragma once
 
 #include <string>
-#include <map>
 #include <vector>
-#include <functional>
 #include <memory>
-#include <czmq.h>
 #include <msgpack.hpp>
 #include "ZstExports.h"
 #include "ZstUtils.hpp"
 #include "ZstURI.h"
 
+class ZstURI;
 class PlugCallback;
 class ZstPlug {
 public:
@@ -32,7 +30,7 @@ protected:
 	msgpack::sbuffer * m_buffer;
 	msgpack::packer<msgpack::sbuffer> * m_packer;
     
-    virtual void run_recv_callbacks() = 0;
+    virtual void run_recv_callbacks();
     std::vector<PlugCallback*> m_received_data_callbacks;
 private:
 	ZstURI m_uri;
@@ -71,8 +69,3 @@ private:
     int m_value;
 };
  
-
-template <typename BASE, typename T = typename BASE::value_type>
-class ZstReactingPlug {
-
-};
