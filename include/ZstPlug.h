@@ -5,7 +5,6 @@
 #include <vector>
 #include <functional>
 #include <memory>
-#include <czmq.h>
 #include <msgpack.hpp>
 #include "ZstExports.h"
 #include "ZstUtils.hpp"
@@ -32,7 +31,7 @@ protected:
 	msgpack::sbuffer * m_buffer;
 	msgpack::packer<msgpack::sbuffer> * m_packer;
     
-    virtual void run_recv_callbacks() = 0;
+    void run_recv_callbacks();
     std::vector<PlugCallback*> m_received_data_callbacks;
 private:
 	ZstURI m_uri;

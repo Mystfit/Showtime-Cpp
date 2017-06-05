@@ -1,7 +1,7 @@
 #include "ZstURI.h"
 using namespace std;
 
-ZstURI::ZstURI()
+ZstURI::ZstURI() : m_direction(Direction::OUT_JACK)
 {
 	//Empty URI
 }

@@ -1,4 +1,8 @@
 #include "Showtime.h"
+#include "czmq.h"
+#include "ZstPerformer.h"
+#include "ZstPlug.h"
+
 #ifdef USEPYTHON
 #include <python.h>
 #endif

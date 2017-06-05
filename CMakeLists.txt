@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.0)
 
 project(Showtime)
 
+set(SHOWTIME_VERSION 0.1.0)
+
 # Set build locations
 set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/install)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/modules)

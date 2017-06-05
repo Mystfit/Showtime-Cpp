@@ -40,7 +40,7 @@ private:
 	std::string m_performer;
 	std::string m_instrument;
 	std::string m_name;
-	Direction m_direction = Direction::OUT_JACK;
+	Direction m_direction;
 };
 
 MSGPACK_ADD_ENUM(ZstURI::Direction);
