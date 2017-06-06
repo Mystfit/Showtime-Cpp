@@ -35,18 +35,13 @@ void ZstEndpoint::destroy() {
 
 
 //ZstEndpoint
-void ZstEndpoint::init(string stage_address)
+void ZstEndpoint::init(const string stage_address)
 {
-#ifdef USEPYTHON
-	if (Showtime::get_runtime_language() == RuntimeLanguage::PYTHON_RUNTIME) {
-		PyEval_InitThreads();
-	}
-#endif
-	m_stage_addr = stage_address;
+	m_stage_addr = string(stage_address);
 
 	//Build endpoint addresses
-	char stage_req_addr[30];
-	sprintf(stage_req_addr, "tcp://%s:%d", m_stage_addr.c_str(), STAGE_REP_PORT);
+	char stage_req_addr[100];
+	sprintf(stage_req_addr, "tcp://%s:%d", stage_address.c_str(), STAGE_REP_PORT);
 
 	//Stage request socket for querying the performance
 	m_stage_requests = zsock_new_req(stage_req_addr);
@@ -54,18 +49,24 @@ void ZstEndpoint::init(string stage_address)
 
 	//Local dealer socket for receiving messages forwarded from other performers
 	m_stage_router = zsock_new(ZMQ_DEALER);
-	attach_pipe_listener(m_stage_router, s_handle_stage_router, this);
+	if (m_stage_router) {
+		attach_pipe_listener(m_stage_router, s_handle_stage_router, this);
+	}
 
 	//Graph input socket
 	m_graph_in = zsock_new(ZMQ_SUB);
-	zsock_set_linger(m_graph_in, 0);
-	attach_pipe_listener(m_graph_in, s_handle_graph_in, this);
+	if (m_graph_in) {
+		zsock_set_linger(m_graph_in, 0);
+		attach_pipe_listener(m_graph_in, s_handle_graph_in, this);
+	}
 
 	//Graph output socket
 	cout << "!!!FIXME!!! Setting pub socket interface to localhost due to binding to all interfaces not working in Windows" << endl;
 	m_graph_out = zsock_new_pub("@tcp://127.0.0.1:*");
 	m_output_endpoint = zsock_last_endpoint(m_graph_out);
-	zsock_set_linger(m_graph_out, 0);
+
+	if(m_graph_out)
+		zsock_set_linger(m_graph_out, 0);
 
 	start();
 }

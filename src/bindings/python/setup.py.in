@@ -1,0 +1,43 @@
+# from distutils.core import setup, Extension
+from setuptools import setup, find_packages, Extension
+from setuptools.command.build_ext import build_ext as _build_ext
+from distutils.command.build import build as _build
+from setuptools.command.install import install as _install
+
+class build(_build):
+    sub_commands = [('build_ext', _build.has_ext_modules),
+                    ('build_py', _build.has_pure_modules),
+                    ('build_clib', _build.has_c_libraries),
+                    ('build_scripts', _build.has_scripts)]
+
+#    def run(self):
+#        self.run_command('build_ext')
+#        build.run(self)
+
+class install(_install):
+    def run(self):
+        self.run_command('build_ext')
+        self.do_egg_install()
+
+class build_ext(_build_ext):
+    def initialize_options(self):
+        _build_ext.initialize_options(self)
+        self.swig = "${SWIG_EXECUTABLE}"
+
+showtime_module = Extension('_showtime',
+    sources=['${CMAKE_CURRENT_BINARY_DIR}/showtime.i'],
+    include_dirs=['${Showtime_INCLUDE_DIRS}'],
+    library_dirs=['${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Debug', '${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Release'],
+    libraries=['${PROJECT_NAME}'],
+    swig_opts=['-c++', '-py3', '-I${Showtime_INCLUDE_DIRS}']#, '-outdir', '${CMAKE_CURRENT_BINARY_DIR}/showtime']
+)
+
+setup (cmdclass={'build_ext': build_ext, 'build':build},
+  name = 'showtime',
+  version = '${SHOWTIME_VERSION}',
+  author      = "Byron  Mallett",
+  description = """Python bindings for Showtime""",
+  packages=find_packages(),
+  ext_modules = [showtime_module],
+  py_modules = ["showtime"]
+)

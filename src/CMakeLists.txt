@@ -33,7 +33,6 @@ set(ZST_SOURCE
 
 set(ZST_INCLUDES 
 	${Showtime_INCLUDE_DIRS}
-	${Boost_INCLUDE_DIRS}
 	${ZeroMQ_INCLUDE_DIRS}
 	${CZMQ_INCLUDE_DIRS}
     ${MSGPACK_INCLUDE_DIRS}
@@ -41,7 +40,6 @@ set(ZST_INCLUDES
 
 set(ZST_LINK_LIBS
 	${ZeroMQ_LIBRARIES}
-	${Boost_LIBRARIES}
 	${CZMQ_LIBRARIES}
     ${MSGPACK_LIBRARIES}
 )
@@ -66,11 +64,8 @@ IF(WIN32)
 ENDIF(WIN32)
 
 add_library(${PROJECT_NAME} SHARED ${ZST_HEADERS} ${ZST_SOURCE})
-
 target_link_libraries(${PROJECT_NAME} ${ZST_LINK_LIBS})
-
 add_test( section_heartbeat Exename arg1 arg2 ... )
-
 
 
 if(BINDINGS_RUBY)

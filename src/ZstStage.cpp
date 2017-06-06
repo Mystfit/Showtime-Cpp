@@ -133,11 +133,6 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 
 	//Get message type
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(msg);
-	switch (message_type) {
-
-	default:
-		break;
-	}
 	return 0;
 }
 

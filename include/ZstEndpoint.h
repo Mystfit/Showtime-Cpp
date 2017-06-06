@@ -4,6 +4,7 @@
 #include <vector>
 #include <chrono>
 #include <czmq.h>
+#include <string>
 #include <msgpack.hpp>
 #include "ZstActor.h"
 #include "ZstExports.h"
@@ -47,7 +48,6 @@ private:
 
 	//Registration
 	void register_performer_to_stage(std::string);
-
 
 	//Send and receive
 	void send_to_stage(zmsg_t * msg);

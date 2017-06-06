@@ -117,8 +117,13 @@ void test_cleanup() {
 
 int main(int argc,char **argv){
     stage = ZstStage::create_stage();
+
+	std::cout << "Stage created" << std::endl;
+#ifdef WIN32
+	system("pause");
+#endif
     
-    Showtime::join( "127.0.0.1");
+    Showtime::join("127.0.0.1");
 	ZstPerformer * performer_a = Showtime::create_performer("test_performer_1");
 	ZstPerformer * performer_b = Showtime::create_performer("test_performer_2");
     
@@ -129,13 +134,14 @@ int main(int argc,char **argv){
 	test_connect_plugs();
 	test_cleanup();
 
+#ifdef WIN32
+	system("pause");
+#endif
+
 	std::cout << "Shutting down..." << std::endl;
 
 	std::cout << "Performer test completed" << std::endl;
 
-#ifdef WIN32
-	system("pause");
-#endif
 
 	return 0;
 }

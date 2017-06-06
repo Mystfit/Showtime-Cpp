@@ -1,6 +1,5 @@
 #pragma once
 
-#include <string>
 #include <chrono>
 #include <vector>
 #include <memory>
@@ -28,22 +27,22 @@ public:
 	ZST_EXPORT static RuntimeLanguage get_runtime_language();
 
 	//Init
-    ZST_EXPORT static void join(std::string stage_address);
+    ZST_EXPORT static void join(const char * stage_address);
 
     //Stage methods
     ZST_EXPORT static std::chrono::milliseconds ping_stage();
 
 	//Performers are our local containers for plugs
-	ZST_EXPORT static ZstPerformer* create_performer(std::string name);
-	ZST_EXPORT static ZstPerformer * get_performer_by_name(std::string performer);
+	ZST_EXPORT static ZstPerformer* create_performer(const char * name);
+	ZST_EXPORT static ZstPerformer * get_performer_by_name(const char * performer);
 
 	template<typename T>
-	static T* create_plug(ZstURI uri) {
+	static T* create_plug(const ZstURI uri) {
 		return Showtime::endpoint().create_plug<T>(uri);
 	}
     ZST_EXPORT static void destroy_plug(ZstPlug *plug);
-    ZST_EXPORT static std::vector<ZstURI> get_all_plug_addresses(std::string section = "", std::string instrument = "");
-	ZST_EXPORT static void connect_plugs(ZstURI a, ZstURI b);
+    ZST_EXPORT static std::vector<ZstURI> get_all_plug_addresses(const char * section = "", const char * instrument = "");
+	ZST_EXPORT static void connect_plugs(const ZstURI a, const ZstURI b);
 
 private:
     Showtime();
@@ -52,7 +51,6 @@ private:
 
 	//Active runtime
 	static RuntimeLanguage _runtime_language;
-	//static ZstEndpoint * _endpoint;
 };
 
 

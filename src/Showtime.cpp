@@ -18,8 +18,8 @@ ZstEndpoint & Showtime::endpoint()
 	return endpoint_singleton;
 }
 
-void Showtime::join(string stage_address){
-
+void Showtime::join(const char * stage_address){
+	cout << "Connecting to stage located at " << stage_address << endl;
 	Showtime::endpoint().init(stage_address);
 	Showtime::endpoint().register_endpoint_to_stage();
 }
@@ -43,12 +43,12 @@ std::chrono::milliseconds Showtime::ping_stage(){
 	return Showtime::endpoint().ping_stage();
 }
 
-ZstPerformer * Showtime::create_performer(std::string name)
+ZstPerformer * Showtime::create_performer(const char * name)
 {
 	return Showtime::endpoint().create_performer(name);
 }
 
-ZstPerformer * Showtime::get_performer_by_name(std::string performer)
+ZstPerformer * Showtime::get_performer_by_name(const char * performer)
 {
 	return Showtime::endpoint().get_performer_by_name(performer);
 }
@@ -58,7 +58,7 @@ void Showtime::destroy_plug(ZstPlug * plug)
 	return Showtime::endpoint().destroy_plug(plug);
 }
 
-std::vector<ZstURI> Showtime::get_all_plug_addresses(string performer, string instrument){
+std::vector<ZstURI> Showtime::get_all_plug_addresses(const char * performer, const char * instrument){
 	return Showtime::endpoint().get_all_plug_addresses(performer, instrument);
 }
 
