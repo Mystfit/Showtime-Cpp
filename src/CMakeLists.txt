@@ -2,6 +2,7 @@ enable_testing()
 
 set(ZST_HEADERS 
  ${Showtime_INCLUDE_DIRS}/Showtime.h
+ ${Showtime_INCLUDE_DIRS}/ZstEndpoint.h
  ${Showtime_INCLUDE_DIRS}/ZstURI.h
  ${Showtime_INCLUDE_DIRS}/ZstUtils.hpp
  ${Showtime_INCLUDE_DIRS}/ZstActor.h	
@@ -17,6 +18,7 @@ set(ZST_HEADERS
 
 set(ZST_SOURCE 
  "Showtime.cpp"
+ "ZstEndpoint.cpp"
  "ZstURI.cpp"
  "ZstUtils.cpp"
  "ZstActor.cpp"
@@ -61,11 +63,8 @@ IF(WIN32)
 ENDIF(WIN32)
 
 add_library(${PROJECT_NAME} SHARED ${ZST_HEADERS} ${ZST_SOURCE})
-
 target_link_libraries(${PROJECT_NAME} ${ZST_LINK_LIBS})
-
 add_test( section_heartbeat Exename arg1 arg2 ... )
-
 
 
 if(BINDINGS_RUBY)

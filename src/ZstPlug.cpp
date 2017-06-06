@@ -1,5 +1,7 @@
 #include "ZstPlug.h"
 #include "Showtime.h"
+#include "ZstEndpoint.h"
+
 #ifdef USEPYTHON
 #include <python.h>
 #endif
@@ -37,7 +39,7 @@ void ZstPlug::run_recv_callbacks(){
     if(m_received_data_callbacks.size() > 0){
 #ifdef USEPYTHON
 		PyGILState_STATE gstate;
-		if (Showtime::instance().get_runtime_language() == Showtime::RuntimeLanguage::PYTHON_RUNTIME) {
+		if (Showtime::get_runtime_language() == RuntimeLanguage::PYTHON_RUNTIME) {
 			cout << "PERFORMER: Host runtime is Python. Obtain GIL" << endl;
 			gstate = PyGILState_Ensure();
 		}
@@ -49,7 +51,7 @@ void ZstPlug::run_recv_callbacks(){
             (*callback)->run(this);
         }
 #ifdef USEPYTHON
-		if (Showtime::instance().get_runtime_language() == Showtime::RuntimeLanguage::PYTHON_RUNTIME) {
+		if (Showtime::get_runtime_language() == RuntimeLanguage::PYTHON_RUNTIME) {
 			cout << "PERFORMER: Release GIL" << endl;
 			PyGILState_Release(gstate);
 		}
@@ -68,7 +70,7 @@ void ZstPlug::fire()
 	zframe_t * payload  = zframe_new(m_buffer->data(), m_buffer->size());
 	zmsg_append(msg, &payload);
 
-	Showtime::instance().send_to_graph(msg);
+	Showtime::endpoint().send_to_graph(msg);
 
 	//Clear our buffer when finished
 	m_buffer->clear();

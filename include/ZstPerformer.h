@@ -1,8 +1,10 @@
 #pragma once
 #include <map>
+#include <string>
+#include <vector>
 #include "ZstExports.h"
-#include "ZstPlug.h"
 
+class ZstPlug;
 class ZstPerformer {
 	public:
 		ZstPerformer(std::string name);
