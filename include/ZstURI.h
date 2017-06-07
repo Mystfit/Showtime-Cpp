@@ -13,26 +13,26 @@ public:
 	};
 
 	ZST_EXPORT ZstURI();
-	ZST_EXPORT ZstURI(std::string performer, std::string instrument, std::string name, Direction direction);
+	ZST_EXPORT ZstURI(const char * performer, const char * instrument, const char * name, const Direction direction);
 	ZST_EXPORT ZstURI(const ZstURI & copy);
 	ZST_EXPORT ~ZstURI();
 
-	ZST_EXPORT std::string performer() const;
-	ZST_EXPORT std::string instrument() const;
-	ZST_EXPORT std::string name() const;
-	ZST_EXPORT ZstURI::Direction direction() const;
+	ZST_EXPORT const char * performer();
+	ZST_EXPORT const char * instrument();
+	ZST_EXPORT const char * name();
+	ZST_EXPORT const ZstURI::Direction direction();
 
 	ZST_EXPORT bool operator==(const ZstURI& other);
 	ZST_EXPORT bool operator!=(const ZstURI& other);
 	ZST_EXPORT bool operator< (const ZstURI& b) const {
-		return to_str() < b.to_str();
+		return std::string(to_char()) < std::string(b.to_char());
 	}
-	ZST_EXPORT std::string to_str() const;
+	ZST_EXPORT const char * to_char() const;
 
-	ZST_EXPORT static ZstURI from_str(std::string s) {
+	ZST_EXPORT static ZstURI from_char(const char * s) {
 		std::vector<std::string> tokens;
-		Utils::str_split(s, tokens, "/");
-		return ZstURI(tokens[0], tokens[1], tokens[2], (ZstURI::Direction)std::atoi(tokens[3].c_str()));
+		Utils::str_split(std::string(s), tokens, "/");
+		return ZstURI(tokens[0].c_str(), tokens[1].c_str(), tokens[2].c_str(), (ZstURI::Direction)std::atoi(tokens[3].c_str()));
 	}
 	MSGPACK_DEFINE(m_performer, m_instrument, m_name, m_direction);
 

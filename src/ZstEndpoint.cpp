@@ -89,7 +89,7 @@ int ZstEndpoint::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg)
     
 	cout << "PERFORMER: Recieved graph message" << endl;
 
-    ZstURI sender = ZstURI::from_str(zmsg_popstr(msg));
+    ZstURI sender = ZstURI::from_char(zmsg_popstr(msg));
 
 	msgpack::object_handle result;
 	zframe_t * payload = zmsg_pop(msg);

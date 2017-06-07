@@ -64,7 +64,7 @@ void ZstPlug::fire()
 	zmsg_t * msg = zmsg_new();
 
 	//First frame is the address of the sender plug
-	zmsg_addstr(msg, get_URI().to_str().c_str());
+	zmsg_addstr(msg, get_URI().to_char());
 
 	//Second frame is the plug payload
 	zframe_t * payload  = zframe_new(m_buffer->data(), m_buffer->size());
