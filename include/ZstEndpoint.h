@@ -33,11 +33,11 @@ public:
 	ZstPerformer * get_performer_by_name(std::string performer);
 	
 	template<typename T>
-	ZST_EXPORT static T* create_plug(ZstURI uri);
+	ZST_EXPORT static T* create_plug(ZstURI * uri);
 	ZST_EXPORT void destroy_plug(ZstPlug * plug);
 
 	ZST_EXPORT  std::vector<ZstURI> get_all_plug_addresses(std::string performer="", std::string instrument="");
-	void connect_plugs(ZstURI a, ZstURI b);
+	void connect_plugs(const ZstURI * a, const ZstURI * b);
 	
 	ZST_EXPORT std::chrono::milliseconds ping_stage();
 

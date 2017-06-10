@@ -8,7 +8,7 @@
 
 using namespace std;
 
-ZstPlug::ZstPlug(ZstURI uri) : m_uri(uri)
+ZstPlug::ZstPlug(ZstURI * uri) : m_uri(uri)
 {
 	m_buffer = new msgpack::sbuffer();
 	m_packer = new msgpack::packer<msgpack::sbuffer>(m_buffer);
@@ -17,9 +17,10 @@ ZstPlug::ZstPlug(ZstURI uri) : m_uri(uri)
 ZstPlug::~ZstPlug() {
 	delete m_buffer;
 	delete m_packer;
+	delete m_uri;
 }
 
-ZstURI ZstPlug::get_URI() const
+ZstURI * ZstPlug::get_URI() const
 {
 	return m_uri;
 }
@@ -64,7 +65,7 @@ void ZstPlug::fire()
 	zmsg_t * msg = zmsg_new();
 
 	//First frame is the address of the sender plug
-	zmsg_addstr(msg, get_URI().to_char());
+	zmsg_addstr(msg, get_URI()->to_str().c_str());
 
 	//Second frame is the plug payload
 	zframe_t * payload  = zframe_new(m_buffer->data(), m_buffer->size());

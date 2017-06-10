@@ -89,7 +89,7 @@ int ZstEndpoint::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg)
     
 	cout << "PERFORMER: Recieved graph message" << endl;
 
-    ZstURI sender = ZstURI::from_char(zmsg_popstr(msg));
+    ZstURI sender = ZstURI::from_str(zmsg_popstr(msg));
 
 	msgpack::object_handle result;
 	zframe_t * payload = zmsg_pop(msg);
@@ -202,12 +202,12 @@ ZstPerformer * ZstEndpoint::get_performer_by_name(std::string performer)
 	return m_performers[performer];
 }
 
-template ZST_EXPORT ZstIntPlug* ZstEndpoint::create_plug<ZstIntPlug>(ZstURI uri);
+template ZST_EXPORT ZstIntPlug* ZstEndpoint::create_plug<ZstIntPlug>(ZstURI * uri);
 template<typename T>
- T* ZstEndpoint::create_plug(ZstURI uri) {
+ T* ZstEndpoint::create_plug(ZstURI * uri) {
 
 	ZstMessages::RegisterPlug plug_args;
-	plug_args.address = uri;
+	plug_args.address = *(uri);
 	Showtime::endpoint().send_to_stage(ZstMessages::build_message<ZstMessages::RegisterPlug>(ZstMessages::Kind::STAGE_REGISTER_PLUG, plug_args));
 
 	zmsg_t *responseMsg = Showtime::endpoint().receive_from_stage();
@@ -218,7 +218,7 @@ template<typename T>
 	}
 
 	T *plug = new T(uri);
-	Showtime::endpoint().get_performer_by_name(uri.performer())->add_plug(plug);
+	Showtime::endpoint().get_performer_by_name(uri->performer())->add_plug(plug);
 	return plug;
 }
 
@@ -226,7 +226,7 @@ template<typename T>
 void ZstEndpoint::destroy_plug(ZstPlug * plug)
 {
 	ZstMessages::DestroyPlug destroy_args;
-	destroy_args.address = plug->get_URI();
+	destroy_args.address = *(plug->get_URI());
 	send_to_stage(ZstMessages::build_message<ZstMessages::DestroyPlug>(ZstMessages::Kind::STAGE_DESTROY_PLUG, destroy_args));
 
 	zmsg_t *responseMsg = receive_from_stage();
@@ -234,8 +234,8 @@ void ZstEndpoint::destroy_plug(ZstPlug * plug)
 	if (message_type != ZstMessages::Signal::OK) {
 		throw runtime_error("PERFORMER: Plug deletion responded with message other than OK");
 	}
-
-	m_performers[plug->get_URI().performer()]->remove_plug(plug);
+	ZstURI * s = plug->get_URI();
+	m_performers[plug->get_URI()->performer()]->remove_plug(plug);
 	delete plug;
 }
 
@@ -266,11 +266,11 @@ std::vector<ZstURI> ZstEndpoint::get_all_plug_addresses(string performer, string
 }
 
 
-void ZstEndpoint::connect_plugs(ZstURI a, ZstURI b)
+void ZstEndpoint::connect_plugs(const ZstURI * a, const ZstURI * b)
 {
 	ZstMessages::ConnectPlugs plug_args;
-	plug_args.first = a;
-	plug_args.second = b;
+	plug_args.first = *a;
+	plug_args.second = *b;
 	send_to_stage(ZstMessages::build_message<ZstMessages::ConnectPlugs>(ZstMessages::Kind::STAGE_REGISTER_CONNECTION, plug_args));
 
 	zmsg_t *responseMsg = receive_from_stage();

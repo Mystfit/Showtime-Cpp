@@ -321,7 +321,7 @@ void ZstStage::destroy_plug_handler(zsock_t * socket, zmsg_t * msg)
 void ZstStage::connect_plugs_handler(zsock_t * socket, zmsg_t * msg)
 {
 	ZstMessages::ConnectPlugs plug_args = ZstMessages::unpack_message_struct<ZstMessages::ConnectPlugs>(msg);
-	cout << "STAGE: Received connect plug request for " << plug_args.first.to_char() << " and " << plug_args.second.to_char() << endl;
+	cout << "STAGE: Received connect plug request for " << plug_args.first.to_str() << " and " << plug_args.second.to_str() << endl;
 
 	if (plug_args.first.direction() == ZstURI::Direction::OUT_JACK && plug_args.second.direction() == ZstURI::Direction::IN_JACK) {
 		connect_plugs(plug_args.first, plug_args.second);

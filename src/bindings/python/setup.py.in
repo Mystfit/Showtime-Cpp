@@ -1,4 +1,4 @@
-# from distutils.core import setup, Extension
+from distutils.core import DEBUG
 from setuptools import setup, find_packages, Extension
 from setuptools.command.build_ext import build_ext as _build_ext
 from distutils.command.build import build as _build
@@ -29,6 +29,8 @@ showtime_module = Extension('_showtime',
     include_dirs=['${Showtime_INCLUDE_DIRS}', '${MSGPACK_INCLUDE_DIRS}'],
     library_dirs=['${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Debug', '${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Release'],
     libraries=['${PROJECT_NAME}'],
+    extra_compile_args=['/Zi'],
+    extra_link_args=['/DEBUG'],
     swig_opts=['-c++', '-py3', '-I${Showtime_INCLUDE_DIRS}']#, '-outdir', '${CMAKE_CURRENT_BINARY_DIR}/showtime']
 )
 

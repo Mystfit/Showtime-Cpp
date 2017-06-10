@@ -38,8 +38,11 @@ void test_stage_registration(){
 
 void test_create_plugs(){
     //Create new plugs
-	ZstIntPlug *outputPlug = Showtime::create_plug<ZstIntPlug>(ZstURI("test_performer_1", "test_instrument", "test_output_plug", ZstURI::Direction::OUT_JACK));
-	ZstIntPlug *inputPlug = Showtime::create_plug<ZstIntPlug>(ZstURI("test_performer_1", "test_instrument", "test_input_plug", ZstURI::Direction::IN_JACK));
+	ZstURI * outURI = ZstURI::create("test_performer_1", "test_instrument", "test_output_plug", ZstURI::Direction::OUT_JACK);
+	ZstURI * inURI = ZstURI::create("test_performer_1", "test_instrument", "test_input_plug", ZstURI::Direction::IN_JACK);
+	//URI ownership taken over by plug
+	ZstIntPlug *outputPlug = Showtime::create_plug<ZstIntPlug>(outURI);
+	ZstIntPlug *inputPlug = Showtime::create_plug<ZstIntPlug>(inURI);
     
     //Check address equality
     assert(outputPlug->get_URI() == outputPlug->get_URI());
@@ -47,17 +50,17 @@ void test_create_plugs(){
 
     //Check stage registered plugs successfully
     ZstPerformerRef *stagePerformerRef = stage->get_performer_ref_by_name("test_performer_1");
-    assert(stagePerformerRef->get_plug_by_name(outputPlug->get_URI().name()) != NULL);
-    assert(stagePerformerRef->get_plug_by_name(inputPlug->get_URI().name()) != NULL);
+    assert(stagePerformerRef->get_plug_by_name(outputPlug->get_URI()->name()) != NULL);
+    assert(stagePerformerRef->get_plug_by_name(inputPlug->get_URI()->name()) != NULL);
     
     //Check local client registered plugs correctly
 	ZstPlug *localPlug = Showtime::get_performer_by_name("test_performer_1")->get_instrument_plugs("test_instrument")[0];
-    assert(strcmp(localPlug->get_URI().name(), localPlug->get_URI().name()) == 0);
+    //assert(strcmp(localPlug->get_URI().name().c_str(), localPlug->get_URI().name().c_str()) == 0);
     
     std::vector<ZstPlug*> localplugs = Showtime::get_performer_by_name("test_performer_1")->get_plugs();
     assert(localplugs.size() > 1);
-    assert(stagePerformerRef->get_plug_by_name(localplugs[0]->get_URI().name()) != NULL);
-    assert(stagePerformerRef->get_plug_by_name(localplugs[1]->get_URI().name()) != NULL);
+    assert(stagePerformerRef->get_plug_by_name(localplugs[0]->get_URI()->name()) != NULL);
+    assert(stagePerformerRef->get_plug_by_name(localplugs[1]->get_URI()->name()) != NULL);
     
     //Query stage for remote plugs
     std::vector<ZstURI> plugs = Showtime::endpoint().get_all_plug_addresses();
@@ -70,8 +73,8 @@ void test_create_plugs(){
     assert(plugs.size() > 0);
 
 	//Check plug destruction
-	std::string outputName = outputPlug->get_URI().name();
-	std::string inputName = inputPlug->get_URI().name();
+	std::string outputName = outputPlug->get_URI()->name();
+	std::string inputName = inputPlug->get_URI()->name();
 
 	Showtime::endpoint().destroy_plug(outputPlug);
 	assert(stage->get_performer_ref_by_name("test_performer_1")->get_plug_by_name(outputName) == NULL);
@@ -93,9 +96,13 @@ public:
 
 
 void test_connect_plugs() {
+
+	ZstURI * outURI = ZstURI::create("test_performer_1", "test_instrument", "test_output_plug", ZstURI::Direction::OUT_JACK);
+	ZstURI * inURI = ZstURI::create("test_performer_1", "test_instrument", "test_input_plug", ZstURI::Direction::IN_JACK);
+
 	//Test plugs connected between performers
-	ZstIntPlug *output_int_plug = Showtime::create_plug<ZstIntPlug>(ZstURI("test_performer_1", "test_instrument", "output_int_plug", ZstURI::Direction::OUT_JACK));
-	ZstIntPlug *input_int_plug = Showtime::create_plug<ZstIntPlug>(ZstURI("test_performer_2", "test_instrument", "input_int_plug", ZstURI::Direction::IN_JACK));
+	ZstIntPlug *output_int_plug = Showtime::create_plug<ZstIntPlug>(outURI);
+	ZstIntPlug *input_int_plug = Showtime::create_plug<ZstIntPlug>(inURI);
     input_int_plug->attach_recv_callback(new TestIntCallback());
 	Showtime::connect_plugs(output_int_plug->get_URI(), input_int_plug->get_URI());
 
@@ -133,15 +140,10 @@ int main(int argc,char **argv){
     test_create_plugs();
 	test_connect_plugs();
 	test_cleanup();
-
+	std::cout << "\nShowtime test successful" << std::endl;
 #ifdef WIN32
 	system("pause");
 #endif
-
-	std::cout << "Shutting down..." << std::endl;
-
-	std::cout << "Performer test completed" << std::endl;
-
 
 	return 0;
 }
