@@ -34,7 +34,10 @@ public:
 
 	ZST_EXPORT const std::string to_str() const;
 	ZST_EXPORT const char * to_char() const;
-	ZST_EXPORT static ZstURI from_str(const char * s);
+	
+	ZST_EXPORT static ZstURI from_str(const std::string s);
+	ZST_EXPORT static ZstURI from_char(const char * s);
+
 	MSGPACK_DEFINE(m_performer, m_instrument, m_name, m_direction);
 
 private:

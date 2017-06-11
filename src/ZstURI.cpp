@@ -83,14 +83,24 @@ bool ZstURI::operator< (const ZstURI& b) const
 	return to_str() < b.to_str();
 }
 
-ZstURI ZstURI::from_str(const char * s)
+const std::string ZstURI::to_str() const {
+	return m_performer + "/" + m_instrument + "/" + m_name + "/" + std::to_string(m_direction);
+}
+
+const char * ZstURI::to_char() const
+{
+	return to_str().c_str();
+}
+
+ZstURI ZstURI::from_str(const std::string s)
 {
 	std::vector<std::string> tokens;
 	Utils::str_split(string(s), tokens, "/");
 	return ZstURI(tokens[0].c_str(), tokens[1].c_str(), tokens[2].c_str(), (ZstURI::Direction)std::atoi(tokens[3].c_str()));
 }
 
-const std::string ZstURI::to_str() const {
-	return m_performer + "/" + m_instrument + "/" + m_name + "/" + std::to_string(m_direction);
+ZstURI ZstURI::from_char(const char * s)
+{
+	return from_str(string(s));
 }
 
