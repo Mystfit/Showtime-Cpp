@@ -14,6 +14,7 @@
 %include "ZstExports.h"
 
 %nodefaultctor ZstURI;
+%thread;
 class ZstURI {
 public:
 	enum Direction {
@@ -30,22 +31,54 @@ public:
 	%rename("instrument") instrument_char();
 	const char * instrument_char();
 
-	%rename("name_char") name_char();
+	%rename("name") name_char();
 	const char * name_char();
 
 	const ZstURI::Direction direction();
 
-	std::string to_str() const;
+	%rename("to_str") to_char();
+	const char * to_char() const;
 	static ZstURI from_str(char * s);
 
 	bool operator==(const ZstURI& other);
 	bool operator!=(const ZstURI& other);
 	bool operator< (const ZstURI& b) const;
 };
+%nothread;
 
+
+%feature("pythonprepend") ZstPlug::attach_recv_callback(PlugCallback * callback) %{
+   if len(args) == 1 and (not isinstance(args[0], PlugCallback) and callable(args[0])):
+      class CallableWrapper(PlugCallback):
+         def __init__(self, f):
+            super(CallableWrapper, self).__init__()
+            self.f_ = f
+         def run(self, obj):
+            self.f_(obj)
+
+      args = tuple([CallableWrapper(args[0])])
+      args[0].__disown__()
+   elif len(args) == 1 and isinstance(args[0], PlugCallback):
+      args[0].__disown__()
+%}
+
+%feature("director") PlugCallback;
 %thread;
-%nodefaultctor ZstPlug;
-%include "ZstPlug.h"
+class PlugCallback {
+public:
+	PlugCallback();
+	virtual ~PlugCallback();
+    virtual void run(ZstPlug * plug);
+};
+
+%nodefaultctor ZstIntPlug;
+class ZstIntPlug {
+public:
+	void fire(int value);
+	void recv(msgpack::object object);
+	void attach_recv_callback(PlugCallback * callback);
+	int get_value();	
+};
 %nothread;
 
 %feature("pythonprepend") Showtime::join %{
@@ -53,5 +86,4 @@ public:
 %} 
 
 %include "Showtime.h"
-%template(create_int_plug) Showtime::create_plug<ZstIntPlug>;
 

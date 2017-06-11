@@ -180,8 +180,6 @@ void ZstEndpoint::register_performer_to_stage(string performer) {
 	send_to_stage(ZstMessages::build_message<ZstMessages::RegisterPerformer>(ZstMessages::Kind::STAGE_REGISTER_PERFORMER, register_args));
 
 	zmsg_t *responseMsg = receive_from_stage();
-
-	zmsg_print(responseMsg);
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
 
 	if (message_type != ZstMessages::Signal::OK) {
@@ -208,7 +206,8 @@ template<typename T>
 
 	ZstMessages::RegisterPlug plug_args;
 	plug_args.address = *(uri);
-	Showtime::endpoint().send_to_stage(ZstMessages::build_message<ZstMessages::RegisterPlug>(ZstMessages::Kind::STAGE_REGISTER_PLUG, plug_args));
+	zmsg_t * plug_msg = ZstMessages::build_message<ZstMessages::RegisterPlug>(ZstMessages::Kind::STAGE_REGISTER_PLUG, plug_args);
+	Showtime::endpoint().send_to_stage(plug_msg);
 
 	zmsg_t *responseMsg = Showtime::endpoint().receive_from_stage();
 
@@ -222,8 +221,12 @@ template<typename T>
 	return plug;
 }
 
+ ZstIntPlug * ZstEndpoint::create_int_plug(ZstURI * uri)
+ {
+	 return create_plug<ZstIntPlug>(uri);
+ }
 
-void ZstEndpoint::destroy_plug(ZstPlug * plug)
+ void ZstEndpoint::destroy_plug(ZstPlug * plug)
 {
 	ZstMessages::DestroyPlug destroy_args;
 	destroy_args.address = *(plug->get_URI());

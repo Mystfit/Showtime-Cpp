@@ -95,3 +95,7 @@ void ZstIntPlug::recv(msgpack::object object){
 int ZstIntPlug::get_value(){
     return m_value;
 }
+
+PlugCallback::PlugCallback()
+{
+}

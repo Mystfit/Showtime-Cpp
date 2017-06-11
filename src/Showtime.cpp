@@ -48,6 +48,10 @@ ZstPerformer * Showtime::create_performer(const char * name)
 	return Showtime::endpoint().create_performer(name);
 }
 
+ZstIntPlug * Showtime::create_int_plug(ZstURI * uri) {
+	return Showtime::endpoint().create_int_plug(uri);
+}
+
 ZstPerformer * Showtime::get_performer_by_name(const char * performer)
 {
 	return Showtime::endpoint().get_performer_by_name(performer);

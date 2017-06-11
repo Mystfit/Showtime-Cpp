@@ -40,19 +40,24 @@ void test_create_plugs(){
     //Create new plugs
 	ZstURI * outURI = ZstURI::create("test_performer_1", "test_instrument", "test_output_plug", ZstURI::Direction::OUT_JACK);
 	ZstURI * inURI = ZstURI::create("test_performer_1", "test_instrument", "test_input_plug", ZstURI::Direction::IN_JACK);
+	
 	//URI ownership taken over by plug
 	ZstIntPlug *outputPlug = Showtime::create_plug<ZstIntPlug>(outURI);
 	ZstIntPlug *inputPlug = Showtime::create_plug<ZstIntPlug>(inURI);
     
     //Check address equality
-    assert(outputPlug->get_URI() == outputPlug->get_URI());
-    assert(!(outputPlug->get_URI() == inputPlug->get_URI()));
+    assert(outputPlug->get_URI() == outURI);
+    assert(!(outputPlug->get_URI() == inURI));
+
+	//Test creating plug with type functions (blame swig python!)
+	ZstIntPlug *typedIntPlug = Showtime::create_int_plug(new ZstURI("test_performer_1", "test_instrument", "test_int_plug", ZstURI::Direction::OUT_JACK));
 
     //Check stage registered plugs successfully
     ZstPerformerRef *stagePerformerRef = stage->get_performer_ref_by_name("test_performer_1");
     assert(stagePerformerRef->get_plug_by_name(outputPlug->get_URI()->name()) != NULL);
     assert(stagePerformerRef->get_plug_by_name(inputPlug->get_URI()->name()) != NULL);
-    
+	assert(stagePerformerRef->get_plug_by_name(typedIntPlug->get_URI()->name()) != NULL);
+
     //Check local client registered plugs correctly
 	ZstPlug *localPlug = Showtime::get_performer_by_name("test_performer_1")->get_instrument_plugs("test_instrument")[0];
     //assert(strcmp(localPlug->get_URI().name().c_str(), localPlug->get_URI().name().c_str()) == 0);
@@ -75,13 +80,18 @@ void test_create_plugs(){
 	//Check plug destruction
 	std::string outputName = outputPlug->get_URI()->name();
 	std::string inputName = inputPlug->get_URI()->name();
+	std::string typedName = typedIntPlug->get_URI()->name();
 
 	Showtime::endpoint().destroy_plug(outputPlug);
 	assert(stage->get_performer_ref_by_name("test_performer_1")->get_plug_by_name(outputName) == NULL);
-	assert(Showtime::get_performer_by_name("test_performer_1")->get_instrument_plugs("test_instrument").size() == 1);
+	assert(Showtime::get_performer_by_name("test_performer_1")->get_instrument_plugs("test_instrument").size() == 2);
 	
 	Showtime::endpoint().destroy_plug(inputPlug);
 	assert(stage->get_performer_ref_by_name("test_performer_1")->get_plug_by_name(inputName) == NULL);
+	assert(Showtime::get_performer_by_name("test_performer_1")->get_instrument_plugs("test_instrument").size() == 1);
+
+	Showtime::endpoint().destroy_plug(typedIntPlug);
+	assert(stage->get_performer_ref_by_name("test_performer_1")->get_plug_by_name(typedName) == NULL);
 	assert(Showtime::get_performer_by_name("test_performer_1")->get_instrument_plugs("test_instrument").empty());
 }
 

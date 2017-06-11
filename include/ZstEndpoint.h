@@ -34,6 +34,8 @@ public:
 	
 	template<typename T>
 	ZST_EXPORT static T* create_plug(ZstURI * uri);
+	ZST_EXPORT static ZstIntPlug * create_int_plug(ZstURI * uri);
+
 	ZST_EXPORT void destroy_plug(ZstPlug * plug);
 
 	ZST_EXPORT  std::vector<ZstURI> get_all_plug_addresses(std::string performer="", std::string instrument="");

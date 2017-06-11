@@ -47,6 +47,7 @@ enum PlugTypes {
 
 class PlugCallback{
 public:
+	ZST_EXPORT PlugCallback();
     virtual ~PlugCallback() { std::cout << "Callback::~Callback()" << std:: endl; }
     virtual void run(ZstPlug * plug) { std::cout << "PlugCallback::run()" << std::endl; }
 };
