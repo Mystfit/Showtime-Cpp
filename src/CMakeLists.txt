@@ -66,16 +66,13 @@ add_library(${PROJECT_NAME} SHARED ${ZST_HEADERS} ${ZST_SOURCE})
 target_link_libraries(${PROJECT_NAME} ${ZST_LINK_LIBS})
 add_test( section_heartbeat Exename arg1 arg2 ... )
 
-
 if(BINDINGS_RUBY)
 	add_subdirectory(bindings/ruby)
 endif(BINDINGS_RUBY)
 
 if(BINDINGS_PYTHON)
 	INCLUDE(FindPythonInterp)
-	get_filename_component(PYTHON_DIR ${PYTHON_EXECUTABLE} DIRECTORY)
-	set(PYTHON_SITE_PACKAGES ${PYTHON_DIR}/lib/site-packages)
-
+	get_filename_component(PYTHON_DIR ${PYTHON_EXECUTABLE} DIRECTORY)	
 	add_subdirectory(bindings/python)
 endif(BINDINGS_PYTHON)
 

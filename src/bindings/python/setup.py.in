@@ -1,3 +1,4 @@
+import os
 from distutils.core import DEBUG
 from setuptools import setup, find_packages, Extension
 from setuptools.command.build_ext import build_ext as _build_ext
@@ -9,10 +10,6 @@ class build(_build):
                     ('build_py', _build.has_pure_modules),
                     ('build_clib', _build.has_c_libraries),
                     ('build_scripts', _build.has_scripts)]
-
-#    def run(self):
-#        self.run_command('build_ext')
-#        build.run(self)
 
 class install(_install):
     def run(self):
@@ -40,6 +37,7 @@ setup (cmdclass={'build_ext': build_ext, 'build':build},
   author      = "Byron  Mallett",
   description = """Python bindings for Showtime""",
   packages=find_packages(),
+  data_files=[os.path.normcase("@SHOWTIME_TARGET@")],
   ext_modules = [showtime_module],
   py_modules = ["showtime"]
 )
