@@ -38,26 +38,25 @@ void ZstPlug::run_recv_callbacks(){
 	cout << "PERFORMER: Running input plug callbacks" << endl;
 
     if(m_received_data_callbacks.size() > 0){
-#ifdef USEPYTHON
-		PyGILState_STATE gstate;
 		if (Showtime::get_runtime_language() == RuntimeLanguage::PYTHON_RUNTIME) {
-			cout << "PERFORMER: Host runtime is Python. Obtain GIL" << endl;
-			gstate = PyGILState_Ensure();
+#ifdef USEPYTHON
+			Py_BEGIN_ALLOW_THREADS;
+#endif
+			run_all_recv_callbacks();
+#ifdef USEPYTHON
+			Py_END_ALLOW_THREADS;
+#endif
 		}
 		else {
-			cout << "PERFORMER: Host runtime is native." << endl;
+			run_all_recv_callbacks();
 		}
-#endif
-        for(vector<PlugCallback*>::iterator callback = m_received_data_callbacks.begin(); callback != m_received_data_callbacks.end(); ++callback){
-            (*callback)->run(this);
-        }
-#ifdef USEPYTHON
-		if (Showtime::get_runtime_language() == RuntimeLanguage::PYTHON_RUNTIME) {
-			cout << "PERFORMER: Release GIL" << endl;
-			PyGILState_Release(gstate);
-		}
-#endif
     }
+}
+
+void ZstPlug::run_all_recv_callbacks() {
+	for (vector<PlugCallback*>::iterator callback = m_received_data_callbacks.begin(); callback != m_received_data_callbacks.end(); ++callback) {
+		(*callback)->run(this);
+	}
 }
 
 void ZstPlug::fire()

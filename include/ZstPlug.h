@@ -30,6 +30,8 @@ protected:
 	msgpack::sbuffer * m_buffer;
 	msgpack::packer<msgpack::sbuffer> * m_packer;
     void run_recv_callbacks();
+	void run_all_recv_callbacks();
+
     std::vector<PlugCallback*> m_received_data_callbacks;
 private:
 	ZstURI * m_uri;

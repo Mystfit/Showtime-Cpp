@@ -31,13 +31,16 @@ showtime_module = Extension('_showtime',
     swig_opts=['-c++', '-py3', '-I${Showtime_INCLUDE_DIRS}']#, '-outdir', '${CMAKE_CURRENT_BINARY_DIR}/showtime']
 )
 
+runtimes = ["@SHOWTIME_TARGET@", "${RUNTIMES_LIBZMQ}", "${RUNTIMES_CZMQ}"]
+runtimes = [os.path.normcase(x) for x in runtimes]
+
 setup (cmdclass={'build_ext': build_ext, 'build':build},
   name = 'showtime',
   version = '${SHOWTIME_VERSION}',
   author      = "Byron  Mallett",
   description = """Python bindings for Showtime""",
   packages=find_packages(),
-  data_files=[os.path.normcase("@SHOWTIME_TARGET@")],
+  data_files=runtimes,
   ext_modules = [showtime_module],
   py_modules = ["showtime"]
 )
