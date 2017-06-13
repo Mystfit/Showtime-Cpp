@@ -61,21 +61,25 @@ std::vector<ZstPerformerRef*> ZstStage::get_all_performer_refs()
 
 ZstPerformerRef * ZstStage::get_performer_ref_by_name(string performer_name) {
 
-	ZstPerformerRef * performer;
+	ZstPerformerRef * performer = NULL;
 	for (map<string, ZstEndpointRef*>::iterator endpnt_iter = m_endpoint_refs.begin(); endpnt_iter != m_endpoint_refs.end(); ++endpnt_iter) {
-		return endpnt_iter->second->get_performer_by_name(performer_name);
+		performer = endpnt_iter->second->get_performer_by_name(performer_name);
+		if (performer != NULL)
+			break;
 	}
-	return NULL;
+	return performer;
 }
 
 ZstEndpointRef * ZstStage::get_performer_endpoint(ZstPerformerRef * performer)
 {
+	ZstEndpointRef * endpoint = NULL;
 	for (map<string, ZstEndpointRef*>::iterator endpnt_iter = m_endpoint_refs.begin(); endpnt_iter != m_endpoint_refs.end(); ++endpnt_iter) {
 		if (endpnt_iter->second->get_performer_by_name(performer->name) != NULL) {
-			return endpnt_iter->second;
+			endpoint = endpnt_iter->second;
+			break;
 		}
 	}
-	return NULL;
+	return endpoint;
 }
 
 ZstEndpointRef * ZstStage::create_endpoint(std::string starting_uuid, std::string endpoint)
