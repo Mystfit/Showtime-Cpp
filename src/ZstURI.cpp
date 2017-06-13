@@ -4,7 +4,6 @@ using namespace std;
 
 ZstURI::ZstURI() : m_direction(Direction::OUT_JACK)
 {
-	cout << "In ZSTURI default constructor" << endl;
 	m_performer = "";
 	m_instrument = "";
 	m_name = "";

@@ -5,9 +5,12 @@
 #include <chrono>
 #include <czmq.h>
 #include <string>
+#include <queue>
 #include <msgpack.hpp>
 #include "ZstActor.h"
 #include "ZstExports.h"
+#include "Queue.h"
+#include "ZstPlug.h"
 
 //Fixed port numbers
 #define STAGE_REP_PORT 6000
@@ -16,7 +19,6 @@
 //Forward declarations
 class ZstURI;
 class ZstPerformer;
-class ZstPlug;
 
 class ZstEndpoint : public ZstActor {
 public:
@@ -42,6 +44,10 @@ public:
 	void connect_plugs(const ZstURI * a, const ZstURI * b);
 	
 	ZST_EXPORT std::chrono::milliseconds ping_stage();
+
+	void enqueue_plug_event(PlugEvent event);
+	ZST_EXPORT PlugEvent pop_plug_event();
+	ZST_EXPORT int plug_event_queue_size();
 
 private:
 	//Stage actor
@@ -83,6 +89,8 @@ private:
 
 	//Active local plug connections
 	std::map<ZstURI, std::vector<ZstPlug*>> m_plug_connections;
+
+	Queue<PlugEvent> m_plug_events;
 
 	//Zeromq pipes
 	zsock_t *m_stage_requests;		//Reqests sent to the stage server

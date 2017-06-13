@@ -10,6 +10,7 @@ class ZstIntPlug;
 class ZstPerformer;
 class ZstURI;
 class ZstEndpoint;
+class PlugEvent;
 
 enum RuntimeLanguage {
 	NATIVE_RUNTIME,
@@ -22,6 +23,7 @@ class Showtime
 public:
 	ZST_EXPORT ~Showtime();
 	ZST_EXPORT static ZstEndpoint & endpoint();
+	ZST_EXPORT static void destroy();
 
 	ZST_EXPORT static void set_runtime_language(RuntimeLanguage runtime);
 	ZST_EXPORT static RuntimeLanguage get_runtime_language();
@@ -35,6 +37,9 @@ public:
 	//Performers are our local containers for plugs
 	ZST_EXPORT static ZstPerformer* create_performer(const char * name);
 	ZST_EXPORT static ZstPerformer * get_performer_by_name(const char * performer);
+
+	ZST_EXPORT static PlugEvent pop_plug_event();
+	ZST_EXPORT static int plug_event_queue_size();
 
 	template<typename T>
 	static T* create_plug(ZstURI * uri) {

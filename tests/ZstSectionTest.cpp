@@ -98,9 +98,11 @@ void test_create_plugs(){
 
 class TestIntCallback : public PlugCallback{
 public:
+	bool fired = false;
     //~TestCallback();
     void run(ZstPlug* plug) override {
-        assert(((ZstIntPlug*)plug)->get_value() == 27);
+		assert(plug);
+		fired = true;
     };
 };
 
@@ -113,7 +115,9 @@ void test_connect_plugs() {
 	//Test plugs connected between performers
 	ZstIntPlug *output_int_plug = Showtime::create_plug<ZstIntPlug>(outURI);
 	ZstIntPlug *input_int_plug = Showtime::create_plug<ZstIntPlug>(inURI);
-    input_int_plug->attach_recv_callback(new TestIntCallback());
+
+	TestIntCallback * callback = new TestIntCallback();
+    input_int_plug->attach_recv_callback(callback);
 	Showtime::connect_plugs(output_int_plug->get_URI(), input_int_plug->get_URI());
 
     //TODO: First connection, so need to wait for endpoint->stage->endpoint handshake to complete. Futures could help with this?
@@ -122,7 +126,32 @@ void test_connect_plugs() {
 #else
     sleep(1);
 #endif
-	output_int_plug->fire(27);
+	int num_fires = 5;
+	for (int i = 0; i < num_fires; ++i) {
+		output_int_plug->fire(i);
+	}
+
+#ifdef WIN32
+	Sleep(500);
+#else
+	sleep(1);
+#endif
+	//Test callbacks
+	assert(callback->fired);
+	std::cout << "Callback test successful" << std::endl;
+	delete callback;
+
+	//Test event queue. This is thread safe so we can pop each event off at our leisure
+	for (int i = num_fires; i > 0; --i) {
+		assert(Showtime::plug_event_queue_size() == i);
+		PlugEvent e = Showtime::pop_plug_event();
+		assert(e.event() == PlugEvent::Events::HIT);
+		assert(e.plug()->get_URI()->name() == input_int_plug->get_URI()->name());
+		assert(Showtime::plug_event_queue_size() == i-1);
+	}
+	std::cout << "Queue test successful" << std::endl;
+	Showtime::destroy_plug(output_int_plug);
+	Showtime::destroy_plug(input_int_plug);
 }
 
 
