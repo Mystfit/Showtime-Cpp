@@ -2,6 +2,7 @@ enable_testing()
 
 set(ZST_HEADERS 
  ${Showtime_INCLUDE_DIRS}/Showtime.h
+ ${Showtime_INCLUDE_DIRS}/Queue.h
  ${Showtime_INCLUDE_DIRS}/ZstEndpoint.h
  ${Showtime_INCLUDE_DIRS}/ZstURI.h
  ${Showtime_INCLUDE_DIRS}/ZstUtils.hpp

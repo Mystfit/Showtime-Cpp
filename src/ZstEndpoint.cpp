@@ -1,6 +1,3 @@
-#ifdef USEPYTHON
-#include <python.h>
-#endif
 #include "Showtime.h"
 #include "ZstPerformer.h"
 #include "ZstEndpoint.h"
@@ -313,10 +310,21 @@ chrono::milliseconds ZstEndpoint::ping_stage()
 	return delta;
 }
 
-//std::chrono::milliseconds ZstEndpoint::ping_stage() {
+void ZstEndpoint::enqueue_plug_event(PlugEvent event)
+{
+	std::cout << "About to enqueue" << std::endl;
+	m_plug_events.push(event);
+}
 
-//}
+PlugEvent ZstEndpoint::pop_plug_event()
+{
+	return m_plug_events.pop();
+}
 
+int ZstEndpoint::plug_event_queue_size()
+{
+	return m_plug_events.size();
+}
 
 
 // ------------

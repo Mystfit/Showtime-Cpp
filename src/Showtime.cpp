@@ -1,6 +1,7 @@
 #include "Showtime.h"
 #include "ZstEndpoint.h"
 #include "ZstMessages.h"
+#include "ZstPlug.h"
 
 using namespace std;
 
@@ -16,6 +17,10 @@ ZstEndpoint & Showtime::endpoint()
 {
 	static ZstEndpoint endpoint_singleton;
 	return endpoint_singleton;
+}
+
+void Showtime::destroy() {
+	Showtime::endpoint().destroy();
 }
 
 void Showtime::join(const char * stage_address){
@@ -55,6 +60,16 @@ ZstIntPlug * Showtime::create_int_plug(ZstURI * uri) {
 ZstPerformer * Showtime::get_performer_by_name(const char * performer)
 {
 	return Showtime::endpoint().get_performer_by_name(performer);
+}
+
+PlugEvent Showtime::pop_plug_event()
+{
+	return Showtime::endpoint().pop_plug_event();
+}
+
+int Showtime::plug_event_queue_size()
+{
+	return Showtime::endpoint().plug_event_queue_size();
 }
 
 void Showtime::destroy_plug(ZstPlug * plug)

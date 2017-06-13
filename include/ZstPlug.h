@@ -17,8 +17,8 @@ public:
 	ZST_EXPORT ~ZstPlug();
 
 	ZST_EXPORT ZstURI * get_URI() const;
-    
-    //Plug callbacks
+
+	//Plug callbacks
     ZST_EXPORT void attach_recv_callback(PlugCallback * callback);
     ZST_EXPORT void destroy_recv_callback(PlugCallback * callback);
     
@@ -54,6 +54,25 @@ public:
     virtual void run(ZstPlug * plug) { std::cout << "PlugCallback::run()" << std::endl; }
 };
 
+
+class PlugEvent {
+public:
+	enum Events {
+		DEFAULT = 0 ,
+		CREATED,
+		DESTROYED,
+		HIT
+	};
+	
+	ZST_EXPORT PlugEvent();
+	ZST_EXPORT PlugEvent(Events e, ZstPlug * p);
+	ZST_EXPORT ~PlugEvent();
+	ZST_EXPORT Events event();
+	ZST_EXPORT ZstPlug * plug();
+private:
+	Events m_event;
+	ZstPlug * m_plug;
+};
 
 
 // ----------------------
