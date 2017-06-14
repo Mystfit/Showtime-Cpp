@@ -4,6 +4,21 @@ using namespace std;
 
 ZstStage::ZstStage()
 {
+}
+
+ZstStage::~ZstStage()
+{
+	ZstActor::~ZstActor();
+
+	//Close stage pipes
+	zsock_destroy(&m_performer_requests);
+	zsock_destroy(&m_performer_router);
+	zsock_destroy(&m_graph_update_pub);
+}
+
+void ZstStage::init()
+{
+	ZstActor::init();
 	m_performer_requests = zsock_new_rep("@tcp://*:6000");
 	zsock_set_linger(m_performer_requests, 0);
 	attach_pipe_listener(m_performer_requests, s_handle_performer_requests, this);
@@ -19,19 +34,10 @@ ZstStage::ZstStage()
 	start();
 }
 
-ZstStage::~ZstStage()
-{
-	ZstActor::~ZstActor();
-
-	//Close stage pipes
-	zsock_destroy(&m_performer_requests);
-	zsock_destroy(&m_performer_router);
-	zsock_destroy(&m_graph_update_pub);
-}
-
 ZstStage* ZstStage::create_stage()
 {
 	ZstStage* stage = new ZstStage();
+	stage->init();
 	return stage;
 }
 

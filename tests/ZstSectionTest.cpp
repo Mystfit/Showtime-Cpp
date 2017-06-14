@@ -169,6 +169,7 @@ int main(int argc,char **argv){
 	system("pause");
 #endif
     
+	Showtime::init();
     Showtime::join("127.0.0.1");
 	ZstPerformer * performer_a = Showtime::create_performer("test_performer_1");
 	ZstPerformer * performer_b = Showtime::create_performer("test_performer_2");

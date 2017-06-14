@@ -9,7 +9,6 @@
 using namespace std;
 
 ZstEndpoint::ZstEndpoint() {
-	m_startup_uuid = zuuid_new();
 }
 
 ZstEndpoint::~ZstEndpoint() {
@@ -22,7 +21,8 @@ void ZstEndpoint::destroy() {
 		return;
 
 	m_is_ending = true;
-	ZstActor::~ZstActor();
+	m_connected_to_stage = false;
+	ZstActor::destroy();
 	zsock_destroy(&m_stage_requests);
 	zsock_destroy(&m_stage_router);
 	zsock_destroy(&m_graph_in);
@@ -32,17 +32,10 @@ void ZstEndpoint::destroy() {
 
 
 //ZstEndpoint
-void ZstEndpoint::init(const string stage_address)
+void ZstEndpoint::init()
 {
-	m_stage_addr = string(stage_address);
-
-	//Build endpoint addresses
-	char stage_req_addr[100];
-	sprintf(stage_req_addr, "tcp://%s:%d", stage_address.c_str(), STAGE_REP_PORT);
-
-	//Stage request socket for querying the performance
-	m_stage_requests = zsock_new_req(stage_req_addr);
-	zsock_set_linger(m_stage_requests, 0);
+	ZstActor::init();
+	m_startup_uuid = zuuid_new();
 
 	//Local dealer socket for receiving messages forwarded from other performers
 	m_stage_router = zsock_new(ZMQ_DEALER);
@@ -139,7 +132,17 @@ int ZstEndpoint::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
 	return 0;
 }
 
-void ZstEndpoint::register_endpoint_to_stage() {
+void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
+	m_stage_addr = string(stage_address);
+
+	//Build endpoint addresses
+	char stage_req_addr[100];
+	sprintf(stage_req_addr, "tcp://%s:%d", stage_address.c_str(), STAGE_REP_PORT);
+
+	//Stage request socket for querying the performance
+	m_stage_requests = zsock_new_req(stage_req_addr);
+	zsock_set_linger(m_stage_requests, 0);
+
 	ZstMessages::RegisterEndpoint args;
 	args.uuid = zuuid_str(m_startup_uuid);
 	args.address = m_output_endpoint;
@@ -162,10 +165,17 @@ void ZstEndpoint::register_endpoint_to_stage() {
 		m_assigned_uuid = endpoint_ack.assigned_uuid;
 		zsock_set_identity(m_stage_router, endpoint_ack.assigned_uuid.c_str());
 		zsock_connect(m_stage_router, stage_router_addr);
+
+		m_connected_to_stage = true;
 	}
 	else {
 		throw runtime_error("PERFORMER: Stage performer registration responded with ERR");
 	}
+}
+
+bool ZstEndpoint::is_connected_to_stage()
+{
+	return m_connected_to_stage;
 }
 
 void ZstEndpoint::register_performer_to_stage(string performer) {

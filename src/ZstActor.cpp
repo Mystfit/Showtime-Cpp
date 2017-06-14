@@ -5,15 +5,24 @@ using namespace std;
 
 ZstActor::ZstActor()
 {
-	m_loop = zloop_new();
-	zloop_set_verbose(m_loop, false);
 }
 
 ZstActor::~ZstActor()
 {
+	destroy();
+}
+
+void ZstActor::destroy()
+{
 	stop();
 	free(m_loop);
 	free(m_loop_actor);
+}
+
+void ZstActor::init()
+{
+	m_loop = zloop_new();
+	zloop_set_verbose(m_loop, false);
 }
 
 void ZstActor::start()

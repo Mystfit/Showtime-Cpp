@@ -23,10 +23,14 @@ void Showtime::destroy() {
 	Showtime::endpoint().destroy();
 }
 
+void Showtime::init()
+{
+	Showtime::endpoint().init();
+}
+
 void Showtime::join(const char * stage_address){
 	cout << "Connecting to stage located at " << stage_address << endl;
-	Showtime::endpoint().init(stage_address);
-	Showtime::endpoint().register_endpoint_to_stage();
+	Showtime::endpoint().register_endpoint_to_stage(stage_address);
 }
 
 void Showtime::set_runtime_language(RuntimeLanguage runtime)

@@ -8,6 +8,8 @@ class ZstActor {
 public:
 	ZstActor();
 	~ZstActor();
+	virtual void destroy();
+	virtual void init();
 
 	virtual void start();
 	virtual void stop();

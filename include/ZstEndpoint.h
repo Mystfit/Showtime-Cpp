@@ -24,13 +24,15 @@ class ZstEndpoint : public ZstActor {
 public:
 	ZstEndpoint();
 	~ZstEndpoint();
-	void init(std::string stage_address);
+	ZST_EXPORT void init();
 	ZST_EXPORT void destroy();
 
 	void send_to_graph(zmsg_t * msg);
 	zmsg_t * receive_from_graph();
 
-	void register_endpoint_to_stage();
+	void register_endpoint_to_stage(std::string stage_address);
+	bool is_connected_to_stage();
+
 	ZstPerformer * create_performer(std::string name);
 	ZstPerformer * get_performer_by_name(std::string performer);
 	
@@ -76,6 +78,7 @@ private:
 
 	//Destruction
 	bool m_is_ending;
+	bool m_connected_to_stage = false;
 
 	zuuid_t * m_startup_uuid;
 	std::string m_assigned_uuid;

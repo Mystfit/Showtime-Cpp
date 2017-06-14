@@ -29,6 +29,7 @@ public:
 	ZST_EXPORT static RuntimeLanguage get_runtime_language();
 
 	//Init
+	ZST_EXPORT static void init();
     ZST_EXPORT static void join(const char * stage_address);
 
     //Stage methods

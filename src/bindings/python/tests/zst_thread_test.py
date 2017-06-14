@@ -7,18 +7,19 @@ class Watcher(threading.Thread):
         threading.Thread.__init__(self)
         self.setDaemon(True)
         self.runcount = 2
-    
+
     def run(self):
-        while runcount > 0:
+        while self.runcount > 0:
             event = showtime.Showtime_pop_plug_event()
             print("Received plug event")
             if event.event() == showtime.PlugEvent.HIT:
                 print("Received plug hit: {0}".format(showtime.convert_to_int_plug(event.plug()).get_value()))
-            runcount -=1 ;
+            self.runcount -=1 ;
 
 watch = Watcher()
 watch.start()
 
+showtime.Showtime_init();
 showtime.Showtime_join("127.0.0.1")
 perf = showtime.Showtime_create_performer("python_perf")
 
@@ -31,8 +32,6 @@ plug_out = showtime.Showtime_create_int_plug(local_uri_out)
 showtime.Showtime_connect_plugs(local_uri_in, local_uri_out)
 time.sleep(0.1)
 plug_out.fire(27)
-time.sleep(0.1)
-
 time.sleep(0.1)
 
 # Listen test
@@ -48,7 +47,7 @@ if choice == "y":
 # Remote Send test
 choice = input("Send to dotnet? y/n")
 if choice == "y":
-    remote_uri = showtime.ZstURI_create("dotnet_perf", "ins", "plug_in", showtime.ZstURI.IN_JACK)
+    remote_uri = showtime.ZstURI_create("unity_performer", "ins", "plug_in", showtime.ZstURI.IN_JACK)
     showtime.Showtime_connect_plugs(remote_uri, local_uri_out)
     time.sleep(0.1)
     plug_out.fire(27)

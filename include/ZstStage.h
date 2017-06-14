@@ -21,6 +21,7 @@ public:
     //int router_port = 6001;
     
     ZST_EXPORT ~ZstStage();
+	ZST_EXPORT void init();
     ZST_EXPORT static ZstStage* create_stage();
 
 	ZST_EXPORT std::vector<ZstPlugRef*> get_all_plug_refs();
