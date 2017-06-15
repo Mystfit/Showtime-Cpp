@@ -189,8 +189,10 @@ void ZstEndpoint::register_performer_to_stage(string performer) {
 	zmsg_t *responseMsg = receive_from_stage();
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
 
-	if (message_type != ZstMessages::Signal::OK) {
-		throw runtime_error("PERFORMER: Plug registration responded with message other than OK");
+	if (message_type == ZstMessages::Kind::SIGNAL) {
+		ZstMessages::Signal s = ZstMessages::unpack_signal(responseMsg);
+		if(s != ZstMessages::Signal::OK)
+			throw runtime_error("PERFORMER: Performer registration responded with message other than OK");
 	}
 }
 
@@ -219,8 +221,10 @@ template<typename T>
 	zmsg_t *responseMsg = Showtime::endpoint().receive_from_stage();
 
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
-	if (message_type != ZstMessages::Signal::OK) {
-		throw runtime_error("PERFORMER: Plug registration responded with message other than OK");
+	if (message_type == ZstMessages::Kind::SIGNAL) {
+		ZstMessages::Signal s = ZstMessages::unpack_signal(responseMsg);
+		if (s != ZstMessages::Signal::OK)
+			throw runtime_error("PERFORMER: Plug creation responded with message other than OK");
 	}
 
 	T *plug = new T(uri);
@@ -241,8 +245,10 @@ template<typename T>
 
 	zmsg_t *responseMsg = receive_from_stage();
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
-	if (message_type != ZstMessages::Signal::OK) {
-		throw runtime_error("PERFORMER: Plug deletion responded with message other than OK");
+	if (message_type != ZstMessages::Kind::SIGNAL) {
+		ZstMessages::Signal s = ZstMessages::unpack_signal(responseMsg);
+		if (s != ZstMessages::Signal::OK)
+			throw runtime_error("PERFORMER: Plug deletion responded with message other than OK");
 	}
 	ZstURI * s = plug->get_URI();
 	m_performers[plug->get_URI()->performer()]->remove_plug(plug);
@@ -284,9 +290,12 @@ void ZstEndpoint::connect_plugs(const ZstURI * a, const ZstURI * b)
 	send_to_stage(ZstMessages::build_message<ZstMessages::ConnectPlugs>(ZstMessages::Kind::STAGE_REGISTER_CONNECTION, plug_args));
 
 	zmsg_t *responseMsg = receive_from_stage();
+
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
-	if (message_type != ZstMessages::Signal::OK) {
-		throw runtime_error("PERFORMER: Plug connect responded with message other than OK");
+	if (message_type == ZstMessages::Kind::SIGNAL) {
+		ZstMessages::Signal s = ZstMessages::unpack_signal(responseMsg);
+		if (s != ZstMessages::Signal::OK)
+			throw runtime_error("PERFORMER: Plug connection responded with message other than OK");
 	}
 }
 

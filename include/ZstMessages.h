@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 #include <iostream>
 #include <stdio.h>
 #include <msgpack.hpp>
@@ -160,7 +161,8 @@ public:
 	template <typename T>
 	static zmsg_t * build_message(Kind message_id, T message_args) {
 		zmsg_t *msg = zmsg_new();
-		zmsg_add(msg, build_message_kind_frame(message_id));
+		zframe_t * kind = build_message_kind_frame(message_id);
+		zmsg_append(msg, &kind);
 
 		msgpack::sbuffer buf;
 		msgpack::pack(buf, message_args);
@@ -180,6 +182,18 @@ public:
         zmsg_append(msg, &payload);
         return msg;
     }
+
+	static zmsg_t * build_signal(ZstMessages::Signal signal) {
+		zmsg_t *msg = zmsg_new();
+		zframe_t * kind = build_message_kind_frame(ZstMessages::Kind::SIGNAL);
+		zmsg_append(msg, &kind);
+		zmsg_addstr(msg, std::to_string(signal).c_str());
+		return msg;
+	}
+
+	static Signal unpack_signal(zmsg_t * msg) {
+		return (Signal)std::atoi(zmsg_popstr(msg));
+	}
 };
 
 //Enums for MsgPack

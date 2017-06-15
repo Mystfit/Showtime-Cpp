@@ -111,6 +111,7 @@ void test_connect_plugs() {
 
 	ZstURI * outURI = ZstURI::create("test_performer_1", "test_instrument", "test_output_plug", ZstURI::Direction::OUT_JACK);
 	ZstURI * inURI = ZstURI::create("test_performer_1", "test_instrument", "test_input_plug", ZstURI::Direction::IN_JACK);
+	ZstURI * badURI = ZstURI::create("fake_performer", "test_instrument", "test_input_plug", ZstURI::Direction::IN_JACK);
 
 	//Test plugs connected between performers
 	ZstIntPlug *output_int_plug = Showtime::create_plug<ZstIntPlug>(outURI);
@@ -119,6 +120,17 @@ void test_connect_plugs() {
 	TestIntCallback * callback = new TestIntCallback();
     input_int_plug->attach_recv_callback(callback);
 	Showtime::connect_plugs(output_int_plug->get_URI(), input_int_plug->get_URI());
+
+	//Test connecting missing URI objects
+	bool exceptionThrown = false;
+	try{
+		Showtime::connect_plugs(output_int_plug->get_URI(), badURI);
+	}
+	catch (std::runtime_error&){
+		exceptionThrown = true;
+	}
+	assert(exceptionThrown);
+
 
     //TODO: First connection, so need to wait for endpoint->stage->endpoint handshake to complete. Futures could help with this?
 #ifdef WIN32

@@ -196,7 +196,7 @@ void ZstStage::reply_with_signal(zsock_t * socket, ZstMessages::Signal status, Z
 	ZstMessages::SignalAck signal_ack;
 	signal_ack.sig = status;
 
-	zmsg_t * signal_msg = ZstMessages::build_message<ZstMessages::SignalAck>(ZstMessages::Kind::SIGNAL, signal_ack);
+	zmsg_t * signal_msg = ZstMessages::build_signal(status);
 
 	if (destination != NULL) {
 		zframe_t * empty = zframe_new_empty();
@@ -332,14 +332,18 @@ void ZstStage::connect_plugs_handler(zsock_t * socket, zmsg_t * msg)
 {
 	ZstMessages::ConnectPlugs plug_args = ZstMessages::unpack_message_struct<ZstMessages::ConnectPlugs>(msg);
 	cout << "STAGE: Received connect plug request for " << plug_args.first.to_str() << " and " << plug_args.second.to_str() << endl;
-
+	int connect_status = 0;
 	if (plug_args.first.direction() == ZstURI::Direction::OUT_JACK && plug_args.second.direction() == ZstURI::Direction::IN_JACK) {
-		connect_plugs(plug_args.first, plug_args.second);
+		connect_status = connect_plugs(plug_args.first, plug_args.second);
 	}
 	else if (plug_args.first.direction() == ZstURI::Direction::IN_JACK && plug_args.second.direction() == ZstURI::Direction::OUT_JACK) {
-		connect_plugs(plug_args.second, plug_args.first);
+		connect_status = connect_plugs(plug_args.second, plug_args.first);
 	}
 	else {
+		connect_status = -1;
+	}
+
+	if (connect_status != 0) {
 		cout << "STAGE: Bad plug connect request" << endl;
 		reply_with_signal(socket, ZstMessages::Signal::ERR_STAGE_BAD_PLUG_CONNECT_REQUEST);
 		return;
@@ -348,15 +352,15 @@ void ZstStage::connect_plugs_handler(zsock_t * socket, zmsg_t * msg)
 	reply_with_signal(socket, ZstMessages::Signal::OK);
 }
 
-void ZstStage::connect_plugs(ZstURI output_plug, ZstURI input_plug)
+int ZstStage::connect_plugs(ZstURI output_plug, ZstURI input_plug)
 {
-	//Need to get to the input performer and tell it to initiate a connection to the output performer
-	//Will the performer need to return information back to the output?
-	//The stage will dispatch a graph update, so will the client need to do this? Probably not
-
     ZstPerformerRef * output_performer = get_performer_ref_by_name(output_plug.performer());
     ZstPerformerRef * input_performer = get_performer_ref_by_name(input_plug.performer());
     
+	if (!(output_performer && input_performer)) {
+		return -1;
+	}
+
 	ZstMessages::PerformerConnection perf_args;
 	perf_args.output_plug = output_plug;
 	perf_args.input_plug = input_plug;
@@ -370,4 +374,5 @@ void ZstStage::connect_plugs(ZstURI output_plug, ZstURI input_plug)
 
 	cout << "STAGE: Sending plug connection request to " << get_performer_endpoint(input_performer)->client_assigned_uuid.c_str() << endl;
 	zmsg_send(&connectMsg, m_performer_router);
+	return 0;
 }

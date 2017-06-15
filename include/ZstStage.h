@@ -63,6 +63,6 @@ private:
 	std::map<std::string, ZstEndpointRef*> m_endpoint_refs;
 
 	//Plug connections
-    void connect_plugs(ZstURI output_plug, ZstURI input_plug);
+    int connect_plugs(ZstURI output_plug, ZstURI input_plug);
 };
 
