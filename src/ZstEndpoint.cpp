@@ -1,6 +1,3 @@
-#ifdef USEPYTHON
-#include <python.h>
-#endif
 #include "Showtime.h"
 #include "ZstPerformer.h"
 #include "ZstEndpoint.h"
@@ -200,7 +197,7 @@ ZstPerformer * ZstEndpoint::get_performer_by_name(std::string performer)
 	return m_performers[performer];
 }
 
-template ZST_EXPORT ZstIntPlug* ZstEndpoint::create_plug<ZstIntPlug>(ZstURI * uri);
+template ZstIntPlug* ZstEndpoint::create_plug<ZstIntPlug>(ZstURI * uri);
 template<typename T>
  T* ZstEndpoint::create_plug(ZstURI * uri) {
 

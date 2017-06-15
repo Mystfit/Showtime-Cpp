@@ -2,10 +2,6 @@
 #include "Showtime.h"
 #include "ZstEndpoint.h"
 
-#ifdef USEPYTHON
-#include <python.h>
-#endif
-
 using namespace std;
 
 ZstPlug::ZstPlug(ZstURI * uri) : m_uri(uri)
@@ -38,26 +34,12 @@ void ZstPlug::run_recv_callbacks(){
 	cout << "PERFORMER: Running input plug callbacks" << endl;
 
     if(m_received_data_callbacks.size() > 0){
-		if (Showtime::get_runtime_language() == RuntimeLanguage::PYTHON_RUNTIME) {
-#ifdef USEPYTHON
-			Py_BEGIN_ALLOW_THREADS;
-#endif
-			run_all_recv_callbacks();
-#ifdef USEPYTHON
-			Py_END_ALLOW_THREADS;
-#endif
-		}
-		else {
-			run_all_recv_callbacks();
-		}
+        for (vector<PlugCallback*>::iterator callback = m_received_data_callbacks.begin(); callback != m_received_data_callbacks.end(); ++callback) {
+            (*callback)->run(this);
+        }
     }
 }
 
-void ZstPlug::run_all_recv_callbacks() {
-	for (vector<PlugCallback*>::iterator callback = m_received_data_callbacks.begin(); callback != m_received_data_callbacks.end(); ++callback) {
-		(*callback)->run(this);
-	}
-}
 
 void ZstPlug::fire()
 {

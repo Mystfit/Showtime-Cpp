@@ -42,8 +42,8 @@ void test_create_plugs(){
 	ZstURI * inURI = ZstURI::create("test_performer_1", "test_instrument", "test_input_plug", ZstURI::Direction::IN_JACK);
 	
 	//URI ownership taken over by plug
-	ZstIntPlug *outputPlug = Showtime::create_plug<ZstIntPlug>(outURI);
-	ZstIntPlug *inputPlug = Showtime::create_plug<ZstIntPlug>(inURI);
+	ZstIntPlug *outputPlug = Showtime::create_int_plug(outURI);
+	ZstIntPlug *inputPlug = Showtime::create_int_plug(inURI);
     
     //Check address equality
     assert(outputPlug->get_URI() == outURI);
@@ -111,8 +111,8 @@ void test_connect_plugs() {
 	ZstURI * inURI = ZstURI::create("test_performer_1", "test_instrument", "test_input_plug", ZstURI::Direction::IN_JACK);
 
 	//Test plugs connected between performers
-	ZstIntPlug *output_int_plug = Showtime::create_plug<ZstIntPlug>(outURI);
-	ZstIntPlug *input_int_plug = Showtime::create_plug<ZstIntPlug>(inURI);
+	ZstIntPlug *output_int_plug = Showtime::create_int_plug(outURI);
+	ZstIntPlug *input_int_plug = Showtime::create_int_plug(inURI);
     input_int_plug->attach_recv_callback(new TestIntCallback());
 	Showtime::connect_plugs(output_int_plug->get_URI(), input_int_plug->get_URI());
 
@@ -138,6 +138,8 @@ int main(int argc,char **argv){
 	std::cout << "Stage created" << std::endl;
 #ifdef WIN32
 	system("pause");
+#else
+    system( "read -n 1 -s -p \"Press any key to continue...\"" );
 #endif
     
     Showtime::join("127.0.0.1");

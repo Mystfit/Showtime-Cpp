@@ -24,6 +24,10 @@ set(SHOWTIME_TARGET '$<TARGET_FILE:${PROJECT_NAME}>')
 
 get_filename_component(SETUPPY_PARSER ${CMAKE_CURRENT_SOURCE_DIR}/showtime-final.cmake REALPATH)
 
+if(MACOSX)
+	SET(PREFIX 'LDFLAGS="-framework Showtime")
+ENDIF
+
 # Command for building second-pass setup.py
 add_custom_command(OUTPUT ${SETUP_PY}
 					COMMAND ${CMAKE_COMMAND}
@@ -36,7 +40,7 @@ add_custom_command(OUTPUT ${SETUP_PY}
 
 # Command for showtime c extension build step
 add_custom_command(OUTPUT ${BUILD_STAMP}
-                	COMMAND ${PYTHON} ${SETUP_PY} build
+                	COMMAND ${PREFIX} ${PYTHON_EXECUTABLE} ${SETUP_PY} build
                 	COMMAND ${CMAKE_COMMAND} -E touch ${BUILD_STAMP}
                 	DEPENDS ${SETUP_PY} ${DEPS} ${PROJECT_NAME})
 

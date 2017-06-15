@@ -1,20 +1,25 @@
 enable_testing()
 
-set(ZST_HEADERS 
+set(ZST_PUBLIC_HEADERS 
  ${Showtime_INCLUDE_DIRS}/Showtime.h
- ${Showtime_INCLUDE_DIRS}/ZstEndpoint.h
  ${Showtime_INCLUDE_DIRS}/ZstURI.h
  ${Showtime_INCLUDE_DIRS}/ZstUtils.hpp
- ${Showtime_INCLUDE_DIRS}/ZstActor.h	
  ${Showtime_INCLUDE_DIRS}/ZstPlug.h
- ${Showtime_INCLUDE_DIRS}/ZstPlugRef.h
  ${Showtime_INCLUDE_DIRS}/ZstPerformer.h
- ${Showtime_INCLUDE_DIRS}/ZstPerformerRef.h
- ${Showtime_INCLUDE_DIRS}/ZstEndpointRef.h
- ${Showtime_INCLUDE_DIRS}/ZstExports.h
  ${Showtime_INCLUDE_DIRS}/ZstStage.h
  ${Showtime_INCLUDE_DIRS}/ZstMessages.h
 )
+
+set(ZST_PRIVATE_HEADERS 
+ ${Showtime_INCLUDE_DIRS}/ZstEndpoint.h
+ ${Showtime_INCLUDE_DIRS}/ZstActor.h	
+ ${Showtime_INCLUDE_DIRS}/ZstPlugRef.h
+ ${Showtime_INCLUDE_DIRS}/ZstPerformerRef.h
+ ${Showtime_INCLUDE_DIRS}/ZstEndpointRef.h
+ ${Showtime_INCLUDE_DIRS}/ZstExports.h
+)
+
+set(ZST_HEADERS ${ZST_PUBLIC_HEADERS} ${ZST_PRIVATE_HEADERS})
 
 set(ZST_SOURCE 
  "Showtime.cpp"
@@ -64,6 +69,21 @@ ENDIF(WIN32)
 
 add_library(${PROJECT_NAME} SHARED ${ZST_HEADERS} ${ZST_SOURCE})
 target_link_libraries(${PROJECT_NAME} ${ZST_LINK_LIBS})
+
+if(MACOSX)
+	# set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER ${ZST_HEADERS})
+	set_target_properties(${PROJECT_NAME} PROPERTIES
+	  FRAMEWORK TRUE
+	  FRAMEWORK_VERSION "${SHOWTIME_VERSION}"
+	  PUBLIC_HEADER "${ZST_HEADERS}"
+  	)
+
+	install(TARGETS ${PROJECT_NAME}
+		FRAMEWORK DESTINATION "/Library/Frameworks/"
+		PUBLIC_HEADER DESTINATION "/usr/local/include/${PROJECT_NAME}"
+	)
+ENDIF(MACOSX)
+
 add_test( section_heartbeat Exename arg1 arg2 ... )
 
 if(BINDINGS_RUBY)
