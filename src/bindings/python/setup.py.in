@@ -23,8 +23,8 @@ class build_ext(_build_ext):
         self.swig = "${SWIG_EXECUTABLE}"
 
 extra_link_args = [] #['/DEBUG']
-if platform.system() == 'Darwin':
-    extra_link_args.append('-Wl,-rpath,'+'@SHOWTIME_TARGET@')
+#if platform.system() == 'Darwin':
+#    extra_link_args.append('-Wl,-rpath,'+'@SHOWTIME_TARGET@')
 
 showtime_module = Extension('_showtime',
     sources=['${CMAKE_CURRENT_BINARY_DIR}/showtime.i'],
@@ -36,7 +36,8 @@ showtime_module = Extension('_showtime',
     swig_opts=['-c++', '-py3', '-I${Showtime_INCLUDE_DIRS}']#, '-outdir', '${CMAKE_CURRENT_BINARY_DIR}/showtime']
 )
 
-runtimes = ["@SHOWTIME_TARGET@", "${RUNTIMES_LIBZMQ}", "${RUNTIMES_CZMQ}"]
+#"@SHOWTIME_TARGET@"
+runtimes = ["${RUNTIMES_LIBZMQ}", "${RUNTIMES_CZMQ}"]
 runtimes = [os.path.normcase(x) for x in runtimes]
 
 setup (cmdclass={'build_ext': build_ext, 'build':build},

@@ -55,13 +55,6 @@ option(BINDINGS_RUBY "Build python bindings" OFF)
 option(BINDINGS_PYTHON "Build ruby bindings" OFF)
 option(BINDINGS_DOTNET "Build C# bindings" OFF)
 
-if(BINDINGS_PYTHON)
-	add_definitions(-DUSEPYTHON)
-	FIND_PACKAGE(PythonLibs 3.6 REQUIRED)
-	list(APPEND ZST_INCLUDES ${PYTHON_INCLUDE_PATH})
-	list(APPEND ZST_LINK_LIBS ${PYTHON_LIBRARIES})
-ENDIF(BINDINGS_PYTHON)
-
 include_directories(${ZST_INCLUDES})
 
 IF(WIN32)
@@ -92,6 +85,7 @@ if(BINDINGS_RUBY)
 endif(BINDINGS_RUBY)
 
 if(BINDINGS_PYTHON)
+    FIND_PACKAGE(PythonLibs 3.6 REQUIRED)
 	INCLUDE(FindPythonInterp)
 	get_filename_component(PYTHON_DIR ${PYTHON_EXECUTABLE} DIRECTORY)	
 	add_subdirectory(bindings/python)

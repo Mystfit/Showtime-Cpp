@@ -15,6 +15,8 @@ set(SWIG_INTERFACES "${CMAKE_CURRENT_SOURCE_DIR}/showtime.i")
 set(SWIG_INTERFACES_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/showtime.i")
 configure_file(${SWIG_INTERFACES} ${SWIG_INTERFACES_DESTINATION} COPYONLY)
 
+FIND_PACKAGE(PythonLibs 3.6 REQUIRED)
+
 # Copy showtime module files
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/showtime.i DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../showtime_common.i DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
@@ -29,8 +31,8 @@ set(SHOWTIME_TARGET '$<TARGET_FILE:${PROJECT_NAME}>')
 get_filename_component(SETUPPY_PARSER ${CMAKE_CURRENT_SOURCE_DIR}/showtime-final.cmake REALPATH)
 
 if(MACOSX)
-	SET(PREFIX 'LDFLAGS="-framework Showtime")
-ENDIF
+	SET(PREFIX "LDFLAGS='-framework Showtime';")
+ENDIF()
 
 # Command for building second-pass setup.py
 add_custom_command(OUTPUT ${SETUP_PY}

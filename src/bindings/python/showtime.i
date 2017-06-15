@@ -12,7 +12,7 @@
 	Showtime_set_runtime_language(PYTHON_RUNTIME);
 %}
 
-%include "../showtime_common.i" 
+%include "showtime_common.i" 
 
 %thread;
 %include "Showtime.h"
