@@ -55,8 +55,6 @@ void ZstActor::actor_thread_func(zsock_t * pipe, void * args)
 
 int ZstActor::s_handle_actor_pipe(zloop_t * loop, zsock_t * sock, void * args)
 {
-	ZstActor *actor = (ZstActor*)args;
-
 	zmsg_t *msg = zmsg_recv(sock);
 
 	//Received TERM message, this actor is going away

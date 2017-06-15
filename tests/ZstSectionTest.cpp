@@ -12,7 +12,7 @@ Showtime *performer_b;
 
 void test_URI() {
 	ZstURI uri_empty = ZstURI();
-	//assert(uri_empty.performer().empty() && uri_empty.instrument().empty() && uri_empty.name().empty());
+	assert(uri_empty.performer().empty() && uri_empty.instrument().empty() && uri_empty.name().empty());
 
 	ZstURI uri_equal1 = ZstURI("perf", "ins", "someplug", ZstURI::Direction::OUT_JACK);
 	ZstURI uri_equal2 = ZstURI("perf", "ins", "someplug", ZstURI::Direction::OUT_JACK);
@@ -42,8 +42,8 @@ void test_create_plugs(){
 	ZstURI * inURI = ZstURI::create("test_performer_1", "test_instrument", "test_input_plug", ZstURI::Direction::IN_JACK);
 	
 	//URI ownership taken over by plug
-	ZstIntPlug *outputPlug = Showtime::create_plug<ZstIntPlug>(outURI);
-	ZstIntPlug *inputPlug = Showtime::create_plug<ZstIntPlug>(inURI);
+	ZstIntPlug *outputPlug = Showtime::create_int_plug(outURI);
+	ZstIntPlug *inputPlug = Showtime::create_int_plug(inURI);
     
     //Check address equality
     assert(outputPlug->get_URI() == outURI);
@@ -60,7 +60,7 @@ void test_create_plugs(){
 
     //Check local client registered plugs correctly
 	ZstPlug *localPlug = Showtime::get_performer_by_name("test_performer_1")->get_instrument_plugs("test_instrument")[0];
-    //assert(strcmp(localPlug->get_URI().name().c_str(), localPlug->get_URI().name().c_str()) == 0);
+    assert(strcmp(localPlug->get_URI()->name().c_str(), localPlug->get_URI()->name().c_str()) == 0);
     
     std::vector<ZstPlug*> localplugs = Showtime::get_performer_by_name("test_performer_1")->get_plugs();
     assert(localplugs.size() > 1);
@@ -114,11 +114,9 @@ void test_connect_plugs() {
 	ZstURI * badURI = ZstURI::create("fake_performer", "test_instrument", "test_input_plug", ZstURI::Direction::IN_JACK);
 
 	//Test plugs connected between performers
-	ZstIntPlug *output_int_plug = Showtime::create_plug<ZstIntPlug>(outURI);
-	ZstIntPlug *input_int_plug = Showtime::create_plug<ZstIntPlug>(inURI);
-
-	TestIntCallback * callback = new TestIntCallback();
-    input_int_plug->attach_recv_callback(callback);
+	ZstIntPlug *output_int_plug = Showtime::create_int_plug(outURI);
+	ZstIntPlug *input_int_plug = Showtime::create_int_plug(inURI);
+    input_int_plug->attach_recv_callback(new TestIntCallback());
 	Showtime::connect_plugs(output_int_plug->get_URI(), input_int_plug->get_URI());
 
 	//Test connecting missing URI objects
@@ -148,11 +146,6 @@ void test_connect_plugs() {
 #else
 	sleep(1);
 #endif
-	//Test callbacks
-	assert(callback->fired);
-	std::cout << "Callback test successful" << std::endl;
-	delete callback;
-
 	//Test event queue. This is thread safe so we can pop each event off at our leisure
 	for (int i = num_fires; i > 0; --i) {
 		assert(Showtime::plug_event_queue_size() == i);
@@ -179,6 +172,8 @@ int main(int argc,char **argv){
 	std::cout << "Stage created" << std::endl;
 #ifdef WIN32
 	system("pause");
+#else
+    system( "read -n 1 -s -p \"Press any key to continue...\"" );
 #endif
     
 	Showtime::init();

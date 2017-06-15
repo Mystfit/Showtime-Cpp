@@ -250,7 +250,6 @@ template<typename T>
 		if (s != ZstMessages::Signal::OK)
 			throw runtime_error("PERFORMER: Plug deletion responded with message other than OK");
 	}
-	ZstURI * s = plug->get_URI();
 	m_performers[plug->get_URI()->performer()]->remove_plug(plug);
 	delete plug;
 }

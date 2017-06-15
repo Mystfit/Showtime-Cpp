@@ -42,10 +42,6 @@ public:
 	ZST_EXPORT static PlugEvent pop_plug_event();
 	ZST_EXPORT static int plug_event_queue_size();
 
-	template<typename T>
-	static T* create_plug(ZstURI * uri) {
-		return Showtime::endpoint().create_plug<T>(uri);
-	}
 	ZST_EXPORT static ZstIntPlug * create_int_plug(ZstURI * uri);
     ZST_EXPORT static void destroy_plug(ZstPlug *plug);
     ZST_EXPORT static std::vector<ZstURI> get_all_plug_addresses(const char * section = "", const char * instrument = "");
