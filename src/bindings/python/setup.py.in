@@ -22,24 +22,28 @@ class build_ext(_build_ext):
         _build_ext.initialize_options(self)
         self.swig = "${SWIG_EXECUTABLE}"
 
-extra_link_args = [] #['/DEBUG']
+extra_compile_args = []
+extra_link_args = []
+runtimes = []
+
 if platform.system() == 'Darwin':
     extra_link_args=['-framework', 'Showtime']
-#    extra_link_args.append('-Wl,-rpath,'+'@SHOWTIME_TARGET@')
+elif platform.system() == 'Windows':
+  extra_compile_args=['/Zi']
+  extra_link_args=['/DEBUG']
+
+  runtimes = ["${RUNTIMES_LIBZMQ}", "${RUNTIMES_CZMQ}", "@SHOWTIME_TARGET@"]
+  runtimes = [os.path.normcase(x) for x in runtimes]
 
 showtime_module = Extension('_showtime',
     sources=['${CMAKE_CURRENT_BINARY_DIR}/showtime.i'],
     include_dirs=['${Showtime_INCLUDE_DIRS}', '${MSGPACK_INCLUDE_DIRS}'],
     library_dirs=['${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Debug', '${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Release'],
     libraries=['${PROJECT_NAME}'],
-#    extra_compile_args=['/Zi'],
+    extra_compile_args=extra_compile_args,
     extra_link_args=extra_link_args,
     swig_opts=['-c++', '-py3', '-I${Showtime_INCLUDE_DIRS}']#, '-outdir', '${CMAKE_CURRENT_BINARY_DIR}/showtime']
 )
-
-#"@SHOWTIME_TARGET@"
-runtimes = ["${RUNTIMES_LIBZMQ}", "${RUNTIMES_CZMQ}"]
-runtimes = [os.path.normcase(x) for x in runtimes]
 
 setup (cmdclass={'build_ext': build_ext, 'build':build},
   name = 'showtime',
