@@ -81,8 +81,13 @@ void Showtime::destroy_plug(ZstPlug * plug)
 	return Showtime::endpoint().destroy_plug(plug);
 }
 
-std::vector<ZstURI> Showtime::get_all_plug_addresses(const char * performer, const char * instrument){
-	return Showtime::endpoint().get_all_plug_addresses(performer, instrument);
+std::vector<ZstURI> Showtime::get_all_plug_URIs(const char * performer, const char * instrument){
+	return Showtime::endpoint().get_all_plug_URIs(performer, instrument);
+}
+
+std::vector<tuple<ZstURI, ZstURI>> Showtime::get_all_plug_connections(const char * performer, const char * instrument)
+{
+	return Showtime::endpoint().get_all_plug_connections(performer, instrument);
 }
 
 void Showtime::connect_plugs(const ZstURI * a, const ZstURI * b)

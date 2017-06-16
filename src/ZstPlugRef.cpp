@@ -10,7 +10,23 @@ ZstPlugRef::~ZstPlugRef()
 {
 }
 
-ZstURI ZstPlugRef::get_address()
+ZstURI ZstPlugRef::get_URI()
 {
 	return m_address;
+}
+
+const std::vector<ZstURI> ZstPlugRef::get_output_connections() const
+{
+	return m_connections;
+}
+
+void ZstPlugRef::add_output_connection(ZstURI uri)
+{
+	return m_connections.push_back(uri);
+}
+
+void ZstPlugRef::remove_output_connection(ZstURI uri)
+{
+	throw new exception("TODO: Implement plug discconection on stage");
+	return;
 }

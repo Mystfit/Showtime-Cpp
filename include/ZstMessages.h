@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <tuple>
 #include <iostream>
 #include <stdio.h>
 #include <msgpack.hpp>
@@ -23,6 +24,8 @@ public:
         STAGE_GRAPH_UPDATES,         
         STAGE_LIST_PLUGS,
         STAGE_LIST_PLUGS_ACK,
+		STAGE_LIST_PLUG_CONNECTIONS,
+		STAGE_LIST_PLUG_CONNECTIONS_ACK,
         PERFORMER_UPDATE_PLUG,           
         ENDPOINT_HEARTBEAT,             
 		PERFORMER_REGISTER_CONNECTION
@@ -116,6 +119,11 @@ public:
         std::vector<ZstURI> plugs;
         MSGPACK_DEFINE_ARRAY(plugs);
     };
+
+	struct ListPlugConnectionsAck {
+		std::vector<std::tuple<ZstURI, ZstURI>> plug_connections;
+		MSGPACK_DEFINE_ARRAY(plug_connections);
+	};
 
 	struct ConnectPlugs {
 		ZstURI first;

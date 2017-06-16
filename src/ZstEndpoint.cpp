@@ -255,7 +255,7 @@ template<typename T>
 }
 
 
-std::vector<ZstURI> ZstEndpoint::get_all_plug_addresses(string performer, string instrument) {
+std::vector<ZstURI> ZstEndpoint::get_all_plug_URIs(string performer, string instrument) {
 	ZstMessages::ListPlugs plug_args;
 	plug_args.performer = performer;
 	plug_args.instrument = instrument;
@@ -273,11 +273,34 @@ std::vector<ZstURI> ZstEndpoint::get_all_plug_addresses(string performer, string
 		}
 	}
 	else {
-		throw runtime_error("PERFORMER: Plug registration responded with message other than STAGE_LIST_PLUGS_ACK");
+		throw runtime_error("PERFORMER: Plug list responded with message other than STAGE_LIST_PLUGS_ACK");
 	}
 	cout << "PERFORMER: Total returned remote plugs: " << plugResponse.plugs.size() << endl;
 
 	return plugResponse.plugs;
+}
+
+std::vector<std::tuple<ZstURI, ZstURI>> ZstEndpoint::get_all_plug_connections(std::string performer, std::string instrument)
+{
+	ZstMessages::ListPlugs plug_args;
+	plug_args.performer = performer;
+	plug_args.instrument = instrument;
+	send_to_stage(ZstMessages::build_message<ZstMessages::ListPlugs>(ZstMessages::Kind::STAGE_LIST_PLUG_CONNECTIONS, plug_args));
+
+	zmsg_t *responseMsg = receive_from_stage();
+
+	ZstMessages::ListPlugConnectionsAck plugResponse;
+
+	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
+	if (message_type == ZstMessages::Kind::STAGE_LIST_PLUG_CONNECTIONS_ACK) {
+		plugResponse = ZstMessages::unpack_message_struct<ZstMessages::ListPlugConnectionsAck>(responseMsg);
+	}
+	else {
+		throw runtime_error("PERFORMER: Plug list connections responded with message other than STAGE_LIST_PLUG_CONNECTIONS_ACK");
+	}
+	cout << "PERFORMER: Total returned plug connections: " << plugResponse.plug_connections.size() << endl;
+
+	return plugResponse.plug_connections;
 }
 
 

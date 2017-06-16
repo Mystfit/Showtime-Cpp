@@ -170,6 +170,9 @@ int ZstStage::s_handle_performer_requests(zloop_t * loop, zsock_t * socket, void
 	case ZstMessages::Kind::STAGE_LIST_PLUGS:
 		stage->list_plugs_handler(socket, msg);
 		break;
+	case ZstMessages::Kind::STAGE_LIST_PLUG_CONNECTIONS:
+		stage->list_plug_connections_handler(socket, msg);
+		break;
 	case ZstMessages::Kind::STAGE_DESTROY_PLUG:
 		stage->destroy_plug_handler(socket, msg);
 		break;
@@ -304,11 +307,48 @@ void ZstStage::list_plugs_handler(zsock_t *socket, zmsg_t *msg) {
 
 		//Pull addressess from plug refs
 		for (vector<ZstPlugRef*>::iterator plug_iter = plugs.begin(); plug_iter != plugs.end(); ++plug_iter) {
-			response.plugs.push_back((*plug_iter)->get_address());
+			response.plugs.push_back((*plug_iter)->get_URI());
 		}
 	}
 
 	zmsg_t *ackmsg = ZstMessages::build_message<ZstMessages::ListPlugsAck>(ZstMessages::Kind::STAGE_LIST_PLUGS_ACK, response);
+	zmsg_send(&ackmsg, socket);
+}
+
+void ZstStage::list_plug_connections_handler(zsock_t * socket, zmsg_t * msg)
+{
+	ZstMessages::ListPlugs plug_query_args = ZstMessages::unpack_message_struct<ZstMessages::ListPlugs>(msg);
+	cout << "STAGE: Received list plug connections request" << endl;
+
+	ZstMessages::ListPlugConnectionsAck response;
+
+	for (map<string, ZstEndpointRef*>::iterator endpnt_iter = m_endpoint_refs.begin(); endpnt_iter != m_endpoint_refs.end(); ++endpnt_iter)
+	{
+		//Build tuple of each plug connection
+
+		vector<ZstPlugRef*> plugs;
+		if (plug_query_args.performer.empty()) {
+			plugs = get_all_plug_refs();
+		}
+		else {
+			ZstPerformerRef* endpoint = endpnt_iter->second->get_performer_by_name(plug_query_args.performer);
+			if (endpoint != NULL) {
+				plugs = endpnt_iter->second->get_performer_by_name(plug_query_args.performer)->get_plug_refs();
+			}
+		}
+
+		//Pull URI from plug refs per connection
+		for (vector<ZstPlugRef*>::iterator plug_iter = plugs.begin(); plug_iter != plugs.end(); ++plug_iter) {
+			if ((*plug_iter)->get_output_connections().size() > 0) {
+				vector<ZstURI> connections = (*plug_iter)->get_output_connections();
+				for (vector<ZstURI>::iterator out_plug_iter = connections.begin(); out_plug_iter != connections.end(); ++out_plug_iter) {
+					response.plug_connections.push_back(tuple<ZstURI, ZstURI>((*plug_iter)->get_URI(), (*out_plug_iter)));
+				}
+			}
+		}
+	}
+
+	zmsg_t *ackmsg = ZstMessages::build_message<ZstMessages::ListPlugConnectionsAck>(ZstMessages::Kind::STAGE_LIST_PLUG_CONNECTIONS_ACK, response);
 	zmsg_send(&ackmsg, socket);
 }
 
@@ -360,6 +400,8 @@ int ZstStage::connect_plugs(ZstURI output_plug, ZstURI input_plug)
 	if (!(output_performer && input_performer)) {
 		return -1;
 	}
+
+	output_performer->get_plug_by_name(output_plug.name())->add_output_connection(input_plug);
 
 	ZstMessages::PerformerConnection perf_args;
 	perf_args.output_plug = output_plug;

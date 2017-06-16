@@ -6,6 +6,7 @@
 #include <czmq.h>
 #include <string>
 #include <queue>
+#include <tuple>
 #include <msgpack.hpp>
 #include "ZstActor.h"
 #include "ZstExports.h"
@@ -42,7 +43,9 @@ public:
 
 	ZST_EXPORT void destroy_plug(ZstPlug * plug);
 
-	ZST_EXPORT  std::vector<ZstURI> get_all_plug_addresses(std::string performer="", std::string instrument="");
+	ZST_EXPORT  std::vector<ZstURI> get_all_plug_URIs(std::string performer="", std::string instrument="");
+	ZST_EXPORT  std::vector<std::tuple<ZstURI, ZstURI>> get_all_plug_connections(std::string performer = "", std::string instrument = "");
+
 	void connect_plugs(const ZstURI * a, const ZstURI * b);
 	
 	ZST_EXPORT std::chrono::milliseconds ping_stage();

@@ -1,4 +1,6 @@
 #include <string>
+#include <vector>
+#include <tuple>
 #include <iostream>
 #include "Showtime.h"
 #include "ZstPlug.h"
@@ -68,13 +70,13 @@ void test_create_plugs(){
     assert(stagePerformerRef->get_plug_by_name(localplugs[1]->get_URI()->name()) != NULL);
     
     //Query stage for remote plugs
-    std::vector<ZstURI> plugs = Showtime::endpoint().get_all_plug_addresses();
+    std::vector<ZstURI> plugs = Showtime::endpoint().get_all_plug_URIs();
     assert(plugs.size() > 0);
-    plugs = Showtime::endpoint().get_all_plug_addresses("test_performer_1");
+    plugs = Showtime::endpoint().get_all_plug_URIs("test_performer_1");
     assert(plugs.size() > 0);
-    plugs = Showtime::endpoint().get_all_plug_addresses("non_existing_performer");
+    plugs = Showtime::endpoint().get_all_plug_URIs("non_existing_performer");
     assert(plugs.size() == 0);
-    plugs = Showtime::endpoint().get_all_plug_addresses("test_performer_1", "test_instrument");
+    plugs = Showtime::endpoint().get_all_plug_URIs("test_performer_1", "test_instrument");
     assert(plugs.size() > 0);
 
 	//Check plug destruction
@@ -154,6 +156,13 @@ void test_connect_plugs() {
 		assert(e.plug()->get_URI()->name() == input_int_plug->get_URI()->name());
 		assert(Showtime::plug_event_queue_size() == i-1);
 	}
+
+	//Test stage listing active plug connections
+	std::vector<std::tuple<ZstURI, ZstURI>> connections = Showtime::get_all_plug_connections();
+	assert(connections.size() > 0);
+	assert(std::get<0>(connections[0]) == *outURI);
+	assert(std::get<1>(connections[0]) == *inURI);
+
 	std::cout << "Queue test successful" << std::endl;
 	Showtime::destroy_plug(output_int_plug);
 	Showtime::destroy_plug(input_int_plug);

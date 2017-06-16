@@ -51,6 +51,7 @@ private:
 	void register_performer_handler(zsock_t * socket, zmsg_t * msg);
 	void register_plug_handler(zsock_t * socket, zmsg_t * msg);
 	void list_plugs_handler(zsock_t * socket, zmsg_t * msg);
+	void list_plug_connections_handler(zsock_t * socket, zmsg_t * msg);
 	void destroy_plug_handler(zsock_t * socket, zmsg_t * msg);
 
 	//Router
