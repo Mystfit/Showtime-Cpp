@@ -342,7 +342,7 @@ void ZstStage::list_plug_connections_handler(zsock_t * socket, zmsg_t * msg)
 			if ((*plug_iter)->get_output_connections().size() > 0) {
 				vector<ZstURI> connections = (*plug_iter)->get_output_connections();
 				for (vector<ZstURI>::iterator out_plug_iter = connections.begin(); out_plug_iter != connections.end(); ++out_plug_iter) {
-					response.plug_connections.push_back(tuple<ZstURI, ZstURI>((*plug_iter)->get_URI(), (*out_plug_iter)));
+					response.plug_connections.push_back(pair<ZstURI, ZstURI>((*plug_iter)->get_URI(), (*out_plug_iter)));
 				}
 			}
 		}
