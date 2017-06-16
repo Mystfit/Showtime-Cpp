@@ -27,6 +27,6 @@ void ZstPlugRef::add_output_connection(ZstURI uri)
 
 void ZstPlugRef::remove_output_connection(ZstURI uri)
 {
-	throw new exception("TODO: Implement plug discconection on stage");
+    throw runtime_error("TODO: Implement plug discconection on stage");
 	return;
 }

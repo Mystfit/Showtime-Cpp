@@ -158,10 +158,11 @@ void test_connect_plugs() {
 	}
 
 	//Test stage listing active plug connections
-	std::vector<std::tuple<ZstURI, ZstURI>> connections = Showtime::get_all_plug_connections();
+	std::vector<std::pair<ZstURI, ZstURI>> connections = Showtime::get_all_plug_connections();
 	assert(connections.size() > 0);
-	assert(std::get<0>(connections[0]) == *outURI);
-	assert(std::get<1>(connections[0]) == *inURI);
+    
+	assert(connections[0].first == *outURI);
+	assert(connections[0].second == *inURI);
 
 	std::cout << "Queue test successful" << std::endl;
 	Showtime::destroy_plug(output_int_plug);

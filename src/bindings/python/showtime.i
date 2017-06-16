@@ -12,6 +12,12 @@
 	Showtime_set_runtime_language(PYTHON_RUNTIME);
 %}
 
+
+%include <std_pair.i>
+%include <std_vector.i>
+%template() std::pair<ZstURI,ZstURI>;
+%template(ConnectionPair) std::vector<std::pair<ZstURI,ZstURI> >;
+
 %include "showtime_common.i" 
 
 %thread;

@@ -85,7 +85,7 @@ std::vector<ZstURI> Showtime::get_all_plug_URIs(const char * performer, const ch
 	return Showtime::endpoint().get_all_plug_URIs(performer, instrument);
 }
 
-std::vector<tuple<ZstURI, ZstURI>> Showtime::get_all_plug_connections(const char * performer, const char * instrument)
+std::vector<pair<ZstURI, ZstURI> > Showtime::get_all_plug_connections(const char * performer, const char * instrument)
 {
 	return Showtime::endpoint().get_all_plug_connections(performer, instrument);
 }

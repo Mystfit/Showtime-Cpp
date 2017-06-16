@@ -280,7 +280,7 @@ std::vector<ZstURI> ZstEndpoint::get_all_plug_URIs(string performer, string inst
 	return plugResponse.plugs;
 }
 
-std::vector<std::tuple<ZstURI, ZstURI>> ZstEndpoint::get_all_plug_connections(std::string performer, std::string instrument)
+std::vector<std::pair<ZstURI, ZstURI> > ZstEndpoint::get_all_plug_connections(std::string performer, std::string instrument)
 {
 	ZstMessages::ListPlugs plug_args;
 	plug_args.performer = performer;

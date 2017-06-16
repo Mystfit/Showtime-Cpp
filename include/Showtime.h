@@ -1,7 +1,7 @@
 #pragma once
 
 #include <chrono>
-#include <tuple>
+#include <utility>
 #include <vector>
 #include <memory>
 #include "ZstExports.h"
@@ -46,7 +46,7 @@ public:
 	ZST_EXPORT static ZstIntPlug * create_int_plug(ZstURI * uri);
     ZST_EXPORT static void destroy_plug(ZstPlug *plug);
     ZST_EXPORT static std::vector<ZstURI> get_all_plug_URIs(const char * performer = "", const char * instrument = "");
-	ZST_EXPORT static std::vector<std::tuple<ZstURI, ZstURI>> get_all_plug_connections(const char * performer = "", const char * instrument = "");
+	ZST_EXPORT static std::vector<std::pair<ZstURI, ZstURI> > get_all_plug_connections(const char * performer = "", const char * instrument = "");
 
 	ZST_EXPORT static void connect_plugs(const ZstURI * a, const ZstURI * b);
 

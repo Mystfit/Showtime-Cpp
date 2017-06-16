@@ -1,5 +1,5 @@
 %include "std_string.i"
-%include <std_shared_ptr.i>
+
 %include <windows.i>
 %include "ZstExports.h"
 

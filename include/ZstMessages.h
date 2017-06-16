@@ -121,7 +121,7 @@ public:
     };
 
 	struct ListPlugConnectionsAck {
-		std::vector<std::tuple<ZstURI, ZstURI>> plug_connections;
+		std::vector<std::pair<ZstURI, ZstURI>> plug_connections;
 		MSGPACK_DEFINE_ARRAY(plug_connections);
 	};
 
