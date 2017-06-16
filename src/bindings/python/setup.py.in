@@ -23,7 +23,8 @@ class build_ext(_build_ext):
         self.swig = "${SWIG_EXECUTABLE}"
 
 extra_link_args = [] #['/DEBUG']
-#if platform.system() == 'Darwin':
+if platform.system() == 'Darwin':
+    extra_link_args=['-framework', 'Showtime']
 #    extra_link_args.append('-Wl,-rpath,'+'@SHOWTIME_TARGET@')
 
 showtime_module = Extension('_showtime',

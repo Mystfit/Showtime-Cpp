@@ -31,7 +31,7 @@ set(SHOWTIME_TARGET '$<TARGET_FILE:${PROJECT_NAME}>')
 get_filename_component(SETUPPY_PARSER ${CMAKE_CURRENT_SOURCE_DIR}/showtime-final.cmake REALPATH)
 
 if(MACOSX)
-	SET(PREFIX "LDFLAGS='-framework Showtime';")
+	SET(PREFIX "LDFLAGS=\"-framework\ Showtime\";")
 ENDIF()
 
 # Command for building second-pass setup.py
@@ -52,4 +52,4 @@ add_custom_command(OUTPUT ${BUILD_STAMP}
 
 # Create target and install
 add_custom_target(INSTALL_PYTHON ALL DEPENDS ${BUILD_STAMP})
-install(CODE "execute_process(COMMAND ${PYTHON} ${SETUP_PY} install)")
+install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} install)")
