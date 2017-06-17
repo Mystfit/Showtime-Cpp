@@ -34,6 +34,7 @@ void ZstEndpoint::destroy() {
 //ZstEndpoint
 void ZstEndpoint::init()
 {
+    cout << "Starting Showtime" << endl;
 	ZstActor::init();
 	m_startup_uuid = zuuid_new();
 
@@ -99,14 +100,14 @@ int ZstEndpoint::s_handle_stage_router(zloop_t * loop, zsock_t * socket, void * 
     zmsg_t *msg = endpoint->receive_routed_from_stage();
     
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(msg);
-    cout << "PERFORMER: Message from stage pipe: " << message_type << endl;
-    
+
     switch(message_type){
         case ZstMessages::Kind::PERFORMER_REGISTER_CONNECTION:
 			endpoint->connect_performer_handler(socket, msg);
             break;
 		default:
 			cout << "Didn't understand message of type " << message_type << endl;
+            break;
     }
     
     return 0;
