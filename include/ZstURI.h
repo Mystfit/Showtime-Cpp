@@ -32,8 +32,8 @@ public:
 	ZST_EXPORT bool operator!=(const ZstURI& other);
 	ZST_EXPORT bool operator< (const ZstURI& b) const;
 
-	ZST_EXPORT const std::string to_str() const;
-	ZST_EXPORT const char * to_char() const;
+	ZST_EXPORT virtual const std::string to_str() const;
+	ZST_EXPORT virtual const char * to_char() const;
 	
 	ZST_EXPORT static ZstURI from_str(const std::string s);
 	ZST_EXPORT static ZstURI from_char(const char * s);

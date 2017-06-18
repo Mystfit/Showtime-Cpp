@@ -89,7 +89,7 @@ int ZstEndpoint::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg)
     msgpack::object obj = result.get();
 	
     cout << "Endpoint received a published message: " << endpoint->m_assigned_uuid << endl;
-    
+    cout << "Message is from " << sender.to_str() << endl;
 	endpoint->broadcast_to_local_plugs(sender, obj);
 	return 0;
 }
@@ -170,7 +170,7 @@ void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
 		m_connected_to_stage = true;
 	}
 	else {
-		throw runtime_error("PERFORMER: Stage performer registration responded with ERR");
+        throw runtime_error("PERFORMER: Stage performer registration responded with error -> Kind: " + std::to_string((int)message_type));
 	}
 }
 
@@ -193,7 +193,7 @@ void ZstEndpoint::register_performer_to_stage(string performer) {
 	if (message_type == ZstMessages::Kind::SIGNAL) {
 		ZstMessages::Signal s = ZstMessages::unpack_signal(responseMsg);
 		if(s != ZstMessages::Signal::OK)
-			throw runtime_error("PERFORMER: Performer registration responded with message other than OK");
+            throw runtime_error("PERFORMER: Performer registration responded with message other than OK -> Signal" + std::to_string((int)s));
 	}
 }
 
@@ -225,8 +225,8 @@ template<typename T>
 	if (message_type == ZstMessages::Kind::SIGNAL) {
 		ZstMessages::Signal s = ZstMessages::unpack_signal(responseMsg);
 		if (s != ZstMessages::Signal::OK)
-			throw runtime_error("PERFORMER: Plug creation responded with message other than OK");
-	}
+            throw runtime_error("PERFORMER: Plug creation responded with message other than OK -> Signal" + std::to_string((int)s));
+    }
 
 	T *plug = new T(uri);
 	Showtime::endpoint().get_performer_by_name(uri->performer())->add_plug(plug);
@@ -249,8 +249,8 @@ template<typename T>
 	if (message_type != ZstMessages::Kind::SIGNAL) {
 		ZstMessages::Signal s = ZstMessages::unpack_signal(responseMsg);
 		if (s != ZstMessages::Signal::OK)
-			throw runtime_error("PERFORMER: Plug deletion responded with message other than OK");
-	}
+            throw runtime_error("PERFORMER: Plug deletion responded with message other than OK -> Signal:" + std::to_string((int)s));
+    }
 	m_performers[plug->get_URI()->performer()]->remove_plug(plug);
 	delete plug;
 }
@@ -274,8 +274,8 @@ std::vector<ZstURI> ZstEndpoint::get_all_plug_URIs(string performer, string inst
 		}
 	}
 	else {
-		throw runtime_error("PERFORMER: Plug list responded with message other than STAGE_LIST_PLUGS_ACK");
-	}
+        throw runtime_error("PERFORMER: Plug list responded with message other than OK -> Kind: " + std::to_string((int)message_type));
+    }
 	cout << "PERFORMER: Total returned remote plugs: " << plugResponse.plugs.size() << endl;
 
 	return plugResponse.plugs;
@@ -297,7 +297,7 @@ std::vector<std::pair<ZstURI, ZstURI> > ZstEndpoint::get_all_plug_connections(st
 		plugResponse = ZstMessages::unpack_message_struct<ZstMessages::ListPlugConnectionsAck>(responseMsg);
 	}
 	else {
-		throw runtime_error("PERFORMER: Plug list connections responded with message other than STAGE_LIST_PLUG_CONNECTIONS_ACK");
+        throw runtime_error("PERFORMER: Plug list connections responded with error -> Kind: " + std::to_string((int)message_type));
 	}
 	cout << "PERFORMER: Total returned plug connections: " << plugResponse.plug_connections.size() << endl;
 
@@ -318,7 +318,7 @@ void ZstEndpoint::connect_plugs(const ZstURI * a, const ZstURI * b)
 	if (message_type == ZstMessages::Kind::SIGNAL) {
 		ZstMessages::Signal s = ZstMessages::unpack_signal(responseMsg);
 		if (s != ZstMessages::Signal::OK)
-			throw runtime_error("PERFORMER: Plug connection responded with message other than OK");
+            throw runtime_error("PERFORMER: Plug connection responded with message other than OK -> Signal: " + std::to_string((int)s));
 	}
 }
 
@@ -346,7 +346,7 @@ chrono::milliseconds ZstEndpoint::ping_stage()
 		cout << "PERFORMER: Client received heartbeat ping ack. Roundtrip was " << delta.count() << "ms" << endl;
 	}
 	else {
-		throw runtime_error("PERFORMER: Stage ping responded with message other than OK");
+        throw runtime_error("PERFORMER: Stage ping responded with message other than OK -> Kind: " + std::to_string(message_type));
 	}
 	
 	return delta;
@@ -408,7 +408,10 @@ zmsg_t * ZstEndpoint::receive_from_graph() {
 
 void ZstEndpoint::broadcast_to_local_plugs(ZstURI output_plug, msgpack::object obj) {
 
+    cout << "Looking for local plugs connected to incoming output plug" << endl;
+    cout << "There are currently " << m_plug_connections[output_plug].size() << " local plugs attached to this output" << endl;
 	for (vector<ZstPlug*>::iterator plug_iter = m_plug_connections[output_plug].begin(); plug_iter != m_plug_connections[output_plug].end(); ++plug_iter) {
+        cout << "Forwarding message to " << (*plug_iter)->get_URI()->name() << endl;
 		(*plug_iter)->recv(obj);
 	}
 }

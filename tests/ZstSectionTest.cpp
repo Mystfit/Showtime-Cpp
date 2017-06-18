@@ -23,6 +23,10 @@ void test_URI() {
 	ZstURI uri_notequal = ZstURI("perf", "anotherins", "someplug", ZstURI::Direction::IN_JACK);
 	assert(!(uri_equal1 == uri_notequal));
 	assert(uri_equal1 != uri_notequal);
+    
+    assert(uri_equal1.to_str() == "perf/ins/someplug?d=1");
+
+    uri_equal1 = ZstURI("ableton_perf", "", "someplug", ZstURI::Direction::OUT_JACK);
 }
 
 void test_performer_init() {
@@ -114,6 +118,10 @@ void test_connect_plugs() {
 	ZstURI * outURI = ZstURI::create("test_performer_1", "test_instrument", "test_output_plug", ZstURI::Direction::OUT_JACK);
 	ZstURI * inURI = ZstURI::create("test_performer_1", "test_instrument", "test_input_plug", ZstURI::Direction::IN_JACK);
 	ZstURI * badURI = ZstURI::create("fake_performer", "test_instrument", "test_input_plug", ZstURI::Direction::IN_JACK);
+    
+    // ZstURI * ableton_uri = ZstURI::create("test_performer_1", "A-Reverb/Reverb/PreDelay", "out", ZstURI::Direction::OUT_JACK);
+    // ZstIntPlug *ableton_plug = Showtime::create_int_plug(ableton_uri);
+    //ableton_perf/A-Reverb/Reverb/PreDelay/out?d=1
 
 	//Test plugs connected between performers
 	ZstIntPlug *output_int_plug = Showtime::create_int_plug(outURI);
