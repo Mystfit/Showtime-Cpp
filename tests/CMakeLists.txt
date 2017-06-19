@@ -1,5 +1,5 @@
 set(SECTION_SOURCE_FILES 
- "ZstSectionTest.cpp"
+ "ShowtimeTest.cpp"
 )
 
 include_directories(
@@ -15,8 +15,7 @@ IF(WIN32)
 ENDIF(WIN32)
 
 # Section test executable
-add_executable (SectionTest ${SECTION_SOURCE_FILES}) 
-add_dependencies(SectionTest ${PROJECT_NAME})
-target_link_libraries(SectionTest ${PROJECT_NAME})
-add_test(NAME section_test COMMAND SectionTest)
-
+add_executable (ShowtimeTest ${SECTION_SOURCE_FILES}) 
+add_dependencies(ShowtimeTest ${PROJECT_NAME})
+target_link_libraries(ShowtimeTest ${PROJECT_NAME})
+add_test(NAME showtime_test COMMAND ShowtimeTest)

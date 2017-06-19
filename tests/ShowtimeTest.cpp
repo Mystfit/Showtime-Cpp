@@ -181,19 +181,13 @@ void test_connect_plugs() {
 void test_cleanup() {
 	//Test object destruction
 	delete stage;
-	Showtime::endpoint().destroy();
+	Showtime::destroy();
 }
 
 int main(int argc,char **argv){
     stage = ZstStage::create_stage();
-
 	std::cout << "Stage created" << std::endl;
-#ifdef WIN32
-	system("pause");
-#else
-    system( "read -n 1 -s -p \"Press any key to continue...\"" );
-#endif
-    
+
 	Showtime::init();
     Showtime::join("127.0.0.1");
 	ZstPerformer * performer_a = Showtime::create_performer("test_performer_1");
@@ -206,13 +200,9 @@ int main(int argc,char **argv){
 	test_connect_plugs();
 	test_cleanup();
 	std::cout << "\nShowtime test successful" << std::endl;
+
 #ifdef WIN32
 	system("pause");
 #endif
-
 	return 0;
 }
-
-
-
-

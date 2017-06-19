@@ -55,14 +55,29 @@ option(BINDINGS_RUBY "Build python bindings" OFF)
 option(BINDINGS_PYTHON "Build ruby bindings" OFF)
 option(BINDINGS_DOTNET "Build C# bindings" OFF)
 
+# Set up libzmq and czmq runtime dependencies
+set(RUNTIMES_LIBZMQ ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} CACHE FILEPATH "Path to libzmq dll/dylib/so")
+set(RUNTIMES_CZMQ ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} CACHE FILEPATH "Path to czmq .dll/.dylib/.so")
+
 include_directories(${ZST_INCLUDES})
 
 IF(WIN32)
 	add_definitions(-DEXPORTS_API)
 ENDIF(WIN32)
 
+# Create Showtime library target
 add_library(${PROJECT_NAME} SHARED ${ZST_HEADERS} ${ZST_SOURCE})
 target_link_libraries(${PROJECT_NAME} ${ZST_LINK_LIBS})
+
+
+# Create standalone stage executable
+SET(SHOWTIME_STAGE_NAME ShowtimeStage)
+IF(WIN32)
+	add_definitions(-DIMPORTS_API)
+ENDIF(WIN32)
+add_executable (${SHOWTIME_STAGE_NAME} "ZstStageRunner.cpp") 
+add_dependencies(${SHOWTIME_STAGE_NAME} ${PROJECT_NAME})
+target_link_libraries(${SHOWTIME_STAGE_NAME} ${PROJECT_NAME})
 
 if(MACOSX)
 	# set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER ${ZST_HEADERS})

@@ -419,3 +419,4 @@ int ZstStage::connect_plugs(ZstURI output_plug, ZstURI input_plug)
 	zmsg_send(&connectMsg, m_performer_router);
 	return 0;
 }
+

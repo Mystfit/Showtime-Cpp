@@ -5,11 +5,6 @@ set(SETUP_PY    		"${CMAKE_CURRENT_BINARY_DIR}/setup.py")
 set(DEPS        		"${CMAKE_CURRENT_SOURCE_DIR}/module/__init__.py")
 set(BUILD_STAMP 		"${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
 
-# Set up libzmq and czmq runtime dependencies
-
-set(RUNTIMES_LIBZMQ ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} CACHE FILEPATH "Path to libzmq dll/dylib/so")
-set(RUNTIMES_CZMQ ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} CACHE FILEPATH "Path to czmq .dll/.dylib/.so")
-
 # Set up swig interfaces
 set(SWIG_INTERFACES "${CMAKE_CURRENT_SOURCE_DIR}/showtime.i")
 set(SWIG_INTERFACES_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/showtime.i")
