@@ -122,7 +122,7 @@ void ZstEndpoint::connect_performer_handler(zsock_t * socket, zmsg_t * msg) {
 
 	//Register local connections so we can take the single published message and make sure each expecting internal input
 	//plug receives it
-	ZstPlug * input = get_performer_by_name(performer_args.input_plug.performer())->get_plug_by_name(performer_args.input_plug.name());
+	ZstPlug * input = get_performer_by_URI(performer_args.input_plug.performer())->get_plug_by_URI(performer_args.input_plug.to_str());
 	m_plug_connections[performer_args.output_plug].push_back(input);
 
 	cout << "PERFORMER: Connecting to " << performer_args.endpoint << ". My output endpoint is " << m_output_endpoint << endl;
@@ -205,9 +205,9 @@ ZstPerformer * ZstEndpoint::create_performer(std::string name)
 	return perf;
 }
 
-ZstPerformer * ZstEndpoint::get_performer_by_name(std::string performer)
+ZstPerformer * ZstEndpoint::get_performer_by_URI(std::string uri_str)
 {
-	return m_performers[performer];
+	return m_performers[uri_str];
 }
 
 template ZstIntPlug* ZstEndpoint::create_plug<ZstIntPlug>(ZstURI * uri);
@@ -229,7 +229,7 @@ template<typename T>
     }
 
 	T *plug = new T(uri);
-	Showtime::endpoint().get_performer_by_name(uri->performer())->add_plug(plug);
+	Showtime::endpoint().get_performer_by_URI(uri->performer())->add_plug(plug);
 	return plug;
 }
 
@@ -411,7 +411,7 @@ void ZstEndpoint::broadcast_to_local_plugs(ZstURI output_plug, msgpack::object o
     cout << "Looking for local plugs connected to incoming output plug" << endl;
     cout << "There are currently " << m_plug_connections[output_plug].size() << " local plugs attached to this output" << endl;
 	for (vector<ZstPlug*>::iterator plug_iter = m_plug_connections[output_plug].begin(); plug_iter != m_plug_connections[output_plug].end(); ++plug_iter) {
-        cout << "Forwarding message to " << (*plug_iter)->get_URI()->name() << endl;
+        cout << "Forwarding message to " << (*plug_iter)->get_URI()->to_str() << endl;
 		(*plug_iter)->recv(obj);
 	}
 }

@@ -27,11 +27,11 @@ std::vector<ZstPlug*> ZstPerformer::get_instrument_plugs(std::string instrument)
 	return m_plugs[instrument];
 }
 
-ZstPlug * ZstPerformer::get_plug_by_name(std::string plug_name)
+ZstPlug * ZstPerformer::get_plug_by_URI(std::string uri_str)
 {
     vector<ZstPlug*> plugs = get_plugs();
     for (vector<ZstPlug*>::iterator plugIter = plugs.begin(); plugIter != plugs.end(); ++plugIter) {
-        if((*plugIter)->get_URI()->name() == plug_name){
+        if((*plugIter)->get_URI()->to_str() == uri_str){
             return (*plugIter);
         }
     }

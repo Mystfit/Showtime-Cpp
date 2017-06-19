@@ -35,7 +35,7 @@ public:
 	bool is_connected_to_stage();
 
 	ZstPerformer * create_performer(std::string name);
-	ZstPerformer * get_performer_by_name(std::string performer);
+	ZstPerformer * get_performer_by_URI(std::string uri_str);
 	
 	template<typename T>
 	ZST_EXPORT static T* create_plug(ZstURI * uri);
