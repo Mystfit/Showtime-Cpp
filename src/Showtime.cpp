@@ -61,9 +61,9 @@ ZstIntPlug * Showtime::create_int_plug(ZstURI * uri) {
 	return Showtime::endpoint().create_int_plug(uri);
 }
 
-ZstPerformer * Showtime::get_performer_by_name(const char * performer)
+ZstPerformer * Showtime::get_performer_by_URI(const char * uri_str)
 {
-	return Showtime::endpoint().get_performer_by_name(performer);
+	return Showtime::endpoint().get_performer_by_URI(uri_str);
 }
 
 PlugEvent Showtime::pop_plug_event()

@@ -361,7 +361,7 @@ void ZstStage::destroy_plug_handler(zsock_t * socket, zmsg_t * msg)
 
 	ZstPerformerRef *performer = get_performer_ref_by_name(plug_destroy_args.address.performer());
 
-	performer->destroy_plug(performer->get_plug_by_name(plug_destroy_args.address.name()));
+	performer->destroy_plug(performer->get_plug_by_URI(plug_destroy_args.address.to_str()));
 
 	reply_with_signal(socket, ZstMessages::Signal::OK);
 }
@@ -402,7 +402,7 @@ int ZstStage::connect_plugs(ZstURI output_plug, ZstURI input_plug)
 		return -1;
 	}
 
-	output_performer->get_plug_by_name(output_plug.name())->add_output_connection(input_plug);
+	output_performer->get_plug_by_URI(output_plug.to_str())->add_output_connection(input_plug);
 
 	ZstMessages::PerformerConnection perf_args;
 	perf_args.output_plug = output_plug;

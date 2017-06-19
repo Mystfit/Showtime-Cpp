@@ -12,7 +12,7 @@ class ZstPerformer {
 		ZST_EXPORT std::string get_name();
 		ZST_EXPORT std::vector<ZstPlug*> get_plugs();
 		ZST_EXPORT std::vector<ZstPlug*> get_instrument_plugs(std::string instrument);
-        ZST_EXPORT ZstPlug * get_plug_by_name(std::string plug_name);
+        ZST_EXPORT ZstPlug * get_plug_by_URI(std::string uri_str);
 
 		void add_plug(ZstPlug* plug);
 		void remove_plug(ZstPlug* plug);
