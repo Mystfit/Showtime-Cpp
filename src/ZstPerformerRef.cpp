@@ -20,7 +20,7 @@ ZstPerformerRef::~ZstPerformerRef()
 ZstPlugRef * ZstPerformerRef::create_plug(ZstURI address)
 {
 	//Check for existing plugs with this name
-	auto it = find_if(m_plugs.begin(), m_plugs.end(), [&address](ZstPlugRef* plugRef) {return plugRef->get_URI().name() == address.name(); });
+	auto it = find_if(m_plugs.begin(), m_plugs.end(), [&address](ZstPlugRef* plugRef) {return plugRef->get_URI() == address; });
 
 	if (it != m_plugs.end()) {
 		//Plug already exists!

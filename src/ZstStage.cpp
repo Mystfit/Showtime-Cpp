@@ -273,11 +273,12 @@ void ZstStage::register_plug_handler(zsock_t *socket, zmsg_t *msg) {
 		return;
 	}
 
-	cout << "STAGE: Registering new plug " << plug_args.address.name() << endl;
+	cout << "STAGE: Registering new plug " << plug_args.address.to_str() << endl;
 
 	ZstPlugRef * plug = performer->create_plug(plug_args.address);
 
 	if (plug == NULL) {
+        cout << "STAGE: Plug already exists! " << plug_args.address.to_str() << endl;
 		reply_with_signal(socket, ZstMessages::Signal::ERR_STAGE_PLUG_ALREADY_EXISTS);
 		return;
 	}

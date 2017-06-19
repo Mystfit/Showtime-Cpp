@@ -83,7 +83,7 @@ bool ZstURI::operator< (const ZstURI& b) const
 }
 
 const std::string ZstURI::to_str() const {
-	return m_performer + "/" + m_instrument + "/" + m_name + "/" + std::to_string(m_direction);
+	return m_performer + "/" + m_instrument + "/" + m_name + "?d=" + std::to_string(m_direction);
 }
 
 const char * ZstURI::to_char() const
@@ -93,9 +93,39 @@ const char * ZstURI::to_char() const
 
 ZstURI ZstURI::from_str(const std::string s)
 {
-	std::vector<std::string> tokens;
-	Utils::str_split(string(s), tokens, "/");
-	return ZstURI(tokens[0].c_str(), tokens[1].c_str(), tokens[2].c_str(), (ZstURI::Direction)std::atoi(tokens[3].c_str()));
+	std::vector<std::string> uri_args_split;
+    
+	Utils::str_split(string(s), uri_args_split, "?");
+    
+    string uri_str = uri_args_split[0];
+    string args_str = uri_args_split[1];
+    
+    std::vector<std::string> uri;
+    Utils::str_split(uri_str, uri, "/");
+    
+    string performer = uri[0];
+    
+    string instrument = "";
+    for(int i = 1; i < uri.size()-1; ++i){
+        instrument += uri[i];
+        if(i < uri.size() - 2)
+            instrument += "/";
+    }
+    
+    string plug = uri[uri.size()-1];
+    
+    std::vector<std::string> args_split;
+    Utils::str_split(args_str, args_split, "&");
+    
+    std::map<string, string> arg_map;
+    for(int i = 0; i < args_split.size(); ++i){
+        std::vector<std::string> single_arg_split;
+        Utils::str_split(args_split[i], single_arg_split, "=");
+        arg_map[single_arg_split[0]] = single_arg_split[1];
+    }
+
+    ZstURI::Direction dir = (ZstURI::Direction)std::atoi(arg_map["d"].c_str());
+	return ZstURI(performer.c_str(), instrument.c_str(), plug.c_str(), dir);
 }
 
 ZstURI ZstURI::from_char(const char * s)

@@ -85,7 +85,7 @@ if(BINDINGS_RUBY)
 endif(BINDINGS_RUBY)
 
 if(BINDINGS_PYTHON)
-    FIND_PACKAGE(PythonLibs 3.6 REQUIRED)
+    FIND_PACKAGE(PythonLibs 2.7.12 REQUIRED)
 	INCLUDE(FindPythonInterp)
 	get_filename_component(PYTHON_DIR ${PYTHON_EXECUTABLE} DIRECTORY)	
 	add_subdirectory(bindings/python)

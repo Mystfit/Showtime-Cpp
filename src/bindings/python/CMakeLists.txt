@@ -15,8 +15,6 @@ set(SWIG_INTERFACES "${CMAKE_CURRENT_SOURCE_DIR}/showtime.i")
 set(SWIG_INTERFACES_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/showtime.i")
 configure_file(${SWIG_INTERFACES} ${SWIG_INTERFACES_DESTINATION} COPYONLY)
 
-FIND_PACKAGE(PythonLibs 3.6 REQUIRED)
-
 # Copy showtime module files
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/showtime.i DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../showtime_common.i DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
@@ -46,7 +44,7 @@ add_custom_command(OUTPUT ${SETUP_PY}
 
 # Command for showtime c extension build step
 add_custom_command(OUTPUT ${BUILD_STAMP}
-                	COMMAND ${PREFIX} ${PYTHON_EXECUTABLE} ${SETUP_PY} build
+                	COMMAND ${PREFIX} ${PYTHON_EXECUTABLE} ${SETUP_PY} build ${EXTENSION_COMPILER}
                 	COMMAND ${CMAKE_COMMAND} -E touch ${BUILD_STAMP}
                 	DEPENDS ${SETUP_PY} ${DEPS} ${PROJECT_NAME})
 
