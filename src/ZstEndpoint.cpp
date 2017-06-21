@@ -50,16 +50,39 @@ void ZstEndpoint::init()
 		zsock_set_linger(m_graph_in, 0);
 		attach_pipe_listener(m_graph_in, s_handle_graph_in, this);
 	}
-
-	//Graph output socket
-	cout << "!!!FIXME!!! Setting pub socket interface to localhost due to binding to all interfaces not working in Windows" << endl;
-	m_graph_out = zsock_new_pub("@tcp://127.0.0.1:*");
-	m_output_endpoint = zsock_last_endpoint(m_graph_out);
-
-	if(m_graph_out)
-		zsock_set_linger(m_graph_out, 0);
-
-	start();
+    
+    ziflist_t * interfaces = ziflist_new();
+    const char *interface = ziflist_first(interfaces);
+    const char * interface_ip = ziflist_address(interfaces);
+    
+    //Pick first publicly available IP by default.
+    m_network_interface = string(interface);
+    string network_ip = string(interface_ip);
+    
+    cout << "Network interfaces on system:" << endl;
+    while (interface) {
+        interface_ip = ziflist_address(interfaces);
+        if(interface_ip){
+            cout << interface << " " << interface_ip << endl;
+        }
+        interface = ziflist_next(interfaces);
+    }
+    
+    cout << "Using network interface: " << m_network_interface << endl;
+    
+    char client_bind_addr[100];
+    sprintf(client_bind_addr, "@tcp://%s:*", network_ip.c_str());
+    
+    //Graph output socket
+    m_graph_out = zsock_new_pub(client_bind_addr);
+    m_output_endpoint = zsock_last_endpoint(m_graph_out);
+    
+    cout << "Endpoint graph address: " << m_output_endpoint << endl;
+    
+    if(m_graph_out)
+        zsock_set_linger(m_graph_out, 0);
+    
+    start();
 }
 
 void ZstEndpoint::start() {

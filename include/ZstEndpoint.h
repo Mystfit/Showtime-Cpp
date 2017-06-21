@@ -89,6 +89,7 @@ private:
 	//Name property
 	std::string m_output_endpoint;
 	std::string m_stage_addr = "127.0.0.1";
+    std::string m_network_interface;
 
 	//All performers
 	std::map<std::string, ZstPerformer*> m_performers;
