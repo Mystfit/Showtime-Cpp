@@ -9,7 +9,8 @@
 class ZstURI {
 public:
 	enum Direction {
-		IN_JACK = 0,
+		NONE = 0,
+		IN_JACK,
 		OUT_JACK
 	};
 

@@ -85,3 +85,8 @@ void ZstActor::attach_pipe_listener(zsock_t * sock, zloop_reader_fn handler, voi
 {
 	zloop_reader(m_loop, sock, handler, args);
 }
+
+int ZstActor::attach_timer(zloop_timer_fn handler, int delay, void * args)
+{
+	return zloop_timer(m_loop, delay, 0, handler, args);
+}

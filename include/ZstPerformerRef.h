@@ -8,9 +8,10 @@
 
 class ZstPerformerRef {
 public:
-	ZstPerformerRef(std::string performer_name);
+	ZstPerformerRef(ZstURI uri);
 	~ZstPerformerRef();
-	std::string name;
+
+	ZST_EXPORT ZstURI get_URI();
 
 	ZstPlugRef * create_plug(ZstURI address);
 	ZST_EXPORT ZstPlugRef * get_plug_by_URI(std::string uri_str);
@@ -19,8 +20,9 @@ public:
 
 	inline bool operator==(const ZstPerformerRef& other)
 	{
-		return (name == other.name);
+		return (m_URI == other.m_URI);
 	}
 private:
 	std::vector<ZstPlugRef*> m_plugs;
+	ZstURI m_URI;
 };

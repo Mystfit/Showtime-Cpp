@@ -14,6 +14,7 @@
 #include "ZstPerformerRef.h"
 #include "ZstEndpointRef.h"
 #include "Showtime.h"
+#include "Queue.h"
 
 class ZstStage : public ZstActor{
 public:
@@ -32,6 +33,8 @@ public:
 private:
     ZstStage();
 
+	ZstURI m_stage_identity;
+
     //Stage pipes
     zsock_t *m_performer_router;
     zsock_t *m_performer_requests;
@@ -43,6 +46,7 @@ private:
 
 	//Replies
 	void reply_with_signal(zsock_t * socket, ZstMessages::Signal status, ZstEndpointRef * destination = NULL);
+	void send_to_endpoint(zmsg_t * msg, ZstEndpointRef * destination);
 
     //Message handlers
 	//Rep
@@ -50,8 +54,6 @@ private:
 	void endpoint_heartbeat_handler(zsock_t * socket, zmsg_t * msg);
 	void register_performer_handler(zsock_t * socket, zmsg_t * msg);
 	void register_plug_handler(zsock_t * socket, zmsg_t * msg);
-	void list_plugs_handler(zsock_t * socket, zmsg_t * msg);
-	void list_plug_connections_handler(zsock_t * socket, zmsg_t * msg);
 	void destroy_plug_handler(zsock_t * socket, zmsg_t * msg);
 
 	//Router
@@ -65,5 +67,15 @@ private:
 
 	//Plug connections
     int connect_plugs(ZstURI output_plug, ZstURI input_plug);
+
+	//Queued stage events
+	std::vector<ZstEvent> create_snapshot();
+	void enqueue_stage_update(ZstEvent e);
+	Queue<ZstEvent> m_stage_updates;
+	int m_update_timer_id;
+	static int stage_update_timer_func(zloop_t * loop, int timer_id, void * arg);
+	
+	//Database handle
+	sqlite3 * db;
 };
 

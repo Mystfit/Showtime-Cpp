@@ -1,7 +1,9 @@
 #include "Showtime.h"
 #include "ZstEndpoint.h"
 #include "ZstMessages.h"
+#include "ZstPerformer.h"
 #include "ZstPlug.h"
+#include "ZstEvent.h"
 
 using namespace std;
 
@@ -31,6 +33,14 @@ void Showtime::init()
 void Showtime::join(const char * stage_address){
 	cout << "Connecting to stage located at " << stage_address << endl;
 	Showtime::endpoint().register_endpoint_to_stage(stage_address);
+}
+
+void Showtime::poll_once()
+{
+	while (Showtime::event_queue_size() > 0) {
+		ZstEvent e = Showtime::pop_event();
+		Showtime::endpoint().get_performer_by_URI(e.get_first().to_str())->get_plug_by_URI(e.get_first().to_str())->run_recv_callbacks();
+	}
 }
 
 void Showtime::set_runtime_language(RuntimeLanguage runtime)
@@ -66,12 +76,13 @@ ZstPerformer * Showtime::get_performer_by_URI(const char * uri_str)
 	return Showtime::endpoint().get_performer_by_URI(uri_str);
 }
 
-PlugEvent Showtime::pop_plug_event()
+
+ZstEvent Showtime::pop_event()
 {
 	return Showtime::endpoint().pop_plug_event();
 }
 
-int Showtime::plug_event_queue_size()
+int Showtime::event_queue_size()
 {
 	return Showtime::endpoint().plug_event_queue_size();
 }
@@ -79,15 +90,6 @@ int Showtime::plug_event_queue_size()
 void Showtime::destroy_plug(ZstPlug * plug)
 {
 	return Showtime::endpoint().destroy_plug(plug);
-}
-
-std::vector<ZstURI> Showtime::get_all_plug_URIs(const char * performer, const char * instrument){
-	return Showtime::endpoint().get_all_plug_URIs(performer, instrument);
-}
-
-std::vector<pair<ZstURI, ZstURI> > Showtime::get_all_plug_connections(const char * performer, const char * instrument)
-{
-	return Showtime::endpoint().get_all_plug_connections(performer, instrument);
 }
 
 void Showtime::connect_plugs(const ZstURI * a, const ZstURI * b)

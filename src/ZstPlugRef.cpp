@@ -2,7 +2,7 @@
 
 using namespace std;
 
-ZstPlugRef::ZstPlugRef(ZstURI address) : m_address(address)
+ZstPlugRef::ZstPlugRef(ZstURI uri) : m_URI(uri)
 {
 }
 
@@ -12,7 +12,7 @@ ZstPlugRef::~ZstPlugRef()
 
 ZstURI ZstPlugRef::get_URI()
 {
-	return m_address;
+	return m_URI;
 }
 
 const std::vector<ZstURI> ZstPlugRef::get_output_connections() const

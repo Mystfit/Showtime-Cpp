@@ -10,8 +10,11 @@
 
 class ZstURI;
 class PlugCallback;
+class Showtime;
+
 class ZstPlug {
 public:
+	friend class Showtime;
 	//Constructor
 	ZST_EXPORT ZstPlug(ZstURI * uri);
 	ZST_EXPORT ~ZstPlug();
@@ -21,7 +24,7 @@ public:
 	//Plug callbacks
     ZST_EXPORT void attach_recv_callback(PlugCallback * callback);
     ZST_EXPORT void destroy_recv_callback(PlugCallback * callback);
-    
+
 	//IO
     ZST_EXPORT void fire();
 	ZST_EXPORT virtual void recv(msgpack::object obj) = 0;
@@ -29,7 +32,7 @@ public:
 protected:
 	msgpack::sbuffer * m_buffer;
 	msgpack::packer<msgpack::sbuffer> * m_packer;
-    void run_recv_callbacks();
+	void run_recv_callbacks();
 
     std::vector<PlugCallback*> m_received_data_callbacks;
 private:
@@ -51,26 +54,6 @@ public:
 	ZST_EXPORT PlugCallback();
     virtual ~PlugCallback() { std::cout << "Callback::~Callback()" << std:: endl; }
     virtual void run(ZstPlug * plug) { std::cout << "PlugCallback::run()" << std::endl; }
-};
-
-
-class PlugEvent {
-public:
-	enum Events {
-		DEFAULT = 0 ,
-		CREATED,
-		DESTROYED,
-		HIT
-	};
-	
-	ZST_EXPORT PlugEvent();
-	ZST_EXPORT PlugEvent(Events e, ZstPlug * p);
-	ZST_EXPORT ~PlugEvent();
-	ZST_EXPORT Events event();
-	ZST_EXPORT ZstPlug * plug();
-private:
-	Events m_event;
-	ZstPlug * m_plug;
 };
 
 

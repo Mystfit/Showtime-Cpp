@@ -8,6 +8,8 @@ set(ZST_PUBLIC_HEADERS
  ${Showtime_INCLUDE_DIRS}/ZstPerformer.h
  ${Showtime_INCLUDE_DIRS}/ZstStage.h
  ${Showtime_INCLUDE_DIRS}/ZstMessages.h
+ ${Showtime_INCLUDE_DIRS}/ZstEvent.h
+
 )
 
 set(ZST_PRIVATE_HEADERS 
@@ -29,6 +31,7 @@ set(ZST_SOURCE
  "ZstUtils.cpp"
  "ZstActor.cpp"
  "ZstMessages.cpp"
+ "ZstEvent.cpp"
  "ZstPlug.cpp"
  "ZstPlugRef.cpp"
  "ZstPerformer.cpp"

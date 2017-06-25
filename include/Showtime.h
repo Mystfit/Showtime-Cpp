@@ -11,7 +11,7 @@ class ZstIntPlug;
 class ZstPerformer;
 class ZstURI;
 class ZstEndpoint;
-class PlugEvent;
+class ZstEvent;
 
 enum RuntimeLanguage {
 	NATIVE_RUNTIME,
@@ -22,16 +22,24 @@ enum RuntimeLanguage {
 class Showtime
 {
 public:
+	//Destructor
 	ZST_EXPORT ~Showtime();
+
+	//Endpoint singleton
 	ZST_EXPORT static ZstEndpoint & endpoint();
+
+	//Destroy the endpoint instrance and leave
 	ZST_EXPORT static void destroy();
 
 	ZST_EXPORT static void set_runtime_language(RuntimeLanguage runtime);
 	ZST_EXPORT static RuntimeLanguage get_runtime_language();
 
-	//Init
+	//Init the library
 	ZST_EXPORT static void init();
     ZST_EXPORT static void join(const char * stage_address);
+
+	//Poll the event queue - for runtimes that have process events from the main thread
+	ZST_EXPORT static void poll_once();
 
     //Stage methods
     ZST_EXPORT static std::chrono::milliseconds ping_stage();
@@ -40,14 +48,11 @@ public:
 	ZST_EXPORT static ZstPerformer* create_performer(const char * name);
 	ZST_EXPORT static ZstPerformer * get_performer_by_URI(const char * uri_str);
 
-	ZST_EXPORT static PlugEvent pop_plug_event();
-	ZST_EXPORT static int plug_event_queue_size();
+	ZST_EXPORT static ZstEvent pop_event();
+	ZST_EXPORT static int event_queue_size();
 
 	ZST_EXPORT static ZstIntPlug * create_int_plug(ZstURI * uri);
     ZST_EXPORT static void destroy_plug(ZstPlug *plug);
-    ZST_EXPORT static std::vector<ZstURI> get_all_plug_URIs(const char * performer = "", const char * instrument = "");
-	ZST_EXPORT static std::vector<std::pair<ZstURI, ZstURI> > get_all_plug_connections(const char * performer = "", const char * instrument = "");
-
 	ZST_EXPORT static void connect_plugs(const ZstURI * a, const ZstURI * b);
 
 private:
@@ -58,5 +63,3 @@ private:
 	//Active runtime
 	static RuntimeLanguage _runtime_language;
 };
-
-

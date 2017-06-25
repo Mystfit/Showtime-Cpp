@@ -2,9 +2,8 @@
 
 using namespace std;
 
-ZstPerformerRef::ZstPerformerRef(std::string performer_name)
+ZstPerformerRef::ZstPerformerRef(ZstURI uri) : m_URI(uri)
 {
-	name = performer_name;
 }
 
 ZstPerformerRef::~ZstPerformerRef()
@@ -16,6 +15,10 @@ ZstPerformerRef::~ZstPerformerRef()
 	m_plugs.clear();
 }
 
+ZstURI ZstPerformerRef::get_URI()
+{
+	return m_URI;
+}
 
 ZstPlugRef * ZstPerformerRef::create_plug(ZstURI address)
 {

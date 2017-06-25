@@ -1,6 +1,7 @@
 #include "ZstPlug.h"
 #include "Showtime.h"
 #include "ZstEndpoint.h"
+#include "ZstEvent.h"
 
 using namespace std;
 
@@ -70,8 +71,7 @@ void ZstIntPlug::recv(msgpack::object object){
     int out;
     object.convert<int>(out);
     m_value = out;
-	run_recv_callbacks();
-	Showtime::endpoint().enqueue_plug_event(PlugEvent(PlugEvent::Events::HIT, this));
+	Showtime::endpoint().enqueue_plug_event(ZstEvent(*get_URI(), ZstEvent::EventType::PLUG_HIT));
 }
 
 int ZstIntPlug::get_value(){
@@ -80,23 +80,4 @@ int ZstIntPlug::get_value(){
 
 PlugCallback::PlugCallback()
 {
-}
-
-PlugEvent::PlugEvent():m_plug(NULL), m_event(Events::DEFAULT){
-}
-
-PlugEvent::PlugEvent(Events e, ZstPlug * p) : m_event(e), m_plug(p)
-{
-}
-
-PlugEvent::~PlugEvent()
-{
-}
-
-PlugEvent::Events PlugEvent::event(){
-	return m_event;
-}
-
-ZstPlug * PlugEvent::plug() {
-	return m_plug;
 }

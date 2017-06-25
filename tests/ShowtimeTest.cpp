@@ -49,7 +49,11 @@ void test_create_plugs(){
 	
 	//URI ownership taken over by plug
 	ZstIntPlug *outputPlug = Showtime::create_int_plug(outURI);
+	std::cout << Showtime::event_queue_size() << std::endl;
+
 	ZstIntPlug *inputPlug = Showtime::create_int_plug(inURI);
+
+
     
     //Check address equality
     assert(outputPlug->get_URI() == outURI);
@@ -74,15 +78,6 @@ void test_create_plugs(){
 //  assert(stagePerformerRef->get_plug_by_name(localplugs[0]->get_URI()->name()) != NULL);
 //  assert(stagePerformerRef->get_plug_by_name(localplugs[1]->get_URI()->name()) != NULL);
     
-    //Query stage for remote plugs
-    std::vector<ZstURI> plugs = Showtime::endpoint().get_all_plug_URIs();
-    assert(plugs.size() > 0);
-    plugs = Showtime::endpoint().get_all_plug_URIs("test_performer_1");
-    assert(plugs.size() > 0);
-    plugs = Showtime::endpoint().get_all_plug_URIs("non_existing_performer");
-    assert(plugs.size() == 0);
-    plugs = Showtime::endpoint().get_all_plug_URIs("test_performer_1", "test_instrument");
-    assert(plugs.size() > 0);
 
 	//Check plug destruction
 	std::string outputName = outputPlug->get_URI()->name();
@@ -160,19 +155,12 @@ void test_connect_plugs() {
 #endif
 	//Test event queue. This is thread safe so we can pop each event off at our leisure
 	for (int i = num_fires; i > 0; --i) {
-		assert(Showtime::plug_event_queue_size() == i);
-		PlugEvent e = Showtime::pop_plug_event();
-		assert(e.event() == PlugEvent::Events::HIT);
+		assert(Showtime::event_queue_size() == i);
+		ZstEvent e = Showtime::pop_event();
+		assert(e.get_update_type() == ZstEvent::Events::PLUG_HIT);
 		assert(e.plug()->get_URI()->name() == input_int_plug->get_URI()->name());
-		assert(Showtime::plug_event_queue_size() == i-1);
+		assert(Showtime::event_queue_size() == i-1);
 	}
-
-	//Test stage listing active plug connections
-	std::vector<std::pair<ZstURI, ZstURI>> connections = Showtime::get_all_plug_connections();
-	assert(connections.size() > 0);
-    
-	assert(connections[0].first == *outURI);
-	assert(connections[0].second == *inURI);
 
 	std::cout << "Queue test successful" << std::endl;
 	Showtime::destroy_plug(output_int_plug);
@@ -192,6 +180,13 @@ int main(int argc,char **argv){
 
 	Showtime::init();
     Showtime::join("127.0.0.1");
+
+#ifdef WIN32
+	Sleep(500);
+#else
+	sleep(1);
+#endif
+
 	ZstPerformer * performer_a = Showtime::create_performer("test_performer_1");
 	ZstPerformer * performer_b = Showtime::create_performer("test_performer_2");
     

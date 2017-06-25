@@ -8,6 +8,7 @@
 #include <msgpack.hpp>
 #include <czmq.h>
 #include "ZstURI.h"
+#include "ZstEvent.h"
 
 class ZstMessages{
 public:
@@ -15,36 +16,26 @@ public:
     enum Kind{
         SIGNAL,
 		STAGE_REGISTER_ENDPOINT,
-		STAGE_REGISTER_ENDPOINT_ACK,   
-        STAGE_REGISTER_PERFORMER,     
-        STAGE_REGISTER_PLUG,          
-		STAGE_DESTROY_PLUG,           
-        STAGE_REGISTER_CONNECTION,     
-        STAGE_REMOVE_ITEM,             
-        STAGE_GRAPH_UPDATES,         
-        STAGE_LIST_PLUGS,
-        STAGE_LIST_PLUGS_ACK,
-		STAGE_LIST_PLUG_CONNECTIONS,
-		STAGE_LIST_PLUG_CONNECTIONS_ACK,
-        PERFORMER_UPDATE_PLUG,           
-        ENDPOINT_HEARTBEAT,             
+		STAGE_REGISTER_ENDPOINT_ACK,
+        STAGE_REGISTER_PERFORMER,
+        STAGE_REGISTER_PLUG,
+		STAGE_DESTROY_PLUG,
+        STAGE_REGISTER_CONNECTION,
+        STAGE_REMOVE_ITEM,
+        STAGE_UPDATE,
+        ENDPOINT_HEARTBEAT,
 		PERFORMER_REGISTER_CONNECTION
     };
 
 	enum Signal {
 		OK = 0,
+		SYNC,
 		ERR_STAGE_ENDPOINT_NOT_FOUND,
 		ERR_STAGE_ENDPOINT_ALREADY_EXISTS,
 		ERR_STAGE_PERFORMER_NOT_FOUND,
 		ERR_STAGE_PERFORMER_ALREADY_EXISTS,
 		ERR_STAGE_PLUG_ALREADY_EXISTS,
 		ERR_STAGE_BAD_PLUG_CONNECT_REQUEST
-	};
-
-	//Special message property enums
-	enum GraphItemUpdateType {
-		ARRIVING,
-		LEAVING
 	};
 
     //Message structs
@@ -92,38 +83,23 @@ public:
         MSGPACK_DEFINE(from, to);
     };
     
-    struct GraphUpdates{
-        std::vector<std::tuple<int, GraphItemUpdateType> > updates;
-        MSGPACK_DEFINE_ARRAY(updates);
-    };
-
     struct PlugOutput{
         ZstURI from;
         std::string value;
         MSGPACK_DEFINE(from, value);
     };
+
+	struct StageUpdates {
+		std::vector<ZstEvent> updates;
+		MSGPACK_DEFINE_ARRAY(updates);
+	};
     
     struct Heartbeat {
         std::string from;
         long timestamp;
         MSGPACK_DEFINE(from, timestamp);
     };
-    
-    struct ListPlugs{
-        std::string performer;
-        std::string instrument;
-        MSGPACK_DEFINE(performer, instrument);
-    };
-    
-    struct ListPlugsAck{
-        std::vector<ZstURI> plugs;
-        MSGPACK_DEFINE_ARRAY(plugs);
-    };
 
-	struct ListPlugConnectionsAck {
-		std::vector<std::pair<ZstURI, ZstURI>> plug_connections;
-		MSGPACK_DEFINE_ARRAY(plug_connections);
-	};
 
 	struct ConnectPlugs {
 		ZstURI first;
@@ -205,5 +181,4 @@ public:
 };
 
 //Enums for MsgPack
-MSGPACK_ADD_ENUM(ZstMessages::GraphItemUpdateType);
 MSGPACK_ADD_ENUM(ZstMessages::Signal);
