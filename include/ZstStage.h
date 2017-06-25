@@ -74,8 +74,5 @@ private:
 	Queue<ZstEvent> m_stage_updates;
 	int m_update_timer_id;
 	static int stage_update_timer_func(zloop_t * loop, int timer_id, void * arg);
-	
-	//Database handle
-	sqlite3 * db;
 };
 
