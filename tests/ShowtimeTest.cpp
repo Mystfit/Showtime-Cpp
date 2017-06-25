@@ -157,8 +157,8 @@ void test_connect_plugs() {
 	for (int i = num_fires; i > 0; --i) {
 		assert(Showtime::event_queue_size() == i);
 		ZstEvent e = Showtime::pop_event();
-		assert(e.get_update_type() == ZstEvent::Events::PLUG_HIT);
-		assert(e.plug()->get_URI()->name() == input_int_plug->get_URI()->name());
+		assert(e.get_update_type() == ZstEvent::EventType::PLUG_HIT);
+		assert(e.get_first().to_str() == input_int_plug->get_URI()->to_str());
 		assert(Showtime::event_queue_size() == i-1);
 	}
 

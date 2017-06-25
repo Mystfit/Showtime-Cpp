@@ -43,6 +43,7 @@ void ZstEndpoint::init()
 	//Local dealer socket for receiving messages forwarded from other performers
 	m_stage_router = zsock_new(ZMQ_DEALER);
 	if (m_stage_router) {
+		zsock_set_linger(m_stage_router, 0);
 		attach_pipe_listener(m_stage_router, s_handle_stage_router, this);
 	}
 
@@ -202,10 +203,6 @@ void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
 	m_stage_requests = zsock_new_req(stage_req_addr);
 	zsock_set_linger(m_stage_requests, 0);
 
-	//Stage sub socket for update messages
-	cout << "PERFORMER: Connecting to stage publisher " << stage_sub_addr << endl;
-	zsock_connect(m_stage_updates, stage_sub_addr);
-
 	ZstMessages::RegisterEndpoint args;
 	args.uuid = zuuid_str(m_startup_uuid);
 	args.address = m_output_endpoint;
@@ -228,6 +225,11 @@ void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
 		m_assigned_uuid = endpoint_ack.assigned_uuid;
 		zsock_set_identity(m_stage_router, endpoint_ack.assigned_uuid.c_str());
 		zsock_connect(m_stage_router, stage_router_addr);
+
+		//Stage sub socket for update messages
+		cout << "PERFORMER: Connecting to stage publisher " << stage_sub_addr << endl;
+		zsock_connect(m_stage_updates, stage_sub_addr);
+		zsock_set_subscribe(m_stage_updates, "");
 
 		//TODO: Need to check handshake before setting connection as active
 		m_connected_to_stage = true;
