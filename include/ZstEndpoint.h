@@ -40,8 +40,8 @@ public:
 	//Lets the stage know we want a full snapshot of the current performance
 	void request_stage_sync();
 
-	ZstPerformer * create_performer(std::string name);
-	ZstPerformer * get_performer_by_URI(std::string uri_str);
+	ZstPerformer * create_performer(const ZstURI uri);
+	ZstPerformer * get_performer_by_URI(const ZstURI uri);
 	
 	template<typename T>
 	ZST_EXPORT static T* create_plug(ZstURI * uri);

@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <msgpack.hpp>
 #include <czmq.h>
-#include "ZstURI.h"
 #include "ZstEvent.h"
+#include "ZstURIWire.h"
 
 class ZstMessages{
 public:
@@ -68,23 +68,23 @@ public:
     };
     
     struct RegisterPlug{
-		ZstURI address;
+		ZstURIWire address;
         MSGPACK_DEFINE(address);
     };
 
     struct DestroyPlug {
-        ZstURI address;
+		ZstURIWire address;
         MSGPACK_DEFINE(address);
     };
 
     struct RegisterConnection{
-        ZstURI from;
-        ZstURI to;
+		ZstURIWire from;
+		ZstURIWire to;
         MSGPACK_DEFINE(from, to);
     };
     
     struct PlugOutput{
-        ZstURI from;
+		ZstURIWire from;
         std::string value;
         MSGPACK_DEFINE(from, value);
     };
@@ -102,15 +102,15 @@ public:
 
 
 	struct ConnectPlugs {
-		ZstURI first;
-		ZstURI second;
+		ZstURIWire first;
+		ZstURIWire second;
 		MSGPACK_DEFINE(first, second);
 	};
 
 	struct PerformerConnection {
 		std::string endpoint;
-		ZstURI output_plug;
-        ZstURI input_plug;
+		ZstURIWire output_plug;
+		ZstURIWire input_plug;
 		MSGPACK_DEFINE(endpoint, output_plug, input_plug);
 	};
     

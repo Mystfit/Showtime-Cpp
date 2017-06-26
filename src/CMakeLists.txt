@@ -3,6 +3,7 @@ enable_testing()
 set(ZST_PUBLIC_HEADERS 
  ${Showtime_INCLUDE_DIRS}/Showtime.h
  ${Showtime_INCLUDE_DIRS}/ZstURI.h
+ ${Showtime_INCLUDE_DIRS}/ZstURIWire.h
  ${Showtime_INCLUDE_DIRS}/ZstUtils.hpp
  ${Showtime_INCLUDE_DIRS}/ZstPlug.h
  ${Showtime_INCLUDE_DIRS}/ZstPerformer.h
@@ -28,6 +29,7 @@ set(ZST_SOURCE
  "Showtime.cpp"
  "ZstEndpoint.cpp"
  "ZstURI.cpp"
+ "ZstURIWire.cpp"
  "ZstUtils.cpp"
  "ZstActor.cpp"
  "ZstMessages.cpp"

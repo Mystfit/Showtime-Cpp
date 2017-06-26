@@ -1,4 +1,5 @@
 #include "ZstStage.h"
+#include "ZstURIWire.h"
 
 using namespace std;
 
@@ -70,11 +71,11 @@ std::vector<ZstPerformerRef*> ZstStage::get_all_performer_refs()
 	return all_performers;
 }
 
-ZstPerformerRef * ZstStage::get_performer_ref_by_name(string performer_name) {
+ZstPerformerRef * ZstStage::get_performer_ref_by_name(const char * performer_name) {
 
 	ZstPerformerRef * performer = NULL;
 	for (map<string, ZstEndpointRef*>::iterator endpnt_iter = m_endpoint_refs.begin(); endpnt_iter != m_endpoint_refs.end(); ++endpnt_iter) {
-		performer = endpnt_iter->second->get_performer_by_name(performer_name);
+		performer = endpnt_iter->second->get_performer_by_name(string(performer_name));
 		if (performer != NULL)
 			break;
 	}
@@ -85,7 +86,7 @@ ZstEndpointRef * ZstStage::get_performer_endpoint(ZstPerformerRef * performer)
 {
 	ZstEndpointRef * endpoint = NULL;
 	for (map<string, ZstEndpointRef*>::iterator endpnt_iter = m_endpoint_refs.begin(); endpnt_iter != m_endpoint_refs.end(); ++endpnt_iter) {
-		if (endpnt_iter->second->get_performer_by_name(performer->get_URI().performer()) != NULL) {
+		if (endpnt_iter->second->get_performer_by_name(performer->get_URI()->performer()) != NULL) {
 			endpoint = endpnt_iter->second;
 			break;
 		}
@@ -283,14 +284,14 @@ void ZstStage::register_performer_handler(zsock_t * socket, zmsg_t * msg) {
 	}
 
 	reply_with_signal(socket, ZstMessages::Signal::OK);
-	enqueue_stage_update(ZstEvent(performerRef->get_URI(), ZstEvent::EventType::CREATED));
+	enqueue_stage_update(ZstEvent(*performerRef->get_URI(), ZstEvent::EventType::CREATED));
 }
 
 
 void ZstStage::register_plug_handler(zsock_t *socket, zmsg_t *msg) {
 	ZstMessages::RegisterPlug plug_args = ZstMessages::unpack_message_struct<ZstMessages::RegisterPlug>(msg);
 
-	ZstPerformerRef * performer = get_performer_ref_by_name(plug_args.address.performer());
+	ZstPerformerRef * performer = get_performer_ref_by_name(plug_args.address.performer_char());
 
 	if (performer == NULL) {
 		cout << "STAGE: Couldn't register plug. No performer registered to stage with name";
@@ -318,7 +319,7 @@ void ZstStage::destroy_plug_handler(zsock_t * socket, zmsg_t * msg)
 	ZstMessages::DestroyPlug plug_destroy_args = ZstMessages::unpack_message_struct<ZstMessages::DestroyPlug>(msg);
 	cout << "STAGE: Received destroy plug request" << endl;
 
-	ZstPerformerRef *performer = get_performer_ref_by_name(plug_destroy_args.address.performer());
+	ZstPerformerRef *performer = get_performer_ref_by_name(plug_destroy_args.address.performer_char());
 
 	performer->destroy_plug(performer->get_plug_by_URI(plug_destroy_args.address.to_str()));
 
@@ -355,8 +356,8 @@ void ZstStage::connect_plugs_handler(zsock_t * socket, zmsg_t * msg)
 
 int ZstStage::connect_plugs(ZstURI output_plug, ZstURI input_plug)
 {
-    ZstPerformerRef * output_performer = get_performer_ref_by_name(output_plug.performer());
-    ZstPerformerRef * input_performer = get_performer_ref_by_name(input_plug.performer());
+    ZstPerformerRef * output_performer = get_performer_ref_by_name(output_plug.performer_char());
+    ZstPerformerRef * input_performer = get_performer_ref_by_name(input_plug.performer_char());
     
 	if (!(output_performer && input_performer)) {
 		return -1;
@@ -403,7 +404,6 @@ vector<ZstEvent> ZstStage::create_snapshot() {
 			for (vector<ZstURI>::iterator out_plug_iter = connections.begin(); out_plug_iter != connections.end(); ++out_plug_iter) {
 				stage_snapshot.push_back(ZstEvent((*plug_iter)->get_URI(), (*out_plug_iter), ZstEvent::CONNECTION_CREATED));
 			}
-
 		}
 	}
 

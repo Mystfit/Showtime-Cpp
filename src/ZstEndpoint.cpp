@@ -4,6 +4,7 @@
 #include "ZstActor.h"
 #include "ZstPlug.h"
 #include "ZstURI.h"
+#include "ZstURIWire.h"
 #include "ZstMessages.h"
 #include "ZstEvent.h"
 
@@ -178,7 +179,8 @@ void ZstEndpoint::connect_performer_handler(zsock_t * socket, zmsg_t * msg) {
 
 	//Register local connections so we can take the single published message and make sure each expecting internal input
 	//plug receives it
-	ZstPlug * input = get_performer_by_URI(performer_args.input_plug.performer())->get_plug_by_URI(performer_args.input_plug.to_str());
+	ZstURI input_plug = performer_args.input_plug;
+	ZstPlug * input = get_performer_by_URI(input_plug)->get_plug_by_URI(input_plug);
 	m_plug_connections[performer_args.output_plug].push_back(input);
 
 	cout << "PERFORMER: Connecting to " << performer_args.endpoint << ". My output endpoint is " << m_output_endpoint << endl;
@@ -280,17 +282,17 @@ void ZstEndpoint::register_performer_to_stage(string performer) {
 	}
 }
 
-ZstPerformer * ZstEndpoint::create_performer(std::string name)
+ZstPerformer * ZstEndpoint::create_performer(ZstURI uri)
 {
-	ZstPerformer * perf = new ZstPerformer(name);
-	m_performers[name] = perf;
+	ZstPerformer * perf = new ZstPerformer(uri.performer());
+	m_performers[uri.performer()] = perf;
 	register_performer_to_stage(perf->get_name());
 	return perf;
 }
 
-ZstPerformer * ZstEndpoint::get_performer_by_URI(std::string uri_str)
+ZstPerformer * ZstEndpoint::get_performer_by_URI(const ZstURI uri)
 {
-	return m_performers[uri_str];
+	return m_performers[uri.performer()];
 }
 
 template ZstIntPlug* ZstEndpoint::create_plug<ZstIntPlug>(ZstURI * uri);
@@ -298,8 +300,14 @@ template<typename T>
  T* ZstEndpoint::create_plug(ZstURI * uri) {
 
 	ZstMessages::RegisterPlug plug_args;
-	plug_args.address = *(uri);
+	plug_args.address = ZstURIWire(*(uri));
 	zmsg_t * plug_msg = ZstMessages::build_message<ZstMessages::RegisterPlug>(ZstMessages::Kind::STAGE_REGISTER_PLUG, plug_args);
+	
+	zmsg_t * plug_msg_b = ZstMessages::build_message<ZstMessages::RegisterPlug>(ZstMessages::Kind::STAGE_REGISTER_PLUG, plug_args);
+	zmsg_pop(plug_msg_b);
+	ZstMessages::RegisterPlug temp = ZstMessages::unpack_message_struct<ZstMessages::RegisterPlug>(plug_msg_b);
+	assert(plug_args.address.direction() == temp.address.direction());
+	
 	Showtime::endpoint().send_to_stage(plug_msg);
 
 	zmsg_t *responseMsg = Showtime::endpoint().receive_from_stage();
@@ -312,7 +320,7 @@ template<typename T>
     }
 
 	T *plug = new T(uri);
-	Showtime::endpoint().get_performer_by_URI(uri->performer())->add_plug(plug);
+	Showtime::endpoint().get_performer_by_URI(*uri)->add_plug(plug);
 	return plug;
 }
 
@@ -324,7 +332,7 @@ template<typename T>
  void ZstEndpoint::destroy_plug(ZstPlug * plug)
 {
 	ZstMessages::DestroyPlug destroy_args;
-	destroy_args.address = *(plug->get_URI());
+	destroy_args.address = ZstURIWire(*(plug->get_URI()));
 	send_to_stage(ZstMessages::build_message<ZstMessages::DestroyPlug>(ZstMessages::Kind::STAGE_DESTROY_PLUG, destroy_args));
 
 	zmsg_t *responseMsg = receive_from_stage();

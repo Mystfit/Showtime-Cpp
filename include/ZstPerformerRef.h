@@ -8,10 +8,10 @@
 
 class ZstPerformerRef {
 public:
-	ZstPerformerRef(ZstURI uri);
+	ZstPerformerRef(ZstURI * uri);
 	~ZstPerformerRef();
 
-	ZST_EXPORT ZstURI get_URI();
+	ZST_EXPORT ZstURI * get_URI();
 
 	ZstPlugRef * create_plug(ZstURI address);
 	ZST_EXPORT ZstPlugRef * get_plug_by_URI(std::string uri_str);
@@ -24,5 +24,5 @@ public:
 	}
 private:
 	std::vector<ZstPlugRef*> m_plugs;
-	ZstURI m_URI;
+	ZstURI * m_URI;
 };

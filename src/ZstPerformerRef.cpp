@@ -2,7 +2,7 @@
 
 using namespace std;
 
-ZstPerformerRef::ZstPerformerRef(ZstURI uri) : m_URI(uri)
+ZstPerformerRef::ZstPerformerRef(ZstURI * uri) : m_URI(uri)
 {
 }
 
@@ -15,7 +15,7 @@ ZstPerformerRef::~ZstPerformerRef()
 	m_plugs.clear();
 }
 
-ZstURI ZstPerformerRef::get_URI()
+ZstURI * ZstPerformerRef::get_URI()
 {
 	return m_URI;
 }
@@ -37,7 +37,10 @@ ZstPlugRef * ZstPerformerRef::create_plug(ZstURI address)
 
 ZstPlugRef * ZstPerformerRef::get_plug_by_URI(std::string uri_str)
 {
-	auto it = find_if(m_plugs.begin(), m_plugs.end(), [&uri_str](ZstPlugRef* plugRef) {return plugRef->get_URI().to_str() == uri_str; });
+	auto it = find_if(m_plugs.begin(), m_plugs.end(), [&uri_str](ZstPlugRef* plugRef) {
+		ZstURI uri = plugRef->get_URI();
+		return uri.to_str() == uri_str;
+	});
 
 	if (it != m_plugs.end()) {
 		return (*it);

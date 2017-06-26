@@ -39,7 +39,7 @@ void Showtime::poll_once()
 {
 	while (Showtime::event_queue_size() > 0) {
 		ZstEvent e = Showtime::pop_event();
-		Showtime::endpoint().get_performer_by_URI(e.get_first().to_str())->get_plug_by_URI(e.get_first().to_str())->run_recv_callbacks();
+		Showtime::endpoint().get_performer_by_URI(e.get_first())->get_plug_by_URI(e.get_first())->run_recv_callbacks();
 	}
 }
 
@@ -64,16 +64,16 @@ std::chrono::milliseconds Showtime::ping_stage(){
 
 ZstPerformer * Showtime::create_performer(const char * name)
 {
-	return Showtime::endpoint().create_performer(name);
+	return Showtime::endpoint().create_performer(ZstURI(name, "", "", ZstURI::Direction::NONE));
 }
 
 ZstIntPlug * Showtime::create_int_plug(ZstURI * uri) {
 	return Showtime::endpoint().create_int_plug(uri);
 }
 
-ZstPerformer * Showtime::get_performer_by_URI(const char * uri_str)
+ZstPerformer * Showtime::get_performer_by_URI(const ZstURI * uri)
 {
-	return Showtime::endpoint().get_performer_by_URI(uri_str);
+	return Showtime::endpoint().get_performer_by_URI(*uri);
 }
 
 

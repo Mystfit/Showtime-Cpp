@@ -46,7 +46,7 @@ public:
 
 	//Performers are our local containers for plugs
 	ZST_EXPORT static ZstPerformer* create_performer(const char * name);
-	ZST_EXPORT static ZstPerformer * get_performer_by_URI(const char * uri_str);
+	ZST_EXPORT static ZstPerformer * get_performer_by_URI(const ZstURI * uri);
 
 	ZST_EXPORT static ZstEvent pop_event();
 	ZST_EXPORT static int event_queue_size();

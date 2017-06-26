@@ -1,22 +1,32 @@
+#include <map>
 #include "ZstURI.h"
+
 using namespace std;
 
-
-ZstURI::ZstURI() : m_direction(Direction::OUT_JACK)
+ZstURI::ZstURI() : 
+	m_performer(""),
+	m_instrument(""),
+	m_name(""),
+	m_direction(Direction::NONE)
 {
-	m_performer = "";
-	m_instrument = "";
-	m_name = "";
-	m_direction = Direction::OUT_JACK;
 }
 
-ZstURI::ZstURI(string  performer, string  instrument, string  name, Direction direction) {
-	m_performer = performer;
-	m_instrument = instrument;
-	m_name = name;
+ZstURI::ZstURI(const char *  performer, const char *  instrument, const char *  name, Direction direction){
+	
+	int performer_size = strlen(performer);
+	int instrument_size = strlen(instrument);
+	int name_size = strlen(name);
+
+	m_performer = new char[performer_size + 1]();
+	m_instrument = new char[instrument_size + 1]();
+	m_name = new char[name_size + 1]();
+
+	strncpy(m_performer, performer, performer_size);
+	strncpy(m_instrument, instrument, instrument_size);
+	strncpy(m_name, name, name_size);
+
 	m_direction = direction;
 }
-
 
 ZstURI::~ZstURI()
 {
@@ -24,26 +34,40 @@ ZstURI::~ZstURI()
 
 ZstURI * ZstURI::create(const char *  performer, const char *  instrument, const char *  name, Direction direction)
 {
-	return new ZstURI(string(performer), string(instrument), string(name), direction);
+	int performer_size = strlen(performer);
+	int instrument_size = strlen(instrument);
+	int name_size = strlen(name);
+
+
+	char * perf_copy = new char[performer_size + 1]();
+	char * instrument_copy = new char[instrument_size + 1]();
+	char * name_copy = new char[name_size + 1]();
+
+	strncpy(perf_copy, performer, performer_size);
+	strncpy(instrument_copy, instrument, instrument_size);
+	strncpy(name_copy, name, name_size);
+
+	return new ZstURI(perf_copy, instrument_copy, name_copy, direction);
+}
+
+ZstURI * ZstURI::create_empty() {
+	return new ZstURI();
 }
 
 void ZstURI::destroy(ZstURI * uri) {
 	delete uri;
 }
 
-string ZstURI::performer()
-{
-	return m_performer;
+const string ZstURI::performer() const{
+	return string(m_performer);
 }
 
-string ZstURI::instrument()
-{
-	return m_instrument;
+const string ZstURI::instrument() const{
+	return string(m_instrument);
 }
 
-string ZstURI::name(
-){
-	return m_name;
+const string ZstURI::name() const {
+	return string(m_name);
 }
 
 const ZstURI::Direction ZstURI::direction()
@@ -52,29 +76,29 @@ const ZstURI::Direction ZstURI::direction()
 }
 
 const char * ZstURI::performer_char() {
-	return m_performer.c_str();
+	return m_performer;
 }
 
 const char * ZstURI::instrument_char() {
-	return m_instrument.c_str();
+	return m_instrument;
 }
 
 const char * ZstURI::name_char() {
-	return m_name.c_str();
+	return m_name;
 }
 
 bool ZstURI::operator==(const ZstURI & other)
 {
-	return (m_performer == other.m_performer) &&
-		(m_instrument == other.m_instrument) &&
-		(m_name == other.m_name);
+	return (strcmp(m_performer, other.m_performer) == 0) &&
+		(strcmp(m_instrument, other.m_instrument) == 0) &&
+		(strcmp(m_name, other.m_name) == 0);
 }
 
 bool ZstURI::operator!=(const ZstURI & other)
 {
-	return !((m_performer == other.m_performer) &&
-		(m_instrument == other.m_instrument) &&
-		(m_name == other.m_name));
+	return !((strcmp(m_performer, other.m_performer) == 0) &&
+		(strcmp(m_instrument, other.m_instrument) == 0) &&
+		(strcmp(m_name, other.m_name) == 0));
 }
 
 bool ZstURI::operator< (const ZstURI& b) const 
@@ -82,8 +106,12 @@ bool ZstURI::operator< (const ZstURI& b) const
 	return to_str() < b.to_str();
 }
 
+bool ZstURI::is_empty() {
+	return performer().empty() && instrument().empty() && name().empty() && m_direction == Direction::NONE;
+}
+
 const std::string ZstURI::to_str() const {
-	return m_performer + "/" + m_instrument + "/" + m_name + "?d=" + std::to_string(m_direction);
+	return string(string(m_performer) + "/" + string(m_instrument) + "/" + string(m_name) + "?d=" + std::to_string(m_direction));
 }
 
 const char * ZstURI::to_char() const
@@ -91,7 +119,7 @@ const char * ZstURI::to_char() const
 	return to_str().c_str();
 }
 
-ZstURI ZstURI::from_str(const std::string s)
+ZstURI ZstURI::from_str(const char * s)
 {
 	std::vector<std::string> uri_args_split;
     
@@ -126,10 +154,5 @@ ZstURI ZstURI::from_str(const std::string s)
 
     ZstURI::Direction dir = (ZstURI::Direction)std::atoi(arg_map["d"].c_str());
 	return ZstURI(performer.c_str(), instrument.c_str(), plug.c_str(), dir);
-}
-
-ZstURI ZstURI::from_char(const char * s)
-{
-	return from_str(string(s));
 }
 

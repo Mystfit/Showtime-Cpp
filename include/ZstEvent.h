@@ -1,10 +1,10 @@
 #pragma once
 
-#include "ZstURI.h"
-#include "ZstExports.h"
 #include <msgpack.hpp>
+#include "ZstURIWire.h"
+#include "ZstExports.h"
 
-class ZstURI;
+class ZstURIWire;
 class ZstEvent {
 public:
 	//Special message property enums
@@ -20,6 +20,7 @@ public:
 	};
 
 	ZstEvent();
+	ZstEvent(const ZstEvent & copy);
 	ZstEvent(ZstURI single, EventType event_type);
 	ZstEvent(ZstURI first, ZstURI second, EventType event_type);
 	ZST_EXPORT ~ZstEvent();
@@ -31,8 +32,8 @@ public:
 	MSGPACK_DEFINE(m_first, m_second, m_update_type);
 
 private:
-	ZstURI m_first;
-	ZstURI m_second;
+	ZstURIWire m_first;
+	ZstURIWire m_second;
 	EventType m_update_type;
 };
 

@@ -7,31 +7,22 @@ ZstPerformer::ZstPerformer(string name) {
 	m_name = name;
 }
 
+ZstPerformer::~ZstPerformer()
+{
+}
+
 string ZstPerformer::get_name()
 {
 	return m_name;
 }
 
-std::vector<ZstPlug*> ZstPerformer::get_plugs() {
-	vector<ZstPlug*> plugs;
 
-	for (map<string, vector<ZstPlug*>>::iterator instrumentIter = m_plugs.begin(); instrumentIter != m_plugs.end(); ++instrumentIter) {
-		for (vector<ZstPlug*>::iterator plugIter = instrumentIter->second.begin(); plugIter != instrumentIter->second.end(); ++plugIter) {
-			plugs.push_back(*plugIter);
-		}
-	}
-	return plugs;
-}
-
-std::vector<ZstPlug*> ZstPerformer::get_instrument_plugs(std::string instrument) {
-	return m_plugs[instrument];
-}
-
-ZstPlug * ZstPerformer::get_plug_by_URI(std::string uri_str)
+ZstPlug * ZstPerformer::get_plug_by_URI(const ZstURI uri)
 {
-    vector<ZstPlug*> plugs = get_plugs();
+	string instrument = uri.instrument();
+	vector<ZstPlug*> plugs = m_plugs[instrument];
     for (vector<ZstPlug*>::iterator plugIter = plugs.begin(); plugIter != plugs.end(); ++plugIter) {
-        if((*plugIter)->get_URI()->to_str() == uri_str){
+        if((*plugIter)->get_URI()->to_str() == uri.to_str()){
             return (*plugIter);
         }
     }

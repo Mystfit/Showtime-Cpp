@@ -2,6 +2,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "ZstURI.h"
 #include "ZstExports.h"
 
 class ZstPlug;
@@ -10,9 +11,7 @@ class ZstPerformer {
 		ZstPerformer(std::string name);
 		~ZstPerformer();
 		ZST_EXPORT std::string get_name();
-		ZST_EXPORT std::vector<ZstPlug*> get_plugs();
-		ZST_EXPORT std::vector<ZstPlug*> get_instrument_plugs(std::string instrument);
-        ZST_EXPORT ZstPlug * get_plug_by_URI(std::string uri_str);
+        ZST_EXPORT ZstPlug * get_plug_by_URI(const ZstURI uri);
 
 		void add_plug(ZstPlug* plug);
 		void remove_plug(ZstPlug* plug);

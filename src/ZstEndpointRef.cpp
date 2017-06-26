@@ -24,8 +24,7 @@ ZstPerformerRef * ZstEndpointRef::create_performer(std::string name)
 		//Already exists!
 		return NULL;
 	}
-
-	ZstPerformerRef * performer = new ZstPerformerRef(ZstURI(name, "", "", ZstURI::Direction::NONE));
+	ZstPerformerRef * performer = new ZstPerformerRef(ZstURI::create(name.c_str(), "", "", ZstURI::Direction::NONE));
 	m_performers[name] = performer;
 	return performer;
 }
