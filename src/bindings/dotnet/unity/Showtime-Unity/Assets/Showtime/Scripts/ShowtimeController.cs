@@ -34,6 +34,7 @@ public class ShowtimeController : MonoBehaviour {
 		//Create our local plug objects. Will block until the stage returns them. Could be async?
 		local_plug_out = Showtime.create_int_plug(local_uri_out);
 		local_plug_in = Showtime.create_int_plug(local_uri_in);
+        local_plug_in.attach_recv_callback(new PlugCallback());
 
 		//Connect the plugs together
 		Showtime.connect_plugs(local_uri_out, local_uri_in);
@@ -77,13 +78,15 @@ public class ShowtimeController : MonoBehaviour {
 	IEnumerator ShowtimeEventLoop(){
 		while (true) {
 			//Wait until queue has at least 1 event
-			yield return new WaitUntil (() => Showtime.plug_event_queue_size () > 0);
-			while (Showtime.plug_event_queue_size () > 0) {
-				//Pop event and handle it. This is a good place to implement a callback system since we
-				//receive the plug handle
-				PlugEvent e = Showtime.pop_plug_event ();
-				Debug.Log ("Queue got a plug event from: " + e.plug ().get_URI ().name () + " Value: " + showtime_dotnet.convert_to_int_plug (e.plug ()).get_value ());
-			}
+			yield return new WaitUntil (() => Showtime.event_queue_size () > 0);
+            Showtime.poll_once();
 		}
 	}
+
+    public class PlugCallback : ZstEventCallback{
+        public override void run(ZstEvent e)
+        {
+            Debug.Log(e.get_first().to_char() + " received hit with val " );
+        }
+    }
 }

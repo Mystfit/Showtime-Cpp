@@ -86,7 +86,7 @@ ZstEndpointRef * ZstStage::get_performer_endpoint(ZstPerformerRef * performer)
 {
 	ZstEndpointRef * endpoint = NULL;
 	for (map<string, ZstEndpointRef*>::iterator endpnt_iter = m_endpoint_refs.begin(); endpnt_iter != m_endpoint_refs.end(); ++endpnt_iter) {
-		if (endpnt_iter->second->get_performer_by_name(performer->get_URI()->performer()) != NULL) {
+		if (endpnt_iter->second->get_performer_by_name(performer->get_URI().performer()) != NULL) {
 			endpoint = endpnt_iter->second;
 			break;
 		}
@@ -164,6 +164,7 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 		}
 	}
 
+	zmsg_destroy(&msg);
 	return 0;
 }
 
@@ -202,6 +203,7 @@ int ZstStage::s_handle_performer_requests(zloop_t * loop, zsock_t * socket, void
 		break;
 	}
 
+	zmsg_destroy(&msg);
 	return 0;
 }
 
@@ -284,7 +286,7 @@ void ZstStage::register_performer_handler(zsock_t * socket, zmsg_t * msg) {
 	}
 
 	reply_with_signal(socket, ZstMessages::Signal::OK);
-	enqueue_stage_update(ZstEvent(*performerRef->get_URI(), ZstEvent::EventType::CREATED));
+	enqueue_stage_update(ZstEvent(performerRef->get_URI(), ZstEvent::EventType::CREATED));
 }
 
 

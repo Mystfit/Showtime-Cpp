@@ -13,7 +13,8 @@ public:
 		OUT_JACK
 	};
 
-	ZstURI();
+	ZST_EXPORT ZstURI();
+	ZST_EXPORT ZstURI(const ZstURI &copy);
 	ZST_EXPORT ZstURI(const char *  performer, const char *  instrument, const char *  name, Direction direction);
 	ZST_EXPORT ~ZstURI();
 
@@ -42,8 +43,12 @@ public:
 	ZST_EXPORT static ZstURI from_str(const char * s);
 
 protected:
-	char * m_performer;
-	char * m_instrument;
-	char * m_name;
+	char m_performer[255];
+	char m_instrument[255];
+	char m_name[255];
 	Direction m_direction;
+	char m_combined_char[255];
+
+private:
+	void build_combined_char();
 };

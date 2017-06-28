@@ -22,11 +22,11 @@ ZstURI * ZstPlug::get_URI() const
 	return m_uri;
 }
 
-void ZstPlug::attach_recv_callback(PlugCallback *callback){
+void ZstPlug::attach_recv_callback(ZstEventCallback *callback){
     m_received_data_callbacks.push_back(callback);
 }
 
-void ZstPlug::destroy_recv_callback(PlugCallback *callback){
+void ZstPlug::destroy_recv_callback(ZstEventCallback *callback){
     m_received_data_callbacks.erase(std::remove(m_received_data_callbacks.begin(), m_received_data_callbacks.end(), callback), m_received_data_callbacks.end());
     delete callback;
 }
@@ -35,8 +35,8 @@ void ZstPlug::run_recv_callbacks(){
 	cout << "PERFORMER: Running input plug callbacks" << endl;
 
     if(m_received_data_callbacks.size() > 0){
-        for (vector<PlugCallback*>::iterator callback = m_received_data_callbacks.begin(); callback != m_received_data_callbacks.end(); ++callback) {
-            (*callback)->run(this);
+        for (vector<ZstEventCallback*>::iterator callback = m_received_data_callbacks.begin(); callback != m_received_data_callbacks.end(); ++callback) {
+			(*callback)->run(ZstEvent(*(this->get_URI()), ZstEvent::EventType::PLUG_HIT));
         }
     }
 }
@@ -76,8 +76,4 @@ void ZstIntPlug::recv(msgpack::object object){
 
 int ZstIntPlug::get_value(){
     return m_value;
-}
-
-PlugCallback::PlugCallback()
-{
 }

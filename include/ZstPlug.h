@@ -7,6 +7,7 @@
 #include "ZstExports.h"
 #include "ZstUtils.hpp"
 #include "ZstURI.h"
+#include "ZstEvent.h"
 
 class ZstURI;
 class PlugCallback;
@@ -22,8 +23,8 @@ public:
 	ZST_EXPORT ZstURI * get_URI() const;
 
 	//Plug callbacks
-    ZST_EXPORT void attach_recv_callback(PlugCallback * callback);
-    ZST_EXPORT void destroy_recv_callback(PlugCallback * callback);
+    ZST_EXPORT void attach_recv_callback(ZstEventCallback * callback);
+    ZST_EXPORT void destroy_recv_callback(ZstEventCallback * callback);
 
 	//IO
     ZST_EXPORT void fire();
@@ -34,7 +35,7 @@ protected:
 	msgpack::packer<msgpack::sbuffer> * m_packer;
 	void run_recv_callbacks();
 
-    std::vector<PlugCallback*> m_received_data_callbacks;
+    std::vector<ZstEventCallback*> m_received_data_callbacks;
 private:
 	ZstURI * m_uri;
 };
@@ -46,14 +47,6 @@ enum PlugTypes {
 	FLOAT_PLUG,
 	FLOAT_ARR_PLUG,
 	STRING_PLUG
-};
-
-
-class PlugCallback{
-public:
-	ZST_EXPORT PlugCallback();
-    virtual ~PlugCallback() { std::cout << "Callback::~Callback()" << std:: endl; }
-    virtual void run(ZstPlug * plug) { std::cout << "PlugCallback::run()" << std::endl; }
 };
 
 

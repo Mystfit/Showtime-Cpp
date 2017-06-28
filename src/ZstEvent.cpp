@@ -5,11 +5,10 @@ ZstEvent::ZstEvent()
 {
 }
 
-ZstEvent::ZstEvent(const ZstEvent & copy)
+ZstEvent::ZstEvent(const ZstEvent & copy) : 
+	m_first(copy.m_first),
+	m_update_type(copy.m_update_type)
 {
-	m_first = copy.m_first;
-	m_second = copy.m_second;
-	m_update_type = copy.m_update_type;
 }
 
 ZstEvent::ZstEvent(ZstURI single, EventType event_type) :
@@ -41,5 +40,9 @@ ZstURI ZstEvent::get_second()
 
 ZstEvent::EventType ZstEvent::get_update_type()
 {
-	return EventType();
+	return m_update_type;
+}
+
+ZstEventCallback::ZstEventCallback() {
+
 }

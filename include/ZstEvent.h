@@ -19,10 +19,10 @@ public:
 		PLUG_HIT
 	};
 
-	ZstEvent();
-	ZstEvent(const ZstEvent & copy);
-	ZstEvent(ZstURI single, EventType event_type);
-	ZstEvent(ZstURI first, ZstURI second, EventType event_type);
+	ZST_EXPORT ZstEvent();
+	ZST_EXPORT ZstEvent(const ZstEvent & copy);
+	ZST_EXPORT ZstEvent(ZstURI single, EventType event_type);
+	ZST_EXPORT ZstEvent(ZstURI first, ZstURI second, EventType event_type);
 	ZST_EXPORT ~ZstEvent();
 
 	ZST_EXPORT ZstURI get_first();
@@ -35,6 +35,13 @@ private:
 	ZstURIWire m_first;
 	ZstURIWire m_second;
 	EventType m_update_type;
+};
+
+class ZstEventCallback {
+public:
+	ZST_EXPORT ZstEventCallback();
+	virtual ~ZstEventCallback() { std::cout << "ZstEventCallback::~ZstEventCallback()" << std::endl; }
+	virtual void run(ZstEvent e) { std::cout << "ZstEventCallback::run()" << std::endl; }
 };
 
 //Enums for MsgPack

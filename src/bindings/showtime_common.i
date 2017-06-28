@@ -3,13 +3,17 @@
 %include <windows.i>
 %include "ZstExports.h"
 
-%nodefaultctor ZstURI;
+
 class ZstURI {
 public:
 	enum Direction {
-		IN_JACK = 0,
+		NONE = 0,
+		IN_JACK,
 		OUT_JACK
 	};
+
+	ZstURI();
+	ZstURI(const char *  performer, const char *  instrument, const char *  name, Direction direction);
 
 	static ZstURI * create(const char * performer, const char * instrument, const char * name, Direction direction);
 	static void destroy(ZstURI * uri);
@@ -25,6 +29,8 @@ public:
 
 	const ZstURI::Direction direction();
 
+	bool is_empty();
+
 	%rename("to_str") to_char();
 	const char * to_char() const;
 	static ZstURI from_str(char * s);
@@ -34,8 +40,11 @@ public:
 	bool operator< (const ZstURI& b) const;
 };
 
-%feature("director") PlugCallback;
 %include "ZstPlug.h"
+
+%feature("director") ZstEventCallback;
+%nodefaultctor ZstEvent;
+%include "ZstEvent.h"
 
 %inline %{
 	ZstIntPlug * convert_to_int_plug(ZstPlug * plug) {

@@ -4,6 +4,7 @@
 	#include "Showtime.h"
 	#include "ZstURI.h"
 	#include "ZstPlug.h"
+	#include "ZstEvent.h"
 	class ZstEndpoint{};
 %}
 %nothread;
@@ -13,10 +14,8 @@
 %}
 
 
-%include <std_pair.i>
 %include <std_vector.i>
-%template() std::pair<ZstURI,ZstURI>;
-%template(ConnectionPair) std::vector<std::pair<ZstURI,ZstURI> >;
+%template(EventList) std::vector<ZstEvent>;
 
 %include "showtime_common.i" 
 

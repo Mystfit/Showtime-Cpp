@@ -12,6 +12,7 @@ class ZstPerformer;
 class ZstURI;
 class ZstEndpoint;
 class ZstEvent;
+class ZstEventCallback;
 
 enum RuntimeLanguage {
 	NATIVE_RUNTIME,
@@ -40,6 +41,10 @@ public:
 
 	//Poll the event queue - for runtimes that have process events from the main thread
 	ZST_EXPORT static void poll_once();
+
+	//Plug callbacks
+	ZST_EXPORT static void attach_stage_event_callback(ZstEventCallback * callback);
+	ZST_EXPORT static void destroy_stage_event_callback(ZstEventCallback * callback);
 
     //Stage methods
     ZST_EXPORT static std::chrono::milliseconds ping_stage();

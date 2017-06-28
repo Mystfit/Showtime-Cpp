@@ -2,7 +2,7 @@
 
 using namespace std;
 
-ZstPerformerRef::ZstPerformerRef(ZstURI * uri) : m_URI(uri)
+ZstPerformerRef::ZstPerformerRef(ZstURI uri) : m_URI(uri)
 {
 }
 
@@ -15,7 +15,7 @@ ZstPerformerRef::~ZstPerformerRef()
 	m_plugs.clear();
 }
 
-ZstURI * ZstPerformerRef::get_URI()
+ZstURI ZstPerformerRef::get_URI()
 {
 	return m_URI;
 }

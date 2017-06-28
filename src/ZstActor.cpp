@@ -79,6 +79,7 @@ void ZstActor::self_test()
 	zactor_send(m_loop_actor, &msg);
 	zmsg_t * response = zactor_recv(m_loop_actor);
 	assert(streq(zmsg_popstr(response), "PONG"));
+	zmsg_destroy(&response);
 }
 
 void ZstActor::attach_pipe_listener(zsock_t * sock, zloop_reader_fn handler, void * args)

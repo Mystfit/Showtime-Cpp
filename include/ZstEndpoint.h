@@ -23,6 +23,7 @@ class ZstPerformer;
 
 class ZstEndpoint : public ZstActor {
 public:
+	friend class Showtime;
 	ZstEndpoint();
 	~ZstEndpoint();
 	ZST_EXPORT void init();
@@ -56,6 +57,10 @@ public:
 	void enqueue_plug_event(ZstEvent event);
 	ZST_EXPORT ZstEvent pop_plug_event();
 	ZST_EXPORT int plug_event_queue_size();
+
+	//Plug callbacks
+	ZST_EXPORT void attach_stage_event_callback(ZstEventCallback * callback);
+	ZST_EXPORT void destroy_stage_event_callback(ZstEventCallback * callback);
 
 private:
 	//Stage actor
@@ -103,7 +108,9 @@ private:
 	//Active local plug connections
 	std::map<ZstURI, std::vector<ZstPlug*>> m_plug_connections;
 
-	Queue<ZstEvent> m_plug_events;
+	void run_stage_event_callbacks(ZstEvent e);
+	Queue<ZstEvent> m_events;
+	std::vector<ZstEventCallback*> m_stage_callbacks;
 
 	//Zeromq pipes
 	zsock_t *m_stage_requests;		//Reqests sent to the stage server

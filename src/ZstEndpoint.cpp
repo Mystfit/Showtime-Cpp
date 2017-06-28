@@ -123,6 +123,8 @@ int ZstEndpoint::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg)
     msgpack::object obj = result.get();
 	
 	endpoint->broadcast_to_local_plugs(sender, obj);
+
+	zmsg_destroy(&msg);
 	return 0;
 }
 
@@ -143,6 +145,7 @@ int ZstEndpoint::s_handle_stage_update_in(zloop_t * loop, zsock_t * socket, void
 		break;
 	}
 
+	zmsg_destroy(&msg);
 	return 0;
 }
 
@@ -165,9 +168,9 @@ int ZstEndpoint::s_handle_stage_router(zloop_t * loop, zsock_t * socket, void * 
             break;
     }
     
+	zmsg_destroy(&msg);
     return 0;
 }
-
 
 
 void ZstEndpoint::connect_performer_handler(zsock_t * socket, zmsg_t * msg) {
@@ -240,6 +243,8 @@ void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
 	else {
         throw runtime_error("PERFORMER: Stage performer registration responded with error -> Kind: " + std::to_string((int)message_type));
 	}
+
+	zmsg_destroy(&responseMsg);
 }
 
 void ZstEndpoint::request_stage_sync()
@@ -280,6 +285,8 @@ void ZstEndpoint::register_performer_to_stage(string performer) {
 		if(s != ZstMessages::Signal::OK)
             throw runtime_error("PERFORMER: Performer registration responded with message other than OK -> Signal" + std::to_string((int)s));
 	}
+
+	zmsg_destroy(&responseMsg);
 }
 
 ZstPerformer * ZstEndpoint::create_performer(ZstURI uri)
@@ -302,12 +309,6 @@ template<typename T>
 	ZstMessages::RegisterPlug plug_args;
 	plug_args.address = ZstURIWire(*(uri));
 	zmsg_t * plug_msg = ZstMessages::build_message<ZstMessages::RegisterPlug>(ZstMessages::Kind::STAGE_REGISTER_PLUG, plug_args);
-	
-	zmsg_t * plug_msg_b = ZstMessages::build_message<ZstMessages::RegisterPlug>(ZstMessages::Kind::STAGE_REGISTER_PLUG, plug_args);
-	zmsg_pop(plug_msg_b);
-	ZstMessages::RegisterPlug temp = ZstMessages::unpack_message_struct<ZstMessages::RegisterPlug>(plug_msg_b);
-	assert(plug_args.address.direction() == temp.address.direction());
-	
 	Showtime::endpoint().send_to_stage(plug_msg);
 
 	zmsg_t *responseMsg = Showtime::endpoint().receive_from_stage();
@@ -321,6 +322,8 @@ template<typename T>
 
 	T *plug = new T(uri);
 	Showtime::endpoint().get_performer_by_URI(*uri)->add_plug(plug);
+
+	zmsg_destroy(&responseMsg);
 	return plug;
 }
 
@@ -344,6 +347,8 @@ template<typename T>
     }
 	m_performers[plug->get_URI()->performer()]->remove_plug(plug);
 	delete plug;
+
+	zmsg_destroy(&responseMsg);
 }
 
 
@@ -362,6 +367,8 @@ void ZstEndpoint::connect_plugs(const ZstURI * a, const ZstURI * b)
 		if (s != ZstMessages::Signal::OK)
             throw runtime_error("PERFORMER: Plug connection responded with message other than OK -> Signal: " + std::to_string((int)s));
 	}
+
+	zmsg_destroy(&responseMsg);
 }
 
 
@@ -389,24 +396,44 @@ chrono::milliseconds ZstEndpoint::ping_stage()
 	else {
         throw runtime_error("PERFORMER: Stage ping responded with message other than OK -> Kind: " + std::to_string(message_type));
 	}
-	
+
+	zmsg_destroy(&responseMsg);
 	return delta;
 }
 
 void ZstEndpoint::enqueue_plug_event(ZstEvent event)
 {
 	std::cout << "About to enqueue" << std::endl;
-	m_plug_events.push(event);
+	m_events.push(event);
 }
 
 ZstEvent ZstEndpoint::pop_plug_event()
 {
-	return m_plug_events.pop();
+	return m_events.pop();
 }
 
 int ZstEndpoint::plug_event_queue_size()
 {
-	return m_plug_events.size();
+	return m_events.size();
+}
+
+void ZstEndpoint::attach_stage_event_callback(ZstEventCallback *callback) {
+	m_stage_callbacks.push_back(callback);
+}
+
+void ZstEndpoint::destroy_stage_event_callback(ZstEventCallback *callback) {
+	m_stage_callbacks.erase(std::remove(m_stage_callbacks.begin(), m_stage_callbacks.end(), callback), m_stage_callbacks.end());
+	delete callback;
+}
+
+void ZstEndpoint::run_stage_event_callbacks(ZstEvent e) {
+	cout << "PERFORMER: Running stage event callbacks" << endl;
+
+	if (m_stage_callbacks.size() > 0) {
+		for (vector<ZstEventCallback*>::iterator callback = m_stage_callbacks.begin(); callback != m_stage_callbacks.end(); ++callback) {
+			(*callback)->run(e);
+		}
+	}
 }
 
 

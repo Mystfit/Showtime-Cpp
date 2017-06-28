@@ -10,9 +10,14 @@
 #include "ZstStage.h"
 #include "ZstEndpoint.h"
 
+#ifdef WIN32
+#define TAKE_BREATH Sleep(100);
+#else
+#define TAKE_BREATH sleep(1);
+#endif
+
 ZstStage *stage;
-Showtime *performer_a;
-Showtime *performer_b;
+ZstPerformer *performer_a;
 
 void test_URI() {
 
@@ -30,10 +35,10 @@ void test_URI() {
 	assert(!(*uri_equal1 == *uri_notequal));
 	assert(*uri_equal1 != *uri_notequal);
 	
+	//TODO: Fix bug in to_str() causing deallocation errors.
 	//std::string uri_str = uri_equal1->to_str();
 	//std::string cmp_str = "perf/ins/someplug?d=2";
     //assert(uri_str == cmp_str);
-
 
 	ZstURI::destroy(uri_notequal);
 	ZstURI::destroy(uri_equal1);
@@ -42,6 +47,10 @@ void test_URI() {
 
 void test_performer_init() {
 	Showtime::endpoint().self_test();
+	performer_a = Showtime::create_performer("test_performer_1");
+	assert(performer_a);
+	ZstEvent e = Showtime::pop_event();
+	//assert(e.get_first().to_str() == "test_performer_1//?d=0");
 }
 
 //Test stage creation and performer
@@ -52,15 +61,47 @@ void test_stage_registration(){
     assert(stage->get_performer_ref_by_name("non_existing_performer") == NULL);
 }
 
+
+
+//Callback definitions and trackers
+int stageEventHits = 0;
+int intPlugCallbacks = 0;
+int connectionCallbacks = 0;
+
+class TestStageEventCallback : public ZstEventCallback {
+public:
+	void run(ZstEvent e) override {
+		stageEventHits++;
+	};
+};
+
+class TestIntValueCallback : public ZstEventCallback {
+public:
+	void run(ZstEvent e) override {
+		intPlugCallbacks++;
+	};
+};
+
+class TestConnectionCallback : public ZstEventCallback {
+public:
+	void run(ZstEvent e) override {
+		connectionCallbacks++;
+	};
+};
+
+
+
 void test_create_plugs(){
+
+	//Attach stage event callbacks first so we get status updates from stage on plug creation
+	Showtime::attach_stage_event_callback(new TestStageEventCallback());
+
     //Create new plugs
 	ZstURI * outURI = ZstURI::create("test_performer_1", "test_instrument", "test_output_plug", ZstURI::Direction::OUT_JACK);
 	ZstURI * inURI = ZstURI::create("test_performer_1", "test_instrument", "test_input_plug", ZstURI::Direction::IN_JACK);
 	
 	//URI ownership taken over by plug
 	ZstIntPlug *outputPlug = Showtime::create_int_plug(outURI);
-	std::cout << Showtime::event_queue_size() << std::endl;
-
 	ZstIntPlug *inputPlug = Showtime::create_int_plug(inURI);
     
     //Check address equality
@@ -70,13 +111,19 @@ void test_create_plugs(){
 	//Test creating plug with type functions (blame swig python!)
 	ZstIntPlug *typedIntPlug = Showtime::create_int_plug(ZstURI::create("test_performer_1", "test_instrument", "test_int_plug", ZstURI::Direction::OUT_JACK));
 
+	//Check that our plug creation callbacks fired successfully
+	TAKE_BREATH
+	assert(Showtime::event_queue_size() > 0);
+	Showtime::poll_once();
+	assert(Showtime::event_queue_size() == 0);
+	assert(stageEventHits == 3);
+	stageEventHits = 0;
+
     //Check stage registered plugs successfully
     ZstPerformerRef *stagePerformerRef = stage->get_performer_ref_by_name("test_performer_1");
     assert(stagePerformerRef->get_plug_by_URI(outputPlug->get_URI()->to_str()) != NULL);
     assert(stagePerformerRef->get_plug_by_URI(inputPlug->get_URI()->to_str()) != NULL);
 	assert(stagePerformerRef->get_plug_by_URI(typedIntPlug->get_URI()->to_str()) != NULL);
-
-    std::cout << "!!!FIXME: get_performer_by_URI in test program" << std::endl;
 
 	//Check local client registered plugs correctly
 	ZstPlug *localPlug = Showtime::get_performer_by_URI(outURI)->get_plug_by_URI(*outURI);
@@ -89,9 +136,9 @@ void test_create_plugs(){
     
 
 	//Check plug destruction
-	std::string outputName = outputPlug->get_URI()->name();
-	std::string inputName = inputPlug->get_URI()->name();
-	std::string typedName = typedIntPlug->get_URI()->name();
+	//std::string outputName = outputPlug->get_URI()->name();
+	//std::string inputName = inputPlug->get_URI()->name();
+	//std::string typedName = typedIntPlug->get_URI()->name();
 
     std:: cout << "FIXME: Getting plug by name" << std::endl;
 	Showtime::endpoint().destroy_plug(outputPlug);
@@ -105,35 +152,37 @@ void test_create_plugs(){
 	Showtime::endpoint().destroy_plug(typedIntPlug);
 //	assert(stage->get_performer_ref_by_name("test_performer_1")->get_plug_by_name(typedName) == NULL);
 //	assert(Showtime::get_performer_by_name("test_performer_1")->get_instrument_plugs("test_instrument").empty());
+
+	TAKE_BREATH
+	assert(Showtime::event_queue_size() > 0);
+	Showtime::poll_once();
+	assert(Showtime::event_queue_size() == 0);
+	assert(stageEventHits == 3);
+	stageEventHits = 0;
 }
 
-
-class TestIntCallback : public PlugCallback{
-public:
-	bool fired = false;
-    //~TestCallback();
-    void run(ZstPlug* plug) override {
-		assert(plug);
-		fired = true;
-    };
-};
-
+void test_memory() {
+	ZstEvent temp = ZstEvent(ZstURI("", "", "", ZstURI::Direction::NONE), ZstEvent::CREATED);
+}
 
 void test_connect_plugs() {
 
 	ZstURI * outURI = ZstURI::create("test_performer_1", "test_instrument", "test_output_plug", ZstURI::Direction::OUT_JACK);
 	ZstURI * inURI = ZstURI::create("test_performer_1", "test_instrument", "test_input_plug", ZstURI::Direction::IN_JACK);
 	ZstURI * badURI = ZstURI::create("fake_performer", "test_instrument", "test_input_plug", ZstURI::Direction::IN_JACK);
-    
-    // ZstURI * ableton_uri = ZstURI::create("test_performer_1", "A-Reverb/Reverb/PreDelay", "out", ZstURI::Direction::OUT_JACK);
-    // ZstIntPlug *ableton_plug = Showtime::create_int_plug(ableton_uri);
-    //ableton_perf/A-Reverb/Reverb/PreDelay/out?d=1
 
 	//Test plugs connected between performers
 	ZstIntPlug *output_int_plug = Showtime::create_int_plug(outURI);
 	ZstIntPlug *input_int_plug = Showtime::create_int_plug(inURI);
-    input_int_plug->attach_recv_callback(new TestIntCallback());
+    input_int_plug->attach_recv_callback(new TestIntValueCallback());
 	Showtime::connect_plugs(output_int_plug->get_URI(), input_int_plug->get_URI());
+
+	TAKE_BREATH
+	assert(Showtime::event_queue_size() > 0);
+	Showtime::poll_once();
+	assert(Showtime::event_queue_size() == 0);
+	//assert(connectionCallbacks == 1);
+	connectionCallbacks = 0;
 
 	//Test connecting missing URI objects
 	bool exceptionThrown = false;
@@ -146,30 +195,40 @@ void test_connect_plugs() {
 	assert(exceptionThrown);
 	delete badURI;
 
-    //TODO: First connection, so need to wait for endpoint->stage->endpoint handshake to complete. Futures could help with this?
-#ifdef WIN32
-    Sleep(500);
-#else
-    sleep(1);
-#endif
+	//Test plug value callbacks
 	int num_fires = 5;
 	for (int i = 0; i < num_fires; ++i) {
 		output_int_plug->fire(i);
 	}
 
-#ifdef WIN32
-	Sleep(500);
-#else
-	sleep(1);
-#endif
-	//Test event queue. This is thread safe so we can pop each event off at our leisure
-	for (int i = num_fires; i > 0; --i) {
-		//assert(Showtime::event_queue_size() == i);
-		//ZstEvent e = Showtime::pop_event();
-		//assert(e.get_update_type() == ZstEvent::EventType::PLUG_HIT);
-		//assert(e.get_first().to_str() == input_int_plug->get_URI()->to_str());
-		//assert(Showtime::event_queue_size() == i-1);
+	while (true) {
+		//output_int_plug->fire(1);
+		//Showtime::poll_once();
+		//test_memory();
 	}
+
+	TAKE_BREATH
+	assert(Showtime::event_queue_size() > 0);
+	Showtime::poll_once();
+	assert(Showtime::event_queue_size() == 0);
+	assert(intPlugCallbacks == num_fires);
+	intPlugCallbacks = 0;
+
+	//Test manual event queue pop. This is thread safe so we can pop each event off at our leisure
+	num_fires = 5;
+	for (int i = 0; i < num_fires; ++i) {
+		output_int_plug->fire(i);
+	}
+
+	TAKE_BREATH
+	for (int i = num_fires; i > 0; --i) {
+		assert(Showtime::event_queue_size() == i);
+		ZstEvent e = Showtime::pop_event();
+		assert(e.get_update_type() == ZstEvent::EventType::PLUG_HIT);
+		assert(strcmp(e.get_first().to_char(), input_int_plug->get_URI()->to_char()) == 0);
+		assert(Showtime::event_queue_size() == i-1);
+	}
+	assert(Showtime::event_queue_size() == 0);
 
 	std::cout << "Queue test successful" << std::endl;
 	Showtime::destroy_plug(output_int_plug);
@@ -190,15 +249,7 @@ int main(int argc,char **argv){
 	Showtime::init();
     Showtime::join("127.0.0.1");
 
-#ifdef WIN32
-	Sleep(500);
-#else
-	sleep(1);
-#endif
-
-	ZstPerformer * performer_a = Showtime::create_performer("test_performer_1");
-	ZstPerformer * performer_b = Showtime::create_performer("test_performer_2");
-    
+	TAKE_BREATH
 	test_URI();
 	test_performer_init();
     test_stage_registration();
