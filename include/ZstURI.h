@@ -37,7 +37,6 @@ public:
 	ZST_EXPORT bool operator< (const ZstURI& b) const;
 	ZST_EXPORT bool is_empty();
 
-	ZST_EXPORT const std::string to_str() const;
 	ZST_EXPORT const char * to_char();
 	
 	ZST_EXPORT static ZstURI from_str(const char * s);
@@ -48,8 +47,8 @@ protected:
 	char m_name[255];
 	Direction m_direction;
 	char m_combined_char[255];
+	bool m_created_combined_char = false;
 
 private:
 	void build_combined_char();
-	bool m_created_combined_char = false;
 };

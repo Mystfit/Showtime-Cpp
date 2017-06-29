@@ -484,7 +484,7 @@ void ZstEndpoint::broadcast_to_local_plugs(ZstURI output_plug, msgpack::object o
     cout << "Looking for local plugs connected to incoming output plug" << endl;
     cout << "There are currently " << m_plug_connections[output_plug].size() << " local plugs attached to this output" << endl;
 	for (vector<ZstPlug*>::iterator plug_iter = m_plug_connections[output_plug].begin(); plug_iter != m_plug_connections[output_plug].end(); ++plug_iter) {
-        cout << "Forwarding message to " << (*plug_iter)->get_URI()->to_str() << endl;
+        cout << "Forwarding message to " << (*plug_iter)->get_URI()->to_char() << endl;
 		(*plug_iter)->recv(obj);
 	}
 }

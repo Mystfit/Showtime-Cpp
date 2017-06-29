@@ -306,7 +306,7 @@ void ZstStage::register_plug_handler(zsock_t *socket, zmsg_t *msg) {
 	ZstPlugRef * plug = performer->create_plug(plug_args.address);
 
 	if (plug == NULL) {
-        cout << "STAGE: Plug already exists! " << plug_args.address.to_str() << endl;
+        cout << "STAGE: Plug already exists! " << plug_args.address.to_char() << endl;
 		reply_with_signal(socket, ZstMessages::Signal::ERR_STAGE_PLUG_ALREADY_EXISTS);
 		return;
 	}
@@ -335,7 +335,7 @@ void ZstStage::destroy_plug_handler(zsock_t * socket, zmsg_t * msg)
 void ZstStage::connect_plugs_handler(zsock_t * socket, zmsg_t * msg)
 {
 	ZstMessages::ConnectPlugs plug_args = ZstMessages::unpack_message_struct<ZstMessages::ConnectPlugs>(msg);
-	cout << "STAGE: Received connect plug request for " << plug_args.first.to_str() << " and " << plug_args.second.to_str() << endl;
+	cout << "STAGE: Received connect plug request for " << plug_args.first.to_char() << " and " << plug_args.second.to_char() << endl;
 	int connect_status = 0;
 	if (plug_args.first.direction() == ZstURI::Direction::OUT_JACK && plug_args.second.direction() == ZstURI::Direction::IN_JACK) {
 		connect_status = connect_plugs(plug_args.first, plug_args.second);

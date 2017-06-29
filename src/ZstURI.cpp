@@ -9,6 +9,7 @@ ZstURI::ZstURI() :
 	m_name(""),
 	m_direction(Direction::NONE)
 {
+	build_combined_char();
 }
 
 ZstURI::ZstURI(const ZstURI &copy)
@@ -22,6 +23,7 @@ ZstURI::ZstURI(const ZstURI &copy)
 	memcpy(m_name, copy.m_name, 255);
 
 	m_direction = copy.m_direction;
+	build_combined_char();
 }
 
 ZstURI::ZstURI(const char *  performer, const char *  instrument, const char *  name, Direction direction){
@@ -36,6 +38,7 @@ ZstURI::ZstURI(const char *  performer, const char *  instrument, const char *  
 	memcpy(m_name, name, 255);
 
 	m_direction = direction;
+	build_combined_char();
 }
 
 ZstURI::~ZstURI()
@@ -100,27 +103,23 @@ bool ZstURI::operator!=(const ZstURI & other)
 
 bool ZstURI::operator< (const ZstURI& b) const 
 {
-	return to_str() < b.to_str();
+	return std::lexicographical_compare<const char*, const char*>(m_combined_char, m_combined_char + strlen(m_combined_char), m_combined_char, m_combined_char + strlen(b.m_combined_char));
 }
 
 bool ZstURI::is_empty() {
 	return performer().empty() && instrument().empty() && name().empty() && m_direction == Direction::NONE;
 }
 
-const std::string ZstURI::to_str() const {
-	return string(m_combined_char);
-}
 
 const char * ZstURI::to_char()
 {
 	if (!m_created_combined_char) {
 		build_combined_char();
-		m_created_combined_char = !m_created_combined_char;
 	}
 	return m_combined_char;
 }
 
-ZstURI ZstURI::from_str(const char * s)
+ZstURI ZstURI::from_char(const char * s)
 {
 	std::vector<std::string> uri_args_split;
     
@@ -159,4 +158,5 @@ ZstURI ZstURI::from_str(const char * s)
 
 void ZstURI::build_combined_char() {
 	sprintf(m_combined_char, "%s/%s/%s?d=%i", m_performer, m_instrument, m_name, (int)m_direction);
+	m_created_combined_char = true;
 }
