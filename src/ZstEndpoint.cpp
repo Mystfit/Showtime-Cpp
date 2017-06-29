@@ -70,16 +70,16 @@ void ZstEndpoint::init()
     m_network_interface = string(net_if);
     string network_ip = string(interface_ip);
     
-    cout << "Network interfaces on system:" << endl;
+    cout << "ZST: Network interfaces on system:" << endl;
     while (net_if) {
         interface_ip = ziflist_address(interfaces);
         if(interface_ip){
-            cout << net_if << " " << interface_ip << endl;
+            cout << "ZST: " << net_if << " " << interface_ip << endl;
         }
 		net_if = ziflist_next(interfaces);
     }
     
-    cout << "Using network interface: " << m_network_interface << endl;
+    cout << "ZST: Using network interface: " << m_network_interface << endl;
     
     char client_bind_addr[100];
     sprintf(client_bind_addr, "@tcp://%s:*", network_ip.c_str());
@@ -88,7 +88,7 @@ void ZstEndpoint::init()
     m_graph_out = zsock_new_pub(client_bind_addr);
     m_output_endpoint = zsock_last_endpoint(m_graph_out);
     
-    cout << "Endpoint graph address: " << m_output_endpoint << endl;
+    cout << "ZST: Endpoint graph address: " << m_output_endpoint << endl;
     
     if(m_graph_out)
         zsock_set_linger(m_graph_out, 0);
@@ -111,10 +111,7 @@ void ZstEndpoint::stop() {
 int ZstEndpoint::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg){
 	ZstEndpoint *endpoint = (ZstEndpoint*)arg;
     zmsg_t *msg = endpoint->receive_from_graph();
-    
-	cout << "PERFORMER GRAPH_SUB: Recieved graph message" << endl;
-
-    ZstURI sender = ZstURI::from_str(zmsg_popstr(msg));
+    ZstURI sender = ZstURI::from_char(zmsg_popstr(msg));
 
 	msgpack::object_handle result;
 	zframe_t * payload = zmsg_pop(msg);
@@ -131,8 +128,6 @@ int ZstEndpoint::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg)
 int ZstEndpoint::s_handle_stage_update_in(zloop_t * loop, zsock_t * socket, void * arg) {
 	ZstEndpoint *endpoint = (ZstEndpoint*)arg;
 
-	cout << "!!!!!!!!!!!!!!!!!!!" << endl;
-
 	zmsg_t *msg = endpoint->receive_stage_update();
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(msg);
 
@@ -141,7 +136,7 @@ int ZstEndpoint::s_handle_stage_update_in(zloop_t * loop, zsock_t * socket, void
 		endpoint->stage_update_handler(socket, msg);
 		break;
 	default:
-		cout << "PERFORMER STAGE_SUB: Didn't understand message of type " << message_type << endl;
+		cout << "ZST: Stage subscriber - Didn't understand message of type " << message_type << endl;
 		break;
 	}
 
@@ -164,7 +159,7 @@ int ZstEndpoint::s_handle_stage_router(zloop_t * loop, zsock_t * socket, void * 
 			endpoint->stage_update_handler(socket, msg);
 			break;
 		default:
-			cout << "PERFORMER DEALER: Didn't understand message of type " << message_type << endl;
+			cout << "ZST: Performer dealer - Didn't understand message of type " << message_type << endl;
             break;
     }
     
@@ -186,7 +181,7 @@ void ZstEndpoint::connect_performer_handler(zsock_t * socket, zmsg_t * msg) {
 	ZstPlug * input = get_performer_by_URI(input_plug)->get_plug_by_URI(input_plug);
 	m_plug_connections[performer_args.output_plug].push_back(input);
 
-	cout << "PERFORMER: Connecting to " << performer_args.endpoint << ". My output endpoint is " << m_output_endpoint << endl;
+	cout << "ZST: Connecting to " << performer_args.endpoint << ". My output endpoint is " << m_output_endpoint << endl;
 }
 
 int ZstEndpoint::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
@@ -212,7 +207,7 @@ void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
 	args.uuid = zuuid_str(m_startup_uuid);
 	args.address = m_output_endpoint;
 
-	cout << "PERFORMER: Registering endpoint" << endl;
+	cout << "ZST: Registering endpoint" << endl;
 	send_to_stage(ZstMessages::build_message<ZstMessages::RegisterEndpoint>(ZstMessages::Kind::STAGE_REGISTER_ENDPOINT, args));
 
 	zmsg_t *responseMsg = receive_from_stage();
@@ -221,7 +216,7 @@ void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
 	if (message_type == ZstMessages::Kind::STAGE_REGISTER_ENDPOINT_ACK) {
 
 		ZstMessages::RegisterEndpointAck endpoint_ack = ZstMessages::unpack_message_struct<ZstMessages::RegisterEndpointAck>(responseMsg);
-		cout << "PERFORMER: Successfully registered endpoint to stage. UUID is " << endpoint_ack.assigned_uuid << endl;
+		cout << "ZST: Successfully registered endpoint to stage. UUID is " << endpoint_ack.assigned_uuid << endl;
 
 		//Connect performer dealer to stage now that it's been registered successfully
 		char stage_router_addr[30];
@@ -232,7 +227,7 @@ void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
 		zsock_connect(m_stage_router, stage_router_addr);
 
 		//Stage sub socket for update messages
-		cout << "PERFORMER: Connecting to stage publisher " << stage_sub_addr << endl;
+		cout << "ZST: Connecting to stage publisher " << stage_sub_addr << endl;
 		zsock_connect(m_stage_updates, stage_sub_addr);
 		zsock_set_subscribe(m_stage_updates, "");
 
@@ -241,7 +236,7 @@ void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
 		request_stage_sync();
 	}
 	else {
-        throw runtime_error("PERFORMER: Stage performer registration responded with error -> Kind: " + std::to_string((int)message_type));
+        throw runtime_error("ZST: Stage performer registration responded with error -> Kind: " + std::to_string((int)message_type));
 	}
 
 	zmsg_destroy(&responseMsg);
@@ -250,14 +245,13 @@ void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
 void ZstEndpoint::request_stage_sync()
 {
 	if (m_connected_to_stage) {
-		cout << "PERFORMER: Requesting stage snapshot" << endl;
+		cout << "ZST: Requesting stage snapshot" << endl;
 		send_through_stage(ZstMessages::build_signal(ZstMessages::Signal::SYNC));
 	}
 }
 
 void ZstEndpoint::stage_update_handler(zsock_t * socket, zmsg_t * msg)
 {
-	cout << "PERFORMER STAGE_UPDATE: Recieved stage update message" << endl;
 	ZstMessages::StageUpdates update_args = ZstMessages::unpack_message_struct<ZstMessages::StageUpdates>(msg);
 	for (vector<ZstEvent>::iterator event_iter = update_args.updates.begin(); event_iter != update_args.updates.end(); ++event_iter) {
 		Showtime::endpoint().enqueue_plug_event(ZstEvent((*event_iter).get_first(), (*event_iter).get_update_type()));
@@ -283,7 +277,7 @@ void ZstEndpoint::register_performer_to_stage(string performer) {
 	if (message_type == ZstMessages::Kind::SIGNAL) {
 		ZstMessages::Signal s = ZstMessages::unpack_signal(responseMsg);
 		if(s != ZstMessages::Signal::OK)
-            throw runtime_error("PERFORMER: Performer registration responded with message other than OK -> Signal" + std::to_string((int)s));
+            throw runtime_error("ZST: Performer registration responded with message other than OK -> Signal" + std::to_string((int)s));
 	}
 
 	zmsg_destroy(&responseMsg);
@@ -317,7 +311,7 @@ template<typename T>
 	if (message_type == ZstMessages::Kind::SIGNAL) {
 		ZstMessages::Signal s = ZstMessages::unpack_signal(responseMsg);
 		if (s != ZstMessages::Signal::OK)
-            throw runtime_error("PERFORMER: Plug creation responded with message other than OK -> Signal" + std::to_string((int)s));
+            throw runtime_error("ZST: Plug creation responded with message other than OK -> Signal" + std::to_string((int)s));
     }
 
 	T *plug = new T(uri);
@@ -343,7 +337,7 @@ template<typename T>
 	if (message_type != ZstMessages::Kind::SIGNAL) {
 		ZstMessages::Signal s = ZstMessages::unpack_signal(responseMsg);
 		if (s != ZstMessages::Signal::OK)
-            throw runtime_error("PERFORMER: Plug deletion responded with message other than OK -> Signal:" + std::to_string((int)s));
+            throw runtime_error("ZST: Plug deletion responded with message other than OK -> Signal:" + std::to_string((int)s));
     }
 	m_performers[plug->get_URI()->performer()]->remove_plug(plug);
 	delete plug;
@@ -365,7 +359,7 @@ void ZstEndpoint::connect_plugs(const ZstURI * a, const ZstURI * b)
 	if (message_type == ZstMessages::Kind::SIGNAL) {
 		ZstMessages::Signal s = ZstMessages::unpack_signal(responseMsg);
 		if (s != ZstMessages::Signal::OK)
-            throw runtime_error("PERFORMER: Plug connection responded with message other than OK -> Signal: " + std::to_string((int)s));
+            throw runtime_error("ZST: Plug connection responded with message other than OK -> Signal: " + std::to_string((int)s));
 	}
 
 	zmsg_destroy(&responseMsg);
@@ -391,10 +385,10 @@ chrono::milliseconds ZstEndpoint::ping_stage()
 	if (message_type == ZstMessages::Kind::SIGNAL) {
 		end = chrono::system_clock::now();
 		delta = chrono::duration_cast<chrono::milliseconds>(end - start);
-		cout << "PERFORMER: Client received heartbeat ping ack. Roundtrip was " << delta.count() << "ms" << endl;
+		cout << "ZST: Client received heartbeat ping ack. Roundtrip was " << delta.count() << "ms" << endl;
 	}
 	else {
-        throw runtime_error("PERFORMER: Stage ping responded with message other than OK -> Kind: " + std::to_string(message_type));
+        throw runtime_error("ZST: Stage ping responded with message other than OK -> Kind: " + std::to_string(message_type));
 	}
 
 	zmsg_destroy(&responseMsg);
@@ -403,7 +397,6 @@ chrono::milliseconds ZstEndpoint::ping_stage()
 
 void ZstEndpoint::enqueue_plug_event(ZstEvent event)
 {
-	std::cout << "About to enqueue" << std::endl;
 	m_events.push(event);
 }
 
@@ -427,8 +420,6 @@ void ZstEndpoint::destroy_stage_event_callback(ZstEventCallback *callback) {
 }
 
 void ZstEndpoint::run_stage_event_callbacks(ZstEvent e) {
-	cout << "PERFORMER: Running stage event callbacks" << endl;
-
 	if (m_stage_callbacks.size() > 0) {
 		for (vector<ZstEventCallback*>::iterator callback = m_stage_callbacks.begin(); callback != m_stage_callbacks.end(); ++callback) {
 			(*callback)->run(e);
@@ -480,11 +471,7 @@ zmsg_t * ZstEndpoint::receive_from_graph() {
 
 
 void ZstEndpoint::broadcast_to_local_plugs(ZstURI output_plug, msgpack::object obj) {
-
-    cout << "Looking for local plugs connected to incoming output plug" << endl;
-    cout << "There are currently " << m_plug_connections[output_plug].size() << " local plugs attached to this output" << endl;
 	for (vector<ZstPlug*>::iterator plug_iter = m_plug_connections[output_plug].begin(); plug_iter != m_plug_connections[output_plug].end(); ++plug_iter) {
-        cout << "Forwarding message to " << (*plug_iter)->get_URI()->to_char() << endl;
 		(*plug_iter)->recv(obj);
 	}
 }

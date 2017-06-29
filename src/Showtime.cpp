@@ -31,7 +31,7 @@ void Showtime::init()
 }
 
 void Showtime::join(const char * stage_address){
-	cout << "Connecting to stage located at " << stage_address << endl;
+	cout << "ZST: Connecting to stage located at " << stage_address << endl;
 	Showtime::endpoint().register_endpoint_to_stage(stage_address);
 }
 
@@ -39,9 +39,6 @@ void Showtime::poll_once()
 {
 	while (Showtime::event_queue_size() > 0) {
 		ZstEvent e = Showtime::pop_event();
-
-		cout << "PERFORMER: Processing event queue. Type is " << e.get_update_type() << ". Uri is " << e.get_first().to_char() << endl;
-
 		if (e.get_update_type() == ZstEvent::EventType::PLUG_HIT)
 			Showtime::endpoint().get_performer_by_URI(e.get_first())->get_plug_by_URI(e.get_first())->run_recv_callbacks();
 		else

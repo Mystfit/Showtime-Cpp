@@ -199,7 +199,7 @@ int ZstStage::s_handle_performer_requests(zloop_t * loop, zsock_t * socket, void
 		stage->endpoint_heartbeat_handler(socket, msg);
 		break;
 	default:
-		cout << "Didn't understand received message type of " << message_type << endl;
+		cout << "ZST_STAGE: Didn't understand received message type of " << message_type << endl;
 		break;
 	}
 
@@ -245,7 +245,7 @@ void ZstStage::send_to_endpoint(zmsg_t * msg, ZstEndpointRef * destination) {
 void ZstStage::register_endpoint_handler(zsock_t * socket, zmsg_t * msg)
 {
 	ZstMessages::RegisterEndpoint endpoint_args = ZstMessages::unpack_message_struct<ZstMessages::RegisterEndpoint>(msg);
-	cout << "STAGE: Registering new endpoint UUID " << endpoint_args.uuid << endl;
+	cout << "ZST_STAGE: Registering new endpoint UUID " << endpoint_args.uuid << endl;
 
 	ZstEndpointRef * endpointRef = create_endpoint(endpoint_args.uuid, endpoint_args.address);
 
@@ -263,7 +263,7 @@ void ZstStage::register_endpoint_handler(zsock_t * socket, zmsg_t * msg)
 
 void ZstStage::endpoint_heartbeat_handler(zsock_t * socket, zmsg_t * msg) {
 	ZstMessages::Heartbeat heartbeat_args = ZstMessages::unpack_message_struct<ZstMessages::Heartbeat>(msg);
-	cout << "STAGE: Received heartbeat from " << heartbeat_args.from << ". Timestamp: " << heartbeat_args.timestamp << endl;
+	cout << "ZST_STAGE: Received heartbeat from " << heartbeat_args.from << ". Timestamp: " << heartbeat_args.timestamp << endl;
 
 	reply_with_signal(socket, ZstMessages::Signal::OK);
 }
@@ -271,7 +271,7 @@ void ZstStage::endpoint_heartbeat_handler(zsock_t * socket, zmsg_t * msg) {
 
 void ZstStage::register_performer_handler(zsock_t * socket, zmsg_t * msg) {
 	ZstMessages::RegisterPerformer performer_args = ZstMessages::unpack_message_struct<ZstMessages::RegisterPerformer>(msg);
-	cout << "STAGE: Registering new performer " << performer_args.name << endl;
+	cout << "ZST_STAGE: Registering new performer " << performer_args.name << endl;
 
 	ZstEndpointRef * endpoint = get_endpoint_ref_by_UUID(performer_args.endpoint_uuid);
 	if (endpoint == NULL) {
@@ -296,17 +296,17 @@ void ZstStage::register_plug_handler(zsock_t *socket, zmsg_t *msg) {
 	ZstPerformerRef * performer = get_performer_ref_by_name(plug_args.address.performer_char());
 
 	if (performer == NULL) {
-		cout << "STAGE: Couldn't register plug. No performer registered to stage with name";
+		cout << "ZST_STAGE: Couldn't register plug. No performer registered to stage with name";
 		reply_with_signal(socket, ZstMessages::Signal::ERR_STAGE_PERFORMER_NOT_FOUND);
 		return;
 	}
 
-	cout << "STAGE: Registering new plug " << plug_args.address.to_char() << endl;
+	cout << "ZST_STAGE: Registering new plug " << plug_args.address.to_char() << endl;
 
 	ZstPlugRef * plug = performer->create_plug(plug_args.address);
 
 	if (plug == NULL) {
-        cout << "STAGE: Plug already exists! " << plug_args.address.to_char() << endl;
+        cout << "ZST_STAGE: Plug already exists! " << plug_args.address.to_char() << endl;
 		reply_with_signal(socket, ZstMessages::Signal::ERR_STAGE_PLUG_ALREADY_EXISTS);
 		return;
 	}
@@ -319,7 +319,7 @@ void ZstStage::register_plug_handler(zsock_t *socket, zmsg_t *msg) {
 void ZstStage::destroy_plug_handler(zsock_t * socket, zmsg_t * msg)
 {
 	ZstMessages::DestroyPlug plug_destroy_args = ZstMessages::unpack_message_struct<ZstMessages::DestroyPlug>(msg);
-	cout << "STAGE: Received destroy plug request" << endl;
+	cout << "ZST_STAGE: Received destroy plug request" << endl;
 
 	ZstPerformerRef *performer = get_performer_ref_by_name(plug_destroy_args.address.performer_char());
 
@@ -335,7 +335,7 @@ void ZstStage::destroy_plug_handler(zsock_t * socket, zmsg_t * msg)
 void ZstStage::connect_plugs_handler(zsock_t * socket, zmsg_t * msg)
 {
 	ZstMessages::ConnectPlugs plug_args = ZstMessages::unpack_message_struct<ZstMessages::ConnectPlugs>(msg);
-	cout << "STAGE: Received connect plug request for " << plug_args.first.to_char() << " and " << plug_args.second.to_char() << endl;
+	cout << "ZST_STAGE: Received connect plug request for " << plug_args.first.to_char() << " and " << plug_args.second.to_char() << endl;
 	int connect_status = 0;
 	if (plug_args.first.direction() == ZstURI::Direction::OUT_JACK && plug_args.second.direction() == ZstURI::Direction::IN_JACK) {
 		connect_status = connect_plugs(plug_args.first, plug_args.second);
@@ -348,7 +348,7 @@ void ZstStage::connect_plugs_handler(zsock_t * socket, zmsg_t * msg)
 	}
 
 	if (connect_status != 0) {
-		cout << "STAGE: Bad plug connect request" << endl;
+		cout << "ZST_STAGE: Bad plug connect request" << endl;
 		reply_with_signal(socket, ZstMessages::Signal::ERR_STAGE_BAD_PLUG_CONNECT_REQUEST);
 		return;
 	}
@@ -378,14 +378,13 @@ int ZstStage::connect_plugs(ZstURI output_plug, ZstURI input_plug)
 	zmsg_prepend(connectMsg, &empty);
 	zmsg_prepend(connectMsg, &identity);
 
-	cout << "STAGE: Sending plug connection request to " << get_performer_endpoint(input_performer)->client_assigned_uuid.c_str() << endl;
+	cout << "ZST_STAGE: Sending plug connection request to " << get_performer_endpoint(input_performer)->client_assigned_uuid.c_str() << endl;
 	zmsg_send(&connectMsg, m_performer_router);
 	return 0;
 }
 
 void ZstStage::enqueue_stage_update(ZstEvent e)
 {
-	cout << "STAGE: pushing event" << endl;
 	m_stage_updates.push(e);
 }
 
@@ -421,7 +420,6 @@ int ZstStage::stage_update_timer_func(zloop_t * loop, int timer_id, void * arg)
 		while (stage->m_stage_updates.size()) {
 			updates.push_back(stage->m_stage_updates.pop());
 		}
-		cout << "!!!!!!About to send " << updates.size() << endl;
 
 		ZstMessages::StageUpdates su;
 		su.updates = updates;

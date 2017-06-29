@@ -39,7 +39,7 @@ public:
 
 	ZST_EXPORT const char * to_char();
 	
-	ZST_EXPORT static ZstURI from_str(const char * s);
+	ZST_EXPORT static ZstURI from_char(const char * s);
 
 protected:
 	char m_performer[255];
@@ -48,7 +48,6 @@ protected:
 	Direction m_direction;
 	char m_combined_char[255];
 	bool m_created_combined_char = false;
-
 private:
 	void build_combined_char();
 };
