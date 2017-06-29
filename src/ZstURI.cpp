@@ -22,7 +22,6 @@ ZstURI::ZstURI(const ZstURI &copy)
 	memcpy(m_name, copy.m_name, 255);
 
 	m_direction = copy.m_direction;
-	build_combined_char();
 }
 
 ZstURI::ZstURI(const char *  performer, const char *  instrument, const char *  name, Direction direction){
@@ -37,7 +36,6 @@ ZstURI::ZstURI(const char *  performer, const char *  instrument, const char *  
 	memcpy(m_name, name, 255);
 
 	m_direction = direction;
-	build_combined_char();
 }
 
 ZstURI::~ZstURI()
@@ -113,8 +111,12 @@ const std::string ZstURI::to_str() const {
 	return string(m_combined_char);
 }
 
-const char * ZstURI::to_char() const
+const char * ZstURI::to_char()
 {
+	if (!m_created_combined_char) {
+		build_combined_char();
+		m_created_combined_char = !m_created_combined_char;
+	}
 	return m_combined_char;
 }
 

@@ -158,7 +158,7 @@ public:
     template <typename T>
     static zmsg_t * build_graph_message(ZstURI from, T data) {
         zmsg_t *msg = zmsg_new();
-        zmsg_addstr(msg, from.to_str().c_str());
+        zmsg_addstr(msg, from.to_char());
         
         msgpack::sbuffer buf;
         msgpack::pack(buf, data);

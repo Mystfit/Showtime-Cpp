@@ -301,7 +301,7 @@ void ZstStage::register_plug_handler(zsock_t *socket, zmsg_t *msg) {
 		return;
 	}
 
-	cout << "STAGE: Registering new plug " << plug_args.address.to_str() << endl;
+	cout << "STAGE: Registering new plug " << plug_args.address.to_char() << endl;
 
 	ZstPlugRef * plug = performer->create_plug(plug_args.address);
 
@@ -323,7 +323,7 @@ void ZstStage::destroy_plug_handler(zsock_t * socket, zmsg_t * msg)
 
 	ZstPerformerRef *performer = get_performer_ref_by_name(plug_destroy_args.address.performer_char());
 
-	performer->destroy_plug(performer->get_plug_by_URI(plug_destroy_args.address.to_str()));
+	performer->destroy_plug(performer->get_plug_by_URI(plug_destroy_args.address));
 
 	reply_with_signal(socket, ZstMessages::Signal::OK);
 	enqueue_stage_update(ZstEvent(plug_destroy_args.address, ZstEvent::EventType::DESTROYED));
@@ -365,7 +365,7 @@ int ZstStage::connect_plugs(ZstURI output_plug, ZstURI input_plug)
 		return -1;
 	}
 
-	output_performer->get_plug_by_URI(output_plug.to_str())->add_output_connection(input_plug);
+	output_performer->get_plug_by_URI(output_plug)->add_output_connection(input_plug);
 
 	ZstMessages::PerformerConnection perf_args;
 	perf_args.output_plug = output_plug;

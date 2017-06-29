@@ -35,11 +35,10 @@ ZstPlugRef * ZstPerformerRef::create_plug(ZstURI address)
 	return plugRef;
 }
 
-ZstPlugRef * ZstPerformerRef::get_plug_by_URI(std::string uri_str)
+ZstPlugRef * ZstPerformerRef::get_plug_by_URI(ZstURI uri)
 {
-	auto it = find_if(m_plugs.begin(), m_plugs.end(), [&uri_str](ZstPlugRef* plugRef) {
-		ZstURI uri = plugRef->get_URI();
-		return uri.to_str() == uri_str;
+	auto it = find_if(m_plugs.begin(), m_plugs.end(), [&uri](ZstPlugRef* plugRef) {
+		return plugRef->get_URI() == uri;
 	});
 
 	if (it != m_plugs.end()) {

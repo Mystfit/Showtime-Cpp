@@ -38,7 +38,7 @@ public:
 	ZST_EXPORT bool is_empty();
 
 	ZST_EXPORT const std::string to_str() const;
-	ZST_EXPORT const char * to_char() const;
+	ZST_EXPORT const char * to_char();
 	
 	ZST_EXPORT static ZstURI from_str(const char * s);
 
@@ -51,4 +51,5 @@ protected:
 
 private:
 	void build_combined_char();
+	bool m_created_combined_char = false;
 };
