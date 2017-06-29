@@ -2,7 +2,7 @@
 
 using namespace std;
 
-ZstURIWire::ZstURIWire()
+ZstURIWire::ZstURIWire() : ZstURI()
 {
 }
 
