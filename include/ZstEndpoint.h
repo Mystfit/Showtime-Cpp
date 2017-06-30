@@ -53,7 +53,7 @@ public:
 
 	int connect_cable(const ZstURI * a, const ZstURI * b);
 	int destroy_cable(const ZstURI * a, const ZstURI * b);
-	ZstCable * get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB);
+	ZST_EXPORT ZstCable * get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB);
 	void remove_cable(ZstCable * cable);
 	
 	ZST_EXPORT std::chrono::milliseconds ping_stage();

@@ -226,8 +226,16 @@ void test_connect_plugs() {
 	assert(Showtime::event_queue_size() == 0);
 
 	std::cout << "Queue test successful" << std::endl;
-	Showtime::destroy_plug(output_int_plug);
-	Showtime::destroy_plug(input_int_plug);
+
+	//Testing connection disconnect and reconnect
+	assert(Showtime::destroy_cable(output_int_plug->get_URI(), input_int_plug->get_URI()));
+	TAKE_A_BREATH
+	assert(Showtime::endpoint().get_cable_by_URI(*outURI, *inURI) == NULL);
+	assert(Showtime::connect_cable(output_int_plug->get_URI(), input_int_plug->get_URI()));
+
+	//Test plug destruction
+	assert(Showtime::destroy_plug(output_int_plug));
+	assert(Showtime::destroy_plug(input_int_plug));
 }
 
 
