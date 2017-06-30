@@ -12,6 +12,7 @@
 #include "ZstPlug.h"
 #include "ZstEvent.h"
 #include "ZstMessages.h"
+#include "ZstCable.h"
 
 //Fixed port numbers
 #define STAGE_REP_PORT 6000
@@ -48,11 +49,12 @@ public:
 	template<typename T>
 	ZST_EXPORT static T* create_plug(ZstURI * uri);
 	ZST_EXPORT static ZstIntPlug * create_int_plug(ZstURI * uri);
-
 	ZST_EXPORT int destroy_plug(ZstPlug * plug);
 
-	int connect_plugs(const ZstURI * a, const ZstURI * b);
-	int disconnect_plugs(const ZstURI * a, const ZstURI * b);
+	int connect_cable(const ZstURI * a, const ZstURI * b);
+	int destroy_cable(const ZstURI * a, const ZstURI * b);
+	ZstCable * get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB);
+	void remove_cable(ZstCable * cable);
 	
 	ZST_EXPORT std::chrono::milliseconds ping_stage();
 
@@ -109,7 +111,7 @@ private:
 	std::map<std::string, ZstPerformer*> m_performers;
 
 	//Active local plug connections
-	std::map<ZstURI, std::vector<ZstPlug*>> m_plug_connections;
+	std::vector<ZstCable*> m_cables;
 
 	void run_stage_event_callbacks(ZstEvent e);
 	Queue<ZstEvent> m_events;

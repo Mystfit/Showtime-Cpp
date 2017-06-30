@@ -21,24 +21,29 @@ ZstPerformer *performer_a;
 
 void test_URI() {
 
+	//Verify standard layout
 	assert(std::is_standard_layout<ZstURI>());
+	assert(std::is_standard_layout<ZstCable>());
 
 	ZstURI * uri_empty = ZstURI::create_empty();
-	assert(uri_empty->is_empty());
-	ZstURI::destroy(uri_empty);
-
 	ZstURI * uri_equal1 = ZstURI::create("perf", "ins", "someplug", ZstURI::Direction::OUT_JACK);
-	ZstURI * uri_equal2 = ZstURI::create("perf", "ins", "someplug", ZstURI::Direction::OUT_JACK);
-	assert(*uri_equal1 == *uri_equal2);
-
 	ZstURI * uri_notequal = ZstURI::create("perf", "anotherins", "someplug", ZstURI::Direction::IN_JACK);
-	assert(!(*uri_equal1 == *uri_notequal));
+
+	assert(uri_empty->is_empty());
+	assert(*uri_equal1 == *uri_equal1);
 	assert(*uri_equal1 != *uri_notequal);
     assert(strcmp(uri_equal1->to_char() , "perf/ins/someplug?d=2") == 0);
 
+	//Test ZstCable equality against ZstURI instances
+	ZstCable test_cable_eq1 = ZstCable(*uri_equal1, *uri_notequal);
+	assert(test_cable_eq1 == test_cable_eq1);
+	assert(test_cable_eq1 == *uri_equal1);
+	assert(test_cable_eq1 == *uri_notequal);
+	assert(test_cable_eq1 != *uri_empty);
+
 	ZstURI::destroy(uri_notequal);
 	ZstURI::destroy(uri_equal1);
-	ZstURI::destroy(uri_equal2);
+	ZstURI::destroy(uri_empty);
 }
 
 void test_performer_init() {
@@ -56,8 +61,6 @@ void test_stage_registration(){
     assert(stage->get_performer_ref_by_name("test_performer_1") != NULL);
     assert(stage->get_performer_ref_by_name("non_existing_performer") == NULL);
 }
-
-
 
 //Callback definitions and trackers
 int stageEventHits = 0;
@@ -148,25 +151,22 @@ void test_create_plugs(){
 	stageEventHits = 0;
 }
 
-void test_memory() {
-	ZstEvent temp = ZstEvent(ZstURI("", "", "", ZstURI::Direction::NONE), ZstEvent::CREATED);
-}
-
 void test_memory_leaks() {
 	ZstURI * outURI = ZstURI::create("test_performer_1", "mem_instrument", "mem_output_plug", ZstURI::Direction::OUT_JACK);
 	ZstURI * inURI = ZstURI::create("test_performer_1", "mem_instrument", "mem_input_plug", ZstURI::Direction::IN_JACK);
 	ZstIntPlug *output_int_plug = Showtime::create_int_plug(outURI);
 	ZstIntPlug *input_int_plug = Showtime::create_int_plug(inURI);
 	input_int_plug->attach_recv_callback(new TestIntValueCallback());
-	Showtime::connect_plugs(output_int_plug->get_URI(), input_int_plug->get_URI());
+	Showtime::connect_cable(output_int_plug->get_URI(), input_int_plug->get_URI());
 
-	int count = 9999;
+	int count = 99000;
 	int current = 0;
 	while (++current < count) {
 		output_int_plug->fire(current);
 		Showtime::poll_once();
 	}
 
+	TAKE_A_BREATH
 	Showtime::destroy_plug(output_int_plug);
 	Showtime::destroy_plug(input_int_plug);
 }
@@ -181,7 +181,7 @@ void test_connect_plugs() {
 	ZstIntPlug *output_int_plug = Showtime::create_int_plug(outURI);
 	ZstIntPlug *input_int_plug = Showtime::create_int_plug(inURI);
     input_int_plug->attach_recv_callback(new TestIntValueCallback());
-	Showtime::connect_plugs(output_int_plug->get_URI(), input_int_plug->get_URI());
+	Showtime::connect_cable(output_int_plug->get_URI(), input_int_plug->get_URI());
 
 	TAKE_A_BREATH
 	assert(Showtime::event_queue_size() > 0);
@@ -191,8 +191,10 @@ void test_connect_plugs() {
 	connectionCallbacks = 0;
 
 	//Test connecting missing URI objects
-	assert(Showtime::connect_plugs(output_int_plug->get_URI(), badURI) <= 0);
+	std::cout << " Testing bad cable connection request" << std::endl;
+	assert(Showtime::connect_cable(output_int_plug->get_URI(), badURI) <= 0);
 	delete badURI;
+	std::cout << "Finished testing bad cable connection request" << std::endl;
 
 	//Test plug value callbacks
 	int num_fires = 5;
@@ -222,11 +224,6 @@ void test_connect_plugs() {
 		assert(Showtime::event_queue_size() == i-1);
 	}
 	assert(Showtime::event_queue_size() == 0);
-
-	//while (true) {
-	//	output_int_plug->fire(1);
-	//	Showtime::poll_once();
-	//}
 
 	std::cout << "Queue test successful" << std::endl;
 	Showtime::destroy_plug(output_int_plug);

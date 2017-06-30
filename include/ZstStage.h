@@ -10,6 +10,8 @@
 #include "ZstExports.h"
 #include "ZstMessages.h"
 #include "ZstURI.h"
+#include "ZstCable.h"
+
 #include "ZstPlugRef.h"
 #include "ZstPerformerRef.h"
 #include "ZstEndpointRef.h"
@@ -29,6 +31,9 @@ public:
 	ZST_EXPORT std::vector<ZstPerformerRef*> get_all_performer_refs();
     ZST_EXPORT ZstPerformerRef * get_performer_ref_by_name(const char * performer_name);
 	ZST_EXPORT ZstEndpointRef * get_performer_endpoint(ZstPerformerRef * performer);
+	
+	ZST_EXPORT ZstCable * get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB);
+	ZST_EXPORT std::vector<ZstCable*> get_cables_by_URI(const ZstURI & uri);
     
 private:
     ZstStage();
@@ -57,8 +62,8 @@ private:
 	void destroy_plug_handler(zsock_t * socket, zmsg_t * msg);
 
 	//Router
-    void connect_plugs_handler(zsock_t * socket, zmsg_t * msg);
-	void disconnect_plugs_handler(zsock_t * socket, zmsg_t * msg);
+    void connect_cable_handler(zsock_t * socket, zmsg_t * msg);
+	void disconnect_cable_handler(zsock_t * socket, zmsg_t * msg);
 
     //Graph storage
 	ZstEndpointRef * create_endpoint(std::string starting_uuid, std::string endpoint);
@@ -67,8 +72,9 @@ private:
 	std::map<std::string, ZstEndpointRef*> m_endpoint_refs;
 
 	//Plug connections
-    int connect_plugs(ZstURI output_plug, ZstURI input_plug);
-	int disconnect_plugs(ZstURI output_plug, ZstURI input_plug);
+    int connect_cable(ZstURI output_plug, ZstURI input_plug);
+	int destroy_cable(ZstURI output_plug, ZstURI input_plug);
+	std::vector<ZstCable*> m_cables;
 
 	//Queued stage events
 	std::vector<ZstEvent> create_snapshot();

@@ -14,29 +14,18 @@ ZstURI::ZstURI() :
 
 ZstURI::ZstURI(const ZstURI &copy)
 {
-	int performer_size = strlen(copy.m_performer);
-	int instrument_size = strlen(copy.m_instrument);
-	int name_size = strlen(copy.m_name);
-
 	memcpy(m_performer, copy.m_performer, 255);
 	memcpy(m_instrument, copy.m_instrument, 255);
 	memcpy(m_name, copy.m_name, 255);
-
 	m_direction = copy.m_direction;
 	build_combined_char();
 }
 
-ZstURI::ZstURI(const char *  performer, const char *  instrument, const char *  name, Direction direction){
-	
-	int performer_size = strlen(performer);
-	int instrument_size = strlen(instrument);
-	int name_size = strlen(name);
-
-
+ZstURI::ZstURI(const char *  performer, const char *  instrument, const char *  name, Direction direction)
+{
 	memcpy(m_performer, performer, 255);
 	memcpy(m_instrument, instrument, 255);
 	memcpy(m_name, name, 255);
-
 	m_direction = direction;
 	build_combined_char();
 }
@@ -111,11 +100,8 @@ bool ZstURI::is_empty() {
 }
 
 
-const char * ZstURI::to_char()
+const char * ZstURI::to_char() const
 {
-	if (!m_created_combined_char) {
-		build_combined_char();
-	}
 	return m_combined_char;
 }
 

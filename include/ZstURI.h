@@ -37,8 +37,7 @@ public:
 	ZST_EXPORT bool operator< (const ZstURI& b) const;
 	ZST_EXPORT bool is_empty();
 
-	ZST_EXPORT const char * to_char();
-	
+	ZST_EXPORT const char * to_char() const;
 	ZST_EXPORT static ZstURI from_char(const char * s);
 
 protected:

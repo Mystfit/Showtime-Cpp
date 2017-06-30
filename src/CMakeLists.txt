@@ -10,7 +10,7 @@ set(ZST_PUBLIC_HEADERS
  ${Showtime_INCLUDE_DIRS}/ZstStage.h
  ${Showtime_INCLUDE_DIRS}/ZstMessages.h
  ${Showtime_INCLUDE_DIRS}/ZstEvent.h
-
+ ${Showtime_INCLUDE_DIRS}/ZstCable.h
 )
 
 set(ZST_PRIVATE_HEADERS 
@@ -40,6 +40,7 @@ set(ZST_SOURCE
  "ZstPerformerRef.cpp"
  "ZstEndpointRef.cpp"
  "ZstStage.cpp"
+ "ZstCable.cpp"
 )
 
 set(ZST_INCLUDES 

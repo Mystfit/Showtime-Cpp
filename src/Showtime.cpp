@@ -106,12 +106,12 @@ int Showtime::destroy_plug(ZstPlug * plug)
 	return Showtime::endpoint().destroy_plug(plug);
 }
 
-int Showtime::connect_plugs(const ZstURI * a, const ZstURI * b)
+int Showtime::connect_cable(const ZstURI * a, const ZstURI * b)
 {
-	return Showtime::endpoint().connect_plugs(a, b);
+	return Showtime::endpoint().connect_cable(a, b);
 }
 
-int Showtime::disconnect_plugs(const ZstURI * a, const ZstURI * b)
+int Showtime::destroy_cable(const ZstURI * a, const ZstURI * b)
 {
-	return Showtime::endpoint().disconnect_plugs(a, b);
+	return Showtime::endpoint().destroy_cable(a, b);
 }

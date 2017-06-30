@@ -7,6 +7,8 @@ ZstEvent::ZstEvent()
 
 ZstEvent::ZstEvent(const ZstEvent & copy) : 
 	m_first(copy.m_first),
+	m_second(copy.m_second),
+
 	m_update_type(copy.m_update_type)
 {
 }
@@ -28,12 +30,12 @@ ZstEvent::~ZstEvent()
 {
 }
 
-ZstURI ZstEvent::get_first()
+const ZstURI & ZstEvent::get_first() const
 {
 	return m_first;
 }
 
-ZstURI ZstEvent::get_second()
+const ZstURI & ZstEvent::get_second() const
 {
 	return m_second;
 }

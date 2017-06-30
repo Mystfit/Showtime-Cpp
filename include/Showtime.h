@@ -59,8 +59,8 @@ public:
 	ZST_EXPORT static ZstIntPlug * create_int_plug(ZstURI * uri);
     ZST_EXPORT static int destroy_plug(ZstPlug *plug);
 
-	ZST_EXPORT static int connect_plugs(const ZstURI * a, const ZstURI * b);
-	ZST_EXPORT static int disconnect_plugs(const ZstURI * a, const ZstURI * b);
+	ZST_EXPORT static int connect_cable(const ZstURI * a, const ZstURI * b);
+	ZST_EXPORT static int destroy_cable(const ZstURI * a, const ZstURI * b);
 
 
 private:

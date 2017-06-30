@@ -29,8 +29,8 @@ public:
 		STAGE_DESTROY_PLUG,
 		
 		//Connection registration
-        STAGE_REGISTER_CONNECTION,
-		STAGE_DESTROY_PLUG_CONNECTION,
+        STAGE_REGISTER_CABLE,
+		STAGE_DESTROY_CABLE,
 		
 		//Misc messages
         STAGE_UPDATE,
