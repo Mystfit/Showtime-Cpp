@@ -33,7 +33,9 @@ public:
 
 	%rename("to_str") to_char();
 	const char * to_char() const;
-	static ZstURI from_str(char * s);
+
+	%rename("from_str") from_char();
+	static ZstURI from_char(char * s);
 
 	bool operator==(const ZstURI& other);
 	bool operator!=(const ZstURI& other);
