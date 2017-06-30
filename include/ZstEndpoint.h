@@ -11,6 +11,7 @@
 #include "Queue.h"
 #include "ZstPlug.h"
 #include "ZstEvent.h"
+#include "ZstMessages.h"
 
 //Fixed port numbers
 #define STAGE_REP_PORT 6000
@@ -39,7 +40,7 @@ public:
 	bool is_connected_to_stage();
 
 	//Lets the stage know we want a full snapshot of the current performance
-	void request_stage_sync();
+	void signal_sync();
 
 	ZstPerformer * create_performer(const ZstURI uri);
 	ZstPerformer * get_performer_by_URI(const ZstURI uri);
@@ -48,9 +49,10 @@ public:
 	ZST_EXPORT static T* create_plug(ZstURI * uri);
 	ZST_EXPORT static ZstIntPlug * create_int_plug(ZstURI * uri);
 
-	ZST_EXPORT void destroy_plug(ZstPlug * plug);
+	ZST_EXPORT int destroy_plug(ZstPlug * plug);
 
-	void connect_plugs(const ZstURI * a, const ZstURI * b);
+	int connect_plugs(const ZstURI * a, const ZstURI * b);
+	int disconnect_plugs(const ZstURI * a, const ZstURI * b);
 	
 	ZST_EXPORT std::chrono::milliseconds ping_stage();
 
@@ -76,6 +78,7 @@ private:
 	zmsg_t * receive_from_stage();
 	zmsg_t * receive_stage_update();
 	zmsg_t * receive_routed_from_stage();
+	inline static ZstMessages::Signal check_stage_response_ok();
 
 	//Socket handlers
 	static int s_handle_graph_in(zloop_t *loop, zsock_t *sock, void *arg);

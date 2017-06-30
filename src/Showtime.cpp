@@ -39,10 +39,13 @@ void Showtime::poll_once()
 {
 	while (Showtime::event_queue_size() > 0) {
 		ZstEvent e = Showtime::pop_event();
-		if (e.get_update_type() == ZstEvent::EventType::PLUG_HIT)
+		switch (e.get_update_type()) {
+		case ZstEvent::EventType::PLUG_HIT:
 			Showtime::endpoint().get_performer_by_URI(e.get_first())->get_plug_by_URI(e.get_first())->run_recv_callbacks();
-		else
+			break;
+		default:
 			Showtime::endpoint().run_stage_event_callbacks(e);
+		}
 	}
 }
 
@@ -78,7 +81,8 @@ ZstPerformer * Showtime::create_performer(const char * name)
 	return Showtime::endpoint().create_performer(ZstURI(name, "", "", ZstURI::Direction::NONE));
 }
 
-ZstIntPlug * Showtime::create_int_plug(ZstURI * uri) {
+ZstIntPlug * Showtime::create_int_plug(ZstURI * uri)
+{
 	return Showtime::endpoint().create_int_plug(uri);
 }
 
@@ -86,7 +90,6 @@ ZstPerformer * Showtime::get_performer_by_URI(const ZstURI * uri)
 {
 	return Showtime::endpoint().get_performer_by_URI(*uri);
 }
-
 
 ZstEvent Showtime::pop_event()
 {
@@ -98,12 +101,17 @@ int Showtime::event_queue_size()
 	return Showtime::endpoint().plug_event_queue_size();
 }
 
-void Showtime::destroy_plug(ZstPlug * plug)
+int Showtime::destroy_plug(ZstPlug * plug)
 {
 	return Showtime::endpoint().destroy_plug(plug);
 }
 
-void Showtime::connect_plugs(const ZstURI * a, const ZstURI * b)
+int Showtime::connect_plugs(const ZstURI * a, const ZstURI * b)
 {
 	return Showtime::endpoint().connect_plugs(a, b);
+}
+
+int Showtime::disconnect_plugs(const ZstURI * a, const ZstURI * b)
+{
+	return Showtime::endpoint().disconnect_plugs(a, b);
 }

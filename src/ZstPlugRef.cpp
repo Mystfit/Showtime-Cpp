@@ -27,6 +27,13 @@ void ZstPlugRef::add_output_connection(ZstURI uri)
 
 void ZstPlugRef::remove_output_connection(ZstURI uri)
 {
-    throw runtime_error("TODO: Implement plug discconection on stage");
+	for (vector<ZstURI>::iterator conn_iter = m_connections.begin(); conn_iter != m_connections.end(); ++conn_iter)
+	{
+		if ((*conn_iter) == uri)
+		{
+			m_connections.erase(conn_iter);
+			break;
+		}
+	}
 	return;
 }

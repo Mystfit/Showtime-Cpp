@@ -171,6 +171,8 @@ int ZstEndpoint::s_handle_stage_router(zloop_t * loop, zsock_t * socket, void * 
 void ZstEndpoint::connect_performer_handler(zsock_t * socket, zmsg_t * msg) {
 	ZstMessages::PerformerConnection performer_args = ZstMessages::unpack_message_struct<ZstMessages::PerformerConnection>(msg);
 
+	cout << "ZST: Connecting to " << performer_args.endpoint << ". My output endpoint is " << m_output_endpoint << endl;
+
 	//Connect to endpoint publisher
 	zsock_connect(m_graph_in, performer_args.endpoint.c_str());
 	zsock_set_subscribe(m_graph_in, "");
@@ -180,8 +182,6 @@ void ZstEndpoint::connect_performer_handler(zsock_t * socket, zmsg_t * msg) {
 	ZstURI input_plug = performer_args.input_plug;
 	ZstPlug * input = get_performer_by_URI(input_plug)->get_plug_by_URI(input_plug);
 	m_plug_connections[performer_args.output_plug].push_back(input);
-
-	cout << "ZST: Connecting to " << performer_args.endpoint << ". My output endpoint is " << m_output_endpoint << endl;
 }
 
 int ZstEndpoint::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
@@ -233,7 +233,7 @@ void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
 
 		//TODO: Need to check handshake before setting connection as active
 		m_connected_to_stage = true;
-		request_stage_sync();
+		signal_sync();
 	}
 	else {
         throw runtime_error("ZST: Stage performer registration responded with error -> Kind: " + std::to_string((int)message_type));
@@ -242,7 +242,7 @@ void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
 	zmsg_destroy(&responseMsg);
 }
 
-void ZstEndpoint::request_stage_sync()
+void ZstEndpoint::signal_sync()
 {
 	if (m_connected_to_stage) {
 		cout << "ZST: Requesting stage snapshot" << endl;
@@ -254,6 +254,11 @@ void ZstEndpoint::stage_update_handler(zsock_t * socket, zmsg_t * msg)
 {
 	ZstMessages::StageUpdates update_args = ZstMessages::unpack_message_struct<ZstMessages::StageUpdates>(msg);
 	for (vector<ZstEvent>::iterator event_iter = update_args.updates.begin(); event_iter != update_args.updates.end(); ++event_iter) {
+		if ((*event_iter).get_update_type() == ZstEvent::CONNECTION_DESTROYED) {
+			//Remove any connections that we own that have been destroyed
+			//if(m_plug_connections.)
+		}
+
 		Showtime::endpoint().enqueue_plug_event(ZstEvent((*event_iter).get_first(), (*event_iter).get_update_type()));
 	}
 }
@@ -270,17 +275,7 @@ void ZstEndpoint::register_performer_to_stage(string performer) {
 	register_args.endpoint_uuid = m_assigned_uuid;
 	register_args.name = performer;
 	send_to_stage(ZstMessages::build_message<ZstMessages::RegisterPerformer>(ZstMessages::Kind::STAGE_REGISTER_PERFORMER, register_args));
-
-	zmsg_t *responseMsg = receive_from_stage();
-	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
-
-	if (message_type == ZstMessages::Kind::SIGNAL) {
-		ZstMessages::Signal s = ZstMessages::unpack_signal(responseMsg);
-		if(s != ZstMessages::Signal::OK)
-            throw runtime_error("ZST: Performer registration responded with message other than OK -> Signal" + std::to_string((int)s));
-	}
-
-	zmsg_destroy(&responseMsg);
+	check_stage_response_ok();
 }
 
 ZstPerformer * ZstEndpoint::create_performer(ZstURI uri)
@@ -305,20 +300,12 @@ template<typename T>
 	zmsg_t * plug_msg = ZstMessages::build_message<ZstMessages::RegisterPlug>(ZstMessages::Kind::STAGE_REGISTER_PLUG, plug_args);
 	Showtime::endpoint().send_to_stage(plug_msg);
 
-	zmsg_t *responseMsg = Showtime::endpoint().receive_from_stage();
-
-	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
-	if (message_type == ZstMessages::Kind::SIGNAL) {
-		ZstMessages::Signal s = ZstMessages::unpack_signal(responseMsg);
-		if (s != ZstMessages::Signal::OK)
-            throw runtime_error("ZST: Plug creation responded with message other than OK -> Signal" + std::to_string((int)s));
-    }
-
-	T *plug = new T(uri);
-	Showtime::endpoint().get_performer_by_URI(*uri)->add_plug(plug);
-
-	zmsg_destroy(&responseMsg);
-	return plug;
+	if (check_stage_response_ok()) {
+		T *plug = new T(uri);
+		Showtime::endpoint().get_performer_by_URI(*uri)->add_plug(plug);
+		return plug;
+	}
+	return NULL;
 }
 
  ZstIntPlug * ZstEndpoint::create_int_plug(ZstURI * uri)
@@ -326,43 +313,37 @@ template<typename T>
 	 return create_plug<ZstIntPlug>(uri);
  }
 
- void ZstEndpoint::destroy_plug(ZstPlug * plug)
+ int ZstEndpoint::destroy_plug(ZstPlug * plug)
+ {
+	 ZstMessages::DestroyPlug destroy_args;
+	 destroy_args.address = ZstURIWire(*(plug->get_URI()));
+	 send_to_stage(ZstMessages::build_message<ZstMessages::DestroyPlug>(ZstMessages::Kind::STAGE_DESTROY_PLUG, destroy_args));
+
+	 ZstMessages::Signal s = check_stage_response_ok();
+	 if (s){
+		 m_performers[plug->get_URI()->performer()]->remove_plug(plug);
+		 delete plug;
+	 }
+	 return (int)s;
+ }
+
+
+ int ZstEndpoint::connect_plugs(const ZstURI * a, const ZstURI * b)
 {
-	ZstMessages::DestroyPlug destroy_args;
-	destroy_args.address = ZstURIWire(*(plug->get_URI()));
-	send_to_stage(ZstMessages::build_message<ZstMessages::DestroyPlug>(ZstMessages::Kind::STAGE_DESTROY_PLUG, destroy_args));
-
-	zmsg_t *responseMsg = receive_from_stage();
-	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
-	if (message_type != ZstMessages::Kind::SIGNAL) {
-		ZstMessages::Signal s = ZstMessages::unpack_signal(responseMsg);
-		if (s != ZstMessages::Signal::OK)
-            throw runtime_error("ZST: Plug deletion responded with message other than OK -> Signal:" + std::to_string((int)s));
-    }
-	m_performers[plug->get_URI()->performer()]->remove_plug(plug);
-	delete plug;
-
-	zmsg_destroy(&responseMsg);
-}
-
-
-void ZstEndpoint::connect_plugs(const ZstURI * a, const ZstURI * b)
-{
-	ZstMessages::ConnectPlugs plug_args;
+	ZstMessages::PlugConnection plug_args;
 	plug_args.first = *a;
 	plug_args.second = *b;
-	send_to_stage(ZstMessages::build_message<ZstMessages::ConnectPlugs>(ZstMessages::Kind::STAGE_REGISTER_CONNECTION, plug_args));
+	send_to_stage(ZstMessages::build_message<ZstMessages::PlugConnection>(ZstMessages::Kind::STAGE_REGISTER_CONNECTION, plug_args));
+	return check_stage_response_ok();
+}
 
-	zmsg_t *responseMsg = receive_from_stage();
-
-	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
-	if (message_type == ZstMessages::Kind::SIGNAL) {
-		ZstMessages::Signal s = ZstMessages::unpack_signal(responseMsg);
-		if (s != ZstMessages::Signal::OK)
-            throw runtime_error("ZST: Plug connection responded with message other than OK -> Signal: " + std::to_string((int)s));
-	}
-
-	zmsg_destroy(&responseMsg);
+int ZstEndpoint::disconnect_plugs(const ZstURI * a, const ZstURI * b)
+{
+	ZstMessages::PlugConnection plug_args;
+	plug_args.first = *a;
+	plug_args.second = *b;
+	send_to_stage(ZstMessages::build_message<ZstMessages::PlugConnection>(ZstMessages::Kind::STAGE_DESTROY_PLUG_CONNECTION, plug_args));
+	return check_stage_response_ok();
 }
 
 
@@ -376,22 +357,12 @@ chrono::milliseconds ZstEndpoint::ping_stage()
 	
 	beat.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(start.time_since_epoch()).count();
 	send_to_stage(ZstMessages::build_message<ZstMessages::Heartbeat>(ZstMessages::Kind::ENDPOINT_HEARTBEAT, beat));
-	
-	//Get stage response
-	zmsg_t *responseMsg = zmsg_recv(m_stage_requests);
-	
-	//Get message type
-	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
-	if (message_type == ZstMessages::Kind::SIGNAL) {
+
+	if (check_stage_response_ok()) {
 		end = chrono::system_clock::now();
 		delta = chrono::duration_cast<chrono::milliseconds>(end - start);
 		cout << "ZST: Client received heartbeat ping ack. Roundtrip was " << delta.count() << "ms" << endl;
 	}
-	else {
-        throw runtime_error("ZST: Stage ping responded with message other than OK -> Kind: " + std::to_string(message_type));
-	}
-
-	zmsg_destroy(&responseMsg);
 	return delta;
 }
 
@@ -469,6 +440,20 @@ zmsg_t * ZstEndpoint::receive_from_graph() {
 	return zmsg_recv(m_graph_in);
 }
 
+ZstMessages::Signal ZstEndpoint::check_stage_response_ok() {
+	zmsg_t *responseMsg = Showtime::endpoint().receive_from_stage();
+	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
+
+	if (message_type != ZstMessages::Kind::SIGNAL) {
+		throw runtime_error("ZST: Attempting to check stage signal, but we got a message other than signal!");
+	}
+
+	ZstMessages::Signal s = ZstMessages::unpack_signal(responseMsg);
+	if (s != ZstMessages::Signal::OK) {
+		std::cout << "ZST: Stage responded with signal other than OK -> " << s << std::endl;
+	}
+	return s;
+}
 
 void ZstEndpoint::broadcast_to_local_plugs(ZstURI output_plug, msgpack::object obj) {
 	for (vector<ZstPlug*>::iterator plug_iter = m_plug_connections[output_plug].begin(); plug_iter != m_plug_connections[output_plug].end(); ++plug_iter) {

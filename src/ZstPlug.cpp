@@ -32,8 +32,6 @@ void ZstPlug::destroy_recv_callback(ZstEventCallback *callback){
 }
 
 void ZstPlug::run_recv_callbacks(){
-	cout << "ZST: Running input plug callbacks" << endl;
-
     if(m_received_data_callbacks.size() > 0){
         for (vector<ZstEventCallback*>::iterator callback = m_received_data_callbacks.begin(); callback != m_received_data_callbacks.end(); ++callback) {
 			(*callback)->run(ZstEvent(*(this->get_URI()), ZstEvent::EventType::PLUG_HIT));

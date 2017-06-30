@@ -58,7 +58,8 @@ private:
 
 	//Router
     void connect_plugs_handler(zsock_t * socket, zmsg_t * msg);
-    
+	void disconnect_plugs_handler(zsock_t * socket, zmsg_t * msg);
+
     //Graph storage
 	ZstEndpointRef * create_endpoint(std::string starting_uuid, std::string endpoint);
 	ZstEndpointRef * get_endpoint_ref_by_UUID(std::string uuid);
@@ -67,6 +68,7 @@ private:
 
 	//Plug connections
     int connect_plugs(ZstURI output_plug, ZstURI input_plug);
+	int disconnect_plugs(ZstURI output_plug, ZstURI input_plug);
 
 	//Queued stage events
 	std::vector<ZstEvent> create_snapshot();

@@ -57,8 +57,11 @@ public:
 	ZST_EXPORT static int event_queue_size();
 
 	ZST_EXPORT static ZstIntPlug * create_int_plug(ZstURI * uri);
-    ZST_EXPORT static void destroy_plug(ZstPlug *plug);
-	ZST_EXPORT static void connect_plugs(const ZstURI * a, const ZstURI * b);
+    ZST_EXPORT static int destroy_plug(ZstPlug *plug);
+
+	ZST_EXPORT static int connect_plugs(const ZstURI * a, const ZstURI * b);
+	ZST_EXPORT static int disconnect_plugs(const ZstURI * a, const ZstURI * b);
+
 
 private:
     Showtime();

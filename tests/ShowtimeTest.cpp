@@ -152,6 +152,25 @@ void test_memory() {
 	ZstEvent temp = ZstEvent(ZstURI("", "", "", ZstURI::Direction::NONE), ZstEvent::CREATED);
 }
 
+void test_memory_leaks() {
+	ZstURI * outURI = ZstURI::create("test_performer_1", "mem_instrument", "mem_output_plug", ZstURI::Direction::OUT_JACK);
+	ZstURI * inURI = ZstURI::create("test_performer_1", "mem_instrument", "mem_input_plug", ZstURI::Direction::IN_JACK);
+	ZstIntPlug *output_int_plug = Showtime::create_int_plug(outURI);
+	ZstIntPlug *input_int_plug = Showtime::create_int_plug(inURI);
+	input_int_plug->attach_recv_callback(new TestIntValueCallback());
+	Showtime::connect_plugs(output_int_plug->get_URI(), input_int_plug->get_URI());
+
+	int count = 9999;
+	int current = 0;
+	while (++current < count) {
+		output_int_plug->fire(current);
+		Showtime::poll_once();
+	}
+
+	Showtime::destroy_plug(output_int_plug);
+	Showtime::destroy_plug(input_int_plug);
+}
+
 void test_connect_plugs() {
 
 	ZstURI * outURI = ZstURI::create("test_performer_1", "test_instrument", "test_output_plug", ZstURI::Direction::OUT_JACK);
@@ -172,14 +191,7 @@ void test_connect_plugs() {
 	connectionCallbacks = 0;
 
 	//Test connecting missing URI objects
-	bool exceptionThrown = false;
-	try{
-		Showtime::connect_plugs(output_int_plug->get_URI(), badURI);
-	}
-	catch (std::runtime_error&){
-		exceptionThrown = true;
-	}
-	assert(exceptionThrown);
+	assert(Showtime::connect_plugs(output_int_plug->get_URI(), badURI) <= 0);
 	delete badURI;
 
 	//Test plug value callbacks
@@ -241,6 +253,7 @@ int main(int argc,char **argv){
     test_stage_registration();
     test_create_plugs();
 	test_connect_plugs();
+	test_memory_leaks();
 	test_cleanup();
 	std::cout << "\nShowtime test successful" << std::endl;
 

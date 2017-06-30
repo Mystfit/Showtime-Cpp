@@ -195,6 +195,9 @@ int ZstStage::s_handle_performer_requests(zloop_t * loop, zsock_t * socket, void
 	case ZstMessages::Kind::STAGE_REGISTER_CONNECTION:
 		stage->connect_plugs_handler(socket, msg);
 		break;
+	case ZstMessages::Kind::STAGE_DESTROY_PLUG_CONNECTION:
+		stage->disconnect_plugs_handler(socket, msg);
+		break;
 	case ZstMessages::Kind::ENDPOINT_HEARTBEAT:
 		stage->endpoint_heartbeat_handler(socket, msg);
 		break;
@@ -323,6 +326,18 @@ void ZstStage::destroy_plug_handler(zsock_t * socket, zmsg_t * msg)
 
 	ZstPerformerRef *performer = get_performer_ref_by_name(plug_destroy_args.address.performer_char());
 
+	ZstPlugRef* plugRef = performer->get_plug_by_URI(plug_destroy_args.address);
+	if (plugRef != NULL) {
+
+		//Need to remove all connections attached to this plug
+		vector<ZstURI> connections = plugRef->get_output_connections();
+		for (vector<ZstURI>::iterator conn_iter = connections.begin(); conn_iter != connections.end(); ++conn_iter) {
+			if (disconnect_plugs(plugRef->get_URI(), (*conn_iter))) {
+				enqueue_stage_update(ZstEvent(plugRef->get_URI(), (*conn_iter), ZstEvent::EventType::CONNECTION_DESTROYED));
+			}
+		}
+	}
+
 	performer->destroy_plug(performer->get_plug_by_URI(plug_destroy_args.address));
 
 	reply_with_signal(socket, ZstMessages::Signal::OK);
@@ -334,7 +349,7 @@ void ZstStage::destroy_plug_handler(zsock_t * socket, zmsg_t * msg)
 // Router endpoints
 void ZstStage::connect_plugs_handler(zsock_t * socket, zmsg_t * msg)
 {
-	ZstMessages::ConnectPlugs plug_args = ZstMessages::unpack_message_struct<ZstMessages::ConnectPlugs>(msg);
+	ZstMessages::PlugConnection plug_args = ZstMessages::unpack_message_struct<ZstMessages::PlugConnection>(msg);
 	cout << "ZST_STAGE: Received connect plug request for " << plug_args.first.to_char() << " and " << plug_args.second.to_char() << endl;
 	int connect_status = 0;
 	if (plug_args.first.direction() == ZstURI::Direction::OUT_JACK && plug_args.second.direction() == ZstURI::Direction::IN_JACK) {
@@ -343,17 +358,29 @@ void ZstStage::connect_plugs_handler(zsock_t * socket, zmsg_t * msg)
 	else if (plug_args.first.direction() == ZstURI::Direction::IN_JACK && plug_args.second.direction() == ZstURI::Direction::OUT_JACK) {
 		connect_status = connect_plugs(plug_args.second, plug_args.first);
 	}
-	else {
-		connect_status = -1;
-	}
 
-	if (connect_status != 0) {
+	if (!connect_status) {
 		cout << "ZST_STAGE: Bad plug connect request" << endl;
 		reply_with_signal(socket, ZstMessages::Signal::ERR_STAGE_BAD_PLUG_CONNECT_REQUEST);
 		return;
 	}
 
 	reply_with_signal(socket, ZstMessages::Signal::OK);
+	enqueue_stage_update(ZstEvent(plug_args.first, plug_args.second, ZstEvent::EventType::CONNECTION_CREATED));
+}
+
+void ZstStage::disconnect_plugs_handler(zsock_t * socket, zmsg_t * msg)
+{
+	ZstMessages::PlugConnection connection_destroy_args = ZstMessages::unpack_message_struct<ZstMessages::PlugConnection>(msg);
+	cout << "ZST_STAGE: Received destroy plug connection request" << endl;
+
+	if (!disconnect_plugs(connection_destroy_args.first, connection_destroy_args.second)) {
+		reply_with_signal(socket, ZstMessages::Signal::ERR_STAGE_BAD_PLUG_DISCONNECT_REQUEST);
+		return;
+	}
+
+	reply_with_signal(socket, ZstMessages::Signal::OK);
+	enqueue_stage_update(ZstEvent(connection_destroy_args.first, connection_destroy_args.second, ZstEvent::EventType::CONNECTION_DESTROYED));
 }
 
 int ZstStage::connect_plugs(ZstURI output_plug, ZstURI input_plug)
@@ -362,7 +389,7 @@ int ZstStage::connect_plugs(ZstURI output_plug, ZstURI input_plug)
     ZstPerformerRef * input_performer = get_performer_ref_by_name(input_plug.performer_char());
     
 	if (!(output_performer && input_performer)) {
-		return -1;
+		return 0;
 	}
 
 	output_performer->get_plug_by_URI(output_plug)->add_output_connection(input_plug);
@@ -380,8 +407,31 @@ int ZstStage::connect_plugs(ZstURI output_plug, ZstURI input_plug)
 
 	cout << "ZST_STAGE: Sending plug connection request to " << get_performer_endpoint(input_performer)->client_assigned_uuid.c_str() << endl;
 	zmsg_send(&connectMsg, m_performer_router);
-	return 0;
+	return 1;
 }
+
+int ZstStage::disconnect_plugs(ZstURI output_plug, ZstURI input_plug) {
+	ZstPerformerRef *performerA = get_performer_ref_by_name(output_plug.performer_char());
+	ZstPerformerRef *performerB = get_performer_ref_by_name(input_plug.performer_char());
+
+	if (performerA == NULL || performerB == NULL) {
+		return 0;
+	}
+
+	ZstPlugRef* plugA = performerA->get_plug_by_URI(output_plug);
+	ZstPlugRef* plugB = performerA->get_plug_by_URI(input_plug);
+
+	if (plugA == NULL || plugB == NULL) {
+		return 0;
+	}
+
+	plugA->remove_output_connection(plugB->get_URI());
+	plugB->remove_output_connection(plugA->get_URI());
+	cout << "ZST_STAGE: Disconnecting plugs "<< plugA->get_URI().to_char() << " and " << plugB->get_URI().to_char() << endl;
+
+	return 1;
+}
+
 
 void ZstStage::enqueue_stage_update(ZstEvent e)
 {
@@ -394,7 +444,6 @@ vector<ZstEvent> ZstStage::create_snapshot() {
 
 	for (map<string, ZstEndpointRef*>::iterator endpnt_iter = m_endpoint_refs.begin(); endpnt_iter != m_endpoint_refs.end(); ++endpnt_iter)
 	{
-
 		vector<ZstPlugRef*> plugs = get_all_plug_refs();
 
 		//Pull addressess from plug refs

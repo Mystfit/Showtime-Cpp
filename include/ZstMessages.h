@@ -15,27 +15,42 @@ public:
     //Message ID index
     enum Kind{
         SIGNAL,
+		
+		//Endpoint registration
 		STAGE_REGISTER_ENDPOINT,
 		STAGE_REGISTER_ENDPOINT_ACK,
+		
+		//Performer registration
         STAGE_REGISTER_PERFORMER,
+		STAGE_DESTROY_PERFORMER,
+		
+		//Plug registration
         STAGE_REGISTER_PLUG,
 		STAGE_DESTROY_PLUG,
+		
+		//Connection registration
         STAGE_REGISTER_CONNECTION,
-        STAGE_REMOVE_ITEM,
+		STAGE_DESTROY_PLUG_CONNECTION,
+		
+		//Misc messages
         STAGE_UPDATE,
         ENDPOINT_HEARTBEAT,
+
+		//P2P endpoint connection requests
 		PERFORMER_REGISTER_CONNECTION
     };
 
 	enum Signal {
-		OK = 0,
-		SYNC,
-		ERR_STAGE_ENDPOINT_NOT_FOUND,
-		ERR_STAGE_ENDPOINT_ALREADY_EXISTS,
-		ERR_STAGE_PERFORMER_NOT_FOUND,
-		ERR_STAGE_PERFORMER_ALREADY_EXISTS,
-		ERR_STAGE_PLUG_ALREADY_EXISTS,
-		ERR_STAGE_BAD_PLUG_CONNECT_REQUEST
+		ERR_STAGE_BAD_PLUG_DISCONNECT_REQUEST = -7,
+		ERR_STAGE_BAD_PLUG_CONNECT_REQUEST = -6,
+		ERR_STAGE_ENDPOINT_NOT_FOUND = -5,
+		ERR_STAGE_ENDPOINT_ALREADY_EXISTS = -4,
+		ERR_STAGE_PERFORMER_NOT_FOUND = -3,
+		ERR_STAGE_PERFORMER_ALREADY_EXISTS = -2,
+		ERR_STAGE_PLUG_ALREADY_EXISTS = -1,
+		//--
+		OK = 1,
+		SYNC = 2
 	};
 
     //Message structs
@@ -101,7 +116,7 @@ public:
     };
 
 
-	struct ConnectPlugs {
+	struct PlugConnection {
 		ZstURIWire first;
 		ZstURIWire second;
 		MSGPACK_DEFINE(first, second);
