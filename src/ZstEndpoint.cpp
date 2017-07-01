@@ -260,7 +260,7 @@ void ZstEndpoint::signal_sync()
 void ZstEndpoint::stage_update_handler(zsock_t * socket, zmsg_t * msg)
 {
 	ZstMessages::StageUpdates update_args = ZstMessages::unpack_message_struct<ZstMessages::StageUpdates>(msg);
-	for (vector<ZstEvent>::iterator event_iter = update_args.updates.begin(); event_iter != update_args.updates.end(); ++event_iter) {
+	for (vector<ZstEventWire>::iterator event_iter = update_args.updates.begin(); event_iter != update_args.updates.end(); ++event_iter) {
 		if ((*event_iter).get_update_type() == ZstEvent::CABLE_DESTROYED) {
 			//Remove any cables that we own that have been destroyed
 			
