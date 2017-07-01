@@ -24,7 +24,8 @@ set(SHOWTIME_TARGET '$<TARGET_FILE:${PROJECT_NAME}>')
 get_filename_component(SETUPPY_PARSER ${CMAKE_CURRENT_SOURCE_DIR}/showtime-final.cmake REALPATH)
 
 if(MACOSX)
-	SET(PREFIX "LDFLAGS=\"-framework\ Showtime\";")
+	# SET(PREFIX "LDFLAGS=\"-framework\ Showtime\"\;PATH=/Library/Frameworks\;")
+	MESSAGE(STATUS "Setting python env flags to ${PREFIX}")
 ENDIF()
 
 # Command for building second-pass setup.py

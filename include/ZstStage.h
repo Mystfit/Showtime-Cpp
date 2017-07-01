@@ -11,7 +11,7 @@
 #include "ZstMessages.h"
 #include "ZstURI.h"
 #include "ZstCable.h"
-
+#include "ZstEventWire.h"
 #include "ZstPlugRef.h"
 #include "ZstPerformerRef.h"
 #include "ZstEndpointRef.h"
@@ -77,7 +77,7 @@ private:
 	std::vector<ZstCable*> m_cables;
 
 	//Queued stage events
-	std::vector<ZstEvent> create_snapshot();
+	std::vector<ZstEventWire> create_snapshot();
 	void enqueue_stage_update(ZstEvent e);
 	Queue<ZstEvent> m_stage_updates;
 	int m_update_timer_id;

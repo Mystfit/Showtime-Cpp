@@ -5,10 +5,9 @@
 #include "ZstEndpoint.h"
 #include "ZstActor.h"
 #include "ZstPlug.h"
-#include "ZstURI.h"
-#include "ZstURIWire.h"
 #include "ZstMessages.h"
-#include "ZstEvent.h"
+#include "ZstURIWire.h"
+#include "ZstEventWire.h"
 
 using namespace std;
 

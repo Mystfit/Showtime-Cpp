@@ -1,20 +1,23 @@
 #include "ZstEvent.h"
 #include "ZstURI.h"
 
-ZstEvent::ZstEvent()
+ZstEvent::ZstEvent() :
+    m_first(ZstURI()),
+    m_second(ZstURI()),
+    m_update_type(ZstEvent::CREATED)
 {
 }
 
 ZstEvent::ZstEvent(const ZstEvent & copy) : 
 	m_first(copy.m_first),
 	m_second(copy.m_second),
-
 	m_update_type(copy.m_update_type)
 {
 }
 
 ZstEvent::ZstEvent(ZstURI single, EventType event_type) :
 	m_first(single),
+    m_second(ZstURI()),
 	m_update_type(event_type)
 {
 }

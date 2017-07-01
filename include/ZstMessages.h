@@ -9,6 +9,7 @@
 #include <czmq.h>
 #include "ZstEvent.h"
 #include "ZstURIWire.h"
+#include "ZstEventWire.h"
 
 class ZstMessages{
 public:
@@ -105,7 +106,7 @@ public:
     };
 
 	struct StageUpdates {
-		std::vector<ZstEvent> updates;
+		std::vector<ZstEventWire> updates;
 		MSGPACK_DEFINE_ARRAY(updates);
 	};
     

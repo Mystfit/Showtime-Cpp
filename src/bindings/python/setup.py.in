@@ -28,7 +28,7 @@ runtimes = []
 libraries = []
 
 if platform.system() == 'Darwin':
-  extra_link_args=['-framework', 'Showtime']
+  extra_link_args=['-F', '/Library/Frameworks', '-framework', 'Showtime']
 elif platform.system() == 'Windows':
   extra_compile_args=['/Zi']
   extra_link_args=['/DEBUG']

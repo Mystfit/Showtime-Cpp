@@ -3,7 +3,6 @@ enable_testing()
 set(ZST_PUBLIC_HEADERS 
  ${Showtime_INCLUDE_DIRS}/Showtime.h
  ${Showtime_INCLUDE_DIRS}/ZstURI.h
- ${Showtime_INCLUDE_DIRS}/ZstURIWire.h
  ${Showtime_INCLUDE_DIRS}/ZstUtils.hpp
  ${Showtime_INCLUDE_DIRS}/ZstPlug.h
  ${Showtime_INCLUDE_DIRS}/ZstPerformer.h
@@ -18,6 +17,8 @@ set(ZST_PRIVATE_HEADERS
  ${Showtime_INCLUDE_DIRS}/ZstEndpoint.h
  ${Showtime_INCLUDE_DIRS}/ZstActor.h	
  ${Showtime_INCLUDE_DIRS}/ZstPlugRef.h
+ ${Showtime_INCLUDE_DIRS}/ZstURIWire.h
+ ${Showtime_INCLUDE_DIRS}/ZstEventWire.h
  ${Showtime_INCLUDE_DIRS}/ZstPerformerRef.h
  ${Showtime_INCLUDE_DIRS}/ZstEndpointRef.h
  ${Showtime_INCLUDE_DIRS}/ZstExports.h
@@ -34,6 +35,7 @@ set(ZST_SOURCE
  "ZstActor.cpp"
  "ZstMessages.cpp"
  "ZstEvent.cpp"
+ "ZstEventWire.cpp"
  "ZstPlug.cpp"
  "ZstPlugRef.cpp"
  "ZstPerformer.cpp"
