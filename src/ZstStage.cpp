@@ -1,5 +1,6 @@
 #include "ZstStage.h"
-#include "ZstURIWire.h"
+#include "ZstURI.h"
+#include "ZstEventWire.h"
 
 using namespace std;
 
@@ -470,9 +471,9 @@ void ZstStage::enqueue_stage_update(ZstEvent e)
 	m_stage_updates.push(e);
 }
 
-vector<ZstEvent> ZstStage::create_snapshot() {
+vector<ZstEventWire> ZstStage::create_snapshot() {
 	
-	vector<ZstEvent> stage_snapshot;
+	vector<ZstEventWire> stage_snapshot;
 
 	for (map<string, ZstEndpointRef*>::iterator endpnt_iter = m_endpoint_refs.begin(); endpnt_iter != m_endpoint_refs.end(); ++endpnt_iter)
 	{
@@ -480,10 +481,10 @@ vector<ZstEvent> ZstStage::create_snapshot() {
 
 		//Pull addressess from plug refs
 		for (vector<ZstPlugRef*>::iterator plug_iter = plugs.begin(); plug_iter != plugs.end(); ++plug_iter) {
-			stage_snapshot.push_back(ZstEvent((*plug_iter)->get_URI(), ZstEvent::CREATED));
+			stage_snapshot.push_back(ZstEventWire((*plug_iter)->get_URI(), ZstEvent::CREATED));
 
 			for (vector<ZstCable*>::iterator cable_iter = m_cables.begin(); cable_iter != m_cables.end(); ++cable_iter) {
-				stage_snapshot.push_back(ZstEvent((*cable_iter)->get_output(), (*cable_iter)->get_input(), ZstEvent::CABLE_CREATED));
+				stage_snapshot.push_back(ZstEventWire((*cable_iter)->get_output(), (*cable_iter)->get_input(), ZstEvent::CABLE_CREATED));
 			}
 		}
 	}
@@ -496,9 +497,9 @@ int ZstStage::stage_update_timer_func(zloop_t * loop, int timer_id, void * arg)
 	ZstStage *stage = (ZstStage*)arg;
 
 	if (stage->m_stage_updates.size()) {
-		vector<ZstEvent> updates;
+		vector<ZstEventWire> updates;
 		while (stage->m_stage_updates.size()) {
-			updates.push_back(stage->m_stage_updates.pop());
+			updates.push_back(ZstEventWire(stage->m_stage_updates.pop()));
 		}
 
 		ZstMessages::StageUpdates su;

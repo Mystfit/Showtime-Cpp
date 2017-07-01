@@ -17,8 +17,8 @@ ZstCable::ZstCable(const ZstEvent & e) :
 }
 
 ZstCable::ZstCable(const ZstURI output, const ZstURI input) :
-	m_output(output),
-	m_input(input)
+	m_input(input),
+    m_output(output)
 {
 }
 

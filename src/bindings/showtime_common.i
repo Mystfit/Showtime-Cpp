@@ -46,6 +46,7 @@ public:
 
 %feature("director") ZstEventCallback;
 %nodefaultctor ZstEvent;
+
 %include "ZstEvent.h"
 
 %inline %{

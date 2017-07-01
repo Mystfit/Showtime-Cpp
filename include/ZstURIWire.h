@@ -22,8 +22,6 @@ public:
 		pk.pack(m_direction);
 	}
 
-	// this function is looks like de-serializer, taking an msgpack object
-	// and extracting data from it to the current class fields
 	void msgpack_unpack(msgpack::object o) {
 		// check if received structure is an array
 		if (o.type != msgpack::type::ARRAY) { throw msgpack::type_error(); }
@@ -42,15 +40,13 @@ public:
 		int name_char_size = o.via.array.ptr[2].via.str.size;
 		const char * name_char = o.via.array.ptr[2].via.str.ptr;
 
-
 		assert(perf_char_size < 255 && ins_char_size < 255 && name_char_size < 255);
 
 		memcpy(m_performer, perf_char, perf_char_size);
 		memcpy(m_instrument, ins_char, ins_char_size);
 		memcpy(m_name, name_char, name_char_size);
-
-		msgpack::object d = o.via.array.ptr[3];
 		m_direction = o.via.array.ptr[3].as<Direction>();
+        build_combined_char();
 	}
 };
 

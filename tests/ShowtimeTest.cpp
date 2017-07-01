@@ -13,7 +13,7 @@
 #ifdef WIN32
 #define TAKE_A_BREATH Sleep(100);
 #else
-#define TAKE_A_BREATH sleep(1);
+#define TAKE_A_BREATH usleep(1 * 1000 * 100);
 #endif
 
 ZstStage *stage;
