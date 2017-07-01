@@ -35,11 +35,14 @@ void test_URI() {
     assert(strcmp(uri_equal1->to_char() , "perf/ins/someplug?d=2") == 0);
 
 	//Test ZstCable equality against ZstURI instances
-	ZstCable test_cable_eq1 = ZstCable(*uri_equal1, *uri_notequal);
+	ZstCable test_cable_eq1 = ZstCable(*uri_equal1, *uri_empty);
+	ZstCable test_cable_neq1 = ZstCable(*uri_equal1, *uri_notequal);
+
 	assert(test_cable_eq1 == test_cable_eq1);
-	assert(test_cable_eq1 == *uri_equal1);
-	assert(test_cable_eq1 == *uri_notequal);
-	assert(test_cable_eq1 != *uri_empty);
+	assert(test_cable_eq1 != test_cable_neq1);
+	assert(test_cable_eq1.is_attached(*uri_equal1));
+	assert(test_cable_eq1.is_attached(*uri_empty));
+	assert(!(test_cable_neq1.is_attached(*uri_empty)));
 
 	ZstURI::destroy(uri_notequal);
 	ZstURI::destroy(uri_equal1);

@@ -442,7 +442,7 @@ vector<ZstCable*> ZstStage::get_cables_by_URI(const ZstURI & uri) {
 
 	vector<ZstCable*> cables;
 	auto it = find_if(m_cables.begin(), m_cables.end(), [&uri](ZstCable* current) {
-		return *current == uri;
+		return current->is_attached(uri);
 	});
 	
 	for (it; it != m_cables.end(); ++it) {
@@ -455,7 +455,7 @@ vector<ZstCable*> ZstStage::get_cables_by_URI(const ZstURI & uri) {
 ZstCable * ZstStage::get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB) {
 
 	auto it = find_if(m_cables.begin(), m_cables.end(), [&uriA, &uriB](ZstCable * current) {
-		return (*current == uriA) && (*current == uriB);
+		return current->is_attached(uriA, uriB);
 	});
 
 	if (it != m_cables.end()) {
