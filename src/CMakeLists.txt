@@ -62,7 +62,9 @@ option(BINDINGS_PYTHON "Build ruby bindings" OFF)
 option(BINDINGS_DOTNET "Build C# bindings" OFF)
 
 # Set up libzmq and czmq runtime dependencies
-set(RUNTIMES_LIBZMQ ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} CACHE FILEPATH "Path to libzmq dll/dylib/so")
+set(RUNTIMES_LIBZMQ_RELEASE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} CACHE FILEPATH "Path to release libzmq dll/dylib/so")
+set(RUNTIMES_LIBZMQ_DEBUG ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} CACHE FILEPATH "Path to debug libzmq dll/dylib/so")
+set(RUNTIMES_LIBZMQ ${RUNTIMES_LIBZMQ_RELEASE} ${RUNTIMES_LIBZMQ_DEBUG})
 set(RUNTIMES_CZMQ ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} CACHE FILEPATH "Path to czmq .dll/.dylib/.so")
 
 include_directories(${ZST_INCLUDES})

@@ -34,7 +34,7 @@ elif platform.system() == 'Windows':
   extra_link_args=['/DEBUG']
   libraries.append('${PROJECT_NAME}')
 
-  runtimes = ["${RUNTIMES_LIBZMQ}", "${RUNTIMES_CZMQ}", "@SHOWTIME_TARGET@"]
+  runtimes = "${RUNTIMES_LIBZMQ}".split(';') + ["${RUNTIMES_CZMQ}", "@SHOWTIME_TARGET@"] 
   runtimes = [os.path.normcase(x) for x in runtimes]
 
 showtime_module = Extension('_showtime',
