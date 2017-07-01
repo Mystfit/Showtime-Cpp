@@ -11,9 +11,11 @@ public:
 	ZST_EXPORT ZstCable(const ZstURI input, const ZstURI );
 	ZST_EXPORT ~ZstCable();
 
-	ZST_EXPORT bool operator==(const ZstURI& other);
-	ZST_EXPORT bool operator==(const ZstCable& other);
-	ZST_EXPORT bool operator!=(const ZstURI& other);
+	ZST_EXPORT bool operator==(const ZstCable & other);
+	ZST_EXPORT bool operator!=(const ZstCable & other);
+	ZST_EXPORT bool is_attached(const ZstURI & uri);
+	ZST_EXPORT bool is_attached(const ZstURI & uriA, const ZstURI & uriB);
+
 
 	ZST_EXPORT ZstURI & get_input();
 	ZST_EXPORT ZstURI & get_output();

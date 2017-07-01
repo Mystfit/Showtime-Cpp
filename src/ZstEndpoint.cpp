@@ -359,8 +359,8 @@ int ZstEndpoint::destroy_cable(const ZstURI * a, const ZstURI * b)
 ZstCable * ZstEndpoint::get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB) {
 
 	auto it = find_if(m_cables.begin(), m_cables.end(), [&uriA, &uriB](ZstCable * current) {
-		cout << ((*current == uriA) && (*current == uriB)) << endl;
-		return (*current == uriA) && (*current == uriB);
+		cout << current->is_attached(uriA, uriB) << endl;
+		return current->is_attached(uriA, uriB);
 	});
 
 	if (it != m_cables.end()) {

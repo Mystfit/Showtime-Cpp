@@ -10,10 +10,10 @@ ZstCable::ZstCable(const ZstCable & copy) :
 {
 }
 
-ZstCable::ZstCable(const ZstEvent & e)
+ZstCable::ZstCable(const ZstEvent & e) :
+	m_input(e.get_first()),
+	m_output(e.get_second())
 {
-	m_input = e.get_first();
-	m_output = e.get_second();
 }
 
 ZstCable::ZstCable(const ZstURI output, const ZstURI input) :
@@ -26,19 +26,24 @@ ZstCable::~ZstCable()
 {
 }
 
-bool ZstCable::operator==(const ZstURI & other)
-{
-	return (m_input == other) || (m_output == other);
-}
-
 bool ZstCable::operator==(const ZstCable & other)
 {
-	return (m_input == other.m_input) || (m_output == other.m_output);
+	return (m_input == other.m_input) && (m_output == other.m_output);
 }
 
-bool ZstCable::operator!=(const ZstURI & other)
+bool ZstCable::operator!=(const ZstCable & other)
 {
-	return 	!((m_input == other) || (m_output == other));
+	return !((m_input == other.m_input) && (m_output == other.m_output));
+}
+
+bool ZstCable::is_attached(const ZstURI & uri)
+{
+	return (m_input == uri) || (m_output == uri);
+}
+
+bool ZstCable::is_attached(const ZstURI & uriA, const ZstURI & uriB)
+{
+	return (m_input == uriA || m_input == uriB) && (m_output == uriA || m_output == uriB);
 }
 
 ZstURI & ZstCable::get_input()
