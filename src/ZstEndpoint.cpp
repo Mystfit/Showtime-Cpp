@@ -1,3 +1,5 @@
+#include <chrono>
+
 #include "Showtime.h"
 #include "ZstPerformer.h"
 #include "ZstEndpoint.h"
@@ -382,8 +384,7 @@ void ZstEndpoint::remove_cable(ZstCable * cable)
 	}
 }
 
-
-chrono::milliseconds ZstEndpoint::ping_stage()
+int ZstEndpoint::ping_stage()
 {
 	ZstMessages::Heartbeat beat;
 	
@@ -399,7 +400,7 @@ chrono::milliseconds ZstEndpoint::ping_stage()
 		delta = chrono::duration_cast<chrono::milliseconds>(end - start);
 		cout << "ZST: Client received heartbeat ping ack. Roundtrip was " << delta.count() << "ms" << endl;
 	}
-	return delta;
+	return (int)delta.count();
 }
 
 void ZstEndpoint::enqueue_plug_event(ZstEvent event)
