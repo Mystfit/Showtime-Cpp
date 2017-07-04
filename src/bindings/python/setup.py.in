@@ -26,21 +26,23 @@ extra_compile_args = []
 extra_link_args = []
 runtimes = []
 libraries = []
+library_dirs = []
 
 if platform.system() == 'Darwin':
   extra_link_args=['-F', '/Library/Frameworks', '-framework', 'Showtime']
+  library_dirs = ['${CMAKE_LIBRARY_OUTPUT_DIRECTORY}']
 elif platform.system() == 'Windows':
   extra_compile_args=['/Zi']
   extra_link_args=['/DEBUG']
   libraries.append('${PROJECT_NAME}')
-
-  runtimes = "${RUNTIMES_LIBZMQ}".split(';') + ["${RUNTIMES_CZMQ}", "@SHOWTIME_TARGET@"] 
+  library_dirs = ['${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Debug', '${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Release']
+  runtimes = ["${RUNTIMES_LIBZMQ}", "${RUNTIMES_CZMQ}", "@SHOWTIME_TARGET@"]
   runtimes = [os.path.normcase(x) for x in runtimes]
 
 showtime_module = Extension('_showtime',
     sources=['${CMAKE_CURRENT_BINARY_DIR}/showtime.i'],
     include_dirs=['${Showtime_INCLUDE_DIRS}', '${MSGPACK_INCLUDE_DIR}'],
-    library_dirs=['${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Debug', '${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Release'],
+    library_dirs=library_dirs,
     libraries=libraries,
     extra_compile_args=extra_compile_args,
     extra_link_args=extra_link_args,
@@ -55,5 +57,6 @@ setup (cmdclass={'build_ext': build_ext, 'build':build},
   packages=find_packages(),
   data_files=runtimes,
   ext_modules = [showtime_module],
-  py_modules = ["showtime"]
+  py_modules = ["showtime"],
+  zip_safe=False
 )
