@@ -7,12 +7,18 @@ ZstURI::ZstURI() :
 	m_performer(""),
 	m_instrument(""),
 	m_name(""),
-	m_direction(Direction::NONE)
+	m_direction(Direction::NONE),
+	m_created_combined_char(false)
 {
 	build_combined_char();
 }
 
-ZstURI::ZstURI(const ZstURI &copy)
+ZstURI::ZstURI(const ZstURI &copy) : 
+	m_performer(""),
+	m_instrument(""),
+	m_name(""),
+	m_direction(Direction::NONE),
+	m_created_combined_char(false)
 {
 	memcpy(m_performer, copy.m_performer, 255);
 	memcpy(m_instrument, copy.m_instrument, 255);
@@ -21,7 +27,12 @@ ZstURI::ZstURI(const ZstURI &copy)
 	build_combined_char();
 }
 
-ZstURI::ZstURI(const char *  performer, const char *  instrument, const char *  name, Direction direction)
+ZstURI::ZstURI(const char *  performer, const char *  instrument, const char *  name, Direction direction) :
+	m_performer(""),
+	m_instrument(""),
+	m_name(""),
+	m_direction(Direction::NONE),
+	m_created_combined_char(false)
 {
 	memcpy(m_performer, performer, 255);
 	memcpy(m_instrument, instrument, 255);

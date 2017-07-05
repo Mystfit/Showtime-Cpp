@@ -60,7 +60,7 @@ void test_performer_init() {
 //Test stage creation and performer
 void test_stage_registration(){
     //Test stage connection
-    assert(Showtime::endpoint().ping_stage().count() >= 0);
+    assert(Showtime::endpoint().ping_stage() >= 0);
     assert(stage->get_performer_ref_by_name("test_performer_1") != NULL);
     assert(stage->get_performer_ref_by_name("non_existing_performer") == NULL);
 }

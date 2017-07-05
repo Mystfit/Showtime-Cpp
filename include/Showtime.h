@@ -1,6 +1,5 @@
 #pragma once
 
-#include <chrono>
 #include <utility>
 #include <vector>
 #include <memory>
@@ -47,7 +46,7 @@ public:
 	ZST_EXPORT static void destroy_stage_event_callback(ZstEventCallback * callback);
 
     //Stage methods
-    ZST_EXPORT static std::chrono::milliseconds ping_stage();
+    ZST_EXPORT static int ping_stage();
 
 	//Performers are our local containers for plugs
 	ZST_EXPORT static ZstPerformer* create_performer(const char * name);

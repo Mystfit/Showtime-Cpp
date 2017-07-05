@@ -48,6 +48,16 @@ ZstEvent::EventType ZstEvent::get_update_type()
 	return m_update_type;
 }
 
+bool ZstEvent::operator==(const ZstEvent & other)
+{
+	return m_first == other.m_first && m_second == other.m_second;
+}
+
+bool ZstEvent::operator!=(const ZstEvent & other)
+{
+	return !(m_first == other.m_first && m_second == other.m_second);
+}
+
 ZstEventCallback::ZstEventCallback() {
 
 }

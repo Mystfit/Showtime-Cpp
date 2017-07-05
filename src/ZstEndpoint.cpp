@@ -1,3 +1,5 @@
+#include <chrono>
+
 #include "Showtime.h"
 #include "ZstPerformer.h"
 #include "ZstEndpoint.h"
@@ -258,7 +260,7 @@ void ZstEndpoint::signal_sync()
 void ZstEndpoint::stage_update_handler(zsock_t * socket, zmsg_t * msg)
 {
 	ZstMessages::StageUpdates update_args = ZstMessages::unpack_message_struct<ZstMessages::StageUpdates>(msg);
-	for (vector<ZstEvent>::iterator event_iter = update_args.updates.begin(); event_iter != update_args.updates.end(); ++event_iter) {
+	for (vector<ZstEventWire>::iterator event_iter = update_args.updates.begin(); event_iter != update_args.updates.end(); ++event_iter) {
 		if ((*event_iter).get_update_type() == ZstEvent::CABLE_DESTROYED) {
 			//Remove any cables that we own that have been destroyed
 			
@@ -381,8 +383,7 @@ void ZstEndpoint::remove_cable(ZstCable * cable)
 	}
 }
 
-
-chrono::milliseconds ZstEndpoint::ping_stage()
+int ZstEndpoint::ping_stage()
 {
 	ZstMessages::Heartbeat beat;
 	
@@ -398,7 +399,7 @@ chrono::milliseconds ZstEndpoint::ping_stage()
 		delta = chrono::duration_cast<chrono::milliseconds>(end - start);
 		cout << "ZST: Client received heartbeat ping ack. Roundtrip was " << delta.count() << "ms" << endl;
 	}
-	return delta;
+	return (int)delta.count();
 }
 
 void ZstEndpoint::enqueue_plug_event(ZstEvent event)

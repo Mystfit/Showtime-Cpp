@@ -27,6 +27,8 @@ public:
 	ZST_EXPORT const ZstURI & get_second() const;
 	ZST_EXPORT EventType get_update_type();
 
+	ZST_EXPORT bool operator==(const ZstEvent& other);
+	ZST_EXPORT bool operator!=(const ZstEvent& other);
 
 protected:
 	ZstURI m_first;

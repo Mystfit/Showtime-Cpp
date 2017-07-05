@@ -74,7 +74,7 @@ RuntimeLanguage Showtime::get_runtime_language()
 // API Functions
 // -------------
 
-std::chrono::milliseconds Showtime::ping_stage(){
+int Showtime::ping_stage(){
 	return Showtime::endpoint().ping_stage();
 }
 

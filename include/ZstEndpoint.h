@@ -2,7 +2,6 @@
 
 #include <map>
 #include <vector>
-#include <chrono>
 #include <czmq.h>
 #include <string>
 #include <msgpack.hpp>
@@ -56,7 +55,7 @@ public:
 	ZST_EXPORT ZstCable * get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB);
 	void remove_cable(ZstCable * cable);
 	
-	ZST_EXPORT std::chrono::milliseconds ping_stage();
+	ZST_EXPORT int ping_stage();
 
 	void enqueue_plug_event(ZstEvent event);
 	ZST_EXPORT ZstEvent pop_plug_event();

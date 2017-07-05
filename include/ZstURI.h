@@ -46,6 +46,6 @@ protected:
 	char m_name[255];
 	Direction m_direction;
 	char m_combined_char[255];
-	bool m_created_combined_char = false;
-    void build_combined_char();
+	bool m_created_combined_char;
+	void build_combined_char();
 };
