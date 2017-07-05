@@ -39,6 +39,8 @@ void Showtime::poll_once()
 {
 	while (Showtime::event_queue_size() > 0) {
 		ZstEvent e = Showtime::pop_event();
+        cout << "ZST: Received event " << e.get_update_type() << endl;
+
 		switch (e.get_update_type()) {
 		case ZstEvent::EventType::PLUG_HIT:
 			Showtime::endpoint().get_performer_by_URI(e.get_first())->get_plug_by_URI(e.get_first())->run_recv_callbacks();
