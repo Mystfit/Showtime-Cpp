@@ -113,10 +113,27 @@ ZstEndpointRef * ZstStage::get_endpoint_ref_by_UUID(std::string uuid)
 
 void ZstStage::destroy_endpoint(ZstEndpointRef * endpoint)
 {
+	if (endpoint == NULL) {
+		return;
+	}
+
 	for (std::map<string, ZstEndpointRef*>::iterator endpnt_iter = m_endpoint_refs.begin(); endpnt_iter != m_endpoint_refs.end(); ++endpnt_iter)
 	{
+		vector<ZstPerformerRef*> performers = endpnt_iter->second->get_performer_refs();
+		for (vector<ZstPerformerRef*>::iterator perf_iter = performers.begin(); perf_iter != performers.end(); ++perf_iter) {
+			vector<ZstPlugRef*> plugs = (*perf_iter)->get_plug_refs();
+			for (vector<ZstPlugRef*>::iterator plug_iter = plugs.begin(); plug_iter != plugs.end(); ++plug_iter) {
+				for (vector<ZstCable*>::iterator cable_iter = m_cables.begin(); cable_iter != m_cables.end(); ++cable_iter) {
+					if ((*cable_iter)->is_attached((*plug_iter)->get_URI())) {
+						destroy_cable((*cable_iter));
+					}
+				}
+			}
+		}
+
 		if ((endpnt_iter->second) == endpoint)
 		{
+			cout << "ZST_STAGE: Destroying endpoint " << endpnt_iter->second->client_assigned_uuid << endl;
 			m_endpoint_refs.erase(endpnt_iter);
 			break;
 		}
@@ -162,6 +179,9 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 			su.updates = stage->create_snapshot();
 			zmsg_t *updatemsg = ZstMessages::build_message<ZstMessages::StageUpdates>(ZstMessages::Kind::STAGE_UPDATE, su);
 			stage->send_to_endpoint(updatemsg, sender);
+		}
+		else if (s == ZstMessages::Signal::LEAVING) {
+			stage->destroy_endpoint(sender);
 		}
 	}
 
@@ -366,7 +386,7 @@ void ZstStage::connect_cable_handler(zsock_t * socket, zmsg_t * msg)
 
 	if (!connect_status) {
 		cout << "ZST_STAGE: Bad cable connect request" << endl;
-		reply_with_signal(socket, ZstMessages::Signal::ERR_STAGE_BAD_PLUG_CONNECT_REQUEST);
+		reply_with_signal(socket, ZstMessages::Signal::ERR_STAGE_BAD_CABLE_CONNECT_REQUEST);
 		return;
 	}
 
@@ -380,7 +400,7 @@ void ZstStage::disconnect_cable_handler(zsock_t * socket, zmsg_t * msg)
 	cout << "ZST_STAGE: Received destroy cable connection request" << endl;
 
 	if (!destroy_cable(connection_destroy_args.first, connection_destroy_args.second)) {
-		reply_with_signal(socket, ZstMessages::Signal::ERR_STAGE_BAD_PLUG_DISCONNECT_REQUEST);
+		reply_with_signal(socket, ZstMessages::Signal::ERR_STAGE_BAD_CABLE_DISCONNECT_REQUEST);
 		return;
 	}
 
@@ -421,13 +441,11 @@ int ZstStage::connect_cable(ZstURI output_plug, ZstURI input_plug)
 	return 1;
 }
 
-int ZstStage::destroy_cable(ZstURI output_plug, ZstURI input_plug) {
-	cout << "ZST_STAGE: Disconnecting cable " << output_plug.to_char() << " and " << input_plug.to_char() << endl;
-	ZstCable * cable = get_cable_by_URI(output_plug, input_plug);
-
+int ZstStage::destroy_cable(ZstCable * cable) {
 	if (cable != NULL) {
-		for (vector<ZstCable*>::iterator cable_iter = m_cables.begin(); cable_iter != m_cables.end(); ++cable_iter){
-			if ((*cable_iter) == cable){
+		cout << "ZST_STAGE: Destroying cable " << cable->get_output().to_char() << " " << cable->get_input().to_char() << endl;
+		for (vector<ZstCable*>::iterator cable_iter = m_cables.begin(); cable_iter != m_cables.end(); ++cable_iter) {
+			if ((*cable_iter) == cable) {
 				m_cables.erase(cable_iter);
 				break;
 			}
@@ -438,6 +456,11 @@ int ZstStage::destroy_cable(ZstURI output_plug, ZstURI input_plug) {
 	return 0;
 }
 
+int ZstStage::destroy_cable(ZstURI output_plug, ZstURI input_plug) {
+	cout << "ZST_STAGE: Disconnecting cable " << output_plug.to_char() << " and " << input_plug.to_char() << endl;
+	ZstCable * cable = get_cable_by_URI(output_plug, input_plug);
+	return destroy_cable(cable);
+}
 
 vector<ZstCable*> ZstStage::get_cables_by_URI(const ZstURI & uri) {
 
@@ -482,10 +505,10 @@ vector<ZstEventWire> ZstStage::create_snapshot() {
 		//Pull addressess from plug refs
 		for (vector<ZstPlugRef*>::iterator plug_iter = plugs.begin(); plug_iter != plugs.end(); ++plug_iter) {
 			stage_snapshot.push_back(ZstEventWire((*plug_iter)->get_URI(), ZstEvent::CREATED));
+		}
 
-			for (vector<ZstCable*>::iterator cable_iter = m_cables.begin(); cable_iter != m_cables.end(); ++cable_iter) {
-				stage_snapshot.push_back(ZstEventWire((*cable_iter)->get_output(), (*cable_iter)->get_input(), ZstEvent::CABLE_CREATED));
-			}
+		for (vector<ZstCable*>::iterator cable_iter = m_cables.begin(); cable_iter != m_cables.end(); ++cable_iter) {
+			stage_snapshot.push_back(ZstEventWire((*cable_iter)->get_output(), (*cable_iter)->get_input(), ZstEvent::CABLE_CREATED));
 		}
 	}
 

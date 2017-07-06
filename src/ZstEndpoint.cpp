@@ -23,6 +23,10 @@ void ZstEndpoint::destroy() {
 	if (m_is_ending)
 		return;
 
+	leave_stage();
+
+	m_stage_callbacks.clear();
+
 	m_is_ending = true;
 	m_connected_to_stage = false;
 	ZstActor::destroy();
@@ -288,6 +292,15 @@ void ZstEndpoint::register_performer_to_stage(string performer) {
 	check_stage_response_ok();
 }
 
+void ZstEndpoint::leave_stage()
+{
+	if (m_connected_to_stage) {
+		cout << "ZST:Leaving stage" << endl;
+		send_through_stage(ZstMessages::build_signal(ZstMessages::Signal::LEAVING));
+		m_connected_to_stage = false;
+	}
+}
+
 ZstPerformer * ZstEndpoint::create_performer(ZstURI uri)
 {
 	ZstPerformer * perf = new ZstPerformer(uri.performer());
@@ -357,6 +370,20 @@ int ZstEndpoint::destroy_cable(const ZstURI * a, const ZstURI * b)
 }
 
 
+vector<ZstCable*> ZstEndpoint::get_cables_by_URI(const ZstURI & uri) {
+
+	vector<ZstCable*> cables;
+	auto it = find_if(m_cables.begin(), m_cables.end(), [&uri](ZstCable* current) {
+		return current->is_attached(uri);
+	});
+
+	for (it; it != m_cables.end(); ++it) {
+		cables.push_back((*it));
+	}
+
+	return cables;
+}
+
 ZstCable * ZstEndpoint::get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB) {
 
 	auto it = find_if(m_cables.begin(), m_cables.end(), [&uriA, &uriB](ZstCable * current) {
@@ -421,14 +448,14 @@ void ZstEndpoint::attach_stage_event_callback(ZstEventCallback *callback) {
 	m_stage_callbacks.push_back(callback);
 }
 
-void ZstEndpoint::destroy_stage_event_callback(ZstEventCallback *callback) {
+void ZstEndpoint::remove_stage_event_callback(ZstEventCallback *callback) {
 	m_stage_callbacks.erase(std::remove(m_stage_callbacks.begin(), m_stage_callbacks.end(), callback), m_stage_callbacks.end());
-	delete callback;
 }
 
 void ZstEndpoint::run_stage_event_callbacks(ZstEvent e) {
 	if (m_stage_callbacks.size() > 0) {
 		for (vector<ZstEventCallback*>::iterator callback = m_stage_callbacks.begin(); callback != m_stage_callbacks.end(); ++callback) {
+			cout << "ZST: Running stage callback" << endl;
 			(*callback)->run(e);
 		}
 	}

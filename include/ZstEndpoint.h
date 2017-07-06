@@ -52,6 +52,7 @@ public:
 
 	int connect_cable(const ZstURI * a, const ZstURI * b);
 	int destroy_cable(const ZstURI * a, const ZstURI * b);
+	ZST_EXPORT std::vector<ZstCable*> get_cables_by_URI(const ZstURI & uri);
 	ZST_EXPORT ZstCable * get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB);
 	void remove_cable(ZstCable * cable);
 	
@@ -63,7 +64,7 @@ public:
 
 	//Plug callbacks
 	ZST_EXPORT void attach_stage_event_callback(ZstEventCallback * callback);
-	ZST_EXPORT void destroy_stage_event_callback(ZstEventCallback * callback);
+	ZST_EXPORT void remove_stage_event_callback(ZstEventCallback * callback);
 
 private:
 	//Stage actor
@@ -72,6 +73,7 @@ private:
 
 	//Registration
 	void register_performer_to_stage(std::string);
+	void leave_stage();
 
 	//Send and receive
 	void send_to_stage(zmsg_t * msg);

@@ -36,7 +36,7 @@ elif platform.system() == 'Windows':
   extra_link_args=['/DEBUG']
   libraries.append('${PROJECT_NAME}')
   library_dirs = ['${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Debug', '${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Release']
-  runtimes = ["${RUNTIMES_LIBZMQ}", "${RUNTIMES_CZMQ}", "@SHOWTIME_TARGET@"]
+  runtimes = ["${RUNTIMES_CZMQ}", "@SHOWTIME_TARGET@"] + "${RUNTIMES_LIBZMQ}".split(';')
   runtimes = [os.path.normcase(x) for x in runtimes]
 
 showtime_module = Extension('_showtime',
