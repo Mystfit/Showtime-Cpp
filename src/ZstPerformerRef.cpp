@@ -10,7 +10,6 @@ ZstPerformerRef::~ZstPerformerRef()
 {
 	for (vector<ZstPlugRef*>::iterator plug_iter = m_plugs.begin(); plug_iter != m_plugs.end(); ++plug_iter) {
 		destroy_plug((*plug_iter));
-		delete (*plug_iter);
 	}
 	m_plugs.clear();
 }

@@ -45,8 +45,6 @@ public:
 %include "ZstPlug.h"
 
 %feature("director") ZstEventCallback;
-%nodefaultctor ZstEvent;
-
 %include "ZstEvent.h"
 
 %inline %{

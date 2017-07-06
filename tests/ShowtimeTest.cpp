@@ -162,7 +162,7 @@ void test_memory_leaks() {
 	input_int_plug->attach_recv_callback(new TestIntValueCallback());
 	Showtime::connect_cable(output_int_plug->get_URI(), input_int_plug->get_URI());
 
-	int count = 99000;
+	int count = 100;
 	int current = 0;
 	while (++current < count) {
 		output_int_plug->fire(current);
@@ -268,5 +268,6 @@ int main(int argc,char **argv){
 #ifdef WIN32
 	system("pause");
 #endif
+
 	return 0;
 }

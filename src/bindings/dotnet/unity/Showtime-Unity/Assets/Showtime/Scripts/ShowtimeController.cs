@@ -11,12 +11,17 @@ public class ShowtimeController : MonoBehaviour {
 	private SWIGTYPE_p_ZstPerformer localPerformer;
 	private ZstIntPlug local_plug_out;
 	private ZstIntPlug local_plug_in;
+    private StageCallback stageCallback;
+    private PlugCallback plugCallback;
 
 	// Use this for initialization
 	void Start () {
 
 		Showtime.init ();
 
+
+        stageCallback = new StageCallback();
+        Showtime.attach_stage_event_callback(stageCallback);
 
 		//Start the event loop coroutine to listen for showtime events
 		StartCoroutine (ShowtimeEventLoop());
@@ -34,10 +39,12 @@ public class ShowtimeController : MonoBehaviour {
 		//Create our local plug objects. Will block until the stage returns them. Could be async?
 		local_plug_out = Showtime.create_int_plug(local_uri_out);
 		local_plug_in = Showtime.create_int_plug(local_uri_in);
-        local_plug_in.attach_recv_callback(new PlugCallback());
+
+        plugCallback = new PlugCallback();
+        local_plug_in.attach_recv_callback(plugCallback);
 
 		//Connect the plugs together
-		Showtime.connect_plugs(local_uri_out, local_uri_in);
+		Showtime.connect_cable(local_uri_out, local_uri_in);
 
 		//Need to wait whilst plugs connect before we send anything. Will need to put some flag into 
 		//the plug to signify connection status
@@ -55,7 +62,7 @@ public class ShowtimeController : MonoBehaviour {
 		if (testPython) {
 			ZstURI remote_uri_in = ZstURI.create ("python_perf", "ins", "plug_in", ZstURI.Direction.IN_JACK);
 
-			Showtime.connect_plugs (local_uri_out, remote_uri_in);
+			Showtime.connect_cable (local_uri_out, remote_uri_in);
 			System.Threading.Thread.Sleep (100);
 
 			local_plug_out.fire (12);
@@ -86,7 +93,17 @@ public class ShowtimeController : MonoBehaviour {
     public class PlugCallback : ZstEventCallback{
         public override void run(ZstEvent e)
         {
-            Debug.Log(e.get_first().to_char() + " received hit with val " );
+            Debug.Log("Plug: " + e.get_first().to_char() + " received hit with val ");
+        
+        }
+    }
+
+
+    public class StageCallback : ZstEventCallback
+    {
+        public override void run(ZstEvent e)
+        {
+            Debug.Log("Stage: " + e.get_update_type().ToString());
         }
     }
 }

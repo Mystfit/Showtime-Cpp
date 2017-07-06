@@ -37,13 +37,14 @@ public:
 	//Init the library
 	ZST_EXPORT static void init();
     ZST_EXPORT static void join(const char * stage_address);
+	ZST_EXPORT void leave();
 
 	//Poll the event queue - for runtimes that have process events from the main thread
 	ZST_EXPORT static void poll_once();
 
 	//Plug callbacks
 	ZST_EXPORT static void attach_stage_event_callback(ZstEventCallback * callback);
-	ZST_EXPORT static void destroy_stage_event_callback(ZstEventCallback * callback);
+	ZST_EXPORT static void remove_stage_event_callback(ZstEventCallback * callback);
 
     //Stage methods
     ZST_EXPORT static int ping_stage();

@@ -73,6 +73,7 @@ private:
 
 	//Plug connections
     int connect_cable(ZstURI output_plug, ZstURI input_plug);
+	int destroy_cable(ZstCable * cable);
 	int destroy_cable(ZstURI output_plug, ZstURI input_plug);
 	std::vector<ZstCable*> m_cables;
 
