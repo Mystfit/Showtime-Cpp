@@ -22,13 +22,10 @@ void ZstEndpoint::destroy() {
 	//Only need to call cleanup once
 	if (m_is_ending)
 		return;
+    m_is_ending = true;
 
 	leave_stage();
-
 	m_stage_callbacks.clear();
-
-	m_is_ending = true;
-	m_connected_to_stage = false;
 	ZstActor::destroy();
 	zsock_destroy(&m_stage_requests);
 	zsock_destroy(&m_stage_updates);

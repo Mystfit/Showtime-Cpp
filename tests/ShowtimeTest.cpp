@@ -50,6 +50,7 @@ void test_URI() {
 }
 
 void test_performer_init() {
+    //Test single performer init
 	Showtime::endpoint().self_test();
 	performer_a = Showtime::create_performer("test_performer_1");
 	assert(performer_a);
@@ -190,6 +191,7 @@ void test_connect_plugs() {
 	assert(Showtime::event_queue_size() > 0);
 	Showtime::poll_once();
 	assert(Showtime::event_queue_size() == 0);
+    assert(Showtime::endpoint().get_cable_by_URI( *outURI, *inURI) != NULL);
 	//assert(connectionCallbacks == 1);
 	connectionCallbacks = 0;
 
@@ -241,6 +243,13 @@ void test_connect_plugs() {
 	assert(Showtime::destroy_plug(input_int_plug));
 }
 
+void test_leaving(){
+    Showtime::leave();
+    TAKE_A_BREATH
+    assert(stage->get_performer_ref_by_name("test_performer_1") == NULL);
+    TAKE_A_BREATH
+}
+
 
 void test_cleanup() {
 	//Test object destruction
@@ -261,7 +270,8 @@ int main(int argc,char **argv){
     test_stage_registration();
     test_create_plugs();
 	test_connect_plugs();
-	test_memory_leaks();
+    test_memory_leaks();
+    test_leaving();
 	test_cleanup();
 	std::cout << "\nShowtime test successful" << std::endl;
 

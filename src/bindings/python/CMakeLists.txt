@@ -2,7 +2,6 @@
 set(SETUP_PY_IN 		"${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
 set(SETUP_PY_PARTIAL    "${CMAKE_CURRENT_BINARY_DIR}/setup-partial.py")
 set(SETUP_PY    		"${CMAKE_CURRENT_BINARY_DIR}/setup.py")
-set(DEPS        		"${CMAKE_CURRENT_SOURCE_DIR}/module/__init__.py")
 set(BUILD_STAMP 		"${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
 
 # Set up swig interfaces
@@ -42,7 +41,7 @@ add_custom_command(OUTPUT ${SETUP_PY}
 add_custom_command(OUTPUT ${BUILD_STAMP}
                 	COMMAND ${PREFIX} ${PYTHON_EXECUTABLE} ${SETUP_PY} build ${EXTENSION_COMPILER}
                 	COMMAND ${CMAKE_COMMAND} -E touch ${BUILD_STAMP}
-                	DEPENDS ${SETUP_PY} ${DEPS} ${PROJECT_NAME})
+                	DEPENDS ${SETUP_PY} ${PROJECT_NAME})
 
 # Create target and install
 add_custom_target(INSTALL_PYTHON ALL DEPENDS ${BUILD_STAMP})

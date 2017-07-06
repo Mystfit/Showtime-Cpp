@@ -52,24 +52,13 @@ set(ZST_INCLUDES
     ${MSGPACK_INCLUDE_DIRS}
 )
 
+include_directories(${ZST_INCLUDES})
+
 set(ZST_LINK_LIBS
 	${ZeroMQ_LIBRARIES}
 	${CZMQ_LIBRARIES}
     ${MSGPACK_LIBRARIES}
 )
-
-# SWIG bindings
-option(BINDINGS_RUBY "Build python bindings" OFF)
-option(BINDINGS_PYTHON "Build ruby bindings" OFF)
-option(BINDINGS_DOTNET "Build C# bindings" OFF)
-
-# Set up libzmq and czmq runtime dependencies
-set(RUNTIMES_LIBZMQ_RELEASE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} CACHE FILEPATH "Path to release libzmq dll/dylib/so")
-set(RUNTIMES_LIBZMQ_DEBUG ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} CACHE FILEPATH "Path to debug libzmq dll/dylib/so")
-set(RUNTIMES_LIBZMQ ${RUNTIMES_LIBZMQ_RELEASE} ${RUNTIMES_LIBZMQ_DEBUG})
-set(RUNTIMES_CZMQ ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} CACHE FILEPATH "Path to czmq .dll/.dylib/.so")
-
-include_directories(${ZST_INCLUDES})
 
 IF(WIN32)
 	add_definitions(-DEXPORTS_API)
@@ -79,12 +68,18 @@ ENDIF(WIN32)
 add_library(${PROJECT_NAME} SHARED ${ZST_HEADERS} ${ZST_SOURCE})
 target_link_libraries(${PROJECT_NAME} ${ZST_LINK_LIBS})
 
-
 # Create standalone stage executable
 SET(SHOWTIME_STAGE_NAME ShowtimeStage)
 IF(WIN32)
 	add_definitions(-DIMPORTS_API)
+
+	# Set up libzmq and czmq runtime dependencies
+	set(RUNTIMES_LIBZMQ_RELEASE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} CACHE FILEPATH "Path to release libzmq dll")
+	set(RUNTIMES_LIBZMQ_DEBUG ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} CACHE FILEPATH "Path to debug libzmq dll")
+	set(RUNTIMES_LIBZMQ ${RUNTIMES_LIBZMQ_RELEASE} ${RUNTIMES_LIBZMQ_DEBUG})
+	set(RUNTIMES_CZMQ ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} CACHE FILEPATH "Path to czmq .dll")
 ENDIF(WIN32)
+
 add_executable (${SHOWTIME_STAGE_NAME} "ZstStageRunner.cpp") 
 add_dependencies(${SHOWTIME_STAGE_NAME} ${PROJECT_NAME})
 target_link_libraries(${SHOWTIME_STAGE_NAME} ${PROJECT_NAME})
@@ -97,29 +92,29 @@ if(MACOSX)
 	  PUBLIC_HEADER "${ZST_HEADERS}"
   	)
 
-	install(TARGETS ${PROJECT_NAME}
-		FRAMEWORK DESTINATION "/Library/Frameworks/"
-		PUBLIC_HEADER DESTINATION "/usr/local/include/${PROJECT_NAME}"
-	)
+	# option(FRAMEWORK_SYMLINK "Symlink Showtime.framework into /Library/Frameworks" OFF)
+
+
+	# IF(FRAMEWORK_SYMLINK)
+	# 	add_custom_command(
+	# 		OUTPUT /Library/Frameworks/Showtime.framework
+ #            COMMAND ln -s ${SOURCE} ${TARGET}
+ #            DEPENDS ${PROJECT_NAME}
+ #        )
+
+	# 	# Create target and install
+	# 	add_custom_target(INSTALL_PYTHON ALL DEPENDS ${BUILD_STAMP})
+	# 	install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} install)")
+	# ENDIF()
+
+	# IF(NOT FRAMEWORK_SYMLINK)
+	# 	install(
+	# 		TARGETS ${PROJECT_NAME}
+	# 		FRAMEWORK DESTINATION "/Library/Frameworks/"
+	# 		PUBLIC_HEADER DESTINATION "/usr/local/include/${PROJECT_NAME}"
+	# 	)
+	# ENDIF()
+
 ENDIF(MACOSX)
 
-add_test( section_heartbeat Exename arg1 arg2 ... )
-
-if(BINDINGS_RUBY)
-	add_subdirectory(bindings/ruby)
-endif(BINDINGS_RUBY)
-
-if(BINDINGS_PYTHON)
-    FIND_PACKAGE(PythonLibs 2.7.12 REQUIRED)
-	INCLUDE(FindPythonInterp)
-	get_filename_component(PYTHON_DIR ${PYTHON_EXECUTABLE} DIRECTORY)	
-	add_subdirectory(bindings/python)
-endif(BINDINGS_PYTHON)
-
-if(BINDINGS_RUBY)
-	add_subdirectory(bindings/ruby)
-endif(BINDINGS_RUBY)
-
-if(BINDINGS_DOTNET)
-	add_subdirectory(bindings/dotnet)
-endif(BINDINGS_DOTNET)
+add_subdirectory(bindings)
