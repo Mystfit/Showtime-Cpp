@@ -46,18 +46,30 @@ ZstStage* ZstStage::create_stage()
 	return stage;
 }
 
-std::vector<ZstPlugRef*> ZstStage::get_all_plug_refs()
+
+std::vector<ZstPlugRef*> ZstStage::get_all_plug_refs(){
+    return get_all_plug_refs(NULL);
+}
+
+std::vector<ZstPlugRef*> ZstStage::get_all_plug_refs(ZstEndpointRef * endpoint)
 {
-	vector<ZstPlugRef*> plugs;
-	for (map<string, ZstEndpointRef*>::iterator endpnt_iter = m_endpoint_refs.begin(); endpnt_iter != m_endpoint_refs.end(); ++endpnt_iter)
-	{
-		vector<ZstPerformerRef*> performers = get_all_performer_refs();
-		if (performers.size() > 0) {
-			for (vector<ZstPerformerRef*>::iterator perf_iter = performers.begin(); perf_iter != performers.end(); ++perf_iter) {
-				plugs.insert(plugs.end(), (*perf_iter)->get_plug_refs().begin(), (*perf_iter)->get_plug_refs().end());
-			}
-		}	
-	}
+    vector<ZstPlugRef*> plugs;
+
+    if(endpoint != NULL){
+        vector<ZstPerformerRef*> performers = endpoint->get_performer_refs();
+        for (vector<ZstPerformerRef*>::iterator perf_iter = performers.begin(); perf_iter != performers.end(); ++perf_iter){
+            plugs = (*perf_iter)->get_plug_refs();
+        }
+
+    } else {
+        vector<ZstPerformerRef*> performers = get_all_performer_refs();
+        if (performers.size() > 0) {
+            for (vector<ZstPerformerRef*>::iterator perf_iter = performers.begin(); perf_iter != performers.end(); ++perf_iter) {
+                plugs.insert(plugs.end(), (*perf_iter)->get_plug_refs().begin(), (*perf_iter)->get_plug_refs().end());
+            }
+        }
+    }
+	
 	return plugs;
 }
 
@@ -113,30 +125,36 @@ ZstEndpointRef * ZstStage::get_endpoint_ref_by_UUID(std::string uuid)
 
 void ZstStage::destroy_endpoint(ZstEndpointRef * endpoint)
 {
+    //Nothing to do
 	if (endpoint == NULL) {
 		return;
 	}
-
+    
+    //Remove all cables
+    vector<ZstPlugRef*> plugs = get_all_plug_refs(endpoint);
+    if(plugs.size() > 0){
+        for (vector<ZstPlugRef*>::iterator plug_iter = plugs.begin(); plug_iter != plugs.end(); ++plug_iter) {
+            if((*plug_iter) != NULL){
+                vector<ZstCable*> cables = get_cables_by_URI((*plug_iter)->get_URI());
+                for (vector<ZstCable*>::iterator cable_iter = m_cables.begin(); cable_iter != m_cables.end();) {
+                    if(!destroy_cable((*cable_iter))){
+                        //If didn't remove a cable, we need to iterate forwards manually
+                        ++cable_iter;
+                    }
+                }
+            }
+        }
+    }
+    
+    //Remove endpoint and call all destructors in its hierarchy
 	for (std::map<string, ZstEndpointRef*>::iterator endpnt_iter = m_endpoint_refs.begin(); endpnt_iter != m_endpoint_refs.end(); ++endpnt_iter)
 	{
-		vector<ZstPerformerRef*> performers = endpnt_iter->second->get_performer_refs();
-		for (vector<ZstPerformerRef*>::iterator perf_iter = performers.begin(); perf_iter != performers.end(); ++perf_iter) {
-			vector<ZstPlugRef*> plugs = (*perf_iter)->get_plug_refs();
-			for (vector<ZstPlugRef*>::iterator plug_iter = plugs.begin(); plug_iter != plugs.end(); ++plug_iter) {
-				for (vector<ZstCable*>::iterator cable_iter = m_cables.begin(); cable_iter != m_cables.end(); ++cable_iter) {
-					if ((*cable_iter)->is_attached((*plug_iter)->get_URI())) {
-						destroy_cable((*cable_iter));
-					}
-				}
-			}
-		}
-
 		if ((endpnt_iter->second) == endpoint)
 		{
 			cout << "ZST_STAGE: Destroying endpoint " << endpnt_iter->second->client_assigned_uuid << endl;
 			m_endpoint_refs.erase(endpnt_iter);
 			break;
-		}
+        }
 	}
 
 	delete endpoint;
@@ -451,6 +469,7 @@ int ZstStage::destroy_cable(ZstCable * cable) {
 			}
 		}
 		delete cable;
+        cable = 0;
 		return 1;
 	}
 	return 0;

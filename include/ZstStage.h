@@ -28,6 +28,8 @@ public:
     ZST_EXPORT static ZstStage* create_stage();
 
 	ZST_EXPORT std::vector<ZstPlugRef*> get_all_plug_refs();
+    ZST_EXPORT std::vector<ZstPlugRef*> get_all_plug_refs(ZstEndpointRef * endpoint);
+
 	ZST_EXPORT std::vector<ZstPerformerRef*> get_all_performer_refs();
     ZST_EXPORT ZstPerformerRef * get_performer_ref_by_name(const char * performer_name);
 	ZST_EXPORT ZstEndpointRef * get_performer_endpoint(ZstPerformerRef * performer);
