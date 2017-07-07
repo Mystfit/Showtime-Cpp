@@ -163,7 +163,7 @@ void test_memory_leaks() {
 	input_int_plug->attach_recv_callback(new TestIntValueCallback());
 	Showtime::connect_cable(output_int_plug->get_URI(), input_int_plug->get_URI());
 
-	int count = 100;
+	int count = 99999999;
 	int current = 0;
 	while (++current < count) {
 		output_int_plug->fire(current);
@@ -254,6 +254,7 @@ void test_leaving(){
 void test_cleanup() {
 	//Test object destruction
 	delete stage;
+    stage = NULL;
 	Showtime::destroy();
 }
 

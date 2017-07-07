@@ -113,8 +113,9 @@ void ZstEndpoint::stop() {
 int ZstEndpoint::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg){
 	ZstEndpoint *endpoint = (ZstEndpoint*)arg;
     zmsg_t *msg = endpoint->receive_from_graph();
+    
     ZstURI sender = ZstURI::from_char(zmsg_popstr(msg));
-
+    
 	msgpack::object_handle result;
 	zframe_t * payload = zmsg_pop(msg);
 
@@ -124,6 +125,7 @@ int ZstEndpoint::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg)
 	endpoint->broadcast_to_local_plugs(sender, obj);
 
 	zmsg_destroy(&msg);
+    zframe_destroy(&payload);
 	return 0;
 }
 
@@ -176,7 +178,7 @@ void ZstEndpoint::connect_performer_handler(zsock_t * socket, zmsg_t * msg) {
 	cout << "ZST: Connecting to " << performer_args.endpoint << ". My output endpoint is " << m_output_endpoint << endl;
 
 	//Connect to endpoint publisher
-	zsock_connect(m_graph_in, performer_args.endpoint.c_str());
+	zsock_connect(m_graph_in, "%s", performer_args.endpoint.c_str());
 	zsock_set_subscribe(m_graph_in, "");
 
 	ZstCable cable = ZstCable(performer_args.output_plug, performer_args.input_plug);
@@ -201,10 +203,10 @@ void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
 	m_stage_addr = string(stage_address);
 
 	//Build endpoint addresses
-	char stage_req_addr[100];
+	Str255 stage_req_addr;
 	sprintf(stage_req_addr, "tcp://%s:%d", stage_address.c_str(), STAGE_REP_PORT);
 
-	char stage_sub_addr[100];
+	Str255 stage_sub_addr;
 	sprintf(stage_sub_addr, "tcp://%s:%d", stage_address.c_str(), STAGE_PUB_PORT);
 
 	//Stage request socket for querying the performance
@@ -227,16 +229,16 @@ void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
 		cout << "ZST: Successfully registered endpoint to stage. UUID is " << endpoint_ack.assigned_uuid << endl;
 
 		//Connect performer dealer to stage now that it's been registered successfully
-		char stage_router_addr[30];
+		Str255 stage_router_addr;
 		sprintf(stage_router_addr, "tcp://%s:%d", m_stage_addr.c_str(), STAGE_ROUTER_PORT);
 
 		m_assigned_uuid = endpoint_ack.assigned_uuid;
 		zsock_set_identity(m_stage_router, endpoint_ack.assigned_uuid.c_str());
-		zsock_connect(m_stage_router, stage_router_addr);
+		zsock_connect(m_stage_router, "%s", stage_router_addr);
 
 		//Stage sub socket for update messages
 		cout << "ZST: Connecting to stage publisher " << stage_sub_addr << endl;
-		zsock_connect(m_stage_updates, stage_sub_addr);
+		zsock_connect(m_stage_updates, "%s", stage_sub_addr);
 		zsock_set_subscribe(m_stage_updates, "");
 
 		//TODO: Need to check handshake before setting connection as active
@@ -512,6 +514,7 @@ ZstMessages::Signal ZstEndpoint::check_stage_response_ok() {
 	if (s != ZstMessages::Signal::OK) {
 		std::cout << "ZST: Stage responded with signal other than OK -> " << s << std::endl;
 	}
+    zmsg_destroy(&responseMsg);
 	return s;
 }
 

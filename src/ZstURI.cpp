@@ -150,6 +150,9 @@ ZstURI ZstURI::from_char(const char * s)
     }
 
     ZstURI::Direction dir = (ZstURI::Direction)std::atoi(arg_map["d"].c_str());
+    
+    //Remove input char
+    delete s;
 	return ZstURI(performer.c_str(), instrument.c_str(), plug.c_str(), dir);
 }
 

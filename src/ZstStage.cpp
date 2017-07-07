@@ -1,5 +1,6 @@
 #include "ZstStage.h"
 #include "ZstURI.h"
+#include "ZstUtils.hpp"
 #include "ZstEventWire.h"
 
 using namespace std;
@@ -22,19 +23,28 @@ ZstStage::~ZstStage()
 void ZstStage::init()
 {
 	ZstActor::init();
-	m_performer_requests = zsock_new_rep("@tcp://*:6000");
+    
+    Str255 stage_rep_addr;
+    sprintf(stage_rep_addr, "@tcp://*:%d", STAGE_REP_PORT);
+    
+	m_performer_requests = zsock_new_rep(stage_rep_addr);
 	zsock_set_linger(m_performer_requests, 0);
 	attach_pipe_listener(m_performer_requests, s_handle_performer_requests, this);
 
 	m_performer_router = zsock_new(ZMQ_ROUTER);
 	zsock_set_linger(m_performer_router, 0);
 	attach_pipe_listener(m_performer_router, s_handle_router, this);
-	zsock_bind(m_performer_router, "tcp://*:6001");
+    
+    Str255 stage_router_addr;
+    sprintf(stage_router_addr, "tcp://*:%d", STAGE_ROUTER_PORT);
+	zsock_bind(m_performer_router, "%s", stage_router_addr);
 
-	m_graph_update_pub = zsock_new_pub("@tcp://*:6002");
+    Str255 stage_pub_addr;
+    sprintf(stage_pub_addr, "@tcp://*:%d", STAGE_PUB_PORT);
+	m_graph_update_pub = zsock_new_pub(stage_pub_addr);
 	zsock_set_linger(m_graph_update_pub, 0);
 
-	int m_update_timer_id = attach_timer(stage_update_timer_func, 50, this);
+    m_update_timer_id = attach_timer(stage_update_timer_func, 50, this);
 
 	start();
 }
@@ -132,19 +142,12 @@ void ZstStage::destroy_endpoint(ZstEndpointRef * endpoint)
     
     //Remove all cables
     vector<ZstPlugRef*> plugs = get_all_plug_refs(endpoint);
-    vector<ZstCable*> cables;
     
-    for (auto plug_iter : plugs) {
-        if(plug_iter != NULL){
-            cables = get_cables_by_URI(plug_iter->get_URI());
-            for (auto cable_iter : cables) {
-                if(!destroy_cable(cable_iter)){
-                    cout << "Couldn't remove cable" << endl;
-                }
-            }
+    for (auto plug : plugs) {
+        if(plug != NULL){
+            destroy_cable(plug->get_URI());
         }
     }
-    
     
     //Remove endpoint and call all destructors in its hierarchy
 	for (std::map<string, ZstEndpointRef*>::iterator endpnt_iter = m_endpoint_refs.begin(); endpnt_iter != m_endpoint_refs.end(); ++endpnt_iter)
@@ -367,18 +370,7 @@ void ZstStage::destroy_plug_handler(zsock_t * socket, zmsg_t * msg)
 
 	ZstPlugRef* plugRef = performer->get_plug_by_URI(plug_destroy_args.address);
 	if (plugRef != NULL) {
-
-		//Need to remove all cables attached to this plug
-		vector<ZstCable*> cables = get_cables_by_URI(plugRef->get_URI());
-        for (auto cable : cables) {
-
-			ZstURI out_URI = cable->get_output();
-			ZstURI in_URI = cable->get_input();
-
-			if (destroy_cable(cable)) {
-				enqueue_stage_update(ZstEvent(out_URI, in_URI, ZstEvent::EventType::CABLE_DESTROYED));
-			}
-		}
+        destroy_cable(plugRef->get_URI());
 	}
 
 	performer->destroy_plug(performer->get_plug_by_URI(plug_destroy_args.address));
@@ -459,6 +451,19 @@ int ZstStage::connect_cable(ZstURI output_plug, ZstURI input_plug)
 	return 1;
 }
 
+int ZstStage::destroy_cable(const ZstURI & uri){
+    vector<ZstCable*> cables = get_cables_by_URI(uri);
+    for (auto cable : cables) {
+        if(!destroy_cable(cable)){
+            cout << "Couldn't remove cable" << endl;
+        }
+    }
+}
+
+int ZstStage::destroy_cable(ZstURI output_plug, ZstURI input_plug) {
+    return destroy_cable(get_cable_by_URI(output_plug, input_plug));
+}
+
 int ZstStage::destroy_cable(ZstCable * cable) {
 	if (cable != NULL) {
 		cout << "ZST_STAGE: Destroying cable " << cable->get_output().to_char() << " " << cable->get_input().to_char() << endl;
@@ -468,17 +473,18 @@ int ZstStage::destroy_cable(ZstCable * cable) {
 				break;
 			}
 		}
+        
+        ZstURI out_uri = cable->get_output();
+        ZstURI in_uri = cable->get_input();
+
 		delete cable;
         cable = 0;
+        
+        //let performers know this cable has left
+        enqueue_stage_update(ZstEvent(out_uri, in_uri, ZstEvent::EventType::CABLE_DESTROYED));
 		return 1;
 	}
 	return 0;
-}
-
-int ZstStage::destroy_cable(ZstURI output_plug, ZstURI input_plug) {
-	cout << "ZST_STAGE: Disconnecting cable " << output_plug.to_char() << " and " << input_plug.to_char() << endl;
-	ZstCable * cable = get_cable_by_URI(output_plug, input_plug);
-	return destroy_cable(cable);
 }
 
 vector<ZstCable*> ZstStage::get_cables_by_URI(const ZstURI & uri) {

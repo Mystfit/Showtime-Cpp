@@ -13,6 +13,10 @@ class ZstEndpoint;
 class ZstEvent;
 class ZstEventCallback;
 
+#define STAGE_REP_PORT 6000
+#define STAGE_ROUTER_PORT 6001
+#define STAGE_PUB_PORT 6002
+
 enum RuntimeLanguage {
 	NATIVE_RUNTIME,
 	PYTHON_RUNTIME,

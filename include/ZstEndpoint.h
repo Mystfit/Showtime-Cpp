@@ -13,11 +13,6 @@
 #include "ZstMessages.h"
 #include "ZstCable.h"
 
-//Fixed port numbers
-#define STAGE_REP_PORT 6000
-#define STAGE_ROUTER_PORT 6001
-#define STAGE_PUB_PORT 6002
-
 //Forward declarations
 class ZstURI;
 class ZstPerformer;

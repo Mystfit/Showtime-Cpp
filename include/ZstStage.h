@@ -20,8 +20,6 @@
 
 class ZstStage : public ZstActor{
 public:
-    //int dealer_port = 6000;
-    //int router_port = 6001;
     
     ZST_EXPORT ~ZstStage();
 	ZST_EXPORT void init();
@@ -75,6 +73,7 @@ private:
 
 	//Plug connections
     int connect_cable(ZstURI output_plug, ZstURI input_plug);
+    int destroy_cable(const ZstURI & uri);
 	int destroy_cable(ZstCable * cable);
 	int destroy_cable(ZstURI output_plug, ZstURI input_plug);
 	std::vector<ZstCable*> m_cables;
