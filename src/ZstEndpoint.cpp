@@ -33,6 +33,7 @@ void ZstEndpoint::destroy() {
 	zsock_destroy(&m_graph_in);
 	zsock_destroy(&m_graph_out);
 	zsys_shutdown();
+	m_is_ending = false;
 }
 
 
@@ -83,13 +84,10 @@ void ZstEndpoint::init()
     
     cout << "ZST: Using network interface: " << m_network_interface << endl;
     
-    char client_bind_addr[100];
-    sprintf(client_bind_addr, "@tcp://%s:*", network_ip.c_str());
-    
-    //Graph output socket
-    m_graph_out = zsock_new_pub(client_bind_addr);
+	//Graph output socket
+    sprintf(m_graph_out_addr, "@tcp://%s:*", network_ip.c_str());
+    m_graph_out = zsock_new_pub(m_graph_out_addr);
     m_output_endpoint = zsock_last_endpoint(m_graph_out);
-    
     cout << "ZST: Endpoint graph address: " << m_output_endpoint << endl;
     
     if(m_graph_out)
@@ -114,18 +112,25 @@ int ZstEndpoint::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg)
 	ZstEndpoint *endpoint = (ZstEndpoint*)arg;
     zmsg_t *msg = endpoint->receive_from_graph();
     
-    ZstURI sender = ZstURI::from_char(zmsg_popstr(msg));
+	//Get sender from msg
+	zframe_t * sender_frame = zmsg_pop(msg);
+	int sender_size = zframe_size(sender_frame);
+	char * sender_c = new char[sender_size+1]();
+	memcpy(sender_c, zframe_data(sender_frame), sender_size);
+    ZstURI sender = ZstURI::from_char(sender_c);
+	free(sender_c);
+	zframe_destroy(&sender_frame);
     
+	//Get payload from msg
 	msgpack::object_handle result;
 	zframe_t * payload = zmsg_pop(msg);
-
-	unpack(result, (char*)zframe_data(payload), zframe_size(payload));
-    msgpack::object obj = result.get();
-	
-	endpoint->broadcast_to_local_plugs(sender, obj);
-
 	zmsg_destroy(&msg);
-    zframe_destroy(&payload);
+	unpack(result, (char*)zframe_data(payload), zframe_size(payload));
+	zframe_destroy(&payload);
+
+	//Convert payload and send to plugs
+    msgpack::object obj = result.get();
+	endpoint->broadcast_to_local_plugs(sender, obj);
 	return 0;
 }
 
@@ -195,7 +200,8 @@ void ZstEndpoint::connect_performer_handler(zsock_t * socket, zmsg_t * msg) {
 }
 
 int ZstEndpoint::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
-    ((ZstEndpoint*)arg)->ping_stage();
+	ZstEndpoint * endpoint = (ZstEndpoint*)arg;
+	endpoint->send_through_stage(ZstMessages::build_signal(ZstMessages::Signal::HEARTBEAT));
 	return 0;
 }
 
@@ -203,15 +209,14 @@ void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
 	m_stage_addr = string(stage_address);
 
 	//Build endpoint addresses
-	Str255 stage_req_addr;
-	sprintf(stage_req_addr, "tcp://%s:%d", stage_address.c_str(), STAGE_REP_PORT);
-
-	Str255 stage_sub_addr;
-	sprintf(stage_sub_addr, "tcp://%s:%d", stage_address.c_str(), STAGE_PUB_PORT);
+	sprintf(m_stage_requests_addr, "tcp://%s:%d", stage_address.c_str(), STAGE_REP_PORT);
 
 	//Stage request socket for querying the performance
-	m_stage_requests = zsock_new_req(stage_req_addr);
-	zsock_set_linger(m_stage_requests, 0);
+	if (m_stage_requests == NULL) {
+		m_stage_requests = zsock_new(ZMQ_REQ);
+		zsock_set_linger(m_stage_requests, 0);
+	}
+	zsock_connect(m_stage_requests, m_stage_requests_addr);
 
 	ZstMessages::RegisterEndpoint args;
 	args.uuid = zuuid_str(m_startup_uuid);
@@ -229,21 +234,23 @@ void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
 		cout << "ZST: Successfully registered endpoint to stage. UUID is " << endpoint_ack.assigned_uuid << endl;
 
 		//Connect performer dealer to stage now that it's been registered successfully
-		Str255 stage_router_addr;
-		sprintf(stage_router_addr, "tcp://%s:%d", m_stage_addr.c_str(), STAGE_ROUTER_PORT);
-
+		sprintf(m_stage_router_addr, "tcp://%s:%d", m_stage_addr.c_str(), STAGE_ROUTER_PORT);
 		m_assigned_uuid = endpoint_ack.assigned_uuid;
 		zsock_set_identity(m_stage_router, endpoint_ack.assigned_uuid.c_str());
-		zsock_connect(m_stage_router, "%s", stage_router_addr);
+		zsock_connect(m_stage_router, "%s", m_stage_router_addr);
 
 		//Stage sub socket for update messages
-		cout << "ZST: Connecting to stage publisher " << stage_sub_addr << endl;
-		zsock_connect(m_stage_updates, "%s", stage_sub_addr);
+		sprintf(m_stage_updates_addr, "tcp://%s:%d", stage_address.c_str(), STAGE_PUB_PORT);
+		cout << "ZST: Connecting to stage publisher " << m_stage_updates_addr << endl;
+		zsock_connect(m_stage_updates, "%s", m_stage_updates_addr);
 		zsock_set_subscribe(m_stage_updates, "");
 
 		//TODO: Need to check handshake before setting connection as active
 		m_connected_to_stage = true;
 		signal_sync();
+
+		//Set up heartbeat timer
+		m_heartbeat_timer_id = attach_timer(s_heartbeat_timer, HEARTBEAT_DURATION, this);
 	}
 	else {
         throw runtime_error("ZST: Stage performer registration responded with error -> Kind: " + std::to_string((int)message_type));
@@ -296,6 +303,13 @@ void ZstEndpoint::leave_stage()
 	if (m_connected_to_stage) {
 		cout << "ZST:Leaving stage" << endl;
 		send_through_stage(ZstMessages::build_signal(ZstMessages::Signal::LEAVING));
+
+		zsock_disconnect(m_stage_requests, m_stage_requests_addr);
+		zsock_disconnect(m_stage_router, m_stage_router_addr);
+		zsock_disconnect(m_stage_updates, m_stage_updates_addr);
+
+		detach_timer(m_heartbeat_timer_id);
+
 		m_connected_to_stage = false;
 	}
 }

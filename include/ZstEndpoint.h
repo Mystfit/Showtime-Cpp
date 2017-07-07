@@ -89,6 +89,7 @@ private:
 	void broadcast_to_local_plugs(ZstURI output_plug, msgpack::object obj);
 
 	//Heartbeat timer
+	int m_heartbeat_timer_id;
 	static int s_heartbeat_timer(zloop_t *loop, int timer_id, void *arg);
 
 	//Destruction
@@ -100,7 +101,6 @@ private:
 
 	//Name property
 	std::string m_output_endpoint;
-	std::string m_stage_addr = "127.0.0.1";
     std::string m_network_interface;
 
 	//All performers
@@ -116,7 +116,13 @@ private:
 	//Zeromq pipes
 	zsock_t *m_stage_requests;		//Reqests sent to the stage server
 	zsock_t *m_stage_router;        //Stage pipe in
-	zsock_t *m_stage_updates;
+	zsock_t *m_stage_updates;		//Stage publisher for updates
 	zsock_t *m_graph_out;           //Pub for sending graph outputs
 	zsock_t *m_graph_in;            //Sub for receiving graph inputs
+
+	std::string m_stage_addr = "127.0.0.1";
+	Str255 m_stage_requests_addr;
+	Str255 m_stage_router_addr;
+	Str255 m_stage_updates_addr;
+	Str255 m_graph_out_addr;
 };

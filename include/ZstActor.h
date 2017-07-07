@@ -19,6 +19,8 @@ public:
 protected:
 	void attach_pipe_listener(zsock_t* sock, zloop_reader_fn handler, void *args);
 	int attach_timer(zloop_timer_fn handler, int delay, void *args);
+	void detach_timer(int timer_id);
+
 
 private:
 	//Loop

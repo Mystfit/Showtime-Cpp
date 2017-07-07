@@ -13,7 +13,13 @@
 #ifdef WIN32
 #define TAKE_A_BREATH Sleep(100);
 #else
-#define TAKE_A_BREATH usleep(1 * 1000 * 100);
+#define TAKE_A_BREATH usleep(1000 * 100);
+#endif
+
+#ifdef WIN32
+#define WAIT_FOR_HEARTBEAT Sleep(HEARTBEAT_DURATION);
+#else
+#define WAIT_FOR_HEARTBEAT usleep(1000 * HEARTBEAT_DURATION);
 #endif
 
 ZstStage *stage;
@@ -163,7 +169,7 @@ void test_memory_leaks() {
 	input_int_plug->attach_recv_callback(new TestIntValueCallback());
 	Showtime::connect_cable(output_int_plug->get_URI(), input_int_plug->get_URI());
 
-	int count = 99999999;
+	int count = 100;
 	int current = 0;
 	while (++current < count) {
 		output_int_plug->fire(current);
@@ -252,7 +258,6 @@ void test_leaving(){
 
 
 void test_cleanup() {
-	//Test object destruction
 	delete stage;
     stage = NULL;
 	Showtime::destroy();

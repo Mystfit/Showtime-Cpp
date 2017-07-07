@@ -52,7 +52,8 @@ public:
 		//--
 		OK = 1,
 		SYNC = 2,
-		LEAVING = 3
+		LEAVING = 3,
+		HEARTBEAT = 4
 	};
 
     //Message structs

@@ -18,6 +18,8 @@
 #include "Showtime.h"
 #include "Queue.h"
 
+#define HEARTBEAT_DURATION 1000
+
 class ZstStage : public ZstActor{
 public:
     
@@ -82,7 +84,12 @@ private:
 	std::vector<ZstEventWire> create_snapshot();
 	void enqueue_stage_update(ZstEvent e);
 	Queue<ZstEvent> m_stage_updates;
+	
 	int m_update_timer_id;
 	static int stage_update_timer_func(zloop_t * loop, int timer_id, void * arg);
+
+	int m_heartbeat_timer_id;
+	static int stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * arg);
+
 };
 

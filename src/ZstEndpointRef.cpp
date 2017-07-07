@@ -46,6 +46,33 @@ std::vector<ZstPerformerRef*> ZstEndpointRef::get_performer_refs()
 	return performers;
 }
 
+
+void ZstEndpointRef::set_heartbeat_active()
+{
+	m_heartbeat_active = true;
+	m_missed_heartbeats = 0;
+}
+
+void ZstEndpointRef::clear_active_hearbeat() {
+	m_heartbeat_active = false;
+}
+
+bool ZstEndpointRef::get_active_heartbeat()
+{
+	return m_heartbeat_active;
+}
+
+void ZstEndpointRef::set_heartbeat_inactive()
+{
+	m_missed_heartbeats++;
+}
+
+int ZstEndpointRef::get_missed_heartbeats()
+{
+	return m_missed_heartbeats;
+}
+
+
 void ZstEndpointRef::destroy_performer(ZstPerformerRef* performer)
 {
 	for (map<string, ZstPerformerRef*>::iterator perf_iter = m_performers.begin(); perf_iter != m_performers.end(); ++perf_iter)

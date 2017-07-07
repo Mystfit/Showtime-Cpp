@@ -17,6 +17,8 @@ class ZstEventCallback;
 #define STAGE_ROUTER_PORT 6001
 #define STAGE_PUB_PORT 6002
 
+#define HEARTBEAT_DURATION 1000
+
 enum RuntimeLanguage {
 	NATIVE_RUNTIME,
 	PYTHON_RUNTIME,

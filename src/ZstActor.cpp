@@ -91,3 +91,8 @@ int ZstActor::attach_timer(zloop_timer_fn handler, int delay, void * args)
 {
 	return zloop_timer(m_loop, delay, 0, handler, args);
 }
+
+void ZstActor::detach_timer(int timer_id)
+{
+	zloop_timer_end(m_loop, timer_id);
+}

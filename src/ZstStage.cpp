@@ -12,8 +12,9 @@ ZstStage::ZstStage()
 
 ZstStage::~ZstStage()
 {
+	detach_timer(m_heartbeat_timer_id);
+	detach_timer(m_heartbeat_timer_id);
 	ZstActor::~ZstActor();
-
 	//Close stage pipes
 	zsock_destroy(&m_performer_requests);
 	zsock_destroy(&m_performer_router);
@@ -45,6 +46,7 @@ void ZstStage::init()
 	zsock_set_linger(m_graph_update_pub, 0);
 
     m_update_timer_id = attach_timer(stage_update_timer_func, 50, this);
+	m_heartbeat_timer_id = attach_timer(stage_heartbeat_timer_func, HEARTBEAT_DURATION, this);
 
 	start();
 }
@@ -203,6 +205,9 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 		}
 		else if (s == ZstMessages::Signal::LEAVING) {
 			stage->destroy_endpoint(sender);
+		}
+		else if (s == ZstMessages::Signal::HEARTBEAT) {
+			sender->set_heartbeat_active();
 		}
 	}
 
@@ -456,8 +461,10 @@ int ZstStage::destroy_cable(const ZstURI & uri){
     for (auto cable : cables) {
         if(!destroy_cable(cable)){
             cout << "Couldn't remove cable" << endl;
+			return 0;
         }
     }
+	return 1;
 }
 
 int ZstStage::destroy_cable(ZstURI output_plug, ZstURI input_plug) {
@@ -551,6 +558,25 @@ int ZstStage::stage_update_timer_func(zloop_t * loop, int timer_id, void * arg)
 
 		zmsg_t *updatemsg = ZstMessages::build_message<ZstMessages::StageUpdates>(ZstMessages::Kind::STAGE_UPDATE, su);
 		zmsg_send(&updatemsg, stage->m_graph_update_pub);
+	}
+	return 0;
+}
+
+int ZstStage::stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * arg)
+{
+	ZstStage * stage = (ZstStage*)arg;
+	for (auto endpoint : stage->m_endpoint_refs) {
+		if (endpoint.second->get_active_heartbeat()) {
+			endpoint.second->clear_active_hearbeat();
+		}
+		else {
+			cout << "Endpoint " << endpoint.second->client_assigned_uuid << " missed a heartbeat. " << (MAX_MISSED_HEARTBEATS - endpoint.second->get_missed_heartbeats()) << " remaining" << endl;
+			endpoint.second->set_heartbeat_inactive();
+		}
+
+		if (endpoint.second->get_missed_heartbeats() >= MAX_MISSED_HEARTBEATS) {
+			stage->destroy_endpoint(endpoint.second);
+		}
 	}
 	return 0;
 }
