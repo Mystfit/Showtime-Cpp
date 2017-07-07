@@ -21,9 +21,9 @@ ZstPlug * ZstPerformer::get_plug_by_URI(const ZstURI uri)
 {
 	string instrument = uri.instrument();
 	vector<ZstPlug*> plugs = m_plugs[instrument];
-    for (vector<ZstPlug*>::iterator plugIter = plugs.begin(); plugIter != plugs.end(); ++plugIter) {
-        if(*((*plugIter))->get_URI() == uri){
-            return (*plugIter);
+    for (auto plug : plugs) {
+        if(*(plug->get_URI()) == uri){
+            return plug;
         }
     }
     

@@ -57,15 +57,15 @@ std::vector<ZstPlugRef*> ZstStage::get_all_plug_refs(ZstEndpointRef * endpoint)
 
     if(endpoint != NULL){
         vector<ZstPerformerRef*> performers = endpoint->get_performer_refs();
-        for (vector<ZstPerformerRef*>::iterator perf_iter = performers.begin(); perf_iter != performers.end(); ++perf_iter){
-            plugs = (*perf_iter)->get_plug_refs();
+        for (auto performer : performers){
+            plugs = performer->get_plug_refs();
         }
 
     } else {
         vector<ZstPerformerRef*> performers = get_all_performer_refs();
         if (performers.size() > 0) {
-            for (vector<ZstPerformerRef*>::iterator perf_iter = performers.begin(); perf_iter != performers.end(); ++perf_iter) {
-                plugs.insert(plugs.end(), (*perf_iter)->get_plug_refs().begin(), (*perf_iter)->get_plug_refs().end());
+            for (auto performer : performers){
+                plugs.insert(plugs.end(), performer->get_plug_refs().begin(), performer->get_plug_refs().end());
             }
         }
     }
@@ -76,8 +76,8 @@ std::vector<ZstPlugRef*> ZstStage::get_all_plug_refs(ZstEndpointRef * endpoint)
 std::vector<ZstPerformerRef*> ZstStage::get_all_performer_refs()
 {
 	vector<ZstPerformerRef*> all_performers;
-	for (map<string, ZstEndpointRef*>::iterator endpnt_iter = m_endpoint_refs.begin(); endpnt_iter != m_endpoint_refs.end(); ++endpnt_iter) {
-		vector<ZstPerformerRef*> endpoint_performers = endpnt_iter->second->get_performer_refs();
+    for (auto endpnt_iter : m_endpoint_refs) {
+		vector<ZstPerformerRef*> endpoint_performers = endpnt_iter.second->get_performer_refs();
 		all_performers.insert(all_performers.end(), endpoint_performers.begin(), endpoint_performers.end());
 	}
 
@@ -87,8 +87,8 @@ std::vector<ZstPerformerRef*> ZstStage::get_all_performer_refs()
 ZstPerformerRef * ZstStage::get_performer_ref_by_name(const char * performer_name) {
 
 	ZstPerformerRef * performer = NULL;
-	for (map<string, ZstEndpointRef*>::iterator endpnt_iter = m_endpoint_refs.begin(); endpnt_iter != m_endpoint_refs.end(); ++endpnt_iter) {
-		performer = endpnt_iter->second->get_performer_by_name(string(performer_name));
+    for (auto endpnt_iter : m_endpoint_refs) {
+		performer = endpnt_iter.second->get_performer_by_name(string(performer_name));
 		if (performer != NULL)
 			break;
 	}
@@ -98,9 +98,9 @@ ZstPerformerRef * ZstStage::get_performer_ref_by_name(const char * performer_nam
 ZstEndpointRef * ZstStage::get_performer_endpoint(ZstPerformerRef * performer)
 {
 	ZstEndpointRef * endpoint = NULL;
-	for (map<string, ZstEndpointRef*>::iterator endpnt_iter = m_endpoint_refs.begin(); endpnt_iter != m_endpoint_refs.end(); ++endpnt_iter) {
-		if (endpnt_iter->second->get_performer_by_name(performer->get_URI().performer()) != NULL) {
-			endpoint = endpnt_iter->second;
+    for (auto endpnt_iter : m_endpoint_refs) {
+		if (endpnt_iter.second->get_performer_by_name(performer->get_URI().performer()) != NULL) {
+			endpoint = endpnt_iter.second;
 			break;
 		}
 	}
@@ -132,19 +132,19 @@ void ZstStage::destroy_endpoint(ZstEndpointRef * endpoint)
     
     //Remove all cables
     vector<ZstPlugRef*> plugs = get_all_plug_refs(endpoint);
-    if(plugs.size() > 0){
-        for (vector<ZstPlugRef*>::iterator plug_iter = plugs.begin(); plug_iter != plugs.end(); ++plug_iter) {
-            if((*plug_iter) != NULL){
-                vector<ZstCable*> cables = get_cables_by_URI((*plug_iter)->get_URI());
-                for (vector<ZstCable*>::iterator cable_iter = m_cables.begin(); cable_iter != m_cables.end();) {
-                    if(!destroy_cable((*cable_iter))){
-                        //If didn't remove a cable, we need to iterate forwards manually
-                        ++cable_iter;
-                    }
+    vector<ZstCable*> cables;
+    
+    for (auto plug_iter : plugs) {
+        if(plug_iter != NULL){
+            cables = get_cables_by_URI(plug_iter->get_URI());
+            for (auto cable_iter : cables) {
+                if(!destroy_cable(cable_iter)){
+                    cout << "Couldn't remove cable" << endl;
                 }
             }
         }
     }
+    
     
     //Remove endpoint and call all destructors in its hierarchy
 	for (std::map<string, ZstEndpointRef*>::iterator endpnt_iter = m_endpoint_refs.begin(); endpnt_iter != m_endpoint_refs.end(); ++endpnt_iter)
@@ -369,13 +369,13 @@ void ZstStage::destroy_plug_handler(zsock_t * socket, zmsg_t * msg)
 	if (plugRef != NULL) {
 
 		//Need to remove all cables attached to this plug
-		vector<ZstCable*> connections = get_cables_by_URI(plugRef->get_URI());
-		for (vector<ZstCable*>::iterator cable_iter = connections.begin(); cable_iter != connections.end(); ++cable_iter) {
+		vector<ZstCable*> cables = get_cables_by_URI(plugRef->get_URI());
+        for (auto cable : cables) {
 
-			ZstURI out_URI = (*cable_iter)->get_output();
-			ZstURI in_URI = (*cable_iter)->get_input();
+			ZstURI out_URI = cable->get_output();
+			ZstURI in_URI = cable->get_input();
 
-			if (destroy_cable(out_URI, in_URI)) {
+			if (destroy_cable(cable)) {
 				enqueue_stage_update(ZstEvent(out_URI, in_URI, ZstEvent::EventType::CABLE_DESTROYED));
 			}
 		}
@@ -516,20 +516,16 @@ void ZstStage::enqueue_stage_update(ZstEvent e)
 vector<ZstEventWire> ZstStage::create_snapshot() {
 	
 	vector<ZstEventWire> stage_snapshot;
+    vector<ZstPlugRef*> plugs = get_all_plug_refs();
 
-	for (map<string, ZstEndpointRef*>::iterator endpnt_iter = m_endpoint_refs.begin(); endpnt_iter != m_endpoint_refs.end(); ++endpnt_iter)
-	{
-		vector<ZstPlugRef*> plugs = get_all_plug_refs();
+    //Pull addressess from plug refs
+    for (auto plug : plugs) {
+        stage_snapshot.push_back(ZstEventWire(plug->get_URI(), ZstEvent::CREATED));
+    }
 
-		//Pull addressess from plug refs
-		for (vector<ZstPlugRef*>::iterator plug_iter = plugs.begin(); plug_iter != plugs.end(); ++plug_iter) {
-			stage_snapshot.push_back(ZstEventWire((*plug_iter)->get_URI(), ZstEvent::CREATED));
-		}
-
-		for (vector<ZstCable*>::iterator cable_iter = m_cables.begin(); cable_iter != m_cables.end(); ++cable_iter) {
-			stage_snapshot.push_back(ZstEventWire((*cable_iter)->get_output(), (*cable_iter)->get_input(), ZstEvent::CABLE_CREATED));
-		}
-	}
+    for (auto cable : m_cables) {
+        stage_snapshot.push_back(ZstEventWire(cable->get_output(), cable->get_input(), ZstEvent::CABLE_CREATED));
+    }
 
 	return stage_snapshot;
 }

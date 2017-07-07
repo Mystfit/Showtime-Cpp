@@ -11,8 +11,8 @@ ZstEndpointRef::ZstEndpointRef(string starting_uuid, string assigned_uuid, strin
 
 ZstEndpointRef::~ZstEndpointRef()
 {
-	for (map<string, ZstPerformerRef*>::iterator perf_iter = m_performers.begin(); perf_iter != m_performers.end(); ++perf_iter) {
-		delete perf_iter->second;
+    for (auto perf_iter : m_performers) {
+		delete perf_iter.second;
 	}
 	m_performers.clear();
 }
@@ -40,8 +40,8 @@ ZstPerformerRef * ZstEndpointRef::get_performer_by_name(std::string name)
 std::vector<ZstPerformerRef*> ZstEndpointRef::get_performer_refs()
 {
 	vector<ZstPerformerRef*> performers;
-	for (map<string, ZstPerformerRef*>::iterator perf_iter = m_performers.begin(); perf_iter != m_performers.end(); ++perf_iter) {
-		performers.push_back(perf_iter->second);
+    for (auto performer_iter : m_performers) {
+		performers.push_back(performer_iter.second);
 	}
 	return performers;
 }

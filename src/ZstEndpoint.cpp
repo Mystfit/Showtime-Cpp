@@ -261,16 +261,16 @@ void ZstEndpoint::signal_sync()
 void ZstEndpoint::stage_update_handler(zsock_t * socket, zmsg_t * msg)
 {
 	ZstMessages::StageUpdates update_args = ZstMessages::unpack_message_struct<ZstMessages::StageUpdates>(msg);
-	for (vector<ZstEventWire>::iterator event_iter = update_args.updates.begin(); event_iter != update_args.updates.end(); ++event_iter) {
-		if ((*event_iter).get_update_type() == ZstEvent::CABLE_DESTROYED) {
+    for (auto event_iter : update_args.updates) {
+		if (event_iter.get_update_type() == ZstEvent::CABLE_DESTROYED) {
 			//Remove any cables that we own that have been destroyed
 			
-			ZstCable * cable = get_cable_by_URI((*event_iter).get_first(), (*event_iter).get_second());
+			ZstCable * cable = get_cable_by_URI(event_iter.get_first(), event_iter.get_second());
 			if (cable != NULL) {
 				remove_cable(cable);
 			}
 		}
-		Showtime::endpoint().enqueue_plug_event(ZstEvent((*event_iter).get_first(), (*event_iter).get_update_type()));
+		Showtime::endpoint().enqueue_plug_event(ZstEvent(event_iter.get_first(), event_iter.get_update_type()));
 	}
 }
 
@@ -451,9 +451,9 @@ void ZstEndpoint::remove_stage_event_callback(ZstEventCallback *callback) {
 
 void ZstEndpoint::run_stage_event_callbacks(ZstEvent e) {
 	if (m_stage_callbacks.size() > 0) {
-		for (vector<ZstEventCallback*>::iterator callback = m_stage_callbacks.begin(); callback != m_stage_callbacks.end(); ++callback) {
+        for (auto callback : m_stage_callbacks) {
 			cout << "ZST: Running stage callback" << endl;
-			(*callback)->run(e);
+			callback->run(e);
 		}
 	}
 }
@@ -517,16 +517,15 @@ ZstMessages::Signal ZstEndpoint::check_stage_response_ok() {
 
 void ZstEndpoint::broadcast_to_local_plugs(ZstURI output_plug, msgpack::object obj) {
 
-	for (vector <ZstCable*>::iterator cable_iter = m_cables.begin(); cable_iter != m_cables.end(); ++cable_iter) {
-		if ((*cable_iter)->get_output() == output_plug) {
-			ZstPerformer* performer = get_performer_by_URI((*cable_iter)->get_input());
-			ZstPlug * plug = performer->get_plug_by_URI((*cable_iter)->get_input());
+    for (auto cable : m_cables) {
+		if (cable->get_output() == output_plug) {
+			ZstPerformer* performer = get_performer_by_URI(cable->get_input());
+			ZstPlug * plug = performer->get_plug_by_URI(cable->get_input());
 			if (plug != NULL) {
 				plug->recv(obj);
 			}
 			else {
-				cout << "ZST: Ignoring plug hit from " << (*cable_iter)->get_output().to_char()
-					<< " for missing input plug " << (*cable_iter)->get_input().to_char() <<  endl;
+				cout << "ZST: Ignoring plug hit from " << cable->get_output().to_char() << " for missing input plug " << cable->get_input().to_char() <<  endl;
 			}
 		}
 	}
