@@ -8,8 +8,9 @@ ZstPerformerRef::ZstPerformerRef(ZstURI uri) : m_URI(uri)
 
 ZstPerformerRef::~ZstPerformerRef()
 {
-	for (vector<ZstPlugRef*>::iterator plug_iter = m_plugs.begin(); plug_iter != m_plugs.end(); ++plug_iter) {
-		destroy_plug((*plug_iter));
+	vector<ZstPlugRef*> plugs = m_plugs;
+	for (auto plug : plugs) {
+		destroy_plug(plug);
 	}
 	m_plugs.clear();
 }

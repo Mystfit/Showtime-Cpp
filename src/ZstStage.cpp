@@ -565,8 +565,11 @@ int ZstStage::stage_update_timer_func(zloop_t * loop, int timer_id, void * arg)
 int ZstStage::stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * arg)
 {
 	ZstStage * stage = (ZstStage*)arg;
-	for (auto endpoint : stage->m_endpoint_refs) {
+	map<string, ZstEndpointRef*> endpoints = stage->m_endpoint_refs;
+
+	for (auto endpoint : endpoints) {
 		if (endpoint.second->get_active_heartbeat()) {
+			cout << "Endpoint " << endpoint.second->client_assigned_uuid << " is alive" << endl;
 			endpoint.second->clear_active_hearbeat();
 		}
 		else {
@@ -574,7 +577,7 @@ int ZstStage::stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * ar
 			endpoint.second->set_heartbeat_inactive();
 		}
 
-		if (endpoint.second->get_missed_heartbeats() >= MAX_MISSED_HEARTBEATS) {
+		if (endpoint.second->get_missed_heartbeats() > MAX_MISSED_HEARTBEATS) {
 			stage->destroy_endpoint(endpoint.second);
 		}
 	}
