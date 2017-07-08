@@ -27,6 +27,9 @@ runtimes = []
 libraries = []
 library_dirs = []
 
+# CD into the python build dir so we can pick up our showtime interface
+os.chdir(os.path.dirname( __file__))
+
 if platform.system() == 'Darwin':
   extra_link_args=['-F', '/Library/Frameworks', '-framework', 'Showtime']
   library_dirs = ['${CMAKE_LIBRARY_OUTPUT_DIRECTORY}']
