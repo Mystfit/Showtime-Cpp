@@ -28,17 +28,19 @@ libraries = []
 library_dirs = []
 
 # CD into the python build dir so we can pick up our showtime interface
-os.chdir(os.path.dirname( __file__))
+if os.path.dirname(__file__):
+  os.chdir(os.path.dirname(__file__))
 
 if platform.system() == 'Darwin':
-  extra_link_args=['-F', '/Library/Frameworks', '-framework', 'Showtime']
-  library_dirs = ['${CMAKE_LIBRARY_OUTPUT_DIRECTORY}']
+  extra_compile_args += ['-O0', '-g']
+  extra_link_args += ['-F', '/Library/Frameworks', '-framework', 'Showtime']
+  library_dirs += ['${CMAKE_LIBRARY_OUTPUT_DIRECTORY}']
 elif platform.system() == 'Windows':
-  extra_compile_args=['/Zi']
-  extra_link_args=['/DEBUG']
+  extra_compile_args += ['/Zi']
+  extra_link_args += ['/DEBUG']
   libraries.append('${PROJECT_NAME}')
-  library_dirs = ['${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Debug', '${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Release']
-  runtimes = ["${RUNTIMES_CZMQ}", "@SHOWTIME_TARGET@"] + "${RUNTIMES_LIBZMQ}".split(';')
+  library_dirs += ['${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Debug', '${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Release']
+  runtimes += ["${RUNTIMES_CZMQ}", "@SHOWTIME_TARGET@"] + "${RUNTIMES_LIBZMQ}".split(';')
   runtimes = [os.path.normcase(x) for x in runtimes]
 
 showtime_module = Extension('_showtime',

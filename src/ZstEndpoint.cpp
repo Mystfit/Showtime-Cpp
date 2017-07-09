@@ -466,12 +466,9 @@ void ZstEndpoint::remove_stage_event_callback(ZstEventCallback *callback) {
 }
 
 void ZstEndpoint::run_stage_event_callbacks(ZstEvent e) {
-	if (m_stage_callbacks.size() > 0) {
-        for (auto callback : m_stage_callbacks) {
-			cout << "ZST: Running stage callback" << endl;
-			callback->run(e);
-		}
-	}
+    for (auto callback : m_stage_callbacks) {
+        callback->run(e);
+    }
 }
 
 

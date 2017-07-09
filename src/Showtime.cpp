@@ -45,24 +45,18 @@ void Showtime::poll_once()
 	while (Showtime::event_queue_size() > 0) {
 		ZstPerformer * performer = NULL;
 		ZstEvent e = Showtime::pop_event();
-        cout << "ZST: Received event " << e.get_update_type() << endl;
 
 		switch (e.get_update_type()) {
 		case ZstEvent::EventType::PLUG_HIT:
-			cout << "Poll once: Plug hit" << endl;
-
 			performer = Showtime::endpoint().get_performer_by_URI(e.get_first());
 			if (performer != NULL) {
 				ZstPlug * plug = performer->get_plug_by_URI(e.get_first());
 				if (plug != NULL) {
-					cout << "Poll once: Plug running callbacks" << endl;
-
 					plug->run_recv_callbacks();
 				}
 			}
 			break;
 		default:
-			cout << "Poll once: Stage event" << endl;
 			Showtime::endpoint().run_stage_event_callbacks(e);
 		}
 	}

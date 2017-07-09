@@ -18,7 +18,4 @@
 %template(EventList) std::vector<ZstEvent>;
 
 %include "showtime_common.i" 
-
-%thread;
 %include "Showtime.h"
-%nothread;
