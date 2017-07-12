@@ -26,6 +26,12 @@ endif()
 set(CMAKE_CXX_STANDARD 11)
 set(CXX_STANDARD_REQUIRED)
 
+# Boost flags
+set(Boost_USE_MULTITHREADED  ON)
+set(Boost_USE_STATIC_LIBS ON)
+set(Boost_USE_STATIC_RUNTIME ON)
+find_package(Boost COMPONENTS serialization REQUIRED)
+
 # Set showtime include directories
 set(Showtime_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include)
 

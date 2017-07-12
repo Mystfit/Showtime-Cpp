@@ -14,6 +14,7 @@
 #include "ZstCable.h"
 
 //Forward declarations
+class ZstValue;
 class ZstURI;
 class ZstPerformer;
 
@@ -41,8 +42,7 @@ public:
 	ZstPerformer * get_performer_by_URI(const ZstURI uri);
 	
 	template<typename T>
-	ZST_EXPORT static T* create_plug(ZstURI * uri);
-	ZST_EXPORT static ZstIntPlug * create_int_plug(ZstURI * uri);
+	ZST_EXPORT static T* create_plug(ZstURI * uri, ZstValueType val_type, ZstURI::Direction direction);
 	ZST_EXPORT int destroy_plug(ZstPlug * plug);
 
 	int connect_cable(const ZstURI * a, const ZstURI * b);
@@ -86,7 +86,7 @@ private:
 	//Message handlers
 	void stage_update_handler(zsock_t * socket, zmsg_t * msg);
 	void connect_performer_handler(zsock_t * socket, zmsg_t * msg);
-	void broadcast_to_local_plugs(ZstURI output_plug, msgpack::object obj);
+	void broadcast_to_local_plugs(ZstURI output_plug, ZstValue * value);
 
 	//Heartbeat timer
 	int m_heartbeat_timer_id;

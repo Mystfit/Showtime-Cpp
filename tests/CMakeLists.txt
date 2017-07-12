@@ -13,6 +13,7 @@ include_directories(
 IF(WIN32)
 	add_definitions(-DIMPORTS_API)
 ENDIF(WIN32)
+add_definitions(-DMSGPACK_USE_BOOST)
 
 # Section test executable
 add_executable (ShowtimeTest ${SECTION_SOURCE_FILES}) 

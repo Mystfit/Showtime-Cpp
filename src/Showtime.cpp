@@ -50,7 +50,8 @@ void Showtime::poll_once()
 		case ZstEvent::EventType::PLUG_HIT:
 			performer = Showtime::endpoint().get_performer_by_URI(e.get_first());
 			if (performer != NULL) {
-				ZstPlug * plug = performer->get_plug_by_URI(e.get_first());
+				//TODO: Verify that plug is actually an input plug!
+				ZstInputPlug * plug = (ZstInputPlug*)performer->get_plug_by_URI(e.get_first());
 				if (plug != NULL) {
 					plug->run_recv_callbacks();
 				}
@@ -94,9 +95,14 @@ ZstPerformer * Showtime::create_performer(const char * name)
 	return Showtime::endpoint().create_performer(ZstURI(name, "", "", ZstURI::Direction::NONE));
 }
 
-ZstIntPlug * Showtime::create_int_plug(ZstURI * uri)
+ZstInputPlug * Showtime::create_input_plug(ZstURI * uri, ZstValueType val_type)
 {
-	return Showtime::endpoint().create_int_plug(uri);
+	return (ZstInputPlug*)Showtime::endpoint().create_plug<ZstInputPlug>(uri, val_type, ZstURI::Direction::IN_JACK);
+}
+
+ZstOutputPlug * Showtime::create_output_plug(ZstURI * uri, ZstValueType val_type)
+{
+	return (ZstOutputPlug*)Showtime::endpoint().create_plug<ZstOutputPlug>(uri, val_type, ZstURI::Direction::OUT_JACK);
 }
 
 ZstPerformer * Showtime::get_performer_by_URI(const ZstURI * uri)

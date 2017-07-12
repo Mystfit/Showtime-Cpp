@@ -8,6 +8,7 @@
 #include "ZstMessages.h"
 #include "ZstURIWire.h"
 #include "ZstEventWire.h"
+#include "ZstValueWire.h"
 
 using namespace std;
 
@@ -122,15 +123,11 @@ int ZstEndpoint::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg)
 	zframe_destroy(&sender_frame);
     
 	//Get payload from msg
-	msgpack::object_handle result;
-	zframe_t * payload = zmsg_pop(msg);
+	ZstValue value = (ZstValue)ZstMessages::unpack_message_struct<ZstValueWire>(msg);
+	
 	zmsg_destroy(&msg);
-	unpack(result, (char*)zframe_data(payload), zframe_size(payload));
-	zframe_destroy(&payload);
 
-	//Convert payload and send to plugs
-    msgpack::object obj = result.get();
-	endpoint->broadcast_to_local_plugs(sender, obj);
+	endpoint->broadcast_to_local_plugs(sender, &value);
 	return 0;
 }
 
@@ -327,27 +324,22 @@ ZstPerformer * ZstEndpoint::get_performer_by_URI(const ZstURI uri)
 	return m_performers[uri.performer()];
 }
 
-template ZstIntPlug* ZstEndpoint::create_plug<ZstIntPlug>(ZstURI * uri);
+template ZstInputPlug* ZstEndpoint::create_plug<ZstInputPlug>(ZstURI * uri, ZstValueType val_type, ZstURI::Direction direction);
+template ZstOutputPlug* ZstEndpoint::create_plug<ZstOutputPlug>(ZstURI * uri, ZstValueType val_type, ZstURI::Direction direction);
 template<typename T>
- T* ZstEndpoint::create_plug(ZstURI * uri) {
-
+T* ZstEndpoint::create_plug(ZstURI * uri, ZstValueType val_type, ZstURI::Direction direction) {
 	ZstMessages::RegisterPlug plug_args;
 	plug_args.address = ZstURIWire(*(uri));
 	zmsg_t * plug_msg = ZstMessages::build_message<ZstMessages::RegisterPlug>(ZstMessages::Kind::STAGE_REGISTER_PLUG, plug_args);
 	Showtime::endpoint().send_to_stage(plug_msg);
 
 	if (check_stage_response_ok()) {
-		T *plug = new T(uri);
+		T *plug = new T(uri, val_type);
 		Showtime::endpoint().get_performer_by_URI(*uri)->add_plug(plug);
 		return plug;
 	}
 	return NULL;
 }
-
- ZstIntPlug * ZstEndpoint::create_int_plug(ZstURI * uri)
- {
-	 return create_plug<ZstIntPlug>(uri);
- }
 
  int ZstEndpoint::destroy_plug(ZstPlug * plug)
  {
@@ -529,14 +521,15 @@ ZstMessages::Signal ZstEndpoint::check_stage_response_ok() {
 	return s;
 }
 
-void ZstEndpoint::broadcast_to_local_plugs(ZstURI output_plug, msgpack::object obj) {
+void ZstEndpoint::broadcast_to_local_plugs(ZstURI output_plug, ZstValue * value) {
 
     for (auto cable : m_cables) {
 		if (cable->get_output() == output_plug) {
 			ZstPerformer* performer = get_performer_by_URI(cable->get_input());
-			ZstPlug * plug = performer->get_plug_by_URI(cable->get_input());
+			//TODO: Need to verify plug is an input plug!
+			ZstInputPlug * plug = (ZstInputPlug*)performer->get_plug_by_URI(cable->get_input());
 			if (plug != NULL) {
-				plug->recv(obj);
+				plug->recv(value);
 			}
 			else {
 				cout << "ZST: Ignoring plug hit from " << cable->get_output().to_char() << " for missing input plug " << cable->get_input().to_char() <<  endl;

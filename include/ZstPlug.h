@@ -8,7 +8,10 @@
 #include "ZstUtils.hpp"
 #include "ZstURI.h"
 #include "ZstEvent.h"
+#include "Showtime.h"
 
+//Forward declaration
+class ZstValue;
 class ZstURI;
 class PlugCallback;
 class Showtime;
@@ -17,52 +20,48 @@ class ZstPlug {
 public:
 	friend class Showtime;
 	//Constructor
-	ZST_EXPORT ZstPlug(ZstURI * uri);
-	ZST_EXPORT ~ZstPlug();
-
+	ZST_EXPORT ZstPlug(ZstURI * uri, ZstValueType t);
+	ZST_EXPORT virtual ~ZstPlug();
 	ZST_EXPORT ZstURI * get_URI() const;
-
-	//Plug callbacks
-    ZST_EXPORT void attach_recv_callback(ZstEventCallback * callback);
-    ZST_EXPORT void destroy_recv_callback(ZstEventCallback * callback);
-
-	//IO
-    ZST_EXPORT void fire();
-	ZST_EXPORT virtual void recv(msgpack::object obj) = 0;
+	ZST_EXPORT ZstValue * value();
 
 protected:
-	msgpack::sbuffer * m_buffer;
-	msgpack::packer<msgpack::sbuffer> * m_packer;
-	void run_recv_callbacks();
+	ZstValue * m_value;
 
-    std::vector<ZstEventCallback*> m_received_data_callbacks;
 private:
 	ZstURI * m_uri;
-};
-
-
-enum PlugTypes {
-	INT_PLUG = 0,
-	INT_ARR_PLUG,
-	FLOAT_PLUG,
-	FLOAT_ARR_PLUG,
-	STRING_PLUG
 };
 
 
 // ----------------------
 // Plug types
 // ----------------------
-class ZstIntPlug : public ZstPlug {
+class ZstInputPlugEventCallback;
+class ZstInputPlug : public ZstPlug {
 public:
-	typedef int value_type;
+	ZstInputPlug(ZstURI * uri, ZstValueType t) : ZstPlug(uri, t) {};
+	~ZstInputPlug();
+	
+	//Plug callbacks
+	ZST_EXPORT void attach_recv_callback(ZstInputPlugEventCallback * callback);
+	ZST_EXPORT void destroy_recv_callback(ZstInputPlugEventCallback * callback);
+	void run_recv_callbacks();
 
-	ZstIntPlug(ZstURI * uri) : ZstPlug(uri) {};
-	ZST_EXPORT void fire(int value);
-	ZST_EXPORT void recv(msgpack::object object) override;
-    ZST_EXPORT int get_value();
+	//Receive a msgpacked value through this plug
+	ZST_EXPORT void recv(ZstValue * val);
 private:
-    int m_last_value;
-    int m_value;
+	std::vector<ZstInputPlugEventCallback*> m_received_data_callbacks;
 };
- 
+
+class ZstOutputPlug : public ZstPlug {
+public:
+	ZstOutputPlug(ZstURI * uri, ZstValueType t) : ZstPlug(uri, t) {};
+	ZST_EXPORT void fire();
+};
+
+class ZstInputPlugEventCallback {
+public:
+	ZST_EXPORT ZstInputPlugEventCallback();
+	virtual ~ZstInputPlugEventCallback() { std::cout << "ZstPlugEventCallback::~ZstPlugEventCallback()" << std::endl; }
+	virtual void run(ZstInputPlug * e) { std::cout << "ZstEventCallback::run()" << std::endl; }
+};

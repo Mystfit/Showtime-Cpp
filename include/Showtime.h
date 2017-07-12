@@ -6,12 +6,14 @@
 #include "ZstExports.h"
 
 class ZstPlug;
-class ZstIntPlug;
+class ZstInputPlug;
+class ZstOutputPlug;
 class ZstPerformer;
 class ZstURI;
 class ZstEndpoint;
 class ZstEvent;
 class ZstEventCallback;
+enum class ZstValueType;
 
 #define STAGE_REP_PORT 6000
 #define STAGE_ROUTER_PORT 6001
@@ -23,6 +25,13 @@ enum RuntimeLanguage {
 	NATIVE_RUNTIME,
 	PYTHON_RUNTIME,
 	DOTNET_RUNTIME
+};
+
+enum class ZstValueType {
+	ZST_NONE = 0,
+	ZST_INT,
+	ZST_FLOAT,
+	ZST_STRING
 };
 
 class Showtime
@@ -62,7 +71,8 @@ public:
 	ZST_EXPORT static ZstEvent pop_event();
 	ZST_EXPORT static int event_queue_size();
 
-	ZST_EXPORT static ZstIntPlug * create_int_plug(ZstURI * uri);
+	ZST_EXPORT static ZstInputPlug * create_input_plug(ZstURI * uri, ZstValueType val_type);
+	ZST_EXPORT static ZstOutputPlug * create_output_plug(ZstURI * uri, ZstValueType val_type);
     ZST_EXPORT static int destroy_plug(ZstPlug *plug);
 
 	ZST_EXPORT static int connect_cable(const ZstURI * a, const ZstURI * b);

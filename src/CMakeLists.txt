@@ -10,6 +10,7 @@ set(ZST_PUBLIC_HEADERS
  ${Showtime_INCLUDE_DIRS}/ZstMessages.h
  ${Showtime_INCLUDE_DIRS}/ZstEvent.h
  ${Showtime_INCLUDE_DIRS}/ZstCable.h
+ ${Showtime_INCLUDE_DIRS}/ZstValue.h
 )
 
 set(ZST_PRIVATE_HEADERS 
@@ -18,6 +19,7 @@ set(ZST_PRIVATE_HEADERS
  ${Showtime_INCLUDE_DIRS}/ZstActor.h	
  ${Showtime_INCLUDE_DIRS}/ZstPlugRef.h
  ${Showtime_INCLUDE_DIRS}/ZstURIWire.h
+ ${Showtime_INCLUDE_DIRS}/ZstValueWire.h
  ${Showtime_INCLUDE_DIRS}/ZstEventWire.h
  ${Showtime_INCLUDE_DIRS}/ZstPerformerRef.h
  ${Showtime_INCLUDE_DIRS}/ZstEndpointRef.h
@@ -43,6 +45,8 @@ set(ZST_SOURCE
  "ZstEndpointRef.cpp"
  "ZstStage.cpp"
  "ZstCable.cpp"
+ "ZstValue.cpp"
+ "ZstValueWire.cpp"
 )
 
 set(ZST_INCLUDES 
@@ -50,10 +54,12 @@ set(ZST_INCLUDES
 	${ZeroMQ_INCLUDE_DIRS}
 	${CZMQ_INCLUDE_DIRS}
     ${MSGPACK_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
 )
 
 include_directories(${ZST_INCLUDES})
 
+link_directories(${Boost_LIBRARY_DIRS})
 set(ZST_LINK_LIBS
 	${ZeroMQ_LIBRARIES}
 	${CZMQ_LIBRARIES}
@@ -63,6 +69,7 @@ set(ZST_LINK_LIBS
 IF(WIN32)
 	add_definitions(-DEXPORTS_API)
 ENDIF(WIN32)
+add_definitions(-DMSGPACK_USE_BOOST)
 
 # Create Showtime library target
 add_library(${PROJECT_NAME} SHARED ${ZST_HEADERS} ${ZST_SOURCE})

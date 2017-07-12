@@ -3,12 +3,12 @@
 #include <memory>
 #include <tuple>
 #include <iostream>
-#include <type_traits>
 #include "Showtime.h"
 #include "ZstPlug.h"
 #include "ZstPerformer.h"
 #include "ZstStage.h"
 #include "ZstEndpoint.h"
+#include "ZstValue.h"
 
 #ifdef WIN32
 #define TAKE_A_BREATH Sleep(100);
@@ -84,12 +84,40 @@ public:
 	};
 };
 
-class TestIntValueCallback : public ZstEventCallback {
+class TestIntValueCallback : public ZstInputPlugEventCallback {
 public:
-	void run(ZstEvent e) override {
+	int compare_val;
+	TestIntValueCallback(int cmpr) : compare_val(cmpr) {}
+	void run(ZstInputPlug * plug) override {
+		std::cout << plug->value()->int_at(0) << std::endl;
+		assert(plug->value()->int_at(0) == compare_val);
 		intPlugCallbacks++;
 	};
 };
+
+class TestFloatValueCallback : public ZstInputPlugEventCallback {
+public:
+	float compare_val;
+	TestFloatValueCallback(float cmpr) : compare_val(cmpr) {}
+	void run(ZstInputPlug * plug) override {
+		std::cout << plug->value()->float_at(0) << std::endl;
+		assert(plug->value()->float_at(0) == compare_val);
+	};
+};
+
+class TestCharValueCallback : public ZstInputPlugEventCallback {
+public:
+	char* compare_val;
+	TestCharValueCallback(char* cmpr) : compare_val(cmpr) {}
+	~TestCharValueCallback() { delete compare_val; }
+	void run(ZstInputPlug * plug) override {
+		std::cout << plug->value()->char_at(0) << std::endl;
+		assert(strcmp(plug->value()->char_at(0), compare_val) == 0);
+	};
+};
+
+
+
 
 class TestConnectionCallback : public ZstEventCallback {
 public:
@@ -114,16 +142,16 @@ void test_create_plugs(){
 	ZstURI inURI_stack = ZstURI(*inURI);
 
 	//URI ownership taken over by plug
-	ZstIntPlug *outputPlug = Showtime::create_int_plug(outURI);
-	ZstIntPlug *inputPlug = Showtime::create_int_plug(inURI);
+	ZstOutputPlug *outputPlug = Showtime::create_output_plug(outURI, ZstValueType::ZST_INT);
+	ZstInputPlug *inputPlug = Showtime::create_input_plug(inURI, ZstValueType::ZST_INT);
     
     //Check address equality
     assert(outputPlug->get_URI() == outURI);
     assert(!(outputPlug->get_URI() == inURI));
 
 	//Test creating plug with type functions (blame swig python!)
-	ZstIntPlug *typedIntPlug = Showtime::create_int_plug(ZstURI::create("test_performer_1", "test_instrument", "test_int_plug", ZstURI::Direction::OUT_JACK));
-	ZstURI typedIntPlug_stack = ZstURI(*typedIntPlug->get_URI());
+	ZstInputPlug *typedInputPlug = Showtime::create_input_plug(ZstURI::create("test_performer_1", "test_instrument", "test_int_plug", ZstURI::Direction::OUT_JACK), ZstValueType::ZST_INT);
+	ZstURI typedIntPlug_stack = ZstURI(*typedInputPlug->get_URI());
 
 	//Check that our plug creation callbacks fired successfully
 	TAKE_A_BREATH
@@ -137,7 +165,7 @@ void test_create_plugs(){
     ZstPerformerRef *stagePerformerRef = stage->get_performer_ref_by_name("test_performer_1");
     assert(stagePerformerRef->get_plug_by_URI(*(outputPlug->get_URI())) != NULL);
     assert(stagePerformerRef->get_plug_by_URI(*(inputPlug->get_URI())) != NULL);
-	assert(stagePerformerRef->get_plug_by_URI(*(typedIntPlug->get_URI())) != NULL);
+	assert(stagePerformerRef->get_plug_by_URI(*(typedInputPlug->get_URI())) != NULL);
 
 	//Check local client registered plugs correctly
 	ZstPlug *localPlug = Showtime::get_performer_by_URI(outURI)->get_plug_by_URI(*outURI);
@@ -150,7 +178,7 @@ void test_create_plugs(){
 	Showtime::endpoint().destroy_plug(inputPlug);
 	assert(stage->get_performer_ref_by_name(inURI_stack.performer_char())->get_plug_by_URI(inURI_stack) == NULL);
 
-	Showtime::endpoint().destroy_plug(typedIntPlug);
+	Showtime::endpoint().destroy_plug(typedInputPlug);
 	assert(stage->get_performer_ref_by_name(typedIntPlug_stack.performer_char())->get_plug_by_URI(typedIntPlug_stack) == NULL);
 
 	TAKE_A_BREATH
@@ -161,18 +189,70 @@ void test_create_plugs(){
 	stageEventHits = 0;
 }
 
+void test_check_plug_values() {
+	ZstURI * outURI = ZstURI::create("test_performer_1", "mem_instrument", "mem_output_plug", ZstURI::Direction::OUT_JACK);
+	ZstURI * inURI = ZstURI::create("test_performer_1", "mem_instrument", "mem_input_plug", ZstURI::Direction::IN_JACK);
+	ZstOutputPlug *output_plug = Showtime::create_output_plug(outURI, ZstValueType::ZST_INT);
+	ZstInputPlug *input_plug = Showtime::create_input_plug(inURI, ZstValueType::ZST_INT);
+	Showtime::connect_cable(output_plug->get_URI(), input_plug->get_URI());
+	Showtime::poll_once();
+
+	int int_cmpr_val = 27;
+	float float_cmpr_val = 12.5f;
+	char* char_cmp_val = "hello world";
+
+	ZstInputPlugEventCallback * int_callback = (ZstInputPlugEventCallback*)(new TestIntValueCallback(int_cmpr_val));
+	ZstInputPlugEventCallback * float_callback = (ZstInputPlugEventCallback*)(new TestFloatValueCallback(float_cmpr_val));
+	ZstInputPlugEventCallback * char_callback = (ZstInputPlugEventCallback*)(new TestCharValueCallback(char_cmp_val));
+
+	input_plug->attach_recv_callback(int_callback);
+	output_plug->value()->append_int(int_cmpr_val);
+	output_plug->fire();
+	output_plug->value()->clear();
+	TAKE_A_BREATH
+	Showtime::poll_once();
+	TAKE_A_BREATH
+	input_plug->destroy_recv_callback(int_callback);
+
+	input_plug->attach_recv_callback(float_callback);
+	output_plug->value()->append_float(float_cmpr_val);
+	output_plug->fire();
+	output_plug->value()->clear();
+	TAKE_A_BREATH
+	Showtime::poll_once();
+	TAKE_A_BREATH
+	input_plug->destroy_recv_callback(float_callback);
+
+	input_plug->attach_recv_callback(char_callback);
+	output_plug->value()->append_char(char_cmp_val);
+	output_plug->fire();
+	output_plug->value()->clear();
+	TAKE_A_BREATH
+	Showtime::poll_once();
+	TAKE_A_BREATH
+	input_plug->destroy_recv_callback(char_callback);
+
+	TAKE_A_BREATH
+	Showtime::destroy_plug(output_plug);
+	Showtime::destroy_plug(input_plug);
+}
+
 void test_memory_leaks() {
 	ZstURI * outURI = ZstURI::create("test_performer_1", "mem_instrument", "mem_output_plug", ZstURI::Direction::OUT_JACK);
 	ZstURI * inURI = ZstURI::create("test_performer_1", "mem_instrument", "mem_input_plug", ZstURI::Direction::IN_JACK);
-	ZstIntPlug *output_int_plug = Showtime::create_int_plug(outURI);
-	ZstIntPlug *input_int_plug = Showtime::create_int_plug(inURI);
-	input_int_plug->attach_recv_callback(new TestIntValueCallback());
+	ZstOutputPlug *output_int_plug = Showtime::create_output_plug(outURI, ZstValueType::ZST_INT);
+	ZstInputPlug *input_int_plug = Showtime::create_input_plug(inURI, ZstValueType::ZST_INT);
+	
+	int int_cmpr_val = 27;
+	input_int_plug->attach_recv_callback(new TestIntValueCallback(int_cmpr_val));
 	Showtime::connect_cable(output_int_plug->get_URI(), input_int_plug->get_URI());
 
 	int count = 100;
 	int current = 0;
 	while (++current < count) {
-		output_int_plug->fire(current);
+		output_int_plug->value()->append_int(int_cmpr_val);
+		output_int_plug->fire();
+		output_int_plug->value()->clear();
 		Showtime::poll_once();
 	}
 
@@ -186,11 +266,13 @@ void test_connect_plugs() {
 	ZstURI * outURI = ZstURI::create("test_performer_1", "test_instrument", "test_output_plug", ZstURI::Direction::OUT_JACK);
 	ZstURI * inURI = ZstURI::create("test_performer_1", "test_instrument", "test_input_plug", ZstURI::Direction::IN_JACK);
 	ZstURI * badURI = ZstURI::create("fake_performer", "test_instrument", "test_input_plug", ZstURI::Direction::IN_JACK);
+	
+	int int_fire_val = 27;
 
 	//Test plugs connected between performers
-	ZstIntPlug *output_int_plug = Showtime::create_int_plug(outURI);
-	ZstIntPlug *input_int_plug = Showtime::create_int_plug(inURI);
-    input_int_plug->attach_recv_callback(new TestIntValueCallback());
+	ZstOutputPlug *output_int_plug = Showtime::create_output_plug(outURI, ZstValueType::ZST_INT);
+	ZstInputPlug *input_int_plug = Showtime::create_input_plug(inURI, ZstValueType::ZST_INT);
+    input_int_plug->attach_recv_callback(new TestIntValueCallback(int_fire_val));
 	Showtime::connect_cable(output_int_plug->get_URI(), input_int_plug->get_URI());
 
 	TAKE_A_BREATH
@@ -210,7 +292,9 @@ void test_connect_plugs() {
 	//Test plug value callbacks
 	int num_fires = 5;
 	for (int i = 0; i < num_fires; ++i) {
-		output_int_plug->fire(i);
+		output_int_plug->value()->append_int(int_fire_val);
+		output_int_plug->fire();
+		output_int_plug->value()->clear();
 	}
 
 	TAKE_A_BREATH
@@ -223,7 +307,9 @@ void test_connect_plugs() {
 	//Test manual event queue pop. This is thread safe so we can pop each event off at our leisure
 	num_fires = 5;
 	for (int i = 0; i < num_fires; ++i) {
-		output_int_plug->fire(i);
+		output_int_plug->value()->append_int(1);
+		output_int_plug->fire();
+		output_int_plug->value()->clear();
 	}
 
 	TAKE_A_BREATH
@@ -275,6 +361,7 @@ int main(int argc,char **argv){
 	test_performer_init();
     test_stage_registration();
     test_create_plugs();
+	test_check_plug_values();
 	test_connect_plugs();
     test_memory_leaks();
     test_leaving();
