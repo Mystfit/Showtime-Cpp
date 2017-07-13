@@ -13,7 +13,6 @@ class ZstURI;
 class ZstEndpoint;
 class ZstEvent;
 class ZstEventCallback;
-enum class ZstValueType;
 
 #define STAGE_REP_PORT 6000
 #define STAGE_ROUTER_PORT 6001
@@ -27,7 +26,7 @@ enum RuntimeLanguage {
 	DOTNET_RUNTIME
 };
 
-enum class ZstValueType {
+enum ZstValueType {
 	ZST_NONE = 0,
 	ZST_INT,
 	ZST_FLOAT,

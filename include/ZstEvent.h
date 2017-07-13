@@ -38,7 +38,6 @@ protected:
 
 class ZstEventCallback {
 public:
-	ZST_EXPORT ZstEventCallback();
-	virtual ~ZstEventCallback() { std::cout << "ZstEventCallback::~ZstEventCallback()" << std::endl; }
-	virtual void run(ZstEvent e) { std::cout << "ZstEventCallback::run()" << std::endl; }
+	ZST_EXPORT virtual ~ZstEventCallback() { std::cout << "Destroying stage event callback" << std::endl; }
+	ZST_EXPORT virtual void run(ZstEvent e) { std::cout << "Running stage event callback" << std::endl; }
 };

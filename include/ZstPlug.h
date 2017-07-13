@@ -36,16 +36,21 @@ private:
 // ----------------------
 // Plug types
 // ----------------------
-class ZstInputPlugEventCallback;
+class ZstInputPlugEventCallback {
+public:
+	ZST_EXPORT virtual ~ZstInputPlugEventCallback() { std::cout << "Destroying input callback" << std::endl; }
+	ZST_EXPORT virtual void run(ZstInputPlug * e) { std::cout << "Input callback running" << std::endl; }
+};
+
 class ZstInputPlug : public ZstPlug {
 public:
 	ZstInputPlug(ZstURI * uri, ZstValueType t) : ZstPlug(uri, t) {};
-	~ZstInputPlug();
+	ZST_EXPORT ~ZstInputPlug();
 	
 	//Plug callbacks
 	ZST_EXPORT void attach_recv_callback(ZstInputPlugEventCallback * callback);
 	ZST_EXPORT void destroy_recv_callback(ZstInputPlugEventCallback * callback);
-	void run_recv_callbacks();
+	ZST_EXPORT void run_recv_callbacks();
 
 	//Receive a msgpacked value through this plug
 	ZST_EXPORT void recv(ZstValue * val);
@@ -57,11 +62,4 @@ class ZstOutputPlug : public ZstPlug {
 public:
 	ZstOutputPlug(ZstURI * uri, ZstValueType t) : ZstPlug(uri, t) {};
 	ZST_EXPORT void fire();
-};
-
-class ZstInputPlugEventCallback {
-public:
-	ZST_EXPORT ZstInputPlugEventCallback();
-	virtual ~ZstInputPlugEventCallback() { std::cout << "ZstPlugEventCallback::~ZstPlugEventCallback()" << std::endl; }
-	virtual void run(ZstInputPlug * e) { std::cout << "ZstEventCallback::run()" << std::endl; }
 };

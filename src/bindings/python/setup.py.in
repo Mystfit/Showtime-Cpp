@@ -21,7 +21,7 @@ class build_ext(_build_ext):
         _build_ext.initialize_options(self)
         self.swig = "${SWIG_EXECUTABLE}"
 
-extra_compile_args = []
+extra_compile_args = ['-DMSGPACK_USE_BOOST']
 extra_link_args = []
 runtimes = []
 libraries = []
@@ -45,7 +45,7 @@ elif platform.system() == 'Windows':
 
 showtime_module = Extension('_showtime',
     sources=['${CMAKE_CURRENT_BINARY_DIR}/showtime.i'],
-    include_dirs=['${Showtime_INCLUDE_DIRS}', '${MSGPACK_INCLUDE_DIR}'],
+    include_dirs=['${Showtime_INCLUDE_DIRS}', '${MSGPACK_INCLUDE_DIR}', '${Boost_INCLUDE_DIR}'],
     library_dirs=library_dirs,
     libraries=libraries,
     extra_compile_args=extra_compile_args,

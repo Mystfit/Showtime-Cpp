@@ -460,7 +460,7 @@ int ZstStage::destroy_cable(const ZstURI & uri){
     vector<ZstCable*> cables = get_cables_by_URI(uri);
     for (auto cable : cables) {
         if(!destroy_cable(cable)){
-            cout << "Couldn't remove cable" << endl;
+            cout << "ZST_STAGE: Couldn't remove cable" << endl;
 			return 0;
         }
     }
@@ -569,11 +569,10 @@ int ZstStage::stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * ar
 
 	for (auto endpoint : endpoints) {
 		if (endpoint.second->get_active_heartbeat()) {
-			cout << "Endpoint " << endpoint.second->client_assigned_uuid << " is alive" << endl;
 			endpoint.second->clear_active_hearbeat();
 		}
 		else {
-			cout << "Endpoint " << endpoint.second->client_assigned_uuid << " missed a heartbeat. " << (MAX_MISSED_HEARTBEATS - endpoint.second->get_missed_heartbeats()) << " remaining" << endl;
+			cout << "ZST_STAGE: Endpoint " << endpoint.second->client_assigned_uuid << " missed a heartbeat. " << (MAX_MISSED_HEARTBEATS - endpoint.second->get_missed_heartbeats()) << " remaining" << endl;
 			endpoint.second->set_heartbeat_inactive();
 		}
 

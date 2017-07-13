@@ -57,7 +57,3 @@ bool ZstEvent::operator!=(const ZstEvent & other)
 {
 	return !(m_first == other.m_first && m_second == other.m_second);
 }
-
-ZstEventCallback::ZstEventCallback() {
-
-}

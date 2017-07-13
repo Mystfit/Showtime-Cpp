@@ -392,7 +392,6 @@ vector<ZstCable*> ZstEndpoint::get_cables_by_URI(const ZstURI & uri) {
 ZstCable * ZstEndpoint::get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB) {
 
 	auto it = find_if(m_cables.begin(), m_cables.end(), [&uriA, &uriB](ZstCable * current) {
-		cout << current->is_attached(uriA, uriB) << endl;
 		return current->is_attached(uriA, uriB);
 	});
 

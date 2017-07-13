@@ -5,9 +5,9 @@
 	#include "ZstURI.h"
 	#include "ZstPlug.h"
 	#include "ZstEvent.h"
+	#include "ZstValue.h"
 %}
 
 %include "../showtime_common.i"
 
-%include "std_vector.i"
 %include "Showtime.h"

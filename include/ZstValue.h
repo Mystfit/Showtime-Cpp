@@ -12,10 +12,9 @@
 
 class ZstValue {
 public:
-	ZstValue();
-	ZstValue(ZstValueType t);
-	~ZstValue();
-	void init();
+	ZST_EXPORT ZstValue();
+	ZST_EXPORT ZstValue(ZstValueType t);
+	ZST_EXPORT ~ZstValue();
 
 	ZST_EXPORT ZstValueType get_default_type();
 	
@@ -33,4 +32,7 @@ public:
 protected:
 	std::vector<msgpack::type::variant> m_values;
 	ZstValueType m_default_type;
+
+private:
+	void init();
 };

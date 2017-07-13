@@ -7,10 +7,9 @@ public class ShowtimeController : MonoBehaviour {
 
 	public string stageAddress = "127.0.0.1";
 	public string localPerformerName = "unity_performer";
-	public bool testPython = false;
 	private SWIGTYPE_p_ZstPerformer localPerformer;
-	private ZstIntPlug local_plug_out;
-	private ZstIntPlug local_plug_in;
+	private ZstOutputPlug local_plug_out;
+	private ZstInputPlug local_plug_in;
     private StageCallback stageCallback;
     private PlugCallback plugCallback;
 
@@ -24,7 +23,6 @@ public class ShowtimeController : MonoBehaviour {
         Showtime.attach_stage_event_callback(stageCallback);
 
 		//Start the event loop coroutine to listen for showtime events
-		StartCoroutine (ShowtimeEventLoop());
 
 		//Join the performance
 		Showtime.join (stageAddress);
@@ -37,36 +35,28 @@ public class ShowtimeController : MonoBehaviour {
 		ZstURI local_uri_in = ZstURI.create(localPerformerName, "ins", "plug_in", ZstURI.Direction.IN_JACK);
 
 		//Create our local plug objects. Will block until the stage returns them. Could be async?
-		local_plug_out = Showtime.create_int_plug(local_uri_out);
-		local_plug_in = Showtime.create_int_plug(local_uri_in);
+		local_plug_out = Showtime.create_output_plug(local_uri_out, ZstValueType.ZST_INT);
+		local_plug_in = Showtime.create_input_plug(local_uri_in, ZstValueType.ZST_INT);
 
         plugCallback = new PlugCallback();
         local_plug_in.attach_recv_callback(plugCallback);
 
 		//Connect the plugs together
 		Showtime.connect_cable(local_uri_out, local_uri_in);
+        Showtime.poll_once();
 
-		//Need to wait whilst plugs connect before we send anything. Will need to put some flag into 
-		//the plug to signify connection status
-		System.Threading.Thread.Sleep(100);
+        //Need to wait whilst plugs connect before we send anything. Will need to put some flag into 
+        //the plug to signify connection status
+        System.Threading.Thread.Sleep(100);
 
-		//Send a value through this plug. THis is an Int plug so we send an int (duh)
-		local_plug_out.fire(1);
+        //Send a value through this plug. THis is an Int plug so we send an int (duh)
+        local_plug_out.value().append_int(27);
+		local_plug_out.fire();
 
 		//Pause again to give the message time to do a round trip internally
 		System.Threading.Thread.Sleep(100);
-
-		Debug.Log ("Final plug value: " + local_plug_in.get_value());
-
-		//Test connecting/sending to python
-		if (testPython) {
-			ZstURI remote_uri_in = ZstURI.create ("python_perf", "ins", "plug_in", ZstURI.Direction.IN_JACK);
-
-			Showtime.connect_cable (local_uri_out, remote_uri_in);
-			System.Threading.Thread.Sleep (100);
-
-			local_plug_out.fire (12);
-		}
+        StartCoroutine ("ShowtimeEventLoop");
+        Debug.Log ("Final plug value: " + local_plug_in.value().int_at(0));
 	}
 	
 	void Update () {
@@ -90,11 +80,10 @@ public class ShowtimeController : MonoBehaviour {
 		}
 	}
 
-    public class PlugCallback : ZstEventCallback{
-        public override void run(ZstEvent e)
+    public class PlugCallback : ZstInputPlugEventCallback{
+        public override void run(ZstInputPlug plug)
         {
-            Debug.Log("Plug: " + e.get_first().to_char() + " received hit with val ");
-        
+            Debug.Log("Plug: " + plug.get_URI().to_char() + " received hit with val " + plug.value().int_at(0));
         }
     }
 

@@ -63,7 +63,3 @@ void ZstOutputPlug::fire()
 {
 	Showtime::endpoint().send_to_graph(ZstMessages::build_graph_message(*(this->get_URI()), ZstValueWire(*m_value)));
 }
-
-ZstInputPlugEventCallback::ZstInputPlugEventCallback()
-{
-}
