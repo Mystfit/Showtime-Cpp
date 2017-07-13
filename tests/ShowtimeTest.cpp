@@ -22,11 +22,91 @@
 #define WAIT_FOR_HEARTBEAT usleep(1000 * HEARTBEAT_DURATION);
 #endif
 
+inline void wait_for_poll() {
+	while (Showtime::event_queue_size() < 1) {
+		TAKE_A_BREATH 
+	}
+	Showtime::poll_once();
+}
+
+//Callback classes
+//----------------
+class TestStageEventCallback : public ZstEventCallback {
+public:
+	int stageEventHits = 0;
+	void run(ZstEvent e) override {
+		std::cout << "ZST_TEST CALLBACK - Stage event type " << e.get_update_type() << ": " << e.get_first().to_char() << std::endl;
+		stageEventHits++;
+	};
+	void reset() { stageEventHits = 0; }
+};
+
+class TestConnectionCallback : public ZstEventCallback {
+public:
+	int connectionCallbacks = 0;
+	void run(ZstEvent e) override {
+		connectionCallbacks++;
+	};
+};
+
+class TestIntValueCallback : public ZstInputPlugEventCallback {
+public:
+	int compare_val;
+	int intPlugCallbacks = 0;
+	TestIntValueCallback(int cmpr) : compare_val(cmpr) {}
+	void run(ZstInputPlug * plug) override {
+		std::cout << "ZST_TEST CALLBACK - int: " << plug->value()->int_at(0) << std::endl;
+		assert(plug->value()->int_at(0) == compare_val);
+		intPlugCallbacks++;
+	};
+};
+
+class TestFloatValueCallback : public ZstInputPlugEventCallback {
+public:
+	float compare_val;
+	TestFloatValueCallback(float cmpr) : compare_val(cmpr) {}
+	void run(ZstInputPlug * plug) override {
+		std::cout << "ZST_TEST CALLBACK - float:" << plug->value()->float_at(0) << std::endl;
+		assert(fabs(plug->value()->float_at(0) - compare_val) < FLT_EPSILON);
+	};
+};
+
+class TestCharValueCallback : public ZstInputPlugEventCallback {
+public:
+	const char* compare_val;
+	TestCharValueCallback(const char* cmpr) : compare_val(cmpr) {}
+	void run(ZstInputPlug * plug) override {
+		char * str_val = new char[plug->value()->size_at(0) + 1]();
+		plug->value()->char_at(str_val, 0);
+		std::cout << "ZST_TEST CALLBACK - char: " << str_val << std::endl;
+		assert(strcmp(str_val, compare_val) == 0);
+		delete[] str_val;
+	};
+};
+
+class TestMultipleIntValueCallback : public ZstInputPlugEventCallback {
+public:
+	int compare_val;
+	int _num_values;
+	TestMultipleIntValueCallback(int cmpr, int num_values) : compare_val(cmpr), _num_values(num_values) {}
+	void run(ZstInputPlug * plug) override {
+		std::cout << "ZST_TEST CALLBACK - multple ints" << std::endl;
+		assert(plug->value()->size() == _num_values);
+		for (int i = 0; i < plug->value()->size(); ++i) {
+			assert(plug->value()->int_at(i));
+		}
+	};
+};
+
+
+
+//Global test variables
 ZstStage *stage;
 ZstPerformer *performer_a;
 
-void test_URI() {
 
+void test_URI() {
+	std::cout << "Starting URI test" << std::endl;
 	//Verify standard layout
 	assert(std::is_standard_layout<ZstURI>());
 	assert(std::is_standard_layout<ZstCable>());
@@ -53,85 +133,38 @@ void test_URI() {
 	ZstURI::destroy(uri_notequal);
 	ZstURI::destroy(uri_equal1);
 	ZstURI::destroy(uri_empty);
+	std::cout << "Finished URI test\n" << std::endl;
 }
 
 void test_performer_init() {
     //Test single performer init
+	std::cout << "Starting performer init test" << std::endl;
 	Showtime::endpoint().self_test();
 	performer_a = Showtime::create_performer("test_performer_1");
 	assert(performer_a);
 	ZstEvent e = Showtime::pop_event();
 	assert(strcmp(e.get_first().to_char(), "test_performer_1//?d=0") == 0);
+	std::cout << "Finished performer init test\n" << std::endl;
 }
 
 //Test stage creation and performer
 void test_stage_registration(){
+	std::cout << "Starting stage registration test" << std::endl;
+
     //Test stage connection
     assert(Showtime::endpoint().ping_stage() >= 0);
     assert(stage->get_performer_ref_by_name("test_performer_1") != NULL);
     assert(stage->get_performer_ref_by_name("non_existing_performer") == NULL);
+
+	std::cout << "Finished stage registration test\n" << std::endl;
 }
 
-//Callback definitions and trackers
-int stageEventHits = 0;
-int intPlugCallbacks = 0;
-int connectionCallbacks = 0;
-
-class TestStageEventCallback : public ZstEventCallback {
-public:
-	void run(ZstEvent e) override {
-		stageEventHits++;
-	};
-};
-
-class TestIntValueCallback : public ZstInputPlugEventCallback {
-public:
-	int compare_val;
-	TestIntValueCallback(int cmpr) : compare_val(cmpr) {}
-	void run(ZstInputPlug * plug) override {
-		std::cout << plug->value()->int_at(0) << std::endl;
-		assert(plug->value()->int_at(0) == compare_val);
-		intPlugCallbacks++;
-	};
-};
-
-class TestFloatValueCallback : public ZstInputPlugEventCallback {
-public:
-	float compare_val;
-	TestFloatValueCallback(float cmpr) : compare_val(cmpr) {}
-	void run(ZstInputPlug * plug) override {
-		std::cout << plug->value()->float_at(0) << std::endl;
-		assert(plug->value()->float_at(0) == compare_val);
-	};
-};
-
-class TestCharValueCallback : public ZstInputPlugEventCallback {
-public:
-	char* compare_val;
-	TestCharValueCallback(char* cmpr) : compare_val(cmpr) {}
-	~TestCharValueCallback() { delete compare_val; }
-	void run(ZstInputPlug * plug) override {
-		std::cout << plug->value()->char_at(0) << std::endl;
-		assert(strcmp(plug->value()->char_at(0), compare_val) == 0);
-	};
-};
-
-
-
-
-class TestConnectionCallback : public ZstEventCallback {
-public:
-	void run(ZstEvent e) override {
-		connectionCallbacks++;
-	};
-};
-
-
-
 void test_create_plugs(){
+	std::cout << "Starting create plugs test" << std::endl;
 
 	//Attach stage event callbacks first so we get status updates from stage on plug creation
-	Showtime::attach_stage_event_callback(new TestStageEventCallback());
+	TestStageEventCallback * stagecallback = new TestStageEventCallback();
+	Showtime::attach_stage_event_callback(stagecallback);
 
     //Create new plugs
 	ZstURI * outURI = ZstURI::create("test_performer_1", "test_instrument", "test_output_plug", ZstURI::Direction::OUT_JACK);
@@ -158,8 +191,8 @@ void test_create_plugs(){
 	assert(Showtime::event_queue_size() > 0);
 	Showtime::poll_once();
 	assert(Showtime::event_queue_size() == 0);
-	assert(stageEventHits == 3);
-	stageEventHits = 0;
+	assert(stagecallback->stageEventHits == 3);
+	stagecallback->reset();
 
     //Check stage registered plugs successfully
     ZstPerformerRef *stagePerformerRef = stage->get_performer_ref_by_name("test_performer_1");
@@ -181,148 +214,41 @@ void test_create_plugs(){
 	Showtime::endpoint().destroy_plug(typedInputPlug);
 	assert(stage->get_performer_ref_by_name(typedIntPlug_stack.performer_char())->get_plug_by_URI(typedIntPlug_stack) == NULL);
 
-	TAKE_A_BREATH
-	assert(Showtime::event_queue_size() > 0);
-	Showtime::poll_once();
-	assert(Showtime::event_queue_size() == 0);
-	assert(stageEventHits == 3);
-	stageEventHits = 0;
+	wait_for_poll();
+	Showtime::remove_stage_event_callback(stagecallback);
+
+	std::cout << "Finished create plugs test\n" << std::endl;
 }
 
-void test_check_plug_values() {
-	ZstURI * outURI = ZstURI::create("test_performer_1", "mem_instrument", "mem_output_plug", ZstURI::Direction::OUT_JACK);
-	ZstURI * inURI = ZstURI::create("test_performer_1", "mem_instrument", "mem_input_plug", ZstURI::Direction::IN_JACK);
-	ZstOutputPlug *output_plug = Showtime::create_output_plug(outURI, ZstValueType::ZST_INT);
-	ZstInputPlug *input_plug = Showtime::create_input_plug(inURI, ZstValueType::ZST_INT);
-	Showtime::connect_cable(output_plug->get_URI(), input_plug->get_URI());
-	Showtime::poll_once();
-
-	int int_cmpr_val = 27;
-	float float_cmpr_val = 12.5f;
-	char* char_cmp_val = "hello world";
-
-	ZstInputPlugEventCallback * int_callback = (ZstInputPlugEventCallback*)(new TestIntValueCallback(int_cmpr_val));
-	ZstInputPlugEventCallback * float_callback = (ZstInputPlugEventCallback*)(new TestFloatValueCallback(float_cmpr_val));
-	ZstInputPlugEventCallback * char_callback = (ZstInputPlugEventCallback*)(new TestCharValueCallback(char_cmp_val));
-
-	input_plug->attach_recv_callback(int_callback);
-	output_plug->value()->append_int(int_cmpr_val);
-	output_plug->fire();
-	output_plug->value()->clear();
-	TAKE_A_BREATH
-	Showtime::poll_once();
-	TAKE_A_BREATH
-	input_plug->destroy_recv_callback(int_callback);
-
-	input_plug->attach_recv_callback(float_callback);
-	output_plug->value()->append_float(float_cmpr_val);
-	output_plug->fire();
-	output_plug->value()->clear();
-	TAKE_A_BREATH
-	Showtime::poll_once();
-	TAKE_A_BREATH
-	input_plug->destroy_recv_callback(float_callback);
-
-	input_plug->attach_recv_callback(char_callback);
-	output_plug->value()->append_char(char_cmp_val);
-	output_plug->fire();
-	output_plug->value()->clear();
-	TAKE_A_BREATH
-	Showtime::poll_once();
-	TAKE_A_BREATH
-	input_plug->destroy_recv_callback(char_callback);
-
-	TAKE_A_BREATH
-	Showtime::destroy_plug(output_plug);
-	Showtime::destroy_plug(input_plug);
-}
-
-void test_memory_leaks() {
-	ZstURI * outURI = ZstURI::create("test_performer_1", "mem_instrument", "mem_output_plug", ZstURI::Direction::OUT_JACK);
-	ZstURI * inURI = ZstURI::create("test_performer_1", "mem_instrument", "mem_input_plug", ZstURI::Direction::IN_JACK);
-	ZstOutputPlug *output_int_plug = Showtime::create_output_plug(outURI, ZstValueType::ZST_INT);
-	ZstInputPlug *input_int_plug = Showtime::create_input_plug(inURI, ZstValueType::ZST_INT);
-	
-	int int_cmpr_val = 27;
-	input_int_plug->attach_recv_callback(new TestIntValueCallback(int_cmpr_val));
-	Showtime::connect_cable(output_int_plug->get_URI(), input_int_plug->get_URI());
-
-	int count = 100;
-	int current = 0;
-	while (++current < count) {
-		output_int_plug->value()->append_int(int_cmpr_val);
-		output_int_plug->fire();
-		output_int_plug->value()->clear();
-		Showtime::poll_once();
-	}
-
-	TAKE_A_BREATH
-	Showtime::destroy_plug(output_int_plug);
-	Showtime::destroy_plug(input_int_plug);
-}
 
 void test_connect_plugs() {
+	std::cout << "Starting connect plugs test" << std::endl;
 
+	//TestConnectionCallback * cableCallback = new TestConnectionCallback();
+	//Showtime::attach_cable_callback(cableCallback);
 	ZstURI * outURI = ZstURI::create("test_performer_1", "test_instrument", "test_output_plug", ZstURI::Direction::OUT_JACK);
 	ZstURI * inURI = ZstURI::create("test_performer_1", "test_instrument", "test_input_plug", ZstURI::Direction::IN_JACK);
 	ZstURI * badURI = ZstURI::create("fake_performer", "test_instrument", "test_input_plug", ZstURI::Direction::IN_JACK);
-	
+
 	int int_fire_val = 27;
 
 	//Test plugs connected between performers
 	ZstOutputPlug *output_int_plug = Showtime::create_output_plug(outURI, ZstValueType::ZST_INT);
 	ZstInputPlug *input_int_plug = Showtime::create_input_plug(inURI, ZstValueType::ZST_INT);
-    input_int_plug->attach_recv_callback(new TestIntValueCallback(int_fire_val));
+	input_int_plug->attach_recv_callback(new TestIntValueCallback(int_fire_val));
 	Showtime::connect_cable(output_int_plug->get_URI(), input_int_plug->get_URI());
 
 	TAKE_A_BREATH
 	assert(Showtime::event_queue_size() > 0);
 	Showtime::poll_once();
 	assert(Showtime::event_queue_size() == 0);
-    assert(Showtime::endpoint().get_cable_by_URI( *outURI, *inURI) != NULL);
-	//assert(connectionCallbacks == 1);
-	connectionCallbacks = 0;
+	assert(Showtime::endpoint().get_cable_by_URI(*outURI, *inURI) != NULL);
 
 	//Test connecting missing URI objects
 	std::cout << " Testing bad cable connection request" << std::endl;
 	assert(Showtime::connect_cable(output_int_plug->get_URI(), badURI) <= 0);
 	delete badURI;
 	std::cout << "Finished testing bad cable connection request" << std::endl;
-
-	//Test plug value callbacks
-	int num_fires = 5;
-	for (int i = 0; i < num_fires; ++i) {
-		output_int_plug->value()->append_int(int_fire_val);
-		output_int_plug->fire();
-		output_int_plug->value()->clear();
-	}
-
-	TAKE_A_BREATH
-	assert(Showtime::event_queue_size() > 0);
-	Showtime::poll_once();
-	assert(Showtime::event_queue_size() == 0);
-	assert(intPlugCallbacks == num_fires);
-	intPlugCallbacks = 0;
-
-	//Test manual event queue pop. This is thread safe so we can pop each event off at our leisure
-	num_fires = 5;
-	for (int i = 0; i < num_fires; ++i) {
-		output_int_plug->value()->append_int(1);
-		output_int_plug->fire();
-		output_int_plug->value()->clear();
-	}
-
-	TAKE_A_BREATH
-	for (int i = num_fires; i > 0; --i) {
-		assert(Showtime::event_queue_size() == i);
-		ZstEvent e = Showtime::pop_event();
-		assert(e.get_update_type() == ZstEvent::EventType::PLUG_HIT);
-		assert(strcmp(e.get_first().to_char(), input_int_plug->get_URI()->to_char()) == 0);
-		assert(Showtime::event_queue_size() == i-1);
-	}
-	assert(Showtime::event_queue_size() == 0);
-
-	std::cout << "Queue test successful" << std::endl;
 
 	//Testing connection disconnect and reconnect
 	assert(Showtime::destroy_cable(output_int_plug->get_URI(), input_int_plug->get_URI()));
@@ -333,6 +259,181 @@ void test_connect_plugs() {
 	//Test plug destruction
 	assert(Showtime::destroy_plug(output_int_plug));
 	assert(Showtime::destroy_plug(input_int_plug));
+
+	std::cout << "Finished connect plugs test\n" << std::endl;
+}
+
+
+
+void test_check_plug_values() {
+	std::cout << "Starting check plug values test" << std::endl;
+
+	ZstURI * outURI = ZstURI::create("test_performer_1", "mem_instrument", "mem_output_plug", ZstURI::Direction::OUT_JACK);
+	ZstURI * inURI = ZstURI::create("test_performer_1", "mem_instrument", "mem_input_plug", ZstURI::Direction::IN_JACK);
+	ZstOutputPlug *output_plug = Showtime::create_output_plug(outURI, ZstValueType::ZST_INT);
+	ZstInputPlug *input_plug = Showtime::create_input_plug(inURI, ZstValueType::ZST_INT);
+	Showtime::connect_cable(output_plug->get_URI(), input_plug->get_URI());
+
+	TAKE_A_BREATH
+	wait_for_poll();
+
+	//Test manual event queue pop. This is thread safe so we can pop each event off at our leisure
+	std::cout << "Starting Queue test" << std::endl;
+	assert(Showtime::event_queue_size() == 0);
+	int num_fires = 5;
+	for (int i = 0; i < num_fires; ++i) {
+		output_plug->value()->append_int(1);
+		output_plug->fire();
+		output_plug->value()->clear();
+	}
+	TAKE_A_BREATH
+
+	int queue_size = Showtime::event_queue_size();
+
+	for (int i = num_fires; i > 0; --i) {
+		assert(Showtime::event_queue_size() == i);
+		ZstEvent e = Showtime::pop_event();
+		assert(e.get_update_type() == ZstEvent::EventType::PLUG_HIT);
+		assert(strcmp(e.get_first().to_char(), input_plug->get_URI()->to_char()) == 0);
+		assert(Showtime::event_queue_size() == i - 1);
+	}
+	assert(Showtime::event_queue_size() == 0);
+	std::cout << "Finished Queue test\n" << std::endl;
+
+
+	//Test int value conversion
+	std::cout << "Testing int ZstValues via callback" << std::endl;
+	int int_cmpr_val = 27;
+	TestIntValueCallback * int_callback = new TestIntValueCallback(int_cmpr_val);
+	input_plug->attach_recv_callback(int_callback);
+	output_plug->value()->append_int(int_cmpr_val);
+	output_plug->fire();
+	output_plug->value()->clear();
+	wait_for_poll();
+
+	output_plug->value()->append_float(float(int_cmpr_val));
+	output_plug->fire();
+	output_plug->value()->clear();
+	wait_for_poll();
+
+	output_plug->value()->append_char(std::to_string(int_cmpr_val).c_str());
+	output_plug->fire();
+	output_plug->value()->clear();
+	wait_for_poll();
+
+	int_callback->compare_val = 0;
+	output_plug->value()->append_char("not a number");
+	output_plug->fire();
+	output_plug->value()->clear();
+	wait_for_poll();
+
+	input_plug->destroy_recv_callback(int_callback);
+
+
+	//Test float value conversion
+	std::cout << "Testing float ZstValues via callback" << std::endl;
+	float float_cmpr_val = 28.5f;
+	TestFloatValueCallback * float_callback = new TestFloatValueCallback(float_cmpr_val);
+	input_plug->attach_recv_callback(float_callback);
+	output_plug->value()->append_float(float_cmpr_val);
+	output_plug->fire();
+	output_plug->value()->clear();
+	wait_for_poll();
+	
+	output_plug->value()->append_char(std::to_string(float_cmpr_val).c_str());
+	output_plug->fire();
+	output_plug->value()->clear();
+	wait_for_poll();
+
+	float_callback->compare_val = 0.0f;
+	output_plug->value()->append_char("not a number");
+	output_plug->fire();
+	output_plug->value()->clear();
+	wait_for_poll();
+
+	float_callback->compare_val = int(float_cmpr_val + 0.5f);
+	output_plug->value()->append_int(int(float_cmpr_val + 0.5f)); //Rounded int to match the interal value conversion
+	output_plug->fire();
+	output_plug->value()->clear();
+	wait_for_poll();
+
+	input_plug->destroy_recv_callback(float_callback);
+
+
+	//Test char* value conversion
+	std::string char_cmp_val = "hello world";
+	std::cout << "Testing char ZstValues via callback" << std::endl;
+	TestCharValueCallback * char_callback = new TestCharValueCallback(char_cmp_val.c_str());
+	input_plug->attach_recv_callback(char_callback);
+	output_plug->value()->append_char(char_cmp_val.c_str());
+	output_plug->fire();
+	output_plug->value()->clear();
+	wait_for_poll();
+
+	//delete[] char_callback->compare_val;
+	char_callback->compare_val = "29";
+	output_plug->value()->append_int(29);
+	output_plug->fire();
+	output_plug->value()->clear();
+	wait_for_poll();
+
+	//delete[] char_callback->compare_val;
+	char_callback->compare_val = "29.50000";
+	output_plug->value()->append_float(29.5f);
+	output_plug->fire();
+	output_plug->value()->clear();
+	wait_for_poll();
+
+	input_plug->destroy_recv_callback(char_callback);
+
+
+	//Test multiple values
+	int_cmpr_val = 30;
+	int int_num_value = 10;
+	TestMultipleIntValueCallback * int_mult_callback = new TestMultipleIntValueCallback(int_cmpr_val, int_num_value);
+	input_plug->attach_recv_callback(int_mult_callback);
+
+	for (int i = 0; i < int_num_value; ++i) {
+		output_plug->value()->append_int(int_cmpr_val);
+	}
+	output_plug->fire();
+	output_plug->value()->clear();
+	wait_for_poll();
+	input_plug->destroy_recv_callback(int_mult_callback);
+
+	Showtime::destroy_plug(output_plug);
+	Showtime::destroy_plug(input_plug);
+
+	std::cout << "Finished check plug values test\n" << std::endl;
+}
+
+
+void test_memory_leaks() {
+	std::cout << "Starting plug fire memory leak test" << std::endl;
+
+	ZstURI * outURI = ZstURI::create("test_performer_1", "mem_instrument", "mem_output_plug", ZstURI::Direction::OUT_JACK);
+	ZstURI * inURI = ZstURI::create("test_performer_1", "mem_instrument", "mem_input_plug", ZstURI::Direction::IN_JACK);
+	ZstOutputPlug *output_int_plug = Showtime::create_output_plug(outURI, ZstValueType::ZST_INT);
+	ZstInputPlug *input_int_plug = Showtime::create_input_plug(inURI, ZstValueType::ZST_INT);
+
+	int int_cmpr_val = 10;
+	input_int_plug->attach_recv_callback(new TestIntValueCallback(int_cmpr_val));
+	Showtime::connect_cable(output_int_plug->get_URI(), input_int_plug->get_URI());
+
+	int count = 9999;
+	int current = 0;
+	while (++current < count) {
+		output_int_plug->value()->append_int(int_cmpr_val);
+		output_int_plug->fire();
+		output_int_plug->value()->clear();
+	}
+	wait_for_poll();
+
+	Showtime::destroy_plug(output_int_plug);
+	Showtime::destroy_plug(input_int_plug);
+
+	std::cout << "Starting check plug values test" << std::endl;
+
 }
 
 void test_leaving(){
@@ -361,9 +462,9 @@ int main(int argc,char **argv){
 	test_performer_init();
     test_stage_registration();
     test_create_plugs();
-	test_check_plug_values();
 	test_connect_plugs();
-    test_memory_leaks();
+	test_check_plug_values();
+	test_memory_leaks();
     test_leaving();
 	test_cleanup();
 	std::cout << "\nShowtime test successful" << std::endl;

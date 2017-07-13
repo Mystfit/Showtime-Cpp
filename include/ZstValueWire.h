@@ -31,7 +31,7 @@ public:
 		// sanity check
 		if (size < 2) return;
 
-		int default_type = o.via.array.ptr[0].via.i64;
+		m_default_type = (ZstValueType)o.via.array.ptr[0].via.i64;
 
 		for (auto val : o.via.array.ptr[1].via.array) {
 			if (val.type == msgpack::type::NEGATIVE_INTEGER || val.type == msgpack::type::POSITIVE_INTEGER) {
@@ -41,7 +41,8 @@ public:
 				m_values.push_back(val.as<float>());
 			}
 			else if (val.type == msgpack::type::STR) {
-				m_values.push_back(val.as<char*>());
+				std::string val_str = val.as<std::string>();
+				m_values.push_back(val_str);
 			}
 		}
 	}

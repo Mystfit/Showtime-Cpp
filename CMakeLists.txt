@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 
 project(Showtime)
 
-set(SHOWTIME_VERSION 0.3.14)
+set(SHOWTIME_VERSION 0.3.20)
 
 # Set build locations
 set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/install)
@@ -27,7 +27,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CXX_STANDARD_REQUIRED)
 
 # Boost flags
-set(Boost_USE_MULTITHREADED  ON)
+set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_STATIC_RUNTIME ON)
 find_package(Boost COMPONENTS serialization REQUIRED)

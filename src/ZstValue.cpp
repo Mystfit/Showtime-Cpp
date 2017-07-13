@@ -44,95 +44,99 @@ void ZstValue::append_float(float value)
 	m_values.push_back(value);
 }
 
-void ZstValue::append_char(char * value)
+void ZstValue::append_char(const char * value)
 {
-	m_values.push_back(value);
+	m_values.push_back(string(value));
 }
 
-size_t ZstValue::size()
+const size_t ZstValue::size() const
 {
 	return m_values.size();
 }
 
-int ZstValue::int_at(size_t position)
+const size_t ZstValue::size_at(const size_t position) const
 {
 	auto val = m_values.at(position);
+	if (val.is_uint64_t()) {
+		return sizeof(val.as_uint64_t());
+	}
+	else if (val.is_int64_t()) {
+		return sizeof(val.as_int64_t());
+	}
+	else if (val.is_double()) {
+		return sizeof(val.as_double());
+	}
+	else if (val.is_string()) {
+		return val.as_string().size();
+	} 
+	return 0;
+}
+
+const int ZstValue::int_at(const size_t position) const
+{
+	auto val = m_values.at(position);
+	//Return native value
 	if (val.is_uint64_t()) {
 		return val.as_uint64_t();
 	}
 	else if (val.is_int64_t()) {
 		return val.as_int64_t();
 	}
+	else {
+		//Convert value
+		if (val.is_double()) {
+			return int(val.as_double() + 0.5f);
+		}
+		else if (val.is_string()) {
+			try {
+				return stoi(val.as_string());
+			}
+			catch (std::invalid_argument) {}
+		}
+	}
 	return 0;
 }
 
-
-float ZstValue::float_at(size_t position)
+const float ZstValue::float_at(const size_t position) const
 {
 	auto val = m_values.at(position);
+	//Return native value
 	if (val.is_double()) {
 		return (float)val.as_double();
+	}
+	else {
+		//Convert value
+		if (val.is_uint64_t()) {
+			return float(val.as_uint64_t());
+		}
+		else if (val.is_int64_t()) {
+			return float(val.as_int64_t());
+		}
+		else if (val.is_string()) {
+			try {
+				return stof(val.as_string());
+			} catch (std::invalid_argument) {}
+		}
 	}
 	return 0.0f;
 }
 
-
-const char* ZstValue::char_at(size_t position)
+void ZstValue::char_at(char * buf, const size_t position) const
 {
 	auto val = m_values.at(position);
 	if (val.is_string()) {
-		return val.as_string().c_str();
+		string s = val.as_string();
+		memcpy(buf, s.c_str(), s.size());
 	}
-}
-
-
-//ZstValue int conversion
-//-----------------------
-int ZstValue_as_int::operator()(int i) const
-{
-	return i;
-}
-
-int ZstValue_as_int::operator()(float f) const
-{
-	return (int)f;
-}
-
-int ZstValue_as_int::operator()(char* s) const
-{
-	return std::stoi(s);
-}
-
-//ZstValue float conversion
-//-----------------------
-float ZstValue_as_float::operator()(int i) const
-{
-	return (float)i;
-}
-
-float ZstValue_as_float::operator()(float f) const
-{
-	return f;
-}
-
-float ZstValue_as_float::operator()(char* s) const
-{
-	return std::stof(s);
-}
-
-//ZstValue char* conversion
-//-------------------------
-const char* ZstValue_as_char::operator()(int i) const
-{
-	return std::to_string(i).c_str();
-}
-
-const char* ZstValue_as_char::operator()(float f) const
-{
-	return std::to_string(f).c_str();
-}
-
-const char* ZstValue_as_char::operator()(char* s) const
-{
-	return s;
+	else {
+		if (val.is_uint64_t()) {
+			memcpy(buf, std::to_string(val.as_uint64_t()).c_str(), sizeof(buf));
+		}
+		else if (val.is_int64_t()) {
+			memcpy(buf, std::to_string(val.as_int64_t()).c_str(), sizeof(buf));
+		}
+		else if (val.is_double()) {
+			memcpy(buf, std::to_string(val.as_double()).c_str(), sizeof(buf));
+		}
+	}
 }
