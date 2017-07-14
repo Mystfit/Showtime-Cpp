@@ -30,7 +30,7 @@ set(CXX_STANDARD_REQUIRED)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_STATIC_RUNTIME ON)
-find_package(Boost COMPONENTS serialization REQUIRED)
+find_package(Boost REQUIRED)
 
 # Set showtime include directories
 set(Showtime_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include)

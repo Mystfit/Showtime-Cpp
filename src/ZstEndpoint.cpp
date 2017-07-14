@@ -213,7 +213,7 @@ void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
 		m_stage_requests = zsock_new(ZMQ_REQ);
 		zsock_set_linger(m_stage_requests, 0);
 	}
-	zsock_connect(m_stage_requests, m_stage_requests_addr);
+	zsock_connect(m_stage_requests, "%s", m_stage_requests_addr);
 
 	ZstMessages::RegisterEndpoint args;
 	args.uuid = zuuid_str(m_startup_uuid);
@@ -301,9 +301,9 @@ void ZstEndpoint::leave_stage()
 		cout << "ZST:Leaving stage" << endl;
 		send_through_stage(ZstMessages::build_signal(ZstMessages::Signal::LEAVING));
 
-		zsock_disconnect(m_stage_requests, m_stage_requests_addr);
-		zsock_disconnect(m_stage_router, m_stage_router_addr);
-		zsock_disconnect(m_stage_updates, m_stage_updates_addr);
+		zsock_disconnect(m_stage_requests, "%s", m_stage_requests_addr);
+		zsock_disconnect(m_stage_router, "%s", m_stage_router_addr);
+		zsock_disconnect(m_stage_updates, "%s", m_stage_updates_addr);
 
 		detach_timer(m_heartbeat_timer_id);
 

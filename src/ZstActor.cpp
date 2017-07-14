@@ -74,8 +74,7 @@ int ZstActor::s_handle_actor_pipe(zloop_t * loop, zsock_t * sock, void * args)
 void ZstActor::self_test()
 {
 	zmsg_t *msg = zmsg_new();
-	char *greeting = "PING";
-	zmsg_addstr(msg, greeting);
+	zmsg_addstr(msg, "PING");
 	zactor_send(m_loop_actor, &msg);
 	zmsg_t * response = zactor_recv(m_loop_actor);
 	assert(streq(zmsg_popstr(response), "PONG"));
