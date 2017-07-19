@@ -52,6 +52,6 @@ time.sleep(0.2)
 
 print("Done")
 ZST.remove_stage_event_callback(stageCallback)
-plug_in.destroy_recv_callback(plug_callback)
+plug_in.input_events().remove_event_callback(plug_callback)
 
 ZST.destroy()

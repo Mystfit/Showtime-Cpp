@@ -16,7 +16,7 @@ class ZstPerformer {
 		void add_plug(ZstPlug* plug);
 		void remove_plug(ZstPlug* plug);
 	private:
-		std::map<std::string, std::vector<ZstPlug*>> m_plugs;
+		std::map<std::string, std::vector<ZstPlug*> > m_plugs;
 		std::string m_name;
 };
 
