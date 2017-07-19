@@ -31,8 +31,8 @@ public class ShowtimeController : MonoBehaviour {
 		localPerformer = Showtime.create_performer (localPerformerName);
 
 		//Harcoded URIs describing the plugs we own
-		ZstURI local_uri_out = ZstURI.create(localPerformerName, "ins", "plug_out", ZstURI.Direction.OUT_JACK);
-		ZstURI local_uri_in = ZstURI.create(localPerformerName, "ins", "plug_in", ZstURI.Direction.IN_JACK);
+		ZstURI local_uri_out = new ZstURI(localPerformerName, "ins", "plug_out");
+		ZstURI local_uri_in = new ZstURI(localPerformerName, "ins", "plug_in");
 
 		//Create our local plug objects. Will block until the stage returns them. Could be async?
 		local_plug_out = Showtime.create_output_plug(local_uri_out, ZstValueType.ZST_INT);

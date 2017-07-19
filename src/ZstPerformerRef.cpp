@@ -62,12 +62,8 @@ void ZstPerformerRef::destroy_plug(ZstPlugRef * plug)
 		if ((*plug_iter) == plug)
 		{
 			m_plugs.erase(plug_iter);
-        } else {
-            plug_iter++;
+			break;
         }
 	}
 	delete plug;
-    if(m_plugs.empty()){
-        cout << "break" << endl;
-    }
 }
