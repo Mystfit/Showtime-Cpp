@@ -45,7 +45,7 @@ ZST.connect_cable(uri_in, uri_out)
 time.sleep(0.2)
 
 plug_callback = PlugCallback()
-plug_in.attach_recv_callback(plug_callback);
+plug_in.input_events().attach_event_callback(plug_callback);
 plug_out.value().append_int(27)
 plug_out.fire()
 time.sleep(0.2)
