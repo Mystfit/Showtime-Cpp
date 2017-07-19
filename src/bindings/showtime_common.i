@@ -49,7 +49,7 @@ public:
 %nodefaultctor ZstValue;
 %extend ZstValue{
     std::string char_at(size_t position) {
-        char * buf = new char[255]();
+        char * buf = new char[$self->size_at(position) + 1]();
         $self->char_at(buf,position);
         std::string s = std::string(buf);
         delete[] buf;
@@ -58,3 +58,18 @@ public:
 };
 %include "ZstValue.h"
 %ignore ZstValue::char_at;
+
+%include "ZstCallbackQueue.h"
+%template(ZstEventCallbackQueue) ZstCallbackQueue<ZstEventCallback, ZstEvent>;
+%template(ZstPerformerCallbackQueue) ZstCallbackQueue<ZstPerformerEventCallback, ZstURI>;
+%template(ZstCableCallbackQueue) ZstCallbackQueue<ZstCableEventCallback, ZstCable>;
+%template(ZstPlugCallbackQueue) ZstCallbackQueue<ZstPlugEventCallback, ZstURI>;
+%template(ZstInputPlugCallbackQueue) ZstCallbackQueue<ZstInputPlugEventCallback, ZstInputPlug*>;
+
+class ZstInputPlug : public ZstPlug {
+public:
+    ZstInputPlug(ZstURI * uri, ZstValueType t);
+    ~ZstInputPlug();
+    void recv(ZstValue * val);
+    ZstCallbackQueue<ZstInputPlugEventCallback, ZstInputPlug*> * input_events();
+};

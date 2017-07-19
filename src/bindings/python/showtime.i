@@ -4,8 +4,11 @@
 	#include "Showtime.h"
 	#include "ZstURI.h"
 	#include "ZstPlug.h"
+	#include "ZstPerformer.h"
 	#include "ZstEvent.h"
 	#include "ZstValue.h"
+	#include "ZstCable.h"
+	#include "ZstCallbackQueue.h"
 	class ZstEndpoint{};
 %}
 %nothread;

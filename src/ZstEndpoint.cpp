@@ -13,6 +13,7 @@
 using namespace std;
 
 ZstEndpoint::ZstEndpoint() {
+
 }
 
 ZstEndpoint::~ZstEndpoint() {
@@ -21,12 +22,20 @@ ZstEndpoint::~ZstEndpoint() {
 
 void ZstEndpoint::destroy() {
 	//Only need to call cleanup once
-	if (m_is_ending)
+	if (m_is_ending || m_is_destroyed)
 		return;
     m_is_ending = true;
 
 	leave_stage();
-	m_stage_callbacks.clear();
+
+	delete m_stage_event_manager;
+	delete m_performer_arriving_event_manager;
+	delete m_performer_leaving_event_manager;
+	delete m_cable_arriving_event_manager;
+	delete m_cable_leaving_event_manager;
+	delete m_plug_arriving_event_manager;
+	delete m_plug_leaving_event_manager;
+
 	ZstActor::destroy();
 	zsock_destroy(&m_stage_requests);
 	zsock_destroy(&m_stage_updates);
@@ -35,6 +44,7 @@ void ZstEndpoint::destroy() {
 	zsock_destroy(&m_graph_out);
 	zsys_shutdown();
 	m_is_ending = false;
+	m_is_destroyed = true;
 }
 
 
@@ -42,6 +52,21 @@ void ZstEndpoint::destroy() {
 void ZstEndpoint::init()
 {
     cout << "Starting Showtime" << endl;
+
+	if (m_is_ending) {
+		return;
+	}
+
+	m_is_destroyed = false;
+
+	m_stage_event_manager = new ZstCallbackQueue<ZstEventCallback, ZstEvent>();
+	m_performer_arriving_event_manager = new ZstCallbackQueue<ZstPerformerEventCallback, ZstURI>();
+	m_performer_leaving_event_manager = new ZstCallbackQueue<ZstPerformerEventCallback, ZstURI>();
+	m_cable_arriving_event_manager = new ZstCallbackQueue<ZstCableEventCallback, ZstCable>();
+	m_cable_leaving_event_manager = new ZstCallbackQueue<ZstCableEventCallback, ZstCable>();
+	m_plug_arriving_event_manager = new ZstCallbackQueue<ZstPlugEventCallback, ZstURI>();
+	m_plug_leaving_event_manager = new ZstCallbackQueue<ZstPlugEventCallback, ZstURI>();
+
 	ZstActor::init();
 	m_startup_uuid = zuuid_new();
 
@@ -184,16 +209,16 @@ void ZstEndpoint::connect_performer_handler(zsock_t * socket, zmsg_t * msg) {
 	zsock_set_subscribe(m_graph_in, "");
 
 	ZstCable cable = ZstCable(performer_args.output_plug, performer_args.input_plug);
-	auto it = find_if(m_cables.begin(), m_cables.end(), [&cable](ZstCable * current) {
+	auto it = find_if(m_local_cables.begin(), m_local_cables.end(), [&cable](ZstCable * current) {
 		return *current == cable;
 	});
 
 	//Check if cable already exists
-	if (it != m_cables.end()) {
+	if (it != m_local_cables.end()) {
 		cout << "ZST: Cable already exists. Ignoring." << endl;
 		return;
 	}
-	m_cables.push_back(new ZstCable(performer_args.output_plug, performer_args.input_plug));
+	m_local_cables.push_back(new ZstCable(performer_args.output_plug, performer_args.input_plug));
 }
 
 int ZstEndpoint::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
@@ -276,7 +301,7 @@ void ZstEndpoint::stage_update_handler(zsock_t * socket, zmsg_t * msg)
 				remove_cable(cable);
 			}
 		}
-		Showtime::endpoint().enqueue_plug_event(ZstEvent(event_iter.get_first(), event_iter.get_update_type()));
+		Showtime::endpoint().enqueue_event(ZstEvent(event_iter.get_first(), event_iter.get_update_type()));
 	}
 }
 
@@ -378,11 +403,11 @@ int ZstEndpoint::destroy_cable(const ZstURI * a, const ZstURI * b)
 vector<ZstCable*> ZstEndpoint::get_cables_by_URI(const ZstURI & uri) {
 
 	vector<ZstCable*> cables;
-	auto it = find_if(m_cables.begin(), m_cables.end(), [&uri](ZstCable* current) {
+	auto it = find_if(m_local_cables.begin(), m_local_cables.end(), [&uri](ZstCable* current) {
 		return current->is_attached(uri);
 	});
 
-	for (it; it != m_cables.end(); ++it) {
+	for (it; it != m_local_cables.end(); ++it) {
 		cables.push_back((*it));
 	}
 
@@ -391,11 +416,11 @@ vector<ZstCable*> ZstEndpoint::get_cables_by_URI(const ZstURI & uri) {
 
 ZstCable * ZstEndpoint::get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB) {
 
-	auto it = find_if(m_cables.begin(), m_cables.end(), [&uriA, &uriB](ZstCable * current) {
+	auto it = find_if(m_local_cables.begin(), m_local_cables.end(), [&uriA, &uriB](ZstCable * current) {
 		return current->is_attached(uriA, uriB);
 	});
 
-	if (it != m_cables.end()) {
+	if (it != m_local_cables.end()) {
 		return (*it);
 	}
 	return NULL;
@@ -404,9 +429,9 @@ ZstCable * ZstEndpoint::get_cable_by_URI(const ZstURI & uriA, const ZstURI & uri
 void ZstEndpoint::remove_cable(ZstCable * cable)
 {
 	if (cable != NULL) {
-		for (vector<ZstCable*>::iterator cable_iter = m_cables.begin(); cable_iter != m_cables.end(); ++cable_iter) {
+		for (vector<ZstCable*>::iterator cable_iter = m_local_cables.begin(); cable_iter != m_local_cables.end(); ++cable_iter) {
 			if ((*cable_iter) == cable) {
-				m_cables.erase(cable_iter);
+				m_local_cables.erase(cable_iter);
 				break;
 			}
 		}
@@ -433,7 +458,7 @@ int ZstEndpoint::ping_stage()
 	return (int)delta.count();
 }
 
-void ZstEndpoint::enqueue_plug_event(ZstEvent event)
+void ZstEndpoint::enqueue_event(ZstEvent event)
 {
 	m_events.push(event);
 }
@@ -448,18 +473,43 @@ int ZstEndpoint::plug_event_queue_size()
 	return m_events.size();
 }
 
-void ZstEndpoint::attach_stage_event_callback(ZstEventCallback *callback) {
-	m_stage_callbacks.push_back(callback);
+
+// ------------------------
+// Callback manager getters
+// ------------------------
+ZstCallbackQueue<ZstEventCallback, ZstEvent> * ZstEndpoint::stage_events()
+{
+	return m_stage_event_manager;
 }
 
-void ZstEndpoint::remove_stage_event_callback(ZstEventCallback *callback) {
-	m_stage_callbacks.erase(std::remove(m_stage_callbacks.begin(), m_stage_callbacks.end(), callback), m_stage_callbacks.end());
+ZstCallbackQueue<ZstPerformerEventCallback, ZstURI> * ZstEndpoint::performer_arriving_events()
+{
+	return m_performer_arriving_event_manager;
 }
 
-void ZstEndpoint::run_stage_event_callbacks(ZstEvent e) {
-    for (auto callback : m_stage_callbacks) {
-        callback->run(e);
-    }
+ZstCallbackQueue<ZstPerformerEventCallback, ZstURI> * ZstEndpoint::performer_leaving_events()
+{
+	return m_performer_leaving_event_manager;
+}
+
+ZstCallbackQueue<ZstPlugEventCallback, ZstURI> * ZstEndpoint::plug_arriving_events()
+{
+	return m_plug_arriving_event_manager;
+}
+
+ZstCallbackQueue<ZstPlugEventCallback, ZstURI> * ZstEndpoint::plug_leaving_events()
+{
+	return m_plug_leaving_event_manager;
+}
+
+ZstCallbackQueue<ZstCableEventCallback, ZstCable>* ZstEndpoint::cable_arriving_events()
+{
+	return m_cable_arriving_event_manager;
+}
+
+ZstCallbackQueue<ZstCableEventCallback, ZstCable>* ZstEndpoint::cable_leaving_events()
+{
+	return m_cable_leaving_event_manager;
 }
 
 
@@ -522,7 +572,7 @@ ZstMessages::Signal ZstEndpoint::check_stage_response_ok() {
 
 void ZstEndpoint::broadcast_to_local_plugs(ZstURI output_plug, ZstValue * value) {
 
-    for (auto cable : m_cables) {
+    for (auto cable : m_local_cables) {
 		if (cable->get_output() == output_plug) {
 			ZstPerformer* performer = get_performer_by_URI(cable->get_input());
 			//TODO: Need to verify plug is an input plug!

@@ -39,7 +39,7 @@ public class ShowtimeController : MonoBehaviour {
 		local_plug_in = Showtime.create_input_plug(local_uri_in, ZstValueType.ZST_INT);
 
         plugCallback = new PlugCallback();
-        local_plug_in.attach_recv_callback(plugCallback);
+        local_plug_in.input_events().attach_event_callback(plugCallback);
 
 		//Connect the plugs together
 		Showtime.connect_cable(local_uri_out, local_uri_in);

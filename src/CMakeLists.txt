@@ -24,6 +24,7 @@ set(ZST_PRIVATE_HEADERS
  ${Showtime_INCLUDE_DIRS}/ZstPerformerRef.h
  ${Showtime_INCLUDE_DIRS}/ZstEndpointRef.h
  ${Showtime_INCLUDE_DIRS}/ZstExports.h
+ ${Showtime_INCLUDE_DIRS}/ZstCallbackQueue.h
 )
 
 set(ZST_HEADERS ${ZST_PUBLIC_HEADERS} ${ZST_PRIVATE_HEADERS})
@@ -47,6 +48,7 @@ set(ZST_SOURCE
  "ZstCable.cpp"
  "ZstValue.cpp"
  "ZstValueWire.cpp"
+ "ZstCallbackQueueInstantiations.cpp"
 )
 
 set(ZST_INCLUDES 

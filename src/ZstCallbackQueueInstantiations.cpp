@@ -1,0 +1,11 @@
+#include "ZstCallbackQueue.h"
+#include "ZstEvent.h"
+#include "ZstPerformer.h"
+#include "ZstCable.h"
+#include "ZstPlug.h"
+
+template class ZstCallbackQueue<ZstEventCallback, ZstEvent>;
+template class ZstCallbackQueue<ZstPerformerEventCallback, ZstURI>;
+template class ZstCallbackQueue<ZstCableEventCallback, ZstCable>;
+template class ZstCallbackQueue<ZstPlugEventCallback, ZstURI>;
+template class ZstCallbackQueue<ZstInputPlugEventCallback, ZstInputPlug*>;

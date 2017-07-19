@@ -13,6 +13,9 @@ class ZstURI;
 class ZstEndpoint;
 class ZstEvent;
 class ZstEventCallback;
+class ZstPerformerEventCallback;
+class ZstPlugEventCallback;
+class ZstCableEventCallback;
 
 #define STAGE_REP_PORT 6000
 #define STAGE_ROUTER_PORT 6001
@@ -56,9 +59,22 @@ public:
 	//Poll the event queue - for runtimes that have process events from the main thread
 	ZST_EXPORT static void poll_once();
 
-	//Plug callbacks
+	//Callbacks
 	ZST_EXPORT static void attach_stage_event_callback(ZstEventCallback * callback);
+	ZST_EXPORT static void attach_performer_arriving_callback(ZstPerformerEventCallback * callback);
+	ZST_EXPORT static void attach_performer_leaving_callback(ZstPerformerEventCallback * callback);
+	ZST_EXPORT static void attach_plug_arriving_callback(ZstPlugEventCallback * callback);
+	ZST_EXPORT static void attach_plug_leaving_callback(ZstPlugEventCallback * callback);
+	ZST_EXPORT static void attach_cable_arriving_callback(ZstCableEventCallback *callback);
+	ZST_EXPORT static void attach_cable_leaving_callback(ZstCableEventCallback *callback);
+
 	ZST_EXPORT static void remove_stage_event_callback(ZstEventCallback * callback);
+	ZST_EXPORT static void remove_performer_arriving_callback(ZstPerformerEventCallback * callback);
+	ZST_EXPORT static void remove_performer_leaving_callback(ZstPerformerEventCallback * callback);
+	ZST_EXPORT static void remove_plug_arriving_callback(ZstPlugEventCallback * callback);
+	ZST_EXPORT static void remove_plug_leaving_callback(ZstPlugEventCallback * callback);
+	ZST_EXPORT static void remove_cable_arriving_callback(ZstCableEventCallback * callback);
+	ZST_EXPORT static void remove_cable_leaving_callback(ZstCableEventCallback * callback);
 
     //Stage methods
     ZST_EXPORT static int ping_stage();

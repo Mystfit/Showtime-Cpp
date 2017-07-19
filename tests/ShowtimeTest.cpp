@@ -104,12 +104,15 @@ public:
 ZstStage *stage;
 ZstPerformer *performer_a;
 
-
-void test_URI() {
-	std::cout << "Starting URI test" << std::endl;
+void test_standard_layout() {
 	//Verify standard layout
 	assert(std::is_standard_layout<ZstURI>());
 	assert(std::is_standard_layout<ZstCable>());
+	assert(std::is_standard_layout<ZstEvent>());
+}
+
+void test_URI() {
+	std::cout << "Starting URI test" << std::endl;
 
 	ZstURI * uri_empty = ZstURI::create_empty();
 	ZstURI * uri_equal1 = ZstURI::create("perf", "ins", "someplug", ZstURI::Direction::OUT_JACK);
@@ -235,7 +238,7 @@ void test_connect_plugs() {
 	//Test plugs connected between performers
 	ZstOutputPlug *output_int_plug = Showtime::create_output_plug(outURI, ZstValueType::ZST_INT);
 	ZstInputPlug *input_int_plug = Showtime::create_input_plug(inURI, ZstValueType::ZST_INT);
-	input_int_plug->attach_recv_callback(new TestIntValueCallback(int_fire_val));
+	input_int_plug->input_events()->attach_event_callback(new TestIntValueCallback(int_fire_val));
 	Showtime::connect_cable(output_int_plug->get_URI(), input_int_plug->get_URI());
 
 	TAKE_A_BREATH
@@ -305,7 +308,7 @@ void test_check_plug_values() {
 	std::cout << "Testing int ZstValues via callback" << std::endl;
 	int int_cmpr_val = 27;
 	TestIntValueCallback * int_callback = new TestIntValueCallback(int_cmpr_val);
-	input_plug->attach_recv_callback(int_callback);
+	input_plug->input_events()->attach_event_callback(int_callback);
 	output_plug->value()->append_int(int_cmpr_val);
 	output_plug->fire();
 	output_plug->value()->clear();
@@ -327,14 +330,14 @@ void test_check_plug_values() {
 	output_plug->value()->clear();
 	wait_for_poll();
 
-	input_plug->destroy_recv_callback(int_callback);
+	input_plug->input_events()->remove_event_callback(int_callback);
 
 
 	//Test float value conversion
 	std::cout << "Testing float ZstValues via callback" << std::endl;
 	float float_cmpr_val = 28.5f;
 	TestFloatValueCallback * float_callback = new TestFloatValueCallback(float_cmpr_val);
-	input_plug->attach_recv_callback(float_callback);
+	input_plug->input_events()->attach_event_callback(float_callback);
 	output_plug->value()->append_float(float_cmpr_val);
 	output_plug->fire();
 	output_plug->value()->clear();
@@ -357,14 +360,14 @@ void test_check_plug_values() {
 	output_plug->value()->clear();
 	wait_for_poll();
 
-	input_plug->destroy_recv_callback(float_callback);
+	input_plug->input_events()->remove_event_callback(float_callback);
 
 
 	//Test char* value conversion
 	std::string char_cmp_val = "hello world";
 	std::cout << "Testing char ZstValues via callback" << std::endl;
 	TestCharValueCallback * char_callback = new TestCharValueCallback(char_cmp_val.c_str());
-	input_plug->attach_recv_callback(char_callback);
+	input_plug->input_events()->attach_event_callback(char_callback);
 	output_plug->value()->append_char(char_cmp_val.c_str());
 	output_plug->fire();
 	output_plug->value()->clear();
@@ -384,14 +387,14 @@ void test_check_plug_values() {
 	output_plug->value()->clear();
 	wait_for_poll();
 
-	input_plug->destroy_recv_callback(char_callback);
+	input_plug->input_events()->remove_event_callback(char_callback);
 
 
 	//Test multiple values
 	int_cmpr_val = 30;
 	int int_num_value = 10;
 	TestMultipleIntValueCallback * int_mult_callback = new TestMultipleIntValueCallback(int_cmpr_val, int_num_value);
-	input_plug->attach_recv_callback(int_mult_callback);
+	input_plug->input_events()->attach_event_callback(int_mult_callback);
 
 	for (int i = 0; i < int_num_value; ++i) {
 		output_plug->value()->append_int(int_cmpr_val);
@@ -399,7 +402,7 @@ void test_check_plug_values() {
 	output_plug->fire();
 	output_plug->value()->clear();
 	wait_for_poll();
-	input_plug->destroy_recv_callback(int_mult_callback);
+	input_plug->input_events()->remove_event_callback(int_mult_callback);
 
 	Showtime::destroy_plug(output_plug);
 	Showtime::destroy_plug(input_plug);
@@ -417,7 +420,8 @@ void test_memory_leaks() {
 	ZstInputPlug *input_int_plug = Showtime::create_input_plug(inURI, ZstValueType::ZST_INT);
 
 	int int_cmpr_val = 10;
-	input_int_plug->attach_recv_callback(new TestIntValueCallback(int_cmpr_val));
+	TestIntValueCallback * int_callback = new TestIntValueCallback(int_cmpr_val);
+	input_int_plug->input_events()->attach_event_callback(int_callback);
 	Showtime::connect_cable(output_int_plug->get_URI(), input_int_plug->get_URI());
 
 	int count = 9999;
@@ -458,6 +462,7 @@ int main(int argc,char **argv){
     Showtime::join("127.0.0.1");
 
 	TAKE_A_BREATH
+	test_standard_layout();
 	test_URI();
 	test_performer_init();
     test_stage_registration();

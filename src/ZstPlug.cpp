@@ -26,33 +26,25 @@ ZstValue * ZstPlug::value()
 	return m_value;
 }
 
+ZstInputPlug::ZstInputPlug(ZstURI * uri, ZstValueType t) : ZstPlug(uri, t)
+{
+	m_input_fired_manager = new ZstCallbackQueue<ZstInputPlugEventCallback, ZstInputPlug*>();
+}
+
 //ZstInputPlug
 //------------
 ZstInputPlug::~ZstInputPlug() {
-	for (vector<ZstInputPlugEventCallback*>::iterator callback = m_received_data_callbacks.begin(); callback != m_received_data_callbacks.end(); ++callback) {
-		delete *(callback);
-	}
-	m_received_data_callbacks.clear();
+	delete m_input_fired_manager;
 }
 
 void ZstInputPlug::recv(ZstValue * val) {
 	m_value = new ZstValue(*val);
-	Showtime::endpoint().enqueue_plug_event(ZstEvent(*get_URI(), ZstEvent::EventType::PLUG_HIT));
+	Showtime::endpoint().enqueue_event(ZstEvent(*get_URI(), ZstEvent::EventType::PLUG_HIT));
 }
 
-void ZstInputPlug::attach_recv_callback(ZstInputPlugEventCallback *callback){
-    m_received_data_callbacks.push_back(callback);
-}
-
-void ZstInputPlug::destroy_recv_callback(ZstInputPlugEventCallback *callback){
-    m_received_data_callbacks.erase(std::remove(m_received_data_callbacks.begin(), m_received_data_callbacks.end(), callback), m_received_data_callbacks.end());
-    delete callback;
-}
-
-void ZstInputPlug::run_recv_callbacks(){
-    for (auto callback : m_received_data_callbacks) {
-        callback->run(this);
-    }
+ZstCallbackQueue<ZstInputPlugEventCallback, ZstInputPlug*> * ZstInputPlug::input_events()
+{
+	return m_input_fired_manager;
 }
 
 

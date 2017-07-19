@@ -19,3 +19,10 @@ class ZstPerformer {
 		std::map<std::string, std::vector<ZstPlug*>> m_plugs;
 		std::string m_name;
 };
+
+
+class ZstPerformerEventCallback {
+public:
+	ZST_EXPORT virtual ~ZstPerformerEventCallback() { std::cout << "Destroying performer event callback" << std::endl; }
+	ZST_EXPORT virtual void run(ZstURI performer) { std::cout << "Running performer event callback" << std::endl; }
+};

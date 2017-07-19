@@ -53,23 +53,107 @@ void Showtime::poll_once()
 				//TODO: Verify that plug is actually an input plug!
 				ZstInputPlug * plug = (ZstInputPlug*)performer->get_plug_by_URI(e.get_first());
 				if (plug != NULL) {
-					plug->run_recv_callbacks();
+					plug->input_events()->run_event_callbacks(plug);
 				}
 			}
 			break;
+		case ZstEvent::CABLE_CREATED:
+			Showtime::endpoint().cable_arriving_events()->run_event_callbacks(ZstCable(e.get_first(), e.get_second()));
+			break;
+		case ZstEvent::CABLE_DESTROYED:
+			Showtime::endpoint().cable_leaving_events()->run_event_callbacks(ZstCable(e.get_first(), e.get_second()));
+			break;
+		case ZstEvent::CREATED:
+			Showtime::endpoint().stage_events()->run_event_callbacks(e);
+			break;
+		case ZstEvent::DESTROYED:
+			Showtime::endpoint().stage_events()->run_event_callbacks(e);
+			break;
 		default:
-			Showtime::endpoint().run_stage_event_callbacks(e);
+			Showtime::endpoint().stage_events()->run_event_callbacks(e);
 		}
 	}
 }
 
-void Showtime::attach_stage_event_callback(ZstEventCallback * callback) {
-	Showtime::endpoint().attach_stage_event_callback(callback);
+
+// -----------------
+// Callback managers
+// -----------------
+void Showtime::attach_stage_event_callback(ZstEventCallback * callback)
+{
+	Showtime::endpoint().stage_events()->attach_event_callback(callback);
 }
 
-void Showtime::remove_stage_event_callback(ZstEventCallback * callback) {
-	Showtime::endpoint().remove_stage_event_callback(callback);
+void Showtime::attach_performer_arriving_callback(ZstPerformerEventCallback * callback)
+{
+	Showtime::endpoint().performer_arriving_events()->attach_event_callback(callback);
 }
+
+void Showtime::attach_performer_leaving_callback(ZstPerformerEventCallback * callback)
+{
+	return Showtime::endpoint().performer_leaving_events()->attach_event_callback(callback);
+}
+
+void Showtime::attach_plug_arriving_callback(ZstPlugEventCallback * callback)
+{
+	return Showtime::endpoint().plug_arriving_events()->attach_event_callback(callback);
+}
+
+void Showtime::attach_plug_leaving_callback(ZstPlugEventCallback * callback)
+{
+	return Showtime::endpoint().plug_leaving_events()->attach_event_callback(callback);
+}
+
+void Showtime::attach_cable_arriving_callback(ZstCableEventCallback * callback)
+{
+	return Showtime::endpoint().cable_arriving_events()->attach_event_callback(callback);
+}
+
+void Showtime::attach_cable_leaving_callback(ZstCableEventCallback * callback)
+{
+	return Showtime::endpoint().cable_leaving_events()->attach_event_callback(callback);
+}
+
+//-----
+
+void Showtime::remove_stage_event_callback(ZstEventCallback * callback)
+{
+	Showtime::endpoint().stage_events()->remove_event_callback(callback);
+}
+
+void Showtime::remove_performer_arriving_callback(ZstPerformerEventCallback * callback)
+{
+	Showtime::endpoint().performer_arriving_events()->remove_event_callback(callback);
+}
+
+void Showtime::remove_performer_leaving_callback(ZstPerformerEventCallback * callback)
+{
+	return Showtime::endpoint().performer_leaving_events()->remove_event_callback(callback);
+}
+
+void Showtime::remove_plug_arriving_callback(ZstPlugEventCallback * callback)
+{
+	return Showtime::endpoint().plug_arriving_events()->remove_event_callback(callback);
+}
+
+void Showtime::remove_plug_leaving_callback(ZstPlugEventCallback * callback)
+{
+	return Showtime::endpoint().plug_leaving_events()->remove_event_callback(callback);
+}
+
+void Showtime::remove_cable_arriving_callback(ZstCableEventCallback * callback)
+{
+	return Showtime::endpoint().cable_arriving_events()->remove_event_callback(callback);
+}
+
+void Showtime::remove_cable_leaving_callback(ZstCableEventCallback * callback)
+{
+	return Showtime::endpoint().cable_leaving_events()->remove_event_callback(callback);
+}
+
+
+
+
 
 void Showtime::set_runtime_language(RuntimeLanguage runtime)
 {

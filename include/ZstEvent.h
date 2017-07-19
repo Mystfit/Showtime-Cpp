@@ -36,6 +36,7 @@ protected:
 	EventType m_update_type;
 };
 
+
 class ZstEventCallback {
 public:
 	ZST_EXPORT virtual ~ZstEventCallback() { std::cout << "Destroying stage event callback" << std::endl; }

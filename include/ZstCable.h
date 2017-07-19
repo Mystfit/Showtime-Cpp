@@ -16,10 +16,16 @@ public:
 	ZST_EXPORT bool is_attached(const ZstURI & uri);
 	ZST_EXPORT bool is_attached(const ZstURI & uriA, const ZstURI & uriB);
 
-
 	ZST_EXPORT ZstURI & get_input();
 	ZST_EXPORT ZstURI & get_output();
 private:
 	ZstURI m_input;
 	ZstURI m_output;
+};
+
+
+class ZstCableEventCallback {
+public:
+	ZST_EXPORT virtual ~ZstCableEventCallback() { std::cout << "Destroying cable event callback" << std::endl; }
+	ZST_EXPORT virtual void run(ZstCable cable) { std::cout << "Running cable event callback" << std::endl; }
 };
