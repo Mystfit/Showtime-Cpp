@@ -4,17 +4,8 @@
 
 class ZstURI {
 public:
-    enum Direction {
-        NONE = 0,
-        IN_JACK,
-        OUT_JACK
-    };
-
     ZstURI();
-    ZstURI(const char *  performer, const char *  instrument, const char *  name, Direction direction);
-
-    static ZstURI * create(const char * performer, const char * instrument, const char * name, Direction direction);
-    static void destroy(ZstURI * uri);
+    ZstURI(const char *  performer, const char *  instrument, const char *  name);
 
     %rename("performer") performer_char();
     const char * performer_char();
@@ -24,8 +15,6 @@ public:
 
     %rename("name") name_char();
     const char * name_char();
-
-    const ZstURI::Direction direction();
 
     bool is_empty();
 
@@ -68,7 +57,7 @@ public:
 
 class ZstInputPlug : public ZstPlug {
 public:
-    ZstInputPlug(ZstURI * uri, ZstValueType t);
+    ZstInputPlug(ZstURI uri, ZstValueType t);
     ~ZstInputPlug();
     void recv(ZstValue * val);
     ZstCallbackQueue<ZstInputPlugEventCallback, ZstInputPlug*> * input_events();

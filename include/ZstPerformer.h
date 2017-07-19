@@ -11,7 +11,7 @@ class ZstPerformer {
 		ZstPerformer(std::string name);
 		~ZstPerformer();
 		ZST_EXPORT std::string get_name();
-        ZST_EXPORT ZstPlug * get_plug_by_URI(const ZstURI uri);
+        ZST_EXPORT ZstPlug * get_plug_by_URI(ZstURI uri);
 
 		void add_plug(ZstPlug* plug);
 		void remove_plug(ZstPlug* plug);

@@ -13,7 +13,7 @@ public:
 
 	ZST_EXPORT ZstURI get_URI();
 
-	ZstPlugRef * create_plug(ZstURI address);
+	ZstPlugRef * create_plug(ZstURI address, PlugDirection direction);
 	ZST_EXPORT ZstPlugRef * get_plug_by_URI(ZstURI uri);
 	ZST_EXPORT std::vector<ZstPlugRef*> & get_plug_refs();
 	void destroy_plug(ZstPlugRef * plug);

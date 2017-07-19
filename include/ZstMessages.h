@@ -10,6 +10,7 @@
 #include "ZstEvent.h"
 #include "ZstURIWire.h"
 #include "ZstEventWire.h"
+#include "ZstPlug.h"
 
 class ZstMessages{
 public:
@@ -87,7 +88,8 @@ public:
     
     struct RegisterPlug{
 		ZstURIWire address;
-        MSGPACK_DEFINE(address);
+        PlugDirection dir;
+        MSGPACK_DEFINE(address, dir);
     };
 
     struct DestroyPlug {
@@ -200,3 +202,4 @@ public:
 
 //Enums for MsgPack
 MSGPACK_ADD_ENUM(ZstMessages::Signal);
+MSGPACK_ADD_ENUM(PlugDirection);

@@ -36,16 +36,15 @@ ZST.attach_stage_event_callback(stageCallback)
 ZST.join("127.0.0.1")
 perf = ZST.create_performer("python_perf")
 
-uri_out = ZstURI.create("python_perf", "ins", "plug_out", ZstURI.OUT_JACK)
-uri_in = ZstURI.create("python_perf", "ins", "plug_in", ZstURI.IN_JACK)
-
+uri_out = ZstURI("python_perf", "ins", "plug_out")
+uri_in = ZstURI("python_perf", "ins", "plug_in")
 plug_out = ZST.create_output_plug(uri_out, showtime.ZST_INT)
 plug_in = ZST.create_input_plug(uri_in, showtime.ZST_INT)
 ZST.connect_cable(uri_in, uri_out)
 time.sleep(0.2)
 
 plug_callback = PlugCallback()
-plug_in.input_events().attach_event_callback(plug_callback);
+plug_in.input_events().attach_event_callback(plug_callback)
 plug_out.value().append_int(27)
 plug_out.fire()
 time.sleep(0.2)

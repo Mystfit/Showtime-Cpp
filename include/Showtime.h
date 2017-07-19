@@ -81,17 +81,17 @@ public:
 
 	//Performers are our local containers for plugs
 	ZST_EXPORT static ZstPerformer* create_performer(const char * name);
-	ZST_EXPORT static ZstPerformer * get_performer_by_URI(const ZstURI * uri);
+	ZST_EXPORT static ZstPerformer * get_performer_by_URI(ZstURI uri);
 
 	ZST_EXPORT static ZstEvent pop_event();
 	ZST_EXPORT static int event_queue_size();
 
-	ZST_EXPORT static ZstInputPlug * create_input_plug(ZstURI * uri, ZstValueType val_type);
-	ZST_EXPORT static ZstOutputPlug * create_output_plug(ZstURI * uri, ZstValueType val_type);
+	ZST_EXPORT static ZstInputPlug * create_input_plug(ZstURI uri, ZstValueType val_type);
+	ZST_EXPORT static ZstOutputPlug * create_output_plug(ZstURI uri, ZstValueType val_type);
     ZST_EXPORT static int destroy_plug(ZstPlug *plug);
 
-	ZST_EXPORT static int connect_cable(const ZstURI * a, const ZstURI * b);
-	ZST_EXPORT static int destroy_cable(const ZstURI * a, const ZstURI * b);
+	ZST_EXPORT static int connect_cable(ZstURI a, ZstURI b);
+	ZST_EXPORT static int destroy_cable(ZstURI a, ZstURI b);
 
 
 private:

@@ -2,12 +2,15 @@
 
 #include "ZstExports.h"
 #include "ZstURI.h"
+#include "ZstPlug.h"
 
 class ZstPlugRef {
 public:
-	ZstPlugRef(ZstURI uri);
+	ZstPlugRef(ZstURI uri, PlugDirection dir);
 	~ZstPlugRef();
 	ZST_EXPORT ZstURI get_URI();
+    ZST_EXPORT PlugDirection get_direction();
 private:
 	ZstURI m_URI;
+    PlugDirection m_direction;
 };

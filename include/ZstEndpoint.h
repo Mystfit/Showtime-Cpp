@@ -46,12 +46,12 @@ public:
 	
 	//Plugs
 	template<typename T>
-	ZST_EXPORT static T* create_plug(ZstURI * uri, ZstValueType val_type, ZstURI::Direction direction);
+	ZST_EXPORT static T* create_plug(ZstURI uri, ZstValueType val_type, PlugDirection direction);
 	ZST_EXPORT int destroy_plug(ZstPlug * plug);
 
 	//Cables
-	int connect_cable(const ZstURI * a, const ZstURI * b);
-	int destroy_cable(const ZstURI * a, const ZstURI * b);
+	int connect_cable(ZstURI a, ZstURI b);
+	int destroy_cable(ZstURI a, ZstURI b);
 	ZST_EXPORT std::vector<ZstCable*> get_cables_by_URI(const ZstURI & uri);
 	ZST_EXPORT ZstCable * get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB);
 	void remove_cable(ZstCable * cable);

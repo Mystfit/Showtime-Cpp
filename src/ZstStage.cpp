@@ -7,7 +7,7 @@ using namespace std;
 
 ZstStage::ZstStage()
 {
-	m_stage_identity = ZstURI("stage", "", "", ZstURI::Direction::NONE);
+	m_stage_identity = ZstURI("stage", "", "");
 }
 
 ZstStage::~ZstStage()
@@ -353,7 +353,7 @@ void ZstStage::register_plug_handler(zsock_t *socket, zmsg_t *msg) {
 
 	cout << "ZST_STAGE: Registering new plug " << plug_args.address.to_char() << endl;
 
-	ZstPlugRef * plug = performer->create_plug(plug_args.address);
+	ZstPlugRef * plug = performer->create_plug(plug_args.address, plug_args.dir);
 
 	if (plug == NULL) {
         cout << "ZST_STAGE: Plug already exists! " << plug_args.address.to_char() << endl;
@@ -392,13 +392,26 @@ void ZstStage::connect_cable_handler(zsock_t * socket, zmsg_t * msg)
 	ZstMessages::PlugConnection plug_args = ZstMessages::unpack_message_struct<ZstMessages::PlugConnection>(msg);
 	cout << "ZST_STAGE: Received connect cable request for " << plug_args.first.to_char() << " and " << plug_args.second.to_char() << endl;
 	int connect_status = 0;
-	if (plug_args.first.direction() == ZstURI::Direction::OUT_JACK && plug_args.second.direction() == ZstURI::Direction::IN_JACK) {
-		connect_status = connect_cable(plug_args.first, plug_args.second);
-	}
-	else if (plug_args.first.direction() == ZstURI::Direction::IN_JACK && plug_args.second.direction() == ZstURI::Direction::OUT_JACK) {
-		connect_status = connect_cable(plug_args.second, plug_args.first);
-	}
-
+    
+    ZstPerformerRef * performer_A = get_performer_ref_by_name(plug_args.first.performer_char());
+    ZstPerformerRef * performer_B = get_performer_ref_by_name(plug_args.second.performer_char());
+    
+    if (performer_A && performer_B) {
+        ZstPlugRef * plug_A = performer_A->get_plug_by_URI(plug_args.first);
+        ZstPlugRef * plug_B = performer_B->get_plug_by_URI(plug_args.second);
+        
+        if (performer_A && performer_B){
+            if (plug_A->get_direction() == PlugDirection::OUT_JACK && plug_B->get_direction() == PlugDirection::IN_JACK) {
+                connect_status = connect_cable(plug_A, plug_B);
+            }
+            else if (plug_A->get_direction() == PlugDirection::IN_JACK && plug_B->get_direction() == PlugDirection::OUT_JACK) {
+                connect_status = connect_cable(plug_B, plug_A);
+            }
+        }
+    } else {
+        cout << "ZST_STAGE: Missing performer!" << endl;
+    }
+   
 	if (!connect_status) {
 		cout << "ZST_STAGE: Bad cable connect request" << endl;
 		reply_with_signal(socket, ZstMessages::Signal::ERR_STAGE_BAD_CABLE_CONNECT_REQUEST);
@@ -423,26 +436,23 @@ void ZstStage::disconnect_cable_handler(zsock_t * socket, zmsg_t * msg)
 	enqueue_stage_update(ZstEvent(connection_destroy_args.first, connection_destroy_args.second, ZstEvent::EventType::CABLE_DESTROYED));
 }
 
-int ZstStage::connect_cable(ZstURI output_plug, ZstURI input_plug)
+int ZstStage::connect_cable(ZstPlugRef * output_plug, ZstPlugRef * input_plug)
 {
-    ZstPerformerRef * output_performer = get_performer_ref_by_name(output_plug.performer_char());
-    ZstPerformerRef * input_performer = get_performer_ref_by_name(input_plug.performer_char());
-    
-	if (!(output_performer && input_performer)) {
-		cout << "ZST_STAGE: Cable registration. Missing performer." << endl;
+	if (get_cable_by_URI(output_plug->get_URI(), input_plug->get_URI()) != NULL) {
+		cout << "ZST_STAGE: Cable already exists for " << output_plug->get_URI().to_char() << " and " << input_plug->get_URI().to_char() << endl;
 		return 0;
 	}
-
-	if (get_cable_by_URI(output_plug, input_plug) != NULL) {
-		cout << "ZST_STAGE: Cable already exists for " << output_plug.to_char() << " and " << input_plug.to_char() << endl;
-		return 0;
-	}
-	m_cables.push_back(new ZstCable(output_plug, input_plug));
+	m_cables.push_back(new ZstCable(output_plug->get_URI(), input_plug->get_URI()));
 	
 	//Create request for the performer who owns the input plug
 	ZstMessages::PerformerConnection perf_args;
-	perf_args.output_plug = output_plug;
-	perf_args.input_plug = input_plug;
+	perf_args.output_plug = output_plug->get_URI();
+	perf_args.input_plug = input_plug->get_URI();
+    
+    ZstPerformerRef * output_performer = get_performer_ref_by_name(output_plug->get_URI().performer_char());
+    ZstPerformerRef * input_performer = get_performer_ref_by_name(input_plug->get_URI().performer_char());
+    assert(output_performer && input_performer);
+    
 	perf_args.endpoint = get_performer_endpoint(output_performer)->endpoint_address;
 
 	zmsg_t *connectMsg = ZstMessages::build_message<ZstMessages::PerformerConnection>(ZstMessages::Kind::PERFORMER_REGISTER_CONNECTION, perf_args);

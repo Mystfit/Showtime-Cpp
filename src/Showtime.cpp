@@ -176,22 +176,22 @@ int Showtime::ping_stage(){
 
 ZstPerformer * Showtime::create_performer(const char * name)
 {
-	return Showtime::endpoint().create_performer(ZstURI(name, "", "", ZstURI::Direction::NONE));
+	return Showtime::endpoint().create_performer(ZstURI(name, "", ""));
 }
 
-ZstInputPlug * Showtime::create_input_plug(ZstURI * uri, ZstValueType val_type)
+ZstInputPlug * Showtime::create_input_plug(ZstURI uri, ZstValueType val_type)
 {
-	return (ZstInputPlug*)Showtime::endpoint().create_plug<ZstInputPlug>(uri, val_type, ZstURI::Direction::IN_JACK);
+	return (ZstInputPlug*)Showtime::endpoint().create_plug<ZstInputPlug>(uri, val_type, PlugDirection::IN_JACK);
 }
 
-ZstOutputPlug * Showtime::create_output_plug(ZstURI * uri, ZstValueType val_type)
+ZstOutputPlug * Showtime::create_output_plug(ZstURI uri, ZstValueType val_type)
 {
-	return (ZstOutputPlug*)Showtime::endpoint().create_plug<ZstOutputPlug>(uri, val_type, ZstURI::Direction::OUT_JACK);
+    return (ZstOutputPlug*)Showtime::endpoint().create_plug<ZstOutputPlug>(uri, val_type, PlugDirection::OUT_JACK);
 }
 
-ZstPerformer * Showtime::get_performer_by_URI(const ZstURI * uri)
+ZstPerformer * Showtime::get_performer_by_URI(ZstURI uri)
 {
-	return Showtime::endpoint().get_performer_by_URI(*uri);
+	return Showtime::endpoint().get_performer_by_URI(uri);
 }
 
 ZstEvent Showtime::pop_event()
@@ -209,12 +209,12 @@ int Showtime::destroy_plug(ZstPlug * plug)
 	return Showtime::endpoint().destroy_plug(plug);
 }
 
-int Showtime::connect_cable(const ZstURI * a, const ZstURI * b)
+int Showtime::connect_cable(ZstURI a, ZstURI b)
 {
 	return Showtime::endpoint().connect_cable(a, b);
 }
 
-int Showtime::destroy_cable(const ZstURI * a, const ZstURI * b)
+int Showtime::destroy_cable(ZstURI a, ZstURI b)
 {
 	return Showtime::endpoint().destroy_cable(a, b);
 }

@@ -7,7 +7,6 @@ ZstURI::ZstURI() :
 	m_performer(""),
 	m_instrument(""),
 	m_name(""),
-	m_direction(Direction::NONE),
 	m_created_combined_char(false)
 {
 	build_combined_char();
@@ -17,45 +16,28 @@ ZstURI::ZstURI(const ZstURI &copy) :
 	m_performer(""),
 	m_instrument(""),
 	m_name(""),
-	m_direction(Direction::NONE),
 	m_created_combined_char(false)
 {
 	memcpy(m_performer, copy.m_performer, 255);
 	memcpy(m_instrument, copy.m_instrument, 255);
 	memcpy(m_name, copy.m_name, 255);
-	m_direction = copy.m_direction;
 	build_combined_char();
 }
 
-ZstURI::ZstURI(const char *  performer, const char *  instrument, const char *  name, Direction direction) :
+ZstURI::ZstURI(const char *  performer, const char *  instrument, const char *  name) :
 	m_performer(""),
 	m_instrument(""),
 	m_name(""),
-	m_direction(Direction::NONE),
 	m_created_combined_char(false)
 {
 	memcpy(m_performer, performer, 255);
 	memcpy(m_instrument, instrument, 255);
 	memcpy(m_name, name, 255);
-	m_direction = direction;
 	build_combined_char();
 }
 
 ZstURI::~ZstURI()
 {
-}
-
-ZstURI * ZstURI::create(const char *  performer, const char *  instrument, const char *  name, Direction direction)
-{
-	return new ZstURI(performer, instrument, name, direction);
-}
-
-ZstURI * ZstURI::create_empty() {
-	return new ZstURI();
-}
-
-void ZstURI::destroy(ZstURI * uri) {
-	delete uri;
 }
 
 const string ZstURI::performer() const{
@@ -68,11 +50,6 @@ const string ZstURI::instrument() const{
 
 const string ZstURI::name() const {
 	return string(m_name);
-}
-
-const ZstURI::Direction ZstURI::direction()
-{
-	return m_direction;
 }
 
 const char * ZstURI::performer_char() {
@@ -107,7 +84,7 @@ bool ZstURI::operator< (const ZstURI& b) const
 }
 
 bool ZstURI::is_empty() {
-	return performer().empty() && instrument().empty() && name().empty() && m_direction == Direction::NONE;
+	return performer().empty() && instrument().empty() && name().empty();
 }
 
 
@@ -118,13 +95,7 @@ const char * ZstURI::to_char() const
 
 ZstURI ZstURI::from_char(const char * s)
 {
-	std::vector<std::string> uri_args_split;
-    
-	Utils::str_split(string(s), uri_args_split, "?");
-    
-    string uri_str = uri_args_split[0];
-    string args_str = uri_args_split[1];
-    
+    string uri_str = string(s);
     std::vector<std::string> uri;
     Utils::str_split(uri_str, uri, "/");
     
@@ -139,22 +110,10 @@ ZstURI ZstURI::from_char(const char * s)
     
     string plug = uri[uri.size()-1];
     
-    std::vector<std::string> args_split;
-    Utils::str_split(args_str, args_split, "&");
-    
-    std::map<string, string> arg_map;
-    for(int i = 0; i < args_split.size(); ++i){
-        std::vector<std::string> single_arg_split;
-        Utils::str_split(args_split[i], single_arg_split, "=");
-        arg_map[single_arg_split[0]] = single_arg_split[1];
-    }
-
-    ZstURI::Direction dir = (ZstURI::Direction)std::atoi(arg_map["d"].c_str());
-    
-	return ZstURI(performer.c_str(), instrument.c_str(), plug.c_str(), dir);
+	return ZstURI(performer.c_str(), instrument.c_str(), plug.c_str());
 }
 
 void ZstURI::build_combined_char() {
-	sprintf(m_combined_char, "%s/%s/%s?d=%i", m_performer, m_instrument, m_name, (int)m_direction);
+	sprintf(m_combined_char, "%s/%s/%s", m_performer, m_instrument, m_name);
 	m_created_combined_char = true;
 }

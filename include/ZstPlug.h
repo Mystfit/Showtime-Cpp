@@ -11,7 +11,7 @@
 #include "ZstCallbackQueue.h"
 #include "Showtime.h"
 
-//Forward declaration
+//Forward declarations
 class ZstValue;
 class ZstURI;
 class PlugCallback;
@@ -21,18 +21,24 @@ class ZstPlug {
 public:
 	friend class Showtime;
 	//Constructor
-	ZST_EXPORT ZstPlug(ZstURI * uri, ZstValueType t);
+	ZST_EXPORT ZstPlug(ZstURI uri, ZstValueType t);
 	ZST_EXPORT virtual ~ZstPlug();
-	ZST_EXPORT ZstURI * get_URI() const;
+	ZST_EXPORT ZstURI get_URI() const;
 	ZST_EXPORT ZstValue * value();
 
 protected:
 	ZstValue * m_value;
 
 private:
-	ZstURI * m_uri;
+	ZstURI m_uri;
 };
 
+
+enum PlugDirection {
+    NONE = 0,
+    IN_JACK,
+    OUT_JACK
+};
 
 // ----------------------
 // Plug callbacks
@@ -53,9 +59,13 @@ public:
 };
 
 
+// --------------------
+// Derived plug classes
+// --------------------
+
 class ZstInputPlug : public ZstPlug {
 public:
-	ZST_EXPORT ZstInputPlug(ZstURI * uri, ZstValueType t);
+	ZST_EXPORT ZstInputPlug(ZstURI uri, ZstValueType t);
 	ZST_EXPORT ~ZstInputPlug();
 
 	//Receive a msgpacked value through this plug
@@ -68,7 +78,7 @@ private:
 
 class ZstOutputPlug : public ZstPlug {
 public:
-	ZstOutputPlug(ZstURI * uri, ZstValueType t) : ZstPlug(uri, t) {};
+	ZstOutputPlug(ZstURI uri, ZstValueType t) : ZstPlug(uri, t) {};
 	ZST_EXPORT void fire();
 };
 

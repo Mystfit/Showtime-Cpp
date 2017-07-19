@@ -339,23 +339,24 @@ ZstPerformer * ZstEndpoint::create_performer(ZstURI uri)
 	return perf;
 }
 
-ZstPerformer * ZstEndpoint::get_performer_by_URI(const ZstURI uri)
+ZstPerformer * ZstEndpoint::get_performer_by_URI(ZstURI uri)
 {
 	return m_performers[uri.performer()];
 }
 
-template ZstInputPlug* ZstEndpoint::create_plug<ZstInputPlug>(ZstURI * uri, ZstValueType val_type, ZstURI::Direction direction);
-template ZstOutputPlug* ZstEndpoint::create_plug<ZstOutputPlug>(ZstURI * uri, ZstValueType val_type, ZstURI::Direction direction);
+template ZstInputPlug* ZstEndpoint::create_plug<ZstInputPlug>(ZstURI uri, ZstValueType val_type, PlugDirection direction);
+template ZstOutputPlug* ZstEndpoint::create_plug<ZstOutputPlug>(ZstURI uri, ZstValueType val_type, PlugDirection direction);
 template<typename T>
-T* ZstEndpoint::create_plug(ZstURI * uri, ZstValueType val_type, ZstURI::Direction direction) {
+T* ZstEndpoint::create_plug(ZstURI uri, ZstValueType val_type, PlugDirection direction) {
 	ZstMessages::RegisterPlug plug_args;
-	plug_args.address = ZstURIWire(*(uri));
+	plug_args.address = ZstURIWire(uri);
+    plug_args.dir = direction;
 	zmsg_t * plug_msg = ZstMessages::build_message<ZstMessages::RegisterPlug>(ZstMessages::Kind::STAGE_REGISTER_PLUG, plug_args);
 	Showtime::endpoint().send_to_stage(plug_msg);
 
 	if (check_stage_response_ok()) {
 		T *plug = new T(uri, val_type);
-		Showtime::endpoint().get_performer_by_URI(*uri)->add_plug(plug);
+		Showtime::endpoint().get_performer_by_URI(uri)->add_plug(plug);
 		return plug;
 	}
 	return NULL;
@@ -364,32 +365,32 @@ T* ZstEndpoint::create_plug(ZstURI * uri, ZstValueType val_type, ZstURI::Directi
  int ZstEndpoint::destroy_plug(ZstPlug * plug)
  {
 	 ZstMessages::DestroyPlug destroy_args;
-	 destroy_args.address = ZstURIWire(*(plug->get_URI()));
+	 destroy_args.address = ZstURIWire(plug->get_URI());
 	 send_to_stage(ZstMessages::build_message<ZstMessages::DestroyPlug>(ZstMessages::Kind::STAGE_DESTROY_PLUG, destroy_args));
 
 	 ZstMessages::Signal s = check_stage_response_ok();
 	 if (s){
-		 m_performers[plug->get_URI()->performer()]->remove_plug(plug);
+		 m_performers[plug->get_URI().performer()]->remove_plug(plug);
 		 delete plug;
 	 }
 	 return (int)s;
  }
 
 
- int ZstEndpoint::connect_cable(const ZstURI * a, const ZstURI * b)
+ int ZstEndpoint::connect_cable(ZstURI a, ZstURI b)
 {
 	ZstMessages::PlugConnection plug_args;
-	plug_args.first = *a;
-	plug_args.second = *b;
+	plug_args.first = a;
+	plug_args.second = b;
 	send_to_stage(ZstMessages::build_message<ZstMessages::PlugConnection>(ZstMessages::Kind::STAGE_REGISTER_CABLE, plug_args));
 	return check_stage_response_ok();
 }
 
-int ZstEndpoint::destroy_cable(const ZstURI * a, const ZstURI * b)
+int ZstEndpoint::destroy_cable(ZstURI a, ZstURI b)
 {
 	ZstMessages::PlugConnection plug_args;
-	plug_args.first = *a;
-	plug_args.second = *b;
+	plug_args.first = a;
+	plug_args.second = b;
 	send_to_stage(ZstMessages::build_message<ZstMessages::PlugConnection>(ZstMessages::Kind::STAGE_DESTROY_CABLE, plug_args));
 	return check_stage_response_ok();
 }

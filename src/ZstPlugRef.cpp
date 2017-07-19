@@ -2,7 +2,7 @@
 
 using namespace std;
 
-ZstPlugRef::ZstPlugRef(ZstURI uri) : m_URI(uri)
+ZstPlugRef::ZstPlugRef(ZstURI uri, PlugDirection dir) : m_URI(uri), m_direction(dir)
 {
 }
 
@@ -15,3 +15,6 @@ ZstURI ZstPlugRef::get_URI()
 	return m_URI;
 }
 
+PlugDirection ZstPlugRef::get_direction(){
+    return m_direction;
+}

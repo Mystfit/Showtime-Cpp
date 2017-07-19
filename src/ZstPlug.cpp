@@ -6,17 +6,16 @@
 
 using namespace std;
 
-ZstPlug::ZstPlug(ZstURI * uri, ZstValueType t) : m_uri(uri)
+ZstPlug::ZstPlug(ZstURI uri, ZstValueType t) : m_uri(uri)
 {
 	m_value = new ZstValue(t);
 }
 
 ZstPlug::~ZstPlug() {
-	delete m_uri;
 	delete m_value;
 }
 
-ZstURI * ZstPlug::get_URI() const
+ZstURI ZstPlug::get_URI() const
 {
 	return m_uri;
 }
@@ -26,7 +25,7 @@ ZstValue * ZstPlug::value()
 	return m_value;
 }
 
-ZstInputPlug::ZstInputPlug(ZstURI * uri, ZstValueType t) : ZstPlug(uri, t)
+ZstInputPlug::ZstInputPlug(ZstURI uri, ZstValueType t) : ZstPlug(uri, t)
 {
 	m_input_fired_manager = new ZstCallbackQueue<ZstInputPlugEventCallback, ZstInputPlug*>();
 }
@@ -39,7 +38,7 @@ ZstInputPlug::~ZstInputPlug() {
 
 void ZstInputPlug::recv(ZstValue * val) {
 	m_value = new ZstValue(*val);
-	Showtime::endpoint().enqueue_event(ZstEvent(*get_URI(), ZstEvent::EventType::PLUG_HIT));
+	Showtime::endpoint().enqueue_event(ZstEvent(get_URI(), ZstEvent::EventType::PLUG_HIT));
 }
 
 ZstCallbackQueue<ZstInputPlugEventCallback, ZstInputPlug*> * ZstInputPlug::input_events()
@@ -53,5 +52,5 @@ ZstCallbackQueue<ZstInputPlugEventCallback, ZstInputPlug*> * ZstInputPlug::input
 
 void ZstOutputPlug::fire()
 {
-	Showtime::endpoint().send_to_graph(ZstMessages::build_graph_message(*(this->get_URI()), ZstValueWire(*m_value)));
+	Showtime::endpoint().send_to_graph(ZstMessages::build_graph_message(this->get_URI(), ZstValueWire(*m_value)));
 }

@@ -74,7 +74,7 @@ private:
 	std::map<std::string, ZstEndpointRef*> m_endpoint_refs;
 
 	//Plug connections
-    int connect_cable(ZstURI output_plug, ZstURI input_plug);
+    int connect_cable(ZstPlugRef * output_plug, ZstPlugRef * input_plug);
     int destroy_cable(const ZstURI & uri);
 	int destroy_cable(ZstCable * cable);
 	int destroy_cable(ZstURI output_plug, ZstURI input_plug);
