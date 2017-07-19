@@ -91,24 +91,8 @@ void ZstEndpoint::init()
 		attach_pipe_listener(m_stage_updates, s_handle_stage_update_in, this);
 	}
     
-    ziflist_t * interfaces = ziflist_new();
-    const char * net_if = ziflist_first(interfaces);
-    const char * interface_ip = ziflist_address(interfaces);
-    
-    //Pick first publicly available IP by default.
-    m_network_interface = string(net_if);
-    string network_ip = string(interface_ip);
-    
-    cout << "ZST: Network interfaces on system:" << endl;
-    while (net_if) {
-        interface_ip = ziflist_address(interfaces);
-        if(interface_ip){
-            cout << "ZST: " << net_if << " " << interface_ip << endl;
-        }
-		net_if = ziflist_next(interfaces);
-    }
-    
-    cout << "ZST: Using network interface: " << m_network_interface << endl;
+    string network_ip = first_available_ext_ip();
+    cout << "ZST: Using external IP " << network_ip << endl;
     
 	//Graph output socket
     sprintf(m_graph_out_addr, "@tcp://%s:*", network_ip.c_str());
@@ -120,6 +104,17 @@ void ZstEndpoint::init()
         zsock_set_linger(m_graph_out, 0);
     
     start();
+}
+
+string ZstEndpoint::first_available_ext_ip(){
+    ziflist_t * interfaces = ziflist_new();
+    const char * net_if = ziflist_first(interfaces);
+    const char * interface_ip = ziflist_address(interfaces);
+    
+    if(net_if == NULL) {
+        interface_ip = "127.0.0.1";
+    }
+    return string(interface_ip);
 }
 
 void ZstEndpoint::start() {

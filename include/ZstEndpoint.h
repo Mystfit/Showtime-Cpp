@@ -79,6 +79,7 @@ private:
 	//Registration
 	void register_performer_to_stage(std::string);
 	void leave_stage();
+    std::string first_available_ext_ip();
 
 	//Internal send and receive
 	void send_to_stage(zmsg_t * msg);
