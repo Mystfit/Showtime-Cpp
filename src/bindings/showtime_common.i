@@ -2,6 +2,7 @@
 %include <windows.i>
 %include "ZstExports.h"
 
+// ZstURI class definition
 class ZstURI {
 public:
     ZstURI();
@@ -29,12 +30,28 @@ public:
     bool operator< (const ZstURI& b) const;
 };
 
-%feature("director") ZstInputPlugEventCallback;
+// Importable classes
 %include "ZstPlug.h"
-
-%feature("director") ZstEventCallback;
 %include "ZstEvent.h"
+%include "ZstCable.h"
 
+// Callbacks
+%feature("director") ZstEventCallback;
+%feature("director") ZstPlugDataEventCallback;
+%feature("director") ZstPlugEventCallback;
+%feature("director") ZstPerformerEventCallback;
+%feature("director") ZstCableEventCallback;
+%include "ZstCallbacks.h"
+
+// Callback queue templates
+%include "ZstCallbackQueue.h"
+%template(ZstEventCallbackQueue) ZstCallbackQueue<ZstEventCallback, ZstEvent>;
+%template(ZstPerformerCallbackQueue) ZstCallbackQueue<ZstPerformerEventCallback, ZstURI>;
+%template(ZstCableCallbackQueue) ZstCallbackQueue<ZstCableEventCallback, ZstCable>;
+%template(ZstPlugCallbackQueue) ZstCallbackQueue<ZstPlugEventCallback, ZstURI>;
+%template(ZstInputPlugCallbackQueue) ZstCallbackQueue<ZstPlugDataEventCallback, ZstInputPlug*>;
+
+// ZstValue extensions
 %nodefaultctor ZstValue;
 %extend ZstValue{
     std::string char_at(size_t position) {
@@ -48,17 +65,3 @@ public:
 %include "ZstValue.h"
 %ignore ZstValue::char_at;
 
-%include "ZstCallbackQueue.h"
-%template(ZstEventCallbackQueue) ZstCallbackQueue<ZstEventCallback, ZstEvent>;
-%template(ZstPerformerCallbackQueue) ZstCallbackQueue<ZstPerformerEventCallback, ZstURI>;
-%template(ZstCableCallbackQueue) ZstCallbackQueue<ZstCableEventCallback, ZstCable>;
-%template(ZstPlugCallbackQueue) ZstCallbackQueue<ZstPlugEventCallback, ZstURI>;
-%template(ZstInputPlugCallbackQueue) ZstCallbackQueue<ZstInputPlugEventCallback, ZstInputPlug*>;
-
-class ZstInputPlug : public ZstPlug {
-public:
-    ZstInputPlug(ZstURI uri, ZstValueType t);
-    ~ZstInputPlug();
-    void recv(ZstValue * val);
-    ZstCallbackQueue<ZstInputPlugEventCallback, ZstInputPlug*> * input_events();
-};

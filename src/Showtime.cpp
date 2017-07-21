@@ -40,17 +40,22 @@ void Showtime::leave()
 	return Showtime::endpoint().leave_stage();
 }
 
+bool Showtime::is_connected()
+{
+	return Showtime::endpoint().is_connected_to_stage();
+}
+
 void Showtime::poll_once()
 {
 	while (Showtime::event_queue_size() > 0) {
 		ZstPerformer * performer = NULL;
+		ZstCable * cable = NULL;
 		ZstEvent e = Showtime::pop_event();
 
 		switch (e.get_update_type()) {
 		case ZstEvent::EventType::PLUG_HIT:
 			performer = Showtime::endpoint().get_performer_by_URI(e.get_first());
 			if (performer != NULL) {
-				//TODO: Verify that plug is actually an input plug!
 				ZstInputPlug * plug = (ZstInputPlug*)performer->get_plug_by_URI(e.get_first());
 				if (plug != NULL) {
 					plug->input_events()->run_event_callbacks(plug);
@@ -61,13 +66,23 @@ void Showtime::poll_once()
 			Showtime::endpoint().cable_arriving_events()->run_event_callbacks(ZstCable(e.get_first(), e.get_second()));
 			break;
 		case ZstEvent::CABLE_DESTROYED:
-			Showtime::endpoint().cable_leaving_events()->run_event_callbacks(ZstCable(e.get_first(), e.get_second()));
+			cable = Showtime::endpoint().get_cable_by_URI(e.get_first(), e.get_second());
+			if (cable != NULL) {
+				Showtime::endpoint().remove_cable(cable);
+				Showtime::endpoint().cable_leaving_events()->run_event_callbacks(ZstCable(e.get_first(), e.get_second()));
+			}
 			break;
-		case ZstEvent::CREATED:
-			Showtime::endpoint().stage_events()->run_event_callbacks(e);
+		case ZstEvent::PLUG_CREATED:
+			Showtime::endpoint().plug_arriving_events()->run_event_callbacks(e.get_first());
 			break;
-		case ZstEvent::DESTROYED:
-			Showtime::endpoint().stage_events()->run_event_callbacks(e);
+		case ZstEvent::PLUG_DESTROYED:
+			Showtime::endpoint().plug_leaving_events()->run_event_callbacks(e.get_first());
+			break;
+		case ZstEvent::PERFORMER_CREATED:
+			Showtime::endpoint().performer_arriving_events()->run_event_callbacks(e.get_first());
+			break;
+		case ZstEvent::PERFORMER_DESTROYED:
+			Showtime::endpoint().performer_arriving_events()->run_event_callbacks(e.get_first());
 			break;
 		default:
 			Showtime::endpoint().stage_events()->run_event_callbacks(e);

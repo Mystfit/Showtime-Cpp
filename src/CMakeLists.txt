@@ -11,6 +11,7 @@ set(ZST_PUBLIC_HEADERS
  ${Showtime_INCLUDE_DIRS}/ZstEvent.h
  ${Showtime_INCLUDE_DIRS}/ZstCable.h
  ${Showtime_INCLUDE_DIRS}/ZstValue.h
+ ${Showtime_INCLUDE_DIRS}/ZstCallbacks.h
 )
 
 set(ZST_PRIVATE_HEADERS 

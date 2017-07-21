@@ -4,7 +4,7 @@
 ZstEvent::ZstEvent() :
     m_first(ZstURI()),
     m_second(ZstURI()),
-    m_update_type(ZstEvent::CREATED)
+    m_update_type(ZstEvent::NONE)
 {
 }
 

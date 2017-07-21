@@ -55,6 +55,7 @@ public:
 	ZST_EXPORT static void init();
     ZST_EXPORT static void join(const char * stage_address);
 	ZST_EXPORT static void leave();
+	ZST_EXPORT static bool is_connected();
 
 	//Poll the event queue - for runtimes that have process events from the main thread
 	ZST_EXPORT static void poll_once();

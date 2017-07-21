@@ -336,7 +336,7 @@ void ZstStage::register_performer_handler(zsock_t * socket, zmsg_t * msg) {
 	}
 
 	reply_with_signal(socket, ZstMessages::Signal::OK);
-	enqueue_stage_update(ZstEvent(performerRef->get_URI(), ZstEvent::EventType::CREATED));
+	enqueue_stage_update(ZstEvent(performerRef->get_URI(), ZstEvent::EventType::PERFORMER_CREATED));
 }
 
 
@@ -362,7 +362,7 @@ void ZstStage::register_plug_handler(zsock_t *socket, zmsg_t *msg) {
 	}
 
 	reply_with_signal(socket, ZstMessages::Signal::OK);
-	enqueue_stage_update(ZstEvent(plug->get_URI(), ZstEvent::EventType::CREATED));
+	enqueue_stage_update(ZstEvent(plug->get_URI(), ZstEvent::EventType::PLUG_CREATED));
 }
 
 
@@ -381,7 +381,7 @@ void ZstStage::destroy_plug_handler(zsock_t * socket, zmsg_t * msg)
 	performer->destroy_plug(performer->get_plug_by_URI(plug_destroy_args.address));
 
 	reply_with_signal(socket, ZstMessages::Signal::OK);
-	enqueue_stage_update(ZstEvent(plug_destroy_args.address, ZstEvent::EventType::DESTROYED));
+	enqueue_stage_update(ZstEvent(plug_destroy_args.address, ZstEvent::EventType::PLUG_DESTROYED));
 }
 
 
@@ -540,10 +540,14 @@ vector<ZstEventWire> ZstStage::create_snapshot() {
 	
 	vector<ZstEventWire> stage_snapshot;
     vector<ZstPlugRef*> plugs = get_all_plug_refs();
+	vector<ZstPerformerRef*> performers = get_all_performer_refs();
 
-    //Pull addressess from plug refs
+	for (auto performer : performers) {
+		stage_snapshot.push_back(ZstEventWire(performer->get_URI(), ZstEvent::PERFORMER_CREATED));
+	}
+
     for (auto plug : plugs) {
-        stage_snapshot.push_back(ZstEventWire(plug->get_URI(), ZstEvent::CREATED));
+        stage_snapshot.push_back(ZstEventWire(plug->get_URI(), ZstEvent::PLUG_CREATED));
     }
 
     for (auto cable : m_cables) {

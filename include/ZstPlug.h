@@ -9,6 +9,7 @@
 #include "ZstURI.h"
 #include "ZstEvent.h"
 #include "ZstCallbackQueue.h"
+#include "ZstCallbacks.h"
 #include "Showtime.h"
 
 //Forward declarations
@@ -40,24 +41,6 @@ enum PlugDirection {
     OUT_JACK
 };
 
-// ----------------------
-// Plug callbacks
-// ----------------------
-
-class ZstPlugEventCallback {
-public:
-	ZST_EXPORT virtual ~ZstPlugEventCallback() { std::cout << "Destroying plug event callback" << std::endl; }
-	ZST_EXPORT virtual void run(ZstURI plug) { std::cout << "Running plug event callback" << std::endl; }
-};
-
-
-class ZstInputPlug;
-class ZstInputPlugEventCallback {
-public:
-	ZST_EXPORT virtual ~ZstInputPlugEventCallback() { std::cout << "Destroying input callback" << std::endl; }
-	ZST_EXPORT virtual void run(ZstInputPlug * e) { std::cout << "Input callback running" << std::endl; }
-};
-
 
 // --------------------
 // Derived plug classes
@@ -70,9 +53,9 @@ public:
 
 	//Receive a msgpacked value through this plug
 	ZST_EXPORT void recv(ZstValue * val);
-	ZST_EXPORT ZstCallbackQueue<ZstInputPlugEventCallback, ZstInputPlug*> * input_events();
+	ZST_EXPORT ZstCallbackQueue<ZstPlugDataEventCallback, ZstInputPlug*> * input_events();
 private:
-	ZstCallbackQueue<ZstInputPlugEventCallback, ZstInputPlug*> * m_input_fired_manager;
+	ZstCallbackQueue<ZstPlugDataEventCallback, ZstInputPlug*> * m_input_fired_manager;
 };
 
 

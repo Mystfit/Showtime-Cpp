@@ -10,7 +10,7 @@ class ZstPerformer {
 	public:
 		ZstPerformer(std::string name);
 		~ZstPerformer();
-		ZST_EXPORT std::string get_name();
+		ZST_EXPORT const char * get_name();
         ZST_EXPORT ZstPlug * get_plug_by_URI(ZstURI uri);
 
 		void add_plug(ZstPlug* plug);
@@ -18,11 +18,4 @@ class ZstPerformer {
 	private:
 		std::map<std::string, std::vector<ZstPlug*> > m_plugs;
 		std::string m_name;
-};
-
-
-class ZstPerformerEventCallback {
-public:
-	ZST_EXPORT virtual ~ZstPerformerEventCallback() { std::cout << "Destroying performer event callback" << std::endl; }
-	ZST_EXPORT virtual void run(ZstURI performer) { std::cout << "Running performer event callback" << std::endl; }
 };

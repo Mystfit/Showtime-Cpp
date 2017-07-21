@@ -31,15 +31,73 @@ inline void wait_for_poll() {
 
 //Callback classes
 //----------------
-class TestStageEventCallback : public ZstEventCallback {
+class TestPerformerArrivingEventCallback : public ZstPerformerEventCallback {
 public:
-	int stageEventHits = 0;
-	void run(ZstEvent e) override {
-		std::cout << "ZST_TEST CALLBACK - Stage event type " << e.get_update_type() << ": " << e.get_first().to_char() << std::endl;
-		stageEventHits++;
-	};
-	void reset() { stageEventHits = 0; }
+	int performerArrivedHits = 0;
+	std::string last_created_performer;
+	void run(ZstURI performer) override {
+		std::cout << "ZST_TEST CALLBACK - performer arriving " << performer.to_char() << std::endl;
+		performerArrivedHits++;
+		last_created_performer = std::string(performer.performer_char());
+	}
+	void reset() { performerArrivedHits = 0; }
 };
+
+class TestPerformerLeavingEventCallback : public ZstPerformerEventCallback {
+public:
+	int performerLeavingHits = 0;
+	void run(ZstURI performer) override {
+		std::cout << "ZST_TEST CALLBACK - performer leaving " << performer.to_char() << std::endl;
+		performerLeavingHits++;
+	}
+	void reset() { performerLeavingHits = 0; }
+};
+
+// ----
+
+class TestPlugArrivingEventCallback : public ZstPlugEventCallback {
+public:
+	int plugArrivedHits = 0;
+	void run(ZstURI plug) override {
+		std::cout << "ZST_TEST CALLBACK - plug arriving " << plug.to_char() << std::endl;
+		plugArrivedHits++;
+	}
+	void reset() { plugArrivedHits = 0; }
+};
+
+class TestPlugLeavingEventCallback : public ZstPlugEventCallback {
+public:
+	int plugLeavingHits = 0;
+	void run(ZstURI plug) override {
+		std::cout << "ZST_TEST CALLBACK - plug leaving " << plug.to_char() << std::endl;
+		plugLeavingHits++;
+	}
+	void reset() { plugLeavingHits = 0; }
+};
+
+// ----
+
+class TestCableArrivingEventCallback : public ZstCableEventCallback {
+public:
+	int cableArrivedHits = 0;
+	void run(ZstCable cable) override {
+		std::cout << "ZST_TEST CALLBACK - cable arriving " << cable.get_output().to_char() << " to " << cable.get_input().to_char() << std::endl;
+		cableArrivedHits++;
+	}
+	void reset() { cableArrivedHits = 0; }
+};
+
+class TestCableLeavingEventCallback : public ZstCableEventCallback {
+public:
+	int cableLeavingHits = 0;
+	void run(ZstCable cable) override {
+		std::cout << "ZST_TEST CALLBACK - cable leaving " << cable.get_output().to_char() << " to " << cable.get_input().to_char() << std::endl;
+		cableLeavingHits++;
+	}
+	void reset() { cableLeavingHits = 0; }
+};
+
+// ----
 
 class TestConnectionCallback : public ZstEventCallback {
 public:
@@ -49,7 +107,7 @@ public:
 	};
 };
 
-class TestIntValueCallback : public ZstInputPlugEventCallback {
+class TestIntValueCallback : public ZstPlugDataEventCallback {
 public:
 	int compare_val;
 	int intPlugCallbacks = 0;
@@ -61,7 +119,7 @@ public:
 	};
 };
 
-class TestFloatValueCallback : public ZstInputPlugEventCallback {
+class TestFloatValueCallback : public ZstPlugDataEventCallback {
 public:
 	float compare_val;
 	TestFloatValueCallback(float cmpr) : compare_val(cmpr) {}
@@ -71,7 +129,7 @@ public:
 	};
 };
 
-class TestCharValueCallback : public ZstInputPlugEventCallback {
+class TestCharValueCallback : public ZstPlugDataEventCallback {
 public:
 	const char* compare_val;
 	TestCharValueCallback(const char* cmpr) : compare_val(cmpr) {}
@@ -84,7 +142,7 @@ public:
 	};
 };
 
-class TestMultipleIntValueCallback : public ZstInputPlugEventCallback {
+class TestMultipleIntValueCallback : public ZstPlugDataEventCallback {
 public:
 	int compare_val;
 	int _num_values;
@@ -140,11 +198,20 @@ void test_performer_init() {
     //Test single performer init
 	std::cout << "Starting performer init test" << std::endl;
 	Showtime::endpoint().self_test();
+
+	TestPerformerArrivingEventCallback * perfArriveCallback = new TestPerformerArrivingEventCallback();
+	Showtime::attach_performer_arriving_callback(perfArriveCallback);
+
 	performer_a = Showtime::create_performer("test_performer_1");
 	assert(performer_a);
     wait_for_poll();
+	assert(perfArriveCallback->performerArrivedHits == 1);
+	assert(perfArriveCallback->last_created_performer == performer_a->get_name());
+	perfArriveCallback->reset();
 
-//	assert(strcmp(e.get_first().to_char(), "test_performer_1//") == 0);
+	Showtime::remove_performer_arriving_callback(perfArriveCallback);
+	delete perfArriveCallback;
+
 	std::cout << "Finished performer init test\n" << std::endl;
 }
 
@@ -163,9 +230,8 @@ void test_stage_registration(){
 void test_create_plugs(){
 	std::cout << "Starting create plugs test" << std::endl;
 
-	//Attach stage event callbacks first so we get status updates from stage on plug creation
-	TestStageEventCallback * stagecallback = new TestStageEventCallback();
-	Showtime::attach_stage_event_callback(stagecallback);
+	TestPlugArrivingEventCallback * plugArrivalCallback = new TestPlugArrivingEventCallback();
+	Showtime::attach_plug_arriving_callback(plugArrivalCallback);
 
     //Create new plugs
 	ZstURI outURI = ZstURI("test_performer_1", "test_instrument", "test_output_plug");
@@ -184,12 +250,11 @@ void test_create_plugs(){
 	ZstURI typedIntPlug_stack = ZstURI(typedInputPlug->get_URI());
 
 	//Check that our plug creation callbacks fired successfully
-	TAKE_A_BREATH
-	assert(Showtime::event_queue_size() > 0);
-	Showtime::poll_once();
-	assert(Showtime::event_queue_size() == 0);
-	assert(stagecallback->stageEventHits == 3);
-	stagecallback->reset();
+	wait_for_poll();
+	assert(plugArrivalCallback->plugArrivedHits == 3);
+	plugArrivalCallback->reset();
+	Showtime::remove_plug_arriving_callback(plugArrivalCallback);
+	delete plugArrivalCallback;
 
     //Check stage registered plugs successfully
     ZstPerformerRef *stagePerformerRef = stage->get_performer_ref_by_name("test_performer_1");
@@ -202,6 +267,9 @@ void test_create_plugs(){
 	assert(localPlug->get_URI() == outURI);
 
 	//Check plug destruction
+	TestPlugLeavingEventCallback * plugLeavingCallback = new TestPlugLeavingEventCallback();
+	Showtime::attach_plug_leaving_callback(plugLeavingCallback);
+
 	Showtime::endpoint().destroy_plug(outputPlug);
 	assert(stage->get_performer_ref_by_name(outURI.performer_char())->get_plug_by_URI(outURI) == NULL);
 	
@@ -212,7 +280,9 @@ void test_create_plugs(){
 	assert(stage->get_performer_ref_by_name(typedIntPlug_stack.performer_char())->get_plug_by_URI(typedIntPlug_stack) == NULL);
 
 	wait_for_poll();
-	Showtime::remove_stage_event_callback(stagecallback);
+	assert(plugLeavingCallback->plugLeavingHits == 3);
+	plugLeavingCallback->reset();
+	Showtime::remove_plug_leaving_callback(plugLeavingCallback);
 
 	std::cout << "Finished create plugs test\n" << std::endl;
 }
@@ -233,12 +303,17 @@ void test_connect_plugs() {
 	ZstOutputPlug *output_int_plug = Showtime::create_output_plug(outURI, ZstValueType::ZST_INT);
 	ZstInputPlug *input_int_plug = Showtime::create_input_plug(inURI, ZstValueType::ZST_INT);
 	input_int_plug->input_events()->attach_event_callback(new TestIntValueCallback(int_fire_val));
-	Showtime::connect_cable(output_int_plug->get_URI(), input_int_plug->get_URI());
+	
+	//Test cable callbacks
+	TestCableArrivingEventCallback * cableArriveCallback = new TestCableArrivingEventCallback();
+	TestCableLeavingEventCallback * cableLeaveCallback = new TestCableLeavingEventCallback();
 
-	TAKE_A_BREATH
-	assert(Showtime::event_queue_size() > 0);
-	Showtime::poll_once();
-	assert(Showtime::event_queue_size() == 0);
+	Showtime::attach_cable_arriving_callback(cableArriveCallback);
+	Showtime::attach_cable_leaving_callback(cableLeaveCallback);
+	Showtime::connect_cable(output_int_plug->get_URI(), input_int_plug->get_URI());
+	wait_for_poll();
+	assert(cableArriveCallback->cableArrivedHits == 1);
+	cableArriveCallback->reset();
 	assert(Showtime::endpoint().get_cable_by_URI(outURI, inURI) != NULL);
 
 	//Test connecting missing URI objects
@@ -248,13 +323,24 @@ void test_connect_plugs() {
 
 	//Testing connection disconnect and reconnect
 	assert(Showtime::destroy_cable(output_int_plug->get_URI(), input_int_plug->get_URI()));
-	TAKE_A_BREATH
+	wait_for_poll();
+	assert(cableLeaveCallback->cableLeavingHits == 1);
+	cableLeaveCallback->reset();
 	assert(Showtime::endpoint().get_cable_by_URI(outURI, inURI) == NULL);
 	assert(Showtime::connect_cable(output_int_plug->get_URI(), input_int_plug->get_URI()));
 
-	//Test plug destruction
+	//Test plug and cable destruction
 	assert(Showtime::destroy_plug(output_int_plug));
+	wait_for_poll();
+	assert(cableLeaveCallback->cableLeavingHits == 1);
+	cableLeaveCallback->reset();
 	assert(Showtime::destroy_plug(input_int_plug));
+
+	//Test removing callbacks
+	Showtime::remove_cable_arriving_callback(cableArriveCallback);
+	Showtime::remove_cable_leaving_callback(cableLeaveCallback);
+	delete cableArriveCallback;
+	delete cableLeaveCallback;
 
 	std::cout << "Finished connect plugs test\n" << std::endl;
 }

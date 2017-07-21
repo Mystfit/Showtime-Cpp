@@ -27,7 +27,7 @@ ZstValue * ZstPlug::value()
 
 ZstInputPlug::ZstInputPlug(ZstURI uri, ZstValueType t) : ZstPlug(uri, t)
 {
-	m_input_fired_manager = new ZstCallbackQueue<ZstInputPlugEventCallback, ZstInputPlug*>();
+	m_input_fired_manager = new ZstCallbackQueue<ZstPlugDataEventCallback, ZstInputPlug*>();
 }
 
 //ZstInputPlug
@@ -41,7 +41,7 @@ void ZstInputPlug::recv(ZstValue * val) {
 	Showtime::endpoint().enqueue_event(ZstEvent(get_URI(), ZstEvent::EventType::PLUG_HIT));
 }
 
-ZstCallbackQueue<ZstInputPlugEventCallback, ZstInputPlug*> * ZstInputPlug::input_events()
+ZstCallbackQueue<ZstPlugDataEventCallback, ZstInputPlug*> * ZstInputPlug::input_events()
 {
 	return m_input_fired_manager;
 }

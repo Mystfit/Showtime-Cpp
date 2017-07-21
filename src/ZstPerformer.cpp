@@ -11,9 +11,9 @@ ZstPerformer::~ZstPerformer()
 {
 }
 
-string ZstPerformer::get_name()
+const char * ZstPerformer::get_name()
 {
-	return m_name;
+	return m_name.c_str();
 }
 
 

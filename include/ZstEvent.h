@@ -7,13 +7,18 @@ class ZstEvent {
 public:
 	//Special message property enums
 	enum EventType {
-		CREATED,
-		UPDATED,
-		LEAVING,
-		DESTROYED,
+		NONE,
+		PLUG_CREATED,
+		PLUG_LEAVING,
+		PLUG_DESTROYED,
+		PERFORMER_CREATED,
+		PERFORMER_LEAVING,
+		PERFORMER_DESTROYED,
 		CABLE_CREATED,
 		CABLE_LEAVING,
 		CABLE_DESTROYED,
+		ROUTE_CREATED,
+		ROUTE_DESTROYED,
 		PLUG_HIT
 	};
 
@@ -34,11 +39,4 @@ protected:
 	ZstURI m_first;
 	ZstURI m_second;
 	EventType m_update_type;
-};
-
-
-class ZstEventCallback {
-public:
-	ZST_EXPORT virtual ~ZstEventCallback() { std::cout << "Destroying stage event callback" << std::endl; }
-	ZST_EXPORT virtual void run(ZstEvent e) { std::cout << "Running stage event callback" << std::endl; }
 };

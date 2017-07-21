@@ -288,15 +288,7 @@ void ZstEndpoint::stage_update_handler(zsock_t * socket, zmsg_t * msg)
 {
 	ZstMessages::StageUpdates update_args = ZstMessages::unpack_message_struct<ZstMessages::StageUpdates>(msg);
     for (auto event_iter : update_args.updates) {
-		if (event_iter.get_update_type() == ZstEvent::CABLE_DESTROYED) {
-			//Remove any cables that we own that have been destroyed
-			
-			ZstCable * cable = get_cable_by_URI(event_iter.get_first(), event_iter.get_second());
-			if (cable != NULL) {
-				remove_cable(cable);
-			}
-		}
-		Showtime::endpoint().enqueue_event(ZstEvent(event_iter.get_first(), event_iter.get_update_type()));
+		Showtime::endpoint().enqueue_event(ZstEvent(event_iter.get_first(), event_iter.get_second(), event_iter.get_update_type()));
 	}
 }
 

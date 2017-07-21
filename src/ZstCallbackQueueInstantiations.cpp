@@ -8,4 +8,4 @@ template class ZstCallbackQueue<ZstEventCallback, ZstEvent>;
 template class ZstCallbackQueue<ZstPerformerEventCallback, ZstURI>;
 template class ZstCallbackQueue<ZstCableEventCallback, ZstCable>;
 template class ZstCallbackQueue<ZstPlugEventCallback, ZstURI>;
-template class ZstCallbackQueue<ZstInputPlugEventCallback, ZstInputPlug*>;
+template class ZstCallbackQueue<ZstPlugDataEventCallback, ZstInputPlug*>;

@@ -22,10 +22,3 @@ private:
 	ZstURI m_input;
 	ZstURI m_output;
 };
-
-
-class ZstCableEventCallback {
-public:
-	ZST_EXPORT virtual ~ZstCableEventCallback() { std::cout << "Destroying cable event callback" << std::endl; }
-	ZST_EXPORT virtual void run(ZstCable cable) { std::cout << "Running cable event callback" << std::endl; }
-};
