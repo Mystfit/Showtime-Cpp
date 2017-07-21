@@ -1,4 +1,5 @@
 #include "Showtime.h"
+#include "version.h"
 #include "ZstEndpoint.h"
 #include "ZstMessages.h"
 #include "ZstPerformer.h"
@@ -27,6 +28,7 @@ void Showtime::destroy() {
 
 void Showtime::init()
 {
+	cout << "Starting Showtime v" << SHOWTIME_VERSION << endl;
 	Showtime::endpoint().init();
 }
 

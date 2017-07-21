@@ -1,5 +1,10 @@
 enable_testing()
 
+# Write version info into header file
+set(COMPILED_INCLUDES "${CMAKE_BINARY_DIR}/include")
+set(VERSION_FILE "${COMPILED_INCLUDES}/version.h")
+FILE(WRITE ${COMPILED_INCLUDES}/version.h "#define SHOWTIME_VERSION \"${SHOWTIME_VERSION}\"")
+
 set(ZST_PUBLIC_HEADERS 
  ${Showtime_INCLUDE_DIRS}/Showtime.h
  ${Showtime_INCLUDE_DIRS}/ZstURI.h
@@ -26,6 +31,7 @@ set(ZST_PRIVATE_HEADERS
  ${Showtime_INCLUDE_DIRS}/ZstEndpointRef.h
  ${Showtime_INCLUDE_DIRS}/ZstExports.h
  ${Showtime_INCLUDE_DIRS}/ZstCallbackQueue.h
+ ${VERSION_FILE}
 )
 
 set(ZST_HEADERS ${ZST_PUBLIC_HEADERS} ${ZST_PRIVATE_HEADERS})
@@ -53,6 +59,7 @@ set(ZST_SOURCE
 )
 
 set(ZST_INCLUDES 
+	${COMPILED_INCLUDES}
 	${Showtime_INCLUDE_DIRS}
 	${ZeroMQ_INCLUDE_DIRS}
 	${CZMQ_INCLUDE_DIRS}
@@ -69,6 +76,7 @@ set(ZST_LINK_LIBS
     ${MSGPACK_LIBRARIES}
 )
 
+# Set library definitions
 IF(WIN32)
 	add_definitions(-DEXPORTS_API)
 ENDIF(WIN32)
@@ -102,30 +110,6 @@ if(MACOSX)
 	  VERSION "${SHOWTIME_VERSION}"
 	  PUBLIC_HEADER "${ZST_HEADERS}"
   	)
-
-	# option(FRAMEWORK_SYMLINK "Symlink Showtime.framework into /Library/Frameworks" OFF)
-
-
-	# IF(FRAMEWORK_SYMLINK)
-	# 	add_custom_command(
-	# 		OUTPUT /Library/Frameworks/Showtime.framework
- #            COMMAND ln -s ${SOURCE} ${TARGET}
- #            DEPENDS ${PROJECT_NAME}
- #        )
-
-	# 	# Create target and install
-	# 	add_custom_target(INSTALL_PYTHON ALL DEPENDS ${BUILD_STAMP})
-	# 	install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} install)")
-	# ENDIF()
-
-	# IF(NOT FRAMEWORK_SYMLINK)
-	# 	install(
-	# 		TARGETS ${PROJECT_NAME}
-	# 		FRAMEWORK DESTINATION "/Library/Frameworks/"
-	# 		PUBLIC_HEADER DESTINATION "/usr/local/include/${PROJECT_NAME}"
-	# 	)
-	# ENDIF()
-
 ENDIF(MACOSX)
 
 add_subdirectory(bindings)
