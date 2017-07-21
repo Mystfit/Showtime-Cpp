@@ -17,6 +17,8 @@ set(ZST_PUBLIC_HEADERS
  ${Showtime_INCLUDE_DIRS}/ZstCable.h
  ${Showtime_INCLUDE_DIRS}/ZstValue.h
  ${Showtime_INCLUDE_DIRS}/ZstCallbacks.h
+ ${Showtime_INCLUDE_DIRS}/ZstPatch.h
+ ${Showtime_INCLUDE_DIRS}/ZstFilter.h
 )
 
 set(ZST_PRIVATE_HEADERS 
@@ -31,6 +33,7 @@ set(ZST_PRIVATE_HEADERS
  ${Showtime_INCLUDE_DIRS}/ZstEndpointRef.h
  ${Showtime_INCLUDE_DIRS}/ZstExports.h
  ${Showtime_INCLUDE_DIRS}/ZstCallbackQueue.h
+ ${Showtime_INCLUDE_DIRS}/ZstEntityBase.h
  ${VERSION_FILE}
 )
 
@@ -55,6 +58,9 @@ set(ZST_SOURCE
  "ZstCable.cpp"
  "ZstValue.cpp"
  "ZstValueWire.cpp"
+ "ZstPatch.cpp"
+ "ZstFilter.cpp"
+ "ZstEntityBase.cpp"
  "ZstCallbackQueueInstantiations.cpp"
 )
 

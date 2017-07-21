@@ -19,19 +19,24 @@ public:
         SIGNAL,
 		
 		//Endpoint registration
-		STAGE_REGISTER_ENDPOINT,
-		STAGE_REGISTER_ENDPOINT_ACK,
+		STAGE_CREATE_ENDPOINT,
+		STAGE_CREATE_ENDPOINT_ACK,
 		
 		//Performer registration
-        STAGE_REGISTER_PERFORMER,
+        STAGE_CREATE_PERFORMER,
 		STAGE_DESTROY_PERFORMER,
+
+		//Entity registration
+		STAGE_REGISTER_ENTITY_TYPE,
+		STAGE_CREATE_ENTITY,
+		STAGE_DESTROY_ENTITY,
 		
 		//Plug registration
-        STAGE_REGISTER_PLUG,
+        STAGE_CREATE_PLUG,
 		STAGE_DESTROY_PLUG,
 		
 		//Connection registration
-        STAGE_REGISTER_CABLE,
+        STAGE_CREATE_CABLE,
 		STAGE_DESTROY_CABLE,
 		
 		//Misc messages
@@ -69,24 +74,41 @@ public:
 		MSGPACK_DEFINE(sig);
 	};
 
-	struct RegisterEndpoint {
+	struct CreateEndpoint {
 		std::string uuid;
 		std::string address;
 		MSGPACK_DEFINE(uuid, address);
 	};
 
-	struct RegisterEndpointAck {
+	struct CreateEndpointAck {
 		std::string assigned_uuid;
 		MSGPACK_DEFINE(assigned_uuid);
 	};
     
-    struct RegisterPerformer{
+    struct CreatePerformer{
         std::string name;
 		std::string endpoint_uuid;
         MSGPACK_DEFINE(name, endpoint_uuid);
     };
+
+	struct RegisterEntityType {
+		std::string performer;
+		std::string entity_type;
+		MSGPACK_DEFINE(performer, entity_type);
+	};
+
+	struct CreateEntity {
+		std::string name;
+		std::string entity_type;
+		MSGPACK_DEFINE(name, entity_type);
+	};
+
+	struct CreateEntityAck {
+		int id;
+		MSGPACK_DEFINE(id);
+	};
     
-    struct RegisterPlug{
+    struct CreatePlug{
 		ZstURIWire address;
         PlugDirection dir;
         MSGPACK_DEFINE(address, dir);
@@ -97,17 +119,11 @@ public:
         MSGPACK_DEFINE(address);
     };
 
-    struct RegisterConnection{
-		ZstURIWire from;
-		ZstURIWire to;
-        MSGPACK_DEFINE(from, to);
-    };
-    
-    struct PlugOutput{
-		ZstURIWire from;
-        std::string value;
-        MSGPACK_DEFINE(from, value);
-    };
+	struct CreateCable {
+		ZstURIWire first;
+		ZstURIWire second;
+		MSGPACK_DEFINE(first, second);
+	};
 
 	struct StageUpdates {
 		std::vector<ZstEventWire> updates;
@@ -119,13 +135,6 @@ public:
         long timestamp;
         MSGPACK_DEFINE(from, timestamp);
     };
-
-
-	struct PlugConnection {
-		ZstURIWire first;
-		ZstURIWire second;
-		MSGPACK_DEFINE(first, second);
-	};
 
 	struct PerformerConnection {
 		std::string endpoint;

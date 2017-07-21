@@ -6,6 +6,7 @@
 #include "ZstExports.h"
 
 class ZstPlug;
+class ZstEntityBase;
 class ZstInputPlug;
 class ZstOutputPlug;
 class ZstPerformer;
@@ -83,6 +84,12 @@ public:
 	//Performers are our local containers for plugs
 	ZST_EXPORT static ZstPerformer* create_performer(const char * name);
 	ZST_EXPORT static ZstPerformer * get_performer_by_URI(ZstURI uri);
+
+	//Entities hold plugs
+	ZST_EXPORT static void register_entity_type(const char * entity_type);
+	ZST_EXPORT static ZstEntityBase * create_entity(const char * name, const char * entity_type);
+	ZST_EXPORT static void destroy_entity(ZstEntityBase * entity);
+
 
 	ZST_EXPORT static ZstEvent pop_event();
 	ZST_EXPORT static int event_queue_size();

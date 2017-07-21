@@ -235,19 +235,19 @@ void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
 	}
 	zsock_connect(m_stage_requests, "%s", m_stage_requests_addr);
 
-	ZstMessages::RegisterEndpoint args;
+	ZstMessages::CreateEndpoint args;
 	args.uuid = zuuid_str(m_startup_uuid);
 	args.address = m_output_endpoint;
 
 	cout << "ZST: Registering endpoint" << endl;
-	send_to_stage(ZstMessages::build_message<ZstMessages::RegisterEndpoint>(ZstMessages::Kind::STAGE_REGISTER_ENDPOINT, args));
+	send_to_stage(ZstMessages::build_message<ZstMessages::CreateEndpoint>(ZstMessages::Kind::STAGE_CREATE_ENDPOINT, args));
 
 	zmsg_t *responseMsg = receive_from_stage();
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
 
-	if (message_type == ZstMessages::Kind::STAGE_REGISTER_ENDPOINT_ACK) {
+	if (message_type == ZstMessages::Kind::STAGE_CREATE_ENDPOINT_ACK) {
 
-		ZstMessages::RegisterEndpointAck endpoint_ack = ZstMessages::unpack_message_struct<ZstMessages::RegisterEndpointAck>(responseMsg);
+		ZstMessages::CreateEndpointAck endpoint_ack = ZstMessages::unpack_message_struct<ZstMessages::CreateEndpointAck>(responseMsg);
 		cout << "ZST: Successfully registered endpoint to stage. UUID is " << endpoint_ack.assigned_uuid << endl;
 
 		//Connect performer dealer to stage now that it's been registered successfully
@@ -298,12 +298,12 @@ bool ZstEndpoint::is_connected_to_stage()
 }
 
 void ZstEndpoint::register_performer_to_stage(string performer) {
-	ZstMessages::RegisterPerformer register_args;
+	ZstMessages::CreatePerformer register_args;
 
 	// Need to send back our assigned uuid so we can attach the new performer to our endpoint on the stage
 	register_args.endpoint_uuid = m_assigned_uuid;
 	register_args.name = performer;
-	send_to_stage(ZstMessages::build_message<ZstMessages::RegisterPerformer>(ZstMessages::Kind::STAGE_REGISTER_PERFORMER, register_args));
+	send_to_stage(ZstMessages::build_message<ZstMessages::CreatePerformer>(ZstMessages::Kind::STAGE_CREATE_PERFORMER, register_args));
 	check_stage_response_ok();
 }
 
@@ -336,14 +336,29 @@ ZstPerformer * ZstEndpoint::get_performer_by_URI(ZstURI uri)
 	return m_performers[uri.performer()];
 }
 
+void ZstEndpoint::register_entity_type(const char * entity_type)
+{
+	throw std::exception("Register entity not implemented");
+}
+
+ZstEntityBase * ZstEndpoint::create_entity(const char * name, const char * entity_type)
+{
+	throw std::exception("Create entity not implemented");
+}
+
+void ZstEndpoint::destroy_entity(ZstEntityBase * entity)
+{
+	throw std::exception("Destroy entity not implemented");
+}
+
 template ZstInputPlug* ZstEndpoint::create_plug<ZstInputPlug>(ZstURI uri, ZstValueType val_type, PlugDirection direction);
 template ZstOutputPlug* ZstEndpoint::create_plug<ZstOutputPlug>(ZstURI uri, ZstValueType val_type, PlugDirection direction);
 template<typename T>
 T* ZstEndpoint::create_plug(ZstURI uri, ZstValueType val_type, PlugDirection direction) {
-	ZstMessages::RegisterPlug plug_args;
+	ZstMessages::CreatePlug plug_args;
 	plug_args.address = ZstURIWire(uri);
     plug_args.dir = direction;
-	zmsg_t * plug_msg = ZstMessages::build_message<ZstMessages::RegisterPlug>(ZstMessages::Kind::STAGE_REGISTER_PLUG, plug_args);
+	zmsg_t * plug_msg = ZstMessages::build_message<ZstMessages::CreatePlug>(ZstMessages::Kind::STAGE_CREATE_PLUG, plug_args);
 	Showtime::endpoint().send_to_stage(plug_msg);
 
 	if (check_stage_response_ok()) {
@@ -371,19 +386,19 @@ T* ZstEndpoint::create_plug(ZstURI uri, ZstValueType val_type, PlugDirection dir
 
  int ZstEndpoint::connect_cable(ZstURI a, ZstURI b)
 {
-	ZstMessages::PlugConnection plug_args;
+	ZstMessages::CreateCable plug_args;
 	plug_args.first = a;
 	plug_args.second = b;
-	send_to_stage(ZstMessages::build_message<ZstMessages::PlugConnection>(ZstMessages::Kind::STAGE_REGISTER_CABLE, plug_args));
+	send_to_stage(ZstMessages::build_message<ZstMessages::CreateCable>(ZstMessages::Kind::STAGE_CREATE_CABLE, plug_args));
 	return check_stage_response_ok();
 }
 
 int ZstEndpoint::destroy_cable(ZstURI a, ZstURI b)
 {
-	ZstMessages::PlugConnection plug_args;
+	ZstMessages::CreateCable plug_args;
 	plug_args.first = a;
 	plug_args.second = b;
-	send_to_stage(ZstMessages::build_message<ZstMessages::PlugConnection>(ZstMessages::Kind::STAGE_DESTROY_CABLE, plug_args));
+	send_to_stage(ZstMessages::build_message<ZstMessages::CreateCable>(ZstMessages::Kind::STAGE_DESTROY_CABLE, plug_args));
 	return check_stage_response_ok();
 }
 

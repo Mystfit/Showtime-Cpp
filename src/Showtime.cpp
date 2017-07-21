@@ -211,6 +211,21 @@ ZstPerformer * Showtime::get_performer_by_URI(ZstURI uri)
 	return Showtime::endpoint().get_performer_by_URI(uri);
 }
 
+void Showtime::register_entity_type(const char * entity_type)
+{
+	Showtime::endpoint().register_entity_type(entity_type);
+}
+
+ZstEntityBase * Showtime::create_entity(const char * name, const char * entity_type)
+{
+	return Showtime::endpoint().create_entity(name, entity_type);
+}
+
+void Showtime::destroy_entity(ZstEntityBase * entity)
+{
+	return Showtime::endpoint().destroy_entity(entity);
+}
+
 ZstEvent Showtime::pop_event()
 {
 	return Showtime::endpoint().pop_plug_event();

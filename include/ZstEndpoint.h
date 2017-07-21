@@ -18,6 +18,7 @@
 class ZstValue;
 class ZstURI;
 class ZstPerformer;
+class ZstEntityBase;
 
 class ZstEndpoint : public ZstActor {
 public:
@@ -43,6 +44,12 @@ public:
 	//Performers
 	ZstPerformer * create_performer(const ZstURI uri);
 	ZstPerformer * get_performer_by_URI(const ZstURI uri);
+
+	//Entities
+	void register_entity_type(const char * entity_type);
+	ZstEntityBase * create_entity(const char * name, const char * entity_type);
+	void destroy_entity(ZstEntityBase * entity);
+
 	
 	//Plugs
 	template<typename T>

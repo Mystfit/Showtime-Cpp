@@ -227,23 +227,31 @@ int ZstStage::s_handle_performer_requests(zloop_t * loop, zsock_t * socket, void
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(msg);
 
 	switch (message_type) {
-	case ZstMessages::Kind::STAGE_REGISTER_ENDPOINT:
-		stage->register_endpoint_handler(socket, msg);
+	case ZstMessages::Kind::STAGE_CREATE_ENDPOINT:
+		stage->create_endpoint_handler(socket, msg);
 		break;		
-	case ZstMessages::Kind::STAGE_REGISTER_PERFORMER:
-		stage->register_performer_handler(socket, msg);
+	case ZstMessages::Kind::STAGE_CREATE_PERFORMER:
+		stage->create_performer_handler(socket, msg);
 		break;
-	case ZstMessages::Kind::STAGE_REGISTER_PLUG:
-		stage->register_plug_handler(socket, msg);
+	case ZstMessages::Kind::STAGE_CREATE_PLUG:
+		stage->create_plug_handler(socket, msg);
 		break;
 	case ZstMessages::Kind::STAGE_DESTROY_PLUG:
 		stage->destroy_plug_handler(socket, msg);
 		break;
-	case ZstMessages::Kind::STAGE_REGISTER_CABLE:
-		stage->connect_cable_handler(socket, msg);
+	case ZstMessages::Kind::STAGE_CREATE_CABLE:
+		stage->create_cable_handler(socket, msg);
 		break;
 	case ZstMessages::Kind::STAGE_DESTROY_CABLE:
-		stage->disconnect_cable_handler(socket, msg);
+		stage->destroy_cable_handler(socket, msg);
+		break;
+	case ZstMessages::Kind::STAGE_CREATE_ENTITY:
+		stage->create_entity_handler(socket, msg);
+		break;
+	case ZstMessages::Kind::STAGE_DESTROY_ENTITY:
+		stage->destroy_entity_handler(socket, msg);
+	case ZstMessages::Kind::STAGE_REGISTER_ENTITY_TYPE:
+		stage->register_entity_type_handler(socket, msg);
 		break;
 	case ZstMessages::Kind::ENDPOINT_HEARTBEAT:
 		stage->endpoint_heartbeat_handler(socket, msg);
@@ -292,9 +300,9 @@ void ZstStage::send_to_endpoint(zmsg_t * msg, ZstEndpointRef * destination) {
 // --------------
 // Reply handlers
 
-void ZstStage::register_endpoint_handler(zsock_t * socket, zmsg_t * msg)
+void ZstStage::create_endpoint_handler(zsock_t * socket, zmsg_t * msg)
 {
-	ZstMessages::RegisterEndpoint endpoint_args = ZstMessages::unpack_message_struct<ZstMessages::RegisterEndpoint>(msg);
+	ZstMessages::CreateEndpoint endpoint_args = ZstMessages::unpack_message_struct<ZstMessages::CreateEndpoint>(msg);
 	cout << "ZST_STAGE: Registering new endpoint UUID " << endpoint_args.uuid << endl;
 
 	ZstEndpointRef * endpointRef = create_endpoint(endpoint_args.uuid, endpoint_args.address);
@@ -304,10 +312,10 @@ void ZstStage::register_endpoint_handler(zsock_t * socket, zmsg_t * msg)
 		return;
 	}
 
-	ZstMessages::RegisterEndpointAck ack_params;
+	ZstMessages::CreateEndpointAck ack_params;
 	ack_params.assigned_uuid = endpointRef->client_assigned_uuid;
 
-	zmsg_t *ackmsg = ZstMessages::build_message<ZstMessages::RegisterEndpointAck>(ZstMessages::Kind::STAGE_REGISTER_ENDPOINT_ACK, ack_params);
+	zmsg_t *ackmsg = ZstMessages::build_message<ZstMessages::CreateEndpointAck>(ZstMessages::Kind::STAGE_CREATE_ENDPOINT_ACK, ack_params);
 	zmsg_send(&ackmsg, socket);
 }
 
@@ -319,8 +327,8 @@ void ZstStage::endpoint_heartbeat_handler(zsock_t * socket, zmsg_t * msg) {
 }
 
 
-void ZstStage::register_performer_handler(zsock_t * socket, zmsg_t * msg) {
-	ZstMessages::RegisterPerformer performer_args = ZstMessages::unpack_message_struct<ZstMessages::RegisterPerformer>(msg);
+void ZstStage::create_performer_handler(zsock_t * socket, zmsg_t * msg) {
+	ZstMessages::CreatePerformer performer_args = ZstMessages::unpack_message_struct<ZstMessages::CreatePerformer>(msg);
 	cout << "ZST_STAGE: Registering new performer " << performer_args.name << endl;
 
 	ZstEndpointRef * endpoint = get_endpoint_ref_by_UUID(performer_args.endpoint_uuid);
@@ -340,8 +348,8 @@ void ZstStage::register_performer_handler(zsock_t * socket, zmsg_t * msg) {
 }
 
 
-void ZstStage::register_plug_handler(zsock_t *socket, zmsg_t *msg) {
-	ZstMessages::RegisterPlug plug_args = ZstMessages::unpack_message_struct<ZstMessages::RegisterPlug>(msg);
+void ZstStage::create_plug_handler(zsock_t *socket, zmsg_t *msg) {
+	ZstMessages::CreatePlug plug_args = ZstMessages::unpack_message_struct<ZstMessages::CreatePlug>(msg);
 
 	ZstPerformerRef * performer = get_performer_ref_by_name(plug_args.address.performer_char());
 
@@ -365,6 +373,20 @@ void ZstStage::register_plug_handler(zsock_t *socket, zmsg_t *msg) {
 	enqueue_stage_update(ZstEvent(plug->get_URI(), ZstEvent::EventType::PLUG_CREATED));
 }
 
+void ZstStage::register_entity_type_handler(zsock_t * socket, zmsg_t * msg)
+{
+	throw exception("Register entity handler not implemented");
+}
+
+void ZstStage::create_entity_handler(zsock_t * socket, zmsg_t * msg)
+{
+	throw exception("Create entity handler not implemented");
+}
+
+void ZstStage::destroy_entity_handler(zsock_t * socket, zmsg_t * msg)
+{
+	throw exception("Destroy entity handler not implemented");
+}
 
 void ZstStage::destroy_plug_handler(zsock_t * socket, zmsg_t * msg)
 {
@@ -387,9 +409,9 @@ void ZstStage::destroy_plug_handler(zsock_t * socket, zmsg_t * msg)
 
 // ----------------
 // Router endpoints
-void ZstStage::connect_cable_handler(zsock_t * socket, zmsg_t * msg)
+void ZstStage::create_cable_handler(zsock_t * socket, zmsg_t * msg)
 {
-	ZstMessages::PlugConnection plug_args = ZstMessages::unpack_message_struct<ZstMessages::PlugConnection>(msg);
+	ZstMessages::CreateCable plug_args = ZstMessages::unpack_message_struct<ZstMessages::CreateCable>(msg);
 	cout << "ZST_STAGE: Received connect cable request for " << plug_args.first.to_char() << " and " << plug_args.second.to_char() << endl;
 	int connect_status = 0;
     
@@ -422,9 +444,9 @@ void ZstStage::connect_cable_handler(zsock_t * socket, zmsg_t * msg)
 	enqueue_stage_update(ZstEvent(plug_args.first, plug_args.second, ZstEvent::EventType::CABLE_CREATED));
 }
 
-void ZstStage::disconnect_cable_handler(zsock_t * socket, zmsg_t * msg)
+void ZstStage::destroy_cable_handler(zsock_t * socket, zmsg_t * msg)
 {
-	ZstMessages::PlugConnection connection_destroy_args = ZstMessages::unpack_message_struct<ZstMessages::PlugConnection>(msg);
+	ZstMessages::CreateCable connection_destroy_args = ZstMessages::unpack_message_struct<ZstMessages::CreateCable>(msg);
 	cout << "ZST_STAGE: Received destroy cable connection request" << endl;
 
 	if (!destroy_cable(connection_destroy_args.first, connection_destroy_args.second)) {

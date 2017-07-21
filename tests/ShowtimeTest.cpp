@@ -11,9 +11,9 @@
 #include "ZstValue.h"
 
 #ifdef WIN32
-#define TAKE_A_BREATH Sleep(100);
+#define TAKE_A_BREATH Sleep(200);
 #else
-#define TAKE_A_BREATH usleep(1000 * 100);
+#define TAKE_A_BREATH usleep(1000 * 200);
 #endif
 
 #ifdef WIN32

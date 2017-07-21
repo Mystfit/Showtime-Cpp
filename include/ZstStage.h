@@ -57,15 +57,18 @@ private:
 
     //Message handlers
 	//Rep
-	void register_endpoint_handler(zsock_t * socket, zmsg_t * msg);
 	void endpoint_heartbeat_handler(zsock_t * socket, zmsg_t * msg);
-	void register_performer_handler(zsock_t * socket, zmsg_t * msg);
-	void register_plug_handler(zsock_t * socket, zmsg_t * msg);
+	void register_entity_type_handler(zsock_t * socket, zmsg_t * msg);
+	void create_endpoint_handler(zsock_t * socket, zmsg_t * msg);
+	void create_performer_handler(zsock_t * socket, zmsg_t * msg);
+	void create_plug_handler(zsock_t * socket, zmsg_t * msg);
+	void create_entity_handler(zsock_t * socket, zmsg_t * msg);
 	void destroy_plug_handler(zsock_t * socket, zmsg_t * msg);
+	void destroy_entity_handler(zsock_t * socket, zmsg_t * msg);
+	void destroy_cable_handler(zsock_t * socket, zmsg_t * msg);
 
 	//Router
-    void connect_cable_handler(zsock_t * socket, zmsg_t * msg);
-	void disconnect_cable_handler(zsock_t * socket, zmsg_t * msg);
+    void create_cable_handler(zsock_t * socket, zmsg_t * msg);
 
     //Graph storage
 	ZstEndpointRef * create_endpoint(std::string starting_uuid, std::string endpoint);
