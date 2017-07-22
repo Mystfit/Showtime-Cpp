@@ -191,11 +191,6 @@ int Showtime::ping_stage(){
 	return Showtime::endpoint().ping_stage();
 }
 
-ZstPerformer * Showtime::create_performer(const char * name)
-{
-	return Showtime::endpoint().create_performer(ZstURI(name, "", ""));
-}
-
 ZstInputPlug * Showtime::create_input_plug(ZstURI uri, ZstValueType val_type)
 {
 	return (ZstInputPlug*)Showtime::endpoint().create_plug<ZstInputPlug>(uri, val_type, PlugDirection::IN_JACK);
@@ -206,19 +201,14 @@ ZstOutputPlug * Showtime::create_output_plug(ZstURI uri, ZstValueType val_type)
     return (ZstOutputPlug*)Showtime::endpoint().create_plug<ZstOutputPlug>(uri, val_type, PlugDirection::OUT_JACK);
 }
 
-ZstPerformer * Showtime::get_performer_by_URI(ZstURI uri)
-{
-	return Showtime::endpoint().get_performer_by_URI(uri);
-}
-
 void Showtime::register_entity_type(const char * entity_type)
 {
 	Showtime::endpoint().register_entity_type(entity_type);
 }
 
-ZstEntityBase * Showtime::create_entity(const char * name, const char * entity_type)
+ZstEntityBase * Showtime::create_entity(ZstEntityBehaviour behaviour, const char * name, const char * entity_type)
 {
-	return Showtime::endpoint().create_entity(name, entity_type);
+	return Showtime::endpoint().create_entity(behaviour, name, entity_type);
 }
 
 void Showtime::destroy_entity(ZstEntityBase * entity)

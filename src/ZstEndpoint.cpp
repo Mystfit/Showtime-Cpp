@@ -325,15 +325,10 @@ void ZstEndpoint::leave_stage()
 
 ZstPerformer * ZstEndpoint::create_performer(ZstURI uri)
 {
-	ZstPerformer * perf = new ZstPerformer(uri.performer());
+	ZstPerformer * perf = new ZstPerformer(uri.performer_char());
 	m_performers[uri.performer()] = perf;
-	register_performer_to_stage(perf->get_name());
+	register_performer_to_stage(perf->name());
 	return perf;
-}
-
-ZstPerformer * ZstEndpoint::get_performer_by_URI(ZstURI uri)
-{
-	return m_performers[uri.performer()];
 }
 
 void ZstEndpoint::register_entity_type(const char * entity_type)
@@ -341,7 +336,7 @@ void ZstEndpoint::register_entity_type(const char * entity_type)
 	throw std::exception("Register entity not implemented");
 }
 
-ZstEntityBase * ZstEndpoint::create_entity(const char * name, const char * entity_type)
+ZstEntityBase * ZstEndpoint::create_entity(ZstEntityBehaviour behaviour, const char * entity_type, const char * name)
 {
 	throw std::exception("Create entity not implemented");
 }
@@ -363,7 +358,6 @@ T* ZstEndpoint::create_plug(ZstURI uri, ZstValueType val_type, PlugDirection dir
 
 	if (check_stage_response_ok()) {
 		T *plug = new T(uri, val_type);
-		Showtime::endpoint().get_performer_by_URI(uri)->add_plug(plug);
 		return plug;
 	}
 	return NULL;
@@ -578,7 +572,6 @@ void ZstEndpoint::broadcast_to_local_plugs(ZstURI output_plug, ZstValue * value)
     for (auto cable : m_local_cables) {
 		if (cable->get_output() == output_plug) {
 			ZstPerformer* performer = get_performer_by_URI(cable->get_input());
-			//TODO: Need to verify plug is an input plug!
 			ZstInputPlug * plug = (ZstInputPlug*)performer->get_plug_by_URI(cable->get_input());
 			if (plug != NULL) {
 				plug->recv(value);

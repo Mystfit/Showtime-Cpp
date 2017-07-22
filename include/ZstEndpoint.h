@@ -8,6 +8,7 @@
 #include "ZstActor.h"
 #include "ZstExports.h"
 #include "Queue.h"
+#include "Showtime.h"
 #include "ZstPlug.h"
 #include "ZstEvent.h"
 #include "ZstMessages.h"
@@ -41,15 +42,10 @@ public:
 	//Lets the stage know we want a full snapshot of the current performance
 	void signal_sync();
 
-	//Performers
-	ZstPerformer * create_performer(const ZstURI uri);
-	ZstPerformer * get_performer_by_URI(const ZstURI uri);
-
 	//Entities
 	void register_entity_type(const char * entity_type);
-	ZstEntityBase * create_entity(const char * name, const char * entity_type);
+	ZstEntityBase * create_entity(ZstEntityBehaviour behaviour, const char * entity_type, const char * name);
 	void destroy_entity(ZstEntityBase * entity);
-
 	
 	//Plugs
 	template<typename T>

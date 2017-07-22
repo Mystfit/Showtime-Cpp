@@ -6,9 +6,12 @@
 
 using namespace std;
 
-ZstPlug::ZstPlug(ZstURI uri, ZstValueType t) : m_uri(uri)
+ZstPlug::ZstPlug(ZstEntityBase * entity, const char * name, ZstValueType t) : m_owner(entity)
 {
 	m_value = new ZstValue(t);
+
+	//TODO: Build uri from owner
+	m_uri = ZstURI("", "", name);
 }
 
 ZstPlug::~ZstPlug() {
@@ -25,7 +28,7 @@ ZstValue * ZstPlug::value()
 	return m_value;
 }
 
-ZstInputPlug::ZstInputPlug(ZstURI uri, ZstValueType t) : ZstPlug(uri, t)
+ZstInputPlug::ZstInputPlug(ZstEntityBase * entity, const char * name, ZstValueType t) : ZstPlug(entity, name, t)
 {
 	m_input_fired_manager = new ZstCallbackQueue<ZstPlugDataEventCallback, ZstInputPlug*>();
 }

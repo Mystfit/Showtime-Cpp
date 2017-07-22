@@ -10,10 +10,11 @@
 #include "ZstEvent.h"
 #include "ZstCallbackQueue.h"
 #include "ZstCallbacks.h"
+#include "ZstValue.h"
 #include "Showtime.h"
+#include "entities\ZstEntityBase.h"
 
 //Forward declarations
-class ZstValue;
 class ZstURI;
 class PlugCallback;
 class Showtime;
@@ -22,7 +23,7 @@ class ZstPlug {
 public:
 	friend class Showtime;
 	//Constructor
-	ZST_EXPORT ZstPlug(ZstURI uri, ZstValueType t);
+	ZST_EXPORT ZstPlug(ZstEntityBase * owner, const char * name, ZstValueType t);
 	ZST_EXPORT virtual ~ZstPlug();
 	ZST_EXPORT ZstURI get_URI() const;
 	ZST_EXPORT ZstValue * value();
@@ -31,6 +32,7 @@ protected:
 	ZstValue * m_value;
 
 private:
+	ZstEntityBase * m_owner;
 	ZstURI m_uri;
 };
 
@@ -48,7 +50,7 @@ enum PlugDirection {
 
 class ZstInputPlug : public ZstPlug {
 public:
-	ZST_EXPORT ZstInputPlug(ZstURI uri, ZstValueType t);
+	ZST_EXPORT ZstInputPlug(ZstEntityBase * owner, const char * name, ZstValueType t);
 	ZST_EXPORT ~ZstInputPlug();
 
 	//Receive a msgpacked value through this plug
@@ -61,7 +63,7 @@ private:
 
 class ZstOutputPlug : public ZstPlug {
 public:
-	ZstOutputPlug(ZstURI uri, ZstValueType t) : ZstPlug(uri, t) {};
+	ZstOutputPlug(ZstEntityBase * owner, const char * name, ZstValueType t) : ZstPlug(owner, name, t) {};
 	ZST_EXPORT void fire();
 };
 
