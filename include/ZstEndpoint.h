@@ -20,6 +20,7 @@ class ZstValue;
 class ZstURI;
 class ZstPerformer;
 class ZstEntityBase;
+class ZstFilter;
 
 class ZstEndpoint : public ZstActor {
 public:
@@ -44,12 +45,13 @@ public:
 
 	//Entities
 	void register_entity_type(const char * entity_type);
-	ZstEntityBase * create_entity(ZstEntityBehaviour behaviour, const char * entity_type, const char * name);
-	void destroy_entity(ZstEntityBase * entity);
+	int register_entity(const char * entity_type, const char * name, ZstURI parent);
+	int destroy_entity(ZstEntityBase * entity);
+	ZstEntityBase * get_entity_by_URI(ZstURI uri);
 	
 	//Plugs
 	template<typename T>
-	ZST_EXPORT static T* create_plug(ZstURI uri, ZstValueType val_type, PlugDirection direction);
+	ZST_EXPORT static T* create_plug(ZstFilter * owner, const char * name, ZstValueType val_type, PlugDirection direction);
 	ZST_EXPORT int destroy_plug(ZstPlug * plug);
 
 	//Cables
@@ -67,8 +69,8 @@ public:
 
 	//Plug callbacks
 	ZST_EXPORT ZstCallbackQueue<ZstEventCallback, ZstEvent> * stage_events();
-	ZST_EXPORT ZstCallbackQueue<ZstPerformerEventCallback, ZstURI> * performer_arriving_events();
-	ZST_EXPORT ZstCallbackQueue<ZstPerformerEventCallback, ZstURI> * performer_leaving_events();
+	ZST_EXPORT ZstCallbackQueue<ZstEntityEventCallback, ZstURI> * entity_arriving_events();
+	ZST_EXPORT ZstCallbackQueue<ZstEntityEventCallback, ZstURI> * entity_leaving_events();
 	ZST_EXPORT ZstCallbackQueue<ZstPlugEventCallback, ZstURI> * plug_arriving_events();
 	ZST_EXPORT ZstCallbackQueue<ZstPlugEventCallback, ZstURI> * plug_leaving_events();
 	ZST_EXPORT ZstCallbackQueue<ZstCableEventCallback, ZstCable> * cable_arriving_events();
@@ -80,7 +82,6 @@ private:
 	void stop();
 
 	//Registration
-	void register_performer_to_stage(std::string);
 	void leave_stage();
     std::string first_available_ext_ip();
 
@@ -120,7 +121,7 @@ private:
     std::string m_network_interface;
 
 	//All performers
-	std::map<std::string, ZstPerformer*> m_performers;
+	std::vector<ZstEntityBase*> m_entities;
 
 	//Active local plug connections
 	std::vector<ZstCable*> m_local_cables;
@@ -128,8 +129,8 @@ private:
 	//Events and callbacks
 	Queue<ZstEvent> m_events;
 	ZstCallbackQueue<ZstEventCallback, ZstEvent> * m_stage_event_manager;
-	ZstCallbackQueue<ZstPerformerEventCallback, ZstURI> * m_performer_arriving_event_manager;
-	ZstCallbackQueue<ZstPerformerEventCallback, ZstURI> * m_performer_leaving_event_manager;
+	ZstCallbackQueue<ZstEntityEventCallback, ZstURI> * m_performer_arriving_event_manager;
+	ZstCallbackQueue<ZstEntityEventCallback, ZstURI> * m_performer_leaving_event_manager;
 	ZstCallbackQueue<ZstCableEventCallback, ZstCable> * m_cable_arriving_event_manager;
 	ZstCallbackQueue<ZstCableEventCallback, ZstCable> * m_cable_leaving_event_manager;
 	ZstCallbackQueue<ZstPlugEventCallback, ZstURI> * m_plug_arriving_event_manager;

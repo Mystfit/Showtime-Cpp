@@ -19,9 +19,9 @@ public:
 	ZST_EXPORT virtual void run(ZstURI plug) { std::cout << "Running plug event callback" << std::endl; }
 };
 
-class ZstPerformerEventCallback {
+class ZstEntityEventCallback {
 public:
-	ZST_EXPORT virtual ~ZstPerformerEventCallback() { std::cout << "Destroying performer event callback" << std::endl; }
+	ZST_EXPORT virtual ~ZstEntityEventCallback() { std::cout << "Destroying performer event callback" << std::endl; }
 	ZST_EXPORT virtual void run(ZstURI performer) { std::cout << "Running performer event callback" << std::endl; }
 };
 

@@ -31,7 +31,7 @@ inline void wait_for_poll() {
 
 //Callback classes
 //----------------
-class TestPerformerArrivingEventCallback : public ZstPerformerEventCallback {
+class TestPerformerArrivingEventCallback : public ZstEntityEventCallback {
 public:
 	int performerArrivedHits = 0;
 	std::string last_created_performer;
@@ -43,7 +43,7 @@ public:
 	void reset() { performerArrivedHits = 0; }
 };
 
-class TestPerformerLeavingEventCallback : public ZstPerformerEventCallback {
+class TestPerformerLeavingEventCallback : public ZstEntityEventCallback {
 public:
 	int performerLeavingHits = 0;
 	void run(ZstURI performer) override {
@@ -257,7 +257,7 @@ void test_create_plugs(){
 	delete plugArrivalCallback;
 
     //Check stage registered plugs successfully
-    ZstPerformerRef *stagePerformerRef = stage->get_performer_ref_by_name("test_performer_1");
+    ZstEntityRef *stagePerformerRef = stage->get_performer_ref_by_name("test_performer_1");
     assert(stagePerformerRef->get_plug_by_URI(outputPlug->get_URI()) != NULL);
     assert(stagePerformerRef->get_plug_by_URI(inputPlug->get_URI()) != NULL);
 	assert(stagePerformerRef->get_plug_by_URI(typedInputPlug->get_URI()) != NULL);

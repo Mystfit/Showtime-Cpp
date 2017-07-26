@@ -9,6 +9,8 @@
 #include "ZstURIWire.h"
 #include "ZstEventWire.h"
 #include "ZstValueWire.h"
+#include "entities\ZstEntityBase.h"
+#include "entities\ZstFilter.h"
 
 using namespace std;
 
@@ -60,8 +62,8 @@ void ZstEndpoint::init()
 	m_is_destroyed = false;
 
 	m_stage_event_manager = new ZstCallbackQueue<ZstEventCallback, ZstEvent>();
-	m_performer_arriving_event_manager = new ZstCallbackQueue<ZstPerformerEventCallback, ZstURI>();
-	m_performer_leaving_event_manager = new ZstCallbackQueue<ZstPerformerEventCallback, ZstURI>();
+	m_performer_arriving_event_manager = new ZstCallbackQueue<ZstEntityEventCallback, ZstURI>();
+	m_performer_leaving_event_manager = new ZstCallbackQueue<ZstEntityEventCallback, ZstURI>();
 	m_cable_arriving_event_manager = new ZstCallbackQueue<ZstCableEventCallback, ZstCable>();
 	m_cable_leaving_event_manager = new ZstCallbackQueue<ZstCableEventCallback, ZstCable>();
 	m_plug_arriving_event_manager = new ZstCallbackQueue<ZstPlugEventCallback, ZstURI>();
@@ -123,6 +125,73 @@ void ZstEndpoint::start() {
 
 void ZstEndpoint::stop() {
 	ZstActor::stop();
+}
+
+
+// -------------
+// Endpoint init
+// -------------
+
+void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
+	m_stage_addr = string(stage_address);
+
+	//Build endpoint addresses
+	sprintf(m_stage_requests_addr, "tcp://%s:%d", stage_address.c_str(), STAGE_REP_PORT);
+
+	//Stage request socket for querying the performance
+	if (m_stage_requests == NULL) {
+		m_stage_requests = zsock_new(ZMQ_REQ);
+		zsock_set_linger(m_stage_requests, 0);
+	}
+	zsock_connect(m_stage_requests, "%s", m_stage_requests_addr);
+
+	ZstMessages::CreateEndpoint args;
+	args.uuid = zuuid_str(m_startup_uuid);
+	args.address = m_output_endpoint;
+
+	cout << "ZST: Registering endpoint" << endl;
+	send_to_stage(ZstMessages::build_message<ZstMessages::CreateEndpoint>(ZstMessages::Kind::STAGE_CREATE_ENDPOINT, args));
+
+	zmsg_t *responseMsg = receive_from_stage();
+	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
+
+	if (message_type == ZstMessages::Kind::STAGE_CREATE_ENDPOINT_ACK) {
+
+		ZstMessages::CreateEndpointAck endpoint_ack = ZstMessages::unpack_message_struct<ZstMessages::CreateEndpointAck>(responseMsg);
+		cout << "ZST: Successfully registered endpoint to stage. UUID is " << endpoint_ack.assigned_uuid << endl;
+
+		//Connect performer dealer to stage now that it's been registered successfully
+		sprintf(m_stage_router_addr, "tcp://%s:%d", m_stage_addr.c_str(), STAGE_ROUTER_PORT);
+		m_assigned_uuid = endpoint_ack.assigned_uuid;
+		zsock_set_identity(m_stage_router, endpoint_ack.assigned_uuid.c_str());
+		zsock_connect(m_stage_router, "%s", m_stage_router_addr);
+
+		//Stage sub socket for update messages
+		sprintf(m_stage_updates_addr, "tcp://%s:%d", stage_address.c_str(), STAGE_PUB_PORT);
+		cout << "ZST: Connecting to stage publisher " << m_stage_updates_addr << endl;
+		zsock_connect(m_stage_updates, "%s", m_stage_updates_addr);
+		zsock_set_subscribe(m_stage_updates, "");
+
+		//TODO: Need to check handshake before setting connection as active
+		m_connected_to_stage = true;
+		signal_sync();
+
+		//Set up heartbeat timer
+		m_heartbeat_timer_id = attach_timer(s_heartbeat_timer, HEARTBEAT_DURATION, this);
+	}
+	else {
+		throw runtime_error("ZST: Stage performer registration responded with error -> Kind: " + std::to_string((int)message_type));
+	}
+
+	zmsg_destroy(&responseMsg);
+}
+
+void ZstEndpoint::signal_sync()
+{
+	if (m_connected_to_stage) {
+		cout << "ZST: Requesting stage snapshot" << endl;
+		send_through_stage(ZstMessages::build_signal(ZstMessages::Signal::SYNC));
+	}
 }
 
 
@@ -193,7 +262,6 @@ int ZstEndpoint::s_handle_stage_router(zloop_t * loop, zsock_t * socket, void * 
     return 0;
 }
 
-
 void ZstEndpoint::connect_performer_handler(zsock_t * socket, zmsg_t * msg) {
 	ZstMessages::PerformerConnection performer_args = ZstMessages::unpack_message_struct<ZstMessages::PerformerConnection>(msg);
 
@@ -222,68 +290,6 @@ int ZstEndpoint::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
 	return 0;
 }
 
-void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
-	m_stage_addr = string(stage_address);
-
-	//Build endpoint addresses
-	sprintf(m_stage_requests_addr, "tcp://%s:%d", stage_address.c_str(), STAGE_REP_PORT);
-
-	//Stage request socket for querying the performance
-	if (m_stage_requests == NULL) {
-		m_stage_requests = zsock_new(ZMQ_REQ);
-		zsock_set_linger(m_stage_requests, 0);
-	}
-	zsock_connect(m_stage_requests, "%s", m_stage_requests_addr);
-
-	ZstMessages::CreateEndpoint args;
-	args.uuid = zuuid_str(m_startup_uuid);
-	args.address = m_output_endpoint;
-
-	cout << "ZST: Registering endpoint" << endl;
-	send_to_stage(ZstMessages::build_message<ZstMessages::CreateEndpoint>(ZstMessages::Kind::STAGE_CREATE_ENDPOINT, args));
-
-	zmsg_t *responseMsg = receive_from_stage();
-	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
-
-	if (message_type == ZstMessages::Kind::STAGE_CREATE_ENDPOINT_ACK) {
-
-		ZstMessages::CreateEndpointAck endpoint_ack = ZstMessages::unpack_message_struct<ZstMessages::CreateEndpointAck>(responseMsg);
-		cout << "ZST: Successfully registered endpoint to stage. UUID is " << endpoint_ack.assigned_uuid << endl;
-
-		//Connect performer dealer to stage now that it's been registered successfully
-		sprintf(m_stage_router_addr, "tcp://%s:%d", m_stage_addr.c_str(), STAGE_ROUTER_PORT);
-		m_assigned_uuid = endpoint_ack.assigned_uuid;
-		zsock_set_identity(m_stage_router, endpoint_ack.assigned_uuid.c_str());
-		zsock_connect(m_stage_router, "%s", m_stage_router_addr);
-
-		//Stage sub socket for update messages
-		sprintf(m_stage_updates_addr, "tcp://%s:%d", stage_address.c_str(), STAGE_PUB_PORT);
-		cout << "ZST: Connecting to stage publisher " << m_stage_updates_addr << endl;
-		zsock_connect(m_stage_updates, "%s", m_stage_updates_addr);
-		zsock_set_subscribe(m_stage_updates, "");
-
-		//TODO: Need to check handshake before setting connection as active
-		m_connected_to_stage = true;
-		signal_sync();
-
-		//Set up heartbeat timer
-		m_heartbeat_timer_id = attach_timer(s_heartbeat_timer, HEARTBEAT_DURATION, this);
-	}
-	else {
-        throw runtime_error("ZST: Stage performer registration responded with error -> Kind: " + std::to_string((int)message_type));
-	}
-
-	zmsg_destroy(&responseMsg);
-}
-
-void ZstEndpoint::signal_sync()
-{
-	if (m_connected_to_stage) {
-		cout << "ZST: Requesting stage snapshot" << endl;
-		send_through_stage(ZstMessages::build_signal(ZstMessages::Signal::SYNC));
-	}
-}
-
 void ZstEndpoint::stage_update_handler(zsock_t * socket, zmsg_t * msg)
 {
 	ZstMessages::StageUpdates update_args = ZstMessages::unpack_message_struct<ZstMessages::StageUpdates>(msg);
@@ -295,16 +301,6 @@ void ZstEndpoint::stage_update_handler(zsock_t * socket, zmsg_t * msg)
 bool ZstEndpoint::is_connected_to_stage()
 {
 	return m_connected_to_stage;
-}
-
-void ZstEndpoint::register_performer_to_stage(string performer) {
-	ZstMessages::CreatePerformer register_args;
-
-	// Need to send back our assigned uuid so we can attach the new performer to our endpoint on the stage
-	register_args.endpoint_uuid = m_assigned_uuid;
-	register_args.name = performer;
-	send_to_stage(ZstMessages::build_message<ZstMessages::CreatePerformer>(ZstMessages::Kind::STAGE_CREATE_PERFORMER, register_args));
-	check_stage_response_ok();
 }
 
 void ZstEndpoint::leave_stage()
@@ -323,66 +319,87 @@ void ZstEndpoint::leave_stage()
 	}
 }
 
-ZstPerformer * ZstEndpoint::create_performer(ZstURI uri)
-{
-	ZstPerformer * perf = new ZstPerformer(uri.performer_char());
-	m_performers[uri.performer()] = perf;
-	register_performer_to_stage(perf->name());
-	return perf;
-}
-
 void ZstEndpoint::register_entity_type(const char * entity_type)
 {
 	throw std::exception("Register entity not implemented");
 }
 
-ZstEntityBase * ZstEndpoint::create_entity(ZstEntityBehaviour behaviour, const char * entity_type, const char * name)
+
+// --------
+// Entities
+// --------
+
+int ZstEndpoint::register_entity(ZstEntityBase* entity)
 {
-	throw std::exception("Create entity not implemented");
+	int result = 0;
+	ZstMessages::CreateEntity entity_args;
+	entity_args.parent = ZstURIWire(parent);
+	entity_args.entity_type = entity_type;
+	entity_args.name = name;
+	zmsg_t * entity_msg = ZstMessages::build_message<ZstMessages::CreateEntity>(ZstMessages::Kind::STAGE_CREATE_ENTITY, entity_args);
+	Showtime::endpoint().send_to_stage(entity_msg);
+	return (int)check_stage_response_ok();
 }
 
-void ZstEndpoint::destroy_entity(ZstEntityBase * entity)
+int ZstEndpoint::destroy_entity(ZstEntityBase * entity)
 {
-	throw std::exception("Destroy entity not implemented");
+	ZstMessages::DestroyURI destroy_args;
+	destroy_args.address = ZstURIWire(entity->URI());
+	send_to_stage(ZstMessages::build_message<ZstMessages::DestroyURI>(ZstMessages::Kind::STAGE_DESTROY_ENTITY, destroy_args));
+	return (int)check_stage_response_ok();
 }
 
-template ZstInputPlug* ZstEndpoint::create_plug<ZstInputPlug>(ZstURI uri, ZstValueType val_type, PlugDirection direction);
-template ZstOutputPlug* ZstEndpoint::create_plug<ZstOutputPlug>(ZstURI uri, ZstValueType val_type, PlugDirection direction);
+
+// -----
+// Plugs
+// -----
+
+template ZstInputPlug* ZstEndpoint::create_plug<ZstInputPlug>(ZstFilter* owner, const char * name, ZstValueType val_type, PlugDirection direction);
+template ZstOutputPlug* ZstEndpoint::create_plug<ZstOutputPlug>(ZstFilter* owner, const char * name, ZstValueType val_type, PlugDirection direction);
 template<typename T>
-T* ZstEndpoint::create_plug(ZstURI uri, ZstValueType val_type, PlugDirection direction) {
+T* ZstEndpoint::create_plug(ZstFilter* owner, const char * name, ZstValueType val_type, PlugDirection direction) {
+	T* plug = NULL;
+	ZstURI address = ZstURI(owner->URI().instrument_char(), name);
+	//Build message to register plug on stage
 	ZstMessages::CreatePlug plug_args;
-	plug_args.address = ZstURIWire(uri);
+	plug_args.address = ZstURIWire(address);
     plug_args.dir = direction;
 	zmsg_t * plug_msg = ZstMessages::build_message<ZstMessages::CreatePlug>(ZstMessages::Kind::STAGE_CREATE_PLUG, plug_args);
 	Showtime::endpoint().send_to_stage(plug_msg);
 
 	if (check_stage_response_ok()) {
-		T *plug = new T(uri, val_type);
-		return plug;
+		plug = new T(owner, name, val_type);
 	}
-	return NULL;
+	return plug;
 }
 
  int ZstEndpoint::destroy_plug(ZstPlug * plug)
  {
-	 ZstMessages::DestroyPlug destroy_args;
+	 ZstMessages::DestroyURI destroy_args;
 	 destroy_args.address = ZstURIWire(plug->get_URI());
-	 send_to_stage(ZstMessages::build_message<ZstMessages::DestroyPlug>(ZstMessages::Kind::STAGE_DESTROY_PLUG, destroy_args));
+	 send_to_stage(ZstMessages::build_message<ZstMessages::DestroyURI>(ZstMessages::Kind::STAGE_DESTROY_PLUG, destroy_args));
 
 	 ZstMessages::Signal s = check_stage_response_ok();
 	 if (s){
-		 m_performers[plug->get_URI().performer()]->remove_plug(plug);
+		 ZstFilter * filter = dynamic_cast<ZstFilter*>(get_entity_by_URI(plug->get_URI()));
+		 if (filter) {
+			 filter->remove_plug(plug);
+		 }
 		 delete plug;
 	 }
 	 return (int)s;
  }
 
 
+ // ------
+ // Cables
+ // ------
+ 
  int ZstEndpoint::connect_cable(ZstURI a, ZstURI b)
 {
 	ZstMessages::CreateCable plug_args;
-	plug_args.first = a;
-	plug_args.second = b;
+	plug_args.first = ZstURIWire(a);
+	plug_args.second = ZstURIWire(b);
 	send_to_stage(ZstMessages::build_message<ZstMessages::CreateCable>(ZstMessages::Kind::STAGE_CREATE_CABLE, plug_args));
 	return check_stage_response_ok();
 }
@@ -436,6 +453,9 @@ void ZstEndpoint::remove_cable(ZstCable * cable)
 	}
 }
 
+
+// ---
+
 int ZstEndpoint::ping_stage()
 {
 	ZstMessages::Heartbeat beat;
@@ -454,6 +474,11 @@ int ZstEndpoint::ping_stage()
 	}
 	return (int)delta.count();
 }
+
+
+// ------
+// Events
+// ------
 
 void ZstEndpoint::enqueue_event(ZstEvent event)
 {
@@ -474,17 +499,18 @@ int ZstEndpoint::plug_event_queue_size()
 // ------------------------
 // Callback manager getters
 // ------------------------
+
 ZstCallbackQueue<ZstEventCallback, ZstEvent> * ZstEndpoint::stage_events()
 {
 	return m_stage_event_manager;
 }
 
-ZstCallbackQueue<ZstPerformerEventCallback, ZstURI> * ZstEndpoint::performer_arriving_events()
+ZstCallbackQueue<ZstEntityEventCallback, ZstURI> * ZstEndpoint::entity_arriving_events()
 {
 	return m_performer_arriving_event_manager;
 }
 
-ZstCallbackQueue<ZstPerformerEventCallback, ZstURI> * ZstEndpoint::performer_leaving_events()
+ZstCallbackQueue<ZstEntityEventCallback, ZstURI> * ZstEndpoint::entity_leaving_events()
 {
 	return m_performer_leaving_event_manager;
 }
@@ -571,13 +597,15 @@ void ZstEndpoint::broadcast_to_local_plugs(ZstURI output_plug, ZstValue * value)
 
     for (auto cable : m_local_cables) {
 		if (cable->get_output() == output_plug) {
-			ZstPerformer* performer = get_performer_by_URI(cable->get_input());
-			ZstInputPlug * plug = (ZstInputPlug*)performer->get_plug_by_URI(cable->get_input());
-			if (plug != NULL) {
-				plug->recv(value);
-			}
-			else {
-				cout << "ZST: Ignoring plug hit from " << cable->get_output().to_char() << " for missing input plug " << cable->get_input().to_char() <<  endl;
+			ZstFilter* entity = dynamic_cast<ZstFilter*>(get_entity_by_URI(cable->get_input()));
+			if (entity) {
+				ZstInputPlug * plug = (ZstInputPlug*)entity->get_plug_by_URI(cable->get_input());
+				if (plug != NULL) {
+					plug->recv(value);
+				}
+				else {
+					cout << "ZST: Ignoring plug hit from " << cable->get_output().to_char() << " for missing input plug " << cable->get_input().to_char() << endl;
+				}
 			}
 		}
 	}

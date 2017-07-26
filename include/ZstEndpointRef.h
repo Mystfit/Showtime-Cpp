@@ -2,7 +2,9 @@
 
 #include <vector>
 #include <iostream>
-#include "ZstPerformerRef.h"
+#include <map>
+#include "ZstEntityRef.h"
+#include "ZstPlugRef.h"
 
 #define MAX_MISSED_HEARTBEATS 3
 
@@ -14,9 +16,10 @@ public:
 	std::string client_assigned_uuid;
 	std::string endpoint_address;
 
-	ZstPerformerRef * create_performer(std::string name);
-	ZST_EXPORT ZstPerformerRef * get_performer_by_name(std::string name);
-	ZST_EXPORT std::vector<ZstPerformerRef*> get_performer_refs();
+	ZstEntityRef * register_entity(std::string entity_type, ZstURI uri);
+	ZST_EXPORT std::vector<ZstEntityRef*> get_entity_refs();
+	ZST_EXPORT ZstEntityRef* get_entity_ref_by_URI(ZstURI uri);
+	void destroy_entity(ZstEntityRef* entity);
 	
 	void set_heartbeat_active();
 	void set_heartbeat_inactive();
@@ -24,10 +27,14 @@ public:
 	bool get_active_heartbeat();
 	int get_missed_heartbeats();
 
-	void destroy_performer(ZstPerformerRef* performer);
+	ZstPlugRef * create_plug(ZstURI address, PlugDirection direction);
+	ZstPlugRef * get_plug_by_URI(ZstURI uri);
+	std::vector<ZstPlugRef*> & get_plug_refs();
+	void destroy_plug(ZstURI plug);
 
 private:
-	std::map<std::string, ZstPerformerRef*> m_performers;
+	std::map<ZstURI, ZstEntityRef*> m_entities;
+	std::map<ZstURI, ZstPlugRef*> m_plugs;
 
 	bool m_heartbeat_active;
 	int m_missed_heartbeats = 0;

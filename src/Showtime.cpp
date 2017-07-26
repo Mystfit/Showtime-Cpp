@@ -5,6 +5,7 @@
 #include "ZstPerformer.h"
 #include "ZstPlug.h"
 #include "ZstEvent.h"
+#include "entities\ZstFilter.h"
 
 using namespace std;
 
@@ -50,15 +51,15 @@ bool Showtime::is_connected()
 void Showtime::poll_once()
 {
 	while (Showtime::event_queue_size() > 0) {
-		ZstPerformer * performer = NULL;
+		ZstFilter * filter = NULL;
 		ZstCable * cable = NULL;
 		ZstEvent e = Showtime::pop_event();
 
 		switch (e.get_update_type()) {
 		case ZstEvent::EventType::PLUG_HIT:
-			performer = Showtime::endpoint().get_performer_by_URI(e.get_first());
-			if (performer != NULL) {
-				ZstInputPlug * plug = (ZstInputPlug*)performer->get_plug_by_URI(e.get_first());
+			filter = dynamic_cast<ZstFilter*>(Showtime::endpoint().get_entity_by_URI(e.get_first()));
+			if (filter != NULL) {
+				ZstInputPlug * plug = (ZstInputPlug*)filter->get_plug_by_URI(e.get_first());
 				if (plug != NULL) {
 					plug->input_events()->run_event_callbacks(plug);
 				}
@@ -80,11 +81,11 @@ void Showtime::poll_once()
 		case ZstEvent::PLUG_DESTROYED:
 			Showtime::endpoint().plug_leaving_events()->run_event_callbacks(e.get_first());
 			break;
-		case ZstEvent::PERFORMER_CREATED:
-			Showtime::endpoint().performer_arriving_events()->run_event_callbacks(e.get_first());
+		case ZstEvent::ENTITY_CREATED:
+			Showtime::endpoint().entity_arriving_events()->run_event_callbacks(e.get_first());
 			break;
-		case ZstEvent::PERFORMER_DESTROYED:
-			Showtime::endpoint().performer_arriving_events()->run_event_callbacks(e.get_first());
+		case ZstEvent::ENTITY_DESTROYED:
+			Showtime::endpoint().entity_arriving_events()->run_event_callbacks(e.get_first());
 			break;
 		default:
 			Showtime::endpoint().stage_events()->run_event_callbacks(e);
@@ -101,14 +102,14 @@ void Showtime::attach_stage_event_callback(ZstEventCallback * callback)
 	Showtime::endpoint().stage_events()->attach_event_callback(callback);
 }
 
-void Showtime::attach_performer_arriving_callback(ZstPerformerEventCallback * callback)
+void Showtime::attach_performer_arriving_callback(ZstEntityEventCallback * callback)
 {
-	Showtime::endpoint().performer_arriving_events()->attach_event_callback(callback);
+	Showtime::endpoint().entity_arriving_events()->attach_event_callback(callback);
 }
 
-void Showtime::attach_performer_leaving_callback(ZstPerformerEventCallback * callback)
+void Showtime::attach_performer_leaving_callback(ZstEntityEventCallback * callback)
 {
-	return Showtime::endpoint().performer_leaving_events()->attach_event_callback(callback);
+	return Showtime::endpoint().entity_leaving_events()->attach_event_callback(callback);
 }
 
 void Showtime::attach_plug_arriving_callback(ZstPlugEventCallback * callback)
@@ -138,14 +139,14 @@ void Showtime::remove_stage_event_callback(ZstEventCallback * callback)
 	Showtime::endpoint().stage_events()->remove_event_callback(callback);
 }
 
-void Showtime::remove_performer_arriving_callback(ZstPerformerEventCallback * callback)
+void Showtime::remove_performer_arriving_callback(ZstEntityEventCallback * callback)
 {
-	Showtime::endpoint().performer_arriving_events()->remove_event_callback(callback);
+	Showtime::endpoint().entity_arriving_events()->remove_event_callback(callback);
 }
 
-void Showtime::remove_performer_leaving_callback(ZstPerformerEventCallback * callback)
+void Showtime::remove_performer_leaving_callback(ZstEntityEventCallback * callback)
 {
-	return Showtime::endpoint().performer_leaving_events()->remove_event_callback(callback);
+	return Showtime::endpoint().entity_leaving_events()->remove_event_callback(callback);
 }
 
 void Showtime::remove_plug_arriving_callback(ZstPlugEventCallback * callback)
@@ -168,10 +169,6 @@ void Showtime::remove_cable_leaving_callback(ZstCableEventCallback * callback)
 	return Showtime::endpoint().cable_leaving_events()->remove_event_callback(callback);
 }
 
-
-
-
-
 void Showtime::set_runtime_language(RuntimeLanguage runtime)
 {
 	_runtime_language = runtime;
@@ -191,27 +188,12 @@ int Showtime::ping_stage(){
 	return Showtime::endpoint().ping_stage();
 }
 
-ZstInputPlug * Showtime::create_input_plug(ZstURI uri, ZstValueType val_type)
-{
-	return (ZstInputPlug*)Showtime::endpoint().create_plug<ZstInputPlug>(uri, val_type, PlugDirection::IN_JACK);
-}
-
-ZstOutputPlug * Showtime::create_output_plug(ZstURI uri, ZstValueType val_type)
-{
-    return (ZstOutputPlug*)Showtime::endpoint().create_plug<ZstOutputPlug>(uri, val_type, PlugDirection::OUT_JACK);
-}
-
 void Showtime::register_entity_type(const char * entity_type)
 {
 	Showtime::endpoint().register_entity_type(entity_type);
 }
 
-ZstEntityBase * Showtime::create_entity(ZstEntityBehaviour behaviour, const char * name, const char * entity_type)
-{
-	return Showtime::endpoint().create_entity(behaviour, name, entity_type);
-}
-
-void Showtime::destroy_entity(ZstEntityBase * entity)
+int Showtime::destroy_entity(ZstEntityBase * entity)
 {
 	return Showtime::endpoint().destroy_entity(entity);
 }

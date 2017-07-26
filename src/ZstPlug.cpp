@@ -3,15 +3,16 @@
 #include "ZstEndpoint.h"
 #include "ZstEvent.h"
 #include "ZstValueWire.h"
+#include "entities\ZstFilter.h"
 
 using namespace std;
 
-ZstPlug::ZstPlug(ZstEntityBase * entity, const char * name, ZstValueType t) : m_owner(entity)
+ZstPlug::ZstPlug(ZstFilter * entity, const char * name, ZstValueType t) :
+	m_owner(entity),
+	m_value(NULL),
+	m_uri(ZstURI(entity->URI().instrument_char(), name))
 {
 	m_value = new ZstValue(t);
-
-	//TODO: Build uri from owner
-	m_uri = ZstURI("", "", name);
 }
 
 ZstPlug::~ZstPlug() {
@@ -28,7 +29,7 @@ ZstValue * ZstPlug::value()
 	return m_value;
 }
 
-ZstInputPlug::ZstInputPlug(ZstEntityBase * entity, const char * name, ZstValueType t) : ZstPlug(entity, name, t)
+ZstInputPlug::ZstInputPlug(ZstFilter * entity, const char * name, ZstValueType t) : ZstPlug(entity, name, t)
 {
 	m_input_fired_manager = new ZstCallbackQueue<ZstPlugDataEventCallback, ZstInputPlug*>();
 }
@@ -52,7 +53,6 @@ ZstCallbackQueue<ZstPlugDataEventCallback, ZstInputPlug*> * ZstInputPlug::input_
 
 //ZstOutputPlug
 //-------------
-
 void ZstOutputPlug::fire()
 {
 	Showtime::endpoint().send_to_graph(ZstMessages::build_graph_message(this->get_URI(), ZstValueWire(*m_value)));

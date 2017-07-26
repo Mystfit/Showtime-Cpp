@@ -13,7 +13,6 @@
 #include "ZstCable.h"
 #include "ZstEventWire.h"
 #include "ZstPlugRef.h"
-#include "ZstPerformerRef.h"
 #include "ZstEndpointRef.h"
 #include "Showtime.h"
 #include "Queue.h"
@@ -29,18 +28,17 @@ public:
 
 	ZST_EXPORT std::vector<ZstPlugRef*> get_all_plug_refs();
     ZST_EXPORT std::vector<ZstPlugRef*> get_all_plug_refs(ZstEndpointRef * endpoint);
+	ZST_EXPORT ZstEndpointRef * get_plug_endpoint(ZstPlugRef * plug);
 
-	ZST_EXPORT std::vector<ZstPerformerRef*> get_all_performer_refs();
-    ZST_EXPORT ZstPerformerRef * get_performer_ref_by_name(const char * performer_name);
-	ZST_EXPORT ZstEndpointRef * get_performer_endpoint(ZstPerformerRef * performer);
+	ZST_EXPORT std::vector<ZstEntityRef*> get_all_entity_refs();
+	ZST_EXPORT std::vector<ZstEntityRef*> get_all_entity_refs(ZstEndpointRef* endpoint);
+	ZST_EXPORT ZstEndpointRef * get_entity_endpoint(ZstEntityRef * entity);
 	
 	ZST_EXPORT ZstCable * get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB);
 	ZST_EXPORT std::vector<ZstCable*> get_cables_by_URI(const ZstURI & uri);
     
 private:
     ZstStage();
-
-	ZstURI m_stage_identity;
 
     //Stage pipes
     zsock_t *m_performer_router;
@@ -60,7 +58,6 @@ private:
 	void endpoint_heartbeat_handler(zsock_t * socket, zmsg_t * msg);
 	void register_entity_type_handler(zsock_t * socket, zmsg_t * msg);
 	void create_endpoint_handler(zsock_t * socket, zmsg_t * msg);
-	void create_performer_handler(zsock_t * socket, zmsg_t * msg);
 	void create_plug_handler(zsock_t * socket, zmsg_t * msg);
 	void create_entity_handler(zsock_t * socket, zmsg_t * msg);
 	void destroy_plug_handler(zsock_t * socket, zmsg_t * msg);
@@ -75,6 +72,10 @@ private:
 	ZstEndpointRef * get_endpoint_ref_by_UUID(std::string uuid);
 	void destroy_endpoint(ZstEndpointRef* endpoint);
 	std::map<std::string, ZstEndpointRef*> m_endpoint_refs;
+
+	//Global searches
+	ZstEntityRef* get_entity_by_URI(ZstURI uri);
+	ZstPlugRef* get_plug_by_URI(ZstURI uri);
 
 	//Plug connections
     int connect_cable(ZstPlugRef * output_plug, ZstPlugRef * input_plug);

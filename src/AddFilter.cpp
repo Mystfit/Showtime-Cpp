@@ -2,16 +2,23 @@
 
 using namespace std;
 
-AddFilter::AddFilter() : ZstEntityBase(ZstEntityBehaviour::FILTER, ADDITION_FILTER_TYPE, "add")
+AddFilter::AddFilter() : ZstEntityBase(ADDITION_FILTER_TYPE, "add", ZstURI())
+{
+}
+
+AddFilter::AddFilter(ZstURI parent) : ZstEntityBase(ADDITION_FILTER_TYPE, "add", parent)
 {
 }
 
 void AddFilter::init()
 {
 	ZstEntityBase::init();
-	create_input_plug("addend", ZstValueType::ZST_FLOAT);
-	create_input_plug("augend", ZstValueType::ZST_FLOAT);
-	create_output_plug("sum", ZstValueType::ZST_FLOAT);
+
+	if (is_registered()) {
+		create_input_plug("addend", ZstValueType::ZST_FLOAT);
+		create_input_plug("augend", ZstValueType::ZST_FLOAT);
+		create_output_plug("sum", ZstValueType::ZST_FLOAT);
+	}
 }
 
 void AddFilter::compute(ZstInputPlug * plug)

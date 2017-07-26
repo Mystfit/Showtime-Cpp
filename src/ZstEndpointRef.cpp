@@ -1,4 +1,5 @@
 #include "ZstEndpointRef.h"
+#include "ZstEntityRef.h"
 
 using namespace std;
 
@@ -11,41 +12,17 @@ ZstEndpointRef::ZstEndpointRef(string starting_uuid, string assigned_uuid, strin
 
 ZstEndpointRef::~ZstEndpointRef()
 {
-    for (auto perf_iter : m_performers) {
-		delete perf_iter.second;
+    for (auto entity_iter : m_entities) {
+		delete entity_iter.second;
 	}
-	m_performers.clear();
-}
+	m_entities.clear();
 
-ZstPerformerRef * ZstEndpointRef::create_performer(std::string name)
-{
-	//Check for existing performers with this name
-	if (m_performers.find(name) != m_performers.end()) {
-		//Already exists!
-		return NULL;
+	map<ZstURI, ZstPlugRef*> plugs = m_plugs;
+	for (auto plug : plugs) {
+		destroy_plug(plug.second->get_URI());
 	}
-	ZstPerformerRef * performer = new ZstPerformerRef(ZstURI(name.c_str(), "", ""));
-	m_performers[name] = performer;
-	return performer;
+	m_plugs.clear();
 }
-
-ZstPerformerRef * ZstEndpointRef::get_performer_by_name(std::string name)
-{
-	if (m_performers.find(name) != m_performers.end()) {
-		return m_performers[name];
-	}
-	return NULL;
-}
-
-std::vector<ZstPerformerRef*> ZstEndpointRef::get_performer_refs()
-{
-	vector<ZstPerformerRef*> performers;
-    for (auto performer_iter : m_performers) {
-		performers.push_back(performer_iter.second);
-	}
-	return performers;
-}
-
 
 void ZstEndpointRef::set_heartbeat_active()
 {
@@ -73,15 +50,104 @@ int ZstEndpointRef::get_missed_heartbeats()
 }
 
 
-void ZstEndpointRef::destroy_performer(ZstPerformerRef* performer)
+ZstEntityRef * ZstEndpointRef::register_entity(std::string entity_type, ZstURI uri)
 {
-	for (map<string, ZstPerformerRef*>::iterator perf_iter = m_performers.begin(); perf_iter != m_performers.end(); ++perf_iter)
+	//Check for existing performers with this name
+	if (m_entities.find(uri) != m_entities.end()) {
+		return NULL;
+	}
+	ZstEntityRef * entity = new ZstEntityRef(uri, entity_type);
+	m_entities[uri] = entity;
+	return entity;
+}
+
+std::vector<ZstEntityRef*> ZstEndpointRef::get_entity_refs()
+{
+	vector<ZstEntityRef*> entities;
+	for (auto entity : m_entities) {
+		entities.push_back(entity.second);
+	}
+	return entities;
+}
+
+ZstEntityRef * ZstEndpointRef::get_entity_ref_by_URI(ZstURI uri)
+{
+	ZstEntityRef * result = NULL;
+	auto it = m_entities.find(uri);
+	if (it != m_entities.end()) {
+		result = m_entities[uri];
+	}
+	return result;
+}
+
+void ZstEndpointRef::destroy_entity(ZstEntityRef* entity)
+{
+	for (map<ZstURI, ZstEntityRef*>::iterator entity_iter = m_entities.begin(); entity_iter != m_entities.end(); ++entity_iter)
 	{
-		if ((perf_iter->second) == performer)
+		if ((entity_iter)->second == entity)
 		{
-			m_performers.erase(perf_iter);
+			m_entities.erase(entity_iter);
 			break;
 		}
 	}
-	delete performer;
+	delete entity;
+}
+
+
+// ----------------
+
+ZstPlugRef * ZstEndpointRef::create_plug(ZstURI address, PlugDirection direction)
+{
+	ZstPlugRef * result = NULL;
+	//Check for existing plugs with this name
+	auto it = m_plugs.find(address);
+
+	if (it == m_plugs.end()) {
+		result = new ZstPlugRef(address, direction);
+		m_plugs[address] = result;
+	}
+	else {
+		cout << "ZST_STAGE: Plug already exists!" << endl;
+	}
+
+	return result;
+}
+
+ZstPlugRef * ZstEndpointRef::get_plug_by_URI(ZstURI uri)
+{
+	ZstPlugRef * result = NULL;
+	if (m_plugs.empty())
+		return NULL;
+
+	auto plug_iter = m_plugs.find(uri);
+	if (plug_iter != m_plugs.end()) {
+		result = (*plug_iter).second;
+	}
+	return result;
+}
+
+std::vector<ZstPlugRef*> & ZstEndpointRef::get_plug_refs()
+{
+	vector<ZstPlugRef*> plugs;
+	for (auto plug : m_plugs) {
+		plugs.push_back(plug.second);
+	}
+	return plugs;
+}
+
+void ZstEndpointRef::destroy_plug(ZstURI plug)
+{
+	ZstPlugRef * plug_to_delete = NULL;
+	for (map<ZstURI, ZstPlugRef*>::iterator plug_iter = m_plugs.begin(); plug_iter != m_plugs.end();)
+	{
+		if ((plug_iter->second->get_URI()) == plug)
+		{
+			plug_to_delete = plug_iter->second;
+			m_plugs.erase(plug_iter);
+			break;
+		}
+	}
+
+	if(plug_to_delete)
+		delete plug_to_delete;
 }

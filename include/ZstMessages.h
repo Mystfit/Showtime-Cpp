@@ -52,8 +52,8 @@ public:
 		ERR_STAGE_BAD_CABLE_CONNECT_REQUEST = -6,
 		ERR_STAGE_ENDPOINT_NOT_FOUND = -5,
 		ERR_STAGE_ENDPOINT_ALREADY_EXISTS = -4,
-		ERR_STAGE_PERFORMER_NOT_FOUND = -3,
-		ERR_STAGE_PERFORMER_ALREADY_EXISTS = -2,
+		ERR_STAGE_ENTITY_NOT_FOUND = -3,
+		ERR_STAGE_ENTITY_ALREADY_EXISTS = -2,
 		ERR_STAGE_PLUG_ALREADY_EXISTS = -1,
 		//--
 		OK = 1,
@@ -84,12 +84,6 @@ public:
 		std::string assigned_uuid;
 		MSGPACK_DEFINE(assigned_uuid);
 	};
-    
-    struct CreatePerformer{
-        std::string name;
-		std::string endpoint_uuid;
-        MSGPACK_DEFINE(name, endpoint_uuid);
-    };
 
 	struct RegisterEntityType {
 		std::string performer;
@@ -100,12 +94,9 @@ public:
 	struct CreateEntity {
 		std::string name;
 		std::string entity_type;
-		MSGPACK_DEFINE(name, entity_type);
-	};
-
-	struct CreateEntityAck {
-		int id;
-		MSGPACK_DEFINE(id);
+		ZstURIWire parent;
+		std::string endpoint_uuid;
+		MSGPACK_DEFINE(name, entity_type, parent, endpoint_uuid);
 	};
     
     struct CreatePlug{
@@ -114,7 +105,7 @@ public:
         MSGPACK_DEFINE(address, dir);
     };
 
-    struct DestroyPlug {
+    struct DestroyURI {
 		ZstURIWire address;
         MSGPACK_DEFINE(address);
     };
