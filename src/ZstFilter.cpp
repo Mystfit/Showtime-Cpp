@@ -1,14 +1,6 @@
 #include "entities\ZstFilter.h"
 #include "ZstEndpoint.h"
 
-ZstFilter::ZstFilter() : ZstEntityBase()
-{
-}
-
-ZstFilter::ZstFilter(const char * entity_type, const char * name, ZstURI parent)
-{
-}
-
 ZstInputPlug * ZstFilter::create_input_plug(const char * name, ZstValueType val_type)
 {
 	ZstInputPlug * plug = NULL;

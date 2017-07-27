@@ -36,6 +36,7 @@ public:
 
 	//Register this endpoint to the stage
 	void register_endpoint_to_stage(std::string stage_address);
+	ZST_EXPORT const char * get_endpoint_UUID() const;
 
 	//Stage connection status
 	bool is_connected_to_stage();
@@ -45,9 +46,9 @@ public:
 
 	//Entities
 	void register_entity_type(const char * entity_type);
-	int register_entity(const char * entity_type, const char * name, ZstURI parent);
+	int register_entity(ZstEntityBase * entity);
 	int destroy_entity(ZstEntityBase * entity);
-	ZstEntityBase * get_entity_by_URI(ZstURI uri);
+	ZstEntityBase * get_entity_ref_by_URI(ZstURI uri);
 	
 	//Plugs
 	template<typename T>
@@ -121,7 +122,7 @@ private:
     std::string m_network_interface;
 
 	//All performers
-	std::vector<ZstEntityBase*> m_entities;
+	std::map<ZstURI, ZstEntityBase*> m_entities;
 
 	//Active local plug connections
 	std::vector<ZstCable*> m_local_cables;

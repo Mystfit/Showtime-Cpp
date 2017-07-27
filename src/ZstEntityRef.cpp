@@ -2,7 +2,9 @@
 
 using namespace std;
 
-ZstEntityRef::ZstEntityRef(ZstURI uri, std::string entity_type) : m_URI(uri), m_entity_type(entity_type)
+ZstEntityRef::ZstEntityRef(ZstURI uri, std::string entity_type) : 
+	m_URI(uri), 
+	m_entity_type(entity_type)
 {
 }
 

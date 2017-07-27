@@ -57,7 +57,7 @@ void Showtime::poll_once()
 
 		switch (e.get_update_type()) {
 		case ZstEvent::EventType::PLUG_HIT:
-			filter = dynamic_cast<ZstFilter*>(Showtime::endpoint().get_entity_by_URI(e.get_first()));
+			filter = dynamic_cast<ZstFilter*>(Showtime::endpoint().get_entity_ref_by_URI(e.get_first()));
 			if (filter != NULL) {
 				ZstInputPlug * plug = (ZstInputPlug*)filter->get_plug_by_URI(e.get_first());
 				if (plug != NULL) {
@@ -102,7 +102,7 @@ void Showtime::attach_stage_event_callback(ZstEventCallback * callback)
 	Showtime::endpoint().stage_events()->attach_event_callback(callback);
 }
 
-void Showtime::attach_performer_arriving_callback(ZstEntityEventCallback * callback)
+void Showtime::attach_entity_arriving_callback(ZstEntityEventCallback * callback)
 {
 	Showtime::endpoint().entity_arriving_events()->attach_event_callback(callback);
 }

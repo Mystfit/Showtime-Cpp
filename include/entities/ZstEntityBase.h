@@ -12,11 +12,11 @@ public:
 	
 	//Base entity
 	ZST_EXPORT ZstEntityBase();
-	ZST_EXPORT ZstEntityBase(const char * entity_type, const char * entity_name, ZstURI parent);
+	ZST_EXPORT ZstEntityBase(const char * entity_type, const char * entity_name);
+	ZST_EXPORT ZstEntityBase(const char * entity_type, const char * entity_name, ZstEntityBase * parent);
 	ZST_EXPORT ~ZstEntityBase();
 	ZST_EXPORT virtual void init();
 	ZST_EXPORT const char * entity_type() const;
-	ZST_EXPORT const char * name() const;
 	ZST_EXPORT ZstURI URI();
 	ZST_EXPORT bool is_registered();
 	ZST_EXPORT ZstEntityBase * parent() const;
@@ -24,7 +24,6 @@ public:
 private:
 	//Base entity
 	char * m_entity_type;
-	char * m_name;
 	ZstURI m_uri;
 	bool m_is_registered;
 	ZstEntityBase * m_parent;

@@ -95,8 +95,13 @@ bool ZstURI::is_empty() {
 ZstURI ZstURI::join(ZstURI a, ZstURI b)
 {
 	string a_parent = string(a.instrument_char());
+	string a_name = string(a.name_char());
 	string b_parent = string(b.instrument_char());
-	string combined_parent = a_parent + "/" + b_parent;
+	string combined_parent = a_parent + "/" + a_name;
+	if (!b_parent.empty()) {
+		combined_parent += "/" + b_parent;
+	}
+
 	return ZstURI(combined_parent.c_str(), b.name_char());
 }
 

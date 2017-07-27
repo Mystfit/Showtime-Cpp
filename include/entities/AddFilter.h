@@ -6,8 +6,7 @@
 
 class AddFilter : public ZstFilter {
 public:
-	AddFilter();
-	AddFilter(ZstURI parent);
+	AddFilter(ZstEntityBase * parent);
 	void init() override;
 	void compute(ZstInputPlug * plug) override;
 private:

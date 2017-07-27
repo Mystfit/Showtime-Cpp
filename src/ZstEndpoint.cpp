@@ -186,6 +186,11 @@ void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
 	zmsg_destroy(&responseMsg);
 }
 
+const char * ZstEndpoint::get_endpoint_UUID() const
+{
+	return m_assigned_uuid.c_str();
+}
+
 void ZstEndpoint::signal_sync()
 {
 	if (m_connected_to_stage) {
@@ -333,20 +338,41 @@ int ZstEndpoint::register_entity(ZstEntityBase* entity)
 {
 	int result = 0;
 	ZstMessages::CreateEntity entity_args;
-	entity_args.parent = ZstURIWire(parent);
-	entity_args.entity_type = entity_type;
-	entity_args.name = name;
+	entity_args.parent = ZstURIWire(entity->parent()->URI());
+	entity_args.entity_type = entity->entity_type();
+	entity_args.name = entity->URI().name_char();
 	zmsg_t * entity_msg = ZstMessages::build_message<ZstMessages::CreateEntity>(ZstMessages::Kind::STAGE_CREATE_ENTITY, entity_args);
 	Showtime::endpoint().send_to_stage(entity_msg);
-	return (int)check_stage_response_ok();
+	
+	if (check_stage_response_ok()) {
+		m_entities[entity->URI()] = entity;
+		result = 1;
+	}
+
+	return result;
 }
 
 int ZstEndpoint::destroy_entity(ZstEntityBase * entity)
 {
+	int result = 0;
 	ZstMessages::DestroyURI destroy_args;
 	destroy_args.address = ZstURIWire(entity->URI());
 	send_to_stage(ZstMessages::build_message<ZstMessages::DestroyURI>(ZstMessages::Kind::STAGE_DESTROY_ENTITY, destroy_args));
-	return (int)check_stage_response_ok();
+	result = (int)check_stage_response_ok();
+	m_entities.erase(entity->URI());
+	return result;
+}
+
+ZstEntityBase * ZstEndpoint::get_entity_ref_by_URI(ZstURI uri)
+{
+	ZstEntityBase * result = NULL;
+
+	auto entity_iter = m_entities.find(uri);
+	if (entity_iter != m_entities.end()) {
+		result = entity_iter->second;
+	}
+
+	return result;
 }
 
 
@@ -381,7 +407,7 @@ T* ZstEndpoint::create_plug(ZstFilter* owner, const char * name, ZstValueType va
 
 	 ZstMessages::Signal s = check_stage_response_ok();
 	 if (s){
-		 ZstFilter * filter = dynamic_cast<ZstFilter*>(get_entity_by_URI(plug->get_URI()));
+		 ZstFilter * filter = dynamic_cast<ZstFilter*>(get_entity_ref_by_URI(plug->get_URI()));
 		 if (filter) {
 			 filter->remove_plug(plug);
 		 }
@@ -597,7 +623,7 @@ void ZstEndpoint::broadcast_to_local_plugs(ZstURI output_plug, ZstValue * value)
 
     for (auto cable : m_local_cables) {
 		if (cable->get_output() == output_plug) {
-			ZstFilter* entity = dynamic_cast<ZstFilter*>(get_entity_by_URI(cable->get_input()));
+			ZstFilter* entity = dynamic_cast<ZstFilter*>(get_entity_ref_by_URI(cable->get_input()));
 			if (entity) {
 				ZstInputPlug * plug = (ZstInputPlug*)entity->get_plug_by_URI(cable->get_input());
 				if (plug != NULL) {

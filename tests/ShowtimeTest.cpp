@@ -5,10 +5,11 @@
 #include <iostream>
 #include "Showtime.h"
 #include "ZstPlug.h"
-#include "ZstPerformer.h"
 #include "ZstStage.h"
 #include "ZstEndpoint.h"
 #include "ZstValue.h"
+#include "entities\ZstFilter.h"
+#include "entities\ZstPatch.h"
 
 #ifdef WIN32
 #define TAKE_A_BREATH Sleep(200);
@@ -31,26 +32,26 @@ inline void wait_for_poll() {
 
 //Callback classes
 //----------------
-class TestPerformerArrivingEventCallback : public ZstEntityEventCallback {
+class TestEntityArrivingEventCallback : public ZstEntityEventCallback {
 public:
-	int performerArrivedHits = 0;
-	std::string last_created_performer;
-	void run(ZstURI performer) override {
-		std::cout << "ZST_TEST CALLBACK - performer arriving " << performer.to_char() << std::endl;
-		performerArrivedHits++;
-		last_created_performer = std::string(performer.performer_char());
+	int entityArrivedHits = 0;
+	std::string last_created_entity;
+	void run(ZstURI entity) override {
+		std::cout << "ZST_TEST CALLBACK - entity arriving " << entity.to_char() << std::endl;
+		entityArrivedHits++;
+		last_created_entity = std::string(entity.instrument_char());
 	}
-	void reset() { performerArrivedHits = 0; }
+	void reset() { entityArrivedHits = 0; }
 };
 
-class TestPerformerLeavingEventCallback : public ZstEntityEventCallback {
+class TestEntityLeavingEventCallback : public ZstEntityEventCallback {
 public:
-	int performerLeavingHits = 0;
-	void run(ZstURI performer) override {
-		std::cout << "ZST_TEST CALLBACK - performer leaving " << performer.to_char() << std::endl;
-		performerLeavingHits++;
+	int entityLeavingHits = 0;
+	void run(ZstURI entity) override {
+		std::cout << "ZST_TEST CALLBACK - entity leaving " << entity.to_char() << std::endl;
+		entityLeavingHits++;
 	}
-	void reset() { performerLeavingHits = 0; }
+	void reset() { entityLeavingHits = 0; }
 };
 
 // ----
@@ -160,7 +161,7 @@ public:
 
 //Global test variables
 ZstStage *stage;
-ZstPerformer *performer_a;
+ZstPatch * root_entity;
 
 void test_standard_layout() {
 	//Verify standard layout
@@ -173,13 +174,13 @@ void test_URI() {
 	std::cout << "Starting URI test" << std::endl;
 
 	ZstURI uri_empty = ZstURI();
-	ZstURI uri_equal1 = ZstURI("perf", "ins", "someplug");
-	ZstURI uri_notequal = ZstURI("perf", "anotherins", "someplug");
+	ZstURI uri_equal1 = ZstURI("ins", "someplug");
+	ZstURI uri_notequal = ZstURI("anotherins", "someplug");
 
 	assert(uri_empty.is_empty());
 	assert(uri_equal1 == uri_equal1);
 	assert(uri_equal1 != uri_notequal);
-    assert(strcmp(uri_equal1.to_char() , "perf/ins/someplug") == 0);
+    assert(strcmp(uri_equal1.to_char() , "ins/someplug") == 0);
 
 	//Test ZstCable equality against ZstURI instances
 	ZstCable test_cable_eq1 = ZstCable(uri_equal1, uri_empty);
@@ -195,34 +196,33 @@ void test_URI() {
 }
 
 void test_performer_init() {
-    //Test single performer init
-	std::cout << "Starting performer init test" << std::endl;
+    //Test single entity init
+	std::cout << "Starting entity init test" << std::endl;
 	Showtime::endpoint().self_test();
 
-	TestPerformerArrivingEventCallback * perfArriveCallback = new TestPerformerArrivingEventCallback();
-	Showtime::attach_performer_arriving_callback(perfArriveCallback);
+	TestEntityArrivingEventCallback * entityArriveCallback = new TestEntityArrivingEventCallback();
+	Showtime::attach_entity_arriving_callback(entityArriveCallback);
 
-	performer_a = Showtime::create_performer("test_performer_1");
-	assert(performer_a);
+	root_entity = new ZstPatch("root_entity");
+	assert(root_entity);
     wait_for_poll();
-	assert(perfArriveCallback->performerArrivedHits == 1);
-	assert(perfArriveCallback->last_created_performer == performer_a->get_name());
-	perfArriveCallback->reset();
+	assert(entityArriveCallback->entityArrivedHits == 1);
+	assert(entityArriveCallback->last_created_entity == std::string(root_entity->URI().name_char()));
+	entityArriveCallback->reset();
 
-	Showtime::remove_performer_arriving_callback(perfArriveCallback);
-	delete perfArriveCallback;
+	Showtime::remove_performer_arriving_callback(entityArriveCallback);
+	delete entityArriveCallback;
 
-	std::cout << "Finished performer init test\n" << std::endl;
+	std::cout << "Finished entity init test\n" << std::endl;
 }
 
-//Test stage creation and performer
+//Test stage creation and entity
 void test_stage_registration(){
 	std::cout << "Starting stage registration test" << std::endl;
 
     //Test stage connection
     assert(Showtime::endpoint().ping_stage() >= 0);
-    assert(stage->get_performer_ref_by_name("test_performer_1") != NULL);
-    assert(stage->get_performer_ref_by_name("non_existing_performer") == NULL);
+	assert(stage->get_endpoint_ref_by_UUID(Showtime::endpoint().get_endpoint_UUID()) != NULL);
 
 	std::cout << "Finished stage registration test\n" << std::endl;
 }
@@ -233,21 +233,19 @@ void test_create_plugs(){
 	TestPlugArrivingEventCallback * plugArrivalCallback = new TestPlugArrivingEventCallback();
 	Showtime::attach_plug_arriving_callback(plugArrivalCallback);
 
-    //Create new plugs
-	ZstURI outURI = ZstURI("test_performer_1", "test_instrument", "test_output_plug");
-	ZstURI inURI = ZstURI("test_performer_1", "test_instrument", "test_input_plug");
+	std::string filter_name = "test_filter";
+	ZstFilter * test_filter = new ZstFilter(filter_name.c_str(), root_entity);
 
 	//URI ownership taken over by plug
-	ZstOutputPlug *outputPlug = Showtime::create_output_plug(outURI, ZstValueType::ZST_INT);
-	ZstInputPlug *inputPlug = Showtime::create_input_plug(inURI, ZstValueType::ZST_INT);
+	ZstOutputPlug *outputPlug = test_filter->create_output_plug("test_out", ZstValueType::ZST_INT);
+	ZstInputPlug *inputPlug = test_filter->create_input_plug("test_in", ZstValueType::ZST_INT);
     
     //Check address equality
-    assert(outputPlug->get_URI() == outURI);
-    assert(!(outputPlug->get_URI() == inURI));
+	assert(outputPlug->get_URI() == ZstURI("root_entity/test_filter", "test_out"));
+    assert(!(outputPlug->get_URI() == ZstURI("root_entity/test_filter", "test_in")));
 
 	//Test creating plug with type functions (blame swig python!)
-	ZstInputPlug *typedInputPlug = Showtime::create_input_plug(ZstURI("test_performer_1", "test_instrument", "test_int_plug"), ZstValueType::ZST_INT);
-	ZstURI typedIntPlug_stack = ZstURI(typedInputPlug->get_URI());
+	ZstInputPlug *typedInputPlug = test_filter->create_input_plug("test_int_plug", ZstValueType::ZST_INT);
 
 	//Check that our plug creation callbacks fired successfully
 	wait_for_poll();
@@ -257,32 +255,37 @@ void test_create_plugs(){
 	delete plugArrivalCallback;
 
     //Check stage registered plugs successfully
-    ZstEntityRef *stagePerformerRef = stage->get_performer_ref_by_name("test_performer_1");
-    assert(stagePerformerRef->get_plug_by_URI(outputPlug->get_URI()) != NULL);
-    assert(stagePerformerRef->get_plug_by_URI(inputPlug->get_URI()) != NULL);
-	assert(stagePerformerRef->get_plug_by_URI(typedInputPlug->get_URI()) != NULL);
+    assert(stage->get_plug_by_URI(outputPlug->get_URI()) != NULL);
+    assert(stage->get_plug_by_URI(inputPlug->get_URI()) != NULL);
+	assert(stage->get_plug_by_URI(typedInputPlug->get_URI()) != NULL);
 
 	//Check local client registered plugs correctly
-	ZstPlug *localPlug = Showtime::get_performer_by_URI(outURI)->get_plug_by_URI(outURI);
-	assert(localPlug->get_URI() == outURI);
+	ZstPlug *localPlug = test_filter->get_plug_by_URI(outputPlug->get_URI());
+	assert(localPlug->get_URI() == outputPlug->get_URI());
 
 	//Check plug destruction
 	TestPlugLeavingEventCallback * plugLeavingCallback = new TestPlugLeavingEventCallback();
 	Showtime::attach_plug_leaving_callback(plugLeavingCallback);
 
+	ZstURI outURI = outputPlug->get_URI();
 	Showtime::endpoint().destroy_plug(outputPlug);
-	assert(stage->get_performer_ref_by_name(outURI.performer_char())->get_plug_by_URI(outURI) == NULL);
+	assert(stage->get_plug_by_URI(outURI) == NULL);
 	
+	ZstURI inURI = inputPlug->get_URI();
 	Showtime::endpoint().destroy_plug(inputPlug);
-	assert(stage->get_performer_ref_by_name(inURI.performer_char())->get_plug_by_URI(inURI) == NULL);
+	assert(stage->get_plug_by_URI(inURI) == NULL);
 
+	ZstURI typedURI = typedInputPlug->get_URI();
 	Showtime::endpoint().destroy_plug(typedInputPlug);
-	assert(stage->get_performer_ref_by_name(typedIntPlug_stack.performer_char())->get_plug_by_URI(typedIntPlug_stack) == NULL);
+	assert(stage->get_plug_by_URI(typedURI) == NULL);
 
 	wait_for_poll();
 	assert(plugLeavingCallback->plugLeavingHits == 3);
 	plugLeavingCallback->reset();
 	Showtime::remove_plug_leaving_callback(plugLeavingCallback);
+
+	Showtime::destroy_entity(test_filter);
+	delete test_filter;
 
 	std::cout << "Finished create plugs test\n" << std::endl;
 }
@@ -291,17 +294,14 @@ void test_create_plugs(){
 void test_connect_plugs() {
 	std::cout << "Starting connect plugs test" << std::endl;
 
-	//TestConnectionCallback * cableCallback = new TestConnectionCallback();
-	//Showtime::attach_cable_callback(cableCallback);
-	ZstURI outURI = ZstURI("test_performer_1", "test_instrument", "test_output_plug");
-	ZstURI inURI = ZstURI("test_performer_1", "test_instrument", "test_input_plug");
-	ZstURI badURI = ZstURI("fake_performer", "test_instrument", "test_input_plug");
-
 	int int_fire_val = 27;
 
+	std::string filter_name = "test_filter";
+	ZstFilter * test_filter = new ZstFilter(filter_name.c_str(), root_entity);
+
 	//Test plugs connected between performers
-	ZstOutputPlug *output_int_plug = Showtime::create_output_plug(outURI, ZstValueType::ZST_INT);
-	ZstInputPlug *input_int_plug = Showtime::create_input_plug(inURI, ZstValueType::ZST_INT);
+	ZstOutputPlug *output_int_plug = test_filter->create_output_plug("test_output_plug", ZstValueType::ZST_INT);
+	ZstInputPlug *input_int_plug = test_filter->create_input_plug("test_input_plug", ZstValueType::ZST_INT);
 	input_int_plug->input_events()->attach_event_callback(new TestIntValueCallback(int_fire_val));
 	
 	//Test cable callbacks
@@ -314,9 +314,10 @@ void test_connect_plugs() {
 	wait_for_poll();
 	assert(cableArriveCallback->cableArrivedHits == 1);
 	cableArriveCallback->reset();
-	assert(Showtime::endpoint().get_cable_by_URI(outURI, inURI) != NULL);
+	assert(Showtime::endpoint().get_cable_by_URI(output_int_plug->get_URI(), input_int_plug->get_URI()) != NULL);
 
 	//Test connecting missing URI objects
+	ZstURI badURI = ZstURI("test_instrument", "test_input_plug");
 	std::cout << " Testing bad cable connection request" << std::endl;
 	assert(Showtime::connect_cable(output_int_plug->get_URI(), badURI) <= 0);
 	std::cout << "Finished testing bad cable connection request" << std::endl;
@@ -326,7 +327,7 @@ void test_connect_plugs() {
 	wait_for_poll();
 	assert(cableLeaveCallback->cableLeavingHits == 1);
 	cableLeaveCallback->reset();
-	assert(Showtime::endpoint().get_cable_by_URI(outURI, inURI) == NULL);
+	assert(Showtime::endpoint().get_cable_by_URI(output_int_plug->get_URI(), input_int_plug->get_URI()) == NULL);
 	assert(Showtime::connect_cable(output_int_plug->get_URI(), input_int_plug->get_URI()));
 
 	//Test plug and cable destruction
@@ -342,6 +343,8 @@ void test_connect_plugs() {
 	delete cableArriveCallback;
 	delete cableLeaveCallback;
 
+	Showtime::destroy_entity(test_filter);
+
 	std::cout << "Finished connect plugs test\n" << std::endl;
 }
 
@@ -350,10 +353,11 @@ void test_connect_plugs() {
 void test_check_plug_values() {
 	std::cout << "Starting check plug values test" << std::endl;
 
-	ZstURI outURI = ZstURI("test_performer_1", "mem_instrument", "mem_output_plug");
-	ZstURI inURI = ZstURI("test_performer_1", "mem_instrument", "mem_input_plug");
-	ZstOutputPlug *output_plug = Showtime::create_output_plug(outURI, ZstValueType::ZST_INT);
-	ZstInputPlug *input_plug = Showtime::create_input_plug(inURI, ZstValueType::ZST_INT);
+	std::string filter_name = "test_filter";
+	ZstFilter * test_filter = new ZstFilter(filter_name.c_str(), root_entity);
+
+	ZstOutputPlug *output_plug = test_filter->create_output_plug("mem_test_out", ZstValueType::ZST_INT);
+	ZstInputPlug *input_plug = test_filter->create_input_plug("mem_test_in", ZstValueType::ZST_INT);
 	Showtime::connect_cable(output_plug->get_URI(), input_plug->get_URI());
 
 	TAKE_A_BREATH
@@ -381,7 +385,6 @@ void test_check_plug_values() {
 	}
 	assert(Showtime::event_queue_size() == 0);
 	std::cout << "Finished Queue test\n" << std::endl;
-
 
 	//Test int value conversion
 	std::cout << "Testing int ZstValues via callback" << std::endl;
@@ -485,6 +488,7 @@ void test_check_plug_values() {
 
 	Showtime::destroy_plug(output_plug);
 	Showtime::destroy_plug(input_plug);
+	Showtime::destroy_entity(test_filter);
 
 	std::cout << "Finished check plug values test\n" << std::endl;
 }
@@ -493,10 +497,11 @@ void test_check_plug_values() {
 void test_memory_leaks() {
 	std::cout << "Starting plug fire memory leak test" << std::endl;
 
-	ZstURI outURI = ZstURI("test_performer_1", "mem_instrument", "mem_output_plug");
-	ZstURI inURI = ZstURI("test_performer_1", "mem_instrument", "mem_input_plug");
-	ZstOutputPlug *output_int_plug = Showtime::create_output_plug(outURI, ZstValueType::ZST_INT);
-	ZstInputPlug *input_int_plug = Showtime::create_input_plug(inURI, ZstValueType::ZST_INT);
+	std::string filter_name = "test_filter";
+	ZstFilter * test_filter = new ZstFilter(filter_name.c_str(), root_entity);
+
+	ZstOutputPlug *output_int_plug = test_filter->create_output_plug("mem_test_out", ZstValueType::ZST_INT);
+	ZstInputPlug *input_int_plug = test_filter->create_input_plug("mem_test_in", ZstValueType::ZST_INT);
 
 	int int_cmpr_val = 10;
 	TestIntValueCallback * int_callback = new TestIntValueCallback(int_cmpr_val);
@@ -522,7 +527,7 @@ void test_memory_leaks() {
 void test_leaving(){
     Showtime::leave();
     TAKE_A_BREATH
-    assert(stage->get_performer_ref_by_name("test_performer_1") == NULL);
+    assert(stage->get_endpoint_ref_by_UUID(Showtime::endpoint().get_endpoint_UUID()) == NULL);
     TAKE_A_BREATH
 }
 

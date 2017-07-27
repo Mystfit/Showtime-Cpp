@@ -333,7 +333,7 @@ void ZstStage::endpoint_heartbeat_handler(zsock_t * socket, zmsg_t * msg) {
 void ZstStage::create_plug_handler(zsock_t *socket, zmsg_t *msg) {
 	ZstMessages::CreatePlug plug_args = ZstMessages::unpack_message_struct<ZstMessages::CreatePlug>(msg);
 
-	ZstEntityRef* entity = get_entity_by_URI(ZstURI(plug_args.address.instrument_char(), ""));
+	ZstEntityRef* entity = get_entity_ref_by_URI(ZstURI(plug_args.address.instrument_char(), ""));
 
 	if (entity == NULL) {
 		cout << "ZST_STAGE: Couldn't register plug. No entity registered to stage with name";
@@ -372,14 +372,14 @@ void ZstStage::create_entity_handler(zsock_t * socket, zmsg_t * msg)
 		return;
 	}
 
-	ZstEntityRef* entity_parent = get_entity_by_URI(entity_args.parent);
+	ZstEntityRef* entity_parent = get_entity_ref_by_URI(entity_args.parent);
 	if (entity_parent == NULL) {
 		reply_with_signal(socket, ZstMessages::Signal::ERR_STAGE_ENTITY_NOT_FOUND);
 		return;
 	}
 
 	const char * empty = new char[1]();
-	ZstURI entity_uri = ZstURI::join(entity_args.parent, ZstURI(entity_args.name.c_str(), empty));
+	ZstURI entity_uri = ZstURI::join(entity_args.parent, ZstURI("", entity_args.name.c_str()));
 	delete[] empty;
 
 	ZstEntityRef * entity = endpoint->register_entity(entity_args.entity_type, entity_uri);
@@ -402,7 +402,7 @@ void ZstStage::destroy_plug_handler(zsock_t * socket, zmsg_t * msg)
 	ZstMessages::DestroyURI plug_destroy_args = ZstMessages::unpack_message_struct<ZstMessages::DestroyURI>(msg);
 	cout << "ZST_STAGE: Received destroy plug request" << endl;
 
-	ZstEntityRef *entity = get_entity_by_URI(ZstURI(plug_destroy_args.address.instrument_char(), ""));
+	ZstEntityRef *entity = get_entity_ref_by_URI(ZstURI(plug_destroy_args.address.instrument_char(), ""));
 	ZstEndpointRef* endpoint = get_entity_endpoint(entity);
 	ZstPlugRef* plugRef = get_plug_by_URI(plug_destroy_args.address);
 	if (plugRef != NULL) {
@@ -462,7 +462,7 @@ void ZstStage::destroy_cable_handler(zsock_t * socket, zmsg_t * msg)
 	enqueue_stage_update(ZstEvent(connection_destroy_args.first, connection_destroy_args.second, ZstEvent::EventType::CABLE_DESTROYED));
 }
 
-ZstEntityRef * ZstStage::get_entity_by_URI(ZstURI uri)
+ZstEntityRef * ZstStage::get_entity_ref_by_URI(ZstURI uri)
 {
 	ZstEntityRef * result = NULL;
 	vector<ZstEntityRef*> entities = get_all_entity_refs(NULL);
