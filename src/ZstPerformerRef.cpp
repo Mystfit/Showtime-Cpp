@@ -63,6 +63,8 @@ void ZstPerformerRef::destroy_plug(ZstPlugRef * plug)
 		{
 			m_plugs.erase(plug_iter);
 			break;
+        } else {
+            ++plug_iter;
         }
 	}
 	delete plug;
