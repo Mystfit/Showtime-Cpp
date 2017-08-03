@@ -30,7 +30,7 @@ ZST.join("127.0.0.1")
 root = ZstPatch("python_test")
 test_filter = ZstFilter("test_filter", root)
 add = AddFilter(root)
-plug_callback = PlugCallback().__disown__()
+plug_callback = PlugCallback()
 
 # Create plugs
 plug_augend = test_filter.create_output_plug("p_augend", showtime.ZST_INT)

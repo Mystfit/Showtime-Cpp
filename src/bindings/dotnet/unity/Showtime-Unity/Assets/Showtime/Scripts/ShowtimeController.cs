@@ -7,13 +7,17 @@ public class ShowtimeController : MonoBehaviour {
 
 	public string stageAddress = "127.0.0.1";
 	public string localPerformerName = "unity_performer";
-	private SWIGTYPE_p_ZstPerformer localPerformer;
-	private ZstOutputPlug local_plug_out;
-	private ZstInputPlug local_plug_in;
+	private ZstPatch root;
+    private ZstFilter filter;
+    private AddFilter add_filter;
+
+    private ZstOutputPlug augend_out;
+    private ZstOutputPlug addend_out;
+    private ZstInputPlug sum_in;
 
     //Callbacks
-    private PerformerArrivingCallback perfArrive;
-    private PerformerLeavingCallback perfLeave;
+    private EntityArrivingCallback entityArrive;
+    private EntityLeavingCallback entityLeave;
     private PlugArrivingCallback plugArrive;
     private PlugLeavingCallback plugLeave;
     private PlugDataCallback plugData;
@@ -30,15 +34,15 @@ public class ShowtimeController : MonoBehaviour {
 		Showtime.join (stageAddress);
 
         //Create callbacks for Showtime events
-        perfArrive = new PerformerArrivingCallback();
-        perfLeave = new PerformerLeavingCallback();
+        entityArrive = new EntityArrivingCallback();
+        entityLeave = new EntityLeavingCallback();
         plugArrive = new PlugArrivingCallback();
         plugLeave = new PlugLeavingCallback();
         plugData = new PlugDataCallback();
         cableArrive = new CableArrivingCallback();
         cableLeave = new CableLeavingCallback();
-        Showtime.attach_performer_arriving_callback(perfArrive);
-        Showtime.attach_performer_leaving_callback(perfLeave);
+        Showtime.attach_entity_arriving_callback(entityArrive);
+        Showtime.attach_entity_leaving_callback(entityLeave);
         Showtime.attach_plug_arriving_callback(plugArrive);
         Showtime.attach_plug_leaving_callback(plugLeave);
         Showtime.attach_cable_arriving_callback(cableArrive);
@@ -48,31 +52,34 @@ public class ShowtimeController : MonoBehaviour {
         //StartCoroutine("ShowtimeEventLoop");
 
         //Create a performer to represent this client. I recommend 1 per process.
-        localPerformer = Showtime.create_performer (localPerformerName);
-
-		//Harcoded URIs describing the plugs we own
-		ZstURI local_uri_out = new ZstURI(localPerformerName, "ins", "plug_out");
-		ZstURI local_uri_in = new ZstURI(localPerformerName, "ins", "plug_in");
-
-		//Create our local plug objects. Will block until the stage returns them. Could be async?
-		local_plug_out = Showtime.create_output_plug(local_uri_out, ZstValueType.ZST_INT);
-		local_plug_in = Showtime.create_input_plug(local_uri_in, ZstValueType.ZST_INT);
-        local_plug_in.input_events().attach_event_callback(plugData);
+        root = new ZstPatch(localPerformerName);
+        filter = new ZstFilter("test_filter", root);
+        add_filter = new AddFilter(root);
+        
+        //Create our local plug objects. Will block until the stage returns them. Could be async?
+        augend_out = filter.create_output_plug("augend_out", ZstValueType.ZST_INT);
+        addend_out = filter.create_output_plug("addend_out", ZstValueType.ZST_INT);
+        sum_in = filter.create_input_plug("sum_in", ZstValueType.ZST_INT);
+        sum_in.attach_receive_callback(plugData);
 
 		//Connect the plugs together
-		Showtime.connect_cable(local_uri_out, local_uri_in);
+		Showtime.connect_cable(augend_out.get_URI(), add_filter.augend().get_URI());
+        Showtime.connect_cable(addend_out.get_URI(), add_filter.addend().get_URI());
+        Showtime.connect_cable(add_filter.sum().get_URI(), sum_in.get_URI());
 
         //Need to wait whilst plugs connect before we send anything. Will need to put some flag into 
         //the plug to signify connection status
         System.Threading.Thread.Sleep(100);
 
         //Send a value through this plug. THis is an Int plug so we send an int (duh)
-        local_plug_out.value().append_int(27);
-		local_plug_out.fire();
+        augend_out.value().append_int(27);
+        addend_out.value().append_int(3);
+        augend_out.fire();
+        addend_out.fire();
 
-		//Pause again to give the message time to do a round trip internally
-		System.Threading.Thread.Sleep(100);
-        Debug.Log ("Final plug value: " + local_plug_in.value().int_at(0));
+        //Pause again to give the message time to do a round trip internally
+        System.Threading.Thread.Sleep(100);
+        Debug.Log ("Final plug value: " + sum_in.value().int_at(0));
 	}
 	
 	void Update () {
@@ -99,19 +106,19 @@ public class ShowtimeController : MonoBehaviour {
 
     // Callbacks
     // ---------
-    public class PerformerArrivingCallback : ZstPerformerEventCallback
+    public class EntityArrivingCallback : ZstEntityEventCallback
     {
         public override void run(ZstURI perf)
         {
-            Debug.Log("Performer arriving: " + perf.to_char());
+            Debug.Log("Performer arriving: " + perf.path());
         }
     }
 
-    public class PerformerLeavingCallback : ZstPerformerEventCallback
+    public class EntityLeavingCallback : ZstEntityEventCallback
     {
         public override void run(ZstURI perf)
         {
-            Debug.Log("performer leaving: " + perf.to_char());
+            Debug.Log("performer leaving: " + perf.path());
         }
     }
 
@@ -119,7 +126,7 @@ public class ShowtimeController : MonoBehaviour {
     {
         public override void run(ZstCable cable)
         {
-            Debug.Log("Cable arriving: " + cable.get_output().to_char() + " -> " + cable.get_input().to_char());
+            Debug.Log("Cable arriving: " + cable.get_output().path() + " -> " + cable.get_input().path());
         }
     }
 
@@ -127,7 +134,7 @@ public class ShowtimeController : MonoBehaviour {
     {
         public override void run(ZstCable cable)
         {
-            Debug.Log("Cable leaving: " + cable.get_output().to_char() + " -> " + cable.get_input().to_char());
+            Debug.Log("Cable leaving: " + cable.get_output().path() + " -> " + cable.get_input().path());
         }
     }
 
@@ -135,7 +142,7 @@ public class ShowtimeController : MonoBehaviour {
     {
         public override void run(ZstURI plug)
         {
-            Debug.Log("Plug arriving: " + plug.to_char());
+            Debug.Log("Plug arriving: " + plug.path());
         }
     }
 
@@ -143,7 +150,7 @@ public class ShowtimeController : MonoBehaviour {
     {
         public override void run(ZstURI plug)
         {
-            Debug.Log("Plug leaving: " + plug.to_char());
+            Debug.Log("Plug leaving: " + plug.path());
         }
     }
 
@@ -151,7 +158,7 @@ public class ShowtimeController : MonoBehaviour {
     {
         public override void run(ZstInputPlug plug)
         {
-            Debug.Log("Plug : " + plug.get_URI().to_char() + " received hit with val " + plug.value().int_at(0));
+            Debug.Log("Plug : " + plug.get_URI().path() + " received hit with val " + plug.value().int_at(0));
         }
     }
 }

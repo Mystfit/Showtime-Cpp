@@ -47,16 +47,20 @@ enum PlugDirection {
 // --------------------
 // Derived plug classes
 // --------------------
-
 class ZstInputPlug : public ZstPlug {
 public:
+	friend class ZstEndpoint;
+	friend class Showtime;
+
 	ZST_EXPORT ZstInputPlug(ZstFilter * owner, const char * name, ZstValueType t);
 	ZST_EXPORT ~ZstInputPlug();
+	ZST_EXPORT void attach_receive_callback(ZstPlugDataEventCallback * callback);
+	ZST_EXPORT void remove_receive_callback(ZstPlugDataEventCallback * callback);
+protected:
 
+private:
 	//Receive a msgpacked value through this plug
 	ZST_EXPORT void recv(ZstValue val);
-	ZST_EXPORT ZstCallbackQueue<ZstPlugDataEventCallback, ZstInputPlug*> * input_events();
-private:
 	ZstCallbackQueue<ZstPlugDataEventCallback, ZstInputPlug*> * m_input_fired_manager;
 };
 

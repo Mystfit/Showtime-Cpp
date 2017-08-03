@@ -71,7 +71,7 @@ public:
 	//Callbacks
 	ZST_EXPORT static void attach_stage_event_callback(ZstEventCallback * callback);
 	ZST_EXPORT static void attach_entity_arriving_callback(ZstEntityEventCallback * callback);
-	ZST_EXPORT static void attach_performer_leaving_callback(ZstEntityEventCallback * callback);
+	ZST_EXPORT static void attach_entity_leaving_callback(ZstEntityEventCallback * callback);
 	ZST_EXPORT static void attach_plug_arriving_callback(ZstPlugEventCallback * callback);
 	ZST_EXPORT static void attach_plug_leaving_callback(ZstPlugEventCallback * callback);
 	ZST_EXPORT static void attach_cable_arriving_callback(ZstCableEventCallback *callback);

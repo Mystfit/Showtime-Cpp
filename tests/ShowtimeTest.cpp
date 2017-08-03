@@ -349,7 +349,7 @@ void test_connect_plugs() {
 	//Test plugs connected between performers
 	ZstOutputPlug *output_int_plug = test_filter->create_output_plug("test_output_plug", ZstValueType::ZST_INT);
 	ZstInputPlug *input_int_plug = test_filter->create_input_plug("test_input_plug", ZstValueType::ZST_INT);
-	input_int_plug->input_events()->attach_event_callback(new TestIntValueCallback(int_fire_val));
+	input_int_plug->attach_receive_callback(new TestIntValueCallback(int_fire_val));
 	
 	//Test cable callbacks
 	TestCableArrivingEventCallback * cableArriveCallback = new TestCableArrivingEventCallback();
@@ -414,7 +414,7 @@ void test_add_filter() {
 
 	//Create a callback to listen for the sum result
 	AddFilterSumCallback * sum_callback = new AddFilterSumCallback(4);
-	sum_plug->input_events()->attach_event_callback(sum_callback);
+	sum_plug->attach_receive_callback(sum_callback);
 
 	//Create the addition filter
 	AddFilter * add_filter = new AddFilter(root_entity);
@@ -448,7 +448,7 @@ void test_add_filter() {
 	wait_for_callbacks(1);
 
 	//Cleanup
-	sum_plug->input_events()->remove_event_callback(sum_callback);
+	sum_plug->remove_receive_callback(sum_callback);
 	delete sum_callback;
 
 	delete filter;
@@ -500,7 +500,7 @@ void test_check_plug_values() {
 	std::cout << "Testing int ZstValues via callback" << std::endl;
 	int int_cmpr_val = 27;
 	TestIntValueCallback * int_callback = new TestIntValueCallback(int_cmpr_val);
-	input_plug->input_events()->attach_event_callback(int_callback);
+	input_plug->attach_receive_callback(int_callback);
 	output_plug->value().append_int(int_cmpr_val);
 	output_plug->fire();
 	wait_for_callbacks(1);
@@ -518,14 +518,14 @@ void test_check_plug_values() {
 	output_plug->fire();
 	wait_for_callbacks(1);
 
-	input_plug->input_events()->remove_event_callback(int_callback);
+	input_plug->remove_receive_callback(int_callback);
 
 
 	//Test float value conversion
 	std::cout << "Testing float ZstValues via callback" << std::endl;
 	float float_cmpr_val = 28.5f;
 	TestFloatValueCallback * float_callback = new TestFloatValueCallback(float_cmpr_val);
-	input_plug->input_events()->attach_event_callback(float_callback);
+	input_plug->attach_receive_callback(float_callback);
 	output_plug->value().append_float(float_cmpr_val);
 	output_plug->fire();
 	wait_for_callbacks(1);
@@ -544,14 +544,14 @@ void test_check_plug_values() {
 	output_plug->fire();
 	wait_for_callbacks(1);
 
-	input_plug->input_events()->remove_event_callback(float_callback);
+	input_plug->remove_receive_callback(float_callback);
 
 
 	//Test char* value conversion
 	std::string char_cmp_val = "hello world";
 	std::cout << "Testing char ZstValues via callback" << std::endl;
 	TestCharValueCallback * char_callback = new TestCharValueCallback(char_cmp_val.c_str());
-	input_plug->input_events()->attach_event_callback(char_callback);
+	input_plug->attach_receive_callback(char_callback);
 	output_plug->value().append_char(char_cmp_val.c_str());
 	output_plug->fire();
 	wait_for_callbacks(1);
@@ -568,14 +568,14 @@ void test_check_plug_values() {
 	output_plug->fire();
 	wait_for_callbacks(1);
 
-	input_plug->input_events()->remove_event_callback(char_callback);
+	input_plug->remove_receive_callback(char_callback);
 
 
 	//Test multiple values
 	int_cmpr_val = 30;
 	int int_num_value = 10;
 	TestMultipleIntValueCallback * int_mult_callback = new TestMultipleIntValueCallback(int_cmpr_val, int_num_value);
-	input_plug->input_events()->attach_event_callback(int_mult_callback);
+	input_plug->attach_receive_callback(int_mult_callback);
 
 	for (int i = 0; i < int_num_value; ++i) {
 		output_plug->value().append_int(int_cmpr_val);
@@ -584,7 +584,7 @@ void test_check_plug_values() {
 	wait_for_callbacks(1);
 
 	//Cleanup
-	input_plug->input_events()->remove_event_callback(int_mult_callback);
+	input_plug->attach_receive_callback(int_mult_callback);
 	delete test_filter;
 	clear_callback_queue();
 
@@ -603,7 +603,7 @@ void test_memory_leaks() {
 
 	int int_cmpr_val = 10;
 	TestIntValueCallback * int_callback = new TestIntValueCallback(int_cmpr_val);
-	input_int_plug->input_events()->attach_event_callback(int_callback);
+	input_int_plug->attach_receive_callback(int_callback);
 	Showtime::connect_cable(output_int_plug->get_URI(), input_int_plug->get_URI());
 	wait_for_callbacks(4);
 

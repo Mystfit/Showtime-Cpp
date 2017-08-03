@@ -33,7 +33,7 @@ ZstInputPlug * ZstFilter::create_input_plug(const char * name, ZstValueType val_
 	plug = Showtime::endpoint().create_plug<ZstInputPlug>(this, name, val_type, PlugDirection::IN_JACK);
 	if (plug) {
 		m_plugs.push_back(plug);
-		plug->input_events()->attach_event_callback(m_compute_callback);
+		plug->attach_receive_callback(m_compute_callback);
 	}
 	return plug;
 }

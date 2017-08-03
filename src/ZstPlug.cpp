@@ -44,9 +44,14 @@ void ZstInputPlug::recv(ZstValue val) {
 	Showtime::endpoint().enqueue_event(ZstEvent(get_URI(), ZstEvent::EventType::PLUG_HIT));
 }
 
-ZstCallbackQueue<ZstPlugDataEventCallback, ZstInputPlug*> * ZstInputPlug::input_events()
+void ZstInputPlug::attach_receive_callback(ZstPlugDataEventCallback * callback)
 {
-	return m_input_fired_manager;
+	m_input_fired_manager->attach_event_callback(callback);
+}
+
+void ZstInputPlug::remove_receive_callback(ZstPlugDataEventCallback * callback)
+{
+	m_input_fired_manager->remove_event_callback(callback);
 }
 
 

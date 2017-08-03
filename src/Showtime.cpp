@@ -61,7 +61,7 @@ void Showtime::poll_once()
 			if (filter != NULL) {
 				ZstInputPlug * plug = (ZstInputPlug*)filter->get_plug_by_URI(e.get_first());
 				if (plug != NULL) {
-					plug->input_events()->run_event_callbacks(plug);
+					plug->m_input_fired_manager->run_event_callbacks(plug);
 				}
 			}
 			break;
@@ -107,7 +107,7 @@ void Showtime::attach_entity_arriving_callback(ZstEntityEventCallback * callback
 	Showtime::endpoint().entity_arriving_events()->attach_event_callback(callback);
 }
 
-void Showtime::attach_performer_leaving_callback(ZstEntityEventCallback * callback)
+void Showtime::attach_entity_leaving_callback(ZstEntityEventCallback * callback)
 {
 	return Showtime::endpoint().entity_leaving_events()->attach_event_callback(callback);
 }
