@@ -8,9 +8,9 @@
 #include "ZstStage.h"
 #include "ZstEndpoint.h"
 #include "ZstValue.h"
-#include "entities\AddFilter.h"
-#include "entities\ZstFilter.h"
-#include "entities\ZstPatch.h"
+#include "entities/AddFilter.h"
+#include "entities/ZstFilter.h"
+#include "entities/ZstPatch.h"
 
 #ifdef WIN32
 #define TAKE_A_BREATH Sleep(100);

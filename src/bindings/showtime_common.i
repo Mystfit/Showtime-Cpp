@@ -10,18 +10,18 @@
 
 // Entity bases
 %feature("director") ZstEntityBase;
-%include "entities\ZstEntityBase.h"
+%include "entities/ZstEntityBase.h"
 
 %nodefaultctor;
 %feature("director") ZstFilter;
 %feature("director") ZstPatch;
-%include "entities\ZstFilter.h"
-%include "entities\ZstPatch.h"
+%include "entities/ZstFilter.h"
+%include "entities/ZstPatch.h"
 %clearnodefaultctor;
 
 // Entities
 %nodefaultctor;
-%include "entities\AddFilter.h"
+%include "entities/AddFilter.h"
 %clearnodefaultctor;
 
 // Callbacks

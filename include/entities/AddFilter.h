@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entities\ZstFilter.h"
+#include "entities/ZstFilter.h"
 #include "ZstCallbacks.h"
 
 #define ADDITION_FILTER_TYPE "addition"

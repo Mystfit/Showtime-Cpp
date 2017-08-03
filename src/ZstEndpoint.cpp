@@ -9,8 +9,8 @@
 #include "ZstURIWire.h"
 #include "ZstEventWire.h"
 #include "ZstValueWire.h"
-#include "entities\ZstEntityBase.h"
-#include "entities\ZstFilter.h"
+#include "entities/ZstEntityBase.h"
+#include "entities/ZstFilter.h"
 
 using namespace std;
 
@@ -326,7 +326,7 @@ void ZstEndpoint::leave_stage()
 
 void ZstEndpoint::register_entity_type(const char * entity_type)
 {
-	throw std::exception("Register entity not implemented");
+	//throw std::exception("Register entity not implemented");
 }
 
 

@@ -5,7 +5,7 @@
 #include "ZstPerformer.h"
 #include "ZstPlug.h"
 #include "ZstEvent.h"
-#include "entities\ZstFilter.h"
+#include "entities/ZstFilter.h"
 
 using namespace std;
 

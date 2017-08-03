@@ -9,10 +9,10 @@
 	#include "ZstCable.h"
 	#include "ZstCallbacks.h"
 	#include "ZstCallbackQueue.h"
-	#include "entities\ZstEntityBase.h"
-	#include "entities\ZstPatch.h"
-	#include "entities\ZstFilter.h"
-	#include "entities\AddFilter.h"
+	#include "entities/ZstEntityBase.h"
+	#include "entities/ZstPatch.h"
+	#include "entities/ZstFilter.h"
+	#include "entities/AddFilter.h"
 	class ZstEndpoint{};
 %}
 %nothread;

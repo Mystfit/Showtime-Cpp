@@ -4,7 +4,7 @@
 #include <vector>
 #include "ZstURI.h"
 #include "ZstExports.h"
-#include "entities\ZstEntityBase.h"
+#include "entities/ZstEntityBase.h"
 
 #define PERFORMER_ENTITY "performer"
 

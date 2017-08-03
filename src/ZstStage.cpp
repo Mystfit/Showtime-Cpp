@@ -358,7 +358,7 @@ void ZstStage::create_plug_handler(zsock_t *socket, zmsg_t *msg) {
 
 void ZstStage::register_entity_type_handler(zsock_t * socket, zmsg_t * msg)
 {
-	throw exception("Register entity handler not implemented");
+    //throw std::exception("Register entity handler not implemented");
 }
 
 void ZstStage::create_entity_handler(zsock_t * socket, zmsg_t * msg)

@@ -3,7 +3,7 @@
 #include "ZstEndpoint.h"
 #include "ZstEvent.h"
 #include "ZstValueWire.h"
-#include "entities\ZstFilter.h"
+#include "entities/ZstFilter.h"
 
 using namespace std;
 
