@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ZstEntityBase.h"
+#include "entities\ZstEntityBase.h"
 
 #define FILTER_TYPE "filter"
 
@@ -9,8 +9,8 @@ class FilterComputeCallback;
 class ZstFilter : public virtual ZstEntityBase {
 public:
 	friend class FilterComputeCallback;
-	ZST_EXPORT ZstFilter(const char * name) : ZstEntityBase(FILTER_TYPE, name) { init(); };
-	ZST_EXPORT ZstFilter(const char * name, ZstEntityBase * parent) : ZstEntityBase(FILTER_TYPE, name, parent) { init(); };
+	ZST_EXPORT ZstFilter(const char * name);
+	ZST_EXPORT ZstFilter(const char * name, ZstEntityBase * parent);
 	ZST_EXPORT ~ZstFilter();
 	ZST_EXPORT virtual void init() override;
 
@@ -29,8 +29,8 @@ private:
 
 class FilterComputeCallback : public ZstPlugDataEventCallback {
 public:
-	void set_target_filter(ZstFilter * filter);
-	void run(ZstInputPlug * plug) override;
+	ZST_EXPORT void set_target_filter(ZstFilter * filter);
+	ZST_EXPORT void run(ZstInputPlug * plug) override;
 private:
 	ZstFilter * m_filter;
 };

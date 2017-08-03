@@ -2,51 +2,40 @@
 %include <windows.i>
 %include "ZstExports.h"
 
-// ZstURI class definition
-class ZstURI {
-public:
-    ZstURI();
-    ZstURI(const char *  performer, const char *  instrument, const char *  name);
-
-    %rename("performer") performer_char();
-    const char * performer_char();
-
-    %rename("instrument") instrument_char();
-    const char * instrument_char();
-
-    %rename("name") name_char();
-    const char * name_char();
-
-    bool is_empty();
-
-    %rename("to_str") to_char();
-    const char * to_char() const;
-
-    %rename("from_str") from_char();
-    static ZstURI from_char(char * s);
-
-    bool operator==(const ZstURI& other);
-    bool operator!=(const ZstURI& other);
-    bool operator< (const ZstURI& b) const;
-};
-
 // Importable classes
+%include "ZstURI.h"
 %include "ZstPlug.h"
 %include "ZstEvent.h"
 %include "ZstCable.h"
+
+// Entity bases
+%feature("director") ZstEntityBase;
+%include "entities\ZstEntityBase.h"
+
+%nodefaultctor;
+%feature("director") ZstFilter;
+%feature("director") ZstPatch;
+%include "entities\ZstFilter.h"
+%include "entities\ZstPatch.h"
+%clearnodefaultctor;
+
+// Entities
+%nodefaultctor;
+%include "entities\AddFilter.h"
+%clearnodefaultctor;
 
 // Callbacks
 %feature("director") ZstEventCallback;
 %feature("director") ZstPlugDataEventCallback;
 %feature("director") ZstPlugEventCallback;
-%feature("director") ZstPerformerEventCallback;
+%feature("director") ZstEntityEventCallback;
 %feature("director") ZstCableEventCallback;
 %include "ZstCallbacks.h"
 
 // Callback queue templates
 %include "ZstCallbackQueue.h"
 %template(ZstEventCallbackQueue) ZstCallbackQueue<ZstEventCallback, ZstEvent>;
-%template(ZstPerformerCallbackQueue) ZstCallbackQueue<ZstPerformerEventCallback, ZstURI>;
+%template(ZstEntityEventCallbackQueue) ZstCallbackQueue<ZstEntityEventCallback, ZstURI>;
 %template(ZstCableCallbackQueue) ZstCallbackQueue<ZstCableEventCallback, ZstCable>;
 %template(ZstPlugCallbackQueue) ZstCallbackQueue<ZstPlugEventCallback, ZstURI>;
 %template(ZstInputPlugCallbackQueue) ZstCallbackQueue<ZstPlugDataEventCallback, ZstInputPlug*>;

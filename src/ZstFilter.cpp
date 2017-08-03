@@ -2,6 +2,16 @@
 #include "ZstEndpoint.h"
 #include "Showtime.h"
 
+ZstFilter::ZstFilter(const char * name) : ZstEntityBase(FILTER_TYPE, name)
+{
+	init();
+}
+
+ZstFilter::ZstFilter(const char * name, ZstEntityBase * parent) : ZstEntityBase(FILTER_TYPE, name, parent)
+{
+	init();
+}
+
 void ZstFilter::init()
 {
 	m_compute_callback = new FilterComputeCallback();

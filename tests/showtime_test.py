@@ -2,19 +2,13 @@ import time
 import threading
 import showtime
 from showtime import Showtime as ZST
-from showtime import ZstEventCallback, ZstURI, ZstInputPlugEventCallback
+from showtime import ZstEventCallback, ZstURI, ZstPlugDataEventCallback
+from showtime import ZstPatch, ZstFilter, AddFilter
 
 
-class PlugCallback(ZstInputPlugEventCallback):
+class PlugCallback(ZstPlugDataEventCallback):
     def run(self, plug):
         print("Plug received value {0}".format(plug.value().int_at(0)))
-
-
-class EventCallback(ZstEventCallback):
-    def run(self, event):
-        print("Received stage event {0} from {1}".format(
-            event.get_update_type(), event.get_first().to_char()))
-
 
 class Watcher(threading.Thread):
     def __init__(self):
@@ -30,27 +24,33 @@ watch = Watcher()
 watch.start()
 
 ZST.init()
-
-stageCallback = EventCallback()
-ZST.attach_stage_event_callback(stageCallback)
 ZST.join("127.0.0.1")
-perf = ZST.create_performer("python_perf")
 
-uri_out = ZstURI("python_perf", "ins", "plug_out")
-uri_in = ZstURI("python_perf", "ins", "plug_in")
-plug_out = ZST.create_output_plug(uri_out, showtime.ZST_INT)
-plug_in = ZST.create_input_plug(uri_in, showtime.ZST_INT)
-ZST.connect_cable(uri_in, uri_out)
+# Create entities
+root = ZstPatch("python_test")
+test_filter = ZstFilter("test_filter", root)
+add = AddFilter(root)
+plug_callback = PlugCallback().__disown__()
+
+# Create plugs
+plug_augend = test_filter.create_output_plug("p_augend", showtime.ZST_INT)
+plug_addend = test_filter.create_output_plug("p_addend", showtime.ZST_INT)
+plug_sum = test_filter.create_input_plug("p_sum", showtime.ZST_INT)
+plug_sum.input_events().attach_event_callback(plug_callback)
 time.sleep(0.2)
 
-plug_callback = PlugCallback()
-plug_in.input_events().attach_event_callback(plug_callback)
-plug_out.value().append_int(27)
-plug_out.fire()
+# Connect cables
+ZST.connect_cable(plug_augend.get_URI(), add.augend().get_URI())
+ZST.connect_cable(plug_addend.get_URI(), add.addend().get_URI())
+ZST.connect_cable(add.sum().get_URI(), plug_sum.get_URI())
 time.sleep(0.2)
+
+# Fire values
+plug_augend.value().append_int(27)
+plug_addend.value().append_int(3)
+plug_augend.fire()
+plug_addend.fire()
+time.sleep(1)
 
 print("Done")
-ZST.remove_stage_event_callback(stageCallback)
-plug_in.input_events().remove_event_callback(plug_callback)
-
 ZST.destroy()
