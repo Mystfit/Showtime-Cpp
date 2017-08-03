@@ -22,8 +22,7 @@ public:
 	ZST_EXPORT ZstEntityBase * parent() const;
 
 private:
-	//Base entity
-	char * m_entity_type;
+	Str255 m_entity_type;
 	ZstURI m_uri;
 	bool m_is_registered;
 	ZstEntityBase * m_parent;

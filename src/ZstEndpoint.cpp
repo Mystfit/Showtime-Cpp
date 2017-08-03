@@ -221,7 +221,7 @@ int ZstEndpoint::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg)
 	
 	zmsg_destroy(&msg);
 
-	endpoint->broadcast_to_local_plugs(sender, &value);
+	endpoint->broadcast_to_local_plugs(sender, value);
 	return 0;
 }
 
@@ -338,9 +338,9 @@ int ZstEndpoint::register_entity(ZstEntityBase* entity)
 {
 	int result = 0;
 	ZstMessages::CreateEntity entity_args;
-	entity_args.parent = ZstURIWire(entity->parent()->URI());
+	entity_args.endpoint_uuid = get_endpoint_UUID();
 	entity_args.entity_type = entity->entity_type();
-	entity_args.name = entity->URI().name_char();
+	entity_args.address = ZstURIWire(entity->URI());
 	zmsg_t * entity_msg = ZstMessages::build_message<ZstMessages::CreateEntity>(ZstMessages::Kind::STAGE_CREATE_ENTITY, entity_args);
 	Showtime::endpoint().send_to_stage(entity_msg);
 	
@@ -363,7 +363,7 @@ int ZstEndpoint::destroy_entity(ZstEntityBase * entity)
 	return result;
 }
 
-ZstEntityBase * ZstEndpoint::get_entity_ref_by_URI(ZstURI uri)
+ZstEntityBase * ZstEndpoint::get_entity_by_URI(ZstURI uri)
 {
 	ZstEntityBase * result = NULL;
 
@@ -385,7 +385,8 @@ template ZstOutputPlug* ZstEndpoint::create_plug<ZstOutputPlug>(ZstFilter* owner
 template<typename T>
 T* ZstEndpoint::create_plug(ZstFilter* owner, const char * name, ZstValueType val_type, PlugDirection direction) {
 	T* plug = NULL;
-	ZstURI address = ZstURI(owner->URI().instrument_char(), name);
+	ZstURI address = ZstURI::join(owner->URI(), ZstURI(name));
+	
 	//Build message to register plug on stage
 	ZstMessages::CreatePlug plug_args;
 	plug_args.address = ZstURIWire(address);
@@ -407,11 +408,12 @@ T* ZstEndpoint::create_plug(ZstFilter* owner, const char * name, ZstValueType va
 
 	 ZstMessages::Signal s = check_stage_response_ok();
 	 if (s){
-		 ZstFilter * filter = dynamic_cast<ZstFilter*>(get_entity_ref_by_URI(plug->get_URI()));
+		 ZstFilter * filter = dynamic_cast<ZstFilter*>(get_entity_by_URI(plug->get_URI()));
 		 if (filter) {
 			 filter->remove_plug(plug);
 		 }
 		 delete plug;
+		 plug = 0;
 	 }
 	 return (int)s;
  }
@@ -619,18 +621,19 @@ ZstMessages::Signal ZstEndpoint::check_stage_response_ok() {
 	return s;
 }
 
-void ZstEndpoint::broadcast_to_local_plugs(ZstURI output_plug, ZstValue * value) {
+void ZstEndpoint::broadcast_to_local_plugs(ZstURI output_plug, ZstValue value) {
 
     for (auto cable : m_local_cables) {
 		if (cable->get_output() == output_plug) {
-			ZstFilter* entity = dynamic_cast<ZstFilter*>(get_entity_ref_by_URI(cable->get_input()));
-			if (entity) {
-				ZstInputPlug * plug = (ZstInputPlug*)entity->get_plug_by_URI(cable->get_input());
+			ZstEntityBase * entity = get_entity_by_URI(cable->get_input().range(0, cable->get_input().size() - 1));
+			ZstFilter* filter = dynamic_cast<ZstFilter*>(entity);
+			if (filter) {
+				ZstInputPlug * plug = (ZstInputPlug*)filter->get_plug_by_URI(cable->get_input());
 				if (plug != NULL) {
 					plug->recv(value);
 				}
 				else {
-					cout << "ZST: Ignoring plug hit from " << cable->get_output().to_char() << " for missing input plug " << cable->get_input().to_char() << endl;
+					cout << "ZST: Ignoring plug hit from " << cable->get_output().path() << " for missing input plug " << cable->get_input().path() << endl;
 				}
 			}
 		}

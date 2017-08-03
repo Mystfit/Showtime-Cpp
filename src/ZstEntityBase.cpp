@@ -3,36 +3,32 @@
 #include "ZstEndpoint.h"
 #include <memory>
 
-ZstEntityBase::ZstEntityBase() : 
-	m_is_registered(false),
-	m_parent(NULL),
-	m_entity_type("")
+ZstEntityBase::ZstEntityBase()
 {
-	m_uri = ZstURI();
 	init();
 }
 
-ZstEntityBase::ZstEntityBase(const char * entity_type, const char * entity_name) :
+ZstEntityBase::ZstEntityBase(const char * entity_type, const char * path) :
 	m_is_registered(false),
 	m_parent(NULL)
 {
 	memcpy(m_entity_type, entity_type, 255);
-	m_uri = ZstURI("", entity_name);
+	m_uri = ZstURI(path);
 	init();
 }
 
-ZstEntityBase::ZstEntityBase(const char * entity_type, const char * entity_name, ZstEntityBase * parent) :
+ZstEntityBase::ZstEntityBase(const char * entity_type, const char * local_path, ZstEntityBase * parent) :
 	m_is_registered(false),
 	m_parent(parent)
 {
 	memcpy(m_entity_type, entity_type, 255);
-	m_uri = ZstURI::join(parent->URI(), ZstURI("", entity_name));
+	m_uri = ZstURI::join(parent->URI(), ZstURI(local_path));
 	init();
 }
 
 ZstEntityBase::~ZstEntityBase()
 {
-	Showtime::destroy_entity(this);
+	Showtime::endpoint().destroy_entity(this);
 }
 
 void ZstEntityBase::init()

@@ -26,7 +26,7 @@ public:
 	ZST_EXPORT void init();
     ZST_EXPORT static ZstStage* create_stage();
 
-	ZST_EXPORT ZstEndpointRef * get_endpoint_ref_by_UUID(std::string uuid);
+	ZST_EXPORT ZstEndpointRef * get_endpoint_ref_by_UUID(const char * uuid);
 
 	ZST_EXPORT std::vector<ZstPlugRef*> get_all_plug_refs();
     ZST_EXPORT std::vector<ZstPlugRef*> get_all_plug_refs(ZstEndpointRef * endpoint);

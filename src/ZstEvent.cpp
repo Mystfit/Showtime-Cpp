@@ -33,12 +33,12 @@ ZstEvent::~ZstEvent()
 {
 }
 
-const ZstURI & ZstEvent::get_first() const
+ZstURI ZstEvent::get_first() const
 {
 	return m_first;
 }
 
-const ZstURI & ZstEvent::get_second() const
+ZstURI ZstEvent::get_second() const
 {
 	return m_second;
 }

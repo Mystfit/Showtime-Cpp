@@ -12,6 +12,8 @@
 class ZstValue {
 public:
 	ZST_EXPORT ZstValue();
+	ZST_EXPORT ZstValue(const ZstValue & other);
+
 	ZST_EXPORT ZstValue(ZstValueType t);
 	ZST_EXPORT ~ZstValue();
 

@@ -1,20 +1,36 @@
 #include "entities\ZstFilter.h"
 #include "ZstEndpoint.h"
+#include "Showtime.h"
+
+void ZstFilter::init()
+{
+	m_compute_callback = new FilterComputeCallback();
+	m_compute_callback->set_target_filter(this);
+}
+
+ZstFilter::~ZstFilter()
+{
+	for (auto plug : m_plugs) {
+		Showtime::endpoint().destroy_plug(plug);
+	}
+	m_plugs.clear();
+	delete m_compute_callback;
+}
 
 ZstInputPlug * ZstFilter::create_input_plug(const char * name, ZstValueType val_type)
 {
 	ZstInputPlug * plug = NULL;
-	ZstURI plug_uri = ZstURI(URI().instrument_char(), name);
 	plug = Showtime::endpoint().create_plug<ZstInputPlug>(this, name, val_type, PlugDirection::IN_JACK);
-	if (plug)
+	if (plug) {
 		m_plugs.push_back(plug);
+		plug->input_events()->attach_event_callback(m_compute_callback);
+	}
 	return plug;
 }
 
 ZstOutputPlug * ZstFilter::create_output_plug(const char * name, ZstValueType val_type)
 {
 	ZstOutputPlug * plug = NULL;
-	ZstURI plug_uri = ZstURI(URI().instrument_char(), name);
 	plug = Showtime::endpoint().create_plug<ZstOutputPlug>(this, name, val_type, PlugDirection::OUT_JACK);
 	if(plug)
 		m_plugs.push_back(plug);
@@ -36,4 +52,19 @@ ZstPlug * ZstFilter::get_plug_by_URI(const ZstURI uri)
 void ZstFilter::remove_plug(ZstPlug * plug)
 {
 	m_plugs.erase(std::remove(m_plugs.begin(), m_plugs.end(), plug), m_plugs.end());
+	Showtime::endpoint().destroy_plug(plug);
+}
+
+
+// -----------------------
+// Filter compute callback
+// -----------------------
+void FilterComputeCallback::set_target_filter(ZstFilter * filter)
+{
+	m_filter = filter;
+}
+
+void FilterComputeCallback::run(ZstInputPlug * plug)
+{
+	m_filter->compute(plug);
 }

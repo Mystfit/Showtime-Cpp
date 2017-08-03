@@ -26,10 +26,10 @@ public:
 	ZST_EXPORT ZstPlug(ZstFilter * owner, const char * name, ZstValueType t);
 	ZST_EXPORT virtual ~ZstPlug();
 	ZST_EXPORT ZstURI get_URI() const;
-	ZST_EXPORT ZstValue * value();
+	ZST_EXPORT ZstValue & value();
 
 protected:
-	ZstValue * m_value;
+	ZstValue m_value;
 
 private:
 	ZstFilter * m_owner;
@@ -54,7 +54,7 @@ public:
 	ZST_EXPORT ~ZstInputPlug();
 
 	//Receive a msgpacked value through this plug
-	ZST_EXPORT void recv(ZstValue * val);
+	ZST_EXPORT void recv(ZstValue val);
 	ZST_EXPORT ZstCallbackQueue<ZstPlugDataEventCallback, ZstInputPlug*> * input_events();
 private:
 	ZstCallbackQueue<ZstPlugDataEventCallback, ZstInputPlug*> * m_input_fired_manager;

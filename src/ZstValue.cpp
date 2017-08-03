@@ -11,6 +11,12 @@ ZstValue::ZstValue() : m_default_type(ZstValueType::ZST_NONE)
 	init();
 }
 
+ZstValue::ZstValue(const ZstValue & other)
+{
+	m_values = other.m_values;
+	m_default_type = other.m_default_type;
+}
+
 ZstValue::ZstValue(ZstValueType t) : m_default_type(t)
 {
 	init();

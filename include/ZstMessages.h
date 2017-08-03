@@ -92,11 +92,10 @@ public:
 	};
 
 	struct CreateEntity {
-		std::string name;
 		std::string entity_type;
-		ZstURIWire parent;
+		ZstURIWire address;
 		std::string endpoint_uuid;
-		MSGPACK_DEFINE(name, entity_type, parent, endpoint_uuid);
+		MSGPACK_DEFINE(entity_type, address, endpoint_uuid);
 	};
     
     struct CreatePlug{
@@ -178,7 +177,7 @@ public:
     template <typename T>
     static zmsg_t * build_graph_message(ZstURI from, T data) {
         zmsg_t *msg = zmsg_new();
-        zmsg_addstr(msg, from.to_char());
+        zmsg_addstr(msg, from.path());
         
         msgpack::sbuffer buf;
         msgpack::pack(buf, data);

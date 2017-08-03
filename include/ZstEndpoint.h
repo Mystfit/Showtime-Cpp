@@ -48,7 +48,7 @@ public:
 	void register_entity_type(const char * entity_type);
 	int register_entity(ZstEntityBase * entity);
 	int destroy_entity(ZstEntityBase * entity);
-	ZstEntityBase * get_entity_ref_by_URI(ZstURI uri);
+	ZstEntityBase * get_entity_by_URI(ZstURI uri);
 	
 	//Plugs
 	template<typename T>
@@ -102,7 +102,7 @@ private:
 	//Message handlers
 	void stage_update_handler(zsock_t * socket, zmsg_t * msg);
 	void connect_performer_handler(zsock_t * socket, zmsg_t * msg);
-	void broadcast_to_local_plugs(ZstURI output_plug, ZstValue * value);
+	void broadcast_to_local_plugs(ZstURI output_plug, ZstValue value);
 
 	//Heartbeat timer
 	int m_heartbeat_timer_id;

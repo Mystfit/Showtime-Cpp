@@ -126,7 +126,7 @@ ZstPlugRef * ZstEndpointRef::get_plug_by_URI(ZstURI uri)
 	return result;
 }
 
-std::vector<ZstPlugRef*> & ZstEndpointRef::get_plug_refs()
+std::vector<ZstPlugRef*> ZstEndpointRef::get_plug_refs()
 {
 	vector<ZstPlugRef*> plugs;
 	for (auto plug : m_plugs) {
@@ -138,7 +138,7 @@ std::vector<ZstPlugRef*> & ZstEndpointRef::get_plug_refs()
 void ZstEndpointRef::destroy_plug(ZstURI plug)
 {
 	ZstPlugRef * plug_to_delete = NULL;
-	for (map<ZstURI, ZstPlugRef*>::iterator plug_iter = m_plugs.begin(); plug_iter != m_plugs.end();)
+	for (map<ZstURI, ZstPlugRef*>::iterator plug_iter = m_plugs.begin(); plug_iter != m_plugs.end(); ++plug_iter)
 	{
 		if ((plug_iter->second->get_URI()) == plug)
 		{

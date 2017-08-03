@@ -57,7 +57,7 @@ void Showtime::poll_once()
 
 		switch (e.get_update_type()) {
 		case ZstEvent::EventType::PLUG_HIT:
-			filter = dynamic_cast<ZstFilter*>(Showtime::endpoint().get_entity_ref_by_URI(e.get_first()));
+			filter = dynamic_cast<ZstFilter*>(Showtime::endpoint().get_entity_by_URI(e.get_first().range(0, e.get_first().size()-1)));
 			if (filter != NULL) {
 				ZstInputPlug * plug = (ZstInputPlug*)filter->get_plug_by_URI(e.get_first());
 				if (plug != NULL) {
@@ -193,11 +193,6 @@ void Showtime::register_entity_type(const char * entity_type)
 	Showtime::endpoint().register_entity_type(entity_type);
 }
 
-int Showtime::destroy_entity(ZstEntityBase * entity)
-{
-	return Showtime::endpoint().destroy_entity(entity);
-}
-
 ZstEvent Showtime::pop_event()
 {
 	return Showtime::endpoint().pop_plug_event();
@@ -206,11 +201,6 @@ ZstEvent Showtime::pop_event()
 int Showtime::event_queue_size()
 {
 	return Showtime::endpoint().plug_event_queue_size();
-}
-
-int Showtime::destroy_plug(ZstPlug * plug)
-{
-	return Showtime::endpoint().destroy_plug(plug);
 }
 
 int Showtime::connect_cable(ZstURI a, ZstURI b)

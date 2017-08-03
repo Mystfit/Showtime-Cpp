@@ -90,8 +90,6 @@ public:
 
  	//Entities can contain other entities and plugs
 	ZST_EXPORT static void register_entity_type(const char * entity_type);
-	ZST_EXPORT static int destroy_entity(ZstEntityBase * entity);
-	ZST_EXPORT static int destroy_plug(ZstPlug *plug);
 
 	ZST_EXPORT static ZstEvent pop_event();
 	ZST_EXPORT static int event_queue_size();

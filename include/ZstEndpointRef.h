@@ -29,7 +29,7 @@ public:
 
 	ZstPlugRef * create_plug(ZstURI address, PlugDirection direction);
 	ZstPlugRef * get_plug_by_URI(ZstURI uri);
-	std::vector<ZstPlugRef*> & get_plug_refs();
+	std::vector<ZstPlugRef*> get_plug_refs();
 	void destroy_plug(ZstURI plug);
 
 private:
