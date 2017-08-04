@@ -25,9 +25,6 @@ public:
 	}
 
 	ZST_EXPORT void run_event_callbacks(Target t) {
-		/*for (auto callback : m_callbacks) {
-			callback->run(t);
-		}*/
 		for (int i = 0; i < m_callbacks.size(); ++i) {
 			m_callbacks[i]->run(t);
 		}

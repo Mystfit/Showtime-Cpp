@@ -5,25 +5,23 @@
 #include <memory>
 #include <msgpack.hpp>
 #include "ZstExports.h"
-#include "ZstUtils.hpp"
 #include "ZstURI.h"
 #include "ZstEvent.h"
 #include "ZstCallbackQueue.h"
 #include "ZstCallbacks.h"
 #include "ZstValue.h"
-#include "Showtime.h"
 
 //Forward declarations
 class ZstURI;
 class PlugCallback;
 class Showtime;
-class ZstFilter;
+class ZstComponent;
 
 class ZstPlug {
 public:
 	friend class Showtime;
 	//Constructor
-	ZST_EXPORT ZstPlug(ZstFilter * owner, const char * name, ZstValueType t);
+	ZST_EXPORT ZstPlug(ZstComponent * owner, const char * name, ZstValueType t);
 	ZST_EXPORT virtual ~ZstPlug();
 	ZST_EXPORT ZstURI get_URI() const;
 	ZST_EXPORT ZstValue & value();
@@ -32,7 +30,7 @@ protected:
 	ZstValue m_value;
 
 private:
-	ZstFilter * m_owner;
+	ZstComponent * m_owner;
 	ZstURI m_uri;
 };
 
@@ -52,7 +50,7 @@ public:
 	friend class ZstEndpoint;
 	friend class Showtime;
 
-	ZST_EXPORT ZstInputPlug(ZstFilter * owner, const char * name, ZstValueType t);
+	ZST_EXPORT ZstInputPlug(ZstComponent * owner, const char * name, ZstValueType t);
 	ZST_EXPORT ~ZstInputPlug();
 	ZST_EXPORT void attach_receive_callback(ZstPlugDataEventCallback * callback);
 	ZST_EXPORT void remove_receive_callback(ZstPlugDataEventCallback * callback);
@@ -67,7 +65,7 @@ private:
 
 class ZstOutputPlug : public ZstPlug {
 public:
-	ZstOutputPlug(ZstFilter * owner, const char * name, ZstValueType t) : ZstPlug(owner, name, t) {};
+	ZstOutputPlug(ZstComponent * owner, const char * name, ZstValueType t) : ZstPlug(owner, name, t) {};
 	ZST_EXPORT void fire();
 };
 

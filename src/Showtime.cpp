@@ -51,15 +51,15 @@ bool Showtime::is_connected()
 void Showtime::poll_once()
 {
 	while (Showtime::event_queue_size() > 0) {
-		ZstFilter * filter = NULL;
+		ZstComponent * component = NULL;
 		ZstCable * cable = NULL;
 		ZstEvent e = Showtime::pop_event();
 
 		switch (e.get_update_type()) {
 		case ZstEvent::EventType::PLUG_HIT:
-			filter = dynamic_cast<ZstFilter*>(Showtime::endpoint().get_entity_by_URI(e.get_first().range(0, e.get_first().size()-1)));
-			if (filter != NULL) {
-				ZstInputPlug * plug = (ZstInputPlug*)filter->get_plug_by_URI(e.get_first());
+			component = dynamic_cast<ZstComponent*>(Showtime::endpoint().get_entity_by_URI(e.get_first().range(0, e.get_first().size()-1)));
+			if (component != NULL) {
+				ZstInputPlug * plug = (ZstInputPlug*)component->get_plug_by_URI(e.get_first());
 				if (plug != NULL) {
 					plug->m_input_fired_manager->run_event_callbacks(plug);
 				}

@@ -80,6 +80,9 @@ const size_t ZstValue::size_at(const size_t position) const
 
 const int ZstValue::int_at(const size_t position) const
 {
+	if (position < m_values.size() - 1)
+		return NAN;
+
 	auto val = m_values.at(position);
 	//Return native value
 	if (val.is_uint64_t()) {
@@ -105,6 +108,9 @@ const int ZstValue::int_at(const size_t position) const
 
 const float ZstValue::float_at(const size_t position) const
 {
+	if (position < m_values.size() - 1)
+		return NAN;
+
 	auto val = m_values.at(position);
 	//Return native value
 	if (val.is_double()) {
@@ -129,6 +135,9 @@ const float ZstValue::float_at(const size_t position) const
 
 void ZstValue::char_at(char * buf, const size_t position) const
 {
+	if (position < m_values.size() - 1)
+		return;
+
 	auto val = m_values.at(position);
 	if (val.is_string()) {
 		string s = val.as_string();

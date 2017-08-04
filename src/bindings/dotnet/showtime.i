@@ -10,7 +10,7 @@
 	#include "ZstCallbacks.h"
 	#include "ZstCallbackQueue.h"
 	#include "entities/ZstEntityBase.h"
-	#include "entities/ZstPatch.h"
+	#include "entities/ZstComponent.h"
 	#include "entities/ZstFilter.h"
 	#include "entities/AddFilter.h"
 %}

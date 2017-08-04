@@ -20,7 +20,7 @@ class ZstValue;
 class ZstURI;
 class ZstPerformer;
 class ZstEntityBase;
-class ZstFilter;
+class ZstComponent;
 
 class ZstEndpoint : public ZstActor {
 public:
@@ -52,7 +52,7 @@ public:
 	
 	//Plugs
 	template<typename T>
-	ZST_EXPORT static T* create_plug(ZstFilter * owner, const char * name, ZstValueType val_type, PlugDirection direction);
+	ZST_EXPORT static T* create_plug(ZstComponent * owner, const char * name, ZstValueType val_type, PlugDirection direction);
 	ZST_EXPORT int destroy_plug(ZstPlug * plug);
 
 	//Cables

@@ -3,12 +3,27 @@ import threading
 import showtime
 from showtime import Showtime as ZST
 from showtime import ZstEventCallback, ZstURI, ZstPlugDataEventCallback
-from showtime import ZstPatch, ZstFilter, AddFilter
+from showtime import ZstFilter, ZstComponent, AddFilter
 
 
-class PlugCallback(ZstPlugDataEventCallback):
-    def run(self, plug):
+class SinkComponent(ZstComponent):
+    def __init__(self, name, parent):
+        ZstComponent.__init__(self, "ECHO", name, parent)
+        self.plug = self.create_input_plug("in", showtime.ZST_INT)
+
+    def compute(self, plug):
         print("Plug received value {0}".format(plug.value().int_at(0)))
+
+
+class PushComponent(ZstComponent):
+    def __init__(self, name, parent):
+        ZstComponent.__init__(self, "OUTPUT", name, parent)
+        self.plug = self.create_output_plug("out", showtime.ZST_INT)
+
+    def send(self, val):
+        self.plug.value().append_int(val)
+        self.plug.fire()
+
 
 class Watcher(threading.Thread):
     def __init__(self):
@@ -20,37 +35,37 @@ class Watcher(threading.Thread):
             if ZST.event_queue_size() > 0:
                 ZST.poll_once()
 
-watch = Watcher()
-watch.start()
 
-ZST.init()
-ZST.join("127.0.0.1")
+def test_add():
+    # Create entities
+    root = ZstComponent("ROOT", "python_test")
+    add = AddFilter(root)
+    augend_out = PushComponent("augend_out", root)
+    addend_out = PushComponent("addend_out", root)
+    sum_in = SinkComponent("sum_in", root)
+    time.sleep(0.2)
 
-# Create entities
-root = ZstPatch("python_test")
-test_filter = ZstFilter("test_filter", root)
-add = AddFilter(root)
-plug_callback = PlugCallback()
+    # Connect cables
+    ZST.connect_cable(augend_out.plug.get_URI(), add.augend().get_URI())
+    ZST.connect_cable(addend_out.plug.get_URI(), add.addend().get_URI())
+    ZST.connect_cable(add.sum().get_URI(), sum_in.plug.get_URI())
+    time.sleep(1)
 
-# Create plugs
-plug_augend = test_filter.create_output_plug("p_augend", showtime.ZST_INT)
-plug_addend = test_filter.create_output_plug("p_addend", showtime.ZST_INT)
-plug_sum = test_filter.create_input_plug("p_sum", showtime.ZST_INT)
-plug_sum.input_events().attach_event_callback(plug_callback)
-time.sleep(0.2)
+    # Fire values
+    augend_out.send(1)
+    for i in range(10000):
+        addend_out.send(i*2)
+        #ZST.poll_once()
+    time.sleep(1)
 
-# Connect cables
-ZST.connect_cable(plug_augend.get_URI(), add.augend().get_URI())
-ZST.connect_cable(plug_addend.get_URI(), add.addend().get_URI())
-ZST.connect_cable(add.sum().get_URI(), plug_sum.get_URI())
-time.sleep(0.2)
 
-# Fire values
-plug_augend.value().append_int(27)
-plug_addend.value().append_int(3)
-plug_augend.fire()
-plug_addend.fire()
-time.sleep(1)
+if __name__ == "__main__":
+    watch = Watcher()
+    watch.start()
 
-print("Done")
-ZST.destroy()
+    ZST.init()
+    ZST.join("127.0.0.1")
+    
+    test_add()
+    
+    ZST.destroy()

@@ -380,10 +380,10 @@ ZstEntityBase * ZstEndpoint::get_entity_by_URI(ZstURI uri)
 // Plugs
 // -----
 
-template ZstInputPlug* ZstEndpoint::create_plug<ZstInputPlug>(ZstFilter* owner, const char * name, ZstValueType val_type, PlugDirection direction);
-template ZstOutputPlug* ZstEndpoint::create_plug<ZstOutputPlug>(ZstFilter* owner, const char * name, ZstValueType val_type, PlugDirection direction);
+template ZstInputPlug* ZstEndpoint::create_plug<ZstInputPlug>(ZstComponent* owner, const char * name, ZstValueType val_type, PlugDirection direction);
+template ZstOutputPlug* ZstEndpoint::create_plug<ZstOutputPlug>(ZstComponent* owner, const char * name, ZstValueType val_type, PlugDirection direction);
 template<typename T>
-T* ZstEndpoint::create_plug(ZstFilter* owner, const char * name, ZstValueType val_type, PlugDirection direction) {
+T* ZstEndpoint::create_plug(ZstComponent* owner, const char * name, ZstValueType val_type, PlugDirection direction) {
 	T* plug = NULL;
 	ZstURI address = ZstURI::join(owner->URI(), ZstURI(name));
 	
@@ -622,13 +622,12 @@ ZstMessages::Signal ZstEndpoint::check_stage_response_ok() {
 }
 
 void ZstEndpoint::broadcast_to_local_plugs(ZstURI output_plug, ZstValue value) {
-
     for (auto cable : m_local_cables) {
 		if (cable->get_output() == output_plug) {
 			ZstEntityBase * entity = get_entity_by_URI(cable->get_input().range(0, cable->get_input().size() - 1));
-			ZstFilter* filter = dynamic_cast<ZstFilter*>(entity);
-			if (filter) {
-				ZstInputPlug * plug = (ZstInputPlug*)filter->get_plug_by_URI(cable->get_input());
+			ZstComponent* component = dynamic_cast<ZstComponent*>(entity);
+			if (component) {
+				ZstInputPlug * plug = (ZstInputPlug*)component->get_plug_by_URI(cable->get_input());
 				if (plug != NULL) {
 					plug->recv(value);
 				}

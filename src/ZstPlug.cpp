@@ -3,11 +3,11 @@
 #include "ZstEndpoint.h"
 #include "ZstEvent.h"
 #include "ZstValueWire.h"
-#include "entities/ZstFilter.h"
+#include "entities/ZstComponent.h"
 
 using namespace std;
 
-ZstPlug::ZstPlug(ZstFilter * entity, const char * name, ZstValueType t) :
+ZstPlug::ZstPlug(ZstComponent * entity, const char * name, ZstValueType t) :
 	m_owner(entity),
 	m_value(t),
 	m_uri(ZstURI::join(entity->URI(), ZstURI(name)))
@@ -28,7 +28,7 @@ ZstValue & ZstPlug::value()
 	return m_value;
 }
 
-ZstInputPlug::ZstInputPlug(ZstFilter * entity, const char * name, ZstValueType t) : ZstPlug(entity, name, t)
+ZstInputPlug::ZstInputPlug(ZstComponent * entity, const char * name, ZstValueType t) : ZstPlug(entity, name, t)
 {
 	m_input_fired_manager = new ZstCallbackQueue<ZstPlugDataEventCallback, ZstInputPlug*>();
 }

@@ -22,7 +22,6 @@ set(ZST_PUBLIC_HEADERS
 set(ZST_ENTITIES
  ${Showtime_INCLUDE_DIRS}/entities/ZstEntityBase.h
  ${Showtime_INCLUDE_DIRS}/entities/ZstFilter.h
- ${Showtime_INCLUDE_DIRS}/entities/ZstPatch.h
  ${Showtime_INCLUDE_DIRS}/entities/ZstComponent.h
  ${Showtime_INCLUDE_DIRS}/entities/AddFilter.h
 )
@@ -68,7 +67,6 @@ set(ZST_SOURCE
 
  "ZstEntityBase.cpp"
  "ZstEntityRef.cpp"
- "ZstPatch.cpp"
  "ZstFilter.cpp"
  "ZstComponent.cpp"
  "AddFilter.cpp"

@@ -3,10 +3,6 @@
 #include "ZstEndpoint.h"
 #include <memory>
 
-ZstEntityBase::ZstEntityBase()
-{
-	init();
-}
 
 ZstEntityBase::ZstEntityBase(const char * entity_type, const char * path) :
 	m_is_registered(false),
@@ -55,4 +51,14 @@ bool ZstEntityBase::is_registered()
 ZstEntityBase * ZstEntityBase::parent() const
 {
 	return m_parent;
+}
+
+const ZstEntityBase * ZstEntityBase::get_child_entity_at(int index) const
+{
+	return m_children[index];
+}
+
+const size_t ZstEntityBase::num_children() const
+{
+	return m_children.size();
 }

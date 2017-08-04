@@ -10,7 +10,6 @@
 #include "ZstValue.h"
 #include "entities/AddFilter.h"
 #include "entities/ZstFilter.h"
-#include "entities/ZstPatch.h"
 
 #ifdef WIN32
 #define TAKE_A_BREATH Sleep(100);
@@ -113,72 +112,74 @@ public:
 	};
 };
 
-class TestIntValueCallback : public ZstPlugDataEventCallback {
-public:
-	int compare_val;
-	int intPlugCallbacks = 0;
-	TestIntValueCallback(int cmpr) : compare_val(cmpr) {}
-	void run(ZstInputPlug * plug) override {
-		//std::cout << "ZST_TEST CALLBACK - int: " << plug->value().int_at(0) << std::endl;
-		assert(plug->value().int_at(0) == compare_val);
-		intPlugCallbacks++;
-	};
-};
 
-class TestFloatValueCallback : public ZstPlugDataEventCallback {
-public:
-	float compare_val;
-	TestFloatValueCallback(float cmpr) : compare_val(cmpr) {}
-	void run(ZstInputPlug * plug) override {
-		//std::cout << "ZST_TEST CALLBACK - float:" << plug->value().float_at(0) << std::endl;
-		assert(fabs(plug->value().float_at(0) - compare_val) < FLT_EPSILON);
-	};
-};
 
-class TestCharValueCallback : public ZstPlugDataEventCallback {
+class OutputComponent : public ZstComponent {
 public:
-	const char* compare_val;
-	TestCharValueCallback(const char* cmpr) : compare_val(cmpr) {}
-	void run(ZstInputPlug * plug) override {
-		char * str_val = new char[plug->value().size_at(0) + 1]();
-		plug->value().char_at(str_val, 0);
-		//std::cout << "ZST_TEST CALLBACK - char: " << str_val << std::endl;
-		assert(strcmp(str_val, compare_val) == 0);
-		delete[] str_val;
-	};
-};
-
-class TestMultipleIntValueCallback : public ZstPlugDataEventCallback {
-public:
-	int compare_val;
-	int _num_values;
-	TestMultipleIntValueCallback(int cmpr, int num_values) : compare_val(cmpr), _num_values(num_values) {}
-	void run(ZstInputPlug * plug) override {
-		//std::cout << "ZST_TEST CALLBACK - multple ints" << std::endl;
-		assert(plug->value().size() == _num_values);
-		for (int i = 0; i < plug->value().size(); ++i) {
-			assert(plug->value().int_at(i));
-		}
-	};
-};
-
-class AddFilterSumCallback : public ZstPlugDataEventCallback {
-public:
-	int expected_sum;
-	AddFilterSumCallback(int sum) : expected_sum(sum) {}
-
-	void run(ZstInputPlug * plug) override {
-		std::cout << "ZST_TEST CALLBACK - addition filter" << std::endl;
-		std::cout << "ZST_TEST CALLBACK - expected " << expected_sum << " - received " << plug->value().int_at(0) << std::endl;
-		assert(plug->value().int_at(0) == expected_sum);
+	OutputComponent(const char * name, ZstEntityBase * parent) : ZstComponent("TESTER", name, parent) {
+		init();
 	}
+
+	virtual void init() override {
+		m_output = create_output_plug("out", ZstValueType::ZST_INT);
+	}
+
+	virtual void compute(ZstInputPlug * plug) override {}
+
+	void send(int val) {
+		m_output->value().append_int(val);
+		m_output->fire();
+	}
+
+	ZstURI & output_URI() {
+		return m_output->get_URI();
+	}
+
+private:
+	ZstOutputPlug * m_output;
+};
+
+
+class InputComponent : public ZstFilter {
+public:
+	int num_hits = 0;
+	int compare_val = 0;
+	int last_received_val = 0;
+	bool log = false;
+
+	InputComponent(const char * name, ZstEntityBase * parent, int cmp_val) : compare_val(cmp_val), ZstFilter("TESTER", name, parent) {
+		init();
+	}
+
+	virtual void init() override {
+		m_input = create_input_plug("in", ZstValueType::ZST_INT);
+	}
+
+	virtual void compute(ZstInputPlug * plug) override {
+		num_hits++;
+		last_received_val = plug->value().int_at(0);
+		if (log) {
+			std::cout << "Input filter received value " << last_received_val << std::endl;
+		}
+	}
+
+	ZstURI & input_URI() {
+		return m_input->get_URI();
+	}
+
+	void reset() {
+		num_hits = 0;
+	}
+
+private:
+	ZstInputPlug * m_input;
 };
 
 
 
 //Global test variables
 ZstStage *stage;
-ZstPatch * root_entity;
+ZstEntityBase * root_entity;
 
 void test_standard_layout() {
 	//Verify standard layout
@@ -244,7 +245,7 @@ void test_root_entity() {
 	TestEntityArrivingEventCallback * entityArriveCallback = new TestEntityArrivingEventCallback();
 	Showtime::attach_entity_arriving_callback(entityArriveCallback);
 
-	root_entity = new ZstPatch("root_entity");
+	root_entity = new ZstEntityBase("ROOT", "root_entity");
 	assert(root_entity);
     wait_for_callbacks(1);
 	assert(entityArriveCallback->entityArrivedHits == 1);
@@ -269,67 +270,43 @@ void test_stage_registration(){
 	std::cout << "Finished stage registration test\n" << std::endl;
 }
 
-void test_create_plugs(){
+void test_create_entities(){
 	std::cout << "Starting create plugs test" << std::endl;
+	int expected_entities = 1;
+	int expected_plugs = 1;
 
 	//Attach stage level callback to watch for arriving plugs
 	TestPlugArrivingEventCallback * plugArrivalCallback = new TestPlugArrivingEventCallback();
 	Showtime::attach_plug_arriving_callback(plugArrivalCallback);
 
-	//Create a filter to hold out test plugs
-	std::string filter_name = "test_filter";
-	ZstFilter * test_filter = new ZstFilter(filter_name.c_str(), root_entity);
-	wait_for_callbacks(1);
-
-	//URI ownership taken over by plug
-	ZstOutputPlug *outputPlug = test_filter->create_output_plug("test_out", ZstValueType::ZST_INT);
-	ZstInputPlug *inputPlug = test_filter->create_input_plug("test_in", ZstValueType::ZST_INT);
-    
-    //Check address equality
-	assert(outputPlug->get_URI() == ZstURI("root_entity/test_filter/test_out"));
-    assert(!(outputPlug->get_URI() == ZstURI("root_entity/test_filter/test_in")));
-
-	//Test creating plug with type functions (blame swig python!)
-	ZstInputPlug *typedInputPlug = test_filter->create_input_plug("test_int_plug", ZstValueType::ZST_INT);
-
-	//Check that our plug creation callbacks fired successfully
-	wait_for_callbacks(3);
-	assert(plugArrivalCallback->plugArrivedHits == 3);
+	//Create filters to hold out test plugs
+	OutputComponent * test_output = new OutputComponent("entity_create_test_ent", root_entity);
+	wait_for_callbacks(expected_entities + expected_plugs);
+	assert(plugArrivalCallback->plugArrivedHits == expected_plugs);
 	plugArrivalCallback->reset();
 	Showtime::remove_plug_arriving_callback(plugArrivalCallback);
 	delete plugArrivalCallback;
 
     //Check stage registered plugs successfully
-    assert(stage->get_plug_by_URI(outputPlug->get_URI()) != NULL);
-    assert(stage->get_plug_by_URI(inputPlug->get_URI()) != NULL);
-	assert(stage->get_plug_by_URI(typedInputPlug->get_URI()) != NULL);
+    assert(stage->get_plug_by_URI(test_output->output_URI()) != NULL);
 
 	//Check local client registered plugs correctly
-	ZstPlug *localPlug = test_filter->get_plug_by_URI(outputPlug->get_URI());
-	assert(localPlug->get_URI() == outputPlug->get_URI());
+	ZstURI localPlug_uri = test_output->get_plug_by_URI(test_output->output_URI())->get_URI();
+	ZstURI localPlug_uri_via_entity = test_output->output_URI();
+	assert(localPlug_uri == localPlug_uri_via_entity);
 
 	//Check plug destruction
 	TestPlugLeavingEventCallback * plugLeavingCallback = new TestPlugLeavingEventCallback();
 	Showtime::attach_plug_leaving_callback(plugLeavingCallback);
 
-	//Test single plug destruction
-	ZstURI outURI = outputPlug->get_URI();
-	test_filter->remove_plug(outputPlug);
-	wait_for_callbacks(1);
+	//Test plug destruction when destroying entity
+	ZstURI outURI = test_output->output_URI();
+	delete test_output;
+	wait_for_callbacks(expected_entities + expected_plugs); 
 	assert(stage->get_plug_by_URI(outURI) == NULL);
 
-	//Test plug destruction when destroying entity
-	delete test_filter;
-	wait_for_callbacks(3);
-
-	ZstURI inURI = inputPlug->get_URI();
-	assert(stage->get_plug_by_URI(inURI) == NULL);
-
-	ZstURI typedURI = typedInputPlug->get_URI();
-	assert(stage->get_plug_by_URI(typedURI) == NULL);
-
 	//Make sure that the plug leaving callback was hit the correct number of times
-	assert(plugLeavingCallback->plugLeavingHits == 3);
+	assert(plugLeavingCallback->plugLeavingHits == 1);
 	plugLeavingCallback->reset();
 	Showtime::remove_plug_leaving_callback(plugLeavingCallback);
 	clear_callback_queue();
@@ -340,58 +317,56 @@ void test_create_plugs(){
 
 void test_connect_plugs() {
 	std::cout << "Starting connect plugs test" << std::endl;
-
-	int int_fire_val = 27;
-
-	std::string filter_name = "test_filter";
-	ZstFilter * test_filter = new ZstFilter(filter_name.c_str(), root_entity);
-
-	//Test plugs connected between performers
-	ZstOutputPlug *output_int_plug = test_filter->create_output_plug("test_output_plug", ZstValueType::ZST_INT);
-	ZstInputPlug *input_int_plug = test_filter->create_input_plug("test_input_plug", ZstValueType::ZST_INT);
-	input_int_plug->attach_receive_callback(new TestIntValueCallback(int_fire_val));
 	
+	int expected_entities = 2;
+	int expected_plugs = expected_entities;
+	int expected_cables = 1;
+	OutputComponent * test_output = new OutputComponent("connect_test_ent_out", root_entity);
+	InputComponent * test_input = new InputComponent("connect_test_ent_in", root_entity, 0);
+
 	//Test cable callbacks
 	TestCableArrivingEventCallback * cableArriveCallback = new TestCableArrivingEventCallback();
 	TestCableLeavingEventCallback * cableLeaveCallback = new TestCableLeavingEventCallback();
 
 	Showtime::attach_cable_arriving_callback(cableArriveCallback);
 	Showtime::attach_cable_leaving_callback(cableLeaveCallback);
-	Showtime::connect_cable(output_int_plug->get_URI(), input_int_plug->get_URI());
-	wait_for_callbacks(4);
+	Showtime::connect_cable(test_output->output_URI(), test_input->input_URI());
+	wait_for_callbacks(expected_entities + expected_plugs + expected_cables);
 	assert(cableArriveCallback->cableArrivedHits == 1);
 	cableArriveCallback->reset();
-	assert(Showtime::endpoint().get_cable_by_URI(output_int_plug->get_URI(), input_int_plug->get_URI()) != NULL);
+
+	ZstURI outURI = test_output->output_URI();
+	ZstURI inURI = test_input->input_URI();
+	assert(Showtime::endpoint().get_cable_by_URI(outURI, inURI) != NULL);
 
 	//Test connecting missing URI objects
 	ZstURI badURI = ZstURI("test_instrument/bad_plug");
 	std::cout << " Testing bad cable connection request" << std::endl;
-	assert(Showtime::connect_cable(output_int_plug->get_URI(), badURI) <= 0);
+	assert(Showtime::connect_cable(test_output->output_URI(), badURI) <= 0);
 	std::cout << "Finished testing bad cable connection request" << std::endl;
 
 	//Testing connection disconnect and reconnect
-	assert(Showtime::destroy_cable(output_int_plug->get_URI(), input_int_plug->get_URI()));
+	assert(Showtime::destroy_cable(test_output->output_URI(), test_input->input_URI()));
 	wait_for_callbacks(1);
 	assert(cableLeaveCallback->cableLeavingHits == 1);
 	cableLeaveCallback->reset();
-	assert(Showtime::endpoint().get_cable_by_URI(output_int_plug->get_URI(), input_int_plug->get_URI()) == NULL);
-	assert(Showtime::connect_cable(output_int_plug->get_URI(), input_int_plug->get_URI()));
+	assert(Showtime::endpoint().get_cable_by_URI(test_output->output_URI(), test_input->input_URI()) == NULL);
 
 	//Test plug destruction causes cable destruction
-	test_filter->remove_plug(output_int_plug);
-	output_int_plug = 0;
-	wait_for_callbacks(2);
+	Showtime::connect_cable(test_output->output_URI(), test_input->input_URI());
+	delete test_output;
+	test_output = 0;
+	wait_for_callbacks(expected_cables + 1);
 	assert(cableLeaveCallback->cableLeavingHits == 1);
 	cableLeaveCallback->reset();
-	test_filter->remove_plug(input_int_plug);
-	input_int_plug = 0;
+	delete test_input;
+	test_input = 0;
 
 	//Test removing callbacks
 	Showtime::remove_cable_arriving_callback(cableArriveCallback);
 	Showtime::remove_cable_leaving_callback(cableLeaveCallback);
 	delete cableArriveCallback;
 	delete cableLeaveCallback;
-	delete test_filter;
 	clear_callback_queue();
 
 	std::cout << "Finished connect plugs test\n" << std::endl;
@@ -401,225 +376,76 @@ void test_connect_plugs() {
 void test_add_filter() {
 	std::cout << "Starting addition filter test" << std::endl;
 	
+	int expected_entities = 4;
+	int expected_plugs = 6;
+	int expected_cables = 3;
+	int first_cmp_val = 4;
+	int second_cmp_val = 30;
+
 	//Create a test filter to hold out in/out plugs
-	std::string filter_name = "test_filter";
-	ZstFilter * filter = new ZstFilter(filter_name.c_str(), root_entity);
-	wait_for_callbacks(1);
-
-	//Create plugs
-	ZstOutputPlug *augend_plug = filter->create_output_plug("add_test_out_A", ZstValueType::ZST_INT);
-	ZstOutputPlug *addend_plug = filter->create_output_plug("add_test_out_B", ZstValueType::ZST_INT);
-	ZstInputPlug *sum_plug = filter->create_input_plug("add_test_in_A", ZstValueType::ZST_INT);
-	wait_for_callbacks(3);
-
-	//Create a callback to listen for the sum result
-	AddFilterSumCallback * sum_callback = new AddFilterSumCallback(4);
-	sum_plug->attach_receive_callback(sum_callback);
-
-	//Create the addition filter
+	OutputComponent * test_output_augend = new OutputComponent("add_test_augend", root_entity);
+	OutputComponent * test_output_addend = new OutputComponent("add_test_addend", root_entity);
+	InputComponent * test_input_sum = new InputComponent("add_test_sum", root_entity, first_cmp_val);
+	test_input_sum->log = true;
 	AddFilter * add_filter = new AddFilter(root_entity);
-	wait_for_callbacks(4);
 
-	//Connect cables to filter in/out
-	Showtime::connect_cable(augend_plug->get_URI(), add_filter->augend()->get_URI());
-	Showtime::connect_cable(addend_plug->get_URI(), add_filter->addend()->get_URI());
-	Showtime::connect_cable(sum_plug->get_URI(), add_filter->sum()->get_URI());
-	wait_for_callbacks(3);
+	Showtime::connect_cable(test_output_augend->output_URI(), add_filter->augend()->get_URI());
+	Showtime::connect_cable(test_output_addend->output_URI(), add_filter->addend()->get_URI());
+	Showtime::connect_cable(test_input_sum->input_URI(), add_filter->sum()->get_URI());
+	wait_for_callbacks(expected_entities + expected_plugs + expected_cables);
 
 	//Send values
-	augend_plug->value().append_int(2);
-	augend_plug->fire();
-	addend_plug->value().append_int(2);
-	addend_plug->fire();
+	test_output_augend->send(2);
+	test_output_addend->send(2);
 
 	//Wait for the first two input callbacks to clear before we check for the sum
-	wait_for_callbacks(2);
-	TAKE_A_BREATH
-	wait_for_callbacks(1);
+	while(test_input_sum->num_hits < 2)
+		Showtime::poll_once();
+	assert(test_input_sum->last_received_val == first_cmp_val);
+	test_input_sum->reset();
 
 	//Send more values
-	sum_callback->expected_sum = 30;
-	augend_plug->value().append_int(10);
-	augend_plug->fire();
-	addend_plug->value().append_int(20);
-	addend_plug->fire();
-	wait_for_callbacks(2);
-	TAKE_A_BREATH
-	wait_for_callbacks(1);
+	test_input_sum->compare_val = second_cmp_val;
+	test_output_augend->send(20);
+	test_output_addend->send(10);
+
+	while (test_input_sum->num_hits < 2)
+		Showtime::poll_once();
+	assert(test_input_sum->last_received_val == second_cmp_val);
 
 	//Cleanup
-	sum_plug->remove_receive_callback(sum_callback);
-	delete sum_callback;
-
-	delete filter;
-	augend_plug = 0;
-	addend_plug = 0;
-	sum_plug = 0;
+	delete test_output_augend;
+	delete test_output_addend;
+	delete test_input_sum;
 	delete add_filter;
+	test_output_augend = 0;
+	test_output_addend = 0;
+	test_input_sum = 0;
+	add_filter = 0;
 	clear_callback_queue();
 
 	std::cout << "Finished addition filter test" << std::endl;
 }
 
 
-void test_check_plug_values() {
-	std::cout << "Starting check plug values test" << std::endl;
-
-	std::string filter_name = "test_filter";
-	ZstFilter * test_filter = new ZstFilter(filter_name.c_str(), root_entity);
-
-	ZstOutputPlug *output_plug = test_filter->create_output_plug("mem_test_out", ZstValueType::ZST_INT);
-	ZstInputPlug *input_plug = test_filter->create_input_plug("mem_test_in", ZstValueType::ZST_INT);
-	Showtime::connect_cable(output_plug->get_URI(), input_plug->get_URI());
-	wait_for_callbacks(4);
-
-	//Test manual event queue pop. This is thread safe so we can pop each event off at our leisure
-	std::cout << "Starting Queue test" << std::endl;
-	assert(Showtime::event_queue_size() == 0);
-	int num_fires = 5;
-	for (int i = 0; i < num_fires; ++i) {
-		output_plug->value().append_int(1);
-		output_plug->fire();
-	}
-	//Since we're testing the manual event queue system, we need a small delay so messages propogate back
-	while (Showtime::event_queue_size() < num_fires) {}
-
-	//Test manual queue event pop
-	for (int i = num_fires; i > 0; --i) {
-		assert(Showtime::event_queue_size() == i);
-		ZstEvent e = Showtime::pop_event();
-		assert(e.get_update_type() == ZstEvent::EventType::PLUG_HIT);
-		assert(e.get_first() == input_plug->get_URI());
-		assert(Showtime::event_queue_size() == i - 1);
-	}
-	assert(Showtime::event_queue_size() == 0);
-	std::cout << "Processed " << num_fires << " fires" << std::endl;
-	std::cout << "Finished Queue test\n" << std::endl;
-
-	//Test int value conversion
-	std::cout << "Testing int ZstValues via callback" << std::endl;
-	int int_cmpr_val = 27;
-	TestIntValueCallback * int_callback = new TestIntValueCallback(int_cmpr_val);
-	input_plug->attach_receive_callback(int_callback);
-	output_plug->value().append_int(int_cmpr_val);
-	output_plug->fire();
-	wait_for_callbacks(1);
-
-	output_plug->value().append_float(float(int_cmpr_val));
-	output_plug->fire();
-	wait_for_callbacks(1);
-
-	output_plug->value().append_char(std::to_string(int_cmpr_val).c_str());
-	output_plug->fire();
-	wait_for_callbacks(1);
-
-	int_callback->compare_val = 0;
-	output_plug->value().append_char("not a number");
-	output_plug->fire();
-	wait_for_callbacks(1);
-
-	input_plug->remove_receive_callback(int_callback);
-
-
-	//Test float value conversion
-	std::cout << "Testing float ZstValues via callback" << std::endl;
-	float float_cmpr_val = 28.5f;
-	TestFloatValueCallback * float_callback = new TestFloatValueCallback(float_cmpr_val);
-	input_plug->attach_receive_callback(float_callback);
-	output_plug->value().append_float(float_cmpr_val);
-	output_plug->fire();
-	wait_for_callbacks(1);
-	
-	output_plug->value().append_char(std::to_string(float_cmpr_val).c_str());
-	output_plug->fire();
-	wait_for_callbacks(1);
-
-	float_callback->compare_val = 0.0f;
-	output_plug->value().append_char("not a number");
-	output_plug->fire();
-	wait_for_callbacks(1);
-
-	float_callback->compare_val = int(float_cmpr_val + 0.5f);
-	output_plug->value().append_int(int(float_cmpr_val + 0.5f)); //Rounded int to match the interal value conversion
-	output_plug->fire();
-	wait_for_callbacks(1);
-
-	input_plug->remove_receive_callback(float_callback);
-
-
-	//Test char* value conversion
-	std::string char_cmp_val = "hello world";
-	std::cout << "Testing char ZstValues via callback" << std::endl;
-	TestCharValueCallback * char_callback = new TestCharValueCallback(char_cmp_val.c_str());
-	input_plug->attach_receive_callback(char_callback);
-	output_plug->value().append_char(char_cmp_val.c_str());
-	output_plug->fire();
-	wait_for_callbacks(1);
-
-	//delete[] char_callback->compare_val;
-	char_callback->compare_val = "29";
-	output_plug->value().append_int(29);
-	output_plug->fire();
-	wait_for_callbacks(1);
-
-	//delete[] char_callback->compare_val;
-	char_callback->compare_val = "29.50000";
-	output_plug->value().append_float(29.5f);
-	output_plug->fire();
-	wait_for_callbacks(1);
-
-	input_plug->remove_receive_callback(char_callback);
-
-
-	//Test multiple values
-	int_cmpr_val = 30;
-	int int_num_value = 10;
-	TestMultipleIntValueCallback * int_mult_callback = new TestMultipleIntValueCallback(int_cmpr_val, int_num_value);
-	input_plug->attach_receive_callback(int_mult_callback);
-
-	for (int i = 0; i < int_num_value; ++i) {
-		output_plug->value().append_int(int_cmpr_val);
-	}
-	output_plug->fire();
-	wait_for_callbacks(1);
-
-	//Cleanup
-	input_plug->attach_receive_callback(int_mult_callback);
-	delete test_filter;
-	clear_callback_queue();
-
-	std::cout << "Finished check plug values test\n" << std::endl;
-}
-
-
 void test_memory_leaks() {
-	std::cout << "Starting plug fire memory leak test" << std::endl;
+	std::cout << "Starting memory leak test" << std::endl;
 
-	std::string filter_name = "test_filter";
-	ZstFilter * test_filter = new ZstFilter(filter_name.c_str(), root_entity);
+	OutputComponent * test_output = new OutputComponent("memleak_test_out", root_entity);
+	InputComponent * test_input = new InputComponent("memleak_test_in", root_entity, 10);
+	Showtime::connect_cable(test_output->output_URI(), test_input->input_URI());
 
-	ZstOutputPlug *output_int_plug = test_filter->create_output_plug("mem_test_out", ZstValueType::ZST_INT);
-	ZstInputPlug *input_int_plug = test_filter->create_input_plug("mem_test_in", ZstValueType::ZST_INT);
-
-	int int_cmpr_val = 10;
-	TestIntValueCallback * int_callback = new TestIntValueCallback(int_cmpr_val);
-	input_int_plug->attach_receive_callback(int_callback);
-	Showtime::connect_cable(output_int_plug->get_URI(), input_int_plug->get_URI());
-	wait_for_callbacks(4);
-
-	//Test sending large numbers of messages
 	int count = 20000;
 	for (int i = 0; i < count; ++i) {
-		output_int_plug->value().append_int(int_cmpr_val);
-		output_int_plug->fire();
+		test_output->send(10);
 		Showtime::poll_once();
 	}
 
-	delete test_filter;
+	delete test_output;
+	delete test_input;
 	clear_callback_queue();
 
-	std::cout << "Starting check plug values test" << std::endl;
-
+	std::cout << "Finished memory leak test" << std::endl;
 }
 
 void test_leaving(){
@@ -648,10 +474,9 @@ int main(int argc,char **argv){
 	test_URI();
 	test_root_entity();
     test_stage_registration();
-    test_create_plugs();
+    test_create_entities();
 	test_connect_plugs();
 	test_add_filter();
-	test_check_plug_values();
 	test_memory_leaks();
     test_leaving();
 	test_cleanup();

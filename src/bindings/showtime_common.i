@@ -8,15 +8,15 @@
 %include "ZstEvent.h"
 %include "ZstCable.h"
 
-// Entity bases
-%feature("director") ZstEntityBase;
-%include "entities/ZstEntityBase.h"
-
+// Entities
 %nodefaultctor;
+%feature("director") ZstEntityBase;
 %feature("director") ZstFilter;
-%feature("director") ZstPatch;
+%feature("director") ZstComponent;
+%include "entities/ZstEntityBase.h"
 %include "entities/ZstFilter.h"
-%include "entities/ZstPatch.h"
+%ignore ZstComponent::get_plug_by_URI;
+%include "entities/ZstComponent.h"
 %clearnodefaultctor;
 
 // Entities
