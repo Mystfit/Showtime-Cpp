@@ -7,13 +7,13 @@ public class ShowtimeController : MonoBehaviour {
 
 	public string stageAddress = "127.0.0.1";
 	public string localPerformerName = "unity_performer";
-	private ZstPatch root;
-    private ZstFilter filter;
-    private AddFilter add_filter;
 
-    private ZstOutputPlug augend_out;
-    private ZstOutputPlug addend_out;
-    private ZstInputPlug sum_in;
+    //Entities
+	private ZstComponent root;
+    private Push pushA;
+    private Push pushB;
+    private Sink sink;
+    private AddFilter add;
 
     //Callbacks
     private EntityArrivingCallback entityArrive;
@@ -33,7 +33,7 @@ public class ShowtimeController : MonoBehaviour {
 		//Join the performance
 		Showtime.join (stageAddress);
 
-        //Create callbacks for Showtime events
+        //Create and attach callbacks for Showtime events
         entityArrive = new EntityArrivingCallback();
         entityLeave = new EntityLeavingCallback();
         plugArrive = new PlugArrivingCallback();
@@ -48,43 +48,34 @@ public class ShowtimeController : MonoBehaviour {
         Showtime.attach_cable_arriving_callback(cableArrive);
         Showtime.attach_cable_leaving_callback(cableLeave);
 
-        //Start the event loop coroutine to listen for showtime events
-        //StartCoroutine("ShowtimeEventLoop");
+        //Create a root entity to represent this client. I recommend 1 per process.
+        root = new ZstComponent("ROOT", localPerformerName);
+        add = new AddFilter(root);
+        pushA = new Push("addend", root);
+        pushB = new Push("augend", root);
+        sink = new Sink("sink", root);
 
-        //Create a performer to represent this client. I recommend 1 per process.
-        root = new ZstPatch(localPerformerName);
-        filter = new ZstFilter("test_filter", root);
-        add_filter = new AddFilter(root);
-        
-        //Create our local plug objects. Will block until the stage returns them. Could be async?
-        augend_out = filter.create_output_plug("augend_out", ZstValueType.ZST_INT);
-        addend_out = filter.create_output_plug("addend_out", ZstValueType.ZST_INT);
-        sum_in = filter.create_input_plug("sum_in", ZstValueType.ZST_INT);
-        sum_in.attach_receive_callback(plugData);
-
-		//Connect the plugs together
-		Showtime.connect_cable(augend_out.get_URI(), add_filter.augend().get_URI());
-        Showtime.connect_cable(addend_out.get_URI(), add_filter.addend().get_URI());
-        Showtime.connect_cable(add_filter.sum().get_URI(), sum_in.get_URI());
+        //Connect the plugs together
+        Showtime.connect_cable(pushA.plug.get_URI(), add.augend().get_URI());
+        Showtime.connect_cable(pushB.plug.get_URI(), add.addend().get_URI());
+        Showtime.connect_cable(add.sum().get_URI(), sink.plug.get_URI());
 
         //Need to wait whilst plugs connect before we send anything. Will need to put some flag into 
         //the plug to signify connection status
         System.Threading.Thread.Sleep(100);
 
-        //Send a value through this plug. THis is an Int plug so we send an int (duh)
-        augend_out.value().append_int(27);
-        addend_out.value().append_int(3);
-        augend_out.fire();
-        addend_out.fire();
+        //Send a value through this plug. This is an Int plug so we send an int (duh)
+        pushA.send(27);
+        pushB.send(3);
 
         //Pause again to give the message time to do a round trip internally
         System.Threading.Thread.Sleep(100);
-        Debug.Log ("Final plug value: " + sum_in.value().int_at(0));
+        Debug.Log ("Final plug value: " + sink.plug.value().int_at(0));
 	}
 	
 	void Update () {
         if (Showtime.is_connected())
-        Showtime.poll_once();
+            Showtime.poll_once();
     }
 
 	//Clean up on exit. 
@@ -102,6 +93,41 @@ public class ShowtimeController : MonoBehaviour {
             Showtime.poll_once();
 		}
 	}
+
+
+    // Entities
+    //---------
+    public class Sink : ZstComponent
+    {
+        public ZstInputPlug plug;
+
+        public Sink(string name, ZstEntityBase parent) : base("SINK", name, parent)
+        {
+            plug = create_input_plug("push_in", ZstValueType.ZST_INT);
+        }
+
+        public override void compute(ZstInputPlug plug)
+        {
+            Debug.Log("Sink received value of " + plug.value().int_at(0));
+        }
+    }
+
+
+    public class Push : ZstComponent
+    {
+        public ZstOutputPlug plug;
+
+        public Push(string name, ZstEntityBase parent) : base("PUSH", name, parent)
+        {
+            plug = create_output_plug("push_out", ZstValueType.ZST_INT);
+        }
+
+        public void send(int val)
+        {
+            plug.value().append_int(val);
+            plug.fire();
+        }
+    }
 
 
     // Callbacks
