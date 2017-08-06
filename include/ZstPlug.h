@@ -20,18 +20,20 @@ class ZstComponent;
 class ZstPlug {
 public:
 	friend class Showtime;
+	friend class ZstEndpoint;
 	//Constructor
 	ZST_EXPORT ZstPlug(ZstComponent * owner, const char * name, ZstValueType t);
 	ZST_EXPORT virtual ~ZstPlug();
 	ZST_EXPORT ZstURI get_URI() const;
 	ZST_EXPORT ZstValue & value();
-
+	ZST_EXPORT bool is_destroyed();
 protected:
 	ZstValue m_value;
 
 private:
 	ZstComponent * m_owner;
 	ZstURI m_uri;
+	bool m_is_destroyed;
 };
 
 

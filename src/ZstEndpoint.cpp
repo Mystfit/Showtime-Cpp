@@ -49,8 +49,6 @@ void ZstEndpoint::destroy() {
 	m_is_destroyed = true;
 }
 
-
-//ZstEndpoint
 void ZstEndpoint::init()
 {
     cout << "Starting Showtime" << endl;
@@ -106,6 +104,51 @@ void ZstEndpoint::init()
         zsock_set_linger(m_graph_out, 0);
     
     start();
+}
+
+void ZstEndpoint::process_callbacks()
+{
+	while (m_events.size() > 0) {
+		ZstComponent * component = NULL;
+		ZstCable * cable = NULL;
+		ZstEvent e = pop_event();
+
+		switch (e.get_update_type()) {
+		case ZstEvent::EventType::PLUG_HIT:
+			component = dynamic_cast<ZstComponent*>(get_entity_by_URI(e.get_first().range(0, e.get_first().size() - 1)));
+			if (component != NULL) {
+				ZstInputPlug * plug = (ZstInputPlug*)component->get_plug_by_URI(e.get_first());
+				if (plug != NULL) {
+					plug->m_input_fired_manager->run_event_callbacks(plug);
+				}
+			}
+			break;
+		case ZstEvent::CABLE_CREATED:
+			cable_arriving_events()->run_event_callbacks(ZstCable(e.get_first(), e.get_second()));
+			break;
+		case ZstEvent::CABLE_DESTROYED:
+			cable = get_cable_by_URI(e.get_first(), e.get_second());
+			if (cable != NULL) {
+				remove_cable(cable);
+				cable_leaving_events()->run_event_callbacks(ZstCable(e.get_first(), e.get_second()));
+			}
+			break;
+		case ZstEvent::PLUG_CREATED:
+			plug_arriving_events()->run_event_callbacks(e.get_first());
+			break;
+		case ZstEvent::PLUG_DESTROYED:
+			plug_leaving_events()->run_event_callbacks(e.get_first());
+			break;
+		case ZstEvent::ENTITY_CREATED:
+			entity_arriving_events()->run_event_callbacks(e.get_first());
+			break;
+		case ZstEvent::ENTITY_DESTROYED:
+			entity_arriving_events()->run_event_callbacks(e.get_first());
+			break;
+		default:
+			stage_events()->run_event_callbacks(e);
+		}
+	}
 }
 
 string ZstEndpoint::first_available_ext_ip(){
@@ -295,6 +338,16 @@ int ZstEndpoint::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
 	return 0;
 }
 
+std::map<ZstURI, ZstEntityBase*>& ZstEndpoint::entities()
+{
+	return m_entities;
+}
+
+std::vector<ZstCable*>& ZstEndpoint::cables()
+{
+	return m_local_cables;
+}
+
 void ZstEndpoint::stage_update_handler(zsock_t * socket, zmsg_t * msg)
 {
 	ZstMessages::StageUpdates update_args = ZstMessages::unpack_message_struct<ZstMessages::StageUpdates>(msg);
@@ -354,13 +407,23 @@ int ZstEndpoint::register_entity(ZstEntityBase* entity)
 
 int ZstEndpoint::destroy_entity(ZstEntityBase * entity)
 {
+	if (entity->is_destroyed() ||
+		!entity->is_registered() ||
+		m_is_destroyed
+		)
+	{
+		return 0;
+	}
+		
+	m_entities.erase(entity->URI());
+	entity->set_destroyed();
+
 	int result = 0;
 	ZstMessages::DestroyURI destroy_args;
 	destroy_args.address = ZstURIWire(entity->URI());
 	send_to_stage(ZstMessages::build_message<ZstMessages::DestroyURI>(ZstMessages::Kind::STAGE_DESTROY_ENTITY, destroy_args));
 	result = (int)check_stage_response_ok();
-	m_entities.erase(entity->URI());
-	return result;
+	return 1;
 }
 
 ZstEntityBase * ZstEndpoint::get_entity_by_URI(ZstURI uri)
@@ -402,20 +465,27 @@ T* ZstEndpoint::create_plug(ZstComponent* owner, const char * name, ZstValueType
 
  int ZstEndpoint::destroy_plug(ZstPlug * plug)
  {
+	int status = 0;
+	if (m_is_destroyed || plug->is_destroyed()) {
+		return status;
+	}
+	plug->m_is_destroyed = true;
+
 	 ZstMessages::DestroyURI destroy_args;
 	 destroy_args.address = ZstURIWire(plug->get_URI());
 	 send_to_stage(ZstMessages::build_message<ZstMessages::DestroyURI>(ZstMessages::Kind::STAGE_DESTROY_PLUG, destroy_args));
 
 	 ZstMessages::Signal s = check_stage_response_ok();
 	 if (s){
-		 ZstFilter * filter = dynamic_cast<ZstFilter*>(get_entity_by_URI(plug->get_URI()));
-		 if (filter) {
-			 filter->remove_plug(plug);
+		 ZstComponent * component = dynamic_cast<ZstComponent*>(get_entity_by_URI(plug->get_URI()));
+		 if (component) {
+			 component->remove_plug(plug);
 		 }
 		 delete plug;
 		 plug = 0;
+		 status = 1;
 	 }
-	 return (int)s;
+	 return status;
  }
 
 
@@ -513,12 +583,12 @@ void ZstEndpoint::enqueue_event(ZstEvent event)
 	m_events.push(event);
 }
 
-ZstEvent ZstEndpoint::pop_plug_event()
+ZstEvent ZstEndpoint::pop_event()
 {
 	return m_events.pop();
 }
 
-int ZstEndpoint::plug_event_queue_size()
+int ZstEndpoint::event_queue_size()
 {
 	return m_events.size();
 }
@@ -622,7 +692,10 @@ ZstMessages::Signal ZstEndpoint::check_stage_response_ok() {
 }
 
 void ZstEndpoint::broadcast_to_local_plugs(ZstURI output_plug, ZstValue value) {
-    for (auto cable : m_local_cables) {
+	ZstCable * cable = NULL;
+
+	for(int i = 0; i < cables().size(); ++i){
+		cable = cables()[i];
 		if (cable->get_output() == output_plug) {
 			ZstEntityBase * entity = get_entity_by_URI(cable->get_input().range(0, cable->get_input().size() - 1));
 			ZstComponent* component = dynamic_cast<ZstComponent*>(entity);

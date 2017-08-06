@@ -435,7 +435,9 @@ void test_memory_leaks() {
 	InputComponent * test_input = new InputComponent("memleak_test_in", root_entity, 10);
 	Showtime::connect_cable(test_output->output_URI(), test_input->input_URI());
 
-	int count = 20000;
+	int count = 2000;
+	std::cout << "Sending " << count << " messages" << std::endl;
+
 	for (int i = 0; i < count; ++i) {
 		test_output->send(10);
 		Showtime::poll_once();
@@ -457,9 +459,12 @@ void test_leaving(){
 
 
 void test_cleanup() {
+	//Test late entity destruction after library cleanup
 	delete stage;
-    stage = NULL;
+	stage = NULL;
+
 	Showtime::destroy();
+	delete root_entity;
 }
 
 int main(int argc,char **argv){

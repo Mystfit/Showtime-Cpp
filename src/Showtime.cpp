@@ -50,47 +50,7 @@ bool Showtime::is_connected()
 
 void Showtime::poll_once()
 {
-	while (Showtime::event_queue_size() > 0) {
-		ZstComponent * component = NULL;
-		ZstCable * cable = NULL;
-		ZstEvent e = Showtime::pop_event();
-
-		switch (e.get_update_type()) {
-		case ZstEvent::EventType::PLUG_HIT:
-			component = dynamic_cast<ZstComponent*>(Showtime::endpoint().get_entity_by_URI(e.get_first().range(0, e.get_first().size()-1)));
-			if (component != NULL) {
-				ZstInputPlug * plug = (ZstInputPlug*)component->get_plug_by_URI(e.get_first());
-				if (plug != NULL) {
-					plug->m_input_fired_manager->run_event_callbacks(plug);
-				}
-			}
-			break;
-		case ZstEvent::CABLE_CREATED:
-			Showtime::endpoint().cable_arriving_events()->run_event_callbacks(ZstCable(e.get_first(), e.get_second()));
-			break;
-		case ZstEvent::CABLE_DESTROYED:
-			cable = Showtime::endpoint().get_cable_by_URI(e.get_first(), e.get_second());
-			if (cable != NULL) {
-				Showtime::endpoint().remove_cable(cable);
-				Showtime::endpoint().cable_leaving_events()->run_event_callbacks(ZstCable(e.get_first(), e.get_second()));
-			}
-			break;
-		case ZstEvent::PLUG_CREATED:
-			Showtime::endpoint().plug_arriving_events()->run_event_callbacks(e.get_first());
-			break;
-		case ZstEvent::PLUG_DESTROYED:
-			Showtime::endpoint().plug_leaving_events()->run_event_callbacks(e.get_first());
-			break;
-		case ZstEvent::ENTITY_CREATED:
-			Showtime::endpoint().entity_arriving_events()->run_event_callbacks(e.get_first());
-			break;
-		case ZstEvent::ENTITY_DESTROYED:
-			Showtime::endpoint().entity_arriving_events()->run_event_callbacks(e.get_first());
-			break;
-		default:
-			Showtime::endpoint().stage_events()->run_event_callbacks(e);
-		}
-	}
+	Showtime::endpoint().process_callbacks();
 }
 
 
@@ -195,12 +155,12 @@ void Showtime::register_entity_type(const char * entity_type)
 
 ZstEvent Showtime::pop_event()
 {
-	return Showtime::endpoint().pop_plug_event();
+	return Showtime::endpoint().pop_event();
 }
 
 int Showtime::event_queue_size()
 {
-	return Showtime::endpoint().plug_event_queue_size();
+	return Showtime::endpoint().event_queue_size();
 }
 
 int Showtime::connect_cable(ZstURI a, ZstURI b)

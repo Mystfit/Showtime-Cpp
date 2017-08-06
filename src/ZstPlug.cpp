@@ -10,6 +10,7 @@ using namespace std;
 ZstPlug::ZstPlug(ZstComponent * entity, const char * name, ZstValueType t) :
 	m_owner(entity),
 	m_value(t),
+	m_is_destroyed(false),
 	m_uri(ZstURI::join(entity->URI(), ZstURI(name)))
 {
 }
@@ -26,6 +27,11 @@ ZstURI ZstPlug::get_URI() const
 ZstValue & ZstPlug::value()
 {
 	return m_value;
+}
+
+bool ZstPlug::is_destroyed()
+{
+	return m_is_destroyed;
 }
 
 ZstInputPlug::ZstInputPlug(ZstComponent * entity, const char * name, ZstValueType t) : ZstPlug(entity, name, t)

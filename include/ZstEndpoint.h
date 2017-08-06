@@ -29,6 +29,7 @@ public:
 	~ZstEndpoint();
 	ZST_EXPORT void init();
 	ZST_EXPORT void destroy();
+	ZST_EXPORT void process_callbacks();
 
 	//Send/receive
 	void send_to_graph(zmsg_t * msg);
@@ -65,8 +66,8 @@ public:
 	ZST_EXPORT int ping_stage();
 
 	void enqueue_event(ZstEvent event);
-	ZST_EXPORT ZstEvent pop_plug_event();
-	ZST_EXPORT int plug_event_queue_size();
+	ZST_EXPORT ZstEvent pop_event();
+	ZST_EXPORT int event_queue_size();
 
 	//Plug callbacks
 	ZST_EXPORT ZstCallbackQueue<ZstEventCallback, ZstEvent> * stage_events();
@@ -123,9 +124,11 @@ private:
 
 	//All performers
 	std::map<ZstURI, ZstEntityBase*> m_entities;
+	std::map<ZstURI, ZstEntityBase*> & entities();
 
 	//Active local plug connections
 	std::vector<ZstCable*> m_local_cables;
+	std::vector<ZstCable*> & cables();
 	
 	//Events and callbacks
 	Queue<ZstEvent> m_events;

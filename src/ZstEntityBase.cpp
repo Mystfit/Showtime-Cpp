@@ -6,7 +6,8 @@
 
 ZstEntityBase::ZstEntityBase(const char * entity_type, const char * path) :
 	m_is_registered(false),
-	m_parent(NULL)
+	m_parent(NULL),
+	m_is_destroyed(false)
 {
 	memcpy(m_entity_type, entity_type, 255);
 	m_uri = ZstURI(path);
@@ -15,7 +16,8 @@ ZstEntityBase::ZstEntityBase(const char * entity_type, const char * path) :
 
 ZstEntityBase::ZstEntityBase(const char * entity_type, const char * local_path, ZstEntityBase * parent) :
 	m_is_registered(false),
-	m_parent(parent)
+	m_parent(parent),
+	m_is_destroyed(false)
 {
 	memcpy(m_entity_type, entity_type, 255);
 	m_uri = ZstURI::join(parent->URI(), ZstURI(local_path));
@@ -46,6 +48,16 @@ ZstURI ZstEntityBase::URI()
 bool ZstEntityBase::is_registered()
 {
 	return m_is_registered;
+}
+
+bool ZstEntityBase::is_destroyed()
+{
+	return m_is_destroyed;
+}
+
+void ZstEntityBase::set_destroyed()
+{
+	m_is_destroyed = true;
 }
 
 ZstEntityBase * ZstEntityBase::parent() const
