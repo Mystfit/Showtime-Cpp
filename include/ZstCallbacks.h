@@ -36,3 +36,14 @@ public:
 	ZST_EXPORT virtual ~ZstEventCallback() { std::cout << "Destroying stage event callback" << std::endl; }
 	ZST_EXPORT virtual void run(ZstEvent e) { std::cout << "Running stage event callback" << std::endl; }
 };
+
+
+class ZstInputPlug;
+class ZstComponent;
+class ZstComputeCallback : public ZstPlugDataEventCallback {
+public:
+    ZST_EXPORT void set_target_filter(ZstComponent * component);
+    ZST_EXPORT void run(ZstInputPlug * plug) override;
+private:
+    ZstComponent * m_component;
+};

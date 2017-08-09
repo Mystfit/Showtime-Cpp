@@ -55,7 +55,7 @@ ZstURI ZstURI::range(int start, int end) const
 	string new_path = "";
 	const char * path_ptr;
 	for (int i = start; i < end; ++i) {
-		string s = string(get(i));
+		string s = string(segment(i));
 		new_path += s;
 		if (i < size() - 2) {
 			new_path += "/";
@@ -86,17 +86,12 @@ bool ZstURI::contains(ZstURI compare) {
 	return result;
 }
 
-const char * ZstURI::get(int index) const
+const char * ZstURI::segment(int index) const
 {
 	if (index > m_num_path_components-1 || index > MAX_PATH_LEN)
 		throw std::range_error("Path index out of range");
 
 	return m_path + m_path_offsets[index];
-}
-
-const char * ZstURI::operator[](int index)
-{
-	return get(index);
 }
 
 bool ZstURI::operator==(const ZstURI & other)

@@ -518,7 +518,7 @@ vector<ZstCable*> ZstEndpoint::get_cables_by_URI(const ZstURI & uri) {
 	auto it = find_if(m_local_cables.begin(), m_local_cables.end(), [&uri](ZstCable* current) {
 		return current->is_attached(uri);
 	});
-
+    
 	for (it; it != m_local_cables.end(); ++it) {
 		cables.push_back((*it));
 	}
@@ -691,7 +691,7 @@ ZstMessages::Signal ZstEndpoint::check_stage_response_ok() {
 	return s;
 }
 
-void ZstEndpoint::broadcast_to_local_plugs(ZstURI output_plug, ZstValue value) {
+void ZstEndpoint::broadcast_to_local_plugs(ZstURI output_plug, ZstValue & value) {
 	ZstCable * cable = NULL;
 
 	for(int i = 0; i < cables().size(); ++i){

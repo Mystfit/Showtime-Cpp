@@ -50,7 +50,7 @@ def test_add():
     ZST.connect_cable(addend_out.plug.get_URI(), add.addend().get_URI())
     ZST.connect_cable(add.sum().get_URI(), sum_in.plug.get_URI())
     time.sleep(1)
-
+    
     # Fire values
     augend_out.send(1)
     for i in range(10000):

@@ -1,6 +1,8 @@
 #include "entities/ZstComponent.h"
 #include "Showtime.h"
+#include "ZstPlug.h"
 #include "ZstEndpoint.h"
+#include "ZstCallbacks.h"
 
 
 ZstComponent::ZstComponent(const char * entity_type, const char * name) : ZstEntityBase(entity_type, name)
@@ -15,7 +17,7 @@ ZstComponent::ZstComponent(const char * entity_type, const char * name, ZstEntit
 
 void ZstComponent::init()
 {
-	m_compute_callback = new ComputeCallback();
+	m_compute_callback = new ZstComputeCallback();
 	m_compute_callback->set_target_filter(this);
 }
 
@@ -71,16 +73,3 @@ void ZstComponent::remove_plug(ZstPlug * plug)
 	Showtime::endpoint().destroy_plug(plug);
 }
 
-
-// -----------------------
-// Filter compute callback
-// -----------------------
-void ComputeCallback::set_target_filter(ZstComponent * component)
-{
-	m_component = component;
-}
-
-void ComputeCallback::run(ZstInputPlug * plug)
-{
-	m_component->compute(plug);
-}

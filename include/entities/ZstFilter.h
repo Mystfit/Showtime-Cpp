@@ -4,7 +4,6 @@
 
 #define FILTER_TYPE "filter"
 
-class FilterComputeCallback;
 class ZstComponent;
 
 class ZstFilter : public ZstComponent {

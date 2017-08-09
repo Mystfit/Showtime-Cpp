@@ -13,7 +13,7 @@ ZstValue::ZstValue() : m_default_type(ZstValueType::ZST_NONE)
 
 ZstValue::ZstValue(const ZstValue & other)
 {
-	m_values = other.m_values;
+    m_values = other.m_values;
 	m_default_type = other.m_default_type;
 }
 
@@ -53,6 +53,11 @@ void ZstValue::append_float(float value)
 void ZstValue::append_char(const char * value)
 {
 	m_values.push_back(string(value));
+}
+
+void ZstValue::append_variant(msgpack::type::variant value)
+{
+    m_values.push_back(value);
 }
 
 const size_t ZstValue::size() const
@@ -155,3 +160,9 @@ void ZstValue::char_at(char * buf, const size_t position) const
 		}
 	}
 }
+
+const msgpack::type::variant ZstValue::variant_at(const size_t position) const
+{
+    return m_values[position];
+}
+

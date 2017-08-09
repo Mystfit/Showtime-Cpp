@@ -19,8 +19,7 @@ public:
 	ZST_EXPORT ZstURI range(int start, int end) const;
 
 	ZST_EXPORT bool contains(ZstURI compare);
-	ZST_EXPORT const char * get(int index) const;
-	ZST_EXPORT const char * operator[](int index);
+	ZST_EXPORT const char * segment(int index) const;
 	ZST_EXPORT bool operator==(const ZstURI& other);
 	ZST_EXPORT bool operator!=(const ZstURI& other);
 	ZST_EXPORT bool operator< (const ZstURI& b) const;

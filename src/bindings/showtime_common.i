@@ -8,37 +8,38 @@
 %include "ZstEvent.h"
 %include "ZstCable.h"
 
-// Entities
-%nodefaultctor;
-%feature("director") ZstEntityBase;
-%feature("director") ZstFilter;
-%feature("director") ZstComponent;
-%include "entities/ZstEntityBase.h"
-%include "entities/ZstFilter.h"
-%ignore ZstComponent::get_plug_by_URI;
-%include "entities/ZstComponent.h"
-%clearnodefaultctor;
-
-// Entities
-%nodefaultctor;
-%include "entities/AddFilter.h"
-%clearnodefaultctor;
-
 // Callbacks
 %feature("director") ZstEventCallback;
 %feature("director") ZstPlugDataEventCallback;
 %feature("director") ZstPlugEventCallback;
 %feature("director") ZstEntityEventCallback;
 %feature("director") ZstCableEventCallback;
+%feature("director") ZstComputeCallback;
 %include "ZstCallbacks.h"
 
 // Callback queue templates
 %include "ZstCallbackQueue.h"
+%template(ZstInputPlugCallbackQueue) ZstCallbackQueue<ZstPlugDataEventCallback, ZstInputPlug*>;
 %template(ZstEventCallbackQueue) ZstCallbackQueue<ZstEventCallback, ZstEvent>;
 %template(ZstEntityEventCallbackQueue) ZstCallbackQueue<ZstEntityEventCallback, ZstURI>;
 %template(ZstCableCallbackQueue) ZstCallbackQueue<ZstCableEventCallback, ZstCable>;
 %template(ZstPlugCallbackQueue) ZstCallbackQueue<ZstPlugEventCallback, ZstURI>;
-%template(ZstInputPlugCallbackQueue) ZstCallbackQueue<ZstPlugDataEventCallback, ZstInputPlug*>;
+
+// Entities
+%nodefaultctor;
+%feature("director") ZstEntityBase;
+%feature("director") ZstComponent;
+%feature("director") ZstFilter;
+%include "entities/ZstEntityBase.h"
+%ignore ZstComponent::get_plug_by_URI;
+%include "entities/ZstComponent.h"
+%include "entities/ZstFilter.h"
+%clearnodefaultctor;
+
+// Entities
+%nodefaultctor;
+%include "entities/AddFilter.h"
+%clearnodefaultctor;
 
 // ZstValue extensions
 %nodefaultctor ZstValue;

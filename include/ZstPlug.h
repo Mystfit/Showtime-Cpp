@@ -60,7 +60,7 @@ protected:
 
 private:
 	//Receive a msgpacked value through this plug
-	ZST_EXPORT void recv(ZstValue val);
+	ZST_EXPORT void recv(ZstValue & val);
 	ZstCallbackQueue<ZstPlugDataEventCallback, ZstInputPlug*> * m_input_fired_manager;
 };
 

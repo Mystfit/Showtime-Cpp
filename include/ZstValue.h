@@ -1,11 +1,9 @@
 #pragma once
-
-#include "Showtime.h"
-#include "ZstExports.h"
 #include <msgpack.hpp>
 #include <vector>
 #include <iostream>
-
+#include "Showtime.h"
+#include "ZstExports.h"
 //A ZstValue is a generic value that represents some data 
 //sent from one ZstPlug to another
 
@@ -20,6 +18,7 @@ public:
 	ZST_EXPORT ZstValueType get_default_type();
 	
 	ZST_EXPORT void clear();
+    ZST_EXPORT void append_variant(msgpack::type::variant value);
 	ZST_EXPORT void append_int(int value);
 	ZST_EXPORT void append_float(float value);
 	ZST_EXPORT void append_char(const char * value);
@@ -29,6 +28,7 @@ public:
 	ZST_EXPORT const int int_at(const size_t position) const;
 	ZST_EXPORT const float float_at(const size_t position) const;
 	ZST_EXPORT void char_at(char * buf, const size_t position) const;
+    ZST_EXPORT const msgpack::type::variant variant_at(const size_t position) const;
 
 protected:
 	std::vector<msgpack::type::variant> m_values;

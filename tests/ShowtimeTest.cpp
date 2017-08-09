@@ -115,6 +115,9 @@ public:
 
 
 class OutputComponent : public ZstComponent {
+private:
+    ZstOutputPlug * m_output;
+
 public:
 	OutputComponent(const char * name, ZstEntityBase * parent) : ZstComponent("TESTER", name, parent) {
 		init();
@@ -131,16 +134,16 @@ public:
 		m_output->fire();
 	}
 
-	ZstURI & output_URI() {
+	const ZstURI & output_URI() {
 		return m_output->get_URI();
 	}
-
-private:
-	ZstOutputPlug * m_output;
 };
 
 
 class InputComponent : public ZstFilter {
+private:
+    ZstInputPlug * m_input;
+
 public:
 	int num_hits = 0;
 	int compare_val = 0;
@@ -163,16 +166,13 @@ public:
 		}
 	}
 
-	ZstURI & input_URI() {
+	const ZstURI & input_URI() {
 		return m_input->get_URI();
 	}
 
 	void reset() {
 		num_hits = 0;
 	}
-
-private:
-	ZstInputPlug * m_input;
 };
 
 
@@ -213,11 +213,11 @@ void test_URI() {
 		ZstURI stack_uri("some_entity/some_name");
 	}
 
-	assert(strcmp(uri_equal1[0], "ins") == 0);
-	assert(strcmp(uri_equal1[1], "someplug") == 0);
+	assert(strcmp(uri_equal1.segment(0), "ins") == 0);
+	assert(strcmp(uri_equal1.segment(1), "someplug") == 0);
 	bool thrown_range_error = false;
 	try {
-		uri_equal1[2];
+		uri_equal1.segment(2);
 	}
 	catch (std::range_error){
 		thrown_range_error = true;

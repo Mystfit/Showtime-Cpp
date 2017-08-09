@@ -8,10 +8,10 @@
 using namespace std;
 
 ZstPlug::ZstPlug(ZstComponent * entity, const char * name, ZstValueType t) :
-	m_owner(entity),
 	m_value(t),
-	m_is_destroyed(false),
-	m_uri(ZstURI::join(entity->URI(), ZstURI(name)))
+    m_owner(entity),
+	m_uri(ZstURI::join(entity->URI(), ZstURI(name))),
+    m_is_destroyed(false)
 {
 }
 
@@ -45,8 +45,11 @@ ZstInputPlug::~ZstInputPlug() {
 	delete m_input_fired_manager;
 }
 
-void ZstInputPlug::recv(ZstValue val) {
-	m_value = ZstValue(val);
+void ZstInputPlug::recv(ZstValue & val) {
+    m_value.clear();
+    for(int i = 0; i < val.size(); ++i){
+        m_value.append_variant(val.variant_at(i));
+    }
 	Showtime::endpoint().enqueue_event(ZstEvent(get_URI(), ZstEvent::EventType::PLUG_HIT));
 }
 

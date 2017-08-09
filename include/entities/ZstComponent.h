@@ -3,14 +3,14 @@
 #include <vector>
 #include "ZstExports.h"
 #include "ZstEntityBase.h"
-
-class ZstPlugDataEventCallback;
+#include "ZstCallbacks.h"
 
 #define COMPONENT_TYPE "filter"
 
+class ZstComputeCallback;
 class ZstComponent : public ZstEntityBase {
 public:
-	friend class ComputeCallback;
+	friend class ZstComputeCallback;
 	ZST_EXPORT ZstComponent(const char * entity_type, const char * name);
 	ZST_EXPORT ZstComponent(const char * entity_type, const char * name, ZstEntityBase * parent);
 	ZST_EXPORT ~ZstComponent();
@@ -24,14 +24,5 @@ public:
 
 private:
 	std::vector<ZstPlug*> m_plugs;
-	ComputeCallback * m_compute_callback;
-};
-
-
-class ComputeCallback : public ZstPlugDataEventCallback {
-public:
-	ZST_EXPORT void set_target_filter(ZstComponent * component);
-	ZST_EXPORT void run(ZstInputPlug * plug) override;
-private:
-	ZstComponent * m_component;
+	ZstComputeCallback * m_compute_callback;
 };

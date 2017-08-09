@@ -63,8 +63,8 @@ set(ZST_SOURCE
  "ZstCable.cpp"
  "ZstValue.cpp"
  "ZstValueWire.cpp"
+ "ZstCallbacks.cpp"
  "ZstCallbackQueueInstantiations.cpp"
-
  "ZstEntityBase.cpp"
  "ZstEntityRef.cpp"
  "ZstFilter.cpp"

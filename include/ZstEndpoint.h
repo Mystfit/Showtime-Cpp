@@ -103,7 +103,7 @@ private:
 	//Message handlers
 	void stage_update_handler(zsock_t * socket, zmsg_t * msg);
 	void connect_performer_handler(zsock_t * socket, zmsg_t * msg);
-	void broadcast_to_local_plugs(ZstURI output_plug, ZstValue value);
+	void broadcast_to_local_plugs(ZstURI output_plug, ZstValue & value);
 
 	//Heartbeat timer
 	int m_heartbeat_timer_id;
