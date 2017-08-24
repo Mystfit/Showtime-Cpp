@@ -250,16 +250,19 @@ void ZstEndpoint::signal_sync()
 // ---------------
 int ZstEndpoint::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg){
 	ZstEndpoint *endpoint = (ZstEndpoint*)arg;
-    zmsg_t *msg = endpoint->receive_from_graph();
+    zmsg_t *msg = zmsg_recv(endpoint->m_graph_in);
     
-	//Get sender from msg
-    ZstURI sender = ZstURI(zmsg_popstr(msg));
+    //Get sender from msg
+    char * sender_s = zmsg_popstr(msg);
+    ZstURI sender = ZstURI(sender_s);
+    delete[] sender_s;
     
-	//Get payload from msg
-	ZstValue value = (ZstValue)ZstMessages::unpack_message_struct<ZstValueWire>(msg);
-	
-	zmsg_destroy(&msg);
-
+    //Get payload from msg
+    ZstValue value = (ZstValue)ZstMessages::unpack_message_struct<ZstValueWire>(msg);
+    
+    zmsg_destroy(&msg);
+    free(msg);
+    
 	endpoint->broadcast_to_local_plugs(sender, value);
 	return 0;
 }

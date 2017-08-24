@@ -154,9 +154,9 @@ public:
 		msgpack::object_handle result;
 
 		zframe_t * payload = zmsg_pop(msg);
-
 		unpack(result, (char*)zframe_data(payload), zframe_size(payload));
 		result.get().convert(converted_struct);
+        zframe_destroy(&payload);
 		return converted_struct;
 	}
 

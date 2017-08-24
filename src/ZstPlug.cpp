@@ -76,7 +76,10 @@ void ZstOutputPlug::fire()
 //-------------
 ZstPlugEvent::ZstPlugEvent(ZstURI uri, ZstValue value) : ZstEvent(uri, ZstEvent::EventType::PLUG_HIT)
 {
-	m_value = value;
+    m_value.clear();
+    for(int i = 0; i < value.size(); ++i){
+        m_value.append_variant(value.variant_at(i));
+    }
 }
 
 ZstPlugEvent::~ZstPlugEvent()

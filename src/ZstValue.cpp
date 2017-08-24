@@ -13,7 +13,10 @@ ZstValue::ZstValue() : m_default_type(ZstValueType::ZST_NONE)
 
 ZstValue::ZstValue(const ZstValue & other)
 {
-    m_values = other.m_values;
+    m_values.clear();
+    for(auto v : other.m_values){
+        m_values.push_back(v);
+    }
 	m_default_type = other.m_default_type;
 }
 
