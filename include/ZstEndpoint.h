@@ -65,12 +65,11 @@ public:
 	
 	ZST_EXPORT int ping_stage();
 
-	void enqueue_event(ZstEvent event);
-	ZST_EXPORT ZstEvent pop_event();
+	void enqueue_event(ZstEvent * event);
+	ZST_EXPORT ZstEvent * pop_event();
 	ZST_EXPORT int event_queue_size();
 
 	//Plug callbacks
-	ZST_EXPORT ZstCallbackQueue<ZstEventCallback, ZstEvent> * stage_events();
 	ZST_EXPORT ZstCallbackQueue<ZstEntityEventCallback, ZstURI> * entity_arriving_events();
 	ZST_EXPORT ZstCallbackQueue<ZstEntityEventCallback, ZstURI> * entity_leaving_events();
 	ZST_EXPORT ZstCallbackQueue<ZstPlugEventCallback, ZstURI> * plug_arriving_events();
@@ -131,8 +130,7 @@ private:
 	std::vector<ZstCable*> & cables();
 	
 	//Events and callbacks
-	Queue<ZstEvent> m_events;
-	ZstCallbackQueue<ZstEventCallback, ZstEvent> * m_stage_event_manager;
+	Queue<ZstEvent*> m_events;
 	ZstCallbackQueue<ZstEntityEventCallback, ZstURI> * m_performer_arriving_event_manager;
 	ZstCallbackQueue<ZstEntityEventCallback, ZstURI> * m_performer_leaving_event_manager;
 	ZstCallbackQueue<ZstCableEventCallback, ZstCable> * m_cable_arriving_event_manager;

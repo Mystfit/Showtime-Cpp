@@ -30,7 +30,6 @@ void ZstEndpoint::destroy() {
 
 	leave_stage();
 
-	delete m_stage_event_manager;
 	delete m_performer_arriving_event_manager;
 	delete m_performer_leaving_event_manager;
 	delete m_cable_arriving_event_manager;
@@ -59,7 +58,6 @@ void ZstEndpoint::init()
 
 	m_is_destroyed = false;
 
-	m_stage_event_manager = new ZstCallbackQueue<ZstEventCallback, ZstEvent>();
 	m_performer_arriving_event_manager = new ZstCallbackQueue<ZstEntityEventCallback, ZstURI>();
 	m_performer_leaving_event_manager = new ZstCallbackQueue<ZstEntityEventCallback, ZstURI>();
 	m_cable_arriving_event_manager = new ZstCallbackQueue<ZstCableEventCallback, ZstCable>();
@@ -111,43 +109,47 @@ void ZstEndpoint::process_callbacks()
 	while (m_events.size() > 0) {
 		ZstComponent * component = NULL;
 		ZstCable * cable = NULL;
-		ZstEvent e = pop_event();
+		ZstEvent * e = pop_event();
 
-		switch (e.get_update_type()) {
+		switch (e->get_update_type()) {
 		case ZstEvent::EventType::PLUG_HIT:
-			component = dynamic_cast<ZstComponent*>(get_entity_by_URI(e.get_first().range(0, e.get_first().size() - 1)));
+			component = dynamic_cast<ZstComponent*>(get_entity_by_URI(e->get_first().range(0, e->get_first().size() - 1)));
 			if (component != NULL) {
-				ZstInputPlug * plug = (ZstInputPlug*)component->get_plug_by_URI(e.get_first());
+				ZstInputPlug * plug = (ZstInputPlug*)component->get_plug_by_URI(e->get_first());
 				if (plug != NULL) {
+					plug->recv(((ZstPlugEvent*)e)->value());
 					plug->m_input_fired_manager->run_event_callbacks(plug);
 				}
 			}
 			break;
 		case ZstEvent::CABLE_CREATED:
-			cable_arriving_events()->run_event_callbacks(ZstCable(e.get_first(), e.get_second()));
+			cable_arriving_events()->run_event_callbacks(ZstCable(e->get_first(), e->get_second()));
 			break;
 		case ZstEvent::CABLE_DESTROYED:
-			cable = get_cable_by_URI(e.get_first(), e.get_second());
+			cable = get_cable_by_URI(e->get_first(), e->get_second());
 			if (cable != NULL) {
 				remove_cable(cable);
-				cable_leaving_events()->run_event_callbacks(ZstCable(e.get_first(), e.get_second()));
+				cable_leaving_events()->run_event_callbacks(ZstCable(e->get_first(), e->get_second()));
 			}
 			break;
 		case ZstEvent::PLUG_CREATED:
-			plug_arriving_events()->run_event_callbacks(e.get_first());
+			plug_arriving_events()->run_event_callbacks(e->get_first());
 			break;
 		case ZstEvent::PLUG_DESTROYED:
-			plug_leaving_events()->run_event_callbacks(e.get_first());
+			plug_leaving_events()->run_event_callbacks(e->get_first());
 			break;
 		case ZstEvent::ENTITY_CREATED:
-			entity_arriving_events()->run_event_callbacks(e.get_first());
+			entity_arriving_events()->run_event_callbacks(e->get_first());
 			break;
 		case ZstEvent::ENTITY_DESTROYED:
-			entity_arriving_events()->run_event_callbacks(e.get_first());
+			entity_arriving_events()->run_event_callbacks(e->get_first());
 			break;
 		default:
-			stage_events()->run_event_callbacks(e);
+			break;
 		}
+
+		//Delete event pointer
+		delete e;
 	}
 }
 
@@ -251,13 +253,7 @@ int ZstEndpoint::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg)
     zmsg_t *msg = endpoint->receive_from_graph();
     
 	//Get sender from msg
-	zframe_t * sender_frame = zmsg_pop(msg);
-	int sender_size = zframe_size(sender_frame);
-	char * sender_c = new char[sender_size+1]();
-	memcpy(sender_c, zframe_data(sender_frame), sender_size);
-    ZstURI sender = ZstURI::from_char(sender_c);
-	free(sender_c);
-	zframe_destroy(&sender_frame);
+    ZstURI sender = ZstURI(zmsg_popstr(msg));
     
 	//Get payload from msg
 	ZstValue value = (ZstValue)ZstMessages::unpack_message_struct<ZstValueWire>(msg);
@@ -352,7 +348,7 @@ void ZstEndpoint::stage_update_handler(zsock_t * socket, zmsg_t * msg)
 {
 	ZstMessages::StageUpdates update_args = ZstMessages::unpack_message_struct<ZstMessages::StageUpdates>(msg);
     for (auto event_iter : update_args.updates) {
-		Showtime::endpoint().enqueue_event(ZstEvent(event_iter.get_first(), event_iter.get_second(), event_iter.get_update_type()));
+		Showtime::endpoint().enqueue_event(new ZstEvent(event_iter.get_first(), event_iter.get_second(), event_iter.get_update_type()));
 	}
 }
 
@@ -578,12 +574,12 @@ int ZstEndpoint::ping_stage()
 // Events
 // ------
 
-void ZstEndpoint::enqueue_event(ZstEvent event)
+void ZstEndpoint::enqueue_event(ZstEvent * event)
 {
 	m_events.push(event);
 }
 
-ZstEvent ZstEndpoint::pop_event()
+ZstEvent * ZstEndpoint::pop_event()
 {
 	return m_events.pop();
 }
@@ -597,11 +593,6 @@ int ZstEndpoint::event_queue_size()
 // ------------------------
 // Callback manager getters
 // ------------------------
-
-ZstCallbackQueue<ZstEventCallback, ZstEvent> * ZstEndpoint::stage_events()
-{
-	return m_stage_event_manager;
-}
 
 ZstCallbackQueue<ZstEntityEventCallback, ZstURI> * ZstEndpoint::entity_arriving_events()
 {
@@ -702,7 +693,7 @@ void ZstEndpoint::broadcast_to_local_plugs(ZstURI output_plug, ZstValue & value)
 			if (component) {
 				ZstInputPlug * plug = (ZstInputPlug*)component->get_plug_by_URI(cable->get_input());
 				if (plug != NULL) {
-					plug->recv(value);
+					Showtime::endpoint().enqueue_event(new ZstPlugEvent(plug->get_URI(), value));
 				}
 				else {
 					cout << "ZST: Ignoring plug hit from " << cable->get_output().path() << " for missing input plug " << cable->get_input().path() << endl;

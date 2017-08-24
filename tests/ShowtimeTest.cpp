@@ -252,7 +252,7 @@ void test_root_entity() {
 	assert(entityArriveCallback->last_created_entity == std::string(root_entity->URI().path()));
 	entityArriveCallback->reset();
 
-	Showtime::remove_performer_arriving_callback(entityArriveCallback);
+	Showtime::remove_entity_arriving_callback(entityArriveCallback);
 	delete entityArriveCallback;
 	clear_callback_queue();
 
@@ -435,7 +435,7 @@ void test_memory_leaks() {
 	InputComponent * test_input = new InputComponent("memleak_test_in", root_entity, 10);
 	Showtime::connect_cable(test_output->output_URI(), test_input->input_URI());
 
-	int count = 2000;
+	int count = 200000;
 	std::cout << "Sending " << count << " messages" << std::endl;
 
 	for (int i = 0; i < count; ++i) {

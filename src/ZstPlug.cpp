@@ -50,7 +50,6 @@ void ZstInputPlug::recv(ZstValue & val) {
     for(int i = 0; i < val.size(); ++i){
         m_value.append_variant(val.variant_at(i));
     }
-	Showtime::endpoint().enqueue_event(ZstEvent(get_URI(), ZstEvent::EventType::PLUG_HIT));
 }
 
 void ZstInputPlug::attach_receive_callback(ZstPlugDataEventCallback * callback)
@@ -70,4 +69,21 @@ void ZstOutputPlug::fire()
 {
 	Showtime::endpoint().send_to_graph(ZstMessages::build_graph_message(this->get_URI(), ZstValueWire(m_value)));
 	m_value.clear();
+}
+
+
+//ZstPlugEvent
+//-------------
+ZstPlugEvent::ZstPlugEvent(ZstURI uri, ZstValue value) : ZstEvent(uri, ZstEvent::EventType::PLUG_HIT)
+{
+	m_value = value;
+}
+
+ZstPlugEvent::~ZstPlugEvent()
+{
+}
+
+ZstValue & ZstPlugEvent::value()
+{
+	return m_value;
 }

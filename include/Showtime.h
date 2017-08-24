@@ -69,7 +69,6 @@ public:
 	ZST_EXPORT static void poll_once();
 
 	//Callbacks
-	ZST_EXPORT static void attach_stage_event_callback(ZstEventCallback * callback);
 	ZST_EXPORT static void attach_entity_arriving_callback(ZstEntityEventCallback * callback);
 	ZST_EXPORT static void attach_entity_leaving_callback(ZstEntityEventCallback * callback);
 	ZST_EXPORT static void attach_plug_arriving_callback(ZstPlugEventCallback * callback);
@@ -77,9 +76,8 @@ public:
 	ZST_EXPORT static void attach_cable_arriving_callback(ZstCableEventCallback *callback);
 	ZST_EXPORT static void attach_cable_leaving_callback(ZstCableEventCallback *callback);
 
-	ZST_EXPORT static void remove_stage_event_callback(ZstEventCallback * callback);
-	ZST_EXPORT static void remove_performer_arriving_callback(ZstEntityEventCallback * callback);
-	ZST_EXPORT static void remove_performer_leaving_callback(ZstEntityEventCallback * callback);
+	ZST_EXPORT static void remove_entity_arriving_callback(ZstEntityEventCallback * callback);
+	ZST_EXPORT static void remove_entity_leaving_callback(ZstEntityEventCallback * callback);
 	ZST_EXPORT static void remove_plug_arriving_callback(ZstPlugEventCallback * callback);
 	ZST_EXPORT static void remove_plug_leaving_callback(ZstPlugEventCallback * callback);
 	ZST_EXPORT static void remove_cable_arriving_callback(ZstCableEventCallback * callback);
@@ -91,7 +89,7 @@ public:
  	//Entities can contain other entities and plugs
 	ZST_EXPORT static void register_entity_type(const char * entity_type);
 
-	ZST_EXPORT static ZstEvent pop_event();
+	ZST_EXPORT static ZstEvent * pop_event();
 	ZST_EXPORT static int event_queue_size();
 
 	ZST_EXPORT static int connect_cable(ZstURI a, ZstURI b);

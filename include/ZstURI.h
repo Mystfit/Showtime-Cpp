@@ -26,8 +26,6 @@ public:
 	ZST_EXPORT bool is_empty();
 
 	ZST_EXPORT static ZstURI join(ZstURI a, ZstURI b);
-	ZST_EXPORT static ZstURI from_char(const char * s);
-
 
 protected:
 	Str255 m_path;

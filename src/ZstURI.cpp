@@ -52,18 +52,21 @@ ZstURI ZstURI::range(int start, int end) const
 		throw std::range_error("Start or end exceeds path length");
 	}
 
-	string new_path = "";
-	const char * path_ptr;
-	for (int i = start; i < end; ++i) {
-		string s = string(segment(i));
-		new_path += s;
+	Str255 new_path;
+	strcpy(new_path, segment(0));
+	if (end - start > 1) {
+		strcat(new_path, "/");
+	}
+
+	for (int i = start + 1; i < end; ++i) {
+		strcat(new_path, segment(i));
 		if (i < size() - 2) {
-			new_path += "/";
+			strcat(new_path, "/");
 		}
 	}
 
-	//Return copy of new path as a URI
-	return ZstURI(new_path.c_str());
+	ZstURI new_uri = ZstURI(new_path);
+	return new_uri;
 }
 
 bool ZstURI::contains(ZstURI compare) {
@@ -123,40 +126,29 @@ ZstURI ZstURI::join(ZstURI a, ZstURI b)
 	return ZstURI(combined_path.c_str());
 }
 
-ZstURI ZstURI::from_char(const char * s)
-{
-    string uri_str = string(s);
-    std::vector<std::string> uri;
-    Utils::str_split(uri_str, uri, "/");
-        
-    string path = "";
-    for(int i = 0; i < uri.size(); ++i){
-        path += uri[i];
-        if(i < uri.size() - 1)
-            path += "/";
-    }
-        
-	return ZstURI(path.c_str());
-}
-
 void ZstURI::build_split_path(const char * path)
 {
-	string p = string(path);
-	vector<string> tokens;
-	Utils::str_split(p, tokens, "/");
-	m_num_path_components = tokens.size();
+	char * local_path = new char[255]();
+	strcpy(local_path, path);
+	char * token = strtok(local_path, "/");
 
 	long offset = 0;
- 	for (int i = 0; i < tokens.size(); ++i) {
-		string s = tokens[i];	
+	int i = 0;
+	while(token != NULL){
 		m_path_offsets[i] = offset;
-		memcpy(m_path + offset, s.c_str(), s.size());
-		offset += s.size();
+		size_t l = strlen(token);
+		memcpy(m_path + offset, token, l);
+		offset += l;
 		m_path[offset] = 0;
 		offset += 1;
+		i++;
+
+		token = strtok(NULL, "/");
 
 		if (m_path_offsets[i] < 0) {
-			throw std::range_error("WHy is this less than 0?!");
+			throw std::range_error("Why is this less than 0?!");
 		}
 	}
+	m_num_path_components = i;
+	delete[] local_path;
 }

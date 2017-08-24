@@ -57,11 +57,6 @@ void Showtime::poll_once()
 // -----------------
 // Callback managers
 // -----------------
-void Showtime::attach_stage_event_callback(ZstEventCallback * callback)
-{
-	Showtime::endpoint().stage_events()->attach_event_callback(callback);
-}
-
 void Showtime::attach_entity_arriving_callback(ZstEntityEventCallback * callback)
 {
 	Showtime::endpoint().entity_arriving_events()->attach_event_callback(callback);
@@ -94,17 +89,12 @@ void Showtime::attach_cable_leaving_callback(ZstCableEventCallback * callback)
 
 //-----
 
-void Showtime::remove_stage_event_callback(ZstEventCallback * callback)
-{
-	Showtime::endpoint().stage_events()->remove_event_callback(callback);
-}
-
-void Showtime::remove_performer_arriving_callback(ZstEntityEventCallback * callback)
+void Showtime::remove_entity_arriving_callback(ZstEntityEventCallback * callback)
 {
 	Showtime::endpoint().entity_arriving_events()->remove_event_callback(callback);
 }
 
-void Showtime::remove_performer_leaving_callback(ZstEntityEventCallback * callback)
+void Showtime::remove_entity_leaving_callback(ZstEntityEventCallback * callback)
 {
 	return Showtime::endpoint().entity_leaving_events()->remove_event_callback(callback);
 }
@@ -153,7 +143,7 @@ void Showtime::register_entity_type(const char * entity_type)
 	Showtime::endpoint().register_entity_type(entity_type);
 }
 
-ZstEvent Showtime::pop_event()
+ZstEvent * Showtime::pop_event()
 {
 	return Showtime::endpoint().pop_event();
 }
