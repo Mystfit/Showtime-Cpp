@@ -119,6 +119,10 @@ void ZstEndpoint::process_callbacks()
 				if (plug != NULL) {
 					plug->recv(((ZstPlugEvent*)e)->value());
 					plug->m_input_fired_manager->run_event_callbacks(plug);
+					
+					//Pre-emptively delete event whilst we know it's a plug event
+					delete (ZstPlugEvent*)e;
+					e = 0;
 				}
 			}
 			break;
@@ -253,9 +257,11 @@ int ZstEndpoint::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg)
     zmsg_t *msg = zmsg_recv(endpoint->m_graph_in);
     
     //Get sender from msg
-    char * sender_s = zmsg_popstr(msg);
+	zframe_t * sender_frame = zmsg_pop(msg);
+	char * sender_s = zframe_strdup(sender_frame);
     ZstURI sender = ZstURI(sender_s);
-    delete[] sender_s;
+	zstr_free(&sender_s);
+	zframe_destroy(&sender_frame);
     
     //Get payload from msg
     ZstValue value = (ZstValue)ZstMessages::unpack_message_struct<ZstValueWire>(msg);

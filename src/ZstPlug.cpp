@@ -47,9 +47,7 @@ ZstInputPlug::~ZstInputPlug() {
 
 void ZstInputPlug::recv(ZstValue & val) {
     m_value.clear();
-    for(int i = 0; i < val.size(); ++i){
-        m_value.append_variant(val.variant_at(i));
-    }
+	m_value = val;
 }
 
 void ZstInputPlug::attach_receive_callback(ZstPlugDataEventCallback * callback)
@@ -74,16 +72,14 @@ void ZstOutputPlug::fire()
 
 //ZstPlugEvent
 //-------------
-ZstPlugEvent::ZstPlugEvent(ZstURI uri, ZstValue value) : ZstEvent(uri, ZstEvent::EventType::PLUG_HIT)
+ZstPlugEvent::ZstPlugEvent(ZstURI uri, ZstValue & value) : ZstEvent(uri, ZstEvent::EventType::PLUG_HIT)
 {
-    m_value.clear();
-    for(int i = 0; i < value.size(); ++i){
-        m_value.append_variant(value.variant_at(i));
-    }
+	m_value = value;
 }
 
 ZstPlugEvent::~ZstPlugEvent()
 {
+	m_value.clear();
 }
 
 ZstValue & ZstPlugEvent::value()

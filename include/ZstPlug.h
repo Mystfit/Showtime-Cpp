@@ -74,7 +74,7 @@ public:
 
 class ZstPlugEvent : public ZstEvent {
 public:
-	ZstPlugEvent(ZstURI uri, ZstValue value);
+	ZstPlugEvent(ZstURI uri, ZstValue & value);
 	~ZstPlugEvent();
 	ZstValue & value();
 private:

@@ -13,11 +13,9 @@ ZstValue::ZstValue() : m_default_type(ZstValueType::ZST_NONE)
 
 ZstValue::ZstValue(const ZstValue & other)
 {
-    m_values.clear();
-    for(auto v : other.m_values){
-        m_values.push_back(v);
-    }
 	m_default_type = other.m_default_type;
+	m_values = other.m_values;
+	init();
 }
 
 ZstValue::ZstValue(ZstValueType t) : m_default_type(t)
@@ -30,7 +28,6 @@ ZstValue::~ZstValue()
 }
 
 void ZstValue::init() {
-
 }
 
 ZstValueType ZstValue::get_default_type()
@@ -58,9 +55,8 @@ void ZstValue::append_char(const char * value)
 	m_values.push_back(string(value));
 }
 
-void ZstValue::append_variant(msgpack::type::variant value)
+void ZstValue::append_variant(ZstValueVariant value)
 {
-    m_values.push_back(value);
 }
 
 const size_t ZstValue::size() const
@@ -68,23 +64,8 @@ const size_t ZstValue::size() const
 	return m_values.size();
 }
 
-const size_t ZstValue::size_at(const size_t position) const
-{
-	auto val = m_values.at(position);
-	if (val.is_uint64_t()) {
-		return sizeof(val.as_uint64_t());
-	}
-	else if (val.is_int64_t()) {
-		return sizeof(val.as_int64_t());
-	}
-	else if (val.is_double()) {
-		return sizeof(val.as_double());
-	}
-	else if (val.is_string()) {
-		return val.as_string().size();
-	} 
-	return 0;
-}
+
+
 
 const int ZstValue::int_at(const size_t position) const
 {
@@ -92,26 +73,8 @@ const int ZstValue::int_at(const size_t position) const
 		return NAN;
 
 	auto val = m_values.at(position);
-	//Return native value
-	if (val.is_uint64_t()) {
-		return val.as_uint64_t();
-	}
-	else if (val.is_int64_t()) {
-		return val.as_int64_t();
-	}
-	else {
-		//Convert value
-		if (val.is_double()) {
-			return int(val.as_double() + 0.5f);
-		}
-		else if (val.is_string()) {
-			try {
-				return stoi(val.as_string());
-			}
-			catch (std::invalid_argument) {}
-		}
-	}
-	return 0;
+	int result = val.apply_visitor<ZstValueIntVisitor>(ZstValueIntVisitor());
+	return result;
 }
 
 const float ZstValue::float_at(const size_t position) const
@@ -120,25 +83,8 @@ const float ZstValue::float_at(const size_t position) const
 		return NAN;
 
 	auto val = m_values.at(position);
-	//Return native value
-	if (val.is_double()) {
-		return (float)val.as_double();
-	}
-	else {
-		//Convert value
-		if (val.is_uint64_t()) {
-			return float(val.as_uint64_t());
-		}
-		else if (val.is_int64_t()) {
-			return float(val.as_int64_t());
-		}
-		else if (val.is_string()) {
-			try {
-				return stof(val.as_string());
-			} catch (std::invalid_argument) {}
-		}
-	}
-	return 0.0f;
+	float result = val.apply_visitor<ZstValueFloatVisitor>(ZstValueFloatVisitor());
+	return result;
 }
 
 void ZstValue::char_at(char * buf, const size_t position) const
@@ -147,25 +93,60 @@ void ZstValue::char_at(char * buf, const size_t position) const
 		return;
 
 	auto val = m_values.at(position);
-	if (val.is_string()) {
-		string s = val.as_string();
-		memcpy(buf, s.c_str(), s.size());
-	}
-	else {
-		if (val.is_uint64_t()) {
-			memcpy(buf, std::to_string(val.as_uint64_t()).c_str(), sizeof(buf));
-		}
-		else if (val.is_int64_t()) {
-			memcpy(buf, std::to_string(val.as_int64_t()).c_str(), sizeof(buf));
-		}
-		else if (val.is_double()) {
-			memcpy(buf, std::to_string(val.as_double()).c_str(), sizeof(buf));
-		}
-	}
+	std::string val_s = val.apply_visitor<ZstValueStrVisitor>(ZstValueStrVisitor());
+	memcpy(buf, val_s.c_str(), val_s.size());
 }
 
-const msgpack::type::variant ZstValue::variant_at(const size_t position) const
+const ZstValueVariant ZstValue::variant_at(const size_t position) const
 {
     return m_values[position];
 }
 
+
+// ----------------
+// Variant visitors
+// ----------------
+int ZstValueIntVisitor::operator()(int i) const
+{
+	return i;
+}
+
+int ZstValueIntVisitor::operator()(float f) const
+{
+	return int(f);
+}
+
+int ZstValueIntVisitor::operator()(const std::string & str) const
+{
+	return std::stoi(str);
+}
+
+float ZstValueFloatVisitor::operator()(int i) const
+{
+	return float(i);
+}
+
+float ZstValueFloatVisitor::operator()(float f) const
+{
+	return f;
+}
+
+float ZstValueFloatVisitor::operator()(const std::string & str) const
+{
+	return std::stof(str);
+}
+
+std::string ZstValueStrVisitor::operator()(int i) const
+{
+	return std::to_string(i);
+}
+
+std::string ZstValueStrVisitor::operator()(float f) const
+{
+	return std::to_string(f);
+}
+
+std::string ZstValueStrVisitor::operator()(const std::string & str) const
+{
+	return str;
+}

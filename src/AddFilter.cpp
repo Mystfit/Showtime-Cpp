@@ -25,7 +25,8 @@ void AddFilter::compute(ZstInputPlug * plug)
 	
 	for (int i = 0; i < largest_size; ++i) {
 		if (m_augend->value().size() > i && m_addend->value().size() > i) {
-			m_sum->value().append_float(m_augend->value().float_at(i) + m_addend->value().float_at(i));
+			float result = m_augend->value().float_at(i) + m_addend->value().float_at(i);
+			m_sum->value().append_float(result);
 		}
 		else if (m_augend->value().size() > i) {
 			m_sum->value().append_float(m_augend->value().float_at(i));
