@@ -77,7 +77,9 @@ void ZstActor::self_test()
 	zmsg_addstr(msg, "PING");
 	zactor_send(m_loop_actor, &msg);
 	zmsg_t * response = zactor_recv(m_loop_actor);
-	assert(streq(zmsg_popstr(response), "PONG"));
+    char * response_s = zmsg_popstr(response);
+	assert(streq(response_s, "PONG"));
+    zstr_free(&response_s);
 	zmsg_destroy(&response);
 }
 

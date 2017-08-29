@@ -195,7 +195,10 @@ public:
 	}
 
 	static Signal unpack_signal(zmsg_t * msg) {
-		return (Signal)std::atoi(zmsg_popstr(msg));
+        char * signal_s = zmsg_popstr(msg);
+        Signal sig =(Signal)std::atoi(signal_s);
+        zstr_free(&signal_s);
+		return sig;
 	}
 };
 

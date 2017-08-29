@@ -184,8 +184,11 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 	//Receive waiting message
 	zmsg_t *msg = zmsg_recv(socket);
 
-	//Get endpoint	
-	ZstEndpointRef * sender = stage->get_endpoint_ref_by_UUID(zmsg_popstr(msg));
+	//Get endpoint
+    char * sender_s = zmsg_popstr(msg);
+	ZstEndpointRef * sender = stage->get_endpoint_ref_by_UUID(sender_s);
+    zstr_free(&sender_s);
+
 	if (sender == NULL) {
 		//TODO: Can't return error to caller if the endpoint doesn't exist! Will need to implement timeouts
 		//stage->reply_with_signal(socket, Signal::ENDPOINT_NOT_FOUND);
@@ -193,7 +196,8 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 	}
 
 	//Pop off empty frame
-	zmsg_pop(msg);
+	zframe_t * empty = zmsg_pop(msg);
+    zframe_destroy(&empty);
 
 	//Get message type
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(msg);

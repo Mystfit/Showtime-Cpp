@@ -165,7 +165,13 @@ string ZstEndpoint::first_available_ext_ip(){
     if(net_if == NULL) {
         interface_ip = "127.0.0.1";
     }
-    return string(interface_ip);
+    
+    string interface_ip_str = string(interface_ip);
+    
+    delete[] interface_ip;
+    delete[] net_if;
+    
+    return interface_ip_str;
 }
 
 void ZstEndpoint::start() {
@@ -666,7 +672,8 @@ zmsg_t * ZstEndpoint::receive_routed_from_stage() {
 	zmsg_t * msg = zmsg_recv(m_stage_router);
 
 	//Pop blank seperator frame
-	zmsg_pop(msg);
+	zframe_t * empty = zmsg_pop(msg);
+    zframe_destroy(&empty);
 
 	return msg;
 }
