@@ -73,7 +73,8 @@ const int ZstValue::int_at(const size_t position) const
 		return NAN;
 
 	auto val = m_values.at(position);
-	int result = val.apply_visitor<ZstValueIntVisitor>(ZstValueIntVisitor());
+    ZstValueIntVisitor visitor = ZstValueIntVisitor();
+	int result = val.apply_visitor<ZstValueIntVisitor>(visitor);
 	return result;
 }
 
@@ -83,7 +84,8 @@ const float ZstValue::float_at(const size_t position) const
 		return NAN;
 
 	auto val = m_values.at(position);
-	float result = val.apply_visitor<ZstValueFloatVisitor>(ZstValueFloatVisitor());
+    ZstValueFloatVisitor visitor = ZstValueFloatVisitor();
+	float result = val.apply_visitor<ZstValueFloatVisitor>(visitor);
 	return result;
 }
 
@@ -93,7 +95,8 @@ void ZstValue::char_at(char * buf, const size_t position) const
 		return;
 
 	auto val = m_values.at(position);
-	std::string val_s = val.apply_visitor<ZstValueStrVisitor>(ZstValueStrVisitor());
+    ZstValueStrVisitor visitor = ZstValueStrVisitor();
+	std::string val_s = val.apply_visitor<ZstValueStrVisitor>(visitor);
 	memcpy(buf, val_s.c_str(), val_s.size());
 }
 
