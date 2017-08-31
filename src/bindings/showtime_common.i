@@ -52,6 +52,9 @@
         return s;
     }
 };
+
+%ignore ZstValueIntVisitor;
+%ignore ZstValueFloatVisitor;
+%ignore ZstValueStrVisitor;
 %include "ZstValue.h"
 %ignore ZstValue::char_at;
-

@@ -107,34 +107,39 @@ void ZstEndpoint::init()
 void ZstEndpoint::process_callbacks()
 {
 	while (m_events.size() > 0) {
-		ZstComponent * component = NULL;
-		ZstCable * cable = NULL;
 		ZstEvent * e = pop_event();
 
 		switch (e->get_update_type()) {
 		case ZstEvent::EventType::PLUG_HIT:
-			component = dynamic_cast<ZstComponent*>(get_entity_by_URI(e->get_first().range(0, e->get_first().size() - 1)));
-			if (component != NULL) {
-				ZstInputPlug * plug = (ZstInputPlug*)component->get_plug_by_URI(e->get_first());
-				if (plug != NULL) {
-					plug->recv(((ZstPlugEvent*)e)->value());
-					plug->m_input_fired_manager->run_event_callbacks(plug);
-					
-					//Pre-emptively delete event whilst we know it's a plug event
-					delete (ZstPlugEvent*)e;
-					e = 0;
-				}
-			}
+            {
+                ZstURI entity_URI = e->get_first();
+                ZstURI entity_parent = entity_URI.range(0, entity_URI.size() - 1);
+                
+                ZstComponent * component = dynamic_cast<ZstComponent*>(get_entity_by_URI(entity_parent));
+                if (component != NULL) {
+                    ZstInputPlug * plug = (ZstInputPlug*)component->get_plug_by_URI(entity_URI);
+                    if (plug != NULL) {
+                        plug->recv(((ZstPlugEvent*)e)->value());
+                        plug->m_input_fired_manager->run_event_callbacks(plug);
+                        
+                        //Pre-emptively delete event whilst we know it's a plug event
+                        delete (ZstPlugEvent*)e;
+                        e = 0;
+                    }
+                }
+            }
 			break;
 		case ZstEvent::CABLE_CREATED:
 			cable_arriving_events()->run_event_callbacks(ZstCable(e->get_first(), e->get_second()));
 			break;
 		case ZstEvent::CABLE_DESTROYED:
-			cable = get_cable_by_URI(e->get_first(), e->get_second());
-			if (cable != NULL) {
-				remove_cable(cable);
-				cable_leaving_events()->run_event_callbacks(ZstCable(e->get_first(), e->get_second()));
-			}
+            {
+                ZstCable * cable = get_cable_by_URI(e->get_first(), e->get_second());
+                if (cable != NULL) {
+                    remove_cable(cable);
+                    cable_leaving_events()->run_event_callbacks(ZstCable(e->get_first(), e->get_second()));
+                }
+            }
 			break;
 		case ZstEvent::PLUG_CREATED:
 			plug_arriving_events()->run_event_callbacks(e->get_first());
@@ -400,6 +405,8 @@ void ZstEndpoint::register_entity_type(const char * entity_type)
 
 int ZstEndpoint::register_entity(ZstEntityBase* entity)
 {
+    std::cout << "ZST_ENDPOINT: Registering entity " << entity->URI().path() << " to stage" << std::endl;
+
 	int result = 0;
 	ZstMessages::CreateEntity entity_args;
 	entity_args.endpoint_uuid = get_endpoint_UUID();

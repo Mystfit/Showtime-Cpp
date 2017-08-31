@@ -16,7 +16,7 @@ public:
 	ZST_EXPORT virtual ~ZstEntityBase();
 	ZST_EXPORT virtual void init();
 	ZST_EXPORT const char * entity_type() const;
-	ZST_EXPORT ZstURI URI();
+	ZST_EXPORT ZstURI & URI();
 	ZST_EXPORT bool is_registered();
 	ZST_EXPORT bool is_destroyed();
 	ZST_EXPORT void set_destroyed();

@@ -337,10 +337,11 @@ void ZstStage::endpoint_heartbeat_handler(zsock_t * socket, zmsg_t * msg) {
 void ZstStage::create_plug_handler(zsock_t *socket, zmsg_t *msg) {
 	ZstMessages::CreatePlug plug_args = ZstMessages::unpack_message_struct<ZstMessages::CreatePlug>(msg);
 
-	ZstEntityRef* entity = get_entity_ref_by_URI(plug_args.address.range(0, plug_args.address.size()-1));
+    ZstURI entity_URI = plug_args.address.range(0, plug_args.address.size()-1);
+	ZstEntityRef* entity = get_entity_ref_by_URI(entity_URI);
 
 	if (entity == NULL) {
-		cout << "ZST_STAGE: Couldn't register plug. No entity registered to stage with name";
+        cout << "ZST_STAGE: Couldn't register plug. No entity registered to stage with name " << entity_URI.path() << endl;
 		reply_with_signal(socket, ZstMessages::Signal::ERR_STAGE_ENTITY_NOT_FOUND);
 		return;
 	}

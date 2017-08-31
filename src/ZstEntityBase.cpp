@@ -31,8 +31,9 @@ ZstEntityBase::~ZstEntityBase()
 
 void ZstEntityBase::init()
 {
-	if (Showtime::is_connected())
+    if (Showtime::is_connected()){
 		m_is_registered = Showtime::endpoint().register_entity(this);
+    }
 }
 
 const char * ZstEntityBase::entity_type() const
@@ -40,7 +41,7 @@ const char * ZstEntityBase::entity_type() const
 	return m_entity_type;
 }
 
-ZstURI ZstEntityBase::URI()
+ZstURI & ZstEntityBase::URI()
 {
 	return m_uri;
 }

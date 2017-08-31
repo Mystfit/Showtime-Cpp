@@ -55,17 +55,10 @@ void ZstValue::append_char(const char * value)
 	m_values.push_back(string(value));
 }
 
-void ZstValue::append_variant(ZstValueVariant value)
-{
-}
-
 const size_t ZstValue::size() const
 {
 	return m_values.size();
 }
-
-
-
 
 const int ZstValue::int_at(const size_t position) const
 {
@@ -104,6 +97,24 @@ const ZstValueVariant ZstValue::variant_at(const size_t position) const
 {
     return m_values[position];
 }
+
+const size_t ZstValue::size_at(const size_t position) const {
+    auto val = m_values.at(position);
+    
+    if (m_default_type == ZstValueType::ZST_INT) {
+        return sizeof(int);
+    }
+    else if (m_default_type == ZstValueType::ZST_FLOAT) {
+        return sizeof(float);
+    }
+    else if (m_default_type == ZstValueType::ZST_STRING) {
+        ZstValueStrVisitor visitor = ZstValueStrVisitor();
+        std::string val_s = val.apply_visitor<ZstValueStrVisitor>(visitor);
+        return val_s.size();
+    } 
+    return 0;
+}
+
 
 
 // ----------------

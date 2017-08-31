@@ -48,7 +48,7 @@ const size_t ZstURI::size() const
 
 ZstURI ZstURI::range(int start, int end) const
 {
-	if (start > m_num_path_components || end > m_num_path_components) {
+	if (start > size() || end > size()) {
 		throw std::range_error("Start or end exceeds path length");
 	}
 
@@ -91,7 +91,7 @@ bool ZstURI::contains(ZstURI compare) {
 
 const char * ZstURI::segment(int index) const
 {
-	if (index > m_num_path_components-1 || index > MAX_PATH_LEN)
+	if (index > size()-1 || index > MAX_PATH_LEN)
 		throw std::range_error("Path index out of range");
 
 	return m_path + m_path_offsets[index];
