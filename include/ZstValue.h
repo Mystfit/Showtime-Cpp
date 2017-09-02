@@ -29,7 +29,6 @@ public:
 	ZST_EXPORT const int int_at(const size_t position) const;
 	ZST_EXPORT const float float_at(const size_t position) const;
 	ZST_EXPORT void char_at(char * buf, const size_t position) const;
-    ZST_EXPORT const ZstValueVariant variant_at(const size_t position) const;
     ZST_EXPORT const size_t size_at(const size_t position) const;
 
 

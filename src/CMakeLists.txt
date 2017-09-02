@@ -34,6 +34,7 @@ set(ZST_PRIVATE_HEADERS
  ${Showtime_INCLUDE_DIRS}/ZstURIWire.h
  ${Showtime_INCLUDE_DIRS}/ZstValueWire.h
  ${Showtime_INCLUDE_DIRS}/ZstEventWire.h
+ ${Showtime_INCLUDE_DIRS}/ZstPlugEvent.h
  ${Showtime_INCLUDE_DIRS}/ZstEndpointRef.h
  ${Showtime_INCLUDE_DIRS}/ZstExports.h
  ${Showtime_INCLUDE_DIRS}/ZstEntityRef.h
@@ -56,6 +57,7 @@ set(ZST_SOURCE
  "ZstActor.cpp"
  "ZstMessages.cpp"
  "ZstEvent.cpp"
+ "ZstPlugEvent.cpp"
  "ZstEventWire.cpp"
  "ZstPlug.cpp"
  "ZstPlugRef.cpp"

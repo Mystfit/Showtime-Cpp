@@ -8,6 +8,7 @@
 #include "ZstMessages.h"
 #include "ZstURIWire.h"
 #include "ZstEventWire.h"
+#include "ZstPlugEvent.h"
 #include "ZstValueWire.h"
 #include "entities/ZstEntityBase.h"
 #include "entities/ZstFilter.h"
@@ -173,8 +174,9 @@ string ZstEndpoint::first_available_ext_ip(){
     
     string interface_ip_str = string(interface_ip);
     
-    delete[] interface_ip;
-    delete[] net_if;
+	//TODO: Figure out how to clean these up on Windows - DLL boundary issue?
+    //delete[] interface_ip;
+    //delete[] net_if;
     
     return interface_ip_str;
 }

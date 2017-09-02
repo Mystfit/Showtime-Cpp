@@ -93,11 +93,6 @@ void ZstValue::char_at(char * buf, const size_t position) const
 	memcpy(buf, val_s.c_str(), val_s.size());
 }
 
-const ZstValueVariant ZstValue::variant_at(const size_t position) const
-{
-    return m_values[position];
-}
-
 const size_t ZstValue::size_at(const size_t position) const {
     auto val = m_values.at(position);
     

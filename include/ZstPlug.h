@@ -70,13 +70,3 @@ public:
 	ZstOutputPlug(ZstComponent * owner, const char * name, ZstValueType t) : ZstPlug(owner, name, t) {};
 	ZST_EXPORT void fire();
 };
-
-
-class ZstPlugEvent : public ZstEvent {
-public:
-	ZstPlugEvent(ZstURI uri, ZstValue & value);
-	~ZstPlugEvent();
-	ZstValue & value();
-private:
-	ZstValue m_value;
-};
