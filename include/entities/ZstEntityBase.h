@@ -3,7 +3,6 @@
 #include "ZstExports.h"
 #include "Showtime.h"
 #include "ZstURI.h"
-#include "ZstPlug.h"
 #include <vector>
 
 class ZstEntityBase {

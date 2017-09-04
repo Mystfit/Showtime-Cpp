@@ -4,8 +4,6 @@
 #include <sstream>
 #include <ostream>
 
-using namespace std;
-
 ZstValue::ZstValue() : m_default_type(ZstValueType::ZST_NONE)
 {
 	init();
@@ -35,6 +33,13 @@ ZstValueType ZstValue::get_default_type()
 	return m_default_type;
 }
 
+void ZstValue::copy(ZstValue & other)
+{
+	for (auto v : other.m_values) {
+		m_values.push_back(v);
+	}
+}
+
 void ZstValue::clear()
 {
 	m_values.clear();
@@ -52,7 +57,7 @@ void ZstValue::append_float(float value)
 
 void ZstValue::append_char(const char * value)
 {
-	m_values.push_back(string(value));
+	m_values.push_back(std::string(value));
 }
 
 const size_t ZstValue::size() const
@@ -62,23 +67,15 @@ const size_t ZstValue::size() const
 
 const int ZstValue::int_at(const size_t position) const
 {
-	if (position < m_values.size() - 1)
-		return NAN;
-
 	auto val = m_values.at(position);
-    ZstValueIntVisitor visitor = ZstValueIntVisitor();
-	int result = val.apply_visitor<ZstValueIntVisitor>(visitor);
+	int result = visit(ZstValueIntVisitor(), val);
 	return result;
 }
 
 const float ZstValue::float_at(const size_t position) const
 {
-	if (position < m_values.size() - 1)
-		return NAN;
-
 	auto val = m_values.at(position);
-    ZstValueFloatVisitor visitor = ZstValueFloatVisitor();
-	float result = val.apply_visitor<ZstValueFloatVisitor>(visitor);
+	float result = visit(ZstValueFloatVisitor(), val);
 	return result;
 }
 
@@ -88,8 +85,7 @@ void ZstValue::char_at(char * buf, const size_t position) const
 		return;
 
 	auto val = m_values.at(position);
-    ZstValueStrVisitor visitor = ZstValueStrVisitor();
-	std::string val_s = val.apply_visitor<ZstValueStrVisitor>(visitor);
+	std::string val_s = visit(ZstValueStrVisitor(), val);
 	memcpy(buf, val_s.c_str(), val_s.size());
 }
 
@@ -104,7 +100,7 @@ const size_t ZstValue::size_at(const size_t position) const {
     }
     else if (m_default_type == ZstValueType::ZST_STRING) {
         ZstValueStrVisitor visitor = ZstValueStrVisitor();
-        std::string val_s = val.apply_visitor<ZstValueStrVisitor>(visitor);
+        std::string val_s = visit(ZstValueStrVisitor(), val);
         return val_s.size();
     } 
     return 0;

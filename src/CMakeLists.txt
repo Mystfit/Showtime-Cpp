@@ -17,6 +17,7 @@ set(ZST_PUBLIC_HEADERS
  ${Showtime_INCLUDE_DIRS}/ZstCable.h
  ${Showtime_INCLUDE_DIRS}/ZstValue.h
  ${Showtime_INCLUDE_DIRS}/ZstCallbacks.h
+ ${Showtime_INCLUDE_DIRS}/ZstEnums.h
 )
 
 set(ZST_ENTITIES
@@ -80,12 +81,11 @@ set(ZST_INCLUDES
 	${ZeroMQ_INCLUDE_DIRS}
 	${CZMQ_INCLUDE_DIRS}
     ${MSGPACK_INCLUDE_DIRS}
-    ${Boost_INCLUDE_DIRS}
+    ../devlibs/variant/include
 )
 
 include_directories(${ZST_INCLUDES})
 
-link_directories(${Boost_LIBRARY_DIRS})
 set(ZST_LINK_LIBS
 	${ZeroMQ_LIBRARIES}
 	${CZMQ_LIBRARIES}
@@ -96,7 +96,6 @@ set(ZST_LINK_LIBS
 IF(WIN32)
 	add_definitions(-DEXPORTS_API)
 ENDIF(WIN32)
-add_definitions(-DMSGPACK_USE_BOOST)
 
 # Create Showtime library target
 add_library(${PROJECT_NAME} SHARED ${ZST_HEADERS} ${ZST_SOURCE})

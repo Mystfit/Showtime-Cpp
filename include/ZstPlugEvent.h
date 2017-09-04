@@ -7,7 +7,7 @@ class ZstPlugEvent : public ZstEvent {
 public:
 	ZstPlugEvent(ZstURI uri, ZstValue & value);
 	ZST_EXPORT ~ZstPlugEvent();
-	ZST_EXPORT ZstValue & value();
+	ZST_EXPORT ZstValue * value();
 private:
-	ZstValue m_value;
+	ZstValue * m_value;
 };

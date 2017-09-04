@@ -50,10 +50,10 @@ ZstEvent::EventType ZstEvent::get_update_type()
 
 bool ZstEvent::operator==(const ZstEvent & other)
 {
-	return m_first == other.m_first && m_second == other.m_second;
+	return ZstURI::equal(m_first, other.m_first) && ZstURI::equal(m_second, other.m_second);
 }
 
 bool ZstEvent::operator!=(const ZstEvent & other)
 {
-	return !(m_first == other.m_first && m_second == other.m_second);
+	return !(ZstURI::equal(m_first, other.m_first) && ZstURI::equal(m_second, other.m_second));
 }

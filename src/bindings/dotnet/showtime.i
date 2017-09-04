@@ -2,6 +2,7 @@
 %{
 	#include "ZstExports.h"
 	#include "Showtime.h"
+	#include "ZstEnums.h"
 	#include "ZstURI.h"
 	#include "ZstPlug.h"
 	#include "ZstEvent.h"

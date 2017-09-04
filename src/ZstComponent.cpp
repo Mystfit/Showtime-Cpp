@@ -3,6 +3,7 @@
 #include "ZstPlug.h"
 #include "ZstEndpoint.h"
 #include "ZstCallbacks.h"
+#include "ZstPlug.h"
 
 
 ZstComponent::ZstComponent(const char * entity_type, const char * name) : ZstEntityBase(entity_type, name)
@@ -50,11 +51,11 @@ ZstOutputPlug * ZstComponent::create_output_plug(const char * name, ZstValueType
 	return plug;
 }
 
-ZstPlug * ZstComponent::get_plug_by_URI(const ZstURI uri)
+ZstPlug * ZstComponent::get_plug_by_URI(const ZstURI & uri)
 {
 	ZstPlug * found_plug = NULL;
 	for (auto plug : m_plugs) {
-		if (plug->get_URI() == uri) {
+		if (ZstURI::equal(uri, plug->get_URI())) {
 			found_plug = plug;
 			break;
 		}

@@ -4,15 +4,16 @@
 //-------------
 ZstPlugEvent::ZstPlugEvent(ZstURI uri, ZstValue & value) : ZstEvent(uri, ZstEvent::EventType::PLUG_HIT)
 {
-	m_value = value;
+	m_value = new ZstValue(value);
 }
 
 ZstPlugEvent::~ZstPlugEvent()
 {
-	m_value.clear();
+	m_value->clear();
+	delete m_value;
 }
 
-ZstValue & ZstPlugEvent::value()
+ZstValue * ZstPlugEvent::value()
 {
 	return m_value;
 }

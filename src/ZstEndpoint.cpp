@@ -114,7 +114,8 @@ void ZstEndpoint::process_callbacks()
 		case ZstEvent::EventType::PLUG_HIT:
             {
                 ZstURI entity_URI = e->get_first();
-                ZstURI entity_parent = entity_URI.range(0, entity_URI.size() - 1);
+				int end_index = static_cast<int>(entity_URI.size()) - 1;
+                ZstURI entity_parent = entity_URI.range(0, end_index);
                 
                 ZstComponent * component = dynamic_cast<ZstComponent*>(get_entity_by_URI(entity_parent));
                 if (component != NULL) {
@@ -608,7 +609,7 @@ ZstEvent * ZstEndpoint::pop_event()
 	return m_events.pop();
 }
 
-int ZstEndpoint::event_queue_size()
+size_t ZstEndpoint::event_queue_size()
 {
 	return m_events.size();
 }
@@ -712,8 +713,9 @@ void ZstEndpoint::broadcast_to_local_plugs(ZstURI output_plug, ZstValue & value)
 
 	for(int i = 0; i < cables().size(); ++i){
 		cable = cables()[i];
-		if (cable->get_output() == output_plug) {
-			ZstEntityBase * entity = get_entity_by_URI(cable->get_input().range(0, cable->get_input().size() - 1));
+		if (ZstURI::equal(cable->get_output(), output_plug)) {
+			int end_index = static_cast<int>(cable->get_input().size()) - 1;
+			ZstEntityBase * entity = get_entity_by_URI(cable->get_input().range(0, end_index));
 			ZstComponent* component = dynamic_cast<ZstComponent*>(entity);
 			if (component) {
 				ZstInputPlug * plug = (ZstInputPlug*)component->get_plug_by_URI(cable->get_input());

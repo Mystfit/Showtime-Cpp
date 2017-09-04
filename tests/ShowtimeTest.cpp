@@ -7,7 +7,6 @@
 #include "ZstPlug.h"
 #include "ZstStage.h"
 #include "ZstEndpoint.h"
-#include "ZstValue.h"
 #include "entities/AddFilter.h"
 #include "entities/ZstFilter.h"
 
@@ -130,7 +129,7 @@ public:
 	virtual void compute(ZstInputPlug * plug) override {}
 
 	void send(int val) {
-		m_output->value().append_int(val);
+		m_output->append_int(val);
 		m_output->fire();
 	}
 
@@ -160,7 +159,7 @@ public:
 
 	virtual void compute(ZstInputPlug * plug) override {
 		num_hits++;
-		last_received_val = plug->value().int_at(0);
+		last_received_val = plug->int_at(0);
 		if (log) {
 			std::cout << "Input filter received value " << last_received_val << std::endl;
 		}
@@ -196,13 +195,13 @@ void test_URI() {
 	ZstURI uri_notequal = ZstURI("anotherins/someplug");
 
 	assert(uri_empty.is_empty());
-	assert(uri_equal1 == uri_equal1);
-	assert(uri_equal1 != uri_notequal);
+	assert(ZstURI::equal(uri_equal1, uri_equal1));
+	assert(!ZstURI::equal(uri_equal1, uri_notequal));
     assert(strcmp(uri_equal1.path(), "ins/someplug") == 0);
 
-	assert(ZstURI("root_entity/filter") == ZstURI("root_entity/filter"));
-	assert(!(ZstURI("root_entity") == ZstURI("root_entity/filter")));
-	assert(ZstURI("root_entity") != ZstURI("root_entity/filter"));
+	assert(ZstURI::equal(ZstURI("root_entity/filter") ,ZstURI("root_entity/filter")));
+	assert(!(ZstURI::equal(ZstURI("root_entity"), ZstURI("root_entity/filter"))));
+	assert(!(ZstURI::equal(ZstURI("root_entity"), ZstURI("root_entity/filter"))));
 	assert(ZstURI("b") < ZstURI("c"));
 	assert(ZstURI("a") < ZstURI("b"));
 	assert(ZstURI("a") < ZstURI("c"));
@@ -293,7 +292,7 @@ void test_create_entities(){
 	//Check local client registered plugs correctly
 	ZstURI localPlug_uri = test_output->get_plug_by_URI(test_output->output_URI())->get_URI();
 	ZstURI localPlug_uri_via_entity = test_output->output_URI();
-	assert(localPlug_uri == localPlug_uri_via_entity);
+	assert(ZstURI::equal(localPlug_uri, localPlug_uri_via_entity));
 
 	//Check plug destruction
 	TestPlugLeavingEventCallback * plugLeavingCallback = new TestPlugLeavingEventCallback();
@@ -435,7 +434,7 @@ void test_memory_leaks() {
 	InputComponent * test_input = new InputComponent("memleak_test_in", root_entity, 10);
 	Showtime::connect_cable(test_output->output_URI(), test_input->input_URI());
 
-	int count = 200000;
+	int count = 20000;
 	std::cout << "Sending " << count << " messages" << std::endl;
 
 	for (int i = 0; i < count; ++i) {

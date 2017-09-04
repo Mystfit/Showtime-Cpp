@@ -67,7 +67,7 @@ public:
 
 	void enqueue_event(ZstEvent * event);
 	ZST_EXPORT ZstEvent * pop_event();
-	ZST_EXPORT int event_queue_size();
+	ZST_EXPORT size_t event_queue_size();
 
 	//Plug callbacks
 	ZST_EXPORT ZstCallbackQueue<ZstEntityEventCallback, ZstURI> * entity_arriving_events();

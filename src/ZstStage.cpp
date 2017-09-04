@@ -337,7 +337,8 @@ void ZstStage::endpoint_heartbeat_handler(zsock_t * socket, zmsg_t * msg) {
 void ZstStage::create_plug_handler(zsock_t *socket, zmsg_t *msg) {
 	ZstMessages::CreatePlug plug_args = ZstMessages::unpack_message_struct<ZstMessages::CreatePlug>(msg);
 
-    ZstURI entity_URI = plug_args.address.range(0, plug_args.address.size()-1);
+	int end_index = static_cast<int>(plug_args.address.size()) - 1;
+    ZstURI entity_URI = plug_args.address.range(0, end_index);
 	ZstEntityRef* entity = get_entity_ref_by_URI(entity_URI);
 
 	if (entity == NULL) {
@@ -380,7 +381,9 @@ void ZstStage::create_entity_handler(zsock_t * socket, zmsg_t * msg)
 	ZstURI entity_uri = entity_args.address;
 
 	if (entity_args.address.size() > 1) {
-		entity_uri = entity_args.address.range(0, entity_args.address.size() - 1);
+
+		int end_index = static_cast<int>(entity_args.address.size()) - 1;
+		entity_uri = entity_args.address.range(0, end_index);
 		ZstEntityRef* entity_parent = get_entity_ref_by_URI(entity_uri);
 		if (entity_parent == NULL) {
 			reply_with_signal(socket, ZstMessages::Signal::ERR_STAGE_ENTITY_NOT_FOUND);
@@ -424,7 +427,8 @@ void ZstStage::destroy_plug_handler(zsock_t * socket, zmsg_t * msg)
 	ZstMessages::DestroyURI plug_destroy_args = ZstMessages::unpack_message_struct<ZstMessages::DestroyURI>(msg);
 	cout << "ZST_STAGE: Received destroy plug request for " << plug_destroy_args.address.path() << endl;
 
-	ZstEntityRef *entity = get_entity_ref_by_URI(plug_destroy_args.address.range(0, plug_destroy_args.address.size()-1));
+	int end_index = static_cast<int>(plug_destroy_args.address.size()) - 1;
+	ZstEntityRef *entity = get_entity_ref_by_URI(plug_destroy_args.address.range(0, end_index));
 	if (!entity) {
 		reply_with_signal(socket, ZstMessages::Signal::ERR_STAGE_ENTITY_NOT_FOUND);
 		return;
@@ -498,7 +502,7 @@ ZstEntityRef * ZstStage::get_entity_ref_by_URI(ZstURI uri)
 	ZstEntityRef * result = NULL;
 	vector<ZstEntityRef*> entities = get_all_entity_refs(NULL);
 	for (auto entity_iter : entities) {
-		if (entity_iter->get_URI() == uri) {
+		if (ZstURI::equal(entity_iter->get_URI(), uri)) {
 			result = entity_iter;
 			break;
 		}
@@ -511,7 +515,7 @@ ZstPlugRef * ZstStage::get_plug_by_URI(ZstURI uri)
 	ZstPlugRef* result = NULL;
 	vector<ZstPlugRef*> plugs = get_all_plug_refs();
 	for (auto plug : plugs) {
-		if (plug->get_URI() == uri) {
+		if (ZstURI::equal(plug->get_URI(), uri)) {
 			result = plug;
 			break;
 		}

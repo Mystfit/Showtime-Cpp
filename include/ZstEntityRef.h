@@ -15,7 +15,7 @@ public:
 
 	inline bool operator==(const ZstEntityRef& other)
 	{
-		return (m_URI == other.m_URI);
+		return ZstURI::equal(m_URI, other.m_URI);
 	}
 private:
 	ZstURI m_URI;

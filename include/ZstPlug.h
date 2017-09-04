@@ -9,13 +9,14 @@
 #include "ZstEvent.h"
 #include "ZstCallbackQueue.h"
 #include "ZstCallbacks.h"
-#include "ZstValue.h"
+#include "ZstEnums.h"
 
 //Forward declarations
 class ZstURI;
 class PlugCallback;
 class Showtime;
 class ZstComponent;
+class ZstValue;
 
 class ZstPlug {
 public:
@@ -24,11 +25,23 @@ public:
 	//Constructor
 	ZST_EXPORT ZstPlug(ZstComponent * owner, const char * name, ZstValueType t);
 	ZST_EXPORT virtual ~ZstPlug();
-	ZST_EXPORT ZstURI get_URI() const;
-	ZST_EXPORT ZstValue & value();
+	ZST_EXPORT const ZstURI & get_URI() const;
 	ZST_EXPORT bool is_destroyed();
+
+	//Value interface
+	ZST_EXPORT void clear();
+	ZST_EXPORT void append_int(int value);
+	ZST_EXPORT void append_float(float value);
+	ZST_EXPORT void append_char(const char * value);
+
+	ZST_EXPORT const size_t size() const;
+	ZST_EXPORT const int int_at(const size_t position) const;
+	ZST_EXPORT const float float_at(const size_t position) const;
+	ZST_EXPORT void char_at(char * buf, const size_t position) const;
+	ZST_EXPORT const size_t size_at(const size_t position) const;
+
 protected:
-	ZstValue m_value;
+	ZstValue * m_value;
 
 private:
 	ZstComponent * m_owner;
@@ -60,7 +73,7 @@ protected:
 
 private:
 	//Receive a msgpacked value through this plug
-	ZST_EXPORT void recv(ZstValue & val);
+	ZST_EXPORT void recv(ZstValue * val);
 	ZstCallbackQueue<ZstPlugDataEventCallback, ZstInputPlug*> * m_input_fired_manager;
 };
 

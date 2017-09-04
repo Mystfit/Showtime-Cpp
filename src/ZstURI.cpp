@@ -37,7 +37,7 @@ ZstURI::~ZstURI()
 {
 }
 
-const char * ZstURI::path() {
+const char * ZstURI::path() const {
 	return m_combined_path;
 }
 
@@ -97,14 +97,9 @@ const char * ZstURI::segment(int index) const
 	return m_path + m_path_offsets[index];
 }
 
-bool ZstURI::operator==(const ZstURI & other)
+bool ZstURI::equal(const ZstURI & a, const ZstURI b)
 {
-	return (strcmp(m_combined_path, other.m_combined_path) == 0);
-}
-
-bool ZstURI::operator!=(const ZstURI & other)
-{
-	return !((strcmp(m_combined_path, other.m_combined_path) == 0));
+	return (strcmp(a.path(), b.path()) == 0);
 }
 
 bool ZstURI::operator< (const ZstURI& b) const 

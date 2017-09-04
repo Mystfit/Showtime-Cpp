@@ -14,14 +14,13 @@ public:
 	ZST_EXPORT ZstURI(const char *  path);
 	ZST_EXPORT ~ZstURI();
 
-	ZST_EXPORT const char * path();
+	ZST_EXPORT const char * path() const;
 	ZST_EXPORT const size_t size() const;
 	ZST_EXPORT ZstURI range(int start, int end) const;
 
 	ZST_EXPORT bool contains(ZstURI compare);
 	ZST_EXPORT const char * segment(int index) const;
-	ZST_EXPORT bool operator==(const ZstURI& other);
-	ZST_EXPORT bool operator!=(const ZstURI& other);
+	ZST_EXPORT static bool equal(const ZstURI & a, const ZstURI b);
 	ZST_EXPORT bool operator< (const ZstURI& b) const;
 	ZST_EXPORT bool is_empty();
 

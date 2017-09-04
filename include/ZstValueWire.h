@@ -19,22 +19,18 @@ public:
 		pk.pack_array(m_values.size());
         
 		if (m_default_type == ZstValueType::ZST_INT) {
-            ZstValueIntVisitor visitor = ZstValueIntVisitor();
 			for (auto val : m_values) {
-				pk.pack_int(val.apply_visitor<ZstValueIntVisitor>(visitor));
+				pk.pack_int(visit(ZstValueIntVisitor(), val));
 			}
 		}
 		else if (m_default_type == ZstValueType::ZST_FLOAT) {
-            ZstValueFloatVisitor visitor = ZstValueFloatVisitor();
-
 			for (auto val : m_values) {
-				pk.pack_float(val.apply_visitor<ZstValueFloatVisitor>(visitor));
+				pk.pack_float(visit(ZstValueFloatVisitor(), val));
 			}
 		}
 		else if (m_default_type == ZstValueType::ZST_STRING) {
 			for (auto val : m_values) {
-                ZstValueStrVisitor visitor = ZstValueStrVisitor();
-				std::string s = val.apply_visitor<ZstValueStrVisitor>(visitor);
+				std::string s = visit(ZstValueStrVisitor(), val);
 				pk.pack_str(s.size());
 				pk.pack_str_body(s.c_str(), s.size());
 			}

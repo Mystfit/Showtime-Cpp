@@ -140,7 +140,7 @@ void ZstEndpointRef::destroy_plug(ZstURI plug)
 	ZstPlugRef * plug_to_delete = NULL;
 	for (map<ZstURI, ZstPlugRef*>::iterator plug_iter = m_plugs.begin(); plug_iter != m_plugs.end(); ++plug_iter)
 	{
-		if ((plug_iter->second->get_URI()) == plug)
+		if (ZstURI::equal(plug_iter->second->get_URI(), plug))
 		{
 			plug_to_delete = plug_iter->second;
 			m_plugs.erase(plug_iter);

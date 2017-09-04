@@ -148,7 +148,7 @@ ZstEvent * Showtime::pop_event()
 	return Showtime::endpoint().pop_event();
 }
 
-int Showtime::event_queue_size()
+size_t Showtime::event_queue_size()
 {
 	return Showtime::endpoint().event_queue_size();
 }

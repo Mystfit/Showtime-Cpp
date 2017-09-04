@@ -4,7 +4,6 @@ set(SECTION_SOURCE_FILES
 
 include_directories(
 	${Showtime_INCLUDE_DIRS}
-	${Boost_INCLUDE_DIRS}
 	${ZeroMQ_INCLUDE_DIRS}
 	${CZMQ_INCLUDE_DIRS}
     ${MSGPACK_INCLUDE_DIRS}
@@ -13,7 +12,6 @@ include_directories(
 IF(WIN32)
 	add_definitions(-DIMPORTS_API)
 ENDIF(WIN32)
-add_definitions(-DMSGPACK_USE_BOOST)
 
 # Section test executable
 add_executable (ShowtimeTest ${SECTION_SOURCE_FILES}) 

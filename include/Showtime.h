@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include "ZstExports.h"
+#include "ZstEnums.h"
 
 class ZstPlug;
 class ZstEntityBase;
@@ -23,26 +24,6 @@ class ZstCableEventCallback;
 #define STAGE_PUB_PORT 6002
 
 #define HEARTBEAT_DURATION 1000
-
-enum RuntimeLanguage {
-	NATIVE_RUNTIME,
-	PYTHON_RUNTIME,
-	DOTNET_RUNTIME
-};
-
-enum ZstValueType {
-	ZST_NONE = 0,
-	ZST_INT,
-	ZST_FLOAT,
-	ZST_STRING
-};
-
-enum ZstEntityBehaviour {
-	FILTER = 0,
-	PATCH,
-	COMPONENT,
-	PERFORMER
-};
 
 class Showtime
 {
@@ -90,7 +71,7 @@ public:
 	ZST_EXPORT static void register_entity_type(const char * entity_type);
 
 	ZST_EXPORT static ZstEvent * pop_event();
-	ZST_EXPORT static int event_queue_size();
+	ZST_EXPORT static size_t event_queue_size();
 
 	ZST_EXPORT static int connect_cable(ZstURI a, ZstURI b);
 	ZST_EXPORT static int destroy_cable(ZstURI a, ZstURI b);

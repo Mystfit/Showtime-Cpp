@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.8.2)
 
 project(Showtime)
 
-set(SHOWTIME_VERSION 0.4.6)
+set(SHOWTIME_VERSION 0.4.7)
 
 # Set build locations
 set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/install)
@@ -26,14 +26,16 @@ endif()
 set(CMAKE_CXX_STANDARD 11)
 set(CXX_STANDARD_REQUIRED)
 
-# Boost flags
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_LIBS ON)
-set(Boost_USE_STATIC_RUNTIME ON)
-find_package(Boost REQUIRED)
+if (MSVC_VERSION GREATER_EQUAL "1900")
+    include(CheckCXXCompilerFlag)
+    CHECK_CXX_COMPILER_FLAG("/std:c++17" _cpp_17_flag_supported)
+    if (_cpp_17_flag_supported)
+        add_compile_options("/std:c++17")
+    endif()
+endif()
 
 # Set showtime include directories
-set(Showtime_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include)
+set(Showtime_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include )
 
 # Packages
 find_package(ZeroMQ REQUIRED)

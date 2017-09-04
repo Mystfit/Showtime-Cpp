@@ -1,12 +1,23 @@
 %include "std_string.i"
 %include <windows.i>
 %include "ZstExports.h"
+%include "ZstEnums.h"
 
 // Importable classes
 %include "ZstURI.h"
 %include "ZstPlug.h"
 %include "ZstEvent.h"
 %include "ZstCable.h"
+
+%extend ZstPlug{
+    std::string char_at(size_t position) {
+        char * buf = new char[$self->size_at(position) + 1]();
+        $self->char_at(buf,position);
+        std::string s = std::string(buf);
+        delete[] buf;
+        return s;
+    }
+};
 
 // Callbacks
 %feature("director") ZstEventCallback;
@@ -41,20 +52,3 @@
 %include "entities/AddFilter.h"
 %clearnodefaultctor;
 
-// ZstValue extensions
-%nodefaultctor ZstValue;
-%extend ZstValue{
-    std::string char_at(size_t position) {
-        char * buf = new char[$self->size_at(position) + 1]();
-        $self->char_at(buf,position);
-        std::string s = std::string(buf);
-        delete[] buf;
-        return s;
-    }
-};
-
-%ignore ZstValueIntVisitor;
-%ignore ZstValueFloatVisitor;
-%ignore ZstValueStrVisitor;
-%include "ZstValue.h"
-%ignore ZstValue::char_at;
