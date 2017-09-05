@@ -9,7 +9,7 @@
 #include "ZstEvent.h"
 #include "ZstCallbackQueue.h"
 #include "ZstCallbacks.h"
-#include "ZstEnums.h"
+#include "ZstConstants.h"
 
 //Forward declarations
 class ZstURI;

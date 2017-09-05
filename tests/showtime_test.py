@@ -13,7 +13,7 @@ class SinkComponent(ZstComponent):
         self.last_received_value = 0
 
     def compute(self, plug):
-        self.last_received_value = plug.value().int_at(0)
+        self.last_received_value = plug.int_at(0)
         if self.last_received_value % 1000 == 0:
             print("Plug received value {0}".format(self.last_received_value))
 
@@ -24,7 +24,7 @@ class PushComponent(ZstComponent):
         self.plug = self.create_output_plug("out", showtime.ZST_INT)
 
     def send(self, val):
-        self.plug.value().append_int(val)
+        self.plug.append_int(val)
         self.plug.fire()
 
 

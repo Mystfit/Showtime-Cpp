@@ -20,7 +20,6 @@ public class ShowtimeController : MonoBehaviour {
     private EntityLeavingCallback entityLeave;
     private PlugArrivingCallback plugArrive;
     private PlugLeavingCallback plugLeave;
-    private PlugDataCallback plugData;
     private CableArrivingCallback cableArrive;
     private CableLeavingCallback cableLeave;
 
@@ -38,7 +37,6 @@ public class ShowtimeController : MonoBehaviour {
         entityLeave = new EntityLeavingCallback();
         plugArrive = new PlugArrivingCallback();
         plugLeave = new PlugLeavingCallback();
-        plugData = new PlugDataCallback();
         cableArrive = new CableArrivingCallback();
         cableLeave = new CableLeavingCallback();
         Showtime.attach_entity_arriving_callback(entityArrive);
@@ -67,10 +65,6 @@ public class ShowtimeController : MonoBehaviour {
         //Send a value through this plug. This is an Int plug so we send an int (duh)
         pushA.send(27);
         pushB.send(3);
-
-        //Pause again to give the message time to do a round trip internally
-        System.Threading.Thread.Sleep(100);
-        Debug.Log ("Final plug value: " + sink.plug.value().int_at(0));
 	}
 	
 	void Update () {
@@ -108,7 +102,13 @@ public class ShowtimeController : MonoBehaviour {
 
         public override void compute(ZstInputPlug plug)
         {
-            Debug.Log("Sink received value of " + plug.value().int_at(0));
+            try
+            {
+                Debug.Log("Sink received value of " + plug.int_at(0));
+            } catch (Exception e)
+            {
+                Debug.Log(e.ToString());
+            }
         }
     }
 
@@ -124,7 +124,7 @@ public class ShowtimeController : MonoBehaviour {
 
         public void send(int val)
         {
-            plug.value().append_int(val);
+            plug.append_int(val);
             plug.fire();
         }
     }
@@ -177,14 +177,6 @@ public class ShowtimeController : MonoBehaviour {
         public override void run(ZstURI plug)
         {
             Debug.Log("Plug leaving: " + plug.path());
-        }
-    }
-
-    public class PlugDataCallback : ZstPlugDataEventCallback
-    {
-        public override void run(ZstInputPlug plug)
-        {
-            Debug.Log("Plug : " + plug.get_URI().path() + " received hit with val " + plug.value().int_at(0));
         }
     }
 }

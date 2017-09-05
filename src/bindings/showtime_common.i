@@ -1,7 +1,7 @@
 %include "std_string.i"
 %include <windows.i>
 %include "ZstExports.h"
-%include "ZstEnums.h"
+%include "ZstConstants.h"
 
 // Importable classes
 %include "ZstURI.h"

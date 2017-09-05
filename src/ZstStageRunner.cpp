@@ -1,5 +1,6 @@
 #include "ZstStage.h"
 #include "version.h"
+#include "Showtime.h"
 
 //Standalone stage runner
 //-----------------------

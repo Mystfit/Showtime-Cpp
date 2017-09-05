@@ -1,11 +1,5 @@
 #pragma once
 
-enum RuntimeLanguage {
-	NATIVE_RUNTIME,
-	PYTHON_RUNTIME,
-	DOTNET_RUNTIME
-};
-
 enum ZstValueType {
 	ZST_NONE = 0,
 	ZST_INT,
@@ -16,6 +10,11 @@ enum ZstValueType {
 enum ZstEntityBehaviour {
 	FILTER = 0,
 	PATCH,
-	COMPONENT,
-	PERFORMER
+	COMPONENT
 };
+
+#define STAGE_REP_PORT 6000
+#define STAGE_ROUTER_PORT 6001
+#define STAGE_PUB_PORT 6002
+
+#define HEARTBEAT_DURATION 1000

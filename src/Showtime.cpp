@@ -9,8 +9,6 @@
 
 using namespace std;
 
-RuntimeLanguage Showtime::_runtime_language = RuntimeLanguage::NATIVE_RUNTIME;
-
 Showtime::Showtime(){
 }
 
@@ -117,16 +115,6 @@ void Showtime::remove_cable_arriving_callback(ZstCableEventCallback * callback)
 void Showtime::remove_cable_leaving_callback(ZstCableEventCallback * callback)
 {
 	return Showtime::endpoint().cable_leaving_events()->remove_event_callback(callback);
-}
-
-void Showtime::set_runtime_language(RuntimeLanguage runtime)
-{
-	_runtime_language = runtime;
-}
-
-RuntimeLanguage Showtime::get_runtime_language()
-{
-	return _runtime_language;
 }
 
 

@@ -14,7 +14,6 @@
 #include "ZstEventWire.h"
 #include "ZstPlugRef.h"
 #include "ZstEndpointRef.h"
-#include "Showtime.h"
 #include "Queue.h"
 
 #define HEARTBEAT_DURATION 1000

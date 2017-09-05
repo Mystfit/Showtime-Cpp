@@ -1,5 +1,5 @@
 #include "entities/AddFilter.h"
-#include "ZstEnums.h"
+#include "ZstConstants.h"
 
 using namespace std;
 

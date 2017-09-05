@@ -2,11 +2,10 @@
 %{
 	#include "ZstExports.h"
 	#include "Showtime.h"
-	#include "ZstEnums.h"
+	#include "ZstConstants.h"
 	#include "ZstURI.h"
 	#include "ZstPlug.h"
 	#include "ZstEvent.h"
-	#include "ZstValue.h"
 	#include "ZstCable.h"
 	#include "ZstCallbacks.h"
 	#include "ZstCallbackQueue.h"

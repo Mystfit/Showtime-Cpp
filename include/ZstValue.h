@@ -2,8 +2,8 @@
 #include <msgpack.hpp>
 #include <vector>
 #include <iostream>
-#include <mpark/variant.hpp>
-#include "ZstEnums.h"
+#include "variant.hpp"
+#include "ZstConstants.h"
 
 #include "ZstExports.h"
 //A ZstValue is a generic value that represents some data 

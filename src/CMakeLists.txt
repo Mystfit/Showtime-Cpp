@@ -17,7 +17,7 @@ set(ZST_PUBLIC_HEADERS
  ${Showtime_INCLUDE_DIRS}/ZstCable.h
  ${Showtime_INCLUDE_DIRS}/ZstValue.h
  ${Showtime_INCLUDE_DIRS}/ZstCallbacks.h
- ${Showtime_INCLUDE_DIRS}/ZstEnums.h
+ ${Showtime_INCLUDE_DIRS}/ZstConstants.h
 )
 
 set(ZST_ENTITIES
@@ -29,6 +29,7 @@ set(ZST_ENTITIES
 
 set(ZST_PRIVATE_HEADERS 
  ${Showtime_INCLUDE_DIRS}/Queue.h
+ ${Showtime_INCLUDE_DIRS}/variant.hpp
  ${Showtime_INCLUDE_DIRS}/ZstEndpoint.h
  ${Showtime_INCLUDE_DIRS}/ZstActor.h	
  ${Showtime_INCLUDE_DIRS}/ZstPlugRef.h
@@ -81,7 +82,6 @@ set(ZST_INCLUDES
 	${ZeroMQ_INCLUDE_DIRS}
 	${CZMQ_INCLUDE_DIRS}
     ${MSGPACK_INCLUDE_DIRS}
-    ../devlibs/variant/include
 )
 
 include_directories(${ZST_INCLUDES})

@@ -4,7 +4,7 @@
 #include <vector>
 #include <memory>
 #include "ZstExports.h"
-#include "ZstEnums.h"
+#include "ZstConstants.h"
 
 class ZstPlug;
 class ZstEntityBase;
@@ -19,12 +19,6 @@ class ZstEntityEventCallback;
 class ZstPlugEventCallback;
 class ZstCableEventCallback;
 
-#define STAGE_REP_PORT 6000
-#define STAGE_ROUTER_PORT 6001
-#define STAGE_PUB_PORT 6002
-
-#define HEARTBEAT_DURATION 1000
-
 class Showtime
 {
 public:
@@ -36,9 +30,6 @@ public:
 
 	//Destroy the endpoint instrance and leave
 	ZST_EXPORT static void destroy();
-
-	ZST_EXPORT static void set_runtime_language(RuntimeLanguage runtime);
-	ZST_EXPORT static RuntimeLanguage get_runtime_language();
 
 	//Init the library
 	ZST_EXPORT static void init();
@@ -81,7 +72,4 @@ private:
     Showtime();
 	Showtime(const Showtime&); // Prevent construction by copying
 	Showtime& operator=(const Showtime&) {}; // Prevent assignment
-
-	//Active runtime
-	static RuntimeLanguage _runtime_language;
 };
