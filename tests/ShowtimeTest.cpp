@@ -3,10 +3,14 @@
 #include <memory>
 #include <tuple>
 #include <iostream>
+#include <sstream>
+#include <exception>
+#include <boost/process.hpp>
 #include "Showtime.h"
 #include "ZstPlug.h"
 #include "ZstStage.h"
 #include "ZstEndpoint.h"
+#include "entities/ZstProxyComponent.h"
 #include "entities/AddFilter.h"
 #include "entities/ZstFilter.h"
 
@@ -22,9 +26,18 @@
 #define WAIT_FOR_HEARTBEAT usleep(1000 * HEARTBEAT_DURATION);
 #endif
 
+#define MAX_WAIT 20
+
 inline void wait_for_callbacks(int expected_messages) {
+    int repeats = 0;
 	while (Showtime::event_queue_size() < expected_messages) {
-		TAKE_A_BREATH 
+		TAKE_A_BREATH
+        repeats++;
+        if(repeats > MAX_WAIT){
+            std::ostringstream err;
+            err << "Not enough events in queue. Expecting " << expected_messages << " received " << Showtime::event_queue_size() << std::endl;
+            throw std::logic_error(err.str());
+        }
 	}
 	Showtime::poll_once();
 }
@@ -39,10 +52,10 @@ class TestEntityArrivingEventCallback : public ZstEntityEventCallback {
 public:
 	int entityArrivedHits = 0;
 	std::string last_created_entity;
-	void run(ZstURI entity) override {
-		std::cout << "ZST_TEST CALLBACK - entity arriving " << entity.path() << std::endl;
+	void run(ZstEntityBase * entity) override {
+		std::cout << "ZST_TEST CALLBACK - entity arriving " << entity->URI().path() << std::endl;
 		entityArrivedHits++;
-		last_created_entity = std::string(entity.path());
+		last_created_entity = std::string(entity->URI().path());
 	}
 	void reset() { entityArrivedHits = 0; }
 };
@@ -50,9 +63,11 @@ public:
 class TestEntityLeavingEventCallback : public ZstEntityEventCallback {
 public:
 	int entityLeavingHits = 0;
-	void run(ZstURI entity) override {
-		std::cout << "ZST_TEST CALLBACK - entity leaving " << entity.path() << std::endl;
+    std::string last_leaving_entity;
+	void run(ZstEntityBase * entity) override {
+		std::cout << "ZST_TEST CALLBACK - entity leaving " << entity->URI().path() << std::endl;
 		entityLeavingHits++;
+        last_leaving_entity = std::string(entity->URI().path());
 	}
 	void reset() { entityLeavingHits = 0; }
 };
@@ -241,18 +256,8 @@ void test_root_entity() {
 	std::cout << "Starting entity init test" << std::endl;
 	Showtime::endpoint().self_test();
 
-	TestEntityArrivingEventCallback * entityArriveCallback = new TestEntityArrivingEventCallback();
-	Showtime::attach_entity_arriving_callback(entityArriveCallback);
-
-	root_entity = new ZstEntityBase("ROOT", "root_entity");
+	root_entity = new ZstComponent("ROOT", "root_entity");
 	assert(root_entity);
-    wait_for_callbacks(1);
-	assert(entityArriveCallback->entityArrivedHits == 1);
-	assert(entityArriveCallback->last_created_entity == std::string(root_entity->URI().path()));
-	entityArriveCallback->reset();
-
-	Showtime::remove_entity_arriving_callback(entityArriveCallback);
-	delete entityArriveCallback;
 	clear_callback_queue();
 
 	std::cout << "Finished entity init test\n" << std::endl;
@@ -311,6 +316,63 @@ void test_create_entities(){
 	clear_callback_queue();
 
 	std::cout << "Finished create plugs test\n" << std::endl;
+}
+        
+        
+void test_create_proxies(){
+    //Create callbacks
+    TestEntityArrivingEventCallback * entityArriveCallback = new TestEntityArrivingEventCallback();
+    TestEntityLeavingEventCallback * entityLeaveCallback = new TestEntityLeavingEventCallback();
+    Showtime::attach_entity_arriving_callback(entityArriveCallback);
+    Showtime::attach_entity_leaving_callback(entityLeaveCallback);
+    
+    //Create emitter
+    OutputComponent * output = new OutputComponent("proxy_test_output", root_entity);
+    TAKE_A_BREATH
+    clear_callback_queue();
+
+    //Run sink in external process so we don't share the same Showtime singleton
+    std::cout << "Starting sink process" << std::endl;
+    std::cout << "----" << std::endl;
+    boost::process::child sink_process = boost::process::child("SinkTest", "1");
+    
+    //Wait for the sink to register its entity and for us to receive the proxy event
+    wait_for_callbacks(3);
+    assert(entityArriveCallback->entityArrivedHits == 2);
+    entityArriveCallback->reset();
+    ZstProxyComponent * sink_root = dynamic_cast<ZstProxyComponent*>(Showtime::endpoint().get_entity_by_URI(ZstURI("sink_root")));
+    ZstProxyComponent * sink = dynamic_cast<ZstProxyComponent*>(Showtime::endpoint().get_entity_by_URI(ZstURI("sink_root/sink")));
+
+    assert(sink_root);
+    assert(sink);
+    assert(sink_root->is_proxy());
+    assert(sink->is_proxy());
+    assert(ZstURI::equal(sink->parent()->URI(), sink_root->URI()));
+    assert(Showtime::event_queue_size() == 0);
+    
+    //Connect cable to sink (it will exit when it receives a message)
+    Showtime::connect_cable(output->output_URI(), ZstURI("sink_root/sink/in"));
+    TAKE_A_BREATH
+    clear_callback_queue();
+    output->send(1);
+    sink_process.wait();
+    
+    //Check that we received proxy destruction events
+    wait_for_callbacks(3);
+    assert(entityLeaveCallback->entityLeavingHits == 2);
+    assert(Showtime::endpoint().get_entity_by_URI(ZstURI("sink_root")) == NULL);
+    assert(Showtime::endpoint().get_entity_by_URI(ZstURI("sink_root/sink")) == NULL);
+    
+    //Cleanup
+    Showtime::remove_entity_arriving_callback(entityArriveCallback);
+    Showtime::remove_entity_leaving_callback(entityLeaveCallback);
+    delete entityArriveCallback;
+    delete entityLeaveCallback;
+    sink_root = 0;
+    sink = 0;
+    clear_callback_queue();
+    
+    std::cout << "Finished proxy test\n" << std::endl;
 }
 
 
@@ -479,6 +541,7 @@ int main(int argc,char **argv){
 	test_root_entity();
     test_stage_registration();
     test_create_entities();
+    test_create_proxies();
 	test_connect_plugs();
 	test_add_filter();
 	test_memory_leaks();

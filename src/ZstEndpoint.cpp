@@ -12,6 +12,7 @@
 #include "ZstValueWire.h"
 #include "entities/ZstEntityBase.h"
 #include "entities/ZstFilter.h"
+#include "entities/ZstProxyComponent.h"
 
 using namespace std;
 
@@ -31,8 +32,8 @@ void ZstEndpoint::destroy() {
 
 	leave_stage();
 
-	delete m_performer_arriving_event_manager;
-	delete m_performer_leaving_event_manager;
+	delete m_entity_arriving_event_manager;
+	delete m_entity_leaving_event_manager;
 	delete m_cable_arriving_event_manager;
 	delete m_cable_leaving_event_manager;
 	delete m_plug_arriving_event_manager;
@@ -59,8 +60,8 @@ void ZstEndpoint::init()
 
 	m_is_destroyed = false;
 
-	m_performer_arriving_event_manager = new ZstCallbackQueue<ZstEntityEventCallback, ZstURI>();
-	m_performer_leaving_event_manager = new ZstCallbackQueue<ZstEntityEventCallback, ZstURI>();
+	m_entity_arriving_event_manager = new ZstCallbackQueue<ZstEntityEventCallback, ZstEntityBase*>();
+	m_entity_leaving_event_manager = new ZstCallbackQueue<ZstEntityEventCallback, ZstEntityBase*>();
 	m_cable_arriving_event_manager = new ZstCallbackQueue<ZstCableEventCallback, ZstCable>();
 	m_cable_leaving_event_manager = new ZstCallbackQueue<ZstCableEventCallback, ZstCable>();
 	m_plug_arriving_event_manager = new ZstCallbackQueue<ZstPlugEventCallback, ZstURI>();
@@ -150,10 +151,10 @@ void ZstEndpoint::process_callbacks()
 			plug_leaving_events()->run_event_callbacks(e->get_first());
 			break;
 		case ZstEvent::ENTITY_CREATED:
-			entity_arriving_events()->run_event_callbacks(e->get_first());
+            create_proxy_entity(e->get_first());
 			break;
 		case ZstEvent::ENTITY_DESTROYED:
-			entity_arriving_events()->run_event_callbacks(e->get_first());
+            destroy_proxy_entity(e->get_first());
 			break;
 		default:
 			break;
@@ -438,13 +439,18 @@ int ZstEndpoint::destroy_entity(ZstEntityBase * entity)
 		
 	m_entities.erase(entity->URI());
 	entity->set_destroyed();
+    
+    //If we own this entity, we need to let the stage know it's going away
+    if(!entity->is_proxy()){
+       int result = 0;
+        ZstMessages::DestroyURI destroy_args;
+        destroy_args.address = ZstURIWire(entity->URI());
+        send_to_stage(ZstMessages::build_message<ZstMessages::DestroyURI>(ZstMessages::Kind::STAGE_DESTROY_ENTITY, destroy_args));
+        result = (int)check_stage_response_ok();
+        return 1; 
+    }
 
-	int result = 0;
-	ZstMessages::DestroyURI destroy_args;
-	destroy_args.address = ZstURIWire(entity->URI());
-	send_to_stage(ZstMessages::build_message<ZstMessages::DestroyURI>(ZstMessages::Kind::STAGE_DESTROY_ENTITY, destroy_args));
-	result = (int)check_stage_response_ok();
-	return 1;
+	
 }
 
 ZstEntityBase * ZstEndpoint::get_entity_by_URI(ZstURI uri)
@@ -484,7 +490,46 @@ T* ZstEndpoint::create_plug(ZstComponent* owner, const char * name, ZstValueType
 	return plug;
 }
 
- int ZstEndpoint::destroy_plug(ZstPlug * plug)
+
+void ZstEndpoint::create_proxy_entity(const ZstURI & path){
+    
+    ZstEntityBase * entity = NULL;
+    ZstEntityBase* parent = NULL;
+
+    //Build hierarchy for proxy by instantiating proxies for each segment
+    for(int i = 0; i < path.size(); ++i){
+        ZstURI proxy_path = path.range(0, i+1);
+        entity = get_entity_by_URI(proxy_path);
+        
+        if(!entity){
+            if(parent){
+                entity = new ZstProxyComponent(proxy_path.segment(i), parent);
+            } else {
+                entity = new ZstProxyComponent(proxy_path.segment(i));
+            }
+            
+            m_entities[entity->URI()] = entity;
+
+            //Create new proxy
+            entity_arriving_events()->run_event_callbacks(entity);
+        }
+        
+        parent = entity;
+    }
+}
+
+void ZstEndpoint::destroy_proxy_entity(const ZstURI &path){
+    
+    ZstEntityBase * entity = NULL;
+    entity = get_entity_by_URI(path);
+    
+    if(entity){
+        entity_leaving_events()->run_event_callbacks(entity);
+        destroy_entity(entity);
+    }
+}
+
+int ZstEndpoint::destroy_plug(ZstPlug * plug)
  {
 	int status = 0;
 	if (m_is_destroyed || plug->is_destroyed()) {
@@ -619,14 +664,14 @@ size_t ZstEndpoint::event_queue_size()
 // Callback manager getters
 // ------------------------
 
-ZstCallbackQueue<ZstEntityEventCallback, ZstURI> * ZstEndpoint::entity_arriving_events()
+ZstCallbackQueue<ZstEntityEventCallback, ZstEntityBase*> * ZstEndpoint::entity_arriving_events()
 {
-	return m_performer_arriving_event_manager;
+	return m_entity_arriving_event_manager;
 }
 
-ZstCallbackQueue<ZstEntityEventCallback, ZstURI> * ZstEndpoint::entity_leaving_events()
+ZstCallbackQueue<ZstEntityEventCallback, ZstEntityBase*> * ZstEndpoint::entity_leaving_events()
 {
-	return m_performer_leaving_event_manager;
+	return m_entity_leaving_event_manager;
 }
 
 ZstCallbackQueue<ZstPlugEventCallback, ZstURI> * ZstEndpoint::plug_arriving_events()

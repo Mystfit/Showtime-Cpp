@@ -8,18 +8,12 @@
 
 ZstComponent::ZstComponent(const char * entity_type, const char * name) : ZstEntityBase(entity_type, name)
 {
-	init();
+    init();
 }
 
 ZstComponent::ZstComponent(const char * entity_type, const char * name, ZstEntityBase * parent) : ZstEntityBase(entity_type, name, parent)
 {
-	init();
-}
-
-void ZstComponent::init()
-{
-	m_compute_callback = new ZstComputeCallback();
-	m_compute_callback->set_target_filter(this);
+    init();
 }
 
 ZstComponent::~ZstComponent()
@@ -29,6 +23,12 @@ ZstComponent::~ZstComponent()
 	}
 	m_plugs.clear();
 	delete m_compute_callback;
+}
+
+void ZstComponent::init(){
+    m_compute_callback = new ZstComputeCallback();
+    m_compute_callback->set_target_filter(this);
+    activate();
 }
 
 ZstInputPlug * ZstComponent::create_input_plug(const char * name, ZstValueType val_type)

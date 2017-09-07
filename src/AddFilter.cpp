@@ -6,7 +6,8 @@ using namespace std;
 AddFilter::AddFilter(ZstEntityBase * parent) :
 	ZstFilter(ADDITION_FILTER_TYPE, "add", parent)
 {
-	init();
+    activate();
+    init();
 }
 
 void AddFilter::init()

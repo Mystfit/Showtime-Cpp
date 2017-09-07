@@ -24,6 +24,7 @@ set(ZST_ENTITIES
  ${Showtime_INCLUDE_DIRS}/entities/ZstEntityBase.h
  ${Showtime_INCLUDE_DIRS}/entities/ZstFilter.h
  ${Showtime_INCLUDE_DIRS}/entities/ZstComponent.h
+ ${Showtime_INCLUDE_DIRS}/entities/ZstProxyComponent.h
  ${Showtime_INCLUDE_DIRS}/entities/AddFilter.h
 )
 
@@ -41,7 +42,6 @@ set(ZST_PRIVATE_HEADERS
  ${Showtime_INCLUDE_DIRS}/ZstExports.h
  ${Showtime_INCLUDE_DIRS}/ZstEntityRef.h
  ${Showtime_INCLUDE_DIRS}/ZstCallbackQueue.h
- ${Showtime_INCLUDE_DIRS}/entities/ZstRootEntity.h
  ${VERSION_FILE}
 )
 
@@ -73,6 +73,7 @@ set(ZST_SOURCE
  "ZstEntityRef.cpp"
  "ZstFilter.cpp"
  "ZstComponent.cpp"
+ "ZstProxyComponent.cpp"
  "AddFilter.cpp"
 )
 

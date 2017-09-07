@@ -7,31 +7,31 @@
 ZstEntityBase::ZstEntityBase(const char * entity_type, const char * path) :
 	m_is_registered(false),
 	m_is_destroyed(false),
-    m_parent(NULL)
+    m_parent(NULL),
+    m_is_proxy(false)
 {
 	memcpy(m_entity_type, entity_type, 255);
 	m_uri = ZstURI(path);
-	init();
 }
 
 ZstEntityBase::ZstEntityBase(const char * entity_type, const char * local_path, ZstEntityBase * parent) :
 	m_is_registered(false),
 	m_is_destroyed(false),
-    m_parent(parent)
+    m_parent(parent),
+    m_is_proxy(false)
 {
 	memcpy(m_entity_type, entity_type, 255);
 	m_uri = ZstURI::join(parent->URI(), ZstURI(local_path));
-	init();
 }
 
 ZstEntityBase::~ZstEntityBase()
 {
 	Showtime::endpoint().destroy_entity(this);
 }
-
-void ZstEntityBase::init()
+    
+void ZstEntityBase::activate()
 {
-    if (Showtime::is_connected()){
+    if (Showtime::is_connected() && !m_is_registered){
 		m_is_registered = Showtime::endpoint().register_entity(this);
     }
 }
@@ -59,6 +59,10 @@ bool ZstEntityBase::is_destroyed()
 void ZstEntityBase::set_destroyed()
 {
 	m_is_destroyed = true;
+}
+
+bool ZstEntityBase::is_proxy(){
+    return m_is_proxy;
 }
 
 ZstEntityBase * ZstEntityBase::parent() const

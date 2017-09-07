@@ -5,6 +5,7 @@
 #include "ZstURI.h"
 #include "ZstCable.h"
 #include "ZstEvent.h"
+#include "entities/ZstEntityBase.h"
 
 class ZstInputPlug;
 class ZstPlugDataEventCallback {
@@ -22,7 +23,7 @@ public:
 class ZstEntityEventCallback {
 public:
 	ZST_EXPORT virtual ~ZstEntityEventCallback() { std::cout << "Destroying performer event callback" << std::endl; }
-	ZST_EXPORT virtual void run(ZstURI performer) { std::cout << "Running performer event callback" << std::endl; }
+	ZST_EXPORT virtual void run(ZstEntityBase* entity) { std::cout << "Running performer event callback" << std::endl; }
 };
 
 class ZstCableEventCallback {

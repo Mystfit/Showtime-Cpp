@@ -20,6 +20,7 @@ class ZstURI;
 class ZstPerformer;
 class ZstEntityBase;
 class ZstComponent;
+class ZstProxyComponent;
 
 class ZstEndpoint : public ZstActor {
 public:
@@ -54,6 +55,8 @@ public:
 	template<typename T>
 	ZST_EXPORT static T* create_plug(ZstComponent * owner, const char * name, ZstValueType val_type, PlugDirection direction);
 	ZST_EXPORT int destroy_plug(ZstPlug * plug);
+    void create_proxy_entity(const ZstURI & path);
+    void destroy_proxy_entity(const ZstURI & path);
 
 	//Cables
 	int connect_cable(ZstURI a, ZstURI b);
@@ -69,8 +72,8 @@ public:
 	ZST_EXPORT size_t event_queue_size();
 
 	//Plug callbacks
-	ZST_EXPORT ZstCallbackQueue<ZstEntityEventCallback, ZstURI> * entity_arriving_events();
-	ZST_EXPORT ZstCallbackQueue<ZstEntityEventCallback, ZstURI> * entity_leaving_events();
+	ZST_EXPORT ZstCallbackQueue<ZstEntityEventCallback, ZstEntityBase*> * entity_arriving_events();
+	ZST_EXPORT ZstCallbackQueue<ZstEntityEventCallback, ZstEntityBase*> * entity_leaving_events();
 	ZST_EXPORT ZstCallbackQueue<ZstPlugEventCallback, ZstURI> * plug_arriving_events();
 	ZST_EXPORT ZstCallbackQueue<ZstPlugEventCallback, ZstURI> * plug_leaving_events();
 	ZST_EXPORT ZstCallbackQueue<ZstCableEventCallback, ZstCable> * cable_arriving_events();
@@ -123,6 +126,7 @@ private:
 	//All performers
 	std::map<ZstURI, ZstEntityBase*> m_entities;
 	std::map<ZstURI, ZstEntityBase*> & entities();
+    std::map<ZstURI, ZstProxyComponent*> m_proxies;
 
 	//Active local plug connections
 	std::vector<ZstCable*> m_local_cables;
@@ -130,8 +134,8 @@ private:
 	
 	//Events and callbacks
 	Queue<ZstEvent*> m_events;
-	ZstCallbackQueue<ZstEntityEventCallback, ZstURI> * m_performer_arriving_event_manager;
-	ZstCallbackQueue<ZstEntityEventCallback, ZstURI> * m_performer_leaving_event_manager;
+	ZstCallbackQueue<ZstEntityEventCallback, ZstEntityBase*> * m_entity_arriving_event_manager;
+	ZstCallbackQueue<ZstEntityEventCallback, ZstEntityBase*> * m_entity_leaving_event_manager;
 	ZstCallbackQueue<ZstCableEventCallback, ZstCable> * m_cable_arriving_event_manager;
 	ZstCallbackQueue<ZstCableEventCallback, ZstCable> * m_cable_leaving_event_manager;
 	ZstCallbackQueue<ZstPlugEventCallback, ZstURI> * m_plug_arriving_event_manager;
