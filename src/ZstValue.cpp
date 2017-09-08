@@ -99,7 +99,6 @@ const size_t ZstValue::size_at(const size_t position) const {
         return sizeof(float);
     }
     else if (m_default_type == ZstValueType::ZST_STRING) {
-        ZstValueStrVisitor visitor = ZstValueStrVisitor();
         std::string val_s = visit(ZstValueStrVisitor(), val);
         return val_s.size();
     } 

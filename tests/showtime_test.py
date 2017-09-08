@@ -2,7 +2,7 @@ import time
 import threading
 import showtime
 from showtime import Showtime as ZST
-from showtime import ZstEventCallback, ZstURI, ZstPlugDataEventCallback
+from showtime import ZstURI, ZstPlugDataEventCallback
 from showtime import ZstFilter, ZstComponent, AddFilter
 
 

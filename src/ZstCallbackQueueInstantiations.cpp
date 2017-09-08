@@ -4,7 +4,6 @@
 #include "ZstCable.h"
 #include "ZstPlug.h"
 
-template class ZstCallbackQueue<ZstEventCallback, ZstEvent>;
 template class ZstCallbackQueue<ZstEntityEventCallback, ZstEntityBase*>;
 template class ZstCallbackQueue<ZstCableEventCallback, ZstCable>;
 template class ZstCallbackQueue<ZstPlugEventCallback, ZstURI>;

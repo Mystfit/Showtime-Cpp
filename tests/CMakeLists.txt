@@ -40,6 +40,4 @@ target_link_libraries(ShowtimeLibraryTest
 	${Boost_FILESYSTEM_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
 )
-add_test(NAME showtime_library_test COMMAND ShowtimeLibraryTest)
-
-
+add_test(NAME showtime_library_test COMMAND ShowtimeLibraryTest WORKING_DIRECTORY $<TARGET_FILE_DIR:ShowtimeLibraryTest>)

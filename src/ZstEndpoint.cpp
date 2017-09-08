@@ -429,12 +429,13 @@ int ZstEndpoint::register_entity(ZstEntityBase* entity)
 
 int ZstEndpoint::destroy_entity(ZstEntityBase * entity)
 {
+    int result = 1;
 	if (entity->is_destroyed() ||
 		!entity->is_registered() ||
 		m_is_destroyed
 		)
 	{
-		return 0;
+		return result;
 	}
 		
 	m_entities.erase(entity->URI());
@@ -442,18 +443,20 @@ int ZstEndpoint::destroy_entity(ZstEntityBase * entity)
     
     //If we own this entity, we need to let the stage know it's going away
     if(!entity->is_proxy()){
-       int result = 0;
         ZstMessages::DestroyURI destroy_args;
         destroy_args.address = ZstURIWire(entity->URI());
         send_to_stage(ZstMessages::build_message<ZstMessages::DestroyURI>(ZstMessages::Kind::STAGE_DESTROY_ENTITY, destroy_args));
         result = (int)check_stage_response_ok();
-        return 1; 
+    }
+    
+    if(result){
+        entity_leaving_events()->run_event_callbacks(entity);
     }
 
-	
+    return result;
 }
 
-ZstEntityBase * ZstEndpoint::get_entity_by_URI(ZstURI uri)
+ZstEntityBase * ZstEndpoint::get_entity_by_URI(const ZstURI & uri)
 {
 	ZstEntityBase * result = NULL;
 
@@ -504,6 +507,10 @@ void ZstEndpoint::create_proxy_entity(const ZstURI & path){
         if(!entity){
             if(parent){
                 entity = new ZstProxyComponent(proxy_path.segment(i), parent);
+                ZstEntityBase * child = parent->find_child_by_URI(entity->URI());
+                if(!child){
+                    parent->add_child(entity);
+                }
             } else {
                 entity = new ZstProxyComponent(proxy_path.segment(i));
             }
@@ -524,8 +531,8 @@ void ZstEndpoint::destroy_proxy_entity(const ZstURI &path){
     entity = get_entity_by_URI(path);
     
     if(entity){
-        entity_leaving_events()->run_event_callbacks(entity);
         destroy_entity(entity);
+        delete entity;
     }
 }
 

@@ -14,7 +14,6 @@ class ZstPerformer;
 class ZstURI;
 class ZstEndpoint;
 class ZstEvent;
-class ZstEventCallback;
 class ZstEntityEventCallback;
 class ZstPlugEventCallback;
 class ZstCableEventCallback;

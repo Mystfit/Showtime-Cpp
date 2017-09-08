@@ -4,6 +4,7 @@
 #include "Showtime.h"
 #include "ZstURI.h"
 #include <vector>
+#include <map>
 
 class ZstEntityBase {
 public:
@@ -23,6 +24,7 @@ public:
     ZST_EXPORT bool is_proxy();
 
 	ZST_EXPORT ZstEntityBase * parent() const;
+    ZST_EXPORT virtual ZstEntityBase * find_child_by_URI(const ZstURI & path) const;
 	ZST_EXPORT virtual ZstEntityBase * get_child_entity_at(int index) const;
 	ZST_EXPORT virtual const size_t num_children() const;
     
@@ -30,7 +32,9 @@ protected:
     bool m_is_proxy;
 
 private:
-	std::vector<ZstEntityBase*> m_children;
+    void add_child(ZstEntityBase * child);
+    void remove_child(ZstEntityBase * child);
+    std::map<ZstURI, ZstEntityBase*> m_children;
 	Str255 m_entity_type;
 	ZstURI m_uri;
 	bool m_is_registered;

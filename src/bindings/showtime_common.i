@@ -20,7 +20,6 @@
 };
 
 // Callbacks
-%feature("director") ZstEventCallback;
 %feature("director") ZstPlugDataEventCallback;
 %feature("director") ZstPlugEventCallback;
 %feature("director") ZstEntityEventCallback;
@@ -31,8 +30,7 @@
 // Callback queue templates
 %include "ZstCallbackQueue.h"
 %template(ZstInputPlugCallbackQueue) ZstCallbackQueue<ZstPlugDataEventCallback, ZstInputPlug*>;
-%template(ZstEventCallbackQueue) ZstCallbackQueue<ZstEventCallback, ZstEvent>;
-%template(ZstEntityEventCallbackQueue) ZstCallbackQueue<ZstEntityEventCallback, ZstURI>;
+%template(ZstEntityEventCallbackQueue) ZstCallbackQueue<ZstEntityEventCallback, ZstEntityBase*>;
 %template(ZstCableCallbackQueue) ZstCallbackQueue<ZstCableEventCallback, ZstCable>;
 %template(ZstPlugCallbackQueue) ZstCallbackQueue<ZstPlugEventCallback, ZstURI>;
 

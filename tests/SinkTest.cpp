@@ -47,9 +47,15 @@ int main(int argc,char **argv){
 		Showtime::poll_once();
 	}
 
-	delete sink;
+	std::cout << "Removing sink root" << std::endl;
     delete root;
-	
+
+	std::cout << "Removing sink" << std::endl;
+	delete sink;
+
 	Showtime::destroy();
+
+	std::cout << "Exiting sink process" << std::endl;
+
 	return 0;
 }

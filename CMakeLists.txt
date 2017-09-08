@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.8.2)
 
 project(Showtime)
 
-set(SHOWTIME_VERSION 0.5.0)
+set(SHOWTIME_VERSION 0.5.1)
 
 # Set build locations
 set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/install)
@@ -48,4 +48,3 @@ add_subdirectory(src)
 
 enable_testing()
 add_subdirectory(tests)
-add_test(NAME section_test COMMAND SectionTest)

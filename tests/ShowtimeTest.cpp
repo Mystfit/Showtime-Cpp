@@ -6,6 +6,7 @@
 #include <sstream>
 #include <exception>
 #include <boost/process.hpp>
+#include <boost/filesystem.hpp>
 #include "Showtime.h"
 #include "ZstPlug.h"
 #include "ZstStage.h"
@@ -118,14 +119,6 @@ public:
 
 // ----
 
-class TestConnectionCallback : public ZstEventCallback {
-public:
-	int connectionCallbacks = 0;
-	void run(ZstEvent e) override {
-		connectionCallbacks++;
-	};
-};
-
 
 
 class OutputComponent : public ZstComponent {
@@ -164,7 +157,7 @@ public:
 	int last_received_val = 0;
 	bool log = false;
 
-	InputComponent(const char * name, ZstEntityBase * parent, int cmp_val) : compare_val(cmp_val), ZstFilter("TESTER", name, parent) {
+	InputComponent(const char * name, ZstEntityBase * parent, int cmp_val) : ZstFilter("TESTER", name, parent), compare_val(cmp_val) {
 		init();
 	}
 
@@ -334,6 +327,10 @@ void test_create_proxies(){
     //Run sink in external process so we don't share the same Showtime singleton
     std::cout << "Starting sink process" << std::endl;
     std::cout << "----" << std::endl;
+    
+    boost::filesystem::path full_path( boost::filesystem::current_path() );
+    std::cout << "Current path is : " << full_path << std::endl;
+    
     boost::process::child sink_process = boost::process::child("SinkTest", "1");
     
     //Wait for the sink to register its entity and for us to receive the proxy event
@@ -355,13 +352,15 @@ void test_create_proxies(){
     TAKE_A_BREATH
     clear_callback_queue();
     output->send(1);
-    sink_process.wait();
+//    sink_process.wait();
     
     //Check that we received proxy destruction events
-    wait_for_callbacks(3);
+    wait_for_callbacks(4);
     assert(entityLeaveCallback->entityLeavingHits == 2);
     assert(Showtime::endpoint().get_entity_by_URI(ZstURI("sink_root")) == NULL);
     assert(Showtime::endpoint().get_entity_by_URI(ZstURI("sink_root/sink")) == NULL);
+    assert(sink_root->is_destroyed());
+    assert(sink->is_destroyed());
     
     //Cleanup
     Showtime::remove_entity_arriving_callback(entityArriveCallback);
@@ -485,18 +484,18 @@ void test_add_filter() {
 	add_filter = 0;
 	clear_callback_queue();
 
-	std::cout << "Finished addition filter test" << std::endl;
+	std::cout << "Finished addition filter test\n" << std::endl;
 }
 
 
-void test_memory_leaks() {
+void test_memory_leaks(int num_loops) {
 	std::cout << "Starting memory leak test" << std::endl;
 
 	OutputComponent * test_output = new OutputComponent("memleak_test_out", root_entity);
 	InputComponent * test_input = new InputComponent("memleak_test_in", root_entity, 10);
 	Showtime::connect_cable(test_output->output_URI(), test_input->input_URI());
 
-	int count = 20000;
+	int count = num_loops;
 	std::cout << "Sending " << count << " messages" << std::endl;
 
 	for (int i = 0; i < count; ++i) {
@@ -508,7 +507,7 @@ void test_memory_leaks() {
 	delete test_input;
 	clear_callback_queue();
 
-	std::cout << "Finished memory leak test" << std::endl;
+	std::cout << "Finished memory leak test\n" << std::endl;
 }
 
 void test_leaving(){
@@ -544,7 +543,7 @@ int main(int argc,char **argv){
     test_create_proxies();
 	test_connect_plugs();
 	test_add_filter();
-	test_memory_leaks();
+	test_memory_leaks(20000);
     test_leaving();
 	test_cleanup();
 	std::cout << "\nShowtime test successful" << std::endl;

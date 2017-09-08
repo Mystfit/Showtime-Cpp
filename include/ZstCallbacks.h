@@ -32,12 +32,6 @@ public:
 	ZST_EXPORT virtual void run(ZstCable cable) { std::cout << "Running cable event callback" << std::endl; }
 };
 
-class ZstEventCallback {
-public:
-	ZST_EXPORT virtual ~ZstEventCallback() { std::cout << "Destroying stage event callback" << std::endl; }
-	ZST_EXPORT virtual void run(ZstEvent e) { std::cout << "Running stage event callback" << std::endl; }
-};
-
 
 class ZstInputPlug;
 class ZstComponent;
