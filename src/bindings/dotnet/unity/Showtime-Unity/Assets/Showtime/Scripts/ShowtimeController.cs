@@ -134,17 +134,17 @@ public class ShowtimeController : MonoBehaviour {
     // ---------
     public class EntityArrivingCallback : ZstEntityEventCallback
     {
-        public override void run(ZstURI perf)
+        public override void run(ZstEntityBase entity)
         {
-            Debug.Log("Performer arriving: " + perf.path());
+            Debug.Log("Entity arriving: " + entity.URI().path());
         }
     }
 
     public class EntityLeavingCallback : ZstEntityEventCallback
     {
-        public override void run(ZstURI perf)
+        public override void run(ZstEntityBase entity)
         {
-            Debug.Log("performer leaving: " + perf.path());
+            Debug.Log("Entity leaving: " + entity.URI().path());
         }
     }
 

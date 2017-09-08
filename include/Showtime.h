@@ -54,6 +54,9 @@ public:
 	ZST_EXPORT static void remove_cable_arriving_callback(ZstCableEventCallback * callback);
 	ZST_EXPORT static void remove_cable_leaving_callback(ZstCableEventCallback * callback);
 
+	//Hierarchy
+	ZST_EXPORT static ZstEntityBase* get_entity_by_URI(const ZstURI & path);
+
     //Stage methods
     ZST_EXPORT static int ping_stage();
 

@@ -117,6 +117,11 @@ void Showtime::remove_cable_leaving_callback(ZstCableEventCallback * callback)
 	return Showtime::endpoint().cable_leaving_events()->remove_event_callback(callback);
 }
 
+ZstEntityBase * Showtime::get_entity_by_URI(const ZstURI & path)
+{
+	return Showtime::endpoint().get_entity_by_URI(path);
+}
+
 
 // -------------
 // API Functions

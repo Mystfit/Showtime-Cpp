@@ -337,8 +337,8 @@ void test_create_proxies(){
     wait_for_callbacks(3);
     assert(entityArriveCallback->entityArrivedHits == 2);
     entityArriveCallback->reset();
-    ZstProxyComponent * sink_root = dynamic_cast<ZstProxyComponent*>(Showtime::endpoint().get_entity_by_URI(ZstURI("sink_root")));
-    ZstProxyComponent * sink = dynamic_cast<ZstProxyComponent*>(Showtime::endpoint().get_entity_by_URI(ZstURI("sink_root/sink")));
+    ZstProxyComponent * sink_root = dynamic_cast<ZstProxyComponent*>(Showtime::get_entity_by_URI(ZstURI("sink_root")));
+    ZstProxyComponent * sink = dynamic_cast<ZstProxyComponent*>(Showtime::get_entity_by_URI(ZstURI("sink_root/sink")));
 
     assert(sink_root);
     assert(sink);
@@ -357,8 +357,8 @@ void test_create_proxies(){
     //Check that we received proxy destruction events
     wait_for_callbacks(4);
     assert(entityLeaveCallback->entityLeavingHits == 2);
-    assert(Showtime::endpoint().get_entity_by_URI(ZstURI("sink_root")) == NULL);
-    assert(Showtime::endpoint().get_entity_by_URI(ZstURI("sink_root/sink")) == NULL);
+    assert(Showtime::get_entity_by_URI(ZstURI("sink_root")) == NULL);
+    assert(Showtime::get_entity_by_URI(ZstURI("sink_root/sink")) == NULL);
     assert(sink_root->is_destroyed());
     assert(sink->is_destroyed());
     

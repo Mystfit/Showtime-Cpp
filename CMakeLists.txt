@@ -27,11 +27,12 @@ set(CMAKE_CXX_STANDARD 11)
 set(CXX_STANDARD_REQUIRED)
 
 if (MSVC_VERSION GREATER_EQUAL "1900")
-    include(CheckCXXCompilerFlag)
-    CHECK_CXX_COMPILER_FLAG("/std:c++17" _cpp_17_flag_supported)
-    if (_cpp_17_flag_supported)
-        add_compile_options("/std:c++17")
-    endif()
+    
+    #include(CheckCXXCompilerFlag)
+    #CHECK_CXX_COMPILER_FLAG("/std:c++17" _cpp_17_flag_supported)
+    #if (_cpp_17_flag_supported)
+    #    add_compile_options("/std:c++17")
+    #endif()
 endif()
 
 # Set showtime include directories

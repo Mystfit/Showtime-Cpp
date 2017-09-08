@@ -11,10 +11,10 @@ IF(WIN32)
 ENDIF(WIN32)
 
 # Boost flags
-# set(Boost_USE_MULTITHREADED ON)
-# set(Boost_USE_STATIC_LIBS ON)
-# set(Boost_USE_STATIC_RUNTIME ON)
-find_package(Boost COMPONENTS system filesystem REQUIRED)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_LIBS ON)
+set(Boost_USE_STATIC_RUNTIME ON)
+find_package(Boost 1.64 COMPONENTS system filesystem REQUIRED)
 
 include_directories(
 	${Showtime_INCLUDE_DIRS}
