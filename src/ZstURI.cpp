@@ -111,7 +111,7 @@ bool ZstURI::is_empty() {
 	return string(m_combined_path).empty();
 }
 
-ZstURI ZstURI::join(ZstURI a, ZstURI b)
+ZstURI ZstURI::join(const ZstURI & a, const ZstURI & b)
 {
 	string a_parent = string(a.path());
 	string combined_path = string(b.path());

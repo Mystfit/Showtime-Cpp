@@ -22,12 +22,15 @@ ZstEntityBase::ZstEntityBase(const char * entity_type, const char * local_path, 
 {
 	memcpy(m_entity_type, entity_type, 255);
 	m_uri = ZstURI::join(parent->URI(), ZstURI(local_path));
+	this->parent()->add_child(this);
 }
 
 ZstEntityBase::~ZstEntityBase()
 {
     for(auto child : m_children){
-        Showtime::endpoint().destroy_entity(child.second);
+		if (!child.second->is_destroyed()) {
+			Showtime::endpoint().destroy_entity(child.second);
+		}
     }
     m_children.clear();
     if(m_parent){
@@ -110,9 +113,15 @@ const size_t ZstEntityBase::num_children() const
 }
 
 void ZstEntityBase::add_child(ZstEntityBase * child){
-    m_children[child->URI()] = child;
+	ZstEntityBase * c = find_child_by_URI(child->URI());
+	if (!c) {
+		m_children[child->URI()] = child;
+	}
 }
 
 void ZstEntityBase::remove_child(ZstEntityBase * child){
-    m_children.erase(child->URI());
+	auto c = m_children.find(child->URI());
+	if (c != m_children.end()) {
+		m_children.erase(c);
+	}
 }

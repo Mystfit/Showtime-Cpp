@@ -25,7 +25,9 @@ public:
 	//Constructor
 	ZST_EXPORT ZstPlug(ZstComponent * owner, const char * name, ZstValueType t);
 	ZST_EXPORT virtual ~ZstPlug();
+
 	ZST_EXPORT const ZstURI & get_URI() const;
+	ZST_EXPORT const ZstEntityBase* owner() const;
 	ZST_EXPORT bool is_destroyed();
 
 	//Value interface

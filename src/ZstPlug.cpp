@@ -25,6 +25,11 @@ const ZstURI & ZstPlug::get_URI() const
 	return m_uri;
 }
 
+const ZstEntityBase * ZstPlug::owner() const
+{
+	return m_owner;
+}
+
 bool ZstPlug::is_destroyed()
 {
 	return m_is_destroyed;

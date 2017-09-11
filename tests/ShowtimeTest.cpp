@@ -310,9 +310,43 @@ void test_create_entities(){
 
 	std::cout << "Finished create plugs test\n" << std::endl;
 }
+
+void test_hierarchy() {
+	//Test hierarchy
+	ZstComponent * parent = new ZstComponent("PARENT", "parent", root_entity);
+	ZstComponent * child = new ZstComponent("CHILD", "child", parent);
+
+	wait_for_callbacks(2);
+	assert(root_entity->find_child_by_URI(parent->URI()));
+	assert(parent->find_child_by_URI(child->URI()));
+	assert(Showtime::get_entity_by_URI(parent->URI()));
+	assert(Showtime::get_entity_by_URI(child->URI()));
+
+	//Test child removal from parent
+	ZstURI child_URI = ZstURI(child->URI());
+	delete child;
+	child = 0;
+	wait_for_callbacks(1);
+	assert(!parent->find_child_by_URI(child_URI));
+	assert(!Showtime::get_entity_by_URI(child_URI));
+
+	//Test removing parent removes child
+	child = new ZstComponent("CHILD", "child", parent);
+	clear_callback_queue();
+	ZstURI parent_URI = ZstURI(parent->URI());
+	delete parent;
+	wait_for_callbacks(2);
+	assert(!root_entity->find_child_by_URI(parent_URI));
+	assert(!Showtime::get_entity_by_URI(parent->URI()));
+	assert(!Showtime::get_entity_by_URI(child_URI));
+
+	delete child;
+	child = 0;
+	parent = 0;
+}
         
         
-void test_create_proxies(){
+void test_create_proxies(std::string external_sink_path){
     //Create callbacks
     TestEntityArrivingEventCallback * entityArriveCallback = new TestEntityArrivingEventCallback();
     TestEntityLeavingEventCallback * entityLeaveCallback = new TestEntityLeavingEventCallback();
@@ -328,10 +362,11 @@ void test_create_proxies(){
     std::cout << "Starting sink process" << std::endl;
     std::cout << "----" << std::endl;
     
-    boost::filesystem::path full_path( boost::filesystem::current_path() );
-    std::cout << "Current path is : " << full_path << std::endl;
-    
-    boost::process::child sink_process = boost::process::child("SinkTest", "1");
+	std::string prog = external_sink_path + "/SinkTest";
+#ifdef WIN32
+	prog += ".exe";
+#endif
+    boost::process::child sink_process = boost::process::child(prog, "1");
     
     //Wait for the sink to register its entity and for us to receive the proxy event
     wait_for_callbacks(3);
@@ -540,7 +575,8 @@ int main(int argc,char **argv){
 	test_root_entity();
     test_stage_registration();
     test_create_entities();
-    test_create_proxies();
+	test_hierarchy();
+	test_create_proxies(boost::filesystem::system_complete(argv[0]).parent_path().generic_string());
 	test_connect_plugs();
 	test_add_filter();
 	test_memory_leaks(20000);

@@ -24,7 +24,7 @@ public:
 	ZST_EXPORT bool operator< (const ZstURI& b) const;
 	ZST_EXPORT bool is_empty();
 
-	ZST_EXPORT static ZstURI join(ZstURI a, ZstURI b);
+	ZST_EXPORT static ZstURI join(const ZstURI & a, const ZstURI & b);
 
 protected:
 	Str255 m_path;

@@ -337,7 +337,7 @@ void ZstStage::endpoint_heartbeat_handler(zsock_t * socket, zmsg_t * msg) {
 void ZstStage::create_plug_handler(zsock_t *socket, zmsg_t *msg) {
 	ZstMessages::CreatePlug plug_args = ZstMessages::unpack_message_struct<ZstMessages::CreatePlug>(msg);
 
-	int end_index = static_cast<int>(plug_args.address.size()) - 1;
+	int end_index = static_cast<int>(plug_args.address.size()) - 2;
     ZstURI entity_URI = plug_args.address.range(0, end_index);
 	ZstEntityRef* entity = get_entity_ref_by_URI(entity_URI);
 
@@ -382,7 +382,7 @@ void ZstStage::create_entity_handler(zsock_t * socket, zmsg_t * msg)
 
 	if (entity_args.address.size() > 1) {
 
-		int end_index = static_cast<int>(entity_args.address.size()) - 1;
+		int end_index = static_cast<int>(entity_args.address.size()) - 2;
 		entity_uri = entity_args.address.range(0, end_index);
 		ZstEntityRef* entity_parent = get_entity_ref_by_URI(entity_uri);
 		if (entity_parent == NULL) {
@@ -427,7 +427,7 @@ void ZstStage::destroy_plug_handler(zsock_t * socket, zmsg_t * msg)
 	ZstMessages::DestroyURI plug_destroy_args = ZstMessages::unpack_message_struct<ZstMessages::DestroyURI>(msg);
 	cout << "ZST_STAGE: Received destroy plug request for " << plug_destroy_args.address.path() << endl;
 
-	int end_index = static_cast<int>(plug_destroy_args.address.size()) - 1;
+	int end_index = static_cast<int>(plug_destroy_args.address.size()) - 2;
 	ZstEntityRef *entity = get_entity_ref_by_URI(plug_destroy_args.address.range(0, end_index));
 	if (!entity) {
 		reply_with_signal(socket, ZstMessages::Signal::ERR_STAGE_ENTITY_NOT_FOUND);

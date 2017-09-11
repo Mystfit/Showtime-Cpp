@@ -115,21 +115,17 @@ void ZstEndpoint::process_callbacks()
 		case ZstEvent::EventType::PLUG_HIT:
             {
                 ZstURI entity_URI = e->get_first();
-				int end_index = static_cast<int>(entity_URI.size()) - 1;
-                ZstURI entity_parent = entity_URI.range(0, end_index);
-                
-                ZstComponent * component = dynamic_cast<ZstComponent*>(get_entity_by_URI(entity_parent));
-                if (component != NULL) {
-                    ZstInputPlug * plug = (ZstInputPlug*)component->get_plug_by_URI(entity_URI);
-                    if (plug != NULL) {
-                        plug->recv(((ZstPlugEvent*)e)->value());
-                        plug->m_input_fired_manager->run_event_callbacks(plug);
-                        
-                        //Pre-emptively delete event whilst we know it's a plug event
-                        delete (ZstPlugEvent*)e;
-                        e = 0;
-                    }
-                }
+
+				ZstInputPlug * plug = (ZstInputPlug*)get_plug_by_URI(entity_URI);
+				if (plug != NULL) {
+					plug->recv(((ZstPlugEvent*)e)->value());
+					plug->m_input_fired_manager->run_event_callbacks(plug);
+
+					//Pre-emptively delete event whilst we know it's a plug event
+					delete (ZstPlugEvent*)e;
+					e = 0;
+				}
+
             }
 			break;
 		case ZstEvent::CABLE_CREATED:
@@ -431,18 +427,18 @@ int ZstEndpoint::destroy_entity(ZstEntityBase * entity)
 {
     int result = 1;
 	if (entity->is_destroyed() ||
-		!entity->is_registered() ||
-		m_is_destroyed
+		!entity->is_registered()
 		)
 	{
 		return result;
 	}
-		
+
+	entity->m_parent = NULL;
 	m_entities.erase(entity->URI());
 	entity->set_destroyed();
     
     //If we own this entity, we need to let the stage know it's going away
-    if(!entity->is_proxy()){
+    if(!entity->is_proxy() && is_connected_to_stage()){
         ZstMessages::DestroyURI destroy_args;
         destroy_args.address = ZstURIWire(entity->URI());
         send_to_stage(ZstMessages::build_message<ZstMessages::DestroyURI>(ZstMessages::Kind::STAGE_DESTROY_ENTITY, destroy_args));
@@ -456,13 +452,28 @@ int ZstEndpoint::destroy_entity(ZstEntityBase * entity)
     return result;
 }
 
-ZstEntityBase * ZstEndpoint::get_entity_by_URI(const ZstURI & uri)
+ZstEntityBase * ZstEndpoint::get_entity_by_URI(const ZstURI & uri) const
 {
 	ZstEntityBase * result = NULL;
 
 	auto entity_iter = m_entities.find(uri);
 	if (entity_iter != m_entities.end()) {
 		result = entity_iter->second;
+	}
+
+	return result;
+}
+
+ZstPlug * ZstEndpoint::get_plug_by_URI(const ZstURI & uri) const
+{
+	ZstPlug * result = NULL;
+
+	int end_index = std::max(static_cast<int>(uri.size()) - 2, 0);
+	ZstURI plug_parent = uri.range(0, end_index);
+
+	ZstComponent * component = dynamic_cast<ZstComponent*>(get_entity_by_URI(plug_parent));
+	if (component != NULL) {
+		result = component->get_plug_by_URI(uri);
 	}
 
 	return result;
@@ -501,23 +512,19 @@ void ZstEndpoint::create_proxy_entity(const ZstURI & path){
 
     //Build hierarchy for proxy by instantiating proxies for each segment
     for(int i = 0; i < path.size(); ++i){
-        ZstURI proxy_path = path.range(0, i+1);
+        ZstURI proxy_path = path.range(0, i);
         entity = get_entity_by_URI(proxy_path);
         
         if(!entity){
             if(parent){
                 entity = new ZstProxyComponent(proxy_path.segment(i), parent);
-                ZstEntityBase * child = parent->find_child_by_URI(entity->URI());
-                if(!child){
-                    parent->add_child(entity);
-                }
             } else {
                 entity = new ZstProxyComponent(proxy_path.segment(i));
             }
             
             m_entities[entity->URI()] = entity;
 
-            //Create new proxy
+            //Notify client proxy is arriving
             entity_arriving_events()->run_event_callbacks(entity);
         }
         

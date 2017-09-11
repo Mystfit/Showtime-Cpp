@@ -49,7 +49,9 @@ public:
 	void register_entity_type(const char * entity_type);
 	int register_entity(ZstEntityBase * entity);
 	int destroy_entity(ZstEntityBase * entity);
-	ZstEntityBase * get_entity_by_URI(const ZstURI & uri);
+	ZstEntityBase * get_entity_by_URI(const ZstURI & uri) const;
+	ZstPlug * get_plug_by_URI(const ZstURI & uri) const;
+
 	
 	//Plugs
 	template<typename T>

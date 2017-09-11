@@ -51,7 +51,7 @@ ZstOutputPlug * ZstComponent::create_output_plug(const char * name, ZstValueType
 	return plug;
 }
 
-ZstPlug * ZstComponent::get_plug_by_URI(const ZstURI & uri)
+ZstPlug * ZstComponent::get_plug_by_URI(const ZstURI & uri) const
 {
 	ZstPlug * found_plug = NULL;
 	for (auto plug : m_plugs) {
