@@ -27,4 +27,5 @@ ZstProxyComponent::~ZstProxyComponent(){
 
 void ZstProxyComponent::init(){
     m_is_proxy = true;
+	m_is_registered = true;
 }

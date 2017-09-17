@@ -42,7 +42,6 @@ void ZstActor::start_polling(zsock_t * pipe)
 	zloop_start(m_loop);
 }
 
-
 void ZstActor::actor_thread_func(zsock_t * pipe, void * args)
 {
 	//We need to signal the actor pipe to get things going

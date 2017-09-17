@@ -29,7 +29,7 @@ ZstURI::ZstURI(const char *  path) :
 	m_path_offsets{ 0 },
 	m_num_path_components(0)
 {
-	memcpy(m_combined_path, path, 255);
+	strcpy(m_combined_path, path);
 	build_split_path(path);
 }
 
@@ -53,16 +53,14 @@ ZstURI ZstURI::range(int start, int end) const
 	}
 
 	Str255 new_path;
-	strcpy(new_path, segment(0));
-	if (end - start > 1) {
-		strcat(new_path, "/");
-	}
 
-	for (int i = start + 1; i < end; ++i) {
+	//Head
+	strcpy(new_path, segment(0));
+
+	//Body
+	for (int i = start + 1; i <= end; ++i) {
+		strcat(new_path, "/");
 		strcat(new_path, segment(i));
-		if (i < size() - 2) {
-			strcat(new_path, "/");
-		}
 	}
 
 	ZstURI new_uri = ZstURI(new_path);

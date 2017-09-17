@@ -1,4 +1,5 @@
 #include <string>
+#include <chrono>
 #include <vector>
 #include <memory>
 #include <tuple>
@@ -127,6 +128,7 @@ private:
 
 public:
 	OutputComponent(const char * name, ZstEntityBase * parent) : ZstComponent("TESTER", name, parent) {
+		activate();
 		init();
 	}
 
@@ -158,6 +160,7 @@ public:
 	bool log = false;
 
 	InputComponent(const char * name, ZstEntityBase * parent, int cmp_val) : ZstFilter("TESTER", name, parent), compare_val(cmp_val) {
+		activate();
 		init();
 	}
 
@@ -250,6 +253,7 @@ void test_root_entity() {
 	Showtime::endpoint().self_test();
 
 	root_entity = new ZstComponent("ROOT", "root_entity");
+	root_entity->activate();
 	assert(root_entity);
 	clear_callback_queue();
 
@@ -312,15 +316,21 @@ void test_create_entities(){
 }
 
 void test_hierarchy() {
+	std::cout << "Starting hierarchy test" << std::endl;
+
 	//Test hierarchy
 	ZstComponent * parent = new ZstComponent("PARENT", "parent", root_entity);
 	ZstComponent * child = new ZstComponent("CHILD", "child", parent);
+	parent->activate();
+	child->activate();
 
 	wait_for_callbacks(2);
 	assert(root_entity->find_child_by_URI(parent->URI()));
 	assert(parent->find_child_by_URI(child->URI()));
 	assert(Showtime::get_entity_by_URI(parent->URI()));
 	assert(Showtime::get_entity_by_URI(child->URI()));
+
+	std::cout << "Removing child..." << std::endl;
 
 	//Test child removal from parent
 	ZstURI child_URI = ZstURI(child->URI());
@@ -331,82 +341,29 @@ void test_hierarchy() {
 	assert(!Showtime::get_entity_by_URI(child_URI));
 
 	//Test removing parent removes child
+	std::cout << "Creating new child to test parent removes all children" << std::endl;
+
 	child = new ZstComponent("CHILD", "child", parent);
+	child->activate();
+	TAKE_A_BREATH
+
 	clear_callback_queue();
 	ZstURI parent_URI = ZstURI(parent->URI());
 	delete parent;
 	wait_for_callbacks(2);
 	assert(!root_entity->find_child_by_URI(parent_URI));
-	assert(!Showtime::get_entity_by_URI(parent->URI()));
+	assert(!Showtime::get_entity_by_URI(parent_URI));
 	assert(!Showtime::get_entity_by_URI(child_URI));
 
 	delete child;
 	child = 0;
 	parent = 0;
-}
-        
-        
-void test_create_proxies(std::string external_sink_path){
-    //Create callbacks
-    TestEntityArrivingEventCallback * entityArriveCallback = new TestEntityArrivingEventCallback();
-    TestEntityLeavingEventCallback * entityLeaveCallback = new TestEntityLeavingEventCallback();
-    Showtime::attach_entity_arriving_callback(entityArriveCallback);
-    Showtime::attach_entity_leaving_callback(entityLeaveCallback);
-    
-    //Create emitter
-    OutputComponent * output = new OutputComponent("proxy_test_output", root_entity);
-    TAKE_A_BREATH
-    clear_callback_queue();
 
-    //Run sink in external process so we don't share the same Showtime singleton
-    std::cout << "Starting sink process" << std::endl;
-    std::cout << "----" << std::endl;
-    
-	std::string prog = external_sink_path + "/SinkTest";
-#ifdef WIN32
-	prog += ".exe";
-#endif
-    boost::process::child sink_process = boost::process::child(prog, "1");
-    
-    //Wait for the sink to register its entity and for us to receive the proxy event
-    wait_for_callbacks(3);
-    assert(entityArriveCallback->entityArrivedHits == 2);
-    entityArriveCallback->reset();
-    ZstProxyComponent * sink_root = dynamic_cast<ZstProxyComponent*>(Showtime::get_entity_by_URI(ZstURI("sink_root")));
-    ZstProxyComponent * sink = dynamic_cast<ZstProxyComponent*>(Showtime::get_entity_by_URI(ZstURI("sink_root/sink")));
+	std::cout << "Cleanup..." << std::endl;
 
-    assert(sink_root);
-    assert(sink);
-    assert(sink_root->is_proxy());
-    assert(sink->is_proxy());
-    assert(ZstURI::equal(sink->parent()->URI(), sink_root->URI()));
-    assert(Showtime::event_queue_size() == 0);
-    
-    //Connect cable to sink (it will exit when it receives a message)
-    Showtime::connect_cable(output->output_URI(), ZstURI("sink_root/sink/in"));
-    TAKE_A_BREATH
-    clear_callback_queue();
-    output->send(1);
-//    sink_process.wait();
-    
-    //Check that we received proxy destruction events
-    wait_for_callbacks(4);
-    assert(entityLeaveCallback->entityLeavingHits == 2);
-    assert(Showtime::get_entity_by_URI(ZstURI("sink_root")) == NULL);
-    assert(Showtime::get_entity_by_URI(ZstURI("sink_root/sink")) == NULL);
-    assert(sink_root->is_destroyed());
-    assert(sink->is_destroyed());
-    
-    //Cleanup
-    Showtime::remove_entity_arriving_callback(entityArriveCallback);
-    Showtime::remove_entity_leaving_callback(entityLeaveCallback);
-    delete entityArriveCallback;
-    delete entityLeaveCallback;
-    sink_root = 0;
-    sink = 0;
-    clear_callback_queue();
-    
-    std::cout << "Finished proxy test\n" << std::endl;
+	clear_callback_queue();
+
+	std::cout << "Finished hierarchy test\n" << std::endl;
 }
 
 
@@ -418,7 +375,7 @@ void test_connect_plugs() {
 	int expected_cables = 1;
 	OutputComponent * test_output = new OutputComponent("connect_test_ent_out", root_entity);
 	InputComponent * test_input = new InputComponent("connect_test_ent_in", root_entity, 0);
-
+	
 	//Test cable callbacks
 	TestCableArrivingEventCallback * cableArriveCallback = new TestCableArrivingEventCallback();
 	TestCableLeavingEventCallback * cableLeaveCallback = new TestCableLeavingEventCallback();
@@ -523,24 +480,156 @@ void test_add_filter() {
 }
 
 
+void test_create_proxies(std::string external_sink_path) {
+	//Create callbacks
+	TestEntityArrivingEventCallback * entityArriveCallback = new TestEntityArrivingEventCallback();
+	TestEntityLeavingEventCallback * entityLeaveCallback = new TestEntityLeavingEventCallback();
+	Showtime::attach_entity_arriving_callback(entityArriveCallback);
+	Showtime::attach_entity_leaving_callback(entityLeaveCallback);
+
+	//Create emitter
+	OutputComponent * output = new OutputComponent("proxy_test_output", root_entity);
+	TAKE_A_BREATH
+		clear_callback_queue();
+
+	//Run sink in external process so we don't share the same Showtime singleton
+	std::cout << "Starting sink process" << std::endl;
+	std::cout << "----" << std::endl;
+
+	std::string prog = external_sink_path + "/SinkTest";
+#ifdef WIN32
+	prog += ".exe";
+#endif
+	boost::process::child sink_process = boost::process::child(prog, "1");
+
+	//Wait for the sink to register its entity and for us to receive the proxy event
+	wait_for_callbacks(3);
+	assert(entityArriveCallback->entityArrivedHits == 2);
+	entityArriveCallback->reset();
+	ZstProxyComponent * sink_root = dynamic_cast<ZstProxyComponent*>(Showtime::get_entity_by_URI(ZstURI("sink_root")));
+	ZstProxyComponent * sink = dynamic_cast<ZstProxyComponent*>(Showtime::get_entity_by_URI(ZstURI("sink_root/sink")));
+
+	assert(sink_root);
+	assert(sink);
+	assert(sink_root->is_proxy());
+	assert(sink->is_proxy());
+	assert(ZstURI::equal(sink->parent()->URI(), sink_root->URI()));
+	assert(Showtime::event_queue_size() == 0);
+
+	//Connect cable to sink (it will exit when it receives a message)
+	Showtime::connect_cable(output->output_URI(), ZstURI("sink_root/sink/in"));
+	TAKE_A_BREATH
+	output->send(1);
+	sink_process.wait();
+
+	//Check that we received proxy destruction events
+	wait_for_callbacks(4);
+	assert(entityLeaveCallback->entityLeavingHits == 2);
+	assert(Showtime::get_entity_by_URI(ZstURI("sink_root")) == NULL);
+	assert(Showtime::get_entity_by_URI(ZstURI("sink_root/sink")) == NULL);
+
+	//Cleanup
+	Showtime::remove_entity_arriving_callback(entityArriveCallback);
+	Showtime::remove_entity_leaving_callback(entityLeaveCallback);
+	delete entityArriveCallback;
+	delete entityLeaveCallback;
+	sink_root = 0;
+	sink = 0;
+	clear_callback_queue();
+
+	std::cout << "Finished proxy test\n" << std::endl;
+}
+
+
 void test_memory_leaks(int num_loops) {
 	std::cout << "Starting memory leak test" << std::endl;
 
 	OutputComponent * test_output = new OutputComponent("memleak_test_out", root_entity);
 	InputComponent * test_input = new InputComponent("memleak_test_in", root_entity, 10);
 	Showtime::connect_cable(test_output->output_URI(), test_input->input_URI());
+	TAKE_A_BREATH
 
 	int count = num_loops;
+
+	Showtime::endpoint().reset_graph_recv_tripmeter();
+	Showtime::endpoint().reset_graph_send_tripmeter();
+
 	std::cout << "Sending " << count << " messages" << std::endl;
+	TAKE_A_BREATH
+
+
+	// Wait until our message tripmeter has received all the messages
+	auto delta = std::chrono::milliseconds(-1);
+	std::chrono::time_point<std::chrono::system_clock> end, last, now;
+	auto start = std::chrono::system_clock::now();
+	last = start;
+	int last_message_count = 0;
+	int message_count = 0;
+	int delta_messages = 0;
+	long mps = 0.0;
+	int remaining_messages = count;
+	int queued_messages = 0;
+	int delta_queue = 0;
+	int last_queue_count = 0;
+	long queue_speed = 0;
 
 	for (int i = 0; i < count; ++i) {
 		test_output->send(10);
 		Showtime::poll_once();
+		if (Showtime::endpoint().graph_recv_tripmeter() % 10000 == 0) {
+			//Display progress
+			message_count = Showtime::endpoint().graph_recv_tripmeter();
+			queued_messages = Showtime::endpoint().graph_send_tripmeter() - Showtime::endpoint().graph_recv_tripmeter();
+
+			now = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
+			delta = std::chrono::duration_cast<std::chrono::milliseconds>(now - last);
+			delta_messages = message_count - last_message_count;
+			delta_queue = queued_messages - last_queue_count;
+
+			last = now;
+			mps = (long)delta_messages / (delta.count() / 1000.0);
+			queue_speed = (long)delta_queue / (delta.count() / 1000.0);
+
+			remaining_messages = count - message_count;
+			last_message_count = message_count;
+			last_queue_count = queued_messages;
+
+			std::cout << "Processing " << mps << " messages per/s. Remaining:" << remaining_messages << " Delta time: " << (delta.count() / 1000.0) << " per 10000. Queued messages: " << queued_messages << ". Queuing speed: " << queue_speed << "messages per/s" << std::endl;
+		}
 	}
+	
+	std::cout << "Sent all messages. Waiting for recv" << std::endl;
+
+	do  {
+		Showtime::poll_once();
+		if (Showtime::endpoint().graph_recv_tripmeter() % 10000 == 0) {
+			//Display progress
+			message_count = Showtime::endpoint().graph_recv_tripmeter();
+			now = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
+			delta = std::chrono::duration_cast<std::chrono::milliseconds>(now - last);
+			delta_messages = message_count - last_message_count;
+			queued_messages = Showtime::endpoint().graph_send_tripmeter() - Showtime::endpoint().graph_recv_tripmeter();
+			last = now;
+			mps = (long)delta_messages / (delta.count() / 1000.0);
+			remaining_messages = count - message_count;
+			last_message_count = message_count;
+
+			std::cout << "Processing " << mps << " messages per/s. Remaining:" << remaining_messages << " Delta time: " << (delta.count() / 1000.0) << " per 10000. Queued messages: " << queued_messages << std::endl;
+		}
+	} while ((Showtime::endpoint().graph_recv_tripmeter() < count));
+
+	TAKE_A_BREATH
+	Showtime::poll_once();
+	std::cout << "Received all messages" << std::endl;
+	std::cout << "Remaining events: " << Showtime::event_queue_size() << std::endl;
+	std::cout << "Total received graph_messages " << Showtime::endpoint().graph_recv_tripmeter() << std::endl;
+	assert(test_input->num_hits == count);
 
 	delete test_output;
 	delete test_input;
 	clear_callback_queue();
+	Showtime::endpoint().reset_graph_recv_tripmeter();
+	Showtime::endpoint().reset_graph_send_tripmeter();
 
 	std::cout << "Finished memory leak test\n" << std::endl;
 }
@@ -576,10 +665,10 @@ int main(int argc,char **argv){
     test_stage_registration();
     test_create_entities();
 	test_hierarchy();
-	test_create_proxies(boost::filesystem::system_complete(argv[0]).parent_path().generic_string());
 	test_connect_plugs();
 	test_add_filter();
-	test_memory_leaks(20000);
+	test_create_proxies(boost::filesystem::system_complete(argv[0]).parent_path().generic_string());
+	test_memory_leaks(200000);
     test_leaving();
 	test_cleanup();
 	std::cout << "\nShowtime test successful" << std::endl;

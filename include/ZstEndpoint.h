@@ -74,12 +74,18 @@ public:
 	ZST_EXPORT size_t event_queue_size();
 
 	//Plug callbacks
-	ZST_EXPORT ZstCallbackQueue<ZstEntityEventCallback, ZstEntityBase*> * entity_arriving_events();
-	ZST_EXPORT ZstCallbackQueue<ZstEntityEventCallback, ZstEntityBase*> * entity_leaving_events();
-	ZST_EXPORT ZstCallbackQueue<ZstPlugEventCallback, ZstURI> * plug_arriving_events();
-	ZST_EXPORT ZstCallbackQueue<ZstPlugEventCallback, ZstURI> * plug_leaving_events();
-	ZST_EXPORT ZstCallbackQueue<ZstCableEventCallback, ZstCable> * cable_arriving_events();
-	ZST_EXPORT ZstCallbackQueue<ZstCableEventCallback, ZstCable> * cable_leaving_events();
+	ZstCallbackQueue<ZstEntityEventCallback, ZstEntityBase*> * entity_arriving_events();
+	ZstCallbackQueue<ZstEntityEventCallback, ZstEntityBase*> * entity_leaving_events();
+	ZstCallbackQueue<ZstPlugEventCallback, ZstURI> * plug_arriving_events();
+	ZstCallbackQueue<ZstPlugEventCallback, ZstURI> * plug_leaving_events();
+	ZstCallbackQueue<ZstCableEventCallback, ZstCable> * cable_arriving_events();
+	ZstCallbackQueue<ZstCableEventCallback, ZstCable> * cable_leaving_events();
+	
+	//Debugging
+	ZST_EXPORT int graph_recv_tripmeter();
+	ZST_EXPORT void reset_graph_recv_tripmeter();
+	ZST_EXPORT int graph_send_tripmeter();
+	ZST_EXPORT void reset_graph_send_tripmeter();
 
 private:
 	//Stage actor
@@ -156,4 +162,8 @@ private:
 	Str255 m_stage_router_addr;
 	Str255 m_stage_updates_addr;
 	Str255 m_graph_out_addr;
+
+	//Debugging
+	int m_num_graph_recv_messages;
+	int m_num_graph_send_messages;
 };

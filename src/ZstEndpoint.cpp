@@ -16,8 +16,10 @@
 
 using namespace std;
 
-ZstEndpoint::ZstEndpoint() {
-
+ZstEndpoint::ZstEndpoint() : 
+	m_num_graph_send_messages(0),
+	m_num_graph_recv_messages(0) 
+{
 }
 
 ZstEndpoint::~ZstEndpoint() {
@@ -52,8 +54,6 @@ void ZstEndpoint::destroy() {
 
 void ZstEndpoint::init()
 {
-    cout << "Starting Showtime" << endl;
-
 	if (m_is_ending) {
 		return;
 	}
@@ -81,6 +81,7 @@ void ZstEndpoint::init()
 	m_graph_in = zsock_new(ZMQ_SUB);
 	if (m_graph_in) {
 		zsock_set_linger(m_graph_in, 0);
+		zsock_set_unbounded(m_graph_in);
 		attach_pipe_listener(m_graph_in, s_handle_graph_in, this);
 	}
 
@@ -97,6 +98,7 @@ void ZstEndpoint::init()
 	//Graph output socket
     sprintf(m_graph_out_addr, "@tcp://%s:*", network_ip.c_str());
     m_graph_out = zsock_new_pub(m_graph_out_addr);
+	zsock_set_unbounded(m_graph_out);
     m_output_endpoint = zsock_last_endpoint(m_graph_out);
     cout << "ZST: Endpoint graph address: " << m_output_endpoint << endl;
     
@@ -125,7 +127,6 @@ void ZstEndpoint::process_callbacks()
 					delete (ZstPlugEvent*)e;
 					e = 0;
 				}
-
             }
 			break;
 		case ZstEvent::CABLE_CREATED:
@@ -279,6 +280,8 @@ int ZstEndpoint::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg)
     
     zmsg_destroy(&msg);
     free(msg);
+
+	endpoint->m_num_graph_recv_messages++;
     
 	endpoint->broadcast_to_local_plugs(sender, value);
 	return 0;
@@ -346,6 +349,7 @@ void ZstEndpoint::connect_performer_handler(zsock_t * socket, zmsg_t * msg) {
 		return;
 	}
 	m_local_cables.push_back(new ZstCable(performer_args.output_plug, performer_args.input_plug));
+	std::cout << "Finished connecting" << std::endl;
 }
 
 int ZstEndpoint::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
@@ -427,7 +431,8 @@ int ZstEndpoint::destroy_entity(ZstEntityBase * entity)
 {
     int result = 1;
 	if (entity->is_destroyed() ||
-		!entity->is_registered()
+		!entity->is_registered() ||
+		!is_connected_to_stage()
 		)
 	{
 		return result;
@@ -538,7 +543,7 @@ void ZstEndpoint::destroy_proxy_entity(const ZstURI &path){
     entity = get_entity_by_URI(path);
     
     if(entity){
-        destroy_entity(entity);
+		//destroy_entity(entity);
         delete entity;
     }
 }
@@ -708,6 +713,26 @@ ZstCallbackQueue<ZstCableEventCallback, ZstCable>* ZstEndpoint::cable_leaving_ev
 	return m_cable_leaving_event_manager;
 }
 
+int ZstEndpoint::graph_recv_tripmeter()
+{
+	return m_num_graph_recv_messages;
+}
+
+void ZstEndpoint::reset_graph_recv_tripmeter()
+{
+	m_num_graph_recv_messages = 0;
+}
+
+int ZstEndpoint::graph_send_tripmeter()
+{
+	return m_num_graph_send_messages;
+}
+
+void ZstEndpoint::reset_graph_send_tripmeter()
+{
+	m_num_graph_send_messages = 0;
+}
+
 
 // ------------
 // Send/Receive
@@ -726,6 +751,7 @@ void ZstEndpoint::send_through_stage(zmsg_t * msg) {
 
 void ZstEndpoint::send_to_graph(zmsg_t * msg) {
 	zmsg_send(&msg, m_graph_out);
+	m_num_graph_send_messages++;
 }
 
 zmsg_t * ZstEndpoint::receive_from_stage() {
@@ -735,7 +761,6 @@ zmsg_t * ZstEndpoint::receive_from_stage() {
 zmsg_t * ZstEndpoint::receive_stage_update() {
 	return zmsg_recv(m_stage_updates);
 }
-
 
 zmsg_t * ZstEndpoint::receive_routed_from_stage() {
 	zmsg_t * msg = zmsg_recv(m_stage_router);
@@ -773,17 +798,13 @@ void ZstEndpoint::broadcast_to_local_plugs(ZstURI output_plug, ZstValue & value)
 	for(int i = 0; i < cables().size(); ++i){
 		cable = cables()[i];
 		if (ZstURI::equal(cable->get_output(), output_plug)) {
-			int end_index = static_cast<int>(cable->get_input().size()) - 1;
-			ZstEntityBase * entity = get_entity_by_URI(cable->get_input().range(0, end_index));
-			ZstComponent* component = dynamic_cast<ZstComponent*>(entity);
-			if (component) {
-				ZstInputPlug * plug = (ZstInputPlug*)component->get_plug_by_URI(cable->get_input());
-				if (plug != NULL) {
-					Showtime::endpoint().enqueue_event(new ZstPlugEvent(plug->get_URI(), value));
-				}
-				else {
-					cout << "ZST: Ignoring plug hit from " << cable->get_output().path() << " for missing input plug " << cable->get_input().path() << endl;
-				}
+			ZstInputPlug * plug = (ZstInputPlug*)get_plug_by_URI(cable->get_input());
+
+			if (plug != NULL) {
+				Showtime::endpoint().enqueue_event(new ZstPlugEvent(plug->get_URI(), value));
+			}
+			else {
+				cout << "ZST: Ignoring plug hit from " << cable->get_output().path() << ". Missing destination input plug " << cable->get_input().path() << endl;
 			}
 		}
 	}

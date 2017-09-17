@@ -10,26 +10,26 @@
 class ZstInputPlug;
 class ZstPlugDataEventCallback {
 public:
-	ZST_EXPORT virtual ~ZstPlugDataEventCallback() { std::cout << "Destroying input callback" << std::endl; }
-	ZST_EXPORT virtual void run(ZstInputPlug * e) { std::cout << "Input callback running" << std::endl; }
+	ZST_EXPORT virtual ~ZstPlugDataEventCallback() {}
+	ZST_EXPORT virtual void run(ZstInputPlug * e) {}
 };
 
 class ZstPlugEventCallback {
 public:
-	ZST_EXPORT virtual ~ZstPlugEventCallback() { std::cout << "Destroying plug event callback" << std::endl; }
-	ZST_EXPORT virtual void run(ZstURI plug) { std::cout << "Running plug event callback" << std::endl; }
+	ZST_EXPORT virtual ~ZstPlugEventCallback() {}
+	ZST_EXPORT virtual void run(ZstURI plug) {}
 };
 
 class ZstEntityEventCallback {
 public:
-	ZST_EXPORT virtual ~ZstEntityEventCallback() { std::cout << "Destroying performer event callback" << std::endl; }
-	ZST_EXPORT virtual void run(ZstEntityBase* entity) { std::cout << "Running performer event callback" << std::endl; }
+	ZST_EXPORT virtual ~ZstEntityEventCallback() {}
+	ZST_EXPORT virtual void run(ZstEntityBase* entity) {}
 };
 
 class ZstCableEventCallback {
 public:
-	ZST_EXPORT virtual ~ZstCableEventCallback() { std::cout << "Destroying cable event callback" << std::endl; }
-	ZST_EXPORT virtual void run(ZstCable cable) { std::cout << "Running cable event callback" << std::endl; }
+	ZST_EXPORT virtual ~ZstCableEventCallback() {}
+	ZST_EXPORT virtual void run(ZstCable cable) {}
 };
 
 
