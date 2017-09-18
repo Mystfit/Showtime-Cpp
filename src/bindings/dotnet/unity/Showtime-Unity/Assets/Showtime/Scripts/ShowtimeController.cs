@@ -48,6 +48,7 @@ public class ShowtimeController : MonoBehaviour {
 
         //Create a root entity to represent this client. I recommend 1 per process.
         root = new ZstComponent("ROOT", localPerformerName);
+        root.activate();
         add = new AddFilter(root);
         pushA = new Push("addend", root);
         pushB = new Push("augend", root);
@@ -97,6 +98,7 @@ public class ShowtimeController : MonoBehaviour {
 
         public Sink(string name, ZstEntityBase parent) : base("SINK", name, parent)
         {
+            activate();
             plug = create_input_plug("push_in", ZstValueType.ZST_INT);
         }
 
@@ -119,6 +121,7 @@ public class ShowtimeController : MonoBehaviour {
 
         public Push(string name, ZstEntityBase parent) : base("PUSH", name, parent)
         {
+            activate();
             plug = create_output_plug("push_out", ZstValueType.ZST_INT);
         }
 

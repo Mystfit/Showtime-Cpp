@@ -77,7 +77,6 @@ bool ZstEntityBase::is_proxy(){
     return m_is_proxy;
 }
 
-#ifdef WIN32
 void * ZstEntityBase::operator new(size_t num_bytes)
 {
 	return ::operator new(num_bytes);
@@ -87,7 +86,6 @@ void ZstEntityBase::operator delete(void * p)
 {
 	::operator delete(p);
 }
-#endif
 
 ZstEntityBase * ZstEntityBase::parent() const
 {

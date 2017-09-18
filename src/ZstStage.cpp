@@ -386,6 +386,7 @@ void ZstStage::create_entity_handler(zsock_t * socket, zmsg_t * msg)
 		entity_uri = entity_args.address.range(0, end_index);
 		ZstEntityRef* entity_parent = get_entity_ref_by_URI(entity_uri);
 		if (entity_parent == NULL) {
+			cout << "ZST_STAGE: Could not register entity " << entity_args.address.path() << ", parent not found" << endl;
 			reply_with_signal(socket, ZstMessages::Signal::ERR_STAGE_ENTITY_NOT_FOUND);
 			return;
 		}
@@ -393,6 +394,8 @@ void ZstStage::create_entity_handler(zsock_t * socket, zmsg_t * msg)
 
 	ZstEntityRef * entity = endpoint->register_entity(entity_args.entity_type, entity_args.address);
 	if (entity == NULL) {
+		cout << "ZST_STAGE: Could not register entity " << entity_args.address.path() << ", it already exists" << endl;
+
 		reply_with_signal(socket, ZstMessages::Signal::ERR_STAGE_ENTITY_ALREADY_EXISTS);
 		return;
 	}
