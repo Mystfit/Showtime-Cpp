@@ -16,6 +16,8 @@
 #include "entities/AddFilter.h"
 #include "entities/ZstFilter.h"
 
+#include "Uri.h"
+
 #ifdef WIN32
 #define TAKE_A_BREATH Sleep(100);
 #else
@@ -190,6 +192,20 @@ public:
 //Global test variables
 ZstStage *stage;
 ZstEntityBase * root_entity;
+
+void test_new_URI() {
+	Uri test = Uri("this/is/a/uri");
+	std::cout << test.path() << std::endl;
+
+	for (int i = 0; i < test.size(); i++) {
+		std::cout << "index:" << i << " " << test.segment(i) << std::endl;
+	}
+
+	Uri add = test + test;
+	std::cout << add.path() << std::endl;
+
+	assert(std::is_standard_layout<Uri>());
+}
 
 void test_standard_layout() {
 	//Verify standard layout
@@ -659,6 +675,7 @@ int main(int argc,char **argv){
     Showtime::join("127.0.0.1");
 
 	TAKE_A_BREATH
+	test_new_URI();
 	test_standard_layout();
 	test_URI();
 	test_root_entity();

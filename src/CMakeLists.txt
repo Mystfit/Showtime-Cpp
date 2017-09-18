@@ -18,6 +18,7 @@ set(ZST_PUBLIC_HEADERS
  ${Showtime_INCLUDE_DIRS}/ZstValue.h
  ${Showtime_INCLUDE_DIRS}/ZstCallbacks.h
  ${Showtime_INCLUDE_DIRS}/ZstConstants.h
+ ${Showtime_INCLUDE_DIRS}/Uri.h
 )
 
 set(ZST_ENTITIES
@@ -74,6 +75,7 @@ set(ZST_SOURCE
  "ZstFilter.cpp"
  "ZstComponent.cpp"
  "ZstProxyComponent.cpp"
+ "Uri.cpp"
  "AddFilter.cpp"
 )
 
