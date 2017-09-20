@@ -1,147 +1,205 @@
-#include <map>
 #include "ZstURI.h"
+#include <exception>
+#include <stdexcept>
+#include <iostream>
 #include "ZstUtils.hpp"
 
-using namespace std;
-
-ZstURI::ZstURI() : 
-	m_path(""),
-	m_combined_path(""),
-	m_path_offsets{ 0 },
-	m_num_path_components(0)
-{
-	build_split_path("");
+ZstURI::ZstURI() : component_count(0) {
+	original_path = create_pstr("");
+	segmented_path = create_pstr("");
+	component_count = 0;
 }
 
-ZstURI::ZstURI(const ZstURI &copy) : 
-	m_path(""),
-	m_combined_path(""),
-	m_path_offsets{ 0 },
-	m_num_path_components(0)
-{
-	memcpy(m_combined_path, copy.m_combined_path, 255);
-	build_split_path(copy.m_combined_path);
+
+ZstURI::~ZstURI() {
+	free(original_path.cstr);
+	free(segmented_path.cstr);
 }
 
-ZstURI::ZstURI(const char *  path) :
-	m_path(""),
-	m_combined_path(""),
-	m_path_offsets{ 0 },
-	m_num_path_components(0)
+ZstURI::ZstURI(const ZstURI & copy) : component_count(0)
 {
-	strcpy(m_combined_path, path);
-	build_split_path(path);
+	original_path = create_pstr(copy.original_path.cstr);
+	segmented_path = create_pstr(copy.segmented_path.cstr);
+	component_count = copy.component_count;
+	for (int i = 0; i < copy.component_count; ++i) {
+		components[i] = create_pstr(copy.components[i].cstr);
+	}
 }
 
-ZstURI::~ZstURI()
+//
+
+ZstURI::ZstURI(const char * path)
 {
+	original_path = create_pstr(path);
+	segmented_path = create_pstr(path);
+	split();
 }
 
-const char * ZstURI::path() const {
-	return m_combined_path;
+//
+const char * ZstURI::path() const
+{
+	return original_path.cstr;
 }
 
-const size_t ZstURI::size() const
+char * ZstURI::segment(size_t index)
 {
-	return m_num_path_components;
+	if(index >= component_count || index < 0) {
+		throw std::range_error("Start or end index out of range of path components");
+	}
+	return components[index].cstr;
+}
+
+const int ZstURI::size() const
+{
+	return component_count;
+}
+
+const int ZstURI::full_size() const
+{
+	int length = 0;
+	int c_count = size();
+	for (int i = 0; i < c_count; ++i) {
+		length += components[i].length;
+	}
+	length += c_count-1;
+	return length;
+}
+
+ZstURI ZstURI::operator+(const ZstURI & other) const
+{
+	int new_length = original_path.length + other.original_path.length + 1;
+
+	char * new_path = (char*)calloc(new_length+1, sizeof(char));
+	strncpy(new_path, original_path.cstr, original_path.length);
+
+	strncat(new_path, "/", 1);
+	strncat(new_path, other.original_path.cstr, other.original_path.length);
+	
+	ZstURI result = ZstURI(new_path);
+	free(new_path);
+	new_path = 0;
+	return result;
+}
+
+ZstURI & ZstURI::operator=(const ZstURI & other)
+{
+	original_path = create_pstr(other.original_path.cstr);
+	segmented_path = create_pstr(other.segmented_path.cstr);
+	component_count = other.component_count;
+	for (int i = 0; i < other.component_count; ++i) {
+		components[i] = create_pstr(other.components[i].cstr);
+	}
+	return *this;
 }
 
 ZstURI ZstURI::range(int start, int end) const
 {
-	if (start > size() || end > size()) {
+	if (start > size() || end >= size()) {
 		throw std::range_error("Start or end exceeds path length");
 	}
 
-	Str255 new_path;
+	int new_length = 0;
 
-	//Head
-	strcpy(new_path, segment(0));
-
-	//Body
+	for (int i = start; i <= end; ++i) {
+		new_length += components[i].length;
+	}
+	new_length += end - start;
+	char * new_path = (char*)calloc(new_length + 1, sizeof(char));
+	strncpy(new_path, components[start].cstr, components[start].length);
+	
 	for (int i = start + 1; i <= end; ++i) {
-		strcat(new_path, "/");
-		strcat(new_path, segment(i));
+		strncat(new_path, "/", 1);
+		strncat(new_path, components[i].cstr, components[i].length);
 	}
 
-	ZstURI new_uri = ZstURI(new_path);
-	return new_uri;
-}
-
-bool ZstURI::contains(ZstURI compare) {
-	string original = string(m_combined_path);
-	string comp = string(compare.path());
-	bool result = false;
-	size_t position = original.find(comp);
-
-	//Found URI match at start of string
-	if(position == 0){
-		result = true;
-	}
-	else if (position > 0) {
-		//Matched string not found at start of URI
-		result = false;
-	}
-	else if (position == string::npos) {
-		result = false;
-	}
+	ZstURI result = ZstURI(new_path);
+	free(new_path);
 	return result;
 }
 
-const char * ZstURI::segment(int index) const
+bool ZstURI::contains(const ZstURI & compare)
 {
-	if (index > size()-1 || index > MAX_PATH_LEN)
-		throw std::range_error("Path index out of range");
+	int shortest = (compare.size() > this->size()) ? this->size() : compare.size();
+	int largest = (compare.size() < this->size()) ? this->size() : compare.size();
+	int contiguous = 0;
 
-	return m_path + m_path_offsets[index];
-}
-
-bool ZstURI::equal(const ZstURI & a, const ZstURI b)
-{
-	return (strcmp(a.path(), b.path()) == 0);
-}
-
-bool ZstURI::operator< (const ZstURI& b) const 
-{
-	return std::lexicographical_compare<const char*, const char*>(m_combined_path, m_combined_path + strlen(m_combined_path), b.m_combined_path, b.m_combined_path + strlen(b.m_combined_path));
-}
-
-bool ZstURI::is_empty() {
-	return string(m_combined_path).empty();
-}
-
-ZstURI ZstURI::join(const ZstURI & a, const ZstURI & b)
-{
-	string a_parent = string(a.path());
-	string combined_path = string(b.path());
-	if(!a_parent.empty())
-		combined_path.insert(0, a_parent + "/");
-
-	return ZstURI(combined_path.c_str());
-}
-
-void ZstURI::build_split_path(const char * path)
-{
-	char * local_path = new char[255]();
-	strcpy(local_path, path);
-	char * token = strtok(local_path, "/");
-
-	long offset = 0;
-	int i = 0;
-	while(token != NULL){
-		m_path_offsets[i] = offset;
-		size_t l = strlen(token);
-		memcpy(m_path + offset, token, l);
-		offset += l;
-		m_path[offset] = 0;
-		offset += 1;
-		i++;
-
-		token = strtok(NULL, "/");
-
-		if (m_path_offsets[i] < 0) {
-			throw std::range_error("Why is this less than 0?!");
+	for (int i = 0; i < largest; ++i) {
+		if (i < compare.size()) {
+			if (strcmp(compare.components[i].cstr, this->components[i].cstr) == 0) {
+				if (++contiguous == shortest)
+					return true;
+			}
 		}
 	}
-	m_num_path_components = i;
-	delete[] local_path;
+
+	return false;
+}
+
+bool ZstURI::equal(const ZstURI & a, const ZstURI & b)
+{
+	return 	(strcmp(a.path(), b.path()) == 0);
+}
+
+bool ZstURI::operator==(const ZstURI & other) const
+{
+	return (strcmp(path(), other.path()) == 0);
+}
+
+bool ZstURI::operator<(const ZstURI & b) const
+{
+	return strcmp(b.original_path.cstr, original_path.cstr) < 0 ? false: true;
+}
+
+bool ZstURI::is_empty()
+{
+	return component_count < 1;
+}
+
+void ZstURI::split()
+{
+	component_count = 0;
+
+	if (strcmp(original_path.cstr, "") == 0)
+		return;
+
+	int c_count = 0;
+	int offset = 0;
+
+	for (int i = 0; i < segmented_path.length; i++) {
+		if (segmented_path.cstr[i] == DELIM) {
+			segmented_path.cstr[i] = '\0';
+			c_count++;
+		}
+	}
+	
+	pstr comp;
+	comp.length = strlen(segmented_path.cstr);
+	comp.cstr = segmented_path.cstr + offset;
+	components[component_count] = comp;
+	offset += comp.length + 1;
+	component_count++;
+
+	while (c_count > 0) {
+		comp.length = strlen(segmented_path.cstr + offset);
+		comp.cstr = segmented_path.cstr + offset;
+		components[component_count] = comp;
+		component_count++;
+		offset += comp.length + 1;
+		c_count--;
+	}
+}
+
+pstr ZstURI::create_pstr(const char * p)
+{
+	pstr result;
+	result.length = strlen(p);
+	result.cstr = (char*)calloc(result.length+1, sizeof(char));
+
+	strncpy(result.cstr, p, result.length+1);
+	return result;
+}
+
+size_t std::hash<ZstURI>::operator()(const ZstURI & k) const
+{
+	return Utils::hash_c_string(k.path(), k.full_size());
 }

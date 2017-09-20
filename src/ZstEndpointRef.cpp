@@ -17,7 +17,7 @@ ZstEndpointRef::~ZstEndpointRef()
 	}
 	m_entities.clear();
 
-	map<ZstURI, ZstPlugRef*> plugs = m_plugs;
+	unordered_map<ZstURI, ZstPlugRef*> plugs = m_plugs;
 	for (auto plug : plugs) {
 		destroy_plug(plug.second->get_URI());
 	}
@@ -50,7 +50,7 @@ int ZstEndpointRef::get_missed_heartbeats()
 }
 
 
-ZstEntityRef * ZstEndpointRef::register_entity(std::string entity_type, ZstURI uri)
+ZstEntityRef * ZstEndpointRef::register_entity(std::string entity_type, const ZstURI & uri)
 {
 	//Check for existing performers with this name
 	if (m_entities.find(uri) != m_entities.end()) {
@@ -70,7 +70,7 @@ std::vector<ZstEntityRef*> ZstEndpointRef::get_entity_refs()
 	return entities;
 }
 
-ZstEntityRef * ZstEndpointRef::get_entity_ref_by_URI(ZstURI uri)
+ZstEntityRef * ZstEndpointRef::get_entity_ref_by_URI(const ZstURI & uri)
 {
 	ZstEntityRef * result = NULL;
 	auto it = m_entities.find(uri);
@@ -82,7 +82,7 @@ ZstEntityRef * ZstEndpointRef::get_entity_ref_by_URI(ZstURI uri)
 
 void ZstEndpointRef::destroy_entity(ZstEntityRef* entity)
 {
-	for (map<ZstURI, ZstEntityRef*>::iterator entity_iter = m_entities.begin(); entity_iter != m_entities.end(); ++entity_iter)
+	for (unordered_map<ZstURI, ZstEntityRef*>::iterator entity_iter = m_entities.begin(); entity_iter != m_entities.end(); ++entity_iter)
 	{
 		if ((entity_iter)->second == entity)
 		{
@@ -96,7 +96,7 @@ void ZstEndpointRef::destroy_entity(ZstEntityRef* entity)
 
 // ----------------
 
-ZstPlugRef * ZstEndpointRef::create_plug(ZstURI address, PlugDirection direction)
+ZstPlugRef * ZstEndpointRef::create_plug(const ZstURI & address, PlugDirection direction)
 {
 	ZstPlugRef * result = NULL;
 	//Check for existing plugs with this name
@@ -113,7 +113,7 @@ ZstPlugRef * ZstEndpointRef::create_plug(ZstURI address, PlugDirection direction
 	return result;
 }
 
-ZstPlugRef * ZstEndpointRef::get_plug_by_URI(ZstURI uri)
+ZstPlugRef * ZstEndpointRef::get_plug_by_URI(const ZstURI & uri)
 {
 	ZstPlugRef * result = NULL;
 	if (m_plugs.empty())
@@ -135,10 +135,10 @@ std::vector<ZstPlugRef*> ZstEndpointRef::get_plug_refs()
 	return plugs;
 }
 
-void ZstEndpointRef::destroy_plug(ZstURI plug)
+void ZstEndpointRef::destroy_plug(const ZstURI & plug)
 {
 	ZstPlugRef * plug_to_delete = NULL;
-	for (map<ZstURI, ZstPlugRef*>::iterator plug_iter = m_plugs.begin(); plug_iter != m_plugs.end(); ++plug_iter)
+	for (unordered_map<ZstURI, ZstPlugRef*>::iterator plug_iter = m_plugs.begin(); plug_iter != m_plugs.end(); ++plug_iter)
 	{
 		if (ZstURI::equal(plug_iter->second->get_URI(), plug))
 		{

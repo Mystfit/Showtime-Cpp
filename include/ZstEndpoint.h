@@ -1,6 +1,6 @@
 #pragma once
 
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include <czmq.h>
 #include <string>
@@ -61,8 +61,8 @@ public:
     void destroy_proxy_entity(const ZstURI & path);
 
 	//Cables
-	int connect_cable(ZstURI a, ZstURI b);
-	int destroy_cable(ZstURI a, ZstURI b);
+	int connect_cable(const ZstURI & a, const ZstURI & b);
+	int destroy_cable(const ZstURI & a, const ZstURI & b);
 	ZST_EXPORT std::vector<ZstCable*> get_cables_by_URI(const ZstURI & uri);
 	ZST_EXPORT ZstCable * get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB);
 	void remove_cable(ZstCable * cable);
@@ -132,9 +132,9 @@ private:
     std::string m_network_interface;
 
 	//All performers
-	std::map<ZstURI, ZstEntityBase*> m_entities;
-	std::map<ZstURI, ZstEntityBase*> & entities();
-    std::map<ZstURI, ZstProxyComponent*> m_proxies;
+	std::unordered_map<ZstURI, ZstEntityBase*> m_entities;
+	std::unordered_map<ZstURI, ZstEntityBase*> & entities();
+    std::unordered_map<ZstURI, ZstProxyComponent*> m_proxies;
 
 	//Active local plug connections
 	std::vector<ZstCable*> m_local_cables;
@@ -158,10 +158,10 @@ private:
 
 	//Addresses
 	std::string m_stage_addr = "127.0.0.1";
-	Str255 m_stage_requests_addr;
-	Str255 m_stage_router_addr;
-	Str255 m_stage_updates_addr;
-	Str255 m_graph_out_addr;
+	std::string m_stage_requests_addr;
+	std::string m_stage_router_addr;
+	std::string m_stage_updates_addr;
+	std::string m_graph_out_addr;
 
 	//Debugging
 	int m_num_graph_recv_messages;

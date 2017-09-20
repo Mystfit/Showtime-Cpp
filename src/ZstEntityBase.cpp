@@ -8,26 +8,30 @@ ZstEntityBase::ZstEntityBase(const char * entity_type, const char * path) :
     m_is_proxy(false),
     m_is_registered(false),
 	m_is_destroyed(false),
-    m_parent(NULL)
+    m_parent(NULL),
+	m_uri(path)
 {
-	memcpy(m_entity_type, entity_type, 255);
-	m_uri = ZstURI(path);
+	int entity_type_len = strlen(entity_type);
+	m_entity_type = (char*)calloc(entity_type_len + 1, sizeof(char));
+	strncpy(m_entity_type, entity_type, entity_type_len);
 }
 
 ZstEntityBase::ZstEntityBase(const char * entity_type, const char * local_path, ZstEntityBase * parent) :
 	m_is_proxy(false),
-    m_is_registered(false),
-    m_is_destroyed(false),
-    m_parent(parent)
+	m_is_registered(false),
+	m_is_destroyed(false),
+	m_parent(parent),
+	m_uri(parent->URI() + ZstURI(local_path))
 {
-	memcpy(m_entity_type, entity_type, 255);
-	ZstURI local_uri = ZstURI(local_path);
-	m_uri = ZstURI::join(parent->URI(), local_uri);
+	int entity_type_len = strlen(entity_type);
+	m_entity_type = (char*)calloc(entity_type_len + 1, sizeof(char));
+	strncpy(m_entity_type, entity_type, entity_type_len);
 	this->parent()->add_child(this);
 }
 
 ZstEntityBase::~ZstEntityBase()
 {
+	free(m_entity_type);
     for(auto child : m_children){
 		if (!child.second->is_destroyed()) {
 			Showtime::endpoint().destroy_entity(child.second);
@@ -53,7 +57,7 @@ const char * ZstEntityBase::entity_type() const
 	return m_entity_type;
 }
 
-ZstURI & ZstEntityBase::URI()
+const ZstURI & ZstEntityBase::URI()
 {
 	return m_uri;
 }
@@ -77,7 +81,6 @@ bool ZstEntityBase::is_proxy(){
     return m_is_proxy;
 }
 
-#ifdef WIN32
 void * ZstEntityBase::operator new(size_t num_bytes)
 {
 	return ::operator new(num_bytes);
@@ -87,7 +90,6 @@ void ZstEntityBase::operator delete(void * p)
 {
 	::operator delete(p);
 }
-#endif
 
 ZstEntityBase * ZstEntityBase::parent() const
 {

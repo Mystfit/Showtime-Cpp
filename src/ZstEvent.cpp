@@ -15,14 +15,14 @@ ZstEvent::ZstEvent(const ZstEvent & copy) :
 {
 }
 
-ZstEvent::ZstEvent(ZstURI single, EventType event_type) :
+ZstEvent::ZstEvent(const ZstURI & single, EventType event_type) :
 	m_first(single),
     m_second(ZstURI()),
 	m_update_type(event_type)
 {
 }
 
-ZstEvent::ZstEvent(ZstURI first, ZstURI second, EventType event_type) :
+ZstEvent::ZstEvent(const ZstURI & first, const ZstURI & second, EventType event_type) :
 	m_first(first),
 	m_second(second),
 	m_update_type(event_type)

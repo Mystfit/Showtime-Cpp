@@ -16,8 +16,6 @@
 #include "entities/AddFilter.h"
 #include "entities/ZstFilter.h"
 
-#include "Uri.h"
-
 #ifdef WIN32
 #define TAKE_A_BREATH Sleep(100);
 #else
@@ -193,19 +191,6 @@ public:
 ZstStage *stage;
 ZstEntityBase * root_entity;
 
-void test_new_URI() {
-	Uri test = Uri("this/is/a/uri");
-	std::cout << test.path() << std::endl;
-
-	for (int i = 0; i < test.size(); i++) {
-		std::cout << "index:" << i << " " << test.segment(i) << std::endl;
-	}
-
-	Uri add = test + test;
-	std::cout << add.path() << std::endl;
-
-	assert(std::is_standard_layout<Uri>());
-}
 
 void test_standard_layout() {
 	//Verify standard layout
@@ -217,35 +202,63 @@ void test_standard_layout() {
 void test_URI() {
 	std::cout << "Starting URI test" << std::endl;
 
+	//Define test URIs
 	ZstURI uri_empty = ZstURI();
 	ZstURI uri_equal1 = ZstURI("ins/someplug");
 	ZstURI uri_notequal = ZstURI("anotherins/someplug");
 
+	//Test accessors
+	assert(strcmp(uri_equal1.segment(0), "ins") == 0);
+	assert(strcmp(uri_equal1.segment(1), "someplug") == 0);
 	assert(uri_empty.is_empty());
+	assert(uri_equal1.size() == 2);
+	assert(strcmp(uri_equal1.path(), "ins/someplug") == 0);
+
+	//Test comparisons
 	assert(ZstURI::equal(uri_equal1, uri_equal1));
 	assert(!ZstURI::equal(uri_equal1, uri_notequal));
-    assert(strcmp(uri_equal1.path(), "ins/someplug") == 0);
-
-	assert(ZstURI::equal(ZstURI("root_entity/filter") ,ZstURI("root_entity/filter")));
+	assert(ZstURI::equal(ZstURI("root_entity/filter"), ZstURI("root_entity/filter")));
 	assert(!(ZstURI::equal(ZstURI("root_entity"), ZstURI("root_entity/filter"))));
 	assert(!(ZstURI::equal(ZstURI("root_entity"), ZstURI("root_entity/filter"))));
 	assert(ZstURI("b") < ZstURI("c"));
 	assert(ZstURI("a") < ZstURI("b"));
 	assert(ZstURI("a") < ZstURI("c"));
-	assert(uri_equal1.size() == 2);
+	assert(!(ZstURI("c") < ZstURI("a")));
+	assert(uri_equal1.contains(ZstURI("ins")));
+	assert(uri_equal1.contains(ZstURI("ins/someplug")));
+	assert(!uri_equal1.contains(ZstURI("nomatch")));
+
+	//Test slicing
+	assert(ZstURI::equal(uri_equal1.range(0, 1), ZstURI("ins/someplug")));
+	assert(ZstURI::equal(uri_equal1.range(1, 1), ZstURI("someplug")));
+	assert(ZstURI::equal(uri_equal1.range(0, 0), ZstURI("ins")));
+
+	//Test joining
+	ZstURI joint_uri = ZstURI("a") + ZstURI("b");
+	assert(ZstURI::equal(joint_uri, ZstURI("a/b")));
+	assert(joint_uri.size() == 2);
+	assert(joint_uri.full_size() == 3);
 
 	//Test URI going out of scope
 	{
 		ZstURI stack_uri("some_entity/some_name");
 	}
 
-	assert(strcmp(uri_equal1.segment(0), "ins") == 0);
-	assert(strcmp(uri_equal1.segment(1), "someplug") == 0);
+	//Test range exceptions
 	bool thrown_range_error = false;
 	try {
 		uri_equal1.segment(2);
 	}
 	catch (std::range_error){
+		thrown_range_error = true;
+	}
+	assert(thrown_range_error);
+	thrown_range_error = false;
+
+	try {
+		uri_equal1.range(0, 4);
+	}
+	catch (std::range_error) {
 		thrown_range_error = true;
 	}
 	assert(thrown_range_error);
@@ -263,7 +276,16 @@ void test_URI() {
 	std::cout << "Finished URI test\n" << std::endl;
 }
 
+void test_startup() {
+	stage = ZstStage::create_stage();
+	std::cout << "Stage created" << std::endl;
+
+	Showtime::init();
+	Showtime::join("127.0.0.1");
+}
+
 void test_root_entity() {
+	TAKE_A_BREATH
     //Test single entity init
 	std::cout << "Starting entity init test" << std::endl;
 	Showtime::endpoint().self_test();
@@ -288,7 +310,7 @@ void test_stage_registration(){
 }
 
 void test_create_entities(){
-	std::cout << "Starting create plugs test" << std::endl;
+	std::cout << "Starting entity test" << std::endl;
 	int expected_entities = 1;
 	int expected_plugs = 1;
 
@@ -328,7 +350,7 @@ void test_create_entities(){
 	Showtime::remove_plug_leaving_callback(plugLeavingCallback);
 	clear_callback_queue();
 
-	std::cout << "Finished create plugs test\n" << std::endl;
+	std::cout << "Finished entity test\n" << std::endl;
 }
 
 void test_hierarchy() {
@@ -668,16 +690,9 @@ void test_cleanup() {
 }
 
 int main(int argc,char **argv){
-    stage = ZstStage::create_stage();
-	std::cout << "Stage created" << std::endl;
-
-	Showtime::init();
-    Showtime::join("127.0.0.1");
-
-	TAKE_A_BREATH
-	test_new_URI();
 	test_standard_layout();
 	test_URI();
+	test_startup();
 	test_root_entity();
     test_stage_registration();
     test_create_entities();

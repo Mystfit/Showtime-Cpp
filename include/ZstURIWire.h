@@ -1,20 +1,21 @@
 #pragma once
 
 #include <msgpack.hpp>
-#include <string>
 #include "ZstURI.h"
 
 class ZstURIWire : public ZstURI {
 public:
 	ZstURIWire();
 	ZstURIWire(const ZstURIWire &copy);
-	ZstURIWire(ZstURI uri);
+	ZstURIWire(const ZstURI & uri);
+	~ZstURIWire();
 
 	template <typename Packer>
 	void msgpack_pack(Packer& pk) const {
 		pk.pack_array(1);
-		pk.pack_str(strlen(m_combined_path));
-		pk.pack_str_body(m_combined_path, strlen(m_combined_path));
+		int size = full_size()+1;
+		pk.pack_str(size);
+		pk.pack_str_body(path(), size);
 	}
 
 	void msgpack_unpack(msgpack::object o) {
@@ -23,8 +24,11 @@ public:
 
 		int path_size = o.via.array.ptr[0].via.str.size;
 		const char * path = o.via.array.ptr[0].via.str.ptr;
+		if (!path_size)
+			path = "";
 
-		memcpy(m_combined_path, path, path_size);
-        build_split_path(m_combined_path);
+		original_path = create_pstr(path);
+		segmented_path = create_pstr(path);
+		split();
 	}
 };
