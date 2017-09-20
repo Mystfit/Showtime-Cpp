@@ -398,9 +398,9 @@ void ZstEndpoint::leave_stage()
 		cout << "ZST:Leaving stage" << endl;
 		send_through_stage(ZstMessages::build_signal(ZstMessages::Signal::LEAVING));
 
-		zsock_disconnect(m_stage_requests, "%s", m_stage_requests_addr);
-		zsock_disconnect(m_stage_router, "%s", m_stage_router_addr);
-		zsock_disconnect(m_stage_updates, "%s", m_stage_updates_addr);
+		zsock_disconnect(m_stage_requests, "%s", m_stage_requests_addr.c_str());
+		zsock_disconnect(m_stage_router, "%s", m_stage_router_addr.c_str());
+		zsock_disconnect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
 
 		detach_timer(m_heartbeat_timer_id);
 

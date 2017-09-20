@@ -19,11 +19,8 @@ ZstURI::~ZstURI() {
 ZstURI::ZstURI(const ZstURI & copy) : component_count(0)
 {
 	original_path = create_pstr(copy.original_path.cstr);
-	segmented_path = create_pstr(copy.segmented_path.cstr);
-	component_count = copy.component_count;
-	for (int i = 0; i < copy.component_count; ++i) {
-		components[i] = create_pstr(copy.components[i].cstr);
-	}
+	segmented_path = create_pstr(copy.original_path.cstr);
+    split();
 }
 
 //
@@ -43,7 +40,7 @@ const char * ZstURI::path() const
 
 char * ZstURI::segment(size_t index)
 {
-	if(index >= component_count || index < 0) {
+	if(index >= component_count) {
 		throw std::range_error("Start or end index out of range of path components");
 	}
 	return components[index].cstr;
@@ -84,11 +81,8 @@ ZstURI ZstURI::operator+(const ZstURI & other) const
 ZstURI & ZstURI::operator=(const ZstURI & other)
 {
 	original_path = create_pstr(other.original_path.cstr);
-	segmented_path = create_pstr(other.segmented_path.cstr);
-	component_count = other.component_count;
-	for (int i = 0; i < other.component_count; ++i) {
-		components[i] = create_pstr(other.components[i].cstr);
-	}
+	segmented_path = create_pstr(other.original_path.cstr);
+    split();
 	return *this;
 }
 

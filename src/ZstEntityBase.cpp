@@ -7,9 +7,9 @@
 ZstEntityBase::ZstEntityBase(const char * entity_type, const char * path) :
     m_is_proxy(false),
     m_is_registered(false),
+    m_uri(path),
 	m_is_destroyed(false),
-    m_parent(NULL),
-	m_uri(path)
+    m_parent(NULL)
 {
 	int entity_type_len = strlen(entity_type);
 	m_entity_type = (char*)calloc(entity_type_len + 1, sizeof(char));
@@ -17,11 +17,11 @@ ZstEntityBase::ZstEntityBase(const char * entity_type, const char * path) :
 }
 
 ZstEntityBase::ZstEntityBase(const char * entity_type, const char * local_path, ZstEntityBase * parent) :
-	m_is_proxy(false),
-	m_is_registered(false),
-	m_is_destroyed(false),
-	m_parent(parent),
-	m_uri(parent->URI() + ZstURI(local_path))
+    m_is_proxy(false),
+    m_is_registered(false),
+    m_uri(parent->URI() + ZstURI(local_path)),
+    m_is_destroyed(false),
+	m_parent(parent)
 {
 	int entity_type_len = strlen(entity_type);
 	m_entity_type = (char*)calloc(entity_type_len + 1, sizeof(char));
