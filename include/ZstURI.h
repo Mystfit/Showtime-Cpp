@@ -19,6 +19,7 @@ public:
 	ZST_EXPORT ~ZstURI();
 	ZST_EXPORT ZstURI(const ZstURI & copy);
 	ZST_EXPORT ZstURI(const char * path);
+	ZST_EXPORT ZstURI(const char * path, int len);
 	ZST_EXPORT const char * path() const;
 	ZST_EXPORT char * segment(size_t index);
 	ZST_EXPORT const int size() const;
@@ -37,6 +38,7 @@ protected:
 	void split(void);
 
 	pstr create_pstr(const char * p);
+	pstr create_pstr(const char * p, int l);
 
 	pstr original_path;
 	pstr segmented_path;

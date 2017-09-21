@@ -803,7 +803,7 @@ ZstMessages::Signal ZstEndpoint::check_stage_response_ok() {
 	return s;
 }
 
-void ZstEndpoint::broadcast_to_local_plugs(ZstURI output_plug, ZstValue & value) {
+void ZstEndpoint::broadcast_to_local_plugs(const ZstURI & output_plug, const ZstValue & value) {
 	ZstCable * cable = NULL;
 
 	for(int i = 0; i < cables().size(); ++i){

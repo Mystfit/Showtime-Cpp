@@ -2,7 +2,7 @@
 
 //ZstPlugEvent
 //-------------
-ZstPlugEvent::ZstPlugEvent(ZstURI uri, ZstValue & value) : ZstEvent(uri, ZstEvent::EventType::PLUG_HIT)
+ZstPlugEvent::ZstPlugEvent(const ZstURI & uri, const ZstValue & value) : ZstEvent(uri, ZstEvent::EventType::PLUG_HIT)
 {
 	m_value = new ZstValue(value);
 }
