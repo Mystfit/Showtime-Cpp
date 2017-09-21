@@ -52,7 +52,6 @@ public:
 	ZstEntityBase * get_entity_by_URI(const ZstURI & uri) const;
 	ZstPlug * get_plug_by_URI(const ZstURI & uri) const;
 
-	
 	//Plugs
 	template<typename T>
 	ZST_EXPORT static T* create_plug(ZstComponent * owner, const char * name, ZstValueType val_type, PlugDirection direction);
@@ -112,7 +111,7 @@ private:
 	//Message handlers
 	void stage_update_handler(zsock_t * socket, zmsg_t * msg);
 	void connect_performer_handler(zsock_t * socket, zmsg_t * msg);
-	void broadcast_to_local_plugs(ZstURI output_plug, ZstValue & value);
+	void broadcast_to_local_plugs(const ZstURI & output_plug, const ZstValue & value);
 
 	//Heartbeat timer
 	int m_heartbeat_timer_id;
