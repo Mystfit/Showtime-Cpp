@@ -16,9 +16,9 @@ public:
 	std::string client_assigned_uuid;
 	std::string endpoint_address;
 
-	ZstEntityRef * register_entity(std::string entity_type, ZstURI uri);
+	ZstEntityRef * register_entity(std::string entity_type, const ZstURI & uri);
 	ZST_EXPORT std::vector<ZstEntityRef*> get_entity_refs();
-	ZST_EXPORT ZstEntityRef* get_entity_ref_by_URI(ZstURI uri);
+	ZST_EXPORT ZstEntityRef* get_entity_ref_by_URI(const ZstURI & uri);
 	void destroy_entity(ZstEntityRef* entity);
 	
 	void set_heartbeat_active();
@@ -27,14 +27,14 @@ public:
 	bool get_active_heartbeat();
 	int get_missed_heartbeats();
 
-	ZstPlugRef * create_plug(ZstURI address, PlugDirection direction);
-	ZstPlugRef * get_plug_by_URI(ZstURI uri);
+	ZstPlugRef * create_plug(const ZstURI & address, PlugDirection direction);
+	ZstPlugRef * get_plug_by_URI(const ZstURI & uri);
 	std::vector<ZstPlugRef*> get_plug_refs();
-	void destroy_plug(ZstURI plug);
+	void destroy_plug(const ZstURI & plug);
 
 private:
-	std::map<ZstURI, ZstEntityRef*> m_entities;
-	std::map<ZstURI, ZstPlugRef*> m_plugs;
+	std::unordered_map<ZstURI, ZstEntityRef*> m_entities;
+	std::unordered_map<ZstURI, ZstPlugRef*> m_plugs;
 
 	bool m_heartbeat_active;
 	int m_missed_heartbeats = 0;

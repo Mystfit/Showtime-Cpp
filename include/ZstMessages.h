@@ -175,7 +175,7 @@ public:
 	}
     
     template <typename T>
-    static zmsg_t * build_graph_message(ZstURI from, T data) {
+    static zmsg_t * build_graph_message(const ZstURI & from, const T & data) {
         zmsg_t *msg = zmsg_new();
         zmsg_addstr(msg, from.path());
         

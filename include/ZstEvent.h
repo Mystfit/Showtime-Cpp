@@ -24,8 +24,8 @@ public:
 
 	ZST_EXPORT ZstEvent();
 	ZST_EXPORT ZstEvent(const ZstEvent & copy);
-	ZST_EXPORT ZstEvent(ZstURI single, EventType event_type);
-	ZST_EXPORT ZstEvent(ZstURI first, ZstURI second, EventType event_type);
+	ZST_EXPORT ZstEvent(const ZstURI & single, EventType event_type);
+	ZST_EXPORT ZstEvent(const ZstURI & first, const ZstURI & second, EventType event_type);
 	ZST_EXPORT ~ZstEvent();
 
 	ZST_EXPORT const ZstURI & get_first() const;

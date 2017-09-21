@@ -1,3 +1,4 @@
+#include <sstream>
 #include "ZstStage.h"
 #include "ZstURI.h"
 #include "ZstUtils.hpp"
@@ -24,10 +25,10 @@ void ZstStage::init()
 {
 	ZstActor::init();
     
-    Str255 stage_rep_addr;
-    sprintf(stage_rep_addr, "@tcp://*:%d", STAGE_REP_PORT);
-    
-	m_performer_requests = zsock_new_rep(stage_rep_addr);
+	std::stringstream addr;
+	addr << "@tcp://*:" << STAGE_REP_PORT;
+	m_performer_requests = zsock_new_rep(addr.str().c_str());
+	addr.str("");
 	zsock_set_linger(m_performer_requests, 0);
 	attach_pipe_listener(m_performer_requests, s_handle_performer_requests, this);
 
@@ -35,13 +36,12 @@ void ZstStage::init()
 	zsock_set_linger(m_performer_router, 0);
 	attach_pipe_listener(m_performer_router, s_handle_router, this);
     
-    Str255 stage_router_addr;
-    sprintf(stage_router_addr, "tcp://*:%d", STAGE_ROUTER_PORT);
-	zsock_bind(m_performer_router, "%s", stage_router_addr);
+	addr << "tcp://*:" << STAGE_ROUTER_PORT;
+	zsock_bind(m_performer_router, "%s", addr.str().c_str());
+	addr.str("");
 
-    Str255 stage_pub_addr;
-    sprintf(stage_pub_addr, "@tcp://*:%d", STAGE_PUB_PORT);
-	m_graph_update_pub = zsock_new_pub(stage_pub_addr);
+	addr << "@tcp://*:" << STAGE_PUB_PORT;
+	m_graph_update_pub = zsock_new_pub(addr.str().c_str());
 	zsock_set_linger(m_graph_update_pub, 0);
 
     m_update_timer_id = attach_timer(stage_update_timer_func, 50, this);
@@ -383,8 +383,8 @@ void ZstStage::create_entity_handler(zsock_t * socket, zmsg_t * msg)
 	if (entity_args.address.size() > 1) {
 
 		int end_index = static_cast<int>(entity_args.address.size()) - 2;
-		entity_uri = entity_args.address.range(0, end_index);
-		ZstEntityRef* entity_parent = get_entity_ref_by_URI(entity_uri);
+		ZstURI parent_uri = entity_args.address.range(0, end_index);
+		ZstEntityRef* entity_parent = get_entity_ref_by_URI(parent_uri);
 		if (entity_parent == NULL) {
 			cout << "ZST_STAGE: Could not register entity " << entity_args.address.path() << ", parent not found" << endl;
 			reply_with_signal(socket, ZstMessages::Signal::ERR_STAGE_ENTITY_NOT_FOUND);
@@ -656,8 +656,7 @@ int ZstStage::stage_update_timer_func(zloop_t * loop, int timer_id, void * arg)
 			updates.push_back(ZstEventWire(stage->m_stage_updates.pop()));
 		}
 
-		ZstMessages::StageUpdates su;
-		su.updates = updates;
+		ZstMessages::StageUpdates su = { updates };
 
 		zmsg_t *updatemsg = ZstMessages::build_message<ZstMessages::StageUpdates>(ZstMessages::Kind::STAGE_UPDATE, su);
 		zmsg_send(&updatemsg, stage->m_graph_update_pub);

@@ -1,4 +1,5 @@
 #include <chrono>
+#include <sstream>
 
 #include "Showtime.h"
 #include "ZstPerformer.h"
@@ -96,8 +97,12 @@ void ZstEndpoint::init()
     cout << "ZST: Using external IP " << network_ip << endl;
     
 	//Graph output socket
-    sprintf(m_graph_out_addr, "@tcp://%s:*", network_ip.c_str());
-    m_graph_out = zsock_new_pub(m_graph_out_addr);
+	std::stringstream addr;
+	addr << "@tcp://" << network_ip.c_str() << ":*";
+	m_graph_out_addr = addr.str();
+    m_graph_out = zsock_new_pub(m_graph_out_addr.c_str());
+	addr.str("");
+
 	zsock_set_unbounded(m_graph_out);
     m_output_endpoint = zsock_last_endpoint(m_graph_out);
     cout << "ZST: Endpoint graph address: " << m_output_endpoint << endl;
@@ -197,14 +202,17 @@ void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
 	m_stage_addr = string(stage_address);
 
 	//Build endpoint addresses
-	sprintf(m_stage_requests_addr, "tcp://%s:%d", stage_address.c_str(), STAGE_REP_PORT);
+	std::stringstream addr;
+	addr << "tcp://" << stage_address.c_str() << ":" << STAGE_REP_PORT;
+	m_stage_requests_addr = addr.str();
 
 	//Stage request socket for querying the performance
 	if (m_stage_requests == NULL) {
 		m_stage_requests = zsock_new(ZMQ_REQ);
 		zsock_set_linger(m_stage_requests, 0);
 	}
-	zsock_connect(m_stage_requests, "%s", m_stage_requests_addr);
+	zsock_connect(m_stage_requests, "%s", m_stage_requests_addr.c_str());
+	addr.str("");
 
 	ZstMessages::CreateEndpoint args;
 	args.uuid = zuuid_str(m_startup_uuid);
@@ -222,15 +230,18 @@ void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
 		cout << "ZST: Successfully registered endpoint to stage. UUID is " << endpoint_ack.assigned_uuid << endl;
 
 		//Connect performer dealer to stage now that it's been registered successfully
-		sprintf(m_stage_router_addr, "tcp://%s:%d", m_stage_addr.c_str(), STAGE_ROUTER_PORT);
+		addr << "tcp://" << m_stage_addr << ":" << STAGE_ROUTER_PORT;
+		m_stage_router_addr = addr.str();
 		m_assigned_uuid = endpoint_ack.assigned_uuid;
 		zsock_set_identity(m_stage_router, endpoint_ack.assigned_uuid.c_str());
-		zsock_connect(m_stage_router, "%s", m_stage_router_addr);
-
+		zsock_connect(m_stage_router, "%s", m_stage_router_addr.c_str());
+		addr.str("");
+		
 		//Stage sub socket for update messages
-		sprintf(m_stage_updates_addr, "tcp://%s:%d", stage_address.c_str(), STAGE_PUB_PORT);
+		addr << "tcp://" << stage_address << ":" << STAGE_PUB_PORT;
+		m_stage_updates_addr = addr.str();
 		cout << "ZST: Connecting to stage publisher " << m_stage_updates_addr << endl;
-		zsock_connect(m_stage_updates, "%s", m_stage_updates_addr);
+		zsock_connect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
 		zsock_set_subscribe(m_stage_updates, "");
 
 		//TODO: Need to check handshake before setting connection as active
@@ -358,7 +369,7 @@ int ZstEndpoint::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
 	return 0;
 }
 
-std::map<ZstURI, ZstEntityBase*>& ZstEndpoint::entities()
+std::unordered_map<ZstURI, ZstEntityBase*>& ZstEndpoint::entities()
 {
 	return m_entities;
 }
@@ -387,9 +398,9 @@ void ZstEndpoint::leave_stage()
 		cout << "ZST:Leaving stage" << endl;
 		send_through_stage(ZstMessages::build_signal(ZstMessages::Signal::LEAVING));
 
-		zsock_disconnect(m_stage_requests, "%s", m_stage_requests_addr);
-		zsock_disconnect(m_stage_router, "%s", m_stage_router_addr);
-		zsock_disconnect(m_stage_updates, "%s", m_stage_updates_addr);
+		zsock_disconnect(m_stage_requests, "%s", m_stage_requests_addr.c_str());
+		zsock_disconnect(m_stage_router, "%s", m_stage_router_addr.c_str());
+		zsock_disconnect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
 
 		detach_timer(m_heartbeat_timer_id);
 
@@ -412,10 +423,12 @@ int ZstEndpoint::register_entity(ZstEntityBase* entity)
     std::cout << "ZST_ENDPOINT: Registering entity " << entity->URI().path() << " to stage" << std::endl;
 
 	int result = 0;
-	ZstMessages::CreateEntity entity_args;
-	entity_args.endpoint_uuid = get_endpoint_UUID();
-	entity_args.entity_type = entity->entity_type();
-	entity_args.address = ZstURIWire(entity->URI());
+	ZstMessages::CreateEntity entity_args = { 
+		entity->entity_type(), 
+		ZstURIWire(entity->URI()), 
+		get_endpoint_UUID()
+	};
+
 	zmsg_t * entity_msg = ZstMessages::build_message<ZstMessages::CreateEntity>(ZstMessages::Kind::STAGE_CREATE_ENTITY, entity_args);
 	Showtime::endpoint().send_to_stage(entity_msg);
 	
@@ -494,12 +507,10 @@ template ZstOutputPlug* ZstEndpoint::create_plug<ZstOutputPlug>(ZstComponent* ow
 template<typename T>
 T* ZstEndpoint::create_plug(ZstComponent* owner, const char * name, ZstValueType val_type, PlugDirection direction) {
 	T* plug = NULL;
-	ZstURI address = ZstURI::join(owner->URI(), ZstURI(name));
+	ZstURI address = owner->URI() + ZstURI(name);
 	
 	//Build message to register plug on stage
-	ZstMessages::CreatePlug plug_args;
-	plug_args.address = ZstURIWire(address);
-    plug_args.dir = direction;
+	ZstMessages::CreatePlug plug_args = { ZstURIWire(address), direction };
 	zmsg_t * plug_msg = ZstMessages::build_message<ZstMessages::CreatePlug>(ZstMessages::Kind::STAGE_CREATE_PLUG, plug_args);
 	Showtime::endpoint().send_to_stage(plug_msg);
 
@@ -578,7 +589,7 @@ int ZstEndpoint::destroy_plug(ZstPlug * plug)
  // Cables
  // ------
  
- int ZstEndpoint::connect_cable(ZstURI a, ZstURI b)
+ int ZstEndpoint::connect_cable(const ZstURI & a, const ZstURI & b)
 {
 	ZstMessages::CreateCable plug_args;
 	plug_args.first = ZstURIWire(a);
@@ -587,7 +598,7 @@ int ZstEndpoint::destroy_plug(ZstPlug * plug)
 	return check_stage_response_ok();
 }
 
-int ZstEndpoint::destroy_cable(ZstURI a, ZstURI b)
+int ZstEndpoint::destroy_cable(const ZstURI & a, const ZstURI & b)
 {
 	ZstMessages::CreateCable plug_args;
 	plug_args.first = a;
@@ -792,7 +803,7 @@ ZstMessages::Signal ZstEndpoint::check_stage_response_ok() {
 	return s;
 }
 
-void ZstEndpoint::broadcast_to_local_plugs(ZstURI output_plug, ZstValue & value) {
+void ZstEndpoint::broadcast_to_local_plugs(const ZstURI & output_plug, const ZstValue & value) {
 	ZstCable * cable = NULL;
 
 	for(int i = 0; i < cables().size(); ++i){
