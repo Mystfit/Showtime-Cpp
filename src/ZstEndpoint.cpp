@@ -3,6 +3,7 @@
 
 #include "Showtime.h"
 #include "ZstPerformer.h"
+#include "ZstReaper.h"
 #include "ZstEndpoint.h"
 #include "ZstActor.h"
 #include "ZstPlug.h"
@@ -21,6 +22,8 @@ ZstEndpoint::ZstEndpoint() :
 	m_num_graph_send_messages(0),
 	m_num_graph_recv_messages(0) 
 {
+	m_reaper = new ZstReaper();
+	m_reaper->start();
 }
 
 ZstEndpoint::~ZstEndpoint() {
@@ -34,6 +37,9 @@ void ZstEndpoint::destroy() {
     m_is_ending = true;
 
 	leave_stage();
+
+	m_reaper->destroy();
+	delete m_reaper;
 
 	delete m_entity_arriving_event_manager;
 	delete m_entity_leaving_event_manager;
@@ -452,7 +458,6 @@ int ZstEndpoint::destroy_entity(ZstEntityBase * entity)
 	}
 
 	entity->m_parent = NULL;
-	m_entities.erase(entity->URI());
 	entity->set_destroyed();
     
     //If we own this entity, we need to let the stage know it's going away
@@ -462,6 +467,8 @@ int ZstEndpoint::destroy_entity(ZstEntityBase * entity)
         send_to_stage(ZstMessages::build_message<ZstMessages::DestroyURI>(ZstMessages::Kind::STAGE_DESTROY_ENTITY, destroy_args));
         result = (int)check_stage_response_ok();
     }
+
+	m_destroying_entities.push(entity);
     
     if(result){
         entity_leaving_events()->run_event_callbacks(entity);

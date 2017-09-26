@@ -21,6 +21,7 @@ class ZstPerformer;
 class ZstEntityBase;
 class ZstComponent;
 class ZstProxyComponent;
+class ZstReaper;
 
 class ZstEndpoint : public ZstActor {
 public:
@@ -121,6 +122,7 @@ private:
 	bool m_is_ending;
 	bool m_is_destroyed;
 	bool m_connected_to_stage = false;
+	ZstReaper * m_reaper;
 
 	//UUIDs
 	zuuid_t * m_startup_uuid;
