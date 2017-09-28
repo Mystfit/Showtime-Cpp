@@ -31,18 +31,24 @@ ZstEntityBase::ZstEntityBase(const char * entity_type, const char * local_path, 
 
 ZstEntityBase::~ZstEntityBase()
 {
-	free(m_entity_type);
+	Showtime::endpoint().destroy_entity(this);
+	set_destroyed();
+
+	//Make a copy of the children list so we can remove whilst iterating
+	std::vector<ZstEntityBase*> removed_children;
     for(auto child : m_children){
 		if (!child.second->is_destroyed()) {
-			Showtime::endpoint().destroy_entity(child.second);
+			removed_children.push_back(child.second);
 		}
     }
+	for (auto child : removed_children) {
+		Showtime::endpoint().destroy_entity(child);
+	}
+	
     m_children.clear();
-    if(m_parent){
-        m_parent->remove_child(this);
-    }
-    m_parent = 0;
-	Showtime::endpoint().destroy_entity(this);
+	removed_children.clear();
+    m_parent = NULL;
+	free(m_entity_type);
 }
 
 void ZstEntityBase::activate()

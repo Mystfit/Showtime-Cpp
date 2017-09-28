@@ -58,7 +58,6 @@ public:
 	ZST_EXPORT static T* create_plug(ZstComponent * owner, const char * name, ZstValueType val_type, PlugDirection direction);
 	ZST_EXPORT int destroy_plug(ZstPlug * plug);
     void create_proxy_entity(const ZstURI & path);
-    void destroy_proxy_entity(const ZstURI & path);
 
 	//Cables
 	int connect_cable(const ZstURI & a, const ZstURI & b);

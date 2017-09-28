@@ -4,9 +4,20 @@
 %include "ZstConstants.h"
 
 // Importable classes
+%rename(add) ZstURI::operator+;
+%rename(less_than) ZstURI::operator<;
+%ignore ZstURI::operator==;
+%ignore ZstURI::operator=;
 %include "ZstURI.h"
+
 %include "ZstPlug.h"
+
+%rename(equal) ZstEvent::operator==;
+%ignore ZstEvent::operator!=;
 %include "ZstEvent.h"
+
+%rename(equal) ZstCable::operator==;
+%ignore ZstCable::operator!=;
 %include "ZstCable.h"
 
 %extend ZstPlug{
@@ -39,6 +50,11 @@
 %feature("director") ZstEntityBase;
 %feature("director") ZstComponent;
 %feature("director") ZstFilter;
+%rename(create) ZstEntityBase::operator new;
+%rename(destroy) ZstEntityBase::operator delete;
+%newobject ZstEntityBase::create;
+%delobject ZstEntityBase::destroy;
+
 %include "entities/ZstEntityBase.h"
 %ignore ZstComponent::get_plug_by_URI;
 %include "entities/ZstComponent.h"
