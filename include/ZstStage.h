@@ -60,7 +60,7 @@ private:
     //Message handlers
 	//Rep
 	void endpoint_heartbeat_handler(zsock_t * socket, zmsg_t * msg);
-	void register_entity_type_handler(zsock_t * socket, zmsg_t * msg);
+	void register_entity_recipe_handler(zsock_t * socket, zmsg_t * msg);
 	void create_endpoint_handler(zsock_t * socket, zmsg_t * msg);
 	void create_plug_handler(zsock_t * socket, zmsg_t * msg);
 	void create_entity_handler(zsock_t * socket, zmsg_t * msg);

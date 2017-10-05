@@ -1,5 +1,6 @@
 #include "ZstEndpointRef.h"
 #include "ZstEntityRef.h"
+#include <exception>
 
 using namespace std;
 
@@ -93,6 +94,24 @@ void ZstEndpointRef::destroy_entity(ZstEntityRef* entity)
 	delete entity;
 }
 
+
+// ----------------
+
+
+//Recipes
+void ZstEndpointRef::register_recipe(ZstCreatableRecipe recipe)
+{
+    m_recipes.push_back(recipe);
+}
+
+void ZstEndpointRef::unregister_recipe(std::string recipe)
+{
+}
+
+const std::vector<ZstCreatableRecipe> & ZstEndpointRef::get_recipes()
+{
+    return m_recipes;
+}
 
 // ----------------
 

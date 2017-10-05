@@ -18,6 +18,7 @@ set(ZST_PUBLIC_HEADERS
  ${Showtime_INCLUDE_DIRS}/ZstValue.h
  ${Showtime_INCLUDE_DIRS}/ZstCallbacks.h
  ${Showtime_INCLUDE_DIRS}/ZstConstants.h
+ ${Showtime_INCLUDE_DIRS}/ZstCreatable.h"
 )
 
 set(ZST_ENTITIES
@@ -33,11 +34,11 @@ set(ZST_PRIVATE_HEADERS
  ${Showtime_INCLUDE_DIRS}/variant.hpp
  ${Showtime_INCLUDE_DIRS}/ZstEndpoint.h
  ${Showtime_INCLUDE_DIRS}/ZstActor.h	
- ${Showtime_INCLUDE_DIRS}/ZstReaper.h
  ${Showtime_INCLUDE_DIRS}/ZstPlugRef.h
  ${Showtime_INCLUDE_DIRS}/ZstURIWire.h
  ${Showtime_INCLUDE_DIRS}/ZstValueWire.h
  ${Showtime_INCLUDE_DIRS}/ZstEventWire.h
+ ${Showtime_INCLUDE_DIRS}/ZstCreatableWire.h"
  ${Showtime_INCLUDE_DIRS}/ZstPlugEvent.h
  ${Showtime_INCLUDE_DIRS}/ZstEndpointRef.h
  ${Showtime_INCLUDE_DIRS}/ZstExports.h
@@ -58,7 +59,6 @@ set(ZST_SOURCE
  "ZstURIWire.cpp"
  "ZstUtils.cpp"
  "ZstActor.cpp"
- "ZstReaper.cpp"
  "ZstMessages.cpp"
  "ZstEvent.cpp"
  "ZstPlugEvent.cpp"
@@ -76,6 +76,8 @@ set(ZST_SOURCE
  "ZstFilter.cpp"
  "ZstComponent.cpp"
  "ZstProxyComponent.cpp"
+ "ZstCreatable.cpp"
+ "ZstCreatableWire.cpp"
  "AddFilter.cpp"
 )
 

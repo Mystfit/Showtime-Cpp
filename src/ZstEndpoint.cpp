@@ -18,8 +18,8 @@
 using namespace std;
 
 ZstEndpoint::ZstEndpoint() : 
-	m_num_graph_send_messages(0),
-	m_num_graph_recv_messages(0) 
+	m_num_graph_recv_messages(0),
+    m_num_graph_send_messages(0)
 {
 }
 
@@ -225,7 +225,6 @@ void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
 
 	if (message_type == ZstMessages::Kind::STAGE_CREATE_ENDPOINT_ACK) {
-
 		ZstMessages::CreateEndpointAck endpoint_ack = ZstMessages::unpack_message_struct<ZstMessages::CreateEndpointAck>(responseMsg);
 		cout << "ZST: Successfully registered endpoint to stage. UUID is " << endpoint_ack.assigned_uuid << endl;
 
@@ -247,6 +246,7 @@ void ZstEndpoint::register_endpoint_to_stage(std::string stage_address) {
 		//TODO: Need to check handshake before setting connection as active
 		m_connected_to_stage = true;
 		signal_sync();
+        sync_recipes();
 
 		//Set up heartbeat timer
 		m_heartbeat_timer_id = attach_timer(s_heartbeat_timer, HEARTBEAT_DURATION, this);
@@ -269,6 +269,13 @@ void ZstEndpoint::signal_sync()
 		cout << "ZST: Requesting stage snapshot" << endl;
 		send_through_stage(ZstMessages::build_signal(ZstMessages::Signal::SYNC));
 	}
+}
+
+void ZstEndpoint::sync_recipes()
+{
+    if (m_connected_to_stage) {
+        cout << "ZST: Syncing creatable receipes" << endl;
+    }
 }
 
 
@@ -408,9 +415,16 @@ void ZstEndpoint::leave_stage()
 	}
 }
 
-void ZstEndpoint::register_entity_type(const char * entity_type)
+int ZstEndpoint::register_entity_type(ZstCreateableKitchen * kitchen)
 {
-	//throw std::exception("Register entity not implemented");
+    //Need to save the kitchen here as it will be called whenever we need to build
+    //an entity of its registered type.
+    //We also need to update the cookbook on the stage
+}
+
+int ZstEndpoint::unregister_entity_type(ZstCreateableKitchen * kitchen)
+{
+    
 }
 
 

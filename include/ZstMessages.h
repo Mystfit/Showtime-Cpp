@@ -10,6 +10,7 @@
 #include "ZstEvent.h"
 #include "ZstURIWire.h"
 #include "ZstEventWire.h"
+#include "ZstCreatableRecipeWire.h"
 #include "ZstPlug.h"
 
 class ZstMessages{
@@ -85,10 +86,10 @@ public:
 		MSGPACK_DEFINE(assigned_uuid);
 	};
 
-	struct RegisterEntityType {
+	struct RegisterCreatableRecipe {
 		std::string performer;
-		std::string entity_type;
-		MSGPACK_DEFINE(performer, entity_type);
+        ZstCreatableRecipeWire recipe;
+		MSGPACK_DEFINE(performer, recipe);
 	};
 
 	struct CreateEntity {
@@ -119,6 +120,11 @@ public:
 		std::vector<ZstEventWire> updates;
 		MSGPACK_DEFINE_ARRAY(updates);
 	};
+    
+    struct Recipes {
+        std::vector<ZstCreatableRecipeWire> recipes;
+        MSGPACK_DEFINE_ARRAY(recipes);
+    };
     
     struct Heartbeat {
         std::string from;

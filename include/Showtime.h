@@ -17,6 +17,7 @@ class ZstEvent;
 class ZstEntityEventCallback;
 class ZstPlugEventCallback;
 class ZstCableEventCallback;
+class ZstCreateableKitchen;
 
 class Showtime
 {
@@ -60,15 +61,17 @@ public:
     //Stage methods
     ZST_EXPORT static int ping_stage();
 
- 	//Entities can contain other entities and plugs
-	ZST_EXPORT static void register_entity_type(const char * entity_type);
-
+    //Event queue management
 	ZST_EXPORT static ZstEvent * pop_event();
 	ZST_EXPORT static size_t event_queue_size();
 
+    //Cable management
 	ZST_EXPORT static int connect_cable(ZstURI a, ZstURI b);
 	ZST_EXPORT static int destroy_cable(ZstURI a, ZstURI b);
-
+    
+    //Creatables
+    ZST_EXPORT static int register_entity_type(ZstCreateableKitchen * kitchen);
+    ZST_EXPORT static int unregister_entity_type(ZstCreateableKitchen * kitchen);
 
 private:
     Showtime();

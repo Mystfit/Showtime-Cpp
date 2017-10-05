@@ -13,6 +13,7 @@
 #include "ZstMessages.h"
 #include "ZstCable.h"
 #include "ZstCallbackQueue.h"
+#include "ZstCreatable.h"
 
 //Forward declarations
 class ZstValue;
@@ -45,9 +46,15 @@ public:
 
 	//Lets the stage know we want a full snapshot of the current performance
 	void signal_sync();
+    
+    //Updates stage with our recipes
+    void sync_recipes();
 
-	//Entities
-	void register_entity_type(const char * entity_type);
+	//Entity recipes
+	int register_entity_type(ZstCreateableKitchen * kitchen);
+    int unregister_entity_type(ZstCreateableKitchen * kitchen);
+    
+    //Entities
 	int register_entity(ZstEntityBase * entity);
 	int destroy_entity(ZstEntityBase * entity);
 	ZstEntityBase * get_entity_by_URI(const ZstURI & uri) const;
@@ -66,8 +73,10 @@ public:
 	ZST_EXPORT ZstCable * get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB);
 	void remove_cable(ZstCable * cable);
 	
+    //Utility
 	ZST_EXPORT int ping_stage();
-
+    
+    //Events
 	void enqueue_event(ZstEvent * event);
 	ZST_EXPORT ZstEvent * pop_event();
 	ZST_EXPORT size_t event_queue_size();

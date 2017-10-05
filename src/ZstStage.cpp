@@ -259,7 +259,7 @@ int ZstStage::s_handle_performer_requests(zloop_t * loop, zsock_t * socket, void
 		stage->destroy_entity_handler(socket, msg);
 		break;
 	case ZstMessages::Kind::STAGE_REGISTER_ENTITY_TYPE:
-		stage->register_entity_type_handler(socket, msg);
+		stage->register_entity_recipe_handler(socket, msg);
 		break;
 	case ZstMessages::Kind::ENDPOINT_HEARTBEAT:
 		stage->endpoint_heartbeat_handler(socket, msg);
@@ -362,9 +362,10 @@ void ZstStage::create_plug_handler(zsock_t *socket, zmsg_t *msg) {
 	enqueue_stage_update(ZstEvent(plug->get_URI(), ZstEvent::EventType::PLUG_CREATED));
 }
 
-void ZstStage::register_entity_type_handler(zsock_t * socket, zmsg_t * msg)
+void ZstStage::register_entity_recipe_handler(zsock_t * socket, zmsg_t * msg)
 {
     //throw std::exception("Register entity handler not implemented");
+    enqueue_stage_update(ZstEvent(ZstEvent::EventType::RECIPE_CREATED));
 }
 
 void ZstStage::create_entity_handler(zsock_t * socket, zmsg_t * msg)

@@ -131,11 +131,6 @@ int Showtime::ping_stage(){
 	return Showtime::endpoint().ping_stage();
 }
 
-void Showtime::register_entity_type(const char * entity_type)
-{
-	Showtime::endpoint().register_entity_type(entity_type);
-}
-
 ZstEvent * Showtime::pop_event()
 {
 	return Showtime::endpoint().pop_event();
@@ -154,4 +149,13 @@ int Showtime::connect_cable(ZstURI a, ZstURI b)
 int Showtime::destroy_cable(ZstURI a, ZstURI b)
 {
 	return Showtime::endpoint().destroy_cable(a, b);
+}
+
+int Showtime::register_entity_type(ZstCreateableKitchen * kitchen){
+    return Showtime::endpoint().register_entity_type(kitchen);
+}
+
+int Showtime::unregister_entity_type(ZstCreateableKitchen * kitchen){
+    return Showtime::endpoint().register_entity_type(kitchen);
+
 }
