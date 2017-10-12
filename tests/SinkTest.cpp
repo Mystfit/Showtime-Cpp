@@ -48,7 +48,7 @@ int main(int argc,char **argv){
 	Showtime::init();
     Showtime::join("127.0.0.1");
 	TestCableArrivingEventCallback * cable_arrive = new TestCableArrivingEventCallback();
-	Showtime::attach_cable_arriving_callback(cable_arrive);
+    Showtime::attach(cable_arrive, ZstCallbackAction::ARRIVING);
 
 	std::cout << "Starting sink" << std::endl;
 
@@ -65,8 +65,8 @@ int main(int argc,char **argv){
 
 	std::cout << "Removing sink" << std::endl;
 	delete sink;
-
-	Showtime::remove_cable_arriving_callback(cable_arrive);
+    
+    Showtime::detach(cable_arrive, ZstCallbackAction::ARRIVING);
 	delete cable_arrive;
 
 	Showtime::destroy();

@@ -13,6 +13,12 @@ enum ZstEntityBehaviour {
 	COMPONENT
 };
 
+enum ZstCallbackAction {
+    ARRIVING = 0,
+    LEAVING
+};
+
+
 #define STAGE_REP_PORT 6000
 #define STAGE_ROUTER_PORT 6001
 #define STAGE_PUB_PORT 6002

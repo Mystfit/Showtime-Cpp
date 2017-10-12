@@ -17,7 +17,7 @@ class ZstEvent;
 class ZstEntityEventCallback;
 class ZstPlugEventCallback;
 class ZstCableEventCallback;
-class ZstCreateableKitchen;
+class ZstComposer;
 
 class Showtime
 {
@@ -41,20 +41,14 @@ public:
 	ZST_EXPORT static void poll_once();
 
 	//Callbacks
-	ZST_EXPORT static void attach_entity_arriving_callback(ZstEntityEventCallback * callback);
-	ZST_EXPORT static void attach_entity_leaving_callback(ZstEntityEventCallback * callback);
-	ZST_EXPORT static void attach_plug_arriving_callback(ZstPlugEventCallback * callback);
-	ZST_EXPORT static void attach_plug_leaving_callback(ZstPlugEventCallback * callback);
-	ZST_EXPORT static void attach_cable_arriving_callback(ZstCableEventCallback *callback);
-	ZST_EXPORT static void attach_cable_leaving_callback(ZstCableEventCallback *callback);
-
-	ZST_EXPORT static void remove_entity_arriving_callback(ZstEntityEventCallback * callback);
-	ZST_EXPORT static void remove_entity_leaving_callback(ZstEntityEventCallback * callback);
-	ZST_EXPORT static void remove_plug_arriving_callback(ZstPlugEventCallback * callback);
-	ZST_EXPORT static void remove_plug_leaving_callback(ZstPlugEventCallback * callback);
-	ZST_EXPORT static void remove_cable_arriving_callback(ZstCableEventCallback * callback);
-	ZST_EXPORT static void remove_cable_leaving_callback(ZstCableEventCallback * callback);
-
+	ZST_EXPORT static void attach(ZstEntityEventCallback * callback, ZstCallbackAction action);
+    ZST_EXPORT static void attach(ZstPlugEventCallback * callback, ZstCallbackAction action);
+    ZST_EXPORT static void attach(ZstCableEventCallback * callback, ZstCallbackAction action);
+    
+    ZST_EXPORT static void detach(ZstEntityEventCallback * callback, ZstCallbackAction action);
+    ZST_EXPORT static void detach(ZstPlugEventCallback * callback, ZstCallbackAction action);
+    ZST_EXPORT static void detach(ZstCableEventCallback * callback, ZstCallbackAction action);
+    
 	//Hierarchy
 	ZST_EXPORT static ZstEntityBase* get_entity_by_URI(const ZstURI & path);
 
@@ -70,8 +64,8 @@ public:
 	ZST_EXPORT static int destroy_cable(ZstURI a, ZstURI b);
     
     //Creatables
-    ZST_EXPORT static int register_entity_type(ZstCreateableKitchen * kitchen);
-    ZST_EXPORT static int unregister_entity_type(ZstCreateableKitchen * kitchen);
+    ZST_EXPORT static void register_composer(ZstComposer * composer);
+    ZST_EXPORT static void unregister_composer(ZstComposer * composer);
 
 private:
     Showtime();

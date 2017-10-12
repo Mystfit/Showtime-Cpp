@@ -13,6 +13,7 @@
 #include "ZstStage.h"
 #include "ZstEndpoint.h"
 #include "entities/ZstProxyComponent.h"
+#include "ZstComposer.h"
 #include "entities/AddFilter.h"
 #include "entities/ZstFilter.h"
 
@@ -118,6 +119,18 @@ public:
 	void reset() { cableLeavingHits = 0; }
 };
 
+
+//class EntityTemplateArrivingCallback : public ZstEntityTemplateEvent {
+//public:
+//    int hits = 0;
+//    void run(ZstEntityTemplate entity_template) override {
+//        std::cout << "ZST_TEST CALLBACK - entity_template arriving Type:" << entity_template.entity_type() << " Owner: " << entity_template.owner() << std::endl;
+//        hits++;
+//    }
+//    void reset() { hits = 0; }
+//};
+
+        
 // ----
 
 
@@ -186,6 +199,23 @@ public:
 };
 
 
+class AddComposer : public ZstComposer {
+public:
+    AddComposer() : ZstComposer("add"), adder(NULL) {
+        
+    }
+    
+    ~AddComposer(){
+        delete adder;
+    }
+    
+    virtual void create(std::string entity_name, ZstEntityBase * parent) override {
+        adder = new AddFilter(parent);
+    }
+
+    AddFilter * adder;
+};
+        
 
 //Global test variables
 ZstStage *stage;
@@ -316,14 +346,14 @@ void test_create_entities(){
 
 	//Attach stage level callback to watch for arriving plugs
 	TestPlugArrivingEventCallback * plugArrivalCallback = new TestPlugArrivingEventCallback();
-	Showtime::attach_plug_arriving_callback(plugArrivalCallback);
+    Showtime::attach(plugArrivalCallback, ZstCallbackAction::ARRIVING);
 
 	//Create filters to hold out test plugs
 	OutputComponent * test_output = new OutputComponent("entity_create_test_ent", root_entity);
 	wait_for_callbacks(expected_entities + expected_plugs);
 	assert(plugArrivalCallback->plugArrivedHits == expected_plugs);
 	plugArrivalCallback->reset();
-	Showtime::remove_plug_arriving_callback(plugArrivalCallback);
+    Showtime::detach(plugArrivalCallback, ZstCallbackAction::ARRIVING);
 	delete plugArrivalCallback;
 
     //Check stage registered plugs successfully
@@ -336,7 +366,7 @@ void test_create_entities(){
 
 	//Check plug destruction
 	TestPlugLeavingEventCallback * plugLeavingCallback = new TestPlugLeavingEventCallback();
-	Showtime::attach_plug_leaving_callback(plugLeavingCallback);
+    Showtime::attach(plugLeavingCallback, ZstCallbackAction::LEAVING);
 
 	//Test plug destruction when destroying entity
 	ZstURI outURI = test_output->output_URI();
@@ -347,11 +377,29 @@ void test_create_entities(){
 	//Make sure that the plug leaving callback was hit the correct number of times
 	assert(plugLeavingCallback->plugLeavingHits == 1);
 	plugLeavingCallback->reset();
-	Showtime::remove_plug_leaving_callback(plugLeavingCallback);
+    Showtime::detach(plugLeavingCallback, ZstCallbackAction::LEAVING);
 	clear_callback_queue();
 
 	std::cout << "Finished entity test\n" << std::endl;
 }
+
+//void test_entity_templates(){
+//    //Add entity_template listener
+//    EntityTemplateArrivingCallback * entity_template_arriving = new EntityTemplateArrivingCallback();
+//    Showtime::attach(entity_template_arriving, ZstCallbackAction::ARRIVING);
+//
+//    //Register a simple composer to create add filters
+//    AddComposer * add_composer = new AddComposer();
+//    Showtime::register_composer(add_composer);
+//    
+//    //Test that we recieved a new entity_template locally
+//    wait_for_callbacks(1);
+//    assert(entity_template_arriving->hits == 1);
+//    
+//    //Test entity composer
+//    Showtime::run_template(add_composer->get_template());
+//    
+//}
 
 void test_hierarchy() {
 	std::cout << "Starting hierarchy test" << std::endl;
@@ -417,9 +465,8 @@ void test_connect_plugs() {
 	//Test cable callbacks
 	TestCableArrivingEventCallback * cableArriveCallback = new TestCableArrivingEventCallback();
 	TestCableLeavingEventCallback * cableLeaveCallback = new TestCableLeavingEventCallback();
-
-	Showtime::attach_cable_arriving_callback(cableArriveCallback);
-	Showtime::attach_cable_leaving_callback(cableLeaveCallback);
+    Showtime::attach(cableArriveCallback, ZstCallbackAction::ARRIVING);
+    Showtime::attach(cableLeaveCallback, ZstCallbackAction::LEAVING);
 	Showtime::connect_cable(test_output->output_URI(), test_input->input_URI());
 	wait_for_callbacks(expected_entities + expected_plugs + expected_cables);
 	assert(cableArriveCallback->cableArrivedHits == 1);
@@ -453,8 +500,8 @@ void test_connect_plugs() {
 	test_input = 0;
 
 	//Test removing callbacks
-	Showtime::remove_cable_arriving_callback(cableArriveCallback);
-	Showtime::remove_cable_leaving_callback(cableLeaveCallback);
+    Showtime::detach(cableArriveCallback, ZstCallbackAction::ARRIVING);
+    Showtime::detach(cableLeaveCallback, ZstCallbackAction::LEAVING);
 	delete cableArriveCallback;
 	delete cableLeaveCallback;
 	clear_callback_queue();
@@ -522,8 +569,8 @@ void test_create_proxies(std::string external_sink_path) {
 	//Create callbacks
 	TestEntityArrivingEventCallback * entityArriveCallback = new TestEntityArrivingEventCallback();
 	TestEntityLeavingEventCallback * entityLeaveCallback = new TestEntityLeavingEventCallback();
-	Showtime::attach_entity_arriving_callback(entityArriveCallback);
-	Showtime::attach_entity_leaving_callback(entityLeaveCallback);
+    Showtime::attach(entityArriveCallback, ZstCallbackAction::ARRIVING);
+    Showtime::attach(entityLeaveCallback, ZstCallbackAction::LEAVING);
 
 	//Create emitter
 	OutputComponent * output = new OutputComponent("proxy_test_output", root_entity);
@@ -567,8 +614,8 @@ void test_create_proxies(std::string external_sink_path) {
 	assert(Showtime::get_entity_by_URI(ZstURI("sink_root/sink")) == NULL);
 
 	//Cleanup
-	Showtime::remove_entity_arriving_callback(entityArriveCallback);
-	Showtime::remove_entity_leaving_callback(entityLeaveCallback);
+    Showtime::detach(entityArriveCallback, ZstCallbackAction::ARRIVING);
+    Showtime::detach(entityLeaveCallback, ZstCallbackAction::LEAVING);
 	delete entityArriveCallback;
 	delete entityLeaveCallback;
 	sink_root = 0;
@@ -696,6 +743,7 @@ int main(int argc,char **argv){
 	test_root_entity();
     test_stage_registration();
     test_create_entities();
+//    test_entity_templates();
 	test_hierarchy();
 	test_connect_plugs();
 	test_add_filter();
