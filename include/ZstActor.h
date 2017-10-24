@@ -7,7 +7,7 @@
 class ZstActor {
 public:
 	ZstActor();
-	virtual ~ZstActor();
+	~ZstActor();
 	virtual void destroy();
 	virtual void init();
 

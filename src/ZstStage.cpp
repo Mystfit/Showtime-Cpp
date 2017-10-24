@@ -14,7 +14,7 @@ ZstStage::~ZstStage()
 {
 	detach_timer(m_heartbeat_timer_id);
 	detach_timer(m_heartbeat_timer_id);
-	ZstActor::~ZstActor();
+
 	//Close stage pipes
 	zsock_destroy(&m_performer_requests);
 	zsock_destroy(&m_performer_router);

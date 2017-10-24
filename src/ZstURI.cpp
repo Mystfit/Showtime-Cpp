@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <iostream>
 #include "ZstUtils.hpp"
+#include <string.h>
 
 ZstURI::ZstURI() : component_count(0) {
 	original_path = create_pstr("");
