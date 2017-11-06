@@ -7,7 +7,6 @@ class ZstCable {
 public:
 	ZST_EXPORT ZstCable();
 	ZST_EXPORT ZstCable(const ZstCable & copy);
-	ZST_EXPORT ZstCable(const ZstEvent & e);
 	ZST_EXPORT ZstCable(const ZstURI input, const ZstURI );
 	ZST_EXPORT ~ZstCable();
 

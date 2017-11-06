@@ -3,7 +3,8 @@
 #include <vector>
 #include <iostream>
 #include <map>
-#include "ZstEntityRef.h"
+#include "entities/ZstProxy.h"
+#include "ZstEntityWire.h"
 #include "ZstPlugRef.h"
 
 #define MAX_MISSED_HEARTBEATS 3
@@ -19,15 +20,10 @@ public:
 	std::string endpoint_address;
 
     //Entities
-	ZstEntityRef * register_entity(std::string entity_type, const ZstURI & uri);
-	std::vector<ZstEntityRef*> get_entity_refs();
-	ZstEntityRef* get_entity_ref_by_URI(const ZstURI & uri);
-	void destroy_entity(ZstEntityRef* entity);
-    
-    //Recipes
-    void register_recipe(ZstCreatableRecipe recipe);
-    void unregister_recipe(std::string recipe);
-    const std::vector<ZstCreatableRecipe> & get_recipes();
+	ZstProxy* register_entity(ZstEntityWire & entity);
+	std::vector<ZstProxy*> get_entity_proxies();
+	ZstProxy* get_entity_proxy_by_URI(const ZstURI & uri);
+	void destroy_entity(ZstProxy* entity);
 	
     //Heartbeat
 	void set_heartbeat_active();
@@ -43,9 +39,8 @@ public:
 	void destroy_plug(const ZstURI & plug);
 
 private:
-	std::unordered_map<ZstURI, ZstEntityRef*> m_entities;
+	std::unordered_map<ZstURI, ZstProxy*> m_entities;
 	std::unordered_map<ZstURI, ZstPlugRef*> m_plugs;
-    std::vector<ZstCreatableRecipe> m_recipes;
 	bool m_heartbeat_active;
 	int m_missed_heartbeats = 0;
 };

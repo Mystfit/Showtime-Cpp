@@ -17,34 +17,29 @@ public:
     ZstEventWire();
     ZstEventWire(const ZstEventWire &copy);
     ZstEventWire(ZstEvent copy);
-    ZstEventWire(ZstURI single, EventType event_type);
-    ZstEventWire(ZstURI first, ZstURI second, EventType event_type);
 
     template <typename Packer>
 	void msgpack_pack(Packer& pk) const {
-		pk.pack_array(3);
-
-		int sizeA = m_first.full_size() + 1;
-		int sizeB = m_second.full_size() + 1;
-		pk.pack_str(sizeA);
-		pk.pack_str_body(m_first.path(), sizeA);
-		pk.pack_str(sizeB);
-		pk.pack_str_body(m_second.path(), sizeB);
-		pk.pack(m_update_type);
+        pk.pack_array(2);
+        pk.pack(m_update_type);
+        pk.pack_array(m_parameters.size());
+		
+        for(auto s : m_parameters){
+            pk.pack_str(s.size());
+            pk.pack_str_body(s.c_str(), s.size());
+        }
 	}
 
 	void msgpack_unpack(msgpack::object o) {
 		// check if received structure is an array
 		if (o.type != msgpack::type::ARRAY) { throw msgpack::type_error(); }
 
-		int sizeA = o.via.array.ptr[0].via.str.size;
-		int sizeB = o.via.array.ptr[1].via.str.size;
-
-		if(sizeA)
-			m_first = ZstURI(o.via.array.ptr[0].via.str.ptr);
-		if(sizeB)
-			m_second = ZstURI(o.via.array.ptr[1].via.str.ptr);
-		m_update_type = o.via.array.ptr[2].as<EventType>();
+        m_update_type = (ZstEvent::EventType)o.via.array.ptr[0].via.i64;
+        
+        int param_size = o.via.array.ptr[1].via.array.size;
+        for(int i = 0; i < param_size; ++i){
+            m_parameters.push_back(o.via.array.ptr[1].via.str.ptr);
+        }
 	}
 };
 

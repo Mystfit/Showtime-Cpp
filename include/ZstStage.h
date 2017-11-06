@@ -14,6 +14,7 @@
 #include "ZstEventWire.h"
 #include "ZstPlugRef.h"
 #include "ZstEndpointRef.h"
+#include "ZstEntityWire.h"
 #include "Queue.h"
 
 #define HEARTBEAT_DURATION 1000
@@ -32,10 +33,11 @@ public:
 	ZST_EXPORT ZstEndpointRef * get_plug_endpoint(ZstPlugRef * plug);
 	ZST_EXPORT ZstPlugRef* get_plug_by_URI(ZstURI uri);
 
-	ZST_EXPORT std::vector<ZstEntityRef*> get_all_entity_refs();
-	ZST_EXPORT std::vector<ZstEntityRef*> get_all_entity_refs(ZstEndpointRef* endpoint);
-	ZST_EXPORT ZstEndpointRef * get_entity_endpoint(ZstEntityRef * entity);
-	ZST_EXPORT ZstEntityRef* get_entity_ref_by_URI(ZstURI uri);
+	ZST_EXPORT std::vector<ZstProxy*> get_all_entity_proxies();
+	ZST_EXPORT std::vector<ZstProxy*> get_all_entity_proxies(ZstEndpointRef* endpoint);
+    
+    ZST_EXPORT ZstEndpointRef * get_entity_endpoint(ZstEntityBase * entity);
+    ZST_EXPORT ZstProxy* get_entity_proxy_by_URI(const ZstURI & uri);
 	
 	ZST_EXPORT ZstCable * get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB);
 	ZST_EXPORT std::vector<ZstCable*> get_cables_by_URI(const ZstURI & uri);
@@ -59,30 +61,27 @@ private:
 
     //Message handlers
 	//Rep
-	void endpoint_heartbeat_handler(zsock_t * socket, zmsg_t * msg);
-	void register_entity_recipe_handler(zsock_t * socket, zmsg_t * msg);
-	void create_endpoint_handler(zsock_t * socket, zmsg_t * msg);
-	void create_plug_handler(zsock_t * socket, zmsg_t * msg);
-	void create_entity_handler(zsock_t * socket, zmsg_t * msg);
-	void destroy_plug_handler(zsock_t * socket, zmsg_t * msg);
-	void destroy_entity_handler(zsock_t * socket, zmsg_t * msg);
-	void destroy_cable_handler(zsock_t * socket, zmsg_t * msg);
-
-	//Router
-    void create_cable_handler(zsock_t * socket, zmsg_t * msg);
+    ZstMessages::Signal create_endpoint_handler(zsock_t * socket, zmsg_t * msg);
+	ZstMessages::Signal endpoint_heartbeat_handler(zmsg_t * msg);
+	ZstMessages::Signal register_entity_recipe_handler(ZstEntityWire & entity, ZstEndpointRef * endpoint);
+	ZstMessages::Signal create_plug_handler(zmsg_t * msg);
+	ZstMessages::Signal create_entity_handler(ZstEntityWire & entity, ZstEndpointRef * endpoint);
+    ZstMessages::Signal create_entity_from_template_handler(zmsg_t * msg);
+	ZstMessages::Signal destroy_plug_handler(zmsg_t * msg);
+	ZstMessages::Signal destroy_entity_handler(zmsg_t * msg);
+	ZstMessages::Signal destroy_cable_handler(zmsg_t * msg);
+    ZstMessages::Signal create_cable_handler(zmsg_t * msg);
 
     //Graph storage
 	ZstEndpointRef * create_endpoint(std::string starting_uuid, std::string endpoint);
 	void destroy_endpoint(ZstEndpointRef* endpoint);
 	std::map<std::string, ZstEndpointRef*> m_endpoint_refs;
 
-
-
 	//Plug connections
     int connect_cable(ZstPlugRef * output_plug, ZstPlugRef * input_plug);
     int destroy_cable(const ZstURI & uri);
 	int destroy_cable(ZstCable * cable);
-	int destroy_cable(ZstURI output_plug, ZstURI input_plug);
+	int destroy_cable(const ZstURI & output_plug, const ZstURI & input_plug);
 	std::vector<ZstCable*> m_cables;
 
 	//Queued stage events

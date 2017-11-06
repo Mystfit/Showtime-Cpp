@@ -6,12 +6,16 @@
 #include "ZstPlug.h"
 
 
-ZstComponent::ZstComponent(const char * entity_type, const char * name) : ZstEntityBase(entity_type, name)
+ZstComponent::ZstComponent(const char * entity_type, const char * name)
+    : ZstEntityBase(entity_type, name), m_is_registered(false)
+
 {
 	init();
 }
 
-ZstComponent::ZstComponent(const char * entity_type, const char * name, ZstEntityBase * parent) : ZstEntityBase(entity_type, name, parent)
+ZstComponent::ZstComponent(const char * entity_type, const char * name, ZstEntityBase * parent)
+    : ZstEntityBase(entity_type, name, parent), m_is_registered(false)
+
 {
 	init();
 }
@@ -22,12 +26,17 @@ ZstComponent::~ZstComponent()
 		Showtime::endpoint().destroy_plug(plug);
 	}
 	m_plugs.clear();
-	delete m_compute_callback;
 }
 
 void ZstComponent::init(){
-    m_compute_callback = new ZstComputeCallback();
-    m_compute_callback->set_target_filter(this);
+    activate();
+}
+
+void ZstComponent::activate()
+{
+    if (Showtime::is_connected() && !m_is_registered){
+        m_is_registered = Showtime::endpoint().register_entity(this);
+    }
 }
 
 ZstInputPlug * ZstComponent::create_input_plug(const char * name, ZstValueType val_type)
@@ -36,7 +45,6 @@ ZstInputPlug * ZstComponent::create_input_plug(const char * name, ZstValueType v
 	plug = Showtime::endpoint().create_plug<ZstInputPlug>(this, name, val_type, PlugDirection::IN_JACK);
 	if (plug) {
 		m_plugs.push_back(plug);
-		plug->attach_receive_callback(m_compute_callback);
 	}
 	return plug;
 }
@@ -60,11 +68,6 @@ ZstPlug * ZstComponent::get_plug_by_URI(const ZstURI & uri) const
 		}
 	}
 	return found_plug;
-}
-
-void ZstComponent::compute(ZstInputPlug * plug)
-{
-	std::cout << "Running compute" << std::endl;
 }
 
 void ZstComponent::remove_plug(ZstPlug * plug)

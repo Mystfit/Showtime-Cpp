@@ -82,30 +82,18 @@ const size_t ZstPlug::size_at(const size_t position) const
 
 ZstInputPlug::ZstInputPlug(ZstComponent * entity, const char * name, ZstValueType t) : ZstPlug(entity, name, t)
 {
-	m_input_fired_manager = new ZstCallbackQueue<ZstPlugDataEventCallback, ZstInputPlug*>();
 }
 
 //ZstInputPlug
 //------------
-ZstInputPlug::~ZstInputPlug() {
-	delete m_input_fired_manager;
+ZstInputPlug::~ZstInputPlug()
+{
 }
 
 void ZstInputPlug::recv(ZstValue * val) {
     m_value->clear();
 	m_value->copy(*val);
 }
-
-void ZstInputPlug::attach_receive_callback(ZstPlugDataEventCallback * callback)
-{
-	m_input_fired_manager->attach_event_callback(callback);
-}
-
-void ZstInputPlug::remove_receive_callback(ZstPlugDataEventCallback * callback)
-{
-	m_input_fired_manager->remove_event_callback(callback);
-}
-
 
 //ZstOutputPlug
 //-------------

@@ -2,8 +2,9 @@
 
 //ZstPlugEvent
 //-------------
-ZstPlugEvent::ZstPlugEvent(const ZstURI & uri, const ZstValue & value) : ZstEvent(uri, ZstEvent::EventType::PLUG_HIT)
+ZstPlugEvent::ZstPlugEvent(const ZstURI & uri, const ZstValue & value) : ZstEvent(ZstEvent::EventType::PLUG_HIT)
 {
+    add_parameter(std::string(uri.path()));
 	m_value = new ZstValue(value);
 }
 

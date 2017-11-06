@@ -10,12 +10,6 @@ ZstCable::ZstCable(const ZstCable & copy) :
 {
 }
 
-ZstCable::ZstCable(const ZstEvent & e) :
-	m_input(e.get_first()),
-	m_output(e.get_second())
-{
-}
-
 ZstCable::ZstCable(const ZstURI output, const ZstURI input) :
 	m_input(input),
     m_output(output)

@@ -1,7 +1,8 @@
 #pragma once
 
-#include "ZstExports.h"
 #include "ZstURI.h"
+#include <vector>
+#include <string>
 
 class ZstEvent {
 public:
@@ -17,29 +18,23 @@ public:
 		CABLE_CREATED,
 		CABLE_LEAVING,
 		CABLE_DESTROYED,
-        RECIPE_CREATED,
-        RECIPE_DESTROYED,
+        TEMPLATE_CREATED,
+        TEMPLATE_DESTROYED,
 		ROUTE_CREATED,
 		ROUTE_DESTROYED,
 		PLUG_HIT
 	};
 
-	ZST_EXPORT ZstEvent();
-	ZST_EXPORT ZstEvent(const ZstEvent & copy);
-    ZST_EXPORT ZstEvent(EventType event_type);
-	ZST_EXPORT ZstEvent(const ZstURI & single, EventType event_type);
-	ZST_EXPORT ZstEvent(const ZstURI & first, const ZstURI & second, EventType event_type);
-	ZST_EXPORT ~ZstEvent();
+	ZstEvent();
+	ZstEvent(const ZstEvent & copy);
+    ZstEvent(EventType event_type);
+	~ZstEvent();
 
-	ZST_EXPORT const ZstURI & get_first() const;
-	ZST_EXPORT const ZstURI & get_second() const;
-	ZST_EXPORT EventType get_update_type();
-
-	ZST_EXPORT bool operator==(const ZstEvent& other);
-	ZST_EXPORT bool operator!=(const ZstEvent& other);
-
+	EventType get_update_type();
+    
+    void add_parameter(std::string parameter);
+    std::string get_parameter(size_t index);
 protected:
-	ZstURI m_first;
-	ZstURI m_second;
 	EventType m_update_type;
+    std::vector<std::string> m_parameters;
 };

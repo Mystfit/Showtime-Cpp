@@ -5,7 +5,6 @@
 #include "ZstURI.h"
 #include "ZstCable.h"
 #include "ZstEvent.h"
-#include "entities/ZstEntityBase.h"
 
 //Callback for incoming plug data events
 class ZstInputPlug;
@@ -23,10 +22,18 @@ public:
 };
 
 //Entity arriving/leaving events
+class ZstEntityBase;
 class ZstEntityEventCallback {
 public:
 	ZST_EXPORT virtual ~ZstEntityEventCallback() {}
 	ZST_EXPORT virtual void run(ZstEntityBase* entity) {}
+};
+
+//Entity template arriving/leaving events
+class ZstEntityTemplateEventCallback {
+public:
+    ZST_EXPORT virtual ~ZstEntityTemplateEventCallback() {}
+    ZST_EXPORT virtual void run(ZstEntityBase* entity_template) {}
 };
 
 //Cable arriving/leaving events
@@ -34,15 +41,4 @@ class ZstCableEventCallback {
 public:
 	ZST_EXPORT virtual ~ZstCableEventCallback() {}
 	ZST_EXPORT virtual void run(ZstCable cable) {}
-};
-
-//Compute events
-class ZstInputPlug;
-class ZstComponent;
-class ZstComputeCallback : public ZstPlugDataEventCallback {
-public:
-    ZST_EXPORT void set_target_filter(ZstComponent * component);
-    ZST_EXPORT void run(ZstInputPlug * plug) override;
-private:
-    ZstComponent * m_component;
 };

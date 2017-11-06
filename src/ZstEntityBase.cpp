@@ -2,11 +2,18 @@
 #include "Showtime.h"
 #include "ZstEndpoint.h"
 #include <memory>
+#include <cstring>
 
+
+ZstEntityBase::ZstEntityBase() :
+    m_entity_type(NULL),
+    m_uri(),
+    m_is_destroyed(false),
+    m_parent(NULL)
+{
+}
 
 ZstEntityBase::ZstEntityBase(const char * entity_type, const char * path) :
-    m_is_proxy(false),
-    m_is_registered(false),
     m_uri(path),
 	m_is_destroyed(false),
     m_parent(NULL)
@@ -17,8 +24,6 @@ ZstEntityBase::ZstEntityBase(const char * entity_type, const char * path) :
 }
 
 ZstEntityBase::ZstEntityBase(const char * entity_type, const char * local_path, ZstEntityBase * parent) :
-    m_is_proxy(false),
-    m_is_registered(false),
     m_uri(parent->URI() + ZstURI(local_path)),
     m_is_destroyed(false),
 	m_parent(parent)
@@ -51,13 +56,6 @@ ZstEntityBase::~ZstEntityBase()
 	free(m_entity_type);
 }
 
-void ZstEntityBase::activate()
-{
-    if (Showtime::is_connected() && !m_is_registered && !m_is_proxy){
-		m_is_registered = Showtime::endpoint().register_entity(this);
-    }
-}
-
 const char * ZstEntityBase::entity_type() const
 {
 	return m_entity_type;
@@ -68,11 +66,6 @@ const ZstURI & ZstEntityBase::URI()
 	return m_uri;
 }
 
-bool ZstEntityBase::is_registered()
-{
-	return m_is_registered;
-}
-
 bool ZstEntityBase::is_destroyed()
 {
 	return m_is_destroyed;
@@ -81,10 +74,6 @@ bool ZstEntityBase::is_destroyed()
 void ZstEntityBase::set_destroyed()
 {
 	m_is_destroyed = true;
-}
-
-bool ZstEntityBase::is_proxy(){
-    return m_is_proxy;
 }
 
 void * ZstEntityBase::operator new(size_t num_bytes)

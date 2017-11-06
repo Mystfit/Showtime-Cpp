@@ -25,10 +25,10 @@ void Showtime::destroy() {
 	Showtime::endpoint().destroy();
 }
 
-void Showtime::init()
+void Showtime::init(const char * performer_name)
 {
 	cout << "Starting Showtime v" << SHOWTIME_VERSION << endl;
-	Showtime::endpoint().init();
+	Showtime::endpoint().init(performer_name);
 }
 
 void Showtime::join(const char * stage_address){
@@ -64,6 +64,16 @@ void Showtime::attach(ZstEntityEventCallback * callback, ZstCallbackAction actio
         return Showtime::endpoint().entity_leaving_events()->attach_event_callback(callback);
     }
 }
+
+void Showtime::attach(ZstEntityTemplateEventCallback * callback, ZstCallbackAction action)
+{
+    if(action == ZstCallbackAction::ARRIVING){
+        return Showtime::endpoint().entity_template_arriving_events()->attach_event_callback(callback);
+    } else if(action == ZstCallbackAction::LEAVING){
+        return Showtime::endpoint().entity_template_leaving_events()->attach_event_callback(callback);
+    }
+}
+
 void Showtime::attach(ZstPlugEventCallback * callback, ZstCallbackAction action)
 {
     if(action == ZstCallbackAction::ARRIVING){
@@ -87,6 +97,15 @@ void Showtime::detach(ZstEntityEventCallback * callback, ZstCallbackAction actio
         Showtime::endpoint().entity_arriving_events()->remove_event_callback(callback);
     } else if(action == ZstCallbackAction::LEAVING){
         return Showtime::endpoint().entity_leaving_events()->remove_event_callback(callback);
+    }
+}
+
+void Showtime::detach(ZstEntityTemplateEventCallback * callback, ZstCallbackAction action)
+{
+    if(action == ZstCallbackAction::ARRIVING){
+        return Showtime::endpoint().entity_template_arriving_events()->remove_event_callback(callback);
+    } else if(action == ZstCallbackAction::LEAVING){
+        return Showtime::endpoint().entity_template_leaving_events()->remove_event_callback(callback);
     }
 }
 
@@ -121,11 +140,6 @@ int Showtime::ping_stage(){
 	return Showtime::endpoint().ping_stage();
 }
 
-ZstEvent * Showtime::pop_event()
-{
-	return Showtime::endpoint().pop_event();
-}
-
 size_t Showtime::event_queue_size()
 {
 	return Showtime::endpoint().event_queue_size();
@@ -141,13 +155,14 @@ int Showtime::destroy_cable(ZstURI a, ZstURI b)
 	return Showtime::endpoint().destroy_cable(a, b);
 }
 
-// --
-
-void Showtime::register_composer(ZstComposer *composer){
-    Showtime::endpoint().register_entity_type(composer);
+void Showtime::run_entity_template(const ZstURI & template_path)
+{
+    run_entity_template(template_path, false);
 }
 
-void Showtime::unregister_composer(ZstComposer *composer){
-    Showtime::endpoint().unregister_entity_type(composer);
+void Showtime::run_entity_template(const ZstURI & template_path, bool wait)
+{
+    Showtime::endpoint().run_entity_template(template_path);
 }
+
 

@@ -120,15 +120,15 @@ public:
 };
 
 
-//class EntityTemplateArrivingCallback : public ZstEntityTemplateEvent {
-//public:
-//    int hits = 0;
-//    void run(ZstEntityTemplate entity_template) override {
-//        std::cout << "ZST_TEST CALLBACK - entity_template arriving Type:" << entity_template.entity_type() << " Owner: " << entity_template.owner() << std::endl;
-//        hits++;
-//    }
-//    void reset() { hits = 0; }
-//};
+class EntityTemplateArrivingCallback : public ZstEntityTemplateEventCallback {
+public:
+    int hits = 0;
+    void run(ZstEntityBase * entity_template) override {
+        std::cout << "ZST_TEST CALLBACK - entity_template arriving Type:" << entity_template->entity_type() << " Owner: " << entity_template->owner() << std::endl;
+        hits++;
+    }
+    void reset() { hits = 0; }
+};
 
         
 // ----
@@ -310,7 +310,7 @@ void test_startup() {
 	stage = ZstStage::create_stage();
 	std::cout << "Stage created" << std::endl;
 
-	Showtime::init();
+	Showtime::init("tester");
 	Showtime::join("127.0.0.1");
 }
 
@@ -320,9 +320,9 @@ void test_root_entity() {
 	std::cout << "Starting entity init test" << std::endl;
 	Showtime::endpoint().self_test();
 
-	root_entity = new ZstComponent("ROOT", "root_entity");
-	root_entity->activate();
+    root_entity = Showtime::get_root();
 	assert(root_entity);
+    assert(root_entity->is_registered());
 	clear_callback_queue();
 
 	std::cout << "Finished entity init test\n" << std::endl;
@@ -383,23 +383,22 @@ void test_create_entities(){
 	std::cout << "Finished entity test\n" << std::endl;
 }
 
-//void test_entity_templates(){
-//    //Add entity_template listener
-//    EntityTemplateArrivingCallback * entity_template_arriving = new EntityTemplateArrivingCallback();
-//    Showtime::attach(entity_template_arriving, ZstCallbackAction::ARRIVING);
-//
-//    //Register a simple composer to create add filters
-//    AddComposer * add_composer = new AddComposer();
-//    Showtime::register_composer(add_composer);
-//    
-//    //Test that we recieved a new entity_template locally
-//    wait_for_callbacks(1);
-//    assert(entity_template_arriving->hits == 1);
-//    
-//    //Test entity composer
-//    Showtime::run_template(add_composer->get_template());
-//    
-//}
+void test_entity_templates(){
+    //Add entity_template listener
+    EntityTemplateArrivingCallback * entity_template_arriving = new EntityTemplateArrivingCallback();
+    Showtime::attach(entity_template_arriving, ZstCallbackAction::ARRIVING);
+
+    //Register a simple composer to create add filters
+    AddComposer * add_composer = new AddComposer();
+    Showtime::register_composer(add_composer);
+    
+    //Test that we recieved a new entity_template locally
+    wait_for_callbacks(1);
+    assert(entity_template_arriving->hits == 1);
+    
+    //Test entity composer
+    Showtime::run_entity_template(add_composer->get_template());
+}
 
 void test_hierarchy() {
 	std::cout << "Starting hierarchy test" << std::endl;
@@ -536,8 +535,9 @@ void test_add_filter() {
 	test_output_addend->send(2);
 
 	//Wait for the first two input callbacks to clear before we check for the sum
-	while(test_input_sum->num_hits < 2)
+    while(test_input_sum->num_hits < 2){
 		Showtime::poll_once();
+    }
 	assert(test_input_sum->last_received_val == first_cmp_val);
 	test_input_sum->reset();
 
@@ -733,7 +733,9 @@ void test_cleanup() {
 	stage = NULL;
 
 	Showtime::destroy();
-	delete root_entity;
+    
+    //Root entity should be cleaned up automatically
+	root_entity = NULL;
 }
 
 int main(int argc,char **argv){
@@ -743,7 +745,7 @@ int main(int argc,char **argv){
 	test_root_entity();
     test_stage_registration();
     test_create_entities();
-//    test_entity_templates();
+    test_entity_templates();
 	test_hierarchy();
 	test_connect_plugs();
 	test_add_filter();

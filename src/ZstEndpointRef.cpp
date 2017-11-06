@@ -1,5 +1,5 @@
 #include "ZstEndpointRef.h"
-#include "ZstEntityRef.h"
+#include "ZstEntityWire.h"
 #include <exception>
 
 using namespace std;
@@ -51,29 +51,30 @@ int ZstEndpointRef::get_missed_heartbeats()
 }
 
 
-ZstEntityRef * ZstEndpointRef::register_entity(std::string entity_type, const ZstURI & uri)
+ZstProxy * ZstEndpointRef::register_entity(ZstEntityWire & entity)
 {
 	//Check for existing performers with this name
-	if (m_entities.find(uri) != m_entities.end()) {
+	if (m_entities.find(entity.URI()) != m_entities.end()) {
 		return NULL;
 	}
-	ZstEntityRef * entity = new ZstEntityRef(uri, entity_type);
-	m_entities[uri] = entity;
-	return entity;
+    
+    ZstProxy * proxy = new ZstProxy(entity.entity_type(), entity.URI().path());
+	m_entities[ZstURI(entity.URI())] = proxy;
+	return proxy;
 }
 
-std::vector<ZstEntityRef*> ZstEndpointRef::get_entity_refs()
+std::vector<ZstProxy*> ZstEndpointRef::get_entity_proxies()
 {
-	vector<ZstEntityRef*> entities;
+	vector<ZstProxy*> entities;
 	for (auto entity : m_entities) {
 		entities.push_back(entity.second);
 	}
 	return entities;
 }
 
-ZstEntityRef * ZstEndpointRef::get_entity_ref_by_URI(const ZstURI & uri)
+ZstProxy * ZstEndpointRef::get_entity_proxy_by_URI(const ZstURI & uri)
 {
-	ZstEntityRef * result = NULL;
+	ZstProxy * result = NULL;
 	auto it = m_entities.find(uri);
 	if (it != m_entities.end()) {
 		result = m_entities[uri];
@@ -81,9 +82,9 @@ ZstEntityRef * ZstEndpointRef::get_entity_ref_by_URI(const ZstURI & uri)
 	return result;
 }
 
-void ZstEndpointRef::destroy_entity(ZstEntityRef* entity)
+void ZstEndpointRef::destroy_entity(ZstProxy* entity)
 {
-	for (unordered_map<ZstURI, ZstEntityRef*>::iterator entity_iter = m_entities.begin(); entity_iter != m_entities.end(); ++entity_iter)
+	for (unordered_map<ZstURI, ZstProxy*>::iterator entity_iter = m_entities.begin(); entity_iter != m_entities.end(); ++entity_iter)
 	{
 		if ((entity_iter)->second == entity)
 		{
@@ -92,25 +93,6 @@ void ZstEndpointRef::destroy_entity(ZstEntityRef* entity)
 		}
 	}
 	delete entity;
-}
-
-
-// ----------------
-
-
-//Recipes
-void ZstEndpointRef::register_recipe(ZstCreatableRecipe recipe)
-{
-    m_recipes.push_back(recipe);
-}
-
-void ZstEndpointRef::unregister_recipe(std::string recipe)
-{
-}
-
-const std::vector<ZstCreatableRecipe> & ZstEndpointRef::get_recipes()
-{
-    return m_recipes;
 }
 
 // ----------------

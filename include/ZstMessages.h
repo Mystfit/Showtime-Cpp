@@ -10,7 +10,6 @@
 #include "ZstEvent.h"
 #include "ZstURIWire.h"
 #include "ZstEventWire.h"
-#include "ZstCreatableRecipeWire.h"
 #include "ZstPlug.h"
 
 class ZstMessages{
@@ -28,8 +27,8 @@ public:
 		STAGE_DESTROY_PERFORMER,
 
 		//Entity registration
-		STAGE_REGISTER_ENTITY_TYPE,
-		STAGE_CREATE_ENTITY,
+        STAGE_RUN_ENTITY_TEMPLATE,
+        STAGE_CREATE_ENTITY,
 		STAGE_DESTROY_ENTITY,
 		
 		//Plug registration
@@ -45,10 +44,12 @@ public:
         ENDPOINT_HEARTBEAT,
 
 		//P2P endpoint connection requests
-		PERFORMER_REGISTER_CONNECTION
+		PERFORMER_REGISTER_CONNECTION,
+        PERFORMER_CREATE_ENTITY
     };
 
 	enum Signal {
+        ERR_STAGE_MSG_TYPE_UNKNOWN = -8,
 		ERR_STAGE_BAD_CABLE_DISCONNECT_REQUEST = -7,
 		ERR_STAGE_BAD_CABLE_CONNECT_REQUEST = -6,
 		ERR_STAGE_ENDPOINT_NOT_FOUND = -5,
@@ -65,11 +66,6 @@ public:
 
     //Message structs
     //---------------
-    struct OKAck{
-        bool empty;
-        MSGPACK_DEFINE(empty);
-    };
-
 	struct SignalAck {
 		Signal sig;
 		MSGPACK_DEFINE(sig);
@@ -84,19 +80,6 @@ public:
 	struct CreateEndpointAck {
 		std::string assigned_uuid;
 		MSGPACK_DEFINE(assigned_uuid);
-	};
-
-	struct RegisterCreatableRecipe {
-		std::string performer;
-        ZstCreatableRecipeWire recipe;
-		MSGPACK_DEFINE(performer, recipe);
-	};
-
-	struct CreateEntity {
-		std::string entity_type;
-		ZstURIWire address;
-		std::string endpoint_uuid;
-		MSGPACK_DEFINE(entity_type, address, endpoint_uuid);
 	};
     
     struct CreatePlug{
@@ -120,11 +103,6 @@ public:
 		std::vector<ZstEventWire> updates;
 		MSGPACK_DEFINE_ARRAY(updates);
 	};
-    
-    struct Recipes {
-        std::vector<ZstCreatableRecipeWire> recipes;
-        MSGPACK_DEFINE_ARRAY(recipes);
-    };
     
     struct Heartbeat {
         std::string from;

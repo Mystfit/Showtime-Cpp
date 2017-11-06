@@ -69,14 +69,11 @@ public:
 
 	ZST_EXPORT ZstInputPlug(ZstComponent * owner, const char * name, ZstValueType t);
 	ZST_EXPORT ~ZstInputPlug();
-	ZST_EXPORT void attach_receive_callback(ZstPlugDataEventCallback * callback);
-	ZST_EXPORT void remove_receive_callback(ZstPlugDataEventCallback * callback);
 protected:
 
 private:
 	//Receive a msgpacked value through this plug
 	ZST_EXPORT void recv(ZstValue * val);
-	ZstCallbackQueue<ZstPlugDataEventCallback, ZstInputPlug*> * m_input_fired_manager;
 };
 
 

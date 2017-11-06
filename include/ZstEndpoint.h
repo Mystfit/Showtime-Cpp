@@ -13,13 +13,12 @@
 #include "ZstMessages.h"
 #include "ZstCable.h"
 #include "ZstCallbackQueue.h"
-#include "ZstCreatable.h"
+#include "entities/ZstEntityBase.h"
 
 //Forward declarations
 class ZstValue;
 class ZstURI;
 class ZstPerformer;
-class ZstEntityBase;
 class ZstComponent;
 class ZstProxyComponent;
 class ZstReaper;
@@ -29,7 +28,7 @@ public:
 	friend class Showtime;
 	ZstEndpoint();
 	~ZstEndpoint();
-	ZST_EXPORT void init();
+	ZST_EXPORT void init(const char * performer_name);
 	ZST_EXPORT void destroy();
 	ZST_EXPORT void process_callbacks();
 
@@ -51,20 +50,22 @@ public:
     void sync_recipes();
 
 	//Entity recipes
-	int register_entity_type(ZstCreateableKitchen * kitchen);
-    int unregister_entity_type(ZstCreateableKitchen * kitchen);
+	int register_entity_type(ZstEntityFactory factory_func, const ZstURI & template_path);
+    int unregister_entity_type(const ZstURI & template_path);
+    int run_entity_template(const ZstURI & blueprint_path);
     
     //Entities
 	int register_entity(ZstEntityBase * entity);
 	int destroy_entity(ZstEntityBase * entity);
 	ZstEntityBase * get_entity_by_URI(const ZstURI & uri) const;
 	ZstPlug * get_plug_by_URI(const ZstURI & uri) const;
+    ZstEntityBase * get_root() const;
 
 	//Plugs
 	template<typename T>
 	ZST_EXPORT static T* create_plug(ZstComponent * owner, const char * name, ZstValueType val_type, PlugDirection direction);
 	ZST_EXPORT int destroy_plug(ZstPlug * plug);
-    void create_proxy_entity(const ZstURI & path);
+    void create_proxy_entity(const ZstURI & path, bool is_template);
 
 	//Cables
 	int connect_cable(const ZstURI & a, const ZstURI & b);
@@ -84,6 +85,8 @@ public:
 	//Plug callbacks
 	ZstCallbackQueue<ZstEntityEventCallback, ZstEntityBase*> * entity_arriving_events();
 	ZstCallbackQueue<ZstEntityEventCallback, ZstEntityBase*> * entity_leaving_events();
+    ZstCallbackQueue<ZstEntityTemplateEventCallback, ZstEntityBase*> * entity_template_arriving_events();
+    ZstCallbackQueue<ZstEntityTemplateEventCallback, ZstEntityBase*> * entity_template_leaving_events();
 	ZstCallbackQueue<ZstPlugEventCallback, ZstURI> * plug_arriving_events();
 	ZstCallbackQueue<ZstPlugEventCallback, ZstURI> * plug_leaving_events();
 	ZstCallbackQueue<ZstCableEventCallback, ZstCable> * cable_arriving_events();
@@ -120,6 +123,7 @@ private:
 	//Message handlers
 	void stage_update_handler(zsock_t * socket, zmsg_t * msg);
 	void connect_performer_handler(zsock_t * socket, zmsg_t * msg);
+    void create_entity_from_template_handler(zsock_t * socket, zmsg_t * msg);
 	void broadcast_to_local_plugs(const ZstURI & output_plug, const ZstValue & value);
 
 	//Heartbeat timer
@@ -140,10 +144,11 @@ private:
 	std::string m_output_endpoint;
     std::string m_network_interface;
 
-	//All performers
+	//Entities
+    ZstComponent * m_root_performer;
 	std::unordered_map<ZstURI, ZstEntityBase*> m_entities;
 	std::unordered_map<ZstURI, ZstEntityBase*> & entities();
-    std::unordered_map<ZstURI, ZstProxyComponent*> m_proxies;
+    std::unordered_map<ZstURI, ZstEntityFactory> m_entity_factories;
 
 	//Active local plug connections
 	std::vector<ZstCable*> m_local_cables;
@@ -153,6 +158,8 @@ private:
 	Queue<ZstEvent*> m_events;
 	ZstCallbackQueue<ZstEntityEventCallback, ZstEntityBase*> * m_entity_arriving_event_manager;
 	ZstCallbackQueue<ZstEntityEventCallback, ZstEntityBase*> * m_entity_leaving_event_manager;
+    ZstCallbackQueue<ZstEntityTemplateEventCallback, ZstEntityBase*> * m_entity_template_arriving_event_manager;
+    ZstCallbackQueue<ZstEntityTemplateEventCallback, ZstEntityBase*> * m_entity_template_leaving_event_manager;
 	ZstCallbackQueue<ZstCableEventCallback, ZstCable> * m_cable_arriving_event_manager;
 	ZstCallbackQueue<ZstCableEventCallback, ZstCable> * m_cable_leaving_event_manager;
 	ZstCallbackQueue<ZstPlugEventCallback, ZstURI> * m_plug_arriving_event_manager;
