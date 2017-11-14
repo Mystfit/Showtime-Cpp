@@ -29,6 +29,7 @@
 #endif
 
 #define MAX_WAIT 20
+#define STRESS_MESSAGE_COUNT 200
 
 inline void wait_for_callbacks(int expected_messages) {
     int repeats = 0;
@@ -700,14 +701,14 @@ int main(int argc,char **argv){
 	test_connect_plugs();
 	test_add_filter();
 	test_create_proxies(boost::filesystem::system_complete(argv[0]).parent_path().generic_string());
-	test_memory_leaks(200000);
+	test_memory_leaks(STRESS_MESSAGE_COUNT);
     test_leaving();
 	test_cleanup();
 	std::cout << "\nShowtime test successful" << std::endl;
 
-#ifdef WIN32
-	system("pause");
-#endif
+//#ifdef WIN32
+//	system("pause");
+//#endif
 
 	return 0;
 }

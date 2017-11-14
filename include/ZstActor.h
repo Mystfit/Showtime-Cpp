@@ -13,6 +13,7 @@ public:
 
 	virtual void start();
 	virtual void stop();
+	bool is_running();
 
 	ZST_EXPORT void self_test();
 
@@ -25,6 +26,7 @@ protected:
 private:
 	//Loop
 	zloop_t * m_loop;
+	bool m_is_running;
 	void start_polling(zsock_t * pipe);
 
 	//CZMQ Actor

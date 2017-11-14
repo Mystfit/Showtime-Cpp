@@ -56,7 +56,7 @@ def test_add():
     
     # Fire values
     augend_out.send(1)
-    num_loops = 1000
+    num_loops = 10
     for i in range(num_loops):
         for j in range(num_loops):
             addend_out.send(i * 1000 + j)
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     ZST.init()
     ZST.join("127.0.0.1")
 
-    raw_input("Press any key to continue...")
+    # raw_input("Press any key to continue...")
     
     test_add()
     

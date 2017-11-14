@@ -41,3 +41,13 @@ target_link_libraries(ShowtimeLibraryTest
     ${Boost_SYSTEM_LIBRARY}
 )
 add_test(NAME showtime_library_test COMMAND ShowtimeLibraryTest WORKING_DIRECTORY $<TARGET_FILE_DIR:ShowtimeLibraryTest>)
+
+# Language tests
+if(BINDINGS_PYTHON)
+	find_package(PythonInterp REQUIRED)
+	add_test(NAME python_tests
+	  COMMAND ${PYTHON_EXECUTABLE}
+	    ${CMAKE_CURRENT_SOURCE_DIR}/showtime_test.py
+	    python_tests)
+endif()
+
