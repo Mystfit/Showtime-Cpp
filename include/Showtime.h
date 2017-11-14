@@ -70,8 +70,8 @@ public:
     //Creatables
     ZST_EXPORT static void register_template(ZstEntityBase * entity_template);
     ZST_EXPORT static void unregister_template(ZstEntityBase * entity_template);
-    ZST_EXPORT static void run_entity_template(const ZstURI & template_path);
-    ZST_EXPORT static void run_entity_template(const ZstURI & template_path, bool wait);
+    ZST_EXPORT static void run_entity_template(ZstEntityBase * entityh);
+    ZST_EXPORT static void run_entity_template(ZstEntityBase * entity, bool wait);
 
 private:
     Showtime();

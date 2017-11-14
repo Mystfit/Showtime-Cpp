@@ -11,7 +11,6 @@ public:
 	//Base entity
     ZstEntityBase();
 	ZST_EXPORT ZstEntityBase(const char * entity_type, const char * entity_name);
-	ZST_EXPORT ZstEntityBase(const char * entity_type, const char * entity_name, ZstEntityBase * parent);
 	ZST_EXPORT virtual ~ZstEntityBase();
     
     //Overridable init - must be called by overriden classes
@@ -32,6 +31,7 @@ public:
     
     //The parent of this entity
 	ZST_EXPORT ZstEntityBase * parent() const;
+    ZST_EXPORT void parent(ZstEntityBase * entity);
     
     //Find a child in this entity by a URI
     ZST_EXPORT virtual ZstEntityBase * find_child_by_URI(const ZstURI & path) const;

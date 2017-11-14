@@ -50,9 +50,9 @@ public:
     void sync_recipes();
 
 	//Entity recipes
-	int register_entity_type(ZstEntityFactory factory_func, const ZstURI & template_path);
-    int unregister_entity_type(const ZstURI & template_path);
-    int run_entity_template(const ZstURI & blueprint_path);
+	int register_entity_type(ZstEntityBase * entity);
+    int unregister_entity_type(ZstEntityBase * entity);
+    int run_entity_template(ZstEntityBase * entity);
     
     //Entities
 	int register_entity(ZstEntityBase * entity);
@@ -146,9 +146,9 @@ private:
 
 	//Entities
     ZstComponent * m_root_performer;
-	std::unordered_map<ZstURI, ZstEntityBase*> m_entities;
+	std::unordered_map<ZstURI, ZstEntityBase* > m_entities;
+    std::unordered_map<ZstURI, ZstEntityBase*> m_template_entities;
 	std::unordered_map<ZstURI, ZstEntityBase*> & entities();
-    std::unordered_map<ZstURI, ZstEntityFactory> m_entity_factories;
 
 	//Active local plug connections
 	std::vector<ZstCable*> m_local_cables;

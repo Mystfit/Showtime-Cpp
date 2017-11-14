@@ -224,6 +224,9 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
         //TODO:Create entity proxy on stage
         ZstEntityWire entity = ZstMessages::unpack_message_struct<ZstEntityWire>(msg);
         stage->create_entity_handler(entity, sender);
+    } else if(message_type == ZstMessages::Kind::STAGE_CREATE_ENTITY_TEMPLATE){
+        ZstEntityWire entity = ZstMessages::unpack_message_struct<ZstEntityWire>(msg);
+        stage->create_entity_template(entity, sender);
     }
 
 	zmsg_destroy(&msg);

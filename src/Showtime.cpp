@@ -155,14 +155,24 @@ int Showtime::destroy_cable(ZstURI a, ZstURI b)
 	return Showtime::endpoint().destroy_cable(a, b);
 }
 
-void Showtime::run_entity_template(const ZstURI & template_path)
+void Showtime::register_template(ZstEntityBase * entity_template)
 {
-    run_entity_template(template_path, false);
+    Showtime::endpoint().register_entity_type(entity_template);
 }
 
-void Showtime::run_entity_template(const ZstURI & template_path, bool wait)
+void Showtime::unregister_template(ZstEntityBase * entity_template)
 {
-    Showtime::endpoint().run_entity_template(template_path);
+    
+}
+
+void Showtime::run_entity_template(ZstEntityBase * entity)
+{
+    run_entity_template(entity, false);
+}
+
+void Showtime::run_entity_template(ZstEntityBase * entity, bool wait)
+{
+    Showtime::endpoint().run_entity_template(entity);
 }
 
 

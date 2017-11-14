@@ -13,13 +13,6 @@ ZstComponent::ZstComponent(const char * entity_type, const char * name)
 	init();
 }
 
-ZstComponent::ZstComponent(const char * entity_type, const char * name, ZstEntityBase * parent)
-    : ZstEntityBase(entity_type, name, parent), m_is_registered(false)
-
-{
-	init();
-}
-
 ZstComponent::~ZstComponent()
 {
 	for (auto plug : m_plugs) {

@@ -28,6 +28,7 @@ public:
 
 		//Entity registration
         STAGE_RUN_ENTITY_TEMPLATE,
+        STAGE_CREATE_ENTITY_TEMPLATE,
         STAGE_CREATE_ENTITY,
 		STAGE_DESTROY_ENTITY,
 		

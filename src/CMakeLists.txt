@@ -69,7 +69,6 @@ set(ZST_SOURCE
  "ZstValueWire.cpp"
  "ZstCallbackQueueInstantiations.cpp"
  "ZstEntityBase.cpp"
- "ZstEntityRef.cpp"
  "ZstFilter.cpp"
  "ZstComponent.cpp"
  "ZstProxy.cpp"

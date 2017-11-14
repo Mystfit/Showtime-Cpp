@@ -3,8 +3,8 @@
 
 using namespace std;
 
-AddFilter::AddFilter(ZstEntityBase * parent) :
-	ZstFilter(ADDITION_FILTER_TYPE, "add", parent)
+AddFilter::AddFilter(const char * name) :
+	ZstFilter(ADDITION_FILTER_TYPE, name)
 {
     activate();
     init();

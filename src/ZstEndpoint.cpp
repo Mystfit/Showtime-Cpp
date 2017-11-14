@@ -12,15 +12,16 @@
 #include "ZstPlugEvent.h"
 #include "ZstValueWire.h"
 #include "ZstEntityWire.h"
+#include "entities/ZstProxy.h"
 #include "entities/ZstEntityBase.h"
 #include "entities/ZstFilter.h"
 
 using namespace std;
 
-ZstEndpoint::ZstEndpoint() : 
+ZstEndpoint::ZstEndpoint() :
+    m_root_performer(NULL),
 	m_num_graph_recv_messages(0),
-    m_num_graph_send_messages(0),
-    m_root_performer(NULL)
+    m_num_graph_send_messages(0)
 {
 }
 
@@ -440,12 +441,12 @@ void ZstEndpoint::leave_stage()
 	}
 }
 
-int ZstEndpoint::register_entity_type(ZstEntityFactory factory_func, const ZstURI & blueprint_path)
+int ZstEndpoint::register_entity_type(ZstEntityBase * entity)
 {
-    cout << "ZST:Registering entity template " << blueprint_path.path() << endl;
+    cout << "ZST:Registering entity template " << entity->URI().path() << endl;
     int status = 0;
     
-    m_entity_factories[ZstURI(blueprint_path)] = factory_func;
+    m_template_entities[ZstURI(entity->URI())] = entity;
     
     if (m_connected_to_stage) {
         ZstMessages::EntityTemplate template_args = {m_assigned_uuid, ZstURIWire(blueprint_path)};
@@ -461,12 +462,12 @@ int ZstEndpoint::register_entity_type(ZstEntityFactory factory_func, const ZstUR
     return status;
 }
 
-int ZstEndpoint::unregister_entity_type(const ZstURI & blueprint_path)
+int ZstEndpoint::unregister_entity_type(ZstEntityBase * entity)
 {
     
 }
 
-int ZstEndpoint::run_entity_template(const ZstURI & blueprint_path)
+int ZstEndpoint::run_entity_template(ZstEntityBase * entity)
 {
     //Ask stage to execute entity template here
     cout << "ZST:Executing entity template " << blueprint_path.path() << endl;
@@ -499,7 +500,7 @@ int ZstEndpoint::register_entity(ZstEntityBase* entity)
 
 	int result = 0;
 	zmsg_t * entity_msg = ZstMessages::build_message<ZstEntityWire>(ZstMessages::Kind::STAGE_CREATE_ENTITY, ZstEntityWire(*entity));
-	Showtime::endpoint().send_to_stage(entity_msg);
+	Showtime::endpoint().send_through_stage(entity_msg);
 	
 	if (check_stage_response_ok()) {
 		m_entities[entity->URI()] = entity;
@@ -623,12 +624,11 @@ void ZstEndpoint::create_proxy_entity(const ZstURI & path, bool is_template){
         entity = get_entity_by_URI(proxy_path);
         
         if(!entity){
+            entity = new ZstProxy("PROXY", proxy_path.segment(i));
+
             if(parent){
-                entity = new ZstComponent("PROXY", proxy_path.segment(i), parent);
-            } else {
-                entity = new ZstComponent("PROXY", proxy_path.segment(i));
+                entity->parent(parent);
             }
-            entity->set_proxy();
             
             if(is_template){
                 m_template_proxies[entity->URI()] = entity;

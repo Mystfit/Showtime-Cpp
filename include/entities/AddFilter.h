@@ -7,7 +7,7 @@
 
 class AddFilter : public ZstFilter {
 public:
-	ZST_EXPORT AddFilter(ZstEntityBase * parent);
+	ZST_EXPORT AddFilter(const char * name);
 	virtual void init() override;
 	ZST_EXPORT void compute(ZstInputPlug * plug) override;
 	ZST_EXPORT ZstInputPlug* augend();

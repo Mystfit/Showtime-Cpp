@@ -23,17 +23,6 @@ ZstEntityBase::ZstEntityBase(const char * entity_type, const char * path) :
 	strncpy(m_entity_type, entity_type, entity_type_len);
 }
 
-ZstEntityBase::ZstEntityBase(const char * entity_type, const char * local_path, ZstEntityBase * parent) :
-    m_uri(parent->URI() + ZstURI(local_path)),
-    m_is_destroyed(false),
-	m_parent(parent)
-{
-	int entity_type_len = strlen(entity_type);
-	m_entity_type = (char*)calloc(entity_type_len + 1, sizeof(char));
-	strncpy(m_entity_type, entity_type, entity_type_len);
-	this->parent()->add_child(this);
-}
-
 ZstEntityBase::~ZstEntityBase()
 {
 	Showtime::endpoint().destroy_entity(this);
@@ -89,6 +78,16 @@ void ZstEntityBase::operator delete(void * p)
 ZstEntityBase * ZstEntityBase::parent() const
 {
 	return m_parent;
+}
+
+void ZstEntityBase::parent(ZstEntityBase * entity)
+{
+    //New URI should be a combination of the parent and the local path
+    m_uri = entity->URI() + m_uri;
+    m_parent = entity;
+    
+    //Notify parent that we've been added
+    this->parent()->add_child(this);
 }
 
 ZstEntityBase * ZstEntityBase::find_child_by_URI(const ZstURI & path) const

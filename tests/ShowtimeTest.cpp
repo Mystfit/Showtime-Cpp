@@ -389,15 +389,18 @@ void test_entity_templates(){
     Showtime::attach(entity_template_arriving, ZstCallbackAction::ARRIVING);
 
     //Register a simple composer to create add filters
-    AddComposer * add_composer = new AddComposer();
-    Showtime::register_composer(add_composer);
+    AddFilter * add_creatable = new AddFilter();
+    Showtime::register_template(add_creatable);
     
-    //Test that we recieved a new entity_template locally
+    //Test that we recieved a new entity_template locally`
     wait_for_callbacks(1);
     assert(entity_template_arriving->hits == 1);
     
     //Test entity composer
     Showtime::run_entity_template(add_composer->get_template());
+    
+    Showtime::unregister_template(add_creatable);
+    delete add_creatable;
 }
 
 void test_hierarchy() {

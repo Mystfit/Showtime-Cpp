@@ -65,12 +65,13 @@ private:
 	ZstMessages::Signal endpoint_heartbeat_handler(zmsg_t * msg);
 	ZstMessages::Signal register_entity_recipe_handler(ZstEntityWire & entity, ZstEndpointRef * endpoint);
 	ZstMessages::Signal create_plug_handler(zmsg_t * msg);
-	ZstMessages::Signal create_entity_handler(ZstEntityWire & entity, ZstEndpointRef * endpoint);
+    ZstMessages::Signal create_entity_template_handler(zmsg_t * msg);
+    ZstMessages::Signal create_entity_handler(ZstEntityWire & entity, ZstEndpointRef * endpoint);
     ZstMessages::Signal create_entity_from_template_handler(zmsg_t * msg);
 	ZstMessages::Signal destroy_plug_handler(zmsg_t * msg);
 	ZstMessages::Signal destroy_entity_handler(zmsg_t * msg);
-	ZstMessages::Signal destroy_cable_handler(zmsg_t * msg);
     ZstMessages::Signal create_cable_handler(zmsg_t * msg);
+    ZstMessages::Signal destroy_cable_handler(zmsg_t * msg);
 
     //Graph storage
 	ZstEndpointRef * create_endpoint(std::string starting_uuid, std::string endpoint);
