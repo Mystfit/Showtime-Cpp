@@ -157,7 +157,7 @@ public:
 	}
 
 	const ZstURI & output_URI() {
-		return m_output->get_URI();
+		return m_output->URI();
 	}
 };
 
@@ -190,7 +190,7 @@ public:
 	}
 
 	const ZstURI & input_URI() {
-		return m_input->get_URI();
+		return m_input->URI();
 	}
 
 	void reset() {
@@ -360,7 +360,7 @@ void test_create_entities(){
     assert(stage->get_plug_by_URI(test_output->output_URI()) != NULL);
 
 	//Check local client registered plugs correctly
-	ZstURI localPlug_uri = test_output->get_plug_by_URI(test_output->output_URI())->get_URI();
+	ZstURI localPlug_uri = test_output->get_plug_by_URI(test_output->output_URI())->URI();
 	ZstURI localPlug_uri_via_entity = test_output->output_URI();
 	assert(ZstURI::equal(localPlug_uri, localPlug_uri_via_entity));
 
@@ -528,9 +528,9 @@ void test_add_filter() {
 	test_input_sum->log = true;
 	AddFilter * add_filter = new AddFilter(root_entity);
 
-	Showtime::connect_cable(test_output_augend->output_URI(), add_filter->augend()->get_URI());
-	Showtime::connect_cable(test_output_addend->output_URI(), add_filter->addend()->get_URI());
-	Showtime::connect_cable(test_input_sum->input_URI(), add_filter->sum()->get_URI());
+	Showtime::connect_cable(test_output_augend->output_URI(), add_filter->augend()->URI());
+	Showtime::connect_cable(test_output_addend->output_URI(), add_filter->addend()->URI());
+	Showtime::connect_cable(test_input_sum->input_URI(), add_filter->sum()->URI());
 	wait_for_callbacks(expected_entities + expected_plugs + expected_cables);
 
 	//Send values

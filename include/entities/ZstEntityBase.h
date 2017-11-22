@@ -15,7 +15,8 @@ public:
     
     //Overridable init - must be called by overriden classes
 	ZST_EXPORT virtual void init() = 0;
-    
+    ZST_EXPORT virtual void destroy() = 0;
+
     //Entity type
 	ZST_EXPORT const char * entity_type() const;
     
@@ -25,13 +26,14 @@ public:
     //Entity flags
 	ZST_EXPORT bool is_destroyed();
     
+    ZST_EXPORT bool is_template();
+    
 	//Override allocators so entity is created on DLL heap (Windows only - probably not compatible with SWIG)
 	ZST_EXPORT void * operator new(size_t num_bytes);
 	ZST_EXPORT void operator delete(void * p);
     
     //The parent of this entity
 	ZST_EXPORT ZstEntityBase * parent() const;
-    ZST_EXPORT void parent(ZstEntityBase * entity);
     
     //Find a child in this entity by a URI
     ZST_EXPORT virtual ZstEntityBase * find_child_by_URI(const ZstURI & path) const;
@@ -43,6 +45,7 @@ public:
 	ZST_EXPORT virtual const size_t num_children() const;
     
 protected:
+    void set_parent(ZstEntityBase* entity);
     char * m_entity_type;
     ZstURI m_uri;
 
@@ -58,6 +61,7 @@ private:
     std::unordered_map<ZstURI, ZstEntityBase*> m_children;
 	
 	bool m_is_destroyed;
+    bool m_is_template;
 	ZstEntityBase * m_parent;
 };
 

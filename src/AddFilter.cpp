@@ -4,7 +4,7 @@
 using namespace std;
 
 AddFilter::AddFilter(const char * name) :
-	ZstFilter(ADDITION_FILTER_TYPE, name)
+	ZstComponent(ADDITION_FILTER_TYPE, name)
 {
     activate();
     init();

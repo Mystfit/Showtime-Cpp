@@ -14,7 +14,6 @@ class ZstOutputPlug;
 class ZstPerformer;
 class ZstURI;
 class ZstEndpoint;
-class ZstEvent;
 class ZstEntityEventCallback;
 class ZstPlugEventCallback;
 class ZstCableEventCallback;
@@ -59,9 +58,6 @@ public:
 
     //Stage methods
     ZST_EXPORT static int ping_stage();
-
-    //Event queue management
-	ZST_EXPORT static size_t event_queue_size();
 
     //Cable management
 	ZST_EXPORT static int connect_cable(ZstURI a, ZstURI b);

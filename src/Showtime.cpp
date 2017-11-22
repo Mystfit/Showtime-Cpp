@@ -4,8 +4,6 @@
 #include "ZstMessages.h"
 #include "ZstPerformer.h"
 #include "ZstPlug.h"
-#include "ZstEvent.h"
-#include "entities/ZstFilter.h"
 
 using namespace std;
 
@@ -138,11 +136,6 @@ ZstEntityBase * Showtime::get_entity_by_URI(const ZstURI & path)
 
 int Showtime::ping_stage(){
 	return Showtime::endpoint().ping_stage();
-}
-
-size_t Showtime::event_queue_size()
-{
-	return Showtime::endpoint().event_queue_size();
 }
 
 int Showtime::connect_cable(ZstURI a, ZstURI b)

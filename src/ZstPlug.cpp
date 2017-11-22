@@ -1,38 +1,22 @@
 #include "ZstPlug.h"
 #include "Showtime.h"
 #include "ZstEndpoint.h"
-#include "ZstEvent.h"
 #include "ZstValue.h"
 #include "ZstValueWire.h"
+#include "entities/ZstEntityBase.h"
 #include "entities/ZstComponent.h"
 
 using namespace std;
 
-ZstPlug::ZstPlug(ZstComponent * entity, const char * name, ZstValueType t) :
-    m_owner(entity),
-	m_uri((entity->URI() + ZstURI(name))),
-    m_is_destroyed(false)
+ZstPlug::ZstPlug(ZstComponent * owner, const char * name, ZstValueType t) : ZstEntityBase()
 {
-	m_value = new ZstValue(t);
+    m_value = new ZstValue(t);
+    m_uri = ZstURI(name);
+    set_parent(owner);
 }
 
 ZstPlug::~ZstPlug() {
 	delete m_value;
-}
-
-const ZstURI & ZstPlug::get_URI() const
-{
-	return m_uri;
-}
-
-const ZstEntityBase * ZstPlug::owner() const
-{
-	return m_owner;
-}
-
-bool ZstPlug::is_destroyed()
-{
-	return m_is_destroyed;
 }
 
 void ZstPlug::clear()
@@ -80,8 +64,9 @@ const size_t ZstPlug::size_at(const size_t position) const
 	return m_value->size_at(position);
 }
 
-ZstInputPlug::ZstInputPlug(ZstComponent * entity, const char * name, ZstValueType t) : ZstPlug(entity, name, t)
+ZstInputPlug::ZstInputPlug(ZstComponent * owner, const char * name, ZstValueType t) : ZstPlug(owner, name, t)
 {
+    m_direction = PlugDirection::IN_JACK;
 }
 
 //ZstInputPlug
@@ -90,15 +75,21 @@ ZstInputPlug::~ZstInputPlug()
 {
 }
 
-void ZstInputPlug::recv(ZstValue * val) {
+void ZstInputPlug::recv(const ZstValue & val) {
+    //TODO:Lock plug value when copying
     m_value->clear();
-	m_value->copy(*val);
+	m_value->copy(val);
+}
+
+ZstOutputPlug::ZstOutputPlug(ZstComponent * owner, const char * name, ZstValueType t) : ZstPlug(owner, name, t)
+{
+    m_direction = PlugDirection::OUT_JACK;
 }
 
 //ZstOutputPlug
 //-------------
 void ZstOutputPlug::fire()
 {
-	Showtime::endpoint().send_to_graph(ZstMessages::build_graph_message(this->get_URI(), ZstValueWire(*m_value)));
+	Showtime::endpoint().send_to_graph(ZstMessages::build_graph_message(this->URI(), ZstValueWire(*m_value)));
 	m_value->clear();
 }

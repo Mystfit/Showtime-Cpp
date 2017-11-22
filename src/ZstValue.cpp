@@ -33,7 +33,7 @@ ZstValueType ZstValue::get_default_type()
 	return m_default_type;
 }
 
-void ZstValue::copy(ZstValue & other)
+void ZstValue::copy(const ZstValue & other)
 {
 	for (auto v : other.m_values) {
 		m_values.push_back(v);

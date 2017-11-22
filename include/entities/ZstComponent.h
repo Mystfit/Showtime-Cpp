@@ -10,12 +10,13 @@
 
 class ZstComponent : public ZstEntityBase {
 public:
-	ZST_EXPORT ZstComponent(const char * entity_type, const char * name);
-	ZST_EXPORT ZstComponent(const char * entity_type, const char * name, ZstEntityBase * parent);
+	ZST_EXPORT ZstComponent(const char * entity_type, const char * path);
 	ZST_EXPORT ~ZstComponent();
     
     //Initializer for this component
 	ZST_EXPORT virtual void init() override;
+    
+    ZST_EXPORT virtual void destroy() override;
     
     //External factory function
     ZST_EXPORT virtual void create(const char * name, ZstEntityBase* parent) = 0;

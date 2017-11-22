@@ -22,7 +22,7 @@ public:
 
 	ZstValueType get_default_type();
 	
-	void copy(ZstValue & other);
+	void copy(const ZstValue & other);
 	
 	void clear();
 	void append_int(int value);

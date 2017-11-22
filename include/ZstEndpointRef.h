@@ -3,7 +3,7 @@
 #include <vector>
 #include <iostream>
 #include <map>
-#include "entities/ZstProxy.h"
+#include "entities/ZstComponentProxy.h"
 #include "ZstEntityWire.h"
 #include "ZstPlugRef.h"
 
@@ -20,10 +20,10 @@ public:
 	std::string endpoint_address;
 
     //Entities
-	ZstProxy* register_entity(ZstEntityWire & entity);
-	std::vector<ZstProxy*> get_entity_proxies();
-	ZstProxy* get_entity_proxy_by_URI(const ZstURI & uri);
-	void destroy_entity(ZstProxy* entity);
+	ZstComponentProxy * register_entity(ZstEntityWire & entity);
+	std::vector<ZstComponentProxy*> get_entity_proxies();
+	ZstComponentProxy * get_entity_proxy_by_URI(const ZstURI & uri);
+	void destroy_entity(ZstComponentProxy * entity);
 	
     //Heartbeat
 	void set_heartbeat_active();
@@ -39,7 +39,7 @@ public:
 	void destroy_plug(const ZstURI & plug);
 
 private:
-	std::unordered_map<ZstURI, ZstProxy*> m_entities;
+	std::unordered_map<ZstURI, ZstComponentProxy*> m_entities;
 	std::unordered_map<ZstURI, ZstPlugRef*> m_plugs;
 	bool m_heartbeat_active;
 	int m_missed_heartbeats = 0;

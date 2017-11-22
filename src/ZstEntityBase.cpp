@@ -9,6 +9,7 @@ ZstEntityBase::ZstEntityBase() :
     m_entity_type(NULL),
     m_uri(),
     m_is_destroyed(false),
+    m_is_template(false),
     m_parent(NULL)
 {
 }
@@ -16,6 +17,7 @@ ZstEntityBase::ZstEntityBase() :
 ZstEntityBase::ZstEntityBase(const char * entity_type, const char * path) :
     m_uri(path),
 	m_is_destroyed(false),
+    m_is_template(false),
     m_parent(NULL)
 {
 	int entity_type_len = strlen(entity_type);
@@ -25,7 +27,7 @@ ZstEntityBase::ZstEntityBase(const char * entity_type, const char * path) :
 
 ZstEntityBase::~ZstEntityBase()
 {
-	Showtime::endpoint().destroy_entity(this);
+    destroy();
 	set_destroyed();
 
 	//Make a copy of the children list so we can remove whilst iterating
@@ -55,6 +57,10 @@ const ZstURI & ZstEntityBase::URI()
 	return m_uri;
 }
 
+bool ZstEntityBase::is_template(){
+    return m_is_template;
+}
+
 bool ZstEntityBase::is_destroyed()
 {
 	return m_is_destroyed;
@@ -78,16 +84,6 @@ void ZstEntityBase::operator delete(void * p)
 ZstEntityBase * ZstEntityBase::parent() const
 {
 	return m_parent;
-}
-
-void ZstEntityBase::parent(ZstEntityBase * entity)
-{
-    //New URI should be a combination of the parent and the local path
-    m_uri = entity->URI() + m_uri;
-    m_parent = entity;
-    
-    //Notify parent that we've been added
-    this->parent()->add_child(this);
 }
 
 ZstEntityBase * ZstEntityBase::find_child_by_URI(const ZstURI & path) const
@@ -121,10 +117,19 @@ const size_t ZstEntityBase::num_children() const
 	return m_children.size();
 }
 
+void ZstEntityBase::set_parent(ZstEntityBase *entity){
+    m_parent = entity;
+    m_uri = m_parent->URI() + m_uri;
+}
+
 void ZstEntityBase::add_child(ZstEntityBase * child){
 	ZstEntityBase * c = find_child_by_URI(child->URI());
 	if (!c) {
 		m_children[child->URI()] = child;
+        
+        //New URI should be a combination of the parent and the local path
+        child->m_uri = URI() + child->m_uri;
+        child->m_parent = this;
 	}
 }
 
@@ -134,3 +139,4 @@ void ZstEntityBase::remove_child(ZstEntityBase * child){
 		m_children.erase(c);
 	}
 }
+

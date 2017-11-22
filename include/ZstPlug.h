@@ -6,29 +6,36 @@
 #include <msgpack.hpp>
 #include "ZstExports.h"
 #include "ZstURI.h"
-#include "ZstEvent.h"
 #include "ZstCallbackQueue.h"
 #include "ZstCallbacks.h"
 #include "ZstConstants.h"
+#include "entities/ZstEntityBase.h"
 
 //Forward declarations
 class ZstURI;
-class PlugCallback;
 class Showtime;
-class ZstComponent;
 class ZstValue;
+class ZstComponent;
 
-class ZstPlug {
+
+enum PlugDirection {
+    NONE = 0,
+    IN_JACK,
+    OUT_JACK
+};
+
+
+class ZstPlug : public ZstEntityBase {
 public:
 	friend class Showtime;
 	friend class ZstEndpoint;
+    friend class ZstComponent;
+    
 	//Constructor
 	ZST_EXPORT ZstPlug(ZstComponent * owner, const char * name, ZstValueType t);
 	ZST_EXPORT virtual ~ZstPlug();
-
-	ZST_EXPORT const ZstURI & get_URI() const;
-	ZST_EXPORT const ZstEntityBase* owner() const;
-	ZST_EXPORT bool is_destroyed();
+    
+    virtual void init() override {};
 
 	//Value interface
 	ZST_EXPORT void clear();
@@ -44,18 +51,7 @@ public:
 
 protected:
 	ZstValue * m_value;
-
-private:
-	ZstComponent * m_owner;
-	ZstURI m_uri;
-	bool m_is_destroyed;
-};
-
-
-enum PlugDirection {
-    NONE = 0,
-    IN_JACK,
-    OUT_JACK
+    PlugDirection m_direction;
 };
 
 
@@ -73,12 +69,12 @@ protected:
 
 private:
 	//Receive a msgpacked value through this plug
-	ZST_EXPORT void recv(ZstValue * val);
+	ZST_EXPORT void recv(const ZstValue & val);
 };
 
 
 class ZstOutputPlug : public ZstPlug {
 public:
-	ZstOutputPlug(ZstComponent * owner, const char * name, ZstValueType t) : ZstPlug(owner, name, t) {};
+	ZstOutputPlug(ZstComponent * owner, const char * name, ZstValueType t);
 	ZST_EXPORT void fire();
 };

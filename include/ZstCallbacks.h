@@ -4,7 +4,6 @@
 #include "ZstExports.h"
 #include "ZstURI.h"
 #include "ZstCable.h"
-#include "ZstEvent.h"
 
 //Callback for incoming plug data events
 class ZstInputPlug;

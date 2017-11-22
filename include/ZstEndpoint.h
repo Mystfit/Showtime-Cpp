@@ -9,7 +9,6 @@
 #include "ZstExports.h"
 #include "Queue.h"
 #include "ZstPlug.h"
-#include "ZstEvent.h"
 #include "ZstMessages.h"
 #include "ZstCable.h"
 #include "ZstCallbackQueue.h"
@@ -57,15 +56,16 @@ public:
     //Entities
 	int register_entity(ZstEntityBase * entity);
 	int destroy_entity(ZstEntityBase * entity);
+    void create_proxy_entity(const ZstURI & path, bool is_template);
 	ZstEntityBase * get_entity_by_URI(const ZstURI & uri) const;
 	ZstPlug * get_plug_by_URI(const ZstURI & uri) const;
     ZstEntityBase * get_root() const;
 
 	//Plugs
 	template<typename T>
-	ZST_EXPORT static T* create_plug(ZstComponent * owner, const char * name, ZstValueType val_type, PlugDirection direction);
+	ZST_EXPORT T* create_plug(ZstComponent * owner, const char * name, ZstValueType val_type);
 	ZST_EXPORT int destroy_plug(ZstPlug * plug);
-    void create_proxy_entity(const ZstURI & path, bool is_template);
+    void enqueue_compute(ZstInputPlug * plug);
 
 	//Cables
 	int connect_cable(const ZstURI & a, const ZstURI & b);
@@ -76,11 +76,6 @@ public:
 	
     //Utility
 	ZST_EXPORT int ping_stage();
-    
-    //Events
-	void enqueue_event(ZstEvent * event);
-	ZST_EXPORT ZstEvent * pop_event();
-	ZST_EXPORT size_t event_queue_size();
 
 	//Plug callbacks
 	ZstCallbackQueue<ZstEntityEventCallback, ZstEntityBase*> * entity_arriving_events();
@@ -149,13 +144,13 @@ private:
 	std::unordered_map<ZstURI, ZstEntityBase* > m_entities;
     std::unordered_map<ZstURI, ZstEntityBase*> m_template_entities;
 	std::unordered_map<ZstURI, ZstEntityBase*> & entities();
+    Queue<ZstInputPlug*> m_compute_queue;
 
 	//Active local plug connections
 	std::vector<ZstCable*> m_local_cables;
 	std::vector<ZstCable*> & cables();
 	
 	//Events and callbacks
-	Queue<ZstEvent*> m_events;
 	ZstCallbackQueue<ZstEntityEventCallback, ZstEntityBase*> * m_entity_arriving_event_manager;
 	ZstCallbackQueue<ZstEntityEventCallback, ZstEntityBase*> * m_entity_leaving_event_manager;
     ZstCallbackQueue<ZstEntityTemplateEventCallback, ZstEntityBase*> * m_entity_template_arriving_event_manager;

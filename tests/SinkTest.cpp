@@ -25,7 +25,7 @@ public:
 	}
 
 	const ZstURI & input_URI() {
-		return m_input->get_URI();
+		return m_input->URI();
 	}
 };
 

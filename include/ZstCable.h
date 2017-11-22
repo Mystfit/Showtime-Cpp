@@ -1,7 +1,6 @@
 #pragma once
 #include "ZstExports.h"
 #include "ZstURI.h"
-#include "ZstEvent.h"
 
 class ZstCable {
 public:

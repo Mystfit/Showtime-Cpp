@@ -1,5 +1,4 @@
 #include "ZstCallbackQueue.h"
-#include "ZstEvent.h"
 #include "ZstPerformer.h"
 #include "ZstCable.h"
 #include "ZstPlug.h"

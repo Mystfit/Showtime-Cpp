@@ -20,7 +20,7 @@ ZstEndpointRef::~ZstEndpointRef()
 
 	unordered_map<ZstURI, ZstPlugRef*> plugs = m_plugs;
 	for (auto plug : plugs) {
-		destroy_plug(plug.second->get_URI());
+		destroy_plug(plug.second->URI());
 	}
 	m_plugs.clear();
 }
@@ -51,30 +51,30 @@ int ZstEndpointRef::get_missed_heartbeats()
 }
 
 
-ZstProxy * ZstEndpointRef::register_entity(ZstEntityWire & entity)
+ZstComponentProxy * ZstEndpointRef::register_entity(ZstEntityWire & entity)
 {
 	//Check for existing performers with this name
 	if (m_entities.find(entity.URI()) != m_entities.end()) {
 		return NULL;
 	}
     
-    ZstProxy * proxy = new ZstProxy(entity.entity_type(), entity.URI().path());
+    ZstComponentProxy * proxy = new ZstComponentProxy(entity.entity_type(), entity.URI().path());
 	m_entities[ZstURI(entity.URI())] = proxy;
 	return proxy;
 }
 
-std::vector<ZstProxy*> ZstEndpointRef::get_entity_proxies()
+std::vector<ZstComponentProxy*> ZstEndpointRef::get_entity_proxies()
 {
-	vector<ZstProxy*> entities;
+	vector<ZstComponentProxy*> entities;
 	for (auto entity : m_entities) {
 		entities.push_back(entity.second);
 	}
 	return entities;
 }
 
-ZstProxy * ZstEndpointRef::get_entity_proxy_by_URI(const ZstURI & uri)
+ZstComponentProxy * ZstEndpointRef::get_entity_proxy_by_URI(const ZstURI & uri)
 {
-	ZstProxy * result = NULL;
+	ZstComponentProxy * result = NULL;
 	auto it = m_entities.find(uri);
 	if (it != m_entities.end()) {
 		result = m_entities[uri];
@@ -82,9 +82,9 @@ ZstProxy * ZstEndpointRef::get_entity_proxy_by_URI(const ZstURI & uri)
 	return result;
 }
 
-void ZstEndpointRef::destroy_entity(ZstProxy* entity)
+void ZstEndpointRef::destroy_entity(ZstComponentProxy* entity)
 {
-	for (unordered_map<ZstURI, ZstProxy*>::iterator entity_iter = m_entities.begin(); entity_iter != m_entities.end(); ++entity_iter)
+	for (unordered_map<ZstURI, ZstComponentProxy*>::iterator entity_iter = m_entities.begin(); entity_iter != m_entities.end(); ++entity_iter)
 	{
 		if ((entity_iter)->second == entity)
 		{
@@ -92,6 +92,7 @@ void ZstEndpointRef::destroy_entity(ZstProxy* entity)
 			break;
 		}
 	}
+
 	delete entity;
 }
 
@@ -141,7 +142,7 @@ void ZstEndpointRef::destroy_plug(const ZstURI & plug)
 	ZstPlugRef * plug_to_delete = NULL;
 	for (unordered_map<ZstURI, ZstPlugRef*>::iterator plug_iter = m_plugs.begin(); plug_iter != m_plugs.end(); ++plug_iter)
 	{
-		if (ZstURI::equal(plug_iter->second->get_URI(), plug))
+		if (ZstURI::equal(plug_iter->second->URI(), plug))
 		{
 			plug_to_delete = plug_iter->second;
 			m_plugs.erase(plug_iter);

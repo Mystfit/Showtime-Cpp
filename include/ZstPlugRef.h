@@ -8,7 +8,7 @@ class ZstPlugRef {
 public:
 	ZstPlugRef(ZstURI uri, PlugDirection dir);
 	~ZstPlugRef();
-	ZST_EXPORT ZstURI get_URI();
+	ZST_EXPORT ZstURI URI();
     ZST_EXPORT PlugDirection get_direction();
 private:
 	ZstURI m_URI;

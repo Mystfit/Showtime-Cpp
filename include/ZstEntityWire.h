@@ -17,7 +17,8 @@ public:
     ZstEntityWire(const ZstEntityBase & entity);
     ~ZstEntityWire();
     
-    void init() override;
+    void init() override {};
+    void destroy() override {};
     
     template <typename Packer>
     void msgpack_pack(Packer& pk) const {
@@ -37,6 +38,6 @@ public:
         
         size_t size = o.via.array.ptr[1].via.str.size;
         m_entity_type = (char*)malloc(size+1);
-        strncpy(m_entity_type, o.via.array.ptr[1].via.str.ptr, size);
+        strncpy(m_entity_type, o.via.array.ptr[1].via.str.ptr, size);        
     }
 };

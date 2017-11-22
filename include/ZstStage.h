@@ -11,7 +11,6 @@
 #include "ZstMessages.h"
 #include "ZstURI.h"
 #include "ZstCable.h"
-#include "ZstEventWire.h"
 #include "ZstPlugRef.h"
 #include "ZstEndpointRef.h"
 #include "ZstEntityWire.h"
@@ -33,11 +32,11 @@ public:
 	ZST_EXPORT ZstEndpointRef * get_plug_endpoint(ZstPlugRef * plug);
 	ZST_EXPORT ZstPlugRef* get_plug_by_URI(ZstURI uri);
 
-	ZST_EXPORT std::vector<ZstProxy*> get_all_entity_proxies();
-	ZST_EXPORT std::vector<ZstProxy*> get_all_entity_proxies(ZstEndpointRef* endpoint);
+	ZST_EXPORT std::vector<ZstComponentProxy*> get_all_entity_proxies();
+	ZST_EXPORT std::vector<ZstComponentProxy*> get_all_entity_proxies(ZstEndpointRef* endpoint);
     
     ZST_EXPORT ZstEndpointRef * get_entity_endpoint(ZstEntityBase * entity);
-    ZST_EXPORT ZstProxy* get_entity_proxy_by_URI(const ZstURI & uri);
+    ZST_EXPORT ZstComponentProxy* get_entity_proxy_by_URI(const ZstURI & uri);
 	
 	ZST_EXPORT ZstCable * get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB);
 	ZST_EXPORT std::vector<ZstCable*> get_cables_by_URI(const ZstURI & uri);
@@ -65,8 +64,8 @@ private:
 	ZstMessages::Signal endpoint_heartbeat_handler(zmsg_t * msg);
 	ZstMessages::Signal register_entity_recipe_handler(ZstEntityWire & entity, ZstEndpointRef * endpoint);
 	ZstMessages::Signal create_plug_handler(zmsg_t * msg);
-    ZstMessages::Signal create_entity_template_handler(zmsg_t * msg);
     ZstMessages::Signal create_entity_handler(ZstEntityWire & entity, ZstEndpointRef * endpoint);
+    ZstMessages::Signal create_entity_template_handler(ZstEntityWire & entity, ZstEndpointRef * endpoint);
     ZstMessages::Signal create_entity_from_template_handler(zmsg_t * msg);
 	ZstMessages::Signal destroy_plug_handler(zmsg_t * msg);
 	ZstMessages::Signal destroy_entity_handler(zmsg_t * msg);
@@ -86,9 +85,9 @@ private:
 	std::vector<ZstCable*> m_cables;
 
 	//Queued stage events
-	std::vector<ZstEventWire> create_snapshot();
-	void enqueue_stage_update(ZstEvent e);
-	Queue<ZstEvent> m_stage_updates;
+	zmsg_t * create_snapshot();
+    void enqueue_stage_update(ZstMessages::Kind k, std::string packed);
+    Queue<ZstMessages::MessagePair> m_stage_updates;
 	
 	int m_update_timer_id;
 	static int stage_update_timer_func(zloop_t * loop, int timer_id, void * arg);

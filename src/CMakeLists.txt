@@ -13,7 +13,6 @@ set(ZST_PUBLIC_HEADERS
  ${Showtime_INCLUDE_DIRS}/ZstPerformer.h
  ${Showtime_INCLUDE_DIRS}/ZstStage.h
  ${Showtime_INCLUDE_DIRS}/ZstMessages.h
- ${Showtime_INCLUDE_DIRS}/ZstEvent.h
  ${Showtime_INCLUDE_DIRS}/ZstCable.h
  ${Showtime_INCLUDE_DIRS}/ZstValue.h
  ${Showtime_INCLUDE_DIRS}/ZstCallbacks.h
@@ -22,9 +21,8 @@ set(ZST_PUBLIC_HEADERS
 
 set(ZST_ENTITIES
  ${Showtime_INCLUDE_DIRS}/entities/ZstEntityBase.h
- ${Showtime_INCLUDE_DIRS}/entities/ZstProxy.h
- ${Showtime_INCLUDE_DIRS}/entities/ZstFilter.h
  ${Showtime_INCLUDE_DIRS}/entities/ZstComponent.h
+ ${Showtime_INCLUDE_DIRS}/entities/ZstComponentProxy.h
  ${Showtime_INCLUDE_DIRS}/entities/AddFilter.h
 )
 
@@ -36,7 +34,6 @@ set(ZST_PRIVATE_HEADERS
  ${Showtime_INCLUDE_DIRS}/ZstPlugRef.h
  ${Showtime_INCLUDE_DIRS}/ZstURIWire.h
  ${Showtime_INCLUDE_DIRS}/ZstValueWire.h
- ${Showtime_INCLUDE_DIRS}/ZstEventWire.h
  ${Showtime_INCLUDE_DIRS}/ZstPlugEvent.h
  ${Showtime_INCLUDE_DIRS}/ZstEndpointRef.h
  ${Showtime_INCLUDE_DIRS}/ZstExports.h
@@ -58,9 +55,7 @@ set(ZST_SOURCE
  "ZstUtils.cpp"
  "ZstActor.cpp"
  "ZstMessages.cpp"
- "ZstEvent.cpp"
  "ZstPlugEvent.cpp"
- "ZstEventWire.cpp"
  "ZstPlug.cpp"
  "ZstPlugRef.cpp"
  "ZstStage.cpp"
@@ -69,9 +64,8 @@ set(ZST_SOURCE
  "ZstValueWire.cpp"
  "ZstCallbackQueueInstantiations.cpp"
  "ZstEntityBase.cpp"
- "ZstFilter.cpp"
  "ZstComponent.cpp"
- "ZstProxy.cpp"
+ "ZstComponentProxy.cpp"
  "ZstEntityWire.cpp"
  "AddFilter.cpp"
 )

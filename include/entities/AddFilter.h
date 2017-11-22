@@ -1,11 +1,11 @@
 #pragma once
 
-#include "entities/ZstFilter.h"
+#include "entities/ZstComponent.h"
 #include "ZstCallbacks.h"
 
 #define ADDITION_FILTER_TYPE "addition"
 
-class AddFilter : public ZstFilter {
+class AddFilter : public ZstComponent {
 public:
 	ZST_EXPORT AddFilter(const char * name);
 	virtual void init() override;

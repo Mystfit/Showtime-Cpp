@@ -2,7 +2,6 @@
 #include "ZstStage.h"
 #include "ZstURI.h"
 #include "ZstUtils.hpp"
-#include "ZstEventWire.h"
 #include "ZstEntityWire.h"
 
 using namespace std;
@@ -84,7 +83,7 @@ ZstEndpointRef * ZstStage::get_plug_endpoint(ZstPlugRef * plug)
 {
 	ZstEndpointRef * result = NULL;
 	for (auto endpoint : m_endpoint_refs) {
-		if (endpoint.second->get_plug_by_URI(plug->get_URI()) != NULL) {
+		if (endpoint.second->get_plug_by_URI(plug->URI()) != NULL) {
 			result = endpoint.second;
 			break;
 		}
@@ -92,21 +91,21 @@ ZstEndpointRef * ZstStage::get_plug_endpoint(ZstPlugRef * plug)
 	return result;
 }
 
-std::vector<ZstProxy*> ZstStage::get_all_entity_proxies()
+std::vector<ZstComponentProxy*> ZstStage::get_all_entity_proxies()
 {
 	return get_all_entity_proxies(NULL);
 }
 
-std::vector<ZstProxy*> ZstStage::get_all_entity_proxies(ZstEndpointRef * endpoint)
+std::vector<ZstComponentProxy*> ZstStage::get_all_entity_proxies(ZstEndpointRef * endpoint)
 {
-	vector<ZstProxy*> all_entities;
+	vector<ZstComponentProxy*> all_entities;
 
 	if (endpoint) {
 		all_entities = endpoint->get_entity_proxies();
 	}
 	else {
 		for (auto endpnt_iter : m_endpoint_refs) {
-			vector<ZstProxy*> endpoint_performers = endpnt_iter.second->get_entity_proxies();
+			vector<ZstComponentProxy*> endpoint_performers = endpnt_iter.second->get_entity_proxies();
 			all_entities.insert(all_entities.end(), endpoint_performers.begin(), endpoint_performers.end());
 		}
 	}
@@ -154,7 +153,7 @@ void ZstStage::destroy_endpoint(ZstEndpointRef * endpoint)
     
     for (auto plug : plugs) {
         if(plug != NULL){
-            destroy_cable(plug->get_URI());
+            destroy_cable(plug->URI());
         }
     }
     
@@ -209,10 +208,8 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 
 		if (s == ZstMessages::Signal::SYNC) {
 			//Endpoint is requesting to catch up with the graph. Send a full snapshot
-			ZstMessages::StageUpdates su;
-			su.updates = stage->create_snapshot();
-			zmsg_t *updatemsg = ZstMessages::build_message<ZstMessages::StageUpdates>(ZstMessages::Kind::STAGE_UPDATE, su);
-			stage->send_to_endpoint(updatemsg, sender);
+			zmsg_t * su = stage->create_snapshot();
+			stage->send_to_endpoint(su, sender);
 		}
 		else if (s == ZstMessages::Signal::LEAVING) {
 			stage->destroy_endpoint(sender);
@@ -220,13 +217,12 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 		else if (s == ZstMessages::Signal::HEARTBEAT) {
 			sender->set_heartbeat_active();
 		}
-    } else if(message_type == ZstMessages::Kind::STAGE_CREATE_ENTITY) {
-        //TODO:Create entity proxy on stage
+    } else if(message_type == ZstMessages::Kind::CREATE_ENTITY) {
         ZstEntityWire entity = ZstMessages::unpack_message_struct<ZstEntityWire>(msg);
         stage->create_entity_handler(entity, sender);
-    } else if(message_type == ZstMessages::Kind::STAGE_CREATE_ENTITY_TEMPLATE){
+    } else if(message_type == ZstMessages::Kind::REGISTER_ENTITY_TEMPLATE){
         ZstEntityWire entity = ZstMessages::unpack_message_struct<ZstEntityWire>(msg);
-        stage->create_entity_template(entity, sender);
+        stage->create_entity_template_handler(entity, sender);
     }
 
 	zmsg_destroy(&msg);
@@ -248,33 +244,33 @@ int ZstStage::s_handle_performer_requests(zloop_t * loop, zsock_t * socket, void
     bool send_reply = true;
 
 	switch (message_type) {
-	case ZstMessages::Kind::STAGE_CREATE_ENDPOINT:
+	case ZstMessages::Kind::ENDPOINT_JOIN:
         result = stage->create_endpoint_handler(socket, msg);
         send_reply = false;
 		break;
-	case ZstMessages::Kind::STAGE_CREATE_PLUG:
+	case ZstMessages::Kind::CREATE_PLUG:
         result = stage->create_plug_handler(msg);
 		break;
-	case ZstMessages::Kind::STAGE_DESTROY_PLUG:
+	case ZstMessages::Kind::DESTROY_PLUG:
 		result = stage->destroy_plug_handler(msg);
 		break;
-	case ZstMessages::Kind::STAGE_CREATE_CABLE:
+	case ZstMessages::Kind::CREATE_CABLE:
 		result =stage->create_cable_handler(msg);
 		break;
-	case ZstMessages::Kind::STAGE_DESTROY_CABLE:
+	case ZstMessages::Kind::DESTROY_CABLE:
 		result = stage->destroy_cable_handler(msg);
 		break;
-	case ZstMessages::Kind::STAGE_DESTROY_ENTITY:
+	case ZstMessages::Kind::DESTROY_ENTITY:
 		result = stage->destroy_entity_handler(msg);
 		break;
-    case ZstMessages::Kind::STAGE_RUN_ENTITY_TEMPLATE:
+    case ZstMessages::Kind::CREATE_ENTITY_FROM_TEMPLATE:
         result = stage->create_entity_from_template_handler(msg);
         break;
 	case ZstMessages::Kind::ENDPOINT_HEARTBEAT:
 		result = stage->endpoint_heartbeat_handler(msg);
 		break;
 	default:
-		cout << "ZST_STAGE: Didn't understand received message type of " << message_type << endl;
+		cout << "ZST_STAGE: Didn't understand received message type of " << (char)message_type << endl;
             result = ZstMessages::Signal::ERR_STAGE_MSG_TYPE_UNKNOWN;
 		break;
 	}
@@ -334,10 +330,11 @@ ZstMessages::Signal ZstStage::create_endpoint_handler(zsock_t * socket, zmsg_t *
 
 	ZstMessages::CreateEndpointAck ack_params;
 	ack_params.assigned_uuid = endpointRef->client_assigned_uuid;
-
-	zmsg_t *ackmsg = ZstMessages::build_message<ZstMessages::CreateEndpointAck>(ZstMessages::Kind::STAGE_CREATE_ENDPOINT_ACK, ack_params);
-	zmsg_send(&ackmsg, socket);
     
+    ZstMessages::MessagePair msg_p = ZstMessages::pack_message<ZstMessages::CreateEndpointAck>(ZstMessages::Kind::ENDPOINT_JOIN_ACK, ack_params);
+    zmsg_t * ack_msg = ZstMessages::build_message(msg_p);
+    zmsg_send(&ack_msg, socket);
+
     return ZstMessages::Signal::OK;
 }
 
@@ -352,7 +349,7 @@ ZstMessages::Signal ZstStage::create_plug_handler(zmsg_t *msg) {
 
 	int end_index = static_cast<int>(plug_args.address.size()) - 2;
     ZstURI entity_URI = plug_args.address.range(0, end_index);
-	ZstProxy* entity = get_entity_proxy_by_URI(entity_URI);
+	ZstComponentProxy* entity = get_entity_proxy_by_URI(entity_URI);
 
 	if (entity == NULL) {
         cout << "ZST_STAGE: Couldn't register plug. No entity registered to stage with name " << entity_URI.path() << endl;
@@ -369,9 +366,8 @@ ZstMessages::Signal ZstStage::create_plug_handler(zmsg_t *msg) {
 		return ZstMessages::Signal::ERR_STAGE_PLUG_ALREADY_EXISTS;
 	}
     
-    ZstEvent e = ZstEvent(ZstEvent::EventType::PLUG_CREATED);
-    e.add_parameter(plug->get_URI().path());
-	enqueue_stage_update(e);
+    //TODO: Pack plug into buffer
+	enqueue_stage_update(ZstMessages::Kind::CREATE_PLUG, plug->URI().path());
     
     return ZstMessages::Signal::OK;
 }
@@ -388,14 +384,14 @@ ZstMessages::Signal ZstStage::create_entity_handler(ZstEntityWire & entity, ZstE
 
 		int end_index = static_cast<int>(entity.URI().size()) - 2;
 		ZstURI parent_uri = entity.URI().range(0, end_index);
-		ZstProxy* entity_parent = get_entity_proxy_by_URI(parent_uri);
+		ZstComponentProxy* entity_parent = get_entity_proxy_by_URI(parent_uri);
 		if (entity_parent == NULL) {
 			cout << "ZST_STAGE: Could not register entity " << entity.URI().path() << ", parent not found" << endl;
 			return ZstMessages::Signal::ERR_STAGE_ENTITY_NOT_FOUND;
 		}
 	}
 
-	ZstProxy * entity_proxy = endpoint->register_entity(entity);
+	ZstComponentProxy * entity_proxy = endpoint->register_entity(entity);
 	if (entity_proxy == NULL) {
 		cout << "ZST_STAGE: Could not register entity " << entity.URI().path() << ", it already exists" << endl;
 		return ZstMessages::Signal::ERR_STAGE_ENTITY_ALREADY_EXISTS;
@@ -408,12 +404,21 @@ ZstMessages::Signal ZstStage::create_entity_handler(ZstEntityWire & entity, ZstE
     return ZstMessages::Signal::OK;
 }
 
+ZstMessages::Signal ZstStage::create_entity_template_handler(ZstEntityWire & entity, ZstEndpointRef * endpoint)
+{
+    //TODO:Implement entity template handler on stage
+    return ZstMessages::Signal::ERR_STAGE_ENTITY_NOT_FOUND;
+}
+
+
+
+
 ZstMessages::Signal ZstStage::destroy_entity_handler(zmsg_t * msg)
 {
 	ZstMessages::DestroyURI entity_destroy_args = ZstMessages::unpack_message_struct<ZstMessages::DestroyURI>(msg);
 	cout << "ZST_STAGE: Received destroy entity request for " << entity_destroy_args .address.path() << endl;
 
-	ZstProxy *entity = get_entity_proxy_by_URI(entity_destroy_args.address);
+	ZstComponentProxy *entity = get_entity_proxy_by_URI(entity_destroy_args.address);
 	if (!entity) {
 		return ZstMessages::Signal::ERR_STAGE_ENTITY_NOT_FOUND;
 	}
@@ -437,7 +442,7 @@ ZstMessages::Signal ZstStage::destroy_plug_handler(zmsg_t * msg)
 	cout << "ZST_STAGE: Received destroy plug request for " << plug_destroy_args.address.path() << endl;
 
 	int end_index = static_cast<int>(plug_destroy_args.address.size()) - 2;
-	ZstProxy *entity = get_entity_proxy_by_URI(plug_destroy_args.address.range(0, end_index));
+	ZstComponentProxy *entity = get_entity_proxy_by_URI(plug_destroy_args.address.range(0, end_index));
 	if (!entity) {
 		return ZstMessages::Signal::ERR_STAGE_ENTITY_NOT_FOUND;
 	}
@@ -448,7 +453,7 @@ ZstMessages::Signal ZstStage::destroy_plug_handler(zmsg_t * msg)
 
 	ZstPlugRef* plugRef = get_plug_by_URI(plug_destroy_args.address);
 	if (plugRef != NULL) {
-        destroy_cable(plugRef->get_URI());
+        destroy_cable(plugRef->URI());
 	}
 
 	endpoint->destroy_plug(plug_destroy_args.address);
@@ -502,7 +507,7 @@ ZstMessages::Signal ZstStage::create_entity_from_template_handler(zmsg_t * msg)
     ZstURIWire template_path = ZstMessages::unpack_message_struct<ZstURIWire>(msg);
     cout << "ZST_STAGE: Received entity template creation request for " << template_path.path() << endl;
     
-    ZstProxy * entity_template = get_entity_proxy_by_URI(template_path);
+    ZstComponentProxy * entity_template = get_entity_proxy_by_URI(template_path);
     ZstEndpointRef * endpoint = get_entity_endpoint(entity_template);
     
     return ZstMessages::Signal::OK;
@@ -527,10 +532,10 @@ ZstMessages::Signal ZstStage::destroy_cable_handler(zmsg_t * msg)
 }
 
 
-ZstProxy * ZstStage::get_entity_proxy_by_URI(const ZstURI & uri)
+ZstComponentProxy * ZstStage::get_entity_proxy_by_URI(const ZstURI & uri)
 {
-	ZstProxy * result = NULL;
-	vector<ZstProxy*> entities = get_all_entity_proxies(NULL);
+	ZstComponentProxy * result = NULL;
+	vector<ZstComponentProxy*> entities = get_all_entity_proxies(NULL);
 	for (auto entity_iter : entities) {
 		if (ZstURI::equal(entity_iter->URI(), uri)) {
 			result = entity_iter;
@@ -545,7 +550,7 @@ ZstPlugRef * ZstStage::get_plug_by_URI(ZstURI uri)
 	ZstPlugRef* result = NULL;
 	vector<ZstPlugRef*> plugs = get_all_plug_refs();
 	for (auto plug : plugs) {
-		if (ZstURI::equal(plug->get_URI(), uri)) {
+		if (ZstURI::equal(plug->URI(), uri)) {
 			result = plug;
 			break;
 		}
@@ -555,30 +560,22 @@ ZstPlugRef * ZstStage::get_plug_by_URI(ZstURI uri)
 
 int ZstStage::connect_cable(ZstPlugRef * output_plug, ZstPlugRef * input_plug)
 {
-	if (get_cable_by_URI(output_plug->get_URI(), input_plug->get_URI()) != NULL) {
-		cout << "ZST_STAGE: Cable already exists for " << output_plug->get_URI().path() << " and " << input_plug->get_URI().path() << endl;
+	if (get_cable_by_URI(output_plug->URI(), input_plug->URI()) != NULL) {
+		cout << "ZST_STAGE: Cable already exists for " << output_plug->URI().path() << " and " << input_plug->URI().path() << endl;
 		return 0;
 	}
-	m_cables.push_back(new ZstCable(output_plug->get_URI(), input_plug->get_URI()));
+	m_cables.push_back(new ZstCable(output_plug->URI(), input_plug->URI()));
 	
 	//Create request for the entity who owns the input plug
+    ZstEndpointRef * input_endpoint = get_plug_endpoint(input_plug);
 	ZstMessages::PerformerConnection perf_args;
-	perf_args.output_plug = output_plug->get_URI();
-	perf_args.input_plug = input_plug->get_URI();
-    
-	ZstEndpointRef * output_endpoint = get_plug_endpoint(output_plug);
-	ZstEndpointRef * input_endpoint = get_plug_endpoint(input_plug);
-    
-	perf_args.endpoint = output_endpoint->endpoint_address;
+	perf_args.output_plug = output_plug->URI();
+	perf_args.input_plug = input_plug->URI();
+    perf_args.endpoint = get_plug_endpoint(output_plug)->endpoint_address;
 
-	zmsg_t *connectMsg = ZstMessages::build_message<ZstMessages::PerformerConnection>(ZstMessages::Kind::PERFORMER_REGISTER_CONNECTION, perf_args);
-	zframe_t * empty = zframe_new_empty();
-	zframe_t * identity = zframe_from(input_endpoint->client_assigned_uuid.c_str());
-	zmsg_prepend(connectMsg, &empty);
-	zmsg_prepend(connectMsg, &identity);
-
-	cout << "ZST_STAGE: Sending cable connection request to " << input_endpoint->client_assigned_uuid.c_str() << endl;
-	zmsg_send(&connectMsg, m_performer_router);
+    cout << "ZST_STAGE: Sending cable connection request to " << input_endpoint->client_assigned_uuid.c_str() << endl;
+    ZstMessages::MessagePair p = ZstMessages::pack_message(ZstMessages::Kind::CREATE_PEER_CONNECTION, perf_args);
+    send_to_endpoint(ZstMessages::build_message(p), input_endpoint);
 	return 1;
 }
 
@@ -650,37 +647,39 @@ ZstCable * ZstStage::get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB) 
 }
 
 
-void ZstStage::enqueue_stage_update(ZstEvent e)
+void ZstStage::enqueue_stage_update(ZstMessages::Kind k, std::string packed)
 {
-	m_stage_updates.push(e);
+    ZstMessages::MessagePair p = {k, packed};
+	m_stage_updates.push(p);
 }
 
-vector<ZstEventWire> ZstStage::create_snapshot() {
+zmsg_t * ZstStage::create_snapshot() {
 	
-	vector<ZstEventWire> stage_snapshot;
+    ZstMessages::BatchGraphUpdate stage_snapshot;
+    std::string unpack_order = "";
     vector<ZstPlugRef*> plugs = get_all_plug_refs();
-	vector<ZstProxy*> entities = get_all_entity_proxies(NULL);
+	vector<ZstComponentProxy*> entities = get_all_entity_proxies(NULL);
     ZstEvent e;
 
 	for (auto entity : entities) {
-        e = ZstEventWire(ZstEvent::ENTITY_CREATED);
-        e.add_parameter(entity->URI().path());
-		stage_snapshot.push_back(e);
-	}
+        ZstEntityWire msg = ZstMessages::build_message<ZstEntityWire>(ZstMessages::Kind::CREATE_ENTITY, ZstEntityWire(*(entity)));
+        stage_snapshot.packed_messages.push_back(msg));
+        stage_snapshot.unpack_order += ZstMessages::Kind::CREATE_ENTITY;
+    }
 
     for (auto plug : plugs) {
-        e = ZstEventWire(ZstEvent::PLUG_CREATED);
-        e.add_parameter(plug->get_URI().path());
-        stage_snapshot.push_back(e);
+        ZstEntityWire msg = ZstMessages::build_message<ZstURIWire>(ZstMessages::Kind::CREATE_PLUG, ZstURIWire(plug->URI()));
+        stage_snapshot.packed_messages.push_back(msg));
+        stage_snapshot.unpack_order += ZstMessages::Kind::CREATE_PLUG;
     }
 
     for (auto cable : m_cables) {
-        e = ZstEventWire(ZstEvent::CABLE_CREATED);
-        e.add_parameter(cable->get_output().path());
-        e.add_parameter(cable->get_input().path());
+        ZstEntityWire msg = ZstMessages::build_message<ZstCableWire>(ZstMessages::Kind::PLUG_CREATED, ZstCableWire(cable));
+        stage_snapshot.packed_messages.push_back(msg));
+        stage_snapshot.unpack_order += ZstMessages::Kind::CREATE_CABLE;
     }
-
-	return stage_snapshot;
+    
+    return ZstMessages::build_message<ZstMessages::BatchGraphUpdate>(ZstMessages::Kind::BATCH_GRAPH_UPDATE, stage_snapshot);
 }
 
 int ZstStage::stage_update_timer_func(zloop_t * loop, int timer_id, void * arg)
@@ -688,14 +687,14 @@ int ZstStage::stage_update_timer_func(zloop_t * loop, int timer_id, void * arg)
 	ZstStage *stage = (ZstStage*)arg;
 
 	if (stage->m_stage_updates.size()) {
-		vector<ZstEventWire> updates;
+        ZstMessages::BatchGraphUpdate stage_update;
 		while (stage->m_stage_updates.size()) {
-			updates.push_back(ZstEventWire(stage->m_stage_updates.pop()));
+            ZstMessages::MessagePair p = stage->m_stage_updates.pop();
+            stage_update.packed_messages.push_back(p.packed);
+            stage_update.unpack_order += p.k;
 		}
 
-		ZstMessages::StageUpdates su = { updates };
-
-		zmsg_t *updatemsg = ZstMessages::build_message<ZstMessages::StageUpdates>(ZstMessages::Kind::STAGE_UPDATE, su);
+		zmsg_t *updatemsg = ZstMessages::build_message<ZstMessages::BatchGraphUpdate>(ZstMessages::Kind::BATCH_GRAPH_UPDATE, stage_update);
 		zmsg_send(&updatemsg, stage->m_graph_update_pub);
 	}
 	return 0;

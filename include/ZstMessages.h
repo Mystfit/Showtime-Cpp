@@ -7,46 +7,73 @@
 #include <stdio.h>
 #include <msgpack.hpp>
 #include <czmq.h>
-#include "ZstEvent.h"
 #include "ZstURIWire.h"
-#include "ZstEventWire.h"
 #include "ZstPlug.h"
 
 class ZstMessages{
 public:
     //Message ID index
-    enum Kind{
-        SIGNAL,
-		
-		//Endpoint registration
-		STAGE_CREATE_ENDPOINT,
-		STAGE_CREATE_ENDPOINT_ACK,
-		
-		//Performer registration
-        STAGE_CREATE_PERFORMER,
-		STAGE_DESTROY_PERFORMER,
+//    enum Kind{
+//        SIGNAL,
+//		
+//		//Endpoint registration
+//		ENDPOINT_JOIN,
+//		ENDPOINT_JOIN_ACK,
+//
+//		//Entity registration
+//        CREATE_ENTITY_FROM_TEMPLATE,
+//        REGISTER_ENTITY_TEMPLATE,
+//        CREATE_ENTITY,
+//		DESTROY_ENTITY,
+//		
+//		//Plug registration
+//        CREATE_PLUG,
+//		DESTROY_PLUG,
+//		
+//		//Connection registration
+//        CREATE_CABLE,
+//		DESTROY_CABLE,
+//		
+//		//Misc messages
+//        BATCH_GRAPH_UPDATE,
+//        ENDPOINT_HEARTBEAT,
+//
+//		//P2P endpoint connection requests
+//		CREATE_PEER_CONNECTION,
+//        CREATE_PEER_ENTITY
+//    };
+    
+    enum class Kind : char {
+        SIGNAL = 'a',
+        BATCH_GRAPH_UPDATE = 'b',
+        
+        //Endpoint registration
+        ENDPOINT_JOIN = 'c',
+        ENDPOINT_JOIN_ACK = 'd',
+        ENDPOINT_HEARTBEAT = 'e',
+        
+        //Entity registration
+        CREATE_ENTITY_FROM_TEMPLATE = 'f',
+        REGISTER_ENTITY_TEMPLATE = 'g',
+        CREATE_ENTITY = 'h',
+        DESTROY_ENTITY = 'i',
+        
+        //Plug registration
+        CREATE_PLUG = 'j',
+        DESTROY_PLUG = 'k',
 
-		//Entity registration
-        STAGE_RUN_ENTITY_TEMPLATE,
-        STAGE_CREATE_ENTITY_TEMPLATE,
-        STAGE_CREATE_ENTITY,
-		STAGE_DESTROY_ENTITY,
-		
-		//Plug registration
-        STAGE_CREATE_PLUG,
-		STAGE_DESTROY_PLUG,
-		
-		//Connection registration
-        STAGE_CREATE_CABLE,
-		STAGE_DESTROY_CABLE,
-		
-		//Misc messages
-        STAGE_UPDATE,
-        ENDPOINT_HEARTBEAT,
-
-		//P2P endpoint connection requests
-		PERFORMER_REGISTER_CONNECTION,
-        PERFORMER_CREATE_ENTITY
+        //Connection registration
+        CREATE_CABLE = 'l',
+        DESTROY_CABLE = 'm',
+        
+        //P2P endpoint connection requests
+        CREATE_PEER_CONNECTION = 'n',
+        CREATE_PEER_ENTITY = 'o'
+    };
+    
+    struct MessagePair {
+        ZstMessages::Kind kind;
+        std::string packed;
     };
 
 	enum Signal {
@@ -64,6 +91,8 @@ public:
 		LEAVING = 3,
 		HEARTBEAT = 4
 	};
+    
+    
 
     //Message structs
     //---------------
@@ -94,15 +123,10 @@ public:
         MSGPACK_DEFINE(address);
     };
 
-	struct CreateCable {
+	struct CableURI {
 		ZstURIWire first;
 		ZstURIWire second;
 		MSGPACK_DEFINE(first, second);
-	};
-
-	struct StageUpdates {
-		std::vector<ZstEventWire> updates;
-		MSGPACK_DEFINE_ARRAY(updates);
 	};
     
     struct Heartbeat {
@@ -117,6 +141,12 @@ public:
 		ZstURIWire input_plug;
 		MSGPACK_DEFINE(endpoint, output_plug, input_plug);
 	};
+    
+    struct BatchGraphUpdate {
+        std::string unpack_order;
+        std::vector<std::string> packed_messages;
+        MSGPACK_DEFINE(packed_messages);
+    };
     
 
 	//---------------------------------------
@@ -146,18 +176,23 @@ public:
 	}
 
 	//Creates a msgpacked message
-	template <typename T>
-	static zmsg_t * build_message(Kind message_id, T message_args) {
+	static zmsg_t * build_message(MessagePair payload) {
 		zmsg_t *msg = zmsg_new();
-		zframe_t * kind = build_message_kind_frame(message_id);
+		zframe_t * kind = build_message_kind_frame(payload.kind);
 		zmsg_append(msg, &kind);
-
-		msgpack::sbuffer buf;
-		msgpack::pack(buf, message_args);
-		zframe_t *payload = zframe_new(buf.data(), buf.size());
-		zmsg_append(msg, &payload);
+        zframe_t *payload_frame = zframe_new(payload.packed.c_str(), payload.packed.size());
+		zmsg_append(msg, &payload_frame);
 		return msg;
 	}
+    
+    template<typename T>
+    static MessagePair pack_message(ZstMessages::Kind kind, T item)
+    {
+        msgpack::sbuffer buf;
+        msgpack::pack(buf, item);
+        MessagePair p = {kind, std::string(buf.data())};
+        return p;
+    }
     
     template <typename T>
     static zmsg_t * build_graph_message(const ZstURI & from, const T & data) {

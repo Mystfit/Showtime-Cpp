@@ -10,7 +10,7 @@ ZstPlugRef::~ZstPlugRef()
 {
 }
 
-ZstURI ZstPlugRef::get_URI()
+ZstURI ZstPlugRef::URI()
 {
 	return m_URI;
 }

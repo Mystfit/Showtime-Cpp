@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <vector>
+#include "Queue.h"
 #include "ZstExports.h"
 
 template<class Callback, class Target>
@@ -33,6 +34,18 @@ public:
 	ZST_EXPORT void clear() {
 		m_callbacks.clear();
 	}
+    
+    ZST_EXPORT void enqueue(Target t){
+        m_event_queue.push(t);
+    }
+    
+    ZST_EXPORT void process(){
+        while(m_event_queue.size() > 0){
+            run_event_callbacks(m_event_queue.pop());
+        }
+    }
+    
 private:
 	std::vector<Callback*> m_callbacks;
+    Queue<Target> m_event_queue;
 };
