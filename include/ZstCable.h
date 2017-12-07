@@ -1,8 +1,9 @@
 #pragma once
 #include "ZstExports.h"
 #include "ZstURI.h"
+#include "ZstStreamable.h"
 
-class ZstCable {
+class ZstCable : public ZstStreamable {
 public:
 	ZST_EXPORT ZstCable();
 	ZST_EXPORT ZstCable(const ZstCable & copy);
@@ -16,7 +17,10 @@ public:
 
 	ZST_EXPORT ZstURI & get_input();
 	ZST_EXPORT ZstURI & get_output();
-private:
+
+	ZST_EXPORT virtual void write(std::stringstream & buffer) override;
+	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
+protected:
 	ZstURI m_input;
 	ZstURI m_output;
 };

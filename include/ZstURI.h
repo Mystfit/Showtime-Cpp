@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include "ZstStreamable.h"
 #include "ZstExports.h"
 
 struct pstr {
@@ -11,7 +12,7 @@ struct pstr {
 #define MAX_PATH_LEN 255
 #define DELIM '/'
 
-class ZstURI
+class ZstURI : public ZstStreamable
 {
 
 public:
@@ -31,8 +32,12 @@ public:
 	ZST_EXPORT bool contains(const ZstURI & compare);
 	ZST_EXPORT static bool equal(const ZstURI & a, const ZstURI & b);
 	ZST_EXPORT bool operator==(const ZstURI & other) const;
+	ZST_EXPORT bool operator!=(const ZstURI & other) const;
 	ZST_EXPORT bool operator< (const ZstURI& b) const;
 	ZST_EXPORT bool is_empty();
+
+	ZST_EXPORT virtual void write(std::stringstream & buffer) override;
+	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
 
 protected:
 	void split(void);
@@ -53,6 +58,6 @@ namespace std
 	template <>
 	struct hash<ZstURI>
 	{
-		size_t operator()(const ZstURI& k) const;
+		ZST_EXPORT size_t operator()(const ZstURI& k) const;
 	};
 }

@@ -18,6 +18,12 @@ enum ZstCallbackAction {
     LEAVING
 };
 
+enum ZstPlugDirection {
+	NONE = 0,
+	IN_JACK,
+	OUT_JACK
+};
+
 
 #define STAGE_REP_PORT 6000
 #define STAGE_ROUTER_PORT 6001
