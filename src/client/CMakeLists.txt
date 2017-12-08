@@ -1,6 +1,7 @@
 set(CLIENT_TARGET ${PROJECT_NAME}Client)
 
 set(ZST_CLIENT_HEADERS
+	"${Showtime_INCLUDE_DIRS}/Showtime.h"
     "ZstCallbackQueue.h"
     "ZstCallbacks.h"
     "ZstClient.h"

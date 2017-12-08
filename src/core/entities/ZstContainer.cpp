@@ -78,6 +78,7 @@ void ZstContainer::add_child(ZstEntityBase * child) {
 			child->m_parent = this;
 		}
 		m_children[child->URI()] = child;
+		child->set_parent(this);
 	}
 }
 

@@ -12,11 +12,10 @@ ZstPlug::ZstPlug() :
 	m_value = new ZstValue(ZST_NONE);
 }
 
-ZstPlug::ZstPlug(ZstComponent * owner, const char * name, ZstValueType t) : 
+ZstPlug::ZstPlug(const char * name, ZstValueType t) : 
 	ZstEntityBase(PLUG_TYPE, name)
 {
     m_value = new ZstValue(t);
-	set_parent(owner);
 }
 
 ZstPlug::~ZstPlug() {
@@ -100,12 +99,12 @@ ZstInputPlug::~ZstInputPlug()
 {
 }
 
-ZstInputPlug::ZstInputPlug(ZstComponent * owner, const char * name, ZstValueType t) : ZstPlug(owner, name, t)
+ZstInputPlug::ZstInputPlug(const char * name, ZstValueType t) : ZstPlug(name, t)
 {
 	m_direction = ZstPlugDirection::IN_JACK;
 }
 
-ZstOutputPlug::ZstOutputPlug(ZstComponent * owner, const char * name, ZstValueType t) : ZstPlug(owner, name, t), m_sender(NULL)
+ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t) : ZstPlug(name, t), m_sender(NULL)
 {
     m_direction = ZstPlugDirection::OUT_JACK;
 }

@@ -18,10 +18,26 @@ ZstClient::ZstClient() :
 	m_num_graph_recv_messages(0),
     m_num_graph_send_messages(0)
 {
+	m_component_arriving_event_manager = new ZstCallbackQueue<ZstComponentEvent, ZstEntityBase*>();
+	m_component_leaving_event_manager = new ZstCallbackQueue<ZstComponentEvent, ZstEntityBase*>();
+	m_component_type_arriving_event_manager = new ZstCallbackQueue<ZstComponentTypeEvent, ZstEntityBase*>();
+	m_component_type_leaving_event_manager = new ZstCallbackQueue<ZstComponentTypeEvent, ZstEntityBase*>();
+	m_cable_arriving_event_manager = new ZstCallbackQueue<ZstCableEvent, ZstCable*>();
+	m_cable_leaving_event_manager = new ZstCallbackQueue<ZstCableEvent, ZstCable*>();
+	m_plug_arriving_event_manager = new ZstCallbackQueue<ZstPlugEvent, ZstPlug*>();
+	m_plug_leaving_event_manager = new ZstCallbackQueue<ZstPlugEvent, ZstPlug*>();
 }
 
 ZstClient::~ZstClient() {
 	destroy();
+	delete m_component_arriving_event_manager;
+	delete m_component_leaving_event_manager;
+	delete m_component_type_arriving_event_manager;
+	delete m_component_type_leaving_event_manager;
+	delete m_cable_arriving_event_manager;
+	delete m_cable_leaving_event_manager;
+	delete m_plug_arriving_event_manager;
+	delete m_plug_leaving_event_manager;
 }
 
 ZstClient & ZstClient::instance()
@@ -40,14 +56,6 @@ void ZstClient::destroy() {
     
     //TODO: Delete proxies and templates
     delete m_root_container;
-	delete m_component_arriving_event_manager;
-	delete m_component_leaving_event_manager;
-    delete m_component_type_arriving_event_manager;
-    delete m_component_type_leaving_event_manager;
-	delete m_cable_arriving_event_manager;
-	delete m_cable_leaving_event_manager;
-	delete m_plug_arriving_event_manager;
-	delete m_plug_leaving_event_manager;
 
 	ZstActor::destroy();
 	zsock_destroy(&m_stage_requests);
@@ -60,22 +68,13 @@ void ZstClient::destroy() {
 	m_is_destroyed = true;
 }
 
-void ZstClient::init(const char * performer_name)
+void ZstClient::init(const char * client_name)
 {
 	if (m_is_ending) {
 		return;
 	}
-
+	m_client_name = client_name;
 	m_is_destroyed = false;
-
-	m_component_arriving_event_manager = new ZstCallbackQueue<ZstComponentEvent, ZstEntityBase*>();
-	m_component_leaving_event_manager = new ZstCallbackQueue<ZstComponentEvent, ZstEntityBase*>();
-    m_component_type_arriving_event_manager = new ZstCallbackQueue<ZstComponentTypeEvent, ZstEntityBase*>();
-    m_component_type_leaving_event_manager = new ZstCallbackQueue<ZstComponentTypeEvent, ZstEntityBase*>();
-	m_cable_arriving_event_manager = new ZstCallbackQueue<ZstCableEvent, ZstCable*>();
-	m_cable_leaving_event_manager = new ZstCallbackQueue<ZstCableEvent, ZstCable*>();
-	m_plug_arriving_event_manager = new ZstCallbackQueue<ZstPlugEvent, ZstPlug*>();
-	m_plug_leaving_event_manager = new ZstCallbackQueue<ZstPlugEvent, ZstPlug*>();
 
 	m_component_leaving_event_manager->attach_post_event_callback(component_leaving_hook);
 	m_component_type_leaving_event_manager->attach_post_event_callback(component_type_leaving_hook);
@@ -117,6 +116,7 @@ void ZstClient::init(const char * performer_name)
     m_graph_out = zsock_new_pub(m_graph_out_addr.c_str());
 	addr.str("");
 
+	//Set graph socket as unbounded by HWM
 	zsock_set_unbounded(m_graph_out);
     m_output_endpoint = zsock_last_endpoint(m_graph_out);
     cout << "ZST: Endpoint graph address: " << m_output_endpoint << endl;
@@ -124,8 +124,8 @@ void ZstClient::init(const char * performer_name)
     if(m_graph_out)
         zsock_set_linger(m_graph_out, 0);
 
-    //Create a root entity to hold our local entity hierarchy
-	m_root_container = new ZstContainer(performer_name);
+	//Create a root entity to hold our local entity hierarchy
+	m_root_container = new ZstContainer(m_client_name.c_str());
     
     start();
 }
@@ -151,19 +151,12 @@ void ZstClient::process_callbacks()
 
 string ZstClient::first_available_ext_ip(){
     ziflist_t * interfaces = ziflist_new();
-    const char * net_if = ziflist_first(interfaces);
-    const char * interface_ip = ziflist_address(interfaces);
-    
-    if(net_if == NULL) {
-        interface_ip = "127.0.0.1";
+	string interface_ip_str = "127.0.0.1";
+
+    if(ziflist_first(interfaces) != NULL) {
+		interface_ip_str = string(ziflist_address(interfaces));
     }
-    
-    string interface_ip_str = string(interface_ip);
-    
-	//TODO: Figure out how to clean these up on Windows - DLL boundary issue?
-    //delete[] interface_ip;
-    //delete[] net_if;
-    
+
     return interface_ip_str;
 }
 
@@ -181,6 +174,7 @@ void ZstClient::stop() {
 // -------------
 
 void ZstClient::register_endpoint_to_stage(std::string stage_address) {
+	cout << "ZST: Registering endpoint" << endl;
 	m_stage_addr = string(stage_address);
 
 	//Build endpoint addresses
@@ -193,10 +187,14 @@ void ZstClient::register_endpoint_to_stage(std::string stage_address) {
 		m_stage_requests = zsock_new(ZMQ_REQ);
 		zsock_set_linger(m_stage_requests, 0);
 	}
-	zsock_connect(m_stage_requests, "%s", m_stage_requests_addr.c_str());
-	addr.str("");
 
-	cout << "ZST: Registering endpoint" << endl;
+	//Connect to the incoming stage request socket
+	zsock_connect(m_stage_requests, "%s", m_stage_requests_addr.c_str());
+	addr.clear();
+
+	//Package our root container for the stage
+	std::stringstream entity_buffer;
+	m_root_container->write(entity_buffer);
 
 	//Build connect message
 	zmsg_t * msg = zmsg_new();
@@ -204,8 +202,10 @@ void ZstClient::register_endpoint_to_stage(std::string stage_address) {
 	zmsg_append(msg, &kind_frame);
 	zmsg_addstr(msg, zuuid_str(m_startup_uuid));
 	zmsg_addstr(msg, m_output_endpoint.c_str());
+	zmsg_addstr(msg, entity_buffer.str().c_str());
 	send_to_stage(msg);
 
+	//Check for stage acknowlegement of our connect request
 	zmsg_t *responseMsg = receive_from_stage();
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
 
@@ -213,17 +213,16 @@ void ZstClient::register_endpoint_to_stage(std::string stage_address) {
 		char * assigned_uuid = zmsg_popstr(responseMsg);
 		m_assigned_uuid = std::string(assigned_uuid);
 		zstr_free(&assigned_uuid);
-
 		cout << "ZST: Successfully registered endpoint to stage. UUID is " << m_assigned_uuid << endl;
 
-		//Connect performer dealer to stage now that it's been registered successfully
+		//Connect client dealer socket to stage now that it's been registered successfully
 		addr << "tcp://" << m_stage_addr << ":" << STAGE_ROUTER_PORT;
 		m_stage_router_addr = addr.str();
 		zsock_set_identity(m_stage_router, m_assigned_uuid.c_str());
 		zsock_connect(m_stage_router, "%s", m_stage_router_addr.c_str());
-		addr.str("");
+		addr.clear();
 		
-		//Stage sub socket for update messages
+		//Stage subscriber socket for update messages
 		addr << "tcp://" << stage_address << ":" << STAGE_PUB_PORT;
 		m_stage_updates_addr = addr.str();
 		cout << "ZST: Connecting to stage publisher " << m_stage_updates_addr << endl;
@@ -235,9 +234,6 @@ void ZstClient::register_endpoint_to_stage(std::string stage_address) {
 
 		//TODO: Need a handshake with the stage before we mark connection as active
 		m_connected_to_stage = true;
-        
-        //Activate our root performer
-		activate_entity(m_root_container);
         
         //Ask the stage to send us a full snapshot
 		signal_sync();
@@ -556,6 +552,11 @@ int ZstClient::activate_entity(ZstEntityBase * entity)
 	//If this is not a local entity, we can't activate it
 	if (!entity_is_local(entity))
 		return result;
+
+	//If the entity doesn't a parent, put it under the root container
+	if (!entity->parent()) {
+		m_root_container->add_child(m_root_container);
+	}
 
 	entity->register_graph_sender(this);
 

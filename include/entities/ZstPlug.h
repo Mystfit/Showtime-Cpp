@@ -24,7 +24,7 @@ public:
     
 	//Constructor
 	ZST_EXPORT ZstPlug();
-	ZST_EXPORT ZstPlug(ZstComponent * owner, const char * name, ZstValueType t);
+	ZST_EXPORT ZstPlug(const char * name, ZstValueType t);
 	ZST_EXPORT virtual ~ZstPlug();
     
 	ZST_EXPORT virtual void init() override {};
@@ -63,14 +63,14 @@ public:
 	friend class ZstClient;
 	friend class Showtime;
 
-	ZST_EXPORT ZstInputPlug(ZstComponent * owner, const char * name, ZstValueType t);
+	ZST_EXPORT ZstInputPlug(const char * name, ZstValueType t);
 	ZST_EXPORT ~ZstInputPlug();
 };
 
 
 class ZstOutputPlug : public ZstPlug {
 public:
-	ZstOutputPlug(ZstComponent * owner, const char * name, ZstValueType t);
+	ZstOutputPlug(const char * name, ZstValueType t);
 	virtual void register_graph_sender(ZstGraphSender * sender);
 	ZST_EXPORT void fire();
 

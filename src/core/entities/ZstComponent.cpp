@@ -37,14 +37,14 @@ void ZstComponent::register_graph_sender(ZstGraphSender * sender)
 
 ZstInputPlug * ZstComponent::create_input_plug(const char * name, ZstValueType val_type)
 {
-	ZstInputPlug * plug = new ZstInputPlug(this, name, val_type);
+	ZstInputPlug * plug = new ZstInputPlug(name, val_type);
 	add_plug(plug);
 	return plug;
 }
 
 ZstOutputPlug * ZstComponent::create_output_plug(const char * name, ZstValueType val_type)
 {
-	ZstOutputPlug * plug = new ZstOutputPlug(this, name, val_type);
+	ZstOutputPlug * plug = new ZstOutputPlug(name, val_type);
 	add_plug(plug);
 	return plug;
 }
@@ -67,6 +67,7 @@ int ZstComponent::add_plug(ZstPlug * plug)
 	int result = 0;
 	if (!get_plug_by_URI(plug->URI())) {
 		m_plugs.push_back(plug);
+		plug->set_parent(this);
 		result = 1;
 	}
 	return result;

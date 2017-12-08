@@ -8,7 +8,6 @@ FILE(WRITE ${COMPILED_INCLUDES}/version.h "#define SHOWTIME_VERSION \"${SHOWTIME
 set(CORE_TARGET "${PROJECT_NAME}Core")
 
 set(ZST_PUBLIC_HEADERS
-    ${Showtime_INCLUDE_DIRS}/Showtime.h
     ${Showtime_INCLUDE_DIRS}/ZstCable.h
     ${Showtime_INCLUDE_DIRS}/ZstConstants.h
     ${Showtime_INCLUDE_DIRS}/ZstExports.h

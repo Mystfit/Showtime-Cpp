@@ -21,15 +21,6 @@ ZstEntityBase::ZstEntityBase(const char * entity_type, const char * name) :
 	set_entity_type(entity_type);
 }
 
-ZstEntityBase::ZstEntityBase(const char * entity_type, ZstEntityBase * parent, const char * name) :
-	m_uri(name),
-	m_is_activated(false),
-	m_is_destroyed(false)
-{
-	set_entity_type(entity_type);
-	set_parent(parent);
-}
-
 ZstEntityBase::~ZstEntityBase()
 {
     //destroy();

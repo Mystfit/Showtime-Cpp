@@ -140,6 +140,7 @@ private:
 	//UUIDs
 	zuuid_t * m_startup_uuid;
 	std::string m_assigned_uuid;
+	std::string m_client_name;
 
 	//Name property
 	std::string m_output_endpoint;
