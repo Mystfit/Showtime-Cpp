@@ -9,9 +9,10 @@
 #include <czmq.h>
 #include "ZstConstants.h"
 #include "ZstStreamable.h"
-#include "entities\ZstComponent.h"
-#include "entities\ZstContainer.h"
-#include "entities\ZstPlug.h"
+#include "entities/ZstPerformer.h"
+#include "entities/ZstComponent.h"
+#include "entities/ZstContainer.h"
+#include "entities/ZstPlug.h"
 
 class ZstMessages{
 public:
@@ -19,10 +20,10 @@ public:
         SIGNAL,
         GRAPH_SNAPSHOT,
         
-        //Endpoint registration
-        ENDPOINT_JOIN,
-        ENDPOINT_JOIN_ACK,
-        ENDPOINT_HEARTBEAT,
+        //Client registration
+        CLIENT_JOIN,
+        CLIENT_JOIN_ACK,
+		CLIENT_LEAVE,
         
         //Entity registration
         CREATE_ENTITY_FROM_TEMPLATE,
@@ -30,6 +31,7 @@ public:
 		UNREGISTER_COMPONENT_TEMPLATE,
         CREATE_COMPONENT,
 		CREATE_CONTAINER,
+		CREATE_PERFORMER,
         DESTROY_ENTITY,
         
         //Plug registration
@@ -41,7 +43,7 @@ public:
         DESTROY_CABLE,
         
         //P2P endpoint connection requests
-        CREATE_PEER_CONNECTION,
+        SUBSCRIBE_TO_PERFORMER,
         CREATE_PEER_ENTITY
     };
     
@@ -54,8 +56,8 @@ public:
         ERR_STAGE_MSG_TYPE_UNKNOWN = -8,
 		ERR_STAGE_BAD_CABLE_DISCONNECT_REQUEST = -7,
 		ERR_STAGE_BAD_CABLE_CONNECT_REQUEST = -6,
-		ERR_STAGE_ENDPOINT_NOT_FOUND = -5,
-		ERR_STAGE_ENDPOINT_ALREADY_EXISTS = -4,
+		ERR_STAGE_PERFORMER_NOT_FOUND = -5,
+		ERR_STAGE_PERFORMER_ALREADY_EXISTS = -4,
 		ERR_STAGE_ENTITY_NOT_FOUND = -3,
 		ERR_STAGE_ENTITY_ALREADY_EXISTS = -2,
 		ERR_STAGE_PLUG_ALREADY_EXISTS = -1,
@@ -75,6 +77,9 @@ public:
 		}
 		else if (strcmp(entity->entity_type(), CONTAINER_TYPE)) {
 			k = Kind::CREATE_CONTAINER;
+		}
+		else if (strcmp(entity->entity_type(), PERFORMER_TYPE)) {
+			k = Kind::CREATE_PERFORMER;
 		}
 		else if (strcmp(entity->entity_type(), PLUG_TYPE)) {
 			k = Kind::CREATE_PLUG;
@@ -110,6 +115,22 @@ public:
         Signal sig =(Signal)std::atoi(signal_s);
         zstr_free(&signal_s);
 		return sig;
+	}
+
+	template <typename T>
+	static T* unpack_entity(const char * buffer, size_t length) {
+		T* entity = new T();
+		size_t offset = 0;
+		entity->read(buffer, length, offset);
+		return entity;
+	}
+
+	template <typename T>
+	static T unpack_streamable(const char * buffer, size_t length) {
+		T streamable = T();
+		size_t offset = 0;
+		streamable.read(buffer, length, offset);
+		return streamable;
 	}
 };
 

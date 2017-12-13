@@ -29,7 +29,7 @@ public:
 	ZST_EXPORT ZstURI operator+(const ZstURI & other) const;
 	ZST_EXPORT ZstURI & operator=(const ZstURI & other);
 	ZST_EXPORT ZstURI range(int start, int end) const;
-	ZST_EXPORT bool contains(const ZstURI & compare);
+	ZST_EXPORT bool contains(const ZstURI & compare) const;
 	ZST_EXPORT static bool equal(const ZstURI & a, const ZstURI & b);
 	ZST_EXPORT bool operator==(const ZstURI & other) const;
 	ZST_EXPORT bool operator!=(const ZstURI & other) const;

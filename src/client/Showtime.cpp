@@ -2,6 +2,7 @@
 #include "version.h"
 #include "ZstCable.h"
 #include "entities/ZstEntityBase.h"
+#include "entities/ZstPlug.h"
 #include "entities/ZstComponent.h"
 #include "ZstClient.h"
 #include "ZstCallbacks.h"
@@ -26,7 +27,7 @@ void Showtime::init(const char * performer_name)
 
 void Showtime::join(const char * stage_address){
 	cout << "ZST: Connecting to stage located at " << stage_address << endl;
-	ZstClient::instance().register_endpoint_to_stage(stage_address);
+	ZstClient::instance().register_client_to_stage(stage_address);
 }
 
 void Showtime::leave()
@@ -141,19 +142,19 @@ int Showtime::destroy(ZstEntityBase * entity)
 
 ZstContainer * Showtime::get_root()
 {
-	return ZstClient::instance().get_root();
+	return ZstClient::instance().get_local_performer();
 }
 
-ZstEntityBase * Showtime::get_entity_by_URI(const ZstURI & path)
+ZstEntityBase * Showtime::get_performer_by_URI(const ZstURI & path)
 {
-    return ZstClient::instance().get_entity_by_URI(path);
+    return ZstClient::instance().get_performer_by_URI(path);
 }
 
 int Showtime::ping_stage(){
 	return ZstClient::instance().ping_stage();
 }
 
-int Showtime::connect_cable(ZstURI a, ZstURI b)
+int Showtime::connect_cable(ZstPlug * a, ZstPlug * b)
 {
 	return ZstClient::instance().connect_cable(a, b);
 }

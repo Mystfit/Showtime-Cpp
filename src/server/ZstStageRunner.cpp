@@ -1,6 +1,5 @@
 #include "ZstStage.h"
 #include "version.h"
-#include "Showtime.h"
 
 //Standalone stage runner
 //-----------------------
@@ -16,6 +15,5 @@ int main(int argc, char **argv) {
 #endif
 
 	delete stage;
-	Showtime::destroy();
 	return 0;
 }

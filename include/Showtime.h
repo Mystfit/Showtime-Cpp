@@ -8,6 +8,7 @@ class ZstEntityBase;
 class ZstContainer;
 class ZstComponent;
 class ZstCable;
+class ZstPlug;
 class ZstClient;
 class ZstComponentEvent;
 class ZstComponentTypeEvent;
@@ -49,13 +50,13 @@ public:
 
 	//Hierarchy
     ZST_CLIENT_EXPORT static ZstContainer* get_root();
-	ZST_CLIENT_EXPORT static ZstEntityBase* get_entity_by_URI(const ZstURI & path);
+	ZST_CLIENT_EXPORT static ZstEntityBase* get_performer_by_URI(const ZstURI & path);
 
     //Stage methods
     ZST_CLIENT_EXPORT static int ping_stage();
 
     //Cable management
-	ZST_CLIENT_EXPORT static int connect_cable(ZstURI a, ZstURI b);
+	ZST_CLIENT_EXPORT static int connect_cable(ZstPlug * a, ZstPlug * b);
 	ZST_CLIENT_EXPORT static int destroy_cable(ZstCable * cable);
     
     //Creatables

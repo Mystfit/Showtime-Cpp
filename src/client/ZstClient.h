@@ -26,6 +26,7 @@ class ZstPlug;
 class ZstInputPlug;
 class ZstOutputPlug;
 class ZstValue;
+class ZstPerformer;
 
 class ZstClient : public ZstActor, public ZstGraphSender {
 public:
@@ -40,8 +41,7 @@ public:
 	static ZstClient & instance();
 
 	//Register this endpoint to the stage
-	void register_endpoint_to_stage(std::string stage_address);
-	const char * get_endpoint_UUID() const;
+	void register_client_to_stage(std::string stage_address);
 
 	//Stage connection status
 	bool is_connected_to_stage();
@@ -55,15 +55,19 @@ public:
     int run_component_template(ZstComponent * entity);
     
     //Entities
-	std::unordered_map<ZstURI, ZstEntityBase*> & entities();
+	ZstEntityBase * find_entity(const ZstURI & path);
+	ZstPlug * find_plug(const ZstURI & path);
 	int activate_entity(ZstEntityBase* entity);
 	int destroy_entity(ZstEntityBase * entity);
 	bool entity_is_local(ZstEntityBase * entity);
-	ZstEntityBase * get_entity_by_URI(const ZstURI & uri) const;
-	ZstPlug * get_plug_by_URI(const ZstURI & uri) const;
-    ZstContainer * get_root() const;
-	template<typename T>
-	void create_proxy_entity(const char * buffer, size_t length);
+	bool path_is_local(const ZstURI & path);
+	void add_proxy_entity(ZstEntityBase * entity);
+
+	//Performers
+	std::unordered_map<ZstURI, ZstPerformer*> & performers();
+	void add_performer(ZstPerformer * performer);
+	ZstPerformer * get_performer_by_URI(const ZstURI & uri) const;
+	ZstContainer * get_local_performer() const;
 
 	//Plugs
 	int destroy_plug(ZstPlug * plug);
@@ -73,10 +77,11 @@ public:
 	virtual void send_to_graph(ZstPlug * plug) override;
 
 	//Cables
-	int connect_cable(const ZstURI & a, const ZstURI & b);
+	int connect_cable(ZstPlug * a, ZstPlug * b);
 	int destroy_cable(ZstCable * cable);
 	std::vector<ZstCable*> get_cables_by_URI(const ZstURI & uri);
 	ZstCable * get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB);
+	void add_cable(ZstCable * cable);
 	void remove_cable(ZstCable * cable);
 	std::vector<ZstCable*> & cables();
 
@@ -111,11 +116,9 @@ private:
 	//Internal send and receive
 	//Send/receive
 	void send_to_stage(zmsg_t * msg);
-	void send_returnable_to_stage(zmsg_t * msg);
 	zmsg_t * receive_from_graph();
 	zmsg_t * receive_from_stage();
 	zmsg_t * receive_stage_update();
-	zmsg_t * receive_routed_from_stage();
 	ZstMessages::Signal check_stage_response_ok();
 
 	//Socket handlers
@@ -143,13 +146,12 @@ private:
 	std::string m_client_name;
 
 	//Name property
-	std::string m_output_endpoint;
+	std::string m_graph_out_ip;
     std::string m_network_interface;
 
-	//Entities
-    ZstContainer * m_root_container;
-	std::unordered_map<ZstURI, ZstEntityBase* > m_entities;
-    std::unordered_map<ZstURI, ZstEntityBase*> m_template_entities;
+	//Root performer
+    ZstPerformer * m_root;
+	std::unordered_map<ZstURI, ZstPerformer* > m_clients;
     Queue<ZstInputPlug*> m_compute_queue;
 
 	//Callback hooks for leaving items
@@ -157,7 +159,7 @@ private:
 	static void component_type_leaving_hook(void * target);
 	static void plug_leaving_hook(void * target);
 	static void cable_leaving_hook(void * target);
-
+	
 	//Cable storage
 	std::vector<ZstCable*> m_cables;
 	
@@ -172,7 +174,6 @@ private:
 	ZstCallbackQueue<ZstPlugEvent, ZstPlug*> * m_plug_leaving_event_manager;
 
 	//Zeromq pipes
-	zsock_t *m_stage_requests;		//Reqests sent to the stage server
 	zsock_t *m_stage_router;        //Stage pipe in
 	zsock_t *m_stage_updates;		//Stage publisher for updates
 	zsock_t *m_graph_out;           //Pub for sending graph outputs
@@ -180,7 +181,6 @@ private:
 
 	//Addresses
 	std::string m_stage_addr = "127.0.0.1";
-	std::string m_stage_requests_addr;
 	std::string m_stage_router_addr;
 	std::string m_stage_updates_addr;
 	std::string m_graph_out_addr;

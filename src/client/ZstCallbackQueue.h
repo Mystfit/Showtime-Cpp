@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <iostream>
 #include "Queue.h"
 #include "ZstExports.h"
 
@@ -66,7 +67,11 @@ public:
 	}
     
     ZST_EXPORT void enqueue(Target t){
-        m_event_queue.push(t);
+		if (!t) {
+			std::cout << "ZST: Can't enqueue event for type NULL" << std::endl;
+			return;
+		}
+		m_event_queue.push(t);
     }
     
     ZST_EXPORT void process(){

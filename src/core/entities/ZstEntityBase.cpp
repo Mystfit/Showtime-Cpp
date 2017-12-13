@@ -1,4 +1,5 @@
 #include <memory>
+#include <iostream>
 #include <cstring>
 #include "entities/ZstEntityBase.h"
 #include "msgpack.hpp"
@@ -100,6 +101,8 @@ void ZstEntityBase::set_entity_type(const char * entity_type) {
 }
 
 void ZstEntityBase::set_parent(ZstEntityBase *entity) {
+	if (!entity->URI().contains(URI())) {
+		m_uri = m_parent->URI() + m_uri;
+	}
 	m_parent = entity;
-	m_uri = m_parent->URI() + m_uri;
 }

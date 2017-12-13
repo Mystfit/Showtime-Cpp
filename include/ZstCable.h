@@ -1,13 +1,16 @@
 #pragma once
 #include "ZstExports.h"
 #include "ZstURI.h"
+#include "entities/ZstPlug.h"
 #include "ZstStreamable.h"
+
+class ZstPlug;
 
 class ZstCable : public ZstStreamable {
 public:
 	ZST_EXPORT ZstCable();
 	ZST_EXPORT ZstCable(const ZstCable & copy);
-	ZST_EXPORT ZstCable(const ZstURI input, const ZstURI );
+	ZST_EXPORT ZstCable(ZstPlug * input_plug, ZstPlug * output_plug);
 	ZST_EXPORT ~ZstCable();
 
 	ZST_EXPORT bool operator==(const ZstCable & other);

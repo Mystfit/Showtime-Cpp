@@ -1,4 +1,5 @@
 #include "ZstCable.h"
+#include "entities/ZstPlug.h"
 #include "msgpack.hpp"
 
 ZstCable::ZstCable()
@@ -11,9 +12,9 @@ ZstCable::ZstCable(const ZstCable & copy) :
 {
 }
 
-ZstCable::ZstCable(const ZstURI output, const ZstURI input) :
-	m_input(input),
-    m_output(output)
+ZstCable::ZstCable(ZstPlug * input_plug, ZstPlug * output_plug) :
+	m_input(input_plug->URI()),
+	m_output(output_plug->URI())
 {
 }
 

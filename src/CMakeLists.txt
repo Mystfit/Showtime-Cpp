@@ -17,6 +17,7 @@ set(ZST_PUBLIC_HEADERS
     ${Showtime_INCLUDE_DIRS}/entities/ZstComponent.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstContainer.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstPlug.h
+    ${Showtime_INCLUDE_DIRS}/entities/ZstPerformer.h
 )
 
 set(ZST_CORE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/core")
@@ -33,8 +34,6 @@ set(ZST_PRIVATE_HEADERS
     ${VERSION_FILE}
 )
 
-message(STATUS ${ZST_PRIVATE_HEADERS})
-
 set(ZST_CORE_SRC
     "core/ZstActor.cpp"
     "core/ZstCable.cpp"
@@ -46,6 +45,8 @@ set(ZST_CORE_SRC
     "core/entities/ZstContainer.cpp"
     "core/entities/AddFilter.cpp"
     "core/entities/ZstPlug.cpp"
+    "core/entities/ZstPerformer.cpp"
+
 )
 
 set(ZST_CORE_HEADERS ${ZST_PUBLIC_HEADERS} ${ZST_PRIVATE_HEADERS})

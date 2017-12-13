@@ -116,7 +116,7 @@ ZstURI ZstURI::range(int start, int end) const
 	return result;
 }
 
-bool ZstURI::contains(const ZstURI & compare)
+bool ZstURI::contains(const ZstURI & compare) const
 {
 	int shortest = (compare.size() > this->size()) ? this->size() : compare.size();
 	int largest = (compare.size() < this->size()) ? this->size() : compare.size();

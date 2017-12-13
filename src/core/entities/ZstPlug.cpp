@@ -92,6 +92,11 @@ void ZstPlug::read(const char * buffer, size_t length, size_t & offset)
 	ZstPlugDirection m_direction = (ZstPlugDirection)obj.via.i64;
 }
 
+ZstPlugDirection ZstPlug::direction()
+{
+	return m_direction;
+}
+
 
 //ZstInputPlug
 //------------

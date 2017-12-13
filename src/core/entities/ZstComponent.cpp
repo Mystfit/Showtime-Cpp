@@ -7,16 +7,16 @@ ZstComponent::ZstComponent() :
 	set_component_type("");
 }
 
-ZstComponent::ZstComponent(const char * component_type) : 
+ZstComponent::ZstComponent(const char * entity_type) :
 	ZstEntityBase(COMPONENT_TYPE)
 {
-	set_component_type(component_type);
+	set_component_type(entity_type);
 }
 
-ZstComponent::ZstComponent(const char * component_type, const char * path)
+ZstComponent::ZstComponent(const char * entity_type, const char * path)
     : ZstEntityBase(COMPONENT_TYPE, path)
 {
-	set_component_type(component_type);
+	set_component_type(entity_type);
 }
 
 ZstComponent::~ZstComponent()

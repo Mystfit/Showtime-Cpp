@@ -2,12 +2,10 @@ set(SERVER_TARGET ${PROJECT_NAME}Server)
 
 set(ZST_SERVER_HEADERS
     "ZstStage.h"
-    "ZstEndpointRef.h"
 )
 
 set(ZST_SERVER_SRC
     "ZstStageRunner.cpp"
-    "ZstEndpointRef.cpp"
     "ZstStage.cpp"
 )
 
