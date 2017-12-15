@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <vector>
 #include <iostream>
-#include "Queue.h"
 #include "ZstExports.h"
+#include "../core/Queue.h"
 
 //Internal callback hook
 typedef void (*ZstCallbackHook)(void*);

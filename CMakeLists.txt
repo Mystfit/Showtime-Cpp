@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.8.2)
 
 project(Showtime)
 
-set(SHOWTIME_VERSION 0.6.0)
+set(SHOWTIME_VERSION 0.7.0)
 
 # Set build locations
 set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/install)
@@ -26,26 +26,34 @@ endif()
 set(CMAKE_CXX_STANDARD 11)
 set(CXX_STANDARD_REQUIRED)
 
-if (MSVC_VERSION GREATER_EQUAL "1900")
-    
-    #include(CheckCXXCompilerFlag)
-    #CHECK_CXX_COMPILER_FLAG("/std:c++17" _cpp_17_flag_supported)
-    #if (_cpp_17_flag_supported)
-    #    add_compile_options("/std:c++17")
-    #endif()
-endif()
-
 # Set showtime include directories
 set(Showtime_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include )
 
-# Packages
-find_package(ZeroMQ REQUIRED)
-find_package(czmq REQUIRED)
-find_package(MsgPack REQUIRED)
-find_package(SWIG)
-include(UseSWIG)
+# Core Library
+# ------------
+set(CORE_TARGET "${PROJECT_NAME}Core")
+message(STATUS "Building ${CORE_TARGET} target")
+add_library(${CORE_TARGET} SHARED "")
+include(src/core/CMakeLists.txt)
 
-add_subdirectory(src)
 
+# Client Library
+# --------------
+set(CLIENT_TARGET "${PROJECT_NAME}Client")
+message(STATUS "Building ${CLIENT_TARGET} target")
+add_library(${CLIENT_TARGET} SHARED "")
+include(src/client/CMakeLists.txt)
+
+
+# Server binary
+# -------------
+set(SERVER_TARGET "${PROJECT_NAME}Server")
+message(STATUS "Building ${SERVER_TARGET} target")
+add_executable (${SERVER_TARGET} "") 
+include(src/server/CMakeLists.txt)
+
+
+# Tests
+# -----
 enable_testing()
-#add_subdirectory(tests)
+add_subdirectory(tests)

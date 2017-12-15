@@ -1,6 +1,5 @@
 #include <exception>
 #include "entities/ZstPerformer.h"
-#include <czmq.h>
 
 using namespace std;
 

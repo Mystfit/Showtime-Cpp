@@ -8,14 +8,8 @@
 #include <exception>
 #include <boost/process.hpp>
 #include <boost/filesystem.hpp>
+
 #include "Showtime.h"
-#include "ZstPlug.h"
-#include "ZstStage.h"
-#include "ZstEndpoint.h"
-#include "entities/ZstProxyComponent.h"
-#include "ZstComposer.h"
-#include "entities/AddFilter.h"
-#include "entities/ZstFilter.h"
 
 #ifdef WIN32
 #define TAKE_A_BREATH Sleep(100);
@@ -51,7 +45,7 @@ inline void clear_callback_queue() {
 
 //Callback classes
 //----------------
-class TestEntityArrivingEventCallback : public ZstEntityEventCallback {
+class TestEntityArrivingEventCallback : public ZstEntityEvent {
 public:
 	int entityArrivedHits = 0;
 	std::string last_created_entity;
@@ -63,7 +57,7 @@ public:
 	void reset() { entityArrivedHits = 0; }
 };
 
-class TestEntityLeavingEventCallback : public ZstEntityEventCallback {
+class TestEntityLeavingEventCallback : public ZstEntityEvent {
 public:
 	int entityLeavingHits = 0;
     std::string last_leaving_entity;
@@ -77,7 +71,7 @@ public:
 
 // ----
 
-class TestPlugArrivingEventCallback : public ZstPlugEventCallback {
+class TestPlugArrivingEventCallback : public ZstPlugEvent {
 public:
 	int plugArrivedHits = 0;
 	void run(ZstURI plug) override {
@@ -87,7 +81,7 @@ public:
 	void reset() { plugArrivedHits = 0; }
 };
 
-class TestPlugLeavingEventCallback : public ZstPlugEventCallback {
+class TestPlugLeavingEventCallback : public ZstPlugEvent {
 public:
 	int plugLeavingHits = 0;
 	void run(ZstURI plug) override {
@@ -99,7 +93,7 @@ public:
 
 // ----
 
-class TestCableArrivingEventCallback : public ZstCableEventCallback {
+class TestCableArrivingEventCallback : public ZstCableEvent {
 public:
 	int cableArrivedHits = 0;
 	void run(ZstCable cable) override {
@@ -109,7 +103,7 @@ public:
 	void reset() { cableArrivedHits = 0; }
 };
 
-class TestCableLeavingEventCallback : public ZstCableEventCallback {
+class TestCableLeavingEventCallback : public ZstCableEvent {
 public:
 	int cableLeavingHits = 0;
 	void run(ZstCable cable) override {
@@ -318,7 +312,7 @@ void test_root_entity() {
 	TAKE_A_BREATH
     //Test single entity init
 	std::cout << "Starting entity init test" << std::endl;
-	Showtime::endpoint().self_test();
+	ZstClient::instance().self_test();
 
     root_entity = Showtime::get_root();
 	assert(root_entity);
@@ -333,8 +327,8 @@ void test_stage_registration(){
 	std::cout << "Starting stage registration test" << std::endl;
 
     //Test stage connection
-    assert(Showtime::endpoint().ping_stage() >= 0);
-	assert(stage->get_endpoint_ref_by_UUID(Showtime::endpoint().get_endpoint_UUID()) != NULL);
+    assert(ZstClient::instance().ping_stage() >= 0);
+	assert(stage->get_client_by_UUID(ZstClient::instance().get_endpoint_UUID()) != NULL);
 
 	std::cout << "Finished stage registration test\n" << std::endl;
 }
@@ -397,7 +391,7 @@ void test_entity_templates(){
     assert(entity_template_arriving->hits == 1);
     
     //Test entity composer
-    Showtime::run_entity_template(add_composer->get_template());
+    Showtime::run_component_template(add_composer->get_template());
     
     Showtime::unregister_template(add_creatable);
     delete add_creatable;
@@ -476,7 +470,7 @@ void test_connect_plugs() {
 
 	ZstURI outURI = test_output->output_URI();
 	ZstURI inURI = test_input->input_URI();
-	assert(Showtime::endpoint().get_cable_by_URI(outURI, inURI) != NULL);
+	assert(ZstClient::instance().get_cable_by_URI(outURI, inURI) != NULL);
 
 	//Test connecting missing URI objects
 	ZstURI badURI = ZstURI("test_instrument/bad_plug");
@@ -489,7 +483,7 @@ void test_connect_plugs() {
 	wait_for_callbacks(1);
 	assert(cableLeaveCallback->cableLeavingHits == 1);
 	cableLeaveCallback->reset();
-	assert(Showtime::endpoint().get_cable_by_URI(test_output->output_URI(), test_input->input_URI()) == NULL);
+	assert(ZstClient::instance().get_cable_by_URI(test_output->output_URI(), test_input->input_URI()) == NULL);
 
 	//Test plug destruction causes cable destruction
 	Showtime::connect_cable(test_output->output_URI(), test_input->input_URI());
@@ -639,8 +633,8 @@ void test_memory_leaks(int num_loops) {
 
 	int count = num_loops;
 
-	Showtime::endpoint().reset_graph_recv_tripmeter();
-	Showtime::endpoint().reset_graph_send_tripmeter();
+	ZstClient::instance().reset_graph_recv_tripmeter();
+	ZstClient::instance().reset_graph_send_tripmeter();
 
 	std::cout << "Sending " << count << " messages" << std::endl;
 	TAKE_A_BREATH
@@ -664,10 +658,10 @@ void test_memory_leaks(int num_loops) {
 	for (int i = 0; i < count; ++i) {
 		test_output->send(10);
 		Showtime::poll_once();
-		if (Showtime::endpoint().graph_recv_tripmeter() % 10000 == 0) {
+		if (ZstClient::instance().graph_recv_tripmeter() % 10000 == 0) {
 			//Display progress
-			message_count = Showtime::endpoint().graph_recv_tripmeter();
-			queued_messages = Showtime::endpoint().graph_send_tripmeter() - Showtime::endpoint().graph_recv_tripmeter();
+			message_count = ZstClient::instance().graph_recv_tripmeter();
+			queued_messages = ZstClient::instance().graph_send_tripmeter() - ZstClient::instance().graph_recv_tripmeter();
 
 			now = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
 			delta = std::chrono::duration_cast<std::chrono::milliseconds>(now - last);
@@ -690,13 +684,13 @@ void test_memory_leaks(int num_loops) {
 
 	do  {
 		Showtime::poll_once();
-		if (Showtime::endpoint().graph_recv_tripmeter() % 10000 == 0) {
+		if (ZstClient::instance().graph_recv_tripmeter() % 10000 == 0) {
 			//Display progress
-			message_count = Showtime::endpoint().graph_recv_tripmeter();
+			message_count = ZstClient::instance().graph_recv_tripmeter();
 			now = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
 			delta = std::chrono::duration_cast<std::chrono::milliseconds>(now - last);
 			delta_messages = message_count - last_message_count;
-			queued_messages = Showtime::endpoint().graph_send_tripmeter() - Showtime::endpoint().graph_recv_tripmeter();
+			queued_messages = ZstClient::instance().graph_send_tripmeter() - ZstClient::instance().graph_recv_tripmeter();
 			last = now;
 			mps = (long)delta_messages / (delta.count() / 1000.0);
 			remaining_messages = count - message_count;
@@ -704,20 +698,20 @@ void test_memory_leaks(int num_loops) {
 
 			std::cout << "Processing " << mps << " messages per/s. Remaining:" << remaining_messages << " Delta time: " << (delta.count() / 1000.0) << " per 10000. Queued messages: " << queued_messages << std::endl;
 		}
-	} while ((Showtime::endpoint().graph_recv_tripmeter() < count));
+	} while ((ZstClient::instance().graph_recv_tripmeter() < count));
 
 	TAKE_A_BREATH
 	Showtime::poll_once();
 	std::cout << "Received all messages" << std::endl;
 	std::cout << "Remaining events: " << Showtime::event_queue_size() << std::endl;
-	std::cout << "Total received graph_messages " << Showtime::endpoint().graph_recv_tripmeter() << std::endl;
+	std::cout << "Total received graph_messages " << ZstClient::instance().graph_recv_tripmeter() << std::endl;
 	assert(test_input->num_hits == count);
 
 	delete test_output;
 	delete test_input;
 	clear_callback_queue();
-	Showtime::endpoint().reset_graph_recv_tripmeter();
-	Showtime::endpoint().reset_graph_send_tripmeter();
+	ZstClient::instance().reset_graph_recv_tripmeter();
+	ZstClient::instance().reset_graph_send_tripmeter();
 
 	std::cout << "Finished memory leak test\n" << std::endl;
 }
@@ -725,7 +719,7 @@ void test_memory_leaks(int num_loops) {
 void test_leaving(){
     Showtime::leave();
     TAKE_A_BREATH
-    assert(stage->get_endpoint_ref_by_UUID(Showtime::endpoint().get_endpoint_UUID()) == NULL);
+    assert(stage->get_client_by_UUID(ZstClient::instance().get_endpoint_UUID()) == NULL);
     TAKE_A_BREATH
 }
 

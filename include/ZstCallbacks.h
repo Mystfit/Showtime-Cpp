@@ -2,9 +2,6 @@
 
 #include <iostream>
 #include "ZstExports.h"
-#include "ZstURI.h"
-#include "ZstCable.h"
-#include "ZstCallbackQueue.h"
 
 //Plug arriving/leaving events
 class ZstPlug;
@@ -30,6 +27,7 @@ public:
 };
 
 //Cable arriving/leaving events
+class ZstCable;
 class ZstCableEvent {
 public:
 	ZST_EXPORT virtual ~ZstCableEvent() {}

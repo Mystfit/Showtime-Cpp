@@ -3,17 +3,7 @@
 #include "ZstURI.h"
 #include "ZstConstants.h"
 #include "ZstExports.h"
-
-class ZstEntityBase;
-class ZstContainer;
-class ZstComponent;
-class ZstCable;
-class ZstPlug;
-class ZstClient;
-class ZstComponentEvent;
-class ZstComponentTypeEvent;
-class ZstPlugEvent;
-class ZstCableEvent;
+#include "ZstForwards.h"
 
 class Showtime
 {

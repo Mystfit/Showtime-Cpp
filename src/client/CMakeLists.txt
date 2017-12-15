@@ -1,27 +1,37 @@
-set(CLIENT_TARGET ${PROJECT_NAME}Client)
-
-set(ZST_CLIENT_HEADERS
+set(ZST_CLIENT_PUBLIC_HEADERS
 	"${Showtime_INCLUDE_DIRS}/Showtime.h"
-    "ZstCallbackQueue.h"
-    "ZstCallbacks.h"
-    "ZstClient.h"
+)
+
+set(ZST_CLIENT_PRIVATE_HEADERS
+	"${Showtime_INCLUDE_DIRS}/Showtime.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstClient.h"
 )
 
 set(ZST_CLIENT_SRC
-    "Showtime.cpp"
-    "ZstClient.cpp"
-    "ZstCallbackQueueInstantiations.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/Showtime.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstClient.cpp"
 )
 
-include_directories(${ZST_CORE_DIR})
+target_sources(${CLIENT_TARGET} PUBLIC ${ZST_CLIENT_PUBLIC_HEADERS})
+target_sources(${CLIENT_TARGET} PRIVATE ${ZST_CLIENT_PRIVATE_HEADERS} ${ZST_CLIENT_SRC})
 
-# Set library definitions
-IF(WIN32)
-	add_definitions(-DIMPORTS_CORE_API)
-    add_definitions(-DEXPORTS_CLIENT_API)
-ENDIF(WIN32)
+# Platform specific definitions
+if(WIN32)
+    target_compile_definitions(${CLIENT_TARGET} PRIVATE -DEXPORT_CLIENT_API)
+    target_compile_definitions(${CLIENT_TARGET} INTERFACE -DIMPORT_CLIENT_API)
+endif(WIN32)
 
-# Create Showtime library target
-message(STATUS "Building ${CLIENT_TARGET} target")
-add_library(${CLIENT_TARGET} SHARED  ${ZST_CLIENT_HEADERS} ${ZST_CLIENT_SRC})
-target_link_libraries(${CLIENT_TARGET} ${CORE_TARGET} ${ZST_LINK_LIBS})
+add_dependencies(${CLIENT_TARGET} ${CORE_TARGET})
+
+
+if(MACOSX)
+    set_target_properties(${CLIENT_TARGET} PROPERTIES
+      FRAMEWORK TRUE
+      FRAMEWORK_VERSION "A"
+      VERSION "${SHOWTIME_VERSION}"
+      PUBLIC_HEADER "${ZST_PUBLIC_HEADERS}"
+    )
+endif(MACOSX)
+
+# Link client to core
+target_link_libraries(${CLIENT_TARGET} ${CORE_TARGET})

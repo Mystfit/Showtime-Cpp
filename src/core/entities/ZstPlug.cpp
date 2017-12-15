@@ -1,8 +1,8 @@
 #include "entities/ZstPlug.h"
-#include "ZstValue.h"
 #include "entities/ZstEntityBase.h"
 #include "entities/ZstComponent.h"
-#include "ZstGraphSender.h"
+#include "../ZstValue.h"
+#include "../ZstGraphSender.h"
 
 using namespace std;
 
@@ -109,6 +109,10 @@ ZstInputPlug::ZstInputPlug(const char * name, ZstValueType t) : ZstPlug(name, t)
 	m_direction = ZstPlugDirection::IN_JACK;
 }
 
+
+//ZstOutputPlug
+//-------------
+
 ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t) : ZstPlug(name, t), m_sender(NULL)
 {
     m_direction = ZstPlugDirection::OUT_JACK;
@@ -119,11 +123,10 @@ void ZstOutputPlug::register_graph_sender(ZstGraphSender * sender)
 	m_sender = sender;
 }
 
-//ZstOutputPlug
-//-------------
 void ZstOutputPlug::fire()
 {
-	m_sender->send_to_graph(this);
+	if(m_sender)
+		m_sender->publish(this);
 	m_value->clear();
 }
 

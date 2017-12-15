@@ -33,8 +33,8 @@ public:
 	//Creatables
 	ZST_EXPORT int num_creatables();
 
-	virtual void write(std::stringstream & buffer) override;
-	virtual void read(const char * buffer, size_t length, size_t & offset) override;
+	ZST_EXPORT virtual void write(std::stringstream & buffer) override;
+	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
 
 private:
 	//Heartbeat status

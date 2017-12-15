@@ -4,5 +4,5 @@
 
 class ZstGraphSender {
 public:
-	virtual void send_to_graph(ZstPlug * plug) = 0;
+	virtual void publish(ZstPlug * plug) = 0;
 };

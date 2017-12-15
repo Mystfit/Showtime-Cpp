@@ -1,26 +1,20 @@
-set(SERVER_TARGET ${PROJECT_NAME}Server)
-
-set(ZST_SERVER_HEADERS
-    "ZstStage.h"
+set(ZST_SERVER_PUBLIC_HEADERS
+    "${CMAKE_CURRENT_LIST_DIR}/ZstStage.h"
 )
 
 set(ZST_SERVER_SRC
-    "ZstStageRunner.cpp"
-    "ZstStage.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstStageRunner.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstStage.cpp"
 )
 
-# Create standalone stage executable
-IF(WIN32)
-    add_definitions(-DIMPORTS_CORE_API)
+target_sources(${SERVER_TARGET} PUBLIC ${ZST_SERVER_PUBLIC_HEADERS})
+target_sources(${SERVER_TARGET} PRIVATE ${ZST_SERVER_SRC})
 
-    # Set up libzmq and czmq runtime dependencies
-    set(RUNTIMES_LIBZMQ_RELEASE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} CACHE FILEPATH "Path to release libzmq dll")
-    set(RUNTIMES_LIBZMQ_DEBUG ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} CACHE FILEPATH "Path to debug libzmq dll")
-    set(RUNTIMES_LIBZMQ ${RUNTIMES_LIBZMQ_RELEASE} ${RUNTIMES_LIBZMQ_DEBUG})
-    set(RUNTIMES_CZMQ ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} CACHE FILEPATH "Path to czmq .dll")
+# Platform specific defines
+IF(WIN32)
+    target_compile_definitions(${SERVER_TARGET} PRIVATE -DIMPORT_SERVER_API)
+    target_compile_definitions(${SERVER_TARGET} PRIVATE -DEXPORT_SERVER_API)
 ENDIF(WIN32)
 
-message(STATUS "Building ${SERVER_TARGET} target")
-add_executable (${SERVER_TARGET} ${ZST_SERVER_HEADERS} ${ZST_SERVER_SRC}) 
 add_dependencies(${SERVER_TARGET} ${CORE_TARGET})
 target_link_libraries(${SERVER_TARGET} ${CORE_TARGET})

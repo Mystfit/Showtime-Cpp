@@ -43,8 +43,8 @@ public:
 	ZST_EXPORT virtual void remove_plug(ZstPlug *plug);
 
 	//Serialisation
-	virtual void write(std::stringstream & buffer) override;
-	virtual void read(const char * buffer, size_t length, size_t & offset) override;
+	ZST_EXPORT virtual void write(std::stringstream & buffer) override;
+	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
 
 	//Speicifc component type
 	const char * component_type() const;

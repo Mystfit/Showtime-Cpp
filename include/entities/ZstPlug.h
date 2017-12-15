@@ -6,7 +6,7 @@
 #include <msgpack.hpp>
 #include "ZstExports.h"
 #include "ZstConstants.h"
-#include "entities/ZstEntityBase.h"
+#include "ZstEntityBase.h"
 
 #define PLUG_TYPE "plug"
 

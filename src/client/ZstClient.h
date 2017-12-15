@@ -6,13 +6,15 @@
 #include <string>
 #include <msgpack.hpp>
 #include "ZstURI.h"
-#include "ZstActor.h"
 #include "ZstExports.h"
-#include "Queue.h"
-#include "ZstMessages.h"
-#include "ZstGraphSender.h"
 #include "ZstCallbacks.h"
-#include "ZstCallbackQueue.h"
+
+//Core headers
+#include "../core/Queue.h"
+#include "../core/ZstActor.h"
+#include "../core/ZstMessages.h"
+#include "../core/ZstGraphSender.h"
+#include "../core/ZstCallbackQueue.h"
 
 //Forward declarations
 class ZstValue;
@@ -74,7 +76,7 @@ public:
     void enqueue_compute(ZstInputPlug * plug);
 
 	//Graph communication
-	virtual void send_to_graph(ZstPlug * plug) override;
+	virtual void publish(ZstPlug * plug) override;
 
 	//Cables
 	int connect_cable(ZstPlug * a, ZstPlug * b);
@@ -116,7 +118,6 @@ private:
 	//Internal send and receive
 	//Send/receive
 	void send_to_stage(zmsg_t * msg);
-	zmsg_t * receive_from_graph();
 	zmsg_t * receive_from_stage();
 	zmsg_t * receive_stage_update();
 	ZstMessages::Signal check_stage_response_ok();

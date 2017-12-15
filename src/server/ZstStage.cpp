@@ -1,9 +1,12 @@
 #include <sstream>
 #include "ZstStage.h"
 #include "ZstURI.h"
-#include "entities/ZstPerformer.h"
-#include "ZstUtils.hpp"
 #include "ZstCable.h"
+#include "entities/ZstPerformer.h"
+
+//Core headers
+#include "../core/ZstUtils.hpp"
+
 
 using namespace std;
 
@@ -32,7 +35,7 @@ void ZstStage::init()
     
 	addr << "tcp://*:" << STAGE_ROUTER_PORT;
 	zsock_bind(m_performer_router, "%s", addr.str().c_str());
-	addr.clear();
+	addr.str("");
 
 	addr << "@tcp://*:" << STAGE_PUB_PORT;
 	m_graph_update_pub = zsock_new_pub(addr.str().c_str());
@@ -85,8 +88,9 @@ void ZstStage::destroy_client(ZstPerformer * performer)
 	std::stringstream entity_buffer;
 	ZstURI c = performer->URI();
 	c.write(entity_buffer);
+	zframe_t * uri_frame = zframe_from(entity_buffer.str().c_str());
 
-	enqueue_stage_update(ZstMessages::Kind::CLIENT_LEAVE, entity_buffer.str());
+	enqueue_stage_update(ZstMessages::Kind::CLIENT_LEAVE, uri_frame);
 	delete performer;
 }
 
@@ -245,71 +249,57 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 	ZstMessages::Signal result;
 	bool send_reply = true;
 	bool announce_creation = true;
-	char * data = (char*)zframe_data(msg_payload);
-	size_t data_size = zframe_size(msg_payload);
 
 	//Message type handling
 	switch (message_type) {
 	case ZstMessages::Kind::SIGNAL: {
-		ZstMessages::Signal s = ZstMessages::unpack_signal(msg);
-
-		if (s == ZstMessages::Signal::SYNC) {
-			//Endpoint is requesting to catch up with the graph. Send a full snapshot
-			zmsg_t * su = stage->create_snapshot();
-			stage->send_to_client(su, sender);
-		}
-		else if (s == ZstMessages::Signal::LEAVING) {
-			stage->destroy_client_handler(data, data_size);
-		}
-		else if (s == ZstMessages::Signal::HEARTBEAT) {
-			sender->set_heartbeat_active();
-		}
+		result = stage->signal_handler(msg_payload, sender);
 		announce_creation = false;
 		break;
 	}
 	case ZstMessages::Kind::CLIENT_JOIN:
 	{
-		result = stage->create_client_handler(data, data_size);
+		result = stage->create_client_handler(msg_payload);
 		break;
 	}
 	case ZstMessages::Kind::CREATE_COMPONENT:
 	{
-		result = stage->create_entity_handler<ZstComponent>(data, data_size, sender);
+		result = stage->create_entity_handler<ZstComponent>(msg_payload, sender);
 		break;
 	}
 	case ZstMessages::Kind::CREATE_CONTAINER:
 	{
-		result = stage->create_entity_handler<ZstContainer>(data, data_size, sender);
+		result = stage->create_entity_handler<ZstContainer>(msg_payload, sender);
 		break;
 	}
 	case ZstMessages::Kind::CREATE_PLUG:
 	{
-		result = stage->create_entity_handler<ZstPlug>(data, data_size, sender);
+		result = stage->create_entity_handler<ZstPlug>(msg_payload, sender);
 		break;
 	}
 	case ZstMessages::Kind::CREATE_CABLE:
 	{
-		result = stage->create_cable_handler(data, data_size);
+		result = stage->create_cable_handler(msg_payload);
 		break;
 	}
 	case ZstMessages::Kind::CREATE_ENTITY_FROM_TEMPLATE:
 	{
-		result = stage->create_entity_from_template_handler(data, data_size);
+		result = stage->create_entity_from_template_handler(msg_payload);
 		break;
 	}
 	case ZstMessages::Kind::DESTROY_ENTITY:
 	{
-		result = stage->destroy_entity_handler(data, data_size);
+		result = stage->destroy_entity_handler(msg_payload);
 		break;
 	}
 	case ZstMessages::Kind::DESTROY_PLUG:
 	{
-		result = stage->destroy_entity_handler(data, data_size);
+		result = stage->destroy_entity_handler(msg_payload);
 		break;
 	}
 	case ZstMessages::Kind::DESTROY_CABLE:
 	{
-		result = stage->destroy_cable_handler(data, data_size);
+		result = stage->destroy_cable_handler(msg_payload);
 		break;
 	}
 	default:
@@ -323,11 +313,14 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 		stage->reply_with_signal(socket, result);
 
 	if (announce_creation) {
-		stage->enqueue_stage_update(message_type, std::string(data, data_size));
+		stage->enqueue_stage_update(message_type, msg_payload);
+	}
+	else {
+		//Need to clean up the frame if we aren't forwarding it to the rest of the network
+		zframe_destroy(&msg_payload);
 	}
 
 	//Cleanup
-	zframe_destroy(&msg_payload);
 	zmsg_destroy(&msg);
 	return 0;
 }
@@ -382,9 +375,27 @@ void ZstStage::send_to_client(zmsg_t * msg, ZstPerformer * destination) {
 // Message handlers
 // ----------------
 
-ZstMessages::Signal ZstStage::create_client_handler(const char * buffer, size_t length)
+ZstMessages::Signal ZstStage::signal_handler(zframe_t * frame, ZstPerformer * sender)
 {
-	ZstPerformer * client = ZstMessages::unpack_entity<ZstPerformer>(buffer, length);
+	ZstMessages::Signal signal = ZstMessages::unpack_signal(frame);
+	ZstMessages::Signal result = ZstMessages::Signal::OK;
+
+	if (signal == ZstMessages::Signal::SYNC) {
+		send_to_client(create_snapshot(), sender);
+	}
+	else if (signal == ZstMessages::Signal::LEAVING) {
+		result = destroy_client_handler(sender);
+	}
+	else if (signal == ZstMessages::Signal::HEARTBEAT) {
+		sender->set_heartbeat_active();
+	}
+
+	return result;
+}
+
+ZstMessages::Signal ZstStage::create_client_handler(zframe_t * frame)
+{
+	ZstPerformer * client = ZstMessages::unpack_entity<ZstPerformer>(frame);
 	cout << "ZST_STAGE: Registering new client " << client->URI().path() << endl;
 
 	//Only one client with this UUID at a time
@@ -397,19 +408,18 @@ ZstMessages::Signal ZstStage::create_client_handler(const char * buffer, size_t 
     return ZstMessages::Signal::OK;
 }
 
-ZstMessages::Signal ZstStage::destroy_client_handler(const char * buffer, size_t length)
+ZstMessages::Signal ZstStage::destroy_client_handler(ZstPerformer * performer)
 {
-	ZstPerformer * performer = ZstMessages::unpack_entity<ZstPerformer>(buffer, length);
 	destroy_client(performer);
 	return ZstMessages::Signal::OK;
 }
 
-template ZstMessages::Signal ZstStage::create_entity_handler<ZstPlug>(const char * buffer, size_t length, ZstPerformer * performer);
-template ZstMessages::Signal ZstStage::create_entity_handler<ZstComponent>(const char * buffer, size_t length, ZstPerformer * performer);
-template ZstMessages::Signal ZstStage::create_entity_handler<ZstContainer>(const char * buffer, size_t length, ZstPerformer * performer);
+template ZstMessages::Signal ZstStage::create_entity_handler<ZstPlug>(zframe_t * frame, ZstPerformer * performer);
+template ZstMessages::Signal ZstStage::create_entity_handler<ZstComponent>(zframe_t * frame, ZstPerformer * performer);
+template ZstMessages::Signal ZstStage::create_entity_handler<ZstContainer>(zframe_t * frame, ZstPerformer * performer);
 template <typename T>
-ZstMessages::Signal ZstStage::create_entity_handler(const char * buffer, size_t length, ZstPerformer * performer) {
-	T* entity = ZstMessages::unpack_entity<T>(buffer, length);
+ZstMessages::Signal ZstStage::create_entity_handler(zframe_t * frame, ZstPerformer * performer) {
+	T* entity = ZstMessages::unpack_entity<T>(frame);
 
 	if (performer->find_child_by_URI(entity->URI())) {
 		//Entity already exists
@@ -437,9 +447,9 @@ ZstMessages::Signal ZstStage::create_entity_handler(const char * buffer, size_t 
     return ZstMessages::Signal::OK;
 }
 
-ZstMessages::Signal ZstStage::destroy_entity_handler(const char * buffer, size_t length)
+ZstMessages::Signal ZstStage::destroy_entity_handler(zframe_t * frame)
 {
-	ZstURI entity_path = ZstMessages::unpack_streamable<ZstURI>(buffer, length);
+	ZstURI entity_path = ZstMessages::unpack_streamable<ZstURI>(frame);
 	ZstPerformer * owning_performer = get_client_by_URI(entity_path);
 	if (!owning_performer) {
 		return ZstMessages::Signal::ERR_STAGE_PERFORMER_NOT_FOUND;
@@ -467,7 +477,7 @@ ZstMessages::Signal ZstStage::destroy_entity_handler(const char * buffer, size_t
 }
 
 
-ZstMessages::Signal ZstStage::create_entity_template_handler(const char * buffer, size_t length)
+ZstMessages::Signal ZstStage::create_entity_template_handler(zframe_t * frame)
 {
     //TODO:Implement entity template handler on stage
 	throw new std::exception("Entity template creation not implemented");
@@ -475,15 +485,15 @@ ZstMessages::Signal ZstStage::create_entity_template_handler(const char * buffer
 }
 
 
-ZstMessages::Signal ZstStage::create_entity_from_template_handler(const char * buffer, size_t length)
+ZstMessages::Signal ZstStage::create_entity_from_template_handler(zframe_t * frame)
 {
 	throw new std::exception("ZST_STAGE: Creating template entities not implemented yet");
 	return ZstMessages::Signal::OK;
 }
 
-ZstMessages::Signal ZstStage::create_cable_handler(const char * buffer, size_t length)
+ZstMessages::Signal ZstStage::create_cable_handler(zframe_t * frame)
 {
-	ZstCable cable = ZstMessages::unpack_streamable<ZstCable>(buffer, length);
+	ZstCable cable = ZstMessages::unpack_streamable<ZstCable>(frame);
 	std::cout << "ZST_STAGE: Received connect cable request for " << cable.get_output().path() << " and " << cable.get_output().path() << endl;
 
 	ZstCable * cable_ptr = create_cable(cable.get_output(), cable.get_input());
@@ -514,9 +524,9 @@ ZstMessages::Signal ZstStage::create_cable_handler(const char * buffer, size_t l
     return ZstMessages::Signal::OK;
 }
 
-ZstMessages::Signal ZstStage::destroy_cable_handler(const char * buffer, size_t length)
+ZstMessages::Signal ZstStage::destroy_cable_handler(zframe_t * frame)
 {
-	ZstCable cable = ZstMessages::unpack_streamable<ZstCable>(buffer, length);
+	ZstCable cable = ZstMessages::unpack_streamable<ZstCable>(frame);
 	cout << "ZST_STAGE: Received destroy cable connection request" << endl;
 
 	ZstCable * cable_ptr = get_cable_by_URI(cable.get_input(), cable.get_output());
@@ -533,9 +543,9 @@ ZstMessages::Signal ZstStage::destroy_cable_handler(const char * buffer, size_t 
 // Outgoing event queue
 //---------------------
 
-void ZstStage::enqueue_stage_update(ZstMessages::Kind k, std::string packed)
+void ZstStage::enqueue_stage_update(ZstMessages::Kind k, zframe_t * frame)
 {
-    ZstMessages::MessagePair p = {k, packed};
+    ZstMessages::MessagePair p = {k, frame};
 	m_stage_updates.push(p);
 }
 
@@ -552,7 +562,7 @@ zmsg_t * ZstStage::create_snapshot() {
 		item_frame = ZstMessages::build_message_kind_frame(ZstMessages::Kind::CREATE_PERFORMER);
 		zmsg_append(batch_msg, &item_frame);
 		zmsg_addstr(batch_msg, buffer.str().c_str());
-		buffer.clear();
+		buffer.str("");
 	}
 
 	for (auto cable : m_cables) {
@@ -560,7 +570,7 @@ zmsg_t * ZstStage::create_snapshot() {
 		item_frame = ZstMessages::build_message_kind_frame(ZstMessages::Kind::CREATE_CABLE);
 		zmsg_append(batch_msg, &item_frame);
 		zmsg_addstr(batch_msg, buffer.str().c_str());
-		buffer.clear();
+		buffer.str("");
 	}
 	
     return batch_msg;
@@ -581,7 +591,8 @@ int ZstStage::stage_update_timer_func(zloop_t * loop, int timer_id, void * arg)
             ZstMessages::MessagePair p = stage->m_stage_updates.pop();
 			item_frame = ZstMessages::build_message_kind_frame(p.kind);
 			zmsg_append(batch_msg, &item_frame);
-			zmsg_addstr(batch_msg, p.packed.c_str());
+			zmsg_append(batch_msg, &(p.packed));
+			buffer.str("");
 		}
 
 		zmsg_send(&batch_msg, stage->m_graph_update_pub);

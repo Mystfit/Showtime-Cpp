@@ -6,7 +6,6 @@
 #include <iostream>
 #include <stdio.h>
 #include <msgpack.hpp>
-#include <czmq.h>
 #include "ZstConstants.h"
 #include "ZstStreamable.h"
 #include "entities/ZstPerformer.h"
@@ -49,7 +48,7 @@ public:
     
     struct MessagePair {
         ZstMessages::Kind kind;
-        std::string packed;
+        zframe_t * packed;
     };
 
 	enum Signal {
@@ -110,26 +109,24 @@ public:
 		return msg;
 	}
 
-	static Signal unpack_signal(zmsg_t * msg) {
-        char * signal_s = zmsg_popstr(msg);
-        Signal sig =(Signal)std::atoi(signal_s);
-        zstr_free(&signal_s);
+	static Signal unpack_signal(zframe_t * frame) {
+        Signal sig =(Signal)std::atoi((char*)zframe_data(frame));
 		return sig;
 	}
 
 	template <typename T>
-	static T* unpack_entity(const char * buffer, size_t length) {
+	static T* unpack_entity(zframe_t * frame) {
 		T* entity = new T();
 		size_t offset = 0;
-		entity->read(buffer, length, offset);
+		entity->read((char*)zframe_data(frame), zframe_size(frame), offset);
 		return entity;
 	}
 
 	template <typename T>
-	static T unpack_streamable(const char * buffer, size_t length) {
+	static T unpack_streamable(zframe_t * frame) {
 		T streamable = T();
 		size_t offset = 0;
-		streamable.read(buffer, length, offset);
+		streamable.read((char*)zframe_data(frame), zframe_size(frame), offset);
 		return streamable;
 	}
 };

@@ -1,6 +1,5 @@
 #include "Showtime.h"
-#include "entities/ZstComponent.h"
-
+#include <iostream>
 
 class Sink : public ZstComponent {
 private:
@@ -10,12 +9,11 @@ public:
 
 	bool received_hit = false;
 
-	Sink(const char * name, ZstEntityBase * parent) : ZstComponent("SINK", name, parent) {
+	Sink(const char * name) : ZstComponent("SINK", name) {
 		init();
 	}
 
 	virtual void init() override {
-		activate();
 		m_input = create_input_plug("in", ZstValueType::ZST_INT);
 	}
 
@@ -30,10 +28,10 @@ public:
 };
 
 
-class TestCableArrivingEventCallback : public ZstCableEventCallback {
+class TestCableArrivingEventCallback : public ZstCableEvent {
 public:
-	void run(ZstCable cable) override {
-		std::cout << "SINK - cable arriving " << cable.get_output().path() << " to " << cable.get_input().path() << std::endl;
+	void run(ZstCable * cable) override {
+		std::cout << "SINK - cable arriving " << cable->get_output().path() << " to " << cable->get_input().path() << std::endl;
 	}
 };
 
@@ -45,29 +43,22 @@ int main(int argc,char **argv){
 		return 0;
 	}
 
-	Showtime::init();
+	Showtime::init("sink");
     Showtime::join("127.0.0.1");
 	TestCableArrivingEventCallback * cable_arrive = new TestCableArrivingEventCallback();
     Showtime::attach(cable_arrive, ZstCallbackAction::ARRIVING);
 
 	std::cout << "Starting sink" << std::endl;
 
-    ZstComponent * root = new ZstComponent("ROOT", "sink_root");
-	root->activate();
-	Sink * sink = new Sink("sink", root);
+	Sink * sink = new Sink("sink_ent");
+	Showtime::activate(sink);
 	
 	while (!sink->received_hit){
 		Showtime::poll_once();
 	}
 
-	std::cout << "Removing sink root" << std::endl;
-    delete root;
-
-	std::cout << "Removing sink" << std::endl;
+	std::cout << "Removing sink entity" << std::endl;
 	delete sink;
-    
-    Showtime::detach(cable_arrive, ZstCallbackAction::ARRIVING);
-	delete cable_arrive;
 
 	Showtime::destroy();
 

@@ -1,10 +1,8 @@
 #pragma once
 #include "ZstExports.h"
 #include "ZstURI.h"
-#include "entities/ZstPlug.h"
 #include "ZstStreamable.h"
-
-class ZstPlug;
+#include "entities/ZstPlug.h"
 
 class ZstCable : public ZstStreamable {
 public:
