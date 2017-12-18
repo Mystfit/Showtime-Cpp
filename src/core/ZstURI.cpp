@@ -158,24 +158,6 @@ bool ZstURI::is_empty()
 	return component_count < 1;
 }
 
-void ZstURI::write(std::stringstream & buffer)
-{
-	msgpack::pack(buffer, path());
-}
-
-void ZstURI::read(const char * buffer, size_t length, size_t & offset)
-{
-	//Unpack uri path
-	auto handle = msgpack::unpack(buffer, length, offset);
-	auto obj = handle.get();
-
-	//Unpack path and setup path split
-	const char * uri_path = obj.via.str.ptr;
-	original_path = create_pstr(uri_path);
-	segmented_path = create_pstr(uri_path);
-	split();
-}
-
 void ZstURI::split()
 {
 	component_count = 0;

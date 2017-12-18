@@ -31,7 +31,7 @@ public:
 class TestCableArrivingEventCallback : public ZstCableEvent {
 public:
 	void run(ZstCable * cable) override {
-		std::cout << "SINK - cable arriving " << cable->get_output().path() << " to " << cable->get_input().path() << std::endl;
+		std::cout << "SINK - cable arriving " << cable->get_output()->URI().path() << " to " << cable->get_input()->URI().path() << std::endl;
 	}
 };
 

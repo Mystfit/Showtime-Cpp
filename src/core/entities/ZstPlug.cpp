@@ -1,13 +1,45 @@
 #include "entities/ZstPlug.h"
 #include "entities/ZstEntityBase.h"
 #include "entities/ZstComponent.h"
+#include "ZstCable.h"
 #include "../ZstValue.h"
 #include "../ZstGraphSender.h"
 
 using namespace std;
 
+//--------------------
+//Plug cables iterator
+//--------------------
+
+ZstCableIterator::ZstCableIterator(const ZstPlug * plug, unsigned idx) :
+	m_plug(plug),
+	m_index(idx)
+{
+}
+
+bool ZstCableIterator::operator!=(const ZstCableIterator & other)
+{
+	return (m_index != other.m_index);
+}
+
+const ZstCableIterator & ZstCableIterator::operator++()
+{
+	m_index++;
+	return *this;
+}
+
+ZstCable * ZstCableIterator::operator*() const
+{
+	return m_plug->m_cables[m_index];
+}
+
+
+//--------------------
+// ZstPlug 
+//--------------------
+
 ZstPlug::ZstPlug() :
-	ZstEntityBase(PLUG_TYPE)
+	ZstEntityBase(PLUG_TYPE, "")
 {
 	m_value = new ZstValue(ZST_NONE);
 }
@@ -21,6 +53,10 @@ ZstPlug::ZstPlug(const char * name, ZstValueType t) :
 ZstPlug::~ZstPlug() {
 	delete m_value;
 }
+
+//--------------------
+// Value interface 
+//--------------------
 
 void ZstPlug::clear()
 {
@@ -72,6 +108,11 @@ ZstValue * ZstPlug::raw_value()
 	return m_value;
 }
 
+
+//--------------------
+// Serialisation
+//--------------------
+
 void ZstPlug::write(std::stringstream & buffer)
 {
 	//Pack entity
@@ -92,9 +133,50 @@ void ZstPlug::read(const char * buffer, size_t length, size_t & offset)
 	ZstPlugDirection m_direction = (ZstPlugDirection)obj.via.i64;
 }
 
+
+//--------------------
+// Properties
+//--------------------
+
 ZstPlugDirection ZstPlug::direction()
 {
 	return m_direction;
+}
+
+
+//--------------------
+// Cable enerumeration
+//--------------------
+
+ZstCableIterator ZstPlug::begin() const
+{
+	return ZstCableIterator(this, 0);
+}
+
+ZstCableIterator ZstPlug::end() const
+{
+	return ZstCableIterator(this, m_cables.size()-1);
+}
+
+size_t ZstPlug::num_cables()
+{
+	return m_cables.size();
+}
+
+void ZstPlug::add_cable(ZstCable * cable)
+{
+	std::vector<ZstCable*>::iterator cable_it = std::find(m_cables.begin(), m_cables.end(), cable);
+	if (cable_it != m_cables.end()) {
+		std::cout << "ZST: Plug already has a matching cable" << std::endl;
+		return;
+	}
+
+	m_cables.push_back(cable);
+}
+
+void ZstPlug::remove_cable(ZstCable * cable)
+{
+	m_cables.erase(std::remove(m_cables.begin(), m_cables.end(), cable), m_cables.end());
 }
 
 

@@ -7,16 +7,22 @@ ZstComponent::ZstComponent() :
 	set_component_type("");
 }
 
-ZstComponent::ZstComponent(const char * entity_type) :
-	ZstEntityBase(COMPONENT_TYPE)
+ZstComponent::ZstComponent(const char * path) :
+	ZstEntityBase(COMPONENT_TYPE, path)
 {
-	set_component_type(entity_type);
+	set_component_type("");
 }
 
-ZstComponent::ZstComponent(const char * entity_type, const char * path)
+ZstComponent::ZstComponent(const char * component_type, const char * path)
     : ZstEntityBase(COMPONENT_TYPE, path)
 {
-	set_component_type(entity_type);
+	set_component_type(component_type);
+}
+
+ZstComponent::ZstComponent(const char * entity_type, const char * component_type, const char * path) 
+	: ZstEntityBase(entity_type, path)
+{
+	set_component_type(component_type);
 }
 
 ZstComponent::~ZstComponent()
@@ -48,7 +54,6 @@ ZstOutputPlug * ZstComponent::create_output_plug(const char * name, ZstValueType
 	add_plug(plug);
 	return plug;
 }
-
 
 ZstPlug * ZstComponent::get_plug_by_URI(const ZstURI & uri) const
 {

@@ -12,8 +12,9 @@ public:
 	friend class ZstClient;
 	friend class ZstStage;
 	ZST_EXPORT ZstComponent();
-	ZST_EXPORT ZstComponent(const char * entity_type);
-	ZST_EXPORT ZstComponent(const char * entity_type, const char * path);
+	ZST_EXPORT ZstComponent(const char * path);
+	ZST_EXPORT ZstComponent(const char * component_type, const char * path);
+	ZST_EXPORT ZstComponent(const char * entity_type, const char * component_type, const char * path);
 	ZST_EXPORT ~ZstComponent();
 
 	ZST_EXPORT virtual void init() override {};

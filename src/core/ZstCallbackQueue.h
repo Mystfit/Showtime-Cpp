@@ -81,6 +81,10 @@ public:
         }
     }
 
+	ZST_EXPORT size_t size() {
+		return m_event_queue.size();
+	}
+
 private:
 	std::vector<ZstCallbackHook> m_pre_event_callback;
 	std::vector<Callback*> m_event_callbacks;

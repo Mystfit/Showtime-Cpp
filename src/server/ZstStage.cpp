@@ -85,12 +85,7 @@ void ZstStage::destroy_client(ZstPerformer * performer)
 		m_clients.erase(client_it);
 	}
 
-	std::stringstream entity_buffer;
-	ZstURI c = performer->URI();
-	c.write(entity_buffer);
-	zframe_t * uri_frame = zframe_from(entity_buffer.str().c_str());
-
-	enqueue_stage_update(ZstMessages::Kind::CLIENT_LEAVE, uri_frame);
+	enqueue_stage_update(ZstMessages::Kind::CLIENT_LEAVE, zframe_from(performer->URI().path()));
 	delete performer;
 }
 
@@ -99,7 +94,7 @@ void ZstStage::destroy_client(ZstPerformer * performer)
 //Cables
 //------
 
-ZstCable * ZstStage::create_cable(const ZstURI & a, const ZstURI & b)
+ZstCable * ZstStage::create_cable_ptr(const ZstURI & a, const ZstURI & b)
 {
 	ZstCable * cable_ptr = NULL;
 	cable_ptr = get_cable_by_URI(a, b);
@@ -110,11 +105,10 @@ ZstCable * ZstStage::create_cable(const ZstURI & a, const ZstURI & b)
 		return NULL;
 	}
 
-
 	//Find target plugs, they shyould already exist on the graph
 	int connect_status = 0;
-	ZstPlug * input_plug = get_client_by_URI(cable_ptr->get_input())->get_plug_by_URI(cable_ptr->get_input());
-	ZstPlug * output_plug = get_client_by_URI(cable_ptr->get_output())->get_plug_by_URI(cable_ptr->get_output());
+	ZstPlug * input_plug = get_client_by_URI(cable_ptr->get_input_URI())->get_plug_by_URI(cable_ptr->get_input_URI());
+	ZstPlug * output_plug = get_client_by_URI(cable_ptr->get_output_URI())->get_plug_by_URI(cable_ptr->get_output_URI());
 
 	//Verify plug directions are correct
 	if (input_plug && output_plug) {
@@ -141,7 +135,7 @@ ZstCable * ZstStage::create_cable(const ZstURI & a, const ZstURI & b)
 int ZstStage::destroy_cable(const ZstURI & path) {
 	int result = 1;
 	bool fail = false;
-	std::vector<ZstCable*> cables = get_cables_by_URI(path);
+	std::vector<ZstCable*> cables = find_cables(path);
 	for (ZstCable * cable : cables) {
 		if (!destroy_cable(cable))
 		{
@@ -159,16 +153,13 @@ int ZstStage::destroy_cable(const ZstURI & output_plug, const ZstURI & input_plu
 
 int ZstStage::destroy_cable(ZstCable * cable) {
 	if (cable != NULL) {
-		cout << "ZST_STAGE: Destroying cable " << cable->get_output().path() << " " << cable->get_input().path() << endl;
+		cout << "ZST_STAGE: Destroying cable " << cable->get_output_URI().path() << " " << cable->get_input_URI().path() << endl;
 		for (vector<ZstCable*>::iterator cable_iter = m_cables.begin(); cable_iter != m_cables.end(); ++cable_iter) {
 			if ((*cable_iter) == cable) {
 				m_cables.erase(cable_iter);
 				break;
 			}
 		}
-
-		ZstURI out_uri = cable->get_output();
-		ZstURI in_uri = cable->get_input();
 
 		delete cable;
 		cable = 0;
@@ -177,7 +168,7 @@ int ZstStage::destroy_cable(ZstCable * cable) {
 	return 0;
 }
 
-vector<ZstCable*> ZstStage::get_cables_by_URI(const ZstURI & uri) {
+vector<ZstCable*> ZstStage::find_cables(const ZstURI & uri) {
 
 	vector<ZstCable*> cables;
 	auto it = find_if(m_cables.begin(), m_cables.end(), [&uri](ZstCable* current) {
@@ -195,7 +186,7 @@ std::vector<ZstCable*> ZstStage::get_cables_in_entity(ZstEntityBase * entity)
 {
 	std::vector<ZstCable*> cables;
 	for (auto cable : m_cables) {
-		if (cable->get_input().contains(entity->URI()) || cable->get_output().contains(entity->URI())) {
+		if (cable->get_input_URI().contains(entity->URI()) || cable->get_output_URI().contains(entity->URI())) {
 			cables.push_back(cable);
 		}
 	}
@@ -449,7 +440,7 @@ ZstMessages::Signal ZstStage::create_entity_handler(zframe_t * frame, ZstPerform
 
 ZstMessages::Signal ZstStage::destroy_entity_handler(zframe_t * frame)
 {
-	ZstURI entity_path = ZstMessages::unpack_streamable<ZstURI>(frame);
+	ZstURI entity_path = ZstURI((char*)zframe_data(frame));
 	ZstPerformer * owning_performer = get_client_by_URI(entity_path);
 	if (!owning_performer) {
 		return ZstMessages::Signal::ERR_STAGE_PERFORMER_NOT_FOUND;
@@ -494,18 +485,17 @@ ZstMessages::Signal ZstStage::create_entity_from_template_handler(zframe_t * fra
 ZstMessages::Signal ZstStage::create_cable_handler(zframe_t * frame)
 {
 	ZstCable cable = ZstMessages::unpack_streamable<ZstCable>(frame);
-	std::cout << "ZST_STAGE: Received connect cable request for " << cable.get_output().path() << " and " << cable.get_output().path() << endl;
+	std::cout << "ZST_STAGE: Received connect cable request for " << cable.get_output_URI().path() << " and " << cable.get_output_URI().path() << endl;
 
-	ZstCable * cable_ptr = create_cable(cable.get_output(), cable.get_input());
+	ZstCable * cable_ptr = create_cable_ptr(cable.get_output_URI(), cable.get_input_URI());
 
 	if (!cable_ptr) {
-
 		return ZstMessages::Signal::ERR_STAGE_BAD_CABLE_CONNECT_REQUEST;
 	}
 
 	//Create connection request for the entity who owns the input plug
-	ZstPerformer * input_performer = get_client_by_URI(cable_ptr->get_input());
-	ZstPerformer * output_performer = get_client_by_URI(cable_ptr->get_output());
+	ZstPerformer * input_performer = get_client_by_URI(cable_ptr->get_input_URI());
+	ZstPerformer * output_performer = get_client_by_URI(cable_ptr->get_output_URI());
 
 	std::cout << "ZST_STAGE: Sending cable connection request to " << input_performer->URI().path() << std::endl;
 
@@ -515,9 +505,7 @@ ZstMessages::Signal ZstStage::create_cable_handler(zframe_t * frame)
 	zmsg_append(msg, &kind_frame);
 
 	//Pack target performer address
-	std::stringstream address_buffer;
-	ZstURI(input_performer->URI()).write(address_buffer);
-	zmsg_addstr(msg, address_buffer.str().c_str());
+	zmsg_addstr(msg, input_performer->URI().path());
 	
 	//And send it
 	send_to_client(msg, input_performer);
@@ -529,7 +517,7 @@ ZstMessages::Signal ZstStage::destroy_cable_handler(zframe_t * frame)
 	ZstCable cable = ZstMessages::unpack_streamable<ZstCable>(frame);
 	cout << "ZST_STAGE: Received destroy cable connection request" << endl;
 
-	ZstCable * cable_ptr = get_cable_by_URI(cable.get_input(), cable.get_output());
+	ZstCable * cable_ptr = get_cable_by_URI(cable.get_input_URI(), cable.get_output_URI());
 
 	if (!destroy_cable(cable_ptr)) {
 		return ZstMessages::Signal::ERR_STAGE_BAD_CABLE_DISCONNECT_REQUEST;

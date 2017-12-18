@@ -15,9 +15,10 @@ Showtime::Showtime(){
 Showtime::~Showtime(){
 }
 
-void Showtime::destroy() {
-	ZstClient::instance().destroy();
-}
+
+// -----------------
+// Initialisation
+// -----------------
 
 void Showtime::init(const char * performer_name)
 {
@@ -30,15 +31,24 @@ void Showtime::join(const char * stage_address){
 	ZstClient::instance().register_client_to_stage(stage_address);
 }
 
+
+// -----------------
+// Cleanup
+// -----------------
+
+void Showtime::destroy() {
+	ZstClient::instance().destroy();
+}
+
 void Showtime::leave()
 {
 	return ZstClient::instance().leave_stage();
 }
 
-bool Showtime::is_connected()
-{
-	return ZstClient::instance().is_connected_to_stage();
-}
+
+// -----------------
+// Event polling
+// -----------------
 
 void Showtime::poll_once()
 {
@@ -47,7 +57,7 @@ void Showtime::poll_once()
 
 
 // -----------------
-// Callback managers
+// Callbacks
 // -----------------
 
 void Showtime::attach(ZstComponentEvent * callback, ZstCallbackAction action)
@@ -123,7 +133,7 @@ void Showtime::detach(ZstCableEvent * callback, ZstCallbackAction action)
 
 
 // -----------------------
-// Activation/deactivation
+// Entity activation/deactivation
 // -----------------------
 int Showtime::activate(ZstEntityBase * entity)
 {
@@ -137,10 +147,10 @@ int Showtime::destroy(ZstEntityBase * entity)
 
 
 // -------------
-// API Functions
+// Hierarchy
 // -------------
 
-ZstContainer * Showtime::get_root()
+ZstPerformer * Showtime::get_root()
 {
 	return ZstClient::instance().get_local_performer();
 }
@@ -150,9 +160,29 @@ ZstEntityBase * Showtime::get_performer_by_URI(const ZstURI & path)
     return ZstClient::instance().get_performer_by_URI(path);
 }
 
+ZstEntityBase* Showtime::get_entity_by_URI(const ZstURI & path)
+{
+	return ZstClient::instance().find_entity(path);
+}
+
+
+// -------------
+// Stage status
+// -------------
+
+bool Showtime::is_connected()
+{
+	return ZstClient::instance().is_connected_to_stage();
+}
+
 int Showtime::ping_stage(){
 	return ZstClient::instance().ping_stage();
 }
+
+
+// -------------
+// Cables
+// -------------
 
 int Showtime::connect_cable(ZstPlug * a, ZstPlug * b)
 {
@@ -163,6 +193,11 @@ int Showtime::destroy_cable(ZstCable * cable)
 {
 	return ZstClient::instance().destroy_cable(cable);
 }
+
+
+// -------------
+// Creatables
+// -------------
 
 void Showtime::register_component_type(ZstComponent * component_template)
 {
@@ -183,5 +218,3 @@ void Showtime::run_component_template(ZstComponent * component, bool wait)
 {
     ZstClient::instance().run_component_template(component);
 }
-
-

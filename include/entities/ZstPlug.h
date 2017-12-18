@@ -15,14 +15,28 @@ class Showtime;
 class ZstValue;
 class ZstGraphSender;
 class ZstComponent;
+class ZstCable;
+class ZstPlug;
+
+class ZstCableIterator {
+public:
+	ZST_EXPORT ZstCableIterator(const ZstPlug * p, unsigned idx = 0);
+	ZST_EXPORT bool operator!=(const ZstCableIterator& other);
+	ZST_EXPORT const ZstCableIterator& operator++();
+	ZST_EXPORT ZstCable * operator*() const;
+
+private:
+	const ZstPlug * m_plug;
+	unsigned int m_index;
+};
 
 class ZstPlug : public ZstEntityBase {
 public:
-	friend class Showtime;
 	friend class ZstClient;
     friend class ZstComponent;
+	friend class ZstCableIterator;
     
-	//Constructor
+	//Initialisation
 	ZST_EXPORT ZstPlug();
 	ZST_EXPORT ZstPlug(const char * name, ZstValueType t);
 	ZST_EXPORT virtual ~ZstPlug();
@@ -47,12 +61,23 @@ public:
 	ZST_EXPORT virtual void write(std::stringstream & buffer) override;
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
 
-	//ZST_EXPORT ZstComponent * owner();
+	//Properties
 	ZST_EXPORT ZstPlugDirection direction();
+
+	//Cable enumeration
+	ZST_EXPORT ZstCableIterator begin() const;
+	ZST_EXPORT ZstCableIterator end() const;
+	ZST_EXPORT size_t num_cables();
 
 protected:
 	ZstValue * m_value;
 	ZstPlugDirection m_direction;
+
+private:
+	ZST_EXPORT void add_cable(ZstCable * cable);
+	ZST_EXPORT void remove_cable(ZstCable * cable);
+
+	std::vector<ZstCable*> m_cables;
 };
 
 

@@ -4,15 +4,6 @@
 #include "entities/ZstEntityBase.h"
 #include "msgpack.hpp"
 
-ZstEntityBase::ZstEntityBase(const char * entity_type) :
-    m_uri(),
-	m_is_activated(false),
-    m_is_destroyed(false),
-	m_parent(NULL)
-{
-	set_entity_type(entity_type);
-}
-
 ZstEntityBase::ZstEntityBase(const char * entity_type, const char * name) :
     m_uri(name),
 	m_is_activated(false),
@@ -76,17 +67,18 @@ void ZstEntityBase::operator delete(void * p)
 
 void ZstEntityBase::write(std::stringstream & buffer)
 {
-	m_uri.write(buffer);
+	msgpack::pack(buffer, URI().path());
 	msgpack::pack(buffer, entity_type());
 }
 
 void ZstEntityBase::read(const char * buffer, size_t length, size_t & offset)
 {
-	//Unpack URI first
-	m_uri.read(buffer, length, offset);
+	//Unpack uri path
+	auto handle = msgpack::unpack(buffer, length, offset);
+	m_uri = ZstURI(handle.get().via.str.ptr);
 
 	//Unpack entity type second
-	auto handle = msgpack::unpack(buffer, length, offset);
+	handle = msgpack::unpack(buffer, length, offset);
 	auto obj = handle.get();
 
 	//Copy entity type string into entity

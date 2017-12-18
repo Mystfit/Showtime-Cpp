@@ -2,19 +2,27 @@
 #include "entities/ZstPlug.h"
 #include "msgpack.hpp"
 
-ZstCable::ZstCable()
+ZstCable::ZstCable() : 
+	m_input(NULL),
+	m_output(NULL),
+	m_input_URI(""),
+	m_output_URI("")
 {
 }
 
 ZstCable::ZstCable(const ZstCable & copy) : 
 	m_input(copy.m_input),
-	m_output(copy.m_output)
+	m_output(copy.m_output),
+	m_input_URI(copy.m_input->URI()),
+	m_output_URI(copy.m_output->URI())
 {
 }
 
 ZstCable::ZstCable(ZstPlug * input_plug, ZstPlug * output_plug) :
-	m_input(input_plug->URI()),
-	m_output(output_plug->URI())
+	m_input(input_plug),
+	m_output(output_plug),
+	m_input_URI(input_plug->URI()),
+	m_output_URI(output_plug->URI())
 {
 }
 
@@ -24,43 +32,66 @@ ZstCable::~ZstCable()
 
 bool ZstCable::operator==(const ZstCable & other)
 {
-	return ZstURI::equal(m_input, other.m_input) && ZstURI::equal(m_output, other.m_output);
+	return ZstURI::equal(m_input_URI, other.m_input_URI) && ZstURI::equal(m_output_URI, other.m_output_URI);
 }
 
 bool ZstCable::operator!=(const ZstCable & other)
 {
-	return !(ZstURI::equal(m_input, other.m_input) && ZstURI::equal(m_output, other.m_output));
+	return !(ZstURI::equal(m_input_URI, other.m_input_URI) && ZstURI::equal(m_output_URI, other.m_output_URI));
 }
 
-bool ZstCable::is_attached(const ZstURI & uri)
+bool ZstCable::is_attached(const ZstURI & uri) const
 {
-	return (ZstURI::equal(m_input, uri)) || (ZstURI::equal(m_output, uri));
+	return (ZstURI::equal(m_input_URI, uri)) || (ZstURI::equal(m_output_URI, uri));
 }
 
-bool ZstCable::is_attached(const ZstURI & uriA, const ZstURI & uriB)
+bool ZstCable::is_attached(const ZstURI & uriA, const ZstURI & uriB) const
 {
-	return 	(ZstURI::equal(m_input, uriA) || ZstURI::equal(m_input, uriB)) &&
-		(ZstURI::equal(m_output, uriA) || ZstURI::equal(m_output, uriB));
+	return 	(ZstURI::equal(m_input_URI, uriA) || ZstURI::equal(m_input_URI, uriB)) &&
+		(ZstURI::equal(m_output_URI, uriA) || ZstURI::equal(m_output_URI, uriB));
 }
 
-ZstURI & ZstCable::get_input()
+bool ZstCable::is_attached(ZstPlug * plugA, ZstPlug * plugB) const 
+{
+	return is_attached(plugA->URI(), plugB->URI());
+}
+
+bool ZstCable::is_attached(ZstPlug * plug) const 
+{
+	return (ZstURI::equal(m_input_URI, plug->URI())) || (ZstURI::equal(m_output_URI, plug->URI()));
+}
+
+ZstPlug * ZstCable::get_input()
 {
 	return m_input;
 }
 
-ZstURI & ZstCable::get_output()
+ZstPlug * ZstCable::get_output()
 {
 	return m_output;
 }
 
+const ZstURI & ZstCable::get_input_URI() const
+{
+	return m_input_URI;
+}
+
+const ZstURI & ZstCable::get_output_URI() const
+{
+	return m_output_URI;
+}
+
 void ZstCable::write(std::stringstream & buffer)
 {
-	get_output().write(buffer);
-	get_input().write(buffer);
+	msgpack::pack(buffer, m_output_URI.path());
+	msgpack::pack(buffer, m_input_URI.path());
 }
 
 void ZstCable::read(const char * buffer, size_t length, size_t & offset)
 {
-	m_output.read(buffer, length, offset);
-	m_input.read(buffer, length, offset);
+	auto handle = msgpack::unpack(buffer, length, offset);
+	m_output_URI = ZstURI(handle.get().via.str.ptr);
+
+	handle = msgpack::unpack(buffer, length, offset);
+	m_input_URI = ZstURI(handle.get().via.str.ptr);
 }

@@ -31,12 +31,12 @@ public:
 	void destroy_client(ZstPerformer * performer);
 	
 	//Cables
-	ZstCable * create_cable(const ZstURI & a, const ZstURI & b);
+	ZstCable * create_cable_ptr(const ZstURI & a, const ZstURI & b);
 	int destroy_cable(const ZstURI & path);
 	int destroy_cable(ZstCable * cable);
 	int destroy_cable(const ZstURI & output_plug, const ZstURI & input_plug);
 	ZstCable * get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB);
-	std::vector<ZstCable*> get_cables_by_URI(const ZstURI & uri);
+	std::vector<ZstCable*> find_cables(const ZstURI & uri);
 	std::vector<ZstCable*> get_cables_in_entity(ZstEntityBase * entity);
 
 private:

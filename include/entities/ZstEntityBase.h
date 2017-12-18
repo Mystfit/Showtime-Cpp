@@ -13,7 +13,6 @@ public:
 	friend class ZstContainer;
 
 	//Base entity
-	ZST_EXPORT ZstEntityBase(const char * entity_type);
 	ZST_EXPORT ZstEntityBase(const char * entity_type, const char * entity_name);
 	ZST_EXPORT virtual ~ZstEntityBase();
     
@@ -37,7 +36,6 @@ public:
     
     //Entity flags
 	ZST_EXPORT bool is_destroyed();
-	ZST_EXPORT bool is_local();
     
 	//Override allocators so entity is created on DLL heap (Windows only - probably not compatible with SWIG)
 	ZST_EXPORT void * operator new(size_t num_bytes);

@@ -39,12 +39,13 @@ public:
 	void destroy();
 	void process_callbacks();
 
-	//Endpoint singleton - should not be accessable outside this interface
+	//CLient singleton - should not be accessable outside this interface
 	static ZstClient & instance();
 
 	//Register this endpoint to the stage
 	void register_client_to_stage(std::string stage_address);
-
+	void leave_stage();
+	
 	//Stage connection status
 	bool is_connected_to_stage();
 
@@ -69,7 +70,7 @@ public:
 	std::unordered_map<ZstURI, ZstPerformer*> & performers();
 	void add_performer(ZstPerformer * performer);
 	ZstPerformer * get_performer_by_URI(const ZstURI & uri) const;
-	ZstContainer * get_local_performer() const;
+	ZstPerformer * get_local_performer() const;
 
 	//Plugs
 	int destroy_plug(ZstPlug * plug);
@@ -81,11 +82,7 @@ public:
 	//Cables
 	int connect_cable(ZstPlug * a, ZstPlug * b);
 	int destroy_cable(ZstCable * cable);
-	std::vector<ZstCable*> get_cables_by_URI(const ZstURI & uri);
-	ZstCable * get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB);
-	void add_cable(ZstCable * cable);
-	void remove_cable(ZstCable * cable);
-	std::vector<ZstCable*> & cables();
+	int disconnect_plugs(ZstPlug * input_plug, ZstPlug * output_plug);
 
     //Utility
 	int ping_stage();
@@ -112,7 +109,6 @@ private:
 	void stop();
 
 	//Registration
-	void leave_stage();
     std::string first_available_ext_ip();
 
 	//Internal send and receive
@@ -162,7 +158,9 @@ private:
 	static void cable_leaving_hook(void * target);
 	
 	//Cable storage
-	std::vector<ZstCable*> m_cables;
+	void create_cable_ptr(ZstCable & cable);
+	void remove_cable(ZstCable * cable);
+	ZstCable * find_cable_ptr(const ZstURI & input_path, const ZstURI & output_path);
 	
 	//Events and callbacks
 	ZstCallbackQueue<ZstComponentEvent, ZstEntityBase*> * m_component_arriving_event_manager;

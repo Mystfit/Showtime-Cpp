@@ -2,17 +2,17 @@
 #include "msgpack.hpp"
 
 ZstContainer::ZstContainer() :
-	ZstComponent(CONTAINER_TYPE)
+	ZstComponent(CONTAINER_TYPE, "", "")
 {
 }
 
-ZstContainer::ZstContainer(const char * entity_type) :
-	ZstComponent(entity_type)
+ZstContainer::ZstContainer(const char * path) :
+	ZstComponent(CONTAINER_TYPE, "", path)
 {
 }
 
-ZstContainer::ZstContainer(const char * entity_type, const char * entity_name) :
-	ZstComponent(entity_type, entity_name)
+ZstContainer::ZstContainer(const char * component_type, const char * path) :
+	ZstComponent(CONTAINER_TYPE, component_type, path)
 {
 }
 
@@ -42,7 +42,6 @@ ZstEntityBase * ZstContainer::find_child_by_URI(const ZstURI & path)
 {
 	ZstEntityBase * result = NULL;
 
-	//If our own path is >= than our target path then we won't find the child here
 	if (this->URI().size() >= path.size() || !path.contains(URI())) {
 		return result;
 	}
