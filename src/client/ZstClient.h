@@ -80,8 +80,9 @@ public:
 	virtual void publish(ZstPlug * plug) override;
 
 	//Cables
-	int connect_cable(ZstPlug * a, ZstPlug * b);
+	ZstCable * connect_cable(ZstPlug * a, ZstPlug * b);
 	int destroy_cable(ZstCable * cable);
+	void disconnect_plug(ZstPlug * plug);
 	int disconnect_plugs(ZstPlug * input_plug, ZstPlug * output_plug);
 
     //Utility
@@ -158,7 +159,7 @@ private:
 	static void cable_leaving_hook(void * target);
 	
 	//Cable storage
-	void create_cable_ptr(ZstCable & cable);
+	ZstCable * create_cable_ptr(ZstCable & cable);
 	void remove_cable(ZstCable * cable);
 	ZstCable * find_cable_ptr(const ZstURI & input_path, const ZstURI & output_path);
 	

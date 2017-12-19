@@ -140,7 +140,7 @@ int Showtime::activate(ZstEntityBase * entity)
 	return ZstClient::instance().activate_entity(entity);
 }
 
-int Showtime::destroy(ZstEntityBase * entity)
+int Showtime::deactivate(ZstEntityBase * entity)
 {
 	return ZstClient::instance().destroy_entity(entity);
 }
@@ -155,12 +155,12 @@ ZstPerformer * Showtime::get_root()
 	return ZstClient::instance().get_local_performer();
 }
 
-ZstEntityBase * Showtime::get_performer_by_URI(const ZstURI & path)
+ZstPerformer * Showtime::get_performer_by_URI(const ZstURI & path)
 {
     return ZstClient::instance().get_performer_by_URI(path);
 }
 
-ZstEntityBase* Showtime::get_entity_by_URI(const ZstURI & path)
+ZstEntityBase* Showtime::find_entity(const ZstURI & path)
 {
 	return ZstClient::instance().find_entity(path);
 }
@@ -184,7 +184,7 @@ int Showtime::ping_stage(){
 // Cables
 // -------------
 
-int Showtime::connect_cable(ZstPlug * a, ZstPlug * b)
+ZstCable * Showtime::connect_cable(ZstPlug * a, ZstPlug * b)
 {
 	return ZstClient::instance().connect_cable(a, b);
 }
@@ -192,6 +192,11 @@ int Showtime::connect_cable(ZstPlug * a, ZstPlug * b)
 int Showtime::destroy_cable(ZstCable * cable)
 {
 	return ZstClient::instance().destroy_cable(cable);
+}
+
+void Showtime::disconnect_plug(ZstPlug * plug)
+{
+	ZstClient::instance().disconnect_plug(plug);
 }
 
 

@@ -6,14 +6,13 @@ using namespace std;
 AddFilter::AddFilter(const char * name) :
 	ZstComponent(ADDITION_FILTER_TYPE, name)
 {
-	init();
+	m_addend = create_input_plug("addend", ZstValueType::ZST_FLOAT);
+	m_augend = create_input_plug("augend", ZstValueType::ZST_FLOAT);
+	m_sum = create_output_plug("sum", ZstValueType::ZST_FLOAT);
 }
 
 void AddFilter::init()
 {
-	m_addend = create_input_plug("addend", ZstValueType::ZST_FLOAT);
-	m_augend = create_input_plug("augend", ZstValueType::ZST_FLOAT);
-	m_sum = create_output_plug("sum", ZstValueType::ZST_FLOAT);
 }
 
 void AddFilter::compute(ZstInputPlug * plug)

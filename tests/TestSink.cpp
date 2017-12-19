@@ -1,15 +1,15 @@
 #include "Showtime.h"
 #include <iostream>
 
-class Sink : public ZstComponent {
+class Sink : public ZstContainer {
 private:
     ZstInputPlug * m_input;
 
 public:
-
 	bool received_hit = false;
+	Sink * m_child_sink;
 
-	Sink(const char * name) : ZstComponent("SINK", name) {
+	Sink(const char * name) : ZstContainer("SINK", name) {
 		init();
 	}
 
@@ -20,10 +20,20 @@ public:
 	virtual void compute(ZstInputPlug * plug) override {
 		std::cout << "Sink received plug hit." << std::endl;
 		received_hit = true;
-	}
 
-	const ZstURI & input_URI() {
-		return m_input->URI();
+		int request_code = plug->int_at(0);
+		if (request_code == 0) {
+			received_hit = true;
+		}
+		else if (request_code == 1) {
+			m_child_sink = new Sink("sinkB");
+			add_child(m_child_sink);
+			Showtime::activate(m_child_sink);
+		}
+		else if (request_code == 2) {
+			Showtime::deactivate(m_child_sink);
+			delete m_child_sink;
+		}
 	}
 };
 
@@ -58,9 +68,10 @@ int main(int argc,char **argv){
 	}
 
 	std::cout << "Removing sink entity" << std::endl;
-	delete sink;
-
+	Showtime::detach(cable_arrive, ZstCallbackAction::ARRIVING);
 	Showtime::destroy();
+
+	delete sink;
 
 	std::cout << "Exiting sink process" << std::endl;
 

@@ -52,6 +52,11 @@ ZstPlug::ZstPlug(const char * name, ZstValueType t) :
 
 ZstPlug::~ZstPlug() {
 	delete m_value;
+	for (auto cable : m_cables) {
+		cable->unplug(); 
+		delete cable;
+	}
+	m_cables.clear();
 }
 
 //--------------------
@@ -155,12 +160,23 @@ ZstCableIterator ZstPlug::begin() const
 
 ZstCableIterator ZstPlug::end() const
 {
-	return ZstCableIterator(this, m_cables.size()-1);
+	return ZstCableIterator(this, m_cables.size() - 1);
 }
 
 size_t ZstPlug::num_cables()
 {
 	return m_cables.size();
+}
+
+bool ZstPlug::is_connected_to(ZstPlug * plug)
+{
+	bool result = false;
+	for (auto c : m_cables) {
+		if (c->is_attached(this, plug)) {
+			result = true;
+		}
+	}
+	return result;
 }
 
 void ZstPlug::add_cable(ZstCable * cable)

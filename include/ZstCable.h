@@ -22,6 +22,7 @@ public:
 	ZST_EXPORT ZstPlug * get_output();
 	ZST_EXPORT const ZstURI & get_input_URI() const;
 	ZST_EXPORT const ZstURI & get_output_URI() const;
+	ZST_EXPORT void unplug();
 	
 	ZST_EXPORT virtual void write(std::stringstream & buffer) override;
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;

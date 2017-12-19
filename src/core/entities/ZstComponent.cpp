@@ -1,5 +1,6 @@
 #include "entities/ZstComponent.h"
 #include "entities/ZstPlug.h"
+#include "ZstCable.h"
 
 ZstComponent::ZstComponent() : 
 	ZstEntityBase(COMPONENT_TYPE, "")
@@ -80,6 +81,9 @@ int ZstComponent::add_plug(ZstPlug * plug)
 
 void ZstComponent::remove_plug(ZstPlug * plug)
 {
+	for (auto cable : *plug) {
+		cable->unplug();
+	}
 	m_plugs.erase(std::remove(m_plugs.begin(), m_plugs.end(), plug), m_plugs.end());
 }
 

@@ -34,20 +34,21 @@ public:
 	
 	//Entity activation/deactivation
 	ZST_CLIENT_EXPORT static int activate(ZstEntityBase * entity);
-	ZST_CLIENT_EXPORT static int destroy(ZstEntityBase * entity);
+	ZST_CLIENT_EXPORT static int deactivate(ZstEntityBase * entity);
 
 	//Hierarchy
     ZST_CLIENT_EXPORT static ZstPerformer* get_root();
-	ZST_CLIENT_EXPORT static ZstEntityBase* get_performer_by_URI(const ZstURI & path);
-	ZST_CLIENT_EXPORT static ZstEntityBase* get_entity_by_URI(const ZstURI & path);
+	ZST_CLIENT_EXPORT static ZstPerformer* get_performer_by_URI(const ZstURI & path);
+	ZST_CLIENT_EXPORT static ZstEntityBase* find_entity(const ZstURI & path);
 	
     //Stage methods
 	ZST_CLIENT_EXPORT static bool is_connected();
     ZST_CLIENT_EXPORT static int ping_stage();
 
     //Cable management
-	ZST_CLIENT_EXPORT static int connect_cable(ZstPlug * a, ZstPlug * b);
+	ZST_CLIENT_EXPORT static ZstCable * connect_cable(ZstPlug * a, ZstPlug * b);
 	ZST_CLIENT_EXPORT static int destroy_cable(ZstCable * cable);
+	ZST_CLIENT_EXPORT static void disconnect_plug(ZstPlug * plug);
 	
     //Creatables
     ZST_CLIENT_EXPORT static void register_component_type(ZstComponent * component_template);

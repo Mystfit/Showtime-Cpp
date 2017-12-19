@@ -24,17 +24,17 @@
 #endif
 
 #define MAX_WAIT 20
-
-inline void wait_for_callbacks(int expected_messages) {
-    int repeats = 0;
-	while (Showtime::event_queue_size() < expected_messages) {
+void wait_for_event(ZstEvent * callback, int expected_messages)
+{
+	int repeats = 0;
+	while (callback->num_calls() < expected_messages) {
 		TAKE_A_BREATH
-        repeats++;
-        if(repeats > MAX_WAIT){
-            std::ostringstream err;
-            err << "Not enough events in queue. Expecting " << expected_messages << " received " << Showtime::event_queue_size() << std::endl;
-            throw std::logic_error(err.str());
-        }
+		repeats++;
+		if (repeats > MAX_WAIT) {
+			std::ostringstream err;
+			err << "Not enough events in queue. Expecting " << expected_messages << " received " << callback->num_calls() << std::endl;
+			throw std::logic_error(err.str());
+		}
 	}
 	Showtime::poll_once();
 }
@@ -45,83 +45,61 @@ inline void clear_callback_queue() {
 
 //Callback classes
 //----------------
-class TestEntityArrivingEventCallback : public ZstEntityEvent {
+class TestEntityEventCallback : public ZstComponentEvent {
 public:
-	int entityArrivedHits = 0;
-	std::string last_created_entity;
+	std::string last_entity;
+	std::string m_suffix;
+	TestEntityEventCallback(std::string suffix) {
+		m_suffix = suffix;
+	}
 	void run(ZstEntityBase * entity) override {
-		std::cout << "ZST_TEST CALLBACK - entity arriving " << entity->URI().path() << std::endl;
-		entityArrivedHits++;
-		last_created_entity = std::string(entity->URI().path());
+		std::cout << "ZST_TEST Entity " << entity->URI().path() << " " << m_suffix << std::endl;
+		last_entity = std::string(entity->URI().path());
 	}
-	void reset() { entityArrivedHits = 0; }
 };
 
-class TestEntityLeavingEventCallback : public ZstEntityEvent {
+class TestPlugEventCallback : public ZstPlugEvent {
 public:
-	int entityLeavingHits = 0;
-    std::string last_leaving_entity;
-	void run(ZstEntityBase * entity) override {
-		std::cout << "ZST_TEST CALLBACK - entity leaving " << entity->URI().path() << std::endl;
-		entityLeavingHits++;
-        last_leaving_entity = std::string(entity->URI().path());
+	std::string m_suffix;
+	TestPlugEventCallback(std::string suffix) {
+		m_suffix = suffix;
 	}
-	void reset() { entityLeavingHits = 0; }
+	void run(ZstPlug * plug) override {
+		std::cout << "ZST_TEST CALLBACK - plug " << plug->URI().path() << " " << m_suffix << std::endl;
+	}
 };
 
-// ----
-
-class TestPlugArrivingEventCallback : public ZstPlugEvent {
+class TestCableEventCallback : public ZstCableEvent {
 public:
-	int plugArrivedHits = 0;
-	void run(ZstURI plug) override {
-		std::cout << "ZST_TEST CALLBACK - plug arriving " << plug.path() << std::endl;
-		plugArrivedHits++;
+	std::string m_suffix;
+	TestCableEventCallback(std::string suffix) {
+		m_suffix = suffix;
 	}
-	void reset() { plugArrivedHits = 0; }
+	void run(ZstCable * cable) override {
+		std::cout << "ZST_TEST CALLBACK - cable " << cable->get_output()->URI().path() << " to " << cable->get_input()->URI().path() << " " << m_suffix << std::endl;
+	}
 };
 
-class TestPlugLeavingEventCallback : public ZstPlugEvent {
+class TestEntityTemplateCallback : public ZstComponentTypeEvent {
 public:
-	int plugLeavingHits = 0;
-	void run(ZstURI plug) override {
-		std::cout << "ZST_TEST CALLBACK - plug leaving " << plug.path() << std::endl;
-		plugLeavingHits++;
+	std::string m_suffix;
+	TestEntityTemplateCallback(std::string suffix) {
+		m_suffix = suffix;
 	}
-	void reset() { plugLeavingHits = 0; }
-};
-
-// ----
-
-class TestCableArrivingEventCallback : public ZstCableEvent {
-public:
-	int cableArrivedHits = 0;
-	void run(ZstCable cable) override {
-		std::cout << "ZST_TEST CALLBACK - cable arriving " << cable.get_output().path() << " to " << cable.get_input().path() << std::endl;
-		cableArrivedHits++;
-	}
-	void reset() { cableArrivedHits = 0; }
-};
-
-class TestCableLeavingEventCallback : public ZstCableEvent {
-public:
-	int cableLeavingHits = 0;
-	void run(ZstCable cable) override {
-		std::cout << "ZST_TEST CALLBACK - cable leaving " << cable.get_output().path() << " to " << cable.get_input().path() << std::endl;
-		cableLeavingHits++;
-	}
-	void reset() { cableLeavingHits = 0; }
-};
-
-
-class EntityTemplateArrivingCallback : public ZstEntityTemplateEventCallback {
-public:
-    int hits = 0;
     void run(ZstEntityBase * entity_template) override {
-        std::cout << "ZST_TEST CALLBACK - entity_template arriving Type:" << entity_template->entity_type() << " Owner: " << entity_template->owner() << std::endl;
-        hits++;
+        std::cout << "ZST_TEST CALLBACK - entity_template Type:" << entity_template->entity_type() << " Owner: " << entity_template->parent()->URI().path() << " " << m_suffix << std::endl;
     }
-    void reset() { hits = 0; }
+};
+
+class TestPerformerCallback : public ZstComponentEvent {
+public:
+	std::string m_suffix;
+	TestPerformerCallback(std::string suffix) {
+		m_suffix = suffix;
+	}
+	void run(ZstEntityBase * performer) override {
+		std::cout << "ZST_TEST CALLBACK - performer: " << performer->URI().path() << " " << m_suffix << std::endl;
+	}
 };
 
         
@@ -134,8 +112,7 @@ private:
     ZstOutputPlug * m_output;
 
 public:
-	OutputComponent(const char * name, ZstEntityBase * parent) : ZstComponent("TESTER", name, parent) {
-		activate();
+	OutputComponent(const char * name) : ZstComponent("TESTER", name) {
 		init();
 	}
 
@@ -150,13 +127,13 @@ public:
 		m_output->fire();
 	}
 
-	const ZstURI & output_URI() {
-		return m_output->URI();
+	ZstPlug * output() {
+		return m_output;
 	}
 };
 
 
-class InputComponent : public ZstFilter {
+class InputComponent : public ZstComponent {
 private:
     ZstInputPlug * m_input;
 
@@ -166,9 +143,8 @@ public:
 	int last_received_val = 0;
 	bool log = false;
 
-	InputComponent(const char * name, ZstEntityBase * parent, int cmp_val) : ZstFilter("TESTER", name, parent), compare_val(cmp_val) {
-		activate();
-		init();
+	InputComponent(const char * name, int cmp_val) : 
+		ZstComponent("TESTER", name), compare_val(cmp_val) {
 	}
 
 	virtual void init() override {
@@ -183,8 +159,8 @@ public:
 		}
 	}
 
-	const ZstURI & input_URI() {
-		return m_input->URI();
+	ZstPlug * input() {
+		return m_input;
 	}
 
 	void reset() {
@@ -193,34 +169,10 @@ public:
 };
 
 
-class AddComposer : public ZstComposer {
-public:
-    AddComposer() : ZstComposer("add"), adder(NULL) {
-        
-    }
-    
-    ~AddComposer(){
-        delete adder;
-    }
-    
-    virtual void create(std::string entity_name, ZstEntityBase * parent) override {
-        adder = new AddFilter(parent);
-    }
-
-    AddFilter * adder;
-};
-        
-
-//Global test variables
-ZstStage *stage;
-ZstEntityBase * root_entity;
-
-
 void test_standard_layout() {
 	//Verify standard layout
 	assert(std::is_standard_layout<ZstURI>());
 	assert(std::is_standard_layout<ZstCable>());
-	assert(std::is_standard_layout<ZstEvent>());
 }
 
 void test_URI() {
@@ -287,24 +239,11 @@ void test_URI() {
 	}
 	assert(thrown_range_error);
 
-	//Test ZstCable equality against ZstURI instances
-	ZstCable test_cable_eq1 = ZstCable(uri_equal1, uri_empty);
-	ZstCable test_cable_neq1 = ZstCable(uri_equal1, uri_notequal);
-
-	assert(test_cable_eq1 == test_cable_eq1);
-	assert(test_cable_eq1 != test_cable_neq1);
-	assert(test_cable_eq1.is_attached(uri_equal1));
-	assert(test_cable_eq1.is_attached(uri_empty));
-	assert(!(test_cable_neq1.is_attached(uri_empty)));
-
 	std::cout << "Finished URI test\n" << std::endl;
 }
 
 void test_startup() {
-	stage = ZstStage::create_stage();
-	std::cout << "Stage created" << std::endl;
-
-	Showtime::init("tester");
+	Showtime::init("TestClient");
 	Showtime::join("127.0.0.1");
 }
 
@@ -312,11 +251,10 @@ void test_root_entity() {
 	TAKE_A_BREATH
     //Test single entity init
 	std::cout << "Starting entity init test" << std::endl;
-	ZstClient::instance().self_test();
 
-    root_entity = Showtime::get_root();
+    ZstPerformer * root_entity = Showtime::get_root();
 	assert(root_entity);
-    assert(root_entity->is_registered());
+    assert(root_entity->is_activated());
 	clear_callback_queue();
 
 	std::cout << "Finished entity init test\n" << std::endl;
@@ -324,119 +262,73 @@ void test_root_entity() {
 
 //Test stage creation and entity
 void test_stage_registration(){
-	std::cout << "Starting stage registration test" << std::endl;
+	std::cout << "Starting stage test" << std::endl;
 
     //Test stage connection
-    assert(ZstClient::instance().ping_stage() >= 0);
-	assert(stage->get_client_by_UUID(ZstClient::instance().get_endpoint_UUID()) != NULL);
-
-	std::cout << "Finished stage registration test\n" << std::endl;
+    assert(Showtime::ping_stage() >= 0);
+	std::cout << "Finished stage test\n" << std::endl;
 }
 
 void test_create_entities(){
 	std::cout << "Starting entity test" << std::endl;
 	int expected_entities = 1;
-	int expected_plugs = 1;
-
-	//Attach stage level callback to watch for arriving plugs
-	TestPlugArrivingEventCallback * plugArrivalCallback = new TestPlugArrivingEventCallback();
-    Showtime::attach(plugArrivalCallback, ZstCallbackAction::ARRIVING);
-
-	//Create filters to hold out test plugs
-	OutputComponent * test_output = new OutputComponent("entity_create_test_ent", root_entity);
-	wait_for_callbacks(expected_entities + expected_plugs);
-	assert(plugArrivalCallback->plugArrivedHits == expected_plugs);
-	plugArrivalCallback->reset();
-    Showtime::detach(plugArrivalCallback, ZstCallbackAction::ARRIVING);
-	delete plugArrivalCallback;
-
-    //Check stage registered plugs successfully
-    assert(stage->get_plug_by_URI(test_output->output_URI()) != NULL);
-
+	int expected_plugs = expected_entities * 1;
+	
+	//Create entities
+	OutputComponent * test_output = new OutputComponent("entity_create_test_ent");
+	Showtime::activate(test_output);
+	assert(test_output->is_activated());
+    
 	//Check local client registered plugs correctly
-	ZstURI localPlug_uri = test_output->get_plug_by_URI(test_output->output_URI())->URI();
-	ZstURI localPlug_uri_via_entity = test_output->output_URI();
+	ZstURI localPlug_uri = test_output->get_plug_by_URI(test_output->output()->URI())->URI();
+	ZstURI localPlug_uri_via_entity = test_output->output()->URI();
 	assert(ZstURI::equal(localPlug_uri, localPlug_uri_via_entity));
 
-	//Check plug destruction
-	TestPlugLeavingEventCallback * plugLeavingCallback = new TestPlugLeavingEventCallback();
-    Showtime::attach(plugLeavingCallback, ZstCallbackAction::LEAVING);
-
-	//Test plug destruction when destroying entity
-	ZstURI outURI = test_output->output_URI();
+	//Cleanup
+	Showtime::deactivate(test_output);
 	delete test_output;
-	wait_for_callbacks(expected_entities + expected_plugs); 
-	assert(stage->get_plug_by_URI(outURI) == NULL);
+	test_output = 0;
 
-	//Make sure that the plug leaving callback was hit the correct number of times
-	assert(plugLeavingCallback->plugLeavingHits == 1);
-	plugLeavingCallback->reset();
-    Showtime::detach(plugLeavingCallback, ZstCallbackAction::LEAVING);
-	clear_callback_queue();
+	assert(!Showtime::get_root()->find_child_by_URI(localPlug_uri));
 
 	std::cout << "Finished entity test\n" << std::endl;
 }
 
-void test_entity_templates(){
-    //Add entity_template listener
-    EntityTemplateArrivingCallback * entity_template_arriving = new EntityTemplateArrivingCallback();
-    Showtime::attach(entity_template_arriving, ZstCallbackAction::ARRIVING);
-
-    //Register a simple composer to create add filters
-    AddFilter * add_creatable = new AddFilter();
-    Showtime::register_template(add_creatable);
-    
-    //Test that we recieved a new entity_template locally`
-    wait_for_callbacks(1);
-    assert(entity_template_arriving->hits == 1);
-    
-    //Test entity composer
-    Showtime::run_component_template(add_composer->get_template());
-    
-    Showtime::unregister_template(add_creatable);
-    delete add_creatable;
-}
 
 void test_hierarchy() {
 	std::cout << "Starting hierarchy test" << std::endl;
 
 	//Test hierarchy
-	ZstComponent * parent = new ZstComponent("PARENT", "parent", root_entity);
-	ZstComponent * child = new ZstComponent("CHILD", "child", parent);
-	parent->activate();
-	child->activate();
-
-	wait_for_callbacks(2);
-	assert(root_entity->find_child_by_URI(parent->URI()));
-	assert(parent->find_child_by_URI(child->URI()));
-	assert(Showtime::get_entity_by_URI(parent->URI()));
-	assert(Showtime::get_entity_by_URI(child->URI()));
+	ZstContainer * parent = new ZstContainer("parent");
+	ZstComponent * child = new ZstComponent("child");
+	parent->add_child(child);
+	Showtime::activate(parent);
+	
+	assert(Showtime::get_root()->find_child_by_URI(parent->URI()));
+	assert(Showtime::get_root()->find_child_by_URI(child->URI()));
 
 	std::cout << "Removing child..." << std::endl;
 
 	//Test child removal from parent
+	parent->remove_child(child);
+	ZstURI parent_URI = ZstURI(parent->URI());
 	ZstURI child_URI = ZstURI(child->URI());
 	delete child;
 	child = 0;
-	wait_for_callbacks(1);
 	assert(!parent->find_child_by_URI(child_URI));
-	assert(!Showtime::get_entity_by_URI(child_URI));
+	assert(!Showtime::get_root()->find_child_by_URI(child_URI));
 
 	//Test removing parent removes child
 	std::cout << "Creating new child to test parent removes all children" << std::endl;
 
-	child = new ZstComponent("CHILD", "child", parent);
-	child->activate();
-	TAKE_A_BREATH
+	child = new ZstComponent("child");
+	parent->add_child(child);
+	Showtime::activate(child);
 
-	clear_callback_queue();
-	ZstURI parent_URI = ZstURI(parent->URI());
+
 	delete parent;
-	wait_for_callbacks(2);
-	assert(!root_entity->find_child_by_URI(parent_URI));
-	assert(!Showtime::get_entity_by_URI(parent_URI));
-	assert(!Showtime::get_entity_by_URI(child_URI));
-
+	assert(!Showtime::get_root()->find_child_by_URI(parent_URI));
+	assert(!Showtime::get_root()->find_child_by_URI(child_URI));
 	delete child;
 	child = 0;
 	parent = 0;
@@ -455,44 +347,48 @@ void test_connect_plugs() {
 	int expected_entities = 2;
 	int expected_plugs = expected_entities;
 	int expected_cables = 1;
-	OutputComponent * test_output = new OutputComponent("connect_test_ent_out", root_entity);
-	InputComponent * test_input = new InputComponent("connect_test_ent_in", root_entity, 0);
+	OutputComponent * test_output = new OutputComponent("connect_test_ent_out");
+	InputComponent * test_input = new InputComponent("connect_test_ent_in", 0);
 	
 	//Test cable callbacks
-	TestCableArrivingEventCallback * cableArriveCallback = new TestCableArrivingEventCallback();
-	TestCableLeavingEventCallback * cableLeaveCallback = new TestCableLeavingEventCallback();
+	TestCableEventCallback * cableArriveCallback = new TestCableEventCallback("arriving");
+	TestCableEventCallback * cableLeaveCallback = new TestCableEventCallback("leaving");
     Showtime::attach(cableArriveCallback, ZstCallbackAction::ARRIVING);
     Showtime::attach(cableLeaveCallback, ZstCallbackAction::LEAVING);
-	Showtime::connect_cable(test_output->output_URI(), test_input->input_URI());
-	wait_for_callbacks(expected_entities + expected_plugs + expected_cables);
-	assert(cableArriveCallback->cableArrivedHits == 1);
-	cableArriveCallback->reset();
 
-	ZstURI outURI = test_output->output_URI();
-	ZstURI inURI = test_input->input_URI();
-	assert(ZstClient::instance().get_cable_by_URI(outURI, inURI) != NULL);
+	//Test connect cable
+	ZstCable * cable = Showtime::connect_cable(test_output->output(), test_input->input());
+	wait_for_event(cableArriveCallback, expected_cables);
+	assert(cableArriveCallback->num_calls() == expected_cables);
+	cableArriveCallback->reset_num_calls();
 
-	//Test connecting missing URI objects
-	ZstURI badURI = ZstURI("test_instrument/bad_plug");
-	std::cout << " Testing bad cable connection request" << std::endl;
-	assert(Showtime::connect_cable(test_output->output_URI(), badURI) <= 0);
-	std::cout << "Finished testing bad cable connection request" << std::endl;
+	//Test cable references
+	assert(test_output->output()->num_cables() == 1);
+	assert(cable->get_output() == test_output->output());
+	assert(cable->get_input() == test_input->input());
+	assert(test_output->output()->is_connected_to(test_input->input()));
+	for (auto c : *(test_output->output())) {
+		assert(c->get_input() == test_input->input());
+	}
 
 	//Testing connection disconnect and reconnect
-	assert(Showtime::destroy_cable(test_output->output_URI(), test_input->input_URI()));
-	wait_for_callbacks(1);
-	assert(cableLeaveCallback->cableLeavingHits == 1);
-	cableLeaveCallback->reset();
-	assert(ZstClient::instance().get_cable_by_URI(test_output->output_URI(), test_input->input_URI()) == NULL);
+	assert(Showtime::destroy_cable(cable));
+	wait_for_event(cableLeaveCallback, 1);
+	assert(cableLeaveCallback->num_calls() == 1);
+	cableLeaveCallback->reset_num_calls();
+	assert(!test_output->output()->is_connected_to(test_input->input()));
 
-	//Test plug destruction causes cable destruction
-	Showtime::connect_cable(test_output->output_URI(), test_input->input_URI());
+	//Test plug deactivation causes cable destruction
+	Showtime::connect_cable(test_output->output(), test_input->input());
+	Showtime::deactivate(test_output);
+	wait_for_event(cableLeaveCallback, 1);
+	assert(cableLeaveCallback->num_calls() == 1);
+	assert(!test_input->input()->is_connected_to(test_output->output()));
+	cableLeaveCallback->reset_num_calls();
+
 	delete test_output;
-	test_output = 0;
-	wait_for_callbacks(expected_cables + 1);
-	assert(cableLeaveCallback->cableLeavingHits == 1);
-	cableLeaveCallback->reset();
 	delete test_input;
+	test_output = 0;
 	test_input = 0;
 
 	//Test removing callbacks
@@ -516,16 +412,21 @@ void test_add_filter() {
 	int second_cmp_val = 30;
 
 	//Create a test filter to hold out in/out plugs
-	OutputComponent * test_output_augend = new OutputComponent("add_test_augend", root_entity);
-	OutputComponent * test_output_addend = new OutputComponent("add_test_addend", root_entity);
-	InputComponent * test_input_sum = new InputComponent("add_test_sum", root_entity, first_cmp_val);
-	test_input_sum->log = true;
-	AddFilter * add_filter = new AddFilter(root_entity);
+	OutputComponent * test_output_augend = new OutputComponent("add_test_augend");
+	OutputComponent * test_output_addend = new OutputComponent("add_test_addend");
+	InputComponent * test_input_sum = new InputComponent("add_test_sum", first_cmp_val);
+	Showtime::activate(test_output_augend);
+	Showtime::activate(test_output_addend);
+	Showtime::activate(test_input_sum);
 
-	Showtime::connect_cable(test_output_augend->output_URI(), add_filter->augend()->URI());
-	Showtime::connect_cable(test_output_addend->output_URI(), add_filter->addend()->URI());
-	Showtime::connect_cable(test_input_sum->input_URI(), add_filter->sum()->URI());
-	wait_for_callbacks(expected_entities + expected_plugs + expected_cables);
+	test_input_sum->log = true;
+	AddFilter * add_filter = new AddFilter("add_test");
+	Showtime::activate(add_filter);
+
+	Showtime::connect_cable(test_output_augend->output(), add_filter->augend());
+	Showtime::connect_cable(test_output_addend->output(), add_filter->addend());
+	Showtime::connect_cable(test_input_sum->input(), add_filter->sum());
+	clear_callback_queue();
 
 	//Send values
 	test_output_augend->send(2);
@@ -548,6 +449,11 @@ void test_add_filter() {
 	assert(test_input_sum->last_received_val == second_cmp_val);
 
 	//Cleanup
+
+	Showtime::deactivate(test_output_augend);
+	Showtime::deactivate(test_output_addend);
+	Showtime::deactivate(test_input_sum);
+	Showtime::deactivate(add_filter);
 	delete test_output_augend;
 	delete test_output_addend;
 	delete test_input_sum;
@@ -562,61 +468,84 @@ void test_add_filter() {
 }
 
 
-void test_create_proxies(std::string external_sink_path) {
+void test_external_entities(std::string external_sink_path) {
 	//Create callbacks
-	TestEntityArrivingEventCallback * entityArriveCallback = new TestEntityArrivingEventCallback();
-	TestEntityLeavingEventCallback * entityLeaveCallback = new TestEntityLeavingEventCallback();
+	TestEntityEventCallback * entityArriveCallback = new TestEntityEventCallback("arriving");
+	TestEntityEventCallback * entityLeaveCallback = new TestEntityEventCallback("leaving");
+	TestPerformerCallback * performerArriveCallback = new TestPerformerCallback("arriving");
+	TestPerformerCallback * performerLeaveCallback = new TestPerformerCallback("leaving");
+
     Showtime::attach(entityArriveCallback, ZstCallbackAction::ARRIVING);
     Showtime::attach(entityLeaveCallback, ZstCallbackAction::LEAVING);
+	Showtime::attach(performerArriveCallback, ZstCallbackAction::ARRIVING);
+	Showtime::attach(performerLeaveCallback, ZstCallbackAction::LEAVING);
 
 	//Create emitter
-	OutputComponent * output = new OutputComponent("proxy_test_output", root_entity);
+	OutputComponent * output = new OutputComponent("proxy_test_output");
+	Showtime::activate(output);
 	TAKE_A_BREATH
-		clear_callback_queue();
+	clear_callback_queue();
 
 	//Run sink in external process so we don't share the same Showtime singleton
 	std::cout << "Starting sink process" << std::endl;
 	std::cout << "----" << std::endl;
+	
+	ZstURI sink_perf_uri = ZstURI("sink");
+	ZstURI sink_ent_uri = sink_perf_uri + ZstURI("sink_ent");
+	ZstURI sink_B_uri = sink_perf_uri + ZstURI("sinkB");
+	ZstURI sink_plug_uri = sink_ent_uri + ZstURI("in");
 
+	//Run the sink program
 	std::string prog = external_sink_path + "/SinkTest";
 #ifdef WIN32
 	prog += ".exe";
 #endif
 	boost::process::child sink_process = boost::process::child(prog, "1");
 
-	//Wait for the sink to register its entity and for us to receive the proxy event
-	wait_for_callbacks(3);
-	assert(entityArriveCallback->entityArrivedHits == 2);
-	entityArriveCallback->reset();
-	ZstProxyComponent * sink_root = dynamic_cast<ZstProxyComponent*>(Showtime::get_entity_by_URI(ZstURI("sink_root")));
-	ZstProxyComponent * sink = dynamic_cast<ZstProxyComponent*>(Showtime::get_entity_by_URI(ZstURI("sink_root/sink")));
+	//Test performer arriving
+	wait_for_event(performerArriveCallback, 1);
+	ZstPerformer * sink_performer = Showtime::get_performer_by_URI(sink_perf_uri);
+	assert(sink_performer);
+	
+	//Test entity exists
+	ZstContainer * sink_ent = dynamic_cast<ZstContainer*>(sink_performer->find_child_by_URI(sink_ent_uri));
+	assert(sink_ent);
 
-	assert(sink_root);
-	assert(sink);
-	assert(sink_root->is_proxy());
-	assert(sink->is_proxy());
-	assert(ZstURI::equal(sink->parent()->URI(), sink_root->URI()));
-	assert(Showtime::event_queue_size() == 0);
-
-	//Connect cable to sink (it will exit when it receives a message)
-	Showtime::connect_cable(output->output_URI(), ZstURI("sink_root/sink/in"));
+	//Connect cable to sink
+	Showtime::connect_cable(output->output(), sink_ent->get_plug_by_URI(sink_plug_uri));
 	TAKE_A_BREATH
 	output->send(1);
+
+	//Test entity arriving
+	wait_for_event(entityArriveCallback, 1);
+	assert(entityArriveCallback->last_entity == std::string(sink_B_uri.path()));
+	assert(Showtime::find_entity(sink_B_uri));
+	entityArriveCallback->reset_num_calls();
+
+	//Send another value to remove the child
+	//Test entity leaving
+	output->send(2);
+	wait_for_event(entityLeaveCallback, 1);
+	assert(entityLeaveCallback->last_entity == std::string(sink_B_uri.path()));
+	assert(!Showtime::find_entity(sink_B_uri));
+	entityArriveCallback->reset_num_calls();
+
+	output->send(0);
 	sink_process.wait();
 
-	//Check that we received proxy destruction events
-	wait_for_callbacks(4);
-	assert(entityLeaveCallback->entityLeavingHits == 2);
-	assert(Showtime::get_entity_by_URI(ZstURI("sink_root")) == NULL);
-	assert(Showtime::get_entity_by_URI(ZstURI("sink_root/sink")) == NULL);
+	//Check that we received performer destruction request
+	wait_for_event(performerLeaveCallback, 1);
+	assert(!Showtime::get_performer_by_URI(sink_perf_uri));
 
 	//Cleanup
     Showtime::detach(entityArriveCallback, ZstCallbackAction::ARRIVING);
     Showtime::detach(entityLeaveCallback, ZstCallbackAction::LEAVING);
+	Showtime::detach(performerArriveCallback, ZstCallbackAction::ARRIVING);
+	Showtime::detach(performerLeaveCallback, ZstCallbackAction::LEAVING);
 	delete entityArriveCallback;
 	delete entityLeaveCallback;
-	sink_root = 0;
-	sink = 0;
+	delete performerArriveCallback;
+	delete performerLeaveCallback;
 	clear_callback_queue();
 
 	std::cout << "Finished proxy test\n" << std::endl;
@@ -626,15 +555,17 @@ void test_create_proxies(std::string external_sink_path) {
 void test_memory_leaks(int num_loops) {
 	std::cout << "Starting memory leak test" << std::endl;
 
-	OutputComponent * test_output = new OutputComponent("memleak_test_out", root_entity);
-	InputComponent * test_input = new InputComponent("memleak_test_in", root_entity, 10);
-	Showtime::connect_cable(test_output->output_URI(), test_input->input_URI());
+	OutputComponent * test_output = new OutputComponent("memleak_test_out");
+	InputComponent * test_input = new InputComponent("memleak_test_in", 10);
+	Showtime::activate(test_output);
+	Showtime::activate(test_input);
+	Showtime::connect_cable(test_output->output(), test_input->input());
 	TAKE_A_BREATH
 
 	int count = num_loops;
 
-	ZstClient::instance().reset_graph_recv_tripmeter();
-	ZstClient::instance().reset_graph_send_tripmeter();
+	//ZstClient::instance().reset_graph_recv_tripmeter();
+	//ZstClient::instance().reset_graph_send_tripmeter();
 
 	std::cout << "Sending " << count << " messages" << std::endl;
 	TAKE_A_BREATH
@@ -658,81 +589,72 @@ void test_memory_leaks(int num_loops) {
 	for (int i = 0; i < count; ++i) {
 		test_output->send(10);
 		Showtime::poll_once();
-		if (ZstClient::instance().graph_recv_tripmeter() % 10000 == 0) {
-			//Display progress
-			message_count = ZstClient::instance().graph_recv_tripmeter();
-			queued_messages = ZstClient::instance().graph_send_tripmeter() - ZstClient::instance().graph_recv_tripmeter();
+		//if (ZstClient::instance().graph_recv_tripmeter() % 10000 == 0) {
+		//	//Display progress
+		//	message_count = ZstClient::instance().graph_recv_tripmeter();
+		//	queued_messages = ZstClient::instance().graph_send_tripmeter() - ZstClient::instance().graph_recv_tripmeter();
 
-			now = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
-			delta = std::chrono::duration_cast<std::chrono::milliseconds>(now - last);
-			delta_messages = message_count - last_message_count;
-			delta_queue = queued_messages - last_queue_count;
+		//	now = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
+		//	delta = std::chrono::duration_cast<std::chrono::milliseconds>(now - last);
+		//	delta_messages = message_count - last_message_count;
+		//	delta_queue = queued_messages - last_queue_count;
 
-			last = now;
-			mps = (long)delta_messages / (delta.count() / 1000.0);
-			queue_speed = (long)delta_queue / (delta.count() / 1000.0);
+		//	last = now;
+		//	mps = (long)delta_messages / (delta.count() / 1000.0);
+		//	queue_speed = (long)delta_queue / (delta.count() / 1000.0);
 
-			remaining_messages = count - message_count;
-			last_message_count = message_count;
-			last_queue_count = queued_messages;
+		//	remaining_messages = count - message_count;
+		//	last_message_count = message_count;
+		//	last_queue_count = queued_messages;
 
-			std::cout << "Processing " << mps << " messages per/s. Remaining:" << remaining_messages << " Delta time: " << (delta.count() / 1000.0) << " per 10000. Queued messages: " << queued_messages << ". Queuing speed: " << queue_speed << "messages per/s" << std::endl;
-		}
+		//	std::cout << "Processing " << mps << " messages per/s. Remaining:" << remaining_messages << " Delta time: " << (delta.count() / 1000.0) << " per 10000. Queued messages: " << queued_messages << ". Queuing speed: " << queue_speed << "messages per/s" << std::endl;
+		//}
 	}
 	
 	std::cout << "Sent all messages. Waiting for recv" << std::endl;
 
-	do  {
-		Showtime::poll_once();
-		if (ZstClient::instance().graph_recv_tripmeter() % 10000 == 0) {
-			//Display progress
-			message_count = ZstClient::instance().graph_recv_tripmeter();
-			now = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
-			delta = std::chrono::duration_cast<std::chrono::milliseconds>(now - last);
-			delta_messages = message_count - last_message_count;
-			queued_messages = ZstClient::instance().graph_send_tripmeter() - ZstClient::instance().graph_recv_tripmeter();
-			last = now;
-			mps = (long)delta_messages / (delta.count() / 1000.0);
-			remaining_messages = count - message_count;
-			last_message_count = message_count;
+	//do  {
+	//	Showtime::poll_once();
+	//	if (ZstClient::instance().graph_recv_tripmeter() % 10000 == 0) {
+	//		//Display progress
+	//		message_count = ZstClient::instance().graph_recv_tripmeter();
+	//		now = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
+	//		delta = std::chrono::duration_cast<std::chrono::milliseconds>(now - last);
+	//		delta_messages = message_count - last_message_count;
+	//		queued_messages = ZstClient::instance().graph_send_tripmeter() - ZstClient::instance().graph_recv_tripmeter();
+	//		last = now;
+	//		mps = (long)delta_messages / (delta.count() / 1000.0);
+	//		remaining_messages = count - message_count;
+	//		last_message_count = message_count;
 
-			std::cout << "Processing " << mps << " messages per/s. Remaining:" << remaining_messages << " Delta time: " << (delta.count() / 1000.0) << " per 10000. Queued messages: " << queued_messages << std::endl;
-		}
-	} while ((ZstClient::instance().graph_recv_tripmeter() < count));
+	//		std::cout << "Processing " << mps << " messages per/s. Remaining:" << remaining_messages << " Delta time: " << (delta.count() / 1000.0) << " per 10000. Queued messages: " << queued_messages << std::endl;
+	//	}
+	//} while ((ZstClient::instance().graph_recv_tripmeter() < count));
 
 	TAKE_A_BREATH
 	Showtime::poll_once();
 	std::cout << "Received all messages" << std::endl;
-	std::cout << "Remaining events: " << Showtime::event_queue_size() << std::endl;
-	std::cout << "Total received graph_messages " << ZstClient::instance().graph_recv_tripmeter() << std::endl;
+	/*std::cout << "Remaining events: " << Showtime::event_queue_size() << std::endl;
+	std::cout << "Total received graph_messages " << ZstClient::instance().graph_recv_tripmeter() << std::endl;*/
 	assert(test_input->num_hits == count);
 
 	delete test_output;
 	delete test_input;
 	clear_callback_queue();
-	ZstClient::instance().reset_graph_recv_tripmeter();
-	ZstClient::instance().reset_graph_send_tripmeter();
+	/*ZstClient::instance().reset_graph_recv_tripmeter();
+	ZstClient::instance().reset_graph_send_tripmeter();*/
 
 	std::cout << "Finished memory leak test\n" << std::endl;
 }
 
 void test_leaving(){
     Showtime::leave();
-    TAKE_A_BREATH
-    assert(stage->get_client_by_UUID(ZstClient::instance().get_endpoint_UUID()) == NULL);
-    TAKE_A_BREATH
 }
 
 
 void test_cleanup() {
 	//Test late entity destruction after library cleanup
-	delete stage;
-	stage = NULL;
-
 	Showtime::destroy();
-    
-    //Root entity should be cleaned up automatically
-	root_entity = NULL;
 }
 
 int main(int argc,char **argv){
@@ -742,11 +664,10 @@ int main(int argc,char **argv){
 	test_root_entity();
     test_stage_registration();
     test_create_entities();
-    test_entity_templates();
 	test_hierarchy();
 	test_connect_plugs();
 	test_add_filter();
-	test_create_proxies(boost::filesystem::system_complete(argv[0]).parent_path().generic_string());
+	test_external_entities(boost::filesystem::system_complete(argv[0]).parent_path().generic_string());
 	test_memory_leaks(200000);
     test_leaving();
 	test_cleanup();

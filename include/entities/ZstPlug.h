@@ -35,6 +35,7 @@ public:
 	friend class ZstClient;
     friend class ZstComponent;
 	friend class ZstCableIterator;
+	friend class ZstCable;
     
 	//Initialisation
 	ZST_EXPORT ZstPlug();
@@ -68,6 +69,7 @@ public:
 	ZST_EXPORT ZstCableIterator begin() const;
 	ZST_EXPORT ZstCableIterator end() const;
 	ZST_EXPORT size_t num_cables();
+	ZST_EXPORT bool is_connected_to(ZstPlug * plug);
 
 protected:
 	ZstValue * m_value;

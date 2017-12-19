@@ -58,7 +58,7 @@ bool ZstCable::is_attached(ZstPlug * plugA, ZstPlug * plugB) const
 
 bool ZstCable::is_attached(ZstPlug * plug) const 
 {
-	return (ZstURI::equal(m_input_URI, plug->URI())) || (ZstURI::equal(m_output_URI, plug->URI()));
+	return (ZstURI::equal(m_input->URI(), plug->URI())) || (ZstURI::equal(m_output->URI(), plug->URI()));
 }
 
 ZstPlug * ZstCable::get_input()
@@ -79,6 +79,12 @@ const ZstURI & ZstCable::get_input_URI() const
 const ZstURI & ZstCable::get_output_URI() const
 {
 	return m_output_URI;
+}
+
+void ZstCable::unplug()
+{
+	get_input()->remove_cable(this);
+	get_output()->remove_cable(this);
 }
 
 void ZstCable::write(std::stringstream & buffer)

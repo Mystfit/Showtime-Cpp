@@ -35,6 +35,15 @@ public:
 	ZST_EXPORT virtual void run(ZstEntityBase* entity) {}
 };
 
+//Entity type arriving/leaving events
+class ZstPerformer;
+class ZstPerformerEvent : public ZstEvent {
+public:
+	ZST_EXPORT virtual ~ZstPerformerEvent() {}
+	ZST_EXPORT virtual void run(ZstPerformer* performer) {}
+};
+
+
 //Cable arriving/leaving events
 class ZstCable;
 class ZstCableEvent : public ZstEvent {

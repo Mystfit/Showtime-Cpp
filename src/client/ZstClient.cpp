@@ -485,27 +485,25 @@ void ZstClient::cable_leaving_hook(void * target)
 // ------------------
 // Cable storage
 // ------------------
-void ZstClient::create_cable_ptr(ZstCable & cable)
+ZstCable * ZstClient::create_cable_ptr(ZstCable & cable)
 {
 	ZstPlug * input_plug = dynamic_cast<ZstPlug*>(find_entity(cable.get_input_URI()));
 	ZstPlug * output_plug = dynamic_cast<ZstPlug*>(find_entity(cable.get_output_URI()));
 
 	ZstCable * cable_ptr = find_cable_ptr(input_plug->URI(), output_plug->URI());
-	if (cable_ptr) {
-		std::cout << "ZST: Cable already connected to plug. Ignoring." << std::endl;
-		return;
+	if (!cable_ptr) {
+		cable_ptr = new ZstCable(input_plug, output_plug);
+		input_plug->add_cable(cable_ptr);
+		output_plug->add_cable(cable_ptr);
+		cable_arriving_events()->enqueue(cable_ptr);
 	}
-
-	cable_ptr = new ZstCable(input_plug, output_plug);
-	input_plug->add_cable(cable_ptr);
-	output_plug->add_cable(cable_ptr);
-	cable_arriving_events()->enqueue(cable_ptr);
+	
+	return cable_ptr;
 }
 
 void ZstClient::remove_cable(ZstCable * cable)
 {
-	cable->get_input()->remove_cable(cable);
-	cable->get_output()->remove_cable(cable);
+	cable->unplug();
 	delete cable;
 }
 
@@ -645,7 +643,10 @@ int ZstClient::destroy_entity(ZstEntityBase * entity)
 	}
 
 	//If this entity is remote, we can clean it up
-	if (!is_local) {
+	if (is_local) {
+		//TODO: Since this entity is local we can't wait for cables to be removed in the destructor
+	}
+	else {
 		delete entity;
 	}
 
@@ -768,7 +769,7 @@ void ZstClient::enqueue_compute(ZstInputPlug * plug){
  // Cables
  // ------
  
- int ZstClient::connect_cable(ZstPlug * a, ZstPlug * b)
+ZstCable * ZstClient::connect_cable(ZstPlug * a, ZstPlug * b)
 {
 	 bool result = 0;
 	 ZstCable cable;
@@ -799,12 +800,15 @@ void ZstClient::enqueue_compute(ZstInputPlug * plug){
 	zmsg_addstr(msg, buffer.str().c_str());
 	send_to_stage(msg);
 
+	ZstCable * cable_ptr = NULL;
+
 	if (check_stage_response_ok()) {
-		create_cable_ptr(cable);
+		//Create the cable early so we have something to return immediately
+		cable_ptr = create_cable_ptr(cable);
 		result = 1;
 	}
 
-	return result;
+	return cable_ptr;
 }
 
 int ZstClient::destroy_cable(ZstCable * cable)
@@ -818,6 +822,14 @@ int ZstClient::destroy_cable(ZstCable * cable)
 	zmsg_addstr(msg, buffer.str().c_str());
 	send_to_stage(msg);
 	return check_stage_response_ok();
+}
+
+void ZstClient::disconnect_plug(ZstPlug * plug)
+{
+	int result = 0;
+	for (auto c : *plug) {
+		destroy_cable(c);
+	}
 }
 
 int ZstClient::disconnect_plugs(ZstPlug * input_plug, ZstPlug * output_plug)
