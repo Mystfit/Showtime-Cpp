@@ -1,7 +1,7 @@
-#include "ZstURI.h"
 #include <exception>
 #include <stdexcept>
 #include <iostream>
+#include "ZstURI.h"
 #include "ZstUtils.hpp"
 #include "msgpack.hpp"
 
@@ -94,11 +94,6 @@ ZstURI ZstURI::range(int start, int end) const
 {
 	if ((end - start) > size())
 		throw std::range_error("Start or end exceeds path length");
-
-	//If our result size is 0 then we have an empty URI
-	if (end - start <= 0) {
-		return ZstURI();
-	}
 
 	int index = 0;
 	int start_position = 0;

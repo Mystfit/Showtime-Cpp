@@ -124,14 +124,29 @@ void ZstClient::init(const char * client_name)
 	char * output_ip = zsock_last_endpoint(m_graph_out);
     m_graph_out_ip = std::string(output_ip);
 	zstr_free(&output_ip);
-    cout << "ZST: Endpoint graph address: " << m_graph_out_ip << endl;
+    cout << "ZST: Client graph address: " << m_graph_out_ip << endl;
     
     if(m_graph_out)
         zsock_set_linger(m_graph_out, 0);
+	
+	//Connect client dealer socket to stage now
+	addr << "tcp://" << m_stage_addr << ":" << STAGE_ROUTER_PORT;
+	m_stage_router_addr = addr.str();
+	zsock_set_identity(m_stage_router, zuuid_str(m_startup_uuid));
+	zsock_connect(m_stage_router, "%s", m_stage_router_addr.c_str());
+	addr.str("");
+
+	//Stage subscriber socket for update messages
+	addr << "tcp://" << m_stage_addr << ":" << STAGE_PUB_PORT;
+	m_stage_updates_addr = addr.str();
+	cout << "ZST: Connecting to stage publisher " << m_stage_updates_addr << endl;
+	zsock_connect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
+	zsock_set_subscribe(m_stage_updates, "");
+	addr.str("");
 
 	//Create a root entity to hold our local entity hierarchy
 	m_root = new ZstPerformer(m_client_name.c_str(), m_graph_out_addr.c_str());
-    
+	
     start();
 }
 
@@ -179,47 +194,30 @@ void ZstClient::stop() {
 // -------------
 
 void ZstClient::register_client_to_stage(std::string stage_address) {
-	cout << "ZST: Registering endpoint" << endl;
+	cout << "ZST: Registering client" << endl;
 	m_stage_addr = string(stage_address);
 
-	//Build endpoint addresses
+	//Build client addresses
 	std::stringstream addr;
-	
-	//Package our root container for the stage
-	std::stringstream entity_buffer;
-	m_root->write(entity_buffer);
 
 	//Build connect message
-	zmsg_t * msg = zmsg_new();
-	zframe_t * kind_frame = ZstMessages::build_message_kind_frame(ZstMessages::Kind::CLIENT_JOIN);
-	zmsg_append(msg, &kind_frame);						//Pack kind
-	zmsg_addstr(msg, entity_buffer.str().c_str());		//Pack our local performer
+	zmsg_t * msg = ZstMessages::build_entity_message(ZstMessages::Kind::CLIENT_JOIN, m_root);
 	send_to_stage(msg);
-
+	
 	//Check for stage acknowlegement of our connect request
 	zmsg_t *responseMsg = receive_from_stage();
 	ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(responseMsg);
 
-	if (message_type == ZstMessages::Signal::OK) {
-		char * assigned_uuid = zmsg_popstr(responseMsg);
-		m_assigned_uuid = std::string(assigned_uuid);
-		zstr_free(&assigned_uuid);
-		cout << "ZST: Successfully registered endpoint to stage. UUID is " << m_assigned_uuid << endl;
+	if (message_type == ZstMessages::Kind::SIGNAL) {
+		zframe_t * signal_type_frame = zmsg_pop(responseMsg);
+		ZstMessages::Signal s = ZstMessages::unpack_signal(signal_type_frame);
+		zframe_destroy(&signal_type_frame);
 
-		//Connect client dealer socket to stage now that it's been registered successfully
-		addr << "tcp://" << m_stage_addr << ":" << STAGE_ROUTER_PORT;
-		m_stage_router_addr = addr.str();
-		zsock_set_identity(m_stage_router, m_assigned_uuid.c_str());
-		zsock_connect(m_stage_router, "%s", m_stage_router_addr.c_str());
-		addr.str("");
-		
-		//Stage subscriber socket for update messages
-		addr << "tcp://" << stage_address << ":" << STAGE_PUB_PORT;
-		m_stage_updates_addr = addr.str();
-		cout << "ZST: Connecting to stage publisher " << m_stage_updates_addr << endl;
-		zsock_connect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
-		zsock_set_subscribe(m_stage_updates, "");
-		addr.str("");
+		if (s != ZstMessages::Signal::OK) {
+			throw runtime_error("ZST: Stage performer registration responded with error -> Kind: " + std::to_string((int)message_type));
+		}
+
+		cout << "ZST: Successfully registered client to stage." << endl;
         
         //Set up heartbeat timer
         m_heartbeat_timer_id = attach_timer(s_heartbeat_timer, HEARTBEAT_DURATION, this);
@@ -230,9 +228,7 @@ void ZstClient::register_client_to_stage(std::string stage_address) {
         //Ask the stage to send us a full snapshot
 		signal_sync();
 	}
-	else {
-		throw runtime_error("ZST: Stage performer registration responded with error -> Kind: " + std::to_string((int)message_type));
-	}
+
 	zmsg_destroy(&responseMsg);
 }
 
@@ -361,16 +357,13 @@ int ZstClient::s_handle_stage_router(zloop_t * loop, zsock_t * socket, void * ar
 // ----------------------------------------------
 void ZstClient::stage_update_handler(zmsg_t * msg)
 {
-	int num_messages = static_cast<int>(zmsg_size(msg)) / 2;
-	if (num_messages % 2 != 0) {
-		throw new std::exception("Number of received stage messages not even (Kind/Payload)");
-	}
-	for (int i = 0; i < num_messages; ++i) {
-		ZstMessages::Kind message_type = ZstMessages::pop_message_kind_frame(msg);
+	ZstMessages::Kind message_kind = ZstMessages::pop_message_kind_frame(msg);
+	while (message_kind != ZstMessages::EMPTY)
+	{
 		zframe_t * msg_payload = zmsg_pop(msg);
 
 		//Do something with payload
-		switch (message_type) {
+		switch (message_kind) {
 			case ZstMessages::Kind::CREATE_CABLE:
 			{
 				ZstCable cable = ZstMessages::unpack_streamable<ZstCable>(msg_payload);
@@ -435,6 +428,9 @@ void ZstClient::stage_update_handler(zmsg_t * msg)
 
 		//Cleanup payload
 		zframe_destroy(&msg_payload);
+
+		//Get next message in update
+		message_kind = ZstMessages::pop_message_kind_frame(msg);
 	}
 }
 
@@ -588,14 +584,14 @@ int ZstClient::activate_entity(ZstEntityBase * entity)
 	}
 
 	entity->register_graph_sender(this);
-
+	
 	std::stringstream buffer;
 	entity->write(buffer);
 
 	zmsg_t * msg = zmsg_new();
 	zframe_t * kind_frame = ZstMessages::build_entity_kind_frame(entity);
 	zmsg_append(msg, &kind_frame);
-	zmsg_addstr(msg, buffer.str().c_str());
+	zmsg_addmem(msg, buffer.str().c_str(), buffer.str().size());
 	send_to_stage(msg);
 	
     //TODO: Check if we can receive signals from the stage's router socket
@@ -797,7 +793,7 @@ ZstCable * ZstClient::connect_cable(ZstPlug * a, ZstPlug * b)
 	zmsg_t * msg = zmsg_new();
 	zframe_t * kind_frame = ZstMessages::build_message_kind_frame(ZstMessages::Kind::CREATE_CABLE);
 	zmsg_append(msg, &kind_frame);
-	zmsg_addstr(msg, buffer.str().c_str());
+	zmsg_addmem(msg, buffer.str().c_str(), buffer.str().size());
 	send_to_stage(msg);
 
 	ZstCable * cable_ptr = NULL;
@@ -819,7 +815,7 @@ int ZstClient::destroy_cable(ZstCable * cable)
 	zmsg_t * msg = zmsg_new();
 	zframe_t * kind_frame = ZstMessages::build_message_kind_frame(ZstMessages::Kind::DESTROY_CABLE);
 	zmsg_append(msg, &kind_frame);
-	zmsg_addstr(msg, buffer.str().c_str());
+	zmsg_addmem(msg, buffer.str().c_str(), buffer.str().size());
 	send_to_stage(msg);
 	return check_stage_response_ok();
 }

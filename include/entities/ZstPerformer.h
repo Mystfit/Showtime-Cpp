@@ -26,8 +26,6 @@ public:
 	ZST_EXPORT int get_missed_heartbeats();
 
 	//Client properties
-	void set_uuid(const char * uuid);
-	ZST_EXPORT const char * uuid();
 	ZST_EXPORT const char * address();
 
 	//Creatables
@@ -41,8 +39,7 @@ private:
 	bool m_heartbeat_active;
 	int m_missed_heartbeats;
 	
-	//Endpoint identifing info
-	std::string m_uuid;
+	//Client identifing info
 	std::string m_address;
 
 	//Creatables

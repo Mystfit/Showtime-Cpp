@@ -16,6 +16,7 @@
 class ZstMessages{
 public:
     enum Kind  {
+		EMPTY = 0,
         SIGNAL,
         GRAPH_SNAPSHOT,
         
@@ -67,6 +68,9 @@ public:
 		HEARTBEAT = 4
 	};
     
+
+
+
    
 	//---------------------------------------
 	static zframe_t * build_entity_kind_frame(ZstEntityBase * entity) {
@@ -86,6 +90,20 @@ public:
 		return build_message_kind_frame(k);
 	}
 
+	static zmsg_t * build_entity_message(Kind message_kind, ZstStreamable * entity)
+	{
+		//Package our root container for the stage
+		std::stringstream entity_buffer;
+		entity->write(entity_buffer);
+
+		//Build connect message
+		zmsg_t * msg = zmsg_new();
+		zframe_t * kind_frame = ZstMessages::build_message_kind_frame(message_kind);
+		zmsg_append(msg, &kind_frame);
+		zmsg_addmem(msg, entity_buffer.str().c_str(), entity_buffer.str().size());
+		return msg;
+	}
+
 	//Build a message id from the message ID enum
 	static zframe_t * build_message_kind_frame(Kind msg_id) {
 		char id[sizeof(Kind)];
@@ -96,8 +114,11 @@ public:
 	//Pops message id from fromt of message
 	static Kind pop_message_kind_frame(zmsg_t * msg){
 		char * kind_str = zmsg_popstr(msg);
-		ZstMessages::Kind k = static_cast<ZstMessages::Kind>(kind_str[0]);
-		zstr_free(&kind_str);
+		ZstMessages::Kind k = ZstMessages::Kind::EMPTY;
+		if (kind_str) {
+			k = (ZstMessages::Kind)std::atoi(kind_str);
+			zstr_free(&kind_str);
+		}
 		return k;
 	}
 

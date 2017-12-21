@@ -109,9 +109,11 @@ void ZstComponent::read(const char * buffer, size_t length, size_t & offset)
 
 	//Unpack component type
 	auto handle = msgpack::unpack(buffer, length, offset);
-	set_component_type(handle.get().via.str.ptr);
+	auto obj = handle.get();
+	
+	set_component_type(handle.get().via.str.ptr, handle.get().via.str.size);
 
-	//Unpack children
+	//Unpack plugs
 	handle = msgpack::unpack(buffer, length, offset);
 	int num_plugs = static_cast<int>(handle.get().via.i64);
 	for (int i = 0; i < num_plugs; ++i) {
@@ -128,7 +130,12 @@ const char * ZstComponent::component_type() const
 
 void ZstComponent::set_component_type(const char * component_type)
 {
-	size_t len = strlen(component_type);
+	set_component_type(component_type, strlen(component_type));
+}
+
+
+void ZstComponent::set_component_type(const char * component_type, size_t len)
+{
 	m_component_type = (char*)malloc(len + 1);
 	strncpy(m_component_type, component_type, len);
 	m_component_type[len] = '\0';

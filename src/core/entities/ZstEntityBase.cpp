@@ -75,7 +75,7 @@ void ZstEntityBase::read(const char * buffer, size_t length, size_t & offset)
 {
 	//Unpack uri path
 	auto handle = msgpack::unpack(buffer, length, offset);
-	m_uri = ZstURI(handle.get().via.str.ptr);
+	m_uri = ZstURI(handle.get().via.str.ptr, handle.get().via.str.size);
 
 	//Unpack entity type second
 	handle = msgpack::unpack(buffer, length, offset);
@@ -84,6 +84,7 @@ void ZstEntityBase::read(const char * buffer, size_t length, size_t & offset)
 	//Copy entity type string into entity
 	m_entity_type = (char*)malloc(obj.via.str.size + 1);
 	strncpy(m_entity_type, obj.via.str.ptr, obj.via.str.size);
+	m_entity_type[obj.via.str.size] = '\0';
 }
 
 void ZstEntityBase::set_entity_type(const char * entity_type) {

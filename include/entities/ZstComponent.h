@@ -52,6 +52,7 @@ public:
 
 protected:
 	ZST_EXPORT void set_component_type(const char * component_type);
+	ZST_EXPORT void set_component_type(const char * component_type, size_t len);
 
 private:
 	std::vector<ZstPlug*> m_plugs;

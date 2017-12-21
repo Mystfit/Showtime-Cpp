@@ -172,7 +172,6 @@ public:
 void test_standard_layout() {
 	//Verify standard layout
 	assert(std::is_standard_layout<ZstURI>());
-	assert(std::is_standard_layout<ZstCable>());
 }
 
 void test_URI() {

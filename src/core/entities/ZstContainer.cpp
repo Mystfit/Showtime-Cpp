@@ -138,11 +138,18 @@ void ZstContainer::read(const char * buffer, size_t length, size_t & offset)
 
 	//Unpack children
 	auto handle = msgpack::unpack(buffer, length, offset);
-	auto obj = handle.get();
-	int num_children = static_cast<int>(obj.via.i64);
+	int num_children = static_cast<int>(handle.get().via.i64);
 	for (int i = 0; i < num_children; ++i) {
-		//TODO: How do we know to create a component or a container?
-		ZstContainer * child = new ZstContainer();
+		ZstEntityBase * child = NULL;
+		const char * entity_type = handle.get().via.str.ptr;
+
+		if (strcmp(entity_type, CONTAINER_TYPE)) {
+			child = new ZstContainer();
+		}
+		else if (strcmp(entity_type, COMPONENT_TYPE)) {
+			child = new ZstComponent();
+		}
+
 		child->read(buffer, length, offset);
 		add_child(child);
 	}

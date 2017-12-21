@@ -27,7 +27,10 @@ public:
     static ZstStage* create_stage();
 
 	//Client
-	ZstPerformer * get_client_by_URI(const ZstURI & path);
+	ZstPerformer * get_client(const ZstURI & path);
+	ZstPerformer * get_client(const std::string & socket_id);
+	std::string get_socket_ID(const ZstPerformer * performer);
+
 	void destroy_client(ZstPerformer * performer);
 	
 	//Cables
@@ -44,15 +47,14 @@ private:
 
     //Incoming socket handlers
     static int s_handle_router(zloop_t *loop, zsock_t *sock, void *arg);
-    static int s_handle_performer_requests(zloop_t *loop, zsock_t *sock, void *arg);
 
 	//Client communication
-	void reply_with_signal(zsock_t * socket, ZstMessages::Signal status, ZstPerformer * destination = NULL);
+	void reply_with_signal(zsock_t * socket, ZstMessages::Signal status, ZstPerformer * destination);
 	void send_to_client(zmsg_t * msg, ZstPerformer * destination);
 
     //Message handlers
 	ZstMessages::Signal signal_handler(zframe_t * frame, ZstPerformer * sender);
-    ZstMessages::Signal create_client_handler(zframe_t * frame);
+    ZstMessages::Signal create_client_handler(std::string sender, zframe_t * frame);
 	ZstMessages::Signal destroy_client_handler(ZstPerformer * performer);
 
 	template <typename T>
@@ -82,7 +84,8 @@ private:
 
 	//Client performers
 	std::unordered_map<ZstURI, ZstPerformer*> m_clients;
-
+	std::unordered_map<std::string, ZstPerformer*> m_client_socket_index;
+	
 	//Cables
 	std::vector<ZstCable*> m_cables;
 };
