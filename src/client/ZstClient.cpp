@@ -224,6 +224,7 @@ void ZstClient::register_client_to_stage(std::string stage_address) {
 
 		//TODO: Need a handshake with the stage before we mark connection as active
 		m_connected_to_stage = true;
+		m_root->set_activated();
         
         //Ask the stage to send us a full snapshot
 		signal_sync();
@@ -574,14 +575,14 @@ int ZstClient::activate_entity(ZstEntityBase * entity)
 {
 	int result = 0;
 
-	//If this is not a local entity, we can't activate it
-	if (!entity_is_local(entity))
-		return result;
-
 	//If the entity doesn't have a parent, put it under the root container
 	if (!entity->parent()) {
 		m_root->add_child(m_root);
 	}
+
+	//If this is not a local entity, we can't activate it
+	if (!entity_is_local(entity))
+		return result;
 
 	entity->register_graph_sender(this);
 	
@@ -841,7 +842,7 @@ int ZstClient::ping_stage()
 	chrono::milliseconds delta = chrono::milliseconds(-1);
 	chrono::time_point<chrono::system_clock> start, end;
 	start = std::chrono::system_clock::now();
-	send_to_stage(ZstMessages::build_signal(ZstMessages::Signal::SYNC));
+	send_to_stage(ZstMessages::build_signal(ZstMessages::Signal::HEARTBEAT));
 
 	if (check_stage_response_ok()) {
 		end = chrono::system_clock::now();

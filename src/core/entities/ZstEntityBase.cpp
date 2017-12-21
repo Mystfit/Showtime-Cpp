@@ -95,7 +95,7 @@ void ZstEntityBase::set_entity_type(const char * entity_type) {
 
 void ZstEntityBase::set_parent(ZstEntityBase *entity) {
 	if (!entity->URI().contains(URI())) {
-		m_uri = m_parent->URI() + m_uri;
+		m_uri = entity->URI() + m_uri;
 	}
 	m_parent = entity;
 }
