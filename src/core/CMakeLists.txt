@@ -4,7 +4,7 @@ set(VERSION_FILE "${COMPILED_INCLUDES}/ZstVersion.h")
 FILE(WRITE ${VERSION_FILE} "#define SHOWTIME_VERSION \"${SHOWTIME_VERSION}\"")
 
 set(ZST_INTERFACE_HEADERS
-    ${Showtime_INCLUDE_DIRS}/ZstForwards.h
+    ${Showtime_INCLUDE_DIRS}/ZstCore.h
     ${Showtime_INCLUDE_DIRS}/ZstCable.h
     ${Showtime_INCLUDE_DIRS}/ZstConstants.h
     ${Showtime_INCLUDE_DIRS}/ZstExports.h
@@ -23,7 +23,7 @@ set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/Queue.h"
     "${CMAKE_CURRENT_LIST_DIR}/variant.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstActor.h"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstMessages.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstMessage.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstGraphSender.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstUtils.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstValue.h"
@@ -33,6 +33,7 @@ set(ZST_CORE_HEADERS
 
 set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstActor.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstMessage.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstCable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstURI.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstUtils.cpp"

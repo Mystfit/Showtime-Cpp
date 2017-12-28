@@ -1,5 +1,5 @@
 #include "ZstStage.h"
-#include "version.h"
+#include "ZstVersion.h"
 
 //Standalone stage runner
 //-----------------------

@@ -7,12 +7,12 @@ set(SINK_TEST_SOURCE_FILES
 )
 
 # Boost flags
+# On windows, compile with the following:
+# bjam.exe threading=multi architecture=x86 address-model=64 link=static runtime-link=static --with-system --with-filesystem
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_STATIC_RUNTIME ON)
 find_package(Boost 1.64 COMPONENTS system filesystem REQUIRED)
-
-
 
 # Sink test executable
 set(SINK_TEST_TARGET TestSink)

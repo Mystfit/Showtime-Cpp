@@ -12,7 +12,7 @@
 //Core headers
 #include "../core/Queue.h"
 #include "../core/ZstActor.h"
-#include "../core/ZstMessages.h"
+#include "../core/ZstMessage.h"
 #include "../core/ZstGraphSender.h"
 #include "../core/ZstCallbackQueue.h"
 
@@ -117,7 +117,7 @@ private:
 	void send_to_stage(zmsg_t * msg);
 	zmsg_t * receive_from_stage();
 	zmsg_t * receive_stage_update();
-	ZstMessages::Signal check_stage_response_ok();
+	ZstMessage::Signal check_stage_response_ok();
 
 	//Socket handlers
 	static int s_handle_graph_in(zloop_t *loop, zsock_t *sock, void *arg);
