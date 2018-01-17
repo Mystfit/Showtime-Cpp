@@ -20,7 +20,8 @@ ZstClient::ZstClient() :
 	m_root(NULL),
 	m_num_graph_recv_messages(0),
     m_num_graph_send_messages(0),
-	m_graph_out_ip("")
+	m_graph_out_ip(""),
+	m_ping(-1)
 {
 	m_component_arriving_event_manager = new ZstCallbackQueue<ZstComponentEvent, ZstEntityBase*>();
 	m_component_leaving_event_manager = new ZstCallbackQueue<ZstComponentEvent, ZstEntityBase*>();
@@ -30,6 +31,8 @@ ZstClient::ZstClient() :
 	m_cable_leaving_event_manager = new ZstCallbackQueue<ZstCableEvent, ZstCable*>();
 	m_plug_arriving_event_manager = new ZstCallbackQueue<ZstPlugEvent, ZstPlug*>();
 	m_plug_leaving_event_manager = new ZstCallbackQueue<ZstPlugEvent, ZstPlug*>();
+	m_message_pool = new ZstMessagePool();
+	m_message_pool->populate(MESSAGE_POOL_BLOCK);
 }
 
 ZstClient::~ZstClient() {
@@ -42,6 +45,7 @@ ZstClient::~ZstClient() {
 	delete m_cable_leaving_event_manager;
 	delete m_plug_arriving_event_manager;
 	delete m_plug_leaving_event_manager;
+	delete m_message_pool;
 }
 
 ZstClient & ZstClient::instance()
@@ -188,6 +192,73 @@ void ZstClient::stop() {
 	ZstActor::stop();
 }
 
+// ------------
+// Send/Receive
+// ------------
+
+void ZstClient::publish(ZstPlug * plug) 
+{
+	zmsg_t *msg = zmsg_new();
+
+	//Add output plug path
+	zmsg_addstr(msg, plug->URI().path());
+
+	//Pack value into stream
+	std::stringstream s;
+	plug->raw_value()->write(s);
+	zframe_t *payload = zframe_new(s.str().c_str(), s.str().size());
+	zmsg_append(msg, &payload);
+
+	//Send it
+	zmsg_send(&msg, m_graph_out);
+	m_num_graph_send_messages++;
+}
+
+void ZstClient::send_to_stage(ZstMessage * msg) 
+{
+	//Dealer socket doesn't add an empty frame to seperate identity chain and payload, so we handle it here
+	zframe_t * empty = zframe_new_empty();
+	zmsg_t * msg_handle = msg->handle();
+	zmsg_prepend(msg_handle, &empty);
+	zmsg_send(&msg_handle, m_stage_router);
+	msg_pool()->release(msg);
+}
+
+ZstMessage * ZstClient::receive_stage_update() 
+{
+	ZstMessage * msg = NULL;
+	zmsg_t * recv_msg = zmsg_recv(m_stage_updates);
+	if (recv_msg) {
+		msg = msg_pool()->get();
+		msg->unpack(recv_msg);
+	}
+	return msg;
+}
+
+ZstMessage * ZstClient::receive_from_stage() {
+	ZstMessage * msg = NULL;
+
+	zmsg_t * recv_msg = zmsg_recv(m_stage_router);
+	if (recv_msg) {
+		msg = msg_pool()->get();
+		//Pop blank seperator frame
+		zframe_t * empty = zmsg_pop(recv_msg);
+		zframe_destroy(&empty);
+		msg->unpack(recv_msg);
+	}
+	return msg;
+}
+
+
+// ------------
+// Message pools
+// ------------
+
+ZstMessagePool * ZstClient::msg_pool()
+{
+	return m_message_pool;
+}
+
 
 // -------------
 // Client init
@@ -201,49 +272,55 @@ void ZstClient::register_client_to_stage(std::string stage_address) {
 	std::stringstream addr;
 
 	//Build connect message
-	zmsg_t * msg = ZstMessage::append_payload_frame(ZstMessage::Kind::CLIENT_JOIN, m_root);
-	send_to_stage(msg);
+	ZstMessage * msg = msg_pool()->get();
+	msg->init_streamable_message(ZstMessage::Kind::CLIENT_JOIN, *m_root);
+
+	//Register complete action
+	msg_pool()->register_future(msg).then([this](MessageFuture f){
+		int status = f.get();
+		this->register_client_complete(status);
+		return status;
+	});
 	
-	//Check for stage acknowlegement of our connect request
-	zmsg_t *responseMsg = receive_from_stage();
-	ZstMessage::Kind message_type = ZstMessage::unpack_kind(responseMsg);
+	send_to_stage(msg);
+}
 
-	if (message_type == ZstMessage::Kind::SIGNAL) {
-		zframe_t * signal_type_frame = zmsg_pop(responseMsg);
-		ZstMessage::Signal s = ZstMessage::unpack_signal(signal_type_frame);
-		zframe_destroy(&signal_type_frame);
-
-		if (s != ZstMessage::Signal::OK) {
-			throw runtime_error("ZST: Stage performer registration responded with error -> Kind: " + std::to_string((int)message_type));
-		}
-
-		cout << "ZST: Successfully registered client to stage." << endl;
-        
-        //Set up heartbeat timer
-        m_heartbeat_timer_id = attach_timer(s_heartbeat_timer, HEARTBEAT_DURATION, this);
-
-		//TODO: Need a handshake with the stage before we mark connection as active
-		m_connected_to_stage = true;
-		m_root->set_activated();
-        
-        //Ask the stage to send us a full snapshot
-		signal_sync();
+void ZstClient::register_client_complete(int status)
+{
+	//If we didn't receive a OK signal, something went wrong
+	if (status != ZstMessage::Kind::OK) {
+		throw runtime_error("ZST: Stage performer registration responded with error -> Status: " + status);
 	}
 
-	zmsg_destroy(&responseMsg);
+	cout << "ZST: Successfully registered client to stage." << endl;
+
+	//Set up heartbeat timer
+	m_heartbeat_timer_id = attach_timer(s_heartbeat_timer, HEARTBEAT_DURATION, this);
+
+	//TODO: Need a handshake with the stage before we mark connection as active
+	m_connected_to_stage = true;
+	m_root->set_activated();
+
+	//Ask the stage to send us a full snapshot
+	cout << "ZST: Requesting stage snapshot" << endl;
+	send_to_stage(msg_pool()->get()->init_message(ZstMessage::Kind::CLIENT_SYNC));
 }
+
 
 void ZstClient::leave_stage()
 {
 	if (m_connected_to_stage) {
 		cout << "ZST:Leaving stage" << endl;
-		send_to_stage(ZstMessage::build_signal(ZstMessage::Signal::LEAVING));
 
+		//Notify stage that we are leaving
+		ZstMessage * msg = msg_pool()->get();
+		send_to_stage(msg_pool()->get()->init_message(ZstMessage::Kind::CLIENT_LEAVE));
+
+		//Disconnect sockets and timers
 		zsock_disconnect(m_stage_router, "%s", m_stage_router_addr.c_str());
 		zsock_disconnect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
-
 		detach_timer(m_heartbeat_timer_id);
-
+		
 		m_connected_to_stage = false;
 	}
 }
@@ -253,12 +330,9 @@ bool ZstClient::is_connected_to_stage()
 	return m_connected_to_stage;
 }
 
-void ZstClient::signal_sync()
+long ZstClient::ping()
 {
-	if (m_connected_to_stage) {
-		cout << "ZST: Requesting stage snapshot" << endl;
-		send_to_stage(ZstMessage::build_signal(ZstMessage::Signal::SYNC));
-	}
+	return m_ping;
 }
 
 
@@ -300,7 +374,6 @@ int ZstClient::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg){
 	//Cleanup
 	zframe_destroy(&payload);
     zmsg_destroy(&msg);
-    free(msg);
 
 	//Telemetrics
 	client->m_num_graph_recv_messages++;
@@ -308,130 +381,108 @@ int ZstClient::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg){
 }
 
 int ZstClient::s_handle_stage_update_in(zloop_t * loop, zsock_t * socket, void * arg) {
-	ZstClient *endpoint = (ZstClient*)arg;
-
-	zmsg_t *msg = endpoint->receive_stage_update();
-	endpoint->stage_update_handler(msg);
-	zmsg_destroy(&msg);
+	ZstClient *client = (ZstClient*)arg;
+	ZstMessage * msg = client->receive_stage_update();
+	client->stage_update_handler(msg);
 	return 0;
 }
 
 int ZstClient::s_handle_stage_router(zloop_t * loop, zsock_t * socket, void * arg){
-	ZstClient *endpoint = (ZstClient*)arg;
+	ZstClient *client = (ZstClient*)arg;
 
 	//Receive routed message from stage
-    zmsg_t *msg = endpoint->receive_from_stage();
+    ZstMessage * msg = client->receive_from_stage();
+
+	//Process message promises
+	client->msg_pool()->process_message_promise(msg);
     
-	//Find message type from first frame
-	ZstMessage::Kind message_type = ZstMessage::unpack_kind(msg);
-	if (message_type == ZstMessage::Kind::GRAPH_SNAPSHOT) {
-		endpoint->stage_update_handler(msg);
+	//Process message
+	if (msg->kind() == ZstMessage::Kind::GRAPH_SNAPSHOT) {
+		client->stage_update_handler(msg);
 	}
 	else {
 		
-		switch (message_type) {
-		case ZstMessage::Kind::SUBSCRIBE_TO_PERFORMER:
-		{
-			//Need endpoint ip only, cable will arrive via stage updates
-			//Get message payload
-			char * endpoint_ip = zmsg_popstr(msg);
-			char * subscribed_output_plug = zmsg_popstr(msg);
-			endpoint->connect_client_handler(endpoint_ip, subscribed_output_plug);
-			zstr_free(&endpoint_ip);
-			zstr_free(&subscribed_output_plug);
-			break;
-		}
-		default:
-			cout << "ZST: Performer dealer - Didn't understand message of type " << (char)message_type << endl;
-			break;
-		}
-	}
-
-	zmsg_destroy(&msg);
-    return 0;
-}
-
-// ----------------------------------------------
-// Unpacks batched update messages from the stage
-// The frame structure for updates looks like this:
-// | Kind | Payload | Kind | Payload | ... |
-// ----------------------------------------------
-void ZstClient::stage_update_handler(zmsg_t * msg)
-{
-	ZstMessage::Kind message_kind = ZstMessage::unpack_kind(msg);
-	while (message_kind != ZstMessage::EMPTY)
-	{
-		zframe_t * msg_payload = zmsg_pop(msg);
-
-		//Do something with payload
-		switch (message_kind) {
-			case ZstMessage::Kind::CREATE_CABLE:
+		switch (msg->kind()) {
+			case ZstMessage::Kind::SUBSCRIBE_TO_PERFORMER:
 			{
-				ZstCable cable = ZstMessage::unpack_streamable<ZstCable>(msg_payload);
-				create_cable_ptr(cable);
-			}
-			break;
-			case ZstMessage::Kind::DESTROY_CABLE:
-			{
-				ZstCable cable = ZstMessage::unpack_streamable<ZstCable>(msg_payload);
-				cable_leaving_events()->enqueue(find_cable_ptr(cable.get_input_URI(), cable.get_output_URI()));
-			}
-			break;
-			case ZstMessage::Kind::CREATE_PLUG:
-			{
-				ZstPlug * plug = ZstMessage::unpack_entity<ZstPlug>(msg_payload);
-				add_proxy_entity(plug);
-				break;
-			}
-			case ZstMessage::Kind::DESTROY_PLUG:
-			{
-				ZstURI plug_path = ZstURI((char*)zframe_data(msg_payload));
-				ZstPlug * plug = dynamic_cast<ZstPlug*>(find_plug(plug_path));
-				plug_leaving_events()->enqueue(plug);
-				break;
-			}
-			case ZstMessage::Kind::CREATE_PERFORMER:
-			{
-				ZstPerformer * performer = ZstMessage::unpack_entity<ZstPerformer>(msg_payload);
-				add_performer(performer);
-				break;
-			}
-			case ZstMessage::Kind::CREATE_COMPONENT: 
-			{
-				ZstComponent * component = ZstMessage::unpack_entity<ZstComponent>(msg_payload);
-				add_proxy_entity(component);
-			}
-			case ZstMessage::Kind::CREATE_CONTAINER:
-			{
-				ZstContainer * container = ZstMessage::unpack_entity<ZstContainer>(msg_payload);
-				add_proxy_entity(container);
-			}
-			case ZstMessage::Kind::DESTROY_ENTITY:
-			{
-				ZstURI entity_path = ZstURI((char*)zframe_data(msg_payload));
-				ZstComponent * component = dynamic_cast<ZstComponent*>(find_entity(entity_path));
-				component_leaving_events()->enqueue(component);
-				break;
-			}
-			case ZstMessage::Kind::REGISTER_COMPONENT_TEMPLATE:
-			{
-				throw new std::exception("Handler for component type arriving mesages not implemented");
-				break;
-			}
-			case ZstMessage::Kind::UNREGISTER_COMPONENT_TEMPLATE:
-			{
-				throw new std::exception("Handler for component type leaving mesages not implemented");
+				client->connect_client_handler(msg->payload_at(0).data(), msg->payload_at(1).data());
 				break;
 			}
 			default:
+				cout << "ZST: Performer dealer - Didn't understand message of type " << msg->kind() << endl;
 				break;
 			}
+	}
+	client->msg_pool()->release(msg);
+    return 0;
+}
 
-		//Cleanup payload
-		zframe_destroy(&msg_payload);
-
-		//Get next message in update
-		message_kind = ZstMessage::unpack_kind(msg);
+void ZstClient::stage_update_handler(ZstMessage * msg)
+{
+	for (size_t i = 0; i < msg->num_payloads(); ++i) {
+		//Do something with payload
+		switch (msg->kind()) {
+		case ZstMessage::Kind::CREATE_CABLE:
+		{
+			ZstCable cable = msg->unpack_payload_streamable<ZstCable>(i);
+			create_cable_ptr(cable);
+		}
+		break;
+		case ZstMessage::Kind::DESTROY_CABLE:
+		{
+			ZstCable cable = msg->unpack_payload_streamable<ZstCable>(i);
+			cable_leaving_events()->enqueue(find_cable_ptr(cable.get_input_URI(), cable.get_output_URI()));
+		}
+		break;
+		case ZstMessage::Kind::CREATE_PLUG:
+		{
+			ZstPlug * plug = msg->unpack_payload_entity<ZstPlug>(i);
+			add_proxy_entity(plug);
+			break;
+		}
+		case ZstMessage::Kind::DESTROY_PLUG:
+		{
+			ZstURI plug_path = ZstURI(msg->payload_at(i).data());
+			ZstPlug * plug = dynamic_cast<ZstPlug*>(find_plug(plug_path));
+			plug_leaving_events()->enqueue(plug);
+			break;
+		}
+		case ZstMessage::Kind::CREATE_PERFORMER:
+		{
+			ZstPerformer * performer = msg->unpack_payload_entity<ZstPerformer>(i);
+			add_performer(performer);
+			break;
+		}
+		case ZstMessage::Kind::CREATE_COMPONENT:
+		{
+			ZstComponent * component = msg->unpack_payload_entity<ZstComponent>(i);
+			add_proxy_entity(component);
+		}
+		case ZstMessage::Kind::CREATE_CONTAINER:
+		{
+			ZstContainer * container = msg->unpack_payload_entity<ZstContainer>(i);
+			add_proxy_entity(container);
+		}
+		case ZstMessage::Kind::DESTROY_ENTITY:
+		{
+			ZstURI entity_path = ZstURI(msg->payload_at(i).data());
+			ZstComponent * component = dynamic_cast<ZstComponent*>(find_entity(entity_path));
+			component_leaving_events()->enqueue(component);
+			break;
+		}
+		case ZstMessage::Kind::REGISTER_COMPONENT_TEMPLATE:
+		{
+			throw new std::exception("Handler for component type arriving mesages not implemented");
+			break;
+		}
+		case ZstMessage::Kind::UNREGISTER_COMPONENT_TEMPLATE:
+		{
+			throw new std::exception("Handler for component type leaving mesages not implemented");
+			break;
+		}
+		default:
+			break;
+		}
 	}
 }
 
@@ -448,8 +499,21 @@ void ZstClient::create_entity_from_template_handler(const ZstURI & entity_templa
 }
 
 int ZstClient::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
-	ZstClient * endpoint = (ZstClient*)arg;
-	endpoint->send_to_stage(ZstMessage::build_signal(ZstMessage::Signal::HEARTBEAT));
+	ZstClient * client = (ZstClient*)arg;
+	
+	chrono::time_point<chrono::system_clock> start = std::chrono::system_clock::now();
+
+	ZstMessage * msg = client->msg_pool()->get()->init_message(ZstMessage::Kind::CLIENT_HEARTBEAT);
+	client->msg_pool()->register_future(msg).then([&start, client](MessageFuture f) {
+		int status = f.get();
+		chrono::time_point<chrono::system_clock> end = chrono::system_clock::now();
+		chrono::milliseconds delta = chrono::duration_cast<chrono::milliseconds>(end - start);
+		cout << "ZST: Ping roundtrip " << delta.count() << "ms" << endl;
+		client->m_ping = delta.count();
+		return status;
+	});
+	client->send_to_stage(msg);
+
 	return 0;
 }
 
@@ -571,10 +635,8 @@ ZstPlug * ZstClient::find_plug(const ZstURI & path)
 	return plug_parent->get_plug_by_URI(path);
 }
 
-int ZstClient::activate_entity(ZstEntityBase * entity)
+void ZstClient::activate_entity(ZstEntityBase * entity)
 {
-	int result = 0;
-
 	//If the entity doesn't have a parent, put it under the root container
 	if (!entity->parent()) {
 		m_root->add_child(m_root);
@@ -582,28 +644,30 @@ int ZstClient::activate_entity(ZstEntityBase * entity)
 
 	//If this is not a local entity, we can't activate it
 	if (!entity_is_local(entity))
-		return result;
+		return;
 
+	//Register client in entity to allow it to send messages
 	entity->register_graph_sender(this);
 	
-	std::stringstream buffer;
-	entity->write(buffer);
-
-	zmsg_t * msg = zmsg_new();
-	zframe_t * kind_frame = ZstMessage::append_entity_kind_frame(entity);
-	zmsg_append(msg, &kind_frame);
-	zmsg_addmem(msg, buffer.str().c_str(), buffer.str().size());
+	//Build message
+	ZstMessage * msg = msg_pool()->get()->init_entity_message(entity);
+	msg_pool()->register_future(msg).then([this](MessageFuture f) {
+		int status = f.get();
+		this->activate_entity_completed(status);
+		return status;
+	});
 	send_to_stage(msg);
-	
-	return result;
 }
 
-int ZstClient::destroy_entity(ZstEntityBase * entity)
-{
-	int result = 1;
+void ZstClient::activate_entity_completed(int status) {
+	std::cout << "ZST: Entity activation complete with status " << status << std::endl;
+	//This is a good place to flag the entity as being created
+}
 
+void ZstClient::destroy_entity(ZstEntityBase * entity)
+{
 	if (!entity || entity->is_destroyed()) {
-		return result;
+		return;
 	}
 
 	bool is_local = entity_is_local(entity);
@@ -613,12 +677,14 @@ int ZstClient::destroy_entity(ZstEntityBase * entity)
 
 	//If the entity is local, let the stage know it's leaving
 	if (is_local && is_connected_to_stage()) {
-		zmsg_t * msg = zmsg_new();
-		zframe_t * kind_frame = ZstMessage::append_kind_frame(ZstMessage::Kind::DESTROY_ENTITY);
-		zmsg_append(msg, &kind_frame);
-		zmsg_addstr(msg, entity->URI().path());
+		ZstMessage * msg = msg_pool()->get()->init_message(ZstMessage::Kind::DESTROY_ENTITY);
+		msg->append_str(entity->URI().path());
+		msg_pool()->register_future(msg).then([this](MessageFuture f) {
+			int status = f.get();
+			this->destroy_entity_completed(status);
+			return status;
+		});
 		send_to_stage(msg);
-		result = check_stage_response_ok();
 	}
 
 	//Remove entity from parent
@@ -638,8 +704,11 @@ int ZstClient::destroy_entity(ZstEntityBase * entity)
 	else {
 		delete entity;
 	}
+}
 
-	return result;
+void ZstClient::destroy_entity_completed(int status)
+{
+	std::cout << "ZST: Entity destroy completed with status " << status << std::endl;
 }
 
 bool ZstClient::entity_is_local(ZstEntityBase * entity)
@@ -656,6 +725,7 @@ void ZstClient::add_proxy_entity(ZstEntityBase * entity) {
 		//Look for existing entity
 		ZstEntityBase * local_entity = find_entity(entity->URI());
 
+		//TODO: Move this to the message future
 		if (local_entity) {
 			if (!local_entity->is_activated()) {
 				local_entity->set_activated();
@@ -727,11 +797,10 @@ ZstPerformer * ZstClient::get_local_performer() const
 // Plugs
 // -----
 
-int ZstClient::destroy_plug(ZstPlug * plug)
+void ZstClient::destroy_plug(ZstPlug * plug)
 {
-    int result = 0;
     if (m_is_destroyed || plug->is_destroyed()) {
-        return result;
+        return;
     }
 
 	plug->set_destroyed();
@@ -739,12 +808,13 @@ int ZstClient::destroy_plug(ZstPlug * plug)
 	bool is_local = entity_is_local(plug);
 
 	if (is_local) {
-		zmsg_t * msg = zmsg_new();
-		zframe_t * kind_frame = ZstMessage::append_kind_frame(ZstMessage::Kind::DESTROY_ENTITY);
-		zmsg_append(msg, &kind_frame);
-		zmsg_addstr(msg, plug->URI().path());
-		send_to_stage(msg);
-		result = check_stage_response_ok();
+		ZstMessage * msg = msg_pool()->get()->init_message(ZstMessage::Kind::DESTROY_ENTITY);
+		msg->append_str(plug->URI().path());
+		msg_pool()->register_future(msg).then([this](MessageFuture f) {
+			int status = f.get();
+			this->destroy_plug_complete(status);
+			return status;
+		});
 	}
 
 	ZstComponent * parent = dynamic_cast<ZstComponent*>(plug->parent());
@@ -753,11 +823,11 @@ int ZstClient::destroy_plug(ZstPlug * plug)
 	if (!is_local) {
 		delete plug;
 		plug = NULL;
-		result = 1;
-	
 	}
+}
 
-    return result;
+void ZstClient::destroy_plug_complete(int status)
+{
 }
 
 void ZstClient::enqueue_compute(ZstInputPlug * plug){
@@ -770,7 +840,6 @@ void ZstClient::enqueue_compute(ZstInputPlug * plug){
  
 ZstCable * ZstClient::connect_cable(ZstPlug * a, ZstPlug * b)
 {
-	 bool result = 0;
 	 ZstCable cable;
 	 ZstPlug * input_plug = NULL;
 	 ZstPlug * output_plug = NULL;
@@ -790,37 +859,41 @@ ZstCable * ZstClient::connect_cable(ZstPlug * a, ZstPlug * b)
 
 	//Even though we use a cable object when sending over the wire, it's up to the stage
 	//to determine the input->output order
-	std::stringstream buffer;
-	cable.write(buffer);
 
-	zmsg_t * msg = zmsg_new();
-	zframe_t * kind_frame = ZstMessage::append_kind_frame(ZstMessage::Kind::CREATE_CABLE);
-	zmsg_append(msg, &kind_frame);
-	zmsg_addmem(msg, buffer.str().c_str(), buffer.str().size());
+	ZstMessage * msg = msg_pool()->get()->init_streamable_message(ZstMessage::Kind::CREATE_CABLE, cable);
+	msg_pool()->register_future(msg).then([this](MessageFuture f) {
+		int status = f.get();
+		this->connect_cable_completed(status);
+		return status;
+	});
 	send_to_stage(msg);
 
-	ZstCable * cable_ptr = NULL;
-
-	if (check_stage_response_ok()) {
-		//Create the cable early so we have something to return immediately
-		cable_ptr = create_cable_ptr(cable);
-		result = 1;
-	}
-
+	//Create the cable early so we have something to return immediately
+	ZstCable * cable_ptr = create_cable_ptr(cable);
 	return cable_ptr;
 }
 
-int ZstClient::destroy_cable(ZstCable * cable)
+void ZstClient::connect_cable_completed(int status)
 {
-	std::stringstream buffer;
-	cable->write(buffer);
+	if (status == ZstMessage::Kind::OK) {
+		//Cable connection completed - flag cable as active
+	}
+}
 
-	zmsg_t * msg = zmsg_new();
-	zframe_t * kind_frame = ZstMessage::append_kind_frame(ZstMessage::Kind::DESTROY_CABLE);
-	zmsg_append(msg, &kind_frame);
-	zmsg_addmem(msg, buffer.str().c_str(), buffer.str().size());
+void ZstClient::destroy_cable(ZstCable * cable)
+{
+	ZstMessage * msg = msg_pool()->get()->init_streamable_message(ZstMessage::Kind::DESTROY_CABLE, *cable);
+	msg_pool()->register_future(msg).then([this](MessageFuture f) {
+		int status = f.get();
+		this->activate_entity_completed(status);
+		return status;
+	});
 	send_to_stage(msg);
-	return check_stage_response_ok();
+}
+
+void ZstClient::destroy_cable_completed(int status)
+{	
+	std::cout << "ZST: Destroy cable completed with status " << status << std::endl;
 }
 
 void ZstClient::disconnect_plug(ZstPlug * plug)
@@ -831,28 +904,12 @@ void ZstClient::disconnect_plug(ZstPlug * plug)
 	}
 }
 
-int ZstClient::disconnect_plugs(ZstPlug * input_plug, ZstPlug * output_plug)
+void ZstClient::disconnect_plugs(ZstPlug * input_plug, ZstPlug * output_plug)
 {
 	ZstCable * cable = find_cable_ptr(input_plug->URI(), output_plug->URI());
-	return destroy_cable(cable);
+	destroy_cable(cable);
 }
 
-// ---
-
-int ZstClient::ping_stage()
-{
-	chrono::milliseconds delta = chrono::milliseconds(-1);
-	chrono::time_point<chrono::system_clock> start, end;
-	start = std::chrono::system_clock::now();
-	send_to_stage(ZstMessage::build_signal(ZstMessage::Signal::HEARTBEAT));
-
-	if (check_stage_response_ok()) {
-		end = chrono::system_clock::now();
-		delta = chrono::duration_cast<chrono::milliseconds>(end - start);
-		cout << "ZST: Client received heartbeat ping ack. Roundtrip was " << delta.count() << "ms" << endl;
-	}
-	return (int)delta.count();
-}
 
 
 // ------------------------
@@ -917,72 +974,4 @@ int ZstClient::graph_send_tripmeter()
 void ZstClient::reset_graph_send_tripmeter()
 {
 	m_num_graph_send_messages = 0;
-}
-
-
-// ------------
-// Send/Receive
-// ------------
-
-void ZstClient::publish(ZstPlug * plug) {
-	zmsg_t *msg = zmsg_new();
-
-	//Add output plug path
-	zmsg_addstr(msg, plug->URI().path());
-
-	//Pack value into stream
-	std::stringstream s;
-	plug->raw_value()->write(s);
-	zframe_t *payload = zframe_new(s.str().c_str(), s.str().size());
-	zmsg_append(msg, &payload);
-
-	//Send it
-	zmsg_send(&msg, m_graph_out);
-	m_num_graph_send_messages++;
-}
-
-void ZstClient::send_to_stage(zmsg_t * msg) {
-	//Dealer socket doesn't add an empty frame to seperate identity chain and payload, so we handle it here
-	zframe_t * empty = zframe_new_empty();
-	zmsg_prepend(msg, &empty);
-	zmsg_send(&msg, m_stage_router);
-}
-
-zmsg_t * ZstClient::receive_stage_update() {
-	return zmsg_recv(m_stage_updates);
-}
-
-zmsg_t * ZstClient::receive_from_stage() {
-	zmsg_t * msg = zmsg_recv(m_stage_router);
-
-	//Pop blank seperator frame
-	zframe_t * empty = zmsg_pop(msg);
-    zframe_destroy(&empty);
-
-	return msg;
-}
-
-ZstMessage::Signal ZstClient::check_stage_response_ok() {
-	//Check for response from stage
-	zmsg_t *responseMsg = receive_from_stage();
-
-	//Get message type
-	ZstMessage::Kind message_type = ZstMessage::unpack_kind(responseMsg);
-
-	//We're expecting a signal from the stage. Anything else is unexpected
-	if (message_type != ZstMessage::Kind::SIGNAL) {
-		throw runtime_error("ZST: Attempting to check stage signal, but we got a message other than signal!");
-	}
-
-	//Unpack signal
-	zframe_t * signal_frame = zmsg_pop(responseMsg);
-	ZstMessage::Signal s = ZstMessage::unpack_signal(signal_frame);
-	if (s != ZstMessage::Signal::OK) {
-		std::cout << "ZST: Stage responded with signal other than OK -> " << s << std::endl;
-	}
-
-	//Cleanup
-	zframe_destroy(&signal_frame);
-    zmsg_destroy(&responseMsg);
-	return s;
 }

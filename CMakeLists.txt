@@ -20,6 +20,8 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     MESSAGE(STATUS "Platform is Windows")
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+    option(WINDOWS_USE_VCPKG "Look for sources using VCPKG" false)
+    set(WINDOWS_VCPKG_ROOT "C:/Code/vcpkg/scripts/buildsystems/vcpkg.cmake")
 endif()
 
 # Use C11
@@ -28,6 +30,7 @@ set(CXX_STANDARD_REQUIRED)
 
 # Set showtime include directories
 set(Showtime_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include )
+set(Showtime_SUBMODULES_DIR ${CMAKE_SOURCE_DIR}/submodules)
 
 # Core Library
 # ------------

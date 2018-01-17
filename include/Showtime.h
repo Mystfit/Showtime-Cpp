@@ -3,7 +3,7 @@
 #include "ZstURI.h"
 #include "ZstConstants.h"
 #include "ZstExports.h"
-#include "ZstForwards.h"
+#include "ZstCore.h"
 
 class Showtime
 {
@@ -33,8 +33,8 @@ public:
     ZST_CLIENT_EXPORT static void detach(ZstCableEvent * callback, ZstCallbackAction action);
 	
 	//Entity activation/deactivation
-	ZST_CLIENT_EXPORT static int activate(ZstEntityBase * entity);
-	ZST_CLIENT_EXPORT static int deactivate(ZstEntityBase * entity);
+	ZST_CLIENT_EXPORT static void activate(ZstEntityBase * entity);
+	ZST_CLIENT_EXPORT static void deactivate(ZstEntityBase * entity);
 
 	//Hierarchy
     ZST_CLIENT_EXPORT static ZstPerformer* get_root();
@@ -43,11 +43,11 @@ public:
 	
     //Stage methods
 	ZST_CLIENT_EXPORT static bool is_connected();
-    ZST_CLIENT_EXPORT static int ping_stage();
+    ZST_CLIENT_EXPORT static int ping();
 
     //Cable management
 	ZST_CLIENT_EXPORT static ZstCable * connect_cable(ZstPlug * a, ZstPlug * b);
-	ZST_CLIENT_EXPORT static int destroy_cable(ZstCable * cable);
+	ZST_CLIENT_EXPORT static void destroy_cable(ZstCable * cable);
 	ZST_CLIENT_EXPORT static void disconnect_plug(ZstPlug * plug);
 	
     //Creatables

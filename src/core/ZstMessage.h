@@ -6,23 +6,24 @@
 #include <iostream>
 #include <stdio.h>
 #include <msgpack.hpp>
-#include <czmq.h>
 #include <ZstCore.h>
 
 #define KIND_FRAME_SIZE 1
 
+//Forwards
+class ZstMessagePayload;
+typedef struct _zmsg_t zmsg_t;
+typedef struct _zframe_t zframe_t;
+typedef struct _zuuid_t zuuid_t;
 
 class ZstMessage {
-	friend class ZstStage;
+	friend class ZstMessagePool;
 public:
     enum Kind  {
 		EMPTY = 0,
 
 		//Regular signals
 		OK,
-		SYNC,
-		LEAVING,
-		HEARTBEAT,
         
 		//Error signals
 		ERR_STAGE_MSG_TYPE_UNKNOWN,
@@ -36,8 +37,10 @@ public:
         
         //Client registration
         CLIENT_JOIN,
-        CLIENT_JOIN_ACK,
 		CLIENT_LEAVE,
+		CLIENT_SYNC,
+		CLIENT_LEAVING,
+		CLIENT_HEARTBEAT,
 		GRAPH_SNAPSHOT,
         
         //Entity registration
@@ -62,51 +65,89 @@ public:
         CREATE_PEER_ENTITY
     };
 
-	ZstMessage(zmsg_t * msg);
-	~ZstMessage();
-	static void destroy(ZstMessage * msg);
+	ZST_EXPORT ~ZstMessage();
+	ZST_EXPORT void reset();
+	ZST_EXPORT ZstMessage(const ZstMessage & other);
+	ZST_EXPORT void copy_id(const ZstMessage * msg);
 
-	static ZstMessage create_entity_message(ZstEntityBase * entity);
-	static ZstMessage create_signal_message(Kind kind);
-	static ZstMessage create_streamable_message(Kind kind, ZstStreamable & streamable);
+	//Initialisation
+	ZST_EXPORT ZstMessage * init_entity_message(ZstEntityBase * entity);
+	ZST_EXPORT ZstMessage * init_message(Kind kind);
+	ZST_EXPORT ZstMessage * init_streamable_message(Kind kind, ZstStreamable & streamable);
+
+	//Message modification
+	ZST_EXPORT void append_str(const char * s);
+	ZST_EXPORT void append_streamable(Kind k, ZstStreamable & s);
+
+	//Unpacking
+	ZST_EXPORT void unpack(zmsg_t * msg);
+
+	//Attributes
+	ZST_EXPORT ZstEntityBase * entity_target();
+	ZST_EXPORT zmsg_t * handle();
+	ZST_EXPORT size_t sender_length();
+	ZST_EXPORT const char * sender();
+	ZST_EXPORT ZstURI sender_as_URI();
+	ZST_EXPORT const char * id();
+	ZST_EXPORT Kind kind();
+	
+	//Message iteration
+	ZST_EXPORT ZstMessagePayload & payload_at(size_t index);
+	ZST_EXPORT size_t num_payloads();
+
+	template <typename T>
+	T* unpack_payload_entity(size_t payload_index) {
+		T* entity = new T();
+		size_t offset = 0;
+		ZstMessagePayload & payload = payload_at(payload_index);
+		entity->read(payload.data(), payload.size(), offset);
+		return entity;
+	}
+	
+	template <typename T>
+	T unpack_payload_streamable(size_t payload_index) {
+		T streamable = T();
+		size_t offset = 0;
+		ZstMessagePayload & payload = payload_at(payload_index);
+		streamable.read(payload.data(), payload.size(), offset);
+		return streamable;
+	}
 	
 private:
 	ZstMessage();
-
+		
 	//---------------------------------------
-	void append_identity_frame();
-	void append_kind_frame(Kind msg_id);
+	void append_kind_frame(Kind k);
 	void append_entity_kind_frame(ZstEntityBase * entity);
 	void append_id_frame();
 	void append_payload_frame(ZstStreamable & streamable);
 	
-	void unpack(zmsg_t * msg);
+	//---------------------------------------
+	
+	Kind unpack_kind();
+	Kind unpack_kind(zframe_t * kind_frame);
 
-	ZstStreamable * get_payload_entity();
-	ZstStreamable & get_payload_streamable();
-		
-	template <typename T>
-	T* unpack_entity(zframe_t * frame) {
-		T* entity = new T();
-		size_t offset = 0;
-		entity->read((char*)zframe_data(frame), zframe_size(frame), offset);
-		return entity;
-	}
-
-	template <typename T>
-	T unpack_streamable(zframe_t * frame) {
-		T streamable = T();
-		size_t offset = 0;
-		streamable.read((char*)zframe_data(frame), zframe_size(frame), offset);
-		return streamable;
-	}
-
-	// -----------
-
+	//---------------------------------------
+	
+	//Common message attributes
 	size_t m_sender_length;
 	char * m_sender;
 	zmsg_t * m_msg_handle;
 	zuuid_t * m_msg_id;
 	Kind m_msg_kind;
-	ZstStreamable * m_msg_target;
+	ZstEntityBase * m_entity_target;
+	std::vector<ZstMessagePayload> m_payloads;
+};
+
+
+class ZstMessagePayload {
+public:
+	ZST_EXPORT ZstMessagePayload(ZstMessage::Kind k, zframe_t * p);
+	ZST_EXPORT ZstMessagePayload(const ZstMessagePayload & other);
+	ZST_EXPORT ~ZstMessagePayload();
+	ZST_EXPORT size_t size();
+	ZST_EXPORT char * data();
+private:
+	ZstMessage::Kind m_kind;
+	zframe_t * m_payload;
 };

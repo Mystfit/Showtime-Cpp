@@ -12,8 +12,12 @@ set(ZST_CLIENT_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstClient.cpp"
 )
 
+set(ZST_CLIENT_INCLUDES 
+	${ZST_CLIENT_PUBLIC_HEADERS}
+)
 target_sources(${CLIENT_TARGET} PUBLIC ${ZST_CLIENT_PUBLIC_HEADERS})
 target_sources(${CLIENT_TARGET} PRIVATE ${ZST_CLIENT_PRIVATE_HEADERS} ${ZST_CLIENT_SRC})
+target_include_directories(${CLIENT_TARGET} PUBLIC ${ZST_INCLUDES})
 
 # Platform specific definitions
 if(WIN32)

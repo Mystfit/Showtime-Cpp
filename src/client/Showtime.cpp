@@ -135,14 +135,14 @@ void Showtime::detach(ZstCableEvent * callback, ZstCallbackAction action)
 // -----------------------
 // Entity activation/deactivation
 // -----------------------
-int Showtime::activate(ZstEntityBase * entity)
+void Showtime::activate(ZstEntityBase * entity)
 {
-	return ZstClient::instance().activate_entity(entity);
+	ZstClient::instance().activate_entity(entity);
 }
 
-int Showtime::deactivate(ZstEntityBase * entity)
+void Showtime::deactivate(ZstEntityBase * entity)
 {
-	return ZstClient::instance().destroy_entity(entity);
+	ZstClient::instance().destroy_entity(entity);
 }
 
 
@@ -175,8 +175,9 @@ bool Showtime::is_connected()
 	return ZstClient::instance().is_connected_to_stage();
 }
 
-int Showtime::ping_stage(){
-	return ZstClient::instance().ping_stage();
+int Showtime::ping()
+{
+	return ZstClient::instance().ping();
 }
 
 
@@ -189,9 +190,9 @@ ZstCable * Showtime::connect_cable(ZstPlug * a, ZstPlug * b)
 	return ZstClient::instance().connect_cable(a, b);
 }
 
-int Showtime::destroy_cable(ZstCable * cable)
+void Showtime::destroy_cable(ZstCable * cable)
 {
-	return ZstClient::instance().destroy_cable(cable);
+	ZstClient::instance().destroy_cable(cable);
 }
 
 void Showtime::disconnect_plug(ZstPlug * plug)

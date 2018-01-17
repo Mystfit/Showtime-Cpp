@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#include <map>
+#include <unordered_map>
 #include <algorithm>
 #include <regex>
 #include "czmq.h"
@@ -10,26 +10,22 @@
 
 //Core headers
 #include "../core/ZstActor.h"
-#include "../core/ZstMessage.h"
 #include "../core/Queue.h"
 
 #define HEARTBEAT_DURATION 1000
+#define STAGE_MESSAGE_POOL_BLOCK 512
 
 class ZstEntityBase;
 class ZstPerformer;
+class ZstMessage;
+class ZstMessagePool;
 class ZstCable;
-
-struct MessagePair {
-	ZstMessage::Kind kind;
-	zframe_t * packed;
-};
 
 class ZstStage : public ZstActor{
 public:
-    
+	ZstStage();
 	~ZstStage();
 	void init();
-    static ZstStage* create_stage();
 
 	//Client
 	ZstPerformer * get_client(const ZstURI & path);
@@ -39,7 +35,7 @@ public:
 	void destroy_client(ZstPerformer * performer);
 	
 	//Cables
-	ZstCable * create_cable_ptr(const ZstURI & a, const ZstURI & b);
+	ZstCable * create_cable(const ZstURI & a, const ZstURI & b);
 	int destroy_cable(const ZstURI & path);
 	int destroy_cable(ZstCable * cable);
 	int destroy_cable(const ZstURI & output_plug, const ZstURI & input_plug);
@@ -48,37 +44,31 @@ public:
 	std::vector<ZstCable*> get_cables_in_entity(ZstEntityBase * entity);
 
 private:
-    ZstStage();
 
     //Incoming socket handlers
     static int s_handle_router(zloop_t *loop, zsock_t *sock, void *arg);
 
 	//Client communication
-	void reply_with_signal(zsock_t * socket, ZstMessage::Signal status, ZstPerformer * destination);
-	void send_to_client(zmsg_t * msg, ZstPerformer * destination);
+	void send_to_client(ZstMessage * msg, ZstPerformer * destination);
 
     //Message handlers
-	ZstMessage::Signal signal_handler(zframe_t * frame, ZstPerformer * sender);
-    ZstMessage::Signal create_client_handler(std::string sender, zframe_t * frame);
-	ZstMessage::Signal destroy_client_handler(ZstPerformer * performer);
+    ZstMessage * create_client_handler(std::string sender, ZstMessage * msg);
+	void destroy_client_handler(ZstPerformer * performer);
 
 	template <typename T>
-	ZstMessage::Signal create_entity_handler(zframe_t * frame, ZstPerformer * performer);
-	ZstMessage::Signal destroy_entity_handler(zframe_t * frame);
+	ZstMessage * create_entity_handler(ZstMessage * msg, ZstPerformer * performer);
+	ZstMessage * destroy_entity_handler(ZstMessage * msg);
 
-    ZstMessage::Signal create_entity_template_handler(zframe_t * frame);
-    ZstMessage::Signal create_entity_from_template_handler(zframe_t * frame);
+	ZstMessage * create_entity_template_handler(ZstMessage * msg);
+	ZstMessage * create_entity_from_template_handler(ZstMessage * msg);
 
-	ZstMessage::Signal create_cable_handler(zframe_t * frame);
-    ZstMessage::Signal destroy_cable_handler(zframe_t * frame);
+	ZstMessage * create_cable_handler(ZstMessage * msg);
+	ZstMessage * destroy_cable_handler(ZstMessage * msg);
 	
 	//Outgoing event queue
-	zmsg_t * create_snapshot();
-    void enqueue_stage_update(ZstMessage::Kind k, zframe_t * frame);
-    Queue<MessagePair> m_stage_updates;
-	
-	int m_update_timer_id;
-	static int stage_update_timer_func(zloop_t * loop, int timer_id, void * arg);
+	void send_snapshot(ZstPerformer * client);
+    void publish_stage_update(ZstMessage * msg);
+    Queue<ZstMessage*> m_stage_updates;	
 
 	int m_heartbeat_timer_id;
 	static int stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * arg);
@@ -93,5 +83,8 @@ private:
 	
 	//Cables
 	std::vector<ZstCable*> m_cables;
-};
 
+	//Messages
+	ZstMessagePool * m_message_pool;
+	ZstMessagePool * msg_pool();
+};

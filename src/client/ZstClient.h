@@ -5,6 +5,7 @@
 #include <czmq.h>
 #include <string>
 #include <msgpack.hpp>
+
 #include "ZstURI.h"
 #include "ZstExports.h"
 #include "ZstCallbacks.h"
@@ -15,6 +16,7 @@
 #include "../core/ZstMessage.h"
 #include "../core/ZstGraphSender.h"
 #include "../core/ZstCallbackQueue.h"
+#include "../core/ZstMessagePool.h"
 
 //Forward declarations
 class ZstValue;
@@ -30,6 +32,8 @@ class ZstOutputPlug;
 class ZstValue;
 class ZstPerformer;
 
+#define MESSAGE_POOL_BLOCK 256
+
 class ZstClient : public ZstActor, public ZstGraphSender {
 public:
 	friend class Showtime;
@@ -44,13 +48,12 @@ public:
 
 	//Register this endpoint to the stage
 	void register_client_to_stage(std::string stage_address);
+	void register_client_complete(int status);
 	void leave_stage();
 	
 	//Stage connection status
 	bool is_connected_to_stage();
-
-	//Lets the stage know we want a full snapshot of the current performance
-	void signal_sync();
+	long ping();
     
 	//Entity type registration
 	int register_component_type(ZstComponent * entity);
@@ -60,8 +63,11 @@ public:
     //Entities
 	ZstEntityBase * find_entity(const ZstURI & path);
 	ZstPlug * find_plug(const ZstURI & path);
-	int activate_entity(ZstEntityBase* entity);
-	int destroy_entity(ZstEntityBase * entity);
+	void activate_entity(ZstEntityBase* entity);
+	void activate_entity_completed(int status);
+	void destroy_entity(ZstEntityBase * entity);
+	void destroy_entity_completed(int status);
+
 	bool entity_is_local(ZstEntityBase * entity);
 	bool path_is_local(const ZstURI & path);
 	void add_proxy_entity(ZstEntityBase * entity);
@@ -73,7 +79,8 @@ public:
 	ZstPerformer * get_local_performer() const;
 
 	//Plugs
-	int destroy_plug(ZstPlug * plug);
+	void destroy_plug(ZstPlug * plug);
+	void destroy_plug_complete(int status);
     void enqueue_compute(ZstInputPlug * plug);
 
 	//Graph communication
@@ -81,13 +88,12 @@ public:
 
 	//Cables
 	ZstCable * connect_cable(ZstPlug * a, ZstPlug * b);
-	int destroy_cable(ZstCable * cable);
+	void connect_cable_completed(int status);
+	void destroy_cable(ZstCable * cable);
+	void destroy_cable_completed(int status);
 	void disconnect_plug(ZstPlug * plug);
-	int disconnect_plugs(ZstPlug * input_plug, ZstPlug * output_plug);
-
-    //Utility
-	int ping_stage();
-
+	void disconnect_plugs(ZstPlug * input_plug, ZstPlug * output_plug);
+	
 	//Plug callbacks
 	ZstCallbackQueue<ZstComponentEvent, ZstEntityBase*> * component_arriving_events();
 	ZstCallbackQueue<ZstComponentEvent, ZstEntityBase*> * component_leaving_events();
@@ -114,23 +120,27 @@ private:
 
 	//Internal send and receive
 	//Send/receive
-	void send_to_stage(zmsg_t * msg);
-	zmsg_t * receive_from_stage();
-	zmsg_t * receive_stage_update();
-	ZstMessage::Signal check_stage_response_ok();
+	void send_to_stage(ZstMessage * msg);
+	ZstMessage * receive_from_stage();
+	ZstMessage * receive_stage_update();
 
+	//Message pools
+	ZstMessagePool * msg_pool();
+	ZstMessagePool * m_message_pool;
+	
 	//Socket handlers
 	static int s_handle_graph_in(zloop_t *loop, zsock_t *sock, void *arg);
 	static int s_handle_stage_update_in(zloop_t *loop, zsock_t *sock, void *arg);
 	static int s_handle_stage_router(zloop_t *loop, zsock_t *sock, void *arg);
 
 	//Message handlers
-	void stage_update_handler(zmsg_t * msg);
+	void stage_update_handler(ZstMessage * msg);
 	void connect_client_handler(const char * endpoint_ip, const char * output_plug);
     void create_entity_from_template_handler(const ZstURI & entity_template_address);
 
 	//Heartbeat timer
 	int m_heartbeat_timer_id;
+	long m_ping;
 	static int s_heartbeat_timer(zloop_t *loop, int timer_id, void *arg);
 
 	//Destruction

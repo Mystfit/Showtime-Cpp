@@ -1,3 +1,6 @@
-[submodule "devlibs/variant"]
-	path = devlibs/variant
+[submodule "submodules/variant"]
+	path = submodules/variant
 	url = https://github.com/mpark/variant.git
+[submodule "submodules/cf"]
+	path = submodules/cf
+	url = https://github.com/rpz80/cf
