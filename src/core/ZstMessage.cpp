@@ -1,3 +1,4 @@
+#include "ZstMessage.h"
 #include <memory>
 #include <czmq.h>
 #include "ZstMessage.h"
@@ -25,14 +26,18 @@ void ZstMessage::reset()
 {
 	m_sender_length = 0;
 	m_msg_kind = Kind::EMPTY;
-
-	zstr_free(&m_sender);
-	m_sender = NULL;
-
 	m_payloads.clear();
 
-	zmsg_destroy(&m_msg_handle);
-	zuuid_destroy(&m_msg_id);
+	if (m_sender)
+		zstr_free(&m_sender);
+	m_sender = NULL;
+	
+	if (m_msg_handle) 
+		zmsg_destroy(&m_msg_handle);
+	m_msg_handle = NULL;
+	
+	if (m_msg_id) 
+		zuuid_destroy(&m_msg_id);
 	m_msg_id = NULL;
 }
 
@@ -56,7 +61,8 @@ void ZstMessage::copy_id(const ZstMessage * msg)
 
 ZstMessage * ZstMessage::init_entity_message(ZstEntityBase * entity)
 {
-	zmsg_destroy(&m_msg_handle);
+	if(m_msg_handle)
+		zmsg_destroy(&m_msg_handle);
 	m_msg_handle = zmsg_new();
 	append_id_frame();
 	append_entity_kind_frame(entity);
@@ -67,7 +73,8 @@ ZstMessage * ZstMessage::init_entity_message(ZstEntityBase * entity)
 
 ZstMessage * ZstMessage::init_message(Kind kind)
 {
-	zmsg_destroy(&m_msg_handle);
+	if (m_msg_handle)
+		zmsg_destroy(&m_msg_handle);
 	m_msg_handle = zmsg_new();
 	append_id_frame();
 	append_kind_frame(kind);
@@ -76,12 +83,19 @@ ZstMessage * ZstMessage::init_message(Kind kind)
 
 ZstMessage * ZstMessage::init_streamable_message(Kind kind, ZstStreamable & streamable)
 {
-	zmsg_destroy(&m_msg_handle);
+	if (m_msg_handle)
+		zmsg_destroy(&m_msg_handle);
 	m_msg_handle = zmsg_new();
 	append_id_frame();
 	append_kind_frame(kind);
 	append_payload_frame(streamable);
 	return this;
+}
+
+void ZstMessage::send(zsock_t * socket)
+{
+	zmsg_send(&m_msg_handle, socket);
+	m_msg_handle = NULL;
 }
 
 ZstEntityBase * ZstMessage::entity_target()
@@ -157,6 +171,7 @@ void ZstMessage::append_payload_frame(ZstStreamable & streamable)
 
 //Build a message id from the message ID enum
 void ZstMessage::append_kind_frame(Kind k) {
+	m_msg_kind = k;
 	char id[sizeof(Kind)];
 	sprintf(id, "%d", (int)k);
 	zframe_t * kind_frame = zframe_from(id);

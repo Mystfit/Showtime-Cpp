@@ -4,7 +4,7 @@ set(ZST_CLIENT_PUBLIC_HEADERS
 
 set(ZST_CLIENT_PRIVATE_HEADERS
 	"${Showtime_INCLUDE_DIRS}/Showtime.h"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstClient.h"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstClient.h"
 )
 
 set(ZST_CLIENT_SRC

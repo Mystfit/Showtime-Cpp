@@ -33,6 +33,7 @@ ZstMessage * ZstMessagePool::get()
 		msg = new ZstMessage();
 	}
 	else {
+		msg = m_message_pool.front();
 		m_message_pool.pop_front();
 	}
 	

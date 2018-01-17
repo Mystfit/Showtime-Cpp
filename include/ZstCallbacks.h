@@ -3,6 +3,9 @@
 #include <iostream>
 #include "ZstExports.h"
 
+//Base callbacks
+//----------------
+
 class ZstEvent {
 public:
 	ZstEvent() : m_num_calls(0) {}
@@ -12,6 +15,9 @@ private:
 	int m_num_calls;
 };
 
+//Core callbacks
+//----------------
+
 //Plug arriving/leaving events
 class ZstPlug;
 class ZstPlugEvent : public ZstEvent {
@@ -20,12 +26,19 @@ public:
 	ZST_EXPORT virtual void run(ZstPlug * plug) {}
 };
 
-//Entity arriving/leaving events
 class ZstEntityBase;
+class ZstEntityEvent : public ZstEvent {
+public:
+	ZST_EXPORT virtual ~ZstEntityEvent() {}
+	ZST_EXPORT virtual void run(ZstEntityBase * entity) {}
+};
+
+//Entity arriving/leaving events
+class ZstComponent;
 class ZstComponentEvent : public ZstEvent {
 public:
 	ZST_EXPORT virtual ~ZstComponentEvent() {}
-	ZST_EXPORT virtual void run(ZstEntityBase* entity) {}
+	ZST_EXPORT virtual void run(ZstComponent* component) {}
 };
 
 //Entity type arriving/leaving events
@@ -43,11 +56,20 @@ public:
 	ZST_EXPORT virtual void run(ZstPerformer* performer) {}
 };
 
-
 //Cable arriving/leaving events
 class ZstCable;
 class ZstCableEvent : public ZstEvent {
 public:
 	ZST_EXPORT virtual ~ZstCableEvent() {}
 	ZST_EXPORT virtual void run(ZstCable * cable) {}
+};
+
+
+//Client callbacks
+//----------------
+//Plug arriving/leaving events
+class ZstClientConnectionEvent : public ZstEvent {
+public:
+	ZST_EXPORT virtual ~ZstClientConnectionEvent() {}
+	ZST_EXPORT virtual void run(ZstPerformer * root_performer) {}
 };

@@ -6,8 +6,10 @@
 #include "ZstCallbacks.h"
 #include "ZstCallbackQueue.h"
 
+template class ZstCallbackQueue<ZstEntityEvent, ZstEntityBase*>;
 template class ZstCallbackQueue<ZstPerformerEvent, ZstPerformer*>;
-template class ZstCallbackQueue<ZstComponentEvent, ZstEntityBase*>;
+template class ZstCallbackQueue<ZstComponentEvent, ZstComponent*>;
 template class ZstCallbackQueue<ZstComponentTypeEvent, ZstEntityBase*>;
 template class ZstCallbackQueue<ZstCableEvent, ZstCable*>;
 template class ZstCallbackQueue<ZstPlugEvent, ZstPlug*>;
+template class ZstCallbackQueue<ZstClientConnectionEvent, ZstPerformer*>;

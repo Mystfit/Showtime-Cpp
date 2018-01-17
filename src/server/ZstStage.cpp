@@ -15,7 +15,6 @@ ZstStage::ZstStage()
 {
 	m_message_pool = new ZstMessagePool();
 	m_message_pool->populate(STAGE_MESSAGE_POOL_BLOCK);
-	init();
 }
 
 ZstStage::~ZstStage()
@@ -348,7 +347,7 @@ void ZstStage::send_to_client(ZstMessage * msg, ZstPerformer * destination) {
 	zframe_t * empty = zframe_new_empty();
 	zmsg_prepend(msg_handle, &empty);
 	zmsg_prepend(msg_handle, &identity);
-	zmsg_send(&msg_handle, m_performer_router);
+	msg->send(m_performer_router);
 	msg_pool()->release(msg);
 }
 
@@ -570,8 +569,7 @@ void ZstStage::send_snapshot(ZstPerformer * client) {
 
 void ZstStage::publish_stage_update(ZstMessage * msg)
 {
-	zmsg_t * batch_handle = msg->handle();
-	zmsg_send(&batch_handle, m_graph_update_pub);
+	msg->send(m_graph_update_pub);
 }
 
 int ZstStage::stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * arg)

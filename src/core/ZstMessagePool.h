@@ -20,7 +20,7 @@ public:
 
 	//Obtain a blank message
 	ZST_EXPORT ZstMessage * get();
-
+	
 	//Register a message that will receive a future response
 	ZST_EXPORT MessageFuture register_future(ZstMessage * msg);
 

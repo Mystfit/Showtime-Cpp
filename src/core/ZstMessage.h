@@ -15,6 +15,7 @@ class ZstMessagePayload;
 typedef struct _zmsg_t zmsg_t;
 typedef struct _zframe_t zframe_t;
 typedef struct _zuuid_t zuuid_t;
+typedef struct _zsock_t zsock_t;
 
 class ZstMessage {
 	friend class ZstMessagePool;
@@ -74,6 +75,8 @@ public:
 	ZST_EXPORT ZstMessage * init_entity_message(ZstEntityBase * entity);
 	ZST_EXPORT ZstMessage * init_message(Kind kind);
 	ZST_EXPORT ZstMessage * init_streamable_message(Kind kind, ZstStreamable & streamable);
+
+	ZST_EXPORT void send(zsock_t * socket);
 
 	//Message modification
 	ZST_EXPORT void append_str(const char * s);

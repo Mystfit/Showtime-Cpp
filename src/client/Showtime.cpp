@@ -1,11 +1,14 @@
+#include <ZstVersion.h>
+#include <ZstCable.h>
+#include <ZstCallbacks.h>
+#include <entities/ZstEntityBase.h>
+#include <entities/ZstPlug.h>
+#include <entities/ZstComponent.h>
+
 #include "Showtime.h"
 #include "ZstClient.h"
-#include "ZstVersion.h"
-#include "ZstCable.h"
-#include "ZstCallbacks.h"
-#include "entities/ZstEntityBase.h"
-#include "entities/ZstPlug.h"
-#include "entities/ZstComponent.h"
+#include "ZstClientCallbacks.h"
+
 
 using namespace std;
 
@@ -60,7 +63,27 @@ void Showtime::poll_once()
 // Callbacks
 // -----------------
 
-void Showtime::attach(ZstComponentEvent * callback, ZstCallbackAction action)
+void Showtime::attach_callback(ZstClientConnectionEvent * callback)
+{
+	return ZstClient::instance().client_connected_events()->attach_event_callback(callback);
+}
+
+void Showtime::attach_callback(ZstEntityEvent * callback)
+{
+	return ZstClient::instance().entity_activated_events()->attach_event_callback(callback);
+}
+
+void Showtime::attach_callback(ZstPerformerEvent * callback, ZstCallbackAction action)
+{
+	if (action == ZstCallbackAction::ARRIVING) {
+		return ZstClient::instance().performer_arriving_events()->attach_event_callback(callback);
+	}
+	else if (action == ZstCallbackAction::LEAVING) {
+		return ZstClient::instance().performer_leaving_events()->attach_event_callback(callback);
+	}
+}
+
+void Showtime::attach_callback(ZstComponentEvent * callback, ZstCallbackAction action)
 {
     if(action == ZstCallbackAction::ARRIVING){
         return ZstClient::instance().component_arriving_events()->attach_event_callback(callback);
@@ -69,7 +92,7 @@ void Showtime::attach(ZstComponentEvent * callback, ZstCallbackAction action)
     }
 }
 
-void Showtime::attach(ZstComponentTypeEvent * callback, ZstCallbackAction action)
+void Showtime::attach_callback(ZstComponentTypeEvent * callback, ZstCallbackAction action)
 {
     if(action == ZstCallbackAction::ARRIVING){
         return ZstClient::instance().component_type_arriving_events()->attach_event_callback(callback);
@@ -78,7 +101,7 @@ void Showtime::attach(ZstComponentTypeEvent * callback, ZstCallbackAction action
     }
 }
 
-void Showtime::attach(ZstPlugEvent * callback, ZstCallbackAction action)
+void Showtime::attach_callback(ZstPlugEvent * callback, ZstCallbackAction action)
 {
     if(action == ZstCallbackAction::ARRIVING){
         return ZstClient::instance().plug_arriving_events()->attach_event_callback(callback);
@@ -86,7 +109,7 @@ void Showtime::attach(ZstPlugEvent * callback, ZstCallbackAction action)
         return ZstClient::instance().plug_leaving_events()->attach_event_callback(callback);
     }
 }
-void Showtime::attach(ZstCableEvent * callback, ZstCallbackAction action)
+void Showtime::attach_callback(ZstCableEvent * callback, ZstCallbackAction action)
 {
     if(action == ZstCallbackAction::ARRIVING){
         return ZstClient::instance().cable_arriving_events()->attach_event_callback(callback);
@@ -95,7 +118,27 @@ void Showtime::attach(ZstCableEvent * callback, ZstCallbackAction action)
     }
 }
 
-void Showtime::detach(ZstComponentEvent * callback, ZstCallbackAction action)
+void Showtime::detach_callback(ZstClientConnectionEvent * callback)
+{
+	return ZstClient::instance().client_connected_events()->attach_event_callback(callback);
+}
+
+void Showtime::detach_callback(ZstEntityEvent * callback)
+{
+	return ZstClient::instance().entity_activated_events()->remove_event_callback(callback);
+}
+
+void Showtime::detach_callback(ZstPerformerEvent * callback, ZstCallbackAction action)
+{
+	if (action == ZstCallbackAction::ARRIVING) {
+		return ZstClient::instance().performer_arriving_events()->remove_event_callback(callback);
+	}
+	else if (action == ZstCallbackAction::LEAVING) {
+		return ZstClient::instance().performer_arriving_events()->remove_event_callback(callback);
+	}
+}
+
+void Showtime::detach_callback(ZstComponentEvent * callback, ZstCallbackAction action)
 {
     if(action == ZstCallbackAction::ARRIVING){
         ZstClient::instance().component_arriving_events()->remove_event_callback(callback);
@@ -104,7 +147,7 @@ void Showtime::detach(ZstComponentEvent * callback, ZstCallbackAction action)
     }
 }
 
-void Showtime::detach(ZstComponentTypeEvent * callback, ZstCallbackAction action)
+void Showtime::detach_callback(ZstComponentTypeEvent * callback, ZstCallbackAction action)
 {
     if(action == ZstCallbackAction::ARRIVING){
         return ZstClient::instance().component_type_arriving_events()->remove_event_callback(callback);
@@ -113,7 +156,7 @@ void Showtime::detach(ZstComponentTypeEvent * callback, ZstCallbackAction action
     }
 }
 
-void Showtime::detach(ZstPlugEvent * callback, ZstCallbackAction action)
+void Showtime::detach_callback(ZstPlugEvent * callback, ZstCallbackAction action)
 {
     if(action == ZstCallbackAction::ARRIVING){
         return ZstClient::instance().plug_arriving_events()->remove_event_callback(callback);
@@ -122,7 +165,7 @@ void Showtime::detach(ZstPlugEvent * callback, ZstCallbackAction action)
     }
 }
 
-void Showtime::detach(ZstCableEvent * callback, ZstCallbackAction action)
+void Showtime::detach_callback(ZstCableEvent * callback, ZstCallbackAction action)
 {
     if(action == ZstCallbackAction::ARRIVING){
         return ZstClient::instance().cable_arriving_events()->remove_event_callback(callback);

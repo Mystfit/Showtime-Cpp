@@ -6,9 +6,10 @@
 #include <string>
 #include <msgpack.hpp>
 
-#include "ZstURI.h"
-#include "ZstExports.h"
-#include "ZstCallbacks.h"
+#include <ZstURI.h>
+#include <ZstExports.h>
+#include <ZstCallbacks.h>
+#include "ZstClientCallbacks.h"
 
 //Core headers
 #include "../core/Queue.h"
@@ -64,7 +65,6 @@ public:
 	ZstEntityBase * find_entity(const ZstURI & path);
 	ZstPlug * find_plug(const ZstURI & path);
 	void activate_entity(ZstEntityBase* entity);
-	void activate_entity_completed(int status);
 	void destroy_entity(ZstEntityBase * entity);
 	void destroy_entity_completed(int status);
 
@@ -94,9 +94,13 @@ public:
 	void disconnect_plug(ZstPlug * plug);
 	void disconnect_plugs(ZstPlug * input_plug, ZstPlug * output_plug);
 	
-	//Plug callbacks
-	ZstCallbackQueue<ZstComponentEvent, ZstEntityBase*> * component_arriving_events();
-	ZstCallbackQueue<ZstComponentEvent, ZstEntityBase*> * component_leaving_events();
+	//Callbacks
+	ZstCallbackQueue<ZstClientConnectionEvent, ZstPerformer*> * client_connected_events();
+	ZstCallbackQueue<ZstPerformerEvent, ZstPerformer*> * performer_arriving_events();
+	ZstCallbackQueue<ZstPerformerEvent, ZstPerformer*> * performer_leaving_events();
+	ZstCallbackQueue<ZstComponentEvent, ZstComponent*> * component_arriving_events();
+	ZstCallbackQueue<ZstComponentEvent, ZstComponent*> * component_leaving_events();
+	ZstCallbackQueue<ZstEntityEvent, ZstEntityBase*> * entity_activated_events();
     ZstCallbackQueue<ZstComponentTypeEvent, ZstEntityBase*> * component_type_arriving_events();
     ZstCallbackQueue<ZstComponentTypeEvent, ZstEntityBase*> * component_type_leaving_events();
 	ZstCallbackQueue<ZstPlugEvent, ZstPlug*> * plug_arriving_events();
@@ -174,8 +178,12 @@ private:
 	ZstCable * find_cable_ptr(const ZstURI & input_path, const ZstURI & output_path);
 	
 	//Events and callbacks
-	ZstCallbackQueue<ZstComponentEvent, ZstEntityBase*> * m_component_arriving_event_manager;
-	ZstCallbackQueue<ZstComponentEvent, ZstEntityBase*> * m_component_leaving_event_manager;
+	ZstCallbackQueue<ZstClientConnectionEvent, ZstPerformer*> * m_client_connected_event_manager;
+	ZstCallbackQueue<ZstPerformerEvent, ZstPerformer*> * m_performer_arriving_event_manager;
+	ZstCallbackQueue<ZstPerformerEvent, ZstPerformer*> * m_performer_leaving_event_manager;
+	ZstCallbackQueue<ZstEntityEvent, ZstEntityBase*> * m_entity_activated_event_manager;
+	ZstCallbackQueue<ZstComponentEvent, ZstComponent*> * m_component_arriving_event_manager;
+	ZstCallbackQueue<ZstComponentEvent, ZstComponent*> * m_component_leaving_event_manager;
     ZstCallbackQueue<ZstComponentTypeEvent, ZstEntityBase*> * m_component_type_arriving_event_manager;
     ZstCallbackQueue<ZstComponentTypeEvent, ZstEntityBase*> * m_component_type_leaving_event_manager;
 	ZstCallbackQueue<ZstCableEvent, ZstCable*> * m_cable_arriving_event_manager;
