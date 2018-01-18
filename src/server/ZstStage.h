@@ -6,7 +6,8 @@
 #include <algorithm>
 #include <regex>
 #include "czmq.h"
-#include "ZstURI.h"
+
+#include <ZstCore.h>
 
 //Core headers
 #include "../core/ZstActor.h"
@@ -29,7 +30,7 @@ public:
 
 	//Client
 	ZstPerformer * get_client(const ZstURI & path);
-	ZstPerformer * get_client(const std::string & socket_id);
+	ZstPerformer * get_client_from_socket_id(const char * socket_id);
 	std::string get_socket_ID(const ZstPerformer * performer);
 
 	void destroy_client(ZstPerformer * performer);

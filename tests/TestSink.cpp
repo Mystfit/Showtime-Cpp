@@ -18,7 +18,7 @@ public:
 	}
 
 	virtual void compute(ZstInputPlug * plug) override {
-		std::cout << "Sink received plug hit." << std::endl;
+		LOGGER->debug("Sink received plug hit.");
 		received_hit = true;
 
 		int request_code = plug->int_at(0);
@@ -48,17 +48,21 @@ public:
 
 int main(int argc,char **argv){
 
+	ZST_init_log();
+	LOGGER->set_level(spdlog::level::debug);
+
 	if(argc < 2){
-		std::cout << "Skipping test" << std::endl;
+		LOGGER->warn("Skipping sink test, command line flag not set");
 		return 0;
 	}
+
+	LOGGER->debug("In sink process");
 
 	Showtime::init("sink");
     Showtime::join("127.0.0.1");
 	TestCableArrivingEventCallback * cable_arrive = new TestCableArrivingEventCallback();
     Showtime::attach_callback(cable_arrive, ZstCallbackAction::ARRIVING);
 
-	std::cout << "Starting sink" << std::endl;
 
 	Sink * sink = new Sink("sink_ent");
 	Showtime::activate(sink);
@@ -67,13 +71,13 @@ int main(int argc,char **argv){
 		Showtime::poll_once();
 	}
 
-	std::cout << "Removing sink entity" << std::endl;
+	LOGGER->debug("Removing sink entity");
 	Showtime::detach_callback(cable_arrive, ZstCallbackAction::ARRIVING);
 	Showtime::destroy();
 
 	delete sink;
 
-	std::cout << "Exiting sink process" << std::endl;
+	LOGGER->debug("Exiting sink process");
 
 	return 0;
 }

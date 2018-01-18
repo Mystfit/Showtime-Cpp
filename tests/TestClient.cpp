@@ -53,7 +53,7 @@ public:
 		m_suffix = suffix;
 	}
 	void run(ZstComponent * component) override {
-		std::cout << "ZST_TEST Entity " << component->URI().path() << " " << m_suffix << std::endl;
+		LOGGER->debug("ENTITY_EVENT: {} {}", component->URI().path(), m_suffix);
 		last_entity = std::string(component->URI().path());
 	}
 };
@@ -65,7 +65,7 @@ public:
 		m_suffix = suffix;
 	}
 	void run(ZstPerformer * root_performer) override {
-		std::cout << "ZST_TEST CALLBACK - connection successful " << root_performer->URI().path() << " " << m_suffix << std::endl;
+		LOGGER->debug("CONN_EVENT: {} {}", root_performer->URI().path(), m_suffix);
 	}
 };
 
@@ -76,7 +76,7 @@ public:
 		m_suffix = suffix;
 	}
 	void run(ZstEntityBase * entity) override {
-		std::cout << "ZST_TEST CALLBACK - entity " << entity->URI().path() << " " << m_suffix << std::endl;
+		LOGGER->debug("ENTITY_ACTIVATED_EVENT: {} {}", entity->URI().path(), m_suffix);
 	}
 };
 
@@ -87,7 +87,7 @@ public:
 		m_suffix = suffix;
 	}
 	void run(ZstPlug * plug) override {
-		std::cout << "ZST_TEST CALLBACK - plug " << plug->URI().path() << " " << m_suffix << std::endl;
+		LOGGER->debug("PLUG_EVENT: {} {}", plug->URI().path(), m_suffix);
 	}
 };
 
@@ -98,7 +98,7 @@ public:
 		m_suffix = suffix;
 	}
 	void run(ZstCable * cable) override {
-		std::cout << "ZST_TEST CALLBACK - cable " << cable->get_output()->URI().path() << " to " << cable->get_input()->URI().path() << " " << m_suffix << std::endl;
+		LOGGER->debug("CABLE_EVENT: {} {} {}", cable->get_output()->URI().path(), cable->get_input()->URI().path(), m_suffix);
 	}
 };
 
@@ -109,7 +109,7 @@ public:
 		m_suffix = suffix;
 	}
     void run(ZstEntityBase * entity_template) override {
-        std::cout << "ZST_TEST CALLBACK - entity_template Type:" << entity_template->entity_type() << " Owner: " << entity_template->parent()->URI().path() << " " << m_suffix << std::endl;
+		LOGGER->debug("TEMPLATE_EVENT: {} Owner {}", entity_template->entity_type(), entity_template->parent()->URI().path(), m_suffix);
     }
 };
 
@@ -120,7 +120,7 @@ public:
 		m_suffix = suffix;
 	}
 	void run(ZstPerformer * performer) override {
-		std::cout << "ZST_TEST CALLBACK - performer: " << performer->URI().path() << " " << m_suffix << std::endl;
+		LOGGER->debug("PERFORMER_EVENT: {} {}", performer->URI().path(), m_suffix);
 	}
 };
 
@@ -177,7 +177,7 @@ public:
 		num_hits++;
 		last_received_val = plug->int_at(0);
 		if (log) {
-			std::cout << "Input filter received value " << last_received_val << std::endl;
+			LOGGER->debug("Input filter received value {0:d}", last_received_val);
 		}
 	}
 
@@ -197,7 +197,7 @@ void test_standard_layout() {
 }
 
 void test_URI() {
-	std::cout << "Starting URI test" << std::endl;
+	LOGGER->info("Running URI test");
 
 	//Define test URIs
 	ZstURI uri_empty = ZstURI();
@@ -259,11 +259,12 @@ void test_URI() {
 		thrown_range_error = true;
 	}
 	assert(thrown_range_error);
-
-	std::cout << "Finished URI test\n" << std::endl;
 }
 
 void test_startup() {
+
+	LOGGER->info("Running Showtime init test");
+
 	//Test connection
 	ZstClientConnectionEvent * connectCallback = new TestConnectCallback("connected");
 	Showtime::attach_callback(connectCallback);
@@ -276,25 +277,23 @@ void test_startup() {
 	
 	Showtime::detach_callback(connectCallback);
 	delete connectCallback;
+
 	//assert(Showtime::ping() >= 0);
 }
 
 void test_root_entity() {
-	TAKE_A_BREATH
-    //Test single entity init
-	std::cout << "Starting entity init test" << std::endl;
+	LOGGER->info("Running entity init test");
 
+	//Test root entity is activated
     ZstPerformer * root_entity = Showtime::get_root();
 	assert(root_entity);
     assert(root_entity->is_activated());
 	clear_callback_queue();
-
-	std::cout << "Finished entity init test\n" << std::endl;
 }
 
 
 void test_create_entities(){
-	std::cout << "Starting entity test" << std::endl;
+	LOGGER->info("Running entity test");
 	int expected_entities = 1;
 	int expected_plugs = expected_entities * 1;
 
@@ -323,13 +322,11 @@ void test_create_entities(){
 	entity_activated = 0;
 
 	assert(!Showtime::get_root()->find_child_by_URI(localPlug_uri));
-
-	std::cout << "Finished entity test\n" << std::endl;
 }
 
 
 void test_hierarchy() {
-	std::cout << "Starting hierarchy test" << std::endl;
+	LOGGER->info("Running hierarchy test");
 
 	//Test hierarchy
 	ZstContainer * parent = new ZstContainer("parent");
@@ -340,7 +337,7 @@ void test_hierarchy() {
 	assert(Showtime::get_root()->find_child_by_URI(parent->URI()));
 	assert(Showtime::get_root()->find_child_by_URI(child->URI()));
 
-	std::cout << "Removing child..." << std::endl;
+	LOGGER->debug("Removing child...");
 
 	//Test child removal from parent
 	parent->remove_child(child);
@@ -352,30 +349,25 @@ void test_hierarchy() {
 	assert(!Showtime::get_root()->find_child_by_URI(child_URI));
 
 	//Test removing parent removes child
-	std::cout << "Creating new child to test parent removes all children" << std::endl;
+	LOGGER->debug("Creating new child to test parent removes all children");
 
 	child = new ZstComponent("child");
 	parent->add_child(child);
 	Showtime::activate(child);
-
-
+	
 	delete parent;
 	assert(!Showtime::get_root()->find_child_by_URI(parent_URI));
 	assert(!Showtime::get_root()->find_child_by_URI(child_URI));
 	delete child;
 	child = 0;
 	parent = 0;
-
-	std::cout << "Cleanup..." << std::endl;
-
+	
 	clear_callback_queue();
-
-	std::cout << "Finished hierarchy test\n" << std::endl;
 }
 
 
 void test_connect_plugs() {
-	std::cout << "Starting connect plugs test" << std::endl;
+	LOGGER->info("Running connect plugs test");
 	
 	int expected_entities = 2;
 	int expected_plugs = expected_entities;
@@ -430,14 +422,12 @@ void test_connect_plugs() {
 	delete cableArriveCallback;
 	delete cableLeaveCallback;
 	clear_callback_queue();
-
-	std::cout << "Finished connect plugs test\n" << std::endl;
 }
 
 
 void test_add_filter() {
-	std::cout << "Starting addition filter test" << std::endl;
-	
+	LOGGER->info("Starting addition filter test");
+		
 	int expected_entities = 4;
 	int expected_plugs = 6;
 	int expected_cables = 3;
@@ -496,12 +486,12 @@ void test_add_filter() {
 	test_input_sum = 0;
 	add_filter = 0;
 	clear_callback_queue();
-
-	std::cout << "Finished addition filter test\n" << std::endl;
 }
 
 
 void test_external_entities(std::string external_sink_path) {
+	LOGGER->info("Starting external entities test");
+
 	//Create callbacks
 	TestEntityEventCallback * entityArriveCallback = new TestEntityEventCallback("arriving");
 	TestEntityEventCallback * entityLeaveCallback = new TestEntityEventCallback("leaving");
@@ -520,8 +510,7 @@ void test_external_entities(std::string external_sink_path) {
 	clear_callback_queue();
 
 	//Run sink in external process so we don't share the same Showtime singleton
-	std::cout << "Starting sink process" << std::endl;
-	std::cout << "----" << std::endl;
+	LOGGER->debug("Starting sink process");
 	
 	ZstURI sink_perf_uri = ZstURI("sink");
 	ZstURI sink_ent_uri = sink_perf_uri + ZstURI("sink_ent");
@@ -580,13 +569,11 @@ void test_external_entities(std::string external_sink_path) {
 	delete performerArriveCallback;
 	delete performerLeaveCallback;
 	clear_callback_queue();
-
-	std::cout << "Finished proxy test\n" << std::endl;
 }
 
 
 void test_memory_leaks(int num_loops) {
-	std::cout << "Starting memory leak test" << std::endl;
+	LOGGER->info("Starting memory leak test");
 
 	OutputComponent * test_output = new OutputComponent("memleak_test_out");
 	InputComponent * test_input = new InputComponent("memleak_test_in", 10);
@@ -600,7 +587,8 @@ void test_memory_leaks(int num_loops) {
 	//ZstClient::instance().reset_graph_recv_tripmeter();
 	//ZstClient::instance().reset_graph_send_tripmeter();
 
-	std::cout << "Sending " << count << " messages" << std::endl;
+	LOGGER->debug("Sending {0:d} messages", count);
+
 	TAKE_A_BREATH
 
 
@@ -644,7 +632,7 @@ void test_memory_leaks(int num_loops) {
 		//}
 	}
 	
-	std::cout << "Sent all messages. Waiting for recv" << std::endl;
+	LOGGER->debug("Sent all messages. Waiting for recv");
 
 	//do  {
 	//	Showtime::poll_once();
@@ -666,7 +654,7 @@ void test_memory_leaks(int num_loops) {
 
 	TAKE_A_BREATH
 	Showtime::poll_once();
-	std::cout << "Received all messages" << std::endl;
+	LOGGER->debug("Received all messages");
 	/*std::cout << "Remaining events: " << Showtime::event_queue_size() << std::endl;
 	std::cout << "Total received graph_messages " << ZstClient::instance().graph_recv_tripmeter() << std::endl;*/
 	assert(test_input->num_hits == count);
@@ -676,8 +664,6 @@ void test_memory_leaks(int num_loops) {
 	clear_callback_queue();
 	/*ZstClient::instance().reset_graph_recv_tripmeter();
 	ZstClient::instance().reset_graph_send_tripmeter();*/
-
-	std::cout << "Finished memory leak test\n" << std::endl;
 }
 
 void test_leaving(){
@@ -691,6 +677,8 @@ void test_cleanup() {
 }
 
 int main(int argc,char **argv){
+	ZST_init_log();
+	LOGGER->set_level(spdlog::level::debug);
 	test_standard_layout();
 	test_URI();
 	test_startup();
@@ -703,7 +691,7 @@ int main(int argc,char **argv){
 	test_memory_leaks(200000);
     test_leaving();
 	test_cleanup();
-	std::cout << "\nShowtime test successful" << std::endl;
+	LOGGER->info("All tests completed");
 
 #ifdef WIN32
 	system("pause");

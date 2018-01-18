@@ -56,7 +56,8 @@ ZstMessage::ZstMessage(const ZstMessage & other)
 
 void ZstMessage::copy_id(const ZstMessage * msg)
 {
-	zuuid_set(m_msg_id, zuuid_data(msg->m_msg_id));
+	zuuid_destroy(&m_msg_id);
+	m_msg_id = zuuid_dup(msg->m_msg_id);
 }
 
 ZstMessage * ZstMessage::init_entity_message(ZstEntityBase * entity)
@@ -210,9 +211,7 @@ void ZstMessage::unpack(zmsg_t * msg)
 		m_sender = (char*)malloc(m_sender_length + 1);
 		memcpy(m_sender, (char*)zframe_data(first_frame), m_sender_length);
 		m_sender[m_sender_length] = '\0';
-		zmsg_append(m_msg_handle, &first_frame);
-		zmsg_append(m_msg_handle, &empty);
-
+		
 		//Get the next frame (will be ID)
 		id_frame = zmsg_pop(m_msg_handle);
 	}
@@ -222,8 +221,7 @@ void ZstMessage::unpack(zmsg_t * msg)
 
 	//Unpack id
 	m_msg_id = zuuid_new_from(zframe_data(id_frame));
-	zmsg_append(m_msg_handle, &id_frame);
-
+	
 	//Unpack kind
 	m_msg_kind = unpack_kind();
 

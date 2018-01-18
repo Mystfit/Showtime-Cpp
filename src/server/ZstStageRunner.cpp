@@ -5,7 +5,6 @@
 //-----------------------
 int main(int argc, char **argv) {
 
-	std::cout << "Starting Showtime v" << SHOWTIME_VERSION << " stage server" << std::endl;
 	ZstStage stage;
 	stage.init();
 

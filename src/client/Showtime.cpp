@@ -7,8 +7,6 @@
 
 #include "Showtime.h"
 #include "ZstClient.h"
-#include "ZstClientCallbacks.h"
-
 
 using namespace std;
 
@@ -25,12 +23,10 @@ Showtime::~Showtime(){
 
 void Showtime::init(const char * performer_name)
 {
-	cout << "Starting Showtime v" << SHOWTIME_VERSION << endl;
 	ZstClient::instance().init(performer_name);
 }
 
 void Showtime::join(const char * stage_address){
-	cout << "ZST: Connecting to stage located at " << stage_address << endl;
 	ZstClient::instance().register_client_to_stage(stage_address);
 }
 

@@ -9,7 +9,6 @@
 #include <ZstURI.h>
 #include <ZstExports.h>
 #include <ZstCallbacks.h>
-#include "ZstClientCallbacks.h"
 
 //Core headers
 #include "../core/Queue.h"

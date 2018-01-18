@@ -3,6 +3,7 @@
 
 #include "ZstClient.h"
 #include "ZstCable.h"
+#include "ZstVersion.h"
 #include "entities/ZstEntityBase.h"
 #include "entities/ZstPlug.h"
 #include "entities/ZstContainer.h"
@@ -86,6 +87,9 @@ void ZstClient::init(const char * client_name)
 	if (m_is_ending) {
 		return;
 	}
+	ZST_init_log();
+	LOGGER->info("Starting Showtime v{}", SHOWTIME_VERSION);
+
 	m_client_name = client_name;
 	m_is_destroyed = false;
 
@@ -120,7 +124,7 @@ void ZstClient::init(const char * client_name)
 	}
     
     string network_ip = first_available_ext_ip();
-    cout << "ZST: Using external IP " << network_ip << endl;
+    LOGGER->debug("Using external IP {}", network_ip);
     
 	//Graph output socket
 	std::stringstream addr;
@@ -134,7 +138,7 @@ void ZstClient::init(const char * client_name)
 	char * output_ip = zsock_last_endpoint(m_graph_out);
     m_graph_out_ip = std::string(output_ip);
 	zstr_free(&output_ip);
-    cout << "ZST: Client graph address: " << m_graph_out_ip << endl;
+	LOGGER->debug("Client graph address: {}", m_graph_out_ip);
     
     if(m_graph_out)
         zsock_set_linger(m_graph_out, 0);
@@ -149,7 +153,8 @@ void ZstClient::init(const char * client_name)
 	//Stage subscriber socket for update messages
 	addr << "tcp://" << m_stage_addr << ":" << STAGE_PUB_PORT;
 	m_stage_updates_addr = addr.str();
-	cout << "ZST: Connecting to stage publisher " << m_stage_updates_addr << endl;
+
+	LOGGER->debug("Connecting to stage publisher {}", m_stage_updates_addr);
 	zsock_connect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
 	zsock_set_subscribe(m_stage_updates, "");
 	addr.str("");
@@ -273,7 +278,8 @@ ZstMessagePool * ZstClient::msg_pool()
 // -------------
 
 void ZstClient::register_client_to_stage(std::string stage_address) {
-	cout << "ZST: Registering client" << endl;
+	LOGGER->info("Connecting to stage {}", stage_address);
+
 	m_stage_addr = string(stage_address);
 
 	//Build client addresses
@@ -296,10 +302,10 @@ void ZstClient::register_client_complete(int status)
 {
 	//If we didn't receive a OK signal, something went wrong
 	if (status != ZstMessage::Kind::OK) {
-		throw runtime_error("ZST: Stage performer registration responded with error -> Status: " + status);
+		throw runtime_error("Stage performer registration responded with error -> Status: " + status);
 	}
 
-	cout << "ZST: Successfully registered client to stage." << endl;
+	LOGGER->info("connection success");
 
 	//Set up heartbeat timer
 	m_heartbeat_timer_id = attach_timer(s_heartbeat_timer, HEARTBEAT_DURATION, this);
@@ -310,7 +316,7 @@ void ZstClient::register_client_complete(int status)
 	client_connected_events()->enqueue(m_root);
 	
 	//Ask the stage to send us a full snapshot
-	cout << "ZST: Requesting stage snapshot" << endl;
+	LOGGER->debug("Requesting stage snapshot");
 	send_to_stage(msg_pool()->get()->init_message(ZstMessage::Kind::CLIENT_SYNC));
 }
 
@@ -318,7 +324,7 @@ void ZstClient::register_client_complete(int status)
 void ZstClient::leave_stage()
 {
 	if (m_connected_to_stage) {
-		cout << "ZST:Leaving stage" << endl;
+		LOGGER->info("Leaving stage");
 
 		//Notify stage that we are leaving
 		ZstMessage * msg = msg_pool()->get();
@@ -417,7 +423,7 @@ int ZstClient::s_handle_stage_router(zloop_t * loop, zsock_t * socket, void * ar
 				break;
 			}
 			default:
-				cout << "ZST: Performer dealer - Didn't understand message of type " << msg->kind() << endl;
+				LOGGER->error("Stage router sent unknown message {0:d}" , msg->kind());
 				break;
 			}
 	}
@@ -495,7 +501,7 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 }
 
 void ZstClient::connect_client_handler(const char * endpoint_ip, const char * output_plug) {
-	cout << "ZST: Connecting to " << endpoint_ip << ". My output endpoint is " << m_graph_out_ip << endl;
+	LOGGER->debug("Connecting to {}. My output endpoint is {}", endpoint_ip, m_graph_out_ip);
 
 	//Connect to endpoint publisher
 	zsock_connect(m_graph_in, "%s", endpoint_ip);
@@ -516,7 +522,7 @@ int ZstClient::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
 		int status = f.get();
 		chrono::time_point<chrono::system_clock> end = chrono::system_clock::now();
 		chrono::milliseconds delta = chrono::duration_cast<chrono::milliseconds>(end - start);
-		cout << "ZST: Ping roundtrip " << delta.count() << "ms" << endl;
+		LOGGER->debug("ZST: Ping roundtrip {0:d} ms", delta.count());
 		client->m_ping = delta.count();
 		return status;
 	});
@@ -662,7 +668,7 @@ void ZstClient::activate_entity(ZstEntityBase * entity)
 	msg_pool()->register_future(msg).then([this, entity](MessageFuture f) {
 		int status = f.get();
 		if (status) {
-			std::cout << "ZST: Entity activation complete with status " << status << std::endl;
+			LOGGER->debug("Entity activation complete with status {0:d}", status);
 			entity->set_activated();
 			this->entity_activated_events()->enqueue(entity);
 		}
@@ -715,7 +721,7 @@ void ZstClient::destroy_entity(ZstEntityBase * entity)
 
 void ZstClient::destroy_entity_completed(int status)
 {
-	std::cout << "ZST: Entity destroy completed with status " << status << std::endl;
+	LOGGER->debug("Entity destroy completed with status {0:d}", status);
 }
 
 bool ZstClient::entity_is_local(ZstEntityBase * entity)
@@ -901,7 +907,7 @@ void ZstClient::destroy_cable(ZstCable * cable)
 
 void ZstClient::destroy_cable_completed(int status)
 {	
-	std::cout << "ZST: Destroy cable completed with status " << status << std::endl;
+	LOGGER->debug("Destroy cable completed with status {0:d}", status);
 }
 
 void ZstClient::disconnect_plug(ZstPlug * plug)

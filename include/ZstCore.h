@@ -2,6 +2,7 @@
 
 #include "ZstCable.h"
 #include "ZstConstants.h"
+#include "ZstLogging.h"
 #include "ZstExports.h"
 #include "ZstURI.h"
 #include "ZstStreamable.h"

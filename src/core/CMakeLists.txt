@@ -5,6 +5,7 @@ FILE(WRITE ${VERSION_FILE} "#define SHOWTIME_VERSION \"${SHOWTIME_VERSION}\"")
 
 set(ZST_INTERFACE_HEADERS
     ${Showtime_INCLUDE_DIRS}/ZstCore.h
+    ${Showtime_INCLUDE_DIRS}/ZstLogging.h
     ${Showtime_INCLUDE_DIRS}/ZstCable.h
     ${Showtime_INCLUDE_DIRS}/ZstConstants.h
     ${Showtime_INCLUDE_DIRS}/ZstExports.h
@@ -56,6 +57,7 @@ find_package(MsgPack REQUIRED)
 set(ZST_CORE_INCLUDES 
     ${COMPILED_INCLUDES}
     ${Showtime_INCLUDE_DIRS}
+    "${Showtime_SUBMODULES_DIR}/spdlog/include"
     "${Showtime_SUBMODULES_DIR}/variant/include/mpark"
     "${Showtime_SUBMODULES_DIR}/cf"
     ${ZeroMQ_INCLUDE_DIRS}

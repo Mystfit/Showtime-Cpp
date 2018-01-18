@@ -183,7 +183,6 @@ void ZstPlug::add_cable(ZstCable * cable)
 {
 	std::vector<ZstCable*>::iterator cable_it = std::find(m_cables.begin(), m_cables.end(), cable);
 	if (cable_it != m_cables.end()) {
-		std::cout << "ZST: Plug already has a matching cable" << std::endl;
 		return;
 	}
 

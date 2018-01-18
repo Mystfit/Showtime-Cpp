@@ -1,10 +1,8 @@
 #include <sstream>
 #include "ZstStage.h"
-#include "ZstURI.h"
-#include "ZstCable.h"
-#include "entities/ZstPerformer.h"
 
 //Core headers
+#include <ZstVersion.h>
 #include "../core/ZstUtils.hpp"
 #include "../core/ZstMessage.h"
 #include "../core/ZstMessagePool.h"
@@ -30,6 +28,10 @@ ZstStage::~ZstStage()
 
 void ZstStage::init()
 {
+	ZST_init_log();
+	LOGGER->set_level(spdlog::level::debug);
+	LOGGER->info("Starting Showtime v{} stage server", SHOWTIME_VERSION);
+
 	ZstActor::init();
     
 	std::stringstream addr;
@@ -64,7 +66,7 @@ ZstPerformer * ZstStage::get_client(const ZstURI & path)
 	return performer;
 }
 
-ZstPerformer * ZstStage::get_client(const std::string & socket_id)
+ZstPerformer * ZstStage::get_client_from_socket_id(const char * socket_id)
 {
 	ZstPerformer * performer = NULL;
 	if (m_client_socket_index.find(socket_id) != m_client_socket_index.end()) {
@@ -90,7 +92,7 @@ void ZstStage::destroy_client(ZstPerformer * performer)
 		return;
 	}
 
-	std::cout << "ZST_STAGE: Performer " << performer->URI().path() << " leaving" << std::endl;
+	LOGGER->info("Performer {} leaving", performer->URI().path());
 
 	std::vector<ZstCable*> cables = get_cables_in_entity(performer);
 	for (auto c : cables) {
@@ -121,7 +123,7 @@ ZstCable * ZstStage::create_cable(const ZstURI & a, const ZstURI & b)
 
 	//Check to see if we already have a cable
 	if (cable_ptr != NULL) {
-		cout << "ZST_STAGE: Cable already exists" << endl;
+		LOGGER->warn("Cable already exists");
 		return NULL;
 	}
 
@@ -141,7 +143,7 @@ ZstCable * ZstStage::create_cable(const ZstURI & a, const ZstURI & b)
 	}
 
 	if (!connect_status) {
-		cout << "ZST_STAGE: Cable plug direction mismatch" << endl;
+		LOGGER->error("Cable plug direction mismatch");
 		return NULL;
 	}
 
@@ -173,7 +175,7 @@ int ZstStage::destroy_cable(const ZstURI & output_plug, const ZstURI & input_plu
 
 int ZstStage::destroy_cable(ZstCable * cable) {
 	if (cable != NULL) {
-		cout << "ZST_STAGE: Destroying cable " << cable->get_output_URI().path() << " " << cable->get_input_URI().path() << endl;
+		LOGGER->info("Destroying cable {} {}", cable->get_output_URI().path(), cable->get_input_URI().path());
 		for (vector<ZstCable*>::iterator cable_iter = m_cables.begin(); cable_iter != m_cables.end(); ++cable_iter) {
 			if ((*cable_iter) == cable) {
 				m_cables.erase(cable_iter);
@@ -275,6 +277,7 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 		case ZstMessage::Kind::CLIENT_JOIN:
 		{
 			response = stage->create_client_handler(msg->sender(), msg);
+			sender = stage->get_client_from_socket_id(msg->sender());
 			break;
 		}
 		case ZstMessage::Kind::CREATE_COMPONENT:
@@ -319,7 +322,7 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 		}
 		default:
 		{
-			cout << "ZST_STAGE: Didn't understand received message type of " << msg->kind() << endl;
+			LOGGER->error("Didn't understand received message type of {0:d}", msg->kind());
 			response->init_message(ZstMessage::Kind::ERR_STAGE_MSG_TYPE_UNKNOWN);
 			break;
 		}
@@ -329,6 +332,7 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 	if (response) {
 		//Copy ID of the original message so we can match this message to a promise on the client
 		response->copy_id(msg);
+		LOGGER->debug("Replying to client {} with message ID {}", sender->URI().path(), response->id());
 		stage->send_to_client(response, sender);
 	}
 			
@@ -362,11 +366,11 @@ ZstMessage * ZstStage::create_client_handler(std::string sender, ZstMessage * ms
 
 	//Copy the id of the message so the sender will eventually match the response to a message promise
 	ZstPerformer * client = msg->ZstMessage::unpack_payload_entity<ZstPerformer>(0);
-	cout << "ZST_STAGE: Registering new client " << client->URI().path() << endl;
+	LOGGER->info("Registering new client {}", client->URI().path());
 
 	//Only one client with this UUID at a time
 	if (get_client(client->URI())) {
-		cout << "ZST_STAGE: Client already exists " << client->URI().path() << endl;
+		LOGGER->warn("Client already exists ", client->URI().path());
 		return response->init_message(ZstMessage::Kind::ERR_STAGE_PERFORMER_ALREADY_EXISTS);
 	}
 	
@@ -403,7 +407,7 @@ ZstMessage * ZstStage::create_entity_handler(ZstMessage * msg, ZstPerformer * pe
 	//Make sure this entity doesn't already exist
 	if (performer->find_child_by_URI(entity->URI())) {
 		//Entity already exists
-		std::cout << "ZST_STAGE: Entity already exists! " << entity->URI().path() << std::endl;
+		LOGGER->warn("Entity already exists! {}", entity->URI().path());
 		delete entity;
 		return response->init_message(ZstMessage::Kind::ERR_STAGE_ENTITY_ALREADY_EXISTS);
 	}
@@ -414,7 +418,7 @@ ZstMessage * ZstStage::create_entity_handler(ZstMessage * msg, ZstPerformer * pe
 
 	//If we can't find the parent this entity says it belongs to then we have a problem
 	if (parent == NULL) {
-        std::cout << "ZST_STAGE: Couldn't register entity. No parent found at " << parent_path.path() << std::endl;
+		LOGGER->warn("Couldn't register entity. No parent found at {}", parent_path.path());
 		return response->init_message(ZstMessage::Kind::ERR_STAGE_ENTITY_NOT_FOUND);
 	}
 
@@ -426,7 +430,7 @@ ZstMessage * ZstStage::create_entity_handler(ZstMessage * msg, ZstPerformer * pe
 		dynamic_cast<ZstContainer*>(parent)->add_child(entity);
 	}
 
-	std::cout << "ZST_STAGE: Registering new entity " << entity->URI().path() << std::endl;
+	LOGGER->info("Registering new entity {}", entity->URI().path());
 
 	//Update rest of network
 	publish_stage_update(msg_pool()->get()->init_entity_message(entity));
@@ -488,7 +492,7 @@ ZstMessage * ZstStage::create_entity_template_handler(ZstMessage * msg)
 
 ZstMessage * ZstStage::create_entity_from_template_handler(ZstMessage * msg)
 {
-	throw new std::exception("ZST_STAGE: Creating template entities not implemented yet");
+	throw new std::exception("Creating template entities not implemented yet");
 	return msg_pool()->get()->init_message(ZstMessage::Kind::ERR_STAGE_ENTITY_NOT_FOUND);
 }
 
@@ -498,7 +502,7 @@ ZstMessage * ZstStage::create_cable_handler(ZstMessage * msg)
 
 	//Unpack cable from message
 	ZstCable cable = msg->unpack_payload_streamable<ZstCable>(0);
-	std::cout << "ZST_STAGE: Received connect cable request for " << cable.get_output_URI().path() << " and " << cable.get_output_URI().path() << endl;
+	LOGGER->info("Received connect cable request for {} and {}", cable.get_output_URI().path(), cable.get_output_URI().path());
 
 	//Create cable 
 	ZstCable * cable_ptr = create_cable(cable.get_output_URI(), cable.get_input_URI());
@@ -511,7 +515,7 @@ ZstMessage * ZstStage::create_cable_handler(ZstMessage * msg)
 	ZstPerformer * input_performer = get_client(cable_ptr->get_input_URI());
 	ZstPerformer * output_performer = get_client(cable_ptr->get_output_URI());
 
-	std::cout << "ZST_STAGE: Sending cable connection request to " << input_performer->URI().path() << std::endl;
+	LOGGER->info("Sending cable connection request to {}", input_performer->URI().path());
 
 	ZstMessage * connection_msg = msg_pool()->get()->init_message(ZstMessage::Kind::SUBSCRIBE_TO_PERFORMER);
 	connection_msg->append_str(output_performer->address());	//IP of output client
@@ -528,7 +532,7 @@ ZstMessage * ZstStage::destroy_cable_handler(ZstMessage * msg)
 {
 	ZstMessage * response = msg_pool()->get();
 	ZstCable cable = msg->unpack_payload_streamable<ZstCable>(0);
-	cout << "ZST_STAGE: Received destroy cable connection request" << endl;
+	LOGGER->info("Received destroy cable connection request");
 
 	ZstCable * cable_ptr = get_cable_by_URI(cable.get_input_URI(), cable.get_output_URI());
 
@@ -583,7 +587,7 @@ int ZstStage::stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * ar
 			performer->clear_active_hearbeat();
 		}
 		else {
-			cout << "ZST_STAGE: Endpoint " << performer->URI().path() << " missed a heartbeat. " << (MAX_MISSED_HEARTBEATS - performer->get_missed_heartbeats()) << " remaining" << endl;
+			LOGGER->warn("Client {} missed a heartbeat. {0:d} remaining", performer->URI().path(), MAX_MISSED_HEARTBEATS - performer->get_missed_heartbeats());
 			performer->set_heartbeat_inactive();
 		}
 

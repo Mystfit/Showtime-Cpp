@@ -4,3 +4,6 @@
 [submodule "submodules/cf"]
 	path = submodules/cf
 	url = https://github.com/rpz80/cf
+[submodule "submodules/spdlog"]
+	path = submodules/spdlog
+	url = https://github.com/gabime/spdlog.git

@@ -51,14 +51,15 @@ int ZstMessagePool::process_message_promise(ZstMessage * msg)
 {
 	int status = 0;
 	try {
-		m_promise_messages.at(msg->id()).set_value(msg->kind());
+		std::string id = std::string(msg->id());
+		m_promise_messages.at(id).set_value(msg->kind());
 
 		//Clear completed promise when finished
 		m_promise_messages.erase(msg->id());
 		status = 1;
 	}
 	catch (out_of_range e) {
-		cout << "ZST: Could not find promise for message id " << msg->id() << endl;
+		status = -1;
 	}
 
 	return status;
