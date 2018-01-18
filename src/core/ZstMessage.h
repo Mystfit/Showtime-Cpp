@@ -88,9 +88,6 @@ public:
 	//Attributes
 	ZST_EXPORT ZstEntityBase * entity_target();
 	ZST_EXPORT zmsg_t * handle();
-	ZST_EXPORT size_t sender_length();
-	ZST_EXPORT const char * sender();
-	ZST_EXPORT ZstURI sender_as_URI();
 	ZST_EXPORT const char * id();
 	ZST_EXPORT Kind kind();
 	

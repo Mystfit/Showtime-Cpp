@@ -58,6 +58,13 @@ void ZstMessage::copy_id(const ZstMessage * msg)
 {
 	zuuid_destroy(&m_msg_id);
 	m_msg_id = zuuid_dup(msg->m_msg_id);
+
+	//Remove old id from front of message
+	zframe_t * old_id_frame = zmsg_pop(m_msg_handle);
+	zframe_destroy(&old_id_frame);
+
+	//Add new id to front of message
+	zmsg_pushmem(m_msg_handle, zuuid_data(m_msg_id), zuuid_size(m_msg_id));
 }
 
 ZstMessage * ZstMessage::init_entity_message(ZstEntityBase * entity)
@@ -109,24 +116,12 @@ zmsg_t * ZstMessage::handle()
 	return m_msg_handle;
 }
 
-size_t ZstMessage::sender_length()
-{
-	return m_sender_length;
-}
-
-const char * ZstMessage::sender()
-{
-	return m_sender;
-}
-
-ZstURI ZstMessage::sender_as_URI()
-{
-	return ZstURI(m_sender);
-}
-
 const char * ZstMessage::id()
 {
-	return zuuid_str(m_msg_id);
+	const char * result = NULL;
+	if (m_msg_id)
+		result = zuuid_str(m_msg_id);
+	return result;
 }
 
 ZstMessage::Kind ZstMessage::kind()
@@ -201,26 +196,11 @@ void ZstMessage::append_streamable(ZstMessage::Kind k,  ZstStreamable & s)
 void ZstMessage::unpack(zmsg_t * msg)
 {
 	m_msg_handle = msg;
-	zframe_t * first_frame = zmsg_pop(m_msg_handle);
-	zframe_t * id_frame = NULL;
-
-	//Unpack Identity if we have one
-	if (zframe_size(first_frame) > KIND_FRAME_SIZE) {
-		zframe_t * empty = zmsg_pop(m_msg_handle);
-		m_sender_length = zframe_size(first_frame);
-		m_sender = (char*)malloc(m_sender_length + 1);
-		memcpy(m_sender, (char*)zframe_data(first_frame), m_sender_length);
-		m_sender[m_sender_length] = '\0';
-		
-		//Get the next frame (will be ID)
-		id_frame = zmsg_pop(m_msg_handle);
-	}
-	else {
-		id_frame = first_frame;
-	}
-
+	zframe_t * id_frame = zmsg_pop(m_msg_handle);
+	
 	//Unpack id
 	m_msg_id = zuuid_new_from(zframe_data(id_frame));
+	zframe_destroy(&id_frame);
 	
 	//Unpack kind
 	m_msg_kind = unpack_kind();
@@ -247,7 +227,10 @@ void ZstMessage::unpack(zmsg_t * msg)
 
 ZstMessage::Kind ZstMessage::unpack_kind()
 {
-	return unpack_kind(zmsg_pop(m_msg_handle));
+	zframe_t * kind_frame = zmsg_pop(m_msg_handle);
+	Kind k = unpack_kind(kind_frame);
+	zframe_destroy(&kind_frame);
+	return k;
 }
 
 ZstMessage::Kind ZstMessage::unpack_kind(zframe_t * kind_frame)
@@ -255,7 +238,6 @@ ZstMessage::Kind ZstMessage::unpack_kind(zframe_t * kind_frame)
 	Kind k = Kind::EMPTY;
 	if (kind_frame) {
 		k = (ZstMessage::Kind)std::atoi((char*)zframe_data(kind_frame));
-		zmsg_append(m_msg_handle, &kind_frame);
 	}
 	return k;
 }

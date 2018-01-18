@@ -66,7 +66,7 @@ ZstPerformer * ZstStage::get_client(const ZstURI & path)
 	return performer;
 }
 
-ZstPerformer * ZstStage::get_client_from_socket_id(const char * socket_id)
+ZstPerformer * ZstStage::get_client_from_socket_id(const std::string & socket_id)
 {
 	ZstPerformer * performer = NULL;
 	if (m_client_socket_index.find(socket_id) != m_client_socket_index.end()) {
@@ -236,6 +236,8 @@ ZstCable * ZstStage::get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB) 
 int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 {
 	ZstStage *stage = (ZstStage*)arg;
+	zframe_t * identity_frame = NULL;
+	std::string sender_identity;
 	ZstPerformer * sender = NULL;
 
 	//Receive waiting message
@@ -243,13 +245,19 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 	ZstMessage * msg = NULL;
 
 	if (recv_msg) {
+		//Get identity of sender from first frame
+		zframe_t * identity_frame = zmsg_pop(recv_msg);
+		sender_identity = std::string((char*)zframe_data(identity_frame), zframe_size(identity_frame));
+		zframe_t * empty = zmsg_pop(recv_msg);
+		zframe_destroy(&empty);
+
 		msg = stage->msg_pool()->get();
 		msg->unpack(recv_msg);
 	}
 	
 	//If we're dealing with a new client, we don't need to search for it
 	if (msg->kind() != ZstMessage::Kind::CLIENT_JOIN) {
-		sender = stage->get_client(msg->sender_as_URI());
+		sender = stage->get_client_from_socket_id(sender_identity);
 	}
 	
 	bool send_reply = true;
@@ -276,8 +284,8 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 		}
 		case ZstMessage::Kind::CLIENT_JOIN:
 		{
-			response = stage->create_client_handler(msg->sender(), msg);
-			sender = stage->get_client_from_socket_id(msg->sender());
+			response = stage->create_client_handler(sender_identity, msg);
+			sender = stage->get_client_from_socket_id(sender_identity);
 			break;
 		}
 		case ZstMessage::Kind::CREATE_COMPONENT:
@@ -332,9 +340,11 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 	if (response) {
 		//Copy ID of the original message so we can match this message to a promise on the client
 		response->copy_id(msg);
-		LOGGER->debug("Replying to client {} with message ID {}", sender->URI().path(), response->id());
 		stage->send_to_client(response, sender);
 	}
+
+	//Cleanup
+	zframe_destroy(&identity_frame);
 			
 	return 0;
 }
@@ -360,7 +370,7 @@ void ZstStage::send_to_client(ZstMessage * msg, ZstPerformer * destination) {
 // Message handlers
 // ----------------
 
-ZstMessage * ZstStage::create_client_handler(std::string sender, ZstMessage * msg)
+ZstMessage * ZstStage::create_client_handler(std::string sender_identity, ZstMessage * msg)
 {
 	ZstMessage * response = msg_pool()->get();
 
@@ -376,7 +386,7 @@ ZstMessage * ZstStage::create_client_handler(std::string sender, ZstMessage * ms
 	
 	//Save our new client
 	m_clients[client->URI()] = client;
-	m_client_socket_index[sender] = client;
+	m_client_socket_index[std::string(sender_identity)] = client;
 		
 	//Update rest of network
 	publish_stage_update(msg_pool()->get()->init_entity_message(client));
@@ -568,6 +578,8 @@ void ZstStage::send_snapshot(ZstPerformer * client) {
 		snapshot->append_streamable(ZstMessage::Kind::CREATE_CABLE, *cable);
 	}
 
+	LOGGER->info("Sending graph snapshot to {}", client->URI().path());
+	
 	send_to_client(snapshot, client);
 }
 
@@ -587,7 +599,7 @@ int ZstStage::stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * ar
 			performer->clear_active_hearbeat();
 		}
 		else {
-			LOGGER->warn("Client {} missed a heartbeat. {0:d} remaining", performer->URI().path(), MAX_MISSED_HEARTBEATS - performer->get_missed_heartbeats());
+			LOGGER->warn("Client {} missed a heartbeat. {} remaining", performer->URI().path(), MAX_MISSED_HEARTBEATS - performer->get_missed_heartbeats());
 			performer->set_heartbeat_inactive();
 		}
 

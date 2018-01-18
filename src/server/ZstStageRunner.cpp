@@ -11,7 +11,7 @@ int main(int argc, char **argv) {
 #ifdef WIN32
 	system("pause");
 #else
-	system("read -n 1 -s -p \"Press any key to continue...\"");
+	system("read -n 1 -s -p \"Press any key to continue...\n\"");
 #endif
 	
 	return 0;

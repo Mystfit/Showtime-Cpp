@@ -587,7 +587,7 @@ void test_memory_leaks(int num_loops) {
 	//ZstClient::instance().reset_graph_recv_tripmeter();
 	//ZstClient::instance().reset_graph_send_tripmeter();
 
-	LOGGER->debug("Sending {0:d} messages", count);
+	LOGGER->debug("Sending {} messages", count);
 
 	TAKE_A_BREATH
 

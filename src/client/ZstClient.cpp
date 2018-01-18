@@ -88,6 +88,7 @@ void ZstClient::init(const char * client_name)
 		return;
 	}
 	ZST_init_log();
+	LOGGER->set_level(spdlog::level::debug);
 	LOGGER->info("Starting Showtime v{}", SHOWTIME_VERSION);
 
 	m_client_name = client_name;
@@ -146,7 +147,11 @@ void ZstClient::init(const char * client_name)
 	//Connect client dealer socket to stage now
 	addr << "tcp://" << m_stage_addr << ":" << STAGE_ROUTER_PORT;
 	m_stage_router_addr = addr.str();
-	zsock_set_identity(m_stage_router, zuuid_str(m_startup_uuid));
+
+	std::string identity = std::string(zuuid_str_canonical(m_startup_uuid));
+	LOGGER->debug("Setting socket identity to {}. Length {}", identity, identity.size());
+
+	zsock_set_identity(m_stage_router, identity.c_str());
 	zsock_connect(m_stage_router, "%s", m_stage_router_addr.c_str());
 	addr.str("");
 
@@ -168,6 +173,7 @@ void ZstClient::init(const char * client_name)
 void ZstClient::process_callbacks()
 {
     //Run callbacks
+	m_client_connected_event_manager->process();
     m_component_arriving_event_manager->process();
     m_component_leaving_event_manager->process();
     m_component_type_arriving_event_manager->process();
@@ -233,7 +239,6 @@ void ZstClient::send_to_stage(ZstMessage * msg)
 	zmsg_t * msg_handle = msg->handle();
 	zmsg_prepend(msg_handle, &empty);
 	msg->send(m_stage_router);
-
 	msg_pool()->release(msg);
 }
 
@@ -254,9 +259,12 @@ ZstMessage * ZstClient::receive_from_stage() {
 	zmsg_t * recv_msg = zmsg_recv(m_stage_router);
 	if (recv_msg) {
 		msg = msg_pool()->get();
-		//Pop blank seperator frame
+
+		//Pop blank seperator frame left from the dealer socket
 		zframe_t * empty = zmsg_pop(recv_msg);
 		zframe_destroy(&empty);
+
+		//Unpack message contents
 		msg->unpack(recv_msg);
 	}
 	return msg;
@@ -305,7 +313,7 @@ void ZstClient::register_client_complete(int status)
 		throw runtime_error("Stage performer registration responded with error -> Status: " + status);
 	}
 
-	LOGGER->info("connection success");
+	LOGGER->info("Connection to server established");
 
 	//Set up heartbeat timer
 	m_heartbeat_timer_id = attach_timer(s_heartbeat_timer, HEARTBEAT_DURATION, this);
@@ -408,25 +416,20 @@ int ZstClient::s_handle_stage_router(zloop_t * loop, zsock_t * socket, void * ar
     ZstMessage * msg = client->receive_from_stage();
 
 	//Process message promises
-	client->msg_pool()->process_message_promise(msg);
-    
-	//Process message
-	if (msg->kind() == ZstMessage::Kind::GRAPH_SNAPSHOT) {
-		client->stage_update_handler(msg);
-	}
-	else {
-		
-		switch (msg->kind()) {
-			case ZstMessage::Kind::SUBSCRIBE_TO_PERFORMER:
-			{
+	if (client->msg_pool()->process_message_promise(msg) <= 0) {
+		if (msg->kind() == ZstMessage::Kind::GRAPH_SNAPSHOT) {
+			LOGGER->debug("Received graph snapshot");
+			client->stage_update_handler(msg);
+		}
+		else {
+			if (msg->kind() == ZstMessage::Kind::SUBSCRIBE_TO_PERFORMER) {
 				client->connect_client_handler(msg->payload_at(0).data(), msg->payload_at(1).data());
-				break;
+			} else {
+				LOGGER->error("Stage router sent unknown message {}", msg->kind());
 			}
-			default:
-				LOGGER->error("Stage router sent unknown message {0:d}" , msg->kind());
-				break;
-			}
+		}
 	}
+		
 	client->msg_pool()->release(msg);
     return 0;
 }
@@ -522,7 +525,7 @@ int ZstClient::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
 		int status = f.get();
 		chrono::time_point<chrono::system_clock> end = chrono::system_clock::now();
 		chrono::milliseconds delta = chrono::duration_cast<chrono::milliseconds>(end - start);
-		LOGGER->debug("ZST: Ping roundtrip {0:d} ms", delta.count());
+		LOGGER->debug("Ping roundtrip {} ms", delta.count());
 		client->m_ping = delta.count();
 		return status;
 	});
@@ -668,7 +671,7 @@ void ZstClient::activate_entity(ZstEntityBase * entity)
 	msg_pool()->register_future(msg).then([this, entity](MessageFuture f) {
 		int status = f.get();
 		if (status) {
-			LOGGER->debug("Entity activation complete with status {0:d}", status);
+			LOGGER->debug("Entity activation complete with status {}", status);
 			entity->set_activated();
 			this->entity_activated_events()->enqueue(entity);
 		}
@@ -721,7 +724,7 @@ void ZstClient::destroy_entity(ZstEntityBase * entity)
 
 void ZstClient::destroy_entity_completed(int status)
 {
-	LOGGER->debug("Entity destroy completed with status {0:d}", status);
+	LOGGER->debug("Entity destroy completed with status {}", status);
 }
 
 bool ZstClient::entity_is_local(ZstEntityBase * entity)
@@ -907,7 +910,7 @@ void ZstClient::destroy_cable(ZstCable * cable)
 
 void ZstClient::destroy_cable_completed(int status)
 {	
-	LOGGER->debug("Destroy cable completed with status {0:d}", status);
+	LOGGER->debug("Destroy cable completed with status {}", status);
 }
 
 void ZstClient::disconnect_plug(ZstPlug * plug)

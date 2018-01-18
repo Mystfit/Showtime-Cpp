@@ -30,7 +30,7 @@ public:
 
 	//Client
 	ZstPerformer * get_client(const ZstURI & path);
-	ZstPerformer * get_client_from_socket_id(const char * socket_id);
+	ZstPerformer * get_client_from_socket_id(const std::string & socket_id);
 	std::string get_socket_ID(const ZstPerformer * performer);
 
 	void destroy_client(ZstPerformer * performer);
@@ -53,7 +53,7 @@ private:
 	void send_to_client(ZstMessage * msg, ZstPerformer * destination);
 
     //Message handlers
-    ZstMessage * create_client_handler(std::string sender, ZstMessage * msg);
+    ZstMessage * create_client_handler(std::string sender_identity, ZstMessage * msg);
 	void destroy_client_handler(ZstPerformer * performer);
 
 	template <typename T>
