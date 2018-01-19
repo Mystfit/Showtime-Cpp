@@ -6,11 +6,15 @@
 //Base callbacks
 //----------------
 
+//Internal callback hook
+typedef void(*ZstCallbackHook)(void*);
+
 class ZstEvent {
 public:
 	ZstEvent() : m_num_calls(0) {}
 	int num_calls() const { return m_num_calls; }
 	void reset_num_calls() { m_num_calls = 0; }
+	void increment_calls() { m_num_calls++; };
 private:
 	int m_num_calls;
 };

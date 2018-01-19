@@ -3,11 +3,10 @@
 #include <list>
 #include <map>
 #include <cf/cfuture.h>
+#include "ZstMessage.h"
 
-
-typedef cf::promise<int> MessagePromise;
-typedef cf::future<int> MessageFuture;
-
+typedef cf::promise<ZstMessage::Kind> MessagePromise;
+typedef cf::future<ZstMessage::Kind> MessageFuture;
 
 class ZstMessage;
 

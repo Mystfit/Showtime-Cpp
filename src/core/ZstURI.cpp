@@ -111,13 +111,36 @@ ZstURI ZstURI::range(int start, int end) const
 	return result;
 }
 
+ZstURI ZstURI::parent() const
+{
+	if (size() - 2 < 0)
+		throw std::out_of_range("URI has no parent");
+	return range(0, size() - 2);
+}
+
+ZstURI ZstURI::first() const
+{
+	if (size() < 1)
+		throw std::out_of_range("URI is empty");
+	return ZstURI(components[0].cstr);
+}
+
+ZstURI ZstURI::last()
+{
+	return ZstURI(components[size()-1].cstr);
+}
+
 bool ZstURI::contains(const ZstURI & compare) const
 {
-	int shortest = (compare.size() > this->size()) ? this->size() : compare.size();
-	int largest = (compare.size() < this->size()) ? this->size() : compare.size();
+	if (compare.size() > size()) {
+		return false;
+	}
+
+	int shortest = std::min(compare.size(), size());
+	int largest = std::max(compare.size(), size());
 	int contiguous = 0;
 
-	for (int i = 0; i < largest; ++i) {
+	for (int i = 0; i < shortest; ++i) {
 		if (i < compare.size()) {
 			if (strcmp(compare.components[i].cstr, this->components[i].cstr) == 0) {
 				if (++contiguous == shortest)

@@ -96,8 +96,8 @@ void ZstCable::write(std::stringstream & buffer)
 void ZstCable::read(const char * buffer, size_t length, size_t & offset)
 {
 	auto handle = msgpack::unpack(buffer, length, offset);
-	m_output_URI = ZstURI(handle.get().via.str.ptr);
+	m_output_URI = ZstURI(handle.get().via.str.ptr, handle.get().via.str.size);
 
 	handle = msgpack::unpack(buffer, length, offset);
-	m_input_URI = ZstURI(handle.get().via.str.ptr);
+	m_input_URI = ZstURI(handle.get().via.str.ptr, handle.get().via.str.size);
 }

@@ -330,8 +330,8 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 		}
 		default:
 		{
-			LOGGER->error("Didn't understand received message type of {0:d}", msg->kind());
-			response->init_message(ZstMessage::Kind::ERR_STAGE_MSG_TYPE_UNKNOWN);
+			LOGGER->error("Didn't understand received message type of {}", msg->kind());
+			response = stage->msg_pool()->get()->init_message(ZstMessage::Kind::ERR_STAGE_MSG_TYPE_UNKNOWN);
 			break;
 		}
 	}
@@ -411,7 +411,8 @@ ZstMessage * ZstStage::create_entity_handler(ZstMessage * msg, ZstPerformer * pe
 	if (!performer) {
 		return response->init_message(ZstMessage::Kind::ERR_STAGE_PERFORMER_NOT_FOUND);
 	}
-	
+
+	LOGGER->debug("Found performer, unpacking entity");
 	T* entity = msg->unpack_payload_entity<T>(0);
 
 	//Make sure this entity doesn't already exist
@@ -421,10 +422,20 @@ ZstMessage * ZstStage::create_entity_handler(ZstMessage * msg, ZstPerformer * pe
 		delete entity;
 		return response->init_message(ZstMessage::Kind::ERR_STAGE_ENTITY_ALREADY_EXISTS);
 	}
+
+	LOGGER->debug("Entity doesn't exist yet, registering it now");
 	
 	//Find the parent for this entity
-	ZstURI parent_path = entity->URI().range(0, entity->URI().size() - 1);
-	ZstEntityBase * parent = dynamic_cast<T*>(performer->find_child_by_URI(parent_path));
+	ZstURI parent_path = entity->URI().parent();
+
+	ZstEntityBase * parent = NULL;
+
+	if (parent_path.size() == 1) {
+		parent = performer;
+	}
+	else {
+		parent = dynamic_cast<T*>(performer->find_child_by_URI(parent_path));
+	}
 
 	//If we can't find the parent this entity says it belongs to then we have a problem
 	if (parent == NULL) {
@@ -432,12 +443,16 @@ ZstMessage * ZstStage::create_entity_handler(ZstMessage * msg, ZstPerformer * pe
 		return response->init_message(ZstMessage::Kind::ERR_STAGE_ENTITY_NOT_FOUND);
 	}
 
+	LOGGER->debug("Found parent of entity. ");
+
 	//Handle plugs and entities differently (for now)
 	if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
 		dynamic_cast<ZstComponent*>(parent)->add_plug(dynamic_cast<ZstPlug*>(entity));
 	}
 	else {
-		dynamic_cast<ZstContainer*>(parent)->add_child(entity);
+		ZstContainer * parent_container = dynamic_cast<ZstContainer*>(parent);
+		assert(parent_container);
+		parent_container->add_child(entity);
 	}
 
 	LOGGER->info("Registering new entity {}", entity->URI().path());

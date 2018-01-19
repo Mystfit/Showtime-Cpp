@@ -17,12 +17,6 @@
 #define TAKE_A_BREATH usleep(1000 * 200);
 #endif
 
-#ifdef WIN32
-#define WAIT_FOR_HEARTBEAT Sleep(HEARTBEAT_DURATION);
-#else
-#define WAIT_FOR_HEARTBEAT usleep(1000 * HEARTBEAT_DURATION);
-#endif
-
 #define MAX_WAIT 20
 void wait_for_event(ZstEvent * callback, int expected_messages)
 {
@@ -201,6 +195,7 @@ void test_URI() {
 
 	//Define test URIs
 	ZstURI uri_empty = ZstURI();
+	ZstURI uri_single = ZstURI("single");
 	ZstURI uri_equal1 = ZstURI("ins/someplug");
 	ZstURI uri_notequal = ZstURI("anotherins/someplug");
 
@@ -229,6 +224,18 @@ void test_URI() {
 	assert(ZstURI::equal(uri_equal1.range(0, 1), ZstURI("ins/someplug")));
 	assert(ZstURI::equal(uri_equal1.range(1, 1), ZstURI("someplug")));
 	assert(ZstURI::equal(uri_equal1.range(0, 0), ZstURI("ins")));
+	assert(ZstURI::equal(uri_equal1.parent(), ZstURI("ins")));
+	assert(ZstURI::equal(uri_equal1.first(), ZstURI("ins")));
+
+	bool thrown_URI_range_error = false;
+	try {
+		uri_single.parent();
+	}
+	catch (std::out_of_range) {
+		thrown_URI_range_error = true;
+	}
+	assert(thrown_URI_range_error);
+	thrown_URI_range_error = false;
 
 	//Test joining
 	ZstURI joint_uri = ZstURI("a") + ZstURI("b");
@@ -274,6 +281,7 @@ void test_startup() {
 
 	wait_for_event(connectCallback, 1);
 	assert(connectCallback->num_calls() == 1);
+	assert(Showtime::is_connected());
 	
 	Showtime::detach_callback(connectCallback);
 	delete connectCallback;
@@ -332,7 +340,11 @@ void test_hierarchy() {
 	ZstContainer * parent = new ZstContainer("parent");
 	ZstComponent * child = new ZstComponent("child");
 	parent->add_child(child);
+
+	TestEntityActivatedCallback * entity_activated = new TestEntityActivatedCallback("activated");
+	Showtime::attach_callback(entity_activated);
 	Showtime::activate(parent);
+	wait_for_event(entity_activated, 1);
 	
 	assert(Showtime::get_root()->find_child_by_URI(parent->URI()));
 	assert(Showtime::get_root()->find_child_by_URI(child->URI()));
@@ -361,6 +373,9 @@ void test_hierarchy() {
 	delete child;
 	child = 0;
 	parent = 0;
+
+	Showtime::detach_callback(entity_activated);
+	delete entity_activated;
 	
 	clear_callback_queue();
 }

@@ -140,16 +140,16 @@ size_t ZstMessage::num_payloads()
 }
 
 void ZstMessage::append_entity_kind_frame(ZstEntityBase * entity) {
-	if (strcmp(entity->entity_type(), COMPONENT_TYPE)) {
+	if (strcmp(entity->entity_type(), COMPONENT_TYPE) == 0) {
 		m_msg_kind = Kind::CREATE_COMPONENT;
 	}
-	else if (strcmp(entity->entity_type(), CONTAINER_TYPE)) {
+	else if (strcmp(entity->entity_type(), CONTAINER_TYPE) == 0) {
 		m_msg_kind = Kind::CREATE_CONTAINER;
 	}
-	else if (strcmp(entity->entity_type(), PERFORMER_TYPE)) {
+	else if (strcmp(entity->entity_type(), PERFORMER_TYPE) == 0) {
 		m_msg_kind = Kind::CREATE_PERFORMER;
 	}
-	else if (strcmp(entity->entity_type(), PLUG_TYPE)) {
+	else if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
 		m_msg_kind = Kind::CREATE_PLUG;
 	}
 

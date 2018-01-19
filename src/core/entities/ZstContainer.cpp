@@ -41,6 +41,7 @@ void ZstContainer::register_graph_sender(ZstGraphSender * sender)
 ZstEntityBase * ZstContainer::find_child_by_URI(const ZstURI & path)
 {
 	ZstEntityBase * result = NULL;
+	ZstEntityBase * previous = NULL;
 
 	if (this->URI().size() >= path.size() || !path.contains(URI())) {
 		return result;
@@ -50,15 +51,23 @@ ZstEntityBase * ZstContainer::find_child_by_URI(const ZstURI & path)
 	int distance = distance = path.size() - URI().size();
 	while(distance > 0) {
 		next = path.range(0, path.size() - distance);
-		result = get_child_by_URI(next);
+
+		if (!previous)
+			previous = this;
+
+		result = dynamic_cast<ZstContainer*>(previous)->get_child_by_URI(next);
 
 		//Could not find child entity at the last level, check the plugs
 		if (distance == 1 && !result) {
 			result = get_plug_by_URI(next);
 		}
 
-		if(result)
+		if (result) {
 			distance = path.size() - result->URI().size();
+			previous = result;
+		} else {
+			break;
+		}
 	}
 
 	return result;
@@ -94,14 +103,34 @@ const size_t ZstContainer::num_children() const
 	return m_children.size();
 }
 
+void ZstContainer::set_activated()
+{
+	ZstComponent::set_activated();
+	
+	//Recursively activate all children
+	for (auto c : m_children) {
+		c.second->set_activated();
+	}
+}
+
+void ZstContainer::set_parent(ZstEntityBase * entity)
+{
+	ZstEntityBase::set_parent(entity);
+
+	auto temp_children = m_children;
+
+	for (auto child : temp_children) {
+		remove_child(child.second);
+		add_child(child.second);
+	}
+}
+
 void ZstContainer::add_child(ZstEntityBase * child) {
 	ZstEntityBase * c = find_child_by_URI(child->URI());
 	if (!c) {
 		//If child is a plug, needs to be added to the plug list
 		child->set_parent(this);
-		if (child->parent()->URI() == URI()) {
-			m_children[child->URI()] = child;
-		}
+		m_children[child->URI()] = child;
 	}
 }
 
@@ -117,6 +146,7 @@ void ZstContainer::remove_child(ZstEntityBase * child) {
 			m_children.erase(c);
 		}
 	}
+	update_URI();
 }
 
 void ZstContainer::write(std::stringstream & buffer)
@@ -127,6 +157,7 @@ void ZstContainer::write(std::stringstream & buffer)
 	//Pack children
 	msgpack::pack(buffer, num_children());
 	for (auto child : m_children) {
+		msgpack::pack(buffer, child.second->entity_type());
 		child.second->write(buffer);
 	}
 }
@@ -141,14 +172,19 @@ void ZstContainer::read(const char * buffer, size_t length, size_t & offset)
 	int num_children = static_cast<int>(handle.get().via.i64);
 	for (int i = 0; i < num_children; ++i) {
 		ZstEntityBase * child = NULL;
-		const char * entity_type = handle.get().via.str.ptr;
 
-		if (strcmp(entity_type, CONTAINER_TYPE)) {
+		handle = msgpack::unpack(buffer, length, offset);
+		char * entity_type = (char*)malloc(handle.get().via.str.size + 1);
+		memcpy(entity_type, handle.get().via.str.ptr, handle.get().via.str.size);
+		entity_type[handle.get().via.str.size] = '\0';
+
+		if (strcmp(entity_type, CONTAINER_TYPE) == 0) {
 			child = new ZstContainer();
 		}
-		else if (strcmp(entity_type, COMPONENT_TYPE)) {
+		else if (strcmp(entity_type, COMPONENT_TYPE) == 0) {
 			child = new ZstComponent();
 		}
+		free(entity_type);
 
 		child->read(buffer, length, offset);
 		add_child(child);

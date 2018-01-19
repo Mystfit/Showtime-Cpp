@@ -5,7 +5,10 @@
 #include "../ZstURI.h"
 #include "../ZstStreamable.h"
 
+//Forwards
+class ZstEntityEvent;
 class ZstGraphSender;
+class ZstEntityBase;
 
 class ZstEntityBase : public ZstStreamable {
 public:
@@ -28,6 +31,8 @@ public:
 	//The parent of this entity
 	ZST_EXPORT ZstEntityBase * parent() const;
 
+	ZST_EXPORT virtual void update_URI();
+
     //Entity type
 	ZST_EXPORT const char * entity_type() const;
     
@@ -48,9 +53,9 @@ public:
 protected:
 	//Set entity status
 	ZST_EXPORT void set_entity_type(const char * entity_type);
-	ZST_EXPORT void set_parent(ZstEntityBase* entity);
+	ZST_EXPORT virtual void set_parent(ZstEntityBase* entity);
 	ZST_EXPORT void set_destroyed();
-	ZST_EXPORT void set_activated();
+	ZST_EXPORT virtual void set_activated();
 
 private:
 	bool m_is_activated;
@@ -59,5 +64,3 @@ private:
 	char * m_entity_type;
 	ZstURI m_uri;
 };
-
-

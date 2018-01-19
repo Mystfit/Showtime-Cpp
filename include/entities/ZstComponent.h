@@ -5,7 +5,7 @@
 #include "ZstEntityBase.h"
 #include "ZstPlug.h"
 
-#define COMPONENT_TYPE "component"
+#define COMPONENT_TYPE "cmp"
 
 class ZstComponent : public ZstEntityBase {
 public:

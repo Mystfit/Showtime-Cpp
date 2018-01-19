@@ -298,7 +298,7 @@ void ZstClient::register_client_to_stage(std::string stage_address) {
 	
 	//Register complete action
 	msg_pool()->register_future(msg).then([this](MessageFuture f){
-		int status = f.get();
+		ZstMessage::Kind status = f.get();
 		this->register_client_complete(status);
 		return status;
 	});
@@ -306,7 +306,7 @@ void ZstClient::register_client_to_stage(std::string stage_address) {
 	send_to_stage(msg);
 }
 
-void ZstClient::register_client_complete(int status)
+void ZstClient::register_client_complete(ZstMessage::Kind status)
 {
 	//If we didn't receive a OK signal, something went wrong
 	if (status != ZstMessage::Kind::OK) {
@@ -474,11 +474,13 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 		{
 			ZstComponent * component = msg->unpack_payload_entity<ZstComponent>(i);
 			add_proxy_entity(component);
+			break;
 		}
 		case ZstMessage::Kind::CREATE_CONTAINER:
 		{
 			ZstContainer * container = msg->unpack_payload_entity<ZstContainer>(i);
 			add_proxy_entity(container);
+			break;
 		}
 		case ZstMessage::Kind::DESTROY_ENTITY:
 		{
@@ -648,7 +650,7 @@ ZstEntityBase * ZstClient::find_entity(const ZstURI & path)
 
 ZstPlug * ZstClient::find_plug(const ZstURI & path)
 {
-	ZstComponent * plug_parent = dynamic_cast<ZstComponent*>(find_entity(path.range(0, path.size() - 1)));
+	ZstComponent * plug_parent = dynamic_cast<ZstComponent*>(find_entity(path.parent()));
 	return plug_parent->get_plug_by_URI(path);
 }
 
@@ -656,7 +658,7 @@ void ZstClient::activate_entity(ZstEntityBase * entity)
 {
 	//If the entity doesn't have a parent, put it under the root container
 	if (!entity->parent()) {
-		m_root->add_child(m_root);
+		m_root->add_child(entity);
 	}
 
 	//If this is not a local entity, we can't activate it
@@ -669,12 +671,16 @@ void ZstClient::activate_entity(ZstEntityBase * entity)
 	//Build message
 	ZstMessage * msg = msg_pool()->get()->init_entity_message(entity);
 	msg_pool()->register_future(msg).then([this, entity](MessageFuture f) {
-		int status = f.get();
-		if (status) {
-			LOGGER->debug("Entity activation complete with status {}", status);
-			entity->set_activated();
-			this->entity_activated_events()->enqueue(entity);
+		ZstMessage::Kind status = f.get();
+		if (status != ZstMessage::Kind::OK) {
+			LOGGER->warn("Entity activation failed with status {}", status);
+			return status;
 		}
+		
+		LOGGER->debug("Entity activation complete with status {}", status);
+		entity->set_activated();
+		this->entity_activated_events()->enqueue(entity);
+		
 		return status;
 	});
 	send_to_stage(msg);
@@ -757,7 +763,7 @@ void ZstClient::add_proxy_entity(ZstEntityBase * entity) {
 	ZstPerformer * owning_performer = get_performer_by_URI(entity->URI());
 
 	if (owning_performer) {
-		ZstURI parent_URI = entity->URI().range(0, entity->URI().size() - 1);
+		ZstURI parent_URI = entity->URI().parent();
 		if (parent_URI.size()) {
 			ZstEntityBase * parent = owning_performer->find_child_by_URI(parent_URI);
 
@@ -795,7 +801,7 @@ void ZstClient::add_performer(ZstPerformer * performer)
 ZstPerformer * ZstClient::get_performer_by_URI(const ZstURI & uri) const
 {
 	ZstPerformer * result = NULL;
-	ZstURI performer_URI = uri.range(0, 0);
+	ZstURI performer_URI = uri.first();
 
 	auto entity_iter = m_clients.find(performer_URI);
 	if (entity_iter != m_clients.end()) {

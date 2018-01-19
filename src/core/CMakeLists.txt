@@ -11,7 +11,7 @@ set(ZST_INTERFACE_HEADERS
     ${Showtime_INCLUDE_DIRS}/ZstExports.h
     ${Showtime_INCLUDE_DIRS}/ZstURI.h
     ${Showtime_INCLUDE_DIRS}/ZstStreamable.h
-    ${Showtime_INCLUDE_DIRS}/ZstCallbacks.h
+    ${Showtime_INCLUDE_DIRS}/ZstEvents.h
     ${Showtime_INCLUDE_DIRS}/entities/AddFilter.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstEntityBase.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstComponent.h

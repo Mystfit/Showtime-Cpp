@@ -4,10 +4,8 @@
 #include <vector>
 #include <iostream>
 #include "ZstExports.h"
+#include "ZstEvents.h"
 #include "../core/Queue.h"
-
-//Internal callback hook
-typedef void (*ZstCallbackHook)(void*);
 
 template<class Callback, class Target>
 class ZstCallbackQueue {
@@ -71,6 +69,9 @@ public:
 			return;
 		}
 		m_event_queue.push(t);
+		for (auto c : m_event_callbacks) {
+			c->increment_calls();
+		}
     }
     
     ZST_EXPORT void process(){

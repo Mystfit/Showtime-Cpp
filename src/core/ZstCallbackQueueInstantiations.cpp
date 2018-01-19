@@ -3,7 +3,7 @@
 #include "entities/ZstPlug.h"
 #include "entities/ZstPerformer.h"
 #include "entities/ZstEntityBase.h"
-#include "ZstCallbacks.h"
+#include "ZstEvents.h"
 #include "ZstCallbackQueue.h"
 
 template class ZstCallbackQueue<ZstEntityEvent, ZstEntityBase*>;

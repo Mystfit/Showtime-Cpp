@@ -27,6 +27,16 @@ public:
 	ZST_EXPORT ZstURI operator+(const ZstURI & other) const;
 	ZST_EXPORT ZstURI & operator=(const ZstURI & other);
 	ZST_EXPORT ZstURI range(int start, int end) const;
+
+	//Returns a URI containing the parent
+	ZST_EXPORT ZstURI parent() const;
+
+	//Returns a URI containing the first segment
+	ZST_EXPORT ZstURI first() const;
+
+	//Return a URI containing the last segment
+	ZST_EXPORT ZstURI last();
+
 	ZST_EXPORT bool contains(const ZstURI & compare) const;
 	ZST_EXPORT static bool equal(const ZstURI & a, const ZstURI & b);
 	ZST_EXPORT bool operator==(const ZstURI & other) const;

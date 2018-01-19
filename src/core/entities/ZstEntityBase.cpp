@@ -4,6 +4,9 @@
 #include "entities/ZstEntityBase.h"
 #include "msgpack.hpp"
 
+#include "ZstEvents.h"
+#include "../ZstCallbackQueue.h"
+
 ZstEntityBase::ZstEntityBase(const char * entity_type, const char * name) :
     m_uri(name),
 	m_is_activated(false),
@@ -28,6 +31,18 @@ bool ZstEntityBase::is_activated()
 ZstEntityBase * ZstEntityBase::parent() const
 {
 	return m_parent;
+}
+
+void ZstEntityBase::update_URI()
+{
+	if (!parent()) {
+		m_uri = m_uri.last();
+		return;
+	}
+
+	if (!URI().contains(parent()->URI())) {
+		m_uri = parent()->URI() + m_uri.last();
+	}
 }
 
 const char * ZstEntityBase::entity_type() const
@@ -94,8 +109,6 @@ void ZstEntityBase::set_entity_type(const char * entity_type) {
 }
 
 void ZstEntityBase::set_parent(ZstEntityBase *entity) {
-	if (!entity->URI().contains(URI())) {
-		m_uri = entity->URI() + m_uri;
-	}
 	m_parent = entity;
+	update_URI();
 }

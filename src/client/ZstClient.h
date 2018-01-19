@@ -8,7 +8,7 @@
 
 #include <ZstURI.h>
 #include <ZstExports.h>
-#include <ZstCallbacks.h>
+#include <ZstEvents.h>
 
 //Core headers
 #include "../core/Queue.h"
@@ -48,7 +48,7 @@ public:
 
 	//Register this endpoint to the stage
 	void register_client_to_stage(std::string stage_address);
-	void register_client_complete(int status);
+	void register_client_complete(ZstMessage::Kind status);
 	void leave_stage();
 	
 	//Stage connection status
