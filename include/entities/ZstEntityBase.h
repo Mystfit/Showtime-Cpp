@@ -16,7 +16,7 @@ public:
 	friend class ZstContainer;
 
 	//Base entity
-	ZST_EXPORT ZstEntityBase(const char * entity_type, const char * entity_name);
+	ZST_EXPORT ZstEntityBase(const char * entity_name);
 	ZST_EXPORT virtual ~ZstEntityBase();
     
     //Overridable init - must be called by overriden classes

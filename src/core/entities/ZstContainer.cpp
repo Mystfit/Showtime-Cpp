@@ -2,18 +2,21 @@
 #include "msgpack.hpp"
 
 ZstContainer::ZstContainer() :
-	ZstComponent(CONTAINER_TYPE, "", "")
+	ZstComponent("", "")
 {
+	set_entity_type(CONTAINER_TYPE);
 }
 
 ZstContainer::ZstContainer(const char * path) :
-	ZstComponent(CONTAINER_TYPE, "", path)
+	ZstComponent("", path)
 {
+	set_entity_type(CONTAINER_TYPE);
 }
 
 ZstContainer::ZstContainer(const char * component_type, const char * path) :
-	ZstComponent(CONTAINER_TYPE, component_type, path)
+	ZstComponent(component_type, path)
 {
+	set_entity_type(CONTAINER_TYPE);
 }
 
 ZstContainer::~ZstContainer()

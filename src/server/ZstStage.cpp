@@ -468,12 +468,15 @@ ZstMessage * ZstStage::destroy_entity_handler(ZstMessage * msg)
 	ZstMessage * response = msg_pool()->get();
 
 	//Unpack entity to destroy from message
-	ZstURI entity_path = ZstURI(msg->payload_at(0).data());
+	ZstURI entity_path = ZstURI(msg->payload_at(0).data(), msg->payload_at(0).size());
+	
+	LOGGER->info("Destroying entity {}", entity_path.path());
 
 	//Find owner of entity
-	ZstPerformer * owning_performer = get_client(entity_path);
+	ZstPerformer * owning_performer = get_client(entity_path.first());
 
 	if (!owning_performer) {
+		LOGGER->error("Could not find performer for destroyed entity {}", entity_path.path());
 		return response->init_message(ZstMessage::Kind::ERR_STAGE_PERFORMER_NOT_FOUND);
 	}
 

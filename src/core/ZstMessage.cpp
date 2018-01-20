@@ -4,8 +4,6 @@
 #include "ZstMessage.h"
 
 ZstMessage::ZstMessage() :
-	m_sender_length(0),
-	m_sender(NULL),
 	m_msg_handle(NULL),
 	m_msg_id(NULL),
 	m_msg_kind(Kind::EMPTY),
@@ -16,7 +14,6 @@ ZstMessage::ZstMessage() :
 
 ZstMessage::~ZstMessage()
 {
-	zstr_free(&m_sender);
 	zmsg_destroy(&m_msg_handle);
 	zuuid_destroy(&m_msg_id);
 	m_payloads.clear();
@@ -24,14 +21,9 @@ ZstMessage::~ZstMessage()
 
 void ZstMessage::reset()
 {
-	m_sender_length = 0;
 	m_msg_kind = Kind::EMPTY;
 	m_payloads.clear();
-
-	if (m_sender)
-		zstr_free(&m_sender);
-	m_sender = NULL;
-	
+		
 	if (m_msg_handle) 
 		zmsg_destroy(&m_msg_handle);
 	m_msg_handle = NULL;
@@ -43,11 +35,6 @@ void ZstMessage::reset()
 
 ZstMessage::ZstMessage(const ZstMessage & other)
 {
-	m_sender = (char*)malloc(m_sender_length + 1);
-	m_sender = strncpy(m_sender, other.m_sender, other.m_sender_length);
-	m_sender_length = other.m_sender_length;
-	m_sender[m_sender_length] = '\0';
-	
 	m_msg_kind = other.m_msg_kind;
 	m_payloads = other.m_payloads;
 	m_msg_handle = zmsg_dup(other.m_msg_handle);

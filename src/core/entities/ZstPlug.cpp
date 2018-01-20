@@ -39,14 +39,16 @@ ZstCable * ZstCableIterator::operator*() const
 //--------------------
 
 ZstPlug::ZstPlug() :
-	ZstEntityBase(PLUG_TYPE, "")
+	ZstEntityBase("")
 {
+	set_entity_type(PLUG_TYPE);
 	m_value = new ZstValue(ZST_NONE);
 }
 
 ZstPlug::ZstPlug(const char * name, ZstValueType t) : 
-	ZstEntityBase(PLUG_TYPE, name)
+	ZstEntityBase(name)
 {
+	set_entity_type(PLUG_TYPE);
     m_value = new ZstValue(t);
 }
 

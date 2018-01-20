@@ -673,11 +673,11 @@ void ZstClient::activate_entity(ZstEntityBase * entity)
 	msg_pool()->register_future(msg).then([this, entity](MessageFuture f) {
 		ZstMessage::Kind status = f.get();
 		if (status != ZstMessage::Kind::OK) {
-			LOGGER->warn("Entity activation failed with status {}", status);
+			LOGGER->warn("Activate entity {} failed with status {}", entity->URI().path(), status);
 			return status;
 		}
 		
-		LOGGER->debug("Entity activation complete with status {}", status);
+		LOGGER->debug("Activate entity {} complete with status {}", entity->URI().path(), status);
 		entity->set_activated();
 		this->entity_activated_events()->enqueue(entity);
 		
@@ -701,9 +701,15 @@ void ZstClient::destroy_entity(ZstEntityBase * entity)
 	if (is_local && is_connected_to_stage()) {
 		ZstMessage * msg = msg_pool()->get()->init_message(ZstMessage::Kind::DESTROY_ENTITY);
 		msg->append_str(entity->URI().path());
-		msg_pool()->register_future(msg).then([this](MessageFuture f) {
-			int status = f.get();
-			this->destroy_entity_completed(status);
+		ZstURI entity_path = entity->URI();
+		msg_pool()->register_future(msg).then([this, entity_path](MessageFuture f) {
+			ZstMessage::Kind status = f.get();
+			if (status != ZstMessage::Kind::OK) {
+				LOGGER->error("Destroy entity {} failed with status {}", entity_path.path(), status);
+				return status;
+			}
+			
+			LOGGER->debug("Destroy entity {} completed with status {}", entity_path.path(), status);
 			return status;
 		});
 		send_to_stage(msg);
@@ -726,11 +732,6 @@ void ZstClient::destroy_entity(ZstEntityBase * entity)
 	else {
 		delete entity;
 	}
-}
-
-void ZstClient::destroy_entity_completed(int status)
-{
-	LOGGER->debug("Entity destroy completed with status {}", status);
 }
 
 bool ZstClient::entity_is_local(ZstEntityBase * entity)

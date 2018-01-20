@@ -130,8 +130,6 @@ private:
 	//---------------------------------------
 	
 	//Common message attributes
-	size_t m_sender_length;
-	char * m_sender;
 	zmsg_t * m_msg_handle;
 	zuuid_t * m_msg_id;
 	Kind m_msg_kind;

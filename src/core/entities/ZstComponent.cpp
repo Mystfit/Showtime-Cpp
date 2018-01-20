@@ -3,26 +3,23 @@
 #include "ZstCable.h"
 
 ZstComponent::ZstComponent() : 
-	ZstEntityBase(COMPONENT_TYPE, "")
+	ZstEntityBase("")
 {
+	set_entity_type(COMPONENT_TYPE);
 	set_component_type("");
 }
 
 ZstComponent::ZstComponent(const char * path) :
-	ZstEntityBase(COMPONENT_TYPE, path)
+	ZstEntityBase(path)
 {
+	set_entity_type(COMPONENT_TYPE);
 	set_component_type("");
 }
 
 ZstComponent::ZstComponent(const char * component_type, const char * path)
-    : ZstEntityBase(COMPONENT_TYPE, path)
+    : ZstEntityBase(path)
 {
-	set_component_type(component_type);
-}
-
-ZstComponent::ZstComponent(const char * entity_type, const char * component_type, const char * path) 
-	: ZstEntityBase(entity_type, path)
-{
+	set_entity_type(COMPONENT_TYPE);
 	set_component_type(component_type);
 }
 

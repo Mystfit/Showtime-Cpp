@@ -4,19 +4,21 @@
 using namespace std;
 
 ZstPerformer::ZstPerformer() : 
-	ZstContainer(PERFORMER_TYPE),
+	ZstContainer(),
 	m_heartbeat_active(false),
 	m_missed_heartbeats(0),
 	m_address("")
 {
+	set_entity_type(PERFORMER_TYPE);
 }
 
 ZstPerformer::ZstPerformer(const char * name, const char * client_ip) :
-	ZstContainer(PERFORMER_TYPE, name),
+	ZstContainer("", name),
 	m_heartbeat_active(false),
 	m_missed_heartbeats(0),
 	m_address(client_ip)
 {
+	set_entity_type(PERFORMER_TYPE);
 }
 
 ZstPerformer::~ZstPerformer()

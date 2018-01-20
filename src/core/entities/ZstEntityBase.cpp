@@ -7,13 +7,13 @@
 #include "ZstEvents.h"
 #include "../ZstCallbackQueue.h"
 
-ZstEntityBase::ZstEntityBase(const char * entity_type, const char * name) :
-    m_uri(name),
+ZstEntityBase::ZstEntityBase(const char * name) :
 	m_is_activated(false),
 	m_is_destroyed(false),
-	m_parent(NULL)
+	m_parent(NULL),
+	m_entity_type(NULL),
+	m_uri(name)
 {
-	set_entity_type(entity_type);
 }
 
 ZstEntityBase::~ZstEntityBase()
@@ -103,6 +103,10 @@ void ZstEntityBase::read(const char * buffer, size_t length, size_t & offset)
 }
 
 void ZstEntityBase::set_entity_type(const char * entity_type) {
+	if (m_entity_type) {
+		free(m_entity_type);
+		m_entity_type = NULL;
+	}
 	int entity_type_len = static_cast<int>(strlen(entity_type));
 	m_entity_type = (char*)calloc(entity_type_len + 1, sizeof(char));
 	strncpy(m_entity_type, entity_type, entity_type_len);

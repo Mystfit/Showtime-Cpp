@@ -160,7 +160,9 @@ public:
 	bool log = false;
 
 	InputComponent(const char * name, int cmp_val) : 
-		ZstComponent("TESTER", name), compare_val(cmp_val) {
+		ZstComponent("TESTER", name), compare_val(cmp_val)
+	{
+		init();
 	}
 
 	virtual void init() override {
@@ -345,6 +347,7 @@ void test_hierarchy() {
 	Showtime::attach_callback(entity_activated);
 	Showtime::activate(parent);
 	wait_for_event(entity_activated, 1);
+	entity_activated->reset_num_calls();
 	
 	assert(Showtime::get_root()->find_child_by_URI(parent->URI()));
 	assert(Showtime::get_root()->find_child_by_URI(child->URI()));
@@ -352,7 +355,7 @@ void test_hierarchy() {
 	LOGGER->debug("Removing child...");
 
 	//Test child removal from parent
-	parent->remove_child(child);
+	Showtime::deactivate(child);
 	ZstURI parent_URI = ZstURI(parent->URI());
 	ZstURI child_URI = ZstURI(child->URI());
 	delete child;
@@ -366,7 +369,12 @@ void test_hierarchy() {
 	child = new ZstComponent("child");
 	parent->add_child(child);
 	Showtime::activate(child);
-	
+	wait_for_event(entity_activated, 1);
+	entity_activated->reset_num_calls();
+
+	TAKE_A_BREATH
+
+	Showtime::deactivate(parent);
 	delete parent;
 	assert(!Showtime::get_root()->find_child_by_URI(parent_URI));
 	assert(!Showtime::get_root()->find_child_by_URI(child_URI));
@@ -692,8 +700,12 @@ void test_cleanup() {
 }
 
 int main(int argc,char **argv){
+	//Give the server time to start (if launching both simultaneously)
+	TAKE_A_BREATH
 	ZST_init_log();
 	LOGGER->set_level(spdlog::level::debug);
+
+	//Tests
 	test_standard_layout();
 	test_URI();
 	test_startup();
