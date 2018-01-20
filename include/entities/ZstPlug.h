@@ -40,6 +40,7 @@ public:
 	//Initialisation
 	ZST_EXPORT ZstPlug();
 	ZST_EXPORT ZstPlug(const char * name, ZstValueType t);
+	ZST_EXPORT ZstPlug(const ZstPlug & other);
 	ZST_EXPORT virtual ~ZstPlug();
     
 	ZST_EXPORT virtual void init() override {};

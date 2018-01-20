@@ -19,6 +19,19 @@ ZstContainer::ZstContainer(const char * component_type, const char * path) :
 	set_entity_type(CONTAINER_TYPE);
 }
 
+ZstContainer::ZstContainer(const ZstContainer & other) : ZstComponent(other)
+{
+	for (auto c : other.m_children) {
+		if (strcmp(c.second->entity_type(), CONTAINER_TYPE) == 0) {
+			m_children[c.first] = new ZstContainer(*dynamic_cast<ZstContainer*>(c.second));
+		}
+		else if (strcmp(c.second->entity_type(), COMPONENT_TYPE) == 0) {
+			m_children[c.first] = new ZstComponent(*dynamic_cast<ZstComponent*>(c.second));
+		}
+		m_children[c.first]->set_parent(this);		
+	}
+}
+
 ZstContainer::~ZstContainer()
 {
 	for (auto child : m_children) {

@@ -17,6 +17,7 @@ public:
 
 	//Base entity
 	ZST_EXPORT ZstEntityBase(const char * entity_name);
+	ZST_EXPORT ZstEntityBase(const ZstEntityBase & other);
 	ZST_EXPORT virtual ~ZstEntityBase();
     
     //Overridable init - must be called by overriden classes
@@ -42,9 +43,6 @@ public:
     //Entity flags
 	ZST_EXPORT bool is_destroyed();
     
-	//Override allocators so entity is created on DLL heap (Windows only - probably not compatible with SWIG)
-	ZST_EXPORT void * operator new(size_t num_bytes);
-	ZST_EXPORT void operator delete(void * p);
     
 	//Serialisation
 	ZST_EXPORT virtual void write(std::stringstream & buffer) override;

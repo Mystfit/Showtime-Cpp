@@ -21,6 +21,13 @@ ZstPerformer::ZstPerformer(const char * name, const char * client_ip) :
 	set_entity_type(PERFORMER_TYPE);
 }
 
+ZstPerformer::ZstPerformer(const ZstPerformer & other) : ZstContainer(other)
+{
+	m_heartbeat_active = other.m_heartbeat_active;
+	m_missed_heartbeats = other.m_missed_heartbeats;
+	m_address = other.m_address;
+}
+
 ZstPerformer::~ZstPerformer()
 {
 	for (auto child : m_creatables) {

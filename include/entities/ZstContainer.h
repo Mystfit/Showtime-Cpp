@@ -12,7 +12,7 @@ public:
 	ZST_EXPORT ZstContainer();
 	ZST_EXPORT ZstContainer(const char * path);
 	ZST_EXPORT ZstContainer(const char * component_type, const char * path);
-
+	ZST_EXPORT ZstContainer(const ZstContainer & other);
 	ZST_EXPORT ~ZstContainer();
 
 	ZST_EXPORT virtual void init() override {};

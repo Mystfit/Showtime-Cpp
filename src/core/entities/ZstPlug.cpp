@@ -52,6 +52,12 @@ ZstPlug::ZstPlug(const char * name, ZstValueType t) :
     m_value = new ZstValue(t);
 }
 
+ZstPlug::ZstPlug(const ZstPlug & other) : ZstEntityBase(other)
+{
+	m_value = new ZstValue(*other.m_value);
+	m_direction = other.m_direction;
+}
+
 ZstPlug::~ZstPlug() {
 	delete m_value;
 	for (auto cable : m_cables) {

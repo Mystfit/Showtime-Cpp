@@ -375,21 +375,26 @@ ZstMessage * ZstStage::create_client_handler(std::string sender_identity, ZstMes
 	ZstMessage * response = msg_pool()->get();
 
 	//Copy the id of the message so the sender will eventually match the response to a message promise
-	ZstPerformer * client = msg->ZstMessage::unpack_payload_entity<ZstPerformer>(0);
-	LOGGER->info("Registering new client {}", client->URI().path());
+	ZstPerformer client = msg->ZstMessage::unpack_payload_streamable<ZstPerformer>(0);
+
+	LOGGER->info("Registering new client {}", client.URI().path());
 
 	//Only one client with this UUID at a time
-	if (get_client(client->URI())) {
-		LOGGER->warn("Client already exists ", client->URI().path());
+	if (get_client(client.URI())) {
+		LOGGER->warn("Client already exists ", client.URI().path());
 		return response->init_message(ZstMessage::Kind::ERR_STAGE_PERFORMER_ALREADY_EXISTS);
 	}
+
+	//Copy streamable so we have a local ptr for the client
+	ZstPerformer * client_proxy = new ZstPerformer(client);
+	assert(client_proxy);
 	
 	//Save our new client
-	m_clients[client->URI()] = client;
-	m_client_socket_index[std::string(sender_identity)] = client;
+	m_clients[client_proxy->URI()] = client_proxy;
+	m_client_socket_index[std::string(sender_identity)] = client_proxy;
 		
 	//Update rest of network
-	publish_stage_update(msg_pool()->get()->init_entity_message(client));
+	publish_stage_update(msg_pool()->get()->init_entity_message(client_proxy));
 	
 	return response->init_message(ZstMessage::Kind::OK);
 }
@@ -413,20 +418,20 @@ ZstMessage * ZstStage::create_entity_handler(ZstMessage * msg, ZstPerformer * pe
 	}
 
 	LOGGER->debug("Found performer, unpacking entity");
-	T* entity = msg->unpack_payload_entity<T>(0);
+
+	T entity = msg->unpack_payload_streamable<T>(0);
 
 	//Make sure this entity doesn't already exist
-	if (performer->find_child_by_URI(entity->URI())) {
+	if (performer->find_child_by_URI(entity.URI())) {
 		//Entity already exists
-		LOGGER->warn("Entity already exists! {}", entity->URI().path());
-		delete entity;
+		LOGGER->warn("Entity already exists! {}", entity.URI().path());
 		return response->init_message(ZstMessage::Kind::ERR_STAGE_ENTITY_ALREADY_EXISTS);
 	}
 
 	LOGGER->debug("Entity doesn't exist yet, registering it now");
 	
 	//Find the parent for this entity
-	ZstURI parent_path = entity->URI().parent();
+	ZstURI parent_path = entity.URI().parent();
 
 	ZstEntityBase * parent = NULL;
 
@@ -445,20 +450,24 @@ ZstMessage * ZstStage::create_entity_handler(ZstMessage * msg, ZstPerformer * pe
 
 	LOGGER->debug("Found parent of entity. ");
 
+	//Copy streamable so we have a local ptr for the entity
+	T* entity_proxy = new T(entity);
+	assert(entity_proxy);
+
 	//Handle plugs and entities differently (for now)
-	if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
-		dynamic_cast<ZstComponent*>(parent)->add_plug(dynamic_cast<ZstPlug*>(entity));
+	if (strcmp(entity_proxy->entity_type(), PLUG_TYPE) == 0) {
+		dynamic_cast<ZstComponent*>(parent)->add_plug(dynamic_cast<ZstPlug*>(entity_proxy));
 	}
 	else {
 		ZstContainer * parent_container = dynamic_cast<ZstContainer*>(parent);
 		assert(parent_container);
-		parent_container->add_child(entity);
+		parent_container->add_child(entity_proxy);
 	}
 
-	LOGGER->info("Registering new entity {}", entity->URI().path());
-
+	LOGGER->info("Registering new entity {}", entity_proxy->URI().path());
+	
 	//Update rest of network
-	publish_stage_update(msg_pool()->get()->init_entity_message(entity));
+	publish_stage_update(msg_pool()->get()->init_entity_message(entity_proxy));
 
 	return response->init_message(ZstMessage::Kind::OK);
 }

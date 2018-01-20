@@ -384,7 +384,7 @@ int ZstClient::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg){
 	for (auto cable : *sending_plug) {
 		receiving_plug = dynamic_cast<ZstInputPlug*>(cable->get_input());
 		if (receiving_plug) {
-			if (client->entity_is_local(receiving_plug)) {
+			if (client->entity_is_local(*receiving_plug)) {
 				//TODO: Lock plug value when deserialising
 				size_t offset = 0;
 				receiving_plug->raw_value()->read((char*)zframe_data(payload), zframe_size(payload), offset);
@@ -453,7 +453,7 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 		break;
 		case ZstMessage::Kind::CREATE_PLUG:
 		{
-			ZstPlug * plug = msg->unpack_payload_entity<ZstPlug>(i);
+			ZstPlug plug = msg->unpack_payload_streamable<ZstPlug>(i);
 			add_proxy_entity(plug);
 			break;
 		}
@@ -466,19 +466,19 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 		}
 		case ZstMessage::Kind::CREATE_PERFORMER:
 		{
-			ZstPerformer * performer = msg->unpack_payload_entity<ZstPerformer>(i);
+			ZstPerformer performer = msg->unpack_payload_streamable<ZstPerformer>(i);
 			add_performer(performer);
 			break;
 		}
 		case ZstMessage::Kind::CREATE_COMPONENT:
 		{
-			ZstComponent * component = msg->unpack_payload_entity<ZstComponent>(i);
+			ZstComponent component = msg->unpack_payload_streamable<ZstComponent>(i);
 			add_proxy_entity(component);
 			break;
 		}
 		case ZstMessage::Kind::CREATE_CONTAINER:
 		{
-			ZstContainer * container = msg->unpack_payload_entity<ZstContainer>(i);
+			ZstContainer container = msg->unpack_payload_streamable<ZstContainer>(i);
 			add_proxy_entity(container);
 			break;
 		}
@@ -662,7 +662,7 @@ void ZstClient::activate_entity(ZstEntityBase * entity)
 	}
 
 	//If this is not a local entity, we can't activate it
-	if (!entity_is_local(entity))
+	if (!entity_is_local(*entity))
 		return;
 
 	//Register client in entity to allow it to send messages
@@ -692,7 +692,7 @@ void ZstClient::destroy_entity(ZstEntityBase * entity)
 		return;
 	}
 
-	bool is_local = entity_is_local(entity);
+	bool is_local = entity_is_local(*entity);
 
 	//Flag entity as destroyed so we can't remove it twice
 	entity->set_destroyed();
@@ -734,19 +734,19 @@ void ZstClient::destroy_entity(ZstEntityBase * entity)
 	}
 }
 
-bool ZstClient::entity_is_local(ZstEntityBase * entity)
+bool ZstClient::entity_is_local(ZstEntityBase & entity)
 {
-	return path_is_local(entity->URI());
+	return path_is_local(entity.URI());
 }
 
 bool ZstClient::path_is_local(const ZstURI & path) {
 	return path.contains(m_root->URI());
 }
 
-void ZstClient::add_proxy_entity(ZstEntityBase * entity) {
+void ZstClient::add_proxy_entity(ZstEntityBase & entity) {
 	if (entity_is_local(entity)) {
 		//Look for existing entity
-		ZstEntityBase * local_entity = find_entity(entity->URI());
+		ZstEntityBase * local_entity = find_entity(entity.URI());
 
 		//TODO: Move this to the message future
 		if (local_entity) {
@@ -755,27 +755,29 @@ void ZstClient::add_proxy_entity(ZstEntityBase * entity) {
 				local_entity->init();
 			}
 		}
-
-		//TODO: Would be ideal to return here without having to delete an unused entity
-		delete entity;
 		return;
 	}
 
-	ZstPerformer * owning_performer = get_performer_by_URI(entity->URI());
+	ZstPerformer * owning_performer = get_performer_by_URI(entity.URI());
 
 	if (owning_performer) {
-		ZstURI parent_URI = entity->URI().parent();
+
+		//Copy streamable so we have a local ptr for the entity
+		ZstEntityBase * entity_proxy = NULL;
+		assert(entity_proxy);
+
+		ZstURI parent_URI = entity.URI().parent();
 		if (parent_URI.size()) {
 			ZstEntityBase * parent = owning_performer->find_child_by_URI(parent_URI);
 
-			if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
-				ZstPlug * plug = dynamic_cast<ZstPlug*>(entity);
+			if (strcmp(entity.entity_type(), PLUG_TYPE) == 0) {
+				ZstPlug * plug = dynamic_cast<ZstPlug*>(entity_proxy);
 				dynamic_cast<ZstComponent*>(parent)->add_plug(plug);
 				plug_arriving_events()->enqueue(plug);
 			}
 			else {
-				dynamic_cast<ZstContainer*>(parent)->add_child(entity);
-				component_arriving_events()->enqueue(dynamic_cast<ZstComponent*>(entity));
+				dynamic_cast<ZstContainer*>(parent)->add_child(entity_proxy);
+				component_arriving_events()->enqueue(dynamic_cast<ZstComponent*>(entity_proxy));
 			}
 		}
 	}
@@ -792,10 +794,14 @@ std::unordered_map<ZstURI, ZstPerformer*> & ZstClient::performers()
 }
 
 
-void ZstClient::add_performer(ZstPerformer * performer)
+void ZstClient::add_performer(ZstPerformer & performer)
 {
-	if (performer->URI() == m_root->URI()) {
-		m_clients[performer->URI()] = performer;
+	//Copy streamable so we have a local ptr for the performer
+	ZstPerformer * performer_proxy = new ZstPerformer(performer);
+	assert(performer_proxy);
+
+	if (performer.URI() != m_root->URI()) {
+		m_clients[performer_proxy->URI()] = performer_proxy;
 	}
 }
 
@@ -829,7 +835,7 @@ void ZstClient::destroy_plug(ZstPlug * plug)
 
 	plug->set_destroyed();
 
-	bool is_local = entity_is_local(plug);
+	bool is_local = entity_is_local(*plug);
 
 	if (is_local) {
 		ZstMessage * msg = msg_pool()->get()->init_message(ZstMessage::Kind::DESTROY_ENTITY);

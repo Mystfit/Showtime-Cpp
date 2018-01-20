@@ -23,6 +23,23 @@ ZstComponent::ZstComponent(const char * component_type, const char * path)
 	set_component_type(component_type);
 }
 
+ZstComponent::ZstComponent(const ZstComponent & other) : ZstEntityBase(other)
+{
+	for (auto p : other.m_plugs) {
+		if (p->direction() == ZstPlugDirection::IN_JACK) {
+			m_plugs.push_back(new ZstInputPlug(*dynamic_cast<ZstInputPlug*>(p)));
+		}
+		else if(p->direction() == ZstPlugDirection::OUT_JACK) {
+			m_plugs.push_back(new ZstOutputPlug(*dynamic_cast<ZstOutputPlug*>(p)));
+		}
+	}
+	
+	size_t component_type_size = strlen(other.m_component_type);
+	m_component_type = (char*)malloc(component_type_size + 1);
+	memcpy(m_component_type, other.m_component_type, component_type_size);
+	m_component_type[component_type_size] = '\0';
+}
+
 ZstComponent::~ZstComponent()
 {
 	for (auto plug : m_plugs) {

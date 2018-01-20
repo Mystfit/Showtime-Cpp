@@ -94,15 +94,6 @@ public:
 	//Message iteration
 	ZST_EXPORT ZstMessagePayload & payload_at(size_t index);
 	ZST_EXPORT size_t num_payloads();
-
-	template <typename T>
-	T* unpack_payload_entity(size_t payload_index) {
-		T* entity = new T();
-		size_t offset = 0;
-		ZstMessagePayload & payload = payload_at(payload_index);
-		entity->read(payload.data(), payload.size(), offset);
-		return entity;
-	}
 	
 	template <typename T>
 	T unpack_payload_streamable(size_t payload_index) {

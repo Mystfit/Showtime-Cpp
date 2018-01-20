@@ -65,15 +65,14 @@ public:
 	ZstPlug * find_plug(const ZstURI & path);
 	void activate_entity(ZstEntityBase* entity);
 	void destroy_entity(ZstEntityBase * entity);
-	void destroy_entity_completed(int status);
 
-	bool entity_is_local(ZstEntityBase * entity);
+	bool entity_is_local(ZstEntityBase & entity);
 	bool path_is_local(const ZstURI & path);
-	void add_proxy_entity(ZstEntityBase * entity);
+	void add_proxy_entity(ZstEntityBase & entity);
 
 	//Performers
 	std::unordered_map<ZstURI, ZstPerformer*> & performers();
-	void add_performer(ZstPerformer * performer);
+	void add_performer(ZstPerformer & performer);
 	ZstPerformer * get_performer_by_URI(const ZstURI & uri) const;
 	ZstPerformer * get_local_performer() const;
 

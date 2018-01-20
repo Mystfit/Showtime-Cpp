@@ -5,6 +5,8 @@
 #include <cf/cfuture.h>
 #include "ZstMessage.h"
 
+#define USE_MESSAGE_POOL false
+
 typedef cf::promise<ZstMessage::Kind> MessagePromise;
 typedef cf::future<ZstMessage::Kind> MessageFuture;
 
@@ -30,6 +32,7 @@ public:
 	ZST_EXPORT void release(ZstMessage * message);
 
 private:
+	bool m_use_pool;
 	std::list<ZstMessage*> m_message_pool;
 	std::unordered_map<std::string, MessagePromise > m_promise_messages;
 };

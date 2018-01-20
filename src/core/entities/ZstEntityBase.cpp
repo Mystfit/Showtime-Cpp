@@ -16,6 +16,19 @@ ZstEntityBase::ZstEntityBase(const char * name) :
 {
 }
 
+ZstEntityBase::ZstEntityBase(const ZstEntityBase & other)
+{
+	m_is_activated = other.m_is_activated;
+	m_parent = other.m_parent;
+
+	size_t entity_type_size = strlen(other.m_entity_type);
+	m_entity_type = (char*)malloc(entity_type_size + 1);
+	memcpy(m_entity_type, other.m_entity_type, entity_type_size);
+	m_entity_type[entity_type_size] = '\0';
+
+	m_uri = ZstURI(other.m_uri);
+}
+
 ZstEntityBase::~ZstEntityBase()
 {
     //destroy();
@@ -68,16 +81,6 @@ void ZstEntityBase::set_destroyed()
 void ZstEntityBase::set_activated()
 {
 	m_is_activated = true;
-}
-
-void * ZstEntityBase::operator new(size_t num_bytes)
-{
-	return ::operator new(num_bytes);
-}
-
-void ZstEntityBase::operator delete(void * p)
-{
-	::operator delete(p);
 }
 
 void ZstEntityBase::write(std::stringstream & buffer)

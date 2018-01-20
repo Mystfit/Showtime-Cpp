@@ -16,6 +16,7 @@ class ZstPerformer : public ZstContainer {
 public:
 	ZST_EXPORT ZstPerformer();
 	ZST_EXPORT ZstPerformer(const char * name, const char * address);
+	ZST_EXPORT ZstPerformer(const ZstPerformer & other);
 	ZST_EXPORT ~ZstPerformer();
 	
     //Heartbeat
