@@ -53,6 +53,7 @@ public:
 
 		for (i = 0; i < m_event_callbacks.size(); ++i) {
 			m_event_callbacks[i]->run(t);
+			m_event_callbacks[i]->increment_calls();
 		}
 
 		for (i = 0; i < m_post_event_callback.size(); ++i) {
@@ -69,9 +70,6 @@ public:
 			return;
 		}
 		m_event_queue.push(t);
-		for (auto c : m_event_callbacks) {
-			c->increment_calls();
-		}
     }
     
     ZST_EXPORT void process(){

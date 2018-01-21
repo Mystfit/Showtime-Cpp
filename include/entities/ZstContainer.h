@@ -18,7 +18,7 @@ public:
 	ZST_EXPORT virtual void init() override {};
 
 	//Register graph sender for output plugs and children
-	ZST_EXPORT void register_graph_sender(ZstGraphSender * sender);
+	ZST_EXPORT void register_network_interactor(IZstNetworkInteractor * sender);
 
 	//Find a child in this entity by a URI
 	ZST_EXPORT ZstEntityBase * find_child_by_URI(const ZstURI & path);

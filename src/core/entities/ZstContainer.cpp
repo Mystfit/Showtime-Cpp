@@ -43,14 +43,14 @@ ZstContainer::~ZstContainer()
 	m_parent = NULL;
 }
 
-void ZstContainer::register_graph_sender(ZstGraphSender * sender)
+void ZstContainer::register_network_interactor(IZstNetworkInteractor * sender)
 {
 	//Register sender to out own plugs
-	ZstComponent::register_graph_sender(sender);
+	ZstComponent::register_network_interactor(sender);
 
 	//Register sender for all child components in case they have plugs too
 	for (auto child : m_children) {
-		child.second->register_graph_sender(sender);
+		child.second->register_network_interactor(sender);
 	}
 }
 
@@ -68,11 +68,15 @@ ZstEntityBase * ZstContainer::find_child_by_URI(const ZstURI & path)
 	while(distance > 0) {
 		next = path.range(0, path.size() - distance);
 
-		if (!previous)
+		if (!previous) {
 			previous = this;
+		}
 
-		result = dynamic_cast<ZstContainer*>(previous)->get_child_by_URI(next);
-
+		ZstContainer * prev_container = dynamic_cast<ZstContainer*>(previous);
+		if (prev_container) {
+			result = prev_container->get_child_by_URI(next);
+		}
+			
 		//Could not find child entity at the last level, check the plugs
 		if (distance == 1 && !result) {
 			result = get_plug_by_URI(next);

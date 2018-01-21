@@ -49,10 +49,10 @@ ZstComponent::~ZstComponent()
 	free(m_component_type);
 }
 
-void ZstComponent::register_graph_sender(ZstGraphSender * sender)
+void ZstComponent::register_network_interactor(IZstNetworkInteractor * sender)
 {
 	for (auto plug : m_plugs) {
-		plug->register_graph_sender(sender);
+		plug->register_network_interactor(sender);
 	}
 }
 
@@ -99,6 +99,14 @@ void ZstComponent::remove_plug(ZstPlug * plug)
 		cable->unplug();
 	}
 	m_plugs.erase(std::remove(m_plugs.begin(), m_plugs.end(), plug), m_plugs.end());
+}
+
+void ZstComponent::set_activated()
+{
+	ZstEntityBase::set_activated();
+	for (auto p : m_plugs) {
+		p->set_activated();
+	}
 }
 
 void ZstComponent::write(std::stringstream & buffer)

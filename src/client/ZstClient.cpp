@@ -25,7 +25,6 @@ ZstClient::ZstClient() :
 	m_ping(-1)
 {
 	m_client_connected_event_manager = new ZstCallbackQueue<ZstClientConnectionEvent, ZstPerformer*>();
-	m_entity_activated_event_manager = new ZstCallbackQueue<ZstEntityEvent, ZstEntityBase*>();
 	m_performer_arriving_event_manager = new ZstCallbackQueue<ZstPerformerEvent, ZstPerformer*>();
 	m_performer_leaving_event_manager = new ZstCallbackQueue<ZstPerformerEvent, ZstPerformer*>();
 	m_component_arriving_event_manager = new ZstCallbackQueue<ZstComponentEvent, ZstComponent*>();
@@ -43,7 +42,6 @@ ZstClient::ZstClient() :
 ZstClient::~ZstClient() {
 	destroy();
 	delete m_client_connected_event_manager;
-	delete m_entity_activated_event_manager;
 	delete m_component_arriving_event_manager;
 	delete m_component_leaving_event_manager;
 	delete m_component_type_arriving_event_manager;
@@ -182,8 +180,13 @@ void ZstClient::process_callbacks()
     m_cable_leaving_event_manager->process();
     m_plug_arriving_event_manager->process();
     m_plug_leaving_event_manager->process();
-	m_entity_activated_event_manager->process();
-    
+
+	//Run entity callbacks
+	while (m_entity_events.size() > 0) {
+		ZstEntityBase * entity = m_entity_events.pop();
+		entity->process_events();
+	}
+	    
     //Compute all entites
     while(m_compute_queue.size() > 0){
         ZstInputPlug * plug = m_compute_queue.pop();
@@ -666,7 +669,7 @@ void ZstClient::activate_entity(ZstEntityBase * entity)
 		return;
 
 	//Register client in entity to allow it to send messages
-	entity->register_graph_sender(this);
+	entity->register_network_interactor(this);
 	
 	//Build message
 	ZstMessage * msg = msg_pool()->get()->init_entity_message(entity);
@@ -679,7 +682,7 @@ void ZstClient::activate_entity(ZstEntityBase * entity)
 		
 		LOGGER->debug("Activate entity {} complete with status {}", entity->URI().path(), status);
 		entity->set_activated();
-		this->entity_activated_events()->enqueue(entity);
+		m_entity_events.push(entity);
 		
 		return status;
 	});
@@ -870,21 +873,34 @@ void ZstClient::enqueue_compute(ZstInputPlug * plug){
  
 ZstCable * ZstClient::connect_cable(ZstPlug * a, ZstPlug * b)
 {
-	 ZstCable cable;
-	 ZstPlug * input_plug = NULL;
-	 ZstPlug * output_plug = NULL;
+	ZstCable cable;
+	ZstCable * cable_ptr = NULL;
+	ZstPlug * input_plug = NULL;
+	ZstPlug * output_plug = NULL;
 
-	 if (a && b) {
-		 if (a->direction() == ZstPlugDirection::OUT_JACK && b->direction() == ZstPlugDirection::IN_JACK) {
-			 input_plug = b;
-			 output_plug = a;
-		 }
-		 else if (a->direction() == ZstPlugDirection::IN_JACK && b->direction() == ZstPlugDirection::OUT_JACK) {
-			 input_plug = a;
-			 output_plug = b;
-		 }
-	 }
+	if (!a || !b) {
+		LOGGER->error("Can't connect cable, plug missing.");
+		return cable_ptr;
+	}
 
+	if (!a->is_activated() || !b->is_activated()) {
+		LOGGER->error("Can't connect cable, plug is not activated.");
+		return cable_ptr;
+	}
+
+	//Reorder plugs in correct order (output to input)
+	if (a->direction() == ZstPlugDirection::OUT_JACK && b->direction() == ZstPlugDirection::IN_JACK) {
+		input_plug = b;
+		output_plug = a;
+	}
+	else if (a->direction() == ZstPlugDirection::IN_JACK && b->direction() == ZstPlugDirection::OUT_JACK) {
+		input_plug = a;
+		output_plug = b;
+	} else {
+		LOGGER->error("Can't connect two input or output cables together");
+		return NULL;
+	}
+	
 	cable = ZstCable(input_plug, output_plug);
 
 	//Even though we use a cable object when sending over the wire, it's up to the stage
@@ -899,7 +915,7 @@ ZstCable * ZstClient::connect_cable(ZstPlug * a, ZstPlug * b)
 	send_to_stage(msg);
 
 	//Create the cable early so we have something to return immediately
-	ZstCable * cable_ptr = create_cable_ptr(cable);
+	cable_ptr = create_cable_ptr(cable);
 	return cable_ptr;
 }
 
@@ -969,11 +985,6 @@ ZstCallbackQueue<ZstComponentEvent, ZstComponent*> * ZstClient::component_arrivi
 ZstCallbackQueue<ZstComponentEvent, ZstComponent*> * ZstClient::component_leaving_events()
 {
 	return m_component_leaving_event_manager;
-}
-
-ZstCallbackQueue<ZstEntityEvent, ZstEntityBase*>* ZstClient::entity_activated_events()
-{
-	return m_entity_activated_event_manager;
 }
 
 ZstCallbackQueue<ZstComponentTypeEvent, ZstEntityBase*> * ZstClient::component_type_arriving_events()

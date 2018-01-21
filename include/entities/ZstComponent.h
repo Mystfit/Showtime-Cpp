@@ -20,7 +20,7 @@ public:
 	ZST_EXPORT virtual void init() override {};
 
 	//Register graph sender for output plugs
-	ZST_EXPORT virtual void register_graph_sender(ZstGraphSender * sender);
+	ZST_EXPORT virtual void register_network_interactor(IZstNetworkInteractor * sender);
     
     //External factory function
 	ZST_EXPORT virtual void create(const char * name, ZstEntityBase* parent) {};
@@ -42,6 +42,9 @@ public:
     
     //Remove a plug from this component
 	ZST_EXPORT virtual void remove_plug(ZstPlug *plug);
+
+	//Set component as activated
+	ZST_EXPORT virtual void set_activated() override;
 
 	//Serialisation
 	ZST_EXPORT virtual void write(std::stringstream & buffer) override;

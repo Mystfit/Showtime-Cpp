@@ -64,11 +64,6 @@ void Showtime::attach_callback(ZstClientConnectionEvent * callback)
 	return ZstClient::instance().client_connected_events()->attach_event_callback(callback);
 }
 
-void Showtime::attach_callback(ZstEntityEvent * callback)
-{
-	return ZstClient::instance().entity_activated_events()->attach_event_callback(callback);
-}
-
 void Showtime::attach_callback(ZstPerformerEvent * callback, ZstCallbackAction action)
 {
 	if (action == ZstCallbackAction::ARRIVING) {
@@ -117,11 +112,6 @@ void Showtime::attach_callback(ZstCableEvent * callback, ZstCallbackAction actio
 void Showtime::detach_callback(ZstClientConnectionEvent * callback)
 {
 	return ZstClient::instance().client_connected_events()->attach_event_callback(callback);
-}
-
-void Showtime::detach_callback(ZstEntityEvent * callback)
-{
-	return ZstClient::instance().entity_activated_events()->remove_event_callback(callback);
 }
 
 void Showtime::detach_callback(ZstPerformerEvent * callback, ZstCallbackAction action)

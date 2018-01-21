@@ -41,6 +41,27 @@ bool ZstEntityBase::is_activated()
 	return m_is_activated;
 }
 
+void ZstEntityBase::attach_activation_callback(ZstEntityEvent * callback)
+{
+	m_activation_callbacks.push_back(callback);
+}
+
+void ZstEntityBase::detach_activation_callback(ZstEntityEvent * callback)
+{
+	m_activation_callbacks.erase(std::remove(m_activation_callbacks.begin(), m_activation_callbacks.end(), callback), m_activation_callbacks.end());
+}
+
+void ZstEntityBase::process_events()
+{
+	if (m_activation_queued) {
+		for (auto c : m_activation_callbacks) {
+			c->run(this);
+			c->increment_calls();
+		}
+		m_activation_queued = false;
+	}
+}
+
 ZstEntityBase * ZstEntityBase::parent() const
 {
 	return m_parent;
@@ -80,6 +101,7 @@ void ZstEntityBase::set_destroyed()
 
 void ZstEntityBase::set_activated()
 {
+	m_activation_queued = true;
 	m_is_activated = true;
 }
 

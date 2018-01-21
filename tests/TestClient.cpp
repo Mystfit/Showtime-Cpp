@@ -21,6 +21,7 @@
 void wait_for_event(ZstEvent * callback, int expected_messages)
 {
 	int repeats = 0;
+	Showtime::poll_once();
 	while (callback->num_calls() < expected_messages) {
 		TAKE_A_BREATH
 		repeats++;
@@ -29,8 +30,8 @@ void wait_for_event(ZstEvent * callback, int expected_messages)
 			err << "Not enough events in queue. Expecting " << expected_messages << " received " << callback->num_calls() << std::endl;
 			throw std::logic_error(err.str());
 		}
+		Showtime::poll_once();
 	}
-	Showtime::poll_once();
 }
 
 inline void clear_callback_queue() {
@@ -306,15 +307,15 @@ void test_create_entities(){
 	LOGGER->info("Running entity test");
 	int expected_entities = 1;
 	int expected_plugs = expected_entities * 1;
-
-	TestEntityActivatedCallback * entity_activated = new TestEntityActivatedCallback("activated");
-	Showtime::attach_callback(entity_activated);
-
+	
 	//Create entities
 	OutputComponent * test_output = new OutputComponent("entity_create_test_ent");
+	TestEntityActivatedCallback * entity_activated = new TestEntityActivatedCallback("activated");
+	test_output->attach_activation_callback(entity_activated);
 	Showtime::activate(test_output);
 
 	wait_for_event(entity_activated, 1);
+	entity_activated->reset_num_calls();
 	assert(test_output->is_activated());
     
 	//Check local client registered plugs correctly
@@ -324,8 +325,6 @@ void test_create_entities(){
 
 	//Cleanup
 	Showtime::deactivate(test_output);
-	Showtime::detach_callback(entity_activated);
-
 	delete test_output;
 	delete entity_activated;
 	test_output = 0;
@@ -344,7 +343,7 @@ void test_hierarchy() {
 	parent->add_child(child);
 
 	TestEntityActivatedCallback * entity_activated = new TestEntityActivatedCallback("activated");
-	Showtime::attach_callback(entity_activated);
+	parent->attach_activation_callback(entity_activated);
 	Showtime::activate(parent);
 	wait_for_event(entity_activated, 1);
 	entity_activated->reset_num_calls();
@@ -368,6 +367,7 @@ void test_hierarchy() {
 
 	child = new ZstComponent("child");
 	parent->add_child(child);
+	child->attach_activation_callback(entity_activated);
 	Showtime::activate(child);
 	wait_for_event(entity_activated, 1);
 	entity_activated->reset_num_calls();
@@ -382,9 +382,7 @@ void test_hierarchy() {
 	child = 0;
 	parent = 0;
 
-	Showtime::detach_callback(entity_activated);
-	delete entity_activated;
-	
+	delete entity_activated;	
 	clear_callback_queue();
 }
 
@@ -395,9 +393,18 @@ void test_connect_plugs() {
 	int expected_entities = 2;
 	int expected_plugs = expected_entities;
 	int expected_cables = 1;
+
+	//Create cable test entities
 	OutputComponent * test_output = new OutputComponent("connect_test_ent_out");
 	InputComponent * test_input = new InputComponent("connect_test_ent_in", 0);
-	
+	TestEntityActivatedCallback * entity_activated = new TestEntityActivatedCallback("activated");
+	test_output->attach_activation_callback(entity_activated);
+	test_input->attach_activation_callback(entity_activated);
+	Showtime::activate(test_output);
+	Showtime::activate(test_input);
+	wait_for_event(entity_activated, expected_entities);
+	entity_activated->reset_num_calls();
+
 	//Test cable callbacks
 	TestCableEventCallback * cableArriveCallback = new TestCableEventCallback("arriving");
 	TestCableEventCallback * cableLeaveCallback = new TestCableEventCallback("leaving");
@@ -434,16 +441,17 @@ void test_connect_plugs() {
 	assert(!test_input->input()->is_connected_to(test_output->output()));
 	cableLeaveCallback->reset_num_calls();
 
+	//Cleanup
+	Showtime::deactivate(test_output);
+	Showtime::deactivate(test_input);
 	delete test_output;
 	delete test_input;
-	test_output = 0;
-	test_input = 0;
 
-	//Test removing callbacks
     Showtime::detach_callback(cableArriveCallback, ZstCallbackAction::ARRIVING);
     Showtime::detach_callback(cableLeaveCallback, ZstCallbackAction::LEAVING);
 	delete cableArriveCallback;
 	delete cableLeaveCallback;
+	delete entity_activated;
 	clear_callback_queue();
 }
 

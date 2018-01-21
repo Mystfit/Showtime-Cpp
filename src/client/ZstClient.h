@@ -34,7 +34,7 @@ class ZstPerformer;
 
 #define MESSAGE_POOL_BLOCK 256
 
-class ZstClient : public ZstActor, public ZstGraphSender {
+class ZstClient : public ZstActor, public IZstNetworkInteractor {
 public:
 	friend class Showtime;
 	ZstClient();
@@ -98,7 +98,6 @@ public:
 	ZstCallbackQueue<ZstPerformerEvent, ZstPerformer*> * performer_leaving_events();
 	ZstCallbackQueue<ZstComponentEvent, ZstComponent*> * component_arriving_events();
 	ZstCallbackQueue<ZstComponentEvent, ZstComponent*> * component_leaving_events();
-	ZstCallbackQueue<ZstEntityEvent, ZstEntityBase*> * entity_activated_events();
     ZstCallbackQueue<ZstComponentTypeEvent, ZstEntityBase*> * component_type_arriving_events();
     ZstCallbackQueue<ZstComponentTypeEvent, ZstEntityBase*> * component_type_leaving_events();
 	ZstCallbackQueue<ZstPlugEvent, ZstPlug*> * plug_arriving_events();
@@ -179,7 +178,6 @@ private:
 	ZstCallbackQueue<ZstClientConnectionEvent, ZstPerformer*> * m_client_connected_event_manager;
 	ZstCallbackQueue<ZstPerformerEvent, ZstPerformer*> * m_performer_arriving_event_manager;
 	ZstCallbackQueue<ZstPerformerEvent, ZstPerformer*> * m_performer_leaving_event_manager;
-	ZstCallbackQueue<ZstEntityEvent, ZstEntityBase*> * m_entity_activated_event_manager;
 	ZstCallbackQueue<ZstComponentEvent, ZstComponent*> * m_component_arriving_event_manager;
 	ZstCallbackQueue<ZstComponentEvent, ZstComponent*> * m_component_leaving_event_manager;
     ZstCallbackQueue<ZstComponentTypeEvent, ZstEntityBase*> * m_component_type_arriving_event_manager;
@@ -188,6 +186,9 @@ private:
 	ZstCallbackQueue<ZstCableEvent, ZstCable*> * m_cable_leaving_event_manager;
 	ZstCallbackQueue<ZstPlugEvent, ZstPlug*> * m_plug_arriving_event_manager;
 	ZstCallbackQueue<ZstPlugEvent, ZstPlug*> * m_plug_leaving_event_manager;
+
+	//Entities awaiting callback processing
+	Queue<ZstEntityBase*> m_entity_events;
 
 	//Zeromq pipes
 	zsock_t *m_stage_router;        //Stage pipe in

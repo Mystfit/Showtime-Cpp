@@ -24,7 +24,6 @@ public:
 
 	//Callbacks
 	ZST_CLIENT_EXPORT static void attach_callback(ZstClientConnectionEvent * callback);
-	ZST_CLIENT_EXPORT static void attach_callback(ZstEntityEvent * callback);
 	ZST_CLIENT_EXPORT static void attach_callback(ZstPerformerEvent * callback, ZstCallbackAction action);
 	ZST_CLIENT_EXPORT static void attach_callback(ZstComponentEvent * callback, ZstCallbackAction action);
     ZST_CLIENT_EXPORT static void attach_callback(ZstComponentTypeEvent * callback, ZstCallbackAction action);
@@ -32,7 +31,6 @@ public:
     ZST_CLIENT_EXPORT static void attach_callback(ZstCableEvent * callback, ZstCallbackAction action);
 
 	ZST_CLIENT_EXPORT static void detach_callback(ZstClientConnectionEvent * callback);
-	ZST_CLIENT_EXPORT static void detach_callback(ZstEntityEvent * callback);
 	ZST_CLIENT_EXPORT static void detach_callback(ZstPerformerEvent * callback, ZstCallbackAction action);
     ZST_CLIENT_EXPORT static void detach_callback(ZstComponentEvent * callback, ZstCallbackAction action);
     ZST_CLIENT_EXPORT static void detach_callback(ZstComponentTypeEvent * callback, ZstCallbackAction action);

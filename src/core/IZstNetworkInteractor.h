@@ -2,7 +2,7 @@
 
 #include "entities\ZstPlug.h"
 
-class ZstGraphSender {
+class IZstNetworkInteractor {
 public:
 	virtual void publish(ZstPlug * plug) = 0;
 };

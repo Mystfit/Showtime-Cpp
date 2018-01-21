@@ -218,20 +218,20 @@ ZstInputPlug::ZstInputPlug(const char * name, ZstValueType t) : ZstPlug(name, t)
 //ZstOutputPlug
 //-------------
 
-ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t) : ZstPlug(name, t), m_sender(NULL)
+ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t) : ZstPlug(name, t), m_graph_sender(NULL)
 {
     m_direction = ZstPlugDirection::OUT_JACK;
 }
 
-void ZstOutputPlug::register_graph_sender(ZstGraphSender * sender)
+void ZstOutputPlug::register_network_interactor(IZstNetworkInteractor * sender)
 {
-	m_sender = sender;
+	m_graph_sender = sender;
 }
 
 void ZstOutputPlug::fire()
 {
-	if(m_sender)
-		m_sender->publish(this);
+	if(m_graph_sender)
+		m_graph_sender->publish(this);
 	m_value->clear();
 }
 

@@ -161,7 +161,6 @@ void ZstMessage::append_kind_frame(Kind k) {
 
 	zframe_t * kind_frame = zframe_new(buffer.str().c_str(), buffer.str().size());
 	zmsg_append(m_msg_handle, &kind_frame);
-	zmsg_print(m_msg_handle);
 }
 
 void ZstMessage::append_id_frame()

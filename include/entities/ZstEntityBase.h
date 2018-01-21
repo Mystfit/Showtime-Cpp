@@ -1,13 +1,14 @@
 #pragma once
 
 #include <unordered_map>
+#include <vector>
 #include "../ZstExports.h"
 #include "../ZstURI.h"
 #include "../ZstStreamable.h"
 
 //Forwards
 class ZstEntityEvent;
-class ZstGraphSender;
+class IZstNetworkInteractor;
 class ZstEntityBase;
 
 class ZstEntityBase : public ZstStreamable {
@@ -24,10 +25,15 @@ public:
 	ZST_EXPORT virtual void init() = 0;
 
 	//Register graph sender so this entity can comunicate with the graph
-	ZST_EXPORT virtual void register_graph_sender(ZstGraphSender * sender) {};
+	ZST_EXPORT virtual void register_network_interactor(IZstNetworkInteractor * sender) {};
 
 	//Query if entity is active on the stage
 	ZST_EXPORT bool is_activated();
+
+	//Attach entity activation callback
+	ZST_EXPORT void attach_activation_callback(ZstEntityEvent * callback);
+	ZST_EXPORT void detach_activation_callback(ZstEntityEvent * callback);
+	ZST_EXPORT void process_events();
 
 	//The parent of this entity
 	ZST_EXPORT ZstEntityBase * parent() const;
@@ -42,8 +48,7 @@ public:
     
     //Entity flags
 	ZST_EXPORT bool is_destroyed();
-    
-    
+	    
 	//Serialisation
 	ZST_EXPORT virtual void write(std::stringstream & buffer) override;
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
@@ -61,4 +66,7 @@ private:
 	ZstEntityBase * m_parent;
 	char * m_entity_type;
 	ZstURI m_uri;
+
+	std::vector<ZstEntityEvent*> m_activation_callbacks;
+	bool m_activation_queued = false;
 };
