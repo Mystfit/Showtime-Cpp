@@ -140,3 +140,6 @@ private:
 	ZstMessage::Kind m_kind;
 	zframe_t * m_payload;
 };
+
+//Register Kind as a msgpack enum
+MSGPACK_ADD_ENUM(ZstMessage::Kind);

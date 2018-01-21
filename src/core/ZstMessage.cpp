@@ -155,10 +155,13 @@ void ZstMessage::append_payload_frame(ZstStreamable & streamable)
 //Build a message id from the message ID enum
 void ZstMessage::append_kind_frame(Kind k) {
 	m_msg_kind = k;
-	char id[sizeof(Kind)];
-	sprintf(id, "%d", (int)k);
-	zframe_t * kind_frame = zframe_from(id);
+	
+	std::stringstream buffer;
+	msgpack::pack(buffer, k);
+
+	zframe_t * kind_frame = zframe_new(buffer.str().c_str(), buffer.str().size());
 	zmsg_append(m_msg_handle, &kind_frame);
+	zmsg_print(m_msg_handle);
 }
 
 void ZstMessage::append_id_frame()
@@ -223,8 +226,10 @@ ZstMessage::Kind ZstMessage::unpack_kind()
 ZstMessage::Kind ZstMessage::unpack_kind(zframe_t * kind_frame)
 {
 	Kind k = Kind::EMPTY;
+	unsigned int k_int = 0;;
 	if (kind_frame) {
-		k = (ZstMessage::Kind)std::atoi((char*)zframe_data(kind_frame));
+		auto handle = msgpack::unpack((char*)zframe_data(kind_frame), zframe_size(kind_frame));
+		k = handle.get().as<Kind>();
 	}
 	return k;
 }
