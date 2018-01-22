@@ -76,14 +76,17 @@ int ZstPerformer::num_creatables()
 void ZstPerformer::write(std::stringstream & buffer)
 {
 	ZstContainer::write(buffer);
+
+	//Pack address of performer
+	msgpack::pack(buffer, m_address);
 	
 	//Pack number of children
 	msgpack::pack(buffer, num_creatables());
 
 	//Pack children
-	for (auto child : m_creatables) {
-		msgpack::pack(buffer, child.second->entity_type());
-		child.second->write(buffer);
+	for (auto creatable : m_creatables) {
+		msgpack::pack(buffer, creatable.second->entity_type());
+		creatable.second->write(buffer);
 	}
 }
 
@@ -91,10 +94,14 @@ void ZstPerformer::read(const char * buffer, size_t length, size_t & offset)
 {
 	ZstContainer::read(buffer, length, offset);
 
-	//Unpack creatables
+	//unpack address
 	auto handle = msgpack::unpack(buffer, length, offset);
-	int num_children = static_cast<int>(handle.get().via.i64);
-	for (int i = 0; i < num_children; ++i) {
+	m_address = std::string(handle.get().via.str.ptr, handle.get().via.str.size);
+
+	//Unpack creatables
+	handle = msgpack::unpack(buffer, length, offset);
+	int num_creatables = static_cast<int>(handle.get().via.i64);
+	for (int i = 0; i < num_creatables; ++i) {
 
 		const char * entity_type = handle.get().via.str.ptr;
 

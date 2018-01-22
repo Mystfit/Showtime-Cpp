@@ -36,7 +36,7 @@ public:
 	void destroy_client(ZstPerformer * performer);
 	
 	//Cables
-	ZstCable * create_cable(const ZstURI & a, const ZstURI & b);
+	ZstCable * create_cable(const ZstURI & output_URI, const ZstURI & input_URI);
 	int destroy_cable(const ZstURI & path);
 	int destroy_cable(ZstCable * cable);
 	int destroy_cable(const ZstURI & output_plug, const ZstURI & input_plug);
@@ -47,7 +47,7 @@ public:
 private:
 
     //Incoming socket handlers
-    static int s_handle_router(zloop_t *loop, zsock_t *sock, void *arg);
+	static int s_handle_router(zloop_t *loop, zsock_t *sock, void *arg);
 
 	//Client communication
 	void send_to_client(ZstMessage * msg, ZstPerformer * destination);

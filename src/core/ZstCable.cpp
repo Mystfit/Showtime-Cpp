@@ -13,8 +13,8 @@ ZstCable::ZstCable() :
 ZstCable::ZstCable(const ZstCable & copy) : 
 	m_input(copy.m_input),
 	m_output(copy.m_output),
-	m_input_URI(copy.m_input->URI()),
-	m_output_URI(copy.m_output->URI())
+	m_input_URI(copy.m_input_URI),
+	m_output_URI(copy.m_output_URI)
 {
 }
 
@@ -54,6 +54,11 @@ bool ZstCable::is_attached(const ZstURI & uriA, const ZstURI & uriB) const
 bool ZstCable::is_attached(ZstPlug * plugA, ZstPlug * plugB) const 
 {
 	return is_attached(plugA->URI(), plugB->URI());
+}
+
+bool ZstCable::is_activated()
+{
+	return m_is_activated;
 }
 
 bool ZstCable::is_attached(ZstPlug * plug) const 
@@ -100,4 +105,9 @@ void ZstCable::read(const char * buffer, size_t length, size_t & offset)
 
 	handle = msgpack::unpack(buffer, length, offset);
 	m_input_URI = ZstURI(handle.get().via.str.ptr, handle.get().via.str.size);
+}
+
+void ZstCable::set_activated()
+{
+	m_is_activated = true;
 }

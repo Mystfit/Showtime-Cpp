@@ -67,11 +67,13 @@ ZstEntityBase * ZstContainer::find_child_by_URI(const ZstURI & path)
 	int distance = distance = path.size() - URI().size();
 	while(distance > 0) {
 		next = path.range(0, path.size() - distance);
+		result = NULL;
 
 		if (!previous) {
 			previous = this;
 		}
 
+		//Check if the parent is a container
 		ZstContainer * prev_container = dynamic_cast<ZstContainer*>(previous);
 		if (prev_container) {
 			result = prev_container->get_child_by_URI(next);
@@ -79,7 +81,10 @@ ZstEntityBase * ZstContainer::find_child_by_URI(const ZstURI & path)
 			
 		//Could not find child entity at the last level, check the plugs
 		if (distance == 1 && !result) {
-			result = get_plug_by_URI(next);
+			ZstComponent * prev_component = dynamic_cast<ZstComponent*>(previous);
+			if (prev_component) {
+				result = prev_component->get_plug_by_URI(next);
+			}
 		}
 
 		if (result) {
@@ -137,21 +142,18 @@ void ZstContainer::set_parent(ZstEntityBase * entity)
 {
 	ZstEntityBase::set_parent(entity);
 
-	auto temp_children = m_children;
-
-	for (auto child : temp_children) {
+	auto children = m_children;
+	for (auto child : children) {
+		//We need to remove then re-add the child so that we update the entity map with the updated URI
 		remove_child(child.second);
 		add_child(child.second);
 	}
 }
 
 void ZstContainer::add_child(ZstEntityBase * child) {
-	ZstEntityBase * c = find_child_by_URI(child->URI());
-	if (!c) {
-		//If child is a plug, needs to be added to the plug list
-		child->set_parent(this);
-		m_children[child->URI()] = child;
-	}
+	//If child is a plug, needs to be added to the plug list
+	child->set_parent(this);
+	m_children[child->URI()] = child;
 }
 
 void ZstContainer::remove_child(ZstEntityBase * child) {
@@ -166,7 +168,6 @@ void ZstContainer::remove_child(ZstEntityBase * child) {
 			m_children.erase(c);
 		}
 	}
-	update_URI();
 }
 
 void ZstContainer::write(std::stringstream & buffer)

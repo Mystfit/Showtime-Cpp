@@ -46,6 +46,9 @@ public:
 	//Set component as activated
 	ZST_EXPORT virtual void set_activated() override;
 
+	//Set parent of this component
+	ZST_EXPORT virtual void set_parent(ZstEntityBase * parent) override;
+
 	//Serialisation
 	ZST_EXPORT virtual void write(std::stringstream & buffer) override;
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;

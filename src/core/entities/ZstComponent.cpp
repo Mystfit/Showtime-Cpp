@@ -27,10 +27,10 @@ ZstComponent::ZstComponent(const ZstComponent & other) : ZstEntityBase(other)
 {
 	for (auto p : other.m_plugs) {
 		if (p->direction() == ZstPlugDirection::IN_JACK) {
-			m_plugs.push_back(new ZstInputPlug(*dynamic_cast<ZstInputPlug*>(p)));
+			m_plugs.push_back(new ZstPlug(*dynamic_cast<ZstPlug*>(p)));
 		}
 		else if(p->direction() == ZstPlugDirection::OUT_JACK) {
-			m_plugs.push_back(new ZstOutputPlug(*dynamic_cast<ZstOutputPlug*>(p)));
+			m_plugs.push_back(new ZstPlug(*dynamic_cast<ZstPlug*>(p)));
 		}
 	}
 	
@@ -109,6 +109,16 @@ void ZstComponent::set_activated()
 	}
 }
 
+void ZstComponent::set_parent(ZstEntityBase * parent)
+{
+	ZstEntityBase::set_parent(parent);
+	
+	std::vector<ZstPlug*> plugs = m_plugs;
+	for (auto plug : plugs) {
+		plug->set_parent(this);
+	}
+}
+
 void ZstComponent::write(std::stringstream & buffer)
 {
 	//Pack container
@@ -141,7 +151,7 @@ void ZstComponent::read(const char * buffer, size_t length, size_t & offset)
 	for (int i = 0; i < num_plugs; ++i) {
 		ZstPlug * plug = new ZstPlug();
 		plug->read(buffer, length, offset);
-		m_plugs.push_back(plug);
+		add_plug(plug);
 	}
 }
 

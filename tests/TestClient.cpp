@@ -347,9 +347,9 @@ void test_hierarchy() {
 	Showtime::activate(parent);
 	wait_for_event(entity_activated, 1);
 	entity_activated->reset_num_calls();
-	
-	assert(Showtime::get_root()->find_child_by_URI(parent->URI()));
-	assert(Showtime::get_root()->find_child_by_URI(child->URI()));
+		
+	assert(Showtime::find_entity(parent->URI()));
+	assert(Showtime::find_entity(child->URI()));
 
 	LOGGER->debug("Removing child...");
 

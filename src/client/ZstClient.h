@@ -14,7 +14,7 @@
 #include "../core/Queue.h"
 #include "../core/ZstActor.h"
 #include "../core/ZstMessage.h"
-#include "../core/ZstGraphSender.h"
+#include "../core/IZstNetworkInteractor.h"
 #include "../core/ZstCallbackQueue.h"
 #include "../core/ZstMessagePool.h"
 
@@ -171,8 +171,11 @@ private:
 	
 	//Cable storage
 	ZstCable * create_cable_ptr(ZstCable & cable);
+	ZstCable * create_cable_ptr(ZstPlug * output, ZstPlug * input);
+
 	void remove_cable(ZstCable * cable);
 	ZstCable * find_cable_ptr(const ZstURI & input_path, const ZstURI & output_path);
+	ZstCable * find_cable_ptr(ZstPlug * input, ZstPlug * output);
 	
 	//Events and callbacks
 	ZstCallbackQueue<ZstClientConnectionEvent, ZstPerformer*> * m_client_connected_event_manager;

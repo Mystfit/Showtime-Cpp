@@ -128,8 +128,8 @@ void ZstClient::init(const char * client_name)
 	//Graph output socket
 	std::stringstream addr;
 	addr << "@tcp://" << network_ip.c_str() << ":*";
-	m_graph_out_addr = addr.str();
-    m_graph_out = zsock_new_pub(m_graph_out_addr.c_str());
+    m_graph_out = zsock_new_pub(addr.str().c_str());
+	m_graph_out_addr = zsock_last_endpoint(m_graph_out);
 	addr.str("");
 
 	//Set graph socket as unbounded by HWM
@@ -445,12 +445,18 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 		case ZstMessage::Kind::CREATE_CABLE:
 		{
 			ZstCable cable = msg->unpack_payload_streamable<ZstCable>(i);
-			create_cable_ptr(cable);
+			//Only dispatch cable event if we don't already have the cable (we might have created it)
+			if(!find_cable_ptr(cable.get_input_URI(), cable.get_output_URI())) {
+				ZstCable * cable_ptr = create_cable_ptr(cable);
+				cable_ptr->set_activated();
+				cable_arriving_events()->enqueue(cable_ptr);
+			}
 		}
 		break;
 		case ZstMessage::Kind::DESTROY_CABLE:
 		{
 			ZstCable cable = msg->unpack_payload_streamable<ZstCable>(i);
+			//destroy_cable(cable);
 			cable_leaving_events()->enqueue(find_cable_ptr(cable.get_input_URI(), cable.get_output_URI()));
 		}
 		break;
@@ -572,15 +578,17 @@ ZstCable * ZstClient::create_cable_ptr(ZstCable & cable)
 {
 	ZstPlug * input_plug = dynamic_cast<ZstPlug*>(find_entity(cable.get_input_URI()));
 	ZstPlug * output_plug = dynamic_cast<ZstPlug*>(find_entity(cable.get_output_URI()));
+	return create_cable_ptr(input_plug, output_plug);
+}
 
-	ZstCable * cable_ptr = find_cable_ptr(input_plug->URI(), output_plug->URI());
+ZstCable * ZstClient::create_cable_ptr(ZstPlug * input, ZstPlug * output)
+{
+	ZstCable * cable_ptr = find_cable_ptr(input, output);
 	if (!cable_ptr) {
-		cable_ptr = new ZstCable(input_plug, output_plug);
-		input_plug->add_cable(cable_ptr);
-		output_plug->add_cable(cable_ptr);
-		cable_arriving_events()->enqueue(cable_ptr);
+		cable_ptr = new ZstCable(input, output);
+		input->add_cable(cable_ptr);
+		output->add_cable(cable_ptr);
 	}
-	
 	return cable_ptr;
 }
 
@@ -594,13 +602,17 @@ ZstCable * ZstClient::find_cable_ptr(const ZstURI & input_path, const ZstURI & o
 {
 	ZstPlug * input_plug = dynamic_cast<ZstPlug*>(find_entity(input_path));
 	ZstPlug * output_plug = dynamic_cast<ZstPlug*>(find_entity(output_path));
+	return find_cable_ptr(input_plug, output_plug);
+}
+
+ZstCable * ZstClient::find_cable_ptr(ZstPlug * input, ZstPlug * output)
+{
 	ZstCable * cable_ptr = NULL;
-	for (auto c : *output_plug) {
-		if (c->get_input() == input_plug) {
-			cable_ptr = c;
+	for (auto cable : *output) {
+		if (cable->get_input() == input) {
+			cable_ptr = cable;
 		}
 	}
-
 	return cable_ptr;
 }
 
@@ -873,19 +885,18 @@ void ZstClient::enqueue_compute(ZstInputPlug * plug){
  
 ZstCable * ZstClient::connect_cable(ZstPlug * a, ZstPlug * b)
 {
-	ZstCable cable;
-	ZstCable * cable_ptr = NULL;
+	ZstCable * cable = NULL;
 	ZstPlug * input_plug = NULL;
 	ZstPlug * output_plug = NULL;
 
 	if (!a || !b) {
 		LOGGER->error("Can't connect cable, plug missing.");
-		return cable_ptr;
+		return cable;
 	}
 
 	if (!a->is_activated() || !b->is_activated()) {
 		LOGGER->error("Can't connect cable, plug is not activated.");
-		return cable_ptr;
+		return cable;
 	}
 
 	//Reorder plugs in correct order (output to input)
@@ -901,29 +912,24 @@ ZstCable * ZstClient::connect_cable(ZstPlug * a, ZstPlug * b)
 		return NULL;
 	}
 	
-	cable = ZstCable(input_plug, output_plug);
+	cable = create_cable_ptr(input_plug, output_plug);
 
 	//Even though we use a cable object when sending over the wire, it's up to the stage
 	//to determine the input->output order
 
-	ZstMessage * msg = msg_pool()->get()->init_streamable_message(ZstMessage::Kind::CREATE_CABLE, cable);
-	msg_pool()->register_future(msg).then([this](MessageFuture f) {
+	ZstMessage * msg = msg_pool()->get()->init_streamable_message(ZstMessage::Kind::CREATE_CABLE, *cable);
+	msg_pool()->register_future(msg).then([this, cable](MessageFuture f) {
 		int status = f.get();
-		this->connect_cable_completed(status);
+		if (status == ZstMessage::Kind::OK) {
+			cable->set_activated();
+			cable_arriving_events()->enqueue(cable);
+		}
 		return status;
 	});
 	send_to_stage(msg);
 
 	//Create the cable early so we have something to return immediately
-	cable_ptr = create_cable_ptr(cable);
-	return cable_ptr;
-}
-
-void ZstClient::connect_cable_completed(int status)
-{
-	if (status == ZstMessage::Kind::OK) {
-		//Cable connection completed - flag cable as active
-	}
+	return cable;
 }
 
 void ZstClient::destroy_cable(ZstCable * cable)

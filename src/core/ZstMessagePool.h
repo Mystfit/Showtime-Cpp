@@ -5,7 +5,7 @@
 #include <cf/cfuture.h>
 #include "ZstMessage.h"
 
-#define USE_MESSAGE_POOL true
+#define USE_MESSAGE_POOL false
 
 typedef cf::promise<ZstMessage::Kind> MessagePromise;
 typedef cf::future<ZstMessage::Kind> MessageFuture;

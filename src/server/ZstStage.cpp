@@ -60,8 +60,9 @@ void ZstStage::init()
 ZstPerformer * ZstStage::get_client(const ZstURI & path)
 {
 	ZstPerformer * performer = NULL;
-	if (m_clients.find(path) != m_clients.end()) {
-		performer = m_clients[path];
+	ZstURI first = path.first();
+	if (m_clients.find(first) != m_clients.end()) {
+		performer = m_clients[first];
 	}
 	return performer;
 }
@@ -116,10 +117,10 @@ void ZstStage::destroy_client(ZstPerformer * performer)
 //Cables
 //------
 
-ZstCable * ZstStage::create_cable(const ZstURI & a, const ZstURI & b)
+ZstCable * ZstStage::create_cable(const ZstURI & output_URI, const ZstURI & input_URI)
 {
 	ZstCable * cable_ptr = NULL;
-	cable_ptr = get_cable_by_URI(a, b);
+	cable_ptr = get_cable_by_URI(output_URI, input_URI);
 
 	//Check to see if we already have a cable
 	if (cable_ptr != NULL) {
@@ -129,27 +130,37 @@ ZstCable * ZstStage::create_cable(const ZstURI & a, const ZstURI & b)
 
 	//Find target plugs, they shyould already exist on the graph
 	int connect_status = 0;
-	ZstPlug * input_plug = get_client(cable_ptr->get_input_URI())->get_plug_by_URI(cable_ptr->get_input_URI());
-	ZstPlug * output_plug = get_client(cable_ptr->get_output_URI())->get_plug_by_URI(cable_ptr->get_output_URI());
+
+	ZstPerformer * input_perf = get_client(input_URI);
+	ZstPerformer * output_perf = get_client(output_URI);
+
+	if (!input_perf || !output_perf) {
+		LOGGER->error("Create cable could not find performer");
+		return cable_ptr;
+	}
+
+	ZstPlug * input_plug = dynamic_cast<ZstPlug*>(input_perf->find_child_by_URI(input_URI));
+	ZstPlug * output_plug = dynamic_cast<ZstPlug*>(output_perf->find_child_by_URI(output_URI));
+
+	if (!input_plug || !output_plug) {
+		LOGGER->error("Create cable could not find plugs");
+		return cable_ptr;
+	}
 
 	//Verify plug directions are correct
-	if (input_plug && output_plug) {
-		if (input_plug->direction() == ZstPlugDirection::OUT_JACK && output_plug->direction() == ZstPlugDirection::IN_JACK) {
-			connect_status = 1;
-		}
-		else if (input_plug->direction() == ZstPlugDirection::IN_JACK && output_plug->direction() == ZstPlugDirection::OUT_JACK) {
-			connect_status = 1;
-		}
+	if (input_plug->direction() == ZstPlugDirection::OUT_JACK && output_plug->direction() == ZstPlugDirection::IN_JACK) {
+		connect_status = 1;
+	}
+	else if (input_plug->direction() == ZstPlugDirection::IN_JACK && output_plug->direction() == ZstPlugDirection::OUT_JACK) {
+		connect_status = 1;
+	}
+	else {
+		LOGGER->error("Cable can't connect input to input or output to output");
+		return cable_ptr;
 	}
 
-	if (!connect_status) {
-		LOGGER->error("Cable plug direction mismatch");
-		return NULL;
-	}
-
+	//Finally create the cable
 	cable_ptr = new ZstCable(input_plug, output_plug);
-
-	//Cable verified. Store it
 	m_cables.push_back(cable_ptr);
 	return cable_ptr;
 }
@@ -243,7 +254,7 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 	//Receive waiting message
 	zmsg_t * recv_msg = zmsg_recv(socket);
 	ZstMessage * msg = NULL;
-
+	
 	if (recv_msg) {
 		//Get identity of sender from first frame
 		zframe_t * identity_frame = zmsg_pop(recv_msg);
@@ -339,6 +350,7 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 	//Send ack
 	if (response) {
 		//Copy ID of the original message so we can match this message to a promise on the client
+		//once upon a time there was a null pointer, it pointed to nothing.
 		response->copy_id(msg);
 		stage->send_to_client(response, sender);
 	}
@@ -432,9 +444,7 @@ ZstMessage * ZstStage::create_entity_handler(ZstMessage * msg, ZstPerformer * pe
 	
 	//Find the parent for this entity
 	ZstURI parent_path = entity.URI().parent();
-
 	ZstEntityBase * parent = NULL;
-
 	if (parent_path.size() == 1) {
 		parent = performer;
 	}
@@ -557,7 +567,7 @@ ZstMessage * ZstStage::create_cable_handler(ZstMessage * msg)
 	ZstMessage * connection_msg = msg_pool()->get()->init_message(ZstMessage::Kind::SUBSCRIBE_TO_PERFORMER);
 	connection_msg->append_str(output_performer->address());	//IP of output client
 	connection_msg->append_str(cable.get_output_URI().path());	//Output plug path
-	send_to_client(msg, input_performer);
+	send_to_client(connection_msg, input_performer);
 
 	//Update rest of network
 	publish_stage_update(msg_pool()->get()->init_streamable_message(msg->kind(), cable));

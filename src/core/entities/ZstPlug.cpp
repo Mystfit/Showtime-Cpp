@@ -3,7 +3,7 @@
 #include "entities/ZstComponent.h"
 #include "ZstCable.h"
 #include "../ZstValue.h"
-#include "../ZstGraphSender.h"
+#include "../IZstNetworkInteractor.h"
 
 using namespace std;
 
@@ -30,7 +30,10 @@ const ZstCableIterator & ZstCableIterator::operator++()
 
 ZstCable * ZstCableIterator::operator*() const
 {
-	return m_plug->m_cables[m_index];
+	ZstCable * result = NULL;
+	if (m_plug->m_cables.size())
+		result = m_plug->m_cables[m_index];
+	return result;
 }
 
 
@@ -143,7 +146,7 @@ void ZstPlug::read(const char * buffer, size_t length, size_t & offset)
 	//Unpack direction
 	auto handle = msgpack::unpack(buffer, length, offset);
 	auto obj = handle.get();
-	ZstPlugDirection m_direction = (ZstPlugDirection)obj.via.i64;
+	m_direction = (ZstPlugDirection)obj.via.i64;
 }
 
 
@@ -163,12 +166,12 @@ ZstPlugDirection ZstPlug::direction()
 
 ZstCableIterator ZstPlug::begin() const
 {
-	return ZstCableIterator(this, 0);
+	return m_cables.size() > 0 ? ZstCableIterator(this, 0) : NULL;
 }
 
 ZstCableIterator ZstPlug::end() const
 {
-	return ZstCableIterator(this, m_cables.size() - 1);
+	return m_cables.size() > 0 ? ZstCableIterator(this, m_cables.size() - 1) : NULL;
 }
 
 size_t ZstPlug::num_cables()

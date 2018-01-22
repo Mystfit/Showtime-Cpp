@@ -43,11 +43,13 @@ ZstMessage::ZstMessage(const ZstMessage & other)
 
 void ZstMessage::copy_id(const ZstMessage * msg)
 {
+	assert(m_msg_id != NULL);
 	zuuid_destroy(&m_msg_id);
 	m_msg_id = zuuid_dup(msg->m_msg_id);
 
 	//Remove old id from front of message
 	zframe_t * old_id_frame = zmsg_pop(m_msg_handle);
+
 	zframe_destroy(&old_id_frame);
 
 	//Add new id to front of message
@@ -185,7 +187,7 @@ void ZstMessage::append_streamable(ZstMessage::Kind k,  ZstStreamable & s)
 void ZstMessage::unpack(zmsg_t * msg)
 {
 	m_msg_handle = msg;
-	zframe_t * id_frame = zmsg_pop(m_msg_handle);
+	zframe_t * id_frame = zmsg_pop(m_msg_handle); 
 	
 	//Unpack id
 	m_msg_id = zuuid_new_from(zframe_data(id_frame));

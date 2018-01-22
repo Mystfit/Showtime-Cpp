@@ -6,6 +6,8 @@
 
 class ZstCable : public ZstStreamable {
 public:
+	friend class ZstClient;
+	
 	ZST_EXPORT ZstCable();
 	ZST_EXPORT ZstCable(const ZstCable & copy);
 	ZST_EXPORT ZstCable(ZstPlug * input_plug, ZstPlug * output_plug);
@@ -17,6 +19,7 @@ public:
 	ZST_EXPORT bool is_attached(const ZstURI & uriA, const ZstURI & uriB) const;
 	ZST_EXPORT bool is_attached(ZstPlug * plug) const;
 	ZST_EXPORT bool is_attached(ZstPlug * plugA, ZstPlug * plugB) const;
+	ZST_EXPORT bool is_activated();
 
 	ZST_EXPORT ZstPlug * get_input();
 	ZST_EXPORT ZstPlug * get_output();
@@ -33,4 +36,7 @@ private:
 	//Cached URI
 	ZstURI m_input_URI;
 	ZstURI m_output_URI;
+
+	ZST_EXPORT void set_activated();
+	bool m_is_activated;
 };
