@@ -4,6 +4,7 @@
 #include "ZstExports.h"
 #include "ZstEntityBase.h"
 #include "ZstPlug.h"
+#include "ZstCable.h"
 
 #define COMPONENT_TYPE "cmp"
 
@@ -20,7 +21,7 @@ public:
 	ZST_EXPORT virtual void init() override {};
 
 	//Register graph sender for output plugs
-	ZST_EXPORT virtual void register_network_interactor(IZstNetworkInteractor * sender);
+	ZST_EXPORT virtual void register_network_interactor(ZstINetworkInteractor * sender);
     
     //External factory function
 	ZST_EXPORT virtual void create(const char * name, ZstEntityBase* parent) {};
@@ -43,8 +44,14 @@ public:
     //Remove a plug from this component
 	ZST_EXPORT virtual void remove_plug(ZstPlug *plug);
 
+	//Disconnect all plugs from this component
+	ZST_EXPORT virtual void disconnect_cables() override;
+
 	//Set component as activated
 	ZST_EXPORT virtual void set_activated() override;
+
+	//Set component as deactivated
+	ZST_EXPORT virtual void set_deactivated() override;
 
 	//Set parent of this component
 	ZST_EXPORT virtual void set_parent(ZstEntityBase * parent) override;
@@ -53,13 +60,14 @@ public:
 	ZST_EXPORT virtual void write(std::stringstream & buffer) override;
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
 
-	//Speicifc component type
-	const char * component_type() const;
+	//Specific component type
+	ZST_EXPORT const char * component_type() const;
 
 protected:
 	ZST_EXPORT void set_component_type(const char * component_type);
 	ZST_EXPORT void set_component_type(const char * component_type, size_t len);
-
+	ZST_EXPORT virtual ZstCableBundle * get_child_cables(ZstCableBundle * bundle) override;
+	
 private:
 	std::vector<ZstPlug*> m_plugs;
 	char * m_component_type;

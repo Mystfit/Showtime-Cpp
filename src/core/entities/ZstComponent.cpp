@@ -49,7 +49,7 @@ ZstComponent::~ZstComponent()
 	free(m_component_type);
 }
 
-void ZstComponent::register_network_interactor(IZstNetworkInteractor * sender)
+void ZstComponent::register_network_interactor(ZstINetworkInteractor * sender)
 {
 	for (auto plug : m_plugs) {
 		plug->register_network_interactor(sender);
@@ -101,6 +101,13 @@ void ZstComponent::remove_plug(ZstPlug * plug)
 	m_plugs.erase(std::remove(m_plugs.begin(), m_plugs.end(), plug), m_plugs.end());
 }
 
+void ZstComponent::disconnect_cables()
+{
+	for (auto c : m_plugs) {
+		c->disconnect_cables();
+	}
+}
+
 void ZstComponent::set_activated()
 {
 	ZstEntityBase::set_activated();
@@ -109,10 +116,18 @@ void ZstComponent::set_activated()
 	}
 }
 
+void ZstComponent::set_deactivated()
+{
+	ZstEntityBase::set_deactivated();
+	for (auto p : m_plugs) {
+		p->set_deactivated();
+	}
+}
+
 void ZstComponent::set_parent(ZstEntityBase * parent)
 {
 	ZstEntityBase::set_parent(parent);
-	
+
 	std::vector<ZstPlug*> plugs = m_plugs;
 	for (auto plug : plugs) {
 		plug->set_parent(this);
@@ -142,7 +157,7 @@ void ZstComponent::read(const char * buffer, size_t length, size_t & offset)
 	//Unpack component type
 	auto handle = msgpack::unpack(buffer, length, offset);
 	auto obj = handle.get();
-	
+
 	set_component_type(handle.get().via.str.ptr, handle.get().via.str.size);
 
 	//Unpack plugs
@@ -173,4 +188,20 @@ void ZstComponent::set_component_type(const char * component_type, size_t len)
 	m_component_type[len] = '\0';
 }
 
-
+ZstCableBundle * ZstComponent::get_child_cables(ZstCableBundle * bundle)
+{
+	for (auto p : m_plugs) {
+		for (auto c : *p) {
+			bool exists = false;
+			for (int i = 0; i < bundle->size(); ++i){
+				if (bundle->cable_at(i) == c) {
+					exists = true;
+				}
+			}
+			if (!exists) {
+				bundle->add(c);
+			}
+		}
+	}
+	return bundle;
+}

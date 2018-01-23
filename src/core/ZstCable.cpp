@@ -111,3 +111,26 @@ void ZstCable::set_activated()
 {
 	m_is_activated = true;
 }
+
+ZstCableBundle::ZstCableBundle()
+{
+}
+
+ZstCableBundle::~ZstCableBundle()
+{
+}
+
+void ZstCableBundle::add(ZstCable * cable)
+{
+	m_cables.push_back(cable);
+}
+
+ZstCable * ZstCableBundle::cable_at(size_t index)
+{
+	return m_cables[index];
+}
+
+size_t ZstCableBundle::size()
+{
+	return m_cables.size();
+}

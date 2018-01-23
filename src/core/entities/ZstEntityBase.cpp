@@ -4,7 +4,8 @@
 #include "entities/ZstEntityBase.h"
 #include "msgpack.hpp"
 
-#include "ZstEvents.h"
+#include <ZstEvents.h>
+#include <ZstCable.h>
 #include "../ZstCallbackQueue.h"
 
 ZstEntityBase::ZstEntityBase(const char * name) :
@@ -94,6 +95,17 @@ bool ZstEntityBase::is_destroyed()
 	return m_is_destroyed;
 }
 
+void ZstEntityBase::release_cable_bundle(ZstCableBundle * bundle)
+{
+	delete bundle;
+}
+
+ZstCableBundle * ZstEntityBase::acquire_cable_bundle()
+{
+	ZstCableBundle * bundle = new ZstCableBundle();
+	return get_child_cables(bundle);
+}
+
 void ZstEntityBase::set_destroyed()
 {
 	m_is_destroyed = true;
@@ -103,6 +115,16 @@ void ZstEntityBase::set_activated()
 {
 	m_activation_queued = true;
 	m_is_activated = true;
+}
+
+void ZstEntityBase::set_deactivated()
+{
+	m_is_activated = false;
+}
+
+ZstCableBundle * ZstEntityBase::get_child_cables(ZstCableBundle * bundle)
+{
+	return bundle;
 }
 
 void ZstEntityBase::write(std::stringstream & buffer)

@@ -47,9 +47,9 @@ public:
 	TestEntityEventCallback(std::string suffix) {
 		m_suffix = suffix;
 	}
-	void run(ZstComponent * component) override {
-		LOGGER->debug("ENTITY_EVENT: {} {}", component->URI().path(), m_suffix);
-		last_entity = std::string(component->URI().path());
+	void run(ZstEntityBase * entity) override {
+		LOGGER->debug("ENTITY_EVENT: {} {}", entity->URI().path(), m_suffix);
+		last_entity = std::string(entity->URI().path());
 	}
 };
 
@@ -61,17 +61,6 @@ public:
 	}
 	void run(ZstPerformer * root_performer) override {
 		LOGGER->debug("CONN_EVENT: {} {}", root_performer->URI().path(), m_suffix);
-	}
-};
-
-class TestEntityActivatedCallback : public ZstEntityEvent {
-public:
-	std::string m_suffix;
-	TestEntityActivatedCallback(std::string suffix) {
-		m_suffix = suffix;
-	}
-	void run(ZstEntityBase * entity) override {
-		LOGGER->debug("ENTITY_ACTIVATED_EVENT: {} {}", entity->URI().path(), m_suffix);
 	}
 };
 
@@ -130,11 +119,10 @@ private:
 
 public:
 	OutputComponent(const char * name) : ZstComponent("TESTER", name) {
-		init();
+		m_output = create_output_plug("out", ZstValueType::ZST_INT);
 	}
 
 	virtual void init() override {
-		m_output = create_output_plug("out", ZstValueType::ZST_INT);
 	}
 
 	virtual void compute(ZstInputPlug * plug) override {}
@@ -163,11 +151,10 @@ public:
 	InputComponent(const char * name, int cmp_val) : 
 		ZstComponent("TESTER", name), compare_val(cmp_val)
 	{
-		init();
+		m_input = create_input_plug("in", ZstValueType::ZST_INT);
 	}
 
 	virtual void init() override {
-		m_input = create_input_plug("in", ZstValueType::ZST_INT);
 	}
 
 	virtual void compute(ZstInputPlug * plug) override {
@@ -277,7 +264,7 @@ void test_startup() {
 
 	//Test connection
 	ZstClientConnectionEvent * connectCallback = new TestConnectCallback("connected");
-	Showtime::attach_callback(connectCallback);
+	Showtime::attach_event_listener(connectCallback);
 
 	Showtime::init("TestClient");
 	Showtime::join("127.0.0.1");
@@ -285,8 +272,9 @@ void test_startup() {
 	wait_for_event(connectCallback, 1);
 	assert(connectCallback->num_calls() == 1);
 	assert(Showtime::is_connected());
+	LOGGER->debug("Connection successful");
 	
-	Showtime::detach_callback(connectCallback);
+	Showtime::remove_event_listener(connectCallback);
 	delete connectCallback;
 
 	//assert(Showtime::ping() >= 0);
@@ -300,6 +288,7 @@ void test_root_entity() {
 	assert(root_entity);
     assert(root_entity->is_activated());
 	clear_callback_queue();
+	LOGGER->debug("Root entity is activated");
 }
 
 
@@ -310,13 +299,15 @@ void test_create_entities(){
 	
 	//Create entities
 	OutputComponent * test_output = new OutputComponent("entity_create_test_ent");
-	TestEntityActivatedCallback * entity_activated = new TestEntityActivatedCallback("activated");
+	TestEntityEventCallback * entity_activated = new TestEntityEventCallback("activated");
+	TestEntityEventCallback * entity_deactivated = new TestEntityEventCallback("deactivated");
+	
 	test_output->attach_activation_callback(entity_activated);
 	Showtime::activate(test_output);
-
 	wait_for_event(entity_activated, 1);
 	entity_activated->reset_num_calls();
 	assert(test_output->is_activated());
+	LOGGER->debug("Test output entity is activated");
     
 	//Check local client registered plugs correctly
 	ZstURI localPlug_uri = test_output->get_plug_by_URI(test_output->output()->URI())->URI();
@@ -324,7 +315,12 @@ void test_create_entities(){
 	assert(ZstURI::equal(localPlug_uri, localPlug_uri_via_entity));
 
 	//Cleanup
+	Showtime::attach_event_listener(entity_deactivated, ZstEventAction::LEAVING);
 	Showtime::deactivate(test_output);
+	assert(!test_output->is_activated());
+	assert(!Showtime::find_entity(test_output->URI()));
+	LOGGER->debug("Test output entity is deactivated");
+
 	delete test_output;
 	delete entity_activated;
 	test_output = 0;
@@ -342,7 +338,7 @@ void test_hierarchy() {
 	ZstComponent * child = new ZstComponent("child");
 	parent->add_child(child);
 
-	TestEntityActivatedCallback * entity_activated = new TestEntityActivatedCallback("activated");
+	TestEntityEventCallback * entity_activated = new TestEntityEventCallback("activated");
 	parent->attach_activation_callback(entity_activated);
 	Showtime::activate(parent);
 	wait_for_event(entity_activated, 1);
@@ -350,10 +346,9 @@ void test_hierarchy() {
 		
 	assert(Showtime::find_entity(parent->URI()));
 	assert(Showtime::find_entity(child->URI()));
-
-	LOGGER->debug("Removing child...");
-
+	
 	//Test child removal from parent
+	LOGGER->debug("Testing child removal from parent");
 	Showtime::deactivate(child);
 	ZstURI parent_URI = ZstURI(parent->URI());
 	ZstURI child_URI = ZstURI(child->URI());
@@ -363,17 +358,14 @@ void test_hierarchy() {
 	assert(!Showtime::get_root()->find_child_by_URI(child_URI));
 
 	//Test removing parent removes child
-	LOGGER->debug("Creating new child to test parent removes all children");
-
+	LOGGER->debug("Creating new child to test if parent removes all children");
 	child = new ZstComponent("child");
 	parent->add_child(child);
 	child->attach_activation_callback(entity_activated);
 	Showtime::activate(child);
 	wait_for_event(entity_activated, 1);
 	entity_activated->reset_num_calls();
-
-	TAKE_A_BREATH
-
+	
 	Showtime::deactivate(parent);
 	delete parent;
 	assert(!Showtime::get_root()->find_child_by_URI(parent_URI));
@@ -394,30 +386,28 @@ void test_connect_plugs() {
 	int expected_plugs = expected_entities;
 	int expected_cables = 1;
 
-	//Create cable test entities
+	LOGGER->debug("Creating components to test cable connections");
 	OutputComponent * test_output = new OutputComponent("connect_test_ent_out");
 	InputComponent * test_input = new InputComponent("connect_test_ent_in", 0);
-	TestEntityActivatedCallback * entity_activated = new TestEntityActivatedCallback("activated");
+	TestEntityEventCallback * entity_activated = new TestEntityEventCallback("activated");
 	test_output->attach_activation_callback(entity_activated);
 	test_input->attach_activation_callback(entity_activated);
+	TestCableEventCallback * cableArriveCallback = new TestCableEventCallback("arriving");
+	TestCableEventCallback * cableLeaveCallback = new TestCableEventCallback("leaving");
+	Showtime::attach_event_listener(cableArriveCallback, ZstEventAction::ARRIVING);
+	Showtime::attach_event_listener(cableLeaveCallback, ZstEventAction::LEAVING);
 	Showtime::activate(test_output);
 	Showtime::activate(test_input);
 	wait_for_event(entity_activated, expected_entities);
 	entity_activated->reset_num_calls();
 
-	//Test cable callbacks
-	TestCableEventCallback * cableArriveCallback = new TestCableEventCallback("arriving");
-	TestCableEventCallback * cableLeaveCallback = new TestCableEventCallback("leaving");
-    Showtime::attach_callback(cableArriveCallback, ZstCallbackAction::ARRIVING);
-    Showtime::attach_callback(cableLeaveCallback, ZstCallbackAction::LEAVING);
-
-	//Test connect cable
+	LOGGER->debug("Testing cable connection and events");
 	ZstCable * cable = Showtime::connect_cable(test_output->output(), test_input->input());
 	wait_for_event(cableArriveCallback, expected_cables);
 	assert(cableArriveCallback->num_calls() == expected_cables);
 	cableArriveCallback->reset_num_calls();
 
-	//Test cable references
+	LOGGER->debug("Testing cable navigation");
 	assert(test_output->output()->num_cables() == 1);
 	assert(cable->get_output() == test_output->output());
 	assert(cable->get_input() == test_input->input());
@@ -426,15 +416,16 @@ void test_connect_plugs() {
 		assert(c->get_input() == test_input->input());
 	}
 
-	//Testing connection disconnect and reconnect
+	LOGGER->debug("Testing cable disconnection");
 	Showtime::destroy_cable(cable);
 	wait_for_event(cableLeaveCallback, 1);
 	assert(cableLeaveCallback->num_calls() == 1);
 	cableLeaveCallback->reset_num_calls();
 	assert(!test_output->output()->is_connected_to(test_input->input()));
 
-	//Test plug deactivation causes cable destruction
+	LOGGER->debug("Testing cable disconnection");
 	Showtime::connect_cable(test_output->output(), test_input->input());
+	wait_for_event(cableArriveCallback, 1);
 	Showtime::deactivate(test_output);
 	wait_for_event(cableLeaveCallback, 1);
 	assert(cableLeaveCallback->num_calls() == 1);
@@ -447,8 +438,8 @@ void test_connect_plugs() {
 	delete test_output;
 	delete test_input;
 
-    Showtime::detach_callback(cableArriveCallback, ZstCallbackAction::ARRIVING);
-    Showtime::detach_callback(cableLeaveCallback, ZstCallbackAction::LEAVING);
+    Showtime::remove_event_listener(cableArriveCallback, ZstEventAction::ARRIVING);
+    Showtime::remove_event_listener(cableLeaveCallback, ZstEventAction::LEAVING);
 	delete cableArriveCallback;
 	delete cableLeaveCallback;
 	delete entity_activated;
@@ -465,7 +456,7 @@ void test_add_filter() {
 	int first_cmp_val = 4;
 	int second_cmp_val = 30;
 
-	//Create a test filter to hold out in/out plugs
+	LOGGER->debug("Creating an addition filter");
 	OutputComponent * test_output_augend = new OutputComponent("add_test_augend");
 	OutputComponent * test_output_addend = new OutputComponent("add_test_addend");
 	InputComponent * test_input_sum = new InputComponent("add_test_sum", first_cmp_val);
@@ -529,10 +520,10 @@ void test_external_entities(std::string external_sink_path) {
 	TestPerformerCallback * performerArriveCallback = new TestPerformerCallback("arriving");
 	TestPerformerCallback * performerLeaveCallback = new TestPerformerCallback("leaving");
 
-    Showtime::attach_callback(entityArriveCallback, ZstCallbackAction::ARRIVING);
-    Showtime::attach_callback(entityLeaveCallback, ZstCallbackAction::LEAVING);
-	Showtime::attach_callback(performerArriveCallback, ZstCallbackAction::ARRIVING);
-	Showtime::attach_callback(performerLeaveCallback, ZstCallbackAction::LEAVING);
+    Showtime::attach_event_listener(entityArriveCallback, ZstEventAction::ARRIVING);
+    Showtime::attach_event_listener(entityLeaveCallback, ZstEventAction::LEAVING);
+	Showtime::attach_event_listener(performerArriveCallback, ZstEventAction::ARRIVING);
+	Showtime::attach_event_listener(performerLeaveCallback, ZstEventAction::LEAVING);
 
 	//Create emitter
 	OutputComponent * output = new OutputComponent("proxy_test_output");
@@ -591,10 +582,10 @@ void test_external_entities(std::string external_sink_path) {
 	assert(!Showtime::get_performer_by_URI(sink_perf_uri));
 
 	//Cleanup
-    Showtime::detach_callback(entityArriveCallback, ZstCallbackAction::ARRIVING);
-    Showtime::detach_callback(entityLeaveCallback, ZstCallbackAction::LEAVING);
-	Showtime::detach_callback(performerArriveCallback, ZstCallbackAction::ARRIVING);
-	Showtime::detach_callback(performerLeaveCallback, ZstCallbackAction::LEAVING);
+    Showtime::remove_event_listener(entityArriveCallback, ZstEventAction::ARRIVING);
+    Showtime::remove_event_listener(entityLeaveCallback, ZstEventAction::LEAVING);
+	Showtime::remove_event_listener(performerArriveCallback, ZstEventAction::ARRIVING);
+	Showtime::remove_event_listener(performerLeaveCallback, ZstEventAction::LEAVING);
 	delete entityArriveCallback;
 	delete entityLeaveCallback;
 	delete performerArriveCallback;

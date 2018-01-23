@@ -61,7 +61,7 @@ int main(int argc,char **argv){
 	Showtime::init("sink");
     Showtime::join("127.0.0.1");
 	TestCableArrivingEventCallback * cable_arrive = new TestCableArrivingEventCallback();
-    Showtime::attach_callback(cable_arrive, ZstCallbackAction::ARRIVING);
+    Showtime::attach_event_listener(cable_arrive, ZstEventAction::ARRIVING);
 
 
 	Sink * sink = new Sink("sink_ent");
@@ -72,7 +72,7 @@ int main(int argc,char **argv){
 	}
 
 	LOGGER->debug("Removing sink entity");
-	Showtime::detach_callback(cable_arrive, ZstCallbackAction::ARRIVING);
+	Showtime::remove_event_listener(cable_arrive, ZstEventAction::ARRIVING);
 	Showtime::destroy();
 
 	delete sink;

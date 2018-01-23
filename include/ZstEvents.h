@@ -3,6 +3,15 @@
 #include <iostream>
 #include "ZstExports.h"
 
+//Enums
+//-----
+
+enum ZstEventAction {
+	ARRIVING = 0,
+	LEAVING
+};
+
+
 //Base callbacks
 //----------------
 
@@ -19,17 +28,6 @@ private:
 	int m_num_calls;
 };
 
-//Core callbacks
-//----------------
-
-//Plug arriving/leaving events
-class ZstPlug;
-class ZstPlugEvent : public ZstEvent {
-public:
-	ZST_EXPORT virtual ~ZstPlugEvent() {}
-	ZST_EXPORT virtual void run(ZstPlug * plug) {}
-};
-
 class ZstEntityBase;
 class ZstEntityEvent : public ZstEvent {
 public:
@@ -39,7 +37,7 @@ public:
 
 //Entity arriving/leaving events
 class ZstComponent;
-class ZstComponentEvent : public ZstEvent {
+class ZstComponentEvent : public ZstEntityEvent {
 public:
 	ZST_EXPORT virtual ~ZstComponentEvent() {}
 	ZST_EXPORT virtual void run(ZstComponent* component) {}
@@ -54,7 +52,7 @@ public:
 
 //Entity type arriving/leaving events
 class ZstPerformer;
-class ZstPerformerEvent : public ZstEvent {
+class ZstPerformerEvent : public ZstComponentEvent {
 public:
 	ZST_EXPORT virtual ~ZstPerformerEvent() {}
 	ZST_EXPORT virtual void run(ZstPerformer* performer) {}
@@ -67,6 +65,15 @@ public:
 	ZST_EXPORT virtual ~ZstCableEvent() {}
 	ZST_EXPORT virtual void run(ZstCable * cable) {}
 };
+
+//Plug arriving/leaving events
+class ZstPlug;
+class ZstPlugEvent : public ZstEntityEvent {
+public:
+	ZST_EXPORT virtual ~ZstPlugEvent() {}
+	ZST_EXPORT virtual void run(ZstPlug * plug) {}
+};
+
 
 
 //Client callbacks

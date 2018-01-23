@@ -29,11 +29,11 @@ public:
 		m_pre_event_callback.erase(std::remove(m_pre_event_callback.begin(), m_pre_event_callback.end(), c), m_pre_event_callback.end());
 	}
 
-	ZST_EXPORT void attach_event_callback(Callback * c) {
+	ZST_EXPORT void attach_event_listener(Callback * c) {
 		m_event_callbacks.push_back(c);
 	}
 
-	ZST_EXPORT void remove_event_callback(Callback * c) {
+	ZST_EXPORT void remove_event_listener(Callback * c) {
 		m_event_callbacks.erase(std::remove(m_event_callbacks.begin(), m_event_callbacks.end(), c), m_event_callbacks.end());
 	}
 

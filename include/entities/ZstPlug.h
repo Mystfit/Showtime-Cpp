@@ -13,7 +13,7 @@
 //Forward declarations
 class Showtime;
 class ZstValue;
-class IZstNetworkInteractor;
+class ZstINetworkInteractor;
 class ZstComponent;
 class ZstCable;
 class ZstPlug;
@@ -44,7 +44,7 @@ public:
 	ZST_EXPORT virtual ~ZstPlug();
     
 	ZST_EXPORT virtual void init() override {};
-	ZST_EXPORT virtual void register_network_interactor(IZstNetworkInteractor * sender) {};
+	ZST_EXPORT virtual void register_network_interactor(ZstINetworkInteractor * sender) {};
 
 	//Value interface
 	ZST_EXPORT void clear();
@@ -71,6 +71,8 @@ public:
 	ZST_EXPORT ZstCableIterator end() const;
 	ZST_EXPORT size_t num_cables();
 	ZST_EXPORT bool is_connected_to(ZstPlug * plug);
+	ZST_EXPORT ZstCable * cable_at(size_t index);
+	ZST_EXPORT void disconnect_cables() override;
 
 protected:
 	ZstValue * m_value;
@@ -100,9 +102,9 @@ public:
 class ZstOutputPlug : public ZstPlug {
 public:
 	ZstOutputPlug(const char * name, ZstValueType t);
-	virtual void register_network_interactor(IZstNetworkInteractor * sender);
+	virtual void register_network_interactor(ZstINetworkInteractor * sender);
 	ZST_EXPORT void fire();
 
 private:
-	IZstNetworkInteractor * m_graph_sender;
+	ZstINetworkInteractor * m_graph_sender;
 };

@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 #include "ZstExports.h"
 #include "ZstURI.h"
 #include "ZstStreamable.h"
@@ -13,6 +14,8 @@ public:
 	ZST_EXPORT ZstCable(ZstPlug * input_plug, ZstPlug * output_plug);
 	ZST_EXPORT ~ZstCable();
 
+	// Status
+
 	ZST_EXPORT bool operator==(const ZstCable & other);
 	ZST_EXPORT bool operator!=(const ZstCable & other);
 	ZST_EXPORT bool is_attached(const ZstURI & uri) const;
@@ -20,6 +23,8 @@ public:
 	ZST_EXPORT bool is_attached(ZstPlug * plug) const;
 	ZST_EXPORT bool is_attached(ZstPlug * plugA, ZstPlug * plugB) const;
 	ZST_EXPORT bool is_activated();
+
+	//Plugs and addresses
 
 	ZST_EXPORT ZstPlug * get_input();
 	ZST_EXPORT ZstPlug * get_output();
@@ -39,4 +44,16 @@ private:
 
 	ZST_EXPORT void set_activated();
 	bool m_is_activated;
+};
+
+
+class ZstCableBundle {
+public:
+	ZST_EXPORT ZstCableBundle();
+	ZST_EXPORT ~ZstCableBundle();
+	ZST_EXPORT void add(ZstCable * cable);
+	ZST_EXPORT ZstCable * cable_at(size_t index);
+	ZST_EXPORT size_t size();
+private:
+	std::vector<ZstCable*> m_cables;
 };

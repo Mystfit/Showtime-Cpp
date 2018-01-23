@@ -13,11 +13,6 @@ enum ZstEntityBehaviour {
 	COMPONENT
 };
 
-enum ZstCallbackAction {
-    ARRIVING = 0,
-    LEAVING
-};
-
 enum ZstPlugDirection {
 	NONE = 0,
 	IN_JACK,

@@ -9,7 +9,7 @@
 #include "ZstURI.h"
 #include "entities/ZstContainer.h"
 
-#define MAX_MISSED_HEARTBEATS 3
+#define MAX_MISSED_HEARTBEATS 999999
 #define PERFORMER_TYPE "prf"
 
 class ZstPerformer : public ZstContainer {

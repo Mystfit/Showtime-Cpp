@@ -43,7 +43,7 @@ ZstContainer::~ZstContainer()
 	m_parent = NULL;
 }
 
-void ZstContainer::register_network_interactor(IZstNetworkInteractor * sender)
+void ZstContainer::register_network_interactor(ZstINetworkInteractor * sender)
 {
 	//Register sender to out own plugs
 	ZstComponent::register_network_interactor(sender);
@@ -138,6 +138,14 @@ void ZstContainer::set_activated()
 	}
 }
 
+void ZstContainer::set_deactivated()
+{
+	ZstComponent::set_deactivated();
+	for(auto c : m_children){
+		c.second->set_deactivated();
+	}
+}
+
 void ZstContainer::set_parent(ZstEntityBase * entity)
 {
 	ZstEntityBase::set_parent(entity);
@@ -147,6 +155,14 @@ void ZstContainer::set_parent(ZstEntityBase * entity)
 		//We need to remove then re-add the child so that we update the entity map with the updated URI
 		remove_child(child.second);
 		add_child(child.second);
+	}
+}
+
+void ZstContainer::disconnect_cables()
+{
+	ZstComponent::disconnect_cables();
+	for (auto c : m_children) {
+		c.second->disconnect_cables();
 	}
 }
 
@@ -210,5 +226,16 @@ void ZstContainer::read(const char * buffer, size_t length, size_t & offset)
 		child->read(buffer, length, offset);
 		add_child(child);
 	}
+}
+
+ZstCableBundle * ZstContainer::get_child_cables(ZstCableBundle * bundle)
+{
+	ZstComponent::get_child_cables(bundle);
+
+	for(auto child : m_children){
+		child.second->get_child_cables(bundle);
+	}
+
+	return bundle;
 }
 

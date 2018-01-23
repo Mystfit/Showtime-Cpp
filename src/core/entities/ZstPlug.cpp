@@ -3,7 +3,7 @@
 #include "entities/ZstComponent.h"
 #include "ZstCable.h"
 #include "../ZstValue.h"
-#include "../IZstNetworkInteractor.h"
+#include "../ZstINetworkInteractor.h"
 
 using namespace std;
 
@@ -171,7 +171,7 @@ ZstCableIterator ZstPlug::begin() const
 
 ZstCableIterator ZstPlug::end() const
 {
-	return m_cables.size() > 0 ? ZstCableIterator(this, m_cables.size() - 1) : NULL;
+	return m_cables.size() > 0 ? ZstCableIterator(this, m_cables.size()) : NULL;
 }
 
 size_t ZstPlug::num_cables()
@@ -188,6 +188,20 @@ bool ZstPlug::is_connected_to(ZstPlug * plug)
 		}
 	}
 	return result;
+}
+
+ZstCable * ZstPlug::cable_at(size_t index)
+{
+	return m_cables[index];
+}
+
+void ZstPlug::disconnect_cables()
+{
+	auto cables = m_cables;
+	for (auto c : cables) {
+		c->unplug();
+		delete c;
+	}
 }
 
 void ZstPlug::add_cable(ZstCable * cable)
@@ -226,7 +240,7 @@ ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t) : ZstPlug(name, 
     m_direction = ZstPlugDirection::OUT_JACK;
 }
 
-void ZstOutputPlug::register_network_interactor(IZstNetworkInteractor * sender)
+void ZstOutputPlug::register_network_interactor(ZstINetworkInteractor * sender)
 {
 	m_graph_sender = sender;
 }

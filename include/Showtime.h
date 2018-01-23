@@ -23,19 +23,19 @@ public:
 	ZST_CLIENT_EXPORT static void poll_once();
 
 	//Callbacks
-	ZST_CLIENT_EXPORT static void attach_callback(ZstClientConnectionEvent * callback);
-	ZST_CLIENT_EXPORT static void attach_callback(ZstPerformerEvent * callback, ZstCallbackAction action);
-	ZST_CLIENT_EXPORT static void attach_callback(ZstComponentEvent * callback, ZstCallbackAction action);
-    ZST_CLIENT_EXPORT static void attach_callback(ZstComponentTypeEvent * callback, ZstCallbackAction action);
-    ZST_CLIENT_EXPORT static void attach_callback(ZstPlugEvent * callback, ZstCallbackAction action);
-    ZST_CLIENT_EXPORT static void attach_callback(ZstCableEvent * callback, ZstCallbackAction action);
+	ZST_CLIENT_EXPORT static void attach_event_listener(ZstClientConnectionEvent * callback);
+	ZST_CLIENT_EXPORT static void attach_event_listener(ZstPerformerEvent * callback, ZstEventAction action);
+	ZST_CLIENT_EXPORT static void attach_event_listener(ZstComponentEvent * callback, ZstEventAction action);
+    ZST_CLIENT_EXPORT static void attach_event_listener(ZstComponentTypeEvent * callback, ZstEventAction action);
+    ZST_CLIENT_EXPORT static void attach_event_listener(ZstPlugEvent * callback, ZstEventAction action);
+    ZST_CLIENT_EXPORT static void attach_event_listener(ZstCableEvent * callback, ZstEventAction action);
 
-	ZST_CLIENT_EXPORT static void detach_callback(ZstClientConnectionEvent * callback);
-	ZST_CLIENT_EXPORT static void detach_callback(ZstPerformerEvent * callback, ZstCallbackAction action);
-    ZST_CLIENT_EXPORT static void detach_callback(ZstComponentEvent * callback, ZstCallbackAction action);
-    ZST_CLIENT_EXPORT static void detach_callback(ZstComponentTypeEvent * callback, ZstCallbackAction action);
-    ZST_CLIENT_EXPORT static void detach_callback(ZstPlugEvent * callback, ZstCallbackAction action);
-    ZST_CLIENT_EXPORT static void detach_callback(ZstCableEvent * callback, ZstCallbackAction action);
+	ZST_CLIENT_EXPORT static void remove_event_listener(ZstClientConnectionEvent * callback);
+	ZST_CLIENT_EXPORT static void remove_event_listener(ZstPerformerEvent * callback, ZstEventAction action);
+    ZST_CLIENT_EXPORT static void remove_event_listener(ZstComponentEvent * callback, ZstEventAction action);
+    ZST_CLIENT_EXPORT static void remove_event_listener(ZstComponentTypeEvent * callback, ZstEventAction action);
+    ZST_CLIENT_EXPORT static void remove_event_listener(ZstPlugEvent * callback, ZstEventAction action);
+    ZST_CLIENT_EXPORT static void remove_event_listener(ZstCableEvent * callback, ZstEventAction action);
 	
 	//Entity activation/deactivation
 	ZST_CLIENT_EXPORT static void activate(ZstEntityBase * entity);
