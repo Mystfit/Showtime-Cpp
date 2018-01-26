@@ -1,11 +1,13 @@
 #pragma once
 #include <vector>
-#include "ZstExports.h"
-#include "ZstURI.h"
-#include "ZstStreamable.h"
-#include "entities/ZstPlug.h"
+#include <ZstExports.h>
+#include <ZstURI.h>
+#include <ZstSerialisable.h>
+#include <ZstSynchronisable.h>
+#include <ZstEvents.h>
+#include <entities/ZstPlug.h>
 
-class ZstCable : public ZstStreamable {
+class ZstCable : public ZstSerialisable, public ZstSynchronisable {
 public:
 	friend class ZstClient;
 	
@@ -13,6 +15,8 @@ public:
 	ZST_EXPORT ZstCable(const ZstCable & copy);
 	ZST_EXPORT ZstCable(ZstPlug * input_plug, ZstPlug * output_plug);
 	ZST_EXPORT ~ZstCable();
+	ZST_EXPORT virtual void on_activated() override {};
+	ZST_EXPORT virtual void on_deactivated() override {};
 
 	// Status
 
@@ -22,7 +26,6 @@ public:
 	ZST_EXPORT bool is_attached(const ZstURI & uriA, const ZstURI & uriB) const;
 	ZST_EXPORT bool is_attached(ZstPlug * plug) const;
 	ZST_EXPORT bool is_attached(ZstPlug * plugA, ZstPlug * plugB) const;
-	ZST_EXPORT bool is_activated();
 
 	//Plugs and addresses
 
@@ -31,19 +34,24 @@ public:
 	ZST_EXPORT const ZstURI & get_input_URI() const;
 	ZST_EXPORT const ZstURI & get_output_URI() const;
 	ZST_EXPORT void unplug();
+	ZST_EXPORT bool is_local();
 	
 	ZST_EXPORT virtual void write(std::stringstream & buffer) override;
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
-protected:
-	ZstPlug * m_input;
-	ZstPlug * m_output;
+
 private:
-	//Cached URI
+	//Cached URIs
+
 	ZstURI m_input_URI;
 	ZstURI m_output_URI;
 
-	ZST_EXPORT void set_activated();
-	bool m_is_activated;
+	//Plugs
+
+	ZstPlug * m_input;
+	ZstPlug * m_output;
+
+	ZST_EXPORT void set_local();
+	bool m_is_local;
 };
 
 

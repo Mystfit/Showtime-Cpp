@@ -18,10 +18,11 @@ public:
 	ZST_EXPORT ZstComponent(const ZstComponent & other);
 	ZST_EXPORT ~ZstComponent();
 
-	ZST_EXPORT virtual void init() override {};
+	ZST_EXPORT virtual void on_activated() override {};
+	ZST_EXPORT virtual void on_deactivated() override {};
 
 	//Register graph sender for output plugs
-	ZST_EXPORT virtual void register_network_interactor(ZstINetworkInteractor * sender);
+	ZST_EXPORT virtual void set_network_interactor(ZstINetworkInteractor * network_interactor);
     
     //External factory function
 	ZST_EXPORT virtual void create(const char * name, ZstEntityBase* parent) {};

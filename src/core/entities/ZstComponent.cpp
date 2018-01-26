@@ -49,10 +49,11 @@ ZstComponent::~ZstComponent()
 	free(m_component_type);
 }
 
-void ZstComponent::register_network_interactor(ZstINetworkInteractor * sender)
+void ZstComponent::set_network_interactor(ZstINetworkInteractor * network_interactor)
 {
+	ZstSynchronisable::set_network_interactor(network_interactor);
 	for (auto plug : m_plugs) {
-		plug->register_network_interactor(sender);
+		plug->set_network_interactor(network_interactor);
 	}
 }
 

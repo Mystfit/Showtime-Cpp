@@ -10,7 +10,8 @@ set(ZST_INTERFACE_HEADERS
     ${Showtime_INCLUDE_DIRS}/ZstConstants.h
     ${Showtime_INCLUDE_DIRS}/ZstExports.h
     ${Showtime_INCLUDE_DIRS}/ZstURI.h
-    ${Showtime_INCLUDE_DIRS}/ZstStreamable.h
+    ${Showtime_INCLUDE_DIRS}/ZstSerialisable.h
+    ${Showtime_INCLUDE_DIRS}/ZstSynchronisable.h
     ${Showtime_INCLUDE_DIRS}/ZstEvents.h
     ${Showtime_INCLUDE_DIRS}/entities/AddFilter.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstEntityBase.h
@@ -34,9 +35,11 @@ set(ZST_CORE_HEADERS
 
 set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstActor.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstEvents.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessage.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstCable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstURI.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstSynchronisable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstUtils.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstValue.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessagePool.cpp"

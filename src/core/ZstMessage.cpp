@@ -78,7 +78,7 @@ ZstMessage * ZstMessage::init_message(Kind kind)
 	return this;
 }
 
-ZstMessage * ZstMessage::init_streamable_message(Kind kind, ZstStreamable & streamable)
+ZstMessage * ZstMessage::init_serialisable_message(Kind kind, ZstSerialisable & streamable)
 {
 	if (m_msg_handle)
 		zmsg_destroy(&m_msg_handle);
@@ -145,7 +145,7 @@ void ZstMessage::append_entity_kind_frame(ZstEntityBase * entity) {
 	append_kind_frame(m_msg_kind);
 }
 
-void ZstMessage::append_payload_frame(ZstStreamable & streamable)
+void ZstMessage::append_payload_frame(ZstSerialisable & streamable)
 {
 	std::stringstream buffer;
 	streamable.write(buffer);
@@ -171,12 +171,13 @@ void ZstMessage::append_id_frame()
 	zmsg_addmem(m_msg_handle, zuuid_data(m_msg_id), zuuid_size(m_msg_id));
 }
 
-void ZstMessage::append_str(const char * s)
+void ZstMessage::append_str(const char * s, size_t len)
 {
-	zmsg_addstr(m_msg_handle, s);
+	zframe_t * str_frame = zframe_new(s, len);
+	zmsg_append(m_msg_handle,&str_frame);
 }
 
-void ZstMessage::append_streamable(ZstMessage::Kind k,  ZstStreamable & s)
+void ZstMessage::append_serialisable(ZstMessage::Kind k,  ZstSerialisable & s)
 {
 	if (kind() == Kind::GRAPH_SNAPSHOT) {
 		append_kind_frame(k);

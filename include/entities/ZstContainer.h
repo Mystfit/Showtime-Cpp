@@ -15,10 +15,10 @@ public:
 	ZST_EXPORT ZstContainer(const ZstContainer & other);
 	ZST_EXPORT ~ZstContainer();
 
-	ZST_EXPORT virtual void init() override {};
+	ZST_EXPORT virtual void on_activated() override {};
 
 	//Register graph sender for output plugs and children
-	ZST_EXPORT void register_network_interactor(ZstINetworkInteractor * sender);
+	ZST_EXPORT void set_network_interactor(ZstINetworkInteractor * network_interactor);
 
 	//Find a child in this entity by a URI
 	ZST_EXPORT ZstEntityBase * find_child_by_URI(const ZstURI & path);

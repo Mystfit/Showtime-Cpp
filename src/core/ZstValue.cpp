@@ -5,26 +5,20 @@
 
 ZstValue::ZstValue() : m_default_type(ZstValueType::ZST_NONE)
 {
-	init();
 }
 
 ZstValue::ZstValue(const ZstValue & other)
 {
 	m_default_type = other.m_default_type;
 	m_values = other.m_values;
-	init();
 }
 
 ZstValue::ZstValue(ZstValueType t) : m_default_type(t)
 {
-	init();
 }
 
 ZstValue::~ZstValue()
 {
-}
-
-void ZstValue::init() {
 }
 
 ZstValueType ZstValue::get_default_type()

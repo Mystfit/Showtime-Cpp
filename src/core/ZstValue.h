@@ -3,7 +3,7 @@
 #include <iostream>
 #include "variant.hpp"
 #include "ZstConstants.h"
-#include "ZstStreamable.h"
+#include "ZstSerialisable.h"
 #include "ZstExports.h"
 //A ZstValue is a generic value that represents some data 
 //sent from one ZstPlug to another
@@ -11,7 +11,7 @@
 
 typedef mpark::variant<int, float, std::string> ZstValueVariant;
 
-class ZstValue : public ZstStreamable {
+class ZstValue : public ZstSerialisable {
 public:
 	friend class ZstValueWire;
 	ZstValue();
@@ -42,9 +42,6 @@ public:
 protected:
 	std::vector<ZstValueVariant> m_values;
 	ZstValueType m_default_type;
-
-private:
-	void init();
 };
 
 class ZstValueIntVisitor

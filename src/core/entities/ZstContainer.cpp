@@ -34,23 +34,23 @@ ZstContainer::ZstContainer(const ZstContainer & other) : ZstComponent(other)
 
 ZstContainer::~ZstContainer()
 {
-	for (auto child : m_children) {
-		if (!child.second->is_activated()) {
-			delete child.second;
-		}
+	auto children = m_children;
+	for (auto child : children) {
+		//TODO: This will fail if the entity wasn't assigned in this DLL!
+		delete child.second;
 	}
 	m_children.clear();
 	m_parent = NULL;
 }
 
-void ZstContainer::register_network_interactor(ZstINetworkInteractor * sender)
+void ZstContainer::set_network_interactor(ZstINetworkInteractor * network_interactor)
 {
 	//Register sender to out own plugs
-	ZstComponent::register_network_interactor(sender);
+	ZstComponent::set_network_interactor(network_interactor);
 
 	//Register sender for all child components in case they have plugs too
 	for (auto child : m_children) {
-		child.second->register_network_interactor(sender);
+		child.second->set_network_interactor(network_interactor);
 	}
 }
 
@@ -64,7 +64,7 @@ ZstEntityBase * ZstContainer::find_child_by_URI(const ZstURI & path)
 	}
 
 	ZstURI next;
-	int distance = distance = path.size() - URI().size();
+	int distance = path.size() - URI().size();
 	while(distance > 0) {
 		next = path.range(0, path.size() - distance);
 		result = NULL;

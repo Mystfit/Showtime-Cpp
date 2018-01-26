@@ -8,8 +8,8 @@
 #include <ZstCable.h>
 #include "../ZstCallbackQueue.h"
 
-ZstEntityBase::ZstEntityBase(const char * name) :
-	m_is_activated(false),
+ZstEntityBase::ZstEntityBase(const char * name) : 
+	ZstSynchronisable(),
 	m_is_destroyed(false),
 	m_parent(NULL),
 	m_entity_type(NULL),
@@ -17,9 +17,8 @@ ZstEntityBase::ZstEntityBase(const char * name) :
 {
 }
 
-ZstEntityBase::ZstEntityBase(const ZstEntityBase & other)
+ZstEntityBase::ZstEntityBase(const ZstEntityBase & other) : ZstSynchronisable(other)
 {
-	m_is_activated = other.m_is_activated;
 	m_parent = other.m_parent;
 
 	size_t entity_type_size = strlen(other.m_entity_type);
@@ -37,30 +36,14 @@ ZstEntityBase::~ZstEntityBase()
 	free(m_entity_type);
 }
 
-bool ZstEntityBase::is_activated()
+void * ZstEntityBase::operator new(size_t num_bytes)
 {
-	return m_is_activated;
+	return ::operator new(num_bytes);
 }
 
-void ZstEntityBase::attach_activation_callback(ZstEntityEvent * callback)
+void ZstEntityBase::operator delete(void * p)
 {
-	m_activation_callbacks.push_back(callback);
-}
-
-void ZstEntityBase::detach_activation_callback(ZstEntityEvent * callback)
-{
-	m_activation_callbacks.erase(std::remove(m_activation_callbacks.begin(), m_activation_callbacks.end(), callback), m_activation_callbacks.end());
-}
-
-void ZstEntityBase::process_events()
-{
-	if (m_activation_queued) {
-		for (auto c : m_activation_callbacks) {
-			c->run(this);
-			c->increment_calls();
-		}
-		m_activation_queued = false;
-	}
+	::operator delete(p);
 }
 
 ZstEntityBase * ZstEntityBase::parent() const
@@ -109,17 +92,6 @@ ZstCableBundle * ZstEntityBase::acquire_cable_bundle()
 void ZstEntityBase::set_destroyed()
 {
 	m_is_destroyed = true;
-}
-
-void ZstEntityBase::set_activated()
-{
-	m_activation_queued = true;
-	m_is_activated = true;
-}
-
-void ZstEntityBase::set_deactivated()
-{
-	m_is_activated = false;
 }
 
 ZstCableBundle * ZstEntityBase::get_child_cables(ZstCableBundle * bundle)

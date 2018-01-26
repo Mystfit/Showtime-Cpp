@@ -11,7 +11,7 @@ AddFilter::AddFilter(const char * name) :
 	m_sum = create_output_plug("sum", ZstValueType::ZST_FLOAT);
 }
 
-void AddFilter::init()
+void AddFilter::on_activated()
 {
 }
 

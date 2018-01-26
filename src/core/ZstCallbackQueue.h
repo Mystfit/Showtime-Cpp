@@ -52,8 +52,7 @@ public:
 		}
 
 		for (i = 0; i < m_event_callbacks.size(); ++i) {
-			m_event_callbacks[i]->run(t);
-			m_event_callbacks[i]->increment_calls();
+			m_event_callbacks[i]->cast_run(t);
 		}
 
 		for (i = 0; i < m_post_event_callback.size(); ++i) {

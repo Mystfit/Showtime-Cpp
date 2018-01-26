@@ -43,8 +43,9 @@ public:
 	ZST_EXPORT ZstPlug(const ZstPlug & other);
 	ZST_EXPORT virtual ~ZstPlug();
     
-	ZST_EXPORT virtual void init() override {};
-	ZST_EXPORT virtual void register_network_interactor(ZstINetworkInteractor * sender) {};
+	ZST_EXPORT virtual void on_activated() override {};
+	ZST_EXPORT virtual void on_deactivated() override {};
+	ZST_EXPORT virtual void set_network_interactor(ZstINetworkInteractor * sender) {};
 
 	//Value interface
 	ZST_EXPORT void clear();
@@ -102,7 +103,7 @@ public:
 class ZstOutputPlug : public ZstPlug {
 public:
 	ZstOutputPlug(const char * name, ZstValueType t);
-	virtual void register_network_interactor(ZstINetworkInteractor * sender);
+	virtual void set_network_interactor(ZstINetworkInteractor * sender);
 	ZST_EXPORT void fire();
 
 private:

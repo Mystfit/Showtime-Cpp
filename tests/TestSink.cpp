@@ -10,13 +10,9 @@ public:
 	Sink * m_child_sink;
 
 	Sink(const char * name) : ZstContainer("SINK", name) {
-		init();
-	}
-
-	virtual void init() override {
 		m_input = create_input_plug("in", ZstValueType::ZST_INT);
 	}
-
+	
 	virtual void compute(ZstInputPlug * plug) override {
 		LOGGER->debug("Sink received plug hit.");
 		received_hit = true;
@@ -62,8 +58,7 @@ int main(int argc,char **argv){
     Showtime::join("127.0.0.1");
 	TestCableArrivingEventCallback * cable_arrive = new TestCableArrivingEventCallback();
     Showtime::attach_event_listener(cable_arrive, ZstEventAction::ARRIVING);
-
-
+	
 	Sink * sink = new Sink("sink_ent");
 	Showtime::activate(sink);
 	

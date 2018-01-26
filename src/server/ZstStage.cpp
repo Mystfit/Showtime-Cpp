@@ -107,7 +107,7 @@ void ZstStage::destroy_client(ZstPerformer * performer)
 	}
 
 	ZstMessage * leave_msg = msg_pool()->get()->init_message(ZstMessage::Kind::CLIENT_LEAVE);
-	leave_msg->append_str(performer->URI().path());
+	leave_msg->append_str(performer->URI().path(), performer->URI().full_size());
 	publish_stage_update(leave_msg);
 	delete performer;
 }
@@ -387,7 +387,7 @@ ZstMessage * ZstStage::create_client_handler(std::string sender_identity, ZstMes
 	ZstMessage * response = msg_pool()->get();
 
 	//Copy the id of the message so the sender will eventually match the response to a message promise
-	ZstPerformer client = msg->ZstMessage::unpack_payload_streamable<ZstPerformer>(0);
+	ZstPerformer client = msg->ZstMessage::unpack_payload_serialisable<ZstPerformer>(0);
 
 	LOGGER->info("Registering new client {}", client.URI().path());
 
@@ -431,7 +431,7 @@ ZstMessage * ZstStage::create_entity_handler(ZstMessage * msg, ZstPerformer * pe
 
 	LOGGER->debug("Found performer, unpacking entity");
 
-	T entity = msg->unpack_payload_streamable<T>(0);
+	T entity = msg->unpack_payload_serialisable<T>(0);
 
 	//Make sure this entity doesn't already exist
 	if (performer->find_child_by_URI(entity.URI())) {
@@ -505,7 +505,7 @@ ZstMessage * ZstStage::destroy_entity_handler(ZstMessage * msg)
 		return response->init_message(ZstMessage::Kind::ERR_STAGE_ENTITY_NOT_FOUND);
 	}
 
-	//Handle plugs and entites differently (for now)
+	//Handle plugs and entities differently (for now)
 	if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
 		dynamic_cast<ZstComponent*>(entity->parent())->remove_plug(dynamic_cast<ZstPlug*>(entity));
 	}
@@ -521,7 +521,7 @@ ZstMessage * ZstStage::destroy_entity_handler(ZstMessage * msg)
 
 	//Update rest of network
 	ZstMessage * stage_update_msg = msg_pool()->get()->init_message(msg->kind());
-	stage_update_msg->append_str(entity_path.path());
+	stage_update_msg->append_str(entity_path.path(), entity_path.full_size());
 	publish_stage_update(stage_update_msg);
 
 	delete entity;
@@ -548,7 +548,7 @@ ZstMessage * ZstStage::create_cable_handler(ZstMessage * msg)
 	ZstMessage * response = msg_pool()->get();
 
 	//Unpack cable from message
-	ZstCable cable = msg->unpack_payload_streamable<ZstCable>(0);
+	ZstCable cable = msg->unpack_payload_serialisable<ZstCable>(0);
 	LOGGER->info("Received connect cable request for {} and {}", cable.get_output_URI().path(), cable.get_output_URI().path());
 
 	//Create cable 
@@ -565,12 +565,12 @@ ZstMessage * ZstStage::create_cable_handler(ZstMessage * msg)
 	LOGGER->info("Sending cable connection request to {}", input_performer->URI().path());
 
 	ZstMessage * connection_msg = msg_pool()->get()->init_message(ZstMessage::Kind::SUBSCRIBE_TO_PERFORMER);
-	connection_msg->append_str(output_performer->address());	//IP of output client
-	connection_msg->append_str(cable.get_output_URI().path());	//Output plug path
+	connection_msg->append_str(output_performer->address(), strlen(output_performer->address()));	//IP of output client
+	connection_msg->append_str(cable.get_output_URI().path(), cable.get_output_URI().full_size());	//Output plug path
 	send_to_client(connection_msg, input_performer);
 
 	//Update rest of network
-	publish_stage_update(msg_pool()->get()->init_streamable_message(msg->kind(), cable));
+	publish_stage_update(msg_pool()->get()->init_serialisable_message(msg->kind(), cable));
 
     return response->init_message(ZstMessage::Kind::OK);
 }
@@ -578,7 +578,7 @@ ZstMessage * ZstStage::create_cable_handler(ZstMessage * msg)
 ZstMessage * ZstStage::destroy_cable_handler(ZstMessage * msg)
 {
 	ZstMessage * response = msg_pool()->get();
-	ZstCable cable = msg->unpack_payload_streamable<ZstCable>(0);
+	ZstCable cable = msg->unpack_payload_serialisable<ZstCable>(0);
 	LOGGER->info("Received destroy cable connection request");
 
 	ZstCable * cable_ptr = get_cable_by_URI(cable.get_input_URI(), cable.get_output_URI());
@@ -588,7 +588,7 @@ ZstMessage * ZstStage::destroy_cable_handler(ZstMessage * msg)
 	}
 
 	//Update rest of network
-	publish_stage_update(msg_pool()->get()->init_streamable_message(msg->kind(), cable));
+	publish_stage_update(msg_pool()->get()->init_serialisable_message(msg->kind(), cable));
 
 	return response->init_message(ZstMessage::Kind::OK);
 }
@@ -607,12 +607,12 @@ void ZstStage::send_snapshot(ZstPerformer * client) {
 	for (auto performer : m_clients) {
 		//Only pack performers that aren't the destination client
 		if(performer.second->URI() != client->URI())
-			snapshot->append_streamable(ZstMessage::Kind::CREATE_PERFORMER, *(performer.second));
+			snapshot->append_serialisable(ZstMessage::Kind::CREATE_PERFORMER, *(performer.second));
 	}
 
 	//Pack cables
 	for (auto cable : m_cables) {
-		snapshot->append_streamable(ZstMessage::Kind::CREATE_CABLE, *cable);
+		snapshot->append_serialisable(ZstMessage::Kind::CREATE_CABLE, *cable);
 	}
 
 	LOGGER->info("Sending graph snapshot to {}", client->URI().path());

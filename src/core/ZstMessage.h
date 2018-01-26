@@ -74,13 +74,13 @@ public:
 	//Initialisation
 	ZST_EXPORT ZstMessage * init_entity_message(ZstEntityBase * entity);
 	ZST_EXPORT ZstMessage * init_message(Kind kind);
-	ZST_EXPORT ZstMessage * init_streamable_message(Kind kind, ZstStreamable & streamable);
+	ZST_EXPORT ZstMessage * init_serialisable_message(Kind kind, ZstSerialisable & streamable);
 
 	ZST_EXPORT void send(zsock_t * socket);
 
 	//Message modification
-	ZST_EXPORT void append_str(const char * s);
-	ZST_EXPORT void append_streamable(Kind k, ZstStreamable & s);
+	ZST_EXPORT void append_str(const char * s, size_t len);
+	ZST_EXPORT void append_serialisable(Kind k, ZstSerialisable & s);
 
 	//Unpacking
 	ZST_EXPORT void unpack(zmsg_t * msg);
@@ -96,12 +96,12 @@ public:
 	ZST_EXPORT size_t num_payloads();
 	
 	template <typename T>
-	T unpack_payload_streamable(size_t payload_index) {
-		T streamable = T();
+	T unpack_payload_serialisable(size_t payload_index) {
+		T serialisable = T();
 		size_t offset = 0;
 		ZstMessagePayload & payload = payload_at(payload_index);
-		streamable.read(payload.data(), payload.size(), offset);
-		return streamable;
+		serialisable.read(payload.data(), payload.size(), offset);
+		return serialisable;
 	}
 	
 private:
@@ -111,7 +111,7 @@ private:
 	void append_kind_frame(Kind k);
 	void append_entity_kind_frame(ZstEntityBase * entity);
 	void append_id_frame();
-	void append_payload_frame(ZstStreamable & streamable);
+	void append_payload_frame(ZstSerialisable & streamable);
 	
 	//---------------------------------------
 	

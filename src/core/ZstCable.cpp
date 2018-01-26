@@ -3,6 +3,7 @@
 #include "msgpack.hpp"
 
 ZstCable::ZstCable() : 
+	ZstSynchronisable(),
 	m_input(NULL),
 	m_output(NULL),
 	m_input_URI(""),
@@ -11,6 +12,7 @@ ZstCable::ZstCable() :
 }
 
 ZstCable::ZstCable(const ZstCable & copy) : 
+	ZstSynchronisable(),
 	m_input(copy.m_input),
 	m_output(copy.m_output),
 	m_input_URI(copy.m_input_URI),
@@ -19,6 +21,7 @@ ZstCable::ZstCable(const ZstCable & copy) :
 }
 
 ZstCable::ZstCable(ZstPlug * input_plug, ZstPlug * output_plug) :
+	ZstSynchronisable(),
 	m_input(input_plug),
 	m_output(output_plug),
 	m_input_URI(input_plug->URI()),
@@ -56,11 +59,6 @@ bool ZstCable::is_attached(ZstPlug * plugA, ZstPlug * plugB) const
 	return is_attached(plugA->URI(), plugB->URI());
 }
 
-bool ZstCable::is_activated()
-{
-	return m_is_activated;
-}
-
 bool ZstCable::is_attached(ZstPlug * plug) const 
 {
 	return (ZstURI::equal(m_input->URI(), plug->URI())) || (ZstURI::equal(m_output->URI(), plug->URI()));
@@ -92,6 +90,11 @@ void ZstCable::unplug()
 	get_output()->remove_cable(this);
 }
 
+bool ZstCable::is_local()
+{
+	return m_is_local;
+}
+
 void ZstCable::write(std::stringstream & buffer)
 {
 	msgpack::pack(buffer, m_output_URI.path());
@@ -107,10 +110,12 @@ void ZstCable::read(const char * buffer, size_t length, size_t & offset)
 	m_input_URI = ZstURI(handle.get().via.str.ptr, handle.get().via.str.size);
 }
 
-void ZstCable::set_activated()
+void ZstCable::set_local()
 {
-	m_is_activated = true;
+	m_is_local = true;
 }
+
+//--
 
 ZstCableBundle::ZstCableBundle()
 {

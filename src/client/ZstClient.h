@@ -6,11 +6,13 @@
 #include <string>
 #include <msgpack.hpp>
 
+//Showtime API includes
+#include <ZstConstants.h>
 #include <ZstURI.h>
 #include <ZstExports.h>
 #include <ZstEvents.h>
 
-//Core headers
+//Showtime Core includes
 #include "../core/Queue.h"
 #include "../core/ZstActor.h"
 #include "../core/ZstMessage.h"
@@ -32,7 +34,11 @@ class ZstOutputPlug;
 class ZstValue;
 class ZstPerformer;
 
-#define MESSAGE_POOL_BLOCK 256
+typedef ZstCallbackQueue<ZstPerformerEvent, ZstPerformer*> ZstPerformerEventQueue;
+typedef ZstCallbackQueue<ZstComponentEvent, ZstComponent*> ZstComponentEventQueue;
+typedef ZstCallbackQueue<ZstComponentTypeEvent, ZstComponent*> ZstComponentTypeEventQueue;
+typedef ZstCallbackQueue<ZstPlugEvent, ZstPlug*> ZstPlugEventQueue;
+typedef ZstCallbackQueue<ZstCableEvent, ZstCable*> ZstCableEventQueue;
 
 class ZstClient : public ZstActor, public ZstINetworkInteractor {
 public:
@@ -54,18 +60,13 @@ public:
 	//Stage connection status
 	bool is_connected_to_stage();
 	long ping();
-    
-	//Entity type registration
-	int register_component_type(ZstComponent * entity);
-    int unregister_component_type(ZstComponent * entity);
-    int run_component_template(ZstComponent * entity);
-    
+	
     //Entities
 	ZstEntityBase * find_entity(const ZstURI & path);
 	ZstPlug * find_plug(const ZstURI & path);
 	void activate_entity(ZstEntityBase* entity);
 	void destroy_entity(ZstEntityBase * entity);
-
+	void destroy_entity_complete(ZstEntityBase * entity);
 	bool entity_is_local(ZstEntityBase & entity);
 	bool path_is_local(const ZstURI & path);
 	void add_proxy_entity(ZstEntityBase & entity);
@@ -91,23 +92,27 @@ public:
 	void disconnect_plugs(ZstPlug * input_plug, ZstPlug * output_plug);
 	
 	//Callbacks
-	ZstCallbackQueue<ZstClientConnectionEvent, ZstPerformer*> * client_connected_events();
-	ZstCallbackQueue<ZstPerformerEvent, ZstPerformer*> * performer_arriving_events();
-	ZstCallbackQueue<ZstPerformerEvent, ZstPerformer*> * performer_leaving_events();
-	ZstCallbackQueue<ZstEntityEvent, ZstEntityBase*> * entity_arriving_events();
-	ZstCallbackQueue<ZstEntityEvent, ZstEntityBase*> * entity_leaving_events();
-    ZstCallbackQueue<ZstComponentTypeEvent, ZstEntityBase*> * component_type_arriving_events();
-    ZstCallbackQueue<ZstComponentTypeEvent, ZstEntityBase*> * component_type_leaving_events();
-	ZstCallbackQueue<ZstPlugEvent, ZstPlug*> * plug_arriving_events();
-	ZstCallbackQueue<ZstPlugEvent, ZstPlug*> * plug_leaving_events();
-	ZstCallbackQueue<ZstCableEvent, ZstCable*> * cable_arriving_events();
-	ZstCallbackQueue<ZstCableEvent, ZstCable*> * cable_leaving_events();
+	ZstPerformerEventQueue * client_connected_events();
+	ZstPerformerEventQueue * performer_arriving_events();
+	ZstPerformerEventQueue * performer_leaving_events();
+	ZstComponentEventQueue * component_arriving_events();
+	ZstComponentEventQueue * component_leaving_events();
+    ZstComponentTypeEventQueue * component_type_arriving_events();
+    ZstComponentTypeEventQueue * component_type_leaving_events();
+	ZstPlugEventQueue * plug_arriving_events();
+	ZstPlugEventQueue * plug_leaving_events();
+	ZstCableEventQueue * cable_arriving_events();
+	ZstCableEventQueue * cable_leaving_events();
 	
 	//Debugging
 	int graph_recv_tripmeter();
 	void reset_graph_recv_tripmeter();
 	int graph_send_tripmeter();
 	void reset_graph_send_tripmeter();
+
+	//Network interactor implementation
+	virtual void queue_synchronisable_activation(ZstSynchronisable * synchronisable);
+	virtual void queue_synchronisable_deactivation(ZstSynchronisable * synchronisable);
 
 private:
 	//Stage actor
@@ -176,20 +181,20 @@ private:
 	ZstCable * find_cable_ptr(ZstPlug * input, ZstPlug * output);
 	
 	//Events and callbacks
-	ZstCallbackQueue<ZstClientConnectionEvent, ZstPerformer*> * m_client_connected_event_manager;
+	ZstCallbackQueue<ZstPerformerEvent, ZstPerformer*> * m_client_connected_event_manager;
 	ZstCallbackQueue<ZstPerformerEvent, ZstPerformer*> * m_performer_arriving_event_manager;
 	ZstCallbackQueue<ZstPerformerEvent, ZstPerformer*> * m_performer_leaving_event_manager;
-	ZstCallbackQueue<ZstEntityEvent, ZstEntityBase*> * m_entity_arriving_event_manager;
-	ZstCallbackQueue<ZstEntityEvent, ZstEntityBase*> * m_entity_leaving_event_manager;
-    ZstCallbackQueue<ZstComponentTypeEvent, ZstEntityBase*> * m_component_type_arriving_event_manager;
-    ZstCallbackQueue<ZstComponentTypeEvent, ZstEntityBase*> * m_component_type_leaving_event_manager;
-	ZstCallbackQueue<ZstCableEvent, ZstCable*> * m_cable_arriving_event_manager;
-	ZstCallbackQueue<ZstCableEvent, ZstCable*> * m_cable_leaving_event_manager;
-	ZstCallbackQueue<ZstPlugEvent, ZstPlug*> * m_plug_arriving_event_manager;
-	ZstCallbackQueue<ZstPlugEvent, ZstPlug*> * m_plug_leaving_event_manager;
+	ZstComponentEventQueue * m_component_arriving_event_manager;
+	ZstComponentEventQueue * m_component_leaving_event_manager;
+    ZstComponentTypeEventQueue * m_component_type_arriving_event_manager;
+    ZstComponentTypeEventQueue * m_component_type_leaving_event_manager;
+	ZstCableEventQueue * m_cable_arriving_event_manager;
+	ZstCableEventQueue * m_cable_leaving_event_manager;
+	ZstPlugEventQueue * m_plug_arriving_event_manager;
+	ZstPlugEventQueue * m_plug_leaving_event_manager;
 
 	//Entities awaiting callback processing
-	Queue<ZstEntityBase*> m_entity_events;
+	Queue<ZstSynchronisable*> m_synchronisable_events;
 
 	//Zeromq pipes
 	zsock_t *m_stage_router;        //Stage pipe in
