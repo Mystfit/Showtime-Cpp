@@ -24,10 +24,10 @@ public:
 		else if (request_code == 1) {
 			m_child_sink = new Sink("sinkB");
 			add_child(m_child_sink);
-			Showtime::activate(m_child_sink);
+			zst_activate_entity(m_child_sink);
 		}
 		else if (request_code == 2) {
-			Showtime::deactivate(m_child_sink);
+			zst_deactivate_entity(m_child_sink);
 			delete m_child_sink;
 		}
 	}
@@ -54,21 +54,21 @@ int main(int argc,char **argv){
 
 	LOGGER->debug("In sink process");
 
-	Showtime::init("sink");
-    Showtime::join("127.0.0.1");
+	zst_init("sink");
+    zst_join("127.0.0.1");
 	TestCableArrivingEventCallback * cable_arrive = new TestCableArrivingEventCallback();
-    Showtime::attach_event_listener(cable_arrive, ZstEventAction::ARRIVING);
+    zst_attach_cable_event_listener(cable_arrive, ZstEventAction::ARRIVING);
 	
 	Sink * sink = new Sink("sink_ent");
-	Showtime::activate(sink);
+	zst_activate_entity(sink);
 	
 	while (!sink->received_hit){
-		Showtime::poll_once();
+		zst_poll_once();
 	}
 
 	LOGGER->debug("Removing sink entity");
-	Showtime::remove_event_listener(cable_arrive, ZstEventAction::ARRIVING);
-	Showtime::destroy();
+	zst_remove_cable_event_listener(cable_arrive, ZstEventAction::ARRIVING);
+	zst_destroy();
 
 	delete sink;
 

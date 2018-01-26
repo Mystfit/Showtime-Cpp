@@ -28,7 +28,7 @@ void wait_for_event(ZstEvent * callback, int expected_messages)
 		if (repeats > MAX_WAIT) {
 			std::ostringstream err;
 			err << "Not enough events in queue. Expecting " << expected_messages << " received " << callback->num_calls() << std::endl;
-			throw std::logic_error(err.str());
+			throw std::runtime_error(err.str());
 		}
 		zst_poll_once();
 	}
@@ -300,7 +300,7 @@ void test_create_entities(){
 	test_output->attach_activation_event(entity_activated_local);
 	test_output->attach_deactivation_event(entity_deactivated_local);
 	
-	zst_activate(test_output);
+	zst_activate_entity(test_output);
 	wait_for_event(entity_activated_local, 1);
 	assert(entity_activated_local->num_calls() == 1);
 	entity_activated_local ->reset_num_calls();
@@ -314,7 +314,7 @@ void test_create_entities(){
 
 	//Cleanup
 	LOGGER->debug("Deactivate entity");
-	zst_deactivate(test_output);
+	zst_deactivate_entity(test_output);
 	wait_for_event(entity_deactivated_local, 1);
 	assert(entity_deactivated_local->num_calls() == 1);
 	entity_deactivated_local->reset_num_calls();
@@ -347,7 +347,7 @@ void test_hierarchy() {
 	child->attach_activation_event(child_activated);
 	child->attach_deactivation_event(child_deactivated);
 
-	zst_activate(parent);
+	zst_activate_entity(parent);
 	wait_for_event(parent_activated, 1);
 	assert(parent_activated->num_calls() == 1);
 	parent_activated->reset_num_calls();
@@ -358,7 +358,7 @@ void test_hierarchy() {
 	//Test child removal from parent
 	LOGGER->debug("Testing child removal from parent");
 	ZstURI child_URI = ZstURI(child->URI());
-	zst_deactivate(child);
+	zst_deactivate_entity(child);
 	wait_for_event(child_deactivated, 1);
 	assert(child_deactivated->num_calls() == 1);
 	child_deactivated->reset_num_calls();
@@ -372,12 +372,12 @@ void test_hierarchy() {
 	child = new ZstComponent("child");
 	parent->add_child(child);
 	child->attach_activation_event(child_activated);
-	zst_activate(child);
+	zst_activate_entity(child);
 	wait_for_event(child_activated, 1);
 	child_activated->reset_num_calls();
 	
 	ZstURI parent_URI = ZstURI(parent->URI());
-	zst_deactivate(parent);
+	zst_deactivate_entity(parent);
 	wait_for_event(parent_deactivated, 1);
 	assert(parent_deactivated->num_calls() == 1);
 	parent_deactivated->reset_num_calls();
@@ -406,19 +406,14 @@ void test_connect_plugs() {
 	OutputComponent * test_output = new OutputComponent("connect_test_ent_out");
 	InputComponent * test_input = new InputComponent("connect_test_ent_in", 0);
 	TestEntityEventCallback * entity_activated = new TestEntityEventCallback("activated");
-	TestCableEventCallback * cable_activated_client = new TestCableEventCallback("activated via stage update");
 	TestCableEventCallback * cable_activated_local = new TestCableEventCallback("activated via stage update");
-	TestCableEventCallback * cable_deactivated_client = new TestCableEventCallback("cable deactivated via local event");
 	TestCableEventCallback * cable_deactivated_local = new TestCableEventCallback("cable deactivated via local event");
 	
 	LOGGER->debug("Attaching events");
-	zst_attach_cable_event_listener(cable_activated_client, ZstEventAction::ARRIVING);
-	zst_attach_cable_event_listener(cable_deactivated_client, ZstEventAction::LEAVING);
-
 	test_output->attach_activation_event(entity_activated);
 	test_input->attach_activation_event(entity_activated);
-	zst_activate(test_output);
-	zst_activate(test_input);
+	zst_activate_entity(test_output);
+	zst_activate_entity(test_input);
 	wait_for_event(entity_activated, expected_entities);
 	entity_activated->reset_num_calls();
 
@@ -426,11 +421,8 @@ void test_connect_plugs() {
 	ZstCable * cable = zst_connect_cable(test_output->output(), test_input->input());
 	cable->attach_activation_event(cable_activated_local);
 	wait_for_event(cable_activated_local, 1);
-	wait_for_event(cable_activated_client, 1);
 	assert(cable_activated_local->num_calls() == 1);
-	assert(cable_activated_client->num_calls() == 1);
 	cable_activated_local->reset_num_calls();
-	cable_activated_client->reset_num_calls();
 	
 	LOGGER->debug("Verifying cable");
 	assert(test_output->output()->num_cables() == 1);
@@ -445,43 +437,33 @@ void test_connect_plugs() {
 	cable->attach_deactivation_event(cable_deactivated_local);
 	zst_destroy_cable(cable);
 	wait_for_event(cable_deactivated_local, 1);
-	wait_for_event(cable_deactivated_client, 1);
 	assert(cable_deactivated_local->num_calls() == 1);
-	assert(cable_deactivated_client->num_calls() == 1);
 	cable_deactivated_local->reset_num_calls();
-	cable_deactivated_client->reset_num_calls();
 	assert(!test_output->output()->is_connected_to(test_input->input()));
-	assert(!test_output->output()->num_cables() == 0);
-	assert(!test_input->input()->num_cables() == 0);
+	assert(test_output->output()->num_cables() == 0);
+	assert(test_input->input()->num_cables() == 0);
 
 	LOGGER->debug("Testing cable disconnection when removing parent");
 	cable = zst_connect_cable(test_output->output(), test_input->input());
 	cable->attach_activation_event(cable_activated_local);
+	cable->attach_deactivation_event(cable_deactivated_local);
 	wait_for_event(cable_activated_local, 1);
-	zst_deactivate(test_output);
+	zst_deactivate_entity(test_output);
 	wait_for_event(cable_deactivated_local, 1);
-	wait_for_event(cable_deactivated_client, 1);
 
 	assert(cable_deactivated_local->num_calls() == 1);
-	assert(cable_deactivated_client->num_calls() == 1);
 	assert(!test_input->input()->is_connected_to(test_output->output()));
 	cable_deactivated_local->reset_num_calls();
-	cable_deactivated_client->reset_num_calls();
 
 	//Cleanup
-	zst_deactivate(test_output);
-	zst_deactivate(test_input);
+	zst_deactivate_entity(test_output);
+	zst_deactivate_entity(test_input);
+	clear_callback_queue();
 	delete test_output;
 	delete test_input;
-
-    zst_remove_cable_event_listener(cable_activated_client, ZstEventAction::ARRIVING);
-    zst_remove_cable_event_listener(cable_activated_client, ZstEventAction::LEAVING);
-	delete cable_activated_client;
 	delete cable_activated_local;
-	delete cable_deactivated_client;
 	delete cable_deactivated_local;
 	delete entity_activated;
-	clear_callback_queue();
 }
 
 
@@ -497,7 +479,6 @@ void test_add_filter() {
 	LOGGER->debug("Creating input/output components for addition filter");
 	TestEntityEventCallback * entity_activated = new TestEntityEventCallback("activated");
 	TestCableEventCallback * cable_event = new TestCableEventCallback("arriving");
-	zst_attach_cable_event_listener(cable_event, ZstEventAction::ARRIVING);
 
 	OutputComponent * test_output_augend = new OutputComponent("add_test_augend");
 	OutputComponent * test_output_addend = new OutputComponent("add_test_addend");
@@ -509,17 +490,20 @@ void test_add_filter() {
 	test_input_sum->attach_activation_event(entity_activated);
 	add_filter->attach_activation_event(entity_activated);
 
-	zst_activate(test_output_augend);
-	zst_activate(test_output_addend);
-	zst_activate(test_input_sum);
-	zst_activate(add_filter);
+	zst_activate_entity(test_output_augend);
+	zst_activate_entity(test_output_addend);
+	zst_activate_entity(test_input_sum);
+	zst_activate_entity(add_filter);
 
 	wait_for_event(entity_activated, 4);
 	entity_activated->reset_num_calls();
 
-	zst_connect_cable(test_output_augend->output(), add_filter->augend());
-	zst_connect_cable(test_output_addend->output(), add_filter->addend());
-	zst_connect_cable(test_input_sum->input(), add_filter->sum());
+	ZstCable * augend_cable = zst_connect_cable(test_output_augend->output(), add_filter->augend());
+	augend_cable->attach_activation_event(cable_event);
+	ZstCable * addend_cable = zst_connect_cable(test_output_addend->output(), add_filter->addend());
+	addend_cable->attach_activation_event(cable_event);
+	ZstCable * sum_cable = zst_connect_cable(test_input_sum->input(), add_filter->sum());
+	sum_cable->attach_activation_event(cable_event);
 
 	wait_for_event(cable_event, 3);
 	cable_event->reset_num_calls();
@@ -546,10 +530,10 @@ void test_add_filter() {
 
 	//Cleanup
 
-	zst_deactivate(test_output_augend);
-	zst_deactivate(test_output_addend);
-	zst_deactivate(test_input_sum);
-	zst_deactivate(add_filter);
+	zst_deactivate_entity(test_output_augend);
+	zst_deactivate_entity(test_output_addend);
+	zst_deactivate_entity(test_input_sum);
+	zst_deactivate_entity(add_filter);
 	zst_remove_cable_event_listener(cable_event, ZstEventAction::ARRIVING);
 	delete test_output_augend;
 	delete test_output_addend;
@@ -581,7 +565,7 @@ void test_external_entities(std::string external_sink_path) {
 
 	//Create emitter
 	OutputComponent * output = new OutputComponent("proxy_test_output");
-	zst_activate(output);
+	zst_activate_entity(output);
 	TAKE_A_BREATH
 	clear_callback_queue();
 
@@ -659,8 +643,8 @@ void test_memory_leaks(int num_loops) {
 
 	OutputComponent * test_output = new OutputComponent("memleak_test_out");
 	InputComponent * test_input = new InputComponent("memleak_test_in", 10);
-	zst_activate(test_output);
-	zst_activate(test_input);
+	zst_activate_entity(test_output);
+	zst_activate_entity(test_input);
 	zst_connect_cable(test_output->output(), test_input->input());
 	TAKE_A_BREATH
 
