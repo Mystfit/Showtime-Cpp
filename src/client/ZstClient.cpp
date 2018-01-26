@@ -326,7 +326,7 @@ void ZstClient::register_client_complete(ZstMessage::Kind status)
 
 	//TODO: Need a handshake with the stage before we mark connection as active
 	m_connected_to_stage = true;
-	m_root->set_activated();
+	m_root->set_activation_status(ZstSynchronisable::ACTIVATED);
 	client_connected_events()->enqueue(m_root);
 	
 	//Ask the stage to send us a full snapshot
@@ -451,7 +451,7 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 			//Only dispatch cable event if we don't already have the cable (we might have created it)
 			if(!find_cable_ptr(cable.get_input_URI(), cable.get_output_URI())) {
 				ZstCable * cable_ptr = create_cable_ptr(cable);
-				cable_ptr->set_activated();
+				cable_ptr->set_activation_status(ZstSynchronisable::ACTIVATING);
 				cable_arriving_events()->enqueue(cable_ptr);
 			}
 		}
@@ -461,7 +461,7 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 			ZstCable cable = msg->unpack_payload_serialisable<ZstCable>(i);
 			ZstCable * cable_ptr = find_cable_ptr(cable.get_input_URI(), cable.get_output_URI());
 			if (cable_ptr) {
-				cable_ptr->set_deactivated();
+				cable_ptr->set_activation_status(ZstSynchronisable::DEACTIVATING);
 				cable_leaving_events()->enqueue(cable_ptr);
 			}
 		}
@@ -689,6 +689,7 @@ void ZstClient::activate_entity(ZstEntityBase * entity)
 
 	//Register client to entity to allow it to send messages
 	entity->set_network_interactor(this);
+	entity->set_activation_status(ZstSynchronisable::ACTIVATING);
 	
 	//Build message
 	ZstMessage * msg = msg_pool()->get()->init_entity_message(entity);
@@ -703,8 +704,21 @@ void ZstClient::activate_entity(ZstEntityBase * entity)
 		//In case the entity has disappeared during activation (for whatever reason) make sure it exists first
 		ZstEntityBase * e = find_entity(entity_path);
 		if (e) {
+
+			if (status == ZstMessage::Kind::OK) {
+				e->set_activated();
+			}
+			else if (status == ZstMessage::Kind::ERR_STAGE_ENTITY_ALREADY_EXISTS) {
+				e->set_activation_status(ZstSynchronisable::ERR_ENTITY_ALREADY_EXISTS);
+			} 
+			else if (status == ZstMessage::Kind::ERR_STAGE_ENTITY_NOT_FOUND) {
+				e->set_activation_status(ZstSynchronisable::ERR_PERFORMER_NOT_FOUND);
+			}
+			else if (status == ZstMessage::Kind::ERR_STAGE_ENTITY_NOT_FOUND) {
+				e->set_activation_status(ZstSynchronisable::ERR_PARENT_NOT_FOUND);
+			}
+
 			LOGGER->debug("Activate entity {} complete with status {}", e->URI().path(), status);
-			e->set_activated();
 		}
 		
 		return status;
@@ -717,6 +731,8 @@ void ZstClient::destroy_entity(ZstEntityBase * entity)
 	if (!entity || entity->is_destroyed()) {
 		return;
 	}
+
+	entity->set_activation_status(ZstSynchronisable::DEACTIVATING);
 
 	//If the entity is local, let the stage know it's leaving
 	if (entity_is_local(*entity) && is_connected_to_stage()) {
@@ -866,6 +882,7 @@ void ZstClient::destroy_plug(ZstPlug * plug)
     }
 
 	plug->set_destroyed();
+	plug->set_activation_status(ZstSynchronisable::DEACTIVATING);
 
 	bool is_local = entity_is_local(*plug);
 
@@ -930,6 +947,7 @@ ZstCable * ZstClient::connect_cable(ZstPlug * a, ZstPlug * b)
 	}
 	
 	cable = create_cable_ptr(input_plug, output_plug);
+	cable->set_activation_status(ZstSynchronisable::ACTIVATING);
 
 	//If either of the cable plugs are a local entity, then the cable is local as well
 	if (entity_is_local(*a) || entity_is_local(*b)) {
@@ -955,6 +973,7 @@ ZstCable * ZstClient::connect_cable(ZstPlug * a, ZstPlug * b)
 
 void ZstClient::destroy_cable(ZstCable * cable)
 {
+	cable->set_activation_status(ZstSynchronisable::DEACTIVATING);
 	ZstMessage * msg = msg_pool()->get()->init_serialisable_message(ZstMessage::Kind::DESTROY_CABLE, *cable);
 	msg_pool()->register_future(msg).then([this, cable](MessageFuture f) {
 		int status = f.get();
@@ -1060,12 +1079,7 @@ void ZstClient::reset_graph_send_tripmeter()
 	m_num_graph_send_messages = 0;
 }
 
-void ZstClient::queue_synchronisable_activation(ZstSynchronisable * synchronisable)
-{
-	m_synchronisable_events.push(synchronisable);
-}
-
-void ZstClient::queue_synchronisable_deactivation(ZstSynchronisable * synchronisable)
+void ZstClient::queue_synchronisable_event(ZstSynchronisable * synchronisable)
 {
 	m_synchronisable_events.push(synchronisable);
 }

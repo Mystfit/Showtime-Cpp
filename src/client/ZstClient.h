@@ -111,8 +111,7 @@ public:
 	void reset_graph_send_tripmeter();
 
 	//Network interactor implementation
-	virtual void queue_synchronisable_activation(ZstSynchronisable * synchronisable);
-	virtual void queue_synchronisable_deactivation(ZstSynchronisable * synchronisable);
+	virtual void queue_synchronisable_event(ZstSynchronisable * synchronisable);
 
 private:
 	//Stage actor

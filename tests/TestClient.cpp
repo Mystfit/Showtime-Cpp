@@ -512,8 +512,11 @@ void test_add_filter() {
 	test_output_augend->send(2);
 	test_output_addend->send(2);
 
+	int max_wait = 100;
+	int current_wait = 0;
+
 	//Wait for the first two input callbacks to clear before we check for the sum
-    while(test_input_sum->num_hits < 2){
+    while(test_input_sum->num_hits < 2 && ++current_wait < max_wait){
 		zst_poll_once();
     }
 	assert(test_input_sum->last_received_val == first_cmp_val);

@@ -240,11 +240,6 @@ ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t) : ZstPlug(name, 
     m_direction = ZstPlugDirection::OUT_JACK;
 }
 
-void ZstOutputPlug::set_network_interactor(ZstINetworkInteractor * sender)
-{
-	m_graph_sender = sender;
-}
-
 void ZstOutputPlug::fire()
 {
 	if(m_graph_sender)

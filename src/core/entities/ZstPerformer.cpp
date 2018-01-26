@@ -32,6 +32,7 @@ ZstPerformer::~ZstPerformer()
 {
 	for (auto child : m_creatables) {
 		if (!child.second->is_activated()) {
+			//TODO:Possible memory leak here
 			delete child.second;
 		}
 	}
