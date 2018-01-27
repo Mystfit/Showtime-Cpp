@@ -1,10 +1,11 @@
 #pragma once
 #include <vector>
 #include <iostream>
+#include <ZstConstants.h>
+#include <ZstSerialisable.h>
+#include <ZstExports.h>
 #include "variant.hpp"
-#include "ZstConstants.h"
-#include "ZstSerialisable.h"
-#include "ZstExports.h"
+
 //A ZstValue is a generic value that represents some data 
 //sent from one ZstPlug to another
 

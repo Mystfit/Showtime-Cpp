@@ -1,48 +1,26 @@
 #pragma once
 
 #include <unordered_map>
-#include <vector>
 #include <czmq.h>
 #include <string>
-#include <msgpack.hpp>
 
 //Showtime API includes
-#include <ZstConstants.h>
-#include <ZstURI.h>
-#include <ZstExports.h>
-#include <ZstEvents.h>
+#include <ZstCore.h>
 
 //Showtime Core includes
-#include "../core/Queue.h"
 #include "../core/ZstActor.h"
 #include "../core/ZstMessage.h"
-#include "../core/ZstINetworkInteractor.h"
-#include "../core/ZstCallbackQueue.h"
 #include "../core/ZstMessagePool.h"
+#include "../core/ZstINetworkInteractor.h"
+#include "../core/ZstValue.h"
 
-//Forward declarations
-class ZstValue;
-class ZstCable;
-class ZstPerformer;
-class ZstEntityBase;
-class ZstComponent;
-class ZstComponentProxy;
-class ZstContainer;
-class ZstPlug; 
-class ZstInputPlug;
-class ZstOutputPlug;
-class ZstValue;
-class ZstPerformer;
-
-typedef ZstCallbackQueue<ZstPerformerEvent, ZstPerformer*> ZstPerformerEventQueue;
-typedef ZstCallbackQueue<ZstComponentEvent, ZstComponent*> ZstComponentEventQueue;
-typedef ZstCallbackQueue<ZstComponentTypeEvent, ZstComponent*> ZstComponentTypeEventQueue;
-typedef ZstCallbackQueue<ZstPlugEvent, ZstPlug*> ZstPlugEventQueue;
-typedef ZstCallbackQueue<ZstCableEvent, ZstCable*> ZstCableEventQueue;
+//Client includes
+#include "ZstClientEvents.h"
 
 class ZstClient : public ZstActor, public ZstINetworkInteractor {
+	friend class ZstCableLeavingEvent;
+
 public:
-	friend class Showtime;
 	ZstClient();
 	~ZstClient();
 	void init(const char * performer_name);
@@ -80,7 +58,6 @@ public:
 	//Plugs
 	void destroy_plug(ZstPlug * plug);
 	void destroy_plug_complete(int status);
-    void enqueue_compute(ZstInputPlug * plug);
 
 	//Graph communication
 	virtual void publish(ZstPlug * plug) override;
@@ -92,17 +69,18 @@ public:
 	void disconnect_plugs(ZstPlug * input_plug, ZstPlug * output_plug);
 	
 	//Callbacks
-	ZstPerformerEventQueue * client_connected_events();
-	ZstPerformerEventQueue * performer_arriving_events();
-	ZstPerformerEventQueue * performer_leaving_events();
-	ZstComponentEventQueue * component_arriving_events();
-	ZstComponentEventQueue * component_leaving_events();
-    ZstComponentTypeEventQueue * component_type_arriving_events();
-    ZstComponentTypeEventQueue * component_type_leaving_events();
-	ZstPlugEventQueue * plug_arriving_events();
-	ZstPlugEventQueue * plug_leaving_events();
-	ZstCableEventQueue * cable_arriving_events();
-	ZstCableEventQueue * cable_leaving_events();
+	ZstEventDispatcher * client_connected_events();
+	ZstEventDispatcher * client_disconnected_events();
+	ZstEventDispatcher * performer_arriving_events();
+	ZstEventDispatcher * performer_leaving_events();
+	ZstEventDispatcher * component_arriving_events();
+	ZstEventDispatcher * component_leaving_events();
+	ZstEventDispatcher * component_type_arriving_events();
+	ZstEventDispatcher * component_type_leaving_events();
+	ZstEventDispatcher * plug_arriving_events();
+	ZstEventDispatcher * plug_leaving_events();
+	ZstEventDispatcher * cable_arriving_events();
+	ZstEventDispatcher * cable_leaving_events();
 	
 	//Debugging
 	int graph_recv_tripmeter();
@@ -111,7 +89,7 @@ public:
 	void reset_graph_send_tripmeter();
 
 	//Network interactor implementation
-	virtual void queue_synchronisable_event(ZstSynchronisable * synchronisable);
+	virtual void enqueue_synchronisable_event(ZstSynchronisable * synchronisable);
 
 private:
 	//Stage actor
@@ -163,13 +141,12 @@ private:
 	//Root performer
     ZstPerformer * m_root;
 	std::unordered_map<ZstURI, ZstPerformer* > m_clients;
-    Queue<ZstInputPlug*> m_compute_queue;
 
-	//Callback hooks for leaving items
-	static void component_leaving_hook(void * target);
-	static void component_type_leaving_hook(void * target);
-	static void plug_leaving_hook(void * target);
-	static void cable_leaving_hook(void * target);
+	//Callback hooks
+	ZstSynchronisableDeferredEvent * m_synchronisable_deferred_event;
+	ZstComponentLeavingEvent * m_component_leaving_hook;
+	ZstCableLeavingEvent * m_cable_leaving_hook;
+	ZstPlugLeavingEvent * m_plug_leaving_hook;
 	
 	//Cable storage
 	ZstCable * create_cable_ptr(ZstCable & cable);
@@ -180,21 +157,21 @@ private:
 	ZstCable * find_cable_ptr(ZstPlug * input, ZstPlug * output);
 	
 	//Events and callbacks
-	ZstCallbackQueue<ZstPerformerEvent, ZstPerformer*> * m_client_connected_event_manager;
-	ZstCallbackQueue<ZstPerformerEvent, ZstPerformer*> * m_performer_arriving_event_manager;
-	ZstCallbackQueue<ZstPerformerEvent, ZstPerformer*> * m_performer_leaving_event_manager;
-	ZstComponentEventQueue * m_component_arriving_event_manager;
-	ZstComponentEventQueue * m_component_leaving_event_manager;
-    ZstComponentTypeEventQueue * m_component_type_arriving_event_manager;
-    ZstComponentTypeEventQueue * m_component_type_leaving_event_manager;
-	ZstCableEventQueue * m_cable_arriving_event_manager;
-	ZstCableEventQueue * m_cable_leaving_event_manager;
-	ZstPlugEventQueue * m_plug_arriving_event_manager;
-	ZstPlugEventQueue * m_plug_leaving_event_manager;
-
-	//Entities awaiting callback processing
-	Queue<ZstSynchronisable*> m_synchronisable_events;
-
+	ZstEventDispatcher * m_client_connected_event_manager;
+	ZstEventDispatcher * m_client_disconnected_event_manager;
+	ZstEventDispatcher * m_performer_arriving_event_manager;
+	ZstEventDispatcher * m_performer_leaving_event_manager;
+	ZstEventDispatcher * m_component_arriving_event_manager;
+	ZstEventDispatcher * m_component_leaving_event_manager;
+	ZstEventDispatcher * m_component_type_arriving_event_manager;
+	ZstEventDispatcher * m_component_type_leaving_event_manager;
+	ZstEventDispatcher * m_cable_arriving_event_manager;
+	ZstEventDispatcher * m_cable_leaving_event_manager;
+	ZstEventDispatcher * m_plug_arriving_event_manager;
+	ZstEventDispatcher * m_plug_leaving_event_manager;
+	ZstEventDispatcher * m_compute_events;
+	ZstEventDispatcher * m_synchronisable_event_manager;
+	
 	//Zeromq pipes
 	zsock_t *m_stage_router;        //Stage pipe in
 	zsock_t *m_stage_updates;		//Stage publisher for updates

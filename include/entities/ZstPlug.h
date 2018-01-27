@@ -2,19 +2,14 @@
 
 #include <string>
 #include <vector>
-#include <memory>
-#include <msgpack.hpp>
-#include "ZstExports.h"
-#include "ZstConstants.h"
-#include "ZstEntityBase.h"
+#include <ZstExports.h>
+#include <ZstConstants.h>
+#include <entities/ZstEntityBase.h>
 
 #define PLUG_TYPE "plug"
 
 //Forward declarations
-class Showtime;
 class ZstValue;
-class ZstINetworkInteractor;
-class ZstComponent;
 class ZstCable;
 class ZstPlug;
 
@@ -103,7 +98,4 @@ class ZstOutputPlug : public ZstPlug {
 public:
 	ZstOutputPlug(const char * name, ZstValueType t);
 	ZST_EXPORT void fire();
-
-private:
-	ZstINetworkInteractor * m_graph_sender;
 };

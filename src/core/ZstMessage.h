@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <string>
-#include <tuple>
 #include <iostream>
 #include <stdio.h>
 #include <msgpack.hpp>

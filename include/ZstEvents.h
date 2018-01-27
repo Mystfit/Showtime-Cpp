@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #include <ZstExports.h>
 
 //Enums
@@ -14,9 +13,6 @@ enum ZstEventAction {
 
 //Base callbacks
 //----------------
-
-//Internal callback hook
-typedef void(*ZstCallbackHook)(void*);
 
 class ZstSynchronisable;
 class ZstEvent {

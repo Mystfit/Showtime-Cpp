@@ -2,18 +2,6 @@
 #include <sstream>
 
 #include "ZstClient.h"
-#include "ZstCable.h"
-#include "ZstVersion.h"
-#include "entities/ZstEntityBase.h"
-#include "entities/ZstPlug.h"
-#include "entities/ZstContainer.h"
-#include "entities/ZstComponent.h"
-#include "entities/ZstPerformer.h"
-
-//Core headers
-#include "../core/ZstActor.h"
-#include "../core/ZstMessage.h"
-#include "../core/ZstValue.h"
 
 using namespace std;
 
@@ -25,17 +13,31 @@ ZstClient::ZstClient() :
 	m_ping(-1)
 {
 	//Event queues
-	m_client_connected_event_manager = new ZstPerformerEventQueue();
-	m_performer_arriving_event_manager = new ZstPerformerEventQueue();
-	m_performer_leaving_event_manager = new ZstPerformerEventQueue();
-	m_component_arriving_event_manager = new ZstComponentEventQueue();
-	m_component_leaving_event_manager = new ZstComponentEventQueue();
-	m_component_type_arriving_event_manager = new ZstComponentTypeEventQueue;
-	m_component_type_leaving_event_manager = new ZstComponentTypeEventQueue();
-	m_cable_arriving_event_manager = new ZstCableEventQueue();
-	m_cable_leaving_event_manager = new ZstCableEventQueue();
-	m_plug_arriving_event_manager = new ZstPlugEventQueue();
-	m_plug_leaving_event_manager = new ZstPlugEventQueue();
+	m_synchronisable_event_manager = new ZstEventDispatcher();
+	m_client_connected_event_manager = new ZstEventDispatcher();
+	m_client_disconnected_event_manager = new ZstEventDispatcher();
+	m_performer_arriving_event_manager = new ZstEventDispatcher();
+	m_performer_leaving_event_manager = new ZstEventDispatcher();
+	m_component_arriving_event_manager = new ZstEventDispatcher();
+	m_component_leaving_event_manager = new ZstEventDispatcher();
+	m_component_type_arriving_event_manager = new ZstEventDispatcher;
+	m_component_type_leaving_event_manager = new ZstEventDispatcher();
+	m_cable_arriving_event_manager = new ZstEventDispatcher();
+	m_cable_leaving_event_manager = new ZstEventDispatcher();
+	m_plug_arriving_event_manager = new ZstEventDispatcher();
+	m_plug_leaving_event_manager = new ZstEventDispatcher();
+	m_compute_events = new ZstEventDispatcher();
+
+	//Client events
+	m_synchronisable_deferred_event = new ZstSynchronisableDeferredEvent();
+	m_component_leaving_hook = new ZstComponentLeavingEvent();
+	m_cable_leaving_hook = new ZstCableLeavingEvent();
+	m_plug_leaving_hook = new ZstPlugLeavingEvent();
+
+	m_synchronisable_event_manager->attach_event_listener(m_synchronisable_deferred_event);
+	m_component_leaving_event_manager->attach_post_event_callback(m_component_leaving_hook);
+	m_cable_leaving_event_manager->attach_post_event_callback(m_cable_leaving_hook);
+	m_plug_leaving_event_manager->attach_post_event_callback(m_plug_leaving_hook);
 
 	//Message pools
 	m_message_pool = new ZstMessagePool();
@@ -44,7 +46,17 @@ ZstClient::ZstClient() :
 
 ZstClient::~ZstClient() {
 	destroy();
+
+	m_synchronisable_event_manager->remove_event_listener(m_synchronisable_deferred_event);
+	m_component_leaving_event_manager->remove_post_event_callback(m_component_leaving_hook);
+	m_cable_leaving_event_manager->remove_post_event_callback(m_cable_leaving_hook);
+	m_plug_leaving_event_manager->remove_post_event_callback(m_plug_leaving_hook);
+
+	delete m_synchronisable_event_manager;
 	delete m_client_connected_event_manager;
+	delete m_client_disconnected_event_manager;
+	delete m_performer_arriving_event_manager;
+	delete m_performer_leaving_event_manager;
 	delete m_component_arriving_event_manager;
 	delete m_component_leaving_event_manager;
 	delete m_component_type_arriving_event_manager;
@@ -53,6 +65,12 @@ ZstClient::~ZstClient() {
 	delete m_cable_leaving_event_manager;
 	delete m_plug_arriving_event_manager;
 	delete m_plug_leaving_event_manager;
+
+	delete m_synchronisable_deferred_event;
+	delete m_component_leaving_hook;
+	delete m_cable_leaving_hook;
+	delete m_plug_leaving_hook;
+
 	delete m_message_pool;
 }
 
@@ -94,12 +112,7 @@ void ZstClient::init(const char * client_name)
 
 	m_client_name = client_name;
 	m_is_destroyed = false;
-
-	m_component_leaving_event_manager->attach_post_event_callback(component_leaving_hook);
-	m_component_type_leaving_event_manager->attach_post_event_callback(component_type_leaving_hook);
-	m_cable_leaving_event_manager->attach_post_event_callback(cable_leaving_hook);
-	m_plug_leaving_event_manager->attach_post_event_callback(plug_leaving_hook);
-
+	
 	ZstActor::init();
 	m_startup_uuid = zuuid_new();
 
@@ -173,28 +186,21 @@ void ZstClient::init(const char * client_name)
 
 void ZstClient::process_callbacks()
 {
-	//Run entity callbacks
-	while (m_synchronisable_events.size() > 0) {
-		ZstSynchronisable * s = m_synchronisable_events.pop();
-		s->process_events();
-	}
-
     //Run callbacks
+	m_synchronisable_event_manager->process();
 	m_client_connected_event_manager->process();
+	m_client_disconnected_event_manager->process();
+	m_performer_arriving_event_manager->process();
+	m_performer_leaving_event_manager->process();
     m_component_arriving_event_manager->process();
     m_component_leaving_event_manager->process();
     m_component_type_arriving_event_manager->process();
     m_component_type_leaving_event_manager->process();
-    m_plug_arriving_event_manager->process();
-    m_plug_leaving_event_manager->process();
 	m_cable_arriving_event_manager->process();
 	m_cable_leaving_event_manager->process();
-
-	//Compute all entites
-	while (m_compute_queue.size() > 0) {
-		ZstInputPlug * plug = m_compute_queue.pop();
-		static_cast<ZstComponent*>(plug->parent())->compute(plug);
-	}
+    m_plug_arriving_event_manager->process();
+    m_plug_leaving_event_manager->process();
+	m_compute_events->process();
 }
 
 string ZstClient::first_available_ext_ip(){
@@ -394,7 +400,7 @@ int ZstClient::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg){
 				//TODO: Lock plug value when deserialising
 				size_t offset = 0;
 				receiving_plug->raw_value()->read((char*)zframe_data(payload), zframe_size(payload), offset);
-				client->enqueue_compute(receiving_plug);
+				client->m_compute_events->enqueue(receiving_plug->parent());
 			}
 		}
 	}
@@ -565,31 +571,6 @@ int ZstClient::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
 	return 0;
 }
 
-
-// ------------------
-// Item removal hooks
-// ------------------
-void ZstClient::component_leaving_hook(void * target)
-{
-	ZstClient::instance().destroy_entity_complete(static_cast<ZstEntityBase*>(target));
-}
-
-void ZstClient::component_type_leaving_hook(void * target)
-{
-	throw new std::exception("Component type leaving hook not implemented");
-}
-
-void ZstClient::plug_leaving_hook(void * target)
-{
-	ZstPlug * plug = static_cast<ZstPlug*>(target);
-	dynamic_cast<ZstComponent*>(plug->parent())->remove_plug(plug);
-	ZstClient::instance().destroy_plug(plug);
-}
-
-void ZstClient::cable_leaving_hook(void * target)
-{
-	ZstClient::instance().remove_cable(static_cast<ZstCable*>(target));
-}
 
 // ------------------
 // Cable storage
@@ -909,10 +890,6 @@ void ZstClient::destroy_plug_complete(int status)
 {
 }
 
-void ZstClient::enqueue_compute(ZstInputPlug * plug){
-    m_compute_queue.push(plug);
-}
-
  // ------
  // Cables
  // ------
@@ -998,17 +975,22 @@ void ZstClient::disconnect_plugs(ZstPlug * input_plug, ZstPlug * output_plug)
 	destroy_cable(cable);
 }
 
-ZstPerformerEventQueue * ZstClient::client_connected_events()
+ZstEventDispatcher * ZstClient::client_connected_events()
 {
 	return m_client_connected_event_manager;
 }
 
-ZstPerformerEventQueue * ZstClient::performer_arriving_events()
+ZstEventDispatcher * ZstClient::client_disconnected_events()
+{
+	return m_client_connected_event_manager;
+}
+
+ZstEventDispatcher * ZstClient::performer_arriving_events()
 {
 	return m_performer_arriving_event_manager;
 }
 
-ZstPerformerEventQueue * ZstClient::performer_leaving_events()
+ZstEventDispatcher * ZstClient::performer_leaving_events()
 {
 	return m_performer_leaving_event_manager;
 }
@@ -1019,42 +1001,42 @@ ZstPerformerEventQueue * ZstClient::performer_leaving_events()
 // Callback manager getters
 // ------------------------
 
-ZstComponentEventQueue * ZstClient::component_arriving_events()
+ZstEventDispatcher * ZstClient::component_arriving_events()
 {
 	return m_component_arriving_event_manager;
 }
 
-ZstComponentEventQueue * ZstClient::component_leaving_events()
+ZstEventDispatcher * ZstClient::component_leaving_events()
 {
 	return m_component_leaving_event_manager;
 }
 
-ZstComponentTypeEventQueue * ZstClient::component_type_arriving_events()
+ZstEventDispatcher * ZstClient::component_type_arriving_events()
 {
     return m_component_type_arriving_event_manager;
 }
 
-ZstComponentTypeEventQueue * ZstClient::component_type_leaving_events()
+ZstEventDispatcher * ZstClient::component_type_leaving_events()
 {
     return m_component_type_leaving_event_manager;
 }
 
-ZstPlugEventQueue * ZstClient::plug_arriving_events()
+ZstEventDispatcher * ZstClient::plug_arriving_events()
 {
 	return m_plug_arriving_event_manager;
 }
 
-ZstPlugEventQueue * ZstClient::plug_leaving_events()
+ZstEventDispatcher * ZstClient::plug_leaving_events()
 {
 	return m_plug_leaving_event_manager;
 }
 
-ZstCableEventQueue * ZstClient::cable_arriving_events()
+ZstEventDispatcher * ZstClient::cable_arriving_events()
 {
 	return m_cable_arriving_event_manager;
 }
 
-ZstCableEventQueue * ZstClient::cable_leaving_events()
+ZstEventDispatcher * ZstClient::cable_leaving_events()
 {
 	return m_cable_leaving_event_manager;
 }
@@ -1079,7 +1061,7 @@ void ZstClient::reset_graph_send_tripmeter()
 	m_num_graph_send_messages = 0;
 }
 
-void ZstClient::queue_synchronisable_event(ZstSynchronisable * synchronisable)
+void ZstClient::enqueue_synchronisable_event(ZstSynchronisable * synchronisable)
 {
-	m_synchronisable_events.push(synchronisable);
+	m_synchronisable_event_manager->enqueue(synchronisable);
 }

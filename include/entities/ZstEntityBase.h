@@ -1,16 +1,10 @@
 #pragma once
 
-#include <unordered_map>
-#include <vector>
-#include "../ZstExports.h"
-#include "../ZstURI.h"
-#include "../ZstSerialisable.h"
-#include "../ZstSynchronisable.h"
+#include <ZstExports.h>
+#include <ZstURI.h>
+#include <ZstSerialisable.h>
+#include <ZstSynchronisable.h>
 
-//Forwards
-class ZstEntityEvent;
-class ZstINetworkInteractor;
-class ZstEntityBase;
 class ZstCableBundle;
 
 class ZstEntityBase : public ZstSerialisable, public ZstSynchronisable {
@@ -66,6 +60,4 @@ private:
 	ZstEntityBase * m_parent;
 	char * m_entity_type;
 	ZstURI m_uri;
-
-
 };

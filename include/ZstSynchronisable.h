@@ -1,12 +1,14 @@
 #pragma once
 
-#include <vector>
 #include <ZstExports.h>
 #include <ZstEvents.h>
+#include <ZstEventDispatcher.h>
 
 class ZstINetworkInteractor;
 
 class ZstSynchronisable {
+	friend class ZstActivationEvent;
+	friend class ZstDeactivationEvent;
 public:
 	enum SyncStatus {
 		DEACTIVATED = 0,
@@ -21,6 +23,7 @@ public:
 	};
 
 	ZST_EXPORT ZstSynchronisable();
+	ZST_EXPORT ~ZstSynchronisable();
 	ZST_EXPORT ZstSynchronisable(const ZstSynchronisable & other);
 	ZST_EXPORT virtual void attach_activation_event(ZstSynchronisableEvent * event);
 	ZST_EXPORT virtual void attach_deactivation_event(ZstSynchronisableEvent * event);
@@ -42,10 +45,26 @@ public:
 
 protected:
 	ZST_EXPORT virtual void set_activation_status(SyncStatus status);
+	ZST_EXPORT ZstINetworkInteractor * network_interactor();
 
 private:
-	std::vector<ZstSynchronisableEvent*> m_activation_events;
-	std::vector<ZstSynchronisableEvent*> m_deactivation_events;
+	ZstEventDispatcher * m_activation_events;
+	ZstEventDispatcher * m_deactivation_events;
+	ZstActivationEvent * m_activation_hook;
+	ZstDeactivationEvent * m_deactivation_hook;
+
 	ZstINetworkInteractor * m_network_interactor;
 	SyncStatus m_sync_status;
+};
+
+
+//Events
+
+class ZstActivationEvent : public ZstSynchronisableEvent {
+	virtual void run(ZstSynchronisable * target) override;
+};
+
+
+class ZstDeactivationEvent : public ZstSynchronisableEvent {
+	virtual void run(ZstSynchronisable * target) override;
 };

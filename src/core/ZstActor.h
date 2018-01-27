@@ -2,7 +2,7 @@
 
 #include <czmq.h>
 #include <iostream>
-#include "ZstExports.h"
+#include <ZstExports.h>
 
 class ZstActor {
 public:

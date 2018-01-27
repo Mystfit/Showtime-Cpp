@@ -1,9 +1,8 @@
 #include <exception>
 #include <stdexcept>
 #include <iostream>
-#include "ZstURI.h"
-#include "ZstUtils.hpp"
-#include "msgpack.hpp"
+#include <msgpack.hpp>
+#include <ZstURI.h>
 
 ZstURI::ZstURI() : component_count(0) {
 	original_path = create_pstr("");
@@ -224,5 +223,10 @@ pstr ZstURI::create_pstr(const char * p, int l)
 
 size_t std::hash<ZstURI>::operator()(const ZstURI & k) const
 {
-	return Utils::hash_c_string(k.path(), k.full_size());
+	size_t result = 0;
+	const size_t prime = 31;
+	for (size_t i = 0; i < k.full_size(); ++i) {
+		result = k.path()[i] + (result * prime);
+	}
+	return result;
 }

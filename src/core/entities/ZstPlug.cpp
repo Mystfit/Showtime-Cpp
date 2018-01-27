@@ -1,7 +1,9 @@
-#include "entities/ZstPlug.h"
-#include "entities/ZstEntityBase.h"
-#include "entities/ZstComponent.h"
-#include "ZstCable.h"
+#include <memory>
+#include <msgpack.hpp>
+
+#include <entities/ZstPlug.h>
+#include <ZstCable.h>
+
 #include "../ZstValue.h"
 #include "../ZstINetworkInteractor.h"
 
@@ -235,15 +237,15 @@ ZstInputPlug::ZstInputPlug(const char * name, ZstValueType t) : ZstPlug(name, t)
 //ZstOutputPlug
 //-------------
 
-ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t) : ZstPlug(name, t), m_graph_sender(NULL)
+ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t) : ZstPlug(name, t)
 {
     m_direction = ZstPlugDirection::OUT_JACK;
 }
 
 void ZstOutputPlug::fire()
 {
-	if(m_graph_sender)
-		m_graph_sender->publish(this);
+	if(network_interactor())
+		network_interactor()->publish(this);
 	m_value->clear();
 }
 

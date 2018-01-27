@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ZstExports.h"
-#include "ZstComponent.h"
+#include <ZstExports.h>
+#include <entities/ZstComponent.h>
 
 #define CONTAINER_TYPE "con"
 

@@ -13,6 +13,7 @@ set(ZST_INTERFACE_HEADERS
     ${Showtime_INCLUDE_DIRS}/ZstSerialisable.h
     ${Showtime_INCLUDE_DIRS}/ZstSynchronisable.h
     ${Showtime_INCLUDE_DIRS}/ZstEvents.h
+    ${Showtime_INCLUDE_DIRS}/ZstEventDispatcher.h
     ${Showtime_INCLUDE_DIRS}/entities/AddFilter.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstEntityBase.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstComponent.h
@@ -22,13 +23,10 @@ set(ZST_INTERFACE_HEADERS
 )
 
 set(ZST_CORE_HEADERS
-    "${CMAKE_CURRENT_LIST_DIR}/Queue.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstActor.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessage.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstINetworkInteractor.h"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstUtils.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstValue.h"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstCallbackQueue.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessagePool.h"
     ${VERSION_FILE}
 )
@@ -36,14 +34,13 @@ set(ZST_CORE_HEADERS
 set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstActor.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstEvents.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstEventDispatcher.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessage.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstCable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstURI.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstSynchronisable.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstUtils.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstValue.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessagePool.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstCallbackQueueInstantiations.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstEntityBase.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstComponent.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstContainer.cpp"

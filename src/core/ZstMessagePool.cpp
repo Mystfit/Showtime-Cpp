@@ -1,9 +1,7 @@
 #include <string>
 #include <iostream>
 #include <exception>
-#include "ZstMessage.h"
 #include "ZstMessagePool.h"
-
 
 using namespace std;
 

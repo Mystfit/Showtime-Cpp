@@ -1,6 +1,6 @@
-#include "ZstMessage.h"
 #include <memory>
 #include <czmq.h>
+
 #include "ZstMessage.h"
 
 ZstMessage::ZstMessage() :

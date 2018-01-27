@@ -1,17 +1,15 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <iostream>
 #include <unordered_map>
 #include <algorithm>
-#include <regex>
 #include "czmq.h"
 
+//Showtime API
 #include <ZstCore.h>
 
 //Core headers
 #include "../core/ZstActor.h"
-#include "../core/Queue.h"
 
 #define HEARTBEAT_DURATION 1000
 #define STAGE_MESSAGE_POOL_BLOCK 512
@@ -66,10 +64,9 @@ private:
 	ZstMessage * create_cable_handler(ZstMessage * msg);
 	ZstMessage * destroy_cable_handler(ZstMessage * msg);
 	
-	//Outgoing event queue
+	//Outgoing events
 	void send_snapshot(ZstPerformer * client);
     void publish_stage_update(ZstMessage * msg);
-    Queue<ZstMessage*> m_stage_updates;	
 
 	int m_heartbeat_timer_id;
 	static int stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * arg);

@@ -1,6 +1,6 @@
 #pragma once
 #include <memory>
-#include "ZstExports.h"
+#include <ZstExports.h>
 
 struct pstr {
 	unsigned length;

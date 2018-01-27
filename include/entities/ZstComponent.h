@@ -1,10 +1,10 @@
 #pragma once
 
 #include <vector>
-#include "ZstExports.h"
-#include "ZstEntityBase.h"
-#include "ZstPlug.h"
-#include "ZstCable.h"
+#include <ZstExports.h>
+#include <entities/ZstEntityBase.h>
+#include <entities/ZstPlug.h>
+#include <ZstCable.h>
 
 #define COMPONENT_TYPE "cmp"
 

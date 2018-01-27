@@ -1,12 +1,8 @@
 #include <memory>
-#include <iostream>
-#include <cstring>
-#include "entities/ZstEntityBase.h"
-#include "msgpack.hpp"
+#include <msgpack.hpp>
 
-#include <ZstEvents.h>
+#include <entities/ZstEntityBase.h>
 #include <ZstCable.h>
-#include "../ZstCallbackQueue.h"
 
 ZstEntityBase::ZstEntityBase(const char * name) : 
 	ZstSynchronisable(),

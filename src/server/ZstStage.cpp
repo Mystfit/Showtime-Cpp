@@ -3,7 +3,6 @@
 
 //Core headers
 #include <ZstVersion.h>
-#include "../core/ZstUtils.hpp"
 #include "../core/ZstMessage.h"
 #include "../core/ZstMessagePool.h"
 
