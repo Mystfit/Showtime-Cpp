@@ -147,12 +147,12 @@ private:
 	ZstComponentLeavingEvent * m_component_leaving_hook;
 	ZstCableLeavingEvent * m_cable_leaving_hook;
 	ZstPlugLeavingEvent * m_plug_leaving_hook;
+	ZstComputeEvent * m_compute_event;
 	
 	//Cable storage
 	ZstCable * create_cable_ptr(ZstCable & cable);
 	ZstCable * create_cable_ptr(ZstPlug * output, ZstPlug * input);
 
-	void remove_cable(ZstCable * cable);
 	ZstCable * find_cable_ptr(const ZstURI & input_path, const ZstURI & output_path);
 	ZstCable * find_cable_ptr(ZstPlug * input, ZstPlug * output);
 	
@@ -169,7 +169,7 @@ private:
 	ZstEventDispatcher * m_cable_leaving_event_manager;
 	ZstEventDispatcher * m_plug_arriving_event_manager;
 	ZstEventDispatcher * m_plug_leaving_event_manager;
-	ZstEventDispatcher * m_compute_events;
+	ZstEventDispatcher * m_compute_event_manager;
 	ZstEventDispatcher * m_synchronisable_event_manager;
 	
 	//Zeromq pipes

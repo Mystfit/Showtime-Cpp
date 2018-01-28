@@ -264,6 +264,11 @@ size_t ZstMessagePayload::size()
 	return zframe_size(m_payload);
 }
 
+ZstMessage::Kind ZstMessagePayload::kind()
+{
+	return m_kind;
+}
+
 char * ZstMessagePayload::data()
 {
 	return (char*)zframe_data(m_payload);

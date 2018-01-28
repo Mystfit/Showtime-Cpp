@@ -96,7 +96,7 @@ int ZstComponent::add_plug(ZstPlug * plug)
 void ZstComponent::remove_plug(ZstPlug * plug)
 {
 	for (auto cable : *plug) {
-		cable->unplug();
+		cable->set_deactivated();
 	}
 	m_plugs.erase(std::remove(m_plugs.begin(), m_plugs.end(), plug), m_plugs.end());
 }

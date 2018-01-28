@@ -82,7 +82,7 @@ public:
 		m_suffix = suffix;
 	}
 	void run(ZstCable * cable) override {
-		LOGGER->debug("CABLE_EVENT: {} {} {}", cable->get_output()->URI().path(), cable->get_input()->URI().path(), m_suffix);
+		LOGGER->debug("CABLE_EVENT: {} {} {}", cable->get_output_URI().path(), cable->get_input_URI().path(), m_suffix);
 	}
 };
 
@@ -119,13 +119,13 @@ private:
 
 public:
 	OutputComponent(const char * name) : ZstComponent("TESTER", name) {
-		m_output = create_output_plug("out", ZstValueType::ZST_INT);
+		m_output = create_output_plug("out", ZstValueType::ZST_FLOAT);
 	}
 
 	virtual void compute(ZstInputPlug * plug) override {}
 
 	void send(int val) {
-		m_output->append_int(val);
+		m_output->append_float(val);
 		m_output->fire();
 	}
 
@@ -149,12 +149,12 @@ public:
 		ZstComponent("TESTER", name), compare_val(cmp_val)
 	{
 		log = should_log;
-		m_input = create_input_plug("in", ZstValueType::ZST_INT);
+		m_input = create_input_plug("in", ZstValueType::ZST_FLOAT);
 	}
 
 	virtual void compute(ZstInputPlug * plug) override {
 		num_hits++;
-		last_received_val = plug->int_at(0);
+		last_received_val = plug->float_at(0);
 		if (log) {
 			LOGGER->debug("Input filter received value {0:d}", last_received_val);
 		}
@@ -478,6 +478,7 @@ void test_add_filter() {
 
 	LOGGER->debug("Creating input/output components for addition filter");
 	TestEntityEventCallback * entity_activated = new TestEntityEventCallback("activated");
+	TestEntityEventCallback * entity_deactivated = new TestEntityEventCallback("deactivated");
 	TestCableEventCallback * cable_event = new TestCableEventCallback("arriving");
 
 	OutputComponent * test_output_augend = new OutputComponent("add_test_augend");
@@ -485,19 +486,27 @@ void test_add_filter() {
 	InputComponent * test_input_sum = new InputComponent("add_test_sum", first_cmp_val, true);
 	AddFilter * add_filter = new AddFilter("add_test");
 	
+	LOGGER->debug("Attaching events");
 	test_output_addend->attach_activation_event(entity_activated);
-	test_output_addend->attach_activation_event(entity_activated);
+	test_output_addend->attach_deactivation_event(entity_deactivated);
+	test_output_augend->attach_activation_event(entity_activated);
+	test_output_augend->attach_deactivation_event(entity_deactivated);
 	test_input_sum->attach_activation_event(entity_activated);
+	test_input_sum->attach_deactivation_event(entity_deactivated);
 	add_filter->attach_activation_event(entity_activated);
-
+	add_filter->attach_deactivation_event(entity_deactivated);
+		
+	LOGGER->debug("Activating entities");
 	zst_activate_entity(test_output_augend);
 	zst_activate_entity(test_output_addend);
 	zst_activate_entity(test_input_sum);
 	zst_activate_entity(add_filter);
 
 	wait_for_event(entity_activated, 4);
+	assert(entity_activated->num_calls() == 4);
 	entity_activated->reset_num_calls();
 
+	LOGGER->debug("Connecting cables");
 	ZstCable * augend_cable = zst_connect_cable(test_output_augend->output(), add_filter->augend());
 	augend_cable->attach_activation_event(cable_event);
 	ZstCable * addend_cable = zst_connect_cable(test_output_addend->output(), add_filter->addend());
@@ -509,10 +518,13 @@ void test_add_filter() {
 	cable_event->reset_num_calls();
 
 	//Send values
+	LOGGER->debug("Sending values");
 	test_output_augend->send(2);
 	test_output_addend->send(2);
 
-	int max_wait = 100;
+	TAKE_A_BREATH
+
+	int max_wait = 1000;
 	int current_wait = 0;
 
 	//Wait for the first two input callbacks to clear before we check for the sum
@@ -530,29 +542,31 @@ void test_add_filter() {
 	while (test_input_sum->num_hits < 2)
 		zst_poll_once();
 	assert(test_input_sum->last_received_val == second_cmp_val);
+	LOGGER->debug("Addition component succeeded at addition!");
 
 	//Cleanup
-
+	LOGGER->debug("Cleaning up entities");
 	zst_deactivate_entity(test_output_augend);
 	zst_deactivate_entity(test_output_addend);
 	zst_deactivate_entity(test_input_sum);
 	zst_deactivate_entity(add_filter);
-	zst_remove_cable_event_listener(cable_event, ZstEventAction::ARRIVING);
+	wait_for_event(entity_deactivated, 4);
+	assert(entity_deactivated->num_calls() == 4);
+	clear_callback_queue();
+
 	delete test_output_augend;
 	delete test_output_addend;
 	delete test_input_sum;
 	delete add_filter;
-
 	delete cable_event;
 	test_output_augend = 0;
 	test_output_addend = 0;
 	test_input_sum = 0;
 	add_filter = 0;
-	clear_callback_queue();
 }
 
 
-void test_external_entities(std::string external_sink_path) {
+void test_external_entities(std::string external_test_path) {
 	LOGGER->info("Starting external entities test");
 
 	//Create callbacks
@@ -581,11 +595,22 @@ void test_external_entities(std::string external_sink_path) {
 	ZstURI sink_plug_uri = sink_ent_uri + ZstURI("in");
 
 	//Run the sink program
-	std::string prog = external_sink_path + "/SinkTest";
+	std::string prog = external_test_path + "/TestSink";
 #ifdef WIN32
 	prog += ".exe";
 #endif
-	boost::process::child sink_process = boost::process::child(prog, "1");
+	boost::process::child sink_process;
+
+	try {
+		sink_process = boost::process::child(prog, "1");
+#ifdef WIN32
+		system("pause");
+#endif
+	}
+	catch (boost::process::process_error e) {
+		LOGGER->error("Sink process failed to start. Code:{} Message:{}", e.code().value(), e.what());
+	}
+	assert(sink_process.valid());
 
 	//Test performer arriving
 	wait_for_event(performerArriveCallback, 1);
@@ -596,14 +621,19 @@ void test_external_entities(std::string external_sink_path) {
 	ZstContainer * sink_ent = dynamic_cast<ZstContainer*>(sink_performer->find_child_by_URI(sink_ent_uri));
 	assert(sink_ent);
 
+	ZstPlug * sink_plug = sink_ent->get_plug_by_URI(sink_plug_uri);
+	assert(sink_plug);
+	assert(sink_plug->is_activated());
+
 	//Connect cable to sink
 	TestCableEventCallback * cableArriveCallback = new TestCableEventCallback("arriving");
 	TestCableEventCallback * cableLeaveCallback = new TestCableEventCallback("leaving");
 	zst_attach_cable_event_listener(cableArriveCallback, ZstEventAction::ARRIVING);
 	zst_attach_cable_event_listener(cableLeaveCallback, ZstEventAction::LEAVING);
-	ZstCable * cable = zst_connect_cable(output->output(), sink_ent->get_plug_by_URI(sink_plug_uri));
+	ZstCable * cable = zst_connect_cable(output->output(), sink_plug);
+	assert(cable);
 	cable->attach_activation_event(cableArriveCallback);
-	wait_for_event(cableArriveCallback, 1); //Should this fire when we create ANY cable?
+	wait_for_event(cableArriveCallback, 1);
 	TAKE_A_BREATH
 	output->send(1);
 
@@ -748,8 +778,10 @@ void test_cleanup() {
 int main(int argc,char **argv){
 	//Give the server time to start (if launching both simultaneously)
 	TAKE_A_BREATH
-	ZST_init_log();
+	zst_log_init();
 	LOGGER->set_level(spdlog::level::debug);
+
+	std::string ext_test_folder = boost::filesystem::system_complete(argv[0]).parent_path().generic_string();
 
 	//Tests
 	test_standard_layout();
@@ -760,7 +792,7 @@ int main(int argc,char **argv){
 	test_hierarchy();
 	test_connect_plugs();
 	test_add_filter();
-	test_external_entities(boost::filesystem::system_complete(argv[0]).parent_path().generic_string());
+	test_external_entities(ext_test_folder);
 	test_memory_leaks(200000);
     test_leaving();
 	test_cleanup();

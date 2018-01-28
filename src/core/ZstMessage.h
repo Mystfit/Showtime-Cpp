@@ -134,6 +134,7 @@ public:
 	ZST_EXPORT ZstMessagePayload(const ZstMessagePayload & other);
 	ZST_EXPORT ~ZstMessagePayload();
 	ZST_EXPORT size_t size();
+	ZST_EXPORT ZstMessage::Kind kind();
 	ZST_EXPORT char * data();
 private:
 	ZstMessage::Kind m_kind;

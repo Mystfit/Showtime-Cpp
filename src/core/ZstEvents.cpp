@@ -77,7 +77,16 @@ void ZstPlugEvent::cast_run(ZstSynchronisable * target)
 	}
 }
 
-void ZstPerformerEvent::cast_run(ZstPerformer * target)
+void ZstInputPlugEvent::cast_run(ZstSynchronisable * target)
+{
+	ZstInputPlug * plug = dynamic_cast<ZstInputPlug*>(target);
+	if (plug) {
+		this->increment_calls();
+		this->run(plug);
+	}
+}
+
+void ZstPerformerEvent::cast_run(ZstSynchronisable * target)
 {
 	ZstPerformer * performer = dynamic_cast<ZstPerformer*>(target);
 	if (performer) {

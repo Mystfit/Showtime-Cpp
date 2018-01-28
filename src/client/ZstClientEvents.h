@@ -20,3 +20,7 @@ class ZstCableLeavingEvent : public ZstCableEvent {
 class ZstPlugLeavingEvent : public ZstPlugEvent {
 	virtual void run(ZstPlug * target) override;
 };
+
+class ZstComputeEvent : public ZstInputPlugEvent {
+	virtual void run(ZstInputPlug * target) override;
+};

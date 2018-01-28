@@ -26,18 +26,20 @@ ZstClient::ZstClient() :
 	m_cable_leaving_event_manager = new ZstEventDispatcher();
 	m_plug_arriving_event_manager = new ZstEventDispatcher();
 	m_plug_leaving_event_manager = new ZstEventDispatcher();
-	m_compute_events = new ZstEventDispatcher();
+	m_compute_event_manager = new ZstEventDispatcher();
 
 	//Client events
 	m_synchronisable_deferred_event = new ZstSynchronisableDeferredEvent();
 	m_component_leaving_hook = new ZstComponentLeavingEvent();
 	m_cable_leaving_hook = new ZstCableLeavingEvent();
 	m_plug_leaving_hook = new ZstPlugLeavingEvent();
+	m_compute_event = new ZstComputeEvent();
 
 	m_synchronisable_event_manager->attach_event_listener(m_synchronisable_deferred_event);
 	m_component_leaving_event_manager->attach_post_event_callback(m_component_leaving_hook);
 	m_cable_leaving_event_manager->attach_post_event_callback(m_cable_leaving_hook);
 	m_plug_leaving_event_manager->attach_post_event_callback(m_plug_leaving_hook);
+	m_compute_event_manager->attach_event_listener(m_compute_event);
 
 	//Message pools
 	m_message_pool = new ZstMessagePool();
@@ -51,6 +53,7 @@ ZstClient::~ZstClient() {
 	m_component_leaving_event_manager->remove_post_event_callback(m_component_leaving_hook);
 	m_cable_leaving_event_manager->remove_post_event_callback(m_cable_leaving_hook);
 	m_plug_leaving_event_manager->remove_post_event_callback(m_plug_leaving_hook);
+	m_compute_event_manager->remove_post_event_callback(m_compute_event);
 
 	delete m_synchronisable_event_manager;
 	delete m_client_connected_event_manager;
@@ -70,6 +73,7 @@ ZstClient::~ZstClient() {
 	delete m_component_leaving_hook;
 	delete m_cable_leaving_hook;
 	delete m_plug_leaving_hook;
+	delete m_compute_event;
 
 	delete m_message_pool;
 }
@@ -106,7 +110,7 @@ void ZstClient::init(const char * client_name)
 	if (m_is_ending) {
 		return;
 	}
-	ZST_init_log();
+	zst_log_init();
 	LOGGER->set_level(spdlog::level::debug);
 	LOGGER->info("Starting Showtime v{}", SHOWTIME_VERSION);
 
@@ -186,7 +190,6 @@ void ZstClient::init(const char * client_name)
 
 void ZstClient::process_callbacks()
 {
-    //Run callbacks
 	m_synchronisable_event_manager->process();
 	m_client_connected_event_manager->process();
 	m_client_disconnected_event_manager->process();
@@ -200,7 +203,7 @@ void ZstClient::process_callbacks()
 	m_cable_leaving_event_manager->process();
     m_plug_arriving_event_manager->process();
     m_plug_leaving_event_manager->process();
-	m_compute_events->process();
+	m_compute_event_manager->process();
 }
 
 string ZstClient::first_available_ext_ip(){
@@ -400,7 +403,7 @@ int ZstClient::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg){
 				//TODO: Lock plug value when deserialising
 				size_t offset = 0;
 				receiving_plug->raw_value()->read((char*)zframe_data(payload), zframe_size(payload), offset);
-				client->m_compute_events->enqueue(receiving_plug->parent());
+				client->m_compute_event_manager->enqueue(receiving_plug);
 			}
 		}
 	}
@@ -448,9 +451,25 @@ int ZstClient::s_handle_stage_router(zloop_t * loop, zsock_t * socket, void * ar
 
 void ZstClient::stage_update_handler(ZstMessage * msg)
 {
-	for (size_t i = 0; i < msg->num_payloads(); ++i) {
+	ZstMessage::Kind payload_kind = msg->kind();
+	if (payload_kind == ZstMessage::Kind::GRAPH_SNAPSHOT) {
+		LOGGER->trace("Message is a graph snapshot, using payload kind");
+	}
+	else {
+		LOGGER->trace("Message is a single stage update, using message kind");
+	}
+
+	for (size_t i = 0; i < msg->num_payloads(); ++i)
+	{
+		if (msg->kind() == ZstMessage::Kind::GRAPH_SNAPSHOT) {
+			payload_kind = msg->payload_at(i).kind();
+		}
+		else {
+			payload_kind = (msg->kind());
+		}
+
 		//Do something with payload
-		switch (msg->kind()) {
+		switch (payload_kind) {
 		case ZstMessage::Kind::CREATE_CABLE:
 		{
 			ZstCable cable = msg->unpack_payload_serialisable<ZstCable>(i);
@@ -460,18 +479,20 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 				cable_ptr->set_activation_status(ZstSynchronisable::ACTIVATING);
 				cable_arriving_events()->enqueue(cable_ptr);
 			}
+			break;
 		}
-		break;
 		case ZstMessage::Kind::DESTROY_CABLE:
 		{
 			ZstCable cable = msg->unpack_payload_serialisable<ZstCable>(i);
 			ZstCable * cable_ptr = find_cable_ptr(cable.get_input_URI(), cable.get_output_URI());
 			if (cable_ptr) {
-				cable_ptr->set_activation_status(ZstSynchronisable::DEACTIVATING);
-				cable_leaving_events()->enqueue(cable_ptr);
+				if (cable_ptr->is_activated()) {
+					cable_ptr->set_deactivated();
+					cable_leaving_events()->enqueue(cable_ptr);
+				}
 			}
+			break;
 		}
-		break;
 		case ZstMessage::Kind::CREATE_PLUG:
 		{
 			ZstPlug plug = msg->unpack_payload_serialisable<ZstPlug>(i);
@@ -510,15 +531,13 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 			//Only dispatch entity leaving events for non-local entities (for the moment)
 			if (!path_is_local(entity_path)) {
 				ZstEntityBase * entity = find_entity(entity_path);
-				ZstComponent * component = dynamic_cast<ZstComponent*>(entity);
-				if (component) {
-					component_leaving_events()->enqueue(component);
-					break;
-				}
-				
-				ZstPlug * plug = dynamic_cast<ZstPlug*>(entity);
-				if (plug) {
-					plug_leaving_events()->enqueue(plug);
+
+				if (strcmp(entity->entity_type(), COMPONENT_TYPE) == 0) {
+					component_leaving_events()->enqueue(entity);
+				} else if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
+					plug_leaving_events()->enqueue(entity);
+				} else if (strcmp(entity->entity_type(), PERFORMER_TYPE) == 0) {
+					performer_leaving_events()->enqueue(entity);
 				}
 			}
 			
@@ -535,6 +554,8 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 			break;
 		}
 		default:
+			LOGGER->error("Didn't understand message type of {}", payload_kind);
+			throw new std::exception("");
 			break;
 		}
 	}
@@ -599,12 +620,6 @@ ZstCable * ZstClient::create_cable_ptr(ZstPlug * input, ZstPlug * output)
 	return cable_ptr;
 }
 
-void ZstClient::remove_cable(ZstCable * cable)
-{
-	cable->unplug();
-	delete cable;
-}
-
 ZstCable * ZstClient::find_cable_ptr(const ZstURI & input_path, const ZstURI & output_path)
 {
 	ZstPlug * input_plug = dynamic_cast<ZstPlug*>(find_entity(input_path));
@@ -638,13 +653,24 @@ ZstEntityBase * ZstClient::find_entity(const ZstURI & path)
 	ZstPerformer * root = NULL;
 
 	if (path_is_local(path)) {
+		//Performer is local
 		root = m_root;
 	}
 	else {
+		//Performer is remote
 		root = get_performer_by_URI(path);
 	}
 
+	if (!root)
+		return result;
+
+	if (root->URI() == path) {
+		//Root is the entity we're searching for
+		return root;
+	}
+
 	if (root) {
+		//Find child entity in root
 		result = root->find_child_by_URI(path);
 	}
 
@@ -760,8 +786,11 @@ void ZstClient::destroy_entity_complete(ZstEntityBase * entity)
 		//Make sure to remove all cables from this entity
 		auto cable_bundle = entity->acquire_cable_bundle();
 		for (int i = 0; i < cable_bundle->size(); ++i) {
-			cable_bundle->cable_at(i)->set_deactivated();
-			cable_leaving_events()->enqueue(cable_bundle->cable_at(i));
+			ZstCable * cable = cable_bundle->cable_at(i);
+			if (cable->is_activated()) {
+				cable->set_deactivated();
+				cable_leaving_events()->enqueue(cable_bundle->cable_at(i));
+			}
 		}
 		entity->release_cable_bundle(cable_bundle);
 
@@ -785,31 +814,52 @@ void ZstClient::add_proxy_entity(ZstEntityBase & entity) {
 	
 	//Don't need to activate local entities, they will auto-activate when the stage responds with an OK
 	if (entity_is_local(entity)) {
+		LOGGER->warn("Received local entity {}. Ignoring", entity.URI().path());
 		return;
 	}
 
-	ZstPerformer * owning_performer = get_performer_by_URI(entity.URI());
-	if (owning_performer) {
+	//Copy streamable so we have a local ptr for the entity
+	ZstEntityBase * entity_proxy = NULL;
 
-		//Copy streamable so we have a local ptr for the entity
-		ZstEntityBase * entity_proxy = NULL;
-		assert(entity_proxy);
-
-		ZstURI parent_URI = entity.URI().parent();
-		if (parent_URI.size()) {
-			ZstEntityBase * parent = owning_performer->find_child_by_URI(parent_URI);
-
-			if (strcmp(entity.entity_type(), PLUG_TYPE) == 0) {
-				ZstPlug * plug = dynamic_cast<ZstPlug*>(entity_proxy);
-				dynamic_cast<ZstComponent*>(parent)->add_plug(plug);
-				plug_arriving_events()->enqueue(plug);
-			}
-			else {
-				dynamic_cast<ZstContainer*>(parent)->add_child(entity_proxy);
-				component_arriving_events()->enqueue(dynamic_cast<ZstComponent*>(entity_proxy));
-			}
+	ZstURI parent_URI = entity.URI().parent();
+	if (parent_URI.size()) {
+		ZstEntityBase * parent = find_entity(parent_URI);
+			
+		if (find_entity(entity.URI())) {
+			LOGGER->warn("Can't create entity {}, it already exists", entity.URI().path());
+			return;
 		}
+
+		ZstEntityBase * entity_proxy = NULL;
+		ZstEventDispatcher * dispatcher = NULL;
+
+		//Create proxies and set parents
+		if (strcmp(entity.entity_type(), COMPONENT_TYPE) == 0) {
+			entity_proxy = new ZstComponent(static_cast<ZstComponent&>(entity));
+			dynamic_cast<ZstContainer*>(parent)->add_child(entity_proxy);
+			dispatcher = component_arriving_events();
+		}
+		else if (strcmp(entity.entity_type(), CONTAINER_TYPE) == 0) {
+			entity_proxy = new ZstContainer(static_cast<ZstContainer&>(entity));
+			dynamic_cast<ZstContainer*>(parent)->add_child(entity_proxy);
+			dispatcher = component_arriving_events();
+		}
+		else if (strcmp(entity.entity_type(), PLUG_TYPE) == 0) {
+			ZstPlug * plug = new ZstPlug(static_cast<ZstPlug&>(entity));
+			entity_proxy = plug;
+			dynamic_cast<ZstComponent*>(parent)->add_plug(plug);
+			dispatcher = plug_arriving_events();
+		}
+		else {
+			LOGGER->error("Can't create unknown proxy entity type {}", entity.entity_type());
+		}
+
+		//Activate entity and dispatch events
+		entity_proxy->set_network_interactor(this);
+		entity_proxy->set_activated();
+		dispatcher->enqueue(entity_proxy);
 	}
+	
 }
 
 
@@ -825,12 +875,20 @@ std::unordered_map<ZstURI, ZstPerformer*> & ZstClient::performers()
 
 void ZstClient::add_performer(ZstPerformer & performer)
 {
+	if (performer.URI() == m_root->URI()) {
+		LOGGER->warn("Received self {} as performer. Ignoring", m_root->URI().path());
+		return;
+	}
+
 	//Copy streamable so we have a local ptr for the performer
 	ZstPerformer * performer_proxy = new ZstPerformer(performer);
 	assert(performer_proxy);
+	LOGGER->debug("Adding new performer {}", performer_proxy->URI().path());
 
 	if (performer.URI() != m_root->URI()) {
 		m_clients[performer_proxy->URI()] = performer_proxy;
+		performer_proxy->set_activated();
+		performer_arriving_events()->enqueue(performer_proxy);
 	}
 }
 
@@ -887,7 +945,7 @@ void ZstClient::destroy_plug(ZstPlug * plug)
 }
 
 void ZstClient::destroy_plug_complete(int status)
-{
+{	
 }
 
  // ------

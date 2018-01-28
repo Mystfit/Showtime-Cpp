@@ -19,14 +19,17 @@ public:
 
 		int request_code = plug->int_at(0);
 		if (request_code == 0) {
+			LOGGER->debug("Sink received code 0");
 			received_hit = true;
 		}
 		else if (request_code == 1) {
+			LOGGER->debug("Sink received code 1");
 			m_child_sink = new Sink("sinkB");
 			add_child(m_child_sink);
 			zst_activate_entity(m_child_sink);
 		}
 		else if (request_code == 2) {
+			LOGGER->debug("Sink received code 2");
 			zst_deactivate_entity(m_child_sink);
 			delete m_child_sink;
 		}
@@ -44,7 +47,7 @@ public:
 
 int main(int argc,char **argv){
 
-	ZST_init_log();
+	zst_log_init();
 	LOGGER->set_level(spdlog::level::debug);
 
 	if(argc < 2){
@@ -53,6 +56,11 @@ int main(int argc,char **argv){
 	}
 
 	LOGGER->debug("In sink process");
+
+
+#ifdef WIN32
+	system("pause");
+#endif
 
 	zst_init("sink");
     zst_join("127.0.0.1");

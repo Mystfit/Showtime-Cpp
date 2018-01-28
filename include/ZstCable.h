@@ -16,7 +16,8 @@ public:
 	ZST_EXPORT ZstCable(ZstPlug * input_plug, ZstPlug * output_plug);
 	ZST_EXPORT ~ZstCable();
 	ZST_EXPORT virtual void on_activated() override {};
-	ZST_EXPORT virtual void on_deactivated() override {};
+	ZST_EXPORT virtual void on_deactivated() override;
+	ZST_EXPORT virtual void set_deactivated() override;
 
 	// Status
 

@@ -13,7 +13,8 @@ void ZstComponentLeavingEvent::run(ZstComponent * target)
 
 void ZstCableLeavingEvent::run(ZstCable * target)
 {
-	ZstClient::instance().remove_cable(target);
+	target->unplug();
+	delete target;
 }
 
 void ZstPlugLeavingEvent::run(ZstPlug * target)
@@ -25,4 +26,9 @@ void ZstPlugLeavingEvent::run(ZstPlug * target)
 void ZstSynchronisableDeferredEvent::run(ZstSynchronisable * target)
 {
 	target->process_events();
+}
+
+void ZstComputeEvent::run(ZstInputPlug * target)
+{
+	dynamic_cast<ZstComponent*>(target->parent())->compute(target);
 }

@@ -27,7 +27,7 @@ ZstStage::~ZstStage()
 
 void ZstStage::init()
 {
-	ZST_init_log();
+	zst_log_init();
 	LOGGER->set_level(spdlog::level::debug);
 	LOGGER->info("Starting Showtime v{} stage server", SHOWTIME_VERSION);
 
@@ -605,13 +605,16 @@ void ZstStage::send_snapshot(ZstPerformer * client) {
 	//Pack performer root entities
 	for (auto performer : m_clients) {
 		//Only pack performers that aren't the destination client
-		if(performer.second->URI() != client->URI())
+		if (performer.second->URI() != client->URI()) {
 			snapshot->append_serialisable(ZstMessage::Kind::CREATE_PERFORMER, *(performer.second));
+			LOGGER->debug("Adding performer {} to snapshot", performer.second->URI().path());
+		}
 	}
-
+	
 	//Pack cables
 	for (auto cable : m_cables) {
 		snapshot->append_serialisable(ZstMessage::Kind::CREATE_CABLE, *cable);
+		LOGGER->debug("Adding cable {}-{} to snapshot", cable->get_output_URI().path(), cable->get_input_URI().path());
 	}
 
 	LOGGER->info("Sending graph snapshot to {}", client->URI().path());

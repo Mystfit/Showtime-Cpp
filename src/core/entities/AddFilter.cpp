@@ -17,8 +17,8 @@ void AddFilter::on_activated()
 void AddFilter::compute(ZstInputPlug * plug)
 {
 	m_sum->clear();
-	int largest_size = (m_addend->size() > m_augend->size()) ? m_addend->size() : m_augend->size();
-	
+	int largest_size = std::max(m_addend->size(), m_augend->size());
+
 	for (int i = 0; i < largest_size; ++i) {
 		if (m_augend->size() > i && m_addend->size() > i) {
 			float result = m_augend->float_at(i) + m_addend->float_at(i);
@@ -31,6 +31,7 @@ void AddFilter::compute(ZstInputPlug * plug)
 			m_sum->append_float(m_addend->float_at(i));
 		}
 	}
+	float check_val = m_sum->float_at(0);
 	m_sum->fire();
 }
 

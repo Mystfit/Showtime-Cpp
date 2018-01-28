@@ -65,10 +65,10 @@ ZstPlug::ZstPlug(const ZstPlug & other) : ZstEntityBase(other)
 
 ZstPlug::~ZstPlug() {
 	delete m_value;
-	for (auto cable : m_cables) {
-		cable->unplug(); 
-		delete cable;
-	}
+	//Cables should have been cleared at this point
+	//for (auto cable : m_cables) {
+	//	cable->set_deactivated(); 
+	//}
 	m_cables.clear();
 }
 
@@ -201,8 +201,7 @@ void ZstPlug::disconnect_cables()
 {
 	auto cables = m_cables;
 	for (auto c : cables) {
-		c->unplug();
-		delete c;
+		c->set_deactivated();
 	}
 }
 
