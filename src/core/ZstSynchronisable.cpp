@@ -1,15 +1,13 @@
 #include <ZstSynchronisable.h>
 #include <algorithm>
 #include <assert.h>
+
+#include "ZstEventDispatcher.h"
 #include "ZstINetworkInteractor.h"
 
 ZstSynchronisable::ZstSynchronisable() :
 	m_network_interactor(NULL),
-	m_sync_status(SyncStatus::DEACTIVATED),
-	m_activation_events(NULL),
-	m_deactivation_events(NULL),
-	m_activation_hook(NULL),
-	m_deactivation_hook(NULL)
+	m_sync_status(SyncStatus::DEACTIVATED)
 {
 	m_activation_events = new ZstEventDispatcher();
 	m_deactivation_events = new ZstEventDispatcher();

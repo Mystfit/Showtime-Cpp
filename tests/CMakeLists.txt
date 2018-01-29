@@ -7,8 +7,8 @@ set(SINK_TEST_SOURCE_FILES
 )
 
 # Boost flags
-# On windows, compile with the following:
-# bjam.exe threading=multi architecture=x86 address-model=64 link=static runtime-link=static --with-system --with-filesystem
+# On windows, compile with the following (stage/install):
+#bjam.exe threading=multi architecture=x86 address-model=64 link=static runtime-link=static --with-atomic --with-system --with-filesystem --with-context --with-chrono --with-date_time --with-program_options --with-regex --with-thread
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_STATIC_RUNTIME ON)
@@ -22,8 +22,6 @@ target_include_directories(${SINK_TEST_TARGET} PUBLIC ${ZST_INCLUDES})
 target_link_libraries(${SINK_TEST_TARGET} ${CLIENT_TARGET})
 add_test(NAME sink_test COMMAND ${SINK_TEST_TARGET})
 
-# target_link_directories( ${Boost_LIBRARY_DIRS})
-
 # CLient test executable
 set(CLIENT_TEST_TARGET TestClient)
 add_executable (${CLIENT_TEST_TARGET} ${CLIENT_TEST_SOURCE_FILES}) 
@@ -36,4 +34,7 @@ target_link_libraries( ${CLIENT_TEST_TARGET}
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
 )
+if(WIN32)
+    target_compile_definitions(${CLIENT_TEST_TARGET} PRIVATE -D_WIN32_WINNT=0x0501)
+endif(WIN32)
 add_test(NAME showtime_client_test COMMAND ${CLIENT_TEST_TARGET} WORKING_DIRECTORY $<TARGET_FILE_DIR:${CLIENT_TEST_TARGET}>)

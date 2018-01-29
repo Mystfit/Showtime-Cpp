@@ -32,7 +32,7 @@ ZstURI::ZstURI(const char * path)
 	split();
 }
 
-ZstURI::ZstURI(const char * path, int len)
+ZstURI::ZstURI(const char * path, size_t len)
 {
 	original_path = create_pstr(path, len);
 	segmented_path = create_pstr(path, len);
@@ -53,27 +53,27 @@ char * ZstURI::segment(size_t index)
 	return components[index].cstr;
 }
 
-const int ZstURI::size() const
+const size_t ZstURI::size() const
 {
 	return component_count;
 }
 
-const int ZstURI::full_size() const
+const size_t ZstURI::full_size() const
 {
 	return strlen(original_path.cstr);
 }
 
 ZstURI ZstURI::operator+(const ZstURI & other) const
 {
-	int new_length = original_path.length + other.original_path.length + 1;
+	size_t new_length = original_path.length + other.original_path.length + 2;
 
 	char * new_path = (char*)malloc(new_length+1);
-	strncpy(new_path, original_path.cstr, original_path.length);
+	strncpy_s(new_path, new_length, original_path.cstr, original_path.length);
 	new_path[original_path.length] = '\0';
 
-	strncat(new_path, "/", 1);
-	strncat(new_path, other.original_path.cstr, other.original_path.length);
-	new_path[new_length] = '\0';
+	strncat_s(new_path, new_length, "/", 1);
+	strncat_s(new_path, new_length, other.original_path.cstr, other.original_path.length);
+	new_path[new_length-1] = '\0';
 
 	ZstURI result = ZstURI(new_path);
 	free(new_path);
@@ -89,18 +89,18 @@ ZstURI & ZstURI::operator=(const ZstURI & other)
 	return *this;
 }
 
-ZstURI ZstURI::range(int start, int end) const
+ZstURI ZstURI::range(size_t start, size_t end) const
 {
 	if ((end - start) > size())
 		throw std::range_error("Start or end exceeds path length");
 
-	int index = 0;
-	int start_position = 0;
+	size_t index = 0;
+	size_t start_position = 0;
 
 	for (index; index < start; index++)
 		start_position += components[index].length + 1;
 
-	int length = 0;
+	size_t length = 0;
 	for (index = start; index <= end; index++)
 		length += components[index].length;
 	length += end - start;
@@ -112,9 +112,12 @@ ZstURI ZstURI::range(int start, int end) const
 
 ZstURI ZstURI::parent() const
 {
-	if (size() - 2 < 0)
+	int s = static_cast<int>(this->size());
+	int parent_index = s - 2;
+	if (parent_index < 0) {
 		throw std::out_of_range("URI has no parent");
-	return range(0, size() - 2);
+	}
+	return range(0, parent_index);
 }
 
 ZstURI ZstURI::first() const
@@ -135,12 +138,14 @@ bool ZstURI::contains(const ZstURI & compare) const
 		return false;
 	}
 
-	int shortest = std::min(compare.size(), size());
-	int largest = std::max(compare.size(), size());
+	int s = static_cast<int>(size());
+	int other_s = static_cast<int>(compare.size());
+	int shortest = std::min(other_s,s);
+	int largest = std::max(other_s, s);
 	int contiguous = 0;
 
 	for (int i = 0; i < shortest; ++i) {
-		if (i < compare.size()) {
+		if (i < other_s) {
 			if (strcmp(compare.components[i].cstr, this->components[i].cstr) == 0) {
 				if (++contiguous == shortest)
 					return true;
@@ -210,13 +215,13 @@ pstr ZstURI::create_pstr(const char * p)
 	return create_pstr(p, strlen(p));
 }
 
-pstr ZstURI::create_pstr(const char * p, int l)
+pstr ZstURI::create_pstr(const char * p, size_t l)
 {
 	pstr result;
-	result.length = l;
-	result.cstr = (char*)malloc(result.length + 1);
-	strncpy(result.cstr, p, result.length + 1);
-	result.cstr[result.length] = '\0';
+	result.length = l + 1;
+	result.cstr = (char*)malloc(result.length);
+	strncpy_s(result.cstr, result.length, p, result.length-1);
+	result.cstr[result.length-1] = '\0';
 
 	return result;
 }

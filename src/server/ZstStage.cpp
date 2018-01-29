@@ -105,7 +105,7 @@ void ZstStage::destroy_client(ZstPerformer * performer)
 		m_clients.erase(client_it);
 	}
 
-	ZstMessage * leave_msg = msg_pool()->get()->init_message(ZstMessage::Kind::CLIENT_LEAVE);
+	ZstMessage * leave_msg = msg_pool()->get()->init_message(ZstMessage::Kind::DESTROY_ENTITY);
 	leave_msg->append_str(performer->URI().path(), performer->URI().full_size());
 	publish_stage_update(leave_msg);
 	delete performer;
@@ -116,10 +116,15 @@ void ZstStage::destroy_client(ZstPerformer * performer)
 //Cables
 //------
 
-ZstCable * ZstStage::create_cable(const ZstURI & output_URI, const ZstURI & input_URI)
+ZstCable * ZstStage::create_cable(const ZstCable & cable)
+{
+	return create_cable(cable.get_input_URI(), cable.get_output_URI());
+}
+
+ZstCable * ZstStage::create_cable(const ZstURI & input_URI, const ZstURI & output_URI)
 {
 	ZstCable * cable_ptr = NULL;
-	cable_ptr = get_cable_by_URI(output_URI, input_URI);
+	cable_ptr = get_cable_by_URI(input_URI, output_URI);
 
 	//Check to see if we already have a cable
 	if (cable_ptr != NULL) {
@@ -160,7 +165,13 @@ ZstCable * ZstStage::create_cable(const ZstURI & output_URI, const ZstURI & inpu
 
 	//Finally create the cable
 	cable_ptr = new ZstCable(input_plug, output_plug);
-	m_cables.push_back(cable_ptr);
+	try {
+		m_cables.insert(cable_ptr);
+	} catch(std::exception e) {
+		LOGGER->error("Couldn't insert cable. Reason:", e.what());
+		delete cable_ptr;
+		cable_ptr = NULL;
+	}
 	return cable_ptr;
 }
 
@@ -179,20 +190,18 @@ int ZstStage::destroy_cable(const ZstURI & path) {
 	return result;
 }
 
-int ZstStage::destroy_cable(const ZstURI & output_plug, const ZstURI & input_plug) {
-	return destroy_cable(get_cable_by_URI(output_plug, input_plug));
+int ZstStage::destroy_cable(const ZstURI & input_plug, const ZstURI & output_plug) {
+	return destroy_cable(get_cable_by_URI(input_plug, output_plug));
 }
 
 int ZstStage::destroy_cable(ZstCable * cable) {
 	if (cable != NULL) {
 		LOGGER->info("Destroying cable {} {}", cable->get_output_URI().path(), cable->get_input_URI().path());
-		for (vector<ZstCable*>::iterator cable_iter = m_cables.begin(); cable_iter != m_cables.end(); ++cable_iter) {
-			if ((*cable_iter) == cable) {
-				m_cables.erase(cable_iter);
-				break;
-			}
-		}
-
+		
+		//Update rest of network
+		publish_stage_update(msg_pool()->get()->init_serialisable_message(ZstMessage::Kind::DESTROY_CABLE, *cable));
+		
+		m_cables.erase(cable);
 		delete cable;
 		cable = 0;
 		return 1;
@@ -208,7 +217,7 @@ vector<ZstCable*> ZstStage::find_cables(const ZstURI & uri) {
 	});
 
 	for (it; it != m_cables.end(); ++it) {
-		cables.push_back((*it));
+		cables.push_back(*it);
 	}
 
 	return cables;
@@ -225,16 +234,16 @@ std::vector<ZstCable*> ZstStage::get_cables_in_entity(ZstEntityBase * entity)
 	return cables;
 }
 
-ZstCable * ZstStage::get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB) {
-
-	auto it = find_if(m_cables.begin(), m_cables.end(), [&uriA, &uriB](ZstCable * current) {
-		return current->is_attached(uriA, uriB);
-	});
-
-	if (it != m_cables.end()) {
-		return (*it);
+ZstCable * ZstStage::get_cable_by_URI(const ZstURI & input, const ZstURI & output) {
+	ZstCable * cable = NULL;
+	if (m_cables.size()) {
+		ZstCable search_cable = ZstCable(input, output);
+		auto cable_it = m_cables.find(&search_cable);
+		if (cable_it != m_cables.end()) {
+			cable = *cable_it;
+		}
 	}
-	return NULL;
+	return cable;
 }
 
 
@@ -268,6 +277,10 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 	//If we're dealing with a new client, we don't need to search for it
 	if (msg->kind() != ZstMessage::Kind::CLIENT_JOIN) {
 		sender = stage->get_client_from_socket_id(sender_identity);
+		if (!sender) {
+			//If the sender hasn't joined yet, ignore the message
+			return 0;
+		}
 	}
 	
 	bool send_reply = true;
@@ -515,6 +528,7 @@ ZstMessage * ZstStage::destroy_entity_handler(ZstMessage * msg)
 	//Remove all cables linked to this entity
 	std::vector<ZstCable*> cables = get_cables_in_entity(entity);
 	for (auto c : cables) {
+		LOGGER->info("Removing cables linked to leaving entity");
 		destroy_cable(c);
 	}
 
@@ -548,10 +562,10 @@ ZstMessage * ZstStage::create_cable_handler(ZstMessage * msg)
 
 	//Unpack cable from message
 	ZstCable cable = msg->unpack_payload_serialisable<ZstCable>(0);
-	LOGGER->info("Received connect cable request for {} and {}", cable.get_output_URI().path(), cable.get_output_URI().path());
+	LOGGER->info("Received connect cable request for In:{} and Out:{}", cable.get_input_URI().path(), cable.get_output_URI().path());
 
 	//Create cable 
-	ZstCable * cable_ptr = create_cable(cable.get_output_URI(), cable.get_input_URI());
+	ZstCable * cable_ptr = create_cable(cable);
 
 	if (!cable_ptr) {
 		return response->init_message(ZstMessage::Kind::ERR_STAGE_BAD_CABLE_CONNECT_REQUEST);
@@ -579,15 +593,12 @@ ZstMessage * ZstStage::destroy_cable_handler(ZstMessage * msg)
 	ZstMessage * response = msg_pool()->get();
 	ZstCable cable = msg->unpack_payload_serialisable<ZstCable>(0);
 	LOGGER->info("Received destroy cable connection request");
-
+	
 	ZstCable * cable_ptr = get_cable_by_URI(cable.get_input_URI(), cable.get_output_URI());
 
 	if (!destroy_cable(cable_ptr)) {
 		response->init_message(ZstMessage::Kind::ERR_STAGE_BAD_CABLE_DISCONNECT_REQUEST);
 	}
-
-	//Update rest of network
-	publish_stage_update(msg_pool()->get()->init_serialisable_message(msg->kind(), cable));
 
 	return response->init_message(ZstMessage::Kind::OK);
 }

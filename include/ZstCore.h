@@ -9,7 +9,6 @@
 #include "ZstSynchronisable.h"
 #include "ZstCable.h"
 #include "ZstEvents.h"
-#include "ZstEventDispatcher.h"
 #include "entities/ZstEntityBase.h"
 #include "entities/ZstComponent.h"
 #include "entities/ZstContainer.h"

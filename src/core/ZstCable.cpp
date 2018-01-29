@@ -1,5 +1,6 @@
 #include <msgpack.hpp>
 #include <ZstCable.h>
+#include <entities/ZstPlug.h>
 
 ZstCable::ZstCable() : 
 	ZstSynchronisable(),
@@ -19,6 +20,15 @@ ZstCable::ZstCable(const ZstCable & copy) :
 {
 }
 
+ZstCable::ZstCable(const ZstURI & input_plug_URI, const ZstURI & output_plug_URI) :
+	ZstSynchronisable(),
+	m_input(NULL),
+	m_output(NULL),
+	m_input_URI(input_plug_URI),
+	m_output_URI(output_plug_URI)
+{
+}
+
 ZstCable::ZstCable(ZstPlug * input_plug, ZstPlug * output_plug) :
 	ZstSynchronisable(),
 	m_input(input_plug),
@@ -34,22 +44,22 @@ ZstCable::~ZstCable()
 
 void ZstCable::on_deactivated()
 {
-	unplug();
 }
 
 void ZstCable::set_deactivated()
 {
+	unplug();
 	ZstSynchronisable::set_deactivated();
 }
 
-bool ZstCable::operator==(const ZstCable & other)
+bool ZstCable::operator==(const ZstCable & other) const
 {
-	return ZstURI::equal(m_input_URI, other.m_input_URI) && ZstURI::equal(m_output_URI, other.m_output_URI);
+	return (m_input_URI == other.m_input_URI) && (m_output_URI == other.m_output_URI);
 }
 
 bool ZstCable::operator!=(const ZstCable & other)
 {
-	return !(ZstURI::equal(m_input_URI, other.m_input_URI) && ZstURI::equal(m_output_URI, other.m_output_URI));
+	return !(*this == other);
 }
 
 bool ZstCable::is_attached(const ZstURI & uri) const
@@ -71,6 +81,16 @@ bool ZstCable::is_attached(ZstPlug * plugA, ZstPlug * plugB) const
 bool ZstCable::is_attached(ZstPlug * plug) const 
 {
 	return (ZstURI::equal(m_input->URI(), plug->URI())) || (ZstURI::equal(m_output->URI(), plug->URI()));
+}
+
+void ZstCable::set_input(ZstPlug * input)
+{
+	m_input = input;
+}
+
+void ZstCable::set_output(ZstPlug * output)
+{
+	m_output = output;
 }
 
 ZstPlug * ZstCable::get_input()
@@ -131,8 +151,6 @@ void ZstCable::set_local()
 	m_is_local = true;
 }
 
-//--
-
 ZstCableBundle::ZstCableBundle()
 {
 }
@@ -154,4 +172,19 @@ ZstCable * ZstCableBundle::cable_at(size_t index)
 size_t ZstCableBundle::size()
 {
 	return m_cables.size();
+}
+
+//--
+
+size_t ZstCableHash::operator()(ZstCable* const& k) const
+{
+	std::size_t h1 = std::hash<std::string>{}(k->get_output_URI().path());
+	std::size_t h2 = std::hash<std::string>{}(k->get_input_URI().path());
+	return h1 ^ (h2 << 1);
+}
+
+bool ZstCableEq::operator()(ZstCable const * lhs, ZstCable const * rhs) const
+{
+	bool result = (*lhs == *rhs);
+	return result;
 }

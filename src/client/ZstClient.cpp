@@ -30,12 +30,14 @@ ZstClient::ZstClient() :
 
 	//Client events
 	m_synchronisable_deferred_event = new ZstSynchronisableDeferredEvent();
+	m_performer_leaving_hook = new ZstComponentLeavingEvent();
 	m_component_leaving_hook = new ZstComponentLeavingEvent();
 	m_cable_leaving_hook = new ZstCableLeavingEvent();
 	m_plug_leaving_hook = new ZstPlugLeavingEvent();
 	m_compute_event = new ZstComputeEvent();
 
 	m_synchronisable_event_manager->attach_event_listener(m_synchronisable_deferred_event);
+	m_performer_leaving_event_manager->attach_post_event_callback(m_performer_leaving_hook);
 	m_component_leaving_event_manager->attach_post_event_callback(m_component_leaving_hook);
 	m_cable_leaving_event_manager->attach_post_event_callback(m_cable_leaving_hook);
 	m_plug_leaving_event_manager->attach_post_event_callback(m_plug_leaving_hook);
@@ -50,6 +52,7 @@ ZstClient::~ZstClient() {
 	destroy();
 
 	m_synchronisable_event_manager->remove_event_listener(m_synchronisable_deferred_event);
+	m_performer_leaving_event_manager->attach_post_event_callback(m_performer_leaving_hook);
 	m_component_leaving_event_manager->remove_post_event_callback(m_component_leaving_hook);
 	m_cable_leaving_event_manager->remove_post_event_callback(m_cable_leaving_hook);
 	m_plug_leaving_event_manager->remove_post_event_callback(m_plug_leaving_hook);
@@ -70,6 +73,7 @@ ZstClient::~ZstClient() {
 	delete m_plug_leaving_event_manager;
 
 	delete m_synchronisable_deferred_event;
+	delete m_performer_leaving_hook;
 	delete m_component_leaving_hook;
 	delete m_cable_leaving_hook;
 	delete m_plug_leaving_hook;
@@ -204,6 +208,24 @@ void ZstClient::process_callbacks()
     m_plug_arriving_event_manager->process();
     m_plug_leaving_event_manager->process();
 	m_compute_event_manager->process();
+}
+
+void ZstClient::clear_callbacks()
+{
+	m_synchronisable_event_manager->clear();
+	m_client_connected_event_manager->clear();
+	m_client_disconnected_event_manager->clear();
+	m_cable_arriving_event_manager->clear();
+	m_cable_leaving_event_manager->clear();
+	m_performer_arriving_event_manager->clear();
+	m_performer_leaving_event_manager->clear();
+	m_component_arriving_event_manager->clear();
+	m_component_leaving_event_manager->clear();
+	m_component_type_arriving_event_manager->clear();
+	m_component_type_leaving_event_manager->clear();
+	m_plug_arriving_event_manager->clear();
+	m_plug_leaving_event_manager->clear();
+	m_compute_event_manager->clear();
 }
 
 string ZstClient::first_available_ext_ip(){
@@ -348,14 +370,19 @@ void ZstClient::leave_stage()
 {
 	if (m_connected_to_stage) {
 		LOGGER->info("Leaving stage");
+		
+		//Close stage update socket so we don't receive any updates during shutdown
+		zsock_disconnect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
+
+		//Purge callbacks
+		clear_callbacks();
 
 		//Notify stage that we are leaving
 		ZstMessage * msg = msg_pool()->get();
-		send_to_stage(msg_pool()->get()->init_message(ZstMessage::Kind::CLIENT_LEAVE));
+		send_to_stage(msg_pool()->get()->init_message(ZstMessage::Kind::CLIENT_LEAVING));
 
-		//Disconnect sockets and timers
+		//Disconnect rest of sockets and timers
 		zsock_disconnect(m_stage_router, "%s", m_stage_router_addr.c_str());
-		zsock_disconnect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
 		detach_timer(m_heartbeat_timer_id);
 		
 		m_connected_to_stage = false;
@@ -476,7 +503,7 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 			//Only dispatch cable event if we don't already have the cable (we might have created it)
 			if(!find_cable_ptr(cable.get_input_URI(), cable.get_output_URI())) {
 				ZstCable * cable_ptr = create_cable_ptr(cable);
-				cable_ptr->set_activation_status(ZstSynchronisable::ACTIVATING);
+				cable_ptr->set_activated();
 				cable_arriving_events()->enqueue(cable_ptr);
 			}
 			break;
@@ -486,10 +513,20 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 			ZstCable cable = msg->unpack_payload_serialisable<ZstCable>(i);
 			ZstCable * cable_ptr = find_cable_ptr(cable.get_input_URI(), cable.get_output_URI());
 			if (cable_ptr) {
-				if (cable_ptr->is_activated()) {
-					cable_ptr->set_deactivated();
-					cable_leaving_events()->enqueue(cable_ptr);
-				}
+				//Find the plugs and disconnect them seperately, in case they have already disappeared
+				ZstPlug * input = dynamic_cast<ZstPlug*>(find_entity(cable_ptr->get_input_URI()));
+				ZstPlug * output = dynamic_cast<ZstPlug*>(find_entity(cable_ptr->get_output_URI()));
+
+				if (input)
+					input->remove_cable(cable_ptr);
+
+				if (output)
+					output->remove_cable(cable_ptr);
+
+				cable_ptr->set_input(NULL);
+				cable_ptr->set_output(NULL);
+				cable_ptr->set_deactivated();
+				cable_leaving_events()->enqueue(cable_ptr);
 			}
 			break;
 		}
@@ -532,7 +569,7 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 			if (!path_is_local(entity_path)) {
 				ZstEntityBase * entity = find_entity(entity_path);
 
-				if (strcmp(entity->entity_type(), COMPONENT_TYPE) == 0) {
+				if (strcmp(entity->entity_type(), COMPONENT_TYPE) == 0 || strcmp(entity->entity_type(), CONTAINER_TYPE) == 0) {
 					component_leaving_events()->enqueue(entity);
 				} else if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
 					plug_leaving_events()->enqueue(entity);
@@ -584,7 +621,7 @@ int ZstClient::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
 		chrono::time_point<chrono::system_clock> end = chrono::system_clock::now();
 		chrono::milliseconds delta = chrono::duration_cast<chrono::milliseconds>(end - start);
 		LOGGER->debug("Ping roundtrip {} ms", delta.count());
-		client->m_ping = delta.count();
+		client->m_ping = static_cast<long>(delta.count());
 		return status;
 	});
 	client->send_to_stage(msg);
@@ -598,48 +635,69 @@ int ZstClient::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
 // ------------------
 ZstCable * ZstClient::create_cable_ptr(ZstCable & cable)
 {
-	ZstPlug * input_plug = dynamic_cast<ZstPlug*>(find_entity(cable.get_input_URI()));
-	ZstPlug * output_plug = dynamic_cast<ZstPlug*>(find_entity(cable.get_output_URI()));
-	return create_cable_ptr(input_plug, output_plug);
+	return create_cable_ptr(cable.get_input_URI(), cable.get_output_URI());
 }
 
 ZstCable * ZstClient::create_cable_ptr(ZstPlug * input, ZstPlug * output)
 {
-	ZstCable * cable_ptr = NULL;
 	if (!input || !output) {
+		return NULL;
+	}
+	return create_cable_ptr(input->URI(), output->URI());
+}
+
+ZstCable * ZstClient::create_cable_ptr(const ZstURI & input_path, const ZstURI & output_path)
+{
+	ZstCable * cable_ptr = find_cable_ptr(input_path, output_path);
+	if (cable_ptr) {
+		return NULL;
+	}
+	
+	//Create and store new cable
+	cable_ptr = new ZstCable(input_path, output_path);
+	try {
+		m_cables.insert(cable_ptr);
+	}
+	catch (std::exception e) {
+		LOGGER->error("Couldn't insert cable. Reason:", e.what());
+		delete cable_ptr;
+		cable_ptr = NULL;
 		return cable_ptr;
 	}
 
-	cable_ptr = find_cable_ptr(input, output);
-	if (!cable_ptr) {
-		cable_ptr = new ZstCable(input, output);
-		cable_ptr->set_network_interactor(this);
-		input->add_cable(cable_ptr);
-		output->add_cable(cable_ptr);
-	}
+	//Add cable to plugs
+	ZstPlug * input_plug = dynamic_cast<ZstPlug*>(find_entity(input_path));
+	ZstPlug * output_plug = dynamic_cast<ZstPlug*>(find_entity(output_path));
+	input_plug->add_cable(cable_ptr);
+	output_plug->add_cable(cable_ptr);
+	cable_ptr->set_input(input_plug);
+	cable_ptr->set_output(output_plug);
+
+	//Set network interactor
+	cable_ptr->set_network_interactor(this);
+	
 	return cable_ptr;
 }
 
 ZstCable * ZstClient::find_cable_ptr(const ZstURI & input_path, const ZstURI & output_path)
 {
-	ZstPlug * input_plug = dynamic_cast<ZstPlug*>(find_entity(input_path));
-	ZstPlug * output_plug = dynamic_cast<ZstPlug*>(find_entity(output_path));
-	return find_cable_ptr(input_plug, output_plug);
+	ZstCable * cable = NULL;
+	if (m_cables.size()) {
+		auto search_cable = ZstCable(input_path, output_path);
+		auto cable_ptr = m_cables.find(&search_cable);
+		if (cable_ptr != m_cables.end()) {
+			cable = *cable_ptr;
+		}
+	}
+	return cable;
 }
 
 ZstCable * ZstClient::find_cable_ptr(ZstPlug * input, ZstPlug * output)
 {
-	ZstCable * cable_ptr = NULL;
 	if (!input || !output) {
-		return cable_ptr;
+		return NULL;
 	}
-
-	for (auto cable : *output) {
-		if (cable->get_input() == input) {
-			cable_ptr = cable;
-		}
-	}
-	return cable_ptr;
+	return find_cable_ptr(input->URI(), output->URI());
 }
 
 
@@ -784,7 +842,7 @@ void ZstClient::destroy_entity_complete(ZstEntityBase * entity)
 		}
 
 		//Make sure to remove all cables from this entity
-		auto cable_bundle = entity->acquire_cable_bundle();
+		/*auto cable_bundle = entity->acquire_cable_bundle();
 		for (int i = 0; i < cable_bundle->size(); ++i) {
 			ZstCable * cable = cable_bundle->cable_at(i);
 			if (cable->is_activated()) {
@@ -792,7 +850,7 @@ void ZstClient::destroy_entity_complete(ZstEntityBase * entity)
 				cable_leaving_events()->enqueue(cable_bundle->cable_at(i));
 			}
 		}
-		entity->release_cable_bundle(cable_bundle);
+		entity->release_cable_bundle(cable_bundle);*/
 
 		//If this entity is remote, we can clean it up
 		if (!entity_is_local(*entity)) {
@@ -814,7 +872,7 @@ void ZstClient::add_proxy_entity(ZstEntityBase & entity) {
 	
 	//Don't need to activate local entities, they will auto-activate when the stage responds with an OK
 	if (entity_is_local(entity)) {
-		LOGGER->warn("Received local entity {}. Ignoring", entity.URI().path());
+		LOGGER->info("Received local entity {}. Ignoring", entity.URI().path());
 		return;
 	}
 
@@ -952,40 +1010,35 @@ void ZstClient::destroy_plug_complete(int status)
  // Cables
  // ------
  
-ZstCable * ZstClient::connect_cable(ZstPlug * a, ZstPlug * b)
+ZstCable * ZstClient::connect_cable(ZstPlug * input, ZstPlug * output)
 {
 	ZstCable * cable = NULL;
-	ZstPlug * input_plug = NULL;
-	ZstPlug * output_plug = NULL;
 
-	if (!a || !b) {
+	if (!input || !output) {
 		LOGGER->error("Can't connect cable, plug missing.");
 		return cable;
 	}
 
-	if (!a->is_activated() || !b->is_activated()) {
+	if (!input->is_activated() || !output->is_activated()) {
 		LOGGER->error("Can't connect cable, plug is not activated.");
 		return cable;
 	}
 
-	//Reorder plugs in correct order (output to input)
-	if (a->direction() == ZstPlugDirection::OUT_JACK && b->direction() == ZstPlugDirection::IN_JACK) {
-		input_plug = b;
-		output_plug = a;
-	}
-	else if (a->direction() == ZstPlugDirection::IN_JACK && b->direction() == ZstPlugDirection::OUT_JACK) {
-		input_plug = a;
-		output_plug = b;
-	} else {
-		LOGGER->error("Can't connect two input or output cables together");
+	if (input->direction() != ZstPlugDirection::IN_JACK || output->direction() != ZstPlugDirection::OUT_JACK) {
+		LOGGER->error("Cable order incorrect");
 		return NULL;
 	}
 	
-	cable = create_cable_ptr(input_plug, output_plug);
+	cable = create_cable_ptr(input, output);
+	if (!cable) {
+		LOGGER->error("Couldn't create cable, already exists!");
+		return NULL;
+	}
+
 	cable->set_activation_status(ZstSynchronisable::ACTIVATING);
 
 	//If either of the cable plugs are a local entity, then the cable is local as well
-	if (entity_is_local(*a) || entity_is_local(*b)) {
+	if (entity_is_local(*input) || entity_is_local(*output)) {
 		cable->set_local();
 	}
 

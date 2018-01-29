@@ -4,6 +4,7 @@
 #include <vector>
 #include <ZstExports.h>
 #include <ZstConstants.h>
+#include <ZstCable.h>
 #include <entities/ZstEntityBase.h>
 
 #define PLUG_TYPE "plug"
@@ -13,23 +14,23 @@ class ZstValue;
 class ZstCable;
 class ZstPlug;
 
-class ZstCableIterator {
+class ZstPlugIterator {
 public:
-	ZST_EXPORT ZstCableIterator(const ZstPlug * p, unsigned idx = 0);
-	ZST_EXPORT bool operator!=(const ZstCableIterator& other);
-	ZST_EXPORT const ZstCableIterator& operator++();
+	ZST_EXPORT ZstPlugIterator(const ZstPlug * p, ZstCableList::iterator it);
+	ZST_EXPORT bool operator!=(const ZstPlugIterator& other);
+	ZST_EXPORT const ZstPlugIterator& operator++();
 	ZST_EXPORT ZstCable * operator*() const;
 
 private:
 	const ZstPlug * m_plug;
-	unsigned int m_index;
+	ZstCableList::iterator m_it;
 };
 
 class ZstPlug : public ZstEntityBase {
 public:
 	friend class ZstClient;
     friend class ZstComponent;
-	friend class ZstCableIterator;
+	friend class ZstPlugIterator;
 	friend class ZstCable;
     
 	//Initialisation
@@ -62,11 +63,10 @@ public:
 	ZST_EXPORT ZstPlugDirection direction();
 
 	//Cable enumeration
-	ZST_EXPORT ZstCableIterator begin() const;
-	ZST_EXPORT ZstCableIterator end() const;
+	ZST_EXPORT ZstPlugIterator begin() const;
+	ZST_EXPORT ZstPlugIterator end() const;
 	ZST_EXPORT size_t num_cables();
 	ZST_EXPORT bool is_connected_to(ZstPlug * plug);
-	ZST_EXPORT ZstCable * cable_at(size_t index);
 	ZST_EXPORT void disconnect_cables() override;
 
 protected:
@@ -77,7 +77,7 @@ private:
 	ZST_EXPORT void add_cable(ZstCable * cable);
 	ZST_EXPORT void remove_cable(ZstCable * cable);
 
-	std::vector<ZstCable*> m_cables;
+	ZstCableList m_cables;
 };
 
 

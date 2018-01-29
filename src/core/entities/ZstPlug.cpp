@@ -3,6 +3,7 @@
 
 #include <entities/ZstPlug.h>
 #include <ZstCable.h>
+#include <ZstLogging.h>
 
 #include "../ZstValue.h"
 #include "../ZstINetworkInteractor.h"
@@ -13,29 +14,26 @@ using namespace std;
 //Plug cables iterator
 //--------------------
 
-ZstCableIterator::ZstCableIterator(const ZstPlug * plug, unsigned idx) :
+ZstPlugIterator::ZstPlugIterator(const ZstPlug * plug, ZstCableList::iterator it) :
 	m_plug(plug),
-	m_index(idx)
+	m_it(it)
 {
 }
 
-bool ZstCableIterator::operator!=(const ZstCableIterator & other)
+bool ZstPlugIterator::operator!=(const ZstPlugIterator & other)
 {
-	return (m_index != other.m_index);
+	return (m_it != other.m_it);
 }
 
-const ZstCableIterator & ZstCableIterator::operator++()
+const ZstPlugIterator & ZstPlugIterator::operator++()
 {
-	m_index++;
+	m_it++;
 	return *this;
 }
 
-ZstCable * ZstCableIterator::operator*() const
+ZstCable * ZstPlugIterator::operator*() const
 {
-	ZstCable * result = NULL;
-	if (m_plug->m_cables.size())
-		result = m_plug->m_cables[m_index];
-	return result;
+	return *m_it;
 }
 
 
@@ -166,14 +164,14 @@ ZstPlugDirection ZstPlug::direction()
 // Cable enerumeration
 //--------------------
 
-ZstCableIterator ZstPlug::begin() const
+ZstPlugIterator ZstPlug::begin() const
 {
-	return m_cables.size() > 0 ? ZstCableIterator(this, 0) : NULL;
+	return ZstPlugIterator(this, m_cables.begin());
 }
 
-ZstCableIterator ZstPlug::end() const
+ZstPlugIterator ZstPlug::end() const
 {
-	return m_cables.size() > 0 ? ZstCableIterator(this, m_cables.size()) : NULL;
+	return ZstPlugIterator(this, m_cables.end());
 }
 
 size_t ZstPlug::num_cables()
@@ -192,11 +190,6 @@ bool ZstPlug::is_connected_to(ZstPlug * plug)
 	return result;
 }
 
-ZstCable * ZstPlug::cable_at(size_t index)
-{
-	return m_cables[index];
-}
-
 void ZstPlug::disconnect_cables()
 {
 	auto cables = m_cables;
@@ -207,17 +200,17 @@ void ZstPlug::disconnect_cables()
 
 void ZstPlug::add_cable(ZstCable * cable)
 {
-	std::vector<ZstCable*>::iterator cable_it = std::find(m_cables.begin(), m_cables.end(), cable);
-	if (cable_it != m_cables.end()) {
-		return;
+	try {
+		m_cables.insert(cable);
 	}
-
-	m_cables.push_back(cable);
+	catch (std::exception e) {
+		LOGGER->error("Failed to add cable to plug: Reason: {}", e.what());
+	}
 }
 
 void ZstPlug::remove_cable(ZstCable * cable)
 {
-	m_cables.erase(std::remove(m_cables.begin(), m_cables.end(), cable), m_cables.end());
+	m_cables.erase(cable);
 }
 
 

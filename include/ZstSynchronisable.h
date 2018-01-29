@@ -2,9 +2,9 @@
 
 #include <ZstExports.h>
 #include <ZstEvents.h>
-#include <ZstEventDispatcher.h>
 
 class ZstINetworkInteractor;
+class ZstEventDispatcher;
 
 class ZstSynchronisable {
 	friend class ZstActivationEvent;

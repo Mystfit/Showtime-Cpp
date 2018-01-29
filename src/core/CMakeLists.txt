@@ -13,7 +13,6 @@ set(ZST_INTERFACE_HEADERS
     ${Showtime_INCLUDE_DIRS}/ZstSerialisable.h
     ${Showtime_INCLUDE_DIRS}/ZstSynchronisable.h
     ${Showtime_INCLUDE_DIRS}/ZstEvents.h
-    ${Showtime_INCLUDE_DIRS}/ZstEventDispatcher.h
     ${Showtime_INCLUDE_DIRS}/entities/AddFilter.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstEntityBase.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstComponent.h
@@ -25,6 +24,7 @@ set(ZST_INTERFACE_HEADERS
 set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstActor.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessage.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstEventDispatcher.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstINetworkInteractor.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstValue.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessagePool.h"
@@ -57,6 +57,7 @@ find_package(MsgPack REQUIRED)
 set(ZST_CORE_INCLUDES 
     ${COMPILED_INCLUDES}
     ${Showtime_INCLUDE_DIRS}
+    "${Showtime_SUBMODULES_DIR}/concurrentqueue"
     "${Showtime_SUBMODULES_DIR}/spdlog/include"
     "${Showtime_SUBMODULES_DIR}/variant/include/mpark"
     "${Showtime_SUBMODULES_DIR}/cf"

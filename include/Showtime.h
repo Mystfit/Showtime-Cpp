@@ -43,6 +43,12 @@ extern "C" {
 	ZST_CLIENT_EXPORT int zst_ping();
 
 	//Cable management
-	ZST_CLIENT_EXPORT ZstCable * zst_connect_cable(ZstPlug * a, ZstPlug * b);
+	ZST_CLIENT_EXPORT ZstCable * zst_connect_cable(ZstPlug * input, ZstPlug * output);
 	ZST_CLIENT_EXPORT void zst_destroy_cable(ZstCable * cable);
+
+	//Debugging
+	ZST_CLIENT_EXPORT int zst_graph_recv_tripmeter();
+	ZST_CLIENT_EXPORT void zst_reset_graph_recv_tripmeter();
+	ZST_CLIENT_EXPORT int zst_graph_send_tripmeter();
+	ZST_CLIENT_EXPORT void zst_reset_graph_send_tripmeter();
 }

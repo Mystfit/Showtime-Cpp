@@ -13,6 +13,7 @@
 #include "../core/ZstMessagePool.h"
 #include "../core/ZstINetworkInteractor.h"
 #include "../core/ZstValue.h"
+#include "../core/ZstEventDispatcher.h"
 
 //Client includes
 #include "ZstClientEvents.h"
@@ -26,6 +27,7 @@ public:
 	void init(const char * performer_name);
 	void destroy();
 	void process_callbacks();
+	void clear_callbacks();
 
 	//CLient singleton - should not be accessable outside this interface
 	static ZstClient & instance();
@@ -63,7 +65,7 @@ public:
 	virtual void publish(ZstPlug * plug) override;
 
 	//Cables
-	ZstCable * connect_cable(ZstPlug * a, ZstPlug * b);
+	ZstCable * connect_cable(ZstPlug * input, ZstPlug * output);
 	void destroy_cable(ZstCable * cable);
 	void disconnect_plug(ZstPlug * plug);
 	void disconnect_plugs(ZstPlug * input_plug, ZstPlug * output_plug);
@@ -144,6 +146,7 @@ private:
 
 	//Callback hooks
 	ZstSynchronisableDeferredEvent * m_synchronisable_deferred_event;
+	ZstComponentLeavingEvent * m_performer_leaving_hook;
 	ZstComponentLeavingEvent * m_component_leaving_hook;
 	ZstCableLeavingEvent * m_cable_leaving_hook;
 	ZstPlugLeavingEvent * m_plug_leaving_hook;
@@ -152,9 +155,10 @@ private:
 	//Cable storage
 	ZstCable * create_cable_ptr(ZstCable & cable);
 	ZstCable * create_cable_ptr(ZstPlug * output, ZstPlug * input);
-
+	ZstCable * create_cable_ptr(const ZstURI & input_path, const ZstURI & output_path);
 	ZstCable * find_cable_ptr(const ZstURI & input_path, const ZstURI & output_path);
 	ZstCable * find_cable_ptr(ZstPlug * input, ZstPlug * output);
+	ZstCableList m_cables;
 	
 	//Events and callbacks
 	ZstEventDispatcher * m_client_connected_event_manager;

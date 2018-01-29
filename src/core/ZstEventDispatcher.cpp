@@ -1,4 +1,4 @@
-#include <ZstEventDispatcher.h>
+#include "ZstEventDispatcher.h"
 
 ZstEventDispatcher::ZstEventDispatcher() :
 	m_pre_event_callback(NULL),
@@ -6,9 +6,9 @@ ZstEventDispatcher::ZstEventDispatcher() :
 }
 
 ZstEventDispatcher::~ZstEventDispatcher() {
-	if (!m_event_callbacks.size())
-		return;
-	clear();
+	m_event_callbacks.clear();
+	m_pre_event_callback.clear();
+	m_post_event_callback.clear();
 }
 
 void ZstEventDispatcher::attach_pre_event_callback(ZstEvent * event) {
@@ -58,17 +58,18 @@ void ZstEventDispatcher::enqueue(ZstSynchronisable * target) {
 	if (!target) {
 		return;
 	}
-	m_event_queue.push(target);
+	m_event_queue.enqueue(target);
 }
 
 void ZstEventDispatcher::process() {
-	while (m_event_queue.size() > 0) {
-		ZstSynchronisable * target = m_event_queue.front();
-		m_event_queue.pop();
+	ZstSynchronisable * target = NULL;
+	bool found = m_event_queue.try_dequeue(target);
+	while(found){
 		dispatch_events(target);
+		found = m_event_queue.try_dequeue(target);
 	}
 }
 
 size_t ZstEventDispatcher::size() {
-	return m_event_queue.size();
+	return m_event_queue.size_approx();
 }

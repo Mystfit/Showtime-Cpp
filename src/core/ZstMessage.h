@@ -37,7 +37,6 @@ public:
         
         //Client registration
         CLIENT_JOIN,
-		CLIENT_LEAVE,
 		CLIENT_SYNC,
 		CLIENT_LEAVING,
 		CLIENT_HEARTBEAT,

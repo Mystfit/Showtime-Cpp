@@ -64,7 +64,7 @@ ZstEntityBase * ZstContainer::find_child_by_URI(const ZstURI & path)
 	}
 
 	ZstURI next;
-	int distance = path.size() - URI().size();
+	size_t distance = path.size() - URI().size();
 	while(distance > 0) {
 		next = path.range(0, path.size() - distance);
 		result = NULL;
@@ -148,7 +148,7 @@ void ZstContainer::set_deactivated()
 
 void ZstContainer::set_parent(ZstEntityBase * entity)
 {
-	ZstEntityBase::set_parent(entity);
+	ZstComponent::set_parent(entity);
 
 	auto children = m_children;
 	for (auto child : children) {

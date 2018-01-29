@@ -70,7 +70,7 @@ const char * ZstPerformer::address()
 	return m_address.c_str();
 }
 
-int ZstPerformer::num_creatables()
+size_t ZstPerformer::num_creatables()
 {
 	return m_creatables.size();
 }

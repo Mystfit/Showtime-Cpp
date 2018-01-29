@@ -3,7 +3,7 @@
 #include <ZstExports.h>
 
 struct pstr {
-	unsigned length;
+	size_t length;
 	char *cstr;
 };
 
@@ -18,15 +18,15 @@ public:
 	ZST_EXPORT ~ZstURI();
 	ZST_EXPORT ZstURI(const ZstURI & copy);
 	ZST_EXPORT ZstURI(const char * path);
-	ZST_EXPORT ZstURI(const char * path, int len);
+	ZST_EXPORT ZstURI(const char * path, size_t len);
 	ZST_EXPORT const char * path() const;
 	ZST_EXPORT char * segment(size_t index);
-	ZST_EXPORT const int size() const;
-	ZST_EXPORT const int full_size() const;
+	ZST_EXPORT const size_t size() const;
+	ZST_EXPORT const size_t full_size() const;
 
 	ZST_EXPORT ZstURI operator+(const ZstURI & other) const;
 	ZST_EXPORT ZstURI & operator=(const ZstURI & other);
-	ZST_EXPORT ZstURI range(int start, int end) const;
+	ZST_EXPORT ZstURI range(size_t start, size_t end) const;
 
 	//Returns a URI containing the parent
 	ZST_EXPORT ZstURI parent() const;
@@ -48,7 +48,7 @@ protected:
 	void split(void);
 
 	pstr create_pstr(const char * p);
-	pstr create_pstr(const char * p, int l);
+	pstr create_pstr(const char * p, size_t l);
 
 	pstr original_path;
 	pstr segmented_path;

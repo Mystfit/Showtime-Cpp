@@ -135,7 +135,7 @@ void ZstValue::read(const char * buffer, size_t length, size_t & offset)
 
 	//Unpack num values
 	handle = msgpack::unpack(buffer, length, offset);
-	int num_values = handle.get().via.i64;
+	auto num_values = handle.get().via.i64;
 	m_values.resize(num_values);
 
 	//Unpack values

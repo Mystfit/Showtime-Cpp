@@ -11,6 +11,8 @@
 
 #include "Showtime.h"
 
+#define MEM_LEAK_LOOPS 200000;
+
 #ifdef WIN32
 #define TAKE_A_BREATH Sleep(100);
 #else
@@ -119,13 +121,13 @@ private:
 
 public:
 	OutputComponent(const char * name) : ZstComponent("TESTER", name) {
-		m_output = create_output_plug("out", ZstValueType::ZST_FLOAT);
+		m_output = create_output_plug("out", ZstValueType::ZST_INT);
 	}
 
 	virtual void compute(ZstInputPlug * plug) override {}
 
 	void send(int val) {
-		m_output->append_float(val);
+		m_output->append_int(val);
 		m_output->fire();
 	}
 
@@ -149,12 +151,12 @@ public:
 		ZstComponent("TESTER", name), compare_val(cmp_val)
 	{
 		log = should_log;
-		m_input = create_input_plug("in", ZstValueType::ZST_FLOAT);
+		m_input = create_input_plug("in", ZstValueType::ZST_INT);
 	}
 
 	virtual void compute(ZstInputPlug * plug) override {
 		num_hits++;
-		last_received_val = plug->float_at(0);
+		last_received_val = plug->int_at(0);
 		if (log) {
 			LOGGER->debug("Input filter received value {0:d}", last_received_val);
 		}
@@ -251,6 +253,27 @@ void test_URI() {
 		thrown_range_error = true;
 	}
 	assert(thrown_range_error);
+
+	//Test cables
+	ZstURI in = ZstURI("a/1");
+	ZstURI out = ZstURI("b/1");
+
+	ZstCable cable_a = ZstCable(in, out);
+	assert(cable_a.get_input_URI() == in);
+	assert(cable_a.get_output_URI() == out);
+	assert(cable_a.is_attached(out));
+	assert(cable_a.is_attached(in));
+	
+	ZstCable cable_b = ZstCable(in, out);
+	assert(cable_b == cable_a);
+	assert(ZstCableEq{}(&cable_a, &cable_b));
+	assert(ZstCableHash{}(&cable_a) == ZstCableHash{}(&cable_b));
+
+	//Test cable going out of scope
+	{
+		ZstCable cable_c = ZstCable(ZstURI("foo"), ZstURI("bar"));
+		assert(cable_c != cable_a);
+	}
 }
 
 void test_startup() {
@@ -406,7 +429,7 @@ void test_connect_plugs() {
 	OutputComponent * test_output = new OutputComponent("connect_test_ent_out");
 	InputComponent * test_input = new InputComponent("connect_test_ent_in", 0);
 	TestEntityEventCallback * entity_activated = new TestEntityEventCallback("activated");
-	TestCableEventCallback * cable_activated_local = new TestCableEventCallback("activated via stage update");
+	TestCableEventCallback * cable_activated_local = new TestCableEventCallback("activated via local update");
 	TestCableEventCallback * cable_deactivated_local = new TestCableEventCallback("cable deactivated via local event");
 	
 	LOGGER->debug("Attaching events");
@@ -418,7 +441,7 @@ void test_connect_plugs() {
 	entity_activated->reset_num_calls();
 
 	LOGGER->debug("Testing cable connection");
-	ZstCable * cable = zst_connect_cable(test_output->output(), test_input->input());
+	ZstCable * cable = zst_connect_cable(test_input->input(), test_output->output());
 	cable->attach_activation_event(cable_activated_local);
 	wait_for_event(cable_activated_local, 1);
 	assert(cable_activated_local->num_calls() == 1);
@@ -438,13 +461,14 @@ void test_connect_plugs() {
 	zst_destroy_cable(cable);
 	wait_for_event(cable_deactivated_local, 1);
 	assert(cable_deactivated_local->num_calls() == 1);
+	assert(test_output->output()->num_cables() == 0);
 	cable_deactivated_local->reset_num_calls();
 	assert(!test_output->output()->is_connected_to(test_input->input()));
 	assert(test_output->output()->num_cables() == 0);
 	assert(test_input->input()->num_cables() == 0);
 
 	LOGGER->debug("Testing cable disconnection when removing parent");
-	cable = zst_connect_cable(test_output->output(), test_input->input());
+	cable = zst_connect_cable(test_input->input(), test_output->output());
 	cable->attach_activation_event(cable_activated_local);
 	cable->attach_deactivation_event(cable_deactivated_local);
 	wait_for_event(cable_activated_local, 1);
@@ -507,9 +531,9 @@ void test_add_filter() {
 	entity_activated->reset_num_calls();
 
 	LOGGER->debug("Connecting cables");
-	ZstCable * augend_cable = zst_connect_cable(test_output_augend->output(), add_filter->augend());
+	ZstCable * augend_cable = zst_connect_cable(add_filter->augend(), test_output_augend->output() );
 	augend_cable->attach_activation_event(cable_event);
-	ZstCable * addend_cable = zst_connect_cable(test_output_addend->output(), add_filter->addend());
+	ZstCable * addend_cable = zst_connect_cable(add_filter->addend(), test_output_addend->output());
 	addend_cable->attach_activation_event(cable_event);
 	ZstCable * sum_cable = zst_connect_cable(test_input_sum->input(), add_filter->sum());
 	sum_cable->attach_activation_event(cable_event);
@@ -591,7 +615,7 @@ void test_external_entities(std::string external_test_path) {
 	
 	ZstURI sink_perf_uri = ZstURI("sink");
 	ZstURI sink_ent_uri = sink_perf_uri + ZstURI("sink_ent");
-	ZstURI sink_B_uri = sink_perf_uri + ZstURI("sinkB");
+	ZstURI sink_B_uri = sink_ent_uri + ZstURI("sinkB");
 	ZstURI sink_plug_uri = sink_ent_uri + ZstURI("in");
 
 	//Run the sink program
@@ -601,10 +625,13 @@ void test_external_entities(std::string external_test_path) {
 #endif
 	boost::process::child sink_process;
 
+	bool pause = false;
+	char pause_flag = (pause) ? 'd' : 'p';
 	try {
-		sink_process = boost::process::child(prog, "1");
+		sink_process = boost::process::child(prog, &pause_flag); //d flag pauses the sink process to give us time to attach a debugger
 #ifdef WIN32
-		system("pause");
+		if(pause)
+			system("pause");
 #endif
 	}
 	catch (boost::process::process_error e) {
@@ -620,6 +647,7 @@ void test_external_entities(std::string external_test_path) {
 	//Test entity exists
 	ZstContainer * sink_ent = dynamic_cast<ZstContainer*>(sink_performer->find_child_by_URI(sink_ent_uri));
 	assert(sink_ent);
+	entityArriveCallback->reset_num_calls();
 
 	ZstPlug * sink_plug = sink_ent->get_plug_by_URI(sink_plug_uri);
 	assert(sink_plug);
@@ -628,26 +656,25 @@ void test_external_entities(std::string external_test_path) {
 	//Connect cable to sink
 	TestCableEventCallback * cableArriveCallback = new TestCableEventCallback("arriving");
 	TestCableEventCallback * cableLeaveCallback = new TestCableEventCallback("leaving");
-	zst_attach_cable_event_listener(cableArriveCallback, ZstEventAction::ARRIVING);
-	zst_attach_cable_event_listener(cableLeaveCallback, ZstEventAction::LEAVING);
-	ZstCable * cable = zst_connect_cable(output->output(), sink_plug);
+	ZstCable * cable = zst_connect_cable(sink_plug, output->output());
 	assert(cable);
 	cable->attach_activation_event(cableArriveCallback);
+	cable->attach_deactivation_event(cableLeaveCallback);
+
 	wait_for_event(cableArriveCallback, 1);
 	TAKE_A_BREATH
 	output->send(1);
 
 	//Test entity arriving
 	wait_for_event(entityArriveCallback, 1);
-	assert(entityArriveCallback->last_entity == std::string(sink_B_uri.path()));
 	assert(zst_find_entity(sink_B_uri));
 	entityArriveCallback->reset_num_calls();
 
 	//Send another value to remove the child
 	//Test entity leaving
+	entityLeaveCallback->reset_num_calls();
 	output->send(2);
 	wait_for_event(entityLeaveCallback, 1);
-	assert(entityLeaveCallback->last_entity == std::string(sink_B_uri.path()));
 	assert(!zst_find_entity(sink_B_uri));
 	entityArriveCallback->reset_num_calls();
 
@@ -657,6 +684,12 @@ void test_external_entities(std::string external_test_path) {
 	//Check that we received performer destruction request
 	wait_for_event(performerLeaveCallback, 1);
 	assert(!zst_get_performer_by_URI(sink_perf_uri));
+	wait_for_event(cableLeaveCallback, 1);
+
+	//Clean up output
+	output->attach_deactivation_event(entityLeaveCallback);
+	zst_deactivate_entity(output);
+	wait_for_event(entityLeaveCallback, 1);
 
 	//Cleanup
     zst_remove_component_event_listener(entityArriveCallback, ZstEventAction::ARRIVING);
@@ -667,30 +700,44 @@ void test_external_entities(std::string external_test_path) {
 	delete entityLeaveCallback;
 	delete performerArriveCallback;
 	delete performerLeaveCallback;
+	entityArriveCallback = 0;
+	entityLeaveCallback = 0;
+	performerArriveCallback = 0;
+	performerLeaveCallback = 0;
+
+	delete output;
+	cable = 0;
+
 	clear_callback_queue();
 }
 
 
-void test_memory_leaks(int num_loops) {
+void test_memory_leaks() {
 	LOGGER->info("Starting memory leak test");
 
+	LOGGER->debug("Creating entities and cables");
+	auto cable_arrive = new TestCableEventCallback("connected");
+	auto entity_arrive = new TestEntityEventCallback("activated");
+
 	OutputComponent * test_output = new OutputComponent("memleak_test_out");
-	InputComponent * test_input = new InputComponent("memleak_test_in", 10);
+	InputComponent * test_input = new InputComponent("memleak_test_in", 10, false);
+	test_output->attach_activation_event(entity_arrive);
+	test_input->attach_activation_event(entity_arrive);
 	zst_activate_entity(test_output);
 	zst_activate_entity(test_input);
-	zst_connect_cable(test_output->output(), test_input->input());
-	TAKE_A_BREATH
+	wait_for_event(entity_arrive, 2);
+	entity_arrive->reset_num_calls();
+	auto cable = zst_connect_cable(test_input->input(), test_output->output());
+	cable->attach_activation_event(cable_arrive);
+	wait_for_event(cable_arrive, 1);
+	cable_arrive->reset_num_calls();
 
-	int count = num_loops;
+	int count = MEM_LEAK_LOOPS;
 
 	//ZstClient::instance().reset_graph_recv_tripmeter();
 	//ZstClient::instance().reset_graph_send_tripmeter();
 
 	LOGGER->debug("Sending {} messages", count);
-
-	TAKE_A_BREATH
-
-
 	// Wait until our message tripmeter has received all the messages
 	auto delta = std::chrono::milliseconds(-1);
 	std::chrono::time_point<std::chrono::system_clock> end, last, now;
@@ -699,7 +746,7 @@ void test_memory_leaks(int num_loops) {
 	int last_message_count = 0;
 	int message_count = 0;
 	int delta_messages = 0;
-	long mps = 0.0;
+	double mps = 0.0;
 	int remaining_messages = count;
 	int queued_messages = 0;
 	int delta_queue = 0;
@@ -709,57 +756,61 @@ void test_memory_leaks(int num_loops) {
 	for (int i = 0; i < count; ++i) {
 		test_output->send(10);
 		zst_poll_once();
-		//if (ZstClient::instance().graph_recv_tripmeter() % 10000 == 0) {
-		//	//Display progress
-		//	message_count = ZstClient::instance().graph_recv_tripmeter();
-		//	queued_messages = ZstClient::instance().graph_send_tripmeter() - ZstClient::instance().graph_recv_tripmeter();
+		if (zst_graph_recv_tripmeter() % 10000 == 0) {
+			//Display progress
+			message_count = test_input->num_hits;
+			queued_messages = zst_graph_send_tripmeter() - zst_graph_recv_tripmeter();
 
-		//	now = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
-		//	delta = std::chrono::duration_cast<std::chrono::milliseconds>(now - last);
-		//	delta_messages = message_count - last_message_count;
-		//	delta_queue = queued_messages - last_queue_count;
+			now = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
+			delta = std::chrono::duration_cast<std::chrono::milliseconds>(now - last);
+			delta_messages = message_count - last_message_count;
+			delta_queue = queued_messages - last_queue_count;
 
-		//	last = now;
-		//	mps = (long)delta_messages / (delta.count() / 1000.0);
-		//	queue_speed = (long)delta_queue / (delta.count() / 1000.0);
+			last = now;
+			mps = (long)delta_messages / (delta.count() / 1000.0);
+			queue_speed = (long)delta_queue / (delta.count() / 1000.0);
 
-		//	remaining_messages = count - message_count;
-		//	last_message_count = message_count;
-		//	last_queue_count = queued_messages;
+			remaining_messages = count - message_count;
+			last_message_count = message_count;
+			last_queue_count = queued_messages;
 
-		//	std::cout << "Processing " << mps << " messages per/s. Remaining:" << remaining_messages << " Delta time: " << (delta.count() / 1000.0) << " per 10000. Queued messages: " << queued_messages << ". Queuing speed: " << queue_speed << "messages per/s" << std::endl;
-		//}
+			std::cout << "Processing " << mps << " messages per/s. Remaining:" << remaining_messages << " Delta time: " << (delta.count() / 1000.0) << " per 10000. Queued messages: " << queued_messages << ". Queuing speed: " << queue_speed << "messages per/s" << std::endl;
+		}
 	}
 	
 	LOGGER->debug("Sent all messages. Waiting for recv");
 
-	//do  {
-	//	zst_poll_once();
-	//	if (ZstClient::instance().graph_recv_tripmeter() % 10000 == 0) {
-	//		//Display progress
-	//		message_count = ZstClient::instance().graph_recv_tripmeter();
-	//		now = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
-	//		delta = std::chrono::duration_cast<std::chrono::milliseconds>(now - last);
-	//		delta_messages = message_count - last_message_count;
-	//		queued_messages = ZstClient::instance().graph_send_tripmeter() - ZstClient::instance().graph_recv_tripmeter();
-	//		last = now;
-	//		mps = (long)delta_messages / (delta.count() / 1000.0);
-	//		remaining_messages = count - message_count;
-	//		last_message_count = message_count;
+	do  {
+		zst_poll_once();
+		if (zst_graph_recv_tripmeter() % 10000 == 0) {
+			//Display progress
+			message_count = zst_graph_recv_tripmeter();
+			now = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
+			delta = std::chrono::duration_cast<std::chrono::milliseconds>(now - last);
+			delta_messages = message_count - last_message_count;
+			queued_messages = zst_graph_send_tripmeter() - zst_graph_recv_tripmeter();
+			last = now;
+			mps = (long)delta_messages / (delta.count() / 1000.0);
+			remaining_messages = count - message_count;
+			last_message_count = message_count;
 
-	//		std::cout << "Processing " << mps << " messages per/s. Remaining:" << remaining_messages << " Delta time: " << (delta.count() / 1000.0) << " per 10000. Queued messages: " << queued_messages << std::endl;
-	//	}
-	//} while ((ZstClient::instance().graph_recv_tripmeter() < count));
+			std::cout << "Processing " << mps << " messages per/s. Remaining:" << remaining_messages << " Delta time: " << (delta.count() / 1000.0) << " per 10000. Queued messages: " << queued_messages << std::endl;
+		}
+	} while ((test_input->num_hits < count));
 
-	TAKE_A_BREATH
-	zst_poll_once();
-	LOGGER->debug("Received all messages");
-	/*std::cout << "Remaining events: " << zst_event_queue_size() << std::endl;
-	std::cout << "Total received graph_messages " << ZstClient::instance().graph_recv_tripmeter() << std::endl;*/
 	assert(test_input->num_hits == count);
+	LOGGER->debug("Received all messages. Sent: {}, Received:{}", count, test_input->num_hits);
 
+	auto entity_leave = new TestEntityEventCallback("deactivated");
+	test_output->attach_deactivation_event(entity_leave);
+	test_input->attach_deactivation_event(entity_leave);
+	zst_deactivate_entity(test_output);
+	zst_deactivate_entity(test_input);
+	wait_for_event(entity_leave, 2);
 	delete test_output;
 	delete test_input;
+	delete cable_arrive;
+	delete entity_arrive;
 	clear_callback_queue();
 	/*ZstClient::instance().reset_graph_recv_tripmeter();
 	ZstClient::instance().reset_graph_send_tripmeter();*/
@@ -793,7 +844,7 @@ int main(int argc,char **argv){
 	test_connect_plugs();
 	test_add_filter();
 	test_external_entities(ext_test_folder);
-	test_memory_leaks(200000);
+	test_memory_leaks();
     test_leaving();
 	test_cleanup();
 	LOGGER->info("All tests completed");

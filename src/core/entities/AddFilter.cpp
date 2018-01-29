@@ -1,4 +1,5 @@
 #include <entities/AddFilter.h>
+#include <algorithm>
 
 using namespace std;
 
@@ -17,7 +18,7 @@ void AddFilter::on_activated()
 void AddFilter::compute(ZstInputPlug * plug)
 {
 	m_sum->clear();
-	int largest_size = std::max(m_addend->size(), m_augend->size());
+	auto largest_size = std::max(m_addend->size(), m_augend->size());
 
 	for (int i = 0; i < largest_size; ++i) {
 		if (m_augend->size() > i && m_addend->size() > i) {

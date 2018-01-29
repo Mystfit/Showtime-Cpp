@@ -34,11 +34,12 @@ public:
 	void destroy_client(ZstPerformer * performer);
 	
 	//Cables
-	ZstCable * create_cable(const ZstURI & output_URI, const ZstURI & input_URI);
+	ZstCable * create_cable(const ZstCable & cable);
+	ZstCable * create_cable(const ZstURI & input_URI, const ZstURI & output_URI);
 	int destroy_cable(const ZstURI & path);
 	int destroy_cable(ZstCable * cable);
 	int destroy_cable(const ZstURI & output_plug, const ZstURI & input_plug);
-	ZstCable * get_cable_by_URI(const ZstURI & uriA, const ZstURI & uriB);
+	ZstCable * get_cable_by_URI(const ZstURI & output, const ZstURI & input);
 	std::vector<ZstCable*> find_cables(const ZstURI & uri);
 	std::vector<ZstCable*> get_cables_in_entity(ZstEntityBase * entity);
 
@@ -80,7 +81,7 @@ private:
 	std::unordered_map<std::string, ZstPerformer*> m_client_socket_index;
 	
 	//Cables
-	std::vector<ZstCable*> m_cables;
+	ZstCableList m_cables;
 
 	//Messages
 	ZstMessagePool * m_message_pool;

@@ -184,7 +184,7 @@ void ZstComponent::set_component_type(const char * component_type)
 void ZstComponent::set_component_type(const char * component_type, size_t len)
 {
 	m_component_type = (char*)malloc(len + 1);
-	strncpy(m_component_type, component_type, len);
+	strncpy_s(m_component_type, len + 1, component_type, len);
 	m_component_type[len] = '\0';
 }
 

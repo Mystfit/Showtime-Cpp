@@ -200,12 +200,32 @@ int zst_ping()
 // Cables
 // -------------
 
-ZstCable * zst_connect_cable(ZstPlug * a, ZstPlug * b)
+ZstCable * zst_connect_cable(ZstPlug * input, ZstPlug * output)
 {
-	return ZstClient::instance().connect_cable(a, b);
+	return ZstClient::instance().connect_cable(input, output);
 }
 
 void zst_destroy_cable(ZstCable * cable)
 {
 	ZstClient::instance().destroy_cable(cable);
+}
+
+int zst_graph_recv_tripmeter()
+{
+	return ZstClient::instance().graph_recv_tripmeter();
+}
+
+void zst_reset_graph_recv_tripmeter()
+{
+	ZstClient::instance().reset_graph_recv_tripmeter();
+}
+
+int zst_graph_send_tripmeter()
+{
+	return ZstClient::instance().graph_send_tripmeter();
+}
+
+void zst_reset_graph_send_tripmeter()
+{
+	return ZstClient::instance().reset_graph_send_tripmeter();
 }
