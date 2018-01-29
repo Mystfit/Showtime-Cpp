@@ -1,53 +1,40 @@
-set(LIBRARY_TEST_SOURCE_FILES 
- "ShowtimeTest.cpp"
+set(CLIENT_TEST_SOURCE_FILES 
+    "TestClient.cpp"
 )
 
 set(SINK_TEST_SOURCE_FILES
-	"SinkTest.cpp"
+    "TestSink.cpp"
 )
 
-IF(WIN32)
-	add_definitions(-DIMPORTS_API)
-ENDIF(WIN32)
-
 # Boost flags
+# On windows, compile with the following (stage/install):
+#bjam.exe threading=multi architecture=x86 address-model=64 link=static runtime-link=static --with-atomic --with-system --with-filesystem --with-context --with-chrono --with-date_time --with-program_options --with-regex --with-thread
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_STATIC_RUNTIME ON)
 find_package(Boost 1.64 COMPONENTS system filesystem REQUIRED)
 
-include_directories(
-	${Showtime_INCLUDE_DIRS}
-	${ZeroMQ_INCLUDE_DIRS}
-	${CZMQ_INCLUDE_DIRS}
-    ${MSGPACK_INCLUDE_DIRS}
-    ${Boost_INCLUDE_DIRS}
-)
-
-link_directories(${Boost_LIBRARY_DIRS})
-
 # Sink test executable
-add_executable (SinkTest ${SINK_TEST_SOURCE_FILES}) 
-add_dependencies(SinkTest ${PROJECT_NAME})
-target_link_libraries(SinkTest ${PROJECT_NAME})
-add_test(NAME sink_test COMMAND SinkTest)
+set(SINK_TEST_TARGET TestSink)
+add_executable (${SINK_TEST_TARGET} ${SINK_TEST_SOURCE_FILES}) 
+add_dependencies(${SINK_TEST_TARGET} ${CORE_TARGET})
+target_include_directories(${SINK_TEST_TARGET} PUBLIC ${ZST_INCLUDES})
+target_link_libraries(${SINK_TEST_TARGET} ${CLIENT_TARGET})
+add_test(NAME sink_test COMMAND ${SINK_TEST_TARGET})
 
-# Main library test executable
-add_executable (ShowtimeLibraryTest ${LIBRARY_TEST_SOURCE_FILES}) 
-add_dependencies(ShowtimeLibraryTest ${PROJECT_NAME} SinkTest)
-target_link_libraries(ShowtimeLibraryTest
-	${PROJECT_NAME}
-	${Boost_FILESYSTEM_LIBRARY}
+# CLient test executable
+set(CLIENT_TEST_TARGET TestClient)
+add_executable (${CLIENT_TEST_TARGET} ${CLIENT_TEST_SOURCE_FILES}) 
+add_dependencies(${CLIENT_TEST_TARGET} ${CLIENT_TARGET} ${SINK_TEST_TARGET})
+target_include_directories(${CLIENT_TEST_TARGET} PUBLIC 
+    ${ZST_INCLUDES} 
+    ${Boost_INCLUDE_DIRS})
+target_link_libraries( ${CLIENT_TEST_TARGET}
+    ${CLIENT_TARGET}
+    ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
 )
-add_test(NAME showtime_library_test COMMAND ShowtimeLibraryTest WORKING_DIRECTORY $<TARGET_FILE_DIR:ShowtimeLibraryTest>)
-
-# Language tests
-if(BINDINGS_PYTHON)
-	find_package(PythonInterp REQUIRED)
-	add_test(NAME python_tests
-	  COMMAND ${PYTHON_EXECUTABLE}
-	    ${CMAKE_CURRENT_SOURCE_DIR}/showtime_test.py
-	    python_tests)
-endif()
-
+if(WIN32)
+    target_compile_definitions(${CLIENT_TEST_TARGET} PRIVATE -D_WIN32_WINNT=0x0501)
+endif(WIN32)
+add_test(NAME showtime_client_test COMMAND ${CLIENT_TEST_TARGET} WORKING_DIRECTORY $<TARGET_FILE_DIR:${CLIENT_TEST_TARGET}>)

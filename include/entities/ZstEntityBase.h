@@ -1,45 +1,63 @@
 #pragma once
 
-#include "ZstExports.h"
-#include "ZstURI.h"
-#include <unordered_map>
+#include <ZstExports.h>
+#include <ZstURI.h>
+#include <ZstSerialisable.h>
+#include <ZstSynchronisable.h>
 
-class ZstEntityBase {
+class ZstCableBundle;
+
+class ZstEntityBase : public ZstSerialisable, public ZstSynchronisable {
 public:
-	friend class ZstEndpoint;
-	
-	//Base entity
-	ZST_EXPORT ZstEntityBase(const char * entity_type, const char * entity_name);
-	ZST_EXPORT ZstEntityBase(const char * entity_type, const char * entity_name, ZstEntityBase * parent);
-	ZST_EXPORT virtual ~ZstEntityBase();
-	ZST_EXPORT virtual void init() =0;
-    ZST_EXPORT virtual void activate();
-	ZST_EXPORT const char * entity_type() const;
-	ZST_EXPORT const ZstURI & URI();
-	ZST_EXPORT bool is_registered();
-	ZST_EXPORT bool is_destroyed();
-	ZST_EXPORT void set_destroyed();
-    ZST_EXPORT bool is_proxy();
+	friend class ZstClient;
+	friend class ZstContainer;
 
-	//Override allocators so entity is created on DLL heap (Windows only)
+	//Base entity
+	ZST_EXPORT ZstEntityBase(const char * entity_name);
+	ZST_EXPORT ZstEntityBase(const ZstEntityBase & other);
+	ZST_EXPORT virtual ~ZstEntityBase();
+	
+	//TODO: This is handled by whatever DLL or SO owns the concrete implemetation of this entity
 	ZST_EXPORT void * operator new(size_t num_bytes);
 	ZST_EXPORT void operator delete(void * p);
-
-	ZST_EXPORT ZstEntityBase * parent() const;
-    ZST_EXPORT virtual ZstEntityBase * find_child_by_URI(const ZstURI & path) const;
-	ZST_EXPORT virtual ZstEntityBase * get_child_entity_at(int index) const;
-	ZST_EXPORT virtual const size_t num_children() const;
     
+    //Overridable init - must be called by overriden classes
+	ZST_EXPORT virtual void on_activated() = 0;
+	ZST_EXPORT virtual void on_deactivated() = 0;
+	
+	//The parent of this entity
+	ZST_EXPORT ZstEntityBase * parent() const;
+
+	ZST_EXPORT virtual void update_URI();
+
+    //Entity type
+	ZST_EXPORT const char * entity_type() const;
+    
+    //URI for this entity
+	ZST_EXPORT const ZstURI & URI();
+    
+    //Entity flags
+	ZST_EXPORT bool is_destroyed();
+
+	//Cable management
+	ZST_EXPORT virtual ZstCableBundle * acquire_cable_bundle();
+	ZST_EXPORT void release_cable_bundle(ZstCableBundle * cables);
+	ZST_EXPORT virtual void disconnect_cables() {};
+	    
+	//Serialisation
+	ZST_EXPORT virtual void write(std::stringstream & buffer) override;
+	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
+	
 protected:
-    bool m_is_proxy;
-	bool m_is_registered;
+	//Set entity status
+	ZST_EXPORT void set_entity_type(const char * entity_type);
+	ZST_EXPORT virtual void set_parent(ZstEntityBase* entity);
+	ZST_EXPORT void set_destroyed();
+	ZST_EXPORT virtual ZstCableBundle * get_child_cables(ZstCableBundle * bundle);
 
 private:
-    void add_child(ZstEntityBase * child);
-    void remove_child(ZstEntityBase * child);
-    std::unordered_map<ZstURI, ZstEntityBase*> m_children;
-	char * m_entity_type;
-	ZstURI m_uri;
 	bool m_is_destroyed;
 	ZstEntityBase * m_parent;
+	char * m_entity_type;
+	ZstURI m_uri;
 };

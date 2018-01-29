@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.8.2)
+cmake_minimum_required(VERSION 3.8.4)
 
 project(Showtime)
 
-set(SHOWTIME_VERSION 0.5.3)
+set(SHOWTIME_VERSION 0.8.0)
 
 # Set build locations
 set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/install)
@@ -20,32 +20,43 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     MESSAGE(STATUS "Platform is Windows")
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+    option(WINDOWS_USE_VCPKG "Look for sources using VCPKG" false)
+    set(WINDOWS_VCPKG_ROOT "C:/Code/vcpkg/scripts/buildsystems/vcpkg.cmake")
 endif()
 
 # Use C11
 set(CMAKE_CXX_STANDARD 11)
 set(CXX_STANDARD_REQUIRED)
 
-if (MSVC_VERSION GREATER_EQUAL "1900")
-    
-    #include(CheckCXXCompilerFlag)
-    #CHECK_CXX_COMPILER_FLAG("/std:c++17" _cpp_17_flag_supported)
-    #if (_cpp_17_flag_supported)
-    #    add_compile_options("/std:c++17")
-    #endif()
-endif()
-
 # Set showtime include directories
 set(Showtime_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include )
+set(Showtime_SUBMODULES_DIR ${CMAKE_SOURCE_DIR}/submodules)
 
-# Packages
-find_package(ZeroMQ REQUIRED)
-find_package(czmq REQUIRED)
-find_package(MsgPack REQUIRED)
-find_package(SWIG)
-include(UseSWIG)
+# Core Library
+# ------------
+set(CORE_TARGET "${PROJECT_NAME}Core")
+message(STATUS "Building ${CORE_TARGET} target")
+add_library(${CORE_TARGET} SHARED "")
+include(src/core/CMakeLists.txt)
 
-add_subdirectory(src)
 
+# Client Library
+# --------------
+set(CLIENT_TARGET "${PROJECT_NAME}Client")
+message(STATUS "Building ${CLIENT_TARGET} target")
+add_library(${CLIENT_TARGET} SHARED "")
+include(src/client/CMakeLists.txt)
+
+
+# Server binary
+# -------------
+set(SERVER_TARGET "${PROJECT_NAME}Server")
+message(STATUS "Building ${SERVER_TARGET} target")
+add_executable (${SERVER_TARGET} "") 
+include(src/server/CMakeLists.txt)
+
+
+# Tests
+# -----
 enable_testing()
 add_subdirectory(tests)

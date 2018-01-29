@@ -9,6 +9,7 @@ from showtime import ZstFilter, ZstComponent, AddFilter
 class SinkComponent(ZstComponent):
     def __init__(self, name, parent):
         ZstComponent.__init__(self, "ECHO", name, parent)
+        self.activate()
         self.plug = self.create_input_plug("in", showtime.ZST_INT)
         self.last_received_value = 0
 
@@ -21,6 +22,7 @@ class SinkComponent(ZstComponent):
 class PushComponent(ZstComponent):
     def __init__(self, name, parent):
         ZstComponent.__init__(self, "OUTPUT", name, parent)
+        self.activate()
         self.plug = self.create_output_plug("out", showtime.ZST_INT)
 
     def send(self, val):
@@ -42,6 +44,7 @@ class Watcher(threading.Thread):
 def test_add():
     # Create entities
     root = ZstComponent("ROOT", "python_test")
+    root.activate()
     add = AddFilter(root)
     augend_out = PushComponent("augend_out", root)
     addend_out = PushComponent("addend_out", root)

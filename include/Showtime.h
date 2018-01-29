@@ -1,77 +1,54 @@
 #pragma once
 
-#include <utility>
-#include <vector>
-#include <memory>
-#include "ZstExports.h"
-#include "ZstConstants.h"
+#include "ZstCore.h"
 
-class ZstPlug;
-class ZstEntityBase;
-class ZstInputPlug;
-class ZstOutputPlug;
-class ZstPerformer;
-class ZstURI;
-class ZstEndpoint;
-class ZstEvent;
-class ZstEntityEventCallback;
-class ZstPlugEventCallback;
-class ZstCableEventCallback;
-
-class Showtime
-{
-public:
-	//Destructor
-	ZST_EXPORT ~Showtime();
-
-	//Endpoint singleton
-	ZST_EXPORT static ZstEndpoint & endpoint();
-
-	//Destroy the endpoint instrance and leave
-	ZST_EXPORT static void destroy();
-
+extern "C" {
 	//Init the library
-	ZST_EXPORT static void init();
-    ZST_EXPORT static void join(const char * stage_address);
-	ZST_EXPORT static void leave();
-	ZST_EXPORT static bool is_connected();
+	ZST_CLIENT_EXPORT void zst_init(const char * performer);
+	ZST_CLIENT_EXPORT void zst_join(const char * stage_address);
+
+	//Cleanup
+	ZST_CLIENT_EXPORT void zst_destroy();
+	ZST_CLIENT_EXPORT void zst_leave();
 
 	//Poll the event queue - for runtimes that have process events from the main thread
-	ZST_EXPORT static void poll_once();
+	ZST_CLIENT_EXPORT void zst_poll_once();
 
 	//Callbacks
-	ZST_EXPORT static void attach_entity_arriving_callback(ZstEntityEventCallback * callback);
-	ZST_EXPORT static void attach_entity_leaving_callback(ZstEntityEventCallback * callback);
-	ZST_EXPORT static void attach_plug_arriving_callback(ZstPlugEventCallback * callback);
-	ZST_EXPORT static void attach_plug_leaving_callback(ZstPlugEventCallback * callback);
-	ZST_EXPORT static void attach_cable_arriving_callback(ZstCableEventCallback *callback);
-	ZST_EXPORT static void attach_cable_leaving_callback(ZstCableEventCallback *callback);
+	ZST_CLIENT_EXPORT void zst_attach_connection_event_listener(ZstPerformerEvent * callback);
+	ZST_CLIENT_EXPORT void zst_attach_performer_event_listener(ZstPerformerEvent * callback, ZstEventAction action);
+	ZST_CLIENT_EXPORT void zst_attach_component_event_listener(ZstComponentEvent * callback, ZstEventAction action);
+	ZST_CLIENT_EXPORT void zst_attach_component_type_event_listener(ZstComponentTypeEvent * callback, ZstEventAction action);
+	ZST_CLIENT_EXPORT void zst_attach_plug_event_listener(ZstPlugEvent * callback, ZstEventAction action);
+	ZST_CLIENT_EXPORT void zst_attach_cable_event_listener(ZstCableEvent * callback, ZstEventAction action);
 
-	ZST_EXPORT static void remove_entity_arriving_callback(ZstEntityEventCallback * callback);
-	ZST_EXPORT static void remove_entity_leaving_callback(ZstEntityEventCallback * callback);
-	ZST_EXPORT static void remove_plug_arriving_callback(ZstPlugEventCallback * callback);
-	ZST_EXPORT static void remove_plug_leaving_callback(ZstPlugEventCallback * callback);
-	ZST_EXPORT static void remove_cable_arriving_callback(ZstCableEventCallback * callback);
-	ZST_EXPORT static void remove_cable_leaving_callback(ZstCableEventCallback * callback);
+	ZST_CLIENT_EXPORT void zst_remove_connection_event_listener(ZstPerformerEvent * callback);
+	ZST_CLIENT_EXPORT void zst_remove_performer_event_listener(ZstPerformerEvent * callback, ZstEventAction action);
+	ZST_CLIENT_EXPORT void zst_remove_component_event_listener(ZstComponentEvent * callback, ZstEventAction action);
+	ZST_CLIENT_EXPORT void zst_remove_component_type_event_listener(ZstComponentTypeEvent * callback, ZstEventAction action);
+	ZST_CLIENT_EXPORT void zst_remove_plug_event_listener(ZstPlugEvent * callback, ZstEventAction action);
+	ZST_CLIENT_EXPORT void zst_remove_cable_event_listener(ZstCableEvent * callback, ZstEventAction action);
+
+	//Entity activation/deactivation
+	ZST_CLIENT_EXPORT void zst_activate_entity(ZstEntityBase * entity);
+	ZST_CLIENT_EXPORT void zst_deactivate_entity(ZstEntityBase * entity);
 
 	//Hierarchy
-	ZST_EXPORT static ZstEntityBase* get_entity_by_URI(const ZstURI & path);
+	ZST_CLIENT_EXPORT ZstPerformer* zst_get_root();
+	ZST_CLIENT_EXPORT ZstPerformer* zst_get_performer_by_URI(const ZstURI & path);
+	ZST_CLIENT_EXPORT ZstEntityBase* zst_find_entity(const ZstURI & path);
 
-    //Stage methods
-    ZST_EXPORT static int ping_stage();
+	//Stage methods
+	ZST_CLIENT_EXPORT bool zst_is_connected();
+	ZST_CLIENT_EXPORT int zst_ping();
 
- 	//Entities can contain other entities and plugs
-	ZST_EXPORT static void register_entity_type(const char * entity_type);
+	//Cable management
+	ZST_CLIENT_EXPORT ZstCable * zst_connect_cable(ZstPlug * input, ZstPlug * output);
+	ZST_CLIENT_EXPORT void zst_destroy_cable(ZstCable * cable);
 
-	ZST_EXPORT static ZstEvent * pop_event();
-	ZST_EXPORT static size_t event_queue_size();
-
-	ZST_EXPORT static int connect_cable(ZstURI a, ZstURI b);
-	ZST_EXPORT static int destroy_cable(ZstURI a, ZstURI b);
-
-
-private:
-    Showtime();
-	Showtime(const Showtime&); // Prevent construction by copying
-	Showtime& operator=(const Showtime&) {}; // Prevent assignment
-};
+	//Debugging
+	ZST_CLIENT_EXPORT int zst_graph_recv_tripmeter();
+	ZST_CLIENT_EXPORT void zst_reset_graph_recv_tripmeter();
+	ZST_CLIENT_EXPORT int zst_graph_send_tripmeter();
+	ZST_CLIENT_EXPORT void zst_reset_graph_send_tripmeter();
+}

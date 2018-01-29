@@ -1,3 +1,12 @@
-[submodule "devlibs/variant"]
-	path = devlibs/variant
+[submodule "submodules/variant"]
+	path = submodules/variant
 	url = https://github.com/mpark/variant.git
+[submodule "submodules/cf"]
+	path = submodules/cf
+	url = https://github.com/rpz80/cf
+[submodule "submodules/spdlog"]
+	path = submodules/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "submodules/concurrentqueue"]
+	path = submodules/concurrentqueue
+	url = https://github.com/cameron314/concurrentqueue.git
