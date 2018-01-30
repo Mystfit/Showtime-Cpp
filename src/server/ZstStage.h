@@ -25,6 +25,7 @@ public:
 	ZstStage();
 	~ZstStage();
 	void init();
+	void destroy() override;
 
 	//Client
 	ZstPerformer * get_client(const ZstURI & path);

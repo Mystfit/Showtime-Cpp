@@ -16,13 +16,8 @@ ZstStage::ZstStage()
 
 ZstStage::~ZstStage()
 {
+	m_client_socket_index.clear();
 	delete m_message_pool;
-	detach_timer(m_heartbeat_timer_id);
-	detach_timer(m_heartbeat_timer_id);
-	ZstActor::~ZstActor();
-	//Close stage pipes
-	zsock_destroy(&m_performer_router);
-	zsock_destroy(&m_graph_update_pub);
 }
 
 void ZstStage::init()
@@ -49,6 +44,23 @@ void ZstStage::init()
 	m_heartbeat_timer_id = attach_timer(stage_heartbeat_timer_func, HEARTBEAT_DURATION, this);
 
 	start();
+}
+
+void ZstStage::destroy()
+{
+	for (auto c : m_cables) {
+		destroy_cable(c);
+	}
+
+	for (auto p : m_clients) {
+		destroy_client(p.second);
+	}
+	detach_timer(m_heartbeat_timer_id);
+
+	ZstActor::destroy();
+	zsock_destroy(&m_performer_router);
+	zsock_destroy(&m_graph_update_pub);
+	zsys_shutdown();
 }
 
 
