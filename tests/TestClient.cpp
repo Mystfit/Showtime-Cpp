@@ -625,13 +625,17 @@ void test_external_entities(std::string external_test_path) {
 #endif
 	boost::process::child sink_process;
 
-	bool pause = false;
-	char pause_flag = (pause) ? 'd' : 'p';
+#ifdef PAUSE_SINK
+	char pause_flag = 'd';
+#else
+	char pause_flag = 'a';
+#endif
 	try {
 		sink_process = boost::process::child(prog, &pause_flag); //d flag pauses the sink process to give us time to attach a debugger
+#ifdef PAUSE_SINK
 #ifdef WIN32
-		if(pause)
-			system("pause");
+		system("pause");
+#endif
 #endif
 	}
 	catch (boost::process::process_error e) {

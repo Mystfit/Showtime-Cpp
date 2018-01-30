@@ -10,8 +10,9 @@ public:
 	Sink * m_child_sink;
 
 	~Sink() {
-		//TODO: memory leak
-		delete m_child_sink;
+		//Plug is automatically deleted by owning component
+		m_input = NULL;
+		m_child_sink = NULL;
 	}
 
 	Sink(const char * name) : ZstContainer("SINK", name) {
@@ -29,7 +30,9 @@ public:
 		}
 		else if (request_code == 2) {
 			zst_deactivate_entity(m_child_sink);
+			m_child_sink = NULL;
 		}
+
 		last_received_code = request_code;
 	}
 };
@@ -73,9 +76,7 @@ int main(int argc,char **argv){
 		zst_poll_once();
 	}
 
-	//TODO: memory leak
-	delete sink;
-
+	
 	LOGGER->debug("Sink is leaving");
 	zst_destroy();
 

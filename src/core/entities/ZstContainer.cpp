@@ -35,7 +35,7 @@ ZstContainer::ZstContainer(const ZstContainer & other) : ZstComponent(other)
 ZstContainer::~ZstContainer()
 {
 	auto children = m_children;
-	for (auto child : children) {
+	for (auto child : children){
 		//TODO: This will fail if the entity wasn't assigned in this DLL!
 		delete child.second;
 	}
