@@ -12,7 +12,6 @@ void ZstComponentLeavingEvent::run(ZstComponent * target)
 
 void ZstCableLeavingEvent::run(ZstCable * target)
 {
-	target->unplug();
 	ZstClient::instance().m_cables.erase(target);
 	delete target;
 }

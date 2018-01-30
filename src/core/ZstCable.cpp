@@ -46,12 +46,6 @@ void ZstCable::on_deactivated()
 {
 }
 
-void ZstCable::set_deactivated()
-{
-	unplug();
-	ZstSynchronisable::set_deactivated();
-}
-
 bool ZstCable::operator==(const ZstCable & other) const
 {
 	return (m_input_URI == other.m_input_URI) && (m_output_URI == other.m_output_URI);
@@ -111,19 +105,6 @@ const ZstURI & ZstCable::get_input_URI() const
 const ZstURI & ZstCable::get_output_URI() const
 {
 	return m_output_URI;
-}
-
-void ZstCable::unplug()
-{
-	if (m_input) {
-		m_input->remove_cable(this);
-		m_input = NULL;
-	}
-
-	if (m_output) {
-		m_output->remove_cable(this);
-		m_output = NULL;
-	}
 }
 
 bool ZstCable::is_local()

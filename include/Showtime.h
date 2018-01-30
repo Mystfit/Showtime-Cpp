@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ZstCore.h"
+#include <ZstCore.h>
 
 extern "C" {
 	//Init the library

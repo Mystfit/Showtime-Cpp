@@ -11,6 +11,8 @@
 #define MAX_MISSED_HEARTBEATS 999999
 #define PERFORMER_TYPE "prf"
 
+typedef std::unordered_map<ZstURI, ZstPerformer*, ZstURIHash> ZstPerformerMap;
+
 class ZstPerformer : public ZstContainer {
 public:
 	ZST_EXPORT ZstPerformer();
@@ -43,5 +45,5 @@ private:
 	std::string m_address;
 
 	//Creatables
-	std::unordered_map<ZstURI, ZstEntityBase*> m_creatables;
+	ZstEntityMap m_creatables;
 };

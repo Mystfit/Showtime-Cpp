@@ -137,15 +137,3 @@ void ZstSynchronisable::set_activation_status(SyncStatus status)
 
 	m_sync_status = status;
 }
-
-void ZstActivationEvent::run(ZstSynchronisable * target)
-{
-	target->set_activation_status(ZstSynchronisable::SyncStatus::ACTIVATED);
-	target->on_activated();
-}
-
-void ZstDeactivationEvent::run(ZstSynchronisable * target)
-{
-	target->set_activation_status(ZstSynchronisable::SyncStatus::DEACTIVATED);
-	target->on_deactivated();
-}

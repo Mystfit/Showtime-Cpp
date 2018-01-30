@@ -112,7 +112,7 @@ void ZstStage::destroy_client(ZstPerformer * performer)
 	}
 
 	//Remove client and call all destructors in its hierarchy
-	std::unordered_map<ZstURI, ZstPerformer*>::iterator client_it = m_clients.find(performer->URI());
+	ZstPerformerMap::iterator client_it = m_clients.find(performer->URI());
 	if (client_it != m_clients.end()) {
 		m_clients.erase(client_it);
 	}
@@ -653,7 +653,7 @@ void ZstStage::publish_stage_update(ZstMessage * msg)
 int ZstStage::stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * arg)
 {
 	ZstStage * stage = (ZstStage*)arg;
-	std::unordered_map<ZstURI, ZstPerformer*> endpoints = stage->m_clients;
+	ZstPerformerMap clients = stage->m_clients;
 	std::vector<ZstPerformer*> removed_clients;
 	for (auto performer_it : stage->m_clients) {
 		ZstPerformer * performer = performer_it.second;

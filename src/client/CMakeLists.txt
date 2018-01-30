@@ -1,6 +1,10 @@
 set(ZST_CLIENT_PUBLIC_HEADERS
 	"${Showtime_INCLUDE_DIRS}/Showtime.h"
 )
+message(STATUS ${Showtime_API_INTERFACE})
+
+# Add our top level header to the public API
+list(APPEND Showtime_API_INTERFACE ${ZST_CLIENT_PUBLIC_HEADERS})
 
 set(ZST_CLIENT_PRIVATE_HEADERS
 	"${Showtime_INCLUDE_DIRS}/Showtime.h"
@@ -28,7 +32,6 @@ if(WIN32)
 endif(WIN32)
 
 add_dependencies(${CLIENT_TARGET} ${CORE_TARGET})
-
 
 if(MACOSX)
     set_target_properties(${CLIENT_TARGET} PROPERTIES

@@ -10,7 +10,7 @@
 //Forwards
 class ZstPlug;
 
-class ZstCable : public ZstSerialisable, public ZstSynchronisable {
+class ZstCable : public ZstSynchronisable, public ZstSerialisable {
 public:
 	friend class ZstClient;
 
@@ -21,7 +21,6 @@ public:
 	ZST_EXPORT ~ZstCable();
 	ZST_EXPORT virtual void on_activated() override {};
 	ZST_EXPORT virtual void on_deactivated() override;
-	ZST_EXPORT virtual void set_deactivated() override;
 
 	// Status
 
@@ -40,7 +39,6 @@ public:
 	ZST_EXPORT ZstPlug * get_output();
 	ZST_EXPORT const ZstURI & get_input_URI() const;
 	ZST_EXPORT const ZstURI & get_output_URI() const;
-	ZST_EXPORT void unplug();
 	ZST_EXPORT bool is_local();
 
 	ZST_EXPORT virtual void write(std::stringstream & buffer) override;
@@ -61,10 +59,12 @@ private:
 	bool m_is_local;
 };
 
+
 struct ZstCableHash
 {
 	ZST_EXPORT size_t operator()(ZstCable* const& k) const;
 };
+
 
 struct ZstCableEq {
 	ZST_EXPORT bool operator()(ZstCable const * lhs, ZstCable const * rhs) const;

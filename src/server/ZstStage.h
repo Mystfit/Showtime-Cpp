@@ -20,6 +20,8 @@ class ZstMessage;
 class ZstMessagePool;
 class ZstCable;
 
+typedef std::unordered_map<std::string, ZstPerformer*> ZstClientSocketMap;
+
 class ZstStage : public ZstActor{
 public:
 	ZstStage();
@@ -78,8 +80,8 @@ private:
 	zsock_t *m_graph_update_pub;
 
 	//Client performers
-	std::unordered_map<ZstURI, ZstPerformer*> m_clients;
-	std::unordered_map<std::string, ZstPerformer*> m_client_socket_index;
+	ZstPerformerMap m_clients;
+	ZstClientSocketMap m_client_socket_index;
 	
 	//Cables
 	ZstCableList m_cables;

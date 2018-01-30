@@ -58,11 +58,8 @@ protected:
 
 };
 
-namespace std
+
+struct ZstURIHash
 {
-	template <>
-	struct hash<ZstURI>
-	{
-		ZST_EXPORT size_t operator()(const ZstURI& k) const;
-	};
-}
+	ZST_EXPORT size_t operator()(ZstURI const& k) const;
+};

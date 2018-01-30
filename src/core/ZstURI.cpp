@@ -226,7 +226,10 @@ pstr ZstURI::create_pstr(const char * p, size_t l)
 	return result;
 }
 
-size_t std::hash<ZstURI>::operator()(const ZstURI & k) const
+//--
+
+
+size_t ZstURIHash::operator()(ZstURI const & k) const
 {
 	size_t result = 0;
 	const size_t prime = 31;

@@ -56,15 +56,3 @@ private:
 	ZstINetworkInteractor * m_network_interactor;
 	SyncStatus m_sync_status;
 };
-
-
-//Events
-
-class ZstActivationEvent : public ZstSynchronisableEvent {
-	virtual void run(ZstSynchronisable * target) override;
-};
-
-
-class ZstDeactivationEvent : public ZstSynchronisableEvent {
-	virtual void run(ZstSynchronisable * target) override;
-};

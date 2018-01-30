@@ -3,7 +3,9 @@ set(COMPILED_INCLUDES "${CMAKE_BINARY_DIR}/include")
 set(VERSION_FILE "${COMPILED_INCLUDES}/ZstVersion.h")
 FILE(WRITE ${VERSION_FILE} "#define SHOWTIME_VERSION \"${SHOWTIME_VERSION}\"")
 
-set(ZST_INTERFACE_HEADERS
+# Public include files
+set(API_FILES
+    ${VERSION_FILE}
     ${Showtime_INCLUDE_DIRS}/ZstCore.h
     ${Showtime_INCLUDE_DIRS}/ZstLogging.h
     ${Showtime_INCLUDE_DIRS}/ZstCable.h
@@ -20,7 +22,9 @@ set(ZST_INTERFACE_HEADERS
     ${Showtime_INCLUDE_DIRS}/entities/ZstPlug.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstPerformer.h
 )
+list(APPEND Showtime_API_INTERFACE ${API_FILES})
 
+# Private headers, only accessible within the Showtime library
 set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstActor.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessage.h"
@@ -28,9 +32,9 @@ set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstINetworkInteractor.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstValue.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessagePool.h"
-    ${VERSION_FILE}
 )
 
+# Core cpp files
 set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstActor.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstEvents.cpp"
@@ -54,6 +58,7 @@ find_package(ZeroMQ REQUIRED)
 find_package(czmq REQUIRED)
 find_package(MsgPack REQUIRED)
 
+# Include directories
 set(ZST_CORE_INCLUDES 
     ${COMPILED_INCLUDES}
     ${Showtime_INCLUDE_DIRS}
@@ -65,16 +70,10 @@ set(ZST_CORE_INCLUDES
     ${CZMQ_INCLUDE_DIRS}
     ${MSGPACK_INCLUDE_DIRS}
 )
-#include_directories(${ZST_INCLUDES})
-target_sources(${CORE_TARGET} PUBLIC ${ZST_PUBLIC_HEADERS} ${ZST_CORE_HEADERS})
-target_sources(${CORE_TARGET} PRIVATE ${ZST_CORE_SRC} ${ZST_INTERFACE_HEADERS})
-target_include_directories(${CORE_TARGET} PUBLIC ${ZST_CORE_INCLUDES})
 
-set(ZST_LINK_LIBS
-    ${ZeroMQ_LIBRARIES}
-    ${CZMQ_LIBRARIES}
-    ${MSGPACK_LIBRARIES}
-)
+target_sources(${CORE_TARGET} PUBLIC ${ZST_PUBLIC_HEADERS} )
+target_sources(${CORE_TARGET} PRIVATE ${ZST_CORE_SRC} ${ZST_CORE_HEADERS} ${Showtime_API_INTERFACE})
+target_include_directories(${CORE_TARGET} PUBLIC ${ZST_CORE_INCLUDES})
 
 IF(WIN32)
     IF(WINDOWS_USE_VCPKG)
@@ -84,5 +83,9 @@ IF(WIN32)
     target_compile_definitions(${CORE_TARGET} INTERFACE -DIMPORT_CORE_API)
 ENDIF(WIN32)
 
-
+set(ZST_LINK_LIBS
+    ${ZeroMQ_LIBRARIES}
+    ${CZMQ_LIBRARIES}
+    ${MSGPACK_LIBRARIES}
+)
 target_link_libraries(${CORE_TARGET} ${ZST_LINK_LIBS})

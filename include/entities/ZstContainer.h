@@ -56,5 +56,5 @@ protected:
 	ZST_EXPORT virtual ZstCableBundle * get_child_cables(ZstCableBundle * bundle) override;
 
 private:
-	std::unordered_map<ZstURI, ZstEntityBase*> m_children;
+	ZstEntityMap m_children;
 };

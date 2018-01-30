@@ -29,8 +29,10 @@ set(CMAKE_CXX_STANDARD 11)
 set(CXX_STANDARD_REQUIRED)
 
 # Set showtime include directories
-set(Showtime_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/include )
-set(Showtime_SUBMODULES_DIR ${CMAKE_SOURCE_DIR}/submodules)
+set(Showtime_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/include")
+set(Showtime_SUBMODULES_DIR "${CMAKE_SOURCE_DIR}/submodules")
+set(Showtime_API_INTERFACE "")
+
 
 # Core Library
 # ------------
@@ -46,6 +48,8 @@ set(CLIENT_TARGET "${PROJECT_NAME}Client")
 message(STATUS "Building ${CLIENT_TARGET} target")
 add_library(${CLIENT_TARGET} SHARED "")
 include(src/client/CMakeLists.txt)
+get_target_property(CLIENT_INCLUDES ${CLIENT_TARGET} INCLUDE_DIRECTORIES)
+message(STATUS ${Showtime_INTERFACE})
 
 
 # Server binary
@@ -60,3 +64,4 @@ include(src/server/CMakeLists.txt)
 # -----
 enable_testing()
 add_subdirectory(tests)
+add_subdirectory(src/bindings)

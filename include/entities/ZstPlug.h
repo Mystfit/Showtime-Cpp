@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string>
-#include <vector>
 #include <ZstExports.h>
 #include <ZstConstants.h>
 #include <ZstCable.h>
@@ -11,7 +9,6 @@
 
 //Forward declarations
 class ZstValue;
-class ZstCable;
 class ZstPlug;
 
 class ZstPlugIterator {
@@ -31,7 +28,6 @@ public:
 	friend class ZstClient;
     friend class ZstComponent;
 	friend class ZstPlugIterator;
-	friend class ZstCable;
     
 	//Initialisation
 	ZST_EXPORT ZstPlug();
@@ -53,7 +49,6 @@ public:
 	ZST_EXPORT const float float_at(const size_t position) const;
 	ZST_EXPORT void char_at(char * buf, const size_t position) const;
 	ZST_EXPORT const size_t size_at(const size_t position) const;
-	ZST_EXPORT ZstValue * raw_value();
 
 	//Serialisation
 	ZST_EXPORT virtual void write(std::stringstream & buffer) override;
@@ -76,6 +71,7 @@ protected:
 private:
 	ZST_EXPORT void add_cable(ZstCable * cable);
 	ZST_EXPORT void remove_cable(ZstCable * cable);
+	ZST_EXPORT ZstValue * raw_value();
 
 	ZstCableList m_cables;
 };
@@ -96,6 +92,6 @@ public:
 
 class ZstOutputPlug : public ZstPlug {
 public:
-	ZstOutputPlug(const char * name, ZstValueType t);
+	ZST_EXPORT ZstOutputPlug(const char * name, ZstValueType t);
 	ZST_EXPORT void fire();
 };

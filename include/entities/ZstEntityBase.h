@@ -1,13 +1,18 @@
 #pragma once
 
+#include <unordered_map>
 #include <ZstExports.h>
 #include <ZstURI.h>
 #include <ZstSerialisable.h>
 #include <ZstSynchronisable.h>
 
+//Forwards
 class ZstCableBundle;
 
-class ZstEntityBase : public ZstSerialisable, public ZstSynchronisable {
+//Typedefs
+typedef std::unordered_map<ZstURI, ZstEntityBase*, ZstURIHash> ZstEntityMap;
+
+class ZstEntityBase : public ZstSynchronisable, public ZstSerialisable {
 public:
 	friend class ZstClient;
 	friend class ZstContainer;

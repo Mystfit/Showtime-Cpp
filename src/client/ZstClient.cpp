@@ -925,12 +925,6 @@ void ZstClient::add_proxy_entity(ZstEntityBase & entity) {
 // Performers
 // ----------
 
-std::unordered_map<ZstURI, ZstPerformer*> & ZstClient::performers()
-{
-	return m_clients;
-}
-
-
 void ZstClient::add_performer(ZstPerformer & performer)
 {
 	if (performer.URI() == m_root->URI()) {

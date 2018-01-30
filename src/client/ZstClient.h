@@ -52,7 +52,6 @@ public:
 	void add_proxy_entity(ZstEntityBase & entity);
 
 	//Performers
-	std::unordered_map<ZstURI, ZstPerformer*> & performers();
 	void add_performer(ZstPerformer & performer);
 	ZstPerformer * get_performer_by_URI(const ZstURI & uri) const;
 	ZstPerformer * get_local_performer() const;
@@ -142,7 +141,7 @@ private:
 
 	//Root performer
     ZstPerformer * m_root;
-	std::unordered_map<ZstURI, ZstPerformer* > m_clients;
+	ZstPerformerMap m_clients;
 
 	//Callback hooks
 	ZstSynchronisableDeferredEvent * m_synchronisable_deferred_event;
