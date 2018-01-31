@@ -51,6 +51,7 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/entities/AddFilter.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstPlug.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstPerformer.cpp"
+    "${Showtime_SUBMODULES_DIR}/hashidsxx/hashids.cpp"
 )
 
 # Packages
@@ -62,6 +63,7 @@ find_package(MsgPack REQUIRED)
 set(ZST_CORE_INCLUDES 
     ${COMPILED_INCLUDES}
     ${Showtime_INCLUDE_DIRS}
+    "${Showtime_SUBMODULES_DIR}/hashidsxx"
     "${Showtime_SUBMODULES_DIR}/concurrentqueue"
     "${Showtime_SUBMODULES_DIR}/spdlog/include"
     "${Showtime_SUBMODULES_DIR}/variant/include/mpark"

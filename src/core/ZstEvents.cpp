@@ -43,13 +43,13 @@ void ZstEntityEvent::cast_run(ZstSynchronisable * target)
 
 void ZstActivationEvent::run(ZstSynchronisable * target)
 {
-	target->set_activation_status(ZstSynchronisable::SyncStatus::ACTIVATED);
+	target->set_activation_status(ZstSyncStatus::ACTIVATED);
 	target->on_activated();
 }
 
 void ZstDeactivationEvent::run(ZstSynchronisable * target)
 {
-	target->set_activation_status(ZstSynchronisable::SyncStatus::DEACTIVATED);
+	target->set_activation_status(ZstSyncStatus::DEACTIVATED);
 	target->on_deactivated();
 }
 

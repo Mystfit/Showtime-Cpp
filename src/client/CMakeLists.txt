@@ -1,7 +1,6 @@
 set(ZST_CLIENT_PUBLIC_HEADERS
 	"${Showtime_INCLUDE_DIRS}/Showtime.h"
 )
-message(STATUS ${Showtime_API_INTERFACE})
 
 # Add our top level header to the public API
 list(APPEND Showtime_API_INTERFACE ${ZST_CLIENT_PUBLIC_HEADERS})

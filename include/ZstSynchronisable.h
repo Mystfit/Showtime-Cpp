@@ -6,22 +6,27 @@
 class ZstINetworkInteractor;
 class ZstEventDispatcher;
 
+enum ZstSyncStatus {
+	DEACTIVATED = 0,
+	ACTIVATING,
+	ACTIVATION_QUEUED,
+	ACTIVATED,
+	DEACTIVATING,
+	DEACTIVATION_QUEUED,
+	ERR
+};
+
+enum ZstSyncError {
+	OK,
+	PERFORMER_NOT_FOUND,
+	PARENT_NOT_FOUND,
+	ENTITY_ALREADY_EXISTS
+};
+
 class ZstSynchronisable {
 	friend class ZstActivationEvent;
 	friend class ZstDeactivationEvent;
 public:
-	enum SyncStatus {
-		DEACTIVATED = 0,
-		ACTIVATING,
-		ACTIVATION_QUEUED,
-		ACTIVATED,
-		DEACTIVATING,
-		DEACTIVATION_QUEUED,
-		ERR_PERFORMER_NOT_FOUND,
-		ERR_PARENT_NOT_FOUND,
-		ERR_ENTITY_ALREADY_EXISTS
-	};
-
 	ZST_EXPORT ZstSynchronisable();
 	ZST_EXPORT ~ZstSynchronisable();
 	ZST_EXPORT ZstSynchronisable(const ZstSynchronisable & other);
@@ -35,24 +40,30 @@ public:
 	ZST_EXPORT virtual void on_deactivated() = 0;
 
 	ZST_EXPORT virtual void set_activated();
+	ZST_EXPORT virtual void set_activating();
 	ZST_EXPORT virtual void set_deactivated();
+	ZST_EXPORT virtual void set_deactivating();
+	ZST_EXPORT virtual void set_error(ZstSyncError e);
+
 	ZST_EXPORT bool is_activated();
 	ZST_EXPORT bool is_deactivated();
-	ZST_EXPORT SyncStatus activation_status();
+	ZST_EXPORT ZstSyncStatus activation_status();
+	ZST_EXPORT ZstSyncError last_error();
 
 	//Register graph sender so this entity can comunicate with the graph
 	ZST_EXPORT virtual void set_network_interactor(ZstINetworkInteractor * network_interactor);
 
 protected:
-	ZST_EXPORT virtual void set_activation_status(SyncStatus status);
 	ZST_EXPORT ZstINetworkInteractor * network_interactor();
 
 private:
+	ZST_EXPORT virtual void set_activation_status(ZstSyncStatus status);
 	ZstEventDispatcher * m_activation_events;
 	ZstEventDispatcher * m_deactivation_events;
 	ZstActivationEvent * m_activation_hook;
 	ZstDeactivationEvent * m_deactivation_hook;
 
 	ZstINetworkInteractor * m_network_interactor;
-	SyncStatus m_sync_status;
+	ZstSyncStatus m_sync_status;
+	ZstSyncError m_sync_error;
 };

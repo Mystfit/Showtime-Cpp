@@ -35,10 +35,18 @@ void ZstStage::init()
     
 	addr << "tcp://*:" << STAGE_ROUTER_PORT;
 	zsock_bind(m_performer_router, "%s", addr.str().c_str());
+	if (!m_performer_router) {
+		LOGGER->error("Could not bind stage router socket to {}", addr.str());
+		return;
+	}
 	addr.str("");
 
 	addr << "@tcp://*:" << STAGE_PUB_PORT;
 	m_graph_update_pub = zsock_new_pub(addr.str().c_str());
+	if (!m_graph_update_pub) {
+		LOGGER->error("Could not bind stage graph publisher socket to {}", addr.str());
+		return;
+	}
 	zsock_set_linger(m_graph_update_pub, 0);
 
 	m_heartbeat_timer_id = attach_timer(stage_heartbeat_timer_func, HEARTBEAT_DURATION, this);

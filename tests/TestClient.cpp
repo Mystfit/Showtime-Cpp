@@ -290,6 +290,7 @@ void test_startup() {
 	wait_for_event(connectCallback, 1);
 	assert(connectCallback->num_calls() == 1);
 	assert(zst_is_connected());
+	connectCallback->reset_num_calls();
 	LOGGER->debug("Connection successful");
 	
 	zst_remove_connection_event_listener(connectCallback);
@@ -302,10 +303,17 @@ void test_root_entity() {
 	LOGGER->info("Running entity init test");
 
 	//Test root entity is activated
+	TestPerformerCallback * performer_activated = new TestPerformerCallback("performer activating");
     ZstPerformer * root_entity = zst_get_root();
 	assert(root_entity);
+	root_entity->attach_activation_event(performer_activated);
+	wait_for_event(performer_activated, 1);
+	assert(performer_activated->num_calls() == 1);
+	performer_activated->reset_num_calls();
     assert(root_entity->is_activated());
 	clear_callback_queue();
+	root_entity->detach_activation_event(performer_activated);
+	delete performer_activated;
 	LOGGER->debug("Root entity is activated");
 }
 

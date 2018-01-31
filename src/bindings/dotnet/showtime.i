@@ -1,4 +1,4 @@
-%module(directors="1") ShowtimeDotnet
+%module(directors="1") Showtime
 %{
 	#include <Showtime.h>
 %}
@@ -16,6 +16,7 @@
 %include "ZstPerformer.i"
 %include "ZstEvents.i"
 
+%rename("%(strip:[zst_])s") "";
 %include <Showtime.h>
 //%include "showtime_api.i"
 

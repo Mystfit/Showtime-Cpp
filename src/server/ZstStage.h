@@ -12,6 +12,7 @@
 #include "../core/ZstActor.h"
 
 #define HEARTBEAT_DURATION 1000
+#define MAX_MISSED_HEARTBEATS 10
 #define STAGE_MESSAGE_POOL_BLOCK 512
 
 class ZstEntityBase;

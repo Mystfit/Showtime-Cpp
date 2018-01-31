@@ -10,3 +10,6 @@
 [submodule "submodules/concurrentqueue"]
 	path = submodules/concurrentqueue
 	url = https://github.com/cameron314/concurrentqueue.git
+[submodule "submodules/hashidsxx"]
+	path = submodules/hashidsxx
+	url = https://github.com/schoentoon/hashidsxx

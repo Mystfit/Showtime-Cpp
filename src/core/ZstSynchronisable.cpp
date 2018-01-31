@@ -7,7 +7,7 @@
 
 ZstSynchronisable::ZstSynchronisable() :
 	m_network_interactor(NULL),
-	m_sync_status(SyncStatus::DEACTIVATED)
+	m_sync_status(ZstSyncStatus::DEACTIVATED)
 {
 	m_activation_events = new ZstEventDispatcher();
 	m_deactivation_events = new ZstEventDispatcher();
@@ -35,7 +35,7 @@ void ZstSynchronisable::attach_activation_event(ZstSynchronisableEvent * event)
 	m_activation_events->attach_event_listener(event);
 	
 	//If we're already activated we can trigger the callback immediately
-	if (activation_status() == SyncStatus::ACTIVATED) {
+	if (activation_status() == ZstSyncStatus::ACTIVATED) {
 		event->cast_run(this);
 	}
 }
@@ -57,39 +57,60 @@ void ZstSynchronisable::detach_deactivation_event(ZstSynchronisableEvent * event
 
 void ZstSynchronisable::set_activated()
 {
-	if (is_deactivated() || activation_status() != ZstSynchronisable::ACTIVATION_QUEUED)
+	if (is_deactivated() || activation_status() != ZstSyncStatus::ACTIVATION_QUEUED)
 	{
-		set_activation_status(SyncStatus::ACTIVATION_QUEUED);
+		set_activation_status(ZstSyncStatus::ACTIVATION_QUEUED);
 		m_activation_events->enqueue(this);
 		if (m_network_interactor)
 			m_network_interactor->enqueue_synchronisable_event(this);
 	}
 }
 
+void ZstSynchronisable::set_activating()
+{
+	set_activation_status(ZstSyncStatus::ACTIVATING);
+}
+
 void ZstSynchronisable::set_deactivated()
 {
-	if (is_activated() || activation_status() != ZstSynchronisable::DEACTIVATION_QUEUED)
+	if (is_activated() || activation_status() != ZstSyncStatus::DEACTIVATION_QUEUED)
 	{
-		set_activation_status(SyncStatus::DEACTIVATION_QUEUED);
+		set_activation_status(ZstSyncStatus::DEACTIVATION_QUEUED);
 		m_deactivation_events->enqueue(this);
 		if (m_network_interactor)
 			m_network_interactor->enqueue_synchronisable_event(this);
 	}
 }
 
+void ZstSynchronisable::set_deactivating()
+{
+	set_activation_status(ZstSyncStatus::DEACTIVATING);
+}
+
+void ZstSynchronisable::set_error(ZstSyncError e)
+{
+	m_sync_status = ZstSyncStatus::ERR;
+	m_sync_error = e;
+}
+
 bool ZstSynchronisable::is_activated()
 {
-	return m_sync_status == SyncStatus::ACTIVATED;
+	return m_sync_status == ZstSyncStatus::ACTIVATED;
 }
 
 bool ZstSynchronisable::is_deactivated()
 {
-	return m_sync_status == SyncStatus::DEACTIVATED;
+	return m_sync_status == ZstSyncStatus::DEACTIVATED;
 }
 
-ZstSynchronisable::SyncStatus ZstSynchronisable::activation_status()
+ZstSyncStatus ZstSynchronisable::activation_status()
 {
 	return m_sync_status;
+}
+
+ZstSyncError ZstSynchronisable::last_error()
+{
+	return m_sync_error;
 }
 
 void ZstSynchronisable::set_network_interactor(ZstINetworkInteractor * network_interactor)
@@ -108,27 +129,23 @@ void ZstSynchronisable::process_events()
 	m_deactivation_events->process();
 }
 
-void ZstSynchronisable::set_activation_status(SyncStatus status)
+void ZstSynchronisable::set_activation_status(ZstSyncStatus status)
 {
 	switch (status) 
 	{
-	case SyncStatus::DEACTIVATED:
+	case ZstSyncStatus::DEACTIVATED:
 		break;
-	case SyncStatus::ACTIVATING:
+	case ZstSyncStatus::ACTIVATING:
 		break;
-	case SyncStatus::ACTIVATION_QUEUED:
+	case ZstSyncStatus::ACTIVATION_QUEUED:
 		break;
-	case SyncStatus::ACTIVATED:
+	case ZstSyncStatus::ACTIVATED:
 		break;
-	case SyncStatus::DEACTIVATING:
+	case ZstSyncStatus::DEACTIVATING:
 		break;
-	case SyncStatus::DEACTIVATION_QUEUED:
+	case ZstSyncStatus::DEACTIVATION_QUEUED:
 		break;
-	case SyncStatus::ERR_PERFORMER_NOT_FOUND:
-		break;
-	case SyncStatus::ERR_PARENT_NOT_FOUND:
-		break;
-	case SyncStatus::ERR_ENTITY_ALREADY_EXISTS:
+	case ZstSyncStatus::ERR:
 		break;
 	default:
 		throw std::range_error("Did not understand status");

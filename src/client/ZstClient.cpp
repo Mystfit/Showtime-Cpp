@@ -188,6 +188,7 @@ void ZstClient::init(const char * client_name)
 
 	//Create a root entity to hold our local entity hierarchy
 	m_root = new ZstPerformer(m_client_name.c_str(), m_graph_out_addr.c_str());
+	m_root->set_network_interactor(this);
 	
     start();
 }
@@ -357,7 +358,7 @@ void ZstClient::register_client_complete(ZstMessage::Kind status)
 
 	//TODO: Need a handshake with the stage before we mark connection as active
 	m_connected_to_stage = true;
-	m_root->set_activation_status(ZstSynchronisable::ACTIVATED);
+	m_root->set_activated();
 	client_connected_events()->enqueue(m_root);
 	
 	//Ask the stage to send us a full snapshot
@@ -754,7 +755,7 @@ void ZstClient::activate_entity(ZstEntityBase * entity)
 
 	//Register client to entity to allow it to send messages
 	entity->set_network_interactor(this);
-	entity->set_activation_status(ZstSynchronisable::ACTIVATING);
+	entity->set_activating();
 	
 	//Build message
 	ZstMessage * msg = msg_pool()->get()->init_entity_message(entity);
@@ -774,13 +775,13 @@ void ZstClient::activate_entity(ZstEntityBase * entity)
 				e->set_activated();
 			}
 			else if (status == ZstMessage::Kind::ERR_STAGE_ENTITY_ALREADY_EXISTS) {
-				e->set_activation_status(ZstSynchronisable::ERR_ENTITY_ALREADY_EXISTS);
+				e->set_error(ZstSyncError::ENTITY_ALREADY_EXISTS);
 			} 
 			else if (status == ZstMessage::Kind::ERR_STAGE_ENTITY_NOT_FOUND) {
-				e->set_activation_status(ZstSynchronisable::ERR_PERFORMER_NOT_FOUND);
+				e->set_error(ZstSyncError::PERFORMER_NOT_FOUND);
 			}
 			else if (status == ZstMessage::Kind::ERR_STAGE_ENTITY_NOT_FOUND) {
-				e->set_activation_status(ZstSynchronisable::ERR_PARENT_NOT_FOUND);
+				e->set_error(ZstSyncError::PARENT_NOT_FOUND);
 			}
 
 			LOGGER->debug("Activate entity {} complete with status {}", e->URI().path(), status);
@@ -797,7 +798,7 @@ void ZstClient::destroy_entity(ZstEntityBase * entity)
 		return;
 	}
 
-	entity->set_activation_status(ZstSynchronisable::DEACTIVATING);
+	entity->set_deactivating();
 
 	//If the entity is local, let the stage know it's leaving
 	if (entity_is_local(*entity) && is_connected_to_stage()) {
@@ -973,7 +974,7 @@ void ZstClient::destroy_plug(ZstPlug * plug)
     }
 
 	plug->set_destroyed();
-	plug->set_activation_status(ZstSynchronisable::DEACTIVATING);
+	plug->set_deactivating();
 
 	bool is_local = entity_is_local(*plug);
 
@@ -1029,7 +1030,7 @@ ZstCable * ZstClient::connect_cable(ZstPlug * input, ZstPlug * output)
 		return NULL;
 	}
 
-	cable->set_activation_status(ZstSynchronisable::ACTIVATING);
+	cable->set_activating();
 
 	//If either of the cable plugs are a local entity, then the cable is local as well
 	if (entity_is_local(*input) || entity_is_local(*output)) {
@@ -1055,7 +1056,7 @@ ZstCable * ZstClient::connect_cable(ZstPlug * input, ZstPlug * output)
 
 void ZstClient::destroy_cable(ZstCable * cable)
 {
-	cable->set_activation_status(ZstSynchronisable::DEACTIVATING);
+	cable->set_deactivating();
 	ZstMessage * msg = msg_pool()->get()->init_serialisable_message(ZstMessage::Kind::DESTROY_CABLE, *cable);
 	msg_pool()->register_future(msg).then([this, cable](MessageFuture f) {
 		int status = f.get();

@@ -48,6 +48,8 @@ void zst_poll_once()
 void zst_attach_connection_event_listener(ZstPerformerEvent * callback)
 {
 	ZstClient::instance().client_connected_events()->attach_event_listener(callback);
+	if (ZstClient::instance().is_connected_to_stage())
+		callback->cast_run(ZstClient::instance().get_local_performer());
 }
 
 void zst_attach_performer_event_listener(ZstPerformerEvent * callback, ZstEventAction action)
