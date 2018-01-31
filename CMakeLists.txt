@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.8.4)
 
 project(Showtime)
 
-set(SHOWTIME_VERSION 0.8.0)
+set(SHOWTIME_VERSION 0.8.1)
 
 # Set build locations
 set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/install)
@@ -29,6 +29,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(CXX_STANDARD_REQUIRED)
 
 # Set showtime include directories
+set(Showtime_COMPILED_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include")
 set(Showtime_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/include")
 set(Showtime_SUBMODULES_DIR "${CMAKE_SOURCE_DIR}/submodules")
 set(Showtime_API_INTERFACE "")

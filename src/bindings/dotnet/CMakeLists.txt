@@ -1,10 +1,11 @@
 set(BUILD_STAMP "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
 
 enable_language(CSharp)
+
 # Build C# bindings
 set(DOTNET_TARGET ${PROJECT_NAME}Dotnet)
 set(DOTNET_INTERFACES
-    showtime.i
+    "../showtime.i"
 )
 
 set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR})

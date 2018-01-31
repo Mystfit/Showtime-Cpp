@@ -195,20 +195,23 @@ void ZstClient::init(const char * client_name)
 
 void ZstClient::process_callbacks()
 {
-	m_synchronisable_event_manager->process();
 	m_client_connected_event_manager->process();
-	m_client_disconnected_event_manager->process();
-	m_performer_arriving_event_manager->process();
-	m_performer_leaving_event_manager->process();
-    m_component_arriving_event_manager->process();
-    m_component_leaving_event_manager->process();
-    m_component_type_arriving_event_manager->process();
-    m_component_type_leaving_event_manager->process();
-	m_cable_arriving_event_manager->process();
-	m_cable_leaving_event_manager->process();
-    m_plug_arriving_event_manager->process();
-    m_plug_leaving_event_manager->process();
-	m_compute_event_manager->process();
+    
+    if(is_connected_to_stage()){
+        m_synchronisable_event_manager->process();
+        m_client_disconnected_event_manager->process();
+        m_performer_arriving_event_manager->process();
+        m_performer_leaving_event_manager->process();
+        m_component_arriving_event_manager->process();
+        m_component_leaving_event_manager->process();
+        m_component_type_arriving_event_manager->process();
+        m_component_type_leaving_event_manager->process();
+        m_cable_arriving_event_manager->process();
+        m_cable_leaving_event_manager->process();
+        m_plug_arriving_event_manager->process();
+        m_plug_leaving_event_manager->process();
+        m_compute_event_manager->process();
+    }
 }
 
 void ZstClient::clear_callbacks()
@@ -371,6 +374,9 @@ void ZstClient::leave_stage()
 {
 	if (m_connected_to_stage) {
 		LOGGER->info("Leaving stage");
+        
+        //Deactivate all owned entities
+        destroy_entity(m_root);
 		
 		//Close stage update socket so we don't receive any updates during shutdown
 		zsock_disconnect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
@@ -801,21 +807,23 @@ void ZstClient::destroy_entity(ZstEntityBase * entity)
 	entity->set_deactivating();
 
 	//If the entity is local, let the stage know it's leaving
-	if (entity_is_local(*entity) && is_connected_to_stage()) {
-		ZstMessage * msg = msg_pool()->get()->init_message(ZstMsgKind::DESTROY_ENTITY);
-		msg->append_str(entity->URI().path(), entity->URI().full_size());
-		ZstURI entity_path = entity->URI();
-		msg_pool()->register_future(msg).then([this, entity_path](MessageFuture f) {
-			ZstMsgKind status = f.get();
-			if (status != ZstMsgKind::OK) {
-				LOGGER->error("Destroy entity {} failed with status {}", entity_path.path(), status);
-				return status;
-			}
-			LOGGER->debug("Destroy entity {} completed with status {}", entity_path.path(), status);
-			return status;
-		});
-		send_to_stage(msg);
-
+	if (entity_is_local(*entity)) {
+        if(is_connected_to_stage()){
+            ZstMessage * msg = msg_pool()->get()->init_message(ZstMsgKind::DESTROY_ENTITY);
+            msg->append_str(entity->URI().path(), entity->URI().full_size());
+            ZstURI entity_path = entity->URI();
+            msg_pool()->register_future(msg).then([this, entity_path](MessageFuture f) {
+                ZstMsgKind status = f.get();
+                if (status != ZstMsgKind::OK) {
+                    LOGGER->error("Destroy entity {} failed with status {}", entity_path.path(), status);
+                    return status;
+                }
+                LOGGER->debug("Destroy entity {} completed with status {}", entity_path.path(), status);
+                return status;
+            });
+            send_to_stage(msg);
+        }
+		
 		//Since we own this entity, we can start to clean it up immediately
 		entity->set_deactivated();
 		destroy_entity_complete(entity);
@@ -841,17 +849,6 @@ void ZstClient::destroy_entity_complete(ZstEntityBase * entity)
 			//Entity is a root performer. Remove from performer list
 			m_clients.erase(entity->URI());
 		}
-
-		//Make sure to remove all cables from this entity
-		/*auto cable_bundle = entity->acquire_cable_bundle();
-		for (int i = 0; i < cable_bundle->size(); ++i) {
-			ZstCable * cable = cable_bundle->cable_at(i);
-			if (cable->is_activated()) {
-				cable->set_deactivated();
-				cable_leaving_events()->enqueue(cable_bundle->cable_at(i));
-			}
-		}
-		entity->release_cable_bundle(cable_bundle);*/
 
 		//If this entity is remote, we can clean it up
 		if (!entity_is_local(*entity)) {

@@ -1,4 +1,4 @@
-%module(directors="1") Showtime
+%module(directors="1") showtime
 %{
 	#include <Showtime.h>
 %}

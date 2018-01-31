@@ -1,6 +1,5 @@
 # Write version info into header file
-set(COMPILED_INCLUDES "${CMAKE_BINARY_DIR}/include")
-set(VERSION_FILE "${COMPILED_INCLUDES}/ZstVersion.h")
+set(VERSION_FILE "${Showtime_COMPILED_INCLUDE_DIRS}/ZstVersion.h")
 FILE(WRITE ${VERSION_FILE} "#define SHOWTIME_VERSION \"${SHOWTIME_VERSION}\"")
 
 # Public include files
@@ -61,8 +60,8 @@ find_package(MsgPack REQUIRED)
 
 # Include directories
 set(ZST_CORE_INCLUDES 
-    ${COMPILED_INCLUDES}
     ${Showtime_INCLUDE_DIRS}
+    ${Showtime_COMPILED_INCLUDE_DIRS}
     "${Showtime_SUBMODULES_DIR}/hashidsxx"
     "${Showtime_SUBMODULES_DIR}/concurrentqueue"
     "${Showtime_SUBMODULES_DIR}/spdlog/include"

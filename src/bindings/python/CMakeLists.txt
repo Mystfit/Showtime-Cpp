@@ -4,21 +4,24 @@ set(SETUP_PY_PARTIAL    "${CMAKE_CURRENT_BINARY_DIR}/setup-partial.py")
 set(SETUP_PY    		"${CMAKE_CURRENT_BINARY_DIR}/setup.py")
 set(BUILD_STAMP 		"${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
 
-# Set up swig interfaces
-set(SWIG_INTERFACES "${CMAKE_CURRENT_SOURCE_DIR}/showtime.i")
-set(SWIG_INTERFACES_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/showtime.i")
-configure_file(${SWIG_INTERFACES} ${SWIG_INTERFACES_DESTINATION} COPYONLY)
-
 # Copy showtime module files
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/showtime.i DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../showtime_common.i DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(GLOB PYTHON_INTERFACES "${CMAKE_CURRENT_SOURCE_DIR}/../*.i")
+file(COPY ${PYTHON_INTERFACES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+#Copy required include directories
+get_target_property(CLIENT_TARGET_INCLUDES ${CLIENT_TARGET} PUBLIC_INCLUDE_DIRECTORIES)
 
 # First pass at generating setup.py
-set(SHOWTIME_TARGET "@SHOWTIME_TARGET@")
+set(CLIENT_INCLUDE_DIRS "@CLIENT_INCLUDE_DIRS@")
+set(CLIENT_TARGET_LOCAL "@CLIENT_TARGET@")
+set(CORE_TARGET_LOCAL "@CORE_TARGET@")
+
 configure_file(${SETUP_PY_IN} ${SETUP_PY_PARTIAL})
 
 # Set up second pass for generating setup.py, filling in showtime runtime paths
-set(SHOWTIME_TARGET '$<TARGET_FILE:${PROJECT_NAME}>')
+set(CLIENT_INCLUDE_DIRS '$<TARGET_PROPERTY:${CLIENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>')
+set(CLIENT_TARGET_LOCAL '$<TARGET_FILE:${CLIENT_TARGET}>')
+set(CORE_TARGET_LOCAL '$<TARGET_FILE:${CORE_TARGET}>')
 
 get_filename_component(SETUPPY_PARSER ${CMAKE_CURRENT_SOURCE_DIR}/showtime-final.cmake REALPATH)
 
@@ -32,7 +35,9 @@ add_custom_command(OUTPUT ${SETUP_PY}
 					COMMAND ${CMAKE_COMMAND}
 						-D SUBST_SOURCE=${SETUP_PY_PARTIAL}
 						-D SUBST_DEST=${SETUP_PY}
-						-D SHOWTIME_TARGET=${SHOWTIME_TARGET}
+						-D CLIENT_INCLUDE_DIRS=${CLIENT_INCLUDE_DIRS}
+						-D CLIENT_TARGET=${CLIENT_TARGET_LOCAL}
+						-D CORE_TARGET=${CORE_TARGET_LOCAL}
 						-P ${SETUPPY_PARSER}
                 	DEPENDS ${SETUP_PY_PARTIAL}
                 	VERBATIM)
@@ -41,8 +46,8 @@ add_custom_command(OUTPUT ${SETUP_PY}
 add_custom_command(OUTPUT ${BUILD_STAMP}
                 	COMMAND ${PREFIX} ${PYTHON_EXECUTABLE} ${SETUP_PY} build ${EXTENSION_COMPILER}
                 	COMMAND ${CMAKE_COMMAND} -E touch ${BUILD_STAMP}
-                	DEPENDS ${SETUP_PY} ${PROJECT_NAME})
+                	DEPENDS ${SETUP_PY} ${CLIENT_TARGET})
 
 # Create target and install
-add_custom_target(INSTALL_PYTHON ALL DEPENDS ${BUILD_STAMP})
+add_custom_target(ShowtimePython ALL DEPENDS ${BUILD_STAMP})
 install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} install)")
