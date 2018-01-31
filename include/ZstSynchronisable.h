@@ -17,7 +17,7 @@ enum ZstSyncStatus {
 };
 
 enum ZstSyncError {
-	OK,
+	NO_ERR,
 	PERFORMER_NOT_FOUND,
 	PARENT_NOT_FOUND,
 	ENTITY_ALREADY_EXISTS

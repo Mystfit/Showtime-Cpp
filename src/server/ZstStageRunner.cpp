@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
 #ifdef WIN32
 	Sleep(100);
 #else
-	usleep(1000 * 200)
+    usleep(1000 * 200);
 #endif
 
 	ZstStage stage;

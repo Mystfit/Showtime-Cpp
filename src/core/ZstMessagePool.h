@@ -7,8 +7,8 @@
 
 #define USE_MESSAGE_POOL false
 
-typedef cf::promise<ZstMessage::Kind> MessagePromise;
-typedef cf::future<ZstMessage::Kind> MessageFuture;
+typedef cf::promise<ZstMsgKind> MessagePromise;
+typedef cf::future<ZstMsgKind> MessageFuture;
 
 class ZstMessage;
 

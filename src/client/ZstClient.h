@@ -34,7 +34,7 @@ public:
 
 	//Register this endpoint to the stage
 	void register_client_to_stage(std::string stage_address);
-	void register_client_complete(ZstMessage::Kind status);
+	void register_client_complete(ZstMsgKind status);
 	void leave_stage();
 	
 	//Stage connection status

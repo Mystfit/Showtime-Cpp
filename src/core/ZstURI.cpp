@@ -3,7 +3,6 @@
 #include <iostream>
 #include <msgpack.hpp>
 #include <ZstURI.h>
-#include <hashids.h>
 
 ZstURI::ZstURI() : m_component_count(0) {
 	m_original_path = create_pstr("");
@@ -109,11 +108,11 @@ ZstURI ZstURI::operator+(const ZstURI & other) const
 	size_t new_length = m_original_path.length + other.m_original_path.length + 2;
 
 	char * new_path = (char*)malloc(new_length+1);
-	strncpy_s(new_path, new_length, m_original_path.cstr, m_original_path.length);
+    memcpy(new_path, m_original_path.cstr, m_original_path.length);
 	new_path[m_original_path.length] = '\0';
 
-	strncat_s(new_path, new_length, "/", 1);
-	strncat_s(new_path, new_length, other.m_original_path.cstr, other.m_original_path.length);
+	strncat(new_path, "/", 1);
+	strncat(new_path, other.m_original_path.cstr, other.m_original_path.length);
 	new_path[new_length-1] = '\0';
 
 	ZstURI result = ZstURI(new_path);
@@ -223,7 +222,7 @@ ZstURI::pstr ZstURI::create_pstr(const char * p, size_t l)
 	pstr result;
 	result.length = l + 1;
 	result.cstr = (char*)malloc(result.length);
-	strncpy_s(result.cstr, result.length, p, result.length-1);
+	memcpy(result.cstr, p, result.length-1);
 	result.cstr[result.length-1] = '\0';
 
 	return result;

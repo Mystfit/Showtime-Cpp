@@ -159,8 +159,8 @@ size_t ZstCableBundle::size()
 
 size_t ZstCableHash::operator()(ZstCable* const& k) const
 {
-	std::size_t h1 = std::hash<std::string>{}(k->get_output_URI().path());
-	std::size_t h2 = std::hash<std::string>{}(k->get_input_URI().path());
+    std::size_t h1 = ZstURIHash{}(k->get_output_URI());
+	std::size_t h2 = ZstURIHash{}(k->get_input_URI());
 	return h1 ^ (h2 << 1);
 }
 

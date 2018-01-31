@@ -556,7 +556,7 @@ void test_add_filter() {
 
 	TAKE_A_BREATH
 
-	int max_wait = 1000;
+	int max_wait = 100000;
 	int current_wait = 0;
 
 	//Wait for the first two input callbacks to clear before we check for the sum

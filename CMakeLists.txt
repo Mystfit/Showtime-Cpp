@@ -25,7 +25,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 endif()
 
 # Use C11
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CXX_STANDARD_REQUIRED)
 
 # Set showtime include directories

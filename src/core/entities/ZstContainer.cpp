@@ -101,7 +101,7 @@ ZstEntityBase * ZstContainer::find_child_by_URI(const ZstURI & path)
 ZstEntityBase * ZstContainer::get_child_by_URI(const ZstURI & path)
 {
 	ZstEntityBase * result = NULL;
-	std::unordered_map<ZstURI, ZstEntityBase*>::iterator it = m_children.find(path);
+	ZstEntityMap::iterator it = m_children.find(path);
 	
 	if (it != m_children.end())
 		result = it->second;

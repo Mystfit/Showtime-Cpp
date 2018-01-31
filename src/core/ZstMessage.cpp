@@ -6,7 +6,7 @@
 ZstMessage::ZstMessage() :
 	m_msg_handle(NULL),
 	m_msg_id(NULL),
-	m_msg_kind(Kind::EMPTY),
+	m_msg_kind(ZstMsgKind::EMPTY),
 	m_entity_target(NULL)
 {
 	reset();
@@ -21,7 +21,7 @@ ZstMessage::~ZstMessage()
 
 void ZstMessage::reset()
 {
-	m_msg_kind = Kind::EMPTY;
+	m_msg_kind = ZstMsgKind::EMPTY;
 	m_payloads.clear();
 		
 	if (m_msg_handle) 
@@ -68,7 +68,7 @@ ZstMessage * ZstMessage::init_entity_message(ZstEntityBase * entity)
 	return this;
 }
 
-ZstMessage * ZstMessage::init_message(Kind kind)
+ZstMessage * ZstMessage::init_message(ZstMsgKind kind)
 {
 	if (m_msg_handle)
 		zmsg_destroy(&m_msg_handle);
@@ -78,7 +78,7 @@ ZstMessage * ZstMessage::init_message(Kind kind)
 	return this;
 }
 
-ZstMessage * ZstMessage::init_serialisable_message(Kind kind, ZstSerialisable & streamable)
+ZstMessage * ZstMessage::init_serialisable_message(ZstMsgKind kind, ZstSerialisable & streamable)
 {
 	if (m_msg_handle)
 		zmsg_destroy(&m_msg_handle);
@@ -113,7 +113,7 @@ const char * ZstMessage::id()
 	return result;
 }
 
-ZstMessage::Kind ZstMessage::kind()
+ZstMsgKind ZstMessage::kind()
 {
 	return m_msg_kind;
 }
@@ -130,16 +130,16 @@ size_t ZstMessage::num_payloads()
 
 void ZstMessage::append_entity_kind_frame(ZstEntityBase * entity) {
 	if (strcmp(entity->entity_type(), COMPONENT_TYPE) == 0) {
-		m_msg_kind = Kind::CREATE_COMPONENT;
+		m_msg_kind = ZstMsgKind::CREATE_COMPONENT;
 	}
 	else if (strcmp(entity->entity_type(), CONTAINER_TYPE) == 0) {
-		m_msg_kind = Kind::CREATE_CONTAINER;
+		m_msg_kind = ZstMsgKind::CREATE_CONTAINER;
 	}
 	else if (strcmp(entity->entity_type(), PERFORMER_TYPE) == 0) {
-		m_msg_kind = Kind::CREATE_PERFORMER;
+		m_msg_kind = ZstMsgKind::CREATE_PERFORMER;
 	}
 	else if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
-		m_msg_kind = Kind::CREATE_PLUG;
+		m_msg_kind = ZstMsgKind::CREATE_PLUG;
 	}
 
 	append_kind_frame(m_msg_kind);
@@ -155,7 +155,7 @@ void ZstMessage::append_payload_frame(ZstSerialisable & streamable)
 }
 
 //Build a message id from the message ID enum
-void ZstMessage::append_kind_frame(Kind k) {
+void ZstMessage::append_kind_frame(ZstMsgKind k) {
 	m_msg_kind = k;
 	
 	std::stringstream buffer;
@@ -177,9 +177,9 @@ void ZstMessage::append_str(const char * s, size_t len)
 	zmsg_append(m_msg_handle,&str_frame);
 }
 
-void ZstMessage::append_serialisable(ZstMessage::Kind k,  ZstSerialisable & s)
+void ZstMessage::append_serialisable(ZstMsgKind k,  ZstSerialisable & s)
 {
-	if (kind() == Kind::GRAPH_SNAPSHOT) {
+	if (kind() == ZstMsgKind::GRAPH_SNAPSHOT) {
 		append_kind_frame(k);
 	}
 	append_payload_frame(s);
@@ -198,11 +198,11 @@ void ZstMessage::unpack(zmsg_t * msg)
 	m_msg_kind = unpack_kind();
 
 	//Handle message payloads
-	if (kind() == Kind::GRAPH_SNAPSHOT) {
+	if (kind() == ZstMsgKind::GRAPH_SNAPSHOT) {
 		// Batched update messages from the stage look like this:
 		// | Kind | Payload | Kind | Payload | ... |
-		Kind payload_kind = unpack_kind();
-		while (payload_kind != Kind::EMPTY) {
+		ZstMsgKind payload_kind = unpack_kind();
+		while (payload_kind != ZstMsgKind::EMPTY) {
 			m_payloads.push_back(ZstMessagePayload{ payload_kind, zmsg_pop(m_msg_handle) });
 			payload_kind = unpack_kind();
 		}
@@ -217,21 +217,20 @@ void ZstMessage::unpack(zmsg_t * msg)
 	}
 }
 
-ZstMessage::Kind ZstMessage::unpack_kind()
+ZstMsgKind ZstMessage::unpack_kind()
 {
 	zframe_t * kind_frame = zmsg_pop(m_msg_handle);
-	Kind k = unpack_kind(kind_frame);
+	ZstMsgKind k = unpack_kind(kind_frame);
 	zframe_destroy(&kind_frame);
 	return k;
 }
 
-ZstMessage::Kind ZstMessage::unpack_kind(zframe_t * kind_frame)
+ZstMsgKind ZstMessage::unpack_kind(zframe_t * kind_frame)
 {
-	Kind k = Kind::EMPTY;
-	unsigned int k_int = 0;;
+	ZstMsgKind k = ZstMsgKind::EMPTY;
 	if (kind_frame) {
 		auto handle = msgpack::unpack((char*)zframe_data(kind_frame), zframe_size(kind_frame));
-		k = handle.get().as<Kind>();
+		k = handle.get().as<ZstMsgKind>();
 	}
 	return k;
 }
@@ -242,7 +241,7 @@ ZstMessage::Kind ZstMessage::unpack_kind(zframe_t * kind_frame)
 // Message payload wrapper
 // -----------------------
 
-ZstMessagePayload::ZstMessagePayload(ZstMessage::Kind k, zframe_t * p)
+ZstMessagePayload::ZstMessagePayload(ZstMsgKind k, zframe_t * p)
 {
 	m_kind = k;
 	m_payload = p;
@@ -264,7 +263,7 @@ size_t ZstMessagePayload::size()
 	return zframe_size(m_payload);
 }
 
-ZstMessage::Kind ZstMessagePayload::kind()
+ZstMsgKind ZstMessagePayload::kind()
 {
 	return m_kind;
 }

@@ -1,3 +1,4 @@
+#include <memory>
 #include <msgpack.hpp>
 #include <entities/ZstComponent.h>
 
@@ -184,7 +185,7 @@ void ZstComponent::set_component_type(const char * component_type)
 void ZstComponent::set_component_type(const char * component_type, size_t len)
 {
 	m_component_type = (char*)malloc(len + 1);
-	strncpy_s(m_component_type, len + 1, component_type, len);
+    memcpy(m_component_type, component_type, len);
 	m_component_type[len] = '\0';
 }
 

@@ -114,7 +114,7 @@ void ZstEntityBase::read(const char * buffer, size_t length, size_t & offset)
 
 	//Copy entity type string into entity
 	m_entity_type = (char*)malloc(obj.via.str.size + 1);
-	strncpy_s(m_entity_type, obj.via.str.size + 1, obj.via.str.ptr, obj.via.str.size);
+	memcpy(m_entity_type, obj.via.str.ptr, obj.via.str.size);
 	m_entity_type[obj.via.str.size] = '\0';
 }
 
@@ -125,7 +125,8 @@ void ZstEntityBase::set_entity_type(const char * entity_type) {
 	}
 	int entity_type_len = static_cast<int>(strlen(entity_type));
 	m_entity_type = (char*)malloc(entity_type_len + 1);
-	strncpy_s(m_entity_type, entity_type_len + 1, entity_type, entity_type_len);
+	memcpy(m_entity_type, entity_type, entity_type_len);
+    m_entity_type[entity_type_len] = '\0';
 }
 
 void ZstEntityBase::set_parent(ZstEntityBase *entity) {

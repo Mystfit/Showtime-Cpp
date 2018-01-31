@@ -7,7 +7,8 @@
 
 ZstSynchronisable::ZstSynchronisable() :
 	m_network_interactor(NULL),
-	m_sync_status(ZstSyncStatus::DEACTIVATED)
+	m_sync_status(ZstSyncStatus::DEACTIVATED),
+    m_sync_error(ZstSyncError::NO_ERR)
 {
 	m_activation_events = new ZstEventDispatcher();
 	m_deactivation_events = new ZstEventDispatcher();
