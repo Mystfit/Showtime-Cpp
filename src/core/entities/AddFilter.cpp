@@ -32,7 +32,6 @@ void AddFilter::compute(ZstInputPlug * plug)
 			m_sum->append_float(m_addend->float_at(i));
 		}
 	}
-	float check_val = m_sum->float_at(0);
 	m_sum->fire();
 }
 

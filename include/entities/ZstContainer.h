@@ -18,7 +18,7 @@ public:
 	ZST_EXPORT virtual void on_activated() override {};
 
 	//Register graph sender for output plugs and children
-	ZST_EXPORT void set_network_interactor(ZstINetworkInteractor * network_interactor);
+	ZST_EXPORT void set_network_interactor(ZstINetworkInteractor * network_interactor) override;
 
 	//Find a child in this entity by a URI
 	ZST_EXPORT ZstEntityBase * find_child_by_URI(const ZstURI & path);
@@ -38,9 +38,6 @@ public:
 	//Set all children as deactivated
 	ZST_EXPORT virtual void set_deactivated() override;
 
-	//Set parent for all children
-	ZST_EXPORT virtual void set_parent(ZstEntityBase * entity) override;
-
 	//Unplug all cables in container
 	ZST_EXPORT virtual void disconnect_cables() override;
 	
@@ -51,9 +48,13 @@ public:
 	//Serialisation
 	ZST_EXPORT virtual void write(std::stringstream & buffer) override;
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
+    
 
 protected:
-	ZST_EXPORT virtual ZstCableBundle * get_child_cables(ZstCableBundle * bundle) override;
+	ZST_EXPORT ZstCableBundle * get_child_cables(ZstCableBundle * bundle) override;
+    
+    //Set parent for all children
+    ZST_EXPORT void set_parent(ZstEntityBase * entity) override;
 
 private:
 	ZstEntityMap m_children;

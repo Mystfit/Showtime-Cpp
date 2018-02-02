@@ -279,84 +279,100 @@ void test_URI() {
 void test_startup() {
 
 	LOGGER->info("Running Showtime init test");
-
-	//Test connection
-	TestConnectCallback * connectCallback = new TestConnectCallback("connected");
-	zst_attach_connection_event_listener(connectCallback);
-
 	zst_init("TestClient");
+    
+    LOGGER->debug("Testing sync join");
 	zst_join("127.0.0.1");
-
+    assert(zst_is_connected());
+    
+    //Leave the stage so we can reconnect
+    zst_leave();
+    assert(!zst_is_connected());
+    
+    //Create events to listen for a successful connection
+    TestConnectCallback * connectCallback = new TestConnectCallback("connected");
+    zst_attach_connection_event_listener(connectCallback);
+    
+    LOGGER->debug("Testing async join");
+    assert(connectCallback->num_calls() == 0);
+    zst_join_async("127.0.0.1");
 	wait_for_event(connectCallback, 1);
 	assert(connectCallback->num_calls() == 1);
 	assert(zst_is_connected());
-	connectCallback->reset_num_calls();
-	LOGGER->debug("Connection successful");
-	
-	zst_remove_connection_event_listener(connectCallback);
-	delete connectCallback;
-
-	//assert(zst_ping() >= 0);
+    
+    //Cleanup
+    zst_remove_connection_event_listener(connectCallback);
+    delete connectCallback;
 }
 
 void test_root_entity() {
-	LOGGER->info("Running entity init test");
+	LOGGER->info("Running performer test");
 
 	//Test root entity is activated
 	TestPerformerCallback * performer_activated = new TestPerformerCallback("performer activating");
     ZstPerformer * root_entity = zst_get_root();
 	assert(root_entity);
+    
+    //This should execute immediately since we've already connected to the stage
 	root_entity->attach_activation_event(performer_activated);
-	wait_for_event(performer_activated, 1);
 	assert(performer_activated->num_calls() == 1);
 	performer_activated->reset_num_calls();
     assert(root_entity->is_activated());
 	clear_callback_queue();
 	root_entity->detach_activation_event(performer_activated);
 	delete performer_activated;
-	LOGGER->debug("Root entity is activated");
+	LOGGER->debug("Root performer is activated");
 }
 
 
 void test_create_entities(){
-	LOGGER->info("Running entity test");
-	int expected_entities = 1;
-	int expected_plugs = expected_entities * 1;
-	
-	//Create entities
-	LOGGER->debug("Creating entities and events");
-	OutputComponent * test_output = new OutputComponent("entity_create_test_ent");
+	LOGGER->info("Running entity creation test");
+    
+    LOGGER->debug("Creating sync entity");
+    OutputComponent * test_output_sync = new OutputComponent("entity_create_test_sync");
+    
+    LOGGER->debug("Testing entity sync activation");
+    zst_activate_entity(test_output_sync);
+    assert(test_output_sync->is_activated());
+    assert(zst_find_entity(test_output_sync->URI()));
+    
+    LOGGER->debug("Testing entity sync deactivation");
+    zst_deactivate_entity(test_output_sync);
+    assert(!test_output_sync->is_activated());
+    assert(!zst_find_entity(test_output_sync->URI()));
+    delete test_output_sync;
+    
+    //Test async entity
+	OutputComponent * test_output_async = new OutputComponent("entity_create_test_async");
 	TestEntityEventCallback * entity_activated_local = new TestEntityEventCallback("activated via local event");
 	TestEntityEventCallback * entity_deactivated_local = new TestEntityEventCallback("deactivated via local event");
-	test_output->attach_activation_event(entity_activated_local);
-	test_output->attach_deactivation_event(entity_deactivated_local);
+	test_output_async->attach_activation_event(entity_activated_local);
+	test_output_async->attach_deactivation_event(entity_deactivated_local);
 	
-	zst_activate_entity(test_output);
+    LOGGER->debug("Testing entity async activation");
+	zst_activate_entity_async(test_output_async);
 	wait_for_event(entity_activated_local, 1);
 	assert(entity_activated_local->num_calls() == 1);
 	entity_activated_local ->reset_num_calls();
     
 	//Check local client registered plugs correctly
-	LOGGER->debug("Verify entity is activated");
-	assert(test_output->is_activated());
-	ZstURI localPlug_uri = test_output->get_plug_by_URI(test_output->output()->URI())->URI();
-	ZstURI localPlug_uri_via_entity = test_output->output()->URI();
+	assert(test_output_async->is_activated());
+	ZstURI localPlug_uri = test_output_async->get_plug_by_URI(test_output_async->output()->URI())->URI();
+	ZstURI localPlug_uri_via_entity = test_output_async->output()->URI();
 	assert(ZstURI::equal(localPlug_uri, localPlug_uri_via_entity));
 
-	//Cleanup
-	LOGGER->debug("Deactivate entity");
-	zst_deactivate_entity(test_output);
+    LOGGER->debug("Testing entity async deactivation");
+	zst_deactivate_entity(test_output_async);
 	wait_for_event(entity_deactivated_local, 1);
 	assert(entity_deactivated_local->num_calls() == 1);
 	entity_deactivated_local->reset_num_calls();
-	assert(!test_output->is_activated());
-	assert(!zst_find_entity(test_output->URI()));
-	LOGGER->debug("Entity successfully deactivated");
-
-	delete test_output;
+	assert(!test_output_async->is_activated());
+	assert(!zst_find_entity(test_output_async->URI()));
+    assert(!zst_find_entity(localPlug_uri));
+    
+    //Cleanup
+	delete test_output_async;
 	delete entity_activated_local;
-	
-	assert(!zst_get_root()->find_child_by_URI(localPlug_uri));
 }
 
 
@@ -368,21 +384,7 @@ void test_hierarchy() {
 	ZstComponent * child = new ZstComponent("child");
 	parent->add_child(child);
 
-	TestEntityEventCallback * parent_activated = new TestEntityEventCallback("parent activated");
-	TestEntityEventCallback * parent_deactivated = new TestEntityEventCallback("parent deactivated");
-	TestEntityEventCallback * child_activated = new TestEntityEventCallback("child activated");
-	TestEntityEventCallback * child_deactivated = new TestEntityEventCallback("child deactivated");
-
-	parent->attach_activation_event(parent_activated);
-	parent->attach_deactivation_event(parent_deactivated);
-	child->attach_activation_event(child_activated);
-	child->attach_deactivation_event(child_deactivated);
-
 	zst_activate_entity(parent);
-	wait_for_event(parent_activated, 1);
-	assert(parent_activated->num_calls() == 1);
-	parent_activated->reset_num_calls();
-		
 	assert(zst_find_entity(parent->URI()));
 	assert(zst_find_entity(child->URI()));
 	
@@ -390,38 +392,38 @@ void test_hierarchy() {
 	LOGGER->debug("Testing child removal from parent");
 	ZstURI child_URI = ZstURI(child->URI());
 	zst_deactivate_entity(child);
-	wait_for_event(child_deactivated, 1);
-	assert(child_deactivated->num_calls() == 1);
-	child_deactivated->reset_num_calls();
-	delete child;
-	child = 0;
 	assert(!parent->find_child_by_URI(child_URI));
-	assert(!zst_get_root()->find_child_by_URI(child_URI));
-
+	assert(!zst_find_entity(child_URI));
+    
+    //Test child activation and deactivation callbacks
+    TestEntityEventCallback * child_activated = new TestEntityEventCallback("child activated");
+    TestEntityEventCallback * child_deactivated = new TestEntityEventCallback("child deactivated");
+    child->attach_activation_event(child_activated);
+    child->attach_deactivation_event(child_deactivated);
+    parent->add_child(child);
+    
+    zst_activate_entity(child);
+    assert(child_activated->num_calls() == 1);
+    zst_deactivate_entity(child);
+    assert(child_deactivated->num_calls() == 1);
+    
+    child->detach_activation_event(child_activated);
+    child->detach_deactivation_event(child_deactivated);
+    delete child_activated;
+    delete child_deactivated;
+    
 	//Test removing parent removes child
-	LOGGER->debug("Creating new child to test if parent removes all children");
-	child = new ZstComponent("child");
 	parent->add_child(child);
-	child->attach_activation_event(child_activated);
 	zst_activate_entity(child);
-	wait_for_event(child_activated, 1);
-	child_activated->reset_num_calls();
-	
+    
 	ZstURI parent_URI = ZstURI(parent->URI());
 	zst_deactivate_entity(parent);
-	wait_for_event(parent_deactivated, 1);
-	assert(parent_deactivated->num_calls() == 1);
-	parent_deactivated->reset_num_calls();
-	assert(!zst_get_root()->find_child_by_URI(parent_URI));
-	assert(!zst_get_root()->find_child_by_URI(child_URI));
+	assert(!zst_find_entity(parent->URI()));
+	assert(!zst_find_entity(child->URI()));
 	delete parent;
+    parent = 0;
 	child = 0;
-	parent = 0;
 
-	delete parent_activated;
-	delete parent_deactivated;
-	delete child_activated;
-	delete child_deactivated;
 	clear_callback_queue();
 }
 
@@ -429,126 +431,85 @@ void test_hierarchy() {
 void test_connect_plugs() {
 	LOGGER->info("Running connect plugs test");
 	
-	int expected_entities = 2;
-	int expected_plugs = expected_entities;
-	int expected_cables = 1;
-
-	LOGGER->debug("Creating components to test cable connections");
-	OutputComponent * test_output = new OutputComponent("connect_test_ent_out");
-	InputComponent * test_input = new InputComponent("connect_test_ent_in", 0);
-	TestEntityEventCallback * entity_activated = new TestEntityEventCallback("activated");
-	TestCableEventCallback * cable_activated_local = new TestCableEventCallback("activated via local update");
-	TestCableEventCallback * cable_deactivated_local = new TestCableEventCallback("cable deactivated via local event");
-	
-	LOGGER->debug("Attaching events");
-	test_output->attach_activation_event(entity_activated);
-	test_input->attach_activation_event(entity_activated);
-	zst_activate_entity(test_output);
+	LOGGER->debug("Creating entities");
+	OutputComponent * test_output = new OutputComponent("connect_test_out");
+	InputComponent * test_input = new InputComponent("connect_test_in", 0);
+    zst_activate_entity(test_output);
 	zst_activate_entity(test_input);
-	wait_for_event(entity_activated, expected_entities);
-	entity_activated->reset_num_calls();
 
-	LOGGER->debug("Testing cable connection");
+	LOGGER->debug("Testing sync cable connection");
 	ZstCable * cable = zst_connect_cable(test_input->input(), test_output->output());
-	cable->attach_activation_event(cable_activated_local);
-	wait_for_event(cable_activated_local, 1);
-	assert(cable_activated_local->num_calls() == 1);
-	cable_activated_local->reset_num_calls();
+    assert(cable->is_activated());
 	
 	LOGGER->debug("Verifying cable");
-	assert(test_output->output()->num_cables() == 1);
 	assert(cable->get_output() == test_output->output());
 	assert(cable->get_input() == test_input->input());
-	assert(test_output->output()->is_connected_to(test_input->input()));
+    assert(test_output->output()->is_connected_to(test_input->input()));
+    assert(test_input->input()->is_connected_to(test_output->output()));
 	for (auto c : *(test_output->output())) {
 		assert(c->get_input() == test_input->input());
 	}
 
 	LOGGER->debug("Testing cable disconnection");
-	cable->attach_deactivation_event(cable_deactivated_local);
 	zst_destroy_cable(cable);
-	wait_for_event(cable_deactivated_local, 1);
-	assert(cable_deactivated_local->num_calls() == 1);
-	assert(test_output->output()->num_cables() == 0);
-	cable_deactivated_local->reset_num_calls();
-	assert(!test_output->output()->is_connected_to(test_input->input()));
-	assert(test_output->output()->num_cables() == 0);
-	assert(test_input->input()->num_cables() == 0);
+    cable = 0;
+    assert(!test_output->output()->is_connected_to(test_input->input()));
+    assert(!test_input->input()->is_connected_to(test_output->output()));
+    
+    LOGGER->debug("Testing async cable connection");
+    TestCableEventCallback * cable_activated_local = new TestCableEventCallback("activated via local update");
+    TestCableEventCallback * cable_deactivated_local = new TestCableEventCallback("cable deactivated via local event");
+    cable = zst_connect_cable_async(test_input->input(), test_output->output());
+    cable->attach_activation_event(cable_activated_local);
+    wait_for_event(cable_activated_local, 1);
+    assert(cable_activated_local->num_calls() == 1);
+    cable_activated_local->reset_num_calls();
+    
+    cable->attach_deactivation_event(cable_deactivated_local);
+    zst_destroy_cable_async(cable);
+    cable = 0;
+    wait_for_event(cable_deactivated_local, 1);
+    assert(cable_deactivated_local->num_calls() == 1);
+    cable_deactivated_local->reset_num_calls();
 
 	LOGGER->debug("Testing cable disconnection when removing parent");
 	cable = zst_connect_cable(test_input->input(), test_output->output());
-	cable->attach_activation_event(cable_activated_local);
-	cable->attach_deactivation_event(cable_deactivated_local);
-	wait_for_event(cable_activated_local, 1);
-	zst_deactivate_entity(test_output);
-	wait_for_event(cable_deactivated_local, 1);
-
-	assert(cable_deactivated_local->num_calls() == 1);
+    cable->attach_deactivation_event(cable_deactivated_local);
+    zst_deactivate_entity(test_output);
+    wait_for_event(cable_deactivated_local, 1);
 	assert(!test_input->input()->is_connected_to(test_output->output()));
-	cable_deactivated_local->reset_num_calls();
-
+    assert(!test_output->output()->is_connected_to(test_input->input()));
+    
 	//Cleanup
-	zst_deactivate_entity(test_output);
 	zst_deactivate_entity(test_input);
-	clear_callback_queue();
 	delete test_output;
 	delete test_input;
-	delete cable_activated_local;
-	delete cable_deactivated_local;
-	delete entity_activated;
+    delete cable_activated_local;
+    delete cable_deactivated_local;
+    clear_callback_queue();
 }
-
 
 void test_add_filter() {
 	LOGGER->info("Starting addition filter test");
-		
-	int expected_entities = 4;
-	int expected_plugs = 6;
-	int expected_cables = 3;
 	int first_cmp_val = 4;
 	int second_cmp_val = 30;
 
 	LOGGER->debug("Creating input/output components for addition filter");
-	TestEntityEventCallback * entity_activated = new TestEntityEventCallback("activated");
-	TestEntityEventCallback * entity_deactivated = new TestEntityEventCallback("deactivated");
-	TestCableEventCallback * cable_event = new TestCableEventCallback("arriving");
-
 	OutputComponent * test_output_augend = new OutputComponent("add_test_augend");
 	OutputComponent * test_output_addend = new OutputComponent("add_test_addend");
 	InputComponent * test_input_sum = new InputComponent("add_test_sum", first_cmp_val, true);
 	AddFilter * add_filter = new AddFilter("add_test");
 	
-	LOGGER->debug("Attaching events");
-	test_output_addend->attach_activation_event(entity_activated);
-	test_output_addend->attach_deactivation_event(entity_deactivated);
-	test_output_augend->attach_activation_event(entity_activated);
-	test_output_augend->attach_deactivation_event(entity_deactivated);
-	test_input_sum->attach_activation_event(entity_activated);
-	test_input_sum->attach_deactivation_event(entity_deactivated);
-	add_filter->attach_activation_event(entity_activated);
-	add_filter->attach_deactivation_event(entity_deactivated);
-		
-	LOGGER->debug("Activating entities");
 	zst_activate_entity(test_output_augend);
 	zst_activate_entity(test_output_addend);
 	zst_activate_entity(test_input_sum);
 	zst_activate_entity(add_filter);
-
-	wait_for_event(entity_activated, 4);
-	assert(entity_activated->num_calls() == 4);
-	entity_activated->reset_num_calls();
-
+    
 	LOGGER->debug("Connecting cables");
-	ZstCable * augend_cable = zst_connect_cable(add_filter->augend(), test_output_augend->output() );
-	augend_cable->attach_activation_event(cable_event);
-	ZstCable * addend_cable = zst_connect_cable(add_filter->addend(), test_output_addend->output());
-	addend_cable->attach_activation_event(cable_event);
-	ZstCable * sum_cable = zst_connect_cable(test_input_sum->input(), add_filter->sum());
-	sum_cable->attach_activation_event(cable_event);
-
-	wait_for_event(cable_event, 3);
-	cable_event->reset_num_calls();
-
+	zst_connect_cable(add_filter->augend(), test_output_augend->output() );
+	zst_connect_cable(add_filter->addend(), test_output_addend->output());
+	zst_connect_cable(test_input_sum->input(), add_filter->sum());
+    
 	//Send values
 	LOGGER->debug("Sending values");
 	test_output_augend->send(2);
@@ -577,24 +538,15 @@ void test_add_filter() {
 	LOGGER->debug("Addition component succeeded at addition!");
 
 	//Cleanup
-	LOGGER->debug("Cleaning up entities");
 	zst_deactivate_entity(test_output_augend);
 	zst_deactivate_entity(test_output_addend);
 	zst_deactivate_entity(test_input_sum);
 	zst_deactivate_entity(add_filter);
-	wait_for_event(entity_deactivated, 4);
-	assert(entity_deactivated->num_calls() == 4);
 	clear_callback_queue();
-
 	delete test_output_augend;
 	delete test_output_addend;
 	delete test_input_sum;
 	delete add_filter;
-	delete cable_event;
-	test_output_augend = 0;
-	test_output_addend = 0;
-	test_input_sum = 0;
-	add_filter = 0;
 }
 
 
@@ -613,11 +565,9 @@ void test_external_entities(std::string external_test_path) {
 	zst_attach_performer_event_listener(performerLeaveCallback, ZstEventAction::LEAVING);
 
 	//Create emitter
-	OutputComponent * output = new OutputComponent("proxy_test_output");
-	zst_activate_entity(output);
-	TAKE_A_BREATH
-	clear_callback_queue();
-
+	OutputComponent * output_ent = new OutputComponent("proxy_test_output");
+	zst_activate_entity(output_ent);
+    
 	//Run sink in external process so we don't share the same Showtime singleton
 	LOGGER->debug("Starting sink process");
 	
@@ -632,7 +582,6 @@ void test_external_entities(std::string external_test_path) {
 	prog += ".exe";
 #endif
 	boost::process::child sink_process;
-
 #ifdef PAUSE_SINK
 	char pause_flag = 'd';
 #else
@@ -644,6 +593,7 @@ void test_external_entities(std::string external_test_path) {
 #ifdef WIN32
 		system("pause");
 #endif
+        system("read -n 1 -s -p \"Press any key to continue...\n\"");
 #endif
 	}
 	catch (boost::process::process_error e) {
@@ -655,28 +605,33 @@ void test_external_entities(std::string external_test_path) {
 	wait_for_event(performerArriveCallback, 1);
 	ZstPerformer * sink_performer = zst_get_performer_by_URI(sink_perf_uri);
 	assert(sink_performer);
-	
+    
 	//Test entity exists
-	ZstContainer * sink_ent = dynamic_cast<ZstContainer*>(sink_performer->find_child_by_URI(sink_ent_uri));
+    wait_for_event(entityArriveCallback, 1);
+	ZstContainer * sink_ent = dynamic_cast<ZstContainer*>(zst_find_entity(sink_ent_uri));
 	assert(sink_ent);
 	entityArriveCallback->reset_num_calls();
-
+    
 	ZstPlug * sink_plug = sink_ent->get_plug_by_URI(sink_plug_uri);
 	assert(sink_plug);
 	assert(sink_plug->is_activated());
 
 	//Connect cable to sink
-	TestCableEventCallback * cableArriveCallback = new TestCableEventCallback("arriving");
-	TestCableEventCallback * cableLeaveCallback = new TestCableEventCallback("leaving");
-	ZstCable * cable = zst_connect_cable(sink_plug, output->output());
-	assert(cable);
-	cable->attach_activation_event(cableArriveCallback);
-	cable->attach_deactivation_event(cableLeaveCallback);
-
-	wait_for_event(cableArriveCallback, 1);
-	TAKE_A_BREATH
-	output->send(1);
-
+	ZstCable * cable = zst_connect_cable(sink_plug, output_ent->output());
+    assert(cable);
+    assert(cable->is_activated());
+    
+    // TODO: We need to wait for the other end to finish connecting
+    // Eventually, we need to solve this by broadcasting an empty graph
+    // message on the client owning the output socket that will be picked
+    // up by the subscriber when the connection is valid. At this point,
+    // the subscribing client can let the stage know that the cable is
+    // valid
+    TAKE_A_BREATH
+    
+    //Send message to sink
+	output_ent->send(1);
+    
 	//Test entity arriving
 	wait_for_event(entityArriveCallback, 1);
 	assert(zst_find_entity(sink_B_uri));
@@ -685,23 +640,22 @@ void test_external_entities(std::string external_test_path) {
 	//Send another value to remove the child
 	//Test entity leaving
 	entityLeaveCallback->reset_num_calls();
-	output->send(2);
+	output_ent->send(2);
 	wait_for_event(entityLeaveCallback, 1);
 	assert(!zst_find_entity(sink_B_uri));
 	entityArriveCallback->reset_num_calls();
 
-	output->send(0);
+	output_ent->send(0);
 	sink_process.wait();
+    int result = sink_process.exit_code();
+    assert(result == 0);
 
 	//Check that we received performer destruction request
 	wait_for_event(performerLeaveCallback, 1);
 	assert(!zst_get_performer_by_URI(sink_perf_uri));
-	wait_for_event(cableLeaveCallback, 1);
-
+    
 	//Clean up output
-	output->attach_deactivation_event(entityLeaveCallback);
-	zst_deactivate_entity(output);
-	wait_for_event(entityLeaveCallback, 1);
+	zst_deactivate_entity(output_ent);
 
 	//Cleanup
     zst_remove_component_event_listener(entityArriveCallback, ZstEventAction::ARRIVING);
@@ -712,14 +666,7 @@ void test_external_entities(std::string external_test_path) {
 	delete entityLeaveCallback;
 	delete performerArriveCallback;
 	delete performerLeaveCallback;
-	entityArriveCallback = 0;
-	entityLeaveCallback = 0;
-	performerArriveCallback = 0;
-	performerLeaveCallback = 0;
-
-	delete output;
-	cable = 0;
-
+	delete output_ent;
 	clear_callback_queue();
 }
 
@@ -728,26 +675,15 @@ void test_memory_leaks() {
 	LOGGER->info("Starting memory leak test");
 
 	LOGGER->debug("Creating entities and cables");
-	auto cable_arrive = new TestCableEventCallback("connected");
-	auto entity_arrive = new TestEntityEventCallback("activated");
-
 	OutputComponent * test_output = new OutputComponent("memleak_test_out");
 	InputComponent * test_input = new InputComponent("memleak_test_in", 10, false);
-	test_output->attach_activation_event(entity_arrive);
-	test_input->attach_activation_event(entity_arrive);
 	zst_activate_entity(test_output);
 	zst_activate_entity(test_input);
-	wait_for_event(entity_arrive, 2);
-	entity_arrive->reset_num_calls();
-	auto cable = zst_connect_cable(test_input->input(), test_output->output());
-	cable->attach_activation_event(cable_arrive);
-	wait_for_event(cable_arrive, 1);
-	cable_arrive->reset_num_calls();
+	zst_connect_cable(test_input->input(), test_output->output());
 
 	int count = MEM_LEAK_LOOPS;
-
-	//ZstClient::instance().reset_graph_recv_tripmeter();
-	//ZstClient::instance().reset_graph_send_tripmeter();
+    zst_reset_graph_recv_tripmeter();
+    zst_reset_graph_send_tripmeter();
 
 	LOGGER->debug("Sending {} messages", count);
 	// Wait until our message tripmeter has received all the messages
@@ -812,24 +748,19 @@ void test_memory_leaks() {
 
 	assert(test_input->num_hits == count);
 	LOGGER->debug("Received all messages. Sent: {}, Received:{}", count, test_input->num_hits);
-
-	auto entity_leave = new TestEntityEventCallback("deactivated");
-	test_output->attach_deactivation_event(entity_leave);
-	test_input->attach_deactivation_event(entity_leave);
+    
 	zst_deactivate_entity(test_output);
 	zst_deactivate_entity(test_input);
-	wait_for_event(entity_leave, 2);
 	delete test_output;
 	delete test_input;
-	delete cable_arrive;
-	delete entity_arrive;
 	clear_callback_queue();
-	/*ZstClient::instance().reset_graph_recv_tripmeter();
-	ZstClient::instance().reset_graph_send_tripmeter();*/
+	zst_reset_graph_recv_tripmeter();
+	zst_reset_graph_send_tripmeter();
 }
 
 void test_leaving(){
-    zst_leave();
+    //Test leave async (returns immediately)
+    zst_leave_immediately();
 }
 
 

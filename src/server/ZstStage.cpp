@@ -20,13 +20,13 @@ ZstStage::~ZstStage()
 	delete m_message_pool;
 }
 
-void ZstStage::init()
+void ZstStage::init(const char * stage_name)
 {
 	zst_log_init();
 	LOGGER->set_level(spdlog::level::debug);
 	LOGGER->info("Starting Showtime v{} stage server", SHOWTIME_VERSION);
 
-	ZstActor::init();
+	ZstActor::init(stage_name);
     
 	std::stringstream addr;
 	m_performer_router = zsock_new(ZMQ_ROUTER);
@@ -235,10 +235,10 @@ vector<ZstCable*> ZstStage::find_cables(const ZstURI & uri) {
 	auto it = find_if(m_cables.begin(), m_cables.end(), [&uri](ZstCable* current) {
 		return current->is_attached(uri);
 	});
-
-	for (it; it != m_cables.end(); ++it) {
-		cables.push_back(*it);
-	}
+    
+    while(it++ != m_cables.end()){
+        cables.push_back(*it);
+    }
 
 	return cables;
 }
@@ -303,21 +303,17 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 		}
 	}
 	
-	bool send_reply = true;
-	bool announce_creation = true;
-
+    //Message type handling
 	ZstMessage * response = NULL;
-
-	//Message type handling
 	switch (msg->kind()) {
 		case ZstMsgKind::CLIENT_SYNC:
 		{
-			stage->send_snapshot(sender);
+			response = stage->create_snapshot(sender);
 			break;
 		}
 		case ZstMsgKind::CLIENT_LEAVING:
 		{
-			stage->destroy_client_handler(sender);
+			response = stage->destroy_client_handler(sender);
 			break;
 		}
 		case ZstMsgKind::CLIENT_HEARTBEAT:
@@ -443,10 +439,10 @@ ZstMessage * ZstStage::create_client_handler(std::string sender_identity, ZstMes
 	return response->init_message(ZstMsgKind::OK);
 }
 
-void ZstStage::destroy_client_handler(ZstPerformer * performer)
+ZstMessage * ZstStage::destroy_client_handler(ZstPerformer * performer)
 {
 	destroy_client(performer);
-	send_to_client(msg_pool()->get()->init_message(ZstMsgKind::OK), performer);
+	return msg_pool()->get()->init_message(ZstMsgKind::OK);
 }
 
 template ZstMessage * ZstStage::create_entity_handler<ZstPlug>(ZstMessage * msg, ZstPerformer * performer);
@@ -629,7 +625,7 @@ ZstMessage * ZstStage::destroy_cable_handler(ZstMessage * msg)
 //---------------------
 
 
-void ZstStage::send_snapshot(ZstPerformer * client) {
+ZstMessage * ZstStage::create_snapshot(ZstPerformer * client) {
 
 	ZstMessage * snapshot = msg_pool()->get()->init_message(ZstMsgKind::GRAPH_SNAPSHOT);
 	
@@ -650,7 +646,7 @@ void ZstStage::send_snapshot(ZstPerformer * client) {
 
 	LOGGER->info("Sending graph snapshot to {}", client->URI().path());
 	
-	send_to_client(snapshot, client);
+    return snapshot;
 }
 
 void ZstStage::publish_stage_update(ZstMessage * msg)

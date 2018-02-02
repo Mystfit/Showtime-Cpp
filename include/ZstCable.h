@@ -18,9 +18,9 @@ public:
 	ZST_EXPORT ZstCable(const ZstCable & copy);
 	ZST_EXPORT ZstCable(const ZstURI & input_plug_URI, const ZstURI & output_plug_URI);
 	ZST_EXPORT ZstCable(ZstPlug * input_plug, ZstPlug * output_plug);
-	ZST_EXPORT ~ZstCable();
-	ZST_EXPORT virtual void on_activated() override {};
-	ZST_EXPORT virtual void on_deactivated() override;
+    ZST_EXPORT virtual ~ZstCable();
+	ZST_EXPORT void on_activated() override {};
+    ZST_EXPORT void on_deactivated() override {};
 
 	// Status
 
@@ -41,17 +41,15 @@ public:
 	ZST_EXPORT const ZstURI & get_output_URI() const;
 	ZST_EXPORT bool is_local();
 
-	ZST_EXPORT virtual void write(std::stringstream & buffer) override;
-	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
+	ZST_EXPORT void write(std::stringstream & buffer) override;
+	ZST_EXPORT void read(const char * buffer, size_t length, size_t & offset) override;
 
 private:
-	//Cached URIs
-
+    //Cached URIs
 	ZstURI m_input_URI;
 	ZstURI m_output_URI;
 
 	//Plugs
-
 	ZstPlug * m_input;
 	ZstPlug * m_output;
 

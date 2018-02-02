@@ -1,0 +1,89 @@
+sudo: required
+dist: trusty
+language: cpp
+
+matrix:
+  include:
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.8
+          packages:
+            - clang-3.8
+            - libc++-dev
+      before_install:
+        - sudo apt-get update -qq
+
+      script:
+        - mkdir build
+        - cd build
+        - export CXX=clang++-3.8
+        - export CC=clang-3.8
+        - cmake .. && make
+        - bin/cf_test
+
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.7
+          packages:
+            - clang-3.7
+            - libc++-dev
+      before_install:
+        - sudo apt-get update -qq
+
+      script:
+        - mkdir build
+        - cd build
+        - export CXX=clang++-3.7
+        - export CC=clang-3.7
+        - cmake .. && make
+        - bin/cf_test
+
+    - compiler: gcc 
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-4.9
+      before_install:
+        - sudo apt-get update -qq
+
+      script:
+        - mkdir build
+        - cd build
+        - export CXX=g++-4.9
+        - export CC=gcc-4.9
+        - cmake .. && make
+        - bin/cf_test
+
+    - compiler: gcc 
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-5
+      before_install:
+        - sudo apt-get update -qq
+
+      script:
+        - mkdir build
+        - cd build
+        - export CXX=g++-5
+        - export CC=gcc-5
+        - cmake .. && make
+        - bin/cf_test
+
+    - compiler: gcc 
+      script:
+        - mkdir build
+        - cd build
+        - cmake .. && make
+        - bin/cf_test
+

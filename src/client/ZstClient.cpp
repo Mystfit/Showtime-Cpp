@@ -6,11 +6,11 @@
 using namespace std;
 
 ZstClient::ZstClient() :
+    m_ping(-1),
+    m_graph_out_ip(""),
 	m_root(NULL),
-	m_num_graph_recv_messages(0),
-    m_num_graph_send_messages(0),
-	m_graph_out_ip(""),
-	m_ping(-1)
+    m_num_graph_recv_messages(0),
+    m_num_graph_send_messages(0)
 {
 	//Event queues
 	m_synchronisable_event_manager = new ZstEventDispatcher();
@@ -111,6 +111,8 @@ void ZstClient::destroy() {
 
 void ZstClient::init(const char * client_name)
 {
+    ZstActor::init(client_name);
+
 	if (m_is_ending) {
 		return;
 	}
@@ -121,7 +123,6 @@ void ZstClient::init(const char * client_name)
 	m_client_name = client_name;
 	m_is_destroyed = false;
 	
-	ZstActor::init();
 	m_startup_uuid = zuuid_new();
 
 	//Local dealer socket for receiving messages forwarded from other performers
@@ -165,29 +166,15 @@ void ZstClient::init(const char * client_name)
     
     if(m_graph_out)
         zsock_set_linger(m_graph_out, 0);
+    
+    //Set up outgoing sockets
+    std::string identity = std::string(zuuid_str_canonical(m_startup_uuid));
+    LOGGER->debug("Setting socket identity to {}. Length {}", identity, identity.size());
+    
+    zsock_set_identity(m_stage_router, identity.c_str());
 	
-	//Connect client dealer socket to stage now
-	addr << "tcp://" << m_stage_addr << ":" << STAGE_ROUTER_PORT;
-	m_stage_router_addr = addr.str();
-
-	std::string identity = std::string(zuuid_str_canonical(m_startup_uuid));
-	LOGGER->debug("Setting socket identity to {}. Length {}", identity, identity.size());
-
-	zsock_set_identity(m_stage_router, identity.c_str());
-	zsock_connect(m_stage_router, "%s", m_stage_router_addr.c_str());
-	addr.str("");
-
-	//Stage subscriber socket for update messages
-	addr << "tcp://" << m_stage_addr << ":" << STAGE_PUB_PORT;
-	m_stage_updates_addr = addr.str();
-
-	LOGGER->debug("Connecting to stage publisher {}", m_stage_updates_addr);
-	zsock_connect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
-	zsock_set_subscribe(m_stage_updates, "");
-	addr.str("");
-
 	//Create a root entity to hold our local entity hierarchy
-	m_root = new ZstPerformer(m_client_name.c_str(), m_graph_out_addr.c_str());
+	m_root = new ZstPerformer(actor_name(), m_graph_out_addr.c_str());
 	m_root->set_network_interactor(this);
 	
     start();
@@ -214,22 +201,22 @@ void ZstClient::process_callbacks()
     }
 }
 
-void ZstClient::clear_callbacks()
+void ZstClient::flush_events()
 {
-	m_synchronisable_event_manager->clear();
-	m_client_connected_event_manager->clear();
-	m_client_disconnected_event_manager->clear();
-	m_cable_arriving_event_manager->clear();
-	m_cable_leaving_event_manager->clear();
-	m_performer_arriving_event_manager->clear();
-	m_performer_leaving_event_manager->clear();
-	m_component_arriving_event_manager->clear();
-	m_component_leaving_event_manager->clear();
-	m_component_type_arriving_event_manager->clear();
-	m_component_type_leaving_event_manager->clear();
-	m_plug_arriving_event_manager->clear();
-	m_plug_leaving_event_manager->clear();
-	m_compute_event_manager->clear();
+	m_synchronisable_event_manager->flush();
+	m_client_connected_event_manager->flush();
+	m_client_disconnected_event_manager->flush();
+	m_cable_arriving_event_manager->flush();
+	m_cable_leaving_event_manager->flush();
+	m_performer_arriving_event_manager->flush();
+	m_performer_leaving_event_manager->flush();
+	m_component_arriving_event_manager->flush();
+	m_component_leaving_event_manager->flush();
+	m_component_type_arriving_event_manager->flush();
+	m_component_type_leaving_event_manager->flush();
+	m_plug_arriving_event_manager->flush();
+	m_plug_leaving_event_manager->flush();
+	m_compute_event_manager->flush();
 }
 
 string ZstClient::first_available_ext_ip(){
@@ -250,6 +237,7 @@ void ZstClient::start() {
 void ZstClient::stop() {
 	ZstActor::stop();
 }
+
 
 // ------------
 // Send/Receive
@@ -326,32 +314,55 @@ ZstMessagePool * ZstClient::msg_pool()
 // Client init
 // -------------
 
-void ZstClient::register_client_to_stage(std::string stage_address) {
+void ZstClient::register_client_to_stage(std::string stage_address, bool async) {
 	LOGGER->info("Connecting to stage {}", stage_address);
-
+    
+    stringstream addr;
+    addr << "tcp://" << m_stage_addr << ":" << STAGE_ROUTER_PORT;
+    m_stage_router_addr = addr.str();
 	m_stage_addr = string(stage_address);
-
-	//Build client addresses
-	std::stringstream addr;
-
+    
+    zsock_connect(m_stage_router, "%s", m_stage_router_addr.c_str());
+    addr.str("");
+    
+    //Stage subscriber socket for update messages
+    addr << "tcp://" << m_stage_addr << ":" << STAGE_PUB_PORT;
+    m_stage_updates_addr = addr.str();
+    
+    LOGGER->debug("Connecting to stage publisher {}", m_stage_updates_addr);
+    zsock_connect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
+    zsock_set_subscribe(m_stage_updates, "");
+    addr.str("");
+    
 	//Build connect message
 	ZstMessage * msg = msg_pool()->get()->init_serialisable_message(ZstMsgKind::CLIENT_JOIN, *m_root);
 	
-	//Register complete action
-	msg_pool()->register_future(msg).then([this](MessageFuture f){
-		ZstMsgKind status = f.get();
-		this->register_client_complete(status);
-		return status;
-	});
-	
-	send_to_stage(msg);
+	//Register future to receive async response from stage
+    MessageFuture future = msg_pool()->register_future(msg);
+    if(async){
+        future.then([this, async](MessageFuture f){
+            ZstMsgKind status = f.get();
+            this->register_client_complete(status);
+            this->synchronise_graph(async);
+            return status;
+        });
+        send_to_stage(msg);
+    } else {
+        send_to_stage(msg);
+        register_client_complete(future.get());
+        synchronise_graph(async);
+        
+        //Since we're still on the main thread it should be safe to process events
+        process_callbacks();
+    }
 }
 
 void ZstClient::register_client_complete(ZstMsgKind status)
 {
 	//If we didn't receive a OK signal, something went wrong
 	if (status != ZstMsgKind::OK) {
-		throw runtime_error("Stage performer registration responded with error -> Status: " + status);
+        LOGGER->error("Stage connection failed with with status: {}", status);
+        return;
 	}
 
 	LOGGER->info("Connection to server established");
@@ -361,39 +372,76 @@ void ZstClient::register_client_complete(ZstMsgKind status)
 
 	//TODO: Need a handshake with the stage before we mark connection as active
 	m_connected_to_stage = true;
-	m_root->set_activated();
-	client_connected_events()->enqueue(m_root);
-	
-	//Ask the stage to send us a full snapshot
-	LOGGER->debug("Requesting stage snapshot");
-	send_to_stage(msg_pool()->get()->init_message(ZstMsgKind::CLIENT_SYNC));
+}
+           
+void ZstClient::synchronise_graph(bool async)
+{
+    if(!is_connected_to_stage()){
+        LOGGER->warn("Can't synchronise graph if we're not connected");
+        return;
+    }
+    
+    //Ask the stage to send us a full snapshot
+    LOGGER->debug("Requesting stage snapshot");
+    ZstMessage * msg = msg_pool()->get()->init_message(ZstMsgKind::CLIENT_SYNC);
+    MessageFuture future = msg_pool()->register_future(msg);
+    if(async){
+        future.then([this](MessageFuture f){
+            ZstMsgKind status = f.get();
+            this->synchronise_graph_complete(status);
+            return status;
+        });
+        send_to_stage(msg);
+    } else {
+        send_to_stage(msg);
+        ZstMsgKind status = future.get();
+        this->synchronise_graph_complete(status);
+    }
 }
 
+void ZstClient::synchronise_graph_complete(ZstMsgKind status)
+{
+   	m_root->set_activated();
+    client_connected_events()->enqueue(m_root);
+    LOGGER->warn("Graph sync completed");
+}
 
-void ZstClient::leave_stage()
+void ZstClient::leave_stage(bool immediately)
 {
 	if (m_connected_to_stage) {
 		LOGGER->info("Leaving stage");
-        
-        //Deactivate all owned entities
-        destroy_entity(m_root);
-		
-		//Close stage update socket so we don't receive any updates during shutdown
-		zsock_disconnect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
 
-		//Purge callbacks
-		clear_callbacks();
+        ZstMessage * msg = msg_pool()->get()->init_message(ZstMsgKind::CLIENT_LEAVING);
+        MessageFuture future = msg_pool()->register_future(msg);
+        send_to_stage(msg);
 
-		//Notify stage that we are leaving
-		ZstMessage * msg = msg_pool()->get();
-		send_to_stage(msg_pool()->get()->init_message(ZstMsgKind::CLIENT_LEAVING));
+        if(immediately){
+            leave_stage_complete(ZstMsgKind::OK);
+        } else {
+            future.get();
+            leave_stage_complete(ZstMsgKind::OK);
+        }
+    } else {
+        LOGGER->warn("Not connected to stage. Skipping to cleanup.");
+        leave_stage_complete(ZstMsgKind::OK);
+    }
+}
 
-		//Disconnect rest of sockets and timers
-		zsock_disconnect(m_stage_router, "%s", m_stage_router_addr.c_str());
-		detach_timer(m_heartbeat_timer_id);
-		
-		m_connected_to_stage = false;
-	}
+void ZstClient::leave_stage_complete(ZstMsgKind status)
+{
+    m_connected_to_stage = false;
+    
+    //Deactivate all owned entities
+    destroy_entity(m_root);
+    
+    //Purge callbacks
+    flush_events();
+
+    //Disconnect rest of sockets and timers
+    zsock_disconnect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
+    zsock_disconnect(m_stage_router, "%s", m_stage_router_addr.c_str());
+    detach_timer(m_heartbeat_timer_id);
+
 }
 
 bool ZstClient::is_connected_to_stage()
@@ -464,21 +512,25 @@ int ZstClient::s_handle_stage_router(zloop_t * loop, zsock_t * socket, void * ar
 	//Receive routed message from stage
     ZstMessage * msg = client->receive_from_stage();
 
-	//Process message promises
-	if (client->msg_pool()->process_message_promise(msg) <= 0) {
-		if (msg->kind() == ZstMsgKind::GRAPH_SNAPSHOT) {
-			LOGGER->debug("Received graph snapshot");
-			client->stage_update_handler(msg);
-		}
-		else {
-			if (msg->kind() == ZstMsgKind::SUBSCRIBE_TO_PERFORMER) {
-				client->connect_client_handler(msg->payload_at(0).data(), msg->payload_at(1).data());
-			} else {
-				LOGGER->error("Stage router sent unknown message {}", msg->kind());
-			}
-		}
-	}
-		
+    //Process messages addressed to our client specifically
+    if (msg->kind() == ZstMsgKind::GRAPH_SNAPSHOT) {
+        LOGGER->debug("Received graph snapshot");
+        //Handle graph snapshot synchronisation
+        client->stage_update_handler(msg);
+    }
+    else if (msg->kind() == ZstMsgKind::SUBSCRIBE_TO_PERFORMER) {
+        //Handle connection requests from other clients
+        client->connect_client_handler(msg->payload_at(0).data(), msg->payload_at(1).data());
+    } else if (msg->kind() == ZstMsgKind::OK){
+        //Do nothing?
+    } else {
+        LOGGER->error("Stage router sent unknown message {}", msg->kind());
+    }
+    
+    //Process message promises
+    client->msg_pool()->process_message_promise(msg);
+    
+    //Cleanup
 	client->msg_pool()->release(msg);
     return 0;
 }
@@ -520,20 +572,7 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 			ZstCable cable = msg->unpack_payload_serialisable<ZstCable>(i);
 			ZstCable * cable_ptr = find_cable_ptr(cable.get_input_URI(), cable.get_output_URI());
 			if (cable_ptr) {
-				//Find the plugs and disconnect them seperately, in case they have already disappeared
-				ZstPlug * input = dynamic_cast<ZstPlug*>(find_entity(cable_ptr->get_input_URI()));
-				ZstPlug * output = dynamic_cast<ZstPlug*>(find_entity(cable_ptr->get_output_URI()));
-
-				if (input)
-					input->remove_cable(cable_ptr);
-
-				if (output)
-					output->remove_cable(cable_ptr);
-
-				cable_ptr->set_input(NULL);
-				cable_ptr->set_output(NULL);
-				cable_ptr->set_deactivated();
-				cable_leaving_events()->enqueue(cable_ptr);
+                this->destroy_cable_complete(ZstMsgKind::OK, cable_ptr);
 			}
 			break;
 		}
@@ -575,14 +614,16 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 			//Only dispatch entity leaving events for non-local entities (for the moment)
 			if (!path_is_local(entity_path)) {
 				ZstEntityBase * entity = find_entity(entity_path);
-
-				if (strcmp(entity->entity_type(), COMPONENT_TYPE) == 0 || strcmp(entity->entity_type(), CONTAINER_TYPE) == 0) {
-					component_leaving_events()->enqueue(entity);
-				} else if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
-					plug_leaving_events()->enqueue(entity);
-				} else if (strcmp(entity->entity_type(), PERFORMER_TYPE) == 0) {
-					performer_leaving_events()->enqueue(entity);
-				}
+                if(entity){
+                    entity->set_deactivated();
+                    if (strcmp(entity->entity_type(), COMPONENT_TYPE) == 0 || strcmp(entity->entity_type(), CONTAINER_TYPE) == 0) {
+                        component_leaving_events()->enqueue(entity);
+                    } else if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
+                        plug_leaving_events()->enqueue(entity);
+                    } else if (strcmp(entity->entity_type(), PERFORMER_TYPE) == 0) {
+                        performer_leaving_events()->enqueue(entity);
+                    }
+                }
 			}
 			
 			break;
@@ -748,7 +789,7 @@ ZstPlug * ZstClient::find_plug(const ZstURI & path)
 	return plug_parent->get_plug_by_URI(path);
 }
 
-void ZstClient::activate_entity(ZstEntityBase * entity)
+void ZstClient::activate_entity(ZstEntityBase * entity, bool async)
 {
 	//If the entity doesn't have a parent, put it under the root container
 	if (!entity->parent()) {
@@ -766,41 +807,55 @@ void ZstClient::activate_entity(ZstEntityBase * entity)
 	//Build message
 	ZstMessage * msg = msg_pool()->get()->init_entity_message(entity);
 	ZstURI entity_path = entity->URI();
-	msg_pool()->register_future(msg).then([this, entity_path](MessageFuture f) {
-		ZstMsgKind status = f.get();
-		if (status != ZstMsgKind::OK) {
-			LOGGER->warn("Activate entity {} failed with status {}", entity_path.path(), status);
-			return status;
-		}
-
-		//In case the entity has disappeared during activation (for whatever reason) make sure it exists first
-		ZstEntityBase * e = find_entity(entity_path);
-		if (e) {
-
-			if (status == ZstMsgKind::OK) {
-				e->set_activated();
-			}
-			else if (status == ZstMsgKind::ERR_STAGE_ENTITY_ALREADY_EXISTS) {
-				e->set_error(ZstSyncError::ENTITY_ALREADY_EXISTS);
-			} 
-			else if (status == ZstMsgKind::ERR_STAGE_ENTITY_NOT_FOUND) {
-				e->set_error(ZstSyncError::PERFORMER_NOT_FOUND);
-			}
-			else if (status == ZstMsgKind::ERR_STAGE_ENTITY_NOT_FOUND) {
-				e->set_error(ZstSyncError::PARENT_NOT_FOUND);
-			}
-
-			LOGGER->debug("Activate entity {} complete with status {}", e->URI().path(), status);
-		}
-		
-		return status;
-	});
-	send_to_stage(msg);
+    
+    MessageFuture future = msg_pool()->register_future(msg);
+    if(async){
+        future.then([this, entity_path](MessageFuture f) {
+            ZstMsgKind status = f.get();
+            ZstEntityBase * e = find_entity(entity_path);
+            if(e)
+                this->activate_entity_complete(status, e);
+            else
+                LOGGER->error("Entity {} went missing during activation!", entity_path.path());
+            return status;
+        });
+        send_to_stage(msg);
+    } else {
+        send_to_stage(msg);
+        activate_entity_complete(future.get(), entity);
+        
+        //Since we're still on the main thread it should be safe to process events
+        process_callbacks();
+    }
 }
 
-void ZstClient::destroy_entity(ZstEntityBase * entity)
+void ZstClient::activate_entity_complete(ZstMsgKind status, ZstEntityBase * entity)
 {
-	if (!entity || entity->is_destroyed()) {
+    if (status != ZstMsgKind::OK) {
+        LOGGER->warn("Activate entity {} failed with status {}", entity->URI().path(), status);
+        return;
+    }
+    
+    if (status == ZstMsgKind::OK) {
+        entity->set_activated();
+    }
+    else if (status == ZstMsgKind::ERR_STAGE_ENTITY_ALREADY_EXISTS) {
+        entity->set_error(ZstSyncError::ENTITY_ALREADY_EXISTS);
+    }
+    else if (status == ZstMsgKind::ERR_STAGE_ENTITY_NOT_FOUND) {
+        entity->set_error(ZstSyncError::PERFORMER_NOT_FOUND);
+    }
+    else if (status == ZstMsgKind::ERR_STAGE_ENTITY_NOT_FOUND) {
+        entity->set_error(ZstSyncError::PARENT_NOT_FOUND);
+    }
+    
+    LOGGER->debug("Activate entity {} complete with status {}", entity->URI().path(), status);
+}
+
+
+void ZstClient::destroy_entity(ZstEntityBase * entity, bool async)
+{
+	if (!entity) {
 		return;
 	}
 
@@ -812,40 +867,52 @@ void ZstClient::destroy_entity(ZstEntityBase * entity)
             ZstMessage * msg = msg_pool()->get()->init_message(ZstMsgKind::DESTROY_ENTITY);
             msg->append_str(entity->URI().path(), entity->URI().full_size());
             ZstURI entity_path = entity->URI();
-            msg_pool()->register_future(msg).then([this, entity_path](MessageFuture f) {
-                ZstMsgKind status = f.get();
-                if (status != ZstMsgKind::OK) {
-                    LOGGER->error("Destroy entity {} failed with status {}", entity_path.path(), status);
+            
+            MessageFuture future = msg_pool()->register_future(msg);
+            if(async){
+                future.then([this, entity_path](MessageFuture f) {
+                    ZstMsgKind status = f.get();
+                    if (status != ZstMsgKind::OK) {
+                        LOGGER->error("Destroy entity {} failed with status {}", entity_path.path(), status);
+                        return status;
+                    }
+                    LOGGER->debug("Destroy entity {} completed with status {}", entity_path.path(), status);
                     return status;
-                }
-                LOGGER->debug("Destroy entity {} completed with status {}", entity_path.path(), status);
-                return status;
-            });
-            send_to_stage(msg);
+                });
+                send_to_stage(msg);
+                
+                //Since we own this entity, we can start to clean it up immediately
+                destroy_entity_complete(ZstMsgKind::OK, entity);
+            } else {
+                send_to_stage(msg);
+                ZstMsgKind status = future.get();
+                entity->set_deactivated();
+                destroy_entity_complete(status, entity);
+                process_callbacks();
+
+            }
+        } else {
+            entity->set_deactivated();
+            destroy_entity_complete(ZstMsgKind::OK, entity);
+            process_callbacks();
         }
-		
-		//Since we own this entity, we can start to clean it up immediately
-		entity->set_deactivated();
-		destroy_entity_complete(entity);
 	}
 }
 
-void ZstClient::destroy_entity_complete(ZstEntityBase * entity)
+void ZstClient::destroy_entity_complete(ZstMsgKind status, ZstEntityBase * entity)
 {
 	if (entity) {
-		if (entity->is_destroyed())
-			return;
-
-		//Flag entity as destroyed so we can't remove it twice
-		entity->set_destroyed();
-
+        if(status != ZstMsgKind::OK){
+            LOGGER->error("Destroy entity failed with status {}", status);
+        }
+        
 		//Remove entity from parent
 		if (entity->parent()) {
 			ZstContainer * parent = dynamic_cast<ZstContainer*>(entity->parent());
 			parent->remove_child(entity);
 			entity->m_parent = NULL;
 		}
-		else {
+        else {
 			//Entity is a root performer. Remove from performer list
 			m_clients.erase(entity->URI());
 		}
@@ -873,10 +940,7 @@ void ZstClient::add_proxy_entity(ZstEntityBase & entity) {
 		LOGGER->info("Received local entity {}. Ignoring", entity.URI().path());
 		return;
 	}
-
-	//Copy streamable so we have a local ptr for the entity
-	ZstEntityBase * entity_proxy = NULL;
-
+    
 	ZstURI parent_URI = entity.URI().parent();
 	if (parent_URI.size()) {
 		ZstEntityBase * parent = find_entity(parent_URI);
@@ -966,7 +1030,7 @@ ZstPerformer * ZstClient::get_local_performer() const
 
 void ZstClient::destroy_plug(ZstPlug * plug)
 {
-    if (m_is_destroyed || plug->is_destroyed()) {
+    if (m_is_destroyed) {
         return;
     }
 
@@ -1002,7 +1066,7 @@ void ZstClient::destroy_plug_complete(int status)
  // Cables
  // ------
  
-ZstCable * ZstClient::connect_cable(ZstPlug * input, ZstPlug * output)
+ZstCable * ZstClient::connect_cable(ZstPlug * input, ZstPlug * output, bool async)
 {
 	ZstCable * cable = NULL;
 
@@ -1036,37 +1100,90 @@ ZstCable * ZstClient::connect_cable(ZstPlug * input, ZstPlug * output)
 
 	//Even though we use a cable object when sending over the wire, it's up to the stage
 	//to determine the input->output order
-
+    
+    
 	ZstMessage * msg = msg_pool()->get()->init_serialisable_message(ZstMsgKind::CREATE_CABLE, *cable);
-	msg_pool()->register_future(msg).then([this, cable](MessageFuture f) {
-		int status = f.get();
-		if (status == ZstMsgKind::OK) {
-			cable->set_activated();
-		}
-		return status;
-	});
-	send_to_stage(msg);
+    MessageFuture future = msg_pool()->register_future(msg);
+    
+    if(async){
+        future.then([this, cable](MessageFuture f) {
+            ZstMsgKind status = f.get();
+            this->connect_cable_complete(status, cable);
+            return status;
+        });
+        send_to_stage(msg);
+    } else {
+        send_to_stage(msg);
+        connect_cable_complete(future.get(), cable);
+        
+        //Since we're still on the main thread it should be safe to process events
+        process_callbacks();
+    }
 
 	//Create the cable early so we have something to return immediately
 	return cable;
 }
 
-void ZstClient::destroy_cable(ZstCable * cable)
+
+void ZstClient::connect_cable_complete(ZstMsgKind status, ZstCable * cable){
+    if (status == ZstMsgKind::OK) {
+        cable->set_activated();
+    } else {
+        LOGGER->error("Cable connect for {}-{} failed with status {}", cable->get_input_URI().path(), cable->get_output_URI().path(), status);
+    }
+}
+
+void ZstClient::destroy_cable(ZstCable * cable, bool async)
 {
 	cable->set_deactivating();
 	ZstMessage * msg = msg_pool()->get()->init_serialisable_message(ZstMsgKind::DESTROY_CABLE, *cable);
-	msg_pool()->register_future(msg).then([this, cable](MessageFuture f) {
-		int status = f.get();
-		LOGGER->debug("Destroy cable completed with status {}", status);
-		cable->set_deactivated();
-		return status;
-	});
-	send_to_stage(msg);
+    
+    MessageFuture future = msg_pool()->register_future(msg);
+    if(async){
+        future.then([this, cable](MessageFuture f) {
+            ZstMsgKind status = f.get();
+            this->destroy_cable_complete(status, cable);
+            return status;
+        });
+        send_to_stage(msg);
+    } else {
+        send_to_stage(msg);
+        destroy_cable_complete(future.get(), cable);
+        process_callbacks();
+    }
+}
+
+void ZstClient::destroy_cable_complete(ZstMsgKind status, ZstCable * cable)
+{
+    if(!cable)
+        return;
+    
+    //Remove cable from local list so that other threads don't assume it still exists
+    m_cables.erase(cable);
+    
+    if(status != ZstMsgKind::OK){
+        LOGGER->error("Destroy cable failed with status {}", status);
+    }
+    LOGGER->debug("Destroy cable completed with status {}", status);
+    
+    //Find the plugs and disconnect them seperately, in case they have already disappeared
+    ZstPlug * input = dynamic_cast<ZstPlug*>(find_entity(cable->get_input_URI()));
+    ZstPlug * output = dynamic_cast<ZstPlug*>(find_entity(cable->get_output_URI()));
+    
+    if (input)
+        input->remove_cable(cable);
+    
+    if (output)
+        output->remove_cable(cable);
+    
+    cable->set_input(NULL);
+    cable->set_output(NULL);
+    cable->set_deactivated();
+    cable_leaving_events()->enqueue(cable);
 }
 
 void ZstClient::disconnect_plug(ZstPlug * plug)
 {
-	int result = 0;
 	for (auto c : *plug) {
 		destroy_cable(c);
 	}

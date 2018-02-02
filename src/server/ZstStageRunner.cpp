@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
 #endif
 
 	ZstStage stage;
-	stage.init();
+	stage.init("stage");
 
 #ifdef WIN32
 	system("pause");

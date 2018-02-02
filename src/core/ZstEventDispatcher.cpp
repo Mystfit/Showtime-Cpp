@@ -1,3 +1,4 @@
+#include <ZstSynchronisable.h>
 #include "ZstEventDispatcher.h"
 
 ZstEventDispatcher::ZstEventDispatcher() :
@@ -36,7 +37,6 @@ void ZstEventDispatcher::remove_post_event_callback(ZstEvent * event) {
 }
 
 void ZstEventDispatcher::dispatch_events(ZstSynchronisable * target) {
-	int i = 0;
 	for (auto c : m_pre_event_callback){
 		c->cast_run(target);
 	}
@@ -50,26 +50,36 @@ void ZstEventDispatcher::dispatch_events(ZstSynchronisable * target) {
 	}
 }
 
-void ZstEventDispatcher::clear() {
-	m_event_callbacks.clear();
+void ZstEventDispatcher::flush() {
+    ZstSynchronisable * target = NULL;
+    while(m_event_queue.size() > 0){
+        target = m_event_queue.pop();
+        target->flush_events();
+    }
 }
+
+void ZstEventDispatcher::clear_attached_events() {
+    m_pre_event_callback.clear();
+    m_event_callbacks.clear();
+    m_post_event_callback.clear();
+}
+
 
 void ZstEventDispatcher::enqueue(ZstSynchronisable * target) {
 	if (!target) {
 		return;
 	}
-	m_event_queue.enqueue(target);
+	m_event_queue.push(target);
 }
 
 void ZstEventDispatcher::process() {
 	ZstSynchronisable * target = NULL;
-	bool found = m_event_queue.try_dequeue(target);
-	while(found){
+    while(m_event_queue.size() > 0){
+        target = m_event_queue.pop();
 		dispatch_events(target);
-		found = m_event_queue.try_dequeue(target);
 	}
 }
 
 size_t ZstEventDispatcher::size() {
-	return m_event_queue.size_approx();
+    return m_event_queue.size();
 }

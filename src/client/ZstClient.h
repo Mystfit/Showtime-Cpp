@@ -24,19 +24,22 @@ class ZstClient : public ZstActor, public ZstINetworkInteractor {
 public:
 	ZstClient();
 	~ZstClient();
-	void init(const char * performer_name);
-	void destroy();
+	void init(const char * performer_name) override;
+	void destroy() override;
 	void process_callbacks();
-	void clear_callbacks();
+	void flush_events();
 
 	//CLient singleton - should not be accessable outside this interface
 	static ZstClient & instance();
 
 	//Register this endpoint to the stage
-	void register_client_to_stage(std::string stage_address);
+	void register_client_to_stage(std::string stage_address, bool async = false);
 	void register_client_complete(ZstMsgKind status);
-	void leave_stage();
-	
+    void synchronise_graph(bool async = false);
+    void synchronise_graph_complete(ZstMsgKind status);
+	void leave_stage(bool immediately = false);
+    void leave_stage_complete(ZstMsgKind status);
+    
 	//Stage connection status
 	bool is_connected_to_stage();
 	long ping();
@@ -44,9 +47,10 @@ public:
     //Entities
 	ZstEntityBase * find_entity(const ZstURI & path);
 	ZstPlug * find_plug(const ZstURI & path);
-	void activate_entity(ZstEntityBase* entity);
-	void destroy_entity(ZstEntityBase * entity);
-	void destroy_entity_complete(ZstEntityBase * entity);
+	void activate_entity(ZstEntityBase* entity, bool async = false);
+    void activate_entity_complete(ZstMsgKind status, ZstEntityBase * entity);
+	void destroy_entity(ZstEntityBase * entity, bool async = false);
+	void destroy_entity_complete(ZstMsgKind status, ZstEntityBase * entity);
 	bool entity_is_local(ZstEntityBase & entity);
 	bool path_is_local(const ZstURI & path);
 	void add_proxy_entity(ZstEntityBase & entity);
@@ -64,8 +68,10 @@ public:
 	virtual void publish(ZstPlug * plug) override;
 
 	//Cables
-	ZstCable * connect_cable(ZstPlug * input, ZstPlug * output);
-	void destroy_cable(ZstCable * cable);
+	ZstCable * connect_cable(ZstPlug * input, ZstPlug * output, bool async = false);
+    void connect_cable_complete(ZstMsgKind status, ZstCable * cable);
+	void destroy_cable(ZstCable * cable, bool async = false);
+    void destroy_cable_complete(ZstMsgKind status, ZstCable * cable);
 	void disconnect_plug(ZstPlug * plug);
 	void disconnect_plugs(ZstPlug * input_plug, ZstPlug * output_plug);
 	
@@ -90,12 +96,12 @@ public:
 	void reset_graph_send_tripmeter();
 
 	//Network interactor implementation
-	virtual void enqueue_synchronisable_event(ZstSynchronisable * synchronisable);
+	virtual void enqueue_synchronisable_event(ZstSynchronisable * synchronisable) override;
 
 private:
 	//Stage actor
-	void start();
-	void stop();
+	void start() override;
+	void stop() override;
 
 	//Registration
     std::string first_available_ext_ip();

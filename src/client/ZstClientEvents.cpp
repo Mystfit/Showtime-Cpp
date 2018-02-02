@@ -7,12 +7,11 @@
 
 void ZstComponentLeavingEvent::run(ZstComponent * target)
 {
-	ZstClient::instance().destroy_entity_complete(static_cast<ZstEntityBase*>(target));
+    ZstClient::instance().destroy_entity_complete(ZstMsgKind::OK, static_cast<ZstEntityBase*>(target));
 }
 
 void ZstCableLeavingEvent::run(ZstCable * target)
 {
-	ZstClient::instance().m_cables.erase(target);
 	delete target;
 }
 

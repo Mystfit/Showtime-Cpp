@@ -127,12 +127,12 @@ void ZstComponent::set_deactivated()
 
 void ZstComponent::set_parent(ZstEntityBase * parent)
 {
-	ZstEntityBase::set_parent(parent);
-
-	std::vector<ZstPlug*> plugs = m_plugs;
-	for (auto plug : plugs) {
-		plug->set_parent(this);
-	}
+    ZstEntityBase::set_parent(parent);
+    
+    std::vector<ZstPlug*> plugs = m_plugs;
+    for (auto plug : plugs) {
+        plug->set_parent(this);
+    }
 }
 
 void ZstComponent::write(std::stringstream & buffer)
@@ -157,8 +157,6 @@ void ZstComponent::read(const char * buffer, size_t length, size_t & offset)
 
 	//Unpack component type
 	auto handle = msgpack::unpack(buffer, length, offset);
-	auto obj = handle.get();
-
 	set_component_type(handle.get().via.str.ptr, handle.get().via.str.size);
 
 	//Unpack plugs

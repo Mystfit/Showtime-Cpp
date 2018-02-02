@@ -20,10 +20,12 @@ void ZstActor::destroy()
 	free(m_loop_actor);
 }
 
-void ZstActor::init()
+void ZstActor::init(const char * actor_name)
 {
 	m_loop = zloop_new();
 	zloop_set_verbose(m_loop, false);
+    
+    m_actor_name = std::string(actor_name);
 }
 
 void ZstActor::start()
@@ -80,6 +82,10 @@ void ZstActor::self_test()
 	assert(streq(response_s, "PONG"));
     zstr_free(&response_s);
 	zmsg_destroy(&response);
+}
+
+const char* ZstActor::actor_name() const {
+    return m_actor_name.c_str();
 }
 
 void ZstActor::attach_pipe_listener(zsock_t * sock, zloop_reader_fn handler, void * args)

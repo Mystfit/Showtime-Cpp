@@ -13,7 +13,11 @@ void zst_init(const char * performer_name)
 }
 
 void zst_join(const char * stage_address){
-	ZstClient::instance().register_client_to_stage(stage_address);
+	ZstClient::instance().register_client_to_stage(stage_address, false);
+}
+
+void zst_join_async(const char * stage_address){
+    ZstClient::instance().register_client_to_stage(stage_address, true);
 }
 
 
@@ -27,7 +31,12 @@ void zst_destroy() {
 
 void zst_leave()
 {
-	return ZstClient::instance().leave_stage();
+    return ZstClient::instance().leave_stage(false);
+}
+
+void zst_leave_immediately()
+{
+	return ZstClient::instance().leave_stage(true);
 }
 
 
@@ -157,9 +166,19 @@ void zst_activate_entity(ZstEntityBase * entity)
 	ZstClient::instance().activate_entity(entity);
 }
 
+void zst_activate_entity_async(ZstEntityBase * entity)
+{
+    ZstClient::instance().activate_entity(entity, true);
+}
+
 void zst_deactivate_entity(ZstEntityBase * entity)
 {
 	ZstClient::instance().destroy_entity(entity);
+}
+
+void zst_deactivate_entity_async(ZstEntityBase * entity)
+{
+    ZstClient::instance().destroy_entity(entity, true);
 }
 
 
@@ -204,12 +223,22 @@ int zst_ping()
 
 ZstCable * zst_connect_cable(ZstPlug * input, ZstPlug * output)
 {
-	return ZstClient::instance().connect_cable(input, output);
+	return ZstClient::instance().connect_cable(input, output, false);
+}
+
+ZstCable * zst_connect_cable_async(ZstPlug * input, ZstPlug * output)
+{
+    return ZstClient::instance().connect_cable(input, output, true);
 }
 
 void zst_destroy_cable(ZstCable * cable)
 {
-	ZstClient::instance().destroy_cable(cable);
+	ZstClient::instance().destroy_cable(cable, false);
+}
+
+void zst_destroy_cable_async(ZstCable * cable)
+{
+    ZstClient::instance().destroy_cable(cable, true);
 }
 
 int zst_graph_recv_tripmeter()

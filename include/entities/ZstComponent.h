@@ -22,13 +22,13 @@ public:
 	ZST_EXPORT virtual void on_deactivated() override {};
 
 	//Register graph sender for output plugs
-	ZST_EXPORT virtual void set_network_interactor(ZstINetworkInteractor * network_interactor);
+	ZST_EXPORT virtual void set_network_interactor(ZstINetworkInteractor * network_interactor) override;
     
     //External factory function
 	ZST_EXPORT virtual void create(const char * name, ZstEntityBase* parent) {};
     
     //Find a plug in this component by its URI
-	ZST_EXPORT virtual ZstPlug * get_plug_by_URI(const ZstURI & uri) const;
+	ZST_EXPORT ZstPlug * get_plug_by_URI(const ZstURI & uri) const;
 
     //Overridable compute function that will process input plug events
 	ZST_EXPORT virtual void compute(ZstInputPlug * plug) {};
@@ -43,19 +43,16 @@ public:
 	ZST_EXPORT int add_plug(ZstPlug * plug);
     
     //Remove a plug from this component
-	ZST_EXPORT virtual void remove_plug(ZstPlug *plug);
+	ZST_EXPORT void remove_plug(ZstPlug *plug);
 
 	//Disconnect all plugs from this component
-	ZST_EXPORT virtual void disconnect_cables() override;
+	ZST_EXPORT void disconnect_cables() override;
 
 	//Set component as activated
 	ZST_EXPORT virtual void set_activated() override;
 
 	//Set component as deactivated
 	ZST_EXPORT virtual void set_deactivated() override;
-
-	//Set parent of this component
-	ZST_EXPORT virtual void set_parent(ZstEntityBase * parent) override;
 
 	//Serialisation
 	ZST_EXPORT virtual void write(std::stringstream & buffer) override;
@@ -68,6 +65,9 @@ protected:
 	ZST_EXPORT void set_component_type(const char * component_type);
 	ZST_EXPORT void set_component_type(const char * component_type, size_t len);
 	ZST_EXPORT virtual ZstCableBundle * get_child_cables(ZstCableBundle * bundle) override;
+    
+    //Set parent of this component
+    ZST_EXPORT virtual void set_parent(ZstEntityBase * parent) override;
 	
 private:
 	std::vector<ZstPlug*> m_plugs;

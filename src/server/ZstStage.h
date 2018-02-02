@@ -27,7 +27,7 @@ class ZstStage : public ZstActor{
 public:
 	ZstStage();
 	~ZstStage();
-	void init();
+	void init(const char * stage_name) override;
 	void destroy() override;
 
 	//Client
@@ -57,7 +57,7 @@ private:
 
     //Message handlers
     ZstMessage * create_client_handler(std::string sender_identity, ZstMessage * msg);
-	void destroy_client_handler(ZstPerformer * performer);
+	ZstMessage * destroy_client_handler(ZstPerformer * performer);
 
 	template <typename T>
 	ZstMessage * create_entity_handler(ZstMessage * msg, ZstPerformer * performer);
@@ -70,7 +70,7 @@ private:
 	ZstMessage * destroy_cable_handler(ZstMessage * msg);
 	
 	//Outgoing events
-	void send_snapshot(ZstPerformer * client);
+	ZstMessage * create_snapshot(ZstPerformer * client);
     void publish_stage_update(ZstMessage * msg);
 
 	int m_heartbeat_timer_id;

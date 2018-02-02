@@ -26,23 +26,26 @@ enum ZstSyncError {
 class ZstSynchronisable {
 	friend class ZstActivationEvent;
 	friend class ZstDeactivationEvent;
+    friend class ZstClient;
 public:
 	ZST_EXPORT ZstSynchronisable();
-	ZST_EXPORT ~ZstSynchronisable();
 	ZST_EXPORT ZstSynchronisable(const ZstSynchronisable & other);
-	ZST_EXPORT virtual void attach_activation_event(ZstSynchronisableEvent * event);
-	ZST_EXPORT virtual void attach_deactivation_event(ZstSynchronisableEvent * event);
-	ZST_EXPORT virtual void detach_activation_event(ZstSynchronisableEvent * event);
-	ZST_EXPORT virtual void detach_deactivation_event(ZstSynchronisableEvent * event);
+    ZST_EXPORT virtual ~ZstSynchronisable();
+    
+	ZST_EXPORT void attach_activation_event(ZstSynchronisableEvent * event);
+	ZST_EXPORT void attach_deactivation_event(ZstSynchronisableEvent * event);
+	ZST_EXPORT void detach_activation_event(ZstSynchronisableEvent * event);
+	ZST_EXPORT void detach_deactivation_event(ZstSynchronisableEvent * event);
 
-	ZST_EXPORT virtual void process_events();
+	ZST_EXPORT void process_events();
+    ZST_EXPORT void flush_events();
 	ZST_EXPORT virtual void on_activated() = 0;
 	ZST_EXPORT virtual void on_deactivated() = 0;
 
 	ZST_EXPORT virtual void set_activated();
-	ZST_EXPORT virtual void set_activating();
+	ZST_EXPORT void set_activating();
 	ZST_EXPORT virtual void set_deactivated();
-	ZST_EXPORT virtual void set_deactivating();
+	ZST_EXPORT void set_deactivating();
 	ZST_EXPORT virtual void set_error(ZstSyncError e);
 
 	ZST_EXPORT bool is_activated();
@@ -57,7 +60,7 @@ protected:
 	ZST_EXPORT ZstINetworkInteractor * network_interactor();
 
 private:
-	ZST_EXPORT virtual void set_activation_status(ZstSyncStatus status);
+	void set_activation_status(ZstSyncStatus status);
 	ZstEventDispatcher * m_activation_events;
 	ZstEventDispatcher * m_deactivation_events;
 	ZstActivationEvent * m_activation_hook;

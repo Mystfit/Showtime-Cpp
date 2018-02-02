@@ -6,10 +6,12 @@ extern "C" {
 	//Init the library
 	ZST_CLIENT_EXPORT void zst_init(const char * performer);
 	ZST_CLIENT_EXPORT void zst_join(const char * stage_address);
+    ZST_CLIENT_EXPORT void zst_join_async(const char * stage_address);
 
 	//Cleanup
 	ZST_CLIENT_EXPORT void zst_destroy();
 	ZST_CLIENT_EXPORT void zst_leave();
+    ZST_CLIENT_EXPORT void zst_leave_immediately();
 
 	//Poll the event queue - for runtimes that have process events from the main thread
 	ZST_CLIENT_EXPORT void zst_poll_once();
@@ -31,7 +33,9 @@ extern "C" {
 
 	//Entity activation/deactivation
 	ZST_CLIENT_EXPORT void zst_activate_entity(ZstEntityBase * entity);
+    ZST_CLIENT_EXPORT void zst_activate_entity_async(ZstEntityBase * entity);
 	ZST_CLIENT_EXPORT void zst_deactivate_entity(ZstEntityBase * entity);
+    ZST_CLIENT_EXPORT void zst_deactivate_entity_async(ZstEntityBase * entity);
 
 	//Hierarchy
 	ZST_CLIENT_EXPORT ZstPerformer* zst_get_root();
@@ -44,7 +48,9 @@ extern "C" {
 
 	//Cable management
 	ZST_CLIENT_EXPORT ZstCable * zst_connect_cable(ZstPlug * input, ZstPlug * output);
+    ZST_CLIENT_EXPORT ZstCable * zst_connect_cable_async(ZstPlug * input, ZstPlug * output);
 	ZST_CLIENT_EXPORT void zst_destroy_cable(ZstCable * cable);
+    ZST_CLIENT_EXPORT void zst_destroy_cable_async(ZstCable * cable);
 
 	//Debugging
 	ZST_CLIENT_EXPORT int zst_graph_recv_tripmeter();
