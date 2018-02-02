@@ -7,7 +7,7 @@
 #include <ZstExports.h>
 #include <ZstEvents.h>
 
-#include <concurrentqueue.h>
+#include <Queue.h>
 
 class ZstEventDispatcher {
 public:
@@ -20,7 +20,8 @@ public:
 	ZST_EXPORT void attach_post_event_callback(ZstEvent * event);
 	ZST_EXPORT void remove_post_event_callback(ZstEvent * event);
 	ZST_EXPORT void dispatch_events(ZstSynchronisable * target);
-	ZST_EXPORT void clear();
+	ZST_EXPORT void flush();
+    ZST_EXPORT void clear_attached_events();
 	ZST_EXPORT void enqueue(ZstSynchronisable * target);
 	ZST_EXPORT void process();
 	ZST_EXPORT size_t size();
@@ -29,5 +30,5 @@ private:
 	std::vector<ZstEvent*> m_pre_event_callback;
 	std::vector<ZstEvent*> m_event_callbacks;
 	std::vector<ZstEvent*> m_post_event_callback;
-	moodycamel::ConcurrentQueue<ZstSynchronisable*> m_event_queue;
+	Queue<ZstSynchronisable*> m_event_queue;
 };

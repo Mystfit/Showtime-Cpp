@@ -7,7 +7,7 @@
 #define LOGGER spdlog::get(GLOBAL_CONSOLE)
 
 extern "C" {
-	static void zst_log_init(const char * pattern = "[%H:%M:%S.%e] [PID:%P] [TID:%t] [%l] %v") {
+	static inline void zst_log_init(const char * pattern = "[%H:%M:%S.%e] [PID:%P] [TID:%t] [%l] %v") {
 		//spdlog::set_async_mode(4096);
 		
 		try {

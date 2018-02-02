@@ -11,6 +11,8 @@
 %include "ZstEntityBase.i"
 %include "ZstPlug.i"
 %include "ZstCable.i"
+
+%ignore set_parent;
 %include "ZstComponent.i"
 %include "ZstContainer.i"
 %include "ZstPerformer.i"
@@ -18,7 +20,6 @@
 
 %rename("%(strip:[zst_])s") "";
 %include <Showtime.h>
-//%include "showtime_api.i"
 
 //Entities
 %include "AddFilter.i"

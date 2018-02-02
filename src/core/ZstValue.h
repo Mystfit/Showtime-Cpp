@@ -19,7 +19,7 @@ public:
 	ZstValue(const ZstValue & other);
 
 	ZstValue(ZstValueType t);
-	~ZstValue();
+	virtual ~ZstValue();
 
 	ZstValueType get_default_type();
 	
@@ -37,8 +37,8 @@ public:
     const size_t size_at(const size_t position) const;
 
 	//Serialisation
-	virtual void write(std::stringstream & buffer) override;
-	virtual void read(const char * buffer, size_t length, size_t & offset) override;
+	void write(std::stringstream & buffer) override;
+	void read(const char * buffer, size_t length, size_t & offset) override;
 
 protected:
 	std::vector<ZstValueVariant> m_values;

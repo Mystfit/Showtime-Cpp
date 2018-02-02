@@ -1,7 +1,7 @@
 #include <ZstSynchronisable.h>
 #include <algorithm>
 #include <assert.h>
-
+#include <ZstLogging.h>
 #include "ZstEventDispatcher.h"
 #include "ZstINetworkInteractor.h"
 
@@ -128,6 +128,12 @@ void ZstSynchronisable::process_events()
 {
 	m_activation_events->process();
 	m_deactivation_events->process();
+}
+
+void ZstSynchronisable::flush_events()
+{
+    m_activation_events->flush();
+    m_deactivation_events->flush();
 }
 
 void ZstSynchronisable::set_activation_status(ZstSyncStatus status)

@@ -25,16 +25,10 @@ public:
 	//TODO: This is handled by whatever DLL or SO owns the concrete implemetation of this entity
 	ZST_EXPORT void * operator new(size_t num_bytes);
 	ZST_EXPORT void operator delete(void * p);
-    
-    //Overridable init - must be called by overriden classes
-	ZST_EXPORT virtual void on_activated() = 0;
-	ZST_EXPORT virtual void on_deactivated() = 0;
-	
+    	
 	//The parent of this entity
 	ZST_EXPORT ZstEntityBase * parent() const;
-
-	ZST_EXPORT virtual void update_URI();
-
+    
     //Entity type
 	ZST_EXPORT const char * entity_type() const;
     
@@ -61,6 +55,8 @@ protected:
 	ZST_EXPORT virtual ZstCableBundle * get_child_cables(ZstCableBundle * bundle);
 
 private:
+    ZST_EXPORT void update_URI();
+    
 	bool m_is_destroyed;
 	ZstEntityBase * m_parent;
 	char * m_entity_type;

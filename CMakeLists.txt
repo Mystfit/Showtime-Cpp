@@ -31,7 +31,7 @@ set(CXX_STANDARD_REQUIRED)
 # Set showtime include directories
 set(Showtime_COMPILED_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include")
 set(Showtime_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/include")
-set(Showtime_SUBMODULES_DIR "${CMAKE_SOURCE_DIR}/submodules")
+set(Showtime_DEPENDENCIES_DIR "${CMAKE_SOURCE_DIR}/src/dependencies")
 set(Showtime_API_INTERFACE "")
 
 

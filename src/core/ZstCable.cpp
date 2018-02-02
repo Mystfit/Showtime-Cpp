@@ -4,45 +4,45 @@
 
 ZstCable::ZstCable() : 
 	ZstSynchronisable(),
+    m_input_URI(""),
+    m_output_URI(""),
 	m_input(NULL),
 	m_output(NULL),
-	m_input_URI(""),
-	m_output_URI("")
+    m_is_local(false)
 {
 }
 
 ZstCable::ZstCable(const ZstCable & copy) : 
 	ZstSynchronisable(),
+    m_input_URI(copy.m_input_URI),
+    m_output_URI(copy.m_output_URI),
 	m_input(copy.m_input),
 	m_output(copy.m_output),
-	m_input_URI(copy.m_input_URI),
-	m_output_URI(copy.m_output_URI)
+    m_is_local(copy.m_is_local)
 {
 }
 
 ZstCable::ZstCable(const ZstURI & input_plug_URI, const ZstURI & output_plug_URI) :
 	ZstSynchronisable(),
+    m_input_URI(input_plug_URI),
+    m_output_URI(output_plug_URI),
 	m_input(NULL),
 	m_output(NULL),
-	m_input_URI(input_plug_URI),
-	m_output_URI(output_plug_URI)
+    m_is_local(false)
 {
 }
 
 ZstCable::ZstCable(ZstPlug * input_plug, ZstPlug * output_plug) :
 	ZstSynchronisable(),
+    m_input_URI(input_plug->URI()),
+    m_output_URI(output_plug->URI()),
 	m_input(input_plug),
 	m_output(output_plug),
-	m_input_URI(input_plug->URI()),
-	m_output_URI(output_plug->URI())
+    m_is_local(false)
 {
 }
 
 ZstCable::~ZstCable()
-{
-}
-
-void ZstCable::on_deactivated()
 {
 }
 

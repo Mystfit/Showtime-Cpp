@@ -50,14 +50,15 @@ ZstEntityBase * ZstEntityBase::parent() const
 
 void ZstEntityBase::update_URI()
 {
-	if (!parent()) {
-		m_uri = m_uri.last();
-		return;
-	}
-
-	if (!URI().contains(parent()->URI())) {
-		m_uri = parent()->URI() + m_uri.last();
-	}
+    if (!parent()) {
+        m_uri = m_uri.last();
+        return;
+    }
+    
+    bool path_contains_parent = URI().contains(parent()->URI());
+    if (!path_contains_parent) {
+        m_uri = parent()->URI() + m_uri.last();
+    }
 }
 
 const char * ZstEntityBase::entity_type() const
@@ -130,6 +131,6 @@ void ZstEntityBase::set_entity_type(const char * entity_type) {
 }
 
 void ZstEntityBase::set_parent(ZstEntityBase *entity) {
-	m_parent = entity;
-	update_URI();
+    m_parent = entity;
+    this->update_URI();
 }

@@ -58,9 +58,8 @@ void ZstURI::init()
 	pstr comp;
 
 	comp.cstr = m_segmented_path.cstr;
-	int i = 0;
-	int len = 0;
-	for (i; i < m_segmented_path.length; i++) {
+	size_t len = 0;
+	for (size_t i = 0; i < m_segmented_path.length; i++) {
 		if (m_segmented_path.cstr[i] == DELIM) {
 			m_segmented_path.cstr[i] = '\0';
 			comp.length = len;
@@ -129,7 +128,7 @@ ZstURI ZstURI::range(size_t start, size_t end) const
 	size_t index = 0;
 	size_t start_position = 0;
 
-	for (index; index < start; index++)
+	for (; index < start; index++)
 		start_position += m_components[index].length + 1;
 
 	size_t length = 0;

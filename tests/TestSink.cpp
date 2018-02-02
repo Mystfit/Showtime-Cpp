@@ -38,14 +38,6 @@ public:
 };
 
 
-class TestCableArrivingEventCallback : public ZstCableEvent {
-public:
-	void run(ZstCable * cable) override {
-		LOGGER->debug("CABLE EVENT: {}-{} arriving", cable->get_output()->URI().path(), cable->get_input()->URI().path());
-	}
-};
-
-
 int main(int argc,char **argv){
 
 	zst_log_init();
@@ -59,23 +51,22 @@ int main(int argc,char **argv){
 	LOGGER->debug("In sink process");
 
 
-#ifdef WIN32
 	if(argv[1][0] == 'd')
+#ifdef WIN32
 		system("pause");
+#else
+        system("read -n 1 -s -p \"Press any key to continue...\n\"");
 #endif
 
 	zst_init("sink");
     zst_join("127.0.0.1");
-	TestCableArrivingEventCallback * cable_arrive = new TestCableArrivingEventCallback();
-    zst_attach_cable_event_listener(cable_arrive, ZstEventAction::ARRIVING);
-	
+
 	Sink * sink = new Sink("sink_ent");
 	zst_activate_entity(sink);
 	
 	while (sink->last_received_code > 0){
 		zst_poll_once();
 	}
-
 	
 	LOGGER->debug("Sink is leaving");
 	zst_destroy();

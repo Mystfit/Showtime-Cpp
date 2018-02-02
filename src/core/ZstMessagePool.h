@@ -2,7 +2,7 @@
 
 #include <list>
 #include <map>
-#include <cf/cfuture.h>
+#include <cf/cf/cfuture.h>
 #include "ZstMessage.h"
 
 #define USE_MESSAGE_POOL false

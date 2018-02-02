@@ -148,13 +148,12 @@ void ZstContainer::set_deactivated()
 
 void ZstContainer::set_parent(ZstEntityBase * entity)
 {
-	ZstComponent::set_parent(entity);
-
+    ZstComponent::set_parent(entity);
+    
 	auto children = m_children;
 	for (auto child : children) {
-		//We need to remove then re-add the child so that we update the entity map with the updated URI
-		remove_child(child.second);
-		add_child(child.second);
+        remove_child(child.second);
+        add_child(child.second);
 	}
 }
 
@@ -168,8 +167,8 @@ void ZstContainer::disconnect_cables()
 
 void ZstContainer::add_child(ZstEntityBase * child) {
 	//If child is a plug, needs to be added to the plug list
-	child->set_parent(this);
-	m_children[child->URI()] = child;
+    child->set_parent(this);
+    m_children[child->URI()] = child;
 }
 
 void ZstContainer::remove_child(ZstEntityBase * child) {

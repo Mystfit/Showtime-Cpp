@@ -33,10 +33,10 @@ public:
 	ZST_EXPORT ZstPlug();
 	ZST_EXPORT ZstPlug(const char * name, ZstValueType t);
 	ZST_EXPORT ZstPlug(const ZstPlug & other);
-	ZST_EXPORT virtual ~ZstPlug();
+	ZST_EXPORT ~ZstPlug();
     
-	ZST_EXPORT virtual void on_activated() override {};
-	ZST_EXPORT virtual void on_deactivated() override {};
+	ZST_EXPORT void on_activated() override {};
+	ZST_EXPORT void on_deactivated() override {};
 
 	//Value interface
 	ZST_EXPORT void clear();
@@ -51,8 +51,8 @@ public:
 	ZST_EXPORT const size_t size_at(const size_t position) const;
 
 	//Serialisation
-	ZST_EXPORT virtual void write(std::stringstream & buffer) override;
-	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
+	ZST_EXPORT void write(std::stringstream & buffer) override;
+	ZST_EXPORT void read(const char * buffer, size_t length, size_t & offset) override;
 
 	//Properties
 	ZST_EXPORT ZstPlugDirection direction();

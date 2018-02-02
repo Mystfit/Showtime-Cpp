@@ -9,10 +9,11 @@ public:
 	ZST_EXPORT ZstActor();
 	ZST_EXPORT virtual ~ZstActor();
 	ZST_EXPORT virtual void destroy();
-	ZST_EXPORT virtual void init();
+	ZST_EXPORT virtual void init(const char * actor_name);
 	ZST_EXPORT virtual void start();
 	ZST_EXPORT virtual void stop();
 	ZST_EXPORT void self_test();
+    ZST_EXPORT const char * actor_name() const;
 
 protected:
 	ZST_EXPORT void attach_pipe_listener(zsock_t* sock, zloop_reader_fn handler, void *args);
@@ -20,6 +21,8 @@ protected:
 	ZST_EXPORT void detach_timer(int timer_id);
 
 private:
+    std::string m_actor_name;
+    
 	//Loop
 	zloop_t * m_loop;
 	void start_polling(zsock_t * pipe);
