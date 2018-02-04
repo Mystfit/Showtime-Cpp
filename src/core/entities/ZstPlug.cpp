@@ -3,7 +3,6 @@
 
 #include <entities/ZstPlug.h>
 #include <ZstCable.h>
-#include <ZstLogging.h>
 
 #include "../ZstValue.h"
 #include "../ZstINetworkInteractor.h"
@@ -200,12 +199,7 @@ void ZstPlug::disconnect_cables()
 
 void ZstPlug::add_cable(ZstCable * cable)
 {
-	try {
-		m_cables.insert(cable);
-	}
-	catch (std::exception e) {
-		LOGGER->error("Failed to add cable to plug: Reason: {}", e.what());
-	}
+	m_cables.insert(cable);
 }
 
 void ZstPlug::remove_cable(ZstCable * cable)

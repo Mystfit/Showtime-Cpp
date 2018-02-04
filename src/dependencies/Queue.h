@@ -40,7 +40,7 @@ class Queue
     queue_.pop();
   }
 
-  int size() {
+  size_t size() {
 	  return queue_.size();
   }
 

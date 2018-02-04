@@ -13,11 +13,16 @@ class ZstPlug;
 class ZstCable : public ZstSynchronisable, public ZstSerialisable {
 public:
 	friend class ZstClient;
+	friend class ZstStage;
 
 	ZST_EXPORT ZstCable();
 	ZST_EXPORT ZstCable(const ZstCable & copy);
 	ZST_EXPORT ZstCable(const ZstURI & input_plug_URI, const ZstURI & output_plug_URI);
 	ZST_EXPORT ZstCable(ZstPlug * input_plug, ZstPlug * output_plug);
+	ZST_EXPORT static ZstCable * create(const ZstURI & input, const ZstURI & output);
+	ZST_EXPORT static ZstCable * create(ZstPlug * input, ZstPlug * output);
+
+	ZST_EXPORT static void destroy(ZstCable * cable);
     ZST_EXPORT virtual ~ZstCable();
 	ZST_EXPORT void on_activated() override {};
     ZST_EXPORT void on_deactivated() override {};

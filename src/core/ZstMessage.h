@@ -110,7 +110,7 @@ public:
 	
 	template <typename T>
 	T unpack_payload_serialisable(size_t payload_index) {
-		T serialisable = T();
+		T serialisable;
 		size_t offset = 0;
 		ZstMessagePayload & payload = payload_at(payload_index);
 		serialisable.read(payload.data(), payload.size(), offset);

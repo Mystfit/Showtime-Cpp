@@ -1,7 +1,6 @@
 #include <ZstSynchronisable.h>
 #include <algorithm>
 #include <assert.h>
-#include <ZstLogging.h>
 #include "ZstEventDispatcher.h"
 #include "ZstINetworkInteractor.h"
 

@@ -46,6 +46,21 @@ ZstCable::~ZstCable()
 {
 }
 
+ZstCable * ZstCable::create(const ZstURI & input, const ZstURI & output)
+{
+	return new ZstCable(input, output);
+}
+
+ZstCable * ZstCable::create(ZstPlug * input, ZstPlug * output)
+{
+	return new ZstCable(input, output);
+}
+
+void ZstCable::destroy(ZstCable * cable)
+{
+	delete cable;
+}
+
 bool ZstCable::operator==(const ZstCable & other) const
 {
 	return (m_input_URI == other.m_input_URI) && (m_output_URI == other.m_output_URI);

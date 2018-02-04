@@ -21,7 +21,7 @@ public:
 	
 	virtual void compute(ZstInputPlug * plug) override {
 		int request_code = plug->int_at(0);
-		LOGGER->debug("Sink received code {}", request_code);
+		ZstLog::debug("Sink received code {}", request_code);
 
 		if (request_code == 1) {
 			m_child_sink = new Sink("sinkB");
@@ -41,14 +41,13 @@ public:
 int main(int argc,char **argv){
 
 	zst_log_init();
-	LOGGER->set_level(spdlog::level::debug);
 
 	if(argc < 2){
-		LOGGER->warn("Skipping sink test, command line flag not set");
+		ZstLog::warn("Skipping sink test, command line flag not set");
 		return 0;
 	}
 
-	LOGGER->debug("In sink process");
+	ZstLog::debug("In sink process");
 
 
 	if(argv[1][0] == 'd')
@@ -68,11 +67,11 @@ int main(int argc,char **argv){
 		zst_poll_once();
 	}
 	
-	LOGGER->debug("Sink is leaving");
+	ZstLog::debug("Sink is leaving");
 	zst_destroy();
 
 
-	LOGGER->debug("Exiting sink process");
+	ZstLog::debug("Exiting sink process");
 
 	return 0;
 }

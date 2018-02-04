@@ -4,7 +4,7 @@
 #include <ZstConstants.h>
 #include <ZstSerialisable.h>
 #include <ZstExports.h>
-#include "variant.hpp"
+#include "mpark/variant.hpp"
 
 //A ZstValue is a generic value that represents some data 
 //sent from one ZstPlug to another

@@ -12,7 +12,7 @@ void ZstComponentLeavingEvent::run(ZstComponent * target)
 
 void ZstCableLeavingEvent::run(ZstCable * target)
 {
-	delete target;
+	ZstCable::destroy(target);
 }
 
 void ZstPlugLeavingEvent::run(ZstPlug * target)

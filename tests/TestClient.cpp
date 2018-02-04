@@ -50,7 +50,7 @@ public:
 		m_suffix = suffix;
 	}
 	void run(ZstComponent * component) override {
-		LOGGER->debug("ENTITY_EVENT: {} {}", component->URI().path(), m_suffix);
+		ZstLog::debug("ENTITY_EVENT: {} {}", component->URI().path(), m_suffix);
 		last_entity = std::string(component->URI().path());
 	}
 };
@@ -62,7 +62,7 @@ public:
 		m_suffix = suffix;
 	}
 	void run(ZstPerformer * root_performer) override {
-		LOGGER->debug("CONN_EVENT: {} {}", root_performer->URI().path(), m_suffix);
+		ZstLog::debug("CONN_EVENT: {} {}", root_performer->URI().path(), m_suffix);
 	}
 };
 
@@ -73,7 +73,7 @@ public:
 		m_suffix = suffix;
 	}
 	void run(ZstPlug * plug) override {
-		LOGGER->debug("PLUG_EVENT: {} {}", plug->URI().path(), m_suffix);
+		ZstLog::debug("PLUG_EVENT: {} {}", plug->URI().path(), m_suffix);
 	}
 };
 
@@ -84,7 +84,7 @@ public:
 		m_suffix = suffix;
 	}
 	void run(ZstCable * cable) override {
-		LOGGER->debug("CABLE_EVENT: {} {} {}", cable->get_output_URI().path(), cable->get_input_URI().path(), m_suffix);
+		ZstLog::debug("CABLE_EVENT: {} {} {}", cable->get_output_URI().path(), cable->get_input_URI().path(), m_suffix);
 	}
 };
 
@@ -95,7 +95,7 @@ public:
 		m_suffix = suffix;
 	}
     void run(ZstComponent * component_template) override {
-		LOGGER->debug("TEMPLATE_EVENT: {} Owner {}", component_template->entity_type(), component_template->parent()->URI().path(), m_suffix);
+		ZstLog::debug("TEMPLATE_EVENT: {} Owner {}", component_template->entity_type(), component_template->parent()->URI().path(), m_suffix);
     }
 };
 
@@ -106,7 +106,7 @@ public:
 		m_suffix = suffix;
 	}
 	void run(ZstPerformer * performer) override {
-		LOGGER->debug("PERFORMER_EVENT: {} {}", performer->URI().path(), m_suffix);
+		ZstLog::debug("PERFORMER_EVENT: {} {}", performer->URI().path(), m_suffix);
 	}
 };
 
@@ -121,13 +121,13 @@ private:
 
 public:
 	OutputComponent(const char * name) : ZstComponent("TESTER", name) {
-		m_output = create_output_plug("out", ZstValueType::ZST_INT);
+		m_output = create_output_plug("out", ZstValueType::ZST_FLOAT);
 	}
 
 	virtual void compute(ZstInputPlug * plug) override {}
 
-	void send(int val) {
-		m_output->append_int(val);
+	void send(float val) {
+		m_output->append_float(val);
 		m_output->fire();
 	}
 
@@ -151,14 +151,15 @@ public:
 		ZstComponent("TESTER", name), compare_val(cmp_val)
 	{
 		log = should_log;
-		m_input = create_input_plug("in", ZstValueType::ZST_INT);
+		m_input = create_input_plug("in", ZstValueType::ZST_FLOAT);
 	}
 
 	virtual void compute(ZstInputPlug * plug) override {
 		num_hits++;
-		last_received_val = plug->int_at(0);
+		float actual_val = plug->float_at(0);
+		last_received_val = int(actual_val);
 		if (log) {
-			LOGGER->debug("Input filter received value {0:d}", last_received_val);
+			ZstLog::debug("Input filter received value {0:d}", last_received_val);
 		}
 	}
 
@@ -172,13 +173,39 @@ public:
 };
 
 
-void test_standard_layout() {
-	//Verify standard layout
-	assert(std::is_standard_layout<ZstURI>());
+void test_startup() {
+	zst_log_init(true);
+	zst_init("TestClient");
+	ZstLog::info("Running Showtime init test");
+
+	ZstLog::debug("Testing sync join");
+	zst_join("127.0.0.1");
+	assert(zst_is_connected());
+
+	//Leave the stage so we can reconnect
+	zst_leave();
+	assert(!zst_is_connected());
+
+	//Create events to listen for a successful connection
+	TestConnectCallback * connectCallback = new TestConnectCallback("connected");
+	zst_attach_connection_event_listener(connectCallback);
+
+	ZstLog::debug("Testing async join");
+	assert(connectCallback->num_calls() == 0);
+	zst_join_async("127.0.0.1");
+	wait_for_event(connectCallback, 1);
+	assert(connectCallback->num_calls() == 1);
+	assert(zst_is_connected());
+
+	//Cleanup
+	zst_remove_connection_event_listener(connectCallback);
+	delete connectCallback;
 }
 
 void test_URI() {
-	LOGGER->info("Running URI test");
+	ZstLog::info("Running URI test");
+
+	assert(std::is_standard_layout<ZstURI>());
 
 	//Define test URIs
 	ZstURI uri_empty = ZstURI();
@@ -276,37 +303,8 @@ void test_URI() {
 	}
 }
 
-void test_startup() {
-
-	LOGGER->info("Running Showtime init test");
-	zst_init("TestClient");
-    
-    LOGGER->debug("Testing sync join");
-	zst_join("127.0.0.1");
-    assert(zst_is_connected());
-    
-    //Leave the stage so we can reconnect
-    zst_leave();
-    assert(!zst_is_connected());
-    
-    //Create events to listen for a successful connection
-    TestConnectCallback * connectCallback = new TestConnectCallback("connected");
-    zst_attach_connection_event_listener(connectCallback);
-    
-    LOGGER->debug("Testing async join");
-    assert(connectCallback->num_calls() == 0);
-    zst_join_async("127.0.0.1");
-	wait_for_event(connectCallback, 1);
-	assert(connectCallback->num_calls() == 1);
-	assert(zst_is_connected());
-    
-    //Cleanup
-    zst_remove_connection_event_listener(connectCallback);
-    delete connectCallback;
-}
-
 void test_root_entity() {
-	LOGGER->info("Running performer test");
+	ZstLog::info("Running performer test");
 
 	//Test root entity is activated
 	TestPerformerCallback * performer_activated = new TestPerformerCallback("performer activating");
@@ -321,22 +319,22 @@ void test_root_entity() {
 	clear_callback_queue();
 	root_entity->detach_activation_event(performer_activated);
 	delete performer_activated;
-	LOGGER->debug("Root performer is activated");
+	ZstLog::debug("Root performer is activated");
 }
 
 
 void test_create_entities(){
-	LOGGER->info("Running entity creation test");
+	ZstLog::info("Running entity creation test");
     
-    LOGGER->debug("Creating sync entity");
+    ZstLog::debug("Creating sync entity");
     OutputComponent * test_output_sync = new OutputComponent("entity_create_test_sync");
     
-    LOGGER->debug("Testing entity sync activation");
+    ZstLog::debug("Testing entity sync activation");
     zst_activate_entity(test_output_sync);
     assert(test_output_sync->is_activated());
     assert(zst_find_entity(test_output_sync->URI()));
     
-    LOGGER->debug("Testing entity sync deactivation");
+    ZstLog::debug("Testing entity sync deactivation");
     zst_deactivate_entity(test_output_sync);
     assert(!test_output_sync->is_activated());
     assert(!zst_find_entity(test_output_sync->URI()));
@@ -349,7 +347,7 @@ void test_create_entities(){
 	test_output_async->attach_activation_event(entity_activated_local);
 	test_output_async->attach_deactivation_event(entity_deactivated_local);
 	
-    LOGGER->debug("Testing entity async activation");
+    ZstLog::debug("Testing entity async activation");
 	zst_activate_entity_async(test_output_async);
 	wait_for_event(entity_activated_local, 1);
 	assert(entity_activated_local->num_calls() == 1);
@@ -361,7 +359,7 @@ void test_create_entities(){
 	ZstURI localPlug_uri_via_entity = test_output_async->output()->URI();
 	assert(ZstURI::equal(localPlug_uri, localPlug_uri_via_entity));
 
-    LOGGER->debug("Testing entity async deactivation");
+    ZstLog::debug("Testing entity async deactivation");
 	zst_deactivate_entity(test_output_async);
 	wait_for_event(entity_deactivated_local, 1);
 	assert(entity_deactivated_local->num_calls() == 1);
@@ -377,7 +375,7 @@ void test_create_entities(){
 
 
 void test_hierarchy() {
-	LOGGER->info("Running hierarchy test");
+	ZstLog::info("Running hierarchy test");
 
 	//Test hierarchy
 	ZstContainer * parent = new ZstContainer("parent");
@@ -389,7 +387,7 @@ void test_hierarchy() {
 	assert(zst_find_entity(child->URI()));
 	
 	//Test child removal from parent
-	LOGGER->debug("Testing child removal from parent");
+	ZstLog::debug("Testing child removal from parent");
 	ZstURI child_URI = ZstURI(child->URI());
 	zst_deactivate_entity(child);
 	assert(!parent->find_child_by_URI(child_URI));
@@ -429,19 +427,19 @@ void test_hierarchy() {
 
 
 void test_connect_plugs() {
-	LOGGER->info("Running connect plugs test");
+	ZstLog::info("Running connect plugs test");
 	
-	LOGGER->debug("Creating entities");
+	ZstLog::debug("Creating entities");
 	OutputComponent * test_output = new OutputComponent("connect_test_out");
 	InputComponent * test_input = new InputComponent("connect_test_in", 0);
     zst_activate_entity(test_output);
 	zst_activate_entity(test_input);
 
-	LOGGER->debug("Testing sync cable connection");
+	ZstLog::debug("Testing sync cable connection");
 	ZstCable * cable = zst_connect_cable(test_input->input(), test_output->output());
     assert(cable->is_activated());
 	
-	LOGGER->debug("Verifying cable");
+	ZstLog::debug("Verifying cable");
 	assert(cable->get_output() == test_output->output());
 	assert(cable->get_input() == test_input->input());
     assert(test_output->output()->is_connected_to(test_input->input()));
@@ -450,13 +448,13 @@ void test_connect_plugs() {
 		assert(c->get_input() == test_input->input());
 	}
 
-	LOGGER->debug("Testing cable disconnection");
+	ZstLog::debug("Testing cable disconnection");
 	zst_destroy_cable(cable);
     cable = 0;
     assert(!test_output->output()->is_connected_to(test_input->input()));
     assert(!test_input->input()->is_connected_to(test_output->output()));
     
-    LOGGER->debug("Testing async cable connection");
+    ZstLog::debug("Testing async cable connection");
     TestCableEventCallback * cable_activated_local = new TestCableEventCallback("activated via local update");
     TestCableEventCallback * cable_deactivated_local = new TestCableEventCallback("cable deactivated via local event");
     cable = zst_connect_cable_async(test_input->input(), test_output->output());
@@ -472,7 +470,7 @@ void test_connect_plugs() {
     assert(cable_deactivated_local->num_calls() == 1);
     cable_deactivated_local->reset_num_calls();
 
-	LOGGER->debug("Testing cable disconnection when removing parent");
+	ZstLog::debug("Testing cable disconnection when removing parent");
 	cable = zst_connect_cable(test_input->input(), test_output->output());
     cable->attach_deactivation_event(cable_deactivated_local);
     zst_deactivate_entity(test_output);
@@ -490,11 +488,11 @@ void test_connect_plugs() {
 }
 
 void test_add_filter() {
-	LOGGER->info("Starting addition filter test");
+	ZstLog::info("Starting addition filter test");
 	int first_cmp_val = 4;
 	int second_cmp_val = 30;
 
-	LOGGER->debug("Creating input/output components for addition filter");
+	ZstLog::debug("Creating input/output components for addition filter");
 	OutputComponent * test_output_augend = new OutputComponent("add_test_augend");
 	OutputComponent * test_output_addend = new OutputComponent("add_test_addend");
 	InputComponent * test_input_sum = new InputComponent("add_test_sum", first_cmp_val, true);
@@ -505,13 +503,13 @@ void test_add_filter() {
 	zst_activate_entity(test_input_sum);
 	zst_activate_entity(add_filter);
     
-	LOGGER->debug("Connecting cables");
+	ZstLog::debug("Connecting cables");
 	zst_connect_cable(add_filter->augend(), test_output_augend->output() );
 	zst_connect_cable(add_filter->addend(), test_output_addend->output());
 	zst_connect_cable(test_input_sum->input(), add_filter->sum());
     
 	//Send values
-	LOGGER->debug("Sending values");
+	ZstLog::debug("Sending values");
 	test_output_augend->send(2);
 	test_output_addend->send(2);
 
@@ -535,7 +533,7 @@ void test_add_filter() {
 	while (test_input_sum->num_hits < 2)
 		zst_poll_once();
 	assert(test_input_sum->last_received_val == second_cmp_val);
-	LOGGER->debug("Addition component succeeded at addition!");
+	ZstLog::debug("Addition component succeeded at addition!");
 
 	//Cleanup
 	zst_deactivate_entity(test_output_augend);
@@ -551,7 +549,7 @@ void test_add_filter() {
 
 
 void test_external_entities(std::string external_test_path) {
-	LOGGER->info("Starting external entities test");
+	ZstLog::info("Starting external entities test");
 
 	//Create callbacks
 	TestEntityEventCallback * entityArriveCallback = new TestEntityEventCallback("arriving");
@@ -569,7 +567,7 @@ void test_external_entities(std::string external_test_path) {
 	zst_activate_entity(output_ent);
     
 	//Run sink in external process so we don't share the same Showtime singleton
-	LOGGER->debug("Starting sink process");
+	ZstLog::debug("Starting sink process");
 	
 	ZstURI sink_perf_uri = ZstURI("sink");
 	ZstURI sink_ent_uri = sink_perf_uri + ZstURI("sink_ent");
@@ -597,7 +595,7 @@ void test_external_entities(std::string external_test_path) {
 #endif
 	}
 	catch (boost::process::process_error e) {
-		LOGGER->error("Sink process failed to start. Code:{} Message:{}", e.code().value(), e.what());
+		ZstLog::error("Sink process failed to start. Code:{} Message:{}", e.code().value(), e.what());
 	}
 	assert(sink_process.valid());
 
@@ -672,9 +670,9 @@ void test_external_entities(std::string external_test_path) {
 
 
 void test_memory_leaks() {
-	LOGGER->info("Starting memory leak test");
+	ZstLog::info("Starting memory leak test");
 
-	LOGGER->debug("Creating entities and cables");
+	ZstLog::debug("Creating entities and cables");
 	OutputComponent * test_output = new OutputComponent("memleak_test_out");
 	InputComponent * test_input = new InputComponent("memleak_test_in", 10, false);
 	zst_activate_entity(test_output);
@@ -685,7 +683,7 @@ void test_memory_leaks() {
     zst_reset_graph_recv_tripmeter();
     zst_reset_graph_send_tripmeter();
 
-	LOGGER->debug("Sending {} messages", count);
+	ZstLog::debug("Sending {} messages", count);
 	// Wait until our message tripmeter has received all the messages
 	auto delta = std::chrono::milliseconds(-1);
 	std::chrono::time_point<std::chrono::system_clock> end, last, now;
@@ -722,11 +720,11 @@ void test_memory_leaks() {
 			last_message_count = message_count;
 			last_queue_count = queued_messages;
 
-			std::cout << "Processing " << mps << " messages per/s. Remaining:" << remaining_messages << " Delta time: " << (delta.count() / 1000.0) << " per 10000. Queued messages: " << queued_messages << ". Queuing speed: " << queue_speed << "messages per/s" << std::endl;
+			ZstLog::debug("Processing {} messages per/s. Remaining: {}, Delta T: {} per 10000, Queued: {}, Queuing speed: {} messages per/s", mps, remaining_messages, (delta.count() / 1000.0), queued_messages, queue_speed);
 		}
 	}
 	
-	LOGGER->debug("Sent all messages. Waiting for recv");
+	ZstLog::debug("Sent all messages. Waiting for recv");
 
 	do  {
 		zst_poll_once();
@@ -741,13 +739,12 @@ void test_memory_leaks() {
 			mps = (long)delta_messages / (delta.count() / 1000.0);
 			remaining_messages = count - message_count;
 			last_message_count = message_count;
-
-			std::cout << "Processing " << mps << " messages per/s. Remaining:" << remaining_messages << " Delta time: " << (delta.count() / 1000.0) << " per 10000. Queued messages: " << queued_messages << std::endl;
+			ZstLog::debug("Processing {} messages per/s. Remaining: {}, Delta T: {} per 10000, Queued: {}, Queuing speed: {} messages per/s", mps, remaining_messages, (delta.count() / 1000.0), queued_messages, queue_speed);
 		}
 	} while ((test_input->num_hits < count));
 
 	assert(test_input->num_hits == count);
-	LOGGER->debug("Received all messages. Sent: {}, Received:{}", count, test_input->num_hits);
+	ZstLog::debug("Received all messages. Sent: {}, Received:{}", count, test_input->num_hits);
     
 	zst_deactivate_entity(test_output);
 	zst_deactivate_entity(test_input);
@@ -763,24 +760,17 @@ void test_leaving(){
     zst_leave_immediately();
 }
 
-
 void test_cleanup() {
 	//Test late entity destruction after library cleanup
 	zst_destroy();
 }
 
 int main(int argc,char **argv){
-	//Give the server time to start (if launching both simultaneously)
-	TAKE_A_BREATH
-	zst_log_init();
-	LOGGER->set_level(spdlog::level::debug);
-
 	std::string ext_test_folder = boost::filesystem::system_complete(argv[0]).parent_path().generic_string();
 
 	//Tests
-	test_standard_layout();
-	test_URI();
 	test_startup();
+	test_URI();
 	test_root_entity();
     test_create_entities();
 	test_hierarchy();
@@ -790,7 +780,7 @@ int main(int argc,char **argv){
 	test_memory_leaks();
     test_leaving();
 	test_cleanup();
-	LOGGER->info("All tests completed");
+	ZstLog::info("All tests completed");
 
 #ifdef WIN32
 	system("pause");

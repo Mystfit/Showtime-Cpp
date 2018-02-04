@@ -62,6 +62,9 @@ set(ZST_CORE_INCLUDES
     ${Showtime_INCLUDE_DIRS}
     ${Showtime_COMPILED_INCLUDE_DIRS}
     ${Showtime_DEPENDENCIES_DIR}
+	"${Showtime_DEPENDENCIES_DIR}/spdlog/include"
+    "${Showtime_DEPENDENCIES_DIR}/cf/"
+    "${Showtime_DEPENDENCIES_DIR}/variant/include"
     ${ZeroMQ_INCLUDE_DIRS}
     ${CZMQ_INCLUDE_DIRS}
     ${MSGPACK_INCLUDE_DIRS}
