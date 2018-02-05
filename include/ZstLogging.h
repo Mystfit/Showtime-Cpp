@@ -6,37 +6,36 @@
 #include <Queue.h>
 #include <string>
 #include <sstream>
+
 #include <spdlog/fmt/fmt.h>
 #include <log4cplus/logger.h>
+#include <log4cplus/loglevel.h>
+#include <log4cplus/layout.h>
+#include <log4cplus/helpers/snprintf.h>
+#include <log4cplus/consoleappender.h>
+#include <log4cplus/loggingmacros.h>
+#include <log4cplus/configurator.h>
+#include <log4cplus/initializer.h>
 
-#define GLOBAL_CONSOLE "console"
+#define GLOBAL_CONSOLE "main"
 #define PATTERN "[%H:%M:%S.%e] [PID:%P] [TID:%t] [%l] %v"
 #define DEFAULT_LOG_FILE "showtime.log"
-
-
 
 //----------------------------------------------------------------------------
 //Function forwards for spdlog so that we keep the logger reference in one dll
 
-class ZstExternalLog : public spdlog::sinks::sink
+class ZstExternalLog
 {
 public:
 	virtual ZST_EXPORT ~ZstExternalLog() {};
 
-	virtual void log(const spdlog::details::log_msg& msg) override
+	virtual void log(const char * msg)
 	{
-		// Your code here. 
-		// details::log_msg is a struct containing the log entry info like level, timestamp, thread id etc.
-		// msg.formatted contains the formatted log.
-		// msg.raw contains pre formatted log
-			
-		//std::cout << msg.formatted.str();
-		m_log_buffer.push(msg.formatted.str());
+		m_log_buffer.push(msg);
 	}
 
-	virtual void flush() override
+	virtual void flush()
 	{
-		//std::cout << std::flush;
 		std::stringstream s;
 		s << std::flush;
 		m_log_buffer.push(s.str());
@@ -57,106 +56,91 @@ private:
 
 namespace ZstLog {
 
-	template <typename Arg1, typename... Args>
-	inline void trace(const char* fmt, const Arg1 &arg1, const Args&... args)
+	template <typename... Args>
+	static void trace(const char* fmt, const Args&... args)
 	{
-		if(_logger) _logger->trace(fmt, arg1, args...);
+		std::string msg = fmt::format(fmt, args...);
+		LOG4CPLUS_TRACE(log4cplus::Logger::getRoot(), "\x1b[36m" << msg << "\x1b[0m");
 	}
 
-	template <typename Arg1, typename... Args>
-	inline void debug(const char* fmt, const Arg1 &arg1, const Args&... args)
+	template <typename... Args>
+	static void debug(const char* fmt, const Args&... args)
 	{
-		if (_logger) _logger->debug(fmt, arg1, args...);
+		std::string msg = fmt::format(fmt, args...);
+		LOG4CPLUS_DEBUG(log4cplus::Logger::getRoot(), "\x1b[32m" << msg << "\x1b[0m");
 	}
 
-	template <typename Arg1, typename... Args>
-	inline void info(const char* fmt, const Arg1 &arg1, const Args&... args)
+	template <typename... Args>
+	static void info(const char* fmt, const Args&... args)
 	{
-		if (_logger) _logger->info(fmt, arg1, args...);
+		std::string msg = fmt::format(fmt, args...);
+		LOG4CPLUS_INFO(log4cplus::Logger::getRoot(), msg);
 	}
 
-	template <typename Arg1, typename... Args>
-	inline void warn(const char* fmt, const Arg1 &arg1, const Args&... args)
+	template <typename... Args>
+	static void warn(const char* fmt, const Args&... args)
 	{
-		if (_logger) _logger->warn(fmt, arg1, args...);
+		std::string msg = fmt::format(fmt, args...);
+		LOG4CPLUS_WARN(log4cplus::Logger::getRoot(), "\x1b[33m" << msg << "\x1b[0m");
 	}
 
-	template <typename Arg1, typename... Args>
-	inline void error(const char* fmt, const Arg1 &arg1, const Args&... args)
+	template <typename... Args>
+	static void error(const char* fmt, const Args&... args)
 	{
-		if (_logger) _logger->error(fmt, arg1, args...);
+		std::string msg = fmt::format(fmt, args...);
+		LOG4CPLUS_ERROR(log4cplus::Logger::getRoot(), "\x1b[31m" << msg << "\x1b[0m");
 	}
 
-	template <typename Arg1, typename... Args>
-	inline void critical(const char* fmt, const Arg1 &arg1, const Args&... args)
+	static void trace(const char * msg)
 	{
-		if (_logger) _logger->critical(fmt, arg1, args...);
+		LOG4CPLUS_TRACE(log4cplus::Logger::getRoot(), "\x1b[36m" << msg << "\x1b[0m");
 	}
 
-	template<typename T>
-	inline void trace(const T& msg)
+	static void debug(const char * msg)
 	{
-		if (_logger) _logger->trace(msg);
+		LOG4CPLUS_DEBUG(log4cplus::Logger::getRoot(), "\x1b[32m" << msg << "\x1b[0m");
 	}
 
-	template<typename T>
-	inline void debug(const T& msg)
+	static void info(const char * msg)
 	{
-		if (_logger) _logger->debug(msg);
+		LOG4CPLUS_INFO(log4cplus::Logger::getRoot(), msg);
 	}
 
-	template<typename T>
-	inline void info(const T& msg)
+	static void warn(const char * msg)
 	{
-		if (_logger) _logger->info(msg);
+		LOG4CPLUS_WARN(log4cplus::Logger::getRoot(), "\x1b[33m" << msg << "\x1b[0m");
 	}
 
-	template<typename T>
-	inline void warn(const T& msg)
+	static void error(const char * msg)
 	{
-		if (_logger) _logger->warn(msg);
-	}
-
-	template<typename T>
-	inline void error(const T& msg)
-	{
-		if (_logger) _logger->error(msg);
-	}
-
-	template<typename T>
-	inline void critical(const T& msg)
-	{
-		if (_logger) _logger->critical(msg);
+		LOG4CPLUS_ERROR(log4cplus::Logger::getRoot(), "\x1b[31m" << msg << "\x1b[0m");
 	}
 }
 
 
 
-static std::shared_ptr<spdlog::logger> _logger = NULL;
 static ZstExternalLog * _ext_logger = NULL;
 
 extern "C" 
 {
 	static void zst_log_init(bool debug = false, ZstExternalLog * external_logger = NULL) {
-		spdlog::set_async_mode(4096);
-		_ext_logger = external_logger;
+		log4cplus::initialize();
+		log4cplus::BasicConfigurator config;
+		config.configure();
 
-		try {
-			//auto logger = spdlog::stdout_color_mt(GLOBAL_CONSOLE);
-			if (external_logger) {
-				_logger = _logger = std::make_shared<spdlog::logger>(GLOBAL_CONSOLE, std::shared_ptr<ZstExternalLog>(external_logger));
-			}
-			else {
-				_logger = spdlog::stdout_color_mt(GLOBAL_CONSOLE);
-			}
+		_ext_logger = external_logger;		
+		if (external_logger) {
 
-			_logger->set_pattern(PATTERN);
+		}
+		else {
+			log4cplus::Logger logger = log4cplus::Logger::getRoot();
+			/*log4cplus::SharedAppenderPtr append_1(new log4cplus::ConsoleAppender());
+			append_1->setName(LOG4CPLUS_TEXT(GLOBAL_CONSOLE));
+			append_1->setLayout(std::unique_ptr<log4cplus::Layout>(new log4cplus::TTCCLayout()));
+			logger.addAppender(append_1);*/
 
 			if (debug)
-				_logger->set_level(spdlog::level::debug);
-		}
-		catch (spdlog::spdlog_ex e) {
-			//Logger already exists, be quiet
+				logger.setLogLevel(log4cplus::DEBUG_LOG_LEVEL);
 		}
 	}
 

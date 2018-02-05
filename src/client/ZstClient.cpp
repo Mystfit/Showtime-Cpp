@@ -537,12 +537,6 @@ int ZstClient::s_handle_stage_router(zloop_t * loop, zsock_t * socket, void * ar
 void ZstClient::stage_update_handler(ZstMessage * msg)
 {
 	ZstMsgKind payload_kind = msg->kind();
-	if (payload_kind == ZstMsgKind::GRAPH_SNAPSHOT) {
-		ZstLog::trace("Message is a graph snapshot, using payload kind");
-	}
-	else {
-		ZstLog::trace("Message is a single stage update, using message kind");
-	}
 
 	for (size_t i = 0; i < msg->num_payloads(); ++i)
 	{

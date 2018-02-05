@@ -36,7 +36,7 @@ struct CallableLogger
 	};
 };
 
-#define MAX_WAIT 20
+#define MAX_WAIT 2000
 void wait_for_event(ZstEvent * callback, int expected_messages)
 {
 	int repeats = 0;
