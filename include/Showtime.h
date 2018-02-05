@@ -4,7 +4,7 @@
 
 extern "C" {
 	//Init the library
-	ZST_CLIENT_EXPORT void zst_init(const char * performer, bool debug = false, const char * log_file_path = "");
+	ZST_CLIENT_EXPORT void zst_init(const char * performer, bool debug = false, ZstExternalLog * external_logger = NULL);
 	ZST_CLIENT_EXPORT void zst_join(const char * stage_address);
     ZST_CLIENT_EXPORT void zst_join_async(const char * stage_address);
 

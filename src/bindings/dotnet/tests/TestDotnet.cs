@@ -49,7 +49,7 @@ public class TestShowtimeDotnet
         Console.WriteLine("Starting TestDotnet");
 
         //Start the library
-        showtime.init("TestDotnet", false, "");
+        showtime.init("TestDotnet", true, null);
 
         //Create the event loop
         _cancelationTokenSource = new CancellationTokenSource();

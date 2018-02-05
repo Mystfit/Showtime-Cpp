@@ -109,7 +109,7 @@ void ZstClient::destroy() {
 	m_is_destroyed = true;
 }
 
-void ZstClient::init(const char * client_name)
+void ZstClient::init(const char *client_name, bool debug, ZstExternalLog * external_logger)
 {
 	if (m_is_ending) {
 		return;
@@ -117,7 +117,7 @@ void ZstClient::init(const char * client_name)
 
 	ZstActor::init(client_name);
 	
-	zst_log_init(true);
+	zst_log_init(debug, external_logger);
 	ZstLog::info("Starting Showtime v{}", SHOWTIME_VERSION);
 
 	m_client_name = client_name;
@@ -441,7 +441,6 @@ void ZstClient::leave_stage_complete(ZstMsgKind status)
     zsock_disconnect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
     zsock_disconnect(m_stage_router, "%s", m_stage_router_addr.c_str());
     detach_timer(m_heartbeat_timer_id);
-
 }
 
 bool ZstClient::is_connected_to_stage()

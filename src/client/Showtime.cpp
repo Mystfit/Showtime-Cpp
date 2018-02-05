@@ -7,9 +7,9 @@ using namespace std;
 // Initialisation
 // -----------------
 
-void zst_init(const char * performer_name, bool debug, const char * log_file_path)
+void zst_init(const char * performer_name, bool debug, ZstExternalLog * external_logger)
 {
-	ZstClient::instance().init(performer_name);
+	ZstClient::instance().init(performer_name, debug, external_logger);
 }
 
 void zst_join(const char * stage_address){

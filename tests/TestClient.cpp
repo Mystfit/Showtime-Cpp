@@ -7,10 +7,12 @@
 #include <sstream>
 #include <exception>
 #include <boost/process.hpp>
+#include <boost/thread/thread.hpp>
 #include <boost/filesystem.hpp>
 
 #include "Showtime.h"
 
+#define BOOST_THREAD_DONT_USE_DATETIME
 #define MEM_LEAK_LOOPS 200000;
 
 #ifdef WIN32
@@ -18,6 +20,21 @@
 #else
 #define TAKE_A_BREATH usleep(1000 * 200);
 #endif
+
+static ZstExternalLog * ext_logger = NULL;
+
+struct CallableLogger
+{
+	bool _finished = false;
+	void set_finish() { _finished = true; }
+	void operator()() {
+		while (!_finished) {
+			if (ext_logger) {
+				ext_logger->release_logs();
+			}
+		}
+	};
+};
 
 #define MAX_WAIT 20
 void wait_for_event(ZstEvent * callback, int expected_messages)
@@ -110,6 +127,14 @@ public:
 	}
 };
 
+
+class TestExtLogger : public ZstExternalLog {
+public:
+	virtual void log_to_external(const char * message) {
+		std::cout << "External logger received message: " << message << std::endl;
+	}
+};
+
         
 // ----
 
@@ -174,8 +199,8 @@ public:
 
 
 void test_startup() {
-	zst_log_init(true);
-	zst_init("TestClient");
+
+	zst_init("TestClient", true, ext_logger);
 	ZstLog::info("Running Showtime init test");
 
 	ZstLog::debug("Testing sync join");
@@ -767,7 +792,12 @@ void test_cleanup() {
 
 int main(int argc,char **argv){
 	std::string ext_test_folder = boost::filesystem::system_complete(argv[0]).parent_path().generic_string();
+	ext_logger = new ZstExternalLog();
+	zst_log_init(true, ext_logger);
 
+	CallableLogger log_func;
+	boost::thread log_thread = boost::thread(log_func);
+	
 	//Tests
 	test_startup();
 	test_URI();
@@ -781,6 +811,11 @@ int main(int argc,char **argv){
     test_leaving();
 	test_cleanup();
 	ZstLog::info("All tests completed");
+
+	zst_log_destroy();
+	log_func.set_finish();
+	log_thread.join();
+	delete ext_logger;
 
 #ifdef WIN32
 	system("pause");

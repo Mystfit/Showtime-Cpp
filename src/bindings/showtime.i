@@ -5,6 +5,7 @@
 
 %include <ZstExports.h>
 %include <ZstConstants.h>
+%include "ZstLogging.i"
 
 %include "ZstURI.i"
 %include "ZstSynchronisable.i"

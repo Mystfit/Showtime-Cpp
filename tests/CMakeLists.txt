@@ -12,7 +12,13 @@ set(SINK_TEST_SOURCE_FILES
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_STATIC_RUNTIME ON)
-find_package(Boost 1.64 COMPONENTS system filesystem REQUIRED)
+find_package(Boost 1.64 COMPONENTS 
+	system 
+	filesystem 
+	thread 
+	date_time 
+	chrono
+REQUIRED)
 
 # Sink test executable
 set(SINK_TEST_TARGET TestSink)
@@ -31,6 +37,9 @@ target_include_directories(${CLIENT_TEST_TARGET} PUBLIC
     ${Boost_INCLUDE_DIRS})
 target_link_libraries( ${CLIENT_TEST_TARGET}
     ${CLIENT_TARGET}
+    ${Boost_THREAD_LIBRARY}
+    ${Boost_DATE_TIME_LIBRARY}
+    ${Boost_CHRONO_LIBRARY}
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
 )

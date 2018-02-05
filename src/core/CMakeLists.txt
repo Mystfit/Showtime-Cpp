@@ -56,6 +56,7 @@ set(ZST_CORE_SRC
 find_package(ZeroMQ REQUIRED)
 find_package(czmq REQUIRED)
 find_package(MsgPack REQUIRED)
+find_package(log4cplus REQUIRED)
 
 # Include directories
 set(ZST_CORE_INCLUDES 
@@ -68,6 +69,7 @@ set(ZST_CORE_INCLUDES
     ${ZeroMQ_INCLUDE_DIRS}
     ${CZMQ_INCLUDE_DIRS}
     ${MSGPACK_INCLUDE_DIRS}
+    ${log4cplus_INCLUDE_DIRS}
 )
 
 target_sources(${CORE_TARGET} PUBLIC ${ZST_PUBLIC_HEADERS} )
@@ -86,5 +88,6 @@ set(ZST_LINK_LIBS
     ${ZeroMQ_LIBRARIES}
     ${CZMQ_LIBRARIES}
     ${MSGPACK_LIBRARIES}
+    log4cplus::log4cplusU
 )
 target_link_libraries(${CORE_TARGET} ${ZST_LINK_LIBS})

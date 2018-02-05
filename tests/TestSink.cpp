@@ -57,7 +57,7 @@ int main(int argc,char **argv){
         system("read -n 1 -s -p \"Press any key to continue...\n\"");
 #endif
 
-	zst_init("sink");
+	zst_init("sink", true);
     zst_join("127.0.0.1");
 
 	Sink * sink = new Sink("sink_ent");
