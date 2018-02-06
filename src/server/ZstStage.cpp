@@ -22,7 +22,7 @@ ZstStage::~ZstStage()
 
 void ZstStage::init(const char * stage_name)
 {
-	zst_log_init();
+	ZstLog::init_logger(stage_name, true);
 	ZstLog::info("Starting Showtime v{} stage server", SHOWTIME_VERSION);
 
 	ZstActor::init(stage_name);
@@ -68,6 +68,7 @@ void ZstStage::destroy()
 	zsock_destroy(&m_performer_router);
 	zsock_destroy(&m_graph_update_pub);
 	zsys_shutdown();
+	ZstLog::destroy_logger();
 }
 
 

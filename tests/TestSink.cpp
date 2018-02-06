@@ -40,7 +40,7 @@ public:
 
 int main(int argc,char **argv){
 
-	zst_log_init();
+	zst_init("sink", true);
 
 	if(argc < 2){
 		ZstLog::warn("Skipping sink test, command line flag not set");
@@ -49,7 +49,6 @@ int main(int argc,char **argv){
 
 	ZstLog::debug("In sink process");
 
-
 	if(argv[1][0] == 'd')
 #ifdef WIN32
 		system("pause");
@@ -57,7 +56,7 @@ int main(int argc,char **argv){
         system("read -n 1 -s -p \"Press any key to continue...\n\"");
 #endif
 
-	zst_init("sink", true);
+	
     zst_join("127.0.0.1");
 
 	Sink * sink = new Sink("sink_ent");
@@ -69,9 +68,5 @@ int main(int argc,char **argv){
 	
 	ZstLog::debug("Sink is leaving");
 	zst_destroy();
-
-
-	ZstLog::debug("Exiting sink process");
-
 	return 0;
 }

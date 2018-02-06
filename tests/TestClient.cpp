@@ -21,21 +21,6 @@
 #define TAKE_A_BREATH usleep(1000 * 200);
 #endif
 
-static ZstExternalLog * ext_logger = NULL;
-
-struct CallableLogger
-{
-	bool _finished = false;
-	void set_finish() { _finished = true; }
-	void operator()() {
-		while (!_finished) {
-			if (ext_logger) {
-				ext_logger->release_logs();
-			}
-		}
-	};
-};
-
 #define MAX_WAIT 2000
 void wait_for_event(ZstEvent * callback, int expected_messages)
 {
@@ -127,14 +112,6 @@ public:
 	}
 };
 
-
-class TestExtLogger : public ZstExternalLog {
-public:
-	virtual void log_to_external(const char * message) {
-		std::cout << "External logger received message: " << message << std::endl;
-	}
-};
-
         
 // ----
 
@@ -199,8 +176,8 @@ public:
 
 
 void test_startup() {
-
-	zst_init("TestClient", true, ext_logger);
+	zst_init("TestClient", true);
+	zst_start_file_logging();
 	ZstLog::info("Running Showtime init test");
 
 	ZstLog::debug("Testing sync join");
@@ -792,11 +769,6 @@ void test_cleanup() {
 
 int main(int argc,char **argv){
 	std::string ext_test_folder = boost::filesystem::system_complete(argv[0]).parent_path().generic_string();
-	ext_logger = new ZstExternalLog();
-	zst_log_init(true, ext_logger);
-
-	CallableLogger log_func;
-	boost::thread log_thread = boost::thread(log_func);
 	
 	//Tests
 	test_startup();
@@ -810,13 +782,9 @@ int main(int argc,char **argv){
 	test_memory_leaks();
     test_leaving();
 	test_cleanup();
-	ZstLog::info("All tests completed");
-
-	zst_log_destroy();
-	log_func.set_finish();
-	log_thread.join();
-	delete ext_logger;
-
+	
+	std::cout << "All tests completed" << std::endl;
+	
 #ifdef WIN32
 	system("pause");
 #endif

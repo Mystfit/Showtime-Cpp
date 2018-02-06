@@ -107,19 +107,19 @@ void ZstClient::destroy() {
 	zsys_shutdown();
 	m_is_ending = false;
 	m_is_destroyed = true;
+	ZstLog::destroy_logger();
 }
 
-void ZstClient::init(const char *client_name, bool debug, ZstExternalLog * external_logger)
+void ZstClient::init(const char *client_name, bool debug)
 {
 	if (m_is_ending) {
 		return;
 	}
 
-	ZstActor::init(client_name);
-	
-	zst_log_init(debug, external_logger);
+	ZstLog::init_logger(client_name, debug);
 	ZstLog::info("Starting Showtime v{}", SHOWTIME_VERSION);
 
+	ZstActor::init(client_name);
 	m_client_name = client_name;
 	m_is_destroyed = false;
 	
@@ -178,6 +178,11 @@ void ZstClient::init(const char *client_name, bool debug, ZstExternalLog * exter
 	m_root->set_network_interactor(this);
 	
     start();
+}
+
+void ZstClient::init_file_logging(const char * log_file_path)
+{
+	ZstLog::init_file_logging(log_file_path);
 }
 
 void ZstClient::process_callbacks()

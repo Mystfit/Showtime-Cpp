@@ -27,7 +27,8 @@ public class ShowtimeController : MonoBehaviour {
     void Start () {
 
         //Initialise Showtime
-		showtime.init("unity_test"); 
+		showtime.init("unity_test", true);
+        showtime.init_file_logging("unity_showtime.log");
 
         //Join the performance
         showtime.join(stageAddress);
@@ -53,13 +54,9 @@ public class ShowtimeController : MonoBehaviour {
         showtime.activate_entity(sink);
 
         //Connect the plugs together
-        showtime.connect_cable(pushA.plug, add.augend());
-        showtime.connect_cable(pushB.plug, add.addend());
-        showtime.connect_cable(add.sum(), sink.plug);
-
-        //Need to wait whilst plugs connect before we send anything. Will need to put some flag into 
-        //the plug to signify connection status
-        System.Threading.Thread.Sleep(100);
+        showtime.connect_cable(add.augend(), pushA.plug);
+        showtime.connect_cable(add.addend(), pushB.plug);
+        showtime.connect_cable(sink.plug, add.sum());
 
         //Send a value through this plug. This is an Int plug so we send an int (duh)
         pushA.send(27);
