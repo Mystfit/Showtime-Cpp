@@ -21,6 +21,12 @@
 #define TAKE_A_BREATH usleep(1000 * 200);
 #endif
 
+#ifdef WIN32
+#define TAKE_A_BIG_BREATH Sleep(4000);
+#else
+#define TAKE_A_BIG_BREATH usleep(1000 * 4000);
+#endif
+
 #define MAX_WAIT 2000
 void wait_for_event(ZstEvent * callback, int expected_messages)
 {
@@ -179,7 +185,7 @@ void test_startup() {
 	zst_init("TestClient", true);
 	zst_start_file_logging();
 	ZstLog::info("Running Showtime init test");
-
+	
 	ZstLog::debug("Testing sync join");
 	zst_join("127.0.0.1");
 	assert(zst_is_connected());
@@ -188,6 +194,15 @@ void test_startup() {
 	zst_leave();
 	assert(!zst_is_connected());
 
+	//Test join timeout
+	zst_join("255.255.255.255");
+	assert(!zst_is_connected());
+
+	//Test async join timeout
+	zst_join_async("255.255.255.255");
+	TAKE_A_BIG_BREATH
+	assert(!zst_is_connected());
+	
 	//Create events to listen for a successful connection
 	TestConnectCallback * connectCallback = new TestConnectCallback("connected");
 	zst_attach_connection_event_listener(connectCallback);

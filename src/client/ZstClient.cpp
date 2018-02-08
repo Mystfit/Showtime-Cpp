@@ -321,11 +321,11 @@ ZstMessagePool * ZstClient::msg_pool()
 
 void ZstClient::register_client_to_stage(std::string stage_address, bool async) {
 	ZstLog::info("Connecting to stage {}", stage_address);
-    
+	m_stage_addr = string(stage_address);
+
     stringstream addr;
     addr << "tcp://" << m_stage_addr << ":" << STAGE_ROUTER_PORT;
     m_stage_router_addr = addr.str();
-	m_stage_addr = string(stage_address);
     
     zsock_connect(m_stage_router, "%s", m_stage_router_addr.c_str());
     addr.str("");
@@ -342,24 +342,49 @@ void ZstClient::register_client_to_stage(std::string stage_address, bool async) 
 	//Build connect message
 	ZstMessage * msg = msg_pool()->get()->init_serialisable_message(ZstMsgKind::CLIENT_JOIN, *m_root);
 	
-	//Register future to receive async response from stage
-    MessageFuture future = msg_pool()->register_future(msg);
-    if(async){
-        future.then([this, async](MessageFuture f){
-            ZstMsgKind status = f.get();
-            this->register_client_complete(status);
-            this->synchronise_graph(async);
-            return status;
-        });
-        send_to_stage(msg);
-    } else {
-        send_to_stage(msg);
-        register_client_complete(future.get());
-        synchronise_graph(async);
-        
-        //Since we're still on the main thread it should be safe to process events
-        process_callbacks();
-    }
+	MessageFuture future = msg_pool()->register_future(msg, true);
+	if(async){
+		register_client_to_stage_async(future);
+		send_to_stage(msg);
+	}
+	else {
+		send_to_stage(msg);
+		register_client_to_stage_sync(future);
+	}
+}
+
+void ZstClient::register_client_to_stage_sync(MessageFuture & future)
+{
+	ZstMsgKind status(ZstMsgKind::EMPTY);
+	try {
+		status = future.get();
+		register_client_complete(status);
+		synchronise_graph(false);
+		process_callbacks();
+	}
+	catch (const ZstTimeoutException & e) {
+		ZstLog::error(fmt::format("Stage sync join timed out - {}", e.what()).c_str());
+		leave_stage_complete();
+		status = ZstMsgKind::ERR_STAGE_TIMEOUT;
+	}
+}
+
+void ZstClient::register_client_to_stage_async(MessageFuture & future)
+{
+	future.then([this](MessageFuture f) {
+		ZstMsgKind status(ZstMsgKind::EMPTY);
+		try {
+			status = f.get();
+			this->register_client_complete(status);
+			this->synchronise_graph(true);
+		}
+		catch (const ZstTimeoutException & e) {
+			ZstLog::error(fmt::format("Stage async join timed out - {}", e.what()).c_str());
+			leave_stage_complete();
+			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
+		}
+		return status;
+	});
 }
 
 void ZstClient::register_client_complete(ZstMsgKind status)
@@ -378,7 +403,7 @@ void ZstClient::register_client_complete(ZstMsgKind status)
 	//TODO: Need a handshake with the stage before we mark connection as active
 	m_connected_to_stage = true;
 }
-           
+          
 void ZstClient::synchronise_graph(bool async)
 {
     if(!is_connected_to_stage()){
@@ -389,19 +414,43 @@ void ZstClient::synchronise_graph(bool async)
     //Ask the stage to send us a full snapshot
     ZstLog::debug("Requesting stage snapshot");
     ZstMessage * msg = msg_pool()->get()->init_message(ZstMsgKind::CLIENT_SYNC);
-    MessageFuture future = msg_pool()->register_future(msg);
-    if(async){
-        future.then([this](MessageFuture f){
-            ZstMsgKind status = f.get();
-            this->synchronise_graph_complete(status);
-            return status;
-        });
-        send_to_stage(msg);
-    } else {
-        send_to_stage(msg);
-        ZstMsgKind status = future.get();
-        this->synchronise_graph_complete(status);
-    }
+	MessageFuture future = msg_pool()->register_future(msg, true);
+	
+	if (async) {
+		synchronise_graph_async(future);
+		send_to_stage(msg);
+	}
+	else {
+		send_to_stage(msg);
+		synchronise_graph_sync(future);
+	}
+}
+
+void ZstClient::synchronise_graph_sync(MessageFuture & future)
+{
+	try {
+		ZstMsgKind status = future.get();
+		this->synchronise_graph_complete(status);
+	}
+	catch (const ZstTimeoutException & e) {
+		ZstLog::error("Synchronising graph sync with stage timed out");
+	}
+}
+
+void ZstClient::synchronise_graph_async(MessageFuture & future)
+{
+	future.then([this](MessageFuture f) {
+		ZstMsgKind status(ZstMsgKind::EMPTY); 
+		try {
+			status = f.get();
+			this->synchronise_graph_complete(status);
+		}
+		catch (const ZstTimeoutException & e) {
+			ZstLog::error("Synchronising graph async with stage timed out");
+			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
+		}
+		return status;
+	});
 }
 
 void ZstClient::synchronise_graph_complete(ZstMsgKind status)
@@ -417,22 +466,28 @@ void ZstClient::leave_stage(bool immediately)
 		ZstLog::info("Leaving stage");
 
         ZstMessage * msg = msg_pool()->get()->init_message(ZstMsgKind::CLIENT_LEAVING);
-        MessageFuture future = msg_pool()->register_future(msg);
-        send_to_stage(msg);
+		MessageFuture future = msg_pool()->register_future(msg, true);
+		try {
+			send_to_stage(msg);
 
-        if(immediately){
-            leave_stage_complete(ZstMsgKind::OK);
-        } else {
-            future.get();
-            leave_stage_complete(ZstMsgKind::OK);
-        }
+			if (immediately) {
+				leave_stage_complete();
+			}
+			else {
+				future.get();
+				leave_stage_complete();
+			}
+		}
+		catch (const ZstTimeoutException & e) {
+			ZstLog::error("Stage leave timeout");
+		}
     } else {
         ZstLog::warn("Not connected to stage. Skipping to cleanup.");
-        leave_stage_complete(ZstMsgKind::OK);
+        leave_stage_complete();
     }
 }
 
-void ZstClient::leave_stage_complete(ZstMsgKind status)
+void ZstClient::leave_stage_complete()
 {
     m_connected_to_stage = false;
     
@@ -659,19 +714,24 @@ void ZstClient::create_entity_from_template_handler(const ZstURI & entity_templa
 
 int ZstClient::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
 	ZstClient * client = (ZstClient*)arg;
-	
 	chrono::time_point<chrono::system_clock> start = std::chrono::system_clock::now();
-
 	ZstMessage * msg = client->msg_pool()->get()->init_message(ZstMsgKind::CLIENT_HEARTBEAT);
-	client->msg_pool()->register_future(msg).then([&start, client](MessageFuture f) {
-		int status = f.get();
-		chrono::time_point<chrono::system_clock> end = chrono::system_clock::now();
-		chrono::milliseconds delta = chrono::duration_cast<chrono::milliseconds>(end - start);
-		ZstLog::debug("Ping roundtrip {} ms", delta.count());
-		client->m_ping = static_cast<long>(delta.count());
-		return status;
-	});
-	client->send_to_stage(msg);
+	MessageFuture future = client->msg_pool()->register_future(msg, true);
+
+	try {
+		future.then([&start, client](MessageFuture f) {
+			int status = f.get();
+			chrono::time_point<chrono::system_clock> end = chrono::system_clock::now();
+			chrono::milliseconds delta = chrono::duration_cast<chrono::milliseconds>(end - start);
+			ZstLog::debug("Ping roundtrip {} ms", delta.count());
+			client->m_ping = static_cast<long>(delta.count());
+			return status;
+		});
+		client->send_to_stage(msg);
+	}
+	catch (const ZstTimeoutException & e) {
+		ZstLog::error("Heartbeat timed out");
+	}
 
 	return 0;
 }
@@ -807,25 +867,47 @@ void ZstClient::activate_entity(ZstEntityBase * entity, bool async)
 	ZstMessage * msg = msg_pool()->get()->init_entity_message(entity);
 	ZstURI entity_path = entity->URI();
     
-    MessageFuture future = msg_pool()->register_future(msg);
-    if(async){
-        future.then([this, entity_path](MessageFuture f) {
-            ZstMsgKind status = f.get();
-            ZstEntityBase * e = find_entity(entity_path);
-            if(e)
-                this->activate_entity_complete(status, e);
-            else
-                ZstLog::error("Entity {} went missing during activation!", entity_path.path());
-            return status;
-        });
-        send_to_stage(msg);
-    } else {
-        send_to_stage(msg);
-        activate_entity_complete(future.get(), entity);
-        
-        //Since we're still on the main thread it should be safe to process events
-        process_callbacks();
-    }
+	MessageFuture future = msg_pool()->register_future(msg, true);
+	if(async){
+		activate_entity_async(entity, future);
+		send_to_stage(msg);
+	} else {
+		send_to_stage(msg);
+		activate_entity_sync(entity, future);
+	}
+}
+
+void ZstClient::activate_entity_sync(ZstEntityBase * entity, MessageFuture & future)
+{
+	try {
+		ZstMsgKind status = future.get();
+		activate_entity_complete(status, entity);
+		process_callbacks();
+	}
+	catch (const ZstTimeoutException & e) {
+		ZstLog::error("Activate entity sync call timed out");
+	}
+}
+
+void ZstClient::activate_entity_async(ZstEntityBase * entity, MessageFuture & future)
+{
+	ZstURI entity_path(entity->URI());
+	future.then([this, entity_path](MessageFuture f) {
+		ZstMsgKind status(ZstMsgKind::EMPTY);
+		try {
+			status = f.get();
+			ZstEntityBase * e = find_entity(entity_path);
+			if (e)
+				this->activate_entity_complete(status, e);
+			else
+				ZstLog::error("Entity {} went missing during activation!", entity_path.path());
+		}
+		catch (const ZstTimeoutException & e) {
+			ZstLog::error("Activate entity async call timed out");
+			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
+		}
+		return status;
+	});
 }
 
 void ZstClient::activate_entity_complete(ZstMsgKind status, ZstEntityBase * entity)
@@ -851,13 +933,13 @@ void ZstClient::activate_entity_complete(ZstMsgKind status, ZstEntityBase * enti
     ZstLog::debug("Activate entity {} complete with status {}", entity->URI().path(), status);
 }
 
-
 void ZstClient::destroy_entity(ZstEntityBase * entity, bool async)
 {
 	if (!entity) {
 		return;
 	}
 
+	//Set entity state as deactivating so we can't access it further
 	entity->set_deactivating();
 
 	//If the entity is local, let the stage know it's leaving
@@ -867,35 +949,58 @@ void ZstClient::destroy_entity(ZstEntityBase * entity, bool async)
             msg->append_str(entity->URI().path(), entity->URI().full_size());
             ZstURI entity_path = entity->URI();
             
-            MessageFuture future = msg_pool()->register_future(msg);
-            if(async){
-                future.then([this, entity_path](MessageFuture f) {
-                    ZstMsgKind status = f.get();
-                    if (status != ZstMsgKind::OK) {
-                        ZstLog::error("Destroy entity {} failed with status {}", entity_path.path(), status);
-                        return status;
-                    }
-                    ZstLog::debug("Destroy entity {} completed with status {}", entity_path.path(), status);
-                    return status;
-                });
-                send_to_stage(msg);
-                
-                //Since we own this entity, we can start to clean it up immediately
-                destroy_entity_complete(ZstMsgKind::OK, entity);
-            } else {
-                send_to_stage(msg);
-                ZstMsgKind status = future.get();
-                entity->set_deactivated();
-                destroy_entity_complete(status, entity);
-                process_callbacks();
+            MessageFuture future = msg_pool()->register_future(msg, true);
+			if (async) {
+				destroy_entity_async(entity, future);
+				send_to_stage(msg);
 
-            }
+				//Since we own this entity, we can start to clean it up immediately
+				destroy_entity_complete(ZstMsgKind::OK, entity);
+			}
+			else {
+				send_to_stage(msg);
+				destroy_entity_sync(entity, future);
+			}
+			
         } else {
             entity->set_deactivated();
             destroy_entity_complete(ZstMsgKind::OK, entity);
             process_callbacks();
         }
 	}
+}
+
+void ZstClient::destroy_entity_sync(ZstEntityBase * entity, MessageFuture & future)
+{
+	try {
+		ZstMsgKind status = future.get();
+		entity->set_deactivated();
+		destroy_entity_complete(status, entity);
+		process_callbacks();
+	}
+	catch (const ZstTimeoutException & e) {
+		ZstLog::error("Destroy entity sync timed out");
+	}
+}
+
+void ZstClient::destroy_entity_async(ZstEntityBase * entity, MessageFuture & future)
+{
+	ZstURI entity_path(entity->URI());
+	future.then([this, entity_path](MessageFuture f) {
+		ZstMsgKind status(ZstMsgKind::EMPTY);
+		try {
+			status = f.get();
+			if (status != ZstMsgKind::OK) {
+				ZstLog::error("Destroy entity {} failed with status {}", entity_path.path(), status);
+			}
+			ZstLog::debug("Destroy entity {} completed with status {}", entity_path.path(), status);
+		}
+		catch (const ZstTimeoutException & e) {
+			ZstLog::error("Destroy entity async timed out");
+			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
+		}
+		return status;
+	});
 }
 
 void ZstClient::destroy_entity_complete(ZstMsgKind status, ZstEntityBase * entity)
@@ -1041,11 +1146,17 @@ void ZstClient::destroy_plug(ZstPlug * plug)
 	if (is_local) {
 		ZstMessage * msg = msg_pool()->get()->init_message(ZstMsgKind::DESTROY_ENTITY);
 		msg->append_str(plug->URI().path(), plug->URI().full_size());
-		msg_pool()->register_future(msg).then([this](MessageFuture f) {
-			int status = f.get();
-			this->destroy_plug_complete(status);
-			return status;
-		});
+		MessageFuture future = msg_pool()->register_future(msg, true);
+
+		try {
+			future.then([this](MessageFuture f) {
+				int status = f.get();
+				this->destroy_plug_complete(status);
+				return status;
+			});
+		} catch (const ZstTimeoutException & e) {
+			ZstLog::error("Destroy plug timed out");
+		}
 	}
 
 	ZstComponent * parent = dynamic_cast<ZstComponent*>(plug->parent());
@@ -1097,32 +1208,52 @@ ZstCable * ZstClient::connect_cable(ZstPlug * input, ZstPlug * output, bool asyn
 		cable->set_local();
 	}
 
-	//Even though we use a cable object when sending over the wire, it's up to the stage
-	//to determine the input->output order
-    
-    
+	//TODO: Even though we use a cable object when sending over the wire, it's up to us
+	//to determine the correct input->output order - fix this using ZstInputPlug and 
+	//ZstOutput plug as arguments
 	ZstMessage * msg = msg_pool()->get()->init_serialisable_message(ZstMsgKind::CREATE_CABLE, *cable);
-    MessageFuture future = msg_pool()->register_future(msg);
+    MessageFuture future = msg_pool()->register_future(msg, true);
     
-    if(async){
-        future.then([this, cable](MessageFuture f) {
-            ZstMsgKind status = f.get();
-            this->connect_cable_complete(status, cable);
-            return status;
-        });
-        send_to_stage(msg);
-    } else {
-        send_to_stage(msg);
-        connect_cable_complete(future.get(), cable);
-        
-        //Since we're still on the main thread it should be safe to process events
-        process_callbacks();
-    }
+	if (async) {
+		connect_cable_async(cable, future);
+		send_to_stage(msg);
+	}
+	else {
+		send_to_stage(msg);
+		connect_cable_sync(cable, future);
+	}
 
 	//Create the cable early so we have something to return immediately
 	return cable;
 }
 
+void ZstClient::connect_cable_sync(ZstCable * cable, MessageFuture & future)
+{
+	try {
+		ZstMsgKind status = future.get();
+		connect_cable_complete(status, cable);
+		process_callbacks();
+	}
+	catch (const ZstTimeoutException & e) {
+		ZstLog::error("Connect cable sync timed out");
+	}
+}
+
+void ZstClient::connect_cable_async(ZstCable * cable, MessageFuture & future)
+{
+	future.then([this, cable](MessageFuture f) {
+		ZstMsgKind status(ZstMsgKind::EMPTY);
+		try {
+			status = f.get();
+			this->connect_cable_complete(status, cable);
+		}
+		catch (const ZstTimeoutException & e) {
+			ZstLog::error("Connect cable async timed out");
+			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
+		}
+		return status;
+	});
+}
 
 void ZstClient::connect_cable_complete(ZstMsgKind status, ZstCable * cable){
     if (status == ZstMsgKind::OK) {
@@ -1138,19 +1269,48 @@ void ZstClient::destroy_cable(ZstCable * cable, bool async)
 	cable->set_deactivating();
 	ZstMessage * msg = msg_pool()->get()->init_serialisable_message(ZstMsgKind::DESTROY_CABLE, *cable);
     
-    MessageFuture future = msg_pool()->register_future(msg);
-    if(async){
-        future.then([this, cable](MessageFuture f) {
-            ZstMsgKind status = f.get();
-            this->destroy_cable_complete(status, cable);
-            return status;
-        });
-        send_to_stage(msg);
-    } else {
-		send_to_stage(msg);
-        destroy_cable_complete(future.get(), cable);
-        process_callbacks();
-    }
+    MessageFuture future = msg_pool()->register_future(msg, true);
+	try {
+		if (async) {
+			destroy_cable_async(cable, future);
+			send_to_stage(msg);
+		}
+		else {
+			send_to_stage(msg);
+			destroy_cable_sync(cable, future);
+		}
+	}
+	catch (const ZstTimeoutException & e) {
+		ZstLog::error("Destroy cable timed out");
+	}
+}
+
+void ZstClient::destroy_cable_sync(ZstCable * cable, MessageFuture & future)
+{
+	ZstMsgKind status;
+	try {
+		destroy_cable_complete(future.get(), cable);
+		process_callbacks();
+	}
+	catch (const ZstTimeoutException & e) {
+		ZstLog::error("Destroy cable sync timed out");
+	}
+}
+
+void ZstClient::destroy_cable_async(ZstCable * cable, MessageFuture & future)
+{
+	future.then([this, cable](MessageFuture f) {
+		ZstMsgKind status(ZstMsgKind::EMPTY);
+		try {
+			status = f.get();
+			this->destroy_cable_complete(status, cable);
+		}
+		catch (const ZstTimeoutException & e) {
+			ZstLog::error("Destroy cable async timed out");
+			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
+		}
+		return status;
+	});
 }
 
 void ZstClient::destroy_cable_complete(ZstMsgKind status, ZstCable * cable)

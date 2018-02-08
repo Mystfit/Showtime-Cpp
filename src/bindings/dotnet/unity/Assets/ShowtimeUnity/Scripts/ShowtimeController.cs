@@ -9,7 +9,6 @@ public class ShowtimeController : MonoBehaviour {
 	public string localPerformerName = "unity_performer";
 
     //Entities
-	private ZstComponent root;
     private Push pushA;
     private Push pushB;
     private Sink sink;
@@ -53,10 +52,15 @@ public class ShowtimeController : MonoBehaviour {
         showtime.activate_entity(pushB);
         showtime.activate_entity(sink);
 
+        Debug.Log("adder activated:" + add.is_activated());
+        Debug.Log("addend activated:" + pushA.is_activated());
+        Debug.Log("augend activated:" + pushB.is_activated());
+        Debug.Log("sink activated:" + sink.is_activated());
+
         //Connect the plugs together
-        showtime.connect_cable(add.augend(), pushA.plug);
-        showtime.connect_cable(add.addend(), pushB.plug);
-        showtime.connect_cable(sink.plug, add.sum());
+        ZstCable augend_cable = showtime.connect_cable(add.augend(), pushA.plug);
+        ZstCable addend_cable = showtime.connect_cable(add.addend(), pushB.plug);
+        ZstCable sum_cable = showtime.connect_cable(sink.plug, add.sum());
 
         //Send a value through this plug. This is an Int plug so we send an int (duh)
         pushA.send(27);
@@ -71,6 +75,10 @@ public class ShowtimeController : MonoBehaviour {
 	//Clean up on exit. 
 	void OnApplicationQuit(){
 		Debug.Log ("Cleaning up Showtime");
+        showtime.deactivate_entity(add);
+        showtime.deactivate_entity(pushA);
+        showtime.deactivate_entity(pushB);
+        showtime.deactivate_entity(sink);
         showtime.destroy ();
 	}
     
@@ -80,7 +88,7 @@ public class ShowtimeController : MonoBehaviour {
     {
         public ZstInputPlug plug;
 
-        public Sink(string name) : base("SINK")
+        public Sink(string name) : base(name)
         {
             plug = create_input_plug("push_in", ZstValueType.ZST_INT);
         }
@@ -102,7 +110,7 @@ public class ShowtimeController : MonoBehaviour {
     {
         public ZstOutputPlug plug;
 
-        public Push(string name) : base("PUSH")
+        public Push(string name) : base(name)
         {
             plug = create_output_plug("push_out", ZstValueType.ZST_INT);
         }

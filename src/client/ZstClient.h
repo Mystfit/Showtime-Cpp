@@ -20,6 +20,7 @@
 
 class ZstClient : public ZstActor, public ZstINetworkInteractor {
 	friend class ZstCableLeavingEvent;
+	friend class ZstComponentLeavingEvent;
 
 public:
 	ZstClient();
@@ -28,18 +29,14 @@ public:
 	void init_file_logging(const char * log_file_path);
 	void destroy() override;
 	void process_callbacks();
-	void flush_events();
-
+	
 	//CLient singleton - should not be accessable outside this interface
 	static ZstClient & instance();
 
 	//Register this endpoint to the stage
 	void register_client_to_stage(std::string stage_address, bool async = false);
-	void register_client_complete(ZstMsgKind status);
     void synchronise_graph(bool async = false);
-    void synchronise_graph_complete(ZstMsgKind status);
 	void leave_stage(bool immediately = false);
-    void leave_stage_complete(ZstMsgKind status);
     
 	//Stage connection status
 	bool is_connected_to_stage();
@@ -49,30 +46,24 @@ public:
 	ZstEntityBase * find_entity(const ZstURI & path);
 	ZstPlug * find_plug(const ZstURI & path);
 	void activate_entity(ZstEntityBase* entity, bool async = false);
-    void activate_entity_complete(ZstMsgKind status, ZstEntityBase * entity);
 	void destroy_entity(ZstEntityBase * entity, bool async = false);
-	void destroy_entity_complete(ZstMsgKind status, ZstEntityBase * entity);
 	bool entity_is_local(ZstEntityBase & entity);
 	bool path_is_local(const ZstURI & path);
 	void add_proxy_entity(ZstEntityBase & entity);
 
 	//Performers
-	void add_performer(ZstPerformer & performer);
 	ZstPerformer * get_performer_by_URI(const ZstURI & uri) const;
 	ZstPerformer * get_local_performer() const;
 
 	//Plugs
 	void destroy_plug(ZstPlug * plug);
-	void destroy_plug_complete(int status);
 
 	//Graph communication
 	virtual void publish(ZstPlug * plug) override;
 
 	//Cables
 	ZstCable * connect_cable(ZstPlug * input, ZstPlug * output, bool async = false);
-    void connect_cable_complete(ZstMsgKind status, ZstCable * cable);
 	void destroy_cable(ZstCable * cable, bool async = false);
-    void destroy_cable_complete(ZstMsgKind status, ZstCable * cable);
 	void disconnect_plug(ZstPlug * plug);
 	void disconnect_plugs(ZstPlug * input_plug, ZstPlug * output_plug);
 	
@@ -146,17 +137,41 @@ private:
 	std::string m_graph_out_ip;
     std::string m_network_interface;
 
-	//Root performer
+	//Performers
     ZstPerformer * m_root;
 	ZstPerformerMap m_clients;
+	void add_performer(ZstPerformer & performer);
 
-	//Callback hooks
+	//Event hooks
+	void flush_events();
 	ZstSynchronisableDeferredEvent * m_synchronisable_deferred_event;
 	ZstComponentLeavingEvent * m_performer_leaving_hook;
 	ZstComponentLeavingEvent * m_component_leaving_hook;
 	ZstCableLeavingEvent * m_cable_leaving_hook;
 	ZstPlugLeavingEvent * m_plug_leaving_hook;
 	ZstComputeEvent * m_compute_event;
+
+	//Stage communication
+	void register_client_to_stage_sync(MessageFuture & future);
+	void register_client_to_stage_async(MessageFuture & future);
+	void register_client_complete(ZstMsgKind status);
+	void synchronise_graph_sync(MessageFuture & future);
+	void synchronise_graph_async(MessageFuture & future);
+	void synchronise_graph_complete(ZstMsgKind status);
+	void leave_stage_complete();
+	void activate_entity_sync(ZstEntityBase * entity, MessageFuture & future);
+	void activate_entity_async(ZstEntityBase * entity, MessageFuture & future);
+	void activate_entity_complete(ZstMsgKind status, ZstEntityBase * entity);
+	void destroy_entity_sync(ZstEntityBase * entity, MessageFuture & future);
+	void destroy_entity_async(ZstEntityBase * entity, MessageFuture & future);
+	void destroy_entity_complete(ZstMsgKind status, ZstEntityBase * entity);
+	void connect_cable_sync(ZstCable * cable, MessageFuture & future);
+	void connect_cable_async(ZstCable * cable, MessageFuture & future);
+	void connect_cable_complete(ZstMsgKind status, ZstCable * cable);
+	void destroy_cable_sync(ZstCable * cable, MessageFuture & future);
+	void destroy_cable_async(ZstCable * cable, MessageFuture & future);
+	void destroy_cable_complete(ZstMsgKind status, ZstCable * cable);
+	void destroy_plug_complete(int status);
 	
 	//Cable storage
 	ZstCable * create_cable_ptr(ZstCable & cable);
@@ -181,7 +196,7 @@ private:
 	ZstEventDispatcher * m_plug_leaving_event_manager;
 	ZstEventDispatcher * m_compute_event_manager;
 	ZstEventDispatcher * m_synchronisable_event_manager;
-	
+		
 	//Zeromq pipes
 	zsock_t *m_stage_router;        //Stage pipe in
 	zsock_t *m_stage_updates;		//Stage publisher for updates

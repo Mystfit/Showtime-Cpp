@@ -17,3 +17,4 @@ enum ZstPlugDirection {
 #define STAGE_PUB_PORT 6002
 #define HEARTBEAT_DURATION 1000
 #define MESSAGE_POOL_BLOCK 256
+#define STAGE_TIMEOUT 2000

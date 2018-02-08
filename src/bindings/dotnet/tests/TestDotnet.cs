@@ -58,7 +58,7 @@ public class TestShowtimeDotnet
 
         //Join the stage
         showtime.join("127.0.0.1");
-    
+            
         //Create entities
         var input_comp = new TestInputComponent("test_input_comp");
         var output_comp = new TestOutputComponent("test_output_comp");

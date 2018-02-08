@@ -42,11 +42,14 @@ ZstMessage * ZstMessagePool::get()
 	return msg;
 }
 
-MessageFuture ZstMessagePool::register_future(ZstMessage * msg)
+MessageFuture ZstMessagePool::register_future(ZstMessage * msg, bool timeout)
 {
 	string id = string(msg->id());
 	m_promise_messages[id] = MessagePromise();
-	return m_promise_messages[id].get_future();
+	MessageFuture future = m_promise_messages[id].get_future();
+	if(timeout)
+		future = future.timeout(std::chrono::milliseconds(STAGE_TIMEOUT), ZstTimeoutException("Connect timeout"), m_timeout_watcher);
+	return future;
 }
 
 int ZstMessagePool::process_message_promise(ZstMessage * msg)
