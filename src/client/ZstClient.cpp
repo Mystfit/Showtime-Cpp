@@ -611,7 +611,7 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 		switch (payload_kind) {
 		case ZstMsgKind::CREATE_CABLE:
 		{
-			ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(i);
+			const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(i);
 			//Only dispatch cable event if we don't already have the cable (we might have created it)
 			if(!find_cable_ptr(cable.get_input_URI(), cable.get_output_URI())) {
 				ZstCable * cable_ptr = create_cable_ptr(cable);
@@ -622,7 +622,7 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 		}
 		case ZstMsgKind::DESTROY_CABLE:
 		{
-			ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(i);
+			const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(i);
 			ZstCable * cable_ptr = find_cable_ptr(cable.get_input_URI(), cable.get_output_URI());
 			if (cable_ptr) {
 				if(cable_ptr->is_activated())
@@ -740,7 +740,7 @@ int ZstClient::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
 // ------------------
 // Cable storage
 // ------------------
-ZstCable * ZstClient::create_cable_ptr(ZstCable & cable)
+ZstCable * ZstClient::create_cable_ptr(const ZstCable & cable)
 {
 	return create_cable_ptr(cable.get_input_URI(), cable.get_output_URI());
 }

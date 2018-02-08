@@ -78,7 +78,7 @@ ZstMessage * ZstMessage::init_message(ZstMsgKind kind)
 	return this;
 }
 
-ZstMessage * ZstMessage::init_serialisable_message(ZstMsgKind kind, ZstSerialisable & streamable)
+ZstMessage * ZstMessage::init_serialisable_message(ZstMsgKind kind, const ZstSerialisable & streamable)
 {
 	if (m_msg_handle)
 		zmsg_destroy(&m_msg_handle);
@@ -145,7 +145,7 @@ void ZstMessage::append_entity_kind_frame(ZstEntityBase * entity) {
 	append_kind_frame(m_msg_kind);
 }
 
-void ZstMessage::append_payload_frame(ZstSerialisable & streamable)
+void ZstMessage::append_payload_frame(const ZstSerialisable & streamable)
 {
 	std::stringstream buffer;
 	streamable.write(buffer);

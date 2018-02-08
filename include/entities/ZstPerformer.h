@@ -30,9 +30,9 @@ public:
 	ZST_EXPORT const char * address();
 
 	//Creatables
-	ZST_EXPORT size_t num_creatables();
+	ZST_EXPORT size_t num_creatables() const;
 
-	ZST_EXPORT virtual void write(std::stringstream & buffer) override;
+	ZST_EXPORT virtual void write(std::stringstream & buffer) const override;
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
 
 private:

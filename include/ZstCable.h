@@ -46,7 +46,7 @@ public:
 	ZST_EXPORT const ZstURI & get_output_URI() const;
 	ZST_EXPORT bool is_local();
 
-	ZST_EXPORT void write(std::stringstream & buffer) override;
+	ZST_EXPORT void write(std::stringstream & buffer) const override;
 	ZST_EXPORT void read(const char * buffer, size_t length, size_t & offset) override;
 
 private:

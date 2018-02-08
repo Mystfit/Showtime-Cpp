@@ -184,7 +184,7 @@ void ZstContainer::remove_child(ZstEntityBase * child) {
 	}
 }
 
-void ZstContainer::write(std::stringstream & buffer)
+void ZstContainer::write(std::stringstream & buffer) const
 {
 	//Pack entity
 	ZstComponent::write(buffer);

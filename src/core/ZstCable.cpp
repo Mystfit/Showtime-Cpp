@@ -127,7 +127,7 @@ bool ZstCable::is_local()
 	return m_is_local;
 }
 
-void ZstCable::write(std::stringstream & buffer)
+void ZstCable::write(std::stringstream & buffer) const
 {
 	msgpack::pack(buffer, m_output_URI.path());
 	msgpack::pack(buffer, m_input_URI.path());

@@ -70,12 +70,12 @@ const char * ZstPerformer::address()
 	return m_address.c_str();
 }
 
-size_t ZstPerformer::num_creatables()
+size_t ZstPerformer::num_creatables() const
 {
 	return m_creatables.size();
 }
 
-void ZstPerformer::write(std::stringstream & buffer)
+void ZstPerformer::write(std::stringstream & buffer) const
 {
 	ZstContainer::write(buffer);
 

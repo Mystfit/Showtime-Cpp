@@ -577,7 +577,7 @@ ZstMessage * ZstStage::create_cable_handler(ZstMessage * msg)
 	ZstMessage * response = msg_pool()->get();
 
 	//Unpack cable from message
-	ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(0);
+	const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(0);
 	ZstLog::info("Received connect cable request for In:{} and Out:{}", cable.get_input_URI().path(), cable.get_output_URI().path());
 
 	//Create cable 
@@ -607,7 +607,7 @@ ZstMessage * ZstStage::create_cable_handler(ZstMessage * msg)
 ZstMessage * ZstStage::destroy_cable_handler(ZstMessage * msg)
 {
 	ZstMessage * response = msg_pool()->get();
-	ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(0);
+	const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(0);
 	ZstLog::info("Received destroy cable connection request");
 	
 	ZstCable * cable_ptr = get_cable_by_URI(cable.get_input_URI(), cable.get_output_URI());

@@ -33,7 +33,7 @@ public:
 	ZST_EXPORT const char * entity_type() const;
     
     //URI for this entity
-	ZST_EXPORT const ZstURI & URI();
+	ZST_EXPORT const ZstURI & URI() const;
     
     //Entity flags
 	ZST_EXPORT bool is_destroyed();
@@ -44,7 +44,7 @@ public:
 	ZST_EXPORT virtual void disconnect_cables() {};
 	    
 	//Serialisation
-	ZST_EXPORT virtual void write(std::stringstream & buffer) override;
+	ZST_EXPORT virtual void write(std::stringstream & buffer) const override;
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
 	
 protected:

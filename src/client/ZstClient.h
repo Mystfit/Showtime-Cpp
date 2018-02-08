@@ -174,7 +174,7 @@ private:
 	void destroy_plug_complete(int status);
 	
 	//Cable storage
-	ZstCable * create_cable_ptr(ZstCable & cable);
+	ZstCable * create_cable_ptr(const ZstCable & cable);
 	ZstCable * create_cable_ptr(ZstPlug * output, ZstPlug * input);
 	ZstCable * create_cable_ptr(const ZstURI & input_path, const ZstURI & output_path);
 	ZstCable * find_cable_ptr(const ZstURI & input_path, const ZstURI & output_path);

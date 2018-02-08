@@ -77,7 +77,7 @@ if __name__ == "__main__":
     event_loop = EventLoop()
     # event_loop.start()
 
-    ZST.init("python_test")
+    ZST.init("python_test", True)
     ZST.join("127.0.0.1")
 
     test_add()

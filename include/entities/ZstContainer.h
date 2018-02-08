@@ -46,7 +46,7 @@ public:
 	ZST_EXPORT void remove_child(ZstEntityBase * child);
 
 	//Serialisation
-	ZST_EXPORT virtual void write(std::stringstream & buffer) override;
+	ZST_EXPORT virtual void write(std::stringstream & buffer) const override;
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
     
 

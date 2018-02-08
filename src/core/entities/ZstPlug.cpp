@@ -128,7 +128,7 @@ ZstValue * ZstPlug::raw_value()
 // Serialisation
 //--------------------
 
-void ZstPlug::write(std::stringstream & buffer)
+void ZstPlug::write(std::stringstream & buffer) const
 {
 	//Pack entity
 	ZstEntityBase::write(buffer);

@@ -66,7 +66,7 @@ const char * ZstEntityBase::entity_type() const
 	return m_entity_type;
 }
 
-const ZstURI & ZstEntityBase::URI()
+const ZstURI & ZstEntityBase::URI() const
 {
 	return m_uri;
 }
@@ -97,7 +97,7 @@ ZstCableBundle * ZstEntityBase::get_child_cables(ZstCableBundle * bundle)
 	return bundle;
 }
 
-void ZstEntityBase::write(std::stringstream & buffer)
+void ZstEntityBase::write(std::stringstream & buffer) const
 {
 	msgpack::pack(buffer, URI().path());
 	msgpack::pack(buffer, entity_type());

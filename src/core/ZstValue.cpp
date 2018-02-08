@@ -21,7 +21,7 @@ ZstValue::~ZstValue()
 {
 }
 
-ZstValueType ZstValue::get_default_type()
+ZstValueType ZstValue::get_default_type() const
 {
 	return m_default_type;
 }
@@ -98,7 +98,7 @@ const size_t ZstValue::size_at(const size_t position) const {
     return 0;
 }
 
-void ZstValue::write(std::stringstream & buffer)
+void ZstValue::write(std::stringstream & buffer) const
 {
 	//Pack default type
 	msgpack::pack(buffer, (int)get_default_type());

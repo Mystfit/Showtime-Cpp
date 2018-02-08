@@ -88,7 +88,7 @@ public:
 	//Initialisation
 	ZST_EXPORT ZstMessage * init_entity_message(ZstEntityBase * entity);
 	ZST_EXPORT ZstMessage * init_message(ZstMsgKind kind);
-	ZST_EXPORT ZstMessage * init_serialisable_message(ZstMsgKind kind, ZstSerialisable & streamable);
+	ZST_EXPORT ZstMessage * init_serialisable_message(ZstMsgKind kind, const ZstSerialisable & streamable);
 
 	ZST_EXPORT void send(zsock_t * socket);
 
@@ -125,7 +125,7 @@ private:
 	void append_kind_frame(ZstMsgKind k);
 	void append_entity_kind_frame(ZstEntityBase * entity);
 	void append_id_frame();
-	void append_payload_frame(ZstSerialisable & streamable);
+	void append_payload_frame(const ZstSerialisable & streamable);
 	
 	//---------------------------------------
 	

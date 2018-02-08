@@ -135,7 +135,7 @@ void ZstComponent::set_parent(ZstEntityBase * parent)
     }
 }
 
-void ZstComponent::write(std::stringstream & buffer)
+void ZstComponent::write(std::stringstream & buffer) const
 {
 	//Pack container
 	ZstEntityBase::write(buffer);
