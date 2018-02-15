@@ -216,6 +216,11 @@ bool zst_is_connected()
 	return ZstClient::instance().is_connected_to_stage();
 }
 
+bool zst_is_init_completed()
+{
+    return ZstClient::instance().is_init_complete();
+}
+
 int zst_ping()
 {
 	return ZstClient::instance().ping();

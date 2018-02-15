@@ -40,6 +40,7 @@ public:
     
 	//Stage connection status
 	bool is_connected_to_stage();
+    bool is_init_complete();
 	long ping();
 	
     //Entities
@@ -126,7 +127,8 @@ private:
 	//Destruction
 	bool m_is_ending;
 	bool m_is_destroyed;
-	bool m_connected_to_stage = false;
+    bool m_init_completed;
+	bool m_connected_to_stage;
 
 	//UUIDs
 	zuuid_t * m_startup_uuid;

@@ -7,6 +7,10 @@ using namespace std;
 
 ZstClient::ZstClient() :
     m_ping(-1),
+    m_is_ending(false),
+    m_is_destroyed(false),
+    m_init_completed(false),
+    m_connected_to_stage(false),
     m_graph_out_ip(""),
 	m_root(NULL),
     m_num_graph_recv_messages(0),
@@ -93,12 +97,14 @@ void ZstClient::destroy() {
 	if (m_is_ending || m_is_destroyed)
 		return;
     m_is_ending = true;
-
+    m_init_completed = false;
+    
+    //Let stage know we are leaving
 	leave_stage();
     
     //TODO: Delete proxies and templates
     delete m_root;
-
+    
 	ZstActor::destroy();
 	zsock_destroy(&m_stage_updates);
 	zsock_destroy(&m_stage_router);
@@ -112,7 +118,7 @@ void ZstClient::destroy() {
 
 void ZstClient::init_client(const char *client_name, bool debug)
 {
-	if (m_is_ending) {
+	if (m_is_ending || m_init_completed) {
 		return;
 	}
 
@@ -178,6 +184,8 @@ void ZstClient::init_client(const char *client_name, bool debug)
 	m_root->set_network_interactor(this);
 	
     start();
+    
+    m_init_completed = true;
 }
 
 void ZstClient::init_file_logging(const char * log_file_path)
@@ -187,9 +195,12 @@ void ZstClient::init_file_logging(const char * log_file_path)
 
 void ZstClient::process_callbacks()
 {
-	m_client_connected_event_manager->process();
+    if(!is_init_complete() || m_is_destroyed){
+        return;
+    }
     
     if(is_connected_to_stage()){
+        m_client_connected_event_manager->process();
         m_synchronisable_event_manager->process();
         m_client_disconnected_event_manager->process();
         m_performer_arriving_event_manager->process();
@@ -464,7 +475,7 @@ void ZstClient::leave_stage(bool immediately)
 {
 	if (m_connected_to_stage) {
 		ZstLog::info("Leaving stage");
-
+        
         ZstMessage * msg = msg_pool()->get()->init_message(ZstMsgKind::CLIENT_LEAVING);
 		MessageFuture future = msg_pool()->register_future(msg, true);
 		try {
@@ -506,6 +517,10 @@ void ZstClient::leave_stage_complete()
 bool ZstClient::is_connected_to_stage()
 {
 	return m_connected_to_stage;
+}
+
+bool ZstClient::is_init_complete() {
+    return m_init_completed;
 }
 
 long ZstClient::ping()

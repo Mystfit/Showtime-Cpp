@@ -45,6 +45,7 @@ extern "C" {
 
 	//Stage methods
 	ZST_CLIENT_EXPORT bool zst_is_connected();
+    ZST_CLIENT_EXPORT bool zst_is_init_completed();
 	ZST_CLIENT_EXPORT int zst_ping();
 
 	//Cable management
