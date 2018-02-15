@@ -13,7 +13,7 @@ class SinkComponent(ZstComponent):
     def compute(self, plug):
         self.last_received_value = plug.int_at(0)
         # if self.last_received_value % 1000 == 0:
-        print("Plug received value {0}".format(self.last_received_value))
+        # print("Plug received value {0}".format(self.last_received_value))
 
 
 class PushComponent(ZstComponent):
@@ -34,6 +34,7 @@ class EventLoop(threading.Thread):
     def run(self):
         while True:
             ZST.poll_once()
+            # time.sleep(0.001)
 
 
 def test_add():
@@ -60,7 +61,7 @@ def test_add():
     for i in range(num_loops):
         augend.send(i)
         addend.send(1)
-        ZST.poll_once()
+        # ZST.poll_once()
 
     while sum_in.last_received_value < num_loops:
         ZST.poll_once()
@@ -75,7 +76,7 @@ def test_add():
 
 if __name__ == "__main__":
     event_loop = EventLoop()
-    # event_loop.start()
+    event_loop.start()
 
     ZST.init("python_test", True)
     ZST.join("127.0.0.1")

@@ -468,7 +468,7 @@ ZstMessage * ZstStage::create_entity_handler(ZstMessage * msg, ZstPerformer * pe
 		return response->init_message(ZstMsgKind::ERR_STAGE_ENTITY_ALREADY_EXISTS);
 	}
 
-	ZstLog::debug("Entity doesn't exist yet, registering it now");
+    ZstLog::debug("Entity {} doesn't exist yet, registering it now", entity.URI().path());
 	
 	//Find the parent for this entity
 	ZstURI parent_path = entity.URI().parent();
@@ -482,7 +482,7 @@ ZstMessage * ZstStage::create_entity_handler(ZstMessage * msg, ZstPerformer * pe
 
 	//If we can't find the parent this entity says it belongs to then we have a problem
 	if (parent == NULL) {
-		ZstLog::warn("Couldn't register entity. No parent found at {}", parent_path.path());
+        ZstLog::warn("Couldn't register entity {}. No parent found at {}", entity.URI().path(), parent_path.path());
 		return response->init_message(ZstMsgKind::ERR_STAGE_ENTITY_NOT_FOUND);
 	}
 

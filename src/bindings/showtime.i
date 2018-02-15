@@ -1,19 +1,16 @@
-%module(directors="1") showtime
-%{
-	#include <Showtime.h>
-%}
-
 %include <ZstExports.h>
 %include <ZstConstants.h>
 %include "ZstLogging.i"
 
 %include "ZstURI.i"
 %include "ZstSynchronisable.i"
+
+%ignore ZstSerialisable::read;
+%ignore ZstSerialisable::write;
 %include "ZstEntityBase.i"
 %include "ZstPlug.i"
 %include "ZstCable.i"
 
-%ignore set_parent;
 %include "ZstComponent.i"
 %include "ZstContainer.i"
 %include "ZstPerformer.i"

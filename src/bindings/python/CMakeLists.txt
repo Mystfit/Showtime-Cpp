@@ -6,6 +6,7 @@ set(BUILD_STAMP 		"${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
 
 # Copy showtime module files
 file(GLOB PYTHON_INTERFACES "${CMAKE_CURRENT_SOURCE_DIR}/../*.i")
+list(APPEND PYTHON_INTERFACES "${CMAKE_CURRENT_SOURCE_DIR}/showtime_python.i")
 file(COPY ${PYTHON_INTERFACES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 #Copy required include directories

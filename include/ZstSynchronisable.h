@@ -42,12 +42,6 @@ public:
 	ZST_EXPORT virtual void on_activated() = 0;
 	ZST_EXPORT virtual void on_deactivated() = 0;
 
-	ZST_EXPORT virtual void set_activated();
-	ZST_EXPORT void set_activating();
-	ZST_EXPORT virtual void set_deactivated();
-	ZST_EXPORT void set_deactivating();
-	ZST_EXPORT virtual void set_error(ZstSyncError e);
-
 	ZST_EXPORT bool is_activated();
 	ZST_EXPORT bool is_deactivated();
 	ZST_EXPORT ZstSyncStatus activation_status();
@@ -58,9 +52,15 @@ public:
 
 protected:
 	ZST_EXPORT ZstINetworkInteractor * network_interactor();
+    ZST_EXPORT virtual void enqueue_activation();
+    ZST_EXPORT virtual void enqueue_deactivation();
+    ZST_EXPORT virtual void set_activated();
+    ZST_EXPORT virtual void set_activating();
+    ZST_EXPORT void set_deactivating();
+    ZST_EXPORT virtual void set_activation_status(ZstSyncStatus status);
+    ZST_EXPORT virtual void set_error(ZstSyncError e);
 
 private:
-	void set_activation_status(ZstSyncStatus status);
 	ZstEventDispatcher * m_activation_events;
 	ZstEventDispatcher * m_deactivation_events;
 	ZstActivationEvent * m_activation_hook;

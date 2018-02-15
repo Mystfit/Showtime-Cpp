@@ -29,14 +29,14 @@ namespace ZstLog {
 
 	struct LoggerInfo {
 		std::string name;
-	};
+    };
 	
-	static LoggerInfo & main_logger(const char * name = "") {
+	inline LoggerInfo & main_logger(const char * name = "") {
 		static LoggerInfo main = { std::string(name) };
 		return main;
 	}
 
-	static void init_logger(const char * logger_name, bool debug = false) {
+	inline void init_logger(const char * logger_name, bool debug = false) {
 		log4cplus::initialize();
 		//log4cplus::BasicConfigurator config;
 		//config.configure();
@@ -63,7 +63,7 @@ namespace ZstLog {
 		}
 	}
 
-	static void init_file_logging(const char * log_file_path = "") {
+	inline void init_file_logging(const char * log_file_path = "") {
 		log4cplus::Logger logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT(ZstLog::main_logger().name));
 		std::string file_path(log_file_path);
 		if (file_path.empty()) {
@@ -76,67 +76,67 @@ namespace ZstLog {
 		logger.addAppender(log4cplus::SharedAppenderPtr(append_to_file.get()));
 	}
 
-	static void destroy_logger() {
+	inline void destroy_logger() {
 		log4cplus::Logger::shutdown();
 	}
 
 	template <typename... Args>
-	static void trace(const char* fmt, const Args&... args)
+	inline void trace(const char* fmt, const Args&... args)
 	{
 		std::string msg = fmt::format(fmt, args...);
         log4cplus::Logger::getInstance(ZstLog::main_logger().name).log(log4cplus::TRACE_LOG_LEVEL, msg);
 	}
 
 	template <typename... Args>
-	static void debug(const char* fmt, const Args&... args)
+	inline void debug(const char* fmt, const Args&... args)
 	{
 		std::string msg = fmt::format(fmt, args...);
         log4cplus::Logger::getInstance(ZstLog::main_logger().name).log(log4cplus::DEBUG_LOG_LEVEL, msg);
 	}
 
 	template <typename... Args>
-	static void info(const char* fmt, const Args&... args)
+	inline void info(const char* fmt, const Args&... args)
 	{
 		std::string msg = fmt::format(fmt, args...);
         log4cplus::Logger::getInstance(ZstLog::main_logger().name).log(log4cplus::INFO_LOG_LEVEL, msg);
 	}
 
 	template <typename... Args>
-	static void warn(const char* fmt, const Args&... args)
+	inline void warn(const char* fmt, const Args&... args)
 	{
 		std::string msg = fmt::format(fmt, args...);
         log4cplus::Logger::getInstance(ZstLog::main_logger().name).log(log4cplus::WARN_LOG_LEVEL, msg);
 	}
 
 	template <typename... Args>
-	static void error(const char* fmt, const Args&... args)
+	inline void error(const char* fmt, const Args&... args)
 	{
 		std::string msg = fmt::format(fmt, args...);
         log4cplus::Logger::getInstance(ZstLog::main_logger().name).log(log4cplus::ERROR_LOG_LEVEL, msg);
 	}
 
-	static void trace(const char * msg)
+	inline void trace(const char * msg)
 	{
         log4cplus::Logger::getInstance(ZstLog::main_logger().name).log(log4cplus::TRACE_LOG_LEVEL, msg);
 	}
 
-	static void debug(const char * msg)
+	inline void debug(const char * msg)
 	{
         log4cplus::Logger::getInstance(ZstLog::main_logger().name).log(log4cplus::DEBUG_LOG_LEVEL, msg);
 	}
 
-	static void info(const char * msg)
+	inline void info(const char * msg)
 	{
         log4cplus::Logger::getInstance(ZstLog::main_logger().name).log(log4cplus::INFO_LOG_LEVEL, msg);
 	}
 
-	static void warn(const char * msg)
+	inline void warn(const char * msg)
 	{
         log4cplus::Logger::getInstance(ZstLog::main_logger().name).log(log4cplus::WARN_LOG_LEVEL, msg);
 	}
 
-	static void error(const char * msg)
+	inline void error(const char * msg)
 	{
         log4cplus::Logger::getInstance(ZstLog::main_logger().name).log(log4cplus::ERROR_LOG_LEVEL, msg);
 	}
-}
+};

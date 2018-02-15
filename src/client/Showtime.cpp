@@ -9,7 +9,7 @@ using namespace std;
 
 void zst_init(const char * performer_name, bool debug)
 {
-	ZstClient::instance().init(performer_name, debug);
+	ZstClient::instance().init_client(performer_name, debug);
 }
 
 void zst_start_file_logging(const char * log_file_path)

@@ -1,7 +1,10 @@
-%nodefaultctor;
 %feature("director") ZstComponent;
-%ignore ZstComponent::read;
-%ignore ZstComponent::write;
-%ignore ZstComponent::set_parent;
+
+%inline %{
+	ZstComponent* cast_to_component(ZstEntityBase * entity){
+		return dynamic_cast<ZstComponent*>(entity);
+	}
+%}
+
+%nodefaultctor ZstComponent;
 %include <entities/ZstComponent.h>
-%clearnodefaultctor;

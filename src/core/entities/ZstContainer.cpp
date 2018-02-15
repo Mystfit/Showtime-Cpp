@@ -110,7 +110,7 @@ ZstEntityBase * ZstContainer::get_child_by_URI(const ZstURI & path)
 
 ZstEntityBase * ZstContainer::get_child_at(int index) const
 {
-	ZstEntityBase * result;
+	ZstEntityBase * result = NULL;
 	int i = 0;
 	for (auto it : m_children) {
 		if (i == index) {
@@ -127,33 +127,46 @@ const size_t ZstContainer::num_children() const
 	return m_children.size();
 }
 
-void ZstContainer::set_activated()
+void ZstContainer::enqueue_activation()
 {
-	ZstComponent::set_activated();
+	ZstComponent::enqueue_activation();
 	
 	//Recursively activate all children
 	for (auto c : m_children) {
-		c.second->set_activated();
+		c.second->enqueue_activation();
 	}
 }
 
-void ZstContainer::set_deactivated()
+void ZstContainer::enqueue_deactivation()
 {
-	ZstComponent::set_deactivated();
-	for(auto c : m_children){
-		c.second->set_deactivated();
-	}
+    ZstComponent::enqueue_deactivation();
+    for(auto c : m_children){
+        c.second->enqueue_deactivation();
+    }
+}
+
+void ZstContainer::set_activation_status(ZstSyncStatus status)
+{
+    ZstComponent::set_activation_status(status);
+    for (auto c : m_children) {
+        c.second->set_activation_status(status);
+    }
 }
 
 void ZstContainer::set_parent(ZstEntityBase * entity)
 {
+    if(is_destroyed()) return;
+
     ZstComponent::set_parent(entity);
     
 	auto children = m_children;
-	for (auto child : children) {
-        remove_child(child.second);
-        add_child(child.second);
+	for (auto child : m_children) {
+        this->remove_child(child.second);
 	}
+    
+    for(auto child : children){
+        this->add_child(child.second);
+    }
 }
 
 void ZstContainer::disconnect_cables()
@@ -165,13 +178,16 @@ void ZstContainer::disconnect_cables()
 }
 
 void ZstContainer::add_child(ZstEntityBase * child) {
+    if(is_destroyed()) return;
+    
 	//If child is a plug, needs to be added to the plug list
     child->set_parent(this);
     m_children[child->URI()] = child;
 }
 
 void ZstContainer::remove_child(ZstEntityBase * child) {
-	
+    if(is_destroyed()) return;
+    
 	//Check if we're removing a plug or not
 	if (strcmp(child->entity_type(), PLUG_TYPE) == 0) {
 		remove_plug(dynamic_cast<ZstPlug*>(child));

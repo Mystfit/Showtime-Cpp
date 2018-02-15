@@ -55,7 +55,7 @@ void ZstSynchronisable::detach_deactivation_event(ZstSynchronisableEvent * event
 	m_deactivation_events->remove_event_listener(event);
 }
 
-void ZstSynchronisable::set_activated()
+void ZstSynchronisable::enqueue_activation()
 {
 	if (is_deactivated() || activation_status() != ZstSyncStatus::ACTIVATION_QUEUED)
 	{
@@ -66,20 +66,25 @@ void ZstSynchronisable::set_activated()
 	}
 }
 
+void ZstSynchronisable::enqueue_deactivation()
+{
+    if (is_activated() || activation_status() != ZstSyncStatus::DEACTIVATION_QUEUED)
+    {
+        set_activation_status(ZstSyncStatus::DEACTIVATION_QUEUED);
+        m_deactivation_events->enqueue(this);
+        if (m_network_interactor)
+            m_network_interactor->enqueue_synchronisable_event(this);
+    }
+}
+
+void ZstSynchronisable::set_activated()
+{
+    set_activation_status(ZstSyncStatus::ACTIVATED);
+}
+
 void ZstSynchronisable::set_activating()
 {
 	set_activation_status(ZstSyncStatus::ACTIVATING);
-}
-
-void ZstSynchronisable::set_deactivated()
-{
-	if (is_activated() || activation_status() != ZstSyncStatus::DEACTIVATION_QUEUED)
-	{
-		set_activation_status(ZstSyncStatus::DEACTIVATION_QUEUED);
-		m_deactivation_events->enqueue(this);
-		if (m_network_interactor)
-			m_network_interactor->enqueue_synchronisable_event(this);
-	}
 }
 
 void ZstSynchronisable::set_deactivating()

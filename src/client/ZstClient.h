@@ -25,7 +25,7 @@ class ZstClient : public ZstActor, public ZstINetworkInteractor {
 public:
 	ZstClient();
 	~ZstClient();
-	void init(const char * client_name, bool debug);
+	void init_client(const char * client_name, bool debug);
 	void init_file_logging(const char * log_file_path);
 	void destroy() override;
 	void process_callbacks();

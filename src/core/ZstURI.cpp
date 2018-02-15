@@ -172,7 +172,6 @@ bool ZstURI::contains(const ZstURI & compare) const
 	int s = static_cast<int>(size());
 	int other_s = static_cast<int>(compare.size());
 	int shortest = std::min(other_s,s);
-	int largest = std::max(other_s, s);
 	int contiguous = 0;
 
 	for (int i = 0; i < shortest; ++i) {

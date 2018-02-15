@@ -193,7 +193,7 @@ void ZstPlug::disconnect_cables()
 {
 	auto cables = m_cables;
 	for (auto c : cables) {
-		c->set_deactivated();
+		c->enqueue_deactivation();
 	}
 }
 

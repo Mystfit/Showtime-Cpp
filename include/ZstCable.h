@@ -14,6 +14,8 @@ class ZstCable : public ZstSynchronisable, public ZstSerialisable {
 public:
 	friend class ZstClient;
 	friend class ZstStage;
+    friend class ZstComponent;
+    friend class ZstPlug;
 
 	ZST_EXPORT ZstCable();
 	ZST_EXPORT ZstCable(const ZstCable & copy);

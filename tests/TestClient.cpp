@@ -6,9 +6,22 @@
 #include <iostream>
 #include <sstream>
 #include <exception>
+
+#ifdef WIN32
+#pragma warning disable 4189
+#else
+#pragma GCC diagnostic pop
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#endif
 #include <boost/process.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/filesystem.hpp>
+#ifdef WIN32
+#pragma warning restore 4189
+#else
+#pragma GCC diagnostic pop
+#endif
 
 #include "Showtime.h"
 

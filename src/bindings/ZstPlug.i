@@ -1,10 +1,16 @@
 %ignore ZstPlugIterator;
+%ignore ZstPlugIterator::operator++;
 %ignore ZstPlug::begin;
 %ignore ZstPlug::end;
 
-%nodefaultctor;
+%inline %{
+	ZstPlug* cast_to_plug(ZstEntityBase * entity){
+		return dynamic_cast<ZstPlug*>(entity);
+	}
+%}
+
+%nodefaultctor ZstPlug;
 %include "entities/ZstPlug.h"
-%clearnodefaultctor;
 
 %include "std_string.i"
 %extend ZstPlug{

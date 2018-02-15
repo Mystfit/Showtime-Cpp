@@ -110,7 +110,7 @@ void ZstClient::destroy() {
 	ZstLog::destroy_logger();
 }
 
-void ZstClient::init(const char *client_name, bool debug)
+void ZstClient::init_client(const char *client_name, bool debug)
 {
 	if (m_is_ending) {
 		return;
@@ -455,7 +455,7 @@ void ZstClient::synchronise_graph_async(MessageFuture & future)
 
 void ZstClient::synchronise_graph_complete(ZstMsgKind status)
 {
-   	m_root->set_activated();
+   	m_root->enqueue_activation();
     client_connected_events()->enqueue(m_root);
     ZstLog::warn("Graph sync completed");
 }
@@ -535,7 +535,7 @@ int ZstClient::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg){
 	//Find local proxy of the sneding plug
 	ZstPlug * sending_plug = static_cast<ZstPlug*>(client->find_entity(sender));
 	ZstInputPlug * receiving_plug = NULL;
-	
+    
 	//Iterate over all connected cables from the sending plug
 	for (auto cable : *sending_plug) {
 		receiving_plug = dynamic_cast<ZstInputPlug*>(cable->get_input());
@@ -615,7 +615,7 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 			//Only dispatch cable event if we don't already have the cable (we might have created it)
 			if(!find_cable_ptr(cable.get_input_URI(), cable.get_output_URI())) {
 				ZstCable * cable_ptr = create_cable_ptr(cable);
-				cable_ptr->set_activated();
+                cable_ptr->set_activation_status(ZstSyncStatus::ACTIVATED);
 				cable_arriving_events()->enqueue(cable_ptr);
 			}
 			break;
@@ -669,7 +669,7 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 			if (!path_is_local(entity_path)) {
 				ZstEntityBase * entity = find_entity(entity_path);
                 if(entity){
-                    entity->set_deactivated();
+                    entity->enqueue_deactivation();
                     if (strcmp(entity->entity_type(), COMPONENT_TYPE) == 0 || strcmp(entity->entity_type(), CONTAINER_TYPE) == 0) {
                         component_leaving_events()->enqueue(entity);
                     } else if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
@@ -852,6 +852,7 @@ void ZstClient::activate_entity(ZstEntityBase * entity, bool async)
 {
 	//If the entity doesn't have a parent, put it under the root container
 	if (!entity->parent()) {
+        ZstLog::info("No parent set for {}, adding to {}", entity->URI().path(), m_root->URI().path());
 		m_root->add_child(entity);
 	}
 
@@ -918,7 +919,7 @@ void ZstClient::activate_entity_complete(ZstMsgKind status, ZstEntityBase * enti
     }
     
     if (status == ZstMsgKind::OK) {
-        entity->set_activated();
+        entity->enqueue_activation();
     }
     else if (status == ZstMsgKind::ERR_STAGE_ENTITY_ALREADY_EXISTS) {
         entity->set_error(ZstSyncError::ENTITY_ALREADY_EXISTS);
@@ -963,7 +964,7 @@ void ZstClient::destroy_entity(ZstEntityBase * entity, bool async)
 			}
 			
         } else {
-            entity->set_deactivated();
+            entity->enqueue_deactivation();
             destroy_entity_complete(ZstMsgKind::OK, entity);
             process_callbacks();
         }
@@ -974,7 +975,7 @@ void ZstClient::destroy_entity_sync(ZstEntityBase * entity, MessageFuture & futu
 {
 	try {
 		ZstMsgKind status = future.get();
-		entity->set_deactivated();
+		entity->enqueue_deactivation();
 		destroy_entity_complete(status, entity);
 		process_callbacks();
 	}
@@ -1077,10 +1078,12 @@ void ZstClient::add_proxy_entity(ZstEntityBase & entity) {
 		else {
 			ZstLog::error("Can't create unknown proxy entity type {}", entity.entity_type());
 		}
-
-		//Activate entity and dispatch events
+        
+        ZstLog::debug("Received proxy entity {}", entity_proxy->URI().path());
+        
+		//Forceably activate entity and dispatch events
 		entity_proxy->set_network_interactor(this);
-		entity_proxy->set_activated();
+        entity_proxy->set_activation_status(ZstSyncStatus::ACTIVATED);
 		dispatcher->enqueue(entity_proxy);
 	}
 	
@@ -1102,10 +1105,13 @@ void ZstClient::add_performer(ZstPerformer & performer)
 	ZstPerformer * performer_proxy = new ZstPerformer(performer);
 	assert(performer_proxy);
 	ZstLog::debug("Adding new performer {}", performer_proxy->URI().path());
+    
+    //Since this is a proxy entity, it should be activated immediately.
+    performer_proxy->set_activation_status(ZstSyncStatus::ACTIVATED);
 
 	if (performer.URI() != m_root->URI()) {
 		m_clients[performer_proxy->URI()] = performer_proxy;
-		performer_proxy->set_activated();
+        performer_proxy->set_activation_status(ZstSyncStatus::ACTIVATED);
 		performer_arriving_events()->enqueue(performer_proxy);
 	}
 }
@@ -1257,7 +1263,7 @@ void ZstClient::connect_cable_async(ZstCable * cable, MessageFuture & future)
 
 void ZstClient::connect_cable_complete(ZstMsgKind status, ZstCable * cable){
     if (status == ZstMsgKind::OK) {
-        cable->set_activated();
+        cable->enqueue_activation();
     } else {
         ZstLog::error("Cable connect for {}-{} failed with status {}", cable->get_input_URI().path(), cable->get_output_URI().path(), status);
     }
@@ -1287,9 +1293,10 @@ void ZstClient::destroy_cable(ZstCable * cable, bool async)
 
 void ZstClient::destroy_cable_sync(ZstCable * cable, MessageFuture & future)
 {
-	ZstMsgKind status;
+    ZstMsgKind status(ZstMsgKind::EMPTY);
 	try {
-		destroy_cable_complete(future.get(), cable);
+        status = future.get();
+		destroy_cable_complete(status, cable);
 		process_callbacks();
 	}
 	catch (const ZstTimeoutException & e) {
@@ -1338,7 +1345,7 @@ void ZstClient::destroy_cable_complete(ZstMsgKind status, ZstCable * cable)
     
     cable->set_input(NULL);
     cable->set_output(NULL);
-    cable->set_deactivated();
+    cable->enqueue_deactivation();
     cable_leaving_events()->enqueue(cable);
 }
 

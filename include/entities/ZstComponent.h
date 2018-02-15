@@ -47,13 +47,7 @@ public:
 
 	//Disconnect all plugs from this component
 	ZST_EXPORT void disconnect_cables() override;
-
-	//Set component as activated
-	ZST_EXPORT virtual void set_activated() override;
-
-	//Set component as deactivated
-	ZST_EXPORT virtual void set_deactivated() override;
-
+    
 	//Serialisation
 	ZST_EXPORT virtual void write(std::stringstream & buffer) const override;
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
@@ -68,6 +62,16 @@ protected:
     
     //Set parent of this component
     ZST_EXPORT virtual void set_parent(ZstEntityBase * parent) override;
+    
+    //Queue component as activated
+    ZST_EXPORT virtual void enqueue_activation() override;
+    
+    //Queue component as deactivated
+    ZST_EXPORT virtual void enqueue_deactivation() override;
+    
+    //Set activation status
+    ZST_EXPORT virtual void set_activation_status(ZstSyncStatus status) override;
+
 	
 private:
 	std::vector<ZstPlug*> m_plugs;

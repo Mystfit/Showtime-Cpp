@@ -1,6 +1,12 @@
 %ignore ZstPerformer::read;
 %ignore ZstPerformer::write;
 
-%nodefaultctor;
+%inline %{
+	ZstPerformer* cast_to_performer(ZstEntityBase * entity){
+		return dynamic_cast<ZstPerformer*>(entity);
+	}
+%}
+
+
+%nodefaultctor ZstPerformer;
 %include <entities/ZstPerformer.h>
-%clearnodefaultctor;

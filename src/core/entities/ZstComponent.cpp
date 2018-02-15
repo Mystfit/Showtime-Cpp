@@ -97,7 +97,7 @@ int ZstComponent::add_plug(ZstPlug * plug)
 void ZstComponent::remove_plug(ZstPlug * plug)
 {
 	for (auto cable : *plug) {
-		cable->set_deactivated();
+		cable->enqueue_deactivation();
 	}
 	m_plugs.erase(std::remove(m_plugs.begin(), m_plugs.end(), plug), m_plugs.end());
 }
@@ -109,20 +109,28 @@ void ZstComponent::disconnect_cables()
 	}
 }
 
-void ZstComponent::set_activated()
+void ZstComponent::enqueue_activation()
 {
-	ZstEntityBase::set_activated();
-	for (auto p : m_plugs) {
-		p->set_activated();
-	}
+    ZstEntityBase::enqueue_activation();
+    for (auto p : m_plugs) {
+        p->enqueue_activation();
+    }
 }
 
-void ZstComponent::set_deactivated()
+void ZstComponent::enqueue_deactivation()
 {
-	ZstEntityBase::set_deactivated();
-	for (auto p : m_plugs) {
-		p->set_deactivated();
-	}
+    ZstEntityBase::enqueue_deactivation();
+    for (auto p : m_plugs) {
+        p->enqueue_deactivation();
+    }
+}
+
+void ZstComponent::set_activation_status(ZstSyncStatus status)
+{
+    ZstEntityBase::set_activation_status(status);
+    for (auto p : m_plugs) {
+        p->set_activation_status(status);
+    }
 }
 
 void ZstComponent::set_parent(ZstEntityBase * parent)

@@ -32,12 +32,6 @@ public:
 	//Number of children owned by this entity
 	ZST_EXPORT const size_t num_children() const;
 
-	//Set all children as activated
-	ZST_EXPORT virtual void set_activated() override;
-
-	//Set all children as deactivated
-	ZST_EXPORT virtual void set_deactivated() override;
-
 	//Unplug all cables in container
 	ZST_EXPORT virtual void disconnect_cables() override;
 	
@@ -55,6 +49,16 @@ protected:
     
     //Set parent for all children
     ZST_EXPORT void set_parent(ZstEntityBase * entity) override;
+    
+    //Enqueue all children as activated
+    ZST_EXPORT virtual void enqueue_activation() override;
+    
+    //Enqueue all children as deactivated
+    ZST_EXPORT virtual void enqueue_deactivation() override;
+    
+    //Set all children as activated
+    ZST_EXPORT virtual void set_activation_status(ZstSyncStatus status) override;
+    
 
 private:
 	ZstEntityMap m_children;
