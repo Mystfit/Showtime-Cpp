@@ -160,7 +160,7 @@ void ZstContainer::set_parent(ZstEntityBase * entity)
     ZstComponent::set_parent(entity);
     
 	auto children = m_children;
-	for (auto child : m_children) {
+	for (auto child : children) {
         this->remove_child(child.second);
 	}
     

@@ -58,7 +58,7 @@ protected:
     ZST_EXPORT virtual void set_activating();
     ZST_EXPORT void set_deactivating();
     ZST_EXPORT virtual void set_activation_status(ZstSyncStatus status);
-    ZST_EXPORT virtual void set_error(ZstSyncError e);
+    ZST_EXPORT void set_error(ZstSyncError e);
 
 private:
 	ZstEventDispatcher * m_activation_events;

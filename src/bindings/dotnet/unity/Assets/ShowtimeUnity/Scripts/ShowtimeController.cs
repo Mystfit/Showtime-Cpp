@@ -5,8 +5,8 @@ using UnityEngine;
 
 public class ShowtimeController : MonoBehaviour {
 
-	public string stageAddress = "127.0.0.1";
-	public string localPerformerName = "unity_performer";
+    public string stageAddress = "127.0.0.1";
+    public string localPerformerName = "unity_performer";
 
     //Entities
     private Push pushA;
@@ -26,11 +26,18 @@ public class ShowtimeController : MonoBehaviour {
     void Start () {
 
         //Initialise Showtime
-		showtime.init("unity_test", true);
+        showtime.init("unity_test", true);
         showtime.init_file_logging("unity_showtime.log");
 
+        StartCoroutine(TestLibrary());
+    }
+
+   private IEnumerator TestLibrary()
+    {
         //Join the performance
-        showtime.join(stageAddress);
+        showtime.join_async(stageAddress);
+
+        yield return new WaitUntil(() => showtime.is_connected());
 
         //Create and attach callbacks for Showtime events
         entityArrive = new EntityArrivingCallback();
@@ -39,48 +46,61 @@ public class ShowtimeController : MonoBehaviour {
         plugLeave = new PlugLeavingCallback();
         cableArrive = new CableArrivingCallback();
         cableLeave = new CableLeavingCallback();
-
-        //Create a root entity to represent this client. I recommend 1 per process.
         
         add = new AddFilter("adder");
         pushA = new Push("addend");
         pushB = new Push("augend");
         sink = new Sink("sink");
 
-        showtime.activate_entity(add);
-        showtime.activate_entity(pushA);
-        showtime.activate_entity(pushB);
-        showtime.activate_entity(sink);
+        //Entities need to be activated to become 'live' in the performance
+        Debug.Log("Activating entities");
+        showtime.activate_entity_async(add);
+        showtime.activate_entity_async(pushA);
+        showtime.activate_entity_async(pushB);
+        showtime.activate_entity_async(sink);
 
-        Debug.Log("adder activated:" + add.is_activated());
-        Debug.Log("addend activated:" + pushA.is_activated());
-        Debug.Log("augend activated:" + pushB.is_activated());
-        Debug.Log("sink activated:" + sink.is_activated());
+        yield return new WaitUntil(() => 
+            (add.is_activated() &&
+            pushA.is_activated() &&
+            pushB.is_activated() &&
+            sink.is_activated())
+        );
 
-        //Connect the plugs together
-        ZstCable augend_cable = showtime.connect_cable(add.augend(), pushA.plug);
-        ZstCable addend_cable = showtime.connect_cable(add.addend(), pushB.plug);
-        ZstCable sum_cable = showtime.connect_cable(sink.plug, add.sum());
+        //Connect the plugs together with cables
+        Debug.Log("Connecting cables");
+        ZstCable augend_cable = showtime.connect_cable_async(add.augend(), pushA.plug);
+        ZstCable addend_cable = showtime.connect_cable_async(add.addend(), pushB.plug);
+        ZstCable sum_cable = showtime.connect_cable_async(sink.plug, add.sum());
+        
+        yield return new WaitUntil(() => 
+            (augend_cable.is_activated() && 
+            addend_cable.is_activated() && 
+            sum_cable.is_activated())
+        );
 
         //Send a value through this plug. This is an Int plug so we send an int (duh)
+        Debug.Log("Sending test values");
         pushA.send(27);
         pushB.send(3);
-	}
-	
-	void Update () {
+    }
+    
+    void Update () {
         if (showtime.is_connected())
             showtime.poll_once();
     }
 
-	//Clean up on exit. 
-	void OnApplicationQuit(){
-		Debug.Log ("Cleaning up Showtime");
+    //Clean up on exit. 
+    void OnApplicationQuit(){
+        Debug.Log ("Leaving performance");
         showtime.deactivate_entity(add);
         showtime.deactivate_entity(pushA);
         showtime.deactivate_entity(pushB);
         showtime.deactivate_entity(sink);
-        showtime.destroy ();
-	}
+
+        //We don't have to tear down the library at this point unless we want to run init() again.
+        //The showtime singleton will take care of itself on program exit, but we still need to leave
+        showtime.leave_immediately();
+    }
     
     // Entities
     //---------
