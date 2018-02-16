@@ -201,19 +201,19 @@ void ZstClient::process_callbacks()
     
     if(is_connected_to_stage()){
         m_client_connected_event_manager->process();
+        m_compute_event_manager->process();
         m_synchronisable_event_manager->process();
         m_client_disconnected_event_manager->process();
-        m_performer_arriving_event_manager->process();
-        m_performer_leaving_event_manager->process();
-        m_component_arriving_event_manager->process();
-        m_component_leaving_event_manager->process();
-        m_component_type_arriving_event_manager->process();
-        m_component_type_leaving_event_manager->process();
         m_cable_arriving_event_manager->process();
         m_cable_leaving_event_manager->process();
         m_plug_arriving_event_manager->process();
         m_plug_leaving_event_manager->process();
-        m_compute_event_manager->process();
+        m_component_arriving_event_manager->process();
+        m_component_leaving_event_manager->process();
+        m_component_type_arriving_event_manager->process();
+        m_component_type_leaving_event_manager->process();
+        m_performer_arriving_event_manager->process();
+        m_performer_leaving_event_manager->process();
     }
 }
 
@@ -222,16 +222,16 @@ void ZstClient::flush_events()
 	m_synchronisable_event_manager->flush();
 	m_client_connected_event_manager->flush();
 	m_client_disconnected_event_manager->flush();
+    m_plug_arriving_event_manager->flush();
+    m_plug_leaving_event_manager->flush();
 	m_cable_arriving_event_manager->flush();
 	m_cable_leaving_event_manager->flush();
-	m_performer_arriving_event_manager->flush();
-	m_performer_leaving_event_manager->flush();
 	m_component_arriving_event_manager->flush();
 	m_component_leaving_event_manager->flush();
 	m_component_type_arriving_event_manager->flush();
 	m_component_type_leaving_event_manager->flush();
-	m_plug_arriving_event_manager->flush();
-	m_plug_leaving_event_manager->flush();
+    m_performer_arriving_event_manager->flush();
+    m_performer_leaving_event_manager->flush();
 	m_compute_event_manager->flush();
 }
 
