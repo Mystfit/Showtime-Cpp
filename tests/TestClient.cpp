@@ -8,7 +8,8 @@
 #include <exception>
 
 #ifdef WIN32
-#pragma warning disable 4189
+#pragma warning(push) 
+#pragma warning(disable:4189 4996)
 #else
 #pragma GCC diagnostic pop
 #pragma GCC diagnostic push
@@ -18,7 +19,7 @@
 #include <boost/thread/thread.hpp>
 #include <boost/filesystem.hpp>
 #ifdef WIN32
-#pragma warning restore 4189
+#pragma warning(pop)
 #else
 #pragma GCC diagnostic pop
 #endif
@@ -744,7 +745,7 @@ void test_memory_leaks() {
 
 			last = now;
 			mps = (long)delta_messages / (delta.count() / 1000.0);
-			queue_speed = (long)delta_queue / (delta.count() / 1000.0);
+			queue_speed = static_cast<long>(delta_queue / (delta.count() / 1000.0));
 
 			remaining_messages = count - message_count;
 			last_message_count = message_count;

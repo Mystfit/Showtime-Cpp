@@ -444,7 +444,7 @@ void ZstClient::synchronise_graph_sync(MessageFuture & future)
 		this->synchronise_graph_complete(status);
 	}
 	catch (const ZstTimeoutException & e) {
-		ZstLog::error("Synchronising graph sync with stage timed out");
+		ZstLog::error("Synchronising graph sync with stage timed out: {}", e.what());
 	}
 }
 
@@ -457,7 +457,7 @@ void ZstClient::synchronise_graph_async(MessageFuture & future)
 			this->synchronise_graph_complete(status);
 		}
 		catch (const ZstTimeoutException & e) {
-			ZstLog::error("Synchronising graph async with stage timed out");
+			ZstLog::error("Synchronising graph async with stage timed out: {}", e.what());
 			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
 		}
 		return status;
@@ -490,10 +490,10 @@ void ZstClient::leave_stage(bool immediately)
 			}
 		}
 		catch (const ZstTimeoutException & e) {
-			ZstLog::error("Stage leave timeout");
+			ZstLog::error("Stage leave timeout: {}", e.what());
 		}
     } else {
-        ZstLog::warn("Not connected to stage. Skipping to cleanup.");
+        ZstLog::warn("Not connected to stage. Skipping to cleanup. {}");
         leave_stage_complete();
     }
 }
@@ -509,9 +509,9 @@ void ZstClient::leave_stage_complete()
     flush_events();
 
     //Disconnect rest of sockets and timers
+	detach_timer(m_heartbeat_timer_id);
     zsock_disconnect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
     zsock_disconnect(m_stage_router, "%s", m_stage_router_addr.c_str());
-    detach_timer(m_heartbeat_timer_id);
 }
 
 bool ZstClient::is_connected_to_stage()
@@ -745,7 +745,7 @@ int ZstClient::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
 		client->send_to_stage(msg);
 	}
 	catch (const ZstTimeoutException & e) {
-		ZstLog::error("Heartbeat timed out");
+		ZstLog::error("Heartbeat timed out: {}", e.what());
 	}
 
 	return 0;
@@ -901,7 +901,7 @@ void ZstClient::activate_entity_sync(ZstEntityBase * entity, MessageFuture & fut
 		process_callbacks();
 	}
 	catch (const ZstTimeoutException & e) {
-		ZstLog::error("Activate entity sync call timed out");
+		ZstLog::error("Activate entity sync call timed out: {}", e.what());
 	}
 }
 
@@ -919,7 +919,7 @@ void ZstClient::activate_entity_async(ZstEntityBase * entity, MessageFuture & fu
 				ZstLog::error("Entity {} went missing during activation!", entity_path.path());
 		}
 		catch (const ZstTimeoutException & e) {
-			ZstLog::error("Activate entity async call timed out");
+			ZstLog::error("Activate entity async call timed out: {}", e.what());
 			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
 		}
 		return status;
@@ -995,7 +995,7 @@ void ZstClient::destroy_entity_sync(ZstEntityBase * entity, MessageFuture & futu
 		process_callbacks();
 	}
 	catch (const ZstTimeoutException & e) {
-		ZstLog::error("Destroy entity sync timed out");
+		ZstLog::error("Destroy entity sync timed out: {}", e.what());
 	}
 }
 
@@ -1012,7 +1012,7 @@ void ZstClient::destroy_entity_async(ZstEntityBase * entity, MessageFuture & fut
 			ZstLog::debug("Destroy entity {} completed with status {}", entity_path.path(), status);
 		}
 		catch (const ZstTimeoutException & e) {
-			ZstLog::error("Destroy entity async timed out");
+			ZstLog::error("Destroy entity async timed out: {}", e.what());
 			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
 		}
 		return status;
@@ -1176,7 +1176,7 @@ void ZstClient::destroy_plug(ZstPlug * plug)
 				return status;
 			});
 		} catch (const ZstTimeoutException & e) {
-			ZstLog::error("Destroy plug timed out");
+			ZstLog::error("Destroy plug timed out: {}", e.what());
 		}
 	}
 
@@ -1256,7 +1256,7 @@ void ZstClient::connect_cable_sync(ZstCable * cable, MessageFuture & future)
 		process_callbacks();
 	}
 	catch (const ZstTimeoutException & e) {
-		ZstLog::error("Connect cable sync timed out");
+		ZstLog::error("Connect cable sync timed out: {}", e.what());
 	}
 }
 
@@ -1269,7 +1269,7 @@ void ZstClient::connect_cable_async(ZstCable * cable, MessageFuture & future)
 			this->connect_cable_complete(status, cable);
 		}
 		catch (const ZstTimeoutException & e) {
-			ZstLog::error("Connect cable async timed out");
+			ZstLog::error("Connect cable async timed out: {}", e.what());
 			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
 		}
 		return status;
@@ -1302,7 +1302,7 @@ void ZstClient::destroy_cable(ZstCable * cable, bool async)
 		}
 	}
 	catch (const ZstTimeoutException & e) {
-		ZstLog::error("Destroy cable timed out");
+		ZstLog::error("Destroy cable timed out: {}", e.what());
 	}
 }
 
@@ -1315,7 +1315,7 @@ void ZstClient::destroy_cable_sync(ZstCable * cable, MessageFuture & future)
 		process_callbacks();
 	}
 	catch (const ZstTimeoutException & e) {
-		ZstLog::error("Destroy cable sync timed out");
+		ZstLog::error("Destroy cable sync timed out: ", e.what());
 	}
 }
 
@@ -1328,7 +1328,7 @@ void ZstClient::destroy_cable_async(ZstCable * cable, MessageFuture & future)
 			this->destroy_cable_complete(status, cable);
 		}
 		catch (const ZstTimeoutException & e) {
-			ZstLog::error("Destroy cable async timed out");
+			ZstLog::error("Destroy cable async timed out: {}", e.what());
 			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
 		}
 		return status;
