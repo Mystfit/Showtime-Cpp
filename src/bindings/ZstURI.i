@@ -5,5 +5,4 @@
 %ignore ZstURI::operator!=;
 %ignore ZstURIHash;
 
-%include "std_string.i"
 %include <ZstURI.h>

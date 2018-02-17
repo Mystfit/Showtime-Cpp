@@ -5,7 +5,6 @@
 #include <spdlog/fmt/fmt.h>
 #include <Queue.h>
 #include <string>
-#include <sstream>
 
 #include <spdlog/fmt/fmt.h>
 #include <log4cplus/logger.h>

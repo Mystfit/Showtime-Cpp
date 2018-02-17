@@ -1,3 +1,7 @@
+%include "std_string.i"
+%ignore std::stringstream;
+%ignore ZstLog::LoggerInfo;
+
 %include <ZstExports.h>
 %include <ZstConstants.h>
 %include "ZstLogging.i"

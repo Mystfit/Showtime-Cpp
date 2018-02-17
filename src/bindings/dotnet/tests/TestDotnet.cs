@@ -83,7 +83,10 @@ public class TestShowtimeDotnet
         _cancelationTokenSource.Cancel();
 
         //Leave the stage and clean up
-        showtime.destroy();
+        showtime.leave();
+
+        Console.Write("Press any key to exit...");
+        var wait = Console.ReadLine();
     }
 
     public void event_loop()
