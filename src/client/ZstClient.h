@@ -70,18 +70,19 @@ public:
 	void disconnect_plugs(ZstPlug * input_plug, ZstPlug * output_plug);
 	
 	//Callbacks
-	ZstEventDispatcher * client_connected_events();
-	ZstEventDispatcher * client_disconnected_events();
-	ZstEventDispatcher * performer_arriving_events();
-	ZstEventDispatcher * performer_leaving_events();
-	ZstEventDispatcher * component_arriving_events();
-	ZstEventDispatcher * component_leaving_events();
-	ZstEventDispatcher * component_type_arriving_events();
-	ZstEventDispatcher * component_type_leaving_events();
-	ZstEventDispatcher * plug_arriving_events();
-	ZstEventDispatcher * plug_leaving_events();
-	ZstEventDispatcher * cable_arriving_events();
-	ZstEventDispatcher * cable_leaving_events();
+	ZstEventDispatcher & client_connected_events();
+	ZstEventDispatcher & client_disconnected_events();
+	ZstEventDispatcher & performer_arriving_events();
+	ZstEventDispatcher & performer_leaving_events();
+	ZstEventDispatcher & component_arriving_events();
+	ZstEventDispatcher & component_leaving_events();
+	ZstEventDispatcher & component_type_arriving_events();
+	ZstEventDispatcher & component_type_leaving_events();
+	ZstEventDispatcher & plug_arriving_events();
+	ZstEventDispatcher & plug_leaving_events();
+	ZstEventDispatcher & cable_arriving_events();
+	ZstEventDispatcher & cable_leaving_events();
+	ZstEventDispatcher & compute_events();
 	
 	//Debugging
 	int graph_recv_tripmeter();
@@ -107,8 +108,8 @@ private:
 	ZstMessage * receive_stage_update();
 
 	//Message pools
-	ZstMessagePool * msg_pool();
-	ZstMessagePool * m_message_pool;
+	ZstMessagePool & msg_pool();
+	ZstMessagePool m_message_pool;
 
 	//Entity reaper
 	ZstReaper m_reaper;
@@ -190,26 +191,26 @@ private:
 	ZstCableList m_cables;
 	
 	//Events and callbacks
-	ZstEventDispatcher * m_client_connected_event_manager;
-	ZstEventDispatcher * m_client_disconnected_event_manager;
-	ZstEventDispatcher * m_performer_arriving_event_manager;
-	ZstEventDispatcher * m_performer_leaving_event_manager;
-	ZstEventDispatcher * m_component_arriving_event_manager;
-	ZstEventDispatcher * m_component_leaving_event_manager;
-	ZstEventDispatcher * m_component_type_arriving_event_manager;
-	ZstEventDispatcher * m_component_type_leaving_event_manager;
-	ZstEventDispatcher * m_cable_arriving_event_manager;
-	ZstEventDispatcher * m_cable_leaving_event_manager;
-	ZstEventDispatcher * m_plug_arriving_event_manager;
-	ZstEventDispatcher * m_plug_leaving_event_manager;
-	ZstEventDispatcher * m_compute_event_manager;
-	ZstEventDispatcher * m_synchronisable_event_manager;
+	ZstEventDispatcher m_client_connected_event_manager;
+	ZstEventDispatcher m_client_disconnected_event_manager;
+	ZstEventDispatcher m_performer_arriving_event_manager;
+	ZstEventDispatcher m_performer_leaving_event_manager;
+	ZstEventDispatcher m_component_arriving_event_manager;
+	ZstEventDispatcher m_component_leaving_event_manager;
+	ZstEventDispatcher m_component_type_arriving_event_manager;
+	ZstEventDispatcher m_component_type_leaving_event_manager;
+	ZstEventDispatcher m_cable_arriving_event_manager;
+	ZstEventDispatcher m_cable_leaving_event_manager;
+	ZstEventDispatcher m_plug_arriving_event_manager;
+	ZstEventDispatcher m_plug_leaving_event_manager;
+	ZstEventDispatcher m_compute_event_manager;
+	ZstEventDispatcher m_synchronisable_event_manager;
 		
 	//Zeromq pipes
-	zsock_t *m_stage_router;        //Stage pipe in
-	zsock_t *m_stage_updates;		//Stage publisher for updates
-	zsock_t *m_graph_out;           //Pub for sending graph outputs
-	zsock_t *m_graph_in;            //Sub for receiving graph inputs
+	zsock_t * m_stage_router;        //Stage pipe in
+	zsock_t * m_stage_updates;		//Stage publisher for updates
+	zsock_t * m_graph_out;           //Pub for sending graph outputs
+	zsock_t * m_graph_in;            //Sub for receiving graph inputs
 
 	//Addresses
 	std::string m_stage_addr = "127.0.0.1";

@@ -17,20 +17,6 @@ ZstClient::ZstClient() :
     m_num_graph_send_messages(0)
 {
 	//Event queues
-	m_synchronisable_event_manager = new ZstEventDispatcher();
-	m_client_connected_event_manager = new ZstEventDispatcher();
-	m_client_disconnected_event_manager = new ZstEventDispatcher();
-	m_performer_arriving_event_manager = new ZstEventDispatcher();
-	m_performer_leaving_event_manager = new ZstEventDispatcher();
-	m_component_arriving_event_manager = new ZstEventDispatcher();
-	m_component_leaving_event_manager = new ZstEventDispatcher();
-	m_component_type_arriving_event_manager = new ZstEventDispatcher;
-	m_component_type_leaving_event_manager = new ZstEventDispatcher();
-	m_cable_arriving_event_manager = new ZstEventDispatcher();
-	m_cable_leaving_event_manager = new ZstEventDispatcher();
-	m_plug_arriving_event_manager = new ZstEventDispatcher();
-	m_plug_leaving_event_manager = new ZstEventDispatcher();
-	m_compute_event_manager = new ZstEventDispatcher();
 
 	//Client events
 	m_synchronisable_deferred_event = new ZstSynchronisableDeferredEvent();
@@ -40,50 +26,33 @@ ZstClient::ZstClient() :
 	m_plug_leaving_hook = new ZstPlugLeavingEvent();
 	m_compute_event = new ZstComputeEvent();
 	
-	m_synchronisable_event_manager->attach_event_listener(m_synchronisable_deferred_event);
-	m_performer_leaving_event_manager->attach_post_event_callback(m_performer_leaving_hook);
-	m_component_leaving_event_manager->attach_post_event_callback(m_component_leaving_hook);
-	m_cable_leaving_event_manager->attach_post_event_callback(m_cable_leaving_hook);
-	m_plug_leaving_event_manager->attach_post_event_callback(m_plug_leaving_hook);
-	m_compute_event_manager->attach_event_listener(m_compute_event);
+	m_synchronisable_event_manager.attach_event_listener(m_synchronisable_deferred_event);
+	m_performer_leaving_event_manager.attach_post_event_callback(m_performer_leaving_hook);
+	m_component_leaving_event_manager.attach_post_event_callback(m_component_leaving_hook);
+	m_cable_leaving_event_manager.attach_post_event_callback(m_cable_leaving_hook);
+	m_plug_leaving_event_manager.attach_post_event_callback(m_plug_leaving_hook);
+	m_compute_event_manager.attach_event_listener(m_compute_event);
 
 	//Message pools
-	m_message_pool = new ZstMessagePool();
-	m_message_pool->populate(MESSAGE_POOL_BLOCK);
+	m_message_pool.populate(MESSAGE_POOL_BLOCK);
 }
 
 ZstClient::~ZstClient() {
 	destroy();
 
-	m_synchronisable_event_manager->remove_event_listener(m_synchronisable_deferred_event);
-	m_performer_leaving_event_manager->attach_post_event_callback(m_performer_leaving_hook);
-	m_component_leaving_event_manager->remove_post_event_callback(m_component_leaving_hook);
-	m_cable_leaving_event_manager->remove_post_event_callback(m_cable_leaving_hook);
-	m_plug_leaving_event_manager->remove_post_event_callback(m_plug_leaving_hook);
-	m_compute_event_manager->remove_post_event_callback(m_compute_event);
-
-	delete m_synchronisable_event_manager;
-	delete m_client_connected_event_manager;
-	delete m_client_disconnected_event_manager;
-	delete m_performer_arriving_event_manager;
-	delete m_performer_leaving_event_manager;
-	delete m_component_arriving_event_manager;
-	delete m_component_leaving_event_manager;
-	delete m_component_type_arriving_event_manager;
-	delete m_component_type_leaving_event_manager;
-	delete m_cable_arriving_event_manager;
-	delete m_cable_leaving_event_manager;
-	delete m_plug_arriving_event_manager;
-	delete m_plug_leaving_event_manager;
-
+	m_synchronisable_event_manager.remove_event_listener(m_synchronisable_deferred_event);
+	m_performer_leaving_event_manager.remove_post_event_callback(m_performer_leaving_hook);
+	m_component_leaving_event_manager.remove_post_event_callback(m_component_leaving_hook);
+	m_cable_leaving_event_manager.remove_post_event_callback(m_cable_leaving_hook);
+	m_plug_leaving_event_manager.remove_post_event_callback(m_plug_leaving_hook);
+	m_compute_event_manager.remove_post_event_callback(m_compute_event);
+	
 	delete m_synchronisable_deferred_event;
 	delete m_performer_leaving_hook;
 	delete m_component_leaving_hook;
 	delete m_cable_leaving_hook;
 	delete m_plug_leaving_hook;
 	delete m_compute_event;
-
-	delete m_message_pool;
 }
 
 ZstClient & ZstClient::instance()
@@ -199,20 +168,20 @@ void ZstClient::process_callbacks()
         return;
     }
     
-    m_client_connected_event_manager->process();
-    m_compute_event_manager->process();
-    m_synchronisable_event_manager->process();
-    m_client_disconnected_event_manager->process();
-    m_cable_arriving_event_manager->process();
-    m_cable_leaving_event_manager->process();
-    m_plug_arriving_event_manager->process();
-    m_plug_leaving_event_manager->process();
-    m_component_arriving_event_manager->process();
-    m_component_leaving_event_manager->process();
-    m_component_type_arriving_event_manager->process();
-    m_component_type_leaving_event_manager->process();
-    m_performer_arriving_event_manager->process();
-    m_performer_leaving_event_manager->process();
+    m_client_connected_event_manager.process();
+    m_compute_event_manager.process();
+    m_synchronisable_event_manager.process();
+    m_client_disconnected_event_manager.process();
+    m_cable_arriving_event_manager.process();
+    m_cable_leaving_event_manager.process();
+    m_plug_arriving_event_manager.process();
+    m_plug_leaving_event_manager.process();
+    m_component_arriving_event_manager.process();
+    m_component_leaving_event_manager.process();
+    m_component_type_arriving_event_manager.process();
+    m_component_type_leaving_event_manager.process();
+    m_performer_arriving_event_manager.process();
+    m_performer_leaving_event_manager.process();
 
 	//Only delete entities after all callbacks have finished
 	m_reaper.reap_all();
@@ -220,20 +189,20 @@ void ZstClient::process_callbacks()
 
 void ZstClient::flush_events()
 {
-	m_synchronisable_event_manager->flush();
-	m_client_connected_event_manager->flush();
-	m_client_disconnected_event_manager->flush();
-    m_plug_arriving_event_manager->flush();
-    m_plug_leaving_event_manager->flush();
-	m_cable_arriving_event_manager->flush();
-	m_cable_leaving_event_manager->flush();
-	m_component_arriving_event_manager->flush();
-	m_component_leaving_event_manager->flush();
-	m_component_type_arriving_event_manager->flush();
-	m_component_type_leaving_event_manager->flush();
-    m_performer_arriving_event_manager->flush();
-    m_performer_leaving_event_manager->flush();
-	m_compute_event_manager->flush();
+	m_synchronisable_event_manager.flush();
+	m_client_connected_event_manager.flush();
+	m_client_disconnected_event_manager.flush();
+    m_plug_arriving_event_manager.flush();
+    m_plug_leaving_event_manager.flush();
+	m_cable_arriving_event_manager.flush();
+	m_cable_leaving_event_manager.flush();
+	m_component_arriving_event_manager.flush();
+	m_component_leaving_event_manager.flush();
+	m_component_type_arriving_event_manager.flush();
+	m_component_type_leaving_event_manager.flush();
+    m_performer_arriving_event_manager.flush();
+    m_performer_leaving_event_manager.flush();
+	m_compute_event_manager.flush();
 }
 
 string ZstClient::first_available_ext_ip(){
@@ -285,7 +254,7 @@ void ZstClient::send_to_stage(ZstMessage * msg)
 	zmsg_t * msg_handle = msg->handle();
 	zmsg_prepend(msg_handle, &empty);
 	msg->send(m_stage_router);
-	msg_pool()->release(msg);
+	msg_pool().release(msg);
 }
 
 ZstMessage * ZstClient::receive_stage_update() 
@@ -293,7 +262,7 @@ ZstMessage * ZstClient::receive_stage_update()
 	ZstMessage * msg = NULL;
 	zmsg_t * recv_msg = zmsg_recv(m_stage_updates);
 	if (recv_msg) {
-		msg = msg_pool()->get();
+		msg = msg_pool().get();
 		msg->unpack(recv_msg);
 	}
 	return msg;
@@ -304,7 +273,7 @@ ZstMessage * ZstClient::receive_from_stage() {
 
 	zmsg_t * recv_msg = zmsg_recv(m_stage_router);
 	if (recv_msg) {
-		msg = msg_pool()->get();
+		msg = msg_pool().get();
 
 		//Pop blank seperator frame left from the dealer socket
 		zframe_t * empty = zmsg_pop(recv_msg);
@@ -321,7 +290,7 @@ ZstMessage * ZstClient::receive_from_stage() {
 // Message pools
 // ------------
 
-ZstMessagePool * ZstClient::msg_pool()
+ZstMessagePool & ZstClient::msg_pool()
 {
 	return m_message_pool;
 }
@@ -352,9 +321,9 @@ void ZstClient::register_client_to_stage(std::string stage_address, bool async) 
     addr.str("");
     
 	//Build connect message
-	ZstMessage * msg = msg_pool()->get()->init_serialisable_message(ZstMsgKind::CLIENT_JOIN, *m_root);
+	ZstMessage * msg = msg_pool().get()->init_serialisable_message(ZstMsgKind::CLIENT_JOIN, *m_root);
 	
-	MessageFuture future = msg_pool()->register_future(msg, true);
+	MessageFuture future = msg_pool().register_future(msg, true);
 	if(async){
 		register_client_to_stage_async(future);
 		send_to_stage(msg);
@@ -425,8 +394,8 @@ void ZstClient::synchronise_graph(bool async)
     
     //Ask the stage to send us a full snapshot
     ZstLog::debug("Requesting stage snapshot");
-    ZstMessage * msg = msg_pool()->get()->init_message(ZstMsgKind::CLIENT_SYNC);
-	MessageFuture future = msg_pool()->register_future(msg, true);
+    ZstMessage * msg = msg_pool().get()->init_message(ZstMsgKind::CLIENT_SYNC);
+	MessageFuture future = msg_pool().register_future(msg, true);
 	
 	if (async) {
 		synchronise_graph_async(future);
@@ -468,7 +437,7 @@ void ZstClient::synchronise_graph_async(MessageFuture & future)
 void ZstClient::synchronise_graph_complete(ZstMsgKind status)
 {
    	m_root->enqueue_activation();
-    client_connected_events()->enqueue(m_root);
+    client_connected_events().enqueue(m_root);
     ZstLog::warn("Graph sync completed");
 }
 
@@ -477,8 +446,8 @@ void ZstClient::leave_stage(bool immediately)
 	if (m_connected_to_stage) {
 		ZstLog::info("Leaving stage");
         
-        ZstMessage * msg = msg_pool()->get()->init_message(ZstMsgKind::CLIENT_LEAVING);
-		MessageFuture future = msg_pool()->register_future(msg, true);
+        ZstMessage * msg = msg_pool().get()->init_message(ZstMsgKind::CLIENT_LEAVING);
+		MessageFuture future = msg_pool().register_future(msg, true);
 		try {
 			send_to_stage(msg);
 
@@ -560,7 +529,7 @@ int ZstClient::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg){
 				//TODO: Lock plug value when deserialising
 				size_t offset = 0;
 				receiving_plug->raw_value()->read((char*)zframe_data(payload), zframe_size(payload), offset);
-				client->m_compute_event_manager->enqueue(receiving_plug);
+				client->compute_events().enqueue(receiving_plug);
 			}
 		}
 	}
@@ -603,10 +572,10 @@ int ZstClient::s_handle_stage_router(zloop_t * loop, zsock_t * socket, void * ar
     }
     
     //Process message promises
-    client->msg_pool()->process_message_promise(msg);
+    client->msg_pool().process_message_promise(msg);
     
     //Cleanup
-	client->msg_pool()->release(msg);
+	client->msg_pool().release(msg);
     return 0;
 }
 
@@ -632,7 +601,7 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 			if(!find_cable_ptr(cable.get_input_URI(), cable.get_output_URI())) {
 				ZstCable * cable_ptr = create_cable_ptr(cable);
                 cable_ptr->set_activation_status(ZstSyncStatus::ACTIVATED);
-				cable_arriving_events()->enqueue(cable_ptr);
+				cable_arriving_events().enqueue(cable_ptr);
 			}
 			break;
 		}
@@ -643,7 +612,7 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 			if (cable_ptr) {
 				if (cable_ptr->is_activated()) {
 					cable_ptr->enqueue_deactivation();
-					this->cable_leaving_events()->enqueue(cable_ptr);
+					this->cable_leaving_events().enqueue(cable_ptr);
 				}
 			}
 			break;
@@ -682,11 +651,11 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
                 if(entity){
                     entity->enqueue_deactivation();
                     if (strcmp(entity->entity_type(), COMPONENT_TYPE) == 0 || strcmp(entity->entity_type(), CONTAINER_TYPE) == 0) {
-                        component_leaving_events()->enqueue(entity);
+                        component_leaving_events().enqueue(entity);
                     } else if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
-                        plug_leaving_events()->enqueue(entity);
+                        plug_leaving_events().enqueue(entity);
                     } else if (strcmp(entity->entity_type(), PERFORMER_TYPE) == 0) {
-                        performer_leaving_events()->enqueue(entity);
+                        performer_leaving_events().enqueue(entity);
                     }
                 }
 			}
@@ -726,8 +695,8 @@ void ZstClient::create_entity_from_template_handler(const ZstURI & entity_templa
 int ZstClient::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
 	ZstClient * client = (ZstClient*)arg;
 	chrono::time_point<chrono::system_clock> start = std::chrono::system_clock::now();
-	ZstMessage * msg = client->msg_pool()->get()->init_message(ZstMsgKind::CLIENT_HEARTBEAT);
-	MessageFuture future = client->msg_pool()->register_future(msg, true);
+	ZstMessage * msg = client->msg_pool().get()->init_message(ZstMsgKind::CLIENT_HEARTBEAT);
+	MessageFuture future = client->msg_pool().register_future(msg, true);
 
 	try {
 		future.then([&start, client](MessageFuture f) {
@@ -876,10 +845,10 @@ void ZstClient::activate_entity(ZstEntityBase * entity, bool async)
 	entity->set_activating();
 	
 	//Build message
-	ZstMessage * msg = msg_pool()->get()->init_entity_message(entity);
+	ZstMessage * msg = msg_pool().get()->init_entity_message(entity);
 	ZstURI entity_path = entity->URI();
     
-	MessageFuture future = msg_pool()->register_future(msg, true);
+	MessageFuture future = msg_pool().register_future(msg, true);
 	if(async){
 		activate_entity_async(entity, future);
 		send_to_stage(msg);
@@ -957,18 +926,18 @@ void ZstClient::destroy_entity(ZstEntityBase * entity, bool async)
 	//If the entity is local, let the stage know it's leaving
 	if (entity_is_local(*entity)) {
         if(is_connected_to_stage()){
-            ZstMessage * msg = msg_pool()->get()->init_message(ZstMsgKind::DESTROY_ENTITY);
+            ZstMessage * msg = msg_pool().get()->init_message(ZstMsgKind::DESTROY_ENTITY);
             msg->append_str(entity->URI().path(), entity->URI().full_size());
             ZstURI entity_path = entity->URI();
             
-            MessageFuture future = msg_pool()->register_future(msg, true);
+            MessageFuture future = msg_pool().register_future(msg, true);
 			if (async) {
 				destroy_entity_async(entity, future);
 				send_to_stage(msg);
 
 				//Since we own this entity, we can start to clean it up immediately
 				entity->enqueue_deactivation();
-				component_leaving_events()->enqueue(entity);
+				component_leaving_events().enqueue(entity);
 				process_callbacks();
 			}
 			else {
@@ -978,7 +947,7 @@ void ZstClient::destroy_entity(ZstEntityBase * entity, bool async)
 			
         } else {
             entity->enqueue_deactivation();
-			component_leaving_events()->enqueue(entity);
+			component_leaving_events().enqueue(entity);
             process_callbacks();
         }
 	}
@@ -989,7 +958,7 @@ void ZstClient::destroy_entity_sync(ZstEntityBase * entity, MessageFuture & futu
 	try {
 		ZstMsgKind status = future.get();
 		entity->enqueue_deactivation();
-		component_leaving_events()->enqueue(entity);
+		component_leaving_events().enqueue(entity);
 		process_callbacks();
 	}
 	catch (const ZstTimeoutException & e) {
@@ -1071,24 +1040,23 @@ void ZstClient::add_proxy_entity(ZstEntityBase & entity) {
 		}
 
 		ZstEntityBase * entity_proxy = NULL;
-		ZstEventDispatcher * dispatcher = NULL;
-
+		
 		//Create proxies and set parents
 		if (strcmp(entity.entity_type(), COMPONENT_TYPE) == 0) {
 			entity_proxy = new ZstComponent(static_cast<ZstComponent&>(entity));
 			dynamic_cast<ZstContainer*>(parent)->add_child(entity_proxy);
-			dispatcher = component_arriving_events();
+			component_arriving_events().enqueue(entity_proxy);
 		}
 		else if (strcmp(entity.entity_type(), CONTAINER_TYPE) == 0) {
 			entity_proxy = new ZstContainer(static_cast<ZstContainer&>(entity));
 			dynamic_cast<ZstContainer*>(parent)->add_child(entity_proxy);
-			dispatcher = component_arriving_events();
+			component_arriving_events().enqueue(entity_proxy);
 		}
 		else if (strcmp(entity.entity_type(), PLUG_TYPE) == 0) {
 			ZstPlug * plug = new ZstPlug(static_cast<ZstPlug&>(entity));
 			entity_proxy = plug;
 			dynamic_cast<ZstComponent*>(parent)->add_plug(plug);
-			dispatcher = plug_arriving_events();
+			plug_arriving_events().enqueue(entity_proxy);
 		}
 		else {
 			ZstLog::error("Can't create unknown proxy entity type {}", entity.entity_type());
@@ -1099,7 +1067,6 @@ void ZstClient::add_proxy_entity(ZstEntityBase & entity) {
 		//Forceably activate entity and dispatch events
 		entity_proxy->set_network_interactor(this);
         entity_proxy->set_activation_status(ZstSyncStatus::ACTIVATED);
-		dispatcher->enqueue(entity_proxy);
 	}
 	
 }
@@ -1127,7 +1094,7 @@ void ZstClient::add_performer(ZstPerformer & performer)
 	if (performer.URI() != m_root->URI()) {
 		m_clients[performer_proxy->URI()] = performer_proxy;
         performer_proxy->set_activation_status(ZstSyncStatus::ACTIVATED);
-		performer_arriving_events()->enqueue(performer_proxy);
+		performer_arriving_events().enqueue(performer_proxy);
 	}
 }
 
@@ -1162,9 +1129,9 @@ void ZstClient::destroy_plug(ZstPlug * plug, bool async)
 	plug->set_deactivating();
 	
 	if (entity_is_local(*plug)) {
-		ZstMessage * msg = msg_pool()->get()->init_message(ZstMsgKind::DESTROY_ENTITY);
+		ZstMessage * msg = msg_pool().get()->init_message(ZstMsgKind::DESTROY_ENTITY);
 		msg->append_str(plug->URI().path(), plug->URI().full_size());
-		MessageFuture future = msg_pool()->register_future(msg, true);
+		MessageFuture future = msg_pool().register_future(msg, true);
 		if (async) {
 			destroy_plug_async(plug, future);
 			send_to_stage(msg);
@@ -1253,8 +1220,8 @@ ZstCable * ZstClient::connect_cable(ZstPlug * input, ZstPlug * output, bool asyn
 	//TODO: Even though we use a cable object when sending over the wire, it's up to us
 	//to determine the correct input->output order - fix this using ZstInputPlug and 
 	//ZstOutput plug as arguments
-	ZstMessage * msg = msg_pool()->get()->init_serialisable_message(ZstMsgKind::CREATE_CABLE, *cable);
-    MessageFuture future = msg_pool()->register_future(msg, true);
+	ZstMessage * msg = msg_pool().get()->init_serialisable_message(ZstMsgKind::CREATE_CABLE, *cable);
+    MessageFuture future = msg_pool().register_future(msg, true);
     
 	if (async) {
 		connect_cable_async(cable, future);
@@ -1309,9 +1276,9 @@ void ZstClient::destroy_cable(ZstCable * cable, bool async)
 {
 	//Need to set this cable as deactivating so the stage publish message doesn't clean it up too early
 	cable->set_deactivating();
-	ZstMessage * msg = msg_pool()->get()->init_serialisable_message(ZstMsgKind::DESTROY_CABLE, *cable);
+	ZstMessage * msg = msg_pool().get()->init_serialisable_message(ZstMsgKind::DESTROY_CABLE, *cable);
     
-    MessageFuture future = msg_pool()->register_future(msg, true);
+    MessageFuture future = msg_pool().register_future(msg, true);
 	try {
 		if (async) {
 			destroy_cable_async(cable, future);
@@ -1333,7 +1300,7 @@ void ZstClient::destroy_cable_sync(ZstCable * cable, MessageFuture & future)
 	try {
         status = future.get();
 		cable->enqueue_deactivation();
-		cable_leaving_events()->enqueue(cable);
+		cable_leaving_events().enqueue(cable);
 		process_callbacks();
 	}
 	catch (const ZstTimeoutException & e) {
@@ -1348,7 +1315,7 @@ void ZstClient::destroy_cable_async(ZstCable * cable, MessageFuture & future)
 		try {
 			status = f.get();
 			cable->enqueue_deactivation();
-			this->cable_leaving_events()->enqueue(cable);
+			this->cable_leaving_events().enqueue(cable);
 		}
 		catch (const ZstTimeoutException & e) {
 			ZstLog::error("Destroy cable async timed out: {}", e.what());
@@ -1393,22 +1360,22 @@ void ZstClient::disconnect_plugs(ZstPlug * input_plug, ZstPlug * output_plug)
 	destroy_cable(cable);
 }
 
-ZstEventDispatcher * ZstClient::client_connected_events()
+ZstEventDispatcher & ZstClient::client_connected_events()
 {
 	return m_client_connected_event_manager;
 }
 
-ZstEventDispatcher * ZstClient::client_disconnected_events()
+ZstEventDispatcher & ZstClient::client_disconnected_events()
 {
 	return m_client_connected_event_manager;
 }
 
-ZstEventDispatcher * ZstClient::performer_arriving_events()
+ZstEventDispatcher & ZstClient::performer_arriving_events()
 {
 	return m_performer_arriving_event_manager;
 }
 
-ZstEventDispatcher * ZstClient::performer_leaving_events()
+ZstEventDispatcher & ZstClient::performer_leaving_events()
 {
 	return m_performer_leaving_event_manager;
 }
@@ -1419,44 +1386,49 @@ ZstEventDispatcher * ZstClient::performer_leaving_events()
 // Callback manager getters
 // ------------------------
 
-ZstEventDispatcher * ZstClient::component_arriving_events()
+ZstEventDispatcher & ZstClient::component_arriving_events()
 {
 	return m_component_arriving_event_manager;
 }
 
-ZstEventDispatcher * ZstClient::component_leaving_events()
+ZstEventDispatcher & ZstClient::component_leaving_events()
 {
 	return m_component_leaving_event_manager;
 }
 
-ZstEventDispatcher * ZstClient::component_type_arriving_events()
+ZstEventDispatcher & ZstClient::component_type_arriving_events()
 {
     return m_component_type_arriving_event_manager;
 }
 
-ZstEventDispatcher * ZstClient::component_type_leaving_events()
+ZstEventDispatcher & ZstClient::component_type_leaving_events()
 {
     return m_component_type_leaving_event_manager;
 }
 
-ZstEventDispatcher * ZstClient::plug_arriving_events()
+ZstEventDispatcher & ZstClient::plug_arriving_events()
 {
 	return m_plug_arriving_event_manager;
 }
 
-ZstEventDispatcher * ZstClient::plug_leaving_events()
+ZstEventDispatcher & ZstClient::plug_leaving_events()
 {
 	return m_plug_leaving_event_manager;
 }
 
-ZstEventDispatcher * ZstClient::cable_arriving_events()
+ZstEventDispatcher & ZstClient::cable_arriving_events()
 {
 	return m_cable_arriving_event_manager;
 }
 
-ZstEventDispatcher * ZstClient::cable_leaving_events()
+ZstEventDispatcher & ZstClient::cable_leaving_events()
 {
 	return m_cable_leaving_event_manager;
+}
+
+ZstEventDispatcher & ZstClient::compute_events()
+{
+	return m_compute_event_manager;
 }
 
 int ZstClient::graph_recv_tripmeter()
@@ -1481,5 +1453,5 @@ void ZstClient::reset_graph_send_tripmeter()
 
 void ZstClient::enqueue_synchronisable_event(ZstSynchronisable * synchronisable)
 {
-	m_synchronisable_event_manager->enqueue(synchronisable);
+	m_synchronisable_event_manager.enqueue(synchronisable);
 }
