@@ -5,20 +5,14 @@
 // Item removal hooks
 // ------------------
 
-void ZstComponentLeavingEvent::run(ZstComponent * target)
+void ZstPlugLeavingEvent::run(ZstPlug * target)
 {
-    ZstClient::instance().destroy_entity_complete(ZstMsgKind::OK, static_cast<ZstEntityBase*>(target));
+	ZstClient::instance().destroy_plug_complete(ZstMsgKind::OK, target);
 }
 
 void ZstCableLeavingEvent::run(ZstCable * target)
 {
-	ZstCable::destroy(target);
-}
-
-void ZstPlugLeavingEvent::run(ZstPlug * target)
-{
-	dynamic_cast<ZstComponent*>(target->parent())->remove_plug(target);
-	ZstClient::instance().destroy_plug(target);
+	ZstClient::instance().destroy_cable_complete(ZstMsgKind::OK, target);
 }
 
 void ZstSynchronisableDeferredEvent::run(ZstSynchronisable * target)
@@ -29,4 +23,9 @@ void ZstSynchronisableDeferredEvent::run(ZstSynchronisable * target)
 void ZstComputeEvent::run(ZstInputPlug * target)
 {
 	dynamic_cast<ZstComponent*>(target->parent())->compute(target);
+}
+
+void ZstEntityLeavingEvent::run(ZstEntityBase * target)
+{
+	ZstClient::instance().destroy_entity_complete(ZstMsgKind::OK, target);
 }

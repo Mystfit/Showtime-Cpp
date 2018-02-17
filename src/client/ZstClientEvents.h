@@ -7,8 +7,13 @@ class ZstSynchronisableDeferredEvent : public ZstSynchronisableEvent {
 };
 
 
-class ZstComponentLeavingEvent : public ZstComponentEvent {
-	virtual void run(ZstComponent * target) override;
+class ZstEntityLeavingEvent : public ZstEntityEvent {
+	virtual void run(ZstEntityBase * target) override;
+};
+
+
+class ZstPlugLeavingEvent : public ZstPlugEvent {
+	virtual void run(ZstPlug * target) override;
 };
 
 
@@ -16,10 +21,6 @@ class ZstCableLeavingEvent : public ZstCableEvent {
 	virtual void run(ZstCable * target) override;
 };
 
-
-class ZstPlugLeavingEvent : public ZstPlugEvent {
-	virtual void run(ZstPlug * target) override;
-};
 
 class ZstComputeEvent : public ZstInputPlugEvent {
 	virtual void run(ZstInputPlug * target) override;

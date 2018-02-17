@@ -34,12 +34,12 @@ ZstClient::ZstClient() :
 
 	//Client events
 	m_synchronisable_deferred_event = new ZstSynchronisableDeferredEvent();
-	m_performer_leaving_hook = new ZstComponentLeavingEvent();
-	m_component_leaving_hook = new ZstComponentLeavingEvent();
+	m_performer_leaving_hook = new ZstEntityLeavingEvent();
+	m_component_leaving_hook = new ZstEntityLeavingEvent();
 	m_cable_leaving_hook = new ZstCableLeavingEvent();
 	m_plug_leaving_hook = new ZstPlugLeavingEvent();
 	m_compute_event = new ZstComputeEvent();
-
+	
 	m_synchronisable_event_manager->attach_event_listener(m_synchronisable_deferred_event);
 	m_performer_leaving_event_manager->attach_post_event_callback(m_performer_leaving_hook);
 	m_component_leaving_event_manager->attach_post_event_callback(m_component_leaving_hook);
@@ -199,22 +199,23 @@ void ZstClient::process_callbacks()
         return;
     }
     
-    if(is_connected_to_stage()){
-        m_client_connected_event_manager->process();
-        m_compute_event_manager->process();
-        m_synchronisable_event_manager->process();
-        m_client_disconnected_event_manager->process();
-        m_cable_arriving_event_manager->process();
-        m_cable_leaving_event_manager->process();
-        m_plug_arriving_event_manager->process();
-        m_plug_leaving_event_manager->process();
-        m_component_arriving_event_manager->process();
-        m_component_leaving_event_manager->process();
-        m_component_type_arriving_event_manager->process();
-        m_component_type_leaving_event_manager->process();
-        m_performer_arriving_event_manager->process();
-        m_performer_leaving_event_manager->process();
-    }
+    m_client_connected_event_manager->process();
+    m_compute_event_manager->process();
+    m_synchronisable_event_manager->process();
+    m_client_disconnected_event_manager->process();
+    m_cable_arriving_event_manager->process();
+    m_cable_leaving_event_manager->process();
+    m_plug_arriving_event_manager->process();
+    m_plug_leaving_event_manager->process();
+    m_component_arriving_event_manager->process();
+    m_component_leaving_event_manager->process();
+    m_component_type_arriving_event_manager->process();
+    m_component_type_leaving_event_manager->process();
+    m_performer_arriving_event_manager->process();
+    m_performer_leaving_event_manager->process();
+
+	//Only delete entities after all callbacks have finished
+	m_reaper.reap_all();
 }
 
 void ZstClient::flush_events()
@@ -500,18 +501,18 @@ void ZstClient::leave_stage(bool immediately)
 
 void ZstClient::leave_stage_complete()
 {
-    m_connected_to_stage = false;
-    
     //Deactivate all owned entities
-    destroy_entity(m_root);
+	m_root->enqueue_deactivation();
     
     //Purge callbacks
-    flush_events();
+    process_callbacks();
 
     //Disconnect rest of sockets and timers
 	detach_timer(m_heartbeat_timer_id);
     zsock_disconnect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
     zsock_disconnect(m_stage_router, "%s", m_stage_router_addr.c_str());
+
+	m_connected_to_stage = false;
 }
 
 bool ZstClient::is_connected_to_stage()
@@ -640,8 +641,10 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 			const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(i);
 			ZstCable * cable_ptr = find_cable_ptr(cable.get_input_URI(), cable.get_output_URI());
 			if (cable_ptr) {
-				if(cable_ptr->is_activated())
-					this->destroy_cable_complete(ZstMsgKind::OK, cable_ptr);
+				if (cable_ptr->is_activated()) {
+					cable_ptr->enqueue_deactivation();
+					this->cable_leaving_events()->enqueue(cable_ptr);
+				}
 			}
 			break;
 		}
@@ -649,13 +652,6 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 		{
 			ZstPlug plug = msg->unpack_payload_serialisable<ZstPlug>(i);
 			add_proxy_entity(plug);
-			break;
-		}
-		case ZstMsgKind::DESTROY_PLUG:
-		{
-			ZstURI plug_path = ZstURI(msg->payload_at(i).data());
-			ZstPlug * plug = dynamic_cast<ZstPlug*>(find_plug(plug_path));
-			plug_leaving_events()->enqueue(plug);
 			break;
 		}
 		case ZstMsgKind::CREATE_PERFORMER:
@@ -971,7 +967,9 @@ void ZstClient::destroy_entity(ZstEntityBase * entity, bool async)
 				send_to_stage(msg);
 
 				//Since we own this entity, we can start to clean it up immediately
-				destroy_entity_complete(ZstMsgKind::OK, entity);
+				entity->enqueue_deactivation();
+				component_leaving_events()->enqueue(entity);
+				process_callbacks();
 			}
 			else {
 				send_to_stage(msg);
@@ -980,7 +978,7 @@ void ZstClient::destroy_entity(ZstEntityBase * entity, bool async)
 			
         } else {
             entity->enqueue_deactivation();
-            destroy_entity_complete(ZstMsgKind::OK, entity);
+			component_leaving_events()->enqueue(entity);
             process_callbacks();
         }
 	}
@@ -991,7 +989,7 @@ void ZstClient::destroy_entity_sync(ZstEntityBase * entity, MessageFuture & futu
 	try {
 		ZstMsgKind status = future.get();
 		entity->enqueue_deactivation();
-		destroy_entity_complete(status, entity);
+		component_leaving_events()->enqueue(entity);
 		process_callbacks();
 	}
 	catch (const ZstTimeoutException & e) {
@@ -1022,6 +1020,8 @@ void ZstClient::destroy_entity_async(ZstEntityBase * entity, MessageFuture & fut
 void ZstClient::destroy_entity_complete(ZstMsgKind status, ZstEntityBase * entity)
 {
 	if (entity) {
+		entity->set_destroyed();
+
         if(status != ZstMsgKind::OK){
             ZstLog::error("Destroy entity failed with status {}", status);
         }
@@ -1037,10 +1037,10 @@ void ZstClient::destroy_entity_complete(ZstMsgKind status, ZstEntityBase * entit
 			m_clients.erase(entity->URI());
 		}
 
-		//If this entity is remote, we can clean it up
-		if (!entity_is_local(*entity)) {
-			delete entity;
-		}
+		//Finally, add non-local entities to the reaper to destroy them at the correct time
+		//TODO: Only destroying proxy entities at the moment. Local entities should be managed by the host application
+		if(!entity_is_local(*entity))
+			m_reaper.add(entity);
 	}
 }
 
@@ -1153,44 +1153,65 @@ ZstPerformer * ZstClient::get_local_performer() const
 // Plugs
 // -----
 
-void ZstClient::destroy_plug(ZstPlug * plug)
+void ZstClient::destroy_plug(ZstPlug * plug, bool async)
 {
     if (m_is_destroyed) {
         return;
     }
 
-	plug->set_destroyed();
 	plug->set_deactivating();
-
-	bool is_local = entity_is_local(*plug);
-
-	if (is_local) {
+	
+	if (entity_is_local(*plug)) {
 		ZstMessage * msg = msg_pool()->get()->init_message(ZstMsgKind::DESTROY_ENTITY);
 		msg->append_str(plug->URI().path(), plug->URI().full_size());
 		MessageFuture future = msg_pool()->register_future(msg, true);
-
-		try {
-			future.then([this](MessageFuture f) {
-				int status = f.get();
-				this->destroy_plug_complete(status);
-				return status;
-			});
-		} catch (const ZstTimeoutException & e) {
-			ZstLog::error("Destroy plug timed out: {}", e.what());
+		if (async) {
+			destroy_plug_async(plug, future);
+			send_to_stage(msg);
+		}
+		else {
+			send_to_stage(msg);
+			destroy_plug_sync(plug, future);
 		}
 	}
+}
+
+void ZstClient::destroy_plug_sync(ZstPlug * plug, MessageFuture & future)
+{
+	try {
+		ZstMsgKind status = future.get();
+		destroy_plug_complete(status, plug);
+		process_callbacks();
+	}
+	catch (const ZstTimeoutException & e) {
+		ZstLog::error("Destroy plug timed out: {}", e.what());
+	}
+}
+
+void ZstClient::destroy_plug_async(ZstPlug * plug, MessageFuture & future)
+{
+	try {
+		future.then([this, plug](MessageFuture f) {
+			ZstMsgKind status = f.get();
+			this->destroy_plug_complete(status, plug);
+			return status;
+		});
+	}
+	catch (const ZstTimeoutException & e) {
+		ZstLog::error("Destroy plug timed out: {}", e.what());
+	}
+}
+
+
+void ZstClient::destroy_plug_complete(ZstMsgKind status, ZstPlug * plug)
+{
+	plug->set_destroyed();
 
 	ZstComponent * parent = dynamic_cast<ZstComponent*>(plug->parent());
 	parent->remove_plug(plug);
 
-	if (!is_local) {
-		delete plug;
-		plug = NULL;
-	}
-}
-
-void ZstClient::destroy_plug_complete(int status)
-{	
+	//Finally, add to the reaper to destroy the plug at the correct time
+	m_reaper.add(plug);
 }
 
  // ------
@@ -1311,7 +1332,8 @@ void ZstClient::destroy_cable_sync(ZstCable * cable, MessageFuture & future)
     ZstMsgKind status(ZstMsgKind::EMPTY);
 	try {
         status = future.get();
-		destroy_cable_complete(status, cable);
+		cable->enqueue_deactivation();
+		cable_leaving_events()->enqueue(cable);
 		process_callbacks();
 	}
 	catch (const ZstTimeoutException & e) {
@@ -1325,7 +1347,8 @@ void ZstClient::destroy_cable_async(ZstCable * cable, MessageFuture & future)
 		ZstMsgKind status(ZstMsgKind::EMPTY);
 		try {
 			status = f.get();
-			this->destroy_cable_complete(status, cable);
+			cable->enqueue_deactivation();
+			this->cable_leaving_events()->enqueue(cable);
 		}
 		catch (const ZstTimeoutException & e) {
 			ZstLog::error("Destroy cable async timed out: {}", e.what());
@@ -1360,15 +1383,8 @@ void ZstClient::destroy_cable_complete(ZstMsgKind status, ZstCable * cable)
     
     cable->set_input(NULL);
     cable->set_output(NULL);
-    cable->enqueue_deactivation();
-    cable_leaving_events()->enqueue(cable);
-}
 
-void ZstClient::disconnect_plug(ZstPlug * plug)
-{
-	for (auto c : *plug) {
-		destroy_cable(c);
-	}
+	m_reaper.add(cable);
 }
 
 void ZstClient::disconnect_plugs(ZstPlug * input_plug, ZstPlug * output_plug)

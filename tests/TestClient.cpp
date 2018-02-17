@@ -262,6 +262,7 @@ void test_URI() {
 	assert(ZstURI("a") < ZstURI("c"));
 	assert(!(ZstURI("c") < ZstURI("a")));
 	assert(uri_equal1.contains(ZstURI("ins")));
+	assert(!ZstURI("ins").contains(uri_equal1));
 	assert(uri_equal1.contains(ZstURI("ins/someplug")));
 	assert(!uri_equal1.contains(ZstURI("nomatch")));
 

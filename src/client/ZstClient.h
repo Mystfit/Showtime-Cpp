@@ -17,10 +17,12 @@
 
 //Client includes
 #include "ZstClientEvents.h"
+#include "ZstReaper.h"
 
 class ZstClient : public ZstActor, public ZstINetworkInteractor {
 	friend class ZstCableLeavingEvent;
-	friend class ZstComponentLeavingEvent;
+	friend class ZstEntityLeavingEvent;
+	friend class ZstPlugLeavingEvent;
 
 public:
 	ZstClient();
@@ -57,7 +59,7 @@ public:
 	ZstPerformer * get_local_performer() const;
 
 	//Plugs
-	void destroy_plug(ZstPlug * plug);
+	void destroy_plug(ZstPlug * plug, bool async);
 
 	//Graph communication
 	virtual void publish(ZstPlug * plug) override;
@@ -65,7 +67,6 @@ public:
 	//Cables
 	ZstCable * connect_cable(ZstPlug * input, ZstPlug * output, bool async = false);
 	void destroy_cable(ZstCable * cable, bool async = false);
-	void disconnect_plug(ZstPlug * plug);
 	void disconnect_plugs(ZstPlug * input_plug, ZstPlug * output_plug);
 	
 	//Callbacks
@@ -108,6 +109,9 @@ private:
 	//Message pools
 	ZstMessagePool * msg_pool();
 	ZstMessagePool * m_message_pool;
+
+	//Entity reaper
+	ZstReaper m_reaper;
 	
 	//Socket handlers
 	static int s_handle_graph_in(zloop_t *loop, zsock_t *sock, void *arg);
@@ -147,8 +151,8 @@ private:
 	//Event hooks
 	void flush_events();
 	ZstSynchronisableDeferredEvent * m_synchronisable_deferred_event;
-	ZstComponentLeavingEvent * m_performer_leaving_hook;
-	ZstComponentLeavingEvent * m_component_leaving_hook;
+	ZstEntityLeavingEvent * m_performer_leaving_hook;
+	ZstEntityLeavingEvent * m_component_leaving_hook;
 	ZstCableLeavingEvent * m_cable_leaving_hook;
 	ZstPlugLeavingEvent * m_plug_leaving_hook;
 	ZstComputeEvent * m_compute_event;
@@ -173,7 +177,9 @@ private:
 	void destroy_cable_sync(ZstCable * cable, MessageFuture & future);
 	void destroy_cable_async(ZstCable * cable, MessageFuture & future);
 	void destroy_cable_complete(ZstMsgKind status, ZstCable * cable);
-	void destroy_plug_complete(int status);
+	void destroy_plug_sync(ZstPlug * plug, MessageFuture & future);
+	void destroy_plug_async(ZstPlug * plug, MessageFuture & future);
+	void destroy_plug_complete(ZstMsgKind status, ZstPlug * plug);
 	
 	//Cable storage
 	ZstCable * create_cable_ptr(const ZstCable & cable);

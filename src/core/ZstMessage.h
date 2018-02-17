@@ -51,8 +51,7 @@ enum ZstMsgKind  {
     
     //Plug registration
     CREATE_PLUG,
-    DESTROY_PLUG,
-    
+	    
     //Connection registration
     CREATE_CABLE,
     DESTROY_CABLE,

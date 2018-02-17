@@ -186,6 +186,16 @@ void zst_deactivate_entity_async(ZstEntityBase * entity)
     ZstClient::instance().destroy_entity(entity, true);
 }
 
+void zst_deactivate_plug(ZstPlug * plug)
+{
+	ZstClient::instance().destroy_plug(plug, false);
+}
+
+void zst_deactivate_plug_async(ZstPlug * plug)
+{
+	ZstClient::instance().destroy_plug(plug, true);
+}
+
 
 // -------------
 // Hierarchy

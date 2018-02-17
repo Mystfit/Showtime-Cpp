@@ -38,7 +38,7 @@ public:
 	ZST_EXPORT bool operator==(const ZstURI & other) const;
 	ZST_EXPORT bool operator!=(const ZstURI & other) const;
 	ZST_EXPORT bool operator< (const ZstURI& b) const;
-	ZST_EXPORT bool is_empty();
+	ZST_EXPORT bool is_empty() const;
 
 private:
 	struct pstr {

@@ -357,11 +357,6 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 			response = stage->destroy_entity_handler(msg);
 			break;
 		}
-		case ZstMsgKind::DESTROY_PLUG:
-		{
-			response = stage->destroy_entity_handler(msg);
-			break;
-		}
 		case ZstMsgKind::DESTROY_CABLE:
 		{
 			response = stage->destroy_cable_handler(msg);

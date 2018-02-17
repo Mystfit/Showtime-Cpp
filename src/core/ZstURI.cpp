@@ -205,7 +205,7 @@ bool ZstURI::operator<(const ZstURI & b) const
 	return strcmp(b.m_original_path.cstr, m_original_path.cstr) < 0 ? false: true;
 }
 
-bool ZstURI::is_empty()
+bool ZstURI::is_empty() const
 {
 	return m_component_count < 1;
 }
