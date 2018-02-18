@@ -51,11 +51,7 @@ void ZstEventDispatcher::dispatch_events(ZstSynchronisable * target) {
 }
 
 void ZstEventDispatcher::flush() {
-    ZstSynchronisable * target = NULL;
-    while(m_event_queue.size() > 0){
-        target = m_event_queue.pop();
-        target->flush_events();
-    }
+	m_event_queue.foreach([](ZstSynchronisable* target) { target->flush_events(); });
 }
 
 void ZstEventDispatcher::clear_attached_events() {
@@ -73,11 +69,7 @@ void ZstEventDispatcher::enqueue(ZstSynchronisable * target) {
 }
 
 void ZstEventDispatcher::process() {
-	ZstSynchronisable * target = NULL;
-    while(m_event_queue.size() > 0){
-        target = m_event_queue.pop();
-		dispatch_events(target);
-	}
+	m_event_queue.foreach([this](ZstSynchronisable* target) {this->dispatch_events(target); });
 }
 
 size_t ZstEventDispatcher::size() {

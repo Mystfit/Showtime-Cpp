@@ -10,7 +10,10 @@
 #include <queue>
 #include <thread>
 #include <mutex>
+#include <shared_mutex>
 #include <condition_variable>
+#include <exception>
+#include <iostream>
 
 template <typename T>
 class Queue
@@ -39,9 +42,24 @@ class Queue
     item = queue_.front();
     queue_.pop();
   }
-
+	
   size_t size() {
 	  return queue_.size();
+  }
+	
+  void foreach(std::function<void(T)> func) {
+	  std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
+	  try {
+		  lock.lock();
+	  }
+	  catch (std::exception e) {
+		  std::cout << "Exception when locking: " << e.what() << std::endl;
+	  }
+	  while (size() > 0) {
+		  T val = queue_.front();
+		  queue_.pop();
+		  func(val);
+	  }
   }
 
   void push(const T& item)
