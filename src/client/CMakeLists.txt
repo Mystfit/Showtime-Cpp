@@ -22,9 +22,20 @@ set(ZST_CLIENT_SRC
 set(ZST_CLIENT_INCLUDES 
 	${ZST_CLIENT_PUBLIC_HEADERS}
 )
+
+# Find boost
+find_package(Boost COMPONENTS 
+  filesystem
+  system
+REQUIRED)
+
+# Include files in target
 target_sources(${CLIENT_TARGET} PUBLIC ${ZST_CLIENT_PUBLIC_HEADERS})
 target_sources(${CLIENT_TARGET} PRIVATE ${ZST_CLIENT_PRIVATE_HEADERS} ${ZST_CLIENT_SRC})
-target_include_directories(${CLIENT_TARGET} PUBLIC ${ZST_INCLUDES})
+target_include_directories(${CLIENT_TARGET} PUBLIC 
+  ${ZST_INCLUDES}
+  ${Boost_INCLUDE_DIRS}
+)
 
 # Platform specific definitions
 if(WIN32)
@@ -43,5 +54,7 @@ if(MACOSX)
     )
 endif(MACOSX)
 
-# Link client to core
-target_link_libraries(${CLIENT_TARGET} ${CORE_TARGET})
+# Link libraries
+target_link_libraries(${CLIENT_TARGET} 
+  ${CORE_TARGET}
+)

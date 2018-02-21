@@ -16,10 +16,23 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     MESSAGE(STATUS "Platform is OSX")
 endif()
 
+# Set boost common parameters
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_LIBS ON)
+set(Boost_USE_STATIC_RUNTIME ON)
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     MESSAGE(STATUS "Platform is Windows")
-	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+    option(WINDOWS_USE_DLL_RUNTIME "Use the Visual C++ DLL runtime" ON)
+    if(WINDOWS_USE_DLL_RUNTIME)
+	   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
+	   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
+       set(Boost_USE_STATIC_RUNTIME OFF)
+    else()
+       set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+       set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+       set(Boost_USE_STATIC_RUNTIME ON)
+    endif()
     option(WINDOWS_USE_VCPKG "Look for sources using VCPKG" false)
     set(WINDOWS_VCPKG_ROOT "C:/Code/vcpkg/scripts/buildsystems/vcpkg.cmake")
 endif()
@@ -42,6 +55,12 @@ message(STATUS "Building ${CORE_TARGET} target")
 add_library(${CORE_TARGET} SHARED "")
 include(src/core/CMakeLists.txt)
 
+# Common entity plugin
+# --------------------
+set(COMMON_ENTITIES_TARGET "${PROJECT_NAME}CommonEntities")
+message(STATUS "Building ${COMMON_ENTITIES_TARGET} target")
+add_library(${COMMON_ENTITIES_TARGET} SHARED "")
+include(src/common_entities/CMakeLists.txt)
 
 # Client Library
 # --------------

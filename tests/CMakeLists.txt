@@ -11,13 +11,10 @@ set(SINK_TEST_SOURCE_FILES
 #bjam.exe threading=multi architecture=x86 address-model=64 link=static runtime-link=static --with-atomic --with-system --with-filesystem --with-context --with-chrono --with-date_time --with-program_options --with-regex --with-thread
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_LIBS ON)
-set(Boost_USE_STATIC_RUNTIME ON)
-find_package(Boost 1.64 COMPONENTS 
+set(Boost_USE_STATIC_RUNTIME OFF)
+find_package(Boost COMPONENTS 
 	system 
 	filesystem 
-	thread 
-	date_time 
-	chrono
 REQUIRED)
 
 # Sink test executable
