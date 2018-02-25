@@ -6,17 +6,6 @@ set(SINK_TEST_SOURCE_FILES
     "TestSink.cpp"
 )
 
-# Boost flags
-# On windows, compile with the following (stage/install):
-#bjam.exe threading=multi architecture=x86 address-model=64 link=static runtime-link=static --with-atomic --with-system --with-filesystem --with-context --with-chrono --with-date_time --with-program_options --with-regex --with-thread
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_LIBS ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost COMPONENTS 
-	system 
-	filesystem 
-REQUIRED)
-
 # Sink test executable
 set(SINK_TEST_TARGET TestSink)
 add_executable (${SINK_TEST_TARGET} ${SINK_TEST_SOURCE_FILES}) 
@@ -34,13 +23,6 @@ target_include_directories(${CLIENT_TEST_TARGET} PUBLIC
     ${Boost_INCLUDE_DIRS})
 target_link_libraries( ${CLIENT_TEST_TARGET}
     ${CLIENT_TARGET}
-    ${Boost_THREAD_LIBRARY}
-    ${Boost_DATE_TIME_LIBRARY}
-    ${Boost_CHRONO_LIBRARY}
-    ${Boost_FILESYSTEM_LIBRARY}
-    ${Boost_SYSTEM_LIBRARY}
+    ${CORE_ENTITIES_TARGET}
 )
-if(WIN32)
-    target_compile_definitions(${CLIENT_TEST_TARGET} PRIVATE -D_WIN32_WINNT=0x0501)
-endif(WIN32)
 add_test(NAME ${CLIENT_TEST_TARGET} COMMAND ${CLIENT_TEST_TARGET} WORKING_DIRECTORY $<TARGET_FILE_DIR:${CLIENT_TEST_TARGET}>)

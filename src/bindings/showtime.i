@@ -22,6 +22,3 @@
 
 %rename("%(strip:[zst_])s") "";
 %include <Showtime.h>
-
-//Entities
-%include "AddFilter.i"

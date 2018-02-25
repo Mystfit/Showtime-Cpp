@@ -1,9 +1,9 @@
-#include <entities/AddFilter.h>
+#include "Adder.h"
 #include <algorithm>
 
 using namespace std;
 
-AddFilter::AddFilter(const char * name) :
+Adder::Adder(const char * name) :
 	ZstComponent(ADDITION_FILTER_TYPE, name)
 {
 	m_addend = create_input_plug("addend", ZstValueType::ZST_FLOAT);
@@ -11,11 +11,11 @@ AddFilter::AddFilter(const char * name) :
 	m_sum = create_output_plug("sum", ZstValueType::ZST_FLOAT);
 }
 
-void AddFilter::on_activated()
+void Adder::on_activated()
 {
 }
 
-void AddFilter::compute(ZstInputPlug * plug)
+void Adder::compute(ZstInputPlug * plug)
 {
 	m_sum->clear();
 	auto largest_size = std::max(m_addend->size(), m_augend->size());
@@ -38,17 +38,17 @@ void AddFilter::compute(ZstInputPlug * plug)
 // --------------
 // Plug accessors
 // --------------
-ZstInputPlug * AddFilter::augend()
+ZstInputPlug * Adder::augend()
 {
 	return m_augend;
 }
 
-ZstInputPlug * AddFilter::addend()
+ZstInputPlug * Adder::addend()
 {
 	return m_addend;
 }
 
-ZstOutputPlug * AddFilter::sum()
+ZstOutputPlug * Adder::sum()
 {
 	return m_sum;
 }

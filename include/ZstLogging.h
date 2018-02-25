@@ -1,141 +1,110 @@
 #pragma once
 
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/sink.h>
-#include <spdlog/fmt/fmt.h>
-#include <Queue.h>
-#include <string>
+#include <fmt/format.h>
+#include <boost/log/sources/global_logger_storage.hpp>
+#include <boost/log/sinks/basic_sink_backend.hpp>
+#include <boost/log/sources/severity_channel_logger.hpp>
+#include <boost/log/expressions.hpp>
 
-#include <spdlog/fmt/fmt.h>
-#include <log4cplus/logger.h>
-#include <log4cplus/loglevel.h>
-#include <log4cplus/layout.h>
-#include <log4cplus/helpers/loglog.h>
-#include <log4cplus/fileappender.h>
-#include <log4cplus/win32consoleappender.h>
-#include <log4cplus/consoleappender.h>
-#include <log4cplus/loggingmacros.h>
-#include <log4cplus/configurator.h>
+#include <ZstExports.h>
 
-#define GLOBAL_CONSOLE "main"
-#define PATTERN "[%H:%M:%S.%e] [PID:%P] [TID:%t] [%l] %v"
+namespace logging = boost::log;
+namespace src = boost::log::sources;
+namespace sinks = boost::log::sinks;
+namespace keywords = boost::log::keywords;
+namespace expr = boost::log::expressions;
+
 #define DEFAULT_LOG_FILE "showtime.log"
+#define ZST_LOG_APP_CHANNEL "app"
+#define ZST_LOG_NET_CHANNEL "net"
+#define ZST_LOG_ENTITY_CHANNEL "entity"
 
 // ----------------------------------------------------------------------------
 // Logging interface
 
+enum LogLevel
+{
+	debug = 0,
+	notification,
+	warn,
+	error
+};
+
+BOOST_LOG_ATTRIBUTE_KEYWORD(line_id, "LineID", unsigned int)
+BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", LogLevel)
+BOOST_LOG_ATTRIBUTE_KEYWORD(channel, "Channel", std::string)
+
+typedef src::severity_channel_logger_mt<LogLevel, std::string> ZstLogger_mt;
+BOOST_LOG_GLOBAL_LOGGER(ZstGlobalLogger, ZstLogger_mt)
+
+
 namespace ZstLog {
-
-	struct LoggerInfo {
-		std::string name;
-    };
-	
-	inline LoggerInfo & main_logger(const char * name = "") {
-		static LoggerInfo main = { std::string(name) };
-		return main;
-	}
-
-	inline void init_logger(const char * logger_name, bool debug = false) {
-		log4cplus::initialize();
-		//log4cplus::BasicConfigurator config;
-		//config.configure();
-
-		main_logger(logger_name);
-		log4cplus::Logger logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT(main_logger().name));
-		log4cplus::helpers::Properties props;
-		props.setProperty(LOG4CPLUS_TEXT("AsyncAppend"), LOG4CPLUS_TEXT("true"));
+	namespace internals {
+		//switch (level) {
+		//case LogLevel::debug: return 0x07;
+		//case LogLevel::notification: return 0x0F;
+		//case LogLevel::warn: return 0x0D;
+		//case LogLevel::error: return 0x0E;
+		//default: return 0x0F;
 
 #ifdef WIN32
-		//log4cplus::SharedAppenderPtr append_to_win_console(new log4cplus::Win32ConsoleAppender(props));
-		log4cplus::SharedAppenderPtr append_to_console(new log4cplus::ConsoleAppender(props));
+#define DEBUG_COLOUR (FOREGROUND_BLUE | FOREGROUND_GREEN)
+#define NOTIF_COLOUR (FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN)
+#define WARN_COLOUR (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY)
+#define ERROR_COLOUR (FOREGROUND_RED | FOREGROUND_INTENSITY)
+#define RESET 0x0F
 #else
-		log4cplus::SharedAppenderPtr append_to_console(new log4cplus::ConsoleAppender());
+#define DEBUG_COLOUR \033[34m
+#define NOTIF_COLOUR \033[1;37m
+#define WARN_COLOUR \033[1;33m
+#define ERROR_COLOUR \033[1;31m
+#define RESET \033[0m
 #endif
-		std::string console_appender_name = fmt::format("{}_console", main_logger().name);
-		append_to_console->setName(LOG4CPLUS_TEXT(console_appender_name));
-		append_to_console->setLayout(std::unique_ptr<log4cplus::Layout>(new log4cplus::TTCCLayout()));
-		logger.addAppender(append_to_console);
-		
-		if (debug) {
-			logger.setLogLevel(log4cplus::DEBUG_LOG_LEVEL);
-			log4cplus::helpers::LogLog::getLogLog()->setInternalDebugging(true);
-		}
+
+		ZST_EXPORT void entity_sink_message(LogLevel level, const char * msg);
+		ZST_EXPORT void net_sink_message(LogLevel level, const char * msg);
+		ZST_EXPORT void app_sink_message(LogLevel level, const char * msg);
+
+		class coloured_console_sink : public boost::log::sinks::basic_formatted_sink_backend<char, boost::log::sinks::synchronized_feeding>
+		{
+		public:
+			static void consume(boost::log::record_view const& rec, string_type const& formatted_string);
+		};
 	}
 
-	inline void init_file_logging(const char * log_file_path = "") {
-		log4cplus::Logger logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT(ZstLog::main_logger().name));
-		std::string file_path(log_file_path);
-		if (file_path.empty()) {
-			file_path = fmt::format("{}.log", ZstLog::main_logger().name);
-		}
-		log4cplus::SharedFileAppenderPtr append_to_file(new log4cplus::RollingFileAppender(LOG4CPLUS_TEXT(file_path))); // 5 * 1024, 5, false, true)
-		std::string file_appender_name = fmt::format("{}_file", ZstLog::main_logger().name);
-		append_to_file->setName(LOG4CPLUS_TEXT(file_appender_name));
-		append_to_file->setLayout(std::unique_ptr<log4cplus::Layout>(new log4cplus::TTCCLayout()));
-		logger.addAppender(log4cplus::SharedAppenderPtr(append_to_file.get()));
+	ZST_EXPORT void init_logger(const char * logger_name);
+	ZST_EXPORT void init_file_logging(const char * log_file_path = "");
+	
+	template <typename... Args>
+	inline void net(LogLevel level, const char* msg, const Args&... vars)
+	{
+		internals::net_sink_message(level, fmt::format(msg, vars...).c_str());
 	}
 
-	inline void destroy_logger() {
-		log4cplus::Logger::shutdown();
+	inline void net(LogLevel level, const char* msg)
+	{
+		internals::net_sink_message(level, msg);
 	}
 
 	template <typename... Args>
-	inline void trace(const char* fmt, const Args&... args)
+	inline void entity(LogLevel level, const char* msg, const Args&... vars)
 	{
-		std::string msg = fmt::format(fmt, args...);
-        log4cplus::Logger::getInstance(ZstLog::main_logger().name).log(log4cplus::TRACE_LOG_LEVEL, msg);
+		internals::entity_sink_message(level, fmt::format(msg, vars...).c_str());
+	}
+
+	inline void entity(LogLevel level, const char* msg)
+	{
+		internals::entity_sink_message(level, msg);
 	}
 
 	template <typename... Args>
-	inline void debug(const char* fmt, const Args&... args)
+	inline void app(LogLevel level, const char* msg, const Args&... vars)
 	{
-		std::string msg = fmt::format(fmt, args...);
-        log4cplus::Logger::getInstance(ZstLog::main_logger().name).log(log4cplus::DEBUG_LOG_LEVEL, msg);
+		internals::app_sink_message(level, fmt::format(msg, vars...).c_str());
 	}
 
-	template <typename... Args>
-	inline void info(const char* fmt, const Args&... args)
+	inline void app(LogLevel level, const char* msg)
 	{
-		std::string msg = fmt::format(fmt, args...);
-        log4cplus::Logger::getInstance(ZstLog::main_logger().name).log(log4cplus::INFO_LOG_LEVEL, msg);
-	}
-
-	template <typename... Args>
-	inline void warn(const char* fmt, const Args&... args)
-	{
-		std::string msg = fmt::format(fmt, args...);
-        log4cplus::Logger::getInstance(ZstLog::main_logger().name).log(log4cplus::WARN_LOG_LEVEL, msg);
-	}
-
-	template <typename... Args>
-	inline void error(const char* fmt, const Args&... args)
-	{
-		std::string msg = fmt::format(fmt, args...);
-        log4cplus::Logger::getInstance(ZstLog::main_logger().name).log(log4cplus::ERROR_LOG_LEVEL, msg);
-	}
-
-	inline void trace(const char * msg)
-	{
-        log4cplus::Logger::getInstance(ZstLog::main_logger().name).log(log4cplus::TRACE_LOG_LEVEL, msg);
-	}
-
-	inline void debug(const char * msg)
-	{
-        log4cplus::Logger::getInstance(ZstLog::main_logger().name).log(log4cplus::DEBUG_LOG_LEVEL, msg);
-	}
-
-	inline void info(const char * msg)
-	{
-        log4cplus::Logger::getInstance(ZstLog::main_logger().name).log(log4cplus::INFO_LOG_LEVEL, msg);
-	}
-
-	inline void warn(const char * msg)
-	{
-        log4cplus::Logger::getInstance(ZstLog::main_logger().name).log(log4cplus::WARN_LOG_LEVEL, msg);
-	}
-
-	inline void error(const char * msg)
-	{
-        log4cplus::Logger::getInstance(ZstLog::main_logger().name).log(log4cplus::ERROR_LOG_LEVEL, msg);
+		internals::app_sink_message(level, msg);
 	}
 };

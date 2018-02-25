@@ -22,8 +22,8 @@ ZstStage::~ZstStage()
 
 void ZstStage::init(const char * stage_name)
 {
-	ZstLog::init_logger(stage_name, true);
-	ZstLog::info("Starting Showtime v{} stage server", SHOWTIME_VERSION);
+	ZstLog::init_logger(stage_name);
+	ZstLog::net(LogLevel::notification, "Starting Showtime v{} stage server", SHOWTIME_VERSION);
 
 	ZstActor::init(stage_name);
     
@@ -35,7 +35,7 @@ void ZstStage::init(const char * stage_name)
 	addr << "tcp://*:" << STAGE_ROUTER_PORT;
 	zsock_bind(m_performer_router, "%s", addr.str().c_str());
 	if (!m_performer_router) {
-		ZstLog::error("Could not bind stage router socket to {}", addr.str());
+		ZstLog::net(LogLevel::notification, "Could not bind stage router socket to {}", addr.str());
 		return;
 	}
 	addr.str("");
@@ -43,7 +43,7 @@ void ZstStage::init(const char * stage_name)
 	addr << "@tcp://*:" << STAGE_PUB_PORT;
 	m_graph_update_pub = zsock_new_pub(addr.str().c_str());
 	if (!m_graph_update_pub) {
-		ZstLog::error("Could not bind stage graph publisher socket to {}", addr.str());
+		ZstLog::net(LogLevel::notification, "Could not bind stage graph publisher socket to {}", addr.str());
 		return;
 	}
 	zsock_set_linger(m_graph_update_pub, 0);
@@ -68,7 +68,6 @@ void ZstStage::destroy()
 	zsock_destroy(&m_performer_router);
 	zsock_destroy(&m_graph_update_pub);
 	zsys_shutdown();
-	ZstLog::destroy_logger();
 }
 
 
@@ -112,7 +111,7 @@ void ZstStage::destroy_client(ZstPerformer * performer)
 		return;
 	}
 
-	ZstLog::info("Performer {} leaving", performer->URI().path());
+	ZstLog::net(LogLevel::notification, "Performer {} leaving", performer->URI().path());
 
 	std::vector<ZstCable*> cables = get_cables_in_entity(performer);
 	for (auto c : cables) {
@@ -148,7 +147,7 @@ ZstCable * ZstStage::create_cable(const ZstURI & input_URI, const ZstURI & outpu
 
 	//Check to see if we already have a cable
 	if (cable_ptr != NULL) {
-		ZstLog::warn("Cable already exists");
+		ZstLog::net(LogLevel::warn, "Cable already exists");
 		return NULL;
 	}
 
@@ -159,7 +158,7 @@ ZstCable * ZstStage::create_cable(const ZstURI & input_URI, const ZstURI & outpu
 	ZstPerformer * output_perf = get_client(output_URI);
 
 	if (!input_perf || !output_perf) {
-		ZstLog::error("Create cable could not find performer");
+		ZstLog::net(LogLevel::notification, "Create cable could not find performer");
 		return cable_ptr;
 	}
 
@@ -167,7 +166,7 @@ ZstCable * ZstStage::create_cable(const ZstURI & input_URI, const ZstURI & outpu
 	ZstPlug * output_plug = dynamic_cast<ZstPlug*>(output_perf->find_child_by_URI(output_URI));
 
 	if (!input_plug || !output_plug) {
-		ZstLog::error("Create cable could not find plugs");
+		ZstLog::net(LogLevel::notification, "Create cable could not find plugs");
 		return cable_ptr;
 	}
 
@@ -179,7 +178,7 @@ ZstCable * ZstStage::create_cable(const ZstURI & input_URI, const ZstURI & outpu
 		connect_status = 1;
 	}
 	else {
-		ZstLog::error("Cable can't connect input to input or output to output");
+		ZstLog::net(LogLevel::notification, "Cable can't connect input to input or output to output");
 		return cable_ptr;
 	}
 
@@ -188,7 +187,7 @@ ZstCable * ZstStage::create_cable(const ZstURI & input_URI, const ZstURI & outpu
 	try {
 		m_cables.insert(cable_ptr);
 	} catch(std::exception e) {
-		ZstLog::error("Couldn't insert cable. Reason:", e.what());
+		ZstLog::net(LogLevel::notification, "Couldn't insert cable. Reason:", e.what());
 		ZstCable::destroy(cable_ptr);
 		cable_ptr = NULL;
 	}
@@ -216,7 +215,7 @@ int ZstStage::destroy_cable(const ZstURI & input_plug, const ZstURI & output_plu
 
 int ZstStage::destroy_cable(ZstCable * cable) {
 	if (cable != NULL) {
-		ZstLog::info("Destroying cable {} {}", cable->get_output_URI().path(), cable->get_input_URI().path());
+		ZstLog::net(LogLevel::notification, "Destroying cable {} {}", cable->get_output_URI().path(), cable->get_input_URI().path());
 		
 		//Update rest of network
 		publish_stage_update(msg_pool()->get()->init_serialisable_message(ZstMsgKind::DESTROY_CABLE, *cable));
@@ -364,7 +363,7 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 		}
 		default:
 		{
-			ZstLog::error("Didn't understand received message type of {}", msg->kind());
+			ZstLog::net(LogLevel::notification, "Didn't understand received message type of {}", msg->kind());
 			response = stage->msg_pool()->get()->init_message(ZstMsgKind::ERR_STAGE_MSG_TYPE_UNKNOWN);
 			break;
 		}
@@ -412,11 +411,11 @@ ZstMessage * ZstStage::create_client_handler(std::string sender_identity, ZstMes
 	//Copy the id of the message so the sender will eventually match the response to a message promise
 	ZstPerformer client = msg->ZstMessage::unpack_payload_serialisable<ZstPerformer>(0);
 
-	ZstLog::info("Registering new client {}", client.URI().path());
+	ZstLog::net(LogLevel::notification, "Registering new client {}", client.URI().path());
 
 	//Only one client with this UUID at a time
 	if (get_client(client.URI())) {
-		ZstLog::warn("Client already exists ", client.URI().path());
+		ZstLog::net(LogLevel::warn, "Client already exists ", client.URI().path());
 		return response->init_message(ZstMsgKind::ERR_STAGE_PERFORMER_ALREADY_EXISTS);
 	}
 
@@ -452,18 +451,18 @@ ZstMessage * ZstStage::create_entity_handler(ZstMessage * msg, ZstPerformer * pe
 		return response->init_message(ZstMsgKind::ERR_STAGE_PERFORMER_NOT_FOUND);
 	}
 
-	ZstLog::debug("Found performer, unpacking entity");
+	ZstLog::net(LogLevel::notification, "Found performer, unpacking entity");
 
 	T entity = msg->unpack_payload_serialisable<T>(0);
 
 	//Make sure this entity doesn't already exist
 	if (performer->find_child_by_URI(entity.URI())) {
 		//Entity already exists
-		ZstLog::warn("Entity already exists! {}", entity.URI().path());
+		ZstLog::net(LogLevel::warn, "Entity already exists! {}", entity.URI().path());
 		return response->init_message(ZstMsgKind::ERR_STAGE_ENTITY_ALREADY_EXISTS);
 	}
 
-    ZstLog::debug("Entity {} doesn't exist yet, registering it now", entity.URI().path());
+    ZstLog::net(LogLevel::notification, "Entity {} doesn't exist yet, registering it now", entity.URI().path());
 	
 	//Find the parent for this entity
 	ZstURI parent_path = entity.URI().parent();
@@ -477,11 +476,11 @@ ZstMessage * ZstStage::create_entity_handler(ZstMessage * msg, ZstPerformer * pe
 
 	//If we can't find the parent this entity says it belongs to then we have a problem
 	if (parent == NULL) {
-        ZstLog::warn("Couldn't register entity {}. No parent found at {}", entity.URI().path(), parent_path.path());
+        ZstLog::net(LogLevel::warn, "Couldn't register entity {}. No parent found at {}", entity.URI().path(), parent_path.path());
 		return response->init_message(ZstMsgKind::ERR_STAGE_ENTITY_NOT_FOUND);
 	}
 
-	ZstLog::debug("Found parent of entity. ");
+	ZstLog::net(LogLevel::notification, "Found parent of entity. ");
 
 	//Copy streamable so we have a local ptr for the entity
 	T* entity_proxy = new T(entity);
@@ -497,7 +496,7 @@ ZstMessage * ZstStage::create_entity_handler(ZstMessage * msg, ZstPerformer * pe
 		parent_container->add_child(entity_proxy);
 	}
 
-	ZstLog::info("Registering new entity {}", entity_proxy->URI().path());
+	ZstLog::net(LogLevel::notification, "Registering new entity {}", entity_proxy->URI().path());
 	
 	//Update rest of network
 	publish_stage_update(msg_pool()->get()->init_entity_message(entity_proxy));
@@ -512,13 +511,13 @@ ZstMessage * ZstStage::destroy_entity_handler(ZstMessage * msg)
 	//Unpack entity to destroy from message
 	ZstURI entity_path = ZstURI(msg->payload_at(0).data(), msg->payload_at(0).size());
 	
-	ZstLog::info("Destroying entity {}", entity_path.path());
+	ZstLog::net(LogLevel::notification, "Destroying entity {}", entity_path.path());
 
 	//Find owner of entity
 	ZstPerformer * owning_performer = get_client(entity_path.first());
 
 	if (!owning_performer) {
-		ZstLog::error("Could not find performer for destroyed entity {}", entity_path.path());
+		ZstLog::net(LogLevel::notification, "Could not find performer for destroyed entity {}", entity_path.path());
 		return response->init_message(ZstMsgKind::ERR_STAGE_PERFORMER_NOT_FOUND);
 	}
 
@@ -539,7 +538,7 @@ ZstMessage * ZstStage::destroy_entity_handler(ZstMessage * msg)
 	//Remove all cables linked to this entity
 	std::vector<ZstCable*> cables = get_cables_in_entity(entity);
 	for (auto c : cables) {
-		ZstLog::info("Removing cables linked to leaving entity");
+		ZstLog::net(LogLevel::notification, "Removing cables linked to leaving entity");
 		destroy_cable(c);
 	}
 
@@ -573,7 +572,7 @@ ZstMessage * ZstStage::create_cable_handler(ZstMessage * msg)
 
 	//Unpack cable from message
 	const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(0);
-	ZstLog::info("Received connect cable request for In:{} and Out:{}", cable.get_input_URI().path(), cable.get_output_URI().path());
+	ZstLog::net(LogLevel::notification, "Received connect cable request for In:{} and Out:{}", cable.get_input_URI().path(), cable.get_output_URI().path());
 
 	//Create cable 
 	ZstCable * cable_ptr = create_cable(cable);
@@ -586,7 +585,7 @@ ZstMessage * ZstStage::create_cable_handler(ZstMessage * msg)
 	ZstPerformer * input_performer = get_client(cable_ptr->get_input_URI());
 	ZstPerformer * output_performer = get_client(cable_ptr->get_output_URI());
 
-	ZstLog::info("Sending cable connection request to {}", input_performer->URI().path());
+	ZstLog::net(LogLevel::notification, "Sending cable connection request to {}", input_performer->URI().path());
 
 	ZstMessage * connection_msg = msg_pool()->get()->init_message(ZstMsgKind::SUBSCRIBE_TO_PERFORMER);
 	connection_msg->append_str(output_performer->address(), strlen(output_performer->address()));	//IP of output client
@@ -603,7 +602,7 @@ ZstMessage * ZstStage::destroy_cable_handler(ZstMessage * msg)
 {
 	ZstMessage * response = msg_pool()->get();
 	const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(0);
-	ZstLog::info("Received destroy cable connection request");
+	ZstLog::net(LogLevel::notification, "Received destroy cable connection request");
 	
 	ZstCable * cable_ptr = get_cable_by_URI(cable.get_input_URI(), cable.get_output_URI());
 
@@ -629,17 +628,17 @@ ZstMessage * ZstStage::create_snapshot(ZstPerformer * client) {
 		//Only pack performers that aren't the destination client
 		if (performer.second->URI() != client->URI()) {
 			snapshot->append_serialisable(ZstMsgKind::CREATE_PERFORMER, *(performer.second));
-			ZstLog::debug("Adding performer {} to snapshot", performer.second->URI().path());
+			ZstLog::net(LogLevel::notification, "Adding performer {} to snapshot", performer.second->URI().path());
 		}
 	}
 	
 	//Pack cables
 	for (auto cable : m_cables) {
 		snapshot->append_serialisable(ZstMsgKind::CREATE_CABLE, *cable);
-		ZstLog::debug("Adding cable {}-{} to snapshot", cable->get_output_URI().path(), cable->get_input_URI().path());
+		ZstLog::net(LogLevel::notification, "Adding cable {}-{} to snapshot", cable->get_output_URI().path(), cable->get_input_URI().path());
 	}
 
-	ZstLog::info("Sending graph snapshot to {}", client->URI().path());
+	ZstLog::net(LogLevel::notification, "Sending graph snapshot to {}", client->URI().path());
 	
     return snapshot;
 }
@@ -660,7 +659,7 @@ int ZstStage::stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * ar
 			performer->clear_active_hearbeat();
 		}
 		else {
-			ZstLog::warn("Client {} missed a heartbeat. {} remaining", performer->URI().path(), MAX_MISSED_HEARTBEATS - performer->get_missed_heartbeats());
+			ZstLog::net(LogLevel::warn, "Client {} missed a heartbeat. {} remaining", performer->URI().path(), MAX_MISSED_HEARTBEATS - performer->get_missed_heartbeats());
 			performer->set_heartbeat_inactive();
 		}
 

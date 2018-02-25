@@ -14,4 +14,3 @@
 #include <entities/ZstContainer.h>
 #include <entities/ZstPlug.h>
 #include <entities/ZstPerformer.h>
-#include <entities/AddFilter.h>

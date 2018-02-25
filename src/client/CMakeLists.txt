@@ -23,12 +23,6 @@ set(ZST_CLIENT_INCLUDES
 	${ZST_CLIENT_PUBLIC_HEADERS}
 )
 
-# Find boost
-find_package(Boost COMPONENTS 
-  filesystem
-  system
-REQUIRED)
-
 # Include files in target
 target_sources(${CLIENT_TARGET} PUBLIC ${ZST_CLIENT_PUBLIC_HEADERS})
 target_sources(${CLIENT_TARGET} PRIVATE ${ZST_CLIENT_PRIVATE_HEADERS} ${ZST_CLIENT_SRC})
@@ -43,7 +37,9 @@ if(WIN32)
     target_compile_definitions(${CLIENT_TARGET} INTERFACE -DIMPORT_CLIENT_API)
 endif(WIN32)
 
-add_dependencies(${CLIENT_TARGET} ${CORE_TARGET})
+add_dependencies(${CLIENT_TARGET}
+                 ${CORE_TARGET}
+                 ${CORE_ENTITIES_TARGET})
 
 if(MACOSX)
     set_target_properties(${CLIENT_TARGET} PROPERTIES

@@ -14,7 +14,6 @@ set(API_FILES
     ${Showtime_INCLUDE_DIRS}/ZstSerialisable.h
     ${Showtime_INCLUDE_DIRS}/ZstSynchronisable.h
     ${Showtime_INCLUDE_DIRS}/ZstEvents.h
-    ${Showtime_INCLUDE_DIRS}/entities/AddFilter.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstEntityBase.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstComponent.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstContainer.h
@@ -39,6 +38,7 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstEvents.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstEventDispatcher.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessage.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstLogging.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstCable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstURI.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstSynchronisable.cpp"
@@ -47,29 +47,17 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstEntityBase.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstComponent.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstContainer.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/entities/AddFilter.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstPlug.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstPerformer.cpp"
 )
-
-# Packages
-find_package(ZeroMQ REQUIRED)
-find_package(czmq REQUIRED)
-find_package(MsgPack REQUIRED)
-find_package(log4cplus REQUIRED)
 
 # Include directories
 set(ZST_CORE_INCLUDES 
     ${Showtime_INCLUDE_DIRS}
     ${Showtime_COMPILED_INCLUDE_DIRS}
     ${Showtime_DEPENDENCIES_DIR}
-	"${Showtime_DEPENDENCIES_DIR}/spdlog/include"
     "${Showtime_DEPENDENCIES_DIR}/cf/"
     "${Showtime_DEPENDENCIES_DIR}/variant/include"
-    ${ZeroMQ_INCLUDE_DIRS}
-    ${CZMQ_INCLUDE_DIRS}
-    ${MSGPACK_INCLUDE_DIRS}
-    ${LOG4CPLUS_INCLUDE_DIR}
 )
 
 target_sources(${CORE_TARGET} PUBLIC ${ZST_PUBLIC_HEADERS} )
@@ -77,17 +65,24 @@ target_sources(${CORE_TARGET} PRIVATE ${ZST_CORE_SRC} ${ZST_CORE_HEADERS} ${Show
 target_include_directories(${CORE_TARGET} PUBLIC ${ZST_CORE_INCLUDES})
 
 IF(WIN32)
-    IF(WINDOWS_USE_VCPKG)
-        target_compile_definitions(${CORE_TARGET} PRIVATE "-DCMAKE_TOOLCHAIN_FILE=${WINDOWS_VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
-    ENDIF(WINDOWS_USE_VCPKG)
+    target_compile_definitions(${CORE_TARGET} PUBLIC 
+                                -DBOOST_AUTO_LINK_TAGGED
+                                -DBOOST_LOG_DYN_LINK
+                                -DBOOST_ALL_DYN_LINK
+                                -D_WIN32_WINNT=0x0601)
     target_compile_definitions(${CORE_TARGET} PRIVATE -DEXPORT_CORE_API)
     target_compile_definitions(${CORE_TARGET} INTERFACE -DIMPORT_CORE_API)
 ENDIF(WIN32)
 
-set(ZST_LINK_LIBS
-    ${ZeroMQ_LIBRARIES}
-    ${CZMQ_LIBRARIES}
-    ${MSGPACK_LIBRARIES}
-    ${LOG4CPLUS_LIBRARIES}
-)
-target_link_libraries(${CORE_TARGET} ${ZST_LINK_LIBS})
+target_link_libraries(${CORE_TARGET} PUBLIC 
+                        ${CZMQ_TARGET}
+                        ${msgpackc_LIBRARY}
+                        ${Boost_THREAD_LIBRARY}
+                        ${Boost_SYSTEM_LIBRARY}
+                        ${Boost_FILESYSTEM_LIBRARY}
+                        ${Boost_DATE_TIME_LIBRARY}
+                        ${Boost_CHRONO_LIBRARY}
+                        ${Boost_ATOMIC_LIBRARY}
+                        ${Boost_LOG_SETUP_LIBRARY}
+                        ${Boost_LOG_LIBRARY}
+                        ${fmt_LIBRARY})
