@@ -19,6 +19,7 @@ set(API_FILES
     ${Showtime_INCLUDE_DIRS}/entities/ZstContainer.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstPlug.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstPerformer.h
+    ${Showtime_COMPILED_INCLUDE_DIRS}/ZstVersion.h
 )
 list(APPEND Showtime_API_INTERFACE ${API_FILES})
 
@@ -51,38 +52,42 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstPerformer.cpp"
 )
 
-# Include directories
-set(ZST_CORE_INCLUDES 
-    ${Showtime_INCLUDE_DIRS}
-    ${Showtime_COMPILED_INCLUDE_DIRS}
-    ${Showtime_DEPENDENCIES_DIR}
-    "${Showtime_DEPENDENCIES_DIR}/cf/"
-    "${Showtime_DEPENDENCIES_DIR}/variant/include"
-)
-
 target_sources(${CORE_TARGET} PUBLIC ${ZST_PUBLIC_HEADERS} )
 target_sources(${CORE_TARGET} PRIVATE ${ZST_CORE_SRC} ${ZST_CORE_HEADERS} ${Showtime_API_INTERFACE})
-target_include_directories(${CORE_TARGET} PUBLIC ${ZST_CORE_INCLUDES})
+target_include_directories(${CORE_TARGET} 
+    PUBLIC 
+        $<BUILD_INTERFACE:${Showtime_INCLUDE_DIRS}>
+        $<BUILD_INTERFACE:${Showtime_COMPILED_INCLUDE_DIRS}>
+        $<INSTALL_INTERFACE:include>
+    PRIVATE
+        ${Showtime_SOURCE_DEPENDENCIES}
+)
 
 IF(WIN32)
     target_compile_definitions(${CORE_TARGET} PUBLIC 
-                                -DBOOST_AUTO_LINK_TAGGED
-                                -DBOOST_LOG_DYN_LINK
-                                -DBOOST_ALL_DYN_LINK
                                 -D_WIN32_WINNT=0x0601)
-    target_compile_definitions(${CORE_TARGET} PRIVATE -DEXPORT_CORE_API)
-    target_compile_definitions(${CORE_TARGET} INTERFACE -DIMPORT_CORE_API)
+    target_compile_definitions(${CORE_TARGET} PRIVATE -DZST_EXPORT_CORE_API)
+    target_compile_definitions(${CORE_TARGET} INTERFACE -DZST_IMPORT_CORE_API)
 ENDIF(WIN32)
 
 target_link_libraries(${CORE_TARGET} PUBLIC 
                         ${CZMQ_TARGET}
-                        ${msgpackc_LIBRARY}
-                        ${Boost_THREAD_LIBRARY}
-                        ${Boost_SYSTEM_LIBRARY}
-                        ${Boost_FILESYSTEM_LIBRARY}
-                        ${Boost_DATE_TIME_LIBRARY}
-                        ${Boost_CHRONO_LIBRARY}
-                        ${Boost_ATOMIC_LIBRARY}
-                        ${Boost_LOG_SETUP_LIBRARY}
-                        ${Boost_LOG_LIBRARY}
-                        ${fmt_LIBRARY})
+                        ${msgpackc_TARGET}
+                        ${fmt_TARGET}
+                        ${Boost_THREAD_TARGET}
+                        ${Boost_SYSTEM_TARGET}
+                        ${Boost_FILESYSTEM_TARGET}
+                        ${Boost_DATE_TIME_TARGET}
+                        ${Boost_CHRONO_TARGET}
+                        ${Boost_ATOMIC_TARGET}
+                        ${Boost_LOG_SETUP_TARGET}
+                        ${Boost_LOG_TARGET}
+)
+
+list(APPEND Showtime_RUNTIME_DEPENDENCIES $<TARGET_FILE:${CZMQ_TARGET}>)
+
+# Copy required binaries
+# add_custom_command(TARGET ${CORE_TARGET} POST_BUILD
+#                    COMMAND ${CMAKE_COMMAND} -E
+#                    copy $<TARGET_FILE:${CZMQ_TARGET}> $<TARGET_FILE_DIR:${CORE_TARGET}>
+#                    COMMENT "Copying $<TARGET_FILE:${CZMQ_TARGET} to $<TARGET_FILE_DIR:${CORE_TARGET}>")

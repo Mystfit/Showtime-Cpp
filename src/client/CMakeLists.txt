@@ -1,9 +1,9 @@
-set(ZST_CLIENT_PUBLIC_HEADERS
+set(ZST_CLIENT_HEADERS
 	"${Showtime_INCLUDE_DIRS}/Showtime.h"
 )
 
 # Add our top level header to the public API
-list(APPEND Showtime_API_INTERFACE ${ZST_CLIENT_PUBLIC_HEADERS})
+list(APPEND Showtime_API_INTERFACE ${ZST_CLIENT_HEADERS})
 
 set(ZST_CLIENT_PRIVATE_HEADERS
 	"${Showtime_INCLUDE_DIRS}/Showtime.h"
@@ -19,24 +19,25 @@ set(ZST_CLIENT_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstClientEvents.cpp"
 )
 
-set(ZST_CLIENT_INCLUDES 
-	${ZST_CLIENT_PUBLIC_HEADERS}
+# Include files in client target
+target_sources(${CLIENT_TARGET} PRIVATE 
+  ${ZST_CLIENT_HEADERS}
+  ${ZST_CLIENT_PRIVATE_HEADERS}
+  ${ZST_CLIENT_SRC}
 )
 
-# Include files in target
-target_sources(${CLIENT_TARGET} PUBLIC ${ZST_CLIENT_PUBLIC_HEADERS})
-target_sources(${CLIENT_TARGET} PRIVATE ${ZST_CLIENT_PRIVATE_HEADERS} ${ZST_CLIENT_SRC})
-target_include_directories(${CLIENT_TARGET} PUBLIC 
-  ${ZST_INCLUDES}
-  ${Boost_INCLUDE_DIRS}
+# Include source dependencies in client target
+target_include_directories(${CLIENT_TARGET} PRIVATE
+  ${Showtime_SOURCE_DEPENDENCIES}
 )
 
 # Platform specific definitions
 if(WIN32)
-    target_compile_definitions(${CLIENT_TARGET} PRIVATE -DEXPORT_CLIENT_API)
-    target_compile_definitions(${CLIENT_TARGET} INTERFACE -DIMPORT_CLIENT_API)
+    target_compile_definitions(${CLIENT_TARGET} PRIVATE -DZST_EXPORT_CLIENT_API)
+    target_compile_definitions(${CLIENT_TARGET} INTERFACE -DZST_IMPORT_CLIENT_API)
 endif(WIN32)
 
+# Target dependencies
 add_dependencies(${CLIENT_TARGET}
                  ${CORE_TARGET}
                  ${CORE_ENTITIES_TARGET})

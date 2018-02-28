@@ -1,25 +1,36 @@
 #pragma once
 
-#ifdef EXPORT_CORE_API
-#define ZST_EXPORT __declspec(dllexport)
-#elif IMPORT_CORE_API
-#define ZST_EXPORT __declspec(dllimport)
+#define ZST_API_EXPORTED __declspec(dllexport)
+#define ZST_API_IMPORTED __declspec(dllimport)
+
+#ifdef ZST_EXPORT_CORE_API
+#define ZST_EXPORT ZST_API_EXPORTED
+#elif ZST_IMPORT_CORE_API
+#define ZST_EXPORT ZST_API_IMPORTED
 #else
 #define ZST_EXPORT
 #endif
 
-#ifdef EXPORT_CLIENT_API
-#define ZST_CLIENT_EXPORT __declspec(dllexport)
-#elif IMPORT_CLIENT_API
-#define ZST_CLIENT_EXPORT __declspec(dllimport)
+#ifdef ZST_EXPORT_CLIENT_API
+#define ZST_CLIENT_EXPORT ZST_API_EXPORTED
+#elif ZST_IMPORT_CLIENT_API
+#define ZST_CLIENT_EXPORT ZST_API_IMPORTED
 #else
 #define ZST_CLIENT_EXPORT
 #endif
 
-#ifdef EXPORT_SERVER_API
-#define ZST_SERVER_EXPORT __declspec(dllexport)
-#elif IMPORT_SERVER_API
-#define ZST_SERVER_EXPORT __declspec(dllimport)
+#ifdef ZST_EXPORT_SERVER_API
+#define ZST_SERVER_EXPORT ZST_API_EXPORTED
+#elif ZST_IMPORT_SERVER_API
+#define ZST_SERVER_EXPORT ZST_API_IMPORTED
 #else
 #define ZST_SERVER_EXPORT
+#endif
+
+#ifdef ZST_EXPORT_ENTITY_API
+#define ZST_ENTITY_EXPORT ZST_API_EXPORTED
+#elif ZST_IMPORT_ENTITY_API
+#define ZST_ENTITY_EXPORT ZST_API_IMPORTED
+#else
+#define ZST_ENTITY_EXPORT
 #endif

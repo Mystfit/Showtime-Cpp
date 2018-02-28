@@ -1,5 +1,5 @@
 # Entity source files
-set(ZST_CORE_ENTITIES_PUBLIC_HEADERS
+set(ZST_CORE_ENTITIES_HEADERS
   "${CMAKE_CURRENT_LIST_DIR}/Adder.h"
 )
 
@@ -8,11 +8,17 @@ set(ZST_CORE_ENTITIES_SRC
 )
 
 # Include files in target
-target_sources(${CORE_ENTITIES_TARGET} PUBLIC ${ZST_CORE_ENTITIES_PUBLIC_HEADERS})
-target_sources(${CORE_ENTITIES_TARGET} PRIVATE ${ZST_CORE_ENTITIES_SRC})
+target_sources(${CORE_ENTITIES_TARGET} PRIVATE 
+	${ZST_CORE_ENTITIES_SRC}
+	${ZST_CORE_ENTITIES_HEADERS}
+)
 
 # Library target dependencies
 add_dependencies(${CORE_ENTITIES_TARGET} ${CORE_TARGET})
+
+# Target definitions
+target_compile_definitions(${CORE_ENTITIES_TARGET} PRIVATE -DZST_EXPORT_ENTITY_API)
+target_compile_definitions(${CORE_ENTITIES_TARGET} INTERFACE -DZST_IMPORT_ENTITY_API)
 
 # Link libraries
 target_link_libraries(${CORE_ENTITIES_TARGET} ${CORE_TARGET})

@@ -1,17 +1,18 @@
 #pragma once
 
+#include <ZstExports.h>
 #include <entities/ZstComponent.h>
 
 #define ADDITION_FILTER_TYPE "addition"
 
 class Adder : public ZstComponent {
 public:
-	ZST_EXPORT Adder(const char * name);
-	ZST_EXPORT virtual void on_activated() override;
-	ZST_EXPORT void compute(ZstInputPlug * plug) override;
-	ZST_EXPORT ZstInputPlug* augend();
-	ZST_EXPORT ZstInputPlug* addend();
-	ZST_EXPORT ZstOutputPlug* sum();
+	ZST_ENTITY_EXPORT Adder(const char * name);
+	ZST_ENTITY_EXPORT virtual void on_activated() override;
+	ZST_ENTITY_EXPORT void compute(ZstInputPlug * plug) override;
+	ZST_ENTITY_EXPORT ZstInputPlug* augend();
+	ZST_ENTITY_EXPORT ZstInputPlug* addend();
+	ZST_ENTITY_EXPORT ZstOutputPlug* sum();
 
 private:
 	ZstInputPlug * m_augend;
