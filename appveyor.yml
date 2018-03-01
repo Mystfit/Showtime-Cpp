@@ -54,7 +54,7 @@ install:
 
     REM Aquire patched hunterized msgpack
     cd "%DEPENDENCY_DIR%"
-    IF NOT EXIST %DEPENDENCY_DIR%/msgpack-c git clone git clone https://github.com/mystfit/msgpack-c.git
+    IF NOT EXIST %DEPENDENCY_DIR%/msgpack-c git clone https://github.com/mystfit/msgpack-c.git
     cd msgpack-c
     git checkout hunter-2.1.5
     mkdir "%DEPENDENCY_DIR%/msgpack-c/build"
