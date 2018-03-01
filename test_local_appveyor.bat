@@ -16,7 +16,7 @@ popd
 
 REM APPVEYOR install:
 REM ----------------------
-"%APPVEYOR_BUILD_FOLDER%\install_dependencies.bat"
+call "%APPVEYOR_BUILD_FOLDER%\install_dependencies.bat"
 
 REM APPVEYOR build_script:
 REM ----------------------
@@ -29,9 +29,9 @@ popd
 REM APPVEYOR before_test:
 REM ---------------------
 REM Copy CZMQ dlls into build folder - manually until CMake can do this automagically
-if %CONFIGURATION% == Debug set LIBCZMQ_DLL=libczmqd.dll
-if %CONFIGURATION% == Release set LIBCZMQ_DLL=libczmq.dll
-cmake -E copy "%DEPENDENCY_DIR%\install\bin\%LIBCZMQ_DLL%" "%APPVEYOR_BUILD_FOLDER%\build\bin\%CONFIGURATION%\"
+if %CONFIGURATION% == Debug set LIBCZMQ_RUNTIME=libczmqd.dll
+if %CONFIGURATION% == Release set LIBCZMQ_RUNTIME=libczmq.dll
+cmake -E copy "%DEPENDENCY_DIR%\install\bin\%LIBCZMQ_RUNTIME%" "%APPVEYOR_BUILD_FOLDER%\build\bin\%CONFIGURATION%"
 
 REM APPVEYOR test_script:
 REM ---------------------
