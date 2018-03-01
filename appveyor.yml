@@ -2,7 +2,7 @@ version: '{build}'
 branches:
   only:
   - develop
-cache: C:\Projects\dependencies
+cache: C:\projects\dependencies
 clone_folder: c:\projects\showtime-cpp
 image:
 - Visual Studio 2017
@@ -23,7 +23,7 @@ matrix:
 
 before_build:
 - cmd: |-
-    cd C:\Projects
+    cd C:\projects
     mkdir dependencies
     cd dependencies
     git clone https://github.com/mystfit/czmq.git
@@ -47,8 +47,8 @@ build_script:
 - cmd: |-
     cmake -H. -B./build -G "%GENERATOR%"
     cmake --build ./build --config %CONFIGURATION%
-    if "%CONFIGURATION%" == "Debug" cmake -E copy C:\Projects\dependencies\czmq\build\%CONFIGURATION%\libczmqd.dll C:\Projects\showtime-cpp\build\bin\%CONFIGURATION%\
-    if "%CONFIGURATION%" == "Release" cmake -E copy C:\Projects\dependencies\czmq\build\%CONFIGURATION%\libczmq.dll C:\Projects\showtime-cpp\build\bin\%CONFIGURATION%\
+    if "%CONFIGURATION%" == "Debug" cmake -E copy C:\projects\dependencies\czmq\install\bin\libczmqd.dll C:\projects\showtime-cpp\build\bin\%CONFIGURATION%\
+    if "%CONFIGURATION%" == "Release" cmake -E copy C:\projects\dependencies\czmq\install\bin\libczmq.dll C:\projects\showtime-cpp\build\bin\%CONFIGURATION%\
 
 test_script:
 - cmd: |-
