@@ -30,7 +30,7 @@ before_build:
 - cmd: |-
     REM Set up dependency directory
     cd %APPVEYOR_BUILD_FOLDER%
-    set DEPENDENCY_DIR=%APPVEYOR_BUILD_FOLDER%/dependencies
+    set DEPENDENCY_DIR="%APPVEYOR_BUILD_FOLDER%/dependencies"
     mkdir %DEPENDENCY_DIR%
     cd %DEPENDENCY_DIR%
 
