@@ -87,6 +87,7 @@ if(HUNTER_ENABLED)
     # Shared library names
     set(Boost_LOG_TARGET "Boost::log")
     set(Boost_LOG_SETUP_TARGET "Boost::log_setup")
+    set(Boost_THREAD_TARGET "Boost::thread")
     set(Boost_FILESYSTEM_TARGET "Boost::filesystem")
     set(Boost_SYSTEM_TARGET "Boost::system")
     set(Boost_DATE_TIME_TARGET "Boost::date_time")
