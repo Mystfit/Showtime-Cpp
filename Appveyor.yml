@@ -67,12 +67,12 @@ after_build:
 
 build_script:
 - cmd: |-
-  cmake --build ./build --config %CONFIGURATION%
+    cmake --build ./build --config %CONFIGURATION%
 
 test_script:
 - cmd: |-
-  cd build
-  ctest -C Debug -V --output-on-fail
+    cd build
+    ctest -C Debug -V --output-on-fail
 
 only_commits:
   files:
