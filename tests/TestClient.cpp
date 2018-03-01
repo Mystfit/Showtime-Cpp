@@ -44,7 +44,7 @@ using namespace boost::process;
 #define TAKE_A_BIG_BREATH usleep(1000 * 4000);
 #endif
 
-#define MAX_WAIT 2000
+#define MAX_WAIT 200
 void wait_for_event(ZstEvent * callback, int expected_messages)
 {
 	int repeats = 0;
@@ -759,6 +759,9 @@ void test_memory_leaks() {
 	}
 	
 	ZstLog::app(LogLevel::debug, "Sent all messages. Waiting for recv");
+	
+	int max_loops_idle = 50;
+	int num_loops_idle = 0;
 
 	do  {
 		zst_poll_once();
@@ -772,6 +775,16 @@ void test_memory_leaks() {
 			last = now;
 			mps = (long)delta_messages / (delta.count() / 1000.0);
 			remaining_messages = count - message_count;
+			
+			//Break out of the loop if we lost some messages
+			if(last_message_count == message_count){
+				num_loops_idle++;
+				if(num_loops_idle > max_loops_idle)
+					break;
+			} else {
+				num_loops_idle = 0;
+			}
+			
 			last_message_count = message_count;
 			ZstLog::app(LogLevel::debug, "Processing {} messages per/s. Remaining: {}, Delta T: {} per 10000, Queued: {}, Queuing speed: {} messages per/s", mps, remaining_messages, (delta.count() / 1000.0), queued_messages, queue_speed);
 		}
