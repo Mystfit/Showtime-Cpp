@@ -1,7 +1,8 @@
 version: '{build}'
 branches:
   only:
-  - master
+  - develop
+cache: C:\Projects\dependencies
 clone_folder: c:\projects\showtime-cpp
 image:
 - Visual Studio 2017
@@ -20,17 +21,6 @@ environment:
 matrix:
   fast_finish: true
 
-# skip unsupported combinations
-init:
-- set arch=
-- if "%arch%"=="Win64" ( set arch= Win64)
-- echo %arch%
-- echo %APPVEYOR_BUILD_WORKER_IMAGE%
-- if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2017" ( set generator="Visual Studio 15 2017%arch%" )
-- if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2015" ( set generator="Visual Studio 14 2015%arch%" )
-- if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2013" ( set generator="Visual Studio 12 2013%arch%" )
-- echo %generator%
-
 before_build:
 - cmd: |-
     cd C:\Projects
@@ -41,7 +31,7 @@ before_build:
     git checkout hunter-v4.1.0
     mkdir build
     mkdir install
-    cmake -H. -B./build -G %generator% -DCMAKE_INSTALL_PREFIX="./install"
+    cmake -H. -B./build -G %GENERATOR% -DCMAKE_INSTALL_PREFIX="./install"
     cmake --build ./build --config %CONFIGURATION% --target INSTALL
 
     cd ..
@@ -50,7 +40,7 @@ before_build:
     git checkout hunter-2.1.5
     mkdir build
     mkdir install
-    cmake -H. -B./build -G %generator% -DCMAKE_INSTALL_PREFIX="./install"
+    cmake -H. -B./build -G %GENERATOR% -DCMAKE_INSTALL_PREFIX="./install"
     cmake --build ./build --config %CONFIGURATION% --target INSTALL
 
 after_build:
@@ -60,7 +50,7 @@ after_build:
 
 build_script:
 - cmd: |-
-    cmake -H. -B./build -G %generator%
+    cmake -H. -B./build -G %GENERATOR%
     cmake --build ./build --config %CONFIGURATION%
 
 test_script:
