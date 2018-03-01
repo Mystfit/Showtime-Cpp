@@ -34,7 +34,7 @@ install:
     REM ----------------------
     REM Environment variables
     set DEPENDENCY_DIR=%APPVEYOR_BUILD_FOLDER%/dependencies
-    set HUNTER_ROOT=%APPVEYOR_BUILD_FOLDER%/hunter_root
+    set HUNTER_ROOT=%DEPENDENCY_DIR%/hunter_root
 
     REM Set up dependency directories
     cd %APPVEYOR_BUILD_FOLDER%
@@ -43,33 +43,34 @@ install:
     mkdir "%DEPENDENCY_DIR%/install"
     
     REM Aquire patched hunterized CZMQ
-    cd "%DEPENDENCY_DIR%"
+    pushd "%DEPENDENCY_DIR%"
     IF NOT EXIST %DEPENDENCY_DIR%/czmq git clone https://github.com/mystfit/czmq.git
     
-    cd czmq
+    pushd czmq
     git checkout hunter-v4.1.0
     mkdir "%DEPENDENCY_DIR%/czmq/build"
     cmake -H. -B"%DEPENDENCY_DIR%/czmq/build" -G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%DEPENDENCY_DIR%/install"
     cmake --build "%DEPENDENCY_DIR%/czmq/build" --config %CONFIGURATION% --target INSTALL
+    popd
 
     REM Aquire patched hunterized msgpack
-    cd "%DEPENDENCY_DIR%"
     IF NOT EXIST %DEPENDENCY_DIR%/msgpack-c git clone https://github.com/mystfit/msgpack-c.git
-    cd msgpack-c
+    pushd msgpack-c
     git checkout hunter-2.1.5
     mkdir "%DEPENDENCY_DIR%/msgpack-c/build"
     cmake -H. -B"%DEPENDENCY_DIR%/msgpack-c/build" -G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%DEPENDENCY_DIR%/install"
     cmake --build "%DEPENDENCY_DIR%/msgpack-c/build" --config %CONFIGURATION% --target INSTALL
-    
+    popd
+
 build_script:
 - cmd: |-
     REM APPVEYOR build_script:
     REM ----------------------
-    cd "%APPVEYOR_BUILD_FOLDER%"
+    pushd "%APPVEYOR_BUILD_FOLDER%"
     mkdir build
-    cd build
-    cmake .. -G "%GENERATOR%" -DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%/install;${CMAKE_PREFIX_PATH}"
+    cmake -H. -B"%APPVEYOR_BUILD_FOLDER%/build" -G "%GENERATOR%" -DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%/install;${CMAKE_PREFIX_PATH}"
     cmake --build "%APPVEYOR_BUILD_FOLDER%/build" --config %CONFIGURATION%
+    popd
 
 before_test:
 - cmd: |-
@@ -84,8 +85,9 @@ test_script:
 - cmd: |-
     REM APPVEYOR test_script:
     REM ---------------------
-    cd "%APPVEYOR_BUILD_FOLDER%/build"
+    pushd "%APPVEYOR_BUILD_FOLDER%/build"
     ctest -C Debug -V --output-on-fail
+    popd
 
 only_commits:
   files:
