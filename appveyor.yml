@@ -58,15 +58,15 @@ build_script:
     cd %APPVEYOR_BUILD_FOLDER%
     mkdir build
     cd build
-    cmake .. -G %GENERATOR% -Dczmq_DIR="%DEPENDENCY_DIR%/czmq/build/install/share/cmake/czmq" -DMsgPack_DIR="%DEPENDENCY_DIR%/msgpack-c/build/install/lib/cmake/msgpack" -DHUNTER_STATUS_DEBUG=ON
-    cmake --build . --config %CONFIGURATION%    
+    cmake .. -G "%GENERATOR%" -Dczmq_DIR="%DEPENDENCY_DIR%/czmq/build/install/share/cmake/czmq" -DMsgPack_DIR="%DEPENDENCY_DIR%/msgpack-c/build/install/lib/cmake/msgpack" -DHUNTER_STATUS_DEBUG=ON
+    cmake --build . --config %CONFIGURATION%
 
 before_test:
 - cmd: |-
     REM Copy CZMQ dlls into build folder (manually until CMake can do this automagically)
     if %CONFIGURATION% == Debug set LIBCZMQ_DLL=libczmqd.dll
     if %CONFIGURATION% == Release set LIBCZMQ_DLL=libczmq.dll
-    cmake -E copy %DEPENDENCY_DIR%/czmq/install/bin/%LIBCZMQ_DLL% %APPVEYOR_BUILD_FOLDER%/build/bin/%CONFIGURATION%/
+    cmake -E copy "%DEPENDENCY_DIR%/czmq/install/bin/%LIBCZMQ_DLL%" "%APPVEYOR_BUILD_FOLDER%/build/bin/%CONFIGURATION%/"
 
 test_script:
 - cmd: |-
