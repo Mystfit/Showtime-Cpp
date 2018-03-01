@@ -4,7 +4,6 @@ include("cmake/HunterGate.cmake")
 HunterGate(
     URL "https://github.com/ruslo/hunter/archive/v0.20.9.tar.gz"
     SHA1 "8f7cf6d719d05c49224a4ebeba90c6bb90b90f4a"
-    LOCAL
 )
 
 project(Showtime)
