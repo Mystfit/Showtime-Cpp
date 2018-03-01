@@ -1,0 +1,82 @@
+version: '{build}'
+branches:
+  only:
+  - master
+clone_folder: c:\projects\showtime-cpp
+image:
+- Visual Studio 2013
+- Visual Studio 2015
+- Visual Studio 2017
+configuration:
+- Release
+- Debug
+platform:
+- x64
+environment:
+  matrix:
+  - GENERATOR: "Visual Studio 12 2013 Win64"
+
+  - GENERATOR: "Visual Studio 14 2015 Win64"
+
+  - GENERATOR: "Visual Studio 15 2017 Win64"
+
+  # - arch: #does not work, Release|x64 not a valid target
+matrix:
+  fast_finish: true
+
+# skip unsupported combinations
+init:
+- set arch=
+- if "%arch%"=="Win64" ( set arch= Win64)
+- echo %arch%
+- echo %APPVEYOR_BUILD_WORKER_IMAGE%
+- if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2017" ( set generator="Visual Studio 15 2017%arch%" )
+- if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2015" ( set generator="Visual Studio 14 2015%arch%" )
+- if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2013" ( set generator="Visual Studio 12 2013%arch%" )
+- echo %generator%
+
+before_build:
+- cmd: |-
+    cd C:\Projects
+    mkdir dependencies
+    cd dependencies
+    git clone https://github.com/mystfit/czmq.git
+    cd czmq
+    git checkout hunter-v4.1.0
+    mkdir build
+    cd build
+    mkdir install
+    cmake  -G %generator% -DCMAKE_INSTALL_PREFIX="./install"
+    cmake --build . --config %CONFIGURATION% --target INSTALL
+
+    cd ..
+    cd ..
+    git clone https://github.com/mystfit/msgpack-c.git
+    cd msgpack-c
+    git checkout hunter-2.1.5
+    mkdir build
+    cd build
+    mkdir install
+    cmake .. -G %generator% -DCMAKE_INSTALL_PREFIX="./install"
+    cmake --build . --config %CONFIGURATION% --target INSTALL
+
+after_build:
+- cmd: |-
+    if %CONFIGURATION% == "Debug" cmake -E copy C:\Projects\dependencies\czmq\build\%CONFIGURATION%\libczmqd.dll C:\Projects\showtime-cpp\build\bin\%CONFIGURATION%\
+    if %CONFIGURATION% == "Release" cmake -E copy C:\Projects\dependencies\czmq\build\%CONFIGURATION%\libczmq.dll C:\Projects\showtime-cpp\build\bin\%CONFIGURATION%\
+
+build_script:
+- cmd: |-
+  cmake --build ./build --config %CONFIGURATION%
+
+test_script:
+- cmd: |-
+  cd build
+  ctest -C Debug -V --output-on-fail
+
+only_commits:
+  files:
+    - CMakeLists.txt
+    - appveyor.yml
+    - src/
+    - include/

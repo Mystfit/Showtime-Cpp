@@ -834,10 +834,5 @@ int main(int argc,char **argv){
 	server_in.write("$TERM\n", 6);
 	server_process.wait();
 	std::cout << "All tests completed" << std::endl;
-	
-#ifdef WIN32
-	system("pause");
-#endif
-
 	return 0;
 }
