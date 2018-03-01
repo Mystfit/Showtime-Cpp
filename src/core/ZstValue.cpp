@@ -145,11 +145,14 @@ void ZstValue::read(const char * buffer, size_t length, size_t & offset)
 		if (val.type == msgpack::type::NEGATIVE_INTEGER || val.type == msgpack::type::POSITIVE_INTEGER) {
 			m_values[i] = static_cast<int>(val.via.i64);
 		}
-		else if (val.type == msgpack::type::FLOAT){
+		else if (val.type == msgpack::type::FLOAT || val.type == msgpack::type::FLOAT32 || val.type == msgpack::type::FLOAT64 ){
 			m_values[i] = static_cast<float>(val.via.f64);
 		}
 		else if (val.type == msgpack::type::STR) {
 			m_values[i] = val.as<std::string>();
+		} 
+		else {
+
 		}
 	}
 }
