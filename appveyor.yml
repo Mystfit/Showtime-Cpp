@@ -23,17 +23,18 @@ environment:
   - GENERATOR: "Visual Studio 14 2015 Win64"
   - GENERATOR: "Visual Studio 15 2017 Win64"
 
-  # - arch: #does not work, Release|x64 not a valid target
 matrix:
   fast_finish: true
 
 before_build:
 - cmd: |-
-# Aquire patched hunterized CZMQ 
+    # Set up dependency directory
     cd %APPVEYOR_BUILD_FOLDER%
     set DEPENDENCY_DIR=%APPVEYOR_BUILD_FOLDER%/dependencies
     mkdir %DEPENDENCY_DIR%
     cd %DEPENDENCY_DIR%
+
+    # Aquire patched hunterized CZMQ 
     git clone https://github.com/mystfit/czmq.git
     cd czmq
     git checkout hunter-v4.1.0
@@ -42,7 +43,7 @@ before_build:
     cmake -H. -B./build -G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="./install"
     cmake --build ./build --config %CONFIGURATION% --target INSTALL
 
-# Aquire patched hunterized msgpack
+    # Aquire patched hunterized msgpack
     cd %DEPENDENCY_DIR%
     git clone https://github.com/mystfit/msgpack-c.git
     cd msgpack-c
@@ -62,7 +63,7 @@ build_script:
 
 before_test:
 - cmd: |-
-# Copy CZMQ dlls into build folder (manually until CMake can do this automagically)
+    # Copy CZMQ dlls into build folder (manually until CMake can do this automagically)
     if %CONFIGURATION% == Debug set LIBCZMQ_DLL=libczmqd.dll
     if %CONFIGURATION% == Release set LIBCZMQ_DLL=libczmq.dll
     cmake -E copy %DEPENDENCY_DIR%/czmq/install/bin/%LIBCZMQ_DLL% %APPVEYOR_BUILD_FOLDER%/build/bin/%CONFIGURATION%/
