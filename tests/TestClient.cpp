@@ -18,6 +18,8 @@
 #include <boost/process.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/filesystem.hpp>
+using namespace boost::process;
+
 #ifdef WIN32
 #pragma warning(pop)
 #else
@@ -799,6 +801,22 @@ void test_cleanup() {
 
 int main(int argc,char **argv){
 	std::string ext_test_folder = boost::filesystem::system_complete(argv[0]).parent_path().generic_string();
+
+	//Start server
+	std::string prog = ext_test_folder + "/ShowtimeServer";
+#ifdef WIN32
+	prog += ".exe";
+#endif
+	pipe server_in;
+	child server_process;
+	char test_flag = 't';
+	try {
+		server_process = boost::process::child(prog, &test_flag, std_in < server_in);
+	}
+	catch (process_error e) {
+		ZstLog::app(LogLevel::debug, "Server process failed to start. Code:{} Message:{}", e.code().value(), e.what());
+	}
+	assert(server_process.valid());
 	
 	//Tests
 	test_startup();
@@ -812,7 +830,9 @@ int main(int argc,char **argv){
 	test_memory_leaks();
     test_leaving();
 	test_cleanup();
-	
+
+	server_in.write("$TERM\n", 6);
+	server_process.wait();
 	std::cout << "All tests completed" << std::endl;
 	
 #ifdef WIN32

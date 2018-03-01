@@ -12,7 +12,6 @@ add_executable (${SINK_TEST_TARGET} ${SINK_TEST_SOURCE_FILES})
 add_dependencies(${SINK_TEST_TARGET} ${CLIENT_TARGET} ${SERVER_TARGET})
 target_include_directories(${SINK_TEST_TARGET} PUBLIC ${ZST_INCLUDES})
 target_link_libraries(${SINK_TEST_TARGET} ${CLIENT_TARGET})
-add_test(NAME sink_test COMMAND ${SINK_TEST_TARGET})
 
 # CLient test executable
 set(CLIENT_TEST_TARGET TestClient)
