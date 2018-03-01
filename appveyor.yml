@@ -31,7 +31,7 @@ before_build:
     git checkout hunter-v4.1.0
     mkdir build
     mkdir install
-    cmake -H. -B./build -G %GENERATOR% -DCMAKE_INSTALL_PREFIX="./install"
+    cmake -H. -B./build -G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="./install"
     cmake --build ./build --config %CONFIGURATION% --target INSTALL
 
     cd ..
@@ -40,17 +40,17 @@ before_build:
     git checkout hunter-2.1.5
     mkdir build
     mkdir install
-    cmake -H. -B./build -G %GENERATOR% -DCMAKE_INSTALL_PREFIX="./install"
+    cmake -H. -B./build -G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="./install"
     cmake --build ./build --config %CONFIGURATION% --target INSTALL
 
 after_build:
 - cmd: |-
-    if %CONFIGURATION% == "Debug" cmake -E copy C:\Projects\dependencies\czmq\build\%CONFIGURATION%\libczmqd.dll C:\Projects\showtime-cpp\build\bin\%CONFIGURATION%\
-    if %CONFIGURATION% == "Release" cmake -E copy C:\Projects\dependencies\czmq\build\%CONFIGURATION%\libczmq.dll C:\Projects\showtime-cpp\build\bin\%CONFIGURATION%\
+    if "%CONFIGURATION%" == "Debug" cmake -E copy C:\Projects\dependencies\czmq\build\%CONFIGURATION%\libczmqd.dll C:\Projects\showtime-cpp\build\bin\%CONFIGURATION%\
+    if "%CONFIGURATION%" == "Release" cmake -E copy C:\Projects\dependencies\czmq\build\%CONFIGURATION%\libczmq.dll C:\Projects\showtime-cpp\build\bin\%CONFIGURATION%\
 
 build_script:
 - cmd: |-
-    cmake -H. -B./build -G %GENERATOR%
+    cmake -H. -B./build -G "%GENERATOR%"
     cmake --build ./build --config %CONFIGURATION%
 
 test_script:
