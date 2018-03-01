@@ -1,16 +1,22 @@
 version: '{build}'
+
 branches:
   only:
   - develop
-cache: C:\projects\dependencies
-clone_folder: c:\projects\showtime-cpp
+cache: C:/projects/dependencies
+
+clone_folder: c:/projects/showtime-cpp
+
 image:
 - Visual Studio 2017
+
 configuration:
-- Release
 - Debug
+- Release
+
 platform:
 - x64
+
 environment:
   matrix:
   - GENERATOR: "Visual Studio 12 2013 Win64"
@@ -23,7 +29,7 @@ matrix:
 
 before_build:
 - cmd: |-
-    cd C:\projects
+    cd %APPVEYOR_BUILD_FOLDER%
     mkdir dependencies
     cd dependencies
     git clone https://github.com/mystfit/czmq.git
@@ -45,16 +51,20 @@ before_build:
 
 build_script:
 - cmd: |-
+    cd %APPVEYOR_BUILD_FOLDER%
+    mkdir build
     cmake -H. -B./build -G "%GENERATOR%"
-    cmake --build ./build --config %CONFIGURATION%
+    cmake --build ./build --config %CONFIGURATION%    
 
+before_test:
+- cmd: |-
     if %CONFIGURATION% == Debug set LIBCZMQ_DLL=libczmqd.dll
     if %CONFIGURATION% == Release set LIBCZMQ_DLL=libczmq.dll
-    cmake -E copy C:\projects\dependencies\czmq\install\bin\%LIBCZMQ_DLL% C:\projects\showtime-cpp\build\bin\%CONFIGURATION%\
+    cmake -E copy C:/projects/dependencies/czmq/install/bin/%LIBCZMQ_DLL% C:/projects/showtime-cpp/build/bin/%CONFIGURATION%/
 
 test_script:
 - cmd: |-
-    cd build
+    cd %APPVEYOR_BUILD_FOLDER%/build
     ctest -C Debug -V --output-on-fail
 
 only_commits:
