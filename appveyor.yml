@@ -4,8 +4,6 @@ branches:
   - master
 clone_folder: c:\projects\showtime-cpp
 image:
-- Visual Studio 2013
-- Visual Studio 2015
 - Visual Studio 2017
 configuration:
 - Release
@@ -15,9 +13,7 @@ platform:
 environment:
   matrix:
   - GENERATOR: "Visual Studio 12 2013 Win64"
-
   - GENERATOR: "Visual Studio 14 2015 Win64"
-
   - GENERATOR: "Visual Studio 15 2017 Win64"
 
   # - arch: #does not work, Release|x64 not a valid target
@@ -44,21 +40,18 @@ before_build:
     cd czmq
     git checkout hunter-v4.1.0
     mkdir build
-    cd build
     mkdir install
-    cmake  -G %generator% -DCMAKE_INSTALL_PREFIX="./install"
-    cmake --build . --config %CONFIGURATION% --target INSTALL
+    cmake -H. -B./build -G %generator% -DCMAKE_INSTALL_PREFIX="./install"
+    cmake --build ./build --config %CONFIGURATION% --target INSTALL
 
-    cd ..
     cd ..
     git clone https://github.com/mystfit/msgpack-c.git
     cd msgpack-c
     git checkout hunter-2.1.5
     mkdir build
-    cd build
     mkdir install
-    cmake .. -G %generator% -DCMAKE_INSTALL_PREFIX="./install"
-    cmake --build . --config %CONFIGURATION% --target INSTALL
+    cmake -H. -B./build -G %generator% -DCMAKE_INSTALL_PREFIX="./install"
+    cmake --build ./build --config %CONFIGURATION% --target INSTALL
 
 after_build:
 - cmd: |-
@@ -67,6 +60,7 @@ after_build:
 
 build_script:
 - cmd: |-
+    cmake -H. -B./build -G %generator%
     cmake --build ./build --config %CONFIGURATION%
 
 test_script:
