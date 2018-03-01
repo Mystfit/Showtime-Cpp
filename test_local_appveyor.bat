@@ -20,6 +20,7 @@ REM Set up dependency directories
 cd %APPVEYOR_BUILD_FOLDER%
 mkdir "%HUNTER_ROOT%"
 mkdir "%DEPENDENCY_DIR%"
+mkdir "%DEPENDENCY_DIR%/install"
 
 REM Aquire patched hunterized CZMQ
 cd "%DEPENDENCY_DIR%"
@@ -28,7 +29,7 @@ cd czmq
 git checkout hunter-v4.1.0
 mkdir "%DEPENDENCY_DIR%/czmq/build"
 mkdir "%DEPENDENCY_DIR%/czmq/install"
-cmake -H. -B"%DEPENDENCY_DIR%/czmq/build" -G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%DEPENDENCY_DIR%/czmq/install"
+cmake -H. -B"%DEPENDENCY_DIR%/czmq/build" -G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%DEPENDENCY_DIR%/install"
 cmake --build "%DEPENDENCY_DIR%/czmq/build" --config %CONFIGURATION% --target INSTALL
 
 REM Aquire patched hunterized msgpack
@@ -38,7 +39,7 @@ cd msgpack-c
 git checkout hunter-2.1.5
 mkdir "%DEPENDENCY_DIR%/msgpack-c/build"
 mkdir "%DEPENDENCY_DIR%/msgpack-c/install"
-cmake -H. -B"%DEPENDENCY_DIR%/msgpack-c/build" -G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%DEPENDENCY_DIR%/msgpack-c/install"
+cmake -H. -B"%DEPENDENCY_DIR%/msgpack-c/build" -G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%DEPENDENCY_DIR%/install"
 cmake --build "%DEPENDENCY_DIR%/msgpack-c/build" --config %CONFIGURATION% --target INSTALL
 
 REM APPVEYOR build_script:
@@ -46,8 +47,7 @@ REM ----------------------
 cd "%APPVEYOR_BUILD_FOLDER%"
 mkdir build
 cd build
-echo Running CMake with flags -G "%GENERATOR%" -D "%DEPENDENCY_DIR%/czmq/build/install/share/cmake/czmq" -D "%DEPENDENCY_DIR%/msgpack-c/build/install/lib/cmake/msgpack"
-cmake .. -G "%GENERATOR%" -Dczmq_DIR="%DEPENDENCY_DIR%/czmq/build/install/share/cmake/czmq" -DMsgPack_DIR="%DEPENDENCY_DIR%/msgpack-c/build/install/lib/cmake/msgpack" -DHUNTER_STATUS_DEBUG=ON
+cmake .. -G "%GENERATOR%" -DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%/install;${CMAKE_PREFIX_PATH}"
 cmake --build "%APPVEYOR_BUILD_FOLDER%/build" --config %CONFIGURATION%
 
 REM APPVEYOR before_test:
@@ -55,7 +55,7 @@ REM ---------------------
 REM Copy CZMQ dlls into build folder - manually until CMake can do this automagically
 if %CONFIGURATION% == Debug set LIBCZMQ_DLL=libczmqd.dll
 if %CONFIGURATION% == Release set LIBCZMQ_DLL=libczmq.dll
-cmake -E copy "%DEPENDENCY_DIR%/czmq/install/bin/%LIBCZMQ_DLL%" "%APPVEYOR_BUILD_FOLDER%/build/bin/%CONFIGURATION%/"
+cmake -E copy "%DEPENDENCY_DIR%/install/bin/%LIBCZMQ_DLL%" "%APPVEYOR_BUILD_FOLDER%/build/bin/%CONFIGURATION%/"
 
 REM APPVEYOR test_script:
 REM ---------------------
