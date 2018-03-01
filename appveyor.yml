@@ -47,8 +47,10 @@ build_script:
 - cmd: |-
     cmake -H. -B./build -G "%GENERATOR%"
     cmake --build ./build --config %CONFIGURATION%
-    if "%CONFIGURATION%" == "Debug" cmake -E copy C:\projects\dependencies\czmq\install\bin\libczmqd.dll C:\projects\showtime-cpp\build\bin\%CONFIGURATION%\
-    if "%CONFIGURATION%" == "Release" cmake -E copy C:\projects\dependencies\czmq\install\bin\libczmq.dll C:\projects\showtime-cpp\build\bin\%CONFIGURATION%\
+
+    if %CONFIGURATION% == Debug set LIBCZMQ_DLL=libczmqd.dll
+    if %CONFIGURATION% == Release set LIBCZMQ_DLL=libczmq.dll
+    cmake -E copy C:\projects\dependencies\czmq\install\bin\%LIBCZMQ_DLL% C:\projects\showtime-cpp\build\bin\%CONFIGURATION%\
 
 test_script:
 - cmd: |-
