@@ -43,13 +43,14 @@ install:
     REM APPVEYOR install:
     REM ----------------------
     call "%BUILD_FOLDER%\install_dependencies.bat"
+    set BOOST_ROOT="C:\Libraries\boost_1_65_1"
 
 build_script:
 - cmd: |-
     REM APPVEYOR build_script:
     REM ----------------------
     mkdir build
-    cmake -H. -B"%BUILD_FOLDER%\build" -G "%GENERATOR%" -DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%\install;${CMAKE_PREFIX_PATH}" -DUSE_LOCAL_BOOST=ON
+    cmake -H. -B"%BUILD_FOLDER%\build" -G "%GENERATOR%" -DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%\install;${CMAKE_PREFIX_PATH}" -DUSE_LOCAL_BOOST=ON -DBOOST_ROOT=%BOOST_ROOT%
     cmake --build "%BUILD_FOLDER%\build" --config %CONFIGURATION%
 
 before_test:
