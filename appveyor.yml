@@ -35,8 +35,8 @@ matrix:
   fast_finish: true
 
 init:
-- set BUILD_FOLDER %APPVEYOR_BUILD_FOLDER%
-- set DEPENDENCY_DIR %BUILD_FOLDER%\dependencies
+- BUILD_FOLDER: %APPVEYOR_BUILD_FOLDER%
+- DEPENDENCY_DIR: %APPVEYOR_BUILD_FOLDER%\dependencies
 
 install:
 - cmd: |-
