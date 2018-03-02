@@ -20,10 +20,7 @@ compiler:
 env:
   global:
   - BUILD_FOLDER=$TRAVIS_BUILD_DIR
-  - HOMEBREW_FORCE_VENDOR_RUBY=1
-  - PATH="$TRAVIS_BUILD_DIR/.linuxbrew/bin:$PATH"
   - GENERATOR="Unix Makefiles"
-  - USE_LOCAL_BOOST=1
   matrix:
   - CONFIG=Debug
   - CONFIG=Release
@@ -31,7 +28,18 @@ env:
 matrix:
   include:
     - os: linux
+      env:
+      - HOMEBREW_FORCE_VENDOR_RUBY=1
+      - LINUXBREWHOME=$TRAVIS_BUILD_DIR/.linuxbrew
+      - PATH=$LINUXBREWHOME/bin:$PATH
+      - MANPATH=$LINUXBREWHOME/share/man:$MANPATH
+      - INFOPATH=$LINUXBREWHOME/share/info:$INFOPATH
+      - PKG_CONFIG_PATH=$LINUXBREWHOME/lib64/pkgconfig:$LINUXBREWHOME/lib/pkgconfig:$PKG_CONFIG_PATH
+      - LD_LIBRARY_PATH=$LINUXBREWHOME/lib64:$LINUXBREWHOME/lib:$LD_LIBRARY_PATH
     - os: osx
+      env:
+      - USE_LOCAL_BOOST=1
+
 
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
@@ -41,16 +49,17 @@ before_install:
 
 install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then 
-      if [ -z "$(ls -A $TRAVIS_BUILD_DIR/.linuxbrew)" ]; then
-        echo "Installing linuxbrew to $TRAVIS_BUILD_DIR/.linuxbrew";
-        git clone https://github.com/Linuxbrew/brew.git $TRAVIS_BUILD_DIR/.linuxbrew;
+      if [ -z "$(ls -A $LINUXBREWHOME)" ]; then
+        echo "Installing linuxbrew to $LINUXBREWHOME";
+        git clone https://github.com/Linuxbrew/brew.git $LINUXBREWHOME;
       else
         echo "Found existing linuxbrew directory";
       fi
     fi
-  - export MANPATH="$(brew --prefix)/share/man:$MANPATH"
-  - export INFOPATH="$(brew --prefix)/share/info:$INFOPATH"
-  - if [ ! $USE_LOCAL_BOOST ]; then travis_wait brew install boost; fi
+  - if [ ! $USE_LOCAL_BOOST ]; then 
+      travis_wait brew install boost; 
+      export USE_LOCAL_BOOST=1
+    fi
   - travis_wait brew install czmq
   - travis_wait brew install msgpack
   - travis_wait brew install fmt
@@ -58,8 +67,10 @@ install:
 script:
   - mkdir build
   - GENERATOR_ARGS="";
-  - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS=USE_LOCAL_BOOST=ON; fi
-  - cmake -H. -B./build -G "$GENERATOR" -D$GENERATOR_ARGS
+  - if [ $USE_LOCAL_BOOST ]; then 
+      GENERATOR_ARGS=%GENERATOR_ARGS% -DUSE_LOCAL_BOOST=ON; 
+    fi
+  - cmake -H. -B./build -G "$GENERATOR" $GENERATOR_ARGS
   - cmake --build ./build --config $CONFIG
 
   # Run tests
