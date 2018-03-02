@@ -9,6 +9,8 @@ branches:
 cache:
   - apt
 
+sudo: required 
+
 compiler:
   - clang
   - gcc
@@ -34,7 +36,13 @@ matrix:
     #}
 
 before_install:
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)"
+  - sudo apt-get -qq update
+  - sudo apt-get install build-essential curl file git python-setuptools
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then git clone https://github.com/Linuxbrew/brew.git ~/.linuxbrew
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; export HOMEBREW_FORCE_VENDOR_RUBY=1
+  - PATH="$HOME/.linuxbrew/bin:$PATH"
+  - export MANPATH="$(brew --prefix)/share/man:$MANPATH"
+  - export INFOPATH="$(brew --prefix)/share/info:$INFOPATH"
 
 env:
   - BUILD_FOLDER=$TRAVIS_BUILD_DIR
