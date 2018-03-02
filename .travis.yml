@@ -38,11 +38,13 @@ matrix:
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install build-essential curl file git python-setuptools
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then git clone https://github.com/Linuxbrew/brew.git ~/.linuxbrew
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; export HOMEBREW_FORCE_VENDOR_RUBY=1
-  - PATH="$HOME/.linuxbrew/bin:$PATH"
-  - export MANPATH="$(brew --prefix)/share/man:$MANPATH"
-  - export INFOPATH="$(brew --prefix)/share/info:$INFOPATH"
+  - 'if [ "$TRAVIS_OS_NAME" == "linux" ]; then 
+      git clone https://github.com/Linuxbrew/brew.git ~/.linuxbrew
+      export HOMEBREW_FORCE_VENDOR_RUBY=1
+      PATH="$HOME/.linuxbrew/bin:$PATH"
+      export MANPATH="$(brew --prefix)/share/man:$MANPATH"
+      export INFOPATH="$(brew --prefix)/share/info:$INFOPATH"
+    fi'
 
 env:
   - BUILD_FOLDER=$TRAVIS_BUILD_DIR
