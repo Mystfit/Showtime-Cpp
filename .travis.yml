@@ -38,6 +38,9 @@ before_install:
       sudo apt-get -qq update;
       sudo apt-get install build-essential curl file git python-setuptools;
     fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      export USE_LOCAL_BOOST=1;
+    fi
 
 install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then 
