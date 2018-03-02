@@ -34,9 +34,11 @@ matrix:
     #}
 
 before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install build-essential curl file git python-setuptools
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then $TRAVIS_BUILD_DIR/ci/install_linuxbrew.sh; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      sudo apt-get -qq update;
+      sudo apt-get install build-essential curl file git python-setuptools;
+      $TRAVIS_BUILD_DIR/ci/install_linuxbrew.sh;
+    fi
 
 env:
   - BUILD_FOLDER=$TRAVIS_BUILD_DIR
