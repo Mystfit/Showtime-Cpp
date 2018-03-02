@@ -47,7 +47,11 @@ env:
   - DEPENDENCY_DIR=$BUILD_FOLDER/dependencies
 
 install:
-  - travis_wait brew install boost czmq msgpack fmt 
+  - brew update
+  - travis_wait brew install boost 
+  - travis_wait brew install czmq 
+  - travis_wait brew install msgpack 
+  - travis_wait brew install fmt 
 
 script:
   - mkdir build
