@@ -51,10 +51,10 @@ install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then export INFOPATH=$LINUXBREWHOME/share/info:$INFOPATH; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then export PKG_CONFIG_PATH=$LINUXBREWHOME/lib64/pkgconfig:$LINUXBREWHOME/lib/pkgconfig:$PKG_CONFIG_PATH; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then export LD_LIBRARY_PATH=$LINUXBREWHOME/lib64:$LINUXBREWHOME/lib:$LD_LIBRARY_PATH; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait brew install boost; fi
-  - travis_wait brew install czmq
-  - travis_wait brew install msgpack
-  - travis_wait brew install fmt
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then brew install boost; fi
+  - brew install czmq
+  - brew install msgpack
+  - brew install fmt
 
 script:
   - mkdir build
