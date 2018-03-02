@@ -45,10 +45,10 @@ env:
 
 install:
   - brew update
-  - travis_wait brew install boost 
-  - travis_wait brew install czmq 
-  - travis_wait brew install msgpack 
-  - travis_wait brew install fmt 
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait brew install boost; fi
+  - travis_wait brew install czmq
+  - travis_wait brew install msgpack
+  - travis_wait brew install fmt
 
 script:
   - mkdir build
