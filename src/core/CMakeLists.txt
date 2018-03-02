@@ -76,9 +76,14 @@ if(NOT HUNTER_ENABLED)
                                 -DCZMQ_STATIC
     )
     target_include_directories(${CORE_TARGET} PUBLIC 
-                                ${Boost_INCLUDE_DIRECTORIES}
                                 ${ZeroMQ_INCLUDE_DIRS}
                                 ${CZMQ_INCLUDE_DIRS}
+    )
+endif()
+
+if(USE_LOCAL_BOOST)
+    target_include_directories(${CORE_TARGET} PUBLIC 
+                               ${Boost_INCLUDE_DIRECTORIES}
     )
 endif()
 
