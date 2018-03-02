@@ -49,7 +49,7 @@ build_script:
     REM APPVEYOR build_script:
     REM ----------------------
     mkdir build
-    cmake -H. -B"%BUILD_FOLDER%\build" -G "%GENERATOR%" -DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%\install;${CMAKE_PREFIX_PATH}"
+    cmake -H. -B"%BUILD_FOLDER%\build" -G "%GENERATOR%" -DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%\install;${CMAKE_PREFIX_PATH}" -DUSE_LOCAL_BOOST=ON
     cmake --build "%BUILD_FOLDER%\build" --config %CONFIGURATION%
 
 before_test:

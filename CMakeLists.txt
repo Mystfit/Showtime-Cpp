@@ -34,13 +34,13 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     MESSAGE(STATUS "Platform is Windows")
     option(WINDOWS_USE_DLL_RUNTIME "Use the Visual C++ DLL runtime" ON)
     if(WINDOWS_USE_DLL_RUNTIME)
-	   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
-	   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
-       set(Boost_USE_STATIC_RUNTIME OFF)
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
+        set(Boost_USE_STATIC_RUNTIME OFF)
     else()
-       set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-       set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
-       set(Boost_USE_STATIC_RUNTIME ON)
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+        set(Boost_USE_STATIC_RUNTIME ON)
     endif()
 endif()
 
@@ -70,34 +70,23 @@ set(Showtime_RUNTIME_DEPENDENCIES "")
 set(LIBZMQ_TARGET "")
 set(CZMQ_TARGET "")
 if(HUNTER_ENABLED)
-    hunter_add_package(boost COMPONENTS 
-        system 
-        filesystem 
-        log
-        thread
-        date_time
-        chrono
-        atomic
-    )
+    if(NOT DEFINED USE_LOCAL_BOOST)
+        if(NOT USE_LOCAL_BOOST)
+            hunter_add_package(boost COMPONENTS 
+                system 
+                filesystem 
+                log
+                thread
+                date_time
+                chrono
+                atomic
+            )
+        endif()
+    endif()
     # hunter_add_package(MsgPack) # Use updated packaged at https://github.com/mystfit/msgpack-c.git
     hunter_add_package(fmt)
     hunter_add_package(ZeroMQ)  # Only include ZeroMQ until CZMQ gets CZMQConfig.cmake added to Hunter
     # hunter_add_package(czmq)
-
-    # Shared library names
-    set(Boost_LOG_TARGET "Boost::log")
-    set(Boost_LOG_SETUP_TARGET "Boost::log_setup")
-    set(Boost_THREAD_TARGET "Boost::thread")
-    set(Boost_FILESYSTEM_TARGET "Boost::filesystem")
-    set(Boost_SYSTEM_TARGET "Boost::system")
-    set(Boost_DATE_TIME_TARGET "Boost::date_time")
-    set(Boost_CHRONO_TARGET "Boost::chrono")
-    set(Boost_ATOMIC_TARGET "Boost::atomic")
-
-    # Static library names
-    set(fmt_TARGET "fmt::fmt")
-    set(msgpackc_TARGET "msgpackc-static") # set(msgpackc_LIBRARY "msgpack::msgpackc-static")
-    set(CZMQ_TARGET "czmq::czmq")
 endif()
 
 find_package(Boost COMPONENTS
@@ -114,8 +103,51 @@ find_package(Boost COMPONENTS
 find_package(MsgPack CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(ZeroMQ CONFIG REQUIRED)
-find_package(czmq CONFIG REQUIRED)
 
+if(WIN32 AND HUNTER_ENABLED)
+    find_package(czmq CONFIG REQUIRED)
+
+    if(DEFINED USE_LOCAL_BOOST)
+        if(NOT USE_LOCAL_BOOST)
+            set(USE_LOCAL_BOOST OFF)
+            set(Boost_LOG_TARGET "Boost::log")
+            set(Boost_LOG_SETUP_TARGET "Boost::log_setup")
+            set(Boost_THREAD_TARGET "Boost::thread")
+            set(Boost_FILESYSTEM_TARGET "Boost::filesystem")
+            set(Boost_SYSTEM_TARGET "Boost::system")
+            set(Boost_DATE_TIME_TARGET "Boost::date_time")
+            set(Boost_CHRONO_TARGET "Boost::chrono")
+            set(Boost_ATOMIC_TARGET "Boost::atomic")
+        endif()
+    endif()
+    set(fmt_TARGET "fmt::fmt")
+    set(msgpackc_TARGET "msgpackc-static") # set(msgpackc_LIBRARY "msgpack::msgpackc-static")
+    set(CZMQ_TARGET "czmq::czmq")
+else()
+    find_package(czmq REQUIRED)
+    set(USE_LOCAL_BOOST ON)
+
+    # Static library names
+    set(fmt_TARGET "fmt")
+    set(msgpackc_TARGET "msgpackc-static") # set(msgpackc_LIBRARY "msgpack::msgpackc-static")
+    set(CZMQ_TARGET ${CZMQ_LIBRARIES})
+    set(ZEROMQ_TARGET ${ZeroMQ_LIBRARIES})
+endif()
+
+if(NOT DEFINED USE_LOCAL_BOOST)
+    set(USE_LOCAL_BOOST ON)
+endif()
+
+if(USE_LOCAL_BOOST)
+    set(Boost_LOG_TARGET ${Boost_LOG_LIBRARY})
+    set(Boost_LOG_SETUP_TARGET ${Boost_LOG_LIBRARY})
+    set(Boost_THREAD_TARGET ${Boost_THREAD_LIBRARY})
+    set(Boost_FILESYSTEM_TARGET ${Boost_FILESYSTEM_LIBRARY})
+    set(Boost_SYSTEM_TARGET ${Boost_SYSTEM_LIBRARY})
+    set(Boost_DATE_TIME_TARGET ${Boost_DATE_TIME_LIBRARY})
+    set(Boost_CHRONO_TARGET ${Boost_CHRONO_LIBRARY})
+    set(Boost_ATOMIC_TARGET ${Boost_ATOMIC_LIBRARY})
+endif()
 
 # Shared lib dependencies
 # -----------------------

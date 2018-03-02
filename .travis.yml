@@ -23,6 +23,7 @@ env:
   - HOMEBREW_FORCE_VENDOR_RUBY=1
   - PATH="$TRAVIS_BUILD_DIR/.linuxbrew/bin:$PATH"
   - GENERATOR="Unix Makefiles"
+  - USE_LOCAL_BOOST=1
   matrix:
   - CONFIG=Debug
   - CONFIG=Release
@@ -47,16 +48,18 @@ install:
         echo "Found existing linuxbrew directory";
       fi
     fi
-  - MANPATH="$(brew --prefix)/share/man:$MANPATH"
-  - INFOPATH="$(brew --prefix)/share/info:$INFOPATH"
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait brew install boost; fi
+  - export MANPATH="$(brew --prefix)/share/man:$MANPATH"
+  - export INFOPATH="$(brew --prefix)/share/info:$INFOPATH"
+  - if [ ! $IGNORE_BOOST ]; then travis_wait brew install boost; fi
   - travis_wait brew install czmq
   - travis_wait brew install msgpack
   - travis_wait brew install fmt
 
 script:
   - mkdir build
-  - cmake -H. -B./build -G $GENERATOR
+  - export GENERATOR_ARGS="";
+  - if [ $USE_LOCAL_BOOST ]; then export GENERATOR_ARGS=USE_LOCAL_BOOST=ON; fi
+  - cmake -H. -B./build -G "$GENERATOR" -D$GENERATOR_ARGS
   - cmake --build ./build --config $CONFIG
 
   # Run tests
