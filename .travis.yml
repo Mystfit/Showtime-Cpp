@@ -28,23 +28,15 @@ env:
 matrix:
   include:
     - os: linux
-      env:
-      - HOMEBREW_FORCE_VENDOR_RUBY=1
-      - LINUXBREWHOME=$TRAVIS_BUILD_DIR/.linuxbrew
-      - PATH=$LINUXBREWHOME/bin:$PATH
-      - MANPATH=$LINUXBREWHOME/share/man:$MANPATH
-      - INFOPATH=$LINUXBREWHOME/share/info:$INFOPATH
-      - PKG_CONFIG_PATH=$LINUXBREWHOME/lib64/pkgconfig:$LINUXBREWHOME/lib/pkgconfig:$PKG_CONFIG_PATH
-      - LD_LIBRARY_PATH=$LINUXBREWHOME/lib64:$LINUXBREWHOME/lib:$LD_LIBRARY_PATH
     - os: osx
-      env:
-      - USE_LOCAL_BOOST=1
-
 
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sudo apt-get -qq update;
       sudo apt-get install build-essential curl file git python-setuptools;
+    fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      export USE_LOCAL_BOOST=1l
     fi
 
 install:
@@ -55,9 +47,16 @@ install:
       else
         echo "Found existing linuxbrew directory";
       fi
+      export HOMEBREW_FORCE_VENDOR_RUBY=1;
+      export LINUXBREWHOME=$TRAVIS_BUILD_DIR/.linuxbrew;
+      export PATH=$LINUXBREWHOME/bin:$PATH;
+      export MANPATH=$LINUXBREWHOME/share/man:$MANPATH;
+      export INFOPATH=$LINUXBREWHOME/share/info:$INFOPATH;
+      export PKG_CONFIG_PATH=$LINUXBREWHOME/lib64/pkgconfig:$LINUXBREWHOME/lib/pkgconfig:$PKG_CONFIG_PATH;
+      export LD_LIBRARY_PATH=$LINUXBREWHOME/lib64:$LINUXBREWHOME/lib:$LD_LIBRARY_PATH;
     fi
-  - if [ ! $USE_LOCAL_BOOST ]; then 
-      travis_wait brew install boost; 
+  - if [ ! $USE_LOCAL_BOOST ]; then
+      travis_wait brew install boost;
       export USE_LOCAL_BOOST=1;
     fi
   - travis_wait brew install czmq
