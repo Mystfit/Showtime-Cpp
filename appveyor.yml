@@ -39,17 +39,23 @@ install:
 - cmd: |-
     set BUILD_FOLDER=%APPVEYOR_BUILD_FOLDER%
     set DEPENDENCY_DIR=%APPVEYOR_BUILD_FOLDER%\dependencies
+    set BOOST_ROOT=C:\Libraries\boost_1_65_1
 
     REM APPVEYOR install:
     REM ----------------------
     call "%BUILD_FOLDER%\install_dependencies.bat"
+    set CMAKE_FLAGS=-DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%\install;${CMAKE_PREFIX_PATH}"
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DUSE_LOCAL_BOOST=ON
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBOOST_ROOT="%BOOST_ROOT%"
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBOOST_INCLUDEDIR="%BOOST_ROOT%"
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBOOST_LIBDIR="%BOOST_ROOT%\lib64-msvc-14.1"
 
 build_script:
 - cmd: |-
     REM APPVEYOR build_script:
     REM ----------------------
     mkdir build
-    cmake -H. -B"%BUILD_FOLDER%\build" -G "%GENERATOR%" -DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%\install;${CMAKE_PREFIX_PATH}" -DUSE_LOCAL_BOOST=ON
+    cmake -H. -B"%BUILD_FOLDER%\build" -G "%GENERATOR%" %CMAKE_FLAGS%
     cmake --build "%BUILD_FOLDER%\build" --config %CONFIGURATION%
 
 before_test:
