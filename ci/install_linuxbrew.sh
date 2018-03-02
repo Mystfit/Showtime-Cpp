@@ -1,11 +1,8 @@
-if [ ! -d "$HOME/.linuxbrew/" ]; then
-   	echo "Installing linuxbrew to $HOME/.linuxbrew/";
+if [ -z "$(ls -A $HOME/.linuxbrew)"  ];
+   	echo "Installing linuxbrew to $HOME/.linuxbrew";
 	git clone https://github.com/Linuxbrew/brew.git $HOME/.linuxbrew;
 else
-	pushd $HOME/.linuxbrew;
-	ls -al;
 	echo "Found existing linuxbrew directory";
-	popd
 fi
 export HOMEBREW_FORCE_VENDOR_RUBY=1
 PATH="$HOME/.linuxbrew/bin:$PATH"
