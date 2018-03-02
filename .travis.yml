@@ -7,7 +7,9 @@ branches:
   - travis
 
 cache:
+  directories:
   - apt
+  - $HOME/.linuxbrew
 
 sudo: required 
 
@@ -19,22 +21,22 @@ matrix:
   include:
     # Linux {
     - os: linux
-      env: CONFIG=Debug
+      env: CONFIG=Debug GENERATOR="Unix Makefiles"
     - os: linux
-      env: CONFIG=Release
+      env: CONFIG=Release GENERATOR="Unix Makefiles"
     #}
 
     # OSX {
     - os: osx
-      env: CONFIG=Debug 
+      env: CONFIG=Debug GENERATOR="Unix Makefiles"
     - os: osx
-      env: CONFIG=Release
+      env: CONFIG=Release GENERATOR="Unix Makefiles"
     #}
 
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install build-essential curl file git python-setuptools
-  - 'if [ "$TRAVIS_OS_NAME" == "linux" ]; then 
+  - 'if [ "$TRAVIS_OS_NAME" == "linux" && ! -d "$HOME/.linuxbrew" ]; then 
       git clone https://github.com/Linuxbrew/brew.git ~/.linuxbrew;
       export HOMEBREW_FORCE_VENDOR_RUBY=1;
       PATH="$HOME/.linuxbrew/bin:$PATH";
@@ -55,7 +57,7 @@ install:
 
 script:
   - mkdir build
-  - cmake -H. -B./build -G "$GENERATOR"
+  - cmake -H. -B./build -G $GENERATOR
   - cmake --build ./build --config $CONFIG
 
   # Run tests
