@@ -57,7 +57,7 @@ install:
 
 script:
   - mkdir build
-  - cmake -H. -B./build -G $GENERATOR -DUSE_LOCAL_BOOST=ON
+  - cmake -H. -B./build -G "$GENERATOR" -DUSE_LOCAL_BOOST=ON
   - cmake --build ./build --config $CONFIG
 
   # Run tests
