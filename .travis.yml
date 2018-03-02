@@ -1,0 +1,53 @@
+language: C++
+
+branches:
+  only:
+  - master
+  - develop
+  - travis
+
+cache:
+  - apt
+
+compiler:
+  - clang
+  - gcc
+
+compiler:
+  - clang
+  - gcc
+
+matrix:
+  include:
+    # Linux {
+    - os: linux
+      env: CONFIG=Debug
+    - os: linux
+      env: CONFIG=Release
+    #}
+
+    # OSX {
+    - os: osx
+      env: CONFIG=Debug 
+    - os: osx
+      env: CONFIG=Release
+    #}
+
+before_install:
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)"
+
+env:
+  - BUILD_FOLDER=$TRAVIS_BUILD_DIR
+  - DEPENDENCY_DIR=$BUILD_FOLDER/dependencies
+
+install:
+  - brew install boost czmq msgpack fmt 
+
+script:
+  - mkdir build
+  - cmake -H. -B./build -G "$GENERATOR"
+  - cmake --build ./build --config $CONFIG
+
+  # Run tests
+  - pushd "%BUILD_FOLDER%/build"
+  - ctest -C Debug -V --output-on-fail

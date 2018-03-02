@@ -70,6 +70,18 @@ IF(WIN32)
     target_compile_definitions(${CORE_TARGET} INTERFACE -DZST_IMPORT_CORE_API)
 ENDIF(WIN32)
 
+if(NOT HUNTER_ENABLED)
+    target_compile_definitions(${CORE_TARGET} PRIVATE 
+                                -DZMQ_STATIC
+                                -DCZMQ_STATIC
+    )
+    target_include_directories(${CORE_TARGET} PUBLIC 
+                                ${Boost_INCLUDE_DIRECTORIES}
+                                ${ZeroMQ_INCLUDE_DIRS}
+                                ${CZMQ_INCLUDE_DIRS}
+    )
+endif()
+
 target_link_libraries(${CORE_TARGET} PUBLIC 
                         ${CZMQ_TARGET}
                         ${msgpackc_TARGET}
