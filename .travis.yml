@@ -17,6 +17,12 @@ compiler:
   - clang
   - gcc
 
+env:
+  global:
+  - BUILD_FOLDER=$TRAVIS_BUILD_DIR
+  - HOMEBREW_FORCE_VENDOR_RUBY=1
+  - PATH="$TRAVIS_BUILD_DIR/.linuxbrew/bin:$PATH"
+
 matrix:
   include:
     # Linux {
@@ -39,16 +45,11 @@ before_install:
       sudo apt-get install build-essential curl file git python-setuptools;
     fi
 
-env:
-  - BUILD_FOLDER=$TRAVIS_BUILD_DIR
-  - HOMEBREW_FORCE_VENDOR_RUBY=1
-  - PATH="$HOME/.linuxbrew/bin:$PATH"
-
 install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then 
-      if [ -z "$(ls -A $HOME/.linuxbrew)" ]; then
-        echo "Installing linuxbrew to $HOME/.linuxbrew";
-        git clone https://github.com/Linuxbrew/brew.git $HOME/.linuxbrew;
+      if [ -z "$(ls -A $TRAVIS_BUILD_DIR/.linuxbrew)" ]; then
+        echo "Installing linuxbrew to $TRAVIS_BUILD_DIR/.linuxbrew";
+        git clone https://github.com/Linuxbrew/brew.git $TRAVIS_BUILD_DIR/.linuxbrew;
       else
         echo "Found existing linuxbrew directory";
       fi
