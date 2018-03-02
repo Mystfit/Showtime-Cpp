@@ -18,6 +18,7 @@ set(SHOWTIME_NAMESPACE "${PROJECT_NAME}::")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_MODULE_PATH "cmake;${CMAKE_MODULE_PATH}")
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(MACOSX TRUE)
@@ -65,23 +66,25 @@ set(Showtime_APP_TARGETS "")
 set(Showtime_INSTALL_TARGETS "")
 set(Showtime_RUNTIME_DEPENDENCIES "")
 
+if(NOT DEFINED USE_LOCAL_BOOST)
+    set(USE_LOCAL_BOOST OFF)
+endif()
+
 # Packages
 # --------
 set(LIBZMQ_TARGET "")
 set(CZMQ_TARGET "")
 if(HUNTER_ENABLED)
-    if(NOT DEFINED USE_LOCAL_BOOST)
-        if(NOT USE_LOCAL_BOOST)
-            hunter_add_package(boost COMPONENTS 
-                system 
-                filesystem 
-                log
-                thread
-                date_time
-                chrono
-                atomic
-            )
-        endif()
+    if(NOT USE_LOCAL_BOOST)
+        hunter_add_package(boost COMPONENTS 
+            system 
+            filesystem 
+            log
+            thread
+            date_time
+            chrono
+            atomic
+        )
     endif()
     # hunter_add_package(MsgPack) # Use updated packaged at https://github.com/mystfit/msgpack-c.git
     hunter_add_package(fmt)
@@ -106,19 +109,16 @@ find_package(ZeroMQ CONFIG REQUIRED)
 
 if(WIN32 AND HUNTER_ENABLED)
     find_package(czmq CONFIG REQUIRED)
-
-    if(DEFINED USE_LOCAL_BOOST)
-        if(NOT USE_LOCAL_BOOST)
-            set(USE_LOCAL_BOOST OFF)
-            set(Boost_LOG_TARGET "Boost::log")
-            set(Boost_LOG_SETUP_TARGET "Boost::log_setup")
-            set(Boost_THREAD_TARGET "Boost::thread")
-            set(Boost_FILESYSTEM_TARGET "Boost::filesystem")
-            set(Boost_SYSTEM_TARGET "Boost::system")
-            set(Boost_DATE_TIME_TARGET "Boost::date_time")
-            set(Boost_CHRONO_TARGET "Boost::chrono")
-            set(Boost_ATOMIC_TARGET "Boost::atomic")
-        endif()
+    if(NOT USE_LOCAL_BOOST)
+        set(USE_LOCAL_BOOST OFF)
+        set(Boost_LOG_TARGET "Boost::log")
+        set(Boost_LOG_SETUP_TARGET "Boost::log_setup")
+        set(Boost_THREAD_TARGET "Boost::thread")
+        set(Boost_FILESYSTEM_TARGET "Boost::filesystem")
+        set(Boost_SYSTEM_TARGET "Boost::system")
+        set(Boost_DATE_TIME_TARGET "Boost::date_time")
+        set(Boost_CHRONO_TARGET "Boost::chrono")
+        set(Boost_ATOMIC_TARGET "Boost::atomic")
     endif()
     set(fmt_TARGET "fmt::fmt")
     set(msgpackc_TARGET "msgpackc-static") # set(msgpackc_LIBRARY "msgpack::msgpackc-static")
@@ -132,10 +132,6 @@ else()
     set(msgpackc_TARGET "msgpackc-static") # set(msgpackc_LIBRARY "msgpack::msgpackc-static")
     set(CZMQ_TARGET ${CZMQ_LIBRARIES})
     set(ZEROMQ_TARGET ${ZeroMQ_LIBRARIES})
-endif()
-
-if(NOT DEFINED USE_LOCAL_BOOST)
-    set(USE_LOCAL_BOOST ON)
 endif()
 
 if(USE_LOCAL_BOOST)
