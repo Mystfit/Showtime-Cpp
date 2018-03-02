@@ -2,9 +2,7 @@ ECHO ON
 
 REM Set up test Appveyor environment
 set APPVEYOR_BUILD_FOLDER=C:\projects\showtime-cpp
-set BUILD_FOLDER=%APPVEYOR_BUILD_FOLDER%
 set HUNTER_ROOT=C:\.hunter
-set DEPENDENCY_DIR=%BUILD_FOLDER%\dependencies
 set GENERATOR=Visual Studio 15 2017 Win64
 set CONFIGURATION=Debug
 
@@ -16,6 +14,8 @@ popd
 
 REM APPVEYOR install:
 REM ----------------------
+set BUILD_FOLDER=%APPVEYOR_BUILD_FOLDER%
+set DEPENDENCY_DIR=%BUILD_FOLDER%\dependencies
 call "%APPVEYOR_BUILD_FOLDER%\install_dependencies.bat"
 
 REM APPVEYOR build_script:

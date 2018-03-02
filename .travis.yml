@@ -1,0 +1,65 @@
+language: C++
+
+branches:
+  only:
+  - master
+  - develop
+  - travis
+
+cache:
+  directories:
+  - apt
+  - $HOME/.linuxbrew
+
+sudo: required 
+
+compiler:
+  - clang
+  - gcc
+
+matrix:
+  include:
+    # Linux {
+    - os: linux
+      env: CONFIG=Debug GENERATOR="Unix Makefiles"
+    - os: linux
+      env: CONFIG=Release GENERATOR="Unix Makefiles"
+    #}
+
+    # OSX {
+    - os: osx
+      env: CONFIG=Debug GENERATOR="Unix Makefiles"
+    - os: osx
+      env: CONFIG=Release GENERATOR="Unix Makefiles"
+    #}
+
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install build-essential curl file git python-setuptools
+  - 'if [ "$TRAVIS_OS_NAME" == "linux" && ! -d "$HOME/.linuxbrew" ]; then 
+      git clone https://github.com/Linuxbrew/brew.git ~/.linuxbrew;
+      export HOMEBREW_FORCE_VENDOR_RUBY=1;
+      PATH="$HOME/.linuxbrew/bin:$PATH";
+      export MANPATH="$(brew --prefix)/share/man:$MANPATH";
+      export INFOPATH="$(brew --prefix)/share/info:$INFOPATH";
+    fi'
+
+env:
+  - BUILD_FOLDER=$TRAVIS_BUILD_DIR
+  - DEPENDENCY_DIR=$BUILD_FOLDER/dependencies
+
+install:
+  - brew update
+  - travis_wait brew install boost 
+  - travis_wait brew install czmq 
+  - travis_wait brew install msgpack 
+  - travis_wait brew install fmt 
+
+script:
+  - mkdir build
+  - cmake -H. -B./build -G $GENERATOR
+  - cmake --build ./build --config $CONFIG
+
+  # Run tests
+  - pushd "%BUILD_FOLDER%/build"
+  - ctest -C Debug -V --output-on-fail
