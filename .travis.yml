@@ -58,7 +58,7 @@ install:
     fi
   - if [ ! $USE_LOCAL_BOOST ]; then 
       travis_wait brew install boost; 
-      export USE_LOCAL_BOOST=1
+      export USE_LOCAL_BOOST=1;
     fi
   - travis_wait brew install czmq
   - travis_wait brew install msgpack
