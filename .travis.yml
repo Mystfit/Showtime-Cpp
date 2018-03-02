@@ -15,10 +15,6 @@ compiler:
   - clang
   - gcc
 
-compiler:
-  - clang
-  - gcc
-
 matrix:
   include:
     # Linux {
@@ -51,7 +47,7 @@ env:
   - DEPENDENCY_DIR=$BUILD_FOLDER/dependencies
 
 install:
-  - brew install boost czmq msgpack fmt 
+  - travis_wait brew install boost czmq msgpack fmt 
 
 script:
   - mkdir build
