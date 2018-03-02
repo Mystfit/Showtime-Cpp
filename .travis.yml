@@ -37,7 +37,6 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sudo apt-get -qq update;
       sudo apt-get install build-essential curl file git python-setuptools;
-      $TRAVIS_BUILD_DIR/ci/install_linuxbrew.sh;
     fi
 
 env:
@@ -45,7 +44,11 @@ env:
 
 install:
   - brew update
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait brew install boost; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then 
+      $TRAVIS_BUILD_DIR/ci/install_linuxbrew.sh;
+      echo "New path: $PATH";
+      travis_wait brew install boost;
+    fi
   - travis_wait brew install czmq
   - travis_wait brew install msgpack
   - travis_wait brew install fmt
