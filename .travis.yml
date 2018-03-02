@@ -42,7 +42,6 @@ before_install:
 
 env:
   - BUILD_FOLDER=$TRAVIS_BUILD_DIR
-  - DEPENDENCY_DIR=$BUILD_FOLDER/dependencies
 
 install:
   - brew update
