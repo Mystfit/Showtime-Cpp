@@ -3,6 +3,14 @@ version: '{build}'
 branches:
   only:
   - develop
+
+only_commits:
+  files:
+    - CMakeLists.txt
+    - appveyor.yml
+    - src/
+    - include/
+
 cache: 
 - dependencies
 - hunter_root
@@ -21,28 +29,28 @@ platform:
 
 environment:
   matrix:
-  #- GENERATOR: "Visual Studio 12 2013 Win64"
-  #- GENERATOR: "Visual Studio 14 2015 Win64"
   - GENERATOR: "Visual Studio 15 2017 Win64"
 
 matrix:
   fast_finish: true
 
+init:
+- set BUILD_FOLDER %APPVEYOR_BUILD_FOLDER%
+- set DEPENDENCY_DIR %BUILD_FOLDER%\dependencies
+
 install:
 - cmd: |-
     REM APPVEYOR install:
     REM ----------------------
-    call "%APPVEYOR_BUILD_FOLDER%\install_dependencies.bat"
+    call "%BUILD_FOLDER%\install_dependencies.bat"
 
 build_script:
 - cmd: |-
     REM APPVEYOR build_script:
     REM ----------------------
-    pushd %APPVEYOR_BUILD_FOLDER%
     mkdir build
-    cmake -H. -B"%APPVEYOR_BUILD_FOLDER%\build" -G "%GENERATOR%" -DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%\install;${CMAKE_PREFIX_PATH}"
-    cmake --build "%APPVEYOR_BUILD_FOLDER%\build" --config %CONFIGURATION%
-    popd
+    cmake -H. -B"%BUILD_FOLDER%\build" -G "%GENERATOR%" -DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%\install;${CMAKE_PREFIX_PATH}"
+    cmake --build "%BUILD_FOLDER%\build" --config %CONFIGURATION%
 
 before_test:
 - cmd: |-
@@ -51,19 +59,12 @@ before_test:
     REM Copy CZMQ dlls into build folder - manually until CMake can do this automagically
     if %CONFIGURATION% == Debug set LIBCZMQ_RUNTIME=libczmqd.dll
     if %CONFIGURATION% == Release set LIBCZMQ_RUNTIME=libczmq.dll
-    cmake -E copy "%DEPENDENCY_DIR%\install\bin\%LIBCZMQ_RUNTIME%" "%APPVEYOR_BUILD_FOLDER%\build\bin\%CONFIGURATION%"
+    cmake -E copy "%DEPENDENCY_DIR%\install\bin\%LIBCZMQ_RUNTIME%" "%BUILD_FOLDER%\build\bin\%CONFIGURATION%"
 
 test_script:
 - cmd: |-
     REM APPVEYOR test_script:
     REM ---------------------
-    pushd "%APPVEYOR_BUILD_FOLDER%\build"
+    pushd "%BUILD_FOLDER%\build"
     ctest -C Debug -V --output-on-fail
     popd
-
-only_commits:
-  files:
-    - CMakeLists.txt
-    - appveyor.yml
-    - src/
-    - include/
