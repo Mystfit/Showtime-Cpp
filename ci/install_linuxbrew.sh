@@ -1,4 +1,4 @@
-if [ -z "$(ls -A $HOME/.linuxbrew)"  ];
+if [ -z "$(ls -A $HOME/.linuxbrew)"  ]; then
    	echo "Installing linuxbrew to $HOME/.linuxbrew";
 	git clone https://github.com/Linuxbrew/brew.git $HOME/.linuxbrew;
 else
