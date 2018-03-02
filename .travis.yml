@@ -13,6 +13,10 @@ cache:
 
 sudo: required 
 
+os:
+- linux
+- osx
+
 compiler:
   - clang
   - gcc
@@ -22,22 +26,10 @@ env:
   - BUILD_FOLDER=$TRAVIS_BUILD_DIR
   - HOMEBREW_FORCE_VENDOR_RUBY=1
   - PATH="$TRAVIS_BUILD_DIR/.linuxbrew/bin:$PATH"
-
-matrix:
-  include:
-    # Linux {
-    - os: linux
-      env: CONFIG=Debug GENERATOR="Unix Makefiles"
-    - os: linux
-      env: CONFIG=Release GENERATOR="Unix Makefiles"
-    #}
-
-    # OSX {
-    - os: osx
-      env: CONFIG=Debug GENERATOR="Unix Makefiles"
-    - os: osx
-      env: CONFIG=Release GENERATOR="Unix Makefiles"
-    #}
+  - GENERATOR="Unix Makefiles"
+  matrix:
+    CONFIG=Debug
+    CONFIG=Release
 
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
