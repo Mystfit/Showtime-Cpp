@@ -21,6 +21,7 @@ env:
   global:
   - BUILD_FOLDER=$TRAVIS_BUILD_DIR
   - GENERATOR="Unix Makefiles"
+  - USE_LOCAL_BOOST=1
   matrix:
   - CONFIG=Debug
   - CONFIG=Release
@@ -34,9 +35,6 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sudo apt-get -qq update;
       sudo apt-get install build-essential curl file git python-setuptools;
-    fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      export USE_LOCAL_BOOST=1l
     fi
 
 install:
@@ -55,10 +53,7 @@ install:
       export PKG_CONFIG_PATH=$LINUXBREWHOME/lib64/pkgconfig:$LINUXBREWHOME/lib/pkgconfig:$PKG_CONFIG_PATH;
       export LD_LIBRARY_PATH=$LINUXBREWHOME/lib64:$LINUXBREWHOME/lib:$LD_LIBRARY_PATH;
     fi
-  - if [ ! $USE_LOCAL_BOOST ]; then
-      travis_wait brew install boost;
-      export USE_LOCAL_BOOST=1;
-    fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait brew install boost; fi
   - travis_wait brew install czmq
   - travis_wait brew install msgpack
   - travis_wait brew install fmt
@@ -66,9 +61,8 @@ install:
 script:
   - mkdir build
   - GENERATOR_ARGS="";
-  - if [ $USE_LOCAL_BOOST ]; then 
-      GENERATOR_ARGS=%GENERATOR_ARGS% -DUSE_LOCAL_BOOST=ON; 
-    fi
+  - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS=USE_LOCAL_BOOST=ON; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then GENERATOR_ARGS=$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$LINUXBREWHOME;${CMAKE_PREFIX_PATH}; fi
   - cmake -H. -B./build -G "$GENERATOR" $GENERATOR_ARGS
   - cmake --build ./build --config $CONFIG
 
