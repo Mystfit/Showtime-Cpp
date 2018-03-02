@@ -50,15 +50,15 @@ install:
     fi
   - export MANPATH="$(brew --prefix)/share/man:$MANPATH"
   - export INFOPATH="$(brew --prefix)/share/info:$INFOPATH"
-  - if [ ! $IGNORE_BOOST ]; then travis_wait brew install boost; fi
+  - if [ ! $USE_LOCAL_BOOST ]; then travis_wait brew install boost; fi
   - travis_wait brew install czmq
   - travis_wait brew install msgpack
   - travis_wait brew install fmt
 
 script:
   - mkdir build
-  - export GENERATOR_ARGS="";
-  - if [ $USE_LOCAL_BOOST ]; then export GENERATOR_ARGS=USE_LOCAL_BOOST=ON; fi
+  - GENERATOR_ARGS="";
+  - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS=USE_LOCAL_BOOST=ON; fi
   - cmake -H. -B./build -G "$GENERATOR" -D$GENERATOR_ARGS
   - cmake --build ./build --config $CONFIG
 
