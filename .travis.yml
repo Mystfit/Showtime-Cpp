@@ -20,8 +20,6 @@ compiler:
 env:
   global:
   - BUILD_FOLDER=$TRAVIS_BUILD_DIR
-  - HOMEBREW_FORCE_VENDOR_RUBY=1
-  - PATH="$TRAVIS_BUILD_DIR/.linuxbrew/bin:$PATH"
   - GENERATOR="Unix Makefiles"
   - USE_LOCAL_BOOST=1
   matrix:
@@ -41,16 +39,21 @@ before_install:
 
 install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then 
-      if [ -z "$(ls -A $TRAVIS_BUILD_DIR/.linuxbrew)" ]; then
-        echo "Installing linuxbrew to $TRAVIS_BUILD_DIR/.linuxbrew";
-        git clone https://github.com/Linuxbrew/brew.git $TRAVIS_BUILD_DIR/.linuxbrew;
+      if [ -z "$(ls -A $LINUXBREWHOME)" ]; then
+        echo "Installing linuxbrew to $LINUXBREWHOME";
+        git clone https://github.com/Linuxbrew/brew.git $LINUXBREWHOME;
       else
         echo "Found existing linuxbrew directory";
       fi
+      export HOMEBREW_FORCE_VENDOR_RUBY=1;
+      export LINUXBREWHOME=$TRAVIS_BUILD_DIR/.linuxbrew;
+      export PATH=$LINUXBREWHOME/bin:$PATH;
+      export MANPATH=$LINUXBREWHOME/share/man:$MANPATH;
+      export INFOPATH=$LINUXBREWHOME/share/info:$INFOPATH;
+      export PKG_CONFIG_PATH=$LINUXBREWHOME/lib64/pkgconfig:$LINUXBREWHOME/lib/pkgconfig:$PKG_CONFIG_PATH;
+      export LD_LIBRARY_PATH=$LINUXBREWHOME/lib64:$LINUXBREWHOME/lib:$LD_LIBRARY_PATH;
     fi
-  - export MANPATH="$(brew --prefix)/share/man:$MANPATH"
-  - export INFOPATH="$(brew --prefix)/share/info:$INFOPATH"
-  - if [ ! $USE_LOCAL_BOOST ]; then travis_wait brew install boost; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait brew install boost; fi
   - travis_wait brew install czmq
   - travis_wait brew install msgpack
   - travis_wait brew install fmt
@@ -59,7 +62,8 @@ script:
   - mkdir build
   - GENERATOR_ARGS="";
   - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS=USE_LOCAL_BOOST=ON; fi
-  - cmake -H. -B./build -G "$GENERATOR" -D$GENERATOR_ARGS
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then GENERATOR_ARGS=$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$LINUXBREWHOME;${CMAKE_PREFIX_PATH}; fi
+  - cmake -H. -B./build -G "$GENERATOR" $GENERATOR_ARGS
   - cmake --build ./build --config $CONFIG
 
   # Run tests
