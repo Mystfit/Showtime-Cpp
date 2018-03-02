@@ -2,7 +2,7 @@ ECHO ON
 
 REM Set up test Appveyor environment
 set APPVEYOR_BUILD_FOLDER=C:\projects\showtime-cpp
-set HUNTER_ROOT=C:\.hunter
+REM set HUNTER_ROOT=C:\.hunter
 set GENERATOR=Visual Studio 15 2017 Win64
 set CONFIGURATION=Debug
 

@@ -15,7 +15,6 @@ only_commits:
 
 cache: 
 - dependencies
-- hunter_root
 
 clone_folder: c:/projects/showtime-cpp
 
