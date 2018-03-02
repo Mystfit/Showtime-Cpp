@@ -446,17 +446,20 @@ void ZstClient::leave_stage(bool immediately)
 		ZstLog::net(LogLevel::notification, "Leaving stage");
         
         ZstMessage * msg = msg_pool().get()->init_message(ZstMsgKind::CLIENT_LEAVING);
-		MessageFuture future = msg_pool().register_future(msg, true);
-		try {
+		//If leaving immediately then don't stick around
+		if (immediately) {
 			send_to_stage(msg);
+			leave_stage_complete();
+			return;
+		}
 
-			if (immediately) {
-				leave_stage_complete();
-			}
-			else {
-				future.get();
-				leave_stage_complete();
-			}
+		//Leave slowly by waiting for leave OK from the stage
+		MessageFuture future = msg_pool().register_future(msg, true);
+		send_to_stage(msg);
+
+		try {
+			future.get();
+			leave_stage_complete();
 		}
 		catch (const ZstTimeoutException & e) {
 			ZstLog::net(LogLevel::notification, "Stage leave timeout: {}", e.what());

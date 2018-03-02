@@ -804,17 +804,21 @@ void test_memory_leaks() {
 
 void test_leaving(){
     //Test leave async (returns immediately)
+    ZstLog::app(LogLevel::notification, "Starting stage leave immediate test");
     zst_leave_immediately();
+    ZstLog::app(LogLevel::notification, "Left stage immediately");
 }
 
 void test_cleanup() {
 	//Test late entity destruction after library cleanup
+	ZstLog::app(LogLevel::notification, "Starting library destruction test");
 	zst_destroy();
+	ZstLog::app(LogLevel::notification, "Library successfully destroyed");
 }
 
 int main(int argc,char **argv){
 	std::string ext_test_folder = boost::filesystem::system_complete(argv[0]).parent_path().generic_string();
-
+	
 	//Start server
 	std::string prog = ext_test_folder + "/ShowtimeServer";
 #ifdef WIN32
