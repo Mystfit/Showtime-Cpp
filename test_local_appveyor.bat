@@ -1,4 +1,4 @@
-@echo OFF
+@echo off
 
 REM Set up test Appveyor environment
 set APPVEYOR_BUILD_FOLDER=C:\projects\showtime-cpp
@@ -40,6 +40,5 @@ set TESTCLIENT_LOG=%BUILD_FOLDER%\build\Testing\TestClient.log
 ctest -C %CONFIGURATION% --output-on-fail -V -O "%TESTCLIENT_LOG%"
 set TEST_OUTCOME=Passed
 if NOT %errorlevel% == 0 set TEST_OUTCOME=Failed
-call "%BUILD_FOLDER%\ci\get_test_time.bat" %TESTCLIENT_LOG%
-set /A TEST_DURATION=%errorlevel%
+call "%BUILD_FOLDER%\ci\get_test_time.bat" %TESTCLIENT_LOG% TEST_DURATION
 echo "Test duration %TEST_DURATION%ms"

@@ -15,16 +15,13 @@ ZstActor::~ZstActor()
 void ZstActor::destroy()
 {
 	stop();
-	zloop_destroy(&m_loop);
-	free(m_loop);
-	free(m_loop_actor);
 }
 
 void ZstActor::init(const char * actor_name)
 {
 	m_loop = zloop_new();
 	zloop_set_verbose(m_loop, false);
-    
+	zloop_set_nonstop(m_loop, true);
     m_actor_name = std::string(actor_name);
 }
 
@@ -36,6 +33,7 @@ void ZstActor::start()
 void ZstActor::stop()
 {
 	zactor_destroy(&m_loop_actor);
+	m_loop_actor = NULL;
 }
 
 void ZstActor::start_polling(zsock_t * pipe)
@@ -51,6 +49,10 @@ void ZstActor::actor_thread_func(zsock_t * pipe, void * args)
 
 	ZstActor* actor = (ZstActor*)args;
 	actor->start_polling(pipe);
+	
+	zloop_t * loop = actor->m_loop;
+	zloop_destroy(&loop);
+	actor->m_loop = NULL;
 }
 
 
@@ -61,6 +63,9 @@ int ZstActor::s_handle_actor_pipe(zloop_t * loop, zsock_t * sock, void * args)
 	//Received TERM message, this actor is going away
 	char *command = zmsg_popstr(msg);
 	if (streq(command, "$TERM")) {
+		ZstActor * actor = (ZstActor*)args;
+		
+		//Signal that we finished cleaning up
 		zsock_signal(sock, 0);
 
 		//Return -1 to exit the zloop
