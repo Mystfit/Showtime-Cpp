@@ -9,7 +9,8 @@ branches:
 cache:
   directories:
   - apt
-  - $HOME/.linuxbrew
+  - $TRAVIS_BUILD_DIR/linuxbrew
+  - $TRAVIS_BUILD_DIR/boost
 
 sudo: required 
 
@@ -22,7 +23,8 @@ env:
   - BUILD_FOLDER=$TRAVIS_BUILD_DIR
   - GENERATOR="Unix Makefiles"
   - USE_LOCAL_BOOST=1
-  - BOOST_ROOT=/usr/local
+  - BOOST_ROOT=$TRAVIS_BUILD_DIR/boost
+  - LINUXBREWHOME=$BUILD_FOLDER/linuxbrew
 
   matrix:
   - CONFIG=Debug
@@ -43,8 +45,8 @@ before_install:
     fi
 
 install:
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 30 ./install_boost.sh; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 30 ./ci/install_linuxbrew_dependencies.sh; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 30 %BUILD_FOLDER%/ci/install_boost.sh; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 30 %BUILD_FOLDER%/ci/install_linuxbrew_dependencies.sh; fi
 
 script:
   - mkdir build

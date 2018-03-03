@@ -1,4 +1,3 @@
-export LINUXBREWHOME="$TRAVIS_BUILD_DIR/.linuxbrew"
 if [ -z "$(ls -A $LINUXBREWHOME)" ]; then 
   echo "Installing linuxbrew to $LINUXBREWHOME";
   git clone https://github.com/Linuxbrew/brew.git $LINUXBREWHOME;
