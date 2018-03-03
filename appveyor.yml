@@ -50,7 +50,6 @@ install:
     REM set CMAKE_FLAGS=%CMAKE_FLAGS% -DBOOST_INCLUDEDIR="%BOOST_ROOT%"
     REM set CMAKE_FLAGS=%CMAKE_FLAGS% -DBOOST_LIBRARYDIR="%BOOST_ROOT%\lib64-msvc-14.1"
 
-
 build_script:
 - cmd: |-
     REM APPVEYOR build_script:
@@ -74,4 +73,3 @@ test_script:
     REM ---------------------
     pushd "%BUILD_FOLDER%\build"
     ctest -C Debug -V --output-on-fail
-    popd
