@@ -1,4 +1,3 @@
-#!/bin/bash
 
 export LINUXBREWHOME=$TRAVIS_BUILD_DIR/.linuxbrew
 

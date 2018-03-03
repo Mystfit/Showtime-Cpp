@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # sudo apt-get install libboost1.65-dev
 # sudo apt-get install libboostsystem1.65-dev
 # sudo apt-get install libboostfilesystem1.65-dev
