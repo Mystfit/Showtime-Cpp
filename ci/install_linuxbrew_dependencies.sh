@@ -1,8 +1,5 @@
 if [ -z "$(ls -A $LINUXBREWHOME)" ]; then 
-  echo "Installing linuxbrew to $LINUXBREWHOME";
   git clone https://github.com/Linuxbrew/brew.git $LINUXBREWHOME;
-else
-  echo "Found existing linuxbrew directory";
 fi
 export HOMEBREW_FORCE_VENDOR_RUBY=1
 export PATH=$LINUXBREWHOME/bin:$PATH
