@@ -45,8 +45,8 @@ before_install:
     fi
 
 install:
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 30 %BUILD_FOLDER%/ci/install_boost.sh; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 30 %BUILD_FOLDER%/ci/install_linuxbrew_dependencies.sh; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 30 $BUILD_FOLDER/ci/install_boost.sh; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 30 $BUILD_FOLDER/ci/install_linuxbrew_dependencies.sh; fi
 
 script:
   - mkdir build
@@ -57,5 +57,5 @@ script:
   - cmake --build ./build --config $CONFIG
 
   # Run tests
-  - pushd "%BUILD_FOLDER%/build"
+  - pushd "$BUILD_FOLDER/build"
   - ctest -C Debug -V --output-on-fail
