@@ -44,7 +44,7 @@ before_install:
 
 install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 30 ./install_boost.sh; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 30 ./install_linuxbrew_dependencies.sh; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 30 ./ci/install_linuxbrew_dependencies.sh; fi
 
 script:
   - mkdir build
