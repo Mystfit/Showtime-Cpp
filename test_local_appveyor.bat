@@ -1,4 +1,4 @@
-ECHO ON
+@echo OFF
 
 REM Set up test Appveyor environment
 set APPVEYOR_BUILD_FOLDER=C:\projects\showtime-cpp
@@ -35,6 +35,11 @@ cmake -E copy "%DEPENDENCY_DIR%\install\bin\%LIBCZMQ_RUNTIME%" "%APPVEYOR_BUILD_
 
 REM APPVEYOR test_script:
 REM ---------------------
-pushd "%APPVEYOR_BUILD_FOLDER%\build"
-ctest -C Debug -V --output-on-fail
-popd
+pushd "%BUILD_FOLDER%\build"
+set TESTCLIENT_LOG=%BUILD_FOLDER%\build\Testing\TestClient.log
+ctest -C %CONFIGURATION% --output-on-fail -V -O "%TESTCLIENT_LOG%"
+set TEST_OUTCOME=Passed
+if NOT %errorlevel% == 0 set TEST_OUTCOME=Failed
+call "%BUILD_FOLDER%\ci\get_test_time.bat" %TESTCLIENT_LOG%
+set /A TEST_DURATION=%errorlevel%
+echo "Test duration %TEST_DURATION%ms"

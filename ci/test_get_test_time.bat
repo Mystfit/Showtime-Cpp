@@ -1,4 +1,3 @@
-@echo off
 setlocal EnableDelayedExpansion
 
 rem Tail command in pure Batch, version 2: Tail.bat filename numOfLines
@@ -16,6 +15,8 @@ for /F "delims=" %%a in (%1) do (
 for /L %%i in (%firstTail%,1,%lastTail%) do set lastline=!lastLine[%%i]!
 for /f "tokens=6" %%i in ("%lastline%") do set TEST_TIME=%%i
 for /f  "delims=" %%x in ('powershell %TEST_TIME% * 1000') do set result=%%x
+
+echo %TEST_TIME%
 
 REM Return val as errorlevel
 exit /b %result%
