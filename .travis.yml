@@ -22,6 +22,8 @@ env:
   - BUILD_FOLDER=$TRAVIS_BUILD_DIR
   - GENERATOR="Unix Makefiles"
   - USE_LOCAL_BOOST=1
+  - BOOST_ROOT=/usr/local
+
   matrix:
   - CONFIG=Debug
   - CONFIG=Release
@@ -36,30 +38,13 @@ before_install:
       sudo apt-get -qq update;
       sudo apt-get install build-essential curl file git python-setuptools;
     fi
-
-install:
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then export LINUXBREWHOME=$TRAVIS_BUILD_DIR/.linuxbrew; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ -z "$(ls -A $LINUXBREWHOME)" ]; then 
-      echo "Installing linuxbrew to $LINUXBREWHOME";
-      git clone https://github.com/Linuxbrew/brew.git $LINUXBREWHOME;
-    else
-      echo "Found existing linuxbrew directory";
-    fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then export HOMEBREW_FORCE_VENDOR_RUBY=1; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then export PATH=$LINUXBREWHOME/bin:$PATH; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then export MANPATH=$LINUXBREWHOME/share/man:$MANPATH; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then export INFOPATH=$LINUXBREWHOME/share/info:$INFOPATH; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then export PKG_CONFIG_PATH=$LINUXBREWHOME/lib64/pkgconfig:$LINUXBREWHOME/lib/pkgconfig:$PKG_CONFIG_PATH; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then export LD_LIBRARY_PATH=$LINUXBREWHOME/lib64:$LINUXBREWHOME/lib:$LD_LIBRARY_PATH; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 30 brew install boost; fi
-  - brew install czmq
-  - brew install msgpack
-  - brew install fmt
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 30 ./install_boost.sh; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 30 ./install_linuxbrew_dependencies.sh; fi
 
 script:
   - mkdir build
   - GENERATOR_ARGS="";
-  - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS=USE_LOCAL_BOOST=ON; fi
+  - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS=USE_LOCAL_BOOST=ON BOOST_ROOT=$BOOST_ROOT; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then GENERATOR_ARGS=$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$LINUXBREWHOME;${CMAKE_PREFIX_PATH}; fi
   - cmake -H. -B./build -G "$GENERATOR" $GENERATOR_ARGS
   - cmake --build ./build --config $CONFIG
