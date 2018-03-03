@@ -72,6 +72,11 @@ test_script:
     REM APPVEYOR test_script:
     REM ---------------------
     pushd "%BUILD_FOLDER%\build"
+    set TESTCLIENT_LOG=%BUILD_FOLDER%\build\Testing\TestClient.log
     appveyor AddTest "TestClient" -Framework ctest -Filename TestClient.exe -Outcome Running
-    ctest -C %CONFIGURATION% -V --output-on-fail
-    if %errorlevel% == 0 appveyor UpdateTest -Name "TestClient" -Framework ctest -Filename TestClient.exe -Outcome Passed
+    ctest -C %CONFIGURATION% --output-on-fail -O "%TESTCLIENT_LOG%"
+    
+    set TEST_OUTCOME=Passed
+    if %errorlevel% != 0 set TEST_OUTCOME=Failed
+    for /f  "delims=" %%x in ('ci\get_test_time.bat %TESTCLIENT_LOG%') do set TEST_DURATION=%%x
+    appveyor UpdateTest -Name "TestClient" -Framework ctest -Filename TestClient.exe -Outcome %TEST_OUTCOME% -Duration %TEST_DURATION% -StdOut "%TESTCLIENT_LOG%"
