@@ -72,6 +72,6 @@ test_script:
     REM APPVEYOR test_script:
     REM ---------------------
     pushd "%BUILD_FOLDER%\build"
-    Add-AppveyorTest -Name "TestClient" -Framework ctest -Filename TestClient.exe -Outcome Running
+    appveyor AddTest "TestClient" -Framework ctest -Filename TestClient.exe -Outcome Running
     ctest -C %CONFIGURATION% -V --output-on-fail
-    if %errorlevel% == 0 Update-AppveyorTest -Name "TestClient" -Framework ctest -Filename TestClient.exe -Outcome Passed
+    if %errorlevel% == 0 appveyor UpdateTest -Name "TestClient" -Framework ctest -Filename TestClient.exe -Outcome Passed
