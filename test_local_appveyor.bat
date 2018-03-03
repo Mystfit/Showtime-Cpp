@@ -42,3 +42,11 @@ set TEST_OUTCOME=Passed
 if NOT %errorlevel% == 0 set TEST_OUTCOME=Failed
 call "%BUILD_FOLDER%\ci\get_test_time.bat" %TESTCLIENT_LOG% TEST_DURATION
 echo "Test duration %TEST_DURATION%ms"
+
+SETLOCAL EnableDelayedExpansion
+for /f "Tokens=* Delims=" %%x in (%TESTCLIENT_LOG%) do set TESTCLIENT_LOG_CONTENTS=!TESTCLIENT_LOG_CONTENTS!%%x\n
+
+echo "Test log:"
+echo "-----------------------------"
+echo %TESTCLIENT_LOG_CONTENTS%
+ENDLOCAL

@@ -85,5 +85,9 @@ test_script:
     set TEST_OUTCOME=Passed
     if NOT %errorlevel% == 0 set TEST_OUTCOME=Failed
     call "%BUILD_FOLDER%\ci\get_test_time.bat" %TESTCLIENT_LOG% TEST_DURATION
-    appveyor UpdateTest -Name "TestClient" -Framework ctest -Filename TestClient.exe -Outcome %TEST_OUTCOME% -Duration %TEST_DURATION% -StdOut "%TESTCLIENT_LOG%"
+    
+    SETLOCAL EnableDelayedExpansion
+    for /f "Tokens=* Delims=" %%x in (%TESTCLIENT_LOG%) do set TESTCLIENT_LOG_CONTENTS=!TESTCLIENT_LOG_CONTENTS!%%x\n
+    appveyor UpdateTest -Name "TestClient" -Framework ctest -Filename TestClient.exe -Outcome %TEST_OUTCOME% -Duration %TEST_DURATION% -StdOut "%TESTCLIENT_LOG_CONTENTS%"
     appveyor AddMessage "Tests complete - %TEST_OUTCOME%"
+    ENDLOCAL
