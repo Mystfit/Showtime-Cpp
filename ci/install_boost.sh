@@ -13,6 +13,6 @@ wget https://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.bz2;
 tar --bzip2 -xf boost_1_66_0.tar.bz2;
 pushd boost_1_66_0;
 ./bootstrap.sh --prefix=$BOOST_ROOT
-./b2 --prefix=$BOOST_ROOT --toolset=gcc --with-libraries=$BOOST_LIBS link=static stage
-./b2 --prefix=$BOOST_ROOT --toolset=gcc --with-libraries=$BOOST_LIBS link=static install
+./b2 --prefix=$BOOST_ROOT --toolset=gcc --with-libraries=thread,system,filesystem,log,date_time,chrono,atomic link=static stage
+./b2 --prefix=$BOOST_ROOT --toolset=gcc --with-libraries=thread,system,filesystem,log,date_time,chrono,atomic link=static install
 popd
