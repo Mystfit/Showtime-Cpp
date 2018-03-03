@@ -77,11 +77,13 @@ test_script:
     appveyor AddMessage "Running tests"
     pushd "%BUILD_FOLDER%\build"
     set TESTCLIENT_LOG=%BUILD_FOLDER%\build\Testing\TestClient.log
+    
     appveyor AddTest "TestClient" -Framework ctest -Filename TestClient.exe -Outcome Running
     ctest -C %CONFIGURATION% --output-on-fail -V -O "%TESTCLIENT_LOG%"
-    
     set TEST_OUTCOME=Passed
     if NOT %errorlevel% == 0 set TEST_OUTCOME=Failed
-    for /f  "delims=" %%x in ('ci\get_test_time.bat %TESTCLIENT_LOG%') do set TEST_DURATION=%%x
+    call ci\get_test_time.bat %TESTCLIENT_LOG%
+    set /A TEST_DURATION=%errorlevel%
+
     appveyor UpdateTest -Name "TestClient" -Framework ctest -Filename TestClient.exe -Outcome %TEST_OUTCOME% -Duration %TEST_DURATION% -StdOut "%TESTCLIENT_LOG%"
     appveyor AddMessage "Tests complete - %TEST_OUTCOME%"

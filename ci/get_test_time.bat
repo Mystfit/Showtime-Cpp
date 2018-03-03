@@ -15,4 +15,7 @@ for /F "delims=" %%a in (%1) do (
 )
 for /L %%i in (%firstTail%,1,%lastTail%) do set lastline=!lastLine[%%i]!
 for /f "tokens=6" %%i in ("%lastline%") do set TEST_TIME=%%i
-for /f  "delims=" %%x in  ('powershell %TEST_TIME% * 1000') do echo %%x
+for /f  "delims=" %%x in ('powershell %TEST_TIME% * 1000') do set result=%%x
+
+REM Return val as errorlevel
+exit /b %result%
