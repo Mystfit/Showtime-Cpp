@@ -43,6 +43,7 @@ install:
 
     REM APPVEYOR install:
     REM ----------------------
+    appveyor AddMessage "Installing patched hunter dependencies (czmq, msgpack)"
     call "%BUILD_FOLDER%\install_dependencies.bat"
     set CMAKE_FLAGS=-DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%\install;${CMAKE_PREFIX_PATH}"
     REM set CMAKE_FLAGS=%CMAKE_FLAGS% -DUSE_LOCAL_BOOST=ON
@@ -55,6 +56,7 @@ build_script:
     REM APPVEYOR build_script:
     REM ----------------------
     mkdir build
+    appveyor AddMessage "Building Showtime project with cmake"
     cmake -H. -B"%BUILD_FOLDER%\build" -G "%GENERATOR%" %CMAKE_FLAGS%
     cmake --build "%BUILD_FOLDER%\build" --config %CONFIGURATION%
 
@@ -63,6 +65,7 @@ before_test:
     REM APPVEYOR before_test:
     REM ---------------------
     REM Copy CZMQ dlls into build folder - manually until CMake can do this automagically
+    appveyor AddMessage "Copy CZMQ dlls into build folder"
     if %CONFIGURATION% == Debug set LIBCZMQ_RUNTIME=libczmqd.dll
     if %CONFIGURATION% == Release set LIBCZMQ_RUNTIME=libczmq.dll
     cmake -E copy "%DEPENDENCY_DIR%\install\bin\%LIBCZMQ_RUNTIME%" "%BUILD_FOLDER%\build\bin\%CONFIGURATION%"
@@ -71,12 +74,14 @@ test_script:
 - cmd: |-
     REM APPVEYOR test_script:
     REM ---------------------
+    appveyor AddMessage "Running tests"
     pushd "%BUILD_FOLDER%\build"
     set TESTCLIENT_LOG=%BUILD_FOLDER%\build\Testing\TestClient.log
     appveyor AddTest "TestClient" -Framework ctest -Filename TestClient.exe -Outcome Running
     ctest -C %CONFIGURATION% --output-on-fail -O "%TESTCLIENT_LOG%"
     
     set TEST_OUTCOME=Passed
-    if %errorlevel% != 0 set TEST_OUTCOME=Failed
+    if NOT %errorlevel% == 0 set TEST_OUTCOME=Failed
     for /f  "delims=" %%x in ('ci\get_test_time.bat %TESTCLIENT_LOG%') do set TEST_DURATION=%%x
     appveyor UpdateTest -Name "TestClient" -Framework ctest -Filename TestClient.exe -Outcome %TEST_OUTCOME% -Duration %TEST_DURATION% -StdOut "%TESTCLIENT_LOG%"
+    appveyor AddMessage "Tests complete - %TEST_OUTCOME%"
