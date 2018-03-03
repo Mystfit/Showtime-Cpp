@@ -78,7 +78,7 @@ test_script:
     pushd "%BUILD_FOLDER%\build"
     set TESTCLIENT_LOG=%BUILD_FOLDER%\build\Testing\TestClient.log
     appveyor AddTest "TestClient" -Framework ctest -Filename TestClient.exe -Outcome Running
-    ctest -C %CONFIGURATION% --output-on-fail -O "%TESTCLIENT_LOG%"
+    ctest -C %CONFIGURATION% --output-on-fail -V -O "%TESTCLIENT_LOG%"
     
     set TEST_OUTCOME=Passed
     if NOT %errorlevel% == 0 set TEST_OUTCOME=Failed
