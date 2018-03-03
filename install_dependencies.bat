@@ -23,9 +23,6 @@ IF NOT EXIST %DEPENDENCY_DIR% (
 IF NOT DEFINED HUNTER_ROOT (
 	set HUNTER_ROOT=%DEPENDENCY_DIR%\hunter_root
 )
-IF NOT EXIST %HUNTER_ROOT% (
-	mkdir "%HUNTER_ROOT%"
-)
 
 REM Aquire patched hunterized CZMQ
 pushd "%DEPENDENCY_DIR%"
