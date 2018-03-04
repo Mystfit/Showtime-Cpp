@@ -14,7 +14,7 @@ only_commits:
     - include/
 
 cache: 
-- dependencies
+- dependencies -> cleanup-appveyor-cache.txt
 
 clone_folder: c:/projects/showtime-cpp
 
