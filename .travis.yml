@@ -46,16 +46,7 @@ before_install:
 
 install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ -z "$(ls -A $BOOST_ROOT)" ]; then travis_wait 30 $BUILD_FOLDER/ci/install_boost.sh; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ -z "$(ls -A $LINUXBREWHOME)" ]; then git clone https://github.com/Linuxbrew/brew.git $LINUXBREWHOME; fi
-  - export HOMEBREW_FORCE_VENDOR_RUBY=1
-  - export PATH=$LINUXBREWHOME/bin:$PATH
-  - export MANPATH=$LINUXBREWHOME/share/man:$MANPATH
-  - export INFOPATH=$LINUXBREWHOME/share/info:$INFOPATH
-  - export PKG_CONFIG_PATH=$LINUXBREWHOME/lib64/pkgconfig:$LINUXBREWHOME/lib/pkgconfig:$PKG_CONFIG_PATH
-  - export LD_LIBRARY_PATH=$LINUXBREWHOME/lib64:$LINUXBREWHOME/lib:$LD_LIBRARY_PATH
-  - brew install czmq
-  - brew install msgpack
-  - brew install fmt
+  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ -z "$(ls -A $LINUXBREWHOME)" ]; then $BUILD_FOLDER/ci/install_linuxbrewdependencies.sh; fi
 
 script:
   - mkdir build
