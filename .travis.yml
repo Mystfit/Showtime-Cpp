@@ -45,7 +45,7 @@ before_install:
     fi
 
 install:
-  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ -z "$(ls -A $BOOST_ROOT)" ]; then BOOST_EXISTS; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ -z "$(ls -A $BOOST_ROOT)" ]; then BOOST_EXISTS=1; fi
       
   - if [! $BOOST_EXISTS ]; then 
       BOOST_FLAGS="--with-atomic";
@@ -66,7 +66,7 @@ install:
       popd;
     fi
       
-  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ -z "$(ls -A $LINUXBREWHOME)" ]; then LINUXBREW_EXISTS; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ -z "$(ls -A $LINUXBREWHOME)" ]; then LINUXBREW_EXISTS=1; fi
   - if [! $LINUXBREW_EXISTS ]; then 
       git clone https://github.com/Linuxbrew/brew.git $LINUXBREWHOME;
       export HOMEBREW_FORCE_VENDOR_RUBY=1;
