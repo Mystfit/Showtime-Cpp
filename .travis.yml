@@ -45,9 +45,9 @@ before_install:
     fi
 
 install:
-  - BOOST_EXISTS=0
-  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ -z "$(ls -A $BOOST_ROOT)" ]; then BOOST_EXISTS=1; fi
-      
+  - local BOOST_EXISTS=0
+  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ -z "$(ls -A $BOOST_ROOT)" ]; then BOOST_EXISTS=1; echo $BOOST_EXISTS; fi
+  - echo "Boost found:$BOOST_EXISTS"; 
   - if [ $BOOST_EXISTS -eq 0 ]; then 
       BOOST_FLAGS="--with-atomic";
       BOOST_FLAGS="$BOOST_FLAGS --with-chrono";
@@ -67,8 +67,9 @@ install:
       popd;
     fi
 
-  - LINUXBREW_EXISTS=0
-  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ -z "$(ls -A $LINUXBREWHOME)" ]; then LINUXBREW_EXISTS=1; fi
+  - local LINUXBREW_EXISTS=0
+  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ -z "$(ls -A $LINUXBREWHOME)" ]; then LINUXBREW_EXISTS=1; echo $LINUXBREW_EXISTS; fi
+  - echo "Linuxbrew found:$LINUXBREW_EXISTS"; 
   - if [ $LINUXBREW_EXISTS -eq 0 ]; then 
       git clone https://github.com/Linuxbrew/brew.git $LINUXBREWHOME;
       export HOMEBREW_FORCE_VENDOR_RUBY=1;
