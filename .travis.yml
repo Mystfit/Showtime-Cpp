@@ -45,9 +45,10 @@ before_install:
     fi
 
 install:
+  - BOOST_EXISTS=0
   - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ -z "$(ls -A $BOOST_ROOT)" ]; then BOOST_EXISTS=1; fi
       
-  - if ! [[ -v BOOST_EXISTS ]]; then 
+  - if [ $BOOST_EXISTS -eq 0 ]; then 
       BOOST_FLAGS="--with-atomic";
       BOOST_FLAGS="$BOOST_FLAGS --with-chrono";
       BOOST_FLAGS="$BOOST_FLAGS --with-date_time";
@@ -60,14 +61,15 @@ install:
       pushd boost_1_66_0;
       ./bootstrap.sh --prefix=$BOOST_ROOT;
     fi
-  - if ! [[ -v BOOST_EXISTS ]]; then 
+  - if [ $BOOST_EXISTS -eq 0 ]; then 
       ./b2 --prefix=$BOOST_ROOT --toolset=gcc $BOOST_FLAGS link=static stage -d0;
       ./b2 --prefix=$BOOST_ROOT --toolset=gcc $BOOST_FLAGS link=static install -d0;
       popd;
     fi
 
+  - LINUXBREW_EXISTS=0
   - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ -z "$(ls -A $LINUXBREWHOME)" ]; then LINUXBREW_EXISTS=1; fi
-  - if ! [[ -v LINUXBREW_EXISTS ]]; then 
+  - if [ $LINUXBREW_EXISTS -eq 0 ]; then 
       git clone https://github.com/Linuxbrew/brew.git $LINUXBREWHOME;
       export HOMEBREW_FORCE_VENDOR_RUBY=1;
       export PATH=$LINUXBREWHOME/bin:$PATH;
@@ -76,28 +78,28 @@ install:
       export PKG_CONFIG_PATH=$LINUXBREWHOME/lib64/pkgconfig:$LINUXBREWHOME/lib/pkgconfig:$PKG_CONFIG_PATH;
       export LD_LIBRARY_PATH=$LINUXBREWHOME/lib64:$LINUXBREWHOME/lib:$LD_LIBRARY_PATH;
     fi
-  - if ! [[ -v LINUXBREW_EXISTS ]]; then brew install patchelf; fi
-  - if ! [[ -v LINUXBREW_EXISTS ]]; then brew install zlib; fi
-  - if ! [[ -v LINUXBREW_EXISTS ]]; then brew install binutils; fi
-  - if ! [[ -v LINUXBREW_EXISTS ]]; then brew install linux-headers; fi
-  - if ! [[ -v LINUXBREW_EXISTS ]]; then brew install glibc; fi
-  - if ! [[ -v LINUXBREW_EXISTS ]]; then brew install m4; fi
-  - if ! [[ -v LINUXBREW_EXISTS ]]; then brew install gmp; fi
-  - if ! [[ -v LINUXBREW_EXISTS ]]; then brew install mpfr; fi
-  - if ! [[ -v LINUXBREW_EXISTS ]]; then brew install libmpc; fi
-  - if ! [[ -v LINUXBREW_EXISTS ]]; then brew install isl; fi
-  - if ! [[ -v LINUXBREW_EXISTS ]]; then brew install gcc; fi
-  - if ! [[ -v LINUXBREW_EXISTS ]]; then brew install isl; fi
-  - if ! [[ -v LINUXBREW_EXISTS ]]; then brew install zeromq; fi
-  - if ! [[ -v LINUXBREW_EXISTS ]]; then brew install czmq; fi
-  - if ! [[ -v LINUXBREW_EXISTS ]]; then brew install msgpack; fi
-  - if ! [[ -v LINUXBREW_EXISTS ]]; then brew install fmt; fi
+  - if [ $LINUXBREW_EXISTS -eq 0 ]; then brew install patchelf; fi
+  - if [ $LINUXBREW_EXISTS -eq 0 ]; then brew install zlib; fi
+  - if [ $LINUXBREW_EXISTS -eq 0 ]; then brew install binutils; fi
+  - if [ $LINUXBREW_EXISTS -eq 0 ]; then brew install linux-headers; fi
+  - if [ $LINUXBREW_EXISTS -eq 0 ]; then brew install glibc; fi
+  - if [ $LINUXBREW_EXISTS -eq 0 ]; then brew install m4; fi
+  - if [ $LINUXBREW_EXISTS -eq 0 ]; then brew install gmp; fi
+  - if [ $LINUXBREW_EXISTS -eq 0 ]; then brew install mpfr; fi
+  - if [ $LINUXBREW_EXISTS -eq 0 ]; then brew install libmpc; fi
+  - if [ $LINUXBREW_EXISTS -eq 0 ]; then brew install isl; fi
+  - if [ $LINUXBREW_EXISTS -eq 0 ]; then brew install gcc; fi
+  - if [ $LINUXBREW_EXISTS -eq 0 ]; then brew install isl; fi
+  - if [ $LINUXBREW_EXISTS -eq 0 ]; then brew install zeromq; fi
+  - if [ $LINUXBREW_EXISTS -eq 0 ]; then brew install czmq; fi
+  - if [ $LINUXBREW_EXISTS -eq 0 ]; then brew install msgpack; fi
+  - if [ $LINUXBREW_EXISTS -eq 0 ]; then brew install fmt; fi
 
 script:
   - mkdir build
   - GENERATOR_ARGS="";
-  - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS=USE_LOCAL_BOOST=ON BOOST_ROOT=$BOOST_ROOT; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then GENERATOR_ARGS=$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$LINUXBREWHOME;${CMAKE_PREFIX_PATH}; fi
+  - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS="USE_LOCAL_BOOST=ON BOOST_ROOT=$BOOST_ROOT"; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$LINUXBREWHOME;${CMAKE_PREFIX_PATH}"; fi
   - cmake -H. -B./build -G "$GENERATOR" $GENERATOR_ARGS
   - cmake --build ./build --config $CONFIG
 
