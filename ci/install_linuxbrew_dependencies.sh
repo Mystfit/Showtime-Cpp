@@ -10,13 +10,13 @@ brew install patchelf
 brew install zlib
 brew install binutils
 brew install linux-headers
-travis_wait brew install glibc
+brew install glibc
 brew install m4
 brew install gmp
 brew install mpfr
 brew install libmpc
 brew install isl
-travis_wait brew install gcc
+brew install gcc
 brew install isl
 brew install zeromq
 brew install czmq
