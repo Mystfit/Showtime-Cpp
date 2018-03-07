@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  build:
+  dependencies:
     branches:
       only:
         - master
@@ -47,7 +47,7 @@ jobs:
       - image: circleci/classic:latest
     steps:
       - checkout
-      
+
       - attach_workspace:
           at: $CIRCLE_WORKING_DIRECTORY
       - run: echo "In test"
