@@ -9,7 +9,7 @@ branches:
 cache:
   directories:
   - apt
-  - $TRAVIS_BUILD_DIR/linuxbrew
+  - /home/linuxbrew/.linuxbrew
 
 sudo: required 
 
@@ -37,7 +37,6 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sudo apt-get -qq update;
       sudo apt-get install build-essential curl file git python-setuptools;
-      sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)";
     fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       	export USE_LOCAL_BOOST=1;
@@ -54,9 +53,9 @@ install:
 script:
   - mkdir build
   - GENERATOR_ARGS="";
-  - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS="USE_LOCAL_BOOST=ON"; fi
+  - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS="-DUSE_LOCAL_BOOST=ON"; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$LINUXBREWHOME;${CMAKE_PREFIX_PATH}"; fi
-  - cmake -H$TRAVIS_BUILD_DIR -B$TRAVIS_BUILD_DIR/build -G "$GENERATOR" $GENERATOR_ARGS
+  - cmake -H$TRAVIS_BUILD_DIR -B$TRAVIS_BUILD_DIR/build -G "$GENERATOR" "$GENERATOR_ARGS"
   - cmake --build $TRAVIS_BUILD_DIR/build --config $CONFIG
 
   # Run tests
