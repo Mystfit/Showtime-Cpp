@@ -3,7 +3,7 @@ workflows:
   showtime:
     jobs:
       - dependencies
-      - build
+      - build:
           requires:
             - dependencies
       - test:
