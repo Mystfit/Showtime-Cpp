@@ -1,13 +1,25 @@
 version: 2
 jobs:
-  build:
-    docker:
-      - image: debian:stretch
+  install_dependencies:
+    branches:
+      only:
+        - master
+        - develop
+        - circleci
+    machine:
+      - image: circleci/classic:latest
+        environment:
+          BUILD_FOLDER: $CIRCLE_WORKING_DIRECTORY
+          GENERATOR: "Unix Makefiles"
+          USE_LOCAL_BOOST: 1
+
     steps:
       - checkout
-      - run:
-          name: Greeting
-          command: echo Hello, world.
-      - run:
-          name: Print the Current Time
-          command: date
+      - echo "Working in $BUILD_FOLDER"
+      - run: echo y | sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)"
+      - run: brew update
+      - run: brew install msgpack
+      - run: brew install fmt
+      - run: brew install czmq
+      - run: brew install boost
+
