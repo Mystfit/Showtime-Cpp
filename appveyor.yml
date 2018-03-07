@@ -14,7 +14,7 @@ only_commits:
     - include/
 
 cache: 
-- dependencies
+- dependencies -> .appveyor\cleanup-appveyor-cache.txt
 
 clone_folder: c:/projects/showtime-cpp
 
@@ -46,7 +46,7 @@ install:
     REM APPVEYOR install:
     REM ----------------------
     appveyor AddMessage "Manually installing patched hunter dependencies (czmq, msgpack)"
-    call "%BUILD_FOLDER%\install_dependencies.bat"
+    call "%BUILD_FOLDER%\.appveyor\install_dependencies.bat"
     set CMAKE_FLAGS=-DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%\install;${CMAKE_PREFIX_PATH}"
     REM set CMAKE_FLAGS=%CMAKE_FLAGS% -DUSE_LOCAL_BOOST=ON
     REM set CMAKE_FLAGS=%CMAKE_FLAGS% -DBOOST_ROOT="%BOOST_ROOT%"
