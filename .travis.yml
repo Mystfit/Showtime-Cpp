@@ -23,7 +23,7 @@ env:
   - GENERATOR="Unix Makefiles"
   - USE_LOCAL_BOOST=1
   - BOOST_ROOT=$TRAVIS_BUILD_DIR/boost
-  - LINUXBREWHOME=$BUILD_FOLDER/linuxbrew
+  - LINUXBREWHOME=/home/linuxbrew/.linuxbrew
 
   matrix:
   - CONFIG=Debug
@@ -57,8 +57,8 @@ script:
   - GENERATOR_ARGS="";
   - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS="USE_LOCAL_BOOST=ON BOOST_ROOT=$BOOST_ROOT"; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$LINUXBREWHOME;${CMAKE_PREFIX_PATH}"; fi
-  - cmake -H. -B./build -G "$GENERATOR" $GENERATOR_ARGS
-  - cmake --build ./build --config $CONFIG
+  - cmake -H. -B$TRAVIS_BUILD_DIR/build -G "$GENERATOR" $GENERATOR_ARGS
+  - cmake --build $TRAVIS_BUILD_DIR/build --config $CONFIG
 
   # Run tests
   - pushd "$BUILD_FOLDER/build"
