@@ -9,7 +9,7 @@ branches:
 only_commits:
   files:
     - CMakeLists.txt
-    - appveyor.yml
+    - appveyor.yml -> .appveyor\cleanup-appveyor-cache.txt
     - src/
     - include/
 
