@@ -2,22 +2,35 @@ workflows:
   version: 2
   showtime:
     jobs:
-      - dependencies
+      - dependencies:
+        filters:
+          branches:
+            only:
+              - master
+              - develop
+              - circleci
       - build:
+          filters:
+            branches:
+              only:
+                - master
+                - develop
+                - circleci
           requires:
             - dependencies
       - test:
+          filters:
+            branches:
+              only:
+                - master
+                - develop
+                - circleci
           requires:
             - build
 
 version: 2
 jobs:
   dependencies:
-    branches:
-      only:
-        - master
-        - develop
-        - circleci
     machine:
       - image: circleci/classic:latest
         environment:
