@@ -14,7 +14,7 @@ only_commits:
     - include/
 
 cache: 
-- dependencies -> cleanup-appveyor-cache.txt
+- dependencies
 
 clone_folder: c:/projects/showtime-cpp
 
@@ -81,7 +81,7 @@ test_script:
 
     pushd "%BUILD_FOLDER%\build"
     set TESTCLIENT_LOG=%BUILD_FOLDER%\build\Testing\TestClient.log
-    ctest -C %CONFIGURATION% --output-on-fail -V -O "%TESTCLIENT_LOG%" --timeout 60
+    ctest -C %CONFIGURATION% --output-on-fail -V -O "%TESTCLIENT_LOG%"
     set TEST_OUTCOME=Passed
     if NOT %errorlevel% == 0 set TEST_OUTCOME=Failed
     call "%BUILD_FOLDER%\.appveyor\get_test_time.bat" %TESTCLIENT_LOG% TEST_DURATION

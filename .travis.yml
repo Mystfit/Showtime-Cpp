@@ -10,7 +10,6 @@ cache:
   directories:
   - apt
   - $TRAVIS_BUILD_DIR/linuxbrew
-  - $TRAVIS_BUILD_DIR/boost
 
 sudo: required 
 
@@ -39,20 +38,25 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sudo apt-get -qq update;
       sudo apt-get install build-essential curl file git python-setuptools;
+      sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)";
     fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      export USE_LOCAL_BOOST=1;
+      	export USE_LOCAL_BOOST=1;
     fi
 
 install:
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 30 $BUILD_FOLDER/ci/install_boost.sh; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 30 $BUILD_FOLDER/ci/install_linuxbrew_dependencies.sh; fi
+  #- if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 30 $BUILD_FOLDER/.travis/install_boost.sh; fi
+  # Output something every 10 minutes or Travis kills the job
+  - while sleep 9m; do echo "=====[ $SECONDS seconds still running ]====="; done &
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then bash $BUILD_FOLDER/.travis/install_linuxbrew_dependencies.sh; fi
+  # Killing background sleep loop
+  - kill %1
 
 script:
   - mkdir build
   - GENERATOR_ARGS="";
-  - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS=USE_LOCAL_BOOST=ON BOOST_ROOT=$BOOST_ROOT; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then GENERATOR_ARGS=$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$LINUXBREWHOME;${CMAKE_PREFIX_PATH}; fi
+  - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS="USE_LOCAL_BOOST=ON BOOST_ROOT=$BOOST_ROOT"; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$LINUXBREWHOME;${CMAKE_PREFIX_PATH}"; fi
   - cmake -H. -B./build -G "$GENERATOR" $GENERATOR_ARGS
   - cmake --build ./build --config $CONFIG
 
