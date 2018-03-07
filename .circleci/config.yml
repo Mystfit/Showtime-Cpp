@@ -1,78 +1,22 @@
-workflows:
-  version: 2
-  showtime:
-    jobs:
-      - dependencies:
-        filters:
-          branches:
-            only:
-              - master
-              - develop
-              - circleci
-      - build:
-          filters:
-            branches:
-              only:
-                - master
-                - develop
-                - circleci
-          requires:
-            - dependencies
-      - test:
-          filters:
-            branches:
-              only:
-                - master
-                - develop
-                - circleci
-          requires:
-            - build
-
 version: 2
 jobs:
-  dependencies:
+  build:
     machine:
       - image: circleci/classic:latest
         environment:
           BUILD_FOLDER: $CIRCLE_WORKING_DIRECTORY
           GENERATOR: "Unix Makefiles"
           USE_LOCAL_BOOST: 1
+      - dependencies:
+        - override:
+          - run: echo y | sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)"
+          - run: brew update
+          - run: brew install msgpack
+          - run: brew install fmt
+          - run: brew install czmq
+          - run: brew install boost
 
     steps:
       - checkout
       - echo "Working in $BUILD_FOLDER"
-      - run: echo y | sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)"
-      - run: brew update
-      - run: brew install msgpack
-      - run: brew install fmt
-      - run: brew install czmq
-      - run: brew install boost
-      - persist_to_workspace:
-          root: /home/linuxbrew
-          paths:
-            - .linuxbrew
-
-  build:
-    machine:
-      - image: circleci/classic:latest
-    steps:
-      - attach_workspace:
-          at: /home/linuxbrew
-
-      - checkout
-      - run: echo "In build"
-
-      - persist_to_workspace:
-          root: $CIRCLE_WORKING_DIRECTORY
-          paths:
-            - build
-
-  test:
-    machine:
-      - image: circleci/classic:latest
-    steps:
-      - checkout
-
-      - attach_workspace:
-          at: $CIRCLE_WORKING_DIRECTORY
-      - run: echo "In test"
+      
