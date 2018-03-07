@@ -27,7 +27,7 @@ jobs:
           paths:
             - .linuxbrew
 
-  build:
+  build_showtime:
     machine:
       - image: circleci/classic:latest
     steps:
@@ -42,7 +42,7 @@ jobs:
           paths:
             - build
 
-  test:
+  test_showtime:
     machine:
       - image: circleci/classic:latest
     steps:
@@ -57,9 +57,9 @@ workflows:
   build_and_test:
     jobs:
       - dependencies
-      - build
+      - build_showtime
           requires:
             - dependencies
-      - test:
+      - test_showtime:
           requires:
             - build
