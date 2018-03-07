@@ -39,6 +39,7 @@ before_install:
       sudo apt-get -qq update;
       sudo apt-get install build-essential curl file git python-setuptools;
       sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)";
+      brew update;
     fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       	export USE_LOCAL_BOOST=1;

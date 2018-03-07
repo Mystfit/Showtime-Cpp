@@ -11,5 +11,5 @@ echo 'export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"' >>~/.pr
 PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
 brew install msgpack
 brew install fmt
-brew install czmq
-brew install boost
+brew install czmq -v
+brew install boost -v
