@@ -84,7 +84,7 @@ test_script:
     ctest -C %CONFIGURATION% --output-on-fail -V -O "%TESTCLIENT_LOG%" --timeout 60
     set TEST_OUTCOME=Passed
     if NOT %errorlevel% == 0 set TEST_OUTCOME=Failed
-    call "%BUILD_FOLDER%\ci\get_test_time.bat" %TESTCLIENT_LOG% TEST_DURATION
+    call "%BUILD_FOLDER%\.appveyor\get_test_time.bat" %TESTCLIENT_LOG% TEST_DURATION
     
     SETLOCAL EnableDelayedExpansion
     for /f "Tokens=* Delims=" %%x in (%TESTCLIENT_LOG%) do set TESTCLIENT_LOG_CONTENTS=!TESTCLIENT_LOG_CONTENTS!%%x\n
