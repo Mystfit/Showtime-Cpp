@@ -10,7 +10,6 @@ cache:
   directories:
   - apt
   - $TRAVIS_BUILD_DIR/linuxbrew
-  - $TRAVIS_BUILD_DIR/boost
 
 sudo: required 
 
@@ -45,8 +44,8 @@ before_install:
     fi
 
 install:
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 30 $BUILD_FOLDER/ci/install_boost.sh; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 30 $BUILD_FOLDER/ci/install_linuxbrew_dependencies.sh; fi
+  #- if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 30 $BUILD_FOLDER/ci/install_boost.sh; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 60 $BUILD_FOLDER/ci/install_linuxbrew_dependencies.sh; fi
 
 script:
   - mkdir build
