@@ -13,10 +13,6 @@ cache:
 
 sudo: required 
 
-compiler:
-  - clang
-  - gcc
-
 env:
   global:
   - BUILD_FOLDER=$TRAVIS_BUILD_DIR
