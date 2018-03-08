@@ -23,6 +23,7 @@ env:
   - GENERATOR="Unix Makefiles"
   - USE_LOCAL_BOOST=1
   - LINUXBREWHOME=/home/linuxbrew/.linuxbrew
+  - CMAKE_PATH=$TRAVIS_BUILD_DIR/cmake
 
   matrix:
   - CONFIG=Debug
@@ -38,8 +39,7 @@ before_install:
       sudo apt-get -qq update;
       sudo apt-get install build-essential curl file git python-setuptools;
       wget https://cmake.org/files/v3.11/cmake-3.11.0-rc2-Linux-x86_64.sh --quiet;
-      sudo bash cmake-3.11.0-rc2-Linux-x86_64.sh --skip-license --prefix=/usr/local;
-      echo cmake --version;
+      sudo bash cmake-3.11.0-rc2-Linux-x86_64.sh --skip-license --prefix=$CMAKE_PATH;
     fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       	export USE_LOCAL_BOOST=1;
@@ -54,13 +54,16 @@ install:
   - kill %1
 
 script:
+  - CMAKE_BIN=$CMAKE_PATH/bin/cmake
+  - CTEST_BIN=$CMAKE_PATH/bin/ctest
+  - echo $($CMAKE_BIN --version);
   - mkdir build
   - GENERATOR_ARGS="-DUSE_HUNTER=OFF";
   - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS="$GENERATOR_ARGS -DUSE_LOCAL_BOOST=ON"; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$LINUXBREWHOME;${CMAKE_PREFIX_PATH}"; fi
-  - cmake -H$TRAVIS_BUILD_DIR -B$TRAVIS_BUILD_DIR/build -G "$GENERATOR" $GENERATOR_ARGS
-  - cmake --build $TRAVIS_BUILD_DIR/build --config $CONFIG
+  - $CMAKE_BIN -H$TRAVIS_BUILD_DIR -B$TRAVIS_BUILD_DIR/build -G "$GENERATOR" $GENERATOR_ARGS
+  - $CMAKE_BIN --build $TRAVIS_BUILD_DIR/build --config $CONFIG
 
   # Run tests
   - pushd "$BUILD_FOLDER/build"
-  - ctest -C Debug -V --output-on-fail
+  - $CTEST_BIN -C Debug -V --output-on-fail
