@@ -137,7 +137,7 @@ else()
     set(USE_LOCAL_BOOST ON)
 
     # Static library names
-    set(fmt_TARGET "fmt")
+    set(fmt_TARGET "fmt::fmt")
     set(msgpackc_TARGET "msgpackc-static") # set(msgpackc_LIBRARY "msgpack::msgpackc-static")
     set(CZMQ_TARGET ${CZMQ_LIBRARIES})
     # set(ZEROMQ_TARGET ${ZeroMQ_LIBRARIES})
