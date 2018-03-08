@@ -20,7 +20,7 @@ public:
 
 private:
 	const ZstPlug * m_plug;
-	ZstCableList::iterator m_it;
+	const ZstCableList::iterator m_it;
 };
 
 class ZstPlug : public ZstEntityBase {
