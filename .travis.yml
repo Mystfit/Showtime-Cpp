@@ -32,12 +32,27 @@ env:
 matrix:
   include:
     - os: linux
+      env: COMPILER_NAME=gcc CXX=g++-5 CC=gcc-5
+      addons:
+        apt:
+          packages:
+            - g++-5
+          sources: &sources
+            - llvm-toolchain-precise-3.9
+            - ubuntu-toolchain-r-test
+    - os: linux
+      env: COMPILER_NAME=clang CXX=clang++-3.9 CC=clang-3.9
+      addons:
+        apt:
+          packages:
+            - clang-3.9
+          sources: *sources
     - os: osx
 
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sudo apt-get -qq update;
-      sudo apt-get install build-essential curl file git python-setuptools clang-3.9;
+      sudo apt-get install build-essential curl file git python-setuptools;
       wget https://cmake.org/files/v3.11/cmake-3.11.0-rc2-Linux-x86_64.sh --quiet;
       sudo bash cmake-3.11.0-rc2-Linux-x86_64.sh --skip-license --prefix=$CMAKE_PATH;
     fi
