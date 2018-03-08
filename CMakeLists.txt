@@ -1,11 +1,18 @@
 cmake_minimum_required(VERSION 3.8.4)
 
-include("cmake/HunterGate.cmake")
-HunterGate(
-    URL "https://github.com/ruslo/hunter/archive/v0.20.9.tar.gz"
-    SHA1 "8f7cf6d719d05c49224a4ebeba90c6bb90b90f4a"
-    LOCAL
-)
+if(NOT DEFINED USE_HUNTER)
+    set(USE_HUNTER ON)
+endif()
+
+if(USE_HUNTER)
+    include("cmake/HunterGate.cmake")
+    HunterGate(
+        URL "https://github.com/ruslo/hunter/archive/v0.20.9.tar.gz"
+        SHA1 "8f7cf6d719d05c49224a4ebeba90c6bb90b90f4a"
+        LOCAL
+    )
+    set(HUNTER_ENABLED ON)
+endif()
 
 project(Showtime)
 set(SHOWTIME_VERSION_MAJOR 0)
@@ -74,7 +81,7 @@ endif()
 # --------
 set(LIBZMQ_TARGET "")
 set(CZMQ_TARGET "")
-if(HUNTER_ENABLED)
+if(USE_HUNTER AND HUNTER_ENABLED)
     if(NOT USE_LOCAL_BOOST)
         hunter_add_package(boost COMPONENTS 
             system 
@@ -107,7 +114,7 @@ find_package(MsgPack CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(ZeroMQ CONFIG REQUIRED)
 
-if(WIN32 AND HUNTER_ENABLED)
+if(WIN32 AND USE_HUNTER AND HUNTER_ENABLED)
     find_package(czmq CONFIG REQUIRED)
     if(NOT USE_LOCAL_BOOST)
         set(USE_LOCAL_BOOST OFF)
