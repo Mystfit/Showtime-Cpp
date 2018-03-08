@@ -19,7 +19,7 @@ env:
   - GENERATOR="Unix Makefiles"
   - USE_LOCAL_BOOST=1
   - LINUXBREWHOME=/home/linuxbrew/.linuxbrew
-  - CMAKE_PATH=$TRAVIS_BUILD_DIR/dependencies/cmake
+  - CMAKE_PATH=$TRAVIS_BUILD_DIR/cmake
 
 # Use Linux unless specified otherwise
 os: linux
