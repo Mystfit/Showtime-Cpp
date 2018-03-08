@@ -72,8 +72,15 @@ IF(WIN32)
     endif()
     target_compile_definitions(${CORE_TARGET} PRIVATE -DZST_EXPORT_CORE_API)
     target_compile_definitions(${CORE_TARGET} INTERFACE -DZST_IMPORT_CORE_API)
-ENDIF(WIN32)
-
+else()
+    # Use shared boost on non-windows platforms
+    if(USE_LOCAL_BOOST)
+        target_compile_definitions(${CORE_TARGET} PRIVATE 
+                                    -DBOOST_ALL_DYN_LINK
+        )
+    endif()
+endif(WIN32)
+    
 if(NOT HUNTER_ENABLED)
     target_compile_definitions(${CORE_TARGET} PRIVATE 
                                 -DZMQ_STATIC
