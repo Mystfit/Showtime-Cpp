@@ -10,7 +10,6 @@
 #include <queue>
 #include <thread>
 #include <mutex>
-#include <shared_mutex>
 #include <condition_variable>
 #include <exception>
 #include <iostream>
