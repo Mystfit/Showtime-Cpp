@@ -38,7 +38,7 @@ before_install:
       sudo apt-get -qq update;
       sudo apt-get install build-essential curl file git python-setuptools;
       wget https://cmake.org/files/v3.11/cmake-3.11.0-rc2-Linux-x86_64.sh --quiet;
-      bash cmake-3.11.0-rc2-Linux-x86_64.sh --skip-license --prefix=/usr/local;
+      bash sudo cmake-3.11.0-rc2-Linux-x86_64.sh --skip-license --prefix=/usr/local;
       echo cmake --version;
     fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
