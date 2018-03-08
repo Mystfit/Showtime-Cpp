@@ -1,4 +1,4 @@
-language: C++
+language: cpp
 
 branches:
   only:
@@ -19,33 +19,56 @@ env:
   - GENERATOR="Unix Makefiles"
   - USE_LOCAL_BOOST=1
   - LINUXBREWHOME=/home/linuxbrew/.linuxbrew
-  - CMAKE_PATH=$TRAVIS_BUILD_DIR/cmake
+  - CMAKE_PATH=$TRAVIS_BUILD_DIR/dependencies/cmake
 
-  matrix:
-  - CONFIG=Debug
-  - CONFIG=Release
+# Use Linux unless specified otherwise
+os: linux
+dist: trusty
 
 matrix:
   include:
-    - os: linux
-      env: COMPILER_NAME=gcc CXX=g++-5 CC=gcc-5
-      addons:
+    # Clang 5.0
+    - env: COMPILER=clang++-5.0 BUILD_TYPE=Debug
+      addons: &clang50
         apt:
           packages:
+            - clang-5.0
             - g++-5
-          sources: &sources
-            - llvm-toolchain-precise-3.9
+          sources:
             - ubuntu-toolchain-r-test
-    - os: linux
-      env: COMPILER_NAME=clang CXX=clang++-3.9 CC=clang-3.9
-      addons:
+            - llvm-toolchain-trusty-5.0
+            - sourceline: 'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-4.0 main'
+              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+
+    - env: COMPILER=clang++-5.0 COMPILER_C=clang-5.0 BUILD_TYPE=Release
+      addons: *clang50
+
+    # GCC 6
+    - env: COMPILER=g++-6 BUILD_TYPE=Debug
+      addons: &gcc6
         apt:
-          packages:
-            - clang-3.9
-          sources: *sources
-    - os: osx
+          packages: g++-6
+          sources:
+            - ubuntu-toolchain-r-test
+
+    - env: COMPILER=g++-6 COMPILER_C=gcc-5 BUILD_TYPE=Release
+      addons: *gcc6
+
+    # XCode 9.1
+    - env: COMPILER=clang++ COMPILER_C=clang BUILD_TYPE=Release
+      os: osx
+      osx_image: xcode9.1
+      compiler: clang
 
 before_install:
+  # Set the ${CXX} variable properly
+  - export CXX=${COMPILER}
+  - ${CXX} --version
+
+  # Set the ${CC} variable properly
+  - export CC=${COMPILER_C}
+  - ${CC} --version
+
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sudo apt-get -qq update;
       sudo apt-get install build-essential curl file git python-setuptools;
