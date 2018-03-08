@@ -163,12 +163,12 @@ ZstPlugDirection ZstPlug::direction()
 // Cable enerumeration
 //--------------------
 
-ZstPlugIterator ZstPlug::begin() const
+ZstPlugIterator ZstPlug::begin()
 {
 	return ZstPlugIterator(this, m_cables.begin());
 }
 
-ZstPlugIterator ZstPlug::end() const
+ZstPlugIterator ZstPlug::end()
 {
 	return ZstPlugIterator(this, m_cables.end());
 }
