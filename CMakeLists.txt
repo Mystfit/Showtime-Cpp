@@ -112,9 +112,9 @@ find_package(Boost COMPONENTS
 )
 find_package(MsgPack CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
-find_package(ZeroMQ CONFIG REQUIRED) # Only include ZeroMQ until CZMQ gets CZMQConfig.cmake added to Hunter
 
 if(WIN32 AND USE_HUNTER AND HUNTER_ENABLED)
+    find_package(ZeroMQ CONFIG REQUIRED) # Only include ZeroMQ until CZMQ gets CZMQConfig.cmake added to Hunter - windows only
     find_package(czmq CONFIG REQUIRED)
     if(NOT USE_LOCAL_BOOST)
         set(USE_LOCAL_BOOST OFF)
