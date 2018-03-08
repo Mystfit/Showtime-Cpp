@@ -28,7 +28,7 @@ dist: trusty
 matrix:
   include:
     # Clang 5.0
-    - env: COMPILER=clang++-5.0 BUILD_TYPE=Debug
+    - env: COMPILER=clang++-5.0 COMPILER_C=clang-5.0 BUILD_TYPE=Debug
       addons: &clang50
         apt:
           packages:
@@ -44,7 +44,7 @@ matrix:
       addons: *clang50
 
     # GCC 6
-    - env: COMPILER=g++-6 BUILD_TYPE=Debug
+    - env: COMPILER=g++-6 COMPILER_C=gcc-5 BUILD_TYPE=Debug
       addons: &gcc6
         apt:
           packages: g++-6
@@ -55,6 +55,11 @@ matrix:
       addons: *gcc6
 
     # XCode 9.1
+    - env: COMPILER=clang++ COMPILER_C=clang BUILD_TYPE=Debug
+      os: osx
+      osx_image: xcode9.1
+      compiler: clang
+
     - env: COMPILER=clang++ COMPILER_C=clang BUILD_TYPE=Release
       os: osx
       osx_image: xcode9.1
