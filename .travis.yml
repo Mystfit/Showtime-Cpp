@@ -37,7 +37,7 @@ matrix:
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sudo apt-get -qq update;
-      sudo apt-get install build-essential curl file git python-setuptools;
+      sudo apt-get install build-essential curl file git python-setuptools clang-3.9;
       wget https://cmake.org/files/v3.11/cmake-3.11.0-rc2-Linux-x86_64.sh --quiet;
       sudo bash cmake-3.11.0-rc2-Linux-x86_64.sh --skip-license --prefix=$CMAKE_PATH;
     fi
