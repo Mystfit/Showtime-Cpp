@@ -8,7 +8,7 @@
 
 if [ -z "$(ls -A /home/linuxbrew/.linuxbrew)" ]; then
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)";
-else
+fi
 
 export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
 export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
