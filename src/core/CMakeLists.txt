@@ -80,7 +80,7 @@ if(NOT HUNTER_ENABLED)
                                 -DCZMQ_STATIC
     )
     target_include_directories(${CORE_TARGET} PUBLIC 
-                                ${ZeroMQ_INCLUDE_DIRS}
+                                # ${ZeroMQ_INCLUDE_DIRS}
                                 ${CZMQ_INCLUDE_DIRS}
     )
 endif()
