@@ -12,7 +12,7 @@ fi
 export PATH="$HOMEBREW_PATH/bin:$PATH"
 export MANPATH="$HOMEBREW_PATH/share/man:$MANPATH"
 export INFOPATH="$HOMEBREW_PATH/share/info:$INFOPATH"
-brew update
+brew update >/dev/null
 brew install msgpack
 brew install fmt
 brew install czmq
