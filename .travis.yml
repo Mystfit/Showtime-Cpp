@@ -47,7 +47,13 @@ matrix:
     - env: COMPILER=g++-6 COMPILER_C=gcc-6 BUILD_TYPE=Debug
       addons: &gcc6
         apt:
-          packages: g++-6
+          packages: 
+            - build-essential
+            - g++-6
+            - curl 
+            - file
+            - git
+            - python-setuptools
           sources:
             - ubuntu-toolchain-r-test
 
@@ -57,12 +63,12 @@ matrix:
     # XCode 9.1
     - env: COMPILER=clang++ COMPILER_C=clang BUILD_TYPE=Debug
       os: osx
-      osx_image: xcode9.1
+      osx_image: xcode9.2
       compiler: clang
 
     - env: COMPILER=clang++ COMPILER_C=clang BUILD_TYPE=Release
       os: osx
-      osx_image: xcode9.1
+      osx_image: xcode9.2
       compiler: clang
 
 before_install:
@@ -74,16 +80,14 @@ before_install:
   - export CC=${COMPILER_C}
   - ${CC} --version
 
-  -export HOMEBREW_CC={CXX}
+  - export HOMEBREW_CC={CXX}
 
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      sudo apt-get -qq update;
-      sudo apt-get install build-essential curl file git python-setuptools;
       wget https://cmake.org/files/v3.11/cmake-3.11.0-rc2-Linux-x86_64.sh --quiet;
       sudo bash cmake-3.11.0-rc2-Linux-x86_64.sh --skip-license --prefix=$CMAKE_PATH;
     fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      	export USE_LOCAL_BOOST=1;
+        export USE_LOCAL_BOOST=1;
     fi
 
 install:
