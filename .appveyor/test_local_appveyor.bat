@@ -16,7 +16,7 @@ REM APPVEYOR install:
 REM ----------------------
 set BUILD_FOLDER=%APPVEYOR_BUILD_FOLDER%
 set DEPENDENCY_DIR=%BUILD_FOLDER%\dependencies
-call "%APPVEYOR_BUILD_FOLDER%\install_dependencies.bat"
+call "%APPVEYOR_BUILD_FOLDER%\.appveyor\install_dependencies.bat"
 
 REM APPVEYOR build_script:
 REM ----------------------
