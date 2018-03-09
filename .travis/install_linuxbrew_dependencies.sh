@@ -15,5 +15,5 @@ export INFOPATH="$HOMEBREW_PATH/share/info:$INFOPATH"
 brew update
 brew install msgpack
 brew install fmt
-brew install czmq -v
-brew install boost -v
+brew install czmq
+brew install boost
