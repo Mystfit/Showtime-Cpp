@@ -10,4 +10,4 @@ brew update
 brew install msgpack
 brew install fmt
 brew install czmq -v
-brew install boost -v
+brew upgrade boost -v
