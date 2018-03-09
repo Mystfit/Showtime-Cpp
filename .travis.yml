@@ -42,7 +42,7 @@ matrix:
     #   addons: *clang50
 
     # GCC 6
-    - env: COMPILER=g++-6 COMPILER_C=gcc-6 BUILD_TYPE=Debug HOMEBREW_PATH=/home/linuxbrew/.linuxbrew
+    - env: COMPILER=g++-5 COMPILER_C=gcc-5 BUILD_TYPE=Debug HOMEBREW_PATH=/home/linuxbrew/.linuxbrew
       os: linux
       dist: trusty
       addons: &gcc5
@@ -57,7 +57,7 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
 
-    - env: COMPILER=g++-6 COMPILER_C=gcc-5 BUILD_TYPE=Release HOMEBREW_PATH=/home/linuxbrew/.linuxbrew
+    - env: COMPILER=g++-5 COMPILER_C=gcc-5 BUILD_TYPE=Release HOMEBREW_PATH=/home/linuxbrew/.linuxbrew
       os: linux
       dist: trusty
       addons: *gcc5
