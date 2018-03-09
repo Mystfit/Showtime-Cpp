@@ -27,31 +27,31 @@ dist: trusty
 
 matrix:
   include:
-    # Clang 5.0
-    - env: COMPILER=clang++-5.0 COMPILER_C=clang-5.0 BUILD_TYPE=Debug
-      addons: &clang50
-        apt:
-          packages:
-            - clang-5.0
-            - g++-5
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-5.0
-            - sourceline: 'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-4.0 main'
-              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+    # # Clang 5.0
+    # - env: COMPILER=clang++-5.0 COMPILER_C=clang-5.0 BUILD_TYPE=Debug
+    #   addons: &clang50
+    #     apt:
+    #       packages:
+    #         - clang-5.0
+    #         - g++-5
+    #       sources:
+    #         - ubuntu-toolchain-r-test
+    #         - llvm-toolchain-trusty-5.0
+    #         - sourceline: 'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-4.0 main'
+    #           key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
 
-    - env: COMPILER=clang++-5.0 COMPILER_C=clang-5.0 BUILD_TYPE=Release
-      addons: *clang50
+    # - env: COMPILER=clang++-5.0 COMPILER_C=clang-5.0 BUILD_TYPE=Release
+    #   addons: *clang50
 
     # GCC 6
-    - env: COMPILER=g++-6 COMPILER_C=gcc-5 BUILD_TYPE=Debug
+    - env: COMPILER=g++-6 COMPILER_C=gcc-6 BUILD_TYPE=Debug
       addons: &gcc6
         apt:
           packages: g++-6
           sources:
             - ubuntu-toolchain-r-test
 
-    - env: COMPILER=g++-6 COMPILER_C=gcc-5 BUILD_TYPE=Release
+    - env: COMPILER=g++-6 COMPILER_C=gcc-6 BUILD_TYPE=Release
       addons: *gcc6
 
     # XCode 9.1
@@ -73,6 +73,8 @@ before_install:
   # Set the ${CC} variable properly
   - export CC=${COMPILER_C}
   - ${CC} --version
+
+  -export HOMEBREW_CC={CXX}
 
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sudo apt-get -qq update;
