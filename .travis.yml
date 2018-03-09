@@ -90,9 +90,9 @@ before_install:
     fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       export USE_LOCAL_BOOST=1;
-      wget https://cmake.org/files/v3.11/cmake-3.11.0-rc2-Darwin-x86_64.tar.gz --quiet
-      tar -xvf cmake-3.11.0-rc2-Darwin-x86_64.tar.gz
-      export CMAKE_PATH=cmake-3.11.0-rc2-Darwin-x86_64/CMake.app/Contents
+      wget https://cmake.org/files/v3.11/cmake-3.11.0-rc2-Darwin-x86_64.tar.gz --quiet;
+      tar -xvf cmake-3.11.0-rc2-Darwin-x86_64.tar.gz;
+      export CMAKE_PATH=cmake-3.11.0-rc2-Darwin-x86_64/CMake.app/Contents;
     fi
   - export CMAKE_BIN=$CMAKE_PATH/bin/cmake
   - export CTEST_BIN=$CMAKE_PATH/bin/ctest
