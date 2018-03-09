@@ -78,8 +78,8 @@ else()
         target_compile_definitions(${CORE_TARGET} PRIVATE -DBOOST_ALL_DYN_LINK)
     endif()
 
-    # Turn off C11 compatibility in glibc
-    target_compile_definitions(${CORE_TARGET} PUBLIC -D_GLIBCXX_USE_CXX11_ABI=0)
+    # Turn off C11 ABI compatibility in glibc
+    target_compile_definitions(${CORE_TARGET} PUBLIC -D_GLIBCXX_USE_CXX11_ABI=1)
 endif(WIN32)
 
 if(NOT HUNTER_ENABLED)
