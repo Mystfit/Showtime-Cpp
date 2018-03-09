@@ -4,6 +4,7 @@
 #include <boost/log/sinks/async_frontend.hpp>
 #include <boost/log/sinks/text_file_backend.hpp>
 #include <boost/log/sinks/text_ostream_backend.hpp>
+#include <boost/log/attributes/current_process_name.hpp>
 #include <boost/core/null_deleter.hpp>
 
 #include <fstream>
@@ -37,8 +38,9 @@ void ZstLog::init_logger(const char * logger_name)
 	min_severity[ZST_LOG_ENTITY_CHANNEL] = warn;
 	min_severity[ZST_LOG_NET_CHANNEL] = notification;
 	min_severity[ZST_LOG_APP_CHANNEL] = debug;
+	logging::core::get()->add_global_attribute("ProcessName", attrs::current_process_name());
 
-	sink->set_formatter(expr::stream << line_id << ": <" << severity << "> [" << channel << "] " << expr::smessage);
+	sink->set_formatter(expr::stream << "[" << process_name << "] " << line_id << ": <" << severity << "> [" << channel << "] " << expr::smessage);
 	sink->set_filter(min_severity || severity >= error);
 	logging::core::get()->add_sink(sink);
 	logging::add_common_attributes();
