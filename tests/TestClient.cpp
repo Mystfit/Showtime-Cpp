@@ -824,7 +824,7 @@ int main(int argc,char **argv){
 #ifdef WIN32
 	prog += ".exe";
 #endif
-	pipe server_in;
+	boost::process::pipe server_in;
 	child server_process;
 	char test_flag = 't';
 	try {
