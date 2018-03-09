@@ -41,17 +41,12 @@ install:
     set BUILD_FOLDER=%APPVEYOR_BUILD_FOLDER%
     set DEPENDENCY_DIR=%APPVEYOR_BUILD_FOLDER%\dependencies
     set HUNTER_ROOT=%DEPENDENCY_DIR%\hunter_root
-    set BOOST_ROOT=C:\Libraries\boost_1_65_1
 
     REM APPVEYOR install:
     REM ----------------------
     appveyor AddMessage "Manually installing patched hunter dependencies (czmq, msgpack)"
     call "%BUILD_FOLDER%\.appveyor\install_dependencies.bat"
     set CMAKE_FLAGS=-DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%\install;${CMAKE_PREFIX_PATH}"
-    REM set CMAKE_FLAGS=%CMAKE_FLAGS% -DUSE_LOCAL_BOOST=ON
-    REM set CMAKE_FLAGS=%CMAKE_FLAGS% -DBOOST_ROOT="%BOOST_ROOT%"
-    REM set CMAKE_FLAGS=%CMAKE_FLAGS% -DBOOST_INCLUDEDIR="%BOOST_ROOT%"
-    REM set CMAKE_FLAGS=%CMAKE_FLAGS% -DBOOST_LIBRARYDIR="%BOOST_ROOT%\lib64-msvc-14.1"
 
 build_script:
 - cmd: |-
