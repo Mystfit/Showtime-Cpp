@@ -21,11 +21,10 @@ export CFLAGS="-D_GLIBCXX_USE_CXX11_ABI=1"
 export HOMEBREW_CC=gcc-6
 
 # Zeromq, boost, msgpack unbundled dependencies
-brew install autoconf, pkg-config, gpatch, ncurses, readline, sqlite, gdbm, \
-	berkeley-db, libbsd, expat, perl, openssl, bzip2, python@2, libxml2, 	\
-	docbook, docbook-xsl, gettext, gnu-getopt, libxslt, xmlto, xz, libffi,  \
-	python, asciidoc, zlib, cmake
-/
+brew install autoconf, pkg-config, gpatch, ncurses, readline, sqlite, gdbm
+brew install berkeley-db, libbsd, expat, perl, openssl, bzip2, python@2, libxml2
+brew install docbook, docbook-xsl, gettext, gnu-getopt, libxslt, xmlto, xz, libffi
+brew install python, asciidoc, zlib, cmake
 
 # Bottled dependencies
 brew install msgpack
