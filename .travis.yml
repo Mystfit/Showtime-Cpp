@@ -117,7 +117,7 @@ script:
   - echo $($CMAKE_BIN --version);
   - mkdir build
   - GENERATOR_ARGS="-DUSE_HUNTER=OFF";
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]then
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_C_COMPILER=$HOMEBREW_PATH/bin/gcc-6 -DCMAKE_CXX_COMPILER=$HOMEBREW_PATH/bin/g++-6";
     fi;
   - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS="$GENERATOR_ARGS -DUSE_LOCAL_BOOST=ON"; fi

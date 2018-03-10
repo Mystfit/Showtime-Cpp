@@ -55,6 +55,6 @@ brew install fmt
 
 # Source dependencies
 export HOMEBREW_BUILD_FROM_SOURCE=1 
-brew install zeromq --with-drafts
-brew install czmq --with-drafts
+brew install zeromq
+brew install czmq
 brew install boost --without-single --without-static
