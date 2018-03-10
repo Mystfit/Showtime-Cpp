@@ -15,5 +15,9 @@ export INFOPATH="$HOMEBREW_PATH/share/info:$INFOPATH"
 brew update >/dev/null
 brew install msgpack
 brew install fmt
+
+HOMEBREW_BUILD_FROM_SOURCE=1 
+CFLAGS="-D_GLIBCXX_USE_CXX11_ABI=1"
 brew install czmq
-brew install boost
+brew install boost --without-single --without-static
+HOMEBREW_BUILD_FROM_SOURCE=0
