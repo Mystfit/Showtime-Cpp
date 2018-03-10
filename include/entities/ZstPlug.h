@@ -20,7 +20,7 @@ public:
 
 private:
 	const ZstPlug * m_plug;
-	const ZstCableList::iterator m_it;
+	ZstCableList::iterator m_it;
 };
 
 class ZstPlug : public ZstEntityBase {
@@ -58,8 +58,8 @@ public:
 	ZST_EXPORT ZstPlugDirection direction();
 
 	//Cable enumeration
-	ZST_EXPORT ZstPlugIterator begin() const;
-	ZST_EXPORT ZstPlugIterator end() const;
+	ZST_EXPORT ZstPlugIterator begin();
+	ZST_EXPORT ZstPlugIterator end();
 	ZST_EXPORT size_t num_cables();
 	ZST_EXPORT bool is_connected_to(ZstPlug * plug);
 	ZST_EXPORT void disconnect_cables() override;

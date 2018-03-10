@@ -9,6 +9,7 @@
 #include <ZstExports.h>
 
 namespace logging = boost::log;
+namespace attrs = boost::log::attributes;
 namespace src = boost::log::sources;
 namespace sinks = boost::log::sinks;
 namespace keywords = boost::log::keywords;
@@ -33,6 +34,8 @@ enum LogLevel
 BOOST_LOG_ATTRIBUTE_KEYWORD(line_id, "LineID", unsigned int)
 BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", LogLevel)
 BOOST_LOG_ATTRIBUTE_KEYWORD(channel, "Channel", std::string)
+BOOST_LOG_ATTRIBUTE_KEYWORD(process_name, "ProcessName", std::string)
+
 
 typedef src::severity_channel_logger_mt<LogLevel, std::string> ZstLogger_mt;
 BOOST_LOG_GLOBAL_LOGGER(ZstGlobalLogger, ZstLogger_mt)

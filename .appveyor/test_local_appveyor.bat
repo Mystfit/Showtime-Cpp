@@ -22,7 +22,8 @@ REM APPVEYOR build_script:
 REM ----------------------
 pushd %APPVEYOR_BUILD_FOLDER%
 mkdir build
-cmake -H. -B"%APPVEYOR_BUILD_FOLDER%\build" -G "%GENERATOR%" -DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%\install;${CMAKE_PREFIX_PATH}"
+set CMAKE_FLAGS=-DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%\install;${CMAKE_PREFIX_PATH}"
+cmake -H. -B"%APPVEYOR_BUILD_FOLDER%\build" -G "%GENERATOR%" %CMAKE_FLAGS%
 cmake --build "%APPVEYOR_BUILD_FOLDER%\build" --config %CONFIGURATION%
 popd
 
@@ -37,7 +38,7 @@ REM APPVEYOR test_script:
 REM ---------------------
 pushd "%BUILD_FOLDER%\build"
 set TESTCLIENT_LOG=%BUILD_FOLDER%\build\Testing\TestClient.log
-ctest -C %CONFIGURATION% --output-on-fail -V -O "%TESTCLIENT_LOG%"
+ctest -C %CONFIGURATION% --output-on-fail -V -O "%TESTCLIENT_LOG%" --timeout 120
 set TEST_OUTCOME=Passed
 if NOT %errorlevel% == 0 set TEST_OUTCOME=Failed
 call "%BUILD_FOLDER%\ci\get_test_time.bat" %TESTCLIENT_LOG% TEST_DURATION

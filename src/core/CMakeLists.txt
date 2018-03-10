@@ -64,21 +64,31 @@ target_include_directories(${CORE_TARGET}
 )
 
 IF(WIN32)
+    target_compile_definitions(${CORE_TARGET} PRIVATE -DZST_EXPORT_CORE_API)
+    target_compile_definitions(${CORE_TARGET} INTERFACE -DZST_IMPORT_CORE_API)
     target_compile_definitions(${CORE_TARGET} PUBLIC 
                                 -D_WIN32_WINNT=0x0601)
     if(HUNTER_ENABLED AND NOT USE_LOCAL_BOOST)
         target_compile_definitions(${CORE_TARGET} PUBLIC 
                                    -DBOOST_AUTO_LINK_TAGGED)
     endif()
-    target_compile_definitions(${CORE_TARGET} PRIVATE -DZST_EXPORT_CORE_API)
-    target_compile_definitions(${CORE_TARGET} INTERFACE -DZST_IMPORT_CORE_API)
-ENDIF(WIN32)
+else()
+    # Use shared boost on non-windows platforms
+    if(USE_LOCAL_BOOST)
+        target_compile_definitions(${CORE_TARGET} PRIVATE -DBOOST_ALL_DYN_LINK)
+    endif()
+
+    # Turn off C11 ABI compatibility in glibc
+    target_compile_definitions(${CORE_TARGET} PUBLIC -D_GLIBCXX_USE_CXX11_ABI=1)
+endif(WIN32)
 
 if(NOT HUNTER_ENABLED)
-    target_compile_definitions(${CORE_TARGET} PRIVATE 
-                                -DZMQ_STATIC
-                                -DCZMQ_STATIC
-    )
+    if(USE_STATIC_CZMQ)
+        target_compile_definitions(${CORE_TARGET} PRIVATE 
+                                    -DZMQ_STATIC
+                                    -DCZMQ_STATIC
+        )
+    endif()
     target_include_directories(${CORE_TARGET} PUBLIC 
                                 # ${ZeroMQ_INCLUDE_DIRS}
                                 ${CZMQ_INCLUDE_DIRS}

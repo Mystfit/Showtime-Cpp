@@ -1,4 +1,4 @@
-language: C++
+language: cpp
 
 branches:
   only:
@@ -13,57 +13,110 @@ cache:
 
 sudo: required 
 
-compiler:
-  - clang
-  - gcc
-
 env:
   global:
   - BUILD_FOLDER=$TRAVIS_BUILD_DIR
   - GENERATOR="Unix Makefiles"
   - USE_LOCAL_BOOST=1
-  - LINUXBREWHOME=/home/linuxbrew/.linuxbrew
   - CMAKE_PATH=$TRAVIS_BUILD_DIR/cmake
 
-  matrix:
-  - CONFIG=Debug
-  - CONFIG=Release
+# Use Linux unless specified otherwise
+
 
 matrix:
   include:
-    - os: linux
-    - os: osx
+    # # Clang 5.0
+    # - env: COMPILER=clang++-5.0 COMPILER_C=clang-5.0 BUILD_TYPE=Debug
+    #   addons: &clang50
+    #     apt:
+    #       packages:
+    #         - clang-5.0
+    #         - g++-5
+    #       sources:
+    #         - ubuntu-toolchain-r-test
+    #         - llvm-toolchain-trusty-5.0
+    #         - sourceline: 'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-4.0 main'
+    #           key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+
+    # - env: COMPILER=clang++-5.0 COMPILER_C=clang-5.0 BUILD_TYPE=Release
+    #   addons: *clang50
+
+    # GCC 6
+    - env: COMPILER=g++-5 COMPILER_C=gcc-5 BUILD_TYPE=Debug HOMEBREW_PATH=/home/linuxbrew/.linuxbrew
+      os: linux
+      dist: trusty
+      addons: &gcc5
+        apt:
+          packages: 
+            - build-essential
+            - g++-5
+            - curl 
+            - file
+            - git
+            - python-setuptools
+          sources:
+            - ubuntu-toolchain-r-test
+
+    - env: COMPILER=g++-5 COMPILER_C=gcc-5 BUILD_TYPE=Release HOMEBREW_PATH=/home/linuxbrew/.linuxbrew
+      os: linux
+      dist: trusty
+      addons: *gcc5
+
+    # XCode 9.1
+    - env: COMPILER=clang++ COMPILER_C=clang BUILD_TYPE=Debug HOMEBREW_PATH=/usr/local
+      os: osx
+      osx_image: xcode9.2
+      compiler: clang
+
+    - env: COMPILER=clang++ COMPILER_C=clang BUILD_TYPE=Release HOMEBREW_PATH=/usr/local
+      os: osx
+      osx_image: xcode9.2
+      compiler: clang
 
 before_install:
+  # Set the ${CXX} variable properly
+  - export CXX=${COMPILER}
+  - ${CXX} --version
+
+  # Set the ${CC} variable properly
+  - export CC=${COMPILER_C}
+  - ${CC} --version
+
+  - export HOMEBREW_CC={CXX}
+
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      sudo apt-get -qq update;
-      sudo apt-get install build-essential curl file git python-setuptools;
       wget https://cmake.org/files/v3.11/cmake-3.11.0-rc2-Linux-x86_64.sh --quiet;
       sudo bash cmake-3.11.0-rc2-Linux-x86_64.sh --skip-license --prefix=$CMAKE_PATH;
     fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      	export USE_LOCAL_BOOST=1;
+      export USE_LOCAL_BOOST=1;
+      mkdir $CMAKE_PATH;
+      wget https://cmake.org/files/v3.11/cmake-3.11.0-rc2-Darwin-x86_64.tar.gz --quiet;
+      tar -xf cmake-3.11.0-rc2-Darwin-x86_64.tar.gz -C $CMAKE_PATH --strip-components=1;
+      export CMAKE_PATH=$CMAKE_PATH/CMake.app/Contents;
     fi
+  - export CMAKE_BIN=$CMAKE_PATH/bin/cmake
+  - export CTEST_BIN=$CMAKE_PATH/bin/ctest
 
 install:
   #- if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 30 $BUILD_FOLDER/.travis/install_boost.sh; fi
   # Output something every 10 minutes or Travis kills the job
   - while sleep 9m; do echo "=====[ $SECONDS seconds still running ]====="; done &
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then bash $BUILD_FOLDER/.travis/install_linuxbrew_dependencies.sh; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then bash $BUILD_FOLDER/.travis/install_homebrew_dependencies.sh; fi
   # Killing background sleep loop
   - kill %1
 
 script:
-  - CMAKE_BIN=$CMAKE_PATH/bin/cmake
-  - CTEST_BIN=$CMAKE_PATH/bin/ctest
+
   - echo $($CMAKE_BIN --version);
   - mkdir build
   - GENERATOR_ARGS="-DUSE_HUNTER=OFF";
   - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS="$GENERATOR_ARGS -DUSE_LOCAL_BOOST=ON"; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$LINUXBREWHOME;${CMAKE_PREFIX_PATH}"; fi
-  - $CMAKE_BIN -H$TRAVIS_BUILD_DIR -B$TRAVIS_BUILD_DIR/build -G "$GENERATOR" $GENERATOR_ARGS
-  - $CMAKE_BIN --build $TRAVIS_BUILD_DIR/build --config $CONFIG
+  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$HOMEBREW_PATH;${CMAKE_PREFIX_PATH}"
+  - $CMAKE_BIN -H$TRAVIS_BUILD_DIR -B$TRAVIS_BUILD_DIR/build -G "$GENERATOR" $GENERATOR_ARGS -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
+  - $CMAKE_BIN --build $TRAVIS_BUILD_DIR/build --config $CONFIG 
 
   # Run tests
   - pushd "$BUILD_FOLDER/build"
-  - $CTEST_BIN -C Debug -V --output-on-fail
+  - $CTEST_BIN -C Debug -V --output-on-fail --timeout 120
