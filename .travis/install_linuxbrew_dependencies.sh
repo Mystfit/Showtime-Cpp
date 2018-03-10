@@ -20,10 +20,12 @@ brew link gcc
 which gcc
 gcc --version
 brew postinstall glibc
+brew install binutils
+which ld
+ld --version
 export CFLAGS="-D_GLIBCXX_USE_CXX11_ABI=1"
 
 # Install unbundled dependencies to skip source compiliation
-brew install binutils
 brew install autoconf
 brew install pkg-config
 brew install gpatch
