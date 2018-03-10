@@ -21,6 +21,11 @@ set(SHOWTIME_VERSION_PATCH 6)
 set(SHOWTIME_VERSION "${SHOWTIME_VERSION_MAJOR}.${SHOWTIME_VERSION_MINOR}.${SHOWTIME_VERSION_PATCH}")
 set(SHOWTIME_NAMESPACE "${PROJECT_NAME}::")
 
+# Use C14
+set(CMAKE_CXX_STANDARD 14)
+set(CXX_STANDARD_REQUIRED)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 # Set build locations
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -36,10 +41,11 @@ endif()
 # On windows, compile with the following (stage/install):
 #bjam.exe threading=multi architecture=x86 address-model=64 link=static runtime-link=static --with-system --with-filesystem
 set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_LIBS ON)
-set(Boost_USE_STATIC_RUNTIME ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+set(Boost_USE_STATIC_LIBS OFF)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     MESSAGE(STATUS "Platform is Windows")
+    set(Boost_USE_STATIC_LIBS ON)
     option(WINDOWS_USE_DLL_RUNTIME "Use the Visual C++ DLL runtime" ON)
     if(WINDOWS_USE_DLL_RUNTIME)
         set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
@@ -51,10 +57,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
         set(Boost_USE_STATIC_RUNTIME ON)
     endif()
 endif()
-
-# Use C11
-set(CMAKE_CXX_STANDARD 14)
-set(CXX_STANDARD_REQUIRED)
 
 # Set showtime variables
 set(Showtime_COMPILED_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include")
@@ -135,7 +137,7 @@ else()
     set(USE_LOCAL_BOOST ON)
 
     # Static library names
-    set(fmt_TARGET "fmt")
+    set(fmt_TARGET "fmt::fmt-header-only")
     set(msgpackc_TARGET "msgpackc-static") # set(msgpackc_LIBRARY "msgpack::msgpackc-static")
     set(CZMQ_TARGET ${CZMQ_LIBRARIES})
     # set(ZEROMQ_TARGET ${ZeroMQ_LIBRARIES})
