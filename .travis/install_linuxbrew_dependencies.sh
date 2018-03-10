@@ -22,6 +22,7 @@ export CFLAGS="-D_GLIBCXX_USE_CXX11_ABI=1"
 export HOMEBREW_CC=$HOMEBREW_PATH/bin/gcc
 
 # Install unbundled dependencies to skip source compiliation
+brew install binutils
 brew install autoconf
 brew install pkg-config
 brew install gpatch
