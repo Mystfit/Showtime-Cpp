@@ -49,7 +49,7 @@ matrix:
         apt:
           packages: 
             - build-essential
-            # - g++-5
+            - g++-5
             - curl 
             - file
             - git
@@ -75,14 +75,14 @@ matrix:
 
 before_install:
   # Set the ${CXX} variable properly
-  # - export CXX=${COMPILER}
-  # - ${CXX} --version
+  - export CXX=${COMPILER}
+  - ${CXX} --version
 
-  # # Set the ${CC} variable properly
-  # - export CC=${COMPILER_C}
-  # - ${CC} --version
+  # Set the ${CC} variable properly
+  - export CC=${COMPILER_C}
+  - ${CC} --version
 
-  # - export HOMEBREW_CC={CXX}
+  - export HOMEBREW_CC={CXX}
 
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       wget https://cmake.org/files/v3.11/cmake-3.11.0-rc2-Linux-x86_64.sh --quiet;
