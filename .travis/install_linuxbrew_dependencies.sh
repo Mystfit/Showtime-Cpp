@@ -17,9 +17,10 @@ brew update >/dev/null
 # Install GCC and environment vars
 brew install gcc
 brew link gcc
+which gcc
+gcc --version
 brew postinstall glibc
 export CFLAGS="-D_GLIBCXX_USE_CXX11_ABI=1"
-export HOMEBREW_CC=$HOMEBREW_PATH/bin/gcc
 
 # Install unbundled dependencies to skip source compiliation
 brew install binutils
