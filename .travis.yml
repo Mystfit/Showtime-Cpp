@@ -54,6 +54,7 @@ matrix:
             - file
             - git
             - python-setuptools
+            - locales 
           sources:
             - ubuntu-toolchain-r-test
 
@@ -81,8 +82,10 @@ before_install:
   # Set the ${CC} variable properly
   - export CC=$COMPILER_C
   - $CC --version
-
+  
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      # Set locales to fix glibc brew issues
+      sudo dpkg-reconfigure locales;
       wget https://cmake.org/files/v3.11/cmake-3.11.0-rc2-Linux-x86_64.sh --quiet;
       sudo bash cmake-3.11.0-rc2-Linux-x86_64.sh --skip-license --prefix=$CMAKE_PATH;
     fi
@@ -110,7 +113,6 @@ install:
   - kill %1
 
 script:
-
   - echo $($CMAKE_BIN --version);
   - mkdir build
   - GENERATOR_ARGS="-DUSE_HUNTER=OFF";
