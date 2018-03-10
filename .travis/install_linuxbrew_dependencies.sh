@@ -15,10 +15,10 @@ export INFOPATH="$HOMEBREW_PATH/share/info:$INFOPATH"
 brew update >/dev/null
 
 # Install GCC and environment vars
-brew install gcc@6
+brew install gcc
 brew postinstall glibc
 export CFLAGS="-D_GLIBCXX_USE_CXX11_ABI=1"
-export HOMEBREW_CC=gcc-6
+export HOMEBREW_CC=$HOMEBREW_PATH/bin/gcc-5
 
 # Install unbundled dependencies to skip source compiliation
 brew install autoconf

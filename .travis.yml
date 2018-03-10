@@ -42,14 +42,14 @@ matrix:
     #   addons: *clang50
 
     # GCC 6
-    - env: COMPILER=g++-5 COMPILER_C=gcc-5 BUILD_TYPE=Debug HOMEBREW_PATH=/home/linuxbrew/.linuxbrew
+    - env: BUILD_TYPE=Debug HOMEBREW_PATH=/home/linuxbrew/.linuxbrew
       os: linux
       dist: trusty
-      addons: &gcc5
+      addons: &common_build
         apt:
           packages: 
             - build-essential
-            - g++-5
+            # - g++-5
             - curl 
             - file
             - git
@@ -58,10 +58,10 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
 
-    - env: COMPILER=g++-5 COMPILER_C=gcc-5 BUILD_TYPE=Release HOMEBREW_PATH=/home/linuxbrew/.linuxbrew
+    - env: BUILD_TYPE=Release HOMEBREW_PATH=/home/linuxbrew/.linuxbrew
       os: linux
       dist: trusty
-      addons: *gcc5
+      addons: *common_build
 
     # XCode 9.1
     - env: COMPILER=clang++ COMPILER_C=clang BUILD_TYPE=Debug HOMEBREW_PATH=/usr/local
@@ -75,14 +75,6 @@ matrix:
       compiler: clang
 
 before_install:
-  # Set the ${CXX} variable properly
-  - export CXX=$COMPILER
-  - $CXX --version
-
-  # Set the ${CC} variable properly
-  - export CC=$COMPILER_C
-  - $CC --version
-
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sudo dpkg-reconfigure locales;
       wget https://cmake.org/files/v3.11/cmake-3.11.0-rc2-Linux-x86_64.sh --quiet;
@@ -118,7 +110,7 @@ script:
   - mkdir build
   - GENERATOR_ARGS="-DUSE_HUNTER=OFF";
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_C_COMPILER=$HOMEBREW_PATH/bin/gcc-6 -DCMAKE_CXX_COMPILER=$HOMEBREW_PATH/bin/g++-6";
+      GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_C_COMPILER=$HOMEBREW_PATH/bin/gcc-5 -DCMAKE_CXX_COMPILER=$HOMEBREW_PATH/bin/g++-5";
     fi;
   - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS="$GENERATOR_ARGS -DUSE_LOCAL_BOOST=ON"; fi
   - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$HOMEBREW_PATH;${CMAKE_PREFIX_PATH}"
