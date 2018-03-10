@@ -31,7 +31,7 @@ pushd czmq
 git checkout hunter-v4.1.0
 mkdir "%DEPENDENCY_DIR%\czmq\build"
 cmake -H. -B"%DEPENDENCY_DIR%\czmq\build" -G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%DEPENDENCY_DIR%\install"
-cmake --build "%DEPENDENCY_DIR%\czmq\build" --config %CONFIGURATION% --target INSTALL
+cmake --build "%DEPENDENCY_DIR%\czmq\build" --config %CONFIGURATION% --target INSTALL -- /nologo /verbosity:minimal
 popd
 
 REM Aquire patched hunterized msgpack
@@ -42,7 +42,7 @@ pushd msgpack-c
 git checkout hunter-2.1.5
 mkdir "%DEPENDENCY_DIR%\msgpack-c\build"
 cmake -H. -B"%DEPENDENCY_DIR%\msgpack-c\build" -G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%DEPENDENCY_DIR%\install"
-cmake --build "%DEPENDENCY_DIR%\msgpack-c\build" --config %CONFIGURATION% --target INSTALL
+cmake --build "%DEPENDENCY_DIR%\msgpack-c\build" --config %CONFIGURATION% --target INSTALL -- /nologo /verbosity:minimal
 popd
 popd
 popd
