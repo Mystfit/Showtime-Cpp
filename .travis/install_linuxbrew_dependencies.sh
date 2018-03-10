@@ -20,11 +20,34 @@ brew postinstall glibc
 export CFLAGS="-D_GLIBCXX_USE_CXX11_ABI=1"
 export HOMEBREW_CC=gcc-6
 
-# Zeromq, boost, msgpack unbundled dependencies
-brew install autoconf, pkg-config, gpatch, ncurses, readline, sqlite, gdbm
-brew install berkeley-db, libbsd, expat, perl, openssl, bzip2, python@2, libxml2
-brew install docbook, docbook-xsl, gettext, gnu-getopt, libxslt, xmlto, xz, libffi
-brew install python, asciidoc, zlib, cmake
+# Install unbundled dependencies to skip source compiliation
+brew install autoconf
+brew install pkg-config
+brew install gpatch
+brew install ncurses 
+brew install readline
+brew install sqlite
+brew install gdbm
+brew install berkeley-db
+brew install libbsd
+brew install expat
+brew install perl
+brew install openssl
+brew install bzip2
+brew install python@2
+brew install libxml2
+brew install docbook
+brew install docbook-xsl
+brew install gettext
+brew install gnu-getopt
+brew install libxslt
+brew install xmlto
+brew install xz
+brew install libffi
+brew install python
+brew install asciidoc
+brew install zlib
+brew install cmake
 
 # Bottled dependencies
 brew install msgpack
