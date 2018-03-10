@@ -28,7 +28,8 @@ enum LogLevel
 	debug = 0,
 	notification,
 	warn,
-	error
+	error,
+	loglevelsize
 };
 
 BOOST_LOG_ATTRIBUTE_KEYWORD(line_id, "LineID", unsigned int)

@@ -23,7 +23,6 @@ IF NOT EXIST %DEPENDENCY_DIR% (
 IF NOT DEFINED HUNTER_ROOT (
 	set HUNTER_ROOT=%DEPENDENCY_DIR%\hunter_root
 )
-
 REM Aquire patched hunterized CZMQ
 pushd "%DEPENDENCY_DIR%"
 IF NOT EXIST %DEPENDENCY_DIR%\czmq git clone https://github.com/mystfit/czmq.git

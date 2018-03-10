@@ -22,7 +22,12 @@ void ZstSynchronisableDeferredEvent::run(ZstSynchronisable * target)
 
 void ZstComputeEvent::run(ZstInputPlug * target)
 {
-	dynamic_cast<ZstComponent*>(target->parent())->compute(target);
+	try {
+		dynamic_cast<ZstComponent*>(target->parent())->compute(target);
+	}
+	catch (std::exception e) {
+		ZstLog::entity(LogLevel::error, "Compute on component {} failed.", target->parent()->URI().path());
+	}
 }
 
 void ZstEntityLeavingEvent::run(ZstEntityBase * target)

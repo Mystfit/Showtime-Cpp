@@ -32,6 +32,9 @@ public:
 			zst_deactivate_entity(m_child_sink);
 			m_child_sink = NULL;
 		}
+		else if (request_code == 3) {
+			throw std::runtime_error("Testing compute failure.");
+		}
 
 		last_received_code = request_code;
 	}
