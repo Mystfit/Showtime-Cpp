@@ -79,7 +79,7 @@ before_install:
   - $CXX --version
 
   # Set the ${CC} variable properly
-  - export CC=${COMPILER_C}
+  - export CC=$COMPILER_C
   - $CC --version
 
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
@@ -102,8 +102,8 @@ install:
   - while sleep 9m; do echo "=====[ $SECONDS seconds still running ]====="; done &
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then 
       bash $BUILD_FOLDER/.travis/install_linuxbrew_dependencies.sh;
-      export CXX=g++-6
-      export CC=gcc-6
+      export CXX=g++-6;
+      export CC=gcc-6;
     fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then bash $BUILD_FOLDER/.travis/install_homebrew_dependencies.sh; fi
   # Killing background sleep loop
