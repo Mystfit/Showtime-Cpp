@@ -82,7 +82,7 @@ before_install:
   # Set the ${CC} variable properly
   - export CC=$COMPILER_C
   - $CC --version
-  
+
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sudo dpkg-reconfigure locales;
       wget https://cmake.org/files/v3.11/cmake-3.11.0-rc2-Linux-x86_64.sh --quiet;
@@ -104,18 +104,19 @@ install:
   - while sleep 9m; do echo "=====[ $SECONDS seconds still running ]====="; done &
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then 
       bash $BUILD_FOLDER/.travis/install_linuxbrew_dependencies.sh;
-      export CXX=g++-6;
-      export CC=gcc-6;
     fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then bash $BUILD_FOLDER/.travis/install_homebrew_dependencies.sh; fi
   # Killing background sleep loop
   - kill %1
 
 script:
-
+  - echo "Checking compiler version:"
+  - $CXX --version
+  - $CC --version
+  - echo "Checking CMake version"
   - echo $($CMAKE_BIN --version);
   - mkdir build
-  - GENERATOR_ARGS="-DUSE_HUNTER=OFF";
+  - GENERATOR_ARGS="-DUSE_HUNTER=OFF -DCMAKE_C_COMPILER=$HOMEBREW_PATH/bin/gcc-6 -DCMAKE_CXX_COMPILER=$HOMEBREW_PATH/bin/g++-6";
   - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS="$GENERATOR_ARGS -DUSE_LOCAL_BOOST=ON"; fi
   - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$HOMEBREW_PATH;${CMAKE_PREFIX_PATH}"
   - $CMAKE_BIN -H$TRAVIS_BUILD_DIR -B$TRAVIS_BUILD_DIR/build -G "$GENERATOR" $GENERATOR_ARGS -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
