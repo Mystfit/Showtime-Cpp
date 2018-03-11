@@ -49,7 +49,7 @@ matrix:
         apt:
           packages: 
             - build-essential
-            # - g++-5
+            - gawk
             - curl 
             - file
             - git
