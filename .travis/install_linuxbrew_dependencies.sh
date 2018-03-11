@@ -1,5 +1,5 @@
 # Set linuxbrew paths
-export PATH="$HOMEBREW_PATH/bin:$PATH"
+export PATH="$HOMEBREW_PATH/bin::$HOMEBREW_PATH//sbin:$PATH"
 export MANPATH="$HOMEBREW_PATH/share/man:$MANPATH"
 export INFOPATH="$HOMEBREW_PATH/share/info:$INFOPATH"
 
@@ -11,10 +11,7 @@ brew update >/dev/null
 brew doctor
 
 # Install GCC and set environment vars
-brew install gawk
-export HOMEBREW_BUILD_FROM_SOURCE=1 
 brew install glibc
-export HOMEBREW_BUILD_FROM_SOURCE=0
 brew install gcc
 export CFLAGS="-D_GLIBCXX_USE_CXX11_ABI=1"
 
@@ -55,4 +52,4 @@ brew install fmt
 export HOMEBREW_BUILD_FROM_SOURCE=1 
 brew install zeromq
 brew install czmq
-brew install boost --without-single
+brew install boost@1.60 --without-single
