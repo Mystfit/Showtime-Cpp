@@ -11,10 +11,10 @@ brew update >/dev/null
 
 # Locale fix to let glibc install properly
 sudo sh -c 'echo en_US.UTF-8 UTF-8 >>/etc/locale.gen' && sudo /usr/sbin/locale-gen;
+LC_CTYPE=en_US.UTF-8 brew install glibc
 
 # Install GCC and set environment vars
 brew install gcc
-brew link gcc
 export CFLAGS="-D_GLIBCXX_USE_CXX11_ABI=1"
 
 # Install unbundled dependencies to skip source compiliation
