@@ -52,4 +52,4 @@ brew install fmt
 export HOMEBREW_BUILD_FROM_SOURCE=1 
 brew install zeromq
 brew install czmq
-brew install boost@1.60 --without-single
+brew install boost --without-single
