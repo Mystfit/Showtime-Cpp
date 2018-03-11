@@ -8,9 +8,12 @@ if [ -z "$(ls -A $HOMEBREW_PATH)" ]; then
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)";
 fi
 brew update >/dev/null
+brew doctor
 
 # Install GCC and set environment vars
+export HOMEBREW_BUILD_FROM_SOURCE=1 
 brew install glibc
+export HOMEBREW_BUILD_FROM_SOURCE=0
 brew install gcc
 export CFLAGS="-D_GLIBCXX_USE_CXX11_ABI=1"
 
