@@ -6,8 +6,12 @@ SET(CMAKE_SYSTEM_NAME Linux)
 #SET(CMAKE_SYSTEM_VERSION 1)
 
 # specify the cross compiler
-CMAKE_C_COMPILER (/home/linuxbrew/.linuxbrew/bin/gcc)
-CMAKE_CXX_COMPILER (/home/linuxbrew/.linuxbrew/bin/g++)
+set CMAKE_C_COMPILER(/home/linuxbrew/.linuxbrew/bin/gcc CACHE STRING "" FORCE)
+set CMAKE_CXX_COMPILER(/home/linuxbrew/.linuxbrew/bin/g++ CACHE STRING "" FORCE)
+
+# Set these vars as active to skip the compiler check
+# SET(CMAKE_C_COMPILER_WORKS 1 CACHE INTERNAL "") 
+# SET(CMAKE_CXX_COMPILER_WORKS 1 CACHE INTERNAL "")
 
 # where is the target environment 
 SET(CMAKE_FIND_ROOT_PATH /home/linuxbrew/.linuxbrew)
