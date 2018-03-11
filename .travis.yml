@@ -115,7 +115,7 @@ install:
 
 script:
   - mkdir build
-  - PREFIX_ARGS="$HOMEBREW_PATH
+  - PREFIX_ARGS=$HOMEBREW_PATH
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       export CXX=$HOMEBREW_PATH/bin/g++;
       export CC=$HOMEBREW_PATH/bin/gcc;
