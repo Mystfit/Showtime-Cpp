@@ -83,7 +83,7 @@ before_install:
       sudo locale-gen en_US.UTF-8;
       export CMAKE_PATH=$HOMEBREW_PATH/bin;
     fi
-    
+
     # Linux CMake 3.11 (if required)
     # wget https://cmake.org/files/v3.11/cmake-3.11.0-rc2-Linux-x86_64.sh --quiet;
     # sudo bash cmake-3.11.0-rc2-Linux-x86_64.sh --skip-license --prefix=$CMAKE_PATH;
@@ -115,20 +115,22 @@ install:
 
 script:
   - mkdir build
+  - PREFIX_ARGS="$HOMEBREW_PATH
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       export CXX=$HOMEBREW_PATH/bin/g++;
       export CC=$HOMEBREW_PATH/bin/gcc;
+      PREFIX_ARGS="$HOMEBREW_PATH/opt/boost@1.60;$PREFIX_ARGS"
     fi
   - GENERATOR_ARGS="-DUSE_HUNTER=OFF";
   # - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON";
   # - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_LINKER=/home/linuxbrew/.linuxbrew/bin/ld"
   # - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_CXX_LINK_EXECUTABLE="<CMAKE_LINKER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>"
-  # - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-  #     GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_TOOLCHAIN_FILE=$BUILD_FOLDER/.travis/travis_linux_toolchain.cmake";
-  #   fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_TOOLCHAIN_FILE=$BUILD_FOLDER/.travis/travis_linux_toolchain.cmake";
+    fi
   - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS="$GENERATOR_ARGS -DUSE_LOCAL_BOOST=ON"; fi
-  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$HOMEBREW_PATH;${CMAKE_PREFIX_PATH}"
-  - $CMAKE_BIN -H$BUILD_FOLDER -B$BUILD_FOLDER/build -G "$GENERATOR" $GENERATOR_ARGS
+  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$PREFIX_ARGS;${CMAKE_PREFIX_PATH}"
+  - $CMAKE_BIN -H$BUILD_FOLDER -B$BUILD_FOLDER/build -G "$GENERATOR" -DCMAKE_LINKER=$HOMEBREW_PATH/bin/ld -DCMAKE_CXX_LINK_EXECUTABLE="<CMAKE_LINKER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>" $GENERATOR_ARGS
   - $CMAKE_BIN --build $BUILD_FOLDER/build --config $CONFIG 
 
   # Run tests
