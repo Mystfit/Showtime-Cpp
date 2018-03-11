@@ -9,6 +9,9 @@ if [ -z "$(ls -A $HOMEBREW_PATH)" ]; then
 fi
 brew update >/dev/null
 
+# Locale fix to let glibc install properly
+sudo sh -c 'echo en_US.UTF-8 UTF-8 >>/etc/locale.gen' && sudo /usr/sbin/locale-gen;
+
 # Install GCC and set environment vars
 brew install gcc
 brew link gcc
@@ -51,4 +54,4 @@ brew install fmt
 export HOMEBREW_BUILD_FROM_SOURCE=1 
 brew install zeromq
 brew install czmq
-brew install boost --without-single --without-static
+brew install boost --without-single

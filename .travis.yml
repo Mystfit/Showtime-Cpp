@@ -75,11 +75,13 @@ matrix:
       compiler: clang
 
 before_install:
+  # Get and install latest CMake on linux
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      sudo dpkg-reconfigure locales;
       wget https://cmake.org/files/v3.11/cmake-3.11.0-rc2-Linux-x86_64.sh --quiet;
       sudo bash cmake-3.11.0-rc2-Linux-x86_64.sh --skip-license --prefix=$CMAKE_PATH;
     fi
+
+  # Use local boost - get and install latest CMake on OSX
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       export USE_LOCAL_BOOST=1;
       mkdir $CMAKE_PATH;
@@ -87,6 +89,8 @@ before_install:
       tar -xf cmake-3.11.0-rc2-Darwin-x86_64.tar.gz -C $CMAKE_PATH --strip-components=1;
       export CMAKE_PATH=$CMAKE_PATH/CMake.app/Contents;
     fi
+
+  # CMake paths
   - export CMAKE_BIN=$CMAKE_PATH/bin/cmake
   - export CTEST_BIN=$CMAKE_PATH/bin/ctest
 
@@ -115,8 +119,8 @@ script:
     fi
   - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS="$GENERATOR_ARGS -DUSE_LOCAL_BOOST=ON"; fi
   - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$HOMEBREW_PATH;${CMAKE_PREFIX_PATH}"
-  - $CMAKE_BIN -H$TRAVIS_BUILD_DIR -B$TRAVIS_BUILD_DIR/build -G "$GENERATOR" $GENERATOR_ARGS
-  - $CMAKE_BIN --build $TRAVIS_BUILD_DIR/build --config $CONFIG 
+  - $CMAKE_BIN -H$BUILD_FOLDER -B$BUILD_FOLDER/build -G "$GENERATOR" $GENERATOR_ARGS
+  - $CMAKE_BIN --build $BUILD_FOLDER/build --config $CONFIG 
 
   # Run tests
   - pushd "$BUILD_FOLDER/build"
