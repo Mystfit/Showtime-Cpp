@@ -77,6 +77,10 @@ matrix:
 before_install:
   # Get and install latest CMake on linux
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      echo "LC_ALL=en_US.UTF-8" >> /etc/environment;
+      echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen;
+      echo "LANG=en_US.UTF-8" > /etc/locale.conf;
+      sudo locale-gen en_US.UTF-8;
       wget https://cmake.org/files/v3.11/cmake-3.11.0-rc2-Linux-x86_64.sh --quiet;
       sudo bash cmake-3.11.0-rc2-Linux-x86_64.sh --skip-license --prefix=$CMAKE_PATH;
     fi
