@@ -11,6 +11,7 @@ brew update >/dev/null
 brew doctor
 
 # Install GCC and set environment vars
+brew install gawk
 export HOMEBREW_BUILD_FROM_SOURCE=1 
 brew install glibc
 export HOMEBREW_BUILD_FROM_SOURCE=0
