@@ -106,8 +106,11 @@ install:
   #- if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 30 $BUILD_FOLDER/.travis/install_boost.sh; fi
   # Output something every 10 minutes or Travis kills the job
   - while sleep 9m; do echo "=====[ $SECONDS seconds still running ]====="; done &
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then 
-      bash $BUILD_FOLDER/.travis/install_linuxbrew_dependencies.sh;
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      export PATH="$HOMEBREW_PATH/bin::$HOMEBREW_PATH//sbin:$PATH";
+      export MANPATH="$HOMEBREW_PATH/share/man:$MANPATH";
+      export INFOPATH="$HOMEBREW_PATH/share/info:$INFOPATH";
+      $BUILD_FOLDER/.travis/install_linuxbrew_dependencies.sh;
     fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then bash $BUILD_FOLDER/.travis/install_homebrew_dependencies.sh; fi
   # Killing background sleep loop

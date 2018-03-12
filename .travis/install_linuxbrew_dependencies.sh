@@ -1,7 +1,7 @@
 # Set linuxbrew paths
-export PATH="$HOMEBREW_PATH/bin::$HOMEBREW_PATH//sbin:$PATH"
-export MANPATH="$HOMEBREW_PATH/share/man:$MANPATH"
-export INFOPATH="$HOMEBREW_PATH/share/info:$INFOPATH"
+# export PATH="$HOMEBREW_PATH/bin::$HOMEBREW_PATH//sbin:$PATH"
+# export MANPATH="$HOMEBREW_PATH/share/man:$MANPATH"
+# export INFOPATH="$HOMEBREW_PATH/share/info:$INFOPATH"
 
 # Install linuxbrew if it doesn't already exist
 if [ -z "$(ls -A $HOMEBREW_PATH)" ]; then
