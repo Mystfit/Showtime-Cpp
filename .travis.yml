@@ -6,10 +6,6 @@ branches:
   - develop
   - travis
 
-cache:
-  directories:
-  - apt
-
 sudo: required 
 
 env:
