@@ -101,7 +101,18 @@ if(USE_LOCAL_BOOST)
     )
 endif()
 
+# Set threading library
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+if(CMAKE_USE_WIN32_THREADS_INIT)
+    message(STATUS "Using windows threads")
+elseif(CMAKE_USE_PTHREADS_INIT)
+    message(STATUS "Using posix threads")
+endif()
+message(STATUS "Setting link thread library to ${CMAKE_THREAD_LIBS_INIT}")
+
 target_link_libraries(${CORE_TARGET} PUBLIC 
+                        Threads::Threads
                         ${CZMQ_TARGET}
                         ${msgpackc_TARGET}
                         ${fmt_TARGET}
