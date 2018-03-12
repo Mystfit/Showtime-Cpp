@@ -20,27 +20,8 @@ env:
   - USE_LOCAL_BOOST=1
   - CMAKE_PATH=$TRAVIS_BUILD_DIR/cmake
 
-# Use Linux unless specified otherwise
-
-
 matrix:
   include:
-    # # Clang 5.0
-    # - env: COMPILER=clang++-5.0 COMPILER_C=clang-5.0 BUILD_TYPE=Debug
-    #   addons: &clang50
-    #     apt:
-    #       packages:
-    #         - clang-5.0
-    #         - g++-5
-    #       sources:
-    #         - ubuntu-toolchain-r-test
-    #         - llvm-toolchain-trusty-5.0
-    #         - sourceline: 'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-4.0 main'
-    #           key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
-
-    # - env: COMPILER=clang++-5.0 COMPILER_C=clang-5.0 BUILD_TYPE=Release
-    #   addons: *clang50
-
     # GCC 6
     - env: BUILD_TYPE=Debug HOMEBREW_PATH=/home/linuxbrew/.linuxbrew
       os: linux
@@ -75,6 +56,7 @@ matrix:
       compiler: clang
 
 before_install:
+  # Set locale flags
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sudo echo "LC_ALL=en_US.UTF-8" >> /etc/environment;
       sudo echo "LC_ALL=en_US.UTF-8" >> /etc/environment;
@@ -83,55 +65,68 @@ before_install:
       sudo locale-gen en_US.UTF-8;
     fi
 
+  # Install CMake 3.11 on Linux
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       wget https://cmake.org/files/v3.11/cmake-3.11.0-rc2-Linux-x86_64.sh --quiet;
       export CMAKE_PATH=$BUILD_FOLDER/cmake;
       sudo bash cmake-3.11.0-rc2-Linux-x86_64.sh --skip-license --prefix=$CMAKE_PATH;
     fi
 
-  # Use local boost - get and install latest CMake on OSX
+  # Install CMake 3.11 on OSX
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      export USE_LOCAL_BOOST=1;
       mkdir $CMAKE_PATH;
       wget https://cmake.org/files/v3.11/cmake-3.11.0-rc2-Darwin-x86_64.tar.gz --quiet;
       tar -xf cmake-3.11.0-rc2-Darwin-x86_64.tar.gz -C $CMAKE_PATH --strip-components=1;
       export CMAKE_PATH=$CMAKE_PATH/CMake.app/Contents;
     fi
 
+  # Set local boost on OSX
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then export USE_LOCAL_BOOST=1; fi
+
   # CMake paths
   - export CMAKE_BIN=$CMAKE_PATH/bin/cmake;
   - export CTEST_BIN=$CMAKE_PATH/bin/ctest;
 
 install:
-  #- if [ "$TRAVIS_OS_NAME" == "linux" ]; then travis_wait 30 $BUILD_FOLDER/.travis/install_boost.sh; fi
   # Output something every 10 minutes or Travis kills the job
   - while sleep 9m; do echo "=====[ $SECONDS seconds still running ]====="; done &
+
+  # Install linuxbrew dependencies
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       export PATH="$HOMEBREW_PATH/bin:$HOMEBREW_PATH/sbin:$PATH";
       export MANPATH="$HOMEBREW_PATH/share/man:$MANPATH";
       export INFOPATH="$HOMEBREW_PATH/share/info:$INFOPATH";
       $BUILD_FOLDER/.travis/install_linuxbrew_dependencies.sh;
     fi
+
+  # Install homebrew dependencies
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then bash $BUILD_FOLDER/.travis/install_homebrew_dependencies.sh; fi
-  # Killing background sleep loop
+  
+  # Kill background sleep loop
   - kill %1
 
 script:
   - mkdir build
-  - PREFIX_ARGS=$HOMEBREW_PATH
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      export CXX=$HOMEBREW_PATH/bin/g++;
-      export CC=$HOMEBREW_PATH/bin/gcc;
-    fi
+
+  # We don't need to use Hunter on Windows (we have linuxbrew)
   - GENERATOR_ARGS="-DUSE_HUNTER=OFF";
+
+  # Verbose makefiles
   - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON";
-  # - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_LINKER=/home/linuxbrew/.linuxbrew/bin/ld"
-  # - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_CXX_LINK_EXECUTABLE="<CMAKE_LINKER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>"
+
+  # Set linux toolchain
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_TOOLCHAIN_FILE=$BUILD_FOLDER/.travis/travis_linux_toolchain.cmake";
+      GENERATOR_ARGS="$GENERATOR_ARGS -DCXX_FLAGS"
     fi
+
+  # If we're using local boost, then set CMake vars to set correct target names
   - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS="$GENERATOR_ARGS -DUSE_LOCAL_BOOST=ON"; fi
-  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$PREFIX_ARGS;${CMAKE_PREFIX_PATH}"
+
+  # Set prefix search path to homebrew folder for library discovery
+  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$HOMEBREW_PATH;${CMAKE_PREFIX_PATH}"
+
+  # Build and compile project
   - $CMAKE_BIN -H$BUILD_FOLDER -B$BUILD_FOLDER/build -G "$GENERATOR" $GENERATOR_ARGS
   - $CMAKE_BIN --build $BUILD_FOLDER/build --config $CONFIG 
 

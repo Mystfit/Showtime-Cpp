@@ -165,6 +165,13 @@ add_library(${CORE_TARGET} SHARED "")
 include(src/core/CMakeLists.txt)
 list(APPEND Showtime_LIBRARY_TARGETS ${CORE_TARGET})
 
+if(NOT WIN32)
+    # Use threads
+    set(THREADS_PREFER_PTHREAD_FLAG ON)
+    find_package(Threads REQUIRED)
+    target_link_libraries(${CORE_TARGET} Threads::Threads)
+endif()
+
 # Core entity plugin
 # --------------------
 set(CORE_ENTITIES_TARGET "${PROJECT_NAME}CoreEntities")
