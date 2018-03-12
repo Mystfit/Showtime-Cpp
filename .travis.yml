@@ -9,7 +9,6 @@ branches:
 cache:
   directories:
   - apt
-  - /home/linuxbrew/.linuxbrew
 
 sudo: required 
 
