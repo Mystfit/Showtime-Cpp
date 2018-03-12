@@ -1,5 +1,5 @@
 # Set linuxbrew paths
-# export PATH="$HOMEBREW_PATH/bin::$HOMEBREW_PATH//sbin:$PATH"
+# export PATH="$HOMEBREW_PATH/bin:$HOMEBREW_PATH/sbin:$PATH"
 # export MANPATH="$HOMEBREW_PATH/share/man:$MANPATH"
 # export INFOPATH="$HOMEBREW_PATH/share/info:$INFOPATH"
 
