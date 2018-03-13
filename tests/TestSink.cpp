@@ -1,13 +1,19 @@
-#include "Showtime.h"
 #include <iostream>
+#include <chrono>
+#include <thread>
+#include "Showtime.h"
+
+#define TAKE_A_SHORT_BREATH std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
 class Sink : public ZstContainer {
 private:
     ZstInputPlug * m_input;
 
 public:
-	int last_received_code = 1;
+	int last_received_code;
 	Sink * m_child_sink;
+
+	Sink() : m_input(NULL), m_child_sink(NULL), last_received_code(-1) {}
 
 	~Sink() {
 		//Plug is automatically deleted by owning component
@@ -20,20 +26,37 @@ public:
 	}
 	
 	virtual void compute(ZstInputPlug * plug) override {
+		ZstLog::entity(LogLevel::debug, "In sink compute");
 		int request_code = plug->int_at(0);
 		ZstLog::entity(LogLevel::notification, "Sink received code {}", request_code);
 
-		if (request_code == 1) {
+		switch (request_code)
+		{
+		case 1:
 			m_child_sink = new Sink("sinkB");
 			add_child(m_child_sink);
+			ZstLog::entity(LogLevel::debug, "Sink about to sync activate child entity", m_child_sink->URI().path());
 			zst_activate_entity(m_child_sink);
-		}
-		else if (request_code == 2) {
+			if (!m_child_sink->is_activated()) 
+				throw std::runtime_error("Child entity failed to activate");
+			ZstLog::entity(LogLevel::debug, "Finished sync activate");
+			break;
+		case 2:
+			ZstLog::entity(LogLevel::debug, "Sink about to sync deactivate child entity", m_child_sink->URI().path());
+			if (!m_child_sink)
+				throw std::runtime_error("Child entity is null");
+
+			if (!m_child_sink->is_activated())
+				throw std::runtime_error("Child entity is not activated");
+			
 			zst_deactivate_entity(m_child_sink);
+			ZstLog::entity(LogLevel::debug, "Finished sync deactivate");
 			m_child_sink = NULL;
-		}
-		else if (request_code == 3) {
+			break;
+		case 3:
 			throw std::runtime_error("Testing compute failure.");
+		default:
+			break;
 		}
 
 		last_received_code = request_code;
@@ -65,8 +88,9 @@ int main(int argc,char **argv){
 	Sink * sink = new Sink("sink_ent");
 	zst_activate_entity(sink);
 	
-	while (sink->last_received_code > 0){
+	while (sink->last_received_code != 0){
 		zst_poll_once();
+		TAKE_A_SHORT_BREATH
 	}
 	
 	ZstLog::app(LogLevel::notification, "Sink is leaving");

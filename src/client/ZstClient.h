@@ -42,6 +42,7 @@ public:
     
 	//Stage connection status
 	bool is_connected_to_stage();
+	bool is_connecting_to_stage();
     bool is_init_complete();
 	long ping();
 	
@@ -134,6 +135,7 @@ private:
 	bool m_is_destroyed;
     bool m_init_completed;
 	bool m_connected_to_stage;
+	bool m_is_connecting;
 
 	//UUIDs
 	zuuid_t * m_startup_uuid;

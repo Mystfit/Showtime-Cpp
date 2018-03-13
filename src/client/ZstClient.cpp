@@ -300,6 +300,13 @@ ZstMessagePool & ZstClient::msg_pool()
 // -------------
 
 void ZstClient::register_client_to_stage(std::string stage_address, bool async) {
+	
+	if (m_is_connecting || m_connected_to_stage) {
+		ZstLog::net(LogLevel::error, "Connection in progress or already connected, can't connect to stage.");
+		return;
+	}
+	m_is_connecting = true;
+	
 	ZstLog::net(LogLevel::notification, "Connecting to stage {}", stage_address);
 	m_stage_addr = string(stage_address);
 
@@ -369,6 +376,8 @@ void ZstClient::register_client_to_stage_async(MessageFuture & future)
 
 void ZstClient::register_client_complete(ZstMsgKind status)
 {
+	m_is_connecting = false;
+
 	//If we didn't receive a OK signal, something went wrong
 	if (status != ZstMsgKind::OK) {
         ZstLog::net(LogLevel::error, "Stage connection failed with with status: {}", status);
@@ -483,12 +492,18 @@ void ZstClient::leave_stage_complete()
     zsock_disconnect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
     zsock_disconnect(m_stage_router, "%s", m_stage_router_addr.c_str());
 
+	m_is_connecting = false;
 	m_connected_to_stage = false;
 }
 
 bool ZstClient::is_connected_to_stage()
 {
 	return m_connected_to_stage;
+}
+
+bool ZstClient::is_connecting_to_stage()
+{
+	return m_is_connecting;
 }
 
 bool ZstClient::is_init_complete() {
@@ -528,6 +543,7 @@ int ZstClient::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg){
 		receiving_plug = dynamic_cast<ZstInputPlug*>(cable->get_input());
 		if (receiving_plug) {
 			if (client->entity_is_local(*receiving_plug)) {
+				ZstLog::net(LogLevel::debug, "Reading incoming plug value into {}", receiving_plug->URI().path());
 				//TODO: Lock plug value when deserialising
 				size_t offset = 0;
 				receiving_plug->raw_value()->read((char*)zframe_data(payload), zframe_size(payload), offset);
