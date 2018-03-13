@@ -3,8 +3,6 @@
 #include <thread>
 #include "Showtime.h"
 
-#define TAKE_A_SHORT_BREATH std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
 class Sink : public ZstContainer {
 private:
     ZstInputPlug * m_input;
@@ -13,16 +11,19 @@ public:
 	int last_received_code;
 	Sink * m_child_sink;
 
-	Sink() : m_input(NULL), m_child_sink(NULL), last_received_code(-1) {}
+	Sink(const char * name) : 
+		ZstContainer("SINK", name),
+		m_input(NULL),
+		m_child_sink(NULL),
+		last_received_code(-1)
+	{
+		m_input = create_input_plug("in", ZstValueType::ZST_INT);
+	}
 
 	~Sink() {
 		//Plug is automatically deleted by owning component
 		m_input = NULL;
 		m_child_sink = NULL;
-	}
-
-	Sink(const char * name) : ZstContainer("SINK", name) {
-		m_input = create_input_plug("in", ZstValueType::ZST_INT);
 	}
 	
 	virtual void compute(ZstInputPlug * plug) override {
@@ -81,8 +82,6 @@ int main(int argc,char **argv){
 #else
         system("read -n 1 -s -p \"Press any key to continue...\n\"");
 #endif
-
-	
     zst_join("127.0.0.1");
 
 	Sink * sink = new Sink("sink_ent");
@@ -90,9 +89,10 @@ int main(int argc,char **argv){
 	
 	while (sink->last_received_code != 0){
 		zst_poll_once();
-		TAKE_A_SHORT_BREATH
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
-	
+
+	ZstLog::app(LogLevel::notification, "Last received code after loop finished {}", sink->last_received_code);
 	ZstLog::app(LogLevel::notification, "Sink is leaving");
 	zst_destroy();
 	return 0;
