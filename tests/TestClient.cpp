@@ -32,19 +32,11 @@ using namespace boost::process;
 #define BOOST_THREAD_DONT_USE_DATETIME
 #define MEM_LEAK_LOOPS 200000;
 
-#ifdef WIN32
-#define TAKE_A_BREATH Sleep(100);
-#else
-#define TAKE_A_BREATH usleep(1000 * 200);
-#endif
+#define TAKE_A_SHORT_BREATH std::this_thread::sleep_for(std::chrono::milliseconds(10));
+#define TAKE_A_BREATH std::this_thread::sleep_for(std::chrono::milliseconds(100));
+#define WAIT_UNTIL_STAGE_TIMEOUT std::this_thread::sleep_for(std::chrono::milliseconds(STAGE_TIMEOUT + 500));
 
-#ifdef WIN32
-#define TAKE_A_BIG_BREATH Sleep(4000);
-#else
-#define TAKE_A_BIG_BREATH usleep(1000 * 4000);
-#endif
-
-#define MAX_WAIT 200
+#define MAX_WAIT_LOOPS 20000
 void wait_for_event(ZstEvent * callback, int expected_messages)
 {
 	int repeats = 0;
@@ -52,7 +44,7 @@ void wait_for_event(ZstEvent * callback, int expected_messages)
 	while (callback->num_calls() < expected_messages) {
 		TAKE_A_BREATH
 		repeats++;
-		if (repeats > MAX_WAIT) {
+		if (repeats > MAX_WAIT_LOOPS) {
 			std::ostringstream err;
 			err << "Not enough events in queue. Expecting " << expected_messages << " received " << callback->num_calls() << std::endl;
 			throw std::runtime_error(err.str());
@@ -212,24 +204,36 @@ void test_startup() {
 	assert(!zst_is_connected());
 
 	//Test join timeout
+	ZstLog::app(LogLevel::debug, "Testing sync join timeout");
 	zst_join("255.255.255.255");
 	assert(!zst_is_connected());
 
 	//Test async join timeout
+	ZstLog::app(LogLevel::debug, "Testing async join timeout");
 	zst_join_async("255.255.255.255");
-	TAKE_A_BIG_BREATH
+
+	//Testing abort connection start if we're already connecting
+	ZstLog::app(LogLevel::debug, "Testing abort connection start if we're already connecting");
+	zst_join_async("127.0.0.1");
+	assert(zst_is_connecting());
+	WAIT_UNTIL_STAGE_TIMEOUT
 	assert(!zst_is_connected());
 	
 	//Create events to listen for a successful connection
 	TestConnectCallback * connectCallback = new TestConnectCallback("connected");
 	zst_attach_connection_event_listener(connectCallback);
 
-	ZstLog::app(LogLevel::debug, "Testing async join");
+	ZstLog::app(LogLevel::debug, "Testing async join with callback");
 	assert(connectCallback->num_calls() == 0);
 	zst_join_async("127.0.0.1");
 	wait_for_event(connectCallback, 1);
 	assert(connectCallback->num_calls() == 1);
 	assert(zst_is_connected());
+
+	//Testing join not starting if we're already connected
+	ZstLog::app(LogLevel::debug, "Testing abort connection start if we're already connected");
+	zst_join_async("127.0.0.1");
+	assert(!zst_is_connecting());
 
 	//Cleanup
 	zst_remove_connection_event_listener(connectCallback);
@@ -660,7 +664,16 @@ void test_external_entities(std::string external_test_path) {
     // the subscribing client can let the stage know that the cable is
     // valid
 	TAKE_A_BREATH
+<<<<<<< HEAD
 	
+=======
+
+	//Send message to sink
+	//ZstLog::app(LogLevel::debug, "Asking sink to throw an error");
+	//output_ent->send(3);
+	//Not sure how to test for the error...
+
+>>>>>>> develop
 	//Send message to sink to test entity creation
 	ZstLog::app(LogLevel::debug, "Asking sink to create an entity");
 	output_ent->send(1);

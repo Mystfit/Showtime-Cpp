@@ -22,11 +22,15 @@ void ZstSynchronisableDeferredEvent::run(ZstSynchronisable * target)
 
 void ZstComputeEvent::run(ZstInputPlug * target)
 {
+	ZstComponent * parent = dynamic_cast<ZstComponent*>(target->parent());
+	if (!parent) {
+		throw std::runtime_error("Could not find parent of input plug");
+	}
 	try {
-		dynamic_cast<ZstComponent*>(target->parent())->compute(target);
+		parent->compute(target);
 	}
 	catch (std::exception e) {
-		ZstLog::entity(LogLevel::error, "Compute on component {} failed.", target->parent()->URI().path());
+		ZstLog::entity(LogLevel::error, "Compute on component {} failed. Error was: {}", target->parent()->URI().path(), e.what());
 	}
 }
 
