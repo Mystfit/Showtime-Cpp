@@ -660,12 +660,7 @@ void test_external_entities(std::string external_test_path) {
     // the subscribing client can let the stage know that the cable is
     // valid
 	TAKE_A_BREATH
-
-	//Send message to sink
-	ZstLog::app(LogLevel::debug, "Asking sink to throw an error");
-	output_ent->send(3);
-	//Not sure how to test for the error...
-
+	
 	//Send message to sink to test entity creation
 	ZstLog::app(LogLevel::debug, "Asking sink to create an entity");
 	output_ent->send(1);
@@ -683,6 +678,11 @@ void test_external_entities(std::string external_test_path) {
 	wait_for_event(entityLeaveCallback, 1);
 	assert(!zst_find_entity(sink_B_uri));
 	entityArriveCallback->reset_num_calls();
+
+	//Send message to sink
+	ZstLog::app(LogLevel::debug, "Asking sink to throw an error");
+	output_ent->send(3);
+	//Not sure how to test for the error...
 
 	ZstLog::app(LogLevel::debug, "Asking sink to leave");
 	output_ent->send(0);
