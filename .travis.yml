@@ -126,4 +126,4 @@ script:
 
   # Run tests
   - pushd "$BUILD_FOLDER/build"
-  - $CTEST_BIN -C Debug -V --output-on-fail --timeout 120
+  - $CTEST_BIN -C Debug -V --output-on-fail --timeout 320
