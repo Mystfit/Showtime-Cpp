@@ -112,7 +112,6 @@ script:
   # Set linux toolchain
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_TOOLCHAIN_FILE=$BUILD_FOLDER/.travis/travis_linux_toolchain.cmake";
-      GENERATOR_ARGS="$GENERATOR_ARGS -DCXX_FLAGS"
     fi
 
   # If we're using local boost, then set CMake vars to set correct target names

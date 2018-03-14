@@ -37,7 +37,7 @@ public:
 			m_child_sink = new Sink("sinkB");
 			add_child(m_child_sink);
 			ZstLog::entity(LogLevel::debug, "Sink about to sync activate child entity", m_child_sink->URI().path());
-			zst_activate_entity(m_child_sink);
+			zst_activate_entity_async(m_child_sink);
 			if (!m_child_sink->is_activated()) 
 				throw std::runtime_error("Child entity failed to activate");
 			ZstLog::entity(LogLevel::debug, "Finished sync activate");
@@ -50,7 +50,7 @@ public:
 			if (!m_child_sink->is_activated())
 				throw std::runtime_error("Child entity is not activated");
 			
-			zst_deactivate_entity(m_child_sink);
+			zst_deactivate_entity_async(m_child_sink);
 			ZstLog::entity(LogLevel::debug, "Finished sync deactivate");
 			m_child_sink = NULL;
 			break;
@@ -88,7 +88,9 @@ int main(int argc,char **argv){
 	zst_activate_entity(sink);
 	
 	while (sink->last_received_code != 0){
+		ZstLog::app(LogLevel::notification, "Pre-poll");
 		zst_poll_once();
+		ZstLog::app(LogLevel::notification, "Post-poll");
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 
