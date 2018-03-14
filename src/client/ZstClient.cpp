@@ -564,6 +564,8 @@ int ZstClient::graph_message_handler(zmsg_t * msg) {
 				//TODO: Lock plug value when deserialising
 				size_t offset = 0;
 				receiving_plug->raw_value()->read((char*)zframe_data(payload), zframe_size(payload), offset);
+				
+				ZstLog::net(LogLevel::debug, "Enqueing compute event for plug {}", receiving_plug->URI().path());
 				compute_events().enqueue(receiving_plug);
 			}
 		}
