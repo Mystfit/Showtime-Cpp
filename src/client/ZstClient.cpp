@@ -27,11 +27,12 @@ ZstClient::ZstClient() :
 	m_compute_event = new ZstComputeEvent();
 	
 	m_synchronisable_event_manager.attach_event_listener(m_synchronisable_deferred_event);
+	m_compute_event_manager.attach_event_listener(m_compute_event);
+	
 	m_performer_leaving_event_manager.attach_post_event_callback(m_performer_leaving_hook);
 	m_component_leaving_event_manager.attach_post_event_callback(m_component_leaving_hook);
 	m_cable_leaving_event_manager.attach_post_event_callback(m_cable_leaving_hook);
 	m_plug_leaving_event_manager.attach_post_event_callback(m_plug_leaving_hook);
-	m_compute_event_manager.attach_event_listener(m_compute_event);
 
 	//Message pools
 	m_message_pool.populate(MESSAGE_POOL_BLOCK);
@@ -41,11 +42,12 @@ ZstClient::~ZstClient() {
 	destroy();
 
 	m_synchronisable_event_manager.remove_event_listener(m_synchronisable_deferred_event);
+	m_compute_event_manager.remove_event_listener(m_compute_event);
+
 	m_performer_leaving_event_manager.remove_post_event_callback(m_performer_leaving_hook);
 	m_component_leaving_event_manager.remove_post_event_callback(m_component_leaving_hook);
 	m_cable_leaving_event_manager.remove_post_event_callback(m_cable_leaving_hook);
 	m_plug_leaving_event_manager.remove_post_event_callback(m_plug_leaving_hook);
-	m_compute_event_manager.remove_post_event_callback(m_compute_event);
 	
 	delete m_synchronisable_deferred_event;
 	delete m_performer_leaving_hook;

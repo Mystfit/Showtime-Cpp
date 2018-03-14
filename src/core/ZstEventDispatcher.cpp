@@ -1,4 +1,5 @@
 #include <ZstSynchronisable.h>
+#include <ZstLogging.h>
 #include "ZstEventDispatcher.h"
 
 ZstEventDispatcher::ZstEventDispatcher() :
@@ -69,7 +70,14 @@ void ZstEventDispatcher::enqueue(ZstSynchronisable * target) {
 }
 
 void ZstEventDispatcher::process() {
-	m_event_queue.foreach([this](ZstSynchronisable* target) {this->dispatch_events(target); });
+	m_event_queue.foreach([this](ZstSynchronisable* target) {
+		try {
+			this->dispatch_events(target);
+		}
+		catch(std::exception e) {
+			ZstLog::entity(LogLevel::error, "Failed to dispatch event. Reason: {}", e.what());
+		}
+	});
 }
 
 size_t ZstEventDispatcher::size() {
