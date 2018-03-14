@@ -115,16 +115,16 @@ private:
 	//Entity reaper
 	ZstReaper m_reaper;
 	
-	//Socket handlers
+	//Graph message handlers
 	static int s_handle_graph_in(zloop_t *loop, zsock_t *sock, void *arg);
+	int graph_message_handler(zmsg_t * msg);
+
+	//Stage update handlers
 	static int s_handle_stage_update_in(zloop_t *loop, zsock_t *sock, void *arg);
 	static int s_handle_stage_router(zloop_t *loop, zsock_t *sock, void *arg);
-
-	//Message handlers
 	void stage_update_handler(ZstMessage * msg);
 	void connect_client_handler(const char * endpoint_ip, const char * output_plug);
-    void create_entity_from_template_handler(const ZstURI & entity_template_address);
-
+	
 	//Heartbeat timer
 	int m_heartbeat_timer_id;
 	long m_ping;

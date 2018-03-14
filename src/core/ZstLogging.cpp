@@ -35,8 +35,8 @@ void ZstLog::init_logger(const char * logger_name)
 	typedef expr::channel_severity_filter_actor< std::string, LogLevel > min_severity_filter;
 	min_severity_filter min_severity = expr::channel_severity_filter(channel, severity);
 	// Set up the minimum severity levels for different channels
-	min_severity[ZST_LOG_ENTITY_CHANNEL] = warn;
-	min_severity[ZST_LOG_NET_CHANNEL] = notification;
+	min_severity[ZST_LOG_ENTITY_CHANNEL] = debug;
+	min_severity[ZST_LOG_NET_CHANNEL] = debug;
 	min_severity[ZST_LOG_APP_CHANNEL] = debug;
 	logging::core::get()->add_global_attribute("ProcessName", attrs::current_process_name());
 

@@ -524,47 +524,57 @@ int ZstClient::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg){
 
 	//Receive message from graph
 	zmsg_t *msg = zmsg_recv(client->m_graph_in);
-    
-  	ZstLog::net(LogLevel::debug, "Received graph message");
-  
-    //Get sender from msg
+
+	if (client->graph_message_handler(msg) < 0) {
+		//Errored
+	}
+	
+    zmsg_destroy(&msg);
+
+	return 0;
+}
+
+int ZstClient::graph_message_handler(zmsg_t * msg) {
+	ZstLog::net(LogLevel::notification, "Received graph message");
+
+	//Get sender from msg
 	//zframe_t * sender_frame = zmsg_pop(msg);
 	char * sender_c = zmsg_popstr(msg);
 	ZstURI sender(sender_c);
 	zstr_free(&sender_c);
-	
-    //Get payload from msg
+
+	//Get payload from msg
 	zframe_t * payload = zmsg_pop(msg);
 
 	//Find local proxy of the0 sneding plug
-	ZstPlug * sending_plug = dynamic_cast<ZstPlug*>(client->find_entity(sender));
+	ZstPlug * sending_plug = dynamic_cast<ZstPlug*>(find_entity(sender));
 	ZstInputPlug * receiving_plug = NULL;
-	
-  	if(!sending_plug){
+
+	if (!sending_plug) {
 		ZstLog::net(LogLevel::warn, "No sending plug found");
-		return 0;
-  	}
-      
-  //Iterate over all connected cables from the sending plug
+		return -1;
+	}
+
+	//Iterate over all connected cables from the sending plug
 	for (auto cable : *sending_plug) {
 		receiving_plug = dynamic_cast<ZstInputPlug*>(cable->get_input());
 		if (receiving_plug) {
-			if (client->entity_is_local(*receiving_plug)) {
+			if (entity_is_local(*receiving_plug)) {
 				ZstLog::net(LogLevel::debug, "Reading incoming plug value into {}", receiving_plug->URI().path());
 				//TODO: Lock plug value when deserialising
 				size_t offset = 0;
 				receiving_plug->raw_value()->read((char*)zframe_data(payload), zframe_size(payload), offset);
-				client->compute_events().enqueue(receiving_plug);
+				compute_events().enqueue(receiving_plug);
 			}
 		}
 	}
-	
-	//Cleanup
-	zframe_destroy(&payload);
-    zmsg_destroy(&msg);
 
 	//Telemetrics
-	client->m_num_graph_recv_messages++;
+	m_num_graph_recv_messages++;
+
+	//Cleanup
+	zframe_destroy(&payload);
+
 	return 0;
 }
 
@@ -711,10 +721,6 @@ void ZstClient::connect_client_handler(const char * endpoint_ip, const char * ou
 	//Connect to endpoint publisher
 	zsock_connect(m_graph_in, "%s", endpoint_ip);
 	zsock_set_subscribe(m_graph_in, output_plug);
-}
-
-void ZstClient::create_entity_from_template_handler(const ZstURI & entity_template_address) {
-    //TODO:Fill in entity template creation code
 }
 
 int ZstClient::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
