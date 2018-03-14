@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
 			do {
 				std::getline(std::cin, line);
 			} while (line != "$TERM");
-			ZstLog::app(LogLevel::notification, "Received $TERM. Cloeing stage server.");
+			ZstLog::app(LogLevel::notification, "Received $TERM. Closeing stage server.");
 		}
 	}
 

@@ -537,7 +537,7 @@ int ZstClient::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg){
 }
 
 int ZstClient::graph_message_handler(zmsg_t * msg) {
-	ZstLog::net(LogLevel::notification, "Received graph message");
+	ZstLog::net(LogLevel::debug, "Received graph message");
 
 	//Get sender from msg
 	//zframe_t * sender_frame = zmsg_pop(msg);
@@ -969,11 +969,9 @@ void ZstClient::destroy_entity(ZstEntityBase * entity, bool async)
 			if (async) {
 				destroy_entity_async(entity, future);
 				send_to_stage(msg);
-
-				//Since we own this entity, we can start to clean it up immediately
+                
 				entity->enqueue_deactivation();
 				component_leaving_events().enqueue(entity);
-				process_callbacks();
 			}
 			else {
 				send_to_stage(msg);
@@ -983,7 +981,6 @@ void ZstClient::destroy_entity(ZstEntityBase * entity, bool async)
         } else {
             entity->enqueue_deactivation();
 			component_leaving_events().enqueue(entity);
-            process_callbacks();
         }
 	}
 }

@@ -13,9 +13,9 @@ public:
 
 	Sink(const char * name) : 
 		ZstContainer("SINK", name),
+        last_received_code(-1),
 		m_input(NULL),
-		m_child_sink(NULL),
-		last_received_code(-1)
+		m_child_sink(NULL)
 	{
 		m_input = create_input_plug("in", ZstValueType::ZST_INT);
 	}
@@ -88,13 +88,10 @@ int main(int argc,char **argv){
 	zst_activate_entity(sink);
 	
 	while (sink->last_received_code != 0){
-		ZstLog::app(LogLevel::notification, "Pre-poll");
 		zst_poll_once();
-		ZstLog::app(LogLevel::notification, "Post-poll");
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
-
-	ZstLog::app(LogLevel::notification, "Last received code after loop finished {}", sink->last_received_code);
+    
 	ZstLog::app(LogLevel::notification, "Sink is leaving");
 	zst_destroy();
 	return 0;
