@@ -9,12 +9,14 @@ branches:
 only_commits:
   files:
     - CMakeLists.txt
-    - appveyor.yml -> .appveyor\cleanup-appveyor-cache.txt
+    - appveyor.yml
+    - .appveyor/
     - src/
     - include/
 
 cache: 
-- dependencies -> .appveyor\cleanup-appveyor-cache.txt
+- dependencies
+# - dependencies -> .appveyor\cleanup-appveyor-cache.txt
 
 clone_folder: c:/projects/showtime-cpp
 

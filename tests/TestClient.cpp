@@ -856,11 +856,12 @@ int main(int argc,char **argv){
 	test_connect_plugs();
 	test_add_filter();
 	test_external_entities(ext_test_folder);
-	//test_memory_leaks();
+	test_memory_leaks();
     test_leaving();
 	test_cleanup();
 
-	server_in.write("$TERM\n", 6);
+	std::string term_msg = "$TERM\n";
+	server_in.write(term_msg.c_str(), term_msg.size());
 	server_process.wait();
 	std::cout << "All tests completed" << std::endl;
 	return 0;

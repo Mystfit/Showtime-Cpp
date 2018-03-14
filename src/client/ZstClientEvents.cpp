@@ -27,7 +27,6 @@ void ZstComputeEvent::run(ZstInputPlug * target)
 		throw std::runtime_error("Could not find parent of input plug");
 	}
 	try {
-		ZstLog::entity(LogLevel::debug, "About to run compute for component {}", parent->URI().path());
 		parent->compute(target);
 	}
 	catch (std::exception e) {

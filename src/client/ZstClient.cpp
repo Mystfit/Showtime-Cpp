@@ -528,7 +528,7 @@ int ZstClient::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg){
 	zmsg_t *msg = zmsg_recv(client->m_graph_in);
 
 	if (client->graph_message_handler(msg) < 0) {
-		//Errored
+		//TODO: Graph message error. How to handle here if at all?
 	}
 	
     zmsg_destroy(&msg);
@@ -537,10 +537,7 @@ int ZstClient::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg){
 }
 
 int ZstClient::graph_message_handler(zmsg_t * msg) {
-	ZstLog::net(LogLevel::debug, "Received graph message");
-
 	//Get sender from msg
-	//zframe_t * sender_frame = zmsg_pop(msg);
 	char * sender_c = zmsg_popstr(msg);
 	ZstURI sender(sender_c);
 	zstr_free(&sender_c);
@@ -548,7 +545,7 @@ int ZstClient::graph_message_handler(zmsg_t * msg) {
 	//Get payload from msg
 	zframe_t * payload = zmsg_pop(msg);
 
-	//Find local proxy of the0 sneding plug
+	//Find local proxy of the sneding plug
 	ZstPlug * sending_plug = dynamic_cast<ZstPlug*>(find_entity(sender));
 	ZstInputPlug * receiving_plug = NULL;
 
@@ -562,12 +559,9 @@ int ZstClient::graph_message_handler(zmsg_t * msg) {
 		receiving_plug = dynamic_cast<ZstInputPlug*>(cable->get_input());
 		if (receiving_plug) {
 			if (entity_is_local(*receiving_plug)) {
-				ZstLog::net(LogLevel::debug, "Reading incoming plug value into {}", receiving_plug->URI().path());
 				//TODO: Lock plug value when deserialising
 				size_t offset = 0;
 				receiving_plug->raw_value()->read((char*)zframe_data(payload), zframe_size(payload), offset);
-				
-				ZstLog::net(LogLevel::debug, "Enqueing compute event for plug {}", receiving_plug->URI().path());
 				compute_events().enqueue(receiving_plug);
 			}
 		}
