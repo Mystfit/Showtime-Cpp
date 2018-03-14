@@ -525,7 +525,7 @@ int ZstClient::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg){
 	//Receive message from graph
 	zmsg_t *msg = zmsg_recv(client->m_graph_in);
     
-  	ZstLog::net(LogLevel::DEBUG, "Received graph message");
+  	ZstLog::net(LogLevel::debug, "Received graph message");
   
     //Get sender from msg
 	//zframe_t * sender_frame = zmsg_pop(msg);
@@ -539,10 +539,10 @@ int ZstClient::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg){
 	//Find local proxy of the0 sneding plug
 	ZstPlug * sending_plug = dynamic_cast<ZstPlug*>(client->find_entity(sender));
 	ZstInputPlug * receiving_plug = NULL;
-  
+	
   	if(!sending_plug){
-    	ZstLog::net(LogLevel::WARN, "No sending plug found");
-      return 0;
+		ZstLog::net(LogLevel::warn, "No sending plug found");
+		return 0;
   	}
       
   //Iterate over all connected cables from the sending plug
