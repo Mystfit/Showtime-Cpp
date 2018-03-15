@@ -964,8 +964,10 @@ void ZstClient::destroy_entity(ZstEntityBase * entity, bool async)
 				destroy_entity_async(entity, future);
 				send_to_stage(msg);
                 
+				//Since we own this entity, we can start to clean it up immediately
 				entity->enqueue_deactivation();
 				component_leaving_events().enqueue(entity);
+				process_callbacks();
 			}
 			else {
 				send_to_stage(msg);
@@ -975,6 +977,7 @@ void ZstClient::destroy_entity(ZstEntityBase * entity, bool async)
         } else {
             entity->enqueue_deactivation();
 			component_leaving_events().enqueue(entity);
+			process_callbacks();
         }
 	}
 }

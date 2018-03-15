@@ -47,16 +47,21 @@ class Queue
   }
 	
   void foreach(std::function<void(T)> func) {
-	  std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
-	  try {
-		  lock.lock();
-	  }
-	  catch (std::exception e) {
-		  std::cout << "Exception when locking: " << e.what() << std::endl;
-	  }
 	  while (size() > 0) {
 		  T val = queue_.front();
-		  queue_.pop();
+
+		  // Make sure queue lock and pop are in the same stack so we can unlock the 
+		  // queue as soon as we modify it
+		  {
+			  std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
+			  try {
+				  lock.lock();
+			  }
+			  catch (std::exception e) {
+				  std::cout << "Exception when locking: " << e.what() << std::endl;
+			  }
+			  queue_.pop();
+		  }
 		  func(val);
 	  }
   }
