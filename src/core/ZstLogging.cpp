@@ -1,25 +1,58 @@
 #include <boost/log/utility/setup/common_attributes.hpp>
-#include <boost/log/sources/record_ostream.hpp>
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/sinks/async_frontend.hpp>
 #include <boost/log/sinks/text_file_backend.hpp>
 #include <boost/log/sinks/text_ostream_backend.hpp>
+#include <boost/log/sinks/basic_sink_backend.hpp>
 #include <boost/log/attributes/current_process_name.hpp>
+#include <boost/log/sources/record_ostream.hpp>
+#include <boost/log/sources/global_logger_storage.hpp>
+#include <boost/log/sources/severity_channel_logger.hpp>
+#include <boost/log/expressions.hpp>
 #include <boost/core/null_deleter.hpp>
-
 #include <fstream>
 #ifdef WIN32
 #include <windows.h>
 #endif
-
 #include <ZstLogging.h>
 
-using namespace ZstLog;
+// Boost namespaces 
+namespace logging = boost::log;
+namespace attrs = boost::log::attributes;
+namespace src = boost::log::sources;
+namespace sinks = boost::log::sinks;
+namespace keywords = boost::log::keywords;
+namespace expr = boost::log::expressions;
 
+// Log attributes
+BOOST_LOG_ATTRIBUTE_KEYWORD(line_id, "LineID", unsigned int)
+BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", LogLevel)
+BOOST_LOG_ATTRIBUTE_KEYWORD(channel, "Channel", std::string)
+BOOST_LOG_ATTRIBUTE_KEYWORD(process_name, "ProcessName", std::string)
+
+// Global logger
+typedef src::severity_channel_logger_mt<LogLevel, std::string> ZstLogger_mt;
+BOOST_LOG_GLOBAL_LOGGER(ZstGlobalLogger, ZstLogger_mt)
+
+// Global logger init
 BOOST_LOG_GLOBAL_LOGGER_INIT(ZstGlobalLogger, ZstLogger_mt) {
 	ZstLogger_mt logger = ZstLogger_mt();
 	return logger;
 }
+
+// Internal namespace extension
+namespace ZstLog {
+	namespace internals {
+		// Custom Windows sink
+		class coloured_console_sink : public boost::log::sinks::basic_formatted_sink_backend<char, boost::log::sinks::synchronized_feeding>
+		{
+		public:
+			static void consume(boost::log::record_view const& rec, string_type const& formatted_string);
+		};
+	}
+}
+using namespace ZstLog;
+
 
 void ZstLog::init_logger(const char * logger_name)
 {
