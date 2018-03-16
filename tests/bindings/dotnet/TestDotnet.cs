@@ -52,7 +52,7 @@ public class Program
 
         // redirects on your choice
         server_startInfo.RedirectStandardOutput = true;
-        server_startInfo.RedirectStandardOutput = true;
+        server_startInfo.RedirectStandardInput = true;
         server_startInfo.RedirectStandardError = true;
 
         server_startInfo.FileName = "ShowtimeServer.exe";
@@ -102,7 +102,7 @@ public class Program
         //Leave the stage and clean up
         showtime.leave();
 
-        server_process.StandardInput.WriteLine("$TERM/n");
+        server_process.StandardInput.WriteLine("$TERM\n");
         return 0;
     }
 
