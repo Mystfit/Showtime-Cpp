@@ -56,7 +56,7 @@ public class Program
         server_startInfo.RedirectStandardError = true;
 
         server_startInfo.FileName = "ShowtimeServer.exe";
-        server_startInfo.Arguments = "t";
+        server_startInfo.Arguments = "t";   // Put server into test mode
 
         Process server_process = new Process();
         server_process.StartInfo = server_startInfo;
@@ -89,8 +89,13 @@ public class Program
         //Connect cable
         var cable = showtime.connect_cable(input_comp.input, output_comp.output);
 
+        //Sleep to wait for connection to be established
+        Thread.Sleep(100);
+
         //Send values
         output_comp.send(42.0f);
+
+        Thread.Sleep(1000);
 
         //Clean up entities
         showtime.deactivate_entity(input_comp);
@@ -103,6 +108,7 @@ public class Program
         showtime.leave();
 
         server_process.StandardInput.WriteLine("$TERM\n");
+        server_process.WaitForExit();
         return 0;
     }
 
