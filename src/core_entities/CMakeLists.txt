@@ -1,3 +1,5 @@
+message(STATUS "Building ${CORE_ENTITIES_TARGET} target")
+
 # Entity source files
 set(ZST_CORE_ENTITIES_HEADERS
   "${CMAKE_CURRENT_LIST_DIR}/Adder.h"

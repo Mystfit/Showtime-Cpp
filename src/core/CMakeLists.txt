@@ -1,3 +1,5 @@
+message(STATUS "Building ${CORE_TARGET} target")
+
 # Write version info into header file
 set(VERSION_FILE "${Showtime_COMPILED_INCLUDE_DIRS}/ZstVersion.h")
 FILE(WRITE ${VERSION_FILE} "#define SHOWTIME_VERSION \"${SHOWTIME_VERSION}\"")

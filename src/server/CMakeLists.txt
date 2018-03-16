@@ -1,3 +1,5 @@
+message(STATUS "Building ${SERVER_TARGET} target")
+
 set(ZST_SERVER_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstStage.h"
 )

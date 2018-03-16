@@ -25,3 +25,19 @@ target_link_libraries( ${CLIENT_TEST_TARGET}
     ${CORE_ENTITIES_TARGET}
 )
 add_test(NAME ${CLIENT_TEST_TARGET} COMMAND ${CLIENT_TEST_TARGET} WORKING_DIRECTORY $<TARGET_FILE_DIR:${CLIENT_TEST_TARGET}>)
+
+
+# -------------
+# Language tests
+# -------------
+
+option (BINDINGS_DOTNET_TESTS "Build Dotnet tests" OFF)
+if(BINDINGS_DOTNET_TESTS)
+	add_subdirectory(bindings/dotnet)
+endif(BINDINGS_DOTNET_TESTS)
+
+
+option (BINDINGS_PYTHON_TESTS "Build Python tests" OFF)
+if(BINDINGS_PYTHON_TESTS)
+	add_subdirectory(bindings/python)
+endif(BINDINGS_PYTHON_TESTS)

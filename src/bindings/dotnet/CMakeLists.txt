@@ -1,74 +1,39 @@
+message(STATUS "Building ${DOTNET_TARGET} target")
+
 set(BUILD_STAMP "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
 
 enable_language(CSharp)
-set(DOTNET_TARGET ${PROJECT_NAME}Dotnet)
-set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR})
-include (${SWIG_USE_FILE})
-include_directories(${Showtime_INCLUDE_DIRS})
+
+# Save original swig output dir
+set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR}/dotnet)
+
+# Set include directories from client dependency
+include_directories(${Showtime_INCLUDE_DIRS} ${Showtime_COMPILED_INCLUDE_DIRS})
+
+# Set include files
 set(SWIG_MODULE_${DOTNET_TARGET}_EXTRA_DEPS ${Showtime_API_INTERFACE})
 
-set(DOTNET_INTERFACES "${CMAKE_CURRENT_SOURCE_DIR}/showtime_dotnet.i")
+# Define language root interface file
+set(DOTNET_INTERFACES "${CMAKE_CURRENT_LIST_DIR}/showtime_dotnet.i")
 set_source_files_properties(${DOTNET_INTERFACES} PROPERTIES CPLUSPLUS ON)
 
+# Clear the debug suffix for generated files
 set(CMAKE_DEBUG_POSTFIX "")
+
+# Create the swig dotnet target
 swig_add_library(${DOTNET_TARGET} LANGUAGE csharp TYPE SHARED SOURCES ${DOTNET_INTERFACES})
+
+# Set dependant projects
 add_dependencies(${SWIG_MODULE_${DOTNET_TARGET}_REAL_NAME} ${CLIENT_TARGET})
+
+# Link libraries to swig target
 swig_link_libraries(
-	${DOTNET_TARGET}
-	${CLIENT_TARGET}
+    ${DOTNET_TARGET}
+    ${CLIENT_TARGET}
 )
-file(GLOB DOTNET_BINDINGS "${CMAKE_CURRENT_BINARY_DIR}/*.cs")
 
+# Group together generated binding scripts
+file(GLOB DOTNET_GENERATED_BINDINGS "${CMAKE_SWIG_OUTDIR}/*.cs")
 
-# Build dotnet tests
-option (BINDINGS_DOTNET_TESTS "Build Dotnet tests" OFF)
-if(BINDINGS_DOTNET_TESTS)
-	set(DOTNET_TEST_TARGET TestDotNet)
-	set(DOTNET_TEST_SRC
-		"tests/TestDotnet.cs"
-	)
-	# project(${DOTNET_TEST_TARGET} csharp)
-	add_executable(${DOTNET_TEST_TARGET} ${DOTNET_TEST_SRC})
-	add_dependencies(${DOTNET_TEST_TARGET} ${SWIG_MODULE_${DOTNET_TARGET}_REAL_NAME})
-	target_include_directories(${DOTNET_TEST_TARGET} PUBLIC ${ZST_INCLUDES})
-	target_link_libraries(${DOTNET_TEST_TARGET} ${DOTNET_TARGET})
-	target_sources(${DOTNET_TEST_TARGET} PUBLIC ${DOTNET_BINDINGS})
-	add_test(NAME ${DOTNET_TEST_TARGET} COMMAND ${DOTNET_TEST_TARGET} WORKING_DIRECTORY $<TARGET_FILE_DIR:${DOTNET_TEST_TARGET}>)
-endif(BINDINGS_DOTNET_TESTS)
-
-
-# Build unity package
-option(BINDINGS_UNITY "Build Unity project" OFF)
-if(BINDINGS_UNITY)
-	set(UNITY_TARGET "${PROJECT_NAME}Unity")
-	set(UNITY_EXECUTABLE $ENV{PROGRAMFILES}/Unity/Editor/Unity.exe CACHE FILEPATH "Path to Unity executable")
-	set(UNITY_BUILD_PROJECT ${CMAKE_CURRENT_BINARY_DIR}/unity)
-
-	# Copy dotnet bindings
-	file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/unity" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
-	# Set Unity project paths
-	SET(DOTNET_LIB_OUTPUT $<TARGET_FILE:${SWIG_MODULE_${DOTNET_TARGET}_REAL_NAME}>)
-	SET(UNITY_BIN_DIR ${UNITY_BUILD_PROJECT}/Assets/${UNITY_TARGET}/Plugins/x64-win)
-	SET(UNITY_BINDINGS_DIR ${UNITY_BUILD_PROJECT}/Assets/${UNITY_TARGET}/Plugins/bindings)
-	set(UNITY_BINARY_FILES 
-		$<TARGET_FILE:${CORE_TARGET}> 
-		$<TARGET_FILE:${CLIENT_TARGET}> 
-		$<TARGET_FILE:${SERVER_TARGET}> 
-		${DOTNET_LIB_OUTPUT} 
-		${RUNTIMES_LOG4CPLUS}
-		${RUNTIMES_LIBZMQ}
-		${RUNTIMES_CZMQ}
-	)
-	
-	add_custom_command(
-		OUTPUT ${BUILD_STAMP} 
-		COMMAND ${CMAKE_COMMAND} -E make_directory ${UNITY_BINDINGS_DIR}
-		COMMAND ${CMAKE_COMMAND} -E make_directory ${UNITY_BIN_DIR}
-	   	COMMAND ${CMAKE_COMMAND} -E copy ${DOTNET_BINDINGS} ${UNITY_BINDINGS_DIR}
-		COMMAND ${CMAKE_COMMAND} -E copy ${UNITY_BINARY_FILES} ${UNITY_BIN_DIR}
-		COMMAND ${UNITY_EXECUTABLE} -batchmode -quit -projectPath ${UNITY_BUILD_PROJECT} -exportPackage Assets/${UNITY_TARGET} ${UNITY_TARGET}-${SHOWTIME_VERSION}.unitypackage
-		DEPENDS ${DOTNET_TARGET} ${SERVER_TARGET}
-	)
-	add_custom_target(${UNITY_TARGET} ALL DEPENDS ${BUILD_STAMP})
-endif()
+# Restore original swig output dir
+set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR})

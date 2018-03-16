@@ -35,6 +35,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake;${CMAKE_MODULE_PATH}")
+set(CMAKE_SWIG_ROOT_OUTDIR ${CMAKE_BINARY_DIR}/bindings)
+set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR})
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(MACOSX TRUE)
@@ -119,6 +121,11 @@ find_package(Boost COMPONENTS
 find_package(MsgPack CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 
+find_package(SWIG)
+if(SWIG_FOUND)
+    include(UseSWIG)
+endif()
+
 if(WIN32 AND USE_HUNTER AND HUNTER_ENABLED)
     find_package(ZeroMQ CONFIG REQUIRED) # Only include ZeroMQ until CZMQ gets CZMQConfig.cmake added to Hunter - windows only
     find_package(czmq CONFIG REQUIRED)
@@ -158,13 +165,10 @@ if(USE_LOCAL_BOOST)
     set(Boost_ATOMIC_TARGET ${Boost_ATOMIC_LIBRARY})
 endif()
 
-# Shared lib dependencies
-# -----------------------
 
 # Core Library
 # ------------
 set(CORE_TARGET "${PROJECT_NAME}Core")
-message(STATUS "Building ${CORE_TARGET} target")
 add_library(${CORE_TARGET} SHARED "")
 include(src/core/CMakeLists.txt)
 list(APPEND Showtime_LIBRARY_TARGETS ${CORE_TARGET})
@@ -172,7 +176,6 @@ list(APPEND Showtime_LIBRARY_TARGETS ${CORE_TARGET})
 # Core entity plugin
 # --------------------
 set(CORE_ENTITIES_TARGET "${PROJECT_NAME}CoreEntities")
-message(STATUS "Building ${CORE_ENTITIES_TARGET} target")
 add_library(${CORE_ENTITIES_TARGET} SHARED "")
 include(src/core_entities/CMakeLists.txt)
 list(APPEND Showtime_LIBRARY_TARGETS ${CORE_ENTITIES_TARGET})
@@ -181,7 +184,6 @@ list(APPEND Showtime_LIBRARY_TARGETS ${CORE_ENTITIES_TARGET})
 # Client Library
 # --------------
 set(CLIENT_TARGET "${PROJECT_NAME}Client")
-message(STATUS "Building ${CLIENT_TARGET} target")
 add_library(${CLIENT_TARGET} SHARED "")
 include(src/client/CMakeLists.txt)
 list(APPEND Showtime_LIBRARY_TARGETS ${CLIENT_TARGET})
@@ -190,17 +192,36 @@ list(APPEND Showtime_LIBRARY_TARGETS ${CLIENT_TARGET})
 # Server binary
 # -------------
 set(SERVER_TARGET "${PROJECT_NAME}Server")
-message(STATUS "Building ${SERVER_TARGET} target")
 add_executable (${SERVER_TARGET} "") 
 include(src/server/CMakeLists.txt)
 list(APPEND Showtime_APP_TARGETS ${SERVER_TARGET})
+
+
+# Bindings
+# -------
+#include (${SWIG_USE_FILE})
+
+# Dotnet bindings
+option(BINDINGS_DOTNET "Generate bindings for C#" OFF)
+option(BINDINGS_UNITY "Generate bindings for Unity" OFF)
+
+if(BINDINGS_DOTNET OR BINDINGS_UNITY)
+    set(BINDINGS_DOTNET ON)
+    set(DOTNET_GENERATED_BINDINGS)
+    set(DOTNET_TARGET ${PROJECT_NAME}Dotnet)
+    include(src/bindings/dotnet/CMakeLists.txt)
+endif()
+
+if(BINDINGS_UNITY)
+    set(UNITY_TARGET ${PROJECT_NAME}Unity)
+    include(src/bindings/unity/CMakeLists.txt)
+endif()
 
 
 # Tests
 # -----
 enable_testing()
 add_subdirectory(tests)
-add_subdirectory(src/bindings)
 
 
 # Installation

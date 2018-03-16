@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -40,12 +41,28 @@ public class TestInputComponent : ZstComponent
 }
 
 
-public class TestShowtimeDotnet
+public class Program
 {
-    private static CancellationTokenSource _cancelationTokenSource;
+    public static CancellationTokenSource _cancelationTokenSource;
 
-    public TestShowtimeDotnet()
+    static int Main(string[] args)
     {
+        ProcessStartInfo server_startInfo = new ProcessStartInfo();
+        server_startInfo.UseShellExecute = false; //required to redirect standart input/output
+
+        // redirects on your choice
+        server_startInfo.RedirectStandardOutput = true;
+        server_startInfo.RedirectStandardOutput = true;
+        server_startInfo.RedirectStandardError = true;
+
+        server_startInfo.FileName = "ShowtimeServer.exe";
+        server_startInfo.Arguments = "t";
+
+        Process server_process = new Process();
+        server_process.StartInfo = server_startInfo;
+        server_process.Start();
+
+
         Console.WriteLine("Starting TestDotnet");
 
         //Start the library
@@ -58,7 +75,7 @@ public class TestShowtimeDotnet
 
         //Join the stage
         showtime.join("127.0.0.1");
-            
+
         //Create entities
         var input_comp = new TestInputComponent("test_input_comp");
         var output_comp = new TestOutputComponent("test_output_comp");
@@ -78,32 +95,23 @@ public class TestShowtimeDotnet
         //Clean up entities
         showtime.deactivate_entity(input_comp);
         showtime.deactivate_entity(output_comp);
-        
+
         //Stop the event loop
         _cancelationTokenSource.Cancel();
 
         //Leave the stage and clean up
         showtime.leave();
 
-        Console.Write("Press any key to exit...");
-        var wait = Console.ReadLine();
+        server_process.StandardInput.WriteLine("$TERM/n");
+        return 0;
     }
 
-    public void event_loop()
+    public static void event_loop()
     {
         while (!_cancelationTokenSource.Token.IsCancellationRequested)
         {
             showtime.poll_once();
         }
-    }
-}
-
-
-public class Program
-{
-    static void Main(string[] args)
-    {
-        var test = new TestShowtimeDotnet();
     }
 }
 
