@@ -47,6 +47,7 @@ brew install cmake
 # Install bottled dependencies
 brew install msgpack
 brew install fmt
+brew install swig
 
 # Install source dependencies
 export HOMEBREW_BUILD_FROM_SOURCE=1 
