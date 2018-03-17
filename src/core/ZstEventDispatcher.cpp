@@ -4,7 +4,8 @@
 
 ZstEventDispatcher::ZstEventDispatcher() :
 	m_pre_event_callback(NULL),
-	m_post_event_callback(NULL) {
+	m_post_event_callback(NULL),
+	m_event_queue{50} {
 }
 
 ZstEventDispatcher::~ZstEventDispatcher() {
@@ -52,7 +53,7 @@ void ZstEventDispatcher::dispatch_events(ZstSynchronisable * target) {
 }
 
 void ZstEventDispatcher::flush() {
-	m_event_queue.foreach([](ZstSynchronisable* target) { target->flush_events(); });
+	m_event_queue.consume_all([](ZstSynchronisable* target) {});
 }
 
 void ZstEventDispatcher::clear_attached_events() {
@@ -70,7 +71,7 @@ void ZstEventDispatcher::enqueue(ZstSynchronisable * target) {
 }
 
 void ZstEventDispatcher::process() {
-	m_event_queue.foreach([this](ZstSynchronisable* target) {
+	m_event_queue.consume_all([this](ZstSynchronisable* target) {
 		try {
 			this->dispatch_events(target);
 		}
@@ -78,8 +79,4 @@ void ZstEventDispatcher::process() {
 			ZstLog::entity(LogLevel::error, "Failed to dispatch event. Reason: {}", e.what());
 		}
 	});
-}
-
-size_t ZstEventDispatcher::size() {
-    return m_event_queue.size();
 }

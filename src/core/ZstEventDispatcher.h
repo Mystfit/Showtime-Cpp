@@ -4,10 +4,9 @@
 #include <vector>
 #include <queue>
 #include <iostream>
+#include <boost/lockfree/queue.hpp>
 #include <ZstExports.h>
 #include <ZstEvents.h>
-
-#include <Queue.h>
 
 class ZstEventDispatcher {
 public:
@@ -24,11 +23,10 @@ public:
     ZST_EXPORT void clear_attached_events();
 	ZST_EXPORT void enqueue(ZstSynchronisable * target);
 	ZST_EXPORT void process();
-	ZST_EXPORT size_t size();
 
 private:
 	std::vector<ZstEvent*> m_pre_event_callback;
 	std::vector<ZstEvent*> m_event_callbacks;
 	std::vector<ZstEvent*> m_post_event_callback;
-	Queue<ZstSynchronisable*> m_event_queue;
+	boost::lockfree::queue<ZstSynchronisable*> m_event_queue;
 };
