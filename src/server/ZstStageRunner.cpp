@@ -38,12 +38,13 @@ int main(int argc, char **argv) {
 			do {
 				std::getline(std::cin, line);
 			} while (line != "$TERM");
-			ZstLog::app(LogLevel::notification, "Received $TERM. Closeing stage server.");
+			ZstLog::app(LogLevel::notification, "Received $TERM. Closing stage server.");
 		}
 	}
 
+	std::cout << "Showtime Stage shutting down" << std::endl;
+
 	stage.destroy();
-	std::cout << "Showtime Stage sut down successfully" << std::endl;
 
 	return 0;
 }

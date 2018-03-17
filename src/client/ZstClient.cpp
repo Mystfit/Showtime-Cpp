@@ -71,17 +71,20 @@ void ZstClient::destroy() {
     m_init_completed = false;
     
     //Let stage know we are leaving
-	leave_stage();
+	if(is_connected_to_stage())
+		leave_stage(true);
     
     //TODO: Delete proxies and templates
     delete m_root;
-    
-	ZstActor::destroy();
+
 	zsock_destroy(&m_stage_updates);
 	zsock_destroy(&m_stage_router);
 	zsock_destroy(&m_graph_in);
 	zsock_destroy(&m_graph_out);
+    
+	ZstActor::destroy();
 	zsys_shutdown();
+	
 	m_is_ending = false;
 	m_is_destroyed = true;
 }

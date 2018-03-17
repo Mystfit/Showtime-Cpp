@@ -8,7 +8,7 @@
 
 using namespace std;
 
-ZstStage::ZstStage()
+ZstStage::ZstStage() : m_is_destroyed(false)
 {
 	m_message_pool = new ZstMessagePool();
 	m_message_pool->populate(STAGE_MESSAGE_POOL_BLOCK);
@@ -16,6 +16,7 @@ ZstStage::ZstStage()
 
 ZstStage::~ZstStage()
 {
+	destroy();
 	m_client_socket_index.clear();
 	delete m_message_pool;
 }
@@ -55,6 +56,9 @@ void ZstStage::init(const char * stage_name)
 
 void ZstStage::destroy()
 {
+	if (is_destroyed())
+		return;
+
 	for (auto c : m_cables) {
 		destroy_cable(c);
 	}
@@ -62,12 +66,20 @@ void ZstStage::destroy()
 	for (auto p : m_clients) {
 		destroy_client(p.second);
 	}
+
+	zsock_destroy(&m_performer_router);
+	zsock_destroy(&m_graph_update_pub);
 	detach_timer(m_heartbeat_timer_id);
 
 	ZstActor::destroy();
-	zsock_destroy(&m_performer_router);
-	zsock_destroy(&m_graph_update_pub);
 	zsys_shutdown();
+
+	m_is_destroyed = true;
+}
+
+bool ZstStage::is_destroyed()
+{
+	return m_is_destroyed;
 }
 
 

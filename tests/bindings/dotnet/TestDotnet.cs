@@ -35,7 +35,7 @@ public class TestInputComponent : ZstComponent
 
     public override void compute(ZstInputPlug plug)
     {
-        Console.WriteLine(String.Format("Received plug hit from {0} with value {1}", plug.URI().path(), plug.float_at(0)));
+        showtime.app(LogLevel.notification, String.Format("Received plug hit from {0} with value {1}", plug.URI().path(), plug.float_at(0)));
         wait.Set();
     }
 }
@@ -48,21 +48,17 @@ public class Program
     static int Main(string[] args)
     {
         ProcessStartInfo server_startInfo = new ProcessStartInfo();
-        server_startInfo.UseShellExecute = false; //required to redirect standart input/output
 
-        // redirects on your choice
-        server_startInfo.RedirectStandardOutput = true;
+        //Required to redirect standard input/output
+        server_startInfo.UseShellExecute = false; 
         server_startInfo.RedirectStandardInput = true;
-        server_startInfo.RedirectStandardError = true;
-
         server_startInfo.FileName = "ShowtimeServer.exe";
         server_startInfo.Arguments = "t";   // Put server into test mode
 
         Process server_process = new Process();
         server_process.StartInfo = server_startInfo;
         server_process.Start();
-
-
+        
         Console.WriteLine("Starting TestDotnet");
 
         //Start the library
@@ -98,8 +94,8 @@ public class Program
         Thread.Sleep(1000);
 
         //Clean up entities
-        showtime.deactivate_entity(input_comp);
-        showtime.deactivate_entity(output_comp);
+        showtime.deactivate_entity_async(input_comp);
+        showtime.deactivate_entity_async(output_comp);
 
         //Stop the event loop
         _cancelationTokenSource.Cancel();
@@ -109,6 +105,8 @@ public class Program
 
         server_process.StandardInput.WriteLine("$TERM\n");
         server_process.WaitForExit();
+
+        showtime.destroy();
         return 0;
     }
 

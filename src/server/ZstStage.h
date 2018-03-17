@@ -29,6 +29,7 @@ public:
 	~ZstStage();
 	void init(const char * stage_name) override;
 	void destroy() override;
+	bool is_destroyed();
 
 	//Client
 	ZstPerformer * get_client(const ZstURI & path);
@@ -48,6 +49,7 @@ public:
 	std::vector<ZstCable*> get_cables_in_entity(ZstEntityBase * entity);
 
 private:
+	bool m_is_destroyed;
 
     //Incoming socket handlers
 	static int s_handle_router(zloop_t *loop, zsock_t *sock, void *arg);
