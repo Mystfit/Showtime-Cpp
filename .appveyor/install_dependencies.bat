@@ -44,13 +44,11 @@ cmake --build "%DEPENDENCY_DIR%\msgpack-c\build" --config %CONFIGURATION% --targ
 popd
 
 REM Aquire swig
-IF NOT EXIST %DEPENDENCY_DIR%\swig git clone --branch rel-3.0.12  https://github.com/swig/swig.git
-
-pushd swig
-mkdir "%DEPENDENCY_DIR%\swig\build"
-cmake -H. -B"%DEPENDENCY_DIR%\swig\build" -G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%DEPENDENCY_DIR%\install"
-cmake --build "%DEPENDENCY_DIR%\swig\build" --config %CONFIGURATION% --target INSTALL -- /nologo /verbosity:minimal
-popd
+IF NOT EXIST %DEPENDENCY_DIR%\swig (
+    powershell -Command "Invoke-WebRequest https://phoenixnap.dl.sourceforge.net/project/swig/swigwin/swigwin-3.0.12/swigwin-3.0.12.zip -OutFile swigwin.zip"
+    7z x -y swigwin.zip
+    ren .\swigwin-3.0.12 swig
+)
 
 REM Pop out of dependencies
 popd

@@ -48,7 +48,7 @@ install:
     REM ----------------------
     appveyor AddMessage "Manually installing patched hunter dependencies (czmq, msgpack)"
     call "%BUILD_FOLDER%\.appveyor\install_dependencies.bat"
-    set CMAKE_FLAGS=-DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%\install;${CMAKE_PREFIX_PATH} -DHUNTER_STATUS_PRINT=OFF"
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%\install;%DEPENDENCY_DIR%\swig;${CMAKE_PREFIX_PATH}"
 
 build_script:
 - cmd: |-
@@ -56,7 +56,7 @@ build_script:
     REM ----------------------
     mkdir build
     appveyor AddMessage "Building Showtime project with cmake"
-    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_DOTNET=ON -DBINDINGS_DOTNET_TESTS=ON
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_DOTNET=ON -DBINDINGS_DOTNET_TESTS=ON -DHUNTER_STATUS_PRINT=OFF
     cmake -H. -B"%BUILD_FOLDER%\build" -G "%GENERATOR%" %CMAKE_FLAGS%
     cmake --build "%BUILD_FOLDER%\build" --config %CONFIGURATION% -- /nologo /verbosity:minimal
 

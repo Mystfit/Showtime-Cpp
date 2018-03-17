@@ -103,7 +103,6 @@ if(USE_HUNTER AND HUNTER_ENABLED)
     endif()
     # hunter_add_package(MsgPack) # Use updated packaged at https://github.com/mystfit/msgpack-c.git
     hunter_add_package(fmt)
-    hunter_add_package(SWIG)
     # hunter_add_package(ZeroMQ)  # Only include ZeroMQ until CZMQ gets CZMQConfig.cmake added to Hunter
     # hunter_add_package(czmq)
 endif()
