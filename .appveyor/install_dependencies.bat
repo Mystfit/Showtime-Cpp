@@ -46,7 +46,7 @@ popd
 REM Aquire swig
 IF NOT EXIST %DEPENDENCY_DIR%\swig (
     powershell -Command "Invoke-WebRequest https://phoenixnap.dl.sourceforge.net/project/swig/swigwin/swigwin-3.0.12/swigwin-3.0.12.zip -OutFile swigwin.zip"
-    7z x -y swigwin.zip
+    7z x -y -bd -bb0 swigwin.zip
     ren .\swigwin-3.0.12 swig
 )
 
