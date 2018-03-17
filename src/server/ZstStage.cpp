@@ -66,12 +66,11 @@ void ZstStage::destroy()
 	for (auto p : m_clients) {
 		destroy_client(p.second);
 	}
-
+	
+	ZstActor::destroy();
 	zsock_destroy(&m_performer_router);
 	zsock_destroy(&m_graph_update_pub);
 	detach_timer(m_heartbeat_timer_id);
-
-	ZstActor::destroy();
 	zsys_shutdown();
 
 	m_is_destroyed = true;

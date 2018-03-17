@@ -76,13 +76,12 @@ void ZstClient::destroy() {
     
     //TODO: Delete proxies and templates
     delete m_root;
-
+	
+	ZstActor::destroy();
 	zsock_destroy(&m_stage_updates);
 	zsock_destroy(&m_stage_router);
 	zsock_destroy(&m_graph_in);
 	zsock_destroy(&m_graph_out);
-    
-	ZstActor::destroy();
 	zsys_shutdown();
 	
 	m_is_ending = false;
