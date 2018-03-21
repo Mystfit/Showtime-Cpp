@@ -1,5 +1,10 @@
 message(STATUS "Building ${PYTHON_TARGET} target")
 
+set(Python_ADDITIONAL_VERSIONS 3.6)
+FIND_PACKAGE(PythonLibs 3.6 REQUIRED)
+#FIND_PACKAGE(PythonLibs 2.7.12 REQUIRED)
+INCLUDE(FindPythonInterp)
+
 # Set binding output dir
 set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR}/python)
 
@@ -34,26 +39,12 @@ set(ZST_LIBS
     $<TARGET_LINKER_FILE:${CLIENT_TARGET}>
 )
 
-# Find runtimes to copy from linked libraries
-# get_target_property(CLIENT_LINK_LIBS ${CLIENT_TARGET} INTERFACE_LINK_LIBRARIES)
-# get_target_property(CORE_LINK_LIBS ${CORE_TARGET} INTERFACE_LINK_LIBRARIES)
-# get_target_property(CORE_ENTITIES_LINK_LIBS ${CORE_ENTITIES_TARGET} INTERFACE_LINK_LIBRARIES)
-# set(LINK_LIBS ${CLIENT_LINK_LIBS} ${CORE_LINK_LIBS} ${CORE_ENTITIES_LINK_LIBS})
-# set(ZST_RUNTIMES $<TARGET_FILE:${CLIENT_TARGET}>)
-# foreach(tgt ${LINK_LIBS})
-#     list(APPEND ZST_RUNTIMES $<TARGET_LINKER_FILE:${tgt}>)
-# endforeach()
-# message(STATUS "${ZST_RUNTIMES}")
-
 # Manually set runtimes to copy
 set(ZST_RUNTIMES 
     $<TARGET_FILE:${CLIENT_TARGET}>
     $<TARGET_FILE:${CORE_TARGET}>
     $<TARGET_FILE:${CORE_ENTITIES_TARGET}>
     $<TARGET_FILE:${CZMQ_TARGET}>
-    # $<TARGET_FILE:${Boost_FILESYSTEM_TARGET}>
-    # $<TARGET_FILE:${Boost_FILESYSTEM_TARGET}>
-    # $<TARGET_FILE:${Boost_SYSTEM_TARGET}>
 )
 
 if(WIN32)
