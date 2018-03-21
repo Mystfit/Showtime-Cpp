@@ -1,7 +1,10 @@
 import time
+import os
+import sys
 import threading
 import showtime as ZST
-from showtime import ZstComponent, AddFilter, ZstActivationEvent
+import subprocess
+from showtime import ZstComponent, ZstActivationEvent
 
 
 class SinkComponent(ZstComponent):
@@ -11,9 +14,8 @@ class SinkComponent(ZstComponent):
         self.last_received_value = 0
 
     def compute(self, plug):
+        ZST.app(ZST.notification, "Received message on sink")
         self.last_received_value = plug.int_at(0)
-        # if self.last_received_value % 1000 == 0:
-        # print("Plug received value {0}".format(self.last_received_value))
 
 
 class PushComponent(ZstComponent):
@@ -34,52 +36,56 @@ class EventLoop(threading.Thread):
     def run(self):
         while True:
             ZST.poll_once()
-            # time.sleep(0.001)
+            time.sleep(0.001)
 
-
-def test_add():
-    # Create entities
-    add = AddFilter("adder")
-    augend = PushComponent("aug_out")
-    addend = PushComponent("add_out")
-    sum_in = SinkComponent("sum_in")
-
-    # Activate entities
-    ZST.activate_entity(add)
-    ZST.activate_entity(augend)
-    ZST.activate_entity(addend)
-    ZST.activate_entity(sum_in)
-
-    # Connect cables
-    ZST.connect_cable(add.augend(), augend.plug)
-    ZST.connect_cable(add.addend(), addend.plug)
-    ZST.connect_cable(sum_in.plug, add.sum())
-
-    # Fire values
-    augend.send(1)
-    num_loops = 10000
-    for i in range(num_loops):
-        augend.send(i)
-        addend.send(1)
-        # ZST.poll_once()
-
-    while sum_in.last_received_value < num_loops:
-        ZST.poll_once()
-
-    print("Ran loop {0} times. Final sum: {1}".format(num_loops, sum_in.last_received_value))
-
-    # Cleanup
-    ZST.deactivate_entity(add)
-    ZST.deactivate_entity(addend)
-    ZST.deactivate_entity(augend)
-    ZST.deactivate_entity(sum_in)
 
 if __name__ == "__main__":
+    server_exe = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', 'build', 'bin', 'Debug', 'ShowtimeServer.exe'))
+    print("Starting Showtime server from ".format(server_exe))
+
+    # Start server
+    server = subprocess.Popen([server_exe, "t"], stdin=subprocess.PIPE, shell=True)
+    
+    # Start client
+    ZST.init("python_test", True)
+    ZST.join("127.0.0.1")
+    
+    # Set up event loop
     event_loop = EventLoop()
     event_loop.start()
 
-    ZST.init("python_test", True)
-    ZST.join("127.0.0.1")
+    # Create components
+    push = PushComponent("push")
+    sink = SinkComponent("sink")
 
-    test_add()
+    # Activate entities
+    ZST.activate_entity(push)
+    ZST.activate_entity(sink)
+
+    # Connect cables
+    ZST.connect_cable(sink.plug, push.plug)
+    time.sleep(0.1)
+
+    # Send values
+    sending_val = 42
+    push.send(42)
+
+    # Wait until sink receives value
+    max_loops = 100
+    loops = 0
+    while sink.last_received_value != sending_val and loops < max_loops:
+        time.sleep(0.01)
+        loops += 1
+    status = 0 if sink.last_received_value == sending_val else 1
+    print("Looped {} times. Last received value: {}".format(loops, sink.last_received_value))
+
+    # Cleanup
+    ZST.deactivate_entity(push)
+    ZST.deactivate_entity(sink)
     ZST.destroy()
+    server.communicate(b"$TERM\n")
+    server.wait()
+    print("Python test finished with status {}".format(status))
+    if(status):
+        sys.exit(status)
+    

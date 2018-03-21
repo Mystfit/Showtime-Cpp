@@ -124,6 +124,8 @@ find_package(SWIG)
 if(SWIG_FOUND)
     include(UseSWIG)
 endif()
+set(fmt_TARGET "fmt::fmt")
+set(msgpackc_TARGET "msgpackc-static") # set(msgpackc_LIBRARY "msgpack::msgpackc-static")
 
 if(WIN32 AND USE_HUNTER AND HUNTER_ENABLED)
     find_package(ZeroMQ CONFIG REQUIRED) # Only include ZeroMQ until CZMQ gets CZMQConfig.cmake added to Hunter - windows only
@@ -139,16 +141,11 @@ if(WIN32 AND USE_HUNTER AND HUNTER_ENABLED)
         set(Boost_CHRONO_TARGET "Boost::chrono")
         set(Boost_ATOMIC_TARGET "Boost::atomic")
     endif()
-    set(fmt_TARGET "fmt::fmt")
-    set(msgpackc_TARGET "msgpackc-static") # set(msgpackc_LIBRARY "msgpack::msgpackc-static")
+    
     set(CZMQ_TARGET "czmq::czmq")
 else()
     find_package(czmq REQUIRED)
     set(USE_LOCAL_BOOST ON)
-
-    # Static library names
-    set(fmt_TARGET "fmt::fmt-header-only")
-    set(msgpackc_TARGET "msgpackc-static") # set(msgpackc_LIBRARY "msgpack::msgpackc-static")
     set(CZMQ_TARGET ${CZMQ_LIBRARIES})
     # set(ZEROMQ_TARGET ${ZeroMQ_LIBRARIES})
 endif()
@@ -214,6 +211,11 @@ endif()
 if(BINDINGS_UNITY)
     set(UNITY_TARGET ${PROJECT_NAME}Unity)
     include(src/bindings/unity/CMakeLists.txt)
+endif()
+
+if(BINDINGS_PYTHON)
+    set(PYTHON_TARGET ${PROJECT_NAME}Python)
+    include(src/bindings/python/CMakeLists.txt)
 endif()
 
 

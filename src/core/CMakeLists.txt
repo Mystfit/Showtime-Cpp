@@ -56,7 +56,7 @@ set(ZST_CORE_SRC
 
 target_sources(${CORE_TARGET} PUBLIC ${ZST_PUBLIC_HEADERS} )
 target_sources(${CORE_TARGET} PRIVATE ${ZST_CORE_SRC} ${ZST_CORE_HEADERS} ${Showtime_API_INTERFACE})
-target_include_directories(${CORE_TARGET} 
+target_include_directories(${CORE_TARGET}
     PUBLIC 
         $<BUILD_INTERFACE:${Showtime_INCLUDE_DIRS}>
         $<BUILD_INTERFACE:${Showtime_COMPILED_INCLUDE_DIRS}>
@@ -69,10 +69,11 @@ IF(WIN32)
     target_compile_definitions(${CORE_TARGET} PRIVATE -DZST_EXPORT_CORE_API)
     target_compile_definitions(${CORE_TARGET} INTERFACE -DZST_IMPORT_CORE_API)
     target_compile_definitions(${CORE_TARGET} PUBLIC 
-                                -D_WIN32_WINNT=0x0601)
+                                -D_WIN32_WINNT=0x0601
+                                -DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE)
     if(HUNTER_ENABLED AND NOT USE_LOCAL_BOOST)
-        target_compile_definitions(${CORE_TARGET} PUBLIC 
-                                   -DBOOST_AUTO_LINK_TAGGED)
+        # target_compile_definitions(${CORE_TARGET} PUBLIC 
+        #                            -DBOOST_AUTO_LINK_TAGGED)
     endif()
 else()
     # Use shared boost on non-windows platforms
@@ -114,13 +115,16 @@ endif()
 message(STATUS "Setting link thread library to ${CMAKE_THREAD_LIBS_INIT}")
 
 target_link_libraries(${CORE_TARGET} PUBLIC 
-                        Threads::Threads
                         ${CZMQ_TARGET}
-                        ${msgpackc_TARGET}
-                        ${fmt_TARGET}
-                        ${Boost_THREAD_TARGET}
                         ${Boost_SYSTEM_TARGET}
                         ${Boost_FILESYSTEM_TARGET}
+                        ${fmt_TARGET}
+)
+
+target_link_libraries(${CORE_TARGET} PRIVATE 
+                        Threads::Threads
+                        ${msgpackc_TARGET}
+                        ${Boost_THREAD_TARGET}
                         ${Boost_DATE_TIME_TARGET}
                         ${Boost_CHRONO_TARGET}
                         ${Boost_ATOMIC_TARGET}

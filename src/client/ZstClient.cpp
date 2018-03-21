@@ -355,7 +355,7 @@ void ZstClient::register_client_to_stage_sync(MessageFuture & future)
 		process_callbacks();
 	}
 	catch (const ZstTimeoutException & e) {
-		ZstLog::net(LogLevel::error, fmt::format("Stage sync join timed out - {}", e.what()).c_str());
+		ZstLog::net(LogLevel::error, "Stage sync join timed out - {}", e.what());
 		leave_stage_complete();
 		status = ZstMsgKind::ERR_STAGE_TIMEOUT;
 	}
@@ -371,7 +371,7 @@ void ZstClient::register_client_to_stage_async(MessageFuture & future)
 			this->synchronise_graph(true);
 		}
 		catch (const ZstTimeoutException & e) {
-			ZstLog::net(LogLevel::error, fmt::format("Stage async join timed out - {}", e.what()).c_str());
+			ZstLog::net(LogLevel::error, "Stage async join timed out - {}", e.what());
 			leave_stage_complete();
 			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
 		}

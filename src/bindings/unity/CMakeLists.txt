@@ -1,4 +1,4 @@
-message(STATUS "Building ${DOTNET_TARGET} target")
+message(STATUS "Building ${UNITY_TARGET} target")
 
 set(UNITY_EXECUTABLE $ENV{PROGRAMFILES}/Unity/Editor/Unity.exe CACHE FILEPATH "Path to Unity executable")
 set(UNITY_BUILD_PROJECT ${CMAKE_SWIG_ROOT_OUTDIR}/unity)

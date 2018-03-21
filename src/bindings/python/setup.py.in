@@ -21,35 +21,38 @@ class build_ext(_build_ext):
         _build_ext.initialize_options(self)
         self.swig = "${SWIG_EXECUTABLE}"
 
-extra_compile_args = ['-DMSGPACK_USE_BOOST']
-extra_link_args = []
+sources = "${ZST_SWIG_INTERFACE}".split(';')
+extra_compile_args = ['-D' + x for x in "${ZST_FLAGS}".split(';')] #['-DMSGPACK_USE_BOOST']
+extra_link_args = [] 
 runtimes = []
-libraries = []
+data_files = []
+libraries = [os.path.splitext(os.path.basename(path))[0] for path in "${ZST_LIBS}".split(';')]
 library_dirs = []
-
-# CD into the python build dir so we can pick up our showtime interface
-if os.path.dirname(__file__):
-  os.chdir(os.path.dirname(__file__))
+include_dirs = "${ZST_INCLUDE_DIRS}".split(';')
 
 if platform.system() == 'Darwin':
   extra_compile_args += ['-O0', '-g', '-std=c++14']
   extra_link_args += [
     '-F', '/Library/Frameworks',
-    '-framework', '@CLIENT_TARGET@'
+    '-framework', '${CLIENT_TARGET}'
   ]
   library_dirs += ['${CMAKE_LIBRARY_OUTPUT_DIRECTORY}']
 elif platform.system() == 'Windows':
+  # Set library definitions
   extra_compile_args += ['/Zi']
+  
+  # Set linker flags
   extra_link_args += ['/DEBUG']
-  libraries.append('${PROJECT_NAME}')
-  library_dirs += ['${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Debug', '${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Release']
-  runtimes += ["${RUNTIMES_CZMQ}", "@CORE_TARGET@", "@CLIENT_TARGET@"] + "${RUNTIMES_LIBZMQ}".split(';')
-  runtimes = [os.path.normcase(x) for x in runtimes]
 
-include_dirs = '@CLIENT_INCLUDE_DIRS@'.split(';')
+  library_dirs = "${ZST_LIB_DIRS}".split(';')
+
+  # Set dll runtime files
+  runtimes += [runtime.replace('.lib', '.dll') for runtime in "${ZST_RUNTIMES}".split(';')]
+  runtimes = [os.path.normpath(x) for x in runtimes]
+
 
 showtime_module = Extension('_showtime',
-    sources=['${CMAKE_CURRENT_BINARY_DIR}/showtime_python.i'],
+    sources=sources,
     include_dirs=include_dirs,
     library_dirs=library_dirs,
     libraries=libraries,
@@ -57,18 +60,21 @@ showtime_module = Extension('_showtime',
     extra_link_args=extra_link_args,
     swig_opts=[
       '-c++', 
-      '-outdir', '${CMAKE_CURRENT_BINARY_DIR}'
+      '-outdir', '${CMAKE_SWIG_OUTDIR}'
     ] + ['-I' + x for x in include_dirs]
 )
+
+# Move into the python build dir so we can pick up our showtime interface
+if os.path.dirname(__file__):
+  os.chdir(os.path.dirname(__file__))
 
 setup (cmdclass={'build_ext': build_ext, 'build':build},
   name = 'showtime',
   version = '${SHOWTIME_VERSION}',
   author      = "Byron  Mallett",
   description = """Python bindings for Showtime""",
-  packages=find_packages(),
+  py_modules=['showtime'],
   data_files=runtimes,
   ext_modules = [showtime_module],
-  py_modules = ["showtime"],
   zip_safe=False
 )

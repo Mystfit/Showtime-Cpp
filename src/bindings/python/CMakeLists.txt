@@ -5,58 +5,89 @@ set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR}/python)
 
 # paths
 set(SETUP_PY_IN         "${CMAKE_CURRENT_LIST_DIR}/setup.py.in")
-set(SETUP_PY_PARTIAL    "${CMAKE_CURRENT_BINARY_DIR}/setup-partial.py")
-set(SETUP_PY            "${CMAKE_CURRENT_BINARY_DIR}/setup.py")
-set(BUILD_STAMP         "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
+set(SETUP_PY_PARTIAL    "${CMAKE_SWIG_OUTDIR}/setup-partial.py")
+set(SETUP_PY            "${CMAKE_SWIG_OUTDIR}/setup.py")
+set(BUILD_STAMP         "${CMAKE_CURRENT_BINARY_DIR}/build/python/timestamp")
 
 # Copy showtime module files
 file(GLOB PYTHON_INTERFACES "${CMAKE_CURRENT_LIST_DIR}/../*.i")
 list(APPEND PYTHON_INTERFACES "${CMAKE_CURRENT_LIST_DIR}/showtime_python.i")
 file(COPY ${PYTHON_INTERFACES} DESTINATION ${CMAKE_SWIG_OUTDIR})
 
-#Copy required include directories
-get_target_property(CLIENT_TARGET_INCLUDES ${CLIENT_TARGET} PUBLIC_INCLUDE_DIRECTORIES)
+# First pass variables for generated setup.py
+set(ZST_SWIG_INTERFACE "${CMAKE_SWIG_OUTDIR}/showtime_python.i")
+set(ZST_RUNTIMES "@ZST_RUNTIMES@")
+set(ZST_INCLUDE_DIRS "@ZST_INCLUDE_DIRS@")
+set(ZST_LIB_DIRS "@ZST_LIB_DIRS@") 
+set(ZST_LIBS "@ZST_LIBS@")
+set(ZST_FLAGS "@ZST_FLAGS@")
 
-# First pass at generating setup.py
-set(CLIENT_INCLUDE_DIRS "@CLIENT_INCLUDE_DIRS@")
-set(CLIENT_TARGET_LOCAL "@CLIENT_TARGET@")
-set(CORE_TARGET_LOCAL "@CORE_TARGET@")
-
+# Generate first stage setup.py 
 configure_file(${SETUP_PY_IN} ${SETUP_PY_PARTIAL})
 
-# Set up second pass for generating setup.py, filling in showtime runtime paths
-set(CLIENT_INCLUDE_DIRS '$<TARGET_PROPERTY:${CLIENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>')
-set(CLIENT_TARGET_LOCAL '$<TARGET_FILE:${CLIENT_TARGET}>')
-set(CORE_TARGET_LOCAL '$<TARGET_FILE:${CORE_TARGET}>')
+# Set up second pass variables for generated setup.py
+set(ZST_LIB_DIRS ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/$<CONFIG>)
 
-get_filename_component(SETUPPY_PARSER ${CMAKE_CURRENT_LIST_DIR}/showtime-final.cmake REALPATH)
+set(ZST_LIBS
+    $<TARGET_LINKER_FILE:${CORE_TARGET}>
+    $<TARGET_LINKER_FILE:${CORE_ENTITIES_TARGET}>
+    $<TARGET_LINKER_FILE:${CLIENT_TARGET}>
+)
 
-if(MACOSX)
-    # SET(PREFIX "LDFLAGS=\"-framework\ Showtime\"\;PATH=/Library/Frameworks\;")
-    MESSAGE(STATUS "Setting python env flags to ${PREFIX}")
-ENDIF()
+# Find runtimes to copy from linked libraries
+# get_target_property(CLIENT_LINK_LIBS ${CLIENT_TARGET} INTERFACE_LINK_LIBRARIES)
+# get_target_property(CORE_LINK_LIBS ${CORE_TARGET} INTERFACE_LINK_LIBRARIES)
+# get_target_property(CORE_ENTITIES_LINK_LIBS ${CORE_ENTITIES_TARGET} INTERFACE_LINK_LIBRARIES)
+# set(LINK_LIBS ${CLIENT_LINK_LIBS} ${CORE_LINK_LIBS} ${CORE_ENTITIES_LINK_LIBS})
+# set(ZST_RUNTIMES $<TARGET_FILE:${CLIENT_TARGET}>)
+# foreach(tgt ${LINK_LIBS})
+#     list(APPEND ZST_RUNTIMES $<TARGET_LINKER_FILE:${tgt}>)
+# endforeach()
+# message(STATUS "${ZST_RUNTIMES}")
+
+# Manually set runtimes to copy
+set(ZST_RUNTIMES 
+    $<TARGET_FILE:${CLIENT_TARGET}>
+    $<TARGET_FILE:${CORE_TARGET}>
+    $<TARGET_FILE:${CORE_ENTITIES_TARGET}>
+    $<TARGET_FILE:${CZMQ_TARGET}>
+    # $<TARGET_FILE:${Boost_FILESYSTEM_TARGET}>
+    # $<TARGET_FILE:${Boost_FILESYSTEM_TARGET}>
+    # $<TARGET_FILE:${Boost_SYSTEM_TARGET}>
+)
+
+if(WIN32)
+    set(BOOST_DLL_PATTERN ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/boost*.dll)
+endif()
+
+set(ZST_FLAGS $<TARGET_PROPERTY:${CLIENT_TARGET},INTERFACE_COMPILE_DEFINITIONS>)
+set(ZST_INCLUDE_DIRS $<TARGET_PROPERTY:${CLIENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>)
+
+# Set second pass setup.py parser
+get_filename_component(SETUPPY_PARSER_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/generate-setuppy.cmake REALPATH)
+
+# Create python target
+add_custom_target(${PYTHON_TARGET} ALL DEPENDS ${CLIENT_TARGET})
 
 # Command for building second-pass setup.py
-add_custom_command(OUTPUT ${SETUP_PY}
-                    COMMAND ${CMAKE_COMMAND}
-                        -D SUBST_SOURCE=${SETUP_PY_PARTIAL}
-                        -D SUBST_DEST=${SETUP_PY}
-                        -D CLIENT_INCLUDE_DIRS=${CLIENT_INCLUDE_DIRS}
-                        -D CLIENT_TARGET=${CLIENT_TARGET_LOCAL}
-                        -D CORE_TARGET=${CORE_TARGET_LOCAL}
-                        -P ${SETUPPY_PARSER}
+add_custom_command(TARGET ${PYTHON_TARGET} PRE_BUILD
+                    COMMAND ${CMAKE_COMMAND} 
+                        "-DSUBST_SOURCE=${SETUP_PY_PARTIAL}" 
+                        "-DSUBST_DEST=${SETUP_PY}" 
+                        "-DZST_RUNTIMES=${ZST_RUNTIMES}" 
+                        "-DZST_LIB_DIRS=${ZST_LIB_DIRS}" 
+                        "-DZST_LIBS=${ZST_LIBS}" 
+                        "-DZST_FLAGS=${ZST_FLAGS}"
+                        "-DZST_INCLUDE_DIRS=${ZST_INCLUDE_DIRS}" 
+                        "-DBOOST_DLL_PATTERN=${BOOST_DLL_PATTERN}"
+                        -P ${SETUPPY_PARSER_SCRIPT}
+                    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SWIG_OUTDIR}/showtime"
+                    COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} build ${EXTENSION_COMPILER}
                     DEPENDS ${SETUP_PY_PARTIAL}
-                    VERBATIM)
+                    VERBATIM
+)
 
-# Command for showtime c extension build step
-add_custom_command(OUTPUT ${BUILD_STAMP}
-                    COMMAND ${PREFIX} ${PYTHON_EXECUTABLE} ${SETUP_PY} build ${EXTENSION_COMPILER}
-                    COMMAND ${CMAKE_COMMAND} -E touch ${BUILD_STAMP}
-                    DEPENDS ${SETUP_PY} ${CLIENT_TARGET})
-
-# Create target and install
-add_custom_target(ShowtimePython ALL DEPENDS ${BUILD_STAMP})
-install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} install)")
+install(CODE "execute_process(COMMAND \"${PYTHON_EXECUTABLE}\" \"${SETUP_PY}\" install)")
 
 # Restore binding output dir
 set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR}/python)

@@ -25,4 +25,7 @@ IF(WIN32)
 ENDIF(WIN32)
 
 add_dependencies(${SERVER_TARGET} ${CORE_TARGET})
-target_link_libraries(${SERVER_TARGET} ${CORE_TARGET})
+target_link_libraries(${SERVER_TARGET} 
+					  ${CORE_TARGET} 
+					  ${msgpackc_TARGET}
+)

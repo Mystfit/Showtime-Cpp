@@ -54,6 +54,12 @@ if(MACOSX)
 endif(MACOSX)
 
 # Link libraries
-target_link_libraries(${CLIENT_TARGET} 
+target_link_libraries(${CLIENT_TARGET} PUBLIC
   ${CORE_TARGET}
+)
+
+target_link_libraries(${CLIENT_TARGET} PRIVATE
+  ${CORE_TARGET}
+  ${msgpackc_TARGET}
+  ${fmt_TARGET}
 )
