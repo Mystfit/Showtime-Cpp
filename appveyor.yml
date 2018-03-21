@@ -33,6 +33,7 @@ platform:
 environment:
   matrix:
   - GENERATOR: "Visual Studio 15 2017 Win64"
+    PYTHON: "C:\\Python36-x64"
 
 matrix:
   fast_finish: true
