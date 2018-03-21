@@ -141,7 +141,6 @@ if(WIN32 AND USE_HUNTER AND HUNTER_ENABLED)
         set(Boost_CHRONO_TARGET "Boost::chrono")
         set(Boost_ATOMIC_TARGET "Boost::atomic")
     endif()
-    
     set(CZMQ_TARGET "czmq::czmq")
 else()
     find_package(czmq REQUIRED)

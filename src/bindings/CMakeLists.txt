@@ -11,9 +11,6 @@ if(BINDINGS_RUBY OR BINDINGS_PYTHON OR BINDINGS_DOTNET)
 		include(UseSWIG)
 		
 		if(BINDINGS_PYTHON)
-			FIND_PACKAGE(PythonLibs 2.7.12 REQUIRED)
-			INCLUDE(FindPythonInterp)
-			get_filename_component(PYTHON_DIR ${PYTHON_EXECUTABLE} DIRECTORY)	
 			add_subdirectory(python)
 		endif(BINDINGS_PYTHON)
 
