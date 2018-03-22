@@ -57,7 +57,7 @@ build_script:
     REM ----------------------
     mkdir build
     appveyor AddMessage "Building Showtime project with cmake"
-    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_DOTNET=ON -DBINDINGS_DOTNET_TESTS=ON -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DHUNTER_STATUS_PRINT=OFF
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_DOTNET=ON -DBINDINGS_DOTNET_TESTS=ON -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DHUNTER_STATUS_PRINT=OFF -DPYTHON_EXECUTABLE=%PYTHON%\python.exe
     
     REM Build core and dotnet bindings first
     cmake -H. -B"%BUILD_FOLDER%\build" -G "%GENERATOR%" %CMAKE_FLAGS%

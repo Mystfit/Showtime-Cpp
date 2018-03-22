@@ -1,10 +1,5 @@
 message(STATUS "Building ${PYTHON_TARGET} target")
 
-set(Python_ADDITIONAL_VERSIONS 3.6)
-FIND_PACKAGE(PythonLibs 3.6 REQUIRED)
-#FIND_PACKAGE(PythonLibs 2.7.12 REQUIRED)
-INCLUDE(FindPythonInterp)
-
 # Set binding output dir
 set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR}/python)
 
