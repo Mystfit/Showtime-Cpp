@@ -199,6 +199,7 @@ list(APPEND Showtime_APP_TARGETS ${SERVER_TARGET})
 
 # Dotnet bindings
 option(BINDINGS_DOTNET "Generate bindings for C#" OFF)
+option(BINDINGS_PYTHON "Generate bindings for Python" OFF)
 option(BINDINGS_UNITY "Generate bindings for Unity" OFF)
 
 if(BINDINGS_DOTNET OR BINDINGS_UNITY)
