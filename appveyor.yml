@@ -44,6 +44,7 @@ install:
     set BUILD_FOLDER=%APPVEYOR_BUILD_FOLDER%
     set DEPENDENCY_DIR=%APPVEYOR_BUILD_FOLDER%\dependencies
     set HUNTER_ROOT=%DEPENDENCY_DIR%\hunter_root
+    set INSTALL_DIR=%APPVEYOR_BUILD_FOLDER%\install
 
     REM APPVEYOR install:
     REM ----------------------
@@ -57,8 +58,11 @@ build_script:
     REM ----------------------
     mkdir build
     appveyor AddMessage "Building Showtime project with cmake"
-    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_DOTNET=ON -DBINDINGS_DOTNET_TESTS=ON -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DHUNTER_STATUS_PRINT=OFF -DPYTHON_EXECUTABLE=%PYTHON%\python.exe
-    
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_DOTNET=ON -DBINDINGS_DOTNET_TESTS=ON
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DPYTHON_EXECUTABLE=%PYTHON%\python.exe
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DHUNTER_STATUS_PRINT=OFF 
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR%
+
     REM Build core and dotnet bindings first
     cmake -H. -B"%BUILD_FOLDER%\build" -G "%GENERATOR%" %CMAKE_FLAGS%
     cmake --build "%BUILD_FOLDER%\build" --target ShowtimeDotNet --config %CONFIGURATION% -- /nologo /verbosity:minimal
@@ -69,16 +73,6 @@ build_script:
 
     appveyor AddMessage "Installing Showtime"
     cmake --build "%BUILD_FOLDER%\build" --target INSTALL --config %CONFIGURATION% -- /nologo /verbosity:minimal
-
-before_test:
-- cmd: |-
-    REM APPVEYOR before_test:
-    REM ---------------------
-    REM Copy CZMQ dlls into build folder - manually until CMake can do this automagically
-    appveyor AddMessage "Copy CZMQ dlls into build folder"
-    if %CONFIGURATION% == Debug set LIBCZMQ_RUNTIME=libczmqd.dll
-    if %CONFIGURATION% == Release set LIBCZMQ_RUNTIME=libczmq.dll
-    cmake -E copy "%DEPENDENCY_DIR%\install\bin\%LIBCZMQ_RUNTIME%" "%BUILD_FOLDER%\build\bin\%CONFIGURATION%"
 
 test_script:
 - cmd: |-
