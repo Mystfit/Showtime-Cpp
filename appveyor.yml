@@ -80,23 +80,23 @@ build_script:
     cmake --build "%BUILD_FOLDER%\build" --target INSTALL --config %CONFIGURATION% -- /nologo /verbosity:minimal
     appveyor AddMessage "Showtime install (all) exited with status %errorlevel%"
 
-test_script:
-- cmd: |-
-    @echo off
-    REM APPVEYOR test_script:
-    REM ---------------------
-    appveyor AddMessage "Running tests"
-    appveyor AddTest "TestClient" -Framework ctest -Filename TestClient.exe -Outcome Running
+# test_script:
+# - cmd: |-
+#     @echo off
+#     REM APPVEYOR test_script:
+#     REM ---------------------
+#     appveyor AddMessage "Running tests"
+#     appveyor AddTest "TestClient" -Framework ctest -Filename TestClient.exe -Outcome Running
 
-    pushd "%BUILD_FOLDER%\build"
-    set TESTCLIENT_LOG=%BUILD_FOLDER%\build\Testing\TestClient.log
-    ctest -C %CONFIGURATION% --output-on-fail -V -O "%TESTCLIENT_LOG%" --timeout 320
-    set TEST_OUTCOME=Passed
-    if NOT %errorlevel% == 0 set TEST_OUTCOME=Failed
-    call "%BUILD_FOLDER%\.appveyor\get_test_time.bat" %TESTCLIENT_LOG% TEST_DURATION
+#     pushd "%BUILD_FOLDER%\build"
+#     set TESTCLIENT_LOG=%BUILD_FOLDER%\build\Testing\TestClient.log
+#     ctest -C %CONFIGURATION% --output-on-fail -V -O "%TESTCLIENT_LOG%" --timeout 320
+#     set TEST_OUTCOME=Passed
+#     if NOT %errorlevel% == 0 set TEST_OUTCOME=Failed
+#     call "%BUILD_FOLDER%\.appveyor\get_test_time.bat" %TESTCLIENT_LOG% TEST_DURATION
     
-    SETLOCAL EnableDelayedExpansion
-    for /f "Tokens=* Delims=" %%x in (%TESTCLIENT_LOG%) do set TESTCLIENT_LOG_CONTENTS=!TESTCLIENT_LOG_CONTENTS!%%x\n
-    appveyor UpdateTest -Name "TestClient" -Framework ctest -Filename TestClient.exe -Outcome %TEST_OUTCOME% -Duration %TEST_DURATION% -StdOut "%TESTCLIENT_LOG_CONTENTS%"
-    appveyor AddMessage "Tests complete - %TEST_OUTCOME%"
-    ENDLOCAL
+#     SETLOCAL EnableDelayedExpansion
+#     for /f "Tokens=* Delims=" %%x in (%TESTCLIENT_LOG%) do set TESTCLIENT_LOG_CONTENTS=!TESTCLIENT_LOG_CONTENTS!%%x\n
+#     appveyor UpdateTest -Name "TestClient" -Framework ctest -Filename TestClient.exe -Outcome %TEST_OUTCOME% -Duration %TEST_DURATION% -StdOut "%TESTCLIENT_LOG_CONTENTS%"
+#     appveyor AddMessage "Tests complete - %TEST_OUTCOME%"
+#     ENDLOCAL

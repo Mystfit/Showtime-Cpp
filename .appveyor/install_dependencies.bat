@@ -1,4 +1,4 @@
-@echo OFF
+@echo off
 setlocal
 
 REM Environment variables
