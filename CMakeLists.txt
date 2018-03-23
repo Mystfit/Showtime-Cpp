@@ -109,6 +109,9 @@ if(USE_HUNTER AND HUNTER_ENABLED)
 endif()
 
 message(STATUS "Finding packages")
+message(STATUS "Boost include dir: ${BOOST_INCLUDEDIR}")
+message(STATUS "Boost library dir: ${BOOST_LIBRARYDIR}")
+
 find_package(Boost COMPONENTS
     log
     log_setup
