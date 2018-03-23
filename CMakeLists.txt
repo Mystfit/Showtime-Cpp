@@ -73,9 +73,26 @@ set(Showtime_APP_TARGETS "")
 set(Showtime_INSTALL_TARGETS "")
 set(Showtime_RUNTIME_DEPENDENCIES "")
 
+# Boost properties
 if(NOT DEFINED USE_LOCAL_BOOST)
     set(USE_LOCAL_BOOST OFF)
 endif()
+set(Boost_NO_BOOST_CMAKE ON)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+set(Boost_NO_SYSTEM_PATHS ON)
+if(WIN32)
+    if(NOT DEFINED Boost_USE_STATIC_LIBS)
+        set(Boost_USE_STATIC_LIBS ON)
+    endif()
+else()
+    if(NOT DEFINED Boost_USE_STATIC_LIBS)
+        set(Boost_USE_STATIC_LIBS OFF)
+    endif()
+endif()
+message(STATUS "Boost root: ${BOOST_ROOT}")
+message(STATUS "Boost include dir: ${BOOST_INCLUDEDIR}")
+message(STATUS "Boost library dir: ${BOOST_LIBRARYDIR}")
 
 # Packages
 # --------
@@ -102,26 +119,6 @@ if(USE_HUNTER AND HUNTER_ENABLED)
 endif()
 
 message(STATUS "Finding packages")
-message(STATUS "Boost root: ${BOOST_ROOT}")
-message(STATUS "Boost include dir: ${BOOST_INCLUDEDIR}")
-message(STATUS "Boost library dir: ${BOOST_LIBRARYDIR}")
-
-# Set boost common parameters
-# On windows, compile with the following (stage/install):
-#bjam.exe threading=multi architecture=x86 address-model=64 link=static runtime-link=static --with-system --with-filesystem
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
-set(Boost_NO_SYSTEM_PATHS ON)
-if(WIN32)
-    if(UNDEFINED Boost_USE_STATIC_LIBS)
-        set(Boost_USE_STATIC_LIBS ON)
-    endif()
-else()
-    if(UNDEFINED Boost_USE_STATIC_LIBS)
-        set(Boost_USE_STATIC_LIBS OFF)
-    endif()
-endif()
-
 find_package(Boost COMPONENTS
     log
     log_setup
