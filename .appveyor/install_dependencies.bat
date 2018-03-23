@@ -23,6 +23,17 @@ IF NOT DEFINED HUNTER_ROOT (
     set HUNTER_ROOT=%DEPENDENCY_DIR%\hunter_root
 )
 
+IF NOT EXIST %DEPENDENCY_DIR%\cmake (
+    echo  === Downloading cmake 3.11.0-rc4 === 
+    powershell -Command "Invoke-WebRequest https://cmake.org/files/v3.11/cmake-3.11.0-rc4-win64-x64.zip -OutFile cmake.zip"
+    echo  === Unzipping cmake === 
+    7z x -y -bd -bb0 cmake.zip
+    ren .\cmake-3.11.0-rc4-win64-x64 cmake
+)
+set CMAKE_BIN=%DEPENDENCY_DIR%/cmake/bin/cmake
+set CTEST_BIN=%DEPENDENCY_DIR%/cmake/bin/ctest
+
+
 set COMMON_GENERATOR_FLAGS=-G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%DEPENDENCY_DIR%\install" -DHUNTER_STATUS_PRINT=OFF -DCMAKE_INSTALL_MESSAGE=NEVER
 set COMMON_BUILD_FLAGS=--config %CONFIGURATION% --target INSTALL -- /nologo /verbosity:minimal
 
@@ -34,8 +45,8 @@ pushd czmq
 git checkout hunter-v4.1.0
 mkdir "%DEPENDENCY_DIR%\czmq\build"
 echo  === Building czmq === 
-cmake -H. -B"%DEPENDENCY_DIR%\czmq\build" %COMMON_GENERATOR_FLAGS%
-cmake --build "%DEPENDENCY_DIR%\czmq\build" %COMMON_BUILD_FLAGS%
+%CMAKE_BIN% -H. -B"%DEPENDENCY_DIR%\czmq\build" %COMMON_GENERATOR_FLAGS%
+%CMAKE_BIN% --build "%DEPENDENCY_DIR%\czmq\build" %COMMON_BUILD_FLAGS%
 popd
 
 echo  === Cloning patched hunterized msgpack === 
@@ -45,8 +56,8 @@ pushd msgpack-c
 git checkout hunter-2.1.5
 mkdir "%DEPENDENCY_DIR%\msgpack-c\build"
 echo  === Building msgpack === 
-cmake -H. -B"%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_GENERATOR_FLAGS%
-cmake --build "%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_BUILD_FLAGS%
+%CMAKE_BIN% -H. -B"%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_GENERATOR_FLAGS%
+%CMAKE_BIN% --build "%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_BUILD_FLAGS%
 popd
 
 IF NOT EXIST %DEPENDENCY_DIR%\swig (
@@ -55,14 +66,6 @@ IF NOT EXIST %DEPENDENCY_DIR%\swig (
     echo  === Unzipping swig === 
     7z x -y -bd -bb0 swigwin.zip
     ren .\swigwin-3.0.12 swig
-)
-
-IF NOT EXIST %DEPENDENCY_DIR%\cmake (
-    echo  === Downloading cmake 3.11.0-rc4 === 
-    powershell -Command "Invoke-WebRequest https://cmake.org/files/v3.11/cmake-3.11.0-rc4-win64-x64.zip -OutFile cmake.zip"
-    echo  === Unzipping cmake === 
-    7z x -y -bd -bb0 cmake.zip
-    ren .\cmake-3.11.0-rc4-win64-x64 cmake
 )
 
 REM Pop out of dependencies

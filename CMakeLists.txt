@@ -8,6 +8,7 @@ if(NOT DEFINED USE_HUNTER)
     endif()
 endif()
 
+set(CMAKE_BASE_MODULE_PATH "${CMAKE_MODULE_PATH}")
 if(USE_HUNTER)
     include("cmake/HunterGate.cmake")
     HunterGate(
@@ -76,8 +77,9 @@ set(Showtime_RUNTIME_DEPENDENCIES "")
 # Boost properties
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
+set(Boost_ADDITIONAL_VERSIONS 1.66;1.66.0)
 #set(Boost_NO_BOOST_CMAKE ON)
-#set(Boost_NO_SYSTEM_PATHS ON)
+set(Boost_NO_SYSTEM_PATHS ON)
 if(NOT DEFINED USE_LOCAL_BOOST)
     set(USE_LOCAL_BOOST OFF)
 endif()
@@ -111,7 +113,8 @@ if(USE_HUNTER AND HUNTER_ENABLED)
             atomic
         )
     endif()
-    # hunter_add_package(MsgPack) # Use updated packaged at https://github.com/mystfit/msgpack-c.git
+
+    # hunter_add_package(MsgPack) # Use updated package at https://github.com/mystfit/msgpack-c.git
     message(STATUS "Adding hunter packages")
     hunter_add_package(fmt)
     hunter_add_package(ZeroMQ)  # Only include ZeroMQ until CZMQ gets CZMQConfig.cmake added to Hunter
@@ -119,6 +122,10 @@ if(USE_HUNTER AND HUNTER_ENABLED)
 endif()
 
 message(STATUS "Finding packages")
+if(USE_LOCAL_BOOST)
+    set(HUNTER_CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})
+    set(CMAKE_MODULE_PATH "${CMAKE_BASE_MODULE_PATH};${CMAKE_MODULE_PATH}")
+endif()
 find_package(Boost 1.66.0 COMPONENTS
     log
     log_setup
@@ -130,6 +137,10 @@ find_package(Boost 1.66.0 COMPONENTS
     atomic
     REQUIRED
 )
+if(USE_LOCAL_BOOST)
+   set(CMAKE_MODULE_PATH ${HUNTER_CMAKE_MODULE_PATH}) 
+endif()
+
 find_package(MsgPack CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(SWIG)
