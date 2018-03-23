@@ -45,7 +45,7 @@ pushd msgpack-c
 git checkout hunter-2.1.5
 mkdir "%DEPENDENCY_DIR%\msgpack-c\build"
 echo  === Building msgpack === 
-cmake -H. -B"%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_FLAGS%
+cmake -H. -B"%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_GENERATOR_FLAGS%
 cmake --build "%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_BUILD_FLAGS%
 popd
 
