@@ -1,4 +1,4 @@
-message(STATUS "Building ${DOTNET_TARGET} target")
+message(STATUS "Configuring ${DOTNET_TARGET} target")
 
 set(BUILD_STAMP "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
 

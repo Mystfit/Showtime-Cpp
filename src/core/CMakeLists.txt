@@ -1,4 +1,4 @@
-message(STATUS "Building ${CORE_TARGET} target")
+message(STATUS "Configuring ${CORE_TARGET} target")
 
 # Write version info into header file
 set(VERSION_FILE "${Showtime_COMPILED_INCLUDE_DIRS}/ZstVersion.h")
@@ -119,10 +119,10 @@ target_link_libraries(${CORE_TARGET} PUBLIC
                         ${Boost_SYSTEM_TARGET}
                         ${Boost_FILESYSTEM_TARGET}
                         ${fmt_TARGET}
+                        Threads::Threads
 )
 
 target_link_libraries(${CORE_TARGET} PRIVATE 
-                        Threads::Threads
                         ${msgpackc_TARGET}
                         ${Boost_THREAD_TARGET}
                         ${Boost_DATE_TIME_TARGET}

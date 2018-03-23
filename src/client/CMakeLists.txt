@@ -1,4 +1,4 @@
-message(STATUS "Building ${CLIENT_TARGET} target")
+message(STATUS "Configuring ${CLIENT_TARGET} target")
 
 set(ZST_CLIENT_HEADERS
 	"${Showtime_INCLUDE_DIRS}/Showtime.h"

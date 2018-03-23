@@ -69,7 +69,6 @@ set(Showtime_COMPILED_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include")
 set(Showtime_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/include")
 set(Showtime_DEPENDENCIES_DIR "${CMAKE_SOURCE_DIR}/src/dependencies")
 set(Showtime_SOURCE_DEPENDENCIES 
-    "${Showtime_DEPENDENCIES_DIR}"
     "${Showtime_DEPENDENCIES_DIR}/cf"
     "${Showtime_DEPENDENCIES_DIR}/variant/include"
 )
@@ -90,6 +89,7 @@ endif()
 set(LIBZMQ_TARGET "")
 set(CZMQ_TARGET "")
 if(USE_HUNTER AND HUNTER_ENABLED)
+    message(STATUS "Installing hunter dependencies")
     if(NOT USE_LOCAL_BOOST)
         hunter_add_package(boost COMPONENTS 
             system 
@@ -108,6 +108,7 @@ if(USE_HUNTER AND HUNTER_ENABLED)
     # hunter_add_package(czmq)
 endif()
 
+message(STATUS "Finding packages")
 find_package(Boost COMPONENTS
     log
     log_setup

@@ -22,6 +22,10 @@ IF NOT EXIST %DEPENDENCY_DIR% (
 IF NOT DEFINED HUNTER_ROOT (
     set HUNTER_ROOT=%DEPENDENCY_DIR%\hunter_root
 )
+
+set COMMON_GENERATOR_FLAGS=-G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%DEPENDENCY_DIR%\install" -DHUNTER_STATUS_PRINT=OFF -DCMAKE_INSTALL_MESSAGE=NEVER
+set COMMON_BUILD_FLAGS=--config %CONFIGURATION% --target INSTALL -- /nologo /verbosity:minimal
+
 REM Aquire patched hunterized CZMQ
 pushd "%DEPENDENCY_DIR%"
 IF NOT EXIST %DEPENDENCY_DIR%\czmq git clone https://github.com/mystfit/czmq.git
@@ -29,8 +33,8 @@ IF NOT EXIST %DEPENDENCY_DIR%\czmq git clone https://github.com/mystfit/czmq.git
 pushd czmq
 git checkout hunter-v4.1.0
 mkdir "%DEPENDENCY_DIR%\czmq\build"
-cmake -H. -B"%DEPENDENCY_DIR%\czmq\build" -G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%DEPENDENCY_DIR%\install" -DHUNTER_STATUS_PRINT=OFF 
-cmake --build "%DEPENDENCY_DIR%\czmq\build" --config %CONFIGURATION% --target INSTALL -- /nologo /verbosity:minimal
+cmake -H. -B"%DEPENDENCY_DIR%\czmq\build" %COMMON_GENERATOR_FLAGS%
+cmake --build "%DEPENDENCY_DIR%\czmq\build" %COMMON_BUILD_FLAGS%
 popd
 
 REM Aquire patched hunterized msgpack
@@ -39,8 +43,8 @@ IF NOT EXIST %DEPENDENCY_DIR%\msgpack-c git clone https://github.com/mystfit/msg
 pushd msgpack-c
 git checkout hunter-2.1.5
 mkdir "%DEPENDENCY_DIR%\msgpack-c\build"
-cmake -H. -B"%DEPENDENCY_DIR%\msgpack-c\build" -G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%DEPENDENCY_DIR%\install" -DHUNTER_STATUS_PRINT=OFF 
-cmake --build "%DEPENDENCY_DIR%\msgpack-c\build" --config %CONFIGURATION% --target INSTALL -- /nologo /verbosity:minimal
+cmake -H. -B"%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_FLAGS%
+cmake --build "%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_BUILD_FLAGS%
 popd
 
 REM Aquire swig
