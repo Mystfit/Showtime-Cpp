@@ -1,4 +1,4 @@
-message(STATUS "Building ${CLIENT_TARGET} target")
+message(STATUS "Configuring ${CLIENT_TARGET} target")
 
 set(ZST_CLIENT_HEADERS
 	"${Showtime_INCLUDE_DIRS}/Showtime.h"
@@ -63,3 +63,12 @@ target_link_libraries(${CLIENT_TARGET} PRIVATE
   ${msgpackc_TARGET}
   ${fmt_TARGET}
 )
+
+if(WIN32)
+  # Copy runtime dependencies
+  add_custom_command(TARGET ${CLIENT_TARGET} POST_BUILD
+                      COMMAND ${CMAKE_COMMAND} -E echo "Copy CZMQ runtime $<TARGET_FILE:${CZMQ_TARGET}> to ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>"
+                      COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:${CZMQ_TARGET}>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>"
+                      VERBATIM
+  )
+endif()

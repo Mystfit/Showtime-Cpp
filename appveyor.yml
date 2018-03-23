@@ -44,6 +44,7 @@ install:
     set BUILD_FOLDER=%APPVEYOR_BUILD_FOLDER%
     set DEPENDENCY_DIR=%APPVEYOR_BUILD_FOLDER%\dependencies
     set HUNTER_ROOT=%DEPENDENCY_DIR%\hunter_root
+    set INSTALL_DIR=%APPVEYOR_BUILD_FOLDER%\install
 
     REM APPVEYOR install:
     REM ----------------------
@@ -58,28 +59,26 @@ build_script:
     REM ----------------------
     mkdir build
     appveyor AddMessage "Building Showtime project with cmake"
-    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_DOTNET=ON -DBINDINGS_DOTNET_TESTS=ON -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DHUNTER_STATUS_PRINT=OFF -DPYTHON_EXECUTABLE=%PYTHON%\python.exe
-    
-    REM Build core and dotnet bindings first
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_DOTNET=ON -DBINDINGS_DOTNET_TESTS=ON
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DPYTHON_EXECUTABLE=%PYTHON%\python.exe
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DHUNTER_STATUS_PRINT=OFF
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR%
+
+    appveyor AddMessage "Building Showtime (dotnet)"
     cmake -H. -B"%BUILD_FOLDER%\build" -G "%GENERATOR%" %CMAKE_FLAGS%
     cmake --build "%BUILD_FOLDER%\build" --target ShowtimeDotNet --config %CONFIGURATION% -- /nologo /verbosity:minimal
-
-    REM Re-run configure to pull in the generated dotnet bindings
+    appveyor AddMessage "Showtime build (dotnet only) exited with status %errorlevel%"
+    
+    appveyor AddMessage "Re-running cmake configure to pull in generated dotnet bindings"
     cmake -H. -B"%BUILD_FOLDER%\build" -G "%GENERATOR%" %CMAKE_FLAGS%
+
+    appveyor AddMessage "Building Showtime (all)"
     cmake --build "%BUILD_FOLDER%\build" --target ALL_BUILD --config %CONFIGURATION% -- /nologo /verbosity:minimal
+    appveyor AddMessage "Showtime build (all) exited with status %errorlevel%"
 
-    appveyor AddMessage "Installing Showtime"
+    appveyor AddMessage "Building/installing Showtime"
     cmake --build "%BUILD_FOLDER%\build" --target INSTALL --config %CONFIGURATION% -- /nologo /verbosity:minimal
-
-before_test:
-- cmd: |-
-    REM APPVEYOR before_test:
-    REM ---------------------
-    REM Copy CZMQ dlls into build folder - manually until CMake can do this automagically
-    appveyor AddMessage "Copy CZMQ dlls into build folder"
-    if %CONFIGURATION% == Debug set LIBCZMQ_RUNTIME=libczmqd.dll
-    if %CONFIGURATION% == Release set LIBCZMQ_RUNTIME=libczmq.dll
-    cmake -E copy "%DEPENDENCY_DIR%\install\bin\%LIBCZMQ_RUNTIME%" "%BUILD_FOLDER%\build\bin\%CONFIGURATION%"
+    appveyor AddMessage "Showtime install (all) exited with status %errorlevel%"
 
 test_script:
 - cmd: |-

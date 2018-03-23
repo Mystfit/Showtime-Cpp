@@ -1,6 +1,8 @@
-message(STATUS "Adding python test")
+set(PYTHON_TEST_TARGET "TestPython")
 
-add_test(NAME TestPython
+message(STATUS "Configuring ${PYTHON_TEST_TARGET}")
+
+add_test(NAME ${PYTHON_TEST_TARGET}
          COMMAND ${PYTHON_EXECUTABLE}
          ${CMAKE_CURRENT_LIST_DIR}/TestPython.py
          TestPython

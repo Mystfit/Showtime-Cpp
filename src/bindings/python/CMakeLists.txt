@@ -1,4 +1,4 @@
-message(STATUS "Building ${PYTHON_TARGET} target")
+message(STATUS "Configuring ${PYTHON_TARGET} target")
 
 # Set binding output dir
 set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR}/python)

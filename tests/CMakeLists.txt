@@ -8,6 +8,7 @@ set(SINK_TEST_SOURCE_FILES
 
 # Sink test executable
 set(SINK_TEST_TARGET TestSink)
+message(STATUS "Configuring ${SINK_TEST_TARGET}")
 add_executable (${SINK_TEST_TARGET} ${SINK_TEST_SOURCE_FILES}) 
 add_dependencies(${SINK_TEST_TARGET} ${CLIENT_TARGET} ${SERVER_TARGET})
 target_include_directories(${SINK_TEST_TARGET} PUBLIC ${ZST_INCLUDES})
@@ -15,6 +16,7 @@ target_link_libraries(${SINK_TEST_TARGET} ${CLIENT_TARGET})
 
 # CLient test executable
 set(CLIENT_TEST_TARGET TestClient)
+message(STATUS "Configuring ${CLIENT_TEST_TARGET}")
 add_executable (${CLIENT_TEST_TARGET} ${CLIENT_TEST_SOURCE_FILES}) 
 add_dependencies(${CLIENT_TEST_TARGET} ${CLIENT_TARGET} ${SINK_TEST_TARGET})
 target_include_directories(${CLIENT_TEST_TARGET} PUBLIC 

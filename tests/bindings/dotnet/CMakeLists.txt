@@ -3,6 +3,9 @@ set(DOTNET_TEST_TARGET TestDotNet)
 set(DOTNET_TEST_SRC
 	"TestDotnet.cs"
 )
+
+message(STATUS "Configuring ${DOTNET_TEST_TARGET}")
+
 # project(${DOTNET_TEST_TARGET} csharp)
 add_executable(${DOTNET_TEST_TARGET} ${DOTNET_TEST_SRC})
 add_dependencies(${DOTNET_TEST_TARGET} ${SWIG_MODULE_${DOTNET_TARGET}_REAL_NAME} ${SERVER_TARGET})
