@@ -74,16 +74,16 @@ set(Showtime_INSTALL_TARGETS "")
 set(Showtime_RUNTIME_DEPENDENCIES "")
 
 # Boost properties
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+set(Boost_NO_BOOST_CMAKE ON)
+set(Boost_NO_SYSTEM_PATHS ON)
 if(NOT DEFINED USE_LOCAL_BOOST)
     set(USE_LOCAL_BOOST OFF)
 endif()
-set(Boost_NO_BOOST_CMAKE ON)
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
-set(Boost_NO_SYSTEM_PATHS ON)
 if(WIN32)
     if(NOT DEFINED Boost_USE_STATIC_LIBS)
-        set(Boost_USE_STATIC_LIBS OFF)
+        set(Boost_USE_STATIC_LIBS ON)
     endif()
 else()
     if(NOT DEFINED Boost_USE_STATIC_LIBS)
@@ -119,7 +119,7 @@ if(USE_HUNTER AND HUNTER_ENABLED)
 endif()
 
 message(STATUS "Finding packages")
-find_package(Boost COMPONENTS
+find_package(Boost 1.66.0 COMPONENTS
     log
     log_setup
     thread

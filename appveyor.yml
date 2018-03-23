@@ -16,9 +16,9 @@ only_commits:
 
 cache: 
 - dependencies
-#- dependencies -> .appveyor\cleanup-appveyor-cache.txt
+#- dependencies -> .appveyor/cleanup-appveyor-cache.txt
 
-clone_folder: c:/projects/showtime-cpp
+clone_folder: C:/projects/showtime-cpp
 
 image:
 - Visual Studio 2017
@@ -34,6 +34,13 @@ environment:
   matrix:
   - GENERATOR: "Visual Studio 15 2017 Win64"
     PYTHON: "C:/Python36-x64"
+    BUILD_FOLDER: "%APPVEYOR_BUILD_FOLDER%"
+    DEPENDENCY_DIR: "%APPVEYOR_BUILD_FOLDER%/dependencies"
+    HUNTER_ROOT: "%DEPENDENCY_DIR%/hunter_root"
+    INSTALL_DIR: "%APPVEYOR_BUILD_FOLDER%/install"
+    BOOST_ROOT: "C:/Libraries/boost_1_66_0"
+    CMAKE_BIN: "%DEPENDENCY_DIR%/cmake/bin/cmake"
+    CTEST_BIN: "%DEPENDENCY_DIR%/cmake/bin/ctest"
 
 matrix:
   fast_finish: true
@@ -41,16 +48,10 @@ matrix:
 install:
 - cmd: |-
     @echo off
-    set BUILD_FOLDER=%APPVEYOR_BUILD_FOLDER%
-    set DEPENDENCY_DIR=%APPVEYOR_BUILD_FOLDER%\dependencies
-    set HUNTER_ROOT=%DEPENDENCY_DIR%\hunter_root
-    set INSTALL_DIR=%APPVEYOR_BUILD_FOLDER%\install
-    set BOOST_ROOT=C:/Libraries/boost_1_66_0
-
     REM APPVEYOR install:
     REM ----------------------
     appveyor AddMessage "Manually installing patched hunter dependencies (czmq, msgpack)"
-    call "%BUILD_FOLDER%\.appveyor\install_dependencies.bat"
+    call "%BUILD_FOLDER%/.appveyor/install_dependencies.bat"
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%/install;%DEPENDENCY_DIR%/swig;${CMAKE_PREFIX_PATH}"
 
 build_script:
@@ -67,19 +68,19 @@ build_script:
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DUSE_LOCAL_BOOST=ON -DBOOST_ROOT:PATHNAME="%BOOST_ROOT%" -DBOOST_INCLUDEDIR:PATHNAME="%BOOST_ROOT%" -DBOOST_LIBRARYDIR:PATHNAME="%BOOST_ROOT%/lib64-msvc-14.1"
 
     appveyor AddMessage "Building Showtime (dotnet)"
-    cmake -H. -B"%BUILD_FOLDER%\build" -G "%GENERATOR%" %CMAKE_FLAGS%
-    cmake --build "%BUILD_FOLDER%\build" --target ShowtimeDotNet --config %CONFIGURATION% -- /nologo /verbosity:minimal
+    %CMAKE_BIN% -H. -B"%BUILD_FOLDER%/build" -G "%GENERATOR%" %CMAKE_FLAGS%
+    %CMAKE_BIN% --build "%BUILD_FOLDER%/build" --target ShowtimeDotNet --config %CONFIGURATION% -- /nologo /verbosity:minimal
     appveyor AddMessage "Showtime build (dotnet only) exited with status %errorlevel%"
     
     appveyor AddMessage "Re-running cmake configure to pull in generated dotnet bindings"
-    cmake -H. -B"%BUILD_FOLDER%\build" -G "%GENERATOR%" %CMAKE_FLAGS%
+    %CMAKE_BIN% -H. -B"%BUILD_FOLDER%/build" -G "%GENERATOR%" %CMAKE_FLAGS%
 
     appveyor AddMessage "Building Showtime (all)"
-    cmake --build "%BUILD_FOLDER%\build" --target ALL_BUILD --config %CONFIGURATION% -- /nologo /verbosity:minimal
+    %CMAKE_BIN% --build "%BUILD_FOLDER%/build" --target ALL_BUILD --config %CONFIGURATION% -- /nologo /verbosity:minimal
     appveyor AddMessage "Showtime build (all) exited with status %errorlevel%"
 
     appveyor AddMessage "Building/installing Showtime"
-    cmake --build "%BUILD_FOLDER%\build" --target INSTALL --config %CONFIGURATION% -- /nologo /verbosity:minimal
+    %CMAKE_BIN% --build "%BUILD_FOLDER%/build" --target INSTALL --config %CONFIGURATION% -- /nologo /verbosity:minimal
     appveyor AddMessage "Showtime install (all) exited with status %errorlevel%"
 
 test_script:
@@ -90,9 +91,9 @@ test_script:
     appveyor AddMessage "Running tests"
     appveyor AddTest "TestClient" -Framework ctest -Filename TestClient.exe -Outcome Running
 
-    pushd "%BUILD_FOLDER%\build"
+    pushd "%BUILD_FOLDER%/build"
     set TESTCLIENT_LOG=%BUILD_FOLDER%/build/Testing/TestClient.log
-    ctest -C %CONFIGURATION% --output-on-fail -V -O "%TESTCLIENT_LOG%" --timeout 320
+    %CTEST_BIN% -C %CONFIGURATION% --output-on-fail -V -O "%TESTCLIENT_LOG%" --timeout 320
     set TEST_OUTCOME=Passed
     if NOT %errorlevel% == 0 set TEST_OUTCOME=Failed
     call "%BUILD_FOLDER%/.appveyor/get_test_time.bat" %TESTCLIENT_LOG% TEST_DURATION

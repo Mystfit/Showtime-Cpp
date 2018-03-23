@@ -50,11 +50,19 @@ cmake --build "%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_BUILD_FLAGS%
 popd
 
 IF NOT EXIST %DEPENDENCY_DIR%\swig (
-	echo  === Downloading swig === 
+    echo  === Downloading swig === 
     powershell -Command "Invoke-WebRequest https://phoenixnap.dl.sourceforge.net/project/swig/swigwin/swigwin-3.0.12/swigwin-3.0.12.zip -OutFile swigwin.zip"
     echo  === Unzipping swig === 
     7z x -y -bd -bb0 swigwin.zip
     ren .\swigwin-3.0.12 swig
+)
+
+IF NOT EXIST %DEPENDENCY_DIR%\cmake (
+    echo  === Downloading cmake 3.11.0-rc4 === 
+    powershell -Command "Invoke-WebRequest https://cmake.org/files/v3.11/cmake-3.11.0-rc4-win64-x64.zip -OutFile cmake.zip"
+    echo  === Unzipping cmake === 
+    7z x -y -bd -bb0 cmake.zip
+    ren .\cmake-3.11.0-rc4-win64-x64 cmake
 )
 
 REM Pop out of dependencies
