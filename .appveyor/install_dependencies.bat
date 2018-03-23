@@ -29,7 +29,7 @@ IF NOT EXIST %DEPENDENCY_DIR%\czmq git clone https://github.com/mystfit/czmq.git
 pushd czmq
 git checkout hunter-v4.1.0
 mkdir "%DEPENDENCY_DIR%\czmq\build"
-cmake -H. -B"%DEPENDENCY_DIR%\czmq\build" -G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%DEPENDENCY_DIR%\install"
+cmake -H. -B"%DEPENDENCY_DIR%\czmq\build" -G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%DEPENDENCY_DIR%\install" -DHUNTER_STATUS_PRINT=OFF 
 cmake --build "%DEPENDENCY_DIR%\czmq\build" --config %CONFIGURATION% --target INSTALL -- /nologo /verbosity:minimal
 popd
 
@@ -39,7 +39,7 @@ IF NOT EXIST %DEPENDENCY_DIR%\msgpack-c git clone https://github.com/mystfit/msg
 pushd msgpack-c
 git checkout hunter-2.1.5
 mkdir "%DEPENDENCY_DIR%\msgpack-c\build"
-cmake -H. -B"%DEPENDENCY_DIR%\msgpack-c\build" -G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%DEPENDENCY_DIR%\install"
+cmake -H. -B"%DEPENDENCY_DIR%\msgpack-c\build" -G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%DEPENDENCY_DIR%\install" -DHUNTER_STATUS_PRINT=OFF 
 cmake --build "%DEPENDENCY_DIR%\msgpack-c\build" --config %CONFIGURATION% --target INSTALL -- /nologo /verbosity:minimal
 popd
 
