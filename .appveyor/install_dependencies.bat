@@ -1,4 +1,4 @@
-ECHO ON
+@echo OFF
 setlocal
 
 REM Environment variables
@@ -22,30 +22,37 @@ IF NOT EXIST %DEPENDENCY_DIR% (
 IF NOT DEFINED HUNTER_ROOT (
     set HUNTER_ROOT=%DEPENDENCY_DIR%\hunter_root
 )
-REM Aquire patched hunterized CZMQ
+
+set COMMON_GENERATOR_FLAGS=-G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%DEPENDENCY_DIR%\install" -DHUNTER_STATUS_PRINT=OFF -DCMAKE_INSTALL_MESSAGE=NEVER
+set COMMON_BUILD_FLAGS=--config %CONFIGURATION% --target INSTALL -- /nologo /verbosity:minimal
+
+echo "Clone patched hunterized CZMQ"
 pushd "%DEPENDENCY_DIR%"
 IF NOT EXIST %DEPENDENCY_DIR%\czmq git clone https://github.com/mystfit/czmq.git
 
 pushd czmq
 git checkout hunter-v4.1.0
 mkdir "%DEPENDENCY_DIR%\czmq\build"
-cmake -H. -B"%DEPENDENCY_DIR%\czmq\build" -G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%DEPENDENCY_DIR%\install"
-cmake --build "%DEPENDENCY_DIR%\czmq\build" --config %CONFIGURATION% --target INSTALL -- /nologo /verbosity:minimal
+echo "Building czmq"
+cmake -H. -B"%DEPENDENCY_DIR%\czmq\build" %COMMON_GENERATOR_FLAGS%
+cmake --build "%DEPENDENCY_DIR%\czmq\build" %COMMON_BUILD_FLAGS%
 popd
 
-REM Aquire patched hunterized msgpack
+echo "Cloning patched hunterized msgpack"
 IF NOT EXIST %DEPENDENCY_DIR%\msgpack-c git clone https://github.com/mystfit/msgpack-c.git
 
 pushd msgpack-c
 git checkout hunter-2.1.5
 mkdir "%DEPENDENCY_DIR%\msgpack-c\build"
-cmake -H. -B"%DEPENDENCY_DIR%\msgpack-c\build" -G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%DEPENDENCY_DIR%\install"
-cmake --build "%DEPENDENCY_DIR%\msgpack-c\build" --config %CONFIGURATION% --target INSTALL -- /nologo /verbosity:minimal
+echo "Building msgpack"
+cmake -H. -B"%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_FLAGS%
+cmake --build "%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_BUILD_FLAGS%
 popd
 
-REM Aquire swig
 IF NOT EXIST %DEPENDENCY_DIR%\swig (
+	echo "Downloading swig"
     powershell -Command "Invoke-WebRequest https://phoenixnap.dl.sourceforge.net/project/swig/swigwin/swigwin-3.0.12/swigwin-3.0.12.zip -OutFile swigwin.zip"
+    echo "Unzipping swig"
     7z x -y -bd -bb0 swigwin.zip
     ren .\swigwin-3.0.12 swig
 )

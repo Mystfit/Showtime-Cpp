@@ -15,8 +15,8 @@ only_commits:
     - include/
 
 cache: 
-# - dependencies
-- dependencies -> .appveyor\cleanup-appveyor-cache.txt
+- dependencies
+#- dependencies -> .appveyor\cleanup-appveyor-cache.txt
 
 clone_folder: c:/projects/showtime-cpp
 
@@ -53,6 +53,7 @@ install:
 
 build_script:
 - cmd: |-
+    @echo off
     REM APPVEYOR build_script:
     REM ----------------------
     mkdir build
@@ -82,6 +83,7 @@ before_test:
 
 test_script:
 - cmd: |-
+    @echo off
     REM APPVEYOR test_script:
     REM ---------------------
     appveyor AddMessage "Running tests"
