@@ -2,7 +2,7 @@
 
 #include <list>
 #include <map>
-#include <cf/cf/cfuture.h>
+#include <cf/cfuture.h>
 #include <cf/time_watcher.h>
 #include "ZstMessage.h"
 
