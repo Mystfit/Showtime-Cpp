@@ -66,7 +66,6 @@ set(Showtime_SOURCE_DEPENDENCIES
     "${Showtime_DEPENDENCIES_DIR}/variant/include"
 )
 
-
 set(Showtime_API_INTERFACE "")
 set(Showtime_LIBRARY_TARGETS "")
 set(Showtime_APP_TARGETS "")
@@ -124,6 +123,7 @@ message(STATUS "Finding packages")
 if(USE_LOCAL_BOOST)
     set(HUNTER_CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})
     set(CMAKE_MODULE_PATH "${CMAKE_BASE_MODULE_PATH};${CMAKE_MODULE_PATH}")
+    message(STATUS "Current module path: ${CMAKE_MODULE_PATH}")
 endif()
 find_package(Boost 1.66.0 COMPONENTS
     log
