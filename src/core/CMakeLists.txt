@@ -115,13 +115,13 @@ target_link_libraries(${CORE_TARGET} PUBLIC
                         ${CZMQ_TARGET}
                         ${Boost_SYSTEM_TARGET}
                         ${Boost_FILESYSTEM_TARGET}
-                        ${fmt_TARGET}
+                        ${Boost_THREAD_TARGET}
                         Threads::Threads
+                        ${fmt_TARGET}    
 )
 
 target_link_libraries(${CORE_TARGET} PRIVATE 
                         ${msgpackc_TARGET}
-                        ${Boost_THREAD_TARGET}
                         ${Boost_DATE_TIME_TARGET}
                         ${Boost_CHRONO_TARGET}
                         ${Boost_ATOMIC_TARGET}

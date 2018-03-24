@@ -91,6 +91,8 @@ message(STATUS "Boost root: ${BOOST_ROOT}")
 message(STATUS "Boost include dir: ${BOOST_INCLUDEDIR}")
 message(STATUS "Boost library dir: ${BOOST_LIBRARYDIR}")
 
+
+# --------
 # Packages
 # --------
 set(LIBZMQ_TARGET "")
@@ -117,6 +119,9 @@ if(USE_HUNTER AND HUNTER_ENABLED)
 endif()
 
 message(STATUS "Finding packages")
+
+# Boost
+# --------
 if(USE_LOCAL_BOOST)
     set(HUNTER_CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})
     set(CMAKE_MODULE_PATH ${CMAKE_BASE_MODULE_PATH})
@@ -136,7 +141,17 @@ find_package(Boost 1.66.0 COMPONENTS
 if(USE_LOCAL_BOOST)
    set(CMAKE_MODULE_PATH ${HUNTER_CMAKE_MODULE_PATH}) 
 endif()
+set(Boost_LOG_TARGET "Boost::log")
+set(Boost_LOG_SETUP_TARGET "Boost::log_setup")
+set(Boost_THREAD_TARGET "Boost::thread")
+set(Boost_FILESYSTEM_TARGET "Boost::filesystem")
+set(Boost_SYSTEM_TARGET "Boost::system")
+set(Boost_DATE_TIME_TARGET "Boost::date_time")
+set(Boost_CHRONO_TARGET "Boost::chrono")
+set(Boost_ATOMIC_TARGET "Boost::atomic")
 
+# Msgpack, fmt, swig
+# ------------------
 find_package(MsgPack CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(SWIG)
@@ -148,17 +163,6 @@ set(msgpackc_TARGET "msgpackc-static") # set(msgpackc_LIBRARY "msgpack::msgpackc
 if(WIN32 AND USE_HUNTER AND HUNTER_ENABLED)
     find_package(ZeroMQ CONFIG REQUIRED) # Only include ZeroMQ until CZMQ gets CZMQConfig.cmake added to Hunter - windows only
     find_package(czmq CONFIG REQUIRED)
-    if(NOT USE_LOCAL_BOOST)
-        set(USE_LOCAL_BOOST OFF)
-        set(Boost_LOG_TARGET "Boost::log")
-        set(Boost_LOG_SETUP_TARGET "Boost::log_setup")
-        set(Boost_THREAD_TARGET "Boost::thread")
-        set(Boost_FILESYSTEM_TARGET "Boost::filesystem")
-        set(Boost_SYSTEM_TARGET "Boost::system")
-        set(Boost_DATE_TIME_TARGET "Boost::date_time")
-        set(Boost_CHRONO_TARGET "Boost::chrono")
-        set(Boost_ATOMIC_TARGET "Boost::atomic")
-    endif()
     set(CZMQ_TARGET "czmq::czmq")
     set(fmt_TARGET "fmt::fmt")
 else()
@@ -166,21 +170,13 @@ else()
     set(USE_LOCAL_BOOST ON)
     set(CZMQ_TARGET ${CZMQ_LIBRARIES})
     set(fmt_TARGET "fmt::fmt-header-only")
-
     # set(ZEROMQ_TARGET ${ZeroMQ_LIBRARIES})
 endif()
 
-if(USE_LOCAL_BOOST)
-    set(Boost_LOG_TARGET ${Boost_LOG_LIBRARY})
-    set(Boost_LOG_SETUP_TARGET ${Boost_LOG_SETUP_LIBRARY})
-    set(Boost_THREAD_TARGET ${Boost_THREAD_LIBRARY})
-    set(Boost_FILESYSTEM_TARGET ${Boost_FILESYSTEM_LIBRARY})
-    set(Boost_SYSTEM_TARGET ${Boost_SYSTEM_LIBRARY})
-    set(Boost_DATE_TIME_TARGET ${Boost_DATE_TIME_LIBRARY})
-    set(Boost_CHRONO_TARGET ${Boost_CHRONO_LIBRARY})
-    set(Boost_ATOMIC_TARGET ${Boost_ATOMIC_LIBRARY})
-endif()
 
+# ----------------
+# Showtime targets
+# ----------------
 
 # Core Library
 # ------------
