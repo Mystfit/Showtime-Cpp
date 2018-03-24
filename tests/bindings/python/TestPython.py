@@ -40,11 +40,14 @@ class EventLoop(threading.Thread):
 
 
 if __name__ == "__main__":
-    server_exe = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', 'build', 'bin', 'Debug', 'ShowtimeServer.exe'))
-    print("Starting Showtime server from ".format(server_exe))
+
+    server = None
 
     # Start server
-    server = subprocess.Popen([server_exe, "t"], stdin=subprocess.PIPE, shell=True)
+    if sys.argc > 1:
+        server_exe = os.path.abspath(sys.argv[1])
+        print("Starting Showtime server from ".format(server_exe))
+        server = subprocess.Popen([server_exe, "t"], stdin=subprocess.PIPE, shell=True)
     
     # Start client
     ZST.init("python_test", True)
@@ -83,8 +86,11 @@ if __name__ == "__main__":
     ZST.deactivate_entity(push)
     ZST.deactivate_entity(sink)
     ZST.destroy()
-    server.communicate(b"$TERM\n")
-    server.wait()
+
+    if server:
+        server.communicate(b"$TERM\n")
+        server.wait()
+    
     print("Python test finished with status {}".format(status))
     if(status):
         sys.exit(status)
