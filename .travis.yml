@@ -73,13 +73,13 @@ matrix:
 before_install:
   # Set common env variables
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      COMPILER=clang++;
-      COMPILER_C=clang;
-      HOMEBREW_PATH=/usr/local;
+      export COMPILER=clang++;
+      export COMPILER_C=clang;
+      export HOMEBREW_PATH=/usr/local;
     fi
 
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      HOMEBREW_PATH=/home/linuxbrew/.linuxbrew;
+      export HOMEBREW_PATH=/home/linuxbrew/.linuxbrew;
     fi
 
   # Set locale flags

@@ -233,7 +233,7 @@ endif()
 
 if(BINDINGS_PYTHON)
     set(PYTHON_TARGET ${PROJECT_NAME}Python)
-    set(PYTHON_VERSION 3.6 CACHE STRING "Python version to search for")
+    set(PYTHON_VERSION 2.7 CACHE STRING "Python version to search for")
     find_package(PythonInterp ${PYTHON_VERSION} REQUIRED)
     include(src/bindings/python/CMakeLists.txt)
 endif()
