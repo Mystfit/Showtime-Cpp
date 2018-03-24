@@ -130,10 +130,10 @@ target_link_libraries(${CORE_TARGET} PRIVATE
 )
 
 if(WIN32)
-  # Copy runtime dependencies
-  add_custom_command(TARGET ${CORE_TARGET} POST_BUILD
+    # Copy runtime dependencies
+    add_custom_command(TARGET ${CORE_TARGET} POST_BUILD
                       COMMAND ${CMAKE_COMMAND} -E echo "Copy CZMQ runtime $<TARGET_FILE:${CZMQ_TARGET}> to ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>"
                       COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:${CZMQ_TARGET}>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>"
                       VERBATIM
-  )
+    )
 endif()
