@@ -146,7 +146,7 @@ script:
 
   # Set linux toolchain
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_TOOLCHAIN_FILE=$BUILD_FOLDER/.travis/travis_linux_toolchain.cmake"
+      GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_TOOLCHAIN_FILE=$BUILD_FOLDER/.travis/travis_linux_toolchain.cmake";
     fi
 
   # If we're using local boost, then set CMake vars to set correct target names
@@ -162,7 +162,7 @@ script:
 
   # Build and install project
   - $CMAKE_BIN -H$BUILD_FOLDER -B$BUILD_FOLDER/build -G "$GENERATOR" $GENERATOR_ARGS
-  - $CMAKE_BIN --build $BUILD_FOLDER/build --target ALL_BUILD --config $CONFIG
+  - $CMAKE_BIN --build $BUILD_FOLDER/build --target --config $CONFIG
   - sudo $CMAKE_BIN --build $BUILD_FOLDER/build --target INSTALL --config $CONFIG
 
   # Run tests
