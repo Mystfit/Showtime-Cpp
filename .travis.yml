@@ -132,17 +132,21 @@ install:
   - kill %1
 
 script:
-  - mkdir build
+  - mkdir $BUILD_FOLDER/build
+  - mkdir $BUILD_FOLDER/install
 
   # We don't need to use Hunter on Windows (we have linuxbrew)
   - GENERATOR_ARGS="-DUSE_HUNTER=OFF";
 
   # Verbose makefiles
-  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON";
+  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF"
+
+  # Set installation prefix
+  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_INSTALL_PREFIX=$BUILD_FOLDER/install"
 
   # Set linux toolchain
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_TOOLCHAIN_FILE=$BUILD_FOLDER/.travis/travis_linux_toolchain.cmake";
+      GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_TOOLCHAIN_FILE=$BUILD_FOLDER/.travis/travis_linux_toolchain.cmake"
     fi
 
   # If we're using local boost, then set CMake vars to set correct target names
@@ -156,9 +160,10 @@ script:
   - echo "Python path is $PYTHON_BIN"
   - GENERATOR_ARGS="$GENERATOR_ARGS -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DPYTHON_EXECUTABLE=$PYTHON_BIN"
 
-  # Build and compile project
+  # Build and install project
   - $CMAKE_BIN -H$BUILD_FOLDER -B$BUILD_FOLDER/build -G "$GENERATOR" $GENERATOR_ARGS
-  - $CMAKE_BIN --build $BUILD_FOLDER/build --config $CONFIG 
+  - $CMAKE_BIN --build $BUILD_FOLDER/build --target ALL_BUILD --config $CONFIG
+  - sudo $CMAKE_BIN --build $BUILD_FOLDER/build --target INSTALL --config $CONFIG
 
   # Run tests
   - $CTEST_BIN -C Debug -V --build-run-dir "%BUILD_FOLDER%/build" --output-on-fail --timeout 320
