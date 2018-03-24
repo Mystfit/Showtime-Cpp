@@ -26,7 +26,7 @@ extra_compile_args = ['-D' + x for x in "${ZST_FLAGS}".split(';')] #['-DMSGPACK_
 extra_link_args = [] 
 runtimes = []
 data_files = []
-libraries = [os.path.splitext(os.path.basename(path))[0] for path in "${ZST_LIBS}".split(';')]
+libraries = []
 library_dirs = []
 include_dirs = "${ZST_INCLUDE_DIRS}".split(';')
 
@@ -43,6 +43,8 @@ elif platform.system() == 'Windows':
   # Set linker flags
   extra_link_args += ['/DEBUG']
 
+  # Set libraries
+  libraries = [os.path.splitext(os.path.basename(path))[0] for path in "${ZST_LIBS}".split(';')]
   library_dirs = "${ZST_LIB_DIRS}".split(';')
 
   # Set dll runtime files
