@@ -44,7 +44,7 @@ if __name__ == "__main__":
     server = None
 
     # Start server
-    if sys.argc > 1:
+    if len(sys.argv) > 1:
         server_exe = os.path.abspath(sys.argv[1])
         print("Starting Showtime server from ".format(server_exe))
         server = subprocess.Popen([server_exe, "t"], stdin=subprocess.PIPE, shell=True)
