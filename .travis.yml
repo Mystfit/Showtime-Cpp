@@ -78,7 +78,7 @@ before_install:
       HOMEBREW_PATH=/usr/local;
     fi
 
-  - if [ "$TRAVIS_OS_NAME" == "linux" ];
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       HOMEBREW_PATH=/home/linuxbrew/.linuxbrew;
     fi
 
