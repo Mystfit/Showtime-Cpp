@@ -256,13 +256,20 @@ set(Showtime_INSTALL_TARGETS
     ${Showtime_APP_TARGETS}
 )
 
-install(TARGETS ${Showtime_INSTALL_TARGETS}
-    DESTINATION ${CMAKE_INSTALL_PREFIX}
-    EXPORT showtime-targets
-    RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-)
+if(MACOSX)
+    install(TARGETS ${Showtime_INSTALL_TARGETS}
+        EXPORT showtime-targets
+        FRAMEWORK DESTINATION /Library/Frameworks
+    )
+else()
+    install(TARGETS ${Showtime_INSTALL_TARGETS}
+        DESTINATION ${CMAKE_INSTALL_PREFIX}
+        EXPORT showtime-targets
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+    )
+endif()
 
 # Export targets
 if(NOT CMAKE_VERSION VERSION_LESS 3.0)
