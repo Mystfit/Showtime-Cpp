@@ -257,8 +257,7 @@ set(Showtime_INSTALL_TARGETS
 )
 
 if(MACOSX)
-    install(TARGETS ${CLIENT_TARGET}
-        EXPORT showtime-targets
+    install(TARGETS ${Showtime_INSTALL_TARGETS}
         FRAMEWORK DESTINATION /Library/Frameworks
     )
 else()
@@ -269,41 +268,43 @@ else()
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
     )
-endif()
 
-# Export targets
-if(NOT CMAKE_VERSION VERSION_LESS 3.0)
-    export(EXPORT showtime-targets
-        FILE "${CMAKE_CURRENT_BINARY_DIR}/showtime-targets.cmake"
-        NAMESPACE ${SHOWTIME_NAMESPACE}
+    # Export targets
+    if(NOT CMAKE_VERSION VERSION_LESS 3.0)
+        export(EXPORT showtime-targets
+            FILE "${CMAKE_CURRENT_BINARY_DIR}/showtime-targets.cmake"
+            NAMESPACE ${SHOWTIME_NAMESPACE}
+        )
+    endif()
+
+    # Copy targets
+    install(EXPORT showtime-targets
+        FILE showtime-targets.cmake
+        DESTINATION "${CMAKE_INSTALL_CMAKEDIR}"
+    )
+
+    # Set up CMake package
+    include(CMakePackageConfigHelpers)
+
+    write_basic_package_version_file(
+        showtime-config-version.cmake
+        VERSION ${SHOWTIME_VERSION}
+        COMPATIBILITY SameMajorVersion
+    )
+
+    configure_package_config_file (showtime-config.cmake.in
+        showtime-config.cmake
+        INSTALL_DESTINATION "${CMAKE_INSTALL_CMAKEDIR}"
+    )
+
+    install (
+        FILES
+            "${CMAKE_CURRENT_BINARY_DIR}/showtime-config.cmake"
+            "${CMAKE_CURRENT_BINARY_DIR}/showtime-config-version.cmake"
+        DESTINATION
+            "${CMAKE_INSTALL_CMAKEDIR}"
     )
 endif()
 
-# Copy targets
-install(EXPORT showtime-targets
-    FILE showtime-targets.cmake
-    DESTINATION "${CMAKE_INSTALL_CMAKEDIR}"
-)
 
-# Set up CMake package
-include(CMakePackageConfigHelpers)
-
-write_basic_package_version_file(
-    showtime-config-version.cmake
-    VERSION ${SHOWTIME_VERSION}
-    COMPATIBILITY SameMajorVersion
-)
-
-configure_package_config_file (showtime-config.cmake.in
-    showtime-config.cmake
-    INSTALL_DESTINATION "${CMAKE_INSTALL_CMAKEDIR}"
-)
-
-install (
-    FILES
-        "${CMAKE_CURRENT_BINARY_DIR}/showtime-config.cmake"
-        "${CMAKE_CURRENT_BINARY_DIR}/showtime-config-version.cmake"
-    DESTINATION
-        "${CMAKE_INSTALL_CMAKEDIR}"
-)
 
