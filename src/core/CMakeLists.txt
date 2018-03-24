@@ -72,8 +72,7 @@ IF(WIN32)
                                 -D_WIN32_WINNT=0x0601
                                 -DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE)
     if(HUNTER_ENABLED AND NOT USE_LOCAL_BOOST)
-        # target_compile_definitions(${CORE_TARGET} PUBLIC 
-        #                            -DBOOST_AUTO_LINK_TAGGED)
+        target_compile_definitions(${CORE_TARGET} PUBLIC -DBOOST_AUTO_LINK_TAGGED)
     endif()
 else()
     # Use shared boost on non-windows platforms
@@ -99,9 +98,7 @@ if(NOT HUNTER_ENABLED)
 endif()
 
 if(USE_LOCAL_BOOST)
-    target_include_directories(${CORE_TARGET} PUBLIC 
-                               ${Boost_INCLUDE_DIRECTORIES}
-    )
+    target_include_directories(${CORE_TARGET} PUBLIC ${Boost_INCLUDE_DIR})
 endif()
 
 # Set threading library
@@ -132,10 +129,11 @@ target_link_libraries(${CORE_TARGET} PRIVATE
                         ${Boost_LOG_TARGET}
 )
 
-list(APPEND Showtime_RUNTIME_DEPENDENCIES $<TARGET_FILE:${CZMQ_TARGET}>)
-
-# Copy required binaries
-# add_custom_command(TARGET ${CORE_TARGET} POST_BUILD
-#                    COMMAND ${CMAKE_COMMAND} -E
-#                    copy $<TARGET_FILE:${CZMQ_TARGET}> $<TARGET_FILE_DIR:${CORE_TARGET}>
-#                    COMMENT "Copying $<TARGET_FILE:${CZMQ_TARGET} to $<TARGET_FILE_DIR:${CORE_TARGET}>")
+if(WIN32)
+  # Copy runtime dependencies
+  add_custom_command(TARGET ${CORE_TARGET} POST_BUILD
+                      COMMAND ${CMAKE_COMMAND} -E echo "Copy CZMQ runtime $<TARGET_FILE:${CZMQ_TARGET}> to ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>"
+                      COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:${CZMQ_TARGET}>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>"
+                      VERBATIM
+  )
+endif()

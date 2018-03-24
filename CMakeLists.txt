@@ -70,7 +70,6 @@ set(Showtime_API_INTERFACE "")
 set(Showtime_LIBRARY_TARGETS "")
 set(Showtime_APP_TARGETS "")
 set(Showtime_INSTALL_TARGETS "")
-set(Showtime_RUNTIME_DEPENDENCIES "")
 
 # Boost properties
 set(Boost_USE_MULTITHREADED ON)
