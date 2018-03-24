@@ -18,7 +18,7 @@ env:
 matrix:
   include:
     # GCC 6
-    - env: BUILD_TYPE=Debug HOMEBREW_PATH=/home/linuxbrew/.linuxbrew
+    - env: BUILD_TYPE=Debug HOMEBREW_PATH=/home/linuxbrew/.linuxbrew PYTHON_EXECUTABLE=python2
       os: linux
       dist: trusty
       addons: &common_build
@@ -34,7 +34,17 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
 
-    - env: BUILD_TYPE=Release HOMEBREW_PATH=/home/linuxbrew/.linuxbrew
+    - env: BUILD_TYPE=Debug HOMEBREW_PATH=/home/linuxbrew/.linuxbrew PYTHON_EXECUTABLE=python3
+      os: linux
+      dist: trusty
+      addons: *common_build
+
+    - env: BUILD_TYPE=Release HOMEBREW_PATH=/home/linuxbrew/.linuxbrew PYTHON_EXECUTABLE=python2
+      os: linux
+      dist: trusty
+      addons: *common_build
+
+    - env: BUILD_TYPE=Release HOMEBREW_PATH=/home/linuxbrew/.linuxbrew PYTHON_EXECUTABLE=python3
       os: linux
       dist: trusty
       addons: *common_build
