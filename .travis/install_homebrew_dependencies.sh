@@ -13,4 +13,5 @@ brew install czmq
 brew install swig
 brew install python
 brew install python@2
+brew link --overwrite python@2
 brew upgrade boost

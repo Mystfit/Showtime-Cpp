@@ -18,7 +18,7 @@ env:
 matrix:
   include:
     # GCC 6
-    - env: BUILD_TYPE=Debug HOMEBREW_PATH=/home/linuxbrew/.linuxbrew PYTHON_EXECUTABLE=python2
+    - env: BUILD_TYPE=Debug PY_VER=python2
       os: linux
       dist: trusty
       addons: &common_build
@@ -34,43 +34,54 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
 
-    - env: BUILD_TYPE=Debug HOMEBREW_PATH=/home/linuxbrew/.linuxbrew PYTHON_EXECUTABLE=python3
+    - env: BUILD_TYPE=Debug PY_VER=python3
       os: linux
       dist: trusty
       addons: *common_build
 
-    - env: BUILD_TYPE=Release HOMEBREW_PATH=/home/linuxbrew/.linuxbrew PYTHON_EXECUTABLE=python2
+    - env: BUILD_TYPE=Release PY_VER=python2
       os: linux
       dist: trusty
       addons: *common_build
 
-    - env: BUILD_TYPE=Release HOMEBREW_PATH=/home/linuxbrew/.linuxbrew PYTHON_EXECUTABLE=python3
+    - env: BUILD_TYPE=Release PY_VER=python3
       os: linux
       dist: trusty
       addons: *common_build
 
     # XCode 9.1
-    - env: COMPILER=clang++ COMPILER_C=clang BUILD_TYPE=Debug HOMEBREW_PATH=/usr/local PYTHON_EXECUTABLE=python2
+    - env: BUILD_TYPE=Debug PY_VER=python2 
       os: osx
       osx_image: xcode9.2
       compiler: clang
 
-    - env: COMPILER=clang++ COMPILER_C=clang BUILD_TYPE=Debug HOMEBREW_PATH=/usr/local PYTHON_EXECUTABLE=python3
+    - env: BUILD_TYPE=Debug PY_VER=python3
       os: osx
       osx_image: xcode9.2
       compiler: clang
 
-    - env: COMPILER=clang++ COMPILER_C=clang BUILD_TYPE=Release HOMEBREW_PATH=/usr/local PYTHON_EXECUTABLE=python2
+    - env: BUILD_TYPE=Release PY_VER=python2
       os: osx
       osx_image: xcode9.2
       compiler: clang
 
-    - env: COMPILER=clang++ COMPILER_C=clang BUILD_TYPE=Release HOMEBREW_PATH=/usr/local PYTHON_EXECUTABLE=python3
+    - env: BUILD_TYPE=Release PY_VER=python3
       os: osx
       osx_image: xcode9.2
       compiler: clang
 
 before_install:
+  # Set common env variables
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      COMPILER=clang++;
+      COMPILER_C=clang;
+      HOMEBREW_PATH=/usr/local;
+    fi
+
+  - if [ "$TRAVIS_OS_NAME" == "linux" ];
+      HOMEBREW_PATH=/home/linuxbrew/.linuxbrew;
+    fi
+
   # Set locale flags
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sudo echo "LC_ALL=en_US.UTF-8" >> /etc/environment;
@@ -141,7 +152,9 @@ script:
   - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$HOMEBREW_PATH;${CMAKE_PREFIX_PATH}"
 
   # Python bindings
-  - GENERATOR_ARGS="$GENERATOR_ARGS -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DPYTHON_EXECUTABLE=$PYTHON_EXECUTABLE"
+  - PYTHON_BIN=$(which $PY_VER)
+  - echo "Python path is $PYTHON_BIN"
+  - GENERATOR_ARGS="$GENERATOR_ARGS -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DPYTHON_EXECUTABLE=$PYTHON_BIN"
 
   # Build and compile project
   - $CMAKE_BIN -H$BUILD_FOLDER -B$BUILD_FOLDER/build -G "$GENERATOR" $GENERATOR_ARGS
