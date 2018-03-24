@@ -258,6 +258,7 @@ set(Showtime_INSTALL_TARGETS
 
 if(MACOSX)
     install(TARGETS ${CLIENT_TARGET}
+        EXPORT showtime-targets
         FRAMEWORK DESTINATION /Library/Frameworks
     )
 else()
