@@ -35,15 +35,14 @@ set(ZST_LIBS
 )
 
 # Manually set runtimes to copy
-set(ZST_RUNTIMES 
-    $<TARGET_FILE:${CLIENT_TARGET}>
-    $<TARGET_FILE:${CORE_TARGET}>
-    $<TARGET_FILE:${CORE_ENTITIES_TARGET}>
-    $<TARGET_FILE:${CZMQ_TARGET}>
-)
-
 if(WIN32)
     set(BOOST_DLL_PATTERN ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/boost*.dll)
+    set(ZST_RUNTIMES 
+        $<TARGET_FILE:${CLIENT_TARGET}>
+        $<TARGET_FILE:${CORE_TARGET}>
+        $<TARGET_FILE:${CORE_ENTITIES_TARGET}>
+        $<TARGET_FILE:${CZMQ_TARGET}>
+    )
 endif()
 
 set(ZST_FLAGS $<TARGET_PROPERTY:${CLIENT_TARGET},INTERFACE_COMPILE_DEFINITIONS>)
@@ -64,7 +63,7 @@ add_custom_command(TARGET ${PYTHON_TARGET} PRE_BUILD
                         "-DZST_LIB_DIRS=${ZST_LIB_DIRS}" 
                         "-DZST_LIBS=${ZST_LIBS}" 
                         "-DZST_FLAGS=${ZST_FLAGS}"
-                        "-DZST_INCLUDE_DIRS=${ZST_INCLUDE_DIRS}" 
+                        "-DZST_INCLUDE_DIRS=${ZST_INCLUDE_DIRS}"
                         "-DBOOST_DLL_PATTERN=${BOOST_DLL_PATTERN}"
                         -P ${SETUPPY_PARSER_SCRIPT}
                     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SWIG_OUTDIR}/showtime"
