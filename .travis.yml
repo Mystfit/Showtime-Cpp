@@ -163,7 +163,7 @@ script:
   # Build and install project
   - $CMAKE_BIN -H$BUILD_FOLDER -B$BUILD_FOLDER/build -G "$GENERATOR" $GENERATOR_ARGS
   - $CMAKE_BIN --build $BUILD_FOLDER/build --config $CONFIG
-  - sudo $CMAKE_BIN --build $BUILD_FOLDER/build --target INSTALL --config $CONFIG
+  - sudo $CMAKE_BIN --build $BUILD_FOLDER/build --target install --config $CONFIG
 
   # Run tests
   - $CMAKE_BIN --build $BUILD_FOLDER/build --target TEST --config $CONFIG -VV
