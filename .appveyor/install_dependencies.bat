@@ -38,7 +38,7 @@ IF NOT EXIST %DEPENDENCY_DIR%\cmake (
     powershell -Command "Invoke-WebRequest https://cmake.org/files/v3.11/%CMAKE_VER%.zip -OutFile %DEPENDENCY_DIR%\%CMAKE_VER%.zip"
     echo  === Unzipping cmake === 
     7z x -y -bd -bb0 -o%DEPENDENCY_DIR% %DEPENDENCY_DIR%\%CMAKE_VER%.zip
-    echo "Renaming %DEPENDENCY_DIR%\%CMAKE_VER to cmake"
+    echo Renaming %DEPENDENCY_DIR%\%CMAKE_VER to cmake
     rename "%DEPENDENCY_DIR%\%CMAKE_VER%" cmake
 )
 set CMAKE_BIN=%DEPENDENCY_DIR%\cmake\bin\cmake
@@ -72,7 +72,7 @@ IF NOT EXIST %DEPENDENCY_DIR%\swig (
     powershell -Command "Invoke-WebRequest https://phoenixnap.dl.sourceforge.net/project/swig/swigwin/swigwin-3.0.12/%SWIG_VER%.zip -OutFile %DEPENDENCY_DIR%\%SWIG_VER%.zip"
     echo  === Unzipping swig === 
     7z x -y -bd -bb0 -o%DEPENDENCY_DIR% %DEPENDENCY_DIR%\%SWIG_VER%.zip
-    echo "Renaming %DEPENDENCY_DIR%\%SWIG_VER to swig"
+    echo Renaming %DEPENDENCY_DIR%\%SWIG_VER to swig
     rename "%DEPENDENCY_DIR%\%SWIG_VER%" swig
 )
 
