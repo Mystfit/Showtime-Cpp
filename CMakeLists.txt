@@ -141,6 +141,7 @@ find_package(Boost 1.66.0 COMPONENTS
 if(USE_LOCAL_BOOST)
    set(CMAKE_MODULE_PATH ${HUNTER_CMAKE_MODULE_PATH}) 
 endif()
+set(Boost_HEADER_TARGET "Boost::boost")
 set(Boost_LOG_TARGET "Boost::log")
 set(Boost_LOG_SETUP_TARGET "Boost::log_setup")
 set(Boost_THREAD_TARGET "Boost::thread")

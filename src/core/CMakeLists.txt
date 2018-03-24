@@ -97,9 +97,9 @@ if(NOT HUNTER_ENABLED)
     )
 endif()
 
-if(USE_LOCAL_BOOST)
-    target_include_directories(${CORE_TARGET} PUBLIC ${Boost_INCLUDE_DIR})
-endif()
+# if(USE_LOCAL_BOOST)
+#     target_include_directories(${CORE_TARGET} PUBLIC ${Boost_INCLUDE_DIR})
+# endif()
 
 # Set threading library
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -112,12 +112,12 @@ endif()
 message(STATUS "Setting link thread library to ${CMAKE_THREAD_LIBS_INIT}")
 
 target_link_libraries(${CORE_TARGET} PUBLIC 
+                        Threads::Threads
                         ${CZMQ_TARGET}
+                        ${fmt_TARGET}    
+                        ${Boost_HEADER_TARGET}
                         ${Boost_SYSTEM_TARGET}
                         ${Boost_FILESYSTEM_TARGET}
-                        ${Boost_THREAD_TARGET}
-                        Threads::Threads
-                        ${fmt_TARGET}    
 )
 
 target_link_libraries(${CORE_TARGET} PRIVATE 
@@ -127,6 +127,7 @@ target_link_libraries(${CORE_TARGET} PRIVATE
                         ${Boost_ATOMIC_TARGET}
                         ${Boost_LOG_SETUP_TARGET}
                         ${Boost_LOG_TARGET}
+                        ${Boost_THREAD_TARGET}
 )
 
 if(WIN32)
