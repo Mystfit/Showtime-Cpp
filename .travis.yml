@@ -162,8 +162,9 @@ script:
 
   # Build and install project
   - $CMAKE_BIN -H$BUILD_FOLDER -B$BUILD_FOLDER/build -G "$GENERATOR" $GENERATOR_ARGS
-  - $CMAKE_BIN --build $BUILD_FOLDER/build --target --config $CONFIG
+  - $CMAKE_BIN --build $BUILD_FOLDER/build --config $CONFIG
   - sudo $CMAKE_BIN --build $BUILD_FOLDER/build --target INSTALL --config $CONFIG
 
   # Run tests
-  - $CTEST_BIN -C Debug -V --build-run-dir "%BUILD_FOLDER%/build" --output-on-fail --timeout 320
+  - $CMAKE_BIN --build $BUILD_FOLDER/build --target TEST --config $CONFIG -VV
+  #- $CTEST_BIN -C Debug -V --build-run-dir "%BUILD_FOLDER%/build" --output-on-fail --timeout 320
