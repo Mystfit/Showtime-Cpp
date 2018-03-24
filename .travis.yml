@@ -40,12 +40,22 @@ matrix:
       addons: *common_build
 
     # XCode 9.1
-    - env: COMPILER=clang++ COMPILER_C=clang BUILD_TYPE=Debug HOMEBREW_PATH=/usr/local
+    - env: COMPILER=clang++ COMPILER_C=clang BUILD_TYPE=Debug HOMEBREW_PATH=/usr/local PYTHON_EXECUTABLE=python2
       os: osx
       osx_image: xcode9.2
       compiler: clang
 
-    - env: COMPILER=clang++ COMPILER_C=clang BUILD_TYPE=Release HOMEBREW_PATH=/usr/local
+    - env: COMPILER=clang++ COMPILER_C=clang BUILD_TYPE=Debug HOMEBREW_PATH=/usr/local PYTHON_EXECUTABLE=python3
+      os: osx
+      osx_image: xcode9.2
+      compiler: clang
+
+    - env: COMPILER=clang++ COMPILER_C=clang BUILD_TYPE=Release HOMEBREW_PATH=/usr/local PYTHON_EXECUTABLE=python2
+      os: osx
+      osx_image: xcode9.2
+      compiler: clang
+
+    - env: COMPILER=clang++ COMPILER_C=clang BUILD_TYPE=Release HOMEBREW_PATH=/usr/local PYTHON_EXECUTABLE=python3
       os: osx
       osx_image: xcode9.2
       compiler: clang
@@ -120,10 +130,12 @@ script:
   # Set prefix search path to homebrew folder for library discovery
   - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$HOMEBREW_PATH;${CMAKE_PREFIX_PATH}"
 
+  # Python bindings
+  - GENERATOR_ARGS="$GENERATOR_ARGS -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DPYTHON_EXECUTABLE=$PYTHON_EXECUTABLE"
+
   # Build and compile project
   - $CMAKE_BIN -H$BUILD_FOLDER -B$BUILD_FOLDER/build -G "$GENERATOR" $GENERATOR_ARGS
   - $CMAKE_BIN --build $BUILD_FOLDER/build --config $CONFIG 
 
   # Run tests
-  - pushd "$BUILD_FOLDER/build"
-  - $CTEST_BIN -C Debug -V --output-on-fail --timeout 320
+  - $CTEST_BIN -C Debug -V --build-run-dir "%BUILD_FOLDER%/build" --output-on-fail --timeout 320
