@@ -166,5 +166,6 @@ script:
   - sudo $CMAKE_BIN --build $BUILD_FOLDER/build --target install --config $CONFIG
 
   # Run tests
-  - $CMAKE_BIN --build $BUILD_FOLDER/build --target TEST --config $CONFIG -VV
-  #- $CTEST_BIN -C Debug -V --build-run-dir "%BUILD_FOLDER%/build" --output-on-fail --timeout 320
+  #- $CMAKE_BIN --build $BUILD_FOLDER/build --target TEST --config $CONFIG -VV
+  - pushd "%BUILD_FOLDER%/build"
+  - $CTEST_BIN -C Debug -V --output-on-fail --timeout 320

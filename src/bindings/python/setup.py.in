@@ -11,46 +11,30 @@ class build(_build):
                     ('build_clib', _build.has_c_libraries),
                     ('build_scripts', _build.has_scripts)]
 
+
 class install(_install):
     def run(self):
         self.run_command('build_ext')
         self.do_egg_install()
+
 
 class build_ext(_build_ext):
     def initialize_options(self):
         _build_ext.initialize_options(self)
         self.swig = "${SWIG_EXECUTABLE}"
 
-sources = "${ZST_SWIG_INTERFACE}".split(';')
-extra_compile_args = ['-D' + x for x in "${ZST_FLAGS}".split(';')] #['-DMSGPACK_USE_BOOST']
-extra_link_args = [] 
-runtimes = []
-data_files = []
-libraries = []
-library_dirs = []
+
+sources = "${PYTHON_SWIG_INTERFACE}".split(';')
+extra_compile_args = "${ZST_FLAGS}".split(';')
+extra_link_args = "${ZSTLINK_FLAGS}".split(';') 
+runtimes = "${ZST_RUNTIMES}".split(';')
+libraries = [os.path.splitext(os.path.basename(path))[0] for path in "${ZST_LIBS}".split(';')]
+library_dirs = "${ZST_LIB_DIRS}".split(';')
 include_dirs = "${ZST_INCLUDE_DIRS}".split(';')
 
-if platform.system() == 'Darwin':
-  extra_compile_args += ['-O0', '-g', '-std=c++14']
-  extra_link_args += [
-    '-F', '/Library/Frameworks', '-F', '${CMAKE_LIBRARY_OUTPUT_DIRECTORY}', '-framework', '${CLIENT_TARGET}'
-  ]
-  library_dirs += ['${CMAKE_LIBRARY_OUTPUT_DIRECTORY}']
-elif platform.system() == 'Windows':
-  # Set library definitions
-  extra_compile_args += ['/Zi']
-  
-  # Set linker flags
-  extra_link_args += ['/DEBUG']
-
-  # Set libraries
-  libraries = [os.path.splitext(os.path.basename(path))[0] for path in "${ZST_LIBS}".split(';')]
-  library_dirs = "${ZST_LIB_DIRS}".split(';')
-
-  # Set dll runtime files
-  runtimes += [runtime.replace('.lib', '.dll') for runtime in "${ZST_RUNTIMES}".split(';')]
+if platform.system() == 'Windows':
+  runtimes += [runtime.replace('.lib', '.dll') for runtime in runtimes]
   runtimes = [os.path.normpath(x) for x in runtimes]
-
 
 showtime_module = Extension('_showtime',
     sources=sources,
