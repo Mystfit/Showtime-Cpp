@@ -43,6 +43,11 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     MESSAGE(STATUS "Platform is OSX")
 endif()
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    set(LINUX TRUE)
+    MESSAGE(STATUS "Platform is Linux")
+endif()
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     MESSAGE(STATUS "Platform is Windows")
     option(WINDOWS_USE_DLL_RUNTIME "Use the Visual C++ DLL runtime" ON)
@@ -60,6 +65,7 @@ endif()
 # Set showtime variables
 set(Showtime_COMPILED_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include")
 set(Showtime_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/include")
+set(Showtime_ALL_INCLUDE_DIRS ${Showtime_COMPILED_INCLUDE_DIRS} ${Showtime_INCLUDE_DIRS})
 set(Showtime_DEPENDENCIES_DIR "${CMAKE_SOURCE_DIR}/src/dependencies")
 set(Showtime_SOURCE_DEPENDENCIES 
     "${Showtime_DEPENDENCIES_DIR}/cf"
@@ -258,7 +264,11 @@ set(Showtime_INSTALL_TARGETS
 
 if(MACOSX)
     install(TARGETS ${CLIENT_TARGET}
-        FRAMEWORK DESTINATION /Library/Frameworks
+        FRAMEWORK DESTINATION "/Library/Frameworks"
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        PUBLIC_HEADER DESTINATION include
     )
 else()
     install(TARGETS ${Showtime_INSTALL_TARGETS}

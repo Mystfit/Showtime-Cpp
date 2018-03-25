@@ -167,5 +167,5 @@ script:
 
   # Run tests
   #- $CMAKE_BIN --build $BUILD_FOLDER/build --target TEST --config $CONFIG -VV
-  - pushd "%BUILD_FOLDER%/build"
+  - pushd $BUILD_FOLDER/build
   - $CTEST_BIN -C Debug -V --output-on-fail --timeout 320
