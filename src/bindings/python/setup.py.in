@@ -26,7 +26,7 @@ class build_ext(_build_ext):
 
 sources = "${PYTHON_SWIG_INTERFACE}".split(';')
 extra_compile_args = "${ZST_FLAGS}".split(';')
-extra_compile_args += ["-D" + def for def in "${ZST_DEFINITIONS}".split(';')]
+extra_compile_args += ["-D" + flag for flag in "${ZST_DEFINITIONS}".split(';')]
 extra_link_args = "${ZSTLINK_FLAGS}".split(';') 
 runtimes = "${ZST_RUNTIMES}".split(';')
 libraries = [os.path.splitext(os.path.basename(path))[0] for path in "${ZST_LIBS}".split(';')]
