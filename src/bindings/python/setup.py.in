@@ -60,8 +60,6 @@ showtime_module = Extension('_showtime',
     ] + ['-I' + x for x in include_dirs]
 )
 
-pprint(vars(showtime_module))
-
 # Move into the python build dir so we can pick up our showtime interface
 if os.path.dirname(__file__):
   os.chdir(os.path.dirname(__file__))
