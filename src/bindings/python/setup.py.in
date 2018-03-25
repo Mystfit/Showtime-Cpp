@@ -33,6 +33,8 @@ libraries = [os.path.splitext(os.path.basename(path))[0] for path in "${ZST_LIBS
 library_dirs = "${ZST_LIB_DIRS}".split(';')
 include_dirs = "${ZST_INCLUDE_DIRS}".split(';')
 
+print('Included libraries: {}'.format(libraries))
+
 if platform.system() == 'Windows':
   runtimes += [runtime.replace('.lib', '.dll') for runtime in runtimes]
   runtimes = [os.path.normpath(x) for x in runtimes]
