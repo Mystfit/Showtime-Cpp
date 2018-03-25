@@ -66,6 +66,9 @@ endif()
 
 if(MACOSX OR LINUX)
     list(APPEND ZST_FLAGS "-O0;-g;-std=c++14")
+endif()
+
+if(LINUX)
     list(APPEND ZST_LIB_DIRS ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/$<CONFIG>)
     list(APPEND ZST_LIBS
         $<BUILD_INTERFACE:$<TARGET_LINKER_FILE:${CORE_TARGET}>>
@@ -75,7 +78,7 @@ if(MACOSX OR LINUX)
 endif()
 
 if(MACOSX)
-    #list(APPEND ZST_LINK_FLAGS "-F;/Library/Frameworks;-F;${CMAKE_LIBRARY_OUTPUT_DIRECTORY};-framework;${CLIENT_TARGET}")
+    list(APPEND ZST_LINK_FLAGS "-F;/Library/Frameworks;-F;${CMAKE_LIBRARY_OUTPUT_DIRECTORY};-framework;${CLIENT_TARGET}")
 endif()
 
 # Set second pass setup.py parser
