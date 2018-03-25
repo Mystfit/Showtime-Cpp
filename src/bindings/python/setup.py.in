@@ -42,8 +42,6 @@ if platform.system() == 'Windows':
 showtime_module = Extension('_showtime',
     sources=sources,
     include_dirs=include_dirs,
-    library_dirs=library_dirs,
-    libraries=libraries,
     extra_compile_args=extra_compile_args,
     extra_link_args=extra_link_args,
     swig_opts=[
@@ -51,6 +49,9 @@ showtime_module = Extension('_showtime',
       '-outdir', '${CMAKE_SWIG_OUTDIR}'
     ] + ['-I' + x for x in include_dirs]
 )
+if libraries:
+    showtime_module.library_dirs=library_dirs
+    showtime_module.libraries=libraries
 
 # Move into the python build dir so we can pick up our showtime interface
 if os.path.dirname(__file__):
