@@ -24,6 +24,7 @@ set(ZST_INCLUDE_DIRS "@ZST_INCLUDE_DIRS@")
 set(ZST_LIB_DIRS "@ZST_LIB_DIRS@") 
 set(ZST_LIBS "@ZST_LIBS@")
 set(ZST_FLAGS "@ZST_FLAGS@")
+set(ZST_DEFINITIONS "@ZST_DEFINITIONS@")
 set(ZST_LINK_FLAGS "@ZST_LINK_FLAGS@")
 
 # Generate first stage setup.py 
@@ -35,17 +36,13 @@ set(ZST_INCLUDE_DIRS "")
 set(ZST_LIB_DIRS "") 
 set(ZST_LIBS "")
 set(ZST_FLAGS "")
+set(ZST_DEFINITIONS "")
 set(ZST_LINK_FLAGS "")
 
 # Set up second pass variables for generated setup.py
 set(ZST_LIB_DIRS ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/$<CONFIG>)
 set(ZST_INCLUDE_DIRS $<TARGET_PROPERTY:${CLIENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>)
-set(ZST_FLAGS "$<TARGET_PROPERTY:${CLIENT_TARGET},INTERFACE_COMPILE_DEFINITIONS>") #['-DMSGPACK_USE_BOOST']
-set(PREFIXED_FLAGS "")
-foreach(f ${ZST_FLAGS})
-    list(APPEND PREFIXED_FLAGS "-D${f}")
-endforeach()
-set(ZST_FLAGS ${PREFIXED_FLAGS})
+set(ZST_DEFINITIONS "$<TARGET_PROPERTY:${CLIENT_TARGET},INTERFACE_COMPILE_DEFINITIONS>") #['-DMSGPACK_USE_BOOST']
 
 # Platform specific definitions and paths
 if(WIN32)
@@ -88,6 +85,7 @@ add_custom_command(TARGET ${PYTHON_TARGET} PRE_BUILD
                         "-DZST_RUNTIMES=${ZST_RUNTIMES}" 
                         "-DZST_LIB_DIRS=${ZST_LIB_DIRS}" 
                         "-DZST_LIBS=${ZST_LIBS}" 
+                        "-DZST_DEFINITIONS=${ZST_DEFINITIONS}"
                         "-DZST_FLAGS=${ZST_FLAGS}"
                         "-DZST_LINK_FLAGS=${ZST_LINK_FLAGS}"
                         "-DZST_INCLUDE_DIRS=${ZST_INCLUDE_DIRS}"
