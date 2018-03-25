@@ -46,6 +46,7 @@ set(ZST_DEFINITIONS $<TARGET_PROPERTY:${CLIENT_TARGET},INTERFACE_COMPILE_DEFINIT
 
 # Platform specific definitions and paths
 message(STATUS "Setting platform variables for ${CMAKE_SYSTEM_NAME}")
+
 if(WIN32)
     set(BOOST_DLL_PATTERN ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/boost*.dll)
     list(APPEND ZST_RUNTIMES 
@@ -63,12 +64,12 @@ if(WIN32)
     )
 endif()
 
-if(MACOS OR LINUX)
+if(MACOSX OR LINUX)
     list(APPEND ZST_FLAGS "-O0;-g;-std=c++14")
     list(APPEND ZST_LIB_DIRS ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 endif()
 
-if(MACOS)
+if(MACOSX)
     list(APPEND ZST_LINK_FLAGS "-F;/Library/Frameworks;-F;${CMAKE_LIBRARY_OUTPUT_DIRECTORY};-framework;${CLIENT_TARGET}")
 endif()
 
