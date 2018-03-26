@@ -76,11 +76,6 @@ if(MACOSX OR LINUX)
     )
 endif()
 
-set(PREFIX "")
-if(LINUX)
-    set(PREFIX "CC=gcc ")
-endif()
-
 # Set second pass setup.py parser
 get_filename_component(SETUPPY_PARSER_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/generate-setuppy.cmake REALPATH)
 
@@ -104,7 +99,7 @@ add_custom_command(TARGET ${PYTHON_TARGET} PRE_BUILD
                         -P ${SETUPPY_PARSER_SCRIPT}
                     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SWIG_OUTDIR}/showtime"
                     COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} build_ext --verbose ${EXTENSION_COMPILER}
-                    COMMAND ${PREFIX} ${PYTHON_EXECUTABLE} ${SETUP_PY} build ${EXTENSION_COMPILER}
+                    COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} build ${EXTENSION_COMPILER}
                     DEPENDS ${SETUP_PY_PARTIAL}
                     VERBATIM
 )
