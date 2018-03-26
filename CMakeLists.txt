@@ -40,9 +40,15 @@ set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR})
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(MACOSX TRUE)
-    MESSAGE(STATUS "Platform is OSX")
+    MESSAGE(STATUS "Platform is OSX")    
+endif()
 
-    # Set library Rpath on OSX
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    set(LINUX TRUE)
+    MESSAGE(STATUS "Platform is Linux")
+endif()
+
+if(LINUX OR MACOSX)
     if(NOT CMAKE_INSTALL_NAME_DIR) 
         set(CMAKE_INSTALL_NAME_DIR ${CMAKE_INSTALL_PREFIX}/lib CACHE PATH "Library Install Name Destination Directory" FORCE) 
     endif(NOT CMAKE_INSTALL_NAME_DIR) 
@@ -54,11 +60,6 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     if(NOT CMAKE_BUILD_WITH_INSTALL_RPATH) 
         set(CMAKE_BUILD_WITH_INSTALL_RPATH ON CACHE BOOL "Do Build Using Library Install RPath" FORCE) 
     endif(NOT CMAKE_BUILD_WITH_INSTALL_RPATH)
-endif()
-
-if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    set(LINUX TRUE)
-    MESSAGE(STATUS "Platform is Linux")
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
