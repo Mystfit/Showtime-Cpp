@@ -49,17 +49,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 endif()
 
 if(LINUX OR MACOSX)
-    if(NOT CMAKE_INSTALL_NAME_DIR) 
-        set(CMAKE_INSTALL_NAME_DIR ${CMAKE_INSTALL_PREFIX}/lib CACHE PATH "Library Install Name Destination Directory" FORCE) 
-    endif(NOT CMAKE_INSTALL_NAME_DIR) 
-    
-    if(NOT CMAKE_INSTALL_RPATH) 
-        set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib CACHE PATH "Library Install RPath" FORCE) 
-    endif(NOT CMAKE_INSTALL_RPATH) 
-
-    if(NOT CMAKE_BUILD_WITH_INSTALL_RPATH) 
-        set(CMAKE_BUILD_WITH_INSTALL_RPATH ON CACHE BOOL "Do Build Using Library Install RPath" FORCE) 
-    endif(NOT CMAKE_BUILD_WITH_INSTALL_RPATH)
+    set(CMAKE_INSTALL_NAME_DIR ${CMAKE_INSTALL_PREFIX}/lib CACHE PATH "Library Install Name Destination Directory" FORCE) 
+    set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib CACHE PATH "Library Install RPath" FORCE) 
+    set(CMAKE_BUILD_WITH_INSTALL_RPATH ON CACHE BOOL "Do Build Using Library Install RPath" FORCE) 
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
