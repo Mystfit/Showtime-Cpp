@@ -74,7 +74,6 @@ if(MACOSX OR LINUX)
         ${CORE_ENTITIES_TARGET}
         ${CLIENT_TARGET}
     )
-    list(APPEND ZST_LINK_FLAGS "-R${CMAKE_INSTALL_PREFIX}/lib")
 endif()
 
 set(PREFIX "")

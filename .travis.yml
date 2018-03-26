@@ -139,7 +139,7 @@ script:
   - GENERATOR_ARGS="-DUSE_HUNTER=OFF";
 
   # Verbose makefiles
-  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
+  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF"
 
   # Set installation prefix
   - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_INSTALL_PREFIX=$BUILD_FOLDER/install"
@@ -166,7 +166,5 @@ script:
   - sudo $CMAKE_BIN --build $BUILD_FOLDER/build --target install --config $CONFIG
 
   # Run tests
-  #- $CMAKE_BIN --build $BUILD_FOLDER/build --target TEST --config $CONFIG -VV
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then otool -L /usr/local/lib/python2.7/site-packages/showtime-0.9.9-py2.7-macosx-10.12-x86_64.egg/_showtime.so; fi
   - pushd $BUILD_FOLDER/build
   - $CTEST_BIN -C Debug -V --output-on-fail --timeout 320
