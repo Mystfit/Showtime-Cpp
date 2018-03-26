@@ -167,6 +167,11 @@ script:
 
   # Run tests
   - pushd $BUILD_FOLDER/build
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; ls -l $PYTHON_BIN/../lib/python3.6/site-packages/; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; ls -l $PYTHON_BIN/../lib/python3.6/site-packages/showtime-0.9.9-py3.6-linux-x86_64.egg; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; ls -l $HOMEBREW_PATH/lib/python3.6/site-packages/showtime-0.9.9-py3.6-linux-x86_64.egg; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; ls -l $HOMEBREW_PATH/lib/python3.6/site-packages/; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; ls -l $HOMEBREW_PATH/lib/python3.6/site-packages/showtime-0.9.9-py3.6-linux-x86_64.egg; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then readelf -d $BUILD_FOLDER/install/lib/libShowtimeClient.so |head -20; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then readelf -d $HOMEBREW_PATH/lib/python3.6/site-packages/showtime-0.9.9-py3.6-linux-x86_64.egg/_showtime.so |head -20; fi
   - $CTEST_BIN -C Debug -V --output-on-fail --timeout 320
