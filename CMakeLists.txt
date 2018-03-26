@@ -254,7 +254,6 @@ add_subdirectory(tests)
 # Installation
 # ------------
 set(CMAKE_INSTALL_CMAKEDIR "lib/cmake/showtime")
-install(FILES ${Showtime_API_INTERFACE} DESTINATION include)
 
 # Install targets
 set(Showtime_INSTALL_TARGETS 
@@ -262,17 +261,19 @@ set(Showtime_INSTALL_TARGETS
     ${Showtime_APP_TARGETS}
 )
 
+install(FILES ${Showtime_API_INTERFACE} DESTINATION include/showtime)
 
 if(MACOSX)
-    install(TARGETS ${CLIENT_TARGET}
+    # Install framework
+    install(TARGETS ${Showtime_INSTALL_TARGETS}
         EXPORT showtime-targets
-        FRAMEWORK DESTINATION ${CMAKE_INSTALL_PREFIX}
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
-        PUBLIC_HEADER DESTINATION include
+        FRAMEWORK DESTINATION /Library/Frameworks
     )
 else()
+    # Install targets
     install(TARGETS ${Showtime_INSTALL_TARGETS}
         DESTINATION ${CMAKE_INSTALL_PREFIX}
         EXPORT showtime-targets
@@ -290,7 +291,7 @@ if(NOT CMAKE_VERSION VERSION_LESS 3.0)
     )
 endif()
 
-# Copy targets
+# Install target exports
 install(EXPORT showtime-targets
     FILE showtime-targets.cmake
     DESTINATION "${CMAKE_INSTALL_CMAKEDIR}"

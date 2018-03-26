@@ -27,11 +27,14 @@ class build_ext(_build_ext):
 sources = list(filter(None, "${PYTHON_SWIG_INTERFACE}".split(';')))
 extra_compile_args = list(filter(None, "${ZST_FLAGS}".split(';')))
 extra_compile_args += list(filter(None, ["-D" + flag for flag in "${ZST_DEFINITIONS}".split(';')]))
-extra_link_args = list(filter(None, "${ZSTLINK_FLAGS}".split(';')))
+extra_link_args = list(filter(None, "${ZST_LINK_FLAGS}".split(';')))
 runtimes = list(filter(None, "${ZST_RUNTIMES}".split(';')))
-libraries = list(filter(None, [os.path.splitext(os.path.basename(path))[0] for path in "${ZST_LIBS}".split(';')]))
-library_dirs = list(filter(None, "${ZST_LIB_DIRS}".split(';')))
+libraries = list(filter(None, "${ZST_LIBS}".split(';')))
+
 include_dirs = list(filter(None, "${ZST_INCLUDE_DIRS}".split(';')))
+build_library_dirs = list(filter(None, "${ZST_BUILD_LIB_DIRS}".split(';')))
+runtime_library_dirs = list(filter(None, "${ZST_RUNTIME_LIB_DIRS}".split(';')))
+extra_link_args += ['-R' + d for d in runtime_library_dirs]
 
 print("Compiling Showtime python C extension")
 print("sources: {}".format(sources))
@@ -39,7 +42,8 @@ print("extra_compile_args: {}".format(extra_compile_args))
 print("extra_link_args: {}".format(extra_link_args))
 print("runtimes: {}".format(runtimes))
 print("libraries: {}".format(libraries))
-print("library_dirs: {}".format(library_dirs))
+print("Build library_dirs: {}".format(build_library_dirs))
+print("Runtime library_dirs: {}".format(runtime_library_dirs))
 print("include_dirs: {}".format(include_dirs))
 
 if platform.system() == 'Windows':
@@ -50,7 +54,7 @@ showtime_module = Extension('_showtime',
     language='c++',
     sources=sources,
     include_dirs=include_dirs,
-    library_dirs=library_dirs,
+    library_dirs=build_library_dirs,
     libraries=libraries,
     extra_compile_args=extra_compile_args,
     extra_link_args=extra_link_args,

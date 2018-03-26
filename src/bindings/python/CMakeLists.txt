@@ -21,7 +21,8 @@ set_source_files_properties(${PYTHON_SWIG_INTERFACE} PROPERTIES CPLUSPLUS ON)
 # First pass variables for generated setup.py
 set(ZST_RUNTIMES "@ZST_RUNTIMES@")
 set(ZST_INCLUDE_DIRS "@ZST_INCLUDE_DIRS@")
-set(ZST_LIB_DIRS "@ZST_LIB_DIRS@") 
+set(ZST_BUILD_LIB_DIRS "@ZST_BUILD_LIB_DIRS@") 
+set(ZST_RUNTIME_LIB_DIRS "@ZST_RUNTIME_LIB_DIRS@") 
 set(ZST_LIBS "@ZST_LIBS@")
 set(ZST_FLAGS "@ZST_FLAGS@")
 set(ZST_DEFINITIONS "@ZST_DEFINITIONS@")
@@ -33,14 +34,16 @@ configure_file(${SETUP_PY_IN} ${SETUP_PY_PARTIAL})
 # Clear first pass vars
 set(ZST_RUNTIMES "")
 set(ZST_INCLUDE_DIRS "")
-set(ZST_LIB_DIRS "") 
+set(ZST_BUILD_LIB_DIRS "") 
+set(ZST_RUNTIME_LIB_DIRS "") 
 set(ZST_LIBS "")
 set(ZST_FLAGS "")
 set(ZST_DEFINITIONS "")
 set(ZST_LINK_FLAGS "")
 
 # Set up second pass variables for generated setup.py
-set(ZST_LIB_DIRS ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/$<CONFIG>)
+set(ZST_BUILD_LIB_DIRS ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/$<CONFIG>)
+set(ZST_RUNTIME_LIB_DIRS ${CMAKE_INSTALL_PREFIX}/lib)
 set(ZST_INCLUDE_DIRS $<TARGET_PROPERTY:${CLIENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>)
 set(ZST_DEFINITIONS $<TARGET_PROPERTY:${CLIENT_TARGET},INTERFACE_COMPILE_DEFINITIONS>) #['-DMSGPACK_USE_BOOST']
 
@@ -66,19 +69,11 @@ endif()
 
 if(MACOSX OR LINUX)
     list(APPEND ZST_FLAGS "-O0;-g;-std=c++14")
-endif()
-
-if(LINUX)
-    list(APPEND ZST_LIB_DIRS ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/$<CONFIG>)
     list(APPEND ZST_LIBS
-        $<BUILD_INTERFACE:$<TARGET_LINKER_FILE:${CORE_TARGET}>>
-        $<BUILD_INTERFACE:$<TARGET_LINKER_FILE:${CORE_ENTITIES_TARGET}>>
-        $<BUILD_INTERFACE:$<TARGET_LINKER_FILE:${CLIENT_TARGET}>>
+        ${CORE_TARGET}
+        ${CORE_ENTITIES_TARGET}
+        ${CLIENT_TARGET}
     )
-endif()
-
-if(MACOSX)
-    list(APPEND ZST_LINK_FLAGS "-F;/Library/Frameworks;-F;${CMAKE_LIBRARY_OUTPUT_DIRECTORY};-framework;${CLIENT_TARGET}")
 endif()
 
 # Set second pass setup.py parser
@@ -93,7 +88,8 @@ add_custom_command(TARGET ${PYTHON_TARGET} PRE_BUILD
                         "-DSUBST_SOURCE=${SETUP_PY_PARTIAL}" 
                         "-DSUBST_DEST=${SETUP_PY}" 
                         "-DZST_RUNTIMES=${ZST_RUNTIMES}" 
-                        "-DZST_LIB_DIRS=${ZST_LIB_DIRS}" 
+                        "-DZST_BUILD_LIB_DIRS=${ZST_BUILD_LIB_DIRS}" 
+                        "-DZST_RUNTIME_LIB_DIRS=${ZST_RUNTIME_LIB_DIRS}"
                         "-DZST_LIBS=${ZST_LIBS}" 
                         "-DZST_DEFINITIONS=${ZST_DEFINITIONS}"
                         "-DZST_FLAGS=${ZST_FLAGS}"
@@ -102,6 +98,7 @@ add_custom_command(TARGET ${PYTHON_TARGET} PRE_BUILD
                         "-DBOOST_DLL_PATTERN=${BOOST_DLL_PATTERN}"
                         -P ${SETUPPY_PARSER_SCRIPT}
                     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SWIG_OUTDIR}/showtime"
+                    COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} build_ext --verbose ${EXTENSION_COMPILER}
                     COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} build ${EXTENSION_COMPILER}
                     DEPENDS ${SETUP_PY_PARTIAL}
                     VERBATIM
