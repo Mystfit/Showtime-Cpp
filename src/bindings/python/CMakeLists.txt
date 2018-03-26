@@ -79,7 +79,7 @@ endif()
 
 set(PREFIX "")
 if(LINUX)
-    set(PREFIX CC=gcc)
+    set(PREFIX "CC=gcc ")
 endif()
 
 # Set second pass setup.py parser
@@ -110,7 +110,7 @@ add_custom_command(TARGET ${PYTHON_TARGET} PRE_BUILD
                     VERBATIM
 )
 
-install(CODE "execute_process(COMMAND \"${PREFIX}\" \"${PYTHON_EXECUTABLE}\" \"${SETUP_PY}\" install)")
+install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} install)")
 
 # Restore binding output dir
 set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR}/python)
