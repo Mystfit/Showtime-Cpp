@@ -34,7 +34,6 @@ libraries = list(filter(None, "${ZST_LIBS}".split(';')))
 include_dirs = list(filter(None, "${ZST_INCLUDE_DIRS}".split(';')))
 build_library_dirs = list(filter(None, "${ZST_BUILD_LIB_DIRS}".split(';')))
 runtime_library_dirs = list(filter(None, "${ZST_RUNTIME_LIB_DIRS}".split(';')))
-extra_link_args += ['-R' + d for d in runtime_library_dirs]
 
 print("Compiling Showtime python C extension")
 print("sources: {}".format(sources))
