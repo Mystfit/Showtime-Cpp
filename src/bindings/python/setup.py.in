@@ -30,7 +30,6 @@ extra_compile_args += list(filter(None, ["-D" + flag for flag in "${ZST_DEFINITI
 extra_link_args = list(filter(None, "${ZST_LINK_FLAGS}".split(';')))
 runtimes = list(filter(None, "${ZST_RUNTIMES}".split(';')))
 libraries = list(filter(None, "${ZST_LIBS}".split(';')))
-
 include_dirs = list(filter(None, "${ZST_INCLUDE_DIRS}".split(';')))
 build_library_dirs = list(filter(None, "${ZST_BUILD_LIB_DIRS}".split(';')))
 runtime_library_dirs = list(filter(None, "${ZST_RUNTIME_LIB_DIRS}".split(';')))
@@ -46,8 +45,8 @@ print("Runtime library_dirs: {}".format(runtime_library_dirs))
 print("include_dirs: {}".format(include_dirs))
 
 if platform.system() == 'Windows':
-  runtimes += [runtime.replace('.lib', '.dll') for runtime in runtimes]
-  runtimes = [os.path.normpath(x) for x in runtimes]
+  runtimes = [os.path.normpath(runtime.replace('.lib', '.dll')) for runtime in runtimes]
+  libraries = [os.path.splitext(path)[0] for path in libraries]
 
 showtime_module = Extension('_showtime',
     language='c++',
@@ -55,6 +54,7 @@ showtime_module = Extension('_showtime',
     include_dirs=include_dirs,
     library_dirs=build_library_dirs,
     libraries=libraries,
+    data_files=runtimes,
     extra_compile_args=extra_compile_args,
     extra_link_args=extra_link_args,
     swig_opts=[
