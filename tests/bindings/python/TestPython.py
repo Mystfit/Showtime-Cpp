@@ -88,7 +88,8 @@ if __name__ == "__main__":
     ZST.destroy()
 
     if server:
-        server.communicate(b"$TERM\n")
+        term = "$TERM\n"
+        server.communicate(term)
         server.wait()
     
     print("Python test finished with status {}".format(status))
