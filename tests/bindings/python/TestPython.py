@@ -47,7 +47,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         server_exe = os.path.abspath(sys.argv[1])
         print("Starting Showtime server from ".format(server_exe))
-        server = subprocess.Popen([server_exe, "t"], stdin=subprocess.PIPE, shell=True)
+        server = subprocess.Popen([server_exe, "t"], stdin=subprocess.PIPE, universal_newlines=True)
     
     # Start client
     ZST.init("python_test", True)
