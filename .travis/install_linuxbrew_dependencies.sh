@@ -29,7 +29,6 @@ brew install expat
 brew install perl
 brew install openssl
 brew install bzip2
-brew install python@2
 brew install libxml2
 brew install docbook
 brew install docbook-xsl
@@ -40,6 +39,7 @@ brew install xmlto
 brew install xz
 brew install libffi
 brew install python
+brew install python@2
 brew install asciidoc
 brew install zlib
 brew install cmake

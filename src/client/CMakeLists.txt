@@ -44,15 +44,6 @@ add_dependencies(${CLIENT_TARGET}
                  ${CORE_TARGET}
                  ${CORE_ENTITIES_TARGET})
 
-if(MACOSX)
-    set_target_properties(${CLIENT_TARGET} PROPERTIES
-      FRAMEWORK TRUE
-      FRAMEWORK_VERSION "A"
-      VERSION "${SHOWTIME_VERSION}"
-      PUBLIC_HEADER "${ZST_PUBLIC_HEADERS}"
-    )
-endif(MACOSX)
-
 # Link libraries
 target_link_libraries(${CLIENT_TARGET} PUBLIC
   ${CORE_TARGET}

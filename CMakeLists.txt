@@ -40,7 +40,18 @@ set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR})
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(MACOSX TRUE)
-    MESSAGE(STATUS "Platform is OSX")
+    MESSAGE(STATUS "Platform is OSX")    
+endif()
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    set(LINUX TRUE)
+    MESSAGE(STATUS "Platform is Linux")
+endif()
+
+if(LINUX OR MACOSX)
+    set(CMAKE_INSTALL_NAME_DIR ${CMAKE_INSTALL_PREFIX}/lib CACHE PATH "Library Install Name Destination Directory" FORCE) 
+    set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib CACHE PATH "Library Install RPath" FORCE) 
+    set(CMAKE_BUILD_WITH_INSTALL_RPATH ON CACHE BOOL "Do Build Using Library Install RPath" FORCE) 
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
@@ -60,6 +71,7 @@ endif()
 # Set showtime variables
 set(Showtime_COMPILED_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include")
 set(Showtime_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/include")
+set(Showtime_ALL_INCLUDE_DIRS ${Showtime_COMPILED_INCLUDE_DIRS} ${Showtime_INCLUDE_DIRS})
 set(Showtime_DEPENDENCIES_DIR "${CMAKE_SOURCE_DIR}/src/dependencies")
 set(Showtime_SOURCE_DEPENDENCIES 
     "${Showtime_DEPENDENCIES_DIR}/cf"
@@ -233,7 +245,7 @@ endif()
 
 if(BINDINGS_PYTHON)
     set(PYTHON_TARGET ${PROJECT_NAME}Python)
-    set(PYTHON_VERSION 3.6 CACHE STRING "Python version to search for")
+    set(PYTHON_VERSION 2.7 CACHE STRING "Python version to search for")
     find_package(PythonInterp ${PYTHON_VERSION} REQUIRED)
     include(src/bindings/python/CMakeLists.txt)
 endif()
@@ -248,7 +260,6 @@ add_subdirectory(tests)
 # Installation
 # ------------
 set(CMAKE_INSTALL_CMAKEDIR "lib/cmake/showtime")
-install(FILES ${Showtime_API_INTERFACE} DESTINATION include)
 
 # Install targets
 set(Showtime_INSTALL_TARGETS 
@@ -256,13 +267,27 @@ set(Showtime_INSTALL_TARGETS
     ${Showtime_APP_TARGETS}
 )
 
-install(TARGETS ${Showtime_INSTALL_TARGETS}
-    DESTINATION ${CMAKE_INSTALL_PREFIX}
-    EXPORT showtime-targets
-    RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-)
+install(FILES ${Showtime_API_INTERFACE} DESTINATION include/showtime)
+
+if(MACOSX)
+    # Install framework
+    install(TARGETS ${Showtime_INSTALL_TARGETS}
+        EXPORT showtime-targets
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        FRAMEWORK DESTINATION /Library/Frameworks
+    )
+else()
+    # Install targets
+    install(TARGETS ${Showtime_INSTALL_TARGETS}
+        DESTINATION ${CMAKE_INSTALL_PREFIX}
+        EXPORT showtime-targets
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+    )
+endif()
 
 # Export targets
 if(NOT CMAKE_VERSION VERSION_LESS 3.0)
@@ -272,7 +297,7 @@ if(NOT CMAKE_VERSION VERSION_LESS 3.0)
     )
 endif()
 
-# Copy targets
+# Install target exports
 install(EXPORT showtime-targets
     FILE showtime-targets.cmake
     DESTINATION "${CMAKE_INSTALL_CMAKEDIR}"
@@ -299,4 +324,7 @@ install (
     DESTINATION
         "${CMAKE_INSTALL_CMAKEDIR}"
 )
+
+
+
 

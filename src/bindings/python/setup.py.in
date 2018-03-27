@@ -11,50 +11,49 @@ class build(_build):
                     ('build_clib', _build.has_c_libraries),
                     ('build_scripts', _build.has_scripts)]
 
+
 class install(_install):
     def run(self):
         self.run_command('build_ext')
         self.do_egg_install()
+
 
 class build_ext(_build_ext):
     def initialize_options(self):
         _build_ext.initialize_options(self)
         self.swig = "${SWIG_EXECUTABLE}"
 
-sources = "${ZST_SWIG_INTERFACE}".split(';')
-extra_compile_args = ['-D' + x for x in "${ZST_FLAGS}".split(';')] #['-DMSGPACK_USE_BOOST']
-extra_link_args = [] 
-runtimes = []
-data_files = []
-libraries = [os.path.splitext(os.path.basename(path))[0] for path in "${ZST_LIBS}".split(';')]
-library_dirs = []
-include_dirs = "${ZST_INCLUDE_DIRS}".split(';')
 
-if platform.system() == 'Darwin':
-  extra_compile_args += ['-O0', '-g', '-std=c++14']
-  extra_link_args += [
-    '-F', '/Library/Frameworks',
-    '-framework', '${CLIENT_TARGET}'
-  ]
-  library_dirs += ['${CMAKE_LIBRARY_OUTPUT_DIRECTORY}']
-elif platform.system() == 'Windows':
-  # Set library definitions
-  extra_compile_args += ['/Zi']
-  
-  # Set linker flags
-  extra_link_args += ['/DEBUG']
+sources = list(filter(None, "${PYTHON_SWIG_INTERFACE}".split(';')))
+extra_compile_args = list(filter(None, "${ZST_FLAGS}".split(';')))
+extra_compile_args += list(filter(None, ["-D" + flag for flag in "${ZST_DEFINITIONS}".split(';')]))
+extra_link_args = list(filter(None, "${ZST_LINK_FLAGS}".split(';')))
+runtimes = list(filter(None, "${ZST_RUNTIMES}".split(';')))
+libraries = list(filter(None, "${ZST_LIBS}".split(';')))
 
-  library_dirs = "${ZST_LIB_DIRS}".split(';')
+include_dirs = list(filter(None, "${ZST_INCLUDE_DIRS}".split(';')))
+build_library_dirs = list(filter(None, "${ZST_BUILD_LIB_DIRS}".split(';')))
+runtime_library_dirs = list(filter(None, "${ZST_RUNTIME_LIB_DIRS}".split(';')))
 
-  # Set dll runtime files
-  runtimes += [runtime.replace('.lib', '.dll') for runtime in "${ZST_RUNTIMES}".split(';')]
+print("Compiling Showtime python C extension")
+print("sources: {}".format(sources))
+print("extra_compile_args: {}".format(extra_compile_args))
+print("extra_link_args: {}".format(extra_link_args))
+print("runtimes: {}".format(runtimes))
+print("libraries: {}".format(libraries))
+print("Build library_dirs: {}".format(build_library_dirs))
+print("Runtime library_dirs: {}".format(runtime_library_dirs))
+print("include_dirs: {}".format(include_dirs))
+
+if platform.system() == 'Windows':
+  runtimes += [runtime.replace('.lib', '.dll') for runtime in runtimes]
   runtimes = [os.path.normpath(x) for x in runtimes]
 
-
 showtime_module = Extension('_showtime',
+    language='c++',
     sources=sources,
     include_dirs=include_dirs,
-    library_dirs=library_dirs,
+    library_dirs=build_library_dirs,
     libraries=libraries,
     extra_compile_args=extra_compile_args,
     extra_link_args=extra_link_args,
