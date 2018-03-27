@@ -73,7 +73,11 @@ if(MACOSX OR LINUX)
         ${CORE_TARGET}
         ${CORE_ENTITIES_TARGET}
         ${CLIENT_TARGET}
-    )
+    )    
+endif()
+
+if(LINUX)
+    list(APPEND ZST_LINK_FLAGS "-Wl,-rpath=${ZST_RUNTIME_LIB_DIRS}")
 endif()
 
 # Set second pass setup.py parser
