@@ -102,13 +102,13 @@ add_custom_command(TARGET ${PYTHON_TARGET} PRE_BUILD
                         "-DBOOST_DLL_PATTERN=${BOOST_DLL_PATTERN}"
                         -P ${SETUPPY_PARSER_SCRIPT}
                     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SWIG_OUTDIR}/showtime"
-                    COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} build_ext --verbose ${EXTENSION_COMPILER}
-                    COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} build ${EXTENSION_COMPILER}
+                    COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} -q build_ext ${EXTENSION_COMPILER}
+                    COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} -q build ${EXTENSION_COMPILER}
                     DEPENDS ${SETUP_PY_PARTIAL}
                     VERBATIM
 )
 
-install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} install)")
+install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} -q install)")
 
 # Restore binding output dir
 set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR}/python)

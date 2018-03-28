@@ -34,16 +34,6 @@ include_dirs = list(filter(None, "${ZST_INCLUDE_DIRS}".split(';')))
 build_library_dirs = list(filter(None, "${ZST_BUILD_LIB_DIRS}".split(';')))
 runtime_library_dirs = list(filter(None, "${ZST_RUNTIME_LIB_DIRS}".split(';')))
 
-print("Compiling Showtime python C extension")
-print("sources: {}".format(sources))
-print("extra_compile_args: {}".format(extra_compile_args))
-print("extra_link_args: {}".format(extra_link_args))
-print("runtimes: {}".format(runtimes))
-print("libraries: {}".format(libraries))
-print("Build library_dirs: {}".format(build_library_dirs))
-print("Runtime library_dirs: {}".format(runtime_library_dirs))
-print("include_dirs: {}".format(include_dirs))
-
 if platform.system() == 'Windows':
   runtimes = [os.path.normpath(runtime.replace('.lib', '.dll')) for runtime in runtimes]
   libraries = [os.path.splitext(path)[0] for path in libraries]
