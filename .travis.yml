@@ -121,7 +121,8 @@ install:
     fi
 
   # Install homebrew dependencies
-  - brew update && brew bundle
+  - brew update 
+  - brew bundle --file=$BUILD_FOLDER/Brewfile
     
   # Kill background sleep loop
   - kill %1
