@@ -118,6 +118,7 @@ install:
     fi
 
   # Install homebrew dependencies
+  - which brew
   - brew update 
   - brew bundle --file=$BUILD_FOLDER/Brewfile
     
