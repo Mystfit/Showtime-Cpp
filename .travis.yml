@@ -71,6 +71,10 @@ matrix:
       compiler: clang
 
 before_install:
+
+  # Debug
+  - 
+
   # Set common env variables
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       export HOMEBREW_PATH=/usr/local;
@@ -119,8 +123,8 @@ install:
     fi
 
   # Install homebrew dependencies
-  - brew update 
-  - brew bundle
+  - $HOMEBREW_PATH/bin/brew update 
+  - $HOMEBREW_PATH/bin/brew bundle
     
   # Kill background sleep loop
   - kill %1
