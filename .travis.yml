@@ -73,8 +73,6 @@ matrix:
 before_install:
   # Set common env variables
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      export COMPILER=clang++;
-      export COMPILER_C=clang;
       export HOMEBREW_PATH=/usr/local;
     fi
 
@@ -114,13 +112,15 @@ install:
 
   # Install linuxbrew dependencies
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      export PATH=$HOMEBREW_PATH/bin:$HOMEBREW_PATH/sbin:$PATH;
+      export MANPATH=$HOMEBREW_PATH/share/man:$MANPATH;
+      export INFOPATH=$HOMEBREW_PATH/share/info:$INFOPATH;
       sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)";
     fi
 
   # Install homebrew dependencies
-  - which brew
   - brew update 
-  - brew bundle --file=$BUILD_FOLDER/Brewfile
+  - brew bundle
     
   # Kill background sleep loop
   - kill %1
