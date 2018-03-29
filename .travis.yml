@@ -98,16 +98,11 @@ before_install:
       sudo bash cmake-3.11.0-rc2-Linux-x86_64.sh --skip-license --prefix=$CMAKE_PATH;
     fi
 
-  # Install CMake 3.11 on OSX
+  # OSX uses homebrew CMake and local boost
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      mkdir $CMAKE_PATH;
-      wget https://cmake.org/files/v3.11/cmake-3.11.0-rc2-Darwin-x86_64.tar.gz --quiet;
-      tar -xf cmake-3.11.0-rc2-Darwin-x86_64.tar.gz -C $CMAKE_PATH --strip-components=1;
-      export CMAKE_PATH=$CMAKE_PATH/CMake.app/Contents;
+      export CMAKE_PATH=$HOMEBREW_PATH;
+      export USE_LOCAL_BOOST=1;
     fi
-
-  # Set local boost on OSX
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then export USE_LOCAL_BOOST=1; fi
 
   # CMake paths
   - export CMAKE_BIN=$CMAKE_PATH/bin/cmake;
@@ -122,12 +117,12 @@ install:
       export PATH="$HOMEBREW_PATH/bin:$HOMEBREW_PATH/sbin:$PATH";
       export MANPATH="$HOMEBREW_PATH/share/man:$MANPATH";
       export INFOPATH="$HOMEBREW_PATH/share/info:$INFOPATH";
-      $BUILD_FOLDER/.travis/install_linuxbrew_dependencies.sh;
+      sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)";
     fi
 
   # Install homebrew dependencies
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then bash $BUILD_FOLDER/.travis/install_homebrew_dependencies.sh; fi
-  
+  - brew update && brew bundle
+    
   # Kill background sleep loop
   - kill %1
 

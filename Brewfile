@@ -1,0 +1,7 @@
+brew "msgpack"
+brew "fmt"
+brew "czmq"
+brew "swig"
+brew "python"
+brew "python@2"
+brew "boost"
