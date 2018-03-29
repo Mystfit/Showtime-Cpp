@@ -114,9 +114,6 @@ install:
 
   # Install linuxbrew dependencies
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      export PATH="$HOMEBREW_PATH/bin:$HOMEBREW_PATH/sbin:$PATH";
-      export MANPATH="$HOMEBREW_PATH/share/man:$MANPATH";
-      export INFOPATH="$HOMEBREW_PATH/share/info:$INFOPATH";
       sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)";
     fi
 
