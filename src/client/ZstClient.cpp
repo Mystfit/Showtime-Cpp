@@ -333,7 +333,7 @@ void ZstClient::register_client_to_stage(std::string stage_address, bool async) 
 	//Build connect message
 	ZstMessage * msg = msg_pool().get()->init_serialisable_message(ZstMsgKind::CLIENT_JOIN, *m_root);
 	
-	MessageFuture future = msg_pool().register_future(msg, true);
+	MessageFuture future = msg_pool().register_response_message(msg, true);
 	if(async){
 		register_client_to_stage_async(future);
 		send_to_stage(msg);
@@ -407,7 +407,7 @@ void ZstClient::synchronise_graph(bool async)
     //Ask the stage to send us a full snapshot
     ZstLog::net(LogLevel::notification, "Requesting stage snapshot");
     ZstMessage * msg = msg_pool().get()->init_message(ZstMsgKind::CLIENT_SYNC);
-	MessageFuture future = msg_pool().register_future(msg, true);
+	MessageFuture future = msg_pool().register_response_message(msg, true);
 	
 	if (async) {
 		synchronise_graph_async(future);
@@ -467,7 +467,7 @@ void ZstClient::leave_stage(bool immediately)
 		}
 
 		//Leave slowly by waiting for leave OK from the stage
-		MessageFuture future = msg_pool().register_future(msg, true);
+		MessageFuture future = msg_pool().register_response_message(msg, true);
 		send_to_stage(msg);
 
 		try {
@@ -727,7 +727,7 @@ int ZstClient::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
 	ZstClient * client = (ZstClient*)arg;
 	chrono::time_point<chrono::system_clock> start = std::chrono::system_clock::now();
 	ZstMessage * msg = client->msg_pool().get()->init_message(ZstMsgKind::CLIENT_HEARTBEAT);
-	MessageFuture future = client->msg_pool().register_future(msg, true);
+	MessageFuture future = client->msg_pool().register_response_message(msg, true);
 
 	try {
 		future.then([&start, client](MessageFuture f) {
@@ -879,7 +879,7 @@ void ZstClient::activate_entity(ZstEntityBase * entity, bool async)
 	ZstMessage * msg = msg_pool().get()->init_entity_message(entity);
 	ZstURI entity_path = entity->URI();
     
-	MessageFuture future = msg_pool().register_future(msg, true);
+	MessageFuture future = msg_pool().register_response_message(msg, true);
 	if(async){
 		activate_entity_async(entity, future);
 		send_to_stage(msg);
@@ -961,7 +961,7 @@ void ZstClient::destroy_entity(ZstEntityBase * entity, bool async)
             msg->append_str(entity->URI().path(), entity->URI().full_size());
             ZstURI entity_path = entity->URI();
             
-            MessageFuture future = msg_pool().register_future(msg, true);
+            MessageFuture future = msg_pool().register_response_message(msg, true);
 			if (async) {
 				destroy_entity_async(entity, future);
 				send_to_stage(msg);
@@ -1162,7 +1162,7 @@ void ZstClient::destroy_plug(ZstPlug * plug, bool async)
 	if (entity_is_local(*plug)) {
 		ZstMessage * msg = msg_pool().get()->init_message(ZstMsgKind::DESTROY_ENTITY);
 		msg->append_str(plug->URI().path(), plug->URI().full_size());
-		MessageFuture future = msg_pool().register_future(msg, true);
+		MessageFuture future = msg_pool().register_response_message(msg, true);
 		if (async) {
 			destroy_plug_async(plug, future);
 			send_to_stage(msg);
@@ -1252,7 +1252,7 @@ ZstCable * ZstClient::connect_cable(ZstPlug * input, ZstPlug * output, bool asyn
 	//to determine the correct input->output order - fix this using ZstInputPlug and 
 	//ZstOutput plug as arguments
 	ZstMessage * msg = msg_pool().get()->init_serialisable_message(ZstMsgKind::CREATE_CABLE, *cable);
-    MessageFuture future = msg_pool().register_future(msg, true);
+    MessageFuture future = msg_pool().register_response_message(msg, true);
     
 	if (async) {
 		connect_cable_async(cable, future);
@@ -1309,7 +1309,7 @@ void ZstClient::destroy_cable(ZstCable * cable, bool async)
 	cable->set_deactivating();
 	ZstMessage * msg = msg_pool().get()->init_serialisable_message(ZstMsgKind::DESTROY_CABLE, *cable);
     
-    MessageFuture future = msg_pool().register_future(msg, true);
+    MessageFuture future = msg_pool().register_response_message(msg, true);
 	try {
 		if (async) {
 			destroy_cable_async(cable, future);

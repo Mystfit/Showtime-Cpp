@@ -332,3 +332,7 @@ __pycache__/
 
 # Git submodules
 #submodules/
+
+# VScode projects
+.vscode
+.vs

@@ -42,34 +42,6 @@ ZstMessage * ZstMessagePool::get()
 	return msg;
 }
 
-MessageFuture ZstMessagePool::register_future(ZstMessage * msg, bool timeout)
-{
-	string id = string(msg->id());
-	m_promise_messages[id] = MessagePromise();
-	MessageFuture future = m_promise_messages[id].get_future();
-	if(timeout)
-		future = future.timeout(std::chrono::milliseconds(STAGE_TIMEOUT), ZstTimeoutException("Connect timeout"), m_timeout_watcher);
-	return future;
-}
-
-int ZstMessagePool::process_message_promise(ZstMessage * msg)
-{
-	int status = 0;
-	try {
-		std::string id = std::string(msg->id());
-		m_promise_messages.at(id).set_value(msg->kind());
-
-		//Clear completed promise when finished
-		m_promise_messages.erase(msg->id());
-		status = 1;
-	}
-	catch (out_of_range e) {
-		status = -1;
-	}
-
-	return status;
-}
-
 void ZstMessagePool::release(ZstMessage * message)
 {
 	if (m_use_pool) {

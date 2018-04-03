@@ -30,7 +30,7 @@ public:
 	void init_client(const char * client_name, bool debug);
 	void init_file_logging(const char * log_file_path);
 	void destroy() override;
-	void process_callbacks();
+	void process_callbacks() override;
 	
 	//CLient singleton - should not be accessable outside this interface
 	static ZstClient & instance();

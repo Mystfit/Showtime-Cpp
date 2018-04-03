@@ -8,17 +8,23 @@ set(ZST_CLIENT_HEADERS
 list(APPEND Showtime_API_INTERFACE ${ZST_CLIENT_HEADERS})
 
 set(ZST_CLIENT_PRIVATE_HEADERS
-	"${Showtime_INCLUDE_DIRS}/Showtime.h"
+  "${Showtime_INCLUDE_DIRS}/Showtime.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.h"
-	"${CMAKE_CURRENT_LIST_DIR}/ZstClient.h"
-	"${CMAKE_CURRENT_LIST_DIR}/ZstClientEvents.h"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstClient.h"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstClientEvents.h"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstRequestDispatcher.h"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstTransportLayer.h"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstHierarchy.h"
 )
 
 set(ZST_CLIENT_SRC
-    "${CMAKE_CURRENT_LIST_DIR}/Showtime.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstClient.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstClientEvents.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/Showtime.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstClient.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstClientEvents.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstRequestDispatcher.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstTransportLayer.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstHierarchy.cpp"
 )
 
 # Include files in client target
