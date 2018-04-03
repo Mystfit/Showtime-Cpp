@@ -44,7 +44,6 @@ showtime_module = Extension('_showtime',
     include_dirs=include_dirs,
     library_dirs=build_library_dirs,
     libraries=libraries,
-    data_files=runtimes,
     extra_compile_args=extra_compile_args,
     extra_link_args=extra_link_args,
     swig_opts=[
