@@ -29,6 +29,7 @@ list(APPEND Showtime_API_INTERFACE ${API_FILES})
 set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstActor.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessage.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstEventQueue.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstEventDispatcher.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstINetworkInteractor.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstValue.h"
@@ -39,6 +40,7 @@ set(ZST_CORE_HEADERS
 set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstActor.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstEvents.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstEventQueue.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstEventDispatcher.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessage.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstLogging.cpp"

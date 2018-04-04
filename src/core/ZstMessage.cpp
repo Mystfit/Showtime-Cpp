@@ -1,6 +1,5 @@
 #include <memory>
 #include <czmq.h>
-
 #include "ZstMessage.h"
 
 ZstMessage::ZstMessage() :
@@ -87,12 +86,6 @@ ZstMessage * ZstMessage::init_serialisable_message(ZstMsgKind kind, const ZstSer
 	append_kind_frame(kind);
 	append_payload_frame(streamable);
 	return this;
-}
-
-void ZstMessage::send(zsock_t * socket)
-{
-	zmsg_send(&m_msg_handle, socket);
-	m_msg_handle = NULL;
 }
 
 ZstEntityBase * ZstMessage::entity_target()

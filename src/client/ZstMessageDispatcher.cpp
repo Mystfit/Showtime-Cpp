@@ -1,14 +1,15 @@
-#include "ZstRequestDispatcher.h"
+#include "ZstMessageDispatcher.h"
 
-ZstRequestDispatcher::ZstRequestDispatcher()
+ZstMessageDispatcher::ZstMessageDispatcher()
+{	
+	m_message_pool.populate(MESSAGE_POOL_BLOCK);
+}
+
+ZstMessageDispatcher::~ZstMessageDispatcher()
 {
 }
 
-ZstRequestDispatcher::~ZstRequestDispatcher()
-{
-}
-
-ZstMsgKind ZstRequestDispatcher::prepare_sync_message(const ZstMessage * msg)
+ZstMsgKind ZstMessageDispatcher::prepare_sync_message(const ZstMessage * msg)
 {
 	if (!msg) return ZstMsgKind::EMPTY;
 
@@ -27,9 +28,9 @@ ZstMsgKind ZstRequestDispatcher::prepare_sync_message(const ZstMessage * msg)
 	return status;
 }
 
-ZstMsgKind ZstRequestDispatcher::prepare_async_message(const ZstMessage * msg)
+void ZstMessageDispatcher::prepare_async_message(const ZstMessage * msg)
 {
-	if (!msg) return ZstMsgKind::EMPTY;
+	if (!msg) return;
 	
 	MessageFuture future = register_response_message(msg);
 	future.then([this](MessageFuture f) {
@@ -45,10 +46,9 @@ ZstMsgKind ZstRequestDispatcher::prepare_async_message(const ZstMessage * msg)
 		}
 		return status;
 	});
-	return ZstMsgKind::EMPTY;
 }
 
-void ZstRequestDispatcher::complete(ZstMsgKind status)
+void ZstMessageDispatcher::complete(ZstMsgKind status)
 {
 	//If we didn't receive a OK signal, something went wrong
 	if (status != ZstMsgKind::OK) {
@@ -57,11 +57,16 @@ void ZstRequestDispatcher::complete(ZstMsgKind status)
 	}
 }
 
-void ZstRequestDispatcher::failed(ZstMsgKind status)
+void ZstMessageDispatcher::failed(ZstMsgKind status)
 {
 }
 
-void ZstRequestDispatcher::complete(ZstMsgKind status)
+ZstMessagePool & ZstMessageDispatcher::msg_pool()
+{
+	return m_message_pool;
+}
+
+void ZstMessageDispatcher::complete(ZstMsgKind status)
 {
 	//If we didn't receive a OK signal, something went wrong
 	if (status != ZstMsgKind::OK) {
@@ -71,7 +76,7 @@ void ZstRequestDispatcher::complete(ZstMsgKind status)
 }
 
 
-MessageFuture ZstRequestDispatcher::register_response_message(const ZstMessage * msg)
+MessageFuture ZstMessageDispatcher::register_response_message(const ZstMessage * msg);
 {
 	std::string id = std::string(msg->id());
 	m_promise_messages[id] = MessagePromise();
@@ -80,7 +85,7 @@ MessageFuture ZstRequestDispatcher::register_response_message(const ZstMessage *
 	return future;
 }
 
-int ZstRequestDispatcher::process_message_promise(const ZstMessage * msg)
+int ZstMessageDispatcher::process_response_message(const ZstMessage * msg)
 {
 	int status = 0;
 	try {

@@ -9,13 +9,6 @@
 
 #define KIND_FRAME_SIZE 1
 
-//Forwards
-typedef struct _zmsg_t zmsg_t;
-typedef struct _zframe_t zframe_t;
-typedef struct _zuuid_t zuuid_t;
-typedef struct _zsock_t zsock_t;
-
-
 enum ZstMsgKind  {
     EMPTY = 0,
     
@@ -61,6 +54,12 @@ enum ZstMsgKind  {
     CREATE_PEER_ENTITY
 };
 
+//Forwards
+typedef struct _zmsg_t zmsg_t;
+typedef struct _zframe_t zframe_t;
+typedef struct _zuuid_t zuuid_t;
+typedef struct _zsock_t zsock_t;
+
 
 class ZstMessagePayload {
 public:
@@ -79,17 +78,15 @@ private:
 class ZstMessage {
 	friend class ZstMessagePool;
 public:
-	ZST_EXPORT ~ZstMessage();
-	ZST_EXPORT void reset();
-	ZST_EXPORT ZstMessage(const ZstMessage & other);
-	ZST_EXPORT void copy_id(const ZstMessage * msg);
+	ZST_EXPORT virtual ~ZstMessage();
+	ZST_EXPORT virtual void reset();
+	ZST_EXPORT virtual ZstMessage(const ZstMessage & other);
+	ZST_EXPORT virtual void copy_id(const ZstMessage * msg);
 
 	//Initialisation
 	ZST_EXPORT ZstMessage * init_entity_message(ZstEntityBase * entity);
 	ZST_EXPORT ZstMessage * init_message(ZstMsgKind kind);
 	ZST_EXPORT ZstMessage * init_serialisable_message(ZstMsgKind kind, const ZstSerialisable & streamable);
-
-	ZST_EXPORT void send(zsock_t * socket);
 
 	//Message modification
 	ZST_EXPORT void append_str(const char * s, size_t len);

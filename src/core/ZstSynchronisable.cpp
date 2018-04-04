@@ -9,8 +9,8 @@ ZstSynchronisable::ZstSynchronisable() :
 	m_sync_status(ZstSyncStatus::DEACTIVATED),
     m_sync_error(ZstSyncError::NO_ERR)
 {
-	m_activation_events = new ZstEventDispatcher();
-	m_deactivation_events = new ZstEventDispatcher();
+	m_activation_events = new ZstEventQueue();
+	m_deactivation_events = new ZstEventQueue();
 	m_activation_hook = new ZstActivationEvent();
 	m_deactivation_hook = new ZstDeactivationEvent();
 	m_activation_events->attach_pre_event_callback(m_activation_hook);

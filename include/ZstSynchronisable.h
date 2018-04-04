@@ -4,7 +4,7 @@
 #include <ZstEvents.h>
 
 class ZstINetworkInteractor;
-class ZstEventDispatcher;
+class ZstEventQueue;
 
 enum ZstSyncStatus {
 	DEACTIVATED = 0,
@@ -26,7 +26,6 @@ enum ZstSyncError {
 class ZstSynchronisable {
 	friend class ZstActivationEvent;
 	friend class ZstDeactivationEvent;
-    friend class ZstClient;
 public:
 	ZST_EXPORT ZstSynchronisable();
 	ZST_EXPORT ZstSynchronisable(const ZstSynchronisable & other);
@@ -61,8 +60,8 @@ protected:
     ZST_EXPORT void set_error(ZstSyncError e);
 
 private:
-	ZstEventDispatcher * m_activation_events;
-	ZstEventDispatcher * m_deactivation_events;
+	ZstEventQueue * m_activation_events;
+	ZstEventQueue * m_deactivation_events;
 	ZstActivationEvent * m_activation_hook;
 	ZstDeactivationEvent * m_deactivation_hook;
 

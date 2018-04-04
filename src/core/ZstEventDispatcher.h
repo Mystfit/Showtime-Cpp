@@ -1,32 +1,18 @@
 #pragma once
 
-#include <algorithm>
-#include <vector>
-#include <queue>
-#include <iostream>
-#include <boost/lockfree/queue.hpp>
+#include <set>
 #include <ZstExports.h>
-#include <ZstEvents.h>
+#include "ZstEventQueue.h"
 
 class ZstEventDispatcher {
 public:
-	ZST_EXPORT ZstEventDispatcher();
+	ZST_EXPORT ZstEventDispatcher() {};
 	ZST_EXPORT ~ZstEventDispatcher();
-	ZST_EXPORT void attach_pre_event_callback(ZstEvent * event);
-	ZST_EXPORT void remove_pre_event_callback(ZstEvent * event);
-	ZST_EXPORT void attach_event_listener(ZstEvent * event);
-	ZST_EXPORT void remove_event_listener(ZstEvent * event);
-	ZST_EXPORT void attach_post_event_callback(ZstEvent * event);
-	ZST_EXPORT void remove_post_event_callback(ZstEvent * event);
-	ZST_EXPORT void dispatch_events(ZstSynchronisable * target);
-	ZST_EXPORT void flush();
-    ZST_EXPORT void clear_attached_events();
-	ZST_EXPORT void enqueue(ZstSynchronisable * target);
-	ZST_EXPORT void process();
+
+	ZST_EXPORT void add_event_queue(ZstEventQueue & queue);
+	ZST_EXPORT void remove_event_queue(ZstEventQueue & queue);
+	ZST_EXPORT virtual void process_callbacks();
 
 private:
-	std::vector<ZstEvent*> m_pre_event_callback;
-	std::vector<ZstEvent*> m_event_callbacks;
-	std::vector<ZstEvent*> m_post_event_callback;
-	boost::lockfree::queue<ZstSynchronisable*> m_event_queue;
+	std::set<ZstEventQueue&> m_event_queues;
 };
