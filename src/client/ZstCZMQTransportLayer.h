@@ -3,12 +3,16 @@
 #include <string>
 #include <czmq.h>
 #include "ZstTransportLayer.h"
+#include "ZstCZMQMessagePool.h"
+
 
 class ZstCZMQTransportLayer : public ZstTransportLayer {
 
 public:
 	ZstCZMQTransportLayer();
 	~ZstCZMQTransportLayer();
+
+	ZstMessagePool & msg_pool();
 
 private:
 	// ---------------
@@ -36,8 +40,8 @@ private:
 
 	zsock_t * m_stage_router;
 	zsock_t * m_stage_updates;
-	zsock_t * m_graph_out_tcp;
-	zsock_t * m_graph_out_udp;
+	zsock_t * m_graph_in;
+	zsock_t * m_graph_out;
 
 	// ---------------
 	// Addresses
@@ -50,4 +54,6 @@ private:
 	std::string m_graph_out_addr;
 	std::string m_graph_out_ip;
 	std::string m_network_interface;
+
+	ZstCZMQMessagePool m_message_pool;
 };

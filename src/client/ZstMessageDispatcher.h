@@ -3,7 +3,7 @@
 #include <cf/cfuture.h>
 #include <cf/time_watcher.h>
 #include "../core/ZstMessage.h"
-#include "../core/ZstMessagePool.h"
+#include "ZstCZMQMessagePool.h"
 
 /**
  * Struct:	ZstTimeoutException
@@ -82,15 +82,7 @@ public:
 	 * status - 	Status returned from the server.
 	 */
 	virtual void failed(ZstMsgKind status);
-
-	/**
-	 * Fn:	ZstMessagePool & ZstMessageDispatcher::msg_pool();
-	 *
-	 * Summary:	Message pool.
-	 *
-	 * Returns:	A reference to a ZstMessagePool.
-	 */
-	ZstMessagePool & msg_pool();
+	
 	
 private:
 
@@ -137,7 +129,4 @@ private:
 
 	/** Summary:	The timeout watcher. */
 	cf::time_watcher m_timeout_watcher;
-	
-	/** Summary:	The message pool. */
-	ZstMessagePool m_message_pool;
 };

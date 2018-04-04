@@ -1,15 +1,26 @@
 #include "ZstCZMQTransportLayer.h"
+#include "ZstCZMQMessage.h"
 
 ZstCZMQTransportLayer::ZstCZMQTransportLayer() : 
 	m_graph_out_ip("")
 {
+	m_message_pool.populate(MESSAGE_POOL_BLOCK);
+}
+
+ZstCZMQTransportLayer::~ZstCZMQTransportLayer()
+{
+}
+
+ZstMessagePool & ZstCZMQTransportLayer::msg_pool()
+{
+	return m_message_pool;
 }
 
 int ZstCZMQTransportLayer::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg) {
-	ZstClient *client = (ZstClient*)arg;
+	ZstCZMQTransportLayer * transport = (ZstCZMQTransportLayer*)arg;
 
 	//Receive message from graph
-	zmsg_t *msg = zmsg_recv(client->m_graph_in);
+	zmsg_t *msg = zmsg_recv(transport->m_graph_in);
 
 	if (client->graph_message_handler(msg) < 0) {
 		//TODO: Graph message error. How to handle here if at all?
@@ -22,18 +33,18 @@ int ZstCZMQTransportLayer::s_handle_graph_in(zloop_t * loop, zsock_t * socket, v
 
 
 int ZstCZMQTransportLayer::s_handle_stage_update_in(zloop_t * loop, zsock_t * socket, void * arg) {
-	ZstClient *client = (ZstClient*)arg;
-	ZstMessage * msg = client->receive_stage_update();
+	ZstCZMQTransportLayer * transport = (ZstCZMQTransportLayer*)arg;
+	ZstMessage * msg = transport->receive_stage_update();
 	client->stage_update_handler(msg);
 	return 0;
 }
 
 
 int ZstCZMQTransportLayer::s_handle_stage_router(zloop_t * loop, zsock_t * socket, void * arg) {
-	ZstClient *client = (ZstClient*)arg;
+	ZstCZMQTransportLayer * transport = (ZstCZMQTransportLayer*)arg;
 
 	//Receive routed message from stage
-	ZstMessage * msg = client->receive_from_stage();
+	ZstMessage * msg = transport->receive_from_stage();
 
 	//Process messages addressed to our client specifically
 	if (msg->kind() == ZstMsgKind::GRAPH_SNAPSHOT) {
@@ -53,10 +64,10 @@ int ZstCZMQTransportLayer::s_handle_stage_router(zloop_t * loop, zsock_t * socke
 	}
 
 	//Process message promises
-	client->msg_pool().process_response_message(msg);
+	msg_dispatch->process_response_message(msg);
 
 	//Cleanup
-	client->msg_pool().release(msg);
+	transport->msg_pool().release(msg);
 	return 0;
 }
 
@@ -91,21 +102,21 @@ void ZstCZMQTransportLayer::send_to_stage(ZstMessage * msg)
 
 ZstMessage * ZstCZMQTransportLayer::receive_stage_update()
 {
-	ZstMessage * msg = NULL;
+	ZstCZMQMessage * msg = NULL;
 	zmsg_t * recv_msg = zmsg_recv(m_stage_updates);
 	if (recv_msg) {
-		msg = msg_pool().get();
+		msg = static_cast<ZstCZMQMessage*>(msg_pool().get());
 		msg->unpack(recv_msg);
 	}
 	return msg;
 }
 
 ZstMessage * ZstCZMQTransportLayer::receive_from_stage() {
-	ZstMessage * msg = NULL;
+	ZstCZMQMessage * msg = NULL;
 
 	zmsg_t * recv_msg = zmsg_recv(m_stage_router);
 	if (recv_msg) {
-		msg = msg_pool().get();
+		msg = static_cast<ZstCZMQMessage*>(msg_pool().get());
 
 		//Pop blank seperator frame left from the dealer socket
 		zframe_t * empty = zmsg_pop(recv_msg);

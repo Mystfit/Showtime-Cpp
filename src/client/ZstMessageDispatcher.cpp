@@ -2,7 +2,6 @@
 
 ZstMessageDispatcher::ZstMessageDispatcher()
 {	
-	m_message_pool.populate(MESSAGE_POOL_BLOCK);
 }
 
 ZstMessageDispatcher::~ZstMessageDispatcher()
@@ -59,11 +58,6 @@ void ZstMessageDispatcher::complete(ZstMsgKind status)
 
 void ZstMessageDispatcher::failed(ZstMsgKind status)
 {
-}
-
-ZstMessagePool & ZstMessageDispatcher::msg_pool()
-{
-	return m_message_pool;
 }
 
 void ZstMessageDispatcher::complete(ZstMsgKind status)
