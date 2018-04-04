@@ -12,15 +12,14 @@ public:
 	ZST_EXPORT ZstMessagePool();
 	ZST_EXPORT ~ZstMessagePool();
 
-	ZST_EXPORT void populate(int size);
+	ZST_EXPORT virtual void populate(int size) = 0;
 
-	//Obtain a blank message
-	ZST_EXPORT ZstMessage * get();
+	ZST_EXPORT virtual ZstMessage * get() = 0;
 	
 	//Release and reset a message
 	ZST_EXPORT void release(ZstMessage * message);
 
-private:
+protected:
 	bool m_use_pool;
 	std::list<ZstMessage*> m_message_pool;
 };
