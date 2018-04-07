@@ -157,7 +157,7 @@ void ZstClient::join_stage(std::string stage_address, bool async) {
     
 	ZstMessage * msg = m_msg_dispatch->init_serialisable_message(ZstMsgKind::CLIENT_JOIN, *m_hierarchy->get_local_performer());
 	msg->append_str(stage_address.c_str(), stage_address.size());
-	m_msg_dispatch->send_to_stage(msg, BIND_MSG_ACTION(&ZstClient::join_stage_complete, this), async);
+	m_msg_dispatch->send_to_stage(msg, [this](ZstMessageReceipt response) { this->join_stage_complete(response); }, async);
 	
 	//Run callbacks if we're still on the main app thread
 	if (!async) process_callbacks();
@@ -193,7 +193,7 @@ void ZstClient::leave_stage(bool async)
 		ZstLog::net(LogLevel::notification, "Leaving stage");
         
         ZstMessage * msg = m_msg_dispatch->init_message(ZstMsgKind::CLIENT_LEAVING);
-		m_msg_dispatch->send_to_stage(msg, BIND_MSG_ACTION(&ZstClient::leave_stage_complete, this), async);
+		m_msg_dispatch->send_to_stage(msg, [this](ZstMessageReceipt response) {this->leave_stage_complete(); }, async);
 
 		//Run callbacks if we're still on the main app thread
 		if(!async) process_callbacks();
@@ -252,7 +252,7 @@ int ZstClient::graph_message_handler(zmsg_t * msg) {
 	zframe_t * payload = zmsg_pop(msg);
 
 	//Find local proxy of the sneding plug
-	ZstPlug * sending_plug = dynamic_cast<ZstPlug*>(find_entity(sender));
+	ZstPlug * sending_plug = dynamic_cast<ZstPlug*>(hierarchy()->find_entity(sender));
 	ZstInputPlug * receiving_plug = NULL;
 
 	if (!sending_plug) {
@@ -264,11 +264,11 @@ int ZstClient::graph_message_handler(zmsg_t * msg) {
 	for (auto cable : *sending_plug) {
 		receiving_plug = dynamic_cast<ZstInputPlug*>(cable->get_input());
 		if (receiving_plug) {
-			if (entity_is_local(*receiving_plug)) {
+			if (hierarchy()->entity_is_local(*receiving_plug)) {
 				//TODO: Lock plug value when deserialising
 				size_t offset = 0;
 				receiving_plug->raw_value()->read((char*)zframe_data(payload), zframe_size(payload), offset);
-				compute_events().enqueue(receiving_plug);
+				compute_events()->enqueue(receiving_plug);
 			}
 		}
 	}
@@ -303,21 +303,21 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 		{
 			const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(i);
 			//Only dispatch cable event if we don't already have the cable (we might have created it)
-			if(!find_cable_ptr(cable.get_input_URI(), cable.get_output_URI())) {
-				ZstCable * cable_ptr = create_cable_ptr(cable);
+			if(!cable_network()->find_cable(cable.get_input_URI(), cable.get_output_URI())) {
+				ZstCable * cable_ptr = cable_network()->create_cable_ptr(cable);
                 cable_ptr->set_activation_status(ZstSyncStatus::ACTIVATED);
-				cable_arriving_events().enqueue(cable_ptr);
+				cable_network()->cable_arriving_events()->enqueue(cable_ptr);
 			}
 			break;
 		}
 		case ZstMsgKind::DESTROY_CABLE:
 		{
 			const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(i);
-			ZstCable * cable_ptr = find_cable_ptr(cable.get_input_URI(), cable.get_output_URI());
+			ZstCable * cable_ptr = cable_network()->find_cable(cable.get_input_URI(), cable.get_output_URI());
 			if (cable_ptr) {
 				if (cable_ptr->is_activated()) {
 					cable_ptr->enqueue_deactivation();
-					this->cable_leaving_events().enqueue(cable_ptr);
+					cable_network()->cable_leaving_events()->enqueue(cable_ptr);
 				}
 			}
 			break;
@@ -325,25 +325,25 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 		case ZstMsgKind::CREATE_PLUG:
 		{
 			ZstPlug plug = msg->unpack_payload_serialisable<ZstPlug>(i);
-			add_proxy_entity(plug);
+			hierarchy()->add_proxy_entity(plug);
 			break;
 		}
 		case ZstMsgKind::CREATE_PERFORMER:
 		{
 			ZstPerformer performer = msg->unpack_payload_serialisable<ZstPerformer>(i);
-			add_performer(performer);
+			hierarchy()->add_performer(performer);
 			break;
 		}
 		case ZstMsgKind::CREATE_COMPONENT:
 		{
 			ZstComponent component = msg->unpack_payload_serialisable<ZstComponent>(i);
-			add_proxy_entity(component);
+			hierarchy()->add_proxy_entity(component);
 			break;
 		}
 		case ZstMsgKind::CREATE_CONTAINER:
 		{
 			ZstContainer container = msg->unpack_payload_serialisable<ZstContainer>(i);
-			add_proxy_entity(container);
+			hierarchy()->add_proxy_entity(container);
 			break;
 		}
 		case ZstMsgKind::DESTROY_ENTITY:
@@ -351,16 +351,16 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 			ZstURI entity_path = ZstURI(msg->payload_at(i).data(), msg->payload_at(i).size());
 			
 			//Only dispatch entity leaving events for non-local entities (for the moment)
-			if (!path_is_local(entity_path)) {
-				ZstEntityBase * entity = find_entity(entity_path);
+			if (!hierarchy()->path_is_local(entity_path)) {
+				ZstEntityBase * entity = hierarchy()->find_entity(entity_path);
                 if(entity){
                     entity->enqueue_deactivation();
                     if (strcmp(entity->entity_type(), COMPONENT_TYPE) == 0 || strcmp(entity->entity_type(), CONTAINER_TYPE) == 0) {
-                        component_leaving_events().enqueue(entity);
+						hierarchy()->component_leaving_events()->enqueue(entity);
                     } else if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
-                        plug_leaving_events().enqueue(entity);
+						hierarchy()->plug_leaving_events()->enqueue(entity);
                     } else if (strcmp(entity->entity_type(), PERFORMER_TYPE) == 0) {
-                        performer_leaving_events().enqueue(entity);
+						hierarchy()->performer_leaving_events()->enqueue(entity);
                     }
                 }
 			}
@@ -437,6 +437,11 @@ void ZstClient::enqueue_synchronisable_event(ZstSynchronisable * synchronisable)
 	m_synchronisable_event_manager->enqueue(synchronisable);
 }
 
+void ZstClient::enqueue_synchronisable_deletion(ZstSynchronisable * synchronisable)
+{
+	m_reaper.add(synchronisable);
+}
+
 ZstHierarchy * ZstClient::hierarchy()
 {
 	return m_hierarchy;
@@ -449,5 +454,5 @@ ZstCableNetwork * ZstClient::cable_network()
 
 ZstMessageDispatcher * ZstClient::msg_dispatch()
 {
-	return nullptr;
+	return m_msg_dispatch;
 }

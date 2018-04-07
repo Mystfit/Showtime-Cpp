@@ -31,8 +31,8 @@ public:
 	// Events
 	// -------------
 
-	ZstEventQueue & cable_arriving_events();
-	ZstEventQueue & cable_leaving_events();
+	ZstEventQueue * cable_arriving_events();
+	ZstEventQueue * cable_leaving_events();
 
 private:
 	ZstCableNetwork();
@@ -48,8 +48,8 @@ private:
 	// Event completion
 	// ----------------
 
-	void connect_cable_complete(ZstMsgKind status, ZstCable * cable);
-	void destroy_cable_complete(ZstMsgKind status, ZstCable * cable);
+	void connect_cable_complete(ZstMessageReceipt response, ZstCable * cable);
+	void destroy_cable_complete(ZstMessageReceipt response, ZstCable * cable);
 
 
 	// --------------

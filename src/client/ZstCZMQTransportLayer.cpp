@@ -117,15 +117,10 @@ int ZstCZMQTransportLayer::s_handle_graph_in(zloop_t * loop, zsock_t * socket, v
 	return 0;
 }
 
-ZstMessagePool<ZstCZMQMessage*> & ZstCZMQTransportLayer::msg_pool()
-{
-	return m_pool;
-}
-
 int ZstCZMQTransportLayer::s_handle_stage_update_in(zloop_t * loop, zsock_t * socket, void * arg) {
 	ZstCZMQTransportLayer * transport = (ZstCZMQTransportLayer*)arg;
 	ZstMessage * msg = transport->receive_stage_update();
-	client->stage_update_handler(msg);
+	transport->client()->stage_update_handler(msg);
 	return 0;
 }
 
@@ -140,11 +135,11 @@ int ZstCZMQTransportLayer::s_handle_stage_router(zloop_t * loop, zsock_t * socke
 	if (msg->kind() == ZstMsgKind::GRAPH_SNAPSHOT) {
 		ZstLog::net(LogLevel::notification, "Received graph snapshot");
 		//Handle graph snapshot synchronisation
-		client->stage_update_handler(msg);
+		transport->client()->stage_update_handler(msg);
 	}
 	else if (msg->kind() == ZstMsgKind::SUBSCRIBE_TO_PERFORMER) {
 		//Handle connection requests from other clients
-		client->connect_client_handler(msg->payload_at(0).data(), msg->payload_at(1).data());
+		transport->client()->connect_client_handler(msg->payload_at(0).data(), msg->payload_at(1).data());
 	}
 	else if (msg->kind() == ZstMsgKind::OK) {
 		//Do nothing?
@@ -154,7 +149,7 @@ int ZstCZMQTransportLayer::s_handle_stage_router(zloop_t * loop, zsock_t * socke
 	}
 
 	//Process message promises
-	msg_dispatch->process_response_message(msg);
+	transport->client()->msg_dispatch()->process_response_message(msg);
 
 	//Cleanup
 	transport->m_pool.release(dynamic_cast<ZstCZMQMessage*>(msg));
@@ -206,7 +201,7 @@ ZstMessage * ZstCZMQTransportLayer::receive_stage_update()
 	ZstCZMQMessage * msg = NULL;
 	zmsg_t * recv_msg = zmsg_recv(m_stage_updates);
 	if (recv_msg) {
-		msg = static_cast<ZstCZMQMessage*>(msg_pool().get());
+		msg = static_cast<ZstCZMQMessage*>(m_pool.get_msg());
 		msg->unpack(recv_msg);
 	}
 	return msg;
@@ -217,7 +212,7 @@ ZstMessage * ZstCZMQTransportLayer::receive_from_stage() {
 
 	zmsg_t * recv_msg = zmsg_recv(m_stage_router);
 	if (recv_msg) {
-		msg = static_cast<ZstCZMQMessage*>(msg_pool().get());
+		msg = static_cast<ZstCZMQMessage*>(m_pool.get_msg());
 
 		//Pop blank seperator frame left from the dealer socket
 		zframe_t * empty = zmsg_pop(recv_msg);

@@ -41,14 +41,8 @@ typedef cf::future<ZstMsgKind> MessageFuture;
  *
  * Summary: Defines an alias representing a message completion action.
  */
-typedef boost::function<void(ZstMessageReceipt)> MessageBoundAction;
+typedef std::function<void(ZstMessageReceipt)> MessageBoundAction;
 
-/**
- * Macro: BIND_MSG_ACTION(func, target)
- * 
- * Summary: Helper macro that binds a class member function to to a MessageBoundAction object
- */
-#define BIND_MSG_ACTION(func, target) boost::bind(func, target, _1)
 
 /**
  * Class:	ZstMessageDispatcher
@@ -86,12 +80,14 @@ public:
 	 * Summary:	Sends a message to the stage.
 	 *
 	 * Parameters:
-	 * msg - 	  	[in,out] If non-null, the message.
+	 * msg - 	  	[in,out] If non-null, the message to send.
+	 * action -		Callback method to run when the response is received
 	 * async -    	Send message asynchronously.
 	 *
 	 * Returns:	A ZstMsgKind.
 	 */
 	ZstMessageReceipt send_to_stage(ZstMessage * msg, MessageBoundAction action, bool async);
+	
 
 	/**
 	 * Fn:	ZstMsgKind ZstMessageDispatcher::send_sync_stage_message(const ZstMessage * msg);

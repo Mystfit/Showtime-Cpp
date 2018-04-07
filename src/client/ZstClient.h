@@ -58,12 +58,12 @@ public:
 
 	//Network interactor implementation
 	virtual void enqueue_synchronisable_event(ZstSynchronisable * synchronisable) override;
+	void enqueue_synchronisable_deletion(ZstSynchronisable * synchronisable);
 
 	//Client modules
 	ZstHierarchy * hierarchy();
 	ZstCableNetwork * cable_network();
 	ZstMessageDispatcher * msg_dispatch();
-
 
 private:
 	//Stage actor

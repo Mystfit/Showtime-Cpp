@@ -29,7 +29,7 @@ public:
 	// Entity activation/deactivation
 	// ------------------------------
 	void synchronise_graph(bool async = false);
-	void synchronise_graph_complete(ZstMsgKind status);
+	void synchronise_graph_complete(ZstMessageReceipt response);
 	void activate_entity(ZstEntityBase* entity, bool async = false);
 	void destroy_entity(ZstEntityBase * entity, bool async = false);
 	void destroy_plug(ZstPlug * plug, bool async);
@@ -51,14 +51,14 @@ public:
 	// Events
 	// -------------
 	
-	ZstEventQueue & performer_arriving_events();
-	ZstEventQueue & performer_leaving_events();
-	ZstEventQueue & component_arriving_events();
-	ZstEventQueue & component_leaving_events();
-	ZstEventQueue & component_type_arriving_events();
-	ZstEventQueue & component_type_leaving_events();
-	ZstEventQueue & plug_arriving_events();
-	ZstEventQueue & plug_leaving_events();
+	ZstEventQueue * performer_arriving_events();
+	ZstEventQueue * performer_leaving_events();
+	ZstEventQueue * component_arriving_events();
+	ZstEventQueue * component_leaving_events();
+	ZstEventQueue * component_type_arriving_events();
+	ZstEventQueue * component_type_leaving_events();
+	ZstEventQueue * plug_arriving_events();
+	ZstEventQueue * plug_leaving_events();
 
 private:
 	ZstHierarchy();
@@ -72,9 +72,9 @@ private:
 	// Event completion
 	// ----------------
 	
-	void activate_entity_complete(ZstMsgKind status, ZstEntityBase * entity);
-	void destroy_entity_complete(ZstMsgKind status, ZstEntityBase * entity);
-	void destroy_plug_complete(ZstMsgKind status, ZstPlug * plug);
+	void activate_entity_complete(ZstMessageReceipt response, ZstEntityBase * entity);
+	void destroy_entity_complete(ZstMessageReceipt response, ZstEntityBase * entity);
+	void destroy_plug_complete(ZstMessageReceipt response, ZstPlug * plug);
 
 
 	// --------------
