@@ -1,6 +1,7 @@
 # include "ZstTransportLayer.h"
 
-ZstTransportLayer::ZstTransportLayer() : 
+ZstTransportLayer::ZstTransportLayer(ZstClient * client) : 
+	ZstClientModule(client),
 	m_num_graph_recv_messages(0),
 	m_num_graph_send_messages(0)
 {

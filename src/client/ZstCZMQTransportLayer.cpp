@@ -1,19 +1,105 @@
 #include "ZstCZMQTransportLayer.h"
 #include "ZstCZMQMessage.h"
 
-ZstCZMQTransportLayer::ZstCZMQTransportLayer() : 
+ZstCZMQTransportLayer::ZstCZMQTransportLayer(ZstClient * client) : 
+	ZstTransportLayer(client),
 	m_graph_out_ip("")
 {
-	m_message_pool.populate(MESSAGE_POOL_BLOCK);
 }
 
 ZstCZMQTransportLayer::~ZstCZMQTransportLayer()
 {
 }
 
-ZstMessagePool & ZstCZMQTransportLayer::msg_pool()
+void ZstCZMQTransportLayer::destroy()
 {
-	return m_message_pool;
+	ZstTransportLayer::destroy();
+	zsock_destroy(&m_stage_updates);
+	zsock_destroy(&m_stage_router);
+	zsock_destroy(&m_graph_in);
+	zsock_destroy(&m_graph_out);
+	zsys_shutdown();
+}
+
+void ZstCZMQTransportLayer::init()
+{
+	m_startup_uuid = zuuid_new();
+	
+	//Local dealer socket for receiving messages forwarded from other performers
+	m_stage_router = zsock_new(ZMQ_DEALER);
+	if (m_stage_router) {
+		zsock_set_linger(m_stage_router, 0);
+		attach_pipe_listener(m_stage_router, s_handle_stage_router, this);
+	}
+
+	//Graph input socket
+	m_graph_in = zsock_new(ZMQ_SUB);
+	if (m_graph_in) {
+		zsock_set_linger(m_graph_in, 0);
+		zsock_set_unbounded(m_graph_in);
+		attach_pipe_listener(m_graph_in, s_handle_graph_in, this);
+	}
+
+	//Stage update socket
+	m_stage_updates = zsock_new(ZMQ_SUB);
+	if (m_stage_updates) {
+		zsock_set_linger(m_stage_updates, 0);
+		attach_pipe_listener(m_stage_updates, s_handle_stage_update_in, this);
+	}
+
+	std::string network_ip = first_available_ext_ip();
+	ZstLog::net(LogLevel::notification, "Using external IP {}", network_ip);
+
+	//Graph output socket
+	std::stringstream addr;
+	addr << "@tcp://" << network_ip.c_str() << ":*";
+	m_graph_out = zsock_new_pub(addr.str().c_str());
+	m_graph_out_addr = zsock_last_endpoint(m_graph_out);
+	addr.str("");
+
+	//Set graph socket as unbounded by HWM
+	zsock_set_unbounded(m_graph_out);
+	char * output_ip = zsock_last_endpoint(m_graph_out);
+	m_graph_out_ip = std::string(output_ip);
+	zstr_free(&output_ip);
+	ZstLog::net(LogLevel::notification, "Client graph address: {}", m_graph_out_ip);
+
+	if (m_graph_out)
+		zsock_set_linger(m_graph_out, 0);
+
+	//Set up outgoing sockets
+	std::string identity = std::string(zuuid_str_canonical(m_startup_uuid));
+	ZstLog::net(LogLevel::notification, "Setting socket identity to {}. Length {}", identity, identity.size());
+
+	zsock_set_identity(m_stage_router, identity.c_str());
+
+}
+
+void ZstCZMQTransportLayer::connect_to_stage(std::string stage_address)
+{
+	m_stage_addr = std::string(stage_address);
+
+	std::stringstream addr;
+	addr << "tcp://" << m_stage_addr << ":" << STAGE_ROUTER_PORT;
+	m_stage_router_addr = addr.str();
+
+	zsock_connect(m_stage_router, "%s", m_stage_router_addr.c_str());
+	addr.str("");
+
+	//Stage subscriber socket for update messages
+	addr << "tcp://" << m_stage_addr << ":" << STAGE_PUB_PORT;
+	m_stage_updates_addr = addr.str();
+
+	ZstLog::net(LogLevel::notification, "Connecting to stage publisher {}", m_stage_updates_addr);
+	zsock_connect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
+	zsock_set_subscribe(m_stage_updates, "");
+	addr.str("");
+}
+
+void ZstCZMQTransportLayer::disconnect_from_stage()
+{
+	zsock_disconnect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
+	zsock_disconnect(m_stage_router, "%s", m_stage_router_addr.c_str());
 }
 
 int ZstCZMQTransportLayer::s_handle_graph_in(zloop_t * loop, zsock_t * socket, void * arg) {
@@ -31,6 +117,10 @@ int ZstCZMQTransportLayer::s_handle_graph_in(zloop_t * loop, zsock_t * socket, v
 	return 0;
 }
 
+ZstMessagePool<ZstCZMQMessage*> & ZstCZMQTransportLayer::msg_pool()
+{
+	return m_pool;
+}
 
 int ZstCZMQTransportLayer::s_handle_stage_update_in(zloop_t * loop, zsock_t * socket, void * arg) {
 	ZstCZMQTransportLayer * transport = (ZstCZMQTransportLayer*)arg;
@@ -67,7 +157,7 @@ int ZstCZMQTransportLayer::s_handle_stage_router(zloop_t * loop, zsock_t * socke
 	msg_dispatch->process_response_message(msg);
 
 	//Cleanup
-	transport->msg_pool().release(msg);
+	transport->m_pool.release(dynamic_cast<ZstCZMQMessage*>(msg));
 	return 0;
 }
 
@@ -90,14 +180,25 @@ void ZstCZMQTransportLayer::send_to_performance(ZstPlug * plug)
 	zmsg_send(&msg, m_graph_out);
 }
 
+ZstMessage * ZstCZMQTransportLayer::get_msg()
+{
+	ZstMessage * msg = m_pool.get_msg();
+	return msg;
+}
+
 void ZstCZMQTransportLayer::send_to_stage(ZstMessage * msg)
 {
+	ZstCZMQMessage * czmq_msg = dynamic_cast<ZstCZMQMessage*>(msg);
+
+	//Message needs to be a ZstCZMQMessage else something has gone wrong
+	assert(czmq_msg);
+
 	//Dealer socket doesn't add an empty frame to seperate identity chain and payload, so we handle it here
 	zframe_t * empty = zframe_new_empty();
-	zmsg_t * msg_handle = msg->handle();
+	zmsg_t * msg_handle = czmq_msg->handle();
 	zmsg_prepend(msg_handle, &empty);
-	msg->send(m_stage_router);
-	msg_pool().release(msg);
+	zmsg_send(&msg_handle, m_stage_router);
+	m_pool.release(czmq_msg);
 }
 
 ZstMessage * ZstCZMQTransportLayer::receive_stage_update()

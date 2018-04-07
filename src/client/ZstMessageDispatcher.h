@@ -1,9 +1,12 @@
 #pragma once
 #include <map>
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
 #include <cf/cfuture.h>
 #include <cf/time_watcher.h>
 #include "../core/ZstMessage.h"
-#include "ZstCZMQMessagePool.h"
+#include "ZstTransportLayer.h"
+#include "ZstClientModule.h"
 
 /**
  * Struct:	ZstTimeoutException
@@ -13,6 +16,39 @@
 struct ZstTimeoutException : std::runtime_error {
 	using std::runtime_error::runtime_error;
 };
+
+struct ZstMessageReceipt {
+	ZstMsgKind status;
+	bool async;
+};
+
+/**
+* Typedef:	cf::promise<ZstMsgKind> MessagePromise
+*
+* Summary:	Defines an alias representing the message promise.
+*/
+typedef cf::promise<ZstMsgKind> MessagePromise;
+
+/**
+* Typedef:	cf::future<ZstMsgKind> MessageFuture
+*
+* Summary:	Defines an alias representing the message future.
+*/
+typedef cf::future<ZstMsgKind> MessageFuture;
+
+/**
+ * Typedef:	boost::function<void(ZstMsgKind)> MessageBoundAction
+ *
+ * Summary: Defines an alias representing a message completion action.
+ */
+typedef boost::function<void(ZstMessageReceipt)> MessageBoundAction;
+
+/**
+ * Macro: BIND_MSG_ACTION(func, target)
+ * 
+ * Summary: Helper macro that binds a class member function to to a MessageBoundAction object
+ */
+#define BIND_MSG_ACTION(func, target) boost::bind(func, target, _1)
 
 /**
  * Class:	ZstMessageDispatcher
@@ -24,16 +60,19 @@ struct ZstTimeoutException : std::runtime_error {
  *  		Uses sync and async communication methods to talk with the stage asyncronously, but the
  *  		sync message will block until the async reply returns from the server or times out.
  */
-class ZstMessageDispatcher{
+class ZstMessageDispatcher : public ZstClientModule {
 public:
 
 	/**
-	 * Fn:	ZstMessageDispatcher::ZstMessageDispatcher();
+	 * Fn:	ZstMessageDispatcher::ZstMessageDispatcher(ZstTransportLayer * transport);
 	 *
 	 * Summary:	Constructor.
+	 *
+	 * Parameters:
+	 * transport - 	[in,out] If non-null, the transport for sending/receiving messages.
 	 */
-	ZstMessageDispatcher();
-
+	ZstMessageDispatcher(ZstClient * client, ZstTransportLayer * transport);
+	
 	/**
 	 * Fn:	ZstMessageDispatcher::~ZstMessageDispatcher();
 	 *
@@ -42,7 +81,20 @@ public:
 	~ZstMessageDispatcher();
 
 	/**
-	 * Fn:	ZstMsgKind ZstMessageDispatcher::prepare_sync_message(const ZstMessage * msg);
+	 * Fn:	ZstMsgKind ZstMessageDispatcher::send_to_stage(ZstMessage * msg, bool async);
+	 *
+	 * Summary:	Sends a message to the stage.
+	 *
+	 * Parameters:
+	 * msg - 	  	[in,out] If non-null, the message.
+	 * async -    	Send message asynchronously.
+	 *
+	 * Returns:	A ZstMsgKind.
+	 */
+	ZstMessageReceipt send_to_stage(ZstMessage * msg, MessageBoundAction action, bool async);
+
+	/**
+	 * Fn:	ZstMsgKind ZstMessageDispatcher::send_sync_stage_message(const ZstMessage * msg);
 	 *
 	 * Summary:	Prepare a message to be sent syncronously.
 	 *
@@ -51,17 +103,17 @@ public:
 	 *
 	 * Returns:	A ZstMsgKind.
 	 */
-	ZstMsgKind prepare_sync_message(const ZstMessage * msg);
+	ZstMessageReceipt send_sync_stage_message(ZstMessage * msg);
 
 	/**
-	 * Fn:	void ZstMessageDispatcher::prepare_async_message(const ZstMessage * msg);
+	 * Fn:	void ZstMessageDispatcher::send_async_stage_message(const ZstMessage * msg);
 	 *
 	 * Summary:	Prepare message to be sent asynchronously.
 	 *
 	 * Parameters:
 	 * msg - 	The message.
 	 */
-	void prepare_async_message(const ZstMessage * msg);
+	ZstMessageReceipt send_async_stage_message(ZstMessage * msg, MessageBoundAction completed_action);
 
 	/**
 	 * Fn:	virtual void ZstMessageDispatcher::complete(ZstMsgKind status);
@@ -71,7 +123,7 @@ public:
 	 * Parameters:
 	 * status - 	Status returned from the server.
 	 */
-	virtual void complete(ZstMsgKind status);
+	virtual void complete(ZstMessageReceipt response);
 
 	/**
 	 * Fn:	virtual void ZstMessageDispatcher::failed(ZstMsgKind status);
@@ -81,24 +133,14 @@ public:
 	 * Parameters:
 	 * status - 	Status returned from the server.
 	 */
-	virtual void failed(ZstMsgKind status);
-	
-	
+	virtual void failed(ZstMessageReceipt status);
+
+	ZstMessage * init_entity_message(const ZstEntityBase * entity);
+	ZstMessage * init_message(ZstMsgKind kind);
+	ZstMessage * init_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable);
+			
 private:
-
-	/**
-	 * Typedef:	cf::promise<ZstMsgKind> MessagePromise
-	 *
-	 * Summary:	Defines an alias representing the message promise.
-	 */
-	typedef cf::promise<ZstMsgKind> MessagePromise;
-
-	/**
-	 * Typedef:	cf::future<ZstMsgKind> MessageFuture
-	 *
-	 * Summary:	Defines an alias representing the message future.
-	 */
-	typedef cf::future<ZstMsgKind> MessageFuture;
+	ZstMessageDispatcher();
 
 	/**
 	 * Fn:	MessageFuture ZstMessageDispatcher::register_response_message(const ZstMessage * msg);
@@ -110,7 +152,7 @@ private:
 	 *
 	 * Returns:	A MessageFuture.
 	 */
-	MessageFuture register_response_message(const ZstMessage * msg);
+	MessageFuture register_response_message(ZstMessage * msg);
 
 	/**
 	 * Fn:	int ZstMessageDispatcher::process_response_message(const ZstMessage * msg);
@@ -122,11 +164,14 @@ private:
 	 *
 	 * Returns:	An int. 0 for success, anything under 0 is considered a fail.
 	 */
-	int process_response_message(const ZstMessage * msg);
+	int process_response_message(ZstMessage * msg);
 
 	/** Summary:	The promise messages. */
 	std::unordered_map<std::string, MessagePromise > m_promise_messages;
 
 	/** Summary:	The timeout watcher. */
 	cf::time_watcher m_timeout_watcher;
+
+	/** Summary:	The message transporter. */
+	ZstTransportLayer * m_transport;
 };

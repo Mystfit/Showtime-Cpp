@@ -2,13 +2,20 @@
 
 
 
-ZstCableNetwork::ZstCableNetwork()
+ZstCableNetwork::ZstCableNetwork(ZstClient * client) : 
+	ZstClientModule(client)
 {
+	m_cable_leaving_hook = new ZstCableLeavingEvent();
+	m_cable_leaving_event_manager->attach_post_event_callback(m_cable_leaving_hook);
+	add_event_queue(m_cable_leaving_event_manager);
 }
-
 
 ZstCableNetwork::~ZstCableNetwork()
 {
+	m_cable_leaving_event_manager->remove_post_event_callback(m_cable_leaving_hook);
+	remove_event_queue(m_cable_leaving_event_manager);
+	delete m_cable_leaving_event_manager;
+	delete m_cable_leaving_hook;
 }
 
 
@@ -213,3 +220,69 @@ ZstCable * ZstCableNetwork::create_cable_ptr(const ZstURI & input_path, const Zs
 
 	return cable_ptr;
 }
+
+
+// ---------------------------
+// Sync/async block to convert
+// ---------------------------
+
+//void ZstClient::connect_cable_sync(ZstCable * cable, MessageFuture & future)
+//{
+//	try {
+//		ZstMsgKind status = future.get();
+//		connect_cable_complete(status, cable);
+//		process_callbacks();
+//	}
+//	catch (const ZstTimeoutException & e) {
+//		ZstLog::net(LogLevel::notification, "Connect cable sync timed out: {}", e.what());
+//	}
+//}
+//
+//void ZstClient::connect_cable_async(ZstCable * cable, MessageFuture & future)
+//{
+//	future.then([this, cable](MessageFuture f) {
+//		ZstMsgKind status(ZstMsgKind::EMPTY);
+//		try {
+//			status = f.get();
+//			this->connect_cable_complete(status, cable);
+//		}
+//		catch (const ZstTimeoutException & e) {
+//			ZstLog::net(LogLevel::notification, "Connect cable async timed out: {}", e.what());
+//			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
+//		}
+//		return status;
+//	});
+//}
+//
+//
+//
+//void ZstClient::destroy_cable_sync(ZstCable * cable, MessageFuture & future)
+//{
+//    ZstMsgKind status(ZstMsgKind::EMPTY);
+//	try {
+//        status = future.get();
+//		cable->enqueue_deactivation();
+//		cable_leaving_events().enqueue(cable);
+//		process_callbacks();
+//	}
+//	catch (const ZstTimeoutException & e) {
+//		ZstLog::net(LogLevel::notification, "Destroy cable sync timed out: ", e.what());
+//	}
+//}
+//
+//void ZstClient::destroy_cable_async(ZstCable * cable, MessageFuture & future)
+//{
+//	future.then([this, cable](MessageFuture f) {
+//		ZstMsgKind status(ZstMsgKind::EMPTY);
+//		try {
+//			status = f.get();
+//			cable->enqueue_deactivation();
+//			this->cable_leaving_events().enqueue(cable);
+//		}
+//		catch (const ZstTimeoutException & e) {
+//			ZstLog::net(LogLevel::notification, "Destroy cable async timed out: {}", e.what());
+//			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
+//		}
+//		return status;
+//	});
+//}

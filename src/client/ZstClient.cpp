@@ -12,45 +12,52 @@ ZstClient::ZstClient() :
     m_init_completed(false),
     m_connected_to_stage(false)
 {
+	//Events and callbacks
+	m_client_connected_event_manager = new ZstEventQueue();
 	add_event_queue(m_client_connected_event_manager);
+
+	m_client_disconnected_event_manager = new ZstEventQueue();
 	add_event_queue(m_client_disconnected_event_manager);
+
+	m_compute_event_manager = new ZstEventQueue();
+	m_compute_event = new ZstComputeEvent();
+	m_compute_event_manager->attach_event_listener(m_compute_event);
 	add_event_queue(m_compute_event_manager);
+	
+	m_synchronisable_event_manager = new ZstEventQueue();
+	m_synchronisable_deferred_event = new ZstSynchronisableDeferredEvent();
+	m_synchronisable_event_manager->attach_event_listener(m_synchronisable_deferred_event);
 	add_event_queue(m_synchronisable_event_manager);
 
-	m_compute_event = new ZstComputeEvent();
-	m_compute_event_manager.attach_event_listener(m_compute_event);
-
-	m_synchronisable_deferred_event = new ZstSynchronisableDeferredEvent();
-	m_synchronisable_event_manager.attach_event_listener(m_synchronisable_deferred_event);
-	
-	//Client events
-	
-	m_cable_leaving_hook = new ZstCableLeavingEvent();
-
-	
-	m_performer_leaving_event_manager.attach_post_event_callback(m_performer_leaving_hook);
-	m_component_leaving_event_manager.attach_post_event_callback(m_component_leaving_hook);
-	m_cable_leaving_event_manager.attach_post_event_callback(m_cable_leaving_hook);
-	m_plug_leaving_event_manager.attach_post_event_callback(m_plug_leaving_hook);
+	//CLient modules
+	m_hierarchy = new ZstHierarchy(this);
+	m_cable_network = new ZstCableNetwork(this);
+	m_transport = new ZstCZMQTransportLayer(this);
+	m_msg_dispatch = new ZstMessageDispatcher(this, m_transport);
 }
 
 ZstClient::~ZstClient() {
 	destroy();
 
-	m_synchronisable_event_manager.remove_event_listener(m_synchronisable_deferred_event);
-	m_compute_event_manager.remove_event_listener(m_compute_event);
-
-	m_performer_leaving_event_manager.remove_post_event_callback(m_performer_leaving_hook);
-	m_component_leaving_event_manager.remove_post_event_callback(m_component_leaving_hook);
-	m_cable_leaving_event_manager.remove_post_event_callback(m_cable_leaving_hook);
-	m_plug_leaving_event_manager.remove_post_event_callback(m_plug_leaving_hook);
+	m_synchronisable_event_manager->remove_event_listener(m_synchronisable_deferred_event);
+	m_compute_event_manager->remove_event_listener(m_compute_event);
+	remove_event_queue(m_synchronisable_event_manager);
+	remove_event_queue(m_compute_event_manager);
 	
 	delete m_synchronisable_deferred_event;
-	delete m_performer_leaving_hook;
-	delete m_component_leaving_hook;
-	delete m_cable_leaving_hook;
-	delete m_plug_leaving_hook;
 	delete m_compute_event;
+	delete m_synchronisable_event_manager;
+	delete m_compute_event_manager;
+
+	m_hierarchy->destroy();
+	m_cable_network->destroy();
+	m_msg_dispatch->destroy();
+	m_transport->destroy();
+
+	delete m_hierarchy;
+	delete m_cable_network;
+	delete m_msg_dispatch;
+	delete m_transport;
 }
 
 ZstClient & ZstClient::instance()
@@ -69,16 +76,8 @@ void ZstClient::destroy() {
     //Let stage know we are leaving
 	if(is_connected_to_stage())
 		leave_stage(true);
-    
-    //TODO: Delete proxies and templates
-    delete m_root;
 	
 	ZstActor::destroy();
-	zsock_destroy(&m_stage_updates);
-	zsock_destroy(&m_stage_router);
-	zsock_destroy(&m_graph_in);
-	zsock_destroy(&m_graph_out);
-	zsys_shutdown();
 	
 	m_is_ending = false;
 	m_is_destroyed = true;
@@ -96,63 +95,12 @@ void ZstClient::init_client(const char *client_name, bool debug)
 	ZstActor::init(client_name);
 	m_client_name = client_name;
 	m_is_destroyed = false;
-	
-	m_startup_uuid = zuuid_new();
 
-	//Local dealer socket for receiving messages forwarded from other performers
-	m_stage_router = zsock_new(ZMQ_DEALER);
-	if (m_stage_router) {
-		zsock_set_linger(m_stage_router, 0);
-		attach_pipe_listener(m_stage_router, s_handle_stage_router, this);
-	}
-
-	//Graph input socket
-	m_graph_in = zsock_new(ZMQ_SUB);
-	if (m_graph_in) {
-		zsock_set_linger(m_graph_in, 0);
-		zsock_set_unbounded(m_graph_in);
-		attach_pipe_listener(m_graph_in, s_handle_graph_in, this);
-	}
-
-	//Stage update socket
-	m_stage_updates = zsock_new(ZMQ_SUB);
-	if (m_stage_updates) {
-		zsock_set_linger(m_stage_updates, 0);
-		attach_pipe_listener(m_stage_updates, s_handle_stage_update_in, this);
-	}
-    
-    string network_ip = first_available_ext_ip();
-    ZstLog::net(LogLevel::notification, "Using external IP {}", network_ip);
-    
-	//Graph output socket
-	std::stringstream addr;
-	addr << "@tcp://" << network_ip.c_str() << ":*";
-    m_graph_out = zsock_new_pub(addr.str().c_str());
-	m_graph_out_addr = zsock_last_endpoint(m_graph_out);
-	addr.str("");
-
-	//Set graph socket as unbounded by HWM
-	zsock_set_unbounded(m_graph_out);
-	char * output_ip = zsock_last_endpoint(m_graph_out);
-    m_graph_out_ip = std::string(output_ip);
-	zstr_free(&output_ip);
-	ZstLog::net(LogLevel::notification, "Client graph address: {}", m_graph_out_ip);
-    
-    if(m_graph_out)
-        zsock_set_linger(m_graph_out, 0);
-    
-    //Set up outgoing sockets
-    std::string identity = std::string(zuuid_str_canonical(m_startup_uuid));
-	ZstLog::net(LogLevel::notification, "Setting socket identity to {}. Length {}", identity, identity.size());
-    
-    zsock_set_identity(m_stage_router, identity.c_str());
-	
-	//Create a root entity to hold our local entity hierarchy
-	m_root = new ZstPerformer(actor_name(), m_graph_out_addr.c_str());
-	m_root->set_network_interactor(this);
-	
+	m_hierarchy->init(client_name);
+	m_cable_network->init();
+	m_transport->init();
+		
     start();
-    
     m_init_completed = true;
 }
 
@@ -166,44 +114,22 @@ void ZstClient::process_callbacks()
     if(!is_init_complete() || m_is_destroyed){
         return;
     }
-    
-    m_client_connected_event_manager.process();
-    m_compute_event_manager.process();
-    m_synchronisable_event_manager.process();
-    m_client_disconnected_event_manager.process();
-    m_cable_arriving_event_manager.process();
-    m_cable_leaving_event_manager.process();
-    m_plug_arriving_event_manager.process();
-    m_plug_leaving_event_manager.process();
-    m_component_arriving_event_manager.process();
-    m_component_leaving_event_manager.process();
-    m_component_type_arriving_event_manager.process();
-    m_component_type_leaving_event_manager.process();
-    m_performer_arriving_event_manager.process();
-    m_performer_leaving_event_manager.process();
 
+	ZstEventDispatcher::process_callbacks();
+
+	m_hierarchy->process_callbacks();
+	m_cable_network->process_callbacks();
+	
 	//Only delete entities after all callbacks have finished
 	m_reaper.reap_all();
 }
 
-void ZstClient::flush_events()
+void ZstClient::flush()
 {
-	m_synchronisable_event_manager.flush();
-	m_client_connected_event_manager.flush();
-	m_client_disconnected_event_manager.flush();
-    m_plug_arriving_event_manager.flush();
-    m_plug_leaving_event_manager.flush();
-	m_cable_arriving_event_manager.flush();
-	m_cable_leaving_event_manager.flush();
-	m_component_arriving_event_manager.flush();
-	m_component_leaving_event_manager.flush();
-	m_component_type_arriving_event_manager.flush();
-	m_component_type_leaving_event_manager.flush();
-    m_performer_arriving_event_manager.flush();
-    m_performer_leaving_event_manager.flush();
-	m_compute_event_manager.flush();
+	ZstEventDispatcher::flush();
+	m_hierarchy->flush();
+	m_cable_network->flush();
 }
-
 
 void ZstClient::start() {
 	ZstActor::start();
@@ -214,27 +140,11 @@ void ZstClient::stop() {
 }
 
 
-// ------------
-// Send/Receive
-// ------------
-
-
-
-// ------------
-// Message pools
-// ------------
-
-ZstMessagePool & ZstClient::msg_pool()
-{
-	return m_message_pool;
-}
-
-
 // -------------
-// Client init
+// Client join
 // -------------
 
-void ZstClient::register_client_to_stage(std::string stage_address, bool async) {
+void ZstClient::join_stage(std::string stage_address, bool async) {
 	
 	if (m_is_connecting || m_connected_to_stage) {
 		ZstLog::net(LogLevel::error, "Connection in progress or already connected, can't connect to stage.");
@@ -243,79 +153,23 @@ void ZstClient::register_client_to_stage(std::string stage_address, bool async) 
 	m_is_connecting = true;
 	
 	ZstLog::net(LogLevel::notification, "Connecting to stage {}", stage_address);
-	m_stage_addr = string(stage_address);
-
-    stringstream addr;
-    addr << "tcp://" << m_stage_addr << ":" << STAGE_ROUTER_PORT;
-    m_stage_router_addr = addr.str();
+	m_transport->connect_to_stage(stage_address);
     
-    zsock_connect(m_stage_router, "%s", m_stage_router_addr.c_str());
-    addr.str("");
-    
-    //Stage subscriber socket for update messages
-    addr << "tcp://" << m_stage_addr << ":" << STAGE_PUB_PORT;
-    m_stage_updates_addr = addr.str();
-    
-	ZstLog::net(LogLevel::notification, "Connecting to stage publisher {}", m_stage_updates_addr);
-    zsock_connect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
-    zsock_set_subscribe(m_stage_updates, "");
-    addr.str("");
-    
-	//Build connect message
-	ZstMessage * msg = msg_pool().get()->init_serialisable_message(ZstMsgKind::CLIENT_JOIN, *m_root);
+	ZstMessage * msg = m_msg_dispatch->init_serialisable_message(ZstMsgKind::CLIENT_JOIN, *m_hierarchy->get_local_performer());
+	msg->append_str(stage_address.c_str(), stage_address.size());
+	m_msg_dispatch->send_to_stage(msg, BIND_MSG_ACTION(&ZstClient::join_stage_complete, this), async);
 	
-	MessageFuture future = msg_pool().register_response_message(msg, true);
-	if(async){
-		register_client_to_stage_async(future);
-		send_to_stage(msg);
-	}
-	else {
-		send_to_stage(msg);
-		join_stage(future);
-	}
+	//Run callbacks if we're still on the main app thread
+	if (!async) process_callbacks();
 }
 
-void ZstClient::join_stage(MessageFuture & future)
-{
-	ZstMsgKind status(ZstMsgKind::EMPTY);
-	try {
-		status = future.get();
-		join_stage_complete(status);
-		synchronise_graph(false);
-		process_callbacks();
-	}
-	catch (const ZstTimeoutException & e) {
-		ZstLog::net(LogLevel::error, "Stage sync join timed out - {}", e.what());
-		leave_stage_complete();
-		status = ZstMsgKind::ERR_STAGE_TIMEOUT;
-	}
-}
-
-void ZstClient::register_client_to_stage_async(MessageFuture & future)
-{
-	future.then([this](MessageFuture f) {
-		ZstMsgKind status(ZstMsgKind::EMPTY);
-		try {
-			status = f.get();
-			this->join_stage_complete(status);
-			this->synchronise_graph(true);
-		}
-		catch (const ZstTimeoutException & e) {
-			ZstLog::net(LogLevel::error, "Stage async join timed out - {}", e.what());
-			leave_stage_complete();
-			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
-		}
-		return status;
-	});
-}
-
-void ZstClient::join_stage_complete(ZstMsgKind status)
+void ZstClient::join_stage_complete(ZstMessageReceipt response)
 {
 	m_is_connecting = false;
 
 	//If we didn't receive a OK signal, something went wrong
-	if (status != ZstMsgKind::OK) {
-        ZstLog::net(LogLevel::error, "Stage connection failed with with status: {}", status);
+	if (response.status != ZstMsgKind::OK) {
+        ZstLog::net(LogLevel::error, "Stage connection failed with with status: {}", response.status);
         return;
 	}
 
@@ -326,106 +180,38 @@ void ZstClient::join_stage_complete(ZstMsgKind status)
 
 	//TODO: Need a handshake with the stage before we mark connection as active
 	m_connected_to_stage = true;
-}
-          
-void ZstClient::synchronise_graph(bool async)
-{
-    if(!is_connected_to_stage()){
-        ZstLog::net(LogLevel::error, "Can't synchronise graph if we're not connected");
-        return;
-    }
-    
-    //Ask the stage to send us a full snapshot
-    ZstLog::net(LogLevel::notification, "Requesting stage snapshot");
-    ZstMessage * msg = msg_pool().get()->init_message(ZstMsgKind::CLIENT_SYNC);
-	MessageFuture future = msg_pool().register_response_message(msg, true);
-	
-	if (async) {
-		synchronise_graph_async(future);
-		send_to_stage(msg);
-	}
-	else {
-		send_to_stage(msg);
-		synchronise_graph_sync(future);
-	}
+
+	//Enqueue connection events
+	client_connected_events()->enqueue(m_hierarchy->get_local_performer());
+
+	m_hierarchy->synchronise_graph(response.async);
 }
 
-void ZstClient::synchronise_graph_sync(MessageFuture & future)
-{
-	try {
-		ZstMsgKind status = future.get();
-		this->synchronise_graph_complete(status);
-	}
-	catch (const ZstTimeoutException & e) {
-		ZstLog::net(LogLevel::notification, "Synchronising graph sync with stage timed out: {}", e.what());
-	}
-}
-
-void ZstClient::synchronise_graph_async(MessageFuture & future)
-{
-	future.then([this](MessageFuture f) {
-		ZstMsgKind status(ZstMsgKind::EMPTY); 
-		try {
-			status = f.get();
-			this->synchronise_graph_complete(status);
-		}
-		catch (const ZstTimeoutException & e) {
-			ZstLog::net(LogLevel::notification, "Synchronising graph async with stage timed out: {}", e.what());
-			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
-		}
-		return status;
-	});
-}
-
-void ZstClient::synchronise_graph_complete(ZstMsgKind status)
-{
-   	m_root->enqueue_activation();
-    client_connected_events().enqueue(m_root);
-    ZstLog::net(LogLevel::notification, "Graph sync completed");
-}
-
-void ZstClient::leave_stage(bool immediately)
+void ZstClient::leave_stage(bool async)
 {
 	if (m_connected_to_stage) {
 		ZstLog::net(LogLevel::notification, "Leaving stage");
         
-        ZstMessage * msg = msg_pool().get()->init_message(ZstMsgKind::CLIENT_LEAVING);
-		//If leaving immediately then don't stick around
-		if (immediately) {
-			send_to_stage(msg);
-			leave_stage_complete();
-			return;
-		}
+        ZstMessage * msg = m_msg_dispatch->init_message(ZstMsgKind::CLIENT_LEAVING);
+		m_msg_dispatch->send_to_stage(msg, BIND_MSG_ACTION(&ZstClient::leave_stage_complete, this), async);
 
-		//Leave slowly by waiting for leave OK from the stage
-		MessageFuture future = msg_pool().register_response_message(msg, true);
-		send_to_stage(msg);
-
-		try {
-			future.get();
-			leave_stage_complete();
-		}
-		catch (const ZstTimeoutException & e) {
-			ZstLog::net(LogLevel::notification, "Stage leave timeout: {}", e.what());
-		}
+		//Run callbacks if we're still on the main app thread
+		if(!async) process_callbacks();
     } else {
         ZstLog::net(LogLevel::debug, "Not connected to stage. Skipping to cleanup. {}");
         leave_stage_complete();
+		if (!async) process_callbacks();
     }
 }
 
 void ZstClient::leave_stage_complete()
 {
     //Deactivate all owned entities
-	m_root->enqueue_deactivation();
+    m_hierarchy->get_local_performer()->enqueue_deactivation();
     
-    //Purge callbacks
-    process_callbacks();
-
     //Disconnect rest of sockets and timers
 	detach_timer(m_heartbeat_timer_id);
-    zsock_disconnect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
-    zsock_disconnect(m_stage_router, "%s", m_stage_router_addr.c_str());
+	m_transport->disconnect_from_stage();
 
 	m_is_connecting = false;
 	m_connected_to_stage = false;
@@ -631,210 +417,37 @@ int ZstClient::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
 	return 0;
 }
 
-
-// ------------------
-// Cable storage
-// ------------------
-
-
-
-// --------
-// Entities
-// --------
-
-
-
-
-void ZstClient::activate_entity_sync(ZstEntityBase * entity, MessageFuture & future)
-{
-	try {
-		ZstMsgKind status = future.get();
-		activate_entity_complete(status, entity);
-		process_callbacks();
-	}
-	catch (const ZstTimeoutException & e) {
-		ZstLog::net(LogLevel::notification, "Activate entity sync call timed out: {}", e.what());
-	}
-}
-
-void ZstClient::activate_entity_async(ZstEntityBase * entity, MessageFuture & future)
-{
-	ZstURI entity_path(entity->URI());
-	future.then([this, entity_path](MessageFuture f) {
-		ZstMsgKind status(ZstMsgKind::EMPTY);
-		try {
-			status = f.get();
-			ZstEntityBase * e = find_entity(entity_path);
-			if (e)
-				this->activate_entity_complete(status, e);
-			else
-				ZstLog::net(LogLevel::notification, "Entity {} went missing during activation!", entity_path.path());
-		}
-		catch (const ZstTimeoutException & e) {
-			ZstLog::net(LogLevel::notification, "Activate entity async call timed out: {}", e.what());
-			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
-		}
-		return status;
-	});
-}
-
-
-
-
-void ZstClient::destroy_entity_sync(ZstEntityBase * entity, MessageFuture & future)
-{
-	try {
-		ZstMsgKind status = future.get();
-		entity->enqueue_deactivation();
-		component_leaving_events().enqueue(entity);
-		process_callbacks();
-	}
-	catch (const ZstTimeoutException & e) {
-		ZstLog::net(LogLevel::notification, "Destroy entity sync timed out: {}", e.what());
-	}
-}
-
-void ZstClient::destroy_entity_async(ZstEntityBase * entity, MessageFuture & future)
-{
-	ZstURI entity_path(entity->URI());
-	future.then([this, entity_path](MessageFuture f) {
-		ZstMsgKind status(ZstMsgKind::EMPTY);
-		try {
-			status = f.get();
-			if (status != ZstMsgKind::OK) {
-				ZstLog::net(LogLevel::notification, "Destroy entity {} failed with status {}", entity_path.path(), status);
-			}
-			ZstLog::net(LogLevel::notification, "Destroy entity {} completed with status {}", entity_path.path(), status);
-		}
-		catch (const ZstTimeoutException & e) {
-			ZstLog::net(LogLevel::notification, "Destroy entity async timed out: {}", e.what());
-			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
-		}
-		return status;
-	});
-}
-
-
-
-
-// ----------
-// Performers
-// ----------
-
-
-
-void ZstClient::destroy_plug_sync(ZstPlug * plug, MessageFuture & future)
-{
-	try {
-		ZstMsgKind status = future.get();
-		destroy_plug_complete(status, plug);
-		process_callbacks();
-	}
-	catch (const ZstTimeoutException & e) {
-		ZstLog::net(LogLevel::notification, "Destroy plug timed out: {}", e.what());
-	}
-}
-
-void ZstClient::destroy_plug_async(ZstPlug * plug, MessageFuture & future)
-{
-	try {
-		future.then([this, plug](MessageFuture f) {
-			ZstMsgKind status = f.get();
-			this->destroy_plug_complete(status, plug);
-			return status;
-		});
-	}
-	catch (const ZstTimeoutException & e) {
-		ZstLog::net(LogLevel::notification, "Destroy plug timed out: {}", e.what());
-	}
-}
-
-
- // ------
- // Cables
- // ------
- 
-
-void ZstClient::connect_cable_sync(ZstCable * cable, MessageFuture & future)
-{
-	try {
-		ZstMsgKind status = future.get();
-		connect_cable_complete(status, cable);
-		process_callbacks();
-	}
-	catch (const ZstTimeoutException & e) {
-		ZstLog::net(LogLevel::notification, "Connect cable sync timed out: {}", e.what());
-	}
-}
-
-void ZstClient::connect_cable_async(ZstCable * cable, MessageFuture & future)
-{
-	future.then([this, cable](MessageFuture f) {
-		ZstMsgKind status(ZstMsgKind::EMPTY);
-		try {
-			status = f.get();
-			this->connect_cable_complete(status, cable);
-		}
-		catch (const ZstTimeoutException & e) {
-			ZstLog::net(LogLevel::notification, "Connect cable async timed out: {}", e.what());
-			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
-		}
-		return status;
-	});
-}
-
-
-
-void ZstClient::destroy_cable_sync(ZstCable * cable, MessageFuture & future)
-{
-    ZstMsgKind status(ZstMsgKind::EMPTY);
-	try {
-        status = future.get();
-		cable->enqueue_deactivation();
-		cable_leaving_events().enqueue(cable);
-		process_callbacks();
-	}
-	catch (const ZstTimeoutException & e) {
-		ZstLog::net(LogLevel::notification, "Destroy cable sync timed out: ", e.what());
-	}
-}
-
-void ZstClient::destroy_cable_async(ZstCable * cable, MessageFuture & future)
-{
-	future.then([this, cable](MessageFuture f) {
-		ZstMsgKind status(ZstMsgKind::EMPTY);
-		try {
-			status = f.get();
-			cable->enqueue_deactivation();
-			this->cable_leaving_events().enqueue(cable);
-		}
-		catch (const ZstTimeoutException & e) {
-			ZstLog::net(LogLevel::notification, "Destroy cable async timed out: {}", e.what());
-			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
-		}
-		return status;
-	});
-}
-
-
-
-ZstEventQueue & ZstClient::client_connected_events()
+ZstEventQueue * ZstClient::client_connected_events()
 {
 	return m_client_connected_event_manager;
 }
 
-ZstEventQueue & ZstClient::client_disconnected_events()
+ZstEventQueue * ZstClient::client_disconnected_events()
 {
 	return m_client_connected_event_manager;
 }
 
-ZstEventQueue & ZstClient::compute_events()
+ZstEventQueue * ZstClient::compute_events()
 {
 	return m_compute_event_manager;
 }
 
-
 void ZstClient::enqueue_synchronisable_event(ZstSynchronisable * synchronisable)
 {
-	m_synchronisable_event_manager.enqueue(synchronisable);
+	m_synchronisable_event_manager->enqueue(synchronisable);
+}
+
+ZstHierarchy * ZstClient::hierarchy()
+{
+	return m_hierarchy;
+}
+
+ZstCableNetwork * ZstClient::cable_network()
+{
+	return m_cable_network;
+}
+
+ZstMessageDispatcher * ZstClient::msg_dispatch()
+{
+	return nullptr;
 }

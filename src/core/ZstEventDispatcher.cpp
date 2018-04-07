@@ -21,3 +21,10 @@ void ZstEventDispatcher::process_callbacks()
 		queue->process();
 	}
 }
+
+void ZstEventDispatcher::flush()
+{
+	for (ZstEventQueue* queue : m_event_queues) {
+		queue->flush();
+	}
+}

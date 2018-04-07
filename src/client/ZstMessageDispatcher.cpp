@@ -1,6 +1,8 @@
 #include "ZstMessageDispatcher.h"
 
-ZstMessageDispatcher::ZstMessageDispatcher()
+ZstMessageDispatcher::ZstMessageDispatcher(ZstClient * client, ZstTransportLayer * transport) :
+	ZstClientModule(client),
+	m_transport(transport)
 {	
 }
 
@@ -8,69 +10,104 @@ ZstMessageDispatcher::~ZstMessageDispatcher()
 {
 }
 
-ZstMsgKind ZstMessageDispatcher::prepare_sync_message(const ZstMessage * msg)
+ZstMessageReceipt ZstMessageDispatcher::send_to_stage(ZstMessage * msg, MessageBoundAction action, bool async)
 {
-	if (!msg) return ZstMsgKind::EMPTY;
+	if (!msg) return ZstMessageReceipt{ ZstMsgKind::EMPTY, async };
 
-	MessageFuture future = register_response_message(msg);
-	ZstMsgKind status(ZstMsgKind::EMPTY);
-	try {
-		status = future.get();
-		complete(status);
-		process_callbacks();
+	if (async) {
+		return send_async_stage_message(msg, action);
 	}
-	catch (const ZstTimeoutException & e) {
-		ZstLog::net(LogLevel::error, "Server timed out", e.what());
-		status = ZstMsgKind::ERR_STAGE_TIMEOUT;
-		failed(status);
-	}
-	return status;
+
+	//A sync message can run its callback action as soon as it finishes
+	ZstMessageReceipt msg_response = send_sync_stage_message(msg);
+	action(msg_response);
+	return msg_response;
 }
 
-void ZstMessageDispatcher::prepare_async_message(const ZstMessage * msg)
+ZstMessageReceipt ZstMessageDispatcher::send_sync_stage_message(ZstMessage * msg)
 {
-	if (!msg) return;
-	
 	MessageFuture future = register_response_message(msg);
-	future.then([this](MessageFuture f) {
-		ZstMsgKind status(ZstMsgKind::EMPTY);
+	ZstMessageReceipt msg_response{ZstMsgKind::EMPTY, false};
+	m_transport->send_to_stage(msg);
+	try {
+		msg_response.status = future.get();
+		complete(msg_response);
+	}
+	catch (const ZstTimeoutException & e) {
+		ZstLog::net(LogLevel::error, "Server response timed out", e.what());
+		msg_response.status = ZstMsgKind::ERR_STAGE_TIMEOUT;
+		failed(msg_response);
+	}
+	return msg_response;
+}
+
+ZstMessageReceipt ZstMessageDispatcher::send_async_stage_message(ZstMessage * msg, MessageBoundAction completed_action)
+{
+	MessageFuture future = register_response_message(msg);
+	future.then([this, completed_action](MessageFuture f) {
+		ZstMsgKind status;
+		ZstMessageReceipt msg_response{ZstMsgKind::EMPTY, true};
 		try {
-			status = f.get();
-			complete(status);
+			ZstMsgKind status = f.get();
+			msg_response.status = status;
+			completed_action(msg_response);
+			complete(msg_response);
+			return status;
 		}
 		catch (const ZstTimeoutException & e) {
-			ZstLog::net(LogLevel::error, "Stage async join timed out - {}", e.what());
-			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
-			failed(status);
+			ZstLog::net(LogLevel::error, "Server async response timed out - {}", e.what());
+			msg_response.status = ZstMsgKind::ERR_STAGE_TIMEOUT;
+			failed(msg_response);
 		}
 		return status;
 	});
+	m_transport->send_to_stage(msg);
 }
 
-void ZstMessageDispatcher::complete(ZstMsgKind status)
+void ZstMessageDispatcher::complete(ZstMessageReceipt response)
 {
 	//If we didn't receive a OK signal, something went wrong
-	if (status != ZstMsgKind::OK) {
-        ZstLog::net(LogLevel::error, "Stage connection failed with with status: {}", status);
+	if (response.status != ZstMsgKind::OK) {
+        ZstLog::net(LogLevel::error, "Server response failed with status: {}", response.status);
         return;
 	}
 }
 
-void ZstMessageDispatcher::failed(ZstMsgKind status)
+void ZstMessageDispatcher::failed(ZstMessageReceipt response)
 {
 }
 
-void ZstMessageDispatcher::complete(ZstMsgKind status)
+ZstMessage * ZstMessageDispatcher::init_entity_message(const ZstEntityBase * entity)
 {
-	//If we didn't receive a OK signal, something went wrong
-	if (status != ZstMsgKind::OK) {
-        ZstLog::net(LogLevel::error, "Stage connection failed with with status: {}", status);
-        return;
-	}
+	ZstMessage * msg = m_transport->get_msg();
+	msg->reset();
+	msg->append_id_frame();
+	msg->append_entity_kind_frame(entity);
+	msg->append_payload_frame(*entity);
+	return msg;
+}
+
+ZstMessage * ZstMessageDispatcher::init_message(ZstMsgKind kind)
+{
+	ZstMessage * msg = m_transport->get_msg();
+	msg->reset();
+	msg->append_id_frame();
+	msg->append_kind_frame(kind);
+	return msg;
+}
+
+ZstMessage * ZstMessageDispatcher::init_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable)
+{
+	ZstMessage * msg = m_transport->get_msg();
+	msg->reset();
+	msg->append_id_frame();
+	msg->append_kind_frame(kind);
+	msg->append_payload_frame(serialisable);
+	return msg;
 }
 
 
-MessageFuture ZstMessageDispatcher::register_response_message(const ZstMessage * msg);
+MessageFuture ZstMessageDispatcher::register_response_message(ZstMessage * msg)
 {
 	std::string id = std::string(msg->id());
 	m_promise_messages[id] = MessagePromise();
@@ -79,7 +116,7 @@ MessageFuture ZstMessageDispatcher::register_response_message(const ZstMessage *
 	return future;
 }
 
-int ZstMessageDispatcher::process_response_message(const ZstMessage * msg)
+int ZstMessageDispatcher::process_response_message(ZstMessage * msg)
 {
 	int status = 0;
 	try {

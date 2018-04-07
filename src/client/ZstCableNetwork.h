@@ -4,14 +4,15 @@
 #include "../core/ZstMessage.h"
 #include "../core/ZstEventDispatcher.h"
 #include "../core/ZstEventQueue.h"
+#include "ZstClientModule.h"
 
 
-class ZstCableNetwork : public ZstEventDispatcher
+class ZstCableNetwork : public ZstClientModule
 {
 	friend class ZstCableLeavingEvent;
 
 public:
-	ZstCableNetwork();
+	ZstCableNetwork(ZstClient * client);
 	~ZstCableNetwork();
 	
 	ZstCable * connect_cable(ZstPlug * input, ZstPlug * output, bool async = false);
@@ -34,6 +35,8 @@ public:
 	ZstEventQueue & cable_leaving_events();
 
 private:
+	ZstCableNetwork();
+
 	// -------------
 	// Event hooks
 	// -------------
@@ -71,6 +74,7 @@ private:
 	// -----------
 
 	ZstCableList m_cables;
+	ZstINetworkInteractor * m_client;
 };
 
 

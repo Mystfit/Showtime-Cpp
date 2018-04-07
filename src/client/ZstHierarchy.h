@@ -9,25 +9,30 @@
 #include "../core/ZstMessage.h"
 #include "../core/ZstEventQueue.h"
 #include "../core/ZstEventDispatcher.h"
+#include "../core/ZstINetworkInteractor.h"
 #include "ZstReaper.h"
+#include "ZstClientModule.h"
 
 
-class ZstHierarchy : public ZstEventDispatcher {
+class ZstHierarchy : public ZstClientModule {
 	friend class ZstEntityLeavingEvent;
 	friend class ZstPlugLeavingEvent;
 
 public:
-	ZstHierarchy();
+	ZstHierarchy(ZstClient * client);
 	~ZstHierarchy();
+	void destroy() override;
+	void init(std::string name);
+
 
 	// ------------------------------
 	// Entity activation/deactivation
 	// ------------------------------
-	
+	void synchronise_graph(bool async = false);
+	void synchronise_graph_complete(ZstMsgKind status);
 	void activate_entity(ZstEntityBase* entity, bool async = false);
 	void destroy_entity(ZstEntityBase * entity, bool async = false);
 	void destroy_plug(ZstPlug * plug, bool async);
-
 
 	// ------------------------------
 	// Hierarchy queries
@@ -56,9 +61,10 @@ public:
 	ZstEventQueue & plug_leaving_events();
 
 private:
-	
+	ZstHierarchy();
 	ZstPerformer * m_root;
 	ZstPerformerMap m_clients;
+	ZstINetworkInteractor * m_client;
 	void add_performer(ZstPerformer & performer);
 
 
@@ -83,17 +89,15 @@ private:
 	// Event managers
 	// --------------
 	
-	ZstEventQueue m_performer_arriving_event_manager;
-	ZstEventQueue m_performer_leaving_event_manager;
-	ZstEventQueue m_component_arriving_event_manager;
-	ZstEventQueue m_component_leaving_event_manager;
-	ZstEventQueue m_component_type_arriving_event_manager;
-	ZstEventQueue m_component_type_leaving_event_manager;
-	ZstEventQueue m_plug_arriving_event_manager;
-	ZstEventQueue m_plug_leaving_event_manager;
-	
-	ZstReaper m_reaper;
-	
+	ZstEventQueue * m_performer_arriving_event_manager;
+	ZstEventQueue * m_performer_leaving_event_manager;
+	ZstEventQueue * m_component_arriving_event_manager;
+	ZstEventQueue * m_component_leaving_event_manager;
+	ZstEventQueue * m_component_type_arriving_event_manager;
+	ZstEventQueue * m_component_type_leaving_event_manager;
+	ZstEventQueue * m_plug_arriving_event_manager;
+	ZstEventQueue * m_plug_leaving_event_manager;
+		
 	int m_num_graph_recv_messages;
 	int m_num_graph_send_messages;
 };

@@ -1,15 +1,72 @@
 #include "ZstHierarchy.h"
 
-ZstHierarchy::ZstHierarchy() : 
-	m_root(NULL)
+ZstHierarchy::ZstHierarchy(ZstClient * client) : 
+	m_root(NULL),
+	ZstClientModule(client)
 {
 	m_performer_leaving_hook = new ZstEntityLeavingEvent();
 	m_component_leaving_hook = new ZstEntityLeavingEvent();
 	m_plug_leaving_hook = new ZstPlugLeavingEvent();
+
+	m_performer_leaving_event_manager->attach_post_event_callback(m_performer_leaving_hook);
+	m_component_leaving_event_manager->attach_post_event_callback(m_component_leaving_hook);
+	m_plug_leaving_event_manager->attach_post_event_callback(m_plug_leaving_hook);
+
+	add_event_queue(m_performer_leaving_event_manager);
+	add_event_queue(m_component_leaving_event_manager);
+	add_event_queue(m_plug_leaving_event_manager);
 }
 
 ZstHierarchy::~ZstHierarchy()
 {
+	m_performer_leaving_event_manager->remove_post_event_callback(m_performer_leaving_hook);
+	m_component_leaving_event_manager->remove_post_event_callback(m_component_leaving_hook);
+	m_plug_leaving_event_manager->remove_post_event_callback(m_plug_leaving_hook);
+
+	remove_event_queue(m_performer_leaving_event_manager);
+	remove_event_queue(m_component_leaving_event_manager);
+	remove_event_queue(m_plug_leaving_event_manager);
+
+	delete m_performer_leaving_hook;
+	delete m_component_leaving_hook;
+	delete m_plug_leaving_hook;
+	delete m_performer_leaving_event_manager;
+	delete m_component_leaving_event_manager;
+	delete m_plug_leaving_event_manager;
+}
+
+void ZstHierarchy::destroy()
+{
+	//TODO: Delete proxies and templates
+	delete m_root;
+}
+
+void ZstHierarchy::init(std::string name)
+{
+	//Create a root entity to hold our local entity hierarchy
+	//Sets the name of our performer and the address of our graph output
+	m_root = new ZstPerformer(name.c_str());
+	m_root->set_network_interactor(client());
+}
+
+void ZstHierarchy::synchronise_graph(bool async)
+{
+	if (!client()->is_connected_to_stage()) {
+		ZstLog::net(LogLevel::error, "Can't synchronise graph if we're not connected");
+		return;
+	}
+
+	//Ask the stage to send us a full snapshot
+	ZstLog::net(LogLevel::notification, "Requesting stage snapshot");
+
+	ZstMessage * msg = client()->msg_dispatch()->init_message(ZstMsgKind::CLIENT_SYNC);
+	client()->msg_dispatch()->send_to_stage(msg, BIND_MSG_ACTION(&ZstHierarchy::synchronise_graph_complete, this), async);
+}
+
+void ZstHierarchy::synchronise_graph_complete(ZstMsgKind status)
+{
+	m_root->enqueue_activation();
+	ZstLog::net(LogLevel::notification, "Graph sync completed");
 }
 
 void ZstHierarchy::activate_entity(ZstEntityBase * entity, bool async)
@@ -25,7 +82,7 @@ void ZstHierarchy::activate_entity(ZstEntityBase * entity, bool async)
 		return;
 
 	//Register client to entity to allow it to send messages
-	entity->set_network_interactor(this);
+	entity->set_network_interactor(client());
 	entity->set_activating();
 
 	//Build message
@@ -200,7 +257,7 @@ void ZstHierarchy::add_proxy_entity(ZstEntityBase & entity) {
 		ZstLog::net(LogLevel::notification, "Received proxy entity {}", entity_proxy->URI().path());
 
 		//Forceably activate entity and dispatch events
-		entity_proxy->set_network_interactor(this);
+		entity_proxy->set_network_interactor(client());
 		entity_proxy->set_activation_status(ZstSyncStatus::ACTIVATED);
 	}
 
@@ -354,3 +411,102 @@ void ZstHierarchy::destroy_plug_complete(ZstMsgKind status, ZstPlug * plug)
 	//Finally, add to the reaper to destroy the plug at the correct time
 	m_reaper.add(plug);
 }
+
+
+
+// -----------------------------
+// Sync/async block to convert
+// -----------------------------
+
+
+//void ZstClient::activate_entity_sync(ZstEntityBase * entity, MessageFuture & future)
+//{
+//	try {
+//		ZstMsgKind status = future.get();
+//		activate_entity_complete(status, entity);
+//		process_callbacks();
+//	}
+//	catch (const ZstTimeoutException & e) {
+//		ZstLog::net(LogLevel::notification, "Activate entity sync call timed out: {}", e.what());
+//	}
+//}
+//
+//void ZstClient::activate_entity_async(ZstEntityBase * entity, MessageFuture & future)
+//{
+//	ZstURI entity_path(entity->URI());
+//	future.then([this, entity_path](MessageFuture f) {
+//		ZstMsgKind status(ZstMsgKind::EMPTY);
+//		try {
+//			status = f.get();
+//			ZstEntityBase * e = find_entity(entity_path);
+//			if (e)
+//				this->activate_entity_complete(status, e);
+//			else
+//				ZstLog::net(LogLevel::notification, "Entity {} went missing during activation!", entity_path.path());
+//		}
+//		catch (const ZstTimeoutException & e) {
+//			ZstLog::net(LogLevel::notification, "Activate entity async call timed out: {}", e.what());
+//			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
+//		}
+//		return status;
+//	});
+//}
+
+//void ZstClient::destroy_entity_sync(ZstEntityBase * entity, MessageFuture & future)
+//{
+//	try {
+//		ZstMsgKind status = future.get();
+//		entity->enqueue_deactivation();
+//		component_leaving_events().enqueue(entity);
+//		process_callbacks();
+//	}
+//	catch (const ZstTimeoutException & e) {
+//		ZstLog::net(LogLevel::notification, "Destroy entity sync timed out: {}", e.what());
+//	}
+//}
+//
+//void ZstClient::destroy_entity_async(ZstEntityBase * entity, MessageFuture & future)
+//{
+//	ZstURI entity_path(entity->URI());
+//	future.then([this, entity_path](MessageFuture f) {
+//		ZstMsgKind status(ZstMsgKind::EMPTY);
+//		try {
+//			status = f.get();
+//			if (status != ZstMsgKind::OK) {
+//				ZstLog::net(LogLevel::notification, "Destroy entity {} failed with status {}", entity_path.path(), status);
+//			}
+//			ZstLog::net(LogLevel::notification, "Destroy entity {} completed with status {}", entity_path.path(), status);
+//		}
+//		catch (const ZstTimeoutException & e) {
+//			ZstLog::net(LogLevel::notification, "Destroy entity async timed out: {}", e.what());
+//			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
+//		}
+//		return status;
+//	});
+//}
+
+//void ZstClient::destroy_plug_sync(ZstPlug * plug, MessageFuture & future)
+//{
+//	try {
+//		ZstMsgKind status = future.get();
+//		destroy_plug_complete(status, plug);
+//		process_callbacks();
+//	}
+//	catch (const ZstTimeoutException & e) {
+//		ZstLog::net(LogLevel::notification, "Destroy plug timed out: {}", e.what());
+//	}
+//}
+//
+//void ZstClient::destroy_plug_async(ZstPlug * plug, MessageFuture & future)
+//{
+//	try {
+//		future.then([this, plug](MessageFuture f) {
+//			ZstMsgKind status = f.get();
+//			this->destroy_plug_complete(status, plug);
+//			return status;
+//		});
+//	}
+//	catch (const ZstTimeoutException & e) {
+//		ZstLog::net(LogLevel::notification, "Destroy plug timed out: {}", e.what());
+//	}
+//}

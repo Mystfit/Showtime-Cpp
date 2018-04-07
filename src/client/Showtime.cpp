@@ -18,11 +18,11 @@ void zst_start_file_logging(const char * log_file_path)
 }
 
 void zst_join(const char * stage_address){
-	ZstClient::instance().register_client_to_stage(stage_address, false);
+	ZstClient::instance().join_stage(stage_address, false);
 }
 
 void zst_join_async(const char * stage_address){
-    ZstClient::instance().register_client_to_stage(stage_address, true);
+    ZstClient::instance().join_stage(stage_address, true);
 }
 
 

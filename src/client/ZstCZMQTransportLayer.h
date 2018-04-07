@@ -3,18 +3,23 @@
 #include <string>
 #include <czmq.h>
 #include "ZstTransportLayer.h"
-#include "ZstCZMQMessagePool.h"
+#include "ZstCZMQMessage.h"
 
 
 class ZstCZMQTransportLayer : public ZstTransportLayer {
 
 public:
-	ZstCZMQTransportLayer();
+	ZstCZMQTransportLayer(ZstClient * client);
 	~ZstCZMQTransportLayer();
-
-	ZstMessagePool & msg_pool();
+	virtual void destroy() override;
+	virtual void init() override;
+	virtual void connect_to_stage(std::string stage_address) override;
+	virtual void disconnect_from_stage();
+	ZstMessage * get_msg() override;
 
 private:
+	ZstCZMQTransportLayer();
+
 	// ---------------
 	// Socket handlers
 	// ---------------
@@ -55,5 +60,9 @@ private:
 	std::string m_graph_out_ip;
 	std::string m_network_interface;
 
-	ZstCZMQMessagePool m_message_pool;
+	zuuid_t * m_startup_uuid;
+
+
+	/** Summary:	The message pool. */
+	ZstMessagePool<ZstCZMQMessage*> m_pool;
 };

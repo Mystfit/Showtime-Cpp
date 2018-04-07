@@ -3,24 +3,109 @@
 #include <czmq.h>
 #include "../core/ZstMessage.h"
 
+/**
+ * Class:	ZstCZMQMessagePayload
+ *
+ * Summary:	CZMQ variation of a ZstMessagePayload.
+ */
 class ZstCZMQMessagePayload : public ZstMessagePayload {
 public:
-	ZstCZMQMessagePayload(ZstMsgKind k, void * p);
+
+	/**
+	 * Fn:	ZstCZMQMessagePayload::ZstCZMQMessagePayload(ZstMsgKind k, const zframe_t * p);
+	 *
+	 * Summary:	Construct a single payload frame for a ZstCZMQMessage.
+	 *
+	 * Parameters:
+	 * k - 		  	The ZstMsgKind to assign to this payload.
+	 * p - 		  	The zframe_t data to assign to this payload.
+	 */
+	ZstCZMQMessagePayload(ZstMsgKind k, const zframe_t * p);
+
+	/**
+	 * Fn:	ZstCZMQMessagePayload::ZstCZMQMessagePayload(const ZstCZMQMessagePayload & other);
+	 *
+	 * Summary:	Copy construct a ZstCZMQMessagePayload.
+	 *
+	 * Parameters:
+	 * other - 	Payload to copy.
+	 */
 	ZstCZMQMessagePayload(const ZstCZMQMessagePayload & other);
+
+	/**
+	 * Fn:	ZstCZMQMessagePayload::~ZstCZMQMessagePayload();
+	 *
+	 * Summary:	Destructor.
+	 */
 	~ZstCZMQMessagePayload();
-	size_t size() override;
-	char * data() override;
+
+	/**
+	 * Fn:	const void * ZstCZMQMessagePayload::data() override;
+	 *
+	 * Summary:	Gets the payload data.
+	 *
+	 * Returns:	Null if it fails, else a pointer to a const void.
+	 */
+	const void * data() override;
 };
 
+
+/**
+ * Class:	ZstCZMQMessage
+ *
+ * Summary:
+ *  A ZstCZMQMessage encapsulates a single message sent to or from the performance stage server
+ *  using ZeroMQ sockets.
+ */
 class ZstCZMQMessage : public ZstMessage {
 	friend class ZstCZMQMessagePool;
 
 public:
+
+	/**
+	 * Fn:	ZstCZMQMessage::~ZstCZMQMessage();
+	 *
+	 * Summary:	Destructor.
+	 */
 	~ZstCZMQMessage();
+
+	/**
+	 * Fn:	ZstCZMQMessage::ZstCZMQMessage(const ZstCZMQMessage & other);
+	 *
+	 * Summary:	Copy construct a ZstCZMQMessage.
+	 *
+	 * Parameters:
+	 * other - 	The message to copy.
+	 */
 	ZstCZMQMessage(const ZstCZMQMessage & other);
+
+	/**
+	 * Fn:	void ZstCZMQMessage::reset() override;
+	 *
+	 * Summary:	Resets this message.
+	 */
 	void reset() override;
+
+	/**
+	 * Fn:	void ZstCZMQMessage::copy_id(const ZstCZMQMessage * msg);
+	 *
+	 * Summary:	Copies the identifier from the provided message.
+	 *
+	 * Parameters:
+	 * msg - 	The message to copy the id from.
+	 */
 	void copy_id(const ZstCZMQMessage * msg);
 
+	/**
+	 * Fn:	ZstCZMQMessage * ZstCZMQMessage::init_entity_message(const ZstEntityBase * entity) override;
+	 *
+	 * Summary:	Initialises the message using an entity.
+	 *
+	 * Parameters:
+	 * entity - 	If non-null, the entity to initialise the message with.
+	 *
+	 * Returns:	Pointer to this ZstCZMQMessage.
+	 */
 	ZstCZMQMessage * init_entity_message(const ZstEntityBase * entity) override;
 	ZstMessage * init_message(ZstMsgKind kind) override;
 	ZstMessage * init_serialisable_message(ZstMsgKind kind, const ZstSerialisable & streamable) override;

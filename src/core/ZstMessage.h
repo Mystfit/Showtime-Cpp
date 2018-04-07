@@ -76,7 +76,7 @@ public:
      * Summary:	Construct a single payload frame for a ZstMessage.
      *
      * Parameters:
-     * k - 		  	A ZstMsgKind to assign to this payload.
+     * k - 		  	The ZstMsgKind to assign to this payload.
      * p - 		  	The data to assign to this payload.
      *
      * Returns:	A ZstMessagePayload.
@@ -86,13 +86,10 @@ public:
     /**
      * Fn:	ZST_EXPORT Summary::ZstMessagePayload(const ZstMessagePayload & other);
      *
-     * Summary:
-     * Copy - 	construct a ZstMessagePayload.
+     * Summary:	Copy construct a ZstMessagePayload.
      *
      * Parameters:
      * other - 	Payload to copy.
-     *
-     * Returns:	A ZstMessagePayload.
      */
     ZST_EXPORT ZstMessagePayload(const ZstMessagePayload & other);
 
@@ -151,7 +148,6 @@ private:
  *  class can be extended to account for your transport mechanism of choice.
  */
 class ZstMessage {
-	friend class ZstMessagePool;
 public:
 
 	/**
@@ -167,9 +163,7 @@ public:
 	 * Summary: Copy-construct a ZstMessage.
 	 *
 	 * Parameters:
-	 * other - 	The other ZstMessage to copy
-	 *
-	 * Returns:	A ZstMessage.
+	 * other - 	The message to copy
 	 */
 	ZST_EXPORT ZstMessage(const ZstMessage & other);
 
@@ -183,52 +177,12 @@ public:
 	/**
 	 * Fn:	ZST_EXPORT virtual void ZstMessage::copy_id(const ZstMessage * msg);
 	 *
-	 * Summary:	Copies the identifier described by msg.
+	 * Summary:	Copies the identifier from the provided message.
 	 *
 	 * Parameters:
 	 * msg - 	The message to copy the id from.
 	 */
 	ZST_EXPORT virtual void copy_id(const ZstMessage * msg);
-
-	/**
-	 * Fn:
-	 *  ZST_EXPORT virtual ZstMessage * ZstMessage::init_entity_message(const ZstEntityBase * entity);
-	 *
-	 * Summary:	Initialises the message using an entity.
-	 *
-	 * Parameters:
-	 * entity - 	If non-null, the entity to initialise the message with.
-	 *
-	 * Returns:	Pointer to this ZstMessage.
-	 */
-	ZST_EXPORT virtual ZstMessage * init_entity_message(const ZstEntityBase * entity);
-
-	/**
-	 * Fn:	ZST_EXPORT virtual ZstMessage * ZstMessage::init_message(ZstMsgKind kind);
-	 *
-	 * Summary:	Initialises the message with an empty payload.
-	 *
-	 * Parameters:
-	 * kind - 	The kind of message to initialise.
-	 *
-	 * Returns:	Pointer to this ZstMessage.
-	 */
-	ZST_EXPORT virtual ZstMessage * init_message(ZstMsgKind kind);
-
-	/**
-	 * Fn:
-	 *  ZST_EXPORT virtual ZstMessage * ZstMessage::init_serialisable_message(ZstMsgKind kind,
-	 *  const ZstSerialisable & serialisable);
-	 *
-	 * Summary:	Initialises the message using a serialisable object.
-	 *
-	 * Parameters:
-	 * kind - 		  	The kind of message to initialise.
-	 * serialisable - 	The serialisable object.
-	 *
-	 * Returns:	Pointer to this ZstMessage.
-	 */
-	ZST_EXPORT virtual ZstMessage * init_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable);
 
 	/**
 	 * Fn:	ZST_EXPORT virtual void ZstMessage::unpack(void * msg) = 0;
@@ -324,6 +278,43 @@ public:
 		return serialisable;
 	}
 
+	/**
+	* Fn:	void ZstMessage::append_entity_kind_frame(const ZstEntityBase * entity);
+	*
+	* Summary:	Appends an entity kind frame to this message.
+	*
+	* Parameters:
+	* entity - 	The entity to append.
+	*/
+	void append_entity_kind_frame(const ZstEntityBase * entity);
+
+	/**
+	* Fn:	virtual void ZstMessage::append_kind_frame(ZstMsgKind k) = 0;
+	*
+	* Summary:	Appends a kind frame.
+	*
+	* Parameters:
+	* k - 	A ZstMsgKind to append.
+	*/
+	virtual void append_kind_frame(ZstMsgKind k) = 0;
+
+	/**
+	* Fn:	virtual void ZstMessage::append_id_frame() = 0;
+	*
+	* Summary:	Appends the identifier frame.
+	*/
+	virtual void append_id_frame() = 0;
+
+	/**
+	* Fn:	virtual void ZstMessage::append_payload_frame(const ZstSerialisable & streamable) = 0;
+	*
+	* Summary:	Appends a payload frame.
+	*
+	* Parameters:
+	* streamable - 	The streamable to append.
+	*/
+	virtual void append_payload_frame(const ZstSerialisable & streamable) = 0;
+
 protected:
 
 	/**
@@ -333,48 +324,8 @@ protected:
 	 */
 	ZstMessage();
 
-	/**
-	 * Fn:	void ZstMessage::append_entity_kind_frame(const ZstEntityBase * entity);
-	 *
-	 * Summary:	Appends an entity kind frame to this message.
-	 *
-	 * Parameters:
-	 * entity - 	The entity to append.
-	 */
-	void append_entity_kind_frame(const ZstEntityBase * entity);
-
-	/**
-	 * Fn:	virtual void ZstMessage::append_kind_frame(ZstMsgKind k) = 0;
-	 *
-	 * Summary:	Appends a kind frame.
-	 *
-	 * Parameters:
-	 * k - 	A ZstMsgKind to append.
-	 */
-	virtual void append_kind_frame(ZstMsgKind k) = 0;
-
-	/**
-	 * Fn:	virtual void ZstMessage::append_id_frame() = 0;
-	 *
-	 * Summary:	Appends the identifier frame.
-	 */
-	virtual void append_id_frame() = 0;
-
-	/**
-	 * Fn:	virtual void ZstMessage::append_payload_frame(const ZstSerialisable & streamable) = 0;
-	 *
-	 * Summary:	Appends a payload frame.
-	 *
-	 * Parameters:
-	 * streamable - 	The streamable to append.
-	 */
-	virtual void append_payload_frame(const ZstSerialisable & streamable) = 0;
-
 	/** Summary:	The message kind. */
 	ZstMsgKind m_msg_kind;
-
-	/** Summary:	The entity target. */
-	ZstEntityBase * m_entity_target;
 
 	/** Summary:	The payloads. */
 	std::vector<ZstMessagePayload> m_payloads;

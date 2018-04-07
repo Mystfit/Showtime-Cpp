@@ -33,7 +33,7 @@ set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstEventDispatcher.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstINetworkInteractor.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstValue.h"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstMessagePool.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstMessagePool.hpp"
 )
 
 # Core cpp files
@@ -48,7 +48,6 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstURI.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstSynchronisable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstValue.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstMessagePool.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstEntityBase.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstComponent.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstContainer.cpp"

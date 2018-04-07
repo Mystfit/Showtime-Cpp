@@ -2,8 +2,7 @@
 #include "ZstMessage.h"
 
 ZstMessage::ZstMessage() :
-	m_msg_kind(ZstMsgKind::EMPTY),
-	m_entity_target(NULL)
+	m_msg_kind(ZstMsgKind::EMPTY)
 {
 	reset();
 }
@@ -23,7 +22,6 @@ ZstMessage::ZstMessage(const ZstMessage & other)
 void ZstMessage::reset()
 {
 	memset(&m_msg_id[0], 0, UUID_LENGTH);
-
 	m_msg_kind = ZstMsgKind::EMPTY;
 	m_payloads.clear();
 }
@@ -31,29 +29,6 @@ void ZstMessage::reset()
 void ZstMessage::copy_id(const ZstMessage * msg)
 {
 	memcpy(m_msg_id, msg->m_msg_id, UUID_LENGTH);
-}
-
-ZstMessage * ZstMessage::init_entity_message(const ZstEntityBase * entity)
-{
-	append_id_frame();
-	append_entity_kind_frame(entity);
-	append_payload_frame(*entity);
-	return this;
-}
-
-ZstMessage * ZstMessage::init_message(ZstMsgKind kind)
-{
-	append_id_frame();
-	append_kind_frame(kind);
-	return this;
-}
-
-ZstMessage * ZstMessage::init_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable)
-{
-	append_id_frame();
-	append_kind_frame(kind);
-	append_payload_frame(serialisable);
-	return this;
 }
 
 const char * ZstMessage::id()

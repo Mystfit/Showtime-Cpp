@@ -10,15 +10,19 @@
 //Showtime Core includes
 #include "../core/ZstActor.h"
 #include "../core/ZstMessage.h"
-#include "../core/ZstMessagePool.h"
+#include "../core/ZstMessagePool.hpp"
 #include "../core/ZstINetworkInteractor.h"
 #include "../core/ZstValue.h"
 #include "../core/ZstEventQueue.h"
 #include "../core/ZstEventDispatcher.h"
 
 //Client includes
+#include "ZstMessageDispatcher.h"
 #include "ZstClientEvents.h"
 #include "ZstReaper.h"
+#include "ZstCableNetwork.h"
+#include "ZstHierarchy.h"
+#include "ZstCZMQTransportLayer.h"
 
 class ZstClient : public ZstActor, public ZstINetworkInteractor, public ZstEventDispatcher {
 
@@ -29,14 +33,17 @@ public:
 	void init_file_logging(const char * log_file_path);
 	void destroy() override;
 	void process_callbacks() override;
+	void flush() override;
 	
-	//CLient singleton - should not be accessable outside this interface
+	//Client singleton - should not be accessable outside this interface
 	static ZstClient & instance();
 
 	//Register this endpoint to the stage
 	void join_stage(std::string stage_address, bool async = false);
-	void leave_stage(bool immediately = false);
-    void synchronise_graph(bool async = false);
+	void join_stage_complete(ZstMessageReceipt response);
+
+	void leave_stage(bool async);
+	void leave_stage_complete();
     
 	//Stage connection status
 	bool is_connected_to_stage();
@@ -45,12 +52,18 @@ public:
 	long ping();
 		
 	//Callbacks
-	ZstEventQueue & client_connected_events();
-	ZstEventQueue & client_disconnected_events();
-	ZstEventQueue & compute_events();
+	ZstEventQueue * client_connected_events();
+	ZstEventQueue * client_disconnected_events();
+	ZstEventQueue * compute_events();
 
 	//Network interactor implementation
 	virtual void enqueue_synchronisable_event(ZstSynchronisable * synchronisable) override;
+
+	//Client modules
+	ZstHierarchy * hierarchy();
+	ZstCableNetwork * cable_network();
+	ZstMessageDispatcher * msg_dispatch();
+
 
 private:
 	//Stage actor
@@ -75,26 +88,25 @@ private:
 	bool m_is_connecting;
 
 	//UUIDs
-	zuuid_t * m_startup_uuid;
 	std::string m_assigned_uuid;
 	std::string m_client_name;
 		
 	//Event hooks
-	void flush_events();
 	ZstSynchronisableDeferredEvent * m_synchronisable_deferred_event;
 	ZstComputeEvent * m_compute_event;
-
-	//Stage communication
-	void join_stage_complete(ZstMsgKind status);
-	void synchronise_graph_complete(ZstMsgKind status);
-	void leave_stage_complete();
 	
 	//Events and callbacks
-	ZstEventQueue m_client_connected_event_manager;
-	ZstEventQueue m_client_disconnected_event_manager;
-	ZstEventQueue m_compute_event_manager;
-	ZstEventQueue m_synchronisable_event_manager;
-	
-	//Addresses
-	std::string m_stage_addr = "127.0.0.1";
+	ZstEventQueue * m_client_connected_event_manager;
+	ZstEventQueue * m_client_disconnected_event_manager;
+	ZstEventQueue * m_compute_event_manager;
+	ZstEventQueue * m_synchronisable_event_manager;
+
+	//Syncronisable reaper
+	ZstReaper m_reaper;
+
+	//Client modules
+	ZstHierarchy * m_hierarchy;
+	ZstCableNetwork * m_cable_network;
+	ZstMessageDispatcher * m_msg_dispatch;
+	ZstTransportLayer * m_transport;
 };
