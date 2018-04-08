@@ -117,6 +117,15 @@ int ZstCZMQTransportLayer::s_handle_graph_in(zloop_t * loop, zsock_t * socket, v
 	return 0;
 }
 
+void ZstCZMQTransportLayer::connect_to_client(const char * endpoint_ip, const char * subscription_plug) {
+	ZstLog::net(LogLevel::notification, "Connecting to {}. My output endpoint is {}", endpoint_ip, m_graph_out_ip);
+
+	//Connect to endpoint publisher
+	zsock_connect(m_graph_in, "%s", endpoint_ip);
+	zsock_set_subscribe(m_graph_in, subscription_plug);
+}
+
+
 int ZstCZMQTransportLayer::s_handle_stage_update_in(zloop_t * loop, zsock_t * socket, void * arg) {
 	ZstCZMQTransportLayer * transport = (ZstCZMQTransportLayer*)arg;
 	ZstMessage * msg = transport->receive_stage_update();
@@ -139,7 +148,7 @@ int ZstCZMQTransportLayer::s_handle_stage_router(zloop_t * loop, zsock_t * socke
 	}
 	else if (msg->kind() == ZstMsgKind::SUBSCRIBE_TO_PERFORMER) {
 		//Handle connection requests from other clients
-		transport->client()->connect_client_handler(msg->payload_at(0).data(), msg->payload_at(1).data());
+		transport->connect_to_client(msg->payload_at(0).data(), msg->payload_at(1).data());
 	}
 	else if (msg->kind() == ZstMsgKind::OK) {
 		//Do nothing?
@@ -158,21 +167,16 @@ int ZstCZMQTransportLayer::s_handle_stage_router(zloop_t * loop, zsock_t * socke
 
 
 
-void ZstCZMQTransportLayer::send_to_performance(ZstPlug * plug)
+void ZstCZMQTransportLayer::send_to_performance(ZstMessage * msg)
 {
-	zmsg_t *msg = zmsg_new();
+	ZstCZMQMessage * czmq_msg = dynamic_cast<ZstCZMQMessage*>(msg);
+	assert(czmq_msg);
+	zmsg_t * handle = czmq_msg->handle();
+	zmsg_send(&handle, m_graph_out);
+}
 
-	//Add output plug path
-	zmsg_addstr(msg, plug->URI().path());
-
-	//Pack value into stream
-	std::stringstream s;
-	plug->raw_value()->write(s);
-	zframe_t *payload = zframe_new(s.str().c_str(), s.str().size());
-	zmsg_append(msg, &payload);
-
-	//Send it
-	zmsg_send(&msg, m_graph_out);
+void ZstCZMQTransportLayer::receive_from_performance()
+{
 }
 
 ZstMessage * ZstCZMQTransportLayer::get_msg()

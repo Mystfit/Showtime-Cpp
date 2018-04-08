@@ -10,7 +10,6 @@
  */
 class ZstCZMQMessagePayload : public ZstMessagePayload {
 public:
-
 	/**
 	 * Fn:	ZstCZMQMessagePayload::ZstCZMQMessagePayload(ZstMsgKind k, const zframe_t * p);
 	 *
@@ -58,9 +57,8 @@ public:
  *  using ZeroMQ sockets.
  */
 class ZstCZMQMessage : public ZstMessage {
-	friend class ZstCZMQMessagePool;
-
 public:
+	ZstCZMQMessage();
 
 	/**
 	 * Fn:	ZstCZMQMessage::~ZstCZMQMessage();
@@ -95,28 +93,12 @@ public:
 	 * msg - 	The message to copy the id from.
 	 */
 	void copy_id(const ZstCZMQMessage * msg);
-
-	/**
-	 * Fn:	ZstCZMQMessage * ZstCZMQMessage::init_entity_message(const ZstEntityBase * entity) override;
-	 *
-	 * Summary:	Initialises the message using an entity.
-	 *
-	 * Parameters:
-	 * entity - 	If non-null, the entity to initialise the message with.
-	 *
-	 * Returns:	Pointer to this ZstCZMQMessage.
-	 */
-	ZstCZMQMessage * init_entity_message(const ZstEntityBase * entity) override;
-	ZstMessage * init_message(ZstMsgKind kind) override;
-	ZstMessage * init_serialisable_message(ZstMsgKind kind, const ZstSerialisable & streamable) override;
-
+	
 	void unpack(void * msg) override;
 
 	zmsg_t * handle();
 
 private:
-	ZstCZMQMessage();
-
 	ZstMsgKind unpack_kind();
 	ZstMsgKind unpack_kind(zframe_t * kind_frame);
 

@@ -42,7 +42,7 @@ ZstCable * ZstCableNetwork::connect_cable(ZstPlug * input, ZstPlug * output, boo
 		return NULL;
 	}
 
-	cable = create_cable_ptr(input, output);
+	cable = create_cable(input, output);
 	if (!cable) {
 		ZstLog::net(LogLevel::notification, "Couldn't create cable, already exists!");
 		return NULL;
@@ -59,7 +59,7 @@ ZstCable * ZstCableNetwork::connect_cable(ZstPlug * input, ZstPlug * output, boo
 	//to determine the correct input->output order - fix this using ZstInputPlug and 
 	//ZstOutput plug as arguments
 	ZstMessage * msg = client()->msg_dispatch()->init_serialisable_message(ZstMsgKind::CREATE_CABLE, *cable);
-	client()->msg_dispatch()->send_to_stage(msg, [this, cable](ZstMessageReceipt response) { this->connect_cable_complete(response, cable); }, async);
+	client()->msg_dispatch()->send_to_stage(msg, async, [this, cable](ZstMessageReceipt response) { this->connect_cable_complete(response, cable); });
 
 	//Create the cable early so we have something to return immediately
 	return cable;
@@ -70,7 +70,7 @@ void ZstCableNetwork::connect_cable_complete(ZstMessageReceipt response, ZstCabl
 		cable->enqueue_activation();
 	}
 	else {
-		ZstLog::net(LogLevel::notification, "Cable connect for {}-{} failed with status {}", cable->get_input_URI().path(), cable->get_output_URI().path(), status);
+		ZstLog::net(LogLevel::notification, "Cable connect for {}-{} failed with status {}", cable->get_input_URI().path(), cable->get_output_URI().path(), response.status);
 	}
 }
 
@@ -79,7 +79,7 @@ void ZstCableNetwork::destroy_cable(ZstCable * cable, bool async)
 	//Need to set this cable as deactivating so the stage publish message doesn't clean it up too early
 	cable->set_deactivating();
 	ZstMessage * msg = client()->msg_dispatch()->init_serialisable_message(ZstMsgKind::DESTROY_CABLE, *cable);
-	client()->msg_dispatch()->send_to_stage(msg, [this, cable](ZstMessageReceipt response) { this->destroy_cable_complete(response, cable); }, async); 
+	client()->msg_dispatch()->send_to_stage(msg, async, [this, cable](ZstMessageReceipt response) { this->destroy_cable_complete(response, cable); });
 }
 
 void ZstCableNetwork::destroy_cable_complete(ZstMessageReceipt response, ZstCable * cable)
@@ -150,20 +150,20 @@ ZstEventQueue * ZstCableNetwork::cable_leaving_events()
 }
 
 
-ZstCable * ZstCableNetwork::create_cable_ptr(const ZstCable & cable)
+ZstCable * ZstCableNetwork::create_cable(const ZstCable & cable)
 {
-	return create_cable_ptr(cable.get_input_URI(), cable.get_output_URI());
+	return create_cable(cable.get_input_URI(), cable.get_output_URI());
 }
 
-ZstCable * ZstCableNetwork::create_cable_ptr(ZstPlug * input, ZstPlug * output)
+ZstCable * ZstCableNetwork::create_cable(ZstPlug * input, ZstPlug * output)
 {
 	if (!input || !output) {
 		return NULL;
 	}
-	return create_cable_ptr(input->URI(), output->URI());
+	return create_cable(input->URI(), output->URI());
 }
 
-ZstCable * ZstCableNetwork::create_cable_ptr(const ZstURI & input_path, const ZstURI & output_path)
+ZstCable * ZstCableNetwork::create_cable(const ZstURI & input_path, const ZstURI & output_path)
 {
 	ZstCable * cable_ptr = find_cable(input_path, output_path);
 	if (cable_ptr) {

@@ -4,6 +4,7 @@
 
 class ZstClientModule : public ZstEventDispatcher {
 public:
+	ZstClientModule();
 	ZstClientModule(ZstClient * client);
 	virtual void init() {};
 	virtual void destroy() {};
@@ -13,5 +14,4 @@ protected:
 
 private:
 	ZstClient * m_client;
-	ZstClientModule();
 };

@@ -49,14 +49,13 @@ ZstCZMQMessage::~ZstCZMQMessage()
 ZstCZMQMessage::ZstCZMQMessage(const ZstCZMQMessage & other) : ZstMessage(other)
 {
 	m_msg_handle = zmsg_dup(other.m_msg_handle);
-
 }
 
 void ZstCZMQMessage::reset()
 {
 	if (m_msg_handle)
 		zmsg_destroy(&m_msg_handle);
-	m_msg_handle = NULL;
+	m_msg_handle = zmsg_new();
 }
 
 void ZstCZMQMessage::copy_id(const ZstCZMQMessage * msg)

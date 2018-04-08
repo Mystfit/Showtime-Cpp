@@ -157,7 +157,7 @@ void ZstClient::join_stage(std::string stage_address, bool async) {
     
 	ZstMessage * msg = m_msg_dispatch->init_serialisable_message(ZstMsgKind::CLIENT_JOIN, *m_hierarchy->get_local_performer());
 	msg->append_str(stage_address.c_str(), stage_address.size());
-	m_msg_dispatch->send_to_stage(msg, [this](ZstMessageReceipt response) { this->join_stage_complete(response); }, async);
+	m_msg_dispatch->send_to_stage(msg, async, [this](ZstMessageReceipt response) { this->join_stage_complete(response); });
 	
 	//Run callbacks if we're still on the main app thread
 	if (!async) process_callbacks();
@@ -193,7 +193,7 @@ void ZstClient::leave_stage(bool async)
 		ZstLog::net(LogLevel::notification, "Leaving stage");
         
         ZstMessage * msg = m_msg_dispatch->init_message(ZstMsgKind::CLIENT_LEAVING);
-		m_msg_dispatch->send_to_stage(msg, [this](ZstMessageReceipt response) {this->leave_stage_complete(); }, async);
+		m_msg_dispatch->send_to_stage(msg, async, [this](ZstMessageReceipt response) {this->leave_stage_complete(); });
 
 		//Run callbacks if we're still on the main app thread
 		if(!async) process_callbacks();
@@ -272,10 +272,7 @@ int ZstClient::graph_message_handler(zmsg_t * msg) {
 			}
 		}
 	}
-
-	//Telemetrics
-	m_num_graph_recv_messages++;
-
+	
 	//Cleanup
 	zframe_destroy(&payload);
 
@@ -304,7 +301,7 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 			const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(i);
 			//Only dispatch cable event if we don't already have the cable (we might have created it)
 			if(!cable_network()->find_cable(cable.get_input_URI(), cable.get_output_URI())) {
-				ZstCable * cable_ptr = cable_network()->create_cable_ptr(cable);
+				ZstCable * cable_ptr = cable_network()->create_cable(cable);
                 cable_ptr->set_activation_status(ZstSyncStatus::ACTIVATED);
 				cable_network()->cable_arriving_events()->enqueue(cable_ptr);
 			}
@@ -348,7 +345,7 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 		}
 		case ZstMsgKind::DESTROY_ENTITY:
 		{
-			ZstURI entity_path = ZstURI(msg->payload_at(i).data(), msg->payload_at(i).size());
+			ZstURI entity_path = ZstURI((char*)msg->payload_at(i).data(), msg->payload_at(i).size());
 			
 			//Only dispatch entity leaving events for non-local entities (for the moment)
 			if (!hierarchy()->path_is_local(entity_path)) {
@@ -385,34 +382,17 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 	}
 }
 
-void ZstClient::connect_client_handler(const char * endpoint_ip, const char * output_plug) {
-	ZstLog::net(LogLevel::notification, "Connecting to {}. My output endpoint is {}", endpoint_ip, m_graph_out_ip);
-
-	//Connect to endpoint publisher
-	zsock_connect(m_graph_in, "%s", endpoint_ip);
-	zsock_set_subscribe(m_graph_in, output_plug);
-}
-
 int ZstClient::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
 	ZstClient * client = (ZstClient*)arg;
 	chrono::time_point<chrono::system_clock> start = std::chrono::system_clock::now();
-	ZstMessage * msg = client->msg_pool().get()->init_message(ZstMsgKind::CLIENT_HEARTBEAT);
-	MessageFuture future = client->msg_pool().register_response_message(msg, true);
 
-	try {
-		future.then([&start, client](MessageFuture f) {
-			int status = f.get();
-			chrono::time_point<chrono::system_clock> end = chrono::system_clock::now();
-			chrono::milliseconds delta = chrono::duration_cast<chrono::milliseconds>(end - start);
-			ZstLog::net(LogLevel::notification, "Ping roundtrip {} ms", delta.count());
-			client->m_ping = static_cast<long>(delta.count());
-			return status;
-		});
-		client->send_to_stage(msg);
-	}
-	catch (const ZstTimeoutException & e) {
-		ZstLog::net(LogLevel::notification, "Heartbeat timed out: {}", e.what());
-	}
+	ZstMessage * msg = client->msg_dispatch()->init_message(ZstMsgKind::CLIENT_HEARTBEAT);
+	client->msg_dispatch()->send_to_stage(msg, true, [client, &start](ZstMessageReceipt response) {
+		chrono::time_point<chrono::system_clock> end = chrono::system_clock::now();
+		chrono::milliseconds delta = chrono::duration_cast<chrono::milliseconds>(end - start);
+		ZstLog::net(LogLevel::notification, "Ping roundtrip {} ms", delta.count());
+		client->m_ping = static_cast<long>(delta.count());
+	});
 
 	return 0;
 }
@@ -440,6 +420,11 @@ void ZstClient::enqueue_synchronisable_event(ZstSynchronisable * synchronisable)
 void ZstClient::enqueue_synchronisable_deletion(ZstSynchronisable * synchronisable)
 {
 	m_reaper.add(synchronisable);
+}
+
+void ZstClient::send_to_performance(ZstPlug * plug)
+{
+	msg_dispatch()->send_to_performance(plug);
 }
 
 ZstHierarchy * ZstClient::hierarchy()

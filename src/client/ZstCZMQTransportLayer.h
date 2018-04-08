@@ -5,7 +5,6 @@
 #include "ZstTransportLayer.h"
 #include "ZstCZMQMessage.h"
 
-
 class ZstCZMQTransportLayer : public ZstTransportLayer {
 
 public:
@@ -13,13 +12,14 @@ public:
 	~ZstCZMQTransportLayer();
 	virtual void destroy() override;
 	virtual void init() override;
-	virtual void connect_to_stage(std::string stage_address) override;
-	virtual void disconnect_from_stage();
+	void connect_to_stage(std::string stage_address) override;
+	void connect_to_client(const char * endpoint_ip, const char * subscription_plug);
+	void disconnect_from_stage();
 	ZstMessage * get_msg() override;
 
 private:
 	ZstCZMQTransportLayer();
-
+	
 	// ---------------
 	// Socket handlers
 	// ---------------
@@ -36,8 +36,8 @@ private:
 	void send_to_stage(ZstMessage * msg);
 	ZstMessage * receive_from_stage();
 	ZstMessage * receive_stage_update();
-	void send_to_performance(ZstPlug * plug);
-
+	void send_to_performance(ZstMessage * msg);
+	void receive_from_performance();
 
 	// ---------------
 	// ZMQ Sockets
@@ -64,5 +64,5 @@ private:
 
 
 	/** Summary:	The message pool. */
-	ZstMessagePool<ZstCZMQMessage*> m_pool;
+	ZstMessagePool<ZstCZMQMessage> m_pool;
 };

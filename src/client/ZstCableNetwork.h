@@ -7,10 +7,14 @@
 #include "ZstClientModule.h"
 
 
+class ZstCableLeavingEvent : public ZstCableEvent {
+	virtual void run(ZstCable * target) override;
+};
+
+
+
 class ZstCableNetwork : public ZstClientModule
 {
-	friend class ZstCableLeavingEvent;
-
 public:
 	ZstCableNetwork(ZstClient * client);
 	~ZstCableNetwork();
@@ -18,6 +22,16 @@ public:
 	ZstCable * connect_cable(ZstPlug * input, ZstPlug * output, bool async = false);
 	void destroy_cable(ZstCable * cable, bool async = false);
 	void disconnect_plugs(ZstPlug * input_plug, ZstPlug * output_plug);
+
+
+	// --------------
+	// Cable creation
+	// --------------
+
+	ZstCable * create_cable(const ZstCable & cable);
+	ZstCable * create_cable(ZstPlug * output, ZstPlug * input);
+	ZstCable * create_cable(const ZstURI & input_path, const ZstURI & output_path);
+
 
 	// -------------
 	// Cable queries
@@ -50,16 +64,7 @@ private:
 
 	void connect_cable_complete(ZstMessageReceipt response, ZstCable * cable);
 	void destroy_cable_complete(ZstMessageReceipt response, ZstCable * cable);
-
-
-	// --------------
-	// Cable creation
-	// --------------
-	 
-	ZstCable * create_cable_ptr(const ZstCable & cable);
-	ZstCable * create_cable_ptr(ZstPlug * output, ZstPlug * input);
-	ZstCable * create_cable_ptr(const ZstURI & input_path, const ZstURI & output_path);
-
+	
 
 	// --------------------
 	// Cable event managers
@@ -75,11 +80,6 @@ private:
 
 	ZstCableList m_cables;
 	ZstINetworkInteractor * m_client;
-};
-
-
-class ZstCableLeavingEvent : public ZstCableEvent {
-	virtual void run(ZstCable * target) override;
 };
 
 

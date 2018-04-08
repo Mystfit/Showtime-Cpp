@@ -5,6 +5,7 @@
 #include <cf/cfuture.h>
 #include <cf/time_watcher.h>
 #include "../core/ZstMessage.h"
+#include "../core/ZstINetworkInteractor.h"
 #include "ZstTransportLayer.h"
 #include "ZstClientModule.h"
 
@@ -81,62 +82,66 @@ public:
 	 *
 	 * Parameters:
 	 * msg - 	  	[in,out] If non-null, the message to send.
-	 * action -		Callback method to run when the response is received
 	 * async -    	Send message asynchronously.
+	 * action -		Callback method to run when the response is received.
 	 *
 	 * Returns:	A ZstMsgKind.
 	 */
-	ZstMessageReceipt send_to_stage(ZstMessage * msg, MessageBoundAction action, bool async);
+	ZstMessageReceipt send_to_stage(ZstMessage * msg, bool async, MessageBoundAction action);
 	
-
-	/**
-	 * Fn:	ZstMsgKind ZstMessageDispatcher::send_sync_stage_message(const ZstMessage * msg);
-	 *
-	 * Summary:	Prepare a message to be sent syncronously.
-	 *
-	 * Parameters:
-	 * msg - 	The message.
-	 *
-	 * Returns:	A ZstMsgKind.
-	 */
-	ZstMessageReceipt send_sync_stage_message(ZstMessage * msg);
-
-	/**
-	 * Fn:	void ZstMessageDispatcher::send_async_stage_message(const ZstMessage * msg);
-	 *
-	 * Summary:	Prepare message to be sent asynchronously.
-	 *
-	 * Parameters:
-	 * msg - 	The message.
-	 */
-	ZstMessageReceipt send_async_stage_message(ZstMessage * msg, MessageBoundAction completed_action);
-
-	/**
-	 * Fn:	virtual void ZstMessageDispatcher::complete(ZstMsgKind status);
-	 *
-	 * Summary:	Completed fires when it receives a response from the server.
-	 *
-	 * Parameters:
-	 * status - 	Status returned from the server.
-	 */
-	virtual void complete(ZstMessageReceipt response);
-
-	/**
-	 * Fn:	virtual void ZstMessageDispatcher::failed(ZstMsgKind status);
-	 *
-	 * Summary:	Failed fires when a non-OK message response is received from the server.
-	 *
-	 * Parameters:
-	 * status - 	Status returned from the server.
-	 */
-	virtual void failed(ZstMessageReceipt status);
-
+	void send_to_performance(ZstPlug * plug);
+	
 	ZstMessage * init_entity_message(const ZstEntityBase * entity);
 	ZstMessage * init_message(ZstMsgKind kind);
 	ZstMessage * init_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable);
-			
+	ZstMessage * init_performance_message(ZstPlug * plug);
+
+
+
 private:
 	ZstMessageDispatcher();
+
+	/**
+	* Fn:	ZstMsgKind ZstMessageDispatcher::send_sync_stage_message(const ZstMessage * msg);
+	*
+	* Summary:	Prepare a message to be sent syncronously.
+	*
+	* Parameters:
+	* msg - 	The message.
+	*
+	* Returns:	A ZstMsgKind.
+	*/
+	ZstMessageReceipt send_sync_stage_message(ZstMessage * msg);
+
+	/**
+	* Fn:	void ZstMessageDispatcher::send_async_stage_message(const ZstMessage * msg);
+	*
+	* Summary:	Prepare message to be sent asynchronously.
+	*
+	* Parameters:
+	* msg - 	The message.
+	*/
+	ZstMessageReceipt send_async_stage_message(ZstMessage * msg, MessageBoundAction completed_action);
+
+	/**
+	* Fn:	virtual void ZstMessageDispatcher::complete(ZstMsgKind status);
+	*
+	* Summary:	Completed fires when it receives a response from the server.
+	*
+	* Parameters:
+	* status - 	Status returned from the server.
+	*/
+	virtual void complete(ZstMessageReceipt response);
+
+	/**
+	* Fn:	virtual void ZstMessageDispatcher::failed(ZstMsgKind status);
+	*
+	* Summary:	Failed fires when a non-OK message response is received from the server.
+	*
+	* Parameters:
+	* status - 	Status returned from the server.
+	*/
+	virtual void failed(ZstMessageReceipt status);
 
 	/**
 	 * Fn:	MessageFuture ZstMessageDispatcher::register_response_message(const ZstMessage * msg);

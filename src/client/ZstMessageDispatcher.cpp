@@ -10,7 +10,7 @@ ZstMessageDispatcher::~ZstMessageDispatcher()
 {
 }
 
-ZstMessageReceipt ZstMessageDispatcher::send_to_stage(ZstMessage * msg, MessageBoundAction action, bool async)
+ZstMessageReceipt ZstMessageDispatcher::send_to_stage(ZstMessage * msg, bool async, MessageBoundAction action)
 {
 	if (!msg) return ZstMessageReceipt{ ZstMsgKind::EMPTY, async };
 
@@ -64,6 +64,12 @@ ZstMessageReceipt ZstMessageDispatcher::send_async_stage_message(ZstMessage * ms
 	m_transport->send_to_stage(msg);
 }
 
+void ZstMessageDispatcher::send_to_performance(ZstPlug * plug)
+{
+	ZstMessage * msg = init_performance_message(plug);
+	m_transport->send_to_performance(msg);
+}
+
 void ZstMessageDispatcher::complete(ZstMessageReceipt response)
 {
 	//If we didn't receive a OK signal, something went wrong
@@ -80,7 +86,6 @@ void ZstMessageDispatcher::failed(ZstMessageReceipt response)
 ZstMessage * ZstMessageDispatcher::init_entity_message(const ZstEntityBase * entity)
 {
 	ZstMessage * msg = m_transport->get_msg();
-	msg->reset();
 	msg->append_id_frame();
 	msg->append_entity_kind_frame(entity);
 	msg->append_payload_frame(*entity);
@@ -90,7 +95,6 @@ ZstMessage * ZstMessageDispatcher::init_entity_message(const ZstEntityBase * ent
 ZstMessage * ZstMessageDispatcher::init_message(ZstMsgKind kind)
 {
 	ZstMessage * msg = m_transport->get_msg();
-	msg->reset();
 	msg->append_id_frame();
 	msg->append_kind_frame(kind);
 	return msg;
@@ -99,13 +103,19 @@ ZstMessage * ZstMessageDispatcher::init_message(ZstMsgKind kind)
 ZstMessage * ZstMessageDispatcher::init_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable)
 {
 	ZstMessage * msg = m_transport->get_msg();
-	msg->reset();
 	msg->append_id_frame();
 	msg->append_kind_frame(kind);
 	msg->append_payload_frame(serialisable);
 	return msg;
 }
 
+ZstMessage * ZstMessageDispatcher::init_performance_message(ZstPlug * plug)
+{
+	ZstMessage * msg = m_transport->get_msg();
+	msg->append_str(plug->URI().path(), plug->URI().full_size());
+	msg->append_serialisable(ZstMsgKind::EMPTY, *(plug->raw_value()));
+	return msg;
+}
 
 MessageFuture ZstMessageDispatcher::register_response_message(ZstMessage * msg)
 {

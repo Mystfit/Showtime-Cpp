@@ -265,23 +265,3 @@ void zst_destroy_cable_async(ZstCable * cable)
 {
     ZstClient::instance().cable_network()->destroy_cable(cable, true);
 }
-
-int zst_graph_recv_tripmeter()
-{
-	return ZstClient::instance().graph_recv_tripmeter();
-}
-
-void zst_reset_graph_recv_tripmeter()
-{
-	ZstClient::instance().reset_graph_recv_tripmeter();
-}
-
-int zst_graph_send_tripmeter()
-{
-	return ZstClient::instance().graph_send_tripmeter();
-}
-
-void zst_reset_graph_send_tripmeter()
-{
-	return ZstClient::instance().reset_graph_send_tripmeter();
-}

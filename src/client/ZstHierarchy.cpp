@@ -63,7 +63,7 @@ void ZstHierarchy::init(std::string name)
 	//Create a root entity to hold our local entity hierarchy
 	//Sets the name of our performer and the address of our graph output
 	m_root = new ZstPerformer(name.c_str());
-	m_root->set_network_interactor(client());
+	m_root->set_network_interactor(client()->msg_dispatch());
 }
 
 void ZstHierarchy::synchronise_graph(bool async)
@@ -104,7 +104,7 @@ void ZstHierarchy::activate_entity(ZstEntityBase * entity, bool async)
 	
 	//Build message
 	ZstMessage * msg = client()->msg_dispatch()->init_entity_message(entity);
-	client()->msg_dispatch()->send_to_stage(msg, [this, entity](ZstMessageReceipt response) { this->activate_entity_complete(response, entity); }, async);
+	client()->msg_dispatch()->send_to_stage(msg, async, [this, entity](ZstMessageReceipt response) { this->activate_entity_complete(response, entity); });
 }
 
 
@@ -147,7 +147,7 @@ void ZstHierarchy::destroy_entity(ZstEntityBase * entity, bool async)
 			ZstURI entity_path = entity->URI();
 			ZstMessage * msg = client()->msg_dispatch()->init_message(ZstMsgKind::DESTROY_ENTITY);
 			msg->append_str(entity->URI().path(), entity->URI().full_size());
-			client()->msg_dispatch()->send_to_stage(msg, [this, entity](ZstMessageReceipt response) { this->destroy_entity_complete(response, entity); }, async);
+			client()->msg_dispatch()->send_to_stage(msg, async, [this, entity](ZstMessageReceipt response) { this->destroy_entity_complete(response, entity); });
 
 			if (async) {
 				//Since we own this entity, we can start to clean it up immediately

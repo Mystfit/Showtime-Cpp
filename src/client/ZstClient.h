@@ -24,7 +24,7 @@
 #include "ZstHierarchy.h"
 #include "ZstCZMQTransportLayer.h"
 
-class ZstClient : public ZstActor, public ZstINetworkInteractor, public ZstEventDispatcher {
+class ZstClient : public ZstActor, public ZstEventDispatcher, public ZstINetworkInteractor {
 
 public:
 	ZstClient();
@@ -59,6 +59,7 @@ public:
 	//Network interactor implementation
 	virtual void enqueue_synchronisable_event(ZstSynchronisable * synchronisable) override;
 	void enqueue_synchronisable_deletion(ZstSynchronisable * synchronisable);
+	void send_to_performance(ZstPlug * plug);
 
 	//Client modules
 	ZstHierarchy * hierarchy();
@@ -73,7 +74,6 @@ private:
 	//Message handlers
 	int graph_message_handler(zmsg_t * msg);
 	void stage_update_handler(ZstMessage * msg);
-	void connect_client_handler(const char * endpoint_ip, const char * output_plug);
 	
 	//Heartbeat timer
 	int m_heartbeat_timer_id;

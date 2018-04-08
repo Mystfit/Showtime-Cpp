@@ -231,7 +231,7 @@ ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t) : ZstPlug(name, 
 void ZstOutputPlug::fire()
 {
 	if(network_interactor())
-		network_interactor()->publish(this);
+		network_interactor()->send_to_performance(this);
 	m_value->clear();
 }
 

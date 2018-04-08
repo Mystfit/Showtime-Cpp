@@ -10,7 +10,6 @@
 #include "../core/ZstEventQueue.h"
 #include "../core/ZstEventDispatcher.h"
 #include "../core/ZstINetworkInteractor.h"
-#include "ZstReaper.h"
 #include "ZstClientModule.h"
 
 
@@ -33,6 +32,14 @@ public:
 	void activate_entity(ZstEntityBase* entity, bool async = false);
 	void destroy_entity(ZstEntityBase * entity, bool async = false);
 	void destroy_plug(ZstPlug * plug, bool async);
+
+
+	// ------------------------------
+	// Performers
+	// ------------------------------
+
+	void add_performer(ZstPerformer & performer);
+	
 
 	// ------------------------------
 	// Hierarchy queries
@@ -65,7 +72,6 @@ private:
 	ZstPerformer * m_root;
 	ZstPerformerMap m_clients;
 	ZstINetworkInteractor * m_client;
-	void add_performer(ZstPerformer & performer);
 
 
 	// ----------------

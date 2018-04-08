@@ -151,6 +151,13 @@ class ZstMessage {
 public:
 
 	/**
+	* Fn:	ZstMessage::ZstMessage();
+	*
+	* Summary:	Default constructor.
+	*/
+	ZST_EXPORT ZstMessage();
+
+	/**
 	 * Fn:	ZST_EXPORT virtual ZstMessage::~ZstMessage();
 	 *
 	 * Summary:	Destructor.
@@ -274,7 +281,7 @@ public:
 		T serialisable;
 		size_t offset = 0;
 		ZstMessagePayload & payload = payload_at(payload_index);
-		serialisable.read(payload.data(), payload.size(), offset);
+		serialisable.read((char*)payload.data(), payload.size(), offset);
 		return serialisable;
 	}
 
@@ -316,14 +323,6 @@ public:
 	virtual void append_payload_frame(const ZstSerialisable & streamable) = 0;
 
 protected:
-
-	/**
-	 * Fn:	ZstMessage::ZstMessage();
-	 *
-	 * Summary:	Default constructor.
-	 */
-	ZstMessage();
-
 	/** Summary:	The message kind. */
 	ZstMsgKind m_msg_kind;
 

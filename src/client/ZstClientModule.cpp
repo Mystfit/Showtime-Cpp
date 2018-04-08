@@ -1,6 +1,10 @@
 #include "ZstClientModule.h"
 
-ZstClientModule::ZstClientModule(ZstClient * client) : 
+ZstClientModule::ZstClientModule()
+{
+}
+
+ZstClientModule::ZstClientModule(ZstClient * client) :
 	m_client(client)
 {
 }

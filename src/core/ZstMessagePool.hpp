@@ -27,9 +27,9 @@ public:
 		}
 	}
 
-	ZST_EXPORT virtual T get_msg()
+	ZST_EXPORT virtual T* get_msg()
 	{
-		T msg = NULL;
+		T* msg = NULL;
 		if (m_use_pool) {
 			if (m_message_pool.empty()) {
 				populate(MESSAGE_POOL_BLOCK);
@@ -43,11 +43,10 @@ public:
 		}
 
 		return msg;
-		
 	}
 	
 	//Release and reset a message
-	ZST_EXPORT void release(T message)
+	ZST_EXPORT void release(T* message)
 	{
 		if (m_use_pool) {
 			m_message_pool.push_back(message);
@@ -59,5 +58,5 @@ public:
 
 protected:
 	bool m_use_pool;
-	std::list<T> m_message_pool;
+	std::list<T*> m_message_pool;
 };

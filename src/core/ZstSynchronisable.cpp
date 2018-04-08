@@ -142,26 +142,5 @@ void ZstSynchronisable::flush_events()
 
 void ZstSynchronisable::set_activation_status(ZstSyncStatus status)
 {
-	switch (status) 
-	{
-	case ZstSyncStatus::DEACTIVATED:
-		break;
-	case ZstSyncStatus::ACTIVATING:
-		break;
-	case ZstSyncStatus::ACTIVATION_QUEUED:
-		break;
-	case ZstSyncStatus::ACTIVATED:
-		break;
-	case ZstSyncStatus::DEACTIVATING:
-		break;
-	case ZstSyncStatus::DEACTIVATION_QUEUED:
-		break;
-	case ZstSyncStatus::ERR:
-		break;
-	default:
-		throw std::range_error("Did not understand status");
-		break;
-	}
-
 	m_sync_status = status;
 }
