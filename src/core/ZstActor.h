@@ -10,8 +10,8 @@ public:
 	ZST_EXPORT virtual ~ZstActor();
 	ZST_EXPORT virtual void destroy();
 	ZST_EXPORT virtual void init(const char * actor_name);
-	ZST_EXPORT virtual void start();
-	ZST_EXPORT virtual void stop();
+	ZST_EXPORT virtual void start_loop();
+	ZST_EXPORT virtual void stop_loop();
 	ZST_EXPORT void self_test();
     ZST_EXPORT const char * actor_name() const;
 	ZST_EXPORT virtual void process_callbacks() {};

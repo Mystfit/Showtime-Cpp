@@ -1,4 +1,5 @@
 #include "ZstClientModule.h"
+#include "ZstClient.h"
 
 ZstClientModule::ZstClientModule()
 {

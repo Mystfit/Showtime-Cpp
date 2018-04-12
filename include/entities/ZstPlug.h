@@ -25,7 +25,7 @@ private:
 
 class ZstPlug : public ZstEntityBase {
 public:
-	friend class ZstClient;
+	friend class ZstPlugLiason;
     friend class ZstComponent;
 	friend class ZstPlugIterator;
     

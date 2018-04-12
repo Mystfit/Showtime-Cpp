@@ -1,5 +1,6 @@
 #include "ZstCZMQTransportLayer.h"
 #include "ZstCZMQMessage.h"
+#include "ZstClient.h"
 
 ZstCZMQTransportLayer::ZstCZMQTransportLayer(ZstClient * client) : 
 	ZstTransportLayer(client),
@@ -13,6 +14,7 @@ ZstCZMQTransportLayer::~ZstCZMQTransportLayer()
 
 void ZstCZMQTransportLayer::destroy()
 {
+	ZstActor::destroy();
 	ZstTransportLayer::destroy();
 	zsock_destroy(&m_stage_updates);
 	zsock_destroy(&m_stage_router);
@@ -73,6 +75,8 @@ void ZstCZMQTransportLayer::init()
 
 	zsock_set_identity(m_stage_router, identity.c_str());
 
+	//Start the socket/timer reactor
+	start_loop();
 }
 
 void ZstCZMQTransportLayer::connect_to_stage(std::string stage_address)
@@ -165,7 +169,12 @@ int ZstCZMQTransportLayer::s_handle_stage_router(zloop_t * loop, zsock_t * socke
 	return 0;
 }
 
-
+int ZstCZMQTransportLayer::s_handle_timer(zloop_t * loop, int timer_id, void * arg)
+{
+	ZstCZMQTransportLayer * transport = (ZstCZMQTransportLayer*)arg;
+	transport->m_timers[timer_id]();
+	return 0;
+}
 
 void ZstCZMQTransportLayer::send_to_performance(ZstMessage * msg)
 {
@@ -183,6 +192,17 @@ ZstMessage * ZstCZMQTransportLayer::get_msg()
 {
 	ZstMessage * msg = m_pool.get_msg();
 	return msg;
+}
+
+int ZstCZMQTransportLayer::add_timer(int delay, std::function<void()> timer_func)
+{
+	m_timers[attach_timer(s_handle_timer, delay, this)] = timer_func;
+}
+
+void ZstCZMQTransportLayer::remove_timer(int timer_id)
+{
+	detach_timer(timer_id);
+	m_timers.erase(timer_id);
 }
 
 void ZstCZMQTransportLayer::send_to_stage(ZstMessage * msg)

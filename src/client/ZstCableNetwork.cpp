@@ -1,4 +1,4 @@
-#include "ZstCableNetwork.h"
+#include "ZstClient.h"
 
 ZstCableNetwork::ZstCableNetwork(ZstClient * client) : 
 	ZstClientModule(client)
@@ -48,11 +48,11 @@ ZstCable * ZstCableNetwork::connect_cable(ZstPlug * input, ZstPlug * output, boo
 		return NULL;
 	}
 
-	cable->set_activating();
+	synchronisable_set_activating(cable);
 
 	//If either of the cable plugs are a local entity, then the cable is local as well
 	if (client()->hierarchy()->entity_is_local(*input) || client()->hierarchy()->entity_is_local(*output)) {
-		cable->set_local();
+		cable_set_local(cable);
 	}
 
 	//TODO: Even though we use a cable object when sending over the wire, it's up to us
@@ -67,7 +67,7 @@ ZstCable * ZstCableNetwork::connect_cable(ZstPlug * input, ZstPlug * output, boo
 
 void ZstCableNetwork::connect_cable_complete(ZstMessageReceipt response, ZstCable * cable) {
 	if (response.status == ZstMsgKind::OK) {
-		cable->enqueue_activation();
+		synchronisable_enqueue_activation(cable);
 	}
 	else {
 		ZstLog::net(LogLevel::notification, "Cable connect for {}-{} failed with status {}", cable->get_input_URI().path(), cable->get_output_URI().path(), response.status);
@@ -77,14 +77,15 @@ void ZstCableNetwork::connect_cable_complete(ZstMessageReceipt response, ZstCabl
 void ZstCableNetwork::destroy_cable(ZstCable * cable, bool async)
 {
 	//Need to set this cable as deactivating so the stage publish message doesn't clean it up too early
-	cable->set_deactivating();
+	synchronisable_set_deactivating(cable);
+
 	ZstMessage * msg = client()->msg_dispatch()->init_serialisable_message(ZstMsgKind::DESTROY_CABLE, *cable);
 	client()->msg_dispatch()->send_to_stage(msg, async, [this, cable](ZstMessageReceipt response) { this->destroy_cable_complete(response, cable); });
 }
 
 void ZstCableNetwork::destroy_cable_complete(ZstMessageReceipt response, ZstCable * cable)
 {
-	if (!cable)
+	if (!cable || !cable->is_activated())
 		return;
 
 	//Remove cable from local list so that other threads don't assume it still exists
@@ -100,14 +101,19 @@ void ZstCableNetwork::destroy_cable_complete(ZstMessageReceipt response, ZstCabl
 	ZstPlug * output = dynamic_cast<ZstPlug*>(client()->hierarchy()->find_entity(cable->get_output_URI()));
 
 	if (input)
-		input->remove_cable(cable);
+		plug_remove_cable(input, cable);
 
 	if (output)
-		output->remove_cable(cable);
+		plug_remove_cable(output, cable);
 
 	cable->set_input(NULL);
 	cable->set_output(NULL);
 
+	//Queue events
+	synchronisable_enqueue_deactivation(cable);
+	cable_leaving_events()->enqueue(cable);
+
+	//Add to reaper for deletion
 	client()->enqueue_synchronisable_deletion(cable);
 }
 
@@ -149,7 +155,6 @@ ZstEventQueue * ZstCableNetwork::cable_leaving_events()
 	return m_cable_leaving_event_manager;
 }
 
-
 ZstCable * ZstCableNetwork::create_cable(const ZstCable & cable)
 {
 	return create_cable(cable.get_input_URI(), cable.get_output_URI());
@@ -167,7 +172,7 @@ ZstCable * ZstCableNetwork::create_cable(const ZstURI & input_path, const ZstURI
 {
 	ZstCable * cable_ptr = find_cable(input_path, output_path);
 	if (cable_ptr) {
-		return NULL;
+		return cable_ptr;
 	}
 
 	//Create and store new cable
@@ -185,13 +190,17 @@ ZstCable * ZstCableNetwork::create_cable(const ZstURI & input_path, const ZstURI
 	//Add cable to plugs
 	ZstPlug * input_plug = dynamic_cast<ZstPlug*>(client()->hierarchy()->find_entity(input_path));
 	ZstPlug * output_plug = dynamic_cast<ZstPlug*>(client()->hierarchy()->find_entity(output_path));
-	input_plug->add_cable(cable_ptr);
-	output_plug->add_cable(cable_ptr);
+	plug_add_cable(input_plug, cable_ptr);
+	plug_add_cable(output_plug, cable_ptr);
 	cable_ptr->set_input(input_plug);
 	cable_ptr->set_output(output_plug);
 
 	//Set network interactor
 	cable_ptr->set_network_interactor(client());
+
+	//Enqueue events
+	synchronisable_set_activation_status(cable_ptr, ZstSyncStatus::ACTIVATED);
+	cable_arriving_events()->enqueue(cable_ptr);
 
 	return cable_ptr;
 }

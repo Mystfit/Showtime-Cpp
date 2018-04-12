@@ -4,6 +4,7 @@
 #include <boost/bind.hpp>
 #include <cf/cfuture.h>
 #include <cf/time_watcher.h>
+
 #include "../core/ZstMessage.h"
 #include "../core/ZstINetworkInteractor.h"
 #include "ZstTransportLayer.h"
@@ -16,11 +17,6 @@
  */
 struct ZstTimeoutException : std::runtime_error {
 	using std::runtime_error::runtime_error;
-};
-
-struct ZstMessageReceipt {
-	ZstMsgKind status;
-	bool async;
 };
 
 /**

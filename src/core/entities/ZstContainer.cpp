@@ -198,6 +198,7 @@ void ZstContainer::remove_child(ZstEntityBase * child) {
 			m_children.erase(c);
 		}
 	}
+	child->m_parent = NULL;
 }
 
 void ZstContainer::write(std::stringstream & buffer) const

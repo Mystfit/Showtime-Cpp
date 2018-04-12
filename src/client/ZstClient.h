@@ -1,8 +1,8 @@
 #pragma once
 
+//std lib includes
 #include <unordered_map>
 #include <string>
-#include <czmq.h>
 
 //Showtime API includes
 #include <ZstCore.h>
@@ -13,25 +13,25 @@
 #include "../core/ZstMessagePool.hpp"
 #include "../core/ZstINetworkInteractor.h"
 #include "../core/ZstValue.h"
-#include "../core/ZstEventQueue.h"
 #include "../core/ZstEventDispatcher.h"
+#include "../core/ZstEventQueue.h"
 
-//Client includes
+#include "ZstReaper.h"
 #include "ZstMessageDispatcher.h"
-#include "ZstClientEvents.h"
 #include "ZstReaper.h"
 #include "ZstCableNetwork.h"
 #include "ZstHierarchy.h"
 #include "ZstCZMQTransportLayer.h"
+#include "ZstClientEvents.h"
 
-class ZstClient : public ZstActor, public ZstEventDispatcher, public ZstINetworkInteractor {
+class ZstClient : public ZstEventDispatcher, public ZstINetworkInteractor {
 
 public:
 	ZstClient();
 	~ZstClient();
 	void init_client(const char * client_name, bool debug);
 	void init_file_logging(const char * log_file_path);
-	void destroy() override;
+	void destroy();
 	void process_callbacks() override;
 	void flush() override;
 	
@@ -66,11 +66,7 @@ public:
 	ZstCableNetwork * cable_network();
 	ZstMessageDispatcher * msg_dispatch();
 
-private:
-	//Stage actor
-	void start() override;
-	void stop() override;
-			
+private:	
 	//Message handlers
 	int graph_message_handler(zmsg_t * msg);
 	void stage_update_handler(ZstMessage * msg);
@@ -78,7 +74,7 @@ private:
 	//Heartbeat timer
 	int m_heartbeat_timer_id;
 	long m_ping;
-	static int s_heartbeat_timer(zloop_t *loop, int timer_id, void *arg);
+	void heartbeat_timer();
 
 	//Destruction
 	bool m_is_ending;
@@ -102,11 +98,11 @@ private:
 	ZstEventQueue * m_synchronisable_event_manager;
 
 	//Syncronisable reaper
-	ZstReaper m_reaper;
+	ZstReaper * m_reaper;
 
 	//Client modules
 	ZstHierarchy * m_hierarchy;
 	ZstCableNetwork * m_cable_network;
 	ZstMessageDispatcher * m_msg_dispatch;
-	ZstTransportLayer * m_transport;
+	ZstCZMQTransportLayer * m_transport;
 };

@@ -5,6 +5,7 @@
 #include "ZstINetworkInteractor.h"
 
 ZstSynchronisable::ZstSynchronisable() :
+	m_is_destroyed(false),
 	m_network_interactor(NULL),
 	m_sync_status(ZstSyncStatus::DEACTIVATED),
     m_sync_error(ZstSyncError::NO_ERR)
@@ -28,6 +29,7 @@ ZstSynchronisable::~ZstSynchronisable()
 ZstSynchronisable::ZstSynchronisable(const ZstSynchronisable & other) : ZstSynchronisable()
 {
 	m_sync_status = other.m_sync_status;
+	m_is_destroyed = other.m_is_destroyed;
 }
 
 void ZstSynchronisable::attach_activation_event(ZstSynchronisableEvent * event)
@@ -118,6 +120,11 @@ ZstSyncError ZstSynchronisable::last_error()
 	return m_sync_error;
 }
 
+bool ZstSynchronisable::is_destroyed()
+{
+	return m_is_destroyed;
+}
+
 void ZstSynchronisable::set_network_interactor(ZstINetworkInteractor * network_interactor)
 {
 	m_network_interactor = network_interactor;
@@ -143,4 +150,9 @@ void ZstSynchronisable::flush_events()
 void ZstSynchronisable::set_activation_status(ZstSyncStatus status)
 {
 	m_sync_status = status;
+}
+
+void ZstSynchronisable::set_destroyed()
+{
+	m_is_destroyed = true;
 }

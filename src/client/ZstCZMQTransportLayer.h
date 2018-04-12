@@ -1,11 +1,13 @@
 #pragma once
 
+#include <functional>
 #include <string>
 #include <czmq.h>
+#include "../core/ZstActor.h"
 #include "ZstTransportLayer.h"
 #include "ZstCZMQMessage.h"
 
-class ZstCZMQTransportLayer : public ZstTransportLayer {
+class ZstCZMQTransportLayer : public ZstTransportLayer, public ZstActor {
 
 public:
 	ZstCZMQTransportLayer(ZstClient * client);
@@ -13,9 +15,12 @@ public:
 	virtual void destroy() override;
 	virtual void init() override;
 	void connect_to_stage(std::string stage_address) override;
-	void connect_to_client(const char * endpoint_ip, const char * subscription_plug);
-	void disconnect_from_stage();
+	void connect_to_client(const char * endpoint_ip, const char * subscription_plug) override;
+	void disconnect_from_stage() override;
 	ZstMessage * get_msg() override;
+
+	int add_timer(int delay, std::function<void()> timer_func);
+	void remove_timer(int timer_id);
 
 private:
 	ZstCZMQTransportLayer();
@@ -27,6 +32,14 @@ private:
 	static int s_handle_graph_in(zloop_t *loop, zsock_t *sock, void *arg);
 	static int s_handle_stage_update_in(zloop_t *loop, zsock_t *sock, void *arg);
 	static int s_handle_stage_router(zloop_t *loop, zsock_t *sock, void *arg);
+	static int s_handle_timer(zloop_t * loop, int timer_id, void * arg);
+
+
+	// ---------------
+	// Timers
+	// ---------------
+	
+	std::unordered_map<int, std::function<void()> > m_timers;
 
 
 	// ---------------

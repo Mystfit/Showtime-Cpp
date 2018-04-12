@@ -6,14 +6,12 @@
 
 #pragma once
 #include <ZstCore.h>
-#include "../core/ZstMessage.h"
-#include "../core/ZstEventQueue.h"
-#include "../core/ZstEventDispatcher.h"
-#include "../core/ZstINetworkInteractor.h"
 #include "ZstClientModule.h"
+#include "ZstClient.h"
+#include "../core/liasons/ZstSynchronisableLiason.hpp"
 
 
-class ZstHierarchy : public ZstClientModule {
+class ZstHierarchy : public ZstClientModule, private ZstSynchronisableLiason {
 	friend class ZstEntityLeavingEvent;
 	friend class ZstPlugLeavingEvent;
 
@@ -22,8 +20,7 @@ public:
 	~ZstHierarchy();
 	void destroy() override;
 	void init(std::string name);
-
-
+	
 	// ------------------------------
 	// Entity activation/deactivation
 	// ------------------------------
@@ -71,7 +68,6 @@ private:
 	ZstHierarchy();
 	ZstPerformer * m_root;
 	ZstPerformerMap m_clients;
-	ZstINetworkInteractor * m_client;
 
 
 	// ----------------
@@ -82,14 +78,6 @@ private:
 	void destroy_entity_complete(ZstMessageReceipt response, ZstEntityBase * entity);
 	void destroy_plug_complete(ZstMessageReceipt response, ZstPlug * plug);
 
-
-	// --------------
-	// Hooks
-	// --------------
-
-	ZstEntityLeavingEvent * m_performer_leaving_hook;
-	ZstEntityLeavingEvent * m_component_leaving_hook;
-	ZstPlugLeavingEvent * m_plug_leaving_hook;
 
 	// --------------
 	// Event managers
@@ -106,14 +94,4 @@ private:
 		
 	int m_num_graph_recv_messages;
 	int m_num_graph_send_messages;
-};
-
-
-class ZstEntityLeavingEvent : public ZstEntityEvent {
-	virtual void run(ZstEntityBase * target) override;
-};
-
-
-class ZstPlugLeavingEvent : public ZstPlugEvent {
-	virtual void run(ZstPlug * target) override;
 };

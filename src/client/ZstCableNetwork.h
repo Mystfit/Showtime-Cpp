@@ -1,19 +1,22 @@
 #pragma once
 
 #include <ZstCore.h>
-#include "../core/ZstMessage.h"
-#include "../core/ZstEventDispatcher.h"
-#include "../core/ZstEventQueue.h"
+#include "ZstClient.h"
+#include "../core/liasons/ZstSynchronisableLiason.hpp"
+#include "../core/liasons/ZstCableLiason.hpp"
+#include "../core/liasons/ZstPlugLiason.hpp"
 #include "ZstClientModule.h"
-
 
 class ZstCableLeavingEvent : public ZstCableEvent {
 	virtual void run(ZstCable * target) override;
 };
 
 
-
-class ZstCableNetwork : public ZstClientModule
+class ZstCableNetwork : 
+	public ZstClientModule, 
+	private ZstPlugLiason, 
+	private ZstCableLiason, 
+	private ZstSynchronisableLiason
 {
 public:
 	ZstCableNetwork(ZstClient * client);

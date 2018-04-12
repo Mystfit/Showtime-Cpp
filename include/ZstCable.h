@@ -12,7 +12,7 @@ class ZstPlug;
 
 class ZstCable : public ZstSynchronisable, public ZstSerialisable {
 public:
-	friend class ZstClient;
+	friend class ZstCableLiason;
 	friend class ZstStage;
     friend class ZstComponent;
     friend class ZstPlug;

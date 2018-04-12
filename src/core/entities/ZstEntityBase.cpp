@@ -6,7 +6,6 @@
 
 ZstEntityBase::ZstEntityBase(const char * name) : 
 	ZstSynchronisable(),
-	m_is_destroyed(false),
 	m_parent(NULL),
 	m_entity_type(NULL),
 	m_uri(name)
@@ -16,8 +15,7 @@ ZstEntityBase::ZstEntityBase(const char * name) :
 ZstEntityBase::ZstEntityBase(const ZstEntityBase & other) : ZstSynchronisable(other)
 {
 	m_parent = other.m_parent;
-	m_is_destroyed = other.m_is_destroyed;
-
+	
 	size_t entity_type_size = strlen(other.m_entity_type);
 	m_entity_type = (char*)malloc(entity_type_size + 1);
 	memcpy(m_entity_type, other.m_entity_type, entity_type_size);
@@ -71,11 +69,6 @@ const ZstURI & ZstEntityBase::URI() const
 	return m_uri;
 }
 
-bool ZstEntityBase::is_destroyed()
-{
-	return m_is_destroyed;
-}
-
 void ZstEntityBase::release_cable_bundle(ZstCableBundle * bundle)
 {
 	delete bundle;
@@ -87,10 +80,7 @@ ZstCableBundle * ZstEntityBase::acquire_cable_bundle()
 	return get_child_cables(bundle);
 }
 
-void ZstEntityBase::set_destroyed()
-{
-	m_is_destroyed = true;
-}
+
 
 ZstCableBundle * ZstEntityBase::get_child_cables(ZstCableBundle * bundle)
 {

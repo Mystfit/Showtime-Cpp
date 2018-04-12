@@ -3,8 +3,6 @@
 
 #include "ZstClient.h"
 
-using namespace std;
-
 ZstClient::ZstClient() :
     m_ping(-1),
     m_is_ending(false),
@@ -28,8 +26,11 @@ ZstClient::ZstClient() :
 	m_synchronisable_deferred_event = new ZstSynchronisableDeferredEvent();
 	m_synchronisable_event_manager->attach_event_listener(m_synchronisable_deferred_event);
 	add_event_queue(m_synchronisable_event_manager);
+	
+	//Entity reaper
+	m_reaper = new ZstReaper();
 
-	//CLient modules
+	//Client modules
 	m_hierarchy = new ZstHierarchy(this);
 	m_cable_network = new ZstCableNetwork(this);
 	m_transport = new ZstCZMQTransportLayer(this);
@@ -49,11 +50,13 @@ ZstClient::~ZstClient() {
 	delete m_synchronisable_event_manager;
 	delete m_compute_event_manager;
 
+	m_reaper->reap_all();
 	m_hierarchy->destroy();
 	m_cable_network->destroy();
 	m_msg_dispatch->destroy();
 	m_transport->destroy();
 
+	delete m_reaper;
 	delete m_hierarchy;
 	delete m_cable_network;
 	delete m_msg_dispatch;
@@ -77,7 +80,7 @@ void ZstClient::destroy() {
 	if(is_connected_to_stage())
 		leave_stage(true);
 	
-	ZstActor::destroy();
+	m_transport->destroy();
 	
 	m_is_ending = false;
 	m_is_destroyed = true;
@@ -92,15 +95,12 @@ void ZstClient::init_client(const char *client_name, bool debug)
 	ZstLog::init_logger(client_name);
 	ZstLog::net(LogLevel::notification, "Starting Showtime v{}", SHOWTIME_VERSION);
 
-	ZstActor::init(client_name);
 	m_client_name = client_name;
 	m_is_destroyed = false;
 
 	m_hierarchy->init(client_name);
 	m_cable_network->init();
 	m_transport->init();
-		
-    start();
     m_init_completed = true;
 }
 
@@ -121,7 +121,7 @@ void ZstClient::process_callbacks()
 	m_cable_network->process_callbacks();
 	
 	//Only delete entities after all callbacks have finished
-	m_reaper.reap_all();
+	m_reaper->reap_all();
 }
 
 void ZstClient::flush()
@@ -131,13 +131,6 @@ void ZstClient::flush()
 	m_cable_network->flush();
 }
 
-void ZstClient::start() {
-	ZstActor::start();
-}
-
-void ZstClient::stop() {
-	ZstActor::stop();
-}
 
 
 // -------------
@@ -176,8 +169,8 @@ void ZstClient::join_stage_complete(ZstMessageReceipt response)
 	ZstLog::net(LogLevel::notification, "Connection to server established");
 
 	//Set up heartbeat timer
-	m_heartbeat_timer_id = attach_timer(s_heartbeat_timer, HEARTBEAT_DURATION, this);
-
+	m_heartbeat_timer_id = m_transport->add_timer(HEARTBEAT_DURATION, [this]() {this->heartbeat_timer(); });
+	
 	//TODO: Need a handshake with the stage before we mark connection as active
 	m_connected_to_stage = true;
 
@@ -210,7 +203,7 @@ void ZstClient::leave_stage_complete()
     m_hierarchy->get_local_performer()->enqueue_deactivation();
     
     //Disconnect rest of sockets and timers
-	detach_timer(m_heartbeat_timer_id);
+	m_transport->remove_timer(m_heartbeat_timer_id);
 	m_transport->disconnect_from_stage();
 
 	m_is_connecting = false;
@@ -280,7 +273,6 @@ int ZstClient::graph_message_handler(zmsg_t * msg) {
 }
 
 
-
 void ZstClient::stage_update_handler(ZstMessage * msg)
 {
 	ZstMsgKind payload_kind = msg->kind();
@@ -299,12 +291,7 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 		case ZstMsgKind::CREATE_CABLE:
 		{
 			const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(i);
-			//Only dispatch cable event if we don't already have the cable (we might have created it)
-			if(!cable_network()->find_cable(cable.get_input_URI(), cable.get_output_URI())) {
-				ZstCable * cable_ptr = cable_network()->create_cable(cable);
-                cable_ptr->set_activation_status(ZstSyncStatus::ACTIVATED);
-				cable_network()->cable_arriving_events()->enqueue(cable_ptr);
-			}
+			cable_network()->create_cable(cable);
 			break;
 		}
 		case ZstMsgKind::DESTROY_CABLE:
@@ -312,10 +299,7 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 			const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(i);
 			ZstCable * cable_ptr = cable_network()->find_cable(cable.get_input_URI(), cable.get_output_URI());
 			if (cable_ptr) {
-				if (cable_ptr->is_activated()) {
-					cable_ptr->enqueue_deactivation();
-					cable_network()->cable_leaving_events()->enqueue(cable_ptr);
-				}
+				cable_network()->destroy_cable_complete(ZstMessageReceipt{ ZstMsgKind::OK, false }, cable_ptr);
 			}
 			break;
 		}
@@ -353,9 +337,9 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
                 if(entity){
                     entity->enqueue_deactivation();
                     if (strcmp(entity->entity_type(), COMPONENT_TYPE) == 0 || strcmp(entity->entity_type(), CONTAINER_TYPE) == 0) {
-						hierarchy()->component_leaving_events()->enqueue(entity);
+						hierarchy()->destroy_entity(entity, false);
                     } else if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
-						hierarchy()->plug_leaving_events()->enqueue(entity);
+						hierarchy()->destroy_plug(static_cast<ZstPlug*>(entity), false);
                     } else if (strcmp(entity->entity_type(), PERFORMER_TYPE) == 0) {
 						hierarchy()->performer_leaving_events()->enqueue(entity);
                     }
@@ -382,19 +366,16 @@ void ZstClient::stage_update_handler(ZstMessage * msg)
 	}
 }
 
-int ZstClient::s_heartbeat_timer(zloop_t * loop, int timer_id, void * arg){
-	ZstClient * client = (ZstClient*)arg;
-	chrono::time_point<chrono::system_clock> start = std::chrono::system_clock::now();
+void ZstClient::heartbeat_timer(){
+	std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
 
-	ZstMessage * msg = client->msg_dispatch()->init_message(ZstMsgKind::CLIENT_HEARTBEAT);
-	client->msg_dispatch()->send_to_stage(msg, true, [client, &start](ZstMessageReceipt response) {
-		chrono::time_point<chrono::system_clock> end = chrono::system_clock::now();
-		chrono::milliseconds delta = chrono::duration_cast<chrono::milliseconds>(end - start);
+	ZstMessage * msg = msg_dispatch()->init_message(ZstMsgKind::CLIENT_HEARTBEAT);
+	msg_dispatch()->send_to_stage(msg, true, [&start, this](ZstMessageReceipt response) {
+		std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
+		std::chrono::milliseconds delta = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 		ZstLog::net(LogLevel::notification, "Ping roundtrip {} ms", delta.count());
-		client->m_ping = static_cast<long>(delta.count());
+		this->m_ping = static_cast<long>(delta.count());
 	});
-
-	return 0;
 }
 
 ZstEventQueue * ZstClient::client_connected_events()
@@ -419,7 +400,7 @@ void ZstClient::enqueue_synchronisable_event(ZstSynchronisable * synchronisable)
 
 void ZstClient::enqueue_synchronisable_deletion(ZstSynchronisable * synchronisable)
 {
-	m_reaper.add(synchronisable);
+	m_reaper->add(synchronisable);
 }
 
 void ZstClient::send_to_performance(ZstPlug * plug)

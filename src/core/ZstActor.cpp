@@ -14,7 +14,7 @@ ZstActor::~ZstActor()
 
 void ZstActor::destroy()
 {
-	stop();
+	stop_loop();
 }
 
 void ZstActor::init(const char * actor_name)
@@ -25,12 +25,12 @@ void ZstActor::init(const char * actor_name)
     m_actor_name = std::string(actor_name);
 }
 
-void ZstActor::start()
+void ZstActor::start_loop()
 {
 	m_loop_actor = zactor_new(actor_thread_func, this);
 }
 
-void ZstActor::stop()
+void ZstActor::stop_loop()
 {
 	zactor_destroy(&m_loop_actor);
 	m_loop_actor = NULL;

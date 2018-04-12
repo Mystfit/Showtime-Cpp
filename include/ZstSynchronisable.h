@@ -26,6 +26,7 @@ enum ZstSyncError {
 class ZstSynchronisable {
 	friend class ZstActivationEvent;
 	friend class ZstDeactivationEvent;
+	friend class ZstSynchronisableLiason;
 public:
 	ZST_EXPORT ZstSynchronisable();
 	ZST_EXPORT ZstSynchronisable(const ZstSynchronisable & other);
@@ -45,6 +46,7 @@ public:
 	ZST_EXPORT bool is_deactivated();
 	ZST_EXPORT ZstSyncStatus activation_status();
 	ZST_EXPORT ZstSyncError last_error();
+	ZST_EXPORT bool is_destroyed();
 
 	//Register graph sender so this entity can comunicate with the graph
 	ZST_EXPORT virtual void set_network_interactor(ZstINetworkInteractor * network_interactor);
@@ -58,8 +60,11 @@ protected:
     ZST_EXPORT void set_deactivating();
     ZST_EXPORT virtual void set_activation_status(ZstSyncStatus status);
     ZST_EXPORT void set_error(ZstSyncError e);
+	ZST_EXPORT void set_destroyed();
 
 private:
+	bool m_is_destroyed;
+
 	ZstEventQueue * m_activation_events;
 	ZstEventQueue * m_deactivation_events;
 	ZstActivationEvent * m_activation_hook;

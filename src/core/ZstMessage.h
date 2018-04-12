@@ -63,6 +63,17 @@ MSGPACK_ADD_ENUM(ZstMsgKind);
 
 
 /**
+ * Struct:	ZstMessageReceipt
+ *
+ * Summary:	Message response from a message sent to the server.
+ */
+struct ZstMessageReceipt {
+	ZstMsgKind status;
+	bool async;
+};
+
+
+/**
  * Class:	ZstMessagePayload
  *
  * Summary:	A single payload frame in a ZstMessage

@@ -34,6 +34,9 @@ set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstINetworkInteractor.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstValue.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessagePool.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstSynchronisableLiason.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstPlugLiason.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstCableLiason.hpp"
 )
 
 # Core cpp files
@@ -53,6 +56,9 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstContainer.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstPlug.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstPerformer.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstSynchronisableLiason.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstPlugLiason.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstCableLiason.cpp"
 )
 
 target_sources(${CORE_TARGET} PUBLIC ${ZST_PUBLIC_HEADERS} )

@@ -1,4 +1,6 @@
 # include "ZstTransportLayer.h"
+#include "ZstClient.h"
+
 
 ZstTransportLayer::ZstTransportLayer()
 {
