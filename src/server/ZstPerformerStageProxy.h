@@ -1,0 +1,13 @@
+#pragma once
+
+#include <string>
+#include <entities/ZstPerformer.h>
+
+class ZstPerformerStageProxy : public ZstPerformer {
+public:
+	ZstPerformerStageProxy(const std::string & name, const std::string & ip_address);
+	const std::string & ip_address();
+
+private:
+	std::string m_address;
+};

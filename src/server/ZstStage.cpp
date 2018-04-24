@@ -418,7 +418,7 @@ void ZstStage::send_to_client(ZstMessage * msg, ZstPerformer * destination) {
 ZstMessage * ZstStage::create_client_handler(std::string sender_identity, ZstMessage * msg)
 {
 	ZstMessage * response = msg_pool()->get();
-
+	
 	//Copy the id of the message so the sender will eventually match the response to a message promise
 	ZstPerformer client = msg->ZstMessage::unpack_payload_serialisable<ZstPerformer>(0);
 
@@ -431,7 +431,7 @@ ZstMessage * ZstStage::create_client_handler(std::string sender_identity, ZstMes
 	}
 
 	//Copy streamable so we have a local ptr for the client
-	ZstPerformer * client_proxy = new ZstPerformer(client);
+	ZstPerformer * client_proxy = new ZstPerformerStageProxy(client);
 	assert(client_proxy);
 	
 	//Save our new client

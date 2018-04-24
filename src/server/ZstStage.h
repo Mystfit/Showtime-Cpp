@@ -11,6 +11,9 @@
 //Core headers
 #include "../core/ZstActor.h"
 
+//Stage headers
+#include "ZstPerformerStageProxy.h"
+
 #define HEARTBEAT_DURATION 1000
 #define MAX_MISSED_HEARTBEATS 10
 #define STAGE_MESSAGE_POOL_BLOCK 512
@@ -21,7 +24,8 @@ class ZstMessage;
 class ZstMessagePool;
 class ZstCable;
 
-typedef std::unordered_map<std::string, ZstPerformer*> ZstClientSocketMap;
+typedef std::unordered_map<ZstURI, ZstPerformerStageProxy*, ZstURIHash> ZstClientMap;
+typedef std::unordered_map<std::string, ZstPerformerStageProxy*> ZstClientSocketMap;
 
 class ZstStage : public ZstActor{
 public:
@@ -83,7 +87,7 @@ private:
 	zsock_t *m_graph_update_pub;
 
 	//Client performers
-	ZstPerformerMap m_clients;
+	ZstClientMap m_clients;
 	ZstClientSocketMap m_client_socket_index;
 	
 	//Cables
