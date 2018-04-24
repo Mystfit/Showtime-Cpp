@@ -18,14 +18,14 @@ set(ZST_CLIENT_PRIVATE_HEADERS
   "${CMAKE_CURRENT_LIST_DIR}/ZstCZMQMessage.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstHierarchy.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstSession.h"
-  "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstMessageAdaptor.hpp"
+  "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstStageDispatchAdaptor.hpp"
+  "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstPerformanceDispatchAdaptor.hpp"
 )
 
 set(ZST_CLIENT_SRC
   "${CMAKE_CURRENT_LIST_DIR}/Showtime.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClient.cpp"
-  "${CMAKE_CURRENT_LIST_DIR}/ZstClientModule.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstMessageDispatcher.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstTransportLayer.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstCZMQTransportLayer.cpp"

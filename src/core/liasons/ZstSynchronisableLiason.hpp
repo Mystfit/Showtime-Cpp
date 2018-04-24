@@ -17,4 +17,5 @@ protected:
 	ZST_EXPORT void synchronisable_set_error(ZstSynchronisable * synchronisable, ZstSyncError e);
 	ZST_EXPORT void synchronisable_set_destroyed(ZstSynchronisable * synchronisable);
 	ZST_EXPORT void synchronisable_set_proxy(ZstSynchronisable * synchronisable);
+	ZST_EXPORT void synchronisable_process_events(ZstSynchronisable * synchronisable);
 };

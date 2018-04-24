@@ -20,29 +20,42 @@
 #include "../core/liasons/ZstSynchronisableLiason.hpp"
 
 //Adaptors
+#include "adaptors/ZstStageDispatchAdaptor.hpp"
+#include "adaptors/ZstPerformanceDispatchAdaptor.hpp"
 #include <adaptors/ZstPlugAdaptors.hpp>
+#include <adaptors/ZstSessionAdaptor.hpp>
+#include <adaptors/ZstSynchronisableAdaptor.hpp>
 
 class ZstSession :
 	public ZstClientModule,
+	public ZstEventDispatcher<ZstPerformanceDispatchAdaptor*>,
+	public ZstEventDispatcher<ZstStageDispatchAdaptor*>,
 	public ZstEventDispatcher<ZstSessionAdaptor*>,
-	public ZstEventDispatcher<ZstStageAdaptor*>,
-	private ZstSessionAdaptor,
-	private ZstStageAdaptor,
-	private ZstOutputPlugAdaptor,
-	private ZstSynchronisableAdaptor,
-	private ZstPlugLiason,
-	private ZstCableLiason,
-	private ZstSynchronisableLiason
+	public ZstEventDispatcher<ZstSynchronisableAdaptor*>,
+	public ZstSessionAdaptor,
+	public ZstStageDispatchAdaptor,
+	public ZstPerformanceDispatchAdaptor,
+	public ZstOutputPlugAdaptor,
+	public ZstSynchronisableAdaptor,
+	public ZstPlugLiason,
+	public ZstCableLiason,
+	public ZstSynchronisableLiason
 {
+
+public:
+	using ZstEventDispatcher<ZstSessionAdaptor*>::add_adaptor;
+	using ZstEventDispatcher<ZstSessionAdaptor*>::remove_adaptor;
 	using ZstEventDispatcher<ZstSessionAdaptor*>::process_events;
 	using ZstEventDispatcher<ZstSessionAdaptor*>::run_event;
 	using ZstEventDispatcher<ZstSessionAdaptor*>::add_event;
-	using ZstEventDispatcher<ZstStageAdaptor*>::run_event;
 	using ZstEventDispatcher<ZstSessionAdaptor*>::flush;
-	using ZstEventDispatcher<ZstStageAdaptor*>::flush;
+	using ZstEventDispatcher<ZstStageDispatchAdaptor*>::add_adaptor;
+	using ZstEventDispatcher<ZstStageDispatchAdaptor*>::remove_adaptor;
+	using ZstEventDispatcher<ZstStageDispatchAdaptor*>::run_event;
+	using ZstEventDispatcher<ZstStageDispatchAdaptor*>::flush;
+	using ZstEventDispatcher<ZstPerformanceDispatchAdaptor*>::run_event;
 
-public:
-	ZstSession(ZstClient * client);
+	ZstSession();
 	~ZstSession();
 
 
@@ -50,21 +63,27 @@ public:
 	// Delegator overrides
 	// ------------------------------
 
-	void init() override;
+	void init(std::string name);
+	void init() override {};
 	void destroy() override;
 	void process_events();
 	void flush();
 
+	// ---------------------------
+	// Connection events
+	// ---------------------------
+	void on_connected_to_stage() override;
+	void on_disconnected_from_stage() override;
 
 	// ---------------------------
 	// Adaptor plug send/receive
 	// ---------------------------
 
-	void on_receive_from_performance(ZstPerformanceMessage * msg) override;
+	void on_receive_from_performance(ZstMessage * msg) override;
 	void on_plug_fire(ZstOutputPlug * plug) override;
 	void on_plug_received_value(ZstInputPlug * plug) override;
 	
-	void on_receive_from_stage(int payload_index, ZstStageMessage * msg) override;
+	void on_receive_from_stage(size_t payload_index, ZstMessage * msg) override;
 
 	// -------------------------------
 	// Adaptor syncronisable methods
@@ -89,9 +108,12 @@ public:
 	ZstCable * find_cable(ZstPlug * input, ZstPlug * output);
 
 
-private:
-	ZstSession();
+	// -------------
+	// Modules
+	// -------------
+	ZstHierarchy * hierarchy();
 
+private:
 	// --------------------------
 	// Cable creation/destruction
 	// --------------------------

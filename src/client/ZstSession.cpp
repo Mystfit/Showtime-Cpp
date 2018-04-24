@@ -1,8 +1,8 @@
 #include "ZstSession.h"
 
-ZstSession::ZstSession(ZstClient * client) : ZstClientModule(client)
+ZstSession::ZstSession()
 {
-	m_hierarchy = new ZstHierarchy(client);
+	m_hierarchy = new ZstHierarchy();
 }
 
 ZstSession::~ZstSession() {
@@ -15,7 +15,7 @@ ZstSession::~ZstSession() {
 // Delegator overrides
 // ------------------------------
 
-void ZstSession::init()
+void ZstSession::init(std::string client_name)
 {
 	m_hierarchy->init(client_name);
 }
@@ -32,7 +32,7 @@ void ZstSession::process_events()
 	
 	//Process queued performance updates
 	ZstEventDispatcher<ZstSessionAdaptor*>::process_events();
-	ZstEventDispatcher<ZstStageAdaptor*>::process_events();
+	ZstEventDispatcher<ZstStageDispatchAdaptor*>::process_events();
 	ZstEventDispatcher<ZstSynchronisableAdaptor*>::process_events();
 
 	m_reaper->reap_all();
@@ -41,9 +41,20 @@ void ZstSession::process_events()
 void ZstSession::flush()
 {
 	ZstEventDispatcher<ZstSessionAdaptor*>::flush();
-	ZstEventDispatcher<ZstStageAdaptor*>::flush();
+	ZstEventDispatcher<ZstStageDispatchAdaptor*>::flush();
 	ZstEventDispatcher<ZstSynchronisableAdaptor*>::flush();
 	m_hierarchy->flush();
+}
+
+void ZstSession::on_connected_to_stage()
+{
+	m_hierarchy->synchronise_graph(true);
+}
+
+void ZstSession::on_disconnected_from_stage()
+{
+	//Deactivate all owned entities
+	synchronisable_enqueue_deactivation(m_hierarchy->get_local_performer());
 }
 
 
@@ -51,7 +62,7 @@ void ZstSession::flush()
 // Adaptor plug send/receive
 // ---------------------------
 
-void ZstSession::on_receive_from_performance(ZstPerformanceMessage * msg)
+void ZstSession::on_receive_from_performance(ZstMessage * msg)
 {
 	ZstURI sender((char*)msg->payload_at(0).data(), msg->payload_at(0).size());
 
@@ -67,7 +78,7 @@ void ZstSession::on_receive_from_performance(ZstPerformanceMessage * msg)
 	for (auto cable : *sending_plug) {
 		receiving_plug = dynamic_cast<ZstInputPlug*>(cable->get_input());
 		if (receiving_plug) {
-			if (m_hierarchy->entity_is_local(*receiving_plug)) {
+			if (!receiving_plug->is_proxy()) {
 				//TODO: Lock plug value when deserialising
 				size_t offset = 0;
 				this->plug_raw_value(receiving_plug)->read((char*)msg->payload_at(1).data(), msg->payload_at(1).size(), offset);
@@ -79,8 +90,8 @@ void ZstSession::on_receive_from_performance(ZstPerformanceMessage * msg)
 
 void ZstSession::on_plug_fire(ZstOutputPlug * plug)
 {
-	run_event([plug](ZstSessionAdaptor * dlg) {
-		dlg->send_to_performance(client()->msg_dispatch()->init_performance_message(plug));
+	run_event([plug](ZstPerformanceDispatchAdaptor * adaptor) {
+		adaptor->send_to_performance(plug);
 	});
 }
 
@@ -98,7 +109,7 @@ void ZstSession::on_plug_received_value(ZstInputPlug * plug)
 	}
 }
 
-void ZstSession::on_receive_from_stage(int payload_index, ZstStageMessage * msg)
+void ZstSession::on_receive_from_stage(size_t payload_index, ZstMessage * msg)
 {
 	switch (msg->payload_at(payload_index).kind()) {
 	case ZstMsgKind::CREATE_CABLE:
@@ -162,16 +173,15 @@ ZstCable * ZstSession::connect_cable(ZstPlug * input, ZstPlug * output, bool asy
 	synchronisable_set_activating(cable);
 
 	//If either of the cable plugs are a local entity, then the cable is local as well
-	if (m_hierarchy->entity_is_local(*input) || m_hierarchy->entity_is_local(*output)) {
+	if (!input->is_proxy() || !output->is_proxy()) {
 		cable_set_local(cable);
 	}
 
 	//TODO: Even though we use a cable object when sending over the wire, it's up to us
 	//to determine the correct input->output order - fix this using ZstInputPlug and 
 	//ZstOutput plug as arguments
-	ZstStageMessage * msg = client()->msg_dispatch()->init_serialisable_message(ZstMsgKind::CREATE_CABLE, *cable);
-	run_event([this, msg, async, cable](ZstStageAdaptor * adaptor) {
-		ZstMessageReceipt response = adaptor->send_to_stage(msg, async, [this, cable](ZstMessageReceipt response) {
+	run_event([this, async, cable](ZstStageDispatchAdaptor* adaptor) {
+		adaptor->send_serialisable_message(ZstMsgKind::CREATE_CABLE, *cable, async, [this, cable](ZstMessageReceipt response) {
 			this->connect_cable_complete(response, cable);
 		});
 	});
@@ -194,8 +204,13 @@ void ZstSession::destroy_cable(ZstCable * cable, bool async)
 	//Need to set this cable as deactivating so the stage publish message doesn't clean it up too early
 	synchronisable_set_deactivating(cable);
 
-	ZstStageMessage * msg = client()->msg_dispatch()->init_serialisable_message(ZstMsgKind::DESTROY_CABLE, *cable);
-	client()->msg_dispatch()->send_to_stage(msg, async, [this, cable](ZstMessageReceipt response) { this->destroy_cable_complete(response, cable); });
+
+	run_event([this, cable, async](ZstStageDispatchAdaptor * adaptor) {
+		adaptor->send_serialisable_message(ZstMsgKind::DESTROY_CABLE, *cable, async, [this, cable](ZstMessageReceipt response) {
+			this->destroy_cable_complete(response, cable);
+		});
+	});
+
 }
 
 void ZstSession::destroy_cable_complete(ZstMessageReceipt response, ZstCable * cable)
@@ -259,6 +274,11 @@ ZstCable * ZstSession::find_cable(ZstPlug * input, ZstPlug * output)
 		return NULL;
 	}
 	return find_cable(input->URI(), output->URI());
+}
+
+ZstHierarchy * ZstSession::hierarchy()
+{
+	return m_hierarchy;
 }
 
 

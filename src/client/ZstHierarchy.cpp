@@ -1,8 +1,8 @@
 #include "ZstHierarchy.h"
+#include <boost/assign.hpp>
 
-ZstHierarchy::ZstHierarchy(ZstClient * client) : 
-	m_root(NULL),
-	ZstClientModule(client)
+ZstHierarchy::ZstHierarchy() : 
+	m_root(NULL)
 {
 }
 
@@ -27,10 +27,18 @@ void ZstHierarchy::init(std::string name)
 void ZstHierarchy::process_events()
 {
 	ZstEventDispatcher<ZstSynchronisableAdaptor*>::process_events();
+	ZstEventDispatcher<ZstStageDispatchAdaptor*>::process_events();
 	ZstEventDispatcher<ZstSessionAdaptor*>::process_events();
 }
 
-void ZstHierarchy::on_receive_from_stage(int payload_index, ZstStageMessage * msg)
+void ZstHierarchy::flush()
+{
+	ZstEventDispatcher<ZstSynchronisableAdaptor*>::flush();
+	ZstEventDispatcher<ZstStageDispatchAdaptor*>::flush();
+	ZstEventDispatcher<ZstSessionAdaptor*>::flush();
+}
+
+void ZstHierarchy::on_receive_from_stage(size_t payload_index, ZstMessage * msg)
 {
 	switch (msg->payload_at(payload_index).kind()) {
 	case ZstMsgKind::CREATE_PLUG:
@@ -91,16 +99,19 @@ void ZstHierarchy::on_receive_from_stage(int payload_index, ZstStageMessage * ms
 
 void ZstHierarchy::notify_event_ready(ZstSynchronisable * synchronisable)
 {
-	add_event([synchronisable](ZstSessionAdaptor * dlg) { synchronisable->process_events(); });
+	add_event([this, synchronisable](ZstSessionAdaptor * dlg) { this->synchronisable_process_events(synchronisable); });
 }
 
 void ZstHierarchy::synchronise_graph(bool async)
 {
 	//Ask the stage to send us a full snapshot
 	ZstLog::net(LogLevel::notification, "Requesting stage snapshot");
-
-	ZstMessage * msg = client()->msg_dispatch()->init_message(ZstMsgKind::CLIENT_SYNC);
-	client()->msg_dispatch()->send_to_stage(msg, async, [this](ZstMessageReceipt response) { this->synchronise_graph_complete(response); });
+	
+	run_event([this, async](ZstStageDispatchAdaptor * adaptor) {
+		adaptor->send_message(ZstMsgKind::CLIENT_SYNC, async, [this](ZstMessageReceipt response) {
+			this->synchronise_graph_complete(response);
+		});
+	});
 }
 
 void ZstHierarchy::synchronise_graph_complete(ZstMessageReceipt response)
@@ -126,8 +137,11 @@ void ZstHierarchy::activate_entity(ZstEntityBase * entity, bool async)
 	synchronisable_set_activating(entity);
 	
 	//Build message
-	ZstMessage * msg = client()->msg_dispatch()->init_entity_message(entity);
-	client()->msg_dispatch()->send_to_stage(msg, async, [this, entity](ZstMessageReceipt response) { this->activate_entity_complete(response, entity); });
+	run_event([this, entity, async](ZstStageDispatchAdaptor * adaptor) {
+		adaptor->send_entity_message(entity, async, [this, entity](ZstMessageReceipt response) {
+			this->activate_entity_complete(response, entity);
+		});
+	});
 }
 
 
@@ -166,10 +180,13 @@ void ZstHierarchy::destroy_entity(ZstEntityBase * entity, bool async)
 
 	//If the entity is local, let the stage know it's leaving
 	if (!entity->is_proxy()) {
-		ZstMessage * msg = client()->msg_dispatch()->init_message(ZstMsgKind::DESTROY_ENTITY);
-		msg->append_str(entity->URI().path(), entity->URI().full_size());
-		client()->msg_dispatch()->send_to_stage(msg, async, [this, entity](ZstMessageReceipt response) { this->destroy_entity_complete(response, entity); });
 
+		run_event([this, async, entity](ZstStageDispatchAdaptor * adaptor) {
+			adaptor->send_message(ZstMsgKind::DESTROY_ENTITY, async, std::string(entity->URI().path()), [this, entity](ZstMessageReceipt response) {
+				this->destroy_entity_complete(response, entity);
+			});
+		});
+		
 		if (!async) {				
 			process_events();
 		}
@@ -213,9 +230,11 @@ void ZstHierarchy::destroy_plug(ZstPlug * plug, bool async)
 	synchronisable_set_deactivating(plug);
 
 	if (!plug->is_proxy()) {
-		ZstMessage * msg = client()->msg_dispatch()->init_message(ZstMsgKind::DESTROY_ENTITY);
-		msg->append_str(plug->URI().path(), plug->URI().full_size());
-		client()->msg_dispatch()->send_to_stage(msg, async, [this, plug](ZstMessageReceipt response) {this->destroy_plug_complete(response, plug); });
+		run_event([this, async, plug](ZstStageDispatchAdaptor * adaptor) {
+			adaptor->send_message(ZstMsgKind::DESTROY_ENTITY, async, std::string(plug->URI().path()), [this, plug](ZstMessageReceipt response) {
+				this->destroy_plug_complete(response, plug); 
+			});
+		});
 	}
 	else {
 		destroy_plug_complete(ZstMessageReceipt{ ZstMsgKind::EMPTY , async}, plug);

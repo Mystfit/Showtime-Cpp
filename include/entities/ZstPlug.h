@@ -12,6 +12,9 @@
 class ZstValue;
 class ZstPlug;
 
+template<typename T>
+class ZstEventDispatcher;
+
 class ZstPlugIterator {
 public:
 	ZST_EXPORT ZstPlugIterator(const ZstPlug * p, ZstCableList::iterator it);
@@ -87,10 +90,16 @@ public:
 };
 
 
-class ZstOutputPlug : public ZstPlug, public ZstEventDispatcher<ZstOutputPlugAdaptor*> {
+class ZstOutputPlug : public ZstPlug {
 	friend class ZstPlugLiason;
-	using ZstEventDispatcher<ZstOutputPlugAdaptor*>::run_event;
 public:
 	ZST_EXPORT ZstOutputPlug(const char * name, ZstValueType t);
+	ZST_EXPORT ~ZstOutputPlug();
 	ZST_EXPORT void fire();
+
+	ZST_EXPORT void add_adaptor(ZstOutputPlugAdaptor * adaptor);
+	ZST_EXPORT void remove_adaptor(ZstOutputPlugAdaptor * adaptor);
+
+private:
+	ZstEventDispatcher<ZstOutputPlugAdaptor*> * m_event_dispatch;
 };

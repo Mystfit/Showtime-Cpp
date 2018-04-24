@@ -1,5 +1,6 @@
 #include "Showtime.h"
 #include "ZstClient.h"
+#include <adaptors/ZstSessionAdaptor.hpp>
 
 using namespace std;
 
@@ -24,7 +25,6 @@ void zst_join(const char * stage_address){
 void zst_join_async(const char * stage_address){
     ZstClient::instance().join_stage(stage_address, true);
 }
-
 
 // -----------------
 // Cleanup
@@ -54,118 +54,16 @@ void zst_poll_once()
 	ZstClient::instance().process_events();
 }
 
-void attach_session_adaptor(ZstSessionAdaptor * adaptor)
+void add_session_adaptor(ZstSessionAdaptor * adaptor)
 {
-	ZstClient::instance().session()->attach_adaptor(adaptor);
+	ZstClient::instance().session()->add_adaptor(adaptor);
 }
 
-
-// -----------------
-// Callbacks
-// -----------------
-
-void zst_attach_connection_event_adaptor(ZstPerformerEventAdaptor * callback)
+void remove_session_adaptor(ZstSessionAdaptor * adaptor)
 {
-	ZstClient::instance().client_connected_events()->attach_event_adaptor(callback);
-	if (ZstClient::instance().is_connected_to_stage())
-		callback->run_impl(ZstClient::instance().hierarchy()->get_local_performer());
+	ZstClient::instance().session()->remove_adaptor(adaptor);
 }
 
-void zst_attach_performer_event_adaptor(ZstPerformerEventAdaptor * callback, ZstEventAction action)
-{
-	if (action == ZstEventAction::ARRIVING) {
-		ZstClient::instance().hierarchy()->performer_arriving_events()->attach_event_adaptor(callback);
-	}
-	else if (action == ZstEventAction::LEAVING) {
-		ZstClient::instance().hierarchy()->performer_leaving_events()->attach_event_adaptor(callback);
-	}
-}
-
-void zst_attach_component_event_adaptor(ZstComponentEventAdaptor * callback, ZstEventAction action)
-{
-    if(action == ZstEventAction::ARRIVING){
-        ZstClient::instance().hierarchy()->component_arriving_events()->attach_event_adaptor(callback);
-    } else if(action == ZstEventAction::LEAVING){
-        ZstClient::instance().hierarchy()->component_leaving_events()->attach_event_adaptor(callback);
-    }
-}
-
-void zst_attach_component_type_event_adaptor(ZstComponentTypeEventAdaptor * callback, ZstEventAction action)
-{
-    if(action == ZstEventAction::ARRIVING){
-        ZstClient::instance().hierarchy()->component_type_arriving_events()->attach_event_adaptor(callback);
-    } else if(action == ZstEventAction::LEAVING){
-        ZstClient::instance().hierarchy()->component_type_leaving_events()->attach_event_adaptor(callback);
-    }
-}
-
-void zst_attach_plug_event_adaptor(ZstPlugEventAdaptor * callback, ZstEventAction action)
-{
-    if(action == ZstEventAction::ARRIVING){
-        ZstClient::instance().hierarchy()->plug_arriving_events()->attach_event_adaptor(callback);
-    } else if(action == ZstEventAction::LEAVING){
-        ZstClient::instance().hierarchy()->plug_leaving_events()->attach_event_adaptor(callback);
-    }
-}
-void zst_attach_cable_event_adaptor(ZstCableEventAdaptor * callback, ZstEventAction action)
-{
-    if(action == ZstEventAction::ARRIVING){
-        ZstClient::instance().cable_network()->cable_arriving_events()->attach_event_adaptor(callback);
-    } else if(action == ZstEventAction::LEAVING){
-        ZstClient::instance().cable_network()->cable_leaving_events()->attach_event_adaptor(callback);
-    }
-}
-
-void zst_remove_connection_event_adaptor(ZstPerformerEventAdaptor * callback)
-{
-	ZstClient::instance().client_connected_events()->attach_event_adaptor(callback);
-}
-
-void zst_remove_performer_event_adaptor(ZstPerformerEventAdaptor * callback, ZstEventAction action)
-{
-	if (action == ZstEventAction::ARRIVING) {
-		ZstClient::instance().hierarchy()->performer_arriving_events()->remove_event_adaptor(callback);
-	}
-	else if (action == ZstEventAction::LEAVING) {
-		ZstClient::instance().hierarchy()->performer_arriving_events()->remove_event_adaptor(callback);
-	}
-}
-
-void zst_remove_component_event_adaptor(ZstComponentEventAdaptor * callback, ZstEventAction action)
-{
-    if(action == ZstEventAction::ARRIVING){
-        ZstClient::instance().hierarchy()->component_arriving_events()->remove_event_adaptor(callback);
-    } else if(action == ZstEventAction::LEAVING){
-        ZstClient::instance().hierarchy()->component_leaving_events()->remove_event_adaptor(callback);
-    }
-}
-
-void zst_remove_component_type_event_adaptor(ZstComponentTypeEventAdaptor * callback, ZstEventAction action)
-{
-    if(action == ZstEventAction::ARRIVING){
-        ZstClient::instance().hierarchy()->component_type_arriving_events()->remove_event_adaptor(callback);
-    } else if(action == ZstEventAction::LEAVING){
-        ZstClient::instance().hierarchy()->component_type_leaving_events()->remove_event_adaptor(callback);
-    }
-}
-
-void zst_remove_plug_event_adaptor(ZstPlugEventAdaptor * callback, ZstEventAction action)
-{
-    if(action == ZstEventAction::ARRIVING){
-		ZstClient::instance().hierarchy()->plug_arriving_events()->remove_event_adaptor(callback);
-    } else if(action == ZstEventAction::LEAVING){
-        ZstClient::instance().hierarchy()->plug_leaving_events()->remove_event_adaptor(callback);
-    }
-}
-
-void zst_remove_cable_event_adaptor(ZstCableEventAdaptor * callback, ZstEventAction action)
-{
-    if(action == ZstEventAction::ARRIVING){
-		ZstClient::instance().cable_network()->cable_arriving_events()->remove_event_adaptor(callback);
-    } else if(action == ZstEventAction::LEAVING){
-		ZstClient::instance().cable_network()->cable_leaving_events()->remove_event_adaptor(callback);
-    }
-}
 
 
 // -----------------------
@@ -173,32 +71,32 @@ void zst_remove_cable_event_adaptor(ZstCableEventAdaptor * callback, ZstEventAct
 // -----------------------
 void zst_activate_entity(ZstEntityBase * entity)
 {
-	ZstClient::instance().hierarchy()->activate_entity(entity);
+	ZstClient::instance().session()->hierarchy()->activate_entity(entity);
 }
 
 void zst_activate_entity_async(ZstEntityBase * entity)
 {
-    ZstClient::instance().hierarchy()->activate_entity(entity, true);
+    ZstClient::instance().session()->hierarchy()->activate_entity(entity, true);
 }
 
 void zst_deactivate_entity(ZstEntityBase * entity)
 {
-	ZstClient::instance().hierarchy()->destroy_entity(entity);
+	ZstClient::instance().session()->hierarchy()->destroy_entity(entity);
 }
 
 void zst_deactivate_entity_async(ZstEntityBase * entity)
 {
-    ZstClient::instance().hierarchy()->destroy_entity(entity, true);
+    ZstClient::instance().session()->hierarchy()->destroy_entity(entity, true);
 }
 
 void zst_deactivate_plug(ZstPlug * plug)
 {
-	ZstClient::instance().hierarchy()->destroy_plug(plug, false);
+	ZstClient::instance().session()->hierarchy()->destroy_plug(plug, false);
 }
 
 void zst_deactivate_plug_async(ZstPlug * plug)
 {
-	ZstClient::instance().hierarchy()->destroy_plug(plug, true);
+	ZstClient::instance().session()->hierarchy()->destroy_plug(plug, true);
 }
 
 
@@ -208,17 +106,17 @@ void zst_deactivate_plug_async(ZstPlug * plug)
 
 ZstPerformer * zst_get_root()
 {
-	return ZstClient::instance().hierarchy()->get_local_performer();
+	return ZstClient::instance().session()->hierarchy()->get_local_performer();
 }
 
 ZstPerformer * zst_get_performer_by_URI(const ZstURI & path)
 {
-    return ZstClient::instance().hierarchy()->get_performer_by_URI(path);
+    return ZstClient::instance().session()->hierarchy()->get_performer_by_URI(path);
 }
 
 ZstEntityBase* zst_find_entity(const ZstURI & path)
 {
-	return ZstClient::instance().hierarchy()->find_entity(path);
+	return ZstClient::instance().session()->hierarchy()->find_entity(path);
 }
 
 
@@ -253,20 +151,20 @@ int zst_ping()
 
 ZstCable * zst_connect_cable(ZstPlug * input, ZstPlug * output)
 {
-	return ZstClient::instance().cable_network()->connect_cable(input, output, false);
+	return ZstClient::instance().session()->connect_cable(input, output, false);
 }
 
 ZstCable * zst_connect_cable_async(ZstPlug * input, ZstPlug * output)
 {
-    return ZstClient::instance().cable_network()->connect_cable(input, output, true);
+    return ZstClient::instance().session()->connect_cable(input, output, true);
 }
 
 void zst_destroy_cable(ZstCable * cable)
 {
-	ZstClient::instance().cable_network()->destroy_cable(cable, false);
+	ZstClient::instance().session()->destroy_cable(cable, false);
 }
 
 void zst_destroy_cable_async(ZstCable * cable)
 {
-    ZstClient::instance().cable_network()->destroy_cable(cable, true);
+    ZstClient::instance().session()->destroy_cable(cable, true);
 }

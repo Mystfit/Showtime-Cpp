@@ -19,11 +19,10 @@
 #include "ZstReaper.h"
 #include "ZstSession.h"
 #include "ZstCZMQTransportLayer.h"
-#include "adaptors/ZstMessageAdaptor.hpp"
+#include "adaptors/ZstStageDispatchAdaptor.hpp"
 
 class ZstClient : 
-	public ZstEventDispatcher<ZstMessageAdaptor*>,
-	private ZstSynchronisableAdaptor
+	public ZstEventDispatcher<ZstStageDispatchAdaptor*>
 {
 public:
 	ZstClient();
@@ -53,6 +52,7 @@ public:
 
 	//Client modules
 	ZstMessageDispatcher * msg_dispatch();
+	ZstSession * session();
 
 private:	
 	//Heartbeat timer

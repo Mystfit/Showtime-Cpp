@@ -77,14 +77,6 @@ struct ZstMessageReceipt {
 
 
 /**
-* Typedef:	boost::function<void(ZstMsgKind)> MessageBoundAction
-*
-* Summary: Defines an alias representing a message completion action.
-*/
-typedef std::function<void(ZstMessageReceipt)> MessageBoundAction;
-
-
-/**
  * Class:	ZstMessagePayload
  *
  * Summary:	A single payload frame in a ZstMessage
@@ -353,13 +345,4 @@ protected:
 
 	/** Summary:	The message id. */
 	char m_msg_id[UUID_LENGTH];
-};
-
-
-// Derived message types for when we need to be explicit about how the message is to be used
-class ZstStageMessage : public ZstMessage {};
-
-
-class ZstPerformanceMessage : public ZstMessage {
-	void reset() override;
 };

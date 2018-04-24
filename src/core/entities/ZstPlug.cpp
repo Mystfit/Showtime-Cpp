@@ -5,6 +5,7 @@
 #include <ZstCable.h>
 
 #include "../ZstValue.h"
+#include <ZstEventDispatcher.hpp>
 
 using namespace std;
 
@@ -225,12 +226,29 @@ ZstInputPlug::ZstInputPlug(const char * name, ZstValueType t) : ZstPlug(name, t)
 ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t) : ZstPlug(name, t)
 {
     m_direction = ZstPlugDirection::OUT_JACK;
+	m_event_dispatch = new ZstEventDispatcher<ZstOutputPlugAdaptor*>();
+}
+
+ZstOutputPlug::~ZstOutputPlug()
+{
+	m_event_dispatch->flush();
+	delete m_event_dispatch;
 }
 
 void ZstOutputPlug::fire()
 {
-	run_event([this](ZstOutputPlugAdaptor * dlg) { dlg->on_plug_fire(this); });
+	m_event_dispatch->run_event([this](ZstOutputPlugAdaptor * dlg) { dlg->on_plug_fire(this); });
 	m_value->clear();
+}
+
+void ZstOutputPlug::add_adaptor(ZstOutputPlugAdaptor * adaptor)
+{
+	m_event_dispatch->add_adaptor(adaptor);
+}
+
+void ZstOutputPlug::remove_adaptor(ZstOutputPlugAdaptor * adaptor)
+{
+	m_event_dispatch->remove_adaptor(adaptor);
 }
 
 MSGPACK_ADD_ENUM(ZstPlugDirection);

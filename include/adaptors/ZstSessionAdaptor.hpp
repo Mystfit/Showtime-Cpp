@@ -2,8 +2,6 @@
 
 #include <ZstExports.h>
 #include <adaptors/ZstEventAdaptor.hpp>
-#include "../core/ZstMessage.h"
-
 #include <entities/ZstPlug.h>
 #include <entities/ZstEntityBase.h>
 #include <entities/ZstPerformer.h>

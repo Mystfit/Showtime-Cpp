@@ -45,3 +45,8 @@ void ZstSynchronisableLiason::synchronisable_set_proxy(ZstSynchronisable * synch
 {
 	synchronisable->set_proxy();
 }
+
+void ZstSynchronisableLiason::synchronisable_process_events(ZstSynchronisable * synchronisable)
+{
+	synchronisable->process_events();
+}

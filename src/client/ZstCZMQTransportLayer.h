@@ -5,6 +5,7 @@
 #include <czmq.h>
 
 #include "../core/ZstActor.h"
+#include "../core/ZstMessagePool.hpp"
 #include "ZstTransportLayer.h"
 #include "ZstCZMQMessage.h"
 
@@ -15,9 +16,8 @@ class ZstCZMQTransportLayer :
 	public ZstTransportLayer, 
 	public ZstActor
 {
-
 public:
-	ZstCZMQTransportLayer(ZstClient * client);
+	ZstCZMQTransportLayer();
 	~ZstCZMQTransportLayer();
 	virtual void destroy() override;
 	virtual void init() override;
@@ -28,13 +28,10 @@ public:
 	int add_timer(int delay, std::function<void()> timer_func);
 	void remove_timer(int timer_id);
 
-	ZstStageMessage * get_stage_msg();
-	ZstPerformanceMessage * get_performance_msg();
+	ZstMessage * get_msg();
 
 
-private:
-	ZstCZMQTransportLayer();
-	
+private:	
 	// ---------------
 	// Socket handlers
 	// ---------------
@@ -55,16 +52,14 @@ private:
 	// Message IO
 	// ---------------
 	
-	void send_to_stage(ZstStageMessage * msg) override;
-	void send_to_performance(ZstPerformanceMessage * msg) override;
+	void send_to_stage(ZstMessage * msg) override;
+	void send_to_performance(ZstMessage * msg) override;
 
-	zmsg_t * receive(zsock_t* socket, bool pop_first);
-	ZstStageMessage * receive_from_stage();
-	ZstStageMessage * receive_stage_update();
-	ZstPerformanceMessage * receive_from_performance();
-
-	ZstMessageDispatcher m_msg_dispatch;
-
+	zmsg_t * sock_recv(zsock_t* socket, bool pop_first);
+	ZstMessage * receive_from_stage();
+	void receive_stage_update();
+	void receive_from_performance();
+	
 	// ---------------
 	// ZMQ Sockets
 	// ---------------
@@ -88,6 +83,5 @@ private:
 
 	zuuid_t * m_startup_uuid;
 
-	ZstMessagePool<ZstCZMQStageMessage> m_stage_pool;
-	ZstMessagePool<ZstCZMQPerformanceMessage> m_performance_pool;
+	ZstMessagePool<ZstCZMQMessage> m_pool;
 };

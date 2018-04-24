@@ -9,41 +9,49 @@
 #include <ZstCore.h>
 #include <ZstEventDispatcher.hpp>
 #include "ZstClientModule.h"
-#include "ZstClient.h"
-#include "adaptors/ZstPerformanceAdaptor.hpp"
+#include "adaptors/ZstSessionAdaptor.hpp"
+#include "adaptors/ZstStageDispatchAdaptor.hpp"
+#include "../core/ZstMessage.h"
 #include "../core/liasons/ZstSynchronisableLiason.hpp"
 
 
 class ZstHierarchy : 
 	public ZstClientModule,
 	public ZstEventDispatcher<ZstSessionAdaptor*>,
+	public ZstEventDispatcher<ZstStageDispatchAdaptor*>,
 	public ZstEventDispatcher<ZstSynchronisableAdaptor*>,
-	private ZstSynchronisableAdaptor,
-	private ZstStageAdaptor,
-	private ZstSynchronisableLiason
+	public ZstSynchronisableAdaptor,
+	public ZstStageDispatchAdaptor,
+	public ZstSynchronisableLiason
 {
 	using ZstEventDispatcher<ZstSynchronisableAdaptor*>::run_event;
+	using ZstEventDispatcher<ZstStageDispatchAdaptor*>::run_event;
 	using ZstEventDispatcher<ZstSessionAdaptor*>::add_event;
+	using ZstEventDispatcher<ZstSynchronisableAdaptor*>::flush;
+	using ZstEventDispatcher<ZstStageDispatchAdaptor*>::flush;
+	using ZstEventDispatcher<ZstSessionAdaptor*>::flush;
 
 public:
-	ZstHierarchy(ZstClient * client);
+	ZstHierarchy();
 	~ZstHierarchy();
 	void destroy() override;
+	
 	void init(std::string name);
-
-
+	void init() override {};
+	
 	// --------------------------
 	// Event dispatcher overrides
 	// --------------------------
 
 	void process_events();
+	void flush();
 
 
 	// --------------------
 	// Adaptor behaviours
 	// --------------------
 	
-	void on_receive_from_stage(int payload_index, ZstStageMessage * msg) override;
+	void on_receive_from_stage(size_t payload_index, ZstMessage * msg) override;
 	void notify_event_ready(ZstSynchronisable * synchronisable) override;
 	
 
@@ -77,7 +85,6 @@ public:
 	ZstPerformer * get_local_performer() const;
 
 private:
-	ZstHierarchy();
 	ZstPerformer * m_root;
 	ZstPerformerMap m_clients;
 
