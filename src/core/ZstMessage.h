@@ -307,7 +307,7 @@ public:
 	* Parameters:
 	* entity - 	The entity to append.
 	*/
-	void append_entity_kind_frame(const ZstEntityBase * entity);
+	ZST_EXPORT void append_entity_kind_frame(const ZstEntityBase * entity);
 
 	/**
 	* Fn:	virtual void ZstMessage::append_kind_frame(ZstMsgKind k) = 0;
@@ -317,14 +317,14 @@ public:
 	* Parameters:
 	* k - 	A ZstMsgKind to append.
 	*/
-	virtual void append_kind_frame(ZstMsgKind k) = 0;
+	ZST_EXPORT virtual void append_kind_frame(ZstMsgKind k) = 0;
 
 	/**
 	* Fn:	virtual void ZstMessage::append_id_frame() = 0;
 	*
 	* Summary:	Appends the identifier frame.
 	*/
-	virtual void append_id_frame() = 0;
+	ZST_EXPORT virtual void append_id_frame() = 0;
 
 	/**
 	* Fn:	virtual void ZstMessage::append_payload_frame(const ZstSerialisable & streamable) = 0;
@@ -334,7 +334,7 @@ public:
 	* Parameters:
 	* streamable - 	The streamable to append.
 	*/
-	virtual void append_payload_frame(const ZstSerialisable & streamable) = 0;
+	ZST_EXPORT virtual void append_payload_frame(const ZstSerialisable & streamable) = 0;
 
 protected:
 	/** Summary:	The message kind. */
