@@ -4,6 +4,7 @@
 #include <ZstConstants.h>
 #include <ZstCable.h>
 #include <entities/ZstEntityBase.h>
+#include <adaptors/ZstPlugAdaptors.hpp>
 
 #define PLUG_TYPE "plug"
 
@@ -34,9 +35,6 @@ public:
 	ZST_EXPORT ZstPlug(const char * name, ZstValueType t);
 	ZST_EXPORT ZstPlug(const ZstPlug & other);
 	ZST_EXPORT ~ZstPlug();
-    
-	ZST_EXPORT void on_activated() override {};
-	ZST_EXPORT void on_deactivated() override {};
 
 	//Value interface
 	ZST_EXPORT void clear();
@@ -82,15 +80,16 @@ private:
 // --------------------
 class ZstInputPlug : public ZstPlug {
 public:
-	friend class ZstClient;
-	friend class Showtime;
+	friend class ZstPlugLiason;
 
 	ZST_EXPORT ZstInputPlug(const char * name, ZstValueType t);
 	ZST_EXPORT ~ZstInputPlug();
 };
 
 
-class ZstOutputPlug : public ZstPlug {
+class ZstOutputPlug : public ZstPlug, public ZstEventDispatcher<ZstOutputPlugAdaptor*> {
+	friend class ZstPlugLiason;
+	using ZstEventDispatcher<ZstOutputPlugAdaptor*>::run_event;
 public:
 	ZST_EXPORT ZstOutputPlug(const char * name, ZstValueType t);
 	ZST_EXPORT void fire();

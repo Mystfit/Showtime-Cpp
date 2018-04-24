@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ZstCore.h>
+#include <adaptors/ZstSessionAdaptor.hpp>
 
 extern "C" {
 	//Init the library
@@ -17,20 +18,8 @@ extern "C" {
 	//Poll the event queue - for runtimes that have process events from the main thread
 	ZST_CLIENT_EXPORT void zst_poll_once();
 
-	//Callbacks
-	ZST_CLIENT_EXPORT void zst_attach_connection_event_listener(ZstPerformerEvent * callback);
-	ZST_CLIENT_EXPORT void zst_attach_performer_event_listener(ZstPerformerEvent * callback, ZstEventAction action);
-	ZST_CLIENT_EXPORT void zst_attach_component_event_listener(ZstComponentEvent * callback, ZstEventAction action);
-	ZST_CLIENT_EXPORT void zst_attach_component_type_event_listener(ZstComponentTypeEvent * callback, ZstEventAction action);
-	ZST_CLIENT_EXPORT void zst_attach_plug_event_listener(ZstPlugEvent * callback, ZstEventAction action);
-	ZST_CLIENT_EXPORT void zst_attach_cable_event_listener(ZstCableEvent * callback, ZstEventAction action);
-
-	ZST_CLIENT_EXPORT void zst_remove_connection_event_listener(ZstPerformerEvent * callback);
-	ZST_CLIENT_EXPORT void zst_remove_performer_event_listener(ZstPerformerEvent * callback, ZstEventAction action);
-	ZST_CLIENT_EXPORT void zst_remove_component_event_listener(ZstComponentEvent * callback, ZstEventAction action);
-	ZST_CLIENT_EXPORT void zst_remove_component_type_event_listener(ZstComponentTypeEvent * callback, ZstEventAction action);
-	ZST_CLIENT_EXPORT void zst_remove_plug_event_listener(ZstPlugEvent * callback, ZstEventAction action);
-	ZST_CLIENT_EXPORT void zst_remove_cable_event_listener(ZstCableEvent * callback, ZstEventAction action);
+	//Adaptors
+	ZST_CLIENT_EXPORT void attach_adaptor(ZstSessionAdaptor * adaptor);
 
 	//Entity activation/deactivation
 	ZST_CLIENT_EXPORT void zst_activate_entity(ZstEntityBase * entity);

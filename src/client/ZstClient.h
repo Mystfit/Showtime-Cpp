@@ -11,29 +11,29 @@
 #include "../core/ZstActor.h"
 #include "../core/ZstMessage.h"
 #include "../core/ZstMessagePool.hpp"
-#include "../core/ZstINetworkInteractor.h"
 #include "../core/ZstValue.h"
-#include "../core/ZstEventDispatcher.h"
-#include "../core/ZstEventQueue.h"
 
+//Showtime client includes
 #include "ZstReaper.h"
 #include "ZstMessageDispatcher.h"
 #include "ZstReaper.h"
-#include "ZstCableNetwork.h"
-#include "ZstHierarchy.h"
+#include "ZstSession.h"
 #include "ZstCZMQTransportLayer.h"
-#include "ZstClientEvents.h"
+#include "adaptors/ZstMessageAdaptor.hpp"
 
-class ZstClient : public ZstEventDispatcher, public ZstINetworkInteractor {
-
+class ZstClient : 
+	public ZstEventDispatcher<ZstMessageAdaptor*>,
+	private ZstSynchronisableAdaptor
+{
 public:
 	ZstClient();
 	~ZstClient();
 	void init_client(const char * client_name, bool debug);
 	void init_file_logging(const char * log_file_path);
 	void destroy();
-	void process_callbacks() override;
-	void flush() override;
+	
+	void process_events();
+	void flush();
 	
 	//Client singleton - should not be accessable outside this interface
 	static ZstClient & instance();
@@ -50,32 +50,16 @@ public:
 	bool is_connecting_to_stage();
     bool is_init_complete();
 	long ping();
-		
-	//Callbacks
-	ZstEventQueue * client_connected_events();
-	ZstEventQueue * client_disconnected_events();
-	ZstEventQueue * compute_events();
-
-	//Network interactor implementation
-	virtual void enqueue_synchronisable_event(ZstSynchronisable * synchronisable) override;
-	void enqueue_synchronisable_deletion(ZstSynchronisable * synchronisable);
-	void send_to_performance(ZstPlug * plug);
 
 	//Client modules
-	ZstHierarchy * hierarchy();
-	ZstCableNetwork * cable_network();
 	ZstMessageDispatcher * msg_dispatch();
 
 private:	
-	//Message handlers
-	int graph_message_handler(zmsg_t * msg);
-	void stage_update_handler(ZstMessage * msg);
-	
 	//Heartbeat timer
 	int m_heartbeat_timer_id;
 	long m_ping;
 	void heartbeat_timer();
-
+		
 	//Destruction
 	bool m_is_ending;
 	bool m_is_destroyed;
@@ -86,23 +70,9 @@ private:
 	//UUIDs
 	std::string m_assigned_uuid;
 	std::string m_client_name;
-		
-	//Event hooks
-	ZstSynchronisableDeferredEvent * m_synchronisable_deferred_event;
-	ZstComputeEvent * m_compute_event;
 	
-	//Events and callbacks
-	ZstEventQueue * m_client_connected_event_manager;
-	ZstEventQueue * m_client_disconnected_event_manager;
-	ZstEventQueue * m_compute_event_manager;
-	ZstEventQueue * m_synchronisable_event_manager;
-
-	//Syncronisable reaper
-	ZstReaper * m_reaper;
-
 	//Client modules
-	ZstHierarchy * m_hierarchy;
-	ZstCableNetwork * m_cable_network;
+	ZstSession * m_session;
 	ZstMessageDispatcher * m_msg_dispatch;
 	ZstCZMQTransportLayer * m_transport;
 };

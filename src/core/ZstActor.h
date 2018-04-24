@@ -17,7 +17,7 @@ public:
 	ZST_EXPORT virtual void process_callbacks() {};
 
 protected:
-	ZST_EXPORT void attach_pipe_listener(zsock_t* sock, zloop_reader_fn handler, void *args);
+	ZST_EXPORT void attach_pipe_adaptor(zsock_t* sock, zloop_reader_fn handler, void *args);
 	ZST_EXPORT int attach_timer(zloop_timer_fn handler, int delay, void *args);
 	ZST_EXPORT void detach_timer(int timer_id);
 

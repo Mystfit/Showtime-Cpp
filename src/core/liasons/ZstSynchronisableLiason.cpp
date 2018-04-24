@@ -1,4 +1,5 @@
 #include "ZstSynchronisableLiason.hpp"
+#include <ZstSynchronisable.h>
 
 void ZstSynchronisableLiason::synchronisable_enqueue_activation(ZstSynchronisable * synchronisable)
 {
@@ -27,7 +28,7 @@ void ZstSynchronisableLiason::synchronisable_set_deactivating(ZstSynchronisable 
 
 void ZstSynchronisableLiason::synchronisable_set_activation_status(ZstSynchronisable * synchronisable, ZstSyncStatus status)
 {
-	synchronisable->activation_status();
+	synchronisable->set_activation_status(status);
 }
 
 void ZstSynchronisableLiason::synchronisable_set_error(ZstSynchronisable * synchronisable, ZstSyncError e)
@@ -38,4 +39,9 @@ void ZstSynchronisableLiason::synchronisable_set_error(ZstSynchronisable * synch
 void ZstSynchronisableLiason::synchronisable_set_destroyed(ZstSynchronisable * synchronisable)
 {
 	synchronisable->set_destroyed();
+}
+
+void ZstSynchronisableLiason::synchronisable_set_proxy(ZstSynchronisable * synchronisable)
+{
+	synchronisable->set_proxy();
 }

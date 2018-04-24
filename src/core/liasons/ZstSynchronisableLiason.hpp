@@ -1,7 +1,10 @@
 #pragma once
 
 #include <ZstExports.h>
-#include <ZstSynchronisable.h>
+#include <ZstConstants.h>
+
+//Forwards
+class ZstSynchronisable;
 
 class ZstSynchronisableLiason {
 protected:
@@ -13,4 +16,5 @@ protected:
 	ZST_EXPORT void synchronisable_set_activation_status(ZstSynchronisable * synchronisable, ZstSyncStatus status);
 	ZST_EXPORT void synchronisable_set_error(ZstSynchronisable * synchronisable, ZstSyncError e);
 	ZST_EXPORT void synchronisable_set_destroyed(ZstSynchronisable * synchronisable);
+	ZST_EXPORT void synchronisable_set_proxy(ZstSynchronisable * synchronisable);
 };

@@ -1,13 +1,13 @@
-# include "ZstTransportLayer.h"
-#include "ZstClient.h"
+#include "ZstTransportLayer.h"
+#include "ZstMessageDispatcher.h"
 
 
 ZstTransportLayer::ZstTransportLayer()
 {
 }
 
-ZstTransportLayer::ZstTransportLayer(ZstClient * client) :
-	ZstClientModule(client)
+ZstTransportLayer::ZstTransportLayer(ZstMessageDispatcher * dispatcher) :
+	m_msg_dispatch(dispatcher)
 {
 }
 

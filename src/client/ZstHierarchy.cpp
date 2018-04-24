@@ -4,37 +4,10 @@ ZstHierarchy::ZstHierarchy(ZstClient * client) :
 	m_root(NULL),
 	ZstClientModule(client)
 {
-	m_performer_arriving_event_manager = new ZstEventQueue();
-	m_component_arriving_event_manager = new ZstEventQueue();
-	m_plug_arriving_event_manager = new ZstEventQueue();
-	m_performer_leaving_event_manager = new ZstEventQueue();
-	m_component_leaving_event_manager = new ZstEventQueue();
-	m_plug_leaving_event_manager = new ZstEventQueue();
-
-	add_event_queue(m_performer_arriving_event_manager);
-	add_event_queue(m_component_arriving_event_manager);
-	add_event_queue(m_plug_arriving_event_manager);
-	add_event_queue(m_performer_leaving_event_manager);
-	add_event_queue(m_component_leaving_event_manager);
-	add_event_queue(m_plug_leaving_event_manager);
 }
 
 ZstHierarchy::~ZstHierarchy()
 {
-	remove_event_queue(m_performer_leaving_event_manager);
-	remove_event_queue(m_component_leaving_event_manager);
-	remove_event_queue(m_plug_leaving_event_manager);
-
-	remove_event_queue(m_performer_arriving_event_manager);
-	remove_event_queue(m_component_arriving_event_manager);
-	remove_event_queue(m_plug_arriving_event_manager);
-	
-	delete m_performer_leaving_event_manager;
-	delete m_component_leaving_event_manager;
-	delete m_plug_leaving_event_manager;
-	delete m_performer_arriving_event_manager;
-	delete m_component_arriving_event_manager;
-	delete m_plug_arriving_event_manager;
 }
 
 void ZstHierarchy::destroy()
@@ -48,16 +21,81 @@ void ZstHierarchy::init(std::string name)
 	//Create a root entity to hold our local entity hierarchy
 	//Sets the name of our performer and the address of our graph output
 	m_root = new ZstPerformer(name.c_str());
-	m_root->set_network_interactor(client());
+	m_root->add_adaptor(this);
+}
+
+void ZstHierarchy::process_events()
+{
+	ZstEventDispatcher<ZstSynchronisableAdaptor*>::process_events();
+	ZstEventDispatcher<ZstSessionAdaptor*>::process_events();
+}
+
+void ZstHierarchy::on_receive_from_stage(int payload_index, ZstStageMessage * msg)
+{
+	switch (msg->payload_at(payload_index).kind()) {
+	case ZstMsgKind::CREATE_PLUG:
+	{
+		ZstPlug plug = msg->unpack_payload_serialisable<ZstPlug>(payload_index);
+		add_proxy_entity(plug);
+		break;
+	}
+	case ZstMsgKind::CREATE_PERFORMER:
+	{
+		ZstPerformer performer = msg->unpack_payload_serialisable<ZstPerformer>(payload_index);
+		add_performer(performer);
+		break;
+	}
+	case ZstMsgKind::CREATE_COMPONENT:
+	{
+		ZstComponent component = msg->unpack_payload_serialisable<ZstComponent>(payload_index);
+		add_proxy_entity(component);
+		break;
+	}
+	case ZstMsgKind::CREATE_CONTAINER:
+	{
+		ZstContainer container = msg->unpack_payload_serialisable<ZstContainer>(payload_index);
+		add_proxy_entity(container);
+		break;
+	}
+	case ZstMsgKind::DESTROY_ENTITY:
+	{
+		ZstURI entity_path = ZstURI((char*)msg->payload_at(payload_index).data(), msg->payload_at(payload_index).size());
+
+		//Only dispatch entity leaving events for non-local entities (for the moment)
+		if (!path_is_local(entity_path)) {
+			ZstEntityBase * entity = find_entity(entity_path);
+			if (entity) {
+				synchronisable_enqueue_deactivation(entity);
+				if (strcmp(entity->entity_type(), COMPONENT_TYPE) == 0 || strcmp(entity->entity_type(), CONTAINER_TYPE) == 0) {
+					destroy_entity(entity, false);
+				}
+				else if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
+					destroy_plug(static_cast<ZstPlug*>(entity), false);
+				}
+				else if (strcmp(entity->entity_type(), PERFORMER_TYPE) == 0) {
+					add_event([entity](ZstSessionAdaptor * dlg) {
+						dlg->on_performer_leaving(static_cast<ZstPerformer*>(entity)); 
+					});
+				}
+			}
+		}
+
+		break;
+	}
+	default:
+		ZstLog::net(LogLevel::notification, "Didn't understand message type of {}", msg->payload_at(payload_index).kind());
+		throw std::logic_error("Didn't understand message type");
+		break;
+	}
+}
+
+void ZstHierarchy::notify_event_ready(ZstSynchronisable * synchronisable)
+{
+	add_event([synchronisable](ZstSessionAdaptor * dlg) { synchronisable->process_events(); });
 }
 
 void ZstHierarchy::synchronise_graph(bool async)
 {
-	if (!client()->is_connected_to_stage()) {
-		ZstLog::net(LogLevel::error, "Can't synchronise graph if we're not connected");
-		return;
-	}
-
 	//Ask the stage to send us a full snapshot
 	ZstLog::net(LogLevel::notification, "Requesting stage snapshot");
 
@@ -80,11 +118,11 @@ void ZstHierarchy::activate_entity(ZstEntityBase * entity, bool async)
 	}
 
 	//If this is not a local entity, we can't activate it
-	if (!entity_is_local(*entity))
+	if (entity->is_proxy())
 		return;
 
 	//Register client to entity to allow it to send messages
-	entity->set_network_interactor(client());
+	entity->add_adaptor(this);
 	synchronisable_set_activating(entity);
 	
 	//Build message
@@ -127,18 +165,13 @@ void ZstHierarchy::destroy_entity(ZstEntityBase * entity, bool async)
 	synchronisable_set_deactivating(entity);
 
 	//If the entity is local, let the stage know it's leaving
-	if (entity_is_local(*entity)) {
-		if (client()->is_connected_to_stage()) {
-			ZstMessage * msg = client()->msg_dispatch()->init_message(ZstMsgKind::DESTROY_ENTITY);
-			msg->append_str(entity->URI().path(), entity->URI().full_size());
-			client()->msg_dispatch()->send_to_stage(msg, async, [this, entity](ZstMessageReceipt response) { this->destroy_entity_complete(response, entity); });
+	if (!entity->is_proxy()) {
+		ZstMessage * msg = client()->msg_dispatch()->init_message(ZstMsgKind::DESTROY_ENTITY);
+		msg->append_str(entity->URI().path(), entity->URI().full_size());
+		client()->msg_dispatch()->send_to_stage(msg, async, [this, entity](ZstMessageReceipt response) { this->destroy_entity_complete(response, entity); });
 
-			if (!async) {				
-				process_callbacks();
-			}
-		}
-		else {
-			process_callbacks();
+		if (!async) {				
+			process_events();
 		}
 	}
 	else {
@@ -168,12 +201,8 @@ void ZstHierarchy::destroy_entity_complete(ZstMessageReceipt response, ZstEntity
 
 	//Finally, add non-local entities to the reaper to destroy them at the correct time
 	//TODO: Only destroying proxy entities at the moment. Local entities should be managed by the host application
-	synchronisable_enqueue_activation(entity);
-	component_leaving_events()->enqueue(entity);
-
-	if (!entity_is_local(*entity)) {
-		client()->enqueue_synchronisable_deletion(entity);
-	}
+	add_event([entity](ZstSessionAdaptor * dlg) {dlg->on_entity_leaving(entity); });
+	synchronisable_enqueue_deactivation(entity);
 }
 
 
@@ -183,7 +212,7 @@ void ZstHierarchy::destroy_plug(ZstPlug * plug, bool async)
 
 	synchronisable_set_deactivating(plug);
 
-	if (entity_is_local(*plug)) {
+	if (!plug->is_proxy()) {
 		ZstMessage * msg = client()->msg_dispatch()->init_message(ZstMsgKind::DESTROY_ENTITY);
 		msg->append_str(plug->URI().path(), plug->URI().full_size());
 		client()->msg_dispatch()->send_to_stage(msg, async, [this, plug](ZstMessageReceipt response) {this->destroy_plug_complete(response, plug); });
@@ -202,10 +231,7 @@ void ZstHierarchy::destroy_plug_complete(ZstMessageReceipt response, ZstPlug * p
 
 	//Queue events
 	synchronisable_enqueue_deactivation(plug);
-	plug_leaving_events()->enqueue(plug);
-
-	//Finally, add to the reaper to destroy the plug at the correct time
-	client()->enqueue_synchronisable_deletion(plug);
+	add_event([plug](ZstSessionAdaptor * dlg){ dlg->on_plug_leaving(plug); });
 }
 
 ZstEntityBase * ZstHierarchy::find_entity(const ZstURI & path)
@@ -244,23 +270,20 @@ ZstPlug * ZstHierarchy::find_plug(const ZstURI & path)
 	return plug_parent->get_plug_by_URI(path);
 }
 
-bool ZstHierarchy::entity_is_local(ZstEntityBase & entity)
-{
-	return path_is_local(entity.URI());
-}
-
 bool ZstHierarchy::path_is_local(const ZstURI & path) {
 	return path.contains(m_root->URI());
 }
 
 void ZstHierarchy::add_proxy_entity(ZstEntityBase & entity) {
 
-	//Don't need to activate local entities, they will auto-activate when the stage responds with an OK
-	if (entity_is_local(entity)) {
+	// Don't need to activate local entities, they will auto-activate when the stage responds with an OK
+	// Also, we can't rely on the proxy flag here as it won't have been set yet
+	if (path_is_local(entity.URI())) {
 		ZstLog::net(LogLevel::notification, "Received local entity {}. Ignoring", entity.URI().path());
 		return;
 	}
 
+	// All entities need a parent unless they are a performer 
 	ZstURI parent_URI = entity.URI().parent();
 	if (parent_URI.size()) {
 		ZstEntityBase * parent = find_entity(parent_URI);
@@ -276,18 +299,18 @@ void ZstHierarchy::add_proxy_entity(ZstEntityBase & entity) {
 		if (strcmp(entity.entity_type(), COMPONENT_TYPE) == 0) {
 			entity_proxy = new ZstComponent(static_cast<ZstComponent&>(entity));
 			dynamic_cast<ZstContainer*>(parent)->add_child(entity_proxy);
-			component_arriving_events()->enqueue(entity_proxy);
+			add_event([entity_proxy](ZstSessionAdaptor * dlg) {dlg->on_entity_arriving(entity_proxy); });
 		}
 		else if (strcmp(entity.entity_type(), CONTAINER_TYPE) == 0) {
 			entity_proxy = new ZstContainer(static_cast<ZstContainer&>(entity));
 			dynamic_cast<ZstContainer*>(parent)->add_child(entity_proxy);
-			component_arriving_events()->enqueue(entity_proxy);
+			add_event([entity_proxy](ZstSessionAdaptor * dlg) {dlg->on_entity_arriving(entity_proxy); });
 		}
 		else if (strcmp(entity.entity_type(), PLUG_TYPE) == 0) {
 			ZstPlug * plug = new ZstPlug(static_cast<ZstPlug&>(entity));
 			entity_proxy = plug;
 			dynamic_cast<ZstComponent*>(parent)->add_plug(plug);
-			plug_arriving_events()->enqueue(entity_proxy);
+			add_event([plug](ZstSessionAdaptor * dlg) {dlg->on_plug_arriving(plug); });
 		}
 		else {
 			ZstLog::net(LogLevel::notification, "Can't create unknown proxy entity type {}", entity.entity_type());
@@ -295,8 +318,11 @@ void ZstHierarchy::add_proxy_entity(ZstEntityBase & entity) {
 
 		ZstLog::net(LogLevel::notification, "Received proxy entity {}", entity_proxy->URI().path());
 
-		//Forceably activate entity and dispatch events
-		entity_proxy->set_network_interactor(client());
+		//Set entity as a proxy so the reaper can clean it up later
+		synchronisable_set_proxy(entity_proxy);
+
+		//Activate entity and dispatch events
+		entity_proxy->add_adaptor(this);
 		synchronisable_set_activation_status(entity_proxy, ZstSyncStatus::ACTIVATED);
 	}
 
@@ -322,47 +348,6 @@ ZstPerformer * ZstHierarchy::get_local_performer() const
 	return m_root;
 }
 
-ZstEventQueue * ZstHierarchy::performer_arriving_events()
-{
-	return m_performer_arriving_event_manager;
-}
-
-ZstEventQueue * ZstHierarchy::performer_leaving_events()
-{
-	return m_performer_leaving_event_manager;
-}
-
-ZstEventQueue * ZstHierarchy::component_arriving_events()
-{
-	return m_component_arriving_event_manager;
-}
-
-ZstEventQueue * ZstHierarchy::component_leaving_events()
-{
-	return m_component_leaving_event_manager;
-}
-
-ZstEventQueue * ZstHierarchy::component_type_arriving_events()
-{
-	return m_component_type_arriving_event_manager;
-}
-
-ZstEventQueue * ZstHierarchy::component_type_leaving_events()
-{
-	return m_component_type_leaving_event_manager;
-}
-
-ZstEventQueue * ZstHierarchy::plug_arriving_events()
-{
-	return m_plug_arriving_event_manager;
-}
-
-ZstEventQueue * ZstHierarchy::plug_leaving_events()
-{
-	return m_plug_leaving_event_manager;
-}
-
-
 
 void ZstHierarchy::add_performer(ZstPerformer & performer)
 {
@@ -382,104 +367,6 @@ void ZstHierarchy::add_performer(ZstPerformer & performer)
 	if (performer.URI() != m_root->URI()) {
 		m_clients[performer_proxy->URI()] = performer_proxy;
 		synchronisable_set_activation_status(performer_proxy, ZstSyncStatus::ACTIVATED);
-		performer_arriving_events()->enqueue(performer_proxy);
+		add_event([performer_proxy](ZstSessionAdaptor * dlg) {dlg->on_performer_arriving(performer_proxy); });
 	}
 }
-
-
-// -----------------------------
-// Sync/async block to convert
-// -----------------------------
-
-
-//void ZstClient::activate_entity_sync(ZstEntityBase * entity, MessageFuture & future)
-//{
-//	try {
-//		ZstMsgKind status = future.get();
-//		activate_entity_complete(status, entity);
-//		process_callbacks();
-//	}
-//	catch (const ZstTimeoutException & e) {
-//		ZstLog::net(LogLevel::notification, "Activate entity sync call timed out: {}", e.what());
-//	}
-//}
-//
-//void ZstClient::activate_entity_async(ZstEntityBase * entity, MessageFuture & future)
-//{
-//	ZstURI entity_path(entity->URI());
-//	future.then([this, entity_path](MessageFuture f) {
-//		ZstMsgKind status(ZstMsgKind::EMPTY);
-//		try {
-//			status = f.get();
-//			ZstEntityBase * e = find_entity(entity_path);
-//			if (e)
-//				this->activate_entity_complete(status, e);
-//			else
-//				ZstLog::net(LogLevel::notification, "Entity {} went missing during activation!", entity_path.path());
-//		}
-//		catch (const ZstTimeoutException & e) {
-//			ZstLog::net(LogLevel::notification, "Activate entity async call timed out: {}", e.what());
-//			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
-//		}
-//		return status;
-//	});
-//}
-
-//void ZstClient::destroy_entity_sync(ZstEntityBase * entity, MessageFuture & future)
-//{
-//	try {
-//		ZstMsgKind status = future.get();
-//		entity->enqueue_deactivation();
-//		component_leaving_events().enqueue(entity);
-//		process_callbacks();
-//	}
-//	catch (const ZstTimeoutException & e) {
-//		ZstLog::net(LogLevel::notification, "Destroy entity sync timed out: {}", e.what());
-//	}
-//}
-//
-//void ZstClient::destroy_entity_async(ZstEntityBase * entity, MessageFuture & future)
-//{
-//	ZstURI entity_path(entity->URI());
-//	future.then([this, entity_path](MessageFuture f) {
-//		ZstMsgKind status(ZstMsgKind::EMPTY);
-//		try {
-//			status = f.get();
-//			if (status != ZstMsgKind::OK) {
-//				ZstLog::net(LogLevel::notification, "Destroy entity {} failed with status {}", entity_path.path(), status);
-//			}
-//			ZstLog::net(LogLevel::notification, "Destroy entity {} completed with status {}", entity_path.path(), status);
-//		}
-//		catch (const ZstTimeoutException & e) {
-//			ZstLog::net(LogLevel::notification, "Destroy entity async timed out: {}", e.what());
-//			status = ZstMsgKind::ERR_STAGE_TIMEOUT;
-//		}
-//		return status;
-//	});
-//}
-
-//void ZstClient::destroy_plug_sync(ZstPlug * plug, MessageFuture & future)
-//{
-//	try {
-//		ZstMsgKind status = future.get();
-//		destroy_plug_complete(status, plug);
-//		process_callbacks();
-//	}
-//	catch (const ZstTimeoutException & e) {
-//		ZstLog::net(LogLevel::notification, "Destroy plug timed out: {}", e.what());
-//	}
-//}
-//
-//void ZstClient::destroy_plug_async(ZstPlug * plug, MessageFuture & future)
-//{
-//	try {
-//		future.then([this, plug](MessageFuture f) {
-//			ZstMsgKind status = f.get();
-//			this->destroy_plug_complete(status, plug);
-//			return status;
-//		});
-//	}
-//	catch (const ZstTimeoutException & e) {
-//		ZstLog::net(LogLevel::notification, "Destroy plug timed out: {}", e.what());
-//	}
-//}

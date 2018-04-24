@@ -51,7 +51,12 @@ void zst_leave_immediately()
 
 void zst_poll_once()
 {
-	ZstClient::instance().process_callbacks();
+	ZstClient::instance().process_events();
+}
+
+void attach_session_adaptor(ZstSessionAdaptor * adaptor)
+{
+	ZstClient::instance().session()->attach_adaptor(adaptor);
 }
 
 
@@ -59,106 +64,106 @@ void zst_poll_once()
 // Callbacks
 // -----------------
 
-void zst_attach_connection_event_listener(ZstPerformerEvent * callback)
+void zst_attach_connection_event_adaptor(ZstPerformerEventAdaptor * callback)
 {
-	ZstClient::instance().client_connected_events()->attach_event_listener(callback);
+	ZstClient::instance().client_connected_events()->attach_event_adaptor(callback);
 	if (ZstClient::instance().is_connected_to_stage())
-		callback->cast_run(ZstClient::instance().hierarchy()->get_local_performer());
+		callback->run_impl(ZstClient::instance().hierarchy()->get_local_performer());
 }
 
-void zst_attach_performer_event_listener(ZstPerformerEvent * callback, ZstEventAction action)
+void zst_attach_performer_event_adaptor(ZstPerformerEventAdaptor * callback, ZstEventAction action)
 {
 	if (action == ZstEventAction::ARRIVING) {
-		ZstClient::instance().hierarchy()->performer_arriving_events()->attach_event_listener(callback);
+		ZstClient::instance().hierarchy()->performer_arriving_events()->attach_event_adaptor(callback);
 	}
 	else if (action == ZstEventAction::LEAVING) {
-		ZstClient::instance().hierarchy()->performer_leaving_events()->attach_event_listener(callback);
+		ZstClient::instance().hierarchy()->performer_leaving_events()->attach_event_adaptor(callback);
 	}
 }
 
-void zst_attach_component_event_listener(ZstComponentEvent * callback, ZstEventAction action)
+void zst_attach_component_event_adaptor(ZstComponentEventAdaptor * callback, ZstEventAction action)
 {
     if(action == ZstEventAction::ARRIVING){
-        ZstClient::instance().hierarchy()->component_arriving_events()->attach_event_listener(callback);
+        ZstClient::instance().hierarchy()->component_arriving_events()->attach_event_adaptor(callback);
     } else if(action == ZstEventAction::LEAVING){
-        ZstClient::instance().hierarchy()->component_leaving_events()->attach_event_listener(callback);
+        ZstClient::instance().hierarchy()->component_leaving_events()->attach_event_adaptor(callback);
     }
 }
 
-void zst_attach_component_type_event_listener(ZstComponentTypeEvent * callback, ZstEventAction action)
+void zst_attach_component_type_event_adaptor(ZstComponentTypeEventAdaptor * callback, ZstEventAction action)
 {
     if(action == ZstEventAction::ARRIVING){
-        ZstClient::instance().hierarchy()->component_type_arriving_events()->attach_event_listener(callback);
+        ZstClient::instance().hierarchy()->component_type_arriving_events()->attach_event_adaptor(callback);
     } else if(action == ZstEventAction::LEAVING){
-        ZstClient::instance().hierarchy()->component_type_leaving_events()->attach_event_listener(callback);
+        ZstClient::instance().hierarchy()->component_type_leaving_events()->attach_event_adaptor(callback);
     }
 }
 
-void zst_attach_plug_event_listener(ZstPlugEvent * callback, ZstEventAction action)
+void zst_attach_plug_event_adaptor(ZstPlugEventAdaptor * callback, ZstEventAction action)
 {
     if(action == ZstEventAction::ARRIVING){
-        ZstClient::instance().hierarchy()->plug_arriving_events()->attach_event_listener(callback);
+        ZstClient::instance().hierarchy()->plug_arriving_events()->attach_event_adaptor(callback);
     } else if(action == ZstEventAction::LEAVING){
-        ZstClient::instance().hierarchy()->plug_leaving_events()->attach_event_listener(callback);
+        ZstClient::instance().hierarchy()->plug_leaving_events()->attach_event_adaptor(callback);
     }
 }
-void zst_attach_cable_event_listener(ZstCableEvent * callback, ZstEventAction action)
+void zst_attach_cable_event_adaptor(ZstCableEventAdaptor * callback, ZstEventAction action)
 {
     if(action == ZstEventAction::ARRIVING){
-        ZstClient::instance().cable_network()->cable_arriving_events()->attach_event_listener(callback);
+        ZstClient::instance().cable_network()->cable_arriving_events()->attach_event_adaptor(callback);
     } else if(action == ZstEventAction::LEAVING){
-        ZstClient::instance().cable_network()->cable_leaving_events()->attach_event_listener(callback);
+        ZstClient::instance().cable_network()->cable_leaving_events()->attach_event_adaptor(callback);
     }
 }
 
-void zst_remove_connection_event_listener(ZstPerformerEvent * callback)
+void zst_remove_connection_event_adaptor(ZstPerformerEventAdaptor * callback)
 {
-	ZstClient::instance().client_connected_events()->attach_event_listener(callback);
+	ZstClient::instance().client_connected_events()->attach_event_adaptor(callback);
 }
 
-void zst_remove_performer_event_listener(ZstPerformerEvent * callback, ZstEventAction action)
+void zst_remove_performer_event_adaptor(ZstPerformerEventAdaptor * callback, ZstEventAction action)
 {
 	if (action == ZstEventAction::ARRIVING) {
-		ZstClient::instance().hierarchy()->performer_arriving_events()->remove_event_listener(callback);
+		ZstClient::instance().hierarchy()->performer_arriving_events()->remove_event_adaptor(callback);
 	}
 	else if (action == ZstEventAction::LEAVING) {
-		ZstClient::instance().hierarchy()->performer_arriving_events()->remove_event_listener(callback);
+		ZstClient::instance().hierarchy()->performer_arriving_events()->remove_event_adaptor(callback);
 	}
 }
 
-void zst_remove_component_event_listener(ZstComponentEvent * callback, ZstEventAction action)
+void zst_remove_component_event_adaptor(ZstComponentEventAdaptor * callback, ZstEventAction action)
 {
     if(action == ZstEventAction::ARRIVING){
-        ZstClient::instance().hierarchy()->component_arriving_events()->remove_event_listener(callback);
+        ZstClient::instance().hierarchy()->component_arriving_events()->remove_event_adaptor(callback);
     } else if(action == ZstEventAction::LEAVING){
-        ZstClient::instance().hierarchy()->component_leaving_events()->remove_event_listener(callback);
+        ZstClient::instance().hierarchy()->component_leaving_events()->remove_event_adaptor(callback);
     }
 }
 
-void zst_remove_component_type_event_listener(ZstComponentTypeEvent * callback, ZstEventAction action)
+void zst_remove_component_type_event_adaptor(ZstComponentTypeEventAdaptor * callback, ZstEventAction action)
 {
     if(action == ZstEventAction::ARRIVING){
-        ZstClient::instance().hierarchy()->component_type_arriving_events()->remove_event_listener(callback);
+        ZstClient::instance().hierarchy()->component_type_arriving_events()->remove_event_adaptor(callback);
     } else if(action == ZstEventAction::LEAVING){
-        ZstClient::instance().hierarchy()->component_type_leaving_events()->remove_event_listener(callback);
+        ZstClient::instance().hierarchy()->component_type_leaving_events()->remove_event_adaptor(callback);
     }
 }
 
-void zst_remove_plug_event_listener(ZstPlugEvent * callback, ZstEventAction action)
+void zst_remove_plug_event_adaptor(ZstPlugEventAdaptor * callback, ZstEventAction action)
 {
     if(action == ZstEventAction::ARRIVING){
-		ZstClient::instance().hierarchy()->plug_arriving_events()->remove_event_listener(callback);
+		ZstClient::instance().hierarchy()->plug_arriving_events()->remove_event_adaptor(callback);
     } else if(action == ZstEventAction::LEAVING){
-        ZstClient::instance().hierarchy()->plug_leaving_events()->remove_event_listener(callback);
+        ZstClient::instance().hierarchy()->plug_leaving_events()->remove_event_adaptor(callback);
     }
 }
 
-void zst_remove_cable_event_listener(ZstCableEvent * callback, ZstEventAction action)
+void zst_remove_cable_event_adaptor(ZstCableEventAdaptor * callback, ZstEventAction action)
 {
     if(action == ZstEventAction::ARRIVING){
-		ZstClient::instance().cable_network()->cable_arriving_events()->remove_event_listener(callback);
+		ZstClient::instance().cable_network()->cable_arriving_events()->remove_event_adaptor(callback);
     } else if(action == ZstEventAction::LEAVING){
-		ZstClient::instance().cable_network()->cable_leaving_events()->remove_event_listener(callback);
+		ZstClient::instance().cable_network()->cable_leaving_events()->remove_event_adaptor(callback);
     }
 }
 

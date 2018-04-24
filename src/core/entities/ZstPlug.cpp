@@ -5,7 +5,6 @@
 #include <ZstCable.h>
 
 #include "../ZstValue.h"
-#include "../ZstINetworkInteractor.h"
 
 using namespace std;
 
@@ -230,8 +229,7 @@ ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t) : ZstPlug(name, 
 
 void ZstOutputPlug::fire()
 {
-	if(network_interactor())
-		network_interactor()->send_to_performance(this);
+	run_event([this](ZstOutputPlugAdaptor * dlg) { dlg->on_plug_fire(this); });
 	m_value->clear();
 }
 

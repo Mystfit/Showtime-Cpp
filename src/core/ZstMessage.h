@@ -57,7 +57,10 @@ enum ZstMsgKind  {
     
     //P2P endpoint connection requests
     SUBSCRIBE_TO_PERFORMER,
-    CREATE_PEER_ENTITY
+    CREATE_PEER_ENTITY,
+
+	//Plug values
+	PLUG_VALUE
 };
 MSGPACK_ADD_ENUM(ZstMsgKind);
 
@@ -71,6 +74,14 @@ struct ZstMessageReceipt {
 	ZstMsgKind status;
 	bool async;
 };
+
+
+/**
+* Typedef:	boost::function<void(ZstMsgKind)> MessageBoundAction
+*
+* Summary: Defines an alias representing a message completion action.
+*/
+typedef std::function<void(ZstMessageReceipt)> MessageBoundAction;
 
 
 /**
@@ -344,3 +355,11 @@ protected:
 	char m_msg_id[UUID_LENGTH];
 };
 
+
+// Derived message types for when we need to be explicit about how the message is to be used
+class ZstStageMessage : public ZstMessage {};
+
+
+class ZstPerformanceMessage : public ZstMessage {
+	void reset() override;
+};

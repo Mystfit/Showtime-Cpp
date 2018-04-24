@@ -49,14 +49,6 @@ ZstComponent::~ZstComponent()
 	free(m_component_type);
 }
 
-void ZstComponent::set_network_interactor(ZstINetworkInteractor * network_interactor)
-{
-	ZstSynchronisable::set_network_interactor(network_interactor);
-	for (auto plug : m_plugs) {
-		plug->set_network_interactor(network_interactor);
-	}
-}
-
 ZstInputPlug * ZstComponent::create_input_plug(const char * name, ZstValueType val_type)
 {
 	ZstInputPlug * plug = new ZstInputPlug(name, val_type);

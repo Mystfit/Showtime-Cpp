@@ -2,5 +2,5 @@
 
 void ZstCableLiason::cable_set_local(ZstCable * cable)
 {
-	cable->set_local();
+	cable->set_proxy();
 }

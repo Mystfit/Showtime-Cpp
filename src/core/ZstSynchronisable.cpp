@@ -1,60 +1,29 @@
 #include <ZstSynchronisable.h>
 #include <algorithm>
 #include <assert.h>
-#include "ZstEventDispatcher.h"
-#include "ZstINetworkInteractor.h"
 
 ZstSynchronisable::ZstSynchronisable() :
 	m_is_destroyed(false),
-	m_network_interactor(NULL),
 	m_sync_status(ZstSyncStatus::DEACTIVATED),
-    m_sync_error(ZstSyncError::NO_ERR)
+    m_sync_error(ZstSyncError::NO_ERR),
+	m_is_proxy(false)
 {
-	m_activation_events = new ZstEventQueue();
-	m_deactivation_events = new ZstEventQueue();
-	m_activation_hook = new ZstActivationEvent();
-	m_deactivation_hook = new ZstDeactivationEvent();
-	m_activation_events->attach_pre_event_callback(m_activation_hook);
-	m_deactivation_events->attach_post_event_callback(m_deactivation_hook);
 }
 
 ZstSynchronisable::~ZstSynchronisable()
 {
-	delete m_activation_events;
-	delete m_deactivation_events;
-	delete m_activation_hook;
-	delete m_deactivation_hook;
+}
+
+void ZstSynchronisable::add_adaptor(ZstSynchronisableAdaptor * adaptor)
+{
+	ZstEventDispatcher<ZstSynchronisableAdaptor*>::add_adaptor(adaptor);
 }
 
 ZstSynchronisable::ZstSynchronisable(const ZstSynchronisable & other) : ZstSynchronisable()
 {
 	m_sync_status = other.m_sync_status;
 	m_is_destroyed = other.m_is_destroyed;
-}
-
-void ZstSynchronisable::attach_activation_event(ZstSynchronisableEvent * event)
-{
-	m_activation_events->attach_event_listener(event);
-	
-	//If we're already activated we can trigger the callback immediately
-	if (activation_status() == ZstSyncStatus::ACTIVATED) {
-		event->cast_run(this);
-	}
-}
-
-void ZstSynchronisable::attach_deactivation_event(ZstSynchronisableEvent * event)
-{
-	m_deactivation_events->attach_event_listener(event);
-}
-
-void ZstSynchronisable::detach_activation_event(ZstSynchronisableEvent * event)
-{
-	m_activation_events->remove_event_listener(event);
-}
-
-void ZstSynchronisable::detach_deactivation_event(ZstSynchronisableEvent * event)
-{
-	m_deactivation_events->remove_event_listener(event);
+	m_is_proxy = other.m_is_proxy;
 }
 
 void ZstSynchronisable::enqueue_activation()
@@ -62,9 +31,12 @@ void ZstSynchronisable::enqueue_activation()
 	if (is_deactivated() || activation_status() != ZstSyncStatus::ACTIVATION_QUEUED)
 	{
 		set_activation_status(ZstSyncStatus::ACTIVATION_QUEUED);
-		m_activation_events->enqueue(this);
-		if (m_network_interactor)
-			m_network_interactor->enqueue_synchronisable_event(this);
+
+		//Notify adaptors synchronisable is activating
+		add_event([this](ZstSynchronisableAdaptor* dlg) { dlg->on_synchronisable_activated(this); });
+
+		//Notify adaptors that we have a queued event
+		run_event([this](ZstSynchronisableAdaptor* dlg) { dlg->notify_event_ready(this); });
 	}
 }
 
@@ -73,9 +45,15 @@ void ZstSynchronisable::enqueue_deactivation()
     if (is_activated() || activation_status() != ZstSyncStatus::DEACTIVATION_QUEUED)
     {
         set_activation_status(ZstSyncStatus::DEACTIVATION_QUEUED);
-        m_deactivation_events->enqueue(this);
-        if (m_network_interactor)
-            m_network_interactor->enqueue_synchronisable_event(this);
+
+		//Notify adaptors synchronisable is deactivating
+		add_event([this](ZstSynchronisableAdaptor* dlg) { dlg->on_synchronisable_deactivated(this); });
+
+		//Notify adaptors that we have a queued event
+		run_event([this](ZstSynchronisableAdaptor* dlg) { dlg->notify_event_ready(this); });
+
+		//Notify adaptors that this syncronisable needs to be cleaned up
+		run_event([this](ZstSynchronisableAdaptor * dlg) {dlg->on_synchronisable_destroyed(this); });
     }
 }
 
@@ -125,34 +103,43 @@ bool ZstSynchronisable::is_destroyed()
 	return m_is_destroyed;
 }
 
-void ZstSynchronisable::set_network_interactor(ZstINetworkInteractor * network_interactor)
+bool ZstSynchronisable::is_proxy()
 {
-	m_network_interactor = network_interactor;
-}
-
-ZstINetworkInteractor * ZstSynchronisable::network_interactor()
-{
-	return m_network_interactor;
-}
-
-void ZstSynchronisable::process_events()
-{
-	m_activation_events->process();
-	m_deactivation_events->process();
-}
-
-void ZstSynchronisable::flush_events()
-{
-    m_activation_events->flush();
-    m_deactivation_events->flush();
+	return m_is_proxy;
 }
 
 void ZstSynchronisable::set_activation_status(ZstSyncStatus status)
 {
 	m_sync_status = status;
+	switch (m_sync_status)
+	{
+	case DEACTIVATED:
+		add_event([this](ZstSynchronisableAdaptor* dlg) { dlg->on_synchronisable_deactivated(this); });
+		break;
+	case ACTIVATING:
+		break;
+	case ACTIVATION_QUEUED:
+		break;
+	case ACTIVATED:
+		add_event([this](ZstSynchronisableAdaptor* dlg) { dlg->on_synchronisable_activated(this); });
+		break;
+	case DEACTIVATING:
+		break;
+	case DEACTIVATION_QUEUED:
+		break;
+	case ERR:
+		break;
+	default:
+		break;
+	}
 }
 
 void ZstSynchronisable::set_destroyed()
 {
 	m_is_destroyed = true;
+}
+
+void ZstSynchronisable::set_proxy()
+{
+	m_is_proxy = true;
 }

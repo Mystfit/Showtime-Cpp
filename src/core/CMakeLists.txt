@@ -16,6 +16,11 @@ set(API_FILES
     ${Showtime_INCLUDE_DIRS}/ZstSerialisable.h
     ${Showtime_INCLUDE_DIRS}/ZstSynchronisable.h
     ${Showtime_INCLUDE_DIRS}/ZstEvents.h
+    ${Showtime_INCLUDE_DIRS}/ZstEventDispatcher.hpp
+    ${Showtime_INCLUDE_DIRS}/adaptors/ZstEventAdaptor.hpp
+    ${Showtime_INCLUDE_DIRS}/adaptors/ZstPlugAdaptors.hpp
+    ${Showtime_INCLUDE_DIRS}/adaptors/ZstSynchronisableAdaptor.hpp
+    ${Showtime_INCLUDE_DIRS}/adaptors/ZstSessionAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/entities/ZstEntityBase.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstComponent.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstContainer.h
@@ -29,9 +34,6 @@ list(APPEND Showtime_API_INTERFACE ${API_FILES})
 set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstActor.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessage.h"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstEventQueue.h"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstEventDispatcher.h"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstINetworkInteractor.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstValue.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessagePool.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstSynchronisableLiason.hpp"
@@ -43,8 +45,6 @@ set(ZST_CORE_HEADERS
 set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstActor.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstEvents.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstEventQueue.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstEventDispatcher.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessage.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstLogging.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstCable.cpp"
@@ -56,6 +56,7 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstContainer.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstPlug.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstPerformer.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstEventAdaptorStubs.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstSynchronisableLiason.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstPlugLiason.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstCableLiason.cpp"

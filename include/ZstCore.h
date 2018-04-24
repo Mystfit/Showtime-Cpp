@@ -9,6 +9,8 @@
 #include <ZstSynchronisable.h>
 #include <ZstCable.h>
 #include <ZstEvents.h>
+#include <ZstEventDispatcher.hpp>
+#include <adaptors/ZstEventAdaptor.hpp>
 #include <entities/ZstEntityBase.h>
 #include <entities/ZstComponent.h>
 #include <entities/ZstContainer.h>

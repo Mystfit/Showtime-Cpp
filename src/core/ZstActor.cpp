@@ -93,7 +93,7 @@ const char* ZstActor::actor_name() const {
     return m_actor_name.c_str();
 }
 
-void ZstActor::attach_pipe_listener(zsock_t * sock, zloop_reader_fn handler, void * args)
+void ZstActor::attach_pipe_adaptor(zsock_t * sock, zloop_reader_fn handler, void * args)
 {
 	zloop_reader(m_loop, sock, handler, args);
 }

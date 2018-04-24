@@ -26,8 +26,6 @@ public:
 
 	ZST_EXPORT static void destroy(ZstCable * cable);
     ZST_EXPORT virtual ~ZstCable();
-	ZST_EXPORT void on_activated() override {};
-    ZST_EXPORT void on_deactivated() override {};
 
 	// Status
 
@@ -46,7 +44,6 @@ public:
 	ZST_EXPORT ZstPlug * get_output();
 	ZST_EXPORT const ZstURI & get_input_URI() const;
 	ZST_EXPORT const ZstURI & get_output_URI() const;
-	ZST_EXPORT bool is_local();
 
 	ZST_EXPORT void write(std::stringstream & buffer) const override;
 	ZST_EXPORT void read(const char * buffer, size_t length, size_t & offset) override;
@@ -59,9 +56,6 @@ private:
 	//Plugs
 	ZstPlug * m_input;
 	ZstPlug * m_output;
-
-	ZST_EXPORT void set_local();
-	bool m_is_local;
 };
 
 

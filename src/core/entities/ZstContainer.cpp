@@ -43,17 +43,6 @@ ZstContainer::~ZstContainer()
 	m_parent = NULL;
 }
 
-void ZstContainer::set_network_interactor(ZstINetworkInteractor * network_interactor)
-{
-	//Register sender to out own plugs
-	ZstComponent::set_network_interactor(network_interactor);
-
-	//Register sender for all child components in case they have plugs too
-	for (auto child : m_children) {
-		child.second->set_network_interactor(network_interactor);
-	}
-}
-
 ZstEntityBase * ZstContainer::find_child_by_URI(const ZstURI & path)
 {
 	ZstEntityBase * result = NULL;

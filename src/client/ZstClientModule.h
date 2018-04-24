@@ -1,17 +1,16 @@
 #pragma once
-#include "../core/ZstEventDispatcher.h"
 
 //Forwards
 class ZstClient;
 
-class ZstClientModule : public ZstEventDispatcher {
+class ZstClientModule {
 public:
 	ZstClientModule(ZstClient * client);
 	virtual void init() {};
 	virtual void destroy() {};
 
 protected:
-	ZstClient * client();
+	/*ZstClient * client();*/
 	ZstClientModule();
 
 private:

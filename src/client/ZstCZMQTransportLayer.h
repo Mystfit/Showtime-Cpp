@@ -3,11 +3,18 @@
 #include <functional>
 #include <string>
 #include <czmq.h>
+
 #include "../core/ZstActor.h"
 #include "ZstTransportLayer.h"
 #include "ZstCZMQMessage.h"
 
-class ZstCZMQTransportLayer : public ZstTransportLayer, public ZstActor {
+//Forwards
+class ZstMessageDispatcher;
+
+class ZstCZMQTransportLayer : 
+	public ZstTransportLayer, 
+	public ZstActor
+{
 
 public:
 	ZstCZMQTransportLayer(ZstClient * client);
@@ -17,10 +24,13 @@ public:
 	void connect_to_stage(std::string stage_address) override;
 	void connect_to_client(const char * endpoint_ip, const char * subscription_plug) override;
 	void disconnect_from_stage() override;
-	ZstMessage * get_msg() override;
 
 	int add_timer(int delay, std::function<void()> timer_func);
 	void remove_timer(int timer_id);
+
+	ZstStageMessage * get_stage_msg();
+	ZstPerformanceMessage * get_performance_msg();
+
 
 private:
 	ZstCZMQTransportLayer();
@@ -41,16 +51,19 @@ private:
 	
 	std::unordered_map<int, std::function<void()> > m_timers;
 
-
 	// ---------------
 	// Message IO
 	// ---------------
 	
-	void send_to_stage(ZstMessage * msg);
-	ZstMessage * receive_from_stage();
-	ZstMessage * receive_stage_update();
-	void send_to_performance(ZstMessage * msg);
-	void receive_from_performance();
+	void send_to_stage(ZstStageMessage * msg) override;
+	void send_to_performance(ZstPerformanceMessage * msg) override;
+
+	zmsg_t * receive(zsock_t* socket, bool pop_first);
+	ZstStageMessage * receive_from_stage();
+	ZstStageMessage * receive_stage_update();
+	ZstPerformanceMessage * receive_from_performance();
+
+	ZstMessageDispatcher m_msg_dispatch;
 
 	// ---------------
 	// ZMQ Sockets
@@ -75,7 +88,6 @@ private:
 
 	zuuid_t * m_startup_uuid;
 
-
-	/** Summary:	The message pool. */
-	ZstMessagePool<ZstCZMQMessage> m_pool;
+	ZstMessagePool<ZstCZMQStageMessage> m_stage_pool;
+	ZstMessagePool<ZstCZMQPerformanceMessage> m_performance_pool;
 };

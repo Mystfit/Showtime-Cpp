@@ -10,7 +10,7 @@ ZstMessageDispatcher::~ZstMessageDispatcher()
 {
 }
 
-ZstMessageReceipt ZstMessageDispatcher::send_to_stage(ZstMessage * msg, bool async, MessageBoundAction action)
+ZstMessageReceipt ZstMessageDispatcher::send_to_stage(ZstStageMessage * msg, bool async, MessageBoundAction action)
 {
 	if (!msg) return ZstMessageReceipt{ ZstMsgKind::EMPTY, async };
 
@@ -24,7 +24,7 @@ ZstMessageReceipt ZstMessageDispatcher::send_to_stage(ZstMessage * msg, bool asy
 	return msg_response;
 }
 
-ZstMessageReceipt ZstMessageDispatcher::send_sync_stage_message(ZstMessage * msg)
+ZstMessageReceipt ZstMessageDispatcher::send_sync_stage_message(ZstStageMessage * msg)
 {
 	MessageFuture future = register_response_message(msg);
 	ZstMessageReceipt msg_response{ZstMsgKind::EMPTY, false};
@@ -41,7 +41,7 @@ ZstMessageReceipt ZstMessageDispatcher::send_sync_stage_message(ZstMessage * msg
 	return msg_response;
 }
 
-ZstMessageReceipt ZstMessageDispatcher::send_async_stage_message(ZstMessage * msg, MessageBoundAction completed_action)
+ZstMessageReceipt ZstMessageDispatcher::send_async_stage_message(ZstStageMessage * msg, MessageBoundAction completed_action)
 {
 	MessageFuture future = register_response_message(msg);
 	future.then([this, completed_action](MessageFuture f) {
@@ -66,7 +66,7 @@ ZstMessageReceipt ZstMessageDispatcher::send_async_stage_message(ZstMessage * ms
 
 void ZstMessageDispatcher::send_to_performance(ZstPlug * plug)
 {
-	ZstMessage * msg = init_performance_message(plug);
+	ZstPerformanceMessage * msg = init_performance_message(plug);
 	m_transport->send_to_performance(msg);
 }
 
@@ -83,41 +83,41 @@ void ZstMessageDispatcher::failed(ZstMessageReceipt response)
 {
 }
 
-ZstMessage * ZstMessageDispatcher::init_entity_message(const ZstEntityBase * entity)
+ZstStageMessage * ZstMessageDispatcher::init_entity_message(const ZstEntityBase * entity)
 {
-	ZstMessage * msg = m_transport->get_msg();
+	ZstStageMessage * msg = m_transport->get_stage_msg();
 	msg->append_id_frame();
 	msg->append_entity_kind_frame(entity);
 	msg->append_payload_frame(*entity);
 	return msg;
 }
 
-ZstMessage * ZstMessageDispatcher::init_message(ZstMsgKind kind)
+ZstStageMessage * ZstMessageDispatcher::init_message(ZstMsgKind kind)
 {
-	ZstMessage * msg = m_transport->get_msg();
+	ZstStageMessage * msg = m_transport->get_stage_msg();
 	msg->append_id_frame();
 	msg->append_kind_frame(kind);
 	return msg;
 }
 
-ZstMessage * ZstMessageDispatcher::init_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable)
+ZstStageMessage * ZstMessageDispatcher::init_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable)
 {
-	ZstMessage * msg = m_transport->get_msg();
+	ZstStageMessage * msg = m_transport->get_stage_msg();
 	msg->append_id_frame();
 	msg->append_kind_frame(kind);
 	msg->append_payload_frame(serialisable);
 	return msg;
 }
 
-ZstMessage * ZstMessageDispatcher::init_performance_message(ZstPlug * plug)
+ZstPerformanceMessage * ZstMessageDispatcher::init_performance_message(ZstPlug * plug)
 {
-	ZstMessage * msg = m_transport->get_msg();
+	ZstPerformanceMessage * msg = m_transport->get_performance_msg();
 	msg->append_str(plug->URI().path(), plug->URI().full_size());
-	msg->append_serialisable(ZstMsgKind::EMPTY, *(plug->raw_value()));
+	msg->append_serialisable(ZstMsgKind::PLUG_VALUE, *(plug_raw_value(plug)));
 	return msg;
 }
 
-MessageFuture ZstMessageDispatcher::register_response_message(ZstMessage * msg)
+MessageFuture ZstMessageDispatcher::register_response_message(ZstStageMessage * msg)
 {
 	std::string id = std::string(msg->id());
 	m_promise_messages[id] = MessagePromise();
@@ -126,7 +126,7 @@ MessageFuture ZstMessageDispatcher::register_response_message(ZstMessage * msg)
 	return future;
 }
 
-int ZstMessageDispatcher::process_response_message(ZstMessage * msg)
+void ZstMessageDispatcher::on_process_stage_response(ZstStageMessage * msg)
 {
 	int status = 0;
 	try {
@@ -140,6 +140,4 @@ int ZstMessageDispatcher::process_response_message(ZstMessage * msg)
 	catch (std::out_of_range e) {
 		status = -1;
 	}
-
-	return status;
 }

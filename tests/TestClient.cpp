@@ -37,7 +37,7 @@ using namespace boost::process;
 #define WAIT_UNTIL_STAGE_TIMEOUT std::this_thread::sleep_for(std::chrono::milliseconds(STAGE_TIMEOUT + 500));
 
 #define MAX_WAIT_LOOPS 20000
-void wait_for_event(ZstEvent * callback, int expected_messages)
+void wait_for_event(ZstEventListener * callback, int expected_messages)
 {
 	int repeats = 0;
 	zst_poll_once();
@@ -59,20 +59,20 @@ inline void clear_callback_queue() {
 
 //Callback classes
 //----------------
-class TestEntityEventCallback : public ZstComponentEvent {
+class TestEntityEventCallback : public ZstEntityEventListener {
 public:
 	std::string last_entity;
 	std::string m_suffix;
 	TestEntityEventCallback(std::string suffix) {
 		m_suffix = suffix;
 	}
-	void run(ZstComponent * component) override {
-		ZstLog::app(LogLevel::debug, "ENTITY_EVENT: {} {}", component->URI().path(), m_suffix);
+	void run(const ZstEntityEvent & event) override {
+		ZstLog::app(LogLevel::debug, "ENTITY_EVENT: {} {}", event.target()->URI().path(), m_suffix);
 		last_entity = std::string(component->URI().path());
 	}
 };
 
-class TestConnectCallback : public ZstPerformerEvent {
+class TestConnectCallback : public ZstPerformerEventListener {
 public:
 	std::string m_suffix;
 	TestConnectCallback(std::string suffix) {
@@ -83,7 +83,7 @@ public:
 	}
 };
 
-class TestPlugEventCallback : public ZstPlugEvent {
+class TestPlugEventCallback : public ZstPlugEventListener {
 public:
 	std::string m_suffix;
 	TestPlugEventCallback(std::string suffix) {
@@ -94,7 +94,7 @@ public:
 	}
 };
 
-class TestCableEventCallback : public ZstCableEvent {
+class TestCableEventCallback : public ZstCableEventListener {
 public:
 	std::string m_suffix;
 	TestCableEventCallback(std::string suffix) {
@@ -105,7 +105,7 @@ public:
 	}
 };
 
-class TestEntityTemplateCallback : public ZstComponentTypeEvent {
+class TestEntityTemplateCallback : public ZstComponentTypeEventListener {
 public:
 	std::string m_suffix;
 	TestEntityTemplateCallback(std::string suffix) {
@@ -116,7 +116,7 @@ public:
     }
 };
 
-class TestPerformerCallback : public ZstPerformerEvent {
+class TestPerformerCallback : public ZstPerformerEventListener {
 public:
 	std::string m_suffix;
 	TestPerformerCallback(std::string suffix) {

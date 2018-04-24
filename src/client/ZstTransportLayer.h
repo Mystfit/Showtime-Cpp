@@ -6,13 +6,15 @@
 
 #pragma once
 
+#include <functional>
+
 #include <ZstCore.h>
 #include "../core/ZstMessage.h"
-#include "ZstClientModule.h"
 
-class ZstTransportLayer : public ZstClientModule {
+class ZstTransportLayer : 
+{
 public:
-	ZstTransportLayer(ZstClient * client);
+	ZstTransportLayer(ZstMessageDispatcher * dispatcher);
 	~ZstTransportLayer();
 	virtual void destroy() override {};
 	virtual void init() override {}
@@ -31,15 +33,20 @@ public:
 	// Message IO
 	// ---------------
 	
-	virtual ZstMessage * get_msg() = 0;
-	virtual void send_to_stage(ZstMessage * msg) = 0;
-	virtual ZstMessage * receive_from_stage() = 0;
-	virtual ZstMessage * receive_stage_update() = 0;
-	virtual void send_to_performance(ZstMessage * msg) = 0;
-	virtual void receive_from_performance() = 0;
+	virtual ZstStageMessage * get_stage_msg() = 0;
+	virtual ZstPerformanceMessage * get_performance_msg() = 0;
+
+	virtual void send_to_stage(ZstStageMessage * msg) = 0;
+	virtual void send_to_performance(ZstPerformanceMessage * msg) = 0;
+	virtual ZstStageMessage * receive_from_stage() = 0;
+	virtual ZstStageMessage * receive_stage_update() = 0;
+	virtual ZstPerformanceMessage * receive_from_performance() = 0;
 
 protected:
 	std::string m_stage_addr;
+
+	ZstMessageDispatcher * msg_dispatch();
+	ZstMessageDispatcher m_msg_dispatch;
 
 private:
 	ZstTransportLayer();

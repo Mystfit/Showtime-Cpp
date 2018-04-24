@@ -7,9 +7,9 @@ ZstCable::ZstCable() :
     m_input_URI(""),
     m_output_URI(""),
 	m_input(NULL),
-	m_output(NULL),
-    m_is_local(false)
+	m_output(NULL)
 {
+	set_proxy();
 }
 
 ZstCable::ZstCable(const ZstCable & copy) : 
@@ -17,8 +17,7 @@ ZstCable::ZstCable(const ZstCable & copy) :
     m_input_URI(copy.m_input_URI),
     m_output_URI(copy.m_output_URI),
 	m_input(copy.m_input),
-	m_output(copy.m_output),
-    m_is_local(copy.m_is_local)
+	m_output(copy.m_output)
 {
 }
 
@@ -27,8 +26,7 @@ ZstCable::ZstCable(const ZstURI & input_plug_URI, const ZstURI & output_plug_URI
     m_input_URI(input_plug_URI),
     m_output_URI(output_plug_URI),
 	m_input(NULL),
-	m_output(NULL),
-    m_is_local(false)
+	m_output(NULL)
 {
 }
 
@@ -37,8 +35,7 @@ ZstCable::ZstCable(ZstPlug * input_plug, ZstPlug * output_plug) :
     m_input_URI(input_plug->URI()),
     m_output_URI(output_plug->URI()),
 	m_input(input_plug),
-	m_output(output_plug),
-    m_is_local(false)
+	m_output(output_plug)
 {
 }
 
@@ -122,11 +119,6 @@ const ZstURI & ZstCable::get_output_URI() const
 	return m_output_URI;
 }
 
-bool ZstCable::is_local()
-{
-	return m_is_local;
-}
-
 void ZstCable::write(std::stringstream & buffer) const
 {
 	msgpack::pack(buffer, m_output_URI.path());
@@ -140,11 +132,6 @@ void ZstCable::read(const char * buffer, size_t length, size_t & offset)
 
 	handle = msgpack::unpack(buffer, length, offset);
 	m_input_URI = ZstURI(handle.get().via.str.ptr, handle.get().via.str.size);
-}
-
-void ZstCable::set_local()
-{
-	m_is_local = true;
 }
 
 ZstCableBundle::ZstCableBundle()

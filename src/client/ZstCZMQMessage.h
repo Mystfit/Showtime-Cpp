@@ -111,3 +111,14 @@ private:
 	zmsg_t * m_msg_handle;
 };
 
+
+class ZstCZMQStageMessage : 
+	public ZstStageMessage, 
+	public ZstCZMQMessage 
+{};
+
+
+class ZstCZMQPerformanceMessage : 
+	public ZstPerformanceMessage, 
+	public ZstCZMQMessage 
+{};
