@@ -17,7 +17,7 @@
 #include "ZstReaper.h"
 #include "ZstMessageDispatcher.h"
 #include "ZstReaper.h"
-#include "ZstSession.h"
+#include "ZstClientSession.h"
 #include "ZstCZMQTransportLayer.h"
 #include "adaptors/ZstStageDispatchAdaptor.hpp"
 
@@ -52,7 +52,7 @@ public:
 
 	//Client modules
 	ZstMessageDispatcher * msg_dispatch();
-	ZstSession * session();
+	ZstClientSession * session();
 
 private:	
 	//Heartbeat timer
@@ -72,7 +72,7 @@ private:
 	std::string m_client_name;
 	
 	//Client modules
-	ZstSession * m_session;
+	ZstClientSession * m_session;
 	ZstMessageDispatcher * m_msg_dispatch;
 	ZstCZMQTransportLayer * m_transport;
 };

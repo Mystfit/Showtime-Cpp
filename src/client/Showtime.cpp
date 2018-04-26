@@ -106,7 +106,8 @@ void zst_deactivate_plug_async(ZstPlug * plug)
 
 ZstPerformer * zst_get_root()
 {
-	return ZstClient::instance().session()->hierarchy()->get_local_performer();
+	ZstClientHierarchy * session = dynamic_cast<ZstClientHierarchy*>(ZstClient::instance().session()->hierarchy());
+	return session->get_local_performer();
 }
 
 ZstPerformer * zst_get_performer_by_URI(const ZstURI & path)

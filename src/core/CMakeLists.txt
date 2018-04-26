@@ -26,6 +26,7 @@ set(API_FILES
     ${Showtime_INCLUDE_DIRS}/entities/ZstContainer.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstPlug.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstPerformer.h
+
     ${Showtime_COMPILED_INCLUDE_DIRS}/ZstVersion.h
 )
 list(APPEND Showtime_API_INTERFACE ${API_FILES})
@@ -36,6 +37,8 @@ set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessage.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstValue.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessagePool.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstSession.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstHierarchy.h"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstSynchronisableLiason.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstPlugLiason.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstCableLiason.hpp"
@@ -51,6 +54,8 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstURI.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstSynchronisable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstValue.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstSession.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstHierarchy.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstEntityBase.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstComponent.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstContainer.cpp"

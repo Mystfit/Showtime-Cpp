@@ -1,17 +1,17 @@
-/*
-	ZstPerformance
-*/
-
-
 #pragma once
+
+/*
+	ZstClientSession
+*/
 
 //Core API
 #include <ZstCore.h>
 #include "../core/ZstMessage.h"
+#include "../core/ZstSession.h"
 
 //Client modules
 #include "ZstClientModule.h"
-#include "ZstHierarchy.h"
+#include "ZstClientHierarchy.h"
 #include "ZstReaper.h"
 
 //Liasons
@@ -26,37 +26,31 @@
 #include <adaptors/ZstSessionAdaptor.hpp>
 #include <adaptors/ZstSynchronisableAdaptor.hpp>
 
-class ZstSession :
+class ZstClientSession : 
+	public ZstSession,
 	public ZstClientModule,
 	public ZstEventDispatcher<ZstPerformanceDispatchAdaptor*>,
 	public ZstEventDispatcher<ZstStageDispatchAdaptor*>,
-	public ZstEventDispatcher<ZstSessionAdaptor*>,
 	public ZstEventDispatcher<ZstSynchronisableAdaptor*>,
-	public ZstSessionAdaptor,
 	public ZstStageDispatchAdaptor,
 	public ZstPerformanceDispatchAdaptor,
-	public ZstOutputPlugAdaptor,
-	public ZstSynchronisableAdaptor,
-	public ZstPlugLiason,
-	public ZstCableLiason,
-	public ZstSynchronisableLiason
+	public ZstOutputPlugAdaptor
 {
 
 public:
+	using ZstEventDispatcher<ZstSessionAdaptor*>::add_event;
 	using ZstEventDispatcher<ZstSessionAdaptor*>::add_adaptor;
 	using ZstEventDispatcher<ZstSessionAdaptor*>::remove_adaptor;
-	using ZstEventDispatcher<ZstSessionAdaptor*>::process_events;
-	using ZstEventDispatcher<ZstSessionAdaptor*>::run_event;
-	using ZstEventDispatcher<ZstSessionAdaptor*>::add_event;
-	using ZstEventDispatcher<ZstSessionAdaptor*>::flush;
 	using ZstEventDispatcher<ZstStageDispatchAdaptor*>::add_adaptor;
 	using ZstEventDispatcher<ZstStageDispatchAdaptor*>::remove_adaptor;
 	using ZstEventDispatcher<ZstStageDispatchAdaptor*>::run_event;
 	using ZstEventDispatcher<ZstStageDispatchAdaptor*>::flush;
+	using ZstEventDispatcher<ZstPerformanceDispatchAdaptor*>::add_adaptor;
+	using ZstEventDispatcher<ZstPerformanceDispatchAdaptor*>::add_event;
 	using ZstEventDispatcher<ZstPerformanceDispatchAdaptor*>::run_event;
 
-	ZstSession();
-	~ZstSession();
+	ZstClientSession();
+	~ZstClientSession();
 
 
 	// ------------------------------
@@ -95,33 +89,16 @@ public:
 	// ------------------
 	// Cable creation
 	// ------------------
-	ZstCable * connect_cable(ZstPlug * input, ZstPlug * output, bool async = false);
-	void destroy_cable(ZstCable * cable, bool async = false);
-	void disconnect_plugs(ZstPlug * input_plug, ZstPlug * output_plug);
-
-
-	// -------------
-	// Cable queries
-	// -------------
-
-	ZstCable * find_cable(const ZstURI & input_path, const ZstURI & output_path);
-	ZstCable * find_cable(ZstPlug * input, ZstPlug * output);
+	ZstCable * connect_cable(ZstPlug * input, ZstPlug * output, bool async = false) override;
+	void destroy_cable(ZstCable * cable, bool async = false) override;
 
 
 	// -------------
 	// Modules
 	// -------------
-	ZstHierarchy * hierarchy();
+	ZstClientHierarchy * hierarchy() override;
 
 private:
-	// --------------------------
-	// Cable creation/destruction
-	// --------------------------
-
-	ZstCable * create_cable(const ZstCable & cable);
-	ZstCable * create_cable(ZstPlug * output, ZstPlug * input);
-	ZstCable * create_cable(const ZstURI & input_path, const ZstURI & output_path);
-
 	// ----------------
 	// Event completion
 	// ----------------
@@ -129,8 +106,7 @@ private:
 	void connect_cable_complete(ZstMessageReceipt response, ZstCable * cable);
 	void destroy_cable_complete(ZstMessageReceipt response, ZstCable * cable);
 
-
+	ZstClientHierarchy * m_hierarchy;
 	ZstCableList m_cables;
-	ZstHierarchy * m_hierarchy;
 	ZstReaper * m_reaper;
 };

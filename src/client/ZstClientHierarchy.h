@@ -12,28 +12,23 @@
 #include "adaptors/ZstSessionAdaptor.hpp"
 #include "adaptors/ZstStageDispatchAdaptor.hpp"
 #include "../core/ZstMessage.h"
-#include "../core/liasons/ZstSynchronisableLiason.hpp"
+#include "../core/ZstHierarchy.h"
 
-
-class ZstHierarchy : 
+class ZstClientHierarchy : 
+	public ZstHierarchy,
 	public ZstClientModule,
-	public ZstEventDispatcher<ZstSessionAdaptor*>,
 	public ZstEventDispatcher<ZstStageDispatchAdaptor*>,
 	public ZstEventDispatcher<ZstSynchronisableAdaptor*>,
-	public ZstSynchronisableAdaptor,
-	public ZstStageDispatchAdaptor,
-	public ZstSynchronisableLiason
+	public ZstStageDispatchAdaptor
 {
-	using ZstEventDispatcher<ZstSynchronisableAdaptor*>::run_event;
 	using ZstEventDispatcher<ZstStageDispatchAdaptor*>::run_event;
 	using ZstEventDispatcher<ZstSessionAdaptor*>::add_event;
-	using ZstEventDispatcher<ZstSynchronisableAdaptor*>::flush;
 	using ZstEventDispatcher<ZstStageDispatchAdaptor*>::flush;
 	using ZstEventDispatcher<ZstSessionAdaptor*>::flush;
 
 public:
-	ZstHierarchy();
-	~ZstHierarchy();
+	ZstClientHierarchy();
+	~ZstClientHierarchy();
 	void destroy() override;
 	
 	void init(std::string name);
@@ -78,16 +73,12 @@ public:
 	// ------------------------------
 	
 	ZstEntityBase * find_entity(const ZstURI & path);
-	ZstPlug * find_plug(const ZstURI & path);
 	bool path_is_local(const ZstURI & path);
 	void add_proxy_entity(ZstEntityBase & entity);
-	ZstPerformer * get_performer_by_URI(const ZstURI & uri) const;
 	ZstPerformer * get_local_performer() const;
 
 private:
 	ZstPerformer * m_root;
-	ZstPerformerMap m_clients;
-
 
 	// ----------------
 	// Event completion

@@ -66,7 +66,7 @@ void ZstClient::init_client(const char *client_name, bool debug)
 
 	m_client_name = client_name;
 
-	m_session = new ZstSession();
+	m_session = new ZstClientSession();
 	m_session->init(client_name);
 
 	m_is_destroyed = false;
@@ -214,7 +214,7 @@ ZstMessageDispatcher * ZstClient::msg_dispatch()
 	return m_msg_dispatch;
 }
 
-ZstSession * ZstClient::session()
+ZstClientSession * ZstClient::session()
 {
 	return m_session;
 }
