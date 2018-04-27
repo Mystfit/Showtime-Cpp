@@ -1,6 +1,7 @@
 #pragma once
 
 #include <czmq.h>
+#include <ZstExports.h>
 #include "../core/ZstMessage.h"
 
 /**
@@ -58,14 +59,14 @@ public:
  */
 class ZstCZMQMessage : public ZstMessage {
 public:
-	ZstCZMQMessage();
+	ZST_EXPORT ZstCZMQMessage();
 
 	/**
 	 * Fn:	ZstCZMQMessage::~ZstCZMQMessage();
 	 *
 	 * Summary:	Destructor.
 	 */
-	~ZstCZMQMessage();
+	ZST_EXPORT ~ZstCZMQMessage();
 
 	/**
 	 * Fn:	ZstCZMQMessage::ZstCZMQMessage(const ZstCZMQMessage & other);
@@ -75,14 +76,14 @@ public:
 	 * Parameters:
 	 * other - 	The message to copy.
 	 */
-	ZstCZMQMessage(const ZstCZMQMessage & other);
+	ZST_EXPORT ZstCZMQMessage(const ZstCZMQMessage & other);
 
 	/**
 	 * Fn:	void ZstCZMQMessage::reset() override;
 	 *
 	 * Summary:	Resets this message.
 	 */
-	void reset() override;
+	ZST_EXPORT void reset() override;
 
 	/**
 	 * Fn:	void ZstCZMQMessage::copy_id(const ZstCZMQMessage * msg);
@@ -92,11 +93,14 @@ public:
 	 * Parameters:
 	 * msg - 	The message to copy the id from.
 	 */
-	void copy_id(const ZstCZMQMessage * msg);
+	ZST_EXPORT void copy_id(const ZstCZMQMessage * msg);
 	
-	void unpack(void * msg) override;
+	ZST_EXPORT void unpack(void * msg) override;
 
-	zmsg_t * handle();
+	ZST_EXPORT zmsg_t * handle();
+
+	void append_str(const char * s, size_t len) override;
+	void append_serialisable(ZstMsgKind k, const ZstSerialisable & s) override;
 
 private:
 	ZstMsgKind unpack_kind();
@@ -105,8 +109,6 @@ private:
 	void append_kind_frame(ZstMsgKind k) override;
 	void append_id_frame() override;
 	void append_payload_frame(const ZstSerialisable & streamable) override;
-	void append_str(const char * s, size_t len) override;
-	void append_serialisable(ZstMsgKind k, const ZstSerialisable & s) override;
 
 	zmsg_t * m_msg_handle;
 };

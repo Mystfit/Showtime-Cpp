@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <msgpack.hpp>
 #include <ZstCore.h>
+#include "liasons/ZstPlugLiason.hpp"
 
 #define KIND_FRAME_SIZE 1
 #define UUID_LENGTH 33	//Size of a CZMQ uuid (32 bytes + null terminator)
@@ -161,7 +162,7 @@ private:
  *  A ZstMessage encapsulates a single message sent to or from the performance stage server. This
  *  class can be extended to account for your transport mechanism of choice.
  */
-class ZstMessage {
+class ZstMessage : ZstPlugLiason{
 public:
 
 	/**
@@ -299,6 +300,24 @@ public:
 		return serialisable;
 	}
 
+	ZST_EXPORT ZstMessage * init_entity_message(const ZstEntityBase * entity);
+	ZST_EXPORT ZstMessage * init_message(ZstMsgKind kind);
+	ZST_EXPORT ZstMessage * init_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable);
+	ZST_EXPORT ZstMessage * init_performance_message(ZstPlug * plug);
+
+	
+
+protected:
+	/** Summary:	The message kind. */
+	ZstMsgKind m_msg_kind;
+
+	/** Summary:	The payloads. */
+	std::vector<ZstMessagePayload> m_payloads;
+
+	/** Summary:	The message id. */
+	char m_msg_id[UUID_LENGTH];
+
+private:
 	/**
 	* Fn:	void ZstMessage::append_entity_kind_frame(const ZstEntityBase * entity);
 	*
@@ -335,14 +354,4 @@ public:
 	* streamable - 	The streamable to append.
 	*/
 	ZST_EXPORT virtual void append_payload_frame(const ZstSerialisable & streamable) = 0;
-
-protected:
-	/** Summary:	The message kind. */
-	ZstMsgKind m_msg_kind;
-
-	/** Summary:	The payloads. */
-	std::vector<ZstMessagePayload> m_payloads;
-
-	/** Summary:	The message id. */
-	char m_msg_id[UUID_LENGTH];
 };

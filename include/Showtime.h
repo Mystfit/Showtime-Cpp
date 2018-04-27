@@ -19,8 +19,8 @@ extern "C" {
 	ZST_CLIENT_EXPORT void zst_poll_once();
 
 	//Adaptors
-	ZST_CLIENT_EXPORT void add_session_adaptor(ZstSessionAdaptor * adaptor);
-	ZST_CLIENT_EXPORT void remove_session_adaptor(ZstSessionAdaptor * adaptor);
+	ZST_CLIENT_EXPORT void zst_add_session_adaptor(ZstSessionAdaptor * adaptor);
+	ZST_CLIENT_EXPORT void zst_remove_session_adaptor(ZstSessionAdaptor * adaptor);
 
 	//Entity activation/deactivation
 	ZST_CLIENT_EXPORT void zst_activate_entity(ZstEntityBase * entity);

@@ -61,10 +61,6 @@ public:
 	void process_stage_response(ZstMessage * msg);
 
 private:
-	ZstMessage * init_entity_message(const ZstEntityBase * entity);
-	ZstMessage * init_message(ZstMsgKind kind);
-	ZstMessage * init_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable);
-	ZstMessage * init_performance_message(ZstPlug * plug);
 
 	ZstMessageReceipt send_sync_stage_message(ZstMessage * msg);
 	void send_async_stage_message(ZstMessage * msg, MessageReceivedAction completed_action);

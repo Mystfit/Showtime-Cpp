@@ -3,14 +3,12 @@
 
 //Core headers
 #include <ZstVersion.h>
-#include "../core/ZstMessage.h"
-#include "../core/ZstMessagePool.h"
 
 using namespace std;
 
 ZstStage::ZstStage() : m_is_destroyed(false)
 {
-	m_message_pool = new ZstMessagePool();
+	m_message_pool = new ZstMessagePool<ZstCZMQMessage>();
 	m_message_pool->populate(STAGE_MESSAGE_POOL_BLOCK);
 }
 
@@ -51,7 +49,7 @@ void ZstStage::init(const char * stage_name)
 
 	m_heartbeat_timer_id = attach_timer(stage_heartbeat_timer_func, HEARTBEAT_DURATION, this);
 
-	start();
+	start_loop();
 }
 
 void ZstStage::destroy()
@@ -130,12 +128,12 @@ void ZstStage::destroy_client(ZstPerformer * performer)
 	}
 
 	//Remove client and call all destructors in its hierarchy
-	ZstPerformerMap::iterator client_it = m_clients.find(performer->URI());
+	ZstClientMap::iterator client_it = m_clients.find(performer->URI());
 	if (client_it != m_clients.end()) {
 		m_clients.erase(client_it);
 	}
 
-	ZstMessage * leave_msg = msg_pool()->get()->init_message(ZstMsgKind::DESTROY_ENTITY);
+	ZstCZMQMessage * leave_msg = dynamic_cast<ZstCZMQMessage*>(msg_pool()->get_msg()->init_message(ZstMsgKind::DESTROY_ENTITY));
 	leave_msg->append_str(performer->URI().path(), performer->URI().full_size());
 	publish_stage_update(leave_msg);
 	delete performer;
@@ -229,7 +227,7 @@ int ZstStage::destroy_cable(ZstCable * cable) {
 		ZstLog::net(LogLevel::notification, "Destroying cable {} {}", cable->get_output_URI().path(), cable->get_input_URI().path());
 		
 		//Update rest of network
-		publish_stage_update(msg_pool()->get()->init_serialisable_message(ZstMsgKind::DESTROY_CABLE, *cable));
+		publish_stage_update(dynamic_cast<ZstCZMQMessage*>(msg_pool()->get_msg()->init_serialisable_message(ZstMsgKind::DESTROY_CABLE, *cable)));
 		
 		m_cables.erase(cable);
 		ZstCable::destroy(cable);
@@ -300,7 +298,7 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 		zframe_t * empty = zmsg_pop(recv_msg);
 		zframe_destroy(&empty);
 
-		msg = stage->msg_pool()->get();
+		msg = stage->msg_pool()->get_msg();
 		msg->unpack(recv_msg);
 	}
 	
@@ -375,7 +373,7 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 		default:
 		{
 			ZstLog::net(LogLevel::notification, "Didn't understand received message type of {}", msg->kind());
-			response = stage->msg_pool()->get()->init_message(ZstMsgKind::ERR_STAGE_MSG_TYPE_UNKNOWN);
+			response = stage->msg_pool()->get_msg()->init_message(ZstMsgKind::ERR_STAGE_MSG_TYPE_UNKNOWN);
 			break;
 		}
 	}
@@ -385,7 +383,7 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 		//Copy ID of the original message so we can match this message to a promise on the client
 		//once upon a time there was a null pointer, it pointed to nothing.
 		response->copy_id(msg);
-		stage->send_to_client(response, sender);
+		stage->send_to_client(dynamic_cast<ZstCZMQMessage*>(response), sender);
 	}
 
 	//Cleanup
@@ -399,14 +397,14 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 //Client communication
 //--------------------
 
-void ZstStage::send_to_client(ZstMessage * msg, ZstPerformer * destination) {
+void ZstStage::send_to_client(ZstCZMQMessage * msg, ZstPerformer * destination) {
 	
 	zmsg_t * msg_handle = msg->handle();
 	zframe_t * identity = zframe_from(get_socket_ID(destination).c_str());
 	zframe_t * empty = zframe_new_empty();
 	zmsg_prepend(msg_handle, &empty);
 	zmsg_prepend(msg_handle, &identity);
-	msg->send(m_performer_router);
+	zmsg_send(&msg_handle, socket);
 	msg_pool()->release(msg);
 }
 
@@ -417,7 +415,7 @@ void ZstStage::send_to_client(ZstMessage * msg, ZstPerformer * destination) {
 
 ZstMessage * ZstStage::create_client_handler(std::string sender_identity, ZstMessage * msg)
 {
-	ZstMessage * response = msg_pool()->get();
+	ZstMessage * response = msg_pool()->get_msg();
 	
 	//Copy the id of the message so the sender will eventually match the response to a message promise
 	ZstPerformer client = msg->ZstMessage::unpack_payload_serialisable<ZstPerformer>(0);
@@ -430,8 +428,10 @@ ZstMessage * ZstStage::create_client_handler(std::string sender_identity, ZstMes
 		return response->init_message(ZstMsgKind::ERR_STAGE_PERFORMER_ALREADY_EXISTS);
 	}
 
+	std::string ip_address = std::string((char*)msg->payload_at(1).data(), msg->payload_at(1).size());
+
 	//Copy streamable so we have a local ptr for the client
-	ZstPerformer * client_proxy = new ZstPerformerStageProxy(client);
+	ZstPerformerStageProxy * client_proxy = new ZstPerformerStageProxy(client, ip_address);
 	assert(client_proxy);
 	
 	//Save our new client
@@ -439,7 +439,7 @@ ZstMessage * ZstStage::create_client_handler(std::string sender_identity, ZstMes
 	m_client_socket_index[std::string(sender_identity)] = client_proxy;
 		
 	//Update rest of network
-	publish_stage_update(msg_pool()->get()->init_entity_message(client_proxy));
+	publish_stage_update(dynamic_cast<ZstCZMQMessage*>(msg_pool()->get_msg()->init_entity_message(client_proxy)));
 	
 	return response->init_message(ZstMsgKind::OK);
 }
@@ -447,7 +447,7 @@ ZstMessage * ZstStage::create_client_handler(std::string sender_identity, ZstMes
 ZstMessage * ZstStage::destroy_client_handler(ZstPerformer * performer)
 {
 	destroy_client(performer);
-	return msg_pool()->get()->init_message(ZstMsgKind::OK);
+	return msg_pool()->get_msg()->init_message(ZstMsgKind::OK);
 }
 
 template ZstMessage * ZstStage::create_entity_handler<ZstPlug>(ZstMessage * msg, ZstPerformer * performer);
@@ -456,7 +456,7 @@ template ZstMessage * ZstStage::create_entity_handler<ZstContainer>(ZstMessage *
 template <typename T>
 ZstMessage * ZstStage::create_entity_handler(ZstMessage * msg, ZstPerformer * performer) {
 	
-	ZstMessage * response = msg_pool()->get();
+	ZstMessage * response = msg_pool()->get_msg();
 	
 	if (!performer) {
 		return response->init_message(ZstMsgKind::ERR_STAGE_PERFORMER_NOT_FOUND);
@@ -510,17 +510,17 @@ ZstMessage * ZstStage::create_entity_handler(ZstMessage * msg, ZstPerformer * pe
 	ZstLog::net(LogLevel::notification, "Registering new entity {}", entity_proxy->URI().path());
 	
 	//Update rest of network
-	publish_stage_update(msg_pool()->get()->init_entity_message(entity_proxy));
+	publish_stage_update(dynamic_cast<ZstCZMQMessage*>(msg_pool()->get_msg()->init_entity_message(entity_proxy)));
 
 	return response->init_message(ZstMsgKind::OK);
 }
 
 ZstMessage * ZstStage::destroy_entity_handler(ZstMessage * msg)
 {
-	ZstMessage * response = msg_pool()->get();
+	ZstMessage * response = msg_pool()->get_msg();
 
 	//Unpack entity to destroy from message
-	ZstURI entity_path = ZstURI(msg->payload_at(0).data(), msg->payload_at(0).size());
+	ZstURI entity_path = ZstURI((char*)msg->payload_at(0).data(), msg->payload_at(0).size());
 	
 	ZstLog::net(LogLevel::notification, "Destroying entity {}", entity_path.path());
 
@@ -554,7 +554,7 @@ ZstMessage * ZstStage::destroy_entity_handler(ZstMessage * msg)
 	}
 
 	//Update rest of network
-	ZstMessage * stage_update_msg = msg_pool()->get()->init_message(msg->kind());
+	ZstCZMQMessage * stage_update_msg = dynamic_cast<ZstCZMQMessage*>(msg_pool()->get_msg()->init_message(msg->kind()));
 	stage_update_msg->append_str(entity_path.path(), entity_path.full_size());
 	publish_stage_update(stage_update_msg);
 
@@ -567,19 +567,19 @@ ZstMessage * ZstStage::create_entity_template_handler(ZstMessage * msg)
 {
 	//TODO: Implement this
     throw std::logic_error("Creating entity types not implemented yet");
-	return msg_pool()->get()->init_message(ZstMsgKind::ERR_STAGE_ENTITY_NOT_FOUND);
+	return msg_pool()->get_msg()->init_message(ZstMsgKind::ERR_STAGE_ENTITY_NOT_FOUND);
 }
 
 
 ZstMessage * ZstStage::create_entity_from_template_handler(ZstMessage * msg)
 {
     throw std::logic_error("Creating entity types not implemented yet");
-	return msg_pool()->get()->init_message(ZstMsgKind::ERR_STAGE_ENTITY_NOT_FOUND);
+	return msg_pool()->get_msg()->init_message(ZstMsgKind::ERR_STAGE_ENTITY_NOT_FOUND);
 }
 
 ZstMessage * ZstStage::create_cable_handler(ZstMessage * msg)
 {
-	ZstMessage * response = msg_pool()->get();
+	ZstMessage * response = msg_pool()->get_msg();
 
 	//Unpack cable from message
 	const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(0);
@@ -594,24 +594,24 @@ ZstMessage * ZstStage::create_cable_handler(ZstMessage * msg)
 
 	//Create connection request for the entity who owns the input plug
 	ZstPerformer * input_performer = get_client(cable_ptr->get_input_URI());
-	ZstPerformer * output_performer = get_client(cable_ptr->get_output_URI());
+	ZstPerformerStageProxy * output_performer = dynamic_cast<ZstPerformerStageProxy*>(get_client(cable_ptr->get_output_URI()));
 
 	ZstLog::net(LogLevel::notification, "Sending cable connection request to {}", input_performer->URI().path());
 
-	ZstMessage * connection_msg = msg_pool()->get()->init_message(ZstMsgKind::SUBSCRIBE_TO_PERFORMER);
-	connection_msg->append_str(output_performer->address(), strlen(output_performer->address()));	//IP of output client
+	ZstCZMQMessage * connection_msg = dynamic_cast<ZstCZMQMessage*>(msg_pool()->get_msg()->init_message(ZstMsgKind::SUBSCRIBE_TO_PERFORMER));
+	connection_msg->append_str(output_performer->ip_address().c_str(), strlen(output_performer->ip_address().c_str()));	//IP of output client
 	connection_msg->append_str(cable.get_output_URI().path(), cable.get_output_URI().full_size());	//Output plug path
 	send_to_client(connection_msg, input_performer);
 
 	//Update rest of network
-	publish_stage_update(msg_pool()->get()->init_serialisable_message(msg->kind(), cable));
+	publish_stage_update(dynamic_cast<ZstCZMQMessage*>(msg_pool()->get_msg()->init_serialisable_message(msg->kind(), cable)));
 
     return response->init_message(ZstMsgKind::OK);
 }
 
 ZstMessage * ZstStage::destroy_cable_handler(ZstMessage * msg)
 {
-	ZstMessage * response = msg_pool()->get();
+	ZstMessage * response = msg_pool()->get_msg();
 	const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(0);
 	ZstLog::net(LogLevel::notification, "Received destroy cable connection request");
 	
@@ -632,7 +632,7 @@ ZstMessage * ZstStage::destroy_cable_handler(ZstMessage * msg)
 
 ZstMessage * ZstStage::create_snapshot(ZstPerformer * client) {
 
-	ZstMessage * snapshot = msg_pool()->get()->init_message(ZstMsgKind::GRAPH_SNAPSHOT);
+	ZstCZMQMessage * snapshot = dynamic_cast<ZstCZMQMessage*>(msg_pool()->get_msg()->init_message(ZstMsgKind::GRAPH_SNAPSHOT));
 	
 	//Pack performer root entities
 	for (auto performer : m_clients) {
@@ -654,15 +654,17 @@ ZstMessage * ZstStage::create_snapshot(ZstPerformer * client) {
     return snapshot;
 }
 
-void ZstStage::publish_stage_update(ZstMessage * msg)
+void ZstStage::publish_stage_update(ZstCZMQMessage * msg)
 {
-	msg->send(m_graph_update_pub);
+	zmsg_t * msg_handle = msg->handle();
+	zmsg_send(&msg_handle, m_graph_update_pub);
+	msg_pool()->release(msg);
 }
 
 int ZstStage::stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * arg)
 {
 	ZstStage * stage = (ZstStage*)arg;
-	ZstPerformerMap clients = stage->m_clients;
+	ZstClientMap clients = stage->m_clients;
 	std::vector<ZstPerformer*> removed_clients;
 	for (auto performer_it : stage->m_clients) {
 		ZstPerformer * performer = performer_it.second;
@@ -685,7 +687,7 @@ int ZstStage::stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * ar
 	return 0;
 }
 
-ZstMessagePool * ZstStage::msg_pool()
+ZstMessagePool<ZstCZMQMessage> * ZstStage::msg_pool()
 {
 	return m_message_pool;
 }

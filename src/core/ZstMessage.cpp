@@ -69,6 +69,38 @@ void ZstMessage::append_entity_kind_frame(const ZstEntityBase * entity) {
 }
 
 
+ZstMessage * ZstMessage::init_entity_message(const ZstEntityBase * entity)
+{
+	this->append_id_frame();
+	this->append_entity_kind_frame(entity);
+	this->append_payload_frame(*entity);
+	return this;
+}
+
+ZstMessage * ZstMessage::init_message(ZstMsgKind kind)
+{
+	this->append_id_frame();
+	this->append_kind_frame(kind);
+	return this;
+}
+
+ZstMessage * ZstMessage::init_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable)
+{
+	this->append_id_frame();
+	this->append_kind_frame(kind);
+	this->append_payload_frame(serialisable);
+	return this;
+}
+
+ZstMessage * ZstMessage::init_performance_message(ZstPlug * plug)
+{
+	this->append_str(plug->URI().path(), plug->URI().full_size());
+	this->append_serialisable(ZstMsgKind::PLUG_VALUE, *(plug_raw_value(plug)));
+	return this;
+}
+
+
+
 // -----------------------
 // Message payload
 // -----------------------

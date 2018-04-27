@@ -6,6 +6,11 @@ ZstPerformerStageProxy::ZstPerformerStageProxy(const std::string & name, const s
 {
 }
 
+ZstPerformerStageProxy::ZstPerformerStageProxy(const ZstPerformer & other, std::string address) : ZstPerformer(other)
+{
+	m_address = address;
+}
+
 const std::string & ZstPerformerStageProxy::ip_address()
 {
 	return m_address;

@@ -6,8 +6,8 @@
 
 #include "../core/ZstActor.h"
 #include "../core/ZstMessagePool.hpp"
+#include "../core/ZstCZMQMessage.h"
 #include "ZstTransportLayer.h"
-#include "ZstCZMQMessage.h"
 
 //Forwards
 class ZstMessageDispatcher;

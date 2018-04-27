@@ -54,12 +54,12 @@ void zst_poll_once()
 	ZstClient::instance().process_events();
 }
 
-void add_session_adaptor(ZstSessionAdaptor * adaptor)
+void zst_add_session_adaptor(ZstSessionAdaptor * adaptor)
 {
 	ZstClient::instance().session()->add_adaptor(adaptor);
 }
 
-void remove_session_adaptor(ZstSessionAdaptor * adaptor)
+void zst_remove_session_adaptor(ZstSessionAdaptor * adaptor)
 {
 	ZstClient::instance().session()->remove_adaptor(adaptor);
 }

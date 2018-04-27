@@ -21,4 +21,3 @@ void ZstTransportLayer::set_dispatcher(ZstMessageDispatcher * dispatcher)
 	m_msg_dispatch = dispatcher;
 }
 
-

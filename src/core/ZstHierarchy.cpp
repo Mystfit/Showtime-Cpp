@@ -27,7 +27,6 @@ void ZstHierarchy::destroy_entity(ZstEntityBase * entity, bool async)
 void ZstHierarchy::destroy_plug(ZstPlug * plug, bool async)
 {
 	if (!plug) return;
-
 	synchronisable_set_deactivating(plug);
 }
 

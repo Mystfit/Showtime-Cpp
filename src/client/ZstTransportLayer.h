@@ -15,7 +15,9 @@
 //Forwards
 class ZstMessageDispatcher;
 
-class ZstTransportLayer : public ZstClientModule
+class ZstTransportLayer : 
+	public ZstClientModule,
+	public ZstPlugLiason
 {
 public:
 	ZstTransportLayer();

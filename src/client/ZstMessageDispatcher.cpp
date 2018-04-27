@@ -76,7 +76,7 @@ void ZstMessageDispatcher::send_async_stage_message(ZstMessage * msg, MessageRec
 
 void ZstMessageDispatcher::send_to_performance(ZstPlug * plug)
 {
-	ZstMessage * msg = init_performance_message(plug);
+	ZstMessage * msg = transport()->get_msg()->init_performance_message(plug);
 	m_transport->send_to_performance(msg);
 }
 
@@ -98,20 +98,20 @@ void ZstMessageDispatcher::receive_from_stage(size_t payload_index, ZstMessage *
 
 void ZstMessageDispatcher::send_message(ZstMsgKind kind, bool async, MessageReceivedAction action)
 {
-	ZstMessage * msg = init_message(kind);
+	ZstMessage * msg = transport()->get_msg()->init_message(kind);
 	send_to_stage(msg, async, action);
 }
 
 void ZstMessageDispatcher::send_message(ZstMsgKind kind, bool async, std::string msg_arg, MessageReceivedAction action)
 {
-	ZstMessage * msg = init_message(kind);
+	ZstMessage * msg = transport()->get_msg()->init_message(kind);
 	msg->append_str(msg_arg.c_str(), msg_arg.size());
 	send_to_stage(msg, async, action);
 }
 
 void ZstMessageDispatcher::send_message(ZstMsgKind kind, bool async, const std::vector<std::string> msg_args, MessageReceivedAction action)
 {
-	ZstMessage * msg = init_message(kind);
+	ZstMessage * msg = transport()->get_msg()->init_message(kind);
 	for (auto s : msg_args) {
 		msg->append_str(s.c_str(), s.size());
 	}
@@ -120,20 +120,20 @@ void ZstMessageDispatcher::send_message(ZstMsgKind kind, bool async, const std::
 
 void ZstMessageDispatcher::send_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable, bool async, MessageReceivedAction action)
 {
-	ZstMessage * msg = init_serialisable_message(kind, serialisable);
+	ZstMessage * msg = transport()->get_msg()->init_serialisable_message(kind, serialisable);
 	send_to_stage(msg, async, action);
 }
 
 void ZstMessageDispatcher::send_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable, bool async, std::string msg_arg, MessageReceivedAction action)
 {
-	ZstMessage * msg = init_serialisable_message(kind, serialisable);
+	ZstMessage * msg = transport()->get_msg()->init_serialisable_message(kind, serialisable);
 	msg->append_str(msg_arg.c_str(), msg_arg.size());
 	send_to_stage(msg, async, action);
 }
 
 void ZstMessageDispatcher::send_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable, bool async, const std::vector<std::string> msg_args, MessageReceivedAction action)
 {
-	ZstMessage * msg = init_serialisable_message(kind, serialisable);
+	ZstMessage * msg = transport()->get_msg()->init_serialisable_message(kind, serialisable);
 	for (auto s : msg_args) {
 		msg->append_str(s.c_str(), s.size());
 	}
@@ -142,7 +142,7 @@ void ZstMessageDispatcher::send_serialisable_message(ZstMsgKind kind, const ZstS
 
 void ZstMessageDispatcher::send_entity_message(const ZstEntityBase * entity, bool async, MessageReceivedAction action)
 {
-	ZstMessage * msg = init_entity_message(entity);
+	ZstMessage * msg = transport()->get_msg()->init_entity_message(entity);
 	send_to_stage(msg, async, action);
 }
 
@@ -157,40 +157,6 @@ void ZstMessageDispatcher::complete(ZstMessageReceipt response)
 
 void ZstMessageDispatcher::failed(ZstMessageReceipt response)
 {
-}
-
-ZstMessage * ZstMessageDispatcher::init_entity_message(const ZstEntityBase * entity)
-{
-	ZstMessage * msg = m_transport->get_msg();
-	msg->append_id_frame();
-	msg->append_entity_kind_frame(entity);
-	msg->append_payload_frame(*entity);
-	return msg;
-}
-
-ZstMessage * ZstMessageDispatcher::init_message(ZstMsgKind kind)
-{
-	ZstMessage * msg = m_transport->get_msg();
-	msg->append_id_frame();
-	msg->append_kind_frame(kind);
-	return msg;
-}
-
-ZstMessage * ZstMessageDispatcher::init_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable)
-{
-	ZstMessage * msg = m_transport->get_msg();
-	msg->append_id_frame();
-	msg->append_kind_frame(kind);
-	msg->append_payload_frame(serialisable);
-	return msg;
-}
-
-ZstMessage * ZstMessageDispatcher::init_performance_message(ZstPlug * plug)
-{
-	ZstMessage * msg = m_transport->get_msg();
-	msg->append_str(plug->URI().path(), plug->URI().full_size());
-	msg->append_serialisable(ZstMsgKind::PLUG_VALUE, *(plug_raw_value(plug)));
-	return msg;
 }
 
 MessageFuture ZstMessageDispatcher::register_response_message(ZstMessage * msg)

@@ -10,6 +10,8 @@
 
 //Core headers
 #include "../core/ZstActor.h"
+#include "../core/ZstMessagePool.hpp"
+#include "../core/ZstCZMQMessage.h"
 
 //Stage headers
 #include "ZstPerformerStageProxy.h"
@@ -21,13 +23,12 @@
 class ZstEntityBase;
 class ZstPerformer;
 class ZstMessage;
-class ZstMessagePool;
 class ZstCable;
 
 typedef std::unordered_map<ZstURI, ZstPerformerStageProxy*, ZstURIHash> ZstClientMap;
 typedef std::unordered_map<std::string, ZstPerformerStageProxy*> ZstClientSocketMap;
 
-class ZstStage : public ZstActor{
+class ZstStage : public ZstActor {
 public:
 	ZstStage();
 	~ZstStage();
@@ -59,7 +60,7 @@ private:
 	static int s_handle_router(zloop_t *loop, zsock_t *sock, void *arg);
 
 	//Client communication
-	void send_to_client(ZstMessage * msg, ZstPerformer * destination);
+	void send_to_client(ZstCZMQMessage * msg, ZstPerformer * destination);
 
     //Message handlers
     ZstMessage * create_client_handler(std::string sender_identity, ZstMessage * msg);
@@ -77,7 +78,7 @@ private:
 	
 	//Outgoing events
 	ZstMessage * create_snapshot(ZstPerformer * client);
-    void publish_stage_update(ZstMessage * msg);
+    void publish_stage_update(ZstCZMQMessage * msg);
 
 	int m_heartbeat_timer_id;
 	static int stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * arg);
@@ -94,6 +95,6 @@ private:
 	ZstCableList m_cables;
 
 	//Messages
-	ZstMessagePool * m_message_pool;
-	ZstMessagePool * msg_pool();
+	ZstMessagePool<ZstCZMQMessage> * m_message_pool;
+	ZstMessagePool<ZstCZMQMessage> * msg_pool();
 };

@@ -6,6 +6,8 @@
 class ZstPerformerStageProxy : public ZstPerformer {
 public:
 	ZstPerformerStageProxy(const std::string & name, const std::string & ip_address);
+	ZstPerformerStageProxy(const ZstPerformer & other, std::string address);
+
 	const std::string & ip_address();
 
 private:

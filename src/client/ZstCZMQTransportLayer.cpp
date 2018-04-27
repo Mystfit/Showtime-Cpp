@@ -1,5 +1,4 @@
 #include "ZstCZMQTransportLayer.h"
-#include "ZstCZMQMessage.h"
 #include "ZstClient.h"
 #include "ZstMessageDispatcher.h"
 
@@ -31,7 +30,7 @@ void ZstCZMQTransportLayer::init()
 	m_stage_router = zsock_new(ZMQ_DEALER);
 	if (m_stage_router) {
 		zsock_set_linger(m_stage_router, 0);
-		attach_pipe_adaptor(m_stage_router, s_handle_stage_router, this);
+		attach_pipe_listener(m_stage_router, s_handle_stage_router, this);
 	}
 
 	//Graph input socket
@@ -39,14 +38,14 @@ void ZstCZMQTransportLayer::init()
 	if (m_graph_in) {
 		zsock_set_linger(m_graph_in, 0);
 		zsock_set_unbounded(m_graph_in);
-		attach_pipe_adaptor(m_graph_in, s_handle_graph_in, this);
+		attach_pipe_listener(m_graph_in, s_handle_graph_in, this);
 	}
 
 	//Stage update socket
 	m_stage_updates = zsock_new(ZMQ_SUB);
 	if (m_stage_updates) {
 		zsock_set_linger(m_stage_updates, 0);
-		attach_pipe_adaptor(m_stage_updates, s_handle_stage_update_in, this);
+		attach_pipe_listener(m_stage_updates, s_handle_stage_update_in, this);
 	}
 
 	std::string network_ip = first_available_ext_ip();
