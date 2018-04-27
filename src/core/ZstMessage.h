@@ -108,6 +108,10 @@ public:
      */
     ZST_EXPORT ZstMessagePayload(const ZstMessagePayload & other);
 
+	ZST_EXPORT ZstMessagePayload(ZstMessagePayload && source);
+	ZST_EXPORT ZstMessagePayload& ZstMessagePayload::operator=(ZstMessagePayload && source);
+	ZST_EXPORT ZstMessagePayload& ZstMessagePayload::operator=(ZstMessagePayload & other);
+
 	/**
 	 * Fn:	ZST_EXPORT virtual ZstMessagePayload::~ZstMessagePayload()
 	 *

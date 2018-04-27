@@ -24,7 +24,7 @@ void ZstStage::init(const char * stage_name)
 	ZstLog::init_logger(stage_name);
 	ZstLog::net(LogLevel::notification, "Starting Showtime v{} stage server", SHOWTIME_VERSION);
 
-	ZstActor::init(stage_name);
+	ZstActor::init();
     
 	std::stringstream addr;
 	m_performer_router = zsock_new(ZMQ_ROUTER);
@@ -289,14 +289,19 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 
 	//Receive waiting message
 	zmsg_t * recv_msg = zmsg_recv(socket);
-	ZstMessage * msg = NULL;
+	ZstCZMQMessage * msg = NULL;
 	
 	if (recv_msg) {
+		ZstLog::net(LogLevel::notification, "Received message contents:");
+		zmsg_print(recv_msg);
 		//Get identity of sender from first frame
 		zframe_t * identity_frame = zmsg_pop(recv_msg);
 		sender_identity = std::string((char*)zframe_data(identity_frame), zframe_size(identity_frame));
 		zframe_t * empty = zmsg_pop(recv_msg);
 		zframe_destroy(&empty);
+
+		ZstLog::net(LogLevel::notification, "Received message contents after ID and seperator removal");
+		zmsg_print(recv_msg);
 
 		msg = stage->msg_pool()->get_msg();
 		msg->unpack(recv_msg);

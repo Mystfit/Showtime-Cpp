@@ -12,13 +12,6 @@ ZstCZMQMessagePayload::ZstCZMQMessagePayload(ZstMsgKind k, const zframe_t * p) :
 	m_size = zframe_size((zframe_t*)m_payload);
 }
 
-ZstCZMQMessagePayload::ZstCZMQMessagePayload(const ZstCZMQMessagePayload & other)
-	: ZstMessagePayload(other)
-{
-	assert(zframe_is((zframe_t*)other.m_payload));
-	m_payload = zframe_dup((zframe_t*)other.m_payload);
-}
-
 ZstCZMQMessagePayload::~ZstCZMQMessagePayload()
 {
 	zframe_t * frame = (zframe_t*)m_payload;
@@ -88,13 +81,15 @@ void ZstCZMQMessage::unpack(void * msg)
 	//Unpack kind
 	m_msg_kind = unpack_kind();
 
+	zmsg_print(m_msg_handle);
+
 	//Handle message payloads
 	if (kind() == ZstMsgKind::GRAPH_SNAPSHOT) {
 		// Batched update messages from the stage look like this:
 		// | Kind | Payload | Kind | Payload | ... |
 		ZstMsgKind payload_kind = unpack_kind();
 		while (payload_kind != ZstMsgKind::EMPTY) {
-			m_payloads.push_back(ZstCZMQMessagePayload{ payload_kind, zmsg_pop(m_msg_handle) });
+			m_payloads.push_back(ZstCZMQMessagePayload(payload_kind, zmsg_pop(m_msg_handle)));
 			payload_kind = unpack_kind();
 		}
 	}
@@ -102,8 +97,9 @@ void ZstCZMQMessage::unpack(void * msg)
 		// Normal payloads don't have kind frames and look like this
 		// | Payload | Payload | Payload | ... |
 		zframe_t * payload_frame = zmsg_pop(m_msg_handle);
-		while (payload_frame) {
-			m_payloads.push_back(ZstCZMQMessagePayload{ m_msg_kind, payload_frame });
+		while (payload_frame){
+			ZstCZMQMessagePayload p(m_msg_kind, payload_frame);
+			m_payloads.push_back(std::move(p));
 			payload_frame = zmsg_pop(m_msg_handle);
 		}
 	}

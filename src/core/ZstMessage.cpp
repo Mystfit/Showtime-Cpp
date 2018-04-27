@@ -115,7 +115,51 @@ ZstMessagePayload::ZstMessagePayload(ZstMsgKind k, const void * p) :
 ZstMessagePayload::ZstMessagePayload(const ZstMessagePayload & other)
 {
 	m_kind = other.m_kind;
+	m_size = other.m_size;
+	m_payload = other.m_payload;
 }
+
+ZstMessagePayload::ZstMessagePayload(ZstMessagePayload && source)
+{
+	//Move values
+	m_kind = source.m_kind;
+	m_size = source.m_size;
+	m_payload = std::move(source.m_payload);
+
+	//Reset original
+	source.m_kind = ZstMsgKind::EMPTY;
+	source.m_size = 0;
+	source.m_payload = NULL;
+}
+
+ZstMessagePayload & ZstMessagePayload::operator=(ZstMessagePayload && source)
+{
+	//Move assignment
+	if (this != &source)
+	{
+		//Move values
+		m_kind = source.m_kind;
+		m_size = source.m_size;
+		m_payload = std::move(source.m_payload);
+
+		//Reset original
+		source.m_kind = ZstMsgKind::EMPTY;
+		m_size = 0;
+		m_payload = NULL;
+	}
+	return *this;
+}
+
+ZstMessagePayload & ZstMessagePayload::operator=(ZstMessagePayload & other)
+{
+	//Copy assignment
+	m_kind = other.m_kind;
+	m_size = other.m_size;
+	m_payload = other.m_payload;
+	return *this;
+}
+
+
 
 ZstMsgKind ZstMessagePayload::kind()
 {

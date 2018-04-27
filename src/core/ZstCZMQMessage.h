@@ -23,16 +23,6 @@ public:
 	ZstCZMQMessagePayload(ZstMsgKind k, const zframe_t * p);
 
 	/**
-	 * Fn:	ZstCZMQMessagePayload::ZstCZMQMessagePayload(const ZstCZMQMessagePayload & other);
-	 *
-	 * Summary:	Copy construct a ZstCZMQMessagePayload.
-	 *
-	 * Parameters:
-	 * other - 	Payload to copy.
-	 */
-	ZstCZMQMessagePayload(const ZstCZMQMessagePayload & other);
-
-	/**
 	 * Fn:	ZstCZMQMessagePayload::~ZstCZMQMessagePayload();
 	 *
 	 * Summary:	Destructor.

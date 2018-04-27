@@ -853,23 +853,36 @@ void test_cleanup() {
 }
 
 int main(int argc,char **argv){
-	std::string ext_test_folder = boost::filesystem::system_complete(argv[0]).parent_path().generic_string();
+
+	bool testing = false;
+	if (argc > 1) {
+		if (argv[1][0] == 't') {
+			ZstLog::app(LogLevel::warn, "In test mode. Launching internal stage server.");
+			testing = true;
+		}
+	}
 	
-	//Start server
-	std::string prog = ext_test_folder + "/ShowtimeServer";
-#ifdef WIN32
-	prog += ".exe";
-#endif
+	std::string ext_test_folder = boost::filesystem::system_complete(argv[0]).parent_path().generic_string();
 	boost::process::pipe server_in;
 	child server_process;
-	char test_flag = 't';
-	try {
-		server_process = boost::process::child(prog, &test_flag, std_in < server_in);
+	
+	if (testing) {
+		//Start server
+		std::string prog = ext_test_folder + "/ShowtimeServer";
+#ifdef WIN32
+		prog += ".exe";
+#endif
+		
+		char test_flag = 't';
+		try {
+			server_process = boost::process::child(prog, &test_flag, std_in < server_in);
+		}
+		catch (process_error e) {
+			ZstLog::app(LogLevel::debug, "Server process failed to start. Code:{} Message:{}", e.code().value(), e.what());
+		}
+		assert(server_process.valid());
 	}
-	catch (process_error e) {
-		ZstLog::app(LogLevel::debug, "Server process failed to start. Code:{} Message:{}", e.code().value(), e.what());
-	}
-	assert(server_process.valid());
+
 	
 	//Tests
 	test_startup();
@@ -884,9 +897,11 @@ int main(int argc,char **argv){
     test_leaving();
 	test_cleanup();
 
-	std::string term_msg = "$TERM\n";
-	server_in.write(term_msg.c_str(), term_msg.size());
-	server_process.wait();
-	std::cout << "All tests completed" << std::endl;
+	if (testing) {
+		std::string term_msg = "$TERM\n";
+		server_in.write(term_msg.c_str(), term_msg.size());
+		server_process.wait();
+		std::cout << "All tests completed" << std::endl;
+	}
 	return 0;
 }

@@ -24,6 +24,7 @@ void ZstCZMQTransportLayer::destroy()
 
 void ZstCZMQTransportLayer::init()
 {
+	ZstActor::init();
 	m_startup_uuid = zuuid_new();
 	
 	//Local dealer socket for receiving messages forwarded from other performers

@@ -32,7 +32,7 @@ class ZstStage : public ZstActor {
 public:
 	ZstStage();
 	~ZstStage();
-	void init(const char * stage_name) override;
+	void init(const char * stage_name);
 	void destroy() override;
 	bool is_destroyed();
 
