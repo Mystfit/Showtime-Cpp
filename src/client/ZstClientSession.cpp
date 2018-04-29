@@ -3,6 +3,7 @@
 ZstClientSession::ZstClientSession()
 {
 	m_hierarchy = new ZstClientHierarchy();
+	m_reaper = new ZstReaper();
 }
 
 ZstClientSession::~ZstClientSession() {

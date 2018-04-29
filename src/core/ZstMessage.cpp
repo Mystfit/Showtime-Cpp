@@ -9,13 +9,11 @@ ZstMessage::ZstMessage() :
 
 ZstMessage::~ZstMessage()
 {
-	m_payloads.clear();
 }
 
 ZstMessage::ZstMessage(const ZstMessage & other)
 {
 	m_msg_kind = other.m_msg_kind;
-	m_payloads = other.m_payloads;
 	memcpy(m_msg_id, other.m_msg_id, UUID_LENGTH);
 }
 
@@ -23,7 +21,6 @@ void ZstMessage::reset()
 {
 	memset(&m_msg_id[0], 0, UUID_LENGTH);
 	m_msg_kind = ZstMsgKind::EMPTY;
-	m_payloads.clear();
 }
 
 void ZstMessage::copy_id(const ZstMessage * msg)
@@ -39,16 +36,6 @@ const char * ZstMessage::id()
 ZstMsgKind ZstMessage::kind()
 {
 	return m_msg_kind;
-}
-
-ZstMessagePayload & ZstMessage::payload_at(size_t index)
-{
-	return m_payloads.at(index);
-}
-
-size_t ZstMessage::num_payloads()
-{
-	return m_payloads.size();
 }
 
 void ZstMessage::append_entity_kind_frame(const ZstEntityBase * entity) {
@@ -116,7 +103,6 @@ ZstMessagePayload::ZstMessagePayload(const ZstMessagePayload & other)
 {
 	m_kind = other.m_kind;
 	m_size = other.m_size;
-	m_payload = other.m_payload;
 }
 
 ZstMessagePayload::ZstMessagePayload(ZstMessagePayload && source)
@@ -159,19 +145,12 @@ ZstMessagePayload & ZstMessagePayload::operator=(ZstMessagePayload & other)
 	return *this;
 }
 
-
-
 ZstMsgKind ZstMessagePayload::kind()
 {
 	return m_kind;
 }
 
-size_t ZstMessagePayload::size()
+const size_t ZstMessagePayload::size()
 {
-	return m_size;
-}
-
-const void * ZstMessagePayload::data()
-{
-	return m_payload;
+	return m_size; 
 }

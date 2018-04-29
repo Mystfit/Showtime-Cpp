@@ -22,6 +22,9 @@ public:
 	 */
 	ZstCZMQMessagePayload(ZstMsgKind k, const zframe_t * p);
 
+	ZstCZMQMessagePayload(const ZstCZMQMessagePayload & other);
+
+
 	/**
 	 * Fn:	ZstCZMQMessagePayload::~ZstCZMQMessagePayload();
 	 *
@@ -32,11 +35,20 @@ public:
 	/**
 	 * Fn:	const void * ZstCZMQMessagePayload::data() override;
 	 *
-	 * Summary:	Gets the payload data.
+	 * Summary:	The data stored in this payload.
 	 *
 	 * Returns:	Null if it fails, else a pointer to a const void.
 	 */
-	const void * data() override;
+	const virtual void * data() override;
+
+	/**
+	* Fn:	const void * ZstCZMQMessagePayload::size() override;
+	*
+	* Summary:	Size of the payload.
+	*
+	* Returns:	size_t
+	*/
+	const size_t size() override;
 };
 
 
@@ -83,7 +95,10 @@ public:
 	 * Parameters:
 	 * msg - 	The message to copy the id from.
 	 */
-	ZST_EXPORT void copy_id(const ZstCZMQMessage * msg);
+	ZST_EXPORT void copy_id(const ZstMessage * msg) override;
+
+	ZST_EXPORT ZstMessagePayload & payload_at(size_t index) override;
+	ZST_EXPORT size_t num_payloads() override;
 	
 	ZST_EXPORT void unpack(void * msg) override;
 
@@ -101,4 +116,5 @@ private:
 	void append_payload_frame(const ZstSerialisable & streamable) override;
 
 	zmsg_t * m_msg_handle;
+	std::vector<ZstCZMQMessagePayload> m_payloads;
 };

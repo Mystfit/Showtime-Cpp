@@ -8,8 +8,12 @@
 ZstCZMQMessagePayload::ZstCZMQMessagePayload(ZstMsgKind k, const zframe_t * p) :
 	ZstMessagePayload(k, p)
 {
-	assert(zframe_is((zframe_t*)p));
-	m_size = zframe_size((zframe_t*)m_payload);
+}
+
+ZstCZMQMessagePayload::ZstCZMQMessagePayload(const ZstCZMQMessagePayload & other) : 
+	ZstMessagePayload(other)
+{
+	m_payload = zframe_dup((zframe_t*)other.m_payload);
 }
 
 ZstCZMQMessagePayload::~ZstCZMQMessagePayload()
@@ -21,6 +25,10 @@ ZstCZMQMessagePayload::~ZstCZMQMessagePayload()
 const void * ZstCZMQMessagePayload::data()
 {
 	return (void*)zframe_data((zframe_t*)m_payload);
+}
+
+const size_t ZstCZMQMessagePayload::size() {
+	return zframe_size((zframe_t*)m_payload);
 }
 
 
@@ -41,17 +49,19 @@ ZstCZMQMessage::~ZstCZMQMessage()
 
 ZstCZMQMessage::ZstCZMQMessage(const ZstCZMQMessage & other) : ZstMessage(other)
 {
+	m_payloads = other.m_payloads;
 	m_msg_handle = zmsg_dup(other.m_msg_handle);
 }
 
 void ZstCZMQMessage::reset()
 {
+	m_payloads.clear();
 	if (m_msg_handle)
 		zmsg_destroy(&m_msg_handle);
 	m_msg_handle = zmsg_new();
 }
 
-void ZstCZMQMessage::copy_id(const ZstCZMQMessage * msg)
+void ZstCZMQMessage::copy_id(const ZstMessage * msg)
 {
 	ZstMessage::copy_id(msg);
 
@@ -64,6 +74,16 @@ void ZstCZMQMessage::copy_id(const ZstCZMQMessage * msg)
 	zmsg_pushmem(m_msg_handle, m_msg_id, UUID_LENGTH);
 }
 
+ZstMessagePayload & ZstCZMQMessage::payload_at(size_t index)
+{
+	return m_payloads.at(index);
+}
+
+size_t ZstCZMQMessage::num_payloads()
+{
+	return m_payloads.size();
+}
+
 void ZstCZMQMessage::unpack(void * msg)
 {
 	//Make sure we are providing a zmsg_t
@@ -73,16 +93,12 @@ void ZstCZMQMessage::unpack(void * msg)
 	zframe_t * id_frame = zmsg_pop(m_msg_handle);
 
 	//Unpack id
-	zuuid_t * uuid = zuuid_new_from(zframe_data(id_frame));
-	memcpy(m_msg_id, zuuid_str(uuid), UUID_LENGTH);
-	zuuid_destroy(&uuid);
+	memcpy(m_msg_id, zframe_data(id_frame), UUID_LENGTH);
 	zframe_destroy(&id_frame);
 
 	//Unpack kind
 	m_msg_kind = unpack_kind();
-
-	zmsg_print(m_msg_handle);
-
+	
 	//Handle message payloads
 	if (kind() == ZstMsgKind::GRAPH_SNAPSHOT) {
 		// Batched update messages from the stage look like this:

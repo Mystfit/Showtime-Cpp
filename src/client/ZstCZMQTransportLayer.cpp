@@ -135,7 +135,7 @@ int ZstCZMQTransportLayer::s_handle_stage_router(zloop_t * loop, zsock_t * socke
 	ZstCZMQTransportLayer * transport = (ZstCZMQTransportLayer*)arg;
 
 	//Receive routed message from stage
-	ZstMessage * msg = transport->receive_from_stage();
+	ZstMessage * msg = transport->receive_addressed_msg();
 
 	//Process messages addressed to our client specifically
 	if (msg->kind() == ZstMsgKind::GRAPH_SNAPSHOT) {
@@ -144,7 +144,7 @@ int ZstCZMQTransportLayer::s_handle_stage_router(zloop_t * loop, zsock_t * socke
 		//Handle graph snapshot synchronisation
 		for (size_t i = 0; i < msg->num_payloads(); ++i)
 		{
-			transport->msg_dispatch()->receive_from_stage(i, msg);
+			transport->msg_dispatch()->receive_addressed_msg(i, msg);
 		}
 	}
 	else if (msg->kind() == ZstMsgKind::SUBSCRIBE_TO_PERFORMER) {
@@ -233,14 +233,14 @@ void ZstCZMQTransportLayer::receive_stage_update()
 	msg->unpack(sock_recv(m_stage_updates, false));
 	
 	//Let msg dispatch decide where to forward the message to
-	msg_dispatch()->receive_from_stage(0, msg);
+	msg_dispatch()->receive_addressed_msg(0, msg);
 
 	m_pool.release(static_cast<ZstCZMQMessage*>(msg));
 }
 
-ZstMessage * ZstCZMQTransportLayer::receive_from_stage() {
+ZstMessage * ZstCZMQTransportLayer::receive_addressed_msg() {
 	ZstMessage * msg = m_pool.get_msg();
-	msg->unpack(sock_recv(m_stage_updates, true));
+	msg->unpack(sock_recv(m_stage_router, true));
 	return msg;
 }
 

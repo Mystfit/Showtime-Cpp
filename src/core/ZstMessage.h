@@ -108,10 +108,10 @@ public:
      */
     ZST_EXPORT ZstMessagePayload(const ZstMessagePayload & other);
 
-	ZST_EXPORT ZstMessagePayload(ZstMessagePayload && source);
-	ZST_EXPORT ZstMessagePayload& ZstMessagePayload::operator=(ZstMessagePayload && source);
-	ZST_EXPORT ZstMessagePayload& ZstMessagePayload::operator=(ZstMessagePayload & other);
-
+	ZstMessagePayload(ZstMessagePayload && source);
+	ZstMessagePayload& operator=(ZstMessagePayload && source);
+	ZstMessagePayload& operator=(ZstMessagePayload & other);
+	
 	/**
 	 * Fn:	ZST_EXPORT virtual ZstMessagePayload::~ZstMessagePayload()
 	 *
@@ -135,7 +135,7 @@ public:
      *
      * Returns:	A size_t.
      */
-    ZST_EXPORT size_t size();
+    ZST_EXPORT virtual const size_t size();
 
 	/**
 	 * Fn:	ZST_EXPORT virtual const void * ZstMessagePayload::data();
@@ -144,18 +144,17 @@ public:
 	 *
 	 * Returns:	Null if it fails, else a const void*.
 	 */
-	ZST_EXPORT virtual const void * data();
-
+	ZST_EXPORT virtual const void * data() = 0;
+	
 protected:
 	/** Summary:	The payload. */
 	const void * m_payload;
 	
 	/** Summary:	The size. */
 	size_t m_size;
-	
-private:
-    /** Summary:	The kind. */
-    ZstMsgKind m_kind;
+
+	/** Summary:	The kind. */
+	ZstMsgKind m_kind;
 };
 
 
@@ -251,7 +250,7 @@ public:
 	 *
 	 * Returns:	Null if it fails, else a pointer to a const char.
 	 */
-	ZST_EXPORT const char * id();
+	ZST_EXPORT virtual const char * id();
 
 	/**
 	 * Fn:	ZST_EXPORT ZstMsgKind ZstMessage::kind();
@@ -272,7 +271,7 @@ public:
 	 *
 	 * Returns:	A reference to a ZstMessagePayload.
 	 */
-	ZST_EXPORT ZstMessagePayload & payload_at(size_t index);
+	ZST_EXPORT virtual ZstMessagePayload & payload_at(size_t index) = 0;
 
 	/**
 	 * Fn:	ZST_EXPORT size_t ZstMessage::num_payloads();
@@ -281,7 +280,7 @@ public:
 	 *
 	 * Returns:	A size_t of the total number of payloads this message contains.
 	 */
-	ZST_EXPORT size_t num_payloads();
+	ZST_EXPORT virtual size_t num_payloads() = 0;
 
 	/**
 	 * Fn:	template <typename T> T ZstMessage::unpack_payload_serialisable(size_t payload_index)
@@ -299,8 +298,7 @@ public:
 	T unpack_payload_serialisable(size_t payload_index) {
 		T serialisable;
 		size_t offset = 0;
-		ZstMessagePayload & payload = payload_at(payload_index);
-		serialisable.read((char*)payload.data(), payload.size(), offset);
+		serialisable.read((char*)payload_at(payload_index).data(), payload_at(payload_index).size(), offset);
 		return serialisable;
 	}
 
@@ -314,9 +312,6 @@ public:
 protected:
 	/** Summary:	The message kind. */
 	ZstMsgKind m_msg_kind;
-
-	/** Summary:	The payloads. */
-	std::vector<ZstMessagePayload> m_payloads;
 
 	/** Summary:	The message id. */
 	char m_msg_id[UUID_LENGTH];

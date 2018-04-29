@@ -67,6 +67,7 @@ void ZstMessageDispatcher::send_async_stage_message(ZstMessage * msg, MessageRec
 		catch (const ZstTimeoutException & e) {
 			ZstLog::net(LogLevel::error, "Server async response timed out - {}", e.what());
 			msg_response.status = ZstMsgKind::ERR_STAGE_TIMEOUT;
+			completed_action(msg_response);
 			failed(msg_response);
 		}
 		return status;
@@ -88,7 +89,7 @@ void ZstMessageDispatcher::receive_from_performance(ZstMessage * msg)
 	});
 }
 
-void ZstMessageDispatcher::receive_from_stage(size_t payload_index, ZstMessage * msg)
+void ZstMessageDispatcher::receive_addressed_msg(size_t payload_index, ZstMessage * msg)
 {
 	//Forward stage message to all adaptors
 	run_event([payload_index, msg](ZstStageDispatchAdaptor * adaptor) {

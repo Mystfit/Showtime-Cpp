@@ -292,16 +292,11 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 	ZstCZMQMessage * msg = NULL;
 	
 	if (recv_msg) {
-		ZstLog::net(LogLevel::notification, "Received message contents:");
-		zmsg_print(recv_msg);
 		//Get identity of sender from first frame
 		zframe_t * identity_frame = zmsg_pop(recv_msg);
 		sender_identity = std::string((char*)zframe_data(identity_frame), zframe_size(identity_frame));
 		zframe_t * empty = zmsg_pop(recv_msg);
 		zframe_destroy(&empty);
-
-		ZstLog::net(LogLevel::notification, "Received message contents after ID and seperator removal");
-		zmsg_print(recv_msg);
 
 		msg = stage->msg_pool()->get_msg();
 		msg->unpack(recv_msg);
@@ -409,7 +404,7 @@ void ZstStage::send_to_client(ZstCZMQMessage * msg, ZstPerformer * destination) 
 	zframe_t * empty = zframe_new_empty();
 	zmsg_prepend(msg_handle, &empty);
 	zmsg_prepend(msg_handle, &identity);
-	zmsg_send(&msg_handle, socket);
+	zmsg_send(&msg_handle, m_performer_router);
 	msg_pool()->release(msg);
 }
 
@@ -423,7 +418,7 @@ ZstMessage * ZstStage::create_client_handler(std::string sender_identity, ZstMes
 	ZstMessage * response = msg_pool()->get_msg();
 	
 	//Copy the id of the message so the sender will eventually match the response to a message promise
-	ZstPerformer client = msg->ZstMessage::unpack_payload_serialisable<ZstPerformer>(0);
+	ZstPerformer client = msg->unpack_payload_serialisable<ZstPerformer>(0);
 
 	ZstLog::net(LogLevel::notification, "Registering new client {}", client.URI().path());
 

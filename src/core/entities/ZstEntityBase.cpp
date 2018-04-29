@@ -97,7 +97,9 @@ void ZstEntityBase::read(const char * buffer, size_t length, size_t & offset)
 {
 	//Unpack uri path
 	auto handle = msgpack::unpack(buffer, length, offset);
-	m_uri = ZstURI(handle.get().via.str.ptr, handle.get().via.str.size);
+	const char * uri = handle.get().via.str.ptr;
+	size_t uri_size = handle.get().via.str.size;
+	m_uri = ZstURI(uri, uri_size);
 
 	//Unpack entity type second
 	handle = msgpack::unpack(buffer, length, offset);

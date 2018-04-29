@@ -45,7 +45,7 @@ public:
 
 	virtual void send_to_stage(ZstMessage * msg) = 0;
 	virtual void send_to_performance(ZstMessage * msg) = 0;
-	virtual ZstMessage * receive_from_stage() = 0;
+	virtual ZstMessage * receive_addressed_msg() = 0;
 	virtual void receive_stage_update() = 0;
 	virtual void receive_from_performance() = 0;
 	

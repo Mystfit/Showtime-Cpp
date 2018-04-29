@@ -56,7 +56,7 @@ private:
 	void send_to_performance(ZstMessage * msg) override;
 
 	zmsg_t * sock_recv(zsock_t* socket, bool pop_first);
-	ZstMessage * receive_from_stage();
+	ZstMessage * receive_addressed_msg();
 	void receive_stage_update();
 	void receive_from_performance();
 	

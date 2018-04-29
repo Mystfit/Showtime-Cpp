@@ -153,7 +153,7 @@ class TestSynchronisableEvents : public ZstSynchronisableAdaptor, public TestAda
 };
 
 
-#define MAX_WAIT_LOOPS 20000
+#define MAX_WAIT_LOOPS 200
 void wait_for_event(TestAdaptor * adaptor, int expected_messages)
 {
 	int repeats = 0;

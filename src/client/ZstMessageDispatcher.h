@@ -47,7 +47,7 @@ public:
 	void send_to_stage(ZstMessage * msg, bool async, MessageReceivedAction action);
 	void send_to_performance(ZstPlug * plug);
 
-	void receive_from_stage(size_t payload_index, ZstMessage * msg);
+	void receive_addressed_msg(size_t payload_index, ZstMessage * msg);
 	void receive_from_performance(ZstMessage * msg);
 
 	void send_message(ZstMsgKind kind, bool async, MessageReceivedAction action) override;
