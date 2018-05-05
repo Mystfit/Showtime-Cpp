@@ -34,7 +34,7 @@ using namespace boost::process;
 
 #define TAKE_A_SHORT_BREATH std::this_thread::sleep_for(std::chrono::milliseconds(10));
 #define TAKE_A_BREATH std::this_thread::sleep_for(std::chrono::milliseconds(100));
-#define WAIT_UNTIL_STAGE_TIMEOUT std::this_thread::sleep_for(std::chrono::milliseconds(STAGE_TIMEOUT + 500));
+#define WAIT_UNTIL_STAGE_TIMEOUT std::this_thread::sleep_for(std::chrono::milliseconds(STAGE_TIMEOUT + 1000));
 
 
 
@@ -79,7 +79,7 @@ public:
 	}
 };
 
-class TestEntityEvents : public ZstSessionAdaptor, public TestAdaptor {
+class TestEntityEvents : public ZstHierarchyAdaptor, public TestAdaptor {
 public:
 	std::string last_entity_arriving;
 	std::string last_entity_leaving;
@@ -97,7 +97,7 @@ public:
 	}
 };
 
-class TestPlugEvents : public ZstSessionAdaptor, public TestAdaptor {
+class TestPlugEvents : public ZstHierarchyAdaptor, public TestAdaptor {
 public:
 	std::string last_plug_arriving;
 	std::string last_plug_leaving;
@@ -128,7 +128,7 @@ public:
 	}
 };
 
-class TestPerformerEvents : public ZstSessionAdaptor, public TestAdaptor {
+class TestPerformerEvents : public ZstHierarchyAdaptor, public TestAdaptor {
 	void on_performer_arriving(ZstPerformer * performer) override {
 		ZstLog::app(LogLevel::debug, "PERFORMER_ARRIVING: {}", performer->URI().path());
 		inc_calls();
@@ -234,11 +234,36 @@ void test_startup() {
 	zst_start_file_logging();
 	ZstLog::app(LogLevel::notification, "Running Showtime init test");
 	
+	//Test sync join
 	ZstLog::app(LogLevel::debug, "Testing sync join");
 	zst_join("127.0.0.1");
 	assert(zst_is_connected());
+	zst_leave();
+	assert(!zst_is_connected());
 
-	//Leave the stage so we can reconnect
+	//Test sync join again to verify we cleaned up properly the first time
+	ZstLog::app(LogLevel::debug, "Testing sync join again");
+	zst_join("127.0.0.1");
+	assert(zst_is_connected());
+
+	//Testing join not starting if we're already connected
+	ZstLog::app(LogLevel::debug, "Testing abort connection start if we're already connected");
+	zst_join("127.0.0.1");
+	assert(!zst_is_connecting());
+	zst_leave();
+	assert(!zst_is_connected());
+
+	//Test async join
+	TestConnectionEvents * connectCallback = new TestConnectionEvents();
+	zst_add_session_adaptor(connectCallback);
+
+	ZstLog::app(LogLevel::debug, "Testing async join");
+	assert(connectCallback->num_calls() == 0);
+	zst_join_async("127.0.0.1");
+	wait_for_event(connectCallback, 1);
+	assert(connectCallback->num_calls() == 1);
+	assert(zst_is_connected());
+	connectCallback->reset_num_calls();
 	zst_leave();
 	assert(!zst_is_connected());
 
@@ -250,29 +275,20 @@ void test_startup() {
 	//Test async join timeout
 	ZstLog::app(LogLevel::debug, "Testing async join timeout");
 	zst_join_async("255.255.255.255");
-
-	//Testing abort connection start if we're already connecting
-	ZstLog::app(LogLevel::debug, "Testing abort connection start if we're already connecting");
-	zst_join_async("127.0.0.1");
-	assert(zst_is_connecting());
 	WAIT_UNTIL_STAGE_TIMEOUT
 	assert(!zst_is_connected());
 	
-	//Create events to listen for a successful connection
-	TestConnectionEvents * connectCallback = new TestConnectionEvents();
-	zst_add_session_adaptor(connectCallback);
-
-	ZstLog::app(LogLevel::debug, "Testing async join with callback");
-	assert(connectCallback->num_calls() == 0);
-	zst_join_async("127.0.0.1");
-	wait_for_event(connectCallback, 1);
-	assert(connectCallback->num_calls() == 1);
-	assert(zst_is_connected());
-
-	//Testing join not starting if we're already connected
-	ZstLog::app(LogLevel::debug, "Testing abort connection start if we're already connected");
-	zst_join_async("127.0.0.1");
+	//Testing abort connection start if we're already connecting
+	ZstLog::app(LogLevel::debug, "Testing abort connection start if we're already connecting");
+	zst_join_async("255.255.255.255");
+	assert(zst_is_connecting());
+	zst_join("255.255.255.255");
+	assert(!zst_is_connected());
+	WAIT_UNTIL_STAGE_TIMEOUT
 	assert(!zst_is_connecting());
+
+	//Stay connected at the end
+	zst_join("127.0.0.1");
 
 	//Cleanup
 	zst_remove_session_adaptor(connectCallback);
@@ -383,7 +399,7 @@ void test_URI() {
 
 void test_root_entity() {
 	ZstLog::app(LogLevel::notification, "Running performer test");
-
+	
 	//Test root entity is activated
 	TestSynchronisableEvents * performer_activated = new TestSynchronisableEvents();
     ZstPerformer * root_entity = zst_get_root();
@@ -469,6 +485,7 @@ void test_hierarchy() {
 	assert(!zst_find_entity(child_URI));
     
     //Test child activation and deactivation callbacks
+	ZstLog::app(LogLevel::debug, "Test child activation and deactivation callbacks");
     TestSynchronisableEvents * child_activation = new TestSynchronisableEvents();
     child->add_adaptor(child_activation);
     parent->add_child(child);
@@ -624,8 +641,8 @@ void test_external_entities(std::string external_test_path) {
 	TestEntityEvents * entityEvents = new TestEntityEvents();
 	TestPerformerEvents * performerEvents = new TestPerformerEvents();
 	
-	zst_add_session_adaptor(entityEvents);
-	zst_add_session_adaptor(performerEvents);
+	zst_add_hierarchy_adaptor(entityEvents);
+	zst_add_hierarchy_adaptor(performerEvents);
 
 	//Create emitter
 	OutputComponent * output_ent = new OutputComponent("proxy_test_output");
@@ -730,8 +747,8 @@ void test_external_entities(std::string external_test_path) {
 	zst_deactivate_entity(output_ent);
 
 	//Cleanup
-    zst_remove_session_adaptor(entityEvents);
-	zst_remove_session_adaptor(performerEvents);
+    zst_remove_hierarchy_adaptor(entityEvents);
+	zst_remove_hierarchy_adaptor(performerEvents);
 	delete entityEvents;
 	delete performerEvents;
 	delete output_ent;

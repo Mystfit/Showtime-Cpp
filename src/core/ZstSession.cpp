@@ -5,16 +5,26 @@
 // Cable creation API
 // ------------------
 
+ZstSession::ZstSession() : 
+	m_session_events("session"),
+	m_synchronisable_events("session synchronisable")
+{
+}
+
 void ZstSession::process_events()
 {
 	hierarchy()->process_events();
-	ZstEventDispatcher<ZstSessionAdaptor*>::process_events();
+	m_session_events.process_events();
 }
 
 void ZstSession::flush()
 {
-	hierarchy()->flush();
-	ZstEventDispatcher<ZstSessionAdaptor*>::flush();
+	hierarchy()->events().flush();
+	m_session_events.flush();
+}
+
+void ZstSession::destroy()
+{
 }
 
 ZstCable * ZstSession::connect_cable(ZstPlug * input, ZstPlug * output, bool async)
@@ -56,7 +66,10 @@ ZstCable * ZstSession::connect_cable(ZstPlug * input, ZstPlug * output, bool asy
 
 void ZstSession::destroy_cable(ZstCable * cable, bool async)
 {
-	//Need to set this cable as deactivating so the stage publish message doesn't clean it up too early
+	if (!cable) return;
+
+	//Remove cable from local list so that other threads don't assume it still exists
+	m_cables.erase(cable);
 	synchronisable_set_deactivating(cable);
 }
 
@@ -87,9 +100,6 @@ ZstCable * ZstSession::find_cable(ZstPlug * input, ZstPlug * output)
 	}
 	return find_cable(input->URI(), output->URI());
 }
-
-
-
 
 ZstCable * ZstSession::create_cable(const ZstCable & cable)
 {
@@ -124,8 +134,8 @@ ZstCable * ZstSession::create_cable(const ZstURI & input_path, const ZstURI & ou
 	}
 
 	//Add cable to plugs
-	ZstPlug * input_plug = dynamic_cast<ZstPlug*>(m_hierarchy->find_entity(input_path));
-	ZstPlug * output_plug = dynamic_cast<ZstPlug*>(m_hierarchy->find_entity(output_path));
+	ZstPlug * input_plug = dynamic_cast<ZstPlug*>(hierarchy()->find_entity(input_path));
+	ZstPlug * output_plug = dynamic_cast<ZstPlug*>(hierarchy()->find_entity(output_path));
 	plug_add_cable(input_plug, cable_ptr);
 	plug_add_cable(output_plug, cable_ptr);
 	cable_ptr->set_input(input_plug);
@@ -140,6 +150,16 @@ ZstCable * ZstSession::create_cable(const ZstURI & input_path, const ZstURI & ou
 	//Enqueue events
 	synchronisable_set_activation_status(cable_ptr, ZstSyncStatus::ACTIVATED);
 
-	add_event([cable_ptr](ZstSessionAdaptor * dlg) { dlg->on_cable_created(cable_ptr); });
+	m_session_events.defer([cable_ptr](ZstSessionAdaptor * dlg) { dlg->on_cable_created(cable_ptr); });
 	return cable_ptr;
+}
+
+ZstEventDispatcher<ZstSessionAdaptor*> & ZstSession::session_events()
+{
+	return m_session_events;
+}
+
+ZstEventDispatcher<ZstSynchronisableAdaptor*> & ZstSession::synchronisable_events()
+{
+	return m_synchronisable_events;
 }

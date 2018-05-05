@@ -18,8 +18,8 @@ public:
 	ZST_EXPORT ZstSynchronisable(const ZstSynchronisable & other);
     ZST_EXPORT virtual ~ZstSynchronisable();
 
-	ZST_EXPORT void add_adaptor(ZstSynchronisableAdaptor * adaptor);
-	ZST_EXPORT void remove_adaptor(ZstSynchronisableAdaptor * adaptor);
+	ZST_EXPORT virtual void add_adaptor(ZstSynchronisableAdaptor * adaptor);
+	ZST_EXPORT virtual void remove_adaptor(ZstSynchronisableAdaptor * adaptor);
 
 	ZST_EXPORT bool is_activated();
 	ZST_EXPORT bool is_deactivated();
@@ -45,5 +45,5 @@ private:
 	ZstSyncStatus m_sync_status;
 	ZstSyncError m_sync_error;
 	bool m_is_proxy;
-	ZstEventDispatcher<ZstSynchronisableAdaptor*> * m_event_dispatch;
+	ZstEventDispatcher<ZstSynchronisableAdaptor*> * m_synchronisable_events;
 };

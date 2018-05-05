@@ -56,19 +56,30 @@ void zst_poll_once()
 
 void zst_add_session_adaptor(ZstSessionAdaptor * adaptor)
 {
-	ZstClient::instance().session()->add_adaptor(adaptor);
+	ZstClient::instance().session()->session_events().add_adaptor(adaptor);
+}
+
+void zst_add_hierarchy_adaptor(ZstHierarchyAdaptor * adaptor)
+{
+	ZstClient::instance().session()->hierarchy()->events().add_adaptor(adaptor);
 }
 
 void zst_remove_session_adaptor(ZstSessionAdaptor * adaptor)
 {
-	ZstClient::instance().session()->remove_adaptor(adaptor);
+	ZstClient::instance().session()->session_events().remove_adaptor(adaptor);
+}
+
+void zst_remove_hierarchy_adaptor(ZstHierarchyAdaptor * adaptor)
+{
+	ZstClient::instance().session()->hierarchy()->events().remove_adaptor(adaptor);
 }
 
 
 
-// -----------------------
+// ------------------------------
 // Entity activation/deactivation
-// -----------------------
+// ------------------------------
+
 void zst_activate_entity(ZstEntityBase * entity)
 {
 	ZstClient::instance().session()->hierarchy()->activate_entity(entity);

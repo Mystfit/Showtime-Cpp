@@ -44,7 +44,7 @@ ZstCZMQMessage::ZstCZMQMessage() :
 ZstCZMQMessage::~ZstCZMQMessage()
 {
 	zmsg_destroy(&m_msg_handle);
-	delete m_msg_id;
+	memset(m_msg_id, 0, ZSTMSG_UUID_LENGTH);
 }
 
 ZstCZMQMessage::ZstCZMQMessage(const ZstCZMQMessage & other) : ZstMessage(other)
@@ -71,7 +71,7 @@ void ZstCZMQMessage::copy_id(const ZstMessage * msg)
 	zframe_destroy(&old_id_frame);
 
 	//Add new id to front of message
-	zmsg_pushmem(m_msg_handle, m_msg_id, UUID_LENGTH);
+	zmsg_pushmem(m_msg_handle, m_msg_id, ZSTMSG_UUID_LENGTH);
 }
 
 ZstMessagePayload & ZstCZMQMessage::payload_at(size_t index)
@@ -93,7 +93,7 @@ void ZstCZMQMessage::unpack(void * msg)
 	zframe_t * id_frame = zmsg_pop(m_msg_handle);
 
 	//Unpack id
-	memcpy(m_msg_id, zframe_data(id_frame), UUID_LENGTH);
+	memcpy(m_msg_id, zframe_data(id_frame), ZSTMSG_UUID_LENGTH);
 	zframe_destroy(&id_frame);
 
 	//Unpack kind
@@ -159,8 +159,8 @@ void ZstCZMQMessage::append_kind_frame(ZstMsgKind k)
 void ZstCZMQMessage::append_id_frame()
 {
 	zuuid_t * uuid = zuuid_new();
-	memcpy(m_msg_id, zuuid_str(uuid), UUID_LENGTH);
-	zmsg_addmem(m_msg_handle, m_msg_id, UUID_LENGTH);
+	memcpy(m_msg_id, zuuid_str(uuid), ZSTMSG_UUID_LENGTH);
+	zmsg_addmem(m_msg_handle, m_msg_id, ZSTMSG_UUID_LENGTH);
 }
 
 void ZstCZMQMessage::append_payload_frame(const ZstSerialisable & streamable)

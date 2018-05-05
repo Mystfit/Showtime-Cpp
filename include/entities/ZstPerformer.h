@@ -29,6 +29,7 @@ public:
 	//Creatables
 	ZST_EXPORT size_t num_creatables() const;
 
+	//Serialisation
 	ZST_EXPORT virtual void write(std::stringstream & buffer) const override;
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
 

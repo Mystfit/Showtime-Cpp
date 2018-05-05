@@ -3,18 +3,20 @@
 #include <ZstURI.h>
 #include <ZstExports.h>
 #include <ZstEventDispatcher.hpp>
-#include <adaptors/ZstSessionAdaptor.hpp>
+#include <adaptors/ZstHierarchyAdaptor.hpp>
 #include <entities/ZstEntityBase.h>
 #include <entities/ZstPlug.h>
 #include <entities/ZstPerformer.h>
 #include "liasons/ZstSynchronisableLiason.hpp"
 
 class ZstHierarchy : 
-	public ZstEventDispatcher<ZstSessionAdaptor*>,
-	protected ZstSynchronisableLiason,
-	protected ZstSynchronisableAdaptor
+	public ZstSynchronisableLiason,
+	public ZstSynchronisableAdaptor
 {
 public:
+	ZST_EXPORT ZstHierarchy();
+	ZST_EXPORT virtual void destroy();
+
 	// ------------------------------
 	// Activations
 	// ------------------------------
@@ -38,10 +40,21 @@ public:
 
 	ZST_EXPORT virtual ZstEntityBase * find_entity(const ZstURI & path);
 	ZST_EXPORT virtual ZstPlug * find_plug(const ZstURI & path);
+
 	ZST_EXPORT virtual void add_proxy_entity(ZstEntityBase & entity);
+	ZST_EXPORT virtual void remove_proxy_entity(ZstEntityBase * entity);
+
+	// -----------------
+	// Event dispatchers
+	// -----------------
+	
+	ZST_EXPORT ZstEventDispatcher<ZstHierarchyAdaptor*> & events();
+	ZST_EXPORT virtual void process_events();
+	ZST_EXPORT virtual void flush_events();
 
 protected:
 	ZstPerformerMap m_clients;
 
 private:
+	ZstEventDispatcher<ZstHierarchyAdaptor*> m_hierarchy_events;
 };

@@ -237,7 +237,7 @@ ZstOutputPlug::~ZstOutputPlug()
 
 void ZstOutputPlug::fire()
 {
-	m_event_dispatch->run_event([this](ZstOutputPlugAdaptor * dlg) { dlg->on_plug_fire(this); });
+	m_event_dispatch->invoke([this](ZstOutputPlugAdaptor * dlg) { dlg->on_plug_fire(this); });
 	m_value->clear();
 }
 

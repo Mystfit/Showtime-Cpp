@@ -1,6 +1,15 @@
 #include <ZstLogging.h>
 #include "ZstHierarchy.h"
 
+ZstHierarchy::ZstHierarchy() : 
+	m_hierarchy_events("Hierarchy")
+{
+}
+
+void ZstHierarchy::destroy()
+{
+}
+
 void ZstHierarchy::activate_entity(ZstEntityBase * entity, bool async)
 {
 	//If this is not a local entity, we can't activate it
@@ -8,18 +17,14 @@ void ZstHierarchy::activate_entity(ZstEntityBase * entity, bool async)
 		return;
 
 	//Register client to entity to allow it to send messages
-	entity->add_adaptor(this);
+	entity->add_adaptor_to_children(this);
 	synchronisable_set_activating(entity);
 }
 
 
 void ZstHierarchy::destroy_entity(ZstEntityBase * entity, bool async)
 {
-	if (!entity) {
-		return;
-	}
-
-	//Set entity state as deactivating so we can't access it further
+	if (!entity) return;
 	synchronisable_set_deactivating(entity);
 }
 
@@ -43,7 +48,7 @@ void ZstHierarchy::add_performer(ZstPerformer & performer)
 
 	m_clients[performer_proxy->URI()] = performer_proxy;
 	synchronisable_set_activation_status(performer_proxy, ZstSyncStatus::ACTIVATED);
-	add_event([performer_proxy](ZstSessionAdaptor * dlg) {dlg->on_performer_arriving(performer_proxy); });
+	m_hierarchy_events.defer([performer_proxy](ZstHierarchyAdaptor * adp) {adp->on_performer_arriving(performer_proxy); });
 }
 
 
@@ -107,18 +112,18 @@ void ZstHierarchy::add_proxy_entity(ZstEntityBase & entity) {
 		if (strcmp(entity.entity_type(), COMPONENT_TYPE) == 0) {
 			entity_proxy = new ZstComponent(static_cast<ZstComponent&>(entity));
 			dynamic_cast<ZstContainer*>(parent)->add_child(entity_proxy);
-			add_event([entity_proxy](ZstSessionAdaptor * dlg) {dlg->on_entity_arriving(entity_proxy); });
+			m_hierarchy_events.defer([entity_proxy](ZstHierarchyAdaptor * adp) {adp->on_entity_arriving(entity_proxy); });
 		}
 		else if (strcmp(entity.entity_type(), CONTAINER_TYPE) == 0) {
 			entity_proxy = new ZstContainer(static_cast<ZstContainer&>(entity));
 			dynamic_cast<ZstContainer*>(parent)->add_child(entity_proxy);
-			add_event([entity_proxy](ZstSessionAdaptor * dlg) {dlg->on_entity_arriving(entity_proxy); });
+			m_hierarchy_events.defer([entity_proxy](ZstHierarchyAdaptor * adp) {adp->on_entity_arriving(entity_proxy); });
 		}
 		else if (strcmp(entity.entity_type(), PLUG_TYPE) == 0) {
 			ZstPlug * plug = new ZstPlug(static_cast<ZstPlug&>(entity));
 			entity_proxy = plug;
 			dynamic_cast<ZstComponent*>(parent)->add_plug(plug);
-			add_event([plug](ZstSessionAdaptor * dlg) {dlg->on_plug_arriving(plug); });
+			m_hierarchy_events.defer([plug](ZstHierarchyAdaptor * adp) {adp->on_plug_arriving(plug); });
 		}
 		else {
 			ZstLog::net(LogLevel::notification, "Can't create unknown proxy entity type {}", entity.entity_type());
@@ -134,3 +139,40 @@ void ZstHierarchy::add_proxy_entity(ZstEntityBase & entity) {
 		synchronisable_set_activation_status(entity_proxy, ZstSyncStatus::ACTIVATED);
 	}
 }
+
+void ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
+{
+	if (entity) {
+		if (entity->is_proxy()) {
+			ZstLog::net(LogLevel::debug, "!!!Deactivating proxy {}", entity->URI().path());
+			synchronisable_enqueue_deactivation(entity);
+			if (strcmp(entity->entity_type(), COMPONENT_TYPE) == 0 || strcmp(entity->entity_type(), CONTAINER_TYPE) == 0) {
+				destroy_entity(entity, false);
+			}
+			else if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
+				destroy_plug(static_cast<ZstPlug*>(entity), false);
+			}
+			else if (strcmp(entity->entity_type(), PERFORMER_TYPE) == 0) {
+				//TODO: Remove performer
+				events().defer([entity](ZstHierarchyAdaptor * adp) {
+					adp->on_performer_leaving(static_cast<ZstPerformer*>(entity));
+				});
+			}
+		}
+	}
+}
+
+ZstEventDispatcher<ZstHierarchyAdaptor*>& ZstHierarchy::events()
+{
+	return m_hierarchy_events;
+}
+
+ void ZstHierarchy::process_events()
+{
+	m_hierarchy_events.process_events();
+}
+
+ void ZstHierarchy::flush_events()
+ {
+	 m_hierarchy_events.flush();
+ }

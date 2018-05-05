@@ -174,11 +174,26 @@ const char * ZstComponent::component_type() const
 	return m_component_type;
 }
 
+void ZstComponent::add_adaptor_to_children(ZstSynchronisableAdaptor * adaptor)
+{
+	this->add_adaptor(adaptor);
+	for (auto plug : m_plugs) {
+		plug->add_adaptor(adaptor);
+	}
+}
+
+void ZstComponent::remove_adaptor_from_children(ZstSynchronisableAdaptor * adaptor)
+{
+	this->remove_adaptor(adaptor);
+	for (auto plug : m_plugs) {
+		plug->remove_adaptor(adaptor);
+	}
+}
+
 void ZstComponent::set_component_type(const char * component_type)
 {
 	set_component_type(component_type, strlen(component_type));
 }
-
 
 void ZstComponent::set_component_type(const char * component_type, size_t len)
 {

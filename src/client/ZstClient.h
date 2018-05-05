@@ -40,6 +40,8 @@ public:
 	//Register this endpoint to the stage
 	void join_stage(std::string stage_address, bool async = false);
 	void join_stage_complete(ZstMessageReceipt response);
+	void synchronise_graph(bool async = false);
+	void synchronise_graph_complete(ZstMessageReceipt response);
 
 	void leave_stage(bool async);
 	void leave_stage_complete();

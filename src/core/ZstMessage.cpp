@@ -14,18 +14,18 @@ ZstMessage::~ZstMessage()
 ZstMessage::ZstMessage(const ZstMessage & other)
 {
 	m_msg_kind = other.m_msg_kind;
-	memcpy(m_msg_id, other.m_msg_id, UUID_LENGTH);
+	memcpy(m_msg_id, other.m_msg_id, ZSTMSG_UUID_LENGTH);
 }
 
 void ZstMessage::reset()
 {
-	memset(&m_msg_id[0], 0, UUID_LENGTH);
+	memset(&m_msg_id[0], 0, ZSTMSG_UUID_LENGTH);
 	m_msg_kind = ZstMsgKind::EMPTY;
 }
 
 void ZstMessage::copy_id(const ZstMessage * msg)
 {
-	memcpy(m_msg_id, msg->m_msg_id, UUID_LENGTH);
+	memcpy(m_msg_id, msg->m_msg_id, ZSTMSG_UUID_LENGTH);
 }
 
 const char * ZstMessage::id()

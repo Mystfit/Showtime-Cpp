@@ -21,7 +21,7 @@ ZstStage::~ZstStage()
 
 void ZstStage::init(const char * stage_name)
 {
-	ZstLog::init_logger(stage_name);
+	ZstLog::init_logger(stage_name, LogLevel::debug);
 	ZstLog::net(LogLevel::notification, "Starting Showtime v{} stage server", SHOWTIME_VERSION);
 
 	ZstActor::init();

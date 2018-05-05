@@ -9,7 +9,7 @@
 #include "liasons/ZstPlugLiason.hpp"
 
 #define KIND_FRAME_SIZE 1
-#define UUID_LENGTH 33	//Size of a CZMQ uuid (32 bytes + null terminator)
+#define ZSTMSG_UUID_LENGTH 33	//Size of a CZMQ uuid (32 bytes + null terminator)
 
 /**
  * Enum:	ZstMsgKind
@@ -314,7 +314,7 @@ protected:
 	ZstMsgKind m_msg_kind;
 
 	/** Summary:	The message id. */
-	char m_msg_id[UUID_LENGTH];
+	char m_msg_id[ZSTMSG_UUID_LENGTH];
 
 private:
 	/**

@@ -3,11 +3,16 @@
 #include <set>
 #include <functional>
 #include <concurrentqueue.h>
+#include <ZstLogging.h>
 
 template<typename T>
 class ZstEventDispatcher
 {
 public:
+	ZstEventDispatcher(const char * name = "") {
+		m_name = std::string(name);
+	}
+
 	void add_adaptor(T adaptor) { 
 		this->m_adaptors.insert(adaptor); 
 	}
@@ -21,27 +26,41 @@ public:
 		while (this->m_events.try_dequeue(event_func)) {}
 	}
 
-	void run_event(const std::function<void(T)> & event) {
+	void invoke(const std::function<void(T)> & event) {
+		if (this->m_adaptors.size() < 1) {
+			ZstLog::net(LogLevel::debug, "Inside dispatcher {} invoke() : No adaptors to pass event to!", m_name, m_events.size_approx());
+			return;
+		}
 		for (T adaptor : this->m_adaptors) {
 			event(adaptor);
 		}
 	}
 
-	void add_event(std::function<void(T)> event) {
+	void defer(std::function<void(T)> event) {
 		this->m_events.enqueue(event);
 	}
 
 	void process_events() {
 		std::function<void(T)> event_func;
 
+		ZstLog::net(LogLevel::debug, "Inside dispatcher {} process_events(): Possible queued events={}", m_name, m_events.size_approx());
+
 		while (this->m_events.try_dequeue(event_func)) {
+			if (m_adaptors.size() < 1) {
+				ZstLog::net(LogLevel::debug, "No adaptors to pass event to!", m_name);
+				continue;
+			}
 			for (T adaptor : m_adaptors) {
 				event_func(adaptor);
 			}
 		}
+
+		ZstLog::net(LogLevel::debug, "Leaving dispatcher {} process_events(): Remaining queued events={}", m_name, m_events.size_approx());
+
 	}
 
 private:
 	std::set<T> m_adaptors;
 	moodycamel::ConcurrentQueue< std::function<void(T)> > m_events;
+	std::string m_name;
 };

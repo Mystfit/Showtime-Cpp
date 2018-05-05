@@ -1,7 +1,6 @@
 #pragma once
 
 #include <ZstCore.h>
-#include <adaptors/ZstSessionAdaptor.hpp>
 
 extern "C" {
 	//Init the library
@@ -20,7 +19,10 @@ extern "C" {
 
 	//Adaptors
 	ZST_CLIENT_EXPORT void zst_add_session_adaptor(ZstSessionAdaptor * adaptor);
+	ZST_CLIENT_EXPORT void zst_add_hierarchy_adaptor(ZstHierarchyAdaptor * adaptor);
 	ZST_CLIENT_EXPORT void zst_remove_session_adaptor(ZstSessionAdaptor * adaptor);
+	ZST_CLIENT_EXPORT void zst_remove_hierarchy_adaptor(ZstHierarchyAdaptor * adaptor);
+
 
 	//Entity activation/deactivation
 	ZST_CLIENT_EXPORT void zst_activate_entity(ZstEntityBase * entity);

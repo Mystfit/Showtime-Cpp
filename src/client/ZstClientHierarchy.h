@@ -17,45 +17,37 @@
 class ZstClientHierarchy : 
 	public ZstHierarchy,
 	public ZstClientModule,
-	public ZstEventDispatcher<ZstStageDispatchAdaptor*>,
-	public ZstEventDispatcher<ZstSynchronisableAdaptor*>,
 	public ZstStageDispatchAdaptor
 {
-	using ZstEventDispatcher<ZstStageDispatchAdaptor*>::run_event;
-	using ZstEventDispatcher<ZstSessionAdaptor*>::add_event;
-	using ZstEventDispatcher<ZstStageDispatchAdaptor*>::flush;
-	using ZstEventDispatcher<ZstSessionAdaptor*>::flush;
-
 public:
 	ZstClientHierarchy();
 	~ZstClientHierarchy();
-	void destroy() override;
 	
 	void init(std::string name);
 	void init() override {};
+	void destroy() override;
 	
+
 	// --------------------------
 	// Event dispatcher overrides
 	// --------------------------
 
-	void process_events();
-	void flush();
-
+	void process_events() override;
+	void flush_events() override;
+	
 
 	// --------------------
 	// Adaptor behaviours
 	// --------------------
 	
 	void on_receive_from_stage(size_t payload_index, ZstMessage * msg) override;
-	void notify_event_ready(ZstSynchronisable * synchronisable) override;
-	
+	void synchronisable_has_event(ZstSynchronisable * synchronisable) override;
+
 
 	// ------------------------------
 	// Entity activation/deactivation
 	// ------------------------------
 	
-	void synchronise_graph(bool async = false);
-	void synchronise_graph_complete(ZstMessageReceipt response);
 	void activate_entity(ZstEntityBase* entity, bool async = false);
 	void destroy_entity(ZstEntityBase * entity, bool async = false);
 	void destroy_plug(ZstPlug * plug, bool async);
@@ -77,6 +69,14 @@ public:
 	void add_proxy_entity(ZstEntityBase & entity);
 	ZstPerformer * get_local_performer() const;
 
+
+	// ------------------------------
+	// Event dispatchers
+	// ------------------------------
+
+	ZstEventDispatcher<ZstStageDispatchAdaptor*> & stage_events();
+
+
 private:
 	ZstPerformer * m_root;
 
@@ -87,4 +87,12 @@ private:
 	void activate_entity_complete(ZstMessageReceipt response, ZstEntityBase * entity);
 	void destroy_entity_complete(ZstMessageReceipt response, ZstEntityBase * entity);
 	void destroy_plug_complete(ZstMessageReceipt response, ZstPlug * plug);
+
+
+	// -----------------
+	// Event dispatchers
+	// -----------------
+
+	ZstEventDispatcher<ZstStageDispatchAdaptor*> m_stage_events;
+	ZstEventDispatcher<ZstSynchronisableAdaptor*> m_synchronisable_events;
 };

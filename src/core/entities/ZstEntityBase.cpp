@@ -111,6 +111,16 @@ void ZstEntityBase::read(const char * buffer, size_t length, size_t & offset)
 	m_entity_type[obj.via.str.size] = '\0';
 }
 
+void ZstEntityBase::add_adaptor_to_children(ZstSynchronisableAdaptor * adaptor)
+{
+	ZstSynchronisable::add_adaptor(adaptor);
+}
+
+void ZstEntityBase::remove_adaptor_from_children(ZstSynchronisableAdaptor * adaptor)
+{
+	ZstSynchronisable::remove_adaptor(adaptor);
+}
+
 void ZstEntityBase::set_entity_type(const char * entity_type) {
 	if (m_entity_type) {
 		free(m_entity_type);

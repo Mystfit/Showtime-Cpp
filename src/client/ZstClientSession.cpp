@@ -1,14 +1,16 @@
 #include "ZstClientSession.h"
 
-ZstClientSession::ZstClientSession()
+ZstClientSession::ZstClientSession() : 
+	m_stage_events("session stage"),
+	m_performance_events("session performance")
 {
-	m_hierarchy = new ZstClientHierarchy();
 	m_reaper = new ZstReaper();
+	m_hierarchy = new ZstClientHierarchy();
 }
 
 ZstClientSession::~ZstClientSession() {
-	delete m_hierarchy;
 	delete m_reaper;
+	delete m_hierarchy;
 }
 
 
@@ -24,32 +26,39 @@ void ZstClientSession::init(std::string client_name)
 void ZstClientSession::destroy()
 {
 	m_hierarchy->destroy();
+	delete m_hierarchy;
 }
 
 void ZstClientSession::process_events()
 {
 	ZstSession::process_events();
-	ZstEventDispatcher<ZstSynchronisableAdaptor*>::process_events();
-	ZstEventDispatcher<ZstStageDispatchAdaptor*>::process_events();
+	m_stage_events.process_events();
 	m_reaper->reap_all();
 }
 
 void ZstClientSession::flush()
 {
 	ZstSession::flush();
-	ZstEventDispatcher<ZstSynchronisableAdaptor*>::flush();
-	ZstEventDispatcher<ZstStageDispatchAdaptor*>::flush();
+	m_stage_events.flush();
 }
 
-void ZstClientSession::on_connected_to_stage()
+void ZstClientSession::dispatch_connected_to_stage()
 {
-	m_hierarchy->synchronise_graph(true);
+	//Activate all owned entities
+	synchronisable_enqueue_activation(static_cast<ZstClientHierarchy*>(hierarchy())->get_local_performer());
+	session_events().invoke([](ZstSessionAdaptor * adaptor) {
+		adaptor->on_connected_to_stage();
+	});
 }
 
-void ZstClientSession::on_disconnected_from_stage()
+void ZstClientSession::dispatch_disconnected_from_stage()
 {
 	//Deactivate all owned entities
-	synchronisable_enqueue_deactivation(m_hierarchy->get_local_performer());
+	ZstLog::net(LogLevel::debug, "!!!Deactivating performer {}", hierarchy()->get_local_performer()->URI().path());
+	synchronisable_enqueue_deactivation(static_cast<ZstClientHierarchy*>(hierarchy())->get_local_performer());
+	session_events().invoke([](ZstSessionAdaptor * adaptor) {
+		adaptor->on_disconnected_from_stage();
+	});
 }
 
 
@@ -62,7 +71,7 @@ void ZstClientSession::on_receive_from_performance(ZstMessage * msg)
 	ZstURI sender((char*)msg->payload_at(0).data(), msg->payload_at(0).size());
 
 	//Find local proxy for the sending plug
-	ZstPlug * sending_plug = dynamic_cast<ZstPlug*>(m_hierarchy->find_entity(sender));
+	ZstPlug * sending_plug = dynamic_cast<ZstPlug*>(hierarchy()->find_entity(sender));
 	ZstInputPlug * receiving_plug = NULL;
 
 	if (!sending_plug) {
@@ -77,7 +86,7 @@ void ZstClientSession::on_receive_from_performance(ZstMessage * msg)
 				//TODO: Lock plug value when deserialising
 				size_t offset = 0;
 				this->plug_raw_value(receiving_plug)->read((char*)msg->payload_at(1).data(), msg->payload_at(1).size(), offset);
-				add_event([receiving_plug](ZstSessionAdaptor * dlg) {dlg->on_plug_received_value(receiving_plug); });
+				plug_received_value(receiving_plug);
 			}
 		}
 	}
@@ -85,12 +94,12 @@ void ZstClientSession::on_receive_from_performance(ZstMessage * msg)
 
 void ZstClientSession::on_plug_fire(ZstOutputPlug * plug)
 {
-	run_event([plug](ZstPerformanceDispatchAdaptor * adaptor) {
+	m_performance_events.invoke([plug](ZstPerformanceDispatchAdaptor * adaptor) {
 		adaptor->send_to_performance(plug);
 	});
 }
 
-void ZstClientSession::on_plug_received_value(ZstInputPlug * plug)
+void ZstClientSession::plug_received_value(ZstInputPlug * plug)
 {
 	ZstComponent * parent = dynamic_cast<ZstComponent*>(plug->parent());
 	if (!parent) {
@@ -149,7 +158,7 @@ ZstCable * ZstClientSession::connect_cable(ZstPlug * input, ZstPlug * output, bo
 		//TODO: Even though we use a cable object when sending over the wire, it's up to us
 		//to determine the correct input->output order - fix this using ZstInputPlug and 
 		//ZstOutput plug as arguments
-		run_event([this, async, cable](ZstStageDispatchAdaptor* adaptor) {
+		m_stage_events.invoke([this, async, cable](ZstStageDispatchAdaptor* adaptor) {
 			adaptor->send_serialisable_message(ZstMsgKind::CREATE_CABLE, *cable, async, [this, cable](ZstMessageReceipt response) {
 				this->connect_cable_complete(response, cable);
 			});
@@ -173,20 +182,18 @@ void ZstClientSession::destroy_cable(ZstCable * cable, bool async)
 {
 	ZstSession::destroy_cable(cable, async);
 	
-	run_event([this, cable, async](ZstStageDispatchAdaptor * adaptor) {
+	m_stage_events.invoke([this, cable, async](ZstStageDispatchAdaptor * adaptor) {
 		adaptor->send_serialisable_message(ZstMsgKind::DESTROY_CABLE, *cable, async, [this, cable](ZstMessageReceipt response) {
 			this->destroy_cable_complete(response, cable);
 		});
 	});
+
+	if (!async) process_events();
 }
 
 void ZstClientSession::destroy_cable_complete(ZstMessageReceipt response, ZstCable * cable)
 {
-	if (!cable || !cable->is_activated())
-		return;
-
-	//Remove cable from local list so that other threads don't assume it still exists
-	m_cables.erase(cable);
+	if (!cable) return;
 
 	if (response.status != ZstMsgKind::OK) {
 		ZstLog::net(LogLevel::notification, "Destroy cable failed with status {}", response.status);
@@ -194,8 +201,8 @@ void ZstClientSession::destroy_cable_complete(ZstMessageReceipt response, ZstCab
 	ZstLog::net(LogLevel::notification, "Destroy cable completed with status {}", response.status);
 
 	//Find the plugs and disconnect them seperately, in case they have already disappeared
-	ZstPlug * input = dynamic_cast<ZstPlug*>(m_hierarchy->find_entity(cable->get_input_URI()));
-	ZstPlug * output = dynamic_cast<ZstPlug*>(m_hierarchy->find_entity(cable->get_output_URI()));
+	ZstPlug * input = dynamic_cast<ZstPlug*>(hierarchy()->find_entity(cable->get_input_URI()));
+	ZstPlug * output = dynamic_cast<ZstPlug*>(hierarchy()->find_entity(cable->get_output_URI()));
 
 	if (input)
 		plug_remove_cable(input, cable);
@@ -207,16 +214,25 @@ void ZstClientSession::destroy_cable_complete(ZstMessageReceipt response, ZstCab
 	cable->set_output(NULL);
 
 	//Queue events
+	ZstLog::net(LogLevel::debug, "!!!Deactivating cable {}--{}", cable->get_input_URI().path(), cable->get_output_URI().path());
+	session_events().defer([cable](ZstSessionAdaptor * dlg) { dlg->on_cable_destroyed(cable); });
 	synchronisable_enqueue_deactivation(cable);
-	add_event([cable](ZstSessionAdaptor * dlg) { dlg->on_cable_destroyed(cable); });
 }
 
 
-// -------------
-// Cable queries
-// -------------
+// -----------------
+// Event dispatchers
+// -----------------
 
+ZstEventDispatcher<ZstStageDispatchAdaptor*>& ZstClientSession::stage_events()
+{
+	return m_stage_events;
+}
 
+ZstEventDispatcher<ZstPerformanceDispatchAdaptor*>& ZstClientSession::performance_events()
+{
+	return m_performance_events;
+}
 
 ZstClientHierarchy * ZstClientSession::hierarchy()
 {

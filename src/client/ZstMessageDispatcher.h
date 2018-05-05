@@ -29,9 +29,9 @@ class ZstMessageDispatcher :
 	public ZstClientModule,
 	public ZstPlugLiason
 {
-	using ZstEventDispatcher<ZstStageDispatchAdaptor*>::run_event;
+	using ZstEventDispatcher<ZstStageDispatchAdaptor*>::invoke;
 	using ZstEventDispatcher<ZstStageDispatchAdaptor*>::add_adaptor;
-	using ZstEventDispatcher<ZstPerformanceDispatchAdaptor*>::run_event;
+	using ZstEventDispatcher<ZstPerformanceDispatchAdaptor*>::invoke;
 	using ZstEventDispatcher<ZstPerformanceDispatchAdaptor*>::add_adaptor;
 
 public:

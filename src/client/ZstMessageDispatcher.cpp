@@ -84,7 +84,7 @@ void ZstMessageDispatcher::send_to_performance(ZstPlug * plug)
 void ZstMessageDispatcher::receive_from_performance(ZstMessage * msg)
 {
 	//Forward stage message to all adaptors
-	run_event([msg](ZstPerformanceDispatchAdaptor * adaptor) {
+	invoke([msg](ZstPerformanceDispatchAdaptor * adaptor) {
 		adaptor->on_receive_from_performance(msg);
 	});
 }
@@ -92,7 +92,7 @@ void ZstMessageDispatcher::receive_from_performance(ZstMessage * msg)
 void ZstMessageDispatcher::receive_addressed_msg(size_t payload_index, ZstMessage * msg)
 {
 	//Forward stage message to all adaptors
-	run_event([payload_index, msg](ZstStageDispatchAdaptor * adaptor) {
+	invoke([payload_index, msg](ZstStageDispatchAdaptor * adaptor) {
 		adaptor->on_receive_from_stage(payload_index, msg);
 	});
 }
@@ -149,11 +149,6 @@ void ZstMessageDispatcher::send_entity_message(const ZstEntityBase * entity, boo
 
 void ZstMessageDispatcher::complete(ZstMessageReceipt response)
 {
-	//If we didn't receive a OK signal, something went wrong
-	if (response.status != ZstMsgKind::OK) {
-        ZstLog::net(LogLevel::error, "Server response failed with status: {}", response.status);
-        return;
-	}
 }
 
 void ZstMessageDispatcher::failed(ZstMessageReceipt response)

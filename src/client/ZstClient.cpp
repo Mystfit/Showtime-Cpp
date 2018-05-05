@@ -1,6 +1,7 @@
 #include <chrono>
 #include <sstream>
 
+#include "adaptors/ZstStageDispatchAdaptor.hpp"
 #include "ZstClient.h"
 
 ZstClient::ZstClient() :
@@ -61,7 +62,7 @@ void ZstClient::init_client(const char *client_name, bool debug)
 		return;
 	}
 
-	ZstLog::init_logger(client_name);
+	ZstLog::init_logger(client_name, LogLevel::debug);
 	ZstLog::net(LogLevel::notification, "Starting Showtime v{}", SHOWTIME_VERSION);
 
 	m_client_name = client_name;
@@ -69,6 +70,9 @@ void ZstClient::init_client(const char *client_name, bool debug)
 	m_session = new ZstClientSession();
 	m_session->init(client_name);
 
+	m_session->stage_events().add_adaptor(m_msg_dispatch);
+	m_session->hierarchy()->stage_events().add_adaptor(m_msg_dispatch);
+	
 	m_is_destroyed = false;
 	m_transport->init();
     m_init_completed = true;
@@ -112,14 +116,11 @@ void ZstClient::join_stage(std::string stage_address, bool async) {
 	m_transport->connect_to_stage(stage_address);
 
 	ZstPerformer * root = session()->hierarchy()->get_local_performer();
-	run_event([this, async, stage_address, root](ZstStageDispatchAdaptor * adaptor) {
+	invoke([this, async, stage_address, root](ZstStageDispatchAdaptor * adaptor) {
 		adaptor->send_serialisable_message(ZstMsgKind::CLIENT_JOIN, *root, async, stage_address, [this](ZstMessageReceipt response) {
 			this->join_stage_complete(response);
 		});
 	});
-
-	//Run callbacks if we're still on the main app thread
-	if (!async) process_events();
 }
 
 void ZstClient::join_stage_complete(ZstMessageReceipt response)
@@ -129,6 +130,7 @@ void ZstClient::join_stage_complete(ZstMessageReceipt response)
 	//If we didn't receive a OK signal, something went wrong
 	if (response.status != ZstMsgKind::OK) {
         ZstLog::net(LogLevel::error, "Stage connection failed with with status: {}", response.status);
+		leave_stage_complete();
         return;
 	}
 
@@ -140,8 +142,32 @@ void ZstClient::join_stage_complete(ZstMessageReceipt response)
 	//TODO: Need a handshake with the stage before we mark connection as active
 	m_connected_to_stage = true;
 
+	//Ask the stage to send us the current session
+	synchronise_graph(response.async);
+
 	//Enqueue connection events
-	m_session->on_connected_to_stage();
+	m_session->dispatch_connected_to_stage();
+
+	//If we are sync, we can dispatch events immediately
+	if (!response.async)
+		m_session->process_events();
+}
+
+void ZstClient::synchronise_graph(bool async)
+{
+	//Ask the stage to send us a full snapshot
+	ZstLog::net(LogLevel::notification, "Requesting stage snapshot");
+
+	invoke([this, async](ZstStageDispatchAdaptor * adaptor) {
+		adaptor->send_message(ZstMsgKind::CLIENT_SYNC, async, [this](ZstMessageReceipt response) {
+			this->synchronise_graph_complete(response);
+		});
+	});
+}
+
+void ZstClient::synchronise_graph_complete(ZstMessageReceipt response)
+{
+	ZstLog::net(LogLevel::notification, "Graph sync completed");
 }
 
 void ZstClient::leave_stage(bool async)
@@ -149,7 +175,7 @@ void ZstClient::leave_stage(bool async)
 	if (m_connected_to_stage) {
 		ZstLog::net(LogLevel::notification, "Leaving stage");
         
-		run_event([this, async](ZstStageDispatchAdaptor * adaptor) {
+		invoke([this, async](ZstStageDispatchAdaptor * adaptor) {
 			adaptor->send_message(ZstMsgKind::CLIENT_LEAVING, async, [this](ZstMessageReceipt response) {
 				this->leave_stage_complete();
 			});
@@ -174,7 +200,7 @@ void ZstClient::leave_stage_complete()
 	m_connected_to_stage = false;
 
 	//Enqueue event for adaptors
-	m_session->on_disconnected_from_stage();
+	m_session->dispatch_disconnected_from_stage();
 }
 
 bool ZstClient::is_connected_to_stage()
@@ -199,7 +225,7 @@ long ZstClient::ping()
 void ZstClient::heartbeat_timer(){
 	std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
 
-	run_event([this, &start](ZstStageDispatchAdaptor * adaptor) {
+	invoke([this, &start](ZstStageDispatchAdaptor * adaptor) {
 		adaptor->send_message(ZstMsgKind::CLIENT_HEARTBEAT, true, [this, &start](ZstMessageReceipt response) {
 			std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
 			std::chrono::milliseconds delta = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
