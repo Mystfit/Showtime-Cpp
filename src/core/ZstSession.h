@@ -3,14 +3,21 @@
 #include <ZstExports.h>
 #include <ZstEventDispatcher.hpp>
 #include <adaptors/ZstSessionAdaptor.hpp>
+#include <adaptors/ZstPlugAdaptors.hpp>
+
 #include "ZstHierarchy.h"
 #include "liasons/ZstSynchronisableLiason.hpp"
 #include "liasons/ZstCableLiason.hpp"
 #include "liasons/ZstPlugLiason.hpp"
+#include "adaptors/ZstStageDispatchAdaptor.hpp"
+#include "adaptors/ZstPerformanceDispatchAdaptor.hpp"
 
 
 class ZstSession : 
 	public ZstSynchronisableAdaptor,
+	public ZstStageDispatchAdaptor,
+	public ZstPerformanceDispatchAdaptor,
+	public ZstOutputPlugAdaptor,
 	protected ZstSynchronisableLiason,
 	protected ZstCableLiason,
 	protected ZstPlugLiason

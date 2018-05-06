@@ -19,7 +19,7 @@
 #include "ZstReaper.h"
 #include "ZstClientSession.h"
 #include "ZstCZMQTransportLayer.h"
-#include "adaptors/ZstStageDispatchAdaptor.hpp"
+#include "../core/adaptors/ZstStageDispatchAdaptor.hpp"
 
 class ZstClient : 
 	public ZstEventDispatcher<ZstStageDispatchAdaptor*>

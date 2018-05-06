@@ -134,17 +134,20 @@ ZstCable * ZstSession::create_cable(const ZstURI & input_path, const ZstURI & ou
 	}
 
 	//Add cable to plugs
-	ZstPlug * input_plug = dynamic_cast<ZstPlug*>(hierarchy()->find_entity(input_path));
-	ZstPlug * output_plug = dynamic_cast<ZstPlug*>(hierarchy()->find_entity(output_path));
+	ZstInputPlug * input_plug = dynamic_cast<ZstInputPlug*>(hierarchy()->find_entity(input_path));
+	ZstOutputPlug * output_plug = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(output_path));
 	plug_add_cable(input_plug, cable_ptr);
 	plug_add_cable(output_plug, cable_ptr);
 	cable_ptr->set_input(input_plug);
 	cable_ptr->set_output(output_plug);
 
-	//Set adaptors
+	//Add session adaptor to plug to handle plug sending values
+	output_plug->add_adaptor(this);
+
+	//Add synchronisable adaptor to cable to handle activation
 	cable_ptr->add_adaptor(this);
 
-	//Cables are always local so they can be cleaned up by the reaper
+	//Cables are always local so they can be cleaned up by the reaper when deactivated
 	synchronisable_set_proxy(cable_ptr);
 
 	//Enqueue events

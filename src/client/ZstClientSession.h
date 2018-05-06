@@ -20,18 +20,12 @@
 #include "../core/liasons/ZstSynchronisableLiason.hpp"
 
 //Adaptors
-#include "adaptors/ZstStageDispatchAdaptor.hpp"
-#include "adaptors/ZstPerformanceDispatchAdaptor.hpp"
-#include <adaptors/ZstPlugAdaptors.hpp>
 #include <adaptors/ZstSessionAdaptor.hpp>
 #include <adaptors/ZstSynchronisableAdaptor.hpp>
 
 class ZstClientSession : 
 	public ZstSession,
-	public ZstClientModule,
-	public ZstStageDispatchAdaptor,
-	public ZstPerformanceDispatchAdaptor,
-	public ZstOutputPlugAdaptor
+	public ZstClientModule
 {
 public:
 	ZstClientSession();
@@ -72,6 +66,7 @@ public:
 	// -------------------------------
 
 	void on_synchronisable_destroyed(ZstSynchronisable * synchronisable) override;
+	void synchronisable_has_event(ZstSynchronisable * synchronisable) override;
 
 
 	// ------------------
@@ -97,7 +92,6 @@ public:
 	ZstClientHierarchy * hierarchy() override;
 
 
-
 private:
 	// ----------------
 	// Event completion
@@ -108,6 +102,7 @@ private:
 
 	ZstEventDispatcher<ZstStageDispatchAdaptor*> m_stage_events;
 	ZstEventDispatcher<ZstPerformanceDispatchAdaptor*> m_performance_events;
+	ZstEventDispatcher<ZstSynchronisableAdaptor*> m_synchronisable_events;
 
 	ZstReaper * m_reaper;
 	ZstClientHierarchy * m_hierarchy;

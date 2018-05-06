@@ -2,7 +2,9 @@
 
 ZstMessageDispatcher::ZstMessageDispatcher() :
 	ZstClientModule(),
-	m_transport(NULL)
+	m_transport(NULL),
+	m_stage_events("msgdispatch stage events"),
+	m_performance_events("msgdispatch performance events")
 {	
 }
 
@@ -17,8 +19,14 @@ void ZstMessageDispatcher::set_transport(ZstTransportLayer * transport)
 
 void ZstMessageDispatcher::process_events()
 {
-	ZstEventDispatcher<ZstStageDispatchAdaptor*>::process_events();
-	ZstEventDispatcher<ZstPerformanceDispatchAdaptor*>::process_events();
+	m_stage_events.process_events();
+	m_performance_events.process_events();
+}
+
+void ZstMessageDispatcher::flush_events()
+{
+	m_stage_events.flush();
+	m_performance_events.flush();
 }
 
 void ZstMessageDispatcher::send_to_stage(ZstMessage * msg, bool async, MessageReceivedAction action)
@@ -84,7 +92,7 @@ void ZstMessageDispatcher::send_to_performance(ZstPlug * plug)
 void ZstMessageDispatcher::receive_from_performance(ZstMessage * msg)
 {
 	//Forward stage message to all adaptors
-	invoke([msg](ZstPerformanceDispatchAdaptor * adaptor) {
+	m_performance_events.invoke([msg](ZstPerformanceDispatchAdaptor * adaptor) {
 		adaptor->on_receive_from_performance(msg);
 	});
 }
@@ -92,7 +100,7 @@ void ZstMessageDispatcher::receive_from_performance(ZstMessage * msg)
 void ZstMessageDispatcher::receive_addressed_msg(size_t payload_index, ZstMessage * msg)
 {
 	//Forward stage message to all adaptors
-	invoke([payload_index, msg](ZstStageDispatchAdaptor * adaptor) {
+	m_stage_events.invoke([payload_index, msg](ZstStageDispatchAdaptor * adaptor) {
 		adaptor->on_receive_from_stage(payload_index, msg);
 	});
 }
@@ -178,6 +186,16 @@ void ZstMessageDispatcher::process_stage_response(ZstMessage * msg)
 	catch (std::out_of_range e) {
 		status = -1;
 	}
+}
+
+ZstEventDispatcher<ZstStageDispatchAdaptor*> & ZstMessageDispatcher::stage_events()
+{
+	return m_stage_events;
+}
+
+ZstEventDispatcher<ZstPerformanceDispatchAdaptor*> & ZstMessageDispatcher::performance_events()
+{
+	return m_performance_events;
 }
 
 ZstTransportLayer * ZstMessageDispatcher::transport()

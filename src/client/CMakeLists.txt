@@ -17,8 +17,6 @@ set(ZST_CLIENT_PRIVATE_HEADERS
   "${CMAKE_CURRENT_LIST_DIR}/ZstCZMQTransportLayer.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientHierarchy.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientSession.h"
-  "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstStageDispatchAdaptor.hpp"
-  "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstPerformanceDispatchAdaptor.hpp"
 )
 
 set(ZST_CLIENT_SRC
@@ -30,7 +28,6 @@ set(ZST_CLIENT_SRC
   "${CMAKE_CURRENT_LIST_DIR}/ZstCZMQTransportLayer.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientHierarchy.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientSession.cpp"
-  "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstClientAdaptorStubs.cpp"
 )
 
 # Include files in client target

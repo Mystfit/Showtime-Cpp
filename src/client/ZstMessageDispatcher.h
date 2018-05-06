@@ -5,14 +5,16 @@
 #include <cf/cfuture.h>
 #include <cf/time_watcher.h>
 
+#include <ZstEventDispatcher.hpp>
+
 #include "../core/ZstMessage.h"
 #include "../core/liasons/ZstPlugLiason.hpp"
+#include "../core/adaptors/ZstStageDispatchAdaptor.hpp"
+#include "../core/adaptors/ZstPerformanceDispatchAdaptor.hpp"
+
 #include "ZstTransportLayer.h"
 #include "ZstClientModule.h"
 
-#include <ZstEventDispatcher.hpp>
-#include "adaptors/ZstStageDispatchAdaptor.hpp"
-#include "adaptors/ZstPerformanceDispatchAdaptor.hpp"
 
 struct ZstTimeoutException : std::runtime_error {
 	using std::runtime_error::runtime_error;
@@ -22,18 +24,11 @@ typedef cf::promise<ZstMsgKind> MessagePromise;
 typedef cf::future<ZstMsgKind> MessageFuture;
 
 class ZstMessageDispatcher : 
-	public ZstEventDispatcher<ZstStageDispatchAdaptor*>,
-	public ZstEventDispatcher<ZstPerformanceDispatchAdaptor*>,
 	public ZstStageDispatchAdaptor,
 	public ZstPerformanceDispatchAdaptor,
 	public ZstClientModule,
 	public ZstPlugLiason
 {
-	using ZstEventDispatcher<ZstStageDispatchAdaptor*>::invoke;
-	using ZstEventDispatcher<ZstStageDispatchAdaptor*>::add_adaptor;
-	using ZstEventDispatcher<ZstPerformanceDispatchAdaptor*>::invoke;
-	using ZstEventDispatcher<ZstPerformanceDispatchAdaptor*>::add_adaptor;
-
 public:
 	ZstMessageDispatcher();
 	~ZstMessageDispatcher();
@@ -43,6 +38,7 @@ public:
 	void destroy() override {};
 
 	void process_events();
+	void flush_events();
 
 	void send_to_stage(ZstMessage * msg, bool async, MessageReceivedAction action);
 	void send_to_performance(ZstPlug * plug);
@@ -60,6 +56,10 @@ public:
 
 	void process_stage_response(ZstMessage * msg);
 
+	//Adaptors
+	ZstEventDispatcher<ZstStageDispatchAdaptor*> & stage_events();
+	ZstEventDispatcher<ZstPerformanceDispatchAdaptor*> & performance_events();
+
 private:
 
 	ZstMessageReceipt send_sync_stage_message(ZstMessage * msg);
@@ -75,4 +75,7 @@ private:
 
 	ZstTransportLayer * transport();
 	ZstTransportLayer * m_transport;
+
+	ZstEventDispatcher<ZstStageDispatchAdaptor*> m_stage_events;
+	ZstEventDispatcher<ZstPerformanceDispatchAdaptor*> m_performance_events;
 };

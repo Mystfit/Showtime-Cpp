@@ -12,6 +12,6 @@
 
 class ZstPerformanceDispatchAdaptor : public ZstEventAdaptor {
 public:
-	ZST_CLIENT_EXPORT virtual void send_to_performance(ZstOutputPlug * plug);
-	ZST_CLIENT_EXPORT virtual void on_receive_from_performance(ZstMessage * msg);
+	ZST_EXPORT virtual void send_to_performance(ZstOutputPlug * plug);
+	ZST_EXPORT virtual void on_receive_from_performance(ZstMessage * msg);
 };

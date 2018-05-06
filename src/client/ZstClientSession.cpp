@@ -2,7 +2,8 @@
 
 ZstClientSession::ZstClientSession() : 
 	m_stage_events("session stage"),
-	m_performance_events("session performance")
+	m_performance_events("session performance"),
+	m_synchronisable_events("session synchronisables")
 {
 	m_reaper = new ZstReaper();
 	m_hierarchy = new ZstClientHierarchy();
@@ -21,6 +22,9 @@ ZstClientSession::~ZstClientSession() {
 void ZstClientSession::init(std::string client_name)
 {
 	m_hierarchy->init(client_name);
+
+	//We add this instance as an adaptor to make sure we can process local queued events
+	m_synchronisable_events.add_adaptor(this);
 }
 
 void ZstClientSession::destroy()
@@ -33,12 +37,14 @@ void ZstClientSession::process_events()
 {
 	ZstSession::process_events();
 	m_stage_events.process_events();
+	m_synchronisable_events.process_events();
 	m_reaper->reap_all();
 }
 
 void ZstClientSession::flush()
 {
 	ZstSession::flush();
+	m_synchronisable_events.flush();
 	m_stage_events.flush();
 }
 
@@ -132,8 +138,7 @@ void ZstClientSession::on_receive_from_stage(size_t payload_index, ZstMessage * 
 		break;
 	}
 	default:
-		ZstLog::net(LogLevel::notification, "Didn't understand message type of {}", msg->payload_at(payload_index).kind());
-		throw std::logic_error("Didn't understand message type");
+		ZstLog::net(LogLevel::warn, "Session message handler didn't understand message type of {}", msg->payload_at(payload_index).kind());
 		break;
 	}
 }
@@ -142,6 +147,13 @@ void ZstClientSession::on_synchronisable_destroyed(ZstSynchronisable * synchroni
 {
 	if(synchronisable->is_proxy())
 		m_reaper->add(synchronisable);
+}
+
+void ZstClientSession::synchronisable_has_event(ZstSynchronisable * synchronisable)
+{
+	m_synchronisable_events.defer([this, synchronisable](ZstSynchronisableAdaptor * dlg) {
+		this->synchronisable_process_events(synchronisable);
+	});
 }
 
 
@@ -165,7 +177,6 @@ ZstCable * ZstClientSession::connect_cable(ZstPlug * input, ZstPlug * output, bo
 		});
 	}
 
-	//Create the cable early so we have something to return immediately
 	return cable;
 }
 
@@ -238,8 +249,3 @@ ZstClientHierarchy * ZstClientSession::hierarchy()
 {
 	return m_hierarchy;
 }
-
-
-// -----------------------------
-// Cable creation implementation
-// -----------------------------

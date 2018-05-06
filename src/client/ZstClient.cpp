@@ -1,7 +1,6 @@
 #include <chrono>
 #include <sstream>
 
-#include "adaptors/ZstStageDispatchAdaptor.hpp"
 #include "ZstClient.h"
 
 ZstClient::ZstClient() :
@@ -70,8 +69,15 @@ void ZstClient::init_client(const char *client_name, bool debug)
 	m_session = new ZstClientSession();
 	m_session->init(client_name);
 
+	//Register adaptors to handle outgoing events
 	m_session->stage_events().add_adaptor(m_msg_dispatch);
 	m_session->hierarchy()->stage_events().add_adaptor(m_msg_dispatch);
+	m_session->performance_events().add_adaptor(m_msg_dispatch);
+
+	//Register adaptors to handle incoming events
+	m_msg_dispatch->stage_events().add_adaptor(m_session);
+	m_msg_dispatch->stage_events().add_adaptor(m_session->hierarchy());
+	m_msg_dispatch->performance_events().add_adaptor(m_session);
 	
 	m_is_destroyed = false;
 	m_transport->init();

@@ -43,20 +43,15 @@ public:
 	void process_events() {
 		std::function<void(T)> event_func;
 
-		ZstLog::net(LogLevel::debug, "Inside dispatcher {} process_events(): Possible queued events={}", m_name, m_events.size_approx());
-
 		while (this->m_events.try_dequeue(event_func)) {
 			if (m_adaptors.size() < 1) {
-				ZstLog::net(LogLevel::debug, "No adaptors to pass event to!", m_name);
+				ZstLog::net(LogLevel::debug, "Inside dispatcher {}: No adaptors to pass event to!", m_name);
 				continue;
 			}
 			for (T adaptor : m_adaptors) {
 				event_func(adaptor);
 			}
 		}
-
-		ZstLog::net(LogLevel::debug, "Leaving dispatcher {} process_events(): Remaining queued events={}", m_name, m_events.size_approx());
-
 	}
 
 private:

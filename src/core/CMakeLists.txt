@@ -43,6 +43,8 @@ set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstSynchronisableLiason.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstPlugLiason.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstCableLiason.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstStageDispatchAdaptor.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstPerformanceDispatchAdaptor.hpp"
 )
 
 # Core cpp files

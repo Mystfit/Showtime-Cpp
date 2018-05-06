@@ -10,7 +10,7 @@
 #include <ZstEventDispatcher.hpp>
 #include "ZstClientModule.h"
 #include "adaptors/ZstSessionAdaptor.hpp"
-#include "adaptors/ZstStageDispatchAdaptor.hpp"
+#include "../core/adaptors/ZstStageDispatchAdaptor.hpp"
 #include "../core/ZstMessage.h"
 #include "../core/ZstHierarchy.h"
 
@@ -48,8 +48,8 @@ public:
 	// Entity activation/deactivation
 	// ------------------------------
 	
-	void activate_entity(ZstEntityBase* entity, bool async = false);
-	void destroy_entity(ZstEntityBase * entity, bool async = false);
+	void activate_entity(ZstEntityBase* entity, bool async);
+	void destroy_entity(ZstEntityBase * entity, bool async);
 	void destroy_plug(ZstPlug * plug, bool async);
 
 

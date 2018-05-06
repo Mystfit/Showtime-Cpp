@@ -27,6 +27,8 @@ void ZstClientHierarchy::init(std::string name)
 	//Sets the name of our performer and the address of our graph output
 	m_root = new ZstPerformer(name.c_str());
 	m_root->add_adaptor(this);
+
+	//We add this instance as an adaptor to make sure we can process local queued events
 	m_synchronisable_events.add_adaptor(this);
 }
 
@@ -77,8 +79,7 @@ void ZstClientHierarchy::on_receive_from_stage(size_t payload_index, ZstMessage 
 		break;
 	}
 	default:
-		ZstLog::net(LogLevel::notification, "Didn't understand message type of {}", msg->payload_at(payload_index).kind());
-		throw std::logic_error("Didn't understand message type");
+		ZstLog::net(LogLevel::warn, "Hierarchy message handler didn't understand message type of {}", msg->payload_at(payload_index).kind());
 		break;
 	}
 }
@@ -97,7 +98,7 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, bool async)
 		ZstLog::net(LogLevel::notification, "No parent set for {}, adding to {}", entity->URI().path(), m_root->URI().path());
 		m_root->add_child(entity);
 	}
-
+	 
 	ZstHierarchy::activate_entity(entity, async);
 	
 	//Build message
