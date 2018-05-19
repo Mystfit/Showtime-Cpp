@@ -1,4 +1,5 @@
 #pragma once
+
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -11,7 +12,7 @@
 //Core headers
 #include "../core/ZstActor.h"
 #include "../core/ZstMessagePool.hpp"
-#include "../core/ZstCZMQMessage.h"
+#include "../core/ZstStageMessage.h"
 
 //Stage headers
 #include "ZstPerformerStageProxy.h"
@@ -22,7 +23,6 @@
 
 class ZstEntityBase;
 class ZstPerformer;
-class ZstMessage;
 class ZstCable;
 
 typedef std::unordered_map<ZstURI, ZstPerformerStageProxy*, ZstURIHash> ZstClientMap;
@@ -60,25 +60,25 @@ private:
 	static int s_handle_router(zloop_t *loop, zsock_t *sock, void *arg);
 
 	//Client communication
-	void send_to_client(ZstCZMQMessage * msg, ZstPerformer * destination);
+	void send_to_client(ZstStageMessage * msg, ZstPerformer * destination);
 
     //Message handlers
-    ZstMessage * create_client_handler(std::string sender_identity, ZstMessage * msg);
-	ZstMessage * destroy_client_handler(ZstPerformer * performer);
+    ZstStageMessage * create_client_handler(std::string sender_identity, ZstStageMessage * msg);
+	ZstStageMessage * destroy_client_handler(ZstPerformer * performer);
 
 	template <typename T>
-	ZstMessage * create_entity_handler(ZstMessage * msg, ZstPerformer * performer);
-	ZstMessage * destroy_entity_handler(ZstMessage * msg);
+	ZstStageMessage * create_entity_handler(ZstStageMessage * msg, ZstPerformer * performer);
+	ZstStageMessage * destroy_entity_handler(ZstStageMessage * msg);
 
-	ZstMessage * create_entity_template_handler(ZstMessage * msg);
-	ZstMessage * create_entity_from_template_handler(ZstMessage * msg);
+	ZstStageMessage * create_entity_template_handler(ZstStageMessage * msg);
+	ZstStageMessage * create_entity_from_template_handler(ZstStageMessage * msg);
 
-	ZstMessage * create_cable_handler(ZstMessage * msg);
-	ZstMessage * destroy_cable_handler(ZstMessage * msg);
+	ZstStageMessage * create_cable_handler(ZstStageMessage * msg);
+	ZstStageMessage * destroy_cable_handler(ZstStageMessage * msg);
 	
 	//Outgoing events
-	ZstMessage * create_snapshot(ZstPerformer * client);
-    void publish_stage_update(ZstCZMQMessage * msg);
+	ZstStageMessage * create_snapshot(ZstPerformer * client);
+    void publish_stage_update(ZstStageMessage * msg);
 
 	int m_heartbeat_timer_id;
 	static int stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * arg);
@@ -95,6 +95,6 @@ private:
 	ZstCableList m_cables;
 
 	//Messages
-	ZstMessagePool<ZstCZMQMessage> * m_message_pool;
-	ZstMessagePool<ZstCZMQMessage> * msg_pool();
+	ZstMessagePool<ZstStageMessage> * m_message_pool;
+	ZstMessagePool<ZstStageMessage> * msg_pool();
 };

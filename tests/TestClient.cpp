@@ -11,9 +11,9 @@
 #pragma warning(push) 
 #pragma warning(disable:4189 4996)
 #else
-#pragma GCC diagnostic pop
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic pop
 #endif
 #include <boost/process.hpp>
 #include <boost/thread/thread.hpp>
@@ -22,8 +22,6 @@ using namespace boost::process;
 
 #ifdef WIN32
 #pragma warning(pop)
-#else
-#pragma GCC diagnostic pop
 #endif
 
 #include <Showtime.h>
@@ -593,7 +591,8 @@ void test_add_filter() {
 	zst_connect_cable(add_filter->augend(), test_output_augend->output() );
 	zst_connect_cable(add_filter->addend(), test_output_addend->output());
 	zst_connect_cable(test_input_sum->input(), add_filter->sum());
-    
+	TAKE_A_BREATH
+
 	//Send values
 	ZstLog::app(LogLevel::debug, "Sending values");
 	test_output_augend->send(2);
@@ -616,8 +615,9 @@ void test_add_filter() {
 	test_output_augend->send(20);
 	test_output_addend->send(10);
 
-	while (test_input_sum->num_hits < 2)
+	while (test_input_sum->num_hits < 2){
 		zst_poll_once();
+	}
 	assert(test_input_sum->last_received_val == second_cmp_val);
 	ZstLog::app(LogLevel::debug, "Addition component succeeded at addition!");
 
@@ -871,7 +871,7 @@ void test_cleanup() {
 
 int main(int argc,char **argv){
 
-	bool testing = false;
+	bool testing = true;
 	if (argc > 1) {
 		if (argv[1][0] == 't') {
 			ZstLog::app(LogLevel::warn, "In test mode. Launching internal stage server.");

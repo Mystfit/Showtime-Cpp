@@ -39,8 +39,8 @@ public:
 	void init(std::string name);
 	void init() override {};
 	void destroy() override;
-	void process_events();
-	void flush();
+	void process_events() override;
+	void flush() override;
 
 
 	// ---------------------------
@@ -56,9 +56,9 @@ public:
 	// Adaptor plug send/receive
 	// ---------------------------
 
-	void on_receive_from_performance(ZstMessage * msg) override;
+	void on_receive_from_performance(ZstPerformanceMessage * msg) override;
 	void on_plug_fire(ZstOutputPlug * plug) override;
-	void on_receive_from_stage(size_t payload_index, ZstMessage * msg) override;
+	void on_receive_from_stage(size_t payload_index, ZstStageMessage * msg) override;
 
 
 	// -------------------------------

@@ -135,7 +135,7 @@ int ZstCZMQTransportLayer::s_handle_stage_router(zloop_t * loop, zsock_t * socke
 	ZstCZMQTransportLayer * transport = (ZstCZMQTransportLayer*)arg;
 
 	//Receive routed message from stage
-	ZstMessage * msg = transport->receive_addressed_msg();
+	ZstStageMessage * msg = transport->receive_addressed_msg();
 
 	//Process messages addressed to our client specifically
 	if (msg->kind() == ZstMsgKind::GRAPH_SNAPSHOT) {
@@ -162,7 +162,7 @@ int ZstCZMQTransportLayer::s_handle_stage_router(zloop_t * loop, zsock_t * socke
 	transport->msg_dispatch()->process_stage_response(msg);
 	
 	//Cleanup
-	transport->m_pool.release(static_cast<ZstCZMQMessage*>(msg));
+	transport->m_stage_msg_pool.release(msg);
 	return 0;
 }
 
@@ -186,31 +186,37 @@ void ZstCZMQTransportLayer::remove_timer(int timer_id)
 	m_timers.erase(timer_id);
 }
 
-ZstMessage * ZstCZMQTransportLayer::get_msg()
-{
-	return m_pool.get_msg();
+const char * ZstCZMQTransportLayer::get_graph_address(){
+	return m_graph_out_addr.c_str();
 }
 
-void ZstCZMQTransportLayer::send_to_stage(ZstMessage * msg)
+ZstStageMessage * ZstCZMQTransportLayer::get_stage_msg()
 {
-	ZstCZMQMessage * czmq_msg = dynamic_cast<ZstCZMQMessage*>(msg);
+	return m_stage_msg_pool.get_msg();
+}
 
+ZstPerformanceMessage * ZstCZMQTransportLayer::get_performance_msg()
+{
+	return m_performance_msg_pool.get_msg();
+}
+
+void ZstCZMQTransportLayer::send_to_stage(ZstStageMessage * msg)
+{
 	//Message needs to be a ZstCZMQMessage else something has gone wrong
-	assert(czmq_msg);
+	assert(msg);
 
 	//Dealer socket doesn't add an empty frame to seperate identity chain and payload, so we handle it here
 	zframe_t * empty = zframe_new_empty();
-	zmsg_t * msg_handle = czmq_msg->handle();
+	zmsg_t * msg_handle = msg->handle();
 	zmsg_prepend(msg_handle, &empty);
 	zmsg_send(&msg_handle, m_stage_router);
-	m_pool.release(czmq_msg);
+	m_stage_msg_pool.release(msg);
 }
 
-void ZstCZMQTransportLayer::send_to_performance(ZstMessage * msg)
+void ZstCZMQTransportLayer::send_to_performance(ZstPerformanceMessage * msg)
 {
-	ZstCZMQMessage * czmq_msg = dynamic_cast<ZstCZMQMessage*>(msg);
-	assert(czmq_msg);
-	zmsg_t * handle = czmq_msg->handle();
+	assert(msg);
+	zmsg_t * handle = msg->handle();
 	zmsg_send(&handle, m_graph_out);
 }
 
@@ -229,30 +235,30 @@ zmsg_t * ZstCZMQTransportLayer::sock_recv(zsock_t* socket, bool pop_first)
 
 void ZstCZMQTransportLayer::receive_stage_update()
 {
-	ZstMessage * msg = m_pool.get_msg();
+	ZstStageMessage * msg = m_stage_msg_pool.get_msg();
 	msg->unpack(sock_recv(m_stage_updates, false));
 	
 	//Let msg dispatch decide where to forward the message to
 	msg_dispatch()->receive_addressed_msg(0, msg);
 
-	m_pool.release(static_cast<ZstCZMQMessage*>(msg));
+	m_stage_msg_pool.release(msg);
 }
 
-ZstMessage * ZstCZMQTransportLayer::receive_addressed_msg() {
-	ZstMessage * msg = m_pool.get_msg();
+ZstStageMessage * ZstCZMQTransportLayer::receive_addressed_msg() {
+	ZstStageMessage * msg = m_stage_msg_pool.get_msg();
 	msg->unpack(sock_recv(m_stage_router, true));
 	return msg;
 }
 
 void ZstCZMQTransportLayer::receive_from_performance()
 {
-	ZstMessage * msg = m_pool.get_msg();
+	ZstPerformanceMessage * msg = m_performance_msg_pool.get_msg();	
 	msg->unpack(sock_recv(m_graph_in, false));
 
 	//Let msg dispatch decide where to forward the performance message
 	msg_dispatch()->receive_from_performance(msg);
 
-	m_pool.release(static_cast<ZstCZMQMessage*>(msg));
+	m_performance_msg_pool.release(msg);
 }
 
 std::string ZstCZMQTransportLayer::first_available_ext_ip() {

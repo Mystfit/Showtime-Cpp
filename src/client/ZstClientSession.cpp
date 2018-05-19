@@ -72,12 +72,10 @@ void ZstClientSession::dispatch_disconnected_from_stage()
 // Adaptor plug send/receive
 // ---------------------------
 
-void ZstClientSession::on_receive_from_performance(ZstMessage * msg)
+void ZstClientSession::on_receive_from_performance(ZstPerformanceMessage * msg)
 {
-	ZstURI sender((char*)msg->payload_at(0).data(), msg->payload_at(0).size());
-
 	//Find local proxy for the sending plug
-	ZstPlug * sending_plug = dynamic_cast<ZstPlug*>(hierarchy()->find_entity(sender));
+	ZstPlug * sending_plug = dynamic_cast<ZstPlug*>(hierarchy()->find_entity(msg->sender()));
 	ZstInputPlug * receiving_plug = NULL;
 
 	if (!sending_plug) {
@@ -119,7 +117,7 @@ void ZstClientSession::plug_received_value(ZstInputPlug * plug)
 	}
 }
 
-void ZstClientSession::on_receive_from_stage(size_t payload_index, ZstMessage * msg)
+void ZstClientSession::on_receive_from_stage(size_t payload_index, ZstStageMessage * msg)
 {
 	switch (msg->payload_at(payload_index).kind()) {
 	case ZstMsgKind::CREATE_CABLE:

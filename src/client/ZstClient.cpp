@@ -121,9 +121,12 @@ void ZstClient::join_stage(std::string stage_address, bool async) {
 	ZstLog::net(LogLevel::notification, "Connecting to stage {}", stage_address);
 	m_transport->connect_to_stage(stage_address);
 
+	//Acquire our output graph address to send to the stage
+	const char * graph_addr = m_transport->get_graph_address();
+
 	ZstPerformer * root = session()->hierarchy()->get_local_performer();
-	invoke([this, async, stage_address, root](ZstStageDispatchAdaptor * adaptor) {
-		adaptor->send_serialisable_message(ZstMsgKind::CLIENT_JOIN, *root, async, stage_address, [this](ZstMessageReceipt response) {
+	invoke([this, async, graph_addr, root](ZstStageDispatchAdaptor * adaptor) {
+		adaptor->send_serialisable_message(ZstMsgKind::CLIENT_JOIN, *root, async, graph_addr, [this](ZstMessageReceipt response) {
 			this->join_stage_complete(response);
 		});
 	});

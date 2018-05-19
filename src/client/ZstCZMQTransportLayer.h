@@ -6,7 +6,8 @@
 
 #include "../core/ZstActor.h"
 #include "../core/ZstMessagePool.hpp"
-#include "../core/ZstCZMQMessage.h"
+#include "../core/ZstStageMessage.h"
+#include "../core/ZstPerformanceMessage.h"
 #include "ZstTransportLayer.h"
 
 //Forwards
@@ -28,8 +29,10 @@ public:
 	int add_timer(int delay, std::function<void()> timer_func);
 	void remove_timer(int timer_id);
 
-	ZstMessage * get_msg();
+	const char * get_graph_address();
 
+	ZstStageMessage * get_stage_msg() override;
+	ZstPerformanceMessage * get_performance_msg() override;
 
 private:	
 	// ---------------
@@ -52,13 +55,13 @@ private:
 	// Message IO
 	// ---------------
 	
-	void send_to_stage(ZstMessage * msg) override;
-	void send_to_performance(ZstMessage * msg) override;
+	void send_to_stage(ZstStageMessage * msg) override;
+	void send_to_performance(ZstPerformanceMessage * msg) override;
 
 	zmsg_t * sock_recv(zsock_t* socket, bool pop_first);
-	ZstMessage * receive_addressed_msg();
-	void receive_stage_update();
-	void receive_from_performance();
+	ZstStageMessage * receive_addressed_msg() override;
+	void receive_stage_update() override;
+	void receive_from_performance() override;
 	
 	// ---------------
 	// ZMQ Sockets
@@ -83,5 +86,7 @@ private:
 
 	zuuid_t * m_startup_uuid;
 
-	ZstMessagePool<ZstCZMQMessage> m_pool;
+	ZstMessagePool<ZstStageMessage> m_stage_msg_pool;
+	ZstMessagePool<ZstPerformanceMessage> m_performance_msg_pool;
+
 };

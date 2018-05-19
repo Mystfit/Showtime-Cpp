@@ -5,7 +5,8 @@
 #include <iostream>
 #include <stdio.h>
 #include <msgpack.hpp>
-#include <ZstCore.h>
+#include <czmq.h>
+#include <ZstExports.h>
 #include "liasons/ZstPlugLiason.hpp"
 
 #define KIND_FRAME_SIZE 1
@@ -84,216 +85,39 @@ struct ZstMessageReceipt {
  */
 class ZstMessagePayload {
 public:
-
-    /**
-     * Fn:	ZST_EXPORT Summary::ZstMessagePayload(ZstMsgKind k, const void * p);
-     *
-     * Summary:	Construct a single payload frame for a ZstMessage.
-     *
-     * Parameters:
-     * k - 		  	The ZstMsgKind to assign to this payload.
-     * p - 		  	The data to assign to this payload.
-     *
-     * Returns:	A ZstMessagePayload.
-     */
-    ZST_EXPORT ZstMessagePayload(ZstMsgKind k, const void * p);
-
-    /**
-     * Fn:	ZST_EXPORT Summary::ZstMessagePayload(const ZstMessagePayload & other);
-     *
-     * Summary:	Copy construct a ZstMessagePayload.
-     *
-     * Parameters:
-     * other - 	Payload to copy.
-     */
+    ZST_EXPORT ZstMessagePayload(ZstMsgKind k, zframe_t * p);
     ZST_EXPORT ZstMessagePayload(const ZstMessagePayload & other);
+	ZST_EXPORT ~ZstMessagePayload();
 
-	ZstMessagePayload(ZstMessagePayload && source);
-	ZstMessagePayload& operator=(ZstMessagePayload && source);
-	ZstMessagePayload& operator=(ZstMessagePayload & other);
+	ZST_EXPORT ZstMessagePayload(ZstMessagePayload && source);
+	ZST_EXPORT ZstMessagePayload& operator=(ZstMessagePayload && source);
+	ZST_EXPORT ZstMessagePayload& operator=(ZstMessagePayload & other);
 	
-	/**
-	 * Fn:	ZST_EXPORT virtual ZstMessagePayload::~ZstMessagePayload()
-	 *
-	 * Summary:	Destructor.
-	 */
-	ZST_EXPORT virtual ~ZstMessagePayload() {};
-
-	/**
-	 * Fn:	ZST_EXPORT ZstMsgKind ZstMessagePayload::kind();
-	 *
-	 * Summary:	Gets the payload kind.
-	 *
-	 * Returns:	A ZstMsgKind.
-	 */
-	ZST_EXPORT ZstMsgKind kind();
-
-    /**
-     * Fn:	ZST_EXPORT size_t ZstMessagePayload::size();
-     *
-     * Summary:	Gets the payload size.
-     *
-     * Returns:	A size_t.
-     */
-    ZST_EXPORT virtual const size_t size();
-
-	/**
-	 * Fn:	ZST_EXPORT virtual const void * ZstMessagePayload::data();
-	 *
-	 * Summary:	Gets the payload data.
-	 *
-	 * Returns:	Null if it fails, else a const void*.
-	 */
-	ZST_EXPORT virtual const void * data() = 0;
+    ZST_EXPORT const ZstMsgKind kind();
+    ZST_EXPORT const size_t size();
+	ZST_EXPORT const char * data();
 	
 protected:
-	/** Summary:	The payload. */
-	const void * m_payload;
-	
-	/** Summary:	The size. */
+	zframe_t * m_payload;	
 	size_t m_size;
-
-	/** Summary:	The kind. */
 	ZstMsgKind m_kind;
 };
 
 
-/**
- * Class:	ZstMessage
- *
- * Summary:
- *  A ZstMessage encapsulates a single message sent to or from the performance stage server. This
- *  class can be extended to account for your transport mechanism of choice.
- */
-class ZstMessage : ZstPlugLiason{
+class ZstMessage {
 public:
-
-	/**
-	* Fn:	ZstMessage::ZstMessage();
-	*
-	* Summary:	Default constructor.
-	*/
 	ZST_EXPORT ZstMessage();
-
-	/**
-	 * Fn:	ZST_EXPORT virtual ZstMessage::~ZstMessage();
-	 *
-	 * Summary:	Destructor.
-	 */
-	ZST_EXPORT virtual ~ZstMessage();
-
-	/**
-	 * Fn:	ZST_EXPORT ZstMessage::ZstMessage(const ZstMessage & other);
-	 *
-	 * Summary: Copy-construct a ZstMessage.
-	 *
-	 * Parameters:
-	 * other - 	The message to copy
-	 */
+	ZST_EXPORT ~ZstMessage();
 	ZST_EXPORT ZstMessage(const ZstMessage & other);
 
-	/**
-	 * Fn:	ZST_EXPORT virtual void ZstMessage::reset();
-	 *
-	 * Summary:	Resets this message.
-	 */
 	ZST_EXPORT virtual void reset();
+	ZST_EXPORT virtual void unpack(zmsg_t * msg);
+	ZST_EXPORT virtual void append_str(const char * s, size_t len);
 
-	/**
-	 * Fn:	ZST_EXPORT virtual void ZstMessage::copy_id(const ZstMessage * msg);
-	 *
-	 * Summary:	Copies the identifier from the provided message.
-	 *
-	 * Parameters:
-	 * msg - 	The message to copy the id from.
-	 */
-	ZST_EXPORT virtual void copy_id(const ZstMessage * msg);
+	ZST_EXPORT virtual ZstMessagePayload & payload_at(size_t index);
+	ZST_EXPORT virtual size_t num_payloads();
+	ZST_EXPORT zmsg_t * handle();
 
-	/**
-	 * Fn:	ZST_EXPORT virtual void ZstMessage::unpack(void * msg) = 0;
-	 *
-	 * Summary:	Unpacks a transport specific message into this ZstMessage.
-	 *
-	 * Parameters:
-	 * msg - 	[in,out] If non-null, the transport-specific message data to unpack. May modify input message depending on transport used.
-	 */
-	ZST_EXPORT virtual void unpack(void * msg) = 0;
-
-	/**
-	 * Fn:	ZST_EXPORT virtual void ZstMessage::append_str(const char * s, size_t len) = 0;
-	 *
-	 * Summary:	Appends a string payload to this ZstMessage.
-	 *
-	 * Parameters:
-	 * s - 		  	A char to append to this message.
-	 * len - 	  	The length of the string.
-	 */
-	ZST_EXPORT virtual void append_str(const char * s, size_t len) = 0;
-
-	/**
-	 * Fn:
-	 *  ZST_EXPORT virtual void ZstMessage::append_serialisable(ZstMsgKind k,
-	 *  const ZstSerialisable & s) = 0;
-	 *
-	 * Summary:	Appends a serialisable.
-	 *
-	 * Parameters:
-	 * k - 		  	The kind of message to initialise.
-	 * s - 		  	The serialisable object to append.
-	 */
-	ZST_EXPORT virtual void append_serialisable(ZstMsgKind k, const ZstSerialisable & s) = 0;
-
-	/**
-	 * Fn:	ZST_EXPORT const char * ZstMessage::id();
-	 *
-	 * Summary:	Gets the identifier for this message.
-	 *
-	 * Returns:	Null if it fails, else a pointer to a const char.
-	 */
-	ZST_EXPORT virtual const char * id();
-
-	/**
-	 * Fn:	ZST_EXPORT ZstMsgKind ZstMessage::kind();
-	 *
-	 * Summary:	Gets the ZstMsgKind of this message.
-	 *
-	 * Returns:	A ZstMsgKind.
-	 */
-	ZST_EXPORT ZstMsgKind kind();
-
-	/**
-	 * Fn:	ZST_EXPORT ZstMessagePayload & ZstMessage::payload_at(size_t index);
-	 *
-	 * Summary:	Gets the payload at a specified index.
-	 *
-	 * Parameters:
-	 * index - 	Zero-based index of the payload.
-	 *
-	 * Returns:	A reference to a ZstMessagePayload.
-	 */
-	ZST_EXPORT virtual ZstMessagePayload & payload_at(size_t index) = 0;
-
-	/**
-	 * Fn:	ZST_EXPORT size_t ZstMessage::num_payloads();
-	 *
-	 * Summary:	Number of payloads in this message.
-	 *
-	 * Returns:	A size_t of the total number of payloads this message contains.
-	 */
-	ZST_EXPORT virtual size_t num_payloads() = 0;
-
-	/**
-	 * Fn:	template <typename T> T ZstMessage::unpack_payload_serialisable(size_t payload_index)
-	 *
-	 * Summary:	Unpack a serialisable payload.
-	 *
-	 * Typeparams:
-	 * T -  Type of serialisable to unpack.
-	 * Parameters:
-	 * payload_index - 	Zero-based index of the payload to unpack from.
-	 *
-	 * Returns:	A serialisable.
-	 */
 	template <typename T>
 	T unpack_payload_serialisable(size_t payload_index) {
 		T serialisable;
@@ -302,55 +126,11 @@ public:
 		return serialisable;
 	}
 
-	ZST_EXPORT ZstMessage * init_entity_message(const ZstEntityBase * entity);
-	ZST_EXPORT ZstMessage * init_message(ZstMsgKind kind);
-	ZST_EXPORT ZstMessage * init_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable);
-	ZST_EXPORT ZstMessage * init_performance_message(ZstPlug * plug);
-
-	
-
 protected:
-	/** Summary:	The message kind. */
-	ZstMsgKind m_msg_kind;
-
-	/** Summary:	The message id. */
-	char m_msg_id[ZSTMSG_UUID_LENGTH];
+	ZST_EXPORT void append_payload_frame(const ZstSerialisable & streamable);
+	ZST_EXPORT void set_handle(zmsg_t * handle);
+	std::vector<ZstMessagePayload> m_payloads;
 
 private:
-	/**
-	* Fn:	void ZstMessage::append_entity_kind_frame(const ZstEntityBase * entity);
-	*
-	* Summary:	Appends an entity kind frame to this message.
-	*
-	* Parameters:
-	* entity - 	The entity to append.
-	*/
-	ZST_EXPORT void append_entity_kind_frame(const ZstEntityBase * entity);
-
-	/**
-	* Fn:	virtual void ZstMessage::append_kind_frame(ZstMsgKind k) = 0;
-	*
-	* Summary:	Appends a kind frame.
-	*
-	* Parameters:
-	* k - 	A ZstMsgKind to append.
-	*/
-	ZST_EXPORT virtual void append_kind_frame(ZstMsgKind k) = 0;
-
-	/**
-	* Fn:	virtual void ZstMessage::append_id_frame() = 0;
-	*
-	* Summary:	Appends the identifier frame.
-	*/
-	ZST_EXPORT virtual void append_id_frame() = 0;
-
-	/**
-	* Fn:	virtual void ZstMessage::append_payload_frame(const ZstSerialisable & streamable) = 0;
-	*
-	* Summary:	Appends a payload frame.
-	*
-	* Parameters:
-	* streamable - 	The streamable to append.
-	*/
-	ZST_EXPORT virtual void append_payload_frame(const ZstSerialisable & streamable) = 0;
+	zmsg_t * m_msg_handle;
 };

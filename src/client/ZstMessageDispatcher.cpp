@@ -29,7 +29,7 @@ void ZstMessageDispatcher::flush_events()
 	m_performance_events.flush();
 }
 
-void ZstMessageDispatcher::send_to_stage(ZstMessage * msg, bool async, MessageReceivedAction action)
+void ZstMessageDispatcher::send_to_stage(ZstStageMessage * msg, bool async, MessageReceivedAction action)
 {
 	if (!msg) return;
 
@@ -42,7 +42,7 @@ void ZstMessageDispatcher::send_to_stage(ZstMessage * msg, bool async, MessageRe
 	action(send_sync_stage_message(msg));
 }
 
-ZstMessageReceipt ZstMessageDispatcher::send_sync_stage_message(ZstMessage * msg)
+ZstMessageReceipt ZstMessageDispatcher::send_sync_stage_message(ZstStageMessage * msg)
 {
 	MessageFuture future = register_response_message(msg);
 	ZstMessageReceipt msg_response{ZstMsgKind::EMPTY, false};
@@ -59,7 +59,7 @@ ZstMessageReceipt ZstMessageDispatcher::send_sync_stage_message(ZstMessage * msg
 	return msg_response;
 }
 
-void ZstMessageDispatcher::send_async_stage_message(ZstMessage * msg, MessageReceivedAction completed_action)
+void ZstMessageDispatcher::send_async_stage_message(ZstStageMessage * msg, MessageReceivedAction completed_action)
 {
 	MessageFuture future = register_response_message(msg);
 	future.then([this, completed_action](MessageFuture f) {
@@ -83,13 +83,13 @@ void ZstMessageDispatcher::send_async_stage_message(ZstMessage * msg, MessageRec
 	m_transport->send_to_stage(msg);
 }
 
-void ZstMessageDispatcher::send_to_performance(ZstPlug * plug)
+void ZstMessageDispatcher::send_to_performance(ZstOutputPlug * plug)
 {
-	ZstMessage * msg = transport()->get_msg()->init_performance_message(plug);
+	ZstPerformanceMessage * msg = transport()->get_performance_msg()->init_performance_message(plug);
 	m_transport->send_to_performance(msg);
 }
 
-void ZstMessageDispatcher::receive_from_performance(ZstMessage * msg)
+void ZstMessageDispatcher::receive_from_performance(ZstPerformanceMessage * msg)
 {
 	//Forward stage message to all adaptors
 	m_performance_events.invoke([msg](ZstPerformanceDispatchAdaptor * adaptor) {
@@ -97,7 +97,7 @@ void ZstMessageDispatcher::receive_from_performance(ZstMessage * msg)
 	});
 }
 
-void ZstMessageDispatcher::receive_addressed_msg(size_t payload_index, ZstMessage * msg)
+void ZstMessageDispatcher::receive_addressed_msg(size_t payload_index, ZstStageMessage * msg)
 {
 	//Forward stage message to all adaptors
 	m_stage_events.invoke([payload_index, msg](ZstStageDispatchAdaptor * adaptor) {
@@ -107,20 +107,20 @@ void ZstMessageDispatcher::receive_addressed_msg(size_t payload_index, ZstMessag
 
 void ZstMessageDispatcher::send_message(ZstMsgKind kind, bool async, MessageReceivedAction action)
 {
-	ZstMessage * msg = transport()->get_msg()->init_message(kind);
+	ZstStageMessage * msg = transport()->get_stage_msg()->init_message(kind);
 	send_to_stage(msg, async, action);
 }
 
 void ZstMessageDispatcher::send_message(ZstMsgKind kind, bool async, std::string msg_arg, MessageReceivedAction action)
 {
-	ZstMessage * msg = transport()->get_msg()->init_message(kind);
+	ZstStageMessage * msg = transport()->get_stage_msg()->init_message(kind);
 	msg->append_str(msg_arg.c_str(), msg_arg.size());
 	send_to_stage(msg, async, action);
 }
 
 void ZstMessageDispatcher::send_message(ZstMsgKind kind, bool async, const std::vector<std::string> msg_args, MessageReceivedAction action)
 {
-	ZstMessage * msg = transport()->get_msg()->init_message(kind);
+	ZstStageMessage * msg = transport()->get_stage_msg()->init_message(kind);
 	for (auto s : msg_args) {
 		msg->append_str(s.c_str(), s.size());
 	}
@@ -129,20 +129,20 @@ void ZstMessageDispatcher::send_message(ZstMsgKind kind, bool async, const std::
 
 void ZstMessageDispatcher::send_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable, bool async, MessageReceivedAction action)
 {
-	ZstMessage * msg = transport()->get_msg()->init_serialisable_message(kind, serialisable);
+	ZstStageMessage * msg = transport()->get_stage_msg()->init_serialisable_message(kind, serialisable);
 	send_to_stage(msg, async, action);
 }
 
 void ZstMessageDispatcher::send_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable, bool async, std::string msg_arg, MessageReceivedAction action)
 {
-	ZstMessage * msg = transport()->get_msg()->init_serialisable_message(kind, serialisable);
+	ZstStageMessage * msg = transport()->get_stage_msg()->init_serialisable_message(kind, serialisable);
 	msg->append_str(msg_arg.c_str(), msg_arg.size());
 	send_to_stage(msg, async, action);
 }
 
 void ZstMessageDispatcher::send_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable, bool async, const std::vector<std::string> msg_args, MessageReceivedAction action)
 {
-	ZstMessage * msg = transport()->get_msg()->init_serialisable_message(kind, serialisable);
+	ZstStageMessage * msg = transport()->get_stage_msg()->init_serialisable_message(kind, serialisable);
 	for (auto s : msg_args) {
 		msg->append_str(s.c_str(), s.size());
 	}
@@ -151,7 +151,7 @@ void ZstMessageDispatcher::send_serialisable_message(ZstMsgKind kind, const ZstS
 
 void ZstMessageDispatcher::send_entity_message(const ZstEntityBase * entity, bool async, MessageReceivedAction action)
 {
-	ZstMessage * msg = transport()->get_msg()->init_entity_message(entity);
+	ZstStageMessage * msg = transport()->get_stage_msg()->init_entity_message(entity);
 	send_to_stage(msg, async, action);
 }
 
@@ -163,7 +163,7 @@ void ZstMessageDispatcher::failed(ZstMessageReceipt response)
 {
 }
 
-MessageFuture ZstMessageDispatcher::register_response_message(ZstMessage * msg)
+MessageFuture ZstMessageDispatcher::register_response_message(ZstStageMessage * msg)
 {
 	std::string id = std::string(msg->id());
 	m_promise_messages[id] = MessagePromise();
@@ -172,7 +172,7 @@ MessageFuture ZstMessageDispatcher::register_response_message(ZstMessage * msg)
 	return future;
 }
 
-void ZstMessageDispatcher::process_stage_response(ZstMessage * msg)
+void ZstMessageDispatcher::process_stage_response(ZstStageMessage * msg)
 {
 	int status = 0;
 	try {

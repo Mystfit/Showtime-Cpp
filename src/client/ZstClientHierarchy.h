@@ -5,13 +5,14 @@
 */
 
 #pragma once
-#include <concurrentqueue.h>
+
 #include <ZstCore.h>
 #include <ZstEventDispatcher.hpp>
 #include "ZstClientModule.h"
 #include "adaptors/ZstSessionAdaptor.hpp"
+#include "../dependencies/concurrentqueue.h"
 #include "../core/adaptors/ZstStageDispatchAdaptor.hpp"
-#include "../core/ZstMessage.h"
+#include "../core/ZstStageMessage.h"
 #include "../core/ZstHierarchy.h"
 
 class ZstClientHierarchy : 
@@ -40,7 +41,7 @@ public:
 	// Adaptor behaviours
 	// --------------------
 	
-	void on_receive_from_stage(size_t payload_index, ZstMessage * msg) override;
+	void on_receive_from_stage(size_t payload_index, ZstStageMessage * msg) override;
 	void synchronisable_has_event(ZstSynchronisable * synchronisable) override;
 
 
@@ -48,25 +49,25 @@ public:
 	// Entity activation/deactivation
 	// ------------------------------
 	
-	void activate_entity(ZstEntityBase* entity, bool async);
-	void destroy_entity(ZstEntityBase * entity, bool async);
-	void destroy_plug(ZstPlug * plug, bool async);
+	void activate_entity(ZstEntityBase* entity, bool async) override;
+	void destroy_entity(ZstEntityBase * entity, bool async) override;
+	void destroy_plug(ZstPlug * plug, bool async) override;
 
 
 	// ------------------------------
 	// Performers
 	// ------------------------------
 
-	void add_performer(ZstPerformer & performer);
+	void add_performer(ZstPerformer & performer) override;
 	
 
 	// ------------------------------
 	// Hierarchy queries
 	// ------------------------------
 	
-	ZstEntityBase * find_entity(const ZstURI & path);
+	ZstEntityBase * find_entity(const ZstURI & path) override;
 	bool path_is_local(const ZstURI & path);
-	void add_proxy_entity(ZstEntityBase & entity);
+	void add_proxy_entity(ZstEntityBase & entity) override;
 	ZstPerformer * get_local_performer() const;
 
 

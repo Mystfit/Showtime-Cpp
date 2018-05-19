@@ -50,8 +50,8 @@ public:
 	ZST_EXPORT const char * component_type() const;
 
 	//Adaptor registration
-	ZST_EXPORT virtual void add_adaptor_to_children(ZstSynchronisableAdaptor * adaptor);
-	ZST_EXPORT virtual void remove_adaptor_from_children(ZstSynchronisableAdaptor * adaptorn);
+	ZST_EXPORT virtual void add_adaptor_to_children(ZstSynchronisableAdaptor * adaptor) override;
+	ZST_EXPORT virtual void remove_adaptor_from_children(ZstSynchronisableAdaptor * adaptor) override;
 
 protected:
 	ZST_EXPORT void set_component_type(const char * component_type);

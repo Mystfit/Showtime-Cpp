@@ -46,7 +46,7 @@ void ZstClientHierarchy::flush_events()
 	m_stage_events.flush();
 }
 
-void ZstClientHierarchy::on_receive_from_stage(size_t payload_index, ZstMessage * msg)
+void ZstClientHierarchy::on_receive_from_stage(size_t payload_index, ZstStageMessage * msg)
 {
 	switch (msg->payload_at(payload_index).kind()) {
 	case ZstMsgKind::CREATE_PLUG:
