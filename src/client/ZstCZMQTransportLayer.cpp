@@ -217,7 +217,7 @@ void ZstCZMQTransportLayer::send_to_performance(ZstPerformanceMessage * msg)
 {
 	assert(msg);
 	zmsg_t * handle = msg->handle();
-	zmsg_send(&handle, m_graph_out);
+ 	zmsg_send(&handle, m_graph_out);
 }
 
 zmsg_t * ZstCZMQTransportLayer::sock_recv(zsock_t* socket, bool pop_first)
