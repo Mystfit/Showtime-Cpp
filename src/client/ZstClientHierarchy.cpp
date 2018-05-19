@@ -170,50 +170,31 @@ void ZstClientHierarchy::destroy_entity_complete(ZstMessageReceipt response, Zst
 	if (response.status != ZstMsgKind::OK) {
 		ZstLog::net(LogLevel::notification, "Destroy entity failed with status {}", response.status);
 	}
+	ZstContainer * parent = NULL;
 
 	//Remove entity from parent
 	if (entity->parent()) {
-		ZstContainer * parent = dynamic_cast<ZstContainer*>(entity->parent());
+		parent = dynamic_cast<ZstContainer*>(entity->parent());
 		parent->remove_child(entity);
 	}
 	else {
 		//Entity is a root performer. Remove from performer list
 		m_clients.erase(entity->URI());
 	}
-
+	
 	//Finally, add non-local entities to the reaper to destroy them at the correct time
 	//TODO: Only destroying proxy entities at the moment. Local entities should be managed by the host application
-	events().defer([entity](ZstHierarchyAdaptor * dlg) {dlg->on_entity_leaving(entity); });
+	
+	if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
+		parent->remove_plug(dynamic_cast<ZstPlug*>(entity));
+		events().defer([entity](ZstHierarchyAdaptor * dlg) { dlg->on_plug_leaving(static_cast<ZstPlug*>(entity)); });
+	}
+	else {
+		events().defer([entity](ZstHierarchyAdaptor * dlg) {dlg->on_entity_leaving(entity); });
+	}
 	synchronisable_enqueue_deactivation(entity);
 }
 
-
-void ZstClientHierarchy::destroy_plug(ZstPlug * plug, bool async)
-{
-	if (!plug->is_proxy()) {
-		m_stage_events.invoke([this, async, plug](ZstStageDispatchAdaptor * adaptor) {
-			adaptor->send_message(ZstMsgKind::DESTROY_ENTITY, async, std::string(plug->URI().path()), [this, plug](ZstMessageReceipt response) {
-				this->destroy_plug_complete(response, plug); 
-			});
-		});
-	}
-	else {
-		destroy_plug_complete(ZstMessageReceipt{ ZstMsgKind::EMPTY , async}, plug);
-	}
-}
-
-void ZstClientHierarchy::destroy_plug_complete(ZstMessageReceipt response, ZstPlug * plug)
-{
-	synchronisable_set_destroyed(plug);
-
-	ZstComponent * parent = dynamic_cast<ZstComponent*>(plug->parent());
-	parent->remove_plug(plug);
-
-	//Queue events
-	ZstLog::net(LogLevel::debug, "!!!Deactivating plug {}", plug->URI().path());
-	synchronisable_enqueue_deactivation(plug);
-	events().defer([plug](ZstHierarchyAdaptor * dlg) { dlg->on_plug_leaving(plug); });
-}
 
 ZstEntityBase * ZstClientHierarchy::find_entity(const ZstURI & path)
 {

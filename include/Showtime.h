@@ -29,8 +29,6 @@ extern "C" {
     ZST_CLIENT_EXPORT void zst_activate_entity_async(ZstEntityBase * entity);
 	ZST_CLIENT_EXPORT void zst_deactivate_entity(ZstEntityBase * entity);
     ZST_CLIENT_EXPORT void zst_deactivate_entity_async(ZstEntityBase * entity);
-	ZST_CLIENT_EXPORT void zst_deactivate_plug(ZstPlug * plug);
-	ZST_CLIENT_EXPORT void zst_deactivate_plug_async(ZstPlug * plug);
 
 	//Hierarchy
 	ZST_CLIENT_EXPORT ZstPerformer* zst_get_root();

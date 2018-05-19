@@ -29,13 +29,6 @@ void ZstHierarchy::destroy_entity(ZstEntityBase * entity, bool async)
 }
 
 
-void ZstHierarchy::destroy_plug(ZstPlug * plug, bool async)
-{
-	if (!plug) return;
-	synchronisable_set_deactivating(plug);
-}
-
-
 void ZstHierarchy::add_performer(ZstPerformer & performer)
 {
 	//Copy streamable so we have a local ptr for the performer
@@ -146,11 +139,10 @@ void ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 		if (entity->is_proxy()) {
 			ZstLog::net(LogLevel::debug, "!!!Deactivating proxy {}", entity->URI().path());
 			synchronisable_enqueue_deactivation(entity);
-			if (strcmp(entity->entity_type(), COMPONENT_TYPE) == 0 || strcmp(entity->entity_type(), CONTAINER_TYPE) == 0) {
+			if (strcmp(entity->entity_type(), COMPONENT_TYPE) == 0 || 
+				strcmp(entity->entity_type(), CONTAINER_TYPE) == 0 ||
+				strcmp(entity->entity_type(), PLUG_TYPE)) {
 				destroy_entity(entity, false);
-			}
-			else if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
-				destroy_plug(static_cast<ZstPlug*>(entity), false);
 			}
 			else if (strcmp(entity->entity_type(), PERFORMER_TYPE) == 0) {
 				//TODO: Remove performer

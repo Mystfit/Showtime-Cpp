@@ -210,8 +210,8 @@ void ZstClientSession::destroy_cable_complete(ZstMessageReceipt response, ZstCab
 	ZstLog::net(LogLevel::notification, "Destroy cable completed with status {}", response.status);
 
 	//Find the plugs and disconnect them seperately, in case they have already disappeared
-	ZstPlug * input = dynamic_cast<ZstPlug*>(hierarchy()->find_entity(cable->get_input_URI()));
-	ZstPlug * output = dynamic_cast<ZstPlug*>(hierarchy()->find_entity(cable->get_output_URI()));
+	ZstInputPlug * input = dynamic_cast<ZstInputPlug*>(hierarchy()->find_entity(cable->get_input_URI()));
+	ZstOutputPlug * output = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(cable->get_output_URI()));
 
 	if (input)
 		plug_remove_cable(input, cable);

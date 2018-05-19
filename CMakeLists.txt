@@ -12,8 +12,8 @@ set(CMAKE_BASE_MODULE_PATH "${CMAKE_MODULE_PATH}")
 if(USE_HUNTER)
     include("cmake/HunterGate.cmake")
     HunterGate(
-        URL "https://github.com/ruslo/hunter/archive/v0.20.27.tar.gz"
-        SHA1 "aafefc6377dc9a25d84703702e22434cd6f71d5c"
+        URL "https://github.com/ruslo/hunter/archive/v0.21.6.tar.gz"
+        SHA1 "19e74186aa97d8c3ebe799083cd5e97d87701552"
     )
     set(HUNTER_ENABLED ON)
 endif()

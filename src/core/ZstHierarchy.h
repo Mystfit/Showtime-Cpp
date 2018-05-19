@@ -7,9 +7,11 @@
 #include <entities/ZstEntityBase.h>
 #include <entities/ZstPlug.h>
 #include <entities/ZstPerformer.h>
+#include "liasons/ZstPlugLiason.hpp"
 #include "liasons/ZstSynchronisableLiason.hpp"
 
 class ZstHierarchy : 
+	public ZstPlugLiason,
 	public ZstSynchronisableLiason,
 	public ZstSynchronisableAdaptor
 {
@@ -23,8 +25,7 @@ public:
 
 	ZST_EXPORT virtual void activate_entity(ZstEntityBase* entity, bool async = false);
 	ZST_EXPORT virtual void destroy_entity(ZstEntityBase * entity, bool async = false);
-	ZST_EXPORT virtual void destroy_plug(ZstPlug * plug, bool async);
-	
+		
 	
 	// ------------------------------
 	// Performers

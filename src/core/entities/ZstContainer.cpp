@@ -176,17 +176,14 @@ void ZstContainer::add_child(ZstEntityBase * child) {
 
 void ZstContainer::remove_child(ZstEntityBase * child) {
     if(is_destroyed()) return;
-    
-	//Check if we're removing a plug or not
-	if (strcmp(child->entity_type(), PLUG_TYPE) == 0) {
-		remove_plug(dynamic_cast<ZstPlug*>(child));
+
+	auto c = m_children.find(child->URI());
+	if (c != m_children.end()) {
+		m_children.erase(c);
 	}
-	else {
-		auto c = m_children.find(child->URI());
-		if (c != m_children.end()) {
-			m_children.erase(c);
-		}
-	}
+	
+	//TODO: How do we remove all cables from child plugs?
+
 	child->m_parent = NULL;
 }
 

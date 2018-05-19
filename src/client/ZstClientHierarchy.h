@@ -51,7 +51,6 @@ public:
 	
 	void activate_entity(ZstEntityBase* entity, bool async) override;
 	void destroy_entity(ZstEntityBase * entity, bool async) override;
-	void destroy_plug(ZstPlug * plug, bool async) override;
 
 
 	// ------------------------------
