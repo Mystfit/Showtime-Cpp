@@ -26,6 +26,7 @@ public:
 
 	ZST_EXPORT static void destroy(ZstCable * cable);
     ZST_EXPORT virtual ~ZstCable();
+	ZST_EXPORT void disconnect();
 
 	// Status
 
@@ -44,6 +45,8 @@ public:
 	ZST_EXPORT ZstPlug * get_output();
 	ZST_EXPORT const ZstURI & get_input_URI() const;
 	ZST_EXPORT const ZstURI & get_output_URI() const;
+
+	//Serialisation
 
 	ZST_EXPORT void write(std::stringstream & buffer) const override;
 	ZST_EXPORT void read(const char * buffer, size_t length, size_t & offset) override;
@@ -78,6 +81,7 @@ public:
 	ZST_EXPORT void add(ZstCable * cable);
 	ZST_EXPORT ZstCable * cable_at(size_t index);
 	ZST_EXPORT size_t size();
+	ZST_EXPORT void disconnect_all();
 private:
 	std::vector<ZstCable*> m_cables;
 };

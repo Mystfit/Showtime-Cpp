@@ -4,6 +4,6 @@
 #include <ZstCable.h>
 
 class ZstCableLiason {
-protected:
+public:
 	ZST_EXPORT void cable_set_local(ZstCable * cable);
 };

@@ -1,6 +1,7 @@
 #include <msgpack.hpp>
 #include <ZstCable.h>
 #include <entities/ZstPlug.h>
+#include "liasons/ZstPlugLiason.hpp"
 
 ZstCable::ZstCable() : 
 	ZstSynchronisable(),
@@ -56,6 +57,14 @@ ZstCable * ZstCable::create(ZstPlug * input, ZstPlug * output)
 void ZstCable::destroy(ZstCable * cable)
 {
 	delete cable;
+}
+
+void ZstCable::disconnect()
+{
+	if(get_input() && get_output()){
+		ZstPlugLiason().plug_remove_cable(get_input(), this);
+		ZstPlugLiason().plug_remove_cable(get_output(), this);
+	}
 }
 
 bool ZstCable::operator==(const ZstCable & other) const
@@ -155,6 +164,13 @@ ZstCable * ZstCableBundle::cable_at(size_t index)
 size_t ZstCableBundle::size()
 {
 	return m_cables.size();
+}
+
+void ZstCableBundle::disconnect_all()
+{
+	for(auto c : m_cables){
+		c->disconnect();
+	}
 }
 
 //--

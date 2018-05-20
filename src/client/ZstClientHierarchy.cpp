@@ -181,6 +181,11 @@ void ZstClientHierarchy::destroy_entity_complete(ZstMessageReceipt response, Zst
 		//Entity is a root performer. Remove from performer list
 		m_clients.erase(entity->URI());
 	}
+
+	//Pre-emptively disconnect all cables inside the entity
+	ZstCableBundle * bundle = entity->acquire_cable_bundle();
+	bundle->disconnect_all();
+	entity->release_cable_bundle(bundle);
 	
 	//Finally, add non-local entities to the reaper to destroy them at the correct time
 	//TODO: Only destroying proxy entities at the moment. Local entities should be managed by the host application

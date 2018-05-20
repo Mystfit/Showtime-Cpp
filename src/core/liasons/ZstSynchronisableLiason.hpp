@@ -7,7 +7,7 @@
 class ZstSynchronisable;
 
 class ZstSynchronisableLiason {
-protected:
+public:
 	ZST_EXPORT void synchronisable_enqueue_activation(ZstSynchronisable * synchronisable);
 	ZST_EXPORT void synchronisable_enqueue_deactivation(ZstSynchronisable * synchronisable);
 	ZST_EXPORT void synchronisable_set_activated(ZstSynchronisable * synchronisable);
