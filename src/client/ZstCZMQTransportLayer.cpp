@@ -100,14 +100,18 @@ void ZstCZMQTransportLayer::connect_to_stage(std::string stage_address)
 	addr.str("");
 }
 
-void ZstCZMQTransportLayer::connect_to_client(const char * endpoint_ip, const char * subscription_plug) {
+void ZstCZMQTransportLayer::connect_to_client(const char * endpoint_ip) {
 	ZstLog::net(LogLevel::notification, "Connecting to {}. My output endpoint is {}", endpoint_ip, m_graph_out_ip);
 
 	//Connect to endpoint publisher
 	zsock_connect(m_graph_in, "%s", endpoint_ip);
-	zsock_set_subscribe(m_graph_in, subscription_plug);
+	zsock_set_subscribe(m_graph_in, "");
 }
 
+
+// ------------------------
+// Stage dispatch overrides
+// ------------------------
 
 void ZstCZMQTransportLayer::disconnect_from_stage()
 {
@@ -137,27 +141,16 @@ int ZstCZMQTransportLayer::s_handle_stage_router(zloop_t * loop, zsock_t * socke
 	//Receive routed message from stage
 	ZstStageMessage * msg = transport->receive_addressed_msg();
 
-	//Process messages addressed to our client specifically
-	if (msg->kind() == ZstMsgKind::GRAPH_SNAPSHOT) {
-		ZstLog::net(LogLevel::notification, "Received graph snapshot");
-		
-		//Handle graph snapshot synchronisation
+	//Handle multiple payloads in one message
+	if(msg->kind() == ZstMsgKind::GRAPH_SNAPSHOT){
 		for (size_t i = 0; i < msg->num_payloads(); ++i)
 		{
 			transport->msg_dispatch()->receive_addressed_msg(i, msg);
 		}
+	} else {
+		transport->msg_dispatch()->receive_addressed_msg(0, msg);
 	}
-	else if (msg->kind() == ZstMsgKind::SUBSCRIBE_TO_PERFORMER) {
-		//Handle connection requests from other clients
-		transport->connect_to_client((char*)msg->payload_at(0).data(), (char*)msg->payload_at(1).data());
-	}
-	else if (msg->kind() == ZstMsgKind::OK) {
-		//Do nothing?
-	}
-	else {
-		ZstLog::net(LogLevel::notification, "Stage router sent unknown message {}", msg->kind());
-	}
-
+	
 	//Process message promises
 	transport->msg_dispatch()->process_stage_response(msg);
 	
@@ -218,6 +211,7 @@ void ZstCZMQTransportLayer::send_to_performance(ZstPerformanceMessage * msg)
 	assert(msg);
 	zmsg_t * handle = msg->handle();
  	zmsg_send(&handle, m_graph_out);
+	m_performance_msg_pool.release(msg);
 }
 
 zmsg_t * ZstCZMQTransportLayer::sock_recv(zsock_t* socket, bool pop_first)

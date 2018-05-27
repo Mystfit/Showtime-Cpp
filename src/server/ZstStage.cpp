@@ -84,9 +84,9 @@ bool ZstStage::is_destroyed()
 //Client
 //------
 
-ZstPerformer * ZstStage::get_client(const ZstURI & path)
+ZstPerformerStageProxy * ZstStage::get_client(const ZstURI & path)
 {
-	ZstPerformer * performer = NULL;
+	ZstPerformerStageProxy * performer = NULL;
 	ZstURI first = path.first();
 	if (m_clients.find(first) != m_clients.end()) {
 		performer = m_clients[first];
@@ -94,9 +94,9 @@ ZstPerformer * ZstStage::get_client(const ZstURI & path)
 	return performer;
 }
 
-ZstPerformer * ZstStage::get_client_from_socket_id(const std::string & socket_id)
+ZstPerformerStageProxy * ZstStage::get_client_from_socket_id(const std::string & socket_id)
 {
-	ZstPerformer * performer = NULL;
+	ZstPerformerStageProxy * performer = NULL;
 	if (m_client_socket_index.find(socket_id) != m_client_socket_index.end()) {
 		performer = m_client_socket_index[socket_id];
 	}
@@ -285,7 +285,7 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 	ZstStage *stage = (ZstStage*)arg;
 	zframe_t * identity_frame = NULL;
 	std::string sender_identity;
-	ZstPerformer * sender = NULL;
+	ZstPerformerStageProxy * sender = NULL;
 
 	//Receive waiting message
 	zmsg_t * recv_msg = zmsg_recv(socket);
@@ -370,9 +370,14 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 			response = stage->destroy_cable_handler(msg);
 			break;
 		}
+		case ZstMsgKind::SUBSCRIBE_TO_PERFORMER_ACK:
+		{
+			response = stage->complete_client_connection_handler(msg, sender);
+			break;
+		}
 		default:
 		{
-			ZstLog::net(LogLevel::notification, "Didn't understand received message type of {}", msg->kind());
+			ZstLog::net(LogLevel::notification, "Didn't understand received message type of {}", ZstMsgNames[msg->kind()]);
 			response = stage->msg_pool()->get_msg()->init_message(ZstMsgKind::ERR_STAGE_MSG_TYPE_UNKNOWN);
 			break;
 		}
@@ -591,22 +596,25 @@ ZstStageMessage * ZstStage::create_cable_handler(ZstStageMessage * msg)
 	if (!cable_ptr) {
 		return response->init_message(ZstMsgKind::ERR_STAGE_BAD_CABLE_CONNECT_REQUEST);
 	}
-
+	
 	//Create connection request for the entity who owns the input plug
-	ZstPerformer * input_performer = get_client(cable_ptr->get_input_URI());
+	ZstPerformerStageProxy * input_performer = get_client(cable_ptr->get_input_URI());
 	ZstPerformerStageProxy * output_performer = dynamic_cast<ZstPerformerStageProxy*>(get_client(cable_ptr->get_output_URI()));
 
-	ZstLog::net(LogLevel::notification, "Sending cable connection request to {}", input_performer->URI().path());
-
-	ZstStageMessage * connection_msg = msg_pool()->get_msg()->init_message(ZstMsgKind::SUBSCRIBE_TO_PERFORMER);
-	connection_msg->append_str(output_performer->ip_address().c_str(), strlen(output_performer->ip_address().c_str()));	//IP of output client
-	connection_msg->append_str(cable.get_output_URI().path(), cable.get_output_URI().full_size());	//Output plug path
-	send_to_client(connection_msg, input_performer);
-
-	//Update rest of network
-	publish_stage_update(msg_pool()->get_msg()->init_serialisable_message(msg->kind(), cable));
+	//Check to see if one client is already connected to the other
+	if(!output_performer->is_connected_to_subscriber_peer(input_performer)){
+		connect_clients(output_performer, input_performer);
+	} else {
+		create_cable_complete_handler(cable_ptr);
+	}
 
     return response->init_message(ZstMsgKind::OK);
+}
+
+ZstStageMessage * ZstStage::create_cable_complete_handler(ZstCable * cable)
+{	
+	publish_stage_update(msg_pool()->get_msg()->init_serialisable_message(ZstMsgKind::CREATE_CABLE, *cable));
+	return msg_pool()->get_msg()->init_message(ZstMsgKind::OK);
 }
 
 ZstStageMessage * ZstStage::destroy_cable_handler(ZstStageMessage * msg)
@@ -685,6 +693,37 @@ int ZstStage::stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * ar
 		stage->destroy_client(client);
 	}
 	return 0;
+}
+
+void ZstStage::connect_clients(ZstPerformerStageProxy * output_client, ZstPerformerStageProxy * input_client)
+{
+	ZstStageMessage * connection_msg = msg_pool()->get_msg()->init_message(ZstMsgKind::SUBSCRIBE_TO_PERFORMER);
+
+	//Attach URI and IP of output client
+	connection_msg->append_str(output_client->URI().path(), output_client->URI().size());	
+	connection_msg->append_str(output_client->ip_address().c_str(), strlen(output_client->ip_address().c_str()));
+	
+	ZstLog::net(LogLevel::notification, "Sending P2P subscribe request to {}", input_client->URI().path());
+	send_to_client(connection_msg, input_client);
+
+	ZstLog::net(LogLevel::notification, "Sending P2P handshake broadcast request to {}", output_client->URI().path());
+	send_to_client(msg_pool()->get_msg()->init_message(ZstMsgKind::START_CONNECTION_HANDSHAKE), output_client);
+}
+
+ZstStageMessage * ZstStage::complete_client_connection_handler(ZstStageMessage * msg, ZstPerformerStageProxy * input_client)
+{
+	ZstPerformerStageProxy * output_client = get_client(ZstURI(msg->payload_at(0).data(), msg->payload_at(0).size()));
+	ZstLog::net(LogLevel::notification, "Stopping P2P handshake broadcast from client {}", output_client->URI().path());
+
+	if(output_client){
+		output_client->add_subscriber_peer(input_client);
+
+		ZstLog::net(LogLevel::notification, "Stopping P2P handshake broadcast from client {}", output_client->URI().path());
+		send_to_client(msg_pool()->get_msg()->init_message(ZstMsgKind::STOP_CONNECTION_HANDSHAKE), output_client);
+	}
+
+	return msg_pool()->get_msg()->init_message(ZstMsgKind::OK);
+
 }
 
 ZstMessagePool<ZstStageMessage> * ZstStage::msg_pool()

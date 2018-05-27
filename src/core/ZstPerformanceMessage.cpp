@@ -7,6 +7,12 @@ ZstPerformanceMessage * ZstPerformanceMessage::init_performance_message(ZstOutpu
 	return this;
 }
 
+ZstPerformanceMessage * ZstPerformanceMessage::init_performance_message(const ZstURI & sender)
+{
+	this->append_str(sender.path(), sender.full_size());
+	return this;
+}
+
 void ZstPerformanceMessage::unpack(zmsg_t * msg){
 	ZstMessage::unpack(msg);
 
@@ -14,8 +20,11 @@ void ZstPerformanceMessage::unpack(zmsg_t * msg){
 	m_sender = ZstURI(zmsg_popstr(msg));
 
 	//Unpack value
-	ZstMessagePayload p(ZstMsgKind::PLUG_VALUE, zmsg_pop(msg));
-	m_payloads.push_back(std::move(p));
+	zframe_t * payload = zmsg_pop(msg);
+	if(payload){
+		ZstMessagePayload p(ZstMsgKind::PLUG_VALUE, payload);
+		m_payloads.push_back(std::move(p));
+	}
 }
 
 const ZstURI & ZstPerformanceMessage::sender(){

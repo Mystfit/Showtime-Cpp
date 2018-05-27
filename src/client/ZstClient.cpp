@@ -20,6 +20,9 @@ ZstClient::ZstClient() :
 
 	//Register client as a stage sender/receiver
 	this->add_adaptor(m_msg_dispatch);
+
+	m_msg_dispatch->stage_events().add_adaptor(this);
+	m_msg_dispatch->performance_events().add_adaptor(this);
 }
 
 ZstClient::~ZstClient() {
@@ -75,6 +78,7 @@ void ZstClient::init_client(const char *client_name, bool debug)
 	m_session->performance_events().add_adaptor(m_msg_dispatch);
 
 	//Register adaptors to handle incoming events
+	m_msg_dispatch->stage_events().add_adaptor(this);
 	m_msg_dispatch->stage_events().add_adaptor(m_session);
 	m_msg_dispatch->stage_events().add_adaptor(m_session->hierarchy());
 	m_msg_dispatch->performance_events().add_adaptor(m_session);
@@ -103,6 +107,66 @@ void ZstClient::flush()
 {
 	this->flush();
 	m_session->flush();
+}
+
+// -----------------------
+// Stage adaptor overrides
+// -----------------------
+
+void ZstClient::on_receive_from_stage(size_t payload_index, ZstStageMessage * msg)
+{
+	//Ignore messages with no payloads
+	if(msg->num_payloads() < 1){
+		return;
+	}
+	
+	switch (msg->payload_at(payload_index).kind()) {
+	case ZstMsgKind::START_CONNECTION_HANDSHAKE:
+	{
+		start_connection_broadcast(session()->hierarchy()->get_local_performer(), dynamic_cast<ZstPerformer*>(session()->hierarchy()->find_entity(ZstURI(msg->payload_at(payload_index).data(), msg->payload_at(payload_index).size()))));
+		break;
+	}
+	case ZstMsgKind::STOP_CONNECTION_HANDSHAKE:
+	{
+		stop_connection_broadcast( dynamic_cast<ZstPerformer*>(session()->hierarchy()->find_entity(ZstURI(msg->payload_at(payload_index).data(), msg->payload_at(payload_index).size()))));
+		break;
+	}
+	case ZstMsgKind::SUBSCRIBE_TO_PERFORMER:
+	{
+		//Listen for incoming handshake performance messages
+		m_msg_dispatch->performance_events().add_adaptor(this);
+		m_pending_peer_connections.insert(ZstURI(msg->payload_at(0).data(), msg->payload_at(0).size()));
+
+		//Start connecting to other peer
+		m_transport->connect_to_client(std::string((char*)msg->payload_at(1).data(), msg->payload_at(1).size()).c_str());
+		break;
+	}
+	default:
+		ZstLog::net(LogLevel::warn, "Client message handler didn't understand message type of {}",  ZstMsgNames[msg->payload_at(payload_index).kind()]);
+		break;
+	}
+}
+
+
+// ------------------------------
+// Performance dispatch overrides
+// ------------------------------
+
+void ZstClient::on_receive_from_performance(ZstPerformanceMessage * msg){
+	if(msg->num_payloads() > 0){
+		ZstLog::net(LogLevel::debug, "ZstClient received performance message with a payload, ignoring.");
+		return;
+	}
+
+	//Peer connection is successful if we receive a handshake performance message from the sending client
+	if(m_pending_peer_connections.find(msg->sender()) != m_pending_peer_connections.end()){
+		m_pending_peer_connections.erase(msg->sender());
+		msg_dispatch()->send_message(ZstMsgKind::SUBSCRIBE_TO_PERFORMER_ACK, true, msg->sender().path(), [](ZstMessageReceipt receipt){
+			if(receipt.status != ZstMsgKind::OK){
+				ZstLog::net(LogLevel::error, "SUBSCRIBE_TO_PERFORMER_ACK: Stage responded with error {}", receipt.status);
+			}
+		});
+	}
 }
 
 
@@ -244,6 +308,32 @@ void ZstClient::heartbeat_timer(){
 	});
 }
 
+void ZstClient::start_connection_broadcast(ZstPerformer * local_client, ZstPerformer * remote_client)
+{
+	assert(local_client);
+	assert(remote_client);
+
+	m_connection_timers[remote_client->URI()] = m_transport->add_timer(100, [this, local_client](){
+		m_transport->send_to_performance( m_transport->get_performance_msg()->init_performance_message(local_client->URI()));
+	});
+}
+
+void ZstClient::stop_connection_broadcast(ZstPerformer * remote_client)
+{
+	assert(remote_client);
+
+	int timer_id = -1;
+	try{
+		timer_id = m_connection_timers[remote_client->URI()];
+	} catch (std::out_of_range){
+		ZstLog::net(LogLevel::warn, "Broadcast timer for {} not found", remote_client->URI().path());
+	}
+
+	if(timer_id > -1){
+		m_transport->remove_timer(timer_id);
+	}
+}
+
 ZstMessageDispatcher * ZstClient::msg_dispatch()
 {
 	return m_msg_dispatch;
@@ -253,3 +343,4 @@ ZstClientSession * ZstClient::session()
 {
 	return m_session;
 }
+

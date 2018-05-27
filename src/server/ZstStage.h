@@ -37,8 +37,8 @@ public:
 	bool is_destroyed();
 
 	//Client
-	ZstPerformer * get_client(const ZstURI & path);
-	ZstPerformer * get_client_from_socket_id(const std::string & socket_id);
+	ZstPerformerStageProxy * get_client(const ZstURI & path);
+	ZstPerformerStageProxy * get_client_from_socket_id(const std::string & socket_id);
 	std::string get_socket_ID(const ZstPerformer * performer);
 
 	void destroy_client(ZstPerformer * performer);
@@ -74,7 +74,10 @@ private:
 	ZstStageMessage * create_entity_from_template_handler(ZstStageMessage * msg);
 
 	ZstStageMessage * create_cable_handler(ZstStageMessage * msg);
+	ZstStageMessage * create_cable_complete_handler(ZstCable * cable);
 	ZstStageMessage * destroy_cable_handler(ZstStageMessage * msg);
+
+	ZstStageMessage * complete_client_connection_handler(ZstStageMessage * msg, ZstPerformerStageProxy * input_client);
 	
 	//Outgoing events
 	ZstStageMessage * create_snapshot(ZstPerformer * client);
@@ -83,15 +86,19 @@ private:
 	int m_heartbeat_timer_id;
 	static int stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * arg);
 
+	//P2P client connections
+	void connect_clients(ZstPerformerStageProxy * output_client, ZstPerformerStageProxy * input_client);
+	
 	//Stage pipes
-	zsock_t *m_performer_router;
-	zsock_t *m_graph_update_pub;
+	zsock_t * m_performer_router;
+	zsock_t * m_graph_update_pub;
 
 	//Client performers
 	ZstClientMap m_clients;
 	ZstClientSocketMap m_client_socket_index;
-	
+
 	//Cables
+	ZstCableList m_pending_cables;
 	ZstCableList m_cables;
 
 	//Messages

@@ -48,6 +48,11 @@ void ZstClientHierarchy::flush_events()
 
 void ZstClientHierarchy::on_receive_from_stage(size_t payload_index, ZstStageMessage * msg)
 {
+	//Ignore messages with no payloads
+	if(msg->num_payloads() < 1){
+		return;
+	}
+
 	switch (msg->payload_at(payload_index).kind()) {
 	case ZstMsgKind::CREATE_PLUG:
 	{
@@ -79,7 +84,7 @@ void ZstClientHierarchy::on_receive_from_stage(size_t payload_index, ZstStageMes
 		break;
 	}
 	default:
-		ZstLog::net(LogLevel::warn, "Hierarchy message handler didn't understand message type of {}", msg->payload_at(payload_index).kind());
+		ZstLog::net(LogLevel::warn, "Hierarchy message handler didn't understand message type of {}", ZstMsgNames[msg->payload_at(payload_index).kind()]);
 		break;
 	}
 }

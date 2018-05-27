@@ -65,7 +65,6 @@ void ZstStageDispatchAdaptor::send_serialisable_message(ZstMsgKind kind, const Z
 void ZstStageDispatchAdaptor::send_entity_message(const ZstEntityBase * entity, bool async, MessageReceivedAction action) {}
 void ZstStageDispatchAdaptor::on_receive_from_stage(size_t payload_index, ZstStageMessage * msg) {}
 
-
 // -----------------------
 // Performance message adaptors
 // -----------------------

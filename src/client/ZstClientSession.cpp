@@ -74,6 +74,12 @@ void ZstClientSession::dispatch_disconnected_from_stage()
 
 void ZstClientSession::on_receive_from_performance(ZstPerformanceMessage * msg)
 {
+	//Check for no payloads in message
+	if(msg->num_payloads() < 1){
+		ZstLog::net(LogLevel::debug, "No payload in performance message. Must be a connection broadcast.");
+		return;
+	}
+
 	//Find local proxy for the sending plug
 	ZstPlug * sending_plug = dynamic_cast<ZstPlug*>(hierarchy()->find_entity(msg->sender()));
 	ZstInputPlug * receiving_plug = NULL;
@@ -119,6 +125,11 @@ void ZstClientSession::plug_received_value(ZstInputPlug * plug)
 
 void ZstClientSession::on_receive_from_stage(size_t payload_index, ZstStageMessage * msg)
 {
+	//Ignore messages with no payloads
+	if(msg->num_payloads() < 1){
+		return;
+	}
+
 	switch (msg->payload_at(payload_index).kind()) {
 	case ZstMsgKind::CREATE_CABLE:
 	{
@@ -136,7 +147,7 @@ void ZstClientSession::on_receive_from_stage(size_t payload_index, ZstStageMessa
 		break;
 	}
 	default:
-		ZstLog::net(LogLevel::warn, "Session message handler didn't understand message type of {}", msg->payload_at(payload_index).kind());
+		ZstLog::net(LogLevel::warn, "Session message handler didn't understand message type of {}", ZstMsgNames[msg->payload_at(payload_index).kind()]);
 		break;
 	}
 }
@@ -163,7 +174,7 @@ ZstCable * ZstClientSession::connect_cable(ZstPlug * input, ZstPlug * output, bo
 {
 	ZstCable * cable = NULL;
 	cable = ZstSession::connect_cable(input, output, async);
-
+	
 	if (cable) {
 		//TODO: Even though we use a cable object when sending over the wire, it's up to us
 		//to determine the correct input->output order - fix this using ZstInputPlug and 
@@ -180,7 +191,8 @@ ZstCable * ZstClientSession::connect_cable(ZstPlug * input, ZstPlug * output, bo
 
 void ZstClientSession::connect_cable_complete(ZstMessageReceipt response, ZstCable * cable) {
 	if (response.status == ZstMsgKind::OK) {
-		synchronisable_enqueue_activation(cable);
+		//The connection has started, but we have to wait for the stage to publish the cable before we can mark it live
+		//synchronisable_enqueue_activation(cable);
 	}
 	else {
 		ZstLog::net(LogLevel::notification, "Cable connect for {}-{} failed with status {}", cable->get_input_URI().path(), cable->get_output_URI().path(), response.status);

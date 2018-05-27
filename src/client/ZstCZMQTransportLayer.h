@@ -23,13 +23,26 @@ public:
 	virtual void destroy() override;
 	virtual void init() override;
 	void connect_to_stage(std::string stage_address) override;
-	void connect_to_client(const char * endpoint_ip, const char * subscription_plug) override;
+	void connect_to_client(const char * endpoint_ip) override;
 	void disconnect_from_stage() override;
 
-	int add_timer(int delay, std::function<void()> timer_func);
-	void remove_timer(int timer_id);
+
+	// ------------------------
+	// Timers
+	// ------------------------
+
+	int add_timer(int delay, std::function<void()> timer_func) override;
+	void remove_timer(int timer_id) override;
 
 	const char * get_graph_address();
+
+
+	void send_to_stage(ZstStageMessage * msg) override;
+	void send_to_performance(ZstPerformanceMessage * msg) override;
+
+	// ------------------------
+	// Message instantiation
+	// ------------------------
 
 	ZstStageMessage * get_stage_msg() override;
 	ZstPerformanceMessage * get_performance_msg() override;
@@ -50,13 +63,11 @@ private:
 	// ---------------
 	
 	std::unordered_map<int, std::function<void()> > m_timers;
-
+	
+	
 	// ---------------
 	// Message IO
 	// ---------------
-	
-	void send_to_stage(ZstStageMessage * msg) override;
-	void send_to_performance(ZstPerformanceMessage * msg) override;
 
 	zmsg_t * sock_recv(zsock_t* socket, bool pop_first);
 	ZstStageMessage * receive_addressed_msg() override;

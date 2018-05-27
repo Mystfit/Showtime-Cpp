@@ -60,21 +60,17 @@ void ZstSynchronisable::enqueue_deactivation()
 {
     if (is_activated() || activation_status() != ZstSyncStatus::DEACTIVATED)
     {
-		ZstLog::net(LogLevel::debug, "!!!!Deactivating synchronisable");
         set_activation_status(ZstSyncStatus::DEACTIVATED);
 
 		//Notify adaptors synchronisable is deactivating
-		ZstLog::net(LogLevel::debug, "!!!!Saving local deactivation event");
 		m_synchronisable_events->defer([this](ZstSynchronisableAdaptor* dlg) { 
 			dlg->on_synchronisable_deactivated(this); 
 		});
 
 		//Notify adaptors that we have a queued event
-		ZstLog::net(LogLevel::debug, "!!!!Notifying owner adaptor that synchronisable has an event");
 		m_synchronisable_events->invoke([this](ZstSynchronisableAdaptor* dlg) { dlg->synchronisable_has_event(this); });
 
 		//Notify adaptors that this syncronisable needs to be cleaned up
-		ZstLog::net(LogLevel::debug, "!!!!Notifying reaper synchronisable needs to be destroyed");
 		m_synchronisable_events->invoke([this](ZstSynchronisableAdaptor * dlg) {dlg->on_synchronisable_destroyed(this); });
     }
 }

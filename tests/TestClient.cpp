@@ -591,6 +591,7 @@ void test_add_filter() {
 	zst_connect_cable(add_filter->augend(), test_output_augend->output() );
 	zst_connect_cable(add_filter->addend(), test_output_addend->output());
 	zst_connect_cable(test_input_sum->input(), add_filter->sum());
+	
 	TAKE_A_BREATH
 
 	//Send values

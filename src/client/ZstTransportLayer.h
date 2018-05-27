@@ -35,7 +35,14 @@ public:
 	// Peer connectivity
 	// -----------------
 	// 
-	virtual void connect_to_client(const char * endpoint_ip, const char * subscription_plug) = 0;
+	virtual void connect_to_client(const char * endpoint_ip) = 0;
+	
+
+	// ------
+	// Timers
+	// ------
+	virtual int add_timer(int delay, std::function<void()> timer_func) = 0;
+	virtual void remove_timer(int timer_id) = 0;
 
 
 	// ---------------

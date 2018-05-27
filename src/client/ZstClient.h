@@ -20,9 +20,12 @@
 #include "ZstClientSession.h"
 #include "ZstCZMQTransportLayer.h"
 #include "../core/adaptors/ZstStageDispatchAdaptor.hpp"
+#include "../core/adaptors/ZstPerformanceDispatchAdaptor.hpp"
 
 class ZstClient : 
-	public ZstEventDispatcher<ZstStageDispatchAdaptor*>
+	public ZstEventDispatcher<ZstStageDispatchAdaptor*>,
+	public ZstStageDispatchAdaptor,
+	public ZstPerformanceDispatchAdaptor
 {
 public:
 	ZstClient();
@@ -36,6 +39,10 @@ public:
 	
 	//Client singleton - should not be accessable outside this interface
 	static ZstClient & instance();
+
+	//Stage adaptor overrides
+	void on_receive_from_stage(size_t payload_index, ZstStageMessage * msg) override;
+	void on_receive_from_performance(ZstPerformanceMessage * msg) override;
 
 	//Register this endpoint to the stage
 	void join_stage(std::string stage_address, bool async = false);
@@ -72,6 +79,12 @@ private:
 	//UUIDs
 	std::string m_assigned_uuid;
 	std::string m_client_name;
+
+	//P2P Connections
+	void start_connection_broadcast(ZstPerformer * local_client, ZstPerformer * remote_client);
+	void stop_connection_broadcast(ZstPerformer * remote_client);
+	std::unordered_set<ZstURI, ZstURIHash> m_pending_peer_connections;
+	std::unordered_map<ZstURI, int, ZstURIHash> m_connection_timers;
 	
 	//Client modules
 	ZstClientSession * m_session;

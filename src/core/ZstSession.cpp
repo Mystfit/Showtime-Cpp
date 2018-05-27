@@ -118,6 +118,10 @@ ZstCable * ZstSession::create_cable(const ZstURI & input_path, const ZstURI & ou
 {
 	ZstCable * cable_ptr = find_cable(input_path, output_path);
 	if (cable_ptr) {
+		//If we created this cable, we need to finish its activation
+		if(!cable_ptr->is_activated()){
+			synchronisable_enqueue_activation(cable_ptr);
+		}
 		return cable_ptr;
 	}
 
