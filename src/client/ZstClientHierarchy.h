@@ -41,7 +41,7 @@ public:
 	// Adaptor behaviours
 	// --------------------
 	
-	void on_receive_from_stage(size_t payload_index, ZstStageMessage * msg) override;
+	void on_receive_from_stage(ZstStageMessage * msg) override;
 	void synchronisable_has_event(ZstSynchronisable * synchronisable) override;
 
 

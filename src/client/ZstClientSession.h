@@ -58,7 +58,7 @@ public:
 
 	void on_receive_from_performance(ZstPerformanceMessage * msg) override;
 	void on_plug_fire(ZstOutputPlug * plug) override;
-	void on_receive_from_stage(size_t payload_index, ZstStageMessage * msg) override;
+	void on_receive_from_stage(ZstStageMessage * msg) override;
 
 
 	// -------------------------------

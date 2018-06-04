@@ -26,8 +26,8 @@ public:
 	ZstMsgKind unpack_kind(zframe_t * kind_frame);
 
     //Accessors
-    ZST_EXPORT const char * id();
-	ZST_EXPORT ZstMsgKind kind();
+    ZST_EXPORT const char * id() const;
+	ZST_EXPORT const ZstMsgKind kind() const;
 
 private:
     /** Summary:	The message kind. */

@@ -19,11 +19,11 @@ ZstStageMessage::~ZstStageMessage(){
 void ZstStageMessage::reset(){
     memset(&m_msg_id[0], 0, ZSTMSG_UUID_LENGTH);
 	m_msg_kind = ZstMsgKind::EMPTY;
+	this->append_id_frame();
 }
 
 ZstStageMessage * ZstStageMessage::init_entity_message(const ZstEntityBase * entity)
 {
-	this->append_id_frame();
 	this->append_entity_kind_frame(entity);
 	this->append_payload_frame(*entity);
 	return this;
@@ -31,14 +31,12 @@ ZstStageMessage * ZstStageMessage::init_entity_message(const ZstEntityBase * ent
 
 ZstStageMessage * ZstStageMessage::init_message(ZstMsgKind kind)
 {
-	this->append_id_frame();
 	this->append_kind_frame(kind);
 	return this;
 }
 
 ZstStageMessage * ZstStageMessage::init_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable)
 {
-	this->append_id_frame();
 	this->append_kind_frame(kind);
 	this->append_payload_frame(serialisable);
 	return this;
@@ -92,15 +90,11 @@ void ZstStageMessage::append_id_frame()
 	zmsg_addmem(handle(), m_msg_id, ZSTMSG_UUID_LENGTH);
 }
 
-
 void ZstStageMessage::append_serialisable(ZstMsgKind k, const ZstSerialisable & s)
 {
-	if (kind() == ZstMsgKind::GRAPH_SNAPSHOT) {
-		append_kind_frame(k);
-	}
+	append_kind_frame(k);
 	append_payload_frame(s);
 }
-
 
 void ZstStageMessage::unpack(zmsg_t * msg)
 {
@@ -113,26 +107,11 @@ void ZstStageMessage::unpack(zmsg_t * msg)
 
 	//Unpack kind
 	m_msg_kind = unpack_kind();
-	
-	//Handle message payloads
-	if (kind() == ZstMsgKind::GRAPH_SNAPSHOT) {
-		// Batched update messages from the stage look like this:
-		// | Kind | Payload | Kind | Payload | ... |
-		ZstMsgKind payload_kind = unpack_kind();
-		while (payload_kind != ZstMsgKind::EMPTY) {
-			m_payloads.push_back(ZstMessagePayload(payload_kind, zmsg_pop(handle())));
-			payload_kind = unpack_kind();
-		}
-	}
-	else {
-		// Normal payloads don't have kind frames and look like this
-		// | Payload | Payload | Payload | ... |
-		zframe_t * payload_frame = zmsg_pop(handle());
-		while (payload_frame){
-			ZstMessagePayload p(m_msg_kind, payload_frame);
-			m_payloads.push_back(std::move(p));
-			payload_frame = zmsg_pop(handle());
-		}
+	ZstMsgKind payload_kind = m_msg_kind;
+
+	while (payload_kind != ZstMsgKind::EMPTY) {
+		m_payloads.push_back(ZstMessagePayload(payload_kind, zmsg_pop(handle())));
+		payload_kind = unpack_kind();
 	}
 }
 
@@ -154,12 +133,12 @@ ZstMsgKind ZstStageMessage::unpack_kind(zframe_t * kind_frame)
 	return k;
 }
 
-const char * ZstStageMessage::id()
+const char * ZstStageMessage::id() const
 {
 	return m_msg_id;
 }
 
-ZstMsgKind ZstStageMessage::kind()
+const ZstMsgKind ZstStageMessage::kind() const
 {
 	return m_msg_kind;
 }

@@ -46,45 +46,45 @@ void ZstClientHierarchy::flush_events()
 	m_stage_events.flush();
 }
 
-void ZstClientHierarchy::on_receive_from_stage(size_t payload_index, ZstStageMessage * msg)
+void ZstClientHierarchy::on_receive_from_stage(ZstStageMessage * msg)
 {
 	//Ignore messages with no payloads
 	if(msg->num_payloads() < 1){
 		return;
 	}
 
-	switch (msg->payload_at(payload_index).kind()) {
+	switch (msg->payload_at(0).kind()) {
 	case ZstMsgKind::CREATE_PLUG:
 	{
-		ZstPlug plug = msg->unpack_payload_serialisable<ZstPlug>(payload_index);
+		ZstPlug plug = msg->unpack_payload_serialisable<ZstPlug>(0);
 		add_proxy_entity(plug);
 		break;
 	}
 	case ZstMsgKind::CREATE_PERFORMER:
 	{
-		ZstPerformer performer = msg->unpack_payload_serialisable<ZstPerformer>(payload_index);
+		ZstPerformer performer = msg->unpack_payload_serialisable<ZstPerformer>(0);
 		add_performer(performer);
 		break;
 	}
 	case ZstMsgKind::CREATE_COMPONENT:
 	{
-		ZstComponent component = msg->unpack_payload_serialisable<ZstComponent>(payload_index);
+		ZstComponent component = msg->unpack_payload_serialisable<ZstComponent>(0);
 		add_proxy_entity(component);
 		break;
 	}
 	case ZstMsgKind::CREATE_CONTAINER:
 	{
-		ZstContainer container = msg->unpack_payload_serialisable<ZstContainer>(payload_index);
+		ZstContainer container = msg->unpack_payload_serialisable<ZstContainer>(0);
 		add_proxy_entity(container);
 		break;
 	}
 	case ZstMsgKind::DESTROY_ENTITY:
 	{
-		remove_proxy_entity(find_entity(ZstURI((char*)msg->payload_at(payload_index).data(), msg->payload_at(payload_index).size())));
+		remove_proxy_entity(find_entity(ZstURI((char*)msg->payload_at(0).data(), msg->payload_at(0).size())));
 		break;
 	}
 	default:
-		ZstLog::net(LogLevel::warn, "Hierarchy message handler didn't understand message type of {}", ZstMsgNames[msg->payload_at(payload_index).kind()]);
+		ZstLog::net(LogLevel::warn, "Hierarchy message handler didn't understand message type of {}", ZstMsgNames[msg->payload_at(0).kind()]);
 		break;
 	}
 }

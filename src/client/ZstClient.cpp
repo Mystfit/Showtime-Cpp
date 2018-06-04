@@ -113,22 +113,17 @@ void ZstClient::flush()
 // Stage adaptor overrides
 // -----------------------
 
-void ZstClient::on_receive_from_stage(size_t payload_index, ZstStageMessage * msg)
-{
-	//Ignore messages with no payloads
-	if(msg->num_payloads() < 1){
-		return;
-	}
-	
-	switch (msg->payload_at(payload_index).kind()) {
+void ZstClient::on_receive_from_stage(ZstStageMessage * msg)
+{	
+	switch (msg->kind()) {
 	case ZstMsgKind::START_CONNECTION_HANDSHAKE:
 	{
-		start_connection_broadcast(session()->hierarchy()->get_local_performer(), dynamic_cast<ZstPerformer*>(session()->hierarchy()->find_entity(ZstURI(msg->payload_at(payload_index).data(), msg->payload_at(payload_index).size()))));
+		start_connection_broadcast(session()->hierarchy()->get_local_performer(), dynamic_cast<ZstPerformer*>(session()->hierarchy()->find_entity(ZstURI(msg->payload_at(0).data(), msg->payload_at(0).size()))));
 		break;
 	}
 	case ZstMsgKind::STOP_CONNECTION_HANDSHAKE:
 	{
-		stop_connection_broadcast( dynamic_cast<ZstPerformer*>(session()->hierarchy()->find_entity(ZstURI(msg->payload_at(payload_index).data(), msg->payload_at(payload_index).size()))));
+		stop_connection_broadcast( dynamic_cast<ZstPerformer*>(session()->hierarchy()->find_entity(ZstURI(msg->payload_at(0).data(), msg->payload_at(0).size()))));
 		break;
 	}
 	case ZstMsgKind::SUBSCRIBE_TO_PERFORMER:
@@ -142,7 +137,7 @@ void ZstClient::on_receive_from_stage(size_t payload_index, ZstStageMessage * ms
 		break;
 	}
 	default:
-		ZstLog::net(LogLevel::warn, "Client message handler didn't understand message type of {}",  ZstMsgNames[msg->payload_at(payload_index).kind()]);
+		ZstLog::net(LogLevel::warn, "Client message handler didn't understand message type of {}",  ZstMsgNames[msg->kind()]);
 		break;
 	}
 }

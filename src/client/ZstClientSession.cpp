@@ -123,23 +123,23 @@ void ZstClientSession::plug_received_value(ZstInputPlug * plug)
 	}
 }
 
-void ZstClientSession::on_receive_from_stage(size_t payload_index, ZstStageMessage * msg)
+void ZstClientSession::on_receive_from_stage(ZstStageMessage * msg)
 {
 	//Ignore messages with no payloads
 	if(msg->num_payloads() < 1){
 		return;
 	}
 
-	switch (msg->payload_at(payload_index).kind()) {
+	switch (msg->kind()) {
 	case ZstMsgKind::CREATE_CABLE:
 	{
-		const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(payload_index);
+		const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(0);
 		create_cable(cable);
 		break;
 	}
 	case ZstMsgKind::DESTROY_CABLE:
 	{
-		const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(payload_index);
+		const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(0);
 		ZstCable * cable_ptr = find_cable(cable.get_input_URI(), cable.get_output_URI());
 		if (cable_ptr) {
 			destroy_cable_complete(ZstMessageReceipt{ ZstMsgKind::OK, false }, cable_ptr);
@@ -147,7 +147,7 @@ void ZstClientSession::on_receive_from_stage(size_t payload_index, ZstStageMessa
 		break;
 	}
 	default:
-		ZstLog::net(LogLevel::warn, "Session message handler didn't understand message type of {}", ZstMsgNames[msg->payload_at(payload_index).kind()]);
+		ZstLog::net(LogLevel::warn, "Session message handler didn't understand message type of {}", ZstMsgNames[msg->kind()]);
 		break;
 	}
 }

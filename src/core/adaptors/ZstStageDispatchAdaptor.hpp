@@ -26,5 +26,5 @@ public:
 	ZST_EXPORT virtual void send_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable, bool async, const std::vector<std::string> msg_args, MessageReceivedAction action);
 
 	ZST_EXPORT virtual void send_entity_message(const ZstEntityBase * entity, bool async, MessageReceivedAction action);
-	ZST_EXPORT virtual void on_receive_from_stage(size_t payload_index, ZstStageMessage * msg);
+	ZST_EXPORT virtual void on_receive_from_stage(ZstStageMessage * msg);
 };

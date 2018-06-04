@@ -80,7 +80,7 @@ private:
 	ZstStageMessage * complete_client_connection_handler(ZstStageMessage * msg, ZstPerformerStageProxy * input_client);
 	
 	//Outgoing events
-	ZstStageMessage * create_snapshot(ZstPerformer * client);
+	ZstStageMessage * synchronise_client_graph(ZstPerformer * client);
     void publish_stage_update(ZstStageMessage * msg);
 
 	int m_heartbeat_timer_id;

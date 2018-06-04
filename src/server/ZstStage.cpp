@@ -316,7 +316,7 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 	switch (msg->kind()) {
 		case ZstMsgKind::CLIENT_SYNC:
 		{
-			response = stage->create_snapshot(sender);
+			response = stage->synchronise_client_graph(sender);
 			break;
 		}
 		case ZstMsgKind::CLIENT_LEAVING:
@@ -638,28 +638,24 @@ ZstStageMessage * ZstStage::destroy_cable_handler(ZstStageMessage * msg)
 //---------------------
 
 
-ZstStageMessage * ZstStage::create_snapshot(ZstPerformer * client) {
+ZstStageMessage * ZstStage::synchronise_client_graph(ZstPerformer * client) {
 
-	ZstStageMessage * snapshot = msg_pool()->get_msg()->init_message(ZstMsgKind::GRAPH_SNAPSHOT);
-	
+	ZstLog::net(LogLevel::notification, "Sending graph snapshot to {}", client->URI().path());
+
 	//Pack performer root entities
 	for (auto performer : m_clients) {
 		//Only pack performers that aren't the destination client
 		if (performer.second->URI() != client->URI()) {
-			snapshot->append_serialisable(ZstMsgKind::CREATE_PERFORMER, *(performer.second));
-			ZstLog::net(LogLevel::notification, "Adding performer {} to snapshot", performer.second->URI().path());
+			send_to_client(msg_pool()->get_msg()->init_entity_message(performer.second), client);
 		}
 	}
 	
 	//Pack cables
 	for (auto cable : m_cables) {
-		snapshot->append_serialisable(ZstMsgKind::CREATE_CABLE, *cable);
-		ZstLog::net(LogLevel::notification, "Adding cable {}-{} to snapshot", cable->get_output_URI().path(), cable->get_input_URI().path());
+		send_to_client(msg_pool()->get_msg()->init_serialisable_message(ZstMsgKind::CREATE_CABLE, *cable), client);
 	}
-
-	ZstLog::net(LogLevel::notification, "Sending graph snapshot to {}", client->URI().path());
 	
-    return snapshot;
+    return msg_pool()->get_msg()->init_message(ZstMsgKind::OK);
 }
 
 void ZstStage::publish_stage_update(ZstStageMessage * msg)

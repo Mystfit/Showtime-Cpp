@@ -41,7 +41,7 @@ public:
 	static ZstClient & instance();
 
 	//Stage adaptor overrides
-	void on_receive_from_stage(size_t payload_index, ZstStageMessage * msg) override;
+	void on_receive_from_stage(ZstStageMessage * msg) override;
 	void on_receive_from_performance(ZstPerformanceMessage * msg) override;
 
 	//Register this endpoint to the stage

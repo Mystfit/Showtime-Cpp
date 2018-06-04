@@ -140,16 +140,7 @@ int ZstCZMQTransportLayer::s_handle_stage_router(zloop_t * loop, zsock_t * socke
 
 	//Receive routed message from stage
 	ZstStageMessage * msg = transport->receive_addressed_msg();
-
-	//Handle multiple payloads in one message
-	if(msg->kind() == ZstMsgKind::GRAPH_SNAPSHOT){
-		for (size_t i = 0; i < msg->num_payloads(); ++i)
-		{
-			transport->msg_dispatch()->receive_addressed_msg(i, msg);
-		}
-	} else {
-		transport->msg_dispatch()->receive_addressed_msg(0, msg);
-	}
+	transport->msg_dispatch()->receive_addressed_msg(msg);
 	
 	//Process message promises
 	transport->msg_dispatch()->process_stage_response(msg);
@@ -233,7 +224,7 @@ void ZstCZMQTransportLayer::receive_stage_update()
 	msg->unpack(sock_recv(m_stage_updates, false));
 	
 	//Let msg dispatch decide where to forward the message to
-	msg_dispatch()->receive_addressed_msg(0, msg);
+	msg_dispatch()->receive_addressed_msg(msg);
 
 	m_stage_msg_pool.release(msg);
 }

@@ -97,11 +97,11 @@ void ZstMessageDispatcher::receive_from_performance(ZstPerformanceMessage * msg)
 	});
 }
 
-void ZstMessageDispatcher::receive_addressed_msg(size_t payload_index, ZstStageMessage * msg)
+void ZstMessageDispatcher::receive_addressed_msg(ZstStageMessage * msg)
 {
 	//Forward stage message to all adaptors
-	m_stage_events.invoke([payload_index, msg](ZstStageDispatchAdaptor * adaptor) {
-		adaptor->on_receive_from_stage(payload_index, msg);
+	m_stage_events.invoke([msg](ZstStageDispatchAdaptor * adaptor) {
+		adaptor->on_receive_from_stage(msg);
 	});
 }
 
