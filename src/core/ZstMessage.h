@@ -121,7 +121,7 @@ struct ZstMessageReceipt {
  */
 class ZstMessagePayload {
 public:
-    ZST_EXPORT ZstMessagePayload(ZstMsgKind k, zframe_t * p);
+    ZST_EXPORT ZstMessagePayload(zframe_t * p);
     ZST_EXPORT ZstMessagePayload(const ZstMessagePayload & other);
 	ZST_EXPORT ~ZstMessagePayload();
 
@@ -129,14 +129,12 @@ public:
 	ZST_EXPORT ZstMessagePayload& operator=(ZstMessagePayload && source);
 	ZST_EXPORT ZstMessagePayload& operator=(ZstMessagePayload & other);
 	
-    ZST_EXPORT const ZstMsgKind kind();
     ZST_EXPORT const size_t size();
 	ZST_EXPORT const char * data();
 	
 protected:
 	zframe_t * m_payload;	
 	size_t m_size;
-	ZstMsgKind m_kind;
 };
 
 

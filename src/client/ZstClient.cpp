@@ -118,12 +118,12 @@ void ZstClient::on_receive_from_stage(ZstStageMessage * msg)
 	switch (msg->kind()) {
 	case ZstMsgKind::START_CONNECTION_HANDSHAKE:
 	{
-		start_connection_broadcast(session()->hierarchy()->get_local_performer(), dynamic_cast<ZstPerformer*>(session()->hierarchy()->find_entity(ZstURI(msg->payload_at(0).data(), msg->payload_at(0).size()))));
+		start_connection_broadcast(ZstURI(msg->payload_at(0).data(), msg->payload_at(0).size()));
 		break;
 	}
 	case ZstMsgKind::STOP_CONNECTION_HANDSHAKE:
 	{
-		stop_connection_broadcast( dynamic_cast<ZstPerformer*>(session()->hierarchy()->find_entity(ZstURI(msg->payload_at(0).data(), msg->payload_at(0).size()))));
+		stop_connection_broadcast(ZstURI(msg->payload_at(0).data(), msg->payload_at(0).size()));
 		break;
 	}
 	case ZstMsgKind::SUBSCRIBE_TO_PERFORMER:
@@ -303,19 +303,27 @@ void ZstClient::heartbeat_timer(){
 	});
 }
 
-void ZstClient::start_connection_broadcast(ZstPerformer * local_client, ZstPerformer * remote_client)
+void ZstClient::start_connection_broadcast(const ZstURI & remote_client_path)
 {
-	assert(local_client);
-	assert(remote_client);
+	ZstPerformer * local_client = session()->hierarchy()->get_local_performer();
+	ZstPerformer * remote_client = dynamic_cast<ZstPerformer*>(session()->hierarchy()->find_entity(remote_client_path));
+	if(!remote_client){
+		ZstLog::net(LogLevel::error, "Could not find performer {}", remote_client_path.path());
+		return;
+	}
 
 	m_connection_timers[remote_client->URI()] = m_transport->add_timer(100, [this, local_client](){
 		m_transport->send_to_performance( m_transport->get_performance_msg()->init_performance_message(local_client->URI()));
 	});
 }
 
-void ZstClient::stop_connection_broadcast(ZstPerformer * remote_client)
+void ZstClient::stop_connection_broadcast(const ZstURI & remote_client_path)
 {
-	assert(remote_client);
+	ZstPerformer * remote_client = dynamic_cast<ZstPerformer*>(session()->hierarchy()->find_entity(remote_client_path));
+	if (!remote_client) {
+		ZstLog::net(LogLevel::error, "Could not find performer {}", remote_client_path.path());
+		return;
+	}
 
 	int timer_id = -1;
 	try{

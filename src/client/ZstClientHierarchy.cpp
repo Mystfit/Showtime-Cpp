@@ -53,7 +53,7 @@ void ZstClientHierarchy::on_receive_from_stage(ZstStageMessage * msg)
 		return;
 	}
 
-	switch (msg->payload_at(0).kind()) {
+	switch (msg->kind()) {
 	case ZstMsgKind::CREATE_PLUG:
 	{
 		ZstPlug plug = msg->unpack_payload_serialisable<ZstPlug>(0);
@@ -84,7 +84,7 @@ void ZstClientHierarchy::on_receive_from_stage(ZstStageMessage * msg)
 		break;
 	}
 	default:
-		ZstLog::net(LogLevel::warn, "Hierarchy message handler didn't understand message type of {}", ZstMsgNames[msg->payload_at(0).kind()]);
+		ZstLog::net(LogLevel::warn, "Hierarchy message handler didn't understand message type of {}", ZstMsgNames[msg->kind()]);
 		break;
 	}
 }

@@ -22,7 +22,7 @@ void ZstPerformanceMessage::unpack(zmsg_t * msg){
 	//Unpack value
 	zframe_t * payload = zmsg_pop(msg);
 	if(payload){
-		ZstMessagePayload p(ZstMsgKind::PLUG_VALUE, payload);
+		ZstMessagePayload p(payload);
 		m_payloads.push_back(std::move(p));
 	}
 }

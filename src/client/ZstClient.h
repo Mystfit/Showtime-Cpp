@@ -81,8 +81,8 @@ private:
 	std::string m_client_name;
 
 	//P2P Connections
-	void start_connection_broadcast(ZstPerformer * local_client, ZstPerformer * remote_client);
-	void stop_connection_broadcast(ZstPerformer * remote_client);
+	void start_connection_broadcast(const ZstURI & remote_client_path);
+	void stop_connection_broadcast(const ZstURI & remote_client_path);
 	std::unordered_set<ZstURI, ZstURIHash> m_pending_peer_connections;
 	std::unordered_map<ZstURI, int, ZstURIHash> m_connection_timers;
 	

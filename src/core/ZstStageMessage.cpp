@@ -107,11 +107,12 @@ void ZstStageMessage::unpack(zmsg_t * msg)
 
 	//Unpack kind
 	m_msg_kind = unpack_kind();
-	ZstMsgKind payload_kind = m_msg_kind;
 
-	while (payload_kind != ZstMsgKind::EMPTY) {
-		m_payloads.push_back(ZstMessagePayload(payload_kind, zmsg_pop(handle())));
-		payload_kind = unpack_kind();
+	zframe_t * payload_frame = zmsg_pop(handle());
+	while (payload_frame != NULL) {
+		ZstMessagePayload p(payload_frame);
+		m_payloads.push_back(std::move(p));
+		payload_frame = zmsg_pop(handle());
 	}
 }
 

@@ -693,17 +693,19 @@ int ZstStage::stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * ar
 
 void ZstStage::connect_clients(ZstPerformerStageProxy * output_client, ZstPerformerStageProxy * input_client)
 {
-	ZstStageMessage * connection_msg = msg_pool()->get_msg()->init_message(ZstMsgKind::SUBSCRIBE_TO_PERFORMER);
+	ZstStageMessage * receiver_msg = msg_pool()->get_msg()->init_message(ZstMsgKind::SUBSCRIBE_TO_PERFORMER);
 
 	//Attach URI and IP of output client
-	connection_msg->append_str(output_client->URI().path(), output_client->URI().size());	
-	connection_msg->append_str(output_client->ip_address().c_str(), strlen(output_client->ip_address().c_str()));
+	receiver_msg->append_str(output_client->URI().path(), output_client->URI().size());	
+	receiver_msg->append_str(output_client->ip_address().c_str(), strlen(output_client->ip_address().c_str()));
 	
 	ZstLog::net(LogLevel::notification, "Sending P2P subscribe request to {}", input_client->URI().path());
-	send_to_client(connection_msg, input_client);
+	send_to_client(receiver_msg, input_client);
 
 	ZstLog::net(LogLevel::notification, "Sending P2P handshake broadcast request to {}", output_client->URI().path());
-	send_to_client(msg_pool()->get_msg()->init_message(ZstMsgKind::START_CONNECTION_HANDSHAKE), output_client);
+	ZstStageMessage * broadcaster_msg = msg_pool()->get_msg()->init_message(ZstMsgKind::START_CONNECTION_HANDSHAKE);
+	broadcaster_msg->append_str(input_client->URI().path(), input_client->URI().full_size());
+	send_to_client(broadcaster_msg, output_client);
 }
 
 ZstStageMessage * ZstStage::complete_client_connection_handler(ZstStageMessage * msg, ZstPerformerStageProxy * input_client)
