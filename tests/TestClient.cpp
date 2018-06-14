@@ -209,12 +209,12 @@ public:
 	}
 
 	virtual void compute(ZstInputPlug * plug) override {
-		num_hits++;
 		float actual_val = plug->float_at(0);
 		last_received_val = int(actual_val);
 		if (log) {
 			ZstLog::app(LogLevel::debug, "Input filter received value {0:d}", last_received_val);
 		}
+		num_hits++;
 	}
 
 	ZstPlug * input() {
@@ -601,7 +601,7 @@ void test_add_filter() {
 
 	TAKE_A_BREATH
 
-	int max_wait = 100000;
+	int max_wait = 10000;
 	int current_wait = 0;
 
 	//Wait for the first two input callbacks to clear before we check for the sum
@@ -610,13 +610,14 @@ void test_add_filter() {
     }
 	assert(test_input_sum->last_received_val == first_cmp_val);
 	test_input_sum->reset();
+	current_wait = 0;
 
 	//Send more values
 	test_input_sum->compare_val = second_cmp_val;
 	test_output_augend->send(20);
 	test_output_addend->send(10);
 
-	while (test_input_sum->num_hits < 2){
+	while (test_input_sum->num_hits < 2 && ++current_wait < max_wait){
 		zst_poll_once();
 	}
 	assert(test_input_sum->last_received_val == second_cmp_val);

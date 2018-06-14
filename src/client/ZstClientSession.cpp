@@ -95,7 +95,7 @@ void ZstClientSession::on_receive_from_performance(ZstPerformanceMessage * msg)
 			if (!receiving_plug->is_proxy()) {
 				//TODO: Lock plug value when deserialising
 				size_t offset = 0;
-				this->plug_raw_value(receiving_plug)->read((char*)msg->payload_at(1).data(), msg->payload_at(1).size(), offset);
+				this->plug_raw_value(receiving_plug)->read((char*)msg->payload_at(0).data(), msg->payload_at(0).size(), offset);
 				plug_received_value(receiving_plug);
 			}
 		}

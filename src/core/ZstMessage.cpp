@@ -72,6 +72,7 @@ void ZstMessage::append_str(const char * s, size_t len)
 
 ZstMessagePayload::ZstMessagePayload(zframe_t * p){
 	m_payload = p;
+	m_size = zframe_size((zframe_t*)m_payload);
 }
 
 ZstMessagePayload::ZstMessagePayload(const ZstMessagePayload & other)
@@ -122,7 +123,7 @@ ZstMessagePayload & ZstMessagePayload::operator=(ZstMessagePayload & other)
 
 const size_t ZstMessagePayload::size()
 {
-	return zframe_size((zframe_t*)m_payload);
+	return m_size;
 }
 
 const char * ZstMessagePayload::data(){

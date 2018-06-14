@@ -618,10 +618,11 @@ ZstStageMessage * ZstStage::create_cable_handler(ZstStageMessage * msg, ZstPerfo
 	ZstPerformerStageProxy * input_performer = get_client(cable_ptr->get_input_URI());
 	ZstPerformerStageProxy * output_performer = dynamic_cast<ZstPerformerStageProxy*>(get_client(cable_ptr->get_output_URI()));
 
+	std::string id = std::string(msg->id(), ZSTMSG_UUID_LENGTH);
+	
 	//Check to see if one client is already connected to the other
 	if(!output_performer->is_connected_to_subscriber_peer(input_performer))
 	{	
-		std::string id = std::string(msg->id(), ZSTMSG_UUID_LENGTH);
 		m_promise_messages[id] = MessagePromise();
 		MessageFuture future = m_promise_messages[id].get_future();
 		
@@ -650,7 +651,7 @@ ZstStageMessage * ZstStage::create_cable_handler(ZstStageMessage * msg, ZstPerfo
 		//Start the client connection
 		connect_clients(id, output_performer, input_performer);
 	} else {
-		create_cable_complete_handler(cable_ptr);
+		return create_cable_complete_handler(cable_ptr);
 	}
 
     return NULL;
