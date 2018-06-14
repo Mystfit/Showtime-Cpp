@@ -1,4 +1,5 @@
 #include <sstream>
+#include <chrono>
 #include "ZstStage.h"
 
 //Core headers
@@ -352,7 +353,7 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 		}
 		case ZstMsgKind::CREATE_CABLE:
 		{
-			response = stage->create_cable_handler(msg);
+			response = stage->create_cable_handler(msg, sender);
 			break;
 		}
 		case ZstMsgKind::CREATE_ENTITY_FROM_TEMPLATE:
@@ -402,8 +403,8 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 //Client communication
 //--------------------
 
-void ZstStage::send_to_client(ZstStageMessage * msg, ZstPerformer * destination) {
-	
+void ZstStage::send_to_client(ZstStageMessage * msg, ZstPerformer * destination)
+{	
 	zmsg_t * msg_handle = msg->handle();
 	zframe_t * identity = zframe_from(get_socket_ID(destination).c_str());
 	zframe_t * empty = zframe_new_empty();
@@ -411,6 +412,22 @@ void ZstStage::send_to_client(ZstStageMessage * msg, ZstPerformer * destination)
 	zmsg_prepend(msg_handle, &identity);
 	zmsg_send(&msg_handle, m_performer_router);
 	msg_pool()->release(msg);
+}
+
+void ZstStage::process_client_response(ZstStageMessage * msg)
+{
+	int status = 0;
+	try {
+		std::string id = std::string(msg->id());
+		m_promise_messages.at(id).set_value(msg->kind());
+
+		//Clear completed promise when finished
+		m_promise_messages.erase(msg->id());
+		status = 1;
+	}
+	catch (std::out_of_range e) {
+		status = -1;
+	}
 }
 
 
@@ -582,7 +599,7 @@ ZstStageMessage * ZstStage::create_entity_from_template_handler(ZstStageMessage 
 	return msg_pool()->get_msg()->init_message(ZstMsgKind::ERR_STAGE_ENTITY_NOT_FOUND);
 }
 
-ZstStageMessage * ZstStage::create_cable_handler(ZstStageMessage * msg)
+ZstStageMessage * ZstStage::create_cable_handler(ZstStageMessage * msg, ZstPerformer * performer)
 {
 	ZstStageMessage * response = msg_pool()->get_msg();
 
@@ -602,17 +619,46 @@ ZstStageMessage * ZstStage::create_cable_handler(ZstStageMessage * msg)
 	ZstPerformerStageProxy * output_performer = dynamic_cast<ZstPerformerStageProxy*>(get_client(cable_ptr->get_output_URI()));
 
 	//Check to see if one client is already connected to the other
-	if(!output_performer->is_connected_to_subscriber_peer(input_performer)){
-		connect_clients(output_performer, input_performer);
+	if(!output_performer->is_connected_to_subscriber_peer(input_performer))
+	{	
+		std::string id = std::string(msg->id(), ZSTMSG_UUID_LENGTH);
+		m_promise_messages[id] = MessagePromise();
+		MessageFuture future = m_promise_messages[id].get_future();
+		
+		//Create future action to run when the client responds
+		future.then([this, cable_ptr, performer, id](MessageFuture f) {
+			ZstMsgKind status(ZstMsgKind::EMPTY);
+			try {
+				ZstMsgKind status = f.get();
+				if (status == ZstMsgKind::OK) {
+					//Publish cable to graph
+					create_cable_complete_handler(cable_ptr);
+
+					//Let original requester know that their cable request has completed
+					ZstStageMessage * ok_msg = msg_pool()->get_msg()->init_message(ZstMsgKind::OK);
+					ok_msg->set_id(id.c_str());
+					this->send_to_client(ok_msg, performer);
+				}
+				return status;
+			}
+			catch (const ZstTimeoutException & e) {
+				ZstLog::net(LogLevel::error, "Client connection async response timed out - {}", e.what());
+			}
+			return status;
+		});
+		
+		//Start the client connection
+		connect_clients(id, output_performer, input_performer);
 	} else {
 		create_cable_complete_handler(cable_ptr);
 	}
 
-    return response->init_message(ZstMsgKind::OK);
+    return NULL;
 }
 
 ZstStageMessage * ZstStage::create_cable_complete_handler(ZstCable * cable)
 {	
+	ZstLog::net(LogLevel::notification, "Client connection complete. Publishing cable {}-{}", cable->get_input_URI().path(), cable->get_output_URI().path());
 	publish_stage_update(msg_pool()->get_msg()->init_serialisable_message(ZstMsgKind::CREATE_CABLE, *cable));
 	return msg_pool()->get_msg()->init_message(ZstMsgKind::OK);
 }
@@ -691,13 +737,14 @@ int ZstStage::stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * ar
 	return 0;
 }
 
-void ZstStage::connect_clients(ZstPerformerStageProxy * output_client, ZstPerformerStageProxy * input_client)
+void ZstStage::connect_clients(const std::string & response_id, ZstPerformerStageProxy * output_client, ZstPerformerStageProxy * input_client)
 {
 	ZstStageMessage * receiver_msg = msg_pool()->get_msg()->init_message(ZstMsgKind::SUBSCRIBE_TO_PERFORMER);
 
 	//Attach URI and IP of output client
-	receiver_msg->append_str(output_client->URI().path(), output_client->URI().size());	
+	receiver_msg->append_str(output_client->URI().path(), output_client->URI().full_size());	
 	receiver_msg->append_str(output_client->ip_address().c_str(), strlen(output_client->ip_address().c_str()));
+	receiver_msg->append_str(response_id.c_str(), response_id.size());
 	
 	ZstLog::net(LogLevel::notification, "Sending P2P subscribe request to {}", input_client->URI().path());
 	send_to_client(receiver_msg, input_client);
@@ -710,18 +757,28 @@ void ZstStage::connect_clients(ZstPerformerStageProxy * output_client, ZstPerfor
 
 ZstStageMessage * ZstStage::complete_client_connection_handler(ZstStageMessage * msg, ZstPerformerStageProxy * input_client)
 {
-	ZstPerformerStageProxy * output_client = get_client(ZstURI(msg->payload_at(0).data(), msg->payload_at(0).size()));
-	ZstLog::net(LogLevel::notification, "Stopping P2P handshake broadcast from client {}", output_client->URI().path());
-
+	ZstPerformerStageProxy * output_client = get_client(ZstURI(msg->payload_at(0).data(), msg->payload_at(0).size()));	
 	if(output_client){
+		//Keep a record of which clients are connected to each other
 		output_client->add_subscriber_peer(input_client);
 
+		//Let the broadcaster know it can stop publishing messages
 		ZstLog::net(LogLevel::notification, "Stopping P2P handshake broadcast from client {}", output_client->URI().path());
-		send_to_client(msg_pool()->get_msg()->init_message(ZstMsgKind::STOP_CONNECTION_HANDSHAKE), output_client);
+		ZstStageMessage * end_broadcast_msg = msg_pool()->get_msg()->init_message(ZstMsgKind::STOP_CONNECTION_HANDSHAKE);
+		end_broadcast_msg->append_str(input_client->URI().path(), input_client->URI().full_size());
+		send_to_client(end_broadcast_msg, output_client);
 	}
 
-	return msg_pool()->get_msg()->init_message(ZstMsgKind::OK);
+	//Run any cable promises associated with this client connection
+	std::string promise_id = std::string(msg->payload_at(1).data(), msg->payload_at(1).size());
+	m_promise_messages.at(promise_id).set_value(ZstMsgKind::OK);
+	/*const std::unordered_map<std::string, MessagePromise>::iterator future_it = m_promise_messages.find(promise_id);
+	if (future_it != m_promise_messages.end()) {
+		future_it->second.set_value(ZstMsgKind::OK);
+		m_promise_messages.erase(future_it);
+	}*/
 
+	return msg_pool()->get_msg()->init_message(ZstMsgKind::OK);
 }
 
 ZstMessagePool<ZstStageMessage> * ZstStage::msg_pool()

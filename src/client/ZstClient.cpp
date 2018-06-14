@@ -130,14 +130,13 @@ void ZstClient::on_receive_from_stage(ZstStageMessage * msg)
 	{
 		//Listen for incoming handshake performance messages
 		m_msg_dispatch->performance_events().add_adaptor(this);
-		m_pending_peer_connections.insert(ZstURI(msg->payload_at(0).data(), msg->payload_at(0).size()));
+		m_pending_peer_connections[ZstURI(msg->payload_at(0).data(), msg->payload_at(0).size())] = std::string(msg->payload_at(2).data(), msg->payload_at(2).size());
 
 		//Start connecting to other peer
 		m_transport->connect_to_client(std::string((char*)msg->payload_at(1).data(), msg->payload_at(1).size()).c_str());
 		break;
 	}
 	default:
-		ZstLog::net(LogLevel::warn, "Client message handler didn't understand message type of {}",  ZstMsgNames[msg->kind()]);
 		break;
 	}
 }
@@ -155,12 +154,14 @@ void ZstClient::on_receive_from_performance(ZstPerformanceMessage * msg){
 
 	//Peer connection is successful if we receive a handshake performance message from the sending client
 	if(m_pending_peer_connections.find(msg->sender()) != m_pending_peer_connections.end()){
-		m_pending_peer_connections.erase(msg->sender());
-		msg_dispatch()->send_message(ZstMsgKind::SUBSCRIBE_TO_PERFORMER_ACK, true, msg->sender().path(), [](ZstMessageReceipt receipt){
+
+		std::vector<std::string> args{ msg->sender().path(), m_pending_peer_connections[msg->sender()] };
+		msg_dispatch()->send_message(ZstMsgKind::SUBSCRIBE_TO_PERFORMER_ACK, true, args, [](ZstMessageReceipt receipt){
 			if(receipt.status != ZstMsgKind::OK){
 				ZstLog::net(LogLevel::error, "SUBSCRIBE_TO_PERFORMER_ACK: Stage responded with error {}", receipt.status);
 			}
 		});
+		m_pending_peer_connections.erase(msg->sender());
 	}
 }
 

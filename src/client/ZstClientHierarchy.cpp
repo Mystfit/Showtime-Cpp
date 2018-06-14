@@ -84,7 +84,6 @@ void ZstClientHierarchy::on_receive_from_stage(ZstStageMessage * msg)
 		break;
 	}
 	default:
-		ZstLog::net(LogLevel::warn, "Hierarchy message handler didn't understand message type of {}", ZstMsgNames[msg->kind()]);
 		break;
 	}
 }
@@ -121,7 +120,7 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, bool async)
 void ZstClientHierarchy::activate_entity_complete(ZstMessageReceipt response, ZstEntityBase * entity)
 {
 	if (response.status != ZstMsgKind::OK) {
-		ZstLog::net(LogLevel::error, "Activate entity {} failed with status {}", entity->URI().path(), response.status);
+		ZstLog::net(LogLevel::error, "Activate entity {} failed with status {}", entity->URI().path(), ZstMsgNames[response.status]);
 		return;
 	}
 
@@ -173,7 +172,7 @@ void ZstClientHierarchy::destroy_entity_complete(ZstMessageReceipt response, Zst
 	synchronisable_set_destroyed(entity);
 
 	if (response.status != ZstMsgKind::OK) {
-		ZstLog::net(LogLevel::notification, "Destroy entity failed with status {}", response.status);
+		ZstLog::net(LogLevel::notification, "Destroy entity failed with status {}", ZstMsgNames[response.status]);
 	}
 	ZstContainer * parent = NULL;
 
@@ -208,18 +207,22 @@ void ZstClientHierarchy::destroy_entity_complete(ZstMessageReceipt response, Zst
 
 ZstEntityBase * ZstClientHierarchy::find_entity(const ZstURI & path)
 {
-	ZstEntityBase * result = NULL;
-	ZstPerformer * root = NULL;
-	
-	//Performer is local
 	if (path_is_local(path)) {
-		result = m_root->find_child_by_URI(path);
+		//Path points to local performer
+		if (m_root->URI() == path) {
+			return m_root;
+		}
+
+		//Path points to child in local performer
+		return m_root->find_child_by_URI(path);
 	}
 	else {
-		result = ZstHierarchy::find_entity(path);
+		//Path is somewhere else in the hierarchy
+		//TODO: Should the local performer be also placed in the remote performer list too?
+		return ZstHierarchy::find_entity(path);
 	}
 
-	return result;
+	return NULL;
 }
 
 bool ZstClientHierarchy::path_is_local(const ZstURI & path) {

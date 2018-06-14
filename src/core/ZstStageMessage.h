@@ -14,6 +14,7 @@ public:
 	ZST_EXPORT ZstStageMessage * init_message(ZstMsgKind kind);
 	ZST_EXPORT ZstStageMessage * init_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable);
 
+	ZST_EXPORT void set_id(const char * id);
 	ZST_EXPORT void copy_id(const ZstStageMessage * msg);
 
 	ZST_EXPORT void append_entity_kind_frame(const ZstEntityBase * entity);

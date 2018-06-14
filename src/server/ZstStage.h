@@ -4,6 +4,8 @@
 #include <vector>
 #include <unordered_map>
 #include <algorithm>
+#include <cf/cfuture.h>
+#include <cf/time_watcher.h>
 #include "czmq.h"
 
 //Showtime API
@@ -16,6 +18,17 @@
 
 //Stage headers
 #include "ZstPerformerStageProxy.h"
+
+
+//TODO: Temp defines to get stage functioning with broadcast connections
+//----------------------------------------------------------------------
+struct ZstTimeoutException : std::runtime_error {
+	using std::runtime_error::runtime_error;
+};
+typedef cf::promise<ZstMsgKind> MessagePromise;
+typedef cf::future<ZstMsgKind> MessageFuture;
+//----------------------------------------------------------------------
+//TODO: end
 
 #define HEARTBEAT_DURATION 1000
 #define MAX_MISSED_HEARTBEATS 10
@@ -62,6 +75,10 @@ private:
 	//Client communication
 	void send_to_client(ZstStageMessage * msg, ZstPerformer * destination);
 
+	//TODO: Replace with abstract future message handler class
+	MessageFuture register_response_message(ZstStageMessage * msg);
+	void process_client_response(ZstStageMessage * msg);
+
     //Message handlers
     ZstStageMessage * create_client_handler(std::string sender_identity, ZstStageMessage * msg);
 	ZstStageMessage * destroy_client_handler(ZstPerformer * performer);
@@ -73,7 +90,7 @@ private:
 	ZstStageMessage * create_entity_template_handler(ZstStageMessage * msg);
 	ZstStageMessage * create_entity_from_template_handler(ZstStageMessage * msg);
 
-	ZstStageMessage * create_cable_handler(ZstStageMessage * msg);
+	ZstStageMessage * create_cable_handler(ZstStageMessage * msg, ZstPerformer * performer);
 	ZstStageMessage * create_cable_complete_handler(ZstCable * cable);
 	ZstStageMessage * destroy_cable_handler(ZstStageMessage * msg);
 
@@ -87,7 +104,7 @@ private:
 	static int stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * arg);
 
 	//P2P client connections
-	void connect_clients(ZstPerformerStageProxy * output_client, ZstPerformerStageProxy * input_client);
+	void connect_clients(const std::string & response_id, ZstPerformerStageProxy * output_client, ZstPerformerStageProxy * input_client);
 	
 	//Stage pipes
 	zsock_t * m_performer_router;
@@ -104,4 +121,8 @@ private:
 	//Messages
 	ZstMessagePool<ZstStageMessage> * m_message_pool;
 	ZstMessagePool<ZstStageMessage> * msg_pool();
+
+	//TODO: Replace with abstract future message handler class
+	std::unordered_map<std::string, MessagePromise > m_promise_messages;
+	cf::time_watcher m_timeout_watcher;
 };

@@ -42,9 +42,9 @@ ZstStageMessage * ZstStageMessage::init_serialisable_message(ZstMsgKind kind, co
 	return this;
 }
 
-void ZstStageMessage::copy_id(const ZstStageMessage * msg)
+void ZstStageMessage::set_id(const char * id)
 {
-    memcpy(m_msg_id, msg->m_msg_id, ZSTMSG_UUID_LENGTH);
+	memcpy(m_msg_id, id, ZSTMSG_UUID_LENGTH);
 
 	//Remove old id from front of message
 	zframe_t * old_id_frame = zmsg_pop(handle());
@@ -53,6 +53,11 @@ void ZstStageMessage::copy_id(const ZstStageMessage * msg)
 
 	//Add new id to front of message
 	zmsg_pushmem(handle(), m_msg_id, ZSTMSG_UUID_LENGTH);
+}
+
+void ZstStageMessage::copy_id(const ZstStageMessage * msg)
+{
+	this->set_id(msg->id());
 }
 
 void ZstStageMessage::append_entity_kind_frame(const ZstEntityBase * entity) {

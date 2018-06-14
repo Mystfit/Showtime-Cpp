@@ -20,7 +20,7 @@ public:
 	ZST_EXPORT virtual void send_message(ZstMsgKind kind, bool async, MessageReceivedAction action);
 	ZST_EXPORT virtual void send_message(ZstMsgKind kind, bool async, std::string msg_arg, MessageReceivedAction action);
 	ZST_EXPORT virtual void send_message(ZstMsgKind kind, bool async, const std::vector<std::string> msg_args, MessageReceivedAction action);
-
+	
 	ZST_EXPORT virtual void send_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable, bool async, MessageReceivedAction action);
 	ZST_EXPORT virtual void send_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable, bool async, std::string msg_arg, MessageReceivedAction action);
 	ZST_EXPORT virtual void send_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable, bool async, const std::vector<std::string> msg_args, MessageReceivedAction action);

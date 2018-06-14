@@ -147,7 +147,6 @@ void ZstClientSession::on_receive_from_stage(ZstStageMessage * msg)
 		break;
 	}
 	default:
-		ZstLog::net(LogLevel::warn, "Session message handler didn't understand message type of {}", ZstMsgNames[msg->kind()]);
 		break;
 	}
 }
@@ -195,7 +194,7 @@ void ZstClientSession::connect_cable_complete(ZstMessageReceipt response, ZstCab
 		//synchronisable_enqueue_activation(cable);
 	}
 	else {
-		ZstLog::net(LogLevel::notification, "Cable connect for {}-{} failed with status {}", cable->get_input_URI().path(), cable->get_output_URI().path(), response.status);
+		ZstLog::net(LogLevel::notification, "Cable connect for {}-{} failed with status {}", cable->get_input_URI().path(), cable->get_output_URI().path(), ZstMsgNames[response.status]);
 	}
 }
 
@@ -217,7 +216,7 @@ void ZstClientSession::destroy_cable_complete(ZstMessageReceipt response, ZstCab
 	if (!cable) return;
 
 	if (response.status != ZstMsgKind::OK) {
-		ZstLog::net(LogLevel::notification, "Destroy cable failed with status {}", response.status);
+		ZstLog::net(LogLevel::notification, "Destroy cable failed with status {}", ZstMsgNames[response.status]);
 	}
 	ZstLog::net(LogLevel::notification, "Destroy cable completed with status {}", response.status);
 
