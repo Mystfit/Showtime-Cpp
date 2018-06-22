@@ -6,6 +6,10 @@ ZstHierarchy::ZstHierarchy() :
 {
 }
 
+ZstHierarchy::~ZstHierarchy()
+{
+}
+
 void ZstHierarchy::destroy()
 {
 }
@@ -154,7 +158,7 @@ void ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 	}
 }
 
-ZstEventDispatcher<ZstHierarchyAdaptor*>& ZstHierarchy::events()
+ZstEventDispatcher<ZstHierarchyAdaptor*> & ZstHierarchy::events()
 {
 	return m_hierarchy_events;
 }

@@ -210,6 +210,15 @@ void ZstPlug::remove_cable(ZstCable * cable)
 
 //ZstInputPlug
 //------------
+ZstInputPlug::ZstInputPlug() : ZstPlug()
+{
+	m_direction = ZstPlugDirection::IN_JACK;
+}
+
+ZstInputPlug::ZstInputPlug(const ZstInputPlug & other) : ZstPlug(other)
+{
+}
+
 ZstInputPlug::~ZstInputPlug()
 {
 }
@@ -222,6 +231,17 @@ ZstInputPlug::ZstInputPlug(const char * name, ZstValueType t) : ZstPlug(name, t)
 
 //ZstOutputPlug
 //-------------
+
+ZstOutputPlug::ZstOutputPlug() : ZstPlug()
+{
+	m_direction = ZstPlugDirection::OUT_JACK;
+	m_event_dispatch = new ZstEventDispatcher<ZstOutputPlugAdaptor*>();
+}
+
+ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug & other) : ZstPlug(other)
+{
+	m_event_dispatch = new ZstEventDispatcher<ZstOutputPlugAdaptor*>();
+}
 
 ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t) : ZstPlug(name, t)
 {

@@ -2,8 +2,7 @@
 
 ZstClientSession::ZstClientSession() : 
 	m_stage_events("session stage"),
-	m_performance_events("session performance"),
-	m_synchronisable_events("session synchronisables")
+	m_performance_events("session performance")
 {
 	m_reaper = new ZstReaper();
 	m_hierarchy = new ZstClientHierarchy();
@@ -22,14 +21,15 @@ ZstClientSession::~ZstClientSession() {
 void ZstClientSession::init(std::string client_name)
 {
 	m_hierarchy->init(client_name);
-
-	//We add this instance as an adaptor to make sure we can process local queued events
-	m_synchronisable_events.add_adaptor(this);
+	ZstSession::init();
 }
 
 void ZstClientSession::destroy()
 {
+	ZstSession::destroy();
+
 	m_hierarchy->destroy();
+
 	delete m_hierarchy;
 }
 
@@ -37,14 +37,12 @@ void ZstClientSession::process_events()
 {
 	ZstSession::process_events();
 	m_stage_events.process_events();
-	m_synchronisable_events.process_events();
 	m_reaper->reap_all();
 }
 
 void ZstClientSession::flush()
 {
 	ZstSession::flush();
-	m_synchronisable_events.flush();
 	m_stage_events.flush();
 }
 
@@ -115,12 +113,9 @@ void ZstClientSession::plug_received_value(ZstInputPlug * plug)
 	if (!parent) {
 		throw std::runtime_error("Could not find parent of input plug");
 	}
-	try {
-		parent->compute(plug);
-	}
-	catch (std::exception e) {
-		ZstLog::entity(LogLevel::error, "Compute on component {} failed. Error was: {}", parent->URI().path(), e.what());
-	}
+	compute_events().defer([parent, plug](ZstComputeAdaptor * adaptor) {
+		adaptor->on_compute(parent, plug);
+	});
 }
 
 void ZstClientSession::on_receive_from_stage(ZstStageMessage * msg)
@@ -159,7 +154,7 @@ void ZstClientSession::on_synchronisable_destroyed(ZstSynchronisable * synchroni
 
 void ZstClientSession::synchronisable_has_event(ZstSynchronisable * synchronisable)
 {
-	m_synchronisable_events.defer([this, synchronisable](ZstSynchronisableAdaptor * dlg) {
+	synchronisable_events().defer([this, synchronisable](ZstSynchronisableAdaptor * dlg) {
 		this->synchronisable_process_events(synchronisable);
 	});
 }
@@ -169,7 +164,7 @@ void ZstClientSession::synchronisable_has_event(ZstSynchronisable * synchronisab
 // Cable creation API
 // ------------------
 
-ZstCable * ZstClientSession::connect_cable(ZstPlug * input, ZstPlug * output, bool async)
+ZstCable * ZstClientSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * output, bool async)
 {
 	ZstCable * cable = NULL;
 	cable = ZstSession::connect_cable(input, output, async);
@@ -200,7 +195,7 @@ void ZstClientSession::connect_cable_complete(ZstMessageReceipt response, ZstCab
 
 void ZstClientSession::destroy_cable(ZstCable * cable, bool async)
 {
-	ZstSession::destroy_cable(cable, async);
+	ZstSession::destroy_cable(cable);
 	
 	m_stage_events.invoke([this, cable, async](ZstStageDispatchAdaptor * adaptor) {
 		adaptor->send_serialisable_message(ZstMsgKind::DESTROY_CABLE, *cable, async, [this, cable](ZstMessageReceipt response) {
@@ -217,13 +212,18 @@ void ZstClientSession::destroy_cable_complete(ZstMessageReceipt response, ZstCab
 
 	if (response.status != ZstMsgKind::OK) {
 		ZstLog::net(LogLevel::notification, "Destroy cable failed with status {}", ZstMsgNames[response.status]);
+		return;
 	}
 	ZstLog::net(LogLevel::notification, "Destroy cable completed with status {}", response.status);
+	
+	//Remove the cable from our local cable list
+	ZstSession::destroy_cable(cable);
 
 	//Find the plugs and disconnect them seperately, in case they have already disappeared
 	ZstInputPlug * input = dynamic_cast<ZstInputPlug*>(hierarchy()->find_entity(cable->get_input_URI()));
 	ZstOutputPlug * output = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(cable->get_output_URI()));
 
+	//Remove cable from plugs
 	if (input)
 		plug_remove_cable(input, cable);
 
@@ -234,7 +234,6 @@ void ZstClientSession::destroy_cable_complete(ZstMessageReceipt response, ZstCab
 	cable->set_output(NULL);
 
 	//Queue events
-	ZstLog::net(LogLevel::debug, "!!!Deactivating cable {}--{}", cable->get_input_URI().path(), cable->get_output_URI().path());
 	session_events().defer([cable](ZstSessionAdaptor * dlg) { dlg->on_cable_destroyed(cable); });
 	synchronisable_enqueue_deactivation(cable);
 }

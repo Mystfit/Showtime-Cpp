@@ -19,6 +19,7 @@ set(API_FILES
     ${Showtime_INCLUDE_DIRS}/ZstEventDispatcher.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstEventAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstPlugAdaptors.hpp
+    ${Showtime_INCLUDE_DIRS}/adaptors/ZstComputeAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstSynchronisableAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstSessionAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstHierarchyAdaptor.hpp

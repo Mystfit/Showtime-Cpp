@@ -31,7 +31,7 @@ ZstCable::ZstCable(const ZstURI & input_plug_URI, const ZstURI & output_plug_URI
 {
 }
 
-ZstCable::ZstCable(ZstPlug * input_plug, ZstPlug * output_plug) :
+ZstCable::ZstCable(ZstInputPlug * input_plug, ZstOutputPlug * output_plug) :
 	ZstSynchronisable(),
     m_input_URI(input_plug->URI()),
     m_output_URI(output_plug->URI()),
@@ -49,7 +49,7 @@ ZstCable * ZstCable::create(const ZstURI & input, const ZstURI & output)
 	return new ZstCable(input, output);
 }
 
-ZstCable * ZstCable::create(ZstPlug * input, ZstPlug * output)
+ZstCable * ZstCable::create(ZstInputPlug * input, ZstOutputPlug * output)
 {
 	return new ZstCable(input, output);
 }
@@ -98,22 +98,22 @@ bool ZstCable::is_attached(ZstPlug * plug) const
 	return (ZstURI::equal(m_input->URI(), plug->URI())) || (ZstURI::equal(m_output->URI(), plug->URI()));
 }
 
-void ZstCable::set_input(ZstPlug * input)
+void ZstCable::set_input(ZstInputPlug * input)
 {
 	m_input = input;
 }
 
-void ZstCable::set_output(ZstPlug * output)
+void ZstCable::set_output(ZstOutputPlug * output)
 {
 	m_output = output;
 }
 
-ZstPlug * ZstCable::get_input()
+ZstInputPlug * ZstCable::get_input()
 {
 	return m_input;
 }
 
-ZstPlug * ZstCable::get_output()
+ZstOutputPlug * ZstCable::get_output()
 {
 	return m_output;
 }

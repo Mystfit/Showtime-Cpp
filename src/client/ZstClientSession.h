@@ -73,7 +73,7 @@ public:
 	// Cable creation
 	// ------------------
 
-	ZstCable * connect_cable(ZstPlug * input, ZstPlug * output, bool async = false) override;
+	ZstCable * connect_cable(ZstInputPlug * input, ZstOutputPlug * output, bool async = false) override;
 	void destroy_cable(ZstCable * cable, bool async = false) override;
 
 
@@ -102,8 +102,7 @@ private:
 
 	ZstEventDispatcher<ZstStageDispatchAdaptor*> m_stage_events;
 	ZstEventDispatcher<ZstPerformanceDispatchAdaptor*> m_performance_events;
-	ZstEventDispatcher<ZstSynchronisableAdaptor*> m_synchronisable_events;
-
+	
 	ZstReaper * m_reaper;
 	ZstClientHierarchy * m_hierarchy;
 };

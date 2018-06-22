@@ -151,12 +151,12 @@ int zst_ping()
 // Cables
 // -------------
 
-ZstCable * zst_connect_cable(ZstPlug * input, ZstPlug * output)
+ZstCable * zst_connect_cable(ZstInputPlug * input, ZstOutputPlug * output)
 {
 	return ZstClient::instance().session()->connect_cable(input, output, false);
 }
 
-ZstCable * zst_connect_cable_async(ZstPlug * input, ZstPlug * output)
+ZstCable * zst_connect_cable_async(ZstInputPlug * input, ZstOutputPlug * output)
 {
     return ZstClient::instance().session()->connect_cable(input, output, true);
 }

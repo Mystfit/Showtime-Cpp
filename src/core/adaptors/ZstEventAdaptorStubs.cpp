@@ -1,5 +1,6 @@
 #include <adaptors/ZstEventAdaptor.hpp>
 #include <adaptors/ZstPlugAdaptors.hpp>
+#include <adaptors/ZstComputeAdaptor.hpp>
 #include <adaptors/ZstSynchronisableAdaptor.hpp>
 #include <adaptors/ZstSessionAdaptor.hpp>
 #include <adaptors/ZstHierarchyAdaptor.hpp>
@@ -71,3 +72,10 @@ void ZstStageDispatchAdaptor::on_receive_from_stage(ZstStageMessage * msg) {}
 
 void ZstPerformanceDispatchAdaptor::send_to_performance(ZstOutputPlug * plug) {}
 void ZstPerformanceDispatchAdaptor::on_receive_from_performance(ZstPerformanceMessage * msg) {}
+
+
+// -----------------------
+// Compute adaptors
+// -----------------------
+
+void ZstComputeAdaptor::on_compute(ZstComponent * component, ZstInputPlug * plug) {}

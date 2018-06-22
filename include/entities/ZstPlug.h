@@ -84,7 +84,8 @@ private:
 class ZstInputPlug : public ZstPlug {
 public:
 	friend class ZstPlugLiason;
-
+	ZST_EXPORT ZstInputPlug();
+	ZST_EXPORT ZstInputPlug(const ZstInputPlug & other);
 	ZST_EXPORT ZstInputPlug(const char * name, ZstValueType t);
 	ZST_EXPORT ~ZstInputPlug();
 };
@@ -93,6 +94,8 @@ public:
 class ZstOutputPlug : public ZstPlug {
 	friend class ZstPlugLiason;
 public:
+	ZST_EXPORT ZstOutputPlug();
+	ZST_EXPORT ZstOutputPlug(const ZstOutputPlug & other);
 	ZST_EXPORT ZstOutputPlug(const char * name, ZstValueType t);
 	ZST_EXPORT ~ZstOutputPlug();
 	ZST_EXPORT void fire();

@@ -8,7 +8,8 @@
 #include <ZstEvents.h>
 
 //Forwards
-class ZstPlug;
+class ZstInputPlug;
+class ZstOutputPlug;
 
 class ZstCable : public ZstSynchronisable, public ZstSerialisable {
 public:
@@ -20,9 +21,9 @@ public:
 	ZST_EXPORT ZstCable();
 	ZST_EXPORT ZstCable(const ZstCable & copy);
 	ZST_EXPORT ZstCable(const ZstURI & input_plug_URI, const ZstURI & output_plug_URI);
-	ZST_EXPORT ZstCable(ZstPlug * input_plug, ZstPlug * output_plug);
+	ZST_EXPORT ZstCable(ZstInputPlug * input_plug, ZstOutputPlug * output_plug);
 	ZST_EXPORT static ZstCable * create(const ZstURI & input, const ZstURI & output);
-	ZST_EXPORT static ZstCable * create(ZstPlug * input, ZstPlug * output);
+	ZST_EXPORT static ZstCable * create(ZstInputPlug * input, ZstOutputPlug * output);
 
 	ZST_EXPORT static void destroy(ZstCable * cable);
     ZST_EXPORT virtual ~ZstCable();
@@ -39,10 +40,10 @@ public:
 
 	//Plugs and addresses
 
-	ZST_EXPORT void set_input(ZstPlug * input);
-	ZST_EXPORT void set_output(ZstPlug * output);
-	ZST_EXPORT ZstPlug * get_input();
-	ZST_EXPORT ZstPlug * get_output();
+	ZST_EXPORT void set_input(ZstInputPlug * input);
+	ZST_EXPORT void set_output(ZstOutputPlug * output);
+	ZST_EXPORT ZstInputPlug * get_input();
+	ZST_EXPORT ZstOutputPlug * get_output();
 	ZST_EXPORT const ZstURI & get_input_URI() const;
 	ZST_EXPORT const ZstURI & get_output_URI() const;
 
@@ -57,8 +58,8 @@ private:
 	ZstURI m_output_URI;
 
 	//Plugs
-	ZstPlug * m_input;
-	ZstPlug * m_output;
+	ZstInputPlug * m_input;
+	ZstOutputPlug * m_output;
 };
 
 

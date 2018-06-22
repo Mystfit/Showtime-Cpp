@@ -14,20 +14,33 @@ ZstSession::ZstSession() :
 void ZstSession::process_events()
 {
 	hierarchy()->process_events();
+	m_synchronisable_events.process_events();
 	m_session_events.process_events();
+	m_compute_events.process_events();
 }
 
 void ZstSession::flush()
 {
 	hierarchy()->events().flush();
+	m_synchronisable_events.flush();
 	m_session_events.flush();
+}
+
+void ZstSession::init()
+{
+	//We add this instance as an adaptor to make sure we can process local queued events
+	m_synchronisable_events.add_adaptor(this);
+
+	m_compute_events.add_adaptor(this);
 }
 
 void ZstSession::destroy()
 {
+	m_synchronisable_events.remove_adaptor(this);
+	m_compute_events.remove_adaptor(this);
 }
 
-ZstCable * ZstSession::connect_cable(ZstPlug * input, ZstPlug * output, bool async)
+ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * output, bool async)
 {
 	ZstCable * cable = NULL;
 
@@ -74,7 +87,7 @@ void ZstSession::destroy_cable(ZstCable * cable, bool async)
 }
 
 
-void ZstSession::disconnect_plugs(ZstPlug * input_plug, ZstPlug * output_plug)
+void ZstSession::disconnect_plugs(ZstInputPlug * input_plug, ZstOutputPlug * output_plug)
 {
 	ZstCable * cable = find_cable(input_plug->URI(), output_plug->URI());
 	destroy_cable(cable);
@@ -93,7 +106,7 @@ ZstCable * ZstSession::find_cable(const ZstURI & input_path, const ZstURI & outp
 	return cable;
 }
 
-ZstCable * ZstSession::find_cable(ZstPlug * input, ZstPlug * output)
+ZstCable * ZstSession::find_cable(ZstInputPlug * input, ZstOutputPlug * output)
 {
 	if (!input || !output) {
 		return NULL;
@@ -118,28 +131,40 @@ ZstCable * ZstSession::create_cable(const ZstURI & input_path, const ZstURI & ou
 {
 	ZstCable * cable_ptr = find_cable(input_path, output_path);
 	if (cable_ptr) {
-		//If we created this cable, we need to finish its activation
+		//If we created this cable already, we need to finish its activation
 		if(!cable_ptr->is_activated()){
 			synchronisable_enqueue_activation(cable_ptr);
 		}
 		return cable_ptr;
 	}
-
+	
 	//Create and store new cable
+	bool success = true;
 	cable_ptr = ZstCable::create(input_path, output_path);
 	try {
 		m_cables.insert(cable_ptr);
 	}
 	catch (std::exception e) {
 		ZstLog::net(LogLevel::notification, "Couldn't insert cable. Reason:", e.what());
-		ZstCable::destroy(cable_ptr);
-		cable_ptr = NULL;
-		return cable_ptr;
+		success = false;
 	}
 
 	//Add cable to plugs
 	ZstInputPlug * input_plug = dynamic_cast<ZstInputPlug*>(hierarchy()->find_entity(input_path));
 	ZstOutputPlug * output_plug = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(output_path));
+	if (!input_plug || !output_plug) {
+		ZstLog::net(LogLevel::error, "Can't connect cable, a plug is missing.");
+		success = false;
+	}
+
+	//If we failed to create the cable, we should cleanup our resources before returning
+	if (!success) {
+		ZstCable::destroy(cable_ptr);
+		cable_ptr = NULL;
+		return cable_ptr;
+	}
+
+	//Set up plug and cable references
 	plug_add_cable(input_plug, cable_ptr);
 	plug_add_cable(output_plug, cable_ptr);
 	cable_ptr->set_input(input_plug);
@@ -156,9 +181,18 @@ ZstCable * ZstSession::create_cable(const ZstURI & input_path, const ZstURI & ou
 
 	//Enqueue events
 	synchronisable_set_activation_status(cable_ptr, ZstSyncStatus::ACTIVATED);
-
 	m_session_events.defer([cable_ptr](ZstSessionAdaptor * dlg) { dlg->on_cable_created(cable_ptr); });
+
 	return cable_ptr;
+}
+
+void ZstSession::on_compute(ZstComponent * component, ZstInputPlug * plug) {
+	try {
+		component->compute(plug);
+	}
+	catch (std::exception e) {
+		ZstLog::entity(LogLevel::error, "Compute on component {} failed. Error was: {}", component->URI().path(), e.what());
+	}
 }
 
 ZstEventDispatcher<ZstSessionAdaptor*> & ZstSession::session_events()
@@ -169,4 +203,9 @@ ZstEventDispatcher<ZstSessionAdaptor*> & ZstSession::session_events()
 ZstEventDispatcher<ZstSynchronisableAdaptor*> & ZstSession::synchronisable_events()
 {
 	return m_synchronisable_events;
+}
+
+ZstEventDispatcher<ZstComputeAdaptor*>& ZstSession::compute_events()
+{
+	return m_compute_events;
 }

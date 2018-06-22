@@ -13,14 +13,6 @@ ZstClientHierarchy::~ZstClientHierarchy()
 {
 }
 
-void ZstClientHierarchy::destroy()
-{
-	ZstHierarchy::destroy();
-	
-	//TODO: Delete other clients
-	delete m_root;
-}
-
 void ZstClientHierarchy::init(std::string name)
 {
 	//Create a root entity to hold our local entity hierarchy
@@ -30,6 +22,17 @@ void ZstClientHierarchy::init(std::string name)
 
 	//We add this instance as an adaptor to make sure we can process local queued events
 	m_synchronisable_events.add_adaptor(this);
+}
+
+void ZstClientHierarchy::destroy()
+{
+	ZstHierarchy::destroy();
+
+	m_root->remove_adaptor(this);
+	m_synchronisable_events.remove_adaptor(this);
+
+	//TODO: Delete other clients
+	delete m_root;
 }
 
 void ZstClientHierarchy::process_events()

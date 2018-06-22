@@ -172,8 +172,8 @@ ZstCable * ZstStage::create_cable(const ZstURI & input_URI, const ZstURI & outpu
 		return cable_ptr;
 	}
 
-	ZstPlug * input_plug = dynamic_cast<ZstPlug*>(input_perf->find_child_by_URI(input_URI));
-	ZstPlug * output_plug = dynamic_cast<ZstPlug*>(output_perf->find_child_by_URI(output_URI));
+	ZstInputPlug * input_plug = dynamic_cast<ZstInputPlug*>(input_perf->find_child_by_URI(input_URI));
+	ZstOutputPlug * output_plug = dynamic_cast<ZstOutputPlug*>(output_perf->find_child_by_URI(output_URI));
 
 	if (!input_plug || !output_plug) {
 		ZstLog::net(LogLevel::notification, "Create cable could not find plugs");
@@ -328,6 +328,7 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 		case ZstMsgKind::CLIENT_HEARTBEAT:
 		{
 			sender->set_heartbeat_active();
+			response = stage->msg_pool()->get_msg()->init_message(ZstMsgKind::OK);
 			break;
 		}
 		case ZstMsgKind::CLIENT_JOIN:

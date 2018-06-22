@@ -49,7 +49,11 @@ void ZstClient::destroy() {
     //Let stage know we are leaving
 	if(is_connected_to_stage())
 		leave_stage(true);
-	
+
+	m_msg_dispatch->stage_events().remove_adaptor(this);
+	m_msg_dispatch->performance_events().remove_adaptor(this);
+	this->remove_adaptor(m_msg_dispatch);
+
 	m_session->destroy();
 	m_msg_dispatch->destroy();
 	m_transport->destroy();
@@ -198,7 +202,7 @@ void ZstClient::join_stage_complete(ZstMessageReceipt response)
 
 	//If we didn't receive a OK signal, something went wrong
 	if (response.status != ZstMsgKind::OK) {
-        ZstLog::net(LogLevel::error, "Stage connection failed with with status: {}", response.status);
+        ZstLog::net(LogLevel::error, "Stage connection failed with with status: {}", ZstMsgNames[response.status]);
 		leave_stage_complete();
         return;
 	}
@@ -296,8 +300,12 @@ void ZstClient::heartbeat_timer(){
 
 	invoke([this, &start](ZstStageDispatchAdaptor * adaptor) {
 		adaptor->send_message(ZstMsgKind::CLIENT_HEARTBEAT, true, [this, &start](ZstMessageReceipt response) {
+			if (response.status != ZstMsgKind::OK) {
+				ZstLog::net(LogLevel::notification, "Server ping timed out");
+				return;
+			}
 			std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
-			std::chrono::milliseconds delta = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+			auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 			ZstLog::net(LogLevel::notification, "Ping roundtrip {} ms", delta.count());
 			this->m_ping = static_cast<long>(delta.count());
 		});

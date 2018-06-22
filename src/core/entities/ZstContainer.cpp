@@ -51,8 +51,10 @@ ZstEntityBase * ZstContainer::find_child_by_URI(const ZstURI & path)
 	if (this->URI().size() >= path.size() || !path.contains(URI())) {
 		return result;
 	}
+	
+	int distance = static_cast<int>(path.size()) - static_cast<int>(this->URI().size());
+	if (distance < 0) assert(distance >= 0);
 
-	size_t distance = path.size() - URI().size();
 	while(distance > 0) {
 		ZstURI next = path.range(0, path.size() - distance);
 		result = NULL;

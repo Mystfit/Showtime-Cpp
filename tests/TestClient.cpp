@@ -35,7 +35,6 @@ using namespace boost::process;
 #define WAIT_UNTIL_STAGE_TIMEOUT std::this_thread::sleep_for(std::chrono::milliseconds(STAGE_TIMEOUT + 1000));
 
 
-
 inline void clear_callback_queue() {
 	zst_poll_once();
 }
@@ -185,7 +184,7 @@ public:
 		m_output->fire();
 	}
 
-	ZstPlug * output() {
+	ZstOutputPlug * output() {
 		return m_output;
 	}
 };
@@ -217,7 +216,7 @@ public:
 		num_hits++;
 	}
 
-	ZstPlug * input() {
+	ZstInputPlug * input() {
 		return m_input;
 	}
 
@@ -659,6 +658,7 @@ void test_external_entities(std::string external_test_path) {
 	ZstURI sink_plug_uri = sink_ent_uri + ZstURI("in");
 
 	//Run the sink program
+	bool launched_sink_process = false;
 	std::string prog = external_test_path + "/TestSink";
 #ifdef WIN32
 	prog += ".exe";
@@ -669,33 +669,37 @@ void test_external_entities(std::string external_test_path) {
 #else
 	char pause_flag = 'a';
 #endif
-	try {
-		sink_process = boost::process::child(prog, &pause_flag); //d flag pauses the sink process to give us time to attach a debugger
+	if (launched_sink_process) {
+		try {
+			sink_process = boost::process::child(prog, &pause_flag); //d flag pauses the sink process to give us time to attach a debugger
 #ifdef PAUSE_SINK
 #ifdef WIN32
-		system("pause");
+			system("pause");
 #endif
-        system("read -n 1 -s -p \"Press any key to continue...\n\"");
+			system("read -n 1 -s -p \"Press any key to continue...\n\"");
 #endif
-	}
-	catch (boost::process::process_error e) {
-		ZstLog::app(LogLevel::debug, "Sink process failed to start. Code:{} Message:{}", e.code().value(), e.what());
-	}
-	assert(sink_process.valid());
+		}
+		catch (boost::process::process_error e) {
+			ZstLog::app(LogLevel::debug, "Sink process failed to start. Code:{} Message:{}", e.code().value(), e.what());
+		}
+		assert(sink_process.valid());
 
-	//Test performer arriving
-	wait_for_event(performerEvents, 1);
+		//Test performer arriving
+		wait_for_event(performerEvents, 1);
+	}
 	ZstPerformer * sink_performer = zst_get_performer_by_URI(sink_perf_uri);
 	assert(sink_performer);
 	performerEvents->reset_num_calls();
     
 	//Test entity exists
-    wait_for_event(entityEvents, 1);
+	if (launched_sink_process) {
+		wait_for_event(entityEvents, 1);
+	}
 	ZstContainer * sink_ent = dynamic_cast<ZstContainer*>(zst_find_entity(sink_ent_uri));
 	assert(sink_ent);
 	entityEvents->reset_num_calls();
     
-	ZstPlug * sink_plug = sink_ent->get_plug_by_URI(sink_plug_uri);
+	ZstInputPlug * sink_plug = dynamic_cast<ZstInputPlug*>(sink_ent->get_plug_by_URI(sink_plug_uri));
 	assert(sink_plug);
 	assert(sink_plug->is_activated());
 
@@ -703,14 +707,6 @@ void test_external_entities(std::string external_test_path) {
 	ZstCable * cable = zst_connect_cable(sink_plug, output_ent->output());
     assert(cable);
     assert(cable->is_activated());
-    
-    // TODO: We need to wait for the other end to finish connecting
-    // Eventually, we need to solve this by broadcasting an empty graph
-    // message on the client owning the output socket that will be picked
-    // up by the subscriber when the connection is valid. At this point,
-    // the subscribing client can let the stage know that the cable is
-    // valid
-	TAKE_A_BREATH
 	
 	//Send message to sink to test entity creation
 	ZstLog::app(LogLevel::debug, "Asking sink to create an entity");

@@ -13,6 +13,11 @@ public:
 		m_name = std::string(name);
 	}
 
+	~ZstEventDispatcher() {
+		this->flush();
+		m_adaptors.clear();
+	}
+
 	void add_adaptor(T adaptor) { 
 		this->m_adaptors.insert(adaptor); 
 	}
