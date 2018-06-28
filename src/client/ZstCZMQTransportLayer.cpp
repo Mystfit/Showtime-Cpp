@@ -153,7 +153,9 @@ int ZstCZMQTransportLayer::s_handle_stage_router(zloop_t * loop, zsock_t * socke
 int ZstCZMQTransportLayer::s_handle_timer(zloop_t * loop, int timer_id, void * arg)
 {
 	ZstCZMQTransportLayer * transport = (ZstCZMQTransportLayer*)arg;
-	transport->m_timers[timer_id]();
+	if(transport->m_timers.find(timer_id) != transport->m_timers.end()){
+		transport->m_timers[timer_id]();
+	}
 	return 0;
 }
 
