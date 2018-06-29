@@ -17,6 +17,7 @@ ZstStageMessage::~ZstStageMessage(){
 }
 
 void ZstStageMessage::reset(){
+	ZstMessage::reset();
     memset(&m_msg_id[0], 0, ZSTMSG_UUID_LENGTH);
 	m_msg_kind = ZstMsgKind::EMPTY;
 	this->append_id_frame();

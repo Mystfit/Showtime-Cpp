@@ -20,8 +20,6 @@ ZstMessage::ZstMessage(const ZstMessage & other)
 void ZstMessage::reset()
 {
 	m_payloads.clear();
-	if (m_msg_handle)
-		zmsg_destroy(&m_msg_handle);
 	m_msg_handle = zmsg_new();
 }
 
