@@ -17,16 +17,18 @@ void ZstMessageDispatcher::set_transport(ZstTransportLayer * transport)
 	m_transport = transport;
 }
 
+void ZstMessageDispatcher::destroy()
+{
+	m_stage_events.flush();
+	m_stage_events.remove_all_adaptors();
+	m_performance_events.flush();
+	m_performance_events.remove_all_adaptors();
+}
+
 void ZstMessageDispatcher::process_events()
 {
 	m_stage_events.process_events();
 	m_performance_events.process_events();
-}
-
-void ZstMessageDispatcher::flush_events()
-{
-	m_stage_events.flush();
-	m_performance_events.flush();
 }
 
 void ZstMessageDispatcher::send_to_stage(ZstStageMessage * msg, bool async, MessageReceivedAction action)

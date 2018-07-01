@@ -291,7 +291,7 @@ int ZstStage::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 	//Receive waiting message
 	zmsg_t * recv_msg = zmsg_recv(socket);
 	ZstStageMessage * msg = NULL;
-	
+		
 	if (recv_msg) {
 		//Get identity of sender from first frame
 		zframe_t * identity_frame = zmsg_pop(recv_msg);

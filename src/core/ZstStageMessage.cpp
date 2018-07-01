@@ -13,7 +13,6 @@ ZstStageMessage::ZstStageMessage(const ZstStageMessage & other){
 }
 
 ZstStageMessage::~ZstStageMessage(){
-    memset(m_msg_id, 0, ZSTMSG_UUID_LENGTH);
 }
 
 void ZstStageMessage::reset(){

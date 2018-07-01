@@ -42,6 +42,7 @@ public:
 	//Release and reset a message
 	void release(T* message)
 	{
+		message->set_inactive();
 		m_message_pool.push_back(message);
 	}
 

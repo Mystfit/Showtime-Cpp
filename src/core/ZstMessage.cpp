@@ -8,7 +8,8 @@ ZstMessage::ZstMessage() : m_msg_handle(NULL)
 
 ZstMessage::~ZstMessage()
 {
-	zmsg_destroy(&m_msg_handle);
+	if(m_msg_handle)
+		zmsg_destroy(&m_msg_handle);
 }
 
 ZstMessage::ZstMessage(const ZstMessage & other)
@@ -21,6 +22,11 @@ void ZstMessage::reset()
 {
 	m_payloads.clear();
 	m_msg_handle = zmsg_new();
+}
+
+void ZstMessage::set_inactive()
+{
+	m_msg_handle = NULL;
 }
 
 void ZstMessage::unpack(zmsg_t * msg){

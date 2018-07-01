@@ -61,7 +61,7 @@ void zst_add_session_adaptor(ZstSessionAdaptor * adaptor)
 
 void zst_add_hierarchy_adaptor(ZstHierarchyAdaptor * adaptor)
 {
-	ZstClient::instance().session()->hierarchy()->events().add_adaptor(adaptor);
+	ZstClient::instance().session()->hierarchy()->hierarchy_events().add_adaptor(adaptor);
 }
 
 void zst_remove_session_adaptor(ZstSessionAdaptor * adaptor)
@@ -71,7 +71,7 @@ void zst_remove_session_adaptor(ZstSessionAdaptor * adaptor)
 
 void zst_remove_hierarchy_adaptor(ZstHierarchyAdaptor * adaptor)
 {
-	ZstClient::instance().session()->hierarchy()->events().remove_adaptor(adaptor);
+	ZstClient::instance().session()->hierarchy()->hierarchy_events().remove_adaptor(adaptor);
 }
 
 
@@ -107,8 +107,7 @@ void zst_deactivate_entity_async(ZstEntityBase * entity)
 
 ZstPerformer * zst_get_root()
 {
-	ZstClientHierarchy * session = dynamic_cast<ZstClientHierarchy*>(ZstClient::instance().session()->hierarchy());
-	return session->get_local_performer();
+	return ZstClient::instance().session()->hierarchy()->get_local_performer();
 }
 
 ZstPerformer * zst_get_performer_by_URI(const ZstURI & path)

@@ -4,8 +4,7 @@
 
 ZstClientHierarchy::ZstClientHierarchy() :
 	m_root(NULL),
-	m_stage_events("hierarchy stage"),
-	m_synchronisable_events("hierarchy syncronisables with events")
+	m_stage_events("hierarchy syncronisables with events")
 {
 }
 
@@ -19,17 +18,12 @@ void ZstClientHierarchy::init(std::string name)
 	//Sets the name of our performer and the address of our graph output
 	m_root = new ZstPerformer(name.c_str());
 	m_root->add_adaptor(this);
-
-	//We add this instance as an adaptor to make sure we can process local queued events
-	m_synchronisable_events.add_adaptor(this);
 }
 
 void ZstClientHierarchy::destroy()
 {
 	ZstHierarchy::destroy();
-
-	m_root->remove_adaptor(this);
-	m_synchronisable_events.remove_adaptor(this);
+	m_stage_events.remove_all_adaptors();
 
 	//TODO: Delete other clients
 	delete m_root;
@@ -38,14 +32,12 @@ void ZstClientHierarchy::destroy()
 void ZstClientHierarchy::process_events()
 {
 	ZstHierarchy::process_events();
-	m_synchronisable_events.process_events();
 	m_stage_events.process_events();
 }
 
 void ZstClientHierarchy::flush_events()
 {
 	ZstHierarchy::flush_events();
-	m_synchronisable_events.flush();
 	m_stage_events.flush();
 }
 
@@ -89,13 +81,6 @@ void ZstClientHierarchy::on_receive_from_stage(ZstStageMessage * msg)
 	default:
 		break;
 	}
-}
-
-void ZstClientHierarchy::synchronisable_has_event(ZstSynchronisable * synchronisable)
-{
-	m_synchronisable_events.defer([this, synchronisable](ZstSynchronisableAdaptor * dlg) {
-		this->synchronisable_process_events(synchronisable); 
-	});
 }
 
 void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, bool async)
@@ -194,16 +179,31 @@ void ZstClientHierarchy::destroy_entity_complete(ZstMessageReceipt response, Zst
 	bundle->disconnect_all();
 	entity->release_cable_bundle(bundle);
 	
+	//Dispatch events depending on entity type
+	if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
+		//Remove plug
+		parent->remove_plug(dynamic_cast<ZstPlug*>(entity));
+		hierarchy_events().defer([entity](ZstHierarchyAdaptor * dlg) { 
+			dlg->on_plug_leaving(static_cast<ZstPlug*>(entity)); 
+		});
+	}
+	else if (strcmp(entity->entity_type(), PERFORMER_TYPE) == 0)
+	{
+		//Remove performer
+		hierarchy_events().defer([entity](ZstHierarchyAdaptor * adp) {
+			adp->on_performer_leaving(static_cast<ZstPerformer*>(entity));
+		});
+	}		
+	else 
+	{
+		//Remove entity
+		hierarchy_events().defer([entity](ZstHierarchyAdaptor * dlg) {
+			dlg->on_entity_leaving(entity);
+		});
+	}
+
 	//Finally, add non-local entities to the reaper to destroy them at the correct time
 	//TODO: Only destroying proxy entities at the moment. Local entities should be managed by the host application
-	
-	if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
-		parent->remove_plug(dynamic_cast<ZstPlug*>(entity));
-		events().defer([entity](ZstHierarchyAdaptor * dlg) { dlg->on_plug_leaving(static_cast<ZstPlug*>(entity)); });
-	}
-	else {
-		events().defer([entity](ZstHierarchyAdaptor * dlg) {dlg->on_entity_leaving(entity); });
-	}
 	synchronisable_enqueue_deactivation(entity);
 }
 
@@ -248,7 +248,7 @@ ZstPerformer * ZstClientHierarchy::get_local_performer() const
 	return m_root;
 }
 
-ZstEventDispatcher<ZstStageDispatchAdaptor*>& ZstClientHierarchy::stage_events()
+ZstEventDispatcher<ZstStageDispatchAdaptor*> & ZstClientHierarchy::stage_events()
 {
 	return m_stage_events;
 }

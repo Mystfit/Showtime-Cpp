@@ -1,5 +1,3 @@
-#pragma once
-
 #include "ZstReaper.h"
 
 void ZstReaper::add(ZstSynchronisable * synchronisable)

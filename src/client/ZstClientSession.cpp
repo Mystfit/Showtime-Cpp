@@ -4,12 +4,10 @@ ZstClientSession::ZstClientSession() :
 	m_stage_events("session stage"),
 	m_performance_events("session performance")
 {
-	m_reaper = new ZstReaper();
 	m_hierarchy = new ZstClientHierarchy();
 }
 
 ZstClientSession::~ZstClientSession() {
-	delete m_reaper;
 	delete m_hierarchy;
 }
 
@@ -27,17 +25,14 @@ void ZstClientSession::init(std::string client_name)
 void ZstClientSession::destroy()
 {
 	ZstSession::destroy();
-
 	m_hierarchy->destroy();
-
-	delete m_hierarchy;
 }
 
 void ZstClientSession::process_events()
 {
 	ZstSession::process_events();
 	m_stage_events.process_events();
-	m_reaper->reap_all();
+	m_reaper.reap_all();
 }
 
 void ZstClientSession::flush()
@@ -149,7 +144,7 @@ void ZstClientSession::on_receive_from_stage(ZstStageMessage * msg)
 void ZstClientSession::on_synchronisable_destroyed(ZstSynchronisable * synchronisable)
 {
 	if(synchronisable->is_proxy())
-		m_reaper->add(synchronisable);
+		m_reaper.add(synchronisable);
 }
 
 void ZstClientSession::synchronisable_has_event(ZstSynchronisable * synchronisable)
@@ -185,8 +180,7 @@ ZstCable * ZstClientSession::connect_cable(ZstInputPlug * input, ZstOutputPlug *
 
 void ZstClientSession::connect_cable_complete(ZstMessageReceipt response, ZstCable * cable) {
 	if (response.status == ZstMsgKind::OK) {
-		//The connection has started, but we have to wait for the stage to publish the cable before we can mark it live
-		//synchronisable_enqueue_activation(cable);
+		synchronisable_enqueue_activation(cable);
 	}
 	else {
 		ZstLog::net(LogLevel::notification, "Cable connect for {}-{} failed with status {}", cable->get_input_URI().path(), cable->get_output_URI().path(), ZstMsgNames[response.status]);

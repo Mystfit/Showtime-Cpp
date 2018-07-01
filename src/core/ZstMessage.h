@@ -145,6 +145,7 @@ public:
 	ZST_EXPORT ZstMessage(const ZstMessage & other);
 
 	ZST_EXPORT virtual void reset();
+    ZST_EXPORT virtual void set_inactive();
 	ZST_EXPORT virtual void unpack(zmsg_t * msg);
 	ZST_EXPORT virtual void append_str(const char * s, size_t len);
 

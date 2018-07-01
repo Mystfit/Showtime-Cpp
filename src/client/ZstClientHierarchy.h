@@ -22,7 +22,7 @@ class ZstClientHierarchy :
 {
 public:
 	ZstClientHierarchy();
-	~ZstClientHierarchy();
+	virtual ~ZstClientHierarchy();
 	
 	void init(std::string name);
 	void init() override {};
@@ -42,7 +42,6 @@ public:
 	// --------------------
 	
 	void on_receive_from_stage(ZstStageMessage * msg) override;
-	void synchronisable_has_event(ZstSynchronisable * synchronisable) override;
 
 
 	// ------------------------------
@@ -94,5 +93,4 @@ private:
 	// -----------------
 
 	ZstEventDispatcher<ZstStageDispatchAdaptor*> m_stage_events;
-	ZstEventDispatcher<ZstSynchronisableAdaptor*> m_synchronisable_events;
 };

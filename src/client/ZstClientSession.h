@@ -29,7 +29,7 @@ class ZstClientSession :
 {
 public:
 	ZstClientSession();
-	~ZstClientSession();
+	virtual ~ZstClientSession();
 
 
 	// ------------------------------
@@ -103,6 +103,6 @@ private:
 	ZstEventDispatcher<ZstStageDispatchAdaptor*> m_stage_events;
 	ZstEventDispatcher<ZstPerformanceDispatchAdaptor*> m_performance_events;
 	
-	ZstReaper * m_reaper;
+	ZstReaper m_reaper;
 	ZstClientHierarchy * m_hierarchy;
 };

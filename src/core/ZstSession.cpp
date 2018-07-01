@@ -21,7 +21,7 @@ void ZstSession::process_events()
 
 void ZstSession::flush()
 {
-	hierarchy()->events().flush();
+	hierarchy()->flush_events();
 	m_synchronisable_events.flush();
 	m_session_events.flush();
 }
@@ -30,14 +30,15 @@ void ZstSession::init()
 {
 	//We add this instance as an adaptor to make sure we can process local queued events
 	m_synchronisable_events.add_adaptor(this);
-
 	m_compute_events.add_adaptor(this);
 }
 
 void ZstSession::destroy()
 {
-	m_synchronisable_events.remove_adaptor(this);
-	m_compute_events.remove_adaptor(this);
+	m_synchronisable_events.flush();
+	m_synchronisable_events.remove_all_adaptors();
+	m_compute_events.flush();
+	m_compute_events.remove_all_adaptors();
 }
 
 ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * output, bool async)

@@ -1,9 +1,12 @@
 #include <ZstLogging.h>
 #include "ZstHierarchy.h"
 
-ZstHierarchy::ZstHierarchy() : 
-	m_hierarchy_events("Hierarchy")
+ZstHierarchy::ZstHierarchy() :
+	m_hierarchy_events("hierarchy"),
+	m_synchronisable_events("hierarchy stage")
 {
+	//We add this instance as an adaptor to make sure we can process local queued events
+	m_synchronisable_events.add_adaptor(this);
 }
 
 ZstHierarchy::~ZstHierarchy()
@@ -12,6 +15,9 @@ ZstHierarchy::~ZstHierarchy()
 
 void ZstHierarchy::destroy()
 {
+	this->flush_events();
+	m_synchronisable_events.remove_all_adaptors();
+	m_hierarchy_events.remove_all_adaptors();
 }
 
 void ZstHierarchy::activate_entity(ZstEntityBase * entity, bool async)
@@ -42,9 +48,11 @@ void ZstHierarchy::add_performer(ZstPerformer & performer)
 
 	//Since this is a proxy entity, it should be activated immediately.
 	synchronisable_set_activation_status(performer_proxy, ZstSyncStatus::ACTIVATED);
+	synchronisable_set_proxy(performer_proxy);
 
 	m_clients[performer_proxy->URI()] = performer_proxy;
-	synchronisable_set_activation_status(performer_proxy, ZstSyncStatus::ACTIVATED);
+
+	//Publish performer event
 	m_hierarchy_events.defer([performer_proxy](ZstHierarchyAdaptor * adp) {adp->on_performer_arriving(performer_proxy); });
 }
 
@@ -141,34 +149,32 @@ void ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 {
 	if (entity) {
 		if (entity->is_proxy()) {
-			ZstLog::net(LogLevel::debug, "!!!Deactivating proxy {}", entity->URI().path());
 			synchronisable_enqueue_deactivation(entity);
-			if (strcmp(entity->entity_type(), COMPONENT_TYPE) == 0 || 
-				strcmp(entity->entity_type(), CONTAINER_TYPE) == 0 ||
-				strcmp(entity->entity_type(), PLUG_TYPE)) {
-				destroy_entity(entity, false);
-			}
-			else if (strcmp(entity->entity_type(), PERFORMER_TYPE) == 0) {
-				//TODO: Remove performer
-				events().defer([entity](ZstHierarchyAdaptor * adp) {
-					adp->on_performer_leaving(static_cast<ZstPerformer*>(entity));
-				});
-			}
+			destroy_entity(entity, false);
 		}
 	}
 }
 
-ZstEventDispatcher<ZstHierarchyAdaptor*> & ZstHierarchy::events()
+ZstEventDispatcher<ZstHierarchyAdaptor*> & ZstHierarchy::hierarchy_events()
 {
 	return m_hierarchy_events;
 }
 
  void ZstHierarchy::process_events()
 {
+	m_synchronisable_events.process_events();
 	m_hierarchy_events.process_events();
 }
 
  void ZstHierarchy::flush_events()
  {
-	 m_hierarchy_events.flush();
+	m_synchronisable_events.flush();
+	m_hierarchy_events.flush();
  }
+
+void ZstHierarchy::synchronisable_has_event(ZstSynchronisable * synchronisable)
+{
+	m_synchronisable_events.defer([this, synchronisable](ZstSynchronisableAdaptor * dlg) {
+		this->synchronisable_process_events(synchronisable); 
+	});
+}

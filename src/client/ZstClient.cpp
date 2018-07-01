@@ -109,7 +109,7 @@ void ZstClient::process_events()
 
 void ZstClient::flush()
 {
-	this->flush();
+    ZstEventDispatcher<ZstStageDispatchAdaptor*>::flush();
 	m_session->flush();
 }
 
@@ -296,10 +296,9 @@ long ZstClient::ping()
 }
 
 void ZstClient::heartbeat_timer(){
-	std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
-
-	invoke([this, &start](ZstStageDispatchAdaptor * adaptor) {
-		adaptor->send_message(ZstMsgKind::CLIENT_HEARTBEAT, true, [this, &start](ZstMessageReceipt response) {
+	invoke([this](ZstStageDispatchAdaptor * adaptor) {
+		std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
+		adaptor->send_message(ZstMsgKind::CLIENT_HEARTBEAT, true, [this, start](ZstMessageReceipt response) {
 			if (response.status != ZstMsgKind::OK) {
 				ZstLog::net(LogLevel::notification, "Server ping timed out");
 				return;

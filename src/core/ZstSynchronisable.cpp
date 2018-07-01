@@ -15,6 +15,7 @@ ZstSynchronisable::ZstSynchronisable() :
 ZstSynchronisable::~ZstSynchronisable()
 {
 	m_synchronisable_events->flush();
+	m_synchronisable_events->remove_all_adaptors();
 	delete m_synchronisable_events;
 }
 

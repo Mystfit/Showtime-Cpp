@@ -32,14 +32,12 @@ class ZstMessageDispatcher :
 {
 public:
 	ZstMessageDispatcher();
-	~ZstMessageDispatcher();
+	virtual ~ZstMessageDispatcher();
 	void set_transport(ZstTransportLayer * transport);
 
 	void init() override {};
-	void destroy() override {};
-
+	void destroy() override;
 	void process_events();
-	void flush_events();
 
 	void send_to_stage(ZstStageMessage * msg, bool async, MessageReceivedAction action);
 	void send_to_performance(ZstOutputPlug * plug) override;

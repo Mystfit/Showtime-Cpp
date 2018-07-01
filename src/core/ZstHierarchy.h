@@ -50,13 +50,21 @@ public:
 	// Event dispatchers
 	// -----------------
 	
-	ZST_EXPORT ZstEventDispatcher<ZstHierarchyAdaptor*> & events();
+	//ZST_EXPORT ZstEventDispatcher<ZstHierarchyAdaptor*> & synchronisable_events();
+	ZST_EXPORT ZstEventDispatcher<ZstHierarchyAdaptor*> & hierarchy_events();
 	ZST_EXPORT virtual void process_events();
 	ZST_EXPORT virtual void flush_events();
+
+	// -----------------
+	// Adaptor overrides
+	// -----------------
+	void synchronisable_has_event(ZstSynchronisable * synchronisable) override;
+
 
 protected:
 	ZstPerformerMap m_clients;
 
 private:
+	ZstEventDispatcher<ZstSynchronisableAdaptor*> m_synchronisable_events;
 	ZstEventDispatcher<ZstHierarchyAdaptor*> m_hierarchy_events;
 };

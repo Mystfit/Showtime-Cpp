@@ -15,7 +15,8 @@ public:
 
 	~ZstEventDispatcher() {
 		this->flush();
-		m_adaptors.clear();
+		this->remove_all_adaptors();
+		//ZstLog::net(LogLevel::debug, "Leaving dispatcher {} destructor", m_name);
 	}
 
 	void add_adaptor(T adaptor) { 
@@ -25,6 +26,10 @@ public:
 	void remove_adaptor(T adaptor) { 
 		this->m_adaptors.erase(adaptor); 
 	}
+
+	void remove_all_adaptors(){
+		m_adaptors.clear();
+	}
 	
 	void flush() {
 		std::function<void(T)> event_func;
@@ -33,7 +38,7 @@ public:
 
 	void invoke(const std::function<void(T)> & event) {
 		if (this->m_adaptors.size() < 1) {
-			ZstLog::net(LogLevel::debug, "Inside dispatcher {} invoke() : No adaptors to pass event to!", m_name, m_events.size_approx());
+			//ZstLog::net(LogLevel::debug, "Inside dispatcher {} invoke() : No adaptors to pass event to!", m_name);
 			return;
 		}
 		for (T adaptor : this->m_adaptors) {

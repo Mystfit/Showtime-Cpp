@@ -658,7 +658,7 @@ void test_external_entities(std::string external_test_path) {
 	ZstURI sink_plug_uri = sink_ent_uri + ZstURI("in");
 
 	//Run the sink program
-	bool launched_sink_process = false;
+	bool launched_sink_process = true;
 	std::string prog = external_test_path + "/TestSink";
 #ifdef WIN32
 	prog += ".exe";
