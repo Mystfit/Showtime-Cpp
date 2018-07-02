@@ -247,6 +247,10 @@ void ZstClient::leave_stage(bool async)
 {
 	if (m_connected_to_stage) {
 		ZstLog::net(LogLevel::notification, "Leaving stage");
+
+		//Set flags early to avoid double leaving shenanigans
+		m_is_connecting = false;
+		m_connected_to_stage = false;
         
 		invoke([this, async](ZstStageDispatchAdaptor * adaptor) {
 			adaptor->send_message(ZstMsgKind::CLIENT_LEAVING, async, [this](ZstMessageReceipt response) {
@@ -268,9 +272,6 @@ void ZstClient::leave_stage_complete()
     //Disconnect rest of sockets and timers
 	m_transport->remove_timer(m_heartbeat_timer_id);
 	m_transport->disconnect_from_stage();
-
-	m_is_connecting = false;
-	m_connected_to_stage = false;
 
 	//Enqueue event for adaptors
 	m_session->dispatch_disconnected_from_stage();
