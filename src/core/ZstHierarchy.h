@@ -58,7 +58,7 @@ public:
 	// -----------------
 	// Adaptor overrides
 	// -----------------
-	void synchronisable_has_event(ZstSynchronisable * synchronisable) override;
+	ZST_EXPORT void synchronisable_has_event(ZstSynchronisable * synchronisable) override;
 
 
 protected:

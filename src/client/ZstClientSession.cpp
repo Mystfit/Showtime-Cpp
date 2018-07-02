@@ -53,7 +53,6 @@ void ZstClientSession::dispatch_connected_to_stage()
 void ZstClientSession::dispatch_disconnected_from_stage()
 {
 	//Deactivate all owned entities
-	ZstLog::net(LogLevel::debug, "!!!Deactivating performer {}", hierarchy()->get_local_performer()->URI().path());
 	synchronisable_enqueue_deactivation(static_cast<ZstClientHierarchy*>(hierarchy())->get_local_performer());
 	session_events().invoke([](ZstSessionAdaptor * adaptor) {
 		adaptor->on_disconnected_from_stage();
@@ -69,7 +68,6 @@ void ZstClientSession::on_receive_from_performance(ZstPerformanceMessage * msg)
 {
 	//Check for no payloads in message
 	if(msg->num_payloads() < 1){
-		ZstLog::net(LogLevel::debug, "No payload in performance message. Must be a connection broadcast.");
 		return;
 	}
 

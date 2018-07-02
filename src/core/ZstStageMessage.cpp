@@ -5,6 +5,8 @@
 
 ZstStageMessage::ZstStageMessage() : m_msg_kind(ZstMsgKind::EMPTY)
 {
+	//Need to reset this message to get it ready for sending
+	reset();
 }
 
 ZstStageMessage::ZstStageMessage(const ZstStageMessage & other){
@@ -133,7 +135,9 @@ ZstMsgKind ZstStageMessage::unpack_kind(zframe_t * kind_frame)
 {
 	ZstMsgKind k = ZstMsgKind::EMPTY;
 	if (kind_frame) {
-		auto handle = msgpack::unpack((char*)zframe_data(kind_frame), zframe_size(kind_frame));
+		char * kind_c = (char*)zframe_data(kind_frame);
+		size_t kind_s = zframe_size(kind_frame);
+		auto handle = msgpack::unpack(kind_c, kind_s);
 		k = handle.get().as<ZstMsgKind>();
 	}
 	return k;

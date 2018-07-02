@@ -3,7 +3,6 @@
 
 ZstMessage::ZstMessage() : m_msg_handle(NULL)
 {
-	reset();
 }
 
 ZstMessage::~ZstMessage()

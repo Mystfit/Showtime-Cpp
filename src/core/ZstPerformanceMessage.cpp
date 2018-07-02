@@ -1,5 +1,10 @@
 #include "ZstPerformanceMessage.h"
 
+ZstPerformanceMessage::ZstPerformanceMessage()
+{
+	reset();
+}
+
 ZstPerformanceMessage * ZstPerformanceMessage::init_performance_message(ZstOutputPlug * plug)
 {
 	this->append_str(plug->URI().path(), plug->URI().full_size());

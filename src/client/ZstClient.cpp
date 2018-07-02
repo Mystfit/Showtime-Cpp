@@ -152,7 +152,6 @@ void ZstClient::on_receive_from_stage(ZstStageMessage * msg)
 
 void ZstClient::on_receive_from_performance(ZstPerformanceMessage * msg){
 	if(msg->num_payloads() > 0){
-		ZstLog::net(LogLevel::debug, "ZstClient received performance message with a payload, ignoring.");
 		return;
 	}
 
