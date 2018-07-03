@@ -35,7 +35,8 @@ public class TestInputComponent : ZstComponent
 
     public override void compute(ZstInputPlug plug)
     {
-        showtime.app(LogLevel.notification, String.Format("Received plug hit from {0} with value {1}", plug.URI().path(), plug.float_at(0)));
+        //showtime.app(LogLevel.notification, String.Format("Received plug hit from {0} with value {1}", plug.URI().path(), plug.float_at(0)));
+        System.Console.WriteLine(String.Format("Received plug hit from {0} with value {1}", plug.URI().path(), plug.float_at(0)));
         wait.Set();
     }
 }
@@ -63,7 +64,6 @@ public class Program
 
         //Start the library
         showtime.init("TestDotnet", true);
-        showtime.init_file_logging("dotnet.log");
 
         //Create the event loop
         _cancelationTokenSource = new CancellationTokenSource();
@@ -84,9 +84,6 @@ public class Program
 
         //Connect cable
         var cable = showtime.connect_cable(input_comp.input, output_comp.output);
-
-        //Sleep to wait for connection to be established
-        Thread.Sleep(100);
 
         //Send values
         output_comp.send(42.0f);

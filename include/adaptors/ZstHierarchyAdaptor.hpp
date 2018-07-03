@@ -7,6 +7,7 @@
 
 class ZstHierarchyAdaptor : public ZstEventAdaptor {
 public:
+	ZST_EXPORT virtual ~ZstHierarchyAdaptor() {};
 	ZST_EXPORT virtual void on_performer_arriving(ZstPerformer * performer);
 	ZST_EXPORT virtual void on_performer_leaving(ZstPerformer * performer);
 
