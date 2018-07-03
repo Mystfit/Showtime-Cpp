@@ -127,7 +127,7 @@ public:
 
 	ZST_EXPORT ZstMessagePayload(ZstMessagePayload && source) noexcept;
 	//ZST_EXPORT ZstMessagePayload& operator=(ZstMessagePayload && source);
-	ZST_EXPORT ZstMessagePayload& operator=(ZstMessagePayload & other);
+	ZST_EXPORT ZstMessagePayload & operator=(const ZstMessagePayload & other);
 	
     ZST_EXPORT const size_t size();
 	ZST_EXPORT const char * data();

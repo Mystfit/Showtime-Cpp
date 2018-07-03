@@ -104,9 +104,8 @@ ZstMessagePayload::~ZstMessagePayload(){
 }
 
 
-ZstMessagePayload & ZstMessagePayload::operator=(ZstMessagePayload & other)
+ZstMessagePayload & ZstMessagePayload::operator=(const ZstMessagePayload & other)
 {
-	//Copy assignment
 	m_size = other.m_size;
 	m_payload = other.m_payload;
 	return *this;

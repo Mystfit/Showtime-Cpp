@@ -4,7 +4,7 @@
 #include <boost/bind.hpp>
 #include <cf/cfuture.h>
 #include <cf/time_watcher.h>
-#include <concurrent_queue.h>
+#include <concurrentqueue.h>
 
 #include <ZstEventDispatcher.hpp>
 
