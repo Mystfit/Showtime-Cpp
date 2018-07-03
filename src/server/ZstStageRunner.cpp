@@ -37,6 +37,11 @@ int main(int argc, char **argv) {
 			std::string line;
 			do {
 				std::getline(std::cin, line);
+#ifdef WIN32
+				Sleep(100);
+#else
+				usleep(1000 * 200);
+#endif
 			} while (line != "$TERM");
 			ZstLog::app(LogLevel::notification, "Received $TERM. Closing stage server.");
 		}

@@ -4,31 +4,56 @@
 #include <msgpack.hpp>
 #include <ZstURI.h>
 
-ZstURI::ZstURI() : m_component_count(0) {
+ZstURI::ZstURI() : m_component_count(0) 
+{
 	m_original_path = create_pstr("");
-	m_segmented_path = create_pstr("");
 	m_component_count = 0;
 }
 
 
 ZstURI::~ZstURI() {
 	free(m_original_path.cstr);
-	free(m_segmented_path.cstr);
+	for (size_t i = 0; i < m_component_count; ++i) {
+		free(m_components[i].cstr);
+	}
 }
 
 ZstURI::ZstURI(const ZstURI & copy) : 
 	m_component_count(0)
 {
 	m_original_path = create_pstr(copy.m_original_path.cstr, copy.m_original_path.length);
-	m_segmented_path = create_pstr(copy.m_original_path.cstr, copy.m_original_path.length);
     init();
 }
 
 ZstURI & ZstURI::operator=(const ZstURI & other)
 {
 	m_original_path = create_pstr(other.m_original_path.cstr, other.m_original_path.length);
-	m_segmented_path = create_pstr(other.m_original_path.cstr, other.m_original_path.length);
 	init();
+	return *this;
+}
+
+ZstURI & ZstURI::operator=(ZstURI && source)
+{
+	//Free original uri memory
+	free(m_original_path.cstr);
+	for (size_t i = 0; i < m_component_count; ++i) {
+		free(m_components[i].cstr);
+	}
+
+	//Move source uri memory contents over
+    m_original_path = std::move(source.m_original_path);
+	m_component_count = source.m_component_count;
+	for (size_t i = 0; i < source.m_component_count; ++i) {
+		m_components[i] = std::move(source.m_components[i]);
+	}
+
+	//Reset original URI
+	source.m_component_count = 0;
+	source.m_original_path = pstr();
+	for (size_t i = 0; i < source.m_component_count; ++i) {
+		m_components[i] = pstr();
+	}
+
 	return *this;
 }
 
@@ -37,14 +62,12 @@ ZstURI & ZstURI::operator=(const ZstURI & other)
 ZstURI::ZstURI(const char * path)
 {
 	m_original_path = create_pstr(path);
-	m_segmented_path = create_pstr(path);
 	init();
 }
 
 ZstURI::ZstURI(const char * path, size_t len)
 {
 	m_original_path = create_pstr(path, len);
-	m_segmented_path = create_pstr(path, len);
 	init();
 }
 
@@ -54,28 +77,29 @@ void ZstURI::init()
 
 	if (m_original_path.cstr[0] == 0)
 		return;
-
-	pstr comp;
-
-	comp.cstr = m_segmented_path.cstr;
+	
 	size_t len = 0;
-	for (size_t i = 0; i < m_segmented_path.length; i++) {
-		if (m_segmented_path.cstr[i] == DELIM) {
-			m_segmented_path.cstr[i] = '\0';
-			comp.length = len;
-			m_components[m_component_count++] = comp;
-			comp.cstr = &m_segmented_path.cstr[i + 1];
+	size_t word_offset = 0;
+	for (size_t i = 0; i < m_original_path.length; i++) {
+		if (m_original_path.cstr[i] == DELIM) {
+			m_components[m_component_count].length = len;
+			m_components[m_component_count].cstr = (char*)malloc(len+1);
+			memcpy(m_components[m_component_count].cstr, &m_original_path.cstr[word_offset], len);
+			m_components[m_component_count].cstr[len] = '\0';
+			word_offset += len + 1;
+			m_component_count++;
 			len = 0;
 		}
 		else {
 			len++;
 		}
-
 	}
 
-	//If we only have one component, don't need to truncate length
-	comp.length = len;
-	m_components[m_component_count++] = comp;
+	//Add last component
+	m_components[m_component_count].length = len-1;		//Don't include trailing 0 in component length
+	m_components[m_component_count].cstr = (char*)malloc(len);
+	memcpy(m_components[m_component_count].cstr, &m_original_path.cstr[word_offset], len);
+	m_component_count++;
 }
 
 //
@@ -84,7 +108,7 @@ const char * ZstURI::path() const
 	return m_original_path.cstr;
 }
 
-char * ZstURI::segment(size_t index)
+const char * ZstURI::segment(size_t index) const
 {
 	if(index >= m_component_count) {
 		throw std::range_error("Start or end index out of range of path components");
@@ -137,8 +161,7 @@ ZstURI ZstURI::range(size_t start, size_t end) const
 	length += end - start;
 
 	char * start_s = &m_original_path.cstr[start_position];
-	ZstURI result = ZstURI(start_s, length);
-	return result;
+	return ZstURI(start_s, length);
 }
 
 ZstURI ZstURI::parent() const
@@ -212,7 +235,7 @@ bool ZstURI::is_empty() const
 
 ZstURI::pstr ZstURI::create_pstr(const char * p)
 {
-	return create_pstr(p, strlen(p));
+	return std::move(create_pstr(p, strlen(p)));
 }
 
 ZstURI::pstr ZstURI::create_pstr(const char * p, size_t l)
@@ -223,7 +246,7 @@ ZstURI::pstr ZstURI::create_pstr(const char * p, size_t l)
 	memcpy(result.cstr, p, result.length-1);
 	result.cstr[result.length-1] = '\0';
 
-	return result;
+	return std::move(result);
 }
 
 
@@ -238,4 +261,89 @@ size_t ZstURIHash::operator()(ZstURI const & k) const
 		result = k.path()[i] + (result * prime);
 	}
 	return result;
+}
+
+
+// -------------------------------
+// Testing
+// -------------------------------
+
+void ZstURI::self_test()
+{
+	assert(std::is_standard_layout<ZstURI>());
+
+	//Define test URIs
+	ZstURI uri_empty = ZstURI();
+	ZstURI uri_single = ZstURI("single");
+	ZstURI uri_equal1 = ZstURI("ins/someplug");
+	ZstURI uri_notequal = ZstURI("anotherins/someplug");
+
+	//Test accessors
+	assert(strcmp(uri_equal1.segment(0), "ins") == 0);
+	assert(strcmp(uri_equal1.segment(1), "someplug") == 0);
+	assert(uri_empty.is_empty());
+	assert(uri_equal1.size() == 2);
+	assert(strcmp(uri_equal1.path(), "ins/someplug") == 0);
+
+	//Test comparisons
+	assert(ZstURI::equal(uri_equal1, uri_equal1));
+	assert(!ZstURI::equal(uri_equal1, uri_notequal));
+	assert(ZstURI::equal(ZstURI("root_entity/filter"), ZstURI("root_entity/filter")));
+	assert(!(ZstURI::equal(ZstURI("root_entity"), ZstURI("root_entity/filter"))));
+	assert(!(ZstURI::equal(ZstURI("root_entity"), ZstURI("root_entity/filter"))));
+	assert(ZstURI("b") < ZstURI("c"));
+	assert(ZstURI("a") < ZstURI("b"));
+	assert(ZstURI("a") < ZstURI("c"));
+	assert(!(ZstURI("c") < ZstURI("a")));
+	assert(uri_equal1.contains(ZstURI("ins")));
+	assert(!ZstURI("ins").contains(uri_equal1));
+	assert(uri_equal1.contains(ZstURI("ins/someplug")));
+	assert(!uri_equal1.contains(ZstURI("nomatch")));
+
+	//Test slicing
+	assert(ZstURI::equal(uri_equal1.range(0, 1), ZstURI("ins/someplug")));
+	assert(ZstURI::equal(uri_equal1.range(1, 1), ZstURI("someplug")));
+	assert(ZstURI::equal(uri_equal1.range(0, 0), ZstURI("ins")));
+	assert(ZstURI::equal(uri_equal1.parent(), ZstURI("ins")));
+	assert(ZstURI::equal(uri_equal1.first(), ZstURI("ins")));
+
+	bool thrown_URI_range_error = false;
+	try {
+		uri_single.parent();
+	}
+	catch (std::out_of_range) {
+		thrown_URI_range_error = true;
+	}
+	assert(thrown_URI_range_error);
+	thrown_URI_range_error = false;
+
+	//Test joining
+	ZstURI joint_uri = ZstURI("a") + ZstURI("b");
+	assert(ZstURI::equal(joint_uri, ZstURI("a/b")));
+	assert(joint_uri.size() == 2);
+	assert(joint_uri.full_size() == 3);
+
+	//Test URI going out of scope
+	{
+		ZstURI stack_uri("some_entity/some_name");
+	}
+
+	//Test range exceptions
+	bool thrown_range_error = false;
+	try {
+		uri_equal1.segment(2);
+	}
+	catch (std::range_error) {
+		thrown_range_error = true;
+	}
+	assert(thrown_range_error);
+	thrown_range_error = false;
+
+	try {
+		uri_equal1.range(0, 4);
+	}
+	catch (std::range_error) {
+		thrown_range_error = true;
+	}
+	assert(thrown_range_error);
 }

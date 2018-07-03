@@ -1,15 +1,16 @@
 #include <msgpack.hpp>
 #include <ZstCable.h>
 #include <entities/ZstPlug.h>
+#include "liasons/ZstPlugLiason.hpp"
 
 ZstCable::ZstCable() : 
 	ZstSynchronisable(),
     m_input_URI(""),
     m_output_URI(""),
 	m_input(NULL),
-	m_output(NULL),
-    m_is_local(false)
+	m_output(NULL)
 {
+	set_proxy();
 }
 
 ZstCable::ZstCable(const ZstCable & copy) : 
@@ -17,8 +18,7 @@ ZstCable::ZstCable(const ZstCable & copy) :
     m_input_URI(copy.m_input_URI),
     m_output_URI(copy.m_output_URI),
 	m_input(copy.m_input),
-	m_output(copy.m_output),
-    m_is_local(copy.m_is_local)
+	m_output(copy.m_output)
 {
 }
 
@@ -27,18 +27,16 @@ ZstCable::ZstCable(const ZstURI & input_plug_URI, const ZstURI & output_plug_URI
     m_input_URI(input_plug_URI),
     m_output_URI(output_plug_URI),
 	m_input(NULL),
-	m_output(NULL),
-    m_is_local(false)
+	m_output(NULL)
 {
 }
 
-ZstCable::ZstCable(ZstPlug * input_plug, ZstPlug * output_plug) :
+ZstCable::ZstCable(ZstInputPlug * input_plug, ZstOutputPlug * output_plug) :
 	ZstSynchronisable(),
     m_input_URI(input_plug->URI()),
     m_output_URI(output_plug->URI()),
 	m_input(input_plug),
-	m_output(output_plug),
-    m_is_local(false)
+	m_output(output_plug)
 {
 }
 
@@ -51,7 +49,7 @@ ZstCable * ZstCable::create(const ZstURI & input, const ZstURI & output)
 	return new ZstCable(input, output);
 }
 
-ZstCable * ZstCable::create(ZstPlug * input, ZstPlug * output)
+ZstCable * ZstCable::create(ZstInputPlug * input, ZstOutputPlug * output)
 {
 	return new ZstCable(input, output);
 }
@@ -59,6 +57,14 @@ ZstCable * ZstCable::create(ZstPlug * input, ZstPlug * output)
 void ZstCable::destroy(ZstCable * cable)
 {
 	delete cable;
+}
+
+void ZstCable::disconnect()
+{
+	if(get_input() && get_output()){
+		ZstPlugLiason().plug_remove_cable(get_input(), this);
+		ZstPlugLiason().plug_remove_cable(get_output(), this);
+	}
 }
 
 bool ZstCable::operator==(const ZstCable & other) const
@@ -92,22 +98,22 @@ bool ZstCable::is_attached(ZstPlug * plug) const
 	return (ZstURI::equal(m_input->URI(), plug->URI())) || (ZstURI::equal(m_output->URI(), plug->URI()));
 }
 
-void ZstCable::set_input(ZstPlug * input)
+void ZstCable::set_input(ZstInputPlug * input)
 {
 	m_input = input;
 }
 
-void ZstCable::set_output(ZstPlug * output)
+void ZstCable::set_output(ZstOutputPlug * output)
 {
 	m_output = output;
 }
 
-ZstPlug * ZstCable::get_input()
+ZstInputPlug * ZstCable::get_input()
 {
 	return m_input;
 }
 
-ZstPlug * ZstCable::get_output()
+ZstOutputPlug * ZstCable::get_output()
 {
 	return m_output;
 }
@@ -120,11 +126,6 @@ const ZstURI & ZstCable::get_input_URI() const
 const ZstURI & ZstCable::get_output_URI() const
 {
 	return m_output_URI;
-}
-
-bool ZstCable::is_local()
-{
-	return m_is_local;
 }
 
 void ZstCable::write(std::stringstream & buffer) const
@@ -140,11 +141,6 @@ void ZstCable::read(const char * buffer, size_t length, size_t & offset)
 
 	handle = msgpack::unpack(buffer, length, offset);
 	m_input_URI = ZstURI(handle.get().via.str.ptr, handle.get().via.str.size);
-}
-
-void ZstCable::set_local()
-{
-	m_is_local = true;
 }
 
 ZstCableBundle::ZstCableBundle()
@@ -170,6 +166,13 @@ size_t ZstCableBundle::size()
 	return m_cables.size();
 }
 
+void ZstCableBundle::disconnect_all()
+{
+	for(auto c : m_cables){
+		c->disconnect();
+	}
+}
+
 //--
 
 size_t ZstCableHash::operator()(ZstCable* const& k) const
@@ -183,4 +186,32 @@ bool ZstCableEq::operator()(ZstCable const * lhs, ZstCable const * rhs) const
 {
 	bool result = (*lhs == *rhs);
 	return result;
+}
+
+
+// -------------------------------
+// Testing
+// -------------------------------
+
+void ZstCable::self_test()
+{
+	ZstURI in = ZstURI("a/1");
+	ZstURI out = ZstURI("b/1");
+
+	ZstCable cable_a = ZstCable(in, out);
+	assert(cable_a.get_input_URI() == in);
+	assert(cable_a.get_output_URI() == out);
+	assert(cable_a.is_attached(out));
+	assert(cable_a.is_attached(in));
+
+	ZstCable cable_b = ZstCable(in, out);
+	assert(cable_b == cable_a);
+	assert(ZstCableEq{}(&cable_a, &cable_b));
+	assert(ZstCableHash{}(&cable_a) == ZstCableHash{}(&cable_b));
+
+	//Test cable going out of scope
+	{
+		ZstCable cable_c = ZstCable(ZstURI("foo"), ZstURI("bar"));
+		assert(cable_c != cable_a);
+	}
 }

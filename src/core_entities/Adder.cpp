@@ -11,10 +11,6 @@ Adder::Adder(const char * name) :
 	m_sum = create_output_plug("sum", ZstValueType::ZST_FLOAT);
 }
 
-void Adder::on_activated()
-{
-}
-
 void Adder::compute(ZstInputPlug * plug)
 {
 	m_sum->clear();

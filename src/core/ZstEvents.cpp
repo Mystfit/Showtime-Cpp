@@ -1,108 +1,37 @@
-#include <ZstSynchronisable.h>
-#include <entities/ZstEntityBase.h>
-#include <entities/ZstComponent.h>
-#include <entities/ZstPerformer.h>
-#include <entities/ZstPlug.h>
-#include <ZstCable.h>
 #include <ZstEvents.h>
 
-ZstEvent::ZstEvent() : m_num_calls(0) 
+#include <ZstSynchronisable.h>
+#include <entities/ZstPerformer.h>
+#include <entities/ZstEntityBase.h>
+#include <entities/ZstComponent.h>
+#include <entities/ZstContainer.h>
+#include <entities/ZstPlug.h>
+#include <ZstCable.h>
+
+ZstSynchronisableEvent::ZstSynchronisableEvent(ZstSynchronisable * target) :ZstEvent(target)
 {
 }
 
-int ZstEvent::num_calls() const 
+ZstEntityEvent::ZstEntityEvent(ZstEntityBase * target) : ZstEvent(target)
 {
-	return m_num_calls; 
-
 }
 
-void ZstEvent::reset_num_calls() 
-{ 
-	m_num_calls = 0; 
+ZstComponentEvent::ZstComponentEvent(ZstComponent * target) : ZstEvent(target)
+{
 }
 
-void ZstEvent::increment_calls() 
+ZstContainerEvent::ZstContainerEvent(ZstContainer * target) : ZstEvent(target)
 {
-	m_num_calls++; 
 }
 
-void ZstSynchronisableEvent::cast_run(ZstSynchronisable * target)
+ZstPlugEvent::ZstPlugEvent(ZstPlug * target) : ZstEvent(target)
 {
-	this->increment_calls();
-	this->run(target);
 }
 
-void ZstEntityEvent::cast_run(ZstSynchronisable * target)
+ZstCableEvent::ZstCableEvent(ZstCable * target) : ZstEvent(target)
 {
-	ZstEntityBase * entity = dynamic_cast<ZstEntityBase*>(target);
-	if (entity) {
-		this->increment_calls();
-		this->run(entity);
-	}
 }
 
-void ZstActivationEvent::run(ZstSynchronisable * target)
+ZstPerformerEvent::ZstPerformerEvent(ZstPerformer * target) : ZstEvent(target)
 {
-	target->set_activation_status(ZstSyncStatus::ACTIVATED);
-	target->on_activated();
-}
-
-void ZstDeactivationEvent::run(ZstSynchronisable * target)
-{
-	target->set_activation_status(ZstSyncStatus::DEACTIVATED);
-	target->on_deactivated();
-}
-
-void ZstComponentEvent::cast_run(ZstSynchronisable * target)
-{
-	ZstComponent * component = dynamic_cast<ZstComponent*>(target);
-	if (component) {
-		this->increment_calls();
-		this->run(component);
-	}
-}
-
-void ZstComponentTypeEvent::cast_run(ZstSynchronisable * target)
-{
-	ZstComponent * component = dynamic_cast<ZstComponent*>(target);
-	if (component) {
-		this->increment_calls();
-		this->run(component);
-	}
-}
-
-void ZstCableEvent::cast_run(ZstSynchronisable * target)
-{
-	ZstCable * cable = dynamic_cast<ZstCable*>(target);
-	if (cable) {
-		this->increment_calls();
-		this->run(cable);
-	}
-}
-
-void ZstPlugEvent::cast_run(ZstSynchronisable * target)
-{
-	ZstPlug * plug = dynamic_cast<ZstPlug*>(target);
-	if (plug) {
-		this->increment_calls();
-		this->run(plug);
-	}
-}
-
-void ZstInputPlugEvent::cast_run(ZstSynchronisable * target)
-{
-	ZstInputPlug * plug = dynamic_cast<ZstInputPlug*>(target);
-	if (plug) {
-		this->increment_calls();
-		this->run(plug);
-	}
-}
-
-void ZstPerformerEvent::cast_run(ZstSynchronisable * target)
-{
-	ZstPerformer * performer = dynamic_cast<ZstPerformer*>(target);
-	if (performer) {
-		this->increment_calls();
-		this->run(performer);
-	}
 }

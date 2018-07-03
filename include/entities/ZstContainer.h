@@ -15,11 +15,6 @@ public:
 	ZST_EXPORT ZstContainer(const ZstContainer & other);
 	ZST_EXPORT ~ZstContainer();
 
-	ZST_EXPORT virtual void on_activated() override {};
-
-	//Register graph sender for output plugs and children
-	ZST_EXPORT void set_network_interactor(ZstINetworkInteractor * network_interactor) override;
-
 	//Find a child in this entity by a URI
 	ZST_EXPORT ZstEntityBase * find_child_by_URI(const ZstURI & path);
 
@@ -42,7 +37,11 @@ public:
 	//Serialisation
 	ZST_EXPORT virtual void write(std::stringstream & buffer) const override;
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
-    
+
+	//Adaptor registration
+	ZST_EXPORT virtual void add_adaptor_to_children(ZstSynchronisableAdaptor * adaptor) override;
+	ZST_EXPORT virtual void remove_adaptor_from_children(ZstSynchronisableAdaptor * adaptor) override;
+
 
 protected:
 	ZST_EXPORT ZstCableBundle * get_child_cables(ZstCableBundle * bundle) override;

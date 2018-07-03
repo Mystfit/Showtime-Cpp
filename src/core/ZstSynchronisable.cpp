@@ -1,79 +1,78 @@
-#include <ZstSynchronisable.h>
 #include <algorithm>
 #include <assert.h>
-#include "ZstEventDispatcher.h"
-#include "ZstINetworkInteractor.h"
+#include <ZstSynchronisable.h>
+#include <ZstEventDispatcher.hpp>
 
 ZstSynchronisable::ZstSynchronisable() :
-	m_network_interactor(NULL),
+	m_is_destroyed(false),
 	m_sync_status(ZstSyncStatus::DEACTIVATED),
-    m_sync_error(ZstSyncError::NO_ERR)
+    m_sync_error(ZstSyncError::NO_ERR),
+	m_is_proxy(false)
 {
-	m_activation_events = new ZstEventDispatcher();
-	m_deactivation_events = new ZstEventDispatcher();
-	m_activation_hook = new ZstActivationEvent();
-	m_deactivation_hook = new ZstDeactivationEvent();
-	m_activation_events->attach_pre_event_callback(m_activation_hook);
-	m_deactivation_events->attach_post_event_callback(m_deactivation_hook);
+	m_synchronisable_events = new ZstEventDispatcher<ZstSynchronisableAdaptor*>("synchronisable");
 }
 
 ZstSynchronisable::~ZstSynchronisable()
 {
-	delete m_activation_events;
-	delete m_deactivation_events;
-	delete m_activation_hook;
-	delete m_deactivation_hook;
+	m_synchronisable_events->flush();
+	m_synchronisable_events->remove_all_adaptors();
+	delete m_synchronisable_events;
+}
+
+void ZstSynchronisable::add_adaptor(ZstSynchronisableAdaptor * adaptor)
+{
+	m_synchronisable_events->add_adaptor(adaptor);
+
+	//If we are already activated, immediately dispatch an event
+	if (is_activated()) {
+		m_synchronisable_events->invoke([this](ZstSynchronisableAdaptor* dlg) { dlg->on_synchronisable_activated(this); });
+	}
+}
+
+void ZstSynchronisable::remove_adaptor(ZstSynchronisableAdaptor * adaptor)
+{
+	m_synchronisable_events->remove_adaptor(adaptor);
 }
 
 ZstSynchronisable::ZstSynchronisable(const ZstSynchronisable & other) : ZstSynchronisable()
 {
 	m_sync_status = other.m_sync_status;
-}
-
-void ZstSynchronisable::attach_activation_event(ZstSynchronisableEvent * event)
-{
-	m_activation_events->attach_event_listener(event);
-	
-	//If we're already activated we can trigger the callback immediately
-	if (activation_status() == ZstSyncStatus::ACTIVATED) {
-		event->cast_run(this);
-	}
-}
-
-void ZstSynchronisable::attach_deactivation_event(ZstSynchronisableEvent * event)
-{
-	m_deactivation_events->attach_event_listener(event);
-}
-
-void ZstSynchronisable::detach_activation_event(ZstSynchronisableEvent * event)
-{
-	m_activation_events->remove_event_listener(event);
-}
-
-void ZstSynchronisable::detach_deactivation_event(ZstSynchronisableEvent * event)
-{
-	m_deactivation_events->remove_event_listener(event);
+	m_is_destroyed = other.m_is_destroyed;
+	m_is_proxy = other.m_is_proxy;
 }
 
 void ZstSynchronisable::enqueue_activation()
 {
-	if (is_deactivated() || activation_status() != ZstSyncStatus::ACTIVATION_QUEUED)
+	if (is_deactivated() || activation_status() != ZstSyncStatus::ACTIVATED)
 	{
-		set_activation_status(ZstSyncStatus::ACTIVATION_QUEUED);
-		m_activation_events->enqueue(this);
-		if (m_network_interactor)
-			m_network_interactor->enqueue_synchronisable_event(this);
+		set_activation_status(ZstSyncStatus::ACTIVATED);
+
+		//Notify adaptors synchronisable is activating
+		m_synchronisable_events->defer([this](ZstSynchronisableAdaptor* dlg) { 
+			dlg->on_synchronisable_activated(this);
+		});
+
+		//Notify adaptors that we have a queued event
+		m_synchronisable_events->invoke([this](ZstSynchronisableAdaptor* dlg) { dlg->synchronisable_has_event(this); });
 	}
 }
 
 void ZstSynchronisable::enqueue_deactivation()
 {
-    if (is_activated() || activation_status() != ZstSyncStatus::DEACTIVATION_QUEUED)
+    if (is_activated() || activation_status() != ZstSyncStatus::DEACTIVATED)
     {
-        set_activation_status(ZstSyncStatus::DEACTIVATION_QUEUED);
-        m_deactivation_events->enqueue(this);
-        if (m_network_interactor)
-            m_network_interactor->enqueue_synchronisable_event(this);
+        set_activation_status(ZstSyncStatus::DEACTIVATED);
+
+		//Notify adaptors synchronisable is deactivating
+		m_synchronisable_events->defer([this](ZstSynchronisableAdaptor* dlg) { 
+			dlg->on_synchronisable_deactivated(this); 
+		});
+
+		//Notify adaptors that we have a queued event
+		m_synchronisable_events->invoke([this](ZstSynchronisableAdaptor* dlg) { dlg->synchronisable_has_event(this); });
+
+		//Notify adaptors that this syncronisable needs to be cleaned up
+		m_synchronisable_events->invoke([this](ZstSynchronisableAdaptor * dlg) {dlg->on_synchronisable_destroyed(this); });
     }
 }
 
@@ -118,50 +117,51 @@ ZstSyncError ZstSynchronisable::last_error()
 	return m_sync_error;
 }
 
-void ZstSynchronisable::set_network_interactor(ZstINetworkInteractor * network_interactor)
+bool ZstSynchronisable::is_destroyed()
 {
-	m_network_interactor = network_interactor;
+	return m_is_destroyed;
 }
 
-ZstINetworkInteractor * ZstSynchronisable::network_interactor()
+bool ZstSynchronisable::is_proxy()
 {
-	return m_network_interactor;
-}
-
-void ZstSynchronisable::process_events()
-{
-	m_activation_events->process();
-	m_deactivation_events->process();
-}
-
-void ZstSynchronisable::flush_events()
-{
-    m_activation_events->flush();
-    m_deactivation_events->flush();
+	return m_is_proxy;
 }
 
 void ZstSynchronisable::set_activation_status(ZstSyncStatus status)
 {
-	switch (status) 
+	m_sync_status = status;
+	switch (m_sync_status)
 	{
-	case ZstSyncStatus::DEACTIVATED:
+	case DEACTIVATED:
 		break;
-	case ZstSyncStatus::ACTIVATING:
+	case ACTIVATING:
 		break;
-	case ZstSyncStatus::ACTIVATION_QUEUED:
+	case ACTIVATION_QUEUED:
 		break;
-	case ZstSyncStatus::ACTIVATED:
+	case ACTIVATED:
 		break;
-	case ZstSyncStatus::DEACTIVATING:
+	case DEACTIVATING:
 		break;
-	case ZstSyncStatus::DEACTIVATION_QUEUED:
+	case DEACTIVATION_QUEUED:
 		break;
-	case ZstSyncStatus::ERR:
+	case ERR:
 		break;
 	default:
-		throw std::range_error("Did not understand status");
 		break;
 	}
+}
 
-	m_sync_status = status;
+void ZstSynchronisable::set_destroyed()
+{
+	m_is_destroyed = true;
+}
+
+void ZstSynchronisable::set_proxy()
+{
+	m_is_proxy = true;
+}
+
+void ZstSynchronisable::process_events()
+{
+	m_synchronisable_events->process_events();
 }

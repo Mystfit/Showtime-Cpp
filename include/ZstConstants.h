@@ -1,5 +1,6 @@
 #pragma once
 
+// ZstValue types
 enum ZstValueType {
 	ZST_NONE = 0,
 	ZST_INT,
@@ -7,10 +8,34 @@ enum ZstValueType {
 	ZST_STRING
 };
 
+// ZstSynchronisable activation status
+enum ZstSyncStatus {
+	DEACTIVATED = 0,
+	ACTIVATING,
+	ACTIVATION_QUEUED,
+	ACTIVATED,
+	DEACTIVATING,
+	DEACTIVATION_QUEUED,
+	ERR
+};
+
+// ZstSynchronisable errors
+enum ZstSyncError {
+	NO_ERR,
+	PERFORMER_NOT_FOUND,
+	PARENT_NOT_FOUND,
+	ENTITY_ALREADY_EXISTS
+};
+
 enum ZstPlugDirection {
 	NONE = 0,
 	IN_JACK,
 	OUT_JACK
+};
+
+enum ZstEventAction {
+	ARRIVING = 0,
+	LEAVING
 };
 
 #define STAGE_ROUTER_PORT 6001

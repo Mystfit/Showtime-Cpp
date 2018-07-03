@@ -1,125 +1,44 @@
 #include <memory>
-#include <czmq.h>
-
 #include "ZstMessage.h"
 
-ZstMessage::ZstMessage() :
-	m_msg_handle(NULL),
-	m_msg_id(NULL),
-	m_msg_kind(ZstMsgKind::EMPTY),
-	m_entity_target(NULL)
+ZstMessage::ZstMessage() : m_msg_handle(NULL)
 {
-	reset();
 }
 
 ZstMessage::~ZstMessage()
 {
-	zmsg_destroy(&m_msg_handle);
-	zuuid_destroy(&m_msg_id);
-	m_payloads.clear();
-}
-
-void ZstMessage::reset()
-{
-	m_msg_kind = ZstMsgKind::EMPTY;
-	m_payloads.clear();
-		
-	if (m_msg_handle) 
+	if(m_msg_handle)
 		zmsg_destroy(&m_msg_handle);
-	m_msg_handle = NULL;
-	
-	if (m_msg_id) 
-		zuuid_destroy(&m_msg_id);
-	m_msg_id = NULL;
 }
 
 ZstMessage::ZstMessage(const ZstMessage & other)
 {
-	m_msg_kind = other.m_msg_kind;
 	m_payloads = other.m_payloads;
 	m_msg_handle = zmsg_dup(other.m_msg_handle);
-	m_msg_id = zuuid_dup(m_msg_id);
 }
 
-void ZstMessage::copy_id(const ZstMessage * msg)
+void ZstMessage::init()
 {
-	assert(m_msg_id != NULL);
-	zuuid_destroy(&m_msg_id);
-	m_msg_id = zuuid_dup(msg->m_msg_id);
-
-	//Remove old id from front of message
-	zframe_t * old_id_frame = zmsg_pop(m_msg_handle);
-
-	zframe_destroy(&old_id_frame);
-
-	//Add new id to front of message
-	zmsg_pushmem(m_msg_handle, zuuid_data(m_msg_id), zuuid_size(m_msg_id));
-}
-
-ZstMessage * ZstMessage::init_entity_message(ZstEntityBase * entity)
-{
-	if(m_msg_handle)
-		zmsg_destroy(&m_msg_handle);
 	m_msg_handle = zmsg_new();
-	append_id_frame();
-	append_entity_kind_frame(entity);
-	append_payload_frame(*entity);
-	m_entity_target = entity;
-	return this;
 }
 
-ZstMessage * ZstMessage::init_message(ZstMsgKind kind)
+void ZstMessage::reset()
 {
-	if (m_msg_handle)
-		zmsg_destroy(&m_msg_handle);
-	m_msg_handle = zmsg_new();
-	append_id_frame();
-	append_kind_frame(kind);
-	return this;
+	m_payloads.clear();
 }
 
-ZstMessage * ZstMessage::init_serialisable_message(ZstMsgKind kind, const ZstSerialisable & streamable)
+void ZstMessage::set_inactive()
 {
-	if (m_msg_handle)
-		zmsg_destroy(&m_msg_handle);
-	m_msg_handle = zmsg_new();
-	append_id_frame();
-	append_kind_frame(kind);
-	append_payload_frame(streamable);
-	return this;
-}
-
-void ZstMessage::send(zsock_t * socket)
-{
-	zmsg_send(&m_msg_handle, socket);
 	m_msg_handle = NULL;
 }
 
-ZstEntityBase * ZstMessage::entity_target()
-{
-	return m_entity_target;
-}
-
-zmsg_t * ZstMessage::handle()
-{
-	return m_msg_handle;
-}
-
-const char * ZstMessage::id()
-{
-	const char * result = NULL;
-	if (m_msg_id)
-		result = zuuid_str(m_msg_id);
-	return result;
-}
-
-ZstMsgKind ZstMessage::kind()
-{
-	return m_msg_kind;
+void ZstMessage::unpack(zmsg_t * msg){
+	assert(zmsg_is(msg));
 }
 
 ZstMessagePayload & ZstMessage::payload_at(size_t index)
 {
+	assert(index <= m_payloads.size());
 	return m_payloads.at(index);
 }
 
@@ -128,21 +47,9 @@ size_t ZstMessage::num_payloads()
 	return m_payloads.size();
 }
 
-void ZstMessage::append_entity_kind_frame(ZstEntityBase * entity) {
-	if (strcmp(entity->entity_type(), COMPONENT_TYPE) == 0) {
-		m_msg_kind = ZstMsgKind::CREATE_COMPONENT;
-	}
-	else if (strcmp(entity->entity_type(), CONTAINER_TYPE) == 0) {
-		m_msg_kind = ZstMsgKind::CREATE_CONTAINER;
-	}
-	else if (strcmp(entity->entity_type(), PERFORMER_TYPE) == 0) {
-		m_msg_kind = ZstMsgKind::CREATE_PERFORMER;
-	}
-	else if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
-		m_msg_kind = ZstMsgKind::CREATE_PLUG;
-	}
-
-	append_kind_frame(m_msg_kind);
+zmsg_t * ZstMessage::handle()
+{
+	return m_msg_handle;
 }
 
 void ZstMessage::append_payload_frame(const ZstSerialisable & streamable)
@@ -154,121 +61,62 @@ void ZstMessage::append_payload_frame(const ZstSerialisable & streamable)
 	zmsg_addmem(m_msg_handle, buffer.str().c_str(), buffer.str().size());
 }
 
-//Build a message id from the message ID enum
-void ZstMessage::append_kind_frame(ZstMsgKind k) {
-	m_msg_kind = k;
-	
-	std::stringstream buffer;
-	msgpack::pack(buffer, k);
-
-	zframe_t * kind_frame = zframe_new(buffer.str().c_str(), buffer.str().size());
-	zmsg_append(m_msg_handle, &kind_frame);
-}
-
-void ZstMessage::append_id_frame()
-{
-	m_msg_id = zuuid_new();
-	zmsg_addmem(m_msg_handle, zuuid_data(m_msg_id), zuuid_size(m_msg_id));
+void ZstMessage::set_handle(zmsg_t * handle){
+	m_msg_handle = handle;
 }
 
 void ZstMessage::append_str(const char * s, size_t len)
 {
 	zframe_t * str_frame = zframe_new(s, len);
-	zmsg_append(m_msg_handle,&str_frame);
+	zmsg_append(m_msg_handle, &str_frame);
 }
-
-void ZstMessage::append_serialisable(ZstMsgKind k,  ZstSerialisable & s)
-{
-	if (kind() == ZstMsgKind::GRAPH_SNAPSHOT) {
-		append_kind_frame(k);
-	}
-	append_payload_frame(s);
-}
-
-void ZstMessage::unpack(zmsg_t * msg)
-{
-	m_msg_handle = msg;
-	zframe_t * id_frame = zmsg_pop(m_msg_handle); 
-	
-	//Unpack id
-	m_msg_id = zuuid_new_from(zframe_data(id_frame));
-	zframe_destroy(&id_frame);
-	
-	//Unpack kind
-	m_msg_kind = unpack_kind();
-
-	//Handle message payloads
-	if (kind() == ZstMsgKind::GRAPH_SNAPSHOT) {
-		// Batched update messages from the stage look like this:
-		// | Kind | Payload | Kind | Payload | ... |
-		ZstMsgKind payload_kind = unpack_kind();
-		while (payload_kind != ZstMsgKind::EMPTY) {
-			m_payloads.push_back(ZstMessagePayload{ payload_kind, zmsg_pop(m_msg_handle) });
-			payload_kind = unpack_kind();
-		}
-	} else {
-		// Normal payloads don't have kind frames and look like this
-		// | Payload | Payload | Payload | ... |
-		zframe_t * payload_frame = zmsg_pop(m_msg_handle);
-		while (payload_frame) {
-			m_payloads.push_back(ZstMessagePayload{ m_msg_kind, payload_frame });
-			payload_frame = zmsg_pop(m_msg_handle);
-		}
-	}
-}
-
-ZstMsgKind ZstMessage::unpack_kind()
-{
-	zframe_t * kind_frame = zmsg_pop(m_msg_handle);
-	ZstMsgKind k = unpack_kind(kind_frame);
-	zframe_destroy(&kind_frame);
-	return k;
-}
-
-ZstMsgKind ZstMessage::unpack_kind(zframe_t * kind_frame)
-{
-	ZstMsgKind k = ZstMsgKind::EMPTY;
-	if (kind_frame) {
-		auto handle = msgpack::unpack((char*)zframe_data(kind_frame), zframe_size(kind_frame));
-		k = handle.get().as<ZstMsgKind>();
-	}
-	return k;
-}
-
 
 
 // -----------------------
-// Message payload wrapper
+// Message payload
 // -----------------------
 
-ZstMessagePayload::ZstMessagePayload(ZstMsgKind k, zframe_t * p)
-{
-	m_kind = k;
+ZstMessagePayload::ZstMessagePayload(zframe_t * p){
 	m_payload = p;
+	m_size = zframe_size((zframe_t*)m_payload);
 }
 
 ZstMessagePayload::ZstMessagePayload(const ZstMessagePayload & other)
 {
-	m_kind = other.m_kind;
-	m_payload = zframe_dup(other.m_payload);
+	m_size = other.m_size;
+	m_payload = zframe_dup((zframe_t*)other.m_payload);
 }
 
-ZstMessagePayload::~ZstMessagePayload()
+ZstMessagePayload::ZstMessagePayload(ZstMessagePayload && source) noexcept
 {
-	zframe_destroy(&m_payload);
+	//Move values
+	m_size = source.m_size;
+	m_payload = source.m_payload;
+
+	//Reset original
+	source.m_size = 0;
+	source.m_payload = NULL;
 }
 
-size_t ZstMessagePayload::size()
-{
-	return zframe_size(m_payload);
+ZstMessagePayload::~ZstMessagePayload(){
+	zframe_t * frame = (zframe_t*)m_payload;
+	zframe_destroy(&frame);
 }
 
-ZstMsgKind ZstMessagePayload::kind()
+
+ZstMessagePayload & ZstMessagePayload::operator=(ZstMessagePayload & other)
 {
-	return m_kind;
+	//Copy assignment
+	m_size = other.m_size;
+	m_payload = other.m_payload;
+	return *this;
 }
 
-char * ZstMessagePayload::data()
+const size_t ZstMessagePayload::size()
 {
+	return m_size;
+}
+
+const char * ZstMessagePayload::data(){
 	return (char*)zframe_data(m_payload);
 }

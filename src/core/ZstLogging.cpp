@@ -54,7 +54,7 @@ namespace ZstLog {
 using namespace ZstLog;
 
 
-void ZstLog::init_logger(const char * logger_name)
+void ZstLog::init_logger(const char * logger_name, LogLevel level)
 {
 #ifdef WIN32
 	typedef boost::log::sinks::synchronous_sink<ZstLog::internals::coloured_console_sink> coloured_console_sink_t;
@@ -68,9 +68,9 @@ void ZstLog::init_logger(const char * logger_name)
 	typedef expr::channel_severity_filter_actor< std::string, LogLevel > min_severity_filter;
 	min_severity_filter min_severity = expr::channel_severity_filter(channel, severity);
 	// Set up the minimum severity levels for different channels
-	min_severity[ZST_LOG_ENTITY_CHANNEL] = notification;
-	min_severity[ZST_LOG_NET_CHANNEL] = notification;
-	min_severity[ZST_LOG_APP_CHANNEL] = debug;
+	min_severity[ZST_LOG_ENTITY_CHANNEL] = level;
+	min_severity[ZST_LOG_NET_CHANNEL] = level;
+	min_severity[ZST_LOG_APP_CHANNEL] = level;
 	logging::core::get()->add_global_attribute("ProcessName", attrs::current_process_name());
 
 	sink->set_formatter(expr::stream << "[" << process_name << "] " << line_id << ": <" << severity << "> [" << channel << "] " << expr::smessage);

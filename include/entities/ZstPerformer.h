@@ -15,7 +15,7 @@ typedef std::unordered_map<ZstURI, ZstPerformer*, ZstURIHash> ZstPerformerMap;
 class ZstPerformer : public ZstContainer {
 public:
 	ZST_EXPORT ZstPerformer();
-	ZST_EXPORT ZstPerformer(const char * name, const char * address);
+	ZST_EXPORT ZstPerformer(const char * name);
 	ZST_EXPORT ZstPerformer(const ZstPerformer & other);
 	ZST_EXPORT ~ZstPerformer();
 	
@@ -26,12 +26,10 @@ public:
 	ZST_EXPORT bool get_active_heartbeat();
 	ZST_EXPORT int get_missed_heartbeats();
 
-	//Client properties
-	ZST_EXPORT const char * address();
-
 	//Creatables
 	ZST_EXPORT size_t num_creatables() const;
 
+	//Serialisation
 	ZST_EXPORT virtual void write(std::stringstream & buffer) const override;
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
 
@@ -39,9 +37,6 @@ private:
 	//Heartbeat status
 	bool m_heartbeat_active;
 	int m_missed_heartbeats;
-	
-	//Client identifing info
-	std::string m_address;
 
 	//Creatables
 	ZstEntityMap m_creatables;

@@ -43,17 +43,6 @@ ZstContainer::~ZstContainer()
 	m_parent = NULL;
 }
 
-void ZstContainer::set_network_interactor(ZstINetworkInteractor * network_interactor)
-{
-	//Register sender to out own plugs
-	ZstComponent::set_network_interactor(network_interactor);
-
-	//Register sender for all child components in case they have plugs too
-	for (auto child : m_children) {
-		child.second->set_network_interactor(network_interactor);
-	}
-}
-
 ZstEntityBase * ZstContainer::find_child_by_URI(const ZstURI & path)
 {
 	ZstEntityBase * result = NULL;
@@ -62,8 +51,10 @@ ZstEntityBase * ZstContainer::find_child_by_URI(const ZstURI & path)
 	if (this->URI().size() >= path.size() || !path.contains(URI())) {
 		return result;
 	}
+	
+	int distance = static_cast<int>(path.size()) - static_cast<int>(this->URI().size());
+	if (distance < 0) assert(distance >= 0);
 
-	size_t distance = path.size() - URI().size();
 	while(distance > 0) {
 		ZstURI next = path.range(0, path.size() - distance);
 		result = NULL;
@@ -187,17 +178,15 @@ void ZstContainer::add_child(ZstEntityBase * child) {
 
 void ZstContainer::remove_child(ZstEntityBase * child) {
     if(is_destroyed()) return;
-    
-	//Check if we're removing a plug or not
-	if (strcmp(child->entity_type(), PLUG_TYPE) == 0) {
-		remove_plug(dynamic_cast<ZstPlug*>(child));
+
+	auto c = m_children.find(child->URI());
+	if (c != m_children.end()) {
+		m_children.erase(c);
 	}
-	else {
-		auto c = m_children.find(child->URI());
-		if (c != m_children.end()) {
-			m_children.erase(c);
-		}
-	}
+	
+	//TODO: How do we remove all cables from child plugs?
+
+	child->m_parent = NULL;
 }
 
 void ZstContainer::write(std::stringstream & buffer) const
@@ -239,6 +228,22 @@ void ZstContainer::read(const char * buffer, size_t length, size_t & offset)
 
 		child->read(buffer, length, offset);
 		add_child(child);
+	}
+}
+
+void ZstContainer::add_adaptor_to_children(ZstSynchronisableAdaptor * adaptor)
+{
+	ZstComponent::add_adaptor_to_children(adaptor);
+	for (auto child : m_children) {
+		child.second->add_adaptor(adaptor);
+	}
+}
+
+void ZstContainer::remove_adaptor_from_children (ZstSynchronisableAdaptor * adaptor)
+{
+	ZstComponent::remove_adaptor_from_children(adaptor);
+	for (auto child : m_children) {
+		child.second->remove_adaptor(adaptor);
 	}
 }
 

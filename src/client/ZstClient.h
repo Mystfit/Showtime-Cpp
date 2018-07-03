@@ -1,7 +1,7 @@
 #pragma once
 
+//std lib includes
 #include <unordered_map>
-#include <czmq.h>
 #include <string>
 
 //Showtime API includes
@@ -10,126 +10,65 @@
 //Showtime Core includes
 #include "../core/ZstActor.h"
 #include "../core/ZstMessage.h"
-#include "../core/ZstMessagePool.h"
-#include "../core/ZstINetworkInteractor.h"
+#include "../core/ZstMessagePool.hpp"
 #include "../core/ZstValue.h"
-#include "../core/ZstEventDispatcher.h"
 
-//Client includes
-#include "ZstClientEvents.h"
+//Showtime client includes
 #include "ZstReaper.h"
+#include "ZstMessageDispatcher.h"
+#include "ZstReaper.h"
+#include "ZstClientSession.h"
+#include "ZstCZMQTransportLayer.h"
+#include "../core/adaptors/ZstStageDispatchAdaptor.hpp"
+#include "../core/adaptors/ZstPerformanceDispatchAdaptor.hpp"
 
-class ZstClient : public ZstActor, public ZstINetworkInteractor {
-	friend class ZstCableLeavingEvent;
-	friend class ZstEntityLeavingEvent;
-	friend class ZstPlugLeavingEvent;
-
+class ZstClient : 
+	public ZstEventDispatcher<ZstStageDispatchAdaptor*>,
+	public ZstStageDispatchAdaptor,
+	public ZstPerformanceDispatchAdaptor
+{
 public:
 	ZstClient();
 	~ZstClient();
 	void init_client(const char * client_name, bool debug);
 	void init_file_logging(const char * log_file_path);
-	void destroy() override;
-	void process_callbacks();
+	void destroy();
 	
-	//CLient singleton - should not be accessable outside this interface
+	void process_events();
+	void flush();
+	
+	//Client singleton - should not be accessable outside this interface
 	static ZstClient & instance();
 
+	//Stage adaptor overrides
+	void on_receive_from_stage(ZstStageMessage * msg) override;
+	void on_receive_from_performance(ZstPerformanceMessage * msg) override;
+
 	//Register this endpoint to the stage
-	void register_client_to_stage(std::string stage_address, bool async = false);
-    void synchronise_graph(bool async = false);
-	void leave_stage(bool immediately = false);
+	void join_stage(std::string stage_address, bool async = false);
+	void join_stage_complete(ZstMessageReceipt response);
+	void synchronise_graph(bool async = false);
+	void synchronise_graph_complete(ZstMessageReceipt response);
+
+	void leave_stage(bool async);
+	void leave_stage_complete();
     
 	//Stage connection status
 	bool is_connected_to_stage();
 	bool is_connecting_to_stage();
     bool is_init_complete();
 	long ping();
-	
-    //Entities
-	ZstEntityBase * find_entity(const ZstURI & path);
-	ZstPlug * find_plug(const ZstURI & path);
-	void activate_entity(ZstEntityBase* entity, bool async = false);
-	void destroy_entity(ZstEntityBase * entity, bool async = false);
-	bool entity_is_local(ZstEntityBase & entity);
-	bool path_is_local(const ZstURI & path);
-	void add_proxy_entity(ZstEntityBase & entity);
 
-	//Performers
-	ZstPerformer * get_performer_by_URI(const ZstURI & uri) const;
-	ZstPerformer * get_local_performer() const;
+	//Client modules
+	ZstMessageDispatcher * msg_dispatch();
+	ZstClientSession * session();
 
-	//Plugs
-	void destroy_plug(ZstPlug * plug, bool async);
-
-	//Graph communication
-	virtual void publish(ZstPlug * plug) override;
-
-	//Cables
-	ZstCable * connect_cable(ZstPlug * input, ZstPlug * output, bool async = false);
-	void destroy_cable(ZstCable * cable, bool async = false);
-	void disconnect_plugs(ZstPlug * input_plug, ZstPlug * output_plug);
-	
-	//Callbacks
-	ZstEventDispatcher & client_connected_events();
-	ZstEventDispatcher & client_disconnected_events();
-	ZstEventDispatcher & performer_arriving_events();
-	ZstEventDispatcher & performer_leaving_events();
-	ZstEventDispatcher & component_arriving_events();
-	ZstEventDispatcher & component_leaving_events();
-	ZstEventDispatcher & component_type_arriving_events();
-	ZstEventDispatcher & component_type_leaving_events();
-	ZstEventDispatcher & plug_arriving_events();
-	ZstEventDispatcher & plug_leaving_events();
-	ZstEventDispatcher & cable_arriving_events();
-	ZstEventDispatcher & cable_leaving_events();
-	ZstEventDispatcher & compute_events();
-	
-	//Debugging
-	int graph_recv_tripmeter();
-	void reset_graph_recv_tripmeter();
-	int graph_send_tripmeter();
-	void reset_graph_send_tripmeter();
-
-	//Network interactor implementation
-	virtual void enqueue_synchronisable_event(ZstSynchronisable * synchronisable) override;
-
-private:
-	//Stage actor
-	void start() override;
-	void stop() override;
-
-	//Registration
-    std::string first_available_ext_ip();
-
-	//Internal send and receive
-	//Send/receive
-	void send_to_stage(ZstMessage * msg);
-	ZstMessage * receive_from_stage();
-	ZstMessage * receive_stage_update();
-
-	//Message pools
-	ZstMessagePool & msg_pool();
-	ZstMessagePool m_message_pool;
-
-	//Entity reaper
-	ZstReaper m_reaper;
-	
-	//Graph message handlers
-	static int s_handle_graph_in(zloop_t *loop, zsock_t *sock, void *arg);
-	int graph_message_handler(zmsg_t * msg);
-
-	//Stage update handlers
-	static int s_handle_stage_update_in(zloop_t *loop, zsock_t *sock, void *arg);
-	static int s_handle_stage_router(zloop_t *loop, zsock_t *sock, void *arg);
-	void stage_update_handler(ZstMessage * msg);
-	void connect_client_handler(const char * endpoint_ip, const char * output_plug);
-	
+private:	
 	//Heartbeat timer
 	int m_heartbeat_timer_id;
 	long m_ping;
-	static int s_heartbeat_timer(zloop_t *loop, int timer_id, void *arg);
-
+	void heartbeat_timer();
+		
 	//Destruction
 	bool m_is_ending;
 	bool m_is_destroyed;
@@ -138,89 +77,17 @@ private:
 	bool m_is_connecting;
 
 	//UUIDs
-	zuuid_t * m_startup_uuid;
 	std::string m_assigned_uuid;
 	std::string m_client_name;
 
-	//Name property
-	std::string m_graph_out_ip;
-    std::string m_network_interface;
-
-	//Performers
-    ZstPerformer * m_root;
-	ZstPerformerMap m_clients;
-	void add_performer(ZstPerformer & performer);
-
-	//Event hooks
-	void flush_events();
-	ZstSynchronisableDeferredEvent * m_synchronisable_deferred_event;
-	ZstEntityLeavingEvent * m_performer_leaving_hook;
-	ZstEntityLeavingEvent * m_component_leaving_hook;
-	ZstCableLeavingEvent * m_cable_leaving_hook;
-	ZstPlugLeavingEvent * m_plug_leaving_hook;
-	ZstComputeEvent * m_compute_event;
-
-	//Stage communication
-	void register_client_to_stage_sync(MessageFuture & future);
-	void register_client_to_stage_async(MessageFuture & future);
-	void register_client_complete(ZstMsgKind status);
-	void synchronise_graph_sync(MessageFuture & future);
-	void synchronise_graph_async(MessageFuture & future);
-	void synchronise_graph_complete(ZstMsgKind status);
-	void leave_stage_complete();
-	void activate_entity_sync(ZstEntityBase * entity, MessageFuture & future);
-	void activate_entity_async(ZstEntityBase * entity, MessageFuture & future);
-	void activate_entity_complete(ZstMsgKind status, ZstEntityBase * entity);
-	void destroy_entity_sync(ZstEntityBase * entity, MessageFuture & future);
-	void destroy_entity_async(ZstEntityBase * entity, MessageFuture & future);
-	void destroy_entity_complete(ZstMsgKind status, ZstEntityBase * entity);
-	void connect_cable_sync(ZstCable * cable, MessageFuture & future);
-	void connect_cable_async(ZstCable * cable, MessageFuture & future);
-	void connect_cable_complete(ZstMsgKind status, ZstCable * cable);
-	void destroy_cable_sync(ZstCable * cable, MessageFuture & future);
-	void destroy_cable_async(ZstCable * cable, MessageFuture & future);
-	void destroy_cable_complete(ZstMsgKind status, ZstCable * cable);
-	void destroy_plug_sync(ZstPlug * plug, MessageFuture & future);
-	void destroy_plug_async(ZstPlug * plug, MessageFuture & future);
-	void destroy_plug_complete(ZstMsgKind status, ZstPlug * plug);
+	//P2P Connections
+	void start_connection_broadcast(const ZstURI & remote_client_path);
+	void stop_connection_broadcast(const ZstURI & remote_client_path);
+	std::unordered_map<ZstURI, std::string, ZstURIHash> m_pending_peer_connections;
+	std::unordered_map<ZstURI, int, ZstURIHash> m_connection_timers;
 	
-	//Cable storage
-	ZstCable * create_cable_ptr(const ZstCable & cable);
-	ZstCable * create_cable_ptr(ZstPlug * output, ZstPlug * input);
-	ZstCable * create_cable_ptr(const ZstURI & input_path, const ZstURI & output_path);
-	ZstCable * find_cable_ptr(const ZstURI & input_path, const ZstURI & output_path);
-	ZstCable * find_cable_ptr(ZstPlug * input, ZstPlug * output);
-	ZstCableList m_cables;
-	
-	//Events and callbacks
-	ZstEventDispatcher m_client_connected_event_manager;
-	ZstEventDispatcher m_client_disconnected_event_manager;
-	ZstEventDispatcher m_performer_arriving_event_manager;
-	ZstEventDispatcher m_performer_leaving_event_manager;
-	ZstEventDispatcher m_component_arriving_event_manager;
-	ZstEventDispatcher m_component_leaving_event_manager;
-	ZstEventDispatcher m_component_type_arriving_event_manager;
-	ZstEventDispatcher m_component_type_leaving_event_manager;
-	ZstEventDispatcher m_cable_arriving_event_manager;
-	ZstEventDispatcher m_cable_leaving_event_manager;
-	ZstEventDispatcher m_plug_arriving_event_manager;
-	ZstEventDispatcher m_plug_leaving_event_manager;
-	ZstEventDispatcher m_compute_event_manager;
-	ZstEventDispatcher m_synchronisable_event_manager;
-		
-	//Zeromq pipes
-	zsock_t * m_stage_router;        //Stage pipe in
-	zsock_t * m_stage_updates;		//Stage publisher for updates
-	zsock_t * m_graph_out;           //Pub for sending graph outputs
-	zsock_t * m_graph_in;            //Sub for receiving graph inputs
-
-	//Addresses
-	std::string m_stage_addr = "127.0.0.1";
-	std::string m_stage_router_addr;
-	std::string m_stage_updates_addr;
-	std::string m_graph_out_addr;
-
-	//Debugging
-	int m_num_graph_recv_messages;
-	int m_num_graph_send_messages;
+	//Client modules
+	ZstClientSession * m_session;
+	ZstMessageDispatcher * m_msg_dispatch;
+	ZstCZMQTransportLayer * m_transport;
 };
