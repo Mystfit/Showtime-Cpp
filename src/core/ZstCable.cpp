@@ -187,3 +187,31 @@ bool ZstCableEq::operator()(ZstCable const * lhs, ZstCable const * rhs) const
 	bool result = (*lhs == *rhs);
 	return result;
 }
+
+
+// -------------------------------
+// Testing
+// -------------------------------
+
+void ZstCable::self_test()
+{
+	ZstURI in = ZstURI("a/1");
+	ZstURI out = ZstURI("b/1");
+
+	ZstCable cable_a = ZstCable(in, out);
+	assert(cable_a.get_input_URI() == in);
+	assert(cable_a.get_output_URI() == out);
+	assert(cable_a.is_attached(out));
+	assert(cable_a.is_attached(in));
+
+	ZstCable cable_b = ZstCable(in, out);
+	assert(cable_b == cable_a);
+	assert(ZstCableEq{}(&cable_a, &cable_b));
+	assert(ZstCableHash{}(&cable_a) == ZstCableHash{}(&cable_b));
+
+	//Test cable going out of scope
+	{
+		ZstCable cable_c = ZstCable(ZstURI("foo"), ZstURI("bar"));
+		assert(cable_c != cable_a);
+	}
+}

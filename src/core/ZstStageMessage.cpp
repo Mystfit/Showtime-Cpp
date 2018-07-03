@@ -6,7 +6,6 @@
 ZstStageMessage::ZstStageMessage() : m_msg_kind(ZstMsgKind::EMPTY)
 {
 	//Need to reset this message to get it ready for sending
-	reset();
 }
 
 ZstStageMessage::ZstStageMessage(const ZstStageMessage & other){
@@ -21,11 +20,13 @@ void ZstStageMessage::reset(){
 	ZstMessage::reset();
     memset(&m_msg_id[0], 0, ZSTMSG_UUID_LENGTH);
 	m_msg_kind = ZstMsgKind::EMPTY;
-	this->append_id_frame();
 }
 
 ZstStageMessage * ZstStageMessage::init_entity_message(const ZstEntityBase * entity)
 {
+	this->init();
+	this->reset();
+	this->append_id_frame();
 	this->append_entity_kind_frame(entity);
 	this->append_payload_frame(*entity);
 	return this;
@@ -33,12 +34,18 @@ ZstStageMessage * ZstStageMessage::init_entity_message(const ZstEntityBase * ent
 
 ZstStageMessage * ZstStageMessage::init_message(ZstMsgKind kind)
 {
+	this->init();
+	this->reset();
+	this->append_id_frame();
 	this->append_kind_frame(kind);
 	return this;
 }
 
 ZstStageMessage * ZstStageMessage::init_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable)
 {
+	this->init();
+	this->reset();
+	this->append_id_frame();
 	this->append_kind_frame(kind);
 	this->append_payload_frame(serialisable);
 	return this;
@@ -108,27 +115,20 @@ void ZstStageMessage::unpack(zmsg_t * msg)
 	ZstMessage::unpack(msg);
 
 	//Unpack ID
-    zframe_t * id_frame = zmsg_pop(handle());
+    zframe_t * id_frame = zmsg_pop(msg);
     memcpy(m_msg_id, zframe_data(id_frame), ZSTMSG_UUID_LENGTH);
     zframe_destroy(&id_frame);
 
 	//Unpack kind
-	m_msg_kind = unpack_kind();
-
-	zframe_t * payload_frame = zmsg_pop(handle());
-	while (payload_frame != NULL) {
-		ZstMessagePayload p(payload_frame);
-		m_payloads.push_back(std::move(p));
-		payload_frame = zmsg_pop(handle());
-	}
-}
-
-ZstMsgKind ZstStageMessage::unpack_kind()
-{
-	zframe_t * kind_frame = zmsg_pop(handle());
-	ZstMsgKind k = unpack_kind(kind_frame);
+	zframe_t * kind_frame = zmsg_pop(msg);
+	m_msg_kind = unpack_kind(kind_frame);
 	zframe_destroy(&kind_frame);
-	return k;
+
+	zframe_t * payload_frame = zmsg_pop(msg);
+	while (payload_frame != NULL) {
+		m_payloads.emplace_back(payload_frame);
+		payload_frame = zmsg_pop(msg);
+	}
 }
 
 ZstMsgKind ZstStageMessage::unpack_kind(zframe_t * kind_frame)

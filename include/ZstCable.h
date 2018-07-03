@@ -52,6 +52,9 @@ public:
 	ZST_EXPORT void write(std::stringstream & buffer) const override;
 	ZST_EXPORT void read(const char * buffer, size_t length, size_t & offset) override;
 
+	//Testing
+	ZST_EXPORT static void self_test();
+
 private:
     //Cached URIs
 	ZstURI m_input_URI;

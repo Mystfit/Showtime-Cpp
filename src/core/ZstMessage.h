@@ -125,8 +125,8 @@ public:
     ZST_EXPORT ZstMessagePayload(const ZstMessagePayload & other);
 	ZST_EXPORT ~ZstMessagePayload();
 
-	ZST_EXPORT ZstMessagePayload(ZstMessagePayload && source);
-	ZST_EXPORT ZstMessagePayload& operator=(ZstMessagePayload && source);
+	ZST_EXPORT ZstMessagePayload(ZstMessagePayload && source) noexcept;
+	//ZST_EXPORT ZstMessagePayload& operator=(ZstMessagePayload && source);
 	ZST_EXPORT ZstMessagePayload& operator=(ZstMessagePayload & other);
 	
     ZST_EXPORT const size_t size();
@@ -144,6 +144,7 @@ public:
 	ZST_EXPORT ~ZstMessage();
 	ZST_EXPORT ZstMessage(const ZstMessage & other);
 
+	ZST_EXPORT virtual void init();
 	ZST_EXPORT virtual void reset();
     ZST_EXPORT virtual void set_inactive();
 	ZST_EXPORT virtual void unpack(zmsg_t * msg);

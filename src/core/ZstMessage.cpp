@@ -17,10 +17,14 @@ ZstMessage::ZstMessage(const ZstMessage & other)
 	m_msg_handle = zmsg_dup(other.m_msg_handle);
 }
 
+void ZstMessage::init()
+{
+	m_msg_handle = zmsg_new();
+}
+
 void ZstMessage::reset()
 {
 	m_payloads.clear();
-	m_msg_handle = zmsg_new();
 }
 
 void ZstMessage::set_inactive()
@@ -30,7 +34,6 @@ void ZstMessage::set_inactive()
 
 void ZstMessage::unpack(zmsg_t * msg){
 	assert(zmsg_is(msg));
-	set_handle(msg);
 }
 
 ZstMessagePayload & ZstMessage::payload_at(size_t index)
@@ -84,11 +87,11 @@ ZstMessagePayload::ZstMessagePayload(const ZstMessagePayload & other)
 	m_payload = zframe_dup((zframe_t*)other.m_payload);
 }
 
-ZstMessagePayload::ZstMessagePayload(ZstMessagePayload && source)
+ZstMessagePayload::ZstMessagePayload(ZstMessagePayload && source) noexcept
 {
 	//Move values
 	m_size = source.m_size;
-	m_payload = std::move(source.m_payload);
+	m_payload = source.m_payload;
 
 	//Reset original
 	source.m_size = 0;
@@ -100,21 +103,6 @@ ZstMessagePayload::~ZstMessagePayload(){
 	zframe_destroy(&frame);
 }
 
-ZstMessagePayload & ZstMessagePayload::operator=(ZstMessagePayload && source)
-{
-	//Move assignment
-	if (this != &source)
-	{
-		//Move values
-		m_size = source.m_size;
-		m_payload = std::move(source.m_payload);
-
-		//Reset original
-		m_size = 0;
-		m_payload = NULL;
-	}
-	return *this;
-}
 
 ZstMessagePayload & ZstMessagePayload::operator=(ZstMessagePayload & other)
 {

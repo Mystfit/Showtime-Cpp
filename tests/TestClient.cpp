@@ -8,6 +8,9 @@
 #include <exception>
 
 #ifdef WIN32
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>  
+#include <crtdbg.h>  
 #pragma warning(push) 
 #pragma warning(disable:4189 4996)
 #else
@@ -293,105 +296,12 @@ void test_startup() {
 }
 
 void test_URI() {
-	ZstLog::app(LogLevel::notification, "Running URI test");
 
-	assert(std::is_standard_layout<ZstURI>());
+	//Run URI self test
+	ZstURI::self_test();
 
-	//Define test URIs
-	ZstURI uri_empty = ZstURI();
-	ZstURI uri_single = ZstURI("single");
-	ZstURI uri_equal1 = ZstURI("ins/someplug");
-	ZstURI uri_notequal = ZstURI("anotherins/someplug");
-
-	//Test accessors
-	assert(strcmp(uri_equal1.segment(0), "ins") == 0);
-	assert(strcmp(uri_equal1.segment(1), "someplug") == 0);
-	assert(uri_empty.is_empty());
-	assert(uri_equal1.size() == 2);
-	assert(strcmp(uri_equal1.path(), "ins/someplug") == 0);
-
-	//Test comparisons
-	assert(ZstURI::equal(uri_equal1, uri_equal1));
-	assert(!ZstURI::equal(uri_equal1, uri_notequal));
-	assert(ZstURI::equal(ZstURI("root_entity/filter"), ZstURI("root_entity/filter")));
-	assert(!(ZstURI::equal(ZstURI("root_entity"), ZstURI("root_entity/filter"))));
-	assert(!(ZstURI::equal(ZstURI("root_entity"), ZstURI("root_entity/filter"))));
-	assert(ZstURI("b") < ZstURI("c"));
-	assert(ZstURI("a") < ZstURI("b"));
-	assert(ZstURI("a") < ZstURI("c"));
-	assert(!(ZstURI("c") < ZstURI("a")));
-	assert(uri_equal1.contains(ZstURI("ins")));
-	assert(!ZstURI("ins").contains(uri_equal1));
-	assert(uri_equal1.contains(ZstURI("ins/someplug")));
-	assert(!uri_equal1.contains(ZstURI("nomatch")));
-
-	//Test slicing
-	assert(ZstURI::equal(uri_equal1.range(0, 1), ZstURI("ins/someplug")));
-	assert(ZstURI::equal(uri_equal1.range(1, 1), ZstURI("someplug")));
-	assert(ZstURI::equal(uri_equal1.range(0, 0), ZstURI("ins")));
-	assert(ZstURI::equal(uri_equal1.parent(), ZstURI("ins")));
-	assert(ZstURI::equal(uri_equal1.first(), ZstURI("ins")));
-
-	bool thrown_URI_range_error = false;
-	try {
-		uri_single.parent();
-	}
-	catch (std::out_of_range) {
-		thrown_URI_range_error = true;
-	}
-	assert(thrown_URI_range_error);
-	thrown_URI_range_error = false;
-
-	//Test joining
-	ZstURI joint_uri = ZstURI("a") + ZstURI("b");
-	assert(ZstURI::equal(joint_uri, ZstURI("a/b")));
-	assert(joint_uri.size() == 2);
-	assert(joint_uri.full_size() == 3);
-
-	//Test URI going out of scope
-	{
-		ZstURI stack_uri("some_entity/some_name");
-	}
-
-	//Test range exceptions
-	bool thrown_range_error = false;
-	try {
-		uri_equal1.segment(2);
-	}
-	catch (std::range_error){
-		thrown_range_error = true;
-	}
-	assert(thrown_range_error);
-	thrown_range_error = false;
-
-	try {
-		uri_equal1.range(0, 4);
-	}
-	catch (std::range_error) {
-		thrown_range_error = true;
-	}
-	assert(thrown_range_error);
-
-	//Test cables
-	ZstURI in = ZstURI("a/1");
-	ZstURI out = ZstURI("b/1");
-
-	ZstCable cable_a = ZstCable(in, out);
-	assert(cable_a.get_input_URI() == in);
-	assert(cable_a.get_output_URI() == out);
-	assert(cable_a.is_attached(out));
-	assert(cable_a.is_attached(in));
-	
-	ZstCable cable_b = ZstCable(in, out);
-	assert(cable_b == cable_a);
-	assert(ZstCableEq{}(&cable_a, &cable_b));
-	assert(ZstCableHash{}(&cable_a) == ZstCableHash{}(&cable_b));
-
-	//Test cable going out of scope
-	{
-		ZstCable cable_c = ZstCable(ZstURI("foo"), ZstURI("bar"));
-		assert(cable_c != cable_a);
-	}
+	//RUn cable self test
+	ZstCable::self_test();
 }
 
 void test_root_entity() {
@@ -900,8 +810,8 @@ int main(int argc,char **argv){
 
 	
 	//Tests
-	test_startup();
 	test_URI();
+	test_startup();
 	test_root_entity();
     test_create_entities();
 	test_hierarchy();
@@ -918,5 +828,10 @@ int main(int argc,char **argv){
 		server_process.wait();
 		std::cout << "All tests completed" << std::endl;
 	}
+
+#ifdef WIN32
+	//Dump memory leaks to console
+	_CrtDumpMemoryLeaks();
+#endif
 	return 0;
 }

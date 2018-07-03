@@ -2,7 +2,7 @@
 
 #include <ZstConstants.h>
 #include <list>
-#include <mutex>
+#include <concurrentqueue.h>
 
 template<typename T>
 class ZstMessagePool 
@@ -14,33 +14,27 @@ public:
 	}
 
 	~ZstMessagePool() {
-		std::unique_lock<std::mutex> lock(m_mutex);
-		for (auto m : m_message_pool) {
-			delete m;
+		T* msg = NULL;
+		while (this->m_message_pool.try_dequeue(msg)) {
+			delete msg;
 		}
-		m_message_pool.clear();
 	}
 
 	virtual void populate(int size)
 	{
-		std::unique_lock<std::mutex> lock(m_mutex);
-		while (m_message_pool.size() < size) {
-			m_message_pool.push_back(new T());
+		for(size_t i = 0; i < size; ++i){
+			m_message_pool.enqueue(new T());
 		}
 	}
 
 	virtual T* get_msg()
 	{
 		T* msg = NULL;
-		if (m_message_pool.empty()) {
+		this->m_message_pool.try_dequeue(msg);
+		if (!msg) {
 			populate(MESSAGE_POOL_BLOCK);
+			this->m_message_pool.try_dequeue(msg);
 		}
-
-		//Lock and pop message from list
-		std::unique_lock<std::mutex> lock(m_mutex);
-		msg = m_message_pool.front();
-		m_message_pool.pop_front();
-		lock.unlock();
 		
 		return msg;
 	}
@@ -52,11 +46,9 @@ public:
 		message->set_inactive();
 		message->reset();
 			
-		std::unique_lock<std::mutex> lock(m_mutex);
-		m_message_pool.push_back(message);
+		m_message_pool.enqueue(message);
 	}
 
 protected:
-	std::list<T*> m_message_pool;
-	std::mutex m_mutex;
+	moodycamel::ConcurrentQueue<T*> m_message_pool;
 };

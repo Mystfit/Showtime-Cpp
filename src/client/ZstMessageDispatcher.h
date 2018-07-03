@@ -4,6 +4,7 @@
 #include <boost/bind.hpp>
 #include <cf/cfuture.h>
 #include <cf/time_watcher.h>
+#include <concurrent_queue.h>
 
 #include <ZstEventDispatcher.hpp>
 
@@ -68,8 +69,10 @@ private:
 	virtual void failed(ZstMessageReceipt status);
 
 	MessageFuture register_response_message(ZstStageMessage * msg);
+	void cleanup_response_message(const std::string & id);
 
 	std::unordered_map<std::string, MessagePromise > m_promise_messages;
+	moodycamel::ConcurrentQueue<std::string> m_dead_promises;
 	cf::time_watcher m_timeout_watcher;
 
 	ZstTransportLayer * transport();

@@ -223,7 +223,9 @@ zmsg_t * ZstCZMQTransportLayer::sock_recv(zsock_t* socket, bool pop_first)
 void ZstCZMQTransportLayer::receive_stage_update()
 {
 	ZstStageMessage * msg = m_stage_msg_pool.get_msg();
-	msg->unpack(sock_recv(m_stage_updates, false));
+	zmsg_t * recv_msg = sock_recv(m_stage_updates, false);
+	msg->unpack(recv_msg);
+	zmsg_destroy(&recv_msg);
 	
 	//Let msg dispatch decide where to forward the message to
 	msg_dispatch()->receive_addressed_msg(msg);
@@ -233,14 +235,18 @@ void ZstCZMQTransportLayer::receive_stage_update()
 
 ZstStageMessage * ZstCZMQTransportLayer::receive_addressed_msg() {
 	ZstStageMessage * msg = m_stage_msg_pool.get_msg();
-	msg->unpack(sock_recv(m_stage_router, true));
+	zmsg_t * recv_msg = sock_recv(m_stage_router, true);
+	msg->unpack(recv_msg);
+	zmsg_destroy(&recv_msg);
 	return msg;
 }
 
 void ZstCZMQTransportLayer::receive_from_performance()
 {
 	ZstPerformanceMessage * msg = m_performance_msg_pool.get_msg();	
-	msg->unpack(sock_recv(m_graph_in, false));
+	zmsg_t * recv_msg = sock_recv(m_graph_in, false);
+	msg->unpack(recv_msg);
+	zmsg_destroy(&recv_msg);
 
 	//Let msg dispatch decide where to forward the performance message
 	msg_dispatch()->receive_from_performance(msg);

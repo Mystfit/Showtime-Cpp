@@ -29,6 +29,11 @@ void ZstMessageDispatcher::process_events()
 {
 	m_stage_events.process_events();
 	m_performance_events.process_events();
+
+	std::string s;
+	while (m_dead_promises.try_dequeue(s)) {
+		cleanup_response_message(s);
+	}
 }
 
 void ZstMessageDispatcher::send_to_stage(ZstStageMessage * msg, bool async, MessageReceivedAction action)
@@ -57,6 +62,7 @@ ZstMessageReceipt ZstMessageDispatcher::send_sync_stage_message(ZstStageMessage 
 		ZstLog::net(LogLevel::error, "Server response timed out", e.what());
 		msg_response.status = ZstMsgKind::ERR_STAGE_TIMEOUT;
 		failed(msg_response);
+		m_dead_promises.enqueue(msg->id());
 	}
 	return msg_response;
 }
@@ -64,7 +70,11 @@ ZstMessageReceipt ZstMessageDispatcher::send_sync_stage_message(ZstStageMessage 
 void ZstMessageDispatcher::send_async_stage_message(ZstStageMessage * msg, MessageReceivedAction completed_action)
 {
 	MessageFuture future = register_response_message(msg);
-	future.then([this, completed_action](MessageFuture f) {
+
+	//Hold on to the message id so we can clean up the promise in case we time out
+	std::string id = std::string(msg->id());
+
+	future.then([this, id, completed_action](MessageFuture f) {
 		ZstMsgKind status(ZstMsgKind::EMPTY);
 		ZstMessageReceipt msg_response{status, true};
 		try {
@@ -79,6 +89,7 @@ void ZstMessageDispatcher::send_async_stage_message(ZstStageMessage * msg, Messa
 			msg_response.status = ZstMsgKind::ERR_STAGE_TIMEOUT;
 			completed_action(msg_response);
 			failed(msg_response);
+			m_dead_promises.enqueue(id);
 		}
 		return status;
 	});
@@ -168,10 +179,21 @@ void ZstMessageDispatcher::failed(ZstMessageReceipt response)
 MessageFuture ZstMessageDispatcher::register_response_message(ZstStageMessage * msg)
 {
 	std::string id = std::string(msg->id());
-	m_promise_messages[id] = MessagePromise();
+	m_promise_messages.emplace(id, MessagePromise());
 	MessageFuture future = m_promise_messages[id].get_future();
 	future = future.timeout(std::chrono::milliseconds(STAGE_TIMEOUT), ZstTimeoutException("Connect timeout"), m_timeout_watcher);
 	return future;
+}
+
+void ZstMessageDispatcher::cleanup_response_message(const std::string & id)
+{
+	//Clear completed promise when finished
+	try {
+		m_promise_messages.erase(id);
+	}
+	catch (std::out_of_range e) {
+		ZstLog::net(LogLevel::debug, "Promise already removed. {}", e.what());
+	}
 }
 
 void ZstMessageDispatcher::process_stage_response(ZstStageMessage * msg)
@@ -181,8 +203,7 @@ void ZstMessageDispatcher::process_stage_response(ZstStageMessage * msg)
 		std::string id = std::string(msg->id());
 		m_promise_messages.at(id).set_value(msg->kind());
 
-		//Clear completed promise when finished
-		m_promise_messages.erase(msg->id());
+		cleanup_response_message(id);
 		status = 1;
 	}
 	catch (std::out_of_range e) {

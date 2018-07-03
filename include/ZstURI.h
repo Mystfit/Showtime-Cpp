@@ -13,11 +13,12 @@ public:
 	ZST_EXPORT ~ZstURI();
 	ZST_EXPORT ZstURI(const ZstURI & copy);
 	ZST_EXPORT ZstURI & operator=(const ZstURI & other);
+	ZST_EXPORT ZstURI & operator=(ZstURI && source);
 	ZST_EXPORT ZstURI(const char * path);
 	ZST_EXPORT ZstURI(const char * path, size_t len);
 
 	ZST_EXPORT const char * path() const;
-	ZST_EXPORT char * segment(size_t index);
+	ZST_EXPORT const char * segment(size_t index) const;
 	ZST_EXPORT const size_t size() const;
 	ZST_EXPORT const size_t full_size() const;
 	
@@ -40,6 +41,11 @@ public:
 	ZST_EXPORT bool operator< (const ZstURI& b) const;
 	ZST_EXPORT bool is_empty() const;
 
+	//Testing
+	ZST_EXPORT static void self_test();
+
+
+
 private:
 	struct pstr {
 		size_t length;
@@ -51,8 +57,6 @@ private:
 	pstr create_pstr(const char * p, size_t l);
 
 	pstr m_original_path;
-	pstr m_segmented_path;
-
 	int  m_component_count;
 	pstr m_components[MAX_PATH_LEN];
 };

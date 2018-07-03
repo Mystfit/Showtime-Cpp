@@ -23,7 +23,6 @@ public:
 	ZST_EXPORT void append_serialisable(ZstMsgKind k, const ZstSerialisable & s);
 
     ZST_EXPORT void unpack(zmsg_t * msg) override;
-    ZstMsgKind unpack_kind();
 	ZstMsgKind unpack_kind(zframe_t * kind_frame);
 
     //Accessors
