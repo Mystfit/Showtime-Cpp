@@ -7,17 +7,15 @@ using namespace std;
 ZstPerformer::ZstPerformer() : 
 	ZstContainer(),
 	m_heartbeat_active(false),
-	m_missed_heartbeats(0),
-	m_address("")
+	m_missed_heartbeats(0)
 {
 	set_entity_type(PERFORMER_TYPE);
 }
 
-ZstPerformer::ZstPerformer(const char * name, const char * client_ip) :
+ZstPerformer::ZstPerformer(const char * name) :
 	ZstContainer("", name),
 	m_heartbeat_active(false),
-	m_missed_heartbeats(0),
-	m_address(client_ip)
+	m_missed_heartbeats(0)
 {
 	set_entity_type(PERFORMER_TYPE);
 }
@@ -26,7 +24,6 @@ ZstPerformer::ZstPerformer(const ZstPerformer & other) : ZstContainer(other)
 {
 	m_heartbeat_active = other.m_heartbeat_active;
 	m_missed_heartbeats = other.m_missed_heartbeats;
-	m_address = other.m_address;
 }
 
 ZstPerformer::~ZstPerformer()
@@ -65,11 +62,6 @@ int ZstPerformer::get_missed_heartbeats()
 	return m_missed_heartbeats;
 }
 
-const char * ZstPerformer::address()
-{
-	return m_address.c_str();
-}
-
 size_t ZstPerformer::num_creatables() const
 {
 	return m_creatables.size();
@@ -78,9 +70,6 @@ size_t ZstPerformer::num_creatables() const
 void ZstPerformer::write(std::stringstream & buffer) const
 {
 	ZstContainer::write(buffer);
-
-	//Pack address of performer
-	msgpack::pack(buffer, m_address);
 	
 	//Pack number of children
 	msgpack::pack(buffer, num_creatables());
@@ -96,12 +85,8 @@ void ZstPerformer::read(const char * buffer, size_t length, size_t & offset)
 {
 	ZstContainer::read(buffer, length, offset);
 
-	//unpack address
-	auto handle = msgpack::unpack(buffer, length, offset);
-	m_address = std::string(handle.get().via.str.ptr, handle.get().via.str.size);
-
 	//Unpack creatables
-	handle = msgpack::unpack(buffer, length, offset);
+	auto handle = msgpack::unpack(buffer, length, offset);
 	int num_creatables = static_cast<int>(handle.get().via.i64);
 	for (int i = 0; i < num_creatables; ++i) {
 

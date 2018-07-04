@@ -6,7 +6,6 @@
 
 ZstEntityBase::ZstEntityBase(const char * name) : 
 	ZstSynchronisable(),
-	m_is_destroyed(false),
 	m_parent(NULL),
 	m_entity_type(NULL),
 	m_uri(name)
@@ -16,8 +15,7 @@ ZstEntityBase::ZstEntityBase(const char * name) :
 ZstEntityBase::ZstEntityBase(const ZstEntityBase & other) : ZstSynchronisable(other)
 {
 	m_parent = other.m_parent;
-	m_is_destroyed = other.m_is_destroyed;
-
+	
 	size_t entity_type_size = strlen(other.m_entity_type);
 	m_entity_type = (char*)malloc(entity_type_size + 1);
 	memcpy(m_entity_type, other.m_entity_type, entity_type_size);
@@ -71,11 +69,6 @@ const ZstURI & ZstEntityBase::URI() const
 	return m_uri;
 }
 
-bool ZstEntityBase::is_destroyed()
-{
-	return m_is_destroyed;
-}
-
 void ZstEntityBase::release_cable_bundle(ZstCableBundle * bundle)
 {
 	delete bundle;
@@ -87,10 +80,7 @@ ZstCableBundle * ZstEntityBase::acquire_cable_bundle()
 	return get_child_cables(bundle);
 }
 
-void ZstEntityBase::set_destroyed()
-{
-	m_is_destroyed = true;
-}
+
 
 ZstCableBundle * ZstEntityBase::get_child_cables(ZstCableBundle * bundle)
 {
@@ -107,7 +97,9 @@ void ZstEntityBase::read(const char * buffer, size_t length, size_t & offset)
 {
 	//Unpack uri path
 	auto handle = msgpack::unpack(buffer, length, offset);
-	m_uri = ZstURI(handle.get().via.str.ptr, handle.get().via.str.size);
+	const char * uri = handle.get().via.str.ptr;
+	size_t uri_size = handle.get().via.str.size;
+	m_uri = ZstURI(uri, uri_size);
 
 	//Unpack entity type second
 	handle = msgpack::unpack(buffer, length, offset);
@@ -117,6 +109,16 @@ void ZstEntityBase::read(const char * buffer, size_t length, size_t & offset)
 	m_entity_type = (char*)malloc(obj.via.str.size + 1);
 	memcpy(m_entity_type, obj.via.str.ptr, obj.via.str.size);
 	m_entity_type[obj.via.str.size] = '\0';
+}
+
+void ZstEntityBase::add_adaptor_to_children(ZstSynchronisableAdaptor * adaptor)
+{
+	ZstSynchronisable::add_adaptor(adaptor);
+}
+
+void ZstEntityBase::remove_adaptor_from_children(ZstSynchronisableAdaptor * adaptor)
+{
+	ZstSynchronisable::remove_adaptor(adaptor);
 }
 
 void ZstEntityBase::set_entity_type(const char * entity_type) {

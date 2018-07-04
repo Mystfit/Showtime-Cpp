@@ -52,6 +52,7 @@ public:
 			
 			zst_deactivate_entity(m_child_sink);
 			ZstLog::entity(LogLevel::debug, "Finished sync deactivate");
+			delete m_child_sink;
 			m_child_sink = NULL;
 			break;
 		case 3:
@@ -69,18 +70,19 @@ int main(int argc,char **argv){
 
 	zst_init("sink", true);
 
+	ZstLog::app(LogLevel::notification, "In sink process");
+#ifdef SKIP_SINK_TEST 
 	if(argc < 2){
 		ZstLog::app(LogLevel::warn, "Skipping sink test, command line flag not set");
 		return 0;
 	}
-
-	ZstLog::app(LogLevel::notification, "In sink process");
 
 	if(argv[1][0] == 'd')
 #ifdef WIN32
 		system("pause");
 #else
         system("read -n 1 -s -p \"Press any key to continue...\n\"");
+#endif
 #endif
     zst_join("127.0.0.1");
 

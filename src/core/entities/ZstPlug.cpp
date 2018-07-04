@@ -5,7 +5,7 @@
 #include <ZstCable.h>
 
 #include "../ZstValue.h"
-#include "../ZstINetworkInteractor.h"
+#include <ZstEventDispatcher.hpp>
 
 using namespace std;
 
@@ -210,6 +210,15 @@ void ZstPlug::remove_cable(ZstCable * cable)
 
 //ZstInputPlug
 //------------
+ZstInputPlug::ZstInputPlug() : ZstPlug()
+{
+	m_direction = ZstPlugDirection::IN_JACK;
+}
+
+ZstInputPlug::ZstInputPlug(const ZstInputPlug & other) : ZstPlug(other)
+{
+}
+
 ZstInputPlug::~ZstInputPlug()
 {
 }
@@ -223,16 +232,43 @@ ZstInputPlug::ZstInputPlug(const char * name, ZstValueType t) : ZstPlug(name, t)
 //ZstOutputPlug
 //-------------
 
+ZstOutputPlug::ZstOutputPlug() : ZstPlug()
+{
+	m_direction = ZstPlugDirection::OUT_JACK;
+	m_event_dispatch = new ZstEventDispatcher<ZstOutputPlugAdaptor*>();
+}
+
+ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug & other) : ZstPlug(other)
+{
+	m_event_dispatch = new ZstEventDispatcher<ZstOutputPlugAdaptor*>();
+}
+
 ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t) : ZstPlug(name, t)
 {
     m_direction = ZstPlugDirection::OUT_JACK;
+	m_event_dispatch = new ZstEventDispatcher<ZstOutputPlugAdaptor*>();
+}
+
+ZstOutputPlug::~ZstOutputPlug()
+{
+	m_event_dispatch->flush();
+	delete m_event_dispatch;
 }
 
 void ZstOutputPlug::fire()
 {
-	if(network_interactor())
-		network_interactor()->publish(this);
+	m_event_dispatch->invoke([this](ZstOutputPlugAdaptor * dlg) { dlg->on_plug_fire(this); });
 	m_value->clear();
+}
+
+void ZstOutputPlug::add_adaptor(ZstOutputPlugAdaptor * adaptor)
+{
+	m_event_dispatch->add_adaptor(adaptor);
+}
+
+void ZstOutputPlug::remove_adaptor(ZstOutputPlugAdaptor * adaptor)
+{
+	m_event_dispatch->remove_adaptor(adaptor);
 }
 
 MSGPACK_ADD_ENUM(ZstPlugDirection);

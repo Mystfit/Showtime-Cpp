@@ -48,7 +48,7 @@ namespace ZstLog {
 		ZST_EXPORT void app_sink_message(LogLevel level, const char * msg);
 	}
 
-	ZST_EXPORT void init_logger(const char * logger_name);
+	ZST_EXPORT void init_logger(const char * logger_name, LogLevel level = LogLevel::notification);
 	ZST_EXPORT void init_file_logging(const char * log_file_path = "");
 	
 	template <typename... Args>

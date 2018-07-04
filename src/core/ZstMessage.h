@@ -5,25 +5,26 @@
 #include <iostream>
 #include <stdio.h>
 #include <msgpack.hpp>
-#include <ZstCore.h>
+#include <czmq.h>
+#include <ZstExports.h>
+#include "liasons/ZstPlugLiason.hpp"
 
 #define KIND_FRAME_SIZE 1
+#define ZSTMSG_UUID_LENGTH 33	//Size of a CZMQ uuid (32 bytes + null terminator)
 
-//Forwards
-typedef struct _zmsg_t zmsg_t;
-typedef struct _zframe_t zframe_t;
-typedef struct _zuuid_t zuuid_t;
-typedef struct _zsock_t zsock_t;
-
-
+/**
+ * Enum:	ZstMsgKind
+ *
+ * Summary:	Values that represent possible messages.
+ */
 enum ZstMsgKind  {
     EMPTY = 0,
     
     //Regular signals
     OK,
     
-    //Error signals
-    ERR_STAGE_MSG_TYPE_UNKNOWN,
+    //Error signals starts
+    ERR_STAGE_MSG_TYPE_UNKNOWN, //2
     ERR_STAGE_BAD_CABLE_DISCONNECT_REQUEST,
     ERR_STAGE_BAD_CABLE_CONNECT_REQUEST,
     ERR_STAGE_PERFORMER_NOT_FOUND,
@@ -34,14 +35,13 @@ enum ZstMsgKind  {
 	ERR_STAGE_TIMEOUT,
     
     //Client registration
-    CLIENT_JOIN,
+    CLIENT_JOIN, //11
     CLIENT_SYNC,
     CLIENT_LEAVING,
     CLIENT_HEARTBEAT,
-    GRAPH_SNAPSHOT,
-    
+	    
     //Entity registration
-    CREATE_ENTITY_FROM_TEMPLATE,
+    CREATE_ENTITY_FROM_TEMPLATE, //16
     REGISTER_COMPONENT_TEMPLATE,
     UNREGISTER_COMPONENT_TEMPLATE,
     CREATE_COMPONENT,
@@ -50,96 +50,123 @@ enum ZstMsgKind  {
     DESTROY_ENTITY,
     
     //Plug registration
-    CREATE_PLUG,
+    CREATE_PLUG, //23
 	    
     //Connection registration
-    CREATE_CABLE,
+    CREATE_CABLE, //24
     DESTROY_CABLE,
     
     //P2P endpoint connection requests
+    START_CONNECTION_HANDSHAKE, //26
+    STOP_CONNECTION_HANDSHAKE,
     SUBSCRIBE_TO_PERFORMER,
-    CREATE_PEER_ENTITY
+    SUBSCRIBE_TO_PERFORMER_ACK,
+    CREATE_PEER_ENTITY,
+
+	//Plug values
+	PLUG_VALUE
+};
+MSGPACK_ADD_ENUM(ZstMsgKind);
+
+static std::map<ZstMsgKind, char const*> ZstMsgNames {
+    {EMPTY, "empty"},    
+    {OK, "OK"},
+    {ERR_STAGE_MSG_TYPE_UNKNOWN, "ERR_STAGE_MSG_TYPE_UNKNOWN"}, 
+    {ERR_STAGE_BAD_CABLE_DISCONNECT_REQUEST, "ERR_STAGE_BAD_CABLE_DISCONNECT_REQUEST"},
+    {ERR_STAGE_BAD_CABLE_CONNECT_REQUEST, "ERR_STAGE_BAD_CABLE_CONNECT_REQUEST"},
+    {ERR_STAGE_PERFORMER_NOT_FOUND, "ERR_STAGE_PERFORMER_NOT_FOUND"},
+    {ERR_STAGE_PERFORMER_ALREADY_EXISTS, "ERR_STAGE_PERFORMER_ALREADY_EXISTS" },
+    {ERR_STAGE_ENTITY_NOT_FOUND, "ERR_STAGE_ENTITY_NOT_FOUND"},
+    {ERR_STAGE_ENTITY_ALREADY_EXISTS, "ERR_STAGE_ENTITY_ALREADY_EXISTS"},
+    {ERR_STAGE_PLUG_ALREADY_EXISTS, "ERR_STAGE_PLUG_ALREADY_EXISTS"},
+	{ERR_STAGE_TIMEOUT, "ERR_STAGE_TIMEOUT"},
+    {CLIENT_JOIN, "CLIENT_JOIN"},
+    {CLIENT_SYNC, "CLIENT_SYNC"},
+    {CLIENT_LEAVING, "CLIENT_LEAVING"},
+    {CLIENT_HEARTBEAT, "CLIENT_HEARTBEAT"},
+    {CREATE_ENTITY_FROM_TEMPLATE, "CREATE_ENTITY_FROM_TEMPLATE"},
+    {REGISTER_COMPONENT_TEMPLATE, "REGISTER_COMPONENT_TEMPLATE"},
+    {UNREGISTER_COMPONENT_TEMPLATE, "UNREGISTER_COMPONENT_TEMPLATE"},
+    {CREATE_COMPONENT, "CREATE_COMPONENT"},
+    {CREATE_CONTAINER, "CREATE_CONTAINER"},
+    {CREATE_PERFORMER, "CREATE_PERFORMER"},
+    {DESTROY_ENTITY, "DESTROY_ENTITY"},
+    {CREATE_PLUG, "CREATE_PLUG"},
+    {CREATE_CABLE, "CREATE_CABLE"},
+    {DESTROY_CABLE, "DESTROY_CABLE"},
+    {START_CONNECTION_HANDSHAKE, "START_CONNECTION_HANDSHAKE"},
+    {STOP_CONNECTION_HANDSHAKE, "STOP_CONNECTION_HANDSHAKE"},
+    {SUBSCRIBE_TO_PERFORMER, "SUBSCRIBE_TO_PERFORMER"},
+    {SUBSCRIBE_TO_PERFORMER_ACK, "SUBSCRIBE_TO_PERFORMER_ACK"},
+    {CREATE_PEER_ENTITY, "CREATE_PEER_ENTITY"},
+	{PLUG_VALUE, "PLUG_VALUE"}
 };
 
 
+/**
+ * Struct:	ZstMessageReceipt
+ *
+ * Summary:	Message response from a message sent to the server.
+ */
+struct ZstMessageReceipt {
+	ZstMsgKind status;
+	bool async;
+};
+
+
+/**
+ * Class:	ZstMessagePayload
+ *
+ * Summary:	A single payload frame in a ZstMessage
+ */
 class ZstMessagePayload {
 public:
-    ZST_EXPORT ZstMessagePayload(ZstMsgKind k, zframe_t * p);
+    ZST_EXPORT ZstMessagePayload(zframe_t * p);
     ZST_EXPORT ZstMessagePayload(const ZstMessagePayload & other);
-    ZST_EXPORT ~ZstMessagePayload();
-    ZST_EXPORT size_t size();
-    ZST_EXPORT ZstMsgKind kind();
-    ZST_EXPORT char * data();
-private:
-    ZstMsgKind m_kind;
-    zframe_t * m_payload;
+	ZST_EXPORT ~ZstMessagePayload();
+
+	ZST_EXPORT ZstMessagePayload(ZstMessagePayload && source) noexcept;
+	//ZST_EXPORT ZstMessagePayload& operator=(ZstMessagePayload && source);
+	ZST_EXPORT ZstMessagePayload & operator=(const ZstMessagePayload & other);
+	
+    ZST_EXPORT const size_t size();
+	ZST_EXPORT const char * data();
+	
+protected:
+	zframe_t * m_payload;	
+	size_t m_size;
 };
 
 
 class ZstMessage {
-	friend class ZstMessagePool;
 public:
+	ZST_EXPORT ZstMessage();
 	ZST_EXPORT ~ZstMessage();
-	ZST_EXPORT void reset();
 	ZST_EXPORT ZstMessage(const ZstMessage & other);
-	ZST_EXPORT void copy_id(const ZstMessage * msg);
 
-	//Initialisation
-	ZST_EXPORT ZstMessage * init_entity_message(ZstEntityBase * entity);
-	ZST_EXPORT ZstMessage * init_message(ZstMsgKind kind);
-	ZST_EXPORT ZstMessage * init_serialisable_message(ZstMsgKind kind, const ZstSerialisable & streamable);
+	ZST_EXPORT virtual void init();
+	ZST_EXPORT virtual void reset();
+    ZST_EXPORT virtual void set_inactive();
+	ZST_EXPORT virtual void unpack(zmsg_t * msg);
+	ZST_EXPORT virtual void append_str(const char * s, size_t len);
 
-	ZST_EXPORT void send(zsock_t * socket);
-
-	//Message modification
-	ZST_EXPORT void append_str(const char * s, size_t len);
-	ZST_EXPORT void append_serialisable(ZstMsgKind k, ZstSerialisable & s);
-
-	//Unpacking
-	ZST_EXPORT void unpack(zmsg_t * msg);
-
-	//Attributes
-	ZST_EXPORT ZstEntityBase * entity_target();
+	ZST_EXPORT virtual ZstMessagePayload & payload_at(size_t index);
+	ZST_EXPORT virtual size_t num_payloads();
 	ZST_EXPORT zmsg_t * handle();
-	ZST_EXPORT const char * id();
-	ZST_EXPORT ZstMsgKind kind();
-	
-	//Message iteration
-	ZST_EXPORT ZstMessagePayload & payload_at(size_t index);
-	ZST_EXPORT size_t num_payloads();
-	
+
 	template <typename T>
 	T unpack_payload_serialisable(size_t payload_index) {
 		T serialisable;
 		size_t offset = 0;
-		ZstMessagePayload & payload = payload_at(payload_index);
-		serialisable.read(payload.data(), payload.size(), offset);
+		serialisable.read((char*)payload_at(payload_index).data(), payload_at(payload_index).size(), offset);
 		return serialisable;
 	}
-	
-private:
-	ZstMessage();
-		
-	//---------------------------------------
-	void append_kind_frame(ZstMsgKind k);
-	void append_entity_kind_frame(ZstEntityBase * entity);
-	void append_id_frame();
-	void append_payload_frame(const ZstSerialisable & streamable);
-	
-	//---------------------------------------
-	
-	ZstMsgKind unpack_kind();
-	ZstMsgKind unpack_kind(zframe_t * kind_frame);
 
-	//---------------------------------------
-	
-	//Common message attributes
-	zmsg_t * m_msg_handle;
-	zuuid_t * m_msg_id;
-	ZstMsgKind m_msg_kind;
-	ZstEntityBase * m_entity_target;
+protected:
+	ZST_EXPORT void append_payload_frame(const ZstSerialisable & streamable);
+	ZST_EXPORT void set_handle(zmsg_t * handle);
 	std::vector<ZstMessagePayload> m_payloads;
-};
 
-//Register Kind as a msgpack enum
-MSGPACK_ADD_ENUM(ZstMsgKind);
+private:
+	zmsg_t * m_msg_handle;
+};

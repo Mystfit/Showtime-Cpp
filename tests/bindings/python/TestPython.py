@@ -4,7 +4,7 @@ import sys
 import threading
 import showtime as ZST
 import subprocess
-from showtime import ZstComponent, ZstActivationEvent
+from showtime import ZstComponent
 
 
 class SinkComponent(ZstComponent):
@@ -67,8 +67,7 @@ if __name__ == "__main__":
 
     # Connect cables
     ZST.connect_cable(sink.plug, push.plug)
-    time.sleep(0.1)
-
+    
     # Send values
     sending_val = 42
     push.send(42)

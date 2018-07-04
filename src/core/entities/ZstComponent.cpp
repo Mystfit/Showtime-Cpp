@@ -27,10 +27,10 @@ ZstComponent::ZstComponent(const ZstComponent & other) : ZstEntityBase(other)
 {
 	for (auto p : other.m_plugs) {
 		if (p->direction() == ZstPlugDirection::IN_JACK) {
-			m_plugs.push_back(new ZstPlug(*dynamic_cast<ZstPlug*>(p)));
+			m_plugs.push_back(new ZstInputPlug(*static_cast<ZstInputPlug*>(p)));
 		}
 		else if(p->direction() == ZstPlugDirection::OUT_JACK) {
-			m_plugs.push_back(new ZstPlug(*dynamic_cast<ZstPlug*>(p)));
+			m_plugs.push_back(new ZstOutputPlug(*static_cast<ZstOutputPlug*>(p)));
 		}
 	}
 	
@@ -47,14 +47,6 @@ ZstComponent::~ZstComponent()
 	}
 	m_plugs.clear();
 	free(m_component_type);
-}
-
-void ZstComponent::set_network_interactor(ZstINetworkInteractor * network_interactor)
-{
-	ZstSynchronisable::set_network_interactor(network_interactor);
-	for (auto plug : m_plugs) {
-		plug->set_network_interactor(network_interactor);
-	}
 }
 
 ZstInputPlug * ZstComponent::create_input_plug(const char * name, ZstValueType val_type)
@@ -154,6 +146,7 @@ void ZstComponent::write(std::stringstream & buffer) const
 	//Pack plugs
 	msgpack::pack(buffer, m_plugs.size());
 	for (auto plug : m_plugs) {
+		msgpack::pack(buffer, static_cast<int>(plug->direction()));
 		plug->write(buffer);
 	}
 }
@@ -170,8 +163,20 @@ void ZstComponent::read(const char * buffer, size_t length, size_t & offset)
 	//Unpack plugs
 	handle = msgpack::unpack(buffer, length, offset);
 	int num_plugs = static_cast<int>(handle.get().via.i64);
+	ZstPlugDirection direction;
+	ZstPlug * plug = NULL;
+
 	for (int i = 0; i < num_plugs; ++i) {
-		ZstPlug * plug = new ZstPlug();
+		//Direction is packed first - we use this to construct the correct plug type
+		handle = msgpack::unpack(buffer, length, offset);
+		direction = static_cast<ZstPlugDirection>(handle.get().via.i64);
+		if (direction == ZstPlugDirection::IN_JACK) {
+			plug = new ZstInputPlug();
+		} else {
+			plug = new ZstOutputPlug();
+		}
+
+		//Unpack plug
 		plug->read(buffer, length, offset);
 		add_plug(plug);
 	}
@@ -182,11 +187,26 @@ const char * ZstComponent::component_type() const
 	return m_component_type;
 }
 
+void ZstComponent::add_adaptor_to_children(ZstSynchronisableAdaptor * adaptor)
+{
+	ZstEntityBase::add_adaptor(adaptor);
+	for (auto plug : m_plugs) {
+		plug->add_adaptor(adaptor);
+	}
+}
+
+void ZstComponent::remove_adaptor_from_children(ZstSynchronisableAdaptor * adaptor)
+{
+	this->remove_adaptor(adaptor);
+	for (auto plug : m_plugs) {
+		plug->remove_adaptor(adaptor);
+	}
+}
+
 void ZstComponent::set_component_type(const char * component_type)
 {
 	set_component_type(component_type, strlen(component_type));
 }
-
 
 void ZstComponent::set_component_type(const char * component_type, size_t len)
 {

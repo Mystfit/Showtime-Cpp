@@ -2,118 +2,83 @@
 
 #include <ZstExports.h>
 
-//Enums
-//-----
-
-enum ZstEventAction {
-	ARRIVING = 0,
-	LEAVING
-};
-
-
-//Base callbacks
-//----------------
-
+//Forwards
 class ZstSynchronisable;
+class ZstEntityBase;
+class ZstComponent;
+class ZstContainer;
+class ZstPerformer;
+class ZstPlug;
+class ZstCable;
+
+// -------------------
+// Base event template
+// -------------------
+
+template<typename EventTarget>
 class ZstEvent {
 public:
-	ZST_EXPORT ZstEvent();
-	ZST_EXPORT virtual ~ZstEvent() {};
-	ZST_EXPORT int num_calls() const;
-	ZST_EXPORT void reset_num_calls();
-	ZST_EXPORT void increment_calls();
-	ZST_EXPORT virtual void cast_run(ZstSynchronisable * target) = 0;
+	ZstEvent(EventTarget target) {
+		m_target = target;
+	}
+
+	int id() { return m_id; }
+	EventTarget target() { return m_target; }
+	
 private:
-	int m_num_calls;
+	int m_id;
+	EventTarget m_target;
 };
 
 
-class ZstSynchronisableEvent : public ZstEvent {
+// ---------------------------
+// Events
+// ---------------------------
+
+class ZstSynchronisableEvent : public ZstEvent<ZstSynchronisable*>
+{
 public:
-	ZST_EXPORT virtual ~ZstSynchronisableEvent() override {};
-	ZST_EXPORT virtual void run(ZstSynchronisable * target) {};
-	ZST_EXPORT void cast_run(ZstSynchronisable * target) override;
+	ZstSynchronisableEvent(ZstSynchronisable * target);
 };
 
 
-class ZstActivationEvent : public ZstSynchronisableEvent {
+class ZstEntityEvent : public ZstEvent<ZstEntityBase*>
+{
 public:
-	ZST_EXPORT virtual ~ZstActivationEvent() override {};
-	ZST_EXPORT virtual void run(ZstSynchronisable * target) override;
+	ZstEntityEvent(ZstEntityBase * target);
 };
 
 
-class ZstDeactivationEvent : public ZstSynchronisableEvent {
+class ZstComponentEvent : public ZstEvent<ZstComponent*>
+{
 public:
-	ZST_EXPORT virtual ~ZstDeactivationEvent() override {};
-	ZST_EXPORT virtual void run(ZstSynchronisable * target) override;
+	ZstComponentEvent(ZstComponent * target);
 };
 
 
-class ZstEntityBase;
-class ZstEntityEvent : public ZstSynchronisableEvent {
+class ZstContainerEvent : public ZstEvent<ZstContainer*>
+{
 public:
-	ZST_EXPORT virtual ~ZstEntityEvent() override {};
-    using ZstSynchronisableEvent::run;
-	ZST_EXPORT virtual void run(ZstEntityBase * target) {};
-	ZST_EXPORT virtual void cast_run(ZstSynchronisable * target) override;
+	ZstContainerEvent(ZstContainer * target);
 };
 
 
-class ZstComponent;
-class ZstComponentEvent : public ZstEntityEvent {
+class ZstPerformerEvent : public ZstEvent<ZstPerformer*>
+{
 public:
-	ZST_EXPORT virtual ~ZstComponentEvent() override {};
-    using ZstEntityEvent::run;
-	ZST_EXPORT virtual void run(ZstComponent * target) {};
-	ZST_EXPORT virtual void cast_run(ZstSynchronisable * target) override;
+	ZstPerformerEvent(ZstPerformer * target);
 };
 
 
-class ZstComponentTypeEvent : public ZstComponentEvent {
+class ZstPlugEvent : public ZstEvent<ZstPlug*>
+{
 public:
-	ZST_EXPORT virtual ~ZstComponentTypeEvent() override {};
-    using ZstComponentEvent::run;
-	ZST_EXPORT virtual void run(ZstComponent * target) override {};
-	ZST_EXPORT virtual void cast_run(ZstSynchronisable * target) override;
+	ZstPlugEvent(ZstPlug * target);
 };
 
 
-class ZstCable;
-class ZstCableEvent : public ZstSynchronisableEvent {
+class ZstCableEvent : public ZstEvent<ZstCable*>
+{
 public:
-	ZST_EXPORT virtual ~ZstCableEvent() override {};
-    using ZstSynchronisableEvent::run;
-	ZST_EXPORT virtual void run(ZstCable * target) {};
-	ZST_EXPORT virtual void cast_run(ZstSynchronisable * target) override;
-};
-
-
-class ZstPlug;
-class ZstPlugEvent : public ZstEntityEvent {
-public:
-	ZST_EXPORT virtual ~ZstPlugEvent() override {};
-    using ZstEntityEvent::run;
-	ZST_EXPORT virtual void run(ZstPlug * target) {};
-	ZST_EXPORT virtual void cast_run(ZstSynchronisable * target) override;
-};
-
-
-class ZstInputPlug;
-class ZstInputPlugEvent : public ZstEntityEvent {
-public:
-	ZST_EXPORT virtual ~ZstInputPlugEvent() override {};
-    using ZstEntityEvent::run;
-	ZST_EXPORT virtual void run(ZstInputPlug * target) {};
-	ZST_EXPORT virtual void cast_run(ZstSynchronisable * target) override;
-};
-
-
-class ZstPerformer;
-class ZstPerformerEvent : public ZstComponentEvent {
-public:
-	ZST_EXPORT virtual ~ZstPerformerEvent() override {};
-    using ZstComponentEvent::run;
-	ZST_EXPORT virtual void run(ZstPerformer * target) {};
-	ZST_EXPORT virtual void cast_run(ZstSynchronisable * target) override;
+	ZstCableEvent(ZstCable * target);
 };

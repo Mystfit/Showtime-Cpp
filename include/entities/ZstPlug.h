@@ -4,12 +4,16 @@
 #include <ZstConstants.h>
 #include <ZstCable.h>
 #include <entities/ZstEntityBase.h>
+#include <adaptors/ZstPlugAdaptors.hpp>
 
 #define PLUG_TYPE "plug"
 
 //Forward declarations
 class ZstValue;
 class ZstPlug;
+
+template<typename T>
+class ZstEventDispatcher;
 
 class ZstPlugIterator {
 public:
@@ -25,7 +29,7 @@ private:
 
 class ZstPlug : public ZstEntityBase {
 public:
-	friend class ZstClient;
+	friend class ZstPlugLiason;
     friend class ZstComponent;
 	friend class ZstPlugIterator;
     
@@ -34,9 +38,6 @@ public:
 	ZST_EXPORT ZstPlug(const char * name, ZstValueType t);
 	ZST_EXPORT ZstPlug(const ZstPlug & other);
 	ZST_EXPORT ~ZstPlug();
-    
-	ZST_EXPORT void on_activated() override {};
-	ZST_EXPORT void on_deactivated() override {};
 
 	//Value interface
 	ZST_EXPORT void clear();
@@ -82,16 +83,26 @@ private:
 // --------------------
 class ZstInputPlug : public ZstPlug {
 public:
-	friend class ZstClient;
-	friend class Showtime;
-
+	friend class ZstPlugLiason;
+	ZST_EXPORT ZstInputPlug();
+	ZST_EXPORT ZstInputPlug(const ZstInputPlug & other);
 	ZST_EXPORT ZstInputPlug(const char * name, ZstValueType t);
 	ZST_EXPORT ~ZstInputPlug();
 };
 
 
 class ZstOutputPlug : public ZstPlug {
+	friend class ZstPlugLiason;
 public:
+	ZST_EXPORT ZstOutputPlug();
+	ZST_EXPORT ZstOutputPlug(const ZstOutputPlug & other);
 	ZST_EXPORT ZstOutputPlug(const char * name, ZstValueType t);
+	ZST_EXPORT ~ZstOutputPlug();
 	ZST_EXPORT void fire();
+
+	ZST_EXPORT void add_adaptor(ZstOutputPlugAdaptor * adaptor);
+	ZST_EXPORT void remove_adaptor(ZstOutputPlugAdaptor * adaptor);
+
+private:
+	ZstEventDispatcher<ZstOutputPlugAdaptor*> * m_event_dispatch;
 };

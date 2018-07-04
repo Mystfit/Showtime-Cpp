@@ -5,7 +5,6 @@
 %include <ZstExports.h>
 %include <ZstConstants.h>
 %include "ZstLogging.i"
-
 %include "ZstURI.i"
 %include "ZstSynchronisable.i"
 
@@ -18,7 +17,7 @@
 %include "ZstComponent.i"
 %include "ZstContainer.i"
 %include "ZstPerformer.i"
-%include "ZstEvents.i"
+%include "ZstAdaptors.i"
 
 %rename("%(strip:[zst_])s") "";
 %include <Showtime.h>

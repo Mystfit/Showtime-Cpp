@@ -8,7 +8,6 @@
 class Adder : public ZstComponent {
 public:
 	ZST_ENTITY_EXPORT Adder(const char * name);
-	ZST_ENTITY_EXPORT virtual void on_activated() override;
 	ZST_ENTITY_EXPORT void compute(ZstInputPlug * plug) override;
 	ZST_ENTITY_EXPORT ZstInputPlug* augend();
 	ZST_ENTITY_EXPORT ZstInputPlug* addend();

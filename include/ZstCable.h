@@ -8,11 +8,12 @@
 #include <ZstEvents.h>
 
 //Forwards
-class ZstPlug;
+class ZstInputPlug;
+class ZstOutputPlug;
 
 class ZstCable : public ZstSynchronisable, public ZstSerialisable {
 public:
-	friend class ZstClient;
+	friend class ZstCableLiason;
 	friend class ZstStage;
     friend class ZstComponent;
     friend class ZstPlug;
@@ -20,14 +21,13 @@ public:
 	ZST_EXPORT ZstCable();
 	ZST_EXPORT ZstCable(const ZstCable & copy);
 	ZST_EXPORT ZstCable(const ZstURI & input_plug_URI, const ZstURI & output_plug_URI);
-	ZST_EXPORT ZstCable(ZstPlug * input_plug, ZstPlug * output_plug);
+	ZST_EXPORT ZstCable(ZstInputPlug * input_plug, ZstOutputPlug * output_plug);
 	ZST_EXPORT static ZstCable * create(const ZstURI & input, const ZstURI & output);
-	ZST_EXPORT static ZstCable * create(ZstPlug * input, ZstPlug * output);
+	ZST_EXPORT static ZstCable * create(ZstInputPlug * input, ZstOutputPlug * output);
 
 	ZST_EXPORT static void destroy(ZstCable * cable);
     ZST_EXPORT virtual ~ZstCable();
-	ZST_EXPORT void on_activated() override {};
-    ZST_EXPORT void on_deactivated() override {};
+	ZST_EXPORT void disconnect();
 
 	// Status
 
@@ -40,16 +40,20 @@ public:
 
 	//Plugs and addresses
 
-	ZST_EXPORT void set_input(ZstPlug * input);
-	ZST_EXPORT void set_output(ZstPlug * output);
-	ZST_EXPORT ZstPlug * get_input();
-	ZST_EXPORT ZstPlug * get_output();
+	ZST_EXPORT void set_input(ZstInputPlug * input);
+	ZST_EXPORT void set_output(ZstOutputPlug * output);
+	ZST_EXPORT ZstInputPlug * get_input();
+	ZST_EXPORT ZstOutputPlug * get_output();
 	ZST_EXPORT const ZstURI & get_input_URI() const;
 	ZST_EXPORT const ZstURI & get_output_URI() const;
-	ZST_EXPORT bool is_local();
+
+	//Serialisation
 
 	ZST_EXPORT void write(std::stringstream & buffer) const override;
 	ZST_EXPORT void read(const char * buffer, size_t length, size_t & offset) override;
+
+	//Testing
+	ZST_EXPORT static void self_test();
 
 private:
     //Cached URIs
@@ -57,11 +61,8 @@ private:
 	ZstURI m_output_URI;
 
 	//Plugs
-	ZstPlug * m_input;
-	ZstPlug * m_output;
-
-	ZST_EXPORT void set_local();
-	bool m_is_local;
+	ZstInputPlug * m_input;
+	ZstOutputPlug * m_output;
 };
 
 
@@ -84,6 +85,7 @@ public:
 	ZST_EXPORT void add(ZstCable * cable);
 	ZST_EXPORT ZstCable * cable_at(size_t index);
 	ZST_EXPORT size_t size();
+	ZST_EXPORT void disconnect_all();
 private:
 	std::vector<ZstCable*> m_cables;
 };

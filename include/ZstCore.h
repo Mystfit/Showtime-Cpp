@@ -14,3 +14,5 @@
 #include <entities/ZstContainer.h>
 #include <entities/ZstPlug.h>
 #include <entities/ZstPerformer.h>
+#include <adaptors/ZstSessionAdaptor.hpp>
+#include <adaptors/ZstHierarchyAdaptor.hpp>

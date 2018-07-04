@@ -34,9 +34,6 @@ public:
     
     //URI for this entity
 	ZST_EXPORT const ZstURI & URI() const;
-    
-    //Entity flags
-	ZST_EXPORT bool is_destroyed();
 
 	//Cable management
 	ZST_EXPORT virtual ZstCableBundle * acquire_cable_bundle();
@@ -46,18 +43,20 @@ public:
 	//Serialisation
 	ZST_EXPORT virtual void write(std::stringstream & buffer) const override;
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
+
+	//Adaptors
+	ZST_EXPORT virtual void add_adaptor_to_children(ZstSynchronisableAdaptor * adaptor);
+	ZST_EXPORT virtual void remove_adaptor_from_children(ZstSynchronisableAdaptor * adaptor);
 	
 protected:
 	//Set entity status
 	ZST_EXPORT void set_entity_type(const char * entity_type);
 	ZST_EXPORT virtual void set_parent(ZstEntityBase* entity);
-	ZST_EXPORT void set_destroyed();
 	ZST_EXPORT virtual ZstCableBundle * get_child_cables(ZstCableBundle * bundle);
 
 private:
     ZST_EXPORT void update_URI();
     
-	bool m_is_destroyed;
 	ZstEntityBase * m_parent;
 	char * m_entity_type;
 	ZstURI m_uri;

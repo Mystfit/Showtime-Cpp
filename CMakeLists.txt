@@ -12,16 +12,16 @@ set(CMAKE_BASE_MODULE_PATH "${CMAKE_MODULE_PATH}")
 if(USE_HUNTER)
     include("cmake/HunterGate.cmake")
     HunterGate(
-        URL "https://github.com/ruslo/hunter/archive/v0.20.27.tar.gz"
-        SHA1 "aafefc6377dc9a25d84703702e22434cd6f71d5c"
+        URL "https://github.com/ruslo/hunter/archive/v0.21.6.tar.gz"
+        SHA1 "19e74186aa97d8c3ebe799083cd5e97d87701552"
     )
     set(HUNTER_ENABLED ON)
 endif()
 
 project(Showtime)
 set(SHOWTIME_VERSION_MAJOR 0)
-set(SHOWTIME_VERSION_MINOR 9)
-set(SHOWTIME_VERSION_PATCH 10)
+set(SHOWTIME_VERSION_MINOR 10)
+set(SHOWTIME_VERSION_PATCH 0)
 set(SHOWTIME_VERSION "${SHOWTIME_VERSION_MAJOR}.${SHOWTIME_VERSION_MINOR}.${SHOWTIME_VERSION_PATCH}")
 set(SHOWTIME_NAMESPACE "${PROJECT_NAME}::")
 
@@ -49,9 +49,12 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 endif()
 
 if(LINUX OR MACOSX)
-    set(CMAKE_INSTALL_NAME_DIR ${CMAKE_INSTALL_PREFIX}/lib CACHE PATH "Library Install Name Destination Directory" FORCE) 
+    #set(CMAKE_INSTALL_NAME_DIR ${CMAKE_INSTALL_PREFIX}/lib CACHE PATH "Library Install Name Destination Directory" FORCE) 
     set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib CACHE PATH "Library Install RPath" FORCE) 
-    set(CMAKE_BUILD_WITH_INSTALL_RPATH ON CACHE BOOL "Do Build Using Library Install RPath" FORCE) 
+    set(CMAKE_BUILD_WITH_INSTALL_RPATH OFF CACHE BOOL "Do Build Using Library Install RPath" FORCE)
+    if(NOT DEFINED CMAKE_PREFIX_PATH)
+        set(CMAKE_PREFIX_PATH ${CMAKE_SYSTEM_PREFIX_PATH})
+    endif() 
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
@@ -74,6 +77,7 @@ set(Showtime_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/include")
 set(Showtime_ALL_INCLUDE_DIRS ${Showtime_COMPILED_INCLUDE_DIRS} ${Showtime_INCLUDE_DIRS})
 set(Showtime_DEPENDENCIES_DIR "${CMAKE_SOURCE_DIR}/src/dependencies")
 set(Showtime_SOURCE_DEPENDENCIES 
+	"${Showtime_DEPENDENCIES_DIR}"
     "${Showtime_DEPENDENCIES_DIR}/cf"
     "${Showtime_DEPENDENCIES_DIR}/variant/include"
 )
@@ -88,7 +92,7 @@ set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 set(Boost_NO_SYSTEM_PATHS ON)
 if(NOT DEFINED USE_LOCAL_BOOST)
-    set(USE_LOCAL_BOOST OFF)
+    set(USE_LOCAL_BOOST ON)
 endif()
 if(WIN32)
     if(NOT DEFINED Boost_USE_STATIC_LIBS)
