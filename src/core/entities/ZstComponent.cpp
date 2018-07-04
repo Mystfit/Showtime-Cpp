@@ -189,7 +189,7 @@ const char * ZstComponent::component_type() const
 
 void ZstComponent::add_adaptor_to_children(ZstSynchronisableAdaptor * adaptor)
 {
-	this->add_adaptor(adaptor);
+	ZstEntityBase::add_adaptor(adaptor);
 	for (auto plug : m_plugs) {
 		plug->add_adaptor(adaptor);
 	}

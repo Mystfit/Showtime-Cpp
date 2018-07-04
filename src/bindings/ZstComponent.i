@@ -6,5 +6,8 @@
 	}
 %}
 
+%feature("nodirector") ZstComponent::add_adaptor;
+%feature("nodirector") ZstComponent::remove_adaptor;
+
 %nodefaultctor ZstComponent;
 %include <entities/ZstComponent.h>

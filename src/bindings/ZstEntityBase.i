@@ -14,5 +14,8 @@
 class ZstSerialisable {};
 %ignore ZstSerialisable;
 
+%feature("nodirector") ZstEntityBase::add_adaptor;
+%feature("nodirector") ZstEntityBase::remove_adaptor;
+
 %nodefaultctor ZstEntityBase;
 %include <entities/ZstEntityBase.h>
