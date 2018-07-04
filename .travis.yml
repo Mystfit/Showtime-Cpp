@@ -163,6 +163,10 @@ script:
   - $CMAKE_BIN --build $BUILD_FOLDER/build --config $CONFIG
   - sudo $CMAKE_BIN --build $BUILD_FOLDER/build --target install --config $CONFIG
 
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      otool -L /usr/local/lib/libShowtimeClient.dylib
+    fi
+
   # Run tests
   - pushd $BUILD_FOLDER/build
   - $CTEST_BIN -C Debug -V --output-on-fail --timeout 320
