@@ -2,6 +2,9 @@ message(STATUS "Configuring ${SERVER_TARGET} target")
 
 set(ZST_SERVER_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstStage.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstStageSession.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstStageHierarchy.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstStageTransport.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstPerformerStageProxy.h"
 )
 
@@ -9,6 +12,9 @@ set(ZST_SERVER_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstPerformerStageProxy.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstStageRunner.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstStage.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstStageHierarchy.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstStageSession.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstStageTransport.cpp"
 )
 
 target_sources(${SERVER_TARGET} PRIVATE 
