@@ -33,11 +33,6 @@ enum ZstPlugDirection {
 	OUT_JACK
 };
 
-enum ZstEventAction {
-	ARRIVING = 0,
-	LEAVING
-};
-
 #define STAGE_ROUTER_PORT 6001
 #define STAGE_PUB_PORT 6002
 #define HEARTBEAT_DURATION 1000

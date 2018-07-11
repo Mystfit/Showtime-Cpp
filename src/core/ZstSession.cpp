@@ -41,7 +41,7 @@ void ZstSession::destroy()
 	m_compute_events.remove_all_adaptors();
 }
 
-ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * output, bool async)
+ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * output, const ZstTransportSendType & sendtype)
 {
 	ZstCable * cable = NULL;
 
@@ -78,7 +78,7 @@ ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * outpu
 }
 
 
-void ZstSession::destroy_cable(ZstCable * cable, bool async)
+void ZstSession::destroy_cable(ZstCable * cable, const ZstTransportSendType & sendtype)
 {
 	if (!cable) return;
 
@@ -120,7 +120,7 @@ ZstCable * ZstSession::create_cable(const ZstCable & cable)
 	return create_cable(cable.get_input_URI(), cable.get_output_URI());
 }
 
-ZstCable * ZstSession::create_cable(ZstPlug * input, ZstPlug * output)
+ZstCable * ZstSession::create_cable(ZstInputPlug * input, ZstOutputPlug * output)
 {
 	if (!input || !output) {
 		return NULL;

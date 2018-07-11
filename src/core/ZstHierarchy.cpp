@@ -20,7 +20,7 @@ void ZstHierarchy::destroy()
 	m_hierarchy_events.remove_all_adaptors();
 }
 
-void ZstHierarchy::activate_entity(ZstEntityBase * entity, bool async)
+void ZstHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
 {
 	//If this is not a local entity, we can't activate it
 	if (entity->is_proxy())
@@ -32,7 +32,7 @@ void ZstHierarchy::activate_entity(ZstEntityBase * entity, bool async)
 }
 
 
-void ZstHierarchy::destroy_entity(ZstEntityBase * entity, bool async)
+void ZstHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
 {
 	if (!entity) return;
 	synchronisable_set_deactivating(entity);
@@ -105,6 +105,7 @@ void ZstHierarchy::add_proxy_entity(ZstEntityBase & entity) {
 	ZstURI parent_URI = entity.URI().parent();
 	if (parent_URI.size()) {
 		ZstEntityBase * parent = find_entity(parent_URI);
+		assert(parent);
 
 		if (find_entity(entity.URI())) {
 			ZstLog::net(LogLevel::error, "Can't create entity {}, it already exists", entity.URI().path());
@@ -150,7 +151,7 @@ void ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 	if (entity) {
 		if (entity->is_proxy()) {
 			synchronisable_enqueue_deactivation(entity);
-			destroy_entity(entity, false);
+			destroy_entity(entity, ZstTransportSendType::SYNC_REPLY);
 		}
 	}
 }

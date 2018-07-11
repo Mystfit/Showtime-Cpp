@@ -818,7 +818,7 @@ int main(int argc,char **argv){
 	test_connect_plugs();
 	test_add_filter();
 	test_external_entities(ext_test_folder);
-	//test_memory_leaks();
+	test_memory_leaks();
     test_leaving();
 	test_cleanup();
 

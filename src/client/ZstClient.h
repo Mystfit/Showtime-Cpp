@@ -12,20 +12,19 @@
 #include "../core/ZstMessage.h"
 #include "../core/ZstMessagePool.hpp"
 #include "../core/ZstValue.h"
+#include "../core/adaptors/ZstTransportAdaptor.hpp"
 
 //Showtime client includes
 #include "ZstReaper.h"
-#include "ZstMessageDispatcher.h"
 #include "ZstReaper.h"
 #include "ZstClientSession.h"
-#include "ZstCZMQTransportLayer.h"
-#include "../core/adaptors/ZstStageDispatchAdaptor.hpp"
-#include "../core/adaptors/ZstPerformanceDispatchAdaptor.hpp"
+#include "ZstGraphTransport.h"
+#include "ZstClientTransport.h"
+
 
 class ZstClient : 
-	public ZstEventDispatcher<ZstStageDispatchAdaptor*>,
-	public ZstStageDispatchAdaptor,
-	public ZstPerformanceDispatchAdaptor
+	public ZstEventDispatcher<ZstTransportAdaptor*>,
+	public ZstTransportAdaptor
 {
 public:
 	ZstClient();
@@ -41,16 +40,16 @@ public:
 	static ZstClient & instance();
 
 	//Stage adaptor overrides
-	void on_receive_from_stage(ZstStageMessage * msg) override;
-	void on_receive_from_performance(ZstPerformanceMessage * msg) override;
+	void on_receive_msg(ZstMessage * msg) override;
+	void receive_connection_handshake(ZstMessage * msg);
 
 	//Register this endpoint to the stage
-	void join_stage(std::string stage_address, bool async = false);
+	void join_stage(std::string stage_address, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
 	void join_stage_complete(ZstMessageReceipt response);
-	void synchronise_graph(bool async = false);
+	void synchronise_graph(const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
 	void synchronise_graph_complete(ZstMessageReceipt response);
 
-	void leave_stage(bool async);
+	void leave_stage(const ZstTransportSendType & sendtype);
 	void leave_stage_complete();
     
 	//Stage connection status
@@ -60,7 +59,6 @@ public:
 	long ping();
 
 	//Client modules
-	ZstMessageDispatcher * msg_dispatch();
 	ZstClientSession * session();
 
 private:	
@@ -83,11 +81,12 @@ private:
 	//P2P Connections
 	void start_connection_broadcast(const ZstURI & remote_client_path);
 	void stop_connection_broadcast(const ZstURI & remote_client_path);
-	std::unordered_map<ZstURI, std::string, ZstURIHash> m_pending_peer_connections;
+	std::unordered_map<ZstURI, ZstMsgID, ZstURIHash> m_pending_peer_connections;
 	std::unordered_map<ZstURI, int, ZstURIHash> m_connection_timers;
 	
 	//Client modules
 	ZstClientSession * m_session;
-	ZstMessageDispatcher * m_msg_dispatch;
-	ZstCZMQTransportLayer * m_transport;
+	ZstGraphTransport * m_graph_transport;
+	ZstClientTransport * m_client_transport;
+	ZstActor * m_actor;
 };

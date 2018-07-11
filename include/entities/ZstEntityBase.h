@@ -9,9 +9,6 @@
 //Forwards
 class ZstCableBundle;
 
-//Typedefs
-typedef std::unordered_map<ZstURI, ZstEntityBase*, ZstURIHash> ZstEntityMap;
-
 class ZstEntityBase : public ZstSynchronisable, public ZstSerialisable {
 public:
 	friend class ZstClient;
@@ -61,3 +58,6 @@ private:
 	char * m_entity_type;
 	ZstURI m_uri;
 };
+
+//Typedefs
+typedef std::unordered_map<ZstURI, ZstEntityBase*, ZstURIHash> ZstEntityMap;

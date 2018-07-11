@@ -133,6 +133,9 @@ void ZstPlug::write(std::stringstream & buffer) const
 	//Pack entity
 	ZstEntityBase::write(buffer);
 
+	//Unpack value
+	m_value->write(buffer);
+
 	//Pack plug direction
 	msgpack::pack(buffer, m_direction);
 }
@@ -141,6 +144,9 @@ void ZstPlug::read(const char * buffer, size_t length, size_t & offset)
 {
 	//Unpack entity
 	ZstEntityBase::read(buffer, length, offset);
+	
+	//Unpack value
+	m_value->read(buffer, length, offset);
 
 	//Unpack direction
 	auto handle = msgpack::unpack(buffer, length, offset);

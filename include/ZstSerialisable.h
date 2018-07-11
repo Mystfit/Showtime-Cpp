@@ -2,7 +2,6 @@
 
 #include <sstream>
 #include <ZstExports.h>
-#include <ZstEvents.h>
 
 class ZstSerialisable {
 public:

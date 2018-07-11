@@ -15,6 +15,7 @@ ZstActor::~ZstActor()
 void ZstActor::destroy()
 {
 	stop_loop();
+	zsys_shutdown();
 }
 
 void ZstActor::init()
@@ -93,12 +94,23 @@ void ZstActor::attach_pipe_listener(zsock_t * sock, zloop_reader_fn handler, voi
 	zloop_reader(m_loop, sock, handler, args);
 }
 
-int ZstActor::attach_timer(zloop_timer_fn handler, int delay, void * args)
+int ZstActor::attach_timer(int delay, std::function<void()> timer_func)
 {
-	return zloop_timer(m_loop, delay, 0, handler, args);
+	int timer_id = zloop_timer(m_loop, delay, 0, ZstActor::s_handle_timer, this);
+	m_timers[timer_id] = timer_func;
+	return timer_id;
 }
 
 void ZstActor::detach_timer(int timer_id)
 {
 	zloop_timer_end(m_loop, timer_id);
+}
+
+int ZstActor::s_handle_timer(zloop_t * loop, int timer_id, void * arg)
+{
+	ZstActor * actor = (ZstActor*)arg;
+	if (actor->m_timers.find(timer_id) != actor->m_timers.end()) {
+		actor->m_timers[timer_id]();
+	}
+	return 0;
 }

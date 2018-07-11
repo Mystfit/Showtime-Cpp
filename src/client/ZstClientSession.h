@@ -56,9 +56,9 @@ public:
 	// Adaptor plug send/receive
 	// ---------------------------
 
-	void on_receive_from_performance(ZstPerformanceMessage * msg) override;
+	void on_receive_msg(ZstMessage * msg) override;
+	void on_receive_graph_msg(ZstMessage * msg);
 	void on_plug_fire(ZstOutputPlug * plug) override;
-	void on_receive_from_stage(ZstStageMessage * msg) override;
 
 
 	// -------------------------------
@@ -73,16 +73,16 @@ public:
 	// Cable creation
 	// ------------------
 
-	ZstCable * connect_cable(ZstInputPlug * input, ZstOutputPlug * output, bool async = false) override;
-	void destroy_cable(ZstCable * cable, bool async = false) override;
+	ZstCable * connect_cable(ZstInputPlug * input, ZstOutputPlug * output, const ZstTransportSendType & sendtype) override;
+	void destroy_cable(ZstCable * cable, const ZstTransportSendType & sendtype) override;
 
 
 	// -----------------
 	// Event dispatchers
 	// -----------------
 	
-	ZstEventDispatcher<ZstStageDispatchAdaptor*> & stage_events();
-	ZstEventDispatcher<ZstPerformanceDispatchAdaptor*> & performance_events();
+	ZstEventDispatcher<ZstTransportAdaptor*> & stage_events();
+	ZstEventDispatcher<ZstTransportAdaptor*> & performance_events();
 
 	
 	// -----------------
@@ -100,8 +100,8 @@ private:
 	void connect_cable_complete(ZstMessageReceipt response, ZstCable * cable);
 	void destroy_cable_complete(ZstMessageReceipt response, ZstCable * cable);
 
-	ZstEventDispatcher<ZstStageDispatchAdaptor*> m_stage_events;
-	ZstEventDispatcher<ZstPerformanceDispatchAdaptor*> m_performance_events;
+	ZstEventDispatcher<ZstTransportAdaptor*> m_stage_events;
+	ZstEventDispatcher<ZstTransportAdaptor*> m_performance_events;
 	
 	ZstReaper m_reaper;
 	ZstClientHierarchy * m_hierarchy;

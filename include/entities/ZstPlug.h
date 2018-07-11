@@ -65,6 +65,9 @@ public:
 	ZST_EXPORT bool is_connected_to(ZstPlug * plug);
 	ZST_EXPORT void disconnect_cables() override;
 
+	//Values
+	ZST_EXPORT ZstValue * raw_value();
+
 protected:
 	ZstValue * m_value;
 	ZstPlugDirection m_direction;
@@ -72,7 +75,6 @@ protected:
 private:
 	ZST_EXPORT void add_cable(ZstCable * cable);
 	ZST_EXPORT void remove_cable(ZstCable * cable);
-	ZST_EXPORT ZstValue * raw_value();
 
 	ZstCableList m_cables;
 };

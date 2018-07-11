@@ -1,6 +1,5 @@
 #include "ZstClientHierarchy.h"
 #include <boost/assign.hpp>
-#include "ZstMessageDispatcher.h"
 
 ZstClientHierarchy::ZstClientHierarchy() :
 	m_root(NULL),
@@ -41,7 +40,7 @@ void ZstClientHierarchy::flush_events()
 	m_stage_events.flush();
 }
 
-void ZstClientHierarchy::on_receive_from_stage(ZstStageMessage * msg)
+void ZstClientHierarchy::on_receive_msg(ZstMessage * msg)
 {
 	//Ignore messages with no payloads
 	if(msg->num_payloads() < 1){
@@ -83,7 +82,7 @@ void ZstClientHierarchy::on_receive_from_stage(ZstStageMessage * msg)
 	}
 }
 
-void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, bool async)
+void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
 {
 	//If the entity doesn't have a parent, put it under the root container
 	if (!entity->parent()) {
@@ -91,16 +90,17 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, bool async)
 		m_root->add_child(entity);
 	}
 	 
-	ZstHierarchy::activate_entity(entity, async);
+	ZstHierarchy::activate_entity(entity, sendtype);
 	
 	//Build message
-	m_stage_events.invoke([this, entity, async](ZstStageDispatchAdaptor * adaptor) {
-		adaptor->send_entity_message(entity, async, [this, entity](ZstMessageReceipt response) {
+	m_stage_events.invoke([this, entity, sendtype](ZstTransportAdaptor * adaptor)
+	{
+		adaptor->send_message(ZstMessage::entity_kind(entity), sendtype, *entity, [this, entity](ZstMessageReceipt response) {
 			this->activate_entity_complete(response, entity);
 		});
 	});
 
-	if (!async)
+	if (sendtype == ZstTransportSendType::SYNC_REPLY)
 		process_events();
 }
 
@@ -130,24 +130,24 @@ void ZstClientHierarchy::activate_entity_complete(ZstMessageReceipt response, Zs
 }
 
 
-void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, bool async)
+void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
 {
-	ZstHierarchy::destroy_entity(entity, async);
+	ZstHierarchy::destroy_entity(entity, sendtype);
 
 	//If the entity is local, let the stage know it's leaving
 	if (!entity->is_proxy()) {
-		m_stage_events.invoke([this, async, entity](ZstStageDispatchAdaptor * adaptor) {
-			adaptor->send_message(ZstMsgKind::DESTROY_ENTITY, async, std::string(entity->URI().path()), [this, entity](ZstMessageReceipt response) {
+		m_stage_events.invoke([this, sendtype, entity](ZstTransportAdaptor * adaptor) {
+			adaptor->send_message(ZstMsgKind::DESTROY_ENTITY, sendtype, {{"path", entity->URI().path()}}, [this, entity](ZstMessageReceipt response) {
 				this->destroy_entity_complete(response, entity);
 				entity->remove_adaptor(this);
 			});
 		});
 	}
 	else {
-		destroy_entity_complete(ZstMessageReceipt{ZstMsgKind::OK, async}, entity);
+		destroy_entity_complete(ZstMessageReceipt{ZstMsgKind::OK, sendtype }, entity);
 	}
 
-	if (!async) {
+	if (sendtype == ZstTransportSendType::SYNC_REPLY) {
 		process_events();
 		entity->remove_adaptor(this);
 	}
@@ -248,7 +248,7 @@ ZstPerformer * ZstClientHierarchy::get_local_performer() const
 	return m_root;
 }
 
-ZstEventDispatcher<ZstStageDispatchAdaptor*> & ZstClientHierarchy::stage_events()
+ZstEventDispatcher<ZstTransportAdaptor*> & ZstClientHierarchy::stage_events()
 {
 	return m_stage_events;
 }

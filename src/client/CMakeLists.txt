@@ -12,22 +12,20 @@ set(ZST_CLIENT_PRIVATE_HEADERS
   "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClient.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientModule.h"
-  "${CMAKE_CURRENT_LIST_DIR}/ZstMessageDispatcher.h"
-  "${CMAKE_CURRENT_LIST_DIR}/ZstTransportLayer.h"
-  "${CMAKE_CURRENT_LIST_DIR}/ZstCZMQTransportLayer.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientHierarchy.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientSession.h"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstClientTransport.h"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstGraphTransport.h"
 )
 
 set(ZST_CLIENT_SRC
   "${CMAKE_CURRENT_LIST_DIR}/Showtime.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClient.cpp"
-  "${CMAKE_CURRENT_LIST_DIR}/ZstMessageDispatcher.cpp"
-  "${CMAKE_CURRENT_LIST_DIR}/ZstTransportLayer.cpp"
-  "${CMAKE_CURRENT_LIST_DIR}/ZstCZMQTransportLayer.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientHierarchy.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientSession.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstClientTransport.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstGraphTransport.cpp"
 )
 
 # Include files in client target

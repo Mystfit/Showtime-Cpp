@@ -6,8 +6,7 @@
 #include <adaptors/ZstHierarchyAdaptor.hpp>
 #include <adaptors/ZstSessionAdaptor.hpp>
 
-#include "ZstStageDispatchAdaptor.hpp"
-#include "ZstPerformanceDispatchAdaptor.hpp"
+#include "ZstTransportAdaptor.hpp"
 
 // ----------------------------
 // Plug adaptor stub functions
@@ -55,23 +54,14 @@ void ZstHierarchyAdaptor::on_plug_leaving(ZstPlug * plug) {}
 // Message adaptors
 // -----------------------
 
-void ZstStageDispatchAdaptor::send_message(ZstMsgKind kind, bool async, MessageReceivedAction action) {}
-void ZstStageDispatchAdaptor::send_message(ZstMsgKind kind, bool async, std::string msg_arg, MessageReceivedAction action) {}
-void ZstStageDispatchAdaptor::send_message(ZstMsgKind kind, bool async, const std::vector<std::string> msg_args, MessageReceivedAction action) {}
-
-void ZstStageDispatchAdaptor::send_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable, bool async, MessageReceivedAction action) {}
-void ZstStageDispatchAdaptor::send_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable, bool async, std::string msg_arg, MessageReceivedAction action) {}
-void ZstStageDispatchAdaptor::send_serialisable_message(ZstMsgKind kind, const ZstSerialisable & serialisable, bool async, const std::vector<std::string> msg_args, MessageReceivedAction action) {}
-
-void ZstStageDispatchAdaptor::send_entity_message(const ZstEntityBase * entity, bool async, MessageReceivedAction action) {}
-void ZstStageDispatchAdaptor::on_receive_from_stage(ZstStageMessage * msg) {}
-
-// -----------------------
-// Performance message adaptors
-// -----------------------
-
-void ZstPerformanceDispatchAdaptor::send_to_performance(ZstOutputPlug * plug) {}
-void ZstPerformanceDispatchAdaptor::on_receive_from_performance(ZstPerformanceMessage * msg) {}
+void ZstTransportAdaptor::send_message(ZstMsgKind kind, const ZstMsgArgs & args) {}
+void ZstTransportAdaptor::send_message(ZstMsgKind kind, const ZstSerialisable & serialisable) {}
+void ZstTransportAdaptor::send_message(ZstMsgKind kind, const ZstMsgArgs & args, const ZstSerialisable & serialisable) {}
+void ZstTransportAdaptor::send_message(ZstMsgKind kind, const ZstTransportSendType & sendtype, const MessageReceivedAction & action){}
+void ZstTransportAdaptor::send_message(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstMsgArgs & args, const MessageReceivedAction & action) {}
+void ZstTransportAdaptor::send_message(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstSerialisable & serialisable, const MessageReceivedAction & action) {}
+void ZstTransportAdaptor::send_message(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstSerialisable & serialisable, const ZstMsgArgs & args, const MessageReceivedAction & action) {}
+void ZstTransportAdaptor::on_receive_msg(ZstMessage * msg) {}
 
 
 // -----------------------

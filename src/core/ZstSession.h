@@ -10,14 +10,12 @@
 #include "liasons/ZstSynchronisableLiason.hpp"
 #include "liasons/ZstCableLiason.hpp"
 #include "liasons/ZstPlugLiason.hpp"
-#include "adaptors/ZstStageDispatchAdaptor.hpp"
-#include "adaptors/ZstPerformanceDispatchAdaptor.hpp"
+#include "adaptors/ZstTransportAdaptor.hpp"
 
 
 class ZstSession : 
 	public ZstSynchronisableAdaptor,
-	public ZstStageDispatchAdaptor,
-	public ZstPerformanceDispatchAdaptor,
+	public ZstTransportAdaptor,
 	public ZstOutputPlugAdaptor,
 	public ZstComputeAdaptor,
 	protected ZstSynchronisableLiason,
@@ -35,8 +33,8 @@ public:
 	// Cable creation
 	// ------------------
 
-	ZST_EXPORT virtual ZstCable * connect_cable(ZstInputPlug * input, ZstOutputPlug * output, bool async = false);
-	ZST_EXPORT virtual void destroy_cable(ZstCable * cable, bool async = false);
+	ZST_EXPORT virtual ZstCable * connect_cable(ZstInputPlug * input, ZstOutputPlug * output, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
+	ZST_EXPORT virtual void destroy_cable(ZstCable * cable, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
 	ZST_EXPORT virtual void disconnect_plugs(ZstInputPlug * input_plug, ZstOutputPlug * output_plug);
 
 
@@ -76,13 +74,11 @@ protected:
 	// --------------------------
 
 	ZST_EXPORT virtual ZstCable * create_cable(const ZstCable & cable);
-	ZST_EXPORT virtual ZstCable * create_cable(ZstPlug * output, ZstPlug * input);
+	ZST_EXPORT virtual ZstCable * create_cable(ZstInputPlug * input, ZstOutputPlug * output);
 	ZST_EXPORT virtual ZstCable * create_cable(const ZstURI & input_path, const ZstURI & output_path);
-
-
-private:
 	ZstCableList m_cables;
 
+private:
 	ZstEventDispatcher<ZstSessionAdaptor*> m_session_events;
 	ZstEventDispatcher<ZstSynchronisableAdaptor*> m_synchronisable_events;
 	ZstEventDispatcher<ZstComputeAdaptor*> m_compute_events;

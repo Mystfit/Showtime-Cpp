@@ -101,10 +101,10 @@ private:
     void publish_stage_update(ZstStageMessage * msg);
 
 	int m_heartbeat_timer_id;
-	static int stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * arg);
+	void stage_heartbeat_timer_func();
 
 	//P2P client connections
-	void connect_clients(const std::string & response_id, ZstPerformerStageProxy * output_client, ZstPerformerStageProxy * input_client);
+	void connect_clients(ZstMsgID response_id, ZstPerformerStageProxy * output_client, ZstPerformerStageProxy * input_client);
 	
 	//Stage pipes
 	zsock_t * m_performer_router;
@@ -123,6 +123,6 @@ private:
 	ZstMessagePool<ZstStageMessage> * msg_pool();
 
 	//TODO: Replace with abstract future message handler class
-	std::unordered_map<std::string, MessagePromise > m_promise_messages;
+	std::unordered_map<ZstMsgID, MessagePromise > m_promise_messages;
 	cf::time_watcher m_timeout_watcher;
 };

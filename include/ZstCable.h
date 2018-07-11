@@ -5,7 +5,6 @@
 #include <ZstURI.h>
 #include <ZstSerialisable.h>
 #include <ZstSynchronisable.h>
-#include <ZstEvents.h>
 
 //Forwards
 class ZstInputPlug;

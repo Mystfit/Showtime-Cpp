@@ -10,8 +10,6 @@
 
 #define PERFORMER_TYPE "prf"
 
-typedef std::unordered_map<ZstURI, ZstPerformer*, ZstURIHash> ZstPerformerMap;
-
 class ZstPerformer : public ZstContainer {
 public:
 	ZST_EXPORT ZstPerformer();
@@ -41,3 +39,5 @@ private:
 	//Creatables
 	ZstEntityMap m_creatables;
 };
+
+typedef std::unordered_map<ZstURI, ZstPerformer*, ZstURIHash> ZstPerformerMap;
