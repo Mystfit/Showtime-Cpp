@@ -49,7 +49,7 @@ void ZstGraphTransport::destroy()
 
 void ZstGraphTransport::connect_to_client(const char * endpoint_ip)
 {
-	ZstLog::net(LogLevel::notification, "Connecting to {}. My output endpoint is {}", endpoint_ip, m_graph_out_ip);
+	ZstLog::net(LogLevel::notification, "Connecting to {}", endpoint_ip);
 
 	//Connect to endpoint publisher
 	zsock_connect(m_graph_in, "%s", endpoint_ip);

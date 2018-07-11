@@ -110,6 +110,7 @@ ZstMsgKind ZstMessage::unpack_kind(zframe_t * kind_frame)
 
 void ZstMessage::append_args(const ZstMsgArgs & args)
 {
+	m_args = args;
 	std::stringstream buffer;
 	msgpack::pack(buffer, args);
 

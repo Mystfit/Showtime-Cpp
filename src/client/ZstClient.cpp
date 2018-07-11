@@ -25,6 +25,7 @@ ZstClient::~ZstClient() {
 	delete m_session;
 	delete m_client_transport;
 	delete m_graph_transport;
+	delete m_actor;
 }
 
 ZstClient & ZstClient::instance()
@@ -49,6 +50,7 @@ void ZstClient::destroy() {
 	m_session->destroy();
 	m_client_transport->destroy();
 	m_graph_transport->destroy();
+	m_actor->destroy();
 
 	m_is_ending = false;
 	m_is_destroyed = true;
@@ -283,6 +285,9 @@ void ZstClient::leave_stage(const ZstTransportSendType & sendtype)
 
 void ZstClient::leave_stage_complete()
 {   
+	//Set stage as disconnected again - just to make sure
+	m_connected_to_stage = false;
+
     //Disconnect rest of sockets and timers
 	m_actor->detach_timer(m_heartbeat_timer_id);
 	m_client_transport->disconnect_from_stage();
@@ -315,12 +320,12 @@ void ZstClient::heartbeat_timer(){
 		std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
 		adaptor->send_message(ZstMsgKind::CLIENT_HEARTBEAT, ZstTransportSendType::ASYNC_REPLY, [this, start](ZstMessageReceipt response) {
 			if (response.status != ZstMsgKind::OK) {
-				ZstLog::net(LogLevel::notification, "Server ping timed out");
+				ZstLog::net(LogLevel::warn, "Server ping timed out");
+				this->leave_stage_complete();
 				return;
 			}
 			std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
 			auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-			ZstLog::net(LogLevel::notification, "Ping roundtrip {} ms", delta.count());
 			this->m_ping = static_cast<long>(delta.count());
 		});
 	});

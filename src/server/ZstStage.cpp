@@ -462,7 +462,7 @@ ZstStageMessage * ZstStage::create_client_handler(std::string sender_identity, Z
 	m_client_socket_index[std::string(sender_identity)] = client_proxy;
 		
 	//Update rest of network
-	ZstStageMessage * pub_msg = msg_pool()->get_msg()->init(msg->kind(), *client_proxy);
+	ZstStageMessage * pub_msg = msg_pool()->get_msg()->init(ZstMsgKind::CREATE_PERFORMER, *client_proxy);
 	publish_stage_update(pub_msg);
 
 	response = response->init(ZstMsgKind::OK);
@@ -577,9 +577,9 @@ ZstStageMessage * ZstStage::destroy_entity_handler(ZstStageMessage * msg)
 		ZstLog::net(LogLevel::notification, "Removing cables linked to leaving entity");
 		destroy_cable(c);
 	}
-
+	
 	//Update rest of network
-	ZstStageMessage * stage_update_msg = msg_pool()->get_msg()->init(msg->kind(), { {"path", entity_path.path() } });
+	ZstStageMessage * stage_update_msg = msg_pool()->get_msg()->init(ZstMsgKind::DESTROY_ENTITY, { {"path", entity_path.path() } });
 	publish_stage_update(stage_update_msg);
 
 	delete entity;

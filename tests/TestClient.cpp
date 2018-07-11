@@ -759,8 +759,6 @@ void test_memory_leaks() {
 	delete test_output;
 	delete test_input;
 	clear_callback_queue();
-	// zst_reset_graph_recv_tripmeter();
-	// zst_reset_graph_send_tripmeter();
 }
 
 void test_leaving(){

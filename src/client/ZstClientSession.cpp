@@ -210,10 +210,10 @@ void ZstClientSession::destroy_cable_complete(ZstMessageReceipt response, ZstCab
 	if (!cable) return;
 
 	if (response.status != ZstMsgKind::OK) {
-		ZstLog::net(LogLevel::notification, "Destroy cable failed with status {}", ZstMsgNames[response.status]);
+		ZstLog::net(LogLevel::error, "Destroy cable failed with status {}", ZstMsgNames[response.status]);
 		return;
 	}
-	ZstLog::net(LogLevel::notification, "Destroy cable completed with status {}", response.status);
+	ZstLog::net(LogLevel::debug, "Destroy cable completed with status {}", ZstMsgNames[response.status]);
 	
 	//Remove the cable from our local cable list
 	ZstSession::destroy_cable(cable);

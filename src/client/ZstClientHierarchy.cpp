@@ -42,11 +42,6 @@ void ZstClientHierarchy::flush_events()
 
 void ZstClientHierarchy::on_receive_msg(ZstMessage * msg)
 {
-	//Ignore messages with no payloads
-	if(msg->num_payloads() < 1){
-		return;
-	}
-
 	switch (msg->kind()) {
 	case ZstMsgKind::CREATE_PLUG:
 	{
@@ -74,7 +69,7 @@ void ZstClientHierarchy::on_receive_msg(ZstMessage * msg)
 	}
 	case ZstMsgKind::DESTROY_ENTITY:
 	{
-		remove_proxy_entity(find_entity(ZstURI((char*)msg->payload_at(0).data(), msg->payload_at(0).size())));
+		remove_proxy_entity(find_entity(ZstURI(msg->get_arg("path"))));
 		break;
 	}
 	default:
@@ -86,7 +81,7 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 {
 	//If the entity doesn't have a parent, put it under the root container
 	if (!entity->parent()) {
-		ZstLog::net(LogLevel::notification, "No parent set for {}, adding to {}", entity->URI().path(), m_root->URI().path());
+		ZstLog::net(LogLevel::debug, "No parent set for {}, adding to {}", entity->URI().path(), m_root->URI().path());
 		m_root->add_child(entity);
 	}
 	 
@@ -126,7 +121,7 @@ void ZstClientHierarchy::activate_entity_complete(ZstMessageReceipt response, Zs
 		break;
 	}
 
-	ZstLog::net(LogLevel::notification, "Activate entity {} complete with status {}", entity->URI().path(), response.status);
+	ZstLog::net(LogLevel::debug, "Activate entity {} complete with status {}", entity->URI().path(), ZstMsgNames[response.status]);
 }
 
 
@@ -237,7 +232,7 @@ void ZstClientHierarchy::add_proxy_entity(ZstEntityBase & entity) {
 	// Don't need to activate local entities, they will auto-activate when the stage responds with an OK
 	// Also, we can't rely on the proxy flag here as it won't have been set yet
 	if (path_is_local(entity.URI())) {
-		ZstLog::net(LogLevel::notification, "Received local entity {}. Ignoring", entity.URI().path());
+		ZstLog::net(LogLevel::debug, "Received local entity {}. Ignoring", entity.URI().path());
 		return;
 	}
 	ZstHierarchy::add_proxy_entity(entity);
