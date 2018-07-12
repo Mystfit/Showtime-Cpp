@@ -73,7 +73,7 @@ void ZstClientTransport::send_message_impl(ZstMessage * msg)
 	//Insert empty frame at front of message to seperate between router sender hops and payloads
 	zframe_t * spacer = zframe_new_empty();
 	zmsg_prepend(msg->handle(), &spacer);
-	ZstTransportLayerBase::send_sock_msg(m_stage_router, msg);
+	ZstTransportLayer<ZstStageMessage>::send_sock_msg(m_stage_router, static_cast<ZstStageMessage*>(msg));
 }
 
 int ZstClientTransport::s_handle_stage_update_in(zloop_t * loop, zsock_t * sock, void * arg)

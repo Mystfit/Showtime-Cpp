@@ -147,6 +147,7 @@ public:
 	ZST_EXPORT virtual void unpack(zmsg_t * msg);
 	ZST_EXPORT ZstMsgKind unpack_kind(zframe_t * kind_frame);
 
+	ZST_EXPORT void append_empty_args();
 	ZST_EXPORT void append_args(const ZstMsgArgs & args);
 	ZST_EXPORT const std::string & get_arg_s(const char * key);
 	ZST_EXPORT const char * get_arg(const char * key);

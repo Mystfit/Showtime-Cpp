@@ -66,17 +66,6 @@ void ZstClientSession::dispatch_disconnected_from_stage()
 
 void ZstClientSession::on_receive_msg(ZstMessage * msg)
 {
-	//Handle graph messages seperately
-	if (msg->kind() == ZstMsgKind::PERFORMANCE_MSG) {
-		on_receive_graph_msg(msg);
-		return;
-	}
-
-	//Ignore messages with no payloads
-	if (msg->num_payloads() < 1) {
-		return;
-	}
-
 	switch (msg->kind()) {
 	case ZstMsgKind::CREATE_CABLE:
 	{
@@ -93,6 +82,9 @@ void ZstClientSession::on_receive_msg(ZstMessage * msg)
 		}
 		break;
 	}
+	case ZstMsgKind::PERFORMANCE_MSG:
+		on_receive_graph_msg(msg);
+		break;
 	default:
 		break;
 	}

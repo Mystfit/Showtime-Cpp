@@ -68,7 +68,7 @@ const std::string & ZstGraphTransport::get_graph_address() const
 
 void ZstGraphTransport::send_message_impl(ZstMessage * msg)
 {
-	ZstTransportLayerBase::send_sock_msg(m_graph_out, msg);
+	ZstTransportLayer<ZstPerformanceMessage>::send_sock_msg(m_graph_out, static_cast<ZstPerformanceMessage*>(msg));
 }
 
 int ZstGraphTransport::s_handle_graph_in(zloop_t * loop, zsock_t * sock, void * arg)

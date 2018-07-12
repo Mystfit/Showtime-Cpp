@@ -48,7 +48,7 @@ ZstMessage * ZstMessage::init(ZstMsgKind kind, const ZstMsgArgs & args)
 ZstMessage * ZstMessage::init(ZstMsgKind kind, const ZstSerialisable & serialisable)
 {
 	this->append_kind_frame(kind);
-	this->append_args({ {} });
+	this->append_empty_args();
 	this->append_payload_frame(serialisable);
 	return this;
 }
@@ -64,6 +64,7 @@ ZstMessage * ZstMessage::init(ZstMsgKind kind, const ZstSerialisable & serialisa
 void ZstMessage::reset()
 {
 	m_msg_id = ZstMsgIDManager::next_id();
+	m_args.clear();
 	m_payloads.clear();
 }
 
@@ -83,14 +84,16 @@ void ZstMessage::unpack(zmsg_t * msg)
 	//Unpack args (optional)
 	zframe_t * args_frame = zmsg_pop(msg);
 	if (!args_frame) return;
-	handle = msgpack::unpack((char*)zframe_data(args_frame), zframe_size(args_frame));
-	m_args = handle.get().as<ZstMsgArgs>();
-	if (m_args.size() > 0) {
-		if (m_args.begin()->first.size() < 1 && m_args.begin()->second.size() == 0) {
-			//Empty items in map, clear it.
-			m_args.clear();
-		}
+	size_t offset = 0;
+	handle = msgpack::unpack((char*)zframe_data(args_frame), zframe_size(args_frame), offset);
+	size_t num_args = static_cast<size_t>(handle.get().via.i64);
+
+	//Only unpack arguments if we have any
+	if (num_args > 0) {
+		handle = msgpack::unpack((char*)zframe_data(args_frame), zframe_size(args_frame), offset);
+		m_args = std::move(handle.get().as<ZstMsgArgs>());
 	}
+	zframe_destroy(&args_frame);
 
 	//Unpack payload (optional)
 	zframe_t * payload_frame = zmsg_pop(msg);
@@ -108,12 +111,24 @@ ZstMsgKind ZstMessage::unpack_kind(zframe_t * kind_frame)
 	return k;
 }
 
+void ZstMessage::append_empty_args()
+{
+	std::stringstream buffer;
+	msgpack::pack(buffer,0);
+	zframe_t * frame = zframe_new(buffer.str().c_str(), buffer.str().size());
+	zmsg_append(m_msg_handle, &frame);
+}
+
+
 void ZstMessage::append_args(const ZstMsgArgs & args)
 {
-	m_args = args;
 	std::stringstream buffer;
-	msgpack::pack(buffer, args);
+	msgpack::pack(buffer, args.size());
 
+	if (args.size() > 0) {
+		msgpack::pack(buffer, args);
+	}
+	
 	zframe_t * str_frame = zframe_new(buffer.str().c_str(), buffer.str().size());
 	zmsg_append(m_msg_handle, &str_frame);
 }
