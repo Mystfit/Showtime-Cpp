@@ -14,6 +14,7 @@ public:
 	ZST_EXPORT virtual void init();
 	ZST_EXPORT virtual void start_loop();
 	ZST_EXPORT virtual void stop_loop();
+	ZST_EXPORT virtual bool is_running();
     ZST_EXPORT const char * actor_name() const;
 	ZST_EXPORT virtual void process_callbacks() {};
 	
@@ -28,6 +29,7 @@ private:
     
 	//Loop
 	zloop_t * m_loop;
+	bool m_is_running;
 	void start_polling(zsock_t * pipe);
 
 	//CZMQ Actor

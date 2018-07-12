@@ -180,6 +180,14 @@ public:
 		m_output = create_output_plug("out", ZstValueType::ZST_FLOAT);
 	}
 
+	void on_activation() override {
+		ZstLog::app(LogLevel::debug, "{} on_activation()", URI().path());
+	}
+
+	void on_deactivation() override {
+		ZstLog::app(LogLevel::debug, "{} on_deactivation()", URI().path());
+	}
+
 	virtual void compute(ZstInputPlug * plug) override {}
 
 	void send(float val) {
@@ -210,6 +218,14 @@ public:
 		m_input = create_input_plug("in", ZstValueType::ZST_FLOAT);
 	}
 
+	void on_activation() override {
+		ZstLog::app(LogLevel::debug, "{} on_activation()", URI().path());
+	}
+
+	void on_deactivation() override {
+		ZstLog::app(LogLevel::debug, "{} on_deactivation()", URI().path());
+	}
+
 	virtual void compute(ZstInputPlug * plug) override {
 		float actual_val = plug->float_at(0);
 		last_received_val = int(actual_val);
@@ -238,6 +254,7 @@ void test_startup() {
 	ZstLog::app(LogLevel::debug, "Testing sync join");
 	zst_join("127.0.0.1");
 	assert(zst_is_connected());
+	ZstLog::app(LogLevel::debug, "Testing sync leave");
 	zst_leave();
 	assert(!zst_is_connected());
 
@@ -279,7 +296,7 @@ void test_startup() {
 	assert(!zst_is_connected());
 	
 	//Testing abort connection start if we're already connecting
-	ZstLog::app(LogLevel::debug, "Testing abort connection start if we're already connecting");
+	ZstLog::app(LogLevel::debug, "Testing async abort connection start if we're already connecting");
 	zst_join_async("255.255.255.255");
 	assert(zst_is_connecting());
 	zst_join("255.255.255.255");

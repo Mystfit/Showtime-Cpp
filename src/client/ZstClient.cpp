@@ -9,7 +9,8 @@ ZstClient::ZstClient() :
     m_is_destroyed(false),
     m_init_completed(false),
     m_connected_to_stage(false),
-	m_session(NULL)
+	m_session(NULL),
+	m_heartbeat_timer_id(-1)
 {
 	//Message and transport modules
 	//These are specified by the client based on what transport type we want to use
@@ -288,8 +289,11 @@ void ZstClient::leave_stage_complete()
 	//Set stage as disconnected again - just to make sure
 	m_connected_to_stage = false;
 
-    //Disconnect rest of sockets and timers
-	m_actor->detach_timer(m_heartbeat_timer_id);
+	//Disconnect rest of sockets and timers
+	if (m_heartbeat_timer_id > 0) {
+		m_actor->detach_timer(m_heartbeat_timer_id);
+		m_heartbeat_timer_id = -1;
+	}
 	m_client_transport->disconnect_from_stage();
 
 	//Enqueue event for adaptors

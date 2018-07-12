@@ -4,9 +4,13 @@
 %ignore ZstPlug::end;
 
 %inline %{
-	ZstPlug* cast_to_plug(ZstEntityBase * entity){
-		return dynamic_cast<ZstPlug*>(entity);
+	ZstOutputPlug* cast_to_output_plug(ZstEntityBase * entity){
+		return dynamic_cast<ZstOutputPlug*>(entity);
 	}
+
+    ZstInputPlug* cast_to_input_plug(ZstEntityBase * entity){
+        return dynamic_cast<ZstInputPlug*>(entity);
+    }
 %}
 
 %nodefaultctor ZstPlug;

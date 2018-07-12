@@ -27,6 +27,7 @@ void ZstActor::init()
 
 void ZstActor::start_loop()
 {
+	m_is_running = true;
 	m_loop_actor = zactor_new(actor_thread_func, this);
 }
 
@@ -34,6 +35,12 @@ void ZstActor::stop_loop()
 {
 	zactor_destroy(&m_loop_actor);
 	m_loop_actor = NULL;
+	m_is_running = false;
+}
+
+bool ZstActor::is_running()
+{
+	return m_is_running;
 }
 
 void ZstActor::start_polling(zsock_t * pipe)
@@ -103,7 +110,8 @@ int ZstActor::attach_timer(int delay, std::function<void()> timer_func)
 
 void ZstActor::detach_timer(int timer_id)
 {
-	zloop_timer_end(m_loop, timer_id);
+	if(is_running())
+		zloop_timer_end(m_loop, timer_id);
 }
 
 int ZstActor::s_handle_timer(zloop_t * loop, int timer_id, void * arg)

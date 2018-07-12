@@ -50,6 +50,7 @@ void ZstSynchronisable::enqueue_activation()
 		//Notify adaptors synchronisable is activating
 		m_synchronisable_events->defer([this](ZstSynchronisableAdaptor* dlg) { 
 			dlg->on_synchronisable_activated(this);
+			this->on_activation();
 		});
 
 		//Notify adaptors that we have a queued event
@@ -66,6 +67,7 @@ void ZstSynchronisable::enqueue_deactivation()
 		//Notify adaptors synchronisable is deactivating
 		m_synchronisable_events->defer([this](ZstSynchronisableAdaptor* dlg) { 
 			dlg->on_synchronisable_deactivated(this); 
+			this->on_deactivation();
 		});
 
 		//Notify adaptors that we have a queued event
