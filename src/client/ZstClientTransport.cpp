@@ -37,8 +37,11 @@ void ZstClientTransport::init(ZstActor * actor)
 
 void ZstClientTransport::destroy()
 {
-	zsock_destroy(&m_stage_updates);
-	zsock_destroy(&m_stage_router);
+	ZstTransportLayerBase::destroy();
+	if(m_stage_updates)
+		zsock_destroy(&m_stage_updates);
+	if(m_stage_router)
+		zsock_destroy(&m_stage_router);
 }
 
 void ZstClientTransport::connect_to_stage(std::string stage_address)

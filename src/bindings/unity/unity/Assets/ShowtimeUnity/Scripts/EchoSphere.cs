@@ -110,6 +110,11 @@ public class EchoSphere : MonoBehaviour {
         }
     }
 
+    public void Disconnect()
+    {
+        showtime.leave();
+    }
+
     private void OnApplicationQuit()
     {
         if (showtime.is_connected())
@@ -117,5 +122,53 @@ public class EchoSphere : MonoBehaviour {
             showtime.deactivate_entity(sphere_component);
             showtime.destroy();
         }
+    }
+}
+
+// Callbacks
+// ---------
+public class EntityCallback : ZstHierarchyAdaptor
+{
+    public override void on_entity_arriving(ZstEntityBase entity)
+    {
+        Debug.Log("Entity arriving: " + entity.URI().path());
+    }
+
+    public override void on_entity_leaving(ZstEntityBase entity)
+    {
+        Debug.Log("Entity leaving: " + entity.URI().path());
+    }
+
+    public override void on_plug_arriving(ZstPlug plug)
+    {
+        Debug.Log("Plug arriving: " + plug.URI().path());
+    }
+
+    public override void on_plug_leaving(ZstPlug plug)
+    {
+        Debug.Log("Plug leaving: " + plug.URI().path());
+    }
+}
+
+public class SessionCallback : ZstSessionAdaptor
+{
+    public override void on_connected_to_stage()
+    {
+        Debug.Log("Connected to stage");
+    }
+
+    public override void on_disconnected_from_stage()
+    {
+        Debug.Log("Disconnected from stage");
+    }
+
+    public override void on_cable_created(ZstCable cable)
+    {
+        Debug.Log("Cable arriving: " + cable.get_output_URI().path() + " -> " + cable.get_input_URI().path());
+    }
+
+    public override void on_cable_destroyed(ZstCable cable)
+    {
+        Debug.Log("Cable leaving: " + cable.get_output_URI().path() + " -> " + cable.get_input_URI().path());
     }
 }

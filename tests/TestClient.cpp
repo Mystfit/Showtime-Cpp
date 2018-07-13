@@ -248,9 +248,18 @@ public:
 void test_startup() {
 	zst_init("TestClient", true);
 	zst_start_file_logging();
-	ZstLog::app(LogLevel::notification, "Running Showtime init test");
+
+	//--------------------
+	//Test destroy
+	ZstLog::app(LogLevel::debug, "Testing early destruction of library");
+	zst_destroy();
+	ZstLog::app(LogLevel::debug, "Testing aborting join before init");
+	zst_join("127.0.0.1");
+	ZstLog::app(LogLevel::debug, "Testing double library init");
+	zst_init("TestClient", true);
+	zst_init("TestClient", true);
 	
-	//Test sync join
+	//--------------------
 	ZstLog::app(LogLevel::debug, "Testing sync join");
 	zst_join("127.0.0.1");
 	assert(zst_is_connected());
@@ -790,6 +799,11 @@ void test_cleanup() {
 	ZstLog::app(LogLevel::notification, "Starting library destruction test");
 	zst_destroy();
 	ZstLog::app(LogLevel::notification, "Library successfully destroyed");
+
+	//Test destroy
+	ZstLog::app(LogLevel::debug, "Testing late destruction of library");
+	zst_join("127.0.0.1");
+	zst_destroy();
 }
 
 int main(int argc,char **argv){
@@ -848,5 +862,6 @@ int main(int argc,char **argv){
 	//Dump memory leaks to console
 	_CrtDumpMemoryLeaks();
 #endif
+	WAIT_UNTIL_STAGE_TIMEOUT
 	return 0;
 }

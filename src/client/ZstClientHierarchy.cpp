@@ -13,6 +13,8 @@ ZstClientHierarchy::~ZstClientHierarchy()
 
 void ZstClientHierarchy::init(std::string name)
 {
+	ZstHierarchy::init();
+
 	//Create a root entity to hold our local entity hierarchy
 	//Sets the name of our performer and the address of our graph output
 	m_root = new ZstPerformer(name.c_str());

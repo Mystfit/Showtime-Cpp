@@ -56,6 +56,11 @@ using namespace ZstLog;
 
 void ZstLog::init_logger(const char * logger_name, LogLevel level)
 {
+	//Flag logger as already launched
+	if (ZstLog::internals::_logging)
+		return;
+	ZstLog::internals::_logging = true;
+
 #ifdef WIN32
 	typedef boost::log::sinks::synchronous_sink<ZstLog::internals::coloured_console_sink> coloured_console_sink_t;
 	auto sink = boost::make_shared<coloured_console_sink_t>();

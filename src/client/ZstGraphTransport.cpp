@@ -43,8 +43,11 @@ void ZstGraphTransport::init(ZstActor * actor)
 
 void ZstGraphTransport::destroy()
 {
-	zsock_destroy(&m_graph_in);
-	zsock_destroy(&m_graph_out);
+	ZstTransportLayerBase::destroy();
+	if(m_graph_in)
+		zsock_destroy(&m_graph_in);
+	if(m_graph_out)
+		zsock_destroy(&m_graph_out);
 }
 
 void ZstGraphTransport::connect_to_client(const char * endpoint_ip)

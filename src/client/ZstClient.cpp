@@ -21,8 +21,6 @@ ZstClient::ZstClient() :
 }
 
 ZstClient::~ZstClient() {
-	destroy();	
-
 	delete m_session;
 	delete m_client_transport;
 	delete m_graph_transport;
@@ -48,6 +46,7 @@ void ZstClient::destroy() {
 
 	this->remove_adaptor(m_client_transport);
 
+	m_actor->stop_loop();
 	m_session->destroy();
 	m_client_transport->destroy();
 	m_graph_transport->destroy();
@@ -60,12 +59,17 @@ void ZstClient::destroy() {
 void ZstClient::init_client(const char *client_name, bool debug)
 {
 	if (m_is_ending || m_init_completed) {
+		ZstLog::net(LogLevel::notification, "Showtime already initialised");
 		return;
 	}
 
 	m_is_destroyed = false;
 
-	ZstLog::init_logger(client_name, LogLevel::debug);
+	LogLevel level = LogLevel::notification;
+	if (debug)
+		level = LogLevel::debug;
+
+	ZstLog::init_logger(client_name, level);
 	ZstLog::net(LogLevel::notification, "Starting Showtime v{}", SHOWTIME_VERSION);
 
 	m_client_name = client_name;
@@ -193,8 +197,18 @@ void ZstClient::receive_connection_handshake(ZstMessage * msg)
 
 void ZstClient::join_stage(std::string stage_address, const ZstTransportSendType & sendtype) {
 	
+	if (!m_init_completed) {
+		ZstLog::net(LogLevel::error, "Can't join the stage until the library has been initialised");
+		return;
+	}
+
+	if (m_is_connecting) {
+		ZstLog::net(LogLevel::error, "Can't connect to stage, already connecting");
+		return;
+	}
+
 	if (m_is_connecting || m_connected_to_stage) {
-		ZstLog::net(LogLevel::error, "Connection in progress or already connected, can't connect to stage.");
+		ZstLog::net(LogLevel::error, "Can't connect to stage, already connected");
 		return;
 	}
 	m_is_connecting = true;

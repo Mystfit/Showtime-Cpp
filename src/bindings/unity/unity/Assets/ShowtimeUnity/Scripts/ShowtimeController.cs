@@ -12,15 +12,11 @@ public class ShowtimeController : MonoBehaviour {
     private Push pushA;
     private Push pushB;
     private Sink sink;
-    private AddFilter add;
+    //private AddFilter add;
 
     //Callbacks
-    private EntityArrivingCallback entityArrive;
-    private EntityLeavingCallback entityLeave;
-    private PlugArrivingCallback plugArrive;
-    private PlugLeavingCallback plugLeave;
-    private CableArrivingCallback cableArrive;
-    private CableLeavingCallback cableLeave;
+    private EntityCallback entityCallback;
+    private SessionCallback sessionCallback;
 
     // Use this for initialization
     void Start () {
@@ -40,43 +36,41 @@ public class ShowtimeController : MonoBehaviour {
         yield return new WaitUntil(() => showtime.is_connected());
 
         //Create and attach callbacks for Showtime events
-        entityArrive = new EntityArrivingCallback();
-        entityLeave = new EntityLeavingCallback();
-        plugArrive = new PlugArrivingCallback();
-        plugLeave = new PlugLeavingCallback();
-        cableArrive = new CableArrivingCallback();
-        cableLeave = new CableLeavingCallback();
-        
-        add = new AddFilter("adder");
+        entityCallback = new EntityCallback();
+        sessionCallback = new SessionCallback();
+        showtime.add_session_adaptor(sessionCallback);
+        showtime.add_hierarchy_adaptor(entityCallback);
+
+        //add = new AddFilter("adder");
         pushA = new Push("addend");
         pushB = new Push("augend");
         sink = new Sink("sink");
 
         //Entities need to be activated to become 'live' in the performance
         Debug.Log("Activating entities");
-        showtime.activate_entity_async(add);
+        //showtime.activate_entity_async(add);
         showtime.activate_entity_async(pushA);
         showtime.activate_entity_async(pushB);
         showtime.activate_entity_async(sink);
 
-        yield return new WaitUntil(() => 
-            (add.is_activated() &&
-            pushA.is_activated() &&
-            pushB.is_activated() &&
-            sink.is_activated())
-        );
+        //yield return new WaitUntil(() => 
+        //    (add.is_activated() &&
+        //    pushA.is_activated() &&
+        //    pushB.is_activated() &&
+        //    sink.is_activated())
+        //);
 
         //Connect the plugs together with cables
         Debug.Log("Connecting cables");
-        ZstCable augend_cable = showtime.connect_cable_async(add.augend(), pushA.plug);
-        ZstCable addend_cable = showtime.connect_cable_async(add.addend(), pushB.plug);
-        ZstCable sum_cable = showtime.connect_cable_async(sink.plug, add.sum());
+        //ZstCable augend_cable = showtime.connect_cable_async(add.augend(), pushA.plug);
+        //ZstCable addend_cable = showtime.connect_cable_async(add.addend(), pushB.plug);
+        //ZstCable sum_cable = showtime.connect_cable_async(sink.plug, add.sum());
         
-        yield return new WaitUntil(() => 
-            (augend_cable.is_activated() && 
-            addend_cable.is_activated() && 
-            sum_cable.is_activated())
-        );
+        //yield return new WaitUntil(() => 
+        //    (augend_cable.is_activated() && 
+        //    addend_cable.is_activated() && 
+        //    sum_cable.is_activated())
+        //);
 
         //Send a value through this plug. This is an Int plug so we send an int (duh)
         Debug.Log("Sending test values");
@@ -92,7 +86,7 @@ public class ShowtimeController : MonoBehaviour {
     //Clean up on exit. 
     void OnApplicationQuit(){
         Debug.Log ("Leaving performance");
-        showtime.deactivate_entity(add);
+        //showtime.deactivate_entity(add);
         showtime.deactivate_entity(pushA);
         showtime.deactivate_entity(pushB);
         showtime.deactivate_entity(sink);
@@ -145,51 +139,49 @@ public class ShowtimeController : MonoBehaviour {
 
     // Callbacks
     // ---------
-    public class EntityArrivingCallback : ZstComponentEvent
+    public class EntityCallback : ZstHierarchyAdaptor
     {
-        public override void run_with_component(ZstComponent target)
+        public override void on_entity_arriving(ZstEntityBase entity)
         {
-            Debug.Log("Entity arriving: " + target.URI().path());
+            Debug.Log("Entity arriving: " + entity.URI().path());
+        }
+
+        public override void on_entity_leaving(ZstEntityBase entity)
+        {
+            Debug.Log("Entity leaving: " + entity.URI().path());
+       }
+
+        public override void on_plug_arriving(ZstPlug plug)
+        {
+            Debug.Log("Plug arriving: " + plug.URI().path());
+        }
+
+        public override void on_plug_leaving(ZstPlug plug)
+        {
+            Debug.Log("Plug leaving: " + plug.URI().path());
         }
     }
 
-    public class EntityLeavingCallback : ZstComponentEvent
+    public class SessionCallback : ZstSessionAdaptor
     {
-        public override void run_with_component(ZstComponent target)
+        public override void on_connected_to_stage()
         {
-            Debug.Log("Entity leaving: " + target.URI().path());
+            Debug.Log("Connected to stage");
         }
-    }
 
-    public class CableArrivingCallback : ZstCableEvent
-    {
-        public override void run_with_cable(ZstCable cable)
+        public override void on_disconnected_from_stage()
+        {
+            Debug.Log("Disconnected from stage");
+        }
+
+        public override void on_cable_created(ZstCable cable)
         {
             Debug.Log("Cable arriving: " + cable.get_output_URI().path() + " -> " + cable.get_input_URI().path());
         }
-    }
 
-    public class CableLeavingCallback : ZstCableEvent
-    {
-        public override void run_with_cable(ZstCable cable)
+        public override void on_cable_destroyed(ZstCable cable)
         {
             Debug.Log("Cable leaving: " + cable.get_output_URI().path() + " -> " + cable.get_input_URI().path());
-        }
-    }
-
-    public class PlugArrivingCallback : ZstPlugEvent
-    {
-        public override void run_with_plug(ZstPlug target)
-        {
-            Debug.Log("Plug arriving: " + target.URI().path());
-        }
-    }
-
-    public class PlugLeavingCallback : ZstPlugEvent
-    {
-        public override void run_with_plug(ZstPlug target)
-        {
-            Debug.Log("Plug leaving: " + target.URI().path());
         }
     }
 }

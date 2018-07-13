@@ -72,7 +72,7 @@ private:
 
 	std::unordered_map<ZstMsgID, MessagePromise > m_promise_messages;
 	moodycamel::ConcurrentQueue<ZstMsgID> m_dead_promises;
-	cf::time_watcher m_timeout_watcher;
+	cf::time_watcher * m_timeout_watcher;
 
 	ZstEventDispatcher<ZstTransportAdaptor*> * m_dispatch_events;
 };

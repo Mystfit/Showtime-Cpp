@@ -15,12 +15,14 @@ ZstTransportLayerBase::~ZstTransportLayerBase()
 
 void ZstTransportLayerBase::destroy()
 {
+	delete m_timeout_watcher;
 	m_dispatch_events->flush();
 	m_dispatch_events->remove_all_adaptors();
 }
 
 void ZstTransportLayerBase::init(ZstActor * actor)
 {
+	m_timeout_watcher = new cf::time_watcher();
 	m_actor = actor;
 }
 
@@ -146,7 +148,7 @@ MessageFuture ZstTransportLayerBase::register_response_message(ZstMessage * msg)
 	ZstMsgID id = msg->id();
 	m_promise_messages.emplace(id, MessagePromise());
 	MessageFuture future = m_promise_messages[id].get_future();
-	future = future.timeout(std::chrono::milliseconds(STAGE_TIMEOUT), ZstTimeoutException("Connect timeout"), m_timeout_watcher);
+	future = future.timeout(std::chrono::milliseconds(STAGE_TIMEOUT), ZstTimeoutException("Connect timeout"), *m_timeout_watcher);
 	return future;
 }
 

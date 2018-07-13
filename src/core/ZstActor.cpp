@@ -9,12 +9,10 @@ ZstActor::ZstActor()
 
 ZstActor::~ZstActor()
 {
-	destroy();
 }
 
 void ZstActor::destroy()
 {
-	stop_loop();
 	zsys_shutdown();
 }
 
@@ -22,7 +20,7 @@ void ZstActor::init()
 {
 	m_loop = zloop_new();
 	zloop_set_verbose(m_loop, false);
-	zloop_set_nonstop(m_loop, true);
+	zloop_set_nonstop(m_loop, false);
 }
 
 void ZstActor::start_loop()

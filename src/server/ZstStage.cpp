@@ -16,7 +16,6 @@ ZstStage::ZstStage() : m_is_destroyed(false)
 
 ZstStage::~ZstStage()
 {
-	destroy();
 	m_client_socket_index.clear();
 	delete m_message_pool;
 }
@@ -66,11 +65,11 @@ void ZstStage::destroy()
 		destroy_client(p.second);
 	}
 	
+	ZstActor::stop_loop();
 	detach_timer(m_heartbeat_timer_id);
 	zsock_destroy(&m_performer_router);
 	zsock_destroy(&m_graph_update_pub);
 	ZstActor::destroy();
-	zsys_shutdown();
 
 	m_is_destroyed = true;
 }

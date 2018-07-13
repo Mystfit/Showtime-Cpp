@@ -19,6 +19,8 @@ class ZstHierarchy :
 public:
 	ZST_EXPORT ZstHierarchy();
 	ZST_EXPORT ~ZstHierarchy();
+
+	ZST_EXPORT virtual void init();
 	ZST_EXPORT virtual void destroy();
 
 	// ------------------------------

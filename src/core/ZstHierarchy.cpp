@@ -5,12 +5,17 @@ ZstHierarchy::ZstHierarchy() :
 	m_hierarchy_events("hierarchy"),
 	m_synchronisable_events("hierarchy stage")
 {
-	//We add this instance as an adaptor to make sure we can process local queued events
-	m_synchronisable_events.add_adaptor(this);
+
 }
 
 ZstHierarchy::~ZstHierarchy()
 {
+}
+
+void ZstHierarchy::init()
+{
+	//We add this instance as an adaptor to make sure we can process local queued events
+	m_synchronisable_events.add_adaptor(this);
 }
 
 void ZstHierarchy::destroy()
