@@ -99,11 +99,8 @@ ZstMessageReceipt ZstTransportLayerBase::send_sync_message(ZstMessage * msg)
 {
 	MessageFuture future = register_response_message(msg);
 	ZstMessageReceipt msg_response{ ZstMsgKind::EMPTY, ZstTransportSendType::SYNC_REPLY };
-
-	bool async = false;
-
-	send_message_impl(msg);
-
+	
+    send_message_impl(msg);
 	try {
 		msg_response.status = future.get();
 	}

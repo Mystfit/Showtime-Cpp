@@ -45,7 +45,7 @@ class ZstStage : public ZstActor {
 public:
 	ZstStage();
 	~ZstStage();
-	void init(const char * stage_name);
+	void init_stage(const char * stage_name);
 	void destroy() override;
 	bool is_destroyed();
 
@@ -119,8 +119,8 @@ private:
 	ZstCableList m_cables;
 
 	//Messages
-	ZstMessagePool<ZstStageMessage> * m_message_pool;
-	ZstMessagePool<ZstStageMessage> * msg_pool();
+	ZstMessagePool<ZstStageMessage> m_message_pool;
+	ZstMessagePool<ZstStageMessage> & msg_pool();
 
 	//TODO: Replace with abstract future message handler class
 	std::unordered_map<ZstMsgID, MessagePromise > m_promise_messages;

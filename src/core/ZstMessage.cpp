@@ -9,8 +9,8 @@
 #include "ZstMessage.h"
 
 ZstMessage::ZstMessage() : 
-	m_msg_handle(NULL),
-	m_msg_kind(ZstMsgKind::EMPTY)
+	m_msg_kind(ZstMsgKind::EMPTY),
+    m_msg_handle(NULL)
 {
 }
 
@@ -91,7 +91,7 @@ void ZstMessage::unpack(zmsg_t * msg)
 	//Only unpack arguments if we have any
 	if (num_args > 0) {
 		handle = msgpack::unpack((char*)zframe_data(args_frame), zframe_size(args_frame), offset);
-		m_args = std::move(handle.get().as<ZstMsgArgs>());
+		m_args = handle.get().as<ZstMsgArgs>();
 	}
 	zframe_destroy(&args_frame);
 

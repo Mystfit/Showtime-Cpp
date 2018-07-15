@@ -58,7 +58,7 @@ public:
 
 	void on_receive_msg(ZstMessage * msg) override;
 	void on_receive_graph_msg(ZstMessage * msg);
-	void on_plug_fire(ZstOutputPlug * plug) override;
+    void entity_publish_update(ZstEntityBase * entity) override;
 
 
 	// -------------------------------

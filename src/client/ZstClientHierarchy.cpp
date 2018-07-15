@@ -18,7 +18,7 @@ void ZstClientHierarchy::init(std::string name)
 	//Create a root entity to hold our local entity hierarchy
 	//Sets the name of our performer and the address of our graph output
 	m_root = new ZstPerformer(name.c_str());
-	m_root->add_adaptor(this);
+    ZstSynchronisable::add_adaptor(m_root, this);
 }
 
 void ZstClientHierarchy::destroy()
@@ -136,7 +136,7 @@ void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTranspo
 		m_stage_events.invoke([this, sendtype, entity](ZstTransportAdaptor * adaptor) {
 			adaptor->send_message(ZstMsgKind::DESTROY_ENTITY, sendtype, {{"path", entity->URI().path()}}, [this, entity](ZstMessageReceipt response) {
 				this->destroy_entity_complete(response, entity);
-				entity->remove_adaptor(this);
+                ZstSynchronisable::remove_adaptor(entity, this);
 			});
 		});
 	}
@@ -146,7 +146,7 @@ void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTranspo
 
 	if (sendtype == ZstTransportSendType::SYNC_REPLY) {
 		process_events();
-		entity->remove_adaptor(this);
+        ZstSynchronisable::remove_adaptor(entity, this);
 	}
 }
 

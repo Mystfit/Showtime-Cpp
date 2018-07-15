@@ -3,6 +3,7 @@
 
 #include <entities/ZstEntityBase.h>
 #include <ZstCable.h>
+#include <ZstEventDispatcher.hpp>
 
 ZstEntityBase::ZstEntityBase(const char * name) : 
 	ZstSynchronisable(),
@@ -10,6 +11,7 @@ ZstEntityBase::ZstEntityBase(const char * name) :
 	m_entity_type(NULL),
 	m_uri(name)
 {
+    m_entity_events = new ZstEventDispatcher<ZstEntityAdaptor*>();
 }
 
 ZstEntityBase::ZstEntityBase(const ZstEntityBase & other) : ZstSynchronisable(other)
@@ -29,6 +31,10 @@ ZstEntityBase::~ZstEntityBase()
     //destroy();
 	set_destroyed();
 	free(m_entity_type);
+    
+    m_entity_events->flush();
+    m_entity_events->remove_all_adaptors();
+    delete m_entity_events;
 }
 
 void * ZstEntityBase::operator new(size_t num_bytes)
@@ -87,6 +93,11 @@ ZstCableBundle * ZstEntityBase::get_child_cables(ZstCableBundle * bundle)
 	return bundle;
 }
 
+ZstEventDispatcher<ZstEntityAdaptor*> * ZstEntityBase::entity_events()
+{
+    return m_entity_events;
+}
+
 void ZstEntityBase::write(std::stringstream & buffer) const
 {
 	msgpack::pack(buffer, URI().path());
@@ -111,14 +122,24 @@ void ZstEntityBase::read(const char * buffer, size_t length, size_t & offset)
 	m_entity_type[obj.via.str.size] = '\0';
 }
 
+void ZstEntityBase::add_adaptor(ZstEntityBase * self, ZstEntityAdaptor * adaptor)
+{
+    self->m_entity_events->add_adaptor(adaptor);
+}
+
+void ZstEntityBase::remove_adaptor(ZstEntityBase * self, ZstEntityAdaptor * adaptor)
+{
+    self->m_entity_events->remove_adaptor(adaptor);
+}
+
 void ZstEntityBase::add_adaptor_to_children(ZstSynchronisableAdaptor * adaptor)
 {
-	ZstSynchronisable::add_adaptor(adaptor);
+	ZstSynchronisable::add_adaptor(this, adaptor);
 }
 
 void ZstEntityBase::remove_adaptor_from_children(ZstSynchronisableAdaptor * adaptor)
 {
-	ZstSynchronisable::remove_adaptor(adaptor);
+	ZstSynchronisable::remove_adaptor(this, adaptor);
 }
 
 void ZstEntityBase::set_entity_type(const char * entity_type) {

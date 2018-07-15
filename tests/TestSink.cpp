@@ -13,8 +13,8 @@ public:
 
 	Sink(const char * name) : 
 		ZstContainer("SINK", name),
+        m_input(NULL),
         last_received_code(-1),
-		m_input(NULL),
 		m_child_sink(NULL)
 	{
 		m_input = create_input_plug("in", ZstValueType::ZST_INT);

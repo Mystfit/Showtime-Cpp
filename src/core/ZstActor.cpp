@@ -68,8 +68,6 @@ int ZstActor::s_handle_actor_pipe(zloop_t * loop, zsock_t * sock, void * args)
 	//Received TERM message, this actor is going away
 	char *command = zmsg_popstr(msg);
 	if (streq(command, "$TERM")) {
-		ZstActor * actor = (ZstActor*)args;
-		
 		//Signal that we finished cleaning up
 		zsock_signal(sock, 0);
 

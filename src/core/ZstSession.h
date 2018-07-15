@@ -3,7 +3,7 @@
 #include <ZstExports.h>
 #include <ZstEventDispatcher.hpp>
 #include <adaptors/ZstSessionAdaptor.hpp>
-#include <adaptors/ZstPlugAdaptors.hpp>
+#include <adaptors/ZstEntityAdaptor.hpp>
 #include <adaptors/ZstComputeAdaptor.hpp>
 
 #include "ZstHierarchy.h"
@@ -16,8 +16,8 @@
 class ZstSession : 
 	public ZstSynchronisableAdaptor,
 	public ZstTransportAdaptor,
-	public ZstOutputPlugAdaptor,
 	public ZstComputeAdaptor,
+    public ZstEntityAdaptor,
 	protected ZstSynchronisableLiason,
 	protected ZstCableLiason,
 	protected ZstPlugLiason

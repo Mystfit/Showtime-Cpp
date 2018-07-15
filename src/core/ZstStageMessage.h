@@ -6,7 +6,7 @@ class ZstStageMessage : public ZstMessage {
 public:
     ZST_EXPORT ZstStageMessage();
     ZST_EXPORT ZstStageMessage(const ZstStageMessage & other);
-    ZST_EXPORT ~ZstStageMessage();
+    ZST_EXPORT virtual ~ZstStageMessage();
 
     ZST_EXPORT void reset() override;
 

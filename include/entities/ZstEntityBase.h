@@ -5,9 +5,13 @@
 #include <ZstURI.h>
 #include <ZstSerialisable.h>
 #include <ZstSynchronisable.h>
+#include <adaptors/ZstEntityAdaptor.hpp>
 
 //Forwards
 class ZstCableBundle;
+
+template<typename T>
+class ZstEventDispatcher;
 
 class ZstEntityBase : public ZstSynchronisable, public ZstSerialisable {
 public:
@@ -42,6 +46,9 @@ public:
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
 
 	//Adaptors
+    ZST_EXPORT static void add_adaptor(ZstEntityBase * self, ZstEntityAdaptor * adaptor);
+    ZST_EXPORT static void remove_adaptor(ZstEntityBase * self, ZstEntityAdaptor * adaptor);
+
 	ZST_EXPORT virtual void add_adaptor_to_children(ZstSynchronisableAdaptor * adaptor);
 	ZST_EXPORT virtual void remove_adaptor_from_children(ZstSynchronisableAdaptor * adaptor);
 	
@@ -50,10 +57,11 @@ protected:
 	ZST_EXPORT void set_entity_type(const char * entity_type);
 	ZST_EXPORT virtual void set_parent(ZstEntityBase* entity);
 	ZST_EXPORT virtual ZstCableBundle * get_child_cables(ZstCableBundle * bundle);
-
+    ZST_EXPORT ZstEventDispatcher<ZstEntityAdaptor*> * entity_events();
+    
 private:
     ZST_EXPORT void update_URI();
-    
+    ZstEventDispatcher<ZstEntityAdaptor*> * m_entity_events;
 	ZstEntityBase * m_parent;
 	char * m_entity_type;
 	ZstURI m_uri;

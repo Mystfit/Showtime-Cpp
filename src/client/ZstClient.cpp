@@ -4,13 +4,13 @@
 #include "ZstClient.h"
 
 ZstClient::ZstClient() :
+	m_heartbeat_timer_id(-1),
     m_ping(-1),
     m_is_ending(false),
     m_is_destroyed(false),
     m_init_completed(false),
     m_connected_to_stage(false),
-	m_session(NULL),
-	m_heartbeat_timer_id(-1)
+    m_session(NULL)
 {
 	//Message and transport modules
 	//These are specified by the client based on what transport type we want to use
@@ -172,7 +172,7 @@ void ZstClient::receive_connection_handshake(ZstMessage * msg)
 	//Peer connection is successful if we receive a handshake performance message from the sending client
 	ZstURI output_path(msg->get_arg("outputpath"));
 	if(m_pending_peer_connections.find(output_path) != m_pending_peer_connections.end()){
-		invoke([this, &output_path, msg](ZstTransportAdaptor* adaptor) {
+		invoke([this, &output_path](ZstTransportAdaptor* adaptor) {
 			std::stringstream ss;
 			ss << m_pending_peer_connections[output_path];
 			ZstMsgArgs args{ 

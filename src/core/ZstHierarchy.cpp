@@ -2,8 +2,8 @@
 #include "ZstHierarchy.h"
 
 ZstHierarchy::ZstHierarchy() :
-	m_hierarchy_events("hierarchy"),
-	m_synchronisable_events("hierarchy stage")
+	m_synchronisable_events("hierarchy stage"),
+    m_hierarchy_events("hierarchy")
 {
 
 }
@@ -146,7 +146,7 @@ void ZstHierarchy::add_proxy_entity(ZstEntityBase & entity) {
 		synchronisable_set_proxy(entity_proxy);
 
 		//Activate entity and dispatch events
-		entity_proxy->add_adaptor(this);
+        ZstSynchronisable::add_adaptor(entity_proxy, this);
 		synchronisable_set_activation_status(entity_proxy, ZstSyncStatus::ACTIVATED);
 	}
 }

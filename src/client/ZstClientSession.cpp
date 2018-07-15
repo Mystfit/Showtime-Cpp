@@ -119,11 +119,13 @@ void ZstClientSession::on_receive_graph_msg(ZstMessage * msg)
 	}
 }
 
-void ZstClientSession::on_plug_fire(ZstOutputPlug * plug)
+void ZstClientSession::entity_publish_update(ZstEntityBase *entity)
 {
-	m_performance_events.invoke([plug](ZstTransportAdaptor * adaptor) {
-		adaptor->send_message(ZstMsgKind::PERFORMANCE_MSG, {{"path", plug->URI().path()}}, *plug->raw_value());
-	});
+    m_performance_events.invoke([entity](ZstTransportAdaptor * adaptor) {
+        if(strcmp(entity->entity_type(), PLUG_TYPE) == 0){
+            adaptor->send_message(ZstMsgKind::PERFORMANCE_MSG, {{"path", entity->URI().path()}}, *static_cast<ZstOutputPlug*>(entity)->raw_value());
+        }
+    });
 }
 
 void ZstClientSession::plug_received_value(ZstInputPlug * plug)
@@ -209,20 +211,6 @@ void ZstClientSession::destroy_cable_complete(ZstMessageReceipt response, ZstCab
 	
 	//Remove the cable from our local cable list
 	ZstSession::destroy_cable(cable);
-
-	//Find the plugs and disconnect them seperately, in case they have already disappeared
-	ZstInputPlug * input = dynamic_cast<ZstInputPlug*>(hierarchy()->find_entity(cable->get_input_URI()));
-	ZstOutputPlug * output = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(cable->get_output_URI()));
-
-	//Remove cable from plugs
-	if (input)
-		plug_remove_cable(input, cable);
-
-	if (output)
-		plug_remove_cable(output, cable);
-
-	cable->set_input(NULL);
-	cable->set_output(NULL);
 
 	//Queue events
 	session_events().defer([cable](ZstSessionAdaptor * dlg) { dlg->on_cable_destroyed(cable); });

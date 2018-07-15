@@ -25,11 +25,11 @@ public:
 	{
 		m_msg_pool.release(msg);
 	}
-
-	void send_sock_msg(zsock_t * sock, T * msg)
+    
+	virtual void send_sock_msg(zsock_t * sock, ZstMessage * msg) override
 	{
 		ZstTransportLayerBase::send_sock_msg(sock, msg);
-		m_msg_pool.release(msg);
+		m_msg_pool.release(static_cast<T*>(msg));
 	}
 
 

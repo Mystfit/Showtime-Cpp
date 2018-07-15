@@ -339,12 +339,12 @@ void test_root_entity() {
 	assert(root_entity);
     
     //This should execute immediately since we've already connected to the stage
-	root_entity->add_adaptor(performer_activated);
+    ZstSynchronisable::add_adaptor(root_entity, performer_activated);
 	assert(performer_activated->num_calls() == 1);
 	performer_activated->reset_num_calls();
     assert(root_entity->is_activated());
 	clear_callback_queue();
-	root_entity->remove_adaptor(performer_activated);
+    ZstSynchronisable::remove_adaptor(root_entity, performer_activated);
 	delete performer_activated;
 	ZstLog::app(LogLevel::debug, "Root performer is activated");
 }
@@ -369,7 +369,7 @@ void test_create_entities(){
     //Test async entity
 	OutputComponent * test_output_async = new OutputComponent("entity_create_test_async");
 	TestSynchronisableEvents * entity_sync = new TestSynchronisableEvents();
-	test_output_async->add_adaptor(entity_sync);
+    ZstSynchronisable::add_adaptor(test_output_async, entity_sync);
 		
     ZstLog::app(LogLevel::debug, "Testing entity async activation");
 	zst_activate_entity_async(test_output_async);
@@ -420,7 +420,7 @@ void test_hierarchy() {
     //Test child activation and deactivation callbacks
 	ZstLog::app(LogLevel::debug, "Test child activation and deactivation callbacks");
     TestSynchronisableEvents * child_activation = new TestSynchronisableEvents();
-    child->add_adaptor(child_activation);
+    ZstSynchronisable::add_adaptor(child, child_activation);
     parent->add_child(child);
     
     zst_activate_entity(child);
@@ -429,7 +429,7 @@ void test_hierarchy() {
     zst_deactivate_entity(child);
     assert(child_activation->num_calls() == 1);
 	child_activation->reset_num_calls();
-    child->remove_adaptor(child_activation);
+    ZstSynchronisable::remove_adaptor(child, child_activation);
     delete child_activation;
     
 	//Test removing parent removes child
@@ -479,7 +479,7 @@ void test_connect_plugs() {
     ZstLog::app(LogLevel::debug, "Testing async cable connection");
     TestSynchronisableEvents * cable_activation = new TestSynchronisableEvents();
     cable = zst_connect_cable_async(test_input->input(), test_output->output());
-    cable->add_adaptor(cable_activation);
+    ZstSynchronisable::add_adaptor(cable, cable_activation);
     wait_for_event(cable_activation, 1);
     assert(cable_activation->num_calls() == 1);
 	cable_activation->reset_num_calls();
@@ -492,7 +492,7 @@ void test_connect_plugs() {
 
 	ZstLog::app(LogLevel::debug, "Testing cable disconnection when removing parent");
 	cable = zst_connect_cable(test_input->input(), test_output->output());
-    cable->add_adaptor(cable_activation);
+    ZstSynchronisable::add_adaptor(cable, cable_activation);
     zst_deactivate_entity(test_output);
     wait_for_event(cable_activation, 1);
 	assert(!test_input->input()->is_connected_to(test_output->output()));
@@ -808,7 +808,7 @@ void test_cleanup() {
 
 int main(int argc,char **argv){
 
-	bool testing = true;
+	bool testing = false;
 	if (argc > 1) {
 		if (argv[1][0] == 't') {
 			ZstLog::app(LogLevel::warn, "In test mode. Launching internal stage server.");

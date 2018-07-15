@@ -80,7 +80,25 @@ ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * outpu
 
 void ZstSession::destroy_cable(ZstCable * cable, const ZstTransportSendType & sendtype)
 {
-	if (!cable) return;
+    if (!cable) return;
+    
+    ZstInputPlug * input = cable->get_input();
+    ZstOutputPlug * output = cable->get_output();
+    
+    //Remove cable from plugs
+    if (input)
+        plug_remove_cable(input, cable);
+    
+    if (output){
+        plug_remove_cable(output, cable);
+        if(output->num_cables() < 1){
+            //Remove session adaptor from plug
+            ZstEntityBase::remove_adaptor(output, this);
+        }
+    }
+    
+    cable->set_input(NULL);
+    cable->set_output(NULL);
 
 	//Remove cable from local list so that other threads don't assume it still exists
 	m_cables.erase(cable);
@@ -157,6 +175,12 @@ ZstCable * ZstSession::create_cable(const ZstURI & input_path, const ZstURI & ou
 		ZstLog::net(LogLevel::error, "Can't connect cable, a plug is missing.");
 		success = false;
 	}
+    
+    if(output_plug->num_cables() < 1){
+        //Add session adaptor to plug to handle plug sending values
+        //Only need to add this adaptor once
+        ZstEntityBase::add_adaptor(output_plug, this);
+    }
 
 	//If we failed to create the cable, we should cleanup our resources before returning
 	if (!success) {
@@ -171,11 +195,8 @@ ZstCable * ZstSession::create_cable(const ZstURI & input_path, const ZstURI & ou
 	cable_ptr->set_input(input_plug);
 	cable_ptr->set_output(output_plug);
 
-	//Add session adaptor to plug to handle plug sending values
-	output_plug->add_adaptor(this);
-
 	//Add synchronisable adaptor to cable to handle activation
-	cable_ptr->add_adaptor(this);
+    ZstSynchronisable::add_adaptor(cable_ptr, this);
 
 	//Cables are always local so they can be cleaned up by the reaper when deactivated
 	synchronisable_set_proxy(cable_ptr);

@@ -15,6 +15,11 @@ target_sources(${CORE_ENTITIES_TARGET} PRIVATE
     ${ZST_CORE_ENTITIES_HEADERS}
 )
 
+target_include_directories(${CORE_ENTITIES_TARGET}
+    PRIVATE
+        ${Showtime_SOURCE_DEPENDENCIES}
+)
+
 # Library target dependencies
 add_dependencies(${CORE_ENTITIES_TARGET} ${CORE_TARGET})
 

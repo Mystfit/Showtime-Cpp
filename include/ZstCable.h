@@ -9,6 +9,7 @@
 //Forwards
 class ZstInputPlug;
 class ZstOutputPlug;
+class ZstPlug;
 
 class ZstCable : public ZstSynchronisable, public ZstSerialisable {
 public:

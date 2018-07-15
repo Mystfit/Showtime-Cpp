@@ -17,11 +17,11 @@ set(API_FILES
     ${Showtime_INCLUDE_DIRS}/ZstSynchronisable.h
     ${Showtime_INCLUDE_DIRS}/ZstEventDispatcher.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstEventAdaptor.hpp
-    ${Showtime_INCLUDE_DIRS}/adaptors/ZstPlugAdaptors.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstComputeAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstSynchronisableAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstSessionAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstHierarchyAdaptor.hpp
+    ${Showtime_INCLUDE_DIRS}/adaptors/ZstEntityAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/entities/ZstEntityBase.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstComponent.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstContainer.h

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <functional>
 #include <cf/cfuture.h>
 #include <cf/time_watcher.h>
@@ -30,7 +31,8 @@ struct ZstMessageReceipt {
 
 struct ZstTimeoutException : std::runtime_error {
 	using std::runtime_error::runtime_error;
-};
+};
+
 typedef cf::promise<ZstMsgKind> MessagePromise;
 typedef cf::future<ZstMsgKind> MessageFuture;
 typedef std::function<void(ZstMessageReceipt)> MessageReceivedAction;

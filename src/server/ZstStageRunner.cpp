@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
 #endif
 
 	ZstStage stage;
-	stage.init("stage");
+	stage.init_stage("stage");
 
 	if (argc < 2) {
 		ZstLog::app(LogLevel::notification, "Stage running in standalone mode");
