@@ -24,6 +24,8 @@ ZstEntityBase::ZstEntityBase(const ZstEntityBase & other) : ZstSynchronisable(ot
 	m_entity_type[entity_type_size] = '\0';
 
 	m_uri = ZstURI(other.m_uri);
+
+	m_entity_events = new ZstEventDispatcher<ZstEntityAdaptor*>();
 }
 
 ZstEntityBase::~ZstEntityBase()
