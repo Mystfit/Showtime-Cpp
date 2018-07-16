@@ -123,8 +123,7 @@ install:
     fi
 
   # Install homebrew dependencies
-  - $HOMEBREW_PATH/bin/brew update 
-  - $HOMEBREW_PATH/bin/brew bundle
+  - $HOMEBREW_PATH/bin/brew update
     
   # Kill background sleep loop
   - kill %1
