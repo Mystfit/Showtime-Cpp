@@ -93,18 +93,18 @@ before_install:
 
   # Install CMake 3.12 on Linux
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      CMAKE_FILE=cmake-3.12.0-rc3-Linux-x86_64
-      wget https://cmake.org/files/v3.12/$CMAKE_FILE.sh --quiet;
+      CMAKE_FILE=cmake-3.12.0-rc3-Linux-x86_64;
+      wget https://cmake.org/files/v3.12/${CMAKE_FILE}.sh --quiet;
       export CMAKE_PATH=$BUILD_FOLDER/cmake;
-      sudo bash $CMAKE_FILE.sh --skip-license --prefix=$CMAKE_PATH;
+      sudo bash ${CMAKE_FILE}.sh --skip-license --prefix=$CMAKE_PATH;
     fi
 
   # OSX uses downloaded CMake and local boost
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      CMAKE_FILE=cmake-3.12.0-rc3-Darwin-x86_64
-      wget https://cmake.org/files/v3.12/$CMAKE_FILE.tar.gz --quiet;
-      tar -xvf $CMAKE_FILE.tar.gz
-      export CMAKE_PATH=$BUILD_FOLDER/CMake.app/Contents;
+      CMAKE_FILE=cmake-3.12.0-rc3-Darwin-x86_64;
+      wget https://cmake.org/files/v3.12/${CMAKE_FILE}.tar.gz --quiet;
+      tar -xvf ${CMAKE_FILE}.tar.gz;
+      export CMAKE_PATH=$BUILD_FOLDER/${CMAKE_FILE}/CMake.app/Contents;
       export USE_LOCAL_BOOST=1;
     fi
 
