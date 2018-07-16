@@ -20,8 +20,8 @@ public:
     
     ZST_EXPORT static void add_adaptor(ZstSynchronisable * self, ZstSynchronisableAdaptor * adaptor);
     ZST_EXPORT static void remove_adaptor(ZstSynchronisable * self, ZstSynchronisableAdaptor * adaptor);
-	ZST_EXPORT virtual void on_activation() {};
-	ZST_EXPORT virtual void on_deactivation() {};
+    ZST_EXPORT virtual void on_activation(){};
+    ZST_EXPORT virtual void on_deactivation(){};
 
 	ZST_EXPORT bool is_activated();
 	ZST_EXPORT bool is_deactivated();
@@ -35,8 +35,8 @@ protected:
     ZST_EXPORT virtual void enqueue_deactivation();
     ZST_EXPORT virtual void set_activated();
     ZST_EXPORT virtual void set_activating();
-    ZST_EXPORT void set_deactivating();
     ZST_EXPORT virtual void set_activation_status(ZstSyncStatus status);
+    ZST_EXPORT void set_deactivating();
     ZST_EXPORT void set_error(ZstSyncError e);
 	ZST_EXPORT void set_destroyed();
 	ZST_EXPORT void set_proxy();

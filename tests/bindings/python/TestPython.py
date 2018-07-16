@@ -42,7 +42,7 @@ class EventLoop(threading.Thread):
 if __name__ == "__main__":
 
     server = None
-
+    
     # Start server
     if len(sys.argv) > 1:
         server_exe = os.path.abspath(sys.argv[1])

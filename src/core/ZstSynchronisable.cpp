@@ -47,7 +47,7 @@ void ZstSynchronisable::enqueue_activation()
 	{
 		set_activation_status(ZstSyncStatus::ACTIVATED);
 
-		//Notify adaptors synchronisable is activating
+		//Notify adaptors that this synchronisable is activating
 		synchronisable_events()->defer([this](ZstSynchronisableAdaptor* dlg) {
 			dlg->on_synchronisable_activated(this);
 			this->on_activation();
