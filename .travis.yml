@@ -91,16 +91,18 @@ before_install:
       sudo locale-gen en_US.UTF-8;
     fi
 
-  # Install CMake 3.11 on Linux
+  # Install CMake 3.12 on Linux
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      wget https://cmake.org/files/v3.11/cmake-3.11.0-rc2-Linux-x86_64.sh --quiet;
+      wget https://cmake.org/files/v3.12/cmake-3.12.0-rc3-Linux-x86_64.sh --quiet;
       export CMAKE_PATH=$BUILD_FOLDER/cmake;
-      sudo bash cmake-3.11.0-rc2-Linux-x86_64.sh --skip-license --prefix=$CMAKE_PATH;
+      sudo bash cmake-3.12.0-rc3-Linux-x86_64.sh --skip-license --prefix=$CMAKE_PATH;
     fi
 
   # OSX uses homebrew CMake and local boost
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      export CMAKE_PATH=$PREFIX;
+      wget https://cmake.org/files/v3.12/cmake-3.12.0-rc3-Darwin-x86_64.tar.gz --quiet;
+      export CMAKE_PATH=$BUILD_FOLDER/cmake;
+      sudo bash cmake-3.12.0-rc3-Darwin-x86_64 --skip-license --prefix=$CMAKE_PATH;
       export USE_LOCAL_BOOST=1;
     fi
 
@@ -152,7 +154,7 @@ script:
   - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS="$GENERATOR_ARGS -DUSE_LOCAL_BOOST=ON"; fi
 
   # Set prefix search path to homebrew folder for library discovery
-  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$PREFIX;${CMAKE_PREFIX_PATH}"
+  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$PREFIX;${CMAKE_PREFIX_PATH} -DBUILD_MEMLEAK_TEST=OFF"
 
   # Python bindings
   - PYTHON_BIN=$(which $PY_VER)
