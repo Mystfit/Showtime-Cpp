@@ -36,12 +36,7 @@ void zst_destroy() {
 
 void zst_leave()
 {
-    return ZstClient::instance().leave_stage(ZstTransportSendType::SYNC_REPLY);
-}
-
-void zst_leave_immediately()
-{
-	return ZstClient::instance().leave_stage(ZstTransportSendType::ASYNC_REPLY);
+    return ZstClient::instance().leave_stage();
 }
 
 

@@ -49,7 +49,7 @@ public:
 	void synchronise_graph(const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
 	void synchronise_graph_complete(ZstMessageReceipt response);
 
-	void leave_stage(const ZstTransportSendType & sendtype);
+	void leave_stage();
 	void leave_stage_complete();
     
 	//Stage connection status

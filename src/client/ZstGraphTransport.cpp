@@ -15,7 +15,7 @@ void ZstGraphTransport::init(ZstActor * actor)
 
 	m_graph_in = zsock_new(ZMQ_SUB);
 	if (m_graph_in) {
-		zsock_set_linger(m_graph_in, 0);
+		//zsock_set_linger(m_graph_in, 0);
 		zsock_set_unbounded(m_graph_in);
 		this->actor()->attach_pipe_listener(m_graph_in, s_handle_graph_in, this);
 	}
@@ -37,8 +37,9 @@ void ZstGraphTransport::init(ZstActor * actor)
 	zstr_free(&output_ip);
 	ZstLog::net(LogLevel::notification, "Client graph address: {}", m_graph_out_ip);
 
-	if (m_graph_out)
-		zsock_set_linger(m_graph_out, 0);
+	if (m_graph_out){
+		//zsock_set_linger(m_graph_out, 0);
+	}
 }
 
 void ZstGraphTransport::destroy()

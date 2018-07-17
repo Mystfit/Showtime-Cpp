@@ -12,7 +12,6 @@ extern "C" {
 	//Cleanup
 	ZST_CLIENT_EXPORT void zst_destroy();
 	ZST_CLIENT_EXPORT void zst_leave();
-    ZST_CLIENT_EXPORT void zst_leave_immediately();
 
 	//Poll the event queue - for runtimes that have process events from the main thread
 	ZST_CLIENT_EXPORT void zst_poll_once();

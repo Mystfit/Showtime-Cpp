@@ -42,7 +42,7 @@ void ZstClient::destroy() {
     
     //Let stage know we are leaving
 	if(is_connected_to_stage())
-		leave_stage(ZstTransportSendType::ASYNC_REPLY);
+		leave_stage();
 
 	this->remove_adaptor(m_client_transport);
 
@@ -274,7 +274,7 @@ void ZstClient::synchronise_graph_complete(ZstMessageReceipt response)
 	ZstLog::net(LogLevel::notification, "Graph sync completed");
 }
 
-void ZstClient::leave_stage(const ZstTransportSendType & sendtype)
+void ZstClient::leave_stage()
 {
 	if (m_connected_to_stage) {
 		ZstLog::net(LogLevel::notification, "Leaving stage");
@@ -283,19 +283,13 @@ void ZstClient::leave_stage(const ZstTransportSendType & sendtype)
 		m_is_connecting = false;
 		m_connected_to_stage = false;
         
-		invoke([this, sendtype](ZstTransportAdaptor * adaptor) {
-			adaptor->send_message(ZstMsgKind::CLIENT_LEAVING, sendtype, [this](ZstMessageReceipt response) {
-				this->leave_stage_complete();
-			});
-		});
-		
-		//Run callbacks if we're still on the main app thread
-		if(sendtype == ZstTransportSendType::SYNC_REPLY) process_events();
+		invoke([this](ZstTransportAdaptor * adaptor) { adaptor->send_message(ZstMsgKind::CLIENT_LEAVING); });
     } else {
         ZstLog::net(LogLevel::debug, "Not connected to stage. Skipping to cleanup. {}");
-        leave_stage_complete();
-		if (sendtype == ZstTransportSendType::SYNC_REPLY) process_events();
     }
+
+	this->leave_stage_complete();
+	this->process_events();
 }
 
 void ZstClient::leave_stage_complete()
