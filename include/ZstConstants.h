@@ -39,4 +39,4 @@ enum ZstPlugDirection {
 #define MESSAGE_POOL_BLOCK 256
 
 // Number of milliseconds to wait until a timeout is called on a stage operation
-#define STAGE_TIMEOUT 10000
+#define STAGE_TIMEOUT 5000
