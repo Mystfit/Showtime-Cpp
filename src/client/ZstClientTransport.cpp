@@ -18,13 +18,13 @@ void ZstClientTransport::init(ZstActor * actor)
 	//Local dealer socket for receiving messages forwarded from other performers
 	m_stage_router = zsock_new(ZMQ_DEALER);
 	if (m_stage_router) {
-		//zsock_set_linger(m_stage_router, 0);
+		zsock_set_linger(m_stage_router, 0);
 		this->actor()->attach_pipe_listener(m_stage_router, s_handle_stage_router, this);
 	}
 
 	m_stage_updates = zsock_new(ZMQ_SUB);
 	if (m_stage_updates) {
-		//zsock_set_linger(m_stage_updates, 0);
+		zsock_set_linger(m_stage_updates, 0);
 		this->actor()->attach_pipe_listener(m_stage_updates, s_handle_stage_update_in, this);
 	}
 
