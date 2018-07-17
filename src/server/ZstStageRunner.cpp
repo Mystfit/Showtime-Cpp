@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 #endif
 	}
 	else {
-		if (argv[1][0] == 't')
+		if (strcmp(argv[1], "-t") == 0)
 		{
 			ZstLog::app(LogLevel::notification, "Stage running in test mode. Waiting for $TERM on stdin");
 			std::string line;
@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
 #endif
 			} while (line != "$TERM");
 			ZstLog::app(LogLevel::notification, "Received $TERM. Closing stage server.");
-		}
+			}
 	}
 
 	std::cout << "Showtime Stage shutting down" << std::endl;

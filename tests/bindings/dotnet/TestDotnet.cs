@@ -54,7 +54,7 @@ public class Program
         server_startInfo.UseShellExecute = false; 
         server_startInfo.RedirectStandardInput = true;
         server_startInfo.FileName = "ShowtimeServer.exe";
-        server_startInfo.Arguments = "t";   // Put server into test mode
+        server_startInfo.Arguments = "-t";   // Put server into test mode
 
         Process server_process = new Process();
         server_process.StartInfo = server_startInfo;

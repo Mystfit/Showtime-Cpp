@@ -71,17 +71,15 @@ matrix:
       compiler: clang
 
 before_install:
-
-  # Debug
-  - 
-
   # Set common env variables
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      export HOMEBREW_PATH=/usr/local;
+      export PREFIX=/usr/local
+      echo $(which brew);
+      echo $PATH;
     fi
 
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      export HOMEBREW_PATH=/home/linuxbrew/.linuxbrew;
+      export PREFIX=/home/linuxbrew/.linuxbrew;
     fi
 
   # Set locale flags
@@ -93,16 +91,20 @@ before_install:
       sudo locale-gen en_US.UTF-8;
     fi
 
-  # Install CMake 3.11 on Linux
+  # Install CMake 3.12 on Linux
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      wget https://cmake.org/files/v3.11/cmake-3.11.0-rc2-Linux-x86_64.sh --quiet;
+      CMAKE_FILE=cmake-3.12.0-rc3-Linux-x86_64;
+      wget https://cmake.org/files/v3.12/${CMAKE_FILE}.sh --quiet;
       export CMAKE_PATH=$BUILD_FOLDER/cmake;
-      sudo bash cmake-3.11.0-rc2-Linux-x86_64.sh --skip-license --prefix=$CMAKE_PATH;
+      sudo bash ${CMAKE_FILE}.sh --skip-license --prefix=$CMAKE_PATH;
     fi
 
-  # OSX uses homebrew CMake and local boost
+  # OSX uses downloaded CMake and local boost
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      export CMAKE_PATH=$HOMEBREW_PATH;
+      CMAKE_FILE=cmake-3.12.0-rc3-Darwin-x86_64;
+      wget https://cmake.org/files/v3.12/${CMAKE_FILE}.tar.gz --quiet;
+      tar -xvf ${CMAKE_FILE}.tar.gz;
+      export CMAKE_PATH=$BUILD_FOLDER/${CMAKE_FILE}/CMake.app/Contents;
       export USE_LOCAL_BOOST=1;
     fi
 
@@ -116,15 +118,18 @@ install:
 
   # Install linuxbrew dependencies
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      export PATH=$HOMEBREW_PATH/bin:$HOMEBREW_PATH/sbin:$PATH;
-      export MANPATH=$HOMEBREW_PATH/share/man:$MANPATH;
-      export INFOPATH=$HOMEBREW_PATH/share/info:$INFOPATH;
+      export PATH=$PREFIX/bin:$PREFIX/sbin:$PATH;
+      export MANPATH=$PREFIX/share/man:$MANPATH;
+      export INFOPATH=$PREFIX/share/info:$INFOPATH;
       sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)";
+      hash -r;
+      echo $(which brew);
+      echo $PATH;
     fi
 
   # Install homebrew dependencies
-  - $HOMEBREW_PATH/bin/brew update 
-  - $HOMEBREW_PATH/bin/brew bundle
+  - brew update 
+  - brew bundle
     
   # Kill background sleep loop
   - kill %1
@@ -151,7 +156,7 @@ script:
   - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS="$GENERATOR_ARGS -DUSE_LOCAL_BOOST=ON"; fi
 
   # Set prefix search path to homebrew folder for library discovery
-  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$HOMEBREW_PATH;${CMAKE_PREFIX_PATH}"
+  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$PREFIX;${CMAKE_PREFIX_PATH} -DBUILD_MEMLEAK_TEST=OFF"
 
   # Python bindings
   - PYTHON_BIN=$(which $PY_VER)
