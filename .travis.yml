@@ -103,7 +103,7 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       CMAKE_FILE=cmake-3.12.0-rc3-Darwin-x86_64;
       wget https://cmake.org/files/v3.12/${CMAKE_FILE}.tar.gz --quiet;
-      tar -xvf ${CMAKE_FILE}.tar.gz;
+      tar -xf ${CMAKE_FILE}.tar.gz;
       export CMAKE_PATH=$BUILD_FOLDER/${CMAKE_FILE}/CMake.app/Contents;
       export USE_LOCAL_BOOST=1;
     fi
