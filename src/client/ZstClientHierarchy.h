@@ -9,16 +9,17 @@
 #include <ZstCore.h>
 #include <ZstEventDispatcher.hpp>
 #include "ZstClientModule.h"
+
 #include "adaptors/ZstSessionAdaptor.hpp"
 #include "../dependencies/concurrentqueue.h"
-#include "../core/adaptors/ZstStageDispatchAdaptor.hpp"
+#include "../core/adaptors/ZstTransportAdaptor.hpp"
 #include "../core/ZstStageMessage.h"
 #include "../core/ZstHierarchy.h"
 
 class ZstClientHierarchy : 
 	public ZstHierarchy,
 	public ZstClientModule,
-	public ZstStageDispatchAdaptor
+	public ZstTransportAdaptor
 {
 public:
 	ZstClientHierarchy();
@@ -41,15 +42,14 @@ public:
 	// Adaptor behaviours
 	// --------------------
 	
-	void on_receive_from_stage(ZstStageMessage * msg) override;
-
+	void on_receive_msg(ZstMessage * msg) override;
 
 	// ------------------------------
 	// Entity activation/deactivation
 	// ------------------------------
 	
-	void activate_entity(ZstEntityBase* entity, bool async) override;
-	void destroy_entity(ZstEntityBase * entity, bool async) override;
+	void activate_entity(ZstEntityBase* entity, const ZstTransportSendType & sendtype) override;
+	void destroy_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype) override;
 
 
 	// ------------------------------
@@ -73,7 +73,7 @@ public:
 	// Event dispatchers
 	// ------------------------------
 
-	ZstEventDispatcher<ZstStageDispatchAdaptor*> & stage_events();
+	ZstEventDispatcher<ZstTransportAdaptor*> & stage_events();
 
 
 private:
@@ -92,5 +92,5 @@ private:
 	// Event dispatchers
 	// -----------------
 
-	ZstEventDispatcher<ZstStageDispatchAdaptor*> m_stage_events;
+	ZstEventDispatcher<ZstTransportAdaptor*> m_stage_events;
 };

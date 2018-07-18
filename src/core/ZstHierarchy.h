@@ -7,6 +7,7 @@
 #include <entities/ZstEntityBase.h>
 #include <entities/ZstPlug.h>
 #include <entities/ZstPerformer.h>
+#include "adaptors/ZstTransportAdaptor.hpp"
 #include "liasons/ZstPlugLiason.hpp"
 #include "liasons/ZstSynchronisableLiason.hpp"
 
@@ -18,14 +19,16 @@ class ZstHierarchy :
 public:
 	ZST_EXPORT ZstHierarchy();
 	ZST_EXPORT ~ZstHierarchy();
+
+	ZST_EXPORT virtual void init();
 	ZST_EXPORT virtual void destroy();
 
 	// ------------------------------
 	// Activations
 	// ------------------------------
 
-	ZST_EXPORT virtual void activate_entity(ZstEntityBase* entity, bool async = false);
-	ZST_EXPORT virtual void destroy_entity(ZstEntityBase * entity, bool async = false);
+	ZST_EXPORT virtual void activate_entity(ZstEntityBase* entity, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
+	ZST_EXPORT virtual void destroy_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
 		
 	
 	// ------------------------------
@@ -50,7 +53,6 @@ public:
 	// Event dispatchers
 	// -----------------
 	
-	//ZST_EXPORT ZstEventDispatcher<ZstHierarchyAdaptor*> & synchronisable_events();
 	ZST_EXPORT ZstEventDispatcher<ZstHierarchyAdaptor*> & hierarchy_events();
 	ZST_EXPORT virtual void process_events();
 	ZST_EXPORT virtual void flush_events();

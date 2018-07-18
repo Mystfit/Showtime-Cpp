@@ -7,6 +7,7 @@
 #include <msgpack.hpp>
 #include <czmq.h>
 #include <ZstExports.h>
+#include "ZstMsgID.h"
 #include "liasons/ZstPlugLiason.hpp"
 
 #define KIND_FRAME_SIZE 1
@@ -59,12 +60,13 @@ enum ZstMsgKind  {
     //P2P endpoint connection requests
     START_CONNECTION_HANDSHAKE, //26
     STOP_CONNECTION_HANDSHAKE,
+	CONNECTION_HANDSHAKE,
     SUBSCRIBE_TO_PERFORMER,
     SUBSCRIBE_TO_PERFORMER_ACK,
     CREATE_PEER_ENTITY,
 
-	//Plug values
-	PLUG_VALUE
+	//Generic performance message
+	PERFORMANCE_MSG
 };
 MSGPACK_ADD_ENUM(ZstMsgKind);
 
@@ -99,18 +101,7 @@ static std::map<ZstMsgKind, char const*> ZstMsgNames {
     {SUBSCRIBE_TO_PERFORMER, "SUBSCRIBE_TO_PERFORMER"},
     {SUBSCRIBE_TO_PERFORMER_ACK, "SUBSCRIBE_TO_PERFORMER_ACK"},
     {CREATE_PEER_ENTITY, "CREATE_PEER_ENTITY"},
-	{PLUG_VALUE, "PLUG_VALUE"}
-};
-
-
-/**
- * Struct:	ZstMessageReceipt
- *
- * Summary:	Message response from a message sent to the server.
- */
-struct ZstMessageReceipt {
-	ZstMsgKind status;
-	bool async;
+	{PERFORMANCE_MSG, "PERFORMANCE_MSG"}
 };
 
 
@@ -137,6 +128,7 @@ protected:
 	size_t m_size;
 };
 
+typedef std::unordered_map<std::string, std::string> ZstMsgArgs;
 
 class ZstMessage {
 public:
@@ -145,14 +137,32 @@ public:
 	ZST_EXPORT ZstMessage(const ZstMessage & other);
 
 	ZST_EXPORT virtual void init();
+	ZST_EXPORT virtual ZstMessage * init(ZstMsgKind kind);
+	ZST_EXPORT virtual ZstMessage * init(ZstMsgKind kind, const ZstMsgArgs & args);
+	ZST_EXPORT virtual ZstMessage * init(ZstMsgKind kind, const ZstSerialisable & serialisable);
+	ZST_EXPORT virtual ZstMessage * init(ZstMsgKind kind, const ZstSerialisable & serialisable, const ZstMsgArgs & args);
+
 	ZST_EXPORT virtual void reset();
     ZST_EXPORT virtual void set_inactive();
 	ZST_EXPORT virtual void unpack(zmsg_t * msg);
-	ZST_EXPORT virtual void append_str(const char * s, size_t len);
+	ZST_EXPORT ZstMsgKind unpack_kind(zframe_t * kind_frame);
+
+	ZST_EXPORT void append_empty_args();
+	ZST_EXPORT void append_args(const ZstMsgArgs & args);
+	ZST_EXPORT const std::string & get_arg_s(const char * key);
+	ZST_EXPORT const char * get_arg(const char * key);
+	ZST_EXPORT size_t get_arg_size(const char * key);
+
+	ZST_EXPORT void log_args();
 
 	ZST_EXPORT virtual ZstMessagePayload & payload_at(size_t index);
 	ZST_EXPORT virtual size_t num_payloads();
 	ZST_EXPORT zmsg_t * handle();
+
+	ZST_EXPORT const ZstMsgKind kind() const;
+	ZST_EXPORT ZstMsgID id() const;
+	ZST_EXPORT void set_id(ZstMsgID id);
+	ZST_EXPORT void copy_id(const ZstMessage * msg);
 
 	template <typename T>
 	T unpack_payload_serialisable(size_t payload_index) {
@@ -162,11 +172,21 @@ public:
 		return serialisable;
 	}
 
+	ZST_EXPORT static ZstMsgKind entity_kind(ZstEntityBase * entity);
+
 protected:
 	ZST_EXPORT void append_payload_frame(const ZstSerialisable & streamable);
+	ZST_EXPORT void append_kind_frame(ZstMsgKind k);
+	ZST_EXPORT void append_serialisable(ZstMsgKind k, const ZstSerialisable & s);
+	ZST_EXPORT void prepend_id_frame(ZstMsgID id);
+	ZST_EXPORT void append_id_frame(ZstMsgID id);
 	ZST_EXPORT void set_handle(zmsg_t * handle);
 	std::vector<ZstMessagePayload> m_payloads;
+	ZstMsgKind m_msg_kind;
+	ZstMsgID m_msg_id;
+	ZstMsgArgs m_args;
 
 private:
 	zmsg_t * m_msg_handle;
+
 };

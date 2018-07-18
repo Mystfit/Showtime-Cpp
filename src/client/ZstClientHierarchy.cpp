@@ -1,6 +1,5 @@
 #include "ZstClientHierarchy.h"
 #include <boost/assign.hpp>
-#include "ZstMessageDispatcher.h"
 
 ZstClientHierarchy::ZstClientHierarchy() :
 	m_root(NULL),
@@ -14,10 +13,12 @@ ZstClientHierarchy::~ZstClientHierarchy()
 
 void ZstClientHierarchy::init(std::string name)
 {
+	ZstHierarchy::init();
+
 	//Create a root entity to hold our local entity hierarchy
 	//Sets the name of our performer and the address of our graph output
 	m_root = new ZstPerformer(name.c_str());
-	m_root->add_adaptor(this);
+    ZstSynchronisable::add_adaptor(m_root, this);
 }
 
 void ZstClientHierarchy::destroy()
@@ -41,13 +42,8 @@ void ZstClientHierarchy::flush_events()
 	m_stage_events.flush();
 }
 
-void ZstClientHierarchy::on_receive_from_stage(ZstStageMessage * msg)
+void ZstClientHierarchy::on_receive_msg(ZstMessage * msg)
 {
-	//Ignore messages with no payloads
-	if(msg->num_payloads() < 1){
-		return;
-	}
-
 	switch (msg->kind()) {
 	case ZstMsgKind::CREATE_PLUG:
 	{
@@ -75,7 +71,7 @@ void ZstClientHierarchy::on_receive_from_stage(ZstStageMessage * msg)
 	}
 	case ZstMsgKind::DESTROY_ENTITY:
 	{
-		remove_proxy_entity(find_entity(ZstURI((char*)msg->payload_at(0).data(), msg->payload_at(0).size())));
+		remove_proxy_entity(find_entity(ZstURI(msg->get_arg("path"))));
 		break;
 	}
 	default:
@@ -83,24 +79,25 @@ void ZstClientHierarchy::on_receive_from_stage(ZstStageMessage * msg)
 	}
 }
 
-void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, bool async)
+void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
 {
 	//If the entity doesn't have a parent, put it under the root container
 	if (!entity->parent()) {
-		ZstLog::net(LogLevel::notification, "No parent set for {}, adding to {}", entity->URI().path(), m_root->URI().path());
+		ZstLog::net(LogLevel::debug, "No parent set for {}, adding to {}", entity->URI().path(), m_root->URI().path());
 		m_root->add_child(entity);
 	}
 	 
-	ZstHierarchy::activate_entity(entity, async);
+	ZstHierarchy::activate_entity(entity, sendtype);
 	
 	//Build message
-	m_stage_events.invoke([this, entity, async](ZstStageDispatchAdaptor * adaptor) {
-		adaptor->send_entity_message(entity, async, [this, entity](ZstMessageReceipt response) {
+	m_stage_events.invoke([this, entity, sendtype](ZstTransportAdaptor * adaptor)
+	{
+		adaptor->send_message(ZstMessage::entity_kind(entity), sendtype, *entity, [this, entity](ZstMessageReceipt response) {
 			this->activate_entity_complete(response, entity);
 		});
 	});
 
-	if (!async)
+	if (sendtype == ZstTransportSendType::SYNC_REPLY)
 		process_events();
 }
 
@@ -126,30 +123,30 @@ void ZstClientHierarchy::activate_entity_complete(ZstMessageReceipt response, Zs
 		break;
 	}
 
-	ZstLog::net(LogLevel::notification, "Activate entity {} complete with status {}", entity->URI().path(), response.status);
+	ZstLog::net(LogLevel::debug, "Activate entity {} complete with status {}", entity->URI().path(), ZstMsgNames[response.status]);
 }
 
 
-void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, bool async)
+void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
 {
-	ZstHierarchy::destroy_entity(entity, async);
+	ZstHierarchy::destroy_entity(entity, sendtype);
 
 	//If the entity is local, let the stage know it's leaving
 	if (!entity->is_proxy()) {
-		m_stage_events.invoke([this, async, entity](ZstStageDispatchAdaptor * adaptor) {
-			adaptor->send_message(ZstMsgKind::DESTROY_ENTITY, async, std::string(entity->URI().path()), [this, entity](ZstMessageReceipt response) {
+		m_stage_events.invoke([this, sendtype, entity](ZstTransportAdaptor * adaptor) {
+			adaptor->send_message(ZstMsgKind::DESTROY_ENTITY, sendtype, {{"path", entity->URI().path()}}, [this, entity](ZstMessageReceipt response) {
 				this->destroy_entity_complete(response, entity);
-				entity->remove_adaptor(this);
+                ZstSynchronisable::remove_adaptor(entity, this);
 			});
 		});
 	}
 	else {
-		destroy_entity_complete(ZstMessageReceipt{ZstMsgKind::OK, async}, entity);
+		destroy_entity_complete(ZstMessageReceipt{ZstMsgKind::OK, sendtype }, entity);
 	}
 
-	if (!async) {
+	if (sendtype == ZstTransportSendType::SYNC_REPLY) {
 		process_events();
-		entity->remove_adaptor(this);
+        ZstSynchronisable::remove_adaptor(entity, this);
 	}
 }
 
@@ -237,7 +234,7 @@ void ZstClientHierarchy::add_proxy_entity(ZstEntityBase & entity) {
 	// Don't need to activate local entities, they will auto-activate when the stage responds with an OK
 	// Also, we can't rely on the proxy flag here as it won't have been set yet
 	if (path_is_local(entity.URI())) {
-		ZstLog::net(LogLevel::notification, "Received local entity {}. Ignoring", entity.URI().path());
+		ZstLog::net(LogLevel::debug, "Received local entity {}. Ignoring", entity.URI().path());
 		return;
 	}
 	ZstHierarchy::add_proxy_entity(entity);
@@ -248,7 +245,7 @@ ZstPerformer * ZstClientHierarchy::get_local_performer() const
 	return m_root;
 }
 
-ZstEventDispatcher<ZstStageDispatchAdaptor*> & ZstClientHierarchy::stage_events()
+ZstEventDispatcher<ZstTransportAdaptor*> & ZstClientHierarchy::stage_events()
 {
 	return m_stage_events;
 }

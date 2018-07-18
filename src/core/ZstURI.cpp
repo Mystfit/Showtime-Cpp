@@ -235,7 +235,7 @@ bool ZstURI::is_empty() const
 
 ZstURI::pstr ZstURI::create_pstr(const char * p)
 {
-	return std::move(create_pstr(p, strlen(p)));
+	return create_pstr(p, strlen(p));
 }
 
 ZstURI::pstr ZstURI::create_pstr(const char * p, size_t l)
@@ -246,7 +246,7 @@ ZstURI::pstr ZstURI::create_pstr(const char * p, size_t l)
 	memcpy(result.cstr, p, result.length-1);
 	result.cstr[result.length-1] = '\0';
 
-	return std::move(result);
+	return result;
 }
 
 

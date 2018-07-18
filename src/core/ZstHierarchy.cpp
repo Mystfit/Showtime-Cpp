@@ -2,15 +2,20 @@
 #include "ZstHierarchy.h"
 
 ZstHierarchy::ZstHierarchy() :
-	m_hierarchy_events("hierarchy"),
-	m_synchronisable_events("hierarchy stage")
+	m_synchronisable_events("hierarchy stage"),
+    m_hierarchy_events("hierarchy")
 {
-	//We add this instance as an adaptor to make sure we can process local queued events
-	m_synchronisable_events.add_adaptor(this);
+
 }
 
 ZstHierarchy::~ZstHierarchy()
 {
+}
+
+void ZstHierarchy::init()
+{
+	//We add this instance as an adaptor to make sure we can process local queued events
+	m_synchronisable_events.add_adaptor(this);
 }
 
 void ZstHierarchy::destroy()
@@ -20,7 +25,7 @@ void ZstHierarchy::destroy()
 	m_hierarchy_events.remove_all_adaptors();
 }
 
-void ZstHierarchy::activate_entity(ZstEntityBase * entity, bool async)
+void ZstHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
 {
 	//If this is not a local entity, we can't activate it
 	if (entity->is_proxy())
@@ -32,7 +37,7 @@ void ZstHierarchy::activate_entity(ZstEntityBase * entity, bool async)
 }
 
 
-void ZstHierarchy::destroy_entity(ZstEntityBase * entity, bool async)
+void ZstHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
 {
 	if (!entity) return;
 	synchronisable_set_deactivating(entity);
@@ -105,6 +110,7 @@ void ZstHierarchy::add_proxy_entity(ZstEntityBase & entity) {
 	ZstURI parent_URI = entity.URI().parent();
 	if (parent_URI.size()) {
 		ZstEntityBase * parent = find_entity(parent_URI);
+		assert(parent);
 
 		if (find_entity(entity.URI())) {
 			ZstLog::net(LogLevel::error, "Can't create entity {}, it already exists", entity.URI().path());
@@ -140,7 +146,7 @@ void ZstHierarchy::add_proxy_entity(ZstEntityBase & entity) {
 		synchronisable_set_proxy(entity_proxy);
 
 		//Activate entity and dispatch events
-		entity_proxy->add_adaptor(this);
+        ZstSynchronisable::add_adaptor(entity_proxy, this);
 		synchronisable_set_activation_status(entity_proxy, ZstSyncStatus::ACTIVATED);
 	}
 }
@@ -150,7 +156,7 @@ void ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 	if (entity) {
 		if (entity->is_proxy()) {
 			synchronisable_enqueue_deactivation(entity);
-			destroy_entity(entity, false);
+			destroy_entity(entity, ZstTransportSendType::SYNC_REPLY);
 		}
 	}
 }

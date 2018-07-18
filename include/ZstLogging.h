@@ -46,6 +46,8 @@ namespace ZstLog {
 		ZST_EXPORT void entity_sink_message(LogLevel level, const char * msg);
 		ZST_EXPORT void net_sink_message(LogLevel level, const char * msg);
 		ZST_EXPORT void app_sink_message(LogLevel level, const char * msg);
+
+		static bool _logging = false;
 	}
 
 	ZST_EXPORT void init_logger(const char * logger_name, LogLevel level = LogLevel::notification);

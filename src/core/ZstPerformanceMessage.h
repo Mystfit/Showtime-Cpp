@@ -4,13 +4,10 @@
 #include "liasons/ZstPlugLiason.hpp"
 
 class ZstPerformanceMessage : public ZstMessage, public ZstPlugLiason {
-public:    
-	ZST_EXPORT ZstPerformanceMessage();
-    ZST_EXPORT ZstPerformanceMessage * init_performance_message(const ZstURI & sender);
-    ZST_EXPORT ZstPerformanceMessage * init_performance_message(ZstOutputPlug * plug);
-    ZST_EXPORT void unpack(zmsg_t * msg) override;
-    ZST_EXPORT const ZstURI & sender();
-
-private:
-    ZstURI m_sender;
+public:
+    ZST_EXPORT virtual ~ZstPerformanceMessage();
+	ZST_EXPORT virtual ZstPerformanceMessage * init(ZstMsgKind kind) override;
+	ZST_EXPORT virtual ZstPerformanceMessage * init(ZstMsgKind kind, const ZstMsgArgs & args) override;
+	ZST_EXPORT virtual ZstPerformanceMessage * init(ZstMsgKind kind, const ZstSerialisable & serialisable) override;
+	ZST_EXPORT virtual ZstPerformanceMessage * init(ZstMsgKind kind, const ZstSerialisable & serialisable, const ZstMsgArgs & args) override;
 };

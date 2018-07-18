@@ -8,7 +8,6 @@
 #include <ZstSerialisable.h>
 #include <ZstSynchronisable.h>
 #include <ZstCable.h>
-#include <ZstEvents.h>
 #include <entities/ZstEntityBase.h>
 #include <entities/ZstComponent.h>
 #include <entities/ZstContainer.h>

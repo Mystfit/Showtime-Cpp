@@ -133,6 +133,9 @@ void ZstPlug::write(std::stringstream & buffer) const
 	//Pack entity
 	ZstEntityBase::write(buffer);
 
+	//Unpack value
+	m_value->write(buffer);
+
 	//Pack plug direction
 	msgpack::pack(buffer, m_direction);
 }
@@ -141,6 +144,9 @@ void ZstPlug::read(const char * buffer, size_t length, size_t & offset)
 {
 	//Unpack entity
 	ZstEntityBase::read(buffer, length, offset);
+	
+	//Unpack value
+	m_value->read(buffer, length, offset);
 
 	//Unpack direction
 	auto handle = msgpack::unpack(buffer, length, offset);
@@ -235,40 +241,27 @@ ZstInputPlug::ZstInputPlug(const char * name, ZstValueType t) : ZstPlug(name, t)
 ZstOutputPlug::ZstOutputPlug() : ZstPlug()
 {
 	m_direction = ZstPlugDirection::OUT_JACK;
-	m_event_dispatch = new ZstEventDispatcher<ZstOutputPlugAdaptor*>();
 }
 
 ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug & other) : ZstPlug(other)
 {
-	m_event_dispatch = new ZstEventDispatcher<ZstOutputPlugAdaptor*>();
 }
 
 ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t) : ZstPlug(name, t)
 {
     m_direction = ZstPlugDirection::OUT_JACK;
-	m_event_dispatch = new ZstEventDispatcher<ZstOutputPlugAdaptor*>();
 }
 
 ZstOutputPlug::~ZstOutputPlug()
 {
-	m_event_dispatch->flush();
-	delete m_event_dispatch;
 }
 
 void ZstOutputPlug::fire()
 {
-	m_event_dispatch->invoke([this](ZstOutputPlugAdaptor * dlg) { dlg->on_plug_fire(this); });
+    entity_events()->invoke([this](ZstEntityAdaptor * dlg) { 
+		dlg->entity_publish_update(this);
+	});
 	m_value->clear();
-}
-
-void ZstOutputPlug::add_adaptor(ZstOutputPlugAdaptor * adaptor)
-{
-	m_event_dispatch->add_adaptor(adaptor);
-}
-
-void ZstOutputPlug::remove_adaptor(ZstOutputPlugAdaptor * adaptor)
-{
-	m_event_dispatch->remove_adaptor(adaptor);
 }
 
 MSGPACK_ADD_ENUM(ZstPlugDirection);

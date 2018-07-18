@@ -19,11 +19,11 @@ void zst_start_file_logging(const char * log_file_path)
 }
 
 void zst_join(const char * stage_address){
-	ZstClient::instance().join_stage(stage_address, false);
+	ZstClient::instance().join_stage(stage_address, ZstTransportSendType::SYNC_REPLY);
 }
 
 void zst_join_async(const char * stage_address){
-    ZstClient::instance().join_stage(stage_address, true);
+    ZstClient::instance().join_stage(stage_address, ZstTransportSendType::ASYNC_REPLY);
 }
 
 // -----------------
@@ -36,12 +36,12 @@ void zst_destroy() {
 
 void zst_leave()
 {
-    return ZstClient::instance().leave_stage(false);
+    return ZstClient::instance().leave_stage(ZstTransportSendType::SYNC_REPLY);
 }
 
 void zst_leave_immediately()
 {
-	return ZstClient::instance().leave_stage(true);
+	return ZstClient::instance().leave_stage(ZstTransportSendType::ASYNC_REPLY);
 }
 
 
@@ -82,22 +82,22 @@ void zst_remove_hierarchy_adaptor(ZstHierarchyAdaptor * adaptor)
 
 void zst_activate_entity(ZstEntityBase * entity)
 {
-	ZstClient::instance().session()->hierarchy()->activate_entity(entity, false);
+	ZstClient::instance().session()->hierarchy()->activate_entity(entity, ZstTransportSendType::SYNC_REPLY);
 }
 
 void zst_activate_entity_async(ZstEntityBase * entity)
 {
-    ZstClient::instance().session()->hierarchy()->activate_entity(entity, true);
+    ZstClient::instance().session()->hierarchy()->activate_entity(entity, ZstTransportSendType::ASYNC_REPLY);
 }
 
 void zst_deactivate_entity(ZstEntityBase * entity)
 {
-	ZstClient::instance().session()->hierarchy()->destroy_entity(entity, false);
+	ZstClient::instance().session()->hierarchy()->destroy_entity(entity, ZstTransportSendType::SYNC_REPLY);
 }
 
 void zst_deactivate_entity_async(ZstEntityBase * entity)
 {
-    ZstClient::instance().session()->hierarchy()->destroy_entity(entity, true);
+    ZstClient::instance().session()->hierarchy()->destroy_entity(entity, ZstTransportSendType::ASYNC_REPLY);
 }
 
 
@@ -152,20 +152,20 @@ int zst_ping()
 
 ZstCable * zst_connect_cable(ZstInputPlug * input, ZstOutputPlug * output)
 {
-	return ZstClient::instance().session()->connect_cable(input, output, false);
+	return ZstClient::instance().session()->connect_cable(input, output, ZstTransportSendType::SYNC_REPLY);
 }
 
 ZstCable * zst_connect_cable_async(ZstInputPlug * input, ZstOutputPlug * output)
 {
-    return ZstClient::instance().session()->connect_cable(input, output, true);
+    return ZstClient::instance().session()->connect_cable(input, output, ZstTransportSendType::ASYNC_REPLY);
 }
 
 void zst_destroy_cable(ZstCable * cable)
 {
-	ZstClient::instance().session()->destroy_cable(cable, false);
+	ZstClient::instance().session()->destroy_cable(cable, ZstTransportSendType::SYNC_REPLY);
 }
 
 void zst_destroy_cable_async(ZstCable * cable)
 {
-    ZstClient::instance().session()->destroy_cable(cable, true);
+    ZstClient::instance().session()->destroy_cable(cable, ZstTransportSendType::ASYNC_REPLY);
 }

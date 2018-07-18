@@ -68,17 +68,18 @@ if(WIN32)
 endif()
 
 if(MACOSX OR LINUX)
-    list(APPEND ZST_FLAGS "-O0;-g;-std=c++14")
+    list(APPEND ZST_FLAGS "-O0;-g;-std=c++14;")
     list(APPEND ZST_LIBS
         ${CORE_TARGET}
         ${CORE_ENTITIES_TARGET}
         ${CLIENT_TARGET}
-    )    
+    )
+    list(APPEND ZST_LINK_FLAGS "-Wl,-rpath,${ZST_RUNTIME_LIB_DIRS}")
 endif()
 
-if(LINUX)
-    list(APPEND ZST_LINK_FLAGS "-Wl,-rpath=${ZST_RUNTIME_LIB_DIRS}")
-endif()
+# if(LINUX)
+#     list(APPEND ZST_LINK_FLAGS "-Wl,-rpath=${ZST_RUNTIME_LIB_DIRS}")
+# endif()
 
 # Set second pass setup.py parser
 get_filename_component(SETUPPY_PARSER_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/generate-setuppy.cmake REALPATH)

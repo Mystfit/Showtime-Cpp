@@ -4,7 +4,6 @@
 #include <ZstConstants.h>
 #include <ZstCable.h>
 #include <entities/ZstEntityBase.h>
-#include <adaptors/ZstPlugAdaptors.hpp>
 
 #define PLUG_TYPE "plug"
 
@@ -65,6 +64,9 @@ public:
 	ZST_EXPORT bool is_connected_to(ZstPlug * plug);
 	ZST_EXPORT void disconnect_cables() override;
 
+	//Values
+	ZST_EXPORT ZstValue * raw_value();
+
 protected:
 	ZstValue * m_value;
 	ZstPlugDirection m_direction;
@@ -72,7 +74,6 @@ protected:
 private:
 	ZST_EXPORT void add_cable(ZstCable * cable);
 	ZST_EXPORT void remove_cable(ZstCable * cable);
-	ZST_EXPORT ZstValue * raw_value();
 
 	ZstCableList m_cables;
 };
@@ -93,16 +94,12 @@ public:
 
 class ZstOutputPlug : public ZstPlug {
 	friend class ZstPlugLiason;
+    using ZstSynchronisable::add_adaptor;
+    using ZstSynchronisable::remove_adaptor;
 public:
 	ZST_EXPORT ZstOutputPlug();
 	ZST_EXPORT ZstOutputPlug(const ZstOutputPlug & other);
 	ZST_EXPORT ZstOutputPlug(const char * name, ZstValueType t);
 	ZST_EXPORT ~ZstOutputPlug();
 	ZST_EXPORT void fire();
-
-	ZST_EXPORT void add_adaptor(ZstOutputPlugAdaptor * adaptor);
-	ZST_EXPORT void remove_adaptor(ZstOutputPlugAdaptor * adaptor);
-
-private:
-	ZstEventDispatcher<ZstOutputPlugAdaptor*> * m_event_dispatch;
 };

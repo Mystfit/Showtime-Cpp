@@ -189,18 +189,18 @@ const char * ZstComponent::component_type() const
 
 void ZstComponent::add_adaptor_to_children(ZstSynchronisableAdaptor * adaptor)
 {
-	ZstEntityBase::add_adaptor(adaptor);
+	ZstSynchronisable::add_adaptor(this, adaptor);
 	for (auto plug : m_plugs) {
-		plug->add_adaptor(adaptor);
+        ZstSynchronisable::add_adaptor(plug, adaptor);
 	}
 }
 
 void ZstComponent::remove_adaptor_from_children(ZstSynchronisableAdaptor * adaptor)
 {
-	this->remove_adaptor(adaptor);
-	for (auto plug : m_plugs) {
-		plug->remove_adaptor(adaptor);
-	}
+    ZstSynchronisable::add_adaptor(this, adaptor);
+    for (auto plug : m_plugs) {
+        ZstSynchronisable::remove_adaptor(plug, adaptor);
+    }
 }
 
 void ZstComponent::set_component_type(const char * component_type)

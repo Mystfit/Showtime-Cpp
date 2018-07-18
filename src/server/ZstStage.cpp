@@ -1,5 +1,7 @@
 #include <sstream>
 #include <chrono>
+#include <boost/lexical_cast.hpp>
+#include "ZstStage.h"
 
 //Core headers
 #include <ZstVersion.h>
@@ -12,34 +14,30 @@ using namespace std;
 
 ZstStage::ZstStage() : 
 	m_is_destroyed(false),
+	m_actor(NULL),
 	m_session(NULL),
-	m_transport(NULL),
-	m_dispatch(NULL)
+	m_transport(NULL)
 {
 	m_session = new ZstStageSession();
 	m_transport = new ZstStageTransport();
-	m_dispatch = new ZstTransportDispatcher();
-
-	m_transport->set_dispatcher(m_dispatch);
-	m_dispatch->set_transport(m_transport);
-
+	m_actor = new ZstActor();
 	m_stage_events.add_adaptor(m_dispatch);
 }
 
 ZstStage::~ZstStage()
 {
-	destroy();
 	delete m_session;
 	delete m_transport;
-	delete m_dispatch;
+	delete m_actor;;
 }
 
-void ZstStage::init(const char * stage_name)
+void ZstStage::init_stage(const char * stage_name)
 {
 	ZstLog::init_logger(stage_name, LogLevel::debug);
 	ZstLog::net(LogLevel::notification, "Starting Showtime v{} stage server", SHOWTIME_VERSION);
-
-	m_heartbeat_timer_id = attach_timer(stage_heartbeat_timer_func, HEARTBEAT_DURATION, this);
+	
+	m_heartbeat_timer_id = m_actor->attach_timer(HEARTBEAT_DURATION, [this]() {this->stage_heartbeat_timer_func(); });
+	m_actor->start_loop();
 }
 
 void ZstStage::destroy()
@@ -52,11 +50,11 @@ void ZstStage::destroy()
 	m_stage_events.remove_all_adaptors();
 	this->flush_events();
 
+	m_actor->stop_loop();
 	m_session->destroy();
 	m_transport->destroy();
-	m_dispatch->destroy();
-	
-	detach_timer(m_heartbeat_timer_id);	
+	m_actor->detach_timer(m_heartbeat_timer_id);
+	m_actor->destroy();
 }
 
 bool ZstStage::is_destroyed()
@@ -82,6 +80,7 @@ void ZstStage::on_receive_msg(ZstStageMessage * msg)
 	//Check client hasn't finished joining yet
 	if (!sender)
 		return;
+<<<<<<< HEAD
 
 	switch (msg->kind()) {
 	case ZstMsgKind::CLIENT_SYNC:
@@ -97,6 +96,7 @@ void ZstStage::on_receive_msg(ZstStageMessage * msg)
 		break;
 	}
 	
+
 	//Send ack
 	if (response) {
 		//Copy ID of the original message so we can match this message to a promise on the client
@@ -109,11 +109,9 @@ void ZstStage::on_receive_msg(ZstStageMessage * msg)
 }
 
 
-
 //---------------------
 // Outgoing event queue
 //---------------------
-
 
 ZstStageMessage * ZstStage::synchronise_client_graph(ZstPerformer * client) {
 
@@ -129,21 +127,17 @@ ZstStageMessage * ZstStage::synchronise_client_graph(ZstPerformer * client) {
 	
 	//Pack cables
 	for (auto cable : m_cables) {
-		send_to_client(msg_pool()->get_msg()->init_serialisable_message(ZstMsgKind::CREATE_CABLE, *cable), client);
+		send_to_client(msg_pool().get_msg()->init(ZstMsgKind::CREATE_CABLE, *cable), client);
 	}
 	
-    return msg_pool()->get_msg()->init_message(ZstMsgKind::OK);
+    return msg_pool().get_msg()->init(ZstMsgKind::OK);
 }
 
 
-// -------
-
-int ZstStage::stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * arg)
+void ZstStage::stage_heartbeat_timer_func()
 {
-	ZstStage * stage = (ZstStage*)arg;
-	ZstClientMap clients = stage->m_clients;
 	std::vector<ZstPerformer*> removed_clients;
-	for (auto performer_it : stage->m_clients) {
+	for (auto performer_it : m_clients) {
 		ZstPerformer * performer = performer_it.second;
 		if (performer->get_active_heartbeat()) {
 			performer->clear_active_hearbeat();
@@ -159,7 +153,6 @@ int ZstStage::stage_heartbeat_timer_func(zloop_t * loop, int timer_id, void * ar
 	}
 
 	for (auto client : removed_clients) {
-		stage->destroy_client(client);
+		destroy_client(client);
 	}
-	return 0;
 }

@@ -235,7 +235,7 @@ void ZstContainer::add_adaptor_to_children(ZstSynchronisableAdaptor * adaptor)
 {
 	ZstComponent::add_adaptor_to_children(adaptor);
 	for (auto child : m_children) {
-		child.second->add_adaptor(adaptor);
+        child.second->add_adaptor_to_children(adaptor);
 	}
 }
 
@@ -243,7 +243,7 @@ void ZstContainer::remove_adaptor_from_children (ZstSynchronisableAdaptor * adap
 {
 	ZstComponent::remove_adaptor_from_children(adaptor);
 	for (auto child : m_children) {
-		child.second->remove_adaptor(adaptor);
+        child.second->remove_adaptor_from_children(adaptor);
 	}
 }
 
