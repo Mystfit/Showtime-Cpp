@@ -72,7 +72,7 @@ private:
 	void cleanup_response_message(ZstMsgID id);
 	void process_responses(ZstMessage * msg);
 
-	std::unordered_map<ZstMsgID, MessagePromise > m_promise_messages;
+	std::unordered_map<ZstMsgID, MessagePromise > m_deferred_cables;
 	moodycamel::ConcurrentQueue<ZstMsgID> m_dead_promises;
 	cf::time_watcher * m_timeout_watcher;
 

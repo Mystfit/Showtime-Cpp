@@ -12,6 +12,7 @@ class ZstTransportAdaptor : public ZstEventAdaptor
 public:
 	ZST_EXPORT virtual void on_receive_msg(ZstMessage * msg);
 
+	ZST_EXPORT virtual void send_message(ZstMessage * msg);
 	ZST_EXPORT virtual void send_message(ZstMsgKind kind, const ZstMsgArgs & args);
 	ZST_EXPORT virtual void send_message(ZstMsgKind kind, const ZstSerialisable & serialisable);
 	ZST_EXPORT virtual void send_message(ZstMsgKind kind, const ZstMsgArgs & args, const ZstSerialisable & serialisable);

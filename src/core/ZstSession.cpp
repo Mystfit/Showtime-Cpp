@@ -41,6 +41,10 @@ void ZstSession::destroy()
 	m_compute_events.remove_all_adaptors();
 }
 
+ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * output) {
+	return connect_cable(input, output, ZstTransportSendType::SYNC_REPLY);
+}
+
 ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * output, const ZstTransportSendType & sendtype)
 {
 	ZstCable * cable = NULL;
@@ -75,6 +79,11 @@ ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * outpu
 
 	//Create the cable early so we have something to return immediately
 	return cable;
+}
+
+void ZstSession::destroy_cable(ZstCable * cable)
+{
+	return destroy_cable(cable, ZstTransportSendType::SYNC_REPLY);
 }
 
 
@@ -150,6 +159,10 @@ ZstCable * ZstSession::create_cable(const ZstURI & input_path, const ZstURI & ou
 {
 	ZstCable * cable_ptr = find_cable(input_path, output_path);
 	if (cable_ptr) {
+		if (cable_ptr->is_proxy()) {
+
+		}
+
 		//If we created this cable already, we need to finish its activation
 		if(!cable_ptr->is_activated()){
 			synchronisable_enqueue_activation(cable_ptr);

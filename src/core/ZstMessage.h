@@ -25,14 +25,13 @@ enum ZstMsgKind  {
     OK,
     
     //Error signals starts
-    ERR_STAGE_MSG_TYPE_UNKNOWN, //2
+    ERR_MSG_TYPE_UNKNOWN, //2
     ERR_STAGE_BAD_CABLE_DISCONNECT_REQUEST,
     ERR_STAGE_BAD_CABLE_CONNECT_REQUEST,
     ERR_STAGE_PERFORMER_NOT_FOUND,
     ERR_STAGE_PERFORMER_ALREADY_EXISTS,
-    ERR_STAGE_ENTITY_NOT_FOUND,
-    ERR_STAGE_ENTITY_ALREADY_EXISTS,
-    ERR_STAGE_PLUG_ALREADY_EXISTS,
+    ERR_ENTITY_NOT_FOUND,
+    ERR_ENTITY_ALREADY_EXISTS,
 	ERR_STAGE_TIMEOUT,
     
     //Client registration
@@ -71,16 +70,15 @@ enum ZstMsgKind  {
 MSGPACK_ADD_ENUM(ZstMsgKind);
 
 static std::map<ZstMsgKind, char const*> ZstMsgNames {
-    {EMPTY, "empty"},    
+    {EMPTY, "empty"},
     {OK, "OK"},
-    {ERR_STAGE_MSG_TYPE_UNKNOWN, "ERR_STAGE_MSG_TYPE_UNKNOWN"}, 
+    {ERR_MSG_TYPE_UNKNOWN, "ERR_MSG_TYPE_UNKNOWN"}, 
     {ERR_STAGE_BAD_CABLE_DISCONNECT_REQUEST, "ERR_STAGE_BAD_CABLE_DISCONNECT_REQUEST"},
     {ERR_STAGE_BAD_CABLE_CONNECT_REQUEST, "ERR_STAGE_BAD_CABLE_CONNECT_REQUEST"},
     {ERR_STAGE_PERFORMER_NOT_FOUND, "ERR_STAGE_PERFORMER_NOT_FOUND"},
     {ERR_STAGE_PERFORMER_ALREADY_EXISTS, "ERR_STAGE_PERFORMER_ALREADY_EXISTS" },
-    {ERR_STAGE_ENTITY_NOT_FOUND, "ERR_STAGE_ENTITY_NOT_FOUND"},
-    {ERR_STAGE_ENTITY_ALREADY_EXISTS, "ERR_STAGE_ENTITY_ALREADY_EXISTS"},
-    {ERR_STAGE_PLUG_ALREADY_EXISTS, "ERR_STAGE_PLUG_ALREADY_EXISTS"},
+    {ERR_ENTITY_NOT_FOUND, "ERR_ENTITY_NOT_FOUND"},
+    {ERR_ENTITY_ALREADY_EXISTS, "ERR_ENTITY_ALREADY_EXISTS"},
 	{ERR_STAGE_TIMEOUT, "ERR_STAGE_TIMEOUT"},
     {CLIENT_JOIN, "CLIENT_JOIN"},
     {CLIENT_SYNC, "CLIENT_SYNC"},
@@ -102,6 +100,28 @@ static std::map<ZstMsgKind, char const*> ZstMsgNames {
     {SUBSCRIBE_TO_PERFORMER_ACK, "SUBSCRIBE_TO_PERFORMER_ACK"},
     {CREATE_PEER_ENTITY, "CREATE_PEER_ENTITY"},
 	{PERFORMANCE_MSG, "PERFORMANCE_MSG"}
+};
+
+
+enum ZstMsgArg {
+	OUTPUT_ADDRESS,
+	INPUT_PATH,
+	OUTPUT_PATH,
+	PATH,
+	CONNECTION_MSG_ID,
+	MSG_ID,
+	SENDER_IDENTITY,
+};
+MSGPACK_ADD_ENUM(ZstMsgArg);
+
+static std::map<ZstMsgArg, char const*> ZstMsgArgNames{
+	{ OUTPUT_ADDRESS, "outaddr"},
+	{ INPUT_PATH, "inpth" },
+	{ OUTPUT_PATH, "outpth" },
+	{ PATH, "pth" },
+	{ CONNECTION_MSG_ID, "connID" },
+	{ MSG_ID, "msgID" },
+	{ SENDER_IDENTITY, "sndr" }
 };
 
 
@@ -128,7 +148,7 @@ protected:
 	size_t m_size;
 };
 
-typedef std::unordered_map<std::string, std::string> ZstMsgArgs;
+typedef std::unordered_map<ZstMsgArg, std::string> ZstMsgArgs;
 
 class ZstMessage {
 public:
@@ -149,9 +169,10 @@ public:
 
 	ZST_EXPORT void append_empty_args();
 	ZST_EXPORT void append_args(const ZstMsgArgs & args);
-	ZST_EXPORT const std::string & get_arg_s(const char * key);
-	ZST_EXPORT const char * get_arg(const char * key);
-	ZST_EXPORT size_t get_arg_size(const char * key);
+	ZST_EXPORT void set_local_arg(const ZstMsgArg & key, const std::string & value);
+	ZST_EXPORT const std::string & get_arg_s(const ZstMsgArg & key) const;
+	ZST_EXPORT const char * get_arg(const ZstMsgArg & key) const;
+	ZST_EXPORT size_t get_arg_size(const ZstMsgArg & key) const;
 
 	ZST_EXPORT void log_args();
 
@@ -181,6 +202,7 @@ protected:
 	ZST_EXPORT void prepend_id_frame(ZstMsgID id);
 	ZST_EXPORT void append_id_frame(ZstMsgID id);
 	ZST_EXPORT void set_handle(zmsg_t * handle);
+
 	std::vector<ZstMessagePayload> m_payloads;
 	ZstMsgKind m_msg_kind;
 	ZstMsgID m_msg_id;

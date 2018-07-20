@@ -51,7 +51,6 @@ public:
 	void activate_entity(ZstEntityBase* entity, const ZstTransportSendType & sendtype) override;
 	void destroy_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype) override;
 
-
 	// ------------------------------
 	// Performers
 	// ------------------------------
@@ -65,7 +64,7 @@ public:
 	
 	ZstEntityBase * find_entity(const ZstURI & path) override;
 	bool path_is_local(const ZstURI & path);
-	void add_proxy_entity(ZstEntityBase & entity) override;
+	ZstMsgKind add_proxy_entity(ZstEntityBase & entity) override;
 	ZstPerformer * get_local_performer() const;
 
 
@@ -82,11 +81,8 @@ private:
 	// ----------------
 	// Event completion
 	// ----------------
-	
 	void activate_entity_complete(ZstMessageReceipt response, ZstEntityBase * entity);
-	void destroy_entity_complete(ZstMessageReceipt response, ZstEntityBase * entity);
-	void destroy_plug_complete(ZstMessageReceipt response, ZstPlug * plug);
-
+	void destroy_entity_complete(ZstEntityBase * entity) override;
 
 	// -----------------
 	// Event dispatchers

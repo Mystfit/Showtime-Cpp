@@ -113,10 +113,10 @@ void ZstClientHierarchy::activate_entity_complete(ZstMessageReceipt response, Zs
 	case ZstMsgKind::OK:
 		synchronisable_enqueue_activation(entity);
 		break;
-	case ZstMsgKind::ERR_STAGE_ENTITY_ALREADY_EXISTS:
+	case ZstMsgKind::ERR_ENTITY_ALREADY_EXISTS:
 		synchronisable_set_error(entity, ZstSyncError::ENTITY_ALREADY_EXISTS);
 		break;
-	case ZstMsgKind::ERR_STAGE_ENTITY_NOT_FOUND:
+	case ZstMsgKind::ERR_ENTITY_NOT_FOUND:
 		synchronisable_set_error(entity, ZstSyncError::PERFORMER_NOT_FOUND);
 		break;
 	default:
@@ -135,73 +135,33 @@ void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTranspo
 	if (!entity->is_proxy()) {
 		m_stage_events.invoke([this, sendtype, entity](ZstTransportAdaptor * adaptor) {
 			adaptor->send_message(ZstMsgKind::DESTROY_ENTITY, sendtype, {{"path", entity->URI().path()}}, [this, entity](ZstMessageReceipt response) {
-				this->destroy_entity_complete(response, entity);
+				if (response.status != ZstMsgKind::OK) {
+					ZstLog::net(LogLevel::error, "Destroy entity failed with status {}", ZstMsgNames[response.status]);
+					return;
+				}
+				this->destroy_entity_complete(entity);
                 ZstSynchronisable::remove_adaptor(entity, this);
 			});
 		});
 	}
 	else {
-		destroy_entity_complete(ZstMessageReceipt{ZstMsgKind::OK, sendtype }, entity);
+		destroy_entity_complete(entity);
 	}
 
-	if (sendtype == ZstTransportSendType::SYNC_REPLY) {
+	if (sendtype != ZstTransportSendType::ASYNC_REPLY) {
 		process_events();
         ZstSynchronisable::remove_adaptor(entity, this);
 	}
 }
 
-void ZstClientHierarchy::destroy_entity_complete(ZstMessageReceipt response, ZstEntityBase * entity)
+void ZstClientHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 {
-	if (!entity) return;
-
-	synchronisable_set_destroyed(entity);
-
-	if (response.status != ZstMsgKind::OK) {
-		ZstLog::net(LogLevel::notification, "Destroy entity failed with status {}", ZstMsgNames[response.status]);
-	}
-	ZstContainer * parent = NULL;
-
-	//Remove entity from parent
-	if (entity->parent()) {
-		parent = dynamic_cast<ZstContainer*>(entity->parent());
-		parent->remove_child(entity);
-	}
-	else {
-		//Entity is a root performer. Remove from performer list
-		m_clients.erase(entity->URI());
-	}
-
 	//Pre-emptively disconnect all cables inside the entity
 	ZstCableBundle * bundle = entity->acquire_cable_bundle();
 	bundle->disconnect_all();
 	entity->release_cable_bundle(bundle);
-	
-	//Dispatch events depending on entity type
-	if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
-		//Remove plug
-		parent->remove_plug(dynamic_cast<ZstPlug*>(entity));
-		hierarchy_events().defer([entity](ZstHierarchyAdaptor * dlg) { 
-			dlg->on_plug_leaving(static_cast<ZstPlug*>(entity)); 
-		});
-	}
-	else if (strcmp(entity->entity_type(), PERFORMER_TYPE) == 0)
-	{
-		//Remove performer
-		hierarchy_events().defer([entity](ZstHierarchyAdaptor * adp) {
-			adp->on_performer_leaving(static_cast<ZstPerformer*>(entity));
-		});
-	}		
-	else 
-	{
-		//Remove entity
-		hierarchy_events().defer([entity](ZstHierarchyAdaptor * dlg) {
-			dlg->on_entity_leaving(entity);
-		});
-	}
 
-	//Finally, add non-local entities to the reaper to destroy them at the correct time
-	//TODO: Only destroying proxy entities at the moment. Local entities should be managed by the host application
-	synchronisable_enqueue_deactivation(entity);
+	ZstHierarchy::destroy_entity_complete(entity);
 }
 
 
@@ -229,15 +189,15 @@ bool ZstClientHierarchy::path_is_local(const ZstURI & path) {
 	return path.contains(m_root->URI());
 }
 
-void ZstClientHierarchy::add_proxy_entity(ZstEntityBase & entity) {
+ZstMsgKind ZstClientHierarchy::add_proxy_entity(ZstEntityBase & entity) {
 
 	// Don't need to activate local entities, they will auto-activate when the stage responds with an OK
 	// Also, we can't rely on the proxy flag here as it won't have been set yet
 	if (path_is_local(entity.URI())) {
 		ZstLog::net(LogLevel::debug, "Received local entity {}. Ignoring", entity.URI().path());
-		return;
+		return ZstMsgKind::EMPTY;
 	}
-	ZstHierarchy::add_proxy_entity(entity);
+	return ZstHierarchy::add_proxy_entity(entity);
 }
 
 ZstPerformer * ZstClientHierarchy::get_local_performer() const

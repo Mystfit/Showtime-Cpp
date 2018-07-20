@@ -4,9 +4,7 @@
 #include <vector>
 #include <unordered_map>
 #include <algorithm>
-#include <cf/cfuture.h>
-#include <cf/time_watcher.h>
-#include "czmq.h"
+#include <boost/thread/thread.hpp>
 
 //Showtime API
 #include <ZstCore.h>
@@ -14,39 +12,47 @@
 //Core headers
 #include "../core/ZstActor.h"
 #include "../core/ZstStageMessage.h"
+#include "../core/adaptors/ZstTransportAdaptor.hpp"
 
 //Stage headers
 #include "ZstStageSession.h"
-#include "ZstStageTransport.h"
+#include "ZstStagePublisherTransport.h"
+#include "ZstStageRouterTransport.h"
 
 
 class ZstStage : 
-	public ZstStageDispatchAdaptor
+	public ZstTransportAdaptor,
+	public ZstEventDispatcher<ZstTransportAdaptor*>
 {
 public:
 	ZstStage();
 	~ZstStage();
-	void init_stage(const char * stage_name);
-	void destroy() override;
+	void init_stage(const char * stage_name, bool threaded);
+	void destroy();
 	bool is_destroyed();	
-
 	void process_events();
-	void flush_events();
-
-	void on_receive_msg(ZstStageMessage * msg) override;
-
+	
 private:
 	bool m_is_destroyed;
+	bool m_is_threaded;
+	boost::thread m_eventloop_thread;
 
 	int m_heartbeat_timer_id;
 	void stage_heartbeat_timer_func();
 
-   	//Outgoing events
-	ZstStageMessage * synchronise_client_graph(ZstPerformer * client);
-
 	ZstActor * m_actor;
 	ZstStageSession * m_session;
-	ZstStageTransport * m_transport;
+	
+	ZstStagePublisherTransport * m_publisher_transport;
+	ZstStageRouterTransport * m_router_transport;
+};
 
-	ZstEventDispatcher<ZstStageDispatchAdaptor*> m_stage_events;
+
+struct ZstStageLoop {
+public:
+	ZstStageLoop(ZstStage * stage);
+	void operator()();
+
+private:
+	ZstStage * m_stage;
 };

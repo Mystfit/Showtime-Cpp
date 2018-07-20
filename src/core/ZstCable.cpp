@@ -173,6 +173,16 @@ void ZstCableBundle::disconnect_all()
 	}
 }
 
+ZstCableBundleIterator ZstCableBundle::begin()
+{
+	return ZstCableBundleIterator(m_cables.begin());
+}
+
+ZstCableBundleIterator ZstCableBundle::end()
+{
+	return ZstCableBundleIterator(m_cables.end());
+}
+
 //--
 
 size_t ZstCableHash::operator()(ZstCable* const& k) const
@@ -186,6 +196,33 @@ bool ZstCableEq::operator()(ZstCable const * lhs, ZstCable const * rhs) const
 {
 	bool result = (*lhs == *rhs);
 	return result;
+}
+
+
+
+//---------------------
+//Cable bundle iterator
+//---------------------
+
+ZstCableBundleIterator::ZstCableBundleIterator(std::vector<ZstCable*>::iterator it) :
+	m_it(it)
+{
+}
+
+bool ZstCableBundleIterator::operator!=(const ZstCableBundleIterator & other)
+{
+	return (m_it != other.m_it);
+}
+
+const ZstCableBundleIterator & ZstCableBundleIterator::operator++()
+{
+	m_it++;
+	return *this;
+}
+
+ZstCable * ZstCableBundleIterator::operator*() const
+{
+	return *m_it;
 }
 
 

@@ -29,14 +29,15 @@ public:
 
 	ZST_EXPORT virtual void activate_entity(ZstEntityBase* entity, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
 	ZST_EXPORT virtual void destroy_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
-		
 	
+
 	// ------------------------------
 	// Performers
 	// ------------------------------
 
 	ZST_EXPORT virtual void add_performer(ZstPerformer & performer);
 	ZST_EXPORT virtual ZstPerformer * get_performer_by_URI(const ZstURI & uri) const;
+	ZST_EXPORT virtual std::vector<ZstPerformer*> get_performers();
 
 
 	// ------------------------------
@@ -46,8 +47,14 @@ public:
 	ZST_EXPORT virtual ZstEntityBase * find_entity(const ZstURI & path);
 	ZST_EXPORT virtual ZstPlug * find_plug(const ZstURI & path);
 
-	ZST_EXPORT virtual void add_proxy_entity(ZstEntityBase & entity);
+
+	// ------------------------------
+	// Hierarchy manipulation
+	// ------------------------------
+
+	ZST_EXPORT virtual ZstMsgKind add_proxy_entity(ZstEntityBase & entity);
 	ZST_EXPORT virtual void remove_proxy_entity(ZstEntityBase * entity);
+
 
 	// -----------------
 	// Event dispatchers
@@ -64,6 +71,7 @@ public:
 
 
 protected:
+	ZST_EXPORT virtual void destroy_entity_complete(ZstEntityBase * entity);
 	ZstPerformerMap m_clients;
 
 private:

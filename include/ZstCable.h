@@ -78,6 +78,18 @@ struct ZstCableEq {
 typedef std::unordered_set<ZstCable*, ZstCableHash, ZstCableEq> ZstCableList;
 
 
+class ZstCableBundleIterator {
+public:
+	ZST_EXPORT ZstCableBundleIterator(std::vector<ZstCable*>::iterator it);
+	ZST_EXPORT bool operator!=(const ZstCableBundleIterator& other);
+	ZST_EXPORT const ZstCableBundleIterator& operator++();
+	ZST_EXPORT ZstCable * operator*() const;
+
+private:
+	std::vector<ZstCable*>::iterator m_it;
+};
+
+
 class ZstCableBundle {
 public:
 	ZST_EXPORT ZstCableBundle();
@@ -86,6 +98,10 @@ public:
 	ZST_EXPORT ZstCable * cable_at(size_t index);
 	ZST_EXPORT size_t size();
 	ZST_EXPORT void disconnect_all();
+	
+	//Cable enumeration
+	ZST_EXPORT ZstCableBundleIterator begin();
+	ZST_EXPORT ZstCableBundleIterator end();
 private:
 	std::vector<ZstCable*> m_cables;
 };
