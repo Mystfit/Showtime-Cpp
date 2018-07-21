@@ -140,21 +140,21 @@ void ZstClient::on_receive_msg(ZstMessage * msg)
 		break;
 	case ZstMsgKind::START_CONNECTION_HANDSHAKE:
 	{
-		start_connection_broadcast(ZstURI(msg->get_arg("inputpath")));
+		start_connection_broadcast(ZstURI(msg->get_arg(ZstMsgArg::INPUT_PATH)));
 		break;
 	}
 	case ZstMsgKind::STOP_CONNECTION_HANDSHAKE:
 	{
-		stop_connection_broadcast(ZstURI(msg->get_arg("inputpath")));
+		stop_connection_broadcast(ZstURI(msg->get_arg(ZstMsgArg::INPUT_PATH)));
 		break;
 	}
 	case ZstMsgKind::SUBSCRIBE_TO_PERFORMER:
 	{
 		//Listen for incoming handshake performance messages
-		m_pending_peer_connections[ZstURI(msg->get_arg("outputpath"))] = std::stoull(msg->get_arg("connID"));
+		m_pending_peer_connections[ZstURI(msg->get_arg(ZstMsgArg::OUTPUT_PATH))] = std::stoull(msg->get_arg(ZstMsgArg::CONNECTION_MSG_ID));
 		
 		//Start connecting to other peer
-		m_graph_transport->connect_to_client(msg->get_arg("outputaddress"));
+		m_graph_transport->connect_to_client(msg->get_arg(ZstMsgArg::OUTPUT_ADDRESS));
 		break;
 	}
 	default:
@@ -170,14 +170,14 @@ void ZstClient::on_receive_msg(ZstMessage * msg)
 void ZstClient::receive_connection_handshake(ZstMessage * msg)
 {
 	//Peer connection is successful if we receive a handshake performance message from the sending client
-	ZstURI output_path(msg->get_arg("outputpath"));
+	ZstURI output_path(msg->get_arg(ZstMsgArg::OUTPUT_PATH));
 	if(m_pending_peer_connections.find(output_path) != m_pending_peer_connections.end()){
 		invoke([this, &output_path](ZstTransportAdaptor* adaptor) {
 			std::stringstream ss;
 			ss << m_pending_peer_connections[output_path];
 			ZstMsgArgs args{ 
-				{"publisher", output_path.path()},
-				{"connID", ss.str()}
+				{ZstMsgArg::OUTPUT_PATH, output_path.path() },
+				{ZstMsgArg::CONNECTION_MSG_ID, ss.str()}
 			};
 			adaptor->send_message(ZstMsgKind::SUBSCRIBE_TO_PERFORMER_ACK, ZstTransportSendType::ASYNC_REPLY, args, [](ZstMessageReceipt receipt) {
 				if(receipt.status != ZstMsgKind::OK){
@@ -221,7 +221,7 @@ void ZstClient::join_stage(std::string stage_address, const ZstTransportSendType
 	ZstPerformer * root = session()->hierarchy()->get_local_performer();
 
 	invoke([this, sendtype, &graph_addr, root](ZstTransportAdaptor * adaptor) {
-		adaptor->send_message(ZstMsgKind::CLIENT_JOIN, sendtype, *root, {{"graphaddress", graph_addr}}, [this](ZstMessageReceipt response) {
+		adaptor->send_message(ZstMsgKind::CLIENT_JOIN, sendtype, *root, {{ZstMsgArg::OUTPUT_ADDRESS, graph_addr}}, [this](ZstMessageReceipt response) {
 			this->join_stage_complete(response);
 		});
 	});
@@ -360,7 +360,7 @@ void ZstClient::start_connection_broadcast(const ZstURI & remote_client_path)
 
 	m_connection_timers[remote_client->URI()] = m_actor->attach_timer(100, [this, local_client](){
 		//Cheat by sending a performance message with only the sender and no payload
-		m_graph_transport->send_message(ZstMsgKind::CONNECTION_HANDSHAKE, { {"outputpath", local_client->URI().path()} });
+		m_graph_transport->send_message(ZstMsgKind::CONNECTION_HANDSHAKE, { {ZstMsgArg::OUTPUT_PATH, local_client->URI().path()} });
 	});
 }
 

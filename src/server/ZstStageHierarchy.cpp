@@ -43,11 +43,14 @@ void ZstStageHierarchy::on_receive_msg(ZstMessage * msg)
 	}
 
 	if (response != ZstMsgKind::EMPTY) {
-		m_router_events.invoke([response, &sender_identity, &msg](ZstTransportAdaptor * adp) {
-			adp->send_message(response, {
-				{ ZstMsgArg::SENDER_IDENTITY, sender_identity },
-				{ ZstMsgArg::MSG_ID, std::string((char*)msg->id(), sizeof(ZstMsgKind)) }
-			});
+		ZstMsgID id_ul = msg->id();
+		char * id = (char*)id_ul;
+		ZstMsgArgs args = {
+			{ ZstMsgArg::SENDER_IDENTITY, sender_identity },
+			{ ZstMsgArg::MSG_ID, id}
+		};
+		router_events().invoke([response, &args, &msg](ZstTransportAdaptor * adp) {
+			adp->send_message(response, args);
 		});
 	}
 }
@@ -70,7 +73,7 @@ void ZstStageHierarchy::destroy_client(ZstPerformer * performer)
 		m_clients.erase(client_it);
 	}
 
-	m_publisher_events.invoke([performer](ZstTransportAdaptor * adp) {
+	publisher_events().invoke([performer](ZstTransportAdaptor * adp) {
 		adp->send_message(ZstMsgKind::DESTROY_ENTITY, { {ZstMsgArg::PATH, performer->URI().path() } });
 	});
 
@@ -108,7 +111,7 @@ ZstMsgKind ZstStageHierarchy::create_client_handler(std::string sender_identity,
 	m_client_socket_index[std::string(sender_identity)] = client_proxy;
 
 	//Update rest of network
-	m_publisher_events.invoke([client_proxy](ZstTransportAdaptor * adp) {
+	publisher_events().invoke([client_proxy](ZstTransportAdaptor * adp) {
 		adp->send_message(ZstMsgKind::CREATE_PERFORMER, *client_proxy);
 	});
 	return ZstMsgKind::OK;
@@ -129,7 +132,7 @@ ZstMsgKind ZstStageHierarchy::add_proxy_entity(ZstEntityBase & entity)
 	ZstEntityBase * proxy = find_entity(entity.URI());
 
 	//Update rest of network
-	m_publisher_events.invoke([proxy](ZstTransportAdaptor * adp) {
+	publisher_events().invoke([proxy](ZstTransportAdaptor * adp) {
 		adp->send_message(ZstMsgKind::CREATE_PERFORMER, *proxy);
 	});
 	return msg_status;
@@ -147,7 +150,7 @@ void ZstStageHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 	}
 	
 	//Update rest of network
-	m_publisher_events.invoke([entity](ZstTransportAdaptor * adp) {
+	publisher_events().invoke([entity](ZstTransportAdaptor * adp) {
 		adp->send_message(ZstMsgKind::DESTROY_ENTITY, { {ZstMsgArg::PATH, entity->URI().path()} });
 	});
 

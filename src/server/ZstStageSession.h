@@ -2,12 +2,14 @@
 
 #include "../core/adaptors/ZstTransportAdaptor.hpp"
 #include "../core/ZstSession.h"
+#include "ZstStageModule.h"
 #include "ZstStageHierarchy.h"
 #include "ZstPerformerStageProxy.h"
 
 class ZstStageSession : 
 	public ZstSession,
-	public ZstHierarchyAdaptor
+	public ZstHierarchyAdaptor,
+	public ZstStageModule
 {
 public:
 	ZstStageSession();
@@ -30,6 +32,7 @@ public:
 	void disconnect_cables(ZstEntityBase * entity);
 	void destroy_cable(ZstCable * cable) override;
 
+
 	// -------
 	// Clients
 	// -------
@@ -37,13 +40,15 @@ public:
 	void connect_clients(const ZstMsgID & response_id, ZstPerformerStageProxy * output_client, ZstPerformerStageProxy * input_client);
 	ZstMsgKind complete_client_connection_handler(ZstMessage * msg, ZstPerformerStageProxy * input_client);
 
+
+	// -------
+	// Modules
+	// -------
+
 	ZstStageHierarchy * hierarchy() override;
 
 private:
 	std::unordered_map<ZstMsgID, MessagePromise> m_deferred_cables;
 
 	ZstStageHierarchy * m_hierarchy;
-
-	ZstEventDispatcher<ZstTransportAdaptor*> m_router_events;
-	ZstEventDispatcher<ZstTransportAdaptor*> m_publisher_events;
 };

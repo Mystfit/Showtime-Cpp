@@ -60,7 +60,7 @@ void ZstStageSession::on_receive_msg(ZstMessage * msg)
 	}
 
 	if (response != ZstMsgKind::EMPTY) {
-		m_router_events.invoke([response, &sender_identity, &msg](ZstTransportAdaptor * adp) {
+		router_events().invoke([response, &sender_identity, &msg](ZstTransportAdaptor * adp) {
 			adp->send_message(response, {
 				{ ZstMsgArg::SENDER_IDENTITY, sender_identity },
 				{ ZstMsgArg::MSG_ID, std::string((char*)msg->id(), sizeof(ZstMsgKind)) }
@@ -78,7 +78,7 @@ ZstMsgKind ZstStageSession::synchronise_client_graph(ZstPerformer * client) {
 	for (auto performer : performers) {
 		//Only pack performers that aren't the destination client
 		if (performer->URI() != client->URI()) {
-			m_router_events.invoke([performer](ZstTransportAdaptor * adp) {
+			router_events().invoke([performer](ZstTransportAdaptor * adp) {
 				adp->send_message(ZstMsgKind::CREATE_PERFORMER, *performer);
 			});
 		}
@@ -86,7 +86,7 @@ ZstMsgKind ZstStageSession::synchronise_client_graph(ZstPerformer * client) {
 
 	//Pack cables
 	for (auto cable : m_cables) {
-		m_router_events.invoke([cable](ZstTransportAdaptor * adp) {
+		router_events().invoke([cable](ZstTransportAdaptor * adp) {
 			adp->send_message(ZstMsgKind::CREATE_CABLE, *cable);
 		});
 	}
@@ -132,7 +132,7 @@ ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformer 
 					//Publish cable to graph
 					create_cable_complete_handler(cable_ptr);
 
-					m_router_events.invoke([id, this, performer](ZstTransportAdaptor * adp) {
+					router_events().invoke([id, this, performer](ZstTransportAdaptor * adp) {
 						adp->send_message(ZstMsgKind::OK, { 
 							{ZstMsgArg::SENDER_IDENTITY, this->m_hierarchy->get_socket_ID(performer)},
 							{ZstMsgArg::MSG_ID, std::string((char*)id, sizeof(ZstMsgKind)) }
@@ -160,7 +160,7 @@ ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformer 
 ZstMsgKind ZstStageSession::create_cable_complete_handler(ZstCable * cable)
 {
 	ZstLog::net(LogLevel::notification, "Client connection complete. Publishing cable {}-{}", cable->get_input_URI().path(), cable->get_output_URI().path());
-	m_router_events.invoke([cable](ZstTransportAdaptor * adp) {
+	router_events().invoke([cable](ZstTransportAdaptor * adp) {
 		adp->send_message(ZstMsgKind::CREATE_CABLE, *cable);
 	});
 	return ZstMsgKind::OK;
@@ -209,7 +209,7 @@ void ZstStageSession::destroy_cable(ZstCable * cable) {
 	ZstSession::destroy_cable(cable, ZstTransportSendType::PUBLISH);
 
 	//Update rest of network
-	m_publisher_events.invoke([this, cable](ZstTransportAdaptor * adp) {adp->send_message(ZstMsgKind::DESTROY_CABLE, *cable); });
+	publisher_events().invoke([this, cable](ZstTransportAdaptor * adp) {adp->send_message(ZstMsgKind::DESTROY_CABLE, *cable); });
 }
 
 
@@ -227,13 +227,13 @@ void ZstStageSession::connect_clients(const ZstMsgID & response_id, ZstPerformer
 		{ ZstMsgArg::SENDER_IDENTITY, m_hierarchy->get_socket_ID(input_client) }
 	};
 	
-	m_router_events.invoke([&receiver_args](ZstTransportAdaptor * adp) {
+	router_events().invoke([&receiver_args](ZstTransportAdaptor * adp) {
 		adp->send_message(ZstMsgKind::SUBSCRIBE_TO_PERFORMER, receiver_args);
 	});
 
 	ZstLog::net(LogLevel::notification, "Sending P2P handshake broadcast request to {}", output_client->URI().path());
 	ZstMsgArgs broadcaster_args{ {ZstMsgArg::SENDER_IDENTITY, m_hierarchy->get_socket_ID(input_client) } };
-	m_router_events.invoke([&broadcaster_args](ZstTransportAdaptor * adp) {
+	router_events().invoke([&broadcaster_args](ZstTransportAdaptor * adp) {
 		adp->send_message(ZstMsgKind::START_CONNECTION_HANDSHAKE, broadcaster_args);
 	});
 }
@@ -256,7 +256,7 @@ ZstMsgKind ZstStageSession::complete_client_connection_handler(ZstMessage * msg,
 		{ZstMsgArg::INPUT_PATH, input_client->URI().path()},
 		{ZstMsgArg::SENDER_IDENTITY, m_hierarchy->get_socket_ID(output_client)}
 	};
-	m_router_events.invoke([&args](ZstTransportAdaptor * adp) {
+	router_events().invoke([&args](ZstTransportAdaptor * adp) {
 		adp->send_message(ZstMsgKind::STOP_CONNECTION_HANDSHAKE, args);
 	});
 

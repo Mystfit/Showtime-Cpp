@@ -50,6 +50,10 @@ void ZstStage::init_stage(const char * stage_name, bool threaded)
 	//Attach adaptors
 	m_router_transport->msg_events()->add_adaptor(m_session);
 	m_router_transport->msg_events()->add_adaptor(m_session->hierarchy());
+	m_session->router_events().add_adaptor(m_router_transport);
+	m_session->publisher_events().add_adaptor(m_publisher_transport);
+	m_session->hierarchy()->router_events().add_adaptor(m_router_transport);
+	m_session->hierarchy()->publisher_events().add_adaptor(m_publisher_transport);
 
 	//Start event loop
 	m_eventloop_thread = boost::thread::thread(ZstStageLoop(this));
@@ -134,7 +138,7 @@ void ZstStageLoop::operator()()
 			m_stage->process_events();
 		}
 	}
-	catch (boost::thread_interrupted interrupt) {
+	catch (boost::thread_interrupted) {
 		ZstLog::net(LogLevel::debug, "Stage event loop exiting.");
 	}
 }

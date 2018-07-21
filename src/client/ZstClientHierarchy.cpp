@@ -71,7 +71,7 @@ void ZstClientHierarchy::on_receive_msg(ZstMessage * msg)
 	}
 	case ZstMsgKind::DESTROY_ENTITY:
 	{
-		remove_proxy_entity(find_entity(ZstURI(msg->get_arg("path"))));
+		remove_proxy_entity(find_entity(ZstURI(msg->get_arg(ZstMsgArg::PATH))));
 		break;
 	}
 	default:
@@ -134,7 +134,7 @@ void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTranspo
 	//If the entity is local, let the stage know it's leaving
 	if (!entity->is_proxy()) {
 		m_stage_events.invoke([this, sendtype, entity](ZstTransportAdaptor * adaptor) {
-			adaptor->send_message(ZstMsgKind::DESTROY_ENTITY, sendtype, {{"path", entity->URI().path()}}, [this, entity](ZstMessageReceipt response) {
+			adaptor->send_message(ZstMsgKind::DESTROY_ENTITY, sendtype, {{ZstMsgArg::PATH, entity->URI().path()}}, [this, entity](ZstMessageReceipt response) {
 				if (response.status != ZstMsgKind::OK) {
 					ZstLog::net(LogLevel::error, "Destroy entity failed with status {}", ZstMsgNames[response.status]);
 					return;

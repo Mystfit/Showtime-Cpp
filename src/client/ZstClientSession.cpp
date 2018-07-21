@@ -98,7 +98,7 @@ void ZstClientSession::on_receive_graph_msg(ZstMessage * msg)
 	}
 
 	//Find local proxy for the sending plug
-	ZstPlug * sending_plug = dynamic_cast<ZstPlug*>(hierarchy()->find_entity(ZstURI(msg->get_arg("path"))));
+	ZstPlug * sending_plug = dynamic_cast<ZstPlug*>(hierarchy()->find_entity(ZstURI(msg->get_arg(ZstMsgArg::PATH))));
 	ZstInputPlug * receiving_plug = NULL;
 
 	if (!sending_plug) {
@@ -123,7 +123,7 @@ void ZstClientSession::entity_publish_update(ZstEntityBase *entity)
 {
     m_performance_events.invoke([entity](ZstTransportAdaptor * adaptor) {
         if(strcmp(entity->entity_type(), PLUG_TYPE) == 0){
-            adaptor->send_message(ZstMsgKind::PERFORMANCE_MSG, {{"path", entity->URI().path()}}, *static_cast<ZstOutputPlug*>(entity)->raw_value());
+            adaptor->send_message(ZstMsgKind::PERFORMANCE_MSG, {{ZstMsgArg::PATH, entity->URI().path()}}, *static_cast<ZstOutputPlug*>(entity)->raw_value());
         }
     });
 }

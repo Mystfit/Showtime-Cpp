@@ -4,12 +4,14 @@
 #include "../core/ZstHierarchy.h"
 #include "../core/ZstStageMessage.h"
 #include "ZstPerformerStageProxy.h"
+#include "ZstStageModule.h"
 
 typedef std::unordered_map<std::string, ZstPerformerStageProxy*> ZstClientSocketMap;
 
 class ZstStageHierarchy : 
 	public ZstHierarchy,
-	public ZstTransportAdaptor
+	public ZstTransportAdaptor,
+	public ZstStageModule
 {
 public:
 	~ZstStageHierarchy();
@@ -34,7 +36,4 @@ public:
 
 private:
 	ZstClientSocketMap m_client_socket_index;
-
-	ZstEventDispatcher<ZstTransportAdaptor*> m_router_events;
-	ZstEventDispatcher<ZstTransportAdaptor*> m_publisher_events;
 };
