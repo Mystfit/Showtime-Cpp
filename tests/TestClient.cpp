@@ -498,10 +498,10 @@ void test_connect_plugs() {
     
     //Cleanup
     zst_deactivate_entity(test_input);
+	clear_callback_queue();
     delete test_output;
     delete test_input;
     delete cable_activation;
-    clear_callback_queue();
 }
 
 void test_add_filter() {
