@@ -166,7 +166,7 @@ ZstMsgKind ZstHierarchy::add_proxy_entity(ZstEntityBase & entity) {
 	return ZstMsgKind::OK;
 }
 
-void ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
+ZstMsgKind ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 {
 	if (entity) {
 		if (entity->is_proxy()) {
@@ -175,6 +175,8 @@ void ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 			destroy_entity(entity, ZstTransportSendType::SYNC_REPLY);
 		}
 	}
+
+	return ZstMsgKind::OK;
 }
 
 void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
@@ -232,6 +234,9 @@ ZstEventDispatcher<ZstHierarchyAdaptor*> & ZstHierarchy::hierarchy_events()
 {
 	m_synchronisable_events.process_events();
 	m_hierarchy_events.process_events();
+
+	//Reaper is updated last in case entities still need to be queried
+	m_reaper.reap_all();
 }
 
  void ZstHierarchy::flush_events()
@@ -245,4 +250,10 @@ void ZstHierarchy::synchronisable_has_event(ZstSynchronisable * synchronisable)
 	m_synchronisable_events.defer([this, synchronisable](ZstSynchronisableAdaptor * dlg) {
 		this->synchronisable_process_events(synchronisable); 
 	});
+}
+
+void ZstHierarchy::on_synchronisable_destroyed(ZstSynchronisable * synchronisable)
+{
+	if (synchronisable->is_proxy())
+		m_reaper.add(synchronisable);
 }

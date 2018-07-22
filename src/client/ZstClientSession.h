@@ -12,7 +12,6 @@
 //Client modules
 #include "ZstClientModule.h"
 #include "ZstClientHierarchy.h"
-#include "ZstReaper.h"
 
 //Liasons
 #include "../core/liasons/ZstCableLiason.hpp"
@@ -61,14 +60,6 @@ public:
     void entity_publish_update(ZstEntityBase * entity) override;
 
 
-	// -------------------------------
-	// Adaptor syncronisable methods
-	// -------------------------------
-
-	void on_synchronisable_destroyed(ZstSynchronisable * synchronisable) override;
-	void synchronisable_has_event(ZstSynchronisable * synchronisable) override;
-
-
 	// ------------------
 	// Cable creation
 	// ------------------
@@ -103,6 +94,5 @@ private:
 	ZstEventDispatcher<ZstTransportAdaptor*> m_stage_events;
 	ZstEventDispatcher<ZstTransportAdaptor*> m_performance_events;
 	
-	ZstReaper m_reaper;
 	ZstClientHierarchy * m_hierarchy;
 };

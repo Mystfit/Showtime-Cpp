@@ -1,3 +1,4 @@
+#include <ZstLogging.h>
 #include "ZstReaper.h"
 
 void ZstReaper::add(ZstSynchronisable * synchronisable)
@@ -41,6 +42,7 @@ void ZstReaper::reap_all()
 	std::unique_lock<std::mutex> lock(m_mutex);
 
 	if (m_items_to_reap.size()) {
+		ZstLog::net(LogLevel::debug, "Reaper removing {} items", m_items_to_reap.size());
 		for (auto entity : m_items_to_reap) {
 			delete entity.second;
 		}

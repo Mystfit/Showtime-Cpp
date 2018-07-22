@@ -6,6 +6,7 @@
 #include <adaptors/ZstEntityAdaptor.hpp>
 #include <adaptors/ZstComputeAdaptor.hpp>
 
+#include "ZstReaper.h"
 #include "ZstHierarchy.h"
 #include "liasons/ZstSynchronisableLiason.hpp"
 #include "liasons/ZstCableLiason.hpp"
@@ -37,6 +38,7 @@ public:
 	ZST_EXPORT virtual ZstCable * connect_cable(ZstInputPlug * input, ZstOutputPlug * output, const ZstTransportSendType & sendtype);
 	ZST_EXPORT virtual void destroy_cable(ZstCable * cable);
 	ZST_EXPORT virtual void destroy_cable(ZstCable * cable, const ZstTransportSendType & sendtype);
+	ZST_EXPORT virtual void destroy_cable_complete(ZstCable * cable);
 	ZST_EXPORT virtual void disconnect_plugs(ZstInputPlug * input_plug, ZstOutputPlug * output_plug);
 
 
@@ -54,6 +56,13 @@ public:
 
 	ZST_EXPORT virtual ZstHierarchy * hierarchy() = 0;
 
+
+	// -------------------------------
+	// Syncronisable adaptor overrides
+	// -------------------------------
+	
+	ZST_EXPORT void on_synchronisable_destroyed(ZstSynchronisable * synchronisable) override;
+	ZST_EXPORT void synchronisable_has_event(ZstSynchronisable * synchronisable) override;
 
 	// -------------
 	// Compute adaptor overrides
@@ -81,7 +90,15 @@ protected:
 	ZstCableList m_cables;
 
 private:
+	// -----------------
+	// Event dispatchers
+	// -----------------
 	ZstEventDispatcher<ZstSessionAdaptor*> m_session_events;
 	ZstEventDispatcher<ZstSynchronisableAdaptor*> m_synchronisable_events;
 	ZstEventDispatcher<ZstComputeAdaptor*> m_compute_events;
+
+	// -----------
+	// Destruction
+	// -----------
+	ZstReaper m_reaper;
 };

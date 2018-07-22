@@ -32,7 +32,6 @@ void ZstClientSession::process_events()
 {
 	ZstSession::process_events();
 	m_stage_events.process_events();
-	m_reaper.reap_all();
 }
 
 void ZstClientSession::flush()
@@ -140,19 +139,6 @@ void ZstClientSession::plug_received_value(ZstInputPlug * plug)
 }
 
 
-void ZstClientSession::on_synchronisable_destroyed(ZstSynchronisable * synchronisable)
-{
-	if(synchronisable->is_proxy())
-		m_reaper.add(synchronisable);
-}
-
-void ZstClientSession::synchronisable_has_event(ZstSynchronisable * synchronisable)
-{
-	synchronisable_events().defer([this, synchronisable](ZstSynchronisableAdaptor * dlg) {
-		this->synchronisable_process_events(synchronisable);
-	});
-}
-
 
 // ------------------
 // Cable creation API
@@ -188,7 +174,7 @@ void ZstClientSession::connect_cable_complete(ZstMessageReceipt response, ZstCab
 
 void ZstClientSession::destroy_cable(ZstCable * cable, const ZstTransportSendType & sendtype)
 {
-	ZstSession::destroy_cable(cable);
+	ZstSession::destroy_cable(cable, sendtype);
 	
 	m_stage_events.invoke([this, cable, sendtype](ZstTransportAdaptor * adaptor) {
 		adaptor->send_message(ZstMsgKind::DESTROY_CABLE, sendtype, *cable, [this, cable](ZstMessageReceipt response) {
@@ -202,15 +188,15 @@ void ZstClientSession::destroy_cable(ZstCable * cable, const ZstTransportSendTyp
 void ZstClientSession::destroy_cable_complete(ZstMessageReceipt response, ZstCable * cable)
 {
 	if (!cable) return;
+	if (!cable->is_activated()) return;
+
+	ZstSession::destroy_cable_complete(cable);
 
 	if (response.status != ZstMsgKind::OK) {
 		ZstLog::net(LogLevel::error, "Destroy cable failed with status {}", ZstMsgNames[response.status]);
 		return;
 	}
 	ZstLog::net(LogLevel::debug, "Destroy cable completed with status {}", ZstMsgNames[response.status]);
-	
-	//Remove the cable from our local cable list
-	ZstSession::destroy_cable(cable);
 
 	//Queue events
 	session_events().defer([cable](ZstSessionAdaptor * dlg) { dlg->on_cable_destroyed(cable); });

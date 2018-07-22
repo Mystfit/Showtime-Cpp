@@ -7,6 +7,7 @@
 #include <entities/ZstEntityBase.h>
 #include <entities/ZstPlug.h>
 #include <entities/ZstPerformer.h>
+#include "ZstReaper.h"
 #include "adaptors/ZstTransportAdaptor.hpp"
 #include "liasons/ZstPlugLiason.hpp"
 #include "liasons/ZstSynchronisableLiason.hpp"
@@ -53,7 +54,7 @@ public:
 	// ------------------------------
 
 	ZST_EXPORT virtual ZstMsgKind add_proxy_entity(ZstEntityBase & entity);
-	ZST_EXPORT virtual void remove_proxy_entity(ZstEntityBase * entity);
+	ZST_EXPORT virtual ZstMsgKind remove_proxy_entity(ZstEntityBase * entity);
 
 
 	// -----------------
@@ -68,6 +69,7 @@ public:
 	// Adaptor overrides
 	// -----------------
 	ZST_EXPORT void synchronisable_has_event(ZstSynchronisable * synchronisable) override;
+	ZST_EXPORT void on_synchronisable_destroyed(ZstSynchronisable * synchronisable) override;
 
 
 protected:
@@ -77,4 +79,5 @@ protected:
 private:
 	ZstEventDispatcher<ZstSynchronisableAdaptor*> m_synchronisable_events;
 	ZstEventDispatcher<ZstHierarchyAdaptor*> m_hierarchy_events;
+	ZstReaper m_reaper;
 };

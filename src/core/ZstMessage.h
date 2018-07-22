@@ -10,8 +10,6 @@
 #include "ZstMsgID.h"
 #include "liasons/ZstPlugLiason.hpp"
 
-#define KIND_FRAME_SIZE 1
-#define ZSTMSG_UUID_LENGTH 33	//Size of a CZMQ uuid (32 bytes + null terminator)
 
 /**
  * Enum:	ZstMsgKind
@@ -124,6 +122,8 @@ static std::map<ZstMsgArg, char const*> ZstMsgArgNames{
 	{ SENDER_IDENTITY, "sndr" }
 };
 
+typedef std::unordered_map<ZstMsgArg, std::string> ZstMsgArgs;
+
 
 /**
  * Class:	ZstMessagePayload
@@ -148,7 +148,6 @@ protected:
 	size_t m_size;
 };
 
-typedef std::unordered_map<ZstMsgArg, std::string> ZstMsgArgs;
 
 class ZstMessage {
 public:
@@ -193,7 +192,7 @@ public:
 		return serialisable;
 	}
 
-	ZST_EXPORT static ZstMsgKind entity_kind(ZstEntityBase * entity);
+	ZST_EXPORT static ZstMsgKind entity_kind(const ZstEntityBase & entity);
 
 protected:
 	ZST_EXPORT void append_payload_frame(const ZstSerialisable & streamable);

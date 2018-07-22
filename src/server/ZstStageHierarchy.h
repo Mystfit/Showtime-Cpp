@@ -17,19 +17,41 @@ public:
 	~ZstStageHierarchy();
 	void destroy() override;
 	
+
+	// ---------------------------
+	// Hierarchy adaptor overrides
+	// ---------------------------
+
 	void on_receive_msg(ZstMessage * msg) override;
+	
 
-	void destroy_client(ZstPerformer * performer);
+	// ----------------
+	// Clients
+	// ----------------
 
-	//Message handlers
 	ZstMsgKind create_client_handler(std::string sender_identity, ZstMessage * msg);
 	ZstMsgKind destroy_client_handler(ZstPerformer * performer);
 
+
+	// ----------------
+	// Proxies
+	// ----------------
+
 	ZstMsgKind add_proxy_entity(ZstEntityBase & entity) override;
-	void remove_proxy_entity(ZstEntityBase * entity) override;
+	ZstMsgKind remove_proxy_entity(ZstEntityBase * entity) override;
+
+
+	// ----------------
+	// Createables
+	// ----------------
 
 	ZstMsgKind create_entity_template_handler(ZstMessage * msg);
 	ZstMsgKind create_entity_from_template_handler(ZstMessage * msg);
+
+
+	// ---------------------
+	// Socket IDs
+	// ---------------------
 
 	ZstPerformerStageProxy * get_client_from_socket_id(const std::string & socket_id);
 	std::string get_socket_ID(const ZstPerformer * performer);

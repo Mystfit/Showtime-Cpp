@@ -17,6 +17,9 @@ void ZstSession::process_events()
 	m_synchronisable_events.process_events();
 	m_session_events.process_events();
 	m_compute_events.process_events();
+
+	//Reaper is updated last in case entities still need to be queried
+	m_reaper.reap_all();
 }
 
 void ZstSession::flush()
@@ -89,25 +92,30 @@ void ZstSession::destroy_cable(ZstCable * cable)
 
 void ZstSession::destroy_cable(ZstCable * cable, const ZstTransportSendType & sendtype)
 {
-    if (!cable) return;
-    
-    ZstInputPlug * input = cable->get_input();
-    ZstOutputPlug * output = cable->get_output();
-    
-    //Remove cable from plugs
-    if (input)
-        plug_remove_cable(input, cable);
-    
-    if (output){
-        plug_remove_cable(output, cable);
-        if(output->num_cables() < 1){
-            //Remove session adaptor from plug
-            ZstEntityBase::remove_adaptor(output, this);
-        }
-    }
-    
-    cable->set_input(NULL);
-    cable->set_output(NULL);
+
+}
+
+void ZstSession::destroy_cable_complete(ZstCable * cable)
+{
+	if (!cable) return;
+
+	ZstInputPlug * input = cable->get_input();
+	ZstOutputPlug * output = cable->get_output();
+
+	//Remove cable from plugs
+	if (input)
+		plug_remove_cable(input, cable);
+
+	if (output) {
+		plug_remove_cable(output, cable);
+		if (output->num_cables() < 1) {
+			//Remove session adaptor from plug
+			ZstEntityBase::remove_adaptor(output, this);
+		}
+	}
+
+	cable->set_input(NULL);
+	cable->set_output(NULL);
 
 	//Remove cable from local list so that other threads don't assume it still exists
 	m_cables.erase(cable);
@@ -228,6 +236,19 @@ void ZstSession::on_compute(ZstComponent * component, ZstInputPlug * plug) {
 	catch (std::exception e) {
 		ZstLog::entity(LogLevel::error, "Compute on component {} failed. Error was: {}", component->URI().path(), e.what());
 	}
+}
+
+void ZstSession::on_synchronisable_destroyed(ZstSynchronisable * synchronisable)
+{
+	if (synchronisable->is_proxy())
+		m_reaper.add(synchronisable);
+}
+
+void ZstSession::synchronisable_has_event(ZstSynchronisable * synchronisable)
+{
+	synchronisable_events().defer([this, synchronisable](ZstSynchronisableAdaptor * dlg) {
+		this->synchronisable_process_events(synchronisable);
+	});
 }
 
 ZstEventDispatcher<ZstSessionAdaptor*> & ZstSession::session_events()

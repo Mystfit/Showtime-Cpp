@@ -1,4 +1,5 @@
 #include "ZstStageHierarchy.h"
+#include <boost/lexical_cast.hpp>
 
 ZstStageHierarchy::~ZstStageHierarchy()
 {
@@ -7,7 +8,7 @@ ZstStageHierarchy::~ZstStageHierarchy()
 
 void ZstStageHierarchy::destroy() {
 	for (auto p : m_clients) {
-		destroy_client(p.second);
+		destroy_client_handler(p.second);
 	}
 }
 
@@ -24,60 +25,33 @@ void ZstStageHierarchy::on_receive_msg(ZstMessage * msg)
 		response = create_client_handler(sender_identity, msg);
 		break;
 	case ZstMsgKind::CREATE_COMPONENT:
-		add_proxy_entity(msg->unpack_payload_serialisable<ZstComponent>(0)) ? ZstMsgKind::OK : ZstMsgKind::ERR_ENTITY_NOT_FOUND;
+		response = add_proxy_entity(msg->unpack_payload_serialisable<ZstComponent>(0));
 		break;
 	case ZstMsgKind::CREATE_CONTAINER:
-		add_proxy_entity(msg->unpack_payload_serialisable<ZstContainer>(0));
+		response = add_proxy_entity(msg->unpack_payload_serialisable<ZstContainer>(0));
 		break;
 	case ZstMsgKind::CREATE_PLUG:
-		add_proxy_entity(msg->unpack_payload_serialisable<ZstPlug>(0));
+		response = add_proxy_entity(msg->unpack_payload_serialisable<ZstPlug>(0));
 		break;
 	case ZstMsgKind::CREATE_ENTITY_FROM_TEMPLATE:
 		response = create_entity_from_template_handler(msg);
 		break;
 	case ZstMsgKind::DESTROY_ENTITY:
-		remove_proxy_entity(find_entity(ZstURI(msg->get_arg(ZstMsgArg::PATH))));
+		response = remove_proxy_entity(find_entity(ZstURI(msg->get_arg(ZstMsgArg::PATH))));
 		break;
 	default:
 		break;
 	}
 
 	if (response != ZstMsgKind::EMPTY) {
-		ZstMsgID id_ul = msg->id();
-		char * id = (char*)id_ul;
 		ZstMsgArgs args = {
 			{ ZstMsgArg::SENDER_IDENTITY, sender_identity },
-			{ ZstMsgArg::MSG_ID, id}
+			{ ZstMsgArg::MSG_ID, boost::lexical_cast<std::string>(msg->id()) }
 		};
 		router_events().invoke([response, &args, &msg](ZstTransportAdaptor * adp) {
 			adp->send_message(response, args);
 		});
 	}
-}
-
-void ZstStageHierarchy::destroy_client(ZstPerformer * performer)
-{
-	//Nothing to do
-	if (performer == NULL) {
-		return;
-	}
-
-	ZstLog::net(LogLevel::notification, "Performer {} leaving", performer->URI().path());
-
-	ZstHierarchy::destroy_entity(performer);
-	hierarchy_events().invoke([performer](ZstHierarchyAdaptor * adp) { adp->on_performer_leaving(performer); });
-	
-	//Remove client and call all destructors in its hierarchy
-	ZstPerformerMap::iterator client_it = m_clients.find(performer->URI());
-	if (client_it != m_clients.end()) {
-		m_clients.erase(client_it);
-	}
-
-	publisher_events().invoke([performer](ZstTransportAdaptor * adp) {
-		adp->send_message(ZstMsgKind::DESTROY_ENTITY, { {ZstMsgArg::PATH, performer->URI().path() } });
-	});
-
-	delete performer;
 }
 
 ZstMsgKind ZstStageHierarchy::create_client_handler(std::string sender_identity, ZstMessage * msg)
@@ -119,8 +93,20 @@ ZstMsgKind ZstStageHierarchy::create_client_handler(std::string sender_identity,
 
 ZstMsgKind ZstStageHierarchy::destroy_client_handler(ZstPerformer * performer)
 {
-	destroy_client(performer);
-	return ZstMsgKind::OK;
+	//Nothing to do
+	if (performer == NULL) {
+		return ZstMsgKind::EMPTY;
+	}
+
+	ZstLog::net(LogLevel::notification, "Performer {} leaving", performer->URI().path());
+	
+	//Remove client and call all destructors in its hierarchy
+	ZstPerformerMap::iterator client_it = m_clients.find(performer->URI());
+	if (client_it != m_clients.end()) {
+		m_clients.erase(client_it);
+	}
+
+	return ZstHierarchy::remove_proxy_entity(performer);
 }
 
 
@@ -132,29 +118,22 @@ ZstMsgKind ZstStageHierarchy::add_proxy_entity(ZstEntityBase & entity)
 	ZstEntityBase * proxy = find_entity(entity.URI());
 
 	//Update rest of network
-	publisher_events().invoke([proxy](ZstTransportAdaptor * adp) {
-		adp->send_message(ZstMsgKind::CREATE_PERFORMER, *proxy);
+	publisher_events().invoke([proxy, &entity](ZstTransportAdaptor * adp) {
+		adp->send_message(ZstMessage::entity_kind(entity), *proxy);
 	});
 	return msg_status;
 }
 
-void ZstStageHierarchy::remove_proxy_entity(ZstEntityBase * entity)
+ZstMsgKind ZstStageHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 {
-	ZstHierarchy::remove_proxy_entity(entity);
-
-	//ZstMsgKind::ERR_ENTITY_NOT_FOUND;
-
-	//Let session remove all cables linked to this entity
-	if (strcmp(entity->entity_type(), PERFORMER_TYPE) == 0) {
-		hierarchy_events().invoke([entity](ZstHierarchyAdaptor *adp) {adp->on_entity_leaving(entity); });
-	}
-	
 	//Update rest of network
 	publisher_events().invoke([entity](ZstTransportAdaptor * adp) {
 		adp->send_message(ZstMsgKind::DESTROY_ENTITY, { {ZstMsgArg::PATH, entity->URI().path()} });
 	});
+	
+	destroy_entity_complete(entity);
 
-	delete entity;
+	return ZstMsgKind::OK;
 }
 
 

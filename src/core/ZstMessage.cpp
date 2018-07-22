@@ -5,6 +5,7 @@
 #include <entities/ZstComponent.h>
 #include <entities/ZstContainer.h>
 #include <entities/ZstPerformer.h>
+#include <entities/ZstPlug.h>
 #include <ZstLogging.h>
 #include "ZstMessage.h"
 
@@ -121,6 +122,7 @@ void ZstMessage::append_empty_args()
 
 void ZstMessage::append_args(const ZstMsgArgs & args)
 {
+	m_args = std::move(args);
 	std::stringstream buffer;
 	msgpack::pack(buffer, args.size());
 
@@ -239,20 +241,20 @@ void ZstMessage::append_serialisable(ZstMsgKind k, const ZstSerialisable & s)
 	append_payload_frame(s);
 }
 
-ZstMsgKind ZstMessage::entity_kind(ZstEntityBase * entity)
+ZstMsgKind ZstMessage::entity_kind(const ZstEntityBase & entity)
 {
 	//TODO: Replace with single CREATE_COMPONENT
 	ZstMsgKind kind(ZstMsgKind::EMPTY);
-	if (strcmp(entity->entity_type(), COMPONENT_TYPE) == 0) {
+	if (strcmp(entity.entity_type(), COMPONENT_TYPE) == 0) {
 		kind = ZstMsgKind::CREATE_COMPONENT;
 	}
-	else if (strcmp(entity->entity_type(), CONTAINER_TYPE) == 0) {
+	else if (strcmp(entity.entity_type(), CONTAINER_TYPE) == 0) {
 		kind = ZstMsgKind::CREATE_CONTAINER;
 	}
-	else if (strcmp(entity->entity_type(), PERFORMER_TYPE) == 0) {
+	else if (strcmp(entity.entity_type(), PERFORMER_TYPE) == 0) {
 		kind = ZstMsgKind::CREATE_PERFORMER;
 	}
-	else if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
+	else if (strcmp(entity.entity_type(), PLUG_TYPE) == 0) {
 		kind = ZstMsgKind::CREATE_PLUG;
 	}
 	return kind;
@@ -319,4 +321,3 @@ const size_t ZstMessagePayload::size()
 const char * ZstMessagePayload::data(){
 	return (char*)zframe_data(m_payload);
 }
-

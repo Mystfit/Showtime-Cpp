@@ -46,34 +46,20 @@ void ZstClientHierarchy::on_receive_msg(ZstMessage * msg)
 {
 	switch (msg->kind()) {
 	case ZstMsgKind::CREATE_PLUG:
-	{
-		ZstPlug plug = msg->unpack_payload_serialisable<ZstPlug>(0);
-		add_proxy_entity(plug);
+		add_proxy_entity(msg->unpack_payload_serialisable<ZstPlug>(0));
 		break;
-	}
 	case ZstMsgKind::CREATE_PERFORMER:
-	{
-		ZstPerformer performer = msg->unpack_payload_serialisable<ZstPerformer>(0);
-		add_performer(performer);
+		add_performer(msg->unpack_payload_serialisable<ZstPerformer>(0));
 		break;
-	}
 	case ZstMsgKind::CREATE_COMPONENT:
-	{
-		ZstComponent component = msg->unpack_payload_serialisable<ZstComponent>(0);
-		add_proxy_entity(component);
+		add_proxy_entity(msg->unpack_payload_serialisable<ZstComponent>(0));
 		break;
-	}
 	case ZstMsgKind::CREATE_CONTAINER:
-	{
-		ZstContainer container = msg->unpack_payload_serialisable<ZstContainer>(0);
-		add_proxy_entity(container);
+		add_proxy_entity(msg->unpack_payload_serialisable<ZstContainer>(0));
 		break;
-	}
 	case ZstMsgKind::DESTROY_ENTITY:
-	{
-		remove_proxy_entity(find_entity(ZstURI(msg->get_arg(ZstMsgArg::PATH))));
+		destroy_entity_complete(find_entity(ZstURI(msg->get_arg(ZstMsgArg::PATH))));
 		break;
-	}
 	default:
 		break;
 	}
@@ -92,7 +78,7 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 	//Build message
 	m_stage_events.invoke([this, entity, sendtype](ZstTransportAdaptor * adaptor)
 	{
-		adaptor->send_message(ZstMessage::entity_kind(entity), sendtype, *entity, [this, entity](ZstMessageReceipt response) {
+		adaptor->send_message(ZstMessage::entity_kind(*entity), sendtype, *entity, [this, entity](ZstMessageReceipt response) {
 			this->activate_entity_complete(response, entity);
 		});
 	});

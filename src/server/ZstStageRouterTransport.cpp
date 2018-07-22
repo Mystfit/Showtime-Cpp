@@ -1,3 +1,4 @@
+#include <boost/lexical_cast.hpp>
 #include "ZstStageRouterTransport.h"
 
 ZstStageRouterTransport::ZstStageRouterTransport()
@@ -66,11 +67,9 @@ int ZstStageRouterTransport::s_handle_router(zloop_t * loop, zsock_t * socket, v
 void ZstStageRouterTransport::send_message_impl(ZstMessage * msg)
 {
 	try {
-		ZstMsgID id = (ZstMsgID)msg->get_arg(ZstMsgArg::MSG_ID);
-		msg->set_id(id);
+		msg->set_id(boost::lexical_cast<ZstMsgID>(msg->get_arg(ZstMsgArg::MSG_ID)));
 	}
 	catch (std::out_of_range) {
-		//No msg ID argument in message
 	}
 
 	std::string identity_s = msg->get_arg(ZstMsgArg::SENDER_IDENTITY);

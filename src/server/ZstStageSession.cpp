@@ -63,7 +63,7 @@ void ZstStageSession::on_receive_msg(ZstMessage * msg)
 		router_events().invoke([response, &sender_identity, &msg](ZstTransportAdaptor * adp) {
 			adp->send_message(response, {
 				{ ZstMsgArg::SENDER_IDENTITY, sender_identity },
-				{ ZstMsgArg::MSG_ID, std::string((char*)msg->id(), sizeof(ZstMsgKind)) }
+				{ ZstMsgArg::MSG_ID, boost::lexical_cast<std::string>(msg->id()) }
 				});
 		});
 	}
@@ -73,21 +73,24 @@ ZstMsgKind ZstStageSession::synchronise_client_graph(ZstPerformer * client) {
 
 	ZstLog::net(LogLevel::notification, "Sending graph snapshot to {}", client->URI().path());
 
-	//Pack performer root entities
+	//Create sender args
+	ZstMsgArgs args{ { ZstMsgArg::SENDER_IDENTITY, this->hierarchy()->get_socket_ID(client) } };
+
+	//Send performer root entities
 	std::vector<ZstPerformer*> performers = hierarchy()->get_performers();
 	for (auto performer : performers) {
 		//Only pack performers that aren't the destination client
 		if (performer->URI() != client->URI()) {
-			router_events().invoke([performer](ZstTransportAdaptor * adp) {
-				adp->send_message(ZstMsgKind::CREATE_PERFORMER, *performer);
+			router_events().invoke([performer, &args](ZstTransportAdaptor * adp) {
+				adp->send_message(ZstMsgKind::CREATE_PERFORMER, args, *performer);
 			});
 		}
 	}
 
-	//Pack cables
+	//Send cables
 	for (auto cable : m_cables) {
-		router_events().invoke([cable](ZstTransportAdaptor * adp) {
-			adp->send_message(ZstMsgKind::CREATE_CABLE, *cable);
+		router_events().invoke([cable, &args](ZstTransportAdaptor * adp) {
+			adp->send_message(ZstMsgKind::CREATE_CABLE, args, *cable);
 		});
 	}
 
@@ -135,7 +138,7 @@ ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformer 
 					router_events().invoke([id, this, performer](ZstTransportAdaptor * adp) {
 						adp->send_message(ZstMsgKind::OK, { 
 							{ZstMsgArg::SENDER_IDENTITY, this->m_hierarchy->get_socket_ID(performer)},
-							{ZstMsgArg::MSG_ID, std::string((char*)id, sizeof(ZstMsgKind)) }
+							{ZstMsgArg::MSG_ID, boost::lexical_cast<std::string>(id) }
 						});
 					});
 				}
@@ -160,7 +163,7 @@ ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformer 
 ZstMsgKind ZstStageSession::create_cable_complete_handler(ZstCable * cable)
 {
 	ZstLog::net(LogLevel::notification, "Client connection complete. Publishing cable {}-{}", cable->get_input_URI().path(), cable->get_output_URI().path());
-	router_events().invoke([cable](ZstTransportAdaptor * adp) {
+	publisher_events().invoke([cable](ZstTransportAdaptor * adp) {
 		adp->send_message(ZstMsgKind::CREATE_CABLE, *cable);
 	});
 	return ZstMsgKind::OK;
@@ -206,10 +209,12 @@ void ZstStageSession::destroy_cable(ZstCable * cable) {
 		return;
 
 	ZstLog::net(LogLevel::notification, "Destroying cable {} {}", cable->get_output_URI().path(), cable->get_input_URI().path());
-	ZstSession::destroy_cable(cable, ZstTransportSendType::PUBLISH);
 
 	//Update rest of network
 	publisher_events().invoke([this, cable](ZstTransportAdaptor * adp) {adp->send_message(ZstMsgKind::DESTROY_CABLE, *cable); });
+
+	//Remove cable
+	ZstSession::destroy_cable_complete(cable);
 }
 
 
@@ -232,7 +237,10 @@ void ZstStageSession::connect_clients(const ZstMsgID & response_id, ZstPerformer
 	});
 
 	ZstLog::net(LogLevel::notification, "Sending P2P handshake broadcast request to {}", output_client->URI().path());
-	ZstMsgArgs broadcaster_args{ {ZstMsgArg::SENDER_IDENTITY, m_hierarchy->get_socket_ID(input_client) } };
+	ZstMsgArgs broadcaster_args{ 
+		{ZstMsgArg::SENDER_IDENTITY, m_hierarchy->get_socket_ID(input_client) },
+		{ZstMsgArg::INPUT_PATH, input_client->URI().path() }
+	};
 	router_events().invoke([&broadcaster_args](ZstTransportAdaptor * adp) {
 		adp->send_message(ZstMsgKind::START_CONNECTION_HANDSHAKE, broadcaster_args);
 	});
@@ -261,7 +269,7 @@ ZstMsgKind ZstStageSession::complete_client_connection_handler(ZstMessage * msg,
 	});
 
 	//Run any cable promises associated with this client connection
-	ZstMsgID id = boost::lexical_cast<uint64_t>(msg->get_arg(ZstMsgArg::CONNECTION_MSG_ID));
+	ZstMsgID id = boost::lexical_cast<ZstMsgID>(msg->get_arg(ZstMsgArg::CONNECTION_MSG_ID));
 
 	m_deferred_cables.at(id).set_value(ZstMsgKind::OK);
 	m_deferred_cables.erase(id);

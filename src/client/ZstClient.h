@@ -15,8 +15,6 @@
 #include "../core/adaptors/ZstTransportAdaptor.hpp"
 
 //Showtime client includes
-#include "ZstReaper.h"
-#include "ZstReaper.h"
 #include "ZstClientSession.h"
 #include "ZstGraphTransport.h"
 #include "ZstClientTransport.h"
