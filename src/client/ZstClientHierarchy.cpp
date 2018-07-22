@@ -142,11 +142,6 @@ void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTranspo
 
 void ZstClientHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 {
-	//Pre-emptively disconnect all cables inside the entity
-	ZstCableBundle * bundle = entity->acquire_cable_bundle();
-	bundle->disconnect_all();
-	entity->release_cable_bundle(bundle);
-
 	ZstHierarchy::destroy_entity_complete(entity);
 }
 

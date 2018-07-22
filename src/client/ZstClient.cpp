@@ -139,24 +139,14 @@ void ZstClient::on_receive_msg(ZstMessage * msg)
 		receive_connection_handshake(msg);
 		break;
 	case ZstMsgKind::START_CONNECTION_HANDSHAKE:
-	{
 		start_connection_broadcast(ZstURI(msg->get_arg(ZstMsgArg::INPUT_PATH)));
 		break;
-	}
 	case ZstMsgKind::STOP_CONNECTION_HANDSHAKE:
-	{
 		stop_connection_broadcast(ZstURI(msg->get_arg(ZstMsgArg::INPUT_PATH)));
 		break;
-	}
 	case ZstMsgKind::SUBSCRIBE_TO_PERFORMER:
-	{
-		//Listen for incoming handshake performance messages
-		m_pending_peer_connections[ZstURI(msg->get_arg(ZstMsgArg::OUTPUT_PATH))] = std::stoull(msg->get_arg(ZstMsgArg::CONNECTION_MSG_ID));
-		
-		//Start connecting to other peer
-		m_graph_transport->connect_to_client(msg->get_arg(ZstMsgArg::OUTPUT_ADDRESS));
+		listen_to_client(msg);
 		break;
-	}
 	default:
 		break;
 	}
@@ -353,6 +343,8 @@ void ZstClient::start_connection_broadcast(const ZstURI & remote_client_path)
 {
 	ZstPerformer * local_client = session()->hierarchy()->get_local_performer();
 	ZstPerformer * remote_client = dynamic_cast<ZstPerformer*>(session()->hierarchy()->find_entity(remote_client_path));
+	ZstLog::net(LogLevel::debug, "Starting peer handshake broadcast to {}", remote_client->URI().path());
+
 	if(!remote_client){
 		ZstLog::net(LogLevel::error, "Could not find performer {}", remote_client_path.path());
 		return;
@@ -367,6 +359,8 @@ void ZstClient::start_connection_broadcast(const ZstURI & remote_client_path)
 void ZstClient::stop_connection_broadcast(const ZstURI & remote_client_path)
 {
 	ZstPerformer * remote_client = dynamic_cast<ZstPerformer*>(session()->hierarchy()->find_entity(remote_client_path));
+	ZstLog::net(LogLevel::debug, "Stopping peer handshake broadcast to {}", remote_client->URI().path());
+
 	if (!remote_client) {
 		ZstLog::net(LogLevel::error, "Could not find performer {}", remote_client_path.path());
 		return;
@@ -382,6 +376,12 @@ void ZstClient::stop_connection_broadcast(const ZstURI & remote_client_path)
 	if(timer_id > -1){
 		m_actor->detach_timer(timer_id);
 	}
+}
+
+void ZstClient::listen_to_client(const ZstMessage * msg)
+{
+	m_pending_peer_connections[ZstURI(msg->get_arg(ZstMsgArg::OUTPUT_PATH))] = std::stoull(msg->get_arg(ZstMsgArg::CONNECTION_MSG_ID));
+	m_graph_transport->connect_to_client(msg->get_arg(ZstMsgArg::OUTPUT_ADDRESS));
 }
 
 ZstClientSession * ZstClient::session()

@@ -78,6 +78,7 @@ ZstMsgKind ZstStageHierarchy::create_client_handler(std::string sender_identity,
 	//Copy streamable so we have a local ptr for the client
 	ZstPerformerStageProxy * client_proxy = new ZstPerformerStageProxy(client, ip_address);
 	assert(client_proxy);
+	synchronisable_set_proxy(client_proxy);
 
 	//Save our new client
 	//add_performer(client);
@@ -106,7 +107,7 @@ ZstMsgKind ZstStageHierarchy::destroy_client_handler(ZstPerformer * performer)
 		m_clients.erase(client_it);
 	}
 
-	return ZstHierarchy::remove_proxy_entity(performer);
+	return remove_proxy_entity(performer);
 }
 
 
@@ -131,6 +132,7 @@ ZstMsgKind ZstStageHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 		adp->send_message(ZstMsgKind::DESTROY_ENTITY, { {ZstMsgArg::PATH, entity->URI().path()} });
 	});
 	
+	ZstHierarchy::remove_proxy_entity(entity);
 	destroy_entity_complete(entity);
 
 	return ZstMsgKind::OK;

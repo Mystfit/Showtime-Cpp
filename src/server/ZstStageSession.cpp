@@ -238,7 +238,7 @@ void ZstStageSession::connect_clients(const ZstMsgID & response_id, ZstPerformer
 
 	ZstLog::net(LogLevel::notification, "Sending P2P handshake broadcast request to {}", output_client->URI().path());
 	ZstMsgArgs broadcaster_args{ 
-		{ZstMsgArg::SENDER_IDENTITY, m_hierarchy->get_socket_ID(input_client) },
+		{ZstMsgArg::SENDER_IDENTITY, m_hierarchy->get_socket_ID(output_client) },
 		{ZstMsgArg::INPUT_PATH, input_client->URI().path() }
 	};
 	router_events().invoke([&broadcaster_args](ZstTransportAdaptor * adp) {

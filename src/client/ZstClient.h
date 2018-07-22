@@ -79,6 +79,7 @@ private:
 	//P2P Connections
 	void start_connection_broadcast(const ZstURI & remote_client_path);
 	void stop_connection_broadcast(const ZstURI & remote_client_path);
+	void listen_to_client(const ZstMessage * msg);
 	std::unordered_map<ZstURI, ZstMsgID, ZstURIHash> m_pending_peer_connections;
 	std::unordered_map<ZstURI, int, ZstURIHash> m_connection_timers;
 	
