@@ -127,6 +127,10 @@ install:
   # Install homebrew dependencies
   - brew update 
   - brew bundle
+
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      brew bundle $BUILD_FOLDER/.travis/linux/;
+    fi
     
   # Kill background sleep loop
   - kill %1
