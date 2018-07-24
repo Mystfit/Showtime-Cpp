@@ -142,6 +142,11 @@ void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTranspo
 
 void ZstClientHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 {
+	if (!entity) {
+		ZstLog::net(LogLevel::warn, "destroy_entity_complete(): Entity not found");
+		return;
+	}
+
 	if (entity->URI() == this->get_local_performer()->URI()) {
 		ZstLog::net(LogLevel::debug, "Destroyed entity is our own client, ignore.");
 		return;
