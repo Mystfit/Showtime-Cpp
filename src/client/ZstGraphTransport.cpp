@@ -37,8 +37,9 @@ void ZstGraphTransport::init(ZstActor * actor)
 	zstr_free(&output_ip);
 	ZstLog::net(LogLevel::notification, "Client graph address: {}", m_graph_out_ip);
 
-	if (m_graph_out)
+	if (m_graph_out){
 		zsock_set_linger(m_graph_out, 0);
+	}
 }
 
 void ZstGraphTransport::destroy()

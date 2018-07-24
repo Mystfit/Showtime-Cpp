@@ -33,10 +33,7 @@ add_test(NAME ${CLIENT_TEST_TARGET} COMMAND ${CLIENT_TEST_TARGET} WORKING_DIRECT
 
 
 # Memleak test executable
-if(NOT DEFINED BUILD_MEMLEAK_TEST)
-    set(BUILD_MEMLEAK_TEST ON)
-endif()
-
+option(BUILD_MEMLEAK_TEST "Build memory leak test" ON)
 if(BUILD_MEMLEAK_TEST)
     set(MEMLEAK_TEST_TARGET TestMemleaks)
     message(STATUS "Configuring ${MEMLEAK_TEST_TARGET}")

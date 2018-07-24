@@ -9,7 +9,7 @@ template<typename T>
 class ZstEventDispatcher
 {
 public:
-	ZstEventDispatcher(const char * name = "") {
+	ZstEventDispatcher(const char * name = "") : m_has_event(false){
 		m_name = std::string(name);
 	}
 
@@ -48,6 +48,7 @@ public:
 
 	void defer(std::function<void(T)> event) {
 		this->m_events.enqueue(event);
+		m_has_event = true;
 	}
 
 	void process_events() {
@@ -62,10 +63,16 @@ public:
 				event_func(adaptor);
 			}
 		}
+		m_has_event = false;
+	}
+
+	bool has_event() {
+		return m_has_event;
 	}
 
 private:
 	std::set<T> m_adaptors;
 	moodycamel::ConcurrentQueue< std::function<void(T)> > m_events;
 	std::string m_name;
+	bool m_has_event;
 };

@@ -37,10 +37,15 @@ public:
 	// Publish messages
 	// ----------------
 
+
+	void send_message(ZstMsgKind kind)  override
+	{
+		begin_send_message(get_msg()->init(kind));
+	}
+
 	void send_message(ZstMsgKind kind, const ZstMsgArgs & args)  override
 	{
-		T * msg = get_msg()->init(kind, args);
-		begin_send_message(msg);
+		begin_send_message(get_msg()->init(kind, args));
 	}
 
 	void send_message(ZstMsgKind kind, const ZstSerialisable & serialisable) override
@@ -50,8 +55,7 @@ public:
 
 	void send_message(ZstMsgKind kind, const ZstMsgArgs & args, const ZstSerialisable & serialisable) override
 	{
-		T * msg = get_msg()->init(kind, serialisable, args);
-		begin_send_message(msg);
+		begin_send_message(get_msg()->init(kind, serialisable, args));
 	}
 
 
@@ -66,8 +70,7 @@ public:
 
 	void send_message(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstMsgArgs & args, const MessageReceivedAction & action)  override
 	{
-		T * msg = get_msg()->init(kind, args);
-		begin_send_message(msg, sendtype, action);
+		begin_send_message(get_msg()->init(kind, args), sendtype, action);
 	}
 	
 	void send_message(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstSerialisable & serialisable, const MessageReceivedAction & action) override
@@ -77,8 +80,7 @@ public:
 
 	void send_message(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstSerialisable & serialisable, const ZstMsgArgs & args, const MessageReceivedAction & action) override
 	{
-		T * msg = get_msg()->init(kind, serialisable, args);
-		begin_send_message(msg, sendtype, action);
+		begin_send_message(get_msg()->init(kind, serialisable, args), sendtype, action);
 	}
 
 protected:

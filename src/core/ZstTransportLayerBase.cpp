@@ -143,8 +143,8 @@ void ZstTransportLayerBase::send_async_message(ZstMessage * msg, const MessageRe
 MessageFuture ZstTransportLayerBase::register_response_message(ZstMessage * msg)
 {
 	ZstMsgID id = msg->id();
-	m_promise_messages.emplace(id, MessagePromise());
-	MessageFuture future = m_promise_messages[id].get_future();
+	m_deferred_cables.emplace(id, MessagePromise());
+	MessageFuture future = m_deferred_cables[id].get_future();
 	future = future.timeout(std::chrono::milliseconds(STAGE_TIMEOUT), ZstTimeoutException("Connect timeout"), *m_timeout_watcher);
 	return future;
 }
@@ -153,7 +153,7 @@ void ZstTransportLayerBase::cleanup_response_message(ZstMsgID id)
 {
 	//Clear completed promise when finished
 	try {
-		m_promise_messages.erase(id);
+		m_deferred_cables.erase(id);
 	}
 	catch (std::out_of_range e) {
 		ZstLog::net(LogLevel::debug, "Promise already removed. {}", e.what());
@@ -165,7 +165,7 @@ void ZstTransportLayerBase::process_responses(ZstMessage * msg)
 	int status = 0;
 	try {
 		ZstMsgID id = msg->id();
-		m_promise_messages.at(id).set_value(msg->kind());
+		m_deferred_cables.at(id).set_value(msg->kind());
 
 		cleanup_response_message(id);
 		status = 1;

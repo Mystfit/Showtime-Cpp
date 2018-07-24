@@ -42,7 +42,7 @@ void ZstClient::destroy() {
     
     //Let stage know we are leaving
 	if(is_connected_to_stage())
-		leave_stage(ZstTransportSendType::ASYNC_REPLY);
+		leave_stage();
 
 	this->remove_adaptor(m_client_transport);
 
@@ -120,6 +120,10 @@ void ZstClient::process_events()
 	m_client_transport->process_events();
 	m_graph_transport->process_events();
 	m_session->process_events();
+
+	//Reapers are updated last in case entities still need to be queried beforehand
+	m_session->reaper().reap_all();
+	m_session->hierarchy()->reaper().reap_all();
 }
 
 void ZstClient::flush()
@@ -139,24 +143,14 @@ void ZstClient::on_receive_msg(ZstMessage * msg)
 		receive_connection_handshake(msg);
 		break;
 	case ZstMsgKind::START_CONNECTION_HANDSHAKE:
-	{
-		start_connection_broadcast(ZstURI(msg->get_arg("inputpath")));
+		start_connection_broadcast(ZstURI(msg->get_arg(ZstMsgArg::INPUT_PATH)));
 		break;
-	}
 	case ZstMsgKind::STOP_CONNECTION_HANDSHAKE:
-	{
-		stop_connection_broadcast(ZstURI(msg->get_arg("inputpath")));
+		stop_connection_broadcast(ZstURI(msg->get_arg(ZstMsgArg::INPUT_PATH)));
 		break;
-	}
 	case ZstMsgKind::SUBSCRIBE_TO_PERFORMER:
-	{
-		//Listen for incoming handshake performance messages
-		m_pending_peer_connections[ZstURI(msg->get_arg("outputpath"))] = std::stoull(msg->get_arg("connID"));
-		
-		//Start connecting to other peer
-		m_graph_transport->connect_to_client(msg->get_arg("outputaddress"));
+		listen_to_client(msg);
 		break;
-	}
 	default:
 		break;
 	}
@@ -170,14 +164,14 @@ void ZstClient::on_receive_msg(ZstMessage * msg)
 void ZstClient::receive_connection_handshake(ZstMessage * msg)
 {
 	//Peer connection is successful if we receive a handshake performance message from the sending client
-	ZstURI output_path(msg->get_arg("outputpath"));
+	ZstURI output_path(msg->get_arg(ZstMsgArg::OUTPUT_PATH));
 	if(m_pending_peer_connections.find(output_path) != m_pending_peer_connections.end()){
 		invoke([this, &output_path](ZstTransportAdaptor* adaptor) {
 			std::stringstream ss;
 			ss << m_pending_peer_connections[output_path];
 			ZstMsgArgs args{ 
-				{"publisher", output_path.path()},
-				{"connID", ss.str()}
+				{ZstMsgArg::OUTPUT_PATH, output_path.path() },
+				{ZstMsgArg::CONNECTION_MSG_ID, ss.str()}
 			};
 			adaptor->send_message(ZstMsgKind::SUBSCRIBE_TO_PERFORMER_ACK, ZstTransportSendType::ASYNC_REPLY, args, [](ZstMessageReceipt receipt) {
 				if(receipt.status != ZstMsgKind::OK){
@@ -221,7 +215,7 @@ void ZstClient::join_stage(std::string stage_address, const ZstTransportSendType
 	ZstPerformer * root = session()->hierarchy()->get_local_performer();
 
 	invoke([this, sendtype, &graph_addr, root](ZstTransportAdaptor * adaptor) {
-		adaptor->send_message(ZstMsgKind::CLIENT_JOIN, sendtype, *root, {{"graphaddress", graph_addr}}, [this](ZstMessageReceipt response) {
+		adaptor->send_message(ZstMsgKind::CLIENT_JOIN, sendtype, *root, {{ZstMsgArg::OUTPUT_ADDRESS, graph_addr}}, [this](ZstMessageReceipt response) {
 			this->join_stage_complete(response);
 		});
 	});
@@ -274,7 +268,7 @@ void ZstClient::synchronise_graph_complete(ZstMessageReceipt response)
 	ZstLog::net(LogLevel::notification, "Graph sync completed");
 }
 
-void ZstClient::leave_stage(const ZstTransportSendType & sendtype)
+void ZstClient::leave_stage()
 {
 	if (m_connected_to_stage) {
 		ZstLog::net(LogLevel::notification, "Leaving stage");
@@ -283,19 +277,13 @@ void ZstClient::leave_stage(const ZstTransportSendType & sendtype)
 		m_is_connecting = false;
 		m_connected_to_stage = false;
         
-		invoke([this, sendtype](ZstTransportAdaptor * adaptor) {
-			adaptor->send_message(ZstMsgKind::CLIENT_LEAVING, sendtype, [this](ZstMessageReceipt response) {
-				this->leave_stage_complete();
-			});
-		});
-		
-		//Run callbacks if we're still on the main app thread
-		if(sendtype == ZstTransportSendType::SYNC_REPLY) process_events();
+		invoke([this](ZstTransportAdaptor * adaptor) { adaptor->send_message(ZstMsgKind::CLIENT_LEAVING); });
     } else {
         ZstLog::net(LogLevel::debug, "Not connected to stage. Skipping to cleanup. {}");
-        leave_stage_complete();
-		if (sendtype == ZstTransportSendType::SYNC_REPLY) process_events();
     }
+
+	this->leave_stage_complete();
+	this->process_events();
 }
 
 void ZstClient::leave_stage_complete()
@@ -353,6 +341,8 @@ void ZstClient::start_connection_broadcast(const ZstURI & remote_client_path)
 {
 	ZstPerformer * local_client = session()->hierarchy()->get_local_performer();
 	ZstPerformer * remote_client = dynamic_cast<ZstPerformer*>(session()->hierarchy()->find_entity(remote_client_path));
+	ZstLog::net(LogLevel::debug, "Starting peer handshake broadcast to {}", remote_client->URI().path());
+
 	if(!remote_client){
 		ZstLog::net(LogLevel::error, "Could not find performer {}", remote_client_path.path());
 		return;
@@ -360,13 +350,15 @@ void ZstClient::start_connection_broadcast(const ZstURI & remote_client_path)
 
 	m_connection_timers[remote_client->URI()] = m_actor->attach_timer(100, [this, local_client](){
 		//Cheat by sending a performance message with only the sender and no payload
-		m_graph_transport->send_message(ZstMsgKind::CONNECTION_HANDSHAKE, { {"outputpath", local_client->URI().path()} });
+		m_graph_transport->send_message(ZstMsgKind::CONNECTION_HANDSHAKE, { {ZstMsgArg::OUTPUT_PATH, local_client->URI().path()} });
 	});
 }
 
 void ZstClient::stop_connection_broadcast(const ZstURI & remote_client_path)
 {
 	ZstPerformer * remote_client = dynamic_cast<ZstPerformer*>(session()->hierarchy()->find_entity(remote_client_path));
+	ZstLog::net(LogLevel::debug, "Stopping peer handshake broadcast to {}", remote_client->URI().path());
+
 	if (!remote_client) {
 		ZstLog::net(LogLevel::error, "Could not find performer {}", remote_client_path.path());
 		return;
@@ -382,6 +374,12 @@ void ZstClient::stop_connection_broadcast(const ZstURI & remote_client_path)
 	if(timer_id > -1){
 		m_actor->detach_timer(timer_id);
 	}
+}
+
+void ZstClient::listen_to_client(const ZstMessage * msg)
+{
+	m_pending_peer_connections[ZstURI(msg->get_arg(ZstMsgArg::OUTPUT_PATH))] = std::stoull(msg->get_arg(ZstMsgArg::CONNECTION_MSG_ID));
+	m_graph_transport->connect_to_client(msg->get_arg(ZstMsgArg::OUTPUT_ADDRESS));
 }
 
 ZstClientSession * ZstClient::session()

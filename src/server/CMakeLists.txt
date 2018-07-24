@@ -2,6 +2,11 @@ message(STATUS "Configuring ${SERVER_TARGET} target")
 
 set(ZST_SERVER_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstStage.h"
+	"${CMAKE_CURRENT_LIST_DIR}/ZstStageModule.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstStageSession.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstStageHierarchy.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstStagePublisherTransport.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstStageRouterTransport.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstPerformerStageProxy.h"
 )
 
@@ -9,11 +14,16 @@ set(ZST_SERVER_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstPerformerStageProxy.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstStageRunner.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstStage.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/ZstStageModule.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstStageHierarchy.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstStageSession.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstStagePublisherTransport.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstStageRouterTransport.cpp"
 )
 
 target_sources(${SERVER_TARGET} PRIVATE 
-	${ZST_SERVER_HEADERS}
-	${ZST_SERVER_SRC}
+    ${ZST_SERVER_HEADERS}
+    ${ZST_SERVER_SRC}
 )
 
 target_include_directories(${SERVER_TARGET} PRIVATE
@@ -28,6 +38,6 @@ ENDIF(WIN32)
 
 add_dependencies(${SERVER_TARGET} ${CORE_TARGET})
 target_link_libraries(${SERVER_TARGET} 
-					  ${CORE_TARGET} 
-					  ${msgpackc_TARGET}
+                      ${CORE_TARGET} 
+                      ${Boost_THREAD_TARGET}
 )

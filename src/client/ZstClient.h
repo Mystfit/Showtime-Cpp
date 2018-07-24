@@ -15,8 +15,6 @@
 #include "../core/adaptors/ZstTransportAdaptor.hpp"
 
 //Showtime client includes
-#include "ZstReaper.h"
-#include "ZstReaper.h"
 #include "ZstClientSession.h"
 #include "ZstGraphTransport.h"
 #include "ZstClientTransport.h"
@@ -49,7 +47,7 @@ public:
 	void synchronise_graph(const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
 	void synchronise_graph_complete(ZstMessageReceipt response);
 
-	void leave_stage(const ZstTransportSendType & sendtype);
+	void leave_stage();
 	void leave_stage_complete();
     
 	//Stage connection status
@@ -81,6 +79,7 @@ private:
 	//P2P Connections
 	void start_connection_broadcast(const ZstURI & remote_client_path);
 	void stop_connection_broadcast(const ZstURI & remote_client_path);
+	void listen_to_client(const ZstMessage * msg);
 	std::unordered_map<ZstURI, ZstMsgID, ZstURIHash> m_pending_peer_connections;
 	std::unordered_map<ZstURI, int, ZstURIHash> m_connection_timers;
 	

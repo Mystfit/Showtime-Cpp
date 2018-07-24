@@ -39,7 +39,7 @@ protected:
     ZST_EXPORT void set_deactivating();
     ZST_EXPORT void set_error(ZstSyncError e);
 	ZST_EXPORT void set_destroyed();
-	ZST_EXPORT void set_proxy();
+	ZST_EXPORT virtual void set_proxy();
 	ZST_EXPORT void process_events();
     ZST_EXPORT ZstEventDispatcher<ZstSynchronisableAdaptor*> * synchronisable_events();
 
