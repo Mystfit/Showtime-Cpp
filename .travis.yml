@@ -127,10 +127,6 @@ install:
   # Install homebrew dependencies
   - brew update 
   - brew bundle
-
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      brew install gcc;
-    fi
     
   # Kill background sleep loop
   - kill %1
