@@ -55,7 +55,7 @@ public:
 	// Performers
 	// ------------------------------
 
-	void add_performer(ZstPerformer & performer) override;
+	void add_performer(const ZstPerformer & performer) override;
 	
 
 	// ------------------------------
@@ -64,7 +64,7 @@ public:
 	
 	ZstEntityBase * find_entity(const ZstURI & path) override;
 	bool path_is_local(const ZstURI & path);
-	ZstMsgKind add_proxy_entity(ZstEntityBase & entity) override;
+	ZstMsgKind add_proxy_entity(const ZstEntityBase & entity) override;
 	ZstPerformer * get_local_performer() const;
 
 

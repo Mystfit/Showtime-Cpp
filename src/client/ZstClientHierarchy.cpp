@@ -179,7 +179,7 @@ bool ZstClientHierarchy::path_is_local(const ZstURI & path) {
 	return path.contains(m_root->URI());
 }
 
-ZstMsgKind ZstClientHierarchy::add_proxy_entity(ZstEntityBase & entity) {
+ZstMsgKind ZstClientHierarchy::add_proxy_entity(const ZstEntityBase & entity) {
 
 	// Don't need to activate local entities, they will auto-activate when the stage responds with an OK
 	// Also, we can't rely on the proxy flag here as it won't have been set yet
@@ -195,7 +195,7 @@ ZstPerformer * ZstClientHierarchy::get_local_performer() const
 	return m_root;
 }
 
-void ZstClientHierarchy::add_performer(ZstPerformer & performer)
+void ZstClientHierarchy::add_performer(const ZstPerformer & performer)
 {
 	if (performer.URI() == m_root->URI()) {
 		ZstLog::net(LogLevel::debug, "Received self {} as performer. Ignoring", m_root->URI().path());

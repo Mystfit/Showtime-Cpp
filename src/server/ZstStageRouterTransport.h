@@ -21,7 +21,7 @@ public:
 	//Incoming socket handlers
 	static int s_handle_router(zloop_t *loop, zsock_t *sock, void *arg);
 
-	void send_message_impl(ZstMessage * msg);
+	void send_message_impl(ZstMessage * msg) override;
 
 	void on_receive_msg(ZstMessage * msg) override;
 

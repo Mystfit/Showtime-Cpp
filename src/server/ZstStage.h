@@ -34,7 +34,6 @@ public:
 	
 private:
 	bool m_is_destroyed;
-	bool m_is_threaded;
 	boost::thread m_eventloop_thread;
 
 	int m_heartbeat_timer_id;

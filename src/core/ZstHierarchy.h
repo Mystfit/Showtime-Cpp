@@ -22,8 +22,8 @@ public:
 	ZST_EXPORT ZstHierarchy();
 	ZST_EXPORT ~ZstHierarchy();
 
-	ZST_EXPORT virtual void init();
-	ZST_EXPORT virtual void destroy();
+	ZST_EXPORT virtual void init() override;
+	ZST_EXPORT virtual void destroy() override;
 
 	// ------------------------------
 	// Activations
@@ -37,7 +37,7 @@ public:
 	// Performers
 	// ------------------------------
 
-	ZST_EXPORT virtual void add_performer(ZstPerformer & performer);
+	ZST_EXPORT virtual void add_performer(const ZstPerformer & performer);
 	ZST_EXPORT virtual ZstPerformer * get_performer_by_URI(const ZstURI & uri) const;
 	ZST_EXPORT virtual std::vector<ZstPerformer*> get_performers();
 
@@ -54,7 +54,7 @@ public:
 	// Hierarchy manipulation
 	// ------------------------------
 
-	ZST_EXPORT virtual ZstMsgKind add_proxy_entity(ZstEntityBase & entity);
+	ZST_EXPORT virtual ZstMsgKind add_proxy_entity(const ZstEntityBase & entity);
 	ZST_EXPORT virtual ZstMsgKind remove_proxy_entity(ZstEntityBase * entity);
 
 

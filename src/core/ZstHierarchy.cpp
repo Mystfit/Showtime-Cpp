@@ -44,7 +44,7 @@ void ZstHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTransportSend
 }
 
 
-void ZstHierarchy::add_performer(ZstPerformer & performer)
+void ZstHierarchy::add_performer(const ZstPerformer & performer)
 {
 	//Copy streamable so we have a local ptr for the performer
 	ZstPerformer * performer_proxy = new ZstPerformer(performer);
@@ -117,7 +117,7 @@ ZstPlug * ZstHierarchy::find_plug(const ZstURI & path)
 }
 
 
-ZstMsgKind ZstHierarchy::add_proxy_entity(ZstEntityBase & entity) {
+ZstMsgKind ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity) {
 
 	ZstEntityBase * entity_proxy = NULL;
 
@@ -138,17 +138,17 @@ ZstMsgKind ZstHierarchy::add_proxy_entity(ZstEntityBase & entity) {
 
 	//Create proxies and set parents
 	if (strcmp(entity.entity_type(), COMPONENT_TYPE) == 0) {
-		entity_proxy = new ZstComponent(static_cast<ZstComponent&>(entity));
+		entity_proxy = new ZstComponent(static_cast<const ZstComponent&>(entity));
 		dynamic_cast<ZstContainer*>(parent)->add_child(entity_proxy);
 		m_hierarchy_events.defer([entity_proxy](ZstHierarchyAdaptor * adp) {adp->on_entity_arriving(entity_proxy); });
 	}
 	else if (strcmp(entity.entity_type(), CONTAINER_TYPE) == 0) {
-		entity_proxy = new ZstContainer(static_cast<ZstContainer&>(entity));
+		entity_proxy = new ZstContainer(static_cast<const ZstContainer&>(entity));
 		dynamic_cast<ZstContainer*>(parent)->add_child(entity_proxy);
 		m_hierarchy_events.defer([entity_proxy](ZstHierarchyAdaptor * adp) {adp->on_entity_arriving(entity_proxy); });
 	}
 	else if (strcmp(entity.entity_type(), PLUG_TYPE) == 0) {
-		ZstPlug * plug = new ZstPlug(static_cast<ZstPlug&>(entity));
+		ZstPlug * plug = new ZstPlug(static_cast<const ZstPlug&>(entity));
 		entity_proxy = plug;
 		dynamic_cast<ZstComponent*>(parent)->add_plug(plug);
 		m_hierarchy_events.defer([plug](ZstHierarchyAdaptor * adp) {adp->on_plug_arriving(plug); });

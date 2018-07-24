@@ -42,7 +42,7 @@ public:
 	ZST_EXPORT virtual void add_adaptor_to_children(ZstSynchronisableAdaptor * adaptor) override;
 	ZST_EXPORT virtual void remove_adaptor_from_children(ZstSynchronisableAdaptor * adaptor) override;
 
-	ZST_EXPORT virtual void set_proxy();
+	ZST_EXPORT virtual void set_proxy() override;
 
 
 protected:

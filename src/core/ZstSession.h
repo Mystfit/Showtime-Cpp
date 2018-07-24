@@ -28,8 +28,8 @@ public:
 	ZST_EXPORT ZstSession();
 	ZST_EXPORT virtual void process_events();
 	ZST_EXPORT virtual void flush();
-	ZST_EXPORT virtual void init();
-	ZST_EXPORT virtual void destroy();
+	ZST_EXPORT virtual void init() override;
+	ZST_EXPORT virtual void destroy() override;
 
 	// ------------------
 	// Cable creation
@@ -69,7 +69,7 @@ public:
 	// Compute adaptor overrides
 	// -------------
 
-	ZST_EXPORT virtual void on_compute(ZstComponent * component, ZstInputPlug * plug);
+	ZST_EXPORT virtual void on_compute(ZstComponent * component, ZstInputPlug * plug) override;
 
 
 	// -----------------

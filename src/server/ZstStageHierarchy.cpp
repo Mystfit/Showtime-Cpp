@@ -112,7 +112,7 @@ ZstMsgKind ZstStageHierarchy::destroy_client_handler(ZstPerformer * performer)
 }
 
 
-ZstMsgKind ZstStageHierarchy::add_proxy_entity(ZstEntityBase & entity)
+ZstMsgKind ZstStageHierarchy::add_proxy_entity(const ZstEntityBase & entity)
 {
 	ZstLog::net(LogLevel::notification, "Registering new entity {}", entity.URI().path());
 
