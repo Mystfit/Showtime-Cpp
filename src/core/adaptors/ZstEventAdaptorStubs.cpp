@@ -54,7 +54,7 @@ void ZstHierarchyAdaptor::on_plug_leaving(ZstPlug * plug) {}
 // Message adaptors
 // -----------------------
 
-void ZstTransportAdaptor::send_message(ZstMessage * msg) {};
+void ZstTransportAdaptor::send_message(ZstMsgKind kind) {};
 void ZstTransportAdaptor::send_message(ZstMsgKind kind, const ZstMsgArgs & args) {}
 void ZstTransportAdaptor::send_message(ZstMsgKind kind, const ZstSerialisable & serialisable) {}
 void ZstTransportAdaptor::send_message(ZstMsgKind kind, const ZstMsgArgs & args, const ZstSerialisable & serialisable) {}
