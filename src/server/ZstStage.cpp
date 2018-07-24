@@ -56,7 +56,7 @@ void ZstStage::init_stage(const char * stage_name, bool threaded)
 	m_session->hierarchy()->publisher_events().add_adaptor(m_publisher_transport);
 
 	//Start event loop
-	m_eventloop_thread = boost::thread::thread(ZstStageLoop(this));
+	m_eventloop_thread = boost::thread(ZstStageLoop(this));
 }
 
 
