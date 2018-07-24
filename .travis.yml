@@ -26,7 +26,10 @@ matrix:
         - gcc
       addons: &common_build
         apt:
-          packages: 
+          packages:
+            - gcc-6 
+            - g++-6
+            - clang
             - build-essential
             - gawk
             - curl 
@@ -130,6 +133,8 @@ install:
       export PATH=$PREFIX/bin:$PREFIX/sbin:$PATH;
       export MANPATH=$PREFIX/share/man:$MANPATH;
       export INFOPATH=$PREFIX/share/info:$INFOPATH;
+      export CC=gcc-6;
+      export CXX=g++-6;
       sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)";
       hash -r;
       echo $(which brew);
