@@ -37,9 +37,10 @@ public:
 	// Publish messages
 	// ----------------
 
-	void send_message(ZstMsgKind kind) override 
+
+	void send_message(ZstMessage * msg)  override
 	{
-		begin_send_message(get_msg()->init(kind));
+		begin_send_message(msg);
 	}
 
 	void send_message(ZstMsgKind kind, const ZstMsgArgs & args)  override

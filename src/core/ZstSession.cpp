@@ -41,6 +41,10 @@ void ZstSession::destroy()
 	m_compute_events.remove_all_adaptors();
 }
 
+ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * output) {
+	return connect_cable(input, output, ZstTransportSendType::SYNC_REPLY);
+}
+
 ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * output, const ZstTransportSendType & sendtype)
 {
 	ZstCable * cable = NULL;
@@ -77,28 +81,38 @@ ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * outpu
 	return cable;
 }
 
+void ZstSession::destroy_cable(ZstCable * cable)
+{
+	return destroy_cable(cable, ZstTransportSendType::SYNC_REPLY);
+}
+
 
 void ZstSession::destroy_cable(ZstCable * cable, const ZstTransportSendType & sendtype)
 {
-    if (!cable) return;
-    
-    ZstInputPlug * input = cable->get_input();
-    ZstOutputPlug * output = cable->get_output();
-    
-    //Remove cable from plugs
-    if (input)
-        plug_remove_cable(input, cable);
-    
-    if (output){
-        plug_remove_cable(output, cable);
-        if(output->num_cables() < 1){
-            //Remove session adaptor from plug
-            ZstEntityBase::remove_adaptor(output, this);
-        }
-    }
-    
-    cable->set_input(NULL);
-    cable->set_output(NULL);
+
+}
+
+void ZstSession::destroy_cable_complete(ZstCable * cable)
+{
+	if (!cable) return;
+
+	ZstInputPlug * input = cable->get_input();
+	ZstOutputPlug * output = cable->get_output();
+
+	//Remove cable from plugs
+	if (input)
+		plug_remove_cable(input, cable);
+
+	if (output) {
+		plug_remove_cable(output, cable);
+		if (output->num_cables() < 1) {
+			//Remove session adaptor from plug
+			ZstEntityBase::remove_adaptor(output, this);
+		}
+	}
+
+	cable->set_input(NULL);
+	cable->set_output(NULL);
 
 	//Remove cable from local list so that other threads don't assume it still exists
 	m_cables.erase(cable);
@@ -150,6 +164,10 @@ ZstCable * ZstSession::create_cable(const ZstURI & input_path, const ZstURI & ou
 {
 	ZstCable * cable_ptr = find_cable(input_path, output_path);
 	if (cable_ptr) {
+		if (cable_ptr->is_proxy()) {
+
+		}
+
 		//If we created this cable already, we need to finish its activation
 		if(!cable_ptr->is_activated()){
 			synchronisable_enqueue_activation(cable_ptr);
@@ -215,6 +233,19 @@ void ZstSession::on_compute(ZstComponent * component, ZstInputPlug * plug) {
 	catch (std::exception e) {
 		ZstLog::entity(LogLevel::error, "Compute on component {} failed. Error was: {}", component->URI().path(), e.what());
 	}
+}
+
+void ZstSession::on_synchronisable_destroyed(ZstSynchronisable * synchronisable)
+{
+	if (synchronisable->is_proxy())
+		reaper().add(synchronisable);
+}
+
+void ZstSession::synchronisable_has_event(ZstSynchronisable * synchronisable)
+{
+	synchronisable_events().defer([this, synchronisable](ZstSynchronisableAdaptor * dlg) {
+		this->synchronisable_process_events(synchronisable);
+	});
 }
 
 ZstEventDispatcher<ZstSessionAdaptor*> & ZstSession::session_events()

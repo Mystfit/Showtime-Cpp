@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
 #endif
 
 	ZstStage stage;
-	stage.init_stage("stage");
+	stage.init_stage("stage", true);
 
 	if (argc < 2) {
 		ZstLog::app(LogLevel::notification, "Stage running in standalone mode");
@@ -37,13 +37,9 @@ int main(int argc, char **argv) {
 			std::string line;
 			do {
 				std::getline(std::cin, line);
-#ifdef WIN32
-				Sleep(100);
-#else
-				usleep(1000 * 200);
-#endif
+				TAKE_A_BREATH
 			} while (line != "$TERM");
-			ZstLog::app(LogLevel::notification, "Received $TERM. Closing stage server.");
+				ZstLog::app(LogLevel::notification, "Received $TERM. Closing stage server.");
 			}
 	}
 

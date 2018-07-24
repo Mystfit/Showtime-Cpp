@@ -247,6 +247,14 @@ void ZstContainer::remove_adaptor_from_children (ZstSynchronisableAdaptor * adap
 	}
 }
 
+ void ZstContainer::set_proxy()
+{
+	 ZstComponent::set_proxy();
+	 for (auto c : m_children) {
+		 c.second->set_proxy();
+	 }
+}
+
 ZstCableBundle * ZstContainer::get_child_cables(ZstCableBundle * bundle)
 {
 	ZstComponent::get_child_cables(bundle);

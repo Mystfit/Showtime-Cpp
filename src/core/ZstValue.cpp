@@ -152,7 +152,7 @@ void ZstValue::read(const char * buffer, size_t length, size_t & offset)
 			m_values[i] = val.as<std::string>();
 		} 
 		else {
-
+			//Unknown value type
 		}
 	}
 }
