@@ -129,7 +129,7 @@ install:
   - brew bundle
 
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      brew bundle $BUILD_FOLDER/.travis/linux/;
+      brew bundle install -file=$BUILD_FOLDER/.travis/linux/;
     fi
     
   # Kill background sleep loop
