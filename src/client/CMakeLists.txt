@@ -19,6 +19,7 @@ set(ZST_CLIENT_PRIVATE_HEADERS
 
 set(ZST_CLIENT_SRC
   "${CMAKE_CURRENT_LIST_DIR}/Showtime.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstClientModule.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClient.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientHierarchy.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientSession.cpp"

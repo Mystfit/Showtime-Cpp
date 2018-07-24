@@ -7,12 +7,13 @@
 #include <entities/ZstEntityBase.h>
 #include <entities/ZstPlug.h>
 #include <entities/ZstPerformer.h>
-#include "ZstReaper.h"
+#include "ZstModule.h"
 #include "adaptors/ZstTransportAdaptor.hpp"
 #include "liasons/ZstPlugLiason.hpp"
 #include "liasons/ZstSynchronisableLiason.hpp"
 
 class ZstHierarchy : 
+	public ZstModule,
 	public ZstPlugLiason,
 	public ZstSynchronisableLiason,
 	public ZstSynchronisableAdaptor
@@ -79,5 +80,4 @@ protected:
 private:
 	ZstEventDispatcher<ZstSynchronisableAdaptor*> m_synchronisable_events;
 	ZstEventDispatcher<ZstHierarchyAdaptor*> m_hierarchy_events;
-	ZstReaper m_reaper;
 };

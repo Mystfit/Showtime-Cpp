@@ -2,8 +2,7 @@
 #include <boost/assign.hpp>
 
 ZstClientHierarchy::ZstClientHierarchy() :
-	m_root(NULL),
-	m_stage_events("hierarchy syncronisables with events")
+	m_root(NULL)
 {
 }
 
@@ -24,7 +23,8 @@ void ZstClientHierarchy::init(std::string name)
 void ZstClientHierarchy::destroy()
 {
 	ZstHierarchy::destroy();
-	m_stage_events.remove_all_adaptors();
+	
+	stage_events().remove_all_adaptors();
 
 	//TODO: Delete other clients
 	delete m_root;
@@ -33,13 +33,13 @@ void ZstClientHierarchy::destroy()
 void ZstClientHierarchy::process_events()
 {
 	ZstHierarchy::process_events();
-	m_stage_events.process_events();
+	stage_events().process_events();
 }
 
 void ZstClientHierarchy::flush_events()
 {
 	ZstHierarchy::flush_events();
-	m_stage_events.flush();
+	stage_events().flush();
 }
 
 void ZstClientHierarchy::on_receive_msg(ZstMessage * msg)
@@ -76,7 +76,7 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 	ZstHierarchy::activate_entity(entity, sendtype);
 	
 	//Build message
-	m_stage_events.invoke([this, entity, sendtype](ZstTransportAdaptor * adaptor)
+	stage_events().invoke([this, entity, sendtype](ZstTransportAdaptor * adaptor)
 	{
 		adaptor->send_message(ZstMessage::entity_kind(*entity), sendtype, *entity, [this, entity](ZstMessageReceipt response) {
 			this->activate_entity_complete(response, entity);
@@ -119,7 +119,7 @@ void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTranspo
 
 	//If the entity is local, let the stage know it's leaving
 	if (!entity->is_proxy()) {
-		m_stage_events.invoke([this, sendtype, entity](ZstTransportAdaptor * adaptor) {
+		stage_events().invoke([this, sendtype, entity](ZstTransportAdaptor * adaptor) {
 			adaptor->send_message(ZstMsgKind::DESTROY_ENTITY, sendtype, {{ZstMsgArg::PATH, entity->URI().path()}}, [this, entity](ZstMessageReceipt response) {
 				if (response.status != ZstMsgKind::OK) {
 					ZstLog::net(LogLevel::error, "Destroy entity failed with status {}", ZstMsgNames[response.status]);
@@ -188,11 +188,6 @@ ZstMsgKind ZstClientHierarchy::add_proxy_entity(ZstEntityBase & entity) {
 ZstPerformer * ZstClientHierarchy::get_local_performer() const
 {
 	return m_root;
-}
-
-ZstEventDispatcher<ZstTransportAdaptor*> & ZstClientHierarchy::stage_events()
-{
-	return m_stage_events;
 }
 
 void ZstClientHierarchy::add_performer(ZstPerformer & performer)

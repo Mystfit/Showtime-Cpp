@@ -1,7 +1,14 @@
 #pragma once
 
+#include <ZstEventDispatcher.hpp>
+#include "../core/adaptors/ZstTransportAdaptor.hpp"
+
 class ZstClientModule {
 public:
-	virtual void init() = 0;
-	virtual void destroy() = 0;
+	ZstEventDispatcher<ZstTransportAdaptor*> & stage_events();
+	ZstEventDispatcher<ZstTransportAdaptor*> & performance_events();
+
+private:
+	ZstEventDispatcher<ZstTransportAdaptor*> m_stage_events;
+	ZstEventDispatcher<ZstTransportAdaptor*> m_performance_events;
 };

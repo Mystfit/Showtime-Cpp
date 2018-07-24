@@ -79,9 +79,10 @@ ZstMsgKind ZstStageHierarchy::create_client_handler(std::string sender_identity,
 	ZstPerformerStageProxy * client_proxy = new ZstPerformerStageProxy(client, ip_address);
 	assert(client_proxy);
 	synchronisable_set_proxy(client_proxy);
+	synchronisable_set_activation_status(client_proxy, ZstSyncStatus::ACTIVATED);
+	ZstSynchronisable::add_adaptor(client_proxy, this);
 
 	//Save our new client
-	//add_performer(client);
 	m_clients[client_proxy->URI()] = client_proxy;
 	m_client_socket_index[std::string(sender_identity)] = client_proxy;
 
@@ -127,14 +128,13 @@ ZstMsgKind ZstStageHierarchy::add_proxy_entity(ZstEntityBase & entity)
 
 ZstMsgKind ZstStageHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 {
+	ZstHierarchy::remove_proxy_entity(entity);
+
 	//Update rest of network
 	publisher_events().invoke([entity](ZstTransportAdaptor * adp) {
 		adp->send_message(ZstMsgKind::DESTROY_ENTITY, { {ZstMsgArg::PATH, entity->URI().path()} });
 	});
 	
-	ZstHierarchy::remove_proxy_entity(entity);
-	destroy_entity_complete(entity);
-
 	return ZstMsgKind::OK;
 }
 

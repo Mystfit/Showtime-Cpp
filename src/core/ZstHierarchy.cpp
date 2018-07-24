@@ -55,9 +55,13 @@ void ZstHierarchy::add_performer(ZstPerformer & performer)
 	synchronisable_set_activation_status(performer_proxy, ZstSyncStatus::ACTIVATED);
 	synchronisable_set_proxy(performer_proxy);
 
+	//Add adaptors to performer so we can clean it up later
+	ZstSynchronisable::add_adaptor(performer_proxy, this);
+	
+	//Store it
 	m_clients[performer_proxy->URI()] = performer_proxy;
 
-	//Publish performer event
+	//Dispatch events
 	m_hierarchy_events.defer([performer_proxy](ZstHierarchyAdaptor * adp) {adp->on_performer_arriving(performer_proxy); });
 }
 
@@ -171,8 +175,7 @@ ZstMsgKind ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 	if (entity) {
 		if (entity->is_proxy()) {
 			ZstLog::net(LogLevel::notification, "Destroying entity {}", entity->URI().path());
-			synchronisable_enqueue_deactivation(entity);
-			destroy_entity(entity, ZstTransportSendType::SYNC_REPLY);
+			destroy_entity_complete(entity);
 		}
 	}
 
@@ -234,9 +237,6 @@ ZstEventDispatcher<ZstHierarchyAdaptor*> & ZstHierarchy::hierarchy_events()
 {
 	m_synchronisable_events.process_events();
 	m_hierarchy_events.process_events();
-
-	//Reaper is updated last in case entities still need to be queried
-	m_reaper.reap_all();
 }
 
  void ZstHierarchy::flush_events()
@@ -255,5 +255,5 @@ void ZstHierarchy::synchronisable_has_event(ZstSynchronisable * synchronisable)
 void ZstHierarchy::on_synchronisable_destroyed(ZstSynchronisable * synchronisable)
 {
 	if (synchronisable->is_proxy())
-		m_reaper.add(synchronisable);
+		reaper().add(synchronisable);
 }

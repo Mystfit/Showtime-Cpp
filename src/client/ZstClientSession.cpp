@@ -1,8 +1,6 @@
 #include "ZstClientSession.h"
 
-ZstClientSession::ZstClientSession() : 
-	m_stage_events("session stage"),
-	m_performance_events("session performance")
+ZstClientSession::ZstClientSession()
 {
 	m_hierarchy = new ZstClientHierarchy();
 }
@@ -31,13 +29,13 @@ void ZstClientSession::destroy()
 void ZstClientSession::process_events()
 {
 	ZstSession::process_events();
-	m_stage_events.process_events();
+	stage_events().process_events();
 }
 
 void ZstClientSession::flush()
 {
 	ZstSession::flush();
-	m_stage_events.flush();
+	stage_events().flush();
 }
 
 void ZstClientSession::dispatch_connected_to_stage()
@@ -120,7 +118,7 @@ void ZstClientSession::on_receive_graph_msg(ZstMessage * msg)
 
 void ZstClientSession::entity_publish_update(ZstEntityBase *entity)
 {
-    m_performance_events.invoke([entity](ZstTransportAdaptor * adaptor) {
+    performance_events().invoke([entity](ZstTransportAdaptor * adaptor) {
         if(strcmp(entity->entity_type(), PLUG_TYPE) == 0){
             adaptor->send_message(ZstMsgKind::PERFORMANCE_MSG, {{ZstMsgArg::PATH, entity->URI().path()}}, *static_cast<ZstOutputPlug*>(entity)->raw_value());
         }
@@ -153,7 +151,7 @@ ZstCable * ZstClientSession::connect_cable(ZstInputPlug * input, ZstOutputPlug *
 		//TODO: Even though we use a cable object when sending over the wire, it's up to us
 		//to determine the correct input->output order - fix this using ZstInputPlug and 
 		//ZstOutput plug as arguments
-		m_stage_events.invoke([this, sendtype, cable](ZstTransportAdaptor* adaptor) {
+		stage_events().invoke([this, sendtype, cable](ZstTransportAdaptor* adaptor) {
 			adaptor->send_message(ZstMsgKind::CREATE_CABLE, sendtype, *cable, [this, cable](ZstMessageReceipt response) {
 				this->connect_cable_complete(response, cable);
 			});
@@ -176,7 +174,7 @@ void ZstClientSession::destroy_cable(ZstCable * cable, const ZstTransportSendTyp
 {
 	ZstSession::destroy_cable(cable, sendtype);
 	
-	m_stage_events.invoke([this, cable, sendtype](ZstTransportAdaptor * adaptor) {
+	stage_events().invoke([this, cable, sendtype](ZstTransportAdaptor * adaptor) {
 		adaptor->send_message(ZstMsgKind::DESTROY_CABLE, sendtype, *cable, [this, cable](ZstMessageReceipt response) {
 			this->destroy_cable_complete(response, cable);
 		});
@@ -205,18 +203,8 @@ void ZstClientSession::destroy_cable_complete(ZstMessageReceipt response, ZstCab
 
 
 // -----------------
-// Event dispatchers
+// Submodules
 // -----------------
-
-ZstEventDispatcher<ZstTransportAdaptor*>& ZstClientSession::stage_events()
-{
-	return m_stage_events;
-}
-
-ZstEventDispatcher<ZstTransportAdaptor*>& ZstClientSession::performance_events()
-{
-	return m_performance_events;
-}
 
 ZstClientHierarchy * ZstClientSession::hierarchy()
 {

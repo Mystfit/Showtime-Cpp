@@ -203,6 +203,14 @@ void ZstComponent::remove_adaptor_from_children(ZstSynchronisableAdaptor * adapt
     }
 }
 
+ void ZstComponent::set_proxy()
+{
+	 ZstSynchronisable::set_proxy();
+	 for (auto plug : m_plugs) {
+		 plug->set_proxy();
+	 }
+}
+
 void ZstComponent::set_component_type(const char * component_type)
 {
 	set_component_type(component_type, strlen(component_type));

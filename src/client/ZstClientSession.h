@@ -66,18 +66,10 @@ public:
 
 	ZstCable * connect_cable(ZstInputPlug * input, ZstOutputPlug * output, const ZstTransportSendType & sendtype) override;
 	void destroy_cable(ZstCable * cable, const ZstTransportSendType & sendtype) override;
-
-
-	// -----------------
-	// Event dispatchers
-	// -----------------
 	
-	ZstEventDispatcher<ZstTransportAdaptor*> & stage_events();
-	ZstEventDispatcher<ZstTransportAdaptor*> & performance_events();
 
-	
 	// -----------------
-	// Modules
+	// Submodules
 	// -----------------
 
 	ZstClientHierarchy * hierarchy() override;
@@ -90,9 +82,6 @@ private:
 
 	void connect_cable_complete(ZstMessageReceipt response, ZstCable * cable);
 	void destroy_cable_complete(ZstMessageReceipt response, ZstCable * cable);
-
-	ZstEventDispatcher<ZstTransportAdaptor*> m_stage_events;
-	ZstEventDispatcher<ZstTransportAdaptor*> m_performance_events;
 	
 	ZstClientHierarchy * m_hierarchy;
 };

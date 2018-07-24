@@ -70,6 +70,7 @@ void ZstStage::destroy()
 	this->remove_all_adaptors();
 	this->flush();
 
+	m_eventloop_thread.interrupt();
 	m_eventloop_thread.join();
 	m_actor->stop_loop();
 	m_session->destroy();
@@ -89,6 +90,10 @@ void ZstStage::process_events()
 	m_session->process_events();
 	m_publisher_transport->process_events();
 	m_router_transport->process_events();
+
+	//Reapers are updated last in case entities still need to be queried beforehand
+	m_session->reaper().reap_all();
+	m_session->hierarchy()->reaper().reap_all();
 }
 
 
@@ -129,16 +134,18 @@ ZstStageLoop::ZstStageLoop(ZstStage * stage)
 
 void ZstStageLoop::operator()()
 {
-	try {
-		//std::unique_lock< boost::fibers::mutex > lk(m_event_loop_lock);
-		while (1) {
+	//std::unique_lock< boost::fibers::mutex > lk(m_event_loop_lock);
+	while (1) {
+		try {
 			//while (!data_ready) {
 			//	cond.wait(lk);
 			//}
+			boost::this_thread::interruption_point();
 			m_stage->process_events();
 		}
-	}
-	catch (boost::thread_interrupted) {
-		ZstLog::net(LogLevel::debug, "Stage event loop exiting.");
+		catch (boost::thread_interrupted) {
+			ZstLog::net(LogLevel::debug, "Stage event loop exiting.");
+			break;
+		}
 	}
 }

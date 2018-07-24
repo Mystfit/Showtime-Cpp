@@ -120,6 +120,10 @@ void ZstClient::process_events()
 	m_client_transport->process_events();
 	m_graph_transport->process_events();
 	m_session->process_events();
+
+	//Reapers are updated last in case entities still need to be queried beforehand
+	m_session->reaper().reap_all();
+	m_session->hierarchy()->reaper().reap_all();
 }
 
 void ZstClient::flush()

@@ -17,9 +17,6 @@ void ZstSession::process_events()
 	m_synchronisable_events.process_events();
 	m_session_events.process_events();
 	m_compute_events.process_events();
-
-	//Reaper is updated last in case entities still need to be queried
-	m_reaper.reap_all();
 }
 
 void ZstSession::flush()
@@ -241,7 +238,7 @@ void ZstSession::on_compute(ZstComponent * component, ZstInputPlug * plug) {
 void ZstSession::on_synchronisable_destroyed(ZstSynchronisable * synchronisable)
 {
 	if (synchronisable->is_proxy())
-		m_reaper.add(synchronisable);
+		reaper().add(synchronisable);
 }
 
 void ZstSession::synchronisable_has_event(ZstSynchronisable * synchronisable)

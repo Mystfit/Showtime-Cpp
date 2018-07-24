@@ -6,7 +6,7 @@
 #include <adaptors/ZstEntityAdaptor.hpp>
 #include <adaptors/ZstComputeAdaptor.hpp>
 
-#include "ZstReaper.h"
+#include "ZstModule.h"
 #include "ZstHierarchy.h"
 #include "liasons/ZstSynchronisableLiason.hpp"
 #include "liasons/ZstCableLiason.hpp"
@@ -15,6 +15,7 @@
 
 
 class ZstSession : 
+	public ZstModule,
 	public ZstSynchronisableAdaptor,
 	public ZstTransportAdaptor,
 	public ZstComputeAdaptor,
@@ -97,8 +98,4 @@ private:
 	ZstEventDispatcher<ZstSynchronisableAdaptor*> m_synchronisable_events;
 	ZstEventDispatcher<ZstComputeAdaptor*> m_compute_events;
 
-	// -----------
-	// Destruction
-	// -----------
-	ZstReaper m_reaper;
 };

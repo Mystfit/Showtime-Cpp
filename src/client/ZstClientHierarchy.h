@@ -68,13 +68,6 @@ public:
 	ZstPerformer * get_local_performer() const;
 
 
-	// ------------------------------
-	// Event dispatchers
-	// ------------------------------
-
-	ZstEventDispatcher<ZstTransportAdaptor*> & stage_events();
-
-
 private:
 	ZstPerformer * m_root;
 
@@ -83,10 +76,4 @@ private:
 	// ----------------
 	void activate_entity_complete(ZstMessageReceipt response, ZstEntityBase * entity);
 	void destroy_entity_complete(ZstEntityBase * entity) override;
-
-	// -----------------
-	// Event dispatchers
-	// -----------------
-
-	ZstEventDispatcher<ZstTransportAdaptor*> m_stage_events;
 };
