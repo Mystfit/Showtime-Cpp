@@ -73,9 +73,6 @@ build_script:
     %CMAKE_BIN% -H. -B"%BUILD_FOLDER%/build" -G "%GENERATOR%" %CMAKE_FLAGS%
     %CMAKE_BIN% --build "%BUILD_FOLDER%/build" --target ShowtimeDotNet --config %CONFIGURATION% -- /nologo /verbosity:minimal
     appveyor AddMessage "Showtime build (dotnet only) exited with status %errorlevel%"
-    
-    appveyor AddMessage "Re-running cmake configure to pull in generated dotnet bindings"
-    %CMAKE_BIN% -H. -B"%BUILD_FOLDER%/build" -G "%GENERATOR%" %CMAKE_FLAGS%
 
     appveyor AddMessage "Building Showtime (all)"
     %CMAKE_BIN% --build "%BUILD_FOLDER%/build" --target ALL_BUILD --config %CONFIGURATION% -- /nologo /verbosity:minimal
