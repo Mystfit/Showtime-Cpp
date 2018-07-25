@@ -21,9 +21,15 @@ matrix:
     - env: BUILD_TYPE=Debug PY_VER=python2
       os: linux
       dist: trusty
+      compiler:
+        - clang
+        - gcc
       addons: &common_build
         apt:
-          packages: 
+          packages:
+            - gcc-6 
+            - g++-6
+            - clang
             - build-essential
             - gawk
             - curl 
@@ -37,16 +43,25 @@ matrix:
     - env: BUILD_TYPE=Debug PY_VER=python3
       os: linux
       dist: trusty
+      compiler:
+        - clang
+        - gcc
       addons: *common_build
 
     - env: BUILD_TYPE=Release PY_VER=python2
       os: linux
       dist: trusty
+      compiler:
+        - clang
+        - gcc
       addons: *common_build
 
     - env: BUILD_TYPE=Release PY_VER=python3
       os: linux
       dist: trusty
+      compiler:
+        - clang
+        - gcc
       addons: *common_build
 
     # XCode 9.1
@@ -118,6 +133,8 @@ install:
       export PATH=$PREFIX/bin:$PREFIX/sbin:$PATH;
       export MANPATH=$PREFIX/share/man:$MANPATH;
       export INFOPATH=$PREFIX/share/info:$INFOPATH;
+      export CC=gcc-6;
+      export CXX=g++-6;
       sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)";
       hash -r;
       echo $(which brew);
@@ -128,10 +145,6 @@ install:
   - brew update 
   - brew bundle
 
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      brew install gcc;
-    fi
-    
   # Kill background sleep loop
   - kill %1
 
