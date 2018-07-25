@@ -237,9 +237,11 @@ option(BINDINGS_PYTHON "Generate bindings for Python" OFF)
 option(BINDINGS_UNITY "Generate bindings for Unity" OFF)
 
 if(BINDINGS_DOTNET OR BINDINGS_UNITY)
+    enable_language(CSharp)
     set(BINDINGS_DOTNET ON)
     set(DOTNET_GENERATED_BINDINGS)
     set(DOTNET_TARGET ${PROJECT_NAME}Dotnet)
+    add_library(${DOTNET_TARGET} SHARED "")
     include(src/bindings/dotnet/CMakeLists.txt)
 endif()
 

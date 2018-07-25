@@ -2,38 +2,66 @@ message(STATUS "Configuring ${DOTNET_TARGET} target")
 
 set(BUILD_STAMP "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
 
-enable_language(CSharp)
+set(DOTNET_TARGET_WRAPPER ${DOTNET_TARGET}Wrapper)
 
 # Save original swig output dir
 set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR}/dotnet)
-
-# Set include directories from client dependency
-include_directories(${Showtime_INCLUDE_DIRS} ${Showtime_COMPILED_INCLUDE_DIRS})
-
-# Set include files
-set(SWIG_MODULE_${DOTNET_TARGET}_EXTRA_DEPS ${Showtime_API_INTERFACE})
+set(SWIG_LANGUAGE_DIR ${CMAKE_SWIG_ROOT_OUTDIR}/dotnet)
 
 # Define language root interface file
 set(DOTNET_SWIG_INTERFACES "${CMAKE_CURRENT_LIST_DIR}/showtime_dotnet.i")
 set_source_files_properties(${DOTNET_SWIG_INTERFACES} PROPERTIES CPLUSPLUS ON)
 
+message(STATUS "Running swig to generate dotnet wrappers")
+
+foreach(SWIG_INTERFACE_FILE ${DOTNET_SWIG_INTERFACES})
+    get_filename_component(OUTFILE_NAME ${SWIG_INTERFACE_FILE} NAME_WE)
+    set(SWIG_ARGS 
+        "-c++"
+        "-csharp"
+        "-I${Showtime_INCLUDE_DIRS}"
+        "-outdir" "${SWIG_LANGUAGE_DIR}"
+        "-o" "${CMAKE_SWIG_OUTDIR}/${OUTFILE_NAME}CSHARP_wrap.cxx"
+        "${SWIG_INTERFACE_FILE}"
+    )
+    file(MAKE_DIRECTORY ${SWIG_LANGUAGE_DIR})
+    execute_process(COMMAND ${SWIG_EXECUTABLE} ${SWIG_ARGS} RESULT_VARIABLE SWIG_OUTPUT)
+endforeach()
+
+# Group together generated binding scripts
+file(GLOB DOTNET_GENERATED_BINDINGS CONFIGURE_DEPENDS "${SWIG_LANGUAGE_DIR}/*.cs")
+
+# Set include directories from client dependency
+include_directories(${Showtime_INCLUDE_DIRS} ${Showtime_COMPILED_INCLUDE_DIRS})
+
+# Set include files
+set(SWIG_MODULE_${DOTNET_TARGET_WRAPPER}_EXTRA_DEPS ${Showtime_API_INTERFACE})
+
 # Clear the debug suffix for generated files
 set(CMAKE_DEBUG_POSTFIX "")
 
 # Create the swig dotnet target
-swig_add_library(${DOTNET_TARGET} LANGUAGE csharp TYPE SHARED SOURCES ${DOTNET_SWIG_INTERFACES})
+swig_add_library(${DOTNET_TARGET_WRAPPER} 
+    LANGUAGE csharp 
+    TYPE SHARED 
+    OUTPUT_DIR ${SWIG_LANGUAGE_DIR}
+    OUTFILE_DIR ${CMAKE_SWIG_OUTDIR}
+    SOURCES ${DOTNET_SWIG_INTERFACES}
+)
 
 # Set dependant projects
-add_dependencies(${SWIG_MODULE_${DOTNET_TARGET}_REAL_NAME} ${CLIENT_TARGET})
+add_dependencies(${SWIG_MODULE_${DOTNET_TARGET_WRAPPER}_REAL_NAME} ${CLIENT_TARGET})
 
 # Link libraries to swig target
 swig_link_libraries(
-    ${DOTNET_TARGET}
+    ${DOTNET_TARGET_WRAPPER}
     ${CLIENT_TARGET}
 )
 
-# Group together generated binding scripts
-file(GLOB DOTNET_GENERATED_BINDINGS "${CMAKE_SWIG_OUTDIR}/*.cs")
-
 # Restore original swig output dir
 set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR})
+
+# Create Dotnet project to hold CS files and reference the wrapper project
+target_sources(${DOTNET_TARGET} PRIVATE ${DOTNET_GENERATED_BINDINGS})
+add_dependencies(${DOTNET_TARGET} ${DOTNET_TARGET_WRAPPER})
+set_target_properties(${DOTNET_TARGET} PROPERTIES VS_DOTNET_REFERENCE_System ON) 
