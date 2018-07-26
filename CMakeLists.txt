@@ -8,7 +8,7 @@ if(NOT DEFINED USE_HUNTER)
     endif()
 endif()
 
-set(CMAKE_BASE_MODULE_PATH "${CMAKE_MODULE_PATH}")
+set(CMAKE_BASE_MODULE_PATH ${CMAKE_MODULE_PATH})
 if(USE_HUNTER)
     include("cmake/HunterGate.cmake")
     HunterGate(
@@ -137,8 +137,9 @@ message(STATUS "Finding packages")
 # Boost
 # --------
 if(Boost_USE_LOCAL)
-    #set(HUNTER_CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})
-    #set(CMAKE_MODULE_PATH ${CMAKE_BASE_MODULE_PATH})
+    # Reset the CMake module path to avoid using Hunter's FindBoost.cmake
+    set(HUNTER_CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})
+    set(CMAKE_MODULE_PATH ${CMAKE_BASE_MODULE_PATH})
     message(STATUS "Current module path: ${CMAKE_MODULE_PATH}")
 endif()
 find_package(Boost COMPONENTS
