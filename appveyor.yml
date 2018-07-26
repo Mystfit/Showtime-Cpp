@@ -69,16 +69,14 @@ build_script:
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DBoost_USE_LOCAL=ON -DBoost_DEBUG=ON -DBoost_COMPILER=-vc141
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DBUILD_MEMLEAK_TEST=OFF
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DBOOST_ROOT:PATHNAME="%BOOST_ROOT%" -DBOOST_INCLUDEDIR:PATHNAME="%BOOST_ROOT%" -DBOOST_LIBRARYDIR:PATHNAME="%BOOST_ROOT%/lib64-msvc-14.1"
-    appveyor AddMessage "Building Showtime (dotnet)"
+    
     %CMAKE_BIN% -H. -B"%BUILD_FOLDER%/build" -G "%GENERATOR%" %CMAKE_FLAGS%
-    %CMAKE_BIN% --build "%BUILD_FOLDER%/build" --target ShowtimeDotNet --config %CONFIGURATION% -- /nologo /verbosity:minimal
-    appveyor AddMessage "Showtime build (dotnet only) exited with status %errorlevel%"
 
     appveyor AddMessage "Building Showtime (all)"
     %CMAKE_BIN% --build "%BUILD_FOLDER%/build" --target ALL_BUILD --config %CONFIGURATION% -- /nologo /verbosity:minimal
     appveyor AddMessage "Showtime build (all) exited with status %errorlevel%"
 
-    appveyor AddMessage "Building/installing Showtime"
+    appveyor AddMessage "Installing Showtime"
     %CMAKE_BIN% --build "%BUILD_FOLDER%/build" --target INSTALL --config %CONFIGURATION% -- /nologo /verbosity:minimal
     appveyor AddMessage "Showtime install (all) exited with status %errorlevel%"
 
