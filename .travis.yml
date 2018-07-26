@@ -12,7 +12,7 @@ env:
   global:
   - BUILD_FOLDER=$TRAVIS_BUILD_DIR
   - GENERATOR="Unix Makefiles"
-  - USE_LOCAL_BOOST=1
+  - Boost_USE_LOCAL=1
   - CMAKE_PATH=$TRAVIS_BUILD_DIR/cmake
 
 matrix:
@@ -117,7 +117,7 @@ before_install:
   # OSX uses downloaded CMake and local boost
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       export CMAKE_PATH=$(brew --prefix);
-      export USE_LOCAL_BOOST=1;
+      export Boost_USE_LOCAL=1;
     fi
 
   # CMake paths
@@ -167,7 +167,7 @@ script:
     fi
 
   # If we're using local boost, then set CMake vars to set correct target names
-  - if [ $USE_LOCAL_BOOST ]; then GENERATOR_ARGS="$GENERATOR_ARGS -DUSE_LOCAL_BOOST=ON"; fi
+  - if [ $Boost_USE_LOCAL ]; then GENERATOR_ARGS="$GENERATOR_ARGS -DBoost_USE_LOCAL=ON"; fi
 
   # Set prefix search path to homebrew folder for library discovery
   - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$PREFIX;${CMAKE_PREFIX_PATH} -DBUILD_MEMLEAK_TEST=OFF"

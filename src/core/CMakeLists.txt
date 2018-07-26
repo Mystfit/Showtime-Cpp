@@ -97,12 +97,12 @@ IF(WIN32)
     target_compile_definitions(${CORE_TARGET} PUBLIC 
                                 -D_WIN32_WINNT=0x0601
                                 -DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE)
-    if(HUNTER_ENABLED AND NOT USE_LOCAL_BOOST)
+    if(HUNTER_ENABLED AND NOT Boost_USE_LOCAL)
         target_compile_definitions(${CORE_TARGET} PUBLIC -DBOOST_AUTO_LINK_TAGGED)
     endif()
 else()
     # Use shared boost on non-windows platforms
-    if(USE_LOCAL_BOOST)
+    if(Boost_USE_LOCAL)
         target_compile_definitions(${CORE_TARGET} PRIVATE -DBOOST_ALL_DYN_LINK)
     endif()
 
@@ -123,7 +123,7 @@ if(NOT HUNTER_ENABLED)
     )
 endif()
 
-# if(USE_LOCAL_BOOST)
+# if(Boost_USE_LOCAL)
 #     target_include_directories(${CORE_TARGET} PUBLIC ${Boost_INCLUDE_DIR})
 # endif()
 

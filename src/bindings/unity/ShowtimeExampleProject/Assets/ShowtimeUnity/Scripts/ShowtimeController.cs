@@ -93,7 +93,7 @@ public class ShowtimeController : MonoBehaviour {
 
         //We don't have to tear down the library at this point unless we want to run init() again.
         //The showtime singleton will take care of itself on program exit, but we still need to leave
-        showtime.leave_immediately();
+        showtime.leave();
     }
     
     // Entities

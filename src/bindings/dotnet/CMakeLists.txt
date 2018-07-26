@@ -20,6 +20,7 @@ foreach(SWIG_INTERFACE_FILE ${DOTNET_SWIG_INTERFACES})
         "-c++"
         "-csharp"
         "-I${Showtime_INCLUDE_DIRS}"
+        "-dllimport" "${DOTNET_TARGET_WRAPPER}"
         "-outdir" "${SWIG_LANGUAGE_DIR}"
         "-o" "${CMAKE_SWIG_OUTDIR}/${OUTFILE_NAME}CSHARP_wrap.cxx"
         "${SWIG_INTERFACE_FILE}"
@@ -64,4 +65,6 @@ set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR})
 # Create Dotnet project to hold CS files and reference the wrapper project
 target_sources(${DOTNET_TARGET} PRIVATE ${DOTNET_GENERATED_BINDINGS})
 add_dependencies(${DOTNET_TARGET} ${DOTNET_TARGET_WRAPPER})
-set_target_properties(${DOTNET_TARGET} PROPERTIES VS_DOTNET_REFERENCE_System ON) 
+# set_target_properties(${DOTNET_TARGET} PROPERTIES VS_DOTNET_REFERENCE_System ON) 
+# set_target_properties(${DOTNET_TARGET} PROPERTIES VS_DOTNET_TARGET_FRAMEWORK_VERSION "v4.7.1")
+

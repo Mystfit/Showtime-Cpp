@@ -12,8 +12,8 @@ set(CMAKE_BASE_MODULE_PATH "${CMAKE_MODULE_PATH}")
 if(USE_HUNTER)
     include("cmake/HunterGate.cmake")
     HunterGate(
-        URL "https://github.com/ruslo/hunter/archive/v0.21.6.tar.gz"
-        SHA1 "19e74186aa97d8c3ebe799083cd5e97d87701552"
+        URL "https://github.com/ruslo/hunter/archive/v0.23.3.tar.gz"
+        SHA1 "2c421912930d183c24512590014f955ff073424b"
     )
     set(HUNTER_ENABLED ON)
 endif()
@@ -94,7 +94,7 @@ set(Showtime_INSTALL_TARGETS "")
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 set(Boost_NO_SYSTEM_PATHS ON)
-option(USE_LOCAL_BOOST "Use local boost" OFF)
+option(Boost_USE_LOCAL "Use local boost" OFF)
 if(WIN32)
     if(NOT DEFINED Boost_USE_STATIC_LIBS)
         set(Boost_USE_STATIC_LIBS ON)
@@ -104,9 +104,6 @@ else()
         set(Boost_USE_STATIC_LIBS OFF)
     endif()
 endif()
-message(STATUS "Boost root: ${BOOST_ROOT}")
-message(STATUS "Boost include dir: ${BOOST_INCLUDEDIR}")
-message(STATUS "Boost library dir: ${BOOST_LIBRARYDIR}")
 
 
 # --------
@@ -116,7 +113,7 @@ set(LIBZMQ_TARGET "")
 set(CZMQ_TARGET "")
 if(USE_HUNTER AND HUNTER_ENABLED)
     message(STATUS "Installing hunter dependencies")
-    if(NOT USE_LOCAL_BOOST)
+    if(NOT Boost_USE_LOCAL)
         hunter_add_package(boost COMPONENTS 
             system 
             filesystem 
@@ -139,12 +136,12 @@ message(STATUS "Finding packages")
 
 # Boost
 # --------
-if(USE_LOCAL_BOOST)
-    set(HUNTER_CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})
-    set(CMAKE_MODULE_PATH ${CMAKE_BASE_MODULE_PATH})
+if(Boost_USE_LOCAL)
+    #set(HUNTER_CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})
+    #set(CMAKE_MODULE_PATH ${CMAKE_BASE_MODULE_PATH})
     message(STATUS "Current module path: ${CMAKE_MODULE_PATH}")
 endif()
-find_package(Boost 1.66.0 COMPONENTS
+find_package(Boost COMPONENTS
     log
     log_setup
     thread
@@ -155,7 +152,7 @@ find_package(Boost 1.66.0 COMPONENTS
     atomic
     REQUIRED
 )
-if(USE_LOCAL_BOOST)
+if(Boost_USE_LOCAL)
    set(CMAKE_MODULE_PATH ${HUNTER_CMAKE_MODULE_PATH}) 
 endif()
 set(Boost_HEADER_TARGET "Boost::boost")
@@ -185,7 +182,7 @@ if(WIN32 AND USE_HUNTER AND HUNTER_ENABLED)
     set(fmt_TARGET "fmt::fmt")
 else()
     find_package(czmq REQUIRED)
-    set(USE_LOCAL_BOOST ON)
+    set(Boost_USE_LOCAL ON)
     set(CZMQ_TARGET ${CZMQ_LIBRARIES})
     set(fmt_TARGET "fmt::fmt-header-only")
     # set(ZEROMQ_TARGET ${ZeroMQ_LIBRARIES})
@@ -238,6 +235,8 @@ option(BINDINGS_UNITY "Generate bindings for Unity" OFF)
 
 if(BINDINGS_DOTNET OR BINDINGS_UNITY)
     enable_language(CSharp)
+    set(BINDINGS_DOTNET_FRAMEWORK_VERSION "3.5" CACHE STRING "dotnet Framework version")
+    set(CMAKE_DOTNET_TARGET_FRAMEWORK_VERSION "v${BINDINGS_DOTNET_FRAMEWORK_VERSION}")
     set(BINDINGS_DOTNET ON)
     set(DOTNET_GENERATED_BINDINGS)
     set(DOTNET_TARGET ${PROJECT_NAME}Dotnet)
