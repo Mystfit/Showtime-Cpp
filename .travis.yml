@@ -21,12 +21,11 @@ matrix:
     - env: BUILD_TYPE=Debug PY_VER=python2
       os: linux
       dist: trusty
-      compiler: gcc
+      compiler: 
+        - gcc
       addons: &common_build
         apt:
           packages:
-            # - gcc-6
-            # - g++-6
             - build-essential
             - gawk
             - curl 
@@ -40,19 +39,22 @@ matrix:
     - env: BUILD_TYPE=Debug PY_VER=python3
       os: linux
       dist: trusty
-      compiler:  gcc
+      compiler: 
+        - gcc
       addons: *common_build
 
     - env: BUILD_TYPE=Release PY_VER=python2
       os: linux
       dist: trusty
-      compiler: gcc
+      compiler: 
+        - gcc
       addons: *common_build
 
     - env: BUILD_TYPE=Release PY_VER=python3
       os: linux
       dist: trusty
-      compiler: gcc
+      compiler: 
+        - gcc
       addons: *common_build
 
     # XCode 9.1
