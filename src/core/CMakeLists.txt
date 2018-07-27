@@ -134,19 +134,18 @@ list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS
     ${CZMQ_TARGET}
     ${fmt_TARGET}
     ${Boost_HEADER_TARGET}
-    ${Boost_DATE_TIME_TARGET}
-    ${Boost_CHRONO_TARGET}
-    ${Boost_ATOMIC_TARGET}
-    ${Boost_LOG_SETUP_TARGET}
-    ${Boost_LOG_TARGET}
-    ${Boost_THREAD_TARGET}
-    ${Boost_SYSTEM_TARGET}
-    ${Boost_FILESYSTEM_TARGET}
 )
 target_link_libraries(${CORE_TARGET} PUBLIC ${SHOWTIME_PUBLIC_LINKED_LIBS})
 target_link_libraries(${CORE_TARGET} PRIVATE 
                         ${msgpackc_TARGET}
-
+                        ${Boost_DATE_TIME_TARGET}
+                        ${Boost_CHRONO_TARGET}
+                        ${Boost_ATOMIC_TARGET}
+                        ${Boost_LOG_SETUP_TARGET}
+                        ${Boost_LOG_TARGET}
+                        ${Boost_THREAD_TARGET}
+                        ${Boost_SYSTEM_TARGET}
+                        ${Boost_FILESYSTEM_TARGET}
 )
 list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS ${CORE_TARGET})
 

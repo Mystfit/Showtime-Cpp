@@ -22,14 +22,13 @@ matrix:
       os: linux
       dist: trusty
       compiler:
-        - clang
-        - gcc
+        - g++-5
       addons: &common_build
         apt:
           packages:
-            - gcc-6 
-            - g++-6
-            - clang
+            - gcc-5
+            - g++-5
+            - boost1.67
             - build-essential
             - gawk
             - curl 
@@ -44,24 +43,21 @@ matrix:
       os: linux
       dist: trusty
       compiler:
-        - clang
-        - gcc
+        - g++-5
       addons: *common_build
 
     - env: BUILD_TYPE=Release PY_VER=python2
       os: linux
       dist: trusty
       compiler:
-        - clang
-        - gcc
+        - g++-5
       addons: *common_build
 
     - env: BUILD_TYPE=Release PY_VER=python3
       os: linux
       dist: trusty
       compiler:
-        - clang
-        - gcc
+        - g++-5
       addons: *common_build
 
     # XCode 9.1
