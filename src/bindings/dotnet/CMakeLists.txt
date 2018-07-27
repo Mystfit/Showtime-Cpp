@@ -65,6 +65,3 @@ set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR})
 # Create Dotnet project to hold CS files and reference the wrapper project
 target_sources(${DOTNET_TARGET} PRIVATE ${DOTNET_GENERATED_BINDINGS})
 add_dependencies(${DOTNET_TARGET} ${DOTNET_TARGET_WRAPPER})
-# set_target_properties(${DOTNET_TARGET} PROPERTIES VS_DOTNET_REFERENCE_System ON) 
-# set_target_properties(${DOTNET_TARGET} PROPERTIES VS_DOTNET_TARGET_FRAMEWORK_VERSION "v4.7.1")
-

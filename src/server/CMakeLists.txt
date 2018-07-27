@@ -37,7 +37,7 @@ IF(WIN32)
 ENDIF(WIN32)
 
 add_dependencies(${SERVER_TARGET} ${CORE_TARGET})
-target_link_libraries(${SERVER_TARGET} 
-                      ${CORE_TARGET} 
-                      ${Boost_THREAD_TARGET}
-)
+
+# Link libraries
+target_link_libraries(${SERVER_TARGET} PUBLIC ${CORE_TARGET})
+target_link_libraries(${SERVER_TARGET} PRIVATE ${Boost_THREAD_TARGET})

@@ -73,8 +73,9 @@ void ZstSynchronisable::enqueue_deactivation()
 		//Notify adaptors that we have a queued event
 		synchronisable_events()->invoke([this](ZstSynchronisableAdaptor* dlg) { dlg->synchronisable_has_event(this); });
 
-		//Notify adaptors that this syncronisable needs to be cleaned up
-		synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * dlg) {dlg->on_synchronisable_destroyed(this); });
+		//Notify adaptors that this syncronisable needs to be cleaned up -- proxies only
+		if (this->is_proxy())
+			synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * dlg) {dlg->on_synchronisable_destroyed(this); });
     }
 }
 

@@ -30,4 +30,4 @@ if(WIN32)
 endif()
 
 # Link libraries
-target_link_libraries(${CORE_ENTITIES_TARGET} ${CORE_TARGET})
+target_link_libraries(${CORE_ENTITIES_TARGET} PUBLIC ${CORE_TARGET})

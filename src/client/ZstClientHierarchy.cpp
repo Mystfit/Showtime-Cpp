@@ -27,6 +27,12 @@ void ZstClientHierarchy::destroy()
 	stage_events().remove_all_adaptors();
 
 	//TODO: Delete other clients
+	//Reset local performer
+	size_t index = 0;
+	for (index = 0; index < m_root->num_children(); ++index) {
+		destroy_entity_complete(m_root->get_child_at(index));
+	}
+	destroy_entity_complete(m_root);
 	delete m_root;
 }
 

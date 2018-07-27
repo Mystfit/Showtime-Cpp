@@ -21,7 +21,7 @@ endif()
 project(Showtime)
 set(SHOWTIME_VERSION_MAJOR 0)
 set(SHOWTIME_VERSION_MINOR 11)
-set(SHOWTIME_VERSION_PATCH 0)
+set(SHOWTIME_VERSION_PATCH 1)
 set(SHOWTIME_VERSION "${SHOWTIME_VERSION_MAJOR}.${SHOWTIME_VERSION_MINOR}.${SHOWTIME_VERSION_PATCH}")
 set(SHOWTIME_NAMESPACE "${PROJECT_NAME}::")
 
@@ -193,6 +193,7 @@ endif()
 # ----------------
 # Showtime targets
 # ----------------
+set(SHOWTIME_PUBLIC_LINKED_LIBS "")
 
 # Core Library
 # ------------
@@ -237,12 +238,14 @@ option(BINDINGS_UNITY "Generate bindings for Unity" OFF)
 if(BINDINGS_DOTNET OR BINDINGS_UNITY)
     enable_language(CSharp)
     set(BINDINGS_DOTNET_FRAMEWORK_VERSION "3.5" CACHE STRING "dotnet Framework version")
+    set_property(CACHE BINDINGS_DOTNET_FRAMEWORK_VERSION PROPERTY STRINGS 3.5 4 4.5 4.5.1 4.5.2 4.6 4.6.1 4.7.1)
     set(CMAKE_DOTNET_TARGET_FRAMEWORK_VERSION "v${BINDINGS_DOTNET_FRAMEWORK_VERSION}")
     set(BINDINGS_DOTNET ON)
     set(DOTNET_GENERATED_BINDINGS)
     set(DOTNET_TARGET ${PROJECT_NAME}Dotnet)
     add_library(${DOTNET_TARGET} SHARED "")
     include(src/bindings/dotnet/CMakeLists.txt)
+    list(APPEND Showtime_LIBRARY_TARGETS ${DOTNET_TARGET})
 endif()
 
 if(BINDINGS_UNITY)

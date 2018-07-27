@@ -197,7 +197,12 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 	}
 	else {
 		//Entity is a root performer. Remove from performer list
-		m_clients.erase(entity->URI());
+		try {
+			m_clients.erase(entity->URI());
+		}
+		catch (std::out_of_range) {
+			ZstLog::net(LogLevel::warn, "Could not remove performer {}", entity->URI().path());
+		}
 	}
 
 	//Dispatch events depending on entity type

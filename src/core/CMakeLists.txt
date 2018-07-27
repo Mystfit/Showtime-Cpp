@@ -97,9 +97,6 @@ IF(WIN32)
     target_compile_definitions(${CORE_TARGET} PUBLIC 
                                 -D_WIN32_WINNT=0x0601
                                 -DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE)
-    if(HUNTER_ENABLED AND NOT Boost_USE_LOCAL)
-        target_compile_definitions(${CORE_TARGET} PUBLIC -DBOOST_AUTO_LINK_TAGGED)
-    endif()
 else()
     # Use shared boost on non-windows platforms
     if(Boost_USE_LOCAL)
@@ -107,7 +104,7 @@ else()
     endif()
 
     # Turn off C11 ABI compatibility in glibc
-    target_compile_definitions(${CORE_TARGET} PUBLIC -D_GLIBCXX_USE_CXX11_ABI=1)
+    # target_compile_definitions(${CORE_TARGET} PUBLIC -D_GLIBCXX_USE_CXX11_ABI=1)
 endif(WIN32)
 
 if(NOT HUNTER_ENABLED)
@@ -118,14 +115,9 @@ if(NOT HUNTER_ENABLED)
         )
     endif()
     target_include_directories(${CORE_TARGET} PUBLIC 
-                                # ${ZeroMQ_INCLUDE_DIRS}
                                 ${CZMQ_INCLUDE_DIRS}
     )
 endif()
-
-# if(Boost_USE_LOCAL)
-#     target_include_directories(${CORE_TARGET} PUBLIC ${Boost_INCLUDE_DIR})
-# endif()
 
 # Set threading library
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -137,15 +129,14 @@ elseif(CMAKE_USE_PTHREADS_INIT)
 endif()
 message(STATUS "Setting link thread library to ${CMAKE_THREAD_LIBS_INIT}")
 
-target_link_libraries(${CORE_TARGET} PUBLIC 
-                        Threads::Threads
-                        ${CZMQ_TARGET}
-                        ${fmt_TARGET}    
-                        ${Boost_HEADER_TARGET}
-                        ${Boost_SYSTEM_TARGET}
-                        ${Boost_FILESYSTEM_TARGET}
+# Link libraries
+list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS 
+    Threads::Threads
+    ${CZMQ_TARGET}
+    ${fmt_TARGET}    
+    ${Boost_HEADER_TARGET}
 )
-
+target_link_libraries(${CORE_TARGET} PUBLIC ${SHOWTIME_PUBLIC_LINKED_LIBS})
 target_link_libraries(${CORE_TARGET} PRIVATE 
                         ${msgpackc_TARGET}
                         ${Boost_DATE_TIME_TARGET}
@@ -154,7 +145,10 @@ target_link_libraries(${CORE_TARGET} PRIVATE
                         ${Boost_LOG_SETUP_TARGET}
                         ${Boost_LOG_TARGET}
                         ${Boost_THREAD_TARGET}
+                        ${Boost_SYSTEM_TARGET}
+                        ${Boost_FILESYSTEM_TARGET}
 )
+list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS ${CORE_TARGET})
 
 if(WIN32)
     # Copy runtime dependencies

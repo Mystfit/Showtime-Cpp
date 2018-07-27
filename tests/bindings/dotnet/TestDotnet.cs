@@ -104,6 +104,8 @@ public class Program
         server_process.WaitForExit();
 
         showtime.destroy();
+
+        Console.WriteLine("Test completed");
         return 0;
     }
 

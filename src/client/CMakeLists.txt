@@ -51,10 +51,8 @@ add_dependencies(${CLIENT_TARGET}
                  ${CORE_ENTITIES_TARGET})
 
 # Link libraries
-target_link_libraries(${CLIENT_TARGET} PUBLIC
-  ${CORE_TARGET}
-)
-
+list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS ${CLIENT_TARGET})
+target_link_libraries(${CLIENT_TARGET} PUBLIC ${CORE_TARGET})
 target_link_libraries(${CLIENT_TARGET} PRIVATE
   ${CORE_TARGET}
   ${msgpackc_TARGET}
