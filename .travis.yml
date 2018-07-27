@@ -144,6 +144,12 @@ install:
       export CXX=/usr/local/bin/g++-6
     fi
 
+  # Keep OSX cmake out of brewfile for now until linuxbrew gets its bottle working
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      brew install cmake;
+    fi
+
+
   # Kill background sleep loop
   - kill %1
 
