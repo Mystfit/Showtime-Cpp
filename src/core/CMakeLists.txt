@@ -121,7 +121,7 @@ endif()
 
 # Set threading library
 set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
+# find_package(Threads REQUIRED)
 if(CMAKE_USE_WIN32_THREADS_INIT)
     message(STATUS "Using windows threads")
 elseif(CMAKE_USE_PTHREADS_INIT)
@@ -131,9 +131,8 @@ message(STATUS "Setting link thread library to ${CMAKE_THREAD_LIBS_INIT}")
 
 # Link libraries
 list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS 
-    Threads::Threads
     ${CZMQ_TARGET}
-    ${fmt_TARGET}    
+    ${fmt_TARGET}
     ${Boost_HEADER_TARGET}
 )
 target_link_libraries(${CORE_TARGET} PUBLIC ${SHOWTIME_PUBLIC_LINKED_LIBS})
