@@ -104,7 +104,7 @@ else()
     endif()
 
     # Turn off C11 ABI compatibility in glibc
-    # target_compile_definitions(${CORE_TARGET} PUBLIC -D_GLIBCXX_USE_CXX11_ABI=1)
+    target_compile_definitions(${CORE_TARGET} PUBLIC -D_GLIBCXX_USE_CXX11_ABI=0)
 endif(WIN32)
 
 if(NOT HUNTER_ENABLED)
