@@ -28,7 +28,6 @@ matrix:
           packages:
             - gcc-5
             - g++-5
-            - boost1.67
             - build-essential
             - gawk
             - curl 
