@@ -139,9 +139,10 @@ install:
   
   # Set main compiler to gcc-6
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      #brew install gcc;
       brew install gcc@6;
       export CC=/usr/local/bin/gcc-6;
-      export CXX=/usr/local/bin/g++-6
+      export CXX=/usr/local/bin/g++-6;
     fi
 
   # Keep OSX cmake out of brewfile for now until linuxbrew gets its bottle working
