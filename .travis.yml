@@ -26,8 +26,6 @@ matrix:
       addons: &common_build
         apt:
           packages:
-            - gcc-5
-            - g++-5
             - build-essential
             - gawk
             - curl 
@@ -41,22 +39,16 @@ matrix:
     - env: BUILD_TYPE=Debug PY_VER=python3
       os: linux
       dist: trusty
-      compiler:
-        - g++-5
       addons: *common_build
 
     - env: BUILD_TYPE=Release PY_VER=python2
       os: linux
       dist: trusty
-      compiler:
-        - g++-5
       addons: *common_build
 
     - env: BUILD_TYPE=Release PY_VER=python3
       os: linux
       dist: trusty
-      compiler:
-        - g++-5
       addons: *common_build
 
     # XCode 9.1
@@ -90,6 +82,8 @@ before_install:
 
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       export PREFIX=/home/linuxbrew/.linuxbrew;
+      sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test;
+      sudo apt-get update -qq
     fi
 
   # Set locale flags
@@ -125,6 +119,8 @@ install:
 
   # Install linuxbrew dependencies
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      sudo apt-get install -qq g++-6;
+      sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90;
       export PATH=$PREFIX/bin:$PREFIX/sbin:$PATH;
       export MANPATH=$PREFIX/share/man:$MANPATH;
       export INFOPATH=$PREFIX/share/info:$INFOPATH;
