@@ -34,8 +34,6 @@ target_include_directories(${SERVER_TARGET} PRIVATE
 IF(WIN32)
     target_compile_definitions(${SERVER_TARGET} PRIVATE -DZST_IMPORT_SERVER_API)
     target_compile_definitions(${SERVER_TARGET} INTERFACE -DZST_EXPORT_SERVER_API)
-else()
-    target_compile_definitions(${CORE_TARGET} PUBLIC -D_GLIBCXX_USE_CXX11_ABI=0)
 ENDIF(WIN32)
 
 add_dependencies(${SERVER_TARGET} ${CORE_TARGET})

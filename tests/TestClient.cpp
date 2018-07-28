@@ -19,7 +19,6 @@
 #pragma GCC diagnostic pop
 #endif
 #include <boost/process.hpp>
-#include <boost/thread/thread.hpp>
 #include <boost/filesystem.hpp>
 using namespace boost::process;
 

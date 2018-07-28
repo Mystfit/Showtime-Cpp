@@ -100,11 +100,11 @@ IF(WIN32)
 else()
     # Use shared boost on non-windows platforms
     if(Boost_USE_LOCAL)
-        target_compile_definitions(${CORE_TARGET} PRIVATE -DBOOST_ALL_DYN_LINK)
+        target_compile_definitions(${CORE_TARGET} PUBLIC -DBOOST_ALL_DYN_LINK)
     endif()
 
     # Turn off C11 ABI compatibility in glibc
-    target_compile_definitions(${CORE_TARGET} PUBLIC -D_GLIBCXX_USE_CXX11_ABI=0)
+    #target_compile_definitions(${CORE_TARGET} PUBLIC -D_GLIBCXX_USE_CXX11_ABI=0)
 endif(WIN32)
 
 if(NOT HUNTER_ENABLED)
@@ -121,7 +121,7 @@ endif()
 
 # Set threading library
 set(THREADS_PREFER_PTHREAD_FLAG ON)
-# find_package(Threads REQUIRED)
+find_package(Threads REQUIRED)
 if(CMAKE_USE_WIN32_THREADS_INIT)
     message(STATUS "Using windows threads")
 elseif(CMAKE_USE_PTHREADS_INIT)
@@ -134,15 +134,18 @@ list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS
     ${CZMQ_TARGET}
     ${fmt_TARGET}
     ${Boost_HEADER_TARGET}
+    ${CMAKE_THREAD_LIBS_INIT}
 )
-target_link_libraries(${CORE_TARGET} PUBLIC ${SHOWTIME_PUBLIC_LINKED_LIBS})
+target_link_libraries(${CORE_TARGET} PUBLIC 
+                        ${SHOWTIME_PUBLIC_LINKED_LIBS}
+)
 target_link_libraries(${CORE_TARGET} PRIVATE 
                         ${msgpackc_TARGET}
                         ${Boost_DATE_TIME_TARGET}
                         ${Boost_CHRONO_TARGET}
                         ${Boost_ATOMIC_TARGET}
-                        ${Boost_LOG_SETUP_TARGET}
                         ${Boost_LOG_TARGET}
+                        ${Boost_LOG_SETUP_TARGET}
                         ${Boost_THREAD_TARGET}
                         ${Boost_SYSTEM_TARGET}
                         ${Boost_FILESYSTEM_TARGET}
