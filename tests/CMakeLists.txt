@@ -43,12 +43,11 @@ if(BUILD_MEMLEAK_TEST)
     target_link_libraries( ${MEMLEAK_TEST_TARGET}
         ${CLIENT_TARGET}
         ${CORE_ENTITIES_TARGET}
+        ${Boost_SYSTEM_TARGET}
+        ${Boost_FILESYSTEM_TARGET}
     )
     add_test(NAME ${MEMLEAK_TEST_TARGET} COMMAND ${MEMLEAK_TEST_TARGET} WORKING_DIRECTORY $<TARGET_FILE_DIR:${MEMLEAK_TEST_TARGET}>)
 endif()
-
-
-
 
 
 # -------------
