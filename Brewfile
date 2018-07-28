@@ -1,3 +1,4 @@
+brew "cmake"
 brew "msgpack"
 brew "fmt"
 brew "czmq"

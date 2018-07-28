@@ -100,24 +100,6 @@ before_install:
       sudo locale-gen en_US.UTF-8;
     fi
 
-  # Install CMake 3.12 on Linux
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      CMAKE_FILE=cmake-3.12.0-rc3-Linux-x86_64;
-      wget https://cmake.org/files/v3.12/${CMAKE_FILE}.sh --quiet;
-      export CMAKE_PATH=$BUILD_FOLDER/cmake;
-      sudo bash ${CMAKE_FILE}.sh --skip-license --prefix=$CMAKE_PATH;
-    fi
-
-  # OSX uses downloaded CMake and local boost
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      export CMAKE_PATH=$(brew --prefix);
-      export Boost_USE_LOCAL=1;
-    fi
-
-  # CMake paths
-  - export CMAKE_BIN=$CMAKE_PATH/bin/cmake;
-  - export CTEST_BIN=$CMAKE_PATH/bin/ctest;
-
 install:
   # Output something every 10 minutes or Travis kills the job
   - while sleep 9m; do echo "=====[ $SECONDS seconds still running ]====="; done &
@@ -136,20 +118,18 @@ install:
   # Install homebrew dependencies
   - brew update
   - brew bundle
+
+  # CMake paths
+  - export CMAKE_PATH=$(brew --prefix);
+  - export CMAKE_BIN=$CMAKE_PATH/bin/cmake;
+  - export CTEST_BIN=$CMAKE_PATH/bin/ctest;
   
   # Set main compiler to gcc-6
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      #brew install gcc;
-      brew install gcc@6;
-      export CC=/usr/local/bin/gcc-6;
-      export CXX=/usr/local/bin/g++-6;
+      brew install gcc;
+      export CC=/usr/local/bin/gcc;
+      export CXX=/usr/local/bin/g++;
     fi
-
-  # Keep OSX cmake out of brewfile for now until linuxbrew gets its bottle working
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      brew install cmake;
-    fi
-
 
   # Kill background sleep loop
   - kill %1
@@ -167,10 +147,10 @@ script:
   # Set installation prefix
   - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_INSTALL_PREFIX=$BUILD_FOLDER/install"
 
-  # Set linux toolchain
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_TOOLCHAIN_FILE=$BUILD_FOLDER/.travis/travis_linux_toolchain.cmake";
-    fi
+  # # Set linux toolchain
+  # - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+  #     GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_TOOLCHAIN_FILE=$BUILD_FOLDER/.travis/travis_linux_toolchain.cmake";
+  #   fi
 
   # If we're using local boost, then set CMake vars to set correct target names
   - if [ $Boost_USE_LOCAL ]; then GENERATOR_ARGS="$GENERATOR_ARGS -DBoost_USE_LOCAL=ON"; fi
