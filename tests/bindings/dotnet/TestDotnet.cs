@@ -16,6 +16,12 @@ public class TestOutputComponent : ZstComponent
         output = create_output_plug("out", ZstValueType.ZST_FLOAT);
     }
 
+    public override void Dispose()
+    {
+        Console.WriteLine("In TestOutputComponent dispose");
+        base.Dispose();
+    }
+
     public void send(float val)
     {
         output.append_float(val);
@@ -33,10 +39,16 @@ public class TestInputComponent : ZstComponent
         input = create_input_plug("in", ZstValueType.ZST_FLOAT);
     }
 
+    public override void Dispose()
+    {
+        Console.WriteLine("In TestInputComponent dispose");
+        base.Dispose();
+    }
+
     public override void compute(ZstInputPlug plug)
     {
         //showtime.app(LogLevel.notification, String.Format("Received plug hit from {0} with value {1}", plug.URI().path(), plug.float_at(0)));
-        System.Console.WriteLine(String.Format("Received plug hit from {0} with value {1}", plug.URI().path(), plug.float_at(0)));
+        Console.WriteLine(String.Format("Received plug hit from {0} with value {1}", plug.URI().path(), plug.float_at(0)));
         wait.Set();
     }
 }
@@ -48,6 +60,8 @@ public class Program
 
     static int Main(string[] args)
     {
+        Console.WriteLine("Attach debugger now");
+        Thread.Sleep(1000 * 10);
         ProcessStartInfo server_startInfo = new ProcessStartInfo();
 
         //Required to redirect standard input/output
@@ -64,10 +78,12 @@ public class Program
 
         //Start the library
         showtime.init("TestDotnet", true);
+        showtime.init_file_logging("showtime.log");
 
         //Create the event loop
         _cancelationTokenSource = new CancellationTokenSource();
-        new Task(() => event_loop(), _cancelationTokenSource.Token, TaskCreationOptions.LongRunning).Start();
+        var eventloop = new Task(() => event_loop(), _cancelationTokenSource.Token, TaskCreationOptions.AttachedToParent);
+        eventloop.Start();
 
         //Join the stage
         showtime.join("127.0.0.1");
@@ -91,8 +107,8 @@ public class Program
         Thread.Sleep(1000);
 
         //Clean up entities
-        showtime.deactivate_entity_async(input_comp);
-        showtime.deactivate_entity_async(output_comp);
+        showtime.deactivate_entity(input_comp);
+        showtime.deactivate_entity(output_comp);
 
         //Stop the event loop
         _cancelationTokenSource.Cancel();

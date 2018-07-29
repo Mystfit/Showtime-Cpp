@@ -3,7 +3,8 @@
 
 
 ZstTransportLayerBase::ZstTransportLayerBase() :
-	m_dispatch_events(NULL)
+	m_dispatch_events(NULL),
+	m_is_active(false)
 {
 	m_dispatch_events = new ZstEventDispatcher<ZstTransportAdaptor*>("msgdispatch stage events");
 }
@@ -18,12 +19,14 @@ void ZstTransportLayerBase::destroy()
 	delete m_timeout_watcher;
 	m_dispatch_events->flush();
 	m_dispatch_events->remove_all_adaptors();
+	m_is_active = false;
 }
 
 void ZstTransportLayerBase::init(ZstActor * actor)
 {
 	m_timeout_watcher = new cf::time_watcher();
 	m_actor = actor;
+	m_is_active = true;
 }
 
 void ZstTransportLayerBase::send_sock_msg(zsock_t * sock, ZstMessage * msg)
@@ -35,6 +38,9 @@ void ZstTransportLayerBase::send_sock_msg(zsock_t * sock, ZstMessage * msg)
 
 zmsg_t * ZstTransportLayerBase::sock_recv(zsock_t* socket, bool pop_first)
 {
+	if (!is_active())
+		return NULL;
+
 	zmsg_t * recv_msg = zmsg_recv(socket);
 	if (recv_msg) {
 		if (pop_first) {
@@ -49,6 +55,11 @@ zmsg_t * ZstTransportLayerBase::sock_recv(zsock_t* socket, bool pop_first)
 ZstEventDispatcher<ZstTransportAdaptor*>* ZstTransportLayerBase::msg_events()
 {
 	return m_dispatch_events;
+}
+
+bool ZstTransportLayerBase::is_active()
+{
+	return m_is_active;
 }
 
 ZstActor * ZstTransportLayerBase::actor()

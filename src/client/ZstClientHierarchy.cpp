@@ -22,8 +22,6 @@ void ZstClientHierarchy::init(std::string name)
 
 void ZstClientHierarchy::destroy()
 {
-	ZstHierarchy::destroy();
-	
 	stage_events().remove_all_adaptors();
 
 	//TODO: Delete other clients
@@ -33,7 +31,12 @@ void ZstClientHierarchy::destroy()
 		destroy_entity_complete(m_root->get_child_at(index));
 	}
 	destroy_entity_complete(m_root);
+	
+	//Process events to make sure events are dispatched properly
+	process_events();
 	delete m_root;
+
+	ZstHierarchy::destroy();
 }
 
 void ZstClientHierarchy::process_events()

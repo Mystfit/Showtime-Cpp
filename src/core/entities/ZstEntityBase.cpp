@@ -30,6 +30,8 @@ ZstEntityBase::ZstEntityBase(const ZstEntityBase & other) : ZstSynchronisable(ot
 
 ZstEntityBase::~ZstEntityBase()
 {
+	ZstLog::entity(LogLevel::debug, "In entity destructor: {}", URI().path());
+
     //destroy();
 	set_destroyed();
 	free(m_entity_type);

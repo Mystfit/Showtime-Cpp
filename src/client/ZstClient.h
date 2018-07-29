@@ -3,6 +3,7 @@
 //std lib includes
 #include <unordered_map>
 #include <string>
+#include <mutex>
 
 //Showtime API includes
 #include <ZstCore.h>
@@ -66,10 +67,19 @@ private:
 	void heartbeat_timer();
 		
 	//Destruction
+	void set_is_ending(bool value);
 	bool m_is_ending;
+
+	void set_is_destroyed(bool value);
 	bool m_is_destroyed;
+
+	void set_init_completed(bool value);
     bool m_init_completed;
+
+	void set_connected_to_stage(bool value);
 	bool m_connected_to_stage;
+
+	void set_is_connecting(bool value);
 	bool m_is_connecting;
 
 	//UUIDs
@@ -88,4 +98,5 @@ private:
 	ZstGraphTransport * m_graph_transport;
 	ZstClientTransport * m_client_transport;
 	ZstActor * m_actor;
+	std::mutex m_event_loop_mutex;
 };

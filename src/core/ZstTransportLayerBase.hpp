@@ -57,6 +57,8 @@ public:
 
 	ZST_EXPORT ZstEventDispatcher<ZstTransportAdaptor*> * msg_events();
 
+	ZST_EXPORT bool is_active();
+
 protected:
 	ZST_EXPORT ZstActor * actor();
 
@@ -65,6 +67,7 @@ protected:
 
 private:
 	ZstActor * m_actor;
+	bool m_is_active;
 
 	//Dispatcher methods
 

@@ -84,9 +84,11 @@ int ZstClientTransport::s_handle_stage_update_in(zloop_t * loop, zsock_t * sock,
 	ZstClientTransport * transport = (ZstClientTransport*)arg;
 	ZstStageMessage * stage_msg = transport->get_msg();
 	zmsg_t * sock_msg = transport->sock_recv(sock, false);
-	stage_msg->unpack(sock_msg);
-	transport->on_receive_msg(stage_msg);
-	zmsg_destroy(&sock_msg);
+	if (sock_msg) {
+		stage_msg->unpack(sock_msg);
+		transport->on_receive_msg(stage_msg);
+		zmsg_destroy(&sock_msg);
+	}
 	return 0;
 }
 
@@ -95,9 +97,11 @@ int ZstClientTransport::s_handle_stage_router(zloop_t * loop, zsock_t * sock, vo
 	ZstClientTransport * transport = (ZstClientTransport*)arg;
 	ZstStageMessage * stage_msg = transport->get_msg();
 	zmsg_t * sock_msg = transport->sock_recv(sock, true);
-	stage_msg->unpack(sock_msg);
-	transport->on_receive_msg(stage_msg);
-	zmsg_destroy(&sock_msg);
+	if (sock_msg) {
+		stage_msg->unpack(sock_msg);
+		transport->on_receive_msg(stage_msg);
+		zmsg_destroy(&sock_msg);
+	}
 	return 0;
 }
 

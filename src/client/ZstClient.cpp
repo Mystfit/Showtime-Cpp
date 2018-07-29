@@ -10,6 +10,7 @@ ZstClient::ZstClient() :
     m_is_destroyed(false),
     m_init_completed(false),
     m_connected_to_stage(false),
+	m_is_connecting(false),
     m_session(NULL)
 {
 	//Message and transport modules
@@ -37,12 +38,13 @@ void ZstClient::destroy() {
 	//Only need to call cleanup once
 	if (m_is_ending || m_is_destroyed)
 		return;
-    m_is_ending = true;
-    m_init_completed = false;
+	set_init_completed(false);
     
     //Let stage know we are leaving
 	if(is_connected_to_stage())
 		leave_stage();
+
+	set_is_ending(true);
 
 	this->remove_adaptor(m_client_transport);
 
@@ -52,8 +54,8 @@ void ZstClient::destroy() {
 	m_graph_transport->destroy();
 	m_actor->destroy();
 
-	m_is_ending = false;
-	m_is_destroyed = true;
+	set_is_ending(false);
+	set_is_destroyed(true);
 }
 
 void ZstClient::init_client(const char *client_name, bool debug)
@@ -63,7 +65,8 @@ void ZstClient::init_client(const char *client_name, bool debug)
 		return;
 	}
 
-	m_is_destroyed = false;
+	set_is_destroyed(false);
+	set_is_ending(false);
 
 	LogLevel level = LogLevel::notification;
 	if (debug)
@@ -103,7 +106,7 @@ void ZstClient::init_client(const char *client_name, bool debug)
 	m_actor->start_loop();
 
 	//Init completed
-    m_init_completed = true;
+	set_init_completed(true);
 }
 
 void ZstClient::init_file_logging(const char * log_file_path)
@@ -113,17 +116,30 @@ void ZstClient::init_file_logging(const char * log_file_path)
 
 void ZstClient::process_events()
 {
-    if(!is_init_complete() || m_is_destroyed){
-        return;
-    }
+	if(!m_connected_to_stage)
+		ZstLog::net(LogLevel::debug, "In process_events() but now disconnected");
 
+	//Lock the event loop so the calling thread can process all events
+	std::unique_lock<std::mutex> lock(m_event_loop_mutex, std::defer_lock);
+	lock.lock();
+
+	//Sanity checks
+	if (!is_init_complete() || m_is_destroyed || m_is_ending) {
+		ZstLog::net(LogLevel::debug, "In process_events() but the library is not ready");
+		return;
+	}
+
+	//ZstLog::net(LogLevel::debug, "In process_events() - Submodule events");
 	m_client_transport->process_events();
 	m_graph_transport->process_events();
 	m_session->process_events();
 
 	//Reapers are updated last in case entities still need to be queried beforehand
+	//ZstLog::net(LogLevel::debug, "In process_events() - Reapers");
 	m_session->reaper().reap_all();
 	m_session->hierarchy()->reaper().reap_all();
+
+	lock.unlock();
 }
 
 void ZstClient::flush()
@@ -205,8 +221,8 @@ void ZstClient::join_stage(std::string stage_address, const ZstTransportSendType
 		ZstLog::net(LogLevel::error, "Can't connect to stage, already connected");
 		return;
 	}
-	m_is_connecting = true;
-	
+	set_is_connecting(true);
+		
 	ZstLog::net(LogLevel::notification, "Connecting to stage {}", stage_address);
 	m_client_transport->connect_to_stage(stage_address);
 
@@ -223,7 +239,7 @@ void ZstClient::join_stage(std::string stage_address, const ZstTransportSendType
 
 void ZstClient::join_stage_complete(ZstMessageReceipt response)
 {
-	m_is_connecting = false;
+	set_is_connecting(false);
 	
 	//If we didn't receive a OK signal, something went wrong
 	if (response.status != ZstMsgKind::OK) {
@@ -238,7 +254,7 @@ void ZstClient::join_stage_complete(ZstMessageReceipt response)
 	m_heartbeat_timer_id = m_actor->attach_timer(HEARTBEAT_DURATION, [this]() {this->heartbeat_timer(); });
 	
 	//TODO: Need a handshake with the stage before we mark connection as active
-	m_connected_to_stage = true;
+	set_connected_to_stage(true);
 
 	//Ask the stage to send us the current session
 	synchronise_graph(response.sendtype);
@@ -274,22 +290,33 @@ void ZstClient::leave_stage()
 		ZstLog::net(LogLevel::notification, "Leaving stage");
 
 		//Set flags early to avoid double leaving shenanigans
-		m_is_connecting = false;
-		m_connected_to_stage = false;
-        
+		ZstLog::net(LogLevel::debug, "Before set_is_connecting()");
+		ZstLog::net(LogLevel::debug, "---");
+		assert(this);
+		this->set_is_connecting(false);
+		ZstLog::net(LogLevel::debug, "Before set_connected_to_stage()");
+		this->set_connected_to_stage(false);
+		ZstLog::net(LogLevel::debug, "Before sending CLIENT_LEAVING message");
+
 		invoke([this](ZstTransportAdaptor * adaptor) { adaptor->send_message(ZstMsgKind::CLIENT_LEAVING); });
     } else {
         ZstLog::net(LogLevel::debug, "Not connected to stage. Skipping to cleanup. {}");
     }
+	ZstLog::net(LogLevel::debug, "Before leave_stage_complete()");
 
 	this->leave_stage_complete();
+
+	ZstLog::net(LogLevel::debug, "Final process_events()");
 	this->process_events();
+	ZstLog::net(LogLevel::debug, "Finished final process_events()");
 }
 
 void ZstClient::leave_stage_complete()
 {   
+	ZstLog::net(LogLevel::debug, "In leave_stage_complete()");
+
 	//Set stage as disconnected again - just to make sure
-	m_connected_to_stage = false;
+	set_connected_to_stage(false);
 
 	//Disconnect rest of sockets and timers
 	if (m_heartbeat_timer_id > 0) {
@@ -297,9 +324,10 @@ void ZstClient::leave_stage_complete()
 		m_heartbeat_timer_id = -1;
 	}
 	m_client_transport->disconnect_from_stage();
-
+		
 	//Enqueue event for adaptors
 	m_session->dispatch_disconnected_from_stage();
+	ZstLog::net(LogLevel::debug, "Leaving leave_stage_complete()");
 }
 
 bool ZstClient::is_connected_to_stage()
@@ -387,3 +415,36 @@ ZstClientSession * ZstClient::session()
 	return m_session;
 }
 
+void ZstClient::set_is_ending(bool value)
+{
+	std::lock_guard<std::mutex> lock(m_event_loop_mutex);
+	m_is_ending = value;
+}
+
+void ZstClient::set_is_destroyed(bool value)
+{
+	std::lock_guard<std::mutex> lock(m_event_loop_mutex);
+	m_is_destroyed = value;
+}
+
+void ZstClient::set_init_completed(bool value)
+{
+	std::lock_guard<std::mutex> lock(m_event_loop_mutex);
+	m_init_completed = value;
+}
+
+void ZstClient::set_connected_to_stage(bool value) 
+{
+	std::lock_guard<std::mutex> lock(m_event_loop_mutex);
+	m_connected_to_stage = value;
+}
+
+void ZstClient::set_is_connecting(bool value) 
+{
+	ZstLog::net(LogLevel::debug, "In set_is_connecting()");
+	std::lock_guard<std::mutex> lock(m_event_loop_mutex);
+	ZstLog::net(LogLevel::debug, "In set_is_connecting() - post lock");
+
+	m_is_connecting = value;
+	ZstLog::net(LogLevel::debug, "Leaving set_is_connecting()");
+}
