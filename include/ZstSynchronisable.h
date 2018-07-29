@@ -13,6 +13,7 @@ class ZstEventDispatcher;
 class ZstSynchronisable
 {
 	friend class ZstSynchronisableLiason;
+
 public:
 	ZST_EXPORT ZstSynchronisable();
 	ZST_EXPORT ZstSynchronisable(const ZstSynchronisable & other);
@@ -29,6 +30,7 @@ public:
 	ZST_EXPORT ZstSyncError last_error();
 	ZST_EXPORT bool is_destroyed();
 	ZST_EXPORT bool is_proxy();
+	ZST_EXPORT unsigned int instance_id();
 
 protected:
     ZST_EXPORT virtual void enqueue_activation();
@@ -49,4 +51,6 @@ private:
 	ZstSyncError m_sync_error;
 	bool m_is_proxy;
 	ZstEventDispatcher<ZstSynchronisableAdaptor*> * m_synchronisable_events;
+	unsigned int m_instance_id;
+	static unsigned int s_instance_id_counter;
 };

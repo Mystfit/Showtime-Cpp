@@ -4,6 +4,7 @@
 void ZstReaper::add(ZstSynchronisable * synchronisable)
 {
 	std::unique_lock<std::mutex> lock(m_mutex);
+	ZstLog::net(LogLevel::debug, "Adding synchronisable with id:{} to reaper", synchronisable->instance_id());
 	m_items_to_reap[ZstURI()] = synchronisable;
 	lock.unlock();
 }
@@ -31,8 +32,10 @@ void ZstReaper::add(ZstEntityBase * entity)
 		}
 	}
 
-	if (should_add)
+	if (should_add) {
+		ZstLog::net(LogLevel::debug, "Adding entity {} with id:{} to reaper", entity->URI().path(), entity->instance_id());
 		m_items_to_reap[entity->URI()] = entity;
+	}
 
 	lock.unlock();
 }
@@ -42,9 +45,9 @@ void ZstReaper::reap_all()
 	std::unique_lock<std::mutex> lock(m_mutex);
 
 	if (m_items_to_reap.size()) {
-		ZstLog::net(LogLevel::debug, "Reaper removing {} items", m_items_to_reap.size());
-		for (auto entity : m_items_to_reap) {
-			delete entity.second;
+		for (auto synchronisable : m_items_to_reap) {
+			ZstLog::net(LogLevel::debug, "Reaper removing instance {}", synchronisable.second->instance_id());
+			delete synchronisable.second;
 		}
 		m_items_to_reap.clear();
 	}

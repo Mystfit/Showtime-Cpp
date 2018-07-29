@@ -116,9 +116,6 @@ void ZstClient::init_file_logging(const char * log_file_path)
 
 void ZstClient::process_events()
 {
-	if(!m_connected_to_stage)
-		ZstLog::net(LogLevel::debug, "In process_events() but now disconnected");
-
 	//Lock the event loop so the calling thread can process all events
 	std::unique_lock<std::mutex> lock(m_event_loop_mutex, std::defer_lock);
 	lock.lock();

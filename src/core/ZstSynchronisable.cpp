@@ -3,13 +3,24 @@
 #include <ZstSynchronisable.h>
 #include <ZstEventDispatcher.hpp>
 
+unsigned int ZstSynchronisable::s_instance_id_counter = 0;
+
 ZstSynchronisable::ZstSynchronisable() :
 	m_is_destroyed(false),
 	m_sync_status(ZstSyncStatus::DEACTIVATED),
     m_sync_error(ZstSyncError::NO_ERR),
 	m_is_proxy(false)
 {
+	m_instance_id = ++ZstSynchronisable::s_instance_id_counter;
 	m_synchronisable_events = new ZstEventDispatcher<ZstSynchronisableAdaptor*>("synchronisable");
+}
+
+ZstSynchronisable::ZstSynchronisable(const ZstSynchronisable & other) : ZstSynchronisable()
+{
+	m_sync_status = other.m_sync_status;
+	m_is_destroyed = other.m_is_destroyed;
+	m_is_proxy = other.m_is_proxy;
+	m_instance_id = ++ZstSynchronisable::s_instance_id_counter;
 }
 
 ZstSynchronisable::~ZstSynchronisable()
@@ -32,13 +43,6 @@ void ZstSynchronisable::add_adaptor(ZstSynchronisable * self, ZstSynchronisableA
 void ZstSynchronisable::remove_adaptor(ZstSynchronisable * self, ZstSynchronisableAdaptor * adaptor)
 {
 	self->synchronisable_events()->remove_adaptor(adaptor);
-}
-
-ZstSynchronisable::ZstSynchronisable(const ZstSynchronisable & other) : ZstSynchronisable()
-{
-	m_sync_status = other.m_sync_status;
-	m_is_destroyed = other.m_is_destroyed;
-	m_is_proxy = other.m_is_proxy;
 }
 
 void ZstSynchronisable::enqueue_activation()
@@ -128,6 +132,11 @@ bool ZstSynchronisable::is_destroyed()
 bool ZstSynchronisable::is_proxy()
 {
 	return m_is_proxy;
+}
+
+unsigned int ZstSynchronisable::instance_id()
+{
+	return m_instance_id;
 }
 
 void ZstSynchronisable::set_activation_status(ZstSyncStatus status)
