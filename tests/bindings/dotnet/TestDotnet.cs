@@ -61,7 +61,7 @@ public class Program
     static int Main(string[] args)
     {
         Console.WriteLine("Attach debugger now");
-        Thread.Sleep(1000 * 10);
+        //Thread.Sleep(1000 * 10);
         ProcessStartInfo server_startInfo = new ProcessStartInfo();
 
         //Required to redirect standard input/output

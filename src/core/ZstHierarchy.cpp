@@ -253,7 +253,7 @@ ZstEventDispatcher<ZstHierarchyAdaptor*> & ZstHierarchy::hierarchy_events()
 void ZstHierarchy::synchronisable_has_event(ZstSynchronisable * synchronisable)
 {
 	m_synchronisable_events.defer([this, synchronisable](ZstSynchronisableAdaptor * dlg) {
-		this->synchronisable_process_events(synchronisable); 
+		this->synchronisable_process_events(synchronisable);
 	});
 }
 
