@@ -415,7 +415,7 @@ void test_hierarchy() {
     assert(!zst_find_entity(child_URI));
     
     //Test child activation and deactivation callbacks
-    ZstLog::app(LogLevel::debug, "Test child activation and deactivation callbacks");
+    ZstLog::app(LogLevel::debug, "Test child activation callback");
     TestSynchronisableEvents * child_activation = new TestSynchronisableEvents();
     ZstSynchronisable::add_adaptor(child, child_activation);
     parent->add_child(child);
@@ -423,6 +423,8 @@ void test_hierarchy() {
     zst_activate_entity(child);
     assert(child_activation->num_calls() == 1);
     child_activation->reset_num_calls();
+
+	ZstLog::app(LogLevel::debug, "Test child deactivation callback");
     zst_deactivate_entity(child);
     assert(child_activation->num_calls() == 1);
     child_activation->reset_num_calls();
