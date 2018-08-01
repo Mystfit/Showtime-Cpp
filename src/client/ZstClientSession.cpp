@@ -18,6 +18,9 @@ void ZstClientSession::init(std::string client_name)
 {
 	m_hierarchy->init(client_name);
 	ZstSession::init();
+
+	//Attach this as an adaptor to the hierarchy module to handle hierarchy events
+	m_hierarchy->hierarchy_events().add_adaptor(this);
 }
 
 void ZstClientSession::destroy()
@@ -89,17 +92,30 @@ void ZstClientSession::on_receive_msg(ZstMessage * msg)
 
 void ZstClientSession::on_receive_graph_msg(ZstMessage * msg)
 {
-	//Check for no payloads in message
+	//Check if message has a payload
 	if(msg->num_payloads() < 1){
+		ZstLog::net(LogLevel::warn, "No payload in graph message");
 		return;
 	}
 
 	//Find local proxy for the sending plug
-	ZstPlug * sending_plug = dynamic_cast<ZstPlug*>(hierarchy()->find_entity(ZstURI(msg->get_arg(ZstMsgArg::PATH))));
+	ZstOutputPlug * sending_plug = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(ZstURI(msg->get_arg(ZstMsgArg::PATH))));
 	ZstInputPlug * receiving_plug = NULL;
 
 	if (!sending_plug) {
 		ZstLog::net(LogLevel::warn, "No sending plug found");
+	}
+	
+	//Create a ZstValue object to hold our plug data
+	size_t offset = 0;
+	ZstValue received_val;
+	received_val.read((char*)msg->payload_at(0).data(), msg->payload_at(0).size(), offset);
+
+	//If the sending plug is a proxy then let the host app know it has updated
+	if (sending_plug->is_proxy()) {
+		ZstLog::net(LogLevel::debug, "Proxy plug {} received an update", sending_plug->URI().path());
+		sending_plug->raw_value()->copy(received_val);
+		synchronisable_annouce_update(sending_plug);
 	}
 
 	//Iterate over all connected cables from the sending plug
@@ -108,22 +124,19 @@ void ZstClientSession::on_receive_graph_msg(ZstMessage * msg)
 		if (receiving_plug) {
 			if (!receiving_plug->is_proxy()) {
 				//TODO: Lock plug value when deserialising
-				size_t offset = 0;
-				receiving_plug->raw_value()->read((char*)msg->payload_at(0).data(), msg->payload_at(0).size(), offset);
+				receiving_plug->raw_value()->copy(received_val);
 				plug_received_value(receiving_plug);
 			}
 		}
 	}
 }
 
-void ZstClientSession::entity_publish_update(ZstEntityBase *entity)
+
+void ZstClientSession::on_performer_leaving(ZstPerformer * performer)
 {
-    performance_events().invoke([entity](ZstTransportAdaptor * adaptor) {
-        if(strcmp(entity->entity_type(), PLUG_TYPE) == 0){
-            adaptor->send_message(ZstMsgKind::PERFORMANCE_MSG, {{ZstMsgArg::PATH, entity->URI().path()}}, *static_cast<ZstOutputPlug*>(entity)->raw_value());
-        }
-    });
+	remove_connected_performer(performer);
 }
+
 
 void ZstClientSession::plug_received_value(ZstInputPlug * plug)
 {
@@ -183,6 +196,23 @@ void ZstClientSession::destroy_cable(ZstCable * cable, const ZstTransportSendTyp
 	if (sendtype == ZstTransportSendType::SYNC_REPLY) process_events();
 }
 
+bool ZstClientSession::observe_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
+{
+	if (!ZstSession::observe_entity(entity, sendtype)) {
+		return false;
+	}
+
+	stage_events().invoke([this, entity, sendtype](ZstTransportAdaptor * adaptor) {
+		ZstMsgArgs args = { { ZstMsgArg::OUTPUT_PATH, entity->URI().first().path() } };
+		adaptor->send_message(ZstMsgKind::OBSERVE_ENTITY, sendtype, args, [this, entity](ZstMessageReceipt response) {
+				this->observe_entity_complete(response, entity);
+			}
+		);
+	});
+
+	return true;
+}
+
 void ZstClientSession::destroy_cable_complete(ZstMessageReceipt response, ZstCable * cable)
 {
 	if (!cable) return;
@@ -199,6 +229,15 @@ void ZstClientSession::destroy_cable_complete(ZstMessageReceipt response, ZstCab
 	//Queue events
 	session_events().defer([cable](ZstSessionAdaptor * dlg) { dlg->on_cable_destroyed(cable); });
 	synchronisable_enqueue_deactivation(cable);
+}
+
+void ZstClientSession::observe_entity_complete(ZstMessageReceipt response, ZstEntityBase * entity)
+{
+	if (response.status == ZstMsgKind::OK) {
+		ZstLog::net(LogLevel::debug, "Observing entity {}", entity->URI().path());
+		return;
+	}
+	ZstLog::net(LogLevel::error, "Observe entity {} failed with status {}", entity->URI().path(), ZstMsgNames[response.status]);
 }
 
 

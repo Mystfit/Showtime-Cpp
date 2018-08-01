@@ -187,20 +187,44 @@ const char * ZstComponent::component_type() const
 	return m_component_type;
 }
 
-void ZstComponent::add_adaptor_to_children(ZstSynchronisableAdaptor * adaptor)
+void ZstComponent::add_adaptor(ZstEntityAdaptor * adaptor, bool recursive)
 {
-	ZstSynchronisable::add_adaptor(this, adaptor);
-	for (auto plug : m_plugs) {
-        ZstSynchronisable::add_adaptor(plug, adaptor);
+	ZstEntityBase::add_adaptor(adaptor);
+	if (recursive) {
+		for (auto plug : m_plugs) {
+			plug->add_adaptor(adaptor);
+		}
 	}
 }
 
-void ZstComponent::remove_adaptor_from_children(ZstSynchronisableAdaptor * adaptor)
+void ZstComponent::add_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive)
 {
-    ZstSynchronisable::add_adaptor(this, adaptor);
-    for (auto plug : m_plugs) {
-        ZstSynchronisable::remove_adaptor(plug, adaptor);
-    }
+	ZstSynchronisable::add_adaptor(adaptor);
+	if (recursive) {
+		for (auto plug : m_plugs) {
+			static_cast<ZstSynchronisable*>(plug)->add_adaptor(adaptor);
+		}
+	}
+}
+
+void ZstComponent::remove_adaptor(ZstEntityAdaptor * adaptor, bool recursive)
+{
+	ZstEntityBase::add_adaptor(adaptor);
+	if (recursive) {
+		for (auto plug : m_plugs) {
+			plug->remove_adaptor(adaptor);
+		}
+	}
+}
+
+void ZstComponent::remove_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive)
+{
+    ZstSynchronisable::remove_adaptor(adaptor);
+	if (recursive) {
+		for (auto plug : m_plugs) {
+			static_cast<ZstSynchronisable*>(plug)->remove_adaptor(adaptor);
+		}
+	}
 }
 
  void ZstComponent::set_proxy()

@@ -1,6 +1,7 @@
 #include <string>
 #include <sstream>
 #include <msgpack.hpp>
+#include <ZstLogging.h>
 #include "ZstValue.h"
 
 ZstValue::ZstValue() : m_default_type(ZstValueType::ZST_NONE)
@@ -28,28 +29,31 @@ ZstValueType ZstValue::get_default_type() const
 
 void ZstValue::copy(const ZstValue & other)
 {
-	for (auto v : other.m_values) {
-		m_values.push_back(v);
-	}
+	std::lock_guard<std::mutex> lock(m_lock);
+	m_values = other.m_values;
 }
 
 void ZstValue::clear()
 {
+	std::lock_guard<std::mutex> lock(m_lock);
 	m_values.clear();
 }
 
 void ZstValue::append_int(int value)
 {
+	std::lock_guard<std::mutex> lock(m_lock);
 	m_values.push_back(value);
 }
 
 void ZstValue::append_float(float value)
 {
+	std::lock_guard<std::mutex> lock(m_lock);
 	m_values.push_back(value);
 }
 
 void ZstValue::append_char(const char * value)
 {
+	std::lock_guard<std::mutex> lock(m_lock);
 	m_values.push_back(std::string(value));
 }
 
@@ -124,7 +128,6 @@ void ZstValue::write(std::stringstream & buffer) const
 	else {
 
 	}
-	
 }
 
 void ZstValue::read(const char * buffer, size_t length, size_t & offset)
@@ -136,6 +139,8 @@ void ZstValue::read(const char * buffer, size_t length, size_t & offset)
 	//Unpack num values
 	handle = msgpack::unpack(buffer, length, offset);
 	auto num_values = handle.get().via.i64;
+
+	std::lock_guard<std::mutex> lock(m_lock);
 	m_values.resize(num_values);
 
 	//Unpack values

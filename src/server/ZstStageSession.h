@@ -20,9 +20,10 @@ public:
 	void on_receive_msg(ZstMessage * msg) override;
 	ZstMsgKind synchronise_client_graph(ZstPerformer * client);
 	
-	ZstMsgKind create_cable_handler(ZstMessage * msg, ZstPerformer * performer);
+	ZstMsgKind create_cable_handler(ZstMessage * msg, ZstPerformerStageProxy * sender);
 	ZstMsgKind create_cable_complete_handler(ZstCable * cable);
 	ZstMsgKind destroy_cable_handler(ZstMessage * msg);
+	ZstMsgKind observe_entity_handler(ZstMessage * msg, ZstPerformerStageProxy * sender);
 
 	//Adapter overrides
 	void on_performer_leaving(ZstPerformer * performer) override;
@@ -48,7 +49,7 @@ public:
 	ZstStageHierarchy * hierarchy() override;
 
 private:
-	std::unordered_map<ZstMsgID, MessagePromise> m_deferred_cables;
+	std::unordered_map<ZstMsgID, MessagePromise> m_deferred_connection_promises;
 
 	ZstStageHierarchy * m_hierarchy;
 };

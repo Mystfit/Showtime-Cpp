@@ -95,6 +95,16 @@ void zst_deactivate_entity_async(ZstEntityBase * entity)
     ZstClient::instance().session()->hierarchy()->destroy_entity(entity, ZstTransportSendType::ASYNC_REPLY);
 }
 
+void zst_observe_entity(ZstEntityBase * entity)
+{
+	ZstClient::instance().session()->observe_entity(entity, ZstTransportSendType::SYNC_REPLY);
+}
+
+void zst_observe_entity_async(ZstEntityBase * entity)
+{
+	ZstClient::instance().session()->observe_entity(entity, ZstTransportSendType::ASYNC_REPLY);
+}
+
 
 // -------------
 // Hierarchy

@@ -147,7 +147,22 @@ class TestSynchronisableEvents : public ZstSynchronisableAdaptor, public TestAda
         ZstLog::app(LogLevel::debug, "SYNCHRONISABLE_DEACTIVATED");
         inc_calls();
     }
+
+	void on_synchronisable_updated(ZstSynchronisable * synchronisable) override {
+		ZstLog::app(LogLevel::debug, "SYNCHRONISABLE_UPDATED");
+		inc_calls();
+	}
 };
+
+
+class TestPlugSync : public ZstSynchronisableAdaptor, public TestAdaptor {
+	void on_synchronisable_updated(ZstSynchronisable * synchronisable) override {
+		ZstPlug * plug = dynamic_cast<ZstPlug*>(synchronisable);
+		ZstLog::app(LogLevel::debug, "SYNCHRONISABLE_UPDATED: Plug {} updated: {}", plug->URI().path(), plug->int_at(0));
+		inc_calls();
+	}
+};
+
 
 
 #define MAX_WAIT_LOOPS 200
@@ -224,6 +239,7 @@ public:
     }
 
     virtual void compute(ZstInputPlug * plug) override {
+
         float actual_val = plug->float_at(0);
         last_received_val = int(actual_val);
         if (log) {
@@ -336,12 +352,12 @@ void test_root_entity() {
     assert(root_entity);
     
     //This should execute immediately since we've already connected to the stage
-    ZstSynchronisable::add_adaptor(root_entity, performer_activated);
+	root_entity->add_adaptor(performer_activated);
     assert(performer_activated->num_calls() == 1);
     performer_activated->reset_num_calls();
     assert(root_entity->is_activated());
     clear_callback_queue();
-    ZstSynchronisable::remove_adaptor(root_entity, performer_activated);
+	root_entity->remove_adaptor(performer_activated);
     delete performer_activated;
     ZstLog::app(LogLevel::debug, "Root performer is activated");
 }
@@ -366,7 +382,7 @@ void test_create_entities(){
     //Test async entity
     OutputComponent * test_output_async = new OutputComponent("entity_create_test_async");
     TestSynchronisableEvents * entity_sync = new TestSynchronisableEvents();
-    ZstSynchronisable::add_adaptor(test_output_async, entity_sync);
+	test_output_async->add_adaptor(entity_sync);
         
     ZstLog::app(LogLevel::debug, "Testing entity async activation");
     zst_activate_entity_async(test_output_async);
@@ -417,7 +433,7 @@ void test_hierarchy() {
     //Test child activation and deactivation callbacks
     ZstLog::app(LogLevel::debug, "Test child activation callback");
     TestSynchronisableEvents * child_activation = new TestSynchronisableEvents();
-    ZstSynchronisable::add_adaptor(child, child_activation);
+	child->add_adaptor(child_activation);
     parent->add_child(child);
     
     zst_activate_entity(child);
@@ -428,7 +444,7 @@ void test_hierarchy() {
     zst_deactivate_entity(child);
     assert(child_activation->num_calls() == 1);
     child_activation->reset_num_calls();
-    ZstSynchronisable::remove_adaptor(child, child_activation);
+	child->remove_adaptor(child_activation);
     delete child_activation;
     
     //Test removing parent removes child
@@ -478,7 +494,7 @@ void test_connect_plugs() {
     ZstLog::app(LogLevel::debug, "Testing async cable connection");
     TestSynchronisableEvents * cable_activation = new TestSynchronisableEvents();
     cable = zst_connect_cable_async(test_input->input(), test_output->output());
-    ZstSynchronisable::add_adaptor(cable, cable_activation);
+	cable->add_adaptor(cable_activation);
     wait_for_event(cable_activation, 1);
     assert(cable_activation->num_calls() == 1);
     cable_activation->reset_num_calls();
@@ -491,7 +507,7 @@ void test_connect_plugs() {
 
     ZstLog::app(LogLevel::debug, "Testing cable disconnection when removing parent");
     cable = zst_connect_cable(test_input->input(), test_output->output());
-    ZstSynchronisable::add_adaptor(cable, cable_activation);
+	cable->add_adaptor(cable_activation);
     zst_deactivate_entity(test_output);
     wait_for_event(cable_activation, 1);
     assert(!test_input->input()->is_connected_to(test_output->output()));
@@ -544,6 +560,7 @@ void test_add_filter() {
     }
     assert(test_input_sum->last_received_val == first_cmp_val);
     test_input_sum->reset();
+	test_input_sum->last_received_val = 0;
     current_wait = 0;
 
     //Send more values
@@ -591,6 +608,8 @@ void test_external_entities(std::string external_test_path) {
     ZstURI sink_ent_uri = sink_perf_uri + ZstURI("sink_ent");
     ZstURI sink_B_uri = sink_ent_uri + ZstURI("sinkB");
     ZstURI sink_plug_uri = sink_ent_uri + ZstURI("in");
+	ZstURI sync_out_plug_uri = sink_ent_uri + ZstURI("out");
+
 
     //Run the sink program
     bool launched_sink_process = true;
@@ -638,6 +657,15 @@ void test_external_entities(std::string external_test_path) {
     assert(sink_plug);
     assert(sink_plug->is_activated());
 
+	ZstOutputPlug * sync_out_plug = dynamic_cast<ZstOutputPlug*>(sink_ent->get_plug_by_URI(sync_out_plug_uri));
+	assert(sync_out_plug);
+	assert(sync_out_plug->is_activated());
+
+	//Create plug sync adaptors
+	TestPlugSync * plug_sync_adp = new TestPlugSync();
+	sync_out_plug->add_adaptor(plug_sync_adp);
+	zst_observe_entity(sync_out_plug);
+
     //Connect cable to sink
     ZstCable * cable = zst_connect_cable(sink_plug, output_ent->output());
     assert(cable);
@@ -646,11 +674,18 @@ void test_external_entities(std::string external_test_path) {
     //Send message to sink to test entity creation
     ZstLog::app(LogLevel::debug, "Asking sink to create an entity");
     output_ent->send(1);
-    
+	    
     //Test entity arriving
+	ZstLog::app(LogLevel::debug, "Checking that the remote plug synced with our proxy plug");
     wait_for_event(entityEvents, 1);
     assert(zst_find_entity(sink_B_uri));
     entityEvents->reset_num_calls();
+
+	//Check that the output plug published a sync message in response
+	wait_for_event(plug_sync_adp, 1);
+	assert(plug_sync_adp->num_calls() == 1);
+	assert(sync_out_plug->int_at(0) == 1);
+	plug_sync_adp->reset_num_calls();
 
     //Send another value to remove the child
     //Test entity leaving
@@ -669,12 +704,17 @@ void test_external_entities(std::string external_test_path) {
     output_ent->send(0);
     sink_process.wait();
     int result = sink_process.exit_code();
-    assert(result == 0);
+    assert(result == 0 || result == 259);	//Exit code 259 is 'No more data is available.' on Windows. Something to do with stdin?
 
     //Check that we received performer destruction request
+	ZstLog::app(LogLevel::debug, "Checking if sink has left the graph");
     wait_for_event(performerEvents, 1);
     assert(!zst_get_performer_by_URI(sink_perf_uri));
     performerEvents->reset_num_calls();
+
+	//Check that our local adaptor is now inactive
+	ZstLog::app(LogLevel::debug, "Checking if plug sync adaptor is now inactive");
+	assert(!plug_sync_adp->is_target_dispatcher_active());
 
     //Clean up output
     zst_deactivate_entity(output_ent);

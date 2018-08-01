@@ -80,7 +80,7 @@ ZstMsgKind ZstStageHierarchy::create_client_handler(std::string sender_identity,
 	assert(client_proxy);
 	synchronisable_set_proxy(client_proxy);
 	synchronisable_set_activation_status(client_proxy, ZstSyncStatus::ACTIVATED);
-	ZstSynchronisable::add_adaptor(client_proxy, this);
+	client_proxy->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(this));
 
 	//Save our new client
 	m_clients[client_proxy->URI()] = client_proxy;
@@ -118,22 +118,28 @@ ZstMsgKind ZstStageHierarchy::add_proxy_entity(const ZstEntityBase & entity)
 
 	ZstMsgKind msg_status = ZstHierarchy::add_proxy_entity(entity);
 	ZstEntityBase * proxy = find_entity(entity.URI());
-
+	
 	//Update rest of network
-	publisher_events().invoke([proxy, &entity](ZstTransportAdaptor * adp) {
-		adp->send_message(ZstMessage::entity_kind(entity), *proxy);
-	});
+	if (msg_status == ZstMsgKind::OK) {
+		publisher_events().invoke([proxy, &entity](ZstTransportAdaptor * adp) {
+			adp->send_message(ZstMessage::entity_kind(entity), *proxy);
+		});
+	}
+
 	return msg_status;
 }
 
 ZstMsgKind ZstStageHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 {
-	ZstHierarchy::remove_proxy_entity(entity);
+	if (!entity)
+		return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
 
 	//Update rest of network
 	publisher_events().invoke([entity](ZstTransportAdaptor * adp) {
 		adp->send_message(ZstMsgKind::DESTROY_ENTITY, { {ZstMsgArg::PATH, entity->URI().path()} });
 	});
+
+	ZstHierarchy::remove_proxy_entity(entity);
 	
 	return ZstMsgKind::OK;
 }

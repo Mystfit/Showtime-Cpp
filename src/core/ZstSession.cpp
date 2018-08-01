@@ -105,10 +105,6 @@ void ZstSession::destroy_cable_complete(ZstCable * cable)
 
 	if (output) {
 		plug_remove_cable(output, cable);
-		if (output->num_cables() < 1) {
-			//Remove session adaptor from plug
-			ZstEntityBase::remove_adaptor(output, this);
-		}
 	}
 
 	cable->set_input(NULL);
@@ -193,12 +189,6 @@ ZstCable * ZstSession::create_cable(const ZstURI & input_path, const ZstURI & ou
 		ZstLog::net(LogLevel::error, "Can't connect cable, a plug is missing.");
 		success = false;
 	}
-    
-    if(output_plug->num_cables() < 1){
-        //Add session adaptor to plug to handle plug sending values
-        //Only need to add this adaptor once
-        ZstEntityBase::add_adaptor(output_plug, this);
-    }
 
 	//If we failed to create the cable, we should cleanup our resources before returning
 	if (!success) {
@@ -214,7 +204,7 @@ ZstCable * ZstSession::create_cable(const ZstURI & input_path, const ZstURI & ou
 	cable_ptr->set_output(output_plug);
 
 	//Add synchronisable adaptor to cable to handle activation
-    ZstSynchronisable::add_adaptor(cable_ptr, this);
+	cable_ptr->add_adaptor(this);
 
 	//Cables are always local so they can be cleaned up by the reaper when deactivated
 	synchronisable_set_proxy(cable_ptr);
@@ -233,6 +223,47 @@ void ZstSession::on_compute(ZstComponent * component, ZstInputPlug * plug) {
 	catch (std::exception e) {
 		ZstLog::entity(LogLevel::error, "Compute on component {} failed. Error was: {}", component->URI().path(), e.what());
 	}
+}
+
+bool ZstSession::observe_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
+{
+	if (!entity->is_proxy()) {
+		ZstLog::entity(LogLevel::warn, "Can't observe local entity {}", entity->URI().path());
+		return false;
+	}
+
+	if (listening_to_performer(dynamic_cast<ZstPerformer*>(hierarchy()->find_entity(entity->URI().first()))))
+	{
+		ZstLog::entity(LogLevel::warn, "Already observing performer {}", entity->URI().first().path());
+		return false;
+	}
+	
+	return true;
+}
+
+void ZstSession::add_connected_performer(ZstPerformer * performer)
+{
+	if (!performer)
+		return;
+	m_connected_performers[performer->URI()] = performer;
+}
+
+void ZstSession::remove_connected_performer(ZstPerformer * performer)
+{
+	if (!performer)
+		return;
+
+	try {
+		m_connected_performers.erase(performer->URI());
+	}
+	catch (std::out_of_range) {
+
+	}
+}
+
+bool ZstSession::listening_to_performer(ZstPerformer * performer)
+{
+	return m_connected_performers.find(performer->URI()) != m_connected_performers.end();
 }
 
 void ZstSession::on_synchronisable_destroyed(ZstSynchronisable * synchronisable)

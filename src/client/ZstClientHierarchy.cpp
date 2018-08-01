@@ -17,7 +17,7 @@ void ZstClientHierarchy::init(std::string name)
 	//Create a root entity to hold our local entity hierarchy
 	//Sets the name of our performer and the address of our graph output
 	m_root = new ZstPerformer(name.c_str());
-    ZstSynchronisable::add_adaptor(m_root, this);
+	m_root->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(this));
 }
 
 void ZstClientHierarchy::destroy()
@@ -72,6 +72,16 @@ void ZstClientHierarchy::on_receive_msg(ZstMessage * msg)
 	default:
 		break;
 	}
+}
+
+void ZstClientHierarchy::publish_entity_update(ZstEntityBase * entity)
+{
+	performance_events().invoke([entity](ZstTransportAdaptor * adaptor) {
+		ZstOutputPlug * plug = dynamic_cast<ZstOutputPlug*>(entity);
+		if (plug) {
+			adaptor->send_message(ZstMsgKind::PERFORMANCE_MSG, { { ZstMsgArg::PATH, plug->URI().path() } }, *plug->raw_value());
+		}
+	});
 }
 
 void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
@@ -135,7 +145,8 @@ void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTranspo
 					return;
 				}
 				this->destroy_entity_complete(entity);
-                ZstSynchronisable::remove_adaptor(entity, this);
+				entity->remove_adaptor(static_cast<ZstSynchronisableAdaptor*>(this), false);
+				entity->remove_adaptor(static_cast<ZstEntityAdaptor*>(this), false);
 			});
 		});
 	}
@@ -145,7 +156,8 @@ void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTranspo
 
 	if (sendtype != ZstTransportSendType::ASYNC_REPLY) {
 		process_events();
-        ZstSynchronisable::remove_adaptor(entity, this);
+		entity->remove_adaptor(static_cast<ZstSynchronisableAdaptor*>(this), false);
+		entity->remove_adaptor(static_cast<ZstEntityAdaptor*>(this), false);
 	}
 }
 

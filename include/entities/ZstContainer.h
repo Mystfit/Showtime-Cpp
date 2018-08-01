@@ -39,9 +39,10 @@ public:
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
 
 	//Adaptor registration
-	ZST_EXPORT virtual void add_adaptor_to_children(ZstSynchronisableAdaptor * adaptor) override;
-	ZST_EXPORT virtual void remove_adaptor_from_children(ZstSynchronisableAdaptor * adaptor) override;
-
+	ZST_EXPORT virtual void add_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive = false) override;
+	ZST_EXPORT virtual void remove_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive = false) override;
+	ZST_EXPORT virtual void add_adaptor(ZstEntityAdaptor * adaptor, bool recursive = false) override;
+	ZST_EXPORT virtual void remove_adaptor(ZstEntityAdaptor * adaptor, bool recursive = false) override;
 	ZST_EXPORT virtual void set_proxy() override;
 
 

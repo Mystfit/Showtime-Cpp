@@ -48,6 +48,7 @@ public:
 	void synchronise_graph(const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
 	void synchronise_graph_complete(ZstMessageReceipt response);
 
+	//Leave the stage
 	void leave_stage();
 	void leave_stage_complete();
     
@@ -56,7 +57,7 @@ public:
 	bool is_connecting_to_stage();
     bool is_init_complete();
 	long ping();
-
+	
 	//Client modules
 	ZstClientSession * session();
 
@@ -90,6 +91,7 @@ private:
 	void start_connection_broadcast(const ZstURI & remote_client_path);
 	void stop_connection_broadcast(const ZstURI & remote_client_path);
 	void listen_to_client(const ZstMessage * msg);
+	ZstPerformerMap m_active_peer_connections;
 	std::unordered_map<ZstURI, ZstMsgID, ZstURIHash> m_pending_peer_connections;
 	std::unordered_map<ZstURI, int, ZstURIHash> m_connection_timers;
 	

@@ -6,6 +6,7 @@
 class Sink : public ZstContainer {
 private:
     ZstInputPlug * m_input;
+	ZstOutputPlug * m_output;
 
 public:
 	int last_received_code;
@@ -14,10 +15,12 @@ public:
 	Sink(const char * name) : 
 		ZstContainer("SINK", name),
         m_input(NULL),
+		m_output(NULL),
         last_received_code(-1),
 		m_child_sink(NULL)
 	{
 		m_input = create_input_plug("in", ZstValueType::ZST_INT);
+		m_output = create_output_plug("out", ZstValueType::ZST_INT);
 	}
 
 	~Sink() {
@@ -29,7 +32,9 @@ public:
 	virtual void compute(ZstInputPlug * plug) override {
 		ZstLog::entity(LogLevel::debug, "In sink compute");
 		int request_code = plug->int_at(0);
-		ZstLog::entity(LogLevel::notification, "Sink received code {}", request_code);
+		ZstLog::entity(LogLevel::notification, "Sink received code {}. Echoing over output", request_code);
+		m_output->append_int(request_code);
+		m_output->fire();
 
 		switch (request_code)
 		{

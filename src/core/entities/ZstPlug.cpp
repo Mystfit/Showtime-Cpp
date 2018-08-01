@@ -216,6 +216,7 @@ void ZstPlug::remove_cable(ZstCable * cable)
 
 //ZstInputPlug
 //------------
+
 ZstInputPlug::ZstInputPlug() : ZstPlug()
 {
 	m_direction = ZstPlugDirection::IN_JACK;
@@ -259,7 +260,7 @@ ZstOutputPlug::~ZstOutputPlug()
 void ZstOutputPlug::fire()
 {
     entity_events()->invoke([this](ZstEntityAdaptor * dlg) { 
-		dlg->entity_publish_update(this);
+		dlg->publish_entity_update(this);
 	});
 	m_value->clear();
 }

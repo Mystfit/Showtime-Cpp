@@ -24,10 +24,14 @@ public:
 	}
 
 	void remove_adaptor(T adaptor) { 
+		adaptor->set_target_dispatcher_inactive();
 		this->m_adaptors.erase(adaptor); 
 	}
 
 	void remove_all_adaptors(){
+		for (auto adp : m_adaptors) {
+			adp->set_target_dispatcher_inactive();
+		}
 		m_adaptors.clear();
 	}
 	

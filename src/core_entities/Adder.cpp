@@ -1,5 +1,6 @@
-#include "Adder.h"
 #include <algorithm>
+#include <ZstLogging.h>
+#include "Adder.h"
 
 using namespace std;
 
@@ -13,7 +14,6 @@ Adder::Adder(const char * name) :
 
 void Adder::compute(ZstInputPlug * plug)
 {
-	m_sum->clear();
 	auto largest_size = std::max(m_addend->size(), m_augend->size());
 
 	for (int i = 0; i < largest_size; ++i) {

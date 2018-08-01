@@ -48,6 +48,9 @@ void ZstStageSession::on_receive_msg(ZstMessage * msg)
 	case ZstMsgKind::DESTROY_CABLE:
 		response = destroy_cable_handler(msg);
 		break;
+	case ZstMsgKind::OBSERVE_ENTITY:
+		response = observe_entity_handler(msg, sender);
+		break;
 	case ZstMsgKind::SUBSCRIBE_TO_PERFORMER_ACK:
 		response = complete_client_connection_handler(msg, sender);
 		break;
@@ -97,7 +100,7 @@ ZstMsgKind ZstStageSession::synchronise_client_graph(ZstPerformer * client) {
 	return ZstMsgKind::OK;
 }
 
-ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformer * performer)
+ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformerStageProxy * sender)
 {
 	//Unpack cable from message
 	ZstCable cable = msg->unpack_payload_serialisable<ZstCable>(0);
@@ -123,11 +126,11 @@ ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformer 
 	if (!output_performer->is_connected_to_subscriber_peer(input_performer))
 	{
 		ZstMsgID id = msg->id();
-		m_deferred_cables[id] = MessagePromise();
-		MessageFuture future = m_deferred_cables[id].get_future();
+		m_deferred_connection_promises[id] = MessagePromise();
+		MessageFuture future = m_deferred_connection_promises[id].get_future();
 
 		//Create future action to run when the client responds
-		future.then([this, cable_ptr, performer, id](MessageFuture f) {
+		future.then([this, cable_ptr, sender, id](MessageFuture f) {
 			ZstMsgKind status(ZstMsgKind::EMPTY);
 			try {
 				ZstMsgKind status = f.get();
@@ -135,9 +138,9 @@ ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformer 
 					//Publish cable to graph
 					create_cable_complete_handler(cable_ptr);
 
-					router_events().invoke([id, this, performer](ZstTransportAdaptor * adp) {
+					router_events().invoke([id, this, sender](ZstTransportAdaptor * adp) {
 						adp->send_message(ZstMsgKind::OK, { 
-							{ZstMsgArg::SENDER_IDENTITY, this->m_hierarchy->get_socket_ID(performer)},
+							{ZstMsgArg::SENDER_IDENTITY, this->m_hierarchy->get_socket_ID(sender)},
 							{ZstMsgArg::MSG_ID, boost::lexical_cast<std::string>(id) }
 						});
 					});
@@ -159,6 +162,64 @@ ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformer 
 
 	return ZstMsgKind::EMPTY;
 }
+
+//---------------------
+
+ZstMsgKind ZstStageSession::observe_entity_handler(ZstMessage * msg, ZstPerformerStageProxy * sender)
+{
+	//Get target performer
+	ZstPerformerStageProxy * observed_performer = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(msg->get_arg(ZstMsgArg::OUTPUT_PATH)));
+	if (!observed_performer) {
+		return ZstMsgKind::ERR_STAGE_PERFORMER_NOT_FOUND;
+	}
+	
+	ZstLog::net(LogLevel::notification, "Received observation request: {} watches {}", sender->URI().path(), observed_performer->URI().path());
+	if (sender == observed_performer) {
+		ZstLog::net(LogLevel::warn, "Client attempting to observe itself");
+		return ZstMsgKind::ERR_STAGE_PERFORMER_ALREADY_EXISTS;
+	}
+
+	//Check to see if one client is already connected to the other
+	if (!sender->is_connected_to_subscriber_peer(observed_performer))
+	{
+		ZstMsgID id = msg->id();
+		m_deferred_connection_promises[id] = MessagePromise();
+		MessageFuture future = m_deferred_connection_promises[id].get_future();
+
+		//Create future action to run when the client responds
+		future.then([this, sender, observed_performer, id](MessageFuture f) {
+			ZstMsgKind status(ZstMsgKind::EMPTY);
+			try {
+				ZstMsgKind status = f.get();
+				if (status == ZstMsgKind::OK) {
+					ZstLog::net(LogLevel::notification, "Observation request between {} and {} completed", sender->URI().path(), observed_performer->URI().path());
+
+					router_events().invoke([id, this, sender](ZstTransportAdaptor * adp) {
+						adp->send_message(ZstMsgKind::OK, {
+							{ ZstMsgArg::SENDER_IDENTITY, this->m_hierarchy->get_socket_ID(sender) },
+							{ ZstMsgArg::MSG_ID, boost::lexical_cast<std::string>(id) }
+							});
+					});
+				}
+				return status;
+			}
+			catch (const ZstTimeoutException & e) {
+				ZstLog::net(LogLevel::error, "Client connection async response timed out - {}", e.what());
+			}
+			return status;
+		});
+
+		//Start the client connection
+		connect_clients(id, observed_performer, sender);
+	}
+
+	return ZstMsgKind::EMPTY;
+}
+
+
+//---------------------
+
+
 
 ZstMsgKind ZstStageSession::create_cable_complete_handler(ZstCable * cable)
 {
@@ -271,8 +332,8 @@ ZstMsgKind ZstStageSession::complete_client_connection_handler(ZstMessage * msg,
 	//Run any cable promises associated with this client connection
 	ZstMsgID id = boost::lexical_cast<ZstMsgID>(msg->get_arg(ZstMsgArg::CONNECTION_MSG_ID));
 
-	m_deferred_cables.at(id).set_value(ZstMsgKind::OK);
-	m_deferred_cables.erase(id);
+	m_deferred_connection_promises.at(id).set_value(ZstMsgKind::OK);
+	m_deferred_connection_promises.erase(id);
 	return ZstMsgKind::OK;
 }
 

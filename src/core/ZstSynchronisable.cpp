@@ -30,19 +30,19 @@ ZstSynchronisable::~ZstSynchronisable()
 	delete m_synchronisable_events;
 }
 
-void ZstSynchronisable::add_adaptor(ZstSynchronisable * self, ZstSynchronisableAdaptor * adaptor)
+void ZstSynchronisable::add_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive)
 {
-	self->synchronisable_events()->add_adaptor(adaptor);
+	synchronisable_events()->add_adaptor(adaptor);
 
 	//If we are already activated, immediately dispatch an event
-	if (self->is_activated()) {
-		self->synchronisable_events()->invoke([self](ZstSynchronisableAdaptor* dlg) { dlg->on_synchronisable_activated(self); });
+	if (this->is_activated()) {
+		this->synchronisable_events()->invoke([this](ZstSynchronisableAdaptor* dlg) { dlg->on_synchronisable_activated(this); });
 	}
 }
 
-void ZstSynchronisable::remove_adaptor(ZstSynchronisable * self, ZstSynchronisableAdaptor * adaptor)
+void ZstSynchronisable::remove_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive)
 {
-	self->synchronisable_events()->remove_adaptor(adaptor);
+	this->synchronisable_events()->remove_adaptor(adaptor);
 }
 
 void ZstSynchronisable::enqueue_activation()
@@ -176,6 +176,13 @@ void ZstSynchronisable::set_proxy()
 void ZstSynchronisable::process_events()
 {
 	synchronisable_events()->process_events();
+}
+
+void ZstSynchronisable::announce_update()
+{
+	ZstLog::net(LogLevel::debug, "Synchronisable deferring on_synchronisable_event()");
+	synchronisable_events()->defer([this](ZstSynchronisableAdaptor * adp) { adp->on_synchronisable_updated(this); });
+	synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * adp) { adp->synchronisable_has_event(this); });
 }
 
 ZstEventDispatcher<ZstSynchronisableAdaptor*> * ZstSynchronisable::synchronisable_events()

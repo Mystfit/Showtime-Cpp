@@ -32,7 +32,8 @@ void ZstHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportSen
 		return;
 
 	//Register client to entity to allow it to send messages
-	entity->add_adaptor_to_children(this);
+	entity->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(this), true);
+	entity->add_adaptor(static_cast<ZstEntityAdaptor*>(this), true);
 	synchronisable_set_activating(entity);
 }
 
@@ -56,8 +57,9 @@ void ZstHierarchy::add_performer(const ZstPerformer & performer)
 	synchronisable_set_proxy(performer_proxy);
 
 	//Add adaptors to performer so we can clean it up later
-	ZstSynchronisable::add_adaptor(performer_proxy, this);
-	
+	performer_proxy->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(this), true);
+	performer_proxy->add_adaptor(static_cast<ZstEntityAdaptor*>(this), true);
+
 	//Store it
 	m_clients[performer_proxy->URI()] = performer_proxy;
 
@@ -164,7 +166,9 @@ ZstMsgKind ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity) {
 	synchronisable_set_proxy(entity_proxy);
 
 	//Activate entity and dispatch events
-    ZstSynchronisable::add_adaptor(entity_proxy, this);
+	entity_proxy->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(this), true);
+	entity_proxy->add_adaptor(static_cast<ZstEntityAdaptor*>(this), true);
+
 	synchronisable_set_activation_status(entity_proxy, ZstSyncStatus::ACTIVATED);
 	
 	return ZstMsgKind::OK;
@@ -252,6 +256,7 @@ ZstEventDispatcher<ZstHierarchyAdaptor*> & ZstHierarchy::hierarchy_events()
 
 void ZstHierarchy::synchronisable_has_event(ZstSynchronisable * synchronisable)
 {
+	ZstLog::net(LogLevel::debug, "Synchronisable has an event that needs to be processed");
 	m_synchronisable_events.defer([this, synchronisable](ZstSynchronisableAdaptor * dlg) {
 		this->synchronisable_process_events(synchronisable);
 	});

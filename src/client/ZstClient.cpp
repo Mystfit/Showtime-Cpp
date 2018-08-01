@@ -90,6 +90,7 @@ void ZstClient::init_client(const char *client_name, bool debug)
 	m_session->performance_events().add_adaptor(m_graph_transport);
 	m_session->stage_events().add_adaptor(m_client_transport);
 	m_session->hierarchy()->stage_events().add_adaptor(m_client_transport);
+	m_session->hierarchy()->performance_events().add_adaptor(m_graph_transport);
 
 	//Set up client->stage adaptors
 	m_client_transport->init(m_actor);
@@ -186,8 +187,11 @@ void ZstClient::receive_connection_handshake(ZstMessage * msg)
 				{ZstMsgArg::OUTPUT_PATH, output_path.path() },
 				{ZstMsgArg::CONNECTION_MSG_ID, ss.str()}
 			};
-			adaptor->send_message(ZstMsgKind::SUBSCRIBE_TO_PERFORMER_ACK, ZstTransportSendType::ASYNC_REPLY, args, [](ZstMessageReceipt receipt) {
-				if(receipt.status != ZstMsgKind::OK){
+			adaptor->send_message(ZstMsgKind::SUBSCRIBE_TO_PERFORMER_ACK, ZstTransportSendType::ASYNC_REPLY, args, [this, output_path](ZstMessageReceipt receipt) {
+				if(receipt.status == ZstMsgKind::OK){
+					this->session()->add_connected_performer(dynamic_cast<ZstPerformer*>(this->session()->hierarchy()->find_entity(output_path)));
+				}
+				else {
 					ZstLog::net(LogLevel::error, "SUBSCRIBE_TO_PERFORMER_ACK: Stage responded with error {}", receipt.status);
 				}
 			});

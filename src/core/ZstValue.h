@@ -4,6 +4,7 @@
 #include <ZstConstants.h>
 #include <ZstSerialisable.h>
 #include <ZstExports.h>
+#include <mutex>
 #include "mpark/variant.hpp"
 
 //A ZstValue is a generic value that represents some data 
@@ -14,35 +15,37 @@ typedef mpark::variant<int, float, std::string> ZstValueVariant;
 
 class ZstValue : public ZstSerialisable {
 public:
-	friend class ZstValueWire;
-	ZstValue();
-	ZstValue(const ZstValue & other);
+	ZST_EXPORT ZstValue();
+	ZST_EXPORT ZstValue(const ZstValue & other);
 
-	ZstValue(ZstValueType t);
-	virtual ~ZstValue();
+	ZST_EXPORT ZstValue(ZstValueType t);
+	ZST_EXPORT virtual ~ZstValue();
 
-	ZstValueType get_default_type() const;
+	ZST_EXPORT ZstValueType get_default_type() const;
 	
-	void copy(const ZstValue & other);
+	ZST_EXPORT void copy(const ZstValue & other);
 	
-	void clear();
-	void append_int(int value);
-	void append_float(float value);
-	void append_char(const char * value);
+	ZST_EXPORT void clear();
+	ZST_EXPORT void append_int(int value);
+	ZST_EXPORT void append_float(float value);
+	ZST_EXPORT void append_char(const char * value);
 	
-	const size_t size() const;
-	const int int_at(const size_t position) const;
-	const float float_at(const size_t position) const;
-	void char_at(char * buf, const size_t position) const;
-    const size_t size_at(const size_t position) const;
+	ZST_EXPORT const size_t size() const;
+	ZST_EXPORT const int int_at(const size_t position) const;
+	ZST_EXPORT const float float_at(const size_t position) const;
+	ZST_EXPORT void char_at(char * buf, const size_t position) const;
+	ZST_EXPORT const size_t size_at(const size_t position) const;
 
 	//Serialisation
-	void write(std::stringstream & buffer) const override;
-	void read(const char * buffer, size_t length, size_t & offset) override;
+	ZST_EXPORT void write(std::stringstream & buffer) const override;
+	ZST_EXPORT void read(const char * buffer, size_t length, size_t & offset) override;
 
 protected:
 	std::vector<ZstValueVariant> m_values;
 	ZstValueType m_default_type;
+
+private:
+	std::mutex m_lock;
 };
 
 class ZstValueIntVisitor

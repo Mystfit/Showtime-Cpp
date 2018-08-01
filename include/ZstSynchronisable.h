@@ -19,8 +19,8 @@ public:
 	ZST_EXPORT ZstSynchronisable(const ZstSynchronisable & other);
     ZST_EXPORT virtual ~ZstSynchronisable();
     
-    ZST_EXPORT static void add_adaptor(ZstSynchronisable * self, ZstSynchronisableAdaptor * adaptor);
-    ZST_EXPORT static void remove_adaptor(ZstSynchronisable * self, ZstSynchronisableAdaptor * adaptor);
+    ZST_EXPORT virtual void add_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive = false);
+    ZST_EXPORT virtual void remove_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive = false);
     ZST_EXPORT virtual void on_activation(){};
     ZST_EXPORT virtual void on_deactivation(){};
 
@@ -43,6 +43,7 @@ protected:
 	ZST_EXPORT void set_destroyed();
 	ZST_EXPORT virtual void set_proxy();
 	ZST_EXPORT void process_events();
+	ZST_EXPORT void announce_update();
     ZST_EXPORT ZstEventDispatcher<ZstSynchronisableAdaptor*> * synchronisable_events();
 
 private:

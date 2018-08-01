@@ -46,11 +46,10 @@ public:
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
 
 	//Adaptors
-    ZST_EXPORT static void add_adaptor(ZstEntityBase * self, ZstEntityAdaptor * adaptor);
-    ZST_EXPORT static void remove_adaptor(ZstEntityBase * self, ZstEntityAdaptor * adaptor);
-
-	ZST_EXPORT virtual void add_adaptor_to_children(ZstSynchronisableAdaptor * adaptor);
-	ZST_EXPORT virtual void remove_adaptor_from_children(ZstSynchronisableAdaptor * adaptor);
+	ZST_EXPORT virtual void add_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive = false);
+	ZST_EXPORT virtual void remove_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive = false);
+    ZST_EXPORT virtual void add_adaptor(ZstEntityAdaptor * adaptor, bool recursive = false);
+    ZST_EXPORT virtual void remove_adaptor(ZstEntityAdaptor * adaptor, bool recursive = false);
 	
 protected:
 	//Set entity status

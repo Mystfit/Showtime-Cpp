@@ -53,6 +53,7 @@ enum ZstMsgKind  {
     //Connection registration
     CREATE_CABLE, //24
     DESTROY_CABLE,
+	OBSERVE_ENTITY,
     
     //P2P endpoint connection requests
     START_CONNECTION_HANDSHAKE, //26

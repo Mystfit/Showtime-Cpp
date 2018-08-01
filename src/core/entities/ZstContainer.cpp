@@ -231,19 +231,43 @@ void ZstContainer::read(const char * buffer, size_t length, size_t & offset)
 	}
 }
 
-void ZstContainer::add_adaptor_to_children(ZstSynchronisableAdaptor * adaptor)
+void ZstContainer::add_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive)
 {
-	ZstComponent::add_adaptor_to_children(adaptor);
-	for (auto child : m_children) {
-        child.second->add_adaptor_to_children(adaptor);
+	ZstComponent::add_adaptor(adaptor, recursive);
+	if (recursive) {
+		for (auto child : m_children) {
+			static_cast<ZstSynchronisable*>(child.second)->add_adaptor(adaptor, recursive);
+		}
 	}
 }
 
-void ZstContainer::remove_adaptor_from_children (ZstSynchronisableAdaptor * adaptor)
+void ZstContainer::add_adaptor(ZstEntityAdaptor * adaptor, bool recursive)
 {
-	ZstComponent::remove_adaptor_from_children(adaptor);
-	for (auto child : m_children) {
-        child.second->remove_adaptor_from_children(adaptor);
+	ZstComponent::add_adaptor(adaptor, recursive);
+	if (recursive) {
+		for (auto child : m_children) {
+			child.second->add_adaptor(adaptor, recursive);
+		}
+	}
+}
+
+void ZstContainer::remove_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive)
+{
+	ZstComponent::remove_adaptor(adaptor, recursive);
+	if (recursive) {
+		for (auto child : m_children) {
+			static_cast<ZstSynchronisable*>(child.second)->remove_adaptor(adaptor, recursive);
+		}
+	}
+}
+
+void ZstContainer::remove_adaptor(ZstEntityAdaptor * adaptor, bool recursive)
+{
+	ZstComponent::remove_adaptor(adaptor, recursive);
+	if (recursive) {
+		for (auto child : m_children) {
+			child.second->remove_adaptor(adaptor, recursive);
+		}
 	}
 }
 

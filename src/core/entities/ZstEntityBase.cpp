@@ -123,24 +123,24 @@ void ZstEntityBase::read(const char * buffer, size_t length, size_t & offset)
 	m_entity_type[obj.via.str.size] = '\0';
 }
 
-void ZstEntityBase::add_adaptor(ZstEntityBase * self, ZstEntityAdaptor * adaptor)
+void ZstEntityBase::add_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive)
 {
-    self->m_entity_events->add_adaptor(adaptor);
+	ZstSynchronisable::add_adaptor(adaptor, recursive);
 }
 
-void ZstEntityBase::remove_adaptor(ZstEntityBase * self, ZstEntityAdaptor * adaptor)
+void ZstEntityBase::remove_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive)
 {
-    self->m_entity_events->remove_adaptor(adaptor);
+	ZstSynchronisable::remove_adaptor(adaptor, recursive);
 }
 
-void ZstEntityBase::add_adaptor_to_children(ZstSynchronisableAdaptor * adaptor)
+void ZstEntityBase::add_adaptor(ZstEntityAdaptor * adaptor, bool recursive)
 {
-	ZstSynchronisable::add_adaptor(this, adaptor);
+    this->m_entity_events->add_adaptor(adaptor);
 }
 
-void ZstEntityBase::remove_adaptor_from_children(ZstSynchronisableAdaptor * adaptor)
+void ZstEntityBase::remove_adaptor(ZstEntityAdaptor * adaptor, bool recursive)
 {
-	ZstSynchronisable::remove_adaptor(this, adaptor);
+	this->m_entity_events->remove_adaptor(adaptor);
 }
 
 void ZstEntityBase::set_entity_type(const char * entity_type) {

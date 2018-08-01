@@ -19,7 +19,6 @@ class ZstSession :
 	public ZstSynchronisableAdaptor,
 	public ZstTransportAdaptor,
 	public ZstComputeAdaptor,
-    public ZstEntityAdaptor,
 	protected ZstSynchronisableLiason,
 	protected ZstCableLiason,
 	protected ZstPlugLiason
@@ -72,6 +71,15 @@ public:
 	ZST_EXPORT virtual void on_compute(ZstComponent * component, ZstInputPlug * plug) override;
 
 
+	// -------------
+	// Entity observation
+	// -------------
+	ZST_EXPORT virtual bool observe_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype);
+	ZST_EXPORT void add_connected_performer(ZstPerformer * performer);
+	ZST_EXPORT void remove_connected_performer(ZstPerformer * performer);
+	ZST_EXPORT bool listening_to_performer(ZstPerformer * performer);
+
+
 	// -----------------
 	// Event dispatchers
 	// -----------------
@@ -97,5 +105,5 @@ private:
 	ZstEventDispatcher<ZstSessionAdaptor*> m_session_events;
 	ZstEventDispatcher<ZstSynchronisableAdaptor*> m_synchronisable_events;
 	ZstEventDispatcher<ZstComputeAdaptor*> m_compute_events;
-
+	ZstPerformerMap m_connected_performers;
 };

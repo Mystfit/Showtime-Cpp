@@ -3,20 +3,24 @@
 #include <ZstURI.h>
 #include <ZstExports.h>
 #include <ZstEventDispatcher.hpp>
-#include <adaptors/ZstHierarchyAdaptor.hpp>
 #include <entities/ZstEntityBase.h>
 #include <entities/ZstPlug.h>
 #include <entities/ZstPerformer.h>
+#include <adaptors/ZstHierarchyAdaptor.hpp>
+#include <adaptors/ZstEntityAdaptor.hpp>
+
 #include "ZstModule.h"
-#include "adaptors/ZstTransportAdaptor.hpp"
 #include "liasons/ZstPlugLiason.hpp"
 #include "liasons/ZstSynchronisableLiason.hpp"
+#include "adaptors/ZstTransportAdaptor.hpp"
+
 
 class ZstHierarchy : 
 	public ZstModule,
 	public ZstPlugLiason,
 	public ZstSynchronisableLiason,
-	public ZstSynchronisableAdaptor
+	public ZstSynchronisableAdaptor,
+	public ZstEntityAdaptor
 {
 public:
 	ZST_EXPORT ZstHierarchy();

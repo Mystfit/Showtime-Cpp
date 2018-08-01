@@ -86,12 +86,14 @@ void ZstMessage::unpack(zmsg_t * msg)
 	zframe_t * args_frame = zmsg_pop(msg);
 	if (!args_frame) return;
 	size_t offset = 0;
-	handle = msgpack::unpack((char*)zframe_data(args_frame), zframe_size(args_frame), offset);
+	const char * arg_data = (char*)zframe_data(args_frame);
+	size_t arg_size = zframe_size(args_frame);
+	handle = msgpack::unpack(arg_data, arg_size, offset);
 	size_t num_args = static_cast<size_t>(handle.get().via.i64);
 
 	//Only unpack arguments if we have any
 	if (num_args > 0) {
-		handle = msgpack::unpack((char*)zframe_data(args_frame), zframe_size(args_frame), offset);
+		handle = msgpack::unpack(arg_data, arg_size, offset);
 		m_args = handle.get().as<ZstMsgArgs>();
 	}
 	zframe_destroy(&args_frame);

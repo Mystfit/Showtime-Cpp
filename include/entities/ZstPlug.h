@@ -94,8 +94,6 @@ public:
 
 class ZstOutputPlug : public ZstPlug {
 	friend class ZstPlugLiason;
-    using ZstSynchronisable::add_adaptor;
-    using ZstSynchronisable::remove_adaptor;
 public:
 	ZST_EXPORT ZstOutputPlug();
 	ZST_EXPORT ZstOutputPlug(const ZstOutputPlug & other);

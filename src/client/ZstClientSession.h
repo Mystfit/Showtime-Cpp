@@ -24,7 +24,8 @@
 
 class ZstClientSession : 
 	public ZstSession,
-	public ZstClientModule
+	public ZstClientModule,
+	public ZstHierarchyAdaptor
 {
 public:
 	ZstClientSession();
@@ -57,15 +58,21 @@ public:
 
 	void on_receive_msg(ZstMessage * msg) override;
 	void on_receive_graph_msg(ZstMessage * msg);
-    void entity_publish_update(ZstEntityBase * entity) override;
 
 
+	// ---------------------------
+	// Hierarchy adaptor overrides
+	// ---------------------------
+	void on_performer_leaving(ZstPerformer * performer) override;
+
+	
 	// ------------------
 	// Cable creation
 	// ------------------
 
 	ZstCable * connect_cable(ZstInputPlug * input, ZstOutputPlug * output, const ZstTransportSendType & sendtype) override;
 	void destroy_cable(ZstCable * cable, const ZstTransportSendType & sendtype) override;
+	bool observe_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype) override;
 	
 
 	// -----------------
@@ -82,6 +89,7 @@ private:
 
 	void connect_cable_complete(ZstMessageReceipt response, ZstCable * cable);
 	void destroy_cable_complete(ZstMessageReceipt response, ZstCable * cable);
+	void observe_entity_complete(ZstMessageReceipt response, ZstEntityBase * entity);
 	
 	ZstClientHierarchy * m_hierarchy;
 };
