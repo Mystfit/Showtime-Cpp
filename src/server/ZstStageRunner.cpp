@@ -34,24 +34,23 @@ static void s_signal_handler(int signal_value)
 	case CTRL_CLOSE_EVENT:
 		s_interrupted = 1;
 		return true;
-#else
-	case SIGINT:
-		s_interrupted = 1;
-		return true;
-	case SIGTERM:
-		s_interrupted = 1;
-		return true;
-	case SIGKILL:
-		s_interrupted = 1;
-		return true;
-	case SIGABRT:
-		s_interrupted = 1;
-		return true;
-#endif
 	default:
 		break;
 	}
 	return false;
+#else
+	case SIGINT:
+		s_interrupted = 1;
+	case SIGTERM:
+		s_interrupted = 1;
+	case SIGKILL:
+		s_interrupted = 1;
+	case SIGABRT:
+		s_interrupted = 1;
+	default:
+		break;
+	}
+#endif
 }
 
 static void s_catch_signals(){
