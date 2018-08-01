@@ -78,3 +78,8 @@ IF NOT EXIST %DEPENDENCY_DIR%\swig (
     rename "%DEPENDENCY_DIR%\%SWIG_VER%" swig
 )
 
+IF NOT EXIST %DEPENDENCY_DIR%\unity (
+    powershell -Command "Invoke-WebRequest https://netstorage.unity3d.com/unity/1a9968d9f99c/UnityDownloadAssistant-2018.2.1f1.exe -OutFile %DEPENDENCY_DIR%\unityinstaller.exe"
+    %DEPENDENCY_DIR%\unityinstaller.exe /S /D=%DEPENDENCY_DIR%\unity
+	while (!(Test-Path "%DEPENDENCY_DIR%\unity\Editor.exe")) { Start-Sleep 10 }
+)
