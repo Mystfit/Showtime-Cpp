@@ -79,7 +79,17 @@ IF NOT EXIST %DEPENDENCY_DIR%\swig (
 )
 
 IF NOT EXIST %DEPENDENCY_DIR%\unity (
+    echo  === Downloading unity === 
     powershell -Command "Invoke-WebRequest https://netstorage.unity3d.com/unity/1a9968d9f99c/UnityDownloadAssistant-2018.2.1f1.exe -OutFile %DEPENDENCY_DIR%\unityinstaller.exe"
     %DEPENDENCY_DIR%\unityinstaller.exe /S /D=%DEPENDENCY_DIR%\unity
-	while (!(Test-Path "%DEPENDENCY_DIR%\unity\Editor.exe")) { Start-Sleep 10 }
+
+    SET UNITY_EXE="%DEPENDENCY_DIR%\unity\Editor\Unity.exe"
+
+    :CheckForUnity
+    IF EXIST %UNITY_EXE% GOTO FoundUnity
+    TIMEOUT /T 20 >nul
+    GOTO CheckForUnity
+
+    :FoundUnity
+    ECHO Found: %FoundUnity%
 )
