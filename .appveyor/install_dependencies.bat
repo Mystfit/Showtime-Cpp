@@ -31,15 +31,17 @@ IF NOT DEFINED HUNTER_ROOT (
     set HUNTER_ROOT=%DEPENDENCY_DIR%\hunter_root
 )
 
-REM Download CMake 3.11
-set CMAKE_VER=cmake-3.11.0-rc4-win64-x64
+REM Download CMake 3.12
+set CMAKE_VER=3.12.0
+set CMAKE_VER_FULL=cmake-%CMAKE_VER%-win64-x64
+set CMAKE_URL=https://cmake.org/files/v3.12/%CMAKE_VER_FULL%.zip
 IF NOT EXIST %DEPENDENCY_DIR%\cmake (
-    echo === Downloading %CMAKE_VER% === 
-    powershell -Command "Invoke-WebRequest https://cmake.org/files/v3.11/%CMAKE_VER%.zip -OutFile %DEPENDENCY_DIR%\%CMAKE_VER%.zip"
+    echo === Downloading %CMAKE_VER_FULL% === 
+    powershell -Command "Invoke-WebRequest %CMAKE_URL% -OutFile %DEPENDENCY_DIR%\%CMAKE_VER_FULL%.zip"
     echo  === Unzipping cmake === 
-    7z x -y -bd -bb0 -o%DEPENDENCY_DIR% %DEPENDENCY_DIR%\%CMAKE_VER%.zip
-    echo Renaming %DEPENDENCY_DIR%\%CMAKE_VER to cmake
-    rename "%DEPENDENCY_DIR%\%CMAKE_VER%" cmake
+    7z x -y -bd -bb0 -o%DEPENDENCY_DIR% %DEPENDENCY_DIR%\%CMAKE_VER_FULL%.zip
+    echo Renaming %DEPENDENCY_DIR%\%CMAKE_VER_FULL to cmake
+    rename "%DEPENDENCY_DIR%\%CMAKE_VER_FULL%" cmake
 )
 set CMAKE_BIN=%DEPENDENCY_DIR%\cmake\bin\cmake
 set CTEST_BIN=%DEPENDENCY_DIR%\cmake\bin\ctest
