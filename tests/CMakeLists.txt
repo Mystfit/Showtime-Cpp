@@ -7,7 +7,7 @@ set(SINK_TEST_SOURCE_FILES
 )
 
 set(MEMLEAK_TEST_SOURCE_FILES 
-    "TestMemleaks.cpp"
+    "TestMemLeaks.cpp"
 )
 
 # Sink test executable

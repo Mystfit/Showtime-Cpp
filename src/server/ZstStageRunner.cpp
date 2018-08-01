@@ -1,6 +1,7 @@
 #include "ZstStage.h"
 #include "ZstVersion.h"
 #include <stdio.h>
+#include <signal.h>
 
 //Standalone stage runner
 //-----------------------
@@ -10,6 +11,22 @@
 #else
 #define TAKE_A_BREATH usleep(1000 * 200);
 #endif
+
+static int s_interrupted = 0;
+static void s_signal_handler(int signal_value)
+{
+	ZstLog::app(LogLevel::notification, "Caught signal {}", signal_value);
+	s_interrupted = 1;
+}
+
+static void s_catch_signals(){
+	struct sigaction action;
+	action.sa_handler = s_signal_handler;
+	action.sa_flags = 0;
+	sigemptyset(&action.sa_mask);
+	sigaction(SIGINT, &action, NULL);
+	sigaction(SIGTERM, &action, NULL);
+}
 
 int main(int argc, char **argv) {
 
@@ -23,11 +40,14 @@ int main(int argc, char **argv) {
 	stage.init_stage("stage", true);
 
 	if (argc < 2) {
-		ZstLog::app(LogLevel::notification, "Stage running in standalone mode");
+		ZstLog::app(LogLevel::notification, "Stage running in standalone mode. Press Ctrl+C to exit");
 #ifdef WIN32
 		system("pause");
 #else
-		system("read -n 1 -s -p \"Press any key to continue...\n\"");
+		s_catch_signals();
+		while(!s_interrupted){
+			TAKE_A_BREATH
+		}
 #endif
 	}
 	else {

@@ -1,4 +1,5 @@
 brew "cmake"
+brew "pkgconfig"
 brew "msgpack"
 brew "fmt"
 brew "czmq"
