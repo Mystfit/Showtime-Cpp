@@ -19,11 +19,15 @@
 
 static int s_interrupted = 0;
 
-static bool s_signal_handler(unsigned long signal_value)
+#ifdef WIN32
+static bool s_signal_handler(DWORD signal_value)
+#else
+static void s_signal_handler(int signal_value)
+#endif
 {
 	ZstLog::app(LogLevel::debug, "Caught signal {}", signal_value);
-#ifdef WIN32
 	switch (signal_value) {
+#ifdef WIN32
 	case CTRL_C_EVENT:
 		s_interrupted = 1;
 		return true;
