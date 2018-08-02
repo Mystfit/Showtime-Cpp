@@ -51,22 +51,24 @@ set COMMON_GENERATOR_FLAGS=-G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%DEPENDENCY_
 set COMMON_BUILD_FLAGS=--config %CONFIGURATION% --target INSTALL -- /nologo /verbosity:minimal
 
 echo === Clone patched hunterized CZMQ === 
-IF NOT EXIST %DEPENDENCY_DIR%\czmq git clone https://github.com/mystfit/czmq.git %DEPENDENCY_DIR%\czmq
-
-git -C %DEPENDENCY_DIR%\czmq checkout hunter-v4.1.0
-mkdir "%DEPENDENCY_DIR%\czmq\build"
-echo  === Building czmq === 
-%CMAKE_BIN% -H"%DEPENDENCY_DIR%\czmq" -B"%DEPENDENCY_DIR%\czmq\build" %COMMON_GENERATOR_FLAGS%
-%CMAKE_BIN% --build "%DEPENDENCY_DIR%\czmq\build" %COMMON_BUILD_FLAGS%
+IF NOT EXIST %DEPENDENCY_DIR%\czmq (
+    git clone https://github.com/mystfit/czmq.git %DEPENDENCY_DIR%\czmq
+    git -C %DEPENDENCY_DIR%\czmq checkout hunter-v4.1.0
+    mkdir "%DEPENDENCY_DIR%\czmq\build"
+    echo  === Building czmq === 
+    %CMAKE_BIN% -H"%DEPENDENCY_DIR%\czmq" -B"%DEPENDENCY_DIR%\czmq\build" %COMMON_GENERATOR_FLAGS%
+    %CMAKE_BIN% --build "%DEPENDENCY_DIR%\czmq\build" %COMMON_BUILD_FLAGS%
+)
 
 echo === Cloning patched hunterized msgpack === 
-IF NOT EXIST %DEPENDENCY_DIR%\msgpack-c git clone https://github.com/mystfit/msgpack-c.git %DEPENDENCY_DIR%\msgpack-c
-
-git -C %DEPENDENCY_DIR%\msgpack-c checkout hunter-2.1.5
-mkdir "%DEPENDENCY_DIR%\msgpack-c\build"
-echo === Building msgpack === 
-%CMAKE_BIN% -H"%DEPENDENCY_DIR%\msgpack-c" -B"%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_GENERATOR_FLAGS% -DMSGPACK_BUILD_EXAMPLES=OFF
-%CMAKE_BIN% --build "%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_BUILD_FLAGS%
+IF NOT EXIST %DEPENDENCY_DIR%\msgpack-c (
+    git clone https://github.com/mystfit/msgpack-c.git %DEPENDENCY_DIR%\msgpack-c
+    git -C %DEPENDENCY_DIR%\msgpack-c checkout hunter-2.1.5
+    mkdir "%DEPENDENCY_DIR%\msgpack-c\build"
+    echo === Building msgpack === 
+    %CMAKE_BIN% -H"%DEPENDENCY_DIR%\msgpack-c" -B"%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_GENERATOR_FLAGS% -DMSGPACK_BUILD_EXAMPLES=OFF
+    %CMAKE_BIN% --build "%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_BUILD_FLAGS%
+)
 
 set SWIG_VER=swigwin-3.0.12
 IF NOT EXIST %DEPENDENCY_DIR%\swig (
@@ -78,19 +80,11 @@ IF NOT EXIST %DEPENDENCY_DIR%\swig (
     rename "%DEPENDENCY_DIR%\%SWIG_VER%" swig
 )
 
+SET UNITY_EXE="%DEPENDENCY_DIR%\unity\Editor\Unity.exe"
 IF NOT EXIST %DEPENDENCY_DIR%\unity (
     echo === Downloading unity === 
     SET UNITY_URL=https://netstorage.unity3d.com/unity/1a9968d9f99c/Windows64EditorInstaller/UnitySetup64-2018.2.1f1.exe
-    powershell -Command "Invoke-WebRequest %UNITY_URL% -OutFile %DEPENDENCY_DIR%\UnitySetup64.exe"
+    powershell -Command "Invoke-WebRequest $env:UNITY_URL -OutFile %DEPENDENCY_DIR%\UnitySetup64.exe"
     %DEPENDENCY_DIR%\UnitySetup64.exe /S /D=%DEPENDENCY_DIR%\unity
     SET UNITY_EXE="%DEPENDENCY_DIR%\unity\Editor\Unity.exe"
-
-    :CheckForUnity
-    IF EXIST %UNITY_EXE% GOTO FoundUnity
-    echo "Waiting for %UNITY_EXE% to finish downloading"
-    TIMEOUT /T 30 >nul
-    GOTO CheckForUnity
-
-    :FoundUnity
-    ECHO Found: %FoundUnity%
 )
