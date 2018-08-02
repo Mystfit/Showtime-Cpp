@@ -1,4 +1,4 @@
-message(STATUS "Building ${UNITY_TARGET} target")
+message(STATUS "Configuring ${UNITY_TARGET} target")
 
 # Set Unity project paths
 set(UNITY_EXECUTABLE $ENV{PROGRAMFILES}/Unity/Editor/Unity.exe CACHE FILEPATH "Path to Unity executable")
