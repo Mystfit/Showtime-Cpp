@@ -1,5 +1,7 @@
 #pragma once
 
+#include <mutex>
+
 #include <ZstURI.h>
 #include <ZstExports.h>
 #include <ZstEventDispatcher.hpp>
@@ -76,7 +78,6 @@ public:
 	ZST_EXPORT void synchronisable_has_event(ZstSynchronisable * synchronisable) override;
 	ZST_EXPORT void on_synchronisable_destroyed(ZstSynchronisable * synchronisable) override;
 
-
 protected:
 	ZST_EXPORT virtual void destroy_entity_complete(ZstEntityBase * entity);
 	ZstPerformerMap m_clients;
@@ -84,4 +85,5 @@ protected:
 private:
 	ZstEventDispatcher<ZstSynchronisableAdaptor*> m_synchronisable_events;
 	ZstEventDispatcher<ZstHierarchyAdaptor*> m_hierarchy_events;
+	std::mutex m_hierarchy_mutex;
 };

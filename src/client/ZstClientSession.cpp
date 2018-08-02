@@ -104,6 +104,7 @@ void ZstClientSession::on_receive_graph_msg(ZstMessage * msg)
 
 	if (!sending_plug) {
 		ZstLog::net(LogLevel::warn, "No sending plug found");
+		return;
 	}
 	
 	//Create a ZstValue object to hold our plug data

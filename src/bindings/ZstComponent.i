@@ -1,8 +1,8 @@
 %feature("director") ZstComponent;
 
 %inline %{
-	ZstComponent* cast_to_component(ZstEntityBase * entity){
-		return dynamic_cast<ZstComponent*>(entity);
+	ZstComponent* cast_to_component(ZstSynchronisable * synchronisable){
+		return dynamic_cast<ZstComponent*>(synchronisable);
 	}
 %}
 

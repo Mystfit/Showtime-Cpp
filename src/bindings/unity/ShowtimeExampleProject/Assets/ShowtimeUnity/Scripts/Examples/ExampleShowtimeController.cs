@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ShowtimeController : MonoBehaviour {
+public class ExampleShowtimeController : MonoBehaviour {
 
     public string stageAddress = "127.0.0.1";
     public string localPerformerName = "unity_performer";
