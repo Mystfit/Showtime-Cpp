@@ -74,10 +74,14 @@ else()
     configure_file(${CSPROJ_IN} ${CSPROJ_OUT})
 
     # Build the dotnet project
-    set(DOTNET_COMMAND "dotnet")
+    set(DOTNET_COMMAND /usr/local/share/dotnet/dotnet CACHE FILEPATH "Path to dotnet sdk")
+    set(DOTNET_ARGS 
+        "build" "-o" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
+        "--framework" "${BINDINGS_DOTNET_FRAMEWORK_VERSION}"
+        "${CSPROJ_OUT}")
     add_custom_command(
         OUTPUT ${DOTNET_OUTPUT_FILE}
-        COMMAND ${DOTNET_COMMAND} "build" "-o" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}" "${CSPROJ_OUT}"
+        COMMAND ${DOTNET_COMMAND} ${DOTNET_ARGS}
         DEPENDS ${CSPROJ_OUT} ${DOTNET_TARGET_WRAPPER}
         VERBATIM
     )
