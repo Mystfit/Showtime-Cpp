@@ -11,8 +11,10 @@ set(SWIG_LANGUAGE_DIR ${CMAKE_SWIG_ROOT_OUTDIR}/dotnet)
 # Define language root interface file
 set(DOTNET_SWIG_INTERFACES "${CMAKE_CURRENT_LIST_DIR}/showtime_dotnet.i")
 set_source_files_properties(${DOTNET_SWIG_INTERFACES} PROPERTIES CPLUSPLUS ON)
-
+set(DOTNET_WRAPPER_FILENAME ${DOTNET_TARGET_WRAPPER}${CMAKE_SHARED_LIBRARY_SUFFIX})
 message(STATUS "Running swig to generate dotnet wrappers")
+message(STATUS "Wrapper lib is ${DOTNET_WRAPPER_FILENAME}")
+
 
 foreach(SWIG_INTERFACE_FILE ${DOTNET_SWIG_INTERFACES})
     get_filename_component(OUTFILE_NAME ${SWIG_INTERFACE_FILE} NAME_WE)
@@ -20,7 +22,7 @@ foreach(SWIG_INTERFACE_FILE ${DOTNET_SWIG_INTERFACES})
         "-c++"
         "-csharp"
         "-I${Showtime_INCLUDE_DIRS}"
-        "-dllimport" "${DOTNET_TARGET_WRAPPER}"
+        "-dllimport" "${DOTNET_WRAPPER_FILENAME}"
         "-outdir" "${SWIG_LANGUAGE_DIR}"
         "-o" "${CMAKE_SWIG_OUTDIR}/${OUTFILE_NAME}CSHARP_wrap.cxx"
         "${SWIG_INTERFACE_FILE}"
@@ -40,15 +42,37 @@ set(SWIG_MODULE_${DOTNET_TARGET_WRAPPER}_EXTRA_DEPS ${Showtime_API_INTERFACE})
 
 # Clear the debug suffix for generated files
 set(CMAKE_DEBUG_POSTFIX "")
+set(DOTNET_STAMP {CMAKE_CURRENT_BINARY_DIR}/dotnet.stamp)
 
 # Create the swig dotnet target
-swig_add_library(${DOTNET_TARGET_WRAPPER} 
-    LANGUAGE csharp 
-    TYPE SHARED 
-    OUTPUT_DIR ${SWIG_LANGUAGE_DIR}
-    OUTFILE_DIR ${CMAKE_SWIG_OUTDIR}
-    SOURCES ${DOTNET_SWIG_INTERFACES}
-)
+if(MACOSX)
+    swig_add_library(${DOTNET_TARGET_WRAPPER} 
+        LANGUAGE csharp 
+        TYPE MODULE 
+        OUTPUT_DIR ${SWIG_LANGUAGE_DIR}
+        OUTFILE_DIR ${CMAKE_SWIG_OUTDIR}
+        SOURCES ${DOTNET_SWIG_INTERFACES}
+    )
+    set_target_properties(${SWIG_MODULE_${DOTNET_TARGET_WRAPPER}_REAL_NAME} PROPERTIES BUNDLE TRUE)
+    set(DOTNET_BUNDLE_COPY_LIBS
+        $<TARGET_FILE:${CORE_TARGET}>
+        $<TARGET_FILE:${CORE_ENTITIES_TARGET}>
+        $<TARGET_FILE:${CLIENT_TARGET}> 
+    )
+    add_custom_command(TARGET ${DOTNET_TARGET_WRAPPER} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy ${DOTNET_BUNDLE_COPY_LIBS} $<TARGET_BUNDLE_CONTENT_DIR:${DOTNET_TARGET_WRAPPER}>/MacOS
+        COMMAND ${CMAKE_COMMAND} -E touch ${DOTNET_STAMP}
+        VERBATIM
+    )
+else()
+    swig_add_library(${DOTNET_TARGET_WRAPPER} 
+        LANGUAGE csharp 
+        TYPE SHARED 
+        OUTPUT_DIR ${SWIG_LANGUAGE_DIR}
+        OUTFILE_DIR ${CMAKE_SWIG_OUTDIR}
+        SOURCES ${DOTNET_SWIG_INTERFACES}
+    )
+endif()
 
 # Set dependant projects
 add_dependencies(${SWIG_MODULE_${DOTNET_TARGET_WRAPPER}_REAL_NAME} ${CLIENT_TARGET})
@@ -73,7 +97,7 @@ else()
     endforeach()
     configure_file(${CSPROJ_IN} ${CSPROJ_OUT})
 
-    # Build the dotnet project
+    # Build the project using the dotnet sdk
     set(DOTNET_COMMAND /usr/local/share/dotnet/dotnet CACHE FILEPATH "Path to dotnet sdk")
     set(DOTNET_ARGS 
         "build" "-o" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
@@ -82,12 +106,10 @@ else()
     add_custom_command(
         OUTPUT ${DOTNET_OUTPUT_FILE}
         COMMAND ${DOTNET_COMMAND} ${DOTNET_ARGS}
-        DEPENDS ${CSPROJ_OUT} ${DOTNET_TARGET_WRAPPER}
+        DEPENDS ${CSPROJ_OUT}
         VERBATIM
     )
-
-    # Create custom target for dotnet
-    add_custom_target(${DOTNET_TARGET} DEPENDS ${DOTNET_OUTPUT_FILE})
+    add_custom_target(${DOTNET_TARGET} ALL DEPENDS ${DOTNET_OUTPUT_FILE})
 endif()
 
 add_dependencies(${DOTNET_TARGET} ${DOTNET_TARGET_WRAPPER})

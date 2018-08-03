@@ -4,5 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/ShowtimeUnity/Scenes/ExampleObservableEntity.unity
+    guid: 2803ac12ffce04a818dc281e3a924437
   m_configObjects: {}
