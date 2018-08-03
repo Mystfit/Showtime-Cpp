@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>${BINDINGS_DOTNET_FRAMEWORK_VERSION}</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    ${DOTNET_SRC_BLOCK}
+  </ItemGroup>
+
+</Project>

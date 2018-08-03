@@ -59,9 +59,35 @@ swig_link_libraries(
     ${CLIENT_TARGET}
 )
 
+if(WIN32)
+    # C# is a first class citizen for CMake on Windows, we can build the project normally
+    enable_language(CSharp)
+    target_sources(${DOTNET_TARGET} PRIVATE ${DOTNET_GENERATED_BINDINGS})
+else()
+    # Create custom .csproj file for unix platforms
+    set(CSPROJ_IN "${CMAKE_CURRENT_LIST_DIR}/${DOTNET_TARGET}.csproj.in")
+    set(CSPROJ_OUT "${SWIG_LANGUAGE_DIR}/${DOTNET_TARGET}.csproj")
+    set(DOTNET_SRC_BLOCK "")
+    foreach(file ${DOTNET_GENERATED_BINDINGS})
+        string(APPEND DOTNET_SRC_BLOCK "<Compile\ Include=\"${file}\"\ />\n    ")
+    endforeach()
+    configure_file(${CSPROJ_IN} ${CSPROJ_OUT})
+
+    # Set the output of the custom target to the generated DLL
+    set_target_properties(${DOTNET_TARGET} PROPERTIES LIBRARY_OUTPUT_NAME ${DOTNET_TARGET})
+
+    # Build the dotnet project
+    set(DOTNET_COMMAND "dotnet")
+    add_custom_command(
+        OUTPUT {CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${DOTNET_TARGET}.dll
+        COMMAND ${DOTNET_COMMAND} "build" "-o" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}" "${CSPROJ_OUT}"
+        DEPENDS ${CSPROJ_OUT} ${DOTNET_TARGET_WRAPPER}
+        VERBATIM
+    )
+endif()
+
+add_dependencies(${DOTNET_TARGET} ${DOTNET_TARGET_WRAPPER})
+
+
 # Restore original swig output dir
 set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR})
-
-# Create Dotnet project to hold CS files and reference the wrapper project
-target_sources(${DOTNET_TARGET} PRIVATE ${DOTNET_GENERATED_BINDINGS})
-add_dependencies(${DOTNET_TARGET} ${DOTNET_TARGET_WRAPPER})
