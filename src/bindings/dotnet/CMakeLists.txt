@@ -73,17 +73,17 @@ else()
     endforeach()
     configure_file(${CSPROJ_IN} ${CSPROJ_OUT})
 
-    # Set the output of the custom target to the generated DLL
-    set_target_properties(${DOTNET_TARGET} PROPERTIES LIBRARY_OUTPUT_NAME ${DOTNET_TARGET})
-
     # Build the dotnet project
     set(DOTNET_COMMAND "dotnet")
     add_custom_command(
-        OUTPUT {CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${DOTNET_TARGET}.dll
+        OUTPUT ${DOTNET_OUTPUT_FILE}
         COMMAND ${DOTNET_COMMAND} "build" "-o" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}" "${CSPROJ_OUT}"
         DEPENDS ${CSPROJ_OUT} ${DOTNET_TARGET_WRAPPER}
         VERBATIM
     )
+
+    # Create custom target for dotnet
+    add_custom_target(${DOTNET_TARGET} DEPENDS ${DOTNET_OUTPUT_FILE})
 endif()
 
 add_dependencies(${DOTNET_TARGET} ${DOTNET_TARGET_WRAPPER})
