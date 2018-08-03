@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class EchoSphereComponent : ZstComponent
+public class ExampleCableConnectComponent : ZstComponent
 {
     Transform m_sphere;
     public ZstInputPlug input;
     public ZstOutputPlug output;
 
-    public EchoSphereComponent(Transform sphere, string name) : base(name)
+    public ExampleCableConnectComponent(Transform sphere, string name) : base(name)
     {
         input = create_input_plug("input", ZstValueType.ZST_FLOAT);
         output = create_output_plug("output", ZstValueType.ZST_FLOAT);
@@ -31,7 +31,7 @@ public class EchoSphereComponent : ZstComponent
 }
 
 
-public class EchoSphere : MonoBehaviour {
+public class ExampleCableConnect : MonoBehaviour {
 
     //Showtime vars
     public string address = "127.0.0.1";
@@ -39,7 +39,7 @@ public class EchoSphere : MonoBehaviour {
     public string owner_name;
     public bool is_master = true;
     private string client_name;
-    private EchoSphereComponent sphere_component;
+    private ExampleCableConnectComponent sphere_component;
     private ZstComponent sphere_proxy;
 
     //Anim vars
@@ -92,7 +92,7 @@ public class EchoSphere : MonoBehaviour {
 
         if (is_master)
         {
-            sphere_component = new EchoSphereComponent(transform, component_name);
+            sphere_component = new ExampleCableConnectComponent(transform, component_name);
             showtime.activate_entity(sphere_component);
         }
         else
@@ -103,7 +103,7 @@ public class EchoSphere : MonoBehaviour {
             ZstOutputPlug output_p = showtime.cast_to_output_plug(sphere_proxy.get_plug_by_URI(sphere_proxy.URI().add(new ZstURI("output"))));
             Debug.Log(string.Format("Output plug is {0}", output_p));
 
-            sphere_component = new EchoSphereComponent(transform, component_name);
+            sphere_component = new ExampleCableConnectComponent(transform, component_name);
             showtime.activate_entity(sphere_component);
 
             showtime.connect_cable(sphere_component.input, output_p);

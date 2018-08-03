@@ -1,7 +1,12 @@
 #include "ZstStage.h"
 #include "ZstVersion.h"
 #include <stdio.h>
+
+#ifdef WIN32
+#include <windows.h>
+#else
 #include <signal.h>
+#endif
 
 //Standalone stage runner
 //-----------------------
@@ -13,42 +18,67 @@
 #endif
 
 static int s_interrupted = 0;
+
+#ifdef WIN32
+static bool s_signal_handler(DWORD signal_value)
+#else
 static void s_signal_handler(int signal_value)
+#endif
 {
-	ZstLog::app(LogLevel::notification, "Caught signal {}", signal_value);
-	s_interrupted = 1;
+	ZstLog::app(LogLevel::debug, "Caught signal {}", signal_value);
+	switch (signal_value) {
+#ifdef WIN32
+	case CTRL_C_EVENT:
+		s_interrupted = 1;
+		return true;
+	case CTRL_CLOSE_EVENT:
+		s_interrupted = 1;
+		return true;
+	default:
+		break;
+	}
+	return false;
+#else
+	case SIGINT:
+		s_interrupted = 1;
+	case SIGTERM:
+		s_interrupted = 1;
+	case SIGKILL:
+		s_interrupted = 1;
+	case SIGABRT:
+		s_interrupted = 1;
+	default:
+		break;
+	}
+#endif
 }
 
 static void s_catch_signals(){
+#ifdef WIN32
+	if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)s_signal_handler, TRUE)) {
+		ZstLog::app(LogLevel::error, "Unable to register Control Handler");
+	}
+#else
 	struct sigaction action;
 	action.sa_handler = s_signal_handler;
 	action.sa_flags = 0;
 	sigemptyset(&action.sa_mask);
 	sigaction(SIGINT, &action, NULL);
 	sigaction(SIGTERM, &action, NULL);
+#endif
 }
 
-int main(int argc, char **argv) {
-
-#ifdef WIN32
-	Sleep(100);
-#else
-    usleep(1000 * 200);
-#endif
-
+int main(int argc, char **argv)
+{
 	ZstStage stage;
 	stage.init_stage("stage", true);
 
 	if (argc < 2) {
 		ZstLog::app(LogLevel::notification, "Stage running in standalone mode. Press Ctrl+C to exit");
-#ifdef WIN32
-		system("pause");
-#else
 		s_catch_signals();
 		while(!s_interrupted){
 			TAKE_A_BREATH
 		}
-#endif
 	}
 	else {
 		if (strcmp(argv[1], "-t") == 0)
@@ -59,12 +89,11 @@ int main(int argc, char **argv) {
 				std::getline(std::cin, line);
 				TAKE_A_BREATH
 			} while (line != "$TERM");
-				ZstLog::app(LogLevel::notification, "Received $TERM. Closing stage server.");
-			}
+			ZstLog::app(LogLevel::notification, "Received $TERM. Closing stage server.");
+		}
 	}
 
 	std::cout << "Showtime Stage shutting down" << std::endl;
-
 	stage.destroy();
 
 	return 0;

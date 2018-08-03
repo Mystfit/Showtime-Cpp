@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8.4)
+cmake_minimum_required(VERSION 3.12.0)
 
 if(NOT DEFINED USE_HUNTER)
     if(WIN32)
@@ -18,11 +18,7 @@ if(USE_HUNTER)
     set(HUNTER_ENABLED ON)
 endif()
 
-project(Showtime)
-set(SHOWTIME_VERSION_MAJOR 0)
-set(SHOWTIME_VERSION_MINOR 11)
-set(SHOWTIME_VERSION_PATCH 1)
-set(SHOWTIME_VERSION "${SHOWTIME_VERSION_MAJOR}.${SHOWTIME_VERSION_MINOR}.${SHOWTIME_VERSION_PATCH}")
+project(Showtime VERSION 0.12.0)
 set(SHOWTIME_NAMESPACE "${PROJECT_NAME}::")
 
 # Use C14
@@ -327,7 +323,7 @@ include(CMakePackageConfigHelpers)
 
 write_basic_package_version_file(
     showtime-config-version.cmake
-    VERSION ${SHOWTIME_VERSION}
+    VERSION ${CMAKE_PROJECT_VERSION}
     COMPATIBILITY SameMajorVersion
 )
 

@@ -2,7 +2,9 @@ message(STATUS "Configuring ${CORE_TARGET} target")
 
 # Write version info into header file
 set(VERSION_FILE "${Showtime_COMPILED_INCLUDE_DIRS}/ZstVersion.h")
-FILE(WRITE ${VERSION_FILE} "#define SHOWTIME_VERSION \"${SHOWTIME_VERSION}\"")
+FILE(WRITE ${VERSION_FILE} "#define SHOWTIME_VERSION \"${CMAKE_PROJECT_VERSION}\"")
+
+set_target_properties(${CORE_TARGET} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION})
 
 # Public include files
 set(API_FILES

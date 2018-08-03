@@ -4,12 +4,12 @@
 %ignore ZstPlug::end;
 
 %inline %{
-	ZstOutputPlug* cast_to_output_plug(ZstEntityBase * entity){
-		return dynamic_cast<ZstOutputPlug*>(entity);
+	ZstOutputPlug* cast_to_output_plug(ZstSynchronisable * synchronisable){
+		return dynamic_cast<ZstOutputPlug*>(synchronisable);
 	}
 
-    ZstInputPlug* cast_to_input_plug(ZstEntityBase * entity){
-        return dynamic_cast<ZstInputPlug*>(entity);
+    ZstInputPlug* cast_to_input_plug(ZstSynchronisable * synchronisable){
+        return dynamic_cast<ZstInputPlug*>(synchronisable);
     }
 %}
 
