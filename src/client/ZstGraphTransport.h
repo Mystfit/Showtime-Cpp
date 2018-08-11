@@ -28,8 +28,7 @@ public:
 	
 private:
 	static int s_handle_graph_in(zloop_t *loop, zsock_t *sock, void *arg);
-	static int s_handle_unreliable_graph_in(zloop_t *loop, zsock_t *sock, void *arg);
-
+	
 	void graph_recv(zmsg_t * msg);
 	void graph_recv(zframe_t * msg);
 

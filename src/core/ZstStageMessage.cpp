@@ -50,7 +50,7 @@ ZstStageMessage * ZstStageMessage::init(ZstMsgKind kind, const ZstSerialisable &
 	return this;
 }
 
-void ZstStageMessage::unpack(zmsg_t * msg, bool single_frame)
+void ZstStageMessage::unpack(zmsg_t * msg)
 {
 	//Unpack ID
 	zframe_t * id_frame = zmsg_pop(msg);

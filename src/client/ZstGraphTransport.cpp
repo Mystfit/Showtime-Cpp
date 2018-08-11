@@ -10,7 +10,6 @@ ZstGraphTransport::ZstGraphTransport() :
 {
 }
 
-
 ZstGraphTransport::~ZstGraphTransport()
 {
 }
@@ -70,8 +69,7 @@ void ZstGraphTransport::send_message_impl(ZstMessage * msg)
 			zmsg_t * handle = msg->handle();
 			zframe_t * radio_frame = zmsg_pop(msg->handle());
 			zframe_set_group(radio_frame, PERFORMANCE_GROUP);
-			zframe_send(&radio_frame, m_graph_in_unreliable, 0);
-			zmsg_send(&handle, m_graph_in_unreliable);
+			zframe_send(&radio_frame, m_graph_out_unreliable, 0);
 
 			//Need to release message wrapper early since we won't use the base transport socket sender
 			m_msg_pool.release(static_cast<ZstPerformanceMessage*>(msg));
@@ -88,26 +86,14 @@ void ZstGraphTransport::send_message_impl(ZstMessage * msg)
 
 int ZstGraphTransport::s_handle_graph_in(zloop_t * loop, zsock_t * sock, void * arg)
 {
-	ZstGraphTransport * transport = (ZstGraphTransport*)arg;
-
-	//Forward performance message to adaptors to process
-	transport->graph_recv(transport->sock_recv(sock, false));
-	return 0;
-}
-
-int ZstGraphTransport::s_handle_unreliable_graph_in(zloop_t * loop, zsock_t * sock, void * arg)
-{
-	ZstGraphTransport * transport = (ZstGraphTransport*)arg;
-
-	//Forward performance message to adaptors to process
-	transport->graph_recv(zframe_recv(sock));
+	((ZstGraphTransport*)arg)->graph_recv(zframe_recv(sock));
 	return 0;
 }
 
 void ZstGraphTransport::graph_recv(zmsg_t * msg)
 {
 	ZstPerformanceMessage * perf_msg = get_msg();
-	perf_msg->unpack(msg, true);
+	perf_msg->unpack(msg);
 	zmsg_destroy(&msg);
 
 	//Publish message to other modules
@@ -121,7 +107,7 @@ void ZstGraphTransport::graph_recv(zmsg_t * msg)
 void ZstGraphTransport::graph_recv(zframe_t * frame)
 {
 	ZstPerformanceMessage * perf_msg = get_msg();
-	perf_msg->unpack(frame, true);
+	perf_msg->unpack(frame);
 	
 	//Publish message to other modules
 	msg_events()->invoke([perf_msg](ZstTransportAdaptor* adaptor) {
@@ -178,7 +164,7 @@ void ZstGraphTransport::init_unreliable_graph_sockets()
 
 	//Join groups
 	zsock_join(m_graph_in_unreliable, PERFORMANCE_GROUP);
-	zsock_join(m_graph_in_unreliable, HANDSHAKE_GROUP);
+	//zsock_join(m_graph_in_unreliable, HANDSHAKE_GROUP);
 }
 
 void ZstGraphTransport::init_graph_sockets(zsock_t * graph_in, zsock_t * graph_out, const std::string & address)

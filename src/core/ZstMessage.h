@@ -156,7 +156,8 @@ public:
 
     ZST_EXPORT virtual void reset();
     ZST_EXPORT void set_inactive();
-    ZST_EXPORT virtual void unpack(zmsg_t * msg, bool single_frame = false);
+    ZST_EXPORT virtual void unpack(zmsg_t * msg);
+	ZST_EXPORT virtual void unpack(zframe_t * frame);
 
     ZST_EXPORT void append_empty_args();
     ZST_EXPORT void append_args(const ZstMsgArgs & args);
@@ -200,7 +201,6 @@ protected:
     ZST_EXPORT void append_id_frame(ZstMsgID id);
     ZST_EXPORT void set_handle(zmsg_t * handle);
 
-	ZST_EXPORT void unpack_single_frame(zmsg_t * msg);
 	ZST_EXPORT void unpack_next_kind(zmsg_t * msg);
 	ZST_EXPORT void unpack_next_kind(const char * data, size_t size, size_t & offset);
 	ZST_EXPORT void unpack_next_args(zmsg_t * msg);

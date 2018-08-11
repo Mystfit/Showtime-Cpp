@@ -80,17 +80,24 @@ void ZstMessage::set_inactive()
 	m_msg_handle = NULL;
 }
 
-void ZstMessage::unpack(zmsg_t * msg, bool single_frame)
+void ZstMessage::unpack(zmsg_t * msg)
 {
-	if (single_frame) {
-		unpack_single_frame(msg);
-	}
-	else {
-		unpack_next_kind(msg);
-		unpack_next_args(msg);
-		unpack_next_payload(msg);
-	}
+	unpack_next_kind(msg);
+	unpack_next_args(msg);
+	unpack_next_payload(msg);
 }
+
+void ZstMessage::unpack(zframe_t * frame)
+{
+	char * frame_data = (char*)zframe_data(frame);
+	size_t frame_size = zframe_size(frame);
+	size_t offset = 0;
+
+	unpack_next_kind(frame_data, frame_size, offset);
+	unpack_next_args(frame_data, frame_size, offset);
+	unpack_next_payload(frame_data, frame_size, offset);
+}
+
 
 void ZstMessage::append_empty_args()
 {
@@ -259,20 +266,6 @@ void ZstMessage::append_payload(const ZstSerialisable & streamable, std::strings
 
 void ZstMessage::set_handle(zmsg_t * handle){
 	m_msg_handle = handle;
-}
-
-void ZstMessage::unpack_single_frame(zmsg_t * msg)
-{
-	//If the message is packed into a single frame, grab the frame data
-	zframe_t *  frame = zmsg_pop(msg);
-	assert(frame);
-	char * frame_data = (char*)zframe_data(frame);
-	size_t frame_size = zframe_size(frame);
-	size_t offset = 0;
-
-	unpack_next_kind(frame_data, frame_size, offset);
-	unpack_next_args(frame_data, frame_size, offset);
-	unpack_next_payload(frame_data, frame_size, offset);
 }
 
 void ZstMessage::unpack_next_kind(zmsg_t * msg)
