@@ -802,7 +802,7 @@ void test_cleanup() {
 
 int main(int argc,char **argv){
 
-    bool testing = false;
+    bool testing = true;
     if (argc > 1) {
         if (argv[1][0] == 't') {
             ZstLog::app(LogLevel::warn, "In test mode. Launching internal stage server.");

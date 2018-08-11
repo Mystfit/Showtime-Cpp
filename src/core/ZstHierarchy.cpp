@@ -60,6 +60,9 @@ void ZstHierarchy::add_performer(const ZstPerformer & performer)
 	performer_proxy->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(this), true);
 	performer_proxy->add_adaptor(static_cast<ZstEntityAdaptor*>(this), true);
 
+	//Lock the hierarchy
+	std::lock_guard<std::mutex> lock(m_hierarchy_mutex);
+
 	//Store it
 	m_clients[performer_proxy->URI()] = performer_proxy;
 
@@ -138,6 +141,9 @@ ZstMsgKind ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity) {
 		return ZstMsgKind::ERR_ENTITY_ALREADY_EXISTS;
 	}
 
+	//Lock the hierarchy
+	std::lock_guard<std::mutex> lock(m_hierarchy_mutex);
+
 	//Create proxies and set parents
 	if (strcmp(entity.entity_type(), COMPONENT_TYPE) == 0) {
 		entity_proxy = new ZstComponent(static_cast<const ZstComponent&>(entity));
@@ -177,6 +183,9 @@ ZstMsgKind ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity) {
 ZstMsgKind ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 {
 	if (entity) {
+		//Lock the hierarchy
+		std::lock_guard<std::mutex> lock(m_hierarchy_mutex);
+
 		if (entity->is_proxy()) {
 			ZstLog::net(LogLevel::notification, "Destroying entity {}", entity->URI().path());
 			destroy_entity_complete(entity);

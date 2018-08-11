@@ -99,6 +99,9 @@ void ZstSession::destroy_cable_complete(ZstCable * cable)
 	ZstInputPlug * input = cable->get_input();
 	ZstOutputPlug * output = cable->get_output();
 
+	//Lock the session
+	std::lock_guard<std::mutex> lock(m_session_mtex);
+
 	//Remove cable from plugs
 	if (input)
 		plug_remove_cable(input, cable);
@@ -170,10 +173,14 @@ ZstCable * ZstSession::create_cable(const ZstURI & input_path, const ZstURI & ou
 		}
 		return cable_ptr;
 	}
-	
+		
 	//Create and store new cable
 	bool success = true;
 	cable_ptr = ZstCable::create(input_path, output_path);
+
+	//Lock the session
+	std::lock_guard<std::mutex> lock(m_session_mtex);
+
 	try {
 		m_cables.insert(cable_ptr);
 	}
@@ -245,6 +252,10 @@ void ZstSession::add_connected_performer(ZstPerformer * performer)
 {
 	if (!performer)
 		return;
+
+	//Lock the session
+	std::lock_guard<std::mutex> lock(m_session_mtex);
+
 	m_connected_performers[performer->URI()] = performer;
 }
 
@@ -252,6 +263,9 @@ void ZstSession::remove_connected_performer(ZstPerformer * performer)
 {
 	if (!performer)
 		return;
+	
+	//Lock the session
+	std::lock_guard<std::mutex> lock(m_session_mtex);
 
 	try {
 		m_connected_performers.erase(performer->URI());
