@@ -80,7 +80,7 @@ void ZstClient::init_client(const char *client_name, bool debug)
 	//Todo: init IDs again after stage has responded
 	ZstMsgIDManager::init(m_client_name.c_str(), m_client_name.size());
 
-	m_actor->init();
+	m_actor->init(client_name);
 	
 	//Register message dispatch as a client adaptor
 	this->add_adaptor(m_client_transport);
@@ -157,6 +157,7 @@ void ZstClient::on_receive_msg(ZstMessage * msg)
 		receive_connection_handshake(msg);
 		break;
 	case ZstMsgKind::START_CONNECTION_HANDSHAKE:
+		m_graph_transport->connect_to_unreliable_client(msg->get_arg(ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS));
 		start_connection_broadcast(ZstURI(msg->get_arg(ZstMsgArg::INPUT_PATH)));
 		break;
 	case ZstMsgKind::STOP_CONNECTION_HANDSHAKE:
@@ -228,11 +229,18 @@ void ZstClient::join_stage(std::string stage_address, const ZstTransportSendType
 	m_client_transport->connect_to_stage(stage_address);
 
 	//Acquire our output graph address to send to the stage
-	std::string graph_addr = m_graph_transport->get_graph_address();
-	ZstPerformer * root = session()->hierarchy()->get_local_performer();
+	std::string reliable_graph_addr = m_graph_transport->get_reliable_graph_address();
+	std::string unreliable_graph_addr = m_graph_transport->get_unreliable_graph_address();
 
-	invoke([this, sendtype, &graph_addr, root](ZstTransportAdaptor * adaptor) {
-		adaptor->send_message(ZstMsgKind::CLIENT_JOIN, sendtype, *root, {{ZstMsgArg::OUTPUT_ADDRESS, graph_addr}}, [this](ZstMessageReceipt response) {
+	ZstPerformer * root = session()->hierarchy()->get_local_performer();
+	synchronisable_set_activating(root);
+	
+	invoke([this, sendtype, &reliable_graph_addr, &unreliable_graph_addr, root](ZstTransportAdaptor * adaptor) {
+		ZstMsgArgs args = { 
+			{ ZstMsgArg::GRAPH_RELIABLE_OUTPUT_ADDRESS, reliable_graph_addr },
+			{ ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS, unreliable_graph_addr }
+		};
+		adaptor->send_message(ZstMsgKind::CLIENT_JOIN, sendtype, *root, args, [this](ZstMessageReceipt response) {
 			this->join_stage_complete(response);
 		});
 	});
@@ -254,9 +262,6 @@ void ZstClient::join_stage_complete(ZstMessageReceipt response)
 	//Set up heartbeat timer
 	m_heartbeat_timer_id = m_actor->attach_timer(HEARTBEAT_DURATION, [this]() {this->heartbeat_timer(); });
 	
-	//TODO: Need a handshake with the stage before we mark connection as active
-	set_connected_to_stage(true);
-
 	//Ask the stage to send us the current session
 	synchronise_graph(response.sendtype);
 
@@ -283,6 +288,8 @@ void ZstClient::synchronise_graph(const ZstTransportSendType & sendtype)
 void ZstClient::synchronise_graph_complete(ZstMessageReceipt response)
 {
 	ZstLog::net(LogLevel::notification, "Graph sync completed");
+	set_connected_to_stage(true);
+	m_session->hierarchy()->get_local_performer()->enqueue_activation();
 }
 
 void ZstClient::leave_stage()
@@ -396,7 +403,7 @@ void ZstClient::stop_connection_broadcast(const ZstURI & remote_client_path)
 void ZstClient::listen_to_client(const ZstMessage * msg)
 {
 	m_pending_peer_connections[ZstURI(msg->get_arg(ZstMsgArg::OUTPUT_PATH))] = std::stoull(msg->get_arg(ZstMsgArg::CONNECTION_MSG_ID));
-	m_graph_transport->connect_to_client(msg->get_arg(ZstMsgArg::OUTPUT_ADDRESS));
+	m_graph_transport->connect_to_reliable_client(msg->get_arg(ZstMsgArg::GRAPH_RELIABLE_OUTPUT_ADDRESS));
 }
 
 ZstClientSession * ZstClient::session()

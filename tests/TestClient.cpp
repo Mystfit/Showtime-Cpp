@@ -139,17 +139,17 @@ class TestPerformerEvents : public ZstHierarchyAdaptor, public TestAdaptor {
 
 class TestSynchronisableEvents : public ZstSynchronisableAdaptor, public TestAdaptor {
     void on_synchronisable_activated(ZstSynchronisable * synchronisable) override {
-        ZstLog::app(LogLevel::debug, "SYNCHRONISABLE_ACTIVATED");
+        ZstLog::app(LogLevel::debug, "SYNCHRONISABLE_ACTIVATED: {}", synchronisable->instance_id());
         inc_calls();
     }
 
     void on_synchronisable_deactivated(ZstSynchronisable * synchronisable) override {
-        ZstLog::app(LogLevel::debug, "SYNCHRONISABLE_DEACTIVATED");
+        ZstLog::app(LogLevel::debug, "SYNCHRONISABLE_DEACTIVATED: {}", synchronisable->instance_id());
         inc_calls();
     }
 
 	void on_synchronisable_updated(ZstSynchronisable * synchronisable) override {
-		ZstLog::app(LogLevel::debug, "SYNCHRONISABLE_UPDATED");
+		ZstLog::app(LogLevel::debug, "SYNCHRONISABLE_UPDATED: {}", synchronisable->instance_id());
 		inc_calls();
 	}
 };
@@ -210,6 +210,27 @@ public:
     ZstOutputPlug * output() {
         return m_output;
     }
+};
+
+class UnreliableOutputComponent : public ZstComponent {
+private:
+	ZstOutputPlug * m_output;
+
+public:
+	UnreliableOutputComponent(const char * name) : ZstComponent("TESTER", name) {
+		m_output = create_output_plug("out", ZstValueType::ZST_FLOAT, false);
+	}
+
+	virtual void compute(ZstInputPlug * plug) override {}
+
+	void send(float val) {
+		m_output->append_float(val);
+		m_output->fire();
+	}
+
+	ZstOutputPlug * output() {
+		return m_output;
+	}
 };
 
 
@@ -278,6 +299,9 @@ void test_startup() {
     assert(zst_is_connected());
     ZstLog::app(LogLevel::debug, "Testing sync leave");
     zst_leave();
+
+	//TODO: Pause to let zmq finish disconnecting - a bit ugly
+	TAKE_A_BREATH
     assert(!zst_is_connected());
 
     //Test sync join again to verify we cleaned up properly the first time
@@ -290,6 +314,9 @@ void test_startup() {
     zst_join("127.0.0.1");
     assert(!zst_is_connecting());
     zst_leave();
+
+	//TODO: Pause to let zmq finish disconnecting - a bit ugly
+	TAKE_A_BREATH
     assert(!zst_is_connected());
 
     //Test async join
@@ -397,7 +424,7 @@ void test_create_entities(){
     assert(ZstURI::equal(localPlug_uri, localPlug_uri_via_entity));
 
     ZstLog::app(LogLevel::debug, "Testing entity async deactivation");
-    zst_deactivate_entity(test_output_async);
+    zst_deactivate_entity_async(test_output_async);
     wait_for_event(entity_sync, 1);
     assert(entity_sync->num_calls() == 1);
     entity_sync->reset_num_calls();
@@ -474,6 +501,7 @@ void test_connect_plugs() {
 
     ZstLog::app(LogLevel::debug, "Testing sync cable connection");
     ZstCable * cable = zst_connect_cable(test_input->input(), test_output->output());
+	assert(cable);
     assert(cable->is_activated());
     
     ZstLog::app(LogLevel::debug, "Verifying cable");
@@ -508,6 +536,7 @@ void test_connect_plugs() {
     ZstLog::app(LogLevel::debug, "Testing cable disconnection when removing parent");
     cable = zst_connect_cable(test_input->input(), test_output->output());
 	cable->add_adaptor(cable_activation);
+	cable_activation->reset_num_calls();
     zst_deactivate_entity(test_output);
     wait_for_event(cable_activation, 1);
     assert(!test_input->input()->is_connected_to(test_output->output()));
@@ -585,6 +614,30 @@ void test_add_filter() {
     delete test_input_sum;
     delete add_filter;
 }
+
+void test_unreliable_graph()
+{
+	ZstLog::app(LogLevel::notification, "Starting unreliable graph test");
+	int first_cmp_val = 4;
+
+	UnreliableOutputComponent * test_output = new UnreliableOutputComponent("unreliable");
+	InputComponent * test_input = new InputComponent("reliable", first_cmp_val, true);
+
+	zst_activate_entity(test_output);
+	zst_activate_entity(test_input);
+	zst_connect_cable(test_input->input(), test_output->output());
+	test_output->send(first_cmp_val);
+
+	int max_wait = 10000;
+	int current_wait = 0;
+	while (test_input->num_hits < 1 && ++current_wait < max_wait) {
+		zst_poll_once();
+	}
+	assert(test_input->last_received_val == first_cmp_val);
+	zst_deactivate_entity(test_output);
+	zst_deactivate_entity(test_input);
+}
+
 
 
 void test_external_entities(std::string external_test_path) {
@@ -749,7 +802,7 @@ void test_cleanup() {
 
 int main(int argc,char **argv){
 
-    bool testing = true;
+    bool testing = false;
     if (argc > 1) {
         if (argv[1][0] == 't') {
             ZstLog::app(LogLevel::warn, "In test mode. Launching internal stage server.");
@@ -787,6 +840,7 @@ int main(int argc,char **argv){
     test_hierarchy();
     test_connect_plugs();
     test_add_filter();
+	test_unreliable_graph();
     test_external_entities(ext_test_folder);
     test_leaving();
     test_cleanup();

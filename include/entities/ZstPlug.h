@@ -97,7 +97,11 @@ class ZstOutputPlug : public ZstPlug {
 public:
 	ZST_EXPORT ZstOutputPlug();
 	ZST_EXPORT ZstOutputPlug(const ZstOutputPlug & other);
-	ZST_EXPORT ZstOutputPlug(const char * name, ZstValueType t);
+	ZST_EXPORT ZstOutputPlug(const char * name, ZstValueType t, bool reliable = true);
 	ZST_EXPORT ~ZstOutputPlug();
 	ZST_EXPORT void fire();
+	ZST_EXPORT bool is_reliable();
+
+private:
+	bool m_reliable;
 };

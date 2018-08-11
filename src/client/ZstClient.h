@@ -23,7 +23,8 @@
 
 class ZstClient : 
 	public ZstEventDispatcher<ZstTransportAdaptor*>,
-	public ZstTransportAdaptor
+	public ZstTransportAdaptor,
+	public ZstSynchronisableLiason
 {
 public:
 	ZstClient();

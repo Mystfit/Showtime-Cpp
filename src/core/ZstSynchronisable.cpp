@@ -47,12 +47,13 @@ void ZstSynchronisable::remove_adaptor(ZstSynchronisableAdaptor * adaptor, bool 
 
 void ZstSynchronisable::enqueue_activation()
 {
-	if (is_deactivated() || activation_status() != ZstSyncStatus::ACTIVATED)
+	if (this->m_sync_status == ZstSyncStatus::ACTIVATING)
 	{
-		set_activation_status(ZstSyncStatus::ACTIVATED);
+		set_activation_status(ZstSyncStatus::ACTIVATION_QUEUED);
 
 		//Notify adaptors that this synchronisable is activating
 		synchronisable_events()->defer([this](ZstSynchronisableAdaptor* dlg) {
+			this->set_activation_status(ZstSyncStatus::ACTIVATED);
 			dlg->on_synchronisable_activated(this);
 			this->on_activation();
 		});
@@ -64,12 +65,13 @@ void ZstSynchronisable::enqueue_activation()
 
 void ZstSynchronisable::enqueue_deactivation()
 {
-    if (is_activated() || activation_status() != ZstSyncStatus::DEACTIVATED)
+    if (this->m_sync_status == ZstSyncStatus::ACTIVATED || this->m_sync_status == ZstSyncStatus::DEACTIVATING)
     {
-        set_activation_status(ZstSyncStatus::DEACTIVATED);
+        set_activation_status(ZstSyncStatus::DEACTIVATION_QUEUED);
 
 		//Notify adaptors synchronisable is deactivating
 		synchronisable_events()->defer([this](ZstSynchronisableAdaptor* dlg) {
+			this->set_activation_status(ZstSyncStatus::DEACTIVATED);
 			dlg->on_synchronisable_deactivated(this); 
 			this->on_deactivation();
 		});

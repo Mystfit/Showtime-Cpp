@@ -25,13 +25,13 @@ void ZstStageHierarchy::on_receive_msg(ZstMessage * msg)
 		response = create_client_handler(sender_identity, msg);
 		break;
 	case ZstMsgKind::CREATE_COMPONENT:
-		response = add_proxy_entity(msg->unpack_payload_serialisable<ZstComponent>(0));
+		response = add_proxy_entity(msg->unpack_payload_serialisable<ZstComponent>());
 		break;
 	case ZstMsgKind::CREATE_CONTAINER:
-		response = add_proxy_entity(msg->unpack_payload_serialisable<ZstContainer>(0));
+		response = add_proxy_entity(msg->unpack_payload_serialisable<ZstContainer>());
 		break;
 	case ZstMsgKind::CREATE_PLUG:
-		response = add_proxy_entity(msg->unpack_payload_serialisable<ZstPlug>(0));
+		response = add_proxy_entity(msg->unpack_payload_serialisable<ZstPlug>());
 		break;
 	case ZstMsgKind::CREATE_ENTITY_FROM_TEMPLATE:
 		response = create_entity_from_template_handler(msg);
@@ -57,7 +57,7 @@ void ZstStageHierarchy::on_receive_msg(ZstMessage * msg)
 ZstMsgKind ZstStageHierarchy::create_client_handler(std::string sender_identity, ZstMessage * msg)
 {
 	//Copy the id of the message so the sender will eventually match the response to a message promise
-	ZstPerformer client = msg->unpack_payload_serialisable<ZstPerformer>(0);
+	ZstPerformer client = msg->unpack_payload_serialisable<ZstPerformer>();
 
 	ZstLog::net(LogLevel::notification, "Registering new client {}", client.URI().path());
 
@@ -67,16 +67,18 @@ ZstMsgKind ZstStageHierarchy::create_client_handler(std::string sender_identity,
 		return ZstMsgKind::ERR_STAGE_PERFORMER_ALREADY_EXISTS;
 	}
 
-	std::string ip_address = "";
+	std::string reliable_address = "";
+	std::string unreliable_address = "";
 	try {
-		ip_address = msg->get_arg(ZstMsgArg::OUTPUT_ADDRESS);
+		reliable_address = msg->get_arg(ZstMsgArg::GRAPH_RELIABLE_OUTPUT_ADDRESS);
+		unreliable_address = msg->get_arg(ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS);
 	}
 	catch (std::out_of_range) {
 		ZstLog::net(LogLevel::warn, "Client sent message with unexpected argument");
 	}
 
 	//Copy streamable so we have a local ptr for the client
-	ZstPerformerStageProxy * client_proxy = new ZstPerformerStageProxy(client, ip_address);
+	ZstPerformerStageProxy * client_proxy = new ZstPerformerStageProxy(client, reliable_address, unreliable_address);
 	assert(client_proxy);
 	synchronisable_set_proxy(client_proxy);
 	synchronisable_set_activation_status(client_proxy, ZstSyncStatus::ACTIVATED);

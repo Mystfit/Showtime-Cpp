@@ -60,7 +60,7 @@ public:
 
 		while (this->m_events.try_dequeue(event_func)) {
 			if (m_adaptors.size() < 1) {
-				ZstLog::net(LogLevel::debug, "Inside dispatcher {}: No adaptors to pass event to!", m_name);
+				//ZstLog::net(LogLevel::debug, "Inside dispatcher {}: No adaptors to pass event to!", m_name);
 				continue;
 			}
 			for (T adaptor : m_adaptors) {

@@ -55,16 +55,16 @@ void ZstClientHierarchy::on_receive_msg(ZstMessage * msg)
 {
 	switch (msg->kind()) {
 	case ZstMsgKind::CREATE_PLUG:
-		add_proxy_entity(msg->unpack_payload_serialisable<ZstPlug>(0));
+		add_proxy_entity(msg->unpack_payload_serialisable<ZstPlug>());
 		break;
 	case ZstMsgKind::CREATE_PERFORMER:
-		add_performer(msg->unpack_payload_serialisable<ZstPerformer>(0));
+		add_performer(msg->unpack_payload_serialisable<ZstPerformer>());
 		break;
 	case ZstMsgKind::CREATE_COMPONENT:
-		add_proxy_entity(msg->unpack_payload_serialisable<ZstComponent>(0));
+		add_proxy_entity(msg->unpack_payload_serialisable<ZstComponent>());
 		break;
 	case ZstMsgKind::CREATE_CONTAINER:
-		add_proxy_entity(msg->unpack_payload_serialisable<ZstContainer>(0));
+		add_proxy_entity(msg->unpack_payload_serialisable<ZstContainer>());
 		break;
 	case ZstMsgKind::DESTROY_ENTITY:
 		destroy_entity_complete(find_entity(ZstURI(msg->get_arg(ZstMsgArg::PATH))));
@@ -79,7 +79,10 @@ void ZstClientHierarchy::publish_entity_update(ZstEntityBase * entity)
 	performance_events().invoke([entity](ZstTransportAdaptor * adaptor) {
 		ZstOutputPlug * plug = dynamic_cast<ZstOutputPlug*>(entity);
 		if (plug) {
-			adaptor->send_message(ZstMsgKind::PERFORMANCE_MSG, { { ZstMsgArg::PATH, plug->URI().path() } }, *plug->raw_value());
+			ZstMsgArgs args = { { ZstMsgArg::PATH, plug->URI().path() } };
+			if (!plug->is_reliable())
+				args[ZstMsgArg::UNRELIABLE] = "";
+			adaptor->send_message(ZstMsgKind::PERFORMANCE_MSG, args, *plug->raw_value());
 		}
 	});
 }

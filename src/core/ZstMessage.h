@@ -103,10 +103,12 @@ static std::map<ZstMsgKind, char const*> ZstMsgNames {
 
 
 enum ZstMsgArg {
-    OUTPUT_ADDRESS,
+    GRAPH_RELIABLE_OUTPUT_ADDRESS,
+	GRAPH_UNRELIABLE_INPUT_ADDRESS,
     INPUT_PATH,
     OUTPUT_PATH,
     PATH,
+	UNRELIABLE,
     CONNECTION_MSG_ID,
     MSG_ID,
     SENDER_IDENTITY,
@@ -114,7 +116,8 @@ enum ZstMsgArg {
 MSGPACK_ADD_ENUM(ZstMsgArg);
 
 static std::map<ZstMsgArg, char const*> ZstMsgArgNames{
-    { OUTPUT_ADDRESS, "outaddr"},
+	{ GRAPH_RELIABLE_OUTPUT_ADDRESS, "grphout_reliableaddr" },
+	{ GRAPH_UNRELIABLE_INPUT_ADDRESS, "grphin_unreliableaddr" },
     { INPUT_PATH, "inpth" },
     { OUTPUT_PATH, "outpth" },
     { PATH, "pth" },
@@ -139,30 +142,6 @@ typedef std::unordered_map<ZstMsgArg, std::string> ZstMsgArgs;
 
 
 
-/**
- * Class:   ZstMessagePayload
- *
- * Summary: A single payload frame in a ZstMessage
- */
-class ZstMessagePayload {
-public:
-    ZST_EXPORT ZstMessagePayload(zframe_t * p);
-    ZST_EXPORT ZstMessagePayload(const ZstMessagePayload & other);
-    ZST_EXPORT ~ZstMessagePayload();
-
-    ZST_EXPORT ZstMessagePayload(ZstMessagePayload && source) noexcept;
-    //ZST_EXPORT ZstMessagePayload& operator=(ZstMessagePayload && source);
-    ZST_EXPORT ZstMessagePayload & operator=(const ZstMessagePayload & other);
-    
-    ZST_EXPORT const size_t size();
-    ZST_EXPORT const char * data();
-    
-protected:
-    zframe_t * m_payload;   
-    size_t m_size;
-};
-
-
 class ZstMessage {
 public:
     ZST_EXPORT ZstMessage();
@@ -176,12 +155,13 @@ public:
     ZST_EXPORT virtual ZstMessage * init(ZstMsgKind kind, const ZstSerialisable & serialisable, const ZstMsgArgs & args);
 
     ZST_EXPORT virtual void reset();
-    ZST_EXPORT virtual void set_inactive();
-    ZST_EXPORT virtual void unpack(zmsg_t * msg);
-    ZST_EXPORT ZstMsgKind unpack_kind(zframe_t * kind_frame);
+    ZST_EXPORT void set_inactive();
+    ZST_EXPORT virtual void unpack(zmsg_t * msg, bool single_frame = false);
 
     ZST_EXPORT void append_empty_args();
     ZST_EXPORT void append_args(const ZstMsgArgs & args);
+	ZST_EXPORT void append_args(const ZstMsgArgs & args, std::stringstream & buffer);
+
     ZST_EXPORT void set_local_arg(const ZstMsgArg & key, const std::string & value);
     ZST_EXPORT const std::string & get_arg_s(const ZstMsgArg & key) const;
     ZST_EXPORT const char * get_arg(const ZstMsgArg & key) const;
@@ -189,8 +169,10 @@ public:
 
     ZST_EXPORT void log_args();
 
-    ZST_EXPORT virtual ZstMessagePayload & payload_at(size_t index);
-    ZST_EXPORT virtual size_t num_payloads();
+    ZST_EXPORT const char * payload_data();
+	ZST_EXPORT const size_t payload_size();
+	ZST_EXPORT size_t & payload_offset();
+
     ZST_EXPORT zmsg_t * handle();
 
     ZST_EXPORT const ZstMsgKind kind() const;
@@ -199,24 +181,42 @@ public:
     ZST_EXPORT void copy_id(const ZstMessage * msg);
 
     template <typename T>
-    T unpack_payload_serialisable(size_t payload_index) {
+    T unpack_payload_serialisable() {
         T serialisable;
-        size_t offset = 0;
-        serialisable.read((char*)payload_at(payload_index).data(), payload_at(payload_index).size(), offset);
+        serialisable.read(payload_data(), payload_size(), payload_offset());
         return serialisable;
     }
 
     ZST_EXPORT static ZstMsgKind entity_kind(const ZstEntityBase & entity);
 
 protected:
-    ZST_EXPORT void append_payload_frame(const ZstSerialisable & streamable);
-    ZST_EXPORT void append_kind_frame(ZstMsgKind k);
-    ZST_EXPORT void append_serialisable(ZstMsgKind k, const ZstSerialisable & s);
+    ZST_EXPORT void append_payload(const ZstSerialisable & streamable);
+	ZST_EXPORT void append_payload(const ZstSerialisable & streamable, std::stringstream & buffer);
+
+    ZST_EXPORT void append_kind(ZstMsgKind k);
+	ZST_EXPORT void append_kind(ZstMsgKind k, std::stringstream & buffer);
+
     ZST_EXPORT void prepend_id_frame(ZstMsgID id);
     ZST_EXPORT void append_id_frame(ZstMsgID id);
     ZST_EXPORT void set_handle(zmsg_t * handle);
 
-    std::vector<ZstMessagePayload> m_payloads;
+	ZST_EXPORT void unpack_single_frame(zmsg_t * msg);
+	ZST_EXPORT void unpack_next_kind(zmsg_t * msg);
+	ZST_EXPORT void unpack_next_kind(const char * data, size_t size, size_t & offset);
+	ZST_EXPORT void unpack_next_args(zmsg_t * msg);
+	ZST_EXPORT void unpack_next_args(const char * data, size_t size, size_t & offset);
+	ZST_EXPORT void unpack_next_payload(zmsg_t * msg);
+	ZST_EXPORT void unpack_next_payload(char * data, size_t size, size_t & offset);
+	
+	//Payload as char* with offset
+	char * m_payload;
+	size_t m_payload_size;
+	size_t m_payload_offset;
+
+	//Payload as zframe_t*
+	zframe_t * m_payload_frame;
+
+	//Message info
     ZstMsgKind m_msg_kind;
     ZstMsgID m_msg_id;
     ZstMsgArgs m_args;

@@ -76,7 +76,7 @@ ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * outpu
 	if (!input->is_proxy() || !output->is_proxy()) {
 		cable_set_local(cable);
 	}
-
+	
 	//Create the cable early so we have something to return immediately
 	return cable;
 }

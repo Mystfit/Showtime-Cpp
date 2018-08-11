@@ -248,9 +248,11 @@ ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug & other) : ZstPlug(other)
 {
 }
 
-ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t) : ZstPlug(name, t)
+ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t, bool reliable) : 
+	ZstPlug(name, t),
+	m_reliable(reliable)
 {
-    m_direction = ZstPlugDirection::OUT_JACK;
+	m_direction = ZstPlugDirection::OUT_JACK;
 }
 
 ZstOutputPlug::~ZstOutputPlug()
@@ -263,6 +265,11 @@ void ZstOutputPlug::fire()
 		dlg->publish_entity_update(this);
 	});
 	m_value->clear();
+}
+
+bool ZstOutputPlug::is_reliable()
+{
+	return m_reliable;
 }
 
 MSGPACK_ADD_ENUM(ZstPlugDirection);

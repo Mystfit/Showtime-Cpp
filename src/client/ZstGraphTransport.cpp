@@ -1,6 +1,12 @@
 #include "ZstGraphTransport.h"
 
-ZstGraphTransport::ZstGraphTransport()
+ZstGraphTransport::ZstGraphTransport() :
+	m_graph_in_reliable(NULL),
+	m_graph_out_reliable(NULL),
+	m_graph_in_unreliable(NULL),
+	m_graph_out_unreliable(NULL),
+	m_graph_in_reliable_local(NULL),
+	m_graph_out_reliable_local(NULL)
 {
 }
 
@@ -13,51 +19,31 @@ void ZstGraphTransport::init(ZstActor * actor)
 {
 	ZstTransportLayerBase::init(actor);
 
-	m_graph_in = zsock_new(ZMQ_SUB);
-	if (m_graph_in) {
-		zsock_set_linger(m_graph_in, 0);
-		zsock_set_unbounded(m_graph_in);
-		this->actor()->attach_pipe_listener(m_graph_in, s_handle_graph_in, this);
-	}
-
-	std::string network_ip = first_available_ext_ip();
-	ZstLog::net(LogLevel::notification, "Using external IP {}", network_ip);
-
-	//Graph output socket
-	std::stringstream addr;
-	addr << "@tcp://" << network_ip.c_str() << ":*";
-	m_graph_out = zsock_new_pub(addr.str().c_str());
-	m_graph_out_addr = zsock_last_endpoint(m_graph_out);
-	addr.str("");
-
-	//Set graph socket as unbounded by HWM
-	zsock_set_unbounded(m_graph_out);
-	char * output_ip = zsock_last_endpoint(m_graph_out);
-	m_graph_out_ip = std::string(output_ip);
-	zstr_free(&output_ip);
-	ZstLog::net(LogLevel::notification, "Client graph address: {}", m_graph_out_ip);
-
-	if (m_graph_out){
-		zsock_set_linger(m_graph_out, 0);
-	}
+	init_remote_graph_sockets();
+	init_local_graph_sockets();
+	init_unreliable_graph_sockets();
 }
 
 void ZstGraphTransport::destroy()
 {
 	ZstTransportLayerBase::destroy();
-	if(m_graph_in)
-		zsock_destroy(&m_graph_in);
-	if(m_graph_out)
-		zsock_destroy(&m_graph_out);
+
+	destroy_reliable_graph_sockets();
+	destroy_unreliable_graph_sockets();
+	destroy_local_graph_sockets();
 }
 
-void ZstGraphTransport::connect_to_client(const char * endpoint_ip)
+void ZstGraphTransport::connect_to_reliable_client(const char * reliable_endpoint)
 {
-	ZstLog::net(LogLevel::notification, "Connecting to {}", endpoint_ip);
+	ZstLog::net(LogLevel::notification, "Connecting to {}", reliable_endpoint);
+	zsock_connect(m_graph_in_reliable, "%s", reliable_endpoint);
+	zsock_set_subscribe(m_graph_in_reliable, "");
+}
 
-	//Connect to endpoint publisher
-	zsock_connect(m_graph_in, "%s", endpoint_ip);
-	zsock_set_subscribe(m_graph_in, "");
+void ZstGraphTransport::connect_to_unreliable_client(const char * unreliable_endpoint)
+{
+	ZstLog::net(LogLevel::notification, "Connecting to {}", unreliable_endpoint);
+	zsock_connect(m_graph_out_unreliable, "%s", unreliable_endpoint);
 }
 
 void ZstGraphTransport::disconnect_from_client()
@@ -65,14 +51,39 @@ void ZstGraphTransport::disconnect_from_client()
 	throw(std::runtime_error("disconnect_from_client(): Not implemented"));
 }
 
-const std::string & ZstGraphTransport::get_graph_address() const
+const std::string & ZstGraphTransport::get_reliable_graph_address() const
 {
-	return m_graph_out_addr;
+	return m_graph_out_reliable_addr;
+}
+
+const std::string & ZstGraphTransport::get_unreliable_graph_address() const
+{
+	return m_graph_in_unreliable_addr;
 }
 
 void ZstGraphTransport::send_message_impl(ZstMessage * msg)
 {
-	ZstTransportLayer<ZstPerformanceMessage>::send_sock_msg(m_graph_out, static_cast<ZstPerformanceMessage*>(msg));
+	zsock_t * graph_out = m_graph_out_reliable;
+	try {
+		if (msg->get_arg(ZstMsgArg::UNRELIABLE)) {
+			//Message is unreliable - send over UDP graph
+			zmsg_t * handle = msg->handle();
+			zframe_t * radio_frame = zmsg_pop(msg->handle());
+			zframe_set_group(radio_frame, PERFORMANCE_GROUP);
+			zframe_send(&radio_frame, m_graph_in_unreliable, 0);
+			zmsg_send(&handle, m_graph_in_unreliable);
+
+			//Need to release message wrapper early since we won't use the base transport socket sender
+			m_msg_pool.release(static_cast<ZstPerformanceMessage*>(msg));
+			return;
+		}
+	}
+	catch (std::out_of_range) {
+		//No unreliable flag - use reliable socket
+	}
+
+	//Message is reliable - send over TCP graph
+	ZstTransportLayer<ZstPerformanceMessage>::send_sock_msg(graph_out, static_cast<ZstPerformanceMessage*>(msg));
 }
 
 int ZstGraphTransport::s_handle_graph_in(zloop_t * loop, zsock_t * sock, void * arg)
@@ -80,14 +91,23 @@ int ZstGraphTransport::s_handle_graph_in(zloop_t * loop, zsock_t * sock, void * 
 	ZstGraphTransport * transport = (ZstGraphTransport*)arg;
 
 	//Forward performance message to adaptors to process
-	transport->graph_recv(transport->sock_recv(transport->m_graph_in, false));
+	transport->graph_recv(transport->sock_recv(sock, false));
+	return 0;
+}
+
+int ZstGraphTransport::s_handle_unreliable_graph_in(zloop_t * loop, zsock_t * sock, void * arg)
+{
+	ZstGraphTransport * transport = (ZstGraphTransport*)arg;
+
+	//Forward performance message to adaptors to process
+	transport->graph_recv(zframe_recv(sock));
 	return 0;
 }
 
 void ZstGraphTransport::graph_recv(zmsg_t * msg)
 {
 	ZstPerformanceMessage * perf_msg = get_msg();
-	perf_msg->unpack(msg);
+	perf_msg->unpack(msg, true);
 	zmsg_destroy(&msg);
 
 	//Publish message to other modules
@@ -96,6 +116,111 @@ void ZstGraphTransport::graph_recv(zmsg_t * msg)
 	});
 
 	release_msg(perf_msg);
+}
+
+void ZstGraphTransport::graph_recv(zframe_t * frame)
+{
+	ZstPerformanceMessage * perf_msg = get_msg();
+	perf_msg->unpack(frame, true);
+	
+	//Publish message to other modules
+	msg_events()->invoke([perf_msg](ZstTransportAdaptor* adaptor) {
+		adaptor->on_receive_msg(perf_msg);
+	});
+
+	release_msg(perf_msg);
+}
+
+void ZstGraphTransport::init_remote_graph_sockets()
+{
+	m_graph_in_reliable = zsock_new(ZMQ_SUB);
+	m_graph_out_reliable = zsock_new(ZMQ_PUB);
+	std::stringstream addr;
+	addr << "tcp://" << first_available_ext_ip().c_str() << ":*";
+	init_graph_sockets(m_graph_in_reliable, m_graph_out_reliable, addr.str());
+	m_graph_out_reliable_addr = zsock_last_endpoint(m_graph_out_reliable);
+	ZstLog::net(LogLevel::notification, "Reliable remote graph using address {}", m_graph_out_reliable_addr);
+}
+
+void ZstGraphTransport::init_local_graph_sockets()
+{
+	m_graph_in_reliable_local = zsock_new(ZMQ_SUB);
+	m_graph_out_reliable_local = zsock_new(ZMQ_PUB);
+	std::stringstream addr;
+	addr << "inproc://" << actor()->name();
+	init_graph_sockets(m_graph_in_reliable_local, m_graph_out_reliable_local, addr.str());
+	m_graph_out_reliable_local_addr = zsock_last_endpoint(m_graph_out_reliable_local);
+	ZstLog::net(LogLevel::notification, "Reliable local graph using address {}", m_graph_out_reliable_local_addr);
+}
+
+void ZstGraphTransport::init_unreliable_graph_sockets()
+{
+	m_graph_out_unreliable = zsock_new(ZMQ_RADIO);
+	m_graph_in_unreliable = zsock_new(ZMQ_DISH);
+	std::stringstream addr;
+	std::string protocol = "udp";
+	addr << protocol << "://*:" << CLIENT_UNRELIABLE_PORT;
+
+	zsock_set_linger(m_graph_in_unreliable, 0);
+	zsock_set_unbounded(m_graph_in_unreliable);
+	this->actor()->attach_pipe_listener(m_graph_in_unreliable, s_handle_graph_in, this);
+
+	//UDP sockets are reversed - graph in needs to bind, graph out connects
+	zsock_bind(m_graph_in_unreliable, addr.str().c_str());
+	zsock_set_unbounded(m_graph_out_unreliable);
+	zsock_set_linger(m_graph_out_unreliable, 0);
+
+	//Build remote IP
+	addr.str("");
+	addr << protocol << "://" << first_available_ext_ip() << ":" << CLIENT_UNRELIABLE_PORT;
+	m_graph_in_unreliable_addr =  addr.str();
+	ZstLog::net(LogLevel::notification, "Unreliable graph using address {}", m_graph_in_unreliable_addr);
+
+	//Join groups
+	zsock_join(m_graph_in_unreliable, PERFORMANCE_GROUP);
+	zsock_join(m_graph_in_unreliable, HANDSHAKE_GROUP);
+}
+
+void ZstGraphTransport::init_graph_sockets(zsock_t * graph_in, zsock_t * graph_out, const std::string & address)
+{
+	if (graph_in) {
+		zsock_set_linger(graph_in, 0);
+		zsock_set_unbounded(graph_in);
+		this->actor()->attach_pipe_listener(graph_in, s_handle_graph_in, this);
+	}
+	
+	//Set graph linger to 0 to clean up immediately and unbounded so messages will queue until sent
+	if (graph_out) {
+		int port = zsock_bind(graph_out, address.c_str());
+		ZstLog::net(LogLevel::debug, "Bound port: {}", port);
+
+		zsock_set_unbounded(graph_out);
+		zsock_set_linger(graph_out, 0);
+	}
+}
+
+void ZstGraphTransport::destroy_reliable_graph_sockets()
+{
+	if (m_graph_in_reliable)
+		zsock_destroy(&m_graph_in_reliable);
+	if (m_graph_out_reliable)
+		zsock_destroy(&m_graph_out_reliable);
+}
+
+void ZstGraphTransport::destroy_unreliable_graph_sockets()
+{
+	if (m_graph_in_unreliable)
+		zsock_destroy(&m_graph_in_unreliable);
+	if (m_graph_out_unreliable)
+		zsock_destroy(&m_graph_out_unreliable);
+}
+
+void ZstGraphTransport::destroy_local_graph_sockets()
+{
+	if (m_graph_in_reliable_local)
+		zsock_destroy(&m_graph_in_reliable_local);
+	if (m_graph_out_reliable_local)
+		zsock_destroy(&m_graph_out_reliable_local);
 }
 
 std::string ZstGraphTransport::first_available_ext_ip()

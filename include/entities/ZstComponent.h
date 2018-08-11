@@ -31,7 +31,7 @@ public:
 	ZST_EXPORT ZstInputPlug * create_input_plug(const char* name, ZstValueType val_type);
     
     //Create and attach a new output plug to this component
-	ZST_EXPORT ZstOutputPlug * create_output_plug(const char* name, ZstValueType val_type);
+	ZST_EXPORT ZstOutputPlug * create_output_plug(const char* name, ZstValueType val_type, bool reliable = true);
 
 	//Transfer plug ownership to this component
 	ZST_EXPORT int add_plug(ZstPlug * plug);

@@ -11,11 +11,11 @@ public:
 	ZST_EXPORT ZstActor();
 	ZST_EXPORT virtual ~ZstActor();
 	ZST_EXPORT virtual void destroy();
-	ZST_EXPORT virtual void init();
+	ZST_EXPORT virtual void init(const char * name);
 	ZST_EXPORT virtual void start_loop();
 	ZST_EXPORT virtual void stop_loop();
 	ZST_EXPORT virtual bool is_running();
-    ZST_EXPORT const char * actor_name() const;
+    ZST_EXPORT const char * name() const;
 	ZST_EXPORT virtual void process_callbacks() {};
 	
 	ZST_EXPORT int attach_timer(int delay, std::function<void()> timer_func);

@@ -56,9 +56,9 @@ ZstInputPlug * ZstComponent::create_input_plug(const char * name, ZstValueType v
 	return plug;
 }
 
-ZstOutputPlug * ZstComponent::create_output_plug(const char * name, ZstValueType val_type)
+ZstOutputPlug * ZstComponent::create_output_plug(const char * name, ZstValueType val_type, bool reliable)
 {
-	ZstOutputPlug * plug = new ZstOutputPlug(name, val_type);
+	ZstOutputPlug * plug = new ZstOutputPlug(name, val_type, reliable);
 	add_plug(plug);
 	return plug;
 }
