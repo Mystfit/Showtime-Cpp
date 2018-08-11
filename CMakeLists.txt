@@ -127,7 +127,7 @@ if(USE_HUNTER AND HUNTER_ENABLED)
     # hunter_add_package(MsgPack) # Use updated package at https://github.com/mystfit/msgpack-c.git
     message(STATUS "Adding hunter packages")
     hunter_add_package(fmt)
-    hunter_add_package(ZeroMQ)  # Only include ZeroMQ until CZMQ gets CZMQConfig.cmake added to Hunter
+    # hunter_add_package(ZeroMQ)  # Only include ZeroMQ until CZMQ gets CZMQConfig.cmake added to Hunter
     # hunter_add_package(czmq)
 endif()
 
@@ -178,12 +178,12 @@ set(msgpackc_TARGET "msgpackc-static") # set(msgpackc_LIBRARY "msgpack::msgpackc
 if(WIN32 AND USE_HUNTER AND HUNTER_ENABLED)
     find_package(ZeroMQ CONFIG REQUIRED) # Only include ZeroMQ until CZMQ gets CZMQConfig.cmake added to Hunter - windows only
     find_package(czmq CONFIG REQUIRED)
-    set(CZMQ_TARGET "czmq::czmq")
+    set(CZMQ_TARGET czmq-static)
     set(fmt_TARGET "fmt::fmt")
 else()
     find_package(czmq REQUIRED)
     set(Boost_USE_LOCAL ON)
-    set(CZMQ_TARGET ${CZMQ_LIBRARIES})
+    set(CZMQ_TARGET czmq-static)
     set(fmt_TARGET "fmt::fmt-header-only")
     # set(ZEROMQ_TARGET ${ZeroMQ_LIBRARIES})
 endif()
