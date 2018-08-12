@@ -1,6 +1,5 @@
 #pragma once
 
-#include <mutex>
 #include <ZstExports.h>
 #include <ZstEventDispatcher.hpp>
 #include <adaptors/ZstSessionAdaptor.hpp>
@@ -107,5 +106,4 @@ private:
 	ZstEventDispatcher<ZstSynchronisableAdaptor*> m_synchronisable_events;
 	ZstEventDispatcher<ZstComputeAdaptor*> m_compute_events;
 	ZstPerformerMap m_connected_performers;
-	std::mutex m_session_mtex;
 };
