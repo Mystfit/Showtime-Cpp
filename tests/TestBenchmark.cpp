@@ -1,7 +1,7 @@
 #include "TestCommon.hpp"
 #include <boost/thread.hpp>
 
-#define MEM_LEAK_LOOPS 200000;
+#define MEM_LEAK_LOOPS 10000;
 
 using namespace ZstTest;
 
@@ -51,16 +51,16 @@ void test_benchmark(bool reliable)
 	long queue_speed = 0;
 	int num_sent = 0;
 	int alert_rate = 500;
-	int send_rate = (reliable) ? 0 : 10; 
+	int send_rate = (reliable) ? 11 : 11; 
 
 	for (int i = 0; i < count; ++i) {
 		test_output->send(i);
 		num_sent++;
-		zst_poll_once();
+		//zst_poll_once();
 		std::this_thread::sleep_for(std::chrono::milliseconds(send_rate));
 
-		if (num_sent % 10000 == 0) {
-			ZstLog::app(LogLevel::debug, "Sent {} messages. Remaining: {}", num_sent, count - num_sent);
+		if (num_sent % alert_rate == 0) {
+			ZstLog::app(LogLevel::debug, "Sent {} messages. Remaining: {}. Last received val: {}", num_sent, count - num_sent, test_input->last_received_val);
 		}
 
 		if (test_input->num_hits > 0 && test_input->num_hits % alert_rate == 0) {
@@ -89,7 +89,7 @@ void test_benchmark(bool reliable)
 	int num_loops_idle = 0;
 
 	do {
-		zst_poll_once();
+		//zst_poll_once();
 		
 		received_count = test_input->num_hits;
 		remaining_messages = count - received_count;
@@ -135,16 +135,16 @@ int main(int argc, char **argv)
 	TestRunner runner("TestBenchmark", argv[0]);
 
 	//Create threaded event loop to handle polling
-	//boost::thread eventloop_thread = boost::thread(BenchmarkEventLoop());
-
-	ZstLog::app(LogLevel::notification, "Starting reliable benchmark test");
-	test_benchmark(true);
+	boost::thread eventloop_thread = boost::thread(BenchmarkEventLoop());
 
 	ZstLog::app(LogLevel::notification, "Starting unreliable benchmark test");
 	test_benchmark(false);
 
-	//eventloop_thread.interrupt();
-	//eventloop_thread.join();
+	ZstLog::app(LogLevel::notification, "Starting reliable benchmark test");
+	test_benchmark(true);
+
+	eventloop_thread.interrupt();
+	eventloop_thread.join();
 	return 0;
 }
 

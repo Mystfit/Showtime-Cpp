@@ -67,7 +67,6 @@ void ZstGraphTransport::send_message_impl(ZstMessage * msg)
 
 	if (msg->has_arg(ZstMsgArg::UNRELIABLE)) {
 		//Message is unreliable - send over UDP graph
-		
 		zframe_set_group(payload_frame, PERFORMANCE_GROUP);
 		int result = zframe_send(&payload_frame, m_graph_out_unreliable, 0);
 		if (result < 0) {
@@ -75,9 +74,7 @@ void ZstGraphTransport::send_message_impl(ZstMessage * msg)
 		}
 	}
 	else {
-		zmsg_t * zmsg = zmsg_new();
-		zmsg_append(zmsg, &payload_frame);
-		zmsg_send(&zmsg, m_graph_out_reliable);
+		zframe_send(&payload_frame, m_graph_out_reliable, 0);
 	}
 	
 	m_msg_pool.release(static_cast<ZstPerformanceMessage*>(msg));
@@ -105,6 +102,7 @@ void ZstGraphTransport::graph_recv(zmsg_t * msg)
 
 void ZstGraphTransport::graph_recv(zframe_t * frame)
 {
+	//Unpack the frame into a message
 	ZstPerformanceMessage * perf_msg = get_msg();
 	perf_msg->unpack(frame);
 	
@@ -113,6 +111,7 @@ void ZstGraphTransport::graph_recv(zframe_t * frame)
 		adaptor->on_receive_msg(perf_msg);
 	});
 
+	//Clean up resources once other modules have finished with this message
 	release_msg(perf_msg);
 	zframe_destroy(&frame);
 }
@@ -148,13 +147,13 @@ void ZstGraphTransport::init_unreliable_graph_sockets()
 	addr << protocol << "://*:" << CLIENT_UNRELIABLE_PORT;
 
 	zsock_set_linger(m_graph_in_unreliable, 0);
-	zsock_set_rcvbuf(m_graph_in_unreliable, SOCK_BUFFER);
+	zsock_set_sndhwm(m_graph_in_unreliable, HWM);
 	this->actor()->attach_pipe_listener(m_graph_in_unreliable, s_handle_graph_in, this);
 
 	//UDP sockets are reversed - graph in needs to bind, graph out connects
-	zsock_bind(m_graph_in_unreliable, addr.str().c_str());
 	zsock_set_linger(m_graph_out_unreliable, 0);
-	zsock_set_sndbuf(m_graph_out_unreliable, SOCK_BUFFER);
+	zsock_set_sndhwm(m_graph_out_unreliable, HWM);
+	zsock_bind(m_graph_in_unreliable, addr.str().c_str());
 
 	//Build remote IP
 	addr.str("");
@@ -172,17 +171,15 @@ void ZstGraphTransport::init_graph_sockets(zsock_t * graph_in, zsock_t * graph_o
 	if (graph_in) {
 		zsock_set_linger(graph_in, 0);
 		zsock_set_unbounded(graph_in);
-		//zsock_set_sndbuf(graph_in, SOCK_BUFFER);
 		this->actor()->attach_pipe_listener(graph_in, s_handle_graph_in, this);
 	}
 	
 	//Set graph linger to 0 to clean up immediately and unbounded so messages will queue until sent
 	if (graph_out) {
-		int port = zsock_bind(graph_out, address.c_str());
-		ZstLog::net(LogLevel::debug, "Bound port: {}", port);
-		//zsock_set_rcvbuf(graph_in, SOCK_BUFFER);
 		zsock_set_unbounded(graph_out);
 		zsock_set_linger(graph_out, 0);
+		int port = zsock_bind(graph_out, address.c_str());
+		ZstLog::net(LogLevel::debug, "Bound port: {}", port);
 	}
 }
 

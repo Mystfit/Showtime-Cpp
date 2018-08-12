@@ -26,7 +26,7 @@ namespace ZstTest
 
     public:
         OutputComponent(const char * name, bool reliable = true) : ZstComponent("TESTER", name) {
-            m_output = create_output_plug("out", ZstValueType::ZST_FLOAT, reliable);
+            m_output = create_output_plug("out", ZstValueType::ZST_INT, reliable);
         }
 
         void on_activation() override {
@@ -39,8 +39,8 @@ namespace ZstTest
 
         virtual void compute(ZstInputPlug * plug) override {}
 
-        void send(float val) {
-            m_output->append_float(val);
+        void send(int val) {
+            m_output->append_int(val);
             m_output->fire();
         }
 
@@ -66,7 +66,7 @@ namespace ZstTest
             ZstComponent("TESTER", name), compare_val(cmp_val)
         {
             log = should_log;
-            m_input = create_input_plug("in", ZstValueType::ZST_FLOAT);
+            m_input = create_input_plug("in", ZstValueType::ZST_INT);
         }
 
         void on_activation() override {
@@ -79,10 +79,9 @@ namespace ZstTest
 
         virtual void compute(ZstInputPlug * plug) override {
 
-            float actual_val = plug->float_at(0);
-            last_received_val = int(actual_val);
+            last_received_val = plug->int_at(0);
             if (log) {
-                ZstLog::app(LogLevel::debug, "Input filter received value {0:d}", last_received_val);
+				ZstLog::app(LogLevel::debug, "Input filter received value {0:d}", last_received_val);
             }
             num_hits++;
         }
