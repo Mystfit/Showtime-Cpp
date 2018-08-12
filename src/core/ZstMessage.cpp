@@ -70,6 +70,7 @@ void ZstMessage::reset()
 {
 	m_msg_id = ZstMsgIDManager::next_id();
 	m_payload = NULL;
+	zframe_destroy(&m_payload_frame);
 	m_payload_frame = NULL;
 	m_payload_offset = 0;
 	m_payload_size = 0;
@@ -78,6 +79,7 @@ void ZstMessage::reset()
 void ZstMessage::set_inactive()
 {
 	m_msg_handle = NULL;
+	m_payload_frame = NULL;
 }
 
 void ZstMessage::unpack(zmsg_t * msg)
@@ -134,6 +136,11 @@ const std::string & ZstMessage::get_arg_s(const ZstMsgArg & key) const
 	return m_args.at(key);
 }
 
+bool ZstMessage::has_arg(const ZstMsgArg & key) const
+{
+	return m_args.find(key) != m_args.end();
+}
+
 const char * ZstMessage::get_arg(const ZstMsgArg & key) const
 {
 	return get_arg_s(key).c_str();
@@ -176,6 +183,11 @@ size_t & ZstMessage::payload_offset()
 zmsg_t * ZstMessage::handle()
 {
 	return m_msg_handle;
+}
+
+zframe_t * ZstMessage::payload_frame()
+{
+	return m_payload_frame;
 }
 
 const ZstMsgKind ZstMessage::kind() const

@@ -197,10 +197,10 @@ bool ZstPlug::is_connected_to(ZstPlug * plug)
 
 void ZstPlug::disconnect_cables()
 {
-	auto cables = m_cables;
-	for (auto c : cables) {
+	for (auto c : m_cables) {
 		c->enqueue_deactivation();
 	}
+	m_cables.clear();
 }
 
 void ZstPlug::add_cable(ZstCable * cable)

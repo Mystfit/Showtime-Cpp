@@ -4,6 +4,14 @@
 
 using namespace std;
 
+inline bool LIBRARY_INIT_GUARD() { 
+	if (!ZstClient::instance().is_init_complete()) {
+		ZstLog::net(LogLevel::error, "Showtime library has not been initialised."); 
+		return false;
+	} 
+	return true;
+}
+
 // -----------------
 // Initialisation
 // -----------------
@@ -19,24 +27,25 @@ void zst_start_file_logging(const char * log_file_path)
 }
 
 void zst_join(const char * stage_address){
-	ZstClient::instance().join_stage(stage_address, ZstTransportSendType::SYNC_REPLY);
+	if(LIBRARY_INIT_GUARD()) ZstClient::instance().join_stage(stage_address, ZstTransportSendType::SYNC_REPLY);
 }
 
 void zst_join_async(const char * stage_address){
-    ZstClient::instance().join_stage(stage_address, ZstTransportSendType::ASYNC_REPLY);
+	if (LIBRARY_INIT_GUARD()) ZstClient::instance().join_stage(stage_address, ZstTransportSendType::ASYNC_REPLY);
 }
 
 // -----------------
 // Cleanup
 // -----------------
 
-void zst_destroy() {
-	ZstClient::instance().destroy();
+void zst_destroy()
+{
+	if (LIBRARY_INIT_GUARD()) ZstClient::instance().destroy();
 }
 
 void zst_leave()
 {
-    return ZstClient::instance().leave_stage();
+	if (LIBRARY_INIT_GUARD()) ZstClient::instance().leave_stage();
 }
 
 
@@ -46,27 +55,27 @@ void zst_leave()
 
 void zst_poll_once()
 {
-	ZstClient::instance().process_events();
+	if (LIBRARY_INIT_GUARD()) ZstClient::instance().process_events();
 }
 
 void zst_add_session_adaptor(ZstSessionAdaptor * adaptor)
 {
-	ZstClient::instance().session()->session_events().add_adaptor(adaptor);
+	if (LIBRARY_INIT_GUARD()) ZstClient::instance().session()->session_events().add_adaptor(adaptor);
 }
 
 void zst_add_hierarchy_adaptor(ZstHierarchyAdaptor * adaptor)
 {
-	ZstClient::instance().session()->hierarchy()->hierarchy_events().add_adaptor(adaptor);
+	if (LIBRARY_INIT_GUARD()) ZstClient::instance().session()->hierarchy()->hierarchy_events().add_adaptor(adaptor);
 }
 
 void zst_remove_session_adaptor(ZstSessionAdaptor * adaptor)
 {
-	ZstClient::instance().session()->session_events().remove_adaptor(adaptor);
+	if (LIBRARY_INIT_GUARD()) ZstClient::instance().session()->session_events().remove_adaptor(adaptor);
 }
 
 void zst_remove_hierarchy_adaptor(ZstHierarchyAdaptor * adaptor)
 {
-	ZstClient::instance().session()->hierarchy()->hierarchy_events().remove_adaptor(adaptor);
+	if (LIBRARY_INIT_GUARD()) ZstClient::instance().session()->hierarchy()->hierarchy_events().remove_adaptor(adaptor);
 }
 
 
@@ -77,32 +86,32 @@ void zst_remove_hierarchy_adaptor(ZstHierarchyAdaptor * adaptor)
 
 void zst_activate_entity(ZstEntityBase * entity)
 {
-	ZstClient::instance().session()->hierarchy()->activate_entity(entity, ZstTransportSendType::SYNC_REPLY);
+	if (LIBRARY_INIT_GUARD()) ZstClient::instance().session()->hierarchy()->activate_entity(entity, ZstTransportSendType::SYNC_REPLY);
 }
 
 void zst_activate_entity_async(ZstEntityBase * entity)
 {
-    ZstClient::instance().session()->hierarchy()->activate_entity(entity, ZstTransportSendType::ASYNC_REPLY);
+	if (LIBRARY_INIT_GUARD()) ZstClient::instance().session()->hierarchy()->activate_entity(entity, ZstTransportSendType::ASYNC_REPLY);
 }
 
 void zst_deactivate_entity(ZstEntityBase * entity)
 {
-	ZstClient::instance().session()->hierarchy()->destroy_entity(entity, ZstTransportSendType::SYNC_REPLY);
+	if (LIBRARY_INIT_GUARD()) ZstClient::instance().session()->hierarchy()->destroy_entity(entity, ZstTransportSendType::SYNC_REPLY);
 }
 
 void zst_deactivate_entity_async(ZstEntityBase * entity)
 {
-    ZstClient::instance().session()->hierarchy()->destroy_entity(entity, ZstTransportSendType::ASYNC_REPLY);
+	if (LIBRARY_INIT_GUARD()) ZstClient::instance().session()->hierarchy()->destroy_entity(entity, ZstTransportSendType::ASYNC_REPLY);
 }
 
 void zst_observe_entity(ZstEntityBase * entity)
 {
-	ZstClient::instance().session()->observe_entity(entity, ZstTransportSendType::SYNC_REPLY);
+	if (LIBRARY_INIT_GUARD()) ZstClient::instance().session()->observe_entity(entity, ZstTransportSendType::SYNC_REPLY);
 }
 
 void zst_observe_entity_async(ZstEntityBase * entity)
 {
-	ZstClient::instance().session()->observe_entity(entity, ZstTransportSendType::ASYNC_REPLY);
+	if (LIBRARY_INIT_GUARD()) ZstClient::instance().session()->observe_entity(entity, ZstTransportSendType::ASYNC_REPLY);
 }
 
 
@@ -117,11 +126,13 @@ ZstPerformer * zst_get_root()
 
 ZstPerformer * zst_get_performer_by_URI(const ZstURI & path)
 {
+	if (!LIBRARY_INIT_GUARD()) return NULL;
     return ZstClient::instance().session()->hierarchy()->get_performer_by_URI(path);
 }
 
 ZstEntityBase* zst_find_entity(const ZstURI & path)
 {
+	if (!LIBRARY_INIT_GUARD()) return NULL;
 	return ZstClient::instance().session()->hierarchy()->find_entity(path);
 }
 
@@ -157,20 +168,22 @@ int zst_ping()
 
 ZstCable * zst_connect_cable(ZstInputPlug * input, ZstOutputPlug * output)
 {
+	if (!LIBRARY_INIT_GUARD()) return NULL;
 	return ZstClient::instance().session()->connect_cable(input, output, ZstTransportSendType::SYNC_REPLY);
 }
 
 ZstCable * zst_connect_cable_async(ZstInputPlug * input, ZstOutputPlug * output)
 {
-    return ZstClient::instance().session()->connect_cable(input, output, ZstTransportSendType::ASYNC_REPLY);
+	if (!LIBRARY_INIT_GUARD()) return NULL;
+	return ZstClient::instance().session()->connect_cable(input, output, ZstTransportSendType::ASYNC_REPLY);
 }
 
 void zst_destroy_cable(ZstCable * cable)
 {
-	ZstClient::instance().session()->destroy_cable(cable, ZstTransportSendType::SYNC_REPLY);
+	if (LIBRARY_INIT_GUARD()) ZstClient::instance().session()->destroy_cable(cable, ZstTransportSendType::SYNC_REPLY);
 }
 
 void zst_destroy_cable_async(ZstCable * cable)
 {
-    ZstClient::instance().session()->destroy_cable(cable, ZstTransportSendType::ASYNC_REPLY);
+	if (LIBRARY_INIT_GUARD()) ZstClient::instance().session()->destroy_cable(cable, ZstTransportSendType::ASYNC_REPLY);
 }

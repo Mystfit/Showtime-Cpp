@@ -7,6 +7,9 @@
 #define PERFORMANCE_GROUP "p"
 #define HANDSHAKE_GROUP "h"
 
+#define SOCK_BUFFER 128000
+
+
 class ZstGraphTransport : 
 	public ZstTransportLayer<ZstPerformanceMessage>,
 	public ZstPlugLiason

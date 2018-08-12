@@ -62,26 +62,25 @@ const std::string & ZstGraphTransport::get_unreliable_graph_address() const
 
 void ZstGraphTransport::send_message_impl(ZstMessage * msg)
 {
-	zsock_t * graph_out = m_graph_out_reliable;
-	try {
-		if (msg->get_arg(ZstMsgArg::UNRELIABLE)) {
-			//Message is unreliable - send over UDP graph
-			zmsg_t * handle = msg->handle();
-			zframe_t * radio_frame = zmsg_pop(msg->handle());
-			zframe_set_group(radio_frame, PERFORMANCE_GROUP);
-			zframe_send(&radio_frame, m_graph_out_unreliable, 0);
+	ZstPerformanceMessage * perf_msg = static_cast<ZstPerformanceMessage*>(msg);
+	zframe_t * payload_frame = perf_msg->payload_frame();
 
-			//Need to release message wrapper early since we won't use the base transport socket sender
-			m_msg_pool.release(static_cast<ZstPerformanceMessage*>(msg));
-			return;
+	if (msg->has_arg(ZstMsgArg::UNRELIABLE)) {
+		//Message is unreliable - send over UDP graph
+		
+		zframe_set_group(payload_frame, PERFORMANCE_GROUP);
+		int result = zframe_send(&payload_frame, m_graph_out_unreliable, 0);
+		if (result < 0) {
+			ZstLog::net(LogLevel::warn, "Unreliable message failed to send with status {}", result);
 		}
 	}
-	catch (std::out_of_range) {
-		//No unreliable flag - use reliable socket
+	else {
+		zmsg_t * zmsg = zmsg_new();
+		zmsg_append(zmsg, &payload_frame);
+		zmsg_send(&zmsg, m_graph_out_reliable);
 	}
-
-	//Message is reliable - send over TCP graph
-	ZstTransportLayer<ZstPerformanceMessage>::send_sock_msg(graph_out, static_cast<ZstPerformanceMessage*>(msg));
+	
+	m_msg_pool.release(static_cast<ZstPerformanceMessage*>(msg));
 }
 
 int ZstGraphTransport::s_handle_graph_in(zloop_t * loop, zsock_t * sock, void * arg)
@@ -115,6 +114,7 @@ void ZstGraphTransport::graph_recv(zframe_t * frame)
 	});
 
 	release_msg(perf_msg);
+	zframe_destroy(&frame);
 }
 
 void ZstGraphTransport::init_remote_graph_sockets()
@@ -148,13 +148,13 @@ void ZstGraphTransport::init_unreliable_graph_sockets()
 	addr << protocol << "://*:" << CLIENT_UNRELIABLE_PORT;
 
 	zsock_set_linger(m_graph_in_unreliable, 0);
-	zsock_set_unbounded(m_graph_in_unreliable);
+	zsock_set_rcvbuf(m_graph_in_unreliable, SOCK_BUFFER);
 	this->actor()->attach_pipe_listener(m_graph_in_unreliable, s_handle_graph_in, this);
 
 	//UDP sockets are reversed - graph in needs to bind, graph out connects
 	zsock_bind(m_graph_in_unreliable, addr.str().c_str());
-	zsock_set_unbounded(m_graph_out_unreliable);
 	zsock_set_linger(m_graph_out_unreliable, 0);
+	zsock_set_sndbuf(m_graph_out_unreliable, SOCK_BUFFER);
 
 	//Build remote IP
 	addr.str("");
@@ -172,6 +172,7 @@ void ZstGraphTransport::init_graph_sockets(zsock_t * graph_in, zsock_t * graph_o
 	if (graph_in) {
 		zsock_set_linger(graph_in, 0);
 		zsock_set_unbounded(graph_in);
+		//zsock_set_sndbuf(graph_in, SOCK_BUFFER);
 		this->actor()->attach_pipe_listener(graph_in, s_handle_graph_in, this);
 	}
 	
@@ -179,7 +180,7 @@ void ZstGraphTransport::init_graph_sockets(zsock_t * graph_in, zsock_t * graph_o
 	if (graph_out) {
 		int port = zsock_bind(graph_out, address.c_str());
 		ZstLog::net(LogLevel::debug, "Bound port: {}", port);
-
+		//zsock_set_rcvbuf(graph_in, SOCK_BUFFER);
 		zsock_set_unbounded(graph_out);
 		zsock_set_linger(graph_out, 0);
 	}

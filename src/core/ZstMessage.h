@@ -165,6 +165,7 @@ public:
 
     ZST_EXPORT void set_local_arg(const ZstMsgArg & key, const std::string & value);
     ZST_EXPORT const std::string & get_arg_s(const ZstMsgArg & key) const;
+	ZST_EXPORT bool has_arg(const ZstMsgArg & key) const;
     ZST_EXPORT const char * get_arg(const ZstMsgArg & key) const;
     ZST_EXPORT size_t get_arg_size(const ZstMsgArg & key) const;
 
@@ -175,6 +176,7 @@ public:
 	ZST_EXPORT size_t & payload_offset();
 
     ZST_EXPORT zmsg_t * handle();
+	ZST_EXPORT zframe_t * payload_frame();
 
     ZST_EXPORT const ZstMsgKind kind() const;
     ZST_EXPORT ZstMsgID id() const;
