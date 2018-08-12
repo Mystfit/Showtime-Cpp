@@ -138,6 +138,11 @@ ZstMsgKind ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity) {
 		return ZstMsgKind::ERR_ENTITY_ALREADY_EXISTS;
 	}
 
+
+	//Lock the hierarchy
+	//std::unique_lock<std::mutex> lock(m_hierarchy_mutex);
+	//lock.lock();
+
 	//Create proxies and set parents
 	if (strcmp(entity.entity_type(), COMPONENT_TYPE) == 0) {
 		entity_proxy = new ZstComponent(static_cast<const ZstComponent&>(entity));
@@ -159,6 +164,7 @@ ZstMsgKind ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity) {
 		ZstLog::net(LogLevel::notification, "Can't create unknown proxy entity type {}", entity.entity_type());
 		return ZstMsgKind::ERR_MSG_TYPE_UNKNOWN;
 	}
+	//lock.unlock();
 
 	ZstLog::net(LogLevel::notification, "Received proxy entity {}", entity_proxy->URI().path());
 
@@ -194,6 +200,10 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 
 	ZstContainer * parent = NULL;
 
+	//Lock the hierarchy
+	//std::unique_lock<std::mutex> lock(m_hierarchy_mutex);
+	//lock.lock();
+
 	//Remove entity from parent
 	if (entity->parent()) {
 		parent = dynamic_cast<ZstContainer*>(entity->parent());
@@ -209,12 +219,18 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 		}
 	}
 
+	//Pre-emptively clear cables from this entity, they'll be leaving anyway, and this will avoid issues 
+	//where a parent entity leaves before child does and so does not clear its internal cable list
+	//entity->disconnect_cables();
+
 	//Dispatch events depending on entity type
 	if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
 		//Remove plug
-		parent->remove_plug(dynamic_cast<ZstPlug*>(entity));
-		hierarchy_events().defer([entity](ZstHierarchyAdaptor * dlg) {
-			dlg->on_plug_leaving(static_cast<ZstPlug*>(entity));
+		ZstPlug * plug = dynamic_cast<ZstPlug*>(entity);
+		parent->remove_plug(plug);
+
+		hierarchy_events().defer([plug](ZstHierarchyAdaptor * dlg) {
+			dlg->on_plug_leaving(plug);
 		});
 	}
 	else if (strcmp(entity->entity_type(), PERFORMER_TYPE) == 0)
