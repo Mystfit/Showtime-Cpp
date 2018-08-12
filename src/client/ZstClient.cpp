@@ -118,8 +118,8 @@ void ZstClient::init_file_logging(const char * log_file_path)
 void ZstClient::process_events()
 {
 	//Lock the event loop so the calling thread can process all events
-	std::unique_lock<std::mutex> lock(m_event_loop_mutex, std::defer_lock);
-	lock.lock();
+	//std::unique_lock<std::mutex> lock(m_event_loop_mutex, std::defer_lock);
+	//lock.lock();
 
 	//Sanity checks
 	if (!is_init_complete() || m_is_destroyed || m_is_ending) {
@@ -137,7 +137,7 @@ void ZstClient::process_events()
 	m_session->reaper().reap_all();
 	m_session->hierarchy()->reaper().reap_all();
 
-	lock.unlock();
+	//lock.unlock();
 }
 
 void ZstClient::flush()

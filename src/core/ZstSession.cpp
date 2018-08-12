@@ -97,7 +97,7 @@ void ZstSession::destroy_cable_complete(ZstCable * cable)
 	if (!cable) return;
 
 	//Lock the session
-	std::lock_guard<std::mutex> lock(m_session_mtex);
+	//std::lock_guard<std::mutex> lock(m_session_mtex);
 
 	ZstInputPlug * input = dynamic_cast<ZstInputPlug*>(hierarchy()->find_entity(cable->get_input_URI()));
 	ZstOutputPlug * output = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(cable->get_output_URI()));

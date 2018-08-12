@@ -7,7 +7,7 @@
 #define PERFORMANCE_GROUP "p"
 #define HANDSHAKE_GROUP "h"
 
-#define SOCK_BUFFER 128000
+#define SOCK_BUFFER 10000000
 #define HWM 2000
 
 

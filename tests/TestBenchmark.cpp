@@ -22,7 +22,7 @@ public:
 };
 
 
-void test_benchmark(bool reliable)
+void test_benchmark(bool reliable, int send_rate)
 {
 	ZstLog::app(LogLevel::debug, "Creating entities and cables");
 
@@ -51,12 +51,11 @@ void test_benchmark(bool reliable)
 	long queue_speed = 0;
 	int num_sent = 0;
 	int alert_rate = 500;
-	int send_rate = (reliable) ? 11 : 11; 
 
 	for (int i = 0; i < count; ++i) {
 		test_output->send(i);
 		num_sent++;
-		//zst_poll_once();
+		zst_poll_once();
 		std::this_thread::sleep_for(std::chrono::milliseconds(send_rate));
 
 		if (num_sent % alert_rate == 0) {
@@ -89,7 +88,7 @@ void test_benchmark(bool reliable)
 	int num_loops_idle = 0;
 
 	do {
-		//zst_poll_once();
+		zst_poll_once();
 		
 		received_count = test_input->num_hits;
 		remaining_messages = count - received_count;
@@ -112,7 +111,7 @@ void test_benchmark(bool reliable)
 		}
 		last_message_count = received_count;
 
-	} while ((test_input->num_hits < count));// || (reliable && num_loops_idle < max_loops_idle));
+	} while ((test_input->num_hits < count) || num_loops_idle < max_loops_idle);
 
 	if (reliable) {
 		assert(test_input->num_hits == count);
@@ -135,16 +134,16 @@ int main(int argc, char **argv)
 	TestRunner runner("TestBenchmark", argv[0]);
 
 	//Create threaded event loop to handle polling
-	boost::thread eventloop_thread = boost::thread(BenchmarkEventLoop());
+	//boost::thread eventloop_thread = boost::thread(BenchmarkEventLoop());
 
 	ZstLog::app(LogLevel::notification, "Starting unreliable benchmark test");
-	test_benchmark(false);
+	test_benchmark(false, 10);
 
 	ZstLog::app(LogLevel::notification, "Starting reliable benchmark test");
-	test_benchmark(true);
+	test_benchmark(true, 0);
 
-	eventloop_thread.interrupt();
-	eventloop_thread.join();
+	//eventloop_thread.interrupt();
+	//eventloop_thread.join();
 	return 0;
 }
 

@@ -148,11 +148,13 @@ void ZstGraphTransport::init_unreliable_graph_sockets()
 
 	zsock_set_linger(m_graph_in_unreliable, 0);
 	zsock_set_sndhwm(m_graph_in_unreliable, HWM);
+	zsock_set_rcvbuf(m_graph_in_unreliable, SOCK_BUFFER);
 	this->actor()->attach_pipe_listener(m_graph_in_unreliable, s_handle_graph_in, this);
 
 	//UDP sockets are reversed - graph in needs to bind, graph out connects
 	zsock_set_linger(m_graph_out_unreliable, 0);
 	zsock_set_sndhwm(m_graph_out_unreliable, HWM);
+	zsock_set_rcvbuf(m_graph_out_unreliable, SOCK_BUFFER);
 	zsock_bind(m_graph_in_unreliable, addr.str().c_str());
 
 	//Build remote IP
