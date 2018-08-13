@@ -253,7 +253,7 @@ ZstCableBundle * ZstComponent::get_child_cables(ZstCableBundle * bundle)
 		for (auto c : *p) {
 			bool exists = false;
 			for (int i = 0; i < bundle->size(); ++i){
-				if (bundle->cable_at(i) == c) {
+				if (bundle->item_at(i) == c) {
 					exists = true;
 				}
 			}
@@ -262,5 +262,13 @@ ZstCableBundle * ZstComponent::get_child_cables(ZstCableBundle * bundle)
 			}
 		}
 	}
-	return bundle;
+	return ZstEntityBase::get_child_cables(bundle);
+}
+
+ZstEntityBundle * ZstComponent::get_child_entities(ZstEntityBundle * bundle)
+{
+	for (auto p : m_plugs) {
+		bundle->add(p);
+	}
+	return ZstEntityBase::get_child_entities(bundle);
 }

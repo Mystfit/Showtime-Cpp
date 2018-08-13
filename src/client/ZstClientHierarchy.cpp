@@ -24,7 +24,7 @@ void ZstClientHierarchy::destroy()
 {
 	stage_events().remove_all_adaptors();
 
-	//TODO: Delete other clients
+	//TODO: Delete other clientsa
 	//Reset local performer
 	size_t index = 0;
 	for (index = 0; index < m_root->num_children(); ++index) {
@@ -101,37 +101,16 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 	stage_events().invoke([this, entity, sendtype](ZstTransportAdaptor * adaptor)
 	{
 		adaptor->send_message(ZstMessage::entity_kind(*entity), sendtype, *entity, [this, entity](ZstMessageReceipt response) {
-			this->activate_entity_complete(response, entity);
+			if (response.status != ZstMsgKind::OK) {
+				ZstLog::net(LogLevel::error, "Activate entity {} failed with status {}", entity->URI().path(), ZstMsgNames[response.status]);
+				return;
+			}
+			this->activate_entity_complete(entity);
 		});
 	});
 
 	if (sendtype == ZstTransportSendType::SYNC_REPLY)
 		process_events();
-}
-
-
-void ZstClientHierarchy::activate_entity_complete(ZstMessageReceipt response, ZstEntityBase * entity)
-{
-	if (response.status != ZstMsgKind::OK) {
-		ZstLog::net(LogLevel::error, "Activate entity {} failed with status {}", entity->URI().path(), ZstMsgNames[response.status]);
-		return;
-	}
-
-	switch (response.status) {
-	case ZstMsgKind::OK:
-		synchronisable_enqueue_activation(entity);
-		break;
-	case ZstMsgKind::ERR_ENTITY_ALREADY_EXISTS:
-		synchronisable_set_error(entity, ZstSyncError::ENTITY_ALREADY_EXISTS);
-		break;
-	case ZstMsgKind::ERR_ENTITY_NOT_FOUND:
-		synchronisable_set_error(entity, ZstSyncError::PERFORMER_NOT_FOUND);
-		break;
-	default:
-		break;
-	}
-
-	ZstLog::net(LogLevel::debug, "Activate entity {} complete with status {}", entity->URI().path(), ZstMsgNames[response.status]);
 }
 
 
@@ -181,22 +160,10 @@ void ZstClientHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 
 ZstEntityBase * ZstClientHierarchy::find_entity(const ZstURI & path)
 {
-	if (path_is_local(path)) {
-		//Path points to local performer
-		if (m_root->URI() == path) {
-			return m_root;
-		}
-
-		//Path points to child in local performer
-		return m_root->find_child_by_URI(path);
+	if (m_root->URI() == path) {
+		return m_root;
 	}
-	else {
-		//Path is somewhere else in the hierarchy
-		//TODO: Should the local performer be also placed in the remote performer list too?
-		return ZstHierarchy::find_entity(path);
-	}
-
-	return NULL;
+	return ZstHierarchy::find_entity(path);
 }
 
 bool ZstClientHierarchy::path_is_local(const ZstURI & path) {

@@ -43,7 +43,7 @@ ZstContainer::~ZstContainer()
 	m_parent = NULL;
 }
 
-ZstEntityBase * ZstContainer::find_child_by_URI(const ZstURI & path)
+ZstEntityBase * ZstContainer::walk_child_by_URI(const ZstURI & path)
 {
 	ZstEntityBase * result = NULL;
 	ZstEntityBase * previous = NULL;
@@ -281,12 +281,18 @@ void ZstContainer::remove_adaptor(ZstEntityAdaptor * adaptor, bool recursive)
 
 ZstCableBundle * ZstContainer::get_child_cables(ZstCableBundle * bundle)
 {
-	ZstComponent::get_child_cables(bundle);
-
 	for(auto child : m_children){
 		child.second->get_child_cables(bundle);
 	}
+	return ZstComponent::get_child_cables(bundle);
+}
 
-	return bundle;
+ZstEntityBundle * ZstContainer::get_child_entities(ZstEntityBundle * bundle)
+{
+	for (auto child : m_children) {
+		child.second->get_child_entities(bundle);
+		bundle->add(child.second);
+	}
+	return ZstComponent::get_child_entities(bundle);
 }
 

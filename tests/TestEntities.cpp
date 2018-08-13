@@ -66,7 +66,7 @@ void test_hierarchy() {
     ZstLog::app(LogLevel::debug, "Testing child removal from parent");
     ZstURI child_URI = ZstURI(child->URI());
     zst_deactivate_entity(child);
-    assert(!parent->find_child_by_URI(child_URI));
+    assert(!parent->walk_child_by_URI(child_URI));
     assert(!zst_find_entity(child_URI));
     
     //Test child activation and deactivation callbacks

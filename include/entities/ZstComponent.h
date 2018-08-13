@@ -62,7 +62,8 @@ protected:
 	ZST_EXPORT void set_component_type(const char * component_type);
 	ZST_EXPORT void set_component_type(const char * component_type, size_t len);
 	ZST_EXPORT virtual ZstCableBundle * get_child_cables(ZstCableBundle * bundle) override;
-    
+	ZST_EXPORT virtual ZstEntityBundle * get_child_entities(ZstEntityBundle * bundle) override;
+
     //Set parent of this component
     ZST_EXPORT virtual void set_parent(ZstEntityBase * parent) override;
     

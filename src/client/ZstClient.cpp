@@ -56,6 +56,7 @@ void ZstClient::destroy() {
 
 	set_is_ending(false);
 	set_is_destroyed(true);
+	ZstLog::net(LogLevel::notification, "Showtime library destroyed");
 }
 
 void ZstClient::init_client(const char *client_name, bool debug)
@@ -289,6 +290,8 @@ void ZstClient::synchronise_graph_complete(ZstMessageReceipt response)
 {
 	ZstLog::net(LogLevel::notification, "Graph sync completed");
 	set_connected_to_stage(true);
+
+	//Add local performer to entity lookup
 	m_session->hierarchy()->get_local_performer()->enqueue_activation();
 }
 

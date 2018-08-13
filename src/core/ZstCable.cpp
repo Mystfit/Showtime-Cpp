@@ -143,51 +143,9 @@ void ZstCable::read(const char * buffer, size_t length, size_t & offset)
 	m_input_URI = ZstURI(handle.get().via.str.ptr, handle.get().via.str.size);
 }
 
-ZstCableBundle::ZstCableBundle()
-{
-}
-
-ZstCableBundle::~ZstCableBundle()
-{
-}
-
-void ZstCableBundle::add(ZstCable * cable)
-{
-	m_cables.push_back(cable);
-}
-
-ZstCable * ZstCableBundle::cable_at(size_t index)
-{
-	return m_cables[index];
-}
-
-size_t ZstCableBundle::size()
-{
-	return m_cables.size();
-}
-
-void ZstCableBundle::disconnect_all()
-{
-	for(auto c : m_cables){
-		c->disconnect();
-	}
-}
-
-ZstCableBundleIterator ZstCableBundle::begin()
-{
-	return ZstCableBundleIterator(m_cables.begin());
-}
-
-ZstCableBundleIterator ZstCableBundle::end()
-{
-	return ZstCableBundleIterator(m_cables.end());
-}
-
-//--
-
 size_t ZstCableHash::operator()(ZstCable* const& k) const
 {
-    std::size_t h1 = ZstURIHash{}(k->get_output_URI());
+	std::size_t h1 = ZstURIHash{}(k->get_output_URI());
 	std::size_t h2 = ZstURIHash{}(k->get_input_URI());
 	return h1 ^ (h2 << 1);
 }
@@ -196,33 +154,6 @@ bool ZstCableEq::operator()(ZstCable const * lhs, ZstCable const * rhs) const
 {
 	bool result = (*lhs == *rhs);
 	return result;
-}
-
-
-
-//---------------------
-//Cable bundle iterator
-//---------------------
-
-ZstCableBundleIterator::ZstCableBundleIterator(std::vector<ZstCable*>::iterator it) :
-	m_it(it)
-{
-}
-
-bool ZstCableBundleIterator::operator!=(const ZstCableBundleIterator & other)
-{
-	return (m_it != other.m_it);
-}
-
-const ZstCableBundleIterator & ZstCableBundleIterator::operator++()
-{
-	m_it++;
-	return *this;
-}
-
-ZstCable * ZstCableBundleIterator::operator*() const
-{
-	return *m_it;
 }
 
 

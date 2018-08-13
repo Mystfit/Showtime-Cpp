@@ -76,6 +76,5 @@ private:
 	// ----------------
 	// Event completion
 	// ----------------
-	void activate_entity_complete(ZstMessageReceipt response, ZstEntityBase * entity);
 	void destroy_entity_complete(ZstEntityBase * entity) override;
 };

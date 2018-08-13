@@ -16,7 +16,7 @@ public:
 	ZST_EXPORT ~ZstContainer();
 
 	//Find a child in this entity by a URI
-	ZST_EXPORT ZstEntityBase * find_child_by_URI(const ZstURI & path);
+	ZST_EXPORT ZstEntityBase * walk_child_by_URI(const ZstURI & path);
 
 	//Get a child entity at a specific URI
 	ZST_EXPORT ZstEntityBase * get_child_by_URI(const ZstURI & path);
@@ -48,7 +48,8 @@ public:
 
 protected:
 	ZST_EXPORT ZstCableBundle * get_child_cables(ZstCableBundle * bundle) override;
-    
+	ZST_EXPORT ZstEntityBundle * get_child_entities(ZstEntityBundle * bundle) override;
+
     //Set parent for all children
     ZST_EXPORT void set_parent(ZstEntityBase * entity) override;
     

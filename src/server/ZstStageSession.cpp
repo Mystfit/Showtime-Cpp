@@ -20,12 +20,12 @@ void ZstStageSession::init()
 
 void ZstStageSession::destroy()
 {
-	ZstSession::destroy();
 	for (auto c : m_cables) {
 		destroy_cable(c);
 	}
 
 	hierarchy()->destroy();
+	ZstSession::destroy();
 }
 
 void ZstStageSession::on_receive_msg(ZstMessage * msg)

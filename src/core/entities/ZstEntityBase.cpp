@@ -5,6 +5,13 @@
 #include <ZstCable.h>
 #include <ZstEventDispatcher.hpp>
 
+//Forced template instantiations
+template class ZstBundleIterator<ZstCable*>;
+template class ZstBundleIterator<ZstEntityBase*>;
+template class ZstBundle<ZstCable*>;
+template class ZstBundle<ZstEntityBase*>;
+
+
 ZstEntityBase::ZstEntityBase(const char * name) : 
 	ZstSynchronisable(),
 	m_parent(NULL),
@@ -76,7 +83,13 @@ const ZstURI & ZstEntityBase::URI() const
 	return m_uri;
 }
 
-void ZstEntityBase::release_cable_bundle(ZstCableBundle * bundle)
+ZstEntityBundle * ZstEntityBase::aquire_child_bundle()
+{
+	ZstEntityBundle * bundle = new ZstEntityBundle();
+	return get_child_entities(bundle);
+}
+
+void ZstEntityBase::release_child_bundle(ZstEntityBundle * bundle)
 {
 	delete bundle;
 }
@@ -87,9 +100,17 @@ ZstCableBundle * ZstEntityBase::acquire_cable_bundle()
 	return get_child_cables(bundle);
 }
 
-
+void ZstEntityBase::release_cable_bundle(ZstCableBundle * bundle)
+{
+	delete bundle;
+}
 
 ZstCableBundle * ZstEntityBase::get_child_cables(ZstCableBundle * bundle)
+{
+	return bundle;
+}
+
+ZstEntityBundle * ZstEntityBase::get_child_entities(ZstEntityBundle * bundle)
 {
 	return bundle;
 }
@@ -158,3 +179,4 @@ void ZstEntityBase::set_parent(ZstEntityBase *entity) {
     m_parent = entity;
     this->update_URI();
 }
+

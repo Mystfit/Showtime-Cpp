@@ -51,9 +51,8 @@ public:
 	// ------------------------------
 	// Hierarchy queries
 	// ------------------------------
-
 	ZST_EXPORT virtual ZstEntityBase * find_entity(const ZstURI & path);
-	ZST_EXPORT virtual ZstPlug * find_plug(const ZstURI & path);
+	ZST_EXPORT virtual ZstEntityBase * walk_entity(const ZstURI & path);
 
 
 	// ------------------------------
@@ -63,7 +62,7 @@ public:
 	ZST_EXPORT virtual ZstMsgKind add_proxy_entity(const ZstEntityBase & entity);
 	ZST_EXPORT virtual ZstMsgKind remove_proxy_entity(ZstEntityBase * entity);
 
-
+	
 	// -----------------
 	// Event dispatchers
 	// -----------------
@@ -79,11 +78,27 @@ public:
 	ZST_EXPORT void on_synchronisable_destroyed(ZstSynchronisable * synchronisable) override;
 
 protected:
+	// ------------------------------
+	// Activations
+	// ------------------------------
+
+	ZST_EXPORT virtual void activate_entity_complete(ZstEntityBase * entity);
 	ZST_EXPORT virtual void destroy_entity_complete(ZstEntityBase * entity);
+
+
+	// ------------------------------
+	// Entity lookups
+	// ------------------------------
+
+	ZST_EXPORT virtual void add_entity_to_lookup(ZstEntityBase * entity);
+	ZST_EXPORT virtual void remove_entity_from_lookup(ZstEntityBase * entity);
+	
+	//Client map
 	ZstPerformerMap m_clients;
 
 private:
 	ZstEventDispatcher<ZstSynchronisableAdaptor*> m_synchronisable_events;
 	ZstEventDispatcher<ZstHierarchyAdaptor*> m_hierarchy_events;
 	std::mutex m_hierarchy_mutex;
+	ZstEntityMap m_entity_lookup;
 };

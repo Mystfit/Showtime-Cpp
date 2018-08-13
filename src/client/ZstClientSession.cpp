@@ -120,10 +120,9 @@ void ZstClientSession::on_receive_graph_msg(ZstMessage * msg)
 
 	//Iterate over all connected cables from the sending plug
 	for (auto cable : *sending_plug) {
-		receiving_plug = dynamic_cast<ZstInputPlug*>(cable->get_input());
+		receiving_plug = cable->get_input();
 		if (receiving_plug) {
 			if (!receiving_plug->is_proxy()) {
-				//TODO: Lock plug value when deserialising
 				receiving_plug->raw_value()->copy(received_val);
 				plug_received_value(receiving_plug);
 			}

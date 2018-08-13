@@ -5,13 +5,19 @@
 #include <ZstURI.h>
 #include <ZstSerialisable.h>
 #include <ZstSynchronisable.h>
+#include <ZstBundle.hpp>
+#include <ZstCable.h>
 #include <adaptors/ZstEntityAdaptor.hpp>
 
 //Forwards
-class ZstCableBundle;
-
 template<typename T>
 class ZstEventDispatcher;
+
+//Typedefs
+typedef ZstBundle<ZstCable*> ZstCableBundle;
+typedef ZstBundle<ZstEntityBase*> ZstEntityBundle;
+typedef std::unordered_map<ZstURI, ZstEntityBase*, ZstURIHash> ZstEntityMap;
+
 
 class ZstEntityBase : public ZstSynchronisable, public ZstSerialisable {
 public:
@@ -36,6 +42,10 @@ public:
     //URI for this entity
 	ZST_EXPORT const ZstURI & URI() const;
 
+	//Iterate
+	ZST_EXPORT ZstEntityBundle * aquire_child_bundle();
+	ZST_EXPORT void release_child_bundle(ZstEntityBundle * bundle);
+
 	//Cable management
 	ZST_EXPORT virtual ZstCableBundle * acquire_cable_bundle();
 	ZST_EXPORT void release_cable_bundle(ZstCableBundle * cables);
@@ -56,6 +66,7 @@ protected:
 	ZST_EXPORT void set_entity_type(const char * entity_type);
 	ZST_EXPORT virtual void set_parent(ZstEntityBase* entity);
 	ZST_EXPORT virtual ZstCableBundle * get_child_cables(ZstCableBundle * bundle);
+	ZST_EXPORT virtual ZstEntityBundle * get_child_entities(ZstEntityBundle * bundle);
     ZST_EXPORT ZstEventDispatcher<ZstEntityAdaptor*> * entity_events();
     
 private:
@@ -64,7 +75,6 @@ private:
 	ZstEntityBase * m_parent;
 	char * m_entity_type;
 	ZstURI m_uri;
+	ZstEntityBase * m_current_child_head;
 };
 
-//Typedefs
-typedef std::unordered_map<ZstURI, ZstEntityBase*, ZstURIHash> ZstEntityMap;
