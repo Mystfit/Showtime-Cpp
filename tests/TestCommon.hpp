@@ -231,39 +231,45 @@ namespace ZstTest
 
 	class TestRunner {
 	public:
-		TestRunner(const std::string & name, const std::string & test_path, bool init_library = true)
+		TestRunner(const std::string & name, const std::string & test_path, bool init_library = true, bool run_stage = true)
 		{
-			std::string server_dir = system_complete(test_path).parent_path().generic_string();
-			//Start server
-			std::string prog = server_dir + "/ShowtimeServer";
+			if (run_stage) {
+				std::string server_dir = system_complete(test_path).parent_path().generic_string();
+				//Start server
+				std::string prog = server_dir + "/ShowtimeServer";
 #ifdef WIN32
-			prog += ".exe";
+				prog += ".exe";
 #endif
-
-			std::string test_flag = "-t";
-			try {
-				m_server_process = boost::process::child(prog, test_flag, std_in < m_server_in);
+				std::string test_flag = "-t";
+				try {
+					m_server_process = boost::process::child(prog, test_flag, std_in < m_server_in);
+				}
+				catch (process_error e) {
+					ZstLog::app(LogLevel::debug, "Server process failed to start. Code:{} Message:{}", e.code().value(), e.what());
+				}
+				assert(m_server_process.valid());
 			}
-			catch (process_error e) {
-				ZstLog::app(LogLevel::debug, "Server process failed to start. Code:{} Message:{}", e.code().value(), e.what());
-			}
-			assert(m_server_process.valid());
 
 			//Init library
 			if (init_library) {
 				zst_init(name.c_str(), true);
 				zst_join("127.0.0.1");
+				if (!zst_is_connected) {
+					ZstLog::app(LogLevel::error, "Failed to connect to launched stage");
+					assert(zst_is_connected);
+				}
 			}
 		}
-
+		
 		~TestRunner() 
 		{
 			zst_destroy();
-
-			std::string term_msg = "$TERM\n";
-			m_server_in.write(term_msg.c_str(), term_msg.size());
-			m_server_process.wait();
-			std::cout << "All tests completed" << std::endl;
+			if (m_server_process.valid()) {
+				std::string term_msg = "$TERM\n";
+				m_server_in.write(term_msg.c_str(), term_msg.size());
+				m_server_process.wait();
+				std::cout << "All tests completed" << std::endl;
+			}
 		}
 
 	private:

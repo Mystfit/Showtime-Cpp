@@ -58,7 +58,7 @@ IF EXIST %DEPENDENCY_DIR%\libzmq (
 ) ELSE (
     echo === Cloning libZMQ === 
     git clone https://github.com/mystfit/libzmq.git %DEPENDENCY_DIR%\libzmq
-    git -C %DEPENDENCY_DIR%\libzmq checkout drafts
+    git -C %DEPENDENCY_DIR%\libzmq checkout master
     mkdir "%DEPENDENCY_DIR%\libzmq\build"
     echo  === Building libzmq === 
     %CMAKE_BIN% -H"%DEPENDENCY_DIR%\libzmq" -B"%DEPENDENCY_DIR%\libzmq\build" %COMMON_GENERATOR_FLAGS% -DENABLE_DRAFTS=TRUE -DZMQ_BUILD_TESTS=OFF

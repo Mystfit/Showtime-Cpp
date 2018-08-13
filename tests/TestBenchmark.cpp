@@ -1,7 +1,7 @@
 #include "TestCommon.hpp"
 #include <boost/thread.hpp>
 
-#define MEM_LEAK_LOOPS 10000;
+#define MEM_LEAK_LOOPS 100000;
 
 using namespace ZstTest;
 
@@ -12,6 +12,7 @@ public:
 			try {
 				boost::this_thread::interruption_point();
 				zst_poll_once();
+				std::this_thread::sleep_for(std::chrono::milliseconds(2));
 			}
 			catch (boost::thread_interrupted) {
 				ZstLog::net(LogLevel::debug, "Benchmark event loop exiting.");
@@ -50,12 +51,12 @@ void test_benchmark(bool reliable, int send_rate)
 	int last_queue_count = 0;
 	long queue_speed = 0;
 	int num_sent = 0;
-	int alert_rate = 500;
+	int alert_rate = 2000;
+	bool hit = false;
 
 	for (int i = 0; i < count; ++i) {
 		test_output->send(i);
 		num_sent++;
-		zst_poll_once();
 		std::this_thread::sleep_for(std::chrono::milliseconds(send_rate));
 
 		if (num_sent % alert_rate == 0) {
@@ -72,13 +73,18 @@ void test_benchmark(bool reliable, int send_rate)
 			delta_messages = received_count - last_message_count;
 
 			last = now;
-			mps = (long)delta_messages / (delta_time.count() / 1000.0);
+			mps = (long)delta_messages / ((long)delta_time.count() / 1000.0);
 
 			remaining_messages = count - received_count;
 			last_message_count = received_count;
 			last_queue_count = queued_messages;
+			hit = true;
 
-			ZstLog::app(LogLevel::debug, "Received {} messages over delta T: {}", mps, (delta_time.count() / 1000.0));
+			ZstLog::app(LogLevel::debug, "Received {} messages p/s over period : {} ms", mps, (delta_time.count()));
+		}
+
+		if (hit && test_input->num_hits % alert_rate != 0) {
+			hit = false;
 		}
 	}
 
@@ -87,9 +93,7 @@ void test_benchmark(bool reliable, int send_rate)
 	int max_loops_idle = 1000;
 	int num_loops_idle = 0;
 
-	do {
-		zst_poll_once();
-		
+	do {	
 		received_count = test_input->num_hits;
 		remaining_messages = count - received_count;
 		//Break out of the loop if we lost some messages
@@ -106,11 +110,15 @@ void test_benchmark(bool reliable, int send_rate)
 			delta_time = std::chrono::duration_cast<std::chrono::milliseconds>(now - last);
 			delta_messages = received_count - last_message_count;
 			last = now;
-			mps = (long)delta_messages / (delta_time.count() / 1000.0);
-			ZstLog::app(LogLevel::debug, "Received {} messages over delta T: {}", mps, (delta_time.count() / 1000.0));
+			mps = (long)delta_messages / ((long)delta_time.count() / 1000.0);
+			last_message_count = received_count;
+			hit = true;
+			ZstLog::app(LogLevel::debug, "Received {} messages p/s over period: {} ms", mps, (delta_time.count()));
 		}
-		last_message_count = received_count;
 
+		if (hit && test_input->num_hits % alert_rate != 0) {
+			hit = false;
+		}
 	} while ((test_input->num_hits < count) || num_loops_idle < max_loops_idle);
 
 	if (reliable) {
@@ -134,16 +142,18 @@ int main(int argc, char **argv)
 	TestRunner runner("TestBenchmark", argv[0]);
 
 	//Create threaded event loop to handle polling
-	//boost::thread eventloop_thread = boost::thread(BenchmarkEventLoop());
-
-	ZstLog::app(LogLevel::notification, "Starting unreliable benchmark test");
-	test_benchmark(false, 10);
+	boost::thread eventloop_thread = boost::thread(BenchmarkEventLoop());
 
 	ZstLog::app(LogLevel::notification, "Starting reliable benchmark test");
 	test_benchmark(true, 0);
 
-	//eventloop_thread.interrupt();
-	//eventloop_thread.join();
+	//Disabling unreliable transport until we fix mixing udp and tcp socket speed issues
+	//ZstLog::app(LogLevel::notification, "Starting unreliable benchmark test");
+	//test_benchmark(false, 5);
+
+	eventloop_thread.interrupt();
+	eventloop_thread.join();
+
 	return 0;
 }
 
