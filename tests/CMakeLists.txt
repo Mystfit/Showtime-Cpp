@@ -1,12 +1,14 @@
 set(TEST_COMMON_HEADERS "TestCommon.hpp")
 
+set(HELPER_PREFIX "TestHelper")
+
 set(TESTS
     "TestStartup"
     "TestEntities"
     "TestGraph"
     "TestExternalClients"
     "TestBenchmark"
-    "TestSink"
+    "TestHelperSink"
 )
 
 set(TEST_DEPENDENCIES 
@@ -18,11 +20,16 @@ set(TEST_DEPENDENCIES
 )
 
 foreach(test ${TESTS})
-    message(STATUS "Configuring ${test}")
     add_executable (${test} ${TEST_COMMON_HEADERS} "${test}.cpp") 
     add_dependencies(${test} ${TEST_DEPENDENCIES})
     target_link_libraries(${test} PRIVATE ${TEST_DEPENDENCIES})
-    add_test(NAME ${test} COMMAND ${test} WORKING_DIRECTORY $<TARGET_FILE_DIR:${test}>)
+    
+    # Only include tests that don't have the helper prefix
+    string(FIND ${test} ${HELPER_PREFIX} FOUND_PREFIX)
+    if(FOUND_PREFIX LESS 0)
+        message(STATUS "Adding test ${test}")
+        add_test(NAME ${test} COMMAND ${test} WORKING_DIRECTORY $<TARGET_FILE_DIR:${test}>)
+    endif()
 endforeach()
 
 

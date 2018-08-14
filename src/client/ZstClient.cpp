@@ -81,6 +81,7 @@ void ZstClient::init_client(const char *client_name, bool debug)
 	//Todo: init IDs again after stage has responded
 	ZstMsgIDManager::init(m_client_name.c_str(), m_client_name.size());
 
+	//Start the reactor
 	m_actor->init(client_name);
 	
 	//Register message dispatch as a client adaptor
@@ -104,9 +105,8 @@ void ZstClient::init_client(const char *client_name, bool debug)
 	m_graph_transport->msg_events()->add_adaptor(this);
 	m_graph_transport->msg_events()->add_adaptor(m_session);
 
-	//Start the reactor
 	m_actor->start_loop();
-
+	
 	//Init completed
 	set_init_completed(true);
 }

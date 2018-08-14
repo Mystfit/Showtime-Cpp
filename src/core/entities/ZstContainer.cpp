@@ -160,14 +160,6 @@ void ZstContainer::set_parent(ZstEntityBase * entity)
     }
 }
 
-void ZstContainer::disconnect_cables()
-{
-	ZstComponent::disconnect_cables();
-	for (auto c : m_children) {
-		c.second->disconnect_cables();
-	}
-}
-
 void ZstContainer::add_child(ZstEntityBase * child) {
     if(is_destroyed()) return;
     

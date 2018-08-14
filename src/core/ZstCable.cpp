@@ -61,10 +61,15 @@ void ZstCable::destroy(ZstCable * cable)
 
 void ZstCable::disconnect()
 {
-	if(get_input() && get_output()){
+	if (get_input()){
 		ZstPlugLiason().plug_remove_cable(get_input(), this);
+	}
+		
+	if(get_output()){
 		ZstPlugLiason().plug_remove_cable(get_output(), this);
 	}
+	
+	this->enqueue_deactivation();
 }
 
 bool ZstCable::operator==(const ZstCable & other) const

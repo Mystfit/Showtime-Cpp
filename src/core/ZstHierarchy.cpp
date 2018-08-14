@@ -201,17 +201,16 @@ ZstMsgKind ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 
 void ZstHierarchy::add_entity_to_lookup(ZstEntityBase * entity)
 {
-	ZstEntityBundle * entity_bundle = entity->aquire_child_bundle();
+	ZstEntityBundleUnique entity_bundle = ZstEntityBundleUnique(entity->aquire_child_bundle(), ZstEntityBase::release_child_bundle);
 	for (auto c : *entity_bundle) {
 		m_entity_lookup[c->URI()] = c;
 	}
 	m_entity_lookup[entity->URI()] = entity;
-	entity->release_child_bundle(entity_bundle);
 }
 
 void ZstHierarchy::remove_entity_from_lookup(ZstEntityBase * entity)
 {
-	ZstEntityBundle * entity_bundle = entity->aquire_child_bundle();
+	ZstEntityBundleUnique entity_bundle = ZstEntityBundleUnique(entity->aquire_child_bundle(), ZstEntityBase::release_child_bundle);
 	for (auto c : *entity_bundle) {
 		try {
 			m_entity_lookup.erase(c->URI());
@@ -272,7 +271,10 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 
 	//Pre-emptively clear cables from this entity, they'll be leaving anyway, and this will avoid issues 
 	//where a parent entity leaves before child does and so does not clear its internal cable list
-	//entity->disconnect_cables();
+	ZstCableBundleUnique cable_bundle = ZstCableBundleUnique(entity->aquire_cable_bundle(), ZstEntityBase::release_cable_bundle);
+	for (auto c : *cable_bundle) {
+		c->disconnect();
+	}
 
 	//Dispatch events depending on entity type
 	if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {

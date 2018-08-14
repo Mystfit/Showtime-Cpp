@@ -26,9 +26,6 @@ public:
 
 	//Number of children owned by this entity
 	ZST_EXPORT const size_t num_children() const;
-
-	//Unplug all cables in container
-	ZST_EXPORT virtual void disconnect_cables() override;
 	
 	//Manipulate the hierarchy of this entity
 	ZST_EXPORT void add_child(ZstEntityBase * child);

@@ -117,9 +117,9 @@ void ZstGraphTransport::init_remote_graph_sockets()
 {
 	m_graph_in_reliable = zsock_new(ZMQ_SUB);
 	m_graph_out_reliable = zsock_new(ZMQ_PUB);
-	//zsock_set_subscribe(m_graph_in_reliable, "");
+	zsock_set_subscribe(m_graph_in_reliable, "");
 	std::stringstream addr;
-	addr << "tcp://" << first_available_ext_ip() << ":*";
+	addr << "tcp://" << first_available_ext_ip().c_str() << ":*";
 	init_graph_sockets(m_graph_in_reliable, m_graph_out_reliable, addr.str());
 	m_graph_out_reliable_addr = zsock_last_endpoint(m_graph_out_reliable);
 	ZstLog::net(LogLevel::notification, "Reliable remote graph using address {}", m_graph_out_reliable_addr);
@@ -145,6 +145,8 @@ void ZstGraphTransport::init_unreliable_graph_sockets()
 	addr << protocol << "://*:" << CLIENT_UNRELIABLE_PORT;
 
 	zsock_set_linger(m_graph_in_unreliable, 0);
+
+	//If this line is not run, then connect will never work on the client-server transport ... wtf
 	this->actor()->attach_pipe_listener(m_graph_in_unreliable, s_handle_graph_in, this);
 
 	//UDP sockets are reversed - graph in needs to bind, graph out connects

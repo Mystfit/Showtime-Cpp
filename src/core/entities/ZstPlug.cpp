@@ -10,33 +10,6 @@
 using namespace std;
 
 //--------------------
-//Plug cables iterator
-//--------------------
-
-ZstPlugIterator::ZstPlugIterator(const ZstPlug * plug, ZstCableList::iterator it) :
-	m_plug(plug),
-	m_it(it)
-{
-}
-
-bool ZstPlugIterator::operator!=(const ZstPlugIterator & other)
-{
-	return (m_it != other.m_it);
-}
-
-const ZstPlugIterator & ZstPlugIterator::operator++()
-{
-	m_it++;
-	return *this;
-}
-
-ZstCable * ZstPlugIterator::operator*() const
-{
-	return *m_it;
-}
-
-
-//--------------------
 // ZstPlug 
 //--------------------
 
@@ -164,20 +137,28 @@ ZstPlugDirection ZstPlug::direction()
 	return m_direction;
 }
 
+ZstCableBundle * ZstPlug::get_child_cables(ZstCableBundle * bundle)
+{
+	//TODO: Replace with set?
+	//Cables may already be present, so only add unique ones
+	for (auto c : m_cables) {
+		bool exists = false;
+		for (int i = 0; i < bundle->size(); ++i) {
+			if (bundle->item_at(i) == c) {
+				exists = true;
+			}
+		}
+		if (!exists) {
+			bundle->add(c);
+		}
+	}
+	return ZstEntityBase::get_child_cables(bundle);
+}
+
 
 //--------------------
 // Cable enerumeration
 //--------------------
-
-ZstPlugIterator ZstPlug::begin()
-{
-	return ZstPlugIterator(this, m_cables.begin());
-}
-
-ZstPlugIterator ZstPlug::end()
-{
-	return ZstPlugIterator(this, m_cables.end());
-}
 
 size_t ZstPlug::num_cables()
 {
@@ -193,14 +174,6 @@ bool ZstPlug::is_connected_to(ZstPlug * plug)
 		}
 	}
 	return result;
-}
-
-void ZstPlug::disconnect_cables()
-{
-	for (auto c : m_cables) {
-		c->enqueue_deactivation();
-	}
-	m_cables.clear();
 }
 
 void ZstPlug::add_cable(ZstCable * cable)

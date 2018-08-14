@@ -38,9 +38,6 @@ public:
     
     //Remove a plug from this component
 	ZST_EXPORT void remove_plug(ZstPlug *plug);
-
-	//Disconnect all plugs from this component
-	ZST_EXPORT void disconnect_cables() override;
     
 	//Serialisation
 	ZST_EXPORT virtual void write(std::stringstream & buffer) const override;

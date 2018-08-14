@@ -119,7 +119,8 @@ void ZstClientSession::on_receive_graph_msg(ZstMessage * msg)
 	}
 
 	//Iterate over all connected cables from the sending plug
-	for (auto cable : *sending_plug) {
+	ZstCableBundleUnique bundle = ZstCableBundleUnique(sending_plug->aquire_cable_bundle(), ZstPlug::release_cable_bundle);
+	for (auto cable : *bundle) {
 		receiving_plug = cable->get_input();
 		if (receiving_plug) {
 			if (!receiving_plug->is_proxy()) {

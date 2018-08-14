@@ -94,7 +94,7 @@ void ZstEntityBase::release_child_bundle(ZstEntityBundle * bundle)
 	delete bundle;
 }
 
-ZstCableBundle * ZstEntityBase::acquire_cable_bundle()
+ZstCableBundle * ZstEntityBase::aquire_cable_bundle()
 {
 	ZstCableBundle * bundle = new ZstCableBundle();
 	return get_child_cables(bundle);

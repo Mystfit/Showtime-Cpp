@@ -254,9 +254,9 @@ namespace ZstTest
 			if (init_library) {
 				zst_init(name.c_str(), true);
 				zst_join("127.0.0.1");
-				if (!zst_is_connected) {
+				if (!zst_is_connected()) {
 					ZstLog::app(LogLevel::error, "Failed to connect to launched stage");
-					assert(zst_is_connected);
+					assert(zst_is_connected());
 				}
 			}
 		}
@@ -266,7 +266,7 @@ namespace ZstTest
 			zst_destroy();
 			if (m_server_process.valid()) {
 				std::string term_msg = "$TERM\n";
-				m_server_in.write(term_msg.c_str(), term_msg.size());
+				m_server_in.write(term_msg.c_str(), static_cast<int>(term_msg.size()));
 				m_server_process.wait();
 				std::cout << "All tests completed" << std::endl;
 			}

@@ -88,17 +88,11 @@ int ZstComponent::add_plug(ZstPlug * plug)
 
 void ZstComponent::remove_plug(ZstPlug * plug)
 {
-	for (auto cable : *plug) {
+	ZstCableBundleUnique bundle = ZstCableBundleUnique(plug->aquire_cable_bundle(), ZstPlug::release_cable_bundle);
+	for (auto cable : *bundle) {
 		cable->enqueue_deactivation();
 	}
 	m_plugs.erase(std::remove(m_plugs.begin(), m_plugs.end(), plug), m_plugs.end());
-}
-
-void ZstComponent::disconnect_cables()
-{
-	for (auto c : m_plugs) {
-		c->disconnect_cables();
-	}
 }
 
 void ZstComponent::enqueue_activation()
@@ -250,17 +244,7 @@ void ZstComponent::set_component_type(const char * component_type, size_t len)
 ZstCableBundle * ZstComponent::get_child_cables(ZstCableBundle * bundle)
 {
 	for (auto p : m_plugs) {
-		for (auto c : *p) {
-			bool exists = false;
-			for (int i = 0; i < bundle->size(); ++i){
-				if (bundle->item_at(i) == c) {
-					exists = true;
-				}
-			}
-			if (!exists) {
-				bundle->add(c);
-			}
-		}
+		p->get_child_cables(bundle);
 	}
 	return ZstEntityBase::get_child_cables(bundle);
 }

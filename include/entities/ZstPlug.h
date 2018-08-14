@@ -14,18 +14,6 @@ class ZstPlug;
 template<typename T>
 class ZstEventDispatcher;
 
-class ZstPlugIterator {
-public:
-	ZST_EXPORT ZstPlugIterator(const ZstPlug * p, ZstCableList::iterator it);
-	ZST_EXPORT bool operator!=(const ZstPlugIterator& other);
-	ZST_EXPORT const ZstPlugIterator& operator++();
-	ZST_EXPORT ZstCable * operator*() const;
-
-private:
-	const ZstPlug * m_plug;
-	ZstCableList::iterator m_it;
-};
-
 class ZstPlug : public ZstEntityBase {
 public:
 	friend class ZstPlugLiason;
@@ -58,16 +46,14 @@ public:
 	ZST_EXPORT ZstPlugDirection direction();
 
 	//Cable enumeration
-	ZST_EXPORT ZstPlugIterator begin();
-	ZST_EXPORT ZstPlugIterator end();
 	ZST_EXPORT size_t num_cables();
 	ZST_EXPORT bool is_connected_to(ZstPlug * plug);
-	ZST_EXPORT void disconnect_cables() override;
 
 	//Values
 	ZST_EXPORT ZstValue * raw_value();
 
 protected:
+	ZST_EXPORT ZstCableBundle * get_child_cables(ZstCableBundle * bundle) override;
 	ZstValue * m_value;
 	ZstPlugDirection m_direction;
 

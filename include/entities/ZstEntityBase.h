@@ -15,7 +15,11 @@ class ZstEventDispatcher;
 
 //Typedefs
 typedef ZstBundle<ZstCable*> ZstCableBundle;
+typedef std::unique_ptr<ZstCableBundle, void(*)(ZstCableBundle*)> ZstCableBundleUnique;
+
 typedef ZstBundle<ZstEntityBase*> ZstEntityBundle;
+typedef std::unique_ptr<ZstEntityBundle, void(*)(ZstEntityBundle*)> ZstEntityBundleUnique;
+
 typedef std::unordered_map<ZstURI, ZstEntityBase*, ZstURIHash> ZstEntityMap;
 
 
@@ -44,12 +48,11 @@ public:
 
 	//Iterate
 	ZST_EXPORT ZstEntityBundle * aquire_child_bundle();
-	ZST_EXPORT void release_child_bundle(ZstEntityBundle * bundle);
+	ZST_EXPORT static void release_child_bundle(ZstEntityBundle * bundle);
 
 	//Cable management
-	ZST_EXPORT virtual ZstCableBundle * acquire_cable_bundle();
-	ZST_EXPORT void release_cable_bundle(ZstCableBundle * cables);
-	ZST_EXPORT virtual void disconnect_cables() {};
+	ZST_EXPORT virtual ZstCableBundle * aquire_cable_bundle();
+	ZST_EXPORT static void release_cable_bundle(ZstCableBundle * bundle);
 	    
 	//Serialisation
 	ZST_EXPORT virtual void write(std::stringstream & buffer) const override;

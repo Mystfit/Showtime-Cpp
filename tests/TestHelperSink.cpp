@@ -75,10 +75,8 @@ public:
 
 int main(int argc,char **argv){
 
-	zst_init("sink", true);
 
 	ZstLog::app(LogLevel::notification, "In sink process");
-#ifdef SKIP_SINK_TEST 
 	if(argc < 2){
 		ZstLog::app(LogLevel::warn, "Skipping sink test, command line flag not set");
 		return 0;
@@ -90,7 +88,7 @@ int main(int argc,char **argv){
 #else
         system("read -n 1 -s -p \"Press any key to continue...\n\"");
 #endif
-#endif
+	zst_init("sink", true);
     zst_join("127.0.0.1");
 
 	Sink * sink = new Sink("sink_ent");
