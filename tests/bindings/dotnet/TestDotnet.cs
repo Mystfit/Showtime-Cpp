@@ -108,20 +108,24 @@ public class Program
         showtime.deactivate_entity(input_comp);
         showtime.deactivate_entity(output_comp);
 
-        //Stop the event loop
-        _cancelationTokenSource.Cancel();
-
         //Leave the stage and clean up
         showtime.leave();
 
+        //Stop the event loop
+        _cancelationTokenSource.Cancel();
+        eventloop.Wait();
+
+        //Destroy the library
+        showtime.destroy();
+
+        //Kill the stage
         server_process.StandardInput.WriteLine("$TERM\n");
         server_process.WaitForExit();
-
-        showtime.destroy();
 
         Console.WriteLine("Test completed");
         return 0;
     }
+
 
     public static void event_loop()
     {
