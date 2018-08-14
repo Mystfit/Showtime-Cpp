@@ -15,7 +15,6 @@ using namespace std;
 
 ZstStage::ZstStage() : 
 	m_is_destroyed(false),
-	m_actor(NULL),
 	m_session(NULL),
 	m_publisher_transport(NULL),
 	m_router_transport(NULL)
@@ -23,7 +22,6 @@ ZstStage::ZstStage() :
 	m_session = new ZstStageSession();
 	m_publisher_transport = new ZstStagePublisherTransport();
 	m_router_transport = new ZstStageRouterTransport();
-	m_actor = new ZstActor();
 }
 
 ZstStage::~ZstStage()
@@ -31,7 +29,6 @@ ZstStage::~ZstStage()
 	delete m_session;
 	delete m_publisher_transport;
 	delete m_router_transport;
-	delete m_actor;;
 }
 
 void ZstStage::init_stage(const char * stage_name, bool threaded)
@@ -39,13 +36,14 @@ void ZstStage::init_stage(const char * stage_name, bool threaded)
 	ZstLog::init_logger(stage_name, LogLevel::debug);
 	ZstLog::net(LogLevel::notification, "Starting Showtime v{} stage server", SHOWTIME_VERSION);
 	
-	m_actor->init(stage_name);
 	m_session->init();
-	m_publisher_transport->init(m_actor);
-	m_router_transport->init(m_actor);
+	m_publisher_transport->init();
+	m_router_transport->init();
 
-	m_heartbeat_timer_id = m_actor->attach_timer(HEARTBEAT_DURATION, [this]() {this->stage_heartbeat_timer_func(); });
-	m_actor->start_loop();
+	//Init timer actor for client heartbeats
+	m_timer_actor.init(stage_name);
+	m_timer_actor.start_loop();
+	m_heartbeat_timer_id = m_timer_actor.attach_timer(HEARTBEAT_DURATION, [this]() {this->stage_heartbeat_timer_func(); });
 
 	//Attach adaptors
 	m_router_transport->msg_events()->add_adaptor(m_session);
@@ -70,14 +68,18 @@ void ZstStage::destroy()
 	this->remove_all_adaptors();
 	this->flush();
 
+	m_timer_actor.stop_loop();
+	m_timer_actor.detach_timer(m_heartbeat_timer_id);
+	m_timer_actor.destroy();
+
 	m_eventloop_thread.interrupt();
 	m_eventloop_thread.join();
-	m_actor->stop_loop();
 	m_session->destroy();
 	m_publisher_transport->destroy();
 	m_router_transport->destroy();
-	m_actor->detach_timer(m_heartbeat_timer_id);
-	m_actor->destroy();
+
+	//Destroy zmq context
+	zsys_shutdown();
 }
 
 bool ZstStage::is_destroyed()

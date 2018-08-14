@@ -161,5 +161,5 @@ int main(int argc,char **argv)
     test_add_filter();
 
 	//Unreliable test disabled until polling performance issues are sorted
-    //test_unreliable_graph();
+    test_unreliable_graph();
 }

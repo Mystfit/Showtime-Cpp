@@ -15,7 +15,7 @@ class ZstStagePublisherTransport :
 public:
 	ZstStagePublisherTransport();
 	~ZstStagePublisherTransport();
-	void init(ZstActor * actor) override;
+	void init() override;
 	void destroy() override;
 
 	void send_message_impl(ZstMessage * msg) override;

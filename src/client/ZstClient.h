@@ -100,6 +100,6 @@ private:
 	ZstClientSession * m_session;
 	ZstGraphTransport * m_graph_transport;
 	ZstClientTransport * m_client_transport;
-	ZstActor * m_actor;
+	ZstActor m_timer_actor;
 	std::mutex m_event_loop_mutex;
 };

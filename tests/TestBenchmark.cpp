@@ -12,7 +12,7 @@ public:
 			try {
 				boost::this_thread::interruption_point();
 				zst_poll_once();
-				std::this_thread::sleep_for(std::chrono::milliseconds(2));
+				std::this_thread::sleep_for(std::chrono::milliseconds(5));
 			}
 			catch (boost::thread_interrupted) {
 				ZstLog::net(LogLevel::debug, "Benchmark event loop exiting.");
@@ -23,7 +23,7 @@ public:
 };
 
 
-void test_benchmark(bool reliable, int send_rate)
+void test_benchmark(bool reliable, int send_rate, int send_amount)
 {
 	ZstLog::app(LogLevel::debug, "Creating entities and cables");
 
@@ -33,7 +33,7 @@ void test_benchmark(bool reliable, int send_rate)
 	zst_activate_entity(test_input);
 	zst_connect_cable(test_input->input(), test_output->output());
 
-	int count = MEM_LEAK_LOOPS;
+	int count = send_amount;
 
 	ZstLog::app(LogLevel::debug, "Sending {} messages", count);
 	// Wait until our message tripmeter has received all the messages
@@ -49,9 +49,10 @@ void test_benchmark(bool reliable, int send_rate)
 	int queued_messages = 0;
 	int delta_queue = 0;
 	int last_queue_count = 0;
+	int last_processed_message_count = 0;
 	long queue_speed = 0;
 	int num_sent = 0;
-	int alert_rate = 2000;
+	int alert_rate = 1000;
 	bool hit = false;
 
 	for (int i = 0; i < count; ++i) {
@@ -90,18 +91,23 @@ void test_benchmark(bool reliable, int send_rate)
 
 	ZstLog::app(LogLevel::debug, "Sent all messages. Waiting for recv");
 
-	int max_loops_idle = 1000;
+	int max_loops_idle = 10000;
 	int num_loops_idle = 0;
 
 	do {	
 		received_count = test_input->num_hits;
 		remaining_messages = count - received_count;
+		
 		//Break out of the loop if we lost some messages
-		if (last_message_count == received_count) {
+		if (last_processed_message_count == received_count) {
 			num_loops_idle++;
 		}
 		else {
 			num_loops_idle = 0;
+		}
+		last_processed_message_count = received_count;
+		if (!reliable && num_loops_idle > max_loops_idle) {
+			break;
 		}
 
 		if (test_input->num_hits > 0 && test_input->num_hits % alert_rate == 0) {
@@ -119,7 +125,9 @@ void test_benchmark(bool reliable, int send_rate)
 		if (hit && test_input->num_hits % alert_rate != 0) {
 			hit = false;
 		}
-	} while ((test_input->num_hits < count) || num_loops_idle < max_loops_idle);
+
+
+	} while(test_input->num_hits < count);
 
 	if (reliable) {
 		assert(test_input->num_hits == count);
@@ -145,11 +153,11 @@ int main(int argc, char **argv)
 	boost::thread eventloop_thread = boost::thread(BenchmarkEventLoop());
 
 	ZstLog::app(LogLevel::notification, "Starting reliable benchmark test");
-	test_benchmark(true, 0);
+	test_benchmark(true, 0, 100000);
 
 	//Disabling unreliable transport until we fix mixing udp and tcp socket speed issues
-	//ZstLog::app(LogLevel::notification, "Starting unreliable benchmark test");
-	//test_benchmark(false, 5);
+	ZstLog::app(LogLevel::notification, "Starting unreliable benchmark test");
+	test_benchmark(false, 1, 10000);
 
 	eventloop_thread.interrupt();
 	eventloop_thread.join();

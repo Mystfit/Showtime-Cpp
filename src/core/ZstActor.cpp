@@ -13,7 +13,6 @@ ZstActor::~ZstActor()
 
 void ZstActor::destroy()
 {
-	zsys_shutdown();
 }
 
 void ZstActor::init(const char * name)

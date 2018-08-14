@@ -99,7 +99,7 @@ ZstEntityBase * ZstContainer::get_child_by_URI(const ZstURI & path)
 	return result;
 }
 
-ZstEntityBase * ZstContainer::get_child_at(int index) const
+ZstEntityBase * ZstContainer::get_child_at(size_t index) const
 {
 	ZstEntityBase * result = NULL;
 	int i = 0;

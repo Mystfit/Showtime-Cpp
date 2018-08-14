@@ -43,7 +43,7 @@ public:
 	ZST_EXPORT ZstTransportLayerBase();
 	ZST_EXPORT virtual ~ZstTransportLayerBase();
 
-	ZST_EXPORT virtual void init(ZstActor * actor);
+	ZST_EXPORT virtual void init();
 	ZST_EXPORT virtual void destroy();
 	ZST_EXPORT virtual void process_events();
 
@@ -60,13 +60,10 @@ public:
 	ZST_EXPORT bool is_active();
 
 protected:
-	ZST_EXPORT ZstActor * actor();
-
 	ZST_EXPORT virtual ZstMessageReceipt send_sync_message(ZstMessage * msg);
 	ZST_EXPORT virtual void send_async_message(ZstMessage * msg, const MessageReceivedAction & completed_action);
 
 private:
-	ZstActor * m_actor;
 	bool m_is_active;
 
 	//Dispatcher methods

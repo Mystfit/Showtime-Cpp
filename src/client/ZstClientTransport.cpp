@@ -9,9 +9,11 @@ ZstClientTransport::~ZstClientTransport()
 {
 }
 
-void ZstClientTransport::init(ZstActor * actor)
+void ZstClientTransport::init()
 {
-	ZstTransportLayerBase::init(actor);
+	ZstTransportLayerBase::init();
+
+	m_client_actor.init("client_actor");
 	
 	m_startup_uuid = zuuid_new();
 
@@ -19,13 +21,13 @@ void ZstClientTransport::init(ZstActor * actor)
 	m_stage_router = zsock_new(ZMQ_DEALER);
 	if (m_stage_router) {
 		zsock_set_linger(m_stage_router, 0);
-		this->actor()->attach_pipe_listener(m_stage_router, s_handle_stage_router, this);
+		m_client_actor.attach_pipe_listener(m_stage_router, s_handle_stage_router, this);
 	}
 
 	m_stage_updates = zsock_new(ZMQ_SUB);
 	if (m_stage_updates) {
 		zsock_set_linger(m_stage_updates, 0);
-		this->actor()->attach_pipe_listener(m_stage_updates, s_handle_stage_update_in, this);
+		m_client_actor.attach_pipe_listener(m_stage_updates, s_handle_stage_update_in, this);
 	}
 
 	//Set up outgoing sockets
@@ -33,15 +35,18 @@ void ZstClientTransport::init(ZstActor * actor)
 	ZstLog::net(LogLevel::notification, "Setting socket identity to {}. Length {}", identity, identity.size());
 
 	zsock_set_identity(m_stage_router, identity.c_str());
+	m_client_actor.start_loop();
 }
 
 void ZstClientTransport::destroy()
 {
 	ZstTransportLayerBase::destroy();
+	m_client_actor.stop_loop();
 	if(m_stage_updates)
 		zsock_destroy(&m_stage_updates);
 	if(m_stage_router)
 		zsock_destroy(&m_stage_router);
+	m_client_actor.destroy();
 }
 
 void ZstClientTransport::connect_to_stage(std::string stage_address)

@@ -18,7 +18,7 @@ class ZstGraphTransport :
 public:
 	ZstGraphTransport();
 	~ZstGraphTransport();
-	virtual void init(ZstActor * actor) override;
+	virtual void init() override;
 	virtual void destroy() override;
 	void connect_to_reliable_client(const char * reliable_endpoint);
 	void connect_to_unreliable_client(const char * unreliable_endpoint);
@@ -39,12 +39,14 @@ private:
 	void init_remote_graph_sockets();
 	void init_local_graph_sockets();
 	void init_unreliable_graph_sockets();
-	void init_graph_sockets(zsock_t * graph_in, zsock_t * graph_out, const std::string & address);
 
 	void destroy_reliable_graph_sockets();
 	void destroy_unreliable_graph_sockets();
 	void destroy_local_graph_sockets();
 
+	//Actors
+	ZstActor m_reliable_graph_actor;
+	ZstActor m_unreliable_graph_actor;
 
 	//Addresses
 	std::string first_available_ext_ip();	

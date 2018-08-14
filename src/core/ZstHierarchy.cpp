@@ -270,11 +270,11 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 	}
 
 	//Pre-emptively clear cables from this entity, they'll be leaving anyway, and this will avoid issues 
-	//where a parent entity leaves before child does and so does not clear its internal cable list
-	ZstCableBundleUnique cable_bundle = ZstCableBundleUnique(entity->aquire_cable_bundle(), ZstEntityBase::release_cable_bundle);
-	for (auto c : *cable_bundle) {
-		c->disconnect();
-	}
+	//where a parent entity leaves before a child does and so does not clear its internal cable list
+	//ZstCableBundleUnique cable_bundle = ZstCableBundleUnique(entity->aquire_cable_bundle(), ZstEntityBase::release_cable_bundle);
+	//for (auto c : *cable_bundle) {
+	//	c->disconnect();
+	//}
 
 	//Dispatch events depending on entity type
 	if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
@@ -328,7 +328,6 @@ ZstEventDispatcher<ZstHierarchyAdaptor*> & ZstHierarchy::hierarchy_events()
 
 void ZstHierarchy::synchronisable_has_event(ZstSynchronisable * synchronisable)
 {
-	ZstLog::net(LogLevel::debug, "Synchronisable has an event that needs to be processed");
 	m_synchronisable_events.defer([this, synchronisable](ZstSynchronisableAdaptor * dlg) {
 		this->synchronisable_process_events(synchronisable);
 	});

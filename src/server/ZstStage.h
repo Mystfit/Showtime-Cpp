@@ -39,7 +39,7 @@ private:
 	int m_heartbeat_timer_id;
 	void stage_heartbeat_timer_func();
 
-	ZstActor * m_actor;
+	ZstActor m_timer_actor;
 	ZstStageSession * m_session;
 	
 	ZstStagePublisherTransport * m_publisher_transport;

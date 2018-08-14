@@ -15,7 +15,6 @@ ZstClient::ZstClient() :
 {
 	//Message and transport modules
 	//These are specified by the client based on what transport type we want to use
-	m_actor = new ZstActor();
 	m_client_transport = new ZstClientTransport();
 	m_graph_transport = new ZstGraphTransport();
 	m_session = new ZstClientSession();
@@ -25,7 +24,6 @@ ZstClient::~ZstClient() {
 	delete m_session;
 	delete m_client_transport;
 	delete m_graph_transport;
-	delete m_actor;
 }
 
 ZstClient & ZstClient::instance()
@@ -44,18 +42,29 @@ void ZstClient::destroy() {
 	if(is_connected_to_stage())
 		leave_stage();
 
+	//Since we've sent the leave request, we can flag that we are in the leave process
 	set_is_ending(true);
 
+	//Stop timers
+	m_timer_actor.stop_loop();
+	m_timer_actor.destroy();
+
+	//Remove adaptors
 	this->remove_adaptor(m_client_transport);
 
-	m_actor->stop_loop();
+	//Destroy modules
 	m_session->destroy();
 	m_client_transport->destroy();
 	m_graph_transport->destroy();
-	m_actor->destroy();
-
+	
+	//Set last status flags
 	set_is_ending(false);
 	set_is_destroyed(true);
+	
+	//Destroy zmq context
+	zsys_shutdown();
+
+	//All done
 	ZstLog::net(LogLevel::notification, "Showtime library destroyed");
 }
 
@@ -81,8 +90,9 @@ void ZstClient::init_client(const char *client_name, bool debug)
 	//Todo: init IDs again after stage has responded
 	ZstMsgIDManager::init(m_client_name.c_str(), m_client_name.size());
 
-	//Start the reactor
-	m_actor->init(client_name);
+	//Create timer actor
+	m_timer_actor.init("client_timers");
+	m_timer_actor.start_loop();
 	
 	//Register message dispatch as a client adaptor
 	this->add_adaptor(m_client_transport);
@@ -95,17 +105,15 @@ void ZstClient::init_client(const char *client_name, bool debug)
 	m_session->hierarchy()->performance_events().add_adaptor(m_graph_transport);
 
 	//Set up client->stage adaptors
-	m_client_transport->init(m_actor);
+	m_client_transport->init();
 	m_client_transport->msg_events()->add_adaptor(this);
 	m_client_transport->msg_events()->add_adaptor(m_session);
 	m_client_transport->msg_events()->add_adaptor(m_session->hierarchy());
 
 	//Set up client->performance adaptors
-	m_graph_transport->init(m_actor);
+	m_graph_transport->init();
 	m_graph_transport->msg_events()->add_adaptor(this);
 	m_graph_transport->msg_events()->add_adaptor(m_session);
-
-	m_actor->start_loop();
 	
 	//Init completed
 	set_init_completed(true);
@@ -261,7 +269,7 @@ void ZstClient::join_stage_complete(ZstMessageReceipt response)
 	ZstLog::net(LogLevel::notification, "Connection to server established");
 
 	//Set up heartbeat timer
-	m_heartbeat_timer_id = m_actor->attach_timer(HEARTBEAT_DURATION, [this]() {this->heartbeat_timer(); });
+	m_heartbeat_timer_id = m_timer_actor.attach_timer(HEARTBEAT_DURATION, [this]() {this->heartbeat_timer(); });
 	
 	//Ask the stage to send us the current session
 	synchronise_graph(response.sendtype);
@@ -320,7 +328,7 @@ void ZstClient::leave_stage_complete()
 
 	//Disconnect rest of sockets and timers
 	if (m_heartbeat_timer_id > 0) {
-		m_actor->detach_timer(m_heartbeat_timer_id);
+		m_timer_actor.detach_timer(m_heartbeat_timer_id);
 		m_heartbeat_timer_id = -1;
 	}
 	m_client_transport->disconnect_from_stage();
@@ -375,7 +383,10 @@ void ZstClient::start_connection_broadcast(const ZstURI & remote_client_path)
 		return;
 	}
 
-	m_connection_timers[remote_client->URI()] = m_actor->attach_timer(100, [this, local_client](){
+	// Magic spell. Send one message to unblock ... something?
+	m_graph_transport->send_message(ZstMsgKind::CONNECTION_HANDSHAKE, { { ZstMsgArg::OUTPUT_PATH, local_client->URI().path() } });
+
+	m_connection_timers[remote_client->URI()] = m_timer_actor.attach_timer(100, [this, local_client](){
 		//Cheat by sending a performance message with only the sender and no payload
 		m_graph_transport->send_message(ZstMsgKind::CONNECTION_HANDSHAKE, { {ZstMsgArg::OUTPUT_PATH, local_client->URI().path()} });
 	});
@@ -399,7 +410,7 @@ void ZstClient::stop_connection_broadcast(const ZstURI & remote_client_path)
 	}
 
 	if(timer_id > -1){
-		m_actor->detach_timer(timer_id);
+		m_timer_actor.detach_timer(timer_id);
 	}
 }
 

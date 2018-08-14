@@ -22,7 +22,7 @@ public:
 	ZST_EXPORT ZstEntityBase * get_child_by_URI(const ZstURI & path);
 	
 	//Get a child by index
-	ZST_EXPORT ZstEntityBase * get_child_at(int index) const;
+	ZST_EXPORT ZstEntityBase * get_child_at(size_t index) const;
 
 	//Number of children owned by this entity
 	ZST_EXPORT const size_t num_children() const;
