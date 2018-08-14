@@ -18,7 +18,7 @@ if(USE_HUNTER)
     set(HUNTER_ENABLED ON)
 endif()
 
-project(Showtime VERSION 0.12.0)
+project(Showtime VERSION 0.13.0)
 set(SHOWTIME_NAMESPACE "${PROJECT_NAME}::")
 
 # Use C14
