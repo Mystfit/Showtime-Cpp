@@ -133,6 +133,7 @@ if EXIST %DEPENDENCY_DIR%\unity (
         powershell -Command "Invoke-WebRequest $env:UNITY_URL -OutFile %DEPENDENCY_DIR%\UnitySetup64.exe"
     )
     echo === Installing Unity === 
-    %DEPENDENCY_DIR%\UnitySetup64.exe /S /D=%DEPENDENCY_DIR%\unity
-    del %DEPENDENCY_DIR%\UnitySetup64.exe
+    mkdir "%DEPENDENCY_DIR%\unity"
+    %DEPENDENCY_DIR%\UnitySetup64.exe /S /D="%DEPENDENCY_DIR%\unity"
+    del "%DEPENDENCY_DIR%\UnitySetup64.exe"
 )
