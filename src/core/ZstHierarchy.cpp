@@ -63,7 +63,7 @@ void ZstHierarchy::add_performer(const ZstPerformer & performer)
 	//Store it
 	m_clients[performer_proxy->URI()] = performer_proxy;
 
-	//Add to lookup
+	//Add entity to lookup
 	add_entity_to_lookup(performer_proxy);
 
 	//Dispatch events
@@ -171,6 +171,7 @@ ZstMsgKind ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity) {
 	}
 	//lock.unlock();
 
+	//Cache entity in lookup map
 	add_entity_to_lookup(entity_proxy);
 
 	ZstLog::net(LogLevel::notification, "Received proxy entity {}", entity_proxy->URI().path());

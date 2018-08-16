@@ -189,7 +189,9 @@ ZstPerformer * ZstClientHierarchy::get_local_performer() const
 void ZstClientHierarchy::add_performer(const ZstPerformer & performer)
 {
 	if (performer.URI() == m_root->URI()) {
-		ZstLog::net(LogLevel::debug, "Received self {} as performer. Ignoring", m_root->URI().path());
+		//If we received ourselves as a performer, then we are now activated and can be added to the entity lookup map
+		add_entity_to_lookup(m_root);
+		ZstLog::net(LogLevel::debug, "Received self {} as performer. Caching in entity lookup", m_root->URI().path());
 		return;
 	}
 

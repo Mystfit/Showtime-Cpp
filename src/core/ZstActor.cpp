@@ -1,5 +1,4 @@
 #include "ZstActor.h"
-#include <czmq.h>
 
 using namespace std;
 

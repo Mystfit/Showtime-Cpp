@@ -23,7 +23,7 @@ public:
 };
 
 
-void test_benchmark(bool reliable, int send_rate, int send_amount)
+int test_benchmark(bool reliable, int send_rate, int send_amount)
 {
 	ZstLog::app(LogLevel::debug, "Creating entities and cables");
 
@@ -54,6 +54,8 @@ void test_benchmark(bool reliable, int send_rate, int send_amount)
 	int num_sent = 0;
 	int alert_rate = 1000;
 	bool hit = false;
+	int totalmps = 0;
+	int samples = 0;
 
 	for (int i = 0; i < count; ++i) {
 		test_output->send(i);
@@ -65,6 +67,7 @@ void test_benchmark(bool reliable, int send_rate, int send_amount)
 		}
 
 		if (test_input->num_hits > 0 && test_input->num_hits % alert_rate == 0) {
+			samples++;
 			//Display progress
 			received_count = test_input->num_hits;
 			queued_messages = num_sent - test_input->num_hits;
@@ -80,6 +83,7 @@ void test_benchmark(bool reliable, int send_rate, int send_amount)
 			last_message_count = received_count;
 			last_queue_count = queued_messages;
 			hit = true;
+			totalmps += mps;
 
 			ZstLog::app(LogLevel::debug, "Received {} messages p/s over period : {} ms", mps, (delta_time.count()));
 		}
@@ -111,6 +115,7 @@ void test_benchmark(bool reliable, int send_rate, int send_amount)
 		}
 
 		if (test_input->num_hits > 0 && test_input->num_hits % alert_rate == 0) {
+			samples++;
 			//Display progress
 			now = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
 			delta_time = std::chrono::duration_cast<std::chrono::milliseconds>(now - last);
@@ -120,6 +125,7 @@ void test_benchmark(bool reliable, int send_rate, int send_amount)
 			last_message_count = received_count;
 			hit = true;
 			ZstLog::app(LogLevel::debug, "Received {} messages p/s over period: {} ms", mps, (delta_time.count()));
+			totalmps += mps;
 		}
 
 		if (hit && test_input->num_hits % alert_rate != 0) {
@@ -142,6 +148,8 @@ void test_benchmark(bool reliable, int send_rate, int send_amount)
 	zst_deactivate_entity(test_input);
 	delete test_output;
 	delete test_input;
+
+	return totalmps / samples;
 }
 
 
@@ -153,15 +161,17 @@ int main(int argc, char **argv)
 	boost::thread eventloop_thread = boost::thread(BenchmarkEventLoop());
 
 	ZstLog::app(LogLevel::notification, "Starting reliable benchmark test");
-	test_benchmark(true, 0, 100000);
+	int mps_reliable = test_benchmark(true, 0, 200000);
 
 	//Disabling unreliable transport until we fix mixing udp and tcp socket speed issues
-	ZstLog::app(LogLevel::notification, "Starting unreliable benchmark test");
-	test_benchmark(false, 1, 10000);
+	//ZstLog::app(LogLevel::notification, "Starting unreliable benchmark test");
+	int mps_unreliable = test_benchmark(false, 1, 10000);
+
+	ZstLog::app(LogLevel::notification, "Avg reliable speed: {} mps. Avg unreliable speed: {} mps", mps_reliable, mps_unreliable);
+
 
 	eventloop_thread.interrupt();
 	eventloop_thread.join();
 
 	return 0;
 }
-

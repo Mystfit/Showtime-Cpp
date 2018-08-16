@@ -34,8 +34,8 @@ public:
 	ZST_EXPORT virtual ~ZstEntityBase();
 	
 	//TODO: This is handled by whatever DLL or SO owns the concrete implemetation of this entity
-	ZST_EXPORT void * operator new(size_t num_bytes);
-	ZST_EXPORT void operator delete(void * p);
+	//ZST_EXPORT void * operator new(size_t num_bytes);
+	//ZST_EXPORT void operator delete(void * p);
     	
 	//The parent of this entity
 	ZST_EXPORT ZstEntityBase * parent() const;

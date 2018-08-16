@@ -44,16 +44,16 @@ ZstEntityBase::~ZstEntityBase()
     m_entity_events->remove_all_adaptors();
     delete m_entity_events;
 }
-
-void * ZstEntityBase::operator new(size_t num_bytes)
-{
-	return ::operator new(num_bytes);
-}
-
-void ZstEntityBase::operator delete(void * p)
-{
-	::operator delete(p);
-}
+//
+//void * ZstEntityBase::operator new(size_t num_bytes)
+//{
+//	return ::operator new(num_bytes);
+//}
+//
+//void ZstEntityBase::operator delete(void * p)
+//{
+//	::operator delete(p);
+//}
 
 ZstEntityBase * ZstEntityBase::parent() const
 {

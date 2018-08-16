@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ZstLogging.h>
+
 #include <ZstExports.h>
 #include <ZstEventDispatcher.hpp>
 #include <adaptors/ZstSessionAdaptor.hpp>

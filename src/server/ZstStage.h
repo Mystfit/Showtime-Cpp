@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include <boost/thread/thread.hpp>
+#include <boost/asio.hpp>
 
 //Showtime API
 #include <ZstCore.h>
@@ -18,6 +19,18 @@
 #include "ZstStageSession.h"
 #include "ZstStagePublisherTransport.h"
 #include "ZstStageRouterTransport.h"
+
+
+struct ZstStageIOLoop {
+public:
+	ZstStageIOLoop(ZstStage * stage);
+	void operator()();
+	boost::asio::io_service & IO_context();
+
+private:
+	boost::asio::io_service m_io;
+	ZstStage * m_stage;
+};
 
 
 class ZstStage : 
@@ -34,24 +47,14 @@ public:
 	
 private:
 	bool m_is_destroyed;
-	boost::thread m_eventloop_thread;
+	boost::thread m_stage_eventloop_thread;
+	ZstStageIOLoop m_stage_eventloop;
 
-	int m_heartbeat_timer_id;
-	void stage_heartbeat_timer_func();
+	static void stage_heartbeat_timer(boost::asio::deadline_timer * t, ZstStage * stage, boost::posix_time::milliseconds duration);
+	boost::asio::deadline_timer m_heartbeat_timer;
 
-	ZstActor m_timer_actor;
 	ZstStageSession * m_session;
 	
 	ZstStagePublisherTransport * m_publisher_transport;
 	ZstStageRouterTransport * m_router_transport;
-};
-
-
-struct ZstStageLoop {
-public:
-	ZstStageLoop(ZstStage * stage);
-	void operator()();
-
-private:
-	ZstStage * m_stage;
 };

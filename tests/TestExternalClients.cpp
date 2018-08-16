@@ -28,7 +28,7 @@ void test_external_entities(std::string external_test_path) {
 
     //Run the sink program
     bool launched_sink_process = true;
-    std::string prog = system_complete(external_test_path).parent_path().generic_string() + "/TestSink";
+    std::string prog = system_complete(external_test_path).parent_path().generic_string() + "/TestHelperSink";
 #ifdef WIN32
     prog += ".exe";
 #endif

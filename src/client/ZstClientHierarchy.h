@@ -21,6 +21,7 @@ class ZstClientHierarchy :
 	public ZstClientModule,
 	public ZstTransportAdaptor
 {
+	friend class ZstClient;
 public:
 	ZstClientHierarchy();
 	virtual ~ZstClientHierarchy();

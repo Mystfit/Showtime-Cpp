@@ -5,9 +5,6 @@
 #include "../core/ZstActor.h"
 #include "../core/ZstStageMessage.h"
 
-#define HEARTBEAT_DURATION 1000
-#define MAX_MISSED_HEARTBEATS 10
-#define STAGE_MESSAGE_POOL_BLOCK 512
 
 class ZstStageRouterTransport :
 	public ZstTransportLayer<ZstStageMessage>

@@ -169,8 +169,6 @@ public:
     ZST_EXPORT const char * get_arg(const ZstMsgArg & key) const;
     ZST_EXPORT size_t get_arg_size(const ZstMsgArg & key) const;
 
-    ZST_EXPORT void log_args();
-
     ZST_EXPORT const char * payload_data();
 	ZST_EXPORT const size_t payload_size();
 	ZST_EXPORT size_t & payload_offset();

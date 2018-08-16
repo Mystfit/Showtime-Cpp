@@ -1,5 +1,4 @@
 #include "ZstSession.h"
-#include <ZstLogging.h>
 
 // ------------------
 // Cable creation API

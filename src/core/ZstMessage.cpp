@@ -6,7 +6,6 @@
 #include <entities/ZstContainer.h>
 #include <entities/ZstPerformer.h>
 #include <entities/ZstPlug.h>
-#include <ZstLogging.h>
 #include "ZstMessage.h"
 
 ZstMessage::ZstMessage() : 
@@ -149,14 +148,6 @@ const char * ZstMessage::get_arg(const ZstMsgArg & key) const
 size_t ZstMessage::get_arg_size(const ZstMsgArg & key) const
 {
 	return get_arg_s(key).size();
-}
-
- void ZstMessage::log_args()
-{
-	 ZstLog::net(LogLevel::notification, "Message args:");
-	 for (auto arg_pair : m_args) {
-		 ZstLog::net(LogLevel::notification, "{}: {}", arg_pair.first, arg_pair.second);
-	 }
 }
 
 const char * ZstMessage::payload_data()
