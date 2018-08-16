@@ -94,20 +94,25 @@ target_include_directories(${CORE_TARGET}
         ${Showtime_SOURCE_DEPENDENCIES}
 )
 
+set(GLOBAL_PUBLIC_DEFINES "")
+
 IF(WIN32)
+    list(APPEND GLOBAL_PUBLIC_DEFINES "FMT_USE_WINDOWS_H=0")
     target_compile_definitions(${CORE_TARGET} PRIVATE -DZST_EXPORT_CORE_API)
     target_compile_definitions(${CORE_TARGET} INTERFACE -DZST_IMPORT_CORE_API)
     target_compile_definitions(${CORE_TARGET} PUBLIC 
                                 -D_WIN32_WINNT=0x0601
-                                -DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE)
+                                -DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE
+                                ${GLOBAL_PUBLIC_DEFINES})
 else()
     # Use shared boost on non-windows platforms
     if(Boost_USE_LOCAL)
-        target_compile_definitions(${CORE_TARGET} PUBLIC -DBOOST_ALL_DYN_LINK)
+        target_compile_definitions(${CORE_TARGET} PUBLIC -DBOOST_ALL_DYN_LINK ${GLOBAL_PUBLIC_DEFINES})
     endif()
 
     # Turn off C11 ABI compatibility in glibc
     #target_compile_definitions(${CORE_TARGET} PUBLIC -D_GLIBCXX_USE_CXX11_ABI=0)
+
 endif(WIN32)
 
 if(NOT HUNTER_ENABLED)
@@ -135,8 +140,9 @@ message(STATUS "Setting link thread library to ${CMAKE_THREAD_LIBS_INIT}")
 # Link libraries
 list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS 
     ${CZMQ_TARGET}
-    ${fmt_TARGET}
     ${Boost_HEADER_TARGET}
+    ${Boost_THREAD_TARGET}
+    ${fmt_TARGET}
     ${CMAKE_THREAD_LIBS_INIT}
 )
 target_link_libraries(${CORE_TARGET} PUBLIC 
@@ -149,9 +155,6 @@ target_link_libraries(${CORE_TARGET} PRIVATE
                         ${Boost_ATOMIC_TARGET}
                         ${Boost_LOG_TARGET}
                         ${Boost_LOG_SETUP_TARGET}
-                        ${Boost_THREAD_TARGET}
-                        ${Boost_SYSTEM_TARGET}
-                        ${Boost_FILESYSTEM_TARGET}
 )
 list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS ${CORE_TARGET})
 

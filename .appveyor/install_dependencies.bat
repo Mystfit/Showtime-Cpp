@@ -82,13 +82,29 @@ REM msgpack-c
 IF EXIST %DEPENDENCY_DIR%\msgpack-c (
     echo Found MsgPack-C
 ) ELSE (
-    echo === Cloning patched hunterized MsgPack === 
-    git clone https://github.com/mystfit/msgpack-c.git %DEPENDENCY_DIR%\msgpack-c
-    git -C %DEPENDENCY_DIR%\msgpack-c checkout hunter-2.1.5
+    echo === Cloning msgpack-c === 
+    git clone https://github.com/msgpack/msgpack-c.git %DEPENDENCY_DIR%\msgpack-c
+    git -C %DEPENDENCY_DIR%\msgpack-c fetch --all --tags --prune
+    git -C %DEPENDENCY_DIR%\msgpack-c checkout cpp-3.0.1
     mkdir "%DEPENDENCY_DIR%\msgpack-c\build"
     echo === Building msgpack === 
     %CMAKE_BIN% -H"%DEPENDENCY_DIR%\msgpack-c" -B"%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_GENERATOR_FLAGS% -DMSGPACK_BUILD_EXAMPLES=OFF
     %CMAKE_BIN% --build "%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_BUILD_FLAGS%
+)
+
+
+REM fmt
+IF EXIST %DEPENDENCY_DIR%\fmt (
+    echo Found fmt
+) ELSE (
+    echo === Cloning fmt === 
+    git clone https://github.com/fmtlib/fmt.git %DEPENDENCY_DIR%\fmt
+    git -C %DEPENDENCY_DIR%\fmt fetch --all --tags --prune
+    git -C %DEPENDENCY_DIR%\fmt checkout 5.1.0
+    mkdir "%DEPENDENCY_DIR%\fmt\build"
+    echo === Building fmt === 
+    %CMAKE_BIN% -H"%DEPENDENCY_DIR%\fmt" -B"%DEPENDENCY_DIR%\fmt\build" %COMMON_GENERATOR_FLAGS%
+    %CMAKE_BIN% --build "%DEPENDENCY_DIR%\fmt\build" %COMMON_BUILD_FLAGS%
 )
 
 

@@ -55,6 +55,8 @@ list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS ${CLIENT_TARGET})
 target_link_libraries(${CLIENT_TARGET} PUBLIC ${CORE_TARGET})
 target_link_libraries(${CLIENT_TARGET} PRIVATE
   ${CORE_TARGET}
-  ${msgpackc_TARGET}
-  ${fmt_TARGET}
+  # ${msgpackc_TARGET}
+  ${Boost_THREAD_TARGET}
+  ${Boost_CHRONO_TARGET}
+  ${Boost_DATE_TIME_TARGET}
 )

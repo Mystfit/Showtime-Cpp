@@ -42,5 +42,7 @@ add_dependencies(${SERVER_TARGET} ${CORE_TARGET})
 target_link_libraries(${SERVER_TARGET} PUBLIC ${CORE_TARGET})
 target_link_libraries(${SERVER_TARGET} PRIVATE 
                         ${Boost_THREAD_TARGET}
+                        ${Boost_CHRONO_TARGET}
+                        ${Boost_DATE_TIME_TARGET}
                         ${Boost_SYSTEM_TARGET}
 )
