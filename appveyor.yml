@@ -34,7 +34,7 @@ environment:
   matrix:
   - GENERATOR: "Visual Studio 15 2017 Win64"
     PYTHON: "C:/Python36-x64"
-    BOOST_ROOT: "C:/Libraries/boost_1_66_0"
+    BOOST_ROOT: "C:/Libraries/boost_1_67_0"
 
 matrix:
   fast_finish: true
