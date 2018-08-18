@@ -121,6 +121,7 @@ if(USE_HUNTER AND HUNTER_ENABLED)
             date_time
             chrono
             atomic
+            regex
         )
     endif()
 endif()
@@ -144,6 +145,7 @@ find_package(Boost COMPONENTS
     date_time
     chrono
     atomic
+    regex
     REQUIRED
 )
 if(Boost_USE_LOCAL)
