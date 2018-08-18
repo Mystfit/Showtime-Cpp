@@ -329,7 +329,9 @@ void ZstClient::leave_stage_complete()
 	set_connected_to_stage(false);
 
 	//Remove root performer from entity lookup
-	m_session->hierarchy()->remove_entity_from_lookup(m_session->hierarchy()->get_local_performer());
+	for (auto c : ZstEntityBundleScoped(m_session->hierarchy()->get_local_performer())) {
+		m_session->hierarchy()->remove_entity_from_lookup(c);
+	}
 
 	//Disconnect rest of sockets and timers
 	m_heartbeat_timer.cancel();

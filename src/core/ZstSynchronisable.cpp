@@ -30,7 +30,7 @@ ZstSynchronisable::~ZstSynchronisable()
 	delete m_synchronisable_events;
 }
 
-void ZstSynchronisable::add_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive)
+void ZstSynchronisable::add_adaptor(ZstSynchronisableAdaptor * adaptor)
 {
 	synchronisable_events()->add_adaptor(adaptor);
 
@@ -40,7 +40,7 @@ void ZstSynchronisable::add_adaptor(ZstSynchronisableAdaptor * adaptor, bool rec
 	}
 }
 
-void ZstSynchronisable::remove_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive)
+void ZstSynchronisable::remove_adaptor(ZstSynchronisableAdaptor * adaptor)
 {
 	this->synchronisable_events()->remove_adaptor(adaptor);
 }

@@ -47,13 +47,13 @@ public:
 	ZST_EXPORT const char * component_type() const;
 
 	//Adaptor registration
-	ZST_EXPORT virtual void add_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive = false) override;
-	ZST_EXPORT virtual void add_adaptor(ZstEntityAdaptor * adaptor, bool recursive = false) override;
-	ZST_EXPORT virtual void remove_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive = false) override;
-	ZST_EXPORT virtual void remove_adaptor(ZstEntityAdaptor * adaptor, bool recursive = false) override;
+	//ZST_EXPORT virtual void add_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive = false) override;
+	//ZST_EXPORT virtual void add_adaptor(ZstEntityAdaptor * adaptor, bool recursive = false) override;
+	//ZST_EXPORT virtual void remove_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive = false) override;
+	//ZST_EXPORT virtual void remove_adaptor(ZstEntityAdaptor * adaptor, bool recursive = false) override;
 
 
-	ZST_EXPORT virtual void set_proxy() override;
+	//ZST_EXPORT virtual void set_proxy() override;
 
 protected:
 	ZST_EXPORT void set_component_type(const char * component_type);
@@ -62,16 +62,16 @@ protected:
 	ZST_EXPORT virtual ZstEntityBundle * get_child_entities(ZstEntityBundle * bundle) override;
 
     //Set parent of this component
-    ZST_EXPORT virtual void set_parent(ZstEntityBase * parent) override;
+    //ZST_EXPORT virtual void set_parent(ZstEntityBase * parent) override;
     
-    //Queue component as activated
-    ZST_EXPORT virtual void enqueue_activation() override;
-    
-    //Queue component as deactivated
-    ZST_EXPORT virtual void enqueue_deactivation() override;
+    ////Queue component as activated
+    //ZST_EXPORT virtual void enqueue_activation() override;
+    //
+    ////Queue component as deactivated
+    //ZST_EXPORT virtual void enqueue_deactivation() override;
     
     //Set activation status
-    ZST_EXPORT virtual void set_activation_status(ZstSyncStatus status) override;
+    //ZST_EXPORT virtual void set_activation_status(ZstSyncStatus status) override;
 
 	
 private:

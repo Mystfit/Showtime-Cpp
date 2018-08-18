@@ -258,8 +258,7 @@ void ZstStageSession::on_plug_leaving(ZstPlug * plug)
 
 void ZstStageSession::disconnect_cables(ZstEntityBase * entity)
 {
-	ZstCableBundleUnique bundle = ZstCableBundleUnique(entity->aquire_cable_bundle(), ZstEntityBase::release_cable_bundle);
-	for (auto c : *bundle) {
+	for (auto c : ZstCableBundleScoped(entity)) {
 		destroy_cable(c);
 	}
 }

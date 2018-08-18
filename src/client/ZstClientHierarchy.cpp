@@ -127,8 +127,6 @@ void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTranspo
 					return;
 				}
 				this->destroy_entity_complete(entity);
-				entity->remove_adaptor(static_cast<ZstSynchronisableAdaptor*>(this), false);
-				entity->remove_adaptor(static_cast<ZstEntityAdaptor*>(this), false);
 			});
 		});
 	}
@@ -138,8 +136,6 @@ void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTranspo
 
 	if (sendtype != ZstTransportSendType::ASYNC_REPLY) {
 		process_events();
-		entity->remove_adaptor(static_cast<ZstSynchronisableAdaptor*>(this), false);
-		entity->remove_adaptor(static_cast<ZstEntityAdaptor*>(this), false);
 	}
 }
 
@@ -190,7 +186,9 @@ void ZstClientHierarchy::add_performer(const ZstPerformer & performer)
 {
 	if (performer.URI() == m_root->URI()) {
 		//If we received ourselves as a performer, then we are now activated and can be added to the entity lookup map
-		add_entity_to_lookup(m_root);
+		for (auto c : ZstEntityBundleScoped(m_root, true)) {
+			add_entity_to_lookup(c);
+		}
 		ZstLog::net(LogLevel::debug, "Received self {} as performer. Caching in entity lookup", m_root->URI().path());
 		return;
 	}

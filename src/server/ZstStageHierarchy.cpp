@@ -88,7 +88,9 @@ ZstMsgKind ZstStageHierarchy::create_client_handler(std::string sender_identity,
 	//Save our new client
 	m_clients[client_proxy->URI()] = client_proxy;
 	m_client_socket_index[std::string(sender_identity)] = client_proxy;
-	add_entity_to_lookup(client_proxy);
+	for (auto c : ZstEntityBundleScoped(client_proxy, true)) {
+		add_entity_to_lookup(c);
+	}
 
 	//Update rest of network
 	publisher_events().invoke([client_proxy](ZstTransportAdaptor * adp) {
@@ -111,7 +113,11 @@ ZstMsgKind ZstStageHierarchy::destroy_client_handler(ZstPerformer * performer)
 	if (client_it != m_clients.end()) {
 		m_clients.erase(client_it);
 	}
-	add_entity_to_lookup(performer);
+
+	//Add entity and children to lookup
+	for (auto c : ZstEntityBundleScoped(performer)) {
+		add_entity_to_lookup(c);
+	}
 
 	return remove_proxy_entity(performer);
 }

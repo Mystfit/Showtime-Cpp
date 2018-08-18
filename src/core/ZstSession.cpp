@@ -50,12 +50,17 @@ ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * outpu
 
 	if (!input || !output) {
 		ZstLog::net(LogLevel::notification, "Can't connect cable, plug missing.");
-		return cable;
+		return NULL;
 	}
 
-	if (!input->is_activated() || !output->is_activated()) {
-		ZstLog::net(LogLevel::notification, "Can't connect cable, plug is not activated.");
-		return cable;
+	if (!input->is_activated()) {
+		ZstLog::net(LogLevel::notification, "Can't connect cable, input plug {} is not activated.", input->URI().path());
+		return NULL;
+	}
+
+	if (!output->is_activated()) {
+		ZstLog::net(LogLevel::notification, "Can't connect cable, output plug {} is not activated.", output->URI().path());
+		return NULL;
 	}
 
 	if (input->direction() != ZstPlugDirection::IN_JACK || output->direction() != ZstPlugDirection::OUT_JACK) {

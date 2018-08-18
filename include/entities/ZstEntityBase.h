@@ -12,14 +12,11 @@
 //Forwards
 template<typename T>
 class ZstEventDispatcher;
+class ZstEntityBase;
 
 //Typedefs
 typedef ZstBundle<ZstCable*> ZstCableBundle;
-typedef std::unique_ptr<ZstCableBundle, void(*)(ZstCableBundle*)> ZstCableBundleUnique;
-
 typedef ZstBundle<ZstEntityBase*> ZstEntityBundle;
-typedef std::unique_ptr<ZstEntityBundle, void(*)(ZstEntityBundle*)> ZstEntityBundleUnique;
-
 typedef std::unordered_map<ZstURI, ZstEntityBase*, ZstURIHash> ZstEntityMap;
 
 
@@ -27,6 +24,10 @@ class ZstEntityBase : public ZstSynchronisable, public ZstSerialisable {
 public:
 	friend class ZstClient;
 	friend class ZstContainer;
+
+	//Include base class adaptors
+	using ZstSynchronisable::add_adaptor;
+	using ZstSynchronisable::remove_adaptor;
 
 	//Base entity
 	ZST_EXPORT ZstEntityBase(const char * entity_name);
@@ -59,10 +60,10 @@ public:
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
 
 	//Adaptors
-	ZST_EXPORT virtual void add_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive = false) override;
-	ZST_EXPORT virtual void remove_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive = false) override;
-    ZST_EXPORT virtual void add_adaptor(ZstEntityAdaptor * adaptor, bool recursive = false);
-    ZST_EXPORT virtual void remove_adaptor(ZstEntityAdaptor * adaptor, bool recursive = false);
+	//ZST_EXPORT virtual void add_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive = false) override;
+	//ZST_EXPORT virtual void remove_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive = false) override;
+    ZST_EXPORT virtual void add_adaptor(ZstEntityAdaptor * adaptor);
+    ZST_EXPORT virtual void remove_adaptor(ZstEntityAdaptor * adaptor);
 	
 protected:
 	//Set entity status
@@ -81,3 +82,38 @@ private:
 	ZstEntityBase * m_current_child_head;
 };
 
+
+
+// Bundle unique wrappers
+
+class ZstEntityBundleScoped
+{
+public:
+	ZstEntityBundleScoped() = delete;
+	ZST_EXPORT ZstEntityBundleScoped(ZstEntityBase * entity, bool include_parent = true);
+	ZST_EXPORT ZstBundleIterator<ZstEntityBase*> begin() {
+		return m_bundle->begin();
+	}
+	ZST_EXPORT ZstBundleIterator<ZstEntityBase*> end() {
+		return m_bundle->end();
+	}
+
+private:
+	std::unique_ptr< ZstEntityBundle, void(*)(ZstEntityBundle*)> m_bundle;
+};
+
+
+class ZstCableBundleScoped
+{
+public:
+	ZstCableBundleScoped() = delete;
+	ZST_EXPORT ZstCableBundleScoped(ZstEntityBase * entity);
+	ZST_EXPORT ZstBundleIterator<ZstCable*> begin() {
+		return m_bundle->begin();
+	}
+	ZST_EXPORT ZstBundleIterator<ZstCable*> end() {
+		return m_bundle->end();
+	}
+private:
+	std::unique_ptr< ZstCableBundle, void(*)(ZstCableBundle*)> m_bundle;
+};

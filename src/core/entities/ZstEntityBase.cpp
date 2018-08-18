@@ -144,22 +144,22 @@ void ZstEntityBase::read(const char * buffer, size_t length, size_t & offset)
 	m_entity_type[obj.via.str.size] = '\0';
 }
 
-void ZstEntityBase::add_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive)
-{
-	ZstSynchronisable::add_adaptor(adaptor, recursive);
-}
+//void ZstEntityBase::add_adaptor(ZstSynchronisableAdaptor * adaptor)
+//{
+//	ZstSynchronisable::add_adaptor(adaptor, recursive);
+//}
+//
+//void ZstEntityBase::remove_adaptor(ZstSynchronisableAdaptor * adaptor)
+//{
+//	ZstSynchronisable::remove_adaptor(adaptor, recursive);
+//}
 
-void ZstEntityBase::remove_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive)
-{
-	ZstSynchronisable::remove_adaptor(adaptor, recursive);
-}
-
-void ZstEntityBase::add_adaptor(ZstEntityAdaptor * adaptor, bool recursive)
+void ZstEntityBase::add_adaptor(ZstEntityAdaptor * adaptor)
 {
     this->m_entity_events->add_adaptor(adaptor);
 }
 
-void ZstEntityBase::remove_adaptor(ZstEntityAdaptor * adaptor, bool recursive)
+void ZstEntityBase::remove_adaptor(ZstEntityAdaptor * adaptor)
 {
 	this->m_entity_events->remove_adaptor(adaptor);
 }
@@ -180,3 +180,19 @@ void ZstEntityBase::set_parent(ZstEntityBase *entity) {
     this->update_URI();
 }
 
+
+// ---------------
+
+ZstEntityBundleScoped::ZstEntityBundleScoped(ZstEntityBase * entity, bool include_parent) :
+	m_bundle(std::unique_ptr< ZstBundle<ZstEntityBase*>, void(*)(ZstEntityBundle*)>(entity->aquire_child_bundle(), ZstEntityBase::release_child_bundle))
+{
+	if (include_parent) {
+		m_bundle->add(entity);
+	}
+}
+
+
+ZstCableBundleScoped::ZstCableBundleScoped(ZstEntityBase * entity) :
+	m_bundle(std::unique_ptr< ZstCableBundle, void(*)(ZstCableBundle*)>(entity->aquire_cable_bundle(), ZstEntityBase::release_cable_bundle))
+{
+}
