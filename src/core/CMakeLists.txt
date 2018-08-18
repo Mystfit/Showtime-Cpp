@@ -143,16 +143,17 @@ list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS
     ${Boost_HEADER_TARGET}
     ${fmt_TARGET}
     ${Boost_SYSTEM_TARGET}
+    ${Boost_FILESYSTEM_TARGET}
     ${Boost_THREAD_TARGET}
+    ${Boost_DATE_TIME_TARGET}
+    ${Boost_CHRONO_TARGET}
+    ${Boost_ATOMIC_TARGET}
+    ${Boost_REGEX_TARGET}
     ${CMAKE_THREAD_LIBS_INIT}
 )
 target_link_libraries(${CORE_TARGET} PUBLIC ${SHOWTIME_PUBLIC_LINKED_LIBS})
 target_link_libraries(${CORE_TARGET} PRIVATE 
                         ${msgpackc_TARGET}
-                        ${Boost_DATE_TIME_TARGET}
-                        ${Boost_CHRONO_TARGET}
-                        ${Boost_ATOMIC_TARGET}
-                        ${Boost_FILESYSTEM_TARGET}
                         ${Boost_LOG_TARGET}
                         ${Boost_LOG_SETUP_TARGET}
 )

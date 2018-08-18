@@ -158,6 +158,7 @@ set(Boost_SYSTEM_TARGET "Boost::system")
 set(Boost_DATE_TIME_TARGET "Boost::date_time")
 set(Boost_CHRONO_TARGET "Boost::chrono")
 set(Boost_ATOMIC_TARGET "Boost::atomic")
+set(Boost_REGEX_TARGET "Boost::regex")
 
 # Msgpack, fmt, swig
 # ------------------
