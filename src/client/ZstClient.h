@@ -110,7 +110,7 @@ private:
 
 	//P2P Connections
 	void start_connection_broadcast(const ZstURI & remote_client_path);
-	static void ZstClient::send_connection_broadcast(boost::asio::deadline_timer * t, ZstClient * client, const ZstURI & to, const ZstURI & from, boost::posix_time::milliseconds duration);
+	static void send_connection_broadcast(boost::asio::deadline_timer * t, ZstClient * client, const ZstURI & to, const ZstURI & from, boost::posix_time::milliseconds duration);
 	void stop_connection_broadcast(const ZstURI & remote_client_path);
 	void listen_to_client(const ZstMessage * msg);
 	ZstPerformerMap m_active_peer_connections;

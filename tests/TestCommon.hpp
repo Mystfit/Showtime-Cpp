@@ -273,7 +273,7 @@ namespace ZstTest
 		}
 
 	private:
-		pipe m_server_in;
+        boost::process::pipe m_server_in;
 		child m_server_process;
 	};
 };

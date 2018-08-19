@@ -20,6 +20,9 @@
 #include "ZstStagePublisherTransport.h"
 #include "ZstStageRouterTransport.h"
 
+//Forwards
+class ZstStage;
+
 
 struct ZstStageIOLoop {
 public:

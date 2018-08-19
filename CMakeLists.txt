@@ -166,10 +166,18 @@ set(Boost_REGEX_TARGET "Boost::regex")
 # ------------------
 find_package(MsgPack CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
-find_package(ZeroMQ CONFIG REQUIRED) # Only include ZeroMQ until CZMQ gets CZMQConfig.cmake added to Hunter - windows only
-find_package(czmq CONFIG REQUIRED)
-find_package(SWIG)
 
+if(WIN32)
+    # Use cmake versions of ZeroMQ and CZMQ
+    find_package(ZeroMQ CONFIG REQUIRED)
+    find_package(czmq CONFIG REQUIRED)
+else()
+    # Use homebrew versions of libzmq and CZMQ
+    find_package(libzmq REQUIRED)
+    find_package(czmq REQUIRED)
+endif()
+
+find_package(SWIG)
 if(SWIG_FOUND)
     include(UseSWIG)
 endif()

@@ -103,7 +103,7 @@ void test_hierarchy() {
 
 int main(int argc,char **argv)
 {
-	TestRunner runner("TestEntities", argv[0], true, false);
+	TestRunner runner("TestEntities", argv[0]);
     test_create_entities();
     test_hierarchy();
 }

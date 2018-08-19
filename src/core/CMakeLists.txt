@@ -96,24 +96,32 @@ target_include_directories(${CORE_TARGET}
 
 set(GLOBAL_PUBLIC_DEFINES "")
 
+
 IF(WIN32)
     list(APPEND GLOBAL_PUBLIC_DEFINES "FMT_USE_WINDOWS_H=0")
     target_compile_definitions(${CORE_TARGET} PRIVATE -DZST_EXPORT_CORE_API)
     target_compile_definitions(${CORE_TARGET} INTERFACE -DZST_IMPORT_CORE_API)
-    target_compile_definitions(${CORE_TARGET} PUBLIC 
-                                -D_WIN32_WINNT=0x0601
-                                -DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE
-                                ${GLOBAL_PUBLIC_DEFINES})
+    list(APPEND GLOBAL_PUBLIC_DEFINES
+        -D_WIN32_WINNT=0x0601
+        -DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE
+    )
 else()
+    list(APPEND GLOBAL_PUBLIC_DEFINES 
+        -DZMQ_BUILD_DRAFT_API
+        -DCZMQ_BUILD_DRAFT_API
+    )
     # Use shared boost on non-windows platforms
     if(Boost_USE_LOCAL)
-        target_compile_definitions(${CORE_TARGET} PUBLIC -DBOOST_ALL_DYN_LINK ${GLOBAL_PUBLIC_DEFINES})
+        list(APPEND GLOBAL_PUBLIC_DEFINES -DBOOST_ALL_DYN_LINK)
     endif()
 
     # Turn off C11 ABI compatibility in glibc
     #target_compile_definitions(${CORE_TARGET} PUBLIC -D_GLIBCXX_USE_CXX11_ABI=0)
 
 endif(WIN32)
+
+target_compile_definitions(${CORE_TARGET} PUBLIC ${GLOBAL_PUBLIC_DEFINES})
+
 
 if(NOT HUNTER_ENABLED)
     if(USE_STATIC_CZMQ)
