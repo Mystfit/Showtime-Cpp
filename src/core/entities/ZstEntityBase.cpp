@@ -42,18 +42,9 @@ ZstEntityBase::~ZstEntityBase()
     
     m_entity_events->flush();
     m_entity_events->remove_all_adaptors();
+
     delete m_entity_events;
 }
-//
-//void * ZstEntityBase::operator new(size_t num_bytes)
-//{
-//	return ::operator new(num_bytes);
-//}
-//
-//void ZstEntityBase::operator delete(void * p)
-//{
-//	::operator delete(p);
-//}
 
 ZstEntityBase * ZstEntityBase::parent() const
 {
@@ -144,16 +135,6 @@ void ZstEntityBase::read(const char * buffer, size_t length, size_t & offset)
 	m_entity_type[obj.via.str.size] = '\0';
 }
 
-//void ZstEntityBase::add_adaptor(ZstSynchronisableAdaptor * adaptor)
-//{
-//	ZstSynchronisable::add_adaptor(adaptor, recursive);
-//}
-//
-//void ZstEntityBase::remove_adaptor(ZstSynchronisableAdaptor * adaptor)
-//{
-//	ZstSynchronisable::remove_adaptor(adaptor, recursive);
-//}
-
 void ZstEntityBase::add_adaptor(ZstEntityAdaptor * adaptor)
 {
     this->m_entity_events->add_adaptor(adaptor);
@@ -176,8 +157,8 @@ void ZstEntityBase::set_entity_type(const char * entity_type) {
 }
 
 void ZstEntityBase::set_parent(ZstEntityBase *entity) {
-    m_parent = entity;
-    this->update_URI();
+	m_parent = entity;
+	this->update_URI();
 }
 
 

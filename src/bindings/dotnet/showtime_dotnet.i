@@ -1,6 +1,6 @@
 %module(directors="1") showtime
 %{
-	#include <Showtime.h>
+    #include <Showtime.h>
 %}
 
 %extend ZstURI
@@ -12,7 +12,7 @@
 
     const char * ZstURI::ToString() const
     {
-    	return self->path();
+        return (self->path()) ? self->path() : "";
     }
 };
 

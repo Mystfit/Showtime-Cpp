@@ -77,17 +77,21 @@ int main(int argc,char **argv){
 
 
 	ZstLog::app(LogLevel::notification, "In sink process");
-	if(argc < 2){
+
+	bool force_launch = true;
+	if(argc < 2 && !force_launch){
 		ZstLog::app(LogLevel::warn, "Skipping sink test, command line flag not set");
 		return 0;
 	}
 
-	if(argv[1][0] == 'd')
+	if (argc >= 2) {
+		if (argv[1][0] == 'd')
 #ifdef WIN32
-		system("pause");
+			system("pause");
 #else
-        system("read -n 1 -s -p \"Press any key to continue...\n\"");
+			system("read -n 1 -s -p \"Press any key to continue...\n\"");
 #endif
+	}
 	zst_init("sink", true);
     zst_join("127.0.0.1");
 

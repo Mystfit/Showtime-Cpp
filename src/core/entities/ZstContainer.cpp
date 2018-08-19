@@ -34,11 +34,11 @@ ZstContainer::ZstContainer(const ZstContainer & other) : ZstComponent(other)
 
 ZstContainer::~ZstContainer()
 {
-	auto children = m_children;
-	for (auto child : children){
-		//TODO: This will fail if the entity wasn't assigned in this DLL!
-		delete child.second;
-	}
+	//auto children = m_children;
+	//for (auto child : children){
+	//	//TODO: This will fail if the entity wasn't assigned in this DLL!
+	//	delete child.second;
+	//}
 	m_children.clear();
 	m_parent = NULL;
 }
@@ -118,47 +118,22 @@ const size_t ZstContainer::num_children() const
 	return m_children.size();
 }
 
-//void ZstContainer::enqueue_activation()
-//{
-//	ZstComponent::enqueue_activation();
-//	
-//	//Recursively activate all children
-//	for (auto c : m_children) {
-//		c.second->enqueue_activation();
-//	}
-//}
-//
-//void ZstContainer::enqueue_deactivation()
-//{
-//    ZstComponent::enqueue_deactivation();
-//    for(auto c : m_children){
-//        c.second->enqueue_deactivation();
-//    }
-//}
-//
-//void ZstContainer::set_activation_status(ZstSyncStatus status)
-//{
-//    ZstComponent::set_activation_status(status);
-//    for (auto c : m_children) {
-//        c.second->set_activation_status(status);
-//    }
-//}
-//
-//void ZstContainer::set_parent(ZstEntityBase * entity)
-//{
-//    if(is_destroyed()) return;
-//
-//    ZstComponent::set_parent(entity);
-//    
-//	auto children = m_children;
-//	for (auto child : children) {
-//        this->remove_child(child.second);
-//	}
-//    
-//    for(auto child : children){
-//        this->add_child(child.second);
-//    }
-//}
+void ZstContainer::set_parent(ZstEntityBase * entity)
+{
+    if(is_destroyed()) return;
+
+    ZstComponent::set_parent(entity);
+    
+	//Removing and re-adding children will update their URI
+	auto children = m_children;
+	for (auto child : children) {
+        this->remove_child(child.second);
+	}
+    
+    for(auto child : children){
+        this->add_child(child.second);
+    }
+}
 
 void ZstContainer::add_child(ZstEntityBase * child) {
     if(is_destroyed()) return;
@@ -222,54 +197,6 @@ void ZstContainer::read(const char * buffer, size_t length, size_t & offset)
 		add_child(child);
 	}
 }
-
-//void ZstContainer::add_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive)
-//{
-//	ZstComponent::add_adaptor(adaptor, recursive);
-//	if (recursive) {
-//		for (auto child : m_children) {
-//			static_cast<ZstSynchronisable*>(child.second)->add_adaptor(adaptor, recursive);
-//		}
-//	}
-//}
-//
-//void ZstContainer::add_adaptor(ZstEntityAdaptor * adaptor, bool recursive)
-//{
-//	ZstComponent::add_adaptor(adaptor, recursive);
-//	if (recursive) {
-//		for (auto child : m_children) {
-//			child.second->add_adaptor(adaptor, recursive);
-//		}
-//	}
-//}
-//
-//void ZstContainer::remove_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive)
-//{
-//	ZstComponent::remove_adaptor(adaptor, recursive);
-//	if (recursive) {
-//		for (auto child : m_children) {
-//			static_cast<ZstSynchronisable*>(child.second)->remove_adaptor(adaptor, recursive);
-//		}
-//	}
-//}
-//
-//void ZstContainer::remove_adaptor(ZstEntityAdaptor * adaptor, bool recursive)
-//{
-//	ZstComponent::remove_adaptor(adaptor, recursive);
-//	if (recursive) {
-//		for (auto child : m_children) {
-//			child.second->remove_adaptor(adaptor, recursive);
-//		}
-//	}
-//}
-//
-// void ZstContainer::set_proxy()
-//{
-//	 ZstComponent::set_proxy();
-//	 for (auto c : m_children) {
-//		 c.second->set_proxy();
-//	 }
-//}
 
 ZstCableBundle * ZstContainer::get_child_cables(ZstCableBundle * bundle)
 {

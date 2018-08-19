@@ -58,34 +58,36 @@ public class TestInputComponent : ZstComponent
 
 public class TestHierarchyAdaptor : ZstHierarchyAdaptor
 {
-    public readonly EventWaitHandle wait = new AutoResetEvent(false);
-    public ZstURI last_arrived_entity;
-    public ZstURI last_left_entity;
-    public ZstURI last_arrived_performer;
-    public ZstURI last_left_performer;
+    public readonly EventWaitHandle ent_wait = new AutoResetEvent(false);
+    public readonly EventWaitHandle perf_wait = new AutoResetEvent(false);
+
+    public string last_arrived_entity;
+    public string last_left_entity;
+    public string last_arrived_performer;
+    public string last_left_performer;
 
     public override void on_entity_arriving(ZstEntityBase entity)
     {
-        last_arrived_entity = entity.URI();
-        wait.Set();
+        last_arrived_entity = entity.URI().ToString();
+        ent_wait.Set();
     }
 
     public override void on_entity_leaving(ZstEntityBase entity)
     {
-        last_left_entity = entity.URI();
-        wait.Set();
+        last_left_entity = entity.URI().ToString();
+        ent_wait.Set();
     }
 
     public override void on_performer_arriving(ZstPerformer performer)
     {
-        last_arrived_performer = performer.URI();
-        wait.Set();
+        last_arrived_performer = performer.URI().ToString();
+        perf_wait.Set();
     }
 
     public override void on_performer_leaving(ZstPerformer performer)
     {
-        last_left_performer = performer.URI();
-        wait.Set();
+        last_left_performer = performer.URI().ToString();
+        perf_wait.Set();
     }
 }
 
@@ -142,36 +144,44 @@ public class Program
         sink_process.StartInfo = sink_startInfo;
         sink_process.Start();
 
-        //Wait for incoming performer events
-        adp.wait.WaitOne();
-        Debug.Assert(adp.last_arrived_performer.equal_to(new ZstURI("sink")));
-        adp.wait.Reset();
+        //Wait for performer
+        adp.perf_wait.WaitOne();
+        adp.perf_wait.Reset();
+
+        //Wait for incoming entity events
+        showtime.app(LogLevel.notification, "Waiting for entity to arrive");
+        adp.ent_wait.WaitOne();
+        Debug.Assert(adp.last_arrived_entity == "sink/sink_ent");
+        adp.ent_wait.Reset();
+        ZstEntityBase sink_in_ent = showtime.find_entity(new ZstURI("sink/sink_ent/in"));
+        Debug.Assert(sink_in_ent != null);
+        ZstInputPlug sink_in = showtime.cast_to_input_plug(sink_in_ent);
 
         //Create cable to sink
-        ZstInputPlug sink_in = showtime.cast_to_input_plug(showtime.find_entity(new ZstURI("sink/sink_ent/in")));
         showtime.connect_cable(sink_in, output.output);
 
         //Ask sink to create entity
         output.send(1);
-        adp.wait.WaitOne();
+        adp.ent_wait.WaitOne();
         ZstURI sinkB = new ZstURI("sink/sink_ent/sinkB");
-        Debug.Assert(adp.last_arrived_entity.equal_to(sinkB));
+        Debug.Assert(adp.last_arrived_entity == sinkB.ToString());
         Debug.Assert(showtime.find_entity(sinkB) != null);
-        adp.wait.Reset();
+        adp.ent_wait.Reset();
 
         //Ask sink to remove entity
         output.send(2);
-        adp.wait.WaitOne();
-        Debug.Assert(adp.last_left_entity.equal_to(new ZstURI("sink/sink_ent/sink_B")));
+        adp.ent_wait.WaitOne();
+        Debug.Assert(adp.last_left_entity == "sink/sink_ent/sinkB");
         Debug.Assert(showtime.find_entity(sinkB) == null);
-        adp.wait.Reset();
+        adp.ent_wait.Reset();
 
         //Ask sink to leave
         output.send(0);
-        adp.wait.WaitOne();
-        Debug.Assert(adp.last_left_performer.equal_to(new ZstURI("sink")));
+        adp.perf_wait.WaitOne();
+        showtime.app(LogLevel.notification, adp.last_left_performer);
+        Debug.Assert(adp.last_left_performer == "sink");
         Debug.Assert(showtime.find_entity(new ZstURI("sink")) == null);
-        adp.wait.Reset();
+        adp.perf_wait.Reset();
 
         //Cleanup
         showtime.deactivate_entity(output);
@@ -209,9 +219,6 @@ public class Program
         //Run tests
         TestGraph();
         TestExternalEntities();
-    
-        //Leave the stage and clean up
-        showtime.leave();
 
         //Stop the event loop
         _cancelationTokenSource.Cancel();

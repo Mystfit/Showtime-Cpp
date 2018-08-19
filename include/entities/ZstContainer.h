@@ -35,30 +35,12 @@ public:
 	ZST_EXPORT virtual void write(std::stringstream & buffer) const override;
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
 
-	//Adaptor registration
-	//ZST_EXPORT virtual void add_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive = false) override;
-	//ZST_EXPORT virtual void remove_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive = false) override;
-	//ZST_EXPORT virtual void add_adaptor(ZstEntityAdaptor * adaptor, bool recursive = false) override;
-	//ZST_EXPORT virtual void remove_adaptor(ZstEntityAdaptor * adaptor, bool recursive = false) override;
-	//ZST_EXPORT virtual void set_proxy() override;
-
-
 protected:
 	ZST_EXPORT ZstCableBundle * get_child_cables(ZstCableBundle * bundle) override;
 	ZST_EXPORT ZstEntityBundle * get_child_entities(ZstEntityBundle * bundle) override;
 
     //Set parent for all children
-    //ZST_EXPORT void set_parent(ZstEntityBase * entity) override;
-    
-    ////Enqueue all children as activated
-    //ZST_EXPORT virtual void enqueue_activation() override;
-    //
-    ////Enqueue all children as deactivated
-    //ZST_EXPORT virtual void enqueue_deactivation() override;
-    
-    //Set all children as activated
-    //ZST_EXPORT virtual void set_activation_status(ZstSyncStatus status) override;
-    
+    ZST_EXPORT void set_parent(ZstEntityBase * entity) override;
 
 private:
 	ZstEntityMap m_children;

@@ -211,7 +211,7 @@ namespace ZstTest
         zst_poll_once();
     }
 
-    #define MAX_WAIT_LOOPS 200
+    #define MAX_WAIT_LOOPS 50
     void wait_for_event(TestAdaptor * adaptor, int expected_messages)
     {
         int repeats = 0;
@@ -273,7 +273,7 @@ namespace ZstTest
 		}
 
 	private:
-        boost::process::pipe m_server_in;
+		boost::process::pipe m_server_in;
 		child m_server_process;
 	};
 };

@@ -25,8 +25,6 @@ ZstSynchronisable::ZstSynchronisable(const ZstSynchronisable & other) : ZstSynch
 
 ZstSynchronisable::~ZstSynchronisable()
 {
-	m_synchronisable_events->flush();
-	m_synchronisable_events->remove_all_adaptors();
 	delete m_synchronisable_events;
 }
 
@@ -182,7 +180,7 @@ void ZstSynchronisable::process_events()
 
 void ZstSynchronisable::announce_update()
 {
-	ZstLog::net(LogLevel::debug, "Synchronisable deferring on_synchronisable_event()");
+	ZstLog::net(LogLevel::debug, "Synchronisable {} deferring on_synchronisable_event()", m_instance_id);
 	synchronisable_events()->defer([this](ZstSynchronisableAdaptor * adp) { adp->on_synchronisable_updated(this); });
 	synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * adp) { adp->synchronisable_has_event(this); });
 }
