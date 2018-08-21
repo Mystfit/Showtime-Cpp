@@ -92,6 +92,18 @@ public class TestHierarchyAdaptor : ZstHierarchyAdaptor
 }
 
 
+public class TestPlugEchoAdaptor : ZstSynchronisableAdaptor
+{
+    public readonly EventWaitHandle val_wait = new AutoResetEvent(false);
+
+    public override void on_synchronisable_updated(ZstSynchronisable synchronisable)
+    {
+        showtime.app(LogLevel.notification, "Synchronisable received updated");
+        val_wait.Set();
+    }
+}
+
+
 public class Program
 {
     public static CancellationTokenSource _cancelationTokenSource;
@@ -132,7 +144,7 @@ public class Program
 
         TestOutputComponent output = new TestOutputComponent("sink_comm_out");
         showtime.activate_entity(output);
-
+        
         //Create sink process
         ProcessStartInfo sink_startInfo = new ProcessStartInfo();
         sink_startInfo.UseShellExecute = false;
@@ -157,12 +169,24 @@ public class Program
         Debug.Assert(sink_in_ent != null);
         ZstInputPlug sink_in = showtime.cast_to_input_plug(sink_in_ent);
 
+        //Attach adaptors
+        TestPlugEchoAdaptor plug_watcher = new TestPlugEchoAdaptor();
+        ZstOutputPlug sink_out_plug = showtime.cast_to_output_plug(showtime.find_entity(new ZstURI("sink/sink_ent/out")));
+        sink_out_plug.add_adaptor(plug_watcher);
+        showtime.observe_entity(sink_out_plug);
+
         //Create cable to sink
         showtime.connect_cable(sink_in, output.output);
 
         //Ask sink to create entity
         output.send(1);
+
+        //Wait for events
         adp.ent_wait.WaitOne();
+        Debug.Assert(plug_watcher.val_wait.WaitOne(1000));
+        plug_watcher.val_wait.Reset();
+
+        //Make sure entity arrived
         ZstURI sinkB = new ZstURI("sink/sink_ent/sinkB");
         Debug.Assert(adp.last_arrived_entity == sinkB.ToString());
         Debug.Assert(showtime.find_entity(sinkB) != null);
