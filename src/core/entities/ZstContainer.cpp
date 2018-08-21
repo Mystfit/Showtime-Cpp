@@ -34,11 +34,6 @@ ZstContainer::ZstContainer(const ZstContainer & other) : ZstComponent(other)
 
 ZstContainer::~ZstContainer()
 {
-	//auto children = m_children;
-	//for (auto child : children){
-	//	//TODO: This will fail if the entity wasn't assigned in this DLL!
-	//	delete child.second;
-	//}
 	m_children.clear();
 	m_parent = NULL;
 }
@@ -151,8 +146,6 @@ void ZstContainer::remove_child(ZstEntityBase * child) {
 		m_children.erase(c);
 	}
 	
-	//TODO: How do we remove all cables from child plugs?
-
 	child->m_parent = NULL;
 }
 

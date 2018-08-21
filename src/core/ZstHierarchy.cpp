@@ -284,9 +284,6 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 
 	//Cleanup children
 	for (auto c : ZstEntityBundleScoped(entity, true)) {
-
-		ZstLog::net(LogLevel::debug, "Entity being destroyed: {}", c->URI().path() );
-
 		//Set child as destroyed
 		synchronisable_set_destroyed(c);
 

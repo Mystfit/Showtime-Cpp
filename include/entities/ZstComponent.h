@@ -10,8 +10,6 @@
 
 class ZstComponent : public ZstEntityBase {
 public:
-	friend class ZstClient;
-	friend class ZstStage;
 	ZST_EXPORT ZstComponent();
 	ZST_EXPORT ZstComponent(const char * path);
 	ZST_EXPORT ZstComponent(const char * component_type, const char * path);

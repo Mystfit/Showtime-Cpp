@@ -8,7 +8,6 @@
 class ZstContainer : public ZstComponent
 {
 public:
-	friend class ZstClient;
 	ZST_EXPORT ZstContainer();
 	ZST_EXPORT ZstContainer(const char * path);
 	ZST_EXPORT ZstContainer(const char * component_type, const char * path);

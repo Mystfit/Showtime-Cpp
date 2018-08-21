@@ -14,7 +14,6 @@ public:
 
 	void set_target_dispatcher_inactive() 
 	{ 
-		ZstLog::net(LogLevel::debug, "Flagging dispatcher as inactive");
 		m_is_target_dispatcher_active = false; 
 	};
 

@@ -75,8 +75,9 @@ void ZstSynchronisable::enqueue_deactivation()
 		});
 
 		//Notify adaptors that this syncronisable needs to be cleaned up -- proxies only
-		if (this->is_proxy())
+		if (this->is_proxy()) {
 			synchronisable_events()->defer([this](ZstSynchronisableAdaptor * dlg) {dlg->on_synchronisable_destroyed(this); });
+		}
 
 		//Notify adaptors that we have a queued event
 		synchronisable_events()->invoke([this](ZstSynchronisableAdaptor* dlg) { dlg->synchronisable_has_event(this); });
@@ -180,7 +181,6 @@ void ZstSynchronisable::process_events()
 
 void ZstSynchronisable::announce_update()
 {
-	ZstLog::net(LogLevel::debug, "Synchronisable {} deferring on_synchronisable_event()", m_instance_id);
 	synchronisable_events()->defer([this](ZstSynchronisableAdaptor * adp) { adp->on_synchronisable_updated(this); });
 	synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * adp) { adp->synchronisable_has_event(this); });
 }

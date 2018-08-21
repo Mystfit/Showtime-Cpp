@@ -27,11 +27,11 @@ void ZstClientHierarchy::destroy()
 	//TODO: Delete other clientsa
 	//Reset local performer
 	size_t index = 0;
-	for (index = 0; index < m_root->num_children(); ++index) {
-		destroy_entity_complete(m_root->get_child_at(index));
+
+	for (auto entity : ZstEntityBundleScoped(m_root)) {
+		destroy_entity_complete(entity);
 	}
-	destroy_entity_complete(m_root);
-	
+
 	//Process events to make sure events are dispatched properly
 	process_events();
 	delete m_root;

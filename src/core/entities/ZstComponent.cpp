@@ -42,9 +42,6 @@ ZstComponent::ZstComponent(const ZstComponent & other) : ZstEntityBase(other)
 
 ZstComponent::~ZstComponent()
 {
-	//for (auto plug : m_plugs) {
-	//	delete plug;
-	//}
 	m_plugs.clear();
 	free(m_component_type);
 }
