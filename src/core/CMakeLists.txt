@@ -111,14 +111,17 @@ else()
         -DCZMQ_BUILD_DRAFT_API
     )
     # Use shared boost on non-windows platforms
-    if(Boost_USE_LOCAL)
+    if(Boost_USE_LOCAL AND NOT BUILD_STATIC)
         list(APPEND GLOBAL_PUBLIC_DEFINES -DBOOST_ALL_DYN_LINK)
     endif()
 
     # Turn off C11 ABI compatibility in glibc
     #target_compile_definitions(${CORE_TARGET} PUBLIC -D_GLIBCXX_USE_CXX11_ABI=0)
-
 endif(WIN32)
+
+if(BUILD_STATIC)
+    list(APPEND GLOBAL_PUBLIC_DEFINES "CZMQ_STATIC" "ZMQ_STATIC")
+endif()
 
 target_compile_definitions(${CORE_TARGET} PUBLIC ${GLOBAL_PUBLIC_DEFINES})
 
@@ -148,6 +151,7 @@ message(STATUS "Setting link thread library to ${CMAKE_THREAD_LIBS_INIT}")
 # Link libraries
 list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS 
     ${CZMQ_TARGET}
+    ${LIBZMQ_TARGET}
     ${Boost_HEADER_TARGET}
     ${fmt_TARGET}
     ${Boost_SYSTEM_TARGET}
@@ -157,14 +161,12 @@ list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS
     ${Boost_CHRONO_TARGET}
     ${Boost_ATOMIC_TARGET}
     ${Boost_REGEX_TARGET}
+    ${Boost_LOG_TARGET}
+    ${Boost_LOG_SETUP_TARGET}
     ${CMAKE_THREAD_LIBS_INIT}
 )
 target_link_libraries(${CORE_TARGET} PUBLIC ${SHOWTIME_PUBLIC_LINKED_LIBS})
-target_link_libraries(${CORE_TARGET} PRIVATE 
-                        ${msgpackc_TARGET}
-                        ${Boost_LOG_TARGET}
-                        ${Boost_LOG_SETUP_TARGET}
-)
+target_link_libraries(${CORE_TARGET} PRIVATE ${msgpackc_TARGET})
 list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS ${CORE_TARGET})
 
 if(WIN32)

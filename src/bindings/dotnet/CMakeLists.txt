@@ -1,7 +1,5 @@
 message(STATUS "Configuring ${DOTNET_TARGET} target")
 
-set(BUILD_STAMP "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
-
 set(DOTNET_TARGET_WRAPPER ${DOTNET_TARGET}Wrapper)
 
 # Save original swig output dir
@@ -42,7 +40,8 @@ set(SWIG_MODULE_${DOTNET_TARGET_WRAPPER}_EXTRA_DEPS ${Showtime_API_INTERFACE})
 
 # Clear the debug suffix for generated files
 set(CMAKE_DEBUG_POSTFIX "")
-set(DOTNET_STAMP {CMAKE_CURRENT_BINARY_DIR}/dotnet.stamp)
+set(DOTNET_STAMP ${CMAKE_CURRENT_BINARY_DIR}/dotnet.stamp)
+set(DOTNETWRAPPER_STAMP ${CMAKE_CURRENT_BINARY_DIR}/dotnet_wrapper.stamp)
 
 # Create the swig dotnet target
 if(MACOSX)
@@ -54,16 +53,18 @@ if(MACOSX)
         SOURCES ${DOTNET_SWIG_INTERFACES}
     )
     set_target_properties(${SWIG_MODULE_${DOTNET_TARGET_WRAPPER}_REAL_NAME} PROPERTIES BUNDLE TRUE)
-    set(DOTNET_BUNDLE_COPY_LIBS
-        $<TARGET_FILE:${CORE_TARGET}>
-        $<TARGET_FILE:${CORE_ENTITIES_TARGET}>
-        $<TARGET_FILE:${CLIENT_TARGET}> 
-    )
-    add_custom_command(TARGET ${DOTNET_TARGET_WRAPPER} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy ${DOTNET_BUNDLE_COPY_LIBS} $<TARGET_BUNDLE_CONTENT_DIR:${DOTNET_TARGET_WRAPPER}>/MacOS
-        COMMAND ${CMAKE_COMMAND} -E touch ${DOTNET_STAMP}
-        VERBATIM
-    )
+    if(NOT BUILD_STATIC)
+        set(DOTNET_BUNDLE_COPY_LIBS
+            $<TARGET_FILE:${CORE_TARGET}>
+            $<TARGET_FILE:${CORE_ENTITIES_TARGET}>
+            $<TARGET_FILE:${CLIENT_TARGET}> 
+        )
+        add_custom_command(TARGET ${DOTNET_TARGET_WRAPPER} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy ${DOTNET_BUNDLE_COPY_LIBS} $<TARGET_BUNDLE_CONTENT_DIR:${DOTNET_TARGET_WRAPPER}>/MacOS
+            COMMAND ${CMAKE_COMMAND} -E touch ${DOTNET_STAMP}
+            VERBATIM
+        )
+    endif()
 else()
     swig_add_library(${DOTNET_TARGET_WRAPPER} 
         LANGUAGE csharp 
@@ -88,6 +89,7 @@ if(WIN32)
     enable_language(CSharp)
     target_sources(${DOTNET_TARGET} PRIVATE ${DOTNET_GENERATED_BINDINGS})
 else()
+    message(STATUS "Configuring Dotnet unix project")
     # Create custom .csproj file for unix platforms
     set(CSPROJ_IN "${CMAKE_CURRENT_LIST_DIR}/${DOTNET_TARGET}.csproj.in")
     set(CSPROJ_OUT "${SWIG_LANGUAGE_DIR}/${DOTNET_TARGET}.csproj")
@@ -98,18 +100,22 @@ else()
     configure_file(${CSPROJ_IN} ${CSPROJ_OUT})
 
     # Build the project using the dotnet sdk
+    set(DOTNET_OUTPUT_FILE 
+        ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${DOTNET_TARGET}.dll
+    )
     set(DOTNET_COMMAND /usr/local/share/dotnet/dotnet CACHE FILEPATH "Path to dotnet sdk")
     set(DOTNET_ARGS 
         "build" "-o" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
         "--framework" "${BINDINGS_DOTNET_FRAMEWORK_VERSION}"
         "${CSPROJ_OUT}")
     add_custom_command(
-        OUTPUT ${DOTNET_OUTPUT_FILE}
+        OUTPUT ${DOTNETWRAPPER_STAMP}
+        COMMAND ${CMAKE_COMMAND} -E echo "Building Dotnet unix dll"
         COMMAND ${DOTNET_COMMAND} ${DOTNET_ARGS}
         DEPENDS ${CSPROJ_OUT}
         VERBATIM
     )
-    add_custom_target(${DOTNET_TARGET} ALL DEPENDS ${DOTNET_OUTPUT_FILE})
+    add_custom_target(${DOTNET_TARGET} ALL DEPENDS ${DOTNETWRAPPER_STAMP})
 endif()
 
 add_dependencies(${DOTNET_TARGET} ${DOTNET_TARGET_WRAPPER})
