@@ -15,37 +15,37 @@ using namespace std;
 
 ZstStage::ZstStage() : 
 	m_is_destroyed(false),
-	m_actor(NULL),
 	m_session(NULL),
 	m_publisher_transport(NULL),
-	m_router_transport(NULL)
+	m_router_transport(NULL),
+	m_stage_eventloop(this),
+	m_heartbeat_timer(m_stage_eventloop.IO_context())
 {
 	m_session = new ZstStageSession();
 	m_publisher_transport = new ZstStagePublisherTransport();
 	m_router_transport = new ZstStageRouterTransport();
-	m_actor = new ZstActor();
 }
 
 ZstStage::~ZstStage()
 {
-	delete m_session;
-	delete m_publisher_transport;
-	delete m_router_transport;
-	delete m_actor;;
+delete m_session;
+delete m_publisher_transport;
+delete m_router_transport;
 }
 
 void ZstStage::init_stage(const char * stage_name, bool threaded)
 {
 	ZstLog::init_logger(stage_name, LogLevel::debug);
 	ZstLog::net(LogLevel::notification, "Starting Showtime v{} stage server", SHOWTIME_VERSION);
-	
-	m_actor->init();
-	m_session->init();
-	m_publisher_transport->init(m_actor);
-	m_router_transport->init(m_actor);
 
-	m_heartbeat_timer_id = m_actor->attach_timer(HEARTBEAT_DURATION, [this]() {this->stage_heartbeat_timer_func(); });
-	m_actor->start_loop();
+	m_session->init();
+	m_publisher_transport->init();
+	m_router_transport->init();
+
+	//Init timer actor for client heartbeats
+	//Create timers
+	m_heartbeat_timer.expires_from_now(boost::posix_time::milliseconds(STAGE_HEARTBEAT_CHECK));
+	m_heartbeat_timer.async_wait(boost::bind(&ZstStage::stage_heartbeat_timer, &m_heartbeat_timer, this, boost::posix_time::milliseconds(STAGE_HEARTBEAT_CHECK)));
 
 	//Attach adaptors
 	m_router_transport->msg_events()->add_adaptor(m_session);
@@ -56,7 +56,7 @@ void ZstStage::init_stage(const char * stage_name, bool threaded)
 	m_session->hierarchy()->publisher_events().add_adaptor(m_publisher_transport);
 
 	//Start event loop
-	m_eventloop_thread = boost::thread(ZstStageLoop(this));
+	m_stage_eventloop_thread = boost::thread(boost::ref(m_stage_eventloop));
 }
 
 
@@ -70,14 +70,19 @@ void ZstStage::destroy()
 	this->remove_all_adaptors();
 	this->flush();
 
-	m_eventloop_thread.interrupt();
-	m_eventloop_thread.join();
-	m_actor->stop_loop();
+	//Remove timers
+	m_heartbeat_timer.cancel();
+	m_heartbeat_timer.wait();
+
+	m_stage_eventloop_thread.interrupt();
+	m_stage_eventloop_thread.join();
+
 	m_session->destroy();
 	m_publisher_transport->destroy();
 	m_router_transport->destroy();
-	m_actor->detach_timer(m_heartbeat_timer_id);
-	m_actor->destroy();
+
+	//Destroy zmq context
+	zsys_shutdown();
 }
 
 bool ZstStage::is_destroyed()
@@ -101,10 +106,10 @@ void ZstStage::process_events()
 // Outgoing event queue
 //---------------------
 
-void ZstStage::stage_heartbeat_timer_func()
+void ZstStage::stage_heartbeat_timer(boost::asio::deadline_timer * t, ZstStage * stage, boost::posix_time::milliseconds duration)
 {
 	std::vector<ZstPerformer*> removed_clients;
-	for (auto performer : m_session->hierarchy()->get_performers()) {
+	for (auto performer : stage->m_session->hierarchy()->get_performers()) {
 		if (performer->get_active_heartbeat()) {
 			performer->clear_active_hearbeat();
 		}
@@ -119,33 +124,41 @@ void ZstStage::stage_heartbeat_timer_func()
 	}
 
 	for (auto client : removed_clients) {
-		m_session->hierarchy()->remove_proxy_entity(client);
+		stage->m_session->hierarchy()->remove_proxy_entity(client);
+	}
+
+	if (!stage->is_destroyed()){
+		//Loop timer
+		t->expires_at(t->expires_at() + duration);
+		t->async_wait(boost::bind(&ZstStage::stage_heartbeat_timer, t, stage, duration));
 	}
 }
 
-ZstStageLoop::ZstStageLoop(ZstStage * stage)
-{
-	m_stage = stage;
-}
 
 
 // ------
 
-
-void ZstStageLoop::operator()()
+ZstStageIOLoop::ZstStageIOLoop(ZstStage * stage)
 {
-	//std::unique_lock< boost::fibers::mutex > lk(m_event_loop_lock);
+	m_stage = stage;
+}
+
+void ZstStageIOLoop::operator()()
+{
 	while (1) {
 		try {
-			//while (!data_ready) {
-			//	cond.wait(lk);
-			//}
 			boost::this_thread::interruption_point();
 			m_stage->process_events();
+			IO_context().poll();
 		}
 		catch (boost::thread_interrupted) {
 			ZstLog::net(LogLevel::debug, "Stage event loop exiting.");
 			break;
 		}
 	}
+}
+
+boost::asio::io_service & ZstStageIOLoop::IO_context()
+{
+	return m_io;
 }

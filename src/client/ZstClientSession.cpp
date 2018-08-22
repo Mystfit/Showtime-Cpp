@@ -69,13 +69,13 @@ void ZstClientSession::on_receive_msg(ZstMessage * msg)
 	switch (msg->kind()) {
 	case ZstMsgKind::CREATE_CABLE:
 	{
-		const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(0);
+		const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>();
 		create_cable(cable);
 		break;
 	}
 	case ZstMsgKind::DESTROY_CABLE:
 	{
-		const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(0);
+		const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>();
 		ZstCable * cable_ptr = find_cable(cable.get_input_URI(), cable.get_output_URI());
 		if (cable_ptr) {
 			destroy_cable_complete(ZstMessageReceipt{ ZstMsgKind::OK, ZstTransportSendType::SYNC_REPLY }, cable_ptr);
@@ -93,7 +93,7 @@ void ZstClientSession::on_receive_msg(ZstMessage * msg)
 void ZstClientSession::on_receive_graph_msg(ZstMessage * msg)
 {
 	//Check if message has a payload
-	if(msg->num_payloads() < 1){
+	if(msg->payload_size() < 1){
 		ZstLog::net(LogLevel::warn, "No payload in graph message");
 		return;
 	}
@@ -108,9 +108,8 @@ void ZstClientSession::on_receive_graph_msg(ZstMessage * msg)
 	}
 	
 	//Create a ZstValue object to hold our plug data
-	size_t offset = 0;
 	ZstValue received_val;
-	received_val.read((char*)msg->payload_at(0).data(), msg->payload_at(0).size(), offset);
+	received_val.read((char*)msg->payload_data(), msg->payload_size(), msg->payload_offset());
 
 	//If the sending plug is a proxy then let the host app know it has updated
 	if (sending_plug->is_proxy()) {
@@ -120,11 +119,10 @@ void ZstClientSession::on_receive_graph_msg(ZstMessage * msg)
 	}
 
 	//Iterate over all connected cables from the sending plug
-	for (auto cable : *sending_plug) {
-		receiving_plug = dynamic_cast<ZstInputPlug*>(cable->get_input());
+	for (auto cable : ZstCableBundleScoped(sending_plug)) {
+		receiving_plug = cable->get_input();
 		if (receiving_plug) {
 			if (!receiving_plug->is_proxy()) {
-				//TODO: Lock plug value when deserialising
 				receiving_plug->raw_value()->copy(received_val);
 				plug_received_value(receiving_plug);
 			}
@@ -145,8 +143,12 @@ void ZstClientSession::plug_received_value(ZstInputPlug * plug)
 	if (!parent) {
 		throw std::runtime_error("Could not find parent of input plug");
 	}
-	compute_events().defer([parent, plug](ZstComputeAdaptor * adaptor) {
-		adaptor->on_compute(parent, plug);
+	ZstURI plug_path = plug->URI();
+	compute_events().defer([this, parent, plug_path](ZstComputeAdaptor * adaptor) {
+		//Make sure the entity still exists before running 
+		ZstInputPlug * plug = static_cast<ZstInputPlug*>(this->hierarchy()->find_entity(plug_path));
+		if(plug)
+			adaptor->on_compute(parent, plug);
 	});
 }
 
@@ -171,6 +173,8 @@ ZstCable * ZstClientSession::connect_cable(ZstInputPlug * input, ZstOutputPlug *
 			});
 		});
 	}
+
+	if (sendtype == ZstTransportSendType::SYNC_REPLY) process_events();
 
 	return cable;
 }

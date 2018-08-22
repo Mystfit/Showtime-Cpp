@@ -5,6 +5,13 @@
 #include <ZstCable.h>
 #include <ZstEventDispatcher.hpp>
 
+//Forced template instantiations
+template class ZstBundleIterator<ZstCable*>;
+template class ZstBundleIterator<ZstEntityBase*>;
+template class ZstBundle<ZstCable*>;
+template class ZstBundle<ZstEntityBase*>;
+
+
 ZstEntityBase::ZstEntityBase(const char * name) : 
 	ZstSynchronisable(),
 	m_parent(NULL),
@@ -35,17 +42,8 @@ ZstEntityBase::~ZstEntityBase()
     
     m_entity_events->flush();
     m_entity_events->remove_all_adaptors();
+
     delete m_entity_events;
-}
-
-void * ZstEntityBase::operator new(size_t num_bytes)
-{
-	return ::operator new(num_bytes);
-}
-
-void ZstEntityBase::operator delete(void * p)
-{
-	::operator delete(p);
 }
 
 ZstEntityBase * ZstEntityBase::parent() const
@@ -76,20 +74,34 @@ const ZstURI & ZstEntityBase::URI() const
 	return m_uri;
 }
 
-void ZstEntityBase::release_cable_bundle(ZstCableBundle * bundle)
+ZstEntityBundle * ZstEntityBase::aquire_child_bundle()
+{
+	ZstEntityBundle * bundle = new ZstEntityBundle();
+	return get_child_entities(bundle);
+}
+
+void ZstEntityBase::release_child_bundle(ZstEntityBundle * bundle)
 {
 	delete bundle;
 }
 
-ZstCableBundle * ZstEntityBase::acquire_cable_bundle()
+ZstCableBundle * ZstEntityBase::aquire_cable_bundle()
 {
 	ZstCableBundle * bundle = new ZstCableBundle();
 	return get_child_cables(bundle);
 }
 
-
+void ZstEntityBase::release_cable_bundle(ZstCableBundle * bundle)
+{
+	delete bundle;
+}
 
 ZstCableBundle * ZstEntityBase::get_child_cables(ZstCableBundle * bundle)
+{
+	return bundle;
+}
+
+ZstEntityBundle * ZstEntityBase::get_child_entities(ZstEntityBundle * bundle)
 {
 	return bundle;
 }
@@ -123,22 +135,12 @@ void ZstEntityBase::read(const char * buffer, size_t length, size_t & offset)
 	m_entity_type[obj.via.str.size] = '\0';
 }
 
-void ZstEntityBase::add_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive)
-{
-	ZstSynchronisable::add_adaptor(adaptor, recursive);
-}
-
-void ZstEntityBase::remove_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive)
-{
-	ZstSynchronisable::remove_adaptor(adaptor, recursive);
-}
-
-void ZstEntityBase::add_adaptor(ZstEntityAdaptor * adaptor, bool recursive)
+void ZstEntityBase::add_adaptor(ZstEntityAdaptor * adaptor)
 {
     this->m_entity_events->add_adaptor(adaptor);
 }
 
-void ZstEntityBase::remove_adaptor(ZstEntityAdaptor * adaptor, bool recursive)
+void ZstEntityBase::remove_adaptor(ZstEntityAdaptor * adaptor)
 {
 	this->m_entity_events->remove_adaptor(adaptor);
 }
@@ -155,6 +157,23 @@ void ZstEntityBase::set_entity_type(const char * entity_type) {
 }
 
 void ZstEntityBase::set_parent(ZstEntityBase *entity) {
-    m_parent = entity;
-    this->update_URI();
+	m_parent = entity;
+	this->update_URI();
+}
+
+
+// ---------------
+
+ZstEntityBundleScoped::ZstEntityBundleScoped(ZstEntityBase * entity, bool include_parent) :
+	m_bundle(std::unique_ptr< ZstBundle<ZstEntityBase*>, void(*)(ZstEntityBundle*)>(entity->aquire_child_bundle(), ZstEntityBase::release_child_bundle))
+{
+	if (include_parent) {
+		m_bundle->add(entity);
+	}
+}
+
+
+ZstCableBundleScoped::ZstCableBundleScoped(ZstEntityBase * entity) :
+	m_bundle(std::unique_ptr< ZstCableBundle, void(*)(ZstCableBundle*)>(entity->aquire_cable_bundle(), ZstEntityBase::release_cable_bundle))
+{
 }

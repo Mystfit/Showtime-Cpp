@@ -4,18 +4,17 @@
 #include "ZstClient.h"
 
 ZstClient::ZstClient() :
-	m_heartbeat_timer_id(-1),
-    m_ping(-1),
-    m_is_ending(false),
-    m_is_destroyed(false),
-    m_init_completed(false),
-    m_connected_to_stage(false),
+	m_ping(-1),
+	m_is_ending(false),
+	m_is_destroyed(false),
+	m_init_completed(false),
+	m_connected_to_stage(false),
 	m_is_connecting(false),
-    m_session(NULL)
+	m_session(NULL),
+	m_heartbeat_timer(m_client_eventloop.IO_context())
 {
 	//Message and transport modules
 	//These are specified by the client based on what transport type we want to use
-	m_actor = new ZstActor();
 	m_client_transport = new ZstClientTransport();
 	m_graph_transport = new ZstGraphTransport();
 	m_session = new ZstClientSession();
@@ -25,7 +24,6 @@ ZstClient::~ZstClient() {
 	delete m_session;
 	delete m_client_transport;
 	delete m_graph_transport;
-	delete m_actor;
 }
 
 ZstClient & ZstClient::instance()
@@ -44,18 +42,33 @@ void ZstClient::destroy() {
 	if(is_connected_to_stage())
 		leave_stage();
 
+	//Since we've sent the leave request, we can flag that we are in the leave process
 	set_is_ending(true);
 
-	this->remove_adaptor(m_client_transport);
-
-	m_actor->stop_loop();
-	m_session->destroy();
+	//Destroy transports
 	m_client_transport->destroy();
 	m_graph_transport->destroy();
-	m_actor->destroy();
 
+	//Destroy modules
+	m_session->destroy();
+
+	//Stop timers
+	m_client_eventloop.IO_context().stop();
+	m_client_eventloop_thread.interrupt();
+	m_client_eventloop_thread.join();
+
+	//Remove adaptors
+	this->remove_adaptor(m_client_transport);
+
+	//Set last status flags
 	set_is_ending(false);
 	set_is_destroyed(true);
+	
+	//Destroy zmq context
+	zsys_shutdown();
+
+	//All done
+	ZstLog::net(LogLevel::notification, "Showtime library destroyed");
 }
 
 void ZstClient::init_client(const char *client_name, bool debug)
@@ -80,7 +93,9 @@ void ZstClient::init_client(const char *client_name, bool debug)
 	//Todo: init IDs again after stage has responded
 	ZstMsgIDManager::init(m_client_name.c_str(), m_client_name.size());
 
-	m_actor->init();
+	//Create IO_context thread
+	m_client_eventloop_thread = boost::thread(boost::ref(m_client_eventloop));
+	m_connection_timers = ZstConnectionTimerMapUnique(new ZstConnectionTimerMap());
 	
 	//Register message dispatch as a client adaptor
 	this->add_adaptor(m_client_transport);
@@ -93,19 +108,16 @@ void ZstClient::init_client(const char *client_name, bool debug)
 	m_session->hierarchy()->performance_events().add_adaptor(m_graph_transport);
 
 	//Set up client->stage adaptors
-	m_client_transport->init(m_actor);
+	m_client_transport->init();
 	m_client_transport->msg_events()->add_adaptor(this);
 	m_client_transport->msg_events()->add_adaptor(m_session);
 	m_client_transport->msg_events()->add_adaptor(m_session->hierarchy());
 
 	//Set up client->performance adaptors
-	m_graph_transport->init(m_actor);
+	m_graph_transport->init();
 	m_graph_transport->msg_events()->add_adaptor(this);
 	m_graph_transport->msg_events()->add_adaptor(m_session);
-
-	//Start the reactor
-	m_actor->start_loop();
-
+	
 	//Init completed
 	set_init_completed(true);
 }
@@ -118,8 +130,8 @@ void ZstClient::init_file_logging(const char * log_file_path)
 void ZstClient::process_events()
 {
 	//Lock the event loop so the calling thread can process all events
-	std::unique_lock<std::mutex> lock(m_event_loop_mutex, std::defer_lock);
-	lock.lock();
+	//std::unique_lock<std::mutex> lock(m_event_loop_mutex, std::defer_lock);
+	//lock.lock();
 
 	//Sanity checks
 	if (!is_init_complete() || m_is_destroyed || m_is_ending) {
@@ -133,11 +145,9 @@ void ZstClient::process_events()
 	m_session->process_events();
 
 	//Reapers are updated last in case entities still need to be queried beforehand
-	//ZstLog::net(LogLevel::debug, "In process_events() - Reapers");
 	m_session->reaper().reap_all();
 	m_session->hierarchy()->reaper().reap_all();
-
-	lock.unlock();
+	//lock.unlock();
 }
 
 void ZstClient::flush()
@@ -157,6 +167,7 @@ void ZstClient::on_receive_msg(ZstMessage * msg)
 		receive_connection_handshake(msg);
 		break;
 	case ZstMsgKind::START_CONNECTION_HANDSHAKE:
+		m_graph_transport->connect_to_unreliable_client(msg->get_arg(ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS));
 		start_connection_broadcast(ZstURI(msg->get_arg(ZstMsgArg::INPUT_PATH)));
 		break;
 	case ZstMsgKind::STOP_CONNECTION_HANDSHAKE:
@@ -196,7 +207,6 @@ void ZstClient::receive_connection_handshake(ZstMessage * msg)
 				}
 			});
 		});
-		
 		m_pending_peer_connections.erase(output_path);
 	}
 }
@@ -228,11 +238,18 @@ void ZstClient::join_stage(std::string stage_address, const ZstTransportSendType
 	m_client_transport->connect_to_stage(stage_address);
 
 	//Acquire our output graph address to send to the stage
-	std::string graph_addr = m_graph_transport->get_graph_address();
-	ZstPerformer * root = session()->hierarchy()->get_local_performer();
+	std::string reliable_graph_addr = m_graph_transport->get_reliable_graph_address();
+	std::string unreliable_graph_addr = m_graph_transport->get_unreliable_graph_address();
 
-	invoke([this, sendtype, &graph_addr, root](ZstTransportAdaptor * adaptor) {
-		adaptor->send_message(ZstMsgKind::CLIENT_JOIN, sendtype, *root, {{ZstMsgArg::OUTPUT_ADDRESS, graph_addr}}, [this](ZstMessageReceipt response) {
+	ZstPerformer * root = session()->hierarchy()->get_local_performer();
+	synchronisable_set_activating(root);
+	
+	invoke([this, sendtype, &reliable_graph_addr, &unreliable_graph_addr, root](ZstTransportAdaptor * adaptor) {
+		ZstMsgArgs args = { 
+			{ ZstMsgArg::GRAPH_RELIABLE_OUTPUT_ADDRESS, reliable_graph_addr },
+			{ ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS, unreliable_graph_addr }
+		};
+		adaptor->send_message(ZstMsgKind::CLIENT_JOIN, sendtype, *root, args, [this](ZstMessageReceipt response) {
 			this->join_stage_complete(response);
 		});
 	});
@@ -252,11 +269,9 @@ void ZstClient::join_stage_complete(ZstMessageReceipt response)
 	ZstLog::net(LogLevel::notification, "Connection to server established");
 
 	//Set up heartbeat timer
-	m_heartbeat_timer_id = m_actor->attach_timer(HEARTBEAT_DURATION, [this]() {this->heartbeat_timer(); });
+	m_heartbeat_timer.expires_from_now(boost::posix_time::milliseconds(HEARTBEAT_DURATION));
+	m_heartbeat_timer.async_wait(boost::bind(&ZstClient::heartbeat_timer, &m_heartbeat_timer, this, boost::posix_time::milliseconds(HEARTBEAT_DURATION)));
 	
-	//TODO: Need a handshake with the stage before we mark connection as active
-	set_connected_to_stage(true);
-
 	//Ask the stage to send us the current session
 	synchronise_graph(response.sendtype);
 
@@ -283,6 +298,10 @@ void ZstClient::synchronise_graph(const ZstTransportSendType & sendtype)
 void ZstClient::synchronise_graph_complete(ZstMessageReceipt response)
 {
 	ZstLog::net(LogLevel::notification, "Graph sync completed");
+	set_connected_to_stage(true);
+
+	//Add local performer to entity lookup
+	m_session->hierarchy()->get_local_performer()->enqueue_activation();
 }
 
 void ZstClient::leave_stage()
@@ -308,11 +327,13 @@ void ZstClient::leave_stage_complete()
 	//Set stage as disconnected again - just to make sure
 	set_connected_to_stage(false);
 
-	//Disconnect rest of sockets and timers
-	if (m_heartbeat_timer_id > 0) {
-		m_actor->detach_timer(m_heartbeat_timer_id);
-		m_heartbeat_timer_id = -1;
+	//Remove root performer from entity lookup
+	for (auto c : ZstEntityBundleScoped(m_session->hierarchy()->get_local_performer())) {
+		m_session->hierarchy()->remove_entity_from_lookup(c);
 	}
+
+	//Disconnect rest of sockets and timers
+	m_heartbeat_timer.cancel();
 	m_client_transport->disconnect_from_stage();
 		
 	//Enqueue event for adaptors
@@ -338,20 +359,27 @@ long ZstClient::ping()
 	return m_ping;
 }
 
-void ZstClient::heartbeat_timer(){
-	invoke([this](ZstTransportAdaptor * adaptor) {
+void ZstClient::heartbeat_timer(boost::asio::deadline_timer * t, ZstClient * client, boost::posix_time::milliseconds duration){
+	if (!client->is_connected_to_stage())
+		return;
+
+	client->invoke([client](ZstTransportAdaptor * adaptor) {
 		std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
-		adaptor->send_message(ZstMsgKind::CLIENT_HEARTBEAT, ZstTransportSendType::ASYNC_REPLY, [this, start](ZstMessageReceipt response) {
+		adaptor->send_message(ZstMsgKind::CLIENT_HEARTBEAT, ZstTransportSendType::ASYNC_REPLY, [client, start](ZstMessageReceipt response) {
 			if (response.status != ZstMsgKind::OK) {
 				ZstLog::net(LogLevel::warn, "Server ping timed out");
-				this->leave_stage_complete();
+				client->leave_stage_complete();
 				return;
 			}
 			std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
 			auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-			this->m_ping = static_cast<long>(delta.count());
+			client->m_ping = static_cast<long>(delta.count());
 		});
 	});
+	
+	//Loop timer
+	t->expires_at(t->expires_at() + duration);
+	t->async_wait(boost::bind(&ZstClient::heartbeat_timer, t, client, duration));
 }
 
 void ZstClient::start_connection_broadcast(const ZstURI & remote_client_path)
@@ -365,10 +393,20 @@ void ZstClient::start_connection_broadcast(const ZstURI & remote_client_path)
 		return;
 	}
 
-	m_connection_timers[remote_client->URI()] = m_actor->attach_timer(100, [this, local_client](){
-		//Cheat by sending a performance message with only the sender and no payload
-		m_graph_transport->send_message(ZstMsgKind::CONNECTION_HANDSHAKE, { {ZstMsgArg::OUTPUT_PATH, local_client->URI().path()} });
-	});
+	boost::asio::deadline_timer timer(m_client_eventloop.IO_context(), boost::posix_time::milliseconds(100));
+	m_connection_timers->insert({ remote_client->URI(),  std::move(timer) });
+	m_connection_timers->at(remote_client->URI()).async_wait(boost::bind(&ZstClient::send_connection_broadcast, &m_connection_timers->at(remote_client->URI()), this, remote_client->URI(), local_client->URI(), boost::posix_time::milliseconds(100)));
+}
+
+void ZstClient::send_connection_broadcast(boost::asio::deadline_timer * t, ZstClient * client, const ZstURI & to, const ZstURI & from, boost::posix_time::milliseconds duration)
+{
+	client->m_graph_transport->send_message(ZstMsgKind::CONNECTION_HANDSHAKE, { { ZstMsgArg::OUTPUT_PATH, from.path() } });
+
+	if (client->m_connection_timers->find(to) != client->m_connection_timers->end()) {
+		//Loop timer if it is valid
+		t->expires_at(t->expires_at() + duration);
+		t->async_wait(boost::bind(&ZstClient::send_connection_broadcast, t, client, to, from, duration));
+	}
 }
 
 void ZstClient::stop_connection_broadcast(const ZstURI & remote_client_path)
@@ -381,22 +419,17 @@ void ZstClient::stop_connection_broadcast(const ZstURI & remote_client_path)
 		return;
 	}
 
-	int timer_id = -1;
-	try{
-		timer_id = m_connection_timers[remote_client->URI()];
-	} catch (std::out_of_range){
-		ZstLog::net(LogLevel::warn, "Broadcast timer for {} not found", remote_client->URI().path());
-	}
-
-	if(timer_id > -1){
-		m_actor->detach_timer(timer_id);
+	if (m_connection_timers->find(remote_client->URI()) != m_connection_timers->end()) {
+		size_t num_cancels = m_connection_timers->at(remote_client->URI()).cancel();
+		m_connection_timers->at(remote_client->URI()).wait();
+		m_connection_timers->erase(remote_client->URI());
 	}
 }
 
 void ZstClient::listen_to_client(const ZstMessage * msg)
 {
 	m_pending_peer_connections[ZstURI(msg->get_arg(ZstMsgArg::OUTPUT_PATH))] = std::stoull(msg->get_arg(ZstMsgArg::CONNECTION_MSG_ID));
-	m_graph_transport->connect_to_client(msg->get_arg(ZstMsgArg::OUTPUT_ADDRESS));
+	m_graph_transport->connect_to_reliable_client(msg->get_arg(ZstMsgArg::GRAPH_RELIABLE_OUTPUT_ADDRESS));
 }
 
 ZstClientSession * ZstClient::session()
@@ -406,30 +439,50 @@ ZstClientSession * ZstClient::session()
 
 void ZstClient::set_is_ending(bool value)
 {
-	std::lock_guard<std::mutex> lock(m_event_loop_mutex);
+	//std::lock_guard<std::mutex> lock(m_event_loop_mutex);
 	m_is_ending = value;
 }
 
 void ZstClient::set_is_destroyed(bool value)
 {
-	std::lock_guard<std::mutex> lock(m_event_loop_mutex);
+	//std::lock_guard<std::mutex> lock(m_event_loop_mutex);
 	m_is_destroyed = value;
 }
 
 void ZstClient::set_init_completed(bool value)
 {
-	std::lock_guard<std::mutex> lock(m_event_loop_mutex);
+	//std::lock_guard<std::mutex> lock(m_event_loop_mutex);
 	m_init_completed = value;
 }
 
 void ZstClient::set_connected_to_stage(bool value) 
 {
-	std::lock_guard<std::mutex> lock(m_event_loop_mutex);
+	//std::lock_guard<std::mutex> lock(m_event_loop_mutex);
 	m_connected_to_stage = value;
 }
 
 void ZstClient::set_is_connecting(bool value) 
 {
-	std::lock_guard<std::mutex> lock(m_event_loop_mutex);
+	//std::lock_guard<std::mutex> lock(m_event_loop_mutex);
 	m_is_connecting = value;
+}
+
+
+// -------------------
+
+
+void ZstClientIOLoop::operator()()
+{
+	boost::this_thread::interruption_point(); 
+
+	//Give the event loop some work to do so it doesn't insta-quit
+	boost::asio::io_service::work work(m_io);
+
+	//Run the event loop (blocks this thread)
+	m_io.run();
+}
+
+boost::asio::io_service & ZstClientIOLoop::IO_context()
+{
+	return m_io;
 }

@@ -1,5 +1,4 @@
 #include "ZstSession.h"
-#include <ZstLogging.h>
 
 // ------------------
 // Cable creation API
@@ -51,12 +50,17 @@ ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * outpu
 
 	if (!input || !output) {
 		ZstLog::net(LogLevel::notification, "Can't connect cable, plug missing.");
-		return cable;
+		return NULL;
 	}
 
-	if (!input->is_activated() || !output->is_activated()) {
-		ZstLog::net(LogLevel::notification, "Can't connect cable, plug is not activated.");
-		return cable;
+	if (!input->is_activated()) {
+		ZstLog::net(LogLevel::notification, "Can't connect cable, input plug {} is not activated.", input->URI().path());
+		return NULL;
+	}
+
+	if (!output->is_activated()) {
+		ZstLog::net(LogLevel::notification, "Can't connect cable, output plug {} is not activated.", output->URI().path());
+		return NULL;
 	}
 
 	if (input->direction() != ZstPlugDirection::IN_JACK || output->direction() != ZstPlugDirection::OUT_JACK) {
@@ -76,7 +80,7 @@ ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * outpu
 	if (!input->is_proxy() || !output->is_proxy()) {
 		cable_set_local(cable);
 	}
-
+	
 	//Create the cable early so we have something to return immediately
 	return cable;
 }
@@ -96,23 +100,14 @@ void ZstSession::destroy_cable_complete(ZstCable * cable)
 {
 	if (!cable) return;
 
-	ZstInputPlug * input = cable->get_input();
-	ZstOutputPlug * output = cable->get_output();
-
-	//Remove cable from plugs
-	if (input)
-		plug_remove_cable(input, cable);
-
-	if (output) {
-		plug_remove_cable(output, cable);
-	}
-
-	cable->set_input(NULL);
-	cable->set_output(NULL);
+	//Lock the session
+	//std::lock_guard<std::mutex> lock(m_session_mtex);
 
 	//Remove cable from local list so that other threads don't assume it still exists
 	m_cables.erase(cable);
-	synchronisable_set_deactivating(cable);
+
+	//Disconnect the cable
+	cable->disconnect();
 }
 
 

@@ -34,16 +34,11 @@ ZstContainer::ZstContainer(const ZstContainer & other) : ZstComponent(other)
 
 ZstContainer::~ZstContainer()
 {
-	auto children = m_children;
-	for (auto child : children){
-		//TODO: This will fail if the entity wasn't assigned in this DLL!
-		delete child.second;
-	}
 	m_children.clear();
 	m_parent = NULL;
 }
 
-ZstEntityBase * ZstContainer::find_child_by_URI(const ZstURI & path)
+ZstEntityBase * ZstContainer::walk_child_by_URI(const ZstURI & path)
 {
 	ZstEntityBase * result = NULL;
 	ZstEntityBase * previous = NULL;
@@ -99,7 +94,7 @@ ZstEntityBase * ZstContainer::get_child_by_URI(const ZstURI & path)
 	return result;
 }
 
-ZstEntityBase * ZstContainer::get_child_at(int index) const
+ZstEntityBase * ZstContainer::get_child_at(size_t index) const
 {
 	ZstEntityBase * result = NULL;
 	int i = 0;
@@ -118,38 +113,13 @@ const size_t ZstContainer::num_children() const
 	return m_children.size();
 }
 
-void ZstContainer::enqueue_activation()
-{
-	ZstComponent::enqueue_activation();
-	
-	//Recursively activate all children
-	for (auto c : m_children) {
-		c.second->enqueue_activation();
-	}
-}
-
-void ZstContainer::enqueue_deactivation()
-{
-    ZstComponent::enqueue_deactivation();
-    for(auto c : m_children){
-        c.second->enqueue_deactivation();
-    }
-}
-
-void ZstContainer::set_activation_status(ZstSyncStatus status)
-{
-    ZstComponent::set_activation_status(status);
-    for (auto c : m_children) {
-        c.second->set_activation_status(status);
-    }
-}
-
 void ZstContainer::set_parent(ZstEntityBase * entity)
 {
     if(is_destroyed()) return;
 
     ZstComponent::set_parent(entity);
     
+	//Removing and re-adding children will update their URI
 	auto children = m_children;
 	for (auto child : children) {
         this->remove_child(child.second);
@@ -158,14 +128,6 @@ void ZstContainer::set_parent(ZstEntityBase * entity)
     for(auto child : children){
         this->add_child(child.second);
     }
-}
-
-void ZstContainer::disconnect_cables()
-{
-	ZstComponent::disconnect_cables();
-	for (auto c : m_children) {
-		c.second->disconnect_cables();
-	}
 }
 
 void ZstContainer::add_child(ZstEntityBase * child) {
@@ -184,8 +146,6 @@ void ZstContainer::remove_child(ZstEntityBase * child) {
 		m_children.erase(c);
 	}
 	
-	//TODO: How do we remove all cables from child plugs?
-
 	child->m_parent = NULL;
 }
 
@@ -231,62 +191,20 @@ void ZstContainer::read(const char * buffer, size_t length, size_t & offset)
 	}
 }
 
-void ZstContainer::add_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive)
-{
-	ZstComponent::add_adaptor(adaptor, recursive);
-	if (recursive) {
-		for (auto child : m_children) {
-			static_cast<ZstSynchronisable*>(child.second)->add_adaptor(adaptor, recursive);
-		}
-	}
-}
-
-void ZstContainer::add_adaptor(ZstEntityAdaptor * adaptor, bool recursive)
-{
-	ZstComponent::add_adaptor(adaptor, recursive);
-	if (recursive) {
-		for (auto child : m_children) {
-			child.second->add_adaptor(adaptor, recursive);
-		}
-	}
-}
-
-void ZstContainer::remove_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive)
-{
-	ZstComponent::remove_adaptor(adaptor, recursive);
-	if (recursive) {
-		for (auto child : m_children) {
-			static_cast<ZstSynchronisable*>(child.second)->remove_adaptor(adaptor, recursive);
-		}
-	}
-}
-
-void ZstContainer::remove_adaptor(ZstEntityAdaptor * adaptor, bool recursive)
-{
-	ZstComponent::remove_adaptor(adaptor, recursive);
-	if (recursive) {
-		for (auto child : m_children) {
-			child.second->remove_adaptor(adaptor, recursive);
-		}
-	}
-}
-
- void ZstContainer::set_proxy()
-{
-	 ZstComponent::set_proxy();
-	 for (auto c : m_children) {
-		 c.second->set_proxy();
-	 }
-}
-
 ZstCableBundle * ZstContainer::get_child_cables(ZstCableBundle * bundle)
 {
-	ZstComponent::get_child_cables(bundle);
-
 	for(auto child : m_children){
 		child.second->get_child_cables(bundle);
 	}
+	return ZstComponent::get_child_cables(bundle);
+}
 
-	return bundle;
+ZstEntityBundle * ZstContainer::get_child_entities(ZstEntityBundle * bundle)
+{
+	for (auto child : m_children) {
+		child.second->get_child_entities(bundle);
+		bundle->add(child.second);
+	}
+	return ZstComponent::get_child_entities(bundle);
 }
 

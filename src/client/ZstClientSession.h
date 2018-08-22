@@ -27,6 +27,7 @@ class ZstClientSession :
 	public ZstClientModule,
 	public ZstHierarchyAdaptor
 {
+	friend class ZstClient;
 public:
 	ZstClientSession();
 	virtual ~ZstClientSession();

@@ -140,7 +140,6 @@ void ZstValue::read(const char * buffer, size_t length, size_t & offset)
 	handle = msgpack::unpack(buffer, length, offset);
 	auto num_values = handle.get().via.i64;
 
-	std::lock_guard<std::mutex> lock(m_lock);
 	m_values.resize(num_values);
 
 	//Unpack values

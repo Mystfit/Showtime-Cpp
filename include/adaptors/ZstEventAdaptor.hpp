@@ -1,4 +1,5 @@
 #pragma once
+#include <ZstLogging.h>
 
 class ZstEventAdaptor {
 public:

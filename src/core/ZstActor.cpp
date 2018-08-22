@@ -1,5 +1,4 @@
 #include "ZstActor.h"
-#include <czmq.h>
 
 using namespace std;
 
@@ -13,14 +12,14 @@ ZstActor::~ZstActor()
 
 void ZstActor::destroy()
 {
-	zsys_shutdown();
 }
 
-void ZstActor::init()
+void ZstActor::init(const char * name)
 {
+	m_actor_name = std::string(name);
 	m_loop = zloop_new();
 	zloop_set_verbose(m_loop, false);
-	zloop_set_nonstop(m_loop, false);
+	zloop_set_nonstop(m_loop, true);
 }
 
 void ZstActor::start_loop()
@@ -39,6 +38,11 @@ void ZstActor::stop_loop()
 bool ZstActor::is_running()
 {
 	return m_is_running;
+}
+
+const char * ZstActor::name() const
+{
+	return m_actor_name.c_str();
 }
 
 void ZstActor::start_polling(zsock_t * pipe)

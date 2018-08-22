@@ -5,9 +5,6 @@
 #include "../core/ZstActor.h"
 #include "../core/ZstStageMessage.h"
 
-#define HEARTBEAT_DURATION 1000
-#define MAX_MISSED_HEARTBEATS 10
-#define STAGE_MESSAGE_POOL_BLOCK 512
 
 class ZstStageRouterTransport :
 	public ZstTransportLayer<ZstStageMessage>
@@ -15,7 +12,7 @@ class ZstStageRouterTransport :
 public:
 	ZstStageRouterTransport();
 	~ZstStageRouterTransport();
-	void init(ZstActor * actor) override;
+	void init() override;
 	void destroy() override;
 
 	//Incoming socket handlers
@@ -26,5 +23,6 @@ public:
 	void on_receive_msg(ZstMessage * msg) override;
 
 private:
+	ZstActor m_router_actor;
 	zsock_t * m_performer_router;
 };

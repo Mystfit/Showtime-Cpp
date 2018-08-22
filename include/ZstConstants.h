@@ -33,10 +33,17 @@ enum ZstPlugDirection {
 	OUT_JACK
 };
 
-#define STAGE_ROUTER_PORT 6001
-#define STAGE_PUB_PORT 6002
+//Ports
+#define STAGE_ROUTER_PORT 10006
+#define STAGE_PUB_PORT 10007
+#define CLIENT_UNRELIABLE_PORT 10008
+
+//Heartbeats
 #define HEARTBEAT_DURATION 1000
+#define MAX_MISSED_HEARTBEATS 10
 #define MESSAGE_POOL_BLOCK 256
 
 // Number of milliseconds to wait until a timeout is called on a stage operation
 #define STAGE_TIMEOUT 5000
+#define STAGE_HEARTBEAT_CHECK HEARTBEAT_DURATION * 2
+

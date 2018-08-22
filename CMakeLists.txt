@@ -18,7 +18,7 @@ if(USE_HUNTER)
     set(HUNTER_ENABLED ON)
 endif()
 
-project(Showtime VERSION 0.12.0)
+project(Showtime VERSION 0.13.1)
 set(SHOWTIME_NAMESPACE "${PROJECT_NAME}::")
 
 # Use C14
@@ -121,14 +121,9 @@ if(USE_HUNTER AND HUNTER_ENABLED)
             date_time
             chrono
             atomic
+            regex
         )
     endif()
-
-    # hunter_add_package(MsgPack) # Use updated package at https://github.com/mystfit/msgpack-c.git
-    message(STATUS "Adding hunter packages")
-    hunter_add_package(fmt)
-    hunter_add_package(ZeroMQ)  # Only include ZeroMQ until CZMQ gets CZMQConfig.cmake added to Hunter
-    # hunter_add_package(czmq)
 endif()
 
 message(STATUS "Finding packages")
@@ -150,6 +145,7 @@ find_package(Boost COMPONENTS
     date_time
     chrono
     atomic
+    regex
     REQUIRED
 )
 if(Boost_USE_LOCAL)
@@ -164,28 +160,38 @@ set(Boost_SYSTEM_TARGET "Boost::system")
 set(Boost_DATE_TIME_TARGET "Boost::date_time")
 set(Boost_CHRONO_TARGET "Boost::chrono")
 set(Boost_ATOMIC_TARGET "Boost::atomic")
+set(Boost_REGEX_TARGET "Boost::regex")
 
 # Msgpack, fmt, swig
 # ------------------
 find_package(MsgPack CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
+
+if(WIN32)
+    # Use cmake versions of ZeroMQ and CZMQ
+    find_package(ZeroMQ CONFIG REQUIRED)
+    find_package(czmq CONFIG REQUIRED)
+else()
+    # Use homebrew versions of libzmq and CZMQ
+    find_package(libzmq REQUIRED)
+    find_package(czmq REQUIRED)
+endif()
+
 find_package(SWIG)
 if(SWIG_FOUND)
     include(UseSWIG)
 endif()
+
+set(CZMQ_TARGET czmq)
+set(LIBZMQ_TARGET libzmq)
+set(fmt_TARGET "fmt::fmt-header-only")
 set(msgpackc_TARGET "msgpackc-static") # set(msgpackc_LIBRARY "msgpack::msgpackc-static")
 
+# Boost is the last non-hunter library
 if(WIN32 AND USE_HUNTER AND HUNTER_ENABLED)
-    find_package(ZeroMQ CONFIG REQUIRED) # Only include ZeroMQ until CZMQ gets CZMQConfig.cmake added to Hunter - windows only
-    find_package(czmq CONFIG REQUIRED)
-    set(CZMQ_TARGET "czmq::czmq")
-    set(fmt_TARGET "fmt::fmt")
+    set(Boost_USE_LOCAL OFF)
 else()
-    find_package(czmq REQUIRED)
     set(Boost_USE_LOCAL ON)
-    set(CZMQ_TARGET ${CZMQ_LIBRARIES})
-    set(fmt_TARGET "fmt::fmt-header-only")
-    # set(ZEROMQ_TARGET ${ZeroMQ_LIBRARIES})
 endif()
 
 
@@ -244,7 +250,7 @@ if(BINDINGS_DOTNET OR BINDINGS_UNITY)
     if(WIN32)
         add_library(${DOTNET_TARGET} SHARED "")
     else()
-        set(DOTNET_OUTPUT_FILE ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${DOTNET_TARGET}.dll)
+        add_custom_target(${DOTNET_TARGET})
     endif()
     include(src/bindings/dotnet/CMakeLists.txt)
     if(WIN32)

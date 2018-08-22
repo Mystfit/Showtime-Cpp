@@ -10,8 +10,6 @@
 
 class ZstComponent : public ZstEntityBase {
 public:
-	friend class ZstClient;
-	friend class ZstStage;
 	ZST_EXPORT ZstComponent();
 	ZST_EXPORT ZstComponent(const char * path);
 	ZST_EXPORT ZstComponent(const char * component_type, const char * path);
@@ -31,16 +29,13 @@ public:
 	ZST_EXPORT ZstInputPlug * create_input_plug(const char* name, ZstValueType val_type);
     
     //Create and attach a new output plug to this component
-	ZST_EXPORT ZstOutputPlug * create_output_plug(const char* name, ZstValueType val_type);
+	ZST_EXPORT ZstOutputPlug * create_output_plug(const char* name, ZstValueType val_type, bool reliable = true);
 
 	//Transfer plug ownership to this component
 	ZST_EXPORT int add_plug(ZstPlug * plug);
     
     //Remove a plug from this component
 	ZST_EXPORT void remove_plug(ZstPlug *plug);
-
-	//Disconnect all plugs from this component
-	ZST_EXPORT void disconnect_cables() override;
     
 	//Serialisation
 	ZST_EXPORT virtual void write(std::stringstream & buffer) const override;
@@ -49,33 +44,15 @@ public:
 	//Specific component type
 	ZST_EXPORT const char * component_type() const;
 
-	//Adaptor registration
-	ZST_EXPORT virtual void add_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive = false) override;
-	ZST_EXPORT virtual void add_adaptor(ZstEntityAdaptor * adaptor, bool recursive = false) override;
-	ZST_EXPORT virtual void remove_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive = false) override;
-	ZST_EXPORT virtual void remove_adaptor(ZstEntityAdaptor * adaptor, bool recursive = false) override;
-
-
-	ZST_EXPORT virtual void set_proxy() override;
-
 protected:
 	ZST_EXPORT void set_component_type(const char * component_type);
 	ZST_EXPORT void set_component_type(const char * component_type, size_t len);
 	ZST_EXPORT virtual ZstCableBundle * get_child_cables(ZstCableBundle * bundle) override;
-    
+	ZST_EXPORT virtual ZstEntityBundle * get_child_entities(ZstEntityBundle * bundle) override;
+
     //Set parent of this component
     ZST_EXPORT virtual void set_parent(ZstEntityBase * parent) override;
     
-    //Queue component as activated
-    ZST_EXPORT virtual void enqueue_activation() override;
-    
-    //Queue component as deactivated
-    ZST_EXPORT virtual void enqueue_deactivation() override;
-    
-    //Set activation status
-    ZST_EXPORT virtual void set_activation_status(ZstSyncStatus status) override;
-
-	
 private:
 	std::vector<ZstPlug*> m_plugs;
 	char * m_component_type;

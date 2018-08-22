@@ -42,9 +42,6 @@ ZstComponent::ZstComponent(const ZstComponent & other) : ZstEntityBase(other)
 
 ZstComponent::~ZstComponent()
 {
-	for (auto plug : m_plugs) {
-		delete plug;
-	}
 	m_plugs.clear();
 	free(m_component_type);
 }
@@ -56,9 +53,9 @@ ZstInputPlug * ZstComponent::create_input_plug(const char * name, ZstValueType v
 	return plug;
 }
 
-ZstOutputPlug * ZstComponent::create_output_plug(const char * name, ZstValueType val_type)
+ZstOutputPlug * ZstComponent::create_output_plug(const char * name, ZstValueType val_type, bool reliable)
 {
-	ZstOutputPlug * plug = new ZstOutputPlug(name, val_type);
+	ZstOutputPlug * plug = new ZstOutputPlug(name, val_type, reliable);
 	add_plug(plug);
 	return plug;
 }
@@ -88,41 +85,10 @@ int ZstComponent::add_plug(ZstPlug * plug)
 
 void ZstComponent::remove_plug(ZstPlug * plug)
 {
-	for (auto cable : *plug) {
+	for (auto cable : ZstCableBundleScoped(plug)) {
 		cable->enqueue_deactivation();
 	}
 	m_plugs.erase(std::remove(m_plugs.begin(), m_plugs.end(), plug), m_plugs.end());
-}
-
-void ZstComponent::disconnect_cables()
-{
-	for (auto c : m_plugs) {
-		c->disconnect_cables();
-	}
-}
-
-void ZstComponent::enqueue_activation()
-{
-    ZstEntityBase::enqueue_activation();
-    for (auto p : m_plugs) {
-        p->enqueue_activation();
-    }
-}
-
-void ZstComponent::enqueue_deactivation()
-{
-    ZstEntityBase::enqueue_deactivation();
-    for (auto p : m_plugs) {
-        p->enqueue_deactivation();
-    }
-}
-
-void ZstComponent::set_activation_status(ZstSyncStatus status)
-{
-    ZstEntityBase::set_activation_status(status);
-    for (auto p : m_plugs) {
-        p->set_activation_status(status);
-    }
 }
 
 void ZstComponent::set_parent(ZstEntityBase * parent)
@@ -187,54 +153,6 @@ const char * ZstComponent::component_type() const
 	return m_component_type;
 }
 
-void ZstComponent::add_adaptor(ZstEntityAdaptor * adaptor, bool recursive)
-{
-	ZstEntityBase::add_adaptor(adaptor);
-	if (recursive) {
-		for (auto plug : m_plugs) {
-			plug->add_adaptor(adaptor);
-		}
-	}
-}
-
-void ZstComponent::add_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive)
-{
-	ZstSynchronisable::add_adaptor(adaptor);
-	if (recursive) {
-		for (auto plug : m_plugs) {
-			static_cast<ZstSynchronisable*>(plug)->add_adaptor(adaptor);
-		}
-	}
-}
-
-void ZstComponent::remove_adaptor(ZstEntityAdaptor * adaptor, bool recursive)
-{
-	ZstEntityBase::add_adaptor(adaptor);
-	if (recursive) {
-		for (auto plug : m_plugs) {
-			plug->remove_adaptor(adaptor);
-		}
-	}
-}
-
-void ZstComponent::remove_adaptor(ZstSynchronisableAdaptor * adaptor, bool recursive)
-{
-    ZstSynchronisable::remove_adaptor(adaptor);
-	if (recursive) {
-		for (auto plug : m_plugs) {
-			static_cast<ZstSynchronisable*>(plug)->remove_adaptor(adaptor);
-		}
-	}
-}
-
- void ZstComponent::set_proxy()
-{
-	 ZstSynchronisable::set_proxy();
-	 for (auto plug : m_plugs) {
-		 plug->set_proxy();
-	 }
-}
-
 void ZstComponent::set_component_type(const char * component_type)
 {
 	set_component_type(component_type, strlen(component_type));
@@ -250,17 +168,15 @@ void ZstComponent::set_component_type(const char * component_type, size_t len)
 ZstCableBundle * ZstComponent::get_child_cables(ZstCableBundle * bundle)
 {
 	for (auto p : m_plugs) {
-		for (auto c : *p) {
-			bool exists = false;
-			for (int i = 0; i < bundle->size(); ++i){
-				if (bundle->cable_at(i) == c) {
-					exists = true;
-				}
-			}
-			if (!exists) {
-				bundle->add(c);
-			}
-		}
+		p->get_child_cables(bundle);
 	}
-	return bundle;
+	return ZstEntityBase::get_child_cables(bundle);
+}
+
+ZstEntityBundle * ZstComponent::get_child_entities(ZstEntityBundle * bundle)
+{
+	for (auto p : m_plugs) {
+		bundle->add(p);
+	}
+	return ZstEntityBase::get_child_entities(bundle);
 }

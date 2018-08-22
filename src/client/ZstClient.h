@@ -5,6 +5,10 @@
 #include <string>
 #include <mutex>
 
+//Boost includes
+#include <boost/asio.hpp>
+#include <boost/thread.hpp>
+
 //Showtime API includes
 #include <ZstCore.h>
 
@@ -21,9 +25,26 @@
 #include "ZstClientTransport.h"
 
 
+struct ZstClientIOLoop {
+public:
+	ZstClientIOLoop() {};
+	void operator()();
+	boost::asio::io_service & IO_context();
+
+private:
+	boost::asio::io_service m_io;
+};
+
+
+//Typedefs
+typedef std::unordered_map<ZstURI, boost::asio::deadline_timer, ZstURIHash> ZstConnectionTimerMap;
+typedef std::unique_ptr<ZstConnectionTimerMap> ZstConnectionTimerMapUnique;
+
+
 class ZstClient : 
 	public ZstEventDispatcher<ZstTransportAdaptor*>,
-	public ZstTransportAdaptor
+	public ZstTransportAdaptor,
+	public ZstSynchronisableLiason
 {
 public:
 	ZstClient();
@@ -65,7 +86,7 @@ private:
 	//Heartbeat timer
 	int m_heartbeat_timer_id;
 	long m_ping;
-	void heartbeat_timer();
+	static void heartbeat_timer(boost::asio::deadline_timer * t, ZstClient * client, boost::posix_time::milliseconds duration);
 		
 	//Destruction
 	void set_is_ending(bool value);
@@ -89,16 +110,21 @@ private:
 
 	//P2P Connections
 	void start_connection_broadcast(const ZstURI & remote_client_path);
+	static void send_connection_broadcast(boost::asio::deadline_timer * t, ZstClient * client, const ZstURI & to, const ZstURI & from, boost::posix_time::milliseconds duration);
 	void stop_connection_broadcast(const ZstURI & remote_client_path);
 	void listen_to_client(const ZstMessage * msg);
 	ZstPerformerMap m_active_peer_connections;
 	std::unordered_map<ZstURI, ZstMsgID, ZstURIHash> m_pending_peer_connections;
-	std::unordered_map<ZstURI, int, ZstURIHash> m_connection_timers;
 	
 	//Client modules
 	ZstClientSession * m_session;
 	ZstGraphTransport * m_graph_transport;
 	ZstClientTransport * m_client_transport;
-	ZstActor * m_actor;
-	std::mutex m_event_loop_mutex;
+
+	//Timers
+	boost::thread m_client_eventloop_thread;
+	ZstClientIOLoop m_client_eventloop;
+	boost::asio::deadline_timer m_heartbeat_timer;
+	ZstConnectionTimerMapUnique m_connection_timers;
 };
+

@@ -1,7 +1,9 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
-#include "Showtime.h"
+
+#include "TestCommon.hpp"
+
 
 class Sink : public ZstContainer {
 private:
@@ -73,22 +75,24 @@ public:
 
 int main(int argc,char **argv){
 
-	zst_init("sink", true);
 
 	ZstLog::app(LogLevel::notification, "In sink process");
-#ifdef SKIP_SINK_TEST 
-	if(argc < 2){
+
+	bool force_launch = true;
+	if(argc < 2 && !force_launch){
 		ZstLog::app(LogLevel::warn, "Skipping sink test, command line flag not set");
 		return 0;
 	}
 
-	if(argv[1][0] == 'd')
+	if (argc >= 2) {
+		if (argv[1][0] == 'd')
 #ifdef WIN32
-		system("pause");
+			system("pause");
 #else
-        system("read -n 1 -s -p \"Press any key to continue...\n\"");
+			system("read -n 1 -s -p \"Press any key to continue...\n\"");
 #endif
-#endif
+	}
+	zst_init("sink", true);
     zst_join("127.0.0.1");
 
 	Sink * sink = new Sink("sink_ent");

@@ -34,11 +34,11 @@ set CMAKE_VER_FULL=cmake-%CMAKE_VER%-win64-x64
 set CMAKE_URL=https://cmake.org/files/v3.12/%CMAKE_VER_FULL%.zip
 
 IF EXIST %DEPENDENCY_DIR%\cmake (
-    echo "Found cmake"
+    echo Found CMake
 ) ELSE (
     echo === Downloading %CMAKE_VER_FULL% === 
     powershell -Command "Invoke-WebRequest %CMAKE_URL% -OutFile %DEPENDENCY_DIR%\%CMAKE_VER_FULL%.zip"
-    echo  === Unzipping cmake === 
+    echo  === Unzipping CMake === 
     7z x -y -bd -bb0 -o%DEPENDENCY_DIR% %DEPENDENCY_DIR%\%CMAKE_VER_FULL%.zip
     echo Renaming %DEPENDENCY_DIR%\%CMAKE_VER_FULL to cmake
     rename "%DEPENDENCY_DIR%\%CMAKE_VER_FULL%" cmake
@@ -46,32 +46,46 @@ IF EXIST %DEPENDENCY_DIR%\cmake (
 set CMAKE_BIN=%DEPENDENCY_DIR%\cmake\bin\cmake
 set CTEST_BIN=%DEPENDENCY_DIR%\cmake\bin\ctest
 
-REM Set common build flags and prefixes for czmq and msgpack
-set COMMON_GENERATOR_FLAGS=-G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%DEPENDENCY_DIR%\install" -DHUNTER_STATUS_PRINT=OFF -DCMAKE_INSTALL_MESSAGE=NEVER
+REM Set common build flags and prefixes for czmq and msgpack  
+set INSTALL_PREFIX=%DEPENDENCY_DIR%\install
+set COMMON_GENERATOR_FLAGS=-G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%INSTALL_PREFIX%" -DCMAKE_INSTALL_MESSAGE=NEVER -DCMAKE_PREFIX_PATH="%INSTALL_PREFIX%"
 set COMMON_BUILD_FLAGS=--config %CONFIGURATION% --target INSTALL -- /nologo /verbosity:minimal
 
 
+REM libZMQ
+IF EXIST %DEPENDENCY_DIR%\libzmq (
+    echo Found libZMQ
+) ELSE (
+    echo === Cloning libZMQ === 
+    git clone https://github.com/mystfit/libzmq.git %DEPENDENCY_DIR%\libzmq
+    git -C %DEPENDENCY_DIR%\libzmq checkout drafts
+    mkdir "%DEPENDENCY_DIR%\libzmq\build"
+    echo  === Building libzmq === 
+    %CMAKE_BIN% -H"%DEPENDENCY_DIR%\libzmq" -B"%DEPENDENCY_DIR%\libzmq\build" %COMMON_GENERATOR_FLAGS% -DENABLE_DRAFTS=TRUE -DZMQ_BUILD_TESTS=OFF
+    %CMAKE_BIN% --build "%DEPENDENCY_DIR%\libzmq\build" %COMMON_BUILD_FLAGS%
+)
+
 REM CZMQ
 IF EXIST %DEPENDENCY_DIR%\czmq (
-    echo "Found czmq"
+    echo Found CZMQ
 ) ELSE (
-    echo === Cloning patched hunterized CZMQ === 
+    echo === Cloning CZMQ === 
     git clone https://github.com/mystfit/czmq.git %DEPENDENCY_DIR%\czmq
-    git -C %DEPENDENCY_DIR%\czmq checkout hunter-v4.1.0
+    git -C %DEPENDENCY_DIR%\czmq checkout master
     mkdir "%DEPENDENCY_DIR%\czmq\build"
     echo  === Building czmq === 
-    %CMAKE_BIN% -H"%DEPENDENCY_DIR%\czmq" -B"%DEPENDENCY_DIR%\czmq\build" %COMMON_GENERATOR_FLAGS%
+    %CMAKE_BIN% -H"%DEPENDENCY_DIR%\czmq" -B"%DEPENDENCY_DIR%\czmq\build" %COMMON_GENERATOR_FLAGS% -DENABLE_DRAFTS=TRUE -DBUILD_TESTING=OFF -DLIBZMQ_FIND_USING_CMAKE_PACKAGE=ON
     %CMAKE_BIN% --build "%DEPENDENCY_DIR%\czmq\build" %COMMON_BUILD_FLAGS%
 )
 
-
 REM msgpack-c
 IF EXIST %DEPENDENCY_DIR%\msgpack-c (
-    echo "Found msgpack-c"
+    echo Found MsgPack-C
 ) ELSE (
-    echo === Cloning patched hunterized msgpack === 
-    git clone https://github.com/mystfit/msgpack-c.git %DEPENDENCY_DIR%\msgpack-c
-    git -C %DEPENDENCY_DIR%\msgpack-c checkout hunter-2.1.5
+    echo === Cloning msgpack-c === 
+    git clone https://github.com/msgpack/msgpack-c.git %DEPENDENCY_DIR%\msgpack-c
+    git -C %DEPENDENCY_DIR%\msgpack-c fetch --all --tags --prune
+    git -C %DEPENDENCY_DIR%\msgpack-c checkout cpp-3.0.1
     mkdir "%DEPENDENCY_DIR%\msgpack-c\build"
     echo === Building msgpack === 
     %CMAKE_BIN% -H"%DEPENDENCY_DIR%\msgpack-c" -B"%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_GENERATOR_FLAGS% -DMSGPACK_BUILD_EXAMPLES=OFF
@@ -79,12 +93,27 @@ IF EXIST %DEPENDENCY_DIR%\msgpack-c (
 )
 
 
+REM fmt
+IF EXIST %DEPENDENCY_DIR%\fmt (
+    echo Found fmt
+) ELSE (
+    echo === Cloning fmt === 
+    git clone https://github.com/fmtlib/fmt.git %DEPENDENCY_DIR%\fmt
+    git -C %DEPENDENCY_DIR%\fmt fetch --all --tags --prune
+    git -C %DEPENDENCY_DIR%\fmt checkout 5.1.0
+    mkdir "%DEPENDENCY_DIR%\fmt\build"
+    echo === Building fmt === 
+    %CMAKE_BIN% -H"%DEPENDENCY_DIR%\fmt" -B"%DEPENDENCY_DIR%\fmt\build" %COMMON_GENERATOR_FLAGS%
+    %CMAKE_BIN% --build "%DEPENDENCY_DIR%\fmt\build" %COMMON_BUILD_FLAGS%
+)
+
+
 REM swig
 set SWIG_VER=swigwin-3.0.12
 IF EXIST %DEPENDENCY_DIR%\swig (
-    echo "Found swig"
+    echo Found SWIG
 ) ELSE (
-    echo === Downloading swig === 
+    echo === Downloading SWIG === 
     powershell -Command "Invoke-WebRequest https://phoenixnap.dl.sourceforge.net/project/swig/swigwin/swigwin-3.0.12/%SWIG_VER%.zip -OutFile %DEPENDENCY_DIR%\%SWIG_VER%.zip"
     echo === Unzipping swig === 
     7z x -y -bd -bb0 -o%DEPENDENCY_DIR% %DEPENDENCY_DIR%\%SWIG_VER%.zip
@@ -96,7 +125,7 @@ IF EXIST %DEPENDENCY_DIR%\swig (
 REM Unity
 SET UNITY_EXE="%DEPENDENCY_DIR%\unity\Editor\Unity.exe"
 if EXIST %DEPENDENCY_DIR%\unity (
-    echo "Found unity"
+    echo Found Unity
 ) ELSE (
     IF NOT EXIST %DEPENDENCY_DIR%\UnitySetup64.exe (
         echo === Downloading Unity === 
@@ -104,6 +133,7 @@ if EXIST %DEPENDENCY_DIR%\unity (
         powershell -Command "Invoke-WebRequest $env:UNITY_URL -OutFile %DEPENDENCY_DIR%\UnitySetup64.exe"
     )
     echo === Installing Unity === 
-    %DEPENDENCY_DIR%\UnitySetup64.exe /S /D=%DEPENDENCY_DIR%\unity
-    del %DEPENDENCY_DIR%\UnitySetup64.exe
+    mkdir "%DEPENDENCY_DIR%\unity"
+    %DEPENDENCY_DIR%\UnitySetup64.exe /S /D="%DEPENDENCY_DIR%\unity"
+    del "%DEPENDENCY_DIR%\UnitySetup64.exe"
 )

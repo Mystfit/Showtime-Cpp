@@ -48,6 +48,7 @@ public class ExampleObservableManager : MonoBehaviour
     public void Connect()
     {
         showtime.init(client_name, true);
+        showtime.init_file_logging();
         showtime.join(address);
 
         if (is_master)
@@ -66,9 +67,6 @@ public class ExampleObservableManager : MonoBehaviour
 
     private void OnApplicationQuit()
     {
-        if (showtime.is_connected())
-        {
-            showtime.destroy();
-        }
+        showtime.destroy();
     }
 }

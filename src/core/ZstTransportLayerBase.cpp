@@ -22,10 +22,9 @@ void ZstTransportLayerBase::destroy()
 	m_is_active = false;
 }
 
-void ZstTransportLayerBase::init(ZstActor * actor)
+void ZstTransportLayerBase::init()
 {
 	m_timeout_watcher = new cf::time_watcher();
-	m_actor = actor;
 	m_is_active = true;
 }
 
@@ -60,11 +59,6 @@ ZstEventDispatcher<ZstTransportAdaptor*>* ZstTransportLayerBase::msg_events()
 bool ZstTransportLayerBase::is_active()
 {
 	return m_is_active;
-}
-
-ZstActor * ZstTransportLayerBase::actor()
-{
-	return m_actor;
 }
 
 void ZstTransportLayerBase::process_events()

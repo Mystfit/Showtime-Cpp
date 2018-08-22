@@ -4,9 +4,6 @@
 #include "../core/ZstActor.h"
 #include "../core/ZstStageMessage.h"
 
-#define HEARTBEAT_DURATION 1000
-#define MAX_MISSED_HEARTBEATS 10
-#define STAGE_MESSAGE_POOL_BLOCK 512
 
 class ZstStagePublisherTransport :
 	public ZstTransportLayer<ZstStageMessage>,
@@ -15,7 +12,7 @@ class ZstStagePublisherTransport :
 public:
 	ZstStagePublisherTransport();
 	~ZstStagePublisherTransport();
-	void init(ZstActor * actor) override;
+	void init() override;
 	void destroy() override;
 
 	void send_message_impl(ZstMessage * msg) override;

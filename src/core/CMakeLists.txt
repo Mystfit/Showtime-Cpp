@@ -17,6 +17,7 @@ set(API_FILES
     ${Showtime_INCLUDE_DIRS}/ZstURI.h
     ${Showtime_INCLUDE_DIRS}/ZstSerialisable.h
     ${Showtime_INCLUDE_DIRS}/ZstSynchronisable.h
+    ${Showtime_INCLUDE_DIRS}/ZstBundle.hpp
     ${Showtime_INCLUDE_DIRS}/ZstEventDispatcher.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstEventAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstComputeAdaptor.hpp
@@ -93,21 +94,34 @@ target_include_directories(${CORE_TARGET}
         ${Showtime_SOURCE_DEPENDENCIES}
 )
 
+set(GLOBAL_PUBLIC_DEFINES "")
+
+
 IF(WIN32)
+    list(APPEND GLOBAL_PUBLIC_DEFINES "FMT_USE_WINDOWS_H=0")
     target_compile_definitions(${CORE_TARGET} PRIVATE -DZST_EXPORT_CORE_API)
     target_compile_definitions(${CORE_TARGET} INTERFACE -DZST_IMPORT_CORE_API)
-    target_compile_definitions(${CORE_TARGET} PUBLIC 
-                                -D_WIN32_WINNT=0x0601
-                                -DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE)
+    list(APPEND GLOBAL_PUBLIC_DEFINES
+        -D_WIN32_WINNT=0x0601
+        -DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE
+    )
 else()
+    list(APPEND GLOBAL_PUBLIC_DEFINES 
+        -DZMQ_BUILD_DRAFT_API
+        -DCZMQ_BUILD_DRAFT_API
+    )
     # Use shared boost on non-windows platforms
     if(Boost_USE_LOCAL)
-        target_compile_definitions(${CORE_TARGET} PUBLIC -DBOOST_ALL_DYN_LINK)
+        list(APPEND GLOBAL_PUBLIC_DEFINES -DBOOST_ALL_DYN_LINK)
     endif()
 
     # Turn off C11 ABI compatibility in glibc
     #target_compile_definitions(${CORE_TARGET} PUBLIC -D_GLIBCXX_USE_CXX11_ABI=0)
+
 endif(WIN32)
+
+target_compile_definitions(${CORE_TARGET} PUBLIC ${GLOBAL_PUBLIC_DEFINES})
+
 
 if(NOT HUNTER_ENABLED)
     if(USE_STATIC_CZMQ)
@@ -134,23 +148,22 @@ message(STATUS "Setting link thread library to ${CMAKE_THREAD_LIBS_INIT}")
 # Link libraries
 list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS 
     ${CZMQ_TARGET}
-    ${fmt_TARGET}
     ${Boost_HEADER_TARGET}
+    ${fmt_TARGET}
+    ${Boost_SYSTEM_TARGET}
+    ${Boost_FILESYSTEM_TARGET}
+    ${Boost_THREAD_TARGET}
+    ${Boost_DATE_TIME_TARGET}
+    ${Boost_CHRONO_TARGET}
+    ${Boost_ATOMIC_TARGET}
+    ${Boost_REGEX_TARGET}
     ${CMAKE_THREAD_LIBS_INIT}
 )
-target_link_libraries(${CORE_TARGET} PUBLIC 
-                        ${SHOWTIME_PUBLIC_LINKED_LIBS}
-)
+target_link_libraries(${CORE_TARGET} PUBLIC ${SHOWTIME_PUBLIC_LINKED_LIBS})
 target_link_libraries(${CORE_TARGET} PRIVATE 
                         ${msgpackc_TARGET}
-                        ${Boost_DATE_TIME_TARGET}
-                        ${Boost_CHRONO_TARGET}
-                        ${Boost_ATOMIC_TARGET}
                         ${Boost_LOG_TARGET}
                         ${Boost_LOG_SETUP_TARGET}
-                        ${Boost_THREAD_TARGET}
-                        ${Boost_SYSTEM_TARGET}
-                        ${Boost_FILESYSTEM_TARGET}
 )
 list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS ${CORE_TARGET})
 
@@ -159,6 +172,8 @@ if(WIN32)
     add_custom_command(TARGET ${CORE_TARGET} POST_BUILD
                       COMMAND ${CMAKE_COMMAND} -E echo "Copy CZMQ runtime $<TARGET_FILE:${CZMQ_TARGET}> to ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>"
                       COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:${CZMQ_TARGET}>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>"
+                      COMMAND ${CMAKE_COMMAND} -E echo "Copy libZMQ runtime $<TARGET_FILE:${LIBZMQ_TARGET}> to ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>"
+                      COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:${LIBZMQ_TARGET}>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>"
                       VERBATIM
     )
 endif()

@@ -9,14 +9,15 @@ ZstStageRouterTransport::~ZstStageRouterTransport()
 {
 }
 
-void ZstStageRouterTransport::init(ZstActor * actor)
+void ZstStageRouterTransport::init()
 {
-	ZstTransportLayerBase::init(actor);
+	ZstTransportLayerBase::init();
+	m_router_actor.init("stage_router");
 
 	std::stringstream addr;
 	m_performer_router = zsock_new(ZMQ_ROUTER);
 	zsock_set_linger(m_performer_router, 0);
-	actor->attach_pipe_listener(m_performer_router, s_handle_router, this);
+	m_router_actor.attach_pipe_listener(m_performer_router, s_handle_router, this);
 
 	addr << "tcp://*:" << STAGE_ROUTER_PORT;
 	zsock_bind(m_performer_router, "%s", addr.str().c_str());
@@ -25,13 +26,20 @@ void ZstStageRouterTransport::init(ZstActor * actor)
 		return;
 	}
 	zsock_set_linger(m_performer_router, 0);
+
+	m_router_actor.start_loop();
 }
 
 void ZstStageRouterTransport::destroy()
 {
 	ZstTransportLayerBase::destroy();
+
+	m_router_actor.stop_loop();
+
 	if(m_performer_router)
 		zsock_destroy(&m_performer_router);
+
+	m_router_actor.destroy();
 }
 
 

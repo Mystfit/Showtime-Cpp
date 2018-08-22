@@ -31,10 +31,12 @@ void ZstHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportSen
 	if (entity->is_proxy())
 		return;
 
-	//Register client to entity to allow it to send messages
-	entity->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(this), true);
-	entity->add_adaptor(static_cast<ZstEntityAdaptor*>(this), true);
-	synchronisable_set_activating(entity);
+	//Register adaptors to entity and children
+	for (auto c : ZstEntityBundleScoped(entity, true)) {
+		c->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(this));
+		c->add_adaptor(static_cast<ZstEntityAdaptor*>(this));
+		synchronisable_set_activating(c);
+	}
 }
 
 
@@ -52,15 +54,18 @@ void ZstHierarchy::add_performer(const ZstPerformer & performer)
 	assert(performer_proxy);
 	ZstLog::net(LogLevel::notification, "Adding new performer {}", performer_proxy->URI().path());
 
-	//Since this is a proxy entity, it should be activated immediately.
-	synchronisable_set_activation_status(performer_proxy, ZstSyncStatus::ACTIVATED);
-	synchronisable_set_proxy(performer_proxy);
+	for (auto c : ZstEntityBundleScoped(performer_proxy, true)) {
+		//Since this is a proxy entity, it should be activated immediately.
+		synchronisable_set_activation_status(c, ZstSyncStatus::ACTIVATED);
+		synchronisable_set_proxy(c);
+		add_entity_to_lookup(c);
 
-	//Add adaptors to performer so we can clean it up later
-	performer_proxy->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(this), true);
-	performer_proxy->add_adaptor(static_cast<ZstEntityAdaptor*>(this), true);
+		//Add adaptors to performer so we can clean it up later
+		c->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(this));
+		c->add_adaptor(static_cast<ZstEntityAdaptor*>(this));
+	}
 
-	//Store it
+	//Store performer
 	m_clients[performer_proxy->URI()] = performer_proxy;
 
 	//Dispatch events
@@ -90,8 +95,18 @@ std::vector<ZstPerformer*> ZstHierarchy::get_performers()
 	return performers;
 }
 
-
 ZstEntityBase * ZstHierarchy::find_entity(const ZstURI & path)
+{
+	ZstEntityBase * entity = NULL;
+	try {
+		entity = m_entity_lookup[path];
+	} catch(std::out_of_range){
+	}
+
+	return entity;
+}
+
+ZstEntityBase * ZstHierarchy::walk_entity(const ZstURI & path)
 {
 	ZstEntityBase * result = NULL;
 	ZstPerformer * root = get_performer_by_URI(path);
@@ -106,18 +121,11 @@ ZstEntityBase * ZstHierarchy::find_entity(const ZstURI & path)
 
 	if (root) {
 		//Find child entity in root
-		result = root->find_child_by_URI(path);
+		result = root->walk_child_by_URI(path);
 	}
 
 	return result;
 }
-
-ZstPlug * ZstHierarchy::find_plug(const ZstURI & path)
-{
-	ZstComponent * plug_parent = dynamic_cast<ZstComponent*>(find_entity(path.parent()));
-	return plug_parent->get_plug_by_URI(path);
-}
-
 
 ZstMsgKind ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity) {
 
@@ -138,39 +146,59 @@ ZstMsgKind ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity) {
 		return ZstMsgKind::ERR_ENTITY_ALREADY_EXISTS;
 	}
 
+	//Lock the hierarchy
+	//std::unique_lock<std::mutex> lock(m_hierarchy_mutex);
+	//lock.lock();
+
 	//Create proxies and set parents
 	if (strcmp(entity.entity_type(), COMPONENT_TYPE) == 0) {
 		entity_proxy = new ZstComponent(static_cast<const ZstComponent&>(entity));
 		dynamic_cast<ZstContainer*>(parent)->add_child(entity_proxy);
-		m_hierarchy_events.defer([entity_proxy](ZstHierarchyAdaptor * adp) {adp->on_entity_arriving(entity_proxy); });
 	}
 	else if (strcmp(entity.entity_type(), CONTAINER_TYPE) == 0) {
 		entity_proxy = new ZstContainer(static_cast<const ZstContainer&>(entity));
 		dynamic_cast<ZstContainer*>(parent)->add_child(entity_proxy);
-		m_hierarchy_events.defer([entity_proxy](ZstHierarchyAdaptor * adp) {adp->on_entity_arriving(entity_proxy); });
 	}
 	else if (strcmp(entity.entity_type(), PLUG_TYPE) == 0) {
 		ZstPlug * plug = new ZstPlug(static_cast<const ZstPlug&>(entity));
 		entity_proxy = plug;
 		dynamic_cast<ZstComponent*>(parent)->add_plug(plug);
-		m_hierarchy_events.defer([plug](ZstHierarchyAdaptor * adp) {adp->on_plug_arriving(plug); });
 	}
 	else {
 		ZstLog::net(LogLevel::notification, "Can't create unknown proxy entity type {}", entity.entity_type());
 		return ZstMsgKind::ERR_MSG_TYPE_UNKNOWN;
 	}
+	//lock.unlock();
 
 	ZstLog::net(LogLevel::notification, "Received proxy entity {}", entity_proxy->URI().path());
 
-	//Set entity as a proxy so the reaper can clean it up later
-	synchronisable_set_proxy(entity_proxy);
+	//Mirror proxy and adaptor addition to entity children
+	for (auto c : ZstEntityBundleScoped(entity_proxy, true)) {
+		//Set entity as a proxy so the reaper can clean it up later
+		synchronisable_set_proxy(c);
 
-	//Activate entity and dispatch events
-	entity_proxy->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(this), true);
-	entity_proxy->add_adaptor(static_cast<ZstEntityAdaptor*>(this), true);
+		//Cache entity in lookup map
+		add_entity_to_lookup(c);
 
-	synchronisable_set_activation_status(entity_proxy, ZstSyncStatus::ACTIVATED);
-	
+		//Add adaptors to entities
+		c->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(this));
+		c->add_adaptor(static_cast<ZstEntityAdaptor*>(this));
+
+		//Activate entity
+		synchronisable_set_activation_status(c, ZstSyncStatus::ACTIVATED);
+	}
+
+	//Only dispatch events once all entities have been activated and registered
+	if (strcmp(entity.entity_type(), COMPONENT_TYPE) == 0) {
+		m_hierarchy_events.defer([entity_proxy](ZstHierarchyAdaptor * adp) {adp->on_entity_arriving(entity_proxy); });
+	}
+	else if (strcmp(entity.entity_type(), CONTAINER_TYPE) == 0) {
+		m_hierarchy_events.defer([entity_proxy](ZstHierarchyAdaptor * adp) {adp->on_entity_arriving(entity_proxy); });
+	}
+	else if (strcmp(entity.entity_type(), PLUG_TYPE) == 0) {
+		m_hierarchy_events.defer([entity_proxy](ZstHierarchyAdaptor * adp) {adp->on_plug_arriving(static_cast<ZstPlug*>(entity_proxy)); });
+	}
+
 	return ZstMsgKind::OK;
 }
 
@@ -186,18 +214,63 @@ ZstMsgKind ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 	return ZstMsgKind::OK;
 }
 
+void ZstHierarchy::add_entity_to_lookup(ZstEntityBase * entity)
+{
+	m_entity_lookup[entity->URI()] = entity;
+}
+
+void ZstHierarchy::remove_entity_from_lookup(ZstEntityBase * entity)
+{
+	try {
+		m_entity_lookup.erase(entity->URI());
+	}
+	catch (std::out_of_range) {
+		ZstLog::net(LogLevel::warn, "Entity {} was not in the entity lookup map");
+	}
+}
+
+void ZstHierarchy::activate_entity_complete(ZstEntityBase * entity)
+{
+	if (!entity) {
+		ZstLog::net(LogLevel::warn, "activate_entity_complete(): Entity not found");
+		return;
+	}
+
+	//Add entity to lookup tables
+	for (auto c : ZstEntityBundleScoped(entity, false)) {
+		add_entity_to_lookup(c);
+		synchronisable_set_activated(c);
+	}
+
+	//Add entity to the lookup seperately since it was not included in the bundle
+	add_entity_to_lookup(entity);
+	synchronisable_enqueue_activation(entity);
+}
+
 void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 {
-	if (!entity) return;
-
-	synchronisable_set_destroyed(entity);
+	if (!entity) {
+		ZstLog::net(LogLevel::warn, "destroy_entity_complete(): Entity not found");
+		return;
+	}
 
 	ZstContainer * parent = NULL;
 
+	//Lock the hierarchy
+	//std::unique_lock<std::mutex> lock(m_hierarchy_mutex);
+	//lock.lock();
+
 	//Remove entity from parent
 	if (entity->parent()) {
-		parent = dynamic_cast<ZstContainer*>(entity->parent());
-		parent->remove_child(entity);
+		if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
+			//Remove plug
+			ZstPlug * plug = dynamic_cast<ZstPlug*>(entity);
+			parent->remove_plug(plug);
+		}
+		else {
+			parent = dynamic_cast<ZstContainer*>(entity->parent());
+			parent->remove_child(entity);
+		}
 	}
 	else {
 		//Entity is a root performer. Remove from performer list
@@ -209,32 +282,42 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 		}
 	}
 
+	//Cleanup children
+	for (auto c : ZstEntityBundleScoped(entity, true)) {
+		//Set child as destroyed
+		synchronisable_set_destroyed(c);
+
+		//Enqueue deactivation
+		synchronisable_enqueue_deactivation(c);
+		
+		//Remove hierarchy adaptors from entities
+		//We've already added this entity to the hierarchy event queue so the entity's process_events()
+		//function will still be called in the future to release the deactivation event to the API
+		//c->remove_adaptor(static_cast<ZstSynchronisableAdaptor*>(this));
+		//c->remove_adaptor(static_cast<ZstEntityAdaptor*>(this));
+
+		//Remove entity from quick lookup map
+		remove_entity_from_lookup(c);
+	}
+
 	//Dispatch events depending on entity type
 	if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
-		//Remove plug
-		parent->remove_plug(dynamic_cast<ZstPlug*>(entity));
 		hierarchy_events().defer([entity](ZstHierarchyAdaptor * dlg) {
 			dlg->on_plug_leaving(static_cast<ZstPlug*>(entity));
 		});
 	}
 	else if (strcmp(entity->entity_type(), PERFORMER_TYPE) == 0)
 	{
-		//Remove performer
 		hierarchy_events().defer([entity](ZstHierarchyAdaptor * adp) {
 			adp->on_performer_leaving(static_cast<ZstPerformer*>(entity));
 		});
 	}
 	else
 	{
-		//Remove entity
 		hierarchy_events().defer([entity](ZstHierarchyAdaptor * dlg) {
 			dlg->on_entity_leaving(entity);
 		});
 	}
-
-	//Finally, add non-local entities to the reaper to destroy them at the correct time
-	//TODO: Only destroying proxy entities at the moment. Local entities should be managed by the host application
-	synchronisable_enqueue_deactivation(entity);
 }
 
 ZstEventDispatcher<ZstHierarchyAdaptor*> & ZstHierarchy::hierarchy_events()
@@ -256,7 +339,6 @@ ZstEventDispatcher<ZstHierarchyAdaptor*> & ZstHierarchy::hierarchy_events()
 
 void ZstHierarchy::synchronisable_has_event(ZstSynchronisable * synchronisable)
 {
-	ZstLog::net(LogLevel::debug, "Synchronisable has an event that needs to be processed");
 	m_synchronisable_events.defer([this, synchronisable](ZstSynchronisableAdaptor * dlg) {
 		this->synchronisable_process_events(synchronisable);
 	});

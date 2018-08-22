@@ -20,12 +20,12 @@ void ZstStageSession::init()
 
 void ZstStageSession::destroy()
 {
-	ZstSession::destroy();
 	for (auto c : m_cables) {
 		destroy_cable(c);
 	}
 
 	hierarchy()->destroy();
+	ZstSession::destroy();
 }
 
 void ZstStageSession::on_receive_msg(ZstMessage * msg)
@@ -103,7 +103,7 @@ ZstMsgKind ZstStageSession::synchronise_client_graph(ZstPerformer * client) {
 ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformerStageProxy * sender)
 {
 	//Unpack cable from message
-	ZstCable cable = msg->unpack_payload_serialisable<ZstCable>(0);
+	ZstCable cable = msg->unpack_payload_serialisable<ZstCable>();
 	ZstLog::net(LogLevel::notification, "Received connect cable request for In:{} and Out:{}", cable.get_input_URI().path(), cable.get_output_URI().path());
 
 	//Create cable 
@@ -232,7 +232,7 @@ ZstMsgKind ZstStageSession::create_cable_complete_handler(ZstCable * cable)
 
 ZstMsgKind ZstStageSession::destroy_cable_handler(ZstMessage * msg)
 {
-	const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(0);
+	const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>();
 	ZstLog::net(LogLevel::notification, "Received destroy cable connection request");
 
 	ZstCable * cable_ptr = find_cable(cable.get_input_URI(), cable.get_output_URI());
@@ -258,11 +258,9 @@ void ZstStageSession::on_plug_leaving(ZstPlug * plug)
 
 void ZstStageSession::disconnect_cables(ZstEntityBase * entity)
 {
-	ZstCableBundle * bundle = entity->acquire_cable_bundle();
-	for (auto c : *bundle) {
+	for (auto c : ZstCableBundleScoped(entity)) {
 		destroy_cable(c);
 	}
-	entity->release_cable_bundle(bundle);
 }
 
 void ZstStageSession::destroy_cable(ZstCable * cable) {
@@ -288,7 +286,7 @@ void ZstStageSession::connect_clients(const ZstMsgID & response_id, ZstPerformer
 	conn_s << response_id;
 	ZstMsgArgs receiver_args{
 		{ ZstMsgArg::OUTPUT_PATH, output_client->URI().path() },
-		{ ZstMsgArg::OUTPUT_ADDRESS, output_client->ip_address() },
+		{ ZstMsgArg::GRAPH_RELIABLE_OUTPUT_ADDRESS, output_client->reliable_address() },
 		{ ZstMsgArg::CONNECTION_MSG_ID, conn_s.str() },
 		{ ZstMsgArg::SENDER_IDENTITY, m_hierarchy->get_socket_ID(input_client) }
 	};
@@ -299,6 +297,7 @@ void ZstStageSession::connect_clients(const ZstMsgID & response_id, ZstPerformer
 
 	ZstLog::net(LogLevel::notification, "Sending P2P handshake broadcast request to {}", output_client->URI().path());
 	ZstMsgArgs broadcaster_args{ 
+		{ ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS, input_client->unreliable_address() },
 		{ZstMsgArg::SENDER_IDENTITY, m_hierarchy->get_socket_ID(output_client) },
 		{ZstMsgArg::INPUT_PATH, input_client->URI().path() }
 	};

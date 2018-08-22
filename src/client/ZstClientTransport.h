@@ -11,7 +11,7 @@ class ZstClientTransport :
 public:
 	ZstClientTransport();
 	~ZstClientTransport();
-	virtual void init(ZstActor * actor) override;
+	virtual void init() override;
 	virtual void destroy() override;
 	void connect_to_stage(std::string stage_address);
 	void disconnect_from_stage();
@@ -34,4 +34,5 @@ private:
 	std::string m_stage_updates_addr;
 
 	zuuid_t * m_startup_uuid;
+	ZstActor m_client_actor;
 };
