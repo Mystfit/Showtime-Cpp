@@ -328,7 +328,8 @@ void ZstClient::leave_stage_complete()
 	set_connected_to_stage(false);
 
 	//Remove root performer from entity lookup
-	for (auto c : ZstEntityBundleScoped(m_session->hierarchy()->get_local_performer())) {
+	ZstEntityBundle bundle;
+	for (auto c : m_session->hierarchy()->get_local_performer()->get_child_entities(bundle, true)) {
 		m_session->hierarchy()->remove_entity_from_lookup(c);
 	}
 

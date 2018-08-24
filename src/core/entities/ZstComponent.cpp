@@ -85,7 +85,8 @@ int ZstComponent::add_plug(ZstPlug * plug)
 
 void ZstComponent::remove_plug(ZstPlug * plug)
 {
-	for (auto cable : ZstCableBundleScoped(plug)) {
+	ZstCableBundle bundle;
+	for (auto cable : plug->get_child_cables(bundle)){
 		cable->enqueue_deactivation();
 	}
 	m_plugs.erase(std::remove(m_plugs.begin(), m_plugs.end(), plug), m_plugs.end());
@@ -165,7 +166,7 @@ void ZstComponent::set_component_type(const char * component_type, size_t len)
 	m_component_type[len] = '\0';
 }
 
-ZstCableBundle * ZstComponent::get_child_cables(ZstCableBundle * bundle)
+ZstCableBundle & ZstComponent::get_child_cables(ZstCableBundle & bundle) const
 {
 	for (auto p : m_plugs) {
 		p->get_child_cables(bundle);
@@ -173,10 +174,10 @@ ZstCableBundle * ZstComponent::get_child_cables(ZstCableBundle * bundle)
 	return ZstEntityBase::get_child_cables(bundle);
 }
 
-ZstEntityBundle * ZstComponent::get_child_entities(ZstEntityBundle * bundle)
+ZstEntityBundle & ZstComponent::get_child_entities(ZstEntityBundle & bundle, bool include_parent)
 {
 	for (auto p : m_plugs) {
-		bundle->add(p);
+		bundle.add(p);
 	}
-	return ZstEntityBase::get_child_entities(bundle);
+	return ZstEntityBase::get_child_entities(bundle, include_parent);
 }

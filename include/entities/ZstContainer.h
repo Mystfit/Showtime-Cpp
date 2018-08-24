@@ -30,14 +30,15 @@ public:
 	ZST_EXPORT void add_child(ZstEntityBase * child);
 	ZST_EXPORT void remove_child(ZstEntityBase * child);
 
+	//Query the hierarchy
+	ZST_EXPORT ZstCableBundle & get_child_cables(ZstCableBundle & bundle) const override;
+	ZST_EXPORT ZstEntityBundle & get_child_entities(ZstEntityBundle & bundle, bool include_parent = true) override;
+
 	//Serialisation
 	ZST_EXPORT virtual void write(std::stringstream & buffer) const override;
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
 
 protected:
-	ZST_EXPORT ZstCableBundle * get_child_cables(ZstCableBundle * bundle) override;
-	ZST_EXPORT ZstEntityBundle * get_child_entities(ZstEntityBundle * bundle) override;
-
     //Set parent for all children
     ZST_EXPORT void set_parent(ZstEntityBase * entity) override;
 

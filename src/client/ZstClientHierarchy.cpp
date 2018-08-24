@@ -28,7 +28,8 @@ void ZstClientHierarchy::destroy()
 	//Reset local performer
 	size_t index = 0;
 
-	for (auto entity : ZstEntityBundleScoped(m_root)) {
+	ZstEntityBundle bundle;
+	for (auto entity : m_root->get_child_entities(bundle, true)) {
 		destroy_entity_complete(entity);
 	}
 
@@ -186,7 +187,8 @@ void ZstClientHierarchy::add_performer(const ZstPerformer & performer)
 {
 	if (performer.URI() == m_root->URI()) {
 		//If we received ourselves as a performer, then we are now activated and can be added to the entity lookup map
-		for (auto c : ZstEntityBundleScoped(m_root, true)) {
+		ZstEntityBundle bundle;
+		for (auto c : m_root->get_child_entities(bundle, true)) {
 			add_entity_to_lookup(c);
 		}
 		ZstLog::net(LogLevel::debug, "Received self {} as performer. Caching in entity lookup", m_root->URI().path());
@@ -194,4 +196,12 @@ void ZstClientHierarchy::add_performer(const ZstPerformer & performer)
 	}
 
 	ZstHierarchy::add_performer(performer);
+}
+
+ZstEntityBundle & ZstClientHierarchy::get_performers(ZstEntityBundle & bundle) const
+{
+	//TODO: Add local performer to the main client list?
+	//Join local performer to the performer list since it lives outside the main list
+	bundle.add(m_root);
+	return ZstHierarchy::get_performers(bundle);
 }

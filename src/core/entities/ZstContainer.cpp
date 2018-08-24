@@ -191,7 +191,7 @@ void ZstContainer::read(const char * buffer, size_t length, size_t & offset)
 	}
 }
 
-ZstCableBundle * ZstContainer::get_child_cables(ZstCableBundle * bundle)
+ZstCableBundle & ZstContainer::get_child_cables(ZstCableBundle & bundle) const
 {
 	for(auto child : m_children){
 		child.second->get_child_cables(bundle);
@@ -199,12 +199,12 @@ ZstCableBundle * ZstContainer::get_child_cables(ZstCableBundle * bundle)
 	return ZstComponent::get_child_cables(bundle);
 }
 
-ZstEntityBundle * ZstContainer::get_child_entities(ZstEntityBundle * bundle)
+ZstEntityBundle & ZstContainer::get_child_entities(ZstEntityBundle & bundle, bool include_parent)
 {
 	for (auto child : m_children) {
 		child.second->get_child_entities(bundle);
-		bundle->add(child.second);
+		bundle.add(child.second);
 	}
-	return ZstComponent::get_child_entities(bundle);
+	return ZstComponent::get_child_entities(bundle, include_parent);
 }
 

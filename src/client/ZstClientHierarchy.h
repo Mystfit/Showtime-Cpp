@@ -59,6 +59,7 @@ public:
 	// ------------------------------
 
 	void add_performer(const ZstPerformer & performer) override;
+	ZstEntityBundle & get_performers(ZstEntityBundle & bundle) const override;
 	
 
 	// ------------------------------

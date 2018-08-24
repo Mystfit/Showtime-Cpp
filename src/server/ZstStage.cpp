@@ -109,7 +109,9 @@ void ZstStage::process_events()
 void ZstStage::stage_heartbeat_timer(boost::asio::deadline_timer * t, ZstStage * stage, boost::posix_time::milliseconds duration)
 {
 	std::vector<ZstPerformer*> removed_clients;
-	for (auto performer : stage->m_session->hierarchy()->get_performers()) {
+	ZstEntityBundle bundle;
+	for (auto entity : stage->m_session->hierarchy()->get_performers(bundle)) {
+		ZstPerformer * performer = dynamic_cast<ZstPerformer*>(entity);
 		if (performer->get_active_heartbeat()) {
 			performer->clear_active_hearbeat();
 		}

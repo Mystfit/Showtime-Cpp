@@ -45,7 +45,7 @@ public:
 
 	ZST_EXPORT virtual void add_performer(const ZstPerformer & performer);
 	ZST_EXPORT virtual ZstPerformer * get_performer_by_URI(const ZstURI & uri) const;
-	ZST_EXPORT virtual std::vector<ZstPerformer*> get_performers();
+	ZST_EXPORT virtual ZstEntityBundle & get_performers(ZstEntityBundle & bundle) const;
 
 
 	// ------------------------------

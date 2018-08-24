@@ -48,12 +48,12 @@ public:
 	//Cable enumeration
 	ZST_EXPORT size_t num_cables();
 	ZST_EXPORT bool is_connected_to(ZstPlug * plug);
+	ZST_EXPORT ZstCableBundle & get_child_cables(ZstCableBundle & bundle) const override;
 
 	//Values
 	ZST_EXPORT ZstValue * raw_value();
 
 protected:
-	ZST_EXPORT ZstCableBundle * get_child_cables(ZstCableBundle * bundle) override;
 	ZstValue * m_value;
 	ZstPlugDirection m_direction;
 

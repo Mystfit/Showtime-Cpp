@@ -93,6 +93,8 @@ public class TransformableComponent : MonoBehaviour
                 SendPosition(transform.position);
             }
         }
+
+        last_position = transform.position;
     }
 }
 

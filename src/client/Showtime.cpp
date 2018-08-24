@@ -136,6 +136,13 @@ ZstEntityBase* zst_find_entity(const ZstURI & path)
 	return ZstClient::instance().session()->hierarchy()->find_entity(path);
 }
 
+void zst_get_performers(ZstEntityBundle & bundle)
+{
+	if (!LIBRARY_INIT_GUARD()) return;
+	ZstClient::instance().session()->hierarchy()->get_performers(bundle);
+}
+
+
 
 // -------------
 // Stage status

@@ -80,8 +80,8 @@ ZstMsgKind ZstStageSession::synchronise_client_graph(ZstPerformer * client) {
 	ZstMsgArgs args{ { ZstMsgArg::SENDER_IDENTITY, this->hierarchy()->get_socket_ID(client) } };
 
 	//Send performer root entities
-	std::vector<ZstPerformer*> performers = hierarchy()->get_performers();
-	for (auto performer : performers) {
+	ZstEntityBundle bundle;
+	for (auto performer : hierarchy()->get_performers(bundle)) {
 		//Only pack performers that aren't the destination client
 		if (performer->URI() != client->URI()) {
 			router_events().invoke([performer, &args](ZstTransportAdaptor * adp) {
@@ -258,7 +258,8 @@ void ZstStageSession::on_plug_leaving(ZstPlug * plug)
 
 void ZstStageSession::disconnect_cables(ZstEntityBase * entity)
 {
-	for (auto c : ZstCableBundleScoped(entity)) {
+	ZstCableBundle bundle;
+	for (auto c : entity->get_child_cables(bundle)) {
 		destroy_cable(c);
 	}
 }

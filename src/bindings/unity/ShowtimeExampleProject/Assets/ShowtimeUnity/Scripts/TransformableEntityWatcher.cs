@@ -12,11 +12,13 @@ public class TransformableEntityWatcher : MonoBehaviour {
         adaptor = new TransformableEntityWatcherAdaptor();
         adaptor.component_arrive_dlg = TransformableArriving;
         adaptor.component_leave_dlg = TransformableLeaving;
+
+        //Library must be initialised
         showtime.add_hierarchy_adaptor(adaptor);
     }
-	
-	// Update is called once per frame
-	void Update () {
+
+    // Update is called once per frame
+    void Update () {
 		
 	}
 
@@ -38,7 +40,6 @@ public class TransformableEntityWatcher : MonoBehaviour {
         }
     }
 }
-
 
 
 class TransformableEntityWatcherAdaptor : ZstHierarchyAdaptor

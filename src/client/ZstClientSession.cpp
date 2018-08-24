@@ -45,7 +45,7 @@ void ZstClientSession::dispatch_connected_to_stage()
 {
 	//Activate all owned entities
 	synchronisable_enqueue_activation(static_cast<ZstClientHierarchy*>(hierarchy())->get_local_performer());
-	session_events().invoke([](ZstSessionAdaptor * adaptor) {
+	session_events().defer([](ZstSessionAdaptor * adaptor) {
 		adaptor->on_connected_to_stage();
 	});
 }
@@ -54,7 +54,7 @@ void ZstClientSession::dispatch_disconnected_from_stage()
 {
 	//Deactivate all owned entities
 	synchronisable_enqueue_deactivation(static_cast<ZstClientHierarchy*>(hierarchy())->get_local_performer());
-	session_events().invoke([](ZstSessionAdaptor * adaptor) {
+	session_events().defer([](ZstSessionAdaptor * adaptor) {
 		adaptor->on_disconnected_from_stage();
 	});
 }
@@ -119,7 +119,8 @@ void ZstClientSession::on_receive_graph_msg(ZstMessage * msg)
 	}
 
 	//Iterate over all connected cables from the sending plug
-	for (auto cable : ZstCableBundleScoped(sending_plug)) {
+	ZstCableBundle bundle;
+	for (auto cable : sending_plug->get_child_cables(bundle)) {
 		receiving_plug = cable->get_input();
 		if (receiving_plug) {
 			if (!receiving_plug->is_proxy()) {

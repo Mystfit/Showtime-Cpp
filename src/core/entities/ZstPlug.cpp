@@ -137,19 +137,19 @@ ZstPlugDirection ZstPlug::direction()
 	return m_direction;
 }
 
-ZstCableBundle * ZstPlug::get_child_cables(ZstCableBundle * bundle)
+ZstCableBundle & ZstPlug::get_child_cables(ZstCableBundle & bundle) const
 {
 	//TODO: Replace with set?
 	//Cables may already be present, so only add unique ones
 	for (auto c : m_cables) {
 		bool exists = false;
-		for (int i = 0; i < bundle->size(); ++i) {
-			if (bundle->item_at(i) == c) {
+		for (auto cable : bundle) {
+			if (c == cable)
 				exists = true;
-			}
 		}
+		
 		if (!exists) {
-			bundle->add(c);
+			bundle.add(c);
 		}
 	}
 	return ZstEntityBase::get_child_cables(bundle);

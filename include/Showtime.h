@@ -35,6 +35,7 @@ extern "C" {
 	ZST_CLIENT_EXPORT ZstPerformer* zst_get_root();
 	ZST_CLIENT_EXPORT ZstPerformer* zst_get_performer_by_URI(const ZstURI & path);
 	ZST_CLIENT_EXPORT ZstEntityBase* zst_find_entity(const ZstURI & path);
+	ZST_CLIENT_EXPORT void zst_get_performers(ZstEntityBundle & bundle);
 
 	//Stage methods
 	ZST_CLIENT_EXPORT bool zst_is_connected();

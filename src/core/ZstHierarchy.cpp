@@ -32,7 +32,8 @@ void ZstHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportSen
 		return;
 
 	//Register adaptors to entity and children
-	for (auto c : ZstEntityBundleScoped(entity, true)) {
+	ZstEntityBundle bundle;
+	for (auto c : entity->get_child_entities(bundle, true)) {
 		c->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(this));
 		c->add_adaptor(static_cast<ZstEntityAdaptor*>(this));
 		synchronisable_set_activating(c);
@@ -54,7 +55,8 @@ void ZstHierarchy::add_performer(const ZstPerformer & performer)
 	assert(performer_proxy);
 	ZstLog::net(LogLevel::notification, "Adding new performer {}", performer_proxy->URI().path());
 
-	for (auto c : ZstEntityBundleScoped(performer_proxy, true)) {
+	ZstEntityBundle bundle;
+	for (auto c : performer_proxy->get_child_entities(bundle, true)) {
 		//Since this is a proxy entity, it should be activated immediately.
 		synchronisable_set_activation_status(c, ZstSyncStatus::ACTIVATED);
 		synchronisable_set_proxy(c);
@@ -86,21 +88,38 @@ ZstPerformer * ZstHierarchy::get_performer_by_URI(const ZstURI & uri) const
 	return result;
 }
 
-std::vector<ZstPerformer*> ZstHierarchy::get_performers()
+ZstEntityBundle & ZstHierarchy::get_performers(ZstEntityBundle & bundle) const
 {
-	std::vector<ZstPerformer*> performers;
 	for (auto performer : m_clients) {
-		performers.push_back(performer.second);
+		bundle.add(performer.second);
 	}
-	return performers;
+	return bundle;
 }
 
 ZstEntityBase * ZstHierarchy::find_entity(const ZstURI & path)
 {
 	ZstEntityBase * entity = NULL;
+	bool match_hash = false;
+	bool match_map = false;
+	for (auto e : m_entity_lookup) {
+		if (e.first == path) {
+			if (ZstURIHash{}(e.first) == ZstURIHash{}(path)) {
+				match_hash = true;
+			}
+		}
+	}
+
 	try {
-		entity = m_entity_lookup[path];
+		entity = m_entity_lookup.at(path);
 	} catch(std::out_of_range){
+	}
+
+	if (entity) {
+		match_map = true;
+	}
+
+	if (match_hash != match_map) {
+		ZstLog::net(LogLevel::warn, "Entity {} not found", path.path());
 	}
 
 	return entity;
@@ -173,7 +192,9 @@ ZstMsgKind ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity) {
 	ZstLog::net(LogLevel::notification, "Received proxy entity {}", entity_proxy->URI().path());
 
 	//Mirror proxy and adaptor addition to entity children
-	for (auto c : ZstEntityBundleScoped(entity_proxy, true)) {
+	ZstEntityBundle bundle;
+	for (auto c : entity_proxy->get_child_entities(bundle, true)) 
+	{
 		//Set entity as a proxy so the reaper can clean it up later
 		synchronisable_set_proxy(c);
 
@@ -237,12 +258,13 @@ void ZstHierarchy::activate_entity_complete(ZstEntityBase * entity)
 	}
 
 	//Add entity to lookup tables
-	for (auto c : ZstEntityBundleScoped(entity, false)) {
+	ZstEntityBundle bundle;
+	for (auto c : entity->get_child_entities(bundle, false)) {
 		add_entity_to_lookup(c);
 		synchronisable_set_activated(c);
 	}
 
-	//Add entity to the lookup seperately since it was not included in the bundle
+	//Add entity to the lookup seperately since it was not included in the bundle so that we can activate it seperately
 	add_entity_to_lookup(entity);
 	synchronisable_enqueue_activation(entity);
 }
@@ -283,7 +305,8 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 	}
 
 	//Cleanup children
-	for (auto c : ZstEntityBundleScoped(entity, true)) {
+	ZstEntityBundle bundle;
+	for (auto c : entity->get_child_entities(bundle, true)) {
 		//Set child as destroyed
 		synchronisable_set_destroyed(c);
 

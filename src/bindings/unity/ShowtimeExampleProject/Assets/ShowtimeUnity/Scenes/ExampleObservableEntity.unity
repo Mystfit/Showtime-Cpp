@@ -450,7 +450,6 @@ GameObject:
   m_Component:
   - component: {fileID: 293125057}
   - component: {fileID: 293125056}
-  - component: {fileID: 293125058}
   m_Layer: 0
   m_Name: showtime_manager
   m_TagString: Untagged
@@ -466,13 +465,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 293125055}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 688457ac6b85b492985350682b6e6db1, type: 3}
+  m_Script: {fileID: 11500000, guid: 6744f5a2196f20443bff5a9559885a27, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   address: 127.0.0.1
   component_name: cube
   owner_name: 
   is_master: 1
+  proxy_prefab: {fileID: 1319174644320796, guid: 871bd0faa82910b43a82e0f112fdf76d,
+    type: 2}
 --- !u!4 &293125057
 Transform:
   m_ObjectHideFlags: 0
@@ -486,19 +487,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &293125058
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 293125055}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6676d98133c1943b5a38d46f22434651, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  transformable_prefab: {fileID: 1319174644320796, guid: dbe198963ff8c4bdcbb4ef4fb37b3283,
-    type: 2}
 --- !u!1 &312107537
 GameObject:
   m_ObjectHideFlags: 0
@@ -1349,11 +1337,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 727312467}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 428282ee71861408caca3de4cf6718e1, type: 3}
+  m_Script: {fileID: 11500000, guid: 833536471664e75408686abbc1823463, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ball_prefab: {fileID: 1319174644320796, guid: 026b8e81f07e64a33bcb78df42de3c7b,
-    type: 2}
+  ball_prefab: {fileID: 0}
   spawn_bounds_x: 4.4
   spawn_bounds_y: 5
   spawn_bounds_z: 4.4

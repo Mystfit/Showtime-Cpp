@@ -22,7 +22,9 @@ void test_connect_plugs() {
     assert(cable->get_input() == test_input->input());
     assert(test_output->output()->is_connected_to(test_input->input()));
     assert(test_input->input()->is_connected_to(test_output->output()));
-    for (auto c : ZstCableBundleScoped(test_output->output())) {
+
+	ZstCableBundle bundle;
+    for (auto c : test_output->output()->get_child_cables(bundle)) {
         assert(c->get_input() == test_input->input());
     }
 

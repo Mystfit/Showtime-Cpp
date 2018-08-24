@@ -36,6 +36,10 @@ public:
     
     //Remove a plug from this component
 	ZST_EXPORT void remove_plug(ZstPlug *plug);
+
+	//Hierarchy
+	ZST_EXPORT virtual ZstCableBundle & get_child_cables(ZstCableBundle & bundle) const override;
+	ZST_EXPORT virtual ZstEntityBundle & get_child_entities(ZstEntityBundle & bundle, bool include_parent = true) override;
     
 	//Serialisation
 	ZST_EXPORT virtual void write(std::stringstream & buffer) const override;
@@ -47,8 +51,6 @@ public:
 protected:
 	ZST_EXPORT void set_component_type(const char * component_type);
 	ZST_EXPORT void set_component_type(const char * component_type, size_t len);
-	ZST_EXPORT virtual ZstCableBundle * get_child_cables(ZstCableBundle * bundle) override;
-	ZST_EXPORT virtual ZstEntityBundle * get_child_entities(ZstEntityBundle * bundle) override;
 
     //Set parent of this component
     ZST_EXPORT virtual void set_parent(ZstEntityBase * parent) override;

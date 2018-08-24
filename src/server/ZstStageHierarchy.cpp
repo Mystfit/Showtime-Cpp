@@ -88,7 +88,9 @@ ZstMsgKind ZstStageHierarchy::create_client_handler(std::string sender_identity,
 	//Save our new client
 	m_clients[client_proxy->URI()] = client_proxy;
 	m_client_socket_index[std::string(sender_identity)] = client_proxy;
-	for (auto c : ZstEntityBundleScoped(client_proxy, true)) {
+	
+	ZstEntityBundle bundle;
+	for (auto c : client_proxy->get_child_entities(bundle, true)) {
 		add_entity_to_lookup(c);
 	}
 
@@ -115,8 +117,9 @@ ZstMsgKind ZstStageHierarchy::destroy_client_handler(ZstPerformer * performer)
 	}
 
 	//Add entity and children to lookup
-	for (auto c : ZstEntityBundleScoped(performer)) {
-		add_entity_to_lookup(c);
+	ZstEntityBundle bundle;
+	for (auto c : performer->get_child_entities(bundle, true)) {
+		remove_entity_from_lookup(c);
 	}
 
 	return remove_proxy_entity(performer);
@@ -129,6 +132,10 @@ ZstMsgKind ZstStageHierarchy::add_proxy_entity(const ZstEntityBase & entity)
 
 	ZstMsgKind msg_status = ZstHierarchy::add_proxy_entity(entity);
 	ZstEntityBase * proxy = find_entity(entity.URI());
+	if (!proxy) {
+		ZstLog::net(LogLevel::warn, "No proxy entity found");
+		return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
+	}
 	
 	//Update rest of network
 	if (msg_status == ZstMsgKind::OK) {

@@ -74,35 +74,15 @@ const ZstURI & ZstEntityBase::URI() const
 	return m_uri;
 }
 
-ZstEntityBundle * ZstEntityBase::aquire_child_bundle()
-{
-	ZstEntityBundle * bundle = new ZstEntityBundle();
-	return get_child_entities(bundle);
-}
-
-void ZstEntityBase::release_child_bundle(ZstEntityBundle * bundle)
-{
-	delete bundle;
-}
-
-ZstCableBundle * ZstEntityBase::aquire_cable_bundle()
-{
-	ZstCableBundle * bundle = new ZstCableBundle();
-	return get_child_cables(bundle);
-}
-
-void ZstEntityBase::release_cable_bundle(ZstCableBundle * bundle)
-{
-	delete bundle;
-}
-
-ZstCableBundle * ZstEntityBase::get_child_cables(ZstCableBundle * bundle)
+ZstCableBundle & ZstEntityBase::get_child_cables(ZstCableBundle & bundle) const
 {
 	return bundle;
 }
 
-ZstEntityBundle * ZstEntityBase::get_child_entities(ZstEntityBundle * bundle)
+ZstEntityBundle & ZstEntityBase::get_child_entities(ZstEntityBundle & bundle, bool include_parent)
 {
+	if (include_parent) 
+		bundle.add(this);
 	return bundle;
 }
 
@@ -159,21 +139,4 @@ void ZstEntityBase::set_entity_type(const char * entity_type) {
 void ZstEntityBase::set_parent(ZstEntityBase *entity) {
 	m_parent = entity;
 	this->update_URI();
-}
-
-
-// ---------------
-
-ZstEntityBundleScoped::ZstEntityBundleScoped(ZstEntityBase * entity, bool include_parent) :
-	m_bundle(std::unique_ptr< ZstBundle<ZstEntityBase*>, void(*)(ZstEntityBundle*)>(entity->aquire_child_bundle(), ZstEntityBase::release_child_bundle))
-{
-	if (include_parent) {
-		m_bundle->add(entity);
-	}
-}
-
-
-ZstCableBundleScoped::ZstCableBundleScoped(ZstEntityBase * entity) :
-	m_bundle(std::unique_ptr< ZstCableBundle, void(*)(ZstCableBundle*)>(entity->aquire_cable_bundle(), ZstEntityBase::release_cable_bundle))
-{
 }

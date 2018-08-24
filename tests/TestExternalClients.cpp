@@ -58,6 +58,10 @@ void test_external_entities(std::string external_test_path) {
     ZstPerformer * sink_performer = zst_get_performer_by_URI(sink_perf_uri);
     assert(sink_performer);
     performerEvents->reset_num_calls();
+
+	ZstEntityBundle performer_bundle;
+	zst_get_performers(performer_bundle);
+	assert(performer_bundle.size() == 2);
     
     //Test entity exists
     wait_for_event(entityEvents, 1);
