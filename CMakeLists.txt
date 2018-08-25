@@ -1,23 +1,5 @@
 cmake_minimum_required(VERSION 3.12.0)
 
-if(NOT DEFINED USE_HUNTER)
-    if(WIN32)
-        set(USE_HUNTER ON)
-    else()
-        set(USE_HUNTER OFF)
-    endif()
-endif()
-
-set(CMAKE_BASE_MODULE_PATH ${CMAKE_MODULE_PATH})
-if(USE_HUNTER)
-    include("cmake/HunterGate.cmake")
-    HunterGate(
-        URL "https://github.com/ruslo/hunter/archive/v0.23.3.tar.gz"
-        SHA1 "2c421912930d183c24512590014f955ff073424b"
-    )
-    set(HUNTER_ENABLED ON)
-endif()
-
 project(Showtime VERSION 0.13.1)
 set(SHOWTIME_NAMESPACE "${PROJECT_NAME}::")
 
@@ -27,6 +9,7 @@ set(CXX_STANDARD_REQUIRED)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Set build locations
+set(CMAKE_BASE_MODULE_PATH ${CMAKE_MODULE_PATH})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -83,7 +66,8 @@ set(Showtime_DEPENDENCIES_DIR "${CMAKE_SOURCE_DIR}/src/dependencies")
 set(Showtime_SOURCE_DEPENDENCIES 
 	"${Showtime_DEPENDENCIES_DIR}"
     "${Showtime_DEPENDENCIES_DIR}/cf"
-    "${Showtime_DEPENDENCIES_DIR}/variant/include"
+    "${Showtime_DEPENDENCIES_DIR}/variant"
+    #"${Showtime_DEPENDENCIES_DIR}/variant/include"
 )
 
 set(Showtime_API_INTERFACE "")
@@ -95,7 +79,6 @@ set(Showtime_INSTALL_TARGETS "")
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 set(Boost_NO_SYSTEM_PATHS ON)
-option(Boost_USE_LOCAL "Use local boost" OFF)
 if(WIN32)
     if(NOT DEFINED Boost_USE_STATIC_LIBS)
         set(Boost_USE_STATIC_LIBS ON)
@@ -115,32 +98,11 @@ endif()
 # --------
 set(LIBZMQ_TARGET "")
 set(CZMQ_TARGET "")
-if(USE_HUNTER AND HUNTER_ENABLED)
-    message(STATUS "Installing hunter dependencies")
-    if(NOT Boost_USE_LOCAL)
-        hunter_add_package(boost COMPONENTS 
-            system 
-            filesystem 
-            log
-            thread
-            date_time
-            chrono
-            atomic
-            regex
-        )
-    endif()
-endif()
 
 message(STATUS "Finding packages")
 
 # Boost
 # --------
-if(Boost_USE_LOCAL)
-    # Reset the CMake module path to avoid using Hunter's FindBoost.cmake
-    set(HUNTER_CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})
-    set(CMAKE_MODULE_PATH ${CMAKE_BASE_MODULE_PATH})
-    message(STATUS "Current module path: ${CMAKE_MODULE_PATH}")
-endif()
 find_package(Boost COMPONENTS
     log
     log_setup
@@ -153,9 +115,6 @@ find_package(Boost COMPONENTS
     regex
     REQUIRED
 )
-if(Boost_USE_LOCAL)
-   set(CMAKE_MODULE_PATH ${HUNTER_CMAKE_MODULE_PATH}) 
-endif()
 set(Boost_HEADER_TARGET "Boost::boost")
 set(Boost_LOG_TARGET "Boost::log")
 set(Boost_LOG_SETUP_TARGET "Boost::log_setup")
@@ -171,6 +130,7 @@ set(Boost_REGEX_TARGET "Boost::regex")
 # ------------------
 find_package(MsgPack CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
+find_package(mpark_variant CONFIG REQUIRED)
 
 if(WIN32)
     # Use cmake versions of ZeroMQ and CZMQ
@@ -195,15 +155,9 @@ else()
     set(CZMQ_TARGET czmq)
     set(LIBZMQ_TARGET libzmq)
 endif()
+set(variant_TARGET "mpark_variant")
 set(fmt_TARGET "fmt::fmt-header-only")
 set(msgpackc_TARGET "msgpackc-static") # set(msgpackc_LIBRARY "msgpack::msgpackc-static")
-
-# Boost is the last non-hunter library
-if(WIN32 AND USE_HUNTER AND HUNTER_ENABLED)
-    set(Boost_USE_LOCAL OFF)
-else()
-    set(Boost_USE_LOCAL ON)
-endif()
 
 
 # ----------------
@@ -279,7 +233,6 @@ if(BINDINGS_DOTNET OR BINDINGS_UNITY)
         netstandard2.0
     )
     set_property(CACHE BINDINGS_DOTNET_FRAMEWORK_VERSION PROPERTY STRINGS ${DOTNET_FRAMEWORK_VERSIONS})
-    set(CMAKE_DOTNET_TARGET_FRAMEWORK_VERSION ${BINDINGS_DOTNET_FRAMEWORK_VERSION})
     set(BINDINGS_DOTNET ON)
     set(DOTNET_GENERATED_BINDINGS)
     set(DOTNET_TARGET ${PROJECT_NAME}Dotnet)

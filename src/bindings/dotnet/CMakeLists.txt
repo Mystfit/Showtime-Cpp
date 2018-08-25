@@ -115,6 +115,9 @@ else()
     #add_custom_target(${DOTNET_TARGET} ALL DEPENDS ${DOTNETWRAPPER_STAMP})
 endif()
 
+# Set net framework version
+set_target_properties(${DOTNET_TARGET} PROPERTIES DOTNET_TARGET_FRAMEWORK_VERSION ${BINDINGS_DOTNET_FRAMEWORK_VERSION})
+
 add_dependencies(${DOTNET_TARGET} ${DOTNET_TARGET_WRAPPER})
 
 

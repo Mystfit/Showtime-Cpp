@@ -111,7 +111,7 @@ else()
         -DCZMQ_BUILD_DRAFT_API
     )
     # Use shared boost on non-windows platforms
-    if(Boost_USE_LOCAL AND NOT BUILD_STATIC)
+    if(NOT BUILD_STATIC)
         list(APPEND GLOBAL_PUBLIC_DEFINES -DBOOST_ALL_DYN_LINK)
     endif()
 
@@ -126,17 +126,15 @@ endif()
 target_compile_definitions(${CORE_TARGET} PUBLIC ${GLOBAL_PUBLIC_DEFINES})
 
 
-if(NOT HUNTER_ENABLED)
-    if(USE_STATIC_CZMQ)
-        target_compile_definitions(${CORE_TARGET} PRIVATE 
-                                    -DZMQ_STATIC
-                                    -DCZMQ_STATIC
-        )
-    endif()
-    target_include_directories(${CORE_TARGET} PUBLIC 
-                                ${CZMQ_INCLUDE_DIRS}
+if(USE_STATIC_CZMQ)
+    target_compile_definitions(${CORE_TARGET} PRIVATE 
+                                -DZMQ_STATIC
+                                -DCZMQ_STATIC
     )
 endif()
+target_include_directories(${CORE_TARGET} PUBLIC 
+                            ${CZMQ_INCLUDE_DIRS}
+)
 
 # Set threading library
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -154,6 +152,7 @@ list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS
     ${LIBZMQ_TARGET}
     ${Boost_HEADER_TARGET}
     ${fmt_TARGET}
+    ${variant_SYSTEM_TARGET}
     ${Boost_SYSTEM_TARGET}
     ${Boost_FILESYSTEM_TARGET}
     ${Boost_THREAD_TARGET}

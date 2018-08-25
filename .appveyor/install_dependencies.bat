@@ -3,15 +3,21 @@ setlocal
 
 REM Environment variables
 IF "%1"=="" (
-    set BUILD_FOLDER=.
+    set BUILD_FOLDER=%cd%
 ) ELSE (
     set BUILD_FOLDER=%1
 )
 
 IF "%2"=="" (
-    set CONFIGURATION=Debug
+    set CONFIGURATION=debug
 ) ELSE (
     set CONFIGURATION=%2
+)
+
+IF "%3"=="--with-unity" (
+    set WITH_UNITY=1
+) ELSE (
+    set WITH_UNITY=0
 )
 
 IF NOT DEFINED GENERATOR (
@@ -65,6 +71,7 @@ IF EXIST %DEPENDENCY_DIR%\libzmq (
     %CMAKE_BIN% --build "%DEPENDENCY_DIR%\libzmq\build" %COMMON_BUILD_FLAGS%
 )
 
+
 REM CZMQ
 IF EXIST %DEPENDENCY_DIR%\czmq (
     echo Found CZMQ
@@ -77,6 +84,7 @@ IF EXIST %DEPENDENCY_DIR%\czmq (
     %CMAKE_BIN% -H"%DEPENDENCY_DIR%\czmq" -B"%DEPENDENCY_DIR%\czmq\build" %COMMON_GENERATOR_FLAGS% -DENABLE_DRAFTS=TRUE -DBUILD_TESTING=OFF -DLIBZMQ_FIND_USING_CMAKE_PACKAGE=ON
     %CMAKE_BIN% --build "%DEPENDENCY_DIR%\czmq\build" %COMMON_BUILD_FLAGS%
 )
+
 
 REM msgpack-c
 IF EXIST %DEPENDENCY_DIR%\msgpack-c (
@@ -108,6 +116,39 @@ IF EXIST %DEPENDENCY_DIR%\fmt (
 )
 
 
+REM mpark variant
+IF EXIST %DEPENDENCY_DIR%\variant (
+    echo Found variant
+) ELSE (
+    echo === Cloning mpark-variant === 
+    git clone https://github.com/mpark/variant.git %DEPENDENCY_DIR%\variant
+    mkdir "%DEPENDENCY_DIR%\variant\build"
+    echo === Building variant === 
+    %CMAKE_BIN% -H"%DEPENDENCY_DIR%\variant" -B"%DEPENDENCY_DIR%\variant\build" %COMMON_GENERATOR_FLAGS%
+    %CMAKE_BIN% --build "%DEPENDENCY_DIR%\variant\build" %COMMON_BUILD_FLAGS%
+)
+
+
+REM boost
+IF EXIST %DEPENDENCY_DIR%\boost_1_68_0 (
+    echo Found boost
+) ELSE (
+    echo === Downloading boost ===
+    powershell -Command "Invoke-WebRequest http://dl.bintray.com/boostorg/release/1.68.0/source/boost_1_68_0.zip -OutFile %DEPENDENCY_DIR%\boost_1.68.0.zip"
+    7z x -y -bd -bb0 -o%DEPENDENCY_DIR% %DEPENDENCY_DIR%\boost_1.68.0.zip
+    mkdir %DEPENDENCY_DIR%\boost_1_68_0\build
+    set BOOST_COMMON_FLAGS="--prefix=%DEPENDENCY_DIR%\install address-model=64 variant=%CONFIGURATION% threading=multi runtime-link=shared install"
+    set BOOST_SHARED_LIB_FLAGS="--with-system --with-chrono link=shared"
+    set BOOST_STATIC_LIB_FLAGS="--with-log --with-thread --with-filesystem --with-date_time --with-atomic --with-regex link=static"
+    echo === Building boost ===
+    pushd %DEPENDENCY_DIR%\boost_1_68_0
+    call .\bootstrap.bat
+    call .\b2.exe "%BOOST_SHARED_LIB_FLAGS%" "%BOOST_COMMON_FLAGS%"
+    call .\b2.exe "%BOOST_STATIC_LIB_FLAGS%" "%BOOST_COMMON_FLAGS%"
+    popd
+)
+
+
 REM swig
 set SWIG_VER=swigwin-3.0.12
 IF EXIST %DEPENDENCY_DIR%\swig (
@@ -123,17 +164,19 @@ IF EXIST %DEPENDENCY_DIR%\swig (
 
 
 REM Unity
-SET UNITY_EXE="%DEPENDENCY_DIR%\unity\Editor\Unity.exe"
-if EXIST %DEPENDENCY_DIR%\unity (
-    echo Found Unity
-) ELSE (
-    IF NOT EXIST %DEPENDENCY_DIR%\UnitySetup64.exe (
-        echo === Downloading Unity === 
-        SET UNITY_URL=https://netstorage.unity3d.com/unity/1a9968d9f99c/Windows64EditorInstaller/UnitySetup64-2018.2.1f1.exe
-        powershell -Command "Invoke-WebRequest $env:UNITY_URL -OutFile %DEPENDENCY_DIR%\UnitySetup64.exe"
+IF %WITH_UNITY% EQU 1 (
+    SET UNITY_EXE="%DEPENDENCY_DIR%\unity\Editor\Unity.exe"
+    if EXIST %DEPENDENCY_DIR%\unity (
+        echo Found Unity
+    ) ELSE (
+        IF NOT EXIST %DEPENDENCY_DIR%\UnitySetup64.exe (
+            echo === Downloading Unity === 
+            SET UNITY_URL=https://netstorage.unity3d.com/unity/1a9968d9f99c/Windows64EditorInstaller/UnitySetup64-2018.2.1f1.exe
+            powershell -Command "Invoke-WebRequest $env:UNITY_URL -OutFile %DEPENDENCY_DIR%\UnitySetup64.exe"
+        )
+        echo === Installing Unity === 
+        mkdir "%DEPENDENCY_DIR%\unity"
+        %DEPENDENCY_DIR%\UnitySetup64.exe /S /D="%DEPENDENCY_DIR%\unity"
+        del "%DEPENDENCY_DIR%\UnitySetup64.exe"
     )
-    echo === Installing Unity === 
-    mkdir "%DEPENDENCY_DIR%\unity"
-    %DEPENDENCY_DIR%\UnitySetup64.exe /S /D="%DEPENDENCY_DIR%\unity"
-    del "%DEPENDENCY_DIR%\UnitySetup64.exe"
 )

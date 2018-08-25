@@ -5,7 +5,7 @@
 #include <ZstSerialisable.h>
 #include <ZstExports.h>
 #include <mutex>
-#include "mpark/variant.hpp"
+#include <variant.hpp>
 
 //A ZstValue is a generic value that represents some data 
 //sent from one ZstPlug to another
