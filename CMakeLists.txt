@@ -148,16 +148,15 @@ if(SWIG_FOUND)
 endif()
 
 if(BUILD_STATIC)
-    message(STATUS "Libzmq: ${ZeroMQ_STATIC_LIBRARY} CZMQ: ${CZMQ_STATIC_LIBRARY}")
-    set(CZMQ_TARGET ${ZeroMQ_STATIC_LIBRARY})
-    set(LIBZMQ_TARGET ${CZMQ_STATIC_LIBRARY})
+    set(CZMQ_TARGET ${CZMQ_STATIC_LIBRARY})
+    set(LIBZMQ_TARGET ${ZeroMQ_STATIC_LIBRARY})
 else()
     set(CZMQ_TARGET czmq)
     set(LIBZMQ_TARGET libzmq)
 endif()
 set(variant_TARGET "mpark_variant")
 set(fmt_TARGET "fmt::fmt-header-only")
-set(msgpackc_TARGET "msgpackc-static") # set(msgpackc_LIBRARY "msgpack::msgpackc-static")
+set(msgpackc_TARGET "msgpackc-static")
 
 
 # ----------------

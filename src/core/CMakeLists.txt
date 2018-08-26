@@ -94,8 +94,10 @@ target_include_directories(${CORE_TARGET}
         ${Showtime_SOURCE_DEPENDENCIES}
 )
 
-set(GLOBAL_PUBLIC_DEFINES "")
-
+set(GLOBAL_PUBLIC_DEFINES
+    "-DZMQ_BUILD_DRAFT_API"
+    "-DCZMQ_BUILD_DRAFT_API"
+)
 
 IF(WIN32)
     list(APPEND GLOBAL_PUBLIC_DEFINES "FMT_USE_WINDOWS_H=0")
@@ -106,10 +108,6 @@ IF(WIN32)
         -DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE
     )
 else()
-    list(APPEND GLOBAL_PUBLIC_DEFINES 
-        -DZMQ_BUILD_DRAFT_API
-        -DCZMQ_BUILD_DRAFT_API
-    )
     # Use shared boost on non-windows platforms
     if(NOT BUILD_STATIC)
         list(APPEND GLOBAL_PUBLIC_DEFINES -DBOOST_ALL_DYN_LINK)
@@ -149,7 +147,6 @@ message(STATUS "Setting link thread library to ${CMAKE_THREAD_LIBS_INIT}")
 # Link libraries
 list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS 
     ${CZMQ_TARGET}
-    ${LIBZMQ_TARGET}
     ${Boost_HEADER_TARGET}
     ${fmt_TARGET}
     ${variant_SYSTEM_TARGET}

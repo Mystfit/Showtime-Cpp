@@ -3,19 +3,17 @@
     #include <Showtime.h>
 %}
 
-%extend ZstURI
-{
-    const int ZstURI::GetHashCode() const
-    {
-        return static_cast<int>(ZstURIHash{}(*self));
-    }
+//static ZstEntityBundle get_performers();
+%typemap(cscode) showtime %{
+  public static ZstEntityBundle get_performers() {
+    ZstEntityBundle bundle = new ZstEntityBundle();
+    showtime.get_performers(bundle);
+    return bundle;
+  }
+%}
 
-    const char * ZstURI::ToString() const
-    {
-        return (self->path()) ? self->path() : "";
-    }
-};
-
+%include "ZstURI.i"
+%include "ZstBundle.i"
 %include "../showtime.i"
 
 %csmethodmodifiers ZstURI::GetHashCode() const "public override";

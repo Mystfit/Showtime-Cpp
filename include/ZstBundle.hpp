@@ -66,14 +66,19 @@ public:
 		m_bundle_items.push_back(bundle_item);
 	}
 
-	ZST_EXPORT T item_at(size_t index)
+	ZST_EXPORT T item_at(const size_t index) const
 	{
 		return m_bundle_items[index];
 	}
 
-	ZST_EXPORT size_t size()
+	ZST_EXPORT size_t size() const
 	{
 		return m_bundle_items.size();
+	}
+
+	ZST_EXPORT T operator[](const size_t & index) const
+	{
+		return item_at(index);
 	}
 
 private:

@@ -13,7 +13,6 @@
 %include "ZstEntityBase.i"
 %include "ZstPlug.i"
 %include "ZstCable.i"
-%include "ZstBundle.i"
 
 %include "ZstComponent.i"
 %include "ZstContainer.i"

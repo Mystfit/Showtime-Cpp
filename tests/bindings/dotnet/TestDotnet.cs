@@ -163,7 +163,14 @@ public class Program
         //Query performer list
         ZstEntityBundle bundle = new ZstEntityBundle();
         showtime.get_performers(bundle);
-        Debug.Assert(bundle.size() == 2);
+        Debug.Assert(bundle.Count == 2);
+        
+        //Check bundle is iterable
+        foreach(var p in bundle)
+        {
+            Debug.Assert(p.entity_type() == showtime.PERFORMER_TYPE);
+            showtime.app(LogLevel.debug, "Found performer " + p.URI().ToString());
+        }
 
         //Wait for incoming entity events
         showtime.app(LogLevel.notification, "Waiting for entity to arrive");
@@ -273,82 +280,3 @@ public class Program
         }
     }
 }
-
-
-
-//public class TestEnumerable : IEnumerable<ZstEntityBase>, IDisposable
-//{
-//    public void Dispose()
-//    {
-//        throw new NotImplementedException();
-//    }
-
-//    public IEnumerator<ZstEntityBase> GetEnumerator()
-//    {
-//        throw new NotImplementedException();
-//    }
-
-//    IEnumerator IEnumerable.GetEnumerator()
-//    {
-//        throw new NotImplementedException();
-//    }
-//}
-
-//public class TestEnumerator : IEnumerator<ZstEntityBase>
-//{
-//    public ZstEntityBase Current
-//    {
-//        get
-//        {
-//            throw new NotImplementedException();
-//        }
-//    }
-
-//    object IEnumerator.Current => throw new NotImplementedException();
-
-//    public bool MoveNext()
-//    {
-//        throw new NotImplementedException();
-//    }
-
-//    public void Reset()
-//    {
-//        throw new NotImplementedException();
-//    }
-
-//    #region IDisposable Support
-//    private bool disposedValue = false; // To detect redundant calls
-
-//    protected virtual void Dispose(bool disposing)
-//    {
-//        if (!disposedValue)
-//        {
-//            if (disposing)
-//            {
-//                // TODO: dispose managed state (managed objects).
-//            }
-
-//            // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
-//            // TODO: set large fields to null.
-
-//            disposedValue = true;
-//        }
-//    }
-
-//    // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-//    // ~TestEnumerator() {
-//    //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-//    //   Dispose(false);
-//    // }
-
-//    // This code added to correctly implement the disposable pattern.
-//    public void Dispose()
-//    {
-//        // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-//        Dispose(true);
-//        // TODO: uncomment the following line if the finalizer is overridden above.
-//        // GC.SuppressFinalize(this);
-//    }
-//    #endregion
-
-//}

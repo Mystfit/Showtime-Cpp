@@ -18,6 +18,7 @@
 }
 
 %include "showtime.i"
+%include "ZstBundle.i"
 
 %pythoncode %{
 	def children(self):
