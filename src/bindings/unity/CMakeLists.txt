@@ -34,6 +34,8 @@ endif()
 set(UNITY_PACKAGE "${UNITY_TARGET}-${CMAKE_PROJECT_VERSION}.unitypackage")
 set(UNITY_PACKAGE_PATH "${UNITY_BUILD_DIR}/${UNITY_PACKAGE}")
 set(UNITY_STAMP ${CMAKE_CURRENT_BINARY_DIR}/unity.stamp)
+
+# Bundle copying
 if(MACOSX)
     add_custom_command(
         OUTPUT  ${UNITY_STAMP}
@@ -41,7 +43,13 @@ if(MACOSX)
         COMMAND ${CMAKE_COMMAND} -E copy_directory $<TARGET_BUNDLE_DIR:${DOTNET_TARGET_WRAPPER}> "${UNITY_BIN_DIR}/$<TARGET_FILE_NAME:${DOTNET_TARGET_WRAPPER}>.bundle"
         COMMAND ${CMAKE_COMMAND} -E touch ${UNITY_STAMP}
     )
+else()
+    add_custom_command(
+        OUTPUT  ${UNITY_STAMP}
+        COMMAND ${CMAKE_COMMAND} -E touch ${UNITY_STAMP}
+    )
 endif()
+
 message(STATUS "${UNITY_EXECUTABLE} -nographics -batchmode -quit -projectPath ${UNITY_BUILD_DIR} -exportPackage Assets/${UNITY_TARGET} ${UNITY_PACKAGE_PATH}")
 add_custom_command(
     OUTPUT ${UNITY_PACKAGE_PATH} 
@@ -54,7 +62,6 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E echo "Exporting Unity package"
     COMMAND ${UNITY_EXECUTABLE} -nographics -batchmode -quit -projectPath ${UNITY_BUILD_DIR} -exportPackage Assets/${UNITY_TARGET} ${UNITY_PACKAGE_PATH}
     COMMAND ${CMAKE_COMMAND} -E echo "...done"
-    COMMAND ${CMAKE_COMMAND} -E touch ${UNITY_STAMP}
     DEPENDS ${UNITY_STAMP}
 )
 

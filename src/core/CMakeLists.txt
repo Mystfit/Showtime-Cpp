@@ -147,6 +147,7 @@ message(STATUS "Setting link thread library to ${CMAKE_THREAD_LIBS_INIT}")
 # Link libraries
 list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS 
     ${CZMQ_TARGET}
+    ${LIBZMQ_TARGET}
     ${Boost_HEADER_TARGET}
     ${fmt_TARGET}
     ${variant_SYSTEM_TARGET}

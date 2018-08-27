@@ -130,7 +130,7 @@ set(Boost_REGEX_TARGET "Boost::regex")
 # ------------------
 find_package(MsgPack CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
-find_package(mpark_variant CONFIG REQUIRED)
+#find_package(mpark_variant CONFIG REQUIRED)
 
 if(WIN32)
     # Use cmake versions of ZeroMQ and CZMQ
