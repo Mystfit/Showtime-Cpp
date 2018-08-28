@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12.0)
 
-project(Showtime VERSION 0.13.1)
+project(Showtime VERSION 0.14.0)
 set(SHOWTIME_NAMESPACE "${PROJECT_NAME}::")
 
 # Use C14
