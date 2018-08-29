@@ -1,4 +1,5 @@
 #include "ZstGraphTransport.h"
+#include <zmq.h>
 
 ZstGraphTransport::ZstGraphTransport() :
 	m_graph_in_reliable(NULL),
@@ -158,21 +159,22 @@ void ZstGraphTransport::init_local_graph_sockets()
 
 void ZstGraphTransport::init_unreliable_graph_sockets()
 {
-	m_graph_out_unreliable = zsock_new(ZMQ_RADIO);
-	m_graph_in_unreliable = zsock_new(ZMQ_DISH);
+	//UDP sockets are reversed - graph in needs to bind, graph out connects
 	std::stringstream addr;
 	std::string protocol = "udp";
-	addr << protocol << "://*:" << CLIENT_UNRELIABLE_PORT;
 
-	zsock_set_linger(m_graph_in_unreliable, 0);
-
-	//If this line is not run, then connect will never work on the client-server transport ... wtf
-	m_unreliable_graph_actor.attach_pipe_listener(m_graph_in_unreliable, s_handle_graph_in, this);
-
-	//UDP sockets are reversed - graph in needs to bind, graph out connects
+	//Output socket
+	addr << ">" << protocol << "://" << CLIENT_MULTICAST_ADDR << ":" << CLIENT_UNRELIABLE_PORT;
+	m_graph_out_unreliable = zsock_new_radio(addr.str().c_str());
 	zsock_set_linger(m_graph_out_unreliable, 0);
+	addr.str("");
+
+	//Input socket
+	addr << "@" << protocol << "://*:" << CLIENT_UNRELIABLE_PORT;
+	m_graph_in_unreliable = zsock_new_dish(addr.str().c_str());
+	zsock_set_linger(m_graph_in_unreliable, 0);
+	m_unreliable_graph_actor.attach_pipe_listener(m_graph_in_unreliable, s_handle_graph_in, this);
 	zsock_set_rcvbuf(m_graph_in_unreliable, 25000000);
-	zsock_bind(m_graph_in_unreliable, addr.str().c_str());
 
 	//Build remote IP
 	addr.str("");

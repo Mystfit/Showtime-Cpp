@@ -26,7 +26,8 @@ void ZstStageRouterTransport::init()
 		return;
 	}
 	zsock_set_linger(m_performer_router, 0);
-
+	
+	ZstLog::net(LogLevel::notification, "Stage router listening on address {}", addr.str());
 	m_router_actor.start_loop();
 }
 

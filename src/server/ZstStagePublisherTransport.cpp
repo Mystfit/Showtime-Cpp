@@ -20,6 +20,8 @@ void ZstStagePublisherTransport::init()
 		return;
 	}
 	zsock_set_linger(m_graph_update_pub, 0);
+
+	ZstLog::net(LogLevel::notification, "Stage publisher sending via address {}", addr.str());
 }
 
 void ZstStagePublisherTransport::destroy()

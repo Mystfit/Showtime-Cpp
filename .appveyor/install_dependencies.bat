@@ -65,9 +65,10 @@ IF EXIST %DEPENDENCY_DIR%\libzmq\build (
     echo Found libZMQ
 ) ELSE (
     echo === Cloning libZMQ === 
-    git clone https://github.com/zeromq/libzmq.git %DEPENDENCY_DIR%\libzmq
-    git -C %DEPENDENCY_DIR%\libzmq fetch --all --tags --prune
-    git -C %DEPENDENCY_DIR%\libzmq checkout v4.2.5
+    git clone https://github.com/mystfit/libzmq.git %DEPENDENCY_DIR%\libzmq
+    REM git -C %DEPENDENCY_DIR%\libzmq fetch --all --tags --prune
+    REM git -C %DEPENDENCY_DIR%\libzmq checkout master
+    git -C %DEPENDENCY_DIR%\libzmq checkout 4.2.5-drafts-fixed
     mkdir "%DEPENDENCY_DIR%\libzmq\build"
 )
 echo  === Building libzmq === 
@@ -81,6 +82,7 @@ IF EXIST %DEPENDENCY_DIR%\czmq\build (
 ) ELSE (
     echo === Cloning CZMQ === 
     git clone https://github.com/mystfit/czmq.git %DEPENDENCY_DIR%\czmq
+    git -C %DEPENDENCY_DIR%\czmq checkout master
     mkdir "%DEPENDENCY_DIR%\czmq\build"
 )
 echo  === Building czmq === 
