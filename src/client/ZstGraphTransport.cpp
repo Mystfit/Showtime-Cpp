@@ -170,8 +170,9 @@ void ZstGraphTransport::init_unreliable_graph_sockets()
 	addr.str("");
 
 	//Input socket
-	addr << "@" << protocol << "://*:" << CLIENT_UNRELIABLE_PORT;
+	addr << "@" << protocol << "://" << CLIENT_MULTICAST_ADDR << ":" << CLIENT_UNRELIABLE_PORT;
 	m_graph_in_unreliable = zsock_new_dish(addr.str().c_str());
+
 	zsock_set_linger(m_graph_in_unreliable, 0);
 	m_unreliable_graph_actor.attach_pipe_listener(m_graph_in_unreliable, s_handle_graph_in, this);
 	zsock_set_rcvbuf(m_graph_in_unreliable, 25000000);

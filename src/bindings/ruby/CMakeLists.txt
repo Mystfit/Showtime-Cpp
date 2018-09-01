@@ -28,4 +28,4 @@ target_include_directories(${RUBY_TARGET} PUBLIC
 )
 
 add_dependencies(${SWIG_MODULE_${RUBY_TARGET}_REAL_NAME} ${CLIENT_TARGET})
-swig_link_libraries(${RUBY_TARGET} ${CLIENT_TARGET} ${RUBY_LIBRARY})
+swig_link_libraries(${RUBY_TARGET} PUBLIC ${CLIENT_TARGET} ${RUBY_LIBRARY})
