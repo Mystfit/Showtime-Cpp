@@ -465,14 +465,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 293125055}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6744f5a2196f20443bff5a9559885a27, type: 3}
+  m_Script: {fileID: 11500000, guid: 688457ac6b85b492985350682b6e6db1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   address: 127.0.0.1
   component_name: cube
   owner_name: 
   is_master: 1
-  proxy_prefab: {fileID: 1319174644320796, guid: 871bd0faa82910b43a82e0f112fdf76d,
+  proxy_prefab: {fileID: 1319174644320796, guid: dbe198963ff8c4bdcbb4ef4fb37b3283,
     type: 2}
 --- !u!4 &293125057
 Transform:
@@ -1337,10 +1337,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 727312467}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 833536471664e75408686abbc1823463, type: 3}
+  m_Script: {fileID: 11500000, guid: ac44e37abce824407b1acb96c8794386, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ball_prefab: {fileID: 0}
+  ball_prefab: {fileID: 1319174644320796, guid: dbe198963ff8c4bdcbb4ef4fb37b3283,
+    type: 2}
   spawn_bounds_x: 4.4
   spawn_bounds_y: 5
   spawn_bounds_z: 4.4
@@ -2590,7 +2591,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 727312469}
+      - m_Target: {fileID: 0}
         m_MethodName: DestroyBall
         m_Mode: 1
         m_Arguments:

@@ -100,7 +100,6 @@ else()
     configure_file(${CSPROJ_IN} ${CSPROJ_OUT})
 
     # Build the project using the dotnet sdk
-    set(DOTNET_OUTPUT_FILE ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${DOTNET_TARGET}.dll)
     set(DOTNET_COMMAND /usr/local/share/dotnet/dotnet CACHE FILEPATH "Path to dotnet sdk")
     set(DOTNET_ARGS 
         "build" "-o" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"

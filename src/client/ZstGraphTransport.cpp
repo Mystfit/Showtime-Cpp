@@ -140,7 +140,7 @@ void ZstGraphTransport::init_remote_graph_sockets()
 	addr << "tcp://" << first_available_ext_ip().c_str() << ":*";
 	zsock_set_unbounded(m_graph_out_reliable);
 	zsock_set_linger(m_graph_out_reliable, 0);
-	int port = zsock_bind(m_graph_out_reliable, addr.str().c_str());
+	int port = zsock_bind(m_graph_out_reliable, "%s", addr.str().c_str());
 	ZstLog::net(LogLevel::debug, "Bound port: {}", port);
 	m_graph_out_reliable_addr = zsock_last_endpoint(m_graph_out_reliable);
 	ZstLog::net(LogLevel::notification, "Reliable remote graph using address {}", m_graph_out_reliable_addr);

@@ -39,6 +39,8 @@ public class ExampleObservableManager : MonoBehaviour
     void Start()
     {
         m_connection_watcher = new ConnectionWatcher();
+        m_connection_watcher.connected_dlg += OnConnected;
+        m_connection_watcher.connected_dlg += OnDisconnected;
     }
 
     void Update()
@@ -51,25 +53,27 @@ public class ExampleObservableManager : MonoBehaviour
 
     public void Connect()
     {
+        if(m_client_name == null){
+            throw new System.NullReferenceException("Showtime performer name was null");
+        }
         showtime.init(m_client_name, true);
         showtime.init_file_logging("unity-showtime.log");
-
-        m_connection_watcher.connected_dlg += OnConnected;
-        m_connection_watcher.connected_dlg += OnDisconnected;
         showtime.add_session_adaptor(m_connection_watcher);
-
         showtime.join_async(address);
     }
 
     public void OnConnected()
     {
+        Debug.Log("Connected to stage");
         TransformableEntityWatcher entity_watcher = gameObject.AddComponent<TransformableEntityWatcher>();
         entity_watcher.transformable_prefab = proxy_prefab;
     }
 
     public void OnDisconnected()
     {
-        Destroy(GetComponent< TransformableEntityWatcher>());
+        TransformableEntityWatcher watcher = GetComponent< TransformableEntityWatcher>();
+        if(watcher != null)
+            Destroy(watcher);
     }
 
     public void Disconnect()
@@ -79,6 +83,7 @@ public class ExampleObservableManager : MonoBehaviour
 
     private void OnApplicationQuit()
     {
+        showtime.remove_session_adaptor(m_connection_watcher);
         showtime.destroy();
     }
 }
