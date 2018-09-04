@@ -31,3 +31,5 @@ endif()
 
 # Link libraries
 target_link_libraries(${CORE_ENTITIES_TARGET} PUBLIC ${CORE_TARGET})
+list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS ${CORE_ENTITIES_TARGET})
+

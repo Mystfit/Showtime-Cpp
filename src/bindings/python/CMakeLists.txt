@@ -10,8 +10,9 @@ set(SETUP_PY            "${CMAKE_SWIG_OUTDIR}/setup.py")
 set(BUILD_STAMP         "${CMAKE_CURRENT_BINARY_DIR}/build/python/timestamp")
 
 # Copy showtime module files
-file(GLOB PYTHON_INTERFACES "${CMAKE_CURRENT_LIST_DIR}/../*.i")
-list(APPEND PYTHON_INTERFACES "${CMAKE_CURRENT_LIST_DIR}/showtime_python.i")
+file(GLOB COMMON_INTERFACES "${CMAKE_CURRENT_LIST_DIR}/../*.i")
+file(GLOB PYTHON_INTERFACES "${CMAKE_CURRENT_LIST_DIR}/*.i")
+list(APPEND PYTHON_INTERFACES ${COMMON_INTERFACES})
 file(COPY ${PYTHON_INTERFACES} DESTINATION ${CMAKE_SWIG_OUTDIR})
 
 # Main swig interface
@@ -27,6 +28,7 @@ set(ZST_LIBS "@ZST_LIBS@")
 set(ZST_FLAGS "@ZST_FLAGS@")
 set(ZST_DEFINITIONS "@ZST_DEFINITIONS@")
 set(ZST_LINK_FLAGS "@ZST_LINK_FLAGS@")
+set(ZST_VERSION "@ZST_VERSION@")
 
 # Generate first stage setup.py 
 configure_file(${SETUP_PY_IN} ${SETUP_PY_PARTIAL})
@@ -40,9 +42,9 @@ set(ZST_LIBS "")
 set(ZST_FLAGS "")
 set(ZST_DEFINITIONS "")
 set(ZST_LINK_FLAGS "")
+set(ZST_BUILD_LIB_DIRS "")
 
 # Set up second pass variables for generated setup.py
-set(ZST_BUILD_LIB_DIRS ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/$<CONFIG>)
 set(ZST_RUNTIME_LIB_DIRS ${CMAKE_INSTALL_PREFIX}/lib)
 set(ZST_INCLUDE_DIRS $<TARGET_PROPERTY:${CLIENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>)
 set(ZST_DEFINITIONS $<TARGET_PROPERTY:${CLIENT_TARGET},INTERFACE_COMPILE_DEFINITIONS>) #['-DMSGPACK_USE_BOOST']
@@ -60,26 +62,15 @@ if(WIN32)
     )
     list(APPEND ZST_FLAGS $<$<CONFIG:Debug>:/Zi>)
     list(APPEND ZST_LINK_FLAGS $<$<CONFIG:Debug>:/DEBUG>)
-    list(APPEND ZST_LIBS
-        $<BUILD_INTERFACE:$<TARGET_LINKER_FILE_NAME:${CORE_TARGET}>>
-        $<BUILD_INTERFACE:$<TARGET_LINKER_FILE_NAME:${CORE_ENTITIES_TARGET}>>
-        $<BUILD_INTERFACE:$<TARGET_LINKER_FILE_NAME:${CLIENT_TARGET}>>
-    )
 endif()
 
 if(MACOSX OR LINUX)
     list(APPEND ZST_FLAGS "-O0;-g;-std=c++14;")
-    list(APPEND ZST_LIBS
-        ${CORE_TARGET}
-        ${CORE_ENTITIES_TARGET}
-        ${CLIENT_TARGET}
-    )
-    list(APPEND ZST_LINK_FLAGS "-Wl,-rpath,${ZST_RUNTIME_LIB_DIRS}")
+    foreach(lib ${SHOWTIME_PUBLIC_LINKED_LIBS})
+        list(APPEND ZST_LIBS $<BUILD_INTERFACE:$<TARGET_LINKER_FILE:${lib}>>)
+    endforeach()
+    list(APPEND ZST_LINK_FLAGS "-Wl,-rpath,${ZST_RUNTIME_LIB_DIRS}" ${ZST_LIBS})
 endif()
-
-# if(LINUX)
-#     list(APPEND ZST_LINK_FLAGS "-Wl,-rpath=${ZST_RUNTIME_LIB_DIRS}")
-# endif()
 
 # Set second pass setup.py parser
 get_filename_component(SETUPPY_PARSER_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/generate-setuppy.cmake REALPATH)
@@ -100,6 +91,7 @@ add_custom_command(TARGET ${PYTHON_TARGET} PRE_BUILD
                         "-DZST_FLAGS=${ZST_FLAGS}"
                         "-DZST_LINK_FLAGS=${ZST_LINK_FLAGS}"
                         "-DZST_INCLUDE_DIRS=${ZST_INCLUDE_DIRS}"
+                        "-DZST_VERSION=${CMAKE_PROJECT_VERSION}"
                         "-DBOOST_DLL_PATTERN=${BOOST_DLL_PATTERN}"
                         -P ${SETUPPY_PARSER_SCRIPT}
                     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SWIG_OUTDIR}/showtime"

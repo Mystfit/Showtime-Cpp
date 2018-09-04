@@ -148,9 +148,6 @@ message(STATUS "Setting link thread library to ${CMAKE_THREAD_LIBS_INIT}")
 list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS 
     ${CZMQ_TARGET}
     ${LIBZMQ_TARGET}
-    ${Boost_HEADER_TARGET}
-    ${fmt_TARGET}
-    ${variant_SYSTEM_TARGET}
     ${Boost_SYSTEM_TARGET}
     ${Boost_FILESYSTEM_TARGET}
     ${Boost_THREAD_TARGET}
@@ -162,8 +159,13 @@ list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS
     ${Boost_LOG_SETUP_TARGET}
     ${CMAKE_THREAD_LIBS_INIT}
 )
+set(SHOWTIME_HEADER_TARGETS
+    ${Boost_HEADER_TARGET}
+    ${fmt_TARGET}
+    ${variant_SYSTEM_TARGET}
+)
 target_link_libraries(${CORE_TARGET} PUBLIC ${SHOWTIME_PUBLIC_LINKED_LIBS})
-target_link_libraries(${CORE_TARGET} PRIVATE ${msgpackc_TARGET})
+target_link_libraries(${CORE_TARGET} PRIVATE ${msgpackc_TARGET} ${SHOWTIME_HEADER_TARGETS})
 list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS ${CORE_TARGET})
 
 if(WIN32)
