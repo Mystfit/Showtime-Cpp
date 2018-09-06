@@ -29,7 +29,13 @@ if(WIN32)
     target_compile_definitions(${CORE_ENTITIES_TARGET} INTERFACE -DZST_IMPORT_ENTITY_API)
 endif()
 
+# Set plugin output dir
+
+# Set plugin output dir
+set_target_properties(${CORE_ENTITIES_TARGET} PROPERTIES 
+    LIBRARY_OUTPUT_DIRECTORY_DEBUG ${PLUGIN_OUTPUT_DIR}
+    LIBRARY_OUTPUT_DIRECTORY_RELEASE ${PLUGIN_OUTPUT_DIR}
+)
+
 # Link libraries
 target_link_libraries(${CORE_ENTITIES_TARGET} PUBLIC ${CORE_TARGET})
-list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS ${CORE_ENTITIES_TARGET})
-

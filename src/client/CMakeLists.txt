@@ -1,5 +1,7 @@
 message(STATUS "Configuring ${CLIENT_TARGET} target")
 
+set_target_properties(${CLIENT_TARGET} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION})
+
 set(ZST_CLIENT_HEADERS
 	"${Showtime_INCLUDE_DIRS}/Showtime.h"
 )
@@ -47,8 +49,7 @@ endif(WIN32)
 
 # Target dependencies
 add_dependencies(${CLIENT_TARGET}
-                 ${CORE_TARGET}
-                 ${CORE_ENTITIES_TARGET})
+                 ${CORE_TARGET})
 
 # Link libraries
 list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS ${CLIENT_TARGET})

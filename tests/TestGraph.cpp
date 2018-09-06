@@ -1,4 +1,3 @@
-#include "../src/core_entities/Adder.h"
 #include "TestCommon.hpp"
 
 using namespace ZstTest;
@@ -160,7 +159,5 @@ int main(int argc,char **argv)
 
     test_connect_plugs();
     test_add_filter();
-
-	//Unreliable test disabled until polling performance issues are sorted
     test_unreliable_graph();
 }

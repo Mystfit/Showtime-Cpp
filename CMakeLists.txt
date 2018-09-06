@@ -11,12 +11,20 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Set build locations
 set(CMAKE_BASE_MODULE_PATH ${CMAKE_MODULE_PATH})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin)
+
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake;${CMAKE_MODULE_PATH}")
 set(CMAKE_SWIG_ROOT_OUTDIR ${CMAKE_BINARY_DIR}/bindings)
 set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR})
 set(CMAKE_FIND_FRAMEWORKS LAST)
+set(CMAKE_DEBUG_POSTFIX d)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(MACOSX TRUE)
@@ -64,7 +72,7 @@ set(Showtime_COMPILED_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include")
 set(Showtime_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/include")
 set(Showtime_ALL_INCLUDE_DIRS ${Showtime_COMPILED_INCLUDE_DIRS} ${Showtime_INCLUDE_DIRS})
 set(Showtime_DEPENDENCIES_DIR "${CMAKE_SOURCE_DIR}/src/dependencies")
-set(Showtime_SOURCE_DEPENDENCIES 
+set(Showtime_SOURCE_DEPENDENCIES
 	"${Showtime_DEPENDENCIES_DIR}"
     "${Showtime_DEPENDENCIES_DIR}/cf"
     "${Showtime_DEPENDENCIES_DIR}/variant"
@@ -177,18 +185,6 @@ endif()
 include(src/core/CMakeLists.txt)
 list(APPEND Showtime_LIBRARY_TARGETS ${CORE_TARGET})
 
-# Core entity plugin
-# --------------------
-set(CORE_ENTITIES_TARGET "${PROJECT_NAME}CoreEntities")
-if(BUILD_STATIC)
-    add_library(${CORE_ENTITIES_TARGET} STATIC "")
-else()
-    add_library(${CORE_ENTITIES_TARGET} SHARED "")
-endif()
-include(src/core_entities/CMakeLists.txt)
-list(APPEND Showtime_LIBRARY_TARGETS ${CORE_ENTITIES_TARGET})
-
-
 # Client Library
 # --------------
 set(CLIENT_TARGET "${PROJECT_NAME}Client")
@@ -269,6 +265,37 @@ if(BINDINGS_RUBY)
     set(RUBY_VERSION 2.5 CACHE STRING "Ruby version to search for")
     find_package(Ruby ${RUBY_VERSION} REQUIRED)
     include(src/bindings/ruby/CMakeLists.txt)
+endif()
+
+
+# ------
+# Plugins
+# ------
+
+set(PLUGIN_OUTPUT_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/plugins)
+set(PLUGIN_TARGETS "")
+
+
+# Core entity plugin
+# -------------------
+
+set(CORE_ENTITIES_TARGET "${PROJECT_NAME}CoreEntities")
+add_library(${CORE_ENTITIES_TARGET} MODULE "")
+include(src/plugins/core_entities/CMakeLists.txt)
+list(APPEND PLUGIN_TARGETS ${CORE_ENTITIES_TARGET})
+
+
+# RtMidi plugin
+# -------------------
+
+option(BUILD_PLUGIN_RTMIDI "Build RtMidi plugin" OFF)
+if(BUILD_PLUGIN_RTMIDI)
+    find_package(rtmidi CONFIG REQUIRED)
+    set(RTMIDI_TARGET RtMidi::rtmidi)
+    set(RTMIDI_PLUGIN_TARGET ${PROJECT_NAME}RtMidiPlugin)
+    add_library(${RTMIDI_PLUGIN_TARGET} MODULE "")
+    include(src/plugins/rtmidi/CMakeLists.txt)
+    list(APPEND PLUGIN_TARGETS ${RTMIDI_PLUGIN_TARGET})
 endif()
 
 

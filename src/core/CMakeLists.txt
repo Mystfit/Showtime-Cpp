@@ -19,6 +19,7 @@ set(API_FILES
     ${Showtime_INCLUDE_DIRS}/ZstSynchronisable.h
     ${Showtime_INCLUDE_DIRS}/ZstBundle.hpp
     ${Showtime_INCLUDE_DIRS}/ZstEventDispatcher.hpp
+    ${Showtime_INCLUDE_DIRS}/ZstEntityFactory.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstEventAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstComputeAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstSynchronisableAdaptor.hpp
@@ -72,6 +73,7 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstTransportLayerBase.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstModule.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstEntityFactory.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstEntityBase.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstComponent.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstContainer.cpp"
@@ -97,6 +99,7 @@ target_include_directories(${CORE_TARGET}
 set(GLOBAL_PUBLIC_DEFINES
     "-DZMQ_BUILD_DRAFT_API"
     "-DCZMQ_BUILD_DRAFT_API"
+    "-DFMT_HEADER_ONLY"
 )
 
 IF(WIN32)
@@ -171,10 +174,10 @@ list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS ${CORE_TARGET})
 if(WIN32)
     # Copy runtime dependencies
     add_custom_command(TARGET ${CORE_TARGET} POST_BUILD
-                      COMMAND ${CMAKE_COMMAND} -E echo "Copy CZMQ runtime $<TARGET_FILE:${CZMQ_TARGET}> to ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>"
-                      COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:${CZMQ_TARGET}>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>"
-                      COMMAND ${CMAKE_COMMAND} -E echo "Copy libZMQ runtime $<TARGET_FILE:${LIBZMQ_TARGET}> to ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>"
-                      COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:${LIBZMQ_TARGET}>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>"
+                      COMMAND ${CMAKE_COMMAND} -E echo "Copy CZMQ runtime $<TARGET_FILE:${CZMQ_TARGET}> to ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+                      COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:${CZMQ_TARGET}>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+                      COMMAND ${CMAKE_COMMAND} -E echo "Copy libZMQ runtime $<TARGET_FILE:${LIBZMQ_TARGET}> to ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+                      COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:${LIBZMQ_TARGET}>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
                       VERBATIM
     )
 endif()
