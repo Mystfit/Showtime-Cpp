@@ -160,4 +160,6 @@ int main(int argc,char **argv)
     test_connect_plugs();
     test_add_filter();
     test_unreliable_graph();
+
+    return 0;
 }

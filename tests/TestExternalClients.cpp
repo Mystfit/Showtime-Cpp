@@ -155,4 +155,6 @@ int main(int argc,char **argv)
 	TestRunner runner("TestExternalClients", argv[0]);
 	zst_start_file_logging("TestExternalClients.log");
     test_external_entities(argv[0]);
+
+    return 0;
 }

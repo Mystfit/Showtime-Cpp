@@ -42,6 +42,9 @@ public:
     	
 	//The parent of this entity
 	ZST_EXPORT ZstEntityBase * parent() const;
+
+	ZST_EXPORT virtual void add_child(ZstEntityBase * child);
+	ZST_EXPORT virtual void remove_child(ZstEntityBase * child);
     
     //Entity type
 	ZST_EXPORT const char * entity_type() const;

@@ -34,6 +34,9 @@ void ZstStageHierarchy::on_receive_msg(ZstMessage * msg)
 	case ZstMsgKind::CREATE_PLUG:
 		response = add_proxy_entity(msg->unpack_payload_serialisable<ZstPlug>());
 		break;
+	case ZstMsgKind::CREATE_FACTORY:
+		response = add_proxy_entity(msg->unpack_payload_serialisable<ZstEntityFactory>());
+		break;
 	case ZstMsgKind::CREATE_ENTITY_FROM_TEMPLATE:
 		response = create_entity_from_template_handler(msg);
 		break;

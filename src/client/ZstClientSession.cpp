@@ -219,6 +219,7 @@ bool ZstClientSession::observe_entity(ZstEntityBase * entity, const ZstTransport
 	return true;
 }
 
+
 void ZstClientSession::destroy_cable_complete(ZstMessageReceipt response, ZstCable * cable)
 {
 	if (!cable) return;

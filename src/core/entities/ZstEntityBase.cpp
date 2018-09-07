@@ -51,6 +51,17 @@ ZstEntityBase * ZstEntityBase::parent() const
 	return m_parent;
 }
 
+void ZstEntityBase::add_child(ZstEntityBase * child)
+{
+	if (is_destroyed()) return;
+	child->set_parent(this);
+}
+
+void ZstEntityBase::remove_child(ZstEntityBase * child)
+{
+	child->m_parent = NULL;
+}
+
 void ZstEntityBase::update_URI()
 {
     if (!parent()) {

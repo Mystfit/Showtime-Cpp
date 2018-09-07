@@ -5,6 +5,7 @@
 #include <ZstURI.h>
 #include <ZstExports.h>
 #include <ZstEventDispatcher.hpp>
+#include <ZstEntityFactory.h>
 #include <entities/ZstEntityBase.h>
 #include <entities/ZstPlug.h>
 #include <entities/ZstPerformer.h>

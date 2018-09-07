@@ -131,10 +131,9 @@ void ZstContainer::set_parent(ZstEntityBase * entity)
 }
 
 void ZstContainer::add_child(ZstEntityBase * child) {
-    if(is_destroyed()) return;
-    
-	//If child is a plug, needs to be added to the plug list
-    child->set_parent(this);
+	if (is_destroyed()) return;
+
+	ZstEntityBase::add_child(child);
     m_children[child->URI()] = child;
 }
 
@@ -145,8 +144,8 @@ void ZstContainer::remove_child(ZstEntityBase * child) {
 	if (c != m_children.end()) {
 		m_children.erase(c);
 	}
-	
-	child->m_parent = NULL;
+
+	ZstEntityBase::remove_child(child);
 }
 
 void ZstContainer::write(std::stringstream & buffer) const

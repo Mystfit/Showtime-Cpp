@@ -62,46 +62,67 @@ int ZstPerformer::get_missed_heartbeats()
 	return m_missed_heartbeats;
 }
 
-size_t ZstPerformer::num_creatables() const
+void ZstPerformer::add_child(ZstEntityBase * entity)
 {
-	return m_creatables.size();
+	if (strcmp(entity->entity_type(), FACTORY_TYPE) == 0) {
+		add_factory(static_cast<ZstEntityFactory*>(entity));
+	}
+	else {
+		ZstContainer::add_child(entity);
+	}
+}
+
+void ZstPerformer::remove_child(ZstEntityBase * entity)
+{
+	if (strcmp(entity->entity_type(), FACTORY_TYPE) == 0) {
+		remove_factory(static_cast<ZstEntityFactory*>(entity));
+	}
+	else {
+		ZstContainer::remove_child(entity);
+	}
+}
+
+void ZstPerformer::add_factory(ZstEntityFactory * factory)
+{
+	if (is_destroyed()) return;
+
+	ZstEntityBase::add_child(factory);
+	m_factories[factory->URI()] = factory;
+}
+
+void ZstPerformer::remove_factory(ZstEntityFactory * factory)
+{
+	auto f = m_factories.find(factory->URI());
+	if (f != m_factories.end()) {
+		m_factories.erase(f);
+	}
+
+	ZstEntityBase::remove_child(factory);
 }
 
 void ZstPerformer::write(std::stringstream & buffer) const
 {
+	//Pack entity
 	ZstContainer::write(buffer);
 	
-	//Pack number of children
-	msgpack::pack(buffer, num_creatables());
-
 	//Pack children
-	for (auto creatable : m_creatables) {
-		msgpack::pack(buffer, creatable.second->entity_type());
-		creatable.second->write(buffer);
+	msgpack::pack(buffer, num_children());
+	for (auto factory : m_factories) {
+		factory.second->write(buffer);
 	}
 }
 
 void ZstPerformer::read(const char * buffer, size_t length, size_t & offset)
 {
+	//Unpack entity
 	ZstContainer::read(buffer, length, offset);
 
-	//Unpack creatables
+	//Unpack factories
 	auto handle = msgpack::unpack(buffer, length, offset);
-	int num_creatables = static_cast<int>(handle.get().via.i64);
-	for (int i = 0; i < num_creatables; ++i) {
-
-		const char * entity_type = handle.get().via.str.ptr;
-
-		ZstEntityBase * child = NULL;
-
-		if (strcmp(entity_type, CONTAINER_TYPE)) {
-			child = new ZstContainer();
-		}
-		else if (strcmp(entity_type, COMPONENT_TYPE)) {
-			child = new ZstComponent();
-		}
-
-		child->read(buffer, length, offset);
-		m_creatables[child->URI()] = child;
+	int num_factories = static_cast<int>(handle.get().via.i64);
+	for (int i = 0; i < num_factories; ++i) {
+		ZstEntityFactory * factory = new ZstEntityFactory();
+		factory->read(buffer, length, offset);
+		m_factories[factory->URI()] = factory;
 	}
 }

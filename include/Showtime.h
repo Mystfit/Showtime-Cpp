@@ -30,6 +30,12 @@ extern "C" {
 	ZST_CLIENT_EXPORT void zst_observe_entity(ZstEntityBase * entity);
 	ZST_CLIENT_EXPORT void zst_observe_entity_async(ZstEntityBase * entity);
 
+	//Factories
+	ZST_CLIENT_EXPORT std::shared_ptr<ZstEntityBase> zst_create_entity(const ZstURI & creatable_path, const char * name);
+	ZST_CLIENT_EXPORT std::shared_ptr<ZstEntityBase> zst_create_entity_async(const ZstURI & creatable_path, const char * name);
+
+	ZST_CLIENT_EXPORT void zst_register_factory(ZstEntityFactory * factory);
+	ZST_CLIENT_EXPORT void zst_register_factory_async(ZstEntityFactory * factory);
 
 	//Hierarchy
 	ZST_CLIENT_EXPORT ZstPerformer* zst_get_root();

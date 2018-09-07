@@ -4,6 +4,7 @@
 
 #include <ZstExports.h>
 #include <ZstEventDispatcher.hpp>
+#include <ZstEntityFactory.h>
 #include <adaptors/ZstSessionAdaptor.hpp>
 #include <adaptors/ZstEntityAdaptor.hpp>
 #include <adaptors/ZstComputeAdaptor.hpp>
@@ -42,6 +43,13 @@ public:
 	ZST_EXPORT virtual void destroy_cable(ZstCable * cable, const ZstTransportSendType & sendtype);
 	ZST_EXPORT virtual void destroy_cable_complete(ZstCable * cable);
 	ZST_EXPORT virtual void disconnect_plugs(ZstInputPlug * input_plug, ZstOutputPlug * output_plug);
+
+
+	// ------------------
+	// Factories
+	// ------------------
+
+	ZST_EXPORT virtual std::shared_ptr<ZstEntityBase> create_entity(const ZstURI & creatable_path, const char * name, const ZstTransportSendType & sendtype);
 
 
 	// -------------

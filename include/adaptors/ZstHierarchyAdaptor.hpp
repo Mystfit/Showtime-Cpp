@@ -3,6 +3,7 @@
 #include <ZstExports.h>
 #include <entities/ZstPerformer.h>
 #include <entities/ZstPlug.h>
+#include <ZstEntityFactory.h>
 #include <adaptors/ZstEventAdaptor.hpp>
 
 class ZstHierarchyAdaptor : public ZstEventAdaptor {
@@ -16,4 +17,7 @@ public:
 
 	ZST_EXPORT virtual void on_plug_arriving(ZstPlug * plug);
 	ZST_EXPORT virtual void on_plug_leaving(ZstPlug * plug);
+
+	ZST_EXPORT virtual void on_factory_arriving(ZstEntityFactory * factory);
+	ZST_EXPORT virtual void on_factory_leaving(ZstEntityFactory * factory);
 };

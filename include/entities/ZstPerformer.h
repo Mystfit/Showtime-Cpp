@@ -6,6 +6,7 @@
 #include <ZstExports.h>
 #include <ZstConstants.h>
 #include <ZstURI.h>
+#include <ZstEntityFactory.h>
 #include <entities/ZstContainer.h>
 
 #define PERFORMER_TYPE "prf"
@@ -24,6 +25,12 @@ public:
 	ZST_EXPORT bool get_active_heartbeat();
 	ZST_EXPORT int get_missed_heartbeats();
 
+	//Hierarchy
+	ZST_EXPORT void add_child(ZstEntityBase * entity) override;
+	ZST_EXPORT void remove_child(ZstEntityBase * entity) override;
+	ZST_EXPORT void add_factory(ZstEntityFactory * factory);
+	ZST_EXPORT void remove_factory(ZstEntityFactory * factory);
+
 	//Creatables
 	ZST_EXPORT size_t num_creatables() const;
 
@@ -37,7 +44,7 @@ private:
 	int m_missed_heartbeats;
 
 	//Creatables
-	ZstEntityMap m_creatables;
+	std::unordered_map<ZstURI, ZstEntityFactory*, ZstURIHash> m_factories;
 };
 
 typedef std::unordered_map<ZstURI, ZstPerformer*, ZstURIHash> ZstPerformerMap;

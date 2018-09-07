@@ -110,11 +110,18 @@ void ZstSession::destroy_cable_complete(ZstCable * cable)
 	cable->disconnect();
 }
 
-
 void ZstSession::disconnect_plugs(ZstInputPlug * input_plug, ZstOutputPlug * output_plug)
 {
 	ZstCable * cable = find_cable(input_plug->URI(), output_plug->URI());
 	destroy_cable(cable);
+}
+
+
+std::shared_ptr<ZstEntityBase> ZstSession::create_entity(const ZstURI & creatable_path, const char * name)
+{
+	//Search through available factories to find a creatable entity
+	for (auto factory : m_factories) {
+	}
 }
 
 ZstCable * ZstSession::find_cable(const ZstURI & input_path, const ZstURI & output_path)

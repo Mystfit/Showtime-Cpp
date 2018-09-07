@@ -5,6 +5,8 @@ set(HELPER_PREFIX "TestHelper")
 set(TESTS
     "TestStartup"
     "TestEntities"
+    "TestEntityFactories"
+    "TestPlugins"
     "TestGraph"
     "TestExternalClients"
     "TestBenchmark"

@@ -21,7 +21,7 @@ void test_create_entities(){
     //Test async entity
     OutputComponent * test_output_async = new OutputComponent("entity_create_test_async");
     TestSynchronisableEvents * entity_sync = new TestSynchronisableEvents();
-	test_output_async->add_adaptor(entity_sync);
+    test_output_async->add_adaptor(entity_sync);
         
     ZstLog::app(LogLevel::debug, "Testing entity async activation");
     zst_activate_entity_async(test_output_async);
@@ -72,18 +72,18 @@ void test_hierarchy() {
     //Test child activation and deactivation callbacks
     ZstLog::app(LogLevel::debug, "Test child activation callback");
     TestSynchronisableEvents * child_activation = new TestSynchronisableEvents();
-	child->add_adaptor(child_activation);
+    child->add_adaptor(child_activation);
     parent->add_child(child);
     
     zst_activate_entity(child);
     assert(child_activation->num_calls() == 1);
     child_activation->reset_num_calls();
 
-	ZstLog::app(LogLevel::debug, "Test child deactivation callback");
+    ZstLog::app(LogLevel::debug, "Test child deactivation callback");
     zst_deactivate_entity(child);
     assert(child_activation->num_calls() == 1);
     child_activation->reset_num_calls();
-	child->remove_adaptor(child_activation);
+    child->remove_adaptor(child_activation);
     delete child_activation;
     
     //Test removing parent removes child
@@ -103,7 +103,9 @@ void test_hierarchy() {
 
 int main(int argc,char **argv)
 {
-	TestRunner runner("TestEntities", argv[0]);
+    TestRunner runner("TestEntities", argv[0]);
     test_create_entities();
     test_hierarchy();
+
+    return 0;
 }

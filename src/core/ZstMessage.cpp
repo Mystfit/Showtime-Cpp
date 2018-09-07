@@ -2,6 +2,7 @@
 #include <sstream>
 #include <boost/lexical_cast.hpp>
 #include <msgpack.hpp>
+#include <ZstEntityFactory.h>
 #include <entities/ZstComponent.h>
 #include <entities/ZstContainer.h>
 #include <entities/ZstPerformer.h>
@@ -251,6 +252,9 @@ ZstMsgKind ZstMessage::entity_kind(const ZstEntityBase & entity)
 	}
 	else if (strcmp(entity.entity_type(), PLUG_TYPE) == 0) {
 		kind = ZstMsgKind::CREATE_PLUG;
+	}
+	else if (strcmp(entity.entity_type(), FACTORY_TYPE) == 0) {
+		kind = ZstMsgKind::CREATE_FACTORY;
 	}
 	return kind;
 }

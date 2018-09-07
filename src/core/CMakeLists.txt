@@ -19,7 +19,7 @@ set(API_FILES
     ${Showtime_INCLUDE_DIRS}/ZstSynchronisable.h
     ${Showtime_INCLUDE_DIRS}/ZstBundle.hpp
     ${Showtime_INCLUDE_DIRS}/ZstEventDispatcher.hpp
-    ${Showtime_INCLUDE_DIRS}/ZstEntityFactory.hpp
+    ${Showtime_INCLUDE_DIRS}/ZstEntityFactory.h
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstEventAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstComputeAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstSynchronisableAdaptor.hpp
