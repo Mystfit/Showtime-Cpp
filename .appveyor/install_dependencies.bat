@@ -14,6 +14,12 @@ IF "%2"=="" (
     set CONFIGURATION=%2
 )
 
+IF %CONFIGURATION% EQU "debug" (
+    set CONFIG_WCAPS="Debug"
+) ELSE IF %CONFIGURATION% EQU "release" (
+    set CONFIG_WCAPS="Release"
+)
+
 IF "%3"=="--with-unity" (
     set WITH_UNITY=1
 ) ELSE (
@@ -57,7 +63,7 @@ set CTEST_BIN=%DEPENDENCY_DIR%\cmake\bin\ctest
 REM Set common build flags and prefixes for czmq and msgpack  
 set INSTALL_PREFIX=%DEPENDENCY_DIR%\install
 set COMMON_GENERATOR_FLAGS=-G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%INSTALL_PREFIX%" -DCMAKE_INSTALL_MESSAGE=NEVER -DCMAKE_PREFIX_PATH="%INSTALL_PREFIX%"
-set COMMON_BUILD_FLAGS=--config %CONFIGURATION% --target INSTALL -- /nologo /verbosity:minimal
+set COMMON_BUILD_FLAGS=--config %CONFIG_WCAPS% --target INSTALL -- /nologo /verbosity:minimal
 
 
 REM libZMQ
@@ -124,13 +130,13 @@ REM mpark variant
 IF EXIST %DEPENDENCY_DIR%\variant\build (
     echo Found variant
 ) ELSE (
-    echo === Cloning mpark-variant === 
+    echo === Cloning mpark-variant ===
     git clone https://github.com/mpark/variant.git %DEPENDENCY_DIR%\variant
     mkdir "%DEPENDENCY_DIR%\variant\build"
 )
-    echo === Building variant === 
-    %CMAKE_BIN% -H"%DEPENDENCY_DIR%\variant" -B"%DEPENDENCY_DIR%\variant\build" %COMMON_GENERATOR_FLAGS%
-    %CMAKE_BIN% --build "%DEPENDENCY_DIR%\variant\build" %COMMON_BUILD_FLAGS%
+echo === Building variant ===
+%CMAKE_BIN% -H"%DEPENDENCY_DIR%\variant" -B"%DEPENDENCY_DIR%\variant\build" %COMMON_GENERATOR_FLAGS%
+%CMAKE_BIN% --build "%DEPENDENCY_DIR%\variant\build" %COMMON_BUILD_FLAGS%
 
 
 REM boost
@@ -183,3 +189,16 @@ IF %WITH_UNITY% EQU 1 (
     %DEPENDENCY_DIR%\UnitySetup64.exe /S /D="%DEPENDENCY_DIR%\unity"
     del "%DEPENDENCY_DIR%\UnitySetup64.exe"
 )
+
+
+REM rtmidi
+IF EXIST %DEPENDENCY_DIR%\rtmidi\build (
+    echo Found RtMidi
+) ELSE (
+    echo === Cloning RtMidi ===
+    git clone https://github.com/thestk/rtmidi.git %DEPENDENCY_DIR%\rtmidi
+    mkdir "%DEPENDENCY_DIR%\rtmidi\build"
+)
+echo === Building RtMidi ===
+%CMAKE_BIN% -H"%DEPENDENCY_DIR%\rtmidi" -B"%DEPENDENCY_DIR%\rtmidi\build" %COMMON_GENERATOR_FLAGS% -DBUILD_TESTING=OFF
+%CMAKE_BIN% --build "%DEPENDENCY_DIR%\rtmidi\build" %COMMON_BUILD_FLAGS%
