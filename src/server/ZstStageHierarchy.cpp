@@ -53,7 +53,7 @@ void ZstStageHierarchy::on_receive_msg(ZstMessage * msg)
 			{ ZstMsgArg::MSG_ID, boost::lexical_cast<std::string>(msg->id()) }
 		};
 		router_events().invoke([response, &args, &msg](ZstTransportAdaptor * adp) {
-			adp->send_message(response, args);
+			adp->on_send_msg(response, args);
 		});
 	}
 }
@@ -99,7 +99,7 @@ ZstMsgKind ZstStageHierarchy::create_client_handler(std::string sender_identity,
 
 	//Update rest of network
 	publisher_events().invoke([client_proxy](ZstTransportAdaptor * adp) {
-		adp->send_message(ZstMsgKind::CREATE_PERFORMER, *client_proxy);
+		adp->on_send_msg(ZstMsgKind::CREATE_PERFORMER, *client_proxy);
 	});
 	return ZstMsgKind::OK;
 }
@@ -143,7 +143,7 @@ ZstMsgKind ZstStageHierarchy::add_proxy_entity(const ZstEntityBase & entity)
 	//Update rest of network
 	if (msg_status == ZstMsgKind::OK) {
 		publisher_events().invoke([proxy, &entity](ZstTransportAdaptor * adp) {
-			adp->send_message(ZstMessage::entity_kind(entity), *proxy);
+			adp->on_send_msg(ZstMessage::entity_kind(entity), *proxy);
 		});
 	}
 
@@ -157,7 +157,7 @@ ZstMsgKind ZstStageHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 
 	//Update rest of network
 	publisher_events().invoke([entity](ZstTransportAdaptor * adp) {
-		adp->send_message(ZstMsgKind::DESTROY_ENTITY, { {ZstMsgArg::PATH, entity->URI().path()} });
+		adp->on_send_msg(ZstMsgKind::DESTROY_ENTITY, { {ZstMsgArg::PATH, entity->URI().path()} });
 	});
 
 	ZstHierarchy::remove_proxy_entity(entity);

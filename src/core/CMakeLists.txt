@@ -6,6 +6,8 @@ FILE(WRITE ${VERSION_FILE} "#define SHOWTIME_VERSION \"${CMAKE_PROJECT_VERSION}\
 
 set_target_properties(${CORE_TARGET} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION})
 
+
+
 # Public include files
 set(API_FILES
     ${VERSION_FILE}
@@ -84,6 +86,8 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstPlugLiason.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstCableLiason.cpp"
 )
+
+source_group(TREE ${CMAKE_CURRENT_LIST_DIR})
 
 # Target sources
 target_sources(${CORE_TARGET} PUBLIC ${ZST_PUBLIC_HEADERS} )

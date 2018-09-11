@@ -38,22 +38,22 @@ public:
 	// ----------------
 
 
-	void send_message(ZstMsgKind kind)  override
+	void on_send_msg(ZstMsgKind kind)  override
 	{
 		begin_send_message(get_msg()->init(kind));
 	}
 
-	void send_message(ZstMsgKind kind, const ZstMsgArgs & args)  override
+	void on_send_msg(ZstMsgKind kind, const ZstMsgArgs & args)  override
 	{
 		begin_send_message(get_msg()->init(kind, args));
 	}
 
-	void send_message(ZstMsgKind kind, const ZstSerialisable & serialisable) override
+	void on_send_msg(ZstMsgKind kind, const ZstSerialisable & serialisable) override
 	{
 		begin_send_message(get_msg()->init(kind, serialisable, {}));
 	}
 
-	void send_message(ZstMsgKind kind, const ZstMsgArgs & args, const ZstSerialisable & serialisable) override
+	void on_send_msg(ZstMsgKind kind, const ZstMsgArgs & args, const ZstSerialisable & serialisable) override
 	{
 		begin_send_message(get_msg()->init(kind, serialisable, args));
 	}
@@ -63,22 +63,22 @@ public:
 	// Response messages
 	// -----------------
 	
-	void send_message(ZstMsgKind kind, const ZstTransportSendType & sendtype, const MessageReceivedAction & action) override
+	void on_send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const MessageReceivedAction & action) override
 	{
 		begin_send_message(get_msg()->init(kind), sendtype, action);
 	}
 
-	void send_message(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstMsgArgs & args, const MessageReceivedAction & action)  override
+	void on_send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstMsgArgs & args, const MessageReceivedAction & action)  override
 	{
 		begin_send_message(get_msg()->init(kind, args), sendtype, action);
 	}
 	
-	void send_message(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstSerialisable & serialisable, const MessageReceivedAction & action) override
+	void on_send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstSerialisable & serialisable, const MessageReceivedAction & action) override
 	{
 		begin_send_message(get_msg()->init(kind, serialisable, {}), sendtype, action);
 	}
 
-	void send_message(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstSerialisable & serialisable, const ZstMsgArgs & args, const MessageReceivedAction & action) override
+	void on_send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstSerialisable & serialisable, const ZstMsgArgs & args, const MessageReceivedAction & action) override
 	{
 		begin_send_message(get_msg()->init(kind, serialisable, args), sendtype, action);
 	}

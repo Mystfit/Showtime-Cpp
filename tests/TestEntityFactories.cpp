@@ -28,7 +28,7 @@ public:
 		}
 
 		if (entity) {
-			ZstEntityFactory::register_entity(entity.get());
+			ZstEntityFactory::on_register_entity(entity.get());
 		}
 		return NULL;
 	}
@@ -38,6 +38,8 @@ void test_entity_factories(){
 	//Create the factory that will instantiate our custom entity
 	std::shared_ptr<TestFactory> test_factory = std::shared_ptr<TestFactory>(new TestFactory("customs"));
 	zst_register_factory(test_factory.get());
+	assert(test_factory->is_activated());
+	test_factory->on_publish_entity_update();
 
 	//Create an scoped entity that will be owned by the application (not the Showtime library)
 	ZstURI entity_path = ZstURI("TestEntityFactories/customs/CustomComponent");

@@ -72,7 +72,7 @@ public:
 	// -------------------------------
 	
 	ZST_EXPORT void on_synchronisable_destroyed(ZstSynchronisable * synchronisable) override;
-	ZST_EXPORT void synchronisable_has_event(ZstSynchronisable * synchronisable) override;
+	ZST_EXPORT void on_synchronisable_has_event(ZstSynchronisable * synchronisable) override;
 
 	// -------------
 	// Compute adaptor overrides

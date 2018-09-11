@@ -30,7 +30,7 @@ public:
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
 
 protected:
-	ZST_EXPORT virtual void register_entity(ZstEntityBase * entity) override;
+	ZST_EXPORT virtual void on_register_entity(ZstEntityBase * entity) override;
 
 private:
 	std::unordered_set<ZstURI, ZstURIHash> m_creatables;

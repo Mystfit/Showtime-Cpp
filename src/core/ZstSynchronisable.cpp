@@ -66,7 +66,7 @@ void ZstSynchronisable::enqueue_activation()
 		});
 
 		//Notify adaptors that we have a queued event
-		synchronisable_events()->invoke([this](ZstSynchronisableAdaptor* dlg) { dlg->synchronisable_has_event(this); });
+		synchronisable_events()->invoke([this](ZstSynchronisableAdaptor* dlg) { dlg->on_synchronisable_has_event(this); });
 	}
 }
 
@@ -89,7 +89,7 @@ void ZstSynchronisable::enqueue_deactivation()
 		}
 
 		//Notify adaptors that we have a queued event
-		synchronisable_events()->invoke([this](ZstSynchronisableAdaptor* dlg) { dlg->synchronisable_has_event(this); });
+		synchronisable_events()->invoke([this](ZstSynchronisableAdaptor* dlg) { dlg->on_synchronisable_has_event(this); });
     }
 }
 
@@ -191,7 +191,7 @@ void ZstSynchronisable::process_events()
 void ZstSynchronisable::announce_update()
 {
 	synchronisable_events()->defer([this](ZstSynchronisableAdaptor * adp) { adp->on_synchronisable_updated(this); });
-	synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * adp) { adp->synchronisable_has_event(this); });
+	synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * adp) { adp->on_synchronisable_has_event(this); });
 }
 
 ZstEventDispatcher<ZstSynchronisableAdaptor*> * ZstSynchronisable::synchronisable_events()

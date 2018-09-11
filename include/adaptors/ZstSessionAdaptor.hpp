@@ -9,7 +9,6 @@
 
 class ZstSessionAdaptor : public ZstEventAdaptor {
 public:
-	ZST_EXPORT virtual ~ZstSessionAdaptor() {};
 	ZST_EXPORT virtual void on_connected_to_stage();
 	ZST_EXPORT virtual void on_disconnected_from_stage();
 

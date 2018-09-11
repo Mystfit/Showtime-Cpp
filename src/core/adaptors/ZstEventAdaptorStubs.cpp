@@ -17,7 +17,7 @@
 // Synchronisable adaptor stub functions
 // --------------------------------------
 
-void ZstSynchronisableAdaptor::synchronisable_has_event(ZstSynchronisable * synchronisable) {}
+void ZstSynchronisableAdaptor::on_synchronisable_has_event(ZstSynchronisable * synchronisable) {}
 void ZstSynchronisableAdaptor::on_synchronisable_activated(ZstSynchronisable * synchronisable) {}
 void ZstSynchronisableAdaptor::on_synchronisable_deactivated(ZstSynchronisable * synchronisable) {}
 void ZstSynchronisableAdaptor::on_synchronisable_destroyed(ZstSynchronisable * synchronisable) {}
@@ -28,8 +28,8 @@ void ZstSynchronisableAdaptor::on_synchronisable_updated(ZstSynchronisable * syn
 // Entity adaptors
 // ---------------
 
-void ZstEntityAdaptor::publish_entity_update(ZstEntityBase * entity) {};
-void ZstEntityAdaptor::register_entity(ZstEntityBase * entity){};
+void ZstEntityAdaptor::on_publish_entity_update(ZstEntityBase * entity) {};
+void ZstEntityAdaptor::on_register_entity(ZstEntityBase * entity){};
 void ZstEntityAdaptor::on_entity_destroyed(ZstEntityBase * entity){};
 
 
@@ -65,14 +65,14 @@ void ZstHierarchyAdaptor::on_factory_leaving(ZstEntityFactory * factory) {};
 // Message adaptors
 // -----------------------
 
-void ZstTransportAdaptor::send_message(ZstMsgKind kind) {};
-void ZstTransportAdaptor::send_message(ZstMsgKind kind, const ZstMsgArgs & args) {}
-void ZstTransportAdaptor::send_message(ZstMsgKind kind, const ZstSerialisable & serialisable) {}
-void ZstTransportAdaptor::send_message(ZstMsgKind kind, const ZstMsgArgs & args, const ZstSerialisable & serialisable) {}
-void ZstTransportAdaptor::send_message(ZstMsgKind kind, const ZstTransportSendType & sendtype, const MessageReceivedAction & action){}
-void ZstTransportAdaptor::send_message(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstMsgArgs & args, const MessageReceivedAction & action) {}
-void ZstTransportAdaptor::send_message(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstSerialisable & serialisable, const MessageReceivedAction & action) {}
-void ZstTransportAdaptor::send_message(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstSerialisable & serialisable, const ZstMsgArgs & args, const MessageReceivedAction & action) {}
+void ZstTransportAdaptor::on_send_msg(ZstMsgKind kind) {};
+void ZstTransportAdaptor::on_send_msg(ZstMsgKind kind, const ZstMsgArgs & args) {}
+void ZstTransportAdaptor::on_send_msg(ZstMsgKind kind, const ZstSerialisable & serialisable) {}
+void ZstTransportAdaptor::on_send_msg(ZstMsgKind kind, const ZstMsgArgs & args, const ZstSerialisable & serialisable) {}
+void ZstTransportAdaptor::on_send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const MessageReceivedAction & action){}
+void ZstTransportAdaptor::on_send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstMsgArgs & args, const MessageReceivedAction & action) {}
+void ZstTransportAdaptor::on_send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstSerialisable & serialisable, const MessageReceivedAction & action) {}
+void ZstTransportAdaptor::on_send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstSerialisable & serialisable, const ZstMsgArgs & args, const MessageReceivedAction & action) {}
 void ZstTransportAdaptor::on_receive_msg(ZstMessage * msg) {}
 
 

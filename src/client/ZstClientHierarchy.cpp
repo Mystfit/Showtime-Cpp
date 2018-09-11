@@ -75,7 +75,7 @@ void ZstClientHierarchy::on_receive_msg(ZstMessage * msg)
 	}
 }
 
-void ZstClientHierarchy::publish_entity_update(ZstEntityBase * entity)
+void ZstClientHierarchy::on_publish_entity_update(ZstEntityBase * entity)
 {
 	performance_events().invoke([entity](ZstTransportAdaptor * adaptor) {
 		ZstOutputPlug * plug = dynamic_cast<ZstOutputPlug*>(entity);
@@ -83,7 +83,7 @@ void ZstClientHierarchy::publish_entity_update(ZstEntityBase * entity)
 			ZstMsgArgs args = { { ZstMsgArg::PATH, plug->URI().path() } };
 			if (!plug->is_reliable())
 				args[ZstMsgArg::UNRELIABLE] = "";
-			adaptor->send_message(ZstMsgKind::PERFORMANCE_MSG, args, *plug->raw_value());
+			adaptor->on_send_msg(ZstMsgKind::PERFORMANCE_MSG, args, *plug->raw_value());
 		}
 	});
 }
@@ -101,7 +101,7 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 	//Build message
 	stage_events().invoke([this, entity, sendtype](ZstTransportAdaptor * adaptor)
 	{
-		adaptor->send_message(ZstMessage::entity_kind(*entity), sendtype, *entity, [this, entity](ZstMessageReceipt response) {
+		adaptor->on_send_msg(ZstMessage::entity_kind(*entity), sendtype, *entity, [this, entity](ZstMessageReceipt response) {
 			if (response.status != ZstMsgKind::OK) {
 				ZstLog::net(LogLevel::error, "Activate entity {} failed with status {}", entity->URI().path(), ZstMsgNames[response.status]);
 				return;
@@ -122,7 +122,7 @@ void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTranspo
 	//If the entity is local, let the stage know it's leaving
 	if (!entity->is_proxy()) {
 		stage_events().invoke([this, sendtype, entity](ZstTransportAdaptor * adaptor) {
-			adaptor->send_message(ZstMsgKind::DESTROY_ENTITY, sendtype, {{ZstMsgArg::PATH, entity->URI().path()}}, [this, entity](ZstMessageReceipt response) {
+			adaptor->on_send_msg(ZstMsgKind::DESTROY_ENTITY, sendtype, {{ZstMsgArg::PATH, entity->URI().path()}}, [this, entity](ZstMessageReceipt response) {
 				if (response.status != ZstMsgKind::OK) {
 					ZstLog::net(LogLevel::error, "Destroy entity failed with status {}", ZstMsgNames[response.status]);
 					return;

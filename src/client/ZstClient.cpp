@@ -198,7 +198,7 @@ void ZstClient::receive_connection_handshake(ZstMessage * msg)
 				{ZstMsgArg::OUTPUT_PATH, output_path.path() },
 				{ZstMsgArg::CONNECTION_MSG_ID, ss.str()}
 			};
-			adaptor->send_message(ZstMsgKind::SUBSCRIBE_TO_PERFORMER_ACK, ZstTransportSendType::ASYNC_REPLY, args, [this, output_path](ZstMessageReceipt receipt) {
+			adaptor->on_send_msg(ZstMsgKind::SUBSCRIBE_TO_PERFORMER_ACK, ZstTransportSendType::ASYNC_REPLY, args, [this, output_path](ZstMessageReceipt receipt) {
 				if(receipt.status == ZstMsgKind::OK){
 					this->session()->add_connected_performer(dynamic_cast<ZstPerformer*>(this->session()->hierarchy()->find_entity(output_path)));
 				}
@@ -249,7 +249,7 @@ void ZstClient::join_stage(std::string stage_address, const ZstTransportSendType
 			{ ZstMsgArg::GRAPH_RELIABLE_OUTPUT_ADDRESS, reliable_graph_addr },
 			{ ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS, unreliable_graph_addr }
 		};
-		adaptor->send_message(ZstMsgKind::CLIENT_JOIN, sendtype, *root, args, [this](ZstMessageReceipt response) {
+		adaptor->on_send_msg(ZstMsgKind::CLIENT_JOIN, sendtype, *root, args, [this](ZstMessageReceipt response) {
 			this->join_stage_complete(response);
 		});
 	});
@@ -289,7 +289,7 @@ void ZstClient::synchronise_graph(const ZstTransportSendType & sendtype)
 	ZstLog::net(LogLevel::notification, "Requesting stage snapshot");
 
 	invoke([this, sendtype](ZstTransportAdaptor * adaptor) {
-		adaptor->send_message(ZstMsgKind::CLIENT_SYNC, sendtype, [this](ZstMessageReceipt response) {
+		adaptor->on_send_msg(ZstMsgKind::CLIENT_SYNC, sendtype, [this](ZstMessageReceipt response) {
 			this->synchronise_graph_complete(response);
 		});
 	});
@@ -313,7 +313,7 @@ void ZstClient::leave_stage()
 		this->set_is_connecting(false);
 		this->set_connected_to_stage(false);
 
-		invoke([this](ZstTransportAdaptor * adaptor) { adaptor->send_message(ZstMsgKind::CLIENT_LEAVING); });
+		invoke([this](ZstTransportAdaptor * adaptor) { adaptor->on_send_msg(ZstMsgKind::CLIENT_LEAVING); });
     } else {
         ZstLog::net(LogLevel::debug, "Not connected to stage. Skipping to cleanup. {}");
     }
@@ -366,7 +366,7 @@ void ZstClient::heartbeat_timer(boost::asio::deadline_timer * t, ZstClient * cli
 
 	client->invoke([client](ZstTransportAdaptor * adaptor) {
 		std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
-		adaptor->send_message(ZstMsgKind::CLIENT_HEARTBEAT, ZstTransportSendType::ASYNC_REPLY, [client, start](ZstMessageReceipt response) {
+		adaptor->on_send_msg(ZstMsgKind::CLIENT_HEARTBEAT, ZstTransportSendType::ASYNC_REPLY, [client, start](ZstMessageReceipt response) {
 			if (response.status != ZstMsgKind::OK) {
 				ZstLog::net(LogLevel::warn, "Server ping timed out");
 				client->leave_stage_complete();
@@ -401,7 +401,7 @@ void ZstClient::start_connection_broadcast(const ZstURI & remote_client_path)
 
 void ZstClient::send_connection_broadcast(boost::asio::deadline_timer * t, ZstClient * client, const ZstURI & to, const ZstURI & from, boost::posix_time::milliseconds duration)
 {
-	client->m_graph_transport->send_message(ZstMsgKind::CONNECTION_HANDSHAKE, { { ZstMsgArg::OUTPUT_PATH, from.path() } });
+	client->m_graph_transport->on_send_msg(ZstMsgKind::CONNECTION_HANDSHAKE, { { ZstMsgArg::OUTPUT_PATH, from.path() } });
 
 	if (client->m_connection_timers->find(to) != client->m_connection_timers->end()) {
 		//Loop timer if it is valid

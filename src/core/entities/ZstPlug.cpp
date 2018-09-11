@@ -234,9 +234,7 @@ ZstOutputPlug::~ZstOutputPlug()
 
 void ZstOutputPlug::fire()
 {
-    entity_events()->invoke([this](ZstEntityAdaptor * dlg) { 
-		dlg->publish_entity_update(this);
-	});
+    entity_events()->invoke([this](ZstEntityAdaptor * dlg) { dlg->on_publish_entity_update(this); });
 	m_value->clear();
 }
 

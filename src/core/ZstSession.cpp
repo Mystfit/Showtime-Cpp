@@ -275,7 +275,7 @@ void ZstSession::on_synchronisable_destroyed(ZstSynchronisable * synchronisable)
 		reaper().add(synchronisable);
 }
 
-void ZstSession::synchronisable_has_event(ZstSynchronisable * synchronisable)
+void ZstSession::on_synchronisable_has_event(ZstSynchronisable * synchronisable)
 {
 	synchronisable_events().defer([this, synchronisable](ZstSynchronisableAdaptor * dlg) {
 		this->synchronisable_process_events(synchronisable);

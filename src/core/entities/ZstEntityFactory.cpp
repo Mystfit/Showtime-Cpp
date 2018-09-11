@@ -37,10 +37,10 @@ ZstEntityBase * ZstEntityFactory::create_entity(const ZstURI & creatable_path, c
 	return NULL;
 }
 
-void ZstEntityFactory::register_entity(ZstEntityBase * entity)
+void ZstEntityFactory::on_register_entity(ZstEntityBase * entity)
 {
 	//Activate entity and attach listeners here
-	entity_events()->invoke([entity](ZstEntityAdaptor * adp) { adp->register_entity(entity); });
+	entity_events()->invoke([entity](ZstEntityAdaptor * adp) { adp->on_register_entity(entity); });
 }
 
 void ZstEntityFactory::write(std::stringstream & buffer) const
