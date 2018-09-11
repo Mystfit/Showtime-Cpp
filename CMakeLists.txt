@@ -71,13 +71,6 @@ endif()
 set(Showtime_COMPILED_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include")
 set(Showtime_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/include")
 set(Showtime_ALL_INCLUDE_DIRS ${Showtime_COMPILED_INCLUDE_DIRS} ${Showtime_INCLUDE_DIRS})
-set(Showtime_DEPENDENCIES_DIR "${CMAKE_SOURCE_DIR}/src/dependencies")
-set(Showtime_SOURCE_DEPENDENCIES
-	"${Showtime_DEPENDENCIES_DIR}"
-    "${Showtime_DEPENDENCIES_DIR}/cf"
-    "${Showtime_DEPENDENCIES_DIR}/variant"
-    #"${Showtime_DEPENDENCIES_DIR}/variant/include"
-)
 
 set(Showtime_API_INTERFACE "")
 set(Showtime_LIBRARY_TARGETS "")

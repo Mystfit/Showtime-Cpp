@@ -1,8 +1,12 @@
 #include <algorithm>
 #include <assert.h>
 #include <ZstSynchronisable.h>
-#include <ZstEventDispatcher.hpp>
+#include "ZstEventDispatcher.hpp"
 
+// Template Z
+template class ZstEventDispatcher<ZstSynchronisableAdaptor*>;
+
+// Static vars
 unsigned int ZstSynchronisable::s_instance_id_counter = 0;
 
 ZstSynchronisable::ZstSynchronisable() :
@@ -25,6 +29,11 @@ ZstSynchronisable::ZstSynchronisable(const ZstSynchronisable & other) : ZstSynch
 
 ZstSynchronisable::~ZstSynchronisable()
 {
+	//Let owner know this entity is going away
+	if(!is_destroyed())
+		synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * adp){adp->on_synchronisable_destroyed(this);});
+	
+	//Cleanup event queues
 	delete m_synchronisable_events;
 }
 

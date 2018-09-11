@@ -28,13 +28,6 @@ ZstPerformer::ZstPerformer(const ZstPerformer & other) : ZstContainer(other)
 
 ZstPerformer::~ZstPerformer()
 {
-	for (auto child : m_creatables) {
-		if (!child.second->is_activated()) {
-			//TODO:Possible memory leak here
-			delete child.second;
-		}
-	}
-	m_creatables.clear();
 }
 
 void ZstPerformer::set_heartbeat_active()

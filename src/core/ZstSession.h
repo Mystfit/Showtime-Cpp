@@ -3,12 +3,12 @@
 #include <ZstLogging.h>
 
 #include <ZstExports.h>
-#include <ZstEventDispatcher.hpp>
-#include <ZstEntityFactory.h>
+#include <entities/ZstEntityFactory.h>
 #include <adaptors/ZstSessionAdaptor.hpp>
 #include <adaptors/ZstEntityAdaptor.hpp>
 #include <adaptors/ZstComputeAdaptor.hpp>
 
+#include "ZstEventDispatcher.hpp"
 #include "ZstModule.h"
 #include "ZstHierarchy.h"
 #include "liasons/ZstSynchronisableLiason.hpp"
@@ -49,7 +49,7 @@ public:
 	// Factories
 	// ------------------
 
-	ZST_EXPORT virtual std::shared_ptr<ZstEntityBase> create_entity(const ZstURI & creatable_path, const char * name, const ZstTransportSendType & sendtype);
+	ZST_EXPORT virtual ZstEntityBase * create_entity(const ZstURI & creatable_path, const char * name, const ZstTransportSendType & sendtype);
 
 
 	// -------------

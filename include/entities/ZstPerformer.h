@@ -6,7 +6,7 @@
 #include <ZstExports.h>
 #include <ZstConstants.h>
 #include <ZstURI.h>
-#include <ZstEntityFactory.h>
+#include <entities/ZstEntityFactory.h>
 #include <entities/ZstContainer.h>
 
 #define PERFORMER_TYPE "prf"
@@ -30,10 +30,7 @@ public:
 	ZST_EXPORT void remove_child(ZstEntityBase * entity) override;
 	ZST_EXPORT void add_factory(ZstEntityFactory * factory);
 	ZST_EXPORT void remove_factory(ZstEntityFactory * factory);
-
-	//Creatables
-	ZST_EXPORT size_t num_creatables() const;
-
+	
 	//Serialisation
 	ZST_EXPORT virtual void write(std::stringstream & buffer) const override;
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;

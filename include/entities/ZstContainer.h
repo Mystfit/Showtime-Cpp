@@ -27,8 +27,8 @@ public:
 	ZST_EXPORT const size_t num_children() const;
 	
 	//Manipulate the hierarchy of this entity
-	ZST_EXPORT virtual void add_child(ZstEntityBase * child);
-	ZST_EXPORT virtual void remove_child(ZstEntityBase * child);
+	ZST_EXPORT virtual void add_child(ZstEntityBase * child) override;
+	ZST_EXPORT virtual void remove_child(ZstEntityBase * child) override;
 
 	//Query the hierarchy
 	ZST_EXPORT ZstCableBundle & get_child_cables(ZstCableBundle & bundle) const override;

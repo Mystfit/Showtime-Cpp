@@ -18,14 +18,13 @@ set(API_FILES
     ${Showtime_INCLUDE_DIRS}/ZstSerialisable.h
     ${Showtime_INCLUDE_DIRS}/ZstSynchronisable.h
     ${Showtime_INCLUDE_DIRS}/ZstBundle.hpp
-    ${Showtime_INCLUDE_DIRS}/ZstEventDispatcher.hpp
-    ${Showtime_INCLUDE_DIRS}/ZstEntityFactory.h
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstEventAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstComputeAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstSynchronisableAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstSessionAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstHierarchyAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstEntityAdaptor.hpp
+    ${Showtime_INCLUDE_DIRS}/entities/ZstEntityFactory.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstEntityBase.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstComponent.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstContainer.h
@@ -48,6 +47,7 @@ set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstHierarchy.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstTransportLayer.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstTransportLayerBase.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstEventDispatcher.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstModule.h"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstSynchronisableLiason.hpp"
@@ -73,7 +73,7 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstTransportLayerBase.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstModule.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstEntityFactory.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/entities/ZstEntityFactory.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstEntityBase.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstComponent.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstContainer.cpp"
@@ -85,15 +85,19 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstCableLiason.cpp"
 )
 
+set(ZST_HEADER_DEPENDENCIES_DIR "${CMAKE_SOURCE_DIR}/src/dependencies")
+set(ZST_HEADER_DEPENDENCIES
+    ${ZST_HEADER_DEPENDENCIES_DIR}/cf
+    ${ZST_HEADER_DEPENDENCIES_DIR}/variant
+    ${ZST_HEADER_DEPENDENCIES_DIR}/concurrentqueue
+)
 target_sources(${CORE_TARGET} PUBLIC ${ZST_PUBLIC_HEADERS} )
 target_sources(${CORE_TARGET} PRIVATE ${ZST_CORE_SRC} ${ZST_CORE_HEADERS} ${Showtime_API_INTERFACE})
-target_include_directories(${CORE_TARGET}
-    PUBLIC 
+target_include_directories(${CORE_TARGET} PUBLIC 
         $<BUILD_INTERFACE:${Showtime_INCLUDE_DIRS}>
         $<BUILD_INTERFACE:${Showtime_COMPILED_INCLUDE_DIRS}>
+        $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES}>
         $<INSTALL_INTERFACE:include>
-    PRIVATE
-        ${Showtime_SOURCE_DEPENDENCIES}
 )
 
 set(GLOBAL_PUBLIC_DEFINES

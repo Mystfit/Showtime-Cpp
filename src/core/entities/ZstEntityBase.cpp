@@ -3,13 +3,16 @@
 
 #include <entities/ZstEntityBase.h>
 #include <ZstCable.h>
-#include <ZstEventDispatcher.hpp>
 
-//Forced template instantiations
+#include "../ZstEventDispatcher.hpp"
+
+
+//Template instantiations
 template class ZstBundleIterator<ZstCable*>;
 template class ZstBundleIterator<ZstEntityBase*>;
 template class ZstBundle<ZstCable*>;
 template class ZstBundle<ZstEntityBase*>;
+template class ZstEventDispatcher<ZstEntityAdaptor*>;
 
 
 ZstEntityBase::ZstEntityBase(const char * name) : 

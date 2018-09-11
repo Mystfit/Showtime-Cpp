@@ -1,16 +1,20 @@
 #pragma once
+
+//A ZstValue is a generic value that represents some data 
+//sent from one ZstPlug to another
+
 #include <vector>
 #include <iostream>
 #include <ZstConstants.h>
 #include <ZstSerialisable.h>
 #include <ZstExports.h>
 #include <mutex>
-#include <variant.hpp>
 
-//A ZstValue is a generic value that represents some data 
-//sent from one ZstPlug to another
-
-
+//Forward declare variant
+namespace mpark{
+	template <typename... Ts>
+	class variant;
+}
 typedef mpark::variant<int, float, std::string> ZstValueVariant;
 
 class ZstValue : public ZstSerialisable {

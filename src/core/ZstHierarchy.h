@@ -4,14 +4,14 @@
 
 #include <ZstURI.h>
 #include <ZstExports.h>
-#include <ZstEventDispatcher.hpp>
-#include <ZstEntityFactory.h>
+#include <entities/ZstEntityFactory.h>
 #include <entities/ZstEntityBase.h>
 #include <entities/ZstPlug.h>
 #include <entities/ZstPerformer.h>
 #include <adaptors/ZstHierarchyAdaptor.hpp>
 #include <adaptors/ZstEntityAdaptor.hpp>
 
+#include "ZstEventDispatcher.hpp"
 #include "ZstModule.h"
 #include "liasons/ZstPlugLiason.hpp"
 #include "liasons/ZstSynchronisableLiason.hpp"
@@ -52,8 +52,8 @@ public:
 	// ------------------------------
 	// Hierarchy queries
 	// ------------------------------
-	ZST_EXPORT virtual ZstEntityBase * find_entity(const ZstURI & path);
-	ZST_EXPORT virtual ZstEntityBase * walk_entity(const ZstURI & path);
+	ZST_EXPORT virtual ZstEntityBase * find_entity(const ZstURI & path) const;
+	ZST_EXPORT virtual ZstEntityBase * walk_entity(const ZstURI & path) const;
 
 
 	// ------------------------------

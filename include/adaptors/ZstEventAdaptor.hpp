@@ -3,6 +3,8 @@
 
 class ZstEventAdaptor {
 public:
+	virtual ~ZstEventAdaptor(){};
+	
 	ZstEventAdaptor() : m_is_target_dispatcher_active(true) 
 	{
 	};

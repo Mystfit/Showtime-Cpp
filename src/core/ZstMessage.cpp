@@ -2,7 +2,7 @@
 #include <sstream>
 #include <boost/lexical_cast.hpp>
 #include <msgpack.hpp>
-#include <ZstEntityFactory.h>
+#include <entities/ZstEntityFactory.h>
 #include <entities/ZstComponent.h>
 #include <entities/ZstContainer.h>
 #include <entities/ZstPerformer.h>

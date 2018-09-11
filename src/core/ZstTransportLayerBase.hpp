@@ -5,7 +5,7 @@
 #include <cf/cfuture.h>
 #include <cf/time_watcher.h>
 #include <ZstExports.h>
-#include <ZstEventDispatcher.hpp>
+#include "ZstEventDispatcher.hpp"
 #include "ZstActor.h"
 #include "ZstMessage.h"
 

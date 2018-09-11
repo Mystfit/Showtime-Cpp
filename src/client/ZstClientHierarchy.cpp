@@ -155,7 +155,7 @@ void ZstClientHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 }
 
 
-ZstEntityBase * ZstClientHierarchy::find_entity(const ZstURI & path)
+ZstEntityBase * ZstClientHierarchy::find_entity(const ZstURI & path) const
 {
 	if (m_root->URI() == path) {
 		return m_root;
