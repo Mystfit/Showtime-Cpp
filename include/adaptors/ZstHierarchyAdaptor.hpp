@@ -3,7 +3,7 @@
 #include <ZstExports.h>
 #include <entities/ZstPerformer.h>
 #include <entities/ZstPlug.h>
-#include <ZstEntityFactory.h>
+#include <entities/ZstEntityFactory.h>
 #include <adaptors/ZstEventAdaptor.hpp>
 
 class ZstHierarchyAdaptor : public ZstEventAdaptor {

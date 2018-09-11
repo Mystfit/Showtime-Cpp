@@ -63,14 +63,13 @@ public:
 	//Adaptors
     ZST_EXPORT virtual void add_adaptor(ZstEntityAdaptor * adaptor);
     ZST_EXPORT virtual void remove_adaptor(ZstEntityAdaptor * adaptor);
+	ZST_EXPORT ZstEventDispatcher<ZstEntityAdaptor*> * entity_events();
 	
 protected:
 	//Set entity status
 	ZST_EXPORT void set_entity_type(const char * entity_type);
 	ZST_EXPORT virtual void set_parent(ZstEntityBase* entity);
 
-    ZST_EXPORT ZstEventDispatcher<ZstEntityAdaptor*> * entity_events();
-    
 private:
     ZST_EXPORT void update_URI();
     ZstEventDispatcher<ZstEntityAdaptor*> * m_entity_events;

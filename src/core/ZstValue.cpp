@@ -2,7 +2,12 @@
 #include <sstream>
 #include <msgpack.hpp>
 #include <ZstLogging.h>
+#include <variant.hpp>
 #include "ZstValue.h"
+
+//Template instantiations
+template class mpark::variant<int, float, std::string>;
+
 
 ZstValue::ZstValue() : m_default_type(ZstValueType::ZST_NONE)
 {

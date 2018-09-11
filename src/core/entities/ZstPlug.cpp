@@ -5,7 +5,7 @@
 #include <ZstCable.h>
 
 #include "../ZstValue.h"
-#include <ZstEventDispatcher.hpp>
+#include "../ZstEventDispatcher.hpp"
 
 using namespace std;
 

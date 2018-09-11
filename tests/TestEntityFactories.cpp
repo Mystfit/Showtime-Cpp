@@ -20,9 +20,9 @@ class TestFactory : public ZstEntityFactory
 public:
 	TestFactory(const char * name) : ZstEntityFactory(name) {}
 
-	virtual std::shared_ptr<ZstEntityBase> create_entity(const ZstURI & creatable_path, const char * name) override
+	virtual ZstSharedEntity create_entity(const ZstURI & creatable_path, const char * name) override
 	{
-		std::shared_ptr<ZstEntityBase> entity = NULL;
+		ZstSharedEntity entity = NULL;
 		if (creatable_path == ZstURI("CustomComponent")) {
 			entity = std::shared_ptr<CustomComponent>(new CustomComponent(name));
 		}
@@ -42,7 +42,7 @@ void test_entity_factories(){
 	//Create an scoped entity that will be owned by the application (not the Showtime library)
 	ZstURI entity_path = ZstURI("TestEntityFactories/customs/CustomComponent");
 	{
-		std::shared_ptr<ZstEntityBase> entity = zst_create_entity(entity_path, "brand_spanking_new");
+		ZstSharedEntity entity = zst_create_entity(entity_path, "brand_spanking_new");
 		assert(entity);
 		assert(zst_find_entity(entity_path));
 	}

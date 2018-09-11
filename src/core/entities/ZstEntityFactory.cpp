@@ -1,6 +1,7 @@
 #include <exception>
 #include <msgpack.hpp>
 #include <entities/ZstEntityFactory.h>
+#include "../ZstEventDispatcher.hpp"
 
 ZstEntityFactory::ZstEntityFactory() : ZstEntityBase("")
 {
@@ -32,13 +33,13 @@ void ZstEntityFactory::remove_creatable(const ZstURI & creatable_path)
 
 ZstEntityBase * ZstEntityFactory::create_entity(const ZstURI & creatable_path, const char * name)
 {
-	
+	throw(std::runtime_error("ZstEntityFactory::create_entity not implemented"));
+	return NULL;
 }
 
 void ZstEntityFactory::register_entity(ZstEntityBase * entity)
 {
 	//Activate entity and attach listeners here
-	entity->entity_events()->add_adaptor(this);
 	entity_events()->invoke([entity](ZstEntityAdaptor * adp) { adp->register_entity(entity); });
 }
 

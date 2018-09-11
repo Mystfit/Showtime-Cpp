@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdlib.h>
 #include <ZstExports.h>
 
 typedef uint64_t ZstMsgID;

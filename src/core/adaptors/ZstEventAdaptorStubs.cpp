@@ -27,7 +27,10 @@ void ZstSynchronisableAdaptor::on_synchronisable_updated(ZstSynchronisable * syn
 // ---------------
 // Entity adaptors
 // ---------------
+
 void ZstEntityAdaptor::publish_entity_update(ZstEntityBase * entity) {};
+void ZstEntityAdaptor::register_entity(ZstEntityBase * entity){};
+void ZstEntityAdaptor::on_entity_destroyed(ZstEntityBase * entity){};
 
 
 // -----------------------

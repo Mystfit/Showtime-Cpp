@@ -96,7 +96,7 @@ ZstEntityBundle & ZstHierarchy::get_performers(ZstEntityBundle & bundle) const
 	return bundle;
 }
 
-ZstEntityBase * ZstHierarchy::find_entity(const ZstURI & path)
+ZstEntityBase * ZstHierarchy::find_entity(const ZstURI & path) const
 {
 	ZstEntityBase * entity = NULL;
 
@@ -109,7 +109,7 @@ ZstEntityBase * ZstHierarchy::find_entity(const ZstURI & path)
 	return entity;
 }
 
-ZstEntityBase * ZstHierarchy::walk_entity(const ZstURI & path)
+ZstEntityBase * ZstHierarchy::walk_entity(const ZstURI & path) const
 {
 	ZstEntityBase * result = NULL;
 	ZstPerformer * root = get_performer_by_URI(path);
