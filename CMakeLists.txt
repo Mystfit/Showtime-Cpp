@@ -285,19 +285,6 @@ include(src/plugins/core_entities/CMakeLists.txt)
 list(APPEND PLUGIN_TARGETS ${CORE_ENTITIES_TARGET})
 
 
-# RtMidi plugin
-# -------------------
-
-option(BUILD_PLUGIN_RTMIDI "Build RtMidi plugin" OFF)
-if(BUILD_PLUGIN_RTMIDI)
-    find_package(rtmidi CONFIG REQUIRED)
-    set(RTMIDI_TARGET RtMidi::rtmidi)
-    set(RTMIDI_PLUGIN_TARGET ${PROJECT_NAME}RtMidiPlugin)
-    add_library(${RTMIDI_PLUGIN_TARGET} MODULE "")
-    include(src/plugins/rtmidi/CMakeLists.txt)
-    list(APPEND PLUGIN_TARGETS ${RTMIDI_PLUGIN_TARGET})
-endif()
-
 
 # Tests
 # -----
