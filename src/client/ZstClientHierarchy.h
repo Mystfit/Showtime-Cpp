@@ -6,12 +6,12 @@
 
 #pragma once
 
+#include <concurrentqueue.h>
 #include <ZstCore.h>
-#include <ZstEventDispatcher.hpp>
 #include "ZstClientModule.h"
 
 #include "adaptors/ZstSessionAdaptor.hpp"
-#include "../dependencies/concurrentqueue.h"
+#include "../core/ZstEventDispatcher.hpp"
 #include "../core/adaptors/ZstTransportAdaptor.hpp"
 #include "../core/ZstStageMessage.h"
 #include "../core/ZstHierarchy.h"

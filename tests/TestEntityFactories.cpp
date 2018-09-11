@@ -1,7 +1,7 @@
 #include "TestCommon.hpp"
 #include <string>
 #include <memory>
-#include <ZstEntityFactory.h>
+#include <entities/ZstEntityFactory.h>
 
 using namespace ZstTest;
 
@@ -20,7 +20,7 @@ class TestFactory : public ZstEntityFactory
 public:
 	TestFactory(const char * name) : ZstEntityFactory(name) {}
 
-	virtual ZstSharedEntity create_entity(const ZstURI & creatable_path, const char * name) override
+	virtual ZstEntityBase * create_entity(const ZstURI & creatable_path, const char * name) override
 	{
 		ZstSharedEntity entity = NULL;
 		if (creatable_path == ZstURI("CustomComponent")) {
@@ -42,7 +42,7 @@ void test_entity_factories(){
 	//Create an scoped entity that will be owned by the application (not the Showtime library)
 	ZstURI entity_path = ZstURI("TestEntityFactories/customs/CustomComponent");
 	{
-		ZstSharedEntity entity = zst_create_entity(entity_path, "brand_spanking_new");
+		ZstSharedEntity entity = ZstSharedEntity(zst_create_entity(entity_path, "brand_spanking_new"));
 		assert(entity);
 		assert(zst_find_entity(entity_path));
 	}

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ZstEventDispatcher.hpp>
+#include "../core/ZstEventDispatcher.hpp"
 #include "../core/adaptors/ZstTransportAdaptor.hpp"
 #include "../core/ZstTransportLayer.h"
 #include "../core/ZstStageMessage.h"

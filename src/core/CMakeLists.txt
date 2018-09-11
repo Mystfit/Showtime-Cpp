@@ -85,27 +85,32 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstCableLiason.cpp"
 )
 
-set(ZST_HEADER_DEPENDENCIES_DIR "${CMAKE_SOURCE_DIR}/src/dependencies")
-set(ZST_HEADER_DEPENDENCIES
-    ${ZST_HEADER_DEPENDENCIES_DIR}/cf
-    ${ZST_HEADER_DEPENDENCIES_DIR}/variant
-    ${ZST_HEADER_DEPENDENCIES_DIR}/concurrentqueue
-)
+# Target sources
 target_sources(${CORE_TARGET} PUBLIC ${ZST_PUBLIC_HEADERS} )
 target_sources(${CORE_TARGET} PRIVATE ${ZST_CORE_SRC} ${ZST_CORE_HEADERS} ${Showtime_API_INTERFACE})
-target_include_directories(${CORE_TARGET} PUBLIC 
+
+# Target includes
+set(ZST_HEADER_DEPENDENCIES_DIR "${CMAKE_CURRENT_LIST_DIR}/../dependencies")
+target_include_directories(${CORE_TARGET} PUBLIC
         $<BUILD_INTERFACE:${Showtime_INCLUDE_DIRS}>
         $<BUILD_INTERFACE:${Showtime_COMPILED_INCLUDE_DIRS}>
-        $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES}>
+        $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}/cf>
+        $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}/variant>
+        $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}/concurrentqueue>
         $<INSTALL_INTERFACE:include>
 )
 
+target_include_directories(${CORE_TARGET} PUBLIC 
+                            ${CZMQ_INCLUDE_DIRS}
+)
+
+
+# Target definitions
 set(GLOBAL_PUBLIC_DEFINES
     "-DZMQ_BUILD_DRAFT_API"
     "-DCZMQ_BUILD_DRAFT_API"
     "-DFMT_HEADER_ONLY"
 )
-
 IF(WIN32)
     list(APPEND GLOBAL_PUBLIC_DEFINES "FMT_USE_WINDOWS_H=0")
     target_compile_definitions(${CORE_TARGET} PRIVATE -DZST_EXPORT_CORE_API)
@@ -137,9 +142,6 @@ if(USE_STATIC_CZMQ)
                                 -DCZMQ_STATIC
     )
 endif()
-target_include_directories(${CORE_TARGET} PUBLIC 
-                            ${CZMQ_INCLUDE_DIRS}
-)
 
 # Set threading library
 set(THREADS_PREFER_PTHREAD_FLAG ON)
