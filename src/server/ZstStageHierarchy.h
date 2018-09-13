@@ -41,12 +41,11 @@ public:
 	ZstMsgKind remove_proxy_entity(ZstEntityBase * entity) override;
 
 
-	// ----------------
-	// Createables
-	// ----------------
+	// ------------------------
+	// Factories and creatables
+	// ------------------------
 
-	ZstMsgKind create_entity_template_handler(ZstMessage * msg);
-	ZstMsgKind create_entity_from_template_handler(ZstMessage * msg);
+	ZstMsgKind create_entity_from_factory_handler(ZstMessage * msg, ZstPerformerStageProxy * sender);
 
 
 	// ---------------------
@@ -58,4 +57,6 @@ public:
 
 private:
 	ZstClientSocketMap m_client_socket_index;
+	std::unordered_map<ZstMsgID, MessagePromise> m_deferred_creatable_promises;
+
 };

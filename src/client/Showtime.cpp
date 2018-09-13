@@ -121,12 +121,12 @@ void zst_observe_entity_async(ZstEntityBase * entity)
 
 ZstEntityBase * zst_create_entity(const ZstURI & creatable_path, const char * name)
 {
-	return ZstClient::instance().session()->create_entity(creatable_path, name, ZstTransportSendType::SYNC_REPLY);
+	return ZstClient::instance().session()->hierarchy()->create_entity(creatable_path, name, ZstTransportSendType::SYNC_REPLY);
 }
 
 ZstEntityBase * zst_create_entity_async(const ZstURI & creatable_path, const char * name)
 {
-	return ZstClient::instance().session()->create_entity(creatable_path, name, ZstTransportSendType::ASYNC_REPLY);
+	return ZstClient::instance().session()->hierarchy()->create_entity(creatable_path, name, ZstTransportSendType::ASYNC_REPLY);
 }
 
 void zst_register_factory(ZstEntityFactory * factory)

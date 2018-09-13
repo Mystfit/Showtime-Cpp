@@ -1,14 +1,15 @@
 #include "TestCommon.hpp"
 #include <string>
 #include <memory>
-#include <entities/ZstEntityFactory.h>
 
 using namespace ZstTest;
+
+#define CUSTOM_COMPONENT "CustomComponent"
 
 class CustomComponent : public ZstComponent 
 {
 public:
-    CustomComponent(const char * name) : ZstComponent("CustomComponent", name) {}
+    CustomComponent(const char * name) : ZstComponent(CUSTOM_COMPONENT, name) {}
 protected:
     void compute(ZstInputPlug * plug) override {
         ZstLog::entity(LogLevel::notification, "Custom component {} received a value", this->URI().path());
@@ -18,19 +19,18 @@ protected:
 class TestFactory : public ZstEntityFactory
 {
 public:
-	TestFactory(const char * name) : ZstEntityFactory(name) {}
+	TestFactory(const char * name) : ZstEntityFactory(name) 
+	{
+		this->add_creatable(CUSTOM_COMPONENT);
+	}
 
 	virtual ZstEntityBase * create_entity(const ZstURI & creatable_path, const char * name) override
 	{
-		ZstSharedEntity entity = NULL;
-		if (creatable_path == ZstURI("CustomComponent")) {
-			entity = std::shared_ptr<CustomComponent>(new CustomComponent(name));
+		CustomComponent * entity = NULL;
+		if (creatable_path == this->URI() + ZstURI(CUSTOM_COMPONENT)) {
+			entity = new CustomComponent(name);
 		}
-
-		if (entity) {
-			ZstEntityFactory::on_register_entity(entity.get());
-		}
-		return NULL;
+		return entity;
 	}
 };
 
@@ -39,24 +39,33 @@ void test_entity_factories(){
 	std::shared_ptr<TestFactory> test_factory = std::shared_ptr<TestFactory>(new TestFactory("customs"));
 	zst_register_factory(test_factory.get());
 	assert(test_factory->is_activated());
-	test_factory->on_publish_entity_update();
+
+	ZstURIBundle bundle;
+	test_factory->get_creatables(bundle);
+	assert(bundle.size() == 1);
+	assert(bundle[0] == test_factory->URI() + ZstURI(CUSTOM_COMPONENT));
 
 	//Create an scoped entity that will be owned by the application (not the Showtime library)
-	ZstURI entity_path = ZstURI("TestEntityFactories/customs/CustomComponent");
 	{
-		ZstSharedEntity entity = ZstSharedEntity(zst_create_entity(entity_path, "brand_spanking_new"));
+		ZstSharedEntity entity = ZstSharedEntity(zst_create_entity(bundle[0], "brand_spanking_new"));
 		assert(entity);
-		assert(zst_find_entity(entity_path));
+		assert(zst_find_entity(zst_get_root()->URI() + ZstURI("brand_spanking_new")));
 	}
 
 	//Test scoped entity destruction
-	assert(!zst_find_entity(entity_path));
+	assert(!zst_find_entity(bundle[0]));
+}
+
+void test_remote_factories()
+{
 
 }
 
+
 int main(int argc,char **argv)
 {
-    TestRunner runner("TestEntityFactories", argv[0]);
+    TestRunner runner("TestEntityFactories", argv[0], true, false);
     test_entity_factories();
+	test_remote_factories();
     return 0;
 }

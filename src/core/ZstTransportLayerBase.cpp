@@ -171,6 +171,7 @@ void ZstTransportLayerBase::process_responses(ZstMessage * msg)
 	try {
 		ZstMsgID id = msg->id();
 		m_response_promises.at(id).set_value(msg->kind());
+		ZstLog::net(LogLevel::warn, "Processed stage {} message with id {}", ZstMsgNames[msg->kind()], id);
 
 		cleanup_response_message(id);
 		status = 1;

@@ -1,6 +1,7 @@
 #include <exception>
 #include <msgpack.hpp>
 #include <entities/ZstPerformer.h>
+#include "../ZstEventDispatcher.hpp"
 
 using namespace std;
 
@@ -28,6 +29,10 @@ ZstPerformer::ZstPerformer(const ZstPerformer & other) : ZstContainer(other)
 
 ZstPerformer::~ZstPerformer()
 {
+	//Let owner know this entity is going away
+	if (!is_destroyed())
+		synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * adp) { adp->on_synchronisable_destroyed(this); });
+
 }
 
 void ZstPerformer::set_heartbeat_active()

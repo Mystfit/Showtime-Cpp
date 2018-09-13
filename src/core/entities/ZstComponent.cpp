@@ -1,6 +1,7 @@
 #include <memory>
 #include <msgpack.hpp>
 #include <entities/ZstComponent.h>
+#include "../ZstEventDispatcher.hpp"
 
 ZstComponent::ZstComponent() : 
 	ZstEntityBase("")
@@ -42,6 +43,12 @@ ZstComponent::ZstComponent(const ZstComponent & other) : ZstEntityBase(other)
 
 ZstComponent::~ZstComponent()
 {
+	//Let owner know this entity is going away
+	if (!is_destroyed())
+		synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * adp) { adp->on_synchronisable_destroyed(this); });
+
+	set_destroyed();
+
 	m_plugs.clear();
 	free(m_component_type);
 }

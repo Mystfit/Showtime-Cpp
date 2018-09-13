@@ -17,6 +17,7 @@ void ZstStageHierarchy::on_receive_msg(ZstMessage * msg)
 {
 	ZstMsgKind response(ZstMsgKind::EMPTY);
 	std::string sender_identity = msg->get_arg(ZstMsgArg::SENDER_IDENTITY);
+	ZstPerformerStageProxy * sender = get_client_from_socket_id(sender_identity);
 
 	switch (msg->kind()) {
 	case ZstMsgKind::CLIENT_LEAVING:
@@ -37,8 +38,8 @@ void ZstStageHierarchy::on_receive_msg(ZstMessage * msg)
 	case ZstMsgKind::CREATE_FACTORY:
 		response = add_proxy_entity(msg->unpack_payload_serialisable<ZstEntityFactory>());
 		break;
-	case ZstMsgKind::CREATE_ENTITY_FROM_TEMPLATE:
-		response = create_entity_from_template_handler(msg);
+	case ZstMsgKind::CREATE_ENTITY_FROM_FACTORY:
+		response = create_entity_from_factory_handler(msg, sender);
 		break;
 	case ZstMsgKind::DESTROY_ENTITY:
 		response = remove_proxy_entity(find_entity(ZstURI(msg->get_arg(ZstMsgArg::PATH))));
@@ -49,7 +50,7 @@ void ZstStageHierarchy::on_receive_msg(ZstMessage * msg)
 
 	if (response != ZstMsgKind::EMPTY) {
 		ZstMsgArgs args = {
-			{ ZstMsgArg::SENDER_IDENTITY, sender_identity },
+			{ ZstMsgArg::DESTINATION_IDENTITY, sender_identity },
 			{ ZstMsgArg::MSG_ID, boost::lexical_cast<std::string>(msg->id()) }
 		};
 		router_events().invoke([response, &args, &msg](ZstTransportAdaptor * adp) {
@@ -165,19 +166,61 @@ ZstMsgKind ZstStageHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 	return ZstMsgKind::OK;
 }
 
-
-ZstMsgKind ZstStageHierarchy::create_entity_template_handler(ZstMessage * msg)
+ZstMsgKind ZstStageHierarchy::create_entity_from_factory_handler(ZstMessage * msg, ZstPerformerStageProxy * sender)
 {
-	//TODO: Implement this
-	throw std::logic_error("Creating entity types not implemented yet");
-	return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
-}
+	//First, find the factory
+	ZstURI factory_path = ZstURI(msg->get_arg(ZstMsgArg::PATH)).parent();
+	ZstEntityFactory * factory = dynamic_cast<ZstEntityFactory*>(find_entity(factory_path));
+	if (!factory) {
+		ZstLog::net(LogLevel::error, "Could not find factory {}", factory_path.path());
+		ZstMsgKind::ERR_ENTITY_NOT_FOUND;
+	}
 
+	//Find performer who owns the factory
+	ZstPerformerStageProxy * factory_performer = dynamic_cast<ZstPerformerStageProxy*>(find_entity(factory_path.first()));
 
-ZstMsgKind ZstStageHierarchy::create_entity_from_template_handler(ZstMessage * msg)
-{
-	throw std::logic_error("Creating entity types not implemented yet");
-	return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
+	//Check to see if one client is already connected to the other
+	if (!factory_performer)
+	{
+		ZstLog::net(LogLevel::error, "Could not find factory {}", factory_path.path());
+		return ZstMsgKind::ERR_STAGE_PERFORMER_NOT_FOUND;
+	}
+	
+	//Create a promise to resolve when the origin factory has finished creating the entity
+	ZstMsgID id = msg->id();
+	m_deferred_creatable_promises[id] = MessagePromise();
+	MessageFuture future = m_deferred_creatable_promises[id].get_future();
+
+	//Create future action to run when the client responds to our creatable request
+	future.then([this, id, sender](MessageFuture f) {
+		ZstMsgKind status(ZstMsgKind::EMPTY);
+		try {
+			ZstMsgKind status = f.get();
+			if (status == ZstMsgKind::OK) {
+				router_events().invoke([this, id, sender](ZstTransportAdaptor * adp) {
+					//Let original caller know creatable was built successfully
+					adp->on_send_msg(ZstMsgKind::OK, { 
+						{ZstMsgArg::MSG_ID, boost::lexical_cast<std::string>(id)},
+						{ ZstMsgArg::DESTINATION_IDENTITY, this->get_socket_ID(sender) },
+					});
+				});
+			}
+			else {
+				ZstLog::net(LogLevel::error, "Creatable request failed at origin with status ", status);
+			}
+			return status;
+		}
+		catch (const ZstTimeoutException & e) {
+			ZstLog::net(LogLevel::error, "Client connection async response timed out - {}", e.what());
+		}
+		return status;
+	});
+
+	//Forward creatable message to the performer that owns the factory
+	msg->set_local_arg(ZstMsgArg::DESTINATION_IDENTITY, get_socket_ID(factory_performer));
+	router_events().invoke([msg](ZstTransportAdaptor * adp) { adp->on_send_msg(msg); });
+
+	return ZstMsgKind::EMPTY;
 }
 
 ZstPerformerStageProxy * ZstStageHierarchy::get_client_from_socket_id(const std::string & socket_id)

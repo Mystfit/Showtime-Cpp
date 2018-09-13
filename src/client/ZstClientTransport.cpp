@@ -104,6 +104,7 @@ int ZstClientTransport::s_handle_stage_router(zloop_t * loop, zsock_t * sock, vo
 	zmsg_t * sock_msg = transport->sock_recv(sock, true);
 	if (sock_msg) {
 		stage_msg->unpack(sock_msg);
+		ZstLog::net(LogLevel::warn, "Received {} message from stage with id {}", ZstMsgNames[stage_msg->kind()], stage_msg->id());
 		transport->on_receive_msg(stage_msg);
 		zmsg_destroy(&sock_msg);
 	}

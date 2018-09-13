@@ -13,6 +13,7 @@
 
 #include "ZstEventDispatcher.hpp"
 #include "ZstModule.h"
+#include "liasons/ZstEntityFactoryLiason.hpp"
 #include "liasons/ZstPlugLiason.hpp"
 #include "liasons/ZstSynchronisableLiason.hpp"
 #include "adaptors/ZstTransportAdaptor.hpp"
@@ -22,6 +23,7 @@ class ZstHierarchy :
 	public ZstModule,
 	public ZstPlugLiason,
 	public ZstSynchronisableLiason,
+	public ZstEntityFactoryLiason,
 	public ZstSynchronisableAdaptor,
 	public ZstEntityAdaptor
 {
@@ -38,7 +40,7 @@ public:
 
 	ZST_EXPORT virtual void activate_entity(ZstEntityBase* entity, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
 	ZST_EXPORT virtual void destroy_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
-	
+	ZST_EXPORT virtual ZstEntityBase * create_entity(const ZstURI & creatable_path, const char * name, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
 
 	// ------------------------------
 	// Performers
@@ -52,8 +54,9 @@ public:
 	// ------------------------------
 	// Hierarchy queries
 	// ------------------------------
+
 	ZST_EXPORT virtual ZstEntityBase * find_entity(const ZstURI & path) const;
-	ZST_EXPORT virtual ZstEntityBase * walk_entity(const ZstURI & path) const;
+	ZST_EXPORT virtual ZstEntityBase * walk_to_entity(const ZstURI & path) const;
 
 
 	// ------------------------------
@@ -77,6 +80,7 @@ public:
 	// -----------------
 	ZST_EXPORT void on_synchronisable_has_event(ZstSynchronisable * synchronisable) override;
 	ZST_EXPORT void on_synchronisable_destroyed(ZstSynchronisable * synchronisable) override;
+	ZST_EXPORT virtual void on_register_entity(ZstEntityBase * entity) override;
 
 protected:
 	// ------------------------------

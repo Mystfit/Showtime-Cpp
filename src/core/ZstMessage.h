@@ -39,7 +39,7 @@ enum ZstMsgKind  {
     CLIENT_HEARTBEAT,
         
     //Entity registration
-    CREATE_ENTITY_FROM_TEMPLATE, //16
+    CREATE_ENTITY_FROM_FACTORY, //16
     REGISTER_COMPONENT_TEMPLATE,
     UNREGISTER_COMPONENT_TEMPLATE,
     CREATE_COMPONENT,
@@ -84,7 +84,7 @@ static std::map<ZstMsgKind, char const*> ZstMsgNames {
     {CLIENT_SYNC, "CLIENT_SYNC"},
     {CLIENT_LEAVING, "CLIENT_LEAVING"},
     {CLIENT_HEARTBEAT, "CLIENT_HEARTBEAT"},
-    {CREATE_ENTITY_FROM_TEMPLATE, "CREATE_ENTITY_FROM_TEMPLATE"},
+    {CREATE_ENTITY_FROM_FACTORY, "CREATE_ENTITY_FROM_FACTORY"},
     {REGISTER_COMPONENT_TEMPLATE, "REGISTER_COMPONENT_TEMPLATE"},
     {UNREGISTER_COMPONENT_TEMPLATE, "UNREGISTER_COMPONENT_TEMPLATE"},
     {CREATE_COMPONENT, "CREATE_COMPONENT"},
@@ -105,6 +105,7 @@ static std::map<ZstMsgKind, char const*> ZstMsgNames {
 
 
 enum ZstMsgArg {
+	NAME,
     GRAPH_RELIABLE_OUTPUT_ADDRESS,
 	GRAPH_UNRELIABLE_INPUT_ADDRESS,
     INPUT_PATH,
@@ -114,10 +115,12 @@ enum ZstMsgArg {
     CONNECTION_MSG_ID,
     MSG_ID,
     SENDER_IDENTITY,
+	DESTINATION_IDENTITY,
 };
 MSGPACK_ADD_ENUM(ZstMsgArg);
 
 static std::map<ZstMsgArg, char const*> ZstMsgArgNames{
+	{ NAME, "name" },
 	{ GRAPH_RELIABLE_OUTPUT_ADDRESS, "grphout_reliableaddr" },
 	{ GRAPH_UNRELIABLE_INPUT_ADDRESS, "grphin_unreliableaddr" },
     { INPUT_PATH, "inpth" },
@@ -125,7 +128,8 @@ static std::map<ZstMsgArg, char const*> ZstMsgArgNames{
     { PATH, "pth" },
     { CONNECTION_MSG_ID, "connID" },
     { MSG_ID, "msgID" },
-    { SENDER_IDENTITY, "sndr" }
+    { SENDER_IDENTITY, "sndr" },
+	{ DESTINATION_IDENTITY , "dest" }
 };
 
 namespace std {

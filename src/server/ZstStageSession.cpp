@@ -65,7 +65,7 @@ void ZstStageSession::on_receive_msg(ZstMessage * msg)
 	if (response != ZstMsgKind::EMPTY) {
 		router_events().invoke([response, &sender_identity, &msg](ZstTransportAdaptor * adp) {
 			adp->on_send_msg(response, {
-				{ ZstMsgArg::SENDER_IDENTITY, sender_identity },
+				{ ZstMsgArg::DESTINATION_IDENTITY, sender_identity },
 				{ ZstMsgArg::MSG_ID, boost::lexical_cast<std::string>(msg->id()) }
 				});
 		});
@@ -77,7 +77,7 @@ ZstMsgKind ZstStageSession::synchronise_client_graph(ZstPerformer * client) {
 	ZstLog::net(LogLevel::notification, "Sending graph snapshot to {}", client->URI().path());
 
 	//Create sender args
-	ZstMsgArgs args{ { ZstMsgArg::SENDER_IDENTITY, this->hierarchy()->get_socket_ID(client) } };
+	ZstMsgArgs args{ { ZstMsgArg::DESTINATION_IDENTITY, this->hierarchy()->get_socket_ID(client) } };
 
 	//Send performer root entities
 	ZstEntityBundle bundle;
@@ -140,7 +140,7 @@ ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformerS
 
 					router_events().invoke([id, this, sender](ZstTransportAdaptor * adp) {
 						adp->on_send_msg(ZstMsgKind::OK, { 
-							{ZstMsgArg::SENDER_IDENTITY, this->m_hierarchy->get_socket_ID(sender)},
+							{ZstMsgArg::DESTINATION_IDENTITY, this->m_hierarchy->get_socket_ID(sender)},
 							{ZstMsgArg::MSG_ID, boost::lexical_cast<std::string>(id) }
 						});
 					});
@@ -196,9 +196,9 @@ ZstMsgKind ZstStageSession::observe_entity_handler(ZstMessage * msg, ZstPerforme
 
 					router_events().invoke([id, this, sender](ZstTransportAdaptor * adp) {
 						adp->on_send_msg(ZstMsgKind::OK, {
-							{ ZstMsgArg::SENDER_IDENTITY, this->m_hierarchy->get_socket_ID(sender) },
+							{ ZstMsgArg::DESTINATION_IDENTITY, this->m_hierarchy->get_socket_ID(sender) },
 							{ ZstMsgArg::MSG_ID, boost::lexical_cast<std::string>(id) }
-							});
+						});
 					});
 				}
 				return status;
@@ -289,7 +289,7 @@ void ZstStageSession::connect_clients(const ZstMsgID & response_id, ZstPerformer
 		{ ZstMsgArg::OUTPUT_PATH, output_client->URI().path() },
 		{ ZstMsgArg::GRAPH_RELIABLE_OUTPUT_ADDRESS, output_client->reliable_address() },
 		{ ZstMsgArg::CONNECTION_MSG_ID, conn_s.str() },
-		{ ZstMsgArg::SENDER_IDENTITY, m_hierarchy->get_socket_ID(input_client) }
+		{ ZstMsgArg::DESTINATION_IDENTITY, m_hierarchy->get_socket_ID(input_client) }
 	};
 	
 	router_events().invoke([&receiver_args](ZstTransportAdaptor * adp) {
@@ -299,7 +299,7 @@ void ZstStageSession::connect_clients(const ZstMsgID & response_id, ZstPerformer
 	ZstLog::net(LogLevel::notification, "Sending P2P handshake broadcast request to {}", output_client->URI().path());
 	ZstMsgArgs broadcaster_args{ 
 		{ ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS, input_client->unreliable_address() },
-		{ZstMsgArg::SENDER_IDENTITY, m_hierarchy->get_socket_ID(output_client) },
+		{ZstMsgArg::DESTINATION_IDENTITY, m_hierarchy->get_socket_ID(output_client) },
 		{ZstMsgArg::INPUT_PATH, input_client->URI().path() }
 	};
 	router_events().invoke([&broadcaster_args](ZstTransportAdaptor * adp) {
@@ -323,7 +323,7 @@ ZstMsgKind ZstStageSession::complete_client_connection_handler(ZstMessage * msg,
 	ZstLog::net(LogLevel::notification, "Stopping P2P handshake broadcast from client {}", output_client->URI().path());
 	ZstMsgArgs args{ 
 		{ZstMsgArg::INPUT_PATH, input_client->URI().path()},
-		{ZstMsgArg::SENDER_IDENTITY, m_hierarchy->get_socket_ID(output_client)}
+		{ZstMsgArg::DESTINATION_IDENTITY, m_hierarchy->get_socket_ID(output_client)}
 	};
 	router_events().invoke([&args](ZstTransportAdaptor * adp) {
 		adp->on_send_msg(ZstMsgKind::STOP_CONNECTION_HANDSHAKE, args);

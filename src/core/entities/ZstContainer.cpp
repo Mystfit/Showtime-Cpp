@@ -1,5 +1,6 @@
 #include <msgpack.hpp>
 #include <entities/ZstContainer.h>
+#include "../ZstEventDispatcher.hpp"
 
 ZstContainer::ZstContainer() :
 	ZstComponent("", "")
@@ -34,6 +35,10 @@ ZstContainer::ZstContainer(const ZstContainer & other) : ZstComponent(other)
 
 ZstContainer::~ZstContainer()
 {
+	//Let owner know this entity is going away
+	if (!is_destroyed())
+		synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * adp) { adp->on_synchronisable_destroyed(this); });
+	
 	m_children.clear();
 	m_parent = NULL;
 }

@@ -32,7 +32,7 @@ ZstSynchronisable::~ZstSynchronisable()
 	//Let owner know this entity is going away
 	if(!is_destroyed())
 		synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * adp){adp->on_synchronisable_destroyed(this);});
-	
+
 	//Cleanup event queues
 	delete m_synchronisable_events;
 }

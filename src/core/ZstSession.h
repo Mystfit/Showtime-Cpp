@@ -45,13 +45,6 @@ public:
 	ZST_EXPORT virtual void disconnect_plugs(ZstInputPlug * input_plug, ZstOutputPlug * output_plug);
 
 
-	// ------------------
-	// Factories
-	// ------------------
-
-	ZST_EXPORT virtual ZstEntityBase * create_entity(const ZstURI & creatable_path, const char * name, const ZstTransportSendType & sendtype);
-
-
 	// -------------
 	// Cable queries
 	// -------------

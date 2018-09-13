@@ -30,7 +30,7 @@ void ZstSynchronisableAdaptor::on_synchronisable_updated(ZstSynchronisable * syn
 
 void ZstEntityAdaptor::on_publish_entity_update(ZstEntityBase * entity) {};
 void ZstEntityAdaptor::on_register_entity(ZstEntityBase * entity){};
-void ZstEntityAdaptor::on_entity_destroyed(ZstEntityBase * entity){};
+//void ZstEntityAdaptor::on_entity_destroyed(ZstEntityBase * entity){};
 
 
 // -----------------------
@@ -64,7 +64,7 @@ void ZstHierarchyAdaptor::on_factory_leaving(ZstEntityFactory * factory) {};
 // -----------------------
 // Message adaptors
 // -----------------------
-
+void ZstTransportAdaptor::on_send_msg(ZstMessage * msg) {}
 void ZstTransportAdaptor::on_send_msg(ZstMsgKind kind) {};
 void ZstTransportAdaptor::on_send_msg(ZstMsgKind kind, const ZstMsgArgs & args) {}
 void ZstTransportAdaptor::on_send_msg(ZstMsgKind kind, const ZstSerialisable & serialisable) {}

@@ -31,15 +31,26 @@ void ZstHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportSen
 	if (entity->is_proxy())
 		return;
 
-	//Register adaptors to entity and children
+	//Add module adaptors to entity and children
 	ZstEntityBundle bundle;
 	for (auto c : entity->get_child_entities(bundle, true)) {
+		synchronisable_set_activating(c);
 		c->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(this));
 		c->add_adaptor(static_cast<ZstEntityAdaptor*>(this));
-		synchronisable_set_activating(c);
 	}
 }
 
+ZstEntityBase * ZstHierarchy::create_entity(const ZstURI & creatable_path, const char * name, const ZstTransportSendType & sendtype)
+{
+	ZstEntityBase * entity = NULL;
+	
+	ZstEntityFactory * factory = dynamic_cast<ZstEntityFactory*>(find_entity(creatable_path.parent()));
+	if (factory) {
+		entity = factory_activate_entity(factory, factory->create_entity(creatable_path, name));
+	}
+
+	return entity;
+}
 
 void ZstHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
 {
@@ -109,7 +120,7 @@ ZstEntityBase * ZstHierarchy::find_entity(const ZstURI & path) const
 	return entity;
 }
 
-ZstEntityBase * ZstHierarchy::walk_entity(const ZstURI & path) const
+ZstEntityBase * ZstHierarchy::walk_to_entity(const ZstURI & path) const
 {
 	ZstEntityBase * result = NULL;
 	ZstPerformer * root = get_performer_by_URI(path);
@@ -367,6 +378,16 @@ void ZstHierarchy::on_synchronisable_has_event(ZstSynchronisable * synchronisabl
 
 void ZstHierarchy::on_synchronisable_destroyed(ZstSynchronisable * synchronisable)
 {
+	//Synchronisable is going away and the stage needs to know
+	if (synchronisable->is_activated()) {
+		destroy_entity(dynamic_cast<ZstEntityBase*>(synchronisable), ZstTransportSendType::PUBLISH);
+	}
 	if (synchronisable->is_proxy())
 		reaper().add(synchronisable);
+}
+
+void ZstHierarchy::on_register_entity(ZstEntityBase * entity)
+{
+	//Register entity to stage
+	activate_entity(entity);
 }

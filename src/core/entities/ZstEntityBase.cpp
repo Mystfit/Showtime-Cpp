@@ -12,6 +12,7 @@ template class ZstBundleIterator<ZstCable*>;
 template class ZstBundleIterator<ZstEntityBase*>;
 template class ZstBundle<ZstCable*>;
 template class ZstBundle<ZstEntityBase*>;
+template class ZstBundle<ZstURI>;
 template class ZstEventDispatcher<ZstEntityAdaptor*>;
 
 
@@ -40,6 +41,10 @@ ZstEntityBase::ZstEntityBase(const ZstEntityBase & other) : ZstSynchronisable(ot
 
 ZstEntityBase::~ZstEntityBase()
 {
+	//Let owner know this entity is going away
+	if (!is_destroyed())
+		synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * adp) { adp->on_synchronisable_destroyed(this); });
+
 	set_destroyed();
 	free(m_entity_type);
     

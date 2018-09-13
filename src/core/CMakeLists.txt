@@ -53,6 +53,7 @@ set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstModule.h"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstSynchronisableLiason.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstEntityFactoryLiason.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstPlugLiason.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstCableLiason.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstTransportAdaptor.hpp"
@@ -83,11 +84,10 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstPerformer.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstEventAdaptorStubs.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstSynchronisableLiason.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstEntityFactoryLiason.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstPlugLiason.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstCableLiason.cpp"
 )
-
-source_group(TREE ${CMAKE_CURRENT_LIST_DIR})
 
 # Target sources
 target_sources(${CORE_TARGET} PUBLIC ${ZST_PUBLIC_HEADERS} )

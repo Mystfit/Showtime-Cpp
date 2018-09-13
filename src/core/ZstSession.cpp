@@ -116,15 +116,6 @@ void ZstSession::disconnect_plugs(ZstInputPlug * input_plug, ZstOutputPlug * out
 	destroy_cable(cable);
 }
 
-
-ZstEntityBase * ZstSession::create_entity(const ZstURI & creatable_path, const char * name, const ZstTransportSendType & sendtype)
-{
-	//Search through available factories to find a creatable entity
-	// for (auto factory : m_factories) {
-	// }
-	return NULL;
-}
-
 ZstCable * ZstSession::find_cable(const ZstURI & input_path, const ZstURI & output_path)
 {
 	ZstCable * cable = NULL;

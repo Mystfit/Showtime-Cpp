@@ -31,16 +31,40 @@ void ZstEntityFactory::remove_creatable(const ZstURI & creatable_path)
 	catch (std::out_of_range) {}
 }
 
+void ZstEntityFactory::get_creatables(ZstURIBundle & bundle)
+{
+	for (auto c : m_creatables) {
+		bundle.add(c);
+	}
+}
+
 ZstEntityBase * ZstEntityFactory::create_entity(const ZstURI & creatable_path, const char * name)
 {
 	throw(std::runtime_error("ZstEntityFactory::create_entity not implemented"));
 	return NULL;
 }
 
-void ZstEntityFactory::on_register_entity(ZstEntityBase * entity)
+ZstEntityBase * ZstEntityFactory::activate_entity(ZstEntityBase * entity)
 {
-	//Activate entity and attach listeners here
+	if (!entity)
+	{
+		ZstLog::net(LogLevel::error, "Factory {} can't activate a null entity", URI().path());
+		return NULL;
+	}
+
+	//Activate entity and attach listeners
 	entity_events()->invoke([entity](ZstEntityAdaptor * adp) { adp->on_register_entity(entity); });
+	return entity;
+}
+
+void ZstEntityFactory::update_URI()
+{
+	ZstEntityBase::update_URI();
+	std::unordered_set<ZstURI, ZstURIHash> orig_uris = std::move(m_creatables);
+	m_creatables.clear();
+	for (auto c : orig_uris) {
+		m_creatables.insert(this->URI() + c);
+	}
 }
 
 void ZstEntityFactory::write(std::stringstream & buffer) const

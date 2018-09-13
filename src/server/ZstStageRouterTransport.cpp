@@ -81,7 +81,8 @@ void ZstStageRouterTransport::send_message_impl(ZstMessage * msg)
 	catch (std::out_of_range) {
 	}
 
-	std::string identity_s = msg->get_arg(ZstMsgArg::SENDER_IDENTITY);
+	std::string identity_s = msg->get_arg(ZstMsgArg::DESTINATION_IDENTITY);
+	ZstLog::net(LogLevel::warn, "Sending {} message from stage with id {}", ZstMsgNames[msg->kind()], msg->get_arg(ZstMsgArg::MSG_ID));
 	zmsg_t * msg_handle = msg->handle();
 	zframe_t * identity = zframe_from(identity_s.c_str()); //get_socket_ID(destination).c_str()
 	zframe_t * empty = zframe_new_empty();

@@ -20,6 +20,7 @@ class ZstEntityBase;
 typedef std::unordered_map<ZstURI, ZstEntityBase*, ZstURIHash> ZstEntityMap;
 
 //Common bundle types
+typedef ZstBundle<ZstURI> ZstURIBundle;
 typedef ZstBundle<ZstEntityBase*> ZstEntityBundle;
 typedef ZstBundle<ZstCable*> ZstCableBundle;
 typedef ZstBundleIterator<ZstEntityBase*> ZstEntityBundleIterator;
@@ -69,12 +70,11 @@ protected:
 	//Set entity status
 	ZST_EXPORT void set_entity_type(const char * entity_type);
 	ZST_EXPORT virtual void set_parent(ZstEntityBase* entity);
+	ZST_EXPORT virtual void update_URI();
 
 private:
-    ZST_EXPORT void update_URI();
     ZstEventDispatcher<ZstEntityAdaptor*> * m_entity_events;
 	ZstEntityBase * m_parent;
 	char * m_entity_type;
 	ZstURI m_uri;
-	ZstEntityBase * m_current_child_head;
 };
