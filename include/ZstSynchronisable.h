@@ -46,6 +46,7 @@ protected:
 	ZST_EXPORT virtual void set_proxy();
 	ZST_EXPORT void process_events();
 	ZST_EXPORT void announce_update();
+	ZST_EXPORT virtual void dispatch_destroyed();
 
 private:
 	bool m_is_destroyed;

@@ -29,10 +29,9 @@ ZstPerformer::ZstPerformer(const ZstPerformer & other) : ZstContainer(other)
 
 ZstPerformer::~ZstPerformer()
 {
-	//Let owner know this entity is going away
-	if (!is_destroyed())
-		synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * adp) { adp->on_synchronisable_destroyed(this); });
-
+	for (auto f : m_factories) {
+		delete f.second;
+	}
 }
 
 void ZstPerformer::set_heartbeat_active()

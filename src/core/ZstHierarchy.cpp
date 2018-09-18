@@ -55,7 +55,8 @@ ZstEntityBase * ZstHierarchy::create_entity(const ZstURI & creatable_path, const
 void ZstHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
 {
 	if (!entity) return;
-	synchronisable_set_deactivating(entity);
+	if(entity->activation_status() != ZstSyncStatus::DESTROYED)
+		synchronisable_set_deactivating(entity);
 }
 
 
@@ -316,9 +317,6 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 	//Cleanup children
 	ZstEntityBundle bundle;
 	for (auto c : entity->get_child_entities(bundle, true)) {
-		//Set child as destroyed
-		synchronisable_set_destroyed(c);
-
 		//Enqueue deactivation
 		synchronisable_enqueue_deactivation(c);
 		
@@ -379,11 +377,14 @@ void ZstHierarchy::on_synchronisable_has_event(ZstSynchronisable * synchronisabl
 void ZstHierarchy::on_synchronisable_destroyed(ZstSynchronisable * synchronisable)
 {
 	//Synchronisable is going away and the stage needs to know
-	if (synchronisable->is_activated()) {
+	if (synchronisable->is_activated() || synchronisable->activation_status() == ZstSyncStatus::DESTROYED) {
 		destroy_entity(dynamic_cast<ZstEntityBase*>(synchronisable), ZstTransportSendType::PUBLISH);
 	}
+
 	if (synchronisable->is_proxy())
 		reaper().add(synchronisable);
+
+	synchronisable_set_destroyed(synchronisable);
 }
 
 void ZstHierarchy::on_register_entity(ZstEntityBase * entity)

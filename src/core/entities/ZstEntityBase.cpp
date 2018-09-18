@@ -42,12 +42,9 @@ ZstEntityBase::ZstEntityBase(const ZstEntityBase & other) : ZstSynchronisable(ot
 ZstEntityBase::~ZstEntityBase()
 {
 	//Let owner know this entity is going away
-	if (!is_destroyed())
-		synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * adp) { adp->on_synchronisable_destroyed(this); });
+	dispatch_destroyed();
 
-	set_destroyed();
 	free(m_entity_type);
-    
     m_entity_events->flush();
     m_entity_events->remove_all_adaptors();
 
@@ -158,4 +155,19 @@ void ZstEntityBase::set_entity_type(const char * entity_type) {
 void ZstEntityBase::set_parent(ZstEntityBase *entity) {
 	m_parent = entity;
 	this->update_URI();
+}
+
+void ZstEntityBase::dispatch_destroyed()
+{
+	if (activation_status() != ZstSyncStatus::DESTROYED) {
+		
+		//Set child entities and this entity as destroyed so they won't queue destruction events later
+		ZstEntityBundle bundle;
+		get_child_entities(bundle);
+		for (auto c : bundle) {
+			c->set_activation_status(ZstSyncStatus::DESTROYED);
+		}
+
+		synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * adp) { adp->on_synchronisable_destroyed(this); });
+	}
 }

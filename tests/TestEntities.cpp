@@ -17,6 +17,7 @@ void test_create_entities(){
     assert(!test_output_sync->is_activated());
     assert(!zst_find_entity(test_output_sync->URI()));
     delete test_output_sync;
+	clear_callback_queue();
     
     //Test async entity
     OutputComponent * test_output_async = new OutputComponent("entity_create_test_async");
@@ -47,6 +48,7 @@ void test_create_entities(){
     //Cleanup
     delete test_output_async;
     delete entity_sync;
+	clear_callback_queue();
 }
 
 
@@ -94,10 +96,17 @@ void test_hierarchy() {
     zst_deactivate_entity(parent);
     assert(!zst_find_entity(parent->URI()));
     assert(!zst_find_entity(child->URI()));
-    delete parent;
-    parent = 0;
-    child = 0;
 
+	//Test deleting entity removes it from the library
+	zst_activate_entity(parent);
+	delete parent;
+	assert(!zst_find_entity(parent_URI));
+	assert(!zst_get_root()->num_children() );
+
+	parent = 0;
+	child = 0;
+
+	//Clear callback queue and make sure delete entities don't still have queued events
     clear_callback_queue();
 }
 

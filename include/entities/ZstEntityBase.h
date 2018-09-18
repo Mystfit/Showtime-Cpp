@@ -71,6 +71,7 @@ protected:
 	ZST_EXPORT void set_entity_type(const char * entity_type);
 	ZST_EXPORT virtual void set_parent(ZstEntityBase* entity);
 	ZST_EXPORT virtual void update_URI();
+	ZST_EXPORT virtual void dispatch_destroyed();
 
 private:
     ZstEventDispatcher<ZstEntityAdaptor*> * m_entity_events;

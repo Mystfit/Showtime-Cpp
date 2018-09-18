@@ -35,12 +35,11 @@ ZstContainer::ZstContainer(const ZstContainer & other) : ZstComponent(other)
 
 ZstContainer::~ZstContainer()
 {
-	//Let owner know this entity is going away
-	if (!is_destroyed())
-		synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * adp) { adp->on_synchronisable_destroyed(this); });
-	
+	auto children = m_children;
+	for (auto c : children) {
+		delete c.second;
+	}
 	m_children.clear();
-	m_parent = NULL;
 }
 
 ZstEntityBase * ZstContainer::walk_child_by_URI(const ZstURI & path)

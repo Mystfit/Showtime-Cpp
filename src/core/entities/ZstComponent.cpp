@@ -43,12 +43,11 @@ ZstComponent::ZstComponent(const ZstComponent & other) : ZstEntityBase(other)
 
 ZstComponent::~ZstComponent()
 {
-	//Let owner know this entity is going away
-	if (!is_destroyed())
-		synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * adp) { adp->on_synchronisable_destroyed(this); });
 
-	set_destroyed();
 
+	for (auto p : m_plugs) {
+		delete p;
+	}
 	m_plugs.clear();
 	free(m_component_type);
 }
@@ -92,6 +91,9 @@ int ZstComponent::add_plug(ZstPlug * plug)
 
 void ZstComponent::remove_plug(ZstPlug * plug)
 {
+	if (!plug)
+		return;
+
 	ZstCableBundle bundle;
 	for (auto cable : plug->get_child_cables(bundle)){
 		cable->enqueue_deactivation();

@@ -29,10 +29,6 @@ ZstSynchronisable::ZstSynchronisable(const ZstSynchronisable & other) : ZstSynch
 
 ZstSynchronisable::~ZstSynchronisable()
 {
-	//Let owner know this entity is going away
-	if(!is_destroyed())
-		synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * adp){adp->on_synchronisable_destroyed(this);});
-
 	//Cleanup event queues
 	delete m_synchronisable_events;
 }
@@ -72,6 +68,9 @@ void ZstSynchronisable::enqueue_activation()
 
 void ZstSynchronisable::enqueue_deactivation()
 {
+	if (this->m_sync_status == ZstSyncStatus::DESTROYED)
+		return;
+
     if (this->m_sync_status == ZstSyncStatus::ACTIVATED || this->m_sync_status == ZstSyncStatus::DEACTIVATING)
     {
         set_activation_status(ZstSyncStatus::DEACTIVATION_QUEUED);
@@ -176,6 +175,7 @@ void ZstSynchronisable::set_activation_status(ZstSyncStatus status)
 void ZstSynchronisable::set_destroyed()
 {
 	m_is_destroyed = true;
+	set_activation_status(ZstSyncStatus::DESTROYED);
 }
 
 void ZstSynchronisable::set_proxy()
@@ -192,6 +192,10 @@ void ZstSynchronisable::announce_update()
 {
 	synchronisable_events()->defer([this](ZstSynchronisableAdaptor * adp) { adp->on_synchronisable_updated(this); });
 	synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * adp) { adp->on_synchronisable_has_event(this); });
+}
+
+void ZstSynchronisable::dispatch_destroyed()
+{
 }
 
 ZstEventDispatcher<ZstSynchronisableAdaptor*> * ZstSynchronisable::synchronisable_events()
