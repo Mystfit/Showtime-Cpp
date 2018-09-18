@@ -75,7 +75,6 @@ public:
 
 int main(int argc,char **argv){
 
-
 	ZstLog::app(LogLevel::notification, "In sink process");
 
 	bool force_launch = true;

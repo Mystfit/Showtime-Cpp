@@ -2,7 +2,7 @@
 
 using namespace ZstTest;
 
-void test_external_entities(std::string external_test_path) {
+void test_external_entities(std::string external_test_path, bool launch_sink_process = true) {
     ZstLog::app(LogLevel::notification, "Starting external entities test");
 
     //Create callbacks
@@ -24,7 +24,6 @@ void test_external_entities(std::string external_test_path) {
 
 
     //Run the sink program
-    bool launched_sink_process = true;
     std::string prog = system_complete(external_test_path).parent_path().generic_string() + "/TestHelperSink";
 #ifdef WIN32
     prog += ".exe";
@@ -36,7 +35,7 @@ void test_external_entities(std::string external_test_path) {
     char pause_flag = 'a';
 #endif
 	boost::process::pipe m_sink_out;
-    if (launched_sink_process) {
+    if (launch_sink_process) {
 		//Run sink in external process so we don't share the same Showtime singleton
 		ZstLog::app(LogLevel::debug, "Starting sink process");
 

@@ -5,12 +5,13 @@ set(HELPER_PREFIX "TestHelper")
 set(TESTS
     "TestStartup"
     "TestEntities"
+    "TestExternalClients"
     "TestEntityFactories"
     "TestPlugins"
     "TestGraph"
-    "TestExternalClients"
     "TestBenchmark"
     "TestHelperSink"
+    "TestHelperExternalFactory"
 )
 
 set(TEST_DEPENDENCIES 
@@ -32,6 +33,10 @@ foreach(test ${TESTS})
         add_test(NAME ${test} COMMAND ${test} WORKING_DIRECTORY $<TARGET_FILE_DIR:${test}>)
     endif()
 endforeach()
+
+# Test helper dependencies
+add_dependencies(TestEntityFactories TestHelperExternalFactory)
+add_dependencies(TestExternalClients TestHelperSink)
 
 
 # -------------
