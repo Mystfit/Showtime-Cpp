@@ -30,6 +30,7 @@ public:
 	ZST_EXPORT void remove_child(ZstEntityBase * entity) override;
 	ZST_EXPORT void add_factory(ZstEntityFactory * factory);
 	ZST_EXPORT void remove_factory(ZstEntityFactory * factory);
+	ZST_EXPORT ZstEntityFactoryBundle & get_factories(ZstEntityFactoryBundle & bundle);
 	
 	//Serialisation
 	ZST_EXPORT virtual void write(std::stringstream & buffer) const override;

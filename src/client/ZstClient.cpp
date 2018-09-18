@@ -302,6 +302,11 @@ void ZstClient::synchronise_graph_complete(ZstMessageReceipt response)
 
 	//Add local performer to entity lookup
 	m_session->hierarchy()->get_local_performer()->enqueue_activation();
+
+	ZstEntityFactoryBundle bundle;
+	for (auto f : m_session->hierarchy()->get_local_performer()->get_factories(bundle)) {
+		f->enqueue_activation();
+	}
 }
 
 void ZstClient::leave_stage()

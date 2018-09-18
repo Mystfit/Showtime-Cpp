@@ -15,6 +15,7 @@
 template<typename T>
 class ZstEventDispatcher;
 class ZstEntityBase;
+class ZstEntityFactory;
 
 //Typedefs
 typedef std::unordered_map<ZstURI, ZstEntityBase*, ZstURIHash> ZstEntityMap;
@@ -22,6 +23,7 @@ typedef std::unordered_map<ZstURI, ZstEntityBase*, ZstURIHash> ZstEntityMap;
 //Common bundle types
 typedef ZstBundle<ZstURI> ZstURIBundle;
 typedef ZstBundle<ZstEntityBase*> ZstEntityBundle;
+typedef ZstBundle<ZstEntityFactory*> ZstEntityFactoryBundle;
 typedef ZstBundle<ZstCable*> ZstCableBundle;
 typedef ZstBundleIterator<ZstEntityBase*> ZstEntityBundleIterator;
 typedef ZstBundleIterator<ZstCable*> ZstCableBundleIterator;

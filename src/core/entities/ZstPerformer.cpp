@@ -97,6 +97,14 @@ void ZstPerformer::remove_factory(ZstEntityFactory * factory)
 	ZstEntityBase::remove_child(factory);
 }
 
+ZstEntityFactoryBundle & ZstPerformer::get_factories(ZstEntityFactoryBundle & bundle)
+{
+	for (auto f : m_factories) {
+		bundle.add(f.second);
+	}
+	return bundle;
+}
+
 void ZstPerformer::write(std::stringstream & buffer) const
 {
 	//Pack entity

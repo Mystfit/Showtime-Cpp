@@ -2,6 +2,7 @@
 #include <msgpack.hpp>
 
 #include <entities/ZstEntityBase.h>
+#include <entities/ZstEntityFactory.h>
 #include <ZstCable.h>
 
 #include "../ZstEventDispatcher.hpp"
@@ -10,8 +11,10 @@
 //Template instantiations
 template class ZstBundleIterator<ZstCable*>;
 template class ZstBundleIterator<ZstEntityBase*>;
+template class ZstBundleIterator<ZstEntityFactory*>;
 template class ZstBundle<ZstCable*>;
 template class ZstBundle<ZstEntityBase*>;
+template class ZstBundle<ZstEntityFactory*>;
 template class ZstBundle<ZstURI>;
 template class ZstEventDispatcher<ZstEntityAdaptor*>;
 
