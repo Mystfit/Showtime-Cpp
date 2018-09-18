@@ -14,7 +14,7 @@ public:
 	ZST_EXPORT ZstComponent(const char * path);
 	ZST_EXPORT ZstComponent(const char * component_type, const char * path);
 	ZST_EXPORT ZstComponent(const ZstComponent & other);
-	ZST_EXPORT ~ZstComponent();
+	ZST_EXPORT virtual ~ZstComponent();
 	
     //External factory function
 	ZST_EXPORT virtual void create(const char * name, ZstEntityBase* parent) {};

@@ -12,7 +12,7 @@ public:
 	ZST_EXPORT ZstContainer(const char * path);
 	ZST_EXPORT ZstContainer(const char * component_type, const char * path);
 	ZST_EXPORT ZstContainer(const ZstContainer & other);
-	ZST_EXPORT ~ZstContainer();
+	ZST_EXPORT virtual ~ZstContainer();
 
 	//Find a child in this entity by a URI
 	ZST_EXPORT ZstEntityBase * walk_child_by_URI(const ZstURI & path);

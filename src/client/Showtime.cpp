@@ -86,12 +86,12 @@ void zst_remove_hierarchy_adaptor(ZstHierarchyAdaptor * adaptor)
 
 void zst_activate_entity(ZstEntityBase * entity)
 {
-	if (LIBRARY_INIT_GUARD()) ZstClient::instance().session()->hierarchy()->activate_entity(entity, ZstTransportSendType::SYNC_REPLY);
+	ZstClient::instance().session()->hierarchy()->activate_entity(entity, ZstTransportSendType::SYNC_REPLY);
 }
 
 void zst_activate_entity_async(ZstEntityBase * entity)
 {
-	if (LIBRARY_INIT_GUARD()) ZstClient::instance().session()->hierarchy()->activate_entity(entity, ZstTransportSendType::ASYNC_REPLY);
+	ZstClient::instance().session()->hierarchy()->activate_entity(entity, ZstTransportSendType::ASYNC_REPLY);
 }
 
 void zst_deactivate_entity(ZstEntityBase * entity)

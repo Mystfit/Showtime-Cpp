@@ -102,6 +102,11 @@ void ZstClientHierarchy::on_publish_entity_update(ZstEntityBase * entity)
 
 void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
 {
+	if(!entity){
+		ZstLog::net(LogLevel::error, "Can't activate a null entity");
+		return;
+	}
+
 	//If the entity doesn't have a parent, put it under the root container
 	if (!entity->parent()) {
 		ZstLog::net(LogLevel::debug, "No parent set for {}, adding to {}", entity->URI().path(), m_root->URI().path());
