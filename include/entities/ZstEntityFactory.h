@@ -33,7 +33,7 @@ public:
 
 protected:
 	ZST_EXPORT virtual ZstEntityBase * activate_entity(ZstEntityBase * entity);
-	ZST_EXPORT virtual void update_URI();
+	ZST_EXPORT virtual void update_URI() override;
 
 private:
 	std::unordered_set<ZstURI, ZstURIHash> m_creatables;
