@@ -63,7 +63,12 @@ void ZstEntityFactory::update_URI()
 	std::unordered_set<ZstURI, ZstURIHash> orig_uris = std::move(m_creatables);
 	m_creatables.clear();
 	for (auto c : orig_uris) {
-		m_creatables.insert(this->URI() + c);
+		//Update creatables to match the new factory URI
+		bool creatable_contains_path = c.contains(this->URI());
+		if (!creatable_contains_path) {
+			c = this->URI() + c.last();
+		}
+		m_creatables.insert(c);
 	}
 }
 

@@ -196,7 +196,7 @@ void ZstClient::receive_connection_handshake(ZstMessage * msg)
 			ss << m_pending_peer_connections[output_path];
 			ZstMsgArgs args{ 
 				{ZstMsgArg::OUTPUT_PATH, output_path.path() },
-				{ZstMsgArg::CONNECTION_MSG_ID, ss.str()}
+				{ZstMsgArg::REQUEST_ID, ss.str()}
 			};
 			adaptor->on_send_msg(ZstMsgKind::SUBSCRIBE_TO_PERFORMER_ACK, ZstTransportSendType::ASYNC_REPLY, args, [this, output_path](ZstMessageReceipt receipt) {
 				if(receipt.status == ZstMsgKind::OK){
@@ -241,8 +241,8 @@ void ZstClient::join_stage(std::string stage_address, const ZstTransportSendType
 	std::string reliable_graph_addr = m_graph_transport->get_reliable_graph_address();
 	std::string unreliable_graph_addr = m_graph_transport->get_unreliable_graph_address();
 
+	//Activate any child entities and factories that were added to the root performer already
 	ZstPerformer * root = session()->hierarchy()->get_local_performer();
-	synchronisable_set_activating(root);
 	
 	invoke([this, sendtype, &reliable_graph_addr, &unreliable_graph_addr, root](ZstTransportAdaptor * adaptor) {
 		ZstMsgArgs args = { 
@@ -268,19 +268,30 @@ void ZstClient::join_stage_complete(ZstMessageReceipt response)
 
 	ZstLog::net(LogLevel::notification, "Connection to server established");
 
-	//Set up heartbeat timer
-	m_heartbeat_timer.expires_from_now(boost::posix_time::milliseconds(HEARTBEAT_DURATION));
-	m_heartbeat_timer.async_wait(boost::bind(&ZstClient::heartbeat_timer, &m_heartbeat_timer, this, boost::posix_time::milliseconds(HEARTBEAT_DURATION)));
+	//Add local entities to entity lookup and attach adaptors only if we've connected to the stage
+	ZstEntityBundle bundle;
+	m_session->hierarchy()->get_local_performer()->get_factories(bundle);
+	m_session->hierarchy()->get_local_performer()->get_child_entities(bundle, true);
+	for (auto c : bundle) {
+		c->synchronisable_events()->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(m_session->hierarchy()));
+		c->entity_events()->add_adaptor(static_cast<ZstEntityAdaptor*>(m_session->hierarchy()));
+		synchronisable_set_activating(c);
+		c->enqueue_activation();
+	}
 	
 	//Ask the stage to send us the current session
 	synchronise_graph(response.sendtype);
+
+	//Set up heartbeat timer
+	m_heartbeat_timer.expires_from_now(boost::posix_time::milliseconds(HEARTBEAT_DURATION));
+	m_heartbeat_timer.async_wait(boost::bind(&ZstClient::heartbeat_timer, &m_heartbeat_timer, this, boost::posix_time::milliseconds(HEARTBEAT_DURATION)));
 
 	//Enqueue connection events
 	m_session->dispatch_connected_to_stage();
 
 	//If we are sync, we can dispatch events immediately
 	if (response.sendtype == ZstTransportSendType::SYNC_REPLY)
-		m_session->process_events();
+		process_events();
 }
 
 void ZstClient::synchronise_graph(const ZstTransportSendType & sendtype)
@@ -299,14 +310,6 @@ void ZstClient::synchronise_graph_complete(ZstMessageReceipt response)
 {
 	ZstLog::net(LogLevel::notification, "Graph sync completed");
 	set_connected_to_stage(true);
-
-	//Add local performer to entity lookup
-	m_session->hierarchy()->get_local_performer()->enqueue_activation();
-
-	ZstEntityFactoryBundle bundle;
-	for (auto f : m_session->hierarchy()->get_local_performer()->get_factories(bundle)) {
-		f->enqueue_activation();
-	}
 }
 
 void ZstClient::leave_stage()
@@ -334,7 +337,9 @@ void ZstClient::leave_stage_complete()
 
 	//Remove root performer from entity lookup
 	ZstEntityBundle bundle;
-	for (auto c : m_session->hierarchy()->get_local_performer()->get_child_entities(bundle, true)) {
+	m_session->hierarchy()->get_local_performer()->get_factories(bundle);
+	m_session->hierarchy()->get_local_performer()->get_child_entities(bundle, true);
+	for (auto c : bundle) {
 		m_session->hierarchy()->remove_entity_from_lookup(c);
 	}
 
@@ -434,7 +439,7 @@ void ZstClient::stop_connection_broadcast(const ZstURI & remote_client_path)
 
 void ZstClient::listen_to_client(const ZstMessage * msg)
 {
-	m_pending_peer_connections[ZstURI(msg->get_arg(ZstMsgArg::OUTPUT_PATH))] = std::stoull(msg->get_arg(ZstMsgArg::CONNECTION_MSG_ID));
+	m_pending_peer_connections[ZstURI(msg->get_arg(ZstMsgArg::OUTPUT_PATH))] = std::stoull(msg->get_arg(ZstMsgArg::REQUEST_ID));
 	m_graph_transport->connect_to_reliable_client(msg->get_arg(ZstMsgArg::GRAPH_RELIABLE_OUTPUT_ADDRESS));
 }
 

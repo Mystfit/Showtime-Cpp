@@ -64,7 +64,6 @@ void ZstHierarchyAdaptor::on_factory_leaving(ZstEntityFactory * factory) {};
 // -----------------------
 // Message adaptors
 // -----------------------
-void ZstTransportAdaptor::on_send_msg(ZstMessage * msg) {}
 void ZstTransportAdaptor::on_send_msg(ZstMsgKind kind) {};
 void ZstTransportAdaptor::on_send_msg(ZstMsgKind kind, const ZstMsgArgs & args) {}
 void ZstTransportAdaptor::on_send_msg(ZstMsgKind kind, const ZstSerialisable & serialisable) {}

@@ -71,6 +71,7 @@ private:
 	MessageFuture register_response_message(ZstMessage * msg);
 	void cleanup_response_message(ZstMsgID id);
 	void process_responses(ZstMessage * msg);
+	void copy_id_arg(ZstMessage * msg);
 
 	std::unordered_map<ZstMsgID, MessagePromise > m_response_promises;
 	moodycamel::ConcurrentQueue<ZstMsgID> m_dead_promises;

@@ -132,7 +132,7 @@ ZstMsgKind ZstStageHierarchy::destroy_client_handler(ZstPerformer * performer)
 
 ZstMsgKind ZstStageHierarchy::add_proxy_entity(const ZstEntityBase & entity)
 {
-	ZstLog::net(LogLevel::notification, "Registering new entity {}", entity.URI().path());
+	ZstLog::net(LogLevel::notification, "Registering new proxy entity {}", entity.URI().path());
 
 	ZstMsgKind msg_status = ZstHierarchy::add_proxy_entity(entity);
 	ZstEntityBase * proxy = find_entity(entity.URI());
@@ -156,6 +156,8 @@ ZstMsgKind ZstStageHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 	if (!entity)
 		return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
 
+	ZstLog::net(LogLevel::notification, "Removing proxy entity {}", entity->URI().path());
+
 	//Update rest of network
 	publisher_events().invoke([entity](ZstTransportAdaptor * adp) {
 		adp->on_send_msg(ZstMsgKind::DESTROY_ENTITY, { {ZstMsgArg::PATH, entity->URI().path()} });
@@ -170,6 +172,9 @@ ZstMsgKind ZstStageHierarchy::create_entity_from_factory_handler(ZstMessage * ms
 {
 	//First, find the factory
 	ZstURI factory_path = ZstURI(msg->get_arg(ZstMsgArg::PATH)).parent();
+
+	ZstLog::net(LogLevel::notification, "Forwarding creatable entity request {} with id {}", factory_path.path(), msg->id());
+
 	ZstEntityFactory * factory = dynamic_cast<ZstEntityFactory*>(find_entity(factory_path));
 	if (!factory) {
 		ZstLog::net(LogLevel::error, "Could not find factory {}", factory_path.path());
@@ -185,40 +190,36 @@ ZstMsgKind ZstStageHierarchy::create_entity_from_factory_handler(ZstMessage * ms
 		ZstLog::net(LogLevel::error, "Could not find factory {}", factory_path.path());
 		return ZstMsgKind::ERR_STAGE_PERFORMER_NOT_FOUND;
 	}
-	
-	//Create a promise to resolve when the origin factory has finished creating the entity
-	ZstMsgID id = msg->id();
-	m_deferred_creatable_promises[id] = MessagePromise();
-	MessageFuture future = m_deferred_creatable_promises[id].get_future();
 
-	//Create future action to run when the client responds to our creatable request
-	future.then([this, id, sender](MessageFuture f) {
-		ZstMsgKind status(ZstMsgKind::EMPTY);
-		try {
-			ZstMsgKind status = f.get();
-			if (status == ZstMsgKind::OK) {
-				router_events().invoke([this, id, sender](ZstTransportAdaptor * adp) {
+	std::string request_id = boost::lexical_cast<std::string>(msg->id());
+
+	//Send creatable message to the performer that owns the factory
+	ZstMsgArgs args{ 
+		{ ZstMsgArg::NAME , msg->get_arg(ZstMsgArg::NAME) },
+		{ ZstMsgArg::PATH , msg->get_arg(ZstMsgArg::PATH)},
+		{ ZstMsgArg::DESTINATION_IDENTITY, get_socket_ID(factory_performer) },
+		{ ZstMsgArg::MSG_ID, request_id}
+	};
+	router_events().invoke([this, msg, request_id, &args, factory_path, sender](ZstTransportAdaptor * adp)
+	{
+		adp->on_send_msg(msg->kind(), ZstTransportSendType::ASYNC_REPLY, args, [this, msg, request_id, factory_path, sender](ZstMessageReceipt receipt)
+		{
+			if (receipt.status == ZstMsgKind::OK) {
+				ZstLog::net(LogLevel::notification, "Remote factory created entity {}", factory_path.path());
+
+				this->router_events().invoke([this, request_id, sender](ZstTransportAdaptor * adp) {
 					//Let original caller know creatable was built successfully
-					adp->on_send_msg(ZstMsgKind::OK, { 
-						{ZstMsgArg::MSG_ID, boost::lexical_cast<std::string>(id)},
-						{ ZstMsgArg::DESTINATION_IDENTITY, this->get_socket_ID(sender) },
+					adp->on_send_msg(ZstMsgKind::OK, {
+						{ ZstMsgArg::MSG_ID, request_id },
+						{ ZstMsgArg::DESTINATION_IDENTITY, this->get_socket_ID(sender) }
 					});
 				});
 			}
 			else {
-				ZstLog::net(LogLevel::error, "Creatable request failed at origin with status ", status);
+				ZstLog::net(LogLevel::error, "Creatable request failed at origin with status {}", ZstMsgNames[receipt.status]);
 			}
-			return status;
-		}
-		catch (const ZstTimeoutException & e) {
-			ZstLog::net(LogLevel::error, "Client connection async response timed out - {}", e.what());
-		}
-		return status;
+		}); 
 	});
-
-	//Forward creatable message to the performer that owns the factory
-	msg->set_local_arg(ZstMsgArg::DESTINATION_IDENTITY, get_socket_ID(factory_performer));
-	router_events().invoke([msg](ZstTransportAdaptor * adp) { adp->on_send_msg(msg); });
 
 	return ZstMsgKind::EMPTY;
 }

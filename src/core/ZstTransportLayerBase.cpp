@@ -1,3 +1,4 @@
+#include <boost/lexical_cast.hpp>
 #include "ZstTransportLayerBase.hpp"
 #include "adaptors/ZstTransportAdaptor.hpp"
 
@@ -73,12 +74,17 @@ void ZstTransportLayerBase::process_events()
 
 void ZstTransportLayerBase::begin_send_message(ZstMessage * msg)
 {
+	if (!msg) return;
+
+	copy_id_arg(msg);
 	send_message_impl(msg);
 }
 
 void ZstTransportLayerBase::begin_send_message(ZstMessage * msg, const ZstTransportSendType & sendtype, const MessageReceivedAction & action)
 {
 	if (!msg) return;
+
+	copy_id_arg(msg);
 
 	switch (sendtype) {
 	case ZstTransportSendType::ASYNC_REPLY:
@@ -177,4 +183,15 @@ void ZstTransportLayerBase::process_responses(ZstMessage * msg)
 	catch (std::out_of_range e) {
 		status = -1;
 	}
+}
+
+void ZstTransportLayerBase::copy_id_arg(ZstMessage * msg)
+{
+	//If the message has a MSG_ID argument, copy it to the id portion of the message
+	try {
+		msg->set_id(boost::lexical_cast<ZstMsgID>(msg->get_arg(ZstMsgArg::MSG_ID)));
+	}
+	catch (std::out_of_range) {
+	}
+
 }

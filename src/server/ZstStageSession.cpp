@@ -288,7 +288,7 @@ void ZstStageSession::connect_clients(const ZstMsgID & response_id, ZstPerformer
 	ZstMsgArgs receiver_args{
 		{ ZstMsgArg::OUTPUT_PATH, output_client->URI().path() },
 		{ ZstMsgArg::GRAPH_RELIABLE_OUTPUT_ADDRESS, output_client->reliable_address() },
-		{ ZstMsgArg::CONNECTION_MSG_ID, conn_s.str() },
+		{ ZstMsgArg::REQUEST_ID, conn_s.str() },
 		{ ZstMsgArg::DESTINATION_IDENTITY, m_hierarchy->get_socket_ID(input_client) }
 	};
 	
@@ -330,7 +330,7 @@ ZstMsgKind ZstStageSession::complete_client_connection_handler(ZstMessage * msg,
 	});
 
 	//Run any cable promises associated with this client connection
-	ZstMsgID id = boost::lexical_cast<ZstMsgID>(msg->get_arg(ZstMsgArg::CONNECTION_MSG_ID));
+	ZstMsgID id = boost::lexical_cast<ZstMsgID>(msg->get_arg(ZstMsgArg::REQUEST_ID));
 
 	m_deferred_connection_promises.at(id).set_value(ZstMsgKind::OK);
 	m_deferred_connection_promises.erase(id);

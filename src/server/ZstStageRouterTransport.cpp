@@ -75,14 +75,12 @@ int ZstStageRouterTransport::s_handle_router(zloop_t * loop, zsock_t * socket, v
 
 void ZstStageRouterTransport::send_message_impl(ZstMessage * msg)
 {
-	try {
-		msg->set_id(boost::lexical_cast<ZstMsgID>(msg->get_arg(ZstMsgArg::MSG_ID)));
-	}
-	catch (std::out_of_range) {
-	}
-
 	std::string identity_s = msg->get_arg(ZstMsgArg::DESTINATION_IDENTITY);
 	zmsg_t * msg_handle = msg->handle();
+
+	//If the message handle is missing, then it was released too early
+	assert(msg_handle);
+
 	zframe_t * identity = zframe_from(identity_s.c_str()); //get_socket_ID(destination).c_str()
 	zframe_t * empty = zframe_new_empty();
 	zmsg_prepend(msg_handle, &empty);

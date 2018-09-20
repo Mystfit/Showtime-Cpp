@@ -173,13 +173,21 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
 	ZstEntityBase * entity = NULL;
 	//Find the factory associated with this creatable path
 	ZstEntityFactory * factory = dynamic_cast<ZstEntityFactory*>(find_entity(creatable_path.parent()));
+	if (!factory) {
+		ZstLog::net(LogLevel::warn, "Could not find factory to create entity {}", creatable_path.path());
+		return NULL;
+	}
 
 	ZstURI entity_name(name);
 
 	if (factory->is_proxy()) {
 		//External factory - route creation request
 		stage_events().invoke([this, sendtype, creatable_path, &entity, entity_name](ZstTransportAdaptor * adaptor) {
-			adaptor->on_send_msg(ZstMsgKind::CREATE_ENTITY_FROM_FACTORY, sendtype, { { ZstMsgArg::PATH, creatable_path.path() } }, [this, &entity, sendtype, creatable_path, entity_name](ZstMessageReceipt response) {
+			ZstMsgArgs args{  
+				{ ZstMsgArg::PATH, creatable_path.path() },
+				{ ZstMsgArg::NAME, entity_name.path() }
+			};
+			adaptor->on_send_msg(ZstMsgKind::CREATE_ENTITY_FROM_FACTORY, sendtype, args, [this, &entity, sendtype, creatable_path, entity_name](ZstMessageReceipt response) {
 				if (response.status != ZstMsgKind::OK) {
 					ZstLog::net(LogLevel::error, "Creating remote entity from factory failed with status {}", ZstMsgNames[response.status]);
 					return;
@@ -193,6 +201,7 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
 		});
 	}
 	else {
+		ZstLog::net(LogLevel::notification, "Received remote request to create a {} entity with the name {} ", creatable_path.path(), name);
 		entity = ZstHierarchy::create_entity(creatable_path, name, sendtype);
 	}
 
@@ -247,7 +256,9 @@ void ZstClientHierarchy::add_performer(const ZstPerformer & performer)
 	if (performer.URI() == m_root->URI()) {
 		//If we received ourselves as a performer, then we are now activated and can be added to the entity lookup map
 		ZstEntityBundle bundle;
-		for (auto c : m_root->get_child_entities(bundle, true)) {
+		m_root->get_child_entities(bundle, true);
+		m_root->get_factories(bundle);
+		for (auto c : bundle) {
 			add_entity_to_lookup(c);
 		}
 		ZstLog::net(LogLevel::debug, "Received self {} as performer. Caching in entity lookup", m_root->URI().path());

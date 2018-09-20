@@ -36,10 +36,6 @@ public:
 	// ----------------
 	// Publish messages
 	// ----------------
-	void on_send_msg(ZstMessage * msg) override
-	{
-		begin_send_message(msg);
-	}
 
 	void on_send_msg(ZstMsgKind kind)  override
 	{

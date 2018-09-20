@@ -112,7 +112,7 @@ enum ZstMsgArg {
     OUTPUT_PATH,
     PATH,
 	UNRELIABLE,
-    CONNECTION_MSG_ID,
+    REQUEST_ID,
     MSG_ID,
     SENDER_IDENTITY,
 	DESTINATION_IDENTITY,
@@ -126,7 +126,7 @@ static std::map<ZstMsgArg, char const*> ZstMsgArgNames{
     { INPUT_PATH, "inpth" },
     { OUTPUT_PATH, "outpth" },
     { PATH, "pth" },
-    { CONNECTION_MSG_ID, "connID" },
+    { REQUEST_ID, "connID" },
     { MSG_ID, "msgID" },
     { SENDER_IDENTITY, "sndr" },
 	{ DESTINATION_IDENTITY , "dest" }

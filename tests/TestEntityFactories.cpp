@@ -78,8 +78,9 @@ void test_remote_factories(std::string external_test_path, bool launch_ext_proce
 			ZstLog::app(LogLevel::debug, "External factory process failed to start. Code:{} Message:{}", e.code().value(), e.what());
 		}
 		assert(ext_factory_process.valid());
+		wait_for_event(performerEvents, 1);
 	}
-	wait_for_event(performerEvents, 1);
+
 	ZstPerformer * ext_factory_performer = dynamic_cast<ZstPerformer*>(zst_find_entity(ZstURI("extfactory")));
 	assert(ext_factory_performer);
 	performerEvents->reset_num_calls();
@@ -104,8 +105,8 @@ void test_remote_factories(std::string external_test_path, bool launch_ext_proce
 
 int main(int argc,char **argv)
 {
-    TestRunner runner("TestEntityFactories", argv[0]);
+    TestRunner runner("TestEntityFactories", argv[0], true, false);
     test_entity_factories();
-	test_remote_factories(argv[0]);
+	test_remote_factories(argv[0], false);
     return 0;
 }

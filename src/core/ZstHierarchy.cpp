@@ -59,7 +59,6 @@ void ZstHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTransportSend
 		synchronisable_set_deactivating(entity);
 }
 
-
 void ZstHierarchy::add_performer(const ZstPerformer & performer)
 {
 	//Copy streamable so we have a local ptr for the performer
@@ -67,8 +66,13 @@ void ZstHierarchy::add_performer(const ZstPerformer & performer)
 	assert(performer_proxy);
 	ZstLog::net(LogLevel::notification, "Adding new performer {}", performer_proxy->URI().path());
 
+	//Populate bundle with factory and child entities
 	ZstEntityBundle bundle;
-	for (auto c : performer_proxy->get_child_entities(bundle, true)) {
+	performer_proxy->get_factories(bundle);
+	performer_proxy->get_child_entities(bundle, true);
+
+	//Activate all entities in bundle
+	for (auto c : bundle) {
 		//Since this is a proxy entity, it should be activated immediately.
 		synchronisable_set_activation_status(c, ZstSyncStatus::ACTIVATED);
 		synchronisable_set_proxy(c);
@@ -85,7 +89,6 @@ void ZstHierarchy::add_performer(const ZstPerformer & performer)
 	//Dispatch events
 	m_hierarchy_events.defer([performer_proxy](ZstHierarchyAdaptor * adp) {adp->on_performer_arriving(performer_proxy); });
 }
-
 
 ZstPerformer * ZstHierarchy::get_performer_by_URI(const ZstURI & uri) const
 {

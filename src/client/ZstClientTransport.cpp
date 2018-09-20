@@ -1,3 +1,4 @@
+#include <boost/lexical_cast.hpp>
 #include "ZstClientTransport.h"
 #include "../core/ZstStageMessage.h"
 

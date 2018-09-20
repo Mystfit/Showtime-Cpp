@@ -43,8 +43,6 @@ ZstComponent::ZstComponent(const ZstComponent & other) : ZstEntityBase(other)
 
 ZstComponent::~ZstComponent()
 {
-
-
 	for (auto p : m_plugs) {
 		delete p;
 	}

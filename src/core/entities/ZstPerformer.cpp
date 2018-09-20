@@ -25,6 +25,10 @@ ZstPerformer::ZstPerformer(const ZstPerformer & other) : ZstContainer(other)
 {
 	m_heartbeat_active = other.m_heartbeat_active;
 	m_missed_heartbeats = other.m_missed_heartbeats;
+	
+	for (auto f : other.m_factories) {
+		add_factory(new ZstEntityFactory(*(f.second)));
+	}
 }
 
 ZstPerformer::~ZstPerformer()
@@ -97,6 +101,14 @@ void ZstPerformer::remove_factory(ZstEntityFactory * factory)
 	ZstEntityBase::remove_child(factory);
 }
 
+ZstEntityBundle & ZstPerformer::get_factories(ZstEntityBundle & bundle)
+{
+	for (auto f : m_factories) {
+		bundle.add(f.second);
+	}
+	return bundle;
+}
+
 ZstEntityFactoryBundle & ZstPerformer::get_factories(ZstEntityFactoryBundle & bundle)
 {
 	for (auto f : m_factories) {
@@ -111,7 +123,7 @@ void ZstPerformer::write(std::stringstream & buffer) const
 	ZstContainer::write(buffer);
 	
 	//Pack children
-	msgpack::pack(buffer, num_children());
+	msgpack::pack(buffer, m_factories.size());
 	for (auto factory : m_factories) {
 		factory.second->write(buffer);
 	}
