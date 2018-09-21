@@ -51,22 +51,22 @@ void ZstClient::destroy() {
 	//Since we've sent the leave request, we can flag that we are in the leave process
 	set_is_ending(true);
 
+	//Stop threads
+	m_client_event_thread.interrupt();
+	m_event_condition->wake();
+	m_client_event_thread.join();
+
 	//Destroy transports
 	m_client_transport->destroy();
 	m_graph_transport->destroy();
-
-	//Destroy modules
-	m_session->destroy();
 
 	//Stop timers
 	m_client_timerloop.IO_context().stop();
 	m_client_timer_thread.interrupt();
 	m_client_timer_thread.join();
 
-	//Stop threads
-	m_client_event_thread.interrupt();
-	m_event_condition->wake();
-	m_client_event_thread.join();
+	//Destroy modules
+	m_session->destroy();
 
 	//Remove adaptors
 	this->remove_adaptor(m_client_transport);
