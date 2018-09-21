@@ -110,6 +110,8 @@ find_package(Boost COMPONENTS
     log_setup
     thread
     system
+    context
+    fiber
     filesystem 
     date_time
     chrono
@@ -123,6 +125,8 @@ set(Boost_LOG_SETUP_TARGET "Boost::log_setup")
 set(Boost_THREAD_TARGET "Boost::thread")
 set(Boost_FILESYSTEM_TARGET "Boost::filesystem")
 set(Boost_SYSTEM_TARGET "Boost::system")
+set(Boost_CONTEXT_TARGET "Boost::context")
+set(Boost_FIBER_TARGET "Boost::fiber")
 set(Boost_DATE_TIME_TARGET "Boost::date_time")
 set(Boost_CHRONO_TARGET "Boost::chrono")
 set(Boost_ATOMIC_TARGET "Boost::atomic")

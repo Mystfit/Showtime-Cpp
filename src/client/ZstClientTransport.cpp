@@ -116,8 +116,9 @@ void ZstClientTransport::on_receive_msg(ZstMessage * msg)
 	ZstTransportLayerBase::on_receive_msg(msg);
 
 	//Publish message to other modules
-	msg_events()->invoke([msg](ZstTransportAdaptor * adaptor) {
-		adaptor->on_receive_msg(msg);
+	msg_events()->defer([msg](ZstTransportAdaptor * adaptor) { 
+		adaptor->on_receive_msg(msg); 
+	}, [msg, this](ZstEventStatus status){ 
+		this->release_msg(static_cast<ZstStageMessage*>(msg));
 	});
-	release_msg(static_cast<ZstStageMessage*>(msg));
 }

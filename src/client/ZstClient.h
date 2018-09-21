@@ -24,6 +24,8 @@
 #include "ZstGraphTransport.h"
 #include "ZstClientTransport.h"
 
+//Forwards
+class ZstBoostEventWakeup;
 
 struct ZstClientIOLoop {
 public:
@@ -122,9 +124,13 @@ private:
 	ZstClientTransport * m_client_transport;
 
 	//Timers
-	boost::thread m_client_eventloop_thread;
-	ZstClientIOLoop m_client_eventloop;
+	boost::thread m_client_timer_thread;
+	ZstClientIOLoop m_client_timerloop;
 	boost::asio::deadline_timer m_heartbeat_timer;
 	ZstConnectionTimerMapUnique m_connection_timers;
+
+	boost::thread m_client_event_thread;
+	std::shared_ptr<ZstBoostEventWakeup> m_event_condition;
+	void transport_event_loop();
 };
 

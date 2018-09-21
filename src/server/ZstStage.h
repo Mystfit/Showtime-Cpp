@@ -21,19 +21,8 @@
 #include "ZstStageRouterTransport.h"
 
 //Forwards
-class ZstStage;
+class ZstBoostEventWakeup;
 
-
-struct ZstStageIOLoop {
-public:
-	ZstStageIOLoop(ZstStage * stage);
-	void operator()();
-	boost::asio::io_service & IO_context();
-
-private:
-	boost::asio::io_service m_io;
-	ZstStage * m_stage;
-};
 
 
 class ZstStage : 
@@ -51,13 +40,21 @@ public:
 private:
 	bool m_is_destroyed;
 	boost::thread m_stage_eventloop_thread;
-	ZstStageIOLoop m_stage_eventloop;
+	boost::thread m_stage_timer_thread;
+	boost::asio::io_service m_io;
+	void timer_loop();
+	void event_loop();
+	std::shared_ptr<ZstBoostEventWakeup> m_event_condition;
 
+	//Timers
 	static void stage_heartbeat_timer(boost::asio::deadline_timer * t, ZstStage * stage, boost::posix_time::milliseconds duration);
 	boost::asio::deadline_timer m_heartbeat_timer;
 
+
+	//Modules
 	ZstStageSession * m_session;
 	
+	//Transports
 	ZstStagePublisherTransport * m_publisher_transport;
 	ZstStageRouterTransport * m_router_transport;
 };

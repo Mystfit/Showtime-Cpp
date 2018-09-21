@@ -8,13 +8,13 @@
 #include <adaptors/ZstEntityAdaptor.hpp>
 #include <adaptors/ZstComputeAdaptor.hpp>
 
-#include "ZstEventDispatcher.hpp"
 #include "ZstModule.h"
 #include "ZstHierarchy.h"
 #include "liasons/ZstSynchronisableLiason.hpp"
 #include "liasons/ZstCableLiason.hpp"
 #include "liasons/ZstPlugLiason.hpp"
 #include "adaptors/ZstTransportAdaptor.hpp"
+#include "ZstEventDispatcher.hpp"
 
 
 class ZstSession : 

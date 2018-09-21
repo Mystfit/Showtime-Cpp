@@ -136,7 +136,7 @@ IF EXIST %DEPENDENCY_DIR%\variant\build (
 REM boost
 set BOOST_COMMON_FLAGS=--prefix=%DEPENDENCY_DIR%\install address-model=64 variant=%CONFIGURATION% threading=multi runtime-link=shared
 set BOOST_SHARED_LIB_FLAGS=--with-system --with-chrono link=shared
-set BOOST_STATIC_LIB_FLAGS=--with-log --with-thread --with-filesystem --with-date_time --with-atomic --with-regex link=static
+set BOOST_STATIC_LIB_FLAGS=--with-log --with-thread --with-filesystem --with-date_time --with-atomic --with-regex --with-context --with-fiber link=static
 IF EXIST %DEPENDENCY_DIR%\boost_1.68.0.zip (
     echo Found boost
 ) ELSE (

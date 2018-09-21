@@ -6,6 +6,7 @@
 
 //Core headers
 #include <ZstVersion.h>
+#include "../core/ZstBoostEventWakeup.hpp"
 
 //Stage headers
 #include "ZstPerformerStageProxy.h"
@@ -18,19 +19,31 @@ ZstStage::ZstStage() :
 	m_session(NULL),
 	m_publisher_transport(NULL),
 	m_router_transport(NULL),
-	m_stage_eventloop(this),
-	m_heartbeat_timer(m_stage_eventloop.IO_context())
+	m_heartbeat_timer(m_io)
 {
 	m_session = new ZstStageSession();
 	m_publisher_transport = new ZstStagePublisherTransport();
 	m_router_transport = new ZstStageRouterTransport();
+
+	//Register event conditions
+	m_event_condition = std::make_shared<ZstBoostEventWakeup>();
+	m_session->set_wake_condition(m_event_condition);
+	m_session->hierarchy()->set_wake_condition(m_event_condition);
+	m_publisher_transport->msg_events()->set_wake_condition(m_event_condition);
+	m_router_transport->msg_events()->set_wake_condition(m_event_condition);
+	this->set_wake_condition(m_event_condition);
+
+	//Register event conditions
+	m_event_condition = std::make_shared<ZstBoostEventWakeup>();
+	m_publisher_transport->msg_events()->set_wake_condition(m_event_condition);
+	m_router_transport->msg_events()->set_wake_condition(m_event_condition);
 }
 
 ZstStage::~ZstStage()
 {
-delete m_session;
-delete m_publisher_transport;
-delete m_router_transport;
+	delete m_session;
+	delete m_publisher_transport;
+	delete m_router_transport;
 }
 
 void ZstStage::init_stage(const char * stage_name, bool threaded)
@@ -56,7 +69,8 @@ void ZstStage::init_stage(const char * stage_name, bool threaded)
 	m_session->hierarchy()->publisher_events().add_adaptor(m_publisher_transport);
 
 	//Start event loop
-	m_stage_eventloop_thread = boost::thread(boost::ref(m_stage_eventloop));
+	m_stage_timer_thread = boost::thread(boost::bind(&ZstStage::timer_loop, this));
+	m_stage_eventloop_thread = boost::thread(boost::bind(&ZstStage::event_loop, this));
 }
 
 
@@ -67,6 +81,7 @@ void ZstStage::destroy()
 
 	m_is_destroyed = true;
 
+	//Clear adaptors and events
 	this->remove_all_adaptors();
 	this->flush();
 
@@ -74,10 +89,18 @@ void ZstStage::destroy()
 	m_heartbeat_timer.cancel();
 	m_heartbeat_timer.wait();
 
+	//Stop threads
 	m_stage_eventloop_thread.interrupt();
+	m_event_condition->wake();
 	m_stage_eventloop_thread.join();
+	m_stage_timer_thread.interrupt();
+	m_io.stop();
+	m_stage_timer_thread.join();
 
+	//Destroy modules
 	m_session->destroy();
+
+	//Destroy transports
 	m_publisher_transport->destroy();
 	m_router_transport->destroy();
 
@@ -137,30 +160,33 @@ void ZstStage::stage_heartbeat_timer(boost::asio::deadline_timer * t, ZstStage *
 }
 
 
-
-// ------
-
-ZstStageIOLoop::ZstStageIOLoop(ZstStage * stage)
-{
-	m_stage = stage;
-}
-
-void ZstStageIOLoop::operator()()
+void ZstStage::event_loop() 
 {
 	while (1) {
 		try {
 			boost::this_thread::interruption_point();
-			m_stage->process_events();
-			IO_context().poll();
+			this->m_event_condition->wait();
+			this->process_events();
 		}
 		catch (boost::thread_interrupted) {
-			ZstLog::net(LogLevel::debug, "Stage event loop exiting.");
+			ZstLog::net(LogLevel::debug, "Stage msg event loop exiting.");
 			break;
 		}
 	}
 }
 
-boost::asio::io_service & ZstStageIOLoop::IO_context()
+void ZstStage::timer_loop()
 {
-	return m_io;
+	try {
+		boost::this_thread::interruption_point();
+
+		//Give the event loop some work to do so it doesn't insta-quit
+		boost::asio::io_service::work work(m_io);
+
+		//Run the event loop (blocks this thread)
+		this->m_io.run();
+	}
+	catch (boost::thread_interrupted) {
+		ZstLog::net(LogLevel::debug, "Stage timer event loop exiting.");
+	}
 }

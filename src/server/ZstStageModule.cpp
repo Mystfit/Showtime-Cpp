@@ -1,4 +1,11 @@
 #include "ZstStageModule.h"
+#include "../core/ZstEventWakeup.hpp"
+
+void ZstStageModule::set_wake_condition(std::shared_ptr<ZstEventWakeup> condition)
+{
+	m_router_events.set_wake_condition(condition);
+	m_publisher_events.set_wake_condition(condition);
+}
 
 ZstEventDispatcher<ZstTransportAdaptor*>& ZstStageModule::router_events()
 {

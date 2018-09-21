@@ -2,6 +2,7 @@
 #include <sstream>
 
 #include "ZstClient.h"
+#include "../core/ZstBoostEventWakeup.hpp"
 
 ZstClient::ZstClient() :
 	m_ping(-1),
@@ -11,13 +12,18 @@ ZstClient::ZstClient() :
 	m_connected_to_stage(false),
 	m_is_connecting(false),
 	m_session(NULL),
-	m_heartbeat_timer(m_client_eventloop.IO_context())
+	m_heartbeat_timer(m_client_timerloop.IO_context())
 {
 	//Message and transport modules
 	//These are specified by the client based on what transport type we want to use
 	m_client_transport = new ZstClientTransport();
 	m_graph_transport = new ZstGraphTransport();
 	m_session = new ZstClientSession();
+
+	//Register event conditions
+	m_event_condition = std::make_shared<ZstBoostEventWakeup>();
+	m_client_transport->msg_events()->set_wake_condition(m_event_condition);
+	m_graph_transport->msg_events()->set_wake_condition(m_event_condition);
 }
 
 ZstClient::~ZstClient() {
@@ -53,9 +59,14 @@ void ZstClient::destroy() {
 	m_session->destroy();
 
 	//Stop timers
-	m_client_eventloop.IO_context().stop();
-	m_client_eventloop_thread.interrupt();
-	m_client_eventloop_thread.join();
+	m_client_timerloop.IO_context().stop();
+	m_client_timer_thread.interrupt();
+	m_client_timer_thread.join();
+
+	//Stop threads
+	m_client_event_thread.interrupt();
+	m_event_condition->wake();
+	m_client_event_thread.join();
 
 	//Remove adaptors
 	this->remove_adaptor(m_client_transport);
@@ -94,7 +105,7 @@ void ZstClient::init_client(const char *client_name, bool debug)
 	ZstMsgIDManager::init(m_client_name.c_str(), m_client_name.size());
 
 	//Create IO_context thread
-	m_client_eventloop_thread = boost::thread(boost::ref(m_client_eventloop));
+	m_client_timer_thread = boost::thread(boost::ref(m_client_timerloop));
 	m_connection_timers = ZstConnectionTimerMapUnique(new ZstConnectionTimerMap());
 	
 	//Register message dispatch as a client adaptor
@@ -117,7 +128,10 @@ void ZstClient::init_client(const char *client_name, bool debug)
 	m_graph_transport->init();
 	m_graph_transport->msg_events()->add_adaptor(this);
 	m_graph_transport->msg_events()->add_adaptor(m_session);
-	
+
+	//Transport event loops
+	m_client_event_thread = boost::thread(boost::bind(&ZstClient::transport_event_loop, this));
+
 	//Init completed
 	set_init_completed(true);
 }
@@ -140,8 +154,6 @@ void ZstClient::process_events()
 	}
 
 	//ZstLog::net(LogLevel::debug, "In process_events() - Submodule events");
-	m_client_transport->process_events();
-	m_graph_transport->process_events();
 	m_session->process_events();
 
 	//Reapers are updated last in case entities still need to be queried beforehand
@@ -346,7 +358,7 @@ void ZstClient::leave_stage_complete()
 	//Disconnect rest of sockets and timers
 	m_heartbeat_timer.cancel();
 	m_client_transport->disconnect_from_stage();
-		
+	
 	//Enqueue event for adaptors
 	m_session->dispatch_disconnected_from_stage();
 }
@@ -404,7 +416,7 @@ void ZstClient::start_connection_broadcast(const ZstURI & remote_client_path)
 		return;
 	}
 
-	boost::asio::deadline_timer timer(m_client_eventloop.IO_context(), boost::posix_time::milliseconds(100));
+	boost::asio::deadline_timer timer(m_client_timerloop.IO_context(), boost::posix_time::milliseconds(100));
 	m_connection_timers->insert({ remote_client->URI(),  std::move(timer) });
 	m_connection_timers->at(remote_client->URI()).async_wait(boost::bind(&ZstClient::send_connection_broadcast, &m_connection_timers->at(remote_client->URI()), this, remote_client->URI(), local_client->URI(), boost::posix_time::milliseconds(100)));
 }
@@ -441,6 +453,21 @@ void ZstClient::listen_to_client(const ZstMessage * msg)
 {
 	m_pending_peer_connections[ZstURI(msg->get_arg(ZstMsgArg::OUTPUT_PATH))] = std::stoull(msg->get_arg(ZstMsgArg::REQUEST_ID));
 	m_graph_transport->connect_to_reliable_client(msg->get_arg(ZstMsgArg::GRAPH_RELIABLE_OUTPUT_ADDRESS));
+}
+
+void ZstClient::transport_event_loop()
+{
+	while (1) {
+		try {
+			boost::this_thread::interruption_point();
+			m_event_condition->wait();
+			m_client_transport->process_events();
+			m_graph_transport->process_events();
+		}
+		catch (boost::thread_interrupted) {
+			break;
+		}
+	}
 }
 
 ZstClientSession * ZstClient::session()

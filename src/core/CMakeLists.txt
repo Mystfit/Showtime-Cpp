@@ -52,6 +52,8 @@ set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstEventDispatcher.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstModule.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstEventWakeup.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstBoostEventWakeup.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstSynchronisableLiason.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstEntityFactoryLiason.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstPlugLiason.hpp"
@@ -76,6 +78,7 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstTransportLayerBase.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstModule.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstBoostEventWakeup.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstEntityFactory.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstEntityBase.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstComponent.cpp"
@@ -170,6 +173,8 @@ list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS
     ${Boost_REGEX_TARGET}
     ${Boost_LOG_TARGET}
     ${Boost_LOG_SETUP_TARGET}
+	${Boost_CONTEXT_TARGET}
+    ${Boost_FIBER_TARGET}
     ${CMAKE_THREAD_LIBS_INIT}
 )
 set(SHOWTIME_HEADER_TARGETS
