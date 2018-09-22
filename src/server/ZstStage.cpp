@@ -35,6 +35,9 @@ ZstStage::ZstStage() :
 
 	//Register event conditions
 	m_event_condition = std::make_shared<ZstBoostEventWakeup>();
+	this->set_wake_condition(m_event_condition);
+	m_session->set_wake_condition(m_event_condition);
+	m_session->hierarchy()->set_wake_condition(m_event_condition);
 	m_publisher_transport->msg_events()->set_wake_condition(m_event_condition);
 	m_router_transport->msg_events()->set_wake_condition(m_event_condition);
 }

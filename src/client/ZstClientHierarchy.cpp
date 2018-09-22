@@ -69,16 +69,8 @@ void ZstClientHierarchy::on_receive_msg(ZstMessage * msg)
 		add_proxy_entity(msg->unpack_payload_serialisable<ZstContainer>());
 		break;
 	case ZstMsgKind::CREATE_ENTITY_FROM_FACTORY:
-	{
-		ZstMsgKind status(ZstMsgKind::OK);
-		if (!create_entity(ZstURI(msg->get_arg(ZstMsgArg::PATH)), msg->get_arg(ZstMsgArg::NAME)), ZstTransportSendType::SYNC_REPLY) {
-			status = ZstMsgKind::ERR_ENTITY_NOT_FOUND;
-		}
-		stage_events().invoke([msg, status](ZstTransportAdaptor * adp) {
-			adp->on_send_msg(status, { { ZstMsgArg::MSG_ID, boost::lexical_cast<std::string>(msg->id()) } });
-		});
+		create_entity_handler(msg);
 		break;
-	}
 	case ZstMsgKind::DESTROY_ENTITY:
 		destroy_entity_complete(find_entity(ZstURI(msg->get_arg(ZstMsgArg::PATH))));
 		break;
@@ -102,6 +94,11 @@ void ZstClientHierarchy::on_publish_entity_update(ZstEntityBase * entity)
 
 void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
 {
+	activate_entity(entity, sendtype, 0);
+}
+
+void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype, ZstMsgID request_ID)
+{
 	if(!entity){
 		ZstLog::net(LogLevel::error, "Can't activate a null entity");
 		return;
@@ -116,14 +113,24 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 	ZstHierarchy::activate_entity(entity, sendtype);
 	
 	//Build message
-	stage_events().invoke([this, entity, sendtype](ZstTransportAdaptor * adaptor)
+	stage_events().invoke([this, entity, sendtype, request_ID](ZstTransportAdaptor * adaptor)
 	{
-		adaptor->on_send_msg(ZstMessage::entity_kind(*entity), sendtype, *entity, [this, entity](ZstMessageReceipt response) {
-			if (response.status != ZstMsgKind::OK) {
+		ZstMsgArgs args;
+		if (request_ID > 0) {
+			args[ZstMsgArg::MSG_ID] = boost::lexical_cast<std::string>(request_ID);
+		}
+		ZstLog::net(LogLevel::debug, "Responding to server creatable request with id {}", request_ID);
+		adaptor->on_send_msg(ZstMessage::entity_kind(*entity), sendtype, *entity, args, [this, entity](ZstMessageReceipt response) {
+			if (response.status == ZstMsgKind::CREATE_COMPONENT ||
+				response.status == ZstMsgKind::CREATE_CONTAINER ||
+				response.status == ZstMsgKind::CREATE_FACTORY ||
+				response.status == ZstMsgKind::CREATE_PERFORMER) {
+				this->activate_entity_complete(entity);
+			}
+			else {
 				ZstLog::net(LogLevel::error, "Activate entity {} failed with status {}", entity->URI().path(), ZstMsgNames[response.status]);
 				return;
 			}
-			this->activate_entity_complete(entity);
 		});
 	});
 
@@ -163,12 +170,12 @@ void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTranspo
 	}
 }
 
-ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path, const char * name)
+ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path, const char * name, bool activate)
 {
-	return create_entity(creatable_path, name, ZstTransportSendType::ASYNC_REPLY);
+	return create_entity(creatable_path, name, activate, ZstTransportSendType::ASYNC_REPLY);
 }
 
-ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path, const char * name, const ZstTransportSendType & sendtype)
+ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path, const char * name, bool activate, const ZstTransportSendType & sendtype)
 {
 	ZstEntityBase * entity = NULL;
 	//Find the factory associated with this creatable path
@@ -180,32 +187,58 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
 
 	ZstURI entity_name(name);
 
+	//External factory - route creation request
 	if (factory->is_proxy()) {
-		//External factory - route creation request
 		stage_events().invoke([this, sendtype, creatable_path, &entity, entity_name](ZstTransportAdaptor * adaptor) {
 			ZstMsgArgs args{  
 				{ ZstMsgArg::PATH, creatable_path.path() },
 				{ ZstMsgArg::NAME, entity_name.path() }
 			};
 			adaptor->on_send_msg(ZstMsgKind::CREATE_ENTITY_FROM_FACTORY, sendtype, args, [this, &entity, sendtype, creatable_path, entity_name](ZstMessageReceipt response) {
-				if (response.status != ZstMsgKind::OK) {
+				if (response.status == ZstMsgKind::CREATE_COMPONENT ||
+					response.status == ZstMsgKind::CREATE_CONTAINER ||
+					response.status == ZstMsgKind::CREATE_FACTORY) 
+				{
+					ZstLog::net(LogLevel::notification, "Created entity from {}", creatable_path.path());
+					if (sendtype == ZstTransportSendType::SYNC_REPLY) {
+						//Can return the entity since the pointer reference will still be on the stack
+						entity = find_entity(creatable_path.first() + ZstURI(entity_name));
+					}
+				}
+				else {
 					ZstLog::net(LogLevel::error, "Creating remote entity from factory failed with status {}", ZstMsgNames[response.status]);
 					return;
-				}
-
-				if (sendtype == ZstTransportSendType::SYNC_REPLY) {
-					//Can return the entity since the pointer reference will still be on the stack
-					entity = find_entity(creatable_path + ZstURI(entity_name));
 				}
 			});
 		});
 	}
 	else {
+		//Internal factory - create entity locally
 		ZstLog::net(LogLevel::notification, "Received remote request to create a {} entity with the name {} ", creatable_path.path(), name);
 		entity = ZstHierarchy::create_entity(creatable_path, name, sendtype);
+
+		//If we're creating a local entity, make sure to activate it afterwards
+		if(activate)
+			activate_entity(entity, sendtype);
 	}
 
 	return entity;
+}
+
+void ZstClientHierarchy::create_entity_handler(ZstMessage * msg)
+{
+	ZstMsgKind status(ZstMsgKind::OK);
+	ZstEntityBase * entity = create_entity(ZstURI(msg->get_arg(ZstMsgArg::PATH)), msg->get_arg(ZstMsgArg::NAME), false);
+
+	//Defer entity activation till now so that we can forward the message ID back to the stage
+	if (entity) {
+		activate_entity(entity, ZstTransportSendType::ASYNC_REPLY, msg->id());
+	}
+	else {
+		stage_events().invoke([msg, status](ZstTransportAdaptor * adp) {
+			adp->on_send_msg(ZstMsgKind::ERR_ENTITY_NOT_FOUND, { { ZstMsgArg::MSG_ID, boost::lexical_cast<std::string>(msg->id()) } });
+		});
+	}
 }
 
 void ZstClientHierarchy::destroy_entity_complete(ZstEntityBase * entity)

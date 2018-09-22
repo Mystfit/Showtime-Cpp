@@ -51,11 +51,12 @@ public:
 	// Entity activation/deactivation
 	// ------------------------------
 	
+	void activate_entity(ZstEntityBase* entity, const ZstTransportSendType & sendtype, ZstMsgID request_ID);
 	void activate_entity(ZstEntityBase* entity, const ZstTransportSendType & sendtype) override;
 	void destroy_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype) override;
-	ZstEntityBase * create_entity(const ZstURI & creatable_path, const char * name);
-	ZstEntityBase * create_entity(const ZstURI & creatable_path, const char * name, const ZstTransportSendType & sendtype) override;
-
+	ZstEntityBase * create_entity(const ZstURI & creatable_path, const char * name, bool activate);
+	ZstEntityBase * create_entity(const ZstURI & creatable_path, const char * name, bool activate, const ZstTransportSendType & sendtype) override;
+	void create_entity_handler(ZstMessage * msg);
 	// ------------------------------
 	// Performers
 	// ------------------------------

@@ -40,13 +40,13 @@ void ZstHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportSen
 	}
 }
 
-ZstEntityBase * ZstHierarchy::create_entity(const ZstURI & creatable_path, const char * name, const ZstTransportSendType & sendtype)
+ZstEntityBase * ZstHierarchy::create_entity(const ZstURI & creatable_path, const char * name, bool activate, const ZstTransportSendType & sendtype)
 {
 	ZstEntityBase * entity = NULL;
 	
 	ZstEntityFactory * factory = dynamic_cast<ZstEntityFactory*>(find_entity(creatable_path.parent()));
 	if (factory) {
-		entity = factory_activate_entity(factory, factory->create_entity(creatable_path, name));
+		entity = factory->create_entity(creatable_path, name);
 	}
 
 	return entity;
