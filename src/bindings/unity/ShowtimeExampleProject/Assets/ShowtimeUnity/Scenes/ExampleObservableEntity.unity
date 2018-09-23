@@ -465,14 +465,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 293125055}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 688457ac6b85b492985350682b6e6db1, type: 3}
+  m_Script: {fileID: 11500000, guid: 59d58bfd068ac254bad55c2584e9a4f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   address: 127.0.0.1
   component_name: cube
   owner_name: 
   is_master: 1
-  proxy_prefab: {fileID: 1319174644320796, guid: dbe198963ff8c4bdcbb4ef4fb37b3283,
+  proxy_prefab: {fileID: 1319174644320796, guid: 7feef4faaf88d174799e908cfcd11faa,
     type: 2}
 --- !u!4 &293125057
 Transform:
@@ -1337,11 +1337,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 727312467}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ac44e37abce824407b1acb96c8794386, type: 3}
+  m_Script: {fileID: 11500000, guid: 2aed480bdfba33e408e275c82ecf7a32, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ball_prefab: {fileID: 1319174644320796, guid: dbe198963ff8c4bdcbb4ef4fb37b3283,
+  ball_prefab: {fileID: 1319174644320796, guid: 7feef4faaf88d174799e908cfcd11faa,
     type: 2}
+  local_ball_color: {r: 0, g: 0, b: 0, a: 0}
   spawn_bounds_x: 4.4
   spawn_bounds_y: 5
   spawn_bounds_z: 4.4
@@ -1620,6 +1621,46 @@ CanvasRenderer:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 869775515}
   m_CullTransparentMesh: 0
+--- !u!1 &893890047
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 893890049}
+  - component: {fileID: 893890048}
+  m_Layer: 0
+  m_Name: model_factory
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &893890048
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 893890047}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71356869b439ef349a5647af8c570c05, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &893890049
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 893890047}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 8
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1159069180
 GameObject:
   m_ObjectHideFlags: 0

@@ -5,6 +5,7 @@ using UnityEngine;
 public class BallSpawner : MonoBehaviour {
 
     public GameObject ball_prefab;
+    public Color local_ball_color = Color.HSVToRGB(Random.value, 1.0f, 1.0f);
     public float spawn_bounds_x = 4.4f;
     public float spawn_bounds_y = 5.0f;
     public float spawn_bounds_z = 4.4f;
