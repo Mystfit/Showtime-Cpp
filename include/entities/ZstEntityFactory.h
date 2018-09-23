@@ -3,13 +3,12 @@
 #include <unordered_set>
 #include <ZstExports.h>
 #include <entities/ZstEntityBase.h>
-#include <adaptors/ZstEntityAdaptor.hpp>
 
 #define FACTORY_TYPE "fac"
 
 typedef std::shared_ptr<ZstEntityBase> ZstSharedEntity;
 
-class ZstEntityFactory : public ZstEntityBase, private ZstEntityAdaptor
+class ZstEntityFactory : public ZstEntityBase
 {
 	friend class ZstEntityFactoryLiason;
 public:

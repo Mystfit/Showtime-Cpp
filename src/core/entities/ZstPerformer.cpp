@@ -33,8 +33,10 @@ ZstPerformer::ZstPerformer(const ZstPerformer & other) : ZstContainer(other)
 
 ZstPerformer::~ZstPerformer()
 {
-	for (auto f : m_factories) {
-		delete f.second;
+	if (!is_proxy()){
+		for (auto f : m_factories) {
+			delete f.second;
+		}
 	}
 }
 

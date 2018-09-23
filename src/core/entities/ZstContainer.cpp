@@ -35,11 +35,13 @@ ZstContainer::ZstContainer(const ZstContainer & other) : ZstComponent(other)
 
 ZstContainer::~ZstContainer()
 {
-	auto children = m_children;
-	for (auto c : children) {
-		delete c.second;
+	if (!is_proxy()) {
+		auto children = m_children;
+		for (auto c : children) {
+			delete c.second;
+		}
+		m_children.clear();
 	}
-	m_children.clear();
 }
 
 ZstEntityBase * ZstContainer::walk_child_by_URI(const ZstURI & path)

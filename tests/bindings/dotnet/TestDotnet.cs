@@ -16,12 +16,6 @@ public class TestOutputComponent : ZstComponent
         output = create_output_plug("out", ZstValueType.ZST_INT);
     }
 
-    public override void Dispose()
-    {
-        Console.WriteLine("In TestOutputComponent dispose");
-        base.Dispose();
-    }
-
     public void send(int val)
     {
         output.append_int(val);
@@ -38,12 +32,6 @@ public class TestInputComponent : ZstComponent
     public TestInputComponent(string path) : base(path)
     {
         input = create_input_plug("in", ZstValueType.ZST_INT);
-    }
-
-    public override void Dispose()
-    {
-        Console.WriteLine("In TestInputComponent dispose");
-        base.Dispose();
     }
 
     public override void compute(ZstInputPlug plug)

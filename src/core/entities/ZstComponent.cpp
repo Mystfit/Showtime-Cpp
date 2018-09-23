@@ -43,8 +43,10 @@ ZstComponent::ZstComponent(const ZstComponent & other) : ZstEntityBase(other)
 
 ZstComponent::~ZstComponent()
 {
-	for (auto p : m_plugs) {
-		delete p;
+	if (!is_proxy()) {
+		for (auto p : m_plugs) {
+			delete p;
+		}
 	}
 	m_plugs.clear();
 	free(m_component_type);
