@@ -64,7 +64,15 @@ int main(int argc, char **argv) {
 
 	ZstTest::s_catch_signals();
 	while (!ZstTest::s_interrupted) {
+		std::string line;
 		zst_poll_once();
+
+		//Update creatables when we get a message on stdin
+		std::getline(std::cin, line);
+		if (line == "update_creatables") {
+			test_factory->add_creatable(ZstURI("avocado"));
+			test_factory->update_creatables();
+		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 

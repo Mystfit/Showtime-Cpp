@@ -64,6 +64,7 @@ public:
 	// ------------------------------
 
 	ZST_EXPORT virtual ZstMsgKind add_proxy_entity(const ZstEntityBase & entity);
+	ZST_EXPORT virtual ZstMsgKind update_proxy_entity(const ZstEntityBase & entity);
 	ZST_EXPORT virtual ZstMsgKind remove_proxy_entity(ZstEntityBase * entity);
 
 	

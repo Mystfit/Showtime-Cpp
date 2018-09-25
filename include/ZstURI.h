@@ -32,7 +32,7 @@ public:
 	ZST_EXPORT ZstURI first() const;
 
 	//Return a URI containing the last segment
-	ZST_EXPORT ZstURI last();
+	ZST_EXPORT ZstURI last() const;
 
 	ZST_EXPORT bool contains(const ZstURI & compare) const;
 	ZST_EXPORT static bool equal(const ZstURI & a, const ZstURI & b);

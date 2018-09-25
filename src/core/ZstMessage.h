@@ -47,6 +47,9 @@ enum ZstMsgKind  {
     CREATE_PERFORMER,
 	CREATE_FACTORY,
     DESTROY_ENTITY,
+
+	//Entity updates
+	UPDATE_ENTITY,
     
     //Plug registration
     CREATE_PLUG, //23
@@ -92,6 +95,7 @@ static std::map<ZstMsgKind, char const*> ZstMsgNames {
     {CREATE_PERFORMER, "CREATE_PERFORMER"},
 	{CREATE_FACTORY, "CREATE_FACTORY"},
     {DESTROY_ENTITY, "DESTROY_ENTITY"},
+	{UPDATE_ENTITY, "UPDATE_ENTITY"},
     {CREATE_PLUG, "CREATE_PLUG"},
     {CREATE_CABLE, "CREATE_CABLE"},
     {DESTROY_CABLE, "DESTROY_CABLE"},

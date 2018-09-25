@@ -44,7 +44,7 @@ protected:
     ZST_EXPORT void set_error(ZstSyncError e);
 	ZST_EXPORT void set_destroyed();
 	ZST_EXPORT virtual void set_proxy();
-	ZST_EXPORT void process_events();
+	ZST_EXPORT virtual void process_events();
 	ZST_EXPORT void announce_update();
 	ZST_EXPORT virtual void dispatch_destroyed();
 

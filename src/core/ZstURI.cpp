@@ -181,7 +181,7 @@ ZstURI ZstURI::first() const
 	return ZstURI(m_components[0].cstr);
 }
 
-ZstURI ZstURI::last()
+ZstURI ZstURI::last() const
 {
 	return ZstURI(m_components[size()-1].cstr);
 }

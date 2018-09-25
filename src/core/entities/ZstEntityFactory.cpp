@@ -2,20 +2,35 @@
 #include <msgpack.hpp>
 #include <entities/ZstEntityFactory.h>
 #include "../ZstEventDispatcher.hpp"
+#include <adaptors/ZstSynchronisableAdaptor.hpp>
+
+//Template instatiations
+template class ZstEventDispatcher<ZstFactoryAdaptor*>;
+
 
 ZstEntityFactory::ZstEntityFactory() : ZstEntityBase("")
 {
+	m_factory_events = new ZstEventDispatcher<ZstFactoryAdaptor*>();
 	set_entity_type(FACTORY_TYPE);
 }
 
 ZstEntityFactory::ZstEntityFactory(const char * name) : ZstEntityBase(name)
 {
+	m_factory_events = new ZstEventDispatcher<ZstFactoryAdaptor*>();
 	set_entity_type(FACTORY_TYPE);
 }
 
 ZstEntityFactory::ZstEntityFactory(const ZstEntityFactory & other) : ZstEntityBase(other)
 {
+	m_factory_events = new ZstEventDispatcher<ZstFactoryAdaptor*>();
 	m_creatables = other.m_creatables;
+}
+
+ZstEntityFactory::~ZstEntityFactory()
+{
+	m_factory_events->flush();
+	m_factory_events->remove_all_adaptors();
+	delete m_factory_events;
 }
 
 void ZstEntityFactory::add_creatable(const ZstURI & creatable_path)
@@ -23,25 +38,60 @@ void ZstEntityFactory::add_creatable(const ZstURI & creatable_path)
 	m_creatables.insert(creatable_path);
 }
 
+void ZstEntityFactory::update_creatables() 
+{
+	//Alert stage
+	if (!is_proxy()) {
+		this->update_createable_URIs();
+		entity_events()->invoke([this](ZstEntityAdaptor* adp) {adp->on_publish_entity_update(this); });
+	} 
+
+	factory_events()->defer([this](ZstFactoryAdaptor * dlg) { dlg->on_creatables_updated(this); });
+	synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * adp) {adp->on_synchronisable_has_event(this); });
+}
+
 void ZstEntityFactory::remove_creatable(const ZstURI & creatable_path)
 {
 	try {
 		m_creatables.erase(creatable_path);
+		//Let client library know that we want to update our creatables list
+		//Do stuff
 	}
 	catch (std::out_of_range) {}
 }
 
-void ZstEntityFactory::get_creatables(ZstURIBundle & bundle)
+ZstURIBundle ZstEntityFactory::get_creatables(ZstURIBundle & bundle)
 {
 	for (auto c : m_creatables) {
 		bundle.add(c);
 	}
+	return bundle;
+}
+
+void ZstEntityFactory::clear_creatables()
+{
+	m_creatables.clear();
 }
 
 ZstEntityBase * ZstEntityFactory::create_entity(const ZstURI & creatable_path, const char * name)
 {
 	throw(std::runtime_error("ZstEntityFactory::create_entity not implemented"));
 	return NULL;
+}
+
+void ZstEntityFactory::add_adaptor(ZstFactoryAdaptor * adaptor)
+{
+	m_factory_events->add_adaptor(adaptor);
+}
+
+void ZstEntityFactory::remove_adaptor(ZstFactoryAdaptor * adaptor)
+{
+	m_factory_events->remove_adaptor(adaptor);
+}
+
+ZstEventDispatcher<ZstFactoryAdaptor*>* ZstEntityFactory::factory_events()
+{
+	return m_factory_events;
 }
 
 ZstEntityBase * ZstEntityFactory::activate_entity(ZstEntityBase * entity)
@@ -60,6 +110,17 @@ ZstEntityBase * ZstEntityFactory::activate_entity(ZstEntityBase * entity)
 void ZstEntityFactory::update_URI()
 {
 	ZstEntityBase::update_URI();
+	this->update_createable_URIs();
+}
+
+void ZstEntityFactory::process_events()
+{
+	ZstEntityBase::process_events();
+	factory_events()->process_events();
+}
+
+void ZstEntityFactory::update_createable_URIs()
+{
 	std::unordered_set<ZstURI, ZstURIHash> orig_uris = std::move(m_creatables);
 	m_creatables.clear();
 	for (auto c : orig_uris) {

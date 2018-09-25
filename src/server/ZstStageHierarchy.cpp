@@ -38,6 +38,9 @@ void ZstStageHierarchy::on_receive_msg(ZstMessage * msg)
 	case ZstMsgKind::CREATE_FACTORY:
 		response = add_proxy_entity(msg->unpack_payload_serialisable<ZstEntityFactory>(), msg->id());
 		break;
+	case ZstMsgKind::UPDATE_ENTITY:
+		response = update_proxy_entity(msg->unpack_payload_serialisable<ZstEntityFactory>(), msg->id());
+		break;
 	case ZstMsgKind::CREATE_ENTITY_FROM_FACTORY:
 		response = create_entity_from_factory_handler(msg, sender);
 		break;
@@ -94,7 +97,9 @@ ZstMsgKind ZstStageHierarchy::create_client_handler(std::string sender_identity,
 	m_client_socket_index[std::string(sender_identity)] = client_proxy;
 	
 	ZstEntityBundle bundle;
-	for (auto c : client_proxy->get_child_entities(bundle, true)) {
+	client_proxy->get_factories(bundle);
+	client_proxy->get_child_entities(bundle, true);
+	for (auto c : bundle) {
 		add_entity_to_lookup(c);
 	}
 
@@ -150,6 +155,23 @@ ZstMsgKind ZstStageHierarchy::add_proxy_entity(const ZstEntityBase & entity, Zst
 	}
 
 	return msg_status;
+}
+
+ZstMsgKind ZstStageHierarchy::update_proxy_entity(const ZstEntityBase & entity, ZstMsgID request_ID)
+{
+	ZstLog::net(LogLevel::notification, "Updating proxy entity {}", entity.URI().path());
+	ZstMsgKind msg_status = ZstHierarchy::update_proxy_entity(entity);
+
+	//Update rest of network
+	if (msg_status == ZstMsgKind::OK) {
+		ZstMsgArgs args{ { ZstMsgArg::MSG_ID, boost::lexical_cast<std::string>(request_ID) } };
+		publisher_events().invoke([&entity, &args](ZstTransportAdaptor * adp) {
+			adp->on_send_msg(ZstMsgKind::UPDATE_ENTITY, args, entity);
+		});
+	}
+
+	//Updating entities is a publish action
+	return ZstMsgKind::EMPTY;
 }
 
 ZstMsgKind ZstStageHierarchy::remove_proxy_entity(ZstEntityBase * entity)

@@ -236,6 +236,28 @@ ZstMsgKind ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity) {
 	return ZstMsgKind::OK;
 }
 
+ZstMsgKind ZstHierarchy::update_proxy_entity(const ZstEntityBase & entity)
+{
+	if (strcmp(entity.entity_type(), FACTORY_TYPE) == 0) {
+		ZstLog::net(LogLevel::notification, "Factory {} received an update", entity.URI().path());
+
+		ZstEntityFactory remote_factory = static_cast<const ZstEntityFactory&>(entity);
+		ZstEntityFactory * local_factory = dynamic_cast<ZstEntityFactory*>(find_entity(remote_factory.URI()));
+		if (local_factory) {
+			local_factory->clear_creatables();
+			ZstURIBundle updated_creatables;
+			for (auto c : remote_factory.get_creatables(updated_creatables)) {
+				local_factory->add_creatable(c);
+			}
+			local_factory->update_creatables();
+		}
+		else {
+			return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
+		}
+	}
+	return ZstMsgKind::OK;
+}
+
 ZstMsgKind ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 {
 	if (entity) {

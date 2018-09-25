@@ -71,6 +71,9 @@ void ZstClientHierarchy::on_receive_msg(ZstMessage * msg)
 	case ZstMsgKind::CREATE_ENTITY_FROM_FACTORY:
 		create_entity_handler(msg);
 		break;
+	case ZstMsgKind::UPDATE_ENTITY:
+		update_proxy_entity(msg->unpack_payload_serialisable<ZstEntityFactory>());
+		break;
 	case ZstMsgKind::DESTROY_ENTITY:
 		destroy_entity_complete(find_entity(ZstURI(msg->get_arg(ZstMsgArg::PATH))));
 		break;
@@ -81,15 +84,25 @@ void ZstClientHierarchy::on_receive_msg(ZstMessage * msg)
 
 void ZstClientHierarchy::on_publish_entity_update(ZstEntityBase * entity)
 {
-	performance_events().invoke([entity](ZstTransportAdaptor * adaptor) {
-		ZstOutputPlug * plug = dynamic_cast<ZstOutputPlug*>(entity);
-		if (plug) {
-			ZstMsgArgs args = { { ZstMsgArg::PATH, plug->URI().path() } };
-			if (!plug->is_reliable())
-				args[ZstMsgArg::UNRELIABLE] = "";
-			adaptor->on_send_msg(ZstMsgKind::PERFORMANCE_MSG, args, *plug->raw_value());
-		}
-	});
+	if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
+		//Handle plugs sending values
+		performance_events().invoke([entity](ZstTransportAdaptor * adaptor) {
+			ZstOutputPlug * plug = dynamic_cast<ZstOutputPlug*>(entity);
+			if (plug) {
+				ZstMsgArgs args = { { ZstMsgArg::PATH, plug->URI().path() } };
+				if (!plug->is_reliable())
+					args[ZstMsgArg::UNRELIABLE] = "";
+				adaptor->on_send_msg(ZstMsgKind::PERFORMANCE_MSG, args, *plug->raw_value());
+			}
+		});
+	}
+	else if (strcmp(entity->entity_type(), FACTORY_TYPE) == 0) {
+		//Factory wants to update creatables
+		ZstEntityFactory * factory = static_cast<ZstEntityFactory*>(entity);
+		stage_events().invoke([factory](ZstTransportAdaptor * adp) {
+			adp->on_send_msg(ZstMsgKind::UPDATE_ENTITY, ZstTransportSendType::PUBLISH, *factory, [](ZstMessageReceipt s) {});
+		});
+	}
 }
 
 void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
@@ -189,12 +202,12 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
 
 	//External factory - route creation request
 	if (factory->is_proxy()) {
-		stage_events().invoke([this, sendtype, creatable_path, &entity, entity_name](ZstTransportAdaptor * adaptor) {
+		stage_events().invoke([this, sendtype, creatable_path, &entity, entity_name, factory](ZstTransportAdaptor * adaptor) {
 			ZstMsgArgs args{  
 				{ ZstMsgArg::PATH, creatable_path.path() },
 				{ ZstMsgArg::NAME, entity_name.path() }
 			};
-			adaptor->on_send_msg(ZstMsgKind::CREATE_ENTITY_FROM_FACTORY, sendtype, args, [this, &entity, sendtype, creatable_path, entity_name](ZstMessageReceipt response) {
+			adaptor->on_send_msg(ZstMsgKind::CREATE_ENTITY_FROM_FACTORY, sendtype, args, [this, &entity, sendtype, creatable_path, entity_name, factory](ZstMessageReceipt response) {
 				if (response.status == ZstMsgKind::CREATE_COMPONENT ||
 					response.status == ZstMsgKind::CREATE_CONTAINER ||
 					response.status == ZstMsgKind::CREATE_FACTORY) 
@@ -203,6 +216,13 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
 					if (sendtype == ZstTransportSendType::SYNC_REPLY) {
 						//Can return the entity since the pointer reference will still be on the stack
 						entity = find_entity(creatable_path.first() + ZstURI(entity_name));
+					}
+					if (sendtype == ZstTransportSendType::ASYNC_REPLY) {
+						ZstEntityBase * late_entity = find_entity(creatable_path.first() + ZstURI(entity_name));
+						if (late_entity) {
+							factory->factory_events()->defer([late_entity](ZstFactoryAdaptor * adp) { adp->on_entity_created(late_entity); });
+							factory->synchronisable_events()->invoke([factory](ZstSynchronisableAdaptor * adp) { adp->on_synchronisable_has_event(factory); });
+						}
 					}
 				}
 				else {
@@ -277,6 +297,16 @@ ZstMsgKind ZstClientHierarchy::add_proxy_entity(const ZstEntityBase & entity) {
 		return ZstMsgKind::EMPTY;
 	}
 	return ZstHierarchy::add_proxy_entity(entity);
+}
+
+ZstMsgKind ZstClientHierarchy::update_proxy_entity(const ZstEntityBase & entity)
+{
+	//Don't need to update local entities, they should have published the update
+	if (path_is_local(entity.URI())) {
+		ZstLog::net(LogLevel::debug, "Don't need to update a local entity {}. Ignoring", entity.URI().path());
+		return ZstMsgKind::EMPTY;
+	}
+	return ZstHierarchy::update_proxy_entity(entity);
 }
 
 ZstPerformer * ZstClientHierarchy::get_local_performer() const

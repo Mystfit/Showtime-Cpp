@@ -81,6 +81,11 @@ public:
 		return item_at(index);
 	}
 
+	ZST_EXPORT void clear()
+	{
+		m_bundle_items.clear();
+	}
+
 private:
 	typename std::vector<T> m_bundle_items;
 };

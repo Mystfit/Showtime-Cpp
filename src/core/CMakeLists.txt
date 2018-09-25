@@ -23,6 +23,7 @@ set(API_FILES
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstEventAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstComputeAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstSynchronisableAdaptor.hpp
+    ${Showtime_INCLUDE_DIRS}/adaptors/ZstFactoryAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstSessionAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstHierarchyAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstEntityAdaptor.hpp

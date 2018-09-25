@@ -3,11 +3,13 @@
 #include <adaptors/ZstSynchronisableAdaptor.hpp>
 #include <adaptors/ZstSessionAdaptor.hpp>
 #include <adaptors/ZstHierarchyAdaptor.hpp>
+#include <adaptors/ZstFactoryAdaptor.hpp>
 #include <adaptors/ZstSessionAdaptor.hpp>
 #include <adaptors/ZstEntityAdaptor.hpp>
 #include "ZstTransportAdaptor.hpp"
 
 #include "ZstSynchronisable.h"
+#include <entities/ZstEntityFactory.h>
 #include <entities/ZstPlug.h>
 
 
@@ -30,6 +32,15 @@ void ZstSynchronisableAdaptor::on_synchronisable_updated(ZstSynchronisable * syn
 
 void ZstEntityAdaptor::on_publish_entity_update(ZstEntityBase * entity) {};
 void ZstEntityAdaptor::on_register_entity(ZstEntityBase * entity){};
+//void ZstEntityAdaptor::on_entity_destroyed(ZstEntityBase * entity){};
+
+
+// ----------------
+// Factory adaptors
+// ----------------
+
+void ZstFactoryAdaptor::on_creatables_updated(ZstEntityFactory * factory) {};
+void ZstFactoryAdaptor::on_entity_created(ZstEntityBase * entity) {};
 //void ZstEntityAdaptor::on_entity_destroyed(ZstEntityBase * entity){};
 
 

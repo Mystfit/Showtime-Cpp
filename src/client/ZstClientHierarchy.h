@@ -69,9 +69,10 @@ public:
 	// Hierarchy queries
 	// ------------------------------
 	
-	ZstEntityBase * find_entity(const ZstURI & path) const override;
+	virtual ZstEntityBase * find_entity(const ZstURI & path) const override;
 	bool path_is_local(const ZstURI & path);
-	ZstMsgKind add_proxy_entity(const ZstEntityBase & entity) override;
+	virtual ZstMsgKind add_proxy_entity(const ZstEntityBase & entity) override;
+	virtual ZstMsgKind update_proxy_entity(const ZstEntityBase & entity) override;
 	ZstPerformer * get_local_performer() const;
 
 
