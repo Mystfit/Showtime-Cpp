@@ -28,7 +28,7 @@ public class TransformableEntityWatcher : MonoBehaviour {
         transformable.name = component.URI().path();
         transformable.GetComponent<Rigidbody>().isKinematic = true;
         TransformableComponent visual_component = transformable.AddComponent<TransformableComponent>();
-        visual_component.Init(component);
+        visual_component.WrapProxyComponent(component);
     }
 
     void TransformableLeaving(ZstComponent component)
@@ -51,24 +51,18 @@ class TransformableEntityWatcherAdaptor : ZstHierarchyAdaptor
     public override void on_entity_arriving(ZstEntityBase entity)
     {
         ZstComponent component = showtime.cast_to_component(entity);
-        if(component != null)
+        if(component?.component_type() == typeof(ZstTransformableComponent).ToString())
         {
-            if(component.component_type() == typeof(ZstTransformableComponent).ToString())
-            {
-                component_arrive_dlg(component);
-            }
+            component_arrive_dlg(component);
         }
     }
 
     public override void on_entity_leaving(ZstEntityBase entity)
     {
         ZstComponent component = showtime.cast_to_component(entity);
-        if (component != null)
+        if (component?.component_type() == typeof(ZstTransformableComponent).ToString())
         {
-            if (component.component_type() == typeof(ZstTransformableComponent).ToString())
-            {
-                component_leave_dlg(component);
-            }
+            component_leave_dlg(component);
         }
     }
 }

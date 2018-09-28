@@ -144,6 +144,8 @@ ZstEntityBase * zst_create_entity_async(const ZstURI & creatable_path, const cha
 
 void zst_register_factory(ZstEntityFactory * factory)
 {
+	if (!LIBRARY_INIT_GUARD()) return;
+
 	//Add the factory to the root performer first to allow for offline factory registration
 	zst_get_root()->add_child(factory);
 
@@ -152,6 +154,8 @@ void zst_register_factory(ZstEntityFactory * factory)
 
 void zst_register_factory_async(ZstEntityFactory * factory)
 {
+	if (!LIBRARY_INIT_GUARD()) return;
+
 	//Add the factory to the root performer first to allow for offline factory registration
 	zst_get_root()->add_child(factory);
 

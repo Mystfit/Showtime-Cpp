@@ -51,6 +51,11 @@ public:
 	{
 	}
 
+	ZST_EXPORT ZstBundle(const ZstBundle & other) 
+	{
+		m_bundle_items = other.m_bundle_items;
+	}
+
 	ZST_EXPORT ZstBundleIterator<T> begin()
 	{
 		return ZstBundleIterator<T>(m_bundle_items.begin());

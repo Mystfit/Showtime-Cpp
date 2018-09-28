@@ -125,5 +125,5 @@ class ZstBundle {
 //Bundle instantiations
 %template(ZstEntityBundle) ZstBundle<ZstEntityBase*>;
 %template(ZstCableBundle) ZstBundle<ZstCable*>;
-
-
+%template(ZstURIBundle) ZstBundle<ZstURI>;
+%template(ZstEntityFactoryBundle) ZstBundle<ZstEntityFactory*>;

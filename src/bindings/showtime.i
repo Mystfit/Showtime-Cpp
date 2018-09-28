@@ -14,11 +14,11 @@
 %include "ZstPlug.i"
 %include "ZstCable.i"
 
+%include "ZstAdaptors.i"
 %include "ZstComponent.i"
 %include "ZstContainer.i"
 %include "ZstPerformer.i"
 %include "ZstEntityFactory.i"
-%include "ZstAdaptors.i"
 
 %rename("%(strip:[zst_])s") "";
 %include <Showtime.h>

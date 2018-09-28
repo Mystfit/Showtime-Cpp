@@ -1,8 +1,8 @@
 %feature("director") ZstEntityFactory;
 
 %inline %{
-	ZstEntityFactory* cast_to_factory(ZstEntityFactory * factory){
-		return dynamic_cast<ZstEntityFactory*>(factory);
+	ZstEntityFactory* cast_to_factory(ZstSynchronisable * synchronisable){
+		return dynamic_cast<ZstEntityFactory*>(synchronisable);
 	}
 %}
 

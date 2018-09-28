@@ -37,6 +37,7 @@ ZstPerformer::~ZstPerformer()
 		for (auto f : m_factories) {
 			delete f.second;
 		}
+		m_factories.clear();
 	}
 }
 

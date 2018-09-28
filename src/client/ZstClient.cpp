@@ -107,6 +107,7 @@ void ZstClient::init_client(const char *client_name, bool debug)
 	//Create IO_context thread
 	m_client_timer_thread = boost::thread(boost::ref(m_client_timerloop));
 	m_connection_timers = ZstConnectionTimerMapUnique(new ZstConnectionTimerMap());
+	m_client_timerloop.IO_context().restart();
 	
 	//Register message dispatch as a client adaptor
 	this->add_adaptor(m_client_transport);
@@ -270,7 +271,8 @@ void ZstClient::join_stage(std::string stage_address, const ZstTransportSendType
 void ZstClient::join_stage_complete(ZstMessageReceipt response)
 {
 	set_is_connecting(false);
-	
+	set_connected_to_stage(true);
+
 	//If we didn't receive a OK signal, something went wrong
 	if (response.status != ZstMsgKind::OK) {
         ZstLog::net(LogLevel::error, "Stage connection failed with with status: {}", ZstMsgNames[response.status]);
@@ -321,7 +323,6 @@ void ZstClient::synchronise_graph(const ZstTransportSendType & sendtype)
 void ZstClient::synchronise_graph_complete(ZstMessageReceipt response)
 {
 	ZstLog::net(LogLevel::notification, "Graph sync completed");
-	set_connected_to_stage(true);
 }
 
 void ZstClient::leave_stage()

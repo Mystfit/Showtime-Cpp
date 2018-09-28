@@ -96,11 +96,25 @@ ZstMsgKind ZstStageHierarchy::create_client_handler(std::string sender_identity,
 	m_clients[client_proxy->URI()] = client_proxy;
 	m_client_socket_index[std::string(sender_identity)] = client_proxy;
 	
+	//Cache new client and its contents
 	ZstEntityBundle bundle;
-	client_proxy->get_factories(bundle);
 	client_proxy->get_child_entities(bundle, true);
+	ZstLog::net(LogLevel::debug, "New performer {} contains:", client_proxy->URI().path());
 	for (auto c : bundle) {
 		add_entity_to_lookup(c);
+		ZstLog::net(LogLevel::debug, " - Entity: {}", c->URI().path());
+	}
+
+	//Cache factories
+	bundle.clear();
+	client_proxy->get_factories(bundle);
+	for (auto f : bundle) {
+		add_entity_to_lookup(f);
+		ZstLog::net(LogLevel::debug, " - Factory: {}", f->URI().path());
+		ZstURIBundle creatables;
+		for (auto c : static_cast<ZstEntityFactory*>(f)->get_creatables(creatables)) {
+			ZstLog::net(LogLevel::debug, "   - Creatable: {}", c.path());
+		}
 	}
 
 	//Update rest of network

@@ -38,7 +38,12 @@ void ZstEntityFactory::add_creatable(const ZstURI & creatable_path)
 	m_creatables.insert(creatable_path);
 }
 
-void ZstEntityFactory::update_creatables() 
+size_t ZstEntityFactory::num_creatables()
+{
+	return m_creatables.size();
+}
+
+void ZstEntityFactory::update_creatables()
 {
 	//Alert stage
 	if (!is_proxy()) {
@@ -60,12 +65,19 @@ void ZstEntityFactory::remove_creatable(const ZstURI & creatable_path)
 	catch (std::out_of_range) {}
 }
 
-ZstURIBundle ZstEntityFactory::get_creatables(ZstURIBundle & bundle)
+ZstURIBundle & ZstEntityFactory::get_creatables(ZstURIBundle & bundle)
 {
 	for (auto c : m_creatables) {
 		bundle.add(c);
 	}
 	return bundle;
+}
+
+const ZstURI & ZstEntityFactory::get_creatable_at(size_t index)
+{
+	if (index >= m_creatables.size())
+		throw(std::out_of_range("Creatable index out of range"));
+	return *std::next(m_creatables.begin(), index);
 }
 
 void ZstEntityFactory::clear_creatables()
@@ -121,7 +133,7 @@ void ZstEntityFactory::process_events()
 
 void ZstEntityFactory::update_createable_URIs()
 {
-	std::unordered_set<ZstURI, ZstURIHash> orig_uris = std::move(m_creatables);
+	std::set<ZstURI> orig_uris = std::move(m_creatables);
 	m_creatables.clear();
 	for (auto c : orig_uris) {
 		//Update creatables to match the new factory URI
@@ -150,7 +162,7 @@ void ZstEntityFactory::read(const char * buffer, size_t length, size_t & offset)
 
 	//Unpack creatable paths
 	auto handle = msgpack::unpack(buffer, length, offset);
-	int num_creatables = handle.get().via.i64;
+	int64_t num_creatables = handle.get().via.i64;
 	if (num_creatables > 0) {
 		for (int i = 0; i < num_creatables; ++i) {
 			handle = msgpack::unpack(buffer, length, offset);
