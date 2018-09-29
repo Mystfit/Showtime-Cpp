@@ -117,6 +117,7 @@ void ZstClientTransport::on_receive_msg(ZstMessage * msg)
 	msg_events()->defer([msg, this](ZstTransportAdaptor * adaptor) { 
 		adaptor->on_receive_msg(msg); 
 	}, [msg, this](ZstEventStatus status){ 
+		//Process responses last to make sure our graph has been updated first
 		this->ZstTransportLayerBase::on_receive_msg(msg);
 		this->release_msg(static_cast<ZstStageMessage*>(msg));
 	});

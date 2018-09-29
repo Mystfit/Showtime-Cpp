@@ -149,7 +149,7 @@ void test_remote_factories(std::string external_test_path, bool launch_ext_proce
 		ZstLog::app(LogLevel::debug, "Creatable: {}", c.path());
 	}
 
-	//Check if asking a factory to create a URI that doesn't return anything works
+	//Check if asking a factory to create a URI that doesn't return anything returns null
 	assert(!zst_create_entity(ext_factory->URI() + ZstURI("CustomExternalComponent") + ZstURI("avocado"), "test"));
 
 	//Quit
@@ -160,8 +160,8 @@ void test_remote_factories(std::string external_test_path, bool launch_ext_proce
 
 int main(int argc,char **argv)
 {
-    TestRunner runner("TestEntityFactories", argv[0], true, false);
+    TestRunner runner("TestEntityFactories", argv[0]);
     test_entity_factories();
-	test_remote_factories(argv[0], false);
+	test_remote_factories(argv[0]);
     return 0;
 }

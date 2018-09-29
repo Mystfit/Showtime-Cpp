@@ -233,25 +233,11 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
 		});
 	}
 	else {
-		//Internal factory - create entity locally
-		if (sendtype == ZstTransportSendType::ASYNC_REPLY) {
-			ZstLog::net(LogLevel::notification, "Received remote request to create a {} entity with the name {} ", creatable_path.path(), name);
+		entity = ZstHierarchy::create_entity(creatable_path, name, sendtype);
 
-			std::string ent_name = std::string(name);
-			factory->factory_events()->defer([this, creatable_path, ent_name, factory, activate](ZstFactoryAdaptor * adp) {
-				ZstEntityBase * entity = factory->create_entity(creatable_path, ent_name.c_str());
-				if (activate)
-					this->activate_entity(entity, ZstTransportSendType::ASYNC_REPLY);
-			});
-			factory->synchronisable_events()->invoke([factory](ZstSynchronisableAdaptor* adp) { adp->on_synchronisable_has_event(factory); });
-		}
-		else {
-			entity = ZstHierarchy::create_entity(creatable_path, name, sendtype);
-			
-			//If we're creating a local entity, make sure to activate it afterwards
-			if(activate)
-				activate_entity(entity, sendtype);
-		}
+		//If we're creating a local entity, make sure to activate it afterwards
+		if(activate)
+			activate_entity(entity, sendtype);
 	}
 
 	return entity;
@@ -259,18 +245,34 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
 
 void ZstClientHierarchy::create_entity_handler(ZstMessage * msg)
 {
-	ZstMsgKind status(ZstMsgKind::OK);
-	ZstEntityBase * entity = create_entity(ZstURI(msg->get_arg(ZstMsgArg::PATH)), msg->get_arg(ZstMsgArg::NAME), false);
+	//External creation request to create a local entity
+	ZstURI creatable_path = msg->get_arg(ZstMsgArg::PATH);
+	std::string name = msg->get_arg(ZstMsgArg::NAME);
+	ZstMsgID msg_id = msg->id();
+	ZstLog::net(LogLevel::notification, "Received remote request to create a {} entity with the name {} ", creatable_path.path(), name);
 
-	//Defer entity activation till now so that we can forward the message ID back to the stage
-	if (entity) {
-		activate_entity(entity, ZstTransportSendType::ASYNC_REPLY, msg->id());
+	//Find the factory and delegate the entity creation to the main event loop thread
+	ZstEntityFactory * factory = dynamic_cast<ZstEntityFactory*>(find_entity(creatable_path.parent()));
+	if (!factory) {
+		ZstLog::net(LogLevel::warn, "Could not find factory to create entity {}", creatable_path.path());
+		return;
 	}
-	else {
-		stage_events().invoke([msg, status](ZstTransportAdaptor * adp) {
-			adp->on_send_msg(ZstMsgKind::ERR_ENTITY_NOT_FOUND, { { ZstMsgArg::MSG_ID, boost::lexical_cast<std::string>(msg->id()) } });
-		});
-	}
+	factory->synchronisable_events()->defer([this, creatable_path, name, factory, msg_id](ZstSynchronisableAdaptor * adp) {
+		ZstEntityBase * entity = factory->create_entity(creatable_path, name.c_str());
+		if (entity) {
+			this->activate_entity(entity, ZstTransportSendType::ASYNC_REPLY, msg_id);
+		}
+		else {
+			stage_events().invoke([msg_id](ZstTransportAdaptor * adp) {
+				adp->on_send_msg(ZstMsgKind::ERR_ENTITY_NOT_FOUND, { { ZstMsgArg::MSG_ID, boost::lexical_cast<std::string>(msg_id) } });
+			});
+		}
+	});
+
+	//Signal main event loop that the factory has an event waiting
+	factory->synchronisable_events()->invoke([factory](ZstSynchronisableAdaptor* adp) { 
+		adp->on_synchronisable_has_event(factory); 
+	});
 }
 
 void ZstClientHierarchy::destroy_entity_complete(ZstEntityBase * entity)

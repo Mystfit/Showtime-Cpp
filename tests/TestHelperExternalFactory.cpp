@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
 	zst_init("extfactory", true);
 
 	//Create the factory that will instantiate our custom entity
-	std::shared_ptr<TestExternalFactory> test_factory = std::shared_ptr<TestExternalFactory>(new TestExternalFactory("external_customs"));
+	std::shared_ptr<TestExternalFactory> test_factory = std::make_shared<TestExternalFactory>("external_customs");
 	zst_register_factory(test_factory.get());
 	
 	//Connect to the stage

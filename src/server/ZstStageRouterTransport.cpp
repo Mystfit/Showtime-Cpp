@@ -91,11 +91,13 @@ void ZstStageRouterTransport::send_message_impl(ZstMessage * msg)
 
 void ZstStageRouterTransport::on_receive_msg(ZstMessage * msg)
 {
+	//Process response messages first
+	this->ZstTransportLayerBase::on_receive_msg(msg);
+
 	//Publish message to other modules
 	msg_events()->defer([msg, this](ZstTransportAdaptor * adaptor) {
 		adaptor->on_receive_msg(msg);
 	}, [msg, this](ZstEventStatus status) {
-		this->ZstTransportLayerBase::on_receive_msg(msg);
 		this->release_msg(static_cast<ZstStageMessage*>(msg));
 	});
 }
