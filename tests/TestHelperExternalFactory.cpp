@@ -1,4 +1,6 @@
 #include "TestCommon.hpp"
+#include <boost/thread.hpp>
+#include <boost/chrono.hpp>
 
 using namespace ZstTest;
 
@@ -34,6 +36,23 @@ public:
 };
 
 
+void event_loop()
+{
+	ZstLog::net(LogLevel::debug, "Starting event loop");
+	while (1) {
+		try {
+			boost::this_thread::interruption_point();
+			zst_poll_once();
+			boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
+		}
+		catch (boost::thread_interrupted) {
+			ZstLog::net(LogLevel::debug, "Stopping event loop");
+			break;
+		}
+	}
+}
+
+
 int main(int argc, char **argv) {
 
 	ZstLog::app(LogLevel::notification, "In external factory process");
@@ -62,10 +81,12 @@ int main(int argc, char **argv) {
 	zst_join("127.0.0.1");
 	assert(test_factory->is_activated());
 
+	//Start event loop
+	boost::thread event_thread = boost::thread(event_loop);
+
 	ZstTest::s_catch_signals();
 	while (!ZstTest::s_interrupted) {
 		std::string line;
-		zst_poll_once();
 
 		//Update creatables when we get a message on stdin
 		std::getline(std::cin, line);
@@ -75,6 +96,10 @@ int main(int argc, char **argv) {
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
+
+	//Close event loop
+	event_thread.interrupt();
+	event_thread.join();
 
 	zst_destroy();
 	return 0;
