@@ -234,12 +234,24 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
 	}
 	else {
 		//Internal factory - create entity locally
-		ZstLog::net(LogLevel::notification, "Received remote request to create a {} entity with the name {} ", creatable_path.path(), name);
-		entity = ZstHierarchy::create_entity(creatable_path, name, sendtype);
+		if (sendtype == ZstTransportSendType::ASYNC_REPLY) {
+			ZstLog::net(LogLevel::notification, "Received remote request to create a {} entity with the name {} ", creatable_path.path(), name);
 
-		//If we're creating a local entity, make sure to activate it afterwards
-		if(activate)
-			activate_entity(entity, sendtype);
+			std::string ent_name = std::string(name);
+			factory->factory_events()->defer([this, creatable_path, ent_name, factory, activate](ZstFactoryAdaptor * adp) {
+				ZstEntityBase * entity = factory->create_entity(creatable_path, ent_name.c_str());
+				if (activate)
+					this->activate_entity(entity, ZstTransportSendType::ASYNC_REPLY);
+			});
+			factory->synchronisable_events()->invoke([factory](ZstSynchronisableAdaptor* adp) { adp->on_synchronisable_has_event(factory); });
+		}
+		else {
+			entity = ZstHierarchy::create_entity(creatable_path, name, sendtype);
+			
+			//If we're creating a local entity, make sure to activate it afterwards
+			if(activate)
+				activate_entity(entity, sendtype);
+		}
 	}
 
 	return entity;
