@@ -9,9 +9,11 @@ public class TransformableEntityWatcher : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
-        adaptor = new TransformableEntityWatcherAdaptor();
-        adaptor.component_arrive_dlg = TransformableArriving;
-        adaptor.component_leave_dlg = TransformableLeaving;
+        adaptor = new TransformableEntityWatcherAdaptor
+        {
+            component_arrive_dlg = TransformableArriving,
+            component_leave_dlg = TransformableLeaving
+        };
 
         //Library must be initialised
         showtime.add_hierarchy_adaptor(adaptor);
