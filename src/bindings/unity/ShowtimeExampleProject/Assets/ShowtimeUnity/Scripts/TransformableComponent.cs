@@ -15,23 +15,29 @@ public class TransformableComponent : MonoBehaviour
         //Create component
         ZstTransformableComponent transform_comp = new ZstTransformableComponent(name);
 
+        //Hold on to component
+        this.component = transform_comp;
+
         //Set starting position of plug to the current transform position
         WriteTransformPlug(transform);
 
         //Start the network update loop
         StartCoroutine("NetworkUpdate");
-
-        //Hold on to component
-        this.component = transform_comp;
     }
 
     public void WrapProxyComponent(ZstComponent component)
     {
+        if (component == null) return;
+
+        Debug.Log($"Wrapping proxy component {component.URI().ToString()}");
+
         //Hold on to proxy component reference
         this.component = component;
 
         //Find the output transform plug. Since this is a proxy component, we use the Showtime API to locate it
         ZstOutputPlug transform_plug = showtime.cast_to_output_plug(component.get_plug_by_URI(component.URI().add(new ZstURI("out_transform"))));
+
+        Debug.Log($"Observing {transform_plug}");
 
         //Let the position plug know that we care about its values
         showtime.observe_entity(transform_plug);
@@ -59,7 +65,7 @@ public class TransformableComponent : MonoBehaviour
         transform.localScale = scale;
     }
 
-    public void OnDestroy()
+    void OnDestroy()
     {
         if (!component?.is_proxy() ?? false)
         {
@@ -96,7 +102,7 @@ public class TransformableComponent : MonoBehaviour
         {
             yield return new WaitForSeconds(this.UpdateRate);
 
-            if (this.component?.is_proxy() ?? false && this.transform.hasChanged)
+            if (!this.component?.is_proxy() ?? false && this.transform.hasChanged)
             {
                 this.WriteTransformPlug(transform);
                 (this.component as ZstTransformableComponent).out_transform.fire();

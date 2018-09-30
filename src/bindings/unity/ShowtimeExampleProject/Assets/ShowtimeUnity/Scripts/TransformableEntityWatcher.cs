@@ -5,11 +5,11 @@ using UnityEngine;
 public class TransformableEntityWatcher : MonoBehaviour {
 
     public GameObject transformable_prefab;
-    private TransformableEntityWatcherAdaptor adaptor;
+    private ZstuTransformableWatcherAdaptor adaptor;
 
     // Use this for initialization
     void Start () {
-        adaptor = new TransformableEntityWatcherAdaptor
+        adaptor = new ZstuTransformableWatcherAdaptor
         {
             component_arrive_dlg = TransformableArriving,
             component_leave_dlg = TransformableLeaving
@@ -44,7 +44,7 @@ public class TransformableEntityWatcher : MonoBehaviour {
 }
 
 
-class TransformableEntityWatcherAdaptor : ZstHierarchyAdaptor
+class ZstuTransformableWatcherAdaptor : ZstHierarchyAdaptor
 {
     public delegate void TransformableComponentDlg(ZstComponent transformable);
     public TransformableComponentDlg component_arrive_dlg;
