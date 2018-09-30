@@ -91,7 +91,7 @@ int ZstComponent::add_plug(ZstPlug * plug)
 
 void ZstComponent::remove_plug(ZstPlug * plug)
 {
-	if (!plug)
+	if (!plug || !this)
 		return;
 
 	ZstCableBundle bundle;
