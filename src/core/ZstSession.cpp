@@ -34,12 +34,16 @@ void ZstSession::init()
 
 void ZstSession::destroy()
 {
+	//Clear events
 	m_synchronisable_events.flush();
 	m_synchronisable_events.remove_all_adaptors();
 	m_compute_events.flush();
 	m_compute_events.remove_all_adaptors();
 	m_session_events.flush();
 	m_session_events.remove_all_adaptors();
+
+	//Clear connected performers - they'll remove us when we leave the graph
+	m_connected_performers.clear();
 }
 
 ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * output) {
