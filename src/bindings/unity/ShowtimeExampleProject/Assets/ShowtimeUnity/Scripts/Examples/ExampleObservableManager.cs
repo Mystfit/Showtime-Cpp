@@ -39,8 +39,8 @@ public class ExampleObservableManager : MonoBehaviour
     void Start()
     {
         m_connection_watcher = new ConnectionWatcher();
-        m_connection_watcher.connected_dlg += OnConnected;
-        m_connection_watcher.disconnected_dlg += OnDisconnected;
+        m_connection_watcher.on_connected += OnConnected;
+        m_connection_watcher.on_disconnected += OnDisconnected;
     }
 
     void Update()
@@ -85,23 +85,5 @@ public class ExampleObservableManager : MonoBehaviour
     {
         showtime.remove_session_adaptor(m_connection_watcher);
         showtime.destroy();
-    }
-}
-
-
-public class ConnectionWatcher : ZstSessionAdaptor
-{
-    public delegate void ConnectionWatcherDlg();
-    public ConnectionWatcherDlg connected_dlg;
-    public ConnectionWatcherDlg disconnected_dlg;
-    
-    public override void on_connected_to_stage()
-    {
-        connected_dlg.Invoke();
-    }
-
-    public override void on_disconnected_from_stage()
-    {
-        disconnected_dlg.Invoke();
     }
 }
