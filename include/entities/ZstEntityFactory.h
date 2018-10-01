@@ -51,7 +51,7 @@ public:
 protected:
 	ZST_EXPORT virtual ZstEntityBase * activate_entity(ZstEntityBase * entity);
 	ZST_EXPORT virtual void update_URI() override;
-	ZST_EXPORT virtual void process_events();
+	ZST_EXPORT virtual void process_events() override;
 
 private:
 	void update_createable_URIs();
