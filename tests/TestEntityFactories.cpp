@@ -76,6 +76,9 @@ void test_entity_factories(){
 
 	//Test scoped entity destruction
 	assert(!zst_find_entity(bundle[0]));
+
+	//Test factory destruction
+	test_factory = NULL;
 }
 
 void test_remote_factories(std::string external_test_path, bool launch_ext_process = true)
