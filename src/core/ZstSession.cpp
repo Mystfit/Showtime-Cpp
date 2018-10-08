@@ -112,6 +112,16 @@ void ZstSession::destroy_cable_complete(ZstCable * cable)
 	//Remove cable from local list so that other threads don't assume it still exists
 	m_cables.erase(cable);
 
+	ZstInputPlug * input = dynamic_cast<ZstInputPlug*>(hierarchy()->walk_to_entity(cable->get_input_URI()));
+	if (input) {
+		ZstPlugLiason().plug_remove_cable(input, cable);
+	}
+
+	ZstOutputPlug * output = dynamic_cast<ZstOutputPlug*>(hierarchy()->walk_to_entity(cable->get_output_URI()));
+	if (output) {
+		ZstPlugLiason().plug_remove_cable(output, cable);
+	}
+
 	//Disconnect the cable
 	cable->disconnect();
 }

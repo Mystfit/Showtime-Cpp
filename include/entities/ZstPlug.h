@@ -24,7 +24,10 @@ public:
 	ZST_EXPORT ZstPlug();
 	ZST_EXPORT ZstPlug(const char * name, ZstValueType t);
 	ZST_EXPORT ZstPlug(const ZstPlug & other);
+
+	//Destruction
 	ZST_EXPORT ~ZstPlug();
+	ZST_EXPORT virtual void on_deactivation() override;
 
 	//Value interface
 	ZST_EXPORT void clear();

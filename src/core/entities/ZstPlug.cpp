@@ -42,6 +42,13 @@ ZstPlug::~ZstPlug() {
 	m_cables.clear();
 }
 
+void ZstPlug::on_deactivation()
+{
+	//If this plug is deactivated then cables will be going away
+	m_cables.clear();
+}
+
+
 //--------------------
 // Value interface 
 //--------------------

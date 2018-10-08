@@ -57,12 +57,15 @@ public:
 	ZstEntityBase * create_entity(const ZstURI & creatable_path, const char * name, bool activate);
 	ZstEntityBase * create_entity(const ZstURI & creatable_path, const char * name, bool activate, const ZstTransportSendType & sendtype) override;
 	void create_entity_handler(ZstMessage * msg);
+	
+	
 	// ------------------------------
 	// Performers
 	// ------------------------------
 
-	void add_performer(const ZstPerformer & performer) override;
-	ZstEntityBundle & get_performers(ZstEntityBundle & bundle) const override;
+	virtual void add_performer(const ZstPerformer & performer) override;
+	virtual ZstEntityBundle & get_performers(ZstEntityBundle & bundle) const override;
+	virtual ZstPerformer * get_performer_by_URI(const ZstURI & uri) const override;
 	
 
 	// ------------------------------

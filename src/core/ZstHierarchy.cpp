@@ -49,6 +49,9 @@ ZstEntityBase * ZstHierarchy::create_entity(const ZstURI & creatable_path, const
 		entity = factory->create_entity(creatable_path, name);
 	}
 
+	if (entity && activate)
+		activate_entity(entity);
+
 	return entity;
 }
 

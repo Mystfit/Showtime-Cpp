@@ -66,7 +66,7 @@ public:
 	// ---------------------------
 	void on_performer_leaving(ZstPerformer * performer) override;
 
-	
+
 	// ------------------
 	// Cable creation
 	// ------------------

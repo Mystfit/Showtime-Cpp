@@ -25,6 +25,22 @@ public class TransformableComponent : MonoBehaviour
         StartCoroutine("NetworkUpdate");
     }
 
+    public ZstOutputPlug OutputTransform()
+    {
+        ZstURI plug_path = component.URI().add(new ZstURI("out_transform"));
+        ZstEntityBase entity = showtime.find_entity(plug_path);
+        ZstOutputPlug plug = showtime.cast_to_output_plug(entity);
+        return plug;
+    }
+
+    public ZstInputPlug InputTransform()
+    {
+        ZstURI plug_path = component.URI().add(new ZstURI("in_transform"));
+        ZstEntityBase entity = showtime.find_entity(plug_path);
+        ZstInputPlug plug = showtime.cast_to_input_plug(entity);
+        return plug;
+    }
+
     public void WrapProxyComponent(ZstComponent component)
     {
         if (component == null) return;

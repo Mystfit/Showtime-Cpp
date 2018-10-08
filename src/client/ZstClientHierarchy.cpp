@@ -233,11 +233,7 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
 		});
 	}
 	else {
-		entity = ZstHierarchy::create_entity(creatable_path, name, sendtype);
-
-		//If we're creating a local entity, make sure to activate it afterwards
-		if(activate)
-			activate_entity(entity, sendtype);
+		entity = ZstHierarchy::create_entity(creatable_path, name, activate, sendtype);
 	}
 
 	return entity;
@@ -351,4 +347,12 @@ ZstEntityBundle & ZstClientHierarchy::get_performers(ZstEntityBundle & bundle) c
 	//Join local performer to the performer list since it lives outside the main list
 	bundle.add(m_root);
 	return ZstHierarchy::get_performers(bundle);
+}
+
+ZstPerformer * ZstClientHierarchy::get_performer_by_URI(const ZstURI & uri) const
+{
+	if (uri.first() == m_root->URI()) {
+		return m_root;
+	}
+	return ZstHierarchy::get_performer_by_URI(uri);
 }

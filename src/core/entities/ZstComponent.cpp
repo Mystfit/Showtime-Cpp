@@ -44,11 +44,14 @@ ZstComponent::ZstComponent(const ZstComponent & other) : ZstEntityBase(other)
 ZstComponent::~ZstComponent()
 {
 	if (!is_proxy()) {
-		for (auto p : m_plugs) {
-			delete p;
+		for (auto plug : m_plugs) {
+			// TODO: Deleting plugs will crash if the host GC's them after we delete them here
+			//ZstLog::entity(LogLevel::debug, "FIXME: Component {} leaking entity {} to avoid host app crashing when GCing", URI().path(), plug->URI().path());
+			delete plug;
 		}
+		m_plugs.clear();
 	}
-	m_plugs.clear();
+
 	free(m_component_type);
 }
 

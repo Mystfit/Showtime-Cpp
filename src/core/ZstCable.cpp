@@ -42,6 +42,8 @@ ZstCable::ZstCable(ZstInputPlug * input_plug, ZstOutputPlug * output_plug) :
 
 ZstCable::~ZstCable()
 {
+	m_input = NULL;
+	m_output = NULL;
 }
 
 ZstCable * ZstCable::create(const ZstURI & input, const ZstURI & output)
@@ -61,14 +63,6 @@ void ZstCable::destroy(ZstCable * cable)
 
 void ZstCable::disconnect()
 {
-	if (get_input()){
-		ZstPlugLiason().plug_remove_cable(get_input(), this);
-	}
-		
-	if(get_output()){
-		ZstPlugLiason().plug_remove_cable(get_output(), this);
-	}
-	
 	this->enqueue_deactivation();
 }
 

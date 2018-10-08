@@ -134,8 +134,8 @@ void test_reliable_graph()
 	ZstLog::app(LogLevel::notification, "Starting reliable graph test");
 	int first_cmp_val = 4;
 
-	OutputComponent * test_output = new OutputComponent("unreliable");
-	InputComponent * test_input = new InputComponent("reliable", first_cmp_val, true);
+	OutputComponent * test_output = new OutputComponent("reliable_out");
+	InputComponent * test_input = new InputComponent("reliable_in", first_cmp_val, true);
 
 	zst_activate_entity(test_output);
 	zst_activate_entity(test_input);
@@ -148,8 +148,10 @@ void test_reliable_graph()
 		zst_poll_once();
 	}
 	assert(test_input->last_received_val == first_cmp_val);
+
 	zst_deactivate_entity(test_output);
 	zst_deactivate_entity(test_input);
+	clear_callback_queue();
 	delete test_output;
 	delete test_input;
 }
@@ -160,8 +162,8 @@ void test_unreliable_graph()
     ZstLog::app(LogLevel::notification, "Starting unreliable graph test");
     int first_cmp_val = 4;
 
-   OutputComponent * test_output = new OutputComponent("unreliable", false);
-    InputComponent * test_input = new InputComponent("reliable", first_cmp_val, true);
+    OutputComponent * test_output = new OutputComponent("unreliable_out", false);
+    InputComponent * test_input = new InputComponent("reliable_in", first_cmp_val, true);
 
     zst_activate_entity(test_output);
     zst_activate_entity(test_input);
@@ -174,10 +176,11 @@ void test_unreliable_graph()
         zst_poll_once();
     }
     assert(test_input->last_received_val == first_cmp_val);
-    zst_deactivate_entity(test_output);
-    zst_deactivate_entity(test_input);
+
+	//Test if deleting plugs first triggers deactivation
 	delete test_output;
 	delete test_input;
+	clear_callback_queue();
 }
 
 
