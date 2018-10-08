@@ -35,10 +35,18 @@ ZstContainer::ZstContainer(const ZstContainer & other) : ZstComponent(other)
 
 ZstContainer::~ZstContainer()
 {
+	//if (!is_proxy()) {
+	//	auto children = m_children;
+	//	for (auto c : children) {
+	//		delete c.second;
+	//	}
+	//	m_children.clear();
+	//}
 	if (!is_proxy()) {
-		auto children = m_children;
-		for (auto c : children) {
-			delete c.second;
+		for (auto child : m_children) {
+			// TODO: Deleting children will crash if the host GC's them after we delete them here
+			ZstLog::entity(LogLevel::debug, "FIXME: Container {} leaking entity {} to avoid host app crashing when GCing", URI().path(), child.second->URI().path());
+			//delete child.second;
 		}
 		m_children.clear();
 	}

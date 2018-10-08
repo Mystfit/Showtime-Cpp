@@ -35,7 +35,9 @@ ZstPerformer::~ZstPerformer()
 {
 	if (!is_proxy()){
 		for (auto f : m_factories) {
-			delete f.second;
+			// TODO: Deleting factories will crash the host if it GC's factories after the performer has been freed
+			ZstLog::entity(LogLevel::debug, "FIXME: Performer {} leaking factory {} to avoid host app crashing when GCing", URI().path(), f.second->URI().path());
+			//delete f.second;
 		}
 		m_factories.clear();
 	}
