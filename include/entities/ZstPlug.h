@@ -48,8 +48,9 @@ public:
 	//Properties
 	ZST_EXPORT ZstPlugDirection direction();
 
-	//Cable enumeration
+	//Cables
 	ZST_EXPORT size_t num_cables();
+	ZST_EXPORT int max_connected_cables();
 	ZST_EXPORT bool is_connected_to(ZstPlug * plug);
 	ZST_EXPORT ZstCableBundle & get_child_cables(ZstCableBundle & bundle) const override;
 
@@ -59,6 +60,7 @@ public:
 protected:
 	ZstValue * m_value;
 	ZstPlugDirection m_direction;
+	int m_max_connected_cables;
 
 private:
 	ZST_EXPORT void add_cable(ZstCable * cable);
@@ -76,7 +78,7 @@ public:
 	friend class ZstPlugLiason;
 	ZST_EXPORT ZstInputPlug();
 	ZST_EXPORT ZstInputPlug(const ZstInputPlug & other);
-	ZST_EXPORT ZstInputPlug(const char * name, ZstValueType t);
+	ZST_EXPORT ZstInputPlug(const char * name, ZstValueType t, int max_connected_cables = -1);
 	ZST_EXPORT ~ZstInputPlug();
 };
 

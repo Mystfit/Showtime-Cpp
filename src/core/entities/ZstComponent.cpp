@@ -57,7 +57,12 @@ ZstComponent::~ZstComponent()
 
 ZstInputPlug * ZstComponent::create_input_plug(const char * name, ZstValueType val_type)
 {
-	ZstInputPlug * plug = new ZstInputPlug(name, val_type);
+	return create_input_plug(name, val_type, -1);
+}
+
+ZstInputPlug * ZstComponent::create_input_plug(const char * name, ZstValueType val_type, int max_cable_connections)
+{
+	ZstInputPlug * plug = new ZstInputPlug(name, val_type, max_cable_connections);
 	add_plug(plug);
 	return plug;
 }
