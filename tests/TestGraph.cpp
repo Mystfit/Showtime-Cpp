@@ -2,6 +2,16 @@
 
 using namespace ZstTest;
 
+class LimitedConnectionInputComponent : public ZstComponent
+{
+public:
+	LimitedConnectionInputComponent(std::string name, int max_cables) : ZstComponent("LimitedConnectionInputComponent", name.c_str()) {
+		input = create_input_plug("limited_input", ZstValueType::ZST_INT, max_cables);
+	}
+	ZstInputPlug * input;
+};
+
+
 void test_connect_plugs() {
     ZstLog::app(LogLevel::notification, "Running connect plugs test");
     
@@ -11,7 +21,7 @@ void test_connect_plugs() {
     zst_activate_entity(test_output);
     zst_activate_entity(test_input);
 
-    ZstLog::app(LogLevel::debug, "Testing sync cable connection");
+    ZstLog::app(LogLevel::notification, "Testing sync cable connection");
     ZstCable * cable = zst_connect_cable(test_input->input(), test_output->output());
     assert(cable);
     assert(cable->is_activated());
@@ -27,13 +37,13 @@ void test_connect_plugs() {
         assert(c->get_input() == test_input->input());
     }
 
-    ZstLog::app(LogLevel::debug, "Testing cable disconnection");
+    ZstLog::app(LogLevel::notification, "Testing cable disconnection");
     zst_destroy_cable(cable);
     cable = 0;
     assert(!test_output->output()->is_connected_to(test_input->input()));
     assert(!test_input->input()->is_connected_to(test_output->output()));
     
-    ZstLog::app(LogLevel::debug, "Testing async cable connection");
+    ZstLog::app(LogLevel::notification, "Testing async cable connection");
     TestSynchronisableEvents * cable_activation = new TestSynchronisableEvents();
     cable = zst_connect_cable_async(test_input->input(), test_output->output());
     cable->add_adaptor(cable_activation);
@@ -47,7 +57,7 @@ void test_connect_plugs() {
     assert(cable_activation->num_calls() == 1);
     cable_activation->reset_num_calls();
 
-    ZstLog::app(LogLevel::debug, "Testing cable disconnection when removing parent");
+    ZstLog::app(LogLevel::notification, "Testing cable disconnection when removing parent");
     cable = zst_connect_cable(test_input->input(), test_output->output());
     cable->add_adaptor(cable_activation);
     cable_activation->reset_num_calls();
@@ -55,13 +65,27 @@ void test_connect_plugs() {
     wait_for_event(cable_activation, 1);
     assert(!test_input->input()->is_connected_to(test_output->output()));
     assert(!test_output->output()->is_connected_to(test_input->input()));
+
+	ZstLog::app(LogLevel::notification, "Testing setting maximum amount of cables that can be connected to an input");
+	LimitedConnectionInputComponent * test_limited_input = new LimitedConnectionInputComponent("limited_test_in", 1);
+	OutputComponent * second_output = new OutputComponent("connect_test_out2");
+	zst_activate_entity(test_limited_input);
+	zst_activate_entity(test_output);
+	zst_activate_entity(second_output);
+	zst_connect_cable(test_limited_input->input, test_output->output());
+	zst_connect_cable(test_limited_input->input, second_output->output());
+	assert(!test_limited_input->input->is_connected_to(test_output->output()));
+	assert(test_limited_input->input->is_connected_to(second_output->output()));
+	assert(test_limited_input->input->num_cables() == 1);
     
     //Cleanup
     zst_deactivate_entity(test_input);
     clear_callback_queue();
     delete test_output;
+	delete second_output;
     delete test_input;
     delete cable_activation;
+	delete test_limited_input;
 }
 
 //void test_add_filter() {
