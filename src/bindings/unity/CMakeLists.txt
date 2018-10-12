@@ -20,10 +20,10 @@ set(UNITY_BINARY_FILES)
 if(WIN32)
     # Copy dotnet target outputs on windows
     list(APPEND UNITY_BINARY_FILES
-        $<TARGET_FILE:${LIBZMQ_TARGET}>
-        $<TARGET_FILE:${CZMQ_TARGET}>
-        $<TARGET_FILE:${CORE_TARGET}>
-        $<TARGET_FILE:${CLIENT_TARGET}>
+        # $<TARGET_FILE:${LIBZMQ_TARGET}>
+        # $<TARGET_FILE:${CZMQ_TARGET}>
+        # $<TARGET_FILE:${CORE_TARGET}>
+        # $<TARGET_FILE:${CLIENT_TARGET}>
         $<TARGET_FILE:${SERVER_TARGET}>
         $<TARGET_FILE:${DOTNET_TARGET}>
         $<TARGET_FILE:${DOTNET_TARGET_WRAPPER}>

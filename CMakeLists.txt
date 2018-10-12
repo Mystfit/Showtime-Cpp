@@ -37,14 +37,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 endif()
 
 option(BUILD_STATIC "Build static Showtime library" OFF)
+option(BUILD_SHARED "Build shared Showtime library" OFF)
 
 if(LINUX OR MACOSX)
-    # set(CMAKE_INSTALL_NAME_DIR ${CMAKE_INSTALL_PREFIX}/lib CACHE PATH "Library Install Name Destination Directory" FORCE) 
-    # option(BUILD_RELOCATABLE_LIBRARY "Build relocatatable library" OFF)
-    # set(CMAKE_BUILD_RPATH "@loader_path")
-    # set(CMAKE_MACOSX_RPATH "@loader_path")
-    # set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib CACHE PATH "Library Install RPath") 
-    # set(CMAKE_BUILD_WITH_INSTALL_RPATH OFF CACHE BOOL "Do Build Using Library Install RPath")
     if(NOT DEFINED CMAKE_PREFIX_PATH)
         set(CMAKE_PREFIX_PATH ${CMAKE_SYSTEM_PREFIX_PATH} "/usr/local")
         if(LINUX)
@@ -81,19 +76,11 @@ set(Showtime_INSTALL_TARGETS "")
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 set(Boost_NO_SYSTEM_PATHS ON)
-if(WIN32)
-    if(NOT DEFINED Boost_USE_STATIC_LIBS)
-        set(Boost_USE_STATIC_LIBS ON)
-    endif()
-else()
-    if(BUILD_STATIC)
-        if(NOT DEFINED Boost_USE_STATIC_LIBS)
-            set(Boost_USE_STATIC_LIBS ON)
-            #set(Boost_USE_STATIC_RUNTIME ON)
-        endif()
-    endif()
-endif()
+set(Boost_USE_STATIC_LIBS ON)
 
+if(NOT BUILD_SHARED AND NOT BUILD_STATIC)
+    message(FATAL_ERROR "Need to set either BUILD_SHARED or BUILD_STATIC")
+endif()
 
 # --------
 # Packages
@@ -153,13 +140,8 @@ if(SWIG_FOUND)
     include(UseSWIG)
 endif()
 
-if(BUILD_STATIC)
-    set(CZMQ_TARGET czmq-static)
-    set(LIBZMQ_TARGET libzmq-static)
-else()
-    set(CZMQ_TARGET czmq)
-    set(LIBZMQ_TARGET libzmq)
-endif()
+# set(CZMQ_TARGET czmq-static)
+# set(LIBZMQ_TARGET libzmq-static)
 set(variant_TARGET "mpark_variant")
 set(fmt_TARGET "fmt::fmt-header-only")
 set(msgpackc_TARGET "msgpackc-static")
@@ -168,36 +150,42 @@ set(msgpackc_TARGET "msgpackc-static")
 # ----------------
 # Showtime targets
 # ----------------
-set(SHOWTIME_PUBLIC_LINKED_LIBS "")
+
 
 # Core Library
 # ------------
 set(CORE_TARGET "${PROJECT_NAME}Core")
+set(CORE_TARGET_STATIC "${PROJECT_NAME}CoreStatic")
 if(BUILD_STATIC)
-    add_library(${CORE_TARGET} STATIC "")
-else()
-    add_library(${CORE_TARGET} SHARED "")
+    add_library(${CORE_TARGET_STATIC} STATIC "")
+    list(APPEND Showtime_LIBRARY_TARGETS ${CORE_TARGET_STATIC})
 endif()
-
+if(BUILD_SHARED)
+    add_library(${CORE_TARGET} SHARED "")
+    list(APPEND Showtime_LIBRARY_TARGETS ${CORE_TARGET})
+endif()
 include(src/core/CMakeLists.txt)
-list(APPEND Showtime_LIBRARY_TARGETS ${CORE_TARGET})
+
 
 # Client Library
 # --------------
 set(CLIENT_TARGET "${PROJECT_NAME}Client")
+set(CLIENT_TARGET_STATIC "${PROJECT_NAME}ClientStatic")
 if(BUILD_STATIC)
-    add_library(${CLIENT_TARGET} STATIC "")
-else()
+    add_library(${CLIENT_TARGET_STATIC} STATIC "")
+    list(APPEND Showtime_LIBRARY_TARGETS ${CLIENT_TARGET_STATIC})
+endif()
+if(BUILD_SHARED)
     add_library(${CLIENT_TARGET} SHARED "")
+    list(APPEND Showtime_LIBRARY_TARGETS ${CLIENT_TARGET})
 endif()
 include(src/client/CMakeLists.txt)
-list(APPEND Showtime_LIBRARY_TARGETS ${CLIENT_TARGET})
 
 
 # Server binary
 # -------------
 set(SERVER_TARGET "${PROJECT_NAME}Server")
-add_executable (${SERVER_TARGET} "") 
+add_executable (${SERVER_TARGET} "")
 include(src/server/CMakeLists.txt)
 list(APPEND Showtime_APP_TARGETS ${SERVER_TARGET})
 
