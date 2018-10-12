@@ -9,16 +9,19 @@ IF "%1"=="" (
 )
 
 IF "%2"=="" (
+    echo "hi"
     set CONFIGURATION=debug
 ) ELSE (
     set CONFIGURATION=%2
 )
 
-IF %CONFIGURATION% EQU "debug" (
+IF "%CONFIGURATION%" EQU "debug" (
     set CONFIG_WCAPS="Debug"
-) ELSE IF %CONFIGURATION% EQU "release" (
+) ELSE IF "%CONFIGURATION%" EQU "release" (
     set CONFIG_WCAPS="Release"
 )
+
+echo CONFIG_WCAPS=%CONFIG_WCAPS%
 
 IF "%3"=="--with-unity" (
     set WITH_UNITY=1
@@ -155,7 +158,10 @@ echo === Building boost ===
 pushd %DEPENDENCY_DIR%\boost_1_68_0
 REM call .\bootstrap.bat
 echo .\b2.exe install %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+call .\b2.exe stage %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
 call .\b2.exe install %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+echo .\b2.exe install %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+call .\b2.exe stage %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
 call .\b2.exe install %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
 popd
 

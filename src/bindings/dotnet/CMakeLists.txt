@@ -1,5 +1,9 @@
 message(STATUS "Configuring ${DOTNET_TARGET} target")
 
+if(NOT BUILD_STATIC)
+    message(FATAL_ERROR "Dotnet bindings require BUILD_STATIC to be enabled")
+endif()
+
 set(DOTNET_TARGET_WRAPPER ${DOTNET_TARGET}Wrapper)
 
 # Save original swig output dir
@@ -13,7 +17,6 @@ message(STATUS "Running swig to generate dotnet wrappers")
 
 # Set name of dllimport library for generated cs pinvoke calls
 set(DOTNET_WRAPPER_FILENAME ${DOTNET_TARGET_WRAPPER})
-#set(DOTNET_WRAPPER_FILENAME ${DOTNET_TARGET_WRAPPER}${CMAKE_SHARED_LIBRARY_SUFFIX})
 
 foreach(SWIG_INTERFACE_FILE ${DOTNET_SWIG_INTERFACES})
     get_filename_component(OUTFILE_NAME ${SWIG_INTERFACE_FILE} NAME_WE)
@@ -75,13 +78,10 @@ else()
 endif()
 
 # Set dependant projects
-add_dependencies(${SWIG_MODULE_${DOTNET_TARGET_WRAPPER}_REAL_NAME} ${CLIENT_TARGET})
+add_dependencies(${SWIG_MODULE_${DOTNET_TARGET_WRAPPER}_REAL_NAME} ${CLIENT_TARGET_STATIC})
 
 # Link libraries to swig target
-swig_link_libraries(
-    ${DOTNET_TARGET_WRAPPER}
-    ${CLIENT_TARGET}
-)
+swig_link_libraries(${DOTNET_TARGET_WRAPPER} ${CLIENT_TARGET_STATIC})
 
 if(WIN32)
     # C# is a first class citizen for CMake on Windows, we can build the project normally
@@ -112,14 +112,13 @@ else()
         DEPENDS ${CSPROJ_OUT}
         VERBATIM
     )
-    #add_custom_target(${DOTNET_TARGET} ALL DEPENDS ${DOTNETWRAPPER_STAMP})
 endif()
 
 # Set net framework version
 set_target_properties(${DOTNET_TARGET} PROPERTIES DOTNET_TARGET_FRAMEWORK_VERSION ${BINDINGS_DOTNET_FRAMEWORK_VERSION})
 
+# Add dependencies
 add_dependencies(${DOTNET_TARGET} ${DOTNET_TARGET_WRAPPER})
-
 
 # Restore original swig output dir
 set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR})
