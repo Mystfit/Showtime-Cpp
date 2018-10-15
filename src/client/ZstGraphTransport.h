@@ -20,15 +20,26 @@ public:
 	~ZstGraphTransport();
 	virtual void init() override;
 	virtual void destroy() override;
-	void connect_to_reliable_client(const char * reliable_endpoint);
-	void connect_to_unreliable_client(const char * unreliable_endpoint);
+	virtual void connect_to_client(const char * endpoint) = 0;
+	virtual void disconnect_from_client() = 0;
 
-	void disconnect_from_client();
-
-	const std::string & get_reliable_graph_address() const;
-	const std::string & get_unreliable_graph_address() const;
+	const std::string & get_graph_in_address() const;
+	const std::string & get_graph_out_address() const;
 
 	void send_message_impl(ZstMessage * msg) override;
+
+protected:
+	ZstActor & actor();
+
+	virtual void init_graph_sockets() = 0;
+	virtual void destroy_graph_sockets();
+	void attach_graph_sockets(zsock_t * in, zsock_t * out);
+	void set_graph_addresses(const std::string & in_addr, const std::string & out_addr);
+
+	std::string first_available_ext_ip() const;
+
+	zsock_t * input_graph_socket();
+	zsock_t * output_graph_socket();
 	
 private:
 	static int s_handle_graph_in(zloop_t *loop, zsock_t *sock, void *arg);
@@ -36,40 +47,16 @@ private:
 	void graph_recv(zmsg_t * msg);
 	void graph_recv(zframe_t * msg);
 
-	void init_remote_graph_sockets();
-	void init_local_graph_sockets();
-	void init_unreliable_graph_sockets();
-
-	void destroy_reliable_graph_sockets();
-	void destroy_unreliable_graph_sockets();
-	void destroy_local_graph_sockets();
-
 	//Actors
-	ZstActor m_reliable_graph_actor;
-	ZstActor m_unreliable_graph_actor;
+	ZstActor m_graph_actor;
 
 	//Addresses
-	std::string first_available_ext_ip();	
-	std::string m_graph_out_reliable_addr;
-	std::string m_graph_in_unreliable_addr;
-	std::string m_graph_out_reliable_local_addr;
-
+	std::string m_graph_out_addr;
+	std::string m_graph_in_addr;
 
 	//Sockets
 	//-------
 
-	//TCP
-
-	zsock_t * m_graph_in_reliable;
-	zsock_t * m_graph_out_reliable;
-
-	//UDP
-
-	zsock_t * m_graph_in_unreliable;
-	zsock_t * m_graph_out_unreliable;
-
-	//Inproc
-
-	zsock_t * m_graph_in_reliable_local;
-	zsock_t * m_graph_out_reliable_local;
+	zsock_t * m_graph_in;
+	zsock_t * m_graph_out;
 };

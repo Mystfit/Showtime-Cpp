@@ -17,11 +17,15 @@
 #include "../core/ZstMessage.h"
 #include "../core/ZstMessagePool.hpp"
 #include "../core/ZstValue.h"
+#include "../core/liasons/ZstPlugLiason.hpp"
+#include "../core/liasons/ZstSynchronisableLiason.hpp"
 #include "../core/adaptors/ZstTransportAdaptor.hpp"
+#include "../core/adaptors/ZstModuleAdaptor.hpp"
 
 //Showtime client includes
 #include "ZstClientSession.h"
-#include "ZstGraphTransport.h"
+#include "ZstTCPGraphTransport.h"
+#include "ZstUDPGraphTransport.h"
 #include "ZstClientTransport.h"
 
 //Forwards
@@ -46,7 +50,9 @@ typedef std::unique_ptr<ZstConnectionTimerMap> ZstConnectionTimerMapUnique;
 class ZstClient : 
 	public ZstEventDispatcher<ZstTransportAdaptor*>,
 	public ZstTransportAdaptor,
-	public ZstSynchronisableLiason
+	public ZstModuleAdaptor,
+	public ZstSynchronisableLiason,
+	public ZstPlugLiason
 {
 public:
 	ZstClient();
@@ -90,7 +96,7 @@ private:
 	long m_ping;
 	static void heartbeat_timer(boost::asio::deadline_timer * t, ZstClient * client, boost::posix_time::milliseconds duration);
 		
-	//Destruction
+	//Flags
 	void set_is_ending(bool value);
 	bool m_is_ending;
 
@@ -106,6 +112,9 @@ private:
 	void set_is_connecting(bool value);
 	bool m_is_connecting;
 
+	//Module adaptor overrides
+	virtual void on_entity_arriving(ZstEntityBase * entity) override;
+
 	//UUIDs
 	std::string m_assigned_uuid;
 	std::string m_client_name;
@@ -120,7 +129,8 @@ private:
 	
 	//Client modules
 	ZstClientSession * m_session;
-	ZstGraphTransport * m_graph_transport;
+	ZstTCPGraphTransport * m_tcp_graph_transport;
+	ZstUDPGraphTransport * m_udp_graph_transport;
 	ZstClientTransport * m_client_transport;
 
 	//Timers

@@ -84,19 +84,7 @@ void ZstClientHierarchy::on_receive_msg(ZstMessage * msg)
 
 void ZstClientHierarchy::on_publish_entity_update(ZstEntityBase * entity)
 {
-	if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
-		//Handle plugs sending values
-		performance_events().invoke([entity](ZstTransportAdaptor * adaptor) {
-			ZstOutputPlug * plug = dynamic_cast<ZstOutputPlug*>(entity);
-			if (plug) {
-				ZstMsgArgs args = { { ZstMsgArg::PATH, plug->URI().path() } };
-				if (!plug->is_reliable())
-					args[ZstMsgArg::UNRELIABLE] = "";
-				adaptor->on_send_msg(ZstMsgKind::PERFORMANCE_MSG, args, *plug->raw_value());
-			}
-		});
-	}
-	else if (strcmp(entity->entity_type(), FACTORY_TYPE) == 0) {
+	if (strcmp(entity->entity_type(), FACTORY_TYPE) == 0) {
 		//Factory wants to update creatables
 		ZstEntityFactory * factory = static_cast<ZstEntityFactory*>(entity);
 		stage_events().invoke([factory](ZstTransportAdaptor * adp) {
@@ -269,6 +257,16 @@ void ZstClientHierarchy::create_entity_handler(ZstMessage * msg)
 	factory->synchronisable_events()->invoke([factory](ZstSynchronisableAdaptor* adp) { 
 		adp->on_synchronisable_has_event(factory); 
 	});
+}
+
+void ZstClientHierarchy::activate_entity_complete(ZstEntityBase * entity)
+{
+	ZstHierarchy::activate_entity_complete(entity);
+
+	ZstEntityBundle bundle;
+	for (auto c : entity->get_child_entities(bundle, false)) {
+		module_events().invoke([c](ZstModuleAdaptor * adp) { adp->on_entity_arriving(c); });
+	}
 }
 
 void ZstClientHierarchy::destroy_entity_complete(ZstEntityBase * entity)

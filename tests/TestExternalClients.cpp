@@ -131,7 +131,7 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
 
 	//Check that our local adaptor is now inactive
 	zst_poll_once();
-	ZstLog::app(LogLevel::debug, "Checking if plug sync adaptor {} is now inactive", sync_out_plug->instance_id());
+	ZstLog::app(LogLevel::debug, "Checking if plug sync adaptor is now inactive");
 	assert(!zst_find_entity(out_plug_path));
 	assert(!sink_performer->walk_child_by_URI(out_plug_path));
 	assert(!plug_sync_adp->is_target_dispatcher_active());

@@ -10,6 +10,7 @@
 //Forward declarations
 class ZstValue;
 class ZstPlug;
+class ZstTransportAdaptor;
 
 template<typename T>
 class ZstEventDispatcher;
@@ -92,5 +93,6 @@ public:
 	ZST_EXPORT bool is_reliable();
 
 private:
+	ZstEventDispatcher<ZstTransportAdaptor*> * m_performance_events;
 	bool m_reliable;
 };

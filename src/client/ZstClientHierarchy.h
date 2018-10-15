@@ -85,5 +85,6 @@ private:
 	// ----------------
 	// Event completion
 	// ----------------
-	void destroy_entity_complete(ZstEntityBase * entity) override;
+	virtual void activate_entity_complete(ZstEntityBase * entity) override;
+	virtual void destroy_entity_complete(ZstEntityBase * entity) override;
 };

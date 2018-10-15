@@ -12,6 +12,9 @@ set(ZST_CLIENT_PRIVATE_HEADERS
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientSession.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientTransport.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstGraphTransport.h"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstUDPGraphTransport.h"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstTCPGraphTransport.h"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstGraphTransport.h"
 )
 
 set(ZST_CLIENT_SRC
@@ -21,6 +24,8 @@ set(ZST_CLIENT_SRC
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientHierarchy.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientSession.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientTransport.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstUDPGraphTransport.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstTCPGraphTransport.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstGraphTransport.cpp"
 )
 

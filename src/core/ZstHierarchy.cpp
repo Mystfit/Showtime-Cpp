@@ -5,7 +5,6 @@ ZstHierarchy::ZstHierarchy() :
 	m_synchronisable_events("hierarchy stage"),
     m_hierarchy_events("hierarchy")
 {
-
 }
 
 ZstHierarchy::~ZstHierarchy()

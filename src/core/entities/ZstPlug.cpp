@@ -6,6 +6,7 @@
 
 #include "../ZstValue.h"
 #include "../ZstEventDispatcher.hpp"
+#include "../src/core/adaptors/ZstTransportAdaptor.hpp"
 
 using namespace std;
 
@@ -219,13 +220,17 @@ ZstInputPlug::ZstInputPlug(const char * name, ZstValueType t) : ZstPlug(name, t)
 //ZstOutputPlug
 //-------------
 
-ZstOutputPlug::ZstOutputPlug() : ZstPlug()
+ZstOutputPlug::ZstOutputPlug() : 
+	ZstPlug(),
+	m_performance_events(NULL)
 {
 	m_direction = ZstPlugDirection::OUT_JACK;
+	m_performance_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
 }
 
 ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug & other) : ZstPlug(other)
 {
+	m_performance_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
 }
 
 ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t, bool reliable) : 
@@ -233,15 +238,21 @@ ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t, bool reliable) :
 	m_reliable(reliable)
 {
 	m_direction = ZstPlugDirection::OUT_JACK;
+	m_performance_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
 }
 
 ZstOutputPlug::~ZstOutputPlug()
 {
+	m_performance_events->flush();
+	m_performance_events->remove_all_adaptors();
+	delete m_performance_events;
 }
 
 void ZstOutputPlug::fire()
 {
-    entity_events()->invoke([this](ZstEntityAdaptor * dlg) { dlg->on_publish_entity_update(this); });
+	m_performance_events->invoke([this](ZstTransportAdaptor * adaptor) {
+		adaptor->on_send_msg(ZstMsgKind::PERFORMANCE_MSG, { {ZstMsgArg::PATH, this->URI().path()} }, *this->raw_value());
+	});
 	m_value->clear();
 }
 

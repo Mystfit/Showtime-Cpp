@@ -188,10 +188,6 @@ void ZstTransportLayerBase::process_responses(ZstMessage * msg)
 void ZstTransportLayerBase::copy_id_arg(ZstMessage * msg)
 {
 	//If the message has a MSG_ID argument, copy it to the id portion of the message
-	try {
+	if(msg->has_arg(ZstMsgArg::MSG_ID))
 		msg->set_id(boost::lexical_cast<ZstMsgID>(msg->get_arg(ZstMsgArg::MSG_ID)));
-	}
-	catch (std::out_of_range) {
-	}
-
 }

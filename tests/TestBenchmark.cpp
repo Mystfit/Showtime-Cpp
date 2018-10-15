@@ -46,15 +46,14 @@ int test_benchmark(bool reliable, int send_rate, int send_amount)
 	int delta_messages = 0;
 	double mps = 0.0;
 	int remaining_messages = count;
-	int queued_messages = 0;
 	int delta_queue = 0;
 	int last_queue_count = 0;
 	int last_processed_message_count = 0;
 	long queue_speed = 0;
 	int num_sent = 0;
-	int alert_rate = 1000;
+	int alert_rate = 2000;
 	bool hit = false;
-	int totalmps = 0;
+	long long totalmps = 0;
 	int samples = 0;
 
 	for (int i = 0; i < count; ++i) {
@@ -67,24 +66,26 @@ int test_benchmark(bool reliable, int send_rate, int send_amount)
 		}
 
 		if (test_input->num_hits > 0 && test_input->num_hits % alert_rate == 0) {
-			samples++;
 			//Display progress
 			received_count = test_input->num_hits;
-			queued_messages = num_sent - test_input->num_hits;
 
 			now = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
 			delta_time = std::chrono::duration_cast<std::chrono::milliseconds>(now - last);
 			delta_messages = received_count - last_message_count;
+			if (delta_messages == 0 || delta_time.count() == 0)
+				continue;
 
 			last = now;
 			mps = (long)delta_messages / ((long)delta_time.count() / 1000.0);
+			if (std::isnan(mps))
+				continue;
 
 			remaining_messages = count - received_count;
 			last_message_count = received_count;
-			last_queue_count = queued_messages;
+			last_queue_count = num_sent - received_count;
 			hit = true;
 			totalmps += mps;
-
+			samples++;
 			ZstLog::app(LogLevel::debug, "Received {} messages p/s over period : {} ms", mps, (delta_time.count()));
 		}
 
@@ -115,17 +116,24 @@ int test_benchmark(bool reliable, int send_rate, int send_amount)
 		}
 
 		if (test_input->num_hits > 0 && test_input->num_hits % alert_rate == 0) {
-			samples++;
 			//Display progress
 			now = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
 			delta_time = std::chrono::duration_cast<std::chrono::milliseconds>(now - last);
 			delta_messages = received_count - last_message_count;
+			if (delta_messages == 0 || delta_time.count() == 0)
+				continue;
+			if (std::isnan(mps))
+				continue;
+			
 			last = now;
 			mps = (long)delta_messages / ((long)delta_time.count() / 1000.0);
+			if (mps < 0)
+				mps = 0;
 			last_message_count = received_count;
 			hit = true;
 			ZstLog::app(LogLevel::debug, "Received {} messages p/s over period: {} ms", mps, (delta_time.count()));
 			totalmps += mps;
+			samples++;
 		}
 
 		if (hit && test_input->num_hits % alert_rate != 0) {
@@ -162,13 +170,11 @@ int main(int argc, char **argv)
 
 	ZstLog::app(LogLevel::notification, "Starting reliable benchmark test");
 	int mps_reliable = test_benchmark(true, 0, 200000);
+	ZstLog::app(LogLevel::notification, "Reliable avg mps: {}", mps_reliable);
 
-	//Disabling unreliable transport until we fix mixing udp and tcp socket speed issues
-	//ZstLog::app(LogLevel::notification, "Starting unreliable benchmark test");
+	ZstLog::app(LogLevel::notification, "Starting unreliable benchmark test");
 	int mps_unreliable = test_benchmark(false, 1, 10000);
-
-	ZstLog::app(LogLevel::notification, "Avg reliable speed: {} mps. Avg unreliable speed: {} mps", mps_reliable, mps_unreliable);
-
+	ZstLog::app(LogLevel::notification, "Unreliable avg mps: {}", mps_unreliable);
 
 	eventloop_thread.interrupt();
 	eventloop_thread.join();
