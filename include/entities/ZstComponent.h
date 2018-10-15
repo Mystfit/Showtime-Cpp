@@ -27,7 +27,8 @@ public:
         
     //Create and attach a new input plug to this component
 	ZST_EXPORT ZstInputPlug * create_input_plug(const char* name, ZstValueType val_type);
-    
+	ZST_EXPORT ZstInputPlug * create_input_plug(const char* name, ZstValueType val_type, int max_cable_connections);
+
     //Create and attach a new output plug to this component
 	ZST_EXPORT ZstOutputPlug * create_output_plug(const char* name, ZstValueType val_type, bool reliable = true);
 

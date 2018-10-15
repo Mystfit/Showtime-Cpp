@@ -15,14 +15,16 @@ using namespace std;
 //--------------------
 
 ZstPlug::ZstPlug() :
-	ZstEntityBase("")
+	ZstEntityBase(""),
+	m_max_connected_cables(-1)
 {
 	set_entity_type(PLUG_TYPE);
 	m_value = new ZstValue(ZST_NONE);
 }
 
 ZstPlug::ZstPlug(const char * name, ZstValueType t) : 
-	ZstEntityBase(name)
+	ZstEntityBase(name),
+	m_max_connected_cables(-1)
 {
 	set_entity_type(PLUG_TYPE);
     m_value = new ZstValue(t);
@@ -32,6 +34,7 @@ ZstPlug::ZstPlug(const ZstPlug & other) : ZstEntityBase(other)
 {
 	m_value = new ZstValue(*other.m_value);
 	m_direction = other.m_direction;
+	m_max_connected_cables = other.m_max_connected_cables;
 }
 
 ZstPlug::~ZstPlug() {
@@ -114,11 +117,14 @@ void ZstPlug::write(std::stringstream & buffer) const
 	//Pack entity
 	ZstEntityBase::write(buffer);
 
-	//Unpack value
+	//Pack value
 	m_value->write(buffer);
 
 	//Pack plug direction
 	msgpack::pack(buffer, m_direction);
+
+	//Pack max cables
+	msgpack::pack(buffer, m_max_connected_cables);
 }
 
 void ZstPlug::read(const char * buffer, size_t length, size_t & offset)
@@ -130,9 +136,10 @@ void ZstPlug::read(const char * buffer, size_t length, size_t & offset)
 	m_value->read(buffer, length, offset);
 
 	//Unpack direction
-	auto handle = msgpack::unpack(buffer, length, offset);
-	auto obj = handle.get();
-	m_direction = (ZstPlugDirection)obj.via.i64;
+	m_direction = (ZstPlugDirection)msgpack::unpack(buffer, length, offset).get().via.i64;
+
+	//Unpack max cables
+	m_max_connected_cables = msgpack::unpack(buffer, length, offset).get().via.i64;
 }
 
 
@@ -173,6 +180,11 @@ size_t ZstPlug::num_cables()
 	return m_cables.size();
 }
 
+int ZstPlug::max_connected_cables()
+{
+	return m_max_connected_cables;
+}
+
 bool ZstPlug::is_connected_to(ZstPlug * plug)
 {
 	bool result = false;
@@ -211,9 +223,10 @@ ZstInputPlug::~ZstInputPlug()
 {
 }
 
-ZstInputPlug::ZstInputPlug(const char * name, ZstValueType t) : ZstPlug(name, t)
+ZstInputPlug::ZstInputPlug(const char * name, ZstValueType t, int max_cables) : ZstPlug(name, t)
 {
 	m_direction = ZstPlugDirection::IN_JACK;
+	m_max_connected_cables = max_cables;
 }
 
 
@@ -226,11 +239,13 @@ ZstOutputPlug::ZstOutputPlug() :
 {
 	m_direction = ZstPlugDirection::OUT_JACK;
 	m_performance_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
+	m_max_connected_cables = -1;
 }
 
 ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug & other) : ZstPlug(other)
 {
 	m_performance_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
+	m_max_connected_cables = other.m_max_connected_cables;
 }
 
 ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t, bool reliable) : 
@@ -239,6 +254,7 @@ ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t, bool reliable) :
 {
 	m_direction = ZstPlugDirection::OUT_JACK;
 	m_performance_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
+	m_max_connected_cables = -1;
 }
 
 ZstOutputPlug::~ZstOutputPlug()

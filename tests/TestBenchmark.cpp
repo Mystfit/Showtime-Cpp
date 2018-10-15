@@ -152,8 +152,6 @@ int test_benchmark(bool reliable, int send_rate, int send_amount)
 	}
 
 	//Cleanup
-	zst_deactivate_entity(test_output);
-	zst_deactivate_entity(test_input);
 	delete test_output;
 	delete test_input;
 

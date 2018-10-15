@@ -107,13 +107,29 @@ ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformerS
 	ZstLog::net(LogLevel::notification, "Received connect cable request for In:{} and Out:{}", cable.get_input_URI().path(), cable.get_output_URI().path());
 
 	//Create cable 
-	if (find_cable(cable.get_input_URI(), cable.get_output_URI())){
+	if (find_cable(cable.get_input_URI(), cable.get_output_URI())) {
 		ZstLog::net(LogLevel::warn, "Cable already exists");
 		return ZstMsgKind::ERR_STAGE_BAD_CABLE_CONNECT_REQUEST;
 	}
 
-	ZstCable * cable_ptr = create_cable(cable);
+	//Verify plugs will accept cable
+	ZstInputPlug * input = dynamic_cast<ZstInputPlug*>(hierarchy()->find_entity(cable.get_input_URI()));
+	ZstOutputPlug * output = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(cable.get_output_URI()));
+	if (!input || !output) {
+		return ZstMsgKind::ERR_CABLE_PLUGS_NOT_FOUND;
+	}
 
+	//Unplug existing cables if we hit max cables in an input plug
+	if (input->num_cables() >= input->max_connected_cables()){
+		ZstLog::net(LogLevel::warn, "Too many cables in plug. Disconnecting existing cables");
+		ZstCableBundle bundle;
+		for (auto c : input->get_child_cables(bundle)) {
+			destroy_cable(c);
+		}
+	}
+	
+	//Create our local cable ptr
+	ZstCable * cable_ptr = create_cable(cable);
 	if (!cable_ptr) {
 		return ZstMsgKind::ERR_STAGE_BAD_CABLE_CONNECT_REQUEST;
 	}
