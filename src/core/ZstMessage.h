@@ -200,7 +200,8 @@ public:
         return serialisable;
     }
 
-    ZST_EXPORT static ZstMsgKind entity_kind(const ZstEntityBase & entity);
+    ZST_EXPORT static ZstMsgKind entity_kind(const ZstEntityBase & entity);	
+	ZST_EXPORT static const char * get_msg_name(const ZstMsgKind & msg_kind);
 
 protected:
     ZST_EXPORT void append_payload(const ZstSerialisable & streamable);

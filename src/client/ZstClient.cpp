@@ -287,7 +287,7 @@ void ZstClient::join_stage_complete(ZstMessageReceipt response)
 
 	//If we didn't receive a OK signal, something went wrong
 	if (response.status != ZstMsgKind::OK) {
-        ZstLog::net(LogLevel::error, "Stage connection failed with with status: {}", ZstMsgNames[response.status]);
+        ZstLog::net(LogLevel::error, "Stage connection failed with with status: {}", ZstMessage::get_msg_name(response.status));
 		leave_stage_complete();
         return;
 	}

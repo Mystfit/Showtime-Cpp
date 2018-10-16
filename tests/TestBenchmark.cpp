@@ -12,7 +12,7 @@ public:
 			try {
 				boost::this_thread::interruption_point();
 				zst_poll_once();
-				std::this_thread::sleep_for(std::chrono::milliseconds(5));
+				std::this_thread::sleep_for(std::chrono::milliseconds(0));
 			}
 			catch (boost::thread_interrupted) {
 				ZstLog::net(LogLevel::debug, "Benchmark event loop exiting.");

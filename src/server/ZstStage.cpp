@@ -52,6 +52,7 @@ ZstStage::~ZstStage()
 void ZstStage::init_stage(const char * stage_name, bool threaded)
 {
 	ZstLog::init_logger(stage_name, LogLevel::debug);
+	ZstLog::init_file_logging("server.log");
 	ZstLog::net(LogLevel::notification, "Starting Showtime v{} stage server", SHOWTIME_VERSION);
 
 	m_session->init();

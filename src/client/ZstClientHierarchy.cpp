@@ -119,17 +119,19 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 		ZstMsgArgs args;
 		if (request_ID > 0) {
 			args[ZstMsgArg::MSG_ID] = boost::lexical_cast<std::string>(request_ID);
+			ZstLog::net(LogLevel::debug, "Responding to server creatable request with id {}", request_ID);
 		}
-		ZstLog::net(LogLevel::debug, "Responding to server creatable request with id {}", request_ID);
 		adaptor->on_send_msg(ZstMessage::entity_kind(*entity), sendtype, *entity, args, [this, entity](ZstMessageReceipt response) {
 			if (response.status == ZstMsgKind::CREATE_COMPONENT ||
 				response.status == ZstMsgKind::CREATE_CONTAINER ||
 				response.status == ZstMsgKind::CREATE_FACTORY ||
-				response.status == ZstMsgKind::CREATE_PERFORMER) {
+				response.status == ZstMsgKind::CREATE_PERFORMER || 
+				response.status == ZstMsgKind::OK) 
+			{
+				ZstLog::net(LogLevel::debug, "activate_entity(): Server responded with an {}", ZstMessage::get_msg_name(response.status));
 				this->activate_entity_complete(entity);
-			}
-			else {
-				ZstLog::net(LogLevel::error, "Activate entity {} failed with status {}", entity->URI().path(), ZstMsgNames[response.status]);
+			} else {
+				ZstLog::net(LogLevel::error, "Activate entity {} failed with status {}", entity->URI().path(), ZstMessage::get_msg_name(response.status));
 				return;
 			}
 		});
@@ -151,7 +153,7 @@ void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTranspo
 		stage_events().invoke([this, sendtype, entity](ZstTransportAdaptor * adaptor) {
 			adaptor->on_send_msg(ZstMsgKind::DESTROY_ENTITY, sendtype, {{ZstMsgArg::PATH, entity->URI().path()}}, [this, entity](ZstMessageReceipt response) {
 				if (response.status != ZstMsgKind::OK) {
-					ZstLog::net(LogLevel::error, "Destroy entity failed with status {}", ZstMsgNames[response.status]);
+					ZstLog::net(LogLevel::error, "Destroy entity failed with status {}", ZstMessage::get_msg_name(response.status));
 					return;
 				}
 				this->destroy_entity_complete(entity);
@@ -214,7 +216,7 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
 					}
 				}
 				else {
-					ZstLog::net(LogLevel::error, "Creating remote entity from factory failed with status {}", ZstMsgNames[response.status]);
+					ZstLog::net(LogLevel::error, "Creating remote entity from factory failed with status {}", ZstMessage::get_msg_name(response.status));
 					return;
 				}
 			});

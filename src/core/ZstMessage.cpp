@@ -259,6 +259,15 @@ ZstMsgKind ZstMessage::entity_kind(const ZstEntityBase & entity)
 	return kind;
 }
 
+const char * ZstMessage::get_msg_name(const ZstMsgKind & msg_kind)
+{
+	try {
+		return ZstMsgNames.at(msg_kind);
+	}
+	catch (std::out_of_range) {}
+	return "UNKNOWN";
+}
+
 void ZstMessage::append_payload(const ZstSerialisable & streamable)
 {
 	std::stringstream buffer;

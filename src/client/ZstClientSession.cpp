@@ -185,7 +185,7 @@ void ZstClientSession::connect_cable_complete(ZstMessageReceipt response, ZstCab
 		synchronisable_enqueue_activation(cable);
 	}
 	else {
-		ZstLog::net(LogLevel::notification, "Cable connect for {}-{} failed with status {}", cable->get_input_URI().path(), cable->get_output_URI().path(), ZstMsgNames[response.status]);
+		ZstLog::net(LogLevel::notification, "Cable connect for {}-{} failed with status {}", cable->get_input_URI().path(), cable->get_output_URI().path(), ZstMessage::get_msg_name(response.status));
 	}
 }
 
@@ -228,10 +228,10 @@ void ZstClientSession::destroy_cable_complete(ZstMessageReceipt response, ZstCab
 	ZstSession::destroy_cable_complete(cable);
 
 	if (response.status != ZstMsgKind::OK) {
-		ZstLog::net(LogLevel::error, "Destroy cable failed with status {}", ZstMsgNames[response.status]);
+		ZstLog::net(LogLevel::error, "Destroy cable failed with status {}", ZstMessage::get_msg_name(response.status));
 		return;
 	}
-	ZstLog::net(LogLevel::debug, "Destroy cable completed with status {}", ZstMsgNames[response.status]);
+	ZstLog::net(LogLevel::debug, "Destroy cable completed with status {}", ZstMessage::get_msg_name(response.status));
 
 	//Queue events
 	session_events().defer([cable](ZstSessionAdaptor * dlg) { dlg->on_cable_destroyed(cable); });
@@ -244,7 +244,7 @@ void ZstClientSession::observe_entity_complete(ZstMessageReceipt response, ZstEn
 		ZstLog::net(LogLevel::debug, "Observing entity {}", entity->URI().path());
 		return;
 	}
-	ZstLog::net(LogLevel::error, "Observe entity {} failed with status {}", entity->URI().path(), ZstMsgNames[response.status]);
+	ZstLog::net(LogLevel::error, "Observe entity {} failed with status {}", entity->URI().path(), ZstMessage::get_msg_name(response.status));
 }
 
 
