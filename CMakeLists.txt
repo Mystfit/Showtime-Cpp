@@ -10,6 +10,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Set build locations
 set(CMAKE_BASE_MODULE_PATH ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake;${CMAKE_MODULE_PATH}")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib)
@@ -19,13 +20,14 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin)
-
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake;${CMAKE_MODULE_PATH}")
 set(CMAKE_SWIG_ROOT_OUTDIR ${CMAKE_BINARY_DIR}/bindings)
 set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR})
+
+# Set CMake vars
 set(CMAKE_FIND_FRAMEWORKS LAST)
 set(CMAKE_DEBUG_POSTFIX d)
 
+# Set platform flags
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(MACOSX TRUE)
     MESSAGE(STATUS "Platform is OSX")
@@ -35,9 +37,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     set(LINUX TRUE)
     MESSAGE(STATUS "Platform is Linux")
 endif()
-
-option(BUILD_STATIC "Build static Showtime library" OFF)
-option(BUILD_SHARED "Build shared Showtime library" OFF)
 
 if(LINUX OR MACOSX)
     if(NOT DEFINED CMAKE_PREFIX_PATH)
@@ -61,6 +60,10 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
         set(Boost_USE_STATIC_RUNTIME ON)
     endif()
 endif()
+
+# Set shared and static library flags
+option(BUILD_STATIC "Build static Showtime library" OFF)
+option(BUILD_SHARED "Build shared Showtime library" ON)
 
 # Set showtime variables
 set(Showtime_COMPILED_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include")
@@ -87,7 +90,6 @@ endif()
 # --------
 set(LIBZMQ_TARGET "")
 set(CZMQ_TARGET "")
-
 message(STATUS "Finding packages")
 
 # Boost
@@ -150,7 +152,6 @@ set(msgpackc_TARGET "msgpackc-static")
 # ----------------
 # Showtime targets
 # ----------------
-
 
 # Core Library
 # ------------
@@ -344,7 +345,3 @@ install (
     DESTINATION
         "${CMAKE_INSTALL_CMAKEDIR}"
 )
-
-
-
-

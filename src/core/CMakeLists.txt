@@ -30,7 +30,6 @@ set(API_FILES
     ${Showtime_INCLUDE_DIRS}/ZstSerialisable.h
     ${Showtime_INCLUDE_DIRS}/ZstSynchronisable.h
     ${Showtime_INCLUDE_DIRS}/ZstBundle.hpp
-    ${Showtime_INCLUDE_DIRS}/ZstPlugin.h
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstEventAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstComputeAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstSynchronisableAdaptor.hpp
@@ -93,7 +92,6 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstPerformanceMessage.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstModule.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstPlugin.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstBoostEventWakeup.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayerBase.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstGraphTransport.cpp"
