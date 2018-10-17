@@ -17,7 +17,7 @@
     $result = SWIG_NewPointerObj(SWIG_as_voidptr($1), outtype, $owner);
 }
 
-%include "showtime.i"
+%include "../showtime.i"
 %include "ZstBundle.i"
 
 %pythoncode %{

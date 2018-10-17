@@ -241,15 +241,11 @@ endif()
 
 if(BINDINGS_PYTHON)
     set(PYTHON_TARGET ${PROJECT_NAME}Python)
-    set(PYTHON_VERSION 2.7 CACHE STRING "Python version to search for")
-    find_package(PythonInterp ${PYTHON_VERSION} REQUIRED)
     include(src/bindings/python/CMakeLists.txt)
 endif()
 
 if(BINDINGS_RUBY)
     set(RUBY_TARGET ${PROJECT_NAME}Ruby)
-    set(RUBY_VERSION 2.5 CACHE STRING "Ruby version to search for")
-    find_package(Ruby ${RUBY_VERSION} REQUIRED)
     include(src/bindings/ruby/CMakeLists.txt)
 endif()
 

@@ -1,5 +1,8 @@
 message(STATUS "Configuring ${RUBY_TARGET} target")
 
+set(RUBY_VERSION 2.5 CACHE STRING "Ruby version to search for")
+find_package(Ruby ${RUBY_VERSION} REQUIRED)
+
 # Save original swig output dir
 set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR}/ruby)
 set(SWIG_LANGUAGE_DIR ${CMAKE_SWIG_ROOT_OUTDIR}/ruby)
