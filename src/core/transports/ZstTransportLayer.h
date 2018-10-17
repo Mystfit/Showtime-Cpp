@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include "../core/ZstMessagePool.hpp"
-#include "../core/adaptors/ZstTransportAdaptor.hpp"
+#include "../ZstMessagePool.hpp"
+#include "../adaptors/ZstTransportAdaptor.hpp"
 
 
 template<typename T>

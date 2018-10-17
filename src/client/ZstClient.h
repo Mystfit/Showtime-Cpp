@@ -24,8 +24,8 @@
 
 //Showtime client includes
 #include "ZstClientSession.h"
-#include "ZstTCPGraphTransport.h"
-#include "ZstUDPGraphTransport.h"
+#include "../core/transports/ZstTCPGraphTransport.h"
+#include "../core/transports/ZstUDPGraphTransport.h"
 #include "ZstClientTransport.h"
 
 //Forwards

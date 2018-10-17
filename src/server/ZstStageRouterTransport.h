@@ -1,7 +1,7 @@
 #pragma once
 
 #include <entities/ZstPerformer.h>
-#include "../core/ZstTransportLayer.h"
+#include "../core/transports/ZstTransportLayer.h"
 #include "../core/ZstActor.h"
 #include "../core/ZstStageMessage.h"
 

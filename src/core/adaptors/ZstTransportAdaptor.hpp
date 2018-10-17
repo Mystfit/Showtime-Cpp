@@ -2,7 +2,7 @@
 
 #include <ZstExports.h>
 #include <adaptors/ZstEventAdaptor.hpp>
-#include "../ZstTransportLayerBase.hpp"
+#include "../transports/ZstTransportLayerBase.hpp"
 
 //Forwards
 class ZstMessage;

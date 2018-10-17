@@ -27,16 +27,16 @@ void ZstStageHierarchy::on_receive_msg(ZstMessage * msg)
 		response = create_client_handler(sender_identity, msg);
 		break;
 	case ZstMsgKind::CREATE_COMPONENT:
-		response = add_proxy_entity(msg->unpack_payload_serialisable<ZstComponent>(), msg->id());
+		response = add_proxy_entity(msg->unpack_payload_serialisable<ZstComponent>(), msg->id(), sender);
 		break;
 	case ZstMsgKind::CREATE_CONTAINER:
-		response = add_proxy_entity(msg->unpack_payload_serialisable<ZstContainer>(), msg->id());
+		response = add_proxy_entity(msg->unpack_payload_serialisable<ZstContainer>(), msg->id(), sender);
 		break;
 	case ZstMsgKind::CREATE_PLUG:
-		response = add_proxy_entity(msg->unpack_payload_serialisable<ZstPlug>(), msg->id());
+		response = add_proxy_entity(msg->unpack_payload_serialisable<ZstPlug>(), msg->id(), sender);
 		break;
 	case ZstMsgKind::CREATE_FACTORY:
-		response = add_proxy_entity(msg->unpack_payload_serialisable<ZstEntityFactory>(), msg->id());
+		response = add_proxy_entity(msg->unpack_payload_serialisable<ZstEntityFactory>(), msg->id(), sender);
 		break;
 	case ZstMsgKind::UPDATE_ENTITY:
 		response = update_proxy_entity(msg->unpack_payload_serialisable<ZstEntityFactory>(), msg->id());
@@ -149,7 +149,7 @@ ZstMsgKind ZstStageHierarchy::destroy_client_handler(ZstPerformer * performer)
 }
 
 
-ZstMsgKind ZstStageHierarchy::add_proxy_entity(const ZstEntityBase & entity, ZstMsgID request_ID)
+ZstMsgKind ZstStageHierarchy::add_proxy_entity(const ZstEntityBase & entity, ZstMsgID request_ID, ZstPerformer * sender)
 {
 	ZstLog::net(LogLevel::notification, "Registering new proxy entity {}", entity.URI().path());
 
@@ -158,6 +158,10 @@ ZstMsgKind ZstStageHierarchy::add_proxy_entity(const ZstEntityBase & entity, Zst
 	if (!proxy) {
 		ZstLog::net(LogLevel::warn, "No proxy entity found");
 		return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
+	}
+
+	if (sender->URI().first() != proxy->URI().first()) {
+		//A performer is requesting this entity be attached to another performer
 	}
 	
 	//Update rest of network

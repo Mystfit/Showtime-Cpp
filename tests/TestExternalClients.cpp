@@ -37,7 +37,7 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
 	boost::process::pipe m_sink_out;
     if (launch_sink_process) {
 		//Run sink in external process so we don't share the same Showtime singleton
-		ZstLog::app(LogLevel::debug, "Starting sink process");
+		ZstLog::app(LogLevel::notification, "Starting sink process");
 
         try {
             sink_process = boost::process::child(prog, &pause_flag); //d flag pauses the sink process to give us time to attach a debugger
@@ -49,11 +49,11 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
 #endif
         }
         catch (boost::process::process_error e) {
-            ZstLog::app(LogLevel::debug, "Sink process failed to start. Code:{} Message:{}", e.code().value(), e.what());
+            ZstLog::app(LogLevel::error, "Sink process failed to start. Code:{} Message:{}", e.code().value(), e.what());
         }
         assert(sink_process.valid());
-		wait_for_event(performerEvents, 1);
 	}
+	wait_for_event(performerEvents, 1);
     ZstPerformer * sink_performer = zst_get_performer_by_URI(sink_perf_uri);
     assert(sink_performer);
     performerEvents->reset_num_calls();
@@ -88,11 +88,11 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
     assert(cable->is_activated());
     
     //Send message to sink to test entity creation
-    ZstLog::app(LogLevel::debug, "Asking sink to create an entity");
+    ZstLog::app(LogLevel::notification, "Asking sink to create an entity");
     output_ent->send(1);
 	    
     //Test entity arriving
-	ZstLog::app(LogLevel::debug, "Checking that the remote plug synced with our proxy plug");
+	ZstLog::app(LogLevel::notification, "Checking that the remote plug synced with our proxy plug");
     wait_for_event(entityEvents, 1);
     assert(zst_find_entity(sink_B_uri));
     entityEvents->reset_num_calls();
@@ -103,16 +103,33 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
 	assert(sync_out_plug->int_at(0) == 1);
 	plug_sync_adp->reset_num_calls();
 
+	//Test adding plugs to a remote proxy
+	ZstLog::app(LogLevel::notification, "Creating a plug on the remote performer");
+	ZstComponent * sink_b = dynamic_cast<ZstComponent*>(zst_find_entity(sink_B_uri));
+	ZstOutputPlug * remote_plug = sink_b->create_output_plug("remote_plug", ZstValueType::ZST_INT);
+	assert(remote_plug);
+	zst_activate_entity(remote_plug);
+	assert(remote_plug->is_activated());
+	assert(zst_find_entity(remote_plug->URI()));
+	ZstURI remote_plug_uri = remote_plug->URI();
+
+	//Test remote plug can send values
+	ZstLog::app(LogLevel::notification, "Testing sending values using remote plug");
+	remote_plug->append_int(27);
+	remote_plug->fire();
+
     //Send another value to remove the child
     //Test entity leaving
-    ZstLog::app(LogLevel::debug, "Asking sink to remove an entity");
+    ZstLog::app(LogLevel::notification, "Asking sink to remove an entity");
     output_ent->send(2);
     wait_for_event(entityEvents, 1);
     assert(!zst_find_entity(sink_B_uri));
-    entityEvents->reset_num_calls();
+	assert(!zst_find_entity(remote_plug_uri));
+	assert(!remote_plug->is_activated());
+	entityEvents->reset_num_calls();
 
     //Send message to sink
-    ZstLog::app(LogLevel::debug, "Asking sink to throw an error");
+    ZstLog::app(LogLevel::notification, "Asking sink to throw an error");
     output_ent->send(3);
     //Not sure how to test for the error...
 

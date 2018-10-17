@@ -1,6 +1,6 @@
 #include <boost/lexical_cast.hpp>
 #include "ZstTransportLayerBase.hpp"
-#include "adaptors/ZstTransportAdaptor.hpp"
+#include "../adaptors/ZstTransportAdaptor.hpp"
 
 
 ZstTransportLayerBase::ZstTransportLayerBase() :
@@ -17,10 +17,10 @@ ZstTransportLayerBase::~ZstTransportLayerBase()
 
 void ZstTransportLayerBase::destroy()
 {
+	m_is_active = false;
 	delete m_timeout_watcher;
 	m_dispatch_events->flush();
 	m_dispatch_events->remove_all_adaptors();
-	m_is_active = false;
 }
 
 void ZstTransportLayerBase::init()

@@ -2,7 +2,7 @@
 
 #include "../core/ZstEventDispatcher.hpp"
 #include "../core/adaptors/ZstTransportAdaptor.hpp"
-#include "../core/ZstTransportLayer.h"
+#include "../core/transports/ZstTransportLayer.h"
 #include "../core/ZstStageMessage.h"
 
 class ZstClientTransport : 

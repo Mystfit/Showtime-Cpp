@@ -126,9 +126,10 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 				response.status == ZstMsgKind::CREATE_CONTAINER ||
 				response.status == ZstMsgKind::CREATE_FACTORY ||
 				response.status == ZstMsgKind::CREATE_PERFORMER || 
+				response.status == ZstMsgKind::CREATE_PLUG ||
 				response.status == ZstMsgKind::OK) 
 			{
-				ZstLog::net(LogLevel::debug, "activate_entity(): Server responded with an {}", ZstMessage::get_msg_name(response.status));
+				ZstLog::net(LogLevel::debug, "activate_entity(): Server responded with {}", ZstMessage::get_msg_name(response.status));
 				this->activate_entity_complete(entity);
 			} else {
 				ZstLog::net(LogLevel::error, "Activate entity {} failed with status {}", entity->URI().path(), ZstMessage::get_msg_name(response.status));
