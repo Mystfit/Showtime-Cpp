@@ -163,8 +163,8 @@ public:
     ZST_EXPORT virtual void init();
     ZST_EXPORT virtual ZstMessage * init(ZstMsgKind kind);
     ZST_EXPORT virtual ZstMessage * init(ZstMsgKind kind, const ZstMsgArgs & args);
-    ZST_EXPORT virtual ZstMessage * init(ZstMsgKind kind, const ZstSerialisable & serialisable);
-    ZST_EXPORT virtual ZstMessage * init(ZstMsgKind kind, const ZstSerialisable & serialisable, const ZstMsgArgs & args);
+    ZST_EXPORT virtual ZstMessage * init(ZstMsgKind kind, const std::string & payload);
+    ZST_EXPORT virtual ZstMessage * init(ZstMsgKind kind, const std::string & payload, const ZstMsgArgs & args);
 
     ZST_EXPORT virtual void reset();
     ZST_EXPORT void set_inactive();
@@ -183,10 +183,8 @@ public:
 
     ZST_EXPORT const char * payload_data();
 	ZST_EXPORT const size_t payload_size();
-	ZST_EXPORT size_t & payload_offset();
 
     ZST_EXPORT zmsg_t * handle();
-	ZST_EXPORT zframe_t * payload_frame();
 
     ZST_EXPORT const ZstMsgKind kind() const;
     ZST_EXPORT ZstMsgID id() const;
@@ -196,7 +194,7 @@ public:
     template <typename T>
     T unpack_payload_serialisable() {
         T serialisable;
-        serialisable.read(payload_data(), payload_size(), payload_offset());
+        serialisable.from_json_str(payload_data());
         return serialisable;
     }
 
@@ -204,9 +202,8 @@ public:
 	ZST_EXPORT static const char * get_msg_name(const ZstMsgKind & msg_kind);
 
 protected:
-    ZST_EXPORT void append_payload(const ZstSerialisable & streamable);
-	ZST_EXPORT void append_payload(const ZstSerialisable & streamable, std::stringstream & buffer);
-
+    ZST_EXPORT void append_payload(const std::string & payload);
+	ZST_EXPORT void append_payload(const std::string & payload, std::stringstream & buffer);
     ZST_EXPORT void append_kind(ZstMsgKind k);
 	ZST_EXPORT void append_kind(ZstMsgKind k, std::stringstream & buffer);
 
@@ -222,12 +219,7 @@ protected:
 	ZST_EXPORT void unpack_next_payload(char * data, size_t size, size_t & offset);
 	
 	//Payload as char* with offset
-	char * m_payload;
-	size_t m_payload_size;
-	size_t m_payload_offset;
-
-	//Payload as zframe_t*
-	zframe_t * m_payload_frame;
+	std::string m_payload;
 
 	//Message info
     ZstMsgKind m_msg_kind;

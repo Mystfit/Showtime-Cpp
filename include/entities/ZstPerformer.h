@@ -37,6 +37,8 @@ public:
 	//Serialisation
 	ZST_EXPORT virtual void write(std::stringstream & buffer) const override;
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
+	ZST_EXPORT void write_json(json & buffer) const override;
+	ZST_EXPORT void read_json(const json & buffer) override;
 
 private:
 	//Heartbeat status

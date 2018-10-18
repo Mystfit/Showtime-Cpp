@@ -12,10 +12,7 @@
 ZstMessage::ZstMessage() : 
 	m_msg_kind(ZstMsgKind::EMPTY),
     m_msg_handle(NULL),
-	m_payload(NULL),
-	m_payload_frame(NULL),
-	m_payload_offset(0),
-	m_payload_size(0)
+	m_payload("")
 {
 }
 
@@ -50,36 +47,31 @@ ZstMessage * ZstMessage::init(ZstMsgKind kind, const ZstMsgArgs & args)
 	return this;
 }
 
-ZstMessage * ZstMessage::init(ZstMsgKind kind, const ZstSerialisable & serialisable)
+ZstMessage * ZstMessage::init(ZstMsgKind kind, const std::string & payload)
 {
 	this->append_kind(kind);
 	this->append_empty_args();
-	this->append_payload(serialisable);
+	this->append_payload(payload);
 	return this;
 }
 
-ZstMessage * ZstMessage::init(ZstMsgKind kind, const ZstSerialisable & serialisable, const ZstMsgArgs & args)
+ZstMessage * ZstMessage::init(ZstMsgKind kind, const std::string & payload, const ZstMsgArgs & args)
 {
 	this->append_kind(kind);
 	this->append_args(args);
-	this->append_payload(serialisable);
+	this->append_payload(payload);
 	return this;
 }
 
 void ZstMessage::reset()
 {
 	m_msg_id = ZstMsgIDManager::next_id();
-	m_payload = NULL;
-	zframe_destroy(&m_payload_frame);
-	m_payload_frame = NULL;
-	m_payload_offset = 0;
-	m_payload_size = 0;
+	m_payload.clear();
 }
 
 void ZstMessage::set_inactive()
 {
 	m_msg_handle = NULL;
-	m_payload_frame = NULL;
 }
 
 void ZstMessage::unpack(zmsg_t * msg)
@@ -153,33 +145,17 @@ size_t ZstMessage::get_arg_size(const ZstMsgArg & key) const
 
 const char * ZstMessage::payload_data()
 {
-	if (m_payload_frame) {
-		return (char*)zframe_data(m_payload_frame);
-	}
-	return m_payload;
+	return m_payload.c_str();
 }
 
 const size_t ZstMessage::payload_size()
 {
-	if (m_payload_frame) {
-		return zframe_size(m_payload_frame);
-	}
-	return m_payload_size;
-}
-
-size_t & ZstMessage::payload_offset()
-{
-	return m_payload_offset;
+	return m_payload.size();
 }
 
 zmsg_t * ZstMessage::handle()
 {
 	return m_msg_handle;
-}
-
-zframe_t * ZstMessage::payload_frame()
-{
-	return m_payload_frame;
 }
 
 const ZstMsgKind ZstMessage::kind() const
@@ -268,16 +244,14 @@ const char * ZstMessage::get_msg_name(const ZstMsgKind & msg_kind)
 	return "UNKNOWN";
 }
 
-void ZstMessage::append_payload(const ZstSerialisable & streamable)
+void ZstMessage::append_payload(const std::string & payload)
 {
-	std::stringstream buffer;
-	append_payload(streamable, buffer);
-	zmsg_addmem(m_msg_handle, buffer.str().c_str(), buffer.str().size());
+	zmsg_addstr(m_msg_handle, payload.c_str());
 }
 
-void ZstMessage::append_payload(const ZstSerialisable & streamable, std::stringstream & buffer)
+void ZstMessage::append_payload(const std::string & payload, std::stringstream & buffer)
 {
-	streamable.write(buffer);
+	msgpack::pack(buffer, payload);
 }
 
 void ZstMessage::set_handle(zmsg_t * handle){
@@ -314,6 +288,8 @@ void ZstMessage::unpack_next_args(zmsg_t * msg)
 
 void ZstMessage::unpack_next_args(const char * data, size_t size, size_t & offset)
 {
+	if (offset >= size) return;
+
 	msgpack::object_handle handle = msgpack::unpack(data, size, offset);
 	size_t num_args = static_cast<size_t>(handle.get().via.i64);
 
@@ -327,14 +303,14 @@ void ZstMessage::unpack_next_args(const char * data, size_t size, size_t & offse
 void ZstMessage::unpack_next_payload(zmsg_t * msg)
 {
 	//Unpack payload (optional)
-	zframe_t * frame = zmsg_pop(msg);
+	char * frame = zmsg_popstr(msg);
 	if (!frame) return;
-	m_payload_frame = frame;
+	m_payload = std::string(frame);
 }
 
 void ZstMessage::unpack_next_payload(char * data, size_t size, size_t & offset)
 {
-	m_payload = data;
-	m_payload_size = size;
-	m_payload_offset = offset;
+	if (offset >= size) return;
+	auto handle = msgpack::unpack(data, size, offset);
+	m_payload = std::string(handle.get().via.str.ptr, handle.get().via.str.size);
 }

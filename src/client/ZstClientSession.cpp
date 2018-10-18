@@ -109,7 +109,8 @@ void ZstClientSession::on_receive_graph_msg(ZstMessage * msg)
 	
 	//Create a ZstValue object to hold our plug data
 	ZstValue received_val;
-	received_val.read((char*)msg->payload_data(), msg->payload_size(), msg->payload_offset());
+	size_t offset = 0;
+	received_val.read((char*)msg->payload_data(), msg->payload_size(), offset);
 
 	//If the sending plug is a proxy then let the host app know it has updated
 	if (sending_plug->is_proxy()) {
@@ -169,7 +170,7 @@ ZstCable * ZstClientSession::connect_cable(ZstInputPlug * input, ZstOutputPlug *
 		//to determine the correct input->output order - fix this using ZstInputPlug and 
 		//ZstOutput plug as arguments
 		stage_events().invoke([this, sendtype, cable](ZstTransportAdaptor* adaptor) {
-			adaptor->on_send_msg(ZstMsgKind::CREATE_CABLE, sendtype, *cable, [this, cable](ZstMessageReceipt response) {
+			adaptor->on_send_msg(ZstMsgKind::CREATE_CABLE, sendtype, cable->as_json_str(), [this, cable](ZstMessageReceipt response) {
 				this->connect_cable_complete(response, cable);
 			});
 		});
@@ -194,7 +195,7 @@ void ZstClientSession::destroy_cable(ZstCable * cable, const ZstTransportSendTyp
 	ZstSession::destroy_cable(cable, sendtype);
 	
 	stage_events().invoke([this, cable, sendtype](ZstTransportAdaptor * adaptor) {
-		adaptor->on_send_msg(ZstMsgKind::DESTROY_CABLE, sendtype, *cable, [this, cable](ZstMessageReceipt response) {
+		adaptor->on_send_msg(ZstMsgKind::DESTROY_CABLE, sendtype, cable->as_json_str(), [this, cable](ZstMessageReceipt response) {
 			this->destroy_cable_complete(response, cable);
 		});
 	});

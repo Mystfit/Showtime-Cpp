@@ -2,6 +2,7 @@
 #include <ZstCable.h>
 #include <entities/ZstPlug.h>
 #include "liasons/ZstPlugLiason.hpp"
+#include <nlohmann/json.hpp>
 
 ZstCable::ZstCable() : 
 	ZstSynchronisable(),
@@ -140,6 +141,18 @@ void ZstCable::read(const char * buffer, size_t length, size_t & offset)
 
 	handle = msgpack::unpack(buffer, length, offset);
 	m_input_URI = ZstURI(handle.get().via.str.ptr, handle.get().via.str.size);
+}
+
+void ZstCable::write_json(json & buffer) const
+{
+	buffer["output_uri"] = m_output_URI.path();
+	buffer["input_uri"] = m_input_URI.path();
+}
+
+void ZstCable::read_json(const json & buffer)
+{
+	m_output_URI = ZstURI(buffer["output_uri"].get<std::string>().c_str(), buffer["output_uri"].get<std::string>().size());
+	m_input_URI = ZstURI(buffer["input_uri"].get<std::string>().c_str(), buffer["input_uri"].get<std::string>().size());
 }
 
 size_t ZstCableHash::operator()(ZstCable* const& k) const

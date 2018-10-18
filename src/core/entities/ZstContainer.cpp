@@ -1,4 +1,5 @@
 #include <msgpack.hpp>
+#include <nlohmann/json.hpp>
 #include <entities/ZstContainer.h>
 #include "../ZstEventDispatcher.hpp"
 
@@ -202,6 +203,40 @@ void ZstContainer::read(const char * buffer, size_t length, size_t & offset)
 		child->read(buffer, length, offset);
 		add_child(child);
 	}
+}
+
+void ZstContainer::write_json(json & buffer) const
+{
+	//Pack entity
+	ZstComponent::write_json(buffer);
+
+	//Pack children
+	buffer["children"] = json::array();
+	for (auto child : m_children) {
+		buffer["children"].push_back(child.second->as_json());
+	}
+}
+
+void ZstContainer::read_json(const json & buffer)
+{
+	//Unpack entity base first
+	ZstComponent::read_json(buffer);
+
+	//Unpack children
+	for (auto c : buffer["children"]) {
+		ZstEntityBase * child = NULL;
+
+		if (c["entity_type"] == CONTAINER_TYPE) {
+			child = new ZstContainer();
+		}
+		else if (c["entity_type"] == COMPONENT_TYPE) {
+			child = new ZstComponent();
+		}
+
+		child->read_json(c);
+		add_child(child);
+	}
+	
 }
 
 ZstCableBundle & ZstContainer::get_child_cables(ZstCableBundle & bundle) const

@@ -62,6 +62,8 @@ public:
 	//Serialisation
 	ZST_EXPORT virtual void write(std::stringstream & buffer) const override;
 	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
+	ZST_EXPORT void write_json(json & buffer) const override;
+	ZST_EXPORT void read_json(const json & buffer) override;
 
 	//Adaptors
     ZST_EXPORT virtual void add_adaptor(ZstEntityAdaptor * adaptor);
@@ -78,6 +80,6 @@ protected:
 private:
     ZstEventDispatcher<ZstEntityAdaptor*> * m_entity_events;
 	ZstEntityBase * m_parent;
-	char * m_entity_type;
+	std::string m_entity_type;
 	ZstURI m_uri;
 };

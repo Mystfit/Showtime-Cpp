@@ -84,16 +84,16 @@ ZstMsgKind ZstStageSession::synchronise_client_graph(ZstPerformer * client) {
 	for (auto performer : hierarchy()->get_performers(bundle)) {
 		//Only pack performers that aren't the destination client
 		if (performer->URI() != client->URI()) {
-			router_events().invoke([performer, &args](ZstTransportAdaptor * adp) {
-				adp->on_send_msg(ZstMsgKind::CREATE_PERFORMER, args, *performer);
+			router_events().invoke([&performer, &args](ZstTransportAdaptor * adp) {
+				adp->on_send_msg(ZstMsgKind::CREATE_PERFORMER, args, performer->as_json_str());
 			});
 		}
 	}
 
 	//Send cables
 	for (auto cable : m_cables) {
-		router_events().invoke([cable, &args](ZstTransportAdaptor * adp) {
-			adp->on_send_msg(ZstMsgKind::CREATE_CABLE, args, *cable);
+		router_events().invoke([&cable, &args](ZstTransportAdaptor * adp) {
+			adp->on_send_msg(ZstMsgKind::CREATE_CABLE, args, cable->as_json_str());
 		});
 	}
 
@@ -240,8 +240,8 @@ ZstMsgKind ZstStageSession::observe_entity_handler(ZstMessage * msg, ZstPerforme
 ZstMsgKind ZstStageSession::create_cable_complete_handler(ZstCable * cable)
 {
 	ZstLog::net(LogLevel::notification, "Client connection complete. Publishing cable {}-{}", cable->get_input_URI().path(), cable->get_output_URI().path());
-	publisher_events().invoke([cable](ZstTransportAdaptor * adp) {
-		adp->on_send_msg(ZstMsgKind::CREATE_CABLE, *cable);
+	publisher_events().invoke([&cable](ZstTransportAdaptor * adp) {
+		adp->on_send_msg(ZstMsgKind::CREATE_CABLE, cable->as_json_str());
 	});
 	return ZstMsgKind::OK;
 }
@@ -287,7 +287,7 @@ void ZstStageSession::destroy_cable(ZstCable * cable) {
 	ZstLog::net(LogLevel::notification, "Destroying cable {} {}", cable->get_output_URI().path(), cable->get_input_URI().path());
 
 	//Update rest of network
-	publisher_events().invoke([this, cable](ZstTransportAdaptor * adp) {adp->on_send_msg(ZstMsgKind::DESTROY_CABLE, *cable); });
+	publisher_events().invoke([this, &cable](ZstTransportAdaptor * adp) {adp->on_send_msg(ZstMsgKind::DESTROY_CABLE, cable->as_json_str()); });
 
 	//Remove cable
 	ZstSession::destroy_cable_complete(cable);

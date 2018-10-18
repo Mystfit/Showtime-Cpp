@@ -274,7 +274,7 @@ void ZstClient::join_stage(std::string stage_address, const ZstTransportSendType
 			{ ZstMsgArg::GRAPH_RELIABLE_OUTPUT_ADDRESS, reliable_graph_addr },
 			{ ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS, unreliable_graph_addr }
 		};
-		adaptor->on_send_msg(ZstMsgKind::CLIENT_JOIN, sendtype, *root, args, [this](ZstMessageReceipt response) {
+		adaptor->on_send_msg(ZstMsgKind::CLIENT_JOIN, sendtype, root->as_json_str(), args, [this](ZstMessageReceipt response) {
 			this->join_stage_complete(response);
 		});
 	});

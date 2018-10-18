@@ -51,6 +51,8 @@ public:
 
 	ZST_EXPORT void write(std::stringstream & buffer) const override;
 	ZST_EXPORT void read(const char * buffer, size_t length, size_t & offset) override;
+	ZST_EXPORT void write_json(json & buffer) const override;
+	ZST_EXPORT void read_json(const json & buffer) override;
 
 	//Testing
 	ZST_EXPORT static void self_test();

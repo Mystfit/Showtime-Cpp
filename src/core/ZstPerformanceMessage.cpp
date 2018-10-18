@@ -10,7 +10,7 @@ ZstPerformanceMessage * ZstPerformanceMessage::init(ZstMsgKind kind)
 	ZstMessage::reset();
 	std::stringstream buffer;
 	this->append_kind(kind, buffer);
-	m_payload_frame = zframe_new(buffer.str().c_str(), buffer.str().size());
+	m_payload = buffer.str();
 	return this;
 }
 
@@ -21,30 +21,30 @@ ZstPerformanceMessage * ZstPerformanceMessage::init(ZstMsgKind kind, const ZstMs
 	std::stringstream buffer;
 	this->append_kind(kind, buffer);
 	this->append_args(args, buffer);
-	m_payload_frame = zframe_new(buffer.str().c_str(), buffer.str().size());
+	m_payload = buffer.str();
 	return this;
 }
 
-ZstPerformanceMessage * ZstPerformanceMessage::init(ZstMsgKind kind, const ZstSerialisable & serialisable)
+ZstPerformanceMessage * ZstPerformanceMessage::init(ZstMsgKind kind, const std::string & payload)
 {
 	//Reset instead of init to skip creating a new zmsg_t* object
 	ZstMessage::reset();
 	std::stringstream buffer;
 	this->append_kind(kind, buffer);
 	this->append_args({}, buffer);
-	this->append_payload(serialisable, buffer);
-	m_payload_frame = zframe_new(buffer.str().c_str(), buffer.str().size());
+	this->append_payload(payload, buffer);
+	m_payload = buffer.str();
 	return this;
 }
 
-ZstPerformanceMessage * ZstPerformanceMessage::init(ZstMsgKind kind, const ZstSerialisable & serialisable, const ZstMsgArgs & args)
+ZstPerformanceMessage * ZstPerformanceMessage::init(ZstMsgKind kind, const std::string & payload, const ZstMsgArgs & args)
 {
 	//Reset instead of init to skip creating a new zmsg_t* object
 	ZstMessage::reset();
 	std::stringstream buffer;
 	this->append_kind(kind, buffer);
 	this->append_args(args, buffer);
-	this->append_payload(serialisable, buffer);
-	m_payload_frame = zframe_new(buffer.str().c_str(), buffer.str().size());	
+	this->append_payload(payload, buffer);
+	m_payload = buffer.str();
 	return this;
 }

@@ -34,19 +34,19 @@ ZstStageMessage * ZstStageMessage::init(ZstMsgKind kind, const ZstMsgArgs & args
 	return this;
 }
 
-ZstStageMessage * ZstStageMessage::init(ZstMsgKind kind, const ZstSerialisable & serialisable)
+ZstStageMessage * ZstStageMessage::init(ZstMsgKind kind, const std::string & payload)
 {
 	ZstMessage::init();
 	this->append_id_frame(m_msg_id);
-	ZstMessage::init(kind, serialisable);
+	ZstMessage::init(kind, payload);
 	return this;
 }
 
-ZstStageMessage * ZstStageMessage::init(ZstMsgKind kind, const ZstSerialisable & serialisable, const ZstMsgArgs & args)
+ZstStageMessage * ZstStageMessage::init(ZstMsgKind kind, const std::string & payload, const ZstMsgArgs & args)
 {
 	ZstMessage::init();
 	this->append_id_frame(m_msg_id);
-	ZstMessage::init(kind, serialisable, args);
+	ZstMessage::init(kind, payload, args);
 	return this;
 }
 

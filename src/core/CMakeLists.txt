@@ -84,6 +84,7 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstLogging.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstCable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstURI.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstSerialisable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstSynchronisable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstValue.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstSession.cpp"
@@ -149,10 +150,14 @@ set(SHOWTIME_PUBLIC_LINKED_LIBS
     ${Boost_FIBER_TARGET}
     ${CMAKE_THREAD_LIBS_INIT}
 )
+
+set(SHOWTIME_PRIVATE_LINKED_LIBS 
+    ${msgpackc_TARGET}
+)
+
 set(SHOWTIME_HEADER_TARGETS
     ${Boost_HEADER_TARGET}
     ${fmt_TARGET}
-    ${variant_SYSTEM_TARGET}
 )
 
 if(BUILD_STATIC)
@@ -187,6 +192,7 @@ foreach(TARGET ${CORE_LIBS})
     target_include_directories(${TARGET} PUBLIC
             $<BUILD_INTERFACE:${Showtime_INCLUDE_DIRS}>
             $<BUILD_INTERFACE:${Showtime_COMPILED_INCLUDE_DIRS}>
+            $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}>
             $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}/cf>
             $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}/variant>
             $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}/concurrentqueue>
@@ -198,5 +204,5 @@ foreach(TARGET ${CORE_LIBS})
     target_compile_definitions(${TARGET} PUBLIC ${GLOBAL_PUBLIC_DEFINES})
 
     # Target link libs
-    target_link_libraries(${TARGET} PRIVATE ${msgpackc_TARGET} ${SHOWTIME_HEADER_TARGETS})
+    target_link_libraries(${TARGET} PRIVATE ${SHOWTIME_PRIVATE_LINKED_LIBS} ${SHOWTIME_HEADER_TARGETS})
 endforeach()

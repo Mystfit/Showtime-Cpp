@@ -1,4 +1,5 @@
 #include <exception>
+#include <nlohmann/json.hpp>
 #include <msgpack.hpp>
 #include <entities/ZstEntityFactory.h>
 #include "../ZstEventDispatcher.hpp"
@@ -169,4 +170,23 @@ void ZstEntityFactory::read(const char * buffer, size_t length, size_t & offset)
 			m_creatables.emplace(handle.get().via.str.ptr, handle.get().via.str.size);
 		}
 	}
+}
+
+void ZstEntityFactory::write_json(json & buffer) const
+{
+	//Pack creatables
+	ZstEntityBase::write_json(buffer);
+	buffer["creatables"] = json::array();
+	for (auto creatable : m_creatables) {
+		buffer["creatables"].push_back(creatable.path());
+	}
+}
+
+void ZstEntityFactory::read_json(const json & buffer)
+{
+	ZstEntityBase::read_json(buffer);
+	for (auto creatable : buffer["creatables"]) {
+		m_creatables.emplace(creatable.get<std::string>().c_str(), creatable.get<std::string>().size());
+	}
+	
 }

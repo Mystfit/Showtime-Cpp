@@ -4,6 +4,7 @@
 #include <entities/ZstEntityBase.h>
 #include <entities/ZstEntityFactory.h>
 #include <ZstCable.h>
+#include <nlohmann/json.hpp>
 
 #include "../ZstEventDispatcher.hpp"
 
@@ -22,7 +23,7 @@ template class ZstEventDispatcher<ZstEntityAdaptor*>;
 ZstEntityBase::ZstEntityBase(const char * name) : 
 	ZstSynchronisable(),
 	m_parent(NULL),
-	m_entity_type(NULL),
+	m_entity_type(""),
 	m_uri(name)
 {
     m_entity_events = new ZstEventDispatcher<ZstEntityAdaptor*>();
@@ -31,14 +32,8 @@ ZstEntityBase::ZstEntityBase(const char * name) :
 ZstEntityBase::ZstEntityBase(const ZstEntityBase & other) : ZstSynchronisable(other)
 {
 	m_parent = other.m_parent;
-	
-	size_t entity_type_size = strlen(other.m_entity_type);
-	m_entity_type = (char*)malloc(entity_type_size + 1);
-	memcpy(m_entity_type, other.m_entity_type, entity_type_size);
-	m_entity_type[entity_type_size] = '\0';
-
+	m_entity_type = other.m_entity_type;
 	m_uri = ZstURI(other.m_uri);
-
 	m_entity_events = new ZstEventDispatcher<ZstEntityAdaptor*>();
 }
 
@@ -47,7 +42,6 @@ ZstEntityBase::~ZstEntityBase()
 	//Let owner know this entity is going away
 	dispatch_destroyed();
 
-	free(m_entity_type);
     m_entity_events->flush();
     m_entity_events->remove_all_adaptors();
 
@@ -85,7 +79,7 @@ void ZstEntityBase::update_URI()
 
 const char * ZstEntityBase::entity_type() const
 {
-	return m_entity_type;
+	return m_entity_type.c_str();
 }
 
 const ZstURI & ZstEntityBase::URI() const
@@ -129,9 +123,19 @@ void ZstEntityBase::read(const char * buffer, size_t length, size_t & offset)
 	auto obj = handle.get();
 
 	//Copy entity type string into entity
-	m_entity_type = (char*)malloc(obj.via.str.size + 1);
-	memcpy(m_entity_type, obj.via.str.ptr, obj.via.str.size);
-	m_entity_type[obj.via.str.size] = '\0';
+	m_entity_type = std::string(obj.via.str.ptr, obj.via.str.size);
+}
+
+void ZstEntityBase::write_json(json & buffer) const
+{
+	buffer["URI"] = URI().path();
+	buffer["entity_type"] = entity_type();
+}
+
+void ZstEntityBase::read_json(const json & buffer)
+{
+	m_uri = ZstURI(buffer["URI"].get<std::string>().c_str(), buffer["URI"].get<std::string>().size());
+	m_entity_type = buffer["entity_type"].get<std::string>();
 }
 
 void ZstEntityBase::add_adaptor(ZstEntityAdaptor * adaptor)
@@ -145,14 +149,7 @@ void ZstEntityBase::remove_adaptor(ZstEntityAdaptor * adaptor)
 }
 
 void ZstEntityBase::set_entity_type(const char * entity_type) {
-	if (m_entity_type) {
-		free(m_entity_type);
-		m_entity_type = NULL;
-	}
-	int entity_type_len = static_cast<int>(strlen(entity_type));
-	m_entity_type = (char*)malloc(entity_type_len + 1);
-	memcpy(m_entity_type, entity_type, entity_type_len);
-    m_entity_type[entity_type_len] = '\0';
+	m_entity_type = std::string(entity_type);
 }
 
 void ZstEntityBase::set_parent(ZstEntityBase *entity) {

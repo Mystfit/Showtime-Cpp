@@ -118,8 +118,8 @@ ZstMsgKind ZstStageHierarchy::create_client_handler(std::string sender_identity,
 	}
 
 	//Update rest of network
-	publisher_events().invoke([client_proxy](ZstTransportAdaptor * adp) {
-		adp->on_send_msg(ZstMsgKind::CREATE_PERFORMER, *client_proxy);
+	publisher_events().invoke([&client_proxy](ZstTransportAdaptor * adp) {
+		adp->on_send_msg(ZstMsgKind::CREATE_PERFORMER, client_proxy->as_json_str());
 	});
 	return ZstMsgKind::OK;
 }
@@ -167,8 +167,8 @@ ZstMsgKind ZstStageHierarchy::add_proxy_entity(const ZstEntityBase & entity, Zst
 	//Update rest of network
 	if (msg_status == ZstMsgKind::OK) {
 		ZstMsgArgs args{ {ZstMsgArg::MSG_ID, boost::lexical_cast<std::string>(request_ID)} };
-		publisher_events().invoke([proxy, &entity, &args](ZstTransportAdaptor * adp) {
-			adp->on_send_msg(ZstMessage::entity_kind(entity), args, *proxy);
+		publisher_events().invoke([&proxy, &entity, &args](ZstTransportAdaptor * adp) {
+			adp->on_send_msg(ZstMessage::entity_kind(entity), args, proxy->as_json_str());
 		});
 	}
 
@@ -184,7 +184,7 @@ ZstMsgKind ZstStageHierarchy::update_proxy_entity(const ZstEntityBase & entity, 
 	if (msg_status == ZstMsgKind::OK) {
 		ZstMsgArgs args{ { ZstMsgArg::MSG_ID, boost::lexical_cast<std::string>(request_ID) } };
 		publisher_events().invoke([&entity, &args](ZstTransportAdaptor * adp) {
-			adp->on_send_msg(ZstMsgKind::UPDATE_ENTITY, args, entity);
+			adp->on_send_msg(ZstMsgKind::UPDATE_ENTITY, args, entity.as_json_str());
 		});
 	}
 

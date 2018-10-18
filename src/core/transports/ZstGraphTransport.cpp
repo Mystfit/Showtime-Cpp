@@ -42,7 +42,7 @@ const std::string & ZstGraphTransport::get_graph_out_address() const
 void ZstGraphTransport::send_message_impl(ZstMessage * msg)
 {
 	ZstPerformanceMessage * perf_msg = static_cast<ZstPerformanceMessage*>(msg);
-	zframe_t * payload_frame = perf_msg->payload_frame();
+	zframe_t * payload_frame = zframe_new(perf_msg->payload_data(), perf_msg->payload_size());
 
 	zframe_set_group(payload_frame, PERFORMANCE_GROUP);
 	zsock_t * sock = output_graph_socket();

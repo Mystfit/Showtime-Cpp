@@ -88,7 +88,7 @@ void ZstClientHierarchy::on_publish_entity_update(ZstEntityBase * entity)
 		//Factory wants to update creatables
 		ZstEntityFactory * factory = static_cast<ZstEntityFactory*>(entity);
 		stage_events().invoke([factory](ZstTransportAdaptor * adp) {
-			adp->on_send_msg(ZstMsgKind::UPDATE_ENTITY, ZstTransportSendType::PUBLISH, *factory, [](ZstMessageReceipt s) {});
+			adp->on_send_msg(ZstMsgKind::UPDATE_ENTITY, ZstTransportSendType::PUBLISH, factory->as_json_str(), [](ZstMessageReceipt s) {});
 		});
 	}
 }
@@ -121,7 +121,7 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 			args[ZstMsgArg::MSG_ID] = boost::lexical_cast<std::string>(request_ID);
 			ZstLog::net(LogLevel::debug, "Responding to server creatable request with id {}", request_ID);
 		}
-		adaptor->on_send_msg(ZstMessage::entity_kind(*entity), sendtype, *entity, args, [this, entity](ZstMessageReceipt response) {
+		adaptor->on_send_msg(ZstMessage::entity_kind(*entity), sendtype, entity->as_json_str(), args, [this, entity](ZstMessageReceipt response) {
 			if (response.status == ZstMsgKind::CREATE_COMPONENT ||
 				response.status == ZstMsgKind::CREATE_CONTAINER ||
 				response.status == ZstMsgKind::CREATE_FACTORY ||

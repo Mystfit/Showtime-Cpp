@@ -122,11 +122,20 @@ set(Boost_ATOMIC_TARGET "Boost::atomic")
 set(Boost_REGEX_TARGET "Boost::regex")
 
 # Msgpack, fmt, swig
-# ------------------
+# ------------------------------
 find_package(MsgPack CONFIG REQUIRED)
-find_package(fmt CONFIG REQUIRED)
-#find_package(mpark_variant CONFIG REQUIRED)
+set(msgpackc_TARGET "msgpackc-static")
 
+find_package(fmt CONFIG REQUIRED)
+set(fmt_TARGET "fmt::fmt-header-only")
+
+find_package(SWIG)
+if(SWIG_FOUND)
+    include(UseSWIG)
+endif()
+
+# CZMQ, libZMQ
+# ----
 if(WIN32)
     # Use cmake versions of ZeroMQ and CZMQ
     find_package(ZeroMQ CONFIG REQUIRED)
@@ -136,17 +145,6 @@ else()
     find_package(libzmq REQUIRED)
     find_package(czmq REQUIRED)
 endif()
-
-find_package(SWIG)
-if(SWIG_FOUND)
-    include(UseSWIG)
-endif()
-
-# set(CZMQ_TARGET czmq-static)
-# set(LIBZMQ_TARGET libzmq-static)
-set(variant_TARGET "mpark_variant")
-set(fmt_TARGET "fmt::fmt-header-only")
-set(msgpackc_TARGET "msgpackc-static")
 
 
 # ----------------

@@ -12,8 +12,8 @@ public:
 
 	ZST_EXPORT virtual ZstStageMessage * init(ZstMsgKind kind) override;
 	ZST_EXPORT virtual ZstStageMessage * init(ZstMsgKind kind, const ZstMsgArgs & args) override;
-	ZST_EXPORT virtual ZstStageMessage * init(ZstMsgKind kind, const ZstSerialisable & serialisable) override;
-	ZST_EXPORT virtual ZstStageMessage * init(ZstMsgKind kind, const ZstSerialisable & serialisable, const ZstMsgArgs & args) override;
+	ZST_EXPORT virtual ZstStageMessage * init(ZstMsgKind kind, const std::string & payload) override;
+	ZST_EXPORT virtual ZstStageMessage * init(ZstMsgKind kind, const std::string & payload, const ZstMsgArgs & args) override;
 	
     ZST_EXPORT void unpack(zmsg_t * msg) override;
 };

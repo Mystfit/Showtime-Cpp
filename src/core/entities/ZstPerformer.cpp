@@ -1,4 +1,5 @@
 #include <exception>
+#include <nlohmann/json.hpp>
 #include <msgpack.hpp>
 #include <entities/ZstPerformer.h>
 #include "../ZstEventDispatcher.hpp"
@@ -145,6 +146,30 @@ void ZstPerformer::read(const char * buffer, size_t length, size_t & offset)
 	for (int i = 0; i < num_factories; ++i) {
 		ZstEntityFactory * factory = new ZstEntityFactory();
 		factory->read(buffer, length, offset);
+		m_factories[factory->URI()] = factory;
+	}
+}
+
+void ZstPerformer::write_json(json & buffer) const
+{
+	//Pack entity
+	ZstContainer::write_json(buffer);
+
+	//Pack children
+	buffer["factories"] = json::array();
+	for (auto factory : m_factories) {
+		buffer["factories"].push_back(factory.second->as_json());
+	}
+}
+
+void ZstPerformer::read_json(const json & buffer)
+{
+	ZstContainer::read_json(buffer);
+
+	//Unpack factories
+	for (auto f : buffer["factories"]) {
+		ZstEntityFactory * factory = new ZstEntityFactory();
+		factory->read_json(f);
 		m_factories[factory->URI()] = factory;
 	}
 }

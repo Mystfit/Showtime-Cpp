@@ -1,5 +1,6 @@
 #include <memory>
 #include <msgpack.hpp>
+#include <nlohmann/json.hpp>
 
 #include <entities/ZstPlug.h>
 #include <ZstCable.h>
@@ -142,6 +143,36 @@ void ZstPlug::read(const char * buffer, size_t length, size_t & offset)
 	m_max_connected_cables = msgpack::unpack(buffer, length, offset).get().via.i64;
 }
 
+void ZstPlug::write_json(json & buffer) const
+{
+	//Pack entity
+	ZstEntityBase::write_json(buffer);
+
+	//Pack value
+	buffer["value"] = m_value->as_json();
+
+	//Pack plug direction
+	buffer["plug_direction"] = m_direction;
+
+	//Pack max cables
+	buffer["max_connected_cables"] = m_max_connected_cables;
+}
+
+void ZstPlug::read_json(const json & buffer)
+{
+	//Unpack entity
+	ZstEntityBase::read_json(buffer);
+
+	//Unpack value
+	m_value->read_json(buffer["value"]);
+
+	//Unpack direction
+	m_direction = buffer["plug_direction"];
+
+	//Unpack max cables
+	m_max_connected_cables = buffer["max_connected_cables"];
+}
+
 
 //--------------------
 // Properties
@@ -267,7 +298,9 @@ ZstOutputPlug::~ZstOutputPlug()
 void ZstOutputPlug::fire()
 {
 	m_performance_events->invoke([this](ZstTransportAdaptor * adaptor) {
-		adaptor->on_send_msg(ZstMsgKind::PERFORMANCE_MSG, { {ZstMsgArg::PATH, this->URI().path()} }, *this->raw_value());
+		std::stringstream buffer;
+		this->raw_value()->write(buffer);
+		adaptor->on_send_msg(ZstMsgKind::PERFORMANCE_MSG, { {ZstMsgArg::PATH, this->URI().path()} }, buffer.str());
 	});
 	m_value->clear();
 }
