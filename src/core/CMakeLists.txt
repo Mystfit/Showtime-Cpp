@@ -51,6 +51,7 @@ list(APPEND Showtime_API_INTERFACE ${API_FILES})
 set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstActor.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessage.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstMessageOptions.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMsgID.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstValue.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessagePool.hpp"
@@ -63,6 +64,7 @@ set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstModule.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstEventWakeup.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstBoostEventWakeup.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstMessageSupervisor.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayer.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayerBase.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstGraphTransport.h"
@@ -79,7 +81,6 @@ set(ZST_CORE_HEADERS
 # Core cpp files
 set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstActor.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstMessage.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMsgID.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstLogging.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstCable.cpp"
@@ -94,6 +95,7 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstModule.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstBoostEventWakeup.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstMessageSupervisor.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayerBase.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstGraphTransport.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstUDPGraphTransport.cpp"

@@ -1,8 +1,10 @@
-#include <boost/lexical_cast.hpp>
 #include "ZstStageSession.h"
+#include <cf/cfuture.h>
 
 
-ZstStageSession::ZstStageSession() : m_hierarchy(NULL)
+ZstStageSession::ZstStageSession() : 
+	m_hierarchy(NULL),
+	m_connection_watcher(std::make_shared<cf::time_watcher>(), STAGE_TIMEOUT)
 {
 	m_hierarchy = new ZstStageHierarchy();
 }
@@ -28,17 +30,28 @@ void ZstStageSession::destroy()
 	ZstSession::destroy();
 }
 
+void ZstStageSession::process_events()
+{
+	ZstSession::process_events();
+	m_connection_watcher.cleanup_response_messages();
+}
+
 void ZstStageSession::on_receive_msg(ZstMessage * msg)
 {
+	ZstStageMessage * stage_msg = static_cast<ZstStageMessage*>(msg);
+
 	ZstMsgKind response(ZstMsgKind::EMPTY);
-	std::string sender_identity = msg->get_arg(ZstMsgArg::SENDER_IDENTITY);
+	std::string sender_identity = stage_msg->get_arg<std::string>(ZstMsgArg::SENDER);
 	ZstPerformerStageProxy * sender = m_hierarchy->get_client_from_socket_id(sender_identity);
 
 	//Check client hasn't finished joining yet
 	if (!sender)
 		return;
 
-	switch (msg->kind()) {
+	//Process connection responses first to avoid fresh promises getting insta-resolved
+	m_connection_watcher.process_response(stage_msg->id(), stage_msg->kind());
+
+	switch (stage_msg->kind()) {
 	case ZstMsgKind::CLIENT_SYNC:
 		response = synchronise_client_graph(sender);
 		break;
@@ -51,9 +64,6 @@ void ZstStageSession::on_receive_msg(ZstMessage * msg)
 	case ZstMsgKind::OBSERVE_ENTITY:
 		response = observe_entity_handler(msg, sender);
 		break;
-	case ZstMsgKind::SUBSCRIBE_TO_PERFORMER_ACK:
-		response = complete_client_connection_handler(msg, sender);
-		break;
 	case ZstMsgKind::CLIENT_HEARTBEAT:
 		sender->set_heartbeat_active();
 		response = ZstMsgKind::OK;
@@ -62,12 +72,13 @@ void ZstStageSession::on_receive_msg(ZstMessage * msg)
 		break;
 	}
 
+	//Return response to sender
 	if (response != ZstMsgKind::EMPTY) {
-		router_events().invoke([response, &sender_identity, &msg](ZstTransportAdaptor * adp) {
+		router_events().invoke([response, &sender_identity, &msg, &stage_msg](ZstTransportAdaptor * adp) {
 			adp->on_send_msg(response, {
-				{ ZstMsgArg::DESTINATION_IDENTITY, sender_identity },
-				{ ZstMsgArg::MSG_ID, boost::lexical_cast<std::string>(msg->id()) }
-				});
+				{ get_msg_arg_name(ZstMsgArg::DESTINATION), sender_identity },
+				{ get_msg_arg_name(ZstMsgArg::MSG_ID), stage_msg->id() }
+			});
 		});
 	}
 }
@@ -77,7 +88,7 @@ ZstMsgKind ZstStageSession::synchronise_client_graph(ZstPerformer * client) {
 	ZstLog::net(LogLevel::notification, "Sending graph snapshot to {}", client->URI().path());
 
 	//Create sender args
-	ZstMsgArgs args{ { ZstMsgArg::DESTINATION_IDENTITY, this->hierarchy()->get_socket_ID(client) } };
+	ZstMsgArgs args{ { get_msg_arg_name(ZstMsgArg::DESTINATION), this->hierarchy()->get_socket_ID(client) } };
 
 	//Send performer root entities
 	ZstEntityBundle bundle;
@@ -85,7 +96,7 @@ ZstMsgKind ZstStageSession::synchronise_client_graph(ZstPerformer * client) {
 		//Only pack performers that aren't the destination client
 		if (performer->URI() != client->URI()) {
 			router_events().invoke([&performer, &args](ZstTransportAdaptor * adp) {
-				adp->on_send_msg(ZstMsgKind::CREATE_PERFORMER, args, performer->as_json_str());
+				adp->on_send_msg(ZstMsgKind::CREATE_PERFORMER, args, performer->as_json());
 			});
 		}
 	}
@@ -93,7 +104,7 @@ ZstMsgKind ZstStageSession::synchronise_client_graph(ZstPerformer * client) {
 	//Send cables
 	for (auto cable : m_cables) {
 		router_events().invoke([&cable, &args](ZstTransportAdaptor * adp) {
-			adp->on_send_msg(ZstMsgKind::CREATE_CABLE, args, cable->as_json_str());
+			adp->on_send_msg(ZstMsgKind::CREATE_CABLE, args, cable->as_json());
 		});
 	}
 
@@ -102,8 +113,10 @@ ZstMsgKind ZstStageSession::synchronise_client_graph(ZstPerformer * client) {
 
 ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformerStageProxy * sender)
 {
+	ZstStageMessage * stage_msg = static_cast<ZstStageMessage*>(msg);
+
 	//Unpack cable from message
-	ZstCable cable = msg->unpack_payload_serialisable<ZstCable>();
+	ZstCable cable = stage_msg->unpack_payload_serialisable<ZstCable>();
 	ZstLog::net(LogLevel::notification, "Received connect cable request for In:{} and Out:{}", cable.get_input_URI().path(), cable.get_output_URI().path());
 
 	//Create cable 
@@ -139,43 +152,48 @@ ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformerS
 	ZstPerformerStageProxy * output_performer = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(cable_ptr->get_output_URI().first()));
 
 	//Check to see if one client is already connected to the other
-	if (!output_performer->is_connected_to_subscriber_peer(input_performer))
-	{
-		ZstMsgID id = msg->id();
-		m_deferred_connection_promises[id] = MessagePromise();
-		MessageFuture future = m_deferred_connection_promises[id].get_future();
-
-		//Create future action to run when the client responds
-		future.then([this, cable_ptr, sender, id](MessageFuture f) {
-			ZstMsgKind status(ZstMsgKind::EMPTY);
-			try {
-				ZstMsgKind status = f.get();
-				if (status == ZstMsgKind::OK) {
-					//Publish cable to graph
-					create_cable_complete_handler(cable_ptr);
-
-					router_events().invoke([id, this, sender](ZstTransportAdaptor * adp) {
-						adp->on_send_msg(ZstMsgKind::OK, { 
-							{ZstMsgArg::DESTINATION_IDENTITY, this->m_hierarchy->get_socket_ID(sender)},
-							{ZstMsgArg::MSG_ID, boost::lexical_cast<std::string>(id) }
-						});
-					});
-				}
-				return status;
-			}
-			catch (const ZstTimeoutException & e) {
-				ZstLog::net(LogLevel::error, "Client connection async response timed out - {}", e.what());
-			}
-			return status;
-		});
-
-		//Start the client connection
-		connect_clients(id, output_performer, input_performer);
-	}
-	else {
+	if (output_performer->is_connected_to_subscriber_peer(input_performer)) {
 		return create_cable_complete_handler(cable_ptr);
 	}
 
+	ZstMsgID id = stage_msg->id();		
+	auto future = m_connection_watcher.register_response(id);
+
+	//Create future action to run when the client responds
+	future.then([this, cable_ptr, sender, id, input_performer, output_performer](ZstMessageFuture f) {
+		ZstMsgKind status(ZstMsgKind::EMPTY);
+		try {
+			ZstMsgKind status = f.get();
+			if (status != ZstMsgKind::OK) {
+				ZstLog::net(LogLevel::error, "Client failed to complete P2P connection with status {}", get_msg_name(status));
+				return status;
+			}
+
+			//Finish connection setup
+			complete_client_connection(output_performer, input_performer);
+
+			//Publish cable to graph
+			create_cable_complete_handler(cable_ptr);
+
+			//Let caller know the operation has successfully completed
+			router_events().invoke([id, this, sender](ZstTransportAdaptor * adp) {
+				adp->on_send_msg(ZstMsgKind::OK, { 
+					{get_msg_arg_name(ZstMsgArg::DESTINATION), this->m_hierarchy->get_socket_ID(sender)},
+					{get_msg_arg_name(ZstMsgArg::MSG_ID), id }
+				});
+			});
+			
+			return status;
+		}
+		catch (const ZstTimeoutException & e) {
+			ZstLog::net(LogLevel::error, "Client connection async response timed out - {}", e.what());
+		}
+		return status;
+	});
+
+	//Start the client connection
+	connect_clients(id, output_performer, input_performer);
+	
 	return ZstMsgKind::EMPTY;
 }
 
@@ -183,8 +201,12 @@ ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformerS
 
 ZstMsgKind ZstStageSession::observe_entity_handler(ZstMessage * msg, ZstPerformerStageProxy * sender)
 {
+	ZstStageMessage * stage_msg = static_cast<ZstStageMessage*>(msg);
+
 	//Get target performer
-	ZstPerformerStageProxy * observed_performer = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(msg->get_arg(ZstMsgArg::OUTPUT_PATH)));
+	std::string performer_path_str = stage_msg->get_arg<std::string>(ZstMsgArg::OUTPUT_PATH);
+	ZstURI performer_path(performer_path_str.c_str(), performer_path_str.size());
+	ZstPerformerStageProxy * observed_performer = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(performer_path));
 	if (!observed_performer) {
 		return ZstMsgKind::ERR_STAGE_PERFORMER_NOT_FOUND;
 	}
@@ -198,12 +220,11 @@ ZstMsgKind ZstStageSession::observe_entity_handler(ZstMessage * msg, ZstPerforme
 	//Check to see if one client is already connected to the other
 	if (!sender->is_connected_to_subscriber_peer(observed_performer))
 	{
-		ZstMsgID id = msg->id();
-		m_deferred_connection_promises[id] = MessagePromise();
-		MessageFuture future = m_deferred_connection_promises[id].get_future();
+		ZstMsgID id = stage_msg->id();
+		auto future = m_connection_watcher.register_response(id);
 
 		//Create future action to run when the client responds
-		future.then([this, sender, observed_performer, id](MessageFuture f) {
+		future.then([this, sender, observed_performer, id](ZstMessageFuture f) {
 			ZstMsgKind status(ZstMsgKind::EMPTY);
 			try {
 				ZstMsgKind status = f.get();
@@ -212,8 +233,8 @@ ZstMsgKind ZstStageSession::observe_entity_handler(ZstMessage * msg, ZstPerforme
 
 					router_events().invoke([id, this, sender](ZstTransportAdaptor * adp) {
 						adp->on_send_msg(ZstMsgKind::OK, {
-							{ ZstMsgArg::DESTINATION_IDENTITY, this->m_hierarchy->get_socket_ID(sender) },
-							{ ZstMsgArg::MSG_ID, boost::lexical_cast<std::string>(id) }
+							{ get_msg_arg_name(ZstMsgArg::DESTINATION), this->m_hierarchy->get_socket_ID(sender) },
+							{ get_msg_arg_name(ZstMsgArg::MSG_ID), id }
 						});
 					});
 				}
@@ -241,14 +262,15 @@ ZstMsgKind ZstStageSession::create_cable_complete_handler(ZstCable * cable)
 {
 	ZstLog::net(LogLevel::notification, "Client connection complete. Publishing cable {}-{}", cable->get_input_URI().path(), cable->get_output_URI().path());
 	publisher_events().invoke([&cable](ZstTransportAdaptor * adp) {
-		adp->on_send_msg(ZstMsgKind::CREATE_CABLE, cable->as_json_str());
+		adp->on_send_msg(ZstMsgKind::CREATE_CABLE, json::object(), cable->as_json());
 	});
 	return ZstMsgKind::OK;
 }
 
 ZstMsgKind ZstStageSession::destroy_cable_handler(ZstMessage * msg)
 {
-	const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>();
+	ZstStageMessage * stage_msg = static_cast<ZstStageMessage*>(msg);
+	const ZstCable & cable = stage_msg->unpack_payload_serialisable<ZstCable>();
 	ZstLog::net(LogLevel::notification, "Received destroy cable connection request");
 
 	ZstCable * cable_ptr = find_cable(cable.get_input_URI(), cable.get_output_URI());
@@ -287,7 +309,7 @@ void ZstStageSession::destroy_cable(ZstCable * cable) {
 	ZstLog::net(LogLevel::notification, "Destroying cable {} {}", cable->get_output_URI().path(), cable->get_input_URI().path());
 
 	//Update rest of network
-	publisher_events().invoke([this, &cable](ZstTransportAdaptor * adp) {adp->on_send_msg(ZstMsgKind::DESTROY_CABLE, cable->as_json_str()); });
+	publisher_events().invoke([this, &cable](ZstTransportAdaptor * adp) {adp->on_send_msg(ZstMsgKind::DESTROY_CABLE, json::object(), cable->as_json()); });
 
 	//Remove cable
 	ZstSession::destroy_cable_complete(cable);
@@ -299,13 +321,11 @@ void ZstStageSession::connect_clients(const ZstMsgID & response_id, ZstPerformer
 	ZstLog::net(LogLevel::notification, "Sending P2P subscribe request to {}", input_client->URI().path());
 
 	//Attach URI and IP of output client
-	std::stringstream conn_s;
-	conn_s << response_id;
 	ZstMsgArgs receiver_args{
-		{ ZstMsgArg::OUTPUT_PATH, output_client->URI().path() },
-		{ ZstMsgArg::GRAPH_RELIABLE_OUTPUT_ADDRESS, output_client->reliable_address() },
-		{ ZstMsgArg::REQUEST_ID, conn_s.str() },
-		{ ZstMsgArg::DESTINATION_IDENTITY, m_hierarchy->get_socket_ID(input_client) }
+		{ get_msg_arg_name(ZstMsgArg::OUTPUT_PATH), output_client->URI().path() },
+		{ get_msg_arg_name(ZstMsgArg::GRAPH_RELIABLE_OUTPUT_ADDRESS), output_client->reliable_address() },
+		{ get_msg_arg_name(ZstMsgArg::REQUEST_ID), response_id },
+		{ get_msg_arg_name(ZstMsgArg::DESTINATION), m_hierarchy->get_socket_ID(input_client) }
 	};
 	
 	router_events().invoke([&receiver_args](ZstTransportAdaptor * adp) {
@@ -314,9 +334,9 @@ void ZstStageSession::connect_clients(const ZstMsgID & response_id, ZstPerformer
 
 	ZstLog::net(LogLevel::notification, "Sending P2P handshake broadcast request to {}", output_client->URI().path());
 	ZstMsgArgs broadcaster_args{ 
-		{ ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS, input_client->unreliable_address() },
-		{ZstMsgArg::DESTINATION_IDENTITY, m_hierarchy->get_socket_ID(output_client) },
-		{ZstMsgArg::INPUT_PATH, input_client->URI().path() }
+		{ get_msg_arg_name(ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS), input_client->unreliable_address() },
+		{ get_msg_arg_name(ZstMsgArg::DESTINATION), m_hierarchy->get_socket_ID(output_client) },
+		{ get_msg_arg_name(ZstMsgArg::INPUT_PATH), input_client->URI().path() }
 	};
 	router_events().invoke([&broadcaster_args](ZstTransportAdaptor * adp) {
 		adp->on_send_msg(ZstMsgKind::START_CONNECTION_HANDSHAKE, broadcaster_args);
@@ -324,32 +344,20 @@ void ZstStageSession::connect_clients(const ZstMsgID & response_id, ZstPerformer
 }
 
 
-ZstMsgKind ZstStageSession::complete_client_connection_handler(ZstMessage * msg, ZstPerformerStageProxy * input_client)
+ZstMsgKind ZstStageSession::complete_client_connection(ZstPerformerStageProxy * output_client, ZstPerformerStageProxy * input_client)
 {
-	ZstPerformerStageProxy * output_client = dynamic_cast<ZstPerformerStageProxy*>(m_hierarchy->find_entity(ZstURI(msg->get_arg(ZstMsgArg::OUTPUT_PATH))));
-	if (!output_client) {
-		ZstLog::net(LogLevel::error, "Could not find client {}", msg->get_arg(ZstMsgArg::OUTPUT_PATH));
-		return ZstMsgKind::ERR_STAGE_PERFORMER_NOT_FOUND;
-	}
-
 	//Keep a record of which clients are connected to each other
 	output_client->add_subscriber_peer(input_client);
 
 	//Let the broadcaster know it can stop publishing messages
 	ZstLog::net(LogLevel::notification, "Stopping P2P handshake broadcast from client {}", output_client->URI().path());
 	ZstMsgArgs args{ 
-		{ZstMsgArg::INPUT_PATH, input_client->URI().path()},
-		{ZstMsgArg::DESTINATION_IDENTITY, m_hierarchy->get_socket_ID(output_client)}
+		{ get_msg_arg_name(ZstMsgArg::INPUT_PATH), input_client->URI().path()},
+		{ get_msg_arg_name(ZstMsgArg::DESTINATION), m_hierarchy->get_socket_ID(output_client)}
 	};
 	router_events().invoke([&args](ZstTransportAdaptor * adp) {
 		adp->on_send_msg(ZstMsgKind::STOP_CONNECTION_HANDSHAKE, args);
 	});
-
-	//Run any cable promises associated with this client connection
-	ZstMsgID id = boost::lexical_cast<ZstMsgID>(msg->get_arg(ZstMsgArg::REQUEST_ID));
-
-	m_deferred_connection_promises.at(id).set_value(ZstMsgKind::OK);
-	m_deferred_connection_promises.erase(id);
 	return ZstMsgKind::OK;
 }
 

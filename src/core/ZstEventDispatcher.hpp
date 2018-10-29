@@ -11,11 +11,6 @@
 
 #include "ZstEventWakeup.hpp"
 
-struct ZstTimeoutException : std::runtime_error {
-	using std::runtime_error::runtime_error;
-};
-
-
 enum ZstEventStatus {
 	FAILED = 0,
 	SUCCESS
@@ -108,13 +103,13 @@ public:
 		while (this->m_events.try_dequeue(event)) {
 			bool success = true;
 			for (T adaptor : m_adaptors) {
-				try {
+				//try {
 					event.func(adaptor);
-				}
-				catch (std::exception e) {
+				//}
+				/*catch (std::exception e) {
 					ZstLog::net(LogLevel::error, "Event dispatcher failed to run an event on a adaptor. Reason: {}", e.what());
 					success = false;
-				}
+				}*/
 			}
 			event.completed_func((success) ? ZstEventStatus::SUCCESS : ZstEventStatus::FAILED);
 		}

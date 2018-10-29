@@ -53,7 +53,7 @@ public:
 
 	//Cables
 	ZST_EXPORT size_t num_cables();
-	ZST_EXPORT int max_connected_cables();
+	ZST_EXPORT size_t max_connected_cables();
 	ZST_EXPORT bool is_connected_to(ZstPlug * plug);
 	ZST_EXPORT ZstCableBundle & get_child_cables(ZstCableBundle & bundle) const override;
 
@@ -63,7 +63,7 @@ public:
 protected:
 	ZstValue * m_value;
 	ZstPlugDirection m_direction;
-	int m_max_connected_cables;
+	size_t m_max_connected_cables;
 
 private:
 	ZST_EXPORT void add_cable(ZstCable * cable);

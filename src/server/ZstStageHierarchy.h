@@ -29,7 +29,7 @@ public:
 	// Clients
 	// ----------------
 
-	ZstMsgKind create_client_handler(std::string sender_identity, ZstMessage * msg);
+	ZstMsgKind create_client_handler(std::string sender_identity, ZstStageMessage * msg);
 	ZstMsgKind destroy_client_handler(ZstPerformer * performer);
 
 
@@ -45,7 +45,7 @@ public:
 	// Factories and creatables
 	// ------------------------
 
-	ZstMsgKind create_entity_from_factory_handler(ZstMessage * msg, ZstPerformerStageProxy * sender);
+	ZstMsgKind create_entity_from_factory_handler(ZstStageMessage * msg, ZstPerformerStageProxy * sender);
 
 
 	// ---------------------
@@ -57,6 +57,4 @@ public:
 
 private:
 	ZstClientSocketMap m_client_socket_index;
-	std::unordered_map<ZstMsgID, MessagePromise> m_deferred_creatable_promises;
-
 };

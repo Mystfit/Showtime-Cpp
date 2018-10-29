@@ -10,12 +10,63 @@
 #include <ZstExports.h>
 #include <mutex>
 
+#include <boost/bimap/bimap.hpp>
+#include <boost/bimap/list_of.hpp>
+#include <boost/assign/list_of.hpp>
+
+
 //Forward declare variant
-namespace mpark{
+namespace mpark {
 	template <typename... Ts>
 	class variant;
 }
 typedef mpark::variant<int, float, std::string> ZstValueVariant;
+
+
+namespace ZstValueDetails {
+	class ZstValueIntVisitor
+	{
+	public:
+		int operator()(int i) const;
+		int operator()(float f) const;
+		int operator()(const std::string & str) const;
+	};
+
+	class ZstValueFloatVisitor
+	{
+	public:
+		float operator()(int i) const;
+		float operator()(float f) const;
+		float operator()(const std::string & str) const;
+	};
+
+	class ZstValueStrVisitor
+	{
+	public:
+		std::string operator()(int i) const;
+		std::string operator()(float f) const;
+		std::string operator()(const std::string & str) const;
+	};
+
+	enum ZstValueFields {
+		VALUES,
+		DEFAULT_TYPE
+	};
+
+	typedef boost::bimaps::bimap<ZstValueFields, std::string> ZstValueFieldsMap;
+	static ZstValueFieldsMap ZstValueFieldNames = boost::assign::list_of<ZstValueFieldsMap::relation>
+		(DEFAULT_TYPE, "d")
+		(VALUES, "v");
+
+	static const std::string & get_value_field_name(const ZstValueFields & field) {
+		return ZstValueFieldNames.left.at(field);
+	}
+
+	static const ZstValueFields & get_value_field(const std::string field_str) {
+		return ZstValueFieldNames.right.at(field_str);
+	}
+}
+
 
 class ZstValue : public ZstSerialisable {
 public:
@@ -54,26 +105,4 @@ private:
 	std::mutex m_lock;
 };
 
-class ZstValueIntVisitor
-{
-public:
-	int operator()(int i) const;
-	int operator()(float f) const;
-	int operator()(const std::string & str) const;
-};
 
-class ZstValueFloatVisitor
-{
-public:
-	float operator()(int i) const;
-	float operator()(float f) const;
-	float operator()(const std::string & str) const;
-};
-
-class ZstValueStrVisitor
-{
-public:
-	std::string operator()(int i) const;
-	std::string operator()(float f) const;
-	std::string operator()(const std::string & str) const;
-};

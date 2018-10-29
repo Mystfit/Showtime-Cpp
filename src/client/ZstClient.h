@@ -15,17 +15,18 @@
 //Showtime Core includes
 #include "../core/ZstActor.h"
 #include "../core/ZstMessage.h"
+#include "../core/ZstPerformanceMessage.h"
 #include "../core/ZstMessagePool.hpp"
 #include "../core/ZstValue.h"
 #include "../core/liasons/ZstPlugLiason.hpp"
 #include "../core/liasons/ZstSynchronisableLiason.hpp"
 #include "../core/adaptors/ZstTransportAdaptor.hpp"
 #include "../core/adaptors/ZstModuleAdaptor.hpp"
+#include "../core/transports/ZstTCPGraphTransport.h"
+#include "../core/transports/ZstUDPGraphTransport.h"
 
 //Showtime client includes
 #include "ZstClientSession.h"
-#include "../core/transports/ZstTCPGraphTransport.h"
-#include "../core/transports/ZstUDPGraphTransport.h"
 #include "ZstClientTransport.h"
 
 //Forwards
@@ -69,7 +70,7 @@ public:
 
 	//Stage adaptor overrides
 	void on_receive_msg(ZstMessage * msg) override;
-	void receive_connection_handshake(ZstMessage * msg);
+	void receive_connection_handshake(ZstPerformanceMessage * msg);
 
 	//Register this endpoint to the stage
 	void join_stage(std::string stage_address, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
@@ -123,7 +124,7 @@ private:
 	void start_connection_broadcast(const ZstURI & remote_client_path);
 	static void send_connection_broadcast(boost::asio::deadline_timer * t, ZstClient * client, const ZstURI & to, const ZstURI & from, boost::posix_time::milliseconds duration);
 	void stop_connection_broadcast(const ZstURI & remote_client_path);
-	void listen_to_client(const ZstMessage * msg);
+	void listen_to_client(ZstMessage * msg);
 	ZstPerformerMap m_active_peer_connections;
 	std::unordered_map<ZstURI, ZstMsgID, ZstURIHash> m_pending_peer_connections;
 	

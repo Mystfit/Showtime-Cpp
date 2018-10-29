@@ -140,7 +140,7 @@ void ZstPlug::read(const char * buffer, size_t length, size_t & offset)
 	m_direction = (ZstPlugDirection)msgpack::unpack(buffer, length, offset).get().via.i64;
 
 	//Unpack max cables
-	m_max_connected_cables = msgpack::unpack(buffer, length, offset).get().via.i64;
+	m_max_connected_cables = static_cast<size_t>(msgpack::unpack(buffer, length, offset).get().via.i64);
 }
 
 void ZstPlug::write_json(json & buffer) const
@@ -211,7 +211,7 @@ size_t ZstPlug::num_cables()
 	return m_cables.size();
 }
 
-int ZstPlug::max_connected_cables()
+size_t ZstPlug::max_connected_cables()
 {
 	return m_max_connected_cables;
 }
@@ -298,9 +298,11 @@ ZstOutputPlug::~ZstOutputPlug()
 void ZstOutputPlug::fire()
 {
 	m_performance_events->invoke([this](ZstTransportAdaptor * adaptor) {
-		std::stringstream buffer;
-		this->raw_value()->write(buffer);
-		adaptor->on_send_msg(ZstMsgKind::PERFORMANCE_MSG, { {ZstMsgArg::PATH, this->URI().path()} }, buffer.str());
+		json data;
+		this->raw_value()->write_json(data);
+		auto data_packed = json::to_msgpack(data);
+		std::string buffer(data_packed.begin(), data_packed.end());
+		adaptor->on_send_msg(ZstMsgKind::PERFORMANCE_MSG, { { get_msg_arg_name(ZstMsgArg::PATH), this->URI().path() } }, buffer );
 	});
 	m_value->clear();
 }

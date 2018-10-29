@@ -88,7 +88,7 @@ ZstEntityBase * ZstContainer::walk_child_by_URI(const ZstURI & path)
 		}
 
 		if (result) {
-			distance = path.size() - result->URI().size();
+			distance = static_cast<int>(path.size()) - static_cast<int>(result->URI().size());
 			previous = result;
 		} else {
 			break;

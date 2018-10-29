@@ -1,10 +1,17 @@
 #pragma once
 
-#include <czmq.h>
 #include <iostream>
 #include <unordered_map>
 #include <functional>
 #include <ZstExports.h>
+
+//Forward declared typedefs from CZMQ
+typedef struct _zloop_t zloop_t;
+typedef struct _zsock_t zsock_t;
+typedef struct _zactor_t zactor_t;
+typedef struct _zframe_t zframe_t;
+typedef int (zloop_reader_fn)(zloop_t *loop, zsock_t *reader, void *arg);
+
 
 class ZstActor {
 public:

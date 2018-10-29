@@ -1,11 +1,13 @@
 #pragma once
 
+#include <boost/thread/thread.hpp>
+#include <boost/date_time/posix_time/ptime.hpp>
+#include <boost/asio/deadline_timer.hpp>
+#include <boost/asio/io_context.hpp>
 #include <string>
 #include <vector>
 #include <unordered_map>
 #include <algorithm>
-#include <boost/thread/thread.hpp>
-#include <boost/asio.hpp>
 
 //Showtime API
 #include <ZstCore.h>
@@ -41,7 +43,7 @@ private:
 	bool m_is_destroyed;
 	boost::thread m_stage_eventloop_thread;
 	boost::thread m_stage_timer_thread;
-	boost::asio::io_service m_io;
+	boost::asio::io_context m_io;
 	void timer_loop();
 	void event_loop();
 	std::shared_ptr<ZstBoostEventWakeup> m_event_condition;
@@ -49,7 +51,6 @@ private:
 	//Timers
 	static void stage_heartbeat_timer(boost::asio::deadline_timer * t, ZstStage * stage, boost::posix_time::milliseconds duration);
 	boost::asio::deadline_timer m_heartbeat_timer;
-
 
 	//Modules
 	ZstStageSession * m_session;

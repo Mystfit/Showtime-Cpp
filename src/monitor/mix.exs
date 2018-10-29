@@ -41,7 +41,8 @@ defmodule Monitor.Mixfile do
       {:phoenix_live_reload, "~> 1.0", only: :dev},
       {:gettext, "~> 0.11"},
       {:cowboy, "~> 1.0"},
-      {:chumak, "~> 1.3.0"}
+      {:chumak, "~> 1.3.0"},
+      {:bolt_sips , "~> 0.4.12"}
     ]
   end
 

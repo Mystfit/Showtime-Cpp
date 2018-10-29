@@ -1,5 +1,5 @@
-#include <boost/lexical_cast.hpp>
 #include "ZstStageRouterTransport.h"
+#include <czmq.h>
 
 ZstStageRouterTransport::ZstStageRouterTransport()
 {
@@ -58,14 +58,16 @@ int ZstStageRouterTransport::s_handle_router(zloop_t * loop, zsock_t * socket, v
 		zframe_t * empty = zmsg_pop(recv_msg);
 
 		//Unpack message
+		char * payload_data = zmsg_popstr(recv_msg);
 		ZstStageMessage * msg = transport->get_msg();
-		msg->unpack(recv_msg);
+		msg->unpack(json::parse(payload_data));
 
 		//Save sender as a local argument
-		msg->set_local_arg(ZstMsgArg::SENDER_IDENTITY, std::string((char*)zframe_data(identity_frame), zframe_size(identity_frame)));
+		msg->set_arg<std::string, std::string>(get_msg_arg_name(ZstMsgArg::SENDER), std::string((char*)zframe_data(identity_frame), zframe_size(identity_frame)));
 
 		zframe_destroy(&identity_frame);
 		zframe_destroy(&empty);
+		zstr_free(&payload_data);
 
 		transport->on_receive_msg(msg);
 	}
@@ -75,18 +77,14 @@ int ZstStageRouterTransport::s_handle_router(zloop_t * loop, zsock_t * socket, v
 
 void ZstStageRouterTransport::send_message_impl(ZstMessage * msg)
 {
-	std::string identity_s = msg->get_arg(ZstMsgArg::DESTINATION_IDENTITY);
-	zmsg_t * msg_handle = msg->handle();
-
-	//If the message handle is missing, then it was released too early
-	assert(msg_handle);
-
-	zframe_t * identity = zframe_from(identity_s.c_str()); //get_socket_ID(destination).c_str()
+	ZstStageMessage * stage_msg = static_cast<ZstStageMessage*>(msg);
+	zmsg_t * m = zmsg_new();
+	zmsg_addstr(m, stage_msg->get_arg<std::string>(ZstMsgArg::DESTINATION).c_str());
 	zframe_t * empty = zframe_new_empty();
-	zmsg_prepend(msg_handle, &empty);
-	zmsg_prepend(msg_handle, &identity);
-	zmsg_send(&msg_handle, m_performer_router);
-	release_msg(static_cast<ZstStageMessage*>(msg));
+	zmsg_append(m, &empty);
+	zmsg_addstr(m, stage_msg->as_json_str().c_str());
+	zmsg_send(&m, m_performer_router);
+	release_msg(stage_msg);
 }
 
 void ZstStageRouterTransport::on_receive_msg(ZstMessage * msg)

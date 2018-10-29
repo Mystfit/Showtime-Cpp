@@ -6,6 +6,8 @@
 #include <nlohmann/json.hpp>
 #include "ZstValue.h"
 
+using namespace ZstValueDetails;
+
 //Template instantiations
 template class mpark::variant<int, float, std::string>;
 
@@ -172,15 +174,15 @@ void ZstValue::read(const char * buffer, size_t length, size_t & offset)
 
 void ZstValue::write_json(json & buffer) const
 {
-	buffer["default_type"] = get_default_type();
-	buffer["values"] = json::array();
+	buffer[get_value_field_name(ZstValueFields::DEFAULT_TYPE)] = get_default_type();
+	buffer[get_value_field_name(ZstValueFields::VALUES)] = json::array();
 	for (auto val : m_values) {
 		if (get_default_type() == ZstValueType::ZST_INT) {
-			buffer["values"].push_back({ "val", visit(ZstValueIntVisitor(), val) });
+			buffer[get_value_field_name(ZstValueFields::VALUES)].push_back(visit(ZstValueIntVisitor(), val));
 		} else if (get_default_type() == ZstValueType::ZST_FLOAT) {
-			buffer["values"].push_back({ "val", visit(ZstValueFloatVisitor(), val) });
+			buffer[get_value_field_name(ZstValueFields::VALUES)].push_back(visit(ZstValueFloatVisitor(), val));
 		} else if (get_default_type() == ZstValueType::ZST_STRING) {
-			buffer["values"].push_back({ "val", visit(ZstValueStrVisitor(), val) });
+			buffer[get_value_field_name(ZstValueFields::VALUES)].push_back(visit(ZstValueStrVisitor(), val));
 		} else {
 			//Unknown value type
 		}
@@ -189,19 +191,19 @@ void ZstValue::write_json(json & buffer) const
 
 void ZstValue::read_json(const json & buffer)
 {
-	m_default_type = buffer["default_type"];
-	m_values.resize(buffer["values"].size());
+	m_default_type = buffer[get_value_field_name(ZstValueFields::DEFAULT_TYPE)];
+	m_values.clear();
 
 	//Unpack values
-	for (auto v : buffer["values"]) {
+	for (auto v : buffer[get_value_field_name(ZstValueFields::VALUES)]) {
 		if (v.is_number_integer()) {
-			m_values.emplace_back(v["val"].get<int>());
+			m_values.emplace_back(v.get<int>());
 		}
 		else if (v.is_number_float()) {
-			m_values.emplace_back(v["val"].get<float>());
+			m_values.emplace_back(v.get<float>());
 		}
 		else if (v.is_string()) {
-			m_values.emplace_back(v["val"].get<std::string>());
+			m_values.emplace_back(v.get<std::string>());
 		}
 	}
 }
