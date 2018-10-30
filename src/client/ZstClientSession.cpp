@@ -101,7 +101,7 @@ void ZstClientSession::on_receive_msg(ZstMessage * msg)
 void ZstClientSession::on_receive_graph_msg(ZstPerformanceMessage * msg)
 {
 	//Check if message has a payload
-	if(msg->payload_size() < 1){
+	if(msg->payload().size() < 1){
 		ZstLog::net(LogLevel::warn, "No payload in graph message");
 		return;
 	}
@@ -119,7 +119,7 @@ void ZstClientSession::on_receive_graph_msg(ZstPerformanceMessage * msg)
 	//Create a ZstValue object to hold our plug data
 	ZstValue received_val;
 	size_t offset = 0;
-	received_val.read_json(json::from_msgpack((char*)msg->payload_data(), msg->payload_size()));
+	received_val.read_json(msg->payload());
 
 	//If the sending plug is a proxy then let the host app know it has updated
 	if (sending_plug->is_proxy()) {

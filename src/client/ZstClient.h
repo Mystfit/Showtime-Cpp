@@ -13,24 +13,21 @@
 #include <ZstCore.h>
 
 //Showtime Core includes
-#include "../core/ZstActor.h"
-#include "../core/ZstMessage.h"
-#include "../core/ZstPerformanceMessage.h"
-#include "../core/ZstMessagePool.hpp"
-#include "../core/ZstValue.h"
 #include "../core/liasons/ZstPlugLiason.hpp"
 #include "../core/liasons/ZstSynchronisableLiason.hpp"
 #include "../core/adaptors/ZstTransportAdaptor.hpp"
 #include "../core/adaptors/ZstModuleAdaptor.hpp"
-#include "../core/transports/ZstTCPGraphTransport.h"
-#include "../core/transports/ZstUDPGraphTransport.h"
 
-//Showtime client includes
-#include "ZstClientSession.h"
-#include "ZstClientTransport.h"
+
 
 //Forwards
 class ZstBoostEventWakeup;
+class ZstTCPGraphTransport;
+class ZstUDPGraphTransport;
+class ZstMessage;
+class ZstPerformanceMessage;
+class ZstClientSession;
+class ZstClientTransport;
 
 struct ZstClientIOLoop {
 public:

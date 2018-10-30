@@ -120,8 +120,10 @@ enum ZstMsgArg {
 	REQUEST_ID,
 	MSG_ID,
 	SENDER,
+	SENDER_SHORT,
 	DESTINATION,
 	PAYLOAD,
+	PAYLOAD_SHORT,
 	UNKNOWN
 };
 
@@ -137,8 +139,10 @@ static ZstMsgArgMap ZstMsgArgNames = boost::assign::list_of<ZstMsgArgMap::relati
 	( REQUEST_ID, "request_id" )
 	( MSG_ID, "msg_id" )
 	( SENDER, "sender" )
+	( SENDER_SHORT, "s")
 	( DESTINATION , "destination" )
-	( PAYLOAD , "payload" );
+	( PAYLOAD , "payload" )
+	( PAYLOAD_SHORT, "p");
 
 static const std::string & get_msg_name(const ZstMsgKind & msg_kind){
 	return ZstMsgNames.left.at(msg_kind);

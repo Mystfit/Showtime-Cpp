@@ -108,14 +108,9 @@ const ZstMsgKind & ZstStageMessage::kind() const
 	return get_msg_kind(m_msg_args.at(get_msg_arg_name(ZstMsgArg::KIND)).get<std::string>());
 }
 
-const char * ZstStageMessage::payload_data() const
+const ZstMsgArgs & ZstStageMessage::payload() const
 {
-	return m_msg_args[get_msg_arg_name(ZstMsgArg::PAYLOAD)].get<std::string>().c_str();
-}
-
-const size_t ZstStageMessage::payload_size() const
-{
-	return m_msg_args[get_msg_arg_name(ZstMsgArg::PAYLOAD)].get<std::string>().size();
+	return m_msg_args[get_msg_arg_name(ZstMsgArg::PAYLOAD)];
 }
 
 ZstMsgID ZstStageMessage::id() const

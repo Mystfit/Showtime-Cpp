@@ -11,65 +11,52 @@ ZstPerformanceMessage * ZstPerformanceMessage::init(ZstMsgKind kind)
 ZstPerformanceMessage * ZstPerformanceMessage::init(ZstMsgKind kind, const ZstMsgArgs & args)
 {
 	reset();
-
-	std::stringstream buffer;
-	set_sender(args.at(get_msg_arg_name(ZstMsgArg::PATH)), buffer);
-
+	set_sender(args.at(get_msg_arg_name(ZstMsgArg::PATH)));
 	return this;
 }
 
 ZstPerformanceMessage * ZstPerformanceMessage::init(ZstMsgKind kind, const ZstMsgArgs & payload, const ZstMsgArgs & args)
 {
 	reset();
-	
-	std::stringstream buffer;
-	set_sender(args.at(get_msg_arg_name(ZstMsgArg::PATH)), buffer);
-	set_payload(payload, buffer);
-
+	set_sender(args.at(get_msg_arg_name(ZstMsgArg::PATH)));
+	set_payload(payload);
 	return this;
 }
 
 void ZstPerformanceMessage::reset()
 {
-	m_sender.clear();
-	m_payload.clear();
+	m_args.clear();
 }
 
 void ZstPerformanceMessage::unpack(const char * data, const size_t & size)
 {
-	size_t offset = 0;
-
-	auto handle = msgpack::unpack(data, size, offset);
-	m_sender = std::move(std::string(handle.get().via.str.ptr, handle.get().via.str.size));
-
-	//If we still have data at the end after unpacking the args, then this performance message has a payload
-	if (offset < size) {
-		handle = msgpack::unpack(data, size, offset);
-		m_payload = std::move(std::string(handle.get().via.str.ptr, handle.get().via.str.size));
-	}
+	m_args = json::from_msgpack(data, size);
 }
 
-const char * ZstPerformanceMessage::payload_data() const
+const ZstMsgArgs & ZstPerformanceMessage::payload() const
 {
-	return m_payload.c_str();
+	auto j_it = m_args.find(get_msg_arg_name(ZstMsgArg::PAYLOAD_SHORT));
+	if (j_it != m_args.end())
+		return *j_it;
+	return json::object();
 }
 
-const size_t ZstPerformanceMessage::payload_size() const
+std::string ZstPerformanceMessage::sender() const
 {
-	return m_payload.size();
+	return m_args[get_msg_arg_name(ZstMsgArg::SENDER_SHORT)];
 }
 
-const std::string & ZstPerformanceMessage::sender() const
+std::vector<uint8_t> ZstPerformanceMessage::to_msgpack() const
 {
-	return m_sender;
+	return json::to_msgpack(m_args);
 }
 
-void ZstPerformanceMessage::set_payload(const std::string & payload, std::stringstream & buffer)
+void ZstPerformanceMessage::set_payload(const ZstMsgArgs & payload)
 {
-	m_payload = payload;
+	m_args[get_msg_arg_name(ZstMsgArg::PAYLOAD_SHORT)] = payload;
 }
 
-void ZstPerformanceMessage::set_sender(const std::string & sender, std::stringstream & buffer)
+void ZstPerformanceMessage::set_sender(const std::string & sender)
 {
-	m_sender = sender;
+	m_args[get_msg_arg_name(ZstMsgArg::SENDER_SHORT)] = sender;
 }

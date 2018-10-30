@@ -1,8 +1,13 @@
-#include <chrono>
-#include <sstream>
-
 #include "ZstClient.h"
+
+#include "../core/transports/ZstTCPGraphTransport.h"
+#include "../core/transports/ZstUDPGraphTransport.h"
+#include "../core/ZstMessage.h"
+#include "../core/ZstPerformanceMessage.h"
 #include "../core/ZstBoostEventWakeup.hpp"
+
+#include "ZstClientSession.h"
+#include "ZstClientTransport.h"
 
 #include <czmq.h>
 
@@ -86,7 +91,8 @@ void ZstClient::destroy() {
 	set_is_ending(false);
 	set_is_destroyed(true);
 
-	//Destroy zmq context	zsys_shutdown();
+	//Destroy zmq context
+	zsys_shutdown();
 
 	//All done
 	ZstLog::net(LogLevel::notification, "Showtime library destroyed");
@@ -194,7 +200,6 @@ void ZstClient::on_receive_msg(ZstMessage * msg)
 		//Message was not from the stage - check if it is a performance message
 		ZstPerformanceMessage * perf_msg = dynamic_cast<ZstPerformanceMessage*>(msg);
 		if (perf_msg) {
-			ZstLog::net(LogLevel::debug, "Received connection handshake");
 			receive_connection_handshake(perf_msg);
 		}
 		return;
@@ -233,6 +238,7 @@ void ZstClient::receive_connection_handshake(ZstPerformanceMessage * msg)
 	std::string output_path_str = msg->sender();
 	ZstURI output_path(output_path_str.c_str(), output_path_str.size());
 	if(m_pending_peer_connections.find(output_path) != m_pending_peer_connections.end()){
+		ZstLog::net(LogLevel::debug, "Received connection handshake");
 		invoke([this, &output_path](ZstTransportAdaptor* adaptor) {
 			adaptor->on_send_msg(ZstMsgKind::OK, { { get_msg_arg_name(ZstMsgArg::MSG_ID), m_pending_peer_connections[output_path] } });
 		});

@@ -298,11 +298,9 @@ ZstOutputPlug::~ZstOutputPlug()
 void ZstOutputPlug::fire()
 {
 	m_performance_events->invoke([this](ZstTransportAdaptor * adaptor) {
-		json data;
-		this->raw_value()->write_json(data);
-		auto data_packed = json::to_msgpack(data);
-		std::string buffer(data_packed.begin(), data_packed.end());
-		adaptor->on_send_msg(ZstMsgKind::PERFORMANCE_MSG, { { get_msg_arg_name(ZstMsgArg::PATH), this->URI().path() } }, buffer );
+		json val_json;
+		this->raw_value()->write_json(val_json);
+		adaptor->on_send_msg(ZstMsgKind::PERFORMANCE_MSG, { { get_msg_arg_name(ZstMsgArg::PATH), this->URI().path() } }, val_json);
 	});
 	m_value->clear();
 }

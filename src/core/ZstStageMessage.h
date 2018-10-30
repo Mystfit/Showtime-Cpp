@@ -41,8 +41,7 @@ public:
 	}
 
 	ZST_EXPORT const ZstMsgKind & kind() const;
-	ZST_EXPORT const char * payload_data() const override;
-	ZST_EXPORT const size_t payload_size() const override;
+	ZST_EXPORT virtual const ZstMsgArgs & payload() const override;
 	ZST_EXPORT ZstMsgID id() const;
 	ZST_EXPORT void set_id(const ZstMsgID & id);
 	ZST_EXPORT std::string as_json_str() const;

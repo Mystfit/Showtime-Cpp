@@ -1,6 +1,4 @@
 #include "ZstClientHierarchy.h"
-#include <boost/assign.hpp>
-#include <boost/lexical_cast.hpp>
 
 ZstClientHierarchy::ZstClientHierarchy() :
 	m_root(NULL)
@@ -122,7 +120,7 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 	{
 		ZstMsgArgs args;
 		if (request_ID > 0) {
-			args [get_msg_arg_name(ZstMsgArg::MSG_ID)] = boost::lexical_cast<std::string>(request_ID);
+			args [get_msg_arg_name(ZstMsgArg::MSG_ID)] = request_ID;
 			ZstLog::net(LogLevel::debug, "Responding to server creatable request with id {}", request_ID);
 		}
 		adaptor->on_send_msg(ZstStageMessage::entity_kind(*entity), sendtype, entity->as_json(), args, [this, entity](ZstMessageReceipt response) {

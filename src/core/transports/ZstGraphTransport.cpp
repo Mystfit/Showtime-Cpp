@@ -45,10 +45,9 @@ void ZstGraphTransport::send_message_impl(ZstMessage * msg)
 {
 	ZstPerformanceMessage * perf_msg = static_cast<ZstPerformanceMessage*>(msg);
 
-	std::stringstream buffer;
-	msgpack::pack(buffer, perf_msg->sender());
-	msgpack::pack(buffer, perf_msg->payload_data());
-	zframe_t * payload_frame = zframe_new(buffer.str().c_str(), buffer.str().size());
+	auto data = perf_msg->to_msgpack();
+	std::string buffer(data.begin(), data.end());
+	zframe_t * payload_frame = zframe_new(buffer.c_str(), buffer.size());
 
 	zframe_set_group(payload_frame, PERFORMANCE_GROUP);
 	zsock_t * sock = output_graph_socket();

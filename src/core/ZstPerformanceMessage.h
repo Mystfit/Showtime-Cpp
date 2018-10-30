@@ -1,6 +1,6 @@
 #pragma once
 
-#include <sstream>
+#include <vector>
 #include "ZstMessage.h"
 
 class ZstPerformanceMessage : public ZstMessage {
@@ -13,15 +13,14 @@ public:
 
 	ZST_EXPORT virtual void unpack(const char * data, const size_t & size);
 
-	ZST_EXPORT virtual const char * payload_data() const override;
-	ZST_EXPORT virtual const size_t payload_size() const override;
-	ZST_EXPORT const std::string & sender() const;
+	ZST_EXPORT virtual const ZstMsgArgs & payload() const override;
+	ZST_EXPORT std::string sender() const;
+	ZST_EXPORT std::vector<uint8_t> to_msgpack() const;
 
 
 private:
-	void set_payload(const std::string & payload, std::stringstream & buffer);
-	void set_sender(const std::string & sender, std::stringstream & buffer);
+	void set_payload(const ZstMsgArgs & payload);
+	void set_sender(const std::string & sender);
 
-	std::string m_sender;
-	std::string m_payload;
+	json m_args;
 };
