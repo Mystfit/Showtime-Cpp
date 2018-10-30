@@ -129,6 +129,9 @@ set(msgpackc_TARGET "msgpackc-static")
 find_package(fmt CONFIG REQUIRED)
 set(fmt_TARGET "fmt::fmt-header-only")
 
+find_package(mpark_variant CONFIG REQUIRED)
+set(fmt_TARGET "mpark_variant")
+
 find_package(SWIG)
 if(SWIG_FOUND)
     include(UseSWIG)

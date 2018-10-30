@@ -163,8 +163,8 @@ void test_remote_factories(std::string external_test_path, bool launch_ext_proce
 
 int main(int argc,char **argv)
 {
-    TestRunner runner("TestEntityFactories", argv[0]);
+    TestRunner runner("TestEntityFactories", argv[0], true, false);
     test_entity_factories();
-	test_remote_factories(argv[0]);
+	test_remote_factories(argv[0], false);
     return 0;
 }

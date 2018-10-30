@@ -2,7 +2,7 @@
 #include <sstream>
 #include <msgpack.hpp>
 #include <ZstLogging.h>
-#include <variant.hpp>
+#include <mpark/variant.hpp>
 #include <nlohmann/json.hpp>
 #include "ZstValue.h"
 

@@ -11,8 +11,6 @@ set(ZST_HEADER_DEPENDENCIES_DIR "${CMAKE_CURRENT_LIST_DIR}/../dependencies")
 set(GLOBAL_PUBLIC_DEFINES
     "-DZMQ_BUILD_DRAFT_API"
     "-DCZMQ_BUILD_DRAFT_API"
-    "-DCZMQ_STATIC"
-    "-DZMQ_STATIC"
     "-DFMT_HEADER_ONLY"
     "-DBOOST_ALL_NO_LIB"
     "-DBOOST_THREAD_USE_LIB"
@@ -160,16 +158,20 @@ set(SHOWTIME_PRIVATE_LINKED_LIBS
 set(SHOWTIME_HEADER_TARGETS
     ${Boost_HEADER_TARGET}
     ${fmt_TARGET}
+    ${variant_TARGET}
 )
 
 if(BUILD_STATIC)
   list(APPEND CORE_LIBS ${CORE_TARGET_STATIC})
   target_link_libraries(${CORE_TARGET_STATIC} PUBLIC ${SHOWTIME_PUBLIC_LINKED_LIBS} czmq-static libzmq-static)
+  target_compile_definitions(${CORE_TARGET_STATIC} PUBLIC ${GLOBAL_PUBLIC_DEFINES} "-DCZMQ_STATIC" "-DZMQ_STATIC")
 endif()
 
 if(BUILD_SHARED)
   list(APPEND CORE_LIBS ${CORE_TARGET})
     target_link_libraries(${CORE_TARGET} PUBLIC ${SHOWTIME_PUBLIC_LINKED_LIBS} czmq libzmq)
+    target_compile_definitions(${CORE_TARGET} PUBLIC ${GLOBAL_PUBLIC_DEFINES})
+
 
   if(WIN32)
     # Copy runtime dependencies
@@ -196,14 +198,12 @@ foreach(TARGET ${CORE_LIBS})
             $<BUILD_INTERFACE:${Showtime_COMPILED_INCLUDE_DIRS}>
             $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}>
             $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}/cf>
-            $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}/variant>
             $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}/concurrentqueue>
             $<INSTALL_INTERFACE:include>
     )
     target_include_directories(${TARGET} PUBLIC ${CZMQ_INCLUDE_DIRS})
 
     # Target definitions
-    target_compile_definitions(${TARGET} PUBLIC ${GLOBAL_PUBLIC_DEFINES})
 
     # Target link libs
     target_link_libraries(${TARGET} PRIVATE ${SHOWTIME_PRIVATE_LINKED_LIBS} ${SHOWTIME_HEADER_TARGETS})
