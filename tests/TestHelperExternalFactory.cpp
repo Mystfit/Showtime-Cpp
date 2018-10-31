@@ -91,6 +91,7 @@ int main(int argc, char **argv) {
 		//Update creatables when we get a message on stdin
 		std::getline(std::cin, line);
 		if (line == "update_creatables") {
+			ZstLog::app(LogLevel::debug, "Received std::cin request to update creatables");
 			test_factory->add_creatable(ZstURI("avocado"));
 			test_factory->update_creatables();
 		}

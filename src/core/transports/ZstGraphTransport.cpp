@@ -91,10 +91,11 @@ void ZstGraphTransport::graph_recv(zframe_t * frame)
 	perf_msg->unpack((char*)zframe_data(frame), zframe_size(frame));
 	
 	//Publish message to other modules
-	msg_events()->invoke([this, perf_msg](ZstTransportAdaptor* adaptor) {
-		if(this->is_active())
+	if (this->is_active()) {
+		msg_events()->invoke([this, perf_msg](ZstTransportAdaptor* adaptor) {
 			adaptor->on_receive_msg(perf_msg);
-	});
+		});
+	}
 
 	//Clean up resources once other modules have finished with this message
 	release_msg(perf_msg);

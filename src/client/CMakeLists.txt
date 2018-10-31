@@ -39,8 +39,8 @@ endif()
 if(BUILD_SHARED)
   # Platform specific definitions
   if(WIN32)
-      target_compile_definitions(${CLIENT_TARGET} PRIVATE -DZST_EXPORT_CLIENT_API)
-      target_compile_definitions(${CLIENT_TARGET} INTERFACE -DZST_IMPORT_CLIENT_API)
+      target_compile_definitions(${CLIENT_TARGET} PRIVATE ZST_EXPORT_CLIENT_API)
+      target_compile_definitions(${CLIENT_TARGET} INTERFACE ZST_IMPORT_CLIENT_API)
   endif(WIN32)
 
   target_link_libraries(${CLIENT_TARGET} PUBLIC ${CORE_TARGET})

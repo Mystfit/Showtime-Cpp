@@ -7,6 +7,7 @@
 #include <functional>
 #include <concurrentqueue.h>
 #include <ZstLogging.h>
+#include <mutex>
 #include <adaptors/ZstEventAdaptor.hpp>
 
 #include "ZstEventWakeup.hpp"
@@ -48,7 +49,8 @@ public:
 	}
 
 	void add_adaptor(T adaptor) { 
-		this->m_adaptors.insert(adaptor); 
+		std::scoped_lock lock(m_mtx);
+		this->m_adaptors.insert(adaptor);
 	}
 
 	void set_wake_condition(std::shared_ptr<ZstEventWakeup> condition){
@@ -56,11 +58,13 @@ public:
 	}
 
 	void remove_adaptor(T adaptor) { 
+		std::scoped_lock lock(m_mtx);
 		adaptor->set_target_dispatcher_inactive();
 		this->m_adaptors.erase(adaptor); 
 	}
 
 	void remove_all_adaptors(){
+		std::scoped_lock lock(m_mtx);
 		for (auto adp : m_adaptors) {
 			adp->set_target_dispatcher_inactive();
 		}
@@ -76,6 +80,8 @@ public:
 		if (this->m_adaptors.size() < 1) {
 			return;
 		}
+
+		std::scoped_lock lock(m_mtx);
 		for (T adaptor : this->m_adaptors) {
 			event(adaptor);
 		}
@@ -102,14 +108,16 @@ public:
 
 		while (this->m_events.try_dequeue(event)) {
 			bool success = true;
+
+			std::scoped_lock lock(m_mtx);
 			for (T adaptor : m_adaptors) {
-				//try {
+				try {
 					event.func(adaptor);
-				//}
-				/*catch (std::exception e) {
+				}
+				catch (std::exception e) {
 					ZstLog::net(LogLevel::error, "Event dispatcher failed to run an event on a adaptor. Reason: {}", e.what());
 					success = false;
-				}*/
+				}
 			}
 			event.completed_func((success) ? ZstEventStatus::SUCCESS : ZstEventStatus::FAILED);
 		}
@@ -126,4 +134,5 @@ private:
 	std::string m_name;
 	bool m_has_event;
 	std::shared_ptr<ZstEventWakeup> m_condition_wake;
+	std::recursive_mutex m_mtx;
 };
