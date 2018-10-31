@@ -146,32 +146,6 @@ void ZstEntityFactory::update_createable_URIs()
 	}
 }
 
-void ZstEntityFactory::write(std::stringstream & buffer) const
-{	
-	//Pack creatables
-	ZstEntityBase::write(buffer);
-	msgpack::pack(buffer, m_creatables.size());
-	for (auto creatable : m_creatables) {
-		msgpack::pack(buffer, creatable.path());
-	}
-}
-
-void ZstEntityFactory::read(const char * buffer, size_t length, size_t & offset)
-{
-	//Unpack entity
-	ZstEntityBase::read(buffer, length, offset);
-
-	//Unpack creatable paths
-	auto handle = msgpack::unpack(buffer, length, offset);
-	int64_t num_creatables = handle.get().via.i64;
-	if (num_creatables > 0) {
-		for (int i = 0; i < num_creatables; ++i) {
-			handle = msgpack::unpack(buffer, length, offset);
-			m_creatables.emplace(handle.get().via.str.ptr, handle.get().via.str.size);
-		}
-	}
-}
-
 void ZstEntityFactory::write_json(json & buffer) const
 {
 	//Pack creatables

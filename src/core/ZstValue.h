@@ -92,8 +92,6 @@ public:
 	ZST_EXPORT const size_t size_at(const size_t position) const;
 
 	//Serialisation
-	ZST_EXPORT void write(std::stringstream & buffer) const override;
-	ZST_EXPORT void read(const char * buffer, size_t length, size_t & offset) override;
 	ZST_EXPORT void write_json(json & buffer) const override;
 	ZST_EXPORT void read_json(const json & buffer) override;
 

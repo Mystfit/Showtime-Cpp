@@ -1,4 +1,3 @@
-#include <msgpack.hpp>
 #include <nlohmann/json.hpp>
 #include <entities/ZstContainer.h>
 #include "../ZstEventDispatcher.hpp"
@@ -161,48 +160,6 @@ void ZstContainer::remove_child(ZstEntityBase * child) {
 	}
 
 	ZstEntityBase::remove_child(child);
-}
-
-void ZstContainer::write(std::stringstream & buffer) const
-{
-	//Pack entity
-	ZstComponent::write(buffer);
-
-	//Pack children
-	msgpack::pack(buffer, num_children());
-	for (auto child : m_children) {
-		msgpack::pack(buffer, child.second->entity_type());
-		child.second->write(buffer);
-	}
-}
-
-void ZstContainer::read(const char * buffer, size_t length, size_t & offset)
-{
-	//Unpack entity base first
-	ZstComponent::read(buffer, length, offset);
-
-	//Unpack children
-	auto handle = msgpack::unpack(buffer, length, offset);
-	int num_children = static_cast<int>(handle.get().via.i64);
-	for (int i = 0; i < num_children; ++i) {
-		ZstEntityBase * child = NULL;
-
-		handle = msgpack::unpack(buffer, length, offset);
-		char * entity_type = (char*)malloc(handle.get().via.str.size + 1);
-		memcpy(entity_type, handle.get().via.str.ptr, handle.get().via.str.size);
-		entity_type[handle.get().via.str.size] = '\0';
-
-		if (strcmp(entity_type, CONTAINER_TYPE) == 0) {
-			child = new ZstContainer();
-		}
-		else if (strcmp(entity_type, COMPONENT_TYPE) == 0) {
-			child = new ZstComponent();
-		}
-		free(entity_type);
-
-		child->read(buffer, length, offset);
-		add_child(child);
-	}
 }
 
 void ZstContainer::write_json(json & buffer) const

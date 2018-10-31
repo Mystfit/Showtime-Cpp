@@ -3,6 +3,7 @@
 #include <Showtime.h>
 #include <boost/process.hpp>
 #include <boost/filesystem.hpp>
+#include <sstream>
 
 using namespace boost::process;
 using namespace boost::filesystem;
@@ -268,7 +269,7 @@ namespace ZstTest
 				std::string term_msg = "$TERM\n";
 				m_server_in.write(term_msg.c_str(), static_cast<int>(term_msg.size()));
 				m_server_process.wait();
-				std::cout << "All tests completed" << std::endl;
+				ZstLog::app(LogLevel::notification, "All tests completed");
 			}
 		}
 

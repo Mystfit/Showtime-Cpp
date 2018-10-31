@@ -113,36 +113,6 @@ ZstValue * ZstPlug::raw_value()
 // Serialisation
 //--------------------
 
-void ZstPlug::write(std::stringstream & buffer) const
-{
-	//Pack entity
-	ZstEntityBase::write(buffer);
-
-	//Pack value
-	m_value->write(buffer);
-
-	//Pack plug direction
-	msgpack::pack(buffer, m_direction);
-
-	//Pack max cables
-	msgpack::pack(buffer, m_max_connected_cables);
-}
-
-void ZstPlug::read(const char * buffer, size_t length, size_t & offset)
-{
-	//Unpack entity
-	ZstEntityBase::read(buffer, length, offset);
-	
-	//Unpack value
-	m_value->read(buffer, length, offset);
-
-	//Unpack direction
-	m_direction = (ZstPlugDirection)msgpack::unpack(buffer, length, offset).get().via.i64;
-
-	//Unpack max cables
-	m_max_connected_cables = static_cast<size_t>(msgpack::unpack(buffer, length, offset).get().via.i64);
-}
-
 void ZstPlug::write_json(json & buffer) const
 {
 	//Pack entity

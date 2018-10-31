@@ -1,5 +1,6 @@
 #include "ZstStageRouterTransport.h"
 #include <czmq.h>
+#include <sstream>
 
 ZstStageRouterTransport::ZstStageRouterTransport()
 {

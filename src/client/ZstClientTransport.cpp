@@ -1,6 +1,7 @@
 #include "ZstClientTransport.h"
 #include <nlohmann/json.hpp>
 #include <czmq.h>
+#include <sstream>
 
 ZstClientTransport::ZstClientTransport() : ZstMessageSupervisor(std::make_shared<cf::time_watcher>(), STAGE_TIMEOUT)
 {

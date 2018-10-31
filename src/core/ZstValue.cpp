@@ -110,68 +110,6 @@ const size_t ZstValue::size_at(const size_t position) const {
     return 0;
 }
 
-void ZstValue::write(std::stringstream & buffer) const
-{
-	//Pack default type
-	msgpack::pack(buffer, static_cast<unsigned int>(get_default_type()));
-
-	//Pack values
-	msgpack::pack(buffer, size());
-	if (get_default_type() == ZstValueType::ZST_INT) {
-		for (auto val : m_values) {
-			msgpack::pack(buffer, visit(ZstValueIntVisitor(), val));
-		}
-	}
-	else if (get_default_type() == ZstValueType::ZST_FLOAT) {
-		for (auto val : m_values) {
-			msgpack::pack(buffer, visit(ZstValueFloatVisitor(), val));
-		}
-	}
-	else if (get_default_type() == ZstValueType::ZST_STRING) {
-		for (auto val : m_values) {
-			std::string s = visit(ZstValueStrVisitor(), val);
-			msgpack::pack(buffer, s);
-		}
-	}
-	else {
-
-	}
-}
-
-void ZstValue::read(const char * buffer, size_t length, size_t & offset)
-{
-	//Payload is already in string format, have to unpack again
-	auto handle = msgpack::unpack(buffer, length, offset);
-	auto obj = handle.get();
-
-	//Unpack default type
-	m_default_type = static_cast<ZstValueType>(obj.via.i64);
-
-	//Unpack num values
-	handle = msgpack::unpack(buffer, length, offset);
-	auto num_values = handle.get().via.i64;
-
-	m_values.resize(num_values);
-
-	//Unpack values
-	for (int i = 0; i < num_values; ++i) {
-		handle = msgpack::unpack(buffer, length, offset);
-		auto val = handle.get();
-		if (val.type == msgpack::type::NEGATIVE_INTEGER || val.type == msgpack::type::POSITIVE_INTEGER) {
-			m_values[i] = static_cast<int>(val.via.i64);
-		}
-		else if (val.type == msgpack::type::FLOAT || val.type == msgpack::type::FLOAT32 || val.type == msgpack::type::FLOAT64 ){
-			m_values[i] = static_cast<float>(val.via.f64);
-		}
-		else if (val.type == msgpack::type::STR) {
-			m_values[i] = val.as<std::string>();
-		} 
-		else {
-			//Unknown value type
-		}
-	}
-}
-
 void ZstValue::write_json(json & buffer) const
 {
 	buffer[get_value_field_name(ZstValueFields::DEFAULT_TYPE)] = get_default_type();

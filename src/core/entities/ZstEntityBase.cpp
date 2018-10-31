@@ -1,5 +1,4 @@
 #include <memory>
-#include <msgpack.hpp>
 
 #include <entities/ZstEntityBase.h>
 #include <entities/ZstEntityFactory.h>
@@ -102,28 +101,6 @@ ZstEntityBundle & ZstEntityBase::get_child_entities(ZstEntityBundle & bundle, bo
 ZstEventDispatcher<ZstEntityAdaptor*> * ZstEntityBase::entity_events()
 {
     return m_entity_events;
-}
-
-void ZstEntityBase::write(std::stringstream & buffer) const
-{
-	msgpack::pack(buffer, URI().path());
-	msgpack::pack(buffer, entity_type());
-}
-
-void ZstEntityBase::read(const char * buffer, size_t length, size_t & offset)
-{
-	//Unpack uri path
-	auto handle = msgpack::unpack(buffer, length, offset);
-	const char * uri = handle.get().via.str.ptr;
-	size_t uri_size = handle.get().via.str.size;
-	m_uri = ZstURI(uri, uri_size);
-
-	//Unpack entity type second
-	handle = msgpack::unpack(buffer, length, offset);
-	auto obj = handle.get();
-
-	//Copy entity type string into entity
-	m_entity_type = std::string(obj.via.str.ptr, obj.via.str.size);
 }
 
 void ZstEntityBase::write_json(json & buffer) const

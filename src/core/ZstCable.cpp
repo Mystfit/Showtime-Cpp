@@ -128,21 +128,6 @@ const ZstURI & ZstCable::get_output_URI() const
 	return m_output_URI;
 }
 
-void ZstCable::write(std::stringstream & buffer) const
-{
-	msgpack::pack(buffer, m_output_URI.path());
-	msgpack::pack(buffer, m_input_URI.path());
-}
-
-void ZstCable::read(const char * buffer, size_t length, size_t & offset)
-{
-	auto handle = msgpack::unpack(buffer, length, offset);
-	m_output_URI = ZstURI(handle.get().via.str.ptr, handle.get().via.str.size);
-
-	handle = msgpack::unpack(buffer, length, offset);
-	m_input_URI = ZstURI(handle.get().via.str.ptr, handle.get().via.str.size);
-}
-
 void ZstCable::write_json(json & buffer) const
 {
 	buffer["output_uri"] = m_output_URI.path();

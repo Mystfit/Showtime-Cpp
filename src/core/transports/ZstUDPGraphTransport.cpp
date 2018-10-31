@@ -1,5 +1,6 @@
 #include "ZstUDPGraphTransport.h"
 #include <czmq.h>
+#include <sstream>
 
 ZstUDPGraphTransport::ZstUDPGraphTransport()
 {

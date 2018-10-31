@@ -1,6 +1,5 @@
 #include <memory>
 #include <nlohmann/json.hpp>
-#include <msgpack.hpp>
 #include <entities/ZstComponent.h>
 #include "../ZstEventDispatcher.hpp"
 
@@ -113,53 +112,6 @@ void ZstComponent::set_parent(ZstEntityBase * parent)
     for (auto plug : plugs) {
         plug->set_parent(this);
     }
-}
-
-void ZstComponent::write(std::stringstream & buffer) const
-{
-	//Pack container
-	ZstEntityBase::write(buffer);
-
-	//Pack component type
-	msgpack::pack(buffer, component_type());
-
-	//Pack plugs
-	msgpack::pack(buffer, m_plugs.size());
-	for (auto plug : m_plugs) {
-		msgpack::pack(buffer, static_cast<int>(plug->direction()));
-		plug->write(buffer);
-	}
-}
-
-void ZstComponent::read(const char * buffer, size_t length, size_t & offset)
-{
-	//Unpack entity base first
-	ZstEntityBase::read(buffer, length, offset);
-
-	//Unpack component type
-	auto handle = msgpack::unpack(buffer, length, offset);
-	set_component_type(handle.get().via.str.ptr, handle.get().via.str.size);
-
-	//Unpack plugs
-	handle = msgpack::unpack(buffer, length, offset);
-	int num_plugs = static_cast<int>(handle.get().via.i64);
-	ZstPlugDirection direction;
-	ZstPlug * plug = NULL;
-
-	for (int i = 0; i < num_plugs; ++i) {
-		//Direction is packed first - we use this to construct the correct plug type
-		handle = msgpack::unpack(buffer, length, offset);
-		direction = static_cast<ZstPlugDirection>(handle.get().via.i64);
-		if (direction == ZstPlugDirection::IN_JACK) {
-			plug = new ZstInputPlug();
-		} else {
-			plug = new ZstOutputPlug();
-		}
-
-		//Unpack plug
-		plug->read(buffer, length, offset);
-		add_plug(plug);
-	}
 }
 
 void ZstComponent::write_json(json & buffer) const

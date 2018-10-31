@@ -1,5 +1,6 @@
 #include "ZstStagePublisherTransport.h"
 #include <czmq.h>
+#include <sstream>
 
 ZstStagePublisherTransport::ZstStagePublisherTransport()
 {
