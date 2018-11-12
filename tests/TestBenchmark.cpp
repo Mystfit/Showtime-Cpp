@@ -44,7 +44,7 @@ int test_benchmark(bool reliable, int send_rate, int send_amount)
 	int last_message_count = 0;
 	int received_count = 0;
 	int delta_messages = 0;
-	double mps = 0.0;
+	long double mps = 0.0;
 	int remaining_messages = count;
 	int delta_queue = 0;
 	int last_queue_count = 0;
@@ -53,7 +53,7 @@ int test_benchmark(bool reliable, int send_rate, int send_amount)
 	int num_sent = 0;
 	int alert_rate = 2000;
 	bool hit = false;
-	long long totalmps = 0;
+	long double totalmps = 0;
 	int samples = 0;
 
 	for (int i = 0; i < count; ++i) {

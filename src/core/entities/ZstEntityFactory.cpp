@@ -1,4 +1,5 @@
 #include <exception>
+#include <nlohmann/json.hpp>
 #include <msgpack.hpp>
 #include <entities/ZstEntityFactory.h>
 #include "../ZstEventDispatcher.hpp"
@@ -145,28 +146,21 @@ void ZstEntityFactory::update_createable_URIs()
 	}
 }
 
-void ZstEntityFactory::write(std::stringstream & buffer) const
-{	
+void ZstEntityFactory::write_json(json & buffer) const
+{
 	//Pack creatables
-	ZstEntityBase::write(buffer);
-	msgpack::pack(buffer, m_creatables.size());
+	ZstEntityBase::write_json(buffer);
+	buffer["creatables"] = json::array();
 	for (auto creatable : m_creatables) {
-		msgpack::pack(buffer, creatable.path());
+		buffer["creatables"].push_back(creatable.path());
 	}
 }
 
-void ZstEntityFactory::read(const char * buffer, size_t length, size_t & offset)
+void ZstEntityFactory::read_json(const json & buffer)
 {
-	//Unpack entity
-	ZstEntityBase::read(buffer, length, offset);
-
-	//Unpack creatable paths
-	auto handle = msgpack::unpack(buffer, length, offset);
-	int64_t num_creatables = handle.get().via.i64;
-	if (num_creatables > 0) {
-		for (int i = 0; i < num_creatables; ++i) {
-			handle = msgpack::unpack(buffer, length, offset);
-			m_creatables.emplace(handle.get().via.str.ptr, handle.get().via.str.size);
-		}
+	ZstEntityBase::read_json(buffer);
+	for (auto creatable : buffer["creatables"]) {
+		m_creatables.emplace(creatable.get<std::string>().c_str(), creatable.get<std::string>().size());
 	}
+	
 }

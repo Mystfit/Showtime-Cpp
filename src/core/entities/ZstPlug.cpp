@@ -1,5 +1,6 @@
 #include <memory>
 #include <msgpack.hpp>
+#include <nlohmann/json.hpp>
 
 #include <entities/ZstPlug.h>
 #include <ZstCable.h>
@@ -112,34 +113,34 @@ ZstValue * ZstPlug::raw_value()
 // Serialisation
 //--------------------
 
-void ZstPlug::write(std::stringstream & buffer) const
+void ZstPlug::write_json(json & buffer) const
 {
 	//Pack entity
-	ZstEntityBase::write(buffer);
+	ZstEntityBase::write_json(buffer);
 
 	//Pack value
-	m_value->write(buffer);
+	buffer["value"] = m_value->as_json();
 
 	//Pack plug direction
-	msgpack::pack(buffer, m_direction);
+	buffer["plug_direction"] = m_direction;
 
 	//Pack max cables
-	msgpack::pack(buffer, m_max_connected_cables);
+	buffer["max_connected_cables"] = m_max_connected_cables;
 }
 
-void ZstPlug::read(const char * buffer, size_t length, size_t & offset)
+void ZstPlug::read_json(const json & buffer)
 {
 	//Unpack entity
-	ZstEntityBase::read(buffer, length, offset);
-	
+	ZstEntityBase::read_json(buffer);
+
 	//Unpack value
-	m_value->read(buffer, length, offset);
+	m_value->read_json(buffer["value"]);
 
 	//Unpack direction
-	m_direction = (ZstPlugDirection)msgpack::unpack(buffer, length, offset).get().via.i64;
+	m_direction = buffer["plug_direction"];
 
 	//Unpack max cables
-	m_max_connected_cables = msgpack::unpack(buffer, length, offset).get().via.i64;
+	m_max_connected_cables = buffer["max_connected_cables"];
 }
 
 
@@ -180,7 +181,7 @@ size_t ZstPlug::num_cables()
 	return m_cables.size();
 }
 
-int ZstPlug::max_connected_cables()
+size_t ZstPlug::max_connected_cables()
 {
 	return m_max_connected_cables;
 }
@@ -267,7 +268,9 @@ ZstOutputPlug::~ZstOutputPlug()
 void ZstOutputPlug::fire()
 {
 	m_performance_events->invoke([this](ZstTransportAdaptor * adaptor) {
-		adaptor->on_send_msg(ZstMsgKind::PERFORMANCE_MSG, { {ZstMsgArg::PATH, this->URI().path()} }, *this->raw_value());
+		json val_json;
+		this->raw_value()->write_json(val_json);
+		adaptor->on_send_msg(ZstMsgKind::PERFORMANCE_MSG, { { get_msg_arg_name(ZstMsgArg::PATH), this->URI().path() } }, val_json);
 	});
 	m_value->clear();
 }

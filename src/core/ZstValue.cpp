@@ -2,11 +2,10 @@
 #include <sstream>
 #include <msgpack.hpp>
 #include <ZstLogging.h>
-#include <variant.hpp>
+#include <nlohmann/json.hpp>
 #include "ZstValue.h"
 
-//Template instantiations
-template class mpark::variant<int, float, std::string>;
+using namespace ZstValueDetails;
 
 
 ZstValue::ZstValue() : m_default_type(ZstValueType::ZST_NONE)
@@ -107,61 +106,38 @@ const size_t ZstValue::size_at(const size_t position) const {
     return 0;
 }
 
-void ZstValue::write(std::stringstream & buffer) const
+void ZstValue::write_json(json & buffer) const
 {
-	//Pack default type
-	msgpack::pack(buffer, (int)get_default_type());
-
-	//Pack values
-	msgpack::pack(buffer, size());
-	if (get_default_type() == ZstValueType::ZST_INT) {
-		for (auto val : m_values) {
-			msgpack::pack(buffer, visit(ZstValueIntVisitor(), val));
+	buffer[get_value_field_name(ZstValueFields::DEFAULT_TYPE)] = get_default_type();
+	buffer[get_value_field_name(ZstValueFields::VALUES)] = json::array();
+	for (auto val : m_values) {
+		if (get_default_type() == ZstValueType::ZST_INT) {
+			buffer[get_value_field_name(ZstValueFields::VALUES)].push_back(visit(ZstValueIntVisitor(), val));
+		} else if (get_default_type() == ZstValueType::ZST_FLOAT) {
+			buffer[get_value_field_name(ZstValueFields::VALUES)].push_back(visit(ZstValueFloatVisitor(), val));
+		} else if (get_default_type() == ZstValueType::ZST_STRING) {
+			buffer[get_value_field_name(ZstValueFields::VALUES)].push_back(visit(ZstValueStrVisitor(), val));
+		} else {
+			//Unknown value type
 		}
-	}
-	else if (get_default_type() == ZstValueType::ZST_FLOAT) {
-		for (auto val : m_values) {
-			msgpack::pack(buffer, visit(ZstValueFloatVisitor(), val));
-		}
-	}
-	else if (get_default_type() == ZstValueType::ZST_STRING) {
-		for (auto val : m_values) {
-			std::string s = visit(ZstValueStrVisitor(), val);
-			msgpack::pack(buffer, s);
-		}
-	}
-	else {
-
 	}
 }
 
-void ZstValue::read(const char * buffer, size_t length, size_t & offset)
+void ZstValue::read_json(const json & buffer)
 {
-	//Unpack default type
-	auto handle = msgpack::unpack(buffer, length, offset);
-	m_default_type = (ZstValueType)handle.get().via.i64;
-
-	//Unpack num values
-	handle = msgpack::unpack(buffer, length, offset);
-	auto num_values = handle.get().via.i64;
-
-	m_values.resize(num_values);
+	m_default_type = buffer[get_value_field_name(ZstValueFields::DEFAULT_TYPE)];
+	m_values.clear();
 
 	//Unpack values
-	for (int i = 0; i < num_values; ++i) {
-		handle = msgpack::unpack(buffer, length, offset);
-		auto val = handle.get();
-		if (val.type == msgpack::type::NEGATIVE_INTEGER || val.type == msgpack::type::POSITIVE_INTEGER) {
-			m_values[i] = static_cast<int>(val.via.i64);
+	for (auto v : buffer[get_value_field_name(ZstValueFields::VALUES)]) {
+		if (v.is_number_integer()) {
+			m_values.emplace_back(v.get<int>());
 		}
-		else if (val.type == msgpack::type::FLOAT || val.type == msgpack::type::FLOAT32 || val.type == msgpack::type::FLOAT64 ){
-			m_values[i] = static_cast<float>(val.via.f64);
+		else if (v.is_number_float()) {
+			m_values.emplace_back(v.get<float>());
 		}
-		else if (val.type == msgpack::type::STR) {
-			m_values[i] = val.as<std::string>();
-		} 
-		else {
-			//Unknown value type
+		else if (v.is_string()) {
+			m_values.emplace_back(v.get<std::string>());
 		}
 	}
 }

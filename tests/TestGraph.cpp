@@ -57,6 +57,9 @@ void test_connect_plugs() {
     assert(cable_activation->num_calls() == 1);
     cable_activation->reset_num_calls();
 
+	ZstLog::app(LogLevel::notification, "Testing json serialisation of entity");
+	ZstLog::app(LogLevel::debug, "{}", zst_get_root()->as_json_str());
+
     ZstLog::app(LogLevel::notification, "Testing cable disconnection when removing parent");
     cable = zst_connect_cable(test_input->input(), test_output->output());
     cable->add_adaptor(cable_activation);
@@ -210,7 +213,7 @@ void test_unreliable_graph()
 
 int main(int argc,char **argv)
 {
-	TestRunner runner("TestGraph", argv[0]);
+	TestRunner runner("TestGraph", argv[0], true);
 
     test_connect_plugs();
     //test_add_filter();

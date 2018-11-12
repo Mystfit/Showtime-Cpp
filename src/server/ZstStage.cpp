@@ -1,6 +1,5 @@
 #include <sstream>
 #include <chrono>
-#include <boost/lexical_cast.hpp>
 
 #include "ZstStage.h"
 
@@ -10,9 +9,8 @@
 
 //Stage headers
 #include "ZstPerformerStageProxy.h"
-#include "ZstStage.h"
 
-using namespace std;
+#include <czmq.h>
 
 ZstStage::ZstStage() : 
 	m_is_destroyed(false),
@@ -163,7 +161,6 @@ void ZstStage::stage_heartbeat_timer(boost::asio::deadline_timer * t, ZstStage *
 	}
 }
 
-
 void ZstStage::event_loop() 
 {
 	while (1) {
@@ -185,7 +182,7 @@ void ZstStage::timer_loop()
 		boost::this_thread::interruption_point();
 
 		//Give the event loop some work to do so it doesn't insta-quit
-		boost::asio::io_service::work work(m_io);
+		boost::asio::io_context::work work(m_io);
 
 		//Run the event loop (blocks this thread)
 		this->m_io.run();

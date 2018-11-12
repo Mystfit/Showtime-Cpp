@@ -1,15 +1,16 @@
 cmake_minimum_required(VERSION 3.12.0)
 
-project(Showtime VERSION 0.15.7)
+project(Showtime VERSION 0.15.8)
 set(SHOWTIME_NAMESPACE "${PROJECT_NAME}::")
 
 # Use C14
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CXX_STANDARD_REQUIRED)
-set(CMAKE_CXX_EXTENSIONS OFF)
+#set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Set build locations
 set(CMAKE_BASE_MODULE_PATH ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake;${CMAKE_MODULE_PATH}")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib)
@@ -19,13 +20,14 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin)
-
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake;${CMAKE_MODULE_PATH}")
 set(CMAKE_SWIG_ROOT_OUTDIR ${CMAKE_BINARY_DIR}/bindings)
 set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR})
+
+# Set CMake vars
 set(CMAKE_FIND_FRAMEWORKS LAST)
 set(CMAKE_DEBUG_POSTFIX d)
 
+# Set platform flags
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(MACOSX TRUE)
     MESSAGE(STATUS "Platform is OSX")
@@ -35,9 +37,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     set(LINUX TRUE)
     MESSAGE(STATUS "Platform is Linux")
 endif()
-
-option(BUILD_STATIC "Build static Showtime library" OFF)
-option(BUILD_SHARED "Build shared Showtime library" OFF)
 
 if(LINUX OR MACOSX)
     if(NOT DEFINED CMAKE_PREFIX_PATH)
@@ -61,6 +60,10 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
         set(Boost_USE_STATIC_RUNTIME ON)
     endif()
 endif()
+
+# Set shared and static library flags
+option(BUILD_STATIC "Build static Showtime library" OFF)
+option(BUILD_SHARED "Build shared Showtime library" ON)
 
 # Set showtime variables
 set(Showtime_COMPILED_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include")
@@ -87,7 +90,6 @@ endif()
 # --------
 set(LIBZMQ_TARGET "")
 set(CZMQ_TARGET "")
-
 message(STATUS "Finding packages")
 
 # Boost
@@ -120,11 +122,20 @@ set(Boost_ATOMIC_TARGET "Boost::atomic")
 set(Boost_REGEX_TARGET "Boost::regex")
 
 # Msgpack, fmt, swig
-# ------------------
+# ------------------------------
 find_package(MsgPack CONFIG REQUIRED)
-find_package(fmt CONFIG REQUIRED)
-#find_package(mpark_variant CONFIG REQUIRED)
+set(msgpackc_TARGET "msgpackc-static")
 
+find_package(fmt CONFIG REQUIRED)
+set(fmt_TARGET "fmt::fmt-header-only")
+
+find_package(SWIG)
+if(SWIG_FOUND)
+    include(UseSWIG)
+endif()
+
+# CZMQ, libZMQ
+# ----
 if(WIN32)
     # Use cmake versions of ZeroMQ and CZMQ
     find_package(ZeroMQ CONFIG REQUIRED)
@@ -135,22 +146,10 @@ else()
     find_package(czmq REQUIRED)
 endif()
 
-find_package(SWIG)
-if(SWIG_FOUND)
-    include(UseSWIG)
-endif()
-
-# set(CZMQ_TARGET czmq-static)
-# set(LIBZMQ_TARGET libzmq-static)
-set(variant_TARGET "mpark_variant")
-set(fmt_TARGET "fmt::fmt-header-only")
-set(msgpackc_TARGET "msgpackc-static")
-
 
 # ----------------
 # Showtime targets
 # ----------------
-
 
 # Core Library
 # ------------
@@ -188,6 +187,13 @@ set(SERVER_TARGET "${PROJECT_NAME}Server")
 add_executable (${SERVER_TARGET} "")
 include(src/server/CMakeLists.txt)
 list(APPEND Showtime_APP_TARGETS ${SERVER_TARGET})
+
+
+# Web monitor
+# -------------
+set(MONITOR_TARGET "${PROJECT_NAME}Monitor")
+include(src/monitor/CMakeLists.txt)
+list(APPEND Showtime_APP_TARGETS ${MONITOR_TARGET})
 
 
 # Bindings
@@ -344,7 +350,3 @@ install (
     DESTINATION
         "${CMAKE_INSTALL_CMAKEDIR}"
 )
-
-
-
-

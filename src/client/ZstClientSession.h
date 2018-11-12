@@ -6,6 +6,8 @@
 
 //Core API
 #include <ZstCore.h>
+#include "../core/ZstPerformanceMessage.h"
+#include "../core/ZstStageMessage.h"
 #include "../core/ZstMessage.h"
 #include "../core/ZstSession.h"
 
@@ -58,7 +60,7 @@ public:
 	// ---------------------------
 
 	void on_receive_msg(ZstMessage * msg) override;
-	void on_receive_graph_msg(ZstMessage * msg);
+	void on_receive_graph_msg(ZstPerformanceMessage * msg);
 
 
 	// ---------------------------

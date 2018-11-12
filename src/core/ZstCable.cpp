@@ -2,6 +2,7 @@
 #include <ZstCable.h>
 #include <entities/ZstPlug.h>
 #include "liasons/ZstPlugLiason.hpp"
+#include <nlohmann/json.hpp>
 
 ZstCable::ZstCable() : 
 	ZstSynchronisable(),
@@ -127,19 +128,16 @@ const ZstURI & ZstCable::get_output_URI() const
 	return m_output_URI;
 }
 
-void ZstCable::write(std::stringstream & buffer) const
+void ZstCable::write_json(json & buffer) const
 {
-	msgpack::pack(buffer, m_output_URI.path());
-	msgpack::pack(buffer, m_input_URI.path());
+	buffer["output_uri"] = m_output_URI.path();
+	buffer["input_uri"] = m_input_URI.path();
 }
 
-void ZstCable::read(const char * buffer, size_t length, size_t & offset)
+void ZstCable::read_json(const json & buffer)
 {
-	auto handle = msgpack::unpack(buffer, length, offset);
-	m_output_URI = ZstURI(handle.get().via.str.ptr, handle.get().via.str.size);
-
-	handle = msgpack::unpack(buffer, length, offset);
-	m_input_URI = ZstURI(handle.get().via.str.ptr, handle.get().via.str.size);
+	m_output_URI = ZstURI(buffer["output_uri"].get<std::string>().c_str(), buffer["output_uri"].get<std::string>().size());
+	m_input_URI = ZstURI(buffer["input_uri"].get<std::string>().c_str(), buffer["input_uri"].get<std::string>().size());
 }
 
 size_t ZstCableHash::operator()(ZstCable* const& k) const

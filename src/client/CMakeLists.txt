@@ -11,6 +11,7 @@ set(ZST_CLIENT_PRIVATE_HEADERS
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientHierarchy.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientSession.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientTransport.h"
+  #"${CMAKE_CURRENT_LIST_DIR}/ZstHTTPTransport.h"
 )
 
 set(ZST_CLIENT_SRC
@@ -20,6 +21,7 @@ set(ZST_CLIENT_SRC
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientHierarchy.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientSession.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientTransport.cpp"
+  #"${CMAKE_CURRENT_LIST_DIR}/ZstHTTPTransport.cpp"
 )
 
 
@@ -37,8 +39,8 @@ endif()
 if(BUILD_SHARED)
   # Platform specific definitions
   if(WIN32)
-      target_compile_definitions(${CLIENT_TARGET} PRIVATE -DZST_EXPORT_CLIENT_API)
-      target_compile_definitions(${CLIENT_TARGET} INTERFACE -DZST_IMPORT_CLIENT_API)
+      target_compile_definitions(${CLIENT_TARGET} PRIVATE ZST_EXPORT_CLIENT_API)
+      target_compile_definitions(${CLIENT_TARGET} INTERFACE ZST_IMPORT_CLIENT_API)
   endif(WIN32)
 
   target_link_libraries(${CLIENT_TARGET} PUBLIC ${CORE_TARGET})

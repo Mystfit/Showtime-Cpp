@@ -1,8 +1,16 @@
-#include <chrono>
-#include <sstream>
-
 #include "ZstClient.h"
+
+#include "../core/transports/ZstTCPGraphTransport.h"
+#include "../core/transports/ZstUDPGraphTransport.h"
+#include "../core/ZstMessage.h"
+#include "../core/ZstPerformanceMessage.h"
 #include "../core/ZstBoostEventWakeup.hpp"
+
+#include "ZstClientSession.h"
+#include "ZstClientTransport.h"
+
+#include <czmq.h>
+
 
 ZstClient::ZstClient() :
 	m_ping(-1),
@@ -82,7 +90,7 @@ void ZstClient::destroy() {
 	//Set last status flags
 	set_is_ending(false);
 	set_is_destroyed(true);
-	
+
 	//Destroy zmq context
 	zsys_shutdown();
 
@@ -187,19 +195,33 @@ void ZstClient::flush()
 
 void ZstClient::on_receive_msg(ZstMessage * msg)
 {	
-	switch (msg->kind()) {
-	case ZstMsgKind::CONNECTION_HANDSHAKE:
-		receive_connection_handshake(msg);
-		break;
+	auto stage_msg = dynamic_cast<ZstStageMessage*>(msg);
+	if (!stage_msg) {
+		//Message was not from the stage - check if it is a performance message
+		ZstPerformanceMessage * perf_msg = dynamic_cast<ZstPerformanceMessage*>(msg);
+		if (perf_msg) {
+			receive_connection_handshake(perf_msg);
+		}
+		return;
+	}
+
+	switch (stage_msg->kind()) {
 	case ZstMsgKind::START_CONNECTION_HANDSHAKE:
-		m_udp_graph_transport->connect_to_client(msg->get_arg(ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS));
-		start_connection_broadcast(ZstURI(msg->get_arg(ZstMsgArg::INPUT_PATH)));
+	{
+		m_udp_graph_transport->connect_to_client(stage_msg->get_arg<std::string>(ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS).c_str());
+		
+		std::string input_path_str = stage_msg->get_arg<std::string>(ZstMsgArg::INPUT_PATH);
+		start_connection_broadcast(ZstURI(input_path_str.c_str(), input_path_str.size()));
 		break;
+	}
 	case ZstMsgKind::STOP_CONNECTION_HANDSHAKE:
-		stop_connection_broadcast(ZstURI(msg->get_arg(ZstMsgArg::INPUT_PATH)));
+	{
+		std::string input_path_str = stage_msg->get_arg<std::string>(ZstMsgArg::INPUT_PATH);
+		stop_connection_broadcast(ZstURI(input_path_str.c_str(), input_path_str.size()));
 		break;
+	}
 	case ZstMsgKind::SUBSCRIBE_TO_PERFORMER:
-		listen_to_client(msg);
+		listen_to_client(stage_msg);
 		break;
 	default:
 		break;
@@ -211,26 +233,14 @@ void ZstClient::on_receive_msg(ZstMessage * msg)
 // Performance dispatch overrides
 // ------------------------------
 
-void ZstClient::receive_connection_handshake(ZstMessage * msg)
+void ZstClient::receive_connection_handshake(ZstPerformanceMessage * msg)
 {
-	//Peer connection is successful if we receive a handshake performance message from the sending client
-	ZstURI output_path(msg->get_arg(ZstMsgArg::OUTPUT_PATH));
+	std::string output_path_str = msg->sender();
+	ZstURI output_path(output_path_str.c_str(), output_path_str.size());
 	if(m_pending_peer_connections.find(output_path) != m_pending_peer_connections.end()){
+		ZstLog::net(LogLevel::debug, "Received connection handshake");
 		invoke([this, &output_path](ZstTransportAdaptor* adaptor) {
-			std::stringstream ss;
-			ss << m_pending_peer_connections[output_path];
-			ZstMsgArgs args{ 
-				{ZstMsgArg::OUTPUT_PATH, output_path.path() },
-				{ZstMsgArg::REQUEST_ID, ss.str()}
-			};
-			adaptor->on_send_msg(ZstMsgKind::SUBSCRIBE_TO_PERFORMER_ACK, ZstTransportSendType::ASYNC_REPLY, args, [this, output_path](ZstMessageReceipt receipt) {
-				if(receipt.status == ZstMsgKind::OK){
-					this->session()->add_connected_performer(dynamic_cast<ZstPerformer*>(this->session()->hierarchy()->find_entity(output_path)));
-				}
-				else {
-					ZstLog::net(LogLevel::error, "SUBSCRIBE_TO_PERFORMER_ACK: Stage responded with error {}", receipt.status);
-				}
-			});
+			adaptor->on_send_msg(ZstMsgKind::OK, { { get_msg_arg_name(ZstMsgArg::MSG_ID), m_pending_peer_connections[output_path] } });
 		});
 		m_pending_peer_connections.erase(output_path);
 	}
@@ -271,10 +281,10 @@ void ZstClient::join_stage(std::string stage_address, const ZstTransportSendType
 	
 	invoke([this, sendtype, &reliable_graph_addr, &unreliable_graph_addr, root](ZstTransportAdaptor * adaptor) {
 		ZstMsgArgs args = { 
-			{ ZstMsgArg::GRAPH_RELIABLE_OUTPUT_ADDRESS, reliable_graph_addr },
-			{ ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS, unreliable_graph_addr }
+			{ get_msg_arg_name(ZstMsgArg::GRAPH_RELIABLE_OUTPUT_ADDRESS), reliable_graph_addr },
+			{ get_msg_arg_name(ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS), unreliable_graph_addr }
 		};
-		adaptor->on_send_msg(ZstMsgKind::CLIENT_JOIN, sendtype, *root, args, [this](ZstMessageReceipt response) {
+		adaptor->on_send_msg(ZstMsgKind::CLIENT_JOIN, sendtype, root->as_json(), args, [this](ZstMessageReceipt response) {
 			this->join_stage_complete(response);
 		});
 	});
@@ -287,7 +297,7 @@ void ZstClient::join_stage_complete(ZstMessageReceipt response)
 
 	//If we didn't receive a OK signal, something went wrong
 	if (response.status != ZstMsgKind::OK) {
-        ZstLog::net(LogLevel::error, "Stage connection failed with with status: {}", ZstMessage::get_msg_name(response.status));
+        ZstLog::net(LogLevel::error, "Stage connection failed with with status: {}", get_msg_name(response.status));
 		leave_stage_complete();
         return;
 	}
@@ -436,7 +446,7 @@ void ZstClient::start_connection_broadcast(const ZstURI & remote_client_path)
 
 void ZstClient::send_connection_broadcast(boost::asio::deadline_timer * t, ZstClient * client, const ZstURI & to, const ZstURI & from, boost::posix_time::milliseconds duration)
 {
-	client->m_tcp_graph_transport->on_send_msg(ZstMsgKind::CONNECTION_HANDSHAKE, { { ZstMsgArg::OUTPUT_PATH, from.path() } });
+	client->m_tcp_graph_transport->on_send_msg(ZstMsgKind::CONNECTION_HANDSHAKE, { { get_msg_arg_name(ZstMsgArg::PATH), from.path() } });
 
 	if (client->m_connection_timers->find(to) != client->m_connection_timers->end()) {
 		//Loop timer if it is valid
@@ -462,10 +472,15 @@ void ZstClient::stop_connection_broadcast(const ZstURI & remote_client_path)
 	}
 }
 
-void ZstClient::listen_to_client(const ZstMessage * msg)
+void ZstClient::listen_to_client(ZstMessage * msg)
 {
-	m_pending_peer_connections[ZstURI(msg->get_arg(ZstMsgArg::OUTPUT_PATH))] = std::stoull(msg->get_arg(ZstMsgArg::REQUEST_ID));
-	m_tcp_graph_transport->connect_to_client(msg->get_arg(ZstMsgArg::GRAPH_RELIABLE_OUTPUT_ADDRESS));
+	ZstStageMessage * stage_msg = static_cast<ZstStageMessage*>(msg);
+	std::string output_path_str = stage_msg->get_arg<std::string>(ZstMsgArg::OUTPUT_PATH);
+	ZstMsgID msg_id = stage_msg->get_arg<ZstMsgID>(ZstMsgArg::REQUEST_ID);
+	std::string graph_out_addr = stage_msg->get_arg<std::string>(ZstMsgArg::GRAPH_RELIABLE_OUTPUT_ADDRESS);
+
+	m_pending_peer_connections[ZstURI(output_path_str.c_str(), output_path_str.size())] = msg_id;
+	m_tcp_graph_transport->connect_to_client(graph_out_addr.c_str());
 }
 
 void ZstClient::transport_event_loop()

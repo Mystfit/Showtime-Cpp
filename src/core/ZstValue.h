@@ -9,13 +9,62 @@
 #include <ZstSerialisable.h>
 #include <ZstExports.h>
 #include <mutex>
+#include <variant>
 
-//Forward declare variant
-namespace mpark{
-	template <typename... Ts>
-	class variant;
+#include <boost/bimap/bimap.hpp>
+#include <boost/bimap/list_of.hpp>
+#include <boost/assign/list_of.hpp>
+
+
+//Typedefs
+
+typedef std::variant<int, float, std::string> ZstValueVariant;
+
+
+namespace ZstValueDetails {
+	class ZstValueIntVisitor
+	{
+	public:
+		int operator()(int i) const;
+		int operator()(float f) const;
+		int operator()(const std::string & str) const;
+	};
+
+	class ZstValueFloatVisitor
+	{
+	public:
+		float operator()(int i) const;
+		float operator()(float f) const;
+		float operator()(const std::string & str) const;
+	};
+
+	class ZstValueStrVisitor
+	{
+	public:
+		std::string operator()(int i) const;
+		std::string operator()(float f) const;
+		std::string operator()(const std::string & str) const;
+	};
+
+	enum ZstValueFields {
+		VALUES,
+		DEFAULT_TYPE
+	};
+
+	typedef boost::bimaps::bimap<ZstValueFields, std::string> ZstValueFieldsMap;
+	static ZstValueFieldsMap ZstValueFieldNames = boost::assign::list_of<ZstValueFieldsMap::relation>
+		(DEFAULT_TYPE, "d")
+		(VALUES, "v");
+
+	static const std::string & get_value_field_name(const ZstValueFields & field) {
+		return ZstValueFieldNames.left.at(field);
+	}
+
+	static const ZstValueFields & get_value_field(const std::string field_str) {
+		return ZstValueFieldNames.right.at(field_str);
+	}
 }
-typedef mpark::variant<int, float, std::string> ZstValueVariant;
+
 
 class ZstValue : public ZstSerialisable {
 public:
@@ -41,8 +90,8 @@ public:
 	ZST_EXPORT const size_t size_at(const size_t position) const;
 
 	//Serialisation
-	ZST_EXPORT void write(std::stringstream & buffer) const override;
-	ZST_EXPORT void read(const char * buffer, size_t length, size_t & offset) override;
+	ZST_EXPORT void write_json(json & buffer) const override;
+	ZST_EXPORT void read_json(const json & buffer) override;
 
 protected:
 	std::vector<ZstValueVariant> m_values;
@@ -52,26 +101,4 @@ private:
 	std::mutex m_lock;
 };
 
-class ZstValueIntVisitor
-{
-public:
-	int operator()(int i) const;
-	int operator()(float f) const;
-	int operator()(const std::string & str) const;
-};
 
-class ZstValueFloatVisitor
-{
-public:
-	float operator()(int i) const;
-	float operator()(float f) const;
-	float operator()(const std::string & str) const;
-};
-
-class ZstValueStrVisitor
-{
-public:
-	std::string operator()(int i) const;
-	std::string operator()(float f) const;
-	std::string operator()(const std::string & str) const;
-};

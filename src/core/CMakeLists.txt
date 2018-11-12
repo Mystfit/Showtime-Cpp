@@ -9,13 +9,11 @@ set(ZST_HEADER_DEPENDENCIES_DIR "${CMAKE_CURRENT_LIST_DIR}/../dependencies")
 
 # Target definitions
 set(GLOBAL_PUBLIC_DEFINES
-    "-DZMQ_BUILD_DRAFT_API"
-    "-DCZMQ_BUILD_DRAFT_API"
-    "-DCZMQ_STATIC"
-    "-DZMQ_STATIC"
-    "-DFMT_HEADER_ONLY"
-    "-DBOOST_ALL_NO_LIB"
-    "-DBOOST_THREAD_USE_LIB"
+    ZMQ_BUILD_DRAFT_API
+    CZMQ_BUILD_DRAFT_API
+    FMT_HEADER_ONLY
+    BOOST_ALL_NO_LIB
+    BOOST_THREAD_USE_LIB
 )
 
 # Public include files
@@ -30,7 +28,6 @@ set(API_FILES
     ${Showtime_INCLUDE_DIRS}/ZstSerialisable.h
     ${Showtime_INCLUDE_DIRS}/ZstSynchronisable.h
     ${Showtime_INCLUDE_DIRS}/ZstBundle.hpp
-    ${Showtime_INCLUDE_DIRS}/ZstPlugin.h
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstEventAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstComputeAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstSynchronisableAdaptor.hpp
@@ -52,6 +49,7 @@ list(APPEND Showtime_API_INTERFACE ${API_FILES})
 set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstActor.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessage.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstMessageOptions.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMsgID.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstValue.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessagePool.hpp"
@@ -64,6 +62,7 @@ set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstModule.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstEventWakeup.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstBoostEventWakeup.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstMessageSupervisor.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayer.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayerBase.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstGraphTransport.h"
@@ -80,11 +79,11 @@ set(ZST_CORE_HEADERS
 # Core cpp files
 set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstActor.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstMessage.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMsgID.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstLogging.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstCable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstURI.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstSerialisable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstSynchronisable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstValue.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstSession.cpp"
@@ -93,8 +92,8 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstPerformanceMessage.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstModule.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstPlugin.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstBoostEventWakeup.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstMessageSupervisor.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayerBase.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstGraphTransport.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstUDPGraphTransport.cpp"
@@ -124,14 +123,18 @@ message(STATUS "Setting link thread library to ${CMAKE_THREAD_LIBS_INIT}")
 
 # Platform specific options
 IF(WIN32)
-    list(APPEND GLOBAL_PUBLIC_DEFINES "FMT_USE_WINDOWS_H=0")
+    list(APPEND GLOBAL_PUBLIC_DEFINES 
+        FMT_USE_WINDOWS_H=0
+        _SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING
+        _SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING
+    )
     list(APPEND GLOBAL_PUBLIC_DEFINES
-        -D_WIN32_WINNT=0x0601
-        -DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE
+        _WIN32_WINNT=0x0601
+        BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE
     )
     if(BUILD_SHARED)
-        target_compile_definitions(${CORE_TARGET} PRIVATE -DZST_EXPORT_CORE_API)
-        target_compile_definitions(${CORE_TARGET} INTERFACE -DZST_IMPORT_CORE_API)
+        target_compile_definitions(${CORE_TARGET} PRIVATE ZST_EXPORT_CORE_API)
+        target_compile_definitions(${CORE_TARGET} INTERFACE ZST_IMPORT_CORE_API)
     endif()
 endif()
 #target_compile_definitions(${CORE_TARGET} PUBLIC -D_GLIBCXX_USE_CXX11_ABI=0)
@@ -151,20 +154,27 @@ set(SHOWTIME_PUBLIC_LINKED_LIBS
     ${Boost_FIBER_TARGET}
     ${CMAKE_THREAD_LIBS_INIT}
 )
+
+set(SHOWTIME_PRIVATE_LINKED_LIBS 
+    ${msgpackc_TARGET}
+)
+
 set(SHOWTIME_HEADER_TARGETS
     ${Boost_HEADER_TARGET}
     ${fmt_TARGET}
-    ${variant_SYSTEM_TARGET}
 )
 
 if(BUILD_STATIC)
   list(APPEND CORE_LIBS ${CORE_TARGET_STATIC})
   target_link_libraries(${CORE_TARGET_STATIC} PUBLIC ${SHOWTIME_PUBLIC_LINKED_LIBS} czmq-static libzmq-static)
+  target_compile_definitions(${CORE_TARGET_STATIC} PUBLIC ${GLOBAL_PUBLIC_DEFINES} CZMQ_STATIC ZMQ_STATIC)
 endif()
 
 if(BUILD_SHARED)
   list(APPEND CORE_LIBS ${CORE_TARGET})
     target_link_libraries(${CORE_TARGET} PUBLIC ${SHOWTIME_PUBLIC_LINKED_LIBS} czmq libzmq)
+    target_compile_definitions(${CORE_TARGET} PUBLIC ${GLOBAL_PUBLIC_DEFINES})
+
 
   if(WIN32)
     # Copy runtime dependencies
@@ -189,16 +199,15 @@ foreach(TARGET ${CORE_LIBS})
     target_include_directories(${TARGET} PUBLIC
             $<BUILD_INTERFACE:${Showtime_INCLUDE_DIRS}>
             $<BUILD_INTERFACE:${Showtime_COMPILED_INCLUDE_DIRS}>
+            $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}>
             $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}/cf>
-            $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}/variant>
             $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}/concurrentqueue>
             $<INSTALL_INTERFACE:include>
     )
     target_include_directories(${TARGET} PUBLIC ${CZMQ_INCLUDE_DIRS})
 
     # Target definitions
-    target_compile_definitions(${TARGET} PUBLIC ${GLOBAL_PUBLIC_DEFINES})
 
     # Target link libs
-    target_link_libraries(${TARGET} PRIVATE ${msgpackc_TARGET} ${SHOWTIME_HEADER_TARGETS})
+    target_link_libraries(${TARGET} PRIVATE ${SHOWTIME_PRIVATE_LINKED_LIBS} ${SHOWTIME_HEADER_TARGETS})
 endforeach()

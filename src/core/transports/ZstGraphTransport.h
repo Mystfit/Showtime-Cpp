@@ -45,7 +45,6 @@ protected:
 private:
 	static int s_handle_graph_in(zloop_t *loop, zsock_t *sock, void *arg);
 	
-	void graph_recv(zmsg_t * msg);
 	void graph_recv(zframe_t * msg);
 
 	//Actors
@@ -56,8 +55,6 @@ private:
 	std::string m_graph_in_addr;
 
 	//Sockets
-	//-------
-
 	zsock_t * m_graph_in;
 	zsock_t * m_graph_out;
 };

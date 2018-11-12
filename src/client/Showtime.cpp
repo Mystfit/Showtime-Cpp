@@ -1,5 +1,6 @@
 #include "Showtime.h"
 #include "ZstClient.h"
+#include "ZstClientSession.h"
 #include <adaptors/ZstSessionAdaptor.hpp>
 
 using namespace std;

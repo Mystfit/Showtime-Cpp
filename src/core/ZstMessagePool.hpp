@@ -42,10 +42,7 @@ public:
 	//Release and reset a message
 	void release(T* message)
 	{
-		//Flag message as being inactive so that it can be cleaned up in the future
-		message->set_inactive();
 		message->reset();
-			
 		m_message_pool.enqueue(message);
 	}
 

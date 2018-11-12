@@ -25,12 +25,6 @@ public:
 	{
 		m_msg_pool.release(msg);
 	}
-    
-	virtual void send_sock_msg(zsock_t * sock, ZstMessage * msg) override
-	{
-		ZstTransportLayerBase::send_sock_msg(sock, msg);
-		m_msg_pool.release(static_cast<T*>(msg));
-	}
 
 
 	// ----------------
@@ -47,14 +41,9 @@ public:
 		begin_send_message(get_msg()->init(kind, args));
 	}
 
-	void on_send_msg(ZstMsgKind kind, const ZstSerialisable & serialisable) override
+	void on_send_msg(ZstMsgKind kind, const ZstMsgArgs & args, const ZstMsgArgs& payload) override
 	{
-		begin_send_message(get_msg()->init(kind, serialisable, {}));
-	}
-
-	void on_send_msg(ZstMsgKind kind, const ZstMsgArgs & args, const ZstSerialisable & serialisable) override
-	{
-		begin_send_message(get_msg()->init(kind, serialisable, args));
+		begin_send_message(get_msg()->init(kind, payload, args));
 	}
 
 
@@ -72,14 +61,9 @@ public:
 		begin_send_message(get_msg()->init(kind, args), sendtype, action);
 	}
 	
-	void on_send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstSerialisable & serialisable, const MessageReceivedAction & action) override
+	void on_send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstMsgArgs & payload, const ZstMsgArgs & args, const MessageReceivedAction & action) override
 	{
-		begin_send_message(get_msg()->init(kind, serialisable, {}), sendtype, action);
-	}
-
-	void on_send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstSerialisable & serialisable, const ZstMsgArgs & args, const MessageReceivedAction & action) override
-	{
-		begin_send_message(get_msg()->init(kind, serialisable, args), sendtype, action);
+		begin_send_message(get_msg()->init(kind, payload, args), sendtype, action);
 	}
 
 protected:

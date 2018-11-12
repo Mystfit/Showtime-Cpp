@@ -1,5 +1,7 @@
 #include "ZstGraphTransport.h"
 #include <zmq.h>
+#include <czmq.h>
+#include <msgpack.hpp>
 
 ZstGraphTransport::ZstGraphTransport() :
 	m_graph_in(NULL),
@@ -42,7 +44,10 @@ const std::string & ZstGraphTransport::get_graph_out_address() const
 void ZstGraphTransport::send_message_impl(ZstMessage * msg)
 {
 	ZstPerformanceMessage * perf_msg = static_cast<ZstPerformanceMessage*>(msg);
-	zframe_t * payload_frame = perf_msg->payload_frame();
+
+	auto data = perf_msg->to_msgpack();
+	std::string buffer(data.begin(), data.end());
+	zframe_t * payload_frame = zframe_new(buffer.c_str(), buffer.size());
 
 	zframe_set_group(payload_frame, PERFORMANCE_GROUP);
 	zsock_t * sock = output_graph_socket();
@@ -51,7 +56,7 @@ void ZstGraphTransport::send_message_impl(ZstMessage * msg)
 		ZstLog::net(LogLevel::warn, "Message failed to send with status {}", result);
 	}
 
-	m_msg_pool.release(static_cast<ZstPerformanceMessage*>(msg));
+	release_msg(static_cast<ZstPerformanceMessage*>(msg));
 }
 
 ZstActor & ZstGraphTransport::actor()
@@ -79,34 +84,18 @@ int ZstGraphTransport::s_handle_graph_in(zloop_t * loop, zsock_t * sock, void * 
 	return 0;
 }
 
-void ZstGraphTransport::graph_recv(zmsg_t * msg)
-{
-	ZstPerformanceMessage * perf_msg = get_msg();
-	perf_msg->unpack(msg);
-	zmsg_destroy(&msg);
-
-	if (is_active()) {
-		//Publish message to other modules
-		msg_events()->invoke([this, perf_msg](ZstTransportAdaptor* adaptor) {
-			if (this->is_active())
-				adaptor->on_receive_msg(perf_msg);
-		});
-	}
-
-	release_msg(perf_msg);
-}
-
 void ZstGraphTransport::graph_recv(zframe_t * frame)
 {
 	//Unpack the frame into a message
 	ZstPerformanceMessage * perf_msg = get_msg();
-	perf_msg->unpack(frame);
+	perf_msg->unpack((char*)zframe_data(frame), zframe_size(frame));
 	
 	//Publish message to other modules
-	msg_events()->invoke([this, perf_msg](ZstTransportAdaptor* adaptor) {
-		if(this->is_active())
+	if (this->is_active()) {
+		msg_events()->invoke([this, perf_msg](ZstTransportAdaptor* adaptor) {
 			adaptor->on_receive_msg(perf_msg);
-	});
+		});
+	}
 
 	//Clean up resources once other modules have finished with this message
 	release_msg(perf_msg);

@@ -1,4 +1,4 @@
-#include <msgpack.hpp>
+#include <nlohmann/json.hpp>
 #include <entities/ZstContainer.h>
 #include "../ZstEventDispatcher.hpp"
 
@@ -87,7 +87,7 @@ ZstEntityBase * ZstContainer::walk_child_by_URI(const ZstURI & path)
 		}
 
 		if (result) {
-			distance = path.size() - result->URI().size();
+			distance = static_cast<int>(path.size()) - static_cast<int>(result->URI().size());
 			previous = result;
 		} else {
 			break;
@@ -162,46 +162,38 @@ void ZstContainer::remove_child(ZstEntityBase * child) {
 	ZstEntityBase::remove_child(child);
 }
 
-void ZstContainer::write(std::stringstream & buffer) const
+void ZstContainer::write_json(json & buffer) const
 {
 	//Pack entity
-	ZstComponent::write(buffer);
+	ZstComponent::write_json(buffer);
 
 	//Pack children
-	msgpack::pack(buffer, num_children());
+	buffer["children"] = json::array();
 	for (auto child : m_children) {
-		msgpack::pack(buffer, child.second->entity_type());
-		child.second->write(buffer);
+		buffer["children"].push_back(child.second->as_json());
 	}
 }
 
-void ZstContainer::read(const char * buffer, size_t length, size_t & offset)
+void ZstContainer::read_json(const json & buffer)
 {
 	//Unpack entity base first
-	ZstComponent::read(buffer, length, offset);
+	ZstComponent::read_json(buffer);
 
 	//Unpack children
-	auto handle = msgpack::unpack(buffer, length, offset);
-	int num_children = static_cast<int>(handle.get().via.i64);
-	for (int i = 0; i < num_children; ++i) {
+	for (auto c : buffer["children"]) {
 		ZstEntityBase * child = NULL;
 
-		handle = msgpack::unpack(buffer, length, offset);
-		char * entity_type = (char*)malloc(handle.get().via.str.size + 1);
-		memcpy(entity_type, handle.get().via.str.ptr, handle.get().via.str.size);
-		entity_type[handle.get().via.str.size] = '\0';
-
-		if (strcmp(entity_type, CONTAINER_TYPE) == 0) {
+		if (c["entity_type"] == CONTAINER_TYPE) {
 			child = new ZstContainer();
 		}
-		else if (strcmp(entity_type, COMPONENT_TYPE) == 0) {
+		else if (c["entity_type"] == COMPONENT_TYPE) {
 			child = new ZstComponent();
 		}
-		free(entity_type);
 
-		child->read(buffer, length, offset);
+		child->read_json(c);
 		add_child(child);
 	}
+	
 }
 
 ZstCableBundle & ZstContainer::get_child_cables(ZstCableBundle & bundle) const

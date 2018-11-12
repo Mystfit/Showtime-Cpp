@@ -2,6 +2,7 @@
 %ignore ZstPlugIterator::operator++;
 %ignore ZstPlug::begin;
 %ignore ZstPlug::end;
+%ignore Zstplug::raw_value;
 
 %inline %{
 	ZstOutputPlug* cast_to_output_plug(ZstSynchronisable * synchronisable){

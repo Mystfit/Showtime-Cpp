@@ -2,6 +2,7 @@
 
 #include "../core/adaptors/ZstTransportAdaptor.hpp"
 #include "../core/ZstSession.h"
+#include "../core/ZstMessageSupervisor.hpp"
 #include "ZstStageModule.h"
 #include "ZstStageHierarchy.h"
 #include "ZstPerformerStageProxy.h"
@@ -16,6 +17,7 @@ public:
 	~ZstStageSession();
 	void init() override;
 	void destroy() override;
+	virtual void process_events() override;
 
 	void on_receive_msg(ZstMessage * msg) override;
 	ZstMsgKind synchronise_client_graph(ZstPerformer * client);
@@ -39,7 +41,7 @@ public:
 	// -------
 
 	void connect_clients(const ZstMsgID & response_id, ZstPerformerStageProxy * output_client, ZstPerformerStageProxy * input_client);
-	ZstMsgKind complete_client_connection_handler(ZstMessage * msg, ZstPerformerStageProxy * input_client);
+	ZstMsgKind complete_client_connection(ZstPerformerStageProxy * output_client, ZstPerformerStageProxy * input_client);
 
 
 	// -------
@@ -49,7 +51,6 @@ public:
 	ZstStageHierarchy * hierarchy() override;
 
 private:
-	std::unordered_map<ZstMsgID, MessagePromise> m_deferred_connection_promises;
-
+	ZstMessageSupervisor m_connection_watcher;
 	ZstStageHierarchy * m_hierarchy;
 };

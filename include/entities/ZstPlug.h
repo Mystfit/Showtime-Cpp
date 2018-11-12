@@ -43,15 +43,15 @@ public:
 	ZST_EXPORT const size_t size_at(const size_t position) const;
 
 	//Serialisation
-	ZST_EXPORT void write(std::stringstream & buffer) const override;
-	ZST_EXPORT void read(const char * buffer, size_t length, size_t & offset) override;
+	ZST_EXPORT void write_json(json & buffer) const override;
+	ZST_EXPORT void read_json(const json & buffer) override;
 
 	//Properties
 	ZST_EXPORT ZstPlugDirection direction();
 
 	//Cables
 	ZST_EXPORT size_t num_cables();
-	ZST_EXPORT int max_connected_cables();
+	ZST_EXPORT size_t max_connected_cables();
 	ZST_EXPORT bool is_connected_to(ZstPlug * plug);
 	ZST_EXPORT ZstCableBundle & get_child_cables(ZstCableBundle & bundle) const override;
 
@@ -61,7 +61,7 @@ public:
 protected:
 	ZstValue * m_value;
 	ZstPlugDirection m_direction;
-	int m_max_connected_cables;
+	size_t m_max_connected_cables;
 
 private:
 	ZST_EXPORT void add_cable(ZstCable * cable);

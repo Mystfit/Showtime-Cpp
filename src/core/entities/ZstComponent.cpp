@@ -1,5 +1,5 @@
 #include <memory>
-#include <msgpack.hpp>
+#include <nlohmann/json.hpp>
 #include <entities/ZstComponent.h>
 #include "../ZstEventDispatcher.hpp"
 
@@ -35,10 +35,7 @@ ZstComponent::ZstComponent(const ZstComponent & other) : ZstEntityBase(other)
 		}
 	}
 	
-	size_t component_type_size = strlen(other.m_component_type);
-	m_component_type = (char*)malloc(component_type_size + 1);
-	memcpy(m_component_type, other.m_component_type, component_type_size);
-	m_component_type[component_type_size] = '\0';
+	m_component_type = other.m_component_type;
 }
 
 ZstComponent::~ZstComponent()
@@ -51,8 +48,6 @@ ZstComponent::~ZstComponent()
 		}
 		m_plugs.clear();
 	}
-
-	free(m_component_type);
 }
 
 ZstInputPlug * ZstComponent::create_input_plug(const char * name, ZstValueType val_type)
@@ -119,56 +114,52 @@ void ZstComponent::set_parent(ZstEntityBase * parent)
     }
 }
 
-void ZstComponent::write(std::stringstream & buffer) const
+void ZstComponent::write_json(json & buffer) const
 {
 	//Pack container
-	ZstEntityBase::write(buffer);
+	ZstEntityBase::write_json(buffer);
 
 	//Pack component type
-	msgpack::pack(buffer, component_type());
+	buffer["component_type"] = component_type();
 
 	//Pack plugs
-	msgpack::pack(buffer, m_plugs.size());
+	buffer["plugs"] = json::array();
 	for (auto plug : m_plugs) {
-		msgpack::pack(buffer, static_cast<int>(plug->direction()));
-		plug->write(buffer);
+		buffer["plugs"].push_back(plug->as_json());
 	}
 }
 
-void ZstComponent::read(const char * buffer, size_t length, size_t & offset)
+void ZstComponent::read_json(const json & buffer)
 {
 	//Unpack entity base first
-	ZstEntityBase::read(buffer, length, offset);
+	ZstEntityBase::read_json(buffer);
 
 	//Unpack component type
-	auto handle = msgpack::unpack(buffer, length, offset);
-	set_component_type(handle.get().via.str.ptr, handle.get().via.str.size);
+	set_component_type(buffer["component_type"].get<std::string>().c_str(), buffer["component_type"].get<std::string>().size());
 
 	//Unpack plugs
-	handle = msgpack::unpack(buffer, length, offset);
-	int num_plugs = static_cast<int>(handle.get().via.i64);
-	ZstPlugDirection direction;
 	ZstPlug * plug = NULL;
+	ZstPlugDirection direction;
 
-	for (int i = 0; i < num_plugs; ++i) {
+	for (auto p : buffer["plugs"]) {
 		//Direction is packed first - we use this to construct the correct plug type
-		handle = msgpack::unpack(buffer, length, offset);
-		direction = static_cast<ZstPlugDirection>(handle.get().via.i64);
+		direction = p["plug_direction"];
 		if (direction == ZstPlugDirection::IN_JACK) {
 			plug = new ZstInputPlug();
-		} else {
+		}
+		else {
 			plug = new ZstOutputPlug();
 		}
 
 		//Unpack plug
-		plug->read(buffer, length, offset);
+		plug->read_json(p);
 		add_plug(plug);
 	}
 }
 
 const char * ZstComponent::component_type() const
 {
-	return m_component_type;
+	return m_component_type.c_str();
 }
 
 void ZstComponent::set_component_type(const char * component_type)
@@ -178,9 +169,7 @@ void ZstComponent::set_component_type(const char * component_type)
 
 void ZstComponent::set_component_type(const char * component_type, size_t len)
 {
-	m_component_type = (char*)malloc(len + 1);
-    memcpy(m_component_type, component_type, len);
-	m_component_type[len] = '\0';
+	m_component_type = std::string(component_type, len);
 }
 
 ZstCableBundle & ZstComponent::get_child_cables(ZstCableBundle & bundle) const

@@ -45,18 +45,17 @@ IF NOT DEFINED HUNTER_ROOT (
 
 
 REM CMake
-set CMAKE_VER=3.12.1
+set CMAKE_VER=3.12.3
 set CMAKE_VER_FULL=cmake-%CMAKE_VER%-win64-x64
 set CMAKE_URL=https://cmake.org/files/v3.12/%CMAKE_VER_FULL%.zip
-
-IF EXIST %DEPENDENCY_DIR%\%CMAKE_VER_FULL%.zip (
+IF EXIST %DEPENDENCY_DIR%\cmake (
     echo Found CMake
 ) ELSE (
     echo === Downloading %CMAKE_VER_FULL% === 
-    powershell -Command "Invoke-WebRequest %CMAKE_URL% -OutFile %DEPENDENCY_DIR%\%CMAKE_VER_FULL%.zip"
+    powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest %CMAKE_URL% -OutFile %DEPENDENCY_DIR%\cmake.zip"
     echo  === Unzipping CMake === 
-    7z x -y -bd -bb0 -o%DEPENDENCY_DIR% %DEPENDENCY_DIR%\%CMAKE_VER_FULL%.zip
-    echo Renaming %DEPENDENCY_DIR%\%CMAKE_VER_FULL to cmake
+    7z x -y -bd -bb0 -o%DEPENDENCY_DIR% %DEPENDENCY_DIR%\cmake.zip
+    echo Renaming %DEPENDENCY_DIR%\%CMAKE_VER_FULL% to cmake
     rename "%DEPENDENCY_DIR%\%CMAKE_VER_FULL%" cmake
 )
 
@@ -125,6 +124,7 @@ IF EXIST %DEPENDENCY_DIR%\fmt\build (
     mkdir "%DEPENDENCY_DIR%\fmt\build"
 )
 echo === Building fmt === 
+echo %CMAKE_BIN% -H"%DEPENDENCY_DIR%\fmt" -B"%DEPENDENCY_DIR%\fmt\build" %COMMON_GENERATOR_FLAGS%
 %CMAKE_BIN% -H"%DEPENDENCY_DIR%\fmt" -B"%DEPENDENCY_DIR%\fmt\build" %COMMON_GENERATOR_FLAGS%
 %CMAKE_BIN% --build "%DEPENDENCY_DIR%\fmt\build" %COMMON_BUILD_FLAGS%
 
@@ -156,13 +156,13 @@ IF EXIST %DEPENDENCY_DIR%\boost_1.68.0.zip (
 )
 echo === Building boost ===
 pushd %DEPENDENCY_DIR%\boost_1_68_0
-REM call .\bootstrap.bat
-echo .\b2.exe install %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-call .\b2.exe stage %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-call .\b2.exe install %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-echo .\b2.exe install %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-call .\b2.exe stage %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-call .\b2.exe install %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+call %DEPENDENCY_DIR%\boost_1_68_0\bootstrap.bat
+echo %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe stage %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+echo %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe stage %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
 popd
 
 

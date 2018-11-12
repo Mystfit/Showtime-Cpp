@@ -43,8 +43,8 @@ public:
 	ZST_EXPORT virtual ZstEntityBundle & get_child_entities(ZstEntityBundle & bundle, bool include_parent = true) override;
     
 	//Serialisation
-	ZST_EXPORT virtual void write(std::stringstream & buffer) const override;
-	ZST_EXPORT virtual void read(const char * buffer, size_t length, size_t & offset) override;
+	ZST_EXPORT void write_json(json & buffer) const override;
+	ZST_EXPORT void read_json(const json & buffer) override;
 
 	//Specific component type
 	ZST_EXPORT const char * component_type() const;
@@ -58,5 +58,5 @@ protected:
     
 private:
 	std::vector<ZstPlug*> m_plugs;
-	char * m_component_type;
+	std::string m_component_type;
 };

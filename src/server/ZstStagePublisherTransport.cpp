@@ -1,4 +1,6 @@
 #include "ZstStagePublisherTransport.h"
+#include <czmq.h>
+#include <sstream>
 
 ZstStagePublisherTransport::ZstStagePublisherTransport()
 {
@@ -33,9 +35,13 @@ void ZstStagePublisherTransport::destroy()
 
 void ZstStagePublisherTransport::send_message_impl(ZstMessage * msg)
 {
-	zmsg_t * msg_handle = msg->handle();
-	zmsg_send(&msg_handle, m_graph_update_pub);
-	release_msg(static_cast<ZstStageMessage*>(msg));
+	zmsg_t * m = zmsg_new();
+
+	ZstStageMessage * stage_msg = static_cast<ZstStageMessage*>(msg);
+	zmsg_addstr(m, stage_msg->as_json_str().c_str());
+	zmsg_send(&m, m_graph_update_pub);
+
+	release_msg(stage_msg);
 }
 
 void ZstStagePublisherTransport::on_receive_msg(ZstMessage * msg)

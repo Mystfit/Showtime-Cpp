@@ -1,5 +1,5 @@
 #include <exception>
-#include <msgpack.hpp>
+#include <nlohmann/json.hpp>
 #include <entities/ZstPerformer.h>
 #include "../ZstEventDispatcher.hpp"
 
@@ -122,29 +122,26 @@ ZstEntityFactoryBundle & ZstPerformer::get_factories(ZstEntityFactoryBundle & bu
 	return bundle;
 }
 
-void ZstPerformer::write(std::stringstream & buffer) const
+void ZstPerformer::write_json(json & buffer) const
 {
 	//Pack entity
-	ZstContainer::write(buffer);
-	
+	ZstContainer::write_json(buffer);
+
 	//Pack children
-	msgpack::pack(buffer, m_factories.size());
+	buffer["factories"] = json::array();
 	for (auto factory : m_factories) {
-		factory.second->write(buffer);
+		buffer["factories"].push_back(factory.second->as_json());
 	}
 }
 
-void ZstPerformer::read(const char * buffer, size_t length, size_t & offset)
+void ZstPerformer::read_json(const json & buffer)
 {
-	//Unpack entity
-	ZstContainer::read(buffer, length, offset);
+	ZstContainer::read_json(buffer);
 
 	//Unpack factories
-	auto handle = msgpack::unpack(buffer, length, offset);
-	int num_factories = static_cast<int>(handle.get().via.i64);
-	for (int i = 0; i < num_factories; ++i) {
+	for (auto f : buffer["factories"]) {
 		ZstEntityFactory * factory = new ZstEntityFactory();
-		factory->read(buffer, length, offset);
+		factory->read_json(f);
 		m_factories[factory->URI()] = factory;
 	}
 }
