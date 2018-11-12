@@ -1,3 +1,6 @@
+%csmethodmodifiers ZstURI::GetHashCode "public override";
+%csmethodmodifiers ZstURI::ToString "public override";
+
 %extend ZstURI
 {
     const int ZstURI::GetHashCode() const

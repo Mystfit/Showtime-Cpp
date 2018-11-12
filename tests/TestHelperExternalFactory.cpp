@@ -1,6 +1,7 @@
 #include "TestCommon.hpp"
 #include <boost/thread.hpp>
 #include <boost/chrono.hpp>
+#include <iostream>
 
 using namespace ZstTest;
 

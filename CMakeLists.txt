@@ -26,6 +26,7 @@ set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR})
 # Set CMake vars
 set(CMAKE_FIND_FRAMEWORKS LAST)
 set(CMAKE_DEBUG_POSTFIX d)
+set(CMAKE_SUPPRESS_REGENERATION true)
 
 # Set platform flags
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -193,7 +194,7 @@ list(APPEND Showtime_APP_TARGETS ${SERVER_TARGET})
 # -------------
 set(MONITOR_TARGET "${PROJECT_NAME}Monitor")
 include(src/monitor/CMakeLists.txt)
-list(APPEND Showtime_APP_TARGETS ${MONITOR_TARGET})
+#list(APPEND Showtime_APP_TARGETS ${MONITOR_TARGET})
 
 
 # Bindings
@@ -207,7 +208,7 @@ option(BINDINGS_UNITY "Generate bindings for Unity" OFF)
 option(BINDINGS_RUBY "Generate bindings for ruby" OFF)
 
 if(BINDINGS_DOTNET OR BINDINGS_UNITY)
-    set(BINDINGS_DOTNET_FRAMEWORK_VERSION "4.6.1" CACHE STRING "dotnet Framework version")
+    set(BINDINGS_DOTNET_FRAMEWORK_VERSION v4.7.2 CACHE STRING "dotnet Framework version")
     set(DOTNET_FRAMEWORK_VERSIONS
         v3.5 
         v4 
@@ -217,6 +218,7 @@ if(BINDINGS_DOTNET OR BINDINGS_UNITY)
         v4.6 
         v4.6.1 
         v4.7.1 
+        v4.7.2
         netstandard1.0 
         netstandard2.0
     )
