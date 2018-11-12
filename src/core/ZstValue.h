@@ -9,18 +9,16 @@
 #include <ZstSerialisable.h>
 #include <ZstExports.h>
 #include <mutex>
+#include <variant>
 
 #include <boost/bimap/bimap.hpp>
 #include <boost/bimap/list_of.hpp>
 #include <boost/assign/list_of.hpp>
 
 
-//Forward declare variant
-namespace mpark {
-	template <typename... Ts>
-	class variant;
-}
-typedef mpark::variant<int, float, std::string> ZstValueVariant;
+//Typedefs
+
+typedef std::variant<int, float, std::string> ZstValueVariant;
 
 
 namespace ZstValueDetails {

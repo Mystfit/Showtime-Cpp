@@ -129,9 +129,6 @@ set(msgpackc_TARGET "msgpackc-static")
 find_package(fmt CONFIG REQUIRED)
 set(fmt_TARGET "fmt::fmt-header-only")
 
-find_package(mpark_variant CONFIG REQUIRED)
-set(fmt_TARGET "mpark_variant")
-
 find_package(SWIG)
 if(SWIG_FOUND)
     include(UseSWIG)
@@ -190,6 +187,13 @@ set(SERVER_TARGET "${PROJECT_NAME}Server")
 add_executable (${SERVER_TARGET} "")
 include(src/server/CMakeLists.txt)
 list(APPEND Showtime_APP_TARGETS ${SERVER_TARGET})
+
+
+# Web monitor
+# -------------
+set(MONITOR_TARGET "${PROJECT_NAME}Monitor")
+include(src/monitor/CMakeLists.txt)
+list(APPEND Showtime_APP_TARGETS ${MONITOR_TARGET})
 
 
 # Bindings
