@@ -92,7 +92,7 @@ test_script:
     REM ---------------------
     appveyor AddMessage "Running tests"
 
-    for /F "Tokens=* Delims=" %%A in (!BUILD_FOLDER!/.appveyor/tests.txt) do (
+    for /F "Tokens=* Delims=" %%A in (%BUILD_FOLDER%\.appveyor\tests.txt) do (
         appveyor AddTest %%A -Framework ctest -Filename %%A.exe -Outcome Running
         pushd "%BUILD_FOLDER%/build"
         set TEST_LOG=%BUILD_FOLDER%/build/Testing/%%A.log
