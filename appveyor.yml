@@ -100,7 +100,7 @@ test_script:
 
     appveyor AddMessage "Running tests"
 
-    :SymLoop
+    :SymLoop 
     if defined tests[%x%] (
         set test=!tests[%x%]!
 
