@@ -86,20 +86,7 @@ build_script:
 test_script:
 - cmd: |-
     @echo off
-    SETLOCAL EnableDelayedExpansion
 
     REM APPVEYOR test_script:
     REM ---------------------
-    appveyor AddMessage "Running tests"
-
-    for /F "Tokens=* Delims=" %%A in (%BUILD_FOLDER%\.appveyor\tests.txt) do (
-        appveyor AddTest %%A -Framework ctest -Filename %%A.exe -Outcome Running
-        pushd "%BUILD_FOLDER%/build"
-        set TEST_LOG=%BUILD_FOLDER%/build/Testing/%%A.log
-        %CTEST_BIN% -C %CONFIGURATION% --output-on-fail -V -O "%TEST_LOG%" --timeout 320
-        set TEST_OUTCOME=Passed
-        if NOT %errorlevel% == 0 set TEST_OUTCOME=Failed
-        appveyor UpdateTest -Name %%A -Framework ctest -Filename %%A.exe -Outcome %TEST_OUTCOME%
-    )
-
-    ENDLOCAL
+    call %BUILD_FOLDER%\.appveyor\run_tests.bat
