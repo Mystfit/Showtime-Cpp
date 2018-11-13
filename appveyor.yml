@@ -92,17 +92,17 @@ test_script:
     REM ---------------------
     appveyor AddMessage "Running tests"
 
-    for /f "Tokens=* Delims=" %%test in (%BUILD_FOLDER%/.appveyor/tests.txt) do (
-        appveyor AddTest %%test -Framework ctest -Filename %%test.exe -Outcome Running
+    for /f "Tokens=* Delims=" %test in (%BUILD_FOLDER%/.appveyor/tests.txt) do (
+        appveyor AddTest %test -Framework ctest -Filename %test.exe -Outcome Running
         pushd "%BUILD_FOLDER%/build"
-        set TEST_LOG=%BUILD_FOLDER%/build/Testing/%%test.log
+        set TEST_LOG=%BUILD_FOLDER%/build/Testing/%test.log
         %CTEST_BIN% -C %CONFIGURATION% --output-on-fail -V -O "%TEST_LOG%" --timeout 320
         set TEST_OUTCOME=Passed
         if NOT %errorlevel% == 0 set TEST_OUTCOME=Failed
         call "%BUILD_FOLDER%/.appveyor/get_test_time.bat" %TEST_LOG% TEST_DURATION
         
-        for /f "Tokens=* Delims=" %%x in (%TEST_LOG%) do set TEST_LOG_CONTENTS=!TEST_LOG_CONTENTS!%%test\n
-        appveyor UpdateTest -Name %%test -Framework ctest -Filename %%test.exe -Outcome %TEST_OUTCOME% -Duration %TEST_DURATION% -StdOut "%TEST_LOG_CONTENTS%"
+        for /f "Tokens=* Delims=" %%x in (%TEST_LOG%) do set TEST_LOG_CONTENTS=!TEST_LOG_CONTENTS!%test\n
+        appveyor UpdateTest -Name %test -Framework ctest -Filename %test.exe -Outcome %TEST_OUTCOME% -Duration %TEST_DURATION% -StdOut "%TEST_LOG_CONTENTS%"
         appveyor AddMessage "Test complete - %TEST_OUTCOME%"
     )
 
