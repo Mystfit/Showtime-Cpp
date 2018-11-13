@@ -75,6 +75,7 @@ IF EXIST %DEPENDENCY_DIR%\cmake (
 ) ELSE (
     echo === Downloading %CMAKE_VER_FULL% === 
     powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest %CMAKE_URL% -OutFile %DEPENDENCY_DIR%\cmake.zip"
+    
     echo  === Unzipping CMake === 
     7z x -y -bd -bb0 -o%DEPENDENCY_DIR% %DEPENDENCY_DIR%\cmake.zip
     echo Renaming %DEPENDENCY_DIR%\%CMAKE_VER_FULL% to cmake
@@ -100,10 +101,11 @@ IF EXIST %DEPENDENCY_DIR%\libzmq\build (
     REM git -C %DEPENDENCY_DIR%\libzmq checkout master
     git -C %DEPENDENCY_DIR%\libzmq checkout 4.2.5-drafts-fixed
     mkdir "%DEPENDENCY_DIR%\libzmq\build"
+
+    echo  === Building libzmq === 
+    %CMAKE_BIN% -H"%DEPENDENCY_DIR%\libzmq" -B"%DEPENDENCY_DIR%\libzmq\build" %COMMON_GENERATOR_FLAGS% -DENABLE_DRAFTS=TRUE -DZMQ_BUILD_TESTS=OFF
+    %CMAKE_BIN% --build "%DEPENDENCY_DIR%\libzmq\build" %COMMON_BUILD_FLAGS%
 )
-echo  === Building libzmq === 
-%CMAKE_BIN% -H"%DEPENDENCY_DIR%\libzmq" -B"%DEPENDENCY_DIR%\libzmq\build" %COMMON_GENERATOR_FLAGS% -DENABLE_DRAFTS=TRUE -DZMQ_BUILD_TESTS=OFF
-%CMAKE_BIN% --build "%DEPENDENCY_DIR%\libzmq\build" %COMMON_BUILD_FLAGS%
 
 
 REM CZMQ
@@ -114,10 +116,11 @@ IF EXIST %DEPENDENCY_DIR%\czmq\build (
     git clone https://github.com/mystfit/czmq.git %DEPENDENCY_DIR%\czmq
     git -C %DEPENDENCY_DIR%\czmq checkout master
     mkdir "%DEPENDENCY_DIR%\czmq\build"
+
+    echo  === Building czmq === 
+    %CMAKE_BIN% -H"%DEPENDENCY_DIR%\czmq" -B"%DEPENDENCY_DIR%\czmq\build" %COMMON_GENERATOR_FLAGS% -DENABLE_DRAFTS=TRUE -DBUILD_TESTING=OFF -DLIBZMQ_FIND_USING_CMAKE_PACKAGE=ON
+    %CMAKE_BIN% --build "%DEPENDENCY_DIR%\czmq\build" %COMMON_BUILD_FLAGS%
 )
-echo  === Building czmq === 
-%CMAKE_BIN% -H"%DEPENDENCY_DIR%\czmq" -B"%DEPENDENCY_DIR%\czmq\build" %COMMON_GENERATOR_FLAGS% -DENABLE_DRAFTS=TRUE -DBUILD_TESTING=OFF -DLIBZMQ_FIND_USING_CMAKE_PACKAGE=ON
-%CMAKE_BIN% --build "%DEPENDENCY_DIR%\czmq\build" %COMMON_BUILD_FLAGS%
 
 
 REM msgpack-c
@@ -129,10 +132,11 @@ IF EXIST %DEPENDENCY_DIR%\msgpack-c\build (
     git -C %DEPENDENCY_DIR%\msgpack-c fetch --all --tags --prune
     git -C %DEPENDENCY_DIR%\msgpack-c checkout cpp-3.0.1
     mkdir "%DEPENDENCY_DIR%\msgpack-c\build"
+
+    echo === Building msgpack === 
+    %CMAKE_BIN% -H"%DEPENDENCY_DIR%\msgpack-c" -B"%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_GENERATOR_FLAGS% -DMSGPACK_BUILD_EXAMPLES=OFF
+    %CMAKE_BIN% --build "%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_BUILD_FLAGS%
 )
-echo === Building msgpack === 
-%CMAKE_BIN% -H"%DEPENDENCY_DIR%\msgpack-c" -B"%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_GENERATOR_FLAGS% -DMSGPACK_BUILD_EXAMPLES=OFF
-%CMAKE_BIN% --build "%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_BUILD_FLAGS%
 
 
 REM fmt
@@ -144,11 +148,13 @@ IF EXIST %DEPENDENCY_DIR%\fmt\build (
     git -C %DEPENDENCY_DIR%\fmt fetch --all --tags --prune
     git -C %DEPENDENCY_DIR%\fmt checkout 5.1.0
     mkdir "%DEPENDENCY_DIR%\fmt\build"
+
+    echo === Building fmt === 
+    echo %CMAKE_BIN% -H"%DEPENDENCY_DIR%\fmt" -B"%DEPENDENCY_DIR%\fmt\build" %COMMON_GENERATOR_FLAGS%
+    %CMAKE_BIN% -H"%DEPENDENCY_DIR%\fmt" -B"%DEPENDENCY_DIR%\fmt\build" %COMMON_GENERATOR_FLAGS%
+    %CMAKE_BIN% --build "%DEPENDENCY_DIR%\fmt\build" %COMMON_BUILD_FLAGS%
 )
-echo === Building fmt === 
-echo %CMAKE_BIN% -H"%DEPENDENCY_DIR%\fmt" -B"%DEPENDENCY_DIR%\fmt\build" %COMMON_GENERATOR_FLAGS%
-%CMAKE_BIN% -H"%DEPENDENCY_DIR%\fmt" -B"%DEPENDENCY_DIR%\fmt\build" %COMMON_GENERATOR_FLAGS%
-%CMAKE_BIN% --build "%DEPENDENCY_DIR%\fmt\build" %COMMON_BUILD_FLAGS%
+
 
 REM boost
 set BOOST_COMMON_FLAGS=--prefix=%DEPENDENCY_DIR%\install address-model=64 variant=%CONFIGURATION% threading=multi runtime-link=shared
@@ -156,24 +162,25 @@ set BOOST_SHARED_LIB_FLAGS=--with-system --with-chrono link=shared
 set BOOST_STATIC_LIB_FLAGS=--with-log --with-thread --with-filesystem --with-date_time --with-atomic --with-regex --with-context --with-fiber link=static
 
 IF %WITH_BOOST% EQU 1 (
-    IF EXIST %DEPENDENCY_DIR%\boost_1.68.0.zip (
+    IF EXIST %DEPENDENCY_DIR%\boost_1_68_0 (
         echo Found boost
     ) ELSE (
         echo === Downloading boost ===
         powershell -Command "Invoke-WebRequest http://dl.bintray.com/boostorg/release/1.68.0/source/boost_1_68_0.zip -OutFile %DEPENDENCY_DIR%\boost_1.68.0.zip"
         7z x -y -bd -bb0 -o%DEPENDENCY_DIR% %DEPENDENCY_DIR%\boost_1.68.0.zip
         mkdir %DEPENDENCY_DIR%\boost_1_68_0\build
+
+        echo === Building boost ===
+        pushd %DEPENDENCY_DIR%\boost_1_68_0
+        call %DEPENDENCY_DIR%\boost_1_68_0\bootstrap.bat
+        echo %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+        call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe stage %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+        call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+        echo %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+        call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe stage %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+        call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+        popd
     )
-    echo === Building boost ===
-    pushd %DEPENDENCY_DIR%\boost_1_68_0
-    call %DEPENDENCY_DIR%\boost_1_68_0\bootstrap.bat
-    echo %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe stage %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-    echo %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe stage %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-    popd
 )
 
 REM swig
@@ -183,6 +190,7 @@ IF EXIST %DEPENDENCY_DIR%\swig (
 ) ELSE (
     echo === Downloading SWIG === 
     powershell -Command "Invoke-WebRequest https://phoenixnap.dl.sourceforge.net/project/swig/swigwin/swigwin-3.0.12/%SWIG_VER%.zip -OutFile %DEPENDENCY_DIR%\%SWIG_VER%.zip"
+    
     echo === Unzipping swig === 
     7z x -y -bd -bb0 -o%DEPENDENCY_DIR% %DEPENDENCY_DIR%\%SWIG_VER%.zip
     echo Renaming %DEPENDENCY_DIR%\%SWIG_VER to swig
@@ -200,6 +208,7 @@ IF %WITH_UNITY% EQU 1 (
         echo === Downloading Unity === 
         powershell -Command "Invoke-WebRequest $env:UNITY_URL -OutFile %DEPENDENCY_DIR%\UnitySetup64.exe"
     )
+
     echo === Installing Unity === 
     mkdir "%DEPENDENCY_DIR%\unity"
     %DEPENDENCY_DIR%\UnitySetup64.exe /S /D="%DEPENDENCY_DIR%\unity"
@@ -214,7 +223,9 @@ IF EXIST %DEPENDENCY_DIR%\rtmidi\build (
     echo === Cloning RtMidi ===
     git clone https://github.com/thestk/rtmidi.git %DEPENDENCY_DIR%\rtmidi
     mkdir "%DEPENDENCY_DIR%\rtmidi\build"
+
+    echo === Building RtMidi ===
+    %CMAKE_BIN% -H"%DEPENDENCY_DIR%\rtmidi" -B"%DEPENDENCY_DIR%\rtmidi\build" %COMMON_GENERATOR_FLAGS% -DBUILD_TESTING=OFF
+    %CMAKE_BIN% --build "%DEPENDENCY_DIR%\rtmidi\build" %COMMON_BUILD_FLAGS%
 )
-echo === Building RtMidi ===
-%CMAKE_BIN% -H"%DEPENDENCY_DIR%\rtmidi" -B"%DEPENDENCY_DIR%\rtmidi\build" %COMMON_GENERATOR_FLAGS% -DBUILD_TESTING=OFF
-%CMAKE_BIN% --build "%DEPENDENCY_DIR%\rtmidi\build" %COMMON_BUILD_FLAGS%
+
