@@ -99,7 +99,7 @@ test_script:
     set tests[4]="TestPlugins"
     set tests[5]="TestEntityFactories"
 
-    for /L %i in (1,1,5) do (
+    for /F "tokens=2 delims==" %%s in ('set tests[') do (
         set test=!tests[%%i]!
 
         appveyor AddTest %test% -Framework ctest -Filename %test%.exe -Outcome Running
