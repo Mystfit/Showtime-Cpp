@@ -1,18 +1,48 @@
 @echo off
-setlocal
+setlocal EnableDelayedExpansion
 
-REM Environment variables
-IF "%1"=="" (
-    set BUILD_FOLDER=%cd%
-) ELSE (
-    set BUILD_FOLDER=%1
+
+REM Command line arguments
+:processargs
+SET ARG=%1
+IF DEFINED ARG (
+    IF "%ARG%" EQU "--build-dir" (
+        set BUILD_FOLDER=%2
+        echo Build folder=!BUILD_FOLDER!
+        SHIFT
+    )
+
+    IF "%ARG%" EQU "--config" (
+        set CONFIGURATION=!%2!
+        echo Configuration=%CONFIGURATION%
+        SHIFT
+    )
+
+    IF "%ARG%" EQU "--with-boost" (
+        set WITH_BOOST=1
+        echo With Boost
+    )
+
+    IF "%ARG%" EQU "--with-unity" (
+        set WITH_UNITY=1
+        echo With Unity
+    )
+
+    SHIFT
+    GOTO processargs
 )
 
-IF "%2"=="" (
-    echo "hi"
+REM Expand variables supplied from :processargs
+set BUILD_FOLDER=!BUILD_FOLDER!
+set CONFIGURATION=!CONFIGURATION!
+
+REM Default paths and variables
+IF NOT DEFINED BUILD_FOLDER (
+    set BUILD_FOLDER=%cd%
+)
+
+IF NOT DEFINED CONFIGURATION (
     set CONFIGURATION=debug
-) ELSE (
-    set CONFIGURATION=%2
 )
 
 IF "%CONFIGURATION%" EQU "debug" (
@@ -21,28 +51,20 @@ IF "%CONFIGURATION%" EQU "debug" (
     set CONFIG_WCAPS="Release"
 )
 
-echo CONFIG_WCAPS=%CONFIG_WCAPS%
-
-IF "%3"=="--with-unity" (
-    set WITH_UNITY=1
-) ELSE (
+IF NOT DEFINED WITH_UNITY (
     set WITH_UNITY=0
 )
 
-IF NOT DEFINED GENERATOR (
-    set GENERATOR=Visual Studio 15 2017 Win64
+IF NOT DEFINED WITH_BOOST (
+    set WITH_BOOST=0
 )
-IF NOT DEFINED DEPENDENCY_DIR (
-    set DEPENDENCY_DIR=%BUILD_FOLDER%\dependencies
-)
+
+set GENERATOR=Visual Studio 15 2017 Win64
+set DEPENDENCY_DIR=%BUILD_FOLDER%\dependencies
 IF NOT EXIST %DEPENDENCY_DIR% (
     mkdir "%DEPENDENCY_DIR%"
     mkdir "%DEPENDENCY_DIR%\install"
 )
-IF NOT DEFINED HUNTER_ROOT (
-    set HUNTER_ROOT=%DEPENDENCY_DIR%\hunter_root
-)
-
 
 REM CMake
 set CMAKE_VER=3.12.3
@@ -128,43 +150,31 @@ echo %CMAKE_BIN% -H"%DEPENDENCY_DIR%\fmt" -B"%DEPENDENCY_DIR%\fmt\build" %COMMON
 %CMAKE_BIN% -H"%DEPENDENCY_DIR%\fmt" -B"%DEPENDENCY_DIR%\fmt\build" %COMMON_GENERATOR_FLAGS%
 %CMAKE_BIN% --build "%DEPENDENCY_DIR%\fmt\build" %COMMON_BUILD_FLAGS%
 
-
-REM mpark variant
-IF EXIST %DEPENDENCY_DIR%\variant\build (
-    echo Found variant
-) ELSE (
-    echo === Cloning mpark-variant ===
-    git clone https://github.com/mpark/variant.git %DEPENDENCY_DIR%\variant
-    mkdir "%DEPENDENCY_DIR%\variant\build"
-)
-echo === Building variant ===
-%CMAKE_BIN% -H"%DEPENDENCY_DIR%\variant" -B"%DEPENDENCY_DIR%\variant\build" %COMMON_GENERATOR_FLAGS%
-%CMAKE_BIN% --build "%DEPENDENCY_DIR%\variant\build" %COMMON_BUILD_FLAGS%
-
-
 REM boost
 set BOOST_COMMON_FLAGS=--prefix=%DEPENDENCY_DIR%\install address-model=64 variant=%CONFIGURATION% threading=multi runtime-link=shared
 set BOOST_SHARED_LIB_FLAGS=--with-system --with-chrono link=shared
 set BOOST_STATIC_LIB_FLAGS=--with-log --with-thread --with-filesystem --with-date_time --with-atomic --with-regex --with-context --with-fiber link=static
-IF EXIST %DEPENDENCY_DIR%\boost_1.68.0.zip (
-    echo Found boost
-) ELSE (
-    echo === Downloading boost ===
-    powershell -Command "Invoke-WebRequest http://dl.bintray.com/boostorg/release/1.68.0/source/boost_1_68_0.zip -OutFile %DEPENDENCY_DIR%\boost_1.68.0.zip"
-    7z x -y -bd -bb0 -o%DEPENDENCY_DIR% %DEPENDENCY_DIR%\boost_1.68.0.zip
-    mkdir %DEPENDENCY_DIR%\boost_1_68_0\build
-)
-echo === Building boost ===
-pushd %DEPENDENCY_DIR%\boost_1_68_0
-call %DEPENDENCY_DIR%\boost_1_68_0\bootstrap.bat
-echo %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe stage %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-echo %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe stage %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-popd
 
+IF %WITH_BOOST% EQU 1 (
+    IF EXIST %DEPENDENCY_DIR%\boost_1.68.0.zip (
+        echo Found boost
+    ) ELSE (
+        echo === Downloading boost ===
+        powershell -Command "Invoke-WebRequest http://dl.bintray.com/boostorg/release/1.68.0/source/boost_1_68_0.zip -OutFile %DEPENDENCY_DIR%\boost_1.68.0.zip"
+        7z x -y -bd -bb0 -o%DEPENDENCY_DIR% %DEPENDENCY_DIR%\boost_1.68.0.zip
+        mkdir %DEPENDENCY_DIR%\boost_1_68_0\build
+    )
+    echo === Building boost ===
+    pushd %DEPENDENCY_DIR%\boost_1_68_0
+    call %DEPENDENCY_DIR%\boost_1_68_0\bootstrap.bat
+    echo %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe stage %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+    echo %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe stage %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+    popd
+)
 
 REM swig
 set SWIG_VER=swigwin-3.0.12

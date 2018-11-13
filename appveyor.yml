@@ -44,14 +44,13 @@ install:
     @echo off
     set BUILD_FOLDER=%APPVEYOR_BUILD_FOLDER%
     set DEPENDENCY_DIR=%APPVEYOR_BUILD_FOLDER%/dependencies
-    set HUNTER_ROOT=%DEPENDENCY_DIR%/hunter_root
     set INSTALL_DIR=%APPVEYOR_BUILD_FOLDER%/install
 
     REM APPVEYOR install:
     REM ----------------------
-    appveyor AddMessage "Manually installing patched hunter dependencies (czmq, msgpack)"
-    call %BUILD_FOLDER%/.appveyor/install_dependencies.bat %BUILD_FOLDER% %CONFIGURATION%
-    set CMAKE_FLAGS=%CMAKE_FLAGS% -DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%/install;%DEPENDENCY_DIR%/swig;${CMAKE_PREFIX_PATH}"
+    appveyor AddMessage "Installing dependencies"
+    call %BUILD_FOLDER%/install_dependencies.bat --build-dir %BUILD_FOLDER% --config %CONFIGURATION%
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%/install;${CMAKE_PREFIX_PATH}"
     set CMAKE_BIN=%DEPENDENCY_DIR%/cmake/bin/cmake
     set CTEST_BIN=%DEPENDENCY_DIR%/cmake/bin/ctest
 
@@ -63,12 +62,10 @@ build_script:
     mkdir build
     appveyor AddMessage "Building Showtime project with cmake"
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_DOTNET=ON -DBINDINGS_DOTNET_TESTS=ON
-    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_UNITY=ON -DUNITY_EXECUTABLE:PATHNAME="%DEPENDENCY_DIR%/unity/Editor/Unity.exe"
-    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DPYTHON_EXECUTABLE=%PYTHON%/python.exe
-    set CMAKE_FLAGS=%CMAKE_FLAGS% -DHUNTER_STATUS_PRINT=OFF
+    REM set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_UNITY=ON -DUNITY_EXECUTABLE:PATHNAME="%DEPENDENCY_DIR%/unity/Editor/Unity.exe"
+    REM set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DPYTHON_EXECUTABLE=%PYTHON%/python.exe
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR%
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DBoost_USE_LOCAL=ON -DBoost_DEBUG=ON -DBoost_COMPILER=-vc141
-    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBUILD_MEMLEAK_TEST=OFF
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DBUILD_SHARED=ON
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DBUILD_STATIC=ON
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DBOOST_ROOT:PATHNAME="%BOOST_ROOT%" -DBOOST_INCLUDEDIR:PATHNAME="%BOOST_ROOT%" -DBOOST_LIBRARYDIR:PATHNAME="%BOOST_ROOT%/lib64-msvc-14.1"
@@ -83,26 +80,44 @@ build_script:
     %CMAKE_BIN% --build "%BUILD_FOLDER%/build" --target INSTALL --config %CONFIGURATION% -- /nologo /verbosity:minimal
     appveyor AddMessage "Showtime install (all) exited with status %errorlevel%"
 
-after_build:
-- ps: Get-ChildItem $env:BUILD_FOLDER/build/bindings/unity/ShowtimeExampleProject/*.unitypackage | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
+# after_build:
+# - ps: Get-ChildItem $env:BUILD_FOLDER/build/bindings/unity/ShowtimeExampleProject/*.unitypackage | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
 
 test_script:
 - cmd: |-
     @echo off
+    SETLOCAL EnableDelayedExpansion
+
     REM APPVEYOR test_script:
     REM ---------------------
-    appveyor AddMessage "Running tests"
-    appveyor AddTest "TestClient" -Framework ctest -Filename TestClient.exe -Outcome Running
 
-    pushd "%BUILD_FOLDER%/build"
-    set TESTCLIENT_LOG=%BUILD_FOLDER%/build/Testing/TestClient.log
-    %CTEST_BIN% -C %CONFIGURATION% --output-on-fail -V -O "%TESTCLIENT_LOG%" --timeout 320
-    set TEST_OUTCOME=Passed
-    if NOT %errorlevel% == 0 set TEST_OUTCOME=Failed
-    call "%BUILD_FOLDER%/.appveyor/get_test_time.bat" %TESTCLIENT_LOG% TEST_DURATION
-    
-    SETLOCAL EnableDelayedExpansion
-    for /f "Tokens=* Delims=" %%x in (%TESTCLIENT_LOG%) do set TESTCLIENT_LOG_CONTENTS=!TESTCLIENT_LOG_CONTENTS!%%x\n
-    appveyor UpdateTest -Name "TestClient" -Framework ctest -Filename TestClient.exe -Outcome %TEST_OUTCOME% -Duration %TEST_DURATION% -StdOut "%TESTCLIENT_LOG_CONTENTS%"
-    appveyor AddMessage "Tests complete - %TEST_OUTCOME%"
+    set tests[0]="TestStartup"
+    set tests[1]="TestEntities"
+    set tests[2]="TestGraph"
+    set tests[3]="TestExternalClients"
+    set tests[4]="TestPlugins"
+    set tests[5]="TestEntityFactories"
+
+    appveyor AddMessage "Running tests"
+
+    :SymLoop
+    if defined tests[%x%] (
+        set test=!tests[%x%]!
+
+        appveyor AddTest %test% -Framework ctest -Filename %test%.exe -Outcome Running
+        pushd "%BUILD_FOLDER%/build"
+        set TEST_LOG=%BUILD_FOLDER%/build/Testing/%test%.log
+        %CTEST_BIN% -C %CONFIGURATION% --output-on-fail -V -O "%TEST_LOG%" --timeout 320
+        set TEST_OUTCOME=Passed
+        if NOT %errorlevel% == 0 set TEST_OUTCOME=Failed
+        call "%BUILD_FOLDER%/.appveyor/get_test_time.bat" %TEST_LOG% TEST_DURATION
+        
+        for /f "Tokens=* Delims=" %%x in (%TEST_LOG%) do set TEST_LOG_CONTENTS=!TEST_LOG_CONTENTS!%%x\n
+        appveyor UpdateTest -Name %test% -Framework ctest -Filename %test%.exe -Outcome %TEST_OUTCOME% -Duration %TEST_DURATION% -StdOut "%TEST_LOG_CONTENTS%"
+        appveyor AddMessage "Test complete - %TEST_OUTCOME%"
+
+        set /a "x+=1"
+        GOTO :SymLoop
+    )
+
     ENDLOCAL
