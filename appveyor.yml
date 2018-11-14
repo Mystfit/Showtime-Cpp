@@ -86,8 +86,7 @@ build_script:
 test_script:
 - cmd: |-
     @echo off
-
-    iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+    powershell -Command "iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))"
 
     REM APPVEYOR test_script:
     REM ---------------------
