@@ -152,9 +152,6 @@ script:
   #     GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_TOOLCHAIN_FILE=$BUILD_FOLDER/.travis/travis_linux_toolchain.cmake";
   #   fi
 
-  # If we're using local boost, then set CMake vars to set correct target names
-  - if [ $Boost_USE_LOCAL ]; then GENERATOR_ARGS="$GENERATOR_ARGS -DBoost_USE_LOCAL=ON"; fi
-
   # Set prefix search path to homebrew folder for library discovery
   - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$PREFIX;${CMAKE_PREFIX_PATH} -DBUILD_MEMLEAK_TEST=OFF"
 

@@ -65,7 +65,7 @@ build_script:
     REM set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_UNITY=ON -DUNITY_EXECUTABLE:PATHNAME="%DEPENDENCY_DIR%/unity/Editor/Unity.exe"
     REM set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DPYTHON_EXECUTABLE=%PYTHON%/python.exe
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR%
-    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBoost_USE_LOCAL=ON -DBoost_DEBUG=ON -DBoost_COMPILER=-vc141
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBoost_DEBUG=ON -DBoost_COMPILER=-vc141
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DBUILD_SHARED=ON
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DBUILD_STATIC=ON
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DBOOST_ROOT:PATHNAME="%BOOST_ROOT%" -DBOOST_INCLUDEDIR:PATHNAME="%BOOST_ROOT%" -DBOOST_LIBRARYDIR:PATHNAME="%BOOST_ROOT%/lib64-msvc-14.1"
@@ -86,6 +86,8 @@ build_script:
 test_script:
 - cmd: |-
     @echo off
+
+    iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
     REM APPVEYOR test_script:
     REM ---------------------
