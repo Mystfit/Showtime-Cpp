@@ -1,6 +1,8 @@
 SETLOCAL EnableDelayedExpansion
 appveyor AddMessage "Running tests from %BUILD_FOLDER%/.appveyor/tests.txt"
 
+pushd %BUILD_FOLDER%/build
+
 for /F "Tokens=* Delims=" %%A in (%BUILD_FOLDER%\.appveyor\tests.txt) do (
     appveyor AddTest %%A -Framework ctest -Filename %%A.exe -Outcome Running
     set TEST_LOG=%BUILD_FOLDER%/build/Testing/%%A.log
@@ -9,5 +11,7 @@ for /F "Tokens=* Delims=" %%A in (%BUILD_FOLDER%\.appveyor\tests.txt) do (
     if NOT %errorlevel% == 0 set TEST_OUTCOME=Failed
     appveyor UpdateTest -Name %%A -Framework ctest -Filename %%A.exe -Outcome %TEST_OUTCOME%
 )
+
+popd
 
 ENDLOCAL
