@@ -14,8 +14,8 @@ for /F "Tokens=* Delims=" %%A in (%BUILD_FOLDER%\.appveyor\tests.txt) do (
     set TEST_OUTCOME=Passed
     if NOT %errorlevel% == 0 set TEST_OUTCOME=Failed
 
-    echo "Running appveyor UpdateTest -Name %%A -Framework ctest -Filename %%A.exe -Outcome %TEST_OUTCOME%"
-    appveyor UpdateTest -Name %%A -Framework ctest -Filename %%A.exe -Outcome %TEST_OUTCOME%
+    echo "Running appveyor UpdateTest -Name %%A -Framework ctest -Filename %%A.exe -Outcome !TEST_OUTCOME!"
+    appveyor UpdateTest -Name %%A -Framework ctest -Filename %%A.exe -Outcome !TEST_OUTCOME!
 )
 
 popd
