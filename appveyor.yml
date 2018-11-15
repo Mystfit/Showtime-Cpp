@@ -90,5 +90,5 @@ test_script:
 
     REM APPVEYOR test_script:
     REM ---------------------
-    REM call %BUILD_FOLDER%\.appveyor\run_tests.bat
-    
+    call %BUILD_FOLDER%\.appveyor\run_tests.bat
+
