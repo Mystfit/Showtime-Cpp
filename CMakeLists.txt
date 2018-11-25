@@ -4,7 +4,7 @@ project(Showtime VERSION 0.15.8)
 set(SHOWTIME_NAMESPACE "${PROJECT_NAME}::")
 
 # Use C14
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 set(CXX_STANDARD_REQUIRED)
 #set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -133,6 +133,7 @@ set(fmt_TARGET "fmt::fmt-header-only")
 find_package(SWIG)
 if(SWIG_FOUND)
     include(UseSWIG)
+    set(UseSWIG_MODULE_VERSION 2)
 endif()
 
 # CZMQ, libZMQ
@@ -206,6 +207,7 @@ option(BINDINGS_DOTNET "Generate bindings for C#" OFF)
 option(BINDINGS_PYTHON "Generate bindings for Python" OFF)
 option(BINDINGS_UNITY "Generate bindings for Unity" OFF)
 option(BINDINGS_RUBY "Generate bindings for ruby" OFF)
+option(BINDINGS_JAVA "Generate bindings for java" OFF)
 
 if(BINDINGS_DOTNET OR BINDINGS_UNITY)
     set(BINDINGS_DOTNET_FRAMEWORK_VERSION v4.7.2 CACHE STRING "dotnet Framework version")
@@ -238,8 +240,16 @@ if(BINDINGS_DOTNET OR BINDINGS_UNITY)
     if(WIN32)
         list(APPEND Showtime_LIBRARY_TARGETS ${DOTNET_TARGET})
     endif()
-
 endif()
+
+if(BINDINGS_JAVA)
+    set(JAVA_TARGET ${PROJECT_NAME}Java)
+    find_package(Java REQUIRED)
+    find_package(JNI REQUIRED)
+    include(UseJava)
+    include(src/bindings/java/CMakeLists.txt)
+endif()
+
 
 if(BINDINGS_UNITY)
     set(UNITY_TARGET ${PROJECT_NAME}Unity)

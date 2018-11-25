@@ -12,6 +12,7 @@
   }
 %}
 
+%include "../preflight.i"
 %include "ZstURI.i"
 %include "ZstBundle.i"
 %include "../showtime.i"

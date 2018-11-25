@@ -108,7 +108,7 @@ else()
     # Build the project using the dotnet sdk
     set(DOTNET_COMMAND /usr/local/share/dotnet/dotnet CACHE FILEPATH "Path to dotnet sdk")
     set(DOTNET_ARGS 
-        "build" "-o" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
+        "build" "-o" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
         "--framework" "${BINDINGS_DOTNET_FRAMEWORK_VERSION}"
         "${CSPROJ_OUT}")
     add_custom_command(
