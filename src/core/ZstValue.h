@@ -9,20 +9,20 @@
 #include <ZstSerialisable.h>
 #include <ZstExports.h>
 #include <mutex>
-#include <variant>
 
 #include <boost/bimap/bimap.hpp>
 #include <boost/bimap/list_of.hpp>
 #include <boost/assign/list_of.hpp>
+#include <boost/variant.hpp>
 
 
 //Typedefs
 
-typedef std::variant<int, float, std::string> ZstValueVariant;
+typedef boost::variant<int, float, std::string> ZstValueVariant;
 
 
 namespace ZstValueDetails {
-	class ZstValueIntVisitor
+	class ZstValueIntVisitor : public boost::static_visitor<int>
 	{
 	public:
 		int operator()(int i) const;
@@ -30,7 +30,7 @@ namespace ZstValueDetails {
 		int operator()(const std::string & str) const;
 	};
 
-	class ZstValueFloatVisitor
+	class ZstValueFloatVisitor : public boost::static_visitor<float>
 	{
 	public:
 		float operator()(int i) const;
@@ -38,7 +38,7 @@ namespace ZstValueDetails {
 		float operator()(const std::string & str) const;
 	};
 
-	class ZstValueStrVisitor
+	class ZstValueStrVisitor : public boost::static_visitor<std::string>
 	{
 	public:
 		std::string operator()(int i) const;

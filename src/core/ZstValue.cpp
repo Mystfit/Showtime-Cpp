@@ -69,14 +69,14 @@ const size_t ZstValue::size() const
 const int ZstValue::int_at(const size_t position) const
 {
 	auto val = m_values.at(position);
-	int result = visit(ZstValueIntVisitor(), val);
+	int result = boost::apply_visitor(ZstValueIntVisitor(), val);
 	return result;
 }
 
 const float ZstValue::float_at(const size_t position) const
 {
 	auto val = m_values.at(position);
-	float result = visit(ZstValueFloatVisitor(), val);
+	float result = boost::apply_visitor(ZstValueFloatVisitor(), val);
 	return result;
 }
 
@@ -86,7 +86,7 @@ void ZstValue::char_at(char * buf, const size_t position) const
 		return;
 
 	auto val = m_values.at(position);
-	std::string val_s = visit(ZstValueStrVisitor(), val);
+	std::string val_s = boost::apply_visitor(ZstValueStrVisitor(), val);
 	memcpy(buf, val_s.c_str(), val_s.size());
 }
 
@@ -100,7 +100,7 @@ const size_t ZstValue::size_at(const size_t position) const {
         return sizeof(float);
     }
     else if (m_default_type == ZstValueType::ZST_STRING) {
-        std::string val_s = visit(ZstValueStrVisitor(), val);
+        std::string val_s = boost::apply_visitor(ZstValueStrVisitor(), val);
         return val_s.size();
     } 
     return 0;
@@ -112,11 +112,11 @@ void ZstValue::write_json(json & buffer) const
 	buffer[get_value_field_name(ZstValueFields::VALUES)] = json::array();
 	for (auto val : m_values) {
 		if (get_default_type() == ZstValueType::ZST_INT) {
-			buffer[get_value_field_name(ZstValueFields::VALUES)].push_back(visit(ZstValueIntVisitor(), val));
+			buffer[get_value_field_name(ZstValueFields::VALUES)].push_back(boost::apply_visitor(ZstValueIntVisitor(), val));
 		} else if (get_default_type() == ZstValueType::ZST_FLOAT) {
-			buffer[get_value_field_name(ZstValueFields::VALUES)].push_back(visit(ZstValueFloatVisitor(), val));
+			buffer[get_value_field_name(ZstValueFields::VALUES)].push_back(boost::apply_visitor(ZstValueFloatVisitor(), val));
 		} else if (get_default_type() == ZstValueType::ZST_STRING) {
-			buffer[get_value_field_name(ZstValueFields::VALUES)].push_back(visit(ZstValueStrVisitor(), val));
+			buffer[get_value_field_name(ZstValueFields::VALUES)].push_back(boost::apply_visitor(ZstValueStrVisitor(), val));
 		} else {
 			//Unknown value type
 		}

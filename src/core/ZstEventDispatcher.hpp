@@ -49,7 +49,7 @@ public:
 	}
 
 	void add_adaptor(T adaptor) { 
-		std::scoped_lock lock(m_mtx);
+		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		this->m_adaptors.insert(adaptor);
 	}
 
@@ -58,13 +58,13 @@ public:
 	}
 
 	void remove_adaptor(T adaptor) { 
-		std::scoped_lock lock(m_mtx);
+		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		adaptor->set_target_dispatcher_inactive();
 		this->m_adaptors.erase(adaptor); 
 	}
 
 	void remove_all_adaptors(){
-		std::scoped_lock lock(m_mtx);
+		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		for (auto adp : m_adaptors) {
 			adp->set_target_dispatcher_inactive();
 		}
@@ -81,7 +81,7 @@ public:
 			return;
 		}
 
-		std::scoped_lock lock(m_mtx);
+		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		for (T adaptor : this->m_adaptors) {
 			event(adaptor);
 		}
@@ -109,7 +109,7 @@ public:
 		while (this->m_events.try_dequeue(event)) {
 			bool success = true;
 
-			std::scoped_lock lock(m_mtx);
+			std::lock_guard<std::recursive_mutex> lock(m_mtx);
 			for (T adaptor : m_adaptors) {
 				try {
 					event.func(adaptor);
