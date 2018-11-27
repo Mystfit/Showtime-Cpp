@@ -69,9 +69,9 @@ IF NOT EXIST %DEPENDENCY_DIR% (
 )
 
 REM CMake
-set CMAKE_VER=3.12.3
+set CMAKE_VER=3.13.0
 set CMAKE_VER_FULL=cmake-%CMAKE_VER%-win64-x64
-set CMAKE_URL=https://cmake.org/files/v3.12/%CMAKE_VER_FULL%.zip
+set CMAKE_URL=https://cmake.org/files/v3.13/%CMAKE_VER_FULL%.zip
 IF EXIST %DEPENDENCY_DIR%\cmake (
     echo Found CMake
 ) ELSE (
