@@ -251,7 +251,6 @@ if(BINDINGS_JAVA)
     include(src/bindings/java/CMakeLists.txt)
 endif()
 
-
 if(BINDINGS_UNITY)
     set(UNITY_TARGET ${PROJECT_NAME}Unity)
     include(src/bindings/unity/CMakeLists.txt)
@@ -259,8 +258,8 @@ endif()
 
 if(BINDINGS_PYTHON)
     set(PYTHON_TARGET ${PROJECT_NAME}Python)
-    set(PYTHON_VERSION 2.7 CACHE STRING "Python version to search for")
-    find_package(Python ${PYTHON_VERSION} COMPONENTS Interpreter Development REQUIRED)
+    set(BINDINGS_PYTHON_VERSION 3.7 CACHE STRING "Python version")
+    find_package(Python ${BINDINGS_PYTHON_VERSION} COMPONENTS Interpreter Development REQUIRED)
     include(src/bindings/python/CMakeLists.txt)
 endif()
 

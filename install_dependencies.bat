@@ -8,13 +8,13 @@ SET ARG=%1
 IF DEFINED ARG (
     IF "%ARG%" EQU "--build-dir" (
         set BUILD_FOLDER=%2
-        echo Build folder=!BUILD_FOLDER!
+       
         SHIFT
     )
 
     IF "%ARG%" EQU "--config" (
-        set CONFIGURATION=!%2!
-        echo Configuration=%CONFIGURATION%
+        set CONFIGURATION=%2
+        
         SHIFT
     )
 
@@ -40,10 +40,12 @@ REM Default paths and variables
 IF NOT DEFINED BUILD_FOLDER (
     set BUILD_FOLDER=%cd%
 )
+echo Build folder=!BUILD_FOLDER!
 
 IF NOT DEFINED CONFIGURATION (
     set CONFIGURATION=debug
 )
+echo Configuration=!CONFIGURATION!
 
 IF "%CONFIGURATION%" EQU "debug" (
     set CONFIG_WCAPS="Debug"
@@ -169,18 +171,17 @@ IF %WITH_BOOST% EQU 1 (
         powershell -Command "Invoke-WebRequest http://dl.bintray.com/boostorg/release/1.68.0/source/boost_1_68_0.zip -OutFile %DEPENDENCY_DIR%\boost_1.68.0.zip"
         7z x -y -bd -bb0 -o%DEPENDENCY_DIR% %DEPENDENCY_DIR%\boost_1.68.0.zip
         mkdir %DEPENDENCY_DIR%\boost_1_68_0\build
-
-        echo === Building boost ===
-        pushd %DEPENDENCY_DIR%\boost_1_68_0
-        call %DEPENDENCY_DIR%\boost_1_68_0\bootstrap.bat
-        echo %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-        call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe stage %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-        call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-        echo %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-        call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe stage %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-        call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-        popd
     )
+    echo === Building boost ===
+    pushd %DEPENDENCY_DIR%\boost_1_68_0
+    call %DEPENDENCY_DIR%\boost_1_68_0\bootstrap.bat
+    echo %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe stage %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+    echo %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe stage %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+    popd
 )
 
 REM swig
