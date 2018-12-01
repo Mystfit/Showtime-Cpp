@@ -134,32 +134,54 @@ IF(WIN32)
         _WIN32_WINNT=0x0601
         BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE
     )
-    if(BUILD_SHARED)
-        target_compile_definitions(${CORE_TARGET} PRIVATE ZST_EXPORT_CORE_API)
-        target_compile_definitions(${CORE_TARGET} INTERFACE ZST_IMPORT_CORE_API)
-    endif()
 endif()
-#target_compile_definitions(${CORE_TARGET} PUBLIC -D_GLIBCXX_USE_CXX11_ABI=0)
 
-# Link libraries
+# Create object library so that we don't have to recompile shared and static libs
+target_sources(${CORE_TARGET_OBJECTS} PRIVATE ${ZST_CORE_SRC} ${ZST_CORE_HEADERS})
+
+# Object target includes
+target_include_directories(${CORE_TARGET_OBJECTS} PUBLIC 
+     $<BUILD_INTERFACE:${Showtime_INCLUDE_DIRS}>
+    $<BUILD_INTERFACE:${Showtime_COMPILED_INCLUDE_DIRS}>
+    $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}>
+    $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}/cf>
+    $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}/concurrentqueue>
+    $<INSTALL_INTERFACE:include>
+)
+
+# Object private link libraries
 set(${CORE_TARGET}_PRIVATE_LINKED_LIBS 
     ${msgpackc_TARGET}
 )
 
+# Link libs object target to pull in includes
+target_link_libraries(${CORE_TARGET_OBJECTS} 
+    PUBLIC
+    ${SHOWTIME_PUBLIC_LINKED_LIBS}
+    PRIVATE 
+    ${${CORE_TARGET}_PRIVATE_LINKED_LIBS}
+    ${SHOWTIME_PRIVATE_LINKED_LIBS}
+)
+
+# Object compile definitions
+target_compile_definitions(${CORE_TARGET_OBJECTS} 
+    PUBLIC 
+    ${GLOBAL_PUBLIC_DEFINES}
+    PRIVATE
+    ZST_EXPORT_CORE_API
+    INTERFACE
+    ZST_IMPORT_CORE_API
+)
+
 if(BUILD_STATIC)
     list(APPEND CORE_LIBS ${CORE_TARGET_STATIC})
-    target_link_libraries(${CORE_TARGET_STATIC} PRIVATE 
-        ${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS}
-    )
-    target_compile_definitions(${CORE_TARGET_STATIC} PUBLIC ${GLOBAL_PUBLIC_DEFINES} CZMQ_STATIC ZMQ_STATIC)
+    target_link_libraries(${CORE_TARGET_STATIC} PRIVATE ${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS})
+    target_compile_definitions(${CORE_TARGET_STATIC} PUBLIC CZMQ_STATIC ZMQ_STATIC)
 endif()
 
 if(BUILD_SHARED)
     list(APPEND CORE_LIBS ${CORE_TARGET})
-    target_link_libraries(${CORE_TARGET} PRIVATE 
-        ${SHOWTIME_PRIVATE_SHARED_LINKED_LIBS}
-    )
-    target_compile_definitions(${CORE_TARGET} PUBLIC ${GLOBAL_PUBLIC_DEFINES})
+    target_link_libraries(${CORE_TARGET} PRIVATE ${SHOWTIME_PRIVATE_SHARED_LINKED_LIBS})
 
   if(WIN32)
     # Copy runtime dependencies
@@ -176,23 +198,10 @@ endif()
 foreach(TARGET ${CORE_LIBS})
     set_target_properties(${TARGET} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION})
 
-    # Target sources
-    target_sources(${TARGET} PRIVATE ${ZST_CORE_SRC} ${ZST_CORE_HEADERS})
-
-    # Target includes
-    target_include_directories(${TARGET} PUBLIC
-            $<BUILD_INTERFACE:${Showtime_INCLUDE_DIRS}>
-            $<BUILD_INTERFACE:${Showtime_COMPILED_INCLUDE_DIRS}>
-            $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}>
-            $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}/cf>
-            $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}/concurrentqueue>
-            $<INSTALL_INTERFACE:include>
-    )
-
-    # Target link libs
+    # Target link libs again to link actual libraries
     target_link_libraries(${TARGET} 
         PUBLIC
-        ${SHOWTIME_PUBLIC_LINKED_LIBS}
+        ${CORE_TARGET_OBJECTS}
         PRIVATE 
         ${${CORE_TARGET}_PRIVATE_LINKED_LIBS}
         ${SHOWTIME_PRIVATE_LINKED_LIBS}
