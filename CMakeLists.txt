@@ -50,6 +50,9 @@ endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     MESSAGE(STATUS "Platform is Windows")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP")
+
     option(WINDOWS_USE_DLL_RUNTIME "Use the Visual C++ DLL runtime" ON)
     if(WINDOWS_USE_DLL_RUNTIME)
         set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
@@ -122,13 +125,14 @@ set(Boost_CHRONO_TARGET "Boost::chrono")
 set(Boost_ATOMIC_TARGET "Boost::atomic")
 set(Boost_REGEX_TARGET "Boost::regex")
 
+
 # Msgpack, fmt, swig
 # ------------------------------
 find_package(MsgPack CONFIG REQUIRED)
 set(msgpackc_TARGET "msgpackc-static")
 
-find_package(fmt CONFIG REQUIRED)
-set(fmt_TARGET "fmt::fmt-header-only")
+# find_package(fmt CONFIG REQUIRED)
+# set(fmt_TARGET "fmt::fmt-header-only")
 
 find_package(SWIG)
 if(SWIG_FOUND)
@@ -148,6 +152,37 @@ else()
     find_package(libzmq REQUIRED)
     find_package(czmq REQUIRED)
 endif()
+
+# Set internal linked library lists for our targets
+set(SHOWTIME_PRIVATE_LINKED_LIBS 
+    ${Boost_SYSTEM_TARGET}
+    ${Boost_FILESYSTEM_TARGET}
+    ${Boost_THREAD_TARGET}
+    ${Boost_DATE_TIME_TARGET}
+    ${Boost_CHRONO_TARGET}
+    ${Boost_ATOMIC_TARGET}
+    ${Boost_REGEX_TARGET}
+    ${Boost_LOG_TARGET}
+    ${Boost_LOG_SETUP_TARGET}
+    ${Boost_CONTEXT_TARGET}
+    ${Boost_FIBER_TARGET}
+    ${Boost_HEADER_TARGET}
+    ${CMAKE_THREAD_LIBS_INIT}
+)
+
+set(SHOWTIME_PRIVATE_STATIC_LINKED_LIBS
+    czmq-static 
+    libzmq-static
+)
+
+set(SHOWTIME_PRIVATE_SHARED_LINKED_LIBS
+    czmq
+    libzmq
+)
+
+# set(SHOWTIME_PUBLIC_LINKED_LIBS
+#     ${fmt_TARGET}
+# )
 
 
 # ----------------
@@ -288,6 +323,11 @@ include(src/plugins/core_entities/CMakeLists.txt)
 list(APPEND PLUGIN_TARGETS ${CORE_ENTITIES_TARGET})
 
 
+option(PLUGINS_RTMIDI "Build RTMidi plugin" OFF)
+if(PLUGINS_RTMIDI)
+    add_subdirectory(src/plugins/rtmidi)
+endif()
+
 
 # Tests
 # -----
@@ -304,7 +344,6 @@ set(Showtime_INSTALL_TARGETS
     ${Showtime_LIBRARY_TARGETS} 
     ${Showtime_APP_TARGETS}
 )
-
 install(FILES ${Showtime_API_INTERFACE} DESTINATION include/showtime)
 
 if(MACOSX)
@@ -355,6 +394,7 @@ configure_package_config_file (showtime-config.cmake.in
     INSTALL_DESTINATION "${CMAKE_INSTALL_CMAKEDIR}"
 )
 
+# Install package files
 install (
     FILES
         "${CMAKE_CURRENT_BINARY_DIR}/showtime-config.cmake"

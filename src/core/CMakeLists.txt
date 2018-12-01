@@ -11,7 +11,6 @@ set(ZST_HEADER_DEPENDENCIES_DIR "${CMAKE_CURRENT_LIST_DIR}/../dependencies")
 set(GLOBAL_PUBLIC_DEFINES
     ZMQ_BUILD_DRAFT_API
     CZMQ_BUILD_DRAFT_API
-    FMT_HEADER_ONLY
     BOOST_ALL_NO_LIB
     BOOST_THREAD_USE_LIB
 )
@@ -41,6 +40,10 @@ set(API_FILES
     ${Showtime_INCLUDE_DIRS}/entities/ZstContainer.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstPlug.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstPerformer.h
+    ${Showtime_INCLUDE_DIRS}/fmt/format.hpp
+    ${Showtime_INCLUDE_DIRS}/fmt/format.h
+    ${Showtime_INCLUDE_DIRS}/fmt/format-inl.h
+    ${Showtime_INCLUDE_DIRS}/fmt/core.h
     ${Showtime_COMPILED_INCLUDE_DIRS}/ZstVersion.h
 )
 list(APPEND Showtime_API_INTERFACE ${API_FILES})
@@ -124,7 +127,6 @@ message(STATUS "Setting link thread library to ${CMAKE_THREAD_LIBS_INIT}")
 # Platform specific options
 IF(WIN32)
     list(APPEND GLOBAL_PUBLIC_DEFINES 
-        FMT_USE_WINDOWS_H=0
         _SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING
         _SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING
     )
@@ -140,41 +142,24 @@ endif()
 #target_compile_definitions(${CORE_TARGET} PUBLIC -D_GLIBCXX_USE_CXX11_ABI=0)
 
 # Link libraries
-set(SHOWTIME_PUBLIC_LINKED_LIBS 
-    ${Boost_SYSTEM_TARGET}
-    ${Boost_FILESYSTEM_TARGET}
-    ${Boost_THREAD_TARGET}
-    ${Boost_DATE_TIME_TARGET}
-    ${Boost_CHRONO_TARGET}
-    ${Boost_ATOMIC_TARGET}
-    ${Boost_REGEX_TARGET}
-    ${Boost_LOG_TARGET}
-    ${Boost_LOG_SETUP_TARGET}
-    ${Boost_CONTEXT_TARGET}
-    ${Boost_FIBER_TARGET}
-    ${CMAKE_THREAD_LIBS_INIT}
-)
-
-set(SHOWTIME_PRIVATE_LINKED_LIBS 
+set(${CORE_TARGET}_PRIVATE_LINKED_LIBS 
     ${msgpackc_TARGET}
 )
 
-set(SHOWTIME_HEADER_TARGETS
-    ${Boost_HEADER_TARGET}
-    ${fmt_TARGET}
-)
-
 if(BUILD_STATIC)
-  list(APPEND CORE_LIBS ${CORE_TARGET_STATIC})
-  target_link_libraries(${CORE_TARGET_STATIC} PUBLIC ${SHOWTIME_PUBLIC_LINKED_LIBS} czmq-static libzmq-static)
-  target_compile_definitions(${CORE_TARGET_STATIC} PUBLIC ${GLOBAL_PUBLIC_DEFINES} CZMQ_STATIC ZMQ_STATIC)
+    list(APPEND CORE_LIBS ${CORE_TARGET_STATIC})
+    target_link_libraries(${CORE_TARGET_STATIC} PRIVATE 
+        ${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS}
+    )
+    target_compile_definitions(${CORE_TARGET_STATIC} PUBLIC ${GLOBAL_PUBLIC_DEFINES} CZMQ_STATIC ZMQ_STATIC)
 endif()
 
 if(BUILD_SHARED)
-  list(APPEND CORE_LIBS ${CORE_TARGET})
-    target_link_libraries(${CORE_TARGET} PUBLIC ${SHOWTIME_PUBLIC_LINKED_LIBS} czmq libzmq)
+    list(APPEND CORE_LIBS ${CORE_TARGET})
+    target_link_libraries(${CORE_TARGET} PRIVATE 
+        ${SHOWTIME_PRIVATE_SHARED_LINKED_LIBS}
+    )
     target_compile_definitions(${CORE_TARGET} PUBLIC ${GLOBAL_PUBLIC_DEFINES})
-
 
   if(WIN32)
     # Copy runtime dependencies
@@ -192,8 +177,7 @@ foreach(TARGET ${CORE_LIBS})
     set_target_properties(${TARGET} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION})
 
     # Target sources
-    target_sources(${TARGET} PUBLIC ${ZST_PUBLIC_HEADERS} )
-    target_sources(${TARGET} PRIVATE ${ZST_CORE_SRC} ${ZST_CORE_HEADERS} ${Showtime_API_INTERFACE})
+    target_sources(${TARGET} PRIVATE ${ZST_CORE_SRC} ${ZST_CORE_HEADERS})
 
     # Target includes
     target_include_directories(${TARGET} PUBLIC
@@ -204,10 +188,13 @@ foreach(TARGET ${CORE_LIBS})
             $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}/concurrentqueue>
             $<INSTALL_INTERFACE:include>
     )
-    target_include_directories(${TARGET} PUBLIC ${CZMQ_INCLUDE_DIRS})
-
-    # Target definitions
 
     # Target link libs
-    target_link_libraries(${TARGET} PRIVATE ${SHOWTIME_PRIVATE_LINKED_LIBS} ${SHOWTIME_HEADER_TARGETS})
+    target_link_libraries(${TARGET} 
+        PUBLIC
+        ${SHOWTIME_PUBLIC_LINKED_LIBS}
+        PRIVATE 
+        ${${CORE_TARGET}_PRIVATE_LINKED_LIBS}
+        ${SHOWTIME_PRIVATE_LINKED_LIBS}
+    )
 endforeach()

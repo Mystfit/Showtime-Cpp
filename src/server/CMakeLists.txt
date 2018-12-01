@@ -39,4 +39,8 @@ ENDIF(WIN32)
 add_dependencies(${SERVER_TARGET} ${CORE_TARGET})
 
 # Link libraries
-target_link_libraries(${SERVER_TARGET} PUBLIC ${CORE_TARGET})
+target_link_libraries(${SERVER_TARGET} PRIVATE 
+    ${CORE_TARGET} 
+    ${SHOWTIME_PRIVATE_LINKED_LIBS}
+    ${SHOWTIME_PRIVATE_SHARED_LINKED_LIBS}
+)
