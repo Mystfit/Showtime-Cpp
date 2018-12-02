@@ -7,15 +7,30 @@ FILE(WRITE ${VERSION_FILE} "#define SHOWTIME_VERSION \"${CMAKE_PROJECT_VERSION}\
 # Directories
 set(ZST_HEADER_DEPENDENCIES_DIR "${CMAKE_CURRENT_LIST_DIR}/../dependencies")
 
-# Target definitions
-set(GLOBAL_PUBLIC_DEFINES
-    ZMQ_BUILD_DRAFT_API
-    CZMQ_BUILD_DRAFT_API
-    BOOST_ALL_NO_LIB
-    BOOST_THREAD_USE_LIB
-)
-
 # Public include files
+set(ENTITY_HEADERS
+    ${Showtime_INCLUDE_DIRS}/entities/ZstEntityFactory.h
+    ${Showtime_INCLUDE_DIRS}/entities/ZstEntityBase.h
+    ${Showtime_INCLUDE_DIRS}/entities/ZstComponent.h
+    ${Showtime_INCLUDE_DIRS}/entities/ZstContainer.h
+    ${Showtime_INCLUDE_DIRS}/entities/ZstPlug.h
+    ${Showtime_INCLUDE_DIRS}/entities/ZstPerformer.h
+)
+set(ADAPTOR_HEADERS 
+    ${Showtime_INCLUDE_DIRS}/adaptors/ZstEventAdaptor.hpp
+    ${Showtime_INCLUDE_DIRS}/adaptors/ZstComputeAdaptor.hpp
+    ${Showtime_INCLUDE_DIRS}/adaptors/ZstSynchronisableAdaptor.hpp
+    ${Showtime_INCLUDE_DIRS}/adaptors/ZstFactoryAdaptor.hpp
+    ${Showtime_INCLUDE_DIRS}/adaptors/ZstSessionAdaptor.hpp
+    ${Showtime_INCLUDE_DIRS}/adaptors/ZstHierarchyAdaptor.hpp
+    ${Showtime_INCLUDE_DIRS}/adaptors/ZstEntityAdaptor.hpp
+)
+set(FMT_HEADERS 
+    ${Showtime_INCLUDE_DIRS}/fmt/format.hpp
+    ${Showtime_INCLUDE_DIRS}/fmt/format.h
+    ${Showtime_INCLUDE_DIRS}/fmt/format-inl.h
+    ${Showtime_INCLUDE_DIRS}/fmt/core.h
+)
 set(API_FILES
     ${VERSION_FILE}
     ${Showtime_INCLUDE_DIRS}/ZstCore.h
@@ -27,26 +42,14 @@ set(API_FILES
     ${Showtime_INCLUDE_DIRS}/ZstSerialisable.h
     ${Showtime_INCLUDE_DIRS}/ZstSynchronisable.h
     ${Showtime_INCLUDE_DIRS}/ZstBundle.hpp
-    ${Showtime_INCLUDE_DIRS}/adaptors/ZstEventAdaptor.hpp
-    ${Showtime_INCLUDE_DIRS}/adaptors/ZstComputeAdaptor.hpp
-    ${Showtime_INCLUDE_DIRS}/adaptors/ZstSynchronisableAdaptor.hpp
-    ${Showtime_INCLUDE_DIRS}/adaptors/ZstFactoryAdaptor.hpp
-    ${Showtime_INCLUDE_DIRS}/adaptors/ZstSessionAdaptor.hpp
-    ${Showtime_INCLUDE_DIRS}/adaptors/ZstHierarchyAdaptor.hpp
-    ${Showtime_INCLUDE_DIRS}/adaptors/ZstEntityAdaptor.hpp
-    ${Showtime_INCLUDE_DIRS}/entities/ZstEntityFactory.h
-    ${Showtime_INCLUDE_DIRS}/entities/ZstEntityBase.h
-    ${Showtime_INCLUDE_DIRS}/entities/ZstComponent.h
-    ${Showtime_INCLUDE_DIRS}/entities/ZstContainer.h
-    ${Showtime_INCLUDE_DIRS}/entities/ZstPlug.h
-    ${Showtime_INCLUDE_DIRS}/entities/ZstPerformer.h
-    ${Showtime_INCLUDE_DIRS}/fmt/format.hpp
-    ${Showtime_INCLUDE_DIRS}/fmt/format.h
-    ${Showtime_INCLUDE_DIRS}/fmt/format-inl.h
-    ${Showtime_INCLUDE_DIRS}/fmt/core.h
     ${Showtime_COMPILED_INCLUDE_DIRS}/ZstVersion.h
 )
-list(APPEND Showtime_API_INTERFACE ${API_FILES})
+list(APPEND Showtime_API_INTERFACE 
+    ${API_FILES}
+    ${ENTITY_HEADERS}
+    ${ADAPTOR_HEADERS}
+    ${FMT_HEADERS}
+)
 
 # Private headers, only accessible within the Showtime library
 set(ZST_CORE_HEADERS
@@ -58,23 +61,31 @@ set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessagePool.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstStageMessage.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstPerformanceMessage.h"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstSession.h"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstHierarchy.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstEventDispatcher.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.h"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstModule.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstEventWakeup.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstBoostEventWakeup.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessageSupervisor.hpp"
+)
+set(ZST_CORE_MODULE_HEADERS
+    "${CMAKE_CURRENT_LIST_DIR}/ZstSession.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstModule.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstHierarchy.h"
+)
+set(ZST_CORE_TRANSPORT_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayer.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayerBase.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstGraphTransport.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstUDPGraphTransport.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTCPGraphTransport.h"
+)
+set(ZST_CORE_LIASON_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstSynchronisableLiason.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstEntityFactoryLiason.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstPlugLiason.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstCableLiason.hpp"
+)
+set(ZST_CORE_ADAPTOR_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstTransportAdaptor.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstModuleAdaptor.hpp"
 )
@@ -114,6 +125,26 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstCableLiason.cpp"
 )
 
+# Source groups
+source_group( "showtime\\entities\\headers" FILES ${ENTITY_HEADERS} )
+source_group( "showtime\\adaptors\\headers" FILES ${ADAPTOR_HEADERS} ${ZST_CORE_ADAPTOR_HEADERS})
+source_group( "showtime\\fmt\\headers" FILES ${FMT_HEADERS} )
+source_group( "showtime\\headers" FILES ${ZST_CORE_HEADERS} )
+source_group( "showtime\\modules\\headers" FILES ${ZST_CORE_MODULE_HEADERS} )
+source_group( "showtime\\transport\\headers" FILES ${ZST_CORE_LIASON_HEADERS} )
+source_group( "showtime\\liasons\\headers" FILES ${ZST_CORE_TRANSPORT_HEADERS} )
+
+# Add sources to object library so that we don't have to recompile shared and static libs
+target_sources(${CORE_TARGET_OBJECTS} PRIVATE 
+    ${ZST_CORE_SRC} 
+    ${ZST_CORE_HEADERS} 
+    ${ZST_CORE_MODULE_HEADERS}
+    ${ZST_CORE_TRANSPORT_HEADERS}
+    ${ZST_CORE_LIASON_HEADERS}
+    ${ZST_CORE_ADAPTOR_HEADERS}
+    ${Showtime_API_INTERFACE}
+)
+
 # Set threading library
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
@@ -123,6 +154,14 @@ elseif(CMAKE_USE_PTHREADS_INIT)
     message(STATUS "Using posix threads")
 endif()
 message(STATUS "Setting link thread library to ${CMAKE_THREAD_LIBS_INIT}")
+
+# Target definitions
+set(GLOBAL_PUBLIC_DEFINES
+    ZMQ_BUILD_DRAFT_API
+    CZMQ_BUILD_DRAFT_API
+    BOOST_ALL_NO_LIB
+    BOOST_THREAD_USE_LIB
+)
 
 # Platform specific options
 IF(WIN32)
@@ -136,17 +175,16 @@ IF(WIN32)
     )
 endif()
 
-# Create object library so that we don't have to recompile shared and static libs
-target_sources(${CORE_TARGET_OBJECTS} PRIVATE ${ZST_CORE_SRC} ${ZST_CORE_HEADERS})
-
 # Object target includes
-target_include_directories(${CORE_TARGET_OBJECTS} PUBLIC 
-     $<BUILD_INTERFACE:${Showtime_INCLUDE_DIRS}>
-    $<BUILD_INTERFACE:${Showtime_COMPILED_INCLUDE_DIRS}>
+target_include_directories(${CORE_TARGET_OBJECTS} 
+    PUBLIC 
     $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}>
     $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}/cf>
     $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}/concurrentqueue>
+    INTERFACE
     $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${Showtime_INCLUDE_DIRS}>
+    $<BUILD_INTERFACE:${Showtime_COMPILED_INCLUDE_DIRS}>
 )
 
 # Object private link libraries
