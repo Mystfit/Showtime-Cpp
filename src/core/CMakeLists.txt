@@ -31,7 +31,7 @@ set(FMT_HEADERS
     ${Showtime_INCLUDE_DIRS}/fmt/format-inl.h
     ${Showtime_INCLUDE_DIRS}/fmt/core.h
 )
-set(API_FILES
+set(API_HEADERS
     ${VERSION_FILE}
     ${Showtime_INCLUDE_DIRS}/ZstCore.h
     ${Showtime_INCLUDE_DIRS}/ZstLogging.h
@@ -45,7 +45,7 @@ set(API_FILES
     ${Showtime_COMPILED_INCLUDE_DIRS}/ZstVersion.h
 )
 list(APPEND Showtime_API_INTERFACE 
-    ${API_FILES}
+    ${API_HEADERS}
     ${ENTITY_HEADERS}
     ${ADAPTOR_HEADERS}
     ${FMT_HEADERS}
@@ -99,26 +99,34 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstURI.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstSerialisable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstSynchronisable.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstValue.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstSession.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstHierarchy.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstValue.cpp"    
     "${CMAKE_CURRENT_LIST_DIR}/ZstStageMessage.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstPerformanceMessage.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstModule.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstBoostEventWakeup.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessageSupervisor.cpp"
+)
+set(ZST_CORE_TRANSPORT_SRC
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayerBase.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstGraphTransport.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstUDPGraphTransport.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTCPGraphTransport.cpp"
+)
+set(ZST_CORE_MODULE_SRC
+    "${CMAKE_CURRENT_LIST_DIR}/ZstSession.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstHierarchy.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstModule.cpp"
+)
+set(ZST_CORE_ENTITY_SRC
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstEntityFactory.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstEntityBase.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstComponent.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstContainer.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstPlug.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstPerformer.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstEventAdaptorStubs.cpp"
+)
+set(ZST_CORE_ADAPTOR_SRC "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstEventAdaptorStubs.cpp")
+set(ZST_CORE_LIASON_SRC
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstSynchronisableLiason.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstEntityFactoryLiason.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstPlugLiason.cpp"
@@ -126,22 +134,28 @@ set(ZST_CORE_SRC
 )
 
 # Source groups
-source_group( "showtime\\entities\\headers" FILES ${ENTITY_HEADERS} )
-source_group( "showtime\\adaptors\\headers" FILES ${ADAPTOR_HEADERS} ${ZST_CORE_ADAPTOR_HEADERS})
-source_group( "showtime\\fmt\\headers" FILES ${FMT_HEADERS} )
-source_group( "showtime\\headers" FILES ${ZST_CORE_HEADERS} )
-source_group( "showtime\\modules\\headers" FILES ${ZST_CORE_MODULE_HEADERS} )
-source_group( "showtime\\transport\\headers" FILES ${ZST_CORE_LIASON_HEADERS} )
-source_group( "showtime\\liasons\\headers" FILES ${ZST_CORE_TRANSPORT_HEADERS} )
+source_group( "showtime\\entities" FILES ${ENTITY_HEADERS} ${ZST_CORE_ENTITY_SRC})
+source_group( "showtime\\adaptors" FILES ${ADAPTOR_HEADERS} ${ZST_CORE_ADAPTOR_HEADERS} ${ZST_CORE_ADAPTOR_SRC})
+source_group( "showtime\\fmt" FILES ${FMT_HEADERS})
+source_group( "showtime\\headers" FILES ${ZST_CORE_HEADERS} ${API_HEADERS})
+source_group( "showtime\\source" FILES ${ZST_CORE_SRC})
+source_group( "showtime\\modules" FILES ${ZST_CORE_MODULE_HEADERS} ${ZST_CORE_MODULE_SRC})
+source_group( "showtime\\transports" FILES ${ZST_CORE_LIASON_HEADERS} ${ZST_CORE_TRANSPORT_SRC})
+source_group( "showtime\\liasons" FILES ${ZST_CORE_TRANSPORT_HEADERS} ${ZST_CORE_TRANSPORT_SRC})
 
 # Add sources to object library so that we don't have to recompile shared and static libs
 target_sources(${CORE_TARGET_OBJECTS} PRIVATE 
-    ${ZST_CORE_SRC} 
     ${ZST_CORE_HEADERS} 
+    ${ZST_CORE_SRC} 
     ${ZST_CORE_MODULE_HEADERS}
-    ${ZST_CORE_TRANSPORT_HEADERS}
+    ${ZST_CORE_MODULE_SRC}
+    ${ZST_CORE_TRANSPORT_HEADERS} 
+    ${ZST_CORE_TRANSPORT_SRC}
     ${ZST_CORE_LIASON_HEADERS}
+    ${ZST_CORE_LIASON_SRC}
     ${ZST_CORE_ADAPTOR_HEADERS}
+    ${ZST_CORE_ADAPTOR_SRC}
+    ${ZST_CORE_ENTITY_SRC}
     ${Showtime_API_INTERFACE}
 )
 
@@ -211,6 +225,7 @@ target_compile_definitions(${CORE_TARGET_OBJECTS}
     ZST_IMPORT_CORE_API
 )
 
+# Static/shared library specific options
 if(BUILD_STATIC)
     list(APPEND CORE_LIBS ${CORE_TARGET_STATIC})
     target_link_libraries(${CORE_TARGET_STATIC} PRIVATE ${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS})
@@ -233,6 +248,7 @@ if(BUILD_SHARED)
     endif()
 endif()
 
+# Options common to both static/shared libraries
 foreach(TARGET ${CORE_LIBS})
     set_target_properties(${TARGET} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION})
 
