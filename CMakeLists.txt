@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13.0)
 
-project(Showtime VERSION 0.16.0)
+project(Showtime VERSION 0.16.1)
 set(SHOWTIME_NAMESPACE "${PROJECT_NAME}::")
 
 # Use C14
@@ -74,6 +74,7 @@ option(BUILD_SHARED "Build shared Showtime library" ON)
 set(Showtime_COMPILED_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include")
 set(Showtime_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/include")
 set(Showtime_ALL_INCLUDE_DIRS ${Showtime_COMPILED_INCLUDE_DIRS} ${Showtime_INCLUDE_DIRS})
+set(Showtime_HEADER_DEPENDENCIES_DIR "${CMAKE_SOURCE_DIR}/src/dependencies")
 
 set(Showtime_API_INTERFACE "")
 set(Showtime_LIBRARY_TARGETS "")
@@ -127,10 +128,14 @@ set(Boost_ATOMIC_TARGET "Boost::atomic")
 set(Boost_REGEX_TARGET "Boost::regex")
 
 
-# Msgpack, fmt, swig
+# Msgpack, fmt, swig, json
 # ------------------------------
 find_package(MsgPack CONFIG REQUIRED)
 set(msgpackc_TARGET "msgpackc-static")
+
+find_package(nlohmann_json CONFIG REQUIRED)
+set(json_TARGET "nlohmann_json")
+
 
 # find_package(fmt CONFIG REQUIRED)
 # set(fmt_TARGET "fmt::fmt-header-only")
@@ -171,6 +176,12 @@ set(SHOWTIME_PRIVATE_LINKED_LIBS
     ${CMAKE_THREAD_LIBS_INIT}
 )
 
+set(Showtime_PRIVATE_HEADER_DEPENDENCIES
+    $<BUILD_INTERFACE:${Showtime_HEADER_DEPENDENCIES_DIR}>
+    $<BUILD_INTERFACE:${Showtime_HEADER_DEPENDENCIES_DIR}/cf>
+    $<BUILD_INTERFACE:${Showtime_HEADER_DEPENDENCIES_DIR}/concurrentqueue> 
+)
+
 set(SHOWTIME_PRIVATE_STATIC_LINKED_LIBS
     czmq-static 
     libzmq-static
@@ -181,9 +192,9 @@ set(SHOWTIME_PRIVATE_SHARED_LINKED_LIBS
     libzmq
 )
 
-# set(SHOWTIME_PUBLIC_LINKED_LIBS
-#     ${fmt_TARGET}
-# )
+set(SHOWTIME_PUBLIC_LINKED_LIBS
+    nlohmann_json
+)
 
 
 # ----------------

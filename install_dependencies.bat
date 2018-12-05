@@ -157,6 +157,22 @@ IF EXIST %DEPENDENCY_DIR%\fmt\build (
     %CMAKE_BIN% --build "%DEPENDENCY_DIR%\fmt\build" %COMMON_BUILD_FLAGS%
 )
 
+REM json
+IF EXIST %DEPENDENCY_DIR%\json\build (
+    echo Found nlohmann json
+) ELSE (
+    echo === Cloning nlohmann json === 
+    git clone https://github.com/nlohmann/json.git %DEPENDENCY_DIR%\json
+    git -C %DEPENDENCY_DIR%\json fetch --all --tags --prune
+    git -C %DEPENDENCY_DIR%\json checkout v3.4.0
+    mkdir "%DEPENDENCY_DIR%\json\build"
+
+    echo === Building nlohmann json === 
+    echo %CMAKE_BIN% -H"%DEPENDENCY_DIR%\json" -B"%DEPENDENCY_DIR%\fmt\build" %COMMON_GENERATOR_FLAGS%
+    %CMAKE_BIN% -H"%DEPENDENCY_DIR%\json" -B"%DEPENDENCY_DIR%\json\build" -DJSON_BuildTests=OFF %COMMON_GENERATOR_FLAGS%
+    %CMAKE_BIN% --build "%DEPENDENCY_DIR%\json\build" %COMMON_BUILD_FLAGS%
+)
+
 
 REM boost
 set BOOST_COMMON_FLAGS=--prefix=%DEPENDENCY_DIR%\install address-model=64 variant=%CONFIGURATION% threading=multi runtime-link=shared

@@ -30,8 +30,10 @@ list(APPEND Showtime_API_INTERFACE ${ZST_CLIENT_HEADERS})
 set(CLIENT_LIBS "")
 
 if(BUILD_STATIC)
-  target_link_libraries(${CLIENT_TARGET_STATIC} PRIVATE 
-    ${CORE_TARGET_STATIC} 
+  target_link_libraries(${CLIENT_TARGET_STATIC} 
+    PUBLIC
+    ${CORE_TARGET_STATIC}
+    PRIVATE
     ${SHOWTIME_PRIVATE_LINKED_LIBS}
     ${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS}
   )
@@ -67,5 +69,8 @@ foreach(TARGET ${CLIENT_LIBS})
   )
 
   # Include source dependencies in client target
-  target_include_directories(${TARGET} PRIVATE ${Showtime_SOURCE_DEPENDENCIES})
+  target_include_directories(${TARGET} PRIVATE 
+    ${Showtime_SOURCE_DEPENDENCIES}
+    ${Showtime_PRIVATE_HEADER_DEPENDENCIES}
+  )
 endforeach()

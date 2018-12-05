@@ -78,7 +78,7 @@ else()
 endif()
 
 # Set dependant projects
-add_dependencies(${SWIG_MODULE_${DOTNET_TARGET_WRAPPER}_REAL_NAME} ${CLIENT_TARGET_STATIC})
+add_dependencies(${DOTNET_TARGET_WRAPPER} ${CLIENT_TARGET_STATIC})
 
 # Link libraries to swig target
 swig_link_libraries(${DOTNET_TARGET_WRAPPER} ${CLIENT_TARGET_STATIC})

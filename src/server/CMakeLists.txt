@@ -28,6 +28,7 @@ target_sources(${SERVER_TARGET} PRIVATE
 
 target_include_directories(${SERVER_TARGET} PRIVATE
   ${Showtime_SOURCE_DEPENDENCIES}
+  ${Showtime_PRIVATE_HEADER_DEPENDENCIES}
 )
 
 # Platform specific defines

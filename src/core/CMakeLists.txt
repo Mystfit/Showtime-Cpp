@@ -4,9 +4,6 @@ message(STATUS "Configuring ${CORE_TARGET} target")
 set(VERSION_FILE "${Showtime_COMPILED_INCLUDE_DIRS}/ZstVersion.h")
 FILE(WRITE ${VERSION_FILE} "#define SHOWTIME_VERSION \"${CMAKE_PROJECT_VERSION}\"")
 
-# Directories
-set(ZST_HEADER_DEPENDENCIES_DIR "${CMAKE_CURRENT_LIST_DIR}/../dependencies")
-
 # Public include files
 set(ENTITY_HEADERS
     ${Showtime_INCLUDE_DIRS}/entities/ZstEntityFactory.h
@@ -140,8 +137,8 @@ source_group( "showtime\\fmt" FILES ${FMT_HEADERS})
 source_group( "showtime\\headers" FILES ${ZST_CORE_HEADERS} ${API_HEADERS})
 source_group( "showtime\\source" FILES ${ZST_CORE_SRC})
 source_group( "showtime\\modules" FILES ${ZST_CORE_MODULE_HEADERS} ${ZST_CORE_MODULE_SRC})
-source_group( "showtime\\transports" FILES ${ZST_CORE_LIASON_HEADERS} ${ZST_CORE_TRANSPORT_SRC})
-source_group( "showtime\\liasons" FILES ${ZST_CORE_TRANSPORT_HEADERS} ${ZST_CORE_TRANSPORT_SRC})
+source_group( "showtime\\transports" FILES ${ZST_CORE_TRANSPORT_HEADERS} ${ZST_CORE_TRANSPORT_SRC})
+source_group( "showtime\\liasons" FILES ${ZST_CORE_LIASON_HEADERS} ${ZST_CORE_LIASON_SRC})
 
 # Add sources to object library so that we don't have to recompile shared and static libs
 target_sources(${CORE_TARGET_OBJECTS} PRIVATE 
@@ -173,6 +170,8 @@ message(STATUS "Setting link thread library to ${CMAKE_THREAD_LIBS_INIT}")
 set(GLOBAL_PUBLIC_DEFINES
     ZMQ_BUILD_DRAFT_API
     CZMQ_BUILD_DRAFT_API
+    CZMQ_STATIC 
+    ZMQ_STATIC
     BOOST_ALL_NO_LIB
     BOOST_THREAD_USE_LIB
 )
@@ -191,10 +190,8 @@ endif()
 
 # Object target includes
 target_include_directories(${CORE_TARGET_OBJECTS} 
-    PUBLIC 
-    $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}>
-    $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}/cf>
-    $<BUILD_INTERFACE:${ZST_HEADER_DEPENDENCIES_DIR}/concurrentqueue>
+    PRIVATE
+    ${Showtime_PRIVATE_HEADER_DEPENDENCIES}
     INTERFACE
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${Showtime_INCLUDE_DIRS}>
@@ -219,33 +216,38 @@ target_link_libraries(${CORE_TARGET_OBJECTS}
 target_compile_definitions(${CORE_TARGET_OBJECTS} 
     PUBLIC 
     ${GLOBAL_PUBLIC_DEFINES}
-    PRIVATE
-    ZST_EXPORT_CORE_API
-    INTERFACE
-    ZST_IMPORT_CORE_API
 )
 
 # Static/shared library specific options
 if(BUILD_STATIC)
     list(APPEND CORE_LIBS ${CORE_TARGET_STATIC})
     target_link_libraries(${CORE_TARGET_STATIC} PRIVATE ${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS})
-    target_compile_definitions(${CORE_TARGET_STATIC} PUBLIC CZMQ_STATIC ZMQ_STATIC)
 endif()
 
 if(BUILD_SHARED)
     list(APPEND CORE_LIBS ${CORE_TARGET})
-    target_link_libraries(${CORE_TARGET} PRIVATE ${SHOWTIME_PRIVATE_SHARED_LINKED_LIBS})
 
-  if(WIN32)
-    # Copy runtime dependencies
-    add_custom_command(TARGET ${CORE_TARGET} POST_BUILD
-                      COMMAND ${CMAKE_COMMAND} -E echo "Copy CZMQ runtime $<TARGET_FILE:czmq> to ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-                      COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:czmq>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-                      COMMAND ${CMAKE_COMMAND} -E echo "Copy libZMQ runtime $<TARGET_FILE:libzmq> to ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-                      COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:libzmq>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-                      VERBATIM
-    )
+    if(WIN32)
+        target_compile_definitions(${CORE_TARGET} 
+            PRIVATE 
+            ZST_EXPORT_CORE_API
+            INTERFACE
+            ZST_IMPORT_CORE_API
+        )
+        # Use all imported object symbols
+        set_target_properties(${CORE_TARGET} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+
+        # Copy runtime dependencies
+        add_custom_command(TARGET ${CORE_TARGET} POST_BUILD
+                          COMMAND ${CMAKE_COMMAND} -E echo "Copy CZMQ runtime $<TARGET_FILE:czmq> to ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+                          COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:czmq>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+                          COMMAND ${CMAKE_COMMAND} -E echo "Copy libZMQ runtime $<TARGET_FILE:libzmq> to ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+                          COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:libzmq>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+                          VERBATIM
+        )
     endif()
+
+    target_link_libraries(${CORE_TARGET} PRIVATE ${SHOWTIME_PRIVATE_SHARED_LINKED_LIBS})
 endif()
 
 # Options common to both static/shared libraries
@@ -253,10 +255,10 @@ foreach(TARGET ${CORE_LIBS})
     set_target_properties(${TARGET} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION})
 
     # Target link libs again to link actual libraries
-    target_link_libraries(${TARGET} 
+    target_link_libraries(${TARGET}
         PUBLIC
-        ${CORE_TARGET_OBJECTS}
-        PRIVATE 
+        ${CORE_TARGET_OBJECTS} 
+        PRIVATE
         ${${CORE_TARGET}_PRIVATE_LINKED_LIBS}
         ${SHOWTIME_PRIVATE_LINKED_LIBS}
     )
