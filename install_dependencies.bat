@@ -47,9 +47,9 @@ IF NOT DEFINED CONFIGURATION (
 )
 echo Configuration=!CONFIGURATION!
 
-IF "%CONFIGURATION%" EQU "debug" (
+IF !CONFIGURATION! EQU "debug" (
     set CONFIG_WCAPS="Debug"
-) ELSE IF "%CONFIGURATION%" EQU "release" (
+) ELSE IF !CONFIGURATION! EQU "release" (
     set CONFIG_WCAPS="Release"
 )
 
@@ -170,7 +170,7 @@ echo === Building nlohmann json ===
 
 
 REM boost
-set BOOST_COMMON_FLAGS=--prefix=%DEPENDENCY_DIR%\install address-model=64 variant=%CONFIGURATION% threading=multi runtime-link=shared
+set BOOST_COMMON_FLAGS=--prefix=%DEPENDENCY_DIR%\install address-model=64 variant=!CONFIGURATION! threading=multi runtime-link=shared
 set BOOST_SHARED_LIB_FLAGS=--with-system --with-chrono link=shared
 set BOOST_STATIC_LIB_FLAGS=--with-log --with-thread --with-filesystem --with-date_time --with-atomic --with-regex --with-context --with-fiber link=static
 
