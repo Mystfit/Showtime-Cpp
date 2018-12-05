@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <concurrentqueue.h>
 #include <ZstCore.h>
 #include "ZstClientModule.h"
 

@@ -2,14 +2,10 @@
 %ignore std::stringstream;
 %ignore ZstLog::LoggerInfo;
 
-%include <ZstExports.h>
-%include <ZstConstants.h>
 %include "ZstLogging.i"
 %include "ZstURI.i"
-%include "ZstSynchronisable.i"
 
-%ignore ZstSerialisable::read;
-%ignore ZstSerialisable::write;
+%include "ZstSynchronisable.i"
 %include "ZstEntityBase.i"
 %include "ZstPlug.i"
 %include "ZstCable.i"

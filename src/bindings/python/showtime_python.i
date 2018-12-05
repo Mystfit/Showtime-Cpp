@@ -17,8 +17,9 @@
     $result = SWIG_NewPointerObj(SWIG_as_voidptr($1), outtype, $owner);
 }
 
-%include "showtime.i"
+%include "../preflight.i"
 %include "ZstBundle.i"
+%include "../showtime.i"
 
 %pythoncode %{
 	def children(self):

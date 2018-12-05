@@ -1,9 +1,11 @@
 #pragma once
 
 #include <ZstExports.h>
-#include <nlohmann/json_fwd.hpp>
 
+#ifndef SWIG
+#include <nlohmann/json.hpp>
 using json = nlohmann::json;
+#endif
 
 class ZstSerialisable {
 public:

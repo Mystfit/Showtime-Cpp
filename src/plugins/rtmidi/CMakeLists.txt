@@ -1,4 +1,6 @@
-project(ShowtimeRTMidi VERSION 0.0.0)
+cmake_minimum_required(VERSION 3.13)
+
+project(ShowtimeRTMidi VERSION 0.0.1)
 
 # Use C14
 set(CMAKE_CXX_STANDARD 14)
@@ -20,6 +22,9 @@ set(ZST_RTMIDI_PLUGIN_HEADERS
 set(ZST_RTMIDI_PLUGIN_SRC
   "${CMAKE_CURRENT_LIST_DIR}/RtMidiEntity.cpp"
 )
+
+# Create Library
+add_library(${RTMIDI_PLUGIN_TARGET} MODULE)
 
 # Include files in target
 target_sources(${RTMIDI_PLUGIN_TARGET} PRIVATE 
@@ -47,4 +52,5 @@ set_target_properties(${RTMIDI_PLUGIN_TARGET} PROPERTIES
 )
 
 # Link libraries
-target_link_libraries(${RTMIDI_PLUGIN_TARGET} PUBLIC ${CORE_TARGET} ${RTMIDI_TARGET})
+message(STATUS )
+target_link_libraries(${RTMIDI_PLUGIN_TARGET} PUBLIC ShowtimeCore rtmidi)

@@ -1,10 +1,10 @@
-cmake_minimum_required(VERSION 3.12.0)
+cmake_minimum_required(VERSION 3.13.0)
 
-project(Showtime VERSION 0.15.8)
+project(Showtime VERSION 0.16.1)
 set(SHOWTIME_NAMESPACE "${PROJECT_NAME}::")
 
 # Use C14
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 set(CXX_STANDARD_REQUIRED)
 #set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -27,6 +27,7 @@ set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR})
 set(CMAKE_FIND_FRAMEWORKS LAST)
 set(CMAKE_DEBUG_POSTFIX d)
 set(CMAKE_SUPPRESS_REGENERATION true)
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # Set platform flags
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -50,6 +51,9 @@ endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     MESSAGE(STATUS "Platform is Windows")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP")
+
     option(WINDOWS_USE_DLL_RUNTIME "Use the Visual C++ DLL runtime" ON)
     if(WINDOWS_USE_DLL_RUNTIME)
         set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
@@ -70,6 +74,7 @@ option(BUILD_SHARED "Build shared Showtime library" ON)
 set(Showtime_COMPILED_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include")
 set(Showtime_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/include")
 set(Showtime_ALL_INCLUDE_DIRS ${Showtime_COMPILED_INCLUDE_DIRS} ${Showtime_INCLUDE_DIRS})
+set(Showtime_HEADER_DEPENDENCIES_DIR "${CMAKE_SOURCE_DIR}/src/dependencies")
 
 set(Showtime_API_INTERFACE "")
 set(Showtime_LIBRARY_TARGETS "")
@@ -122,17 +127,24 @@ set(Boost_CHRONO_TARGET "Boost::chrono")
 set(Boost_ATOMIC_TARGET "Boost::atomic")
 set(Boost_REGEX_TARGET "Boost::regex")
 
-# Msgpack, fmt, swig
+
+# Msgpack, fmt, swig, json
 # ------------------------------
 find_package(MsgPack CONFIG REQUIRED)
 set(msgpackc_TARGET "msgpackc-static")
 
-find_package(fmt CONFIG REQUIRED)
-set(fmt_TARGET "fmt::fmt-header-only")
+find_package(nlohmann_json CONFIG REQUIRED)
+set(json_TARGET "nlohmann_json")
+
+
+# find_package(fmt CONFIG REQUIRED)
+# set(fmt_TARGET "fmt::fmt-header-only")
 
 find_package(SWIG)
 if(SWIG_FOUND)
+    cmake_policy(SET CMP0078 NEW)
     include(UseSWIG)
+    set(UseSWIG_MODULE_VERSION 2)
 endif()
 
 # CZMQ, libZMQ
@@ -147,6 +159,43 @@ else()
     find_package(czmq REQUIRED)
 endif()
 
+# Set internal linked library lists for our targets
+set(SHOWTIME_PRIVATE_LINKED_LIBS 
+    ${Boost_SYSTEM_TARGET}
+    ${Boost_FILESYSTEM_TARGET}
+    ${Boost_THREAD_TARGET}
+    ${Boost_DATE_TIME_TARGET}
+    ${Boost_CHRONO_TARGET}
+    ${Boost_ATOMIC_TARGET}
+    ${Boost_REGEX_TARGET}
+    ${Boost_LOG_TARGET}
+    ${Boost_LOG_SETUP_TARGET}
+    ${Boost_CONTEXT_TARGET}
+    ${Boost_FIBER_TARGET}
+    ${Boost_HEADER_TARGET}
+    ${CMAKE_THREAD_LIBS_INIT}
+)
+
+set(Showtime_PRIVATE_HEADER_DEPENDENCIES
+    $<BUILD_INTERFACE:${Showtime_HEADER_DEPENDENCIES_DIR}>
+    $<BUILD_INTERFACE:${Showtime_HEADER_DEPENDENCIES_DIR}/cf>
+    $<BUILD_INTERFACE:${Showtime_HEADER_DEPENDENCIES_DIR}/concurrentqueue> 
+)
+
+set(SHOWTIME_PRIVATE_STATIC_LINKED_LIBS
+    czmq-static 
+    libzmq-static
+)
+
+set(SHOWTIME_PRIVATE_SHARED_LINKED_LIBS
+    czmq
+    libzmq
+)
+
+set(SHOWTIME_PUBLIC_LINKED_LIBS
+    nlohmann_json
+)
+
 
 # ----------------
 # Showtime targets
@@ -156,6 +205,10 @@ endif()
 # ------------
 set(CORE_TARGET "${PROJECT_NAME}Core")
 set(CORE_TARGET_STATIC "${PROJECT_NAME}CoreStatic")
+set(CORE_TARGET_OBJECTS ${CORE_TARGET}Objects)
+add_library(${CORE_TARGET_OBJECTS} OBJECT "")
+list(APPEND Showtime_LIBRARY_TARGETS ${CORE_TARGET_OBJECTS})
+
 if(BUILD_STATIC)
     add_library(${CORE_TARGET_STATIC} STATIC "")
     list(APPEND Showtime_LIBRARY_TARGETS ${CORE_TARGET_STATIC})
@@ -206,6 +259,7 @@ option(BINDINGS_DOTNET "Generate bindings for C#" OFF)
 option(BINDINGS_PYTHON "Generate bindings for Python" OFF)
 option(BINDINGS_UNITY "Generate bindings for Unity" OFF)
 option(BINDINGS_RUBY "Generate bindings for ruby" OFF)
+option(BINDINGS_JAVA "Generate bindings for java" OFF)
 
 if(BINDINGS_DOTNET OR BINDINGS_UNITY)
     set(BINDINGS_DOTNET_FRAMEWORK_VERSION v4.7.2 CACHE STRING "dotnet Framework version")
@@ -238,7 +292,14 @@ if(BINDINGS_DOTNET OR BINDINGS_UNITY)
     if(WIN32)
         list(APPEND Showtime_LIBRARY_TARGETS ${DOTNET_TARGET})
     endif()
+endif()
 
+if(BINDINGS_JAVA)
+    set(JAVA_TARGET ${PROJECT_NAME}Java)
+    find_package(Java REQUIRED)
+    find_package(JNI REQUIRED)
+    include(UseJava)
+    include(src/bindings/java/CMakeLists.txt)
 endif()
 
 if(BINDINGS_UNITY)
@@ -248,8 +309,8 @@ endif()
 
 if(BINDINGS_PYTHON)
     set(PYTHON_TARGET ${PROJECT_NAME}Python)
-    set(PYTHON_VERSION 2.7 CACHE STRING "Python version to search for")
-    find_package(PythonInterp ${PYTHON_VERSION} REQUIRED)
+    set(BINDINGS_PYTHON_VERSION 3.7 CACHE STRING "Python version")
+    find_package(Python ${BINDINGS_PYTHON_VERSION} COMPONENTS Interpreter Development REQUIRED)
     include(src/bindings/python/CMakeLists.txt)
 endif()
 
@@ -278,6 +339,11 @@ include(src/plugins/core_entities/CMakeLists.txt)
 list(APPEND PLUGIN_TARGETS ${CORE_ENTITIES_TARGET})
 
 
+option(PLUGINS_RTMIDI "Build RTMidi plugin" OFF)
+if(PLUGINS_RTMIDI)
+    add_subdirectory(src/plugins/rtmidi)
+endif()
+
 
 # Tests
 # -----
@@ -294,7 +360,6 @@ set(Showtime_INSTALL_TARGETS
     ${Showtime_LIBRARY_TARGETS} 
     ${Showtime_APP_TARGETS}
 )
-
 install(FILES ${Showtime_API_INTERFACE} DESTINATION include/showtime)
 
 if(MACOSX)
@@ -345,6 +410,7 @@ configure_package_config_file (showtime-config.cmake.in
     INSTALL_DESTINATION "${CMAKE_INSTALL_CMAKEDIR}"
 )
 
+# Install package files
 install (
     FILES
         "${CMAKE_CURRENT_BINARY_DIR}/showtime-config.cmake"
