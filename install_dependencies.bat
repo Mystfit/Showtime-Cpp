@@ -46,12 +46,7 @@ IF NOT DEFINED CONFIGURATION (
     set CONFIGURATION=debug
 )
 echo Configuration=!CONFIGURATION!
-
-IF !CONFIGURATION! EQU "debug" (
-    set CONFIG_WCAPS="Debug"
-) ELSE IF !CONFIGURATION! EQU "release" (
-    set CONFIG_WCAPS="Release"
-)
+for /F %%s IN ('python -c "print(\"%CONFIGURATION%\".lower())"') DO set CONFIG_LOWER=%%s
 
 IF NOT DEFINED WITH_UNITY (
     set WITH_UNITY=0
@@ -90,7 +85,7 @@ set CTEST_BIN=%DEPENDENCY_DIR%\cmake\bin\ctest
 REM Set common build flags and prefixes for czmq and msgpack  
 set INSTALL_PREFIX=%DEPENDENCY_DIR%\install
 set COMMON_GENERATOR_FLAGS=-G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%INSTALL_PREFIX%" -DCMAKE_INSTALL_MESSAGE=NEVER -DCMAKE_PREFIX_PATH="%INSTALL_PREFIX%"
-set COMMON_BUILD_FLAGS=--config %CONFIG_WCAPS% --target INSTALL -- /nologo /verbosity:minimal
+set COMMON_BUILD_FLAGS=--config %CONFIGURATION% --target INSTALL -- /nologo /verbosity:minimal
 
 
 REM libZMQ
@@ -170,7 +165,7 @@ echo === Building nlohmann json ===
 
 
 REM boost
-set BOOST_COMMON_FLAGS=--prefix=%DEPENDENCY_DIR%\install address-model=64 variant=!CONFIGURATION! threading=multi runtime-link=shared
+set BOOST_COMMON_FLAGS=--prefix=%DEPENDENCY_DIR%\install address-model=64 variant=%CONFIG_LOWER% threading=multi runtime-link=shared
 set BOOST_SHARED_LIB_FLAGS=--with-system --with-chrono link=shared
 set BOOST_STATIC_LIB_FLAGS=--with-log --with-thread --with-filesystem --with-date_time --with-atomic --with-regex --with-context --with-fiber link=static
 
