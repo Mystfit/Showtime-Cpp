@@ -12,7 +12,6 @@ env:
   global:
   - BUILD_FOLDER=$TRAVIS_BUILD_DIR
   - GENERATOR="Unix Makefiles"
-  - Boost_USE_LOCAL=1
   - CMAKE_PATH=$TRAVIS_BUILD_DIR/cmake
 
 matrix:
@@ -117,7 +116,7 @@ install:
 
   # Install homebrew dependencies
   - brew update
-  - brew bundle
+  - brew bundle && true
 
   # CMake paths
   - export CMAKE_PATH=$(brew --prefix);
@@ -138,9 +137,6 @@ script:
   - mkdir $BUILD_FOLDER/build
   - mkdir $BUILD_FOLDER/install
 
-  # We don't need to use Hunter on Windows (we have linuxbrew)
-  - GENERATOR_ARGS="-DUSE_HUNTER=OFF";
-
   # Verbose makefiles
   - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF"
 
@@ -156,9 +152,12 @@ script:
   - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$PREFIX;${CMAKE_PREFIX_PATH} -DBUILD_MEMLEAK_TEST=OFF"
 
   # Python bindings
-  - PYTHON_BIN=$(which $PY_VER)
-  - echo "Python path is $PYTHON_BIN"
-  - GENERATOR_ARGS="$GENERATOR_ARGS -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DPYTHON_EXECUTABLE=$PYTHON_BIN"
+  #- PYTHON_BIN=$(which $PY_VER)
+  #- echo "Python path is $PYTHON_BIN"
+  #- GENERATOR_ARGS="$GENERATOR_ARGS -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DPYTHON_EXECUTABLE=$PYTHON_BIN"
+
+  # Shared and static libraries
+  - GENERATOR_ARGS="$GENERATOR_ARGS -DBUILD_SHARED=ON -DBUILD_STATIC=ON"
 
   # Build and install project
   - $CMAKE_BIN -H$BUILD_FOLDER -B$BUILD_FOLDER/build -G "$GENERATOR" $GENERATOR_ARGS
@@ -167,4 +166,4 @@ script:
 
   # Run tests
   - pushd $BUILD_FOLDER/build
-  - $CTEST_BIN -C Debug -V --output-on-fail --timeout 320
+  - $CTEST_BIN -C $CONFIG --output-on-fail --no-compress-output -T Test --timeout 320
