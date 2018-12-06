@@ -116,7 +116,7 @@ install:
 
   # Install homebrew dependencies
   - brew update
-  - brew bundle && true
+  - brew bundle || true
 
   # CMake paths
   - export CMAKE_PATH=$(brew --prefix);
