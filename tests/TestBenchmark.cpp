@@ -23,7 +23,7 @@ public:
 };
 
 
-int test_benchmark(bool reliable, int send_rate, int send_amount)
+long double test_benchmark(bool reliable, int send_rate, int send_amount)
 {
 	ZstLog::app(LogLevel::debug, "Creating entities and cables");
 
@@ -167,11 +167,11 @@ int main(int argc, char **argv)
 	boost::thread eventloop_thread = boost::thread(BenchmarkEventLoop());
 
 	ZstLog::app(LogLevel::notification, "Starting reliable benchmark test");
-	int mps_reliable = test_benchmark(true, 0, 200000);
+	long double mps_reliable = test_benchmark(true, 0, 200000);
 	ZstLog::app(LogLevel::notification, "Reliable avg mps: {}", mps_reliable);
 
 	ZstLog::app(LogLevel::notification, "Starting unreliable benchmark test");
-	int mps_unreliable = test_benchmark(false, 1, 10000);
+	long double mps_unreliable = test_benchmark(false, 1, 10000);
 	ZstLog::app(LogLevel::notification, "Unreliable avg mps: {}", mps_unreliable);
 
 	eventloop_thread.interrupt();
