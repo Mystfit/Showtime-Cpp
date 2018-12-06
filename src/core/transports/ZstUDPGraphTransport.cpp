@@ -32,13 +32,18 @@ void ZstUDPGraphTransport::init_graph_sockets()
 	//Output socket
 	addr << ">" << protocol << "://" << CLIENT_MULTICAST_ADDR << ":" << CLIENT_UNRELIABLE_PORT;
 	zsock_t * graph_out = zsock_new_radio(addr.str().c_str());
+    if(!graph_out){
+        throw std::runtime_error("Could not create UDP output socket");
+    }
 	zsock_set_linger(graph_out, 0);
 	addr.str("");
 
 	//Input socket
 	addr << "@" << protocol << "://" << CLIENT_MULTICAST_ADDR << ":" << CLIENT_UNRELIABLE_PORT;
 	zsock_t * graph_in = zsock_new_dish(addr.str().c_str());
-
+    if(!graph_in){
+        throw std::runtime_error("Could not create UDP output socket");
+    }
 	zsock_set_linger(graph_in, 0);
 	attach_graph_sockets(graph_in, graph_out);
 	zsock_set_rcvbuf(graph_in, 25000000);

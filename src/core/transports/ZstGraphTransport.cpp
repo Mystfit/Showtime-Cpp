@@ -92,7 +92,7 @@ void ZstGraphTransport::graph_recv(zframe_t * frame)
 	
 	//Publish message to other modules
 	if (this->is_active()) {
-		msg_events()->invoke([this, perf_msg](ZstTransportAdaptor* adaptor) {
+		msg_events()->invoke([perf_msg](ZstTransportAdaptor* adaptor) {
 			adaptor->on_receive_msg(perf_msg);
 		});
 	}

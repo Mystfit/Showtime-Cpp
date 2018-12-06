@@ -3,7 +3,7 @@
 #include <adaptors/ZstHierarchyAdaptor.hpp>
 #include <adaptors/ZstSessionAdaptor.hpp>
 
-class ZstModuleAdaptor : public ZstHierarchyAdaptor, public ZstSessionAdaptor
+class ZstModuleAdaptor : public ZstHierarchyAdaptor
 {
 public:
 	//Pull base event adaptor functions forwards from common base class

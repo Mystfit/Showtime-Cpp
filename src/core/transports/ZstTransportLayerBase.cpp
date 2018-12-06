@@ -3,8 +3,8 @@
 
 
 ZstTransportLayerBase::ZstTransportLayerBase() :
-	m_dispatch_events(NULL),
-	m_is_active(false)
+	m_is_active(false),
+    m_dispatch_events(NULL)
 {
 	m_dispatch_events = new ZstEventDispatcher<ZstTransportAdaptor*>("msgdispatch stage events");
 }

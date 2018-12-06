@@ -90,7 +90,6 @@ public:
 
 private:	
 	//Heartbeat timer
-	int m_heartbeat_timer_id;
 	long m_ping;
 	static void heartbeat_timer(boost::asio::deadline_timer * t, ZstClient * client, boost::posix_time::milliseconds duration);
 		

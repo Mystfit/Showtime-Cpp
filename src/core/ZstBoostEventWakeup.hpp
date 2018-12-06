@@ -8,6 +8,7 @@
 class ZstBoostEventWakeup : public ZstEventWakeup {
 public:
 	ZST_EXPORT ZstBoostEventWakeup();
+    ZST_EXPORT virtual ~ZstBoostEventWakeup();
 	ZST_EXPORT virtual void wake() override;
 	ZST_EXPORT virtual void wait() override;
 

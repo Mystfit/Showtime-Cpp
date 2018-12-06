@@ -41,7 +41,7 @@ public:
 	ZST_EXPORT virtual ZstCable * connect_cable(ZstInputPlug * input, ZstOutputPlug * output, const ZstTransportSendType & sendtype);
 	ZST_EXPORT virtual void destroy_cable(ZstCable * cable);
 	ZST_EXPORT virtual void destroy_cable(ZstCable * cable, const ZstTransportSendType & sendtype);
-	ZST_EXPORT virtual void destroy_cable_complete(ZstCable * cable);
+	ZST_EXPORT void destroy_cable_complete(ZstCable * cable);
 	ZST_EXPORT virtual void disconnect_plugs(ZstInputPlug * input_plug, ZstOutputPlug * output_plug);
 
 

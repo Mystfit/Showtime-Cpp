@@ -118,7 +118,6 @@ void ZstClientSession::on_receive_graph_msg(ZstPerformanceMessage * msg)
 	
 	//Create a ZstValue object to hold our plug data
 	ZstValue received_val;
-	size_t offset = 0;
 	received_val.read_json(msg->payload());
 
 	//If the sending plug is a proxy then let the host app know it has updated

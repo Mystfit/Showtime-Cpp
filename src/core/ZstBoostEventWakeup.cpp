@@ -1,5 +1,9 @@
 #include "ZstBoostEventWakeup.hpp"
 
+ZstBoostEventWakeup::~ZstBoostEventWakeup()
+{
+}
+
 ZstBoostEventWakeup::ZstBoostEventWakeup()
 {
 	m_event_waker = std::make_shared<boost::fibers::condition_variable>();

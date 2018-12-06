@@ -23,10 +23,8 @@ void ZstClientHierarchy::destroy()
 {
 	stage_events().remove_all_adaptors();
 
-	//TODO: Delete other clientsa
+	//TODO: Delete other clients
 	//Reset local performer
-	size_t index = 0;
-
 	ZstEntityBundle bundle;
 	for (auto entity : m_root->get_child_entities(bundle, true)) {
 		destroy_entity_complete(entity);

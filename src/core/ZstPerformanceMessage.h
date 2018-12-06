@@ -5,6 +5,7 @@
 
 class ZstPerformanceMessage : public ZstMessage {
 public:
+    ZST_EXPORT virtual ~ZstPerformanceMessage();
 	ZST_EXPORT virtual ZstPerformanceMessage * init(ZstMsgKind kind) override;
 	ZST_EXPORT virtual ZstPerformanceMessage * init(ZstMsgKind kind, const ZstMsgArgs & args) override;
 	ZST_EXPORT virtual ZstPerformanceMessage * init(ZstMsgKind kind, const ZstMsgArgs & payload, const ZstMsgArgs & args) override;

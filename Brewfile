@@ -8,3 +8,5 @@ brew "swig"
 brew "python"
 brew "python@2"
 brew "boost"
+tap "nlohmann/json"
+brew "nlohmann_json", args: ["--with-cmake"]

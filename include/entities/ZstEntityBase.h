@@ -64,8 +64,8 @@ public:
 	ZST_EXPORT void read_json(const json & buffer) override;
 
 	//Adaptors
-    ZST_EXPORT virtual void add_adaptor(ZstEntityAdaptor * adaptor);
-    ZST_EXPORT virtual void remove_adaptor(ZstEntityAdaptor * adaptor);
+    ZST_EXPORT void add_adaptor(ZstEntityAdaptor * adaptor);
+    ZST_EXPORT void remove_adaptor(ZstEntityAdaptor * adaptor);
 	ZST_EXPORT ZstEventDispatcher<ZstEntityAdaptor*> * entity_events();
 	
 protected:

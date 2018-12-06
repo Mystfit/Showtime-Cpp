@@ -192,7 +192,7 @@ endif()
 target_include_directories(${CORE_TARGET_OBJECTS} 
     PRIVATE
     ${Showtime_PRIVATE_HEADER_DEPENDENCIES}
-    INTERFACE
+    PUBLIC
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${Showtime_INCLUDE_DIRS}>
     $<BUILD_INTERFACE:${Showtime_COMPILED_INCLUDE_DIRS}>
@@ -226,6 +226,10 @@ endif()
 
 if(BUILD_SHARED)
     list(APPEND CORE_LIBS ${CORE_TARGET})
+
+    # Add a dummy source file to force our target to compile otherwise having no source files might cause the target to not bother compiling
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp)
+    target_sources(${CORE_TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp)
 
     if(WIN32)
         target_compile_definitions(${CORE_TARGET} 

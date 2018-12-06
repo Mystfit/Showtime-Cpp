@@ -2,6 +2,10 @@
 #include <msgpack.hpp>
 #include <exception>
 
+ZstPerformanceMessage::~ZstPerformanceMessage()
+{
+}
+
 ZstPerformanceMessage * ZstPerformanceMessage::init(ZstMsgKind kind)
 {
 	throw new std::runtime_error("Performance message init(kind) not implemented");
@@ -38,7 +42,7 @@ const ZstMsgArgs & ZstPerformanceMessage::payload() const
 	auto j_it = m_args.find(get_msg_arg_name(ZstMsgArg::PAYLOAD_SHORT));
 	if (j_it != m_args.end())
 		return *j_it;
-	return json::object();
+    return std::move(json::object());
 }
 
 std::string ZstPerformanceMessage::sender() const

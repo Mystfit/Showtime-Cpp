@@ -356,7 +356,7 @@ void ZstClient::leave_stage()
 		this->set_is_connecting(false);
 		this->set_connected_to_stage(false);
 
-		invoke([this](ZstTransportAdaptor * adaptor) { adaptor->on_send_msg(ZstMsgKind::CLIENT_LEAVING); });
+		invoke([](ZstTransportAdaptor * adaptor) { adaptor->on_send_msg(ZstMsgKind::CLIENT_LEAVING); });
     } else {
         ZstLog::net(LogLevel::debug, "Not connected to stage. Skipping to cleanup. {}");
     }
@@ -466,7 +466,7 @@ void ZstClient::stop_connection_broadcast(const ZstURI & remote_client_path)
 	}
 
 	if (m_connection_timers->find(remote_client->URI()) != m_connection_timers->end()) {
-		size_t num_cancels = m_connection_timers->at(remote_client->URI()).cancel();
+		m_connection_timers->at(remote_client->URI()).cancel();
 		m_connection_timers->at(remote_client->URI()).wait();
 		m_connection_timers->erase(remote_client->URI());
 	}

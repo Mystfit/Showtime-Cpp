@@ -144,19 +144,19 @@ static ZstMsgArgMap ZstMsgArgNames = boost::assign::list_of<ZstMsgArgMap::relati
 	( PAYLOAD , "payload" )
 	( PAYLOAD_SHORT, "p");
 
-static const std::string & get_msg_name(const ZstMsgKind & msg_kind){
+static inline const std::string & get_msg_name(const ZstMsgKind & msg_kind){
 	return ZstMsgNames.left.at(msg_kind);
 }
 
-static const ZstMsgKind & get_msg_kind(const std::string msg_kind_str) {
+static inline const ZstMsgKind & get_msg_kind(const std::string msg_kind_str) {
 	return ZstMsgNames.right.at(msg_kind_str);
 }
 
-static const std::string & get_msg_arg_name(const ZstMsgArg & msg_arg) {
+static inline const std::string & get_msg_arg_name(const ZstMsgArg & msg_arg) {
 	return ZstMsgArgNames.left.at(msg_arg);
 }
 
-static const ZstMsgArg & get_msg_arg(const std::string & msg_arg_str) {
+static inline const ZstMsgArg & get_msg_arg(const std::string & msg_arg_str) {
 	return ZstMsgArgNames.right.at(msg_arg_str);
 }
 

@@ -159,7 +159,7 @@ int ZstClientTransport::s_handle_stage_router(zloop_t * loop, zsock_t * sock, vo
 void ZstClientTransport::on_receive_msg(ZstMessage * msg)
 {
 	//Publish message to other modules
-	msg_events()->defer([msg, this](ZstTransportAdaptor * adaptor) { 
+	msg_events()->defer([msg](ZstTransportAdaptor * adaptor) { 
 		adaptor->on_receive_msg(msg); 
 	}, [msg, this](ZstEventStatus status){ 
 		ZstStageMessage * stage_msg = static_cast<ZstStageMessage*>(msg);

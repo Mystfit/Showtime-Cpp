@@ -56,11 +56,11 @@ namespace ZstValueDetails {
 		(DEFAULT_TYPE, "d")
 		(VALUES, "v");
 
-	static const std::string & get_value_field_name(const ZstValueFields & field) {
+	static inline const std::string & get_value_field_name(const ZstValueFields & field) {
 		return ZstValueFieldNames.left.at(field);
 	}
 
-	static const ZstValueFields & get_value_field(const std::string field_str) {
+	static inline const ZstValueFields & get_value_field(const std::string field_str) {
 		return ZstValueFieldNames.right.at(field_str);
 	}
 }
