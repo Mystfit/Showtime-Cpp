@@ -81,7 +81,7 @@ matrix:
 
         # Build and install project
         - cmake -H$BUILD_FOLDER -B$BUILD_FOLDER/build -G "$GENERATOR" $GENERATOR_ARGS
-        - cmake --build $BUILD_FOLDER/build --config $CONFIG --target ALL_BUILD
+        - cmake --build $BUILD_FOLDER/build --config $CONFIG
     - stage: test
       language: python2
       script:
