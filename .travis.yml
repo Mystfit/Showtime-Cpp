@@ -1,3 +1,5 @@
+language: cpp
+
 branches:
   only:
   - master
@@ -9,6 +11,8 @@ sudo: false
 os:
   - linux
   - osx
+dist:
+  - xenial
 
 env:
   global:
@@ -39,35 +43,30 @@ env:
   # Set prefix search path to homebrew folder for library discovery
   - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$PREFIX;${CMAKE_PREFIX_PATH}"
 
-jobs:
+  # Output something every 10 minutes or Travis kills the job
+  - while sleep 9m; do echo "=====[ $SECONDS seconds still running ]====="; done &
+
+  # Install linuxbrew dependencies
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      export PATH=$PREFIX/bin:$PREFIX/sbin:$PATH;
+      export MANPATH=$PREFIX/share/man:$MANPATH;
+      export INFOPATH=$PREFIX/share/info:$INFOPATH;
+      sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)";
+      hash -r;
+      echo $(which brew);
+      echo $PATH;
+    fi
+
+  # Install homebrew dependencies
+  - brew update
+  - brew bundle || true
+
+  # Kill background sleep loop
+  - kill %1
+
+matrix:
   include:
-    - stage: dependencies
-      script:
-        - *prepare_build
-        
-        # Output something every 10 minutes or Travis kills the job
-        - while sleep 9m; do echo "=====[ $SECONDS seconds still running ]====="; done &
-
-        # Install linuxbrew dependencies
-        - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-            export PATH=$PREFIX/bin:$PREFIX/sbin:$PATH;
-            export MANPATH=$PREFIX/share/man:$MANPATH;
-            export INFOPATH=$PREFIX/share/info:$INFOPATH;
-            sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)";
-            hash -r;
-            echo $(which brew);
-            echo $PATH;
-          fi
-
-        # Install homebrew dependencies
-        - brew update
-        - brew bundle || true
-
-        # Kill background sleep loop
-        - kill %1
-
-    - stage: test
-      language: cpp
+    - language: cpp
       script:
         - *prepare_build
         - cmake -H$BUILD_FOLDER -B$BUILD_FOLDER/build -G "$GENERATOR" $GENERATOR_ARGS
@@ -75,7 +74,6 @@ jobs:
         - pushd $BUILD_FOLDER/build
         - ctest -C $CONFIG -V --output-on-fail --timeout 320
 
-    - stage: test
     - language: python
       python:
         - "2.7"
@@ -87,7 +85,6 @@ jobs:
         - pushd $BUILD_FOLDER/build
         - ctest -C $CONFIG -V --output-on-fail --timeout 320 --build-target TestPython
 
-    - stage: test
     - language: csharp
       script:
       - *prepare_build
@@ -96,7 +93,6 @@ jobs:
       - pushd $BUILD_FOLDER/build
       - ctest -C $CONFIG -V --output-on-fail --timeout 320 --build-target TestDotNet
 
-    - stage: test
     - language: ruby
       script:
       - *prepare_build
