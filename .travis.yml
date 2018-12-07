@@ -12,86 +12,71 @@ env:
   - GENERATOR="Unix Makefiles"
   - CMAKE_PATH=$TRAVIS_BUILD_DIR/cmake
 
-os:
-  - linux
-  - osx
-  - windows
-dist: xenial
+install:
+  # Set common env variables
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      export PREFIX=/usr/local;
+      echo $(which brew);
+      echo $PATH;
+    fi
 
-stages:
-  - compile
-  - test
+  # Create linuxbrew prefix and relink gcc-6
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      export PREFIX=/home/linuxbrew/.linuxbrew;
+    fi
+
+  - if [ "$TRAVIS_OS_NAME" == "windows" ]; then
+      export PREFIX=$BUILD_FOLDER/build/dependencies/install;
+    fi
+
+  # Output something every 10 minutes or Travis kills the job
+  - while sleep 9m; do echo "=====[ $SECONDS seconds still running ]====="; done &
+
+# Install linuxbrew dependencies
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      export PATH=$PREFIX/bin:$PREFIX/sbin:$PATH;
+      export MANPATH=$PREFIX/share/man:$MANPATH;
+      export INFOPATH=$PREFIX/share/info:$INFOPATH;
+      sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)";
+      hash -r;
+      echo $(which brew);
+      echo $PATH;
+    fi
+
+  # Install homebrew dependencies
+  - brew update
+  - brew bundle || true
+
+  # Kill background sleep loop
+  - kill %1
+script:
+  - mkdir $BUILD_FOLDER/build
+  - mkdir $BUILD_FOLDER/install
+
+  # Verbose makefiles
+  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF"
+
+  # Set installation prefix
+  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_INSTALL_PREFIX=$BUILD_FOLDER/install"
+
+  # Set prefix search path to homebrew folder for library discovery
+  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$PREFIX;${CMAKE_PREFIX_PATH}"
+
+  # Build and install project
+    - cmake -H$BUILD_FOLDER -B$BUILD_FOLDER/build -G "$GENERATOR" $GENERATOR_ARGS
+    - cmake --build $BUILD_FOLDER/build --config $CONFIG
 
 matrix:
   include:
     - os: linux
       dist: xenial
     - os: osx
-    - stage: compile
-      language: cpp
-      install: 
-        # Set common env variables
-        - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-            export PREFIX=/usr/local;
-            echo $(which brew);
-            echo $PATH;
-          fi
-
-        # Create linuxbrew prefix and relink gcc-6
-        - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-            export PREFIX=/home/linuxbrew/.linuxbrew;
-          fi
-
-        - if [ "$TRAVIS_OS_NAME" == "windows" ]; then
-            export PREFIX=$BUILD_FOLDER/build/dependencies/install;
-          fi
-
-        # Output something every 10 minutes or Travis kills the job
-        - while sleep 9m; do echo "=====[ $SECONDS seconds still running ]====="; done &
-
-        # Install linuxbrew dependencies
-        - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-            export PATH=$PREFIX/bin:$PREFIX/sbin:$PATH;
-            export MANPATH=$PREFIX/share/man:$MANPATH;
-            export INFOPATH=$PREFIX/share/info:$INFOPATH;
-            sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)";
-            hash -r;
-            echo $(which brew);
-            echo $PATH;
-          fi
-
-        # Install homebrew dependencies
-        - brew update
-        - brew bundle || true
-
-        # Kill background sleep loop
-        - kill %1
-      script: 
-        - mkdir $BUILD_FOLDER/build
-        - mkdir $BUILD_FOLDER/install
-
-        # Verbose makefiles
-        - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF"
-
-        # Set installation prefix
-        - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_INSTALL_PREFIX=$BUILD_FOLDER/install"
-
-        # Set prefix search path to homebrew folder for library discovery
-        - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$PREFIX;${CMAKE_PREFIX_PATH}"
-
-        # Build and install project
-        - cmake -H$BUILD_FOLDER -B$BUILD_FOLDER/build -G "$GENERATOR" $GENERATOR_ARGS
-        - cmake --build $BUILD_FOLDER/build --config $CONFIG
-    - stage: test
-      language: python2
+    - language: python
+      python:
+        - "2.7"
+        - "3.7"
       script:
         - cmake -H$BUILD_FOLDER -B$BUILD_FOLDER/build -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DBINDINGS_PYTHON_VERSION=2.7
-        - cmake --build $BUILD_FOLDER/build --config $CONFIG --target TestPython
-        - pushd $BUILD_FOLDER/build
-        - ctest -C $CONFIG -V --output-on-fail --timeout 320 --build-target TestPython
-    - language: python3
-      script:
-        - cmake -H$BUILD_FOLDER -B$BUILD_FOLDER/build -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DBINDINGS_PYTHON_VERSION=3.7
         - cmake --build $BUILD_FOLDER/build --config $CONFIG --target TestPython
         - pushd $BUILD_FOLDER/build
         - ctest -C $CONFIG -V --output-on-fail --timeout 320 --build-target TestPython
