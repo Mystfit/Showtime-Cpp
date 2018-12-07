@@ -6,32 +6,21 @@ branches:
 
 sudo: false
 
+os:
+  - linux
+  - osx
+
+dist:
+  - xenial
+
 env:
   global:
   - BUILD_FOLDER=$TRAVIS_BUILD_DIR
   - GENERATOR="Unix Makefiles"
   - CMAKE_PATH=$TRAVIS_BUILD_DIR/cmake
-
-matrix:
-  include:
-    - os: linux
-      dist: xenial
-    - os: osx
-    - language: python
-      python:
-        - "2.7"
-        - "3.7"
-      script:
-        - cmake -H$BUILD_FOLDER -B$BUILD_FOLDER/build -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DBINDINGS_PYTHON_VERSION=2.7
-        - cmake --build $BUILD_FOLDER/build --config $CONFIG --target TestPython
-        - pushd $BUILD_FOLDER/build
-        - ctest -C $CONFIG -V --output-on-fail --timeout 320 --build-target TestPython
-    - language: csharp
-      script:
-      - cmake -H$BUILD_FOLDER -B$BUILD_FOLDER/build -DBINDINGS_DOTNET=ON -DBINDINGS_DOTNET_TESTS=ON -DBINDINGS_DOTNET_FRAMEWORK_VERSION=netstandard2.0
-      - cmake --build $BUILD_FOLDER/build --config $CONFIG --target TestDotNet
-      - pushd $BUILD_FOLDER/build
-      - ctest -C $CONFIG -V --output-on-fail --timeout 320 --build-target TestDotNet
+  matrix:
+  - CONFIG=Debug
+  - CONFIG=RELEASE
 
 install:
   # Set common env variables
@@ -84,6 +73,29 @@ script:
   # Set prefix search path to homebrew folder for library discovery
   - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$PREFIX;${CMAKE_PREFIX_PATH}"
 
-  # Build and install project
-  - cmake -H$BUILD_FOLDER -B$BUILD_FOLDER/build -G "$GENERATOR" $GENERATOR_ARGS
-  - cmake --build $BUILD_FOLDER/build --config $CONFIG
+matrix:
+  include:
+    - language: cpp
+      - cmake -H$BUILD_FOLDER -B$BUILD_FOLDER/build -G "$GENERATOR" $GENERATOR_ARGS
+      - cmake --build $BUILD_FOLDER/build --config $CONFIG
+      - pushd $BUILD_FOLDER/build
+      - ctest -C $CONFIG -V --output-on-fail --timeout 320
+    - language: python
+      python:
+        - "2.7"
+        - "3.7"
+      script:
+        - cmake -H$BUILD_FOLDER -B$BUILD_FOLDER/build -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DBINDINGS_PYTHON_VERSION=2.7
+        - cmake --build $BUILD_FOLDER/build --config $CONFIG --target TestPython
+        - pushd $BUILD_FOLDER/build
+        - ctest -C $CONFIG -V --output-on-fail --timeout 320 --build-target TestPython
+    - language: csharp
+      script:
+      - cmake -H$BUILD_FOLDER -B$BUILD_FOLDER/build -DBINDINGS_DOTNET=ON -DBINDINGS_DOTNET_TESTS=ON -DBINDINGS_DOTNET_FRAMEWORK_VERSION=netstandard2.0
+      - cmake --build $BUILD_FOLDER/build --config $CONFIG --target TestDotNet
+      - pushd $BUILD_FOLDER/build
+      - ctest -C $CONFIG -V --output-on-fail --timeout 320 --build-target TestDotNet
+    - language: ruby
+      script:
+      - cmake -H$BUILD_FOLDER -B$BUILD_FOLDER/build -DBINDINGS_RUBY=ON
+      - cmake --build $BUILD_FOLDER/build --config $CONFIG --target ShowtimeRuby
