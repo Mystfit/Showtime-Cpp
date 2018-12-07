@@ -39,7 +39,7 @@ env:
   # Set prefix search path to homebrew folder for library discovery
   - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$PREFIX;${CMAKE_PREFIX_PATH}"
 
-matrix:
+jobs:
   include:
     - stage: dependencies
       script:
