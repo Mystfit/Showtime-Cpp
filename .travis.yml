@@ -12,10 +12,11 @@ env:
   - GENERATOR="Unix Makefiles"
   - CMAKE_PATH=$TRAVIS_BUILD_DIR/cmake
 
-dist: xenial
 os:
+  - linux
   - osx
   - windows
+dist: xenial
 
 stages:
   - compile
