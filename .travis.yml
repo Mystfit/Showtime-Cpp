@@ -76,10 +76,11 @@ script:
 matrix:
   include:
     - language: cpp
-      - cmake -H$BUILD_FOLDER -B$BUILD_FOLDER/build -G "$GENERATOR" $GENERATOR_ARGS
-      - cmake --build $BUILD_FOLDER/build --config $CONFIG
-      - pushd $BUILD_FOLDER/build
-      - ctest -C $CONFIG -V --output-on-fail --timeout 320
+      script:
+        - cmake -H$BUILD_FOLDER -B$BUILD_FOLDER/build -G "$GENERATOR" $GENERATOR_ARGS
+        - cmake --build $BUILD_FOLDER/build --config $CONFIG
+        - pushd $BUILD_FOLDER/build
+        - ctest -C $CONFIG -V --output-on-fail --timeout 320
     - language: python
       python:
         - "2.7"
