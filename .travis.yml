@@ -22,8 +22,11 @@ stages:
   - compile
   - test
 
-jobs:
+matrix:
   include:
+    - os: linux
+      dist: xenial
+    - os: osx
     - stage: compile
       language: cpp
       install: 
