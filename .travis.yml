@@ -1,5 +1,3 @@
-language: shell
-
 branches:
   only:
   - master
@@ -14,10 +12,6 @@ os:
 dist: xenial
 osx_image: xcode10.1
 
-compiler:
-  - gcc
-  - clang
-
 addons: &common_build
   apt:
     packages:
@@ -26,24 +20,25 @@ addons: &common_build
     brewfile: true
     update: true
 
-env:
-  global:
-  - BUILD_FOLDER=$TRAVIS_BUILD_DIR
-  - GENERATOR="Unix Makefiles"
-  matrix:
-  - BUILD_TYPE=Debug
-  - BUILD_TYPE=Release
-
 matrix:
   include:
     - stage: build
       language: cpp
-    - stage: bindings
+      env:
+        - BUILD_TYPE=Debug
+        - BUILD_TYPE=Release
+      cache:
+        - directories:
+          - $TRAVIS_BUILD_DIR/install
+    - stage: test
       language: python
-    - stage: bindings
+      env: BUILD_TYPE=Release
+    - stage: test
       language: ruby
-    - stage: bindings
+      env: BUILD_TYPE=Release
+    - stage: test
       language: csharp
+      env: BUILD_TYPE=Release
       homebrew:
         casks:
         - dotnet-sdk
@@ -88,7 +83,7 @@ install:
 
 script:
   # Set installation prefix
-  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_INSTALL_PREFIX=$BUILD_FOLDER/install"
+  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_INSTALL_PREFIX=$TRAVIS_BUILD_DIR/install"
 
   # Set prefix search path to homebrew folder for library discovery
   - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$PREFIX;${CMAKE_PREFIX_PATH}"
@@ -100,10 +95,10 @@ script:
   - GENERATOR_ARGS="$GENERATOR_ARGS -DBUILD_SHARED=ON -DBUILD_STATIC=ON"
 
   # Build and install project
-  - cmake -H$BUILD_FOLDER -B$BUILD_FOLDER/build -G "$GENERATOR" $GENERATOR_ARGS
-  - cmake --build $BUILD_FOLDER/build --config $CONFIG
-  - cmake --build $BUILD_FOLDER/build --target install --config $CONFIG
+  - cmake -H$TRAVIS_BUILD_DIR -B$TRAVIS_BUILD_DIR/build -G "$GENERATOR" $GENERATOR_ARGS
+  - cmake --build $TRAVIS_BUILD_DIR/build --config $CONFIG
+  - cmake --build $TRAVIS_BUILD_DIR/build --target install --config $CONFIG
 
   # Run tests
-  - pushd $BUILD_FOLDER/build
+  - pushd $TRAVIS_BUILD_DIR/build
   - ctest -C $CONFIG --output-on-fail --no-compress-output -T Test --timeout 320
