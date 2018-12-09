@@ -20,6 +20,10 @@ addons: &common_build
     brewfile: true
     update: true
 
+stages:
+  - build
+  - test
+
 jobs:
   include:
     - stage: build
