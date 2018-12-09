@@ -250,9 +250,14 @@ include(src/monitor/CMakeLists.txt)
 #list(APPEND Showtime_APP_TARGETS ${MONITOR_TARGET})
 
 
+# Tests
+# -----
+enable_testing()
+add_subdirectory(tests)
+
+
 # Bindings
 # -------
-#include (${SWIG_USE_FILE})
 
 # Dotnet bindings
 option(BINDINGS_DOTNET "Generate bindings for C#" OFF)
@@ -344,11 +349,6 @@ if(PLUGINS_RTMIDI)
     add_subdirectory(src/plugins/rtmidi)
 endif()
 
-
-# Tests
-# -----
-enable_testing()
-add_subdirectory(tests)
 
 
 # Installation

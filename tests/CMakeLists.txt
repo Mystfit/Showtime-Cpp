@@ -15,7 +15,7 @@ set(TESTS
 )
 
 set(TEST_DEPENDENCIES 
-    ${CLIENT_TARGET} 
+    ${CLIENT_TARGET}
     ${Boost_THREAD_TARGET}
     ${Boost_SYSTEM_TARGET}
     ${Boost_FILESYSTEM_TARGET}

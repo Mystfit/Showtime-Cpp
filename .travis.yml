@@ -4,6 +4,8 @@ branches:
   - develop
   - travis
 
+language: shell
+
 sudo: false 
 
 os: 
@@ -12,7 +14,7 @@ os:
 dist: xenial
 osx_image: xcode10.1
 
-addons: &common_build
+addons:
   apt:
     packages:
       - curl
@@ -23,29 +25,6 @@ addons: &common_build
 stages:
   - build
   - test
-
-jobs:
-  include:
-    - stage: build
-      language: cpp
-      env:
-        - BUILD_TYPE=Debug
-        - BUILD_TYPE=Release
-      cache:
-        - directories:
-          - $TRAVIS_BUILD_DIR/install
-    - stage: test
-      language: python
-      env: BUILD_TYPE=Release
-    - stage: test
-      language: ruby
-      env: BUILD_TYPE=Release
-    - stage: test
-      language: csharp
-      env: BUILD_TYPE=Release
-      homebrew:
-        casks:
-        - dotnet-sdk
 
 before_install:
   # Set common env variables
@@ -63,46 +42,99 @@ before_install:
   # Set prefix search path to homebrew folder for library discovery
   - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$PREFIX;${CMAKE_PREFIX_PATH}"
 
-install:
-  # Output something every 10 minutes or Travis kills the job
-  - while sleep 9m; do echo "=====[ $SECONDS seconds still running ]====="; done &
+jobs:
+  include:
+    - stage: dependencies
+      language: shell
+      install:
+        # Output something every 10 minutes or Travis kills the job
+        - while sleep 9m; do echo "=====[ $SECONDS seconds still running ]====="; done &
 
-  # Install linuxbrew dependencies
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      export PATH=$PREFIX/bin:$PREFIX/sbin:$PATH;
-      export MANPATH=$PREFIX/share/man:$MANPATH;
-      export INFOPATH=$PREFIX/share/info:$INFOPATH;
-      sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)";
-      hash -r;
-      echo $(which brew);
-      echo $PATH;
-    fi
+        # Install linuxbrew dependencies
+        - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+            export PATH=$PREFIX/bin:$PREFIX/sbin:$PATH;
+            export MANPATH=$PREFIX/share/man:$MANPATH;
+            export INFOPATH=$PREFIX/share/info:$INFOPATH;
+            sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)";
+            hash -r;
+            echo $(which brew);
+            echo $PATH;
+          fi
 
-  # Install homebrew dependencies
-  - brew update
-  - brew bundle || true
+        # Install homebrew dependencies
+        - brew update
+        - brew bundle || true
 
-  # Kill background sleep loop
-  - kill %1
+        # Kill background sleep loop
+        - kill %1
+      cache:
+        directories:
+          - $HOME/Library/Caches/Homebrew
+          - /home/linuxbrew/.linuxbrew
 
-script:
-  # Set installation prefix
-  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_INSTALL_PREFIX=$TRAVIS_BUILD_DIR/install"
+    - stage: build
+      language: cpp
+      env:
+        - BUILD_TYPE=Debug
+      before_install:
+        - brew list -1 | while read line; do brew unlink $line; brew link $line; done
+      script: &build_lib
+        # Set installation prefix
+        - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_INSTALL_PREFIX=$TRAVIS_BUILD_DIR/install"
 
-  # Set prefix search path to homebrew folder for library discovery
-  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$PREFIX;${CMAKE_PREFIX_PATH}"
+        # Shared and static libraries
+        - GENERATOR_ARGS="$GENERATOR_ARGS -DBUILD_SHARED=ON -DBUILD_STATIC=ON"
 
-  # Python bindings
-  - GENERATOR_ARGS="$GENERATOR_ARGS -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DPYTHON_EXECUTABLE=$PYTHON_BIN"
+        # Build and install project
+        - cmake -H$TRAVIS_BUILD_DIR -B$TRAVIS_BUILD_DIR/build -G "$GENERATOR" $GENERATOR_ARGS
+        - cmake --build $TRAVIS_BUILD_DIR/build --BUILD_TYPE $CONFIG
+        #- cmake --build $TRAVIS_BUILD_DIR/build --target install --BUILD_TYPE $BUILD_TYPE
+      cache:
+        directories:
+        - $TRAVIS_BUILD_DIR/build
+        - $TRAVIS_BUILD_DIR/install
+      
+    - stage: build
+      language: cpp
+      env:
+        - BUILD_TYPE=Release
+      before_install:
+        - brew list -1 | while read line; do brew unlink $line; brew link $line; done
+      script: *build_lib
+      cache:
+        directories:
+        - $TRAVIS_BUILD_DIR/build
+        - $TRAVIS_BUILD_DIR/install
+          
+    - stage: test
+      language: cpp
+      env: BUILD_TYPE=Debug
+      script: &test_cpp
+        - pushd $TRAVIS_BUILD_DIR/build
+        - ctest -C $BUILD_TYPE --output-on-fail --no-compress-output -T Test --timeout 320
 
-  # Shared and static libraries
-  - GENERATOR_ARGS="$GENERATOR_ARGS -DBUILD_SHARED=ON -DBUILD_STATIC=ON"
+    - stage: test
+      language: cpp
+      env: BUILD_TYPE=Release
+      script: *test_cpp
 
-  # Build and install project
-  - cmake -H$TRAVIS_BUILD_DIR -B$TRAVIS_BUILD_DIR/build -G "$GENERATOR" $GENERATOR_ARGS
-  - cmake --build $TRAVIS_BUILD_DIR/build --config $CONFIG
-  - cmake --build $TRAVIS_BUILD_DIR/build --target install --config $CONFIG
+    - stage: test
+      language: python
+      env: BUILD_TYPE=Release
+      script:
+        - GENERATOR_ARGS="$GENERATOR_ARGS -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON"
+        - cmake -H$TRAVIS_BUILD_DIR -B$TRAVIS_BUILD_DIR/build -G "$GENERATOR" $GENERATOR_ARGS
+        - cmake --build $TRAVIS_BUILD_DIR/build --target install --BUILD_TYPE $BUILD_TYPE
+        - pushd $TRAVIS_BUILD_DIR/build
+        - ctest -C $CONFIG --output-on-fail --no-compress-output -T Test --timeout 320
 
-  # Run tests
-  - pushd $TRAVIS_BUILD_DIR/build
-  - ctest -C $CONFIG --output-on-fail --no-compress-output -T Test --timeout 320
+    - stage: test
+      language: ruby
+      env: BUILD_TYPE=Release
+
+    - stage: test
+      language: csharp
+      env: BUILD_TYPE=Release
+      homebrew:
+        casks:
+        - dotnet-sdk
