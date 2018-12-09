@@ -1,27 +1,43 @@
+language: cpp
+
 branches:
   only:
   - master
   - develop
   - travis
 
-sudo: false
+sudo: false 
 
-os:
-  - linux
-  - osx
-dist:
-  - xenial
+matrix:
+  include:
+    - os: linux
+      dist: xenial
+    - os: osx
+      osx_image: xcode10.1
+
+compiler:
+  - gcc
+  - clang
+
+addons: &common_build
+  apt:
+    packages:
+      - curl
+  homebrew:
+    brewfile: true
+    casks:
+    - dotnet-sdk
+    update: true
 
 env:
   global:
   - BUILD_FOLDER=$TRAVIS_BUILD_DIR
   - GENERATOR="Unix Makefiles"
-  - CMAKE_PATH=$TRAVIS_BUILD_DIR/cmake
   matrix:
-  - CONFIG=Debug
-  - CONFIG=RELEASE
-  
-&prepare_build:
+  - BUILD_TYPE=Debug
+  - BUILD_TYPE=Release
+
+before_install:
   # Set common env variables
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       export PREFIX=/usr/local;
@@ -34,13 +50,10 @@ env:
       export PREFIX=/home/linuxbrew/.linuxbrew;
     fi
 
-  - if [ "$TRAVIS_OS_NAME" == "windows" ]; then
-      export PREFIX=$BUILD_FOLDER/build/dependencies/install;
-    fi
-
   # Set prefix search path to homebrew folder for library discovery
   - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$PREFIX;${CMAKE_PREFIX_PATH}"
 
+install:
   # Output something every 10 minutes or Travis kills the job
   - while sleep 9m; do echo "=====[ $SECONDS seconds still running ]====="; done &
 
@@ -62,37 +75,24 @@ env:
   # Kill background sleep loop
   - kill %1
 
-matrix:
-  include:
-    - language: cpp
-      script:
-        - *prepare_build
-        - cmake -H$BUILD_FOLDER -B$BUILD_FOLDER/build -G "$GENERATOR" $GENERATOR_ARGS
-        - cmake --build $BUILD_FOLDER/build --config $CONFIG
-        - pushd $BUILD_FOLDER/build
-        - ctest -C $CONFIG -V --output-on-fail --timeout 320
+script:
+  # Set installation prefix
+  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_INSTALL_PREFIX=$BUILD_FOLDER/install"
 
-    - language: python
-      python:
-        - "2.7"
-        - "3.7"
-      script:
-        - *prepare_build
-        - cmake -H$BUILD_FOLDER -B$BUILD_FOLDER/build -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DBINDINGS_PYTHON_VERSION=2.7
-        - cmake --build $BUILD_FOLDER/build --config $CONFIG --target TestPython
-        - pushd $BUILD_FOLDER/build
-        - ctest -C $CONFIG -V --output-on-fail --timeout 320 --build-target TestPython
+  # Set prefix search path to homebrew folder for library discovery
+  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$PREFIX;${CMAKE_PREFIX_PATH}"
 
-    - language: csharp
-      script:
-      - *prepare_build
-      - cmake -H$BUILD_FOLDER -B$BUILD_FOLDER/build -DBINDINGS_DOTNET=ON -DBINDINGS_DOTNET_TESTS=ON -DBINDINGS_DOTNET_FRAMEWORK_VERSION=netstandard2.0
-      - cmake --build $BUILD_FOLDER/build --config $CONFIG --target TestDotNet
-      - pushd $BUILD_FOLDER/build
-      - ctest -C $CONFIG -V --output-on-fail --timeout 320 --build-target TestDotNet
+  # Python bindings
+  - GENERATOR_ARGS="$GENERATOR_ARGS -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DPYTHON_EXECUTABLE=$PYTHON_BIN"
 
-    - language: ruby
-      script:
-      - *prepare_build
-      - cmake -H$BUILD_FOLDER -B$BUILD_FOLDER/build -DBINDINGS_RUBY=ON
-      - cmake --build $BUILD_FOLDER/build --config $CONFIG --target ShowtimeRuby
+  # Shared and static libraries
+  - GENERATOR_ARGS="$GENERATOR_ARGS -DBUILD_SHARED=ON -DBUILD_STATIC=ON"
+
+  # Build and install project
+  - cmake -H$BUILD_FOLDER -B$BUILD_FOLDER/build -G "$GENERATOR" $GENERATOR_ARGS
+  - cmake --build $BUILD_FOLDER/build --config $CONFIG
+  - cmake --build $BUILD_FOLDER/build --target install --config $CONFIG
+
+  # Run tests
+  - pushd $BUILD_FOLDER/build
+  - ctest -C $CONFIG --output-on-fail --no-compress-output -T Test --timeout 320
