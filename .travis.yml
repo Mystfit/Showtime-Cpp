@@ -87,7 +87,7 @@ jobs:
         - GENERATOR_ARGS="$GENERATOR_ARGS -DBUILD_SHARED=ON -DBUILD_STATIC=ON"
 
         # Build and install project
-        - cmake -H$TRAVIS_BUILD_DIR -B$TRAVIS_BUILD_DIR/build -G "$GENERATOR" $GENERATOR_ARGS
+        - cmake -H$TRAVIS_BUILD_DIR -B$TRAVIS_BUILD_DIR/build $GENERATOR_ARGS
         - cmake --build $TRAVIS_BUILD_DIR/build --BUILD_TYPE $CONFIG
         #- cmake --build $TRAVIS_BUILD_DIR/build --target install --BUILD_TYPE $BUILD_TYPE
       cache:
