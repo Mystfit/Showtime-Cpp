@@ -8,9 +8,6 @@ language: shell
 
 sudo: false 
 
-os: 
-  - linux
-  - osx
 dist: xenial
 osx_image: xcode10.1
 
@@ -30,16 +27,19 @@ stages:
   - test
 
 before_install:
-  # Set common env variables
+  # Set brew paths
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       export PREFIX=/usr/local;
       echo $(which brew);
       echo $PATH;
     fi
 
-  # Create linuxbrew prefix
+  # Set linuxbrew paths
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       export PREFIX=/home/linuxbrew/.linuxbrew;
+      export PATH=$PREFIX/bin:$PREFIX/sbin:$PATH;
+      export MANPATH=$PREFIX/share/man:$MANPATH;
+      export INFOPATH=$PREFIX/share/info:$INFOPATH;
     fi
 
   # Set prefix search path to homebrew folder for library discovery
@@ -48,16 +48,14 @@ before_install:
 jobs:
   include:
     - stage: dependencies
+      os: linux
       language: shell
-      install:
+      install: &download_deps
         # Output something every 10 minutes or Travis kills the job
         - while sleep 9m; do echo "=====[ $SECONDS seconds still running ]====="; done &
 
-        # Install linuxbrew dependencies
+        # Install linuxbrew
         - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-            export PATH=$PREFIX/bin:$PREFIX/sbin:$PATH;
-            export MANPATH=$PREFIX/share/man:$MANPATH;
-            export INFOPATH=$PREFIX/share/info:$INFOPATH;
             sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)";
             hash -r;
             echo $(which brew);
@@ -72,14 +70,20 @@ jobs:
         - kill %1
       cache:
         directories:
-          - $HOME/Library/Caches/Homebrew
           - /home/linuxbrew/.linuxbrew
+
+    - stage: dependencies
+      os: osx
+      install: *download_deps
+      cache:
+        directories:
+          - $HOME/Library/Caches/Homebrew
 
     - stage: build
       language: cpp
-      env:
-        - BUILD_TYPE=Debug
-      before_install:
+      os: linux
+      env: BUILD_TYPE=Debug
+      before_install: &relink_brew
         - brew list -1 | while read line; do brew unlink $line; brew link $line; done
       script: &build_lib
         # Set installation prefix
@@ -91,35 +95,40 @@ jobs:
         # Build and install project
         - cmake -H$TRAVIS_BUILD_DIR -B$TRAVIS_BUILD_DIR/build $GENERATOR_ARGS
         - cmake --build $TRAVIS_BUILD_DIR/build --BUILD_TYPE $CONFIG
+        - pushd $TRAVIS_BUILD_DIR/build
+        - ctest -C $BUILD_TYPE --output-on-fail --no-compress-output -T Test --timeout 320
         #- cmake --build $TRAVIS_BUILD_DIR/build --target install --BUILD_TYPE $BUILD_TYPE
       cache:
-        directories:
+        directories: &cache_build
         - $TRAVIS_BUILD_DIR/build
         - $TRAVIS_BUILD_DIR/install
       
     - stage: build
       language: cpp
-      env:
-        - BUILD_TYPE=Release
-      before_install:
-        - brew list -1 | while read line; do brew unlink $line; brew link $line; done
+      os: linux
+      env: BUILD_TYPE=Release
+      before_install: *relink_brew
       script: *build_lib
       cache:
-        directories:
-        - $TRAVIS_BUILD_DIR/build
-        - $TRAVIS_BUILD_DIR/install
-          
-    - stage: test
-      language: cpp
-      env: BUILD_TYPE=Debug
-      script: &test_cpp
-        - pushd $TRAVIS_BUILD_DIR/build
-        - ctest -C $BUILD_TYPE --output-on-fail --no-compress-output -T Test --timeout 320
+        directories: *cache_build
 
-    - stage: test
+    - stage: build
       language: cpp
+      os: osx
+      env: BUILD_TYPE=Debug
+      before_install: *relink_brew
+      script: *build_lib
+      cache:
+        directories: *cache_build
+
+    - stage: build
+      language: cpp
+      os: osx
       env: BUILD_TYPE=Release
-      script: *test_cpp
+      before_install: *relink_brew
+      script: *build_lib
+      cache:
+        directories: *cache_build
 
     - stage: test
       language: python
