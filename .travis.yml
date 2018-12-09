@@ -20,7 +20,7 @@ addons: &common_build
     brewfile: true
     update: true
 
-matrix:
+jobs:
   include:
     - stage: build
       language: cpp
