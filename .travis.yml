@@ -6,7 +6,7 @@ branches:
 
 language: shell
 
-sudo: false 
+sudo: required 
 
 dist: xenial
 osx_image: xcode10.1
