@@ -8,21 +8,12 @@ language: shell
 
 sudo: required 
 
-dist: xenial
-osx_image: xcode10.1
-
 addons:
-  apt:
-    packages:
-      - curl
   homebrew:
-    packages:
-      - cmake
     brewfile: true
     update: true
 
 stages:
-  - dependencies
   - build
   - test
 
@@ -47,9 +38,13 @@ before_install:
 
 jobs:
   include:
-    - stage: dependencies
+    - stage: build
+      language: cpp
       os: linux
-      language: shell
+      dist: xenial
+      env: BUILD_TYPE=Debug
+      before_install: &relink_brew
+        - brew list -1 | while read line; do brew unlink $line; brew link $line; done
       install: &download_deps
         # Output something every 10 minutes or Travis kills the job
         - while sleep 9m; do echo "=====[ $SECONDS seconds still running ]====="; done &
@@ -60,31 +55,12 @@ jobs:
             hash -r;
             echo $(which brew);
             echo $PATH;
+            brew update;
+            brew bundle || true;
           fi
-
-        # Install homebrew dependencies
-        - brew update
-        - brew bundle || true
 
         # Kill background sleep loop
         - kill %1
-      cache:
-        directories:
-          - /home/linuxbrew/.linuxbrew
-
-    - stage: dependencies
-      os: osx
-      install: *download_deps
-      cache:
-        directories:
-          - $HOME/Library/Caches/Homebrew
-
-    - stage: build
-      language: cpp
-      os: linux
-      env: BUILD_TYPE=Debug
-      before_install: &relink_brew
-        - brew list -1 | while read line; do brew unlink $line; brew link $line; done
       script: &build_lib
         # Set installation prefix
         - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_INSTALL_PREFIX=$TRAVIS_BUILD_DIR/install"
@@ -99,22 +75,29 @@ jobs:
         - ctest -C $BUILD_TYPE --output-on-fail --no-compress-output -T Test --timeout 320
         #- cmake --build $TRAVIS_BUILD_DIR/build --target install --BUILD_TYPE $BUILD_TYPE
       cache:
-        directories: &cache_build
-        - $TRAVIS_BUILD_DIR/build
-        - $TRAVIS_BUILD_DIR/install
-      
+        _cache_build: &cache_build
+          - $TRAVIS_BUILD_DIR/build
+          - $TRAVIS_BUILD_DIR/install
+        directories: 
+          - <<: *_cache_build
+          - /home/linuxbrew/.linuxbrew
+
     - stage: build
       language: cpp
       os: linux
+      dist: xenial
       env: BUILD_TYPE=Release
       before_install: *relink_brew
       script: *build_lib
       cache:
-        directories: *cache_build
+        directories: 
+          - <<: *_cache_build
+          - $HOME/Library/Caches/Homebrew
 
     - stage: build
       language: cpp
       os: osx
+      osx_image: xcode10.1
       env: BUILD_TYPE=Debug
       before_install: *relink_brew
       script: *build_lib
@@ -124,6 +107,7 @@ jobs:
     - stage: build
       language: cpp
       os: osx
+      osx_image: xcode10.1
       env: BUILD_TYPE=Release
       before_install: *relink_brew
       script: *build_lib
@@ -131,6 +115,7 @@ jobs:
         directories: *cache_build
 
     - stage: test
+      dist: xenial
       language: python
       env: BUILD_TYPE=Release
       script:
@@ -141,10 +126,12 @@ jobs:
         - ctest -C $CONFIG --output-on-fail --no-compress-output -T Test --timeout 320
 
     - stage: test
+      dist: xenial
       language: ruby
       env: BUILD_TYPE=Release
 
     - stage: test
+      dist: xenial
       language: csharp
       env: BUILD_TYPE=Release
       homebrew:
