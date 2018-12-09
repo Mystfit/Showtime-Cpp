@@ -1,4 +1,4 @@
-language: cpp
+language: shell
 
 branches:
   only:
@@ -24,8 +24,6 @@ addons: &common_build
       - curl
   homebrew:
     brewfile: true
-    casks:
-    - dotnet-sdk
     update: true
 
 env:
@@ -35,6 +33,20 @@ env:
   matrix:
   - BUILD_TYPE=Debug
   - BUILD_TYPE=Release
+
+matrix:
+  include:
+    - stage: build
+      language: cpp
+    - stage: bindings
+      language: python
+    - stage: bindings
+      language: ruby
+    - stage: bindings
+      language: csharp
+      homebrew:
+        casks:
+        - dotnet-sdk
 
 before_install:
   # Set common env variables
