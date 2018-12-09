@@ -19,6 +19,8 @@ addons:
     packages:
       - curl
   homebrew:
+    packages:
+      - cmake
     brewfile: true
     update: true
 
