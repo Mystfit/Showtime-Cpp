@@ -27,7 +27,7 @@ jobs:
       os: linux
       dist: xenial
       env: BUILD_TYPE=Debug
-      before_install: &relink_brew
+      before_install: &setup_brew
         - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
             export PREFIX=/usr/local;
             echo $(which brew);
@@ -70,7 +70,7 @@ jobs:
 
         # Build and install project
         - cmake -H$TRAVIS_BUILD_DIR -B$TRAVIS_BUILD_DIR/build $GENERATOR_ARGS
-        - cmake --build $TRAVIS_BUILD_DIR/build --BUILD_TYPE $BUILD_TYPE
+        - cmake --build $TRAVIS_BUILD_DIR/build --config $BUILD_TYPE
         - pushd $TRAVIS_BUILD_DIR/build
         - ctest -C $BUILD_TYPE --output-on-fail --no-compress-output -T Test --timeout 320
         #- cmake --build $TRAVIS_BUILD_DIR/build --target install --BUILD_TYPE $BUILD_TYPE
@@ -86,7 +86,7 @@ jobs:
       os: linux
       dist: xenial
       env: BUILD_TYPE=Release
-      before_install: *relink_brew
+      before_install: *setup_brew
       script: *build_lib
       cache:
         directories: *cache_build
@@ -96,7 +96,7 @@ jobs:
       os: osx
       osx_image: xcode10.1
       env: BUILD_TYPE=Debug
-      before_install: *relink_brew
+      before_install: *setup_brew
       script: *build_lib
       cache:
         directories: *cache_build
@@ -106,7 +106,7 @@ jobs:
       os: osx
       osx_image: xcode10.1
       env: BUILD_TYPE=Release
-      before_install: *relink_brew
+      before_install: *setup_brew
       script: *build_lib
       cache:
         directories: *cache_build
@@ -118,7 +118,7 @@ jobs:
       script:
         - GENERATOR_ARGS="$GENERATOR_ARGS -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON"
         - cmake -H$TRAVIS_BUILD_DIR -B$TRAVIS_BUILD_DIR/build -G "$GENERATOR" $GENERATOR_ARGS
-        - cmake --build $TRAVIS_BUILD_DIR/build --target install --BUILD_TYPE $BUILD_TYPE
+        - cmake --build $TRAVIS_BUILD_DIR/build --target install --config $BUILD_TYPE
         - pushd $TRAVIS_BUILD_DIR/build
         - ctest -C $BUILD_TYPE --output-on-fail --no-compress-output -T Test --timeout 320
 
