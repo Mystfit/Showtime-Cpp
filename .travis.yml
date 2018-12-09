@@ -23,6 +23,7 @@ addons:
     update: true
 
 stages:
+  - dependencies
   - build
   - test
 
