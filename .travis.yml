@@ -70,17 +70,16 @@ jobs:
 
         # Build and install project
         - cmake -H$TRAVIS_BUILD_DIR -B$TRAVIS_BUILD_DIR/build $GENERATOR_ARGS
-        - cmake --build $TRAVIS_BUILD_DIR/build --BUILD_TYPE $CONFIG
+        - cmake --build $TRAVIS_BUILD_DIR/build --BUILD_TYPE $BUILD_TYPE
         - pushd $TRAVIS_BUILD_DIR/build
         - ctest -C $BUILD_TYPE --output-on-fail --no-compress-output -T Test --timeout 320
         #- cmake --build $TRAVIS_BUILD_DIR/build --target install --BUILD_TYPE $BUILD_TYPE
       cache:
-        _cache_build: &cache_build
+        directories: &cache_build
+          - $HOME/Library/Caches/Homebrew
+          - /home/linuxbrew/.linuxbrew
           - $TRAVIS_BUILD_DIR/build
           - $TRAVIS_BUILD_DIR/install
-        directories: 
-          - <<: *_cache_build
-          - /home/linuxbrew/.linuxbrew
 
     - stage: build
       language: cpp
@@ -90,9 +89,7 @@ jobs:
       before_install: *relink_brew
       script: *build_lib
       cache:
-        directories: 
-          - <<: *_cache_build
-          - $HOME/Library/Caches/Homebrew
+        directories: *cache_build
 
     - stage: build
       language: cpp
@@ -123,7 +120,7 @@ jobs:
         - cmake -H$TRAVIS_BUILD_DIR -B$TRAVIS_BUILD_DIR/build -G "$GENERATOR" $GENERATOR_ARGS
         - cmake --build $TRAVIS_BUILD_DIR/build --target install --BUILD_TYPE $BUILD_TYPE
         - pushd $TRAVIS_BUILD_DIR/build
-        - ctest -C $CONFIG --output-on-fail --no-compress-output -T Test --timeout 320
+        - ctest -C $BUILD_TYPE --output-on-fail --no-compress-output -T Test --timeout 320
 
     - stage: test
       dist: xenial
