@@ -18,23 +18,7 @@ stages:
   - test
 
 before_install:
-  # Set brew paths
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      export PREFIX=/usr/local;
-      echo $(which brew);
-      echo $PATH;
-    fi
-
-  # Set linuxbrew paths
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      export PREFIX=/home/linuxbrew/.linuxbrew;
-      export PATH=$PREFIX/bin:$PREFIX/sbin:$PATH;
-      export MANPATH=$PREFIX/share/man:$MANPATH;
-      export INFOPATH=$PREFIX/share/info:$INFOPATH;
-    fi
-
-  # Set prefix search path to homebrew folder for library discovery
-  - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$PREFIX;${CMAKE_PREFIX_PATH}"
+  
 
 jobs:
   include:
@@ -44,7 +28,22 @@ jobs:
       dist: xenial
       env: BUILD_TYPE=Debug
       before_install: &relink_brew
-        - brew list -1 | while read line; do brew unlink $line; brew link $line; done
+        - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+            export PREFIX=/usr/local;
+            echo $(which brew);
+            echo $PATH;
+          fi
+
+        # Set linuxbrew paths
+        - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+            export PREFIX=/home/linuxbrew/.linuxbrew;
+            export PATH=$PREFIX/bin:$PREFIX/sbin:$PATH;
+            export MANPATH=$PREFIX/share/man:$MANPATH;
+            export INFOPATH=$PREFIX/share/info:$INFOPATH;
+          fi
+
+        # Set prefix search path to homebrew folder for library discovery
+        - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_PREFIX_PATH=$PREFIX;${CMAKE_PREFIX_PATH}"
       install: &download_deps
         # Output something every 10 minutes or Travis kills the job
         - while sleep 9m; do echo "=====[ $SECONDS seconds still running ]====="; done &
@@ -61,6 +60,7 @@ jobs:
 
         # Kill background sleep loop
         - kill %1
+        - brew list -1 | while read line; do brew unlink $line; brew link $line; done
       script: &build_lib
         # Set installation prefix
         - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_INSTALL_PREFIX=$TRAVIS_BUILD_DIR/install"
