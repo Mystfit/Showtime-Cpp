@@ -233,6 +233,9 @@ target_compile_definitions(${CORE_TARGET_OBJECTS}
     ${GLOBAL_PUBLIC_DEFINES}
 )
 
+# Make sure core objects are position independent for shared libs
+set_target_properties(${CORE_TARGET_OBJECTS} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 # Static/shared library specific options
 if(BUILD_STATIC)
     list(APPEND CORE_LIBS ${CORE_TARGET_STATIC})
