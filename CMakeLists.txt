@@ -251,12 +251,6 @@ include(src/monitor/CMakeLists.txt)
 #list(APPEND Showtime_APP_TARGETS ${MONITOR_TARGET})
 
 
-# Tests
-# -----
-enable_testing()
-add_subdirectory(tests)
-
-
 # Bindings
 # -------
 
@@ -290,6 +284,7 @@ if(BINDINGS_DOTNET OR BINDINGS_UNITY)
     set(DOTNET_OUTPUT_FILE ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${DOTNET_TARGET}.dll)
 
     if(WIN32)
+        enable_language(CSharp)
         add_library(${DOTNET_TARGET} SHARED "")
     else()
         add_custom_target(${DOTNET_TARGET} ALL DEPENDS ${DOTNET_OUTPUT_FILE})
@@ -326,6 +321,12 @@ if(BINDINGS_RUBY)
     find_package(Ruby ${RUBY_VERSION} REQUIRED)
     include(src/bindings/ruby/CMakeLists.txt)
 endif()
+
+
+# Tests
+# -----
+enable_testing()
+add_subdirectory(tests)
 
 
 # ------

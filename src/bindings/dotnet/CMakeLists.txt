@@ -84,9 +84,6 @@ add_dependencies(${DOTNET_TARGET_WRAPPER} ${CLIENT_TARGET_STATIC})
 swig_link_libraries(${DOTNET_TARGET_WRAPPER} ${CLIENT_TARGET_STATIC})
 
 if(WIN32)
-    # C# is a first class citizen for CMake on Windows, we can build the project normally
-    enable_language(CSharp)
-
     # Make sure all included C# files are set to compile
     foreach(file ${DOTNET_GENERATED_BINDINGS})
         set_source_files_properties(${file} PROPERTIES VS_TOOL_OVERRIDE "Compile")
