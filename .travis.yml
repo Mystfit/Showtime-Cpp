@@ -87,7 +87,7 @@ jobs:
       dist: xenial
       env: BUILD_TYPE=Release
       before_install: *setup_brew
-      install: &download_deps
+      install: *download_deps
       script: *build_lib
       cache:
         directories: *cache_build
