@@ -70,6 +70,7 @@ endif()
 # Set shared and static library flags
 option(BUILD_STATIC "Build static Showtime library" OFF)
 option(BUILD_SHARED "Build shared Showtime library" ON)
+option(BUILD_DRAFTS "Build with experimental draft support" OFF)
 
 # Set showtime variables
 set(Showtime_COMPILED_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include")
