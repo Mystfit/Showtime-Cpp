@@ -166,8 +166,9 @@ echo === Building nlohmann json ===
 
 REM boost
 set BOOST_COMMON_FLAGS=--prefix=%DEPENDENCY_DIR%\install address-model=64 variant=%CONFIG_LOWER% threading=multi runtime-link=shared
-set BOOST_SHARED_LIB_FLAGS=--with-system --with-chrono link=shared
-set BOOST_STATIC_LIB_FLAGS=--with-log --with-thread --with-filesystem --with-date_time --with-atomic --with-regex --with-context --with-fiber link=static
+set BOOST_LIBS=--with-system --with-chrono  --with-log --with-thread --with-filesystem --with-date_time --with-atomic --with-regex --with-context --with-fiber
+set BOOST_SHARED_LIB_FLAGS= link=shared
+set BOOST_STATIC_LIB_FLAGS= link=static
 
 IF %WITH_BOOST% EQU 1 (
     IF EXIST %DEPENDENCY_DIR%\boost_1_68_0 (
@@ -181,10 +182,10 @@ IF %WITH_BOOST% EQU 1 (
     echo === Building boost ===
     pushd %DEPENDENCY_DIR%\boost_1_68_0
     call %DEPENDENCY_DIR%\boost_1_68_0\bootstrap.bat
-    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe stage %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe stage %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe stage %BOOST_LIBS% %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_LIBS% %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe stage %BOOST_LIBS% %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_LIBS% %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
     popd
 )
 
