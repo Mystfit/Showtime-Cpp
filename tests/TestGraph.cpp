@@ -191,7 +191,11 @@ void test_unreliable_graph()
 
     OutputComponent * test_output = new OutputComponent("unreliable_out", false);
     InputComponent * test_input = new InputComponent("reliable_in", first_cmp_val, true);
-
+    
+#ifndef ZST_BUILD_DRAFTS
+    // If we don't have draft support enabled, check reliable fallback has been set
+    assert(test_output->output()->is_reliable());
+#else
     zst_activate_entity(test_output);
     zst_activate_entity(test_input);
     zst_connect_cable(test_input->input(), test_output->output());
@@ -203,7 +207,7 @@ void test_unreliable_graph()
         zst_poll_once();
     }
     assert(test_input->last_received_val == first_cmp_val);
-
+#endif
 	//Test if deleting plugs first triggers deactivation
 	delete test_output;
 	delete test_input;
@@ -219,6 +223,5 @@ int main(int argc,char **argv)
     //test_add_filter();
 	test_reliable_graph();
     test_unreliable_graph();
-
     return 0;
 }

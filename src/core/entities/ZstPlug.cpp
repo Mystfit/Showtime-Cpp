@@ -256,6 +256,12 @@ ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t, bool reliable) :
 	m_direction = ZstPlugDirection::OUT_JACK;
 	m_performance_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
 	m_max_connected_cables = -1;
+#ifndef ZST_BUILD_DRAFTS
+    if(!m_reliable){
+        ZstLog::entity(LogLevel::warn, "Can't use plug {} in unreliable mode, Showtime not compiled with draft API support. Falling back to reliable.", name);
+        m_reliable = true;
+    }
+#endif
 }
 
 ZstOutputPlug::~ZstOutputPlug()

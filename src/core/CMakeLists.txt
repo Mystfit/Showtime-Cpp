@@ -73,9 +73,13 @@ set(ZST_CORE_TRANSPORT_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayer.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayerBase.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstGraphTransport.h"
-    "${CMAKE_CURRENT_LIST_DIR}/transports/ZstUDPGraphTransport.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTCPGraphTransport.h"
 )
+if(BUILD_DRAFTS)
+    list(APPEND ZST_CORE_TRANSPORT_SRC
+        "${CMAKE_CURRENT_LIST_DIR}/transports/ZstUDPGraphTransport.h"
+    )
+endif()
 set(ZST_CORE_LIASON_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstSynchronisableLiason.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstEntityFactoryLiason.hpp"
@@ -106,9 +110,14 @@ set(ZST_CORE_SRC
 set(ZST_CORE_TRANSPORT_SRC
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayerBase.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstGraphTransport.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/transports/ZstUDPGraphTransport.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTCPGraphTransport.cpp"
 )
+if(BUILD_DRAFTS)
+    list(APPEND ZST_CORE_TRANSPORT_SRC
+        "${CMAKE_CURRENT_LIST_DIR}/transports/ZstUDPGraphTransport.cpp"
+    )
+endif()
+
 set(ZST_CORE_MODULE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstSession.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstHierarchy.cpp"

@@ -83,7 +83,8 @@ public:
 
 		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		for (T adaptor : this->m_adaptors) {
-			event(adaptor);
+            if(adaptor)
+                event(adaptor);
 		}
 	}
 
