@@ -17,9 +17,6 @@ stages:
   - build
   - test
 
-before_install:
-  
-
 jobs:
   include:
     - stage: build
@@ -66,7 +63,7 @@ jobs:
         - GENERATOR_ARGS="$GENERATOR_ARGS -DCMAKE_INSTALL_PREFIX=$TRAVIS_BUILD_DIR/install"
 
         # Shared and static libraries
-        - GENERATOR_ARGS="$GENERATOR_ARGS -DBUILD_SHARED=ON -DBUILD_STATIC=ON -DBoost_USE_STATIC_LIBS=OFF"
+        - GENERATOR_ARGS="$GENERATOR_ARGS -DBUILD_SHARED=ON -DBUILD_STATIC=ON -DBUILD_DRAFTS=ON"
 
         # Build and install project
         - cmake -H$TRAVIS_BUILD_DIR -B$TRAVIS_BUILD_DIR/build $GENERATOR_ARGS
@@ -77,6 +74,7 @@ jobs:
       cache:
         directories: &cache_build
           - $HOME/Library/Caches/Homebrew
+          - /usr/local/Cellar
           - /home/linuxbrew/.linuxbrew
           - $TRAVIS_BUILD_DIR/build
           - $TRAVIS_BUILD_DIR/install
