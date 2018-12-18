@@ -85,7 +85,7 @@ set CTEST_BIN=%DEPENDENCY_DIR%\cmake\bin\ctest
 REM Set common build flags and prefixes for czmq and msgpack  
 set INSTALL_PREFIX=%DEPENDENCY_DIR%\install
 set COMMON_GENERATOR_FLAGS=-G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%INSTALL_PREFIX%" -DCMAKE_INSTALL_MESSAGE=NEVER -DCMAKE_PREFIX_PATH="%INSTALL_PREFIX%"
-set COMMON_BUILD_FLAGS=--config %CONFIGURATION% --target INSTALL -- /nologo /verbosity:minimal
+set COMMON_BUILD_FLAGS=--config %CONFIGURATION% --target INSTALL -- /nologo /verbosity:minimal /l:FileLogger,Microsoft.Build.Engine;logfile=%CWD%\MSBuild_%BUILD_NAME%_%PLATFORM%_Debug.log
 
 
 REM libZMQ
