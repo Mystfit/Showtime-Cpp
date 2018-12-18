@@ -31,13 +31,15 @@ platform:
 - x64
 
 environment:
-  matrix:
-  - GENERATOR: "Visual Studio 15 2017 Win64"
-    PYTHON: "C:/Python36-x64"
+    GENERATOR: "Visual Studio 15 2017 Win64"
     BOOST_ROOT: "C:/Libraries/boost_1_67_0"
 
+    matrix:
+    - PYTHON_VER: 2.7
+    - PYTHON_VER: 3.7
+
 matrix:
-  fast_finish: true
+    fast_finish: true
 
 install:
 - cmd: |-
@@ -46,8 +48,6 @@ install:
     set DEPENDENCY_DIR=%APPVEYOR_BUILD_FOLDER%/dependencies
     set INSTALL_DIR=%APPVEYOR_BUILD_FOLDER%/install
 
-    REM APPVEYOR install:
-    REM ----------------------
     appveyor AddMessage "Installing dependencies"
     call %BUILD_FOLDER%/install_dependencies.bat --build-dir %BUILD_FOLDER% --config %CONFIGURATION%
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%/install;%DEPENDENCY_DIR%/swig;${CMAKE_PREFIX_PATH}"
@@ -57,31 +57,17 @@ install:
 build_script:
 - cmd: |-
     @echo off
-    REM APPVEYOR build_script:
-    REM ----------------------
     mkdir build
     appveyor AddMessage "Building Showtime project with cmake"
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_DOTNET=ON -DBINDINGS_DOTNET_TESTS=ON -DBINDINGS_DOTNET_FRAMEWORK_VERSION=v4.7.2
-    REM set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON
+    REM set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DBINDINGS_DOTNET_VERSION=%PYTHON_VER%
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR%
-    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBoost_DEBUG=ON -DBoost_COMPILER=-vc141
-    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBUILD_SHARED=ON
-    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBUILD_STATIC=ON
-    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBUILD_DRAFTS=ON
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBUILD_SHARED=ON -DBUILD_STATIC=ON -DBUILD_DRAFTS=ON
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DBOOST_ROOT:PATHNAME="%BOOST_ROOT%" -DBOOST_INCLUDEDIR:PATHNAME="%BOOST_ROOT%" -DBOOST_LIBRARYDIR:PATHNAME="%BOOST_ROOT%/lib64-msvc-14.1"
     
     %CMAKE_BIN% -H. -B"%BUILD_FOLDER%/build" -G "%GENERATOR%" %CMAKE_FLAGS%
-
-    appveyor AddMessage "Building Showtime (all)"
-    %CMAKE_BIN% --build "%BUILD_FOLDER%/build" --target ALL_BUILD --config %CONFIGURATION% -- /nologo /verbosity:minimal
+    %CMAKE_BIN% --build "%BUILD_FOLDER%/build" --config %CONFIGURATION% -- /nologo /verbosity:minimal
     appveyor AddMessage "Showtime build (all) exited with status %errorlevel%"
-
-    appveyor AddMessage "Installing Showtime"
-    %CMAKE_BIN% --build "%BUILD_FOLDER%/build" --target INSTALL --config %CONFIGURATION% -- /nologo /verbosity:minimal
-    appveyor AddMessage "Showtime install (all) exited with status %errorlevel%"
-
-# after_build:
-# - ps: Get-ChildItem $env:BUILD_FOLDER/build/bindings/unity/ShowtimeExampleProject/*.unitypackage | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
 
 test_script:
 - ps: |
