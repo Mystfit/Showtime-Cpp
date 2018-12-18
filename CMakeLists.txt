@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13.0)
 
-project(Showtime VERSION 0.16.1)
+project(Showtime VERSION 0.16.2)
 set(SHOWTIME_NAMESPACE "${PROJECT_NAME}::")
 
 # Use C14
@@ -313,6 +313,7 @@ endif()
 if(BINDINGS_PYTHON)
     set(PYTHON_TARGET ${PROJECT_NAME}Python)
     set(BINDINGS_PYTHON_VERSION 3.7 CACHE STRING "Python version")
+    add_custom_target(${PYTHON_TARGET} ALL)
     find_package(Python ${BINDINGS_PYTHON_VERSION} COMPONENTS Interpreter Development REQUIRED)
     include(src/bindings/python/CMakeLists.txt)
 endif()

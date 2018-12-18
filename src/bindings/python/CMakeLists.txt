@@ -47,12 +47,10 @@ set_target_properties(${PYTHON_TARGET_WRAPPER} PROPERTIES
 
 # Set dependant projects
 add_dependencies(${PYTHON_TARGET_WRAPPER} ${CLIENT_TARGET_STATIC})
+add_dependencies(${PYTHON_TARGET} ${PYTHON_TARGET_WRAPPER})
 
 # Link libraries to swig target
 swig_link_libraries(${PYTHON_TARGET_WRAPPER} ${CLIENT_TARGET_STATIC} Python::Python)
-
-# Create python target
-add_custom_target(${PYTHON_TARGET} ALL DEPENDS ${PYTHON_TARGET_WRAPPER})
 
 # Copy files to build tree
 add_custom_command(TARGET ${PYTHON_TARGET} POST_BUILD
