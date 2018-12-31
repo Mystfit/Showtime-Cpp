@@ -76,7 +76,7 @@ set(ZST_CORE_TRANSPORT_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTCPGraphTransport.h"
 )
 if(BUILD_DRAFTS)
-    list(APPEND ZST_CORE_TRANSPORT_SRC
+    list(APPEND ZST_CORE_TRANSPORT_HEADERS
         "${CMAKE_CURRENT_LIST_DIR}/transports/ZstUDPGraphTransport.h"
     )
 endif()
@@ -177,8 +177,8 @@ message(STATUS "Setting link thread library to ${CMAKE_THREAD_LIBS_INIT}")
 
 # Target definitions
 set(GLOBAL_PUBLIC_DEFINES
-    CZMQ_STATIC 
-    ZMQ_STATIC
+    # CZMQ_STATIC 
+    # ZMQ_STATIC
     BOOST_ALL_NO_LIB
     BOOST_THREAD_USE_LIB
 )

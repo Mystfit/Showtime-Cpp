@@ -19,7 +19,7 @@ class ZstGraphTransport :
 public:
 	ZST_EXPORT ZstGraphTransport();
 	ZST_EXPORT ~ZstGraphTransport();
-	ZST_EXPORT virtual void init() override;
+	ZST_EXPORT virtual void init();
 	ZST_EXPORT virtual void destroy() override;
 	ZST_EXPORT virtual void connect_to_client(const char * endpoint) = 0;
 	ZST_EXPORT virtual void disconnect_from_client() = 0;
@@ -30,8 +30,6 @@ public:
 	ZST_EXPORT void send_message_impl(ZstMessage * msg) override;
 
 protected:
-	ZST_EXPORT ZstActor & actor();
-
 	ZST_EXPORT virtual void init_graph_sockets() = 0;
 	ZST_EXPORT virtual void destroy_graph_sockets();
 	ZST_EXPORT void attach_graph_sockets(zsock_t * in, zsock_t * out);
@@ -46,9 +44,6 @@ private:
 	static int s_handle_graph_in(zloop_t *loop, zsock_t *sock, void *arg);
 	
 	void graph_recv(zframe_t * msg);
-
-	//Actors
-	ZstActor m_graph_actor;
 
 	//Addresses
 	std::string m_graph_out_addr;

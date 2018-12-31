@@ -58,4 +58,5 @@ private:
 	//Transports
 	ZstStagePublisherTransport * m_publisher_transport;
 	ZstStageRouterTransport * m_router_transport;
+	std::shared_ptr<ZstActor> m_reactor;
 };

@@ -41,11 +41,11 @@ enum ZstPlugDirection {
 #define CLIENT_MULTICAST_ADDR "239.0.0.8"
 
 //Heartbeats
-#define HEARTBEAT_DURATION 1000
+#define HEARTBEAT_DURATION 100000
 #define MAX_MISSED_HEARTBEATS 10
 #define MESSAGE_POOL_BLOCK 256
 
 // Number of milliseconds to wait until a timeout is called on a stage operation
-#define STAGE_TIMEOUT 5000
+#define STAGE_TIMEOUT 500000
 #define STAGE_HEARTBEAT_CHECK HEARTBEAT_DURATION * 2
 

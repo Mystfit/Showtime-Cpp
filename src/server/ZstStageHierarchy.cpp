@@ -17,6 +17,8 @@ void ZstStageHierarchy::on_receive_msg(ZstMessage * msg)
 	ZstStageMessage * stage_msg = static_cast<ZstStageMessage*>(msg);
 	ZstMsgKind response(ZstMsgKind::EMPTY);
 	std::string sender_identity = stage_msg->get_arg<std::string>(ZstMsgArg::SENDER);
+	ZstLog::net(LogLevel::debug, "Hierarchy received message from {}", sender_identity);
+
 	ZstPerformerStageProxy * sender = get_client_from_socket_id(sender_identity);
 
 	switch (stage_msg->kind()) {

@@ -115,7 +115,7 @@ void test_root_entity()
 
 int main(int argc,char **argv)
 {
-	TestRunner runner("TestStartup", argv[0], false);
+	TestRunner runner("TestStartup", argv[0], false, false);
     test_URI();
     test_startup();
     test_root_entity();

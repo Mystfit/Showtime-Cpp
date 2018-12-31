@@ -11,48 +11,43 @@ ZstClientTransport::~ZstClientTransport()
 {
 }
 
-void ZstClientTransport::init()
+void ZstClientTransport::init(std::shared_ptr<ZstActor> reactor)
 {
-	ZstTransportLayerBase::init();
-
-	m_client_actor.init("client_actor");
+	ZstTransportLayerBase::init(reactor);
 
 	//Local dealer socket for receiving messages forwarded from other performers
 	m_stage_router = zsock_new(ZMQ_DEALER);
 	if (m_stage_router) {
-		zsock_set_linger(m_stage_router, 0);
-		m_client_actor.attach_pipe_listener(m_stage_router, s_handle_stage_router, this);
+		//zsock_set_linger(m_stage_router, 0);
+		zsock_set_sndtimeo(m_stage_router, STAGE_TIMEOUT);
+		zsock_set_rcvtimeo(m_stage_router, STAGE_TIMEOUT);
+		get_reactor()->attach_pipe_listener(m_stage_router, s_handle_stage_router, this);
 	}
 
 	m_stage_updates = zsock_new(ZMQ_SUB);
 	if (m_stage_updates) {
 		zsock_set_linger(m_stage_updates, 0);
-		m_client_actor.attach_pipe_listener(m_stage_updates, s_handle_stage_update_in, this);
+		get_reactor()->attach_pipe_listener(m_stage_updates, s_handle_stage_update_in, this);
 	}
 
 	//Set up outgoing sockets
 	zuuid_t * startup_uuid = zuuid_new();
 	std::string identity = std::string(zuuid_str_canonical(startup_uuid));
+	zsock_set_identity(m_stage_router, zuuid_str(startup_uuid));
 	zuuid_destroy(&startup_uuid);
-	ZstLog::net(LogLevel::notification, "Setting socket identity to {}. Length {}", identity, identity.size());
-
-	zsock_set_identity(m_stage_router, identity.c_str());
-	m_client_actor.start_loop();
 }
 
 void ZstClientTransport::destroy()
 {
 	ZstTransportLayerBase::destroy();
-
-	m_client_actor.stop_loop();
+	get_reactor()->deattach_pipe_listener(m_stage_router, s_handle_stage_router);
 	if(m_stage_updates)
 		zsock_destroy(&m_stage_updates);
 	if(m_stage_router)
 		zsock_destroy(&m_stage_router);
-	m_client_actor.destroy();
 }
 
-void ZstClientTransport::connect_to_stage(std::string stage_address)
+void ZstClientTransport::connect_to_stage(const std::string & stage_address)
 {
 	m_stage_addr = std::string(stage_address);
 

@@ -35,7 +35,7 @@ public:
 	ZST_EXPORT ZstTransportLayerBase();
 	ZST_EXPORT virtual ~ZstTransportLayerBase();
 
-	ZST_EXPORT virtual void init();
+	ZST_EXPORT virtual void init(std::shared_ptr<ZstActor> reactor);
 	ZST_EXPORT virtual void destroy();
 	ZST_EXPORT virtual void process_events();
 
@@ -47,9 +47,11 @@ public:
 	ZST_EXPORT ZstEventDispatcher<ZstTransportAdaptor*> * msg_events();
 	ZST_EXPORT bool is_active();
 
+protected:
+	ZST_EXPORT std::shared_ptr<ZstActor> get_reactor();
 
 private:
 	bool m_is_active;
-
+	std::shared_ptr<ZstActor> m_reactor;
 	ZstEventDispatcher<ZstTransportAdaptor*> * m_dispatch_events;
 };

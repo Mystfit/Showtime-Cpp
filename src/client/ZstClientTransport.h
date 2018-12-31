@@ -13,9 +13,9 @@ class ZstClientTransport :
 public:
 	ZstClientTransport();
 	~ZstClientTransport();
-	virtual void init() override;
+	virtual void init(std::shared_ptr<ZstActor> reactor) override;
 	virtual void destroy() override;
-	void connect_to_stage(std::string stage_address);
+	void connect_to_stage(const std::string & stage_address);
 	void disconnect_from_stage();
 	void process_events() override;
 	void begin_send_message(ZstMessage * msg, const ZstTransportSendType & sendtype, const MessageReceivedAction & action) override;
@@ -39,6 +39,4 @@ private:
 	std::string m_stage_addr;
 	std::string m_stage_router_addr;
 	std::string m_stage_updates_addr;
-
-	ZstActor m_client_actor;
 };

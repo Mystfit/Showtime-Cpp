@@ -15,20 +15,18 @@ ZstGraphTransport::~ZstGraphTransport()
 
 void ZstGraphTransport::init()
 {
-	ZstTransportLayerBase::init();
-
-	m_graph_actor.init("graph");
+	ZstTransportLayerBase::init(std::make_shared<ZstActor>());
+	get_reactor()->init("graph_reactor");
 	init_graph_sockets();
-	m_graph_actor.start_loop();
+	get_reactor()->start_loop();
 }
 
 void ZstGraphTransport::destroy()
 {
 	ZstTransportLayerBase::destroy();
-
-	m_graph_actor.stop_loop();
+	get_reactor()->stop_loop();
 	destroy_graph_sockets();
-	m_graph_actor.destroy();
+	get_reactor()->destroy();
 }
 
 const std::string & ZstGraphTransport::get_graph_in_address() const
@@ -48,7 +46,7 @@ void ZstGraphTransport::send_message_impl(ZstMessage * msg)
 	auto data = perf_msg->to_msgpack();
 	std::string buffer(data.begin(), data.end());
 	zframe_t * payload_frame = zframe_new(buffer.c_str(), buffer.size());
-#ifdef ZST_BUILD_DRAFTS
+#ifdef ZST_BUILD_DRAFT_API
 	zframe_set_group(payload_frame, PERFORMANCE_GROUP);
 #endif
 	zsock_t * sock = output_graph_socket();
@@ -60,14 +58,9 @@ void ZstGraphTransport::send_message_impl(ZstMessage * msg)
 	release_msg(static_cast<ZstPerformanceMessage*>(msg));
 }
 
-ZstActor & ZstGraphTransport::actor()
-{
-	return m_graph_actor;
-}
-
 void ZstGraphTransport::attach_graph_sockets(zsock_t * in, zsock_t * out)
 {
-	m_graph_actor.attach_pipe_listener(in, s_handle_graph_in, this);
+	get_reactor()->attach_pipe_listener(in, s_handle_graph_in, this);
 	m_graph_in = in;
 	m_graph_out = out;
 }
@@ -105,8 +98,10 @@ void ZstGraphTransport::graph_recv(zframe_t * frame)
 
 void ZstGraphTransport::destroy_graph_sockets()
 {
-	if (m_graph_in)
+	if (m_graph_in) {
 		zsock_destroy(&m_graph_in);
+		get_reactor()->deattach_pipe_listener(m_graph_in, s_handle_graph_in);
+	}
 	if (m_graph_out)
 		zsock_destroy(&m_graph_out);
 }

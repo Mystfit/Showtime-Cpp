@@ -4,7 +4,8 @@
 
 ZstTransportLayerBase::ZstTransportLayerBase() :
 	m_is_active(false),
-    m_dispatch_events(NULL)
+    m_dispatch_events(NULL),
+	m_reactor(NULL)
 {
 	m_dispatch_events = new ZstEventDispatcher<ZstTransportAdaptor*>("msgdispatch stage events");
 }
@@ -21,9 +22,10 @@ void ZstTransportLayerBase::destroy()
 	m_dispatch_events->remove_all_adaptors();
 }
 
-void ZstTransportLayerBase::init()
+void ZstTransportLayerBase::init(std::shared_ptr<ZstActor> reactor)
 {
 	m_is_active = true;
+	m_reactor = reactor;
 }
 
 ZstEventDispatcher<ZstTransportAdaptor*>* ZstTransportLayerBase::msg_events()
@@ -55,4 +57,8 @@ void ZstTransportLayerBase::begin_send_message(ZstMessage * msg, const ZstTransp
 
 void ZstTransportLayerBase::on_receive_msg(ZstMessage * msg)
 {
+}
+
+std::shared_ptr<ZstActor> ZstTransportLayerBase::get_reactor() {
+	return m_reactor;
 }

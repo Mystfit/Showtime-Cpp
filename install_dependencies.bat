@@ -85,7 +85,7 @@ set CTEST_BIN=%DEPENDENCY_DIR%\cmake\bin\ctest
 REM Set common build flags and prefixes for czmq and msgpack  
 set INSTALL_PREFIX=%DEPENDENCY_DIR%\install
 set COMMON_GENERATOR_FLAGS=-G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%INSTALL_PREFIX%" -DCMAKE_INSTALL_MESSAGE=NEVER -DCMAKE_PREFIX_PATH="%INSTALL_PREFIX%"
-set COMMON_BUILD_FLAGS=--config %CONFIGURATION% --target INSTALL -- /nologo /verbosity:minimal /l:FileLogger,Microsoft.Build.Engine;logfile=%CWD%\MSBuild_%BUILD_NAME%_%PLATFORM%_Debug.log
+set COMMON_BUILD_FLAGS=--config %CONFIGURATION% --target INSTALL -- /nologo /verbosity:minimal
 
 
 REM libZMQ
@@ -93,13 +93,16 @@ IF EXIST %DEPENDENCY_DIR%\libzmq\build (
     echo Found libZMQ
 ) ELSE (
     echo === Cloning libZMQ === 
-    git clone https://github.com/mystfit/libzmq.git %DEPENDENCY_DIR%\libzmq
+    git clone https://github.com/zeromq/libzmq.git %DEPENDENCY_DIR%\libzmq
     REM git -C %DEPENDENCY_DIR%\libzmq fetch --all --tags --prune
+    REM git -C %DEPENDENCY_DIR%\libzmq checkout v4.3.0
+    REM git clone https://github.com/mystfit/libzmq.git %DEPENDENCY_DIR%\libzmq
     REM git -C %DEPENDENCY_DIR%\libzmq checkout master
-    git -C %DEPENDENCY_DIR%\libzmq checkout 4.2.5-drafts-fixed
+    REM git -C %DEPENDENCY_DIR%\libzmq checkout 4.2.5-drafts-fixed
     mkdir "%DEPENDENCY_DIR%\libzmq\build"
 )
 echo  === Building libzmq === 
+REM  -DPOLLER=epoll -DAPI_POLLER=poll
 %CMAKE_BIN% -H"%DEPENDENCY_DIR%\libzmq" -B"%DEPENDENCY_DIR%\libzmq\build" %COMMON_GENERATOR_FLAGS% -DENABLE_DRAFTS=TRUE -DZMQ_BUILD_TESTS=OFF
 %CMAKE_BIN% --build "%DEPENDENCY_DIR%\libzmq\build" %COMMON_BUILD_FLAGS%
 
@@ -109,6 +112,9 @@ IF EXIST %DEPENDENCY_DIR%\czmq\build (
     echo Found CZMQ
 ) ELSE (
     echo === Cloning CZMQ === 
+    REM git clone https://github.com/zeromq/czmq.git %DEPENDENCY_DIR%\czmq
+    REM git -C %DEPENDENCY_DIR%\czmq fetch --all --tags --prune
+    REM git -C %DEPENDENCY_DIR%\czmq checkout master
     git clone https://github.com/mystfit/czmq.git %DEPENDENCY_DIR%\czmq
     git -C %DEPENDENCY_DIR%\czmq checkout master
     mkdir "%DEPENDENCY_DIR%\czmq\build"
@@ -119,18 +125,18 @@ echo  === Building czmq ===
 
 
 REM msgpack-c
-IF EXIST %DEPENDENCY_DIR%\msgpack-c\build (
-    echo Found MsgPack-C
+IF EXIST %DEPENDENCY_DIR%\msgpack\build (
+    echo Found MsgPack
 ) ELSE (
-    echo === Cloning msgpack-c === 
-    git clone https://github.com/msgpack/msgpack-c.git %DEPENDENCY_DIR%\msgpack-c
-    git -C %DEPENDENCY_DIR%\msgpack-c fetch --all --tags --prune
-    git -C %DEPENDENCY_DIR%\msgpack-c checkout cpp-3.0.1
-    mkdir "%DEPENDENCY_DIR%\msgpack-c\build"
+    echo === Cloning msgpack === 
+    git clone https://github.com/msgpack/msgpack-c.git %DEPENDENCY_DIR%\msgpack
+    git -C %DEPENDENCY_DIR%\msgpack fetch --all --tags --prune
+    git -C %DEPENDENCY_DIR%\msgpack checkout cpp-3.0.1
+    mkdir "%DEPENDENCY_DIR%\msgpack\build"
 )
 echo === Building msgpack === 
-%CMAKE_BIN% -H"%DEPENDENCY_DIR%\msgpack-c" -B"%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_GENERATOR_FLAGS% -DMSGPACK_BUILD_EXAMPLES=OFF
-%CMAKE_BIN% --build "%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_BUILD_FLAGS%
+%CMAKE_BIN% -H"%DEPENDENCY_DIR%\msgpack" -B"%DEPENDENCY_DIR%\msgpack\build" %COMMON_GENERATOR_FLAGS% -DMSGPACK_BUILD_EXAMPLES=OFF
+%CMAKE_BIN% --build "%DEPENDENCY_DIR%\msgpack\build" %COMMON_BUILD_FLAGS%
 
 
 REM fmt
@@ -192,7 +198,7 @@ IF %WITH_BOOST% EQU 1 (
 
 REM swig
 set SWIG_VER=swigwin-3.0.12
-IF EXIST %DEPENDENCY_DIR%\swig (
+IF EXIST %INSTALL_PREFIX%\swig (
     echo Found SWIG
 ) ELSE (
     echo === Downloading SWIG === 
@@ -200,8 +206,8 @@ IF EXIST %DEPENDENCY_DIR%\swig (
     
     echo === Unzipping swig === 
     7z x -y -bd -bb0 -o%DEPENDENCY_DIR% %DEPENDENCY_DIR%\%SWIG_VER%.zip
-    echo Renaming %DEPENDENCY_DIR%\%SWIG_VER to swig
-    rename "%DEPENDENCY_DIR%\%SWIG_VER%" swig
+    echo Moving %DEPENDENCY_DIR%\%SWIG_VER% to %INSTALL_PREFIX%\swig
+    move "%DEPENDENCY_DIR%\%SWIG_VER%" "%INSTALL_PREFIX%\swig"
 )
 
 

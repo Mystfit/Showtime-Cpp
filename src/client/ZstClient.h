@@ -70,7 +70,7 @@ public:
 	void receive_connection_handshake(ZstPerformanceMessage * msg);
 
 	//Register this endpoint to the stage
-	void join_stage(std::string stage_address, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
+	void join_stage(const std::string & stage_address, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
 	void join_stage_complete(ZstMessageReceipt response);
 	void synchronise_graph(const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
 	void synchronise_graph_complete(ZstMessageReceipt response);
@@ -129,6 +129,7 @@ private:
 	ZstTCPGraphTransport * m_tcp_graph_transport;
 	ZstUDPGraphTransport * m_udp_graph_transport;
 	ZstClientTransport * m_client_transport;
+	std::shared_ptr<ZstActor> m_reactor;
 
 	//Timers
 	boost::thread m_client_timer_thread;

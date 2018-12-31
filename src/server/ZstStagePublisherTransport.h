@@ -12,7 +12,7 @@ class ZstStagePublisherTransport :
 public:
 	ZstStagePublisherTransport();
 	~ZstStagePublisherTransport();
-	void init() override;
+	void init(std::shared_ptr<ZstActor> reactor) override;
 	void destroy() override;
 
 	void send_message_impl(ZstMessage * msg) override;

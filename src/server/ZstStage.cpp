@@ -22,6 +22,7 @@ ZstStage::ZstStage() :
 	m_session = new ZstStageSession();
 	m_publisher_transport = new ZstStagePublisherTransport();
 	m_router_transport = new ZstStageRouterTransport();
+	m_reactor = std::make_shared<ZstActor>();
 
 	//Register event conditions
 	m_event_condition = std::make_shared<ZstBoostEventWakeup>();
@@ -54,8 +55,13 @@ void ZstStage::init_stage(const char * stage_name, bool threaded)
 	ZstLog::net(LogLevel::notification, "Starting Showtime v{} stage server", SHOWTIME_VERSION);
 
 	m_session->init();
-	m_publisher_transport->init();
-	m_router_transport->init();
+
+	//Init reactor for transports
+	m_reactor->init("server_reactor");
+
+	//Init transports
+	m_publisher_transport->init(m_reactor);
+	m_router_transport->init(m_reactor);
 
 	//Init timer actor for client heartbeats
 	//Create timers
@@ -73,6 +79,9 @@ void ZstStage::init_stage(const char * stage_name, bool threaded)
 	//Start event loop
 	m_stage_timer_thread = boost::thread(boost::bind(&ZstStage::timer_loop, this));
 	m_stage_eventloop_thread = boost::thread(boost::bind(&ZstStage::event_loop, this));
+
+	//Start reactor
+	m_reactor->start_loop();
 }
 
 
@@ -98,6 +107,7 @@ void ZstStage::destroy()
 	m_stage_timer_thread.interrupt();
 	m_io.stop();
 	m_stage_timer_thread.join();
+	m_reactor->stop_loop();
 
 	//Destroy modules
 	m_session->destroy();
@@ -105,6 +115,9 @@ void ZstStage::destroy()
 	//Destroy transports
 	m_publisher_transport->destroy();
 	m_router_transport->destroy();
+
+	//Destroy reactor
+	m_reactor->destroy();
 
 	//Destroy zmq context
 	zsys_shutdown();

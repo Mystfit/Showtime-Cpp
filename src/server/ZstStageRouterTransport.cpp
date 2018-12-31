@@ -10,15 +10,14 @@ ZstStageRouterTransport::~ZstStageRouterTransport()
 {
 }
 
-void ZstStageRouterTransport::init()
+void ZstStageRouterTransport::init(std::shared_ptr<ZstActor> reactor)
 {
-	ZstTransportLayerBase::init();
-	m_router_actor.init("stage_router");
+	ZstTransportLayerBase::init(reactor);
 
 	std::stringstream addr;
 	m_performer_router = zsock_new(ZMQ_ROUTER);
 	zsock_set_linger(m_performer_router, 0);
-	m_router_actor.attach_pipe_listener(m_performer_router, s_handle_router, this);
+	get_reactor()->attach_pipe_listener(m_performer_router, s_handle_router, this);
 
 	addr << "tcp://*:" << STAGE_ROUTER_PORT;
 	zsock_bind(m_performer_router, "%s", addr.str().c_str());
@@ -27,21 +26,16 @@ void ZstStageRouterTransport::init()
 		return;
 	}
 	zsock_set_linger(m_performer_router, 0);
+	zsock_set_router_mandatory(m_performer_router, 1);
 	
 	ZstLog::net(LogLevel::notification, "Stage router listening on address {}", addr.str());
-	m_router_actor.start_loop();
 }
 
 void ZstStageRouterTransport::destroy()
 {
 	ZstTransportLayerBase::destroy();
-
-	m_router_actor.stop_loop();
-
 	if(m_performer_router)
 		zsock_destroy(&m_performer_router);
-
-	m_router_actor.destroy();
 }
 
 
@@ -53,6 +47,8 @@ int ZstStageRouterTransport::s_handle_router(zloop_t * loop, zsock_t * socket, v
 {
 	ZstStageRouterTransport * transport = (ZstStageRouterTransport*)arg;
 	zmsg_t * recv_msg = zmsg_recv(socket);
+	zmsg_print(recv_msg);
+
 	if (recv_msg) {
 		//Get identity of sender from first frame
 		zframe_t * identity_frame = zmsg_pop(recv_msg);
@@ -84,7 +80,15 @@ void ZstStageRouterTransport::send_message_impl(ZstMessage * msg)
 	zframe_t * empty = zframe_new_empty();
 	zmsg_append(m, &empty);
 	zmsg_addstr(m, stage_msg->as_json_str().c_str());
-	zmsg_send(&m, m_performer_router);
+	zmsg_print(m);
+	int rc = zmsg_send(&m, m_performer_router);
+	int err = zmq_errno();
+	if (err > 0) {
+		if(err == EHOSTUNREACH)
+			ZstLog::net(LogLevel::error, "Could not reach host");
+		else
+			ZstLog::net(LogLevel::error, "Message sending result code: {}", err);
+	}
 	release_msg(stage_msg);
 }
 

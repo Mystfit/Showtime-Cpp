@@ -12,7 +12,7 @@ class ZstStageRouterTransport :
 public:
 	ZstStageRouterTransport();
 	~ZstStageRouterTransport();
-	void init() override;
+	void init(std::shared_ptr<ZstActor> reactor) override;
 	void destroy() override;
 
 	//Incoming socket handlers
@@ -23,6 +23,5 @@ public:
 	void on_receive_msg(ZstMessage * msg) override;
 
 private:
-	ZstActor m_router_actor;
 	zsock_t * m_performer_router;
 };

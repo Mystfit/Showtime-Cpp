@@ -10,9 +10,9 @@ ZstStagePublisherTransport::~ZstStagePublisherTransport()
 {
 }
 
-void ZstStagePublisherTransport::init()
+void ZstStagePublisherTransport::init(std::shared_ptr<ZstActor> reactor)
 {
-	ZstTransportLayerBase::init();
+	ZstTransportLayerBase::init(reactor);
 
 	std::stringstream addr;
 	addr << "@tcp://*:" << STAGE_PUB_PORT;
