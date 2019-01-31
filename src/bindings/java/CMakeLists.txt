@@ -5,7 +5,7 @@ if(NOT BUILD_STATIC)
 endif()
 
 set(JAVA_TARGET_WRAPPER ${JAVA_TARGET}Wrapper)
-set(JAVA_PACKAGE io.showtime)
+set(JAVA_PACKAGE showtime)
 
 # Save original swig output dir
 set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR}/java)
@@ -24,8 +24,9 @@ set(JAVA_INCLUDES
 )
 
 # Set common swig flags
-set(CMAKE_SWIG_FLAGS -package ${JAVA_PACKAGE})
+#set(CMAKE_SWIG_FLAGS -package ${JAVA_PACKAGE})
 
+# Run SWIG externally to generate java files during configure step for add_jar
 foreach(SWIG_INTERFACE_FILE ${JAVA_SWIG_INTERFACES})
     get_filename_component(OUTFILE_NAME ${SWIG_INTERFACE_FILE} NAME_WE)
     set(SWIG_ARGS 
@@ -61,6 +62,7 @@ swig_add_library(${JAVA_TARGET_WRAPPER}
     SOURCES ${JAVA_SWIG_INTERFACES}
 )
 set_target_properties(${JAVA_TARGET_WRAPPER} PROPERTIES 
+    SWIG_FLAGS "-package ${JAVA_PACKAGE}"
     SWIG_USE_TARGET_INCLUDE_DIRECTORIES TRUE
     SWIG_SUPPORT_FILES_DIRECTORY ${SWIG_LANGUAGE_DIR}
 )
@@ -79,7 +81,6 @@ swig_link_libraries(${JAVA_TARGET_WRAPPER} ${CLIENT_TARGET_STATIC})
 add_jar(${JAVA_TARGET} 
     SOURCES ${JAVA_GENERATED_BINDINGS}
     OUTPUT_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-    # INCLUDE_JARS ${JAVA_TARGET_WRAPPER_JAR}
 )
 
 # Add dependencies

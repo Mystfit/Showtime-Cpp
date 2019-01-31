@@ -192,7 +192,7 @@ void test_unreliable_graph()
     OutputComponent * test_output = new OutputComponent("unreliable_out", false);
     InputComponent * test_input = new InputComponent("reliable_in", first_cmp_val, true);
     
-#ifndef ZST_BUILD_DRAFTS
+#ifndef ZST_BUILD_DRAFT_API
     // If we don't have draft support enabled, check reliable fallback has been set
     assert(test_output->output()->is_reliable());
 #else

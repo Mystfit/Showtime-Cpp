@@ -43,13 +43,18 @@ add_dependencies(TestExternalClients TestHelperSink)
 # Language tests
 # -------------
 
-option (BINDINGS_DOTNET_TESTS "Build Dotnet tests" OFF)
-if(BINDINGS_DOTNET_TESTS)
+if(BINDINGS_DOTNET)
     add_subdirectory(bindings/dotnet)
-endif(BINDINGS_DOTNET_TESTS)
+endif()
 
-
-option (BINDINGS_PYTHON_TESTS "Build Python tests" OFF)
-if(BINDINGS_PYTHON_TESTS)
+if(BINDINGS_PYTHON)
     add_subdirectory(bindings/python)
-endif(BINDINGS_PYTHON_TESTS)
+endif()
+
+if(BINDINGS_JAVA OR BINDINGS_JRUBY)
+    add_subdirectory(bindings/java)
+endif()
+
+if(BINDINGS_JRUBY)
+    add_subdirectory(bindings/jruby)
+endif()

@@ -139,10 +139,10 @@ set(msgpackc_TARGET "msgpackc-static")
 find_package(nlohmann_json CONFIG REQUIRED)
 set(json_TARGET "nlohmann_json")
 
-
-# find_package(fmt CONFIG REQUIRED)
-# set(fmt_TARGET "fmt::fmt-header-only")
-
+if(WIN32)
+    # Find swigwin downloaded using install_dependencies script
+    list(APPEND CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH}/swig")
+endif()
 find_package(SWIG)
 if(SWIG_FOUND)
     cmake_policy(SET CMP0078 NEW)
@@ -262,6 +262,7 @@ option(BINDINGS_PYTHON "Generate bindings for Python" OFF)
 option(BINDINGS_UNITY "Generate bindings for Unity" OFF)
 option(BINDINGS_RUBY "Generate bindings for ruby" OFF)
 option(BINDINGS_JAVA "Generate bindings for java" OFF)
+option(BINDINGS_JRUBY "Generate bindings for JRuby" OFF)
 
 if(BINDINGS_DOTNET OR BINDINGS_UNITY)
     set(BINDINGS_DOTNET_FRAMEWORK_VERSION v4.7.2 CACHE STRING "dotnet Framework version")
@@ -297,6 +298,15 @@ if(BINDINGS_DOTNET OR BINDINGS_UNITY)
     endif()
 endif()
 
+if(BINDINGS_JRUBY)
+    find_package(JRuby REQUIRED)
+
+    # JRuby bindings require 
+    if(NOT BINDINGS_JAVA)
+        message(FATAL_ERROR "JRuby bindings require BINDINGS_JAVA to be enabled")
+    endif()
+endif()
+
 if(BINDINGS_JAVA)
     set(JAVA_TARGET ${PROJECT_NAME}Java)
     find_package(Java REQUIRED)
@@ -304,6 +314,8 @@ if(BINDINGS_JAVA)
     include(UseJava)
     include(src/bindings/java/CMakeLists.txt)
 endif()
+
+
 
 if(BINDINGS_UNITY)
     set(UNITY_TARGET ${PROJECT_NAME}Unity)
@@ -329,8 +341,10 @@ endif()
 # Tests
 # -----
 include( CTest ) 
-enable_testing()
-add_subdirectory(tests)
+if(BUILD_TESTING)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
 
 
 # ------

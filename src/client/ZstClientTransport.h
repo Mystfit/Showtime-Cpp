@@ -15,7 +15,7 @@ public:
 	~ZstClientTransport();
 	virtual void init() override;
 	virtual void destroy() override;
-	void connect_to_stage(std::string stage_address);
+	void connect_to_stage(const std::string stage_address);
 	void disconnect_from_stage();
 	void process_events() override;
 	void begin_send_message(ZstMessage * msg, const ZstTransportSendType & sendtype, const MessageReceivedAction & action) override;

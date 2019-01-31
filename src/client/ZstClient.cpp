@@ -1,7 +1,7 @@
 #include "ZstClient.h"
 
 #include "../core/transports/ZstTCPGraphTransport.h"
-#ifdef ZST_BUILD_DRAFTS
+#ifdef ZST_BUILD_DRAFT_API
 #include "../core/transports/ZstUDPGraphTransport.h"
 #endif
 #include "../core/ZstMessage.h"
@@ -29,7 +29,7 @@ ZstClient::ZstClient() :
 	m_client_transport = new ZstClientTransport();
 	m_tcp_graph_transport = new ZstTCPGraphTransport();
 
-#ifdef ZST_BUILD_DRAFTS
+#ifdef ZST_BUILD_DRAFT_API
 	m_udp_graph_transport = new ZstUDPGraphTransport();
 #else
 	m_udp_graph_transport = NULL;
@@ -44,7 +44,7 @@ ZstClient::ZstClient() :
 	m_event_condition = std::make_shared<ZstBoostEventWakeup>();
 	m_client_transport->msg_events()->set_wake_condition(m_event_condition);
 	m_tcp_graph_transport->msg_events()->set_wake_condition(m_event_condition);
-#ifdef ZST_BUILD_DRAFTS
+#ifdef ZST_BUILD_DRAFT_API
 	m_udp_graph_transport->msg_events()->set_wake_condition(m_event_condition);
 #endif
 }
@@ -54,7 +54,7 @@ ZstClient::~ZstClient() {
 	delete m_client_transport;
 	delete m_tcp_graph_transport;
 
-#ifdef ZST_BUILD_DRAFTS
+#ifdef ZST_BUILD_DRAFT_API
 	delete m_udp_graph_transport;
 #endif
 }
@@ -86,7 +86,7 @@ void ZstClient::destroy() {
 	//Destroy transports
 	m_client_transport->destroy();
 	m_tcp_graph_transport->destroy();
-#ifdef ZST_BUILD_DRAFTS
+#ifdef ZST_BUILD_DRAFT_API
 	m_udp_graph_transport->destroy();
 #endif
 
@@ -157,7 +157,7 @@ void ZstClient::init_client(const char *client_name, bool debug)
 	m_tcp_graph_transport->init();
 	m_tcp_graph_transport->msg_events()->add_adaptor(this);
 	m_tcp_graph_transport->msg_events()->add_adaptor(m_session);
-#ifdef ZST_BUILD_DRAFTS
+#ifdef ZST_BUILD_DRAFT_API
 	m_udp_graph_transport->init();
 	m_udp_graph_transport->msg_events()->add_adaptor(this);
 	m_udp_graph_transport->msg_events()->add_adaptor(m_session);
@@ -224,7 +224,7 @@ void ZstClient::on_receive_msg(ZstMessage * msg)
 	switch (stage_msg->kind()) {
 	case ZstMsgKind::START_CONNECTION_HANDSHAKE:
 	{
-#ifdef ZST_BUILD_DRAFTS
+#ifdef ZST_BUILD_DRAFT_API
 		m_udp_graph_transport->connect_to_client(stage_msg->get_arg<std::string>(ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS).c_str());
 #endif
 		std::string input_path_str = stage_msg->get_arg<std::string>(ZstMsgArg::INPUT_PATH);
@@ -291,7 +291,7 @@ void ZstClient::join_stage(std::string stage_address, const ZstTransportSendType
 
 	//Acquire our output graph address to send to the stage
 	std::string reliable_graph_addr = m_tcp_graph_transport->get_graph_out_address();
-#ifdef ZST_BUILD_DRAFTS
+#ifdef ZST_BUILD_DRAFT_API
 	std::string unreliable_graph_addr = m_udp_graph_transport->get_graph_in_address();
 #else
 	std::string unreliable_graph_addr = "";
@@ -511,7 +511,7 @@ void ZstClient::transport_event_loop()
 			boost::this_thread::interruption_point();
 			m_event_condition->wait();
 			m_client_transport->process_events();
-#ifdef ZST_BUILD_DRAFTS
+#ifdef ZST_BUILD_DRAFT_API
 			m_udp_graph_transport->process_events();
 #endif
 			m_tcp_graph_transport->process_events();
@@ -567,7 +567,7 @@ void ZstClient::on_entity_arriving(ZstEntityBase * entity)
 			if (plug->is_reliable()){
 				transport = m_tcp_graph_transport;
 			}
-#ifdef ZST_BUILD_DRAFTS
+#ifdef ZST_BUILD_DRAFT_API
 			else {
 				transport = m_udp_graph_transport;
 			}

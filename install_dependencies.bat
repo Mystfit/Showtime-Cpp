@@ -85,7 +85,7 @@ set CTEST_BIN=%DEPENDENCY_DIR%\cmake\bin\ctest
 REM Set common build flags and prefixes for czmq and msgpack  
 set INSTALL_PREFIX=%DEPENDENCY_DIR%\install
 set COMMON_GENERATOR_FLAGS=-G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%INSTALL_PREFIX%" -DCMAKE_INSTALL_MESSAGE=NEVER -DCMAKE_PREFIX_PATH="%INSTALL_PREFIX%"
-set COMMON_BUILD_FLAGS=--config %CONFIGURATION% --target INSTALL -- /nologo /verbosity:minimal /l:FileLogger,Microsoft.Build.Engine;logfile=%CWD%\MSBuild_%BUILD_NAME%_%PLATFORM%_Debug.log
+set COMMON_BUILD_FLAGS=--config %CONFIGURATION% --target INSTALL -- /nologo /verbosity:minimal
 
 
 REM libZMQ
@@ -110,7 +110,7 @@ IF EXIST %DEPENDENCY_DIR%\czmq\build (
 ) ELSE (
     echo === Cloning CZMQ === 
     git clone https://github.com/mystfit/czmq.git %DEPENDENCY_DIR%\czmq
-    git -C %DEPENDENCY_DIR%\czmq checkout master
+    git -C %DEPENDENCY_DIR%\czmq checkout 4.2.0
     mkdir "%DEPENDENCY_DIR%\czmq\build"
 )
 echo  === Building czmq === 
@@ -192,7 +192,7 @@ IF %WITH_BOOST% EQU 1 (
 
 REM swig
 set SWIG_VER=swigwin-3.0.12
-IF EXIST %DEPENDENCY_DIR%\swig (
+IF EXIST %INSTALL_PREFIX%\swig (
     echo Found SWIG
 ) ELSE (
     echo === Downloading SWIG === 
@@ -200,8 +200,8 @@ IF EXIST %DEPENDENCY_DIR%\swig (
     
     echo === Unzipping swig === 
     7z x -y -bd -bb0 -o%DEPENDENCY_DIR% %DEPENDENCY_DIR%\%SWIG_VER%.zip
-    echo Renaming %DEPENDENCY_DIR%\%SWIG_VER to swig
-    rename "%DEPENDENCY_DIR%\%SWIG_VER%" swig
+    echo Moving %DEPENDENCY_DIR%\%SWIG_VER% to %INSTALL_PREFIX%\swig
+    move "%DEPENDENCY_DIR%\%SWIG_VER%" "%INSTALL_PREFIX%\swig"
 )
 
 

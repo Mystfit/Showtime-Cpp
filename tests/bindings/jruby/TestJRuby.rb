@@ -1,14 +1,15 @@
 require 'java'
 require 'ShowtimeJava'
+require 'Open3'
 
 # Import showtime objects
-java_import "io.showtime.ShowtimeJava"
-java_import "io.showtime.LogLevel"
-java_import "io.showtime.ZstURI"
-java_import "io.showtime.ZstComponent"
-java_import "io.showtime.ZstInputPlug"
-java_import "io.showtime.ZstOutputPlug"
-java_import "io.showtime.ZstValueType"
+java_import "showtime.ShowtimeJava"
+java_import "showtime.LogLevel"
+java_import "showtime.ZstURI"
+java_import "showtime.ZstComponent"
+java_import "showtime.ZstInputPlug"
+java_import "showtime.ZstOutputPlug"
+java_import "showtime.ZstValueType"
 
 
 #
@@ -89,7 +90,19 @@ def test_graph
     # Since we're sending a value over the network, briefly wait so that we don't exit before 
     # the event loop can process the incoming message
     sleep(0.001)
+end
 
+if ARGV.length < 1
+    puts "Please provide the Showtime Server executable path"
+    exit
+end
+
+# Start a Showtime Server
+server_pipe = IO.popen("#{ARGV[0]} -t", "r+")
+
+# Thread to print server stdout
+Thread.new do
+    server_pipe.each {|l| puts l }
 end
 
 # Initialise the library with the name of our performer - the performer is the root
@@ -115,3 +128,7 @@ event_loop.join
 
 # You MUST clean up the library on exit (Windows) otherwise risk ZMQ hanging
 ShowtimeJava.destroy()
+
+# Exit server
+server_pipe.write "$TERM"
+server_pipe.close

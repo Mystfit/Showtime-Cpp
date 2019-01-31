@@ -4,7 +4,7 @@ set(DOTNET_TEST_SRC
     "TestDotnet.cs"
 )
 
-message(STATUS "Configuring ${DOTNET_TEST_TARGET}")
+message(STATUS "Adding test ${DOTNET_TEST_TARGET}")
 
 add_executable(${DOTNET_TEST_TARGET} ${DOTNET_TEST_SRC})
 set_target_properties(${DOTNET_TEST_TARGET} PROPERTIES 

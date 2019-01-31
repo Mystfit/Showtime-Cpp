@@ -52,7 +52,7 @@ void ZstClientTransport::destroy()
 	m_client_actor.destroy();
 }
 
-void ZstClientTransport::connect_to_stage(std::string stage_address)
+void ZstClientTransport::connect_to_stage(const std::string stage_address)
 {
 	m_stage_addr = std::string(stage_address);
 

@@ -18,6 +18,7 @@ void ZstStageRouterTransport::init()
 	std::stringstream addr;
 	m_performer_router = zsock_new(ZMQ_ROUTER);
 	zsock_set_linger(m_performer_router, 0);
+	zsock_set_router_mandatory(m_performer_router, 1);
 	m_router_actor.attach_pipe_listener(m_performer_router, s_handle_router, this);
 
 	addr << "tcp://*:" << STAGE_ROUTER_PORT;
@@ -26,7 +27,6 @@ void ZstStageRouterTransport::init()
 		ZstLog::net(LogLevel::notification, "Could not bind stage router socket to {}", addr.str());
 		return;
 	}
-	zsock_set_linger(m_performer_router, 0);
 	
 	ZstLog::net(LogLevel::notification, "Stage router listening on address {}", addr.str());
 	m_router_actor.start_loop();
@@ -85,6 +85,14 @@ void ZstStageRouterTransport::send_message_impl(ZstMessage * msg)
 	zmsg_append(m, &empty);
 	zmsg_addstr(m, stage_msg->as_json_str().c_str());
 	zmsg_send(&m, m_performer_router);
+	int rc = zmsg_send(&m, m_performer_router);
+	int err = zmq_errno();
+	if (err > 0) {
+		if(err == EHOSTUNREACH)
+			ZstLog::net(LogLevel::error, "Could not reach host");
+		else
+			ZstLog::net(LogLevel::error, "Message sending result code: {}", err);
+	}
 	release_msg(stage_msg);
 }
 
