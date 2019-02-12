@@ -32,18 +32,18 @@ class ZstStage :
 	public ZstEventDispatcher<ZstTransportAdaptor*>
 {
 public:
-	ZST_SERVER_EXPORT ZstStage();
-	ZST_SERVER_EXPORT ~ZstStage();
-	ZST_SERVER_EXPORT void init_stage(const char * stage_name, bool threaded);
-	ZST_SERVER_EXPORT void destroy();
-	ZST_SERVER_EXPORT bool is_destroyed();
-	void process_events();
+	ZstStage();
+	~ZstStage();
+	void init_stage(const char * stage_name, int port);
+	void destroy();
+	bool is_destroyed();
 	
 private:
 	bool m_is_destroyed;
 	boost::thread m_stage_eventloop_thread;
 	boost::thread m_stage_timer_thread;
 	boost::asio::io_context m_io;
+	void process_events();
 	void timer_loop();
 	void event_loop();
 	std::shared_ptr<ZstBoostEventWakeup> m_event_condition;

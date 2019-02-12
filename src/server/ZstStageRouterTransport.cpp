@@ -10,7 +10,7 @@ ZstStageRouterTransport::~ZstStageRouterTransport()
 {
 }
 
-void ZstStageRouterTransport::init()
+void ZstStageRouterTransport::init(int port)
 {
 	ZstTransportLayerBase::init();
 	m_router_actor.init("stage_router");
@@ -21,7 +21,7 @@ void ZstStageRouterTransport::init()
 	zsock_set_router_mandatory(m_performer_router, 1);
 	m_router_actor.attach_pipe_listener(m_performer_router, s_handle_router, this);
 
-	addr << "tcp://*:" << STAGE_ROUTER_PORT;
+	addr << "tcp://*:" << port;
 	zsock_bind(m_performer_router, "%s", addr.str().c_str());
 	if (!m_performer_router) {
 		ZstLog::net(LogLevel::notification, "Could not bind stage router socket to {}", addr.str());
@@ -30,6 +30,11 @@ void ZstStageRouterTransport::init()
 	
 	ZstLog::net(LogLevel::notification, "Stage router listening on address {}", addr.str());
 	m_router_actor.start_loop();
+}
+
+void ZstStageRouterTransport::init()
+{
+	static_assert(true, "Removed: Use init(int port) instead");
 }
 
 void ZstStageRouterTransport::destroy()

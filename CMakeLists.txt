@@ -261,9 +261,11 @@ include(src/client/CMakeLists.txt)
 # Server binary
 # -------------
 set(SERVER_TARGET "${PROJECT_NAME}Server")
-add_executable (${SERVER_TARGET} "")
+set(SERVER_LAUNCHER "${PROJECT_NAME}ServerLauncher")
+add_library (${SERVER_TARGET} SHARED "")
+add_executable (${SERVER_LAUNCHER} "")
 include(src/server/CMakeLists.txt)
-list(APPEND Showtime_APP_TARGETS ${SERVER_TARGET})
+list(APPEND Showtime_APP_TARGETS ${SERVER_LAUNCHER})
 
 
 # Web monitor

@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <Showtime.h>
+#include <ShowtimeServer.h>
 #include <boost/process.hpp>
 #include <boost/filesystem.hpp>
 #include <sstream>
@@ -235,20 +236,7 @@ namespace ZstTest
 		TestRunner(const std::string & name, const std::string & test_path, bool init_library = true, bool run_stage = true)
 		{
 			if (run_stage) {
-				std::string server_dir = system_complete(test_path).parent_path().generic_string();
-				//Start server
-				std::string prog = server_dir + "/ShowtimeServer";
-#ifdef WIN32
-				prog += ".exe";
-#endif
-				std::string test_flag = "-t";
-				try {
-					m_server_process = boost::process::child(prog, test_flag, std_in < m_server_in);
-				}
-				catch (process_error e) {
-					ZstLog::app(LogLevel::debug, "Server process failed to start. Code:{} Message:{}", e.code().value(), e.what());
-				}
-				assert(m_server_process.valid());
+				m_stage_server = zst_create_server((name + "_server").c_str(), STAGE_ROUTER_PORT);
 			}
 
 			//Init library
@@ -264,18 +252,12 @@ namespace ZstTest
 
 		~TestRunner()
 		{
+			zst_destroy_server(m_stage_server);
 			zst_destroy();
-			if (m_server_process.valid()) {
-				std::string term_msg = "$TERM\n";
-				m_server_in.write(term_msg.c_str(), static_cast<int>(term_msg.size()));
-				m_server_process.wait();
-				ZstLog::app(LogLevel::notification, "All tests completed");
-			}
 		}
 
 	private:
-		boost::process::pipe m_server_in;
-		child m_server_process;
+		void * m_stage_server;
 	};
 
 

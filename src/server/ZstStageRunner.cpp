@@ -1,6 +1,8 @@
-#include "ZstStage.h"
 #include "ZstVersion.h"
 #include <stdio.h>
+#include <iostream>
+#include <ShowtimeServer.h>
+#include <ZstLogging.h>
 
 #ifdef WIN32
 #include <windows.h>
@@ -70,8 +72,7 @@ static void s_catch_signals(){
 
 int main(int argc, char **argv)
 {
-	ZstStage stage;
-	stage.init_stage("stage", true);
+	auto stage = zst_create_server("stage");
 
 	if (argc < 2) {
 		ZstLog::app(LogLevel::notification, "Stage running in standalone mode. Press Ctrl+C to exit");
@@ -94,7 +95,7 @@ int main(int argc, char **argv)
 	}
 
 	std::cout << "Showtime Stage shutting down" << std::endl;
-	stage.destroy();
+	zst_destroy_server(stage);
 
 	return 0;
 }

@@ -106,7 +106,7 @@ void ZstClient::destroy() {
 	set_is_destroyed(true);
 
 	//Destroy zmq context
-	zsys_shutdown();
+	//zsys_shutdown();
 
 	//All done
 	ZstLog::net(LogLevel::notification, "Showtime library destroyed");

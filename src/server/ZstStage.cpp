@@ -42,12 +42,13 @@ ZstStage::ZstStage() :
 
 ZstStage::~ZstStage()
 {
+	destroy();
 	delete m_session;
 	delete m_publisher_transport;
 	delete m_router_transport;
 }
 
-void ZstStage::init_stage(const char * stage_name, bool threaded)
+void ZstStage::init_stage(const char * stage_name, int port)
 {
 	ZstLog::init_logger(stage_name, LogLevel::debug);
 	ZstLog::init_file_logging("server.log");
@@ -55,7 +56,7 @@ void ZstStage::init_stage(const char * stage_name, bool threaded)
 
 	m_session->init();
 	m_publisher_transport->init();
-	m_router_transport->init();
+	m_router_transport->init(port);
 
 	//Init timer actor for client heartbeats
 	//Create timers
@@ -107,7 +108,7 @@ void ZstStage::destroy()
 	m_router_transport->destroy();
 
 	//Destroy zmq context
-	zsys_shutdown();
+	//zsys_shutdown();
 }
 
 bool ZstStage::is_destroyed()
