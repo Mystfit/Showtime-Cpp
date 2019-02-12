@@ -19,15 +19,18 @@ set(UNITY_BINARY_FILES "")
 set(UNITY_BINARY_FILES)
 if(WIN32)
     # Copy dotnet target outputs on windows
+    foreach(LIB ${SHOWTIME_PUBLIC_SHARED_LINKED_LIBS})
+        list(APPEND UNITY_BINARY_FILES $<TARGET_FILE:${LIB}>)
+    endforeach()
     list(APPEND UNITY_BINARY_FILES
-        # $<TARGET_FILE:${LIBZMQ_TARGET}>
-        # $<TARGET_FILE:${CZMQ_TARGET}>
-        # $<TARGET_FILE:${CORE_TARGET}>
-        # $<TARGET_FILE:${CLIENT_TARGET}>
+        $<TARGET_FILE:${CORE_TARGET}>
+        $<TARGET_FILE:${CORE_ENTITIES_TARGET}>
+        $<TARGET_FILE:${CLIENT_TARGET}>
         $<TARGET_FILE:${SERVER_TARGET}>
         $<TARGET_FILE:${DOTNET_TARGET}>
         $<TARGET_FILE:${DOTNET_TARGET_WRAPPER}>
     )
+
 else()
     # Copy dll files on unix
     list(APPEND UNITY_BINARY_FILES
@@ -63,6 +66,7 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E echo "Copying project to ${UNITY_BUILD_DIR}"
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${UNITY_SRC_DIR} ${UNITY_BUILD_DIR}
     COMMAND ${CMAKE_COMMAND} -E echo "Copying libraries to ${UNITY_BIN_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E echo "Copying ${UNITY_BINARY_FILES}"
     COMMAND ${CMAKE_COMMAND} -E copy ${UNITY_BINARY_FILES} ${UNITY_BIN_DIR}
     COMMAND ${CMAKE_COMMAND} -E echo "Exporting Unity package"
     COMMAND ${UNITY_EXECUTABLE} -nographics -batchmode -quit -projectPath ${UNITY_BUILD_DIR} -exportPackage Assets/${UNITY_TARGET} ${UNITY_PACKAGE_PATH}

@@ -32,11 +32,11 @@ class ZstStage :
 	public ZstEventDispatcher<ZstTransportAdaptor*>
 {
 public:
-	ZstStage();
-	~ZstStage();
-	void init_stage(const char * stage_name, bool threaded);
-	void destroy();
-	bool is_destroyed();	
+	ZST_SERVER_EXPORT ZstStage();
+	ZST_SERVER_EXPORT ~ZstStage();
+	ZST_SERVER_EXPORT void init_stage(const char * stage_name, bool threaded);
+	ZST_SERVER_EXPORT void destroy();
+	ZST_SERVER_EXPORT bool is_destroyed();
 	void process_events();
 	
 private:

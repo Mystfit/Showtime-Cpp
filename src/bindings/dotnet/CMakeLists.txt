@@ -78,10 +78,10 @@ else()
 endif()
 
 # Set dependant projects
-add_dependencies(${DOTNET_TARGET_WRAPPER} ${CLIENT_TARGET_STATIC})
+add_dependencies(${DOTNET_TARGET_WRAPPER} ${CLIENT_TARGET})
 
 # Link libraries to swig target
-swig_link_libraries(${DOTNET_TARGET_WRAPPER} ${CLIENT_TARGET_STATIC})
+swig_link_libraries(${DOTNET_TARGET_WRAPPER} ${CLIENT_TARGET})
 
 if(WIN32)
     # Make sure all included C# files are set to compile

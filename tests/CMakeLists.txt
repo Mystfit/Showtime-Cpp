@@ -58,3 +58,7 @@ endif()
 if(BINDINGS_JRUBY)
     add_subdirectory(bindings/jruby)
 endif()
+
+if(BINDINGS_UNITY)
+    add_subdirectory(bindings/unity)
+endif()
