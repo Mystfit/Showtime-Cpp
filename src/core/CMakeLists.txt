@@ -179,7 +179,7 @@ message(STATUS "Setting link thread library to ${CMAKE_THREAD_LIBS_INIT}")
 set(GLOBAL_PUBLIC_DEFINES
     CZMQ_STATIC
     ZMQ_STATIC
-    BOOST_ALL_NO_LIB
+    #BOOST_ALL_NO_LIB
     BOOST_THREAD_USE_LIB
 )
 
@@ -269,7 +269,7 @@ if(BUILD_SHARED)
         )
     endif()
 
-    target_link_libraries(${CORE_TARGET} PRIVATE ${SHOWTIME_PRIVATE_SHARED_LINKED_LIBS})
+    target_link_libraries(${CORE_TARGET} PUBLIC ${SHOWTIME_PUBLIC_SHARED_LINKED_LIBS})
 endif()
 
 # Options common to both static/shared libraries

@@ -176,8 +176,28 @@ set(SHOWTIME_PRIVATE_LINKED_LIBS
     ${Boost_CONTEXT_TARGET}
     ${Boost_FIBER_TARGET}
     ${Boost_HEADER_TARGET}
+    Boost::disable_autolinking
     ${CMAKE_THREAD_LIBS_INIT}
 )
+
+# Boost libraries that MUST be linked shared
+set(Showtime_PUBLIC_SHARED_BOOST_LINKED_LIBS
+    ${Boost_FILESYSTEM_LIBRARY_DEBUG}
+    ${Boost_CONTEXT_LIBRARY_DEBUG}
+)
+
+# Boost shared DLLs
+set(Showtime_SHARED_BOOST_LIBS)
+if(WIN32)
+    # Copy boost dlls
+    foreach(BOOST_LIB ${Showtime_PUBLIC_SHARED_BOOST_LINKED_LIBS})
+        get_filename_component(BOOST_LIB_DIR ${BOOST_LIB} DIRECTORY)
+        get_filename_component(BOOST_LIB_NAME ${BOOST_LIB} NAME_WE)
+        string(REPLACE "libboost" "boost" BOOST_DLL_NAME ${BOOST_LIB_NAME})
+        list(APPEND Showtime_SHARED_BOOST_LIBS ${BOOST_LIB_DIR}/${BOOST_DLL_NAME}.dll)
+    endforeach()
+    message(STATUS "Additional Boost DLLs that need to be copied: ${Showtime_SHARED_BOOST_LIBS}")
+endif()
 
 set(Showtime_PRIVATE_HEADER_DEPENDENCIES
     $<BUILD_INTERFACE:${Showtime_HEADER_DEPENDENCIES_DIR}>
@@ -190,7 +210,7 @@ set(SHOWTIME_PRIVATE_STATIC_LINKED_LIBS
     libzmq-static
 )
 
-set(SHOWTIME_PRIVATE_SHARED_LINKED_LIBS
+set(SHOWTIME_PUBLIC_SHARED_LINKED_LIBS
     czmq
     libzmq
 )
@@ -251,6 +271,29 @@ list(APPEND Showtime_APP_TARGETS ${SERVER_TARGET})
 set(MONITOR_TARGET "${PROJECT_NAME}Monitor")
 include(src/monitor/CMakeLists.txt)
 #list(APPEND Showtime_APP_TARGETS ${MONITOR_TARGET})
+
+
+# ------
+# Plugins
+# ------
+
+set(PLUGIN_OUTPUT_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/plugins)
+set(PLUGIN_TARGETS "")
+
+
+# Core entity plugin
+# -------------------
+
+set(CORE_ENTITIES_TARGET "${PROJECT_NAME}CoreEntities")
+add_library(${CORE_ENTITIES_TARGET} MODULE "")
+include(src/plugins/core_entities/CMakeLists.txt)
+list(APPEND PLUGIN_TARGETS ${CORE_ENTITIES_TARGET})
+
+
+option(PLUGINS_RTMIDI "Build RTMidi plugin" OFF)
+if(PLUGINS_RTMIDI)
+    add_subdirectory(src/plugins/rtmidi)
+endif()
 
 
 # Bindings
@@ -345,30 +388,6 @@ if(BUILD_TESTING)
     enable_testing()
     add_subdirectory(tests)
 endif()
-
-
-# ------
-# Plugins
-# ------
-
-set(PLUGIN_OUTPUT_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/plugins)
-set(PLUGIN_TARGETS "")
-
-
-# Core entity plugin
-# -------------------
-
-set(CORE_ENTITIES_TARGET "${PROJECT_NAME}CoreEntities")
-add_library(${CORE_ENTITIES_TARGET} MODULE "")
-include(src/plugins/core_entities/CMakeLists.txt)
-list(APPEND PLUGIN_TARGETS ${CORE_ENTITIES_TARGET})
-
-
-option(PLUGINS_RTMIDI "Build RTMidi plugin" OFF)
-if(PLUGINS_RTMIDI)
-    add_subdirectory(src/plugins/rtmidi)
-endif()
-
 
 
 # Installation

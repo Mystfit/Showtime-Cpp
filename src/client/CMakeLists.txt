@@ -49,10 +49,10 @@ if(BUILD_SHARED)
   endif(WIN32)
 
   target_link_libraries(${CLIENT_TARGET} 
-    PUBLIC ${CORE_TARGET}
+    PUBLIC 
+    ${CORE_TARGET}
     PRIVATE
     ${SHOWTIME_PRIVATE_LINKED_LIBS}
-    ${SHOWTIME_PRIVATE_SHARED_LINKED_LIBS}
   )
 
   add_dependencies(${CLIENT_TARGET} ${CORE_TARGET})
