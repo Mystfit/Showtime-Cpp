@@ -23,7 +23,6 @@ public:
 private:
 	void send_message_impl(ZstMessage * msg) override;
 	void sock_recv(zsock_t* socket, bool pop_first);
-	static int s_handle_stage_update_in(zloop_t *loop, zsock_t *sock, void *arg);
 	static int s_handle_stage_router(zloop_t *loop, zsock_t *sock, void *arg);
 
 	void on_receive_msg(ZstMessage * msg) override;
@@ -33,12 +32,10 @@ private:
 
 	//Sockets
 	zsock_t * m_stage_router;
-	zsock_t * m_stage_updates;
 
 	//Addresses
 	std::string m_stage_addr;
 	std::string m_stage_router_addr;
-	std::string m_stage_updates_addr;
 
 	ZstActor m_client_actor;
 };

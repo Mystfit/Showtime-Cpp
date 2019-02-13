@@ -19,7 +19,6 @@
 
 //Stage headers
 #include "ZstStageSession.h"
-#include "ZstStagePublisherTransport.h"
 #include "ZstStageRouterTransport.h"
 
 //Forwards
@@ -56,6 +55,5 @@ private:
 	ZstStageSession * m_session;
 	
 	//Transports
-	ZstStagePublisherTransport * m_publisher_transport;
 	ZstStageRouterTransport * m_router_transport;
 };

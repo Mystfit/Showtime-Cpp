@@ -72,6 +72,10 @@ static void s_catch_signals(){
 
 int main(int argc, char **argv)
 {
+	ZstLog::net(LogLevel::notification, "Starting Showtime v{} stage server", SHOWTIME_VERSION);
+	ZstLog::init_logger("stage", LogLevel::debug);
+	ZstLog::init_file_logging("server.log");
+
 	auto stage = zst_create_server("stage");
 
 	if (argc < 2) {

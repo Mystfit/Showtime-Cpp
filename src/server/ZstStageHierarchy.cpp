@@ -121,9 +121,8 @@ ZstMsgKind ZstStageHierarchy::create_client_handler(std::string sender_identity,
 	}
 
 	//Update rest of network
-	publisher_events().invoke([&client_proxy](ZstTransportAdaptor * adp) {
-		adp->on_send_msg(ZstMsgKind::CREATE_PERFORMER, json::object(), client_proxy->as_json());
-	});
+	broadcast_message(ZstMsgKind::CREATE_PERFORMER, json::object(), client_proxy->as_json());
+
 	return ZstMsgKind::OK;
 }
 
@@ -151,6 +150,29 @@ ZstMsgKind ZstStageHierarchy::destroy_client_handler(ZstPerformer * performer)
 	return remove_proxy_entity(performer);
 }
 
+void ZstStageHierarchy::broadcast_message(const ZstMsgKind & msg_kind, const ZstMsgArgs & args, const ZstMsgArgs & payload)
+{
+	ZstEntityBundle bundle;
+	for (auto entity : get_performers(bundle)) 
+	{
+		//Can only send messages to performers
+		ZstPerformer * performer = dynamic_cast<ZstPerformerStageProxy*>(entity);
+		if (!performer) {
+			ZstLog::net(LogLevel::error, "Not a performer");
+			return;
+		}
+
+		//Copy args
+		ZstMsgArgs dest_args = args;
+		dest_args[get_msg_arg_name(ZstMsgArg::DESTINATION)] = get_socket_ID(performer);
+		
+		//Send message to client
+		router_events().invoke([&msg_kind, &dest_args, &payload](ZstTransportAdaptor * adp) {
+			adp->on_send_msg(msg_kind, dest_args, payload);
+		});
+	}
+}
+
 
 ZstMsgKind ZstStageHierarchy::add_proxy_entity(const ZstEntityBase & entity, ZstMsgID request_ID, ZstPerformer * sender)
 {
@@ -170,9 +192,7 @@ ZstMsgKind ZstStageHierarchy::add_proxy_entity(const ZstEntityBase & entity, Zst
 	//Update rest of network
 	if (msg_status == ZstMsgKind::OK) {
 		ZstMsgArgs args{ { get_msg_arg_name(ZstMsgArg::MSG_ID), request_ID } };
-		publisher_events().invoke([&proxy, &entity, &args](ZstTransportAdaptor * adp) {
-			adp->on_send_msg(ZstStageMessage::entity_kind(entity), args, proxy->as_json());
-		});
+		broadcast_message(ZstStageMessage::entity_kind(entity), args, proxy->as_json());
 	}
 
 	return msg_status;
@@ -186,9 +206,7 @@ ZstMsgKind ZstStageHierarchy::update_proxy_entity(const ZstEntityBase & entity, 
 	//Update rest of network
 	if (msg_status == ZstMsgKind::OK) {
 		ZstMsgArgs args{ { get_msg_arg_name(ZstMsgArg::MSG_ID), request_ID } };
-		publisher_events().invoke([&entity, &args](ZstTransportAdaptor * adp) {
-			adp->on_send_msg(ZstMsgKind::UPDATE_ENTITY, args, entity.as_json());
-		});
+		broadcast_message(ZstMsgKind::UPDATE_ENTITY, args, entity.as_json());
 	}
 
 	//Updating entities is a publish action
@@ -203,10 +221,9 @@ ZstMsgKind ZstStageHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 	ZstLog::net(LogLevel::notification, "Removing proxy entity {}", entity->URI().path());
 
 	//Update rest of network
-	publisher_events().invoke([entity](ZstTransportAdaptor * adp) {
-		adp->on_send_msg(ZstMsgKind::DESTROY_ENTITY, { {get_msg_arg_name(ZstMsgArg::PATH), entity->URI().path()} });
-	});
+	broadcast_message(ZstMsgKind::DESTROY_ENTITY, { {get_msg_arg_name(ZstMsgArg::PATH), entity->URI().path()} });
 
+	//Finally, remove the entity
 	ZstHierarchy::remove_proxy_entity(entity);
 	
 	return ZstMsgKind::OK;

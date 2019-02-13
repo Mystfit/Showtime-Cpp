@@ -31,7 +31,7 @@ public:
 
 	ZstMsgKind create_client_handler(std::string sender_identity, ZstStageMessage * msg);
 	ZstMsgKind destroy_client_handler(ZstPerformer * performer);
-
+	void broadcast_message(const ZstMsgKind & msg_kind, const ZstMsgArgs & args, const ZstMsgArgs & payload = json::object());
 
 	// ----------------
 	// Proxies

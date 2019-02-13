@@ -15,19 +15,16 @@
 ZstStage::ZstStage() : 
 	m_is_destroyed(false),
 	m_session(NULL),
-	m_publisher_transport(NULL),
 	m_router_transport(NULL),
 	m_heartbeat_timer(m_io)
 {
 	m_session = new ZstStageSession();
-	m_publisher_transport = new ZstStagePublisherTransport();
 	m_router_transport = new ZstStageRouterTransport();
 
 	//Register event conditions
 	m_event_condition = std::make_shared<ZstBoostEventWakeup>();
 	m_session->set_wake_condition(m_event_condition);
 	m_session->hierarchy()->set_wake_condition(m_event_condition);
-	m_publisher_transport->msg_events()->set_wake_condition(m_event_condition);
 	m_router_transport->msg_events()->set_wake_condition(m_event_condition);
 	this->set_wake_condition(m_event_condition);
 
@@ -36,7 +33,6 @@ ZstStage::ZstStage() :
 	this->set_wake_condition(m_event_condition);
 	m_session->set_wake_condition(m_event_condition);
 	m_session->hierarchy()->set_wake_condition(m_event_condition);
-	m_publisher_transport->msg_events()->set_wake_condition(m_event_condition);
 	m_router_transport->msg_events()->set_wake_condition(m_event_condition);
 }
 
@@ -44,18 +40,12 @@ ZstStage::~ZstStage()
 {
 	destroy();
 	delete m_session;
-	delete m_publisher_transport;
 	delete m_router_transport;
 }
 
 void ZstStage::init_stage(const char * stage_name, int port)
 {
-	ZstLog::init_logger(stage_name, LogLevel::debug);
-	ZstLog::init_file_logging("server.log");
-	ZstLog::net(LogLevel::notification, "Starting Showtime v{} stage server", SHOWTIME_VERSION);
-
 	m_session->init();
-	m_publisher_transport->init();
 	m_router_transport->init(port);
 
 	//Init timer actor for client heartbeats
@@ -67,9 +57,7 @@ void ZstStage::init_stage(const char * stage_name, int port)
 	m_router_transport->msg_events()->add_adaptor(m_session);
 	m_router_transport->msg_events()->add_adaptor(m_session->hierarchy());
 	m_session->router_events().add_adaptor(m_router_transport);
-	m_session->publisher_events().add_adaptor(m_publisher_transport);
 	m_session->hierarchy()->router_events().add_adaptor(m_router_transport);
-	m_session->hierarchy()->publisher_events().add_adaptor(m_publisher_transport);
 
 	//Start event loop
 	m_stage_timer_thread = boost::thread(boost::bind(&ZstStage::timer_loop, this));
@@ -104,7 +92,6 @@ void ZstStage::destroy()
 	m_session->destroy();
 
 	//Destroy transports
-	m_publisher_transport->destroy();
 	m_router_transport->destroy();
 
 	//Destroy zmq context
@@ -119,7 +106,6 @@ bool ZstStage::is_destroyed()
 void ZstStage::process_events()
 {
 	m_session->process_events();
-	m_publisher_transport->process_events();
 	m_router_transport->process_events();
 
 	//Reapers are updated last in case entities still need to be queried beforehand

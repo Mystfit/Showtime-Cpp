@@ -24,12 +24,6 @@ void ZstClientTransport::init()
 		m_client_actor.attach_pipe_listener(m_stage_router, s_handle_stage_router, this);
 	}
 
-	m_stage_updates = zsock_new(ZMQ_SUB);
-	if (m_stage_updates) {
-		zsock_set_linger(m_stage_updates, 0);
-		m_client_actor.attach_pipe_listener(m_stage_updates, s_handle_stage_update_in, this);
-	}
-
 	//Set up outgoing sockets
 	zuuid_t * startup_uuid = zuuid_new();
 	std::string identity = std::string(zuuid_str_canonical(startup_uuid));
@@ -45,8 +39,6 @@ void ZstClientTransport::destroy()
 	ZstTransportLayerBase::destroy();
 
 	m_client_actor.stop_loop();
-	if(m_stage_updates)
-		zsock_destroy(&m_stage_updates);
 	if(m_stage_router)
 		zsock_destroy(&m_stage_router);
 	m_client_actor.destroy();
@@ -61,21 +53,10 @@ void ZstClientTransport::connect_to_stage(const std::string stage_address)
 	m_stage_router_addr = addr.str();
 
 	zsock_connect(m_stage_router, "%s", m_stage_router_addr.c_str());
-	addr.str("");
-
-	//Stage subscriber socket for update messages
-	addr << "tcp://" << m_stage_addr << ":" << STAGE_PUB_PORT;
-	m_stage_updates_addr = addr.str();
-
-	ZstLog::net(LogLevel::notification, "Connecting to stage publisher {}", m_stage_updates_addr);
-	zsock_connect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
-	zsock_set_subscribe(m_stage_updates, "");
-	addr.str("");
 }
 
 void ZstClientTransport::disconnect_from_stage()
 {
-	zsock_disconnect(m_stage_updates, "%s", m_stage_updates_addr.c_str());
 	zsock_disconnect(m_stage_router, "%s", m_stage_router_addr.c_str());
 }
 
@@ -140,13 +121,6 @@ void ZstClientTransport::sock_recv(zsock_t* socket, bool pop_first)
 		on_receive_msg(stage_msg);
 		zmsg_destroy(&recv_msg);
 	}
-}
-
-int ZstClientTransport::s_handle_stage_update_in(zloop_t * loop, zsock_t * sock, void * arg)
-{
-	ZstClientTransport * transport = (ZstClientTransport*)arg;
-	transport->sock_recv(sock, false);
-	return 0;
 }
 
 int ZstClientTransport::s_handle_stage_router(zloop_t * loop, zsock_t * sock, void * arg)

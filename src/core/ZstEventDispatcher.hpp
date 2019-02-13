@@ -112,13 +112,14 @@ public:
 
 			std::lock_guard<std::recursive_mutex> lock(m_mtx);
 			for (T adaptor : m_adaptors) {
-				try {
+				event.func(adaptor);
+				/*try {
 					event.func(adaptor);
 				}
 				catch (std::exception e) {
 					ZstLog::net(LogLevel::error, "Event dispatcher failed to run an event on a adaptor. Reason: {}", e.what());
 					success = false;
-				}
+				}*/
 			}
 			event.completed_func((success) ? ZstEventStatus::SUCCESS : ZstEventStatus::FAILED);
 		}
