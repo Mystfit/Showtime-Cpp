@@ -214,17 +214,7 @@ public class Program
 
     static int Main(string[] args)
     {
-        ProcessStartInfo server_startInfo = new ProcessStartInfo();
-
-        //Required to redirect standard input/output
-        server_startInfo.UseShellExecute = false; 
-        server_startInfo.RedirectStandardInput = true;
-        server_startInfo.FileName = "ShowtimeServer.exe";
-        server_startInfo.Arguments = "-t";   // Put server into test mode
-
-        Process server_process = new Process();
-        server_process.StartInfo = server_startInfo;
-        server_process.Start();
+        var server = showtime.create_server("dotnet_server", showtime.STAGE_ROUTER_PORT);
         
         Console.WriteLine("Starting TestDotnet");
 
@@ -252,9 +242,8 @@ public class Program
         showtime.destroy();
 
         //Kill the stage
-        server_process.StandardInput.WriteLine("$TERM\n");
-        server_process.WaitForExit();
-
+        showtime.destroy_server(server);
+        
         Console.WriteLine("Test completed");
         return 0;
     }

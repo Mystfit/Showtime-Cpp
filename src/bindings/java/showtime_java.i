@@ -1,6 +1,7 @@
 %module(directors="1") ShowtimeJava
 %{
     #include <Showtime.h>
+    #include <ShowtimeServer.h>
 %}
 
 //static ZstEntityBundle get_performers();

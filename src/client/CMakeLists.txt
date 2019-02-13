@@ -64,6 +64,7 @@ foreach(TARGET ${CLIENT_LIBS})
 
   # Include files in client target
   target_sources(${TARGET} PRIVATE 
+    ${ZST_CLIENT_HEADERS}
     ${ZST_CLIENT_PRIVATE_HEADERS}
     ${ZST_CLIENT_SRC}
   )

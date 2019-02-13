@@ -18,3 +18,4 @@
 
 %rename("%(strip:[zst_])s") "";
 %include <Showtime.h>
+%include <ShowtimeServer.h>

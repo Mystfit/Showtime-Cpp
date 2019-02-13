@@ -1,6 +1,7 @@
 %module(directors="1") showtime
 %{
 	#include <Showtime.h>
+	#include <ShowtimeServer.h>
 %}
 
 %include <std_string.i>

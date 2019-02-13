@@ -6,8 +6,9 @@ ZstStageHierarchy::~ZstStageHierarchy()
 }
 
 void ZstStageHierarchy::destroy() {
-	for (auto p : m_clients) {
-		destroy_client_handler(p.second);
+	ZstEntityBundle bundle;
+	for (auto p : get_performers(bundle)) {
+		destroy_client_handler(dynamic_cast<ZstPerformer*>(p));
 	}
 	ZstHierarchy::destroy();
 }

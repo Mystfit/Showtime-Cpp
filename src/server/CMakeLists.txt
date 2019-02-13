@@ -32,6 +32,7 @@ list(APPEND Showtime_API_INTERFACE ${ZST_SERVER_HEADERS})
 
 # Server lib sources
 target_sources(${SERVER_TARGET} PRIVATE 
+    ${ZST_SERVER_HEADERS}
     ${ZST_SERVER_PRIVATE_HEADERS}
     ${ZST_SERVER_SRC}
 )

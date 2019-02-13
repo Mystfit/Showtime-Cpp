@@ -27,5 +27,12 @@ target_include_directories(${RUBY_TARGET} PUBLIC
 	${RUBY_INCLUDE_DIRS}
 )
 
-add_dependencies(${SWIG_MODULE_${RUBY_TARGET}_REAL_NAME} ${CLIENT_TARGET})
-swig_link_libraries(${RUBY_TARGET} PUBLIC ${CLIENT_TARGET} ${RUBY_LIBRARY})
+add_dependencies(${SWIG_MODULE_${RUBY_TARGET}_REAL_NAME} 
+	${CLIENT_TARGET}
+	${SERVER_TARGET}
+)
+swig_link_libraries(${RUBY_TARGET} PUBLIC 
+	${CLIENT_TARGET} 
+	${SERVER_TARGET}
+	${RUBY_LIBRARY}
+)

@@ -72,10 +72,17 @@ target_include_directories(${JAVA_TARGET_WRAPPER} PRIVATE
 )
 
 # Set dependant projects
-add_dependencies(${JAVA_TARGET_WRAPPER} ${CLIENT_TARGET_STATIC})
+add_dependencies(${JAVA_TARGET_WRAPPER} 
+    ${CLIENT_TARGET_STATIC} 
+    ${SERVER_TARGET_STATIC}
+)
 
 # Link libraries to swig target
-swig_link_libraries(${JAVA_TARGET_WRAPPER} ${CLIENT_TARGET_STATIC})
+swig_link_libraries(${JAVA_TARGET_WRAPPER} 
+    PUBLIC 
+    ${CLIENT_TARGET_STATIC}
+    ${SERVER_TARGET_STATIC}
+)
 
 # Create jar library
 add_jar(${JAVA_TARGET} 
