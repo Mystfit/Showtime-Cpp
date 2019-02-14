@@ -238,12 +238,12 @@ public class Program
         _cancelationTokenSource.Cancel();
         eventloop.Wait();
 
+        //Kill the stage
+        showtime.destroy_server(server);
+
         //Destroy the library
         showtime.destroy();
 
-        //Kill the stage
-        showtime.destroy_server(server);
-        
         Console.WriteLine("Test completed");
         return 0;
     }

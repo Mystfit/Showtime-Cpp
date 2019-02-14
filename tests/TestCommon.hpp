@@ -257,7 +257,7 @@ namespace ZstTest
 		}
 
 	private:
-		void * m_stage_server;
+		ServerHandle m_stage_server;
 	};
 
 

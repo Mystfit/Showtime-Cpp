@@ -3,6 +3,7 @@
 #include <iostream>
 #include <ShowtimeServer.h>
 #include <ZstLogging.h>
+#include <czmq.h>
 
 #ifdef WIN32
 #include <windows.h>
@@ -100,6 +101,9 @@ int main(int argc, char **argv)
 
 	std::cout << "Showtime Stage shutting down" << std::endl;
 	zst_destroy_server(stage);
+
+	//Explicitly shut down ZMQ
+	zsys_shutdown();
 
 	return 0;
 }

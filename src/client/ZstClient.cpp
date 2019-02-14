@@ -105,9 +105,6 @@ void ZstClient::destroy() {
 	set_is_ending(false);
 	set_is_destroyed(true);
 
-	//Destroy zmq context
-	//zsys_shutdown();
-
 	//All done
 	ZstLog::net(LogLevel::notification, "Showtime library destroyed");
 }
@@ -162,9 +159,6 @@ void ZstClient::init_client(const char *client_name, bool debug)
 	m_udp_graph_transport->msg_events()->add_adaptor(this);
 	m_udp_graph_transport->msg_events()->add_adaptor(m_session);
 #endif
-
-	//Setup adaptors to let submodules communicate with client
-	//
 
 	//Transport event loops
 	m_client_event_thread = boost::thread(boost::bind(&ZstClient::transport_event_loop, this));
