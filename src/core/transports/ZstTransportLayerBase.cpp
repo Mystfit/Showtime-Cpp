@@ -1,5 +1,6 @@
 #include "ZstTransportLayerBase.hpp"
 #include "../adaptors/ZstTransportAdaptor.hpp"
+#include "../ZstZMQRefCounter.h"
 
 
 ZstTransportLayerBase::ZstTransportLayerBase() :
@@ -19,11 +20,13 @@ void ZstTransportLayerBase::destroy()
 	m_is_active = false;
 	m_dispatch_events->flush();
 	m_dispatch_events->remove_all_adaptors();
+	zst_zmq_dec_ref();
 }
 
 void ZstTransportLayerBase::init()
 {
 	m_is_active = true;
+	zst_zmq_inc_ref();
 }
 
 ZstEventDispatcher<ZstTransportAdaptor*>* ZstTransportLayerBase::msg_events()

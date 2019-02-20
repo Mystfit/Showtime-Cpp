@@ -51,6 +51,7 @@ public:
 
 	ZST_EXPORT virtual ZstCable * find_cable(const ZstURI & input_path, const ZstURI & output_path);
 	ZST_EXPORT virtual ZstCable * find_cable(ZstInputPlug * input, ZstOutputPlug * output);
+	ZST_EXPORT virtual ZstCableBundle & get_cables(ZstCableBundle & bundle);
 	
 
 	// -------------

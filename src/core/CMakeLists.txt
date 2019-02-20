@@ -51,6 +51,7 @@ list(APPEND Showtime_API_INTERFACE
 # Private headers, only accessible within the Showtime library
 set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstActor.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstZMQRefCounter.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessage.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessageOptions.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMsgID.h"
@@ -94,6 +95,7 @@ set(ZST_CORE_ADAPTOR_HEADERS
 # Core cpp files
 set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstActor.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstZMQRefCounter.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMsgID.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstLogging.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstCable.cpp"

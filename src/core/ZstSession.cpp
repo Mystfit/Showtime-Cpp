@@ -153,6 +153,14 @@ ZstCable * ZstSession::find_cable(ZstInputPlug * input, ZstOutputPlug * output)
 	return find_cable(input->URI(), output->URI());
 }
 
+ZstCableBundle & ZstSession::get_cables(ZstCableBundle & bundle)
+{
+	for (auto c : m_cables) {
+		bundle.add(c);
+	}
+	return bundle;
+}
+
 ZstCable * ZstSession::create_cable(const ZstCable & cable)
 {
 	return create_cable(cable.get_input_URI(), cable.get_output_URI());

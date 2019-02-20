@@ -22,7 +22,8 @@ void ZstStageSession::init()
 
 void ZstStageSession::destroy()
 {
-	for (auto c : m_cables) {
+	ZstCableBundle bundle;
+	for (auto c : get_cables(bundle)) {
 		destroy_cable(c);
 	}
 

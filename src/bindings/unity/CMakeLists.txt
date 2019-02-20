@@ -75,7 +75,7 @@ add_custom_command(
 )
 
 add_custom_target(${UNITY_TARGET} ALL DEPENDS ${UNITY_PACKAGE_PATH})
-add_dependencies(${UNITY_TARGET} ${DOTNET_TARGET} ${SERVER_TARGET})
+add_dependencies(${UNITY_TARGET} ${DOTNET_TARGET})
 
 message(STATUS ${UNITY_PACKAGE_PATH})
 #install(FILES ${UNITY_PACKAGE_PATH} DESTINATION unity)

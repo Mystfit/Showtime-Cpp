@@ -264,8 +264,9 @@ set(SERVER_TARGET "${PROJECT_NAME}Server")
 set(SERVER_LAUNCHER "${PROJECT_NAME}ServerLauncher")
 add_library (${SERVER_TARGET} SHARED "")
 add_executable (${SERVER_LAUNCHER} "")
-include(src/server/CMakeLists.txt)
+list(APPEND Showtime_LIBRARY_TARGETS ${SERVER_TARGET})
 list(APPEND Showtime_APP_TARGETS ${SERVER_LAUNCHER})
+include(src/server/CMakeLists.txt)
 
 
 # Web monitor
@@ -338,9 +339,6 @@ if(BINDINGS_DOTNET OR BINDINGS_UNITY)
         add_custom_target(${DOTNET_TARGET} ALL DEPENDS ${DOTNET_OUTPUT_FILE})
     endif()
     include(src/bindings/dotnet/CMakeLists.txt)
-    if(WIN32)
-        list(APPEND Showtime_LIBRARY_TARGETS ${DOTNET_TARGET})
-    endif()
 endif()
 
 if(BINDINGS_JRUBY)
@@ -402,6 +400,9 @@ set(Showtime_INSTALL_TARGETS
     ${Showtime_APP_TARGETS}
 )
 install(FILES ${Showtime_API_INTERFACE} DESTINATION include/showtime)
+foreach(lib ${SHOWTIME_PUBLIC_SHARED_LINKED_LIBS})
+    install(FILES $<TARGET_FILE:${lib}> DESTINATION bin)
+endforeach()
 
 if(MACOSX)
     # Install framework

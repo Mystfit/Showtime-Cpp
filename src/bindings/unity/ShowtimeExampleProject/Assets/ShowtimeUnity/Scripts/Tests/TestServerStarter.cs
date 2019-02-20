@@ -5,20 +5,11 @@ using UnityEngine;
 
 public class TestServerStarter
 {
-    public Process server_process;
+    public static showtime.ShowtimeServer server;
 
     public void Start()
     {
-        var server_startInfo = new ProcessStartInfo
-        {
-            //Required to redirect standard input/output
-            UseShellExecute = false,
-            RedirectStandardInput = true,
-            FileName = $"{Application.dataPath}/ShowtimeUnity/plugins/x86_64/ShowtimeServer",
-            Arguments = "-t"   // Put server into test mode
-        };
-
-        server_process = Process.Start(server_startInfo);
+        zst_create_server("unity", 40004);
     }
 
     public void Stop()

@@ -1,4 +1,5 @@
 #include "ZstActor.h"
+#include "ZstZMQRefCounter.h"
 #include <czmq.h>
 
 using namespace std;
@@ -13,6 +14,7 @@ ZstActor::~ZstActor()
 
 void ZstActor::destroy()
 {
+	zst_zmq_dec_ref();
 }
 
 void ZstActor::init(const char * name)
@@ -21,6 +23,7 @@ void ZstActor::init(const char * name)
 	m_loop = zloop_new();
 	zloop_set_verbose(m_loop, false);
 	zloop_set_nonstop(m_loop, true);
+	zst_zmq_inc_ref();
 }
 
 void ZstActor::start_loop()
