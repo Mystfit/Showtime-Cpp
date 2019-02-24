@@ -75,6 +75,8 @@ set(ZST_CORE_TRANSPORT_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayerBase.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstGraphTransport.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTCPGraphTransport.h"
+    "${CMAKE_CURRENT_LIST_DIR}/transports/ZstServerSendTransport.h"
+    "${CMAKE_CURRENT_LIST_DIR}/transports/ZstServerRecvTransport.h"
 )
 if(BUILD_DRAFTS)
     list(APPEND ZST_CORE_TRANSPORT_HEADERS
@@ -113,6 +115,8 @@ set(ZST_CORE_TRANSPORT_SRC
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayerBase.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstGraphTransport.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTCPGraphTransport.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/transports/ZstServerSendTransport.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/transports/ZstServerRecvTransport.cpp"
 )
 if(BUILD_DRAFTS)
     list(APPEND ZST_CORE_TRANSPORT_SRC
@@ -227,6 +231,7 @@ target_link_libraries(${CORE_TARGET_OBJECTS}
     PRIVATE 
     ${${CORE_TARGET}_PRIVATE_LINKED_LIBS}
     ${SHOWTIME_PRIVATE_LINKED_LIBS}
+    ${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS}
 )
 
 # Object compile definitions
@@ -241,7 +246,7 @@ set_target_properties(${CORE_TARGET_OBJECTS} PROPERTIES POSITION_INDEPENDENT_COD
 # Static/shared library specific options
 if(BUILD_STATIC)
     list(APPEND CORE_LIBS ${CORE_TARGET_STATIC})
-    target_link_libraries(${CORE_TARGET_STATIC} PRIVATE ${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS})
+    #target_link_libraries(${CORE_TARGET_STATIC} PRIVATE ${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS})
 endif()
 
 if(BUILD_SHARED)
@@ -271,7 +276,7 @@ if(BUILD_SHARED)
         )
     endif()
 
-    target_link_libraries(${CORE_TARGET} PUBLIC ${SHOWTIME_PUBLIC_SHARED_LINKED_LIBS})
+    #target_link_libraries(${CORE_TARGET} PRIVATE ${SHOWTIME_PUBLIC_SHARED_LINKED_LIBS})
 endif()
 
 # Options common to both static/shared libraries
@@ -285,5 +290,6 @@ foreach(TARGET ${CORE_LIBS})
         PRIVATE
         ${${CORE_TARGET}_PRIVATE_LINKED_LIBS}
         ${SHOWTIME_PRIVATE_LINKED_LIBS}
+        ${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS}
     )
 endforeach()

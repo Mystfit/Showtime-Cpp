@@ -2,7 +2,7 @@
 
 #include "ZstMessage.h"
 #include <nlohmann/json.hpp>
-#include <entities/ZstEntityBase.h>
+#include "entities/ZstEntityBase.h"
 
 using nlohmann::json;
 

@@ -19,9 +19,6 @@ set(UNITY_BINARY_FILES "")
 set(UNITY_BINARY_FILES)
 if(WIN32)
     # Copy dotnet target outputs on windows
-    foreach(LIB ${SHOWTIME_PUBLIC_SHARED_LINKED_LIBS})
-        list(APPEND UNITY_BINARY_FILES $<TARGET_FILE:${LIB}>)
-    endforeach()
     list(APPEND UNITY_BINARY_FILES
         $<TARGET_FILE:${CORE_TARGET}>
         $<TARGET_FILE:${CORE_ENTITIES_TARGET}>

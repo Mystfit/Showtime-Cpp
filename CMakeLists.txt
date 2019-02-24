@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13.0)
+cmake_minimum_required(VERSION 3.14.0)
 
 project(Showtime VERSION 0.16.2)
 set(SHOWTIME_NAMESPACE "${PROJECT_NAME}::")
@@ -72,8 +72,8 @@ option(BUILD_SHARED "Build shared Showtime library" ON)
 option(BUILD_DRAFTS "Build with experimental draft support" OFF)
 
 # Set showtime variables
-set(Showtime_COMPILED_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include")
-set(Showtime_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/include")
+set(Showtime_COMPILED_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include/")
+set(Showtime_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/include/showtime/")
 set(Showtime_ALL_INCLUDE_DIRS ${Showtime_COMPILED_INCLUDE_DIRS} ${Showtime_INCLUDE_DIRS})
 set(Showtime_HEADER_DEPENDENCIES_DIR "${CMAKE_SOURCE_DIR}/src/dependencies")
 
@@ -136,8 +136,8 @@ set(Boost_REGEX_TARGET "Boost::regex")
 find_package(MsgPack CONFIG REQUIRED)
 set(msgpackc_TARGET "msgpackc-static")
 
-find_package(nlohmann_json CONFIG REQUIRED)
-set(json_TARGET "nlohmann_json")
+# find_package(nlohmann_json CONFIG REQUIRED)
+# set(json_TARGET "nlohmann_json")
 
 if(WIN32)
     # Find swigwin downloaded using install_dependencies script
@@ -215,9 +215,9 @@ set(SHOWTIME_PUBLIC_SHARED_LINKED_LIBS
     libzmq
 )
 
-set(SHOWTIME_PUBLIC_LINKED_LIBS
-    nlohmann_json
-)
+# set(SHOWTIME_PUBLIC_LINKED_LIBS
+#     nlohmann_json
+# )
 
 
 # ----------------
@@ -399,7 +399,10 @@ set(Showtime_INSTALL_TARGETS
     ${Showtime_LIBRARY_TARGETS} 
     ${Showtime_APP_TARGETS}
 )
-install(FILES ${Showtime_API_INTERFACE} DESTINATION include/showtime)
+
+# Set files to copy
+install(DIRECTORY ${Showtime_ALL_INCLUDE_DIRS} DESTINATION include/showtime)
+#install(FILES ${Showtime_API_INTERFACE} DESTINATION include/showtime)
 foreach(lib ${SHOWTIME_PUBLIC_SHARED_LINKED_LIBS})
     install(FILES $<TARGET_FILE:${lib}> DESTINATION bin)
 endforeach()

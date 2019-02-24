@@ -1,6 +1,7 @@
 #include <memory>
 #include <nlohmann/json.hpp>
-#include <entities/ZstComponent.h>
+
+#include "entities/ZstComponent.h"
 #include "../ZstEventDispatcher.hpp"
 
 ZstComponent::ZstComponent() : 

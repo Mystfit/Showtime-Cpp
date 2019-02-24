@@ -4,7 +4,7 @@
 #include <boost/bimap/list_of.hpp>
 #include <boost/assign/list_of.hpp>
 #include <nlohmann/json.hpp>
-#include <ZstLogging.h>
+#include "ZstLogging.h"
 
 using namespace nlohmann;
 

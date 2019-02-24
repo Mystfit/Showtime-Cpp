@@ -11,5 +11,6 @@ ServerHandle zst_create_server(const char * server_name, int port)
 void zst_destroy_server(const ServerHandle & server)
 {
 	ZstStage * server_cast = (ZstStage*)server.server_ptr;
+	server_cast->destroy();
 	delete server_cast;
 }

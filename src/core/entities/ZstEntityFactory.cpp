@@ -1,9 +1,9 @@
 #include <exception>
 #include <nlohmann/json.hpp>
 #include <msgpack.hpp>
-#include <entities/ZstEntityFactory.h>
+#include "entities/ZstEntityFactory.h"
 #include "../ZstEventDispatcher.hpp"
-#include <adaptors/ZstSynchronisableAdaptor.hpp>
+#include "adaptors/ZstSynchronisableAdaptor.hpp"
 
 //Template instatiations
 template class ZstEventDispatcher<ZstFactoryAdaptor*>;

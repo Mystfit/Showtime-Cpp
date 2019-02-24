@@ -1,5 +1,5 @@
 #include "ZstPerformerStageProxy.h"
-#include <ZstLogging.h>
+#include "ZstLogging.h"
 
 ZstPerformerStageProxy::ZstPerformerStageProxy(const std::string & name, const std::string & reliable_address, const std::string & unreliable_address) :
 	ZstPerformer(name.c_str()),

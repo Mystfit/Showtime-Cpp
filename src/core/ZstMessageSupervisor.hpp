@@ -3,7 +3,7 @@
 #include <cf/cfuture.h>
 #include <cf/time_watcher.h>
 #include <concurrentqueue.h>
-#include <ZstExports.h>
+#include "ZstExports.h"
 #include "ZstMessageOptions.h"
 #include "ZstMsgID.h"
 

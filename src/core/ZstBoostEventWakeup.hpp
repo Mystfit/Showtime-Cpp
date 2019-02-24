@@ -2,7 +2,7 @@
 #include <memory>
 #include <boost/fiber/mutex.hpp>
 #include <boost/fiber/condition_variable.hpp>
-#include <ZstExports.h>
+#include "ZstExports.h"
 #include "ZstEventWakeup.hpp"
 
 class ZstBoostEventWakeup : public ZstEventWakeup {

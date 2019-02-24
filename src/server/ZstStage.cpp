@@ -10,8 +10,6 @@
 //Stage headers
 #include "ZstPerformerStageProxy.h"
 
-#include <czmq.h>
-
 ZstStage::ZstStage() : 
 	m_is_destroyed(false),
 	m_session(NULL),
@@ -19,7 +17,7 @@ ZstStage::ZstStage() :
 	m_heartbeat_timer(m_io)
 {
 	m_session = new ZstStageSession();
-	m_router_transport = new ZstStageRouterTransport();
+	m_router_transport = new ZstServerRecvTransport();
 
 	//Register event conditions
 	m_event_condition = std::make_shared<ZstBoostEventWakeup>();

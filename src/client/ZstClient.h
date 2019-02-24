@@ -27,7 +27,7 @@ class ZstUDPGraphTransport;
 class ZstMessage;
 class ZstPerformanceMessage;
 class ZstClientSession;
-class ZstClientTransport;
+class ZstServerSendTransport;
 
 struct ZstClientIOLoop {
 public:
@@ -128,7 +128,7 @@ private:
 	ZstClientSession * m_session;
 	ZstTCPGraphTransport * m_tcp_graph_transport;
 	ZstUDPGraphTransport * m_udp_graph_transport;
-	ZstClientTransport * m_client_transport;
+	ZstServerSendTransport * m_client_transport;
 
 	//Timers
 	boost::thread m_client_timer_thread;

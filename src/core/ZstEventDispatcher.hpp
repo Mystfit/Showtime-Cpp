@@ -6,9 +6,9 @@
 #include <unordered_map>
 #include <functional>
 #include <concurrentqueue.h>
-#include <ZstLogging.h>
+#include "ZstLogging.h"
 #include <mutex>
-#include <adaptors/ZstEventAdaptor.hpp>
+#include "adaptors/ZstEventAdaptor.hpp"
 
 #include "ZstEventWakeup.hpp"
 

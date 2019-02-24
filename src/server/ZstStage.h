@@ -16,10 +16,10 @@
 #include "../core/ZstActor.h"
 #include "../core/ZstStageMessage.h"
 #include "../core/adaptors/ZstTransportAdaptor.hpp"
+#include "../core/transports/ZstServerRecvTransport.h"
 
 //Stage headers
 #include "ZstStageSession.h"
-#include "ZstStageRouterTransport.h"
 
 //Forwards
 class ZstBoostEventWakeup;
@@ -55,5 +55,5 @@ private:
 	ZstStageSession * m_session;
 	
 	//Transports
-	ZstStageRouterTransport * m_router_transport;
+	ZstServerRecvTransport * m_router_transport;
 };

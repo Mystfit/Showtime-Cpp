@@ -9,7 +9,6 @@ set(ZST_SERVER_PRIVATE_HEADERS
 	"${CMAKE_CURRENT_LIST_DIR}/ZstStageModule.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstStageSession.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstStageHierarchy.h"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstStageRouterTransport.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstPerformerStageProxy.h"
 )
 
@@ -20,7 +19,6 @@ set(ZST_SERVER_SRC
 	"${CMAKE_CURRENT_LIST_DIR}/ZstStageModule.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstStageHierarchy.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstStageSession.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstStageRouterTransport.cpp"
 )
 
 set(ZST_SERVER_LAUNCHER_SRC

@@ -7,7 +7,7 @@
 #include <iostream>
 #include <ZstConstants.h>
 #include <ZstSerialisable.h>
-#include <ZstExports.h>
+#include "ZstExports.h"
 #include <mutex>
 
 #include <boost/bimap/bimap.hpp>

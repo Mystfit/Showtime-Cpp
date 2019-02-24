@@ -1,7 +1,7 @@
 #pragma once
 
-#include <ZstExports.h>
-#include <adaptors/ZstEventAdaptor.hpp>
+#include "ZstExports.h"
+#include "adaptors/ZstEventAdaptor.hpp"
 #include "../transports/ZstTransportLayerBase.hpp"
 
 //Forwards

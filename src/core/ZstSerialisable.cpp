@@ -1,5 +1,4 @@
-#include <ZstSerialisable.h>
-#include <nlohmann/json.hpp>
+#include "ZstSerialisable.h"
 
 json ZstSerialisable::as_json() const
 {

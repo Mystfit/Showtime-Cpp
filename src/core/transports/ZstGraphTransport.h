@@ -3,7 +3,7 @@
 #include "../liasons/ZstPlugLiason.hpp"
 #include "../ZstPerformanceMessage.h"
 #include "ZstTransportLayer.h"
-#include <ZstExports.h>
+#include "ZstExports.h"
 
 #define PERFORMANCE_GROUP "p"
 #define HANDSHAKE_GROUP "h"

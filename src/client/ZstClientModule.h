@@ -1,9 +1,10 @@
 #pragma once
 
+#include <memory>
+
 #include "../core/ZstEventDispatcher.hpp"
 #include "../core/adaptors/ZstTransportAdaptor.hpp"
 #include "../core/adaptors/ZstModuleAdaptor.hpp"
-#include <memory>
 
 //Forwards
 class ZstEventWakeup;

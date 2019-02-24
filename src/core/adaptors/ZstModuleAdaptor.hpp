@@ -1,7 +1,7 @@
 #pragma once
 
-#include <adaptors/ZstHierarchyAdaptor.hpp>
-#include <adaptors/ZstSessionAdaptor.hpp>
+#include "adaptors/ZstHierarchyAdaptor.hpp"
+#include "adaptors/ZstSessionAdaptor.hpp"
 
 class ZstModuleAdaptor : public ZstHierarchyAdaptor
 {

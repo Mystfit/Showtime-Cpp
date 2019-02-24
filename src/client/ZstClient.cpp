@@ -4,14 +4,12 @@
 #ifdef ZST_BUILD_DRAFT_API
 #include "../core/transports/ZstUDPGraphTransport.h"
 #endif
+#include "../core/transports/ZstServerSendTransport.h"
 #include "../core/ZstMessage.h"
 #include "../core/ZstPerformanceMessage.h"
 #include "../core/ZstBoostEventWakeup.hpp"
 
 #include "ZstClientSession.h"
-#include "ZstClientTransport.h"
-
-#include <czmq.h>
 
 
 ZstClient::ZstClient() :
@@ -26,7 +24,7 @@ ZstClient::ZstClient() :
 {
 	//Message and transport modules
 	//These are specified by the client based on what transport type we want to use
-	m_client_transport = new ZstClientTransport();
+	m_client_transport = new ZstServerSendTransport();
 	m_tcp_graph_transport = new ZstTCPGraphTransport();
 
 #ifdef ZST_BUILD_DRAFT_API

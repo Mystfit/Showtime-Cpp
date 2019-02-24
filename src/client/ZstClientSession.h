@@ -5,7 +5,7 @@
 */
 
 //Core API
-#include <ZstCore.h>
+#include "ZstCore.h"
 #include "../core/ZstPerformanceMessage.h"
 #include "../core/ZstStageMessage.h"
 #include "../core/ZstMessage.h"
@@ -21,8 +21,8 @@
 #include "../core/liasons/ZstSynchronisableLiason.hpp"
 
 //Adaptors
-#include <adaptors/ZstSessionAdaptor.hpp>
-#include <adaptors/ZstSynchronisableAdaptor.hpp>
+#include "adaptors/ZstSessionAdaptor.hpp"
+#include "adaptors/ZstSynchronisableAdaptor.hpp"
 
 class ZstClientSession : 
 	public ZstSession,

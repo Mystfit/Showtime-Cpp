@@ -9,7 +9,6 @@ set(ZST_CLIENT_PRIVATE_HEADERS
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientModule.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientHierarchy.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientSession.h"
-  "${CMAKE_CURRENT_LIST_DIR}/ZstClientTransport.h"
   #"${CMAKE_CURRENT_LIST_DIR}/ZstHTTPTransport.h"
 )
 
@@ -19,7 +18,6 @@ set(ZST_CLIENT_SRC
   "${CMAKE_CURRENT_LIST_DIR}/ZstClient.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientHierarchy.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientSession.cpp"
-  "${CMAKE_CURRENT_LIST_DIR}/ZstClientTransport.cpp"
   #"${CMAKE_CURRENT_LIST_DIR}/ZstHTTPTransport.cpp"
 )
 
@@ -34,7 +32,6 @@ if(BUILD_STATIC)
     PUBLIC
     ${CORE_TARGET_STATIC}
     PRIVATE
-    ${SHOWTIME_PRIVATE_LINKED_LIBS}
     ${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS}
   )
   add_dependencies(${CLIENT_TARGET_STATIC} ${CORE_TARGET_STATIC})
@@ -50,10 +47,7 @@ if(BUILD_SHARED)
       )
   endif(WIN32)
 
-  target_link_libraries(${CLIENT_TARGET} 
-    PUBLIC ${CORE_TARGET}
-    PRIVATE ${SHOWTIME_PRIVATE_LINKED_LIBS}
-  )
+  target_link_libraries(${CLIENT_TARGET} PUBLIC ${CORE_TARGET})
 
   add_dependencies(${CLIENT_TARGET} ${CORE_TARGET})
   list(APPEND CLIENT_LIBS ${CLIENT_TARGET})
@@ -68,6 +62,8 @@ foreach(TARGET ${CLIENT_LIBS})
     ${ZST_CLIENT_PRIVATE_HEADERS}
     ${ZST_CLIENT_SRC}
   )
+
+  target_link_libraries(${TARGET} PRIVATE ${SHOWTIME_PRIVATE_LINKED_LIBS})
 
   # Include source dependencies in client target
   target_include_directories(${TARGET} PRIVATE 

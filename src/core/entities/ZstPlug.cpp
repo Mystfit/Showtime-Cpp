@@ -2,12 +2,12 @@
 #include <msgpack.hpp>
 #include <nlohmann/json.hpp>
 
-#include <entities/ZstPlug.h>
-#include <ZstCable.h>
+#include "entities/ZstPlug.h"
+#include "ZstCable.h"
 
 #include "../ZstValue.h"
 #include "../ZstEventDispatcher.hpp"
-#include "../src/core/adaptors/ZstTransportAdaptor.hpp"
+#include "../adaptors/ZstTransportAdaptor.hpp"
 
 using namespace std;
 

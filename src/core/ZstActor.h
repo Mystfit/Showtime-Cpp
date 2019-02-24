@@ -3,7 +3,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <functional>
-#include <ZstExports.h>
+#include "ZstExports.h"
 
 //Forward declared typedefs from CZMQ
 typedef struct _zloop_t zloop_t;

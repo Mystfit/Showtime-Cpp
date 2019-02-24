@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ZstExports.h>
+#include "ZstExports.h"
 #include "ZstReaper.h"
 
 class ZstModule {

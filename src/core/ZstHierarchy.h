@@ -3,13 +3,13 @@
 #include <mutex>
 
 #include <ZstURI.h>
-#include <ZstExports.h>
-#include <entities/ZstEntityFactory.h>
-#include <entities/ZstEntityBase.h>
-#include <entities/ZstPlug.h>
-#include <entities/ZstPerformer.h>
-#include <adaptors/ZstHierarchyAdaptor.hpp>
-#include <adaptors/ZstEntityAdaptor.hpp>
+#include "ZstExports.h"
+#include "entities/ZstEntityFactory.h"
+#include "entities/ZstEntityBase.h"
+#include "entities/ZstPlug.h"
+#include "entities/ZstPerformer.h"
+#include "adaptors/ZstHierarchyAdaptor.hpp"
+#include "adaptors/ZstEntityAdaptor.hpp"
 
 #include "ZstEventDispatcher.hpp"
 #include "ZstModule.h"

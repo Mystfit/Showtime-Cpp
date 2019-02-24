@@ -1,12 +1,12 @@
 #pragma once
 
-#include <ZstLogging.h>
+#include "ZstLogging.h"
 
-#include <ZstExports.h>
-#include <entities/ZstEntityFactory.h>
-#include <adaptors/ZstSessionAdaptor.hpp>
-#include <adaptors/ZstEntityAdaptor.hpp>
-#include <adaptors/ZstComputeAdaptor.hpp>
+#include "ZstExports.h"
+#include "entities/ZstEntityFactory.h"
+#include "adaptors/ZstSessionAdaptor.hpp"
+#include "adaptors/ZstEntityAdaptor.hpp"
+#include "adaptors/ZstComputeAdaptor.hpp"
 
 #include "ZstModule.h"
 #include "ZstHierarchy.h"
