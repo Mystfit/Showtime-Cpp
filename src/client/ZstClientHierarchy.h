@@ -44,6 +44,7 @@ public:
 	
 	void on_receive_msg(ZstMessage * msg) override;
 	void on_publish_entity_update(ZstEntityBase * entity) override;
+	void on_request_entity_activation(ZstEntityBase * entity) override;
 	
 
 	// ------------------------------

@@ -93,6 +93,11 @@ void ZstClientHierarchy::on_publish_entity_update(ZstEntityBase * entity)
 	}
 }
 
+void ZstClientHierarchy::on_request_entity_activation(ZstEntityBase * entity)
+{
+	activate_entity(entity, ZstTransportSendType::ASYNC_REPLY, 0);
+}
+
 void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
 {
 	activate_entity(entity, sendtype, 0);

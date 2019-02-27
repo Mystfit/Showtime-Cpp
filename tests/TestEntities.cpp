@@ -7,12 +7,12 @@ void test_create_entities(){
     
     OutputComponent * test_output_sync = new OutputComponent("entity_create_test_sync");
     
-    ZstLog::app(LogLevel::debug, "Testing entity sync activation");
+    ZstLog::app(LogLevel::notification, "Testing entity sync activation");
     zst_activate_entity(test_output_sync);
     assert(test_output_sync->is_activated());
     assert(zst_find_entity(test_output_sync->URI()));
     
-    ZstLog::app(LogLevel::debug, "Testing entity sync deactivation");
+    ZstLog::app(LogLevel::notification, "Testing entity sync deactivation");
     zst_deactivate_entity(test_output_sync);
     assert(!test_output_sync->is_activated());
     assert(!zst_find_entity(test_output_sync->URI()));
@@ -24,7 +24,7 @@ void test_create_entities(){
     TestSynchronisableEvents * entity_sync = new TestSynchronisableEvents();
     test_output_async->add_adaptor(entity_sync);
         
-    ZstLog::app(LogLevel::debug, "Testing entity async activation");
+    ZstLog::app(LogLevel::notification, "Testing entity async activation");
     zst_activate_entity_async(test_output_async);
     wait_for_event(entity_sync, 1);
     assert(entity_sync->num_calls() == 1);
@@ -36,7 +36,7 @@ void test_create_entities(){
     ZstURI localPlug_uri_via_entity = test_output_async->output()->URI();
     assert(ZstURI::equal(localPlug_uri, localPlug_uri_via_entity));
 
-    ZstLog::app(LogLevel::debug, "Testing entity async deactivation");
+    ZstLog::app(LogLevel::notification, "Testing entity async deactivation");
     zst_deactivate_entity_async(test_output_async);
     wait_for_event(entity_sync, 1);
     assert(entity_sync->num_calls() == 1);
@@ -65,23 +65,24 @@ void test_hierarchy() {
     assert(zst_find_entity(child->URI()));
     
     //Test child removal from parent
-    ZstLog::app(LogLevel::debug, "Testing child removal from parent");
+    ZstLog::app(LogLevel::notification, "Testing child removal from parent");
     ZstURI child_URI = ZstURI(child->URI());
     zst_deactivate_entity(child);
     assert(!parent->walk_child_by_URI(child_URI));
     assert(!zst_find_entity(child_URI));
-    
+
     //Test child activation and deactivation callbacks
-    ZstLog::app(LogLevel::debug, "Test child activation callback");
+    ZstLog::app(LogLevel::notification, "Test auto child activation and callback");
     TestSynchronisableEvents * child_activation = new TestSynchronisableEvents();
     child->add_adaptor(child_activation);
     parent->add_child(child);
-    
-    zst_activate_entity(child);
+
+	wait_for_event(child_activation, 1);
+	assert(child->is_activated());
     assert(child_activation->num_calls() == 1);
     child_activation->reset_num_calls();
 
-    ZstLog::app(LogLevel::debug, "Test child deactivation callback");
+    ZstLog::app(LogLevel::notification, "Test child deactivation callback");
     zst_deactivate_entity(child);
     assert(child_activation->num_calls() == 1);
     child_activation->reset_num_calls();
@@ -90,7 +91,6 @@ void test_hierarchy() {
     
     //Test removing parent removes child
     parent->add_child(child);
-    zst_activate_entity(child);
     
     ZstURI parent_URI = ZstURI(parent->URI());
     zst_deactivate_entity(parent);

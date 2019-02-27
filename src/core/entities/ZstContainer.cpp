@@ -150,6 +150,10 @@ void ZstContainer::add_child(ZstEntityBase * child) {
 
 	ZstEntityBase::add_child(child);
     m_children[child->URI()] = child;
+
+	if (is_activated()) {
+		entity_events()->invoke([child](ZstEntityAdaptor * adp) { adp->on_request_entity_activation(child); });
+	}
 }
 
 void ZstContainer::remove_child(ZstEntityBase * child) {
