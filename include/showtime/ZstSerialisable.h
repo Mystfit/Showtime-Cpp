@@ -3,7 +3,8 @@
 #ifndef SWIG
 #include "nlohmann/json.hpp"
 #endif
-using json = nlohmann::json;
+using nlohmann::json;
+//using json = nlohmann::json;
 #include "ZstExports.h"
 
 class ZstSerialisable {
