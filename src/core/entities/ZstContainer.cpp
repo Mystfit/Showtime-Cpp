@@ -133,16 +133,13 @@ void ZstContainer::set_parent(ZstEntityBase * entity)
     if(is_destroyed()) return;
 
     ZstComponent::set_parent(entity);
-    
+
 	//Removing and re-adding children will update their URI
-	auto children = m_children;
-	for (auto child : children) {
-        this->remove_child(child.second);
+	ZstEntityBundle bundle;
+	for (auto child : get_child_entities(bundle)) {
+		this->remove_child(child);
+		this->add_child(child);
 	}
-    
-    for(auto child : children){
-        this->add_child(child.second);
-    }
 }
 
 void ZstContainer::add_child(ZstEntityBase * child) {
