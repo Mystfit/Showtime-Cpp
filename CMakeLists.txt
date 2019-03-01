@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.14.0)
+cmake_minimum_required(VERSION 3.13.0)
 
-project(Showtime VERSION 0.16.2)
+project(Showtime VERSION 0.17.0)
 set(SHOWTIME_NAMESPACE "${PROJECT_NAME}::")
 
 # Use C14
@@ -261,10 +261,17 @@ include(src/client/CMakeLists.txt)
 # Server binary
 # -------------
 set(SERVER_TARGET "${PROJECT_NAME}Server")
+set(SERVER_TARGET_STATIC "${PROJECT_NAME}ServerStatic")
 set(SERVER_LAUNCHER "${PROJECT_NAME}ServerLauncher")
-add_library (${SERVER_TARGET} SHARED "")
+if(BUILD_STATIC)
+    add_library (${SERVER_TARGET_STATIC} STATIC "")
+    list(APPEND Showtime_LIBRARY_TARGETS ${SERVER_TARGET_STATIC})
+endif()
+if(BUILD_SHARED)
+    add_library (${SERVER_TARGET} SHARED "")
+    list(APPEND Showtime_LIBRARY_TARGETS ${SERVER_TARGET})
+endif()
 add_executable (${SERVER_LAUNCHER} "")
-list(APPEND Showtime_LIBRARY_TARGETS ${SERVER_TARGET})
 list(APPEND Showtime_APP_TARGETS ${SERVER_LAUNCHER})
 include(src/server/CMakeLists.txt)
 
@@ -359,7 +366,6 @@ if(BINDINGS_JAVA)
 endif()
 
 
-
 if(BINDINGS_UNITY)
     set(UNITY_TARGET ${PROJECT_NAME}Unity)
     include(src/bindings/unity/CMakeLists.txt)
@@ -367,9 +373,14 @@ endif()
 
 if(BINDINGS_PYTHON)
     set(PYTHON_TARGET ${PROJECT_NAME}Python)
-    set(BINDINGS_PYTHON_VERSION 3.7 CACHE STRING "Python version")
+    set(BINDINGS_PYTHON_VERSION_MAJOR 3 CACHE STRING "Python major version")
+    set(BINDINGS_PYTHON_VERSION_MINOR 7 CACHE STRING "Python minor version")
+    set(BINDINGS_PYTHON_VERSION_PATH 0 CACHE STRING "Python patch version")
+    set(BINDINGS_PYTHON_VERSION ${BINDINGS_PYTHON_VERSION_MAJOR}.${BINDINGS_PYTHON_VERSION_MINOR}.${BINDINGS_PYTHON_VERSION_PATCH})
+    find_package(Python${BINDINGS_PYTHON_VERSION_MAJOR} ${BINDINGS_PYTHON_VERSION} COMPONENTS Interpreter Development REQUIRED)
+    set(Python_EXECUTABLE ${Python${BINDINGS_PYTHON_VERSION_MAJOR}_EXECUTABLE})
+    set(PYTHON_LIB_TARGET Python${BINDINGS_PYTHON_VERSION_MAJOR}::Python)
     add_custom_target(${PYTHON_TARGET} ALL)
-    find_package(Python ${BINDINGS_PYTHON_VERSION} COMPONENTS Interpreter Development REQUIRED)
     include(src/bindings/python/CMakeLists.txt)
 endif()
 

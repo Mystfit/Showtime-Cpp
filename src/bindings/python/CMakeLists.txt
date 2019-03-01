@@ -57,7 +57,7 @@ swig_link_libraries(${PYTHON_TARGET_WRAPPER}
     PUBLIC
     ${CLIENT_TARGET_STATIC}
     ${SERVER_TARGET_STATIC}
-    Python::Python
+    ${PYTHON_LIB_TARGET}
 )
 
 # Copy files to build tree

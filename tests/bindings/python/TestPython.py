@@ -47,11 +47,7 @@ if __name__ == "__main__":
 
     server = None
     
-    # Start server
-    if len(sys.argv) > 1:
-        server_exe = os.path.abspath(sys.argv[1])
-        print("Starting Showtime server from ".format(server_exe))
-        server = subprocess.Popen([server_exe, "-t"], stdin=subprocess.PIPE, universal_newlines=True)
+    ZST.create_server("python_server", ZST.STAGE_ROUTER_PORT);
     
     # Start client
     ZST.init("python_test", True)
@@ -92,9 +88,7 @@ if __name__ == "__main__":
     ZST.destroy()
 
     if server:
-        term = "$TERM\n"
-        server.communicate(term)
-        server.wait()
+        ZST.destroy_server(server)
     
     print("Python test finished with status {}".format(status))
     if(status):
