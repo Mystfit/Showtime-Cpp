@@ -2,9 +2,9 @@
 #include <cf/cfuture.h>
 
 
-ZstStageSession::ZstStageSession() : 
-	m_hierarchy(NULL),
-	m_connection_watcher(std::make_shared<cf::time_watcher>(), STAGE_TIMEOUT)
+ZstStageSession::ZstStageSession() :
+	m_connection_watcher(std::make_shared<cf::time_watcher>(), STAGE_TIMEOUT),
+    m_hierarchy(NULL)
 {
 	m_hierarchy = new ZstStageHierarchy();
 }
@@ -75,7 +75,7 @@ void ZstStageSession::on_receive_msg(ZstMessage * msg)
 
 	//Return response to sender
 	if (response != ZstMsgKind::EMPTY) {
-		router_events().invoke([response, &sender_identity, &msg, &stage_msg](ZstTransportAdaptor * adp) {
+		router_events().invoke([response, &sender_identity, &stage_msg](ZstTransportAdaptor * adp) {
 			adp->on_send_msg(response, {
 				{ get_msg_arg_name(ZstMsgArg::DESTINATION), sender_identity },
 				{ get_msg_arg_name(ZstMsgArg::MSG_ID), stage_msg->id() }

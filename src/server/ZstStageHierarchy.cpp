@@ -60,7 +60,7 @@ void ZstStageHierarchy::on_receive_msg(ZstMessage * msg)
 			{ get_msg_arg_name(ZstMsgArg::DESTINATION), sender_identity },
 			{ get_msg_arg_name(ZstMsgArg::MSG_ID), stage_msg->id() }
 		};
-		router_events().invoke([response, &args, &msg](ZstTransportAdaptor * adp) {
+		router_events().invoke([response, &args](ZstTransportAdaptor * adp) {
 			adp->on_send_msg(response, args);
 		});
 	}
@@ -241,7 +241,7 @@ ZstMsgKind ZstStageHierarchy::create_entity_from_factory_handler(ZstStageMessage
 	ZstEntityFactory * factory = dynamic_cast<ZstEntityFactory*>(find_entity(factory_path));
 	if (!factory) {
 		ZstLog::net(LogLevel::error, "Could not find factory {}", factory_path.path());
-		ZstMsgKind::ERR_ENTITY_NOT_FOUND;
+		return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
 	}
 
 	//Find performer who owns the factory
@@ -263,9 +263,9 @@ ZstMsgKind ZstStageHierarchy::create_entity_from_factory_handler(ZstStageMessage
 		{ get_msg_arg_name(ZstMsgArg::DESTINATION), get_socket_ID(factory_performer) },
 		{ get_msg_arg_name(ZstMsgArg::MSG_ID), request_id }
 	};
-	router_events().invoke([this, msg, &args, factory_path, sender](ZstTransportAdaptor * adp)
+	router_events().invoke([msg, &args, factory_path](ZstTransportAdaptor * adp)
 	{
-		adp->on_send_msg(msg->kind(), ZstTransportSendType::ASYNC_REPLY, args, [this, msg, factory_path, sender](ZstMessageReceipt receipt)
+		adp->on_send_msg(msg->kind(), ZstTransportSendType::ASYNC_REPLY, args, [factory_path](ZstMessageReceipt receipt)
 		{
 			if (receipt.status == ZstMsgKind::ERR_ENTITY_NOT_FOUND) {
 				ZstLog::net(LogLevel::error, "Creatable request failed at origin with status {}", get_msg_name(receipt.status));

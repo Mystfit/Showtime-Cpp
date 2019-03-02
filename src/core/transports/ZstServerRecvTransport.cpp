@@ -98,7 +98,7 @@ void ZstServerRecvTransport::send_message_impl(ZstMessage * msg)
 	zmsg_append(m, &empty);
 	zmsg_addstr(m, stage_msg->as_json_str().c_str());
 	zmsg_send(&m, m_performer_router);
-	int rc = zmsg_send(&m, m_performer_router);
+	zmsg_send(&m, m_performer_router);
 	int err = zmq_errno();
 	if (err > 0) {
 		if(err == EHOSTUNREACH)
@@ -115,7 +115,7 @@ void ZstServerRecvTransport::on_receive_msg(ZstMessage * msg)
 	this->ZstTransportLayerBase::on_receive_msg(msg);
 
 	//Publish message to other modules
-	msg_events()->defer([msg, this](ZstTransportAdaptor * adaptor) {
+	msg_events()->defer([msg](ZstTransportAdaptor * adaptor) {
 		adaptor->on_receive_msg(msg);
 	}, [msg, this](ZstEventStatus status) {
 		this->release_msg(static_cast<ZstStageMessage*>(msg));

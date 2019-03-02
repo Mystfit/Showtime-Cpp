@@ -12,9 +12,9 @@
 
 ZstStage::ZstStage() : 
 	m_is_destroyed(false),
-	m_session(NULL),
-	m_router_transport(NULL),
-	m_heartbeat_timer(m_io)
+	m_heartbeat_timer(m_io),
+    m_session(NULL),
+    m_router_transport(NULL)
 {
 	m_session = new ZstStageSession();
 	m_router_transport = new ZstServerRecvTransport();

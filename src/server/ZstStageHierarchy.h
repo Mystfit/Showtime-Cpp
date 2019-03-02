@@ -36,7 +36,7 @@ public:
 	// ----------------
 	// Proxies
 	// ----------------
-	ZstMsgKind add_proxy_entity(const ZstEntityBase & entity, ZstMsgID request_ID, ZstPerformer * sender);
+	virtual ZstMsgKind add_proxy_entity(const ZstEntityBase & entity, ZstMsgID request_ID, ZstPerformer * sender);
 	ZstMsgKind update_proxy_entity(const ZstEntityBase & entity, ZstMsgID request_ID);
 	ZstMsgKind remove_proxy_entity(ZstEntityBase * entity) override;
 
