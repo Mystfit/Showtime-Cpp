@@ -18,6 +18,10 @@ set(MANIFEST_IN_IN          "${CMAKE_CURRENT_LIST_DIR}/MANIFEST.in.in")
 set(MANIFEST_IN_PARTIAL     "${CMAKE_SWIG_OUTDIR}/MANIFEST-partial.in")
 set(MANIFEST_IN             "${CMAKE_SWIG_OUTDIR}/MANIFEST.in")
 set(BUILD_STAMP             "${CMAKE_CURRENT_BINARY_DIR}/build/python/timestamp")
+set(PYTHON_LINK_LIBS 
+    ${CLIENT_TARGET_STATIC}
+    ${SERVER_TARGET_STATIC}
+)
 
 # Create setup.py
 configure_file(${SETUP_PY_IN} ${SETUP_PY} @ONLY)
@@ -43,7 +47,22 @@ set_target_properties(${PYTHON_TARGET_WRAPPER} PROPERTIES
     SWIG_SUPPORT_FILES_DIRECTORY ${SWIG_LANGUAGE_DIR}
     OUTPUT_NAME showtime
     DEBUG_POSTFIX ""
+    CXX_STANDARD 14
 )
+
+if(BINDINGS_PYTHON_LINK_AT_RUNTIME)
+    if(MACOSX OR LINUX)
+        # Since we don't link agains the Python libs we need to explicitly add the python include dir
+        target_include_directories(${PYTHON_TARGET_WRAPPER} PRIVATE ${PYTHON_INCLUDE_DIR})
+
+        # Compiler option to ignore unresolved externals, resolve at runtime
+        target_link_options(${PYTHON_TARGET_WRAPPER} PRIVATE -undefined dynamic_lookup)
+    elseif(WIN32)
+        message(WARNING "Windows runtime linking not implemented")
+    endif()
+else()
+    list(APPEND PYTHON_LINK_LIBS ${PYTHON_LIB_TARGET})
+endif()
 
 # Set dependant projects
 add_dependencies(${PYTHON_TARGET_WRAPPER} 
@@ -53,11 +72,7 @@ add_dependencies(${PYTHON_TARGET_WRAPPER}
 add_dependencies(${PYTHON_TARGET} ${PYTHON_TARGET_WRAPPER})
 
 # Link libraries to swig target
-swig_link_libraries(${PYTHON_TARGET_WRAPPER} 
-    PUBLIC
-    ${CLIENT_TARGET_STATIC}
-    ${SERVER_TARGET_STATIC}
-    ${PYTHON_LIB_TARGET}
+swig_link_libraries(${PYTHON_TARGET_WRAPPER} PUBLIC ${PYTHON_LINK_LIBS} #
 )
 
 # Copy files to build tree

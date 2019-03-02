@@ -136,7 +136,7 @@ void ZstContainer::set_parent(ZstEntityBase * entity)
 
 	//Removing and re-adding children will update their URI
 	ZstEntityBundle bundle;
-	for (auto child : get_child_entities(bundle)) {
+	for (auto child : get_child_entities(bundle, false)) {
 		this->remove_child(child);
 		this->add_child(child);
 	}
