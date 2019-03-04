@@ -1,20 +1,27 @@
 #include "ZstPerformerStageProxy.h"
-#include <ZstLogging.h>
+#include "ZstLogging.h"
 
-ZstPerformerStageProxy::ZstPerformerStageProxy(const std::string & name, const std::string & ip_address) : 
+ZstPerformerStageProxy::ZstPerformerStageProxy(const std::string & name, const std::string & reliable_address, const std::string & unreliable_address) :
 	ZstPerformer(name.c_str()),
-	m_address(ip_address)
+	m_reliable_address(reliable_address),
+	m_unreliable_address(unreliable_address)
 {
 }
 
-ZstPerformerStageProxy::ZstPerformerStageProxy(const ZstPerformer & other, std::string address) : ZstPerformer(other)
+ZstPerformerStageProxy::ZstPerformerStageProxy(const ZstPerformer & other, const std::string & reliable_address, const std::string & unreliable_address) : ZstPerformer(other)
 {
-	m_address = address;
+	m_reliable_address = reliable_address;
+	m_unreliable_address = unreliable_address;
 }
 
-const std::string & ZstPerformerStageProxy::ip_address()
+const std::string & ZstPerformerStageProxy::reliable_address()
 {
-	return m_address;
+	return m_reliable_address;
+}
+
+const std::string & ZstPerformerStageProxy::unreliable_address()
+{
+	return m_unreliable_address;
 }
 
 void ZstPerformerStageProxy::add_subscriber_peer(ZstPerformerStageProxy * client)

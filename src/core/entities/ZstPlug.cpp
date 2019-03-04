@@ -1,54 +1,31 @@
 #include <memory>
 #include <msgpack.hpp>
+#include <nlohmann/json.hpp>
 
-#include <entities/ZstPlug.h>
-#include <ZstCable.h>
+#include "entities/ZstPlug.h"
+#include "ZstCable.h"
 
 #include "../ZstValue.h"
-#include <ZstEventDispatcher.hpp>
+#include "../ZstEventDispatcher.hpp"
+#include "../adaptors/ZstTransportAdaptor.hpp"
 
 using namespace std;
-
-//--------------------
-//Plug cables iterator
-//--------------------
-
-ZstPlugIterator::ZstPlugIterator(const ZstPlug * plug, ZstCableList::iterator it) :
-	m_plug(plug),
-	m_it(it)
-{
-}
-
-bool ZstPlugIterator::operator!=(const ZstPlugIterator & other)
-{
-	return (m_it != other.m_it);
-}
-
-const ZstPlugIterator & ZstPlugIterator::operator++()
-{
-	m_it++;
-	return *this;
-}
-
-ZstCable * ZstPlugIterator::operator*() const
-{
-	return *m_it;
-}
-
 
 //--------------------
 // ZstPlug 
 //--------------------
 
 ZstPlug::ZstPlug() :
-	ZstEntityBase("")
+	ZstEntityBase(""),
+	m_max_connected_cables(-1)
 {
 	set_entity_type(PLUG_TYPE);
 	m_value = new ZstValue(ZST_NONE);
 }
 
 ZstPlug::ZstPlug(const char * name, ZstValueType t) : 
-	ZstEntityBase(name)
+	ZstEntityBase(name),
+	m_max_connected_cables(-1)
 {
 	set_entity_type(PLUG_TYPE);
     m_value = new ZstValue(t);
@@ -58,6 +35,7 @@ ZstPlug::ZstPlug(const ZstPlug & other) : ZstEntityBase(other)
 {
 	m_value = new ZstValue(*other.m_value);
 	m_direction = other.m_direction;
+	m_max_connected_cables = other.m_max_connected_cables;
 }
 
 ZstPlug::~ZstPlug() {
@@ -68,6 +46,13 @@ ZstPlug::~ZstPlug() {
 	//}
 	m_cables.clear();
 }
+
+void ZstPlug::on_deactivation()
+{
+	//If this plug is deactivated then cables will be going away
+	m_cables.clear();
+}
+
 
 //--------------------
 // Value interface 
@@ -128,30 +113,34 @@ ZstValue * ZstPlug::raw_value()
 // Serialisation
 //--------------------
 
-void ZstPlug::write(std::stringstream & buffer) const
+void ZstPlug::write_json(json & buffer) const
 {
 	//Pack entity
-	ZstEntityBase::write(buffer);
+	ZstEntityBase::write_json(buffer);
 
-	//Unpack value
-	m_value->write(buffer);
+	//Pack value
+	buffer["value"] = m_value->as_json();
 
 	//Pack plug direction
-	msgpack::pack(buffer, m_direction);
+	buffer["plug_direction"] = m_direction;
+
+	//Pack max cables
+	buffer["max_connected_cables"] = m_max_connected_cables;
 }
 
-void ZstPlug::read(const char * buffer, size_t length, size_t & offset)
+void ZstPlug::read_json(const json & buffer)
 {
 	//Unpack entity
-	ZstEntityBase::read(buffer, length, offset);
-	
+	ZstEntityBase::read_json(buffer);
+
 	//Unpack value
-	m_value->read(buffer, length, offset);
+	m_value->read_json(buffer["value"]);
 
 	//Unpack direction
-	auto handle = msgpack::unpack(buffer, length, offset);
-	auto obj = handle.get();
-	m_direction = (ZstPlugDirection)obj.via.i64;
+	m_direction = buffer["plug_direction"];
+
+	//Unpack max cables
+	m_max_connected_cables = buffer["max_connected_cables"];
 }
 
 
@@ -164,24 +153,37 @@ ZstPlugDirection ZstPlug::direction()
 	return m_direction;
 }
 
+ZstCableBundle & ZstPlug::get_child_cables(ZstCableBundle & bundle) const
+{
+	//TODO: Replace with set?
+	//Cables may already be present, so only add unique ones
+	for (auto c : m_cables) {
+		bool exists = false;
+		for (auto cable : bundle) {
+			if (c == cable)
+				exists = true;
+		}
+		
+		if (!exists) {
+			bundle.add(c);
+		}
+	}
+	return ZstEntityBase::get_child_cables(bundle);
+}
+
 
 //--------------------
 // Cable enerumeration
 //--------------------
 
-ZstPlugIterator ZstPlug::begin()
-{
-	return ZstPlugIterator(this, m_cables.begin());
-}
-
-ZstPlugIterator ZstPlug::end()
-{
-	return ZstPlugIterator(this, m_cables.end());
-}
-
 size_t ZstPlug::num_cables()
 {
 	return m_cables.size();
+}
+
+size_t ZstPlug::max_connected_cables()
+{
+	return m_max_connected_cables;
 }
 
 bool ZstPlug::is_connected_to(ZstPlug * plug)
@@ -193,14 +195,6 @@ bool ZstPlug::is_connected_to(ZstPlug * plug)
 		}
 	}
 	return result;
-}
-
-void ZstPlug::disconnect_cables()
-{
-	auto cables = m_cables;
-	for (auto c : cables) {
-		c->enqueue_deactivation();
-	}
 }
 
 void ZstPlug::add_cable(ZstCable * cable)
@@ -216,6 +210,7 @@ void ZstPlug::remove_cable(ZstCable * cable)
 
 //ZstInputPlug
 //------------
+
 ZstInputPlug::ZstInputPlug() : ZstPlug()
 {
 	m_direction = ZstPlugDirection::IN_JACK;
@@ -229,39 +224,66 @@ ZstInputPlug::~ZstInputPlug()
 {
 }
 
-ZstInputPlug::ZstInputPlug(const char * name, ZstValueType t) : ZstPlug(name, t)
+ZstInputPlug::ZstInputPlug(const char * name, ZstValueType t, int max_cables) : ZstPlug(name, t)
 {
 	m_direction = ZstPlugDirection::IN_JACK;
+	m_max_connected_cables = max_cables;
 }
 
 
 //ZstOutputPlug
 //-------------
 
-ZstOutputPlug::ZstOutputPlug() : ZstPlug()
+ZstOutputPlug::ZstOutputPlug() : 
+	ZstPlug(),
+	m_performance_events(NULL)
 {
 	m_direction = ZstPlugDirection::OUT_JACK;
+	m_performance_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
+	m_max_connected_cables = -1;
 }
 
 ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug & other) : ZstPlug(other)
 {
+	m_performance_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
+	m_max_connected_cables = other.m_max_connected_cables;
 }
 
-ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t) : ZstPlug(name, t)
+ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t, bool reliable) : 
+	ZstPlug(name, t),
+	m_reliable(reliable)
 {
-    m_direction = ZstPlugDirection::OUT_JACK;
+	m_direction = ZstPlugDirection::OUT_JACK;
+	m_performance_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
+	m_max_connected_cables = -1;
+#ifndef ZST_BUILD_DRAFT_API
+    if(!m_reliable){
+        ZstLog::entity(LogLevel::warn, "Can't use plug {} in unreliable mode, Showtime not compiled with draft API support. Falling back to reliable.", name);
+        m_reliable = true;
+    }
+#endif
 }
 
 ZstOutputPlug::~ZstOutputPlug()
 {
+	m_performance_events->flush();
+	m_performance_events->remove_all_adaptors();
+	delete m_performance_events;
 }
 
 void ZstOutputPlug::fire()
 {
-    entity_events()->invoke([this](ZstEntityAdaptor * dlg) { 
-		dlg->entity_publish_update(this);
+	m_performance_events->invoke([this](ZstTransportAdaptor * adaptor) {
+		json val_json;
+		this->raw_value()->write_json(val_json);
+		adaptor->on_send_msg(ZstMsgKind::PERFORMANCE_MSG, { { get_msg_arg_name(ZstMsgArg::PATH), this->URI().path() } }, val_json);
 	});
 	m_value->clear();
+}
+
+bool ZstOutputPlug::is_reliable()
+{
+	return m_reliable;
 }
 
 MSGPACK_ADD_ENUM(ZstPlugDirection);

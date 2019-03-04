@@ -1,61 +1,130 @@
 #include "ZstStageMessage.h"
 
+#include "entities/ZstEntityBase.h"
+#include "entities/ZstComponent.h"
+#include "entities/ZstContainer.h"
+#include "entities/ZstPerformer.h"
+#include "entities/ZstPlug.h"
+#include "entities/ZstEntityFactory.h"
+
 ZstStageMessage::ZstStageMessage()
 {
-	//Need to reset this message to get it ready for sending
 }
 
-ZstStageMessage::ZstStageMessage(const ZstStageMessage & other){
-	m_msg_id = other.m_msg_id;
-    m_msg_kind = other.m_msg_kind;
-}
-
-ZstStageMessage::~ZstStageMessage(){
-}
-
-void ZstStageMessage::reset(){
-	ZstMessage::reset();
-	m_msg_kind = ZstMsgKind::EMPTY;
-}
-
-ZstStageMessage * ZstStageMessage::init(ZstMsgKind kind)
+ZstStageMessage::ZstStageMessage(const ZstStageMessage & other)
 {
-	ZstMessage::init();
-	this->append_id_frame(m_msg_id);
-	ZstMessage::init(kind);
+	m_msg_args = other.m_msg_args;
+}
+
+ZstStageMessage::~ZstStageMessage()
+{
+}
+
+ZstMessage * ZstStageMessage::init(ZstMsgKind kind)
+{
+	reset();
+	set_kind(kind);
 	return this;
 }
 
-ZstStageMessage * ZstStageMessage::init(ZstMsgKind kind, const ZstMsgArgs & args)
+ZstMessage * ZstStageMessage::init(ZstMsgKind kind, const ZstMsgArgs & args)
 {
-	ZstMessage::init();
-	this->append_id_frame(m_msg_id);
-	ZstMessage::init(kind, args);
+	reset();
+	set_kind(kind);
+	set_args(args);
 	return this;
 }
 
-ZstStageMessage * ZstStageMessage::init(ZstMsgKind kind, const ZstSerialisable & serialisable)
+ZstMessage * ZstStageMessage::init(ZstMsgKind kind, const ZstMsgArgs & payload, const ZstMsgArgs & args)
 {
-	ZstMessage::init();
-	this->append_id_frame(m_msg_id);
-	ZstMessage::init(kind, serialisable);
+	reset();
+	set_kind(kind);
+	set_args(args);
+	set_payload(payload);
 	return this;
 }
 
-ZstStageMessage * ZstStageMessage::init(ZstMsgKind kind, const ZstSerialisable & serialisable, const ZstMsgArgs & args)
-{
-	ZstMessage::init();
-	this->append_id_frame(m_msg_id);
-	ZstMessage::init(kind, serialisable, args);
-	return this;
+void ZstStageMessage::reset() {
+	m_msg_args.clear();
+	set_id(ZstMsgIDManager::next_id());
 }
 
-void ZstStageMessage::unpack(zmsg_t * msg)
+void ZstStageMessage::unpack(const json & data)
 {
-	//Unpack ID
-	zframe_t * id_frame = zmsg_pop(msg);
-	auto handle = msgpack::unpack((char*)zframe_data(id_frame), zframe_size(id_frame));
-	m_msg_id = handle.get().as<ZstMsgID>();
-	zframe_destroy(&id_frame);
-	ZstMessage::unpack(msg);
+	m_msg_args = data;
 }
+
+ZstMsgKind ZstStageMessage::entity_kind(const ZstEntityBase & entity)
+{
+	//TODO: Replace with single CREATE_COMPONENT
+	ZstMsgKind kind(ZstMsgKind::EMPTY);
+	if (strcmp(entity.entity_type(), COMPONENT_TYPE) == 0) {
+		kind = ZstMsgKind::CREATE_COMPONENT;
+	}
+	else if (strcmp(entity.entity_type(), CONTAINER_TYPE) == 0) {
+		kind = ZstMsgKind::CREATE_CONTAINER;
+	}
+	else if (strcmp(entity.entity_type(), PERFORMER_TYPE) == 0) {
+		kind = ZstMsgKind::CREATE_PERFORMER;
+	}
+	else if (strcmp(entity.entity_type(), PLUG_TYPE) == 0) {
+		kind = ZstMsgKind::CREATE_PLUG;
+	}
+	else if (strcmp(entity.entity_type(), FACTORY_TYPE) == 0) {
+		kind = ZstMsgKind::CREATE_FACTORY;
+	}
+	return kind;
+}
+
+
+void ZstStageMessage::set_payload(const ZstMsgArgs & payload)
+{
+	m_msg_args[get_msg_arg_name(ZstMsgArg::PAYLOAD)] = payload;
+}
+
+void ZstStageMessage::set_payload(const std::string & payload)
+{
+	m_msg_args[get_msg_arg_name(ZstMsgArg::PAYLOAD)] = payload;
+}
+
+void ZstStageMessage::set_args(const ZstMsgArgs & args)
+{
+	if(args.is_object())
+		m_msg_args.update(args);
+}
+
+void ZstStageMessage::set_kind(const ZstMsgKind &  k)
+{
+	m_msg_args[get_msg_arg_name(ZstMsgArg::KIND)] = get_msg_name(k);
+}
+
+bool ZstStageMessage::has_arg(const ZstMsgArg & key) const
+{
+	return m_msg_args.find(get_msg_arg_name(key)) != m_msg_args.end();
+}
+
+const ZstMsgKind & ZstStageMessage::kind() const
+{
+	return get_msg_kind(m_msg_args.at(get_msg_arg_name(ZstMsgArg::KIND)).get<std::string>());
+}
+
+const ZstMsgArgs & ZstStageMessage::payload() const
+{
+	return m_msg_args[get_msg_arg_name(ZstMsgArg::PAYLOAD)];
+}
+
+ZstMsgID ZstStageMessage::id() const
+{
+	return	m_msg_args[get_msg_arg_name(ZstMsgArg::MSG_ID)].get<ZstMsgID>();
+}
+
+void ZstStageMessage::set_id(const ZstMsgID & id)
+{
+	m_msg_args[get_msg_arg_name(ZstMsgArg::MSG_ID)] = id;
+}
+
+std::string ZstStageMessage::as_json_str() const
+{
+	return m_msg_args.dump();
+}
+

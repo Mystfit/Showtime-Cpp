@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>${BINDINGS_DOTNET_FRAMEWORK_VERSION}</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="netstandard" />
+  </ItemGroup>
+  <ItemGroup>
+    ${DOTNET_SRC_BLOCK}
+  </ItemGroup>
+
+</Project>

@@ -15,8 +15,8 @@ only_commits:
     - include/
 
 cache: 
-- dependencies
-#- dependencies -> .appveyor/cleanup-appveyor-cache.txt
+#- dependencies
+- dependencies -> .appveyor/cleanup-appveyor-cache.txt
 
 clone_folder: C:/projects/showtime-cpp
 
@@ -31,77 +31,51 @@ platform:
 - x64
 
 environment:
-  matrix:
-  - GENERATOR: "Visual Studio 15 2017 Win64"
-    PYTHON: "C:/Python36-x64"
-    BOOST_ROOT: "C:/Libraries/boost_1_66_0"
+    GENERATOR: "Visual Studio 15 2017 Win64"
+    BOOST_ROOT: "C:/Libraries/boost_1_67_0"
+    matrix:
+    - PYTHON_VER: 2.7
+    - PYTHON_VER: 3.7
 
 matrix:
-  fast_finish: true
+    fast_finish: true
 
 install:
 - cmd: |-
     @echo off
     set BUILD_FOLDER=%APPVEYOR_BUILD_FOLDER%
     set DEPENDENCY_DIR=%APPVEYOR_BUILD_FOLDER%/dependencies
-    set HUNTER_ROOT=%DEPENDENCY_DIR%/hunter_root
     set INSTALL_DIR=%APPVEYOR_BUILD_FOLDER%/install
+- cmd: |-
+    call %BUILD_FOLDER%/install_dependencies.bat --build-dir %BUILD_FOLDER% --config %CONFIGURATION%
 
-    REM APPVEYOR install:
-    REM ----------------------
-    appveyor AddMessage "Manually installing patched hunter dependencies (czmq, msgpack)"
-    call %BUILD_FOLDER%/.appveyor/install_dependencies.bat %BUILD_FOLDER% %CONFIGURATION%
+before_build:
+- cmd: |-
+    mkdir build
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%/install;%DEPENDENCY_DIR%/swig;${CMAKE_PREFIX_PATH}"
     set CMAKE_BIN=%DEPENDENCY_DIR%/cmake/bin/cmake
     set CTEST_BIN=%DEPENDENCY_DIR%/cmake/bin/ctest
-
-build_script:
-- cmd: |-
-    @echo off
-    REM APPVEYOR build_script:
-    REM ----------------------
-    mkdir build
-    appveyor AddMessage "Building Showtime project with cmake"
-    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_DOTNET=ON -DBINDINGS_DOTNET_TESTS=ON
-    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DPYTHON_EXECUTABLE=%PYTHON%/python.exe
-    set CMAKE_FLAGS=%CMAKE_FLAGS% -DHUNTER_STATUS_PRINT=OFF
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_DOTNET=ON -DBINDINGS_DOTNET_TESTS=ON -DBINDINGS_DOTNET_FRAMEWORK_VERSION=v4.7.2
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DBINDINGS_DOTNET_VERSION=%PYTHON_VER%
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR%
-    set CMAKE_FLAGS=%CMAKE_FLAGS% -DUSE_LOCAL_BOOST=ON -DBoost_DEBUG=ON -DBoost_COMPILER=-vc141
-    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBUILD_MEMLEAK_TEST=OFF
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBUILD_SHARED=ON -DBUILD_STATIC=ON -DBUILD_DRAFTS=ON
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DBOOST_ROOT:PATHNAME="%BOOST_ROOT%" -DBOOST_INCLUDEDIR:PATHNAME="%BOOST_ROOT%" -DBOOST_LIBRARYDIR:PATHNAME="%BOOST_ROOT%/lib64-msvc-14.1"
-    appveyor AddMessage "Building Showtime (dotnet)"
-    %CMAKE_BIN% -H. -B"%BUILD_FOLDER%/build" -G "%GENERATOR%" %CMAKE_FLAGS%
-    %CMAKE_BIN% --build "%BUILD_FOLDER%/build" --target ShowtimeDotNet --config %CONFIGURATION% -- /nologo /verbosity:minimal
-    appveyor AddMessage "Showtime build (dotnet only) exited with status %errorlevel%"
-    
-    appveyor AddMessage "Re-running cmake configure to pull in generated dotnet bindings"
+- cmd: |-
     %CMAKE_BIN% -H. -B"%BUILD_FOLDER%/build" -G "%GENERATOR%" %CMAKE_FLAGS%
 
-    appveyor AddMessage "Building Showtime (all)"
-    %CMAKE_BIN% --build "%BUILD_FOLDER%/build" --target ALL_BUILD --config %CONFIGURATION% -- /nologo /verbosity:minimal
-    appveyor AddMessage "Showtime build (all) exited with status %errorlevel%"
-
-    appveyor AddMessage "Building/installing Showtime"
-    %CMAKE_BIN% --build "%BUILD_FOLDER%/build" --target INSTALL --config %CONFIGURATION% -- /nologo /verbosity:minimal
-    appveyor AddMessage "Showtime install (all) exited with status %errorlevel%"
+build:
+    parallel: true
+    project: %BUILD_FOLDER%/build/Showtime.sln
+    verbosity: minimal
 
 test_script:
-- cmd: |-
-    @echo off
-    REM APPVEYOR test_script:
-    REM ---------------------
-    appveyor AddMessage "Running tests"
-    appveyor AddTest "TestClient" -Framework ctest -Filename TestClient.exe -Outcome Running
-
-    pushd "%BUILD_FOLDER%/build"
-    set TESTCLIENT_LOG=%BUILD_FOLDER%/build/Testing/TestClient.log
-    %CTEST_BIN% -C %CONFIGURATION% --output-on-fail -V -O "%TESTCLIENT_LOG%" --timeout 320
-    set TEST_OUTCOME=Passed
-    if NOT %errorlevel% == 0 set TEST_OUTCOME=Failed
-    call "%BUILD_FOLDER%/.appveyor/get_test_time.bat" %TESTCLIENT_LOG% TEST_DURATION
-    
-    SETLOCAL EnableDelayedExpansion
-    for /f "Tokens=* Delims=" %%x in (%TESTCLIENT_LOG%) do set TESTCLIENT_LOG_CONTENTS=!TESTCLIENT_LOG_CONTENTS!%%x\n
-    appveyor UpdateTest -Name "TestClient" -Framework ctest -Filename TestClient.exe -Outcome %TEST_OUTCOME% -Duration %TEST_DURATION% -StdOut "%TESTCLIENT_LOG_CONTENTS%"
-    appveyor AddMessage "Tests complete - %TEST_OUTCOME%"
-    ENDLOCAL
+- ps: |
+    Push-Location -Path "$env:BUILD_FOLDER/build"
+    & $env:CTEST_BIN -C $env:CONFIGURATION --output-on-fail --no-compress-output -T Test -j 2 --timeout 320
+    $result = Get-Childitem -ErrorAction SilentlyContinue -Recurse –Path $env:BUILD_FOLDER/build/Testing/*.xml
+    $XSLInputElement = New-Object System.Xml.Xsl.XslCompiledTransform
+    $XSLInputElement.Load("https://raw.githubusercontent.com/rpavlik/jenkins-ctest-plugin/master/ctest-to-junit.xsl")
+    $XSLInputElement.Transform($result[0].FullName, (Join-Path (Resolve-Path .) "ctest-to-junit-results.xml"))
+    $wc = New-Object 'System.Net.WebClient'
+    $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\ctest-to-junit-results.xml))
+    Pop-Location

@@ -1,5 +1,7 @@
-#include <msgpack.hpp>
-#include <entities/ZstContainer.h>
+#include <nlohmann/json.hpp>
+
+#include "entities/ZstContainer.h"
+#include "../ZstEventDispatcher.hpp"
 
 ZstContainer::ZstContainer() :
 	ZstComponent("", "")
@@ -22,28 +24,36 @@ ZstContainer::ZstContainer(const char * component_type, const char * path) :
 ZstContainer::ZstContainer(const ZstContainer & other) : ZstComponent(other)
 {
 	for (auto c : other.m_children) {
+
 		if (strcmp(c.second->entity_type(), CONTAINER_TYPE) == 0) {
-			m_children[c.first] = new ZstContainer(*dynamic_cast<ZstContainer*>(c.second));
+			add_child(new ZstContainer(*dynamic_cast<ZstContainer*>(c.second)));
 		}
 		else if (strcmp(c.second->entity_type(), COMPONENT_TYPE) == 0) {
-			m_children[c.first] = new ZstComponent(*dynamic_cast<ZstComponent*>(c.second));
+			add_child(new ZstComponent(*dynamic_cast<ZstComponent*>(c.second)));
 		}
-		m_children[c.first]->set_parent(this);		
 	}
 }
 
 ZstContainer::~ZstContainer()
 {
-	auto children = m_children;
-	for (auto child : children){
-		//TODO: This will fail if the entity wasn't assigned in this DLL!
-		delete child.second;
+	//if (!is_proxy()) {
+	//	auto children = m_children;
+	//	for (auto c : children) {
+	//		delete c.second;
+	//	}
+	//	m_children.clear();
+	//}
+	if (!is_proxy()) {
+		for (auto child : m_children) {
+			// TODO: Deleting children will crash if the host GC's them after we delete them here
+			ZstLog::entity(LogLevel::debug, "FIXME: Container {} leaking entity {} to avoid host app crashing when GCing", URI().path(), child.second->URI().path());
+			//delete child.second;
+		}
+		m_children.clear();
 	}
-	m_children.clear();
-	m_parent = NULL;
 }
 
-ZstEntityBase * ZstContainer::find_child_by_URI(const ZstURI & path)
+ZstEntityBase * ZstContainer::walk_child_by_URI(const ZstURI & path)
 {
 	ZstEntityBase * result = NULL;
 	ZstEntityBase * previous = NULL;
@@ -78,7 +88,7 @@ ZstEntityBase * ZstContainer::find_child_by_URI(const ZstURI & path)
 		}
 
 		if (result) {
-			distance = path.size() - result->URI().size();
+			distance = static_cast<int>(path.size()) - static_cast<int>(result->URI().size());
 			previous = result;
 		} else {
 			break;
@@ -99,7 +109,7 @@ ZstEntityBase * ZstContainer::get_child_by_URI(const ZstURI & path)
 	return result;
 }
 
-ZstEntityBase * ZstContainer::get_child_at(int index) const
+ZstEntityBase * ZstContainer::get_child_at(size_t index) const
 {
 	ZstEntityBase * result = NULL;
 	int i = 0;
@@ -118,62 +128,29 @@ const size_t ZstContainer::num_children() const
 	return m_children.size();
 }
 
-void ZstContainer::enqueue_activation()
-{
-	ZstComponent::enqueue_activation();
-	
-	//Recursively activate all children
-	for (auto c : m_children) {
-		c.second->enqueue_activation();
-	}
-}
-
-void ZstContainer::enqueue_deactivation()
-{
-    ZstComponent::enqueue_deactivation();
-    for(auto c : m_children){
-        c.second->enqueue_deactivation();
-    }
-}
-
-void ZstContainer::set_activation_status(ZstSyncStatus status)
-{
-    ZstComponent::set_activation_status(status);
-    for (auto c : m_children) {
-        c.second->set_activation_status(status);
-    }
-}
-
 void ZstContainer::set_parent(ZstEntityBase * entity)
 {
     if(is_destroyed()) return;
 
     ZstComponent::set_parent(entity);
-    
-	auto children = m_children;
-	for (auto child : children) {
-        this->remove_child(child.second);
-	}
-    
-    for(auto child : children){
-        this->add_child(child.second);
-    }
-}
 
-void ZstContainer::disconnect_cables()
-{
-	ZstComponent::disconnect_cables();
-	for (auto c : m_children) {
-		c.second->disconnect_cables();
+	//Removing and re-adding children will update their URI
+	ZstEntityBundle bundle;
+	for (auto child : get_child_entities(bundle, false)) {
+		this->remove_child(child);
+		this->add_child(child);
 	}
 }
 
 void ZstContainer::add_child(ZstEntityBase * child) {
-    if(is_destroyed()) return;
-    
-	//If child is a plug, needs to be added to the plug list
-    child->set_parent(this);
+	if (is_destroyed()) return;
+
+	ZstEntityBase::add_child(child);
     m_children[child->URI()] = child;
+
+	if (is_activated()) {
+		entity_events()->invoke([child](ZstEntityAdaptor * adp) { adp->on_request_entity_activation(child); });
+	}
 }
 
 void ZstContainer::remove_child(ZstEntityBase * child) {
@@ -183,78 +160,58 @@ void ZstContainer::remove_child(ZstEntityBase * child) {
 	if (c != m_children.end()) {
 		m_children.erase(c);
 	}
-	
-	//TODO: How do we remove all cables from child plugs?
 
-	child->m_parent = NULL;
+	ZstEntityBase::remove_child(child);
 }
 
-void ZstContainer::write(std::stringstream & buffer) const
+void ZstContainer::write_json(json & buffer) const
 {
 	//Pack entity
-	ZstComponent::write(buffer);
+	ZstComponent::write_json(buffer);
 
 	//Pack children
-	msgpack::pack(buffer, num_children());
+	buffer["children"] = json::array();
 	for (auto child : m_children) {
-		msgpack::pack(buffer, child.second->entity_type());
-		child.second->write(buffer);
+		buffer["children"].push_back(child.second->as_json());
 	}
 }
 
-void ZstContainer::read(const char * buffer, size_t length, size_t & offset)
+void ZstContainer::read_json(const json & buffer)
 {
 	//Unpack entity base first
-	ZstComponent::read(buffer, length, offset);
+	ZstComponent::read_json(buffer);
 
 	//Unpack children
-	auto handle = msgpack::unpack(buffer, length, offset);
-	int num_children = static_cast<int>(handle.get().via.i64);
-	for (int i = 0; i < num_children; ++i) {
+	for (auto c : buffer["children"]) {
 		ZstEntityBase * child = NULL;
 
-		handle = msgpack::unpack(buffer, length, offset);
-		char * entity_type = (char*)malloc(handle.get().via.str.size + 1);
-		memcpy(entity_type, handle.get().via.str.ptr, handle.get().via.str.size);
-		entity_type[handle.get().via.str.size] = '\0';
-
-		if (strcmp(entity_type, CONTAINER_TYPE) == 0) {
+		if (c["entity_type"] == CONTAINER_TYPE) {
 			child = new ZstContainer();
 		}
-		else if (strcmp(entity_type, COMPONENT_TYPE) == 0) {
+		else if (c["entity_type"] == COMPONENT_TYPE) {
 			child = new ZstComponent();
 		}
-		free(entity_type);
 
-		child->read(buffer, length, offset);
+		child->read_json(c);
 		add_child(child);
 	}
+	
 }
 
-void ZstContainer::add_adaptor_to_children(ZstSynchronisableAdaptor * adaptor)
+ZstCableBundle & ZstContainer::get_child_cables(ZstCableBundle & bundle) const
 {
-	ZstComponent::add_adaptor_to_children(adaptor);
-	for (auto child : m_children) {
-        child.second->add_adaptor_to_children(adaptor);
-	}
-}
-
-void ZstContainer::remove_adaptor_from_children (ZstSynchronisableAdaptor * adaptor)
-{
-	ZstComponent::remove_adaptor_from_children(adaptor);
-	for (auto child : m_children) {
-        child.second->remove_adaptor_from_children(adaptor);
-	}
-}
-
-ZstCableBundle * ZstContainer::get_child_cables(ZstCableBundle * bundle)
-{
-	ZstComponent::get_child_cables(bundle);
-
 	for(auto child : m_children){
 		child.second->get_child_cables(bundle);
 	}
+	return ZstComponent::get_child_cables(bundle);
+}
 
-	return bundle;
+ZstEntityBundle & ZstContainer::get_child_entities(ZstEntityBundle & bundle, bool include_parent)
+{
+	for (auto child : m_children) {
+		child.second->get_child_entities(bundle);
+		bundle.add(child.second);
+	}
+	return ZstComponent::get_child_entities(bundle, include_parent);
 }
 

@@ -2,9 +2,9 @@ import time
 import os
 import sys
 import threading
-import showtime as ZST
 import subprocess
-from showtime import ZstComponent
+import showtime.showtime as ZST
+from showtime.showtime import ZstComponent
 
 
 class SinkComponent(ZstComponent):
@@ -14,8 +14,8 @@ class SinkComponent(ZstComponent):
         self.last_received_value = 0
 
     def compute(self, plug):
-        ZST.app(ZST.notification, "Received message on sink")
         self.last_received_value = plug.int_at(0)
+        ZST.app(ZST.notification, "Sink received value: {}".format(self.last_received_value))
 
 
 class PushComponent(ZstComponent):
@@ -32,9 +32,13 @@ class EventLoop(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
         self.setDaemon(True)
+        self.is_running = True
+
+    def stop(self):
+        self.is_running = False
 
     def run(self):
-        while True:
+        while self.is_running:
             ZST.poll_once()
             time.sleep(0.001)
 
@@ -43,11 +47,7 @@ if __name__ == "__main__":
 
     server = None
     
-    # Start server
-    if len(sys.argv) > 1:
-        server_exe = os.path.abspath(sys.argv[1])
-        print("Starting Showtime server from ".format(server_exe))
-        server = subprocess.Popen([server_exe, "-t"], stdin=subprocess.PIPE, universal_newlines=True)
+    ZST.create_server("python_server", ZST.STAGE_ROUTER_PORT);
     
     # Start client
     ZST.init("python_test", True)
@@ -82,14 +82,13 @@ if __name__ == "__main__":
     print("Looped {} times. Last received value: {}".format(loops, sink.last_received_value))
 
     # Cleanup
+    event_loop.stop()
     ZST.deactivate_entity(push)
     ZST.deactivate_entity(sink)
     ZST.destroy()
 
     if server:
-        term = "$TERM\n"
-        server.communicate(term)
-        server.wait()
+        ZST.destroy_server(server)
     
     print("Python test finished with status {}".format(status))
     if(status):

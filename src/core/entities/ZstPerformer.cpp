@@ -1,6 +1,7 @@
 #include <exception>
-#include <msgpack.hpp>
-#include <entities/ZstPerformer.h>
+#include <nlohmann/json.hpp>
+#include "entities/ZstPerformer.h"
+#include "../ZstEventDispatcher.hpp"
 
 using namespace std;
 
@@ -24,17 +25,22 @@ ZstPerformer::ZstPerformer(const ZstPerformer & other) : ZstContainer(other)
 {
 	m_heartbeat_active = other.m_heartbeat_active;
 	m_missed_heartbeats = other.m_missed_heartbeats;
+	
+	for (auto f : other.m_factories) {
+		add_factory(new ZstEntityFactory(*(f.second)));
+	}
 }
 
 ZstPerformer::~ZstPerformer()
 {
-	for (auto child : m_creatables) {
-		if (!child.second->is_activated()) {
-			//TODO:Possible memory leak here
-			delete child.second;
+	if (!is_proxy()){
+		for (auto f : m_factories) {
+			// TODO: Deleting factories will crash the host if it GC's factories after the performer has been freed
+			ZstLog::entity(LogLevel::debug, "FIXME: Performer {} leaking factory {} to avoid host app crashing when GCing", URI().path(), f.second->URI().path());
+			//delete f.second;
 		}
+		m_factories.clear();
 	}
-	m_creatables.clear();
 }
 
 void ZstPerformer::set_heartbeat_active()
@@ -62,46 +68,80 @@ int ZstPerformer::get_missed_heartbeats()
 	return m_missed_heartbeats;
 }
 
-size_t ZstPerformer::num_creatables() const
+void ZstPerformer::add_child(ZstEntityBase * entity)
 {
-	return m_creatables.size();
-}
-
-void ZstPerformer::write(std::stringstream & buffer) const
-{
-	ZstContainer::write(buffer);
-	
-	//Pack number of children
-	msgpack::pack(buffer, num_creatables());
-
-	//Pack children
-	for (auto creatable : m_creatables) {
-		msgpack::pack(buffer, creatable.second->entity_type());
-		creatable.second->write(buffer);
+	if (strcmp(entity->entity_type(), FACTORY_TYPE) == 0) {
+		add_factory(static_cast<ZstEntityFactory*>(entity));
+	}
+	else {
+		ZstContainer::add_child(entity);
 	}
 }
 
-void ZstPerformer::read(const char * buffer, size_t length, size_t & offset)
+void ZstPerformer::remove_child(ZstEntityBase * entity)
 {
-	ZstContainer::read(buffer, length, offset);
+	if (strcmp(entity->entity_type(), FACTORY_TYPE) == 0) {
+		remove_factory(static_cast<ZstEntityFactory*>(entity));
+	}
+	else {
+		ZstContainer::remove_child(entity);
+	}
+}
 
-	//Unpack creatables
-	auto handle = msgpack::unpack(buffer, length, offset);
-	int num_creatables = static_cast<int>(handle.get().via.i64);
-	for (int i = 0; i < num_creatables; ++i) {
+void ZstPerformer::add_factory(ZstEntityFactory * factory)
+{
+	if (is_destroyed()) return;
 
-		const char * entity_type = handle.get().via.str.ptr;
+	ZstEntityBase::add_child(factory);
+	m_factories[factory->URI()] = factory;
+}
 
-		ZstEntityBase * child = NULL;
+void ZstPerformer::remove_factory(ZstEntityFactory * factory)
+{
+	auto f = m_factories.find(factory->URI());
+	if (f != m_factories.end()) {
+		m_factories.erase(f);
+	}
 
-		if (strcmp(entity_type, CONTAINER_TYPE)) {
-			child = new ZstContainer();
-		}
-		else if (strcmp(entity_type, COMPONENT_TYPE)) {
-			child = new ZstComponent();
-		}
+	ZstEntityBase::remove_child(factory);
+}
 
-		child->read(buffer, length, offset);
-		m_creatables[child->URI()] = child;
+ZstEntityBundle & ZstPerformer::get_factories(ZstEntityBundle & bundle)
+{
+	for (auto f : m_factories) {
+		bundle.add(f.second);
+	}
+	return bundle;
+}
+
+ZstEntityFactoryBundle & ZstPerformer::get_factories(ZstEntityFactoryBundle & bundle)
+{
+	for (auto f : m_factories) {
+		bundle.add(f.second);
+	}
+	return bundle;
+}
+
+void ZstPerformer::write_json(json & buffer) const
+{
+	//Pack entity
+	ZstContainer::write_json(buffer);
+
+	//Pack children
+	buffer["factories"] = json::array();
+	for (auto factory : m_factories) {
+		buffer["factories"].push_back(factory.second->as_json());
+	}
+}
+
+void ZstPerformer::read_json(const json & buffer)
+{
+	ZstContainer::read_json(buffer);
+
+	//Unpack factories
+	for (auto f : buffer["factories"]) {
+		ZstEntityFactory * factory = new ZstEntityFactory();
+		factory->read_json(f);
+		m_factories[factory->URI()] = factory;
 	}
 }

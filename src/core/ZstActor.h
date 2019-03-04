@@ -1,21 +1,28 @@
 #pragma once
 
-#include <czmq.h>
 #include <iostream>
 #include <unordered_map>
 #include <functional>
-#include <ZstExports.h>
+#include "ZstExports.h"
+
+//Forward declared typedefs from CZMQ
+typedef struct _zloop_t zloop_t;
+typedef struct _zsock_t zsock_t;
+typedef struct _zactor_t zactor_t;
+typedef struct _zframe_t zframe_t;
+typedef int (zloop_reader_fn)(zloop_t *loop, zsock_t *reader, void *arg);
+
 
 class ZstActor {
 public:
 	ZST_EXPORT ZstActor();
 	ZST_EXPORT virtual ~ZstActor();
 	ZST_EXPORT virtual void destroy();
-	ZST_EXPORT virtual void init();
+	ZST_EXPORT virtual void init(const char * name);
 	ZST_EXPORT virtual void start_loop();
 	ZST_EXPORT virtual void stop_loop();
 	ZST_EXPORT virtual bool is_running();
-    ZST_EXPORT const char * actor_name() const;
+    ZST_EXPORT const char * name() const;
 	ZST_EXPORT virtual void process_callbacks() {};
 	
 	ZST_EXPORT int attach_timer(int delay, std::function<void()> timer_func);

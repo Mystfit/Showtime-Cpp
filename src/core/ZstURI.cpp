@@ -181,7 +181,7 @@ ZstURI ZstURI::first() const
 	return ZstURI(m_components[0].cstr);
 }
 
-ZstURI ZstURI::last()
+ZstURI ZstURI::last() const
 {
 	return ZstURI(m_components[size()-1].cstr);
 }
@@ -225,7 +225,7 @@ bool ZstURI::operator!=(const ZstURI & other) const
 
 bool ZstURI::operator<(const ZstURI & b) const
 {
-	return strcmp(b.m_original_path.cstr, m_original_path.cstr) < 0 ? false: true;
+	return std::lexicographical_compare(m_original_path.cstr, m_original_path.cstr+m_original_path.length, b.m_original_path.cstr, b.m_original_path.cstr+b.m_original_path.length);
 }
 
 bool ZstURI::is_empty() const

@@ -1,4 +1,6 @@
 #include "ZstPerformanceMessage.h"
+#include <msgpack.hpp>
+#include <exception>
 
 ZstPerformanceMessage::~ZstPerformanceMessage()
 {
@@ -6,28 +8,59 @@ ZstPerformanceMessage::~ZstPerformanceMessage()
 
 ZstPerformanceMessage * ZstPerformanceMessage::init(ZstMsgKind kind)
 {
-	ZstMessage::init();
-	ZstMessage::init(kind);
+	throw new std::runtime_error("Performance message init(kind) not implemented");
 	return this;
 }
 
 ZstPerformanceMessage * ZstPerformanceMessage::init(ZstMsgKind kind, const ZstMsgArgs & args)
 {
-	ZstMessage::init();
-	ZstMessage::init(kind, args);
+	reset();
+	set_sender(args.at(get_msg_arg_name(ZstMsgArg::PATH)));
 	return this;
 }
 
-ZstPerformanceMessage * ZstPerformanceMessage::init(ZstMsgKind kind, const ZstSerialisable & serialisable)
+ZstPerformanceMessage * ZstPerformanceMessage::init(ZstMsgKind kind, const ZstMsgArgs & payload, const ZstMsgArgs & args)
 {
-	ZstMessage::init();
-	ZstMessage::init(kind, serialisable);
+	reset();
+	set_sender(args.at(get_msg_arg_name(ZstMsgArg::PATH)));
+	set_payload(payload);
 	return this;
 }
 
-ZstPerformanceMessage * ZstPerformanceMessage::init(ZstMsgKind kind, const ZstSerialisable & serialisable, const ZstMsgArgs & args)
+void ZstPerformanceMessage::reset()
 {
-	ZstMessage::init();
-	ZstMessage::init(kind, serialisable, args);
-	return this;
+	m_args.clear();
+}
+
+void ZstPerformanceMessage::unpack(const char * data, const size_t & size)
+{
+	m_args = json::from_msgpack(data, size);
+}
+
+const ZstMsgArgs & ZstPerformanceMessage::payload() const
+{
+	auto j_it = m_args.find(get_msg_arg_name(ZstMsgArg::PAYLOAD_SHORT));
+	if (j_it != m_args.end())
+		return *j_it;
+    return std::move(json::object());
+}
+
+std::string ZstPerformanceMessage::sender() const
+{
+	return m_args[get_msg_arg_name(ZstMsgArg::SENDER_SHORT)];
+}
+
+std::vector<uint8_t> ZstPerformanceMessage::to_msgpack() const
+{
+	return json::to_msgpack(m_args);
+}
+
+void ZstPerformanceMessage::set_payload(const ZstMsgArgs & payload)
+{
+	m_args[get_msg_arg_name(ZstMsgArg::PAYLOAD_SHORT)] = payload;
+}
+
+void ZstPerformanceMessage::set_sender(const std::string & sender)
+{
+	m_args[get_msg_arg_name(ZstMsgArg::SENDER_SHORT)] = sender;
 }

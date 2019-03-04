@@ -50,3 +50,8 @@ void ZstSynchronisableLiason::synchronisable_process_events(ZstSynchronisable * 
 {
 	synchronisable->process_events();
 }
+
+void ZstSynchronisableLiason::synchronisable_annouce_update(ZstSynchronisable * synchronisable)
+{
+	synchronisable->announce_update();
+}

@@ -1,7 +1,13 @@
+brew "cmake"
+brew "pkgconfig"
 brew "msgpack"
 brew "fmt"
-brew "czmq"
+brew "zeromq", args: ["with-drafts", "HEAD"]
+brew "czmq", args: ["with-drafts", "HEAD"]
 brew "swig"
-brew "python"
-brew "python@2"
-brew "boost"
+
+tap "mystfit/showtime"
+brew "mystfit/showtime/boost", args: ["with-fpic"]
+
+tap "nlohmann/json"
+brew "nlohmann/json/nlohmann_json", args: ["with-cmake"]

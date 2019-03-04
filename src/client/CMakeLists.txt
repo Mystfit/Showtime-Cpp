@@ -4,60 +4,70 @@ set(ZST_CLIENT_HEADERS
 	"${Showtime_INCLUDE_DIRS}/Showtime.h"
 )
 
-# Add our top level header to the public API
-list(APPEND Showtime_API_INTERFACE ${ZST_CLIENT_HEADERS})
-
 set(ZST_CLIENT_PRIVATE_HEADERS
-  "${Showtime_INCLUDE_DIRS}/Showtime.h"
-  "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClient.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientModule.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientHierarchy.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientSession.h"
-  "${CMAKE_CURRENT_LIST_DIR}/ZstClientTransport.h"
-  "${CMAKE_CURRENT_LIST_DIR}/ZstGraphTransport.h"
+  #"${CMAKE_CURRENT_LIST_DIR}/ZstHTTPTransport.h"
 )
 
 set(ZST_CLIENT_SRC
   "${CMAKE_CURRENT_LIST_DIR}/Showtime.cpp"
-  "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstClientModule.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClient.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientHierarchy.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientSession.cpp"
-  "${CMAKE_CURRENT_LIST_DIR}/ZstClientTransport.cpp"
-  "${CMAKE_CURRENT_LIST_DIR}/ZstGraphTransport.cpp"
+  #"${CMAKE_CURRENT_LIST_DIR}/ZstHTTPTransport.cpp"
 )
 
-# Include files in client target
-target_sources(${CLIENT_TARGET} PRIVATE 
-  ${ZST_CLIENT_HEADERS}
-  ${ZST_CLIENT_PRIVATE_HEADERS}
-  ${ZST_CLIENT_SRC}
-)
 
-# Include source dependencies in client target
-target_include_directories(${CLIENT_TARGET} PRIVATE
-  ${Showtime_SOURCE_DEPENDENCIES}
-)
+# Add our top level header to the public API
+list(APPEND Showtime_API_INTERFACE ${ZST_CLIENT_HEADERS})
 
-# Platform specific definitions
-if(WIN32)
-    target_compile_definitions(${CLIENT_TARGET} PRIVATE -DZST_EXPORT_CLIENT_API)
-    target_compile_definitions(${CLIENT_TARGET} INTERFACE -DZST_IMPORT_CLIENT_API)
-endif(WIN32)
+set(CLIENT_LIBS "")
 
-# Target dependencies
-add_dependencies(${CLIENT_TARGET}
-                 ${CORE_TARGET}
-                 ${CORE_ENTITIES_TARGET})
+if(BUILD_STATIC)
+  target_link_libraries(${CLIENT_TARGET_STATIC} 
+    PUBLIC
+    ${CORE_TARGET_STATIC}
+    PRIVATE
+    ${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS}
+  )
+  add_dependencies(${CLIENT_TARGET_STATIC} ${CORE_TARGET_STATIC})
+  list(APPEND CLIENT_LIBS ${CLIENT_TARGET_STATIC})
+endif()
 
-# Link libraries
-target_link_libraries(${CLIENT_TARGET} PUBLIC
-  ${CORE_TARGET}
-)
+if(BUILD_SHARED)
+  # Platform specific definitions
+  if(WIN32)
+      target_compile_definitions(${CLIENT_TARGET} 
+        PRIVATE ZST_EXPORT_CLIENT_API
+        INTERFACE ZST_IMPORT_CLIENT_API
+      )
+  endif(WIN32)
 
-target_link_libraries(${CLIENT_TARGET} PRIVATE
-  ${CORE_TARGET}
-  ${msgpackc_TARGET}
-  ${fmt_TARGET}
-)
+  target_link_libraries(${CLIENT_TARGET} PUBLIC ${CORE_TARGET})
+
+  add_dependencies(${CLIENT_TARGET} ${CORE_TARGET})
+  list(APPEND CLIENT_LIBS ${CLIENT_TARGET})
+endif()
+
+foreach(TARGET ${CLIENT_LIBS})
+  set_target_properties(${TARGET} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION})
+
+  # Include files in client target
+  target_sources(${TARGET} PRIVATE 
+    ${ZST_CLIENT_HEADERS}
+    ${ZST_CLIENT_PRIVATE_HEADERS}
+    ${ZST_CLIENT_SRC}
+  )
+
+  target_link_libraries(${TARGET} PRIVATE ${SHOWTIME_PRIVATE_LINKED_LIBS})
+
+  # Include source dependencies in client target
+  target_include_directories(${TARGET} PRIVATE 
+    ${Showtime_SOURCE_DEPENDENCIES}
+    ${Showtime_PRIVATE_HEADER_DEPENDENCIES}
+  )
+endforeach()

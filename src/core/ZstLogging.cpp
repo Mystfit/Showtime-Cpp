@@ -14,7 +14,7 @@
 #ifdef WIN32
 #include <windows.h>
 #endif
-#include <ZstLogging.h>
+#include "ZstLogging.h"
 
 // Boost namespaces 
 namespace logging = boost::log;
@@ -71,7 +71,8 @@ void ZstLog::init_logger(const char * logger_name, LogLevel level)
 	sink->locked_backend()->add_stream(stream);
 #endif
 	typedef expr::channel_severity_filter_actor< std::string, LogLevel > min_severity_filter;
-	min_severity_filter min_severity = expr::channel_severity_filter(channel, severity);
+	min_severity_filter min_severity = expr::channel_severity_filter(channel, severity);
+
 	// Set up the minimum severity levels for different channels
 	min_severity[ZST_LOG_ENTITY_CHANNEL] = level;
 	min_severity[ZST_LOG_NET_CHANNEL] = level;
@@ -86,9 +87,12 @@ void ZstLog::init_logger(const char * logger_name, LogLevel level)
 
 void ZstLog::init_file_logging(const char * log_file_path)
 {
-	typedef sinks::synchronous_sink<sinks::text_ostream_backend> text_sink;	boost::shared_ptr<text_sink> sink = boost::make_shared<text_sink>();
+	typedef sinks::synchronous_sink<sinks::text_ostream_backend> text_sink;
+	boost::shared_ptr<text_sink> sink = boost::make_shared<text_sink>();
+
 	// Add a stream to write log to
-	sink->locked_backend()->add_stream(boost::make_shared<std::ofstream>(log_file_path));
+	sink->locked_backend()->add_stream(boost::make_shared<std::ofstream>(log_file_path));
+
 	// Register the sink in the logging core
 	logging::core::get()->add_sink(sink);
 }
@@ -109,18 +113,26 @@ void ZstLog::internals::app_sink_message(LogLevel level, const char* msg)
 }
 
 #ifdef WIN32
-WORD get_colour(LogLevel level){
+WORD get_colour(LogLevel level)
+{
 	switch (level){
 	case LogLevel::debug: return DEBUG_COLOUR;
 	case LogLevel::notification: return NOTIF_COLOUR;
 	case LogLevel::warn: return WARN_COLOUR;
 	case LogLevel::error: return ERROR_COLOUR;
-	default: return 0x0F;
+	default: return RESET_COLOUR;
 	}
-}
-void ZstLog::internals::coloured_console_sink::consume(boost::log::record_view const& rec, string_type const& formatted_string){
+}
+
+void ZstLog::internals::coloured_console_sink::consume(boost::log::record_view const& rec, string_type const& formatted_string)
+{
 	auto level = rec.attribute_values()["Severity"].extract<LogLevel>();
 	auto channel = rec.attribute_values()["Channel"].extract<std::string>();
-	auto hstdout = GetStdHandle(STD_OUTPUT_HANDLE);	CONSOLE_SCREEN_BUFFER_INFO csbi;	GetConsoleScreenBufferInfo(hstdout, &csbi);	SetConsoleTextAttribute(hstdout, get_colour(level.get()));	std::cout << formatted_string << std::endl;	SetConsoleTextAttribute(hstdout, csbi.wAttributes);
+	auto hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	GetConsoleScreenBufferInfo(hstdout, &csbi);
+	SetConsoleTextAttribute(hstdout, get_colour(level.get()));
+	std::cout << formatted_string << std::endl;
+	SetConsoleTextAttribute(hstdout, csbi.wAttributes);
 }
 #endif

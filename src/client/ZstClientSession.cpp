@@ -1,8 +1,7 @@
 #include "ZstClientSession.h"
+#include "../core/ZstPerformanceMessage.h"
 
-ZstClientSession::ZstClientSession() : 
-	m_stage_events("session stage"),
-	m_performance_events("session performance")
+ZstClientSession::ZstClientSession()
 {
 	m_hierarchy = new ZstClientHierarchy();
 }
@@ -20,6 +19,9 @@ void ZstClientSession::init(std::string client_name)
 {
 	m_hierarchy->init(client_name);
 	ZstSession::init();
+
+	//Attach this as an adaptor to the hierarchy module to handle hierarchy events
+	m_hierarchy->hierarchy_events().add_adaptor(this);
 }
 
 void ZstClientSession::destroy()
@@ -31,21 +33,20 @@ void ZstClientSession::destroy()
 void ZstClientSession::process_events()
 {
 	ZstSession::process_events();
-	m_stage_events.process_events();
-	m_reaper.reap_all();
+	stage_events().process_events();
 }
 
 void ZstClientSession::flush()
 {
 	ZstSession::flush();
-	m_stage_events.flush();
+	stage_events().flush();
 }
 
 void ZstClientSession::dispatch_connected_to_stage()
 {
 	//Activate all owned entities
 	synchronisable_enqueue_activation(static_cast<ZstClientHierarchy*>(hierarchy())->get_local_performer());
-	session_events().invoke([](ZstSessionAdaptor * adaptor) {
+	session_events().defer([](ZstSessionAdaptor * adaptor) {
 		adaptor->on_connected_to_stage();
 	});
 }
@@ -54,7 +55,7 @@ void ZstClientSession::dispatch_disconnected_from_stage()
 {
 	//Deactivate all owned entities
 	synchronisable_enqueue_deactivation(static_cast<ZstClientHierarchy*>(hierarchy())->get_local_performer());
-	session_events().invoke([](ZstSessionAdaptor * adaptor) {
+	session_events().defer([](ZstSessionAdaptor * adaptor) {
 		adaptor->on_disconnected_from_stage();
 	});
 }
@@ -66,67 +67,85 @@ void ZstClientSession::dispatch_disconnected_from_stage()
 
 void ZstClientSession::on_receive_msg(ZstMessage * msg)
 {
-	switch (msg->kind()) {
+	auto stage_msg = dynamic_cast<ZstStageMessage*>(msg);
+	if (!stage_msg) {
+		//Message was not from the stage - check if it is a performance message
+		auto perf_msg = dynamic_cast<ZstPerformanceMessage*>(msg);
+		if (perf_msg) {
+			on_receive_graph_msg(perf_msg);
+		}
+		return;
+	}
+
+	switch (stage_msg->kind()) {
 	case ZstMsgKind::CREATE_CABLE:
 	{
-		const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(0);
+		const ZstCable & cable = stage_msg->unpack_payload_serialisable<ZstCable>();
 		create_cable(cable);
 		break;
 	}
 	case ZstMsgKind::DESTROY_CABLE:
 	{
-		const ZstCable & cable = msg->unpack_payload_serialisable<ZstCable>(0);
+		const ZstCable & cable = stage_msg->unpack_payload_serialisable<ZstCable>();
 		ZstCable * cable_ptr = find_cable(cable.get_input_URI(), cable.get_output_URI());
 		if (cable_ptr) {
 			destroy_cable_complete(ZstMessageReceipt{ ZstMsgKind::OK, ZstTransportSendType::SYNC_REPLY }, cable_ptr);
 		}
 		break;
 	}
-	case ZstMsgKind::PERFORMANCE_MSG:
-		on_receive_graph_msg(msg);
-		break;
 	default:
 		break;
 	}
 }
 
-void ZstClientSession::on_receive_graph_msg(ZstMessage * msg)
+void ZstClientSession::on_receive_graph_msg(ZstPerformanceMessage * msg)
 {
-	//Check for no payloads in message
-	if(msg->num_payloads() < 1){
+	//Check if message has a payload
+	if(msg->payload().size() < 1){
+		ZstLog::net(LogLevel::warn, "No payload in graph message");
 		return;
 	}
 
 	//Find local proxy for the sending plug
-	ZstPlug * sending_plug = dynamic_cast<ZstPlug*>(hierarchy()->find_entity(ZstURI(msg->get_arg("path"))));
+	ZstPerformanceMessage * perf_msg = static_cast<ZstPerformanceMessage*>(msg);
+	ZstOutputPlug * sending_plug = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(ZstURI(perf_msg->sender().c_str(), perf_msg->sender().size())));
 	ZstInputPlug * receiving_plug = NULL;
 
 	if (!sending_plug) {
 		ZstLog::net(LogLevel::warn, "No sending plug found");
+		return;
+	}
+	
+	//Create a ZstValue object to hold our plug data
+	ZstValue received_val;
+	received_val.read_json(msg->payload());
+
+	//If the sending plug is a proxy then let the host app know it has updated
+	if (sending_plug->is_proxy()) {
+		ZstLog::net(LogLevel::debug, "Proxy plug {} received an update", sending_plug->URI().path());
+		sending_plug->raw_value()->copy(received_val);
+		synchronisable_annouce_update(sending_plug);
 	}
 
 	//Iterate over all connected cables from the sending plug
-	for (auto cable : *sending_plug) {
-		receiving_plug = dynamic_cast<ZstInputPlug*>(cable->get_input());
+	ZstCableBundle bundle;
+	for (auto cable : sending_plug->get_child_cables(bundle)) {
+		receiving_plug = cable->get_input();
 		if (receiving_plug) {
 			if (!receiving_plug->is_proxy()) {
-				//TODO: Lock plug value when deserialising
-				size_t offset = 0;
-				receiving_plug->raw_value()->read((char*)msg->payload_at(0).data(), msg->payload_at(0).size(), offset);
+				receiving_plug->raw_value()->copy(received_val);
 				plug_received_value(receiving_plug);
 			}
 		}
 	}
 }
 
-void ZstClientSession::entity_publish_update(ZstEntityBase *entity)
+
+void ZstClientSession::on_performer_leaving(ZstPerformer * performer)
 {
-    m_performance_events.invoke([entity](ZstTransportAdaptor * adaptor) {
-        if(strcmp(entity->entity_type(), PLUG_TYPE) == 0){
-            adaptor->send_message(ZstMsgKind::PERFORMANCE_MSG, {{"path", entity->URI().path()}}, *static_cast<ZstOutputPlug*>(entity)->raw_value());
-        }
-    });
+	remove_connected_performer(performer);
 }
+
 
 void ZstClientSession::plug_received_value(ZstInputPlug * plug)
 {
@@ -134,24 +153,15 @@ void ZstClientSession::plug_received_value(ZstInputPlug * plug)
 	if (!parent) {
 		throw std::runtime_error("Could not find parent of input plug");
 	}
-	compute_events().defer([parent, plug](ZstComputeAdaptor * adaptor) {
-		adaptor->on_compute(parent, plug);
+	ZstURI plug_path = plug->URI();
+	compute_events().defer([this, parent, plug_path](ZstComputeAdaptor * adaptor) {
+		//Make sure the entity still exists before running 
+		ZstInputPlug * plug = static_cast<ZstInputPlug*>(this->hierarchy()->find_entity(plug_path));
+		if(plug)
+			adaptor->on_compute(parent, plug);
 	});
 }
 
-
-void ZstClientSession::on_synchronisable_destroyed(ZstSynchronisable * synchronisable)
-{
-	if(synchronisable->is_proxy())
-		m_reaper.add(synchronisable);
-}
-
-void ZstClientSession::synchronisable_has_event(ZstSynchronisable * synchronisable)
-{
-	synchronisable_events().defer([this, synchronisable](ZstSynchronisableAdaptor * dlg) {
-		this->synchronisable_process_events(synchronisable);
-	});
-}
 
 
 // ------------------
@@ -167,12 +177,14 @@ ZstCable * ZstClientSession::connect_cable(ZstInputPlug * input, ZstOutputPlug *
 		//TODO: Even though we use a cable object when sending over the wire, it's up to us
 		//to determine the correct input->output order - fix this using ZstInputPlug and 
 		//ZstOutput plug as arguments
-		m_stage_events.invoke([this, sendtype, cable](ZstTransportAdaptor* adaptor) {
-			adaptor->send_message(ZstMsgKind::CREATE_CABLE, sendtype, *cable, [this, cable](ZstMessageReceipt response) {
+		stage_events().invoke([this, sendtype, cable](ZstTransportAdaptor* adaptor) {
+			adaptor->on_send_msg(ZstMsgKind::CREATE_CABLE, sendtype, cable->as_json(), json::object(), [this, cable](ZstMessageReceipt response) {
 				this->connect_cable_complete(response, cable);
 			});
 		});
 	}
+
+	if (sendtype == ZstTransportSendType::SYNC_REPLY) process_events();
 
 	return cable;
 }
@@ -182,16 +194,16 @@ void ZstClientSession::connect_cable_complete(ZstMessageReceipt response, ZstCab
 		synchronisable_enqueue_activation(cable);
 	}
 	else {
-		ZstLog::net(LogLevel::notification, "Cable connect for {}-{} failed with status {}", cable->get_input_URI().path(), cable->get_output_URI().path(), ZstMsgNames[response.status]);
+		ZstLog::net(LogLevel::notification, "Cable connect for {}-{} failed with status {}", cable->get_input_URI().path(), cable->get_output_URI().path(), get_msg_name(response.status));
 	}
 }
 
 void ZstClientSession::destroy_cable(ZstCable * cable, const ZstTransportSendType & sendtype)
 {
-	ZstSession::destroy_cable(cable);
+	ZstSession::destroy_cable(cable, sendtype);
 	
-	m_stage_events.invoke([this, cable, sendtype](ZstTransportAdaptor * adaptor) {
-		adaptor->send_message(ZstMsgKind::DESTROY_CABLE, sendtype, *cable, [this, cable](ZstMessageReceipt response) {
+	stage_events().invoke([this, cable, sendtype](ZstTransportAdaptor * adaptor) {
+		adaptor->on_send_msg(ZstMsgKind::DESTROY_CABLE, sendtype, cable->as_json(), json::object(), [this, cable](ZstMessageReceipt response) {
 			this->destroy_cable_complete(response, cable);
 		});
 	});
@@ -199,38 +211,57 @@ void ZstClientSession::destroy_cable(ZstCable * cable, const ZstTransportSendTyp
 	if (sendtype == ZstTransportSendType::SYNC_REPLY) process_events();
 }
 
+bool ZstClientSession::observe_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
+{
+	if (!ZstSession::observe_entity(entity, sendtype)) {
+		return false;
+	}
+
+	stage_events().invoke([this, entity, sendtype](ZstTransportAdaptor * adaptor) {
+		ZstMsgArgs args = { 
+			{ get_msg_arg_name(ZstMsgArg::OUTPUT_PATH), entity->URI().first().path() } 
+		};
+		adaptor->on_send_msg(ZstMsgKind::OBSERVE_ENTITY, sendtype, args, [this, entity](ZstMessageReceipt response) {
+				this->observe_entity_complete(response, entity);
+			}
+		);
+	});
+
+	return true;
+}
+
+
 void ZstClientSession::destroy_cable_complete(ZstMessageReceipt response, ZstCable * cable)
 {
 	if (!cable) return;
+	if (!cable->is_activated()) return;
+
+	ZstSession::destroy_cable_complete(cable);
 
 	if (response.status != ZstMsgKind::OK) {
-		ZstLog::net(LogLevel::error, "Destroy cable failed with status {}", ZstMsgNames[response.status]);
+		ZstLog::net(LogLevel::error, "Destroy cable failed with status {}", get_msg_name(response.status));
 		return;
 	}
-	ZstLog::net(LogLevel::debug, "Destroy cable completed with status {}", ZstMsgNames[response.status]);
-	
-	//Remove the cable from our local cable list
-	ZstSession::destroy_cable(cable);
+	ZstLog::net(LogLevel::debug, "Destroy cable completed with status {}", get_msg_name(response.status));
 
 	//Queue events
 	session_events().defer([cable](ZstSessionAdaptor * dlg) { dlg->on_cable_destroyed(cable); });
 	synchronisable_enqueue_deactivation(cable);
 }
 
-
-// -----------------
-// Event dispatchers
-// -----------------
-
-ZstEventDispatcher<ZstTransportAdaptor*>& ZstClientSession::stage_events()
+void ZstClientSession::observe_entity_complete(ZstMessageReceipt response, ZstEntityBase * entity)
 {
-	return m_stage_events;
+	if (response.status == ZstMsgKind::OK) {
+		ZstLog::net(LogLevel::debug, "Observing entity {}", entity->URI().path());
+		return;
+	}
+	ZstLog::net(LogLevel::error, "Observe entity {} failed with status {}", entity->URI().path(), get_msg_name(response.status));
 }
 
-ZstEventDispatcher<ZstTransportAdaptor*>& ZstClientSession::performance_events()
-{
-	return m_performance_events;
-}
+
+// -----------------
+// Submodules
+// -----------------
 
 ZstClientHierarchy * ZstClientSession::hierarchy()
 {

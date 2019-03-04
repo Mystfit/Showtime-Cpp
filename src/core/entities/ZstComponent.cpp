@@ -1,6 +1,8 @@
 #include <memory>
-#include <msgpack.hpp>
-#include <entities/ZstComponent.h>
+#include <nlohmann/json.hpp>
+
+#include "entities/ZstComponent.h"
+#include "../ZstEventDispatcher.hpp"
 
 ZstComponent::ZstComponent() : 
 	ZstEntityBase("")
@@ -34,31 +36,36 @@ ZstComponent::ZstComponent(const ZstComponent & other) : ZstEntityBase(other)
 		}
 	}
 	
-	size_t component_type_size = strlen(other.m_component_type);
-	m_component_type = (char*)malloc(component_type_size + 1);
-	memcpy(m_component_type, other.m_component_type, component_type_size);
-	m_component_type[component_type_size] = '\0';
+	m_component_type = other.m_component_type;
 }
 
 ZstComponent::~ZstComponent()
 {
-	for (auto plug : m_plugs) {
-		delete plug;
+	if (!is_proxy()) {
+		for (auto plug : m_plugs) {
+			// TODO: Deleting plugs will crash if the host GC's them after we delete them here
+			//ZstLog::entity(LogLevel::debug, "FIXME: Component {} leaking entity {} to avoid host app crashing when GCing", URI().path(), plug->URI().path());
+			delete plug;
+		}
+		m_plugs.clear();
 	}
-	m_plugs.clear();
-	free(m_component_type);
 }
 
 ZstInputPlug * ZstComponent::create_input_plug(const char * name, ZstValueType val_type)
 {
-	ZstInputPlug * plug = new ZstInputPlug(name, val_type);
+	return create_input_plug(name, val_type, -1);
+}
+
+ZstInputPlug * ZstComponent::create_input_plug(const char * name, ZstValueType val_type, int max_cable_connections)
+{
+	ZstInputPlug * plug = new ZstInputPlug(name, val_type, max_cable_connections);
 	add_plug(plug);
 	return plug;
 }
 
-ZstOutputPlug * ZstComponent::create_output_plug(const char * name, ZstValueType val_type)
+ZstOutputPlug * ZstComponent::create_output_plug(const char * name, ZstValueType val_type, bool reliable)
 {
-	ZstOutputPlug * plug = new ZstOutputPlug(name, val_type);
+	ZstOutputPlug * plug = new ZstOutputPlug(name, val_type, reliable);
 	add_plug(plug);
 	return plug;
 }
@@ -88,41 +95,14 @@ int ZstComponent::add_plug(ZstPlug * plug)
 
 void ZstComponent::remove_plug(ZstPlug * plug)
 {
-	for (auto cable : *plug) {
+	if (!plug || !this)
+		return;
+
+	ZstCableBundle bundle;
+	for (auto cable : plug->get_child_cables(bundle)){
 		cable->enqueue_deactivation();
 	}
 	m_plugs.erase(std::remove(m_plugs.begin(), m_plugs.end(), plug), m_plugs.end());
-}
-
-void ZstComponent::disconnect_cables()
-{
-	for (auto c : m_plugs) {
-		c->disconnect_cables();
-	}
-}
-
-void ZstComponent::enqueue_activation()
-{
-    ZstEntityBase::enqueue_activation();
-    for (auto p : m_plugs) {
-        p->enqueue_activation();
-    }
-}
-
-void ZstComponent::enqueue_deactivation()
-{
-    ZstEntityBase::enqueue_deactivation();
-    for (auto p : m_plugs) {
-        p->enqueue_deactivation();
-    }
-}
-
-void ZstComponent::set_activation_status(ZstSyncStatus status)
-{
-    ZstEntityBase::set_activation_status(status);
-    for (auto p : m_plugs) {
-        p->set_activation_status(status);
-    }
 }
 
 void ZstComponent::set_parent(ZstEntityBase * parent)
@@ -135,72 +115,52 @@ void ZstComponent::set_parent(ZstEntityBase * parent)
     }
 }
 
-void ZstComponent::write(std::stringstream & buffer) const
+void ZstComponent::write_json(json & buffer) const
 {
 	//Pack container
-	ZstEntityBase::write(buffer);
+	ZstEntityBase::write_json(buffer);
 
 	//Pack component type
-	msgpack::pack(buffer, component_type());
+	buffer["component_type"] = component_type();
 
 	//Pack plugs
-	msgpack::pack(buffer, m_plugs.size());
+	buffer["plugs"] = json::array();
 	for (auto plug : m_plugs) {
-		msgpack::pack(buffer, static_cast<int>(plug->direction()));
-		plug->write(buffer);
+		buffer["plugs"].push_back(plug->as_json());
 	}
 }
 
-void ZstComponent::read(const char * buffer, size_t length, size_t & offset)
+void ZstComponent::read_json(const json & buffer)
 {
 	//Unpack entity base first
-	ZstEntityBase::read(buffer, length, offset);
+	ZstEntityBase::read_json(buffer);
 
 	//Unpack component type
-	auto handle = msgpack::unpack(buffer, length, offset);
-	set_component_type(handle.get().via.str.ptr, handle.get().via.str.size);
+	set_component_type(buffer["component_type"].get<std::string>().c_str(), buffer["component_type"].get<std::string>().size());
 
 	//Unpack plugs
-	handle = msgpack::unpack(buffer, length, offset);
-	int num_plugs = static_cast<int>(handle.get().via.i64);
-	ZstPlugDirection direction;
 	ZstPlug * plug = NULL;
+	ZstPlugDirection direction;
 
-	for (int i = 0; i < num_plugs; ++i) {
+	for (auto p : buffer["plugs"]) {
 		//Direction is packed first - we use this to construct the correct plug type
-		handle = msgpack::unpack(buffer, length, offset);
-		direction = static_cast<ZstPlugDirection>(handle.get().via.i64);
+		direction = p["plug_direction"];
 		if (direction == ZstPlugDirection::IN_JACK) {
 			plug = new ZstInputPlug();
-		} else {
+		}
+		else {
 			plug = new ZstOutputPlug();
 		}
 
 		//Unpack plug
-		plug->read(buffer, length, offset);
+		plug->read_json(p);
 		add_plug(plug);
 	}
 }
 
 const char * ZstComponent::component_type() const
 {
-	return m_component_type;
-}
-
-void ZstComponent::add_adaptor_to_children(ZstSynchronisableAdaptor * adaptor)
-{
-	ZstSynchronisable::add_adaptor(this, adaptor);
-	for (auto plug : m_plugs) {
-        ZstSynchronisable::add_adaptor(plug, adaptor);
-	}
-}
-
-void ZstComponent::remove_adaptor_from_children(ZstSynchronisableAdaptor * adaptor)
-{
-    ZstSynchronisable::add_adaptor(this, adaptor);
-    for (auto plug : m_plugs) {
-        ZstSynchronisable::remove_adaptor(plug, adaptor);
-    }
+	return m_component_type.c_str();
 }
 
 void ZstComponent::set_component_type(const char * component_type)
@@ -210,25 +170,21 @@ void ZstComponent::set_component_type(const char * component_type)
 
 void ZstComponent::set_component_type(const char * component_type, size_t len)
 {
-	m_component_type = (char*)malloc(len + 1);
-    memcpy(m_component_type, component_type, len);
-	m_component_type[len] = '\0';
+	m_component_type = std::string(component_type, len);
 }
 
-ZstCableBundle * ZstComponent::get_child_cables(ZstCableBundle * bundle)
+ZstCableBundle & ZstComponent::get_child_cables(ZstCableBundle & bundle) const
 {
 	for (auto p : m_plugs) {
-		for (auto c : *p) {
-			bool exists = false;
-			for (int i = 0; i < bundle->size(); ++i){
-				if (bundle->cable_at(i) == c) {
-					exists = true;
-				}
-			}
-			if (!exists) {
-				bundle->add(c);
-			}
-		}
+		p->get_child_cables(bundle);
 	}
-	return bundle;
+	return ZstEntityBase::get_child_cables(bundle);
+}
+
+ZstEntityBundle & ZstComponent::get_child_entities(ZstEntityBundle & bundle, bool include_parent)
+{
+	for (auto p : m_plugs) {
+		bundle.add(p);
+	}
+	return ZstEntityBase::get_child_entities(bundle, include_parent);
 }

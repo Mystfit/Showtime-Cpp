@@ -3,28 +3,54 @@
 //std lib includes
 #include <unordered_map>
 #include <string>
+#include <mutex>
+
+//Boost includes
+#include <boost/asio.hpp>
+#include <boost/thread.hpp>
 
 //Showtime API includes
 #include <ZstCore.h>
 
 //Showtime Core includes
-#include "../core/ZstActor.h"
-#include "../core/ZstMessage.h"
-#include "../core/ZstMessagePool.hpp"
-#include "../core/ZstValue.h"
+#include "../core/liasons/ZstPlugLiason.hpp"
+#include "../core/liasons/ZstSynchronisableLiason.hpp"
 #include "../core/adaptors/ZstTransportAdaptor.hpp"
+#include "../core/adaptors/ZstModuleAdaptor.hpp"
 
-//Showtime client includes
-#include "ZstReaper.h"
-#include "ZstReaper.h"
-#include "ZstClientSession.h"
-#include "ZstGraphTransport.h"
-#include "ZstClientTransport.h"
+
+
+//Forwards
+class ZstBoostEventWakeup;
+class ZstTCPGraphTransport;
+class ZstUDPGraphTransport;
+class ZstMessage;
+class ZstPerformanceMessage;
+class ZstClientSession;
+class ZstServerSendTransport;
+
+struct ZstClientIOLoop {
+public:
+	ZstClientIOLoop() {};
+	void operator()();
+	boost::asio::io_service & IO_context();
+
+private:
+	boost::asio::io_service m_io;
+};
+
+
+//Typedefs
+typedef std::unordered_map<ZstURI, boost::asio::deadline_timer, ZstURIHash> ZstConnectionTimerMap;
+typedef std::unique_ptr<ZstConnectionTimerMap> ZstConnectionTimerMapUnique;
 
 
 class ZstClient : 
 	public ZstEventDispatcher<ZstTransportAdaptor*>,
-	public ZstTransportAdaptor
+	public ZstTransportAdaptor,
+	public ZstModuleAdaptor,
+	public ZstSynchronisableLiason,
+	public ZstPlugLiason
 {
 public:
 	ZstClient();
@@ -41,7 +67,7 @@ public:
 
 	//Stage adaptor overrides
 	void on_receive_msg(ZstMessage * msg) override;
-	void receive_connection_handshake(ZstMessage * msg);
+	void receive_connection_handshake(ZstPerformanceMessage * msg);
 
 	//Register this endpoint to the stage
 	void join_stage(std::string stage_address, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
@@ -49,7 +75,8 @@ public:
 	void synchronise_graph(const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
 	void synchronise_graph_complete(ZstMessageReceipt response);
 
-	void leave_stage(const ZstTransportSendType & sendtype);
+	//Leave the stage
+	void leave_stage();
 	void leave_stage_complete();
     
 	//Stage connection status
@@ -57,22 +84,33 @@ public:
 	bool is_connecting_to_stage();
     bool is_init_complete();
 	long ping();
-
+	
 	//Client modules
 	ZstClientSession * session();
 
 private:	
 	//Heartbeat timer
-	int m_heartbeat_timer_id;
 	long m_ping;
-	void heartbeat_timer();
+	static void heartbeat_timer(boost::asio::deadline_timer * t, ZstClient * client, boost::posix_time::milliseconds duration);
 		
-	//Destruction
+	//Flags
+	void set_is_ending(bool value);
 	bool m_is_ending;
+
+	void set_is_destroyed(bool value);
 	bool m_is_destroyed;
+
+	void set_init_completed(bool value);
     bool m_init_completed;
+
+	void set_connected_to_stage(bool value);
 	bool m_connected_to_stage;
+
+	void set_is_connecting(bool value);
 	bool m_is_connecting;
+
+	//Module adaptor overrides
+	virtual void on_entity_arriving(ZstEntityBase * entity) override;
 
 	//UUIDs
 	std::string m_assigned_uuid;
@@ -80,13 +118,26 @@ private:
 
 	//P2P Connections
 	void start_connection_broadcast(const ZstURI & remote_client_path);
+	static void send_connection_broadcast(boost::asio::deadline_timer * t, ZstClient * client, const ZstURI & to, const ZstURI & from, boost::posix_time::milliseconds duration);
 	void stop_connection_broadcast(const ZstURI & remote_client_path);
+	void listen_to_client(ZstMessage * msg);
+	ZstPerformerMap m_active_peer_connections;
 	std::unordered_map<ZstURI, ZstMsgID, ZstURIHash> m_pending_peer_connections;
-	std::unordered_map<ZstURI, int, ZstURIHash> m_connection_timers;
 	
 	//Client modules
 	ZstClientSession * m_session;
-	ZstGraphTransport * m_graph_transport;
-	ZstClientTransport * m_client_transport;
-	ZstActor * m_actor;
+	ZstTCPGraphTransport * m_tcp_graph_transport;
+	ZstUDPGraphTransport * m_udp_graph_transport;
+	ZstServerSendTransport * m_client_transport;
+
+	//Timers
+	boost::thread m_client_timer_thread;
+	ZstClientIOLoop m_client_timerloop;
+	boost::asio::deadline_timer m_heartbeat_timer;
+	ZstConnectionTimerMapUnique m_connection_timers;
+
+	boost::thread m_client_event_thread;
+	std::shared_ptr<ZstBoostEventWakeup> m_event_condition;
+	void transport_event_loop();
 };
+

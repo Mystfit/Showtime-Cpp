@@ -1,6 +1,8 @@
 #include <msgpack.hpp>
-#include <ZstCable.h>
-#include <entities/ZstPlug.h>
+#include <nlohmann/json.hpp>
+
+#include "ZstCable.h"
+#include "entities/ZstPlug.h"
 #include "liasons/ZstPlugLiason.hpp"
 
 ZstCable::ZstCable() : 
@@ -42,6 +44,8 @@ ZstCable::ZstCable(ZstInputPlug * input_plug, ZstOutputPlug * output_plug) :
 
 ZstCable::~ZstCable()
 {
+	m_input = NULL;
+	m_output = NULL;
 }
 
 ZstCable * ZstCable::create(const ZstURI & input, const ZstURI & output)
@@ -61,10 +65,7 @@ void ZstCable::destroy(ZstCable * cable)
 
 void ZstCable::disconnect()
 {
-	if(get_input() && get_output()){
-		ZstPlugLiason().plug_remove_cable(get_input(), this);
-		ZstPlugLiason().plug_remove_cable(get_output(), this);
-	}
+	this->enqueue_deactivation();
 }
 
 bool ZstCable::operator==(const ZstCable & other) const
@@ -128,56 +129,21 @@ const ZstURI & ZstCable::get_output_URI() const
 	return m_output_URI;
 }
 
-void ZstCable::write(std::stringstream & buffer) const
+void ZstCable::write_json(json & buffer) const
 {
-	msgpack::pack(buffer, m_output_URI.path());
-	msgpack::pack(buffer, m_input_URI.path());
+	buffer["output_uri"] = m_output_URI.path();
+	buffer["input_uri"] = m_input_URI.path();
 }
 
-void ZstCable::read(const char * buffer, size_t length, size_t & offset)
+void ZstCable::read_json(const json & buffer)
 {
-	auto handle = msgpack::unpack(buffer, length, offset);
-	m_output_URI = ZstURI(handle.get().via.str.ptr, handle.get().via.str.size);
-
-	handle = msgpack::unpack(buffer, length, offset);
-	m_input_URI = ZstURI(handle.get().via.str.ptr, handle.get().via.str.size);
+	m_output_URI = ZstURI(buffer["output_uri"].get<std::string>().c_str(), buffer["output_uri"].get<std::string>().size());
+	m_input_URI = ZstURI(buffer["input_uri"].get<std::string>().c_str(), buffer["input_uri"].get<std::string>().size());
 }
-
-ZstCableBundle::ZstCableBundle()
-{
-}
-
-ZstCableBundle::~ZstCableBundle()
-{
-}
-
-void ZstCableBundle::add(ZstCable * cable)
-{
-	m_cables.push_back(cable);
-}
-
-ZstCable * ZstCableBundle::cable_at(size_t index)
-{
-	return m_cables[index];
-}
-
-size_t ZstCableBundle::size()
-{
-	return m_cables.size();
-}
-
-void ZstCableBundle::disconnect_all()
-{
-	for(auto c : m_cables){
-		c->disconnect();
-	}
-}
-
-//--
 
 size_t ZstCableHash::operator()(ZstCable* const& k) const
 {
-    std::size_t h1 = ZstURIHash{}(k->get_output_URI());
+	std::size_t h1 = ZstURIHash{}(k->get_output_URI());
 	std::size_t h2 = ZstURIHash{}(k->get_input_URI());
 	return h1 ^ (h2 << 1);
 }

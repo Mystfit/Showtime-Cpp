@@ -1,7 +1,6 @@
-#include <ZstLogging.h>
 #include "ZstMsgID.h"
 
-ZstMsgID ZstMsgIDManager::s_last_id = 0;
+ZstMsgID ZstMsgIDManager::s_last_id = 1;
 
 void ZstMsgIDManager::init(const char * name, size_t len)
 {

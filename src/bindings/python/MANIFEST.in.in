@@ -1,0 +1,2 @@
+include ${SHOWTIME_WRAPPER_LIB}
+recursive-include *.py

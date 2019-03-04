@@ -5,20 +5,20 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections;
 
-    
 public class TestOutputComponent : ZstComponent
 {
     public ZstOutputPlug output;
 
     public TestOutputComponent(string path) : base(path)
     {
-        output = create_output_plug("out", ZstValueType.ZST_FLOAT);
+        output = create_output_plug("out", ZstValueType.ZST_INT);
     }
 
-    public void send(float val)
+    public void send(int val)
     {
-        output.append_float(val);
+        output.append_int(val);
         output.fire();
     }
 }
@@ -27,17 +27,67 @@ public class TestInputComponent : ZstComponent
 {
     public ZstInputPlug input;
     public readonly EventWaitHandle wait = new AutoResetEvent(false);
+    public float last_val_received = 0.0f;
 
     public TestInputComponent(string path) : base(path)
     {
-        input = create_input_plug("in", ZstValueType.ZST_FLOAT);
+        input = create_input_plug("in", ZstValueType.ZST_INT);
     }
 
     public override void compute(ZstInputPlug plug)
     {
         //showtime.app(LogLevel.notification, String.Format("Received plug hit from {0} with value {1}", plug.URI().path(), plug.float_at(0)));
-        System.Console.WriteLine(String.Format("Received plug hit from {0} with value {1}", plug.URI().path(), plug.float_at(0)));
+        Console.WriteLine(String.Format("Received plug hit from {0} with value {1}", plug.URI().path(), plug.float_at(0)));
+        last_val_received = plug.int_at(0);
         wait.Set();
+    }
+}
+
+
+public class TestHierarchyAdaptor : ZstHierarchyAdaptor
+{
+    public readonly EventWaitHandle ent_wait = new AutoResetEvent(false);
+    public readonly EventWaitHandle perf_wait = new AutoResetEvent(false);
+
+    public string last_arrived_entity;
+    public string last_left_entity;
+    public string last_arrived_performer;
+    public string last_left_performer;
+
+    public override void on_entity_arriving(ZstEntityBase entity)
+    {
+        last_arrived_entity = entity.URI().ToString();
+        ent_wait.Set();
+    }
+
+    public override void on_entity_leaving(ZstEntityBase entity)
+    {
+        last_left_entity = entity.URI().ToString();
+        ent_wait.Set();
+    }
+
+    public override void on_performer_arriving(ZstPerformer performer)
+    {
+        last_arrived_performer = performer.URI().ToString();
+        perf_wait.Set();
+    }
+
+    public override void on_performer_leaving(ZstPerformer performer)
+    {
+        last_left_performer = performer.URI().ToString();
+        perf_wait.Set();
+    }
+}
+
+
+public class TestPlugEchoAdaptor : ZstSynchronisableAdaptor
+{
+    public readonly EventWaitHandle val_wait = new AutoResetEvent(false);
+
+    public override void on_synchronisable_updated(ZstSynchronisable synchronisable)
+    {
+        showtime.app(LogLevel.notification, "Synchronisable received updated");
+        val_wait.Set();
     }
 }
 
@@ -46,32 +96,8 @@ public class Program
 {
     public static CancellationTokenSource _cancelationTokenSource;
 
-    static int Main(string[] args)
+    static void TestGraph()
     {
-        ProcessStartInfo server_startInfo = new ProcessStartInfo();
-
-        //Required to redirect standard input/output
-        server_startInfo.UseShellExecute = false; 
-        server_startInfo.RedirectStandardInput = true;
-        server_startInfo.FileName = "ShowtimeServer.exe";
-        server_startInfo.Arguments = "-t";   // Put server into test mode
-
-        Process server_process = new Process();
-        server_process.StartInfo = server_startInfo;
-        server_process.Start();
-        
-        Console.WriteLine("Starting TestDotnet");
-
-        //Start the library
-        showtime.init("TestDotnet", true);
-
-        //Create the event loop
-        _cancelationTokenSource = new CancellationTokenSource();
-        new Task(() => event_loop(), _cancelationTokenSource.Token, TaskCreationOptions.LongRunning).Start();
-
-        //Join the stage
-        showtime.join("127.0.0.1");
-
         //Create entities
         var input_comp = new TestInputComponent("test_input_comp");
         var output_comp = new TestOutputComponent("test_output_comp");
@@ -86,26 +112,142 @@ public class Program
         var cable = showtime.connect_cable(input_comp.input, output_comp.output);
 
         //Send values
-        output_comp.send(42.0f);
+        int send_val = 42;
+        output_comp.send(send_val);
 
-        Thread.Sleep(1000);
+        //Wait for value to be received
+        input_comp.wait.WaitOne();
+        Debug.Assert(input_comp.last_val_received == send_val);
+        input_comp.wait.Reset();
 
         //Clean up entities
-        showtime.deactivate_entity_async(input_comp);
-        showtime.deactivate_entity_async(output_comp);
+        showtime.deactivate_entity(input_comp);
+        showtime.deactivate_entity(output_comp);
+    }
+    static void TestExternalEntities()
+    {
+        //Create adaptors and entities
+        TestHierarchyAdaptor adp = new TestHierarchyAdaptor();
+        showtime.add_hierarchy_adaptor(adp);
+
+        TestOutputComponent output = new TestOutputComponent("sink_comm_out");
+        showtime.activate_entity(output);
+        
+        //Create sink process
+        ProcessStartInfo sink_startInfo = new ProcessStartInfo();
+        sink_startInfo.UseShellExecute = false;
+        sink_startInfo.RedirectStandardInput = true;
+        sink_startInfo.FileName = "TestHelperSink.exe";
+        sink_startInfo.Arguments = "a";   // Put sink into test mode
+
+        Process sink_process = new Process();
+        sink_process.StartInfo = sink_startInfo;
+        sink_process.Start();
+
+        //Wait for performer
+        adp.perf_wait.WaitOne();
+        adp.perf_wait.Reset();
+
+        //Query performer list
+        ZstEntityBundle bundle = new ZstEntityBundle();
+        showtime.get_performers(bundle);
+        Debug.Assert(bundle.Count == 2);
+        
+        //Check bundle is iterable
+        foreach(var p in bundle)
+        {
+            Debug.Assert(p.entity_type() == showtime.PERFORMER_TYPE);
+            showtime.app(LogLevel.debug, "Found performer " + p.URI().ToString());
+        }
+
+        //Wait for incoming entity events
+        showtime.app(LogLevel.notification, "Waiting for entity to arrive");
+        adp.ent_wait.WaitOne();
+        Debug.Assert(adp.last_arrived_entity == "sink/sink_ent");
+        adp.ent_wait.Reset();
+        ZstEntityBase sink_in_ent = showtime.find_entity(new ZstURI("sink/sink_ent/in"));
+        Debug.Assert(sink_in_ent != null);
+        ZstInputPlug sink_in = showtime.cast_to_input_plug(sink_in_ent);
+
+        //Attach adaptors
+        TestPlugEchoAdaptor plug_watcher = new TestPlugEchoAdaptor();
+        ZstOutputPlug sink_out_plug = showtime.cast_to_output_plug(showtime.find_entity(new ZstURI("sink/sink_ent/out")));
+        sink_out_plug.add_adaptor(plug_watcher);
+        showtime.observe_entity(sink_out_plug);
+
+        //Create cable to sink
+        showtime.connect_cable(sink_in, output.output);
+
+        //Ask sink to create entity
+        output.send(1);
+
+        //Wait for events
+        adp.ent_wait.WaitOne();
+        Debug.Assert(plug_watcher.val_wait.WaitOne(1000));
+        plug_watcher.val_wait.Reset();
+
+        //Make sure entity arrived
+        ZstURI sinkB = new ZstURI("sink/sink_ent/sinkB");
+        Debug.Assert(adp.last_arrived_entity == sinkB.ToString());
+        Debug.Assert(showtime.find_entity(sinkB) != null);
+        adp.ent_wait.Reset();
+
+        //Ask sink to remove entity
+        output.send(2);
+        adp.ent_wait.WaitOne();
+        Debug.Assert(adp.last_left_entity == "sink/sink_ent/sinkB");
+        Debug.Assert(showtime.find_entity(sinkB) == null);
+        adp.ent_wait.Reset();
+
+        //Ask sink to leave
+        output.send(0);
+        adp.perf_wait.WaitOne();
+        showtime.app(LogLevel.notification, adp.last_left_performer);
+        Debug.Assert(adp.last_left_performer == "sink");
+        Debug.Assert(showtime.find_entity(new ZstURI("sink")) == null);
+        adp.perf_wait.Reset();
+
+        //Cleanup
+        showtime.deactivate_entity(output);
+        showtime.remove_hierarchy_adaptor(adp);
+    }
+
+    static int Main(string[] args)
+    {
+        var server = showtime.create_server("dotnet_server", showtime.STAGE_ROUTER_PORT);
+        
+        Console.WriteLine("Starting TestDotnet");
+
+        //Start the library
+        showtime.init("TestDotnet", true);
+        showtime.init_file_logging("showtime.log");
+
+        //Create the event loop
+        _cancelationTokenSource = new CancellationTokenSource();
+        var eventloop = new Task(() => event_loop(), _cancelationTokenSource.Token, TaskCreationOptions.AttachedToParent);
+        eventloop.Start();
+
+        //Join the stage
+        showtime.join("127.0.0.1");
+
+        //Run tests
+        TestGraph();
+        TestExternalEntities();
 
         //Stop the event loop
         _cancelationTokenSource.Cancel();
+        eventloop.Wait();
 
-        //Leave the stage and clean up
-        showtime.leave();
+        //Kill the stage
+        showtime.destroy_server(server);
 
-        server_process.StandardInput.WriteLine("$TERM\n");
-        server_process.WaitForExit();
-
+        //Destroy the library
         showtime.destroy();
+
+        Console.WriteLine("Test completed");
         return 0;
     }
+
 
     public static void event_loop()
     {
@@ -115,4 +257,3 @@ public class Program
         }
     }
 }
-

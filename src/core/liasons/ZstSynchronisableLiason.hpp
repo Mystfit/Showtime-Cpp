@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ZstExports.h>
+#include "ZstExports.h"
 #include <ZstConstants.h>
 
 //Forwards
@@ -18,4 +18,5 @@ public:
 	ZST_EXPORT void synchronisable_set_destroyed(ZstSynchronisable * synchronisable);
 	ZST_EXPORT void synchronisable_set_proxy(ZstSynchronisable * synchronisable);
 	ZST_EXPORT void synchronisable_process_events(ZstSynchronisable * synchronisable);
+	ZST_EXPORT void synchronisable_annouce_update(ZstSynchronisable * synchronisable);
 };

@@ -1,115 +1,101 @@
 message(STATUS "Configuring ${PYTHON_TARGET} target")
 
-# Set binding output dir
+if(NOT BUILD_STATIC)
+    message(FATAL_ERROR "Python bindings require BUILD_STATIC to be enabled")
+endif()
+
+set(PYTHON_TARGET_WRAPPER ${PYTHON_TARGET}Wrapper)
+
+# Save original swig output dir
 set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR}/python)
+set(SWIG_LANGUAGE_DIR ${CMAKE_SWIG_ROOT_OUTDIR}/python/showtime)
 
-# paths
-set(SETUP_PY_IN         "${CMAKE_CURRENT_LIST_DIR}/setup.py.in")
-set(SETUP_PY_PARTIAL    "${CMAKE_SWIG_OUTDIR}/setup-partial.py")
-set(SETUP_PY            "${CMAKE_SWIG_OUTDIR}/setup.py")
-set(BUILD_STAMP         "${CMAKE_CURRENT_BINARY_DIR}/build/python/timestamp")
+# paths 
+set(SETUP_PY_IN             "${CMAKE_CURRENT_LIST_DIR}/setup.py.in")
+set(SETUP_PY                "${CMAKE_SWIG_OUTDIR}/setup.py")
+set(MANIFEST_PARSER_SCRIPT  "${CMAKE_CURRENT_LIST_DIR}/generate-manifest.cmake")
+set(MANIFEST_IN_IN          "${CMAKE_CURRENT_LIST_DIR}/MANIFEST.in.in")
+set(MANIFEST_IN_PARTIAL     "${CMAKE_SWIG_OUTDIR}/MANIFEST-partial.in")
+set(MANIFEST_IN             "${CMAKE_SWIG_OUTDIR}/MANIFEST.in")
+set(BUILD_STAMP             "${CMAKE_CURRENT_BINARY_DIR}/build/python/timestamp")
+set(PYTHON_LINK_LIBS 
+    ${CLIENT_TARGET_STATIC}
+    ${SERVER_TARGET_STATIC}
+)
 
-# Copy showtime module files
-file(GLOB PYTHON_INTERFACES "${CMAKE_CURRENT_LIST_DIR}/../*.i")
-list(APPEND PYTHON_INTERFACES "${CMAKE_CURRENT_LIST_DIR}/showtime_python.i")
-file(COPY ${PYTHON_INTERFACES} DESTINATION ${CMAKE_SWIG_OUTDIR})
+# Create setup.py
+configure_file(${SETUP_PY_IN} ${SETUP_PY} @ONLY)
 
-# Main swig interface
-set(PYTHON_SWIG_INTERFACE "${CMAKE_SWIG_OUTDIR}/showtime_python.i")
-set_source_files_properties(${PYTHON_SWIG_INTERFACE} PROPERTIES CPLUSPLUS ON)
+# Create manifest
+set(SHOWTIME_WRAPPER_LIB "@SHOWTIME_WRAPPER_LIB@")
+configure_file(${MANIFEST_IN_IN} ${MANIFEST_IN_PARTIAL})
 
-# First pass variables for generated setup.py
-set(ZST_RUNTIMES "@ZST_RUNTIMES@")
-set(ZST_INCLUDE_DIRS "@ZST_INCLUDE_DIRS@")
-set(ZST_BUILD_LIB_DIRS "@ZST_BUILD_LIB_DIRS@") 
-set(ZST_RUNTIME_LIB_DIRS "@ZST_RUNTIME_LIB_DIRS@") 
-set(ZST_LIBS "@ZST_LIBS@")
-set(ZST_FLAGS "@ZST_FLAGS@")
-set(ZST_DEFINITIONS "@ZST_DEFINITIONS@")
-set(ZST_LINK_FLAGS "@ZST_LINK_FLAGS@")
+# Define language root interface file
+set(PYTHON_SWIG_INTERFACES "${CMAKE_CURRENT_LIST_DIR}/showtime_python.i")
+set_source_files_properties(${PYTHON_SWIG_INTERFACES} PROPERTIES CPLUSPLUS ON)
 
-# Generate first stage setup.py 
-configure_file(${SETUP_PY_IN} ${SETUP_PY_PARTIAL})
+# Create the swig PYTHON target
+swig_add_library(${PYTHON_TARGET_WRAPPER} 
+    LANGUAGE python
+    TYPE SHARED
+    OUTPUT_DIR ${SWIG_LANGUAGE_DIR}
+    OUTFILE_DIR ${CMAKE_SWIG_OUTDIR}
+    SOURCES ${PYTHON_SWIG_INTERFACES}
+)
+set_target_properties(${PYTHON_TARGET_WRAPPER} PROPERTIES 
+    SWIG_USE_TARGET_INCLUDE_DIRECTORIES TRUE
+    SWIG_SUPPORT_FILES_DIRECTORY ${SWIG_LANGUAGE_DIR}
+    OUTPUT_NAME showtime
+    DEBUG_POSTFIX ""
+    CXX_STANDARD 14
+)
 
-# Clear first pass vars
-set(ZST_RUNTIMES "")
-set(ZST_INCLUDE_DIRS "")
-set(ZST_BUILD_LIB_DIRS "") 
-set(ZST_RUNTIME_LIB_DIRS "") 
-set(ZST_LIBS "")
-set(ZST_FLAGS "")
-set(ZST_DEFINITIONS "")
-set(ZST_LINK_FLAGS "")
+if(BINDINGS_PYTHON_LINK_AT_RUNTIME)
+    if(MACOSX OR LINUX)
+        # Since we don't link agains the Python libs we need to explicitly add the python include dir
+        target_include_directories(${PYTHON_TARGET_WRAPPER} PRIVATE ${PYTHON_INCLUDE_DIR})
 
-# Set up second pass variables for generated setup.py
-set(ZST_BUILD_LIB_DIRS ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/$<CONFIG>)
-set(ZST_RUNTIME_LIB_DIRS ${CMAKE_INSTALL_PREFIX}/lib)
-set(ZST_INCLUDE_DIRS $<TARGET_PROPERTY:${CLIENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>)
-set(ZST_DEFINITIONS $<TARGET_PROPERTY:${CLIENT_TARGET},INTERFACE_COMPILE_DEFINITIONS>) #['-DMSGPACK_USE_BOOST']
-
-# Platform specific definitions and paths
-message(STATUS "Setting platform variables for ${CMAKE_SYSTEM_NAME}")
-
-if(WIN32)
-    set(BOOST_DLL_PATTERN ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/boost*.dll)
-    list(APPEND ZST_RUNTIMES 
-        $<BUILD_INTERFACE:$<TARGET_FILE:${CLIENT_TARGET}>>
-        $<BUILD_INTERFACE:$<TARGET_FILE:${CORE_TARGET}>>
-        $<BUILD_INTERFACE:$<TARGET_FILE:${CORE_ENTITIES_TARGET}>>
-        $<BUILD_INTERFACE:$<TARGET_FILE:${CZMQ_TARGET}>>
-    )
-    list(APPEND ZST_FLAGS $<$<CONFIG:Debug>:/Zi>)
-    list(APPEND ZST_LINK_FLAGS $<$<CONFIG:Debug>:/DEBUG>)
-    list(APPEND ZST_LIBS
-        $<BUILD_INTERFACE:$<TARGET_LINKER_FILE_NAME:${CORE_TARGET}>>
-        $<BUILD_INTERFACE:$<TARGET_LINKER_FILE_NAME:${CORE_ENTITIES_TARGET}>>
-        $<BUILD_INTERFACE:$<TARGET_LINKER_FILE_NAME:${CLIENT_TARGET}>>
-    )
+        # Compiler option to ignore unresolved externals, resolve at runtime
+        target_link_options(${PYTHON_TARGET_WRAPPER} PRIVATE -undefined dynamic_lookup)
+    elseif(WIN32)
+        message(WARNING "Windows runtime linking not implemented")
+    endif()
+else()
+    list(APPEND PYTHON_LINK_LIBS ${PYTHON_LIB_TARGET})
 endif()
 
-if(MACOSX OR LINUX)
-    list(APPEND ZST_FLAGS "-O0;-g;-std=c++14;")
-    list(APPEND ZST_LIBS
-        ${CORE_TARGET}
-        ${CORE_ENTITIES_TARGET}
-        ${CLIENT_TARGET}
-    )
-    list(APPEND ZST_LINK_FLAGS "-Wl,-rpath,${ZST_RUNTIME_LIB_DIRS}")
-endif()
+# Set dependant projects
+add_dependencies(${PYTHON_TARGET_WRAPPER} 
+    ${CLIENT_TARGET_STATIC} 
+    ${SERVER_TARGET_STATIC}
+)
+add_dependencies(${PYTHON_TARGET} ${PYTHON_TARGET_WRAPPER})
 
-# if(LINUX)
-#     list(APPEND ZST_LINK_FLAGS "-Wl,-rpath=${ZST_RUNTIME_LIB_DIRS}")
-# endif()
+# Link libraries to swig target
+swig_link_libraries(${PYTHON_TARGET_WRAPPER} PUBLIC ${PYTHON_LINK_LIBS} #
+)
 
-# Set second pass setup.py parser
-get_filename_component(SETUPPY_PARSER_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/generate-setuppy.cmake REALPATH)
-
-# Create python target
-add_custom_target(${PYTHON_TARGET} ALL DEPENDS ${CLIENT_TARGET})
-
-# Command for building second-pass setup.py
-add_custom_command(TARGET ${PYTHON_TARGET} PRE_BUILD
-                    COMMAND ${CMAKE_COMMAND} 
-                        "-DSUBST_SOURCE=${SETUP_PY_PARTIAL}" 
-                        "-DSUBST_DEST=${SETUP_PY}" 
-                        "-DZST_RUNTIMES=${ZST_RUNTIMES}" 
-                        "-DZST_BUILD_LIB_DIRS=${ZST_BUILD_LIB_DIRS}" 
-                        "-DZST_RUNTIME_LIB_DIRS=${ZST_RUNTIME_LIB_DIRS}"
-                        "-DZST_LIBS=${ZST_LIBS}" 
-                        "-DZST_DEFINITIONS=${ZST_DEFINITIONS}"
-                        "-DZST_FLAGS=${ZST_FLAGS}"
-                        "-DZST_LINK_FLAGS=${ZST_LINK_FLAGS}"
-                        "-DZST_INCLUDE_DIRS=${ZST_INCLUDE_DIRS}"
-                        "-DBOOST_DLL_PATTERN=${BOOST_DLL_PATTERN}"
-                        -P ${SETUPPY_PARSER_SCRIPT}
-                    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SWIG_OUTDIR}/showtime"
-                    COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} -q build_ext ${EXTENSION_COMPILER}
-                    COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} -q build ${EXTENSION_COMPILER}
-                    DEPENDS ${SETUP_PY_PARTIAL}
+# Copy files to build tree
+add_custom_command(TARGET ${PYTHON_TARGET} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/showtime ${CMAKE_SWIG_OUTDIR}/showtime
+                    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PYTHON_TARGET_WRAPPER}> ${CMAKE_SWIG_OUTDIR}/showtime
                     VERBATIM
 )
 
-install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} -q install)")
+# Run setuptools to build wheels
+add_custom_command(TARGET ${PYTHON_TARGET} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} 
+                        "-DSUBST_SOURCE=${MANIFEST_IN_PARTIAL}"
+                        "-DSUBST_DEST=${MANIFEST_IN}"
+                        "-DSHOWTIME_WRAPPER_LIB=showtime/$<TARGET_FILE_NAME:${PYTHON_TARGET_WRAPPER}>"
+                        -P ${MANIFEST_PARSER_SCRIPT}
+                    COMMAND ${Python_EXECUTABLE} ${SETUP_PY} bdist_wheel WORKING_DIRECTORY ${CMAKE_SWIG_OUTDIR}
+                    DEPENDS ${SETUP_PY}
+                    VERBATIM
+)
+
+# Install library
+install(CODE "execute_process(WORKING_DIRECTORY ${CMAKE_SWIG_OUTDIR} COMMAND ${Python_EXECUTABLE} ${SETUP_PY} install)")
 
 # Restore binding output dir
 set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR}/python)

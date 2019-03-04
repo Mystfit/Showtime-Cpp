@@ -5,14 +5,15 @@
 */
 
 //Core API
-#include <ZstCore.h>
+#include "ZstCore.h"
+#include "../core/ZstPerformanceMessage.h"
+#include "../core/ZstStageMessage.h"
 #include "../core/ZstMessage.h"
 #include "../core/ZstSession.h"
 
 //Client modules
 #include "ZstClientModule.h"
 #include "ZstClientHierarchy.h"
-#include "ZstReaper.h"
 
 //Liasons
 #include "../core/liasons/ZstCableLiason.hpp"
@@ -20,13 +21,15 @@
 #include "../core/liasons/ZstSynchronisableLiason.hpp"
 
 //Adaptors
-#include <adaptors/ZstSessionAdaptor.hpp>
-#include <adaptors/ZstSynchronisableAdaptor.hpp>
+#include "adaptors/ZstSessionAdaptor.hpp"
+#include "adaptors/ZstSynchronisableAdaptor.hpp"
 
 class ZstClientSession : 
 	public ZstSession,
-	public ZstClientModule
+	public ZstClientModule,
+	public ZstHierarchyAdaptor
 {
+	friend class ZstClient;
 public:
 	ZstClientSession();
 	virtual ~ZstClientSession();
@@ -57,16 +60,13 @@ public:
 	// ---------------------------
 
 	void on_receive_msg(ZstMessage * msg) override;
-	void on_receive_graph_msg(ZstMessage * msg);
-    void entity_publish_update(ZstEntityBase * entity) override;
+	void on_receive_graph_msg(ZstPerformanceMessage * msg);
 
 
-	// -------------------------------
-	// Adaptor syncronisable methods
-	// -------------------------------
-
-	void on_synchronisable_destroyed(ZstSynchronisable * synchronisable) override;
-	void synchronisable_has_event(ZstSynchronisable * synchronisable) override;
+	// ---------------------------
+	// Hierarchy adaptor overrides
+	// ---------------------------
+	void on_performer_leaving(ZstPerformer * performer) override;
 
 
 	// ------------------
@@ -75,18 +75,11 @@ public:
 
 	ZstCable * connect_cable(ZstInputPlug * input, ZstOutputPlug * output, const ZstTransportSendType & sendtype) override;
 	void destroy_cable(ZstCable * cable, const ZstTransportSendType & sendtype) override;
+	bool observe_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype) override;
 
 
 	// -----------------
-	// Event dispatchers
-	// -----------------
-	
-	ZstEventDispatcher<ZstTransportAdaptor*> & stage_events();
-	ZstEventDispatcher<ZstTransportAdaptor*> & performance_events();
-
-	
-	// -----------------
-	// Modules
+	// Submodules
 	// -----------------
 
 	ZstClientHierarchy * hierarchy() override;
@@ -99,10 +92,7 @@ private:
 
 	void connect_cable_complete(ZstMessageReceipt response, ZstCable * cable);
 	void destroy_cable_complete(ZstMessageReceipt response, ZstCable * cable);
-
-	ZstEventDispatcher<ZstTransportAdaptor*> m_stage_events;
-	ZstEventDispatcher<ZstTransportAdaptor*> m_performance_events;
+	void observe_entity_complete(ZstMessageReceipt response, ZstEntityBase * entity);
 	
-	ZstReaper m_reaper;
 	ZstClientHierarchy * m_hierarchy;
 };

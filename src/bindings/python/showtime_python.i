@@ -1,6 +1,7 @@
 %module(directors="1") showtime
 %{
 	#include <Showtime.h>
+	#include <ShowtimeServer.h>
 %}
 
 %include <std_string.i>
@@ -17,7 +18,9 @@
     $result = SWIG_NewPointerObj(SWIG_as_voidptr($1), outtype, $owner);
 }
 
-%include "showtime.i"
+%include "../preflight.i"
+%include "ZstBundle.i"
+%include "../showtime.i"
 
 %pythoncode %{
 	def children(self):

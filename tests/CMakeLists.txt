@@ -1,70 +1,65 @@
-set(CLIENT_TEST_SOURCE_FILES 
-    "TestClient.cpp"
+set(TEST_COMMON_HEADERS "TestCommon.hpp")
+
+set(HELPER_PREFIX "TestHelper")
+
+set(TESTS
+    "TestStartup"
+    "TestEntities"
+    "TestExternalClients"
+    "TestEntityFactories"
+    "TestPlugins"
+    "TestGraph"
+    "TestBenchmark"
+    "TestHelperSink"
+    "TestHelperExternalFactory"
 )
 
-set(SINK_TEST_SOURCE_FILES
-    "TestSink.cpp"
-)
-
-set(MEMLEAK_TEST_SOURCE_FILES 
-    "TestMemleaks.cpp"
-)
-
-# Sink test executable
-set(SINK_TEST_TARGET TestSink)
-message(STATUS "Configuring ${SINK_TEST_TARGET}")
-add_executable (${SINK_TEST_TARGET} ${SINK_TEST_SOURCE_FILES}) 
-add_dependencies(${SINK_TEST_TARGET} ${CLIENT_TARGET} ${SERVER_TARGET})
-target_include_directories(${SINK_TEST_TARGET} PUBLIC ${ZST_INCLUDES})
-target_link_libraries(${SINK_TEST_TARGET} ${CLIENT_TARGET})
-
-# Client test executable
-set(CLIENT_TEST_TARGET TestClient)
-message(STATUS "Configuring ${CLIENT_TEST_TARGET}")
-add_executable (${CLIENT_TEST_TARGET} ${CLIENT_TEST_SOURCE_FILES}) 
-add_dependencies(${CLIENT_TEST_TARGET} ${CLIENT_TARGET} ${SINK_TEST_TARGET})
-target_link_libraries( ${CLIENT_TEST_TARGET}
+set(TEST_DEPENDENCIES 
     ${CLIENT_TARGET}
-    ${CORE_ENTITIES_TARGET}
+    ${SERVER_TARGET}
     ${Boost_THREAD_TARGET}
+    ${Boost_SYSTEM_TARGET}
+    ${Boost_FILESYSTEM_TARGET}
 )
 
-add_test(NAME ${CLIENT_TEST_TARGET} COMMAND ${CLIENT_TEST_TARGET} WORKING_DIRECTORY $<TARGET_FILE_DIR:${CLIENT_TEST_TARGET}>)
+foreach(test ${TESTS})
+    add_executable (${test} ${TEST_COMMON_HEADERS} "${test}.cpp") 
+    add_dependencies(${test} ${TEST_DEPENDENCIES} ${SERVER_TARGET})
+    target_link_libraries(${test} PRIVATE ${TEST_DEPENDENCIES})
+    
+    # Only include tests that don't have the helper prefix
+    string(FIND ${test} ${HELPER_PREFIX} FOUND_PREFIX)
+    if(FOUND_PREFIX LESS 0)
+        message(STATUS "Adding test ${test}")
+        add_test(NAME ${test} COMMAND ${test} WORKING_DIRECTORY $<TARGET_FILE_DIR:${test}>)
+    endif()
+endforeach()
 
-
-# Memleak test executable
-if(NOT DEFINED BUILD_MEMLEAK_TEST)
-    set(BUILD_MEMLEAK_TEST ON)
-endif()
-
-if(BUILD_MEMLEAK_TEST)
-    set(MEMLEAK_TEST_TARGET TestMemleaks)
-    message(STATUS "Configuring ${MEMLEAK_TEST_TARGET}")
-    add_executable (${MEMLEAK_TEST_TARGET} ${MEMLEAK_TEST_SOURCE_FILES}) 
-    add_dependencies(${MEMLEAK_TEST_TARGET} ${CLIENT_TARGET})
-    target_link_libraries( ${MEMLEAK_TEST_TARGET}
-        ${CLIENT_TARGET}
-        ${CORE_ENTITIES_TARGET}
-        ${Boost_THREAD_TARGET}
-    )
-    add_test(NAME ${MEMLEAK_TEST_TARGET} COMMAND ${MEMLEAK_TEST_TARGET} WORKING_DIRECTORY $<TARGET_FILE_DIR:${MEMLEAK_TEST_TARGET}>)
-endif()
-
-
-
+# Test helper dependencies
+add_dependencies(TestEntityFactories TestHelperExternalFactory)
+add_dependencies(TestExternalClients TestHelperSink)
 
 
 # -------------
 # Language tests
 # -------------
 
-option (BINDINGS_DOTNET_TESTS "Build Dotnet tests" OFF)
-if(BINDINGS_DOTNET_TESTS)
+if(BINDINGS_DOTNET)
     add_subdirectory(bindings/dotnet)
-endif(BINDINGS_DOTNET_TESTS)
+endif()
 
-
-option (BINDINGS_PYTHON_TESTS "Build Python tests" OFF)
-if(BINDINGS_PYTHON_TESTS)
+if(BINDINGS_PYTHON)
     add_subdirectory(bindings/python)
-endif(BINDINGS_PYTHON_TESTS)
+endif()
+
+if(BINDINGS_JAVA OR BINDINGS_JRUBY)
+    add_subdirectory(bindings/java)
+endif()
+
+if(BINDINGS_JRUBY)
+    add_subdirectory(bindings/jruby)
+endif()
+
+if(BINDINGS_UNITY)
+    add_subdirectory(bindings/unity)
+endif()
