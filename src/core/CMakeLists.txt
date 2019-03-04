@@ -252,10 +252,6 @@ endif()
 if(BUILD_SHARED)
     list(APPEND CORE_LIBS ${CORE_TARGET})
 
-    # Add a dummy source file to force our target to compile otherwise having no source files might cause the target to not bother compiling
-    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp)
-    target_sources(${CORE_TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp)
-
     if(WIN32)
         target_compile_definitions(${CORE_TARGET} 
             PRIVATE 
@@ -282,6 +278,10 @@ endif()
 # Options common to both static/shared libraries
 foreach(TARGET ${CORE_LIBS})
     set_target_properties(${TARGET} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION})
+
+    # Add a dummy source file to force our target to compile
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp)
+    target_sources(${TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp)
 
     # Target link libs again to link actual libraries
     target_link_libraries(${TARGET}

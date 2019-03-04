@@ -15,11 +15,10 @@ public:
 void test_connect_plugs() {
     ZstLog::app(LogLevel::notification, "Running connect plugs test");
     
-    ZstLog::app(LogLevel::debug, "Creating entities");
     OutputComponent * test_output = new OutputComponent("connect_test_out");
     InputComponent * test_input = new InputComponent("connect_test_in", 0);
-    zst_activate_entity(test_output);
-    zst_activate_entity(test_input);
+    zst_get_root()->add_child(test_output);
+    zst_get_root()->add_child(test_input);
 
     ZstLog::app(LogLevel::notification, "Testing sync cable connection");
     ZstCable * cable = zst_connect_cable(test_input->input(), test_output->output());
@@ -72,9 +71,9 @@ void test_connect_plugs() {
 	ZstLog::app(LogLevel::notification, "Testing setting maximum amount of cables that can be connected to an input");
 	LimitedConnectionInputComponent * test_limited_input = new LimitedConnectionInputComponent("limited_test_in", 1);
 	OutputComponent * second_output = new OutputComponent("connect_test_out2");
-	zst_activate_entity(test_limited_input);
-	zst_activate_entity(test_output);
-	zst_activate_entity(second_output);
+    zst_get_root()->add_child(test_limited_input);
+    zst_get_root()->add_child(test_output);
+    zst_get_root()->add_child(second_output);
 	zst_connect_cable(test_limited_input->input, test_output->output());
 	zst_connect_cable(test_limited_input->input, second_output->output());
 	assert(!test_limited_input->input->is_connected_to(test_output->output()));
@@ -163,9 +162,8 @@ void test_reliable_graph()
 
 	OutputComponent * test_output = new OutputComponent("reliable_out");
 	InputComponent * test_input = new InputComponent("reliable_in", first_cmp_val, true);
-
-	zst_activate_entity(test_output);
-	zst_activate_entity(test_input);
+    zst_get_root()->add_child(test_output);
+    zst_get_root()->add_child(test_input);
 	zst_connect_cable(test_input->input(), test_output->output());
 	test_output->send(first_cmp_val);
 
@@ -196,8 +194,8 @@ void test_unreliable_graph()
     // If we don't have draft support enabled, check reliable fallback has been set
     assert(test_output->output()->is_reliable());
 #else
-    zst_activate_entity(test_output);
-    zst_activate_entity(test_input);
+    zst_get_root()->add_child(test_output);
+    zst_get_root()->add_child(test_input);
     zst_connect_cable(test_input->input(), test_output->output());
     test_output->send(first_cmp_val);
 

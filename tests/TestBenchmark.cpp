@@ -38,7 +38,7 @@ long double test_benchmark(bool reliable, int send_rate, int send_amount)
 	ZstLog::app(LogLevel::debug, "Sending {} messages", count);
 	// Wait until our message tripmeter has received all the messages
 	auto delta_time = std::chrono::milliseconds(-1);
-	std::chrono::time_point<std::chrono::system_clock> end, last, now;
+	std::chrono::time_point<std::chrono::system_clock> last, now;
 	auto start = std::chrono::system_clock::now();
 	last = start;
 	int last_message_count = 0;
@@ -46,10 +46,8 @@ long double test_benchmark(bool reliable, int send_rate, int send_amount)
 	int delta_messages = 0;
 	long double mps = 0.0;
 	int remaining_messages = count;
-	int delta_queue = 0;
 	int last_queue_count = 0;
 	int last_processed_message_count = 0;
-	long queue_speed = 0;
 	int num_sent = 0;
 	int alert_rate = 2000;
 	bool hit = false;

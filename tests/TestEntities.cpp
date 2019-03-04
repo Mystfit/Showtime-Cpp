@@ -8,7 +8,7 @@ void test_create_entities(){
     OutputComponent * test_output_sync = new OutputComponent("entity_create_test_sync");
     
     ZstLog::app(LogLevel::notification, "Testing entity sync activation");
-    zst_activate_entity(test_output_sync);
+    zst_get_root()->add_child(test_output_sync);
     assert(test_output_sync->is_activated());
     assert(zst_find_entity(test_output_sync->URI()));
     
@@ -25,7 +25,7 @@ void test_create_entities(){
     test_output_async->add_adaptor(entity_sync);
         
     ZstLog::app(LogLevel::notification, "Testing entity async activation");
-    zst_activate_entity_async(test_output_async);
+    zst_get_root()->add_child(test_output_async);
     wait_for_event(entity_sync, 1);
     assert(entity_sync->num_calls() == 1);
     entity_sync ->reset_num_calls();
@@ -60,7 +60,7 @@ void test_hierarchy() {
     ZstComponent * child = new ZstComponent("child");
     parent->add_child(child);
 
-    zst_activate_entity(parent);
+    zst_get_root()->add_child(parent);
     assert(zst_find_entity(parent->URI()));
     assert(zst_find_entity(child->URI()));
     
@@ -98,7 +98,7 @@ void test_hierarchy() {
     assert(!zst_find_entity(child->URI()));
 
 	//Test deleting entity removes it from the library
-	zst_activate_entity(parent);
+    zst_get_root()->add_child(parent);
 	delete parent;
 	assert(!zst_find_entity(parent_URI));
 	assert(!zst_get_root()->num_children() );
@@ -110,11 +110,28 @@ void test_hierarchy() {
     clear_callback_queue();
 }
 
+void test_plugs()
+{
+    ZstLog::app(LogLevel::notification, "Test creating plugs in containers");
+    ZstContainer * container = new ZstContainer("test_container");
+    ZstInputPlug * input = container->create_input_plug("in", ZstValueType::ZST_INT);
+    
+    //Make sure plug hasn't leaked into child list
+    assert(container->num_children() == 0);
+    
+    ZstEntityBundle bundle;
+    container->get_plugs(bundle);
+    assert(bundle.size() == 1);
+    for(auto plug : bundle){
+        assert(plug->URI() == input->URI());
+    }
+}
+
 int main(int argc,char **argv)
 {
     TestRunner runner("TestEntities", argv[0]);
     test_create_entities();
     test_hierarchy();
-
+    test_plugs();
     return 0;
 }

@@ -42,12 +42,18 @@ ZstEntityBase * ZstEntityBase::parent() const
 
 void ZstEntityBase::add_child(ZstEntityBase * child)
 {
+    if(!child)
+        return;
+    
 	if (is_destroyed()) return;
 	child->set_parent(this);
 }
 
 void ZstEntityBase::remove_child(ZstEntityBase * child)
 {
+    if(!child)
+        return;
+    
 	child->m_parent = NULL;
 }
 

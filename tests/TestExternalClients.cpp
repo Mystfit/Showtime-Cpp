@@ -137,8 +137,8 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
 	ZstURI out_plug_path = sync_out_plug->URI();
     output_ent->send(0);
     sink_process.wait();
-    int result = sink_process.exit_code();
-   // assert(result == 0 || result == 259);	//Exit code 259 is 'No more data is available.' on Windows. Something to do with stdin?
+    //int result = sink_process.exit_code();
+    //assert(result == 0 || result == 259);	//Exit code 259 is 'No more data is available.' on Windows. Something to do with stdin?
 
     //Check that we received performer destruction request
 	ZstLog::app(LogLevel::debug, "Checking if sink has left the graph");
