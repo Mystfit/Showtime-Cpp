@@ -9,7 +9,7 @@ class ZstEventWakeup;
 
 class ZstStageModule {
 public:
-	void set_wake_condition(std::shared_ptr<ZstEventWakeup> condition);
+	void set_wake_condition(std::weak_ptr<ZstEventWakeup> condition);
 	ZstEventDispatcher<ZstTransportAdaptor*> & router_events();
 
 private:

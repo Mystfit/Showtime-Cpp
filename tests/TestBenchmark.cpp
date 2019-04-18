@@ -29,8 +29,8 @@ long double test_benchmark(bool reliable, int send_rate, int send_amount)
 
 	OutputComponent * test_output = new OutputComponent("bench_test_out", reliable);
 	InputComponent * test_input = new InputComponent("bench_test_in", 10, false);
-	zst_activate_entity(test_output);
-	zst_activate_entity(test_input);
+	zst_get_root()->add_child(test_output);
+	zst_get_root()->add_child(test_input);
 	zst_connect_cable(test_input->input(), test_output->output());
 
 	int count = send_amount;

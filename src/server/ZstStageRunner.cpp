@@ -28,7 +28,7 @@ static bool s_signal_handler(DWORD signal_value)
 static void s_signal_handler(int signal_value)
 #endif
 {
-	ZstLog::app(LogLevel::debug, "Caught signal {}", signal_value);
+	ZstLog::server(LogLevel::debug, "Caught signal {}", signal_value);
 	switch (signal_value) {
 #ifdef WIN32
 	case CTRL_C_EVENT:
@@ -59,7 +59,7 @@ static void s_signal_handler(int signal_value)
 static void s_catch_signals(){
 #ifdef WIN32
 	if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)s_signal_handler, TRUE)) {
-		ZstLog::app(LogLevel::error, "Unable to register Control Handler");
+		ZstLog::server(LogLevel::error, "Unable to register Control Handler");
 	}
 #else
 	struct sigaction action;
@@ -73,14 +73,14 @@ static void s_catch_signals(){
 
 int main(int argc, char **argv)
 {
-	ZstLog::net(LogLevel::notification, "Starting Showtime v{} stage server", SHOWTIME_VERSION);
+	ZstLog::server(LogLevel::notification, "Starting Showtime v{} stage server", SHOWTIME_VERSION);
 	ZstLog::init_logger("stage", LogLevel::debug);
 	ZstLog::init_file_logging("server.log");
 
 	auto stage = zst_create_server("stage");
 
 	if (argc < 2) {
-		ZstLog::app(LogLevel::notification, "Stage running in standalone mode. Press Ctrl+C to exit");
+		ZstLog::server(LogLevel::notification, "Stage running in standalone mode. Press Ctrl+C to exit");
 		s_catch_signals();
 		while(!s_interrupted){
 			TAKE_A_BREATH
@@ -89,13 +89,13 @@ int main(int argc, char **argv)
 	else {
 		if (strcmp(argv[1], "-t") == 0)
 		{
-			ZstLog::app(LogLevel::notification, "Stage running in test mode. Waiting for $TERM on stdin");
+			ZstLog::server(LogLevel::notification, "Stage running in test mode. Waiting for $TERM on stdin");
 			std::string line;
 			do {
 				std::getline(std::cin, line);
 				TAKE_A_BREATH
 			} while (line != "$TERM");
-			ZstLog::app(LogLevel::notification, "Received $TERM. Closing stage server.");
+			ZstLog::server(LogLevel::notification, "Received $TERM. Closing stage server.");
 		}
 	}
 

@@ -31,9 +31,6 @@ typedef ZstBundleIterator<ZstCable*> ZstCableBundleIterator;
 
 class ZstEntityBase : public ZstSynchronisable, public ZstSerialisable {
 public:
-	friend class ZstClient;
-	friend class ZstContainer;
-
 	//Include base class adaptors
 	using ZstSynchronisable::add_adaptor;
 	using ZstSynchronisable::remove_adaptor;
@@ -46,7 +43,7 @@ public:
 	//The parent of this entity
 	ZST_EXPORT ZstEntityBase * parent() const;
 
-	ZST_EXPORT virtual void add_child(ZstEntityBase * child);
+	ZST_EXPORT virtual void add_child(ZstEntityBase * child, bool auto_activate = true);
 	ZST_EXPORT virtual void remove_child(ZstEntityBase * child);
     
     //Entity type

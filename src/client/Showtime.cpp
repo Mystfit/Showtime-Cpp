@@ -98,10 +98,10 @@ void zst_remove_hierarchy_adaptor(ZstHierarchyAdaptor * adaptor)
 // Entity activation/deactivation
 // ------------------------------
 
-void zst_activate_entity(ZstEntityBase * entity)
-{
-	if (LIBRARY_CONNECTED_GUARD()) ZstClient::instance().session()->hierarchy()->activate_entity(entity, ZstTransportSendType::SYNC_REPLY);
-}
+//void zst_activate_entity(ZstEntityBase * entity)
+//{
+//    if (LIBRARY_CONNECTED_GUARD()) ZstClient::instance().session()->hierarchy()->activate_entity(entity, ZstTransportSendType::SYNC_REPLY);
+//}
 
 void zst_activate_entity_async(ZstEntityBase * entity)
 {
@@ -135,12 +135,12 @@ void zst_observe_entity_async(ZstEntityBase * entity)
 
 ZstEntityBase * zst_create_entity(const ZstURI & creatable_path, const char * name)
 {
-	return ZstClient::instance().session()->hierarchy()->create_entity(creatable_path, name, true, ZstTransportSendType::SYNC_REPLY);
+	return ZstClient::instance().session()->hierarchy()->create_entity(creatable_path, name, ZstTransportSendType::SYNC_REPLY);
 }
 
 ZstEntityBase * zst_create_entity_async(const ZstURI & creatable_path, const char * name)
 {
-	return ZstClient::instance().session()->hierarchy()->create_entity(creatable_path, name, true, ZstTransportSendType::ASYNC_REPLY);
+	return ZstClient::instance().session()->hierarchy()->create_entity(creatable_path, name, ZstTransportSendType::ASYNC_REPLY);
 }
 
 void zst_register_factory(ZstEntityFactory * factory)

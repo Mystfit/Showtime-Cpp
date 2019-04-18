@@ -86,7 +86,7 @@ void ZstStageSession::on_receive_msg(ZstMessage * msg)
 
 ZstMsgKind ZstStageSession::synchronise_client_graph(ZstPerformer * client) {
 
-	ZstLog::net(LogLevel::notification, "Sending graph snapshot to {}", client->URI().path());
+	ZstLog::server(LogLevel::notification, "Sending graph snapshot to {}", client->URI().path());
 
 	//Create sender args
 	ZstMsgArgs args{ { get_msg_arg_name(ZstMsgArg::DESTINATION), this->hierarchy()->get_socket_ID(client) } };
@@ -118,11 +118,11 @@ ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformerS
 
 	//Unpack cable from message
 	ZstCable cable = stage_msg->unpack_payload_serialisable<ZstCable>();
-	ZstLog::net(LogLevel::notification, "Received connect cable request for In:{} and Out:{}", cable.get_input_URI().path(), cable.get_output_URI().path());
+	ZstLog::server(LogLevel::notification, "Received connect cable request for In:{} and Out:{}", cable.get_input_URI().path(), cable.get_output_URI().path());
 
 	//Create cable 
 	if (find_cable(cable.get_input_URI(), cable.get_output_URI())) {
-		ZstLog::net(LogLevel::warn, "Cable already exists");
+		ZstLog::server(LogLevel::warn, "Cable already exists");
 		return ZstMsgKind::ERR_STAGE_BAD_CABLE_CONNECT_REQUEST;
 	}
 
@@ -135,7 +135,7 @@ ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformerS
 
 	//Unplug existing cables if we hit max cables in an input plug
 	if (input->num_cables() >= input->max_connected_cables()){
-		ZstLog::net(LogLevel::warn, "Too many cables in plug. Disconnecting existing cables");
+		ZstLog::server(LogLevel::warn, "Too many cables in plug. Disconnecting existing cables");
 		ZstCableBundle bundle;
 		for (auto c : input->get_child_cables(bundle)) {
 			destroy_cable(c);
@@ -166,7 +166,7 @@ ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformerS
 		try {
 			ZstMsgKind status = f.get();
 			if (status != ZstMsgKind::OK) {
-				ZstLog::net(LogLevel::error, "Client failed to complete P2P connection with status {}", get_msg_name(status));
+				ZstLog::server(LogLevel::error, "Client failed to complete P2P connection with status {}", get_msg_name(status));
 				return status;
 			}
 
@@ -187,7 +187,7 @@ ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformerS
 			return status;
 		}
 		catch (const ZstTimeoutException & e) {
-			ZstLog::net(LogLevel::error, "Client connection async response timed out - {}", e.what());
+			ZstLog::server(LogLevel::error, "Client connection async response timed out - {}", e.what());
 		}
 		return status;
 	});
@@ -212,9 +212,9 @@ ZstMsgKind ZstStageSession::observe_entity_handler(ZstMessage * msg, ZstPerforme
 		return ZstMsgKind::ERR_STAGE_PERFORMER_NOT_FOUND;
 	}
 	
-	ZstLog::net(LogLevel::notification, "Received observation request: {} watches {}", sender->URI().path(), observed_performer->URI().path());
+	ZstLog::server(LogLevel::notification, "Received observation request: {} watches {}", sender->URI().path(), observed_performer->URI().path());
 	if (sender == observed_performer) {
-		ZstLog::net(LogLevel::warn, "Client attempting to observe itself");
+		ZstLog::server(LogLevel::warn, "Client attempting to observe itself");
 		return ZstMsgKind::ERR_STAGE_PERFORMER_ALREADY_EXISTS;
 	}
 
@@ -230,7 +230,7 @@ ZstMsgKind ZstStageSession::observe_entity_handler(ZstMessage * msg, ZstPerforme
 			try {
 				ZstMsgKind status = f.get();
 				if (status == ZstMsgKind::OK) {
-					ZstLog::net(LogLevel::notification, "Observation request between {} and {} completed", sender->URI().path(), observed_performer->URI().path());
+					ZstLog::server(LogLevel::notification, "Observation request between {} and {} completed", sender->URI().path(), observed_performer->URI().path());
 
 					router_events().invoke([id, this, sender](ZstTransportAdaptor * adp) {
 						adp->on_send_msg(ZstMsgKind::OK, {
@@ -242,7 +242,7 @@ ZstMsgKind ZstStageSession::observe_entity_handler(ZstMessage * msg, ZstPerforme
 				return status;
 			}
 			catch (const ZstTimeoutException & e) {
-				ZstLog::net(LogLevel::error, "Client connection async response timed out - {}", e.what());
+				ZstLog::server(LogLevel::error, "Client connection async response timed out - {}", e.what());
 			}
 			return status;
 		});
@@ -261,7 +261,7 @@ ZstMsgKind ZstStageSession::observe_entity_handler(ZstMessage * msg, ZstPerforme
 
 ZstMsgKind ZstStageSession::create_cable_complete_handler(ZstCable * cable)
 {
-	ZstLog::net(LogLevel::notification, "Client connection complete. Publishing cable {}-{}", cable->get_input_URI().path(), cable->get_output_URI().path());
+	ZstLog::server(LogLevel::notification, "Client connection complete. Publishing cable {}-{}", cable->get_input_URI().path(), cable->get_output_URI().path());
 	m_hierarchy->broadcast_message(ZstMsgKind::CREATE_CABLE, json::object(), cable->as_json());
 	return ZstMsgKind::OK;
 }
@@ -270,7 +270,7 @@ ZstMsgKind ZstStageSession::destroy_cable_handler(ZstMessage * msg)
 {
 	ZstStageMessage * stage_msg = static_cast<ZstStageMessage*>(msg);
 	const ZstCable & cable = stage_msg->unpack_payload_serialisable<ZstCable>();
-	ZstLog::net(LogLevel::notification, "Received destroy cable connection request");
+	ZstLog::server(LogLevel::notification, "Received destroy cable connection request");
 
 	ZstCable * cable_ptr = find_cable(cable.get_input_URI(), cable.get_output_URI());
 	destroy_cable(cable_ptr);
@@ -305,7 +305,7 @@ void ZstStageSession::destroy_cable(ZstCable * cable) {
 	if (!cable)
 		return;
 
-	ZstLog::net(LogLevel::notification, "Destroying cable {} {}", cable->get_output_URI().path(), cable->get_input_URI().path());
+	ZstLog::server(LogLevel::notification, "Destroying cable {} {}", cable->get_output_URI().path(), cable->get_input_URI().path());
 
 	//Update rest of network
 	m_hierarchy->broadcast_message(ZstMsgKind::DESTROY_CABLE, json::object(), cable->as_json());
@@ -317,7 +317,7 @@ void ZstStageSession::destroy_cable(ZstCable * cable) {
 
 void ZstStageSession::connect_clients(const ZstMsgID & response_id, ZstPerformerStageProxy * output_client, ZstPerformerStageProxy * input_client)
 {
-	ZstLog::net(LogLevel::notification, "Sending P2P subscribe request to {}", input_client->URI().path());
+	ZstLog::server(LogLevel::notification, "Sending P2P subscribe request to {}", input_client->URI().path());
 
 	//Attach URI and IP of output client
 	ZstMsgArgs receiver_args{
@@ -331,7 +331,7 @@ void ZstStageSession::connect_clients(const ZstMsgID & response_id, ZstPerformer
 		adp->on_send_msg(ZstMsgKind::SUBSCRIBE_TO_PERFORMER, receiver_args);
 	});
 
-	ZstLog::net(LogLevel::notification, "Sending P2P handshake broadcast request to {}", output_client->URI().path());
+	ZstLog::server(LogLevel::notification, "Sending P2P handshake broadcast request to {}", output_client->URI().path());
 	ZstMsgArgs broadcaster_args{ 
 		{ get_msg_arg_name(ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS), input_client->unreliable_address() },
 		{ get_msg_arg_name(ZstMsgArg::DESTINATION), m_hierarchy->get_socket_ID(output_client) },
@@ -349,7 +349,7 @@ ZstMsgKind ZstStageSession::complete_client_connection(ZstPerformerStageProxy * 
 	output_client->add_subscriber_peer(input_client);
 
 	//Let the broadcaster know it can stop publishing messages
-	ZstLog::net(LogLevel::notification, "Stopping P2P handshake broadcast from client {}", output_client->URI().path());
+	ZstLog::server(LogLevel::notification, "Stopping P2P handshake broadcast from client {}", output_client->URI().path());
 	ZstMsgArgs args{ 
 		{ get_msg_arg_name(ZstMsgArg::INPUT_PATH), input_client->URI().path()},
 		{ get_msg_arg_name(ZstMsgArg::DESTINATION), m_hierarchy->get_socket_ID(output_client)}

@@ -502,6 +502,8 @@ void ZstClient::transport_event_loop()
 		try {
 			boost::this_thread::interruption_point();
 			m_event_condition->wait();
+            if(this->m_is_destroyed)
+                break;
 			m_client_transport->process_events();
 #ifdef ZST_BUILD_DRAFT_API
 			m_udp_graph_transport->process_events();

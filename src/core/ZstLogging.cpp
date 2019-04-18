@@ -54,6 +54,16 @@ namespace ZstLog {
 using namespace ZstLog;
 
 
+void my_formatter(logging::record_view const& rec, logging::formatting_ostream& strm)
+{
+    //expr::stream << "[" << process_name << "] " << line_id << ": <" << severity << "> [" << channel << "] " << expr::smessage
+    strm << "[" << logging::extract<std::string>("ProcessName", rec) << "] ";
+    strm << logging::extract< unsigned int >("LineID", rec) << ": ";
+    strm << "[" << logging::extract<std::string>("Channel", rec) << "] ";
+    strm << "<" << get_severity_str(logging::extract<LogLevel>("Severity", rec).get()) << "> ";
+    strm << rec[expr::smessage];
+}
+
 void ZstLog::init_logger(const char * logger_name, LogLevel level)
 {
 	//Flag logger as already launched
@@ -76,10 +86,11 @@ void ZstLog::init_logger(const char * logger_name, LogLevel level)
 	// Set up the minimum severity levels for different channels
 	min_severity[ZST_LOG_ENTITY_CHANNEL] = level;
 	min_severity[ZST_LOG_NET_CHANNEL] = level;
+    min_severity[ZST_LOG_SERVER_CHANNEL] = level;
 	min_severity[ZST_LOG_APP_CHANNEL] = level;
 	logging::core::get()->add_global_attribute("ProcessName", attrs::current_process_name());
-
-	sink->set_formatter(expr::stream << "[" << process_name << "] " << line_id << ": <" << severity << "> [" << channel << "] " << expr::smessage);
+    
+	sink->set_formatter(&my_formatter);
 	sink->set_filter(min_severity || severity >= error);
 	logging::core::get()->add_sink(sink);
 	logging::add_common_attributes();
@@ -97,6 +108,23 @@ void ZstLog::init_file_logging(const char * log_file_path)
 	logging::core::get()->add_sink(sink);
 }
 
+const char * ZstLog::get_severity_str(LogLevel level){
+    switch(level){
+        case LogLevel::debug:
+            return "DEBUG";
+        case LogLevel::error:
+            return "ERROR";
+        case LogLevel::notification:
+            return "NOTIF";
+        case LogLevel::loglevelsize:
+            return "SIZE";
+        case LogLevel::warn:
+            return "WARN";
+    }
+    return "";
+}
+
+
 void ZstLog::internals::entity_sink_message(LogLevel level, const char* msg)
 {
 	BOOST_LOG_CHANNEL_SEV(ZstGlobalLogger::get(), ZST_LOG_ENTITY_CHANNEL, level) << msg;
@@ -105,6 +133,11 @@ void ZstLog::internals::entity_sink_message(LogLevel level, const char* msg)
 void ZstLog::internals::net_sink_message(LogLevel level, const char* msg)
 {
 	BOOST_LOG_CHANNEL_SEV(ZstGlobalLogger::get(), ZST_LOG_NET_CHANNEL, level) << msg;
+}
+
+void ZstLog::internals::server_sink_message(LogLevel level, const char* msg)
+{
+    BOOST_LOG_CHANNEL_SEV(ZstGlobalLogger::get(), ZST_LOG_SERVER_CHANNEL, level) << msg;
 }
 
 void ZstLog::internals::app_sink_message(LogLevel level, const char* msg)

@@ -40,7 +40,7 @@ public:
 
 	ZST_EXPORT virtual void activate_entity(ZstEntityBase* entity, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
 	ZST_EXPORT virtual void destroy_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
-	ZST_EXPORT virtual ZstEntityBase * create_entity(const ZstURI & creatable_path, const char * name, bool activate, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
+	ZST_EXPORT virtual ZstEntityBase * create_entity(const ZstURI & creatable_path, const char * name, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
 
 	// ------------------------------
 	// Performers

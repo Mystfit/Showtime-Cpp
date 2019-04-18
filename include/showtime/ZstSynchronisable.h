@@ -13,7 +13,7 @@ class ZstEventDispatcher;
 class ZstSynchronisable
 {
 	friend class ZstSynchronisableLiason;
-
+    friend class ZstClient;
 public:
 	ZST_EXPORT ZstSynchronisable();
 	ZST_EXPORT ZstSynchronisable(const ZstSynchronisable & other);

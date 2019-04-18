@@ -23,18 +23,21 @@ void test_create_entities(){
     OutputComponent * test_output_async = new OutputComponent("entity_create_test_async");
     TestSynchronisableEvents * entity_sync = new TestSynchronisableEvents();
     test_output_async->add_adaptor(entity_sync);
-        
+
     ZstLog::app(LogLevel::notification, "Testing entity async activation");
+    ZstLog::app(LogLevel::debug, "Pre parent num children: {}", test_output_async->num_children());
     zst_get_root()->add_child(test_output_async);
+    ZstLog::app(LogLevel::debug, "Post parent num children: {}", test_output_async->num_children());
+
     wait_for_event(entity_sync, 1);
     assert(entity_sync->num_calls() == 1);
     entity_sync ->reset_num_calls();
+    assert(test_output_async->is_activated());
     
     //Check local client registered plugs correctly
-    assert(test_output_async->is_activated());
-    ZstURI localPlug_uri = test_output_async->get_plug_by_URI(test_output_async->output()->URI())->URI();
-    ZstURI localPlug_uri_via_entity = test_output_async->output()->URI();
-    assert(ZstURI::equal(localPlug_uri, localPlug_uri_via_entity));
+    auto child = test_output_async->get_child_by_URI(test_output_async->output()->URI());
+    assert(child);
+    assert(ZstURI::equal(child->URI(), test_output_async->output()->URI()));
 
     ZstLog::app(LogLevel::notification, "Testing entity async deactivation");
     zst_deactivate_entity_async(test_output_async);
@@ -43,7 +46,7 @@ void test_create_entities(){
     entity_sync->reset_num_calls();
     assert(!test_output_async->is_activated());
     assert(!zst_find_entity(test_output_async->URI()));
-    assert(!zst_find_entity(localPlug_uri));
+    assert(!zst_find_entity(child->URI()));
     
     //Cleanup
     delete test_output_async;
@@ -56,7 +59,7 @@ void test_hierarchy() {
     ZstLog::app(LogLevel::notification, "Running hierarchy test");
 
     //Test hierarchy
-    ZstContainer * parent = new ZstContainer("parent");
+    ZstComponent * parent = new ZstComponent("parent");
     ZstComponent * child = new ZstComponent("child");
     parent->add_child(child);
 
@@ -110,28 +113,11 @@ void test_hierarchy() {
     clear_callback_queue();
 }
 
-void test_plugs()
-{
-    ZstLog::app(LogLevel::notification, "Test creating plugs in containers");
-    ZstContainer * container = new ZstContainer("test_container");
-    ZstInputPlug * input = container->create_input_plug("in", ZstValueType::ZST_INT);
-    
-    //Make sure plug hasn't leaked into child list
-    assert(container->num_children() == 0);
-    
-    ZstEntityBundle bundle;
-    container->get_plugs(bundle);
-    assert(bundle.size() == 1);
-    for(auto plug : bundle){
-        assert(plug->URI() == input->URI());
-    }
-}
 
 int main(int argc,char **argv)
 {
     TestRunner runner("TestEntities", argv[0]);
     test_create_entities();
     test_hierarchy();
-    test_plugs();
     return 0;
 }

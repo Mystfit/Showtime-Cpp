@@ -40,7 +40,7 @@ ZstEntityBase * ZstEntityBase::parent() const
 	return m_parent;
 }
 
-void ZstEntityBase::add_child(ZstEntityBase * child)
+void ZstEntityBase::add_child(ZstEntityBase * child, bool auto_activate)
 {
     if(!child)
         return;

@@ -81,7 +81,7 @@ void ZstStage::destroy()
 	//Stop threads
 	m_stage_eventloop_thread.interrupt();
 	m_event_condition->wake();
-	m_stage_eventloop_thread.join();
+    m_stage_eventloop_thread.try_join_for(boost::chrono::milliseconds(250));
 	m_stage_timer_thread.interrupt();
 	m_io.stop();
 	m_stage_timer_thread.join();
@@ -126,7 +126,7 @@ void ZstStage::stage_heartbeat_timer(boost::asio::deadline_timer * t, ZstStage *
 			performer->clear_active_hearbeat();
 		}
 		else {
-			ZstLog::net(LogLevel::warn, "Client {} missed a heartbeat. {} remaining", performer->URI().path(), MAX_MISSED_HEARTBEATS - performer->get_missed_heartbeats());
+			ZstLog::server(LogLevel::warn, "Client {} missed a heartbeat. {} remaining", performer->URI().path(), MAX_MISSED_HEARTBEATS - performer->get_missed_heartbeats());
 			performer->set_heartbeat_inactive();
 		}
 
@@ -152,10 +152,12 @@ void ZstStage::event_loop()
 		try {
 			boost::this_thread::interruption_point();
 			this->m_event_condition->wait();
-			this->process_events();
+            if(this->is_destroyed())
+                break;
+            this->process_events();
 		}
 		catch (boost::thread_interrupted) {
-			ZstLog::net(LogLevel::debug, "Stage msg event loop exiting.");
+			ZstLog::server(LogLevel::debug, "Stage msg event loop exiting.");
 			break;
 		}
 	}
@@ -173,6 +175,6 @@ void ZstStage::timer_loop()
 		this->m_io.run();
 	}
 	catch (boost::thread_interrupted) {
-		ZstLog::net(LogLevel::debug, "Stage timer event loop exiting.");
+		ZstLog::server(LogLevel::debug, "Stage timer event loop exiting.");
 	}
 }

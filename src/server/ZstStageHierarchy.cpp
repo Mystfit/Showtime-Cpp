@@ -30,9 +30,6 @@ void ZstStageHierarchy::on_receive_msg(ZstMessage * msg)
 	case ZstMsgKind::CREATE_COMPONENT:
 		response = add_proxy_entity(stage_msg->unpack_payload_serialisable<ZstComponent>(), stage_msg->id(), sender);
 		break;
-	case ZstMsgKind::CREATE_CONTAINER:
-		response = add_proxy_entity(stage_msg->unpack_payload_serialisable<ZstContainer>(), stage_msg->id(), sender);
-		break;
 	case ZstMsgKind::CREATE_PLUG:
 		response = add_proxy_entity(stage_msg->unpack_payload_serialisable<ZstPlug>(), stage_msg->id(), sender);
 		break;
@@ -71,11 +68,11 @@ ZstMsgKind ZstStageHierarchy::create_client_handler(std::string sender_identity,
 	//Copy the id of the message so the sender will eventually match the response to a message promise
 	ZstPerformer client = msg->unpack_payload_serialisable<ZstPerformer>();
 
-	ZstLog::net(LogLevel::notification, "Registering new client {}", client.URI().path());
+	ZstLog::server(LogLevel::notification, "Registering new client {}", client.URI().path());
 
 	//Only one client with this UUID at a time
 	if (find_entity(client.URI())){
-		ZstLog::net(LogLevel::warn, "Client already exists ", client.URI().path());
+		ZstLog::server(LogLevel::warn, "Client already exists ", client.URI().path());
 		return ZstMsgKind::ERR_STAGE_PERFORMER_ALREADY_EXISTS;
 	}
 
@@ -86,7 +83,7 @@ ZstMsgKind ZstStageHierarchy::create_client_handler(std::string sender_identity,
 		unreliable_address = msg->get_arg<std::string>(ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS);
 	}
 	catch (std::out_of_range) {
-		ZstLog::net(LogLevel::warn, "Client sent message with unexpected argument");
+		ZstLog::server(LogLevel::warn, "Client sent message with unexpected argument");
 	}
 
 	//Copy streamable so we have a local ptr for the client
@@ -103,10 +100,10 @@ ZstMsgKind ZstStageHierarchy::create_client_handler(std::string sender_identity,
 	//Cache new client and its contents
 	ZstEntityBundle bundle;
 	client_proxy->get_child_entities(bundle, true);
-	ZstLog::net(LogLevel::debug, "New performer {} contains:", client_proxy->URI().path());
+	ZstLog::server(LogLevel::debug, "New performer {} contains:", client_proxy->URI().path());
 	for (auto c : bundle) {
 		add_entity_to_lookup(c);
-		ZstLog::net(LogLevel::debug, " - Entity: {}", c->URI().path());
+		ZstLog::server(LogLevel::debug, " - Entity: {}", c->URI().path());
 	}
 
 	//Cache factories
@@ -114,10 +111,10 @@ ZstMsgKind ZstStageHierarchy::create_client_handler(std::string sender_identity,
 	client_proxy->get_factories(bundle);
 	for (auto f : bundle) {
 		add_entity_to_lookup(f);
-		ZstLog::net(LogLevel::debug, " - Factory: {}", f->URI().path());
+		ZstLog::server(LogLevel::debug, " - Factory: {}", f->URI().path());
 		ZstURIBundle creatables;
 		for (auto c : static_cast<ZstEntityFactory*>(f)->get_creatables(creatables)) {
-			ZstLog::net(LogLevel::debug, "   - Creatable: {}", c.path());
+			ZstLog::server(LogLevel::debug, "   - Creatable: {}", c.path());
 		}
 	}
 
@@ -134,7 +131,7 @@ ZstMsgKind ZstStageHierarchy::destroy_client_handler(ZstPerformer * performer)
 		return ZstMsgKind::EMPTY;
 	}
 
-	ZstLog::net(LogLevel::notification, "Performer {} leaving", performer->URI().path());
+	ZstLog::server(LogLevel::notification, "Performer {} leaving", performer->URI().path());
 	
 	//Remove client and call all destructors in its hierarchy
 	ZstPerformerMap::iterator client_it = m_clients.find(performer->URI());
@@ -159,7 +156,7 @@ void ZstStageHierarchy::broadcast_message(const ZstMsgKind & msg_kind, const Zst
 		//Can only send messages to performers
 		ZstPerformer * performer = dynamic_cast<ZstPerformerStageProxy*>(entity);
 		if (!performer) {
-			ZstLog::net(LogLevel::error, "Not a performer");
+			ZstLog::server(LogLevel::error, "Not a performer");
 			return;
 		}
 
@@ -177,12 +174,12 @@ void ZstStageHierarchy::broadcast_message(const ZstMsgKind & msg_kind, const Zst
 
 ZstMsgKind ZstStageHierarchy::add_proxy_entity(const ZstEntityBase & entity, ZstMsgID request_ID, ZstPerformer * sender)
 {
-	ZstLog::net(LogLevel::notification, "Registering new proxy entity {}", entity.URI().path());
+	ZstLog::server(LogLevel::notification, "Registering new proxy entity {}", entity.URI().path());
 
 	ZstMsgKind msg_status = ZstHierarchy::add_proxy_entity(entity);
 	ZstEntityBase * proxy = find_entity(entity.URI());
 	if (!proxy) {
-		ZstLog::net(LogLevel::warn, "No proxy entity found");
+		ZstLog::server(LogLevel::warn, "No proxy entity found");
 		return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
 	}
 
@@ -201,7 +198,7 @@ ZstMsgKind ZstStageHierarchy::add_proxy_entity(const ZstEntityBase & entity, Zst
 
 ZstMsgKind ZstStageHierarchy::update_proxy_entity(const ZstEntityBase & entity, ZstMsgID request_ID)
 {
-	ZstLog::net(LogLevel::notification, "Updating proxy entity {}", entity.URI().path());
+	ZstLog::server(LogLevel::notification, "Updating proxy entity {}", entity.URI().path());
 	ZstMsgKind msg_status = ZstHierarchy::update_proxy_entity(entity);
 
 	//Update rest of network
@@ -219,7 +216,7 @@ ZstMsgKind ZstStageHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 	if (!entity)
 		return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
 
-	ZstLog::net(LogLevel::notification, "Removing proxy entity {}", entity->URI().path());
+	ZstLog::server(LogLevel::notification, "Removing proxy entity {}", entity->URI().path());
 
 	//Update rest of network
 	broadcast_message(ZstMsgKind::DESTROY_ENTITY, { {get_msg_arg_name(ZstMsgArg::PATH), entity->URI().path()} });
@@ -236,11 +233,11 @@ ZstMsgKind ZstStageHierarchy::create_entity_from_factory_handler(ZstStageMessage
 	std::string factory_path_str = msg->get_arg<std::string>(ZstMsgArg::PATH);
 	ZstURI factory_path = ZstURI(factory_path_str.c_str(), factory_path_str.size()).parent();
 
-	ZstLog::net(LogLevel::notification, "Forwarding creatable entity request {} with id {}", factory_path.path(), msg->id());
+	ZstLog::server(LogLevel::notification, "Forwarding creatable entity request {} with id {}", factory_path.path(), msg->id());
 
 	ZstEntityFactory * factory = dynamic_cast<ZstEntityFactory*>(find_entity(factory_path));
 	if (!factory) {
-		ZstLog::net(LogLevel::error, "Could not find factory {}", factory_path.path());
+		ZstLog::server(LogLevel::error, "Could not find factory {}", factory_path.path());
 		return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
 	}
 
@@ -250,7 +247,7 @@ ZstMsgKind ZstStageHierarchy::create_entity_from_factory_handler(ZstStageMessage
 	//Check to see if one client is already connected to the other
 	if (!factory_performer)
 	{
-		ZstLog::net(LogLevel::error, "Could not find factory {}", factory_path.path());
+		ZstLog::server(LogLevel::error, "Could not find factory {}", factory_path.path());
 		return ZstMsgKind::ERR_STAGE_PERFORMER_NOT_FOUND;
 	}
 
@@ -268,10 +265,10 @@ ZstMsgKind ZstStageHierarchy::create_entity_from_factory_handler(ZstStageMessage
 		adp->on_send_msg(msg->kind(), ZstTransportSendType::ASYNC_REPLY, args, [factory_path](ZstMessageReceipt receipt)
 		{
 			if (receipt.status == ZstMsgKind::ERR_ENTITY_NOT_FOUND) {
-				ZstLog::net(LogLevel::error, "Creatable request failed at origin with status {}", get_msg_name(receipt.status));
+				ZstLog::server(LogLevel::error, "Creatable request failed at origin with status {}", get_msg_name(receipt.status));
 				return;
 			}
-			ZstLog::net(LogLevel::notification, "Remote factory created entity {}", factory_path.path());
+			ZstLog::server(LogLevel::notification, "Remote factory created entity {}", factory_path.path());
 		}); 
 	});
 

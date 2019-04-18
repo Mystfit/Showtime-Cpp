@@ -235,12 +235,12 @@ ZstCable * ZstSession::create_cable(const ZstURI & input_path, const ZstURI & ou
 }
 
 void ZstSession::on_compute(ZstComponent * component, ZstInputPlug * plug) {
-	try {
-		component->compute(plug);
-	}
-	catch (std::exception e) {
-		ZstLog::entity(LogLevel::error, "Compute on component {} failed. Error was: {}", component->URI().path(), e.what());
-	}
+    try {
+        component->compute(plug);
+    }
+    catch (std::exception e) {
+        ZstLog::entity(LogLevel::error, "Compute on component {} failed. Error was: {}", component->URI().path(), e.what());
+    }
 }
 
 bool ZstSession::observe_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)

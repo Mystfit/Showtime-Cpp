@@ -12,7 +12,6 @@
 
 %include "ZstAdaptors.i"
 %include "ZstComponent.i"
-%include "ZstContainer.i"
 %include "ZstPerformer.i"
 %include "ZstEntityFactory.i"
 

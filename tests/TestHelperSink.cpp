@@ -5,7 +5,7 @@
 #include "TestCommon.hpp"
 
 
-class Sink : public ZstContainer {
+class Sink : public ZstComponent {
 private:
     ZstInputPlug * m_input;
 	ZstOutputPlug * m_output;
@@ -15,7 +15,7 @@ public:
 	Sink * m_child_sink;
 
 	Sink(const char * name) : 
-		ZstContainer("SINK", name),
+		ZstComponent("SINK", name),
         m_input(NULL),
 		m_output(NULL),
         last_received_code(-1),
@@ -42,10 +42,9 @@ public:
 		{
 		case 1:
 			m_child_sink = new Sink("sinkB");
-			add_child(m_child_sink);
+			this->add_child(m_child_sink);
 			ZstLog::entity(LogLevel::debug, "Sink about to sync activate child entity", m_child_sink->URI().path());
-			zst_activate_entity(m_child_sink);
-			if (!m_child_sink->is_activated()) 
+			if (!m_child_sink->is_activated())
 				throw std::runtime_error("Child entity failed to activate");
 			ZstLog::entity(LogLevel::debug, "Finished sync activate");
 			break;
@@ -95,7 +94,7 @@ int main(int argc,char **argv){
     zst_join("127.0.0.1");
 
 	Sink * sink = new Sink("sink_ent");
-	zst_activate_entity(sink);
+	zst_get_root()->add_child(sink);
 	
 	while (sink->last_received_code != 0){
 		zst_poll_once();

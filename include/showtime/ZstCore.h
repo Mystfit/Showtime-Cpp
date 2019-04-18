@@ -11,7 +11,6 @@
 #include "entities/ZstEntityFactory.h"
 #include "entities/ZstEntityBase.h"
 #include "entities/ZstComponent.h"
-#include "entities/ZstContainer.h"
 #include "entities/ZstPlug.h"
 #include "entities/ZstPerformer.h"
 #include "adaptors/ZstSessionAdaptor.hpp"

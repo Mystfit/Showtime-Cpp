@@ -6,7 +6,8 @@
 #define DEFAULT_LOG_FILE "showtime.log"
 #define ZST_LOG_APP_CHANNEL "app"
 #define ZST_LOG_NET_CHANNEL "net"
-#define ZST_LOG_ENTITY_CHANNEL "entity"
+#define ZST_LOG_SERVER_CHANNEL "srv"
+#define ZST_LOG_ENTITY_CHANNEL "ent"
 
 // ----------------------------------------------------------------------------
 // Logging interface
@@ -45,6 +46,7 @@ namespace ZstLog {
 
 		ZST_EXPORT void entity_sink_message(LogLevel level, const char * msg);
 		ZST_EXPORT void net_sink_message(LogLevel level, const char * msg);
+        ZST_EXPORT void server_sink_message(LogLevel level, const char * msg);
 		ZST_EXPORT void app_sink_message(LogLevel level, const char * msg);
 
 		static bool _logging = false;
@@ -52,6 +54,7 @@ namespace ZstLog {
 
 	ZST_EXPORT void init_logger(const char * logger_name, LogLevel level = LogLevel::notification);
 	ZST_EXPORT void init_file_logging(const char * log_file_path = "");
+    ZST_EXPORT const char * get_severity_str(LogLevel level);
 	
 	template <typename... Args>
 	inline void net(LogLevel level, const char* msg, const Args&... vars)
@@ -63,6 +66,17 @@ namespace ZstLog {
 	{
 		internals::net_sink_message(level, msg);
 	}
+    
+    template <typename... Args>
+    inline void server(LogLevel level, const char* msg, const Args&... vars)
+    {
+        internals::server_sink_message(level, fmt::format(msg, vars...).c_str());
+    }
+    
+    inline void server(LogLevel level, const char* msg)
+    {
+        internals::server_sink_message(level, msg);
+    }
 
 	template <typename... Args>
 	inline void entity(LogLevel level, const char* msg, const Args&... vars)

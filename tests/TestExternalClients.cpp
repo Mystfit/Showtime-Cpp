@@ -14,7 +14,8 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
 
     //Create emitter
     OutputComponent * output_ent = new OutputComponent("proxy_test_output");
-    zst_activate_entity(output_ent);
+    zst_get_root()->add_child(output_ent);
+    assert(output_ent->is_activated());
     
     ZstURI sink_perf_uri = ZstURI("sink");
     ZstURI sink_ent_uri = sink_perf_uri + ZstURI("sink_ent");
@@ -64,16 +65,16 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
     
     //Test entity exists
     wait_for_event(entityEvents, 1);
-    ZstContainer * sink_ent = dynamic_cast<ZstContainer*>(zst_find_entity(sink_ent_uri));
+    ZstComponent * sink_ent = dynamic_cast<ZstComponent*>(zst_find_entity(sink_ent_uri));
     assert(sink_ent);
     entityEvents->reset_num_calls();
     
-    ZstInputPlug * sink_plug = dynamic_cast<ZstInputPlug*>(sink_ent->get_plug_by_URI(sink_plug_uri));
+    ZstInputPlug * sink_plug = dynamic_cast<ZstInputPlug*>(sink_ent->get_child_by_URI(sink_plug_uri));
     assert(sink_plug);
 	assert(zst_find_entity(sink_plug->URI()));
     assert(sink_plug->is_activated());
 
-	ZstOutputPlug * sync_out_plug = dynamic_cast<ZstOutputPlug*>(sink_ent->get_plug_by_URI(sync_out_plug_uri));
+	ZstOutputPlug * sync_out_plug = dynamic_cast<ZstOutputPlug*>(sink_ent->get_child_by_URI(sync_out_plug_uri));
 	assert(sync_out_plug);
 	assert(sync_out_plug->is_activated());
 
@@ -107,11 +108,12 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
 	ZstLog::app(LogLevel::notification, "Creating a plug on the remote performer");
 	ZstComponent * sink_b = dynamic_cast<ZstComponent*>(zst_find_entity(sink_B_uri));
 	ZstOutputPlug * remote_plug = sink_b->create_output_plug("remote_plug", ZstValueType::ZST_INT);
+    assert(entityEvents->num_calls() == 1);
 	assert(remote_plug);
-	zst_activate_entity(remote_plug);
 	assert(remote_plug->is_activated());
 	assert(zst_find_entity(remote_plug->URI()));
 	ZstURI remote_plug_uri = remote_plug->URI();
+    entityEvents->reset_num_calls();
 
 	//Test remote plug can send values
 	ZstLog::app(LogLevel::notification, "Testing sending values using remote plug");

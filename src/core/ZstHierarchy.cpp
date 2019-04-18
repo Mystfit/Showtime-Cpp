@@ -39,7 +39,7 @@ void ZstHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportSen
 	}
 }
 
-ZstEntityBase * ZstHierarchy::create_entity(const ZstURI & creatable_path, const char * name, bool activate, const ZstTransportSendType & sendtype)
+ZstEntityBase * ZstHierarchy::create_entity(const ZstURI & creatable_path, const char * name, const ZstTransportSendType & sendtype)
 {
 	ZstEntityBase * entity = NULL;
 	
@@ -47,9 +47,6 @@ ZstEntityBase * ZstHierarchy::create_entity(const ZstURI & creatable_path, const
 	if (factory) {
 		entity = factory->create_entity(creatable_path, name);
 	}
-
-	if (entity && activate)
-		activate_entity(entity);
 
 	return entity;
 }
@@ -120,7 +117,7 @@ ZstEntityBase * ZstHierarchy::find_entity(const ZstURI & path) const
 	try {
 		entity = m_entity_lookup.at(path);
 	} catch(std::out_of_range){
-		ZstLog::net(LogLevel::debug, "Couldn't find entity {}", path.path());
+		//ZstLog::net(LogLevel::debug, "Couldn't find entity {}", path.path());
 	}
 
 	return entity;
@@ -147,10 +144,8 @@ ZstEntityBase * ZstHierarchy::walk_to_entity(const ZstURI & path) const
 	return result;
 }
 
-ZstMsgKind ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity) {
-
-	ZstEntityBase * entity_proxy = NULL;
-
+ZstMsgKind ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity)
+{
 	// All entities need a parent unless they are a performer 
 	ZstURI parent_URI = entity.URI().parent();
 	if (!parent_URI.size()) {
@@ -158,51 +153,34 @@ ZstMsgKind ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity) {
 		return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
 	}
 
-	ZstEntityBase * parent = find_entity(parent_URI);
-	assert(parent);
-
+    //Check if the entity already exists in the hierarchy
 	if (find_entity(entity.URI())) {
 		ZstLog::net(LogLevel::error, "Can't create entity {}, it already exists", entity.URI().path());
 		return ZstMsgKind::ERR_ENTITY_ALREADY_EXISTS;
 	}
-
-	//Lock the hierarchy
-	//std::unique_lock<std::mutex> lock(m_hierarchy_mutex);
-	//lock.lock();
-
+    
 	//Create proxies and set parents
+    ZstEntityBase * parent = find_entity(parent_URI);
+    ZstEntityBase * entity_proxy = NULL;
+
 	if (strcmp(entity.entity_type(), COMPONENT_TYPE) == 0) {
 		entity_proxy = new ZstComponent(static_cast<const ZstComponent&>(entity));
-		dynamic_cast<ZstContainer*>(parent)->add_child(entity_proxy);
-	}
-	else if (strcmp(entity.entity_type(), CONTAINER_TYPE) == 0) {
-		entity_proxy = new ZstContainer(static_cast<const ZstContainer&>(entity));
-		dynamic_cast<ZstContainer*>(parent)->add_child(entity_proxy);
 	}
 	else if (strcmp(entity.entity_type(), PLUG_TYPE) == 0) {
-		ZstPlug * plug = new ZstPlug(static_cast<const ZstPlug&>(entity));
-		entity_proxy = plug;
-		dynamic_cast<ZstComponent*>(parent)->add_plug(plug);
+		entity_proxy = new ZstPlug(static_cast<const ZstPlug&>(entity));
 	}
 	else if (strcmp(entity.entity_type(), FACTORY_TYPE) == 0) {
-		ZstEntityFactory * factory = new ZstEntityFactory(static_cast<const ZstEntityFactory&>(entity));
-		entity_proxy = factory;
-		ZstPerformer * performer = dynamic_cast<ZstPerformer*>(parent);
-		if (performer) {
-			performer->add_child(factory);
-		}
-		else {
-			ZstLog::net(LogLevel::error, "No parent performer found for factory or parent {} is not a performer", parent->URI().path());
-		}
+		entity_proxy = new ZstEntityFactory(static_cast<const ZstEntityFactory&>(entity));
 	}
 	else {
 		ZstLog::net(LogLevel::notification, "Can't create unknown proxy entity type {}", entity.entity_type());
 		return ZstMsgKind::ERR_MSG_TYPE_UNKNOWN;
 	}
-	//lock.unlock();
-
-	ZstLog::net(LogLevel::notification, "Received proxy entity {}", entity_proxy->URI().path());
-
+    
+    //Set the entity as a proxy early to avoid accidental auto-activation
+    synchronisable_set_proxy(entity_proxy);
+    dynamic_cast<ZstComponent*>(parent)->add_child(entity_proxy);
+    
 	//Mirror proxy and adaptor addition to entity children
 	ZstEntityBundle bundle;
 	for (auto c : entity_proxy->get_child_entities(bundle, true)) 
@@ -222,14 +200,8 @@ ZstMsgKind ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity) {
 	}
 
 	//Only dispatch events once all entities have been activated and registered
-	if (strcmp(entity.entity_type(), COMPONENT_TYPE) == 0) {
+    if (strcmp(entity.entity_type(), COMPONENT_TYPE) == 0 || strcmp(entity.entity_type(), PLUG_TYPE) == 0)  {
 		m_hierarchy_events.defer([entity_proxy](ZstHierarchyAdaptor * adp) {adp->on_entity_arriving(entity_proxy); });
-	}
-	else if (strcmp(entity.entity_type(), CONTAINER_TYPE) == 0) {
-		m_hierarchy_events.defer([entity_proxy](ZstHierarchyAdaptor * adp) {adp->on_entity_arriving(entity_proxy); });
-	}
-	else if (strcmp(entity.entity_type(), PLUG_TYPE) == 0) {
-		m_hierarchy_events.defer([entity_proxy](ZstHierarchyAdaptor * adp) {adp->on_plug_arriving(static_cast<ZstPlug*>(entity_proxy)); });
 	}
 	else if (strcmp(entity.entity_type(), FACTORY_TYPE) == 0) {
 		m_hierarchy_events.defer([entity_proxy](ZstHierarchyAdaptor * adp) {adp->on_factory_arriving(static_cast<ZstEntityFactory*>(entity_proxy)); });
@@ -296,14 +268,12 @@ void ZstHierarchy::activate_entity_complete(ZstEntityBase * entity)
 
 	//Add entity to lookup tables
 	ZstEntityBundle bundle;
-	for (auto c : entity->get_child_entities(bundle, false)) {
+	for (auto c : entity->get_child_entities(bundle)) {
 		add_entity_to_lookup(c);
-		synchronisable_set_activated(c);
+		//synchronisable_set_activated(c);
+        synchronisable_set_activating(c);
+        synchronisable_enqueue_activation(c);
 	}
-
-	//Add entity to the lookup seperately since it was not included in the bundle so that we can activate it seperately
-	add_entity_to_lookup(entity);
-	synchronisable_enqueue_activation(entity);
 }
 
 void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
@@ -313,23 +283,11 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 		return;
 	}
 
-	ZstContainer * parent = NULL;
-
-	//Lock the hierarchy
-	//std::unique_lock<std::mutex> lock(m_hierarchy_mutex);
-	//lock.lock();
-
 	//Remove entity from parent
 	if (entity->parent()) {
-		if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
-			//Remove plug
-			ZstPlug * plug = dynamic_cast<ZstPlug*>(entity);
-			parent->remove_plug(plug);
-		}
-		else {
-			parent = dynamic_cast<ZstContainer*>(entity->parent());
-			parent->remove_child(entity);
-		}
+        ZstComponent * parent = dynamic_cast<ZstComponent*>(entity->parent());
+        if(parent)
+            parent->remove_child(entity);
 	}
 	else {
 		//Entity is a root performer. Remove from performer list

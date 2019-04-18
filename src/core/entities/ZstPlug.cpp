@@ -40,16 +40,12 @@ ZstPlug::ZstPlug(const ZstPlug & other) : ZstEntityBase(other)
 
 ZstPlug::~ZstPlug() {
 	delete m_value;
-	//Cables should have been cleared at this point
-	//for (auto cable : m_cables) {
-	//	cable->set_deactivated(); 
-	//}
 	m_cables.clear();
 }
 
 void ZstPlug::on_deactivation()
 {
-	//If this plug is deactivated then cables will be going away
+	//If this plug is deactivated then cables will be going away soon
 	m_cables.clear();
 }
 
@@ -286,4 +282,4 @@ bool ZstOutputPlug::is_reliable()
 	return m_reliable;
 }
 
-MSGPACK_ADD_ENUM(ZstPlugDirection);
+//MSGPACK_ADD_ENUM(ZstPlugDirection);

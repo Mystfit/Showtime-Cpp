@@ -34,7 +34,7 @@ void ZstPerformerStageProxy::remove_subscriber_peer(ZstPerformerStageProxy * cli
 	try{
 		m_connected_subscriber_peers.erase(client->URI());
 	} catch(std::out_of_range e){
-		ZstLog::net(LogLevel::warn, "Peer {} not connected to {}", this->URI().path(), client->URI().path());
+		ZstLog::server(LogLevel::warn, "Peer {} not connected to {}", this->URI().path(), client->URI().path());
 	}
 }
 
