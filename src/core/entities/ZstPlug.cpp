@@ -1,4 +1,5 @@
 #include <memory>
+#include <mutex>
 #include <msgpack.hpp>
 #include <nlohmann/json.hpp>
 
@@ -46,6 +47,7 @@ ZstPlug::~ZstPlug() {
 void ZstPlug::on_deactivation()
 {
 	//If this plug is deactivated then cables will be going away soon
+    std::lock_guard<std::mutex> lock(m_entity_mtx);
 	m_cables.clear();
 }
 
@@ -151,9 +153,8 @@ ZstPlugDirection ZstPlug::direction()
 
 ZstCableBundle & ZstPlug::get_child_cables(ZstCableBundle & bundle) const
 {
-	//TODO: Replace with set?
-	//Cables may already be present, so only add unique ones
-	for (auto c : m_cables) {
+    std::lock_guard<std::mutex> lock(m_entity_mtx);
+	for (auto const & c : m_cables) {
 		bool exists = false;
 		for (auto cable : bundle) {
 			if (c == cable)
@@ -184,23 +185,34 @@ size_t ZstPlug::max_connected_cables()
 
 bool ZstPlug::is_connected_to(ZstPlug * plug)
 {
-	bool result = false;
-	for (auto c : m_cables) {
-		if (c->is_attached(this, plug)) {
-			result = true;
-		}
+	for (auto const & c : m_cables) {
+        if((c.get_input_URI() == this->URI() && c.get_output_URI() ==  plug->URI()) ||
+           (c.get_input_URI() == plug->URI() && c.get_output_URI() ==  this->URI())){
+            return true;
+        }
 	}
-	return result;
+	return false;
 }
 
 void ZstPlug::add_cable(ZstCable * cable)
 {
-	m_cables.insert(cable);
+    if(!cable)
+        return;
+    
+    std::lock_guard<std::mutex> lock(m_entity_mtx);
+	m_cables.insert(ZstCable(*cable));
 }
 
 void ZstPlug::remove_cable(ZstCable * cable)
 {
-	m_cables.erase(cable);
+    if(!cable)
+        return;
+    
+    std::lock_guard<std::mutex> lock(m_entity_mtx);
+    auto cable_it = m_cables.find(*cable);
+    if(cable_it != m_cables.end()){
+        m_cables.erase(cable_it);
+    }
 }
 
 

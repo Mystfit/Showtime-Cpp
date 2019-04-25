@@ -2,7 +2,6 @@
 #include "ZstHierarchy.h"
 
 ZstHierarchy::ZstHierarchy() :
-	m_synchronisable_events("hierarchy stage"),
     m_hierarchy_events("hierarchy")
 {
 }
@@ -11,17 +10,10 @@ ZstHierarchy::~ZstHierarchy()
 {
 }
 
-void ZstHierarchy::init()
-{
-	//We add this instance as an adaptor to make sure we can process local queued events
-	m_synchronisable_events.add_adaptor(this);
-}
-
 void ZstHierarchy::destroy()
 {
-	this->flush_events();
-	m_synchronisable_events.remove_all_adaptors();
 	m_hierarchy_events.remove_all_adaptors();
+    ZstSynchronisableModule::destroy();
 }
 
 void ZstHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
@@ -344,20 +336,16 @@ ZstEventDispatcher<ZstHierarchyAdaptor*> & ZstHierarchy::hierarchy_events()
 {
 	m_synchronisable_events.process_events();
 	m_hierarchy_events.process_events();
+    
+    ZstSynchronisableModule::process_events();
 }
 
  void ZstHierarchy::flush_events()
  {
-	m_synchronisable_events.flush();
 	m_hierarchy_events.flush();
+     
+    ZstSynchronisableModule::flush_events();
  }
-
-void ZstHierarchy::on_synchronisable_has_event(ZstSynchronisable * synchronisable)
-{
-	m_synchronisable_events.defer([this, synchronisable](ZstSynchronisableAdaptor * dlg) {
-		this->synchronisable_process_events(synchronisable);
-	});
-}
 
 void ZstHierarchy::on_synchronisable_destroyed(ZstSynchronisable * synchronisable)
 {

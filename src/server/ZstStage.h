@@ -14,6 +14,7 @@
 
 //Core headers
 #include "../core/ZstActor.h"
+#include "../core/ZstSemaphore.h"
 #include "../core/ZstStageMessage.h"
 #include "../core/adaptors/ZstTransportAdaptor.hpp"
 #include "../core/transports/ZstServerRecvTransport.h"
@@ -22,7 +23,7 @@
 #include "ZstStageSession.h"
 
 //Forwards
-class ZstBoostEventWakeup;
+class ZstSemaphore;
 
 
 
@@ -45,7 +46,7 @@ private:
 	void process_events();
 	void timer_loop();
 	void event_loop();
-	std::shared_ptr<ZstBoostEventWakeup> m_event_condition;
+	std::shared_ptr<ZstSemaphore> m_event_condition;
 
 	//Timers
 	static void stage_heartbeat_timer(boost::asio::deadline_timer * t, ZstStage * stage, boost::posix_time::milliseconds duration);

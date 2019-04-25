@@ -60,13 +60,12 @@ set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstPerformanceMessage.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstEventDispatcher.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.h"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstEventWakeup.hpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstBoostEventWakeup.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstSemaphore.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessageSupervisor.hpp"
 )
 set(ZST_CORE_MODULE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstSession.h"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstModule.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstSynchronisableModule.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstHierarchy.h"
 )
 set(ZST_CORE_TRANSPORT_HEADERS
@@ -107,7 +106,6 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstStageMessage.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstPerformanceMessage.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstBoostEventWakeup.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessageSupervisor.cpp"
 )
 set(ZST_CORE_TRANSPORT_SRC
@@ -126,7 +124,7 @@ endif()
 set(ZST_CORE_MODULE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstSession.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstHierarchy.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstModule.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstSynchronisableModule.cpp"
 )
 set(ZST_CORE_ENTITY_SRC
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstEntityFactory.cpp"

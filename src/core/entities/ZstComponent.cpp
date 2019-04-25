@@ -114,7 +114,9 @@ void ZstComponent::remove_child(ZstEntityBase * entity)
     //Remove cables associated with this child
 	ZstCableBundle bundle;
 	for (auto cable : entity->get_child_cables(bundle)){
-		cable->enqueue_deactivation();
+        entity_events()->defer([cable](ZstEntityAdaptor * adp){
+            adp->on_disconnect_cable(cable);
+        });
 	}
     
     //Clear child from maps

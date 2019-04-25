@@ -7,7 +7,7 @@
 #include "../core/transports/ZstServerSendTransport.h"
 #include "../core/ZstMessage.h"
 #include "../core/ZstPerformanceMessage.h"
-#include "../core/ZstBoostEventWakeup.hpp"
+#include "../core/ZstSemaphore.h"
 
 #include "ZstClientSession.h"
 
@@ -39,7 +39,7 @@ ZstClient::ZstClient() :
 	m_session->hierarchy()->module_events().add_adaptor(this);
 
 	//Register event conditions
-	m_event_condition = std::make_shared<ZstBoostEventWakeup>();
+	m_event_condition = std::make_shared<ZstSemaphore>();
 	m_client_transport->msg_events()->set_wake_condition(m_event_condition);
 	m_tcp_graph_transport->msg_events()->set_wake_condition(m_event_condition);
 #ifdef ZST_BUILD_DRAFT_API
@@ -78,7 +78,7 @@ void ZstClient::destroy() {
 
 	//Stop threads
 	m_client_event_thread.interrupt();
-	m_event_condition->wake();
+	m_event_condition->notify();
 	m_client_event_thread.try_join_for(boost::chrono::milliseconds(250));
 
 	//Destroy transports
@@ -186,15 +186,15 @@ void ZstClient::process_events()
 	m_session->process_events();
 
 	//Reapers are updated last in case entities still need to be queried beforehand
-	m_session->reaper().reap_all();
-	m_session->hierarchy()->reaper().reap_all();
+//    m_session->reaper().reap_all();
+//    m_session->hierarchy()->reaper().reap_all();
 	//lock.unlock();
 }
 
 void ZstClient::flush()
 {
     ZstEventDispatcher<ZstTransportAdaptor*>::flush();
-	m_session->flush();
+	m_session->flush_events();
 }
 
 // -----------------------

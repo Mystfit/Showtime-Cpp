@@ -12,7 +12,7 @@
 #include "adaptors/ZstEntityAdaptor.hpp"
 
 #include "ZstEventDispatcher.hpp"
-#include "ZstModule.h"
+#include "ZstSynchronisableModule.h"
 #include "liasons/ZstEntityFactoryLiason.hpp"
 #include "liasons/ZstPlugLiason.hpp"
 #include "liasons/ZstSynchronisableLiason.hpp"
@@ -20,18 +20,15 @@
 
 
 class ZstHierarchy : 
-	public ZstModule,
+	public ZstSynchronisableModule,
 	public ZstPlugLiason,
-	public ZstSynchronisableLiason,
 	public ZstEntityFactoryLiason,
-	public ZstSynchronisableAdaptor,
 	public ZstEntityAdaptor
 {
 public:
 	ZST_EXPORT ZstHierarchy();
 	ZST_EXPORT ~ZstHierarchy();
-
-	ZST_EXPORT virtual void init() override;
+    
 	ZST_EXPORT virtual void destroy() override;
 
 	// ------------------------------
@@ -73,13 +70,12 @@ public:
 	// -----------------
 	
 	ZST_EXPORT ZstEventDispatcher<ZstHierarchyAdaptor*> & hierarchy_events();
-	ZST_EXPORT virtual void process_events();
-	ZST_EXPORT virtual void flush_events();
+	ZST_EXPORT virtual void process_events() override;
+	ZST_EXPORT virtual void flush_events() override;
 
 	// -----------------
 	// Adaptor overrides
 	// -----------------
-	ZST_EXPORT void on_synchronisable_has_event(ZstSynchronisable * synchronisable) override;
 	ZST_EXPORT void on_synchronisable_destroyed(ZstSynchronisable * synchronisable) override;
 	ZST_EXPORT virtual void on_register_entity(ZstEntityBase * entity) override;
 

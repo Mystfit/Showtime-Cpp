@@ -8,9 +8,8 @@
 #include "adaptors/ZstEntityAdaptor.hpp"
 #include "adaptors/ZstComputeAdaptor.hpp"
 
-#include "ZstModule.h"
+#include "ZstSynchronisableModule.h"
 #include "ZstHierarchy.h"
-#include "liasons/ZstSynchronisableLiason.hpp"
 #include "liasons/ZstCableLiason.hpp"
 #include "liasons/ZstPlugLiason.hpp"
 #include "adaptors/ZstTransportAdaptor.hpp"
@@ -18,18 +17,16 @@
 
 
 class ZstSession : 
-	public ZstModule,
-	public ZstSynchronisableAdaptor,
+	public ZstSynchronisableModule,
 	public ZstTransportAdaptor,
 	public ZstComputeAdaptor,
-	protected ZstSynchronisableLiason,
 	protected ZstCableLiason,
 	protected ZstPlugLiason
 {
 public:
 	ZST_EXPORT ZstSession();
-	ZST_EXPORT virtual void process_events();
-	ZST_EXPORT virtual void flush();
+	ZST_EXPORT virtual void process_events() override;
+	ZST_EXPORT virtual void flush_events() override;
 	ZST_EXPORT virtual void init() override;
 	ZST_EXPORT virtual void destroy() override;
 
@@ -49,6 +46,7 @@ public:
 	// Cable queries
 	// -------------
 
+    ZST_EXPORT virtual ZstCable * find_cable(const ZstCable & cable_path);
 	ZST_EXPORT virtual ZstCable * find_cable(const ZstURI & input_path, const ZstURI & output_path);
 	ZST_EXPORT virtual ZstCable * find_cable(ZstInputPlug * input, ZstOutputPlug * output);
 	ZST_EXPORT virtual ZstCableBundle & get_cables(ZstCableBundle & bundle);
@@ -66,7 +64,6 @@ public:
 	// -------------------------------
 	
 	ZST_EXPORT void on_synchronisable_destroyed(ZstSynchronisable * synchronisable) override;
-	ZST_EXPORT void on_synchronisable_has_event(ZstSynchronisable * synchronisable) override;
 
 	// -------------
 	// Compute adaptor overrides
@@ -89,7 +86,6 @@ public:
 	// -----------------
 
 	ZST_EXPORT ZstEventDispatcher<ZstSessionAdaptor*> & session_events();
-	ZST_EXPORT ZstEventDispatcher<ZstSynchronisableAdaptor*> & synchronisable_events();
 	ZST_EXPORT ZstEventDispatcher<ZstComputeAdaptor*> & compute_events();
 
 protected:
@@ -100,14 +96,16 @@ protected:
 	ZST_EXPORT virtual ZstCable * create_cable(const ZstCable & cable);
 	ZST_EXPORT virtual ZstCable * create_cable(ZstInputPlug * input, ZstOutputPlug * output);
 	ZST_EXPORT virtual ZstCable * create_cable(const ZstURI & input_path, const ZstURI & output_path);
-	ZstCableList m_cables;
+	ZstCableSet m_cables;
+    
+    //Locking
+    mutable std::mutex m_session_mtex;
 
 private:
 	// -----------------
 	// Event dispatchers
 	// -----------------
 	ZstEventDispatcher<ZstSessionAdaptor*> m_session_events;
-	ZstEventDispatcher<ZstSynchronisableAdaptor*> m_synchronisable_events;
 	ZstEventDispatcher<ZstComputeAdaptor*> m_compute_events;
 	ZstPerformerMap m_connected_performers;
 };

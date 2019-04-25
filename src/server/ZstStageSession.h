@@ -1,5 +1,6 @@
 #include <cf/cfuture.h>
 
+#include "../core/ZstSemaphore.h"
 #include "../core/adaptors/ZstTransportAdaptor.hpp"
 #include "../core/ZstSession.h"
 #include "../core/ZstMessageSupervisor.hpp"
@@ -18,6 +19,7 @@ public:
 	void init() override;
 	void destroy() override;
 	virtual void process_events() override;
+    virtual void set_wake_condition(std::weak_ptr<ZstSemaphore> condition) override;
 
 	void on_receive_msg(ZstMessage * msg) override;
 	ZstMsgKind synchronise_client_graph(ZstPerformer * client);

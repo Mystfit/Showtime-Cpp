@@ -13,6 +13,14 @@ void ZstStageHierarchy::destroy() {
 	ZstHierarchy::destroy();
 }
 
+void ZstStageHierarchy::set_wake_condition(std::weak_ptr<ZstSemaphore> condition)
+{
+    ZstStageModule::set_wake_condition(condition);
+    hierarchy_events().set_wake_condition(condition);
+    synchronisable_events().set_wake_condition(condition);
+}
+
+
 void ZstStageHierarchy::on_receive_msg(ZstMessage * msg)
 {
 	ZstStageMessage * stage_msg = static_cast<ZstStageMessage*>(msg);

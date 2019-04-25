@@ -10,7 +10,7 @@
 #include <mutex>
 #include "adaptors/ZstEventAdaptor.hpp"
 
-#include "ZstEventWakeup.hpp"
+#include "ZstSemaphore.h"
 
 enum ZstEventStatus {
 	FAILED = 0,
@@ -37,15 +37,13 @@ class ZstEventDispatcher
 	static_assert(std::is_base_of<ZstEventAdaptor, std::remove_pointer_t<T> >::value, "T must derive from ZstEventAdaptor");
 public:
 	ZstEventDispatcher(const char * name = "") : 
-		m_has_event(false),
-		m_condition_wake(NULL)
+		m_has_event(false)
 	{
 		m_name = std::string(name);
 	}
 
-	~ZstEventDispatcher() {
-		this->flush();
-		this->remove_all_adaptors();
+	~ZstEventDispatcher() noexcept{
+        this->remove_all_adaptors();
 	}
 
 	void add_adaptor(T adaptor) { 
@@ -53,8 +51,9 @@ public:
 		this->m_adaptors.insert(adaptor);
 	}
 
-	void set_wake_condition(std::shared_ptr<ZstEventWakeup> condition){
-		this->m_condition_wake = condition;
+	void set_wake_condition(std::weak_ptr<ZstSemaphore> condition){
+        //std::lock_guard<std::recursive_mutex> lock(m_mtx);
+        this->m_condition_wake = condition;
 	}
 
 	void remove_adaptor(T adaptor) { 
@@ -73,6 +72,7 @@ public:
 	
 	void flush() {
 		ZstEvent<T> e;
+        //std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		while (this->m_events.try_dequeue(e)) {}
 	}
 
@@ -83,8 +83,9 @@ public:
 
 		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		for (T adaptor : this->m_adaptors) {
-            if(adaptor)
+            if(adaptor){
                 event(adaptor);
+            }
 		}
 	}
 
@@ -92,16 +93,16 @@ public:
 		ZstEvent<T> e(event, [](ZstEventStatus s) {});
 		this->m_events.enqueue(e);
 		m_has_event = true;
-		if(m_condition_wake)
-			m_condition_wake->wake();
+		if(auto shared = m_condition_wake.lock())
+            shared->notify();
 	}
 
 	void defer(std::function<void(T)> event, std::function<void(ZstEventStatus)> on_complete) {
 		ZstEvent<T> e(event, on_complete);
 		this->m_events.enqueue(e);
 		m_has_event = true;
-		if(m_condition_wake)
-			m_condition_wake->wake();
+        if(auto shared = m_condition_wake.lock())
+            shared->notify();
 	}
 
 	void process_events() {
@@ -135,6 +136,6 @@ private:
 	moodycamel::ConcurrentQueue< ZstEvent<T> > m_events;
 	std::string m_name;
 	bool m_has_event;
-	std::shared_ptr<ZstEventWakeup> m_condition_wake;
+	std::weak_ptr<ZstSemaphore> m_condition_wake;
 	std::recursive_mutex m_mtx;
 };

@@ -40,10 +40,9 @@ public:
 	// ------------------------------
 
 	void init(std::string name);
-	void init() override {};
 	void destroy() override;
 	void process_events() override;
-	void flush() override;
+	void flush_events() override;
 
 
 	// ---------------------------

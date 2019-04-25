@@ -18,10 +18,11 @@ ZstClientSession::~ZstClientSession() {
 void ZstClientSession::init(std::string client_name)
 {
 	m_hierarchy->init(client_name);
-	ZstSession::init();
 
 	//Attach this as an adaptor to the hierarchy module to handle hierarchy events
 	m_hierarchy->hierarchy_events().add_adaptor(this);
+    
+    ZstSession::init();
 }
 
 void ZstClientSession::destroy()
@@ -36,9 +37,9 @@ void ZstClientSession::process_events()
 	stage_events().process_events();
 }
 
-void ZstClientSession::flush()
+void ZstClientSession::flush_events()
 {
-	ZstSession::flush();
+	ZstSession::flush_events();
 	stage_events().flush();
 }
 
@@ -87,7 +88,7 @@ void ZstClientSession::on_receive_msg(ZstMessage * msg)
 	case ZstMsgKind::DESTROY_CABLE:
 	{
 		const ZstCable & cable = stage_msg->unpack_payload_serialisable<ZstCable>();
-		ZstCable * cable_ptr = find_cable(cable.get_input_URI(), cable.get_output_URI());
+		ZstCable * cable_ptr = find_cable(cable);
 		if (cable_ptr) {
 			destroy_cable_complete(ZstMessageReceipt{ ZstMsgKind::OK, ZstTransportSendType::SYNC_REPLY }, cable_ptr);
 		}
@@ -100,9 +101,8 @@ void ZstClientSession::on_receive_msg(ZstMessage * msg)
 
 void ZstClientSession::on_receive_graph_msg(ZstPerformanceMessage * msg)
 {
-	//Check if message has a payload
 	if(msg->payload().size() < 1){
-		ZstLog::net(LogLevel::warn, "No payload in graph message");
+        //"No payload in graph message"
 		return;
 	}
 
@@ -130,7 +130,7 @@ void ZstClientSession::on_receive_graph_msg(ZstPerformanceMessage * msg)
 	//Iterate over all connected cables from the sending plug
 	ZstCableBundle bundle;
 	for (auto cable : sending_plug->get_child_cables(bundle)) {
-		receiving_plug = cable->get_input();
+		receiving_plug = dynamic_cast<ZstInputPlug*>(hierarchy()->find_entity(cable.get_input_URI()));
 		if (receiving_plug) {
 			if (!receiving_plug->is_proxy()) {
 				receiving_plug->raw_value()->copy(received_val);
@@ -233,20 +233,12 @@ bool ZstClientSession::observe_entity(ZstEntityBase * entity, const ZstTransport
 
 void ZstClientSession::destroy_cable_complete(ZstMessageReceipt response, ZstCable * cable)
 {
-	if (!cable) return;
-	if (!cable->is_activated()) return;
-
 	ZstSession::destroy_cable_complete(cable);
-
 	if (response.status != ZstMsgKind::OK) {
 		ZstLog::net(LogLevel::error, "Destroy cable failed with status {}", get_msg_name(response.status));
 		return;
 	}
 	ZstLog::net(LogLevel::debug, "Destroy cable completed with status {}", get_msg_name(response.status));
-
-	//Queue events
-	session_events().defer([cable](ZstSessionAdaptor * dlg) { dlg->on_cable_destroyed(cable); });
-	synchronisable_enqueue_deactivation(cable);
 }
 
 void ZstClientSession::observe_entity_complete(ZstMessageReceipt response, ZstEntityBase * entity)

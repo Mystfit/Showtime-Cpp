@@ -5,7 +5,7 @@
 
 //Core headers
 #include <ZstVersion.h>
-#include "../core/ZstBoostEventWakeup.hpp"
+#include "../core/ZstSemaphore.h"
 
 //Stage headers
 #include "ZstPerformerStageProxy.h"
@@ -20,18 +20,10 @@ ZstStage::ZstStage() :
 	m_router_transport = new ZstServerRecvTransport();
 
 	//Register event conditions
-	m_event_condition = std::make_shared<ZstBoostEventWakeup>();
+	m_event_condition = std::make_shared<ZstSemaphore>();
 	m_session->set_wake_condition(m_event_condition);
-	m_session->hierarchy()->set_wake_condition(m_event_condition);
 	m_router_transport->msg_events()->set_wake_condition(m_event_condition);
 	this->set_wake_condition(m_event_condition);
-
-	//Register event conditions
-	m_event_condition = std::make_shared<ZstBoostEventWakeup>();
-	this->set_wake_condition(m_event_condition);
-	m_session->set_wake_condition(m_event_condition);
-	m_session->hierarchy()->set_wake_condition(m_event_condition);
-	m_router_transport->msg_events()->set_wake_condition(m_event_condition);
 }
 
 ZstStage::~ZstStage()
@@ -80,7 +72,7 @@ void ZstStage::destroy()
 
 	//Stop threads
 	m_stage_eventloop_thread.interrupt();
-	m_event_condition->wake();
+	m_event_condition->notify();
     m_stage_eventloop_thread.try_join_for(boost::chrono::milliseconds(250));
 	m_stage_timer_thread.interrupt();
 	m_io.stop();
@@ -107,8 +99,8 @@ void ZstStage::process_events()
 	m_router_transport->process_events();
 
 	//Reapers are updated last in case entities still need to be queried beforehand
-	m_session->reaper().reap_all();
-	m_session->hierarchy()->reaper().reap_all();
+//    m_session->reaper().reap_all();
+//    m_session->hierarchy()->reaper().reap_all();
 }
 
 
@@ -151,7 +143,7 @@ void ZstStage::event_loop()
 	while (1) {
 		try {
 			boost::this_thread::interruption_point();
-			this->m_event_condition->wait();
+			this->m_event_condition->wait();    
             if(this->is_destroyed())
                 break;
             this->process_events();

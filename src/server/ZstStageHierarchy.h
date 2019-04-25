@@ -1,6 +1,7 @@
 #include <map>
 #include <string>
 
+#include "../core/ZstSemaphore.h"
 #include "../core/ZstHierarchy.h"
 #include "../core/ZstStageMessage.h"
 #include "ZstPerformerStageProxy.h"
@@ -16,7 +17,8 @@ class ZstStageHierarchy :
 public:
 	~ZstStageHierarchy();
 	void destroy() override;
-	
+    virtual void set_wake_condition(std::weak_ptr<ZstSemaphore> condition) override;
+
 
 	// ---------------------------
 	// Hierarchy adaptor overrides

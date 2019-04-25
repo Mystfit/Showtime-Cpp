@@ -18,14 +18,19 @@ void ZstStageSession::init()
 {
 	//Attach this as an adaptor to the hierarchy module to handle hierarchy events that will modify cables
 	m_hierarchy->hierarchy_events().add_adaptor(this);
+    
+    ZstSession::init();
 }
 
 void ZstStageSession::destroy()
 {
 	ZstCableBundle bundle;
+    
+    std::unique_lock<std::mutex> lock(m_session_mtex);
 	for (auto c : get_cables(bundle)) {
-		destroy_cable(c);
+		destroy_cable(find_cable(c));
 	}
+    lock.release();
 
 	hierarchy()->destroy();
 	ZstSession::destroy();
@@ -35,6 +40,14 @@ void ZstStageSession::process_events()
 {
 	ZstSession::process_events();
 	m_connection_watcher.cleanup_response_messages();
+}
+
+void ZstStageSession::set_wake_condition(std::weak_ptr<ZstSemaphore> condition)
+{
+    ZstStageModule::set_wake_condition(condition);
+    m_hierarchy->set_wake_condition(condition);
+    session_events().set_wake_condition(condition);
+    synchronisable_events().set_wake_condition(condition);
 }
 
 void ZstStageSession::on_receive_msg(ZstMessage * msg)
@@ -103,7 +116,7 @@ ZstMsgKind ZstStageSession::synchronise_client_graph(ZstPerformer * client) {
 	}
 
 	//Send cables
-	for (auto cable : m_cables) {
+	for (auto const & cable : m_cables) {
 		router_events().invoke([&cable, &args](ZstTransportAdaptor * adp) {
 			adp->on_send_msg(ZstMsgKind::CREATE_CABLE, args, cable->as_json());
 		});
@@ -120,9 +133,9 @@ ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformerS
 	ZstCable cable = stage_msg->unpack_payload_serialisable<ZstCable>();
 	ZstLog::server(LogLevel::notification, "Received connect cable request for In:{} and Out:{}", cable.get_input_URI().path(), cable.get_output_URI().path());
 
-	//Create cable 
-	if (find_cable(cable.get_input_URI(), cable.get_output_URI())) {
-		ZstLog::server(LogLevel::warn, "Cable already exists");
+	//Make sure cable doesn't already exist
+	if (find_cable(cable)) {
+        ZstLog::server(LogLevel::warn, "Cable {}<->{} already exists", cable.get_input_URI().path(), cable.get_output_URI().path());
 		return ZstMsgKind::ERR_STAGE_BAD_CABLE_CONNECT_REQUEST;
 	}
 
@@ -137,8 +150,8 @@ ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformerS
 	if (input->num_cables() >= input->max_connected_cables()){
 		ZstLog::server(LogLevel::warn, "Too many cables in plug. Disconnecting existing cables");
 		ZstCableBundle bundle;
-		for (auto c : input->get_child_cables(bundle)) {
-			destroy_cable(c);
+		for (auto const & c : input->get_child_cables(bundle)) {
+			destroy_cable(find_cable(c));
 		}
 	}
 	
@@ -272,7 +285,7 @@ ZstMsgKind ZstStageSession::destroy_cable_handler(ZstMessage * msg)
 	const ZstCable & cable = stage_msg->unpack_payload_serialisable<ZstCable>();
 	ZstLog::server(LogLevel::notification, "Received destroy cable connection request");
 
-	ZstCable * cable_ptr = find_cable(cable.get_input_URI(), cable.get_output_URI());
+	ZstCable * cable_ptr = find_cable(cable);
 	destroy_cable(cable_ptr);
 
 	return ZstMsgKind::OK;
@@ -297,7 +310,7 @@ void ZstStageSession::disconnect_cables(ZstEntityBase * entity)
 {
 	ZstCableBundle bundle;
 	for (auto c : entity->get_child_cables(bundle)) {
-		destroy_cable(c);
+		destroy_cable(find_cable(c));
 	}
 }
 

@@ -13,6 +13,7 @@
 #include <ZstCore.h>
 
 //Showtime Core includes
+#include "../core/ZstSemaphore.h"
 #include "../core/liasons/ZstPlugLiason.hpp"
 #include "../core/liasons/ZstSynchronisableLiason.hpp"
 #include "../core/adaptors/ZstTransportAdaptor.hpp"
@@ -21,7 +22,7 @@
 
 
 //Forwards
-class ZstBoostEventWakeup;
+class ZstSemaphore;
 class ZstTCPGraphTransport;
 class ZstUDPGraphTransport;
 class ZstMessage;
@@ -137,7 +138,7 @@ private:
 	ZstConnectionTimerMapUnique m_connection_timers;
 
 	boost::thread m_client_event_thread;
-	std::shared_ptr<ZstBoostEventWakeup> m_event_condition;
+	std::shared_ptr<ZstSemaphore> m_event_condition;
 	void transport_event_loop();
 };
 

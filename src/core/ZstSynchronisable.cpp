@@ -16,7 +16,7 @@ ZstSynchronisable::ZstSynchronisable() :
 	m_is_proxy(false)
 {
 	m_instance_id = ++ZstSynchronisable::s_instance_id_counter;
-	m_synchronisable_events = new ZstEventDispatcher<ZstSynchronisableAdaptor*>("synchronisable");
+    m_synchronisable_events = std::make_unique< ZstEventDispatcher<ZstSynchronisableAdaptor*> >("synchronisable");
 }
 
 ZstSynchronisable::ZstSynchronisable(const ZstSynchronisable & other) : ZstSynchronisable()
@@ -29,8 +29,6 @@ ZstSynchronisable::ZstSynchronisable(const ZstSynchronisable & other) : ZstSynch
 
 ZstSynchronisable::~ZstSynchronisable()
 {
-	//Cleanup event queues
-	delete m_synchronisable_events;
 }
 
 void ZstSynchronisable::add_adaptor(ZstSynchronisableAdaptor * adaptor)
@@ -84,11 +82,15 @@ void ZstSynchronisable::enqueue_deactivation()
 
 		//Notify adaptors that this syncronisable needs to be cleaned up -- proxies only
 		if (this->is_proxy()) {
-			synchronisable_events()->defer([this](ZstSynchronisableAdaptor * dlg) {dlg->on_synchronisable_destroyed(this); });
+			synchronisable_events()->defer([this](ZstSynchronisableAdaptor * dlg) {
+                dlg->on_synchronisable_destroyed(this);
+            });
 		}
 
 		//Notify adaptors that we have a queued event
-		synchronisable_events()->invoke([this](ZstSynchronisableAdaptor* dlg) { dlg->on_synchronisable_has_event(this); });
+		synchronisable_events()->invoke([this](ZstSynchronisableAdaptor* dlg) {
+            dlg->on_synchronisable_has_event(this);
+        });
     }
 }
 
@@ -109,47 +111,56 @@ void ZstSynchronisable::set_deactivating()
 
 void ZstSynchronisable::set_error(ZstSyncError e)
 {
+    std::lock_guard<std::mutex> lock(m_sync_lock);
 	m_sync_status = ZstSyncStatus::ERR;
 	m_sync_error = e;
 }
 
 bool ZstSynchronisable::is_activated()
 {
+    std::lock_guard<std::mutex> lock(m_sync_lock);
 	return m_sync_status == ZstSyncStatus::ACTIVATED;
 }
 
 bool ZstSynchronisable::is_deactivated()
 {
+    std::lock_guard<std::mutex> lock(m_sync_lock);
 	return m_sync_status == ZstSyncStatus::DEACTIVATED;
 }
 
 ZstSyncStatus ZstSynchronisable::activation_status()
 {
+    std::lock_guard<std::mutex> lock(m_sync_lock);
 	return m_sync_status;
 }
 
 ZstSyncError ZstSynchronisable::last_error()
 {
+    std::lock_guard<std::mutex> lock(m_sync_lock);
 	return m_sync_error;
 }
 
 bool ZstSynchronisable::is_destroyed()
 {
+    std::lock_guard<std::mutex> lock(m_sync_lock);
 	return m_is_destroyed;
 }
 
 bool ZstSynchronisable::is_proxy()
 {
+    std::lock_guard<std::mutex> lock(m_sync_lock);
 	return m_is_proxy;
 }
 
 unsigned int ZstSynchronisable::instance_id()
 {
+    std::lock_guard<std::mutex> lock(m_sync_lock);
 	return m_instance_id;
 }
 
 void ZstSynchronisable::set_activation_status(ZstSyncStatus status)
 {
+    std::lock_guard<std::mutex> lock(m_sync_lock);
 	m_sync_status = status;
 	switch (m_sync_status)
 	{
@@ -174,12 +185,12 @@ void ZstSynchronisable::set_activation_status(ZstSyncStatus status)
 
 void ZstSynchronisable::set_destroyed()
 {
-	m_is_destroyed = true;
 	set_activation_status(ZstSyncStatus::DESTROYED);
 }
 
 void ZstSynchronisable::set_proxy()
 {
+    std::lock_guard<std::mutex> lock(m_sync_lock);
 	m_is_proxy = true;
 }
 
@@ -200,5 +211,5 @@ void ZstSynchronisable::dispatch_destroyed()
 
 ZstEventDispatcher<ZstSynchronisableAdaptor*> * ZstSynchronisable::synchronisable_events()
 {
-    return m_synchronisable_events;
+    return m_synchronisable_events.get();
 }
