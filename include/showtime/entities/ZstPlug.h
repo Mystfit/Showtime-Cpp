@@ -5,6 +5,9 @@
 #include "ZstCable.h"
 #include "entities/ZstEntityBase.h"
 
+#include <set>
+#include <mutex>
+
 #define PLUG_TYPE "plug"
 
 //Forward declarations
@@ -67,7 +70,7 @@ private:
 	ZST_EXPORT void add_cable(ZstCable * cable);
 	ZST_EXPORT void remove_cable(ZstCable * cable);
 
-	ZstCableList m_cables;
+    std::set<ZstCable> m_cables;
 };
 
 

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <unordered_set>
+#include <set>
+#include <memory>
 #include <vector>
 
 #include "ZstExports.h"
@@ -13,6 +15,12 @@ class ZstInputPlug;
 class ZstOutputPlug;
 class ZstPlug;
 
+struct ZstCableAddress {
+public:    
+    ZstURI input_URI;
+    ZstURI output_URI;
+};
+
 class ZstCable : public ZstSynchronisable, public ZstSerialisable {
 public:
 	friend class ZstCableLiason;
@@ -24,17 +32,14 @@ public:
 	ZST_EXPORT ZstCable(const ZstCable & copy);
 	ZST_EXPORT ZstCable(const ZstURI & input_plug_URI, const ZstURI & output_plug_URI);
 	ZST_EXPORT ZstCable(ZstInputPlug * input_plug, ZstOutputPlug * output_plug);
-	ZST_EXPORT static ZstCable * create(const ZstURI & input, const ZstURI & output);
-	ZST_EXPORT static ZstCable * create(ZstInputPlug * input, ZstOutputPlug * output);
-
-	ZST_EXPORT static void destroy(ZstCable * cable);
     ZST_EXPORT virtual ~ZstCable();
 	ZST_EXPORT void disconnect();
 
 	// Status
 
 	ZST_EXPORT bool operator==(const ZstCable & other) const;
-	ZST_EXPORT bool operator!=(const ZstCable & other);
+	ZST_EXPORT bool operator!=(const ZstCable & other) const;
+    ZST_EXPORT bool operator<(const ZstCable& rhs) const;
 	ZST_EXPORT bool is_attached(const ZstURI & uri) const;
 	ZST_EXPORT bool is_attached(const ZstURI & uriA, const ZstURI & uriB) const;
 	ZST_EXPORT bool is_attached(ZstPlug * plug) const;
@@ -73,8 +78,9 @@ struct ZstCableHash
 	ZST_EXPORT size_t operator()(ZstCable* const& k) const;
 };
 
-
 struct ZstCableEq {
 	ZST_EXPORT bool operator()(ZstCable const * lhs, ZstCable const * rhs) const;
 };
-typedef std::unordered_set<ZstCable*, ZstCableHash, ZstCableEq> ZstCableList;
+
+
+typedef std::set< std::unique_ptr<ZstCable> > ZstCableSet;

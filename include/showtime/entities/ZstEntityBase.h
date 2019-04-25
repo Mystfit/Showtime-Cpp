@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <mutex>
 
 #include "../ZstExports.h"
 #include "../ZstURI.h"
@@ -24,7 +25,7 @@ typedef std::unordered_map<ZstURI, ZstEntityBase*, ZstURIHash> ZstEntityMap;
 typedef ZstBundle<ZstURI> ZstURIBundle;
 typedef ZstBundle<ZstEntityBase*> ZstEntityBundle;
 typedef ZstBundle<ZstEntityFactory*> ZstEntityFactoryBundle;
-typedef ZstBundle<ZstCable*> ZstCableBundle;
+typedef ZstBundle<ZstCable> ZstCableBundle;
 typedef ZstBundleIterator<ZstEntityBase*> ZstEntityBundleIterator;
 typedef ZstBundleIterator<ZstCable*> ZstCableBundleIterator;
 
@@ -71,6 +72,9 @@ protected:
 	ZST_EXPORT virtual void set_parent(ZstEntityBase* entity);
 	ZST_EXPORT virtual void update_URI();
 	ZST_EXPORT virtual void dispatch_destroyed() override;
+    
+    //Entity mutex
+    mutable std::mutex m_entity_mtx;
 
 private:
     ZstEventDispatcher<ZstEntityAdaptor*> * m_entity_events;
