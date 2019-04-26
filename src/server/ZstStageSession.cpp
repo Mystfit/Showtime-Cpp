@@ -14,23 +14,12 @@ ZstStageSession::~ZstStageSession()
 	delete m_hierarchy;
 }
 
-void ZstStageSession::init()
-{
-	//Attach this as an adaptor to the hierarchy module to handle hierarchy events that will modify cables
-	m_hierarchy->hierarchy_events().add_adaptor(this);
-    
-    ZstSession::init();
-}
-
 void ZstStageSession::destroy()
 {
 	ZstCableBundle bundle;
-    
-    std::unique_lock<std::mutex> lock(m_session_mtex);
-	for (auto c : get_cables(bundle)) {
-		destroy_cable(find_cable(c));
+	for (auto cable : get_cables(bundle)) {
+		destroy_cable(cable);
 	}
-    lock.release();
 
 	hierarchy()->destroy();
 	ZstSession::destroy();
@@ -118,7 +107,7 @@ ZstMsgKind ZstStageSession::synchronise_client_graph(ZstPerformer * client) {
 	//Send cables
 	for (auto const & cable : m_cables) {
 		router_events().invoke([&cable, &args](ZstTransportAdaptor * adp) {
-			adp->on_send_msg(ZstMsgKind::CREATE_CABLE, args, cable->as_json());
+			adp->on_send_msg(ZstMsgKind::CREATE_CABLE, args, cable->get_address().as_json());
 		});
 	}
 
@@ -130,18 +119,18 @@ ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformerS
 	ZstStageMessage * stage_msg = static_cast<ZstStageMessage*>(msg);
 
 	//Unpack cable from message
-	ZstCable cable = stage_msg->unpack_payload_serialisable<ZstCable>();
-	ZstLog::server(LogLevel::notification, "Received connect cable request for In:{} and Out:{}", cable.get_input_URI().path(), cable.get_output_URI().path());
+	ZstCableAddress cable_path = stage_msg->unpack_payload_serialisable<ZstCableAddress>();
+	ZstLog::server(LogLevel::notification, "Received connect cable request for In:{} and Out:{}", cable_path.get_input_URI().path(), cable_path.get_output_URI().path());
 
 	//Make sure cable doesn't already exist
-	if (find_cable(cable)) {
-        ZstLog::server(LogLevel::warn, "Cable {}<->{} already exists", cable.get_input_URI().path(), cable.get_output_URI().path());
+	if (find_cable(cable_path)) {
+        ZstLog::server(LogLevel::warn, "Cable {}<->{} already exists", cable_path.get_input_URI().path(), cable_path.get_output_URI().path());
 		return ZstMsgKind::ERR_STAGE_BAD_CABLE_CONNECT_REQUEST;
 	}
 
 	//Verify plugs will accept cable
-	ZstInputPlug * input = dynamic_cast<ZstInputPlug*>(hierarchy()->find_entity(cable.get_input_URI()));
-	ZstOutputPlug * output = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(cable.get_output_URI()));
+	ZstInputPlug * input = dynamic_cast<ZstInputPlug*>(hierarchy()->find_entity(cable_path.get_input_URI()));
+	ZstOutputPlug * output = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(cable_path.get_output_URI()));
 	if (!input || !output) {
 		return ZstMsgKind::ERR_CABLE_PLUGS_NOT_FOUND;
 	}
@@ -150,20 +139,20 @@ ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformerS
 	if (input->num_cables() >= input->max_connected_cables()){
 		ZstLog::server(LogLevel::warn, "Too many cables in plug. Disconnecting existing cables");
 		ZstCableBundle bundle;
-		for (auto const & c : input->get_child_cables(bundle)) {
-			destroy_cable(find_cable(c));
+		for (auto cable : input->get_child_cables(bundle)) {
+			destroy_cable(cable);
 		}
 	}
 	
 	//Create our local cable ptr
-	ZstCable * cable_ptr = create_cable(cable);
+	ZstCable * cable_ptr = create_cable(input, output);
 	if (!cable_ptr) {
 		return ZstMsgKind::ERR_STAGE_BAD_CABLE_CONNECT_REQUEST;
 	}
 
 	//Create connection request for the entity who owns the input plug
-	ZstPerformerStageProxy * input_performer = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(cable_ptr->get_input_URI().first()));
-	ZstPerformerStageProxy * output_performer = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(cable_ptr->get_output_URI().first()));
+	ZstPerformerStageProxy * input_performer = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(cable_ptr->get_address().get_input_URI().first()));
+	ZstPerformerStageProxy * output_performer = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(cable_ptr->get_address().get_output_URI().first()));
 
 	//Check to see if one client is already connected to the other
 	if (output_performer->is_connected_to_subscriber_peer(input_performer)) {
@@ -274,18 +263,18 @@ ZstMsgKind ZstStageSession::observe_entity_handler(ZstMessage * msg, ZstPerforme
 
 ZstMsgKind ZstStageSession::create_cable_complete_handler(ZstCable * cable)
 {
-	ZstLog::server(LogLevel::notification, "Client connection complete. Publishing cable {}-{}", cable->get_input_URI().path(), cable->get_output_URI().path());
-	m_hierarchy->broadcast_message(ZstMsgKind::CREATE_CABLE, json::object(), cable->as_json());
+	ZstLog::server(LogLevel::notification, "Client connection complete. Publishing cable {}-{}", cable->get_address().get_input_URI().path(), cable->get_address().get_output_URI().path());
+	m_hierarchy->broadcast_message(ZstMsgKind::CREATE_CABLE, json::object(), cable->get_address().as_json());
 	return ZstMsgKind::OK;
 }
 
 ZstMsgKind ZstStageSession::destroy_cable_handler(ZstMessage * msg)
 {
 	ZstStageMessage * stage_msg = static_cast<ZstStageMessage*>(msg);
-	const ZstCable & cable = stage_msg->unpack_payload_serialisable<ZstCable>();
+	auto cable_path = stage_msg->unpack_payload_serialisable<ZstCableAddress>();
 	ZstLog::server(LogLevel::notification, "Received destroy cable connection request");
 
-	ZstCable * cable_ptr = find_cable(cable);
+	ZstCable * cable_ptr = find_cable(cable_path);
 	destroy_cable(cable_ptr);
 
 	return ZstMsgKind::OK;
@@ -309,8 +298,8 @@ void ZstStageSession::on_plug_leaving(ZstPlug * plug)
 void ZstStageSession::disconnect_cables(ZstEntityBase * entity)
 {
 	ZstCableBundle bundle;
-	for (auto c : entity->get_child_cables(bundle)) {
-		destroy_cable(find_cable(c));
+	for (auto cable : entity->get_child_cables(bundle)) {
+		destroy_cable(cable);
 	}
 }
 
@@ -318,10 +307,10 @@ void ZstStageSession::destroy_cable(ZstCable * cable) {
 	if (!cable)
 		return;
 
-	ZstLog::server(LogLevel::notification, "Destroying cable {} {}", cable->get_output_URI().path(), cable->get_input_URI().path());
+	ZstLog::server(LogLevel::notification, "Destroying cable {} {}", cable->get_address().get_output_URI().path(), cable->get_address().get_input_URI().path());
 
 	//Update rest of network
-	m_hierarchy->broadcast_message(ZstMsgKind::DESTROY_CABLE, json::object(), cable->as_json());
+	m_hierarchy->broadcast_message(ZstMsgKind::DESTROY_CABLE, json::object(), cable->get_address().as_json());
 
 	//Remove cable
 	ZstSession::destroy_cable_complete(cable);

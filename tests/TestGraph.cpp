@@ -33,7 +33,7 @@ void test_connect_plugs() {
 
 	ZstCableBundle bundle;
     for (auto c : test_output->output()->get_child_cables(bundle)) {
-        assert(c.get_input_URI() == test_input->input()->URI());
+        assert(c->get_address().get_input_URI() == test_input->input()->URI());
     }
 
     ZstLog::app(LogLevel::notification, "Testing cable disconnection");

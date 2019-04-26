@@ -17,8 +17,6 @@
 #include "../core/liasons/ZstPlugLiason.hpp"
 #include "../core/liasons/ZstSynchronisableLiason.hpp"
 #include "../core/adaptors/ZstTransportAdaptor.hpp"
-#include "../core/adaptors/ZstModuleAdaptor.hpp"
-
 
 
 //Forwards
@@ -49,7 +47,7 @@ typedef std::unique_ptr<ZstConnectionTimerMap> ZstConnectionTimerMapUnique;
 class ZstClient : 
 	public ZstEventDispatcher<ZstTransportAdaptor*>,
 	public ZstTransportAdaptor,
-	public ZstModuleAdaptor,
+    public ZstHierarchyAdaptor,
 	public ZstSynchronisableLiason,
 	public ZstPlugLiason
 {

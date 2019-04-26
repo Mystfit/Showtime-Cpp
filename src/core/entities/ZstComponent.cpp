@@ -115,7 +115,7 @@ void ZstComponent::remove_child(ZstEntityBase * entity)
 	ZstCableBundle bundle;
 	for (auto cable : entity->get_child_cables(bundle)){
         entity_events()->defer([cable](ZstEntityAdaptor * adp){
-            adp->on_disconnect_cable(cable);
+            adp->on_disconnect_cable(*cable);
         });
 	}
     
@@ -205,10 +205,11 @@ void ZstComponent::set_component_type(const char * component_type, size_t len)
 	m_component_type = std::string(component_type, len);
 }
 
-ZstCableBundle & ZstComponent::get_child_cables(ZstCableBundle & bundle) const
+ZstCableBundle & ZstComponent::get_child_cables(ZstCableBundle & bundle)
 {
-    for(auto child : m_children){
-        child.second->get_child_cables(bundle);
+    ZstEntityBundle entity_bundle;
+    for(auto child : get_child_entities(entity_bundle, false)){
+        child->get_child_cables(bundle);
     }
 	return ZstEntityBase::get_child_cables(bundle);
 }

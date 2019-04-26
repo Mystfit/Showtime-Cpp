@@ -168,9 +168,11 @@ int main(int argc, char **argv)
 	long double mps_reliable = test_benchmark(true, 0, 200000);
 	ZstLog::app(LogLevel::notification, "Reliable avg mps: {}", mps_reliable);
 
+#ifdef ZST_BUILD_DRAFT_API
 	ZstLog::app(LogLevel::notification, "Starting unreliable benchmark test");
 	long double mps_unreliable = test_benchmark(false, 1, 10000);
 	ZstLog::app(LogLevel::notification, "Unreliable avg mps: {}", mps_unreliable);
+#endif
 
 	eventloop_thread.interrupt();
 	eventloop_thread.join();

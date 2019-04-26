@@ -32,6 +32,7 @@ set(API_HEADERS
     ${Showtime_INCLUDE_DIRS}/ZstCore.h
     ${Showtime_INCLUDE_DIRS}/ZstLogging.h
     ${Showtime_INCLUDE_DIRS}/ZstCable.h
+    ${Showtime_INCLUDE_DIRS}/ZstCableAddress.h
     ${Showtime_INCLUDE_DIRS}/ZstConstants.h
     ${Showtime_INCLUDE_DIRS}/ZstExports.h
     ${Showtime_INCLUDE_DIRS}/ZstURI.h
@@ -85,11 +86,11 @@ set(ZST_CORE_LIASON_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstSynchronisableLiason.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstEntityFactoryLiason.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstPlugLiason.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstEntityLiason.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstCableLiason.hpp"
 )
 set(ZST_CORE_ADAPTOR_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstTransportAdaptor.hpp"
-    "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstModuleAdaptor.hpp"
 )
 
 # Core cpp files
@@ -98,6 +99,7 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstZMQRefCounter.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMsgID.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstLogging.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstCableAddress.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstCable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstURI.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstSerialisable.cpp"
@@ -138,6 +140,7 @@ set(ZST_CORE_LIASON_SRC
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstSynchronisableLiason.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstEntityFactoryLiason.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstPlugLiason.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstEntityLiason.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstCableLiason.cpp"
 )
 

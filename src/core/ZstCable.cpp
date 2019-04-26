@@ -4,39 +4,27 @@
 #include "ZstCable.h"
 #include "entities/ZstPlug.h"
 #include "liasons/ZstPlugLiason.hpp"
+#include "ZstEventDispatcher.hpp"
 
 ZstCable::ZstCable() : 
 	ZstSynchronisable(),
-    m_input_URI(""),
-    m_output_URI(""),
+    m_address(),
 	m_input(NULL),
 	m_output(NULL)
 {
-	set_proxy();
 }
 
 ZstCable::ZstCable(const ZstCable & copy) : 
 	ZstSynchronisable(),
-    m_input_URI(copy.m_input_URI),
-    m_output_URI(copy.m_output_URI),
+    m_address(copy.m_address),
 	m_input(copy.m_input),
 	m_output(copy.m_output)
 {
 }
 
-ZstCable::ZstCable(const ZstURI & input_plug_URI, const ZstURI & output_plug_URI) :
-	ZstSynchronisable(),
-    m_input_URI(input_plug_URI),
-    m_output_URI(output_plug_URI),
-	m_input(NULL),
-	m_output(NULL)
-{
-}
-
 ZstCable::ZstCable(ZstInputPlug * input_plug, ZstOutputPlug * output_plug) :
 	ZstSynchronisable(),
-    m_input_URI(input_plug->URI()),
-    m_output_URI(output_plug->URI()),
+    m_address(input_plug->URI(), output_plug->URI()),
 	m_input(input_plug),
 	m_output(output_plug)
 {
@@ -53,38 +41,28 @@ void ZstCable::disconnect()
 	this->enqueue_deactivation();
 }
 
-bool ZstCable::operator==(const ZstCable & other) const
-{
-	return (m_input_URI == other.m_input_URI) && (m_output_URI == other.m_output_URI);
-}
-
-bool ZstCable::operator!=(const ZstCable & other) const {
-	return !(*this == other);
-}
-
-bool ZstCable::operator<(const ZstCable & other) const
-{
-    return std::tie(m_input_URI, m_output_URI) < std::tie(other.m_input_URI, other.m_output_URI);
-}
-
 bool ZstCable::is_attached(const ZstURI & uri) const
 {
-	return (ZstURI::equal(m_input_URI, uri)) || (ZstURI::equal(m_output_URI, uri));
+	return (ZstURI::equal(m_address.get_input_URI(), uri)) || (ZstURI::equal(m_address.get_output_URI(), uri));
 }
 
 bool ZstCable::is_attached(const ZstURI & uriA, const ZstURI & uriB) const
 {
-	return 	(ZstURI::equal(m_input_URI, uriA) || ZstURI::equal(m_input_URI, uriB)) &&
-		(ZstURI::equal(m_output_URI, uriA) || ZstURI::equal(m_output_URI, uriB));
+	return 	(ZstURI::equal(m_address.get_input_URI(), uriA) || ZstURI::equal(m_address.get_input_URI(), uriB)) &&
+		(ZstURI::equal(m_address.get_output_URI(), uriA) || ZstURI::equal(m_address.get_output_URI(), uriB));
 }
 
 bool ZstCable::is_attached(ZstPlug * plugA, ZstPlug * plugB) const 
 {
+    if(!m_input || !m_output || !plugA || !plugB)
+        return false;
 	return is_attached(plugA->URI(), plugB->URI());
 }
 
 bool ZstCable::is_attached(ZstPlug * plug) const 
 {
+    if(!m_input || !m_output)
+        return false;
 	return (ZstURI::equal(m_input->URI(), plug->URI())) || (ZstURI::equal(m_output->URI(), plug->URI()));
 }
 
@@ -108,39 +86,9 @@ ZstOutputPlug * ZstCable::get_output()
 	return m_output;
 }
 
-const ZstURI & ZstCable::get_input_URI() const
+const ZstCableAddress & ZstCable::get_address() const
 {
-	return m_input_URI;
-}
-
-const ZstURI & ZstCable::get_output_URI() const
-{
-	return m_output_URI;
-}
-
-void ZstCable::write_json(json & buffer) const
-{
-	buffer["output_uri"] = m_output_URI.path();
-	buffer["input_uri"] = m_input_URI.path();
-}
-
-void ZstCable::read_json(const json & buffer)
-{
-	m_output_URI = ZstURI(buffer["output_uri"].get<std::string>().c_str(), buffer["output_uri"].get<std::string>().size());
-	m_input_URI = ZstURI(buffer["input_uri"].get<std::string>().c_str(), buffer["input_uri"].get<std::string>().size());
-}
-
-size_t ZstCableHash::operator()(ZstCable* const& k) const
-{
-	std::size_t h1 = ZstURIHash{}(k->get_output_URI());
-	std::size_t h2 = ZstURIHash{}(k->get_input_URI());
-	return h1 ^ (h2 << 1);
-}
-
-bool ZstCableEq::operator()(ZstCable const * lhs, ZstCable const * rhs) const
-{
-	bool result = (*lhs == *rhs);
-	return result;
+    return m_address;
 }
 
 
@@ -150,39 +98,41 @@ bool ZstCableEq::operator()(ZstCable const * lhs, ZstCable const * rhs) const
 
 void ZstCable::self_test()
 {
-	ZstURI in = ZstURI("a/1");
-	ZstURI out = ZstURI("b/1");
-    ZstURI less = ZstURI("a/b");
-    ZstURI more = ZstURI("b/a");
+	auto in = ZstURI("a/1");
+	auto out = ZstURI("b/1");
+    auto less = ZstURI("a/b");
+    auto more = ZstURI("b/a");
+    auto plug_in_A = std::make_unique<ZstInputPlug>(in.path(), ZST_INT);
+    auto plug_out_A = std::make_unique<ZstOutputPlug>(out.path(), ZST_INT);
+    auto plug_in_B = std::make_unique<ZstInputPlug>(less.path(), ZST_INT);
+    auto plug_out_B = std::make_unique<ZstOutputPlug>(more.path(), ZST_INT);
+    auto plug_in_C = std::make_unique<ZstInputPlug>(more.path(), ZST_INT);
+    auto plug_out_C = std::make_unique<ZstOutputPlug>(less.path(), ZST_INT);
 
-	ZstCable cable_a = ZstCable(in, out);
-	assert(cable_a.get_input_URI() == in);
-	assert(cable_a.get_output_URI() == out);
-	assert(cable_a.is_attached(out));
-	assert(cable_a.is_attached(in));
-
+	auto cable_a = std::make_unique<ZstCable>(plug_in_A.get(), plug_out_A.get());
+	assert(cable_a->get_address().get_input_URI() == in);
+	assert(cable_a->get_address().get_output_URI() == out);
+	assert(cable_a->is_attached(out));
+	assert(cable_a->is_attached(in));
+    
     //Test cable comparisons
-	ZstCable cable_b = ZstCable(in, out);
-	assert(cable_b == cable_a);
-	assert(ZstCableEq{}(&cable_a, &cable_b));
-	assert(ZstCableHash{}(&cable_a) == ZstCableHash{}(&cable_b));
+	auto cable_b = std::make_unique<ZstCable>(plug_in_A.get(), plug_out_A.get());
+    assert(ZstCableAddressEq{}(cable_a->get_address(), cable_b->get_address()));
+	assert(ZstCableAddressHash{}(cable_a->get_address()) == ZstCableAddressHash{}(cable_b->get_address()));
+
+    auto cable_c = std::make_unique<ZstCable>(plug_in_B.get(), plug_out_B.get());
+    auto cable_d = std::make_unique<ZstCable>(plug_in_C.get(), plug_out_C.get());
     
-    ZstCable cable_c = ZstCable(less, more);
-    ZstCable cable_d = ZstCable(more, less);
-    assert(cable_c < cable_d);
-    assert(!(cable_d < cable_c));
-    assert(!(cable_c < cable_c));
-    
+    assert(ZstCableCompare{}(cable_c, cable_d));
+    assert(ZstCableCompare{}(cable_c->get_address(), cable_d));
+    assert(ZstCableCompare{}(cable_c, cable_d->get_address()));
+    assert(!(ZstCableCompare{}(cable_d->get_address(), cable_c)));
+    assert(!(ZstCableCompare{}(cable_d, cable_c->get_address())));
+
     //Test cable sets
-    std::set<ZstCable> cable_set;
-    cable_set.insert(cable_c);
-    cable_set.insert(cable_d);
+    std::set<std::unique_ptr<ZstCable>, ZstCableCompare> cable_set;
+    cable_set.insert(std::move(cable_c));
+    cable_set.insert(std::move(cable_d));
     assert(cable_set.find(cable_c) != cable_set.end());
     assert(cable_set.find(cable_d) != cable_set.end());
-
-	//Test cable going out of scope
-	{
-		ZstCable cable_c = ZstCable(ZstURI("foo"), ZstURI("bar"));
-		assert(cable_c != cable_a);
-	}
 }

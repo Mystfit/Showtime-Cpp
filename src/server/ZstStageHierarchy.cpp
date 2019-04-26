@@ -194,6 +194,9 @@ ZstMsgKind ZstStageHierarchy::add_proxy_entity(const ZstEntityBase & entity, Zst
 	if (sender->URI().first() != proxy->URI().first()) {
 		//A performer is requesting this entity be attached to another performer
 	}
+    
+    //Dispatch internal module events
+    dispatch_entity_arrived_event(proxy);
 	
 	//Update rest of network
 	if (msg_status == ZstMsgKind::OK) {

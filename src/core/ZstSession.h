@@ -4,12 +4,14 @@
 
 #include "ZstExports.h"
 #include "entities/ZstEntityFactory.h"
+#include "adaptors/ZstHierarchyAdaptor.hpp"
 #include "adaptors/ZstSessionAdaptor.hpp"
 #include "adaptors/ZstEntityAdaptor.hpp"
 #include "adaptors/ZstComputeAdaptor.hpp"
 
 #include "ZstSynchronisableModule.h"
 #include "ZstHierarchy.h"
+#include "liasons/ZstEntityLiason.hpp"
 #include "liasons/ZstCableLiason.hpp"
 #include "liasons/ZstPlugLiason.hpp"
 #include "adaptors/ZstTransportAdaptor.hpp"
@@ -20,8 +22,11 @@ class ZstSession :
 	public ZstSynchronisableModule,
 	public ZstTransportAdaptor,
 	public ZstComputeAdaptor,
+    public ZstHierarchyAdaptor,
+    public ZstSessionAdaptor,
 	protected ZstCableLiason,
-	protected ZstPlugLiason
+	protected ZstPlugLiason,
+    protected ZstEntityLiason
 {
 public:
 	ZST_EXPORT ZstSession();
@@ -46,10 +51,10 @@ public:
 	// Cable queries
 	// -------------
 
-    ZST_EXPORT virtual ZstCable * find_cable(const ZstCable & cable_path);
+    ZST_EXPORT virtual ZstCable * find_cable(const ZstCableAddress & cable_path) override;
 	ZST_EXPORT virtual ZstCable * find_cable(const ZstURI & input_path, const ZstURI & output_path);
 	ZST_EXPORT virtual ZstCable * find_cable(ZstInputPlug * input, ZstOutputPlug * output);
-	ZST_EXPORT virtual ZstCableBundle & get_cables(ZstCableBundle & bundle);
+	ZST_EXPORT virtual ZstCableBundle & get_cables(ZstCableBundle & bundle) override;
 	
 
 	// -------------
@@ -71,10 +76,15 @@ public:
 
 	ZST_EXPORT virtual void on_compute(ZstComponent * component, ZstInputPlug * plug) override;
 
-
-	// -------------
+    // ---------------------------
+    // Hierarchy adaptor overrides
+    // ---------------------------
+    
+    ZST_EXPORT virtual void on_entity_arriving(ZstEntityBase * entity) override;
+    
+	// ------------------
 	// Entity observation
-	// -------------
+	// ------------------
 	ZST_EXPORT virtual bool observe_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype);
 	ZST_EXPORT void add_connected_performer(ZstPerformer * performer);
 	ZST_EXPORT void remove_connected_performer(ZstPerformer * performer);
@@ -93,9 +103,7 @@ protected:
 	// Cable creation/destruction
 	// --------------------------
 
-	ZST_EXPORT virtual ZstCable * create_cable(const ZstCable & cable);
 	ZST_EXPORT virtual ZstCable * create_cable(ZstInputPlug * input, ZstOutputPlug * output);
-	ZST_EXPORT virtual ZstCable * create_cable(const ZstURI & input_path, const ZstURI & output_path);
 	ZstCableSet m_cables;
     
     //Locking

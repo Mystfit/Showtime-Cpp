@@ -191,15 +191,20 @@ ZstMsgKind ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity)
 		synchronisable_set_activation_status(c, ZstSyncStatus::ACTIVATED);
 	}
 
-	//Only dispatch events once all entities have been activated and registered
-    if (strcmp(entity.entity_type(), COMPONENT_TYPE) == 0 || strcmp(entity.entity_type(), PLUG_TYPE) == 0)  {
-		m_hierarchy_events.defer([entity_proxy](ZstHierarchyAdaptor * adp) {adp->on_entity_arriving(entity_proxy); });
-	}
-	else if (strcmp(entity.entity_type(), FACTORY_TYPE) == 0) {
-		m_hierarchy_events.defer([entity_proxy](ZstHierarchyAdaptor * adp) {adp->on_factory_arriving(static_cast<ZstEntityFactory*>(entity_proxy)); });
-	}
-
 	return ZstMsgKind::OK;
+}
+
+void ZstHierarchy::dispatch_entity_arrived_event(ZstEntityBase * entity){
+    if(!entity)
+        return;
+    
+    //Only dispatch events once all entities have been activated and registered
+    if (strcmp(entity->entity_type(), COMPONENT_TYPE) == 0 || strcmp(entity->entity_type(), PLUG_TYPE) == 0)  {
+        m_hierarchy_events.defer([entity](ZstHierarchyAdaptor * adp) {adp->on_entity_arriving(entity); });
+    }
+    else if (strcmp(entity->entity_type(), FACTORY_TYPE) == 0) {
+        m_hierarchy_events.defer([entity](ZstHierarchyAdaptor * adp) {adp->on_factory_arriving(static_cast<ZstEntityFactory*>(entity)); });
+    }
 }
 
 ZstMsgKind ZstHierarchy::update_proxy_entity(const ZstEntityBase & entity)

@@ -10,13 +10,11 @@
 
 class ZstStageSession : 
 	public ZstSession,
-	public ZstHierarchyAdaptor,
 	public ZstStageModule
 {
 public:
 	ZstStageSession();
 	~ZstStageSession();
-	void init() override;
 	void destroy() override;
 	virtual void process_events() override;
     virtual void set_wake_condition(std::weak_ptr<ZstSemaphore> condition) override;

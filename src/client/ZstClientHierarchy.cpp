@@ -280,7 +280,7 @@ void ZstClientHierarchy::activate_entity_complete(ZstEntityBase * entity)
 
 	ZstEntityBundle bundle;
 	for (auto c : entity->get_child_entities(bundle, false)) {
-		module_events().invoke([c](ZstModuleAdaptor * adp) { adp->on_entity_arriving(c); });
+		hierarchy_events().invoke([c](ZstHierarchyAdaptor * adp) { adp->on_entity_arriving(c); });
 	}
 }
 
@@ -313,13 +313,20 @@ bool ZstClientHierarchy::path_is_local(const ZstURI & path) {
 
 ZstMsgKind ZstClientHierarchy::add_proxy_entity(const ZstEntityBase & entity) {
 
+    auto status = ZstMsgKind::EMPTY;
 	// Don't need to activate local entities, they will auto-activate when the stage responds with an OK
 	// Also, we can't rely on the proxy flag here as it won't have been set yet
 	if (path_is_local(entity.URI())) {
 		ZstLog::net(LogLevel::debug, "Received local entity {}. Ignoring", entity.URI().path());
-		return ZstMsgKind::EMPTY;
-	}
-	return ZstHierarchy::add_proxy_entity(entity);
+		return status;
+    } else {
+        status = ZstHierarchy::add_proxy_entity(entity);
+    }
+    
+    //Dispatch entity arrived event regardless if the entity is local or remote
+    dispatch_entity_arrived_event(find_entity(entity.URI().path()));
+    
+	return status;
 }
 
 ZstMsgKind ZstClientHierarchy::update_proxy_entity(const ZstEntityBase & entity)

@@ -151,19 +151,22 @@ ZstPlugDirection ZstPlug::direction()
 	return m_direction;
 }
 
-ZstCableBundle & ZstPlug::get_child_cables(ZstCableBundle & bundle) const
+ZstCableBundle & ZstPlug::get_child_cables(ZstCableBundle & bundle)
 {
     std::lock_guard<std::mutex> lock(m_entity_mtx);
-	for (auto const & c : m_cables) {
-		bool exists = false;
-		for (auto cable : bundle) {
-			if (c == cable)
-				exists = true;
-		}
-		
-		if (!exists) {
-			bundle.add(c);
-		}
+	for (auto const & cable_path : m_cables) {
+        m_session_events->invoke([&cable_path, &bundle](ZstSessionAdaptor* adp){
+            bool exists = false;
+            auto cable = adp->find_cable(cable_path);
+            for (auto cable : bundle) {
+                if (cable->get_address() == cable_path)
+                    exists = true;
+            }
+            
+            if (!exists) {
+                bundle.add(cable);
+            }
+        });
 	}
 	return ZstEntityBase::get_child_cables(bundle);
 }
@@ -200,7 +203,7 @@ void ZstPlug::add_cable(ZstCable * cable)
         return;
     
     std::lock_guard<std::mutex> lock(m_entity_mtx);
-	m_cables.insert(ZstCable(*cable));
+	m_cables.insert(cable->get_address());
 }
 
 void ZstPlug::remove_cable(ZstCable * cable)
@@ -209,7 +212,7 @@ void ZstPlug::remove_cable(ZstCable * cable)
         return;
     
     std::lock_guard<std::mutex> lock(m_entity_mtx);
-    auto cable_it = m_cables.find(*cable);
+    auto cable_it = m_cables.find(cable->get_address());
     if(cable_it != m_cables.end()){
         m_cables.erase(cable_it);
     }

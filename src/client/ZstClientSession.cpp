@@ -1,4 +1,5 @@
 #include "ZstClientSession.h"
+#include "../core/ZstValue.h"
 #include "../core/ZstPerformanceMessage.h"
 
 ZstClientSession::ZstClientSession()
@@ -18,10 +19,6 @@ ZstClientSession::~ZstClientSession() {
 void ZstClientSession::init(std::string client_name)
 {
 	m_hierarchy->init(client_name);
-
-	//Attach this as an adaptor to the hierarchy module to handle hierarchy events
-	m_hierarchy->hierarchy_events().add_adaptor(this);
-    
     ZstSession::init();
 }
 
@@ -81,14 +78,16 @@ void ZstClientSession::on_receive_msg(ZstMessage * msg)
 	switch (stage_msg->kind()) {
 	case ZstMsgKind::CREATE_CABLE:
 	{
-		const ZstCable & cable = stage_msg->unpack_payload_serialisable<ZstCable>();
-		create_cable(cable);
+		auto cable_address = stage_msg->unpack_payload_serialisable<ZstCableAddress>();
+        auto input = dynamic_cast<ZstInputPlug*>(hierarchy()->find_entity(cable_address.get_input_URI()));
+        auto output = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(cable_address.get_output_URI()));
+		create_cable(input, output);
 		break;
 	}
 	case ZstMsgKind::DESTROY_CABLE:
 	{
-		const ZstCable & cable = stage_msg->unpack_payload_serialisable<ZstCable>();
-		ZstCable * cable_ptr = find_cable(cable);
+		auto cable_address = stage_msg->unpack_payload_serialisable<ZstCableAddress>();
+		ZstCable * cable_ptr = find_cable(cable_address);
 		if (cable_ptr) {
 			destroy_cable_complete(ZstMessageReceipt{ ZstMsgKind::OK, ZstTransportSendType::SYNC_REPLY }, cable_ptr);
 		}
@@ -105,7 +104,7 @@ void ZstClientSession::on_receive_graph_msg(ZstPerformanceMessage * msg)
         //"No payload in graph message"
 		return;
 	}
-
+    
 	//Find local proxy for the sending plug
 	ZstPerformanceMessage * perf_msg = static_cast<ZstPerformanceMessage*>(msg);
 	ZstOutputPlug * sending_plug = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(ZstURI(perf_msg->sender().c_str(), perf_msg->sender().size())));
@@ -130,7 +129,7 @@ void ZstClientSession::on_receive_graph_msg(ZstPerformanceMessage * msg)
 	//Iterate over all connected cables from the sending plug
 	ZstCableBundle bundle;
 	for (auto cable : sending_plug->get_child_cables(bundle)) {
-		receiving_plug = dynamic_cast<ZstInputPlug*>(hierarchy()->find_entity(cable.get_input_URI()));
+		receiving_plug = dynamic_cast<ZstInputPlug*>(hierarchy()->find_entity(cable->get_address().get_input_URI()));
 		if (receiving_plug) {
 			if (!receiving_plug->is_proxy()) {
 				receiving_plug->raw_value()->copy(received_val);
@@ -178,7 +177,7 @@ ZstCable * ZstClientSession::connect_cable(ZstInputPlug * input, ZstOutputPlug *
 		//to determine the correct input->output order - fix this using ZstInputPlug and 
 		//ZstOutput plug as arguments
 		stage_events().invoke([this, sendtype, cable](ZstTransportAdaptor* adaptor) {
-			adaptor->on_send_msg(ZstMsgKind::CREATE_CABLE, sendtype, cable->as_json(), json::object(), [this, cable](ZstMessageReceipt response) {
+			adaptor->on_send_msg(ZstMsgKind::CREATE_CABLE, sendtype, cable->get_address().as_json(), json::object(), [this, cable](ZstMessageReceipt response) {
 				this->connect_cable_complete(response, cable);
 			});
 		});
@@ -194,7 +193,7 @@ void ZstClientSession::connect_cable_complete(ZstMessageReceipt response, ZstCab
 		synchronisable_enqueue_activation(cable);
 	}
 	else {
-		ZstLog::net(LogLevel::notification, "Cable connect for {}-{} failed with status {}", cable->get_input_URI().path(), cable->get_output_URI().path(), get_msg_name(response.status));
+		ZstLog::net(LogLevel::notification, "Cable connect for {}-{} failed with status {}", cable->get_address().get_input_URI().path(), cable->get_address().get_output_URI().path(), get_msg_name(response.status));
 	}
 }
 
@@ -203,7 +202,7 @@ void ZstClientSession::destroy_cable(ZstCable * cable, const ZstTransportSendTyp
 	ZstSession::destroy_cable(cable, sendtype);
 	
 	stage_events().invoke([this, cable, sendtype](ZstTransportAdaptor * adaptor) {
-		adaptor->on_send_msg(ZstMsgKind::DESTROY_CABLE, sendtype, cable->as_json(), json::object(), [this, cable](ZstMessageReceipt response) {
+		adaptor->on_send_msg(ZstMsgKind::DESTROY_CABLE, sendtype, cable->get_address().as_json(), json::object(), [this, cable](ZstMessageReceipt response) {
 			this->destroy_cable_complete(response, cable);
 		});
 	});

@@ -13,7 +13,8 @@ ZstEntityBase::ZstEntityBase(const char * name) :
 	m_entity_type(""),
 	m_uri(name)
 {
-    m_entity_events = new ZstEventDispatcher<ZstEntityAdaptor*>();
+    m_entity_events = std::make_unique< ZstEventDispatcher<ZstEntityAdaptor*> >();
+    m_session_events = std::make_unique< ZstEventDispatcher<ZstSessionAdaptor*> >();
 }
 
 ZstEntityBase::ZstEntityBase(const ZstEntityBase & other) : ZstSynchronisable(other)
@@ -21,7 +22,8 @@ ZstEntityBase::ZstEntityBase(const ZstEntityBase & other) : ZstSynchronisable(ot
 	m_parent = other.m_parent;
 	m_entity_type = other.m_entity_type;
 	m_uri = ZstURI(other.m_uri);
-	m_entity_events = new ZstEventDispatcher<ZstEntityAdaptor*>();
+	m_entity_events = std::make_unique< ZstEventDispatcher<ZstEntityAdaptor*> >();
+    m_session_events = std::make_unique< ZstEventDispatcher<ZstSessionAdaptor*> >();
 }
 
 ZstEntityBase::~ZstEntityBase()
@@ -29,10 +31,8 @@ ZstEntityBase::~ZstEntityBase()
 	//Let owner know this entity is going away
 	dispatch_destroyed();
 
-    m_entity_events->flush();
     m_entity_events->remove_all_adaptors();
-
-    delete m_entity_events;
+    m_session_events->remove_all_adaptors();
 }
 
 ZstEntityBase * ZstEntityBase::parent() const
@@ -80,7 +80,7 @@ const ZstURI & ZstEntityBase::URI() const
 	return m_uri;
 }
 
-ZstCableBundle & ZstEntityBase::get_child_cables(ZstCableBundle & bundle) const
+ZstCableBundle & ZstEntityBase::get_child_cables(ZstCableBundle & bundle)
 {
 	return bundle;
 }
@@ -94,7 +94,7 @@ ZstEntityBundle & ZstEntityBase::get_child_entities(ZstEntityBundle & bundle, bo
 
 ZstEventDispatcher<ZstEntityAdaptor*> * ZstEntityBase::entity_events()
 {
-    return m_entity_events;
+    return m_entity_events.get();
 }
 
 void ZstEntityBase::write_json(json & buffer) const
@@ -114,9 +114,19 @@ void ZstEntityBase::add_adaptor(ZstEntityAdaptor * adaptor)
     this->m_entity_events->add_adaptor(adaptor);
 }
 
+void ZstEntityBase::add_adaptor(ZstSessionAdaptor * adaptor)
+{
+    this->m_session_events->add_adaptor(adaptor);
+}
+
 void ZstEntityBase::remove_adaptor(ZstEntityAdaptor * adaptor)
 {
 	this->m_entity_events->remove_adaptor(adaptor);
+}
+
+void ZstEntityBase::remove_adaptor(ZstSessionAdaptor * adaptor)
+{
+    this->m_session_events->remove_adaptor(adaptor);
 }
 
 void ZstEntityBase::set_entity_type(const char * entity_type) {
@@ -141,4 +151,9 @@ void ZstEntityBase::dispatch_destroyed()
 
 		synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * adp) { adp->on_synchronisable_destroyed(this); });
 	}
+}
+
+ZstEventDispatcher<ZstSessionAdaptor*> * ZstEntityBase::session_events()
+{
+    return m_session_events.get();
 }

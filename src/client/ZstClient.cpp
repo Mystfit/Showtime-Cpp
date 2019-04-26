@@ -35,8 +35,7 @@ ZstClient::ZstClient() :
 	m_session = new ZstClientSession();
 
 	//Register module adaptors
-	m_session->module_events().add_adaptor(this);
-	m_session->hierarchy()->module_events().add_adaptor(this);
+	m_session->hierarchy()->hierarchy_events().add_adaptor(this);
 
 	//Register event conditions
 	m_event_condition = std::make_shared<ZstSemaphore>();
@@ -172,23 +171,12 @@ void ZstClient::init_file_logging(const char * log_file_path)
 
 void ZstClient::process_events()
 {
-	//Lock the event loop so the calling thread can process all events
-	//std::unique_lock<std::mutex> lock(m_event_loop_mutex, std::defer_lock);
-	//lock.lock();
-
-	//Sanity checks
 	if (!is_init_complete() || m_is_destroyed || m_is_ending) {
 		ZstLog::net(LogLevel::debug, "Can't process events until the library is ready");
 		return;
 	}
 
-	//ZstLog::net(LogLevel::debug, "In process_events() - Submodule events");
 	m_session->process_events();
-
-	//Reapers are updated last in case entities still need to be queried beforehand
-//    m_session->reaper().reap_all();
-//    m_session->hierarchy()->reaper().reap_all();
-	//lock.unlock();
 }
 
 void ZstClient::flush()

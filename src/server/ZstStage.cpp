@@ -69,6 +69,9 @@ void ZstStage::destroy()
 	//Remove timers
 	m_heartbeat_timer.cancel();
 	m_heartbeat_timer.wait();
+    
+    //Destroy modules
+    m_session->destroy();
 
 	//Stop threads
 	m_stage_eventloop_thread.interrupt();
@@ -77,9 +80,6 @@ void ZstStage::destroy()
 	m_stage_timer_thread.interrupt();
 	m_io.stop();
 	m_stage_timer_thread.join();
-
-	//Destroy modules
-	m_session->destroy();
 
 	//Destroy transports
 	m_router_transport->destroy();

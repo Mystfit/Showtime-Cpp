@@ -86,6 +86,8 @@ protected:
 
 	ZST_EXPORT virtual void activate_entity_complete(ZstEntityBase * entity);
 	ZST_EXPORT virtual void destroy_entity_complete(ZstEntityBase * entity);
+    ZST_EXPORT void dispatch_entity_arrived_event(ZstEntityBase * entity);
+
 
 
 	// ------------------------------
