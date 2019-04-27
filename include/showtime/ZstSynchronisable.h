@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <mutex>
 
 #include "ZstExports.h"
 #include "ZstConstants.h"

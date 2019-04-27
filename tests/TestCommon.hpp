@@ -4,6 +4,7 @@
 #include <ShowtimeServer.h>
 #include <boost/process.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/thread/thread.hpp>
 #include <sstream>
 
 using namespace boost::process;
@@ -230,6 +231,23 @@ namespace ZstTest
 		}
 	}
 
+	void log_external(boost::process::ipstream & stream) {
+		std::string line;
+
+		while (std::getline(stream, line))
+			try {
+			boost::this_thread::interruption_point();
+			ZstLog::app(LogLevel::debug, "\n    -> {}", line.c_str());
+		}
+		catch (boost::thread_interrupted) {
+			ZstLog::server(LogLevel::debug, "External process logger thread exiting");
+			break;
+		}
+	}
+
+	boost::thread log_external_pipe(boost::process::ipstream & out_pipe) {
+		return boost::thread(boost::bind(&ZstTest::log_external, boost::ref(out_pipe)));
+	}
 
 	class TestRunner {
 	public:

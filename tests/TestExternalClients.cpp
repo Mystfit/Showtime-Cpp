@@ -2,6 +2,7 @@
 
 using namespace ZstTest;
 
+
 void test_external_entities(std::string external_test_path, bool launch_sink_process = true) {
     ZstLog::app(LogLevel::notification, "Starting external entities test");
 
@@ -35,13 +36,13 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
 #else
     char pause_flag = 'a';
 #endif
-	boost::process::pipe m_sink_out;
+	boost::process::ipstream sink_out;
     if (launch_sink_process) {
 		//Run sink in external process so we don't share the same Showtime singleton
 		ZstLog::app(LogLevel::notification, "Starting sink process");
 
         try {
-            sink_process = boost::process::child(prog, &pause_flag); //d flag pauses the sink process to give us time to attach a debugger
+            sink_process = boost::process::child(prog, &pause_flag, boost::process::std_out > sink_out); //d flag pauses the sink process to give us time to attach a debugger
 #ifdef PAUSE_SINK
 #ifdef WIN32
             system("pause");
@@ -54,6 +55,10 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
         }
         assert(sink_process.valid());
 	}
+
+	auto sink_log_thread = ZstTest::log_external_pipe(sink_out);
+
+
 	wait_for_event(performerEvents, 1);
     ZstPerformer * sink_performer = zst_get_performer_by_URI(sink_perf_uri);
     assert(sink_performer);
@@ -64,7 +69,7 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
 	assert(performer_bundle.size() == 2);
     
     //Test entity exists
-    wait_for_event(entityEvents, 1);
+    wait_for_event(entityEvents, 2);
     ZstComponent * sink_ent = dynamic_cast<ZstComponent*>(zst_find_entity(sink_ent_uri));
     assert(sink_ent);
     entityEvents->reset_num_calls();
@@ -164,6 +169,8 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
     delete entityEvents;
     delete performerEvents;
     delete output_ent;
+	sink_out.pipe().close();
+	sink_log_thread.join();
     clear_callback_queue();
 }
 
@@ -172,7 +179,7 @@ int main(int argc,char **argv)
 {
 	TestRunner runner("TestExternalClients", argv[0]);
 	zst_start_file_logging("TestExternalClients.log");
-    test_external_entities(argv[0]);
+    test_external_entities(argv[0], true);
 
     return 0;
 }
