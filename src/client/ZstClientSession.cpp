@@ -81,7 +81,11 @@ void ZstClientSession::on_receive_msg(ZstMessage * msg)
 		auto cable_address = stage_msg->unpack_payload_serialisable<ZstCableAddress>();
         auto input = dynamic_cast<ZstInputPlug*>(hierarchy()->find_entity(cable_address.get_input_URI()));
         auto output = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(cable_address.get_output_URI()));
-		create_cable(input, output);
+		auto cable = create_cable(input, output);
+		if (!cable)
+			throw std::runtime_error(fmt::format("Could not create cable from server request {}<-{}", cable_address.get_input_URI().path(), cable_address.get_output_URI().path()));
+
+		ZstLog::net(LogLevel::debug, "Received cable from server {}<-{}", cable_address.get_input_URI().path(), cable_address.get_output_URI().path());
 		break;
 	}
 	case ZstMsgKind::DESTROY_CABLE:
@@ -100,18 +104,16 @@ void ZstClientSession::on_receive_msg(ZstMessage * msg)
 
 void ZstClientSession::on_receive_graph_msg(ZstPerformanceMessage * msg)
 {
-	if(msg->payload().size() < 1){
+	if(msg->payload().size() < 1 || msg->payload().is_null()){
         //"No payload in graph message"
 		return;
 	}
     
 	//Find local proxy for the sending plug
-	ZstPerformanceMessage * perf_msg = static_cast<ZstPerformanceMessage*>(msg);
-	ZstOutputPlug * sending_plug = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(ZstURI(perf_msg->sender().c_str(), perf_msg->sender().size())));
-	ZstInputPlug * receiving_plug = NULL;
+	ZstOutputPlug * sending_plug = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(ZstURI(msg->sender().c_str(), msg->sender().size())));
 
 	if (!sending_plug) {
-		ZstLog::net(LogLevel::warn, "No sending plug found");
+		ZstLog::net(LogLevel::warn, "Received graph msg but could not find the sender plug. Sender: {}, Payload: {}, Payload size: {}", msg->sender().c_str(), msg->payload().dump().c_str(), msg->payload().dump().size());
 		return;
 	}
 	
@@ -121,15 +123,15 @@ void ZstClientSession::on_receive_graph_msg(ZstPerformanceMessage * msg)
 
 	//If the sending plug is a proxy then let the host app know it has updated
 	if (sending_plug->is_proxy()) {
-		ZstLog::net(LogLevel::debug, "Proxy plug {} received an update", sending_plug->URI().path());
 		sending_plug->raw_value()->copy(received_val);
 		synchronisable_annouce_update(sending_plug);
 	}
 
 	//Iterate over all connected cables from the sending plug
 	ZstCableBundle bundle;
-	for (auto cable : sending_plug->get_child_cables(bundle)) {
-		receiving_plug = dynamic_cast<ZstInputPlug*>(hierarchy()->find_entity(cable->get_address().get_input_URI()));
+	sending_plug->get_child_cables(bundle);
+	for (auto cable : bundle) {
+		auto receiving_plug = cable->get_input();
 		if (receiving_plug) {
 			if (!receiving_plug->is_proxy()) {
 				receiving_plug->raw_value()->copy(received_val);
@@ -173,9 +175,6 @@ ZstCable * ZstClientSession::connect_cable(ZstInputPlug * input, ZstOutputPlug *
 	cable = ZstSession::connect_cable(input, output, sendtype);
 	
 	if (cable) {
-		//TODO: Even though we use a cable object when sending over the wire, it's up to us
-		//to determine the correct input->output order - fix this using ZstInputPlug and 
-		//ZstOutput plug as arguments
 		stage_events().invoke([this, sendtype, cable](ZstTransportAdaptor* adaptor) {
 			adaptor->on_send_msg(ZstMsgKind::CREATE_CABLE, sendtype, cable->get_address().as_json(), json::object(), [this, cable](ZstMessageReceipt response) {
 				this->connect_cable_complete(response, cable);
@@ -202,7 +201,7 @@ void ZstClientSession::destroy_cable(ZstCable * cable, const ZstTransportSendTyp
 	ZstSession::destroy_cable(cable, sendtype);
 	
 	stage_events().invoke([this, cable, sendtype](ZstTransportAdaptor * adaptor) {
-		adaptor->on_send_msg(ZstMsgKind::DESTROY_CABLE, sendtype, cable->get_address().as_json(), json::object(), [this, cable](ZstMessageReceipt response) {
+		adaptor->on_send_msg(ZstMsgKind::DESTROY_CABLE, sendtype, cable->get_address().as_json(), json(), [this, cable](ZstMessageReceipt response) {
 			this->destroy_cable_complete(response, cable);
 		});
 	});

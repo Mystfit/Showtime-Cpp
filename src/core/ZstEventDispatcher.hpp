@@ -51,15 +51,14 @@ public:
 		this->m_adaptors.insert(adaptor);
 	}
 
-	void set_wake_condition(std::weak_ptr<ZstSemaphore> condition){
-        //std::lock_guard<std::recursive_mutex> lock(m_mtx);
-        this->m_condition_wake = condition;
-	}
-
 	void remove_adaptor(T adaptor) { 
 		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		adaptor->set_target_dispatcher_inactive();
 		this->m_adaptors.erase(adaptor); 
+	}
+	
+	int num_adaptors() {
+		return m_adaptors.size();
 	}
 
 	void remove_all_adaptors(){
@@ -68,6 +67,11 @@ public:
 			adp->set_target_dispatcher_inactive();
 		}
 		m_adaptors.clear();
+	}
+
+	void set_wake_condition(std::weak_ptr<ZstSemaphore> condition) {
+		//std::lock_guard<std::recursive_mutex> lock(m_mtx);
+		this->m_condition_wake = condition;
 	}
 	
 	void flush() {

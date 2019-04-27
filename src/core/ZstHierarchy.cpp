@@ -151,8 +151,12 @@ ZstMsgKind ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity)
 		return ZstMsgKind::ERR_ENTITY_ALREADY_EXISTS;
 	}
     
-	//Create proxies and set parents
     ZstEntityBase * parent = find_entity(parent_URI);
+	if (!parent) {
+		ZstLog::net(LogLevel::error, "Could not find parent {} for entity {}", parent_URI.path(), entity.URI().path());
+		return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
+	}
+
     ZstEntityBase * entity_proxy = NULL;
 
 	if (strcmp(entity.entity_type(), COMPONENT_TYPE) == 0) {

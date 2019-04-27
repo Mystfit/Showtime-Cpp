@@ -124,7 +124,7 @@ ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformerS
 
 	//Make sure cable doesn't already exist
 	if (find_cable(cable_path)) {
-        ZstLog::server(LogLevel::warn, "Cable {}<->{} already exists", cable_path.get_input_URI().path(), cable_path.get_output_URI().path());
+        ZstLog::server(LogLevel::warn, "Cable {}<-{} already exists", cable_path.get_input_URI().path(), cable_path.get_output_URI().path());
 		return ZstMsgKind::ERR_STAGE_BAD_CABLE_CONNECT_REQUEST;
 	}
 
@@ -214,7 +214,7 @@ ZstMsgKind ZstStageSession::observe_entity_handler(ZstMessage * msg, ZstPerforme
 		return ZstMsgKind::ERR_STAGE_PERFORMER_NOT_FOUND;
 	}
 	
-	ZstLog::server(LogLevel::notification, "Received observation request: {} watches {}", sender->URI().path(), observed_performer->URI().path());
+	ZstLog::server(LogLevel::notification, "Received observation request. Requestor: {}, Observed: {}", sender->URI().path(), observed_performer->URI().path());
 	if (sender == observed_performer) {
 		ZstLog::server(LogLevel::warn, "Client attempting to observe itself");
 		return ZstMsgKind::ERR_STAGE_PERFORMER_ALREADY_EXISTS;
@@ -232,8 +232,12 @@ ZstMsgKind ZstStageSession::observe_entity_handler(ZstMessage * msg, ZstPerforme
 			try {
 				ZstMsgKind status = f.get();
 				if (status == ZstMsgKind::OK) {
-					ZstLog::server(LogLevel::notification, "Observation request between {} and {} completed", sender->URI().path(), observed_performer->URI().path());
+					ZstLog::server(LogLevel::notification, "Observation request completed. Requester: {}, Observed: {} completed", sender->URI().path(), observed_performer->URI().path());
 
+					//Finish connection setup
+					complete_client_connection(observed_performer, sender);
+
+					//Let caller know the operation has successfully completed
 					router_events().invoke([id, this, sender](ZstTransportAdaptor * adp) {
 						adp->on_send_msg(ZstMsgKind::OK, {
 							{ get_msg_arg_name(ZstMsgArg::DESTINATION), this->m_hierarchy->get_socket_ID(sender) },
@@ -264,7 +268,7 @@ ZstMsgKind ZstStageSession::observe_entity_handler(ZstMessage * msg, ZstPerforme
 ZstMsgKind ZstStageSession::create_cable_complete_handler(ZstCable * cable)
 {
 	ZstLog::server(LogLevel::notification, "Client connection complete. Publishing cable {}-{}", cable->get_address().get_input_URI().path(), cable->get_address().get_output_URI().path());
-	m_hierarchy->broadcast_message(ZstMsgKind::CREATE_CABLE, json::object(), cable->get_address().as_json());
+	m_hierarchy->broadcast_message(ZstMsgKind::CREATE_CABLE, json(), cable->get_address().as_json());
 	return ZstMsgKind::OK;
 }
 
@@ -310,7 +314,7 @@ void ZstStageSession::destroy_cable(ZstCable * cable) {
 	ZstLog::server(LogLevel::notification, "Destroying cable {} {}", cable->get_address().get_output_URI().path(), cable->get_address().get_input_URI().path());
 
 	//Update rest of network
-	m_hierarchy->broadcast_message(ZstMsgKind::DESTROY_CABLE, json::object(), cable->get_address().as_json());
+	m_hierarchy->broadcast_message(ZstMsgKind::DESTROY_CABLE, json(), cable->get_address().as_json());
 
 	//Remove cable
 	ZstSession::destroy_cable_complete(cable);
@@ -347,6 +351,8 @@ void ZstStageSession::connect_clients(const ZstMsgID & response_id, ZstPerformer
 
 ZstMsgKind ZstStageSession::complete_client_connection(ZstPerformerStageProxy * output_client, ZstPerformerStageProxy * input_client)
 {
+	ZstLog::server(LogLevel::notification, "Completing client handshake. Pub: {}, Sub: {}", output_client->URI().path(), input_client->URI().path());
+
 	//Keep a record of which clients are connected to each other
 	output_client->add_subscriber_peer(input_client);
 

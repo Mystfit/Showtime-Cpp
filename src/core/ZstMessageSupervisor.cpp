@@ -52,7 +52,7 @@ void ZstMessageSupervisor::process_response(ZstMsgID id, ZstMsgKind response)
 			promise->second.set_value(response);
 		}
 		catch (cf::future_error e) {
-			ZstLog::net(LogLevel::warn, "Promise error {}", e.what());
+			//ZstLog::net(LogLevel::warn, "Promise error {}", e.what());
 		}
 		enqueue_resolved_promise(id);
 	}

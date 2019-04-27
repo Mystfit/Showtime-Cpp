@@ -127,7 +127,7 @@ ZstMsgKind ZstStageHierarchy::create_client_handler(std::string sender_identity,
 	}
 
 	//Update rest of network
-	broadcast_message(ZstMsgKind::CREATE_PERFORMER, json::object(), client_proxy->as_json());
+	broadcast_message(ZstMsgKind::CREATE_PERFORMER, json(), client_proxy->as_json());
 
 	return ZstMsgKind::OK;
 }

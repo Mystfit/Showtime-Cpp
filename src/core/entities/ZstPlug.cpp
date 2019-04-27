@@ -156,18 +156,22 @@ ZstCableBundle & ZstPlug::get_child_cables(ZstCableBundle & bundle)
     std::lock_guard<std::mutex> lock(m_entity_mtx);
 	for (auto const & cable_path : m_cables) {
         m_session_events->invoke([&cable_path, &bundle](ZstSessionAdaptor* adp){
-            bool exists = false;
             auto cable = adp->find_cable(cable_path);
-            for (auto cable : bundle) {
-                if (cable->get_address() == cable_path)
-                    exists = true;
+			if (!cable) {
+				ZstLog::entity(LogLevel::error, "No cable found for address {}<-{}", cable_path.get_input_URI().path(), cable_path.get_output_URI().path());
+				return;
+			}
+
+			// TODO: Replace bundles vectors with sets?
+            for (auto existing_cable : bundle) {
+				if (existing_cable->get_address() == cable_path)
+					return;  
             }
             
-            if (!exists) {
-                bundle.add(cable);
-            }
+			bundle.add(cable);
         });
 	}
+
 	return ZstEntityBase::get_child_cables(bundle);
 }
 

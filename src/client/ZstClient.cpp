@@ -447,6 +447,7 @@ void ZstClient::start_connection_broadcast(const ZstURI & remote_client_path)
 
 void ZstClient::send_connection_broadcast(boost::asio::deadline_timer * t, ZstClient * client, const ZstURI & to, const ZstURI & from, boost::posix_time::milliseconds duration)
 {
+	ZstLog::net(LogLevel::debug, "Sending connection handshake. From: {}, To: {}", from.path(), to.path());
 	client->m_tcp_graph_transport->on_send_msg(ZstMsgKind::CONNECTION_HANDSHAKE, { { get_msg_arg_name(ZstMsgArg::PATH), from.path() } });
 
 	if (client->m_connection_timers->find(to) != client->m_connection_timers->end()) {

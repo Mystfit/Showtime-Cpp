@@ -86,6 +86,7 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
 	//Create plug sync adaptors
 	TestPlugSync * plug_sync_adp = new TestPlugSync();
 	sync_out_plug->add_adaptor(plug_sync_adp);
+	ZstLog::app(LogLevel::notification, "Requesting observation of {}", sync_out_plug->URI().path());
 	zst_observe_entity(sync_out_plug);
 
     //Connect cable to sink
