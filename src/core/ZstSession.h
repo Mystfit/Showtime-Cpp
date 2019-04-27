@@ -80,6 +80,7 @@ public:
     // Hierarchy adaptor overrides
     // ---------------------------
     
+	ZST_EXPORT virtual void on_performer_arriving(ZstPerformer * performer) override;
     ZST_EXPORT virtual void on_entity_arriving(ZstEntityBase * entity) override;
     
 	// ------------------

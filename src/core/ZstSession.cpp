@@ -190,7 +190,7 @@ ZstCable * ZstSession::create_cable(ZstInputPlug * input, ZstOutputPlug * output
 	//Create and store new cable
     auto cable_it = m_cables.insert(std::make_unique<ZstCable>(input, output));
     const std::unique_ptr<ZstCable> & cable_ptr = *(cable_it.first);
-
+	
 	//Set up plug and cable references
 	plug_add_cable(input, cable_ptr.get());
 	plug_add_cable(output, cable_ptr.get());
@@ -215,8 +215,13 @@ void ZstSession::on_compute(ZstComponent * component, ZstInputPlug * plug) {
         component->compute(plug);
     }
     catch (std::exception e) {
-        ZstLog::entity(LogLevel::error, "Compute on component {} failed. Error was: {}", component->URI().path(), e.what());
+        ZstLog::net(LogLevel::error, "Compute on component {} failed. Error was: {}", component->URI().path(), e.what());
     }
+}
+
+void ZstSession::on_performer_arriving(ZstPerformer * performer)
+{
+	on_entity_arriving(performer);
 }
 
 void ZstSession::on_entity_arriving(ZstEntityBase * entity)
@@ -231,13 +236,13 @@ void ZstSession::on_entity_arriving(ZstEntityBase * entity)
 bool ZstSession::observe_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
 {
 	if (!entity->is_proxy()) {
-		ZstLog::entity(LogLevel::warn, "Can't observe local entity {}", entity->URI().path());
+		ZstLog::net(LogLevel::warn, "Can't observe local entity {}", entity->URI().path());
 		return false;
 	}
 
 	if (listening_to_performer(dynamic_cast<ZstPerformer*>(hierarchy()->find_entity(entity->URI().first()))))
 	{
-		ZstLog::entity(LogLevel::warn, "Already observing performer {}", entity->URI().first().path());
+		ZstLog::net(LogLevel::warn, "Already observing performer {}", entity->URI().first().path());
 		return false;
 	}
 	
