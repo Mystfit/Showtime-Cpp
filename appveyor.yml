@@ -62,7 +62,7 @@ before_build:
 
 build:
   parallel: true
-  project: %BUILD_FOLDER%/Showtime.sln
+  project: $(BUILD_FOLDER)/Showtime.sln
   verbosity: minimal
 
 test_script:
