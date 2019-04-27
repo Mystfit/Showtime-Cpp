@@ -45,11 +45,11 @@ matrix:
 
 install:
 - cmd: |-
+    mkdir build
     call %APPVEYOR_BUILD_FOLDER%/install_dependencies.bat --build-dir %BUILD_FOLDER% --config %CONFIGURATION%
 
 before_build:
 - cmd: |-
-    mkdir build
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%/install;%DEPENDENCY_DIR%/swig;${CMAKE_PREFIX_PATH}"
     set CMAKE_BIN=%DEPENDENCY_DIR%/cmake/bin/cmake
     set CTEST_BIN=%DEPENDENCY_DIR%/cmake/bin/ctest
