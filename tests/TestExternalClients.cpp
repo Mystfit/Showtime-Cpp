@@ -56,9 +56,9 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
         assert(sink_process.valid());
 	}
 
+	// Create a thread to handle reading log info from the sink process' stdout pipe
 	auto sink_log_thread = ZstTest::log_external_pipe(sink_out);
-
-
+	
 	wait_for_event(performerEvents, 1);
     ZstPerformer * sink_performer = zst_get_performer_by_URI(sink_perf_uri);
     assert(sink_performer);

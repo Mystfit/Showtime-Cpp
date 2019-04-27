@@ -94,18 +94,25 @@ void test_remote_factories(std::string external_test_path, bool launch_ext_proce
 #endif
 	boost::process::child ext_factory_process;
 	boost::process::pipe ext_factory_pipe;
+	boost::process::ipstream ext_factory_out;
+	boost::thread ext_factory_log_thread;
+
 	if (launch_ext_process) {
 		//Run external factory in external process so we don't share the same Showtime singleton
 		ZstLog::app(LogLevel::notification, "Starting external factory process");
 		try {
-			ext_factory_process = boost::process::child(prog, std_in < ext_factory_pipe);
+			ext_factory_process = boost::process::child(prog, std_in < ext_factory_pipe, std_out > ext_factory_out);
 		}
 		catch (boost::process::process_error e) {
 			ZstLog::app(LogLevel::error, "External factory process failed to start. Code:{} Message:{}", e.code().value(), e.what());
 		}
 		assert(ext_factory_process.valid());
 		wait_for_event(performerEvents, 1);
+
+		// Create a thread to handle reading log info from the external factory process' stdout pipe
+		ext_factory_log_thread = ZstTest::log_external_pipe(ext_factory_out);
 	}
+
 
 	ZstLog::app(LogLevel::notification, "Test if we can search for a remote factory");
 	ZstPerformer * ext_factory_performer = dynamic_cast<ZstPerformer*>(zst_find_entity(ZstURI("extfactory")));
@@ -156,8 +163,10 @@ void test_remote_factories(std::string external_test_path, bool launch_ext_proce
 	assert(!zst_create_entity(ext_factory->URI() + ZstURI("CustomExternalComponent") + ZstURI("avocado"), "test"));
 
 	//Quit
-	if(launch_ext_process)
+	if (launch_ext_process) {
 		ext_factory_process.terminate();
+		ext_factory_log_thread.join();
+	}
 }
 
 

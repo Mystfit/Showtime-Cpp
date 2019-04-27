@@ -234,14 +234,15 @@ namespace ZstTest
 	void log_external(boost::process::ipstream & stream) {
 		std::string line;
 
-		while (std::getline(stream, line))
+		while (std::getline(stream, line)){
 			try {
-			boost::this_thread::interruption_point();
-			ZstLog::app(LogLevel::debug, "\n    -> {}", line.c_str());
-		}
-		catch (boost::thread_interrupted) {
-			ZstLog::server(LogLevel::debug, "External process logger thread exiting");
-			break;
+				boost::this_thread::interruption_point();
+				ZstLog::app(LogLevel::debug, "\n -> {}", line.c_str());
+			}
+			catch (boost::thread_interrupted) {
+				ZstLog::server(LogLevel::debug, "External process logger thread exiting");
+				break;
+			}
 		}
 	}
 
