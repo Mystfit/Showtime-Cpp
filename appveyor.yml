@@ -24,6 +24,7 @@ image:
 - Visual Studio 2017
 
 configuration:
+- Debug
 - Release
 
 platform:
@@ -36,8 +37,8 @@ environment:
     DEPENDENCY_DIR: "%APPVEYOR_BUILD_FOLDER%/dependencies"
     INSTALL_DIR: "%APPVEYOR_BUILD_FOLDER%/install"
     matrix:
-    - PYTHON_VER: 2.7
-    - PYTHON_VER: 3.7
+    - PYTHON_VER: 2
+    - PYTHON_VER: 3
 
 matrix:
     fast_finish: true
@@ -45,6 +46,7 @@ matrix:
 install:
 - cmd: |-
     mkdir build
+    choco install python%PYTHON_VER% -ia "CompileAll=1 Include_debug=1 Include_symbols=1"
     call %APPVEYOR_BUILD_FOLDER%/install_dependencies.bat --build-dir %BUILD_FOLDER% --config %CONFIGURATION%
 
 before_build:
@@ -53,7 +55,7 @@ before_build:
     set CMAKE_BIN=%DEPENDENCY_DIR%/cmake/bin/cmake
     set CTEST_BIN=%DEPENDENCY_DIR%/cmake/bin/ctest
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_DOTNET=ON -DBINDINGS_DOTNET_TESTS=ON -DBINDINGS_DOTNET_FRAMEWORK_VERSION=v4.7.2
-    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DBINDINGS_DOTNET_VERSION=%PYTHON_VER%
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DBINDINGS_PYTHON_VERSION_MAJOR=%PYTHON_VER%
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR%
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DBUILD_SHARED=ON -DBUILD_STATIC=ON -DBUILD_DRAFTS=ON
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DBOOST_ROOT:PATHNAME="%BOOST_ROOT%" -DBOOST_INCLUDEDIR:PATHNAME="%BOOST_ROOT%" -DBOOST_LIBRARYDIR:PATHNAME="%BOOST_ROOT%/lib64-msvc-14.1"
