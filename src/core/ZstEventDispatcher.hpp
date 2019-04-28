@@ -57,7 +57,7 @@ public:
 		this->m_adaptors.erase(adaptor); 
 	}
 	
-	int num_adaptors() {
+	size_t num_adaptors() {
 		return m_adaptors.size();
 	}
 
