@@ -115,7 +115,7 @@ void ZstComponent::remove_child(ZstEntityBase * entity)
 	ZstCableBundle bundle;
 	for (auto cable : entity->get_child_cables(bundle)){
         entity_events()->defer([cable](ZstEntityAdaptor * adp){
-            adp->on_disconnect_cable(*cable);
+            adp->on_disconnect_cable(cable);
         });
 	}
     

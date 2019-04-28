@@ -11,5 +11,5 @@ public:
 	ZST_EXPORT virtual void on_publish_entity_update(ZstEntityBase * entity);
 	ZST_EXPORT virtual void on_register_entity(ZstEntityBase * entity);
 	ZST_EXPORT virtual void on_request_entity_activation(ZstEntityBase * entity);
-    ZST_EXPORT virtual void on_disconnect_cable(ZstCable cable);
+    ZST_EXPORT virtual void on_disconnect_cable(ZstCable * cable);
 };

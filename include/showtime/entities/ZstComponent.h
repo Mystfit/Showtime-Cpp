@@ -21,7 +21,6 @@ public:
 	ZST_EXPORT virtual void create(const char * name, ZstEntityBase* parent) {};
     
     //Find a plug in this component by its URI
-	ZST_EXPORT ZstPlug * get_plug_by_URI(const ZstURI & uri) const;
     ZST_EXPORT ZstEntityBundle & get_plugs(ZstEntityBundle & bundle) const;
 
     //Overridable compute function that will process input plug events
@@ -66,7 +65,6 @@ public:
     
     //Number of children owned by this entity
     ZST_EXPORT const size_t num_children() const;
-    ZST_EXPORT const size_t num_plugs() const;
 
 
 protected:
