@@ -133,37 +133,6 @@ echo === Building msgpack ===
 %CMAKE_BIN% --build "%DEPENDENCY_DIR%\msgpack-c\build" %COMMON_BUILD_FLAGS%
 
 
-REM fmt
-IF EXIST %DEPENDENCY_DIR%\fmt\build (
-    echo Found fmt
-) ELSE (
-    echo === Cloning fmt === 
-    git clone https://github.com/fmtlib/fmt.git %DEPENDENCY_DIR%\fmt
-    git -C %DEPENDENCY_DIR%\fmt fetch --all --tags --prune
-    git -C %DEPENDENCY_DIR%\fmt checkout 5.1.0
-    mkdir "%DEPENDENCY_DIR%\fmt\build"
-)
-echo === Building fmt === 
-echo %CMAKE_BIN% -H"%DEPENDENCY_DIR%\fmt" -B"%DEPENDENCY_DIR%\fmt\build" -DFMT_TEST=OFF %COMMON_GENERATOR_FLAGS% 
-%CMAKE_BIN% -H"%DEPENDENCY_DIR%\fmt" -B"%DEPENDENCY_DIR%\fmt\build" %COMMON_GENERATOR_FLAGS%
-%CMAKE_BIN% --build "%DEPENDENCY_DIR%\fmt\build" %COMMON_BUILD_FLAGS%
-
-
-REM json
-IF EXIST %DEPENDENCY_DIR%\json\build (
-    echo Found nlohmann json
-) ELSE (
-    echo === Cloning nlohmann json === 
-    git clone https://github.com/nlohmann/json.git %DEPENDENCY_DIR%\json
-    git -C %DEPENDENCY_DIR%\json fetch --all --tags --prune
-    git -C %DEPENDENCY_DIR%\json checkout v3.4.0
-    mkdir "%DEPENDENCY_DIR%\json\build"
-)
-echo === Building nlohmann json === 
-%CMAKE_BIN% -H"%DEPENDENCY_DIR%\json" -B"%DEPENDENCY_DIR%\json\build" -DJSON_BuildTests=OFF %COMMON_GENERATOR_FLAGS%
-%CMAKE_BIN% --build "%DEPENDENCY_DIR%\json\build" %COMMON_BUILD_FLAGS%
-
-
 REM boost
 set BOOST_COMMON_FLAGS=--prefix=%DEPENDENCY_DIR%\install address-model=64 variant=%CONFIG_LOWER% threading=multi runtime-link=shared
 set BOOST_LIBS=--with-system --with-chrono  --with-log --with-thread --with-filesystem --with-date_time --with-atomic --with-regex --with-context --with-fiber

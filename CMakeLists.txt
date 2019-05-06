@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.13.0)
 project(Showtime VERSION 0.18.0)
 set(SHOWTIME_NAMESPACE "${PROJECT_NAME}::")
 
-# Use C14
-set(CMAKE_CXX_STANDARD 14)
+# Use C17
+set(CMAKE_CXX_STANDARD 17)
 set(CXX_STANDARD_REQUIRED)
 #set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -110,7 +110,6 @@ find_package(Boost COMPONENTS
     system
     context
     fiber
-    filesystem 
     date_time
     chrono
     atomic
@@ -121,7 +120,6 @@ set(Boost_HEADER_TARGET "Boost::boost")
 set(Boost_LOG_TARGET "Boost::log")
 set(Boost_LOG_SETUP_TARGET "Boost::log_setup")
 set(Boost_THREAD_TARGET "Boost::thread")
-set(Boost_FILESYSTEM_TARGET "Boost::filesystem")
 set(Boost_SYSTEM_TARGET "Boost::system")
 set(Boost_CONTEXT_TARGET "Boost::context")
 set(Boost_FIBER_TARGET "Boost::fiber")
@@ -163,7 +161,6 @@ endif()
 # Set internal linked library lists for our targets
 set(SHOWTIME_PRIVATE_LINKED_LIBS 
     ${Boost_SYSTEM_TARGET}
-    ${Boost_FILESYSTEM_TARGET}
     ${Boost_THREAD_TARGET}
     ${Boost_DATE_TIME_TARGET}
     ${Boost_CHRONO_TARGET}
@@ -180,7 +177,6 @@ set(SHOWTIME_PRIVATE_LINKED_LIBS
 
 # Boost libraries that MUST be linked shared
 set(Showtime_PUBLIC_SHARED_BOOST_LINKED_LIBS
-    ${Boost_FILESYSTEM_LIBRARY_DEBUG}
     ${Boost_CONTEXT_LIBRARY_DEBUG}
 )
 

@@ -3,12 +3,11 @@
 #include <Showtime.h>
 #include <ShowtimeServer.h>
 #include <boost/process.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
 #include <sstream>
+#include <filesystem>
 
 using namespace boost::process;
-using namespace boost::filesystem;
 
 #define BOOST_THREAD_DONT_USE_DATETIME
 #define TAKE_A_SHORT_BREATH std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -252,7 +251,8 @@ namespace ZstTest
 
 	class TestRunner {
 	public:
-		TestRunner(const std::string & name, const std::string & test_path, bool init_library = true, bool run_stage = true)
+		TestRunner(const std::string & name, const std::string & test_path, bool init_library = true, bool run_stage = true) :
+			m_stage_server{NULL}
 		{
 			if (run_stage) {
 				m_stage_server = zst_create_server((name + "_server").c_str(), STAGE_ROUTER_PORT);

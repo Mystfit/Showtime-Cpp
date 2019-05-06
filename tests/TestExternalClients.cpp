@@ -2,7 +2,6 @@
 
 using namespace ZstTest;
 
-
 void test_external_entities(std::string external_test_path, bool launch_sink_process = true) {
     ZstLog::app(LogLevel::notification, "Starting external entities test");
 
@@ -26,7 +25,7 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
 
 
     //Run the sink program
-    std::string prog = system_complete(external_test_path).parent_path().generic_string() + "/TestHelperSink";
+    std::string prog = std::filesystem::absolute(external_test_path).parent_path().generic_string() + "/TestHelperSink";
 #ifdef WIN32
     prog += ".exe";
 #endif
