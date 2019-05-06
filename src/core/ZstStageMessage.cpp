@@ -2,7 +2,6 @@
 
 #include "entities/ZstEntityBase.h"
 #include "entities/ZstComponent.h"
-#include "entities/ZstContainer.h"
 #include "entities/ZstPerformer.h"
 #include "entities/ZstPlug.h"
 #include "entities/ZstEntityFactory.h"
@@ -60,9 +59,6 @@ ZstMsgKind ZstStageMessage::entity_kind(const ZstEntityBase & entity)
 	ZstMsgKind kind(ZstMsgKind::EMPTY);
 	if (strcmp(entity.entity_type(), COMPONENT_TYPE) == 0) {
 		kind = ZstMsgKind::CREATE_COMPONENT;
-	}
-	else if (strcmp(entity.entity_type(), CONTAINER_TYPE) == 0) {
-		kind = ZstMsgKind::CREATE_CONTAINER;
 	}
 	else if (strcmp(entity.entity_type(), PERFORMER_TYPE) == 0) {
 		kind = ZstMsgKind::CREATE_PERFORMER;

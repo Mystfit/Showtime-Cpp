@@ -5,7 +5,7 @@
 
 //Core headers
 #include <ZstVersion.h>
-#include "../core/ZstBoostEventWakeup.hpp"
+#include "../core/ZstSemaphore.h"
 
 //Stage headers
 #include "ZstPerformerStageProxy.h"
@@ -20,18 +20,10 @@ ZstStage::ZstStage() :
 	m_router_transport = new ZstServerRecvTransport();
 
 	//Register event conditions
-	m_event_condition = std::make_shared<ZstBoostEventWakeup>();
+	m_event_condition = std::make_shared<ZstSemaphore>();
 	m_session->set_wake_condition(m_event_condition);
-	m_session->hierarchy()->set_wake_condition(m_event_condition);
 	m_router_transport->msg_events()->set_wake_condition(m_event_condition);
 	this->set_wake_condition(m_event_condition);
-
-	//Register event conditions
-	m_event_condition = std::make_shared<ZstBoostEventWakeup>();
-	this->set_wake_condition(m_event_condition);
-	m_session->set_wake_condition(m_event_condition);
-	m_session->hierarchy()->set_wake_condition(m_event_condition);
-	m_router_transport->msg_events()->set_wake_condition(m_event_condition);
 }
 
 ZstStage::~ZstStage()
@@ -77,17 +69,17 @@ void ZstStage::destroy()
 	//Remove timers
 	m_heartbeat_timer.cancel();
 	m_heartbeat_timer.wait();
+    
+    //Destroy modules
+    m_session->destroy();
 
 	//Stop threads
 	m_stage_eventloop_thread.interrupt();
-	m_event_condition->wake();
-	m_stage_eventloop_thread.join();
+	m_event_condition->notify();
+    m_stage_eventloop_thread.try_join_for(boost::chrono::milliseconds(250));
 	m_stage_timer_thread.interrupt();
 	m_io.stop();
 	m_stage_timer_thread.join();
-
-	//Destroy modules
-	m_session->destroy();
 
 	//Destroy transports
 	m_router_transport->destroy();
@@ -107,8 +99,8 @@ void ZstStage::process_events()
 	m_router_transport->process_events();
 
 	//Reapers are updated last in case entities still need to be queried beforehand
-	m_session->reaper().reap_all();
-	m_session->hierarchy()->reaper().reap_all();
+//    m_session->reaper().reap_all();
+//    m_session->hierarchy()->reaper().reap_all();
 }
 
 
@@ -126,7 +118,7 @@ void ZstStage::stage_heartbeat_timer(boost::asio::deadline_timer * t, ZstStage *
 			performer->clear_active_hearbeat();
 		}
 		else {
-			ZstLog::net(LogLevel::warn, "Client {} missed a heartbeat. {} remaining", performer->URI().path(), MAX_MISSED_HEARTBEATS - performer->get_missed_heartbeats());
+			ZstLog::server(LogLevel::warn, "Client {} missed a heartbeat. {} remaining", performer->URI().path(), MAX_MISSED_HEARTBEATS - performer->get_missed_heartbeats());
 			performer->set_heartbeat_inactive();
 		}
 
@@ -151,11 +143,13 @@ void ZstStage::event_loop()
 	while (1) {
 		try {
 			boost::this_thread::interruption_point();
-			this->m_event_condition->wait();
-			this->process_events();
+			this->m_event_condition->wait();    
+            if(this->is_destroyed())
+                break;
+            this->process_events();
 		}
 		catch (boost::thread_interrupted) {
-			ZstLog::net(LogLevel::debug, "Stage msg event loop exiting.");
+			ZstLog::server(LogLevel::debug, "Stage msg event loop exiting.");
 			break;
 		}
 	}
@@ -173,6 +167,6 @@ void ZstStage::timer_loop()
 		this->m_io.run();
 	}
 	catch (boost::thread_interrupted) {
-		ZstLog::net(LogLevel::debug, "Stage timer event loop exiting.");
+		ZstLog::server(LogLevel::debug, "Stage timer event loop exiting.");
 	}
 }

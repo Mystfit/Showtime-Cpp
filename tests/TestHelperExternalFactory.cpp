@@ -54,6 +54,57 @@ void event_loop()
 }
 
 
+#ifdef WIN32
+static bool s_signal_handler(DWORD signal_value)
+#else
+static void s_signal_handler(int signal_value)
+#endif
+{
+    ZstLog::app(LogLevel::debug, "Caught signal {}", signal_value);
+    switch (signal_value) {
+#ifdef WIN32
+        case CTRL_C_EVENT:
+            s_interrupted = 1;
+            return true;
+        case CTRL_CLOSE_EVENT:
+            s_interrupted = 1;
+            return true;
+        default:
+            break;
+    }
+    return false;
+#else
+case SIGINT:
+    s_interrupted = 1;
+case SIGTERM:
+    s_interrupted = 1;
+case SIGKILL:
+    s_interrupted = 1;
+case SIGABRT:
+    s_interrupted = 1;
+default:
+    break;
+}
+#endif
+}
+
+
+static void s_catch_signals() {
+#ifdef WIN32
+    if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)s_signal_handler, TRUE)) {
+        ZstLog::app(LogLevel::error, "Unable to register Control Handler");
+    }
+#else
+    struct sigaction action;
+    action.sa_handler = s_signal_handler;
+    action.sa_flags = 0;
+    sigemptyset(&action.sa_mask);
+    sigaction(SIGINT, &action, NULL);
+    sigaction(SIGTERM, &action, NULL);
+#endif
+}
+
+
 int main(int argc, char **argv) {
 
 	ZstLog::app(LogLevel::notification, "In external factory process");
@@ -85,7 +136,7 @@ int main(int argc, char **argv) {
 	//Start event loop
 	boost::thread event_thread = boost::thread(event_loop);
 
-	ZstTest::s_catch_signals();
+	s_catch_signals();
 	while (!ZstTest::s_interrupted) {
 		std::string line;
 

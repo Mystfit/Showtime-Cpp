@@ -2,6 +2,7 @@
 
 using namespace ZstTest;
 
+
 void test_external_entities(std::string external_test_path, bool launch_sink_process = true) {
     ZstLog::app(LogLevel::notification, "Starting external entities test");
 
@@ -14,7 +15,8 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
 
     //Create emitter
     OutputComponent * output_ent = new OutputComponent("proxy_test_output");
-    zst_activate_entity(output_ent);
+    zst_get_root()->add_child(output_ent);
+    assert(output_ent->is_activated());
     
     ZstURI sink_perf_uri = ZstURI("sink");
     ZstURI sink_ent_uri = sink_perf_uri + ZstURI("sink_ent");
@@ -34,13 +36,13 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
 #else
     char pause_flag = 'a';
 #endif
-	boost::process::pipe m_sink_out;
+	boost::process::ipstream sink_out;
     if (launch_sink_process) {
 		//Run sink in external process so we don't share the same Showtime singleton
 		ZstLog::app(LogLevel::notification, "Starting sink process");
 
         try {
-            sink_process = boost::process::child(prog, &pause_flag); //d flag pauses the sink process to give us time to attach a debugger
+            sink_process = boost::process::child(prog, &pause_flag, boost::process::std_out > sink_out); //d flag pauses the sink process to give us time to attach a debugger
 #ifdef PAUSE_SINK
 #ifdef WIN32
             system("pause");
@@ -53,6 +55,10 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
         }
         assert(sink_process.valid());
 	}
+
+	// Create a thread to handle reading log info from the sink process' stdout pipe
+	auto sink_log_thread = ZstTest::log_external_pipe(sink_out);
+	
 	wait_for_event(performerEvents, 1);
     ZstPerformer * sink_performer = zst_get_performer_by_URI(sink_perf_uri);
     assert(sink_performer);
@@ -63,23 +69,24 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
 	assert(performer_bundle.size() == 2);
     
     //Test entity exists
-    wait_for_event(entityEvents, 1);
-    ZstContainer * sink_ent = dynamic_cast<ZstContainer*>(zst_find_entity(sink_ent_uri));
+    wait_for_event(entityEvents, 2);
+    ZstComponent * sink_ent = dynamic_cast<ZstComponent*>(zst_find_entity(sink_ent_uri));
     assert(sink_ent);
     entityEvents->reset_num_calls();
     
-    ZstInputPlug * sink_plug = dynamic_cast<ZstInputPlug*>(sink_ent->get_plug_by_URI(sink_plug_uri));
+    ZstInputPlug * sink_plug = dynamic_cast<ZstInputPlug*>(sink_ent->get_child_by_URI(sink_plug_uri));
     assert(sink_plug);
 	assert(zst_find_entity(sink_plug->URI()));
     assert(sink_plug->is_activated());
 
-	ZstOutputPlug * sync_out_plug = dynamic_cast<ZstOutputPlug*>(sink_ent->get_plug_by_URI(sync_out_plug_uri));
+	ZstOutputPlug * sync_out_plug = dynamic_cast<ZstOutputPlug*>(sink_ent->get_child_by_URI(sync_out_plug_uri));
 	assert(sync_out_plug);
 	assert(sync_out_plug->is_activated());
 
 	//Create plug sync adaptors
 	TestPlugSync * plug_sync_adp = new TestPlugSync();
 	sync_out_plug->add_adaptor(plug_sync_adp);
+	ZstLog::app(LogLevel::notification, "Requesting observation of {}", sync_out_plug->URI().path());
 	zst_observe_entity(sync_out_plug);
 
     //Connect cable to sink
@@ -107,11 +114,12 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
 	ZstLog::app(LogLevel::notification, "Creating a plug on the remote performer");
 	ZstComponent * sink_b = dynamic_cast<ZstComponent*>(zst_find_entity(sink_B_uri));
 	ZstOutputPlug * remote_plug = sink_b->create_output_plug("remote_plug", ZstValueType::ZST_INT);
+    assert(entityEvents->num_calls() == 1);
 	assert(remote_plug);
-	zst_activate_entity(remote_plug);
 	assert(remote_plug->is_activated());
 	assert(zst_find_entity(remote_plug->URI()));
 	ZstURI remote_plug_uri = remote_plug->URI();
+    entityEvents->reset_num_calls();
 
 	//Test remote plug can send values
 	ZstLog::app(LogLevel::notification, "Testing sending values using remote plug");
@@ -137,8 +145,8 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
 	ZstURI out_plug_path = sync_out_plug->URI();
     output_ent->send(0);
     sink_process.wait();
-    int result = sink_process.exit_code();
-   // assert(result == 0 || result == 259);	//Exit code 259 is 'No more data is available.' on Windows. Something to do with stdin?
+    //int result = sink_process.exit_code();
+    //assert(result == 0 || result == 259);	//Exit code 259 is 'No more data is available.' on Windows. Something to do with stdin?
 
     //Check that we received performer destruction request
 	ZstLog::app(LogLevel::debug, "Checking if sink has left the graph");
@@ -162,6 +170,8 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
     delete entityEvents;
     delete performerEvents;
     delete output_ent;
+	sink_out.pipe().close();
+	sink_log_thread.join();
     clear_callback_queue();
 }
 
@@ -170,7 +180,7 @@ int main(int argc,char **argv)
 {
 	TestRunner runner("TestExternalClients", argv[0]);
 	zst_start_file_logging("TestExternalClients.log");
-    test_external_entities(argv[0]);
+    test_external_entities(argv[0], true);
 
     return 0;
 }

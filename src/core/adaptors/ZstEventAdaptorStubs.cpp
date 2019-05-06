@@ -11,8 +11,7 @@
 #include "ZstSynchronisable.h"
 #include "entities/ZstEntityFactory.h"
 #include "entities/ZstPlug.h"
-
-
+#include "ZstCable.h"
 
 
 // --------------------------------------
@@ -33,6 +32,8 @@ void ZstSynchronisableAdaptor::on_synchronisable_updated(ZstSynchronisable * syn
 void ZstEntityAdaptor::on_publish_entity_update(ZstEntityBase * entity) {};
 void ZstEntityAdaptor::on_register_entity(ZstEntityBase * entity){};
 void ZstEntityAdaptor::on_request_entity_activation(ZstEntityBase * entity) {};
+void ZstEntityAdaptor::on_disconnect_cable(ZstCable * cable) {};
+
 //void ZstEntityAdaptor::on_entity_destroyed(ZstEntityBase * entity){};
 
 
@@ -54,6 +55,10 @@ void ZstSessionAdaptor::on_disconnected_from_stage() {};
 
 void ZstSessionAdaptor::on_cable_created(ZstCable * cable) {}
 void ZstSessionAdaptor::on_cable_destroyed(ZstCable * cable) {}
+
+ZstCableBundle & ZstSessionAdaptor::get_cables(ZstCableBundle & bundle) { return ZstCableBundle(); };
+ZstCable * ZstSessionAdaptor::find_cable(const ZstCableAddress & address) { return NULL; };
+
 
 
 // -----------------------

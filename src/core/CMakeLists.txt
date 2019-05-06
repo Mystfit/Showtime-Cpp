@@ -9,7 +9,6 @@ set(ENTITY_HEADERS
     ${Showtime_INCLUDE_DIRS}/entities/ZstEntityFactory.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstEntityBase.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstComponent.h
-    ${Showtime_INCLUDE_DIRS}/entities/ZstContainer.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstPlug.h
     ${Showtime_INCLUDE_DIRS}/entities/ZstPerformer.h
 )
@@ -33,6 +32,7 @@ set(API_HEADERS
     ${Showtime_INCLUDE_DIRS}/ZstCore.h
     ${Showtime_INCLUDE_DIRS}/ZstLogging.h
     ${Showtime_INCLUDE_DIRS}/ZstCable.h
+    ${Showtime_INCLUDE_DIRS}/ZstCableAddress.h
     ${Showtime_INCLUDE_DIRS}/ZstConstants.h
     ${Showtime_INCLUDE_DIRS}/ZstExports.h
     ${Showtime_INCLUDE_DIRS}/ZstURI.h
@@ -61,13 +61,12 @@ set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstPerformanceMessage.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstEventDispatcher.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.h"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstEventWakeup.hpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstBoostEventWakeup.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstSemaphore.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessageSupervisor.hpp"
 )
 set(ZST_CORE_MODULE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstSession.h"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstModule.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstSynchronisableModule.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstHierarchy.h"
 )
 set(ZST_CORE_TRANSPORT_HEADERS
@@ -87,11 +86,11 @@ set(ZST_CORE_LIASON_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstSynchronisableLiason.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstEntityFactoryLiason.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstPlugLiason.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstEntityLiason.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstCableLiason.hpp"
 )
 set(ZST_CORE_ADAPTOR_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstTransportAdaptor.hpp"
-    "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstModuleAdaptor.hpp"
 )
 
 # Core cpp files
@@ -100,6 +99,7 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstZMQRefCounter.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMsgID.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstLogging.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstCableAddress.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstCable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstURI.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstSerialisable.cpp"
@@ -108,7 +108,6 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstStageMessage.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstPerformanceMessage.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstBoostEventWakeup.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessageSupervisor.cpp"
 )
 set(ZST_CORE_TRANSPORT_SRC
@@ -127,13 +126,12 @@ endif()
 set(ZST_CORE_MODULE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstSession.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstHierarchy.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstModule.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstSynchronisableModule.cpp"
 )
 set(ZST_CORE_ENTITY_SRC
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstEntityFactory.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstEntityBase.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstComponent.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/entities/ZstContainer.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstPlug.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstPerformer.cpp"
 )
@@ -142,6 +140,7 @@ set(ZST_CORE_LIASON_SRC
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstSynchronisableLiason.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstEntityFactoryLiason.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstPlugLiason.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstEntityLiason.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstCableLiason.cpp"
 )
 
@@ -252,10 +251,6 @@ endif()
 if(BUILD_SHARED)
     list(APPEND CORE_LIBS ${CORE_TARGET})
 
-    # Add a dummy source file to force our target to compile otherwise having no source files might cause the target to not bother compiling
-    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp)
-    target_sources(${CORE_TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp)
-
     if(WIN32)
         target_compile_definitions(${CORE_TARGET} 
             PRIVATE 
@@ -282,6 +277,10 @@ endif()
 # Options common to both static/shared libraries
 foreach(TARGET ${CORE_LIBS})
     set_target_properties(${TARGET} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION})
+
+    # Add a dummy source file to force our target to compile
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp)
+    target_sources(${TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp)
 
     # Target link libs again to link actual libraries
     target_link_libraries(${TARGET}

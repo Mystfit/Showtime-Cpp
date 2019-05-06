@@ -29,8 +29,8 @@ long double test_benchmark(bool reliable, int send_rate, int send_amount)
 
 	OutputComponent * test_output = new OutputComponent("bench_test_out", reliable);
 	InputComponent * test_input = new InputComponent("bench_test_in", 10, false);
-	zst_activate_entity(test_output);
-	zst_activate_entity(test_input);
+	zst_get_root()->add_child(test_output);
+	zst_get_root()->add_child(test_input);
 	zst_connect_cable(test_input->input(), test_output->output());
 
 	int count = send_amount;
@@ -38,7 +38,7 @@ long double test_benchmark(bool reliable, int send_rate, int send_amount)
 	ZstLog::app(LogLevel::debug, "Sending {} messages", count);
 	// Wait until our message tripmeter has received all the messages
 	auto delta_time = std::chrono::milliseconds(-1);
-	std::chrono::time_point<std::chrono::system_clock> end, last, now;
+	std::chrono::time_point<std::chrono::system_clock> last, now;
 	auto start = std::chrono::system_clock::now();
 	last = start;
 	int last_message_count = 0;
@@ -46,10 +46,8 @@ long double test_benchmark(bool reliable, int send_rate, int send_amount)
 	int delta_messages = 0;
 	long double mps = 0.0;
 	int remaining_messages = count;
-	int delta_queue = 0;
 	int last_queue_count = 0;
 	int last_processed_message_count = 0;
-	long queue_speed = 0;
 	int num_sent = 0;
 	int alert_rate = 2000;
 	bool hit = false;
@@ -170,9 +168,11 @@ int main(int argc, char **argv)
 	long double mps_reliable = test_benchmark(true, 0, 200000);
 	ZstLog::app(LogLevel::notification, "Reliable avg mps: {}", mps_reliable);
 
+#ifdef ZST_BUILD_DRAFT_API
 	ZstLog::app(LogLevel::notification, "Starting unreliable benchmark test");
 	long double mps_unreliable = test_benchmark(false, 1, 10000);
 	ZstLog::app(LogLevel::notification, "Unreliable avg mps: {}", mps_unreliable);
+#endif
 
 	eventloop_thread.interrupt();
 	eventloop_thread.join();

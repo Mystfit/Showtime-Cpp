@@ -6,7 +6,7 @@
 using namespace std;
 
 ZstPerformer::ZstPerformer() : 
-	ZstContainer(),
+	ZstComponent(),
 	m_heartbeat_active(false),
 	m_missed_heartbeats(0)
 {
@@ -14,14 +14,14 @@ ZstPerformer::ZstPerformer() :
 }
 
 ZstPerformer::ZstPerformer(const char * name) :
-	ZstContainer("", name),
+	ZstComponent("", name),
 	m_heartbeat_active(false),
 	m_missed_heartbeats(0)
 {
 	set_entity_type(PERFORMER_TYPE);
 }
 
-ZstPerformer::ZstPerformer(const ZstPerformer & other) : ZstContainer(other)
+ZstPerformer::ZstPerformer(const ZstPerformer & other) : ZstComponent(other)
 {
 	m_heartbeat_active = other.m_heartbeat_active;
 	m_missed_heartbeats = other.m_missed_heartbeats;
@@ -68,13 +68,13 @@ int ZstPerformer::get_missed_heartbeats()
 	return m_missed_heartbeats;
 }
 
-void ZstPerformer::add_child(ZstEntityBase * entity)
+void ZstPerformer::add_child(ZstEntityBase * entity, bool auto_activate)
 {
 	if (strcmp(entity->entity_type(), FACTORY_TYPE) == 0) {
 		add_factory(static_cast<ZstEntityFactory*>(entity));
 	}
 	else {
-		ZstContainer::add_child(entity);
+		ZstComponent::add_child(entity, auto_activate);
 	}
 }
 
@@ -84,7 +84,7 @@ void ZstPerformer::remove_child(ZstEntityBase * entity)
 		remove_factory(static_cast<ZstEntityFactory*>(entity));
 	}
 	else {
-		ZstContainer::remove_child(entity);
+		ZstComponent::remove_child(entity);
 	}
 }
 
@@ -125,7 +125,7 @@ ZstEntityFactoryBundle & ZstPerformer::get_factories(ZstEntityFactoryBundle & bu
 void ZstPerformer::write_json(json & buffer) const
 {
 	//Pack entity
-	ZstContainer::write_json(buffer);
+	ZstComponent::write_json(buffer);
 
 	//Pack children
 	buffer["factories"] = json::array();
@@ -136,7 +136,7 @@ void ZstPerformer::write_json(json & buffer) const
 
 void ZstPerformer::read_json(const json & buffer)
 {
-	ZstContainer::read_json(buffer);
+	ZstComponent::read_json(buffer);
 
 	//Unpack factories
 	for (auto f : buffer["factories"]) {

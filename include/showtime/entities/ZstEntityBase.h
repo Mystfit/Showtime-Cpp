@@ -1,6 +1,8 @@
 #pragma once
 
 #include <unordered_map>
+#include <mutex>
+#include <memory>
 
 #include "../ZstExports.h"
 #include "../ZstURI.h"
@@ -8,8 +10,10 @@
 #include "../ZstSynchronisable.h"
 #include "../ZstBundle.hpp"
 #include "../ZstCable.h"
+#include "../ZstCableAddress.h"
 #include "../ZstBundle.hpp"
 #include "../adaptors/ZstEntityAdaptor.hpp"
+#include "../adaptors/ZstSessionAdaptor.hpp"
 
 //Forwards
 template<typename T>
@@ -20,20 +24,17 @@ class ZstEntityFactory;
 //Typedefs
 typedef std::unordered_map<ZstURI, ZstEntityBase*, ZstURIHash> ZstEntityMap;
 
-//Common bundle types
+//Common entity bundle types
 typedef ZstBundle<ZstURI> ZstURIBundle;
 typedef ZstBundle<ZstEntityBase*> ZstEntityBundle;
 typedef ZstBundle<ZstEntityFactory*> ZstEntityFactoryBundle;
-typedef ZstBundle<ZstCable*> ZstCableBundle;
 typedef ZstBundleIterator<ZstEntityBase*> ZstEntityBundleIterator;
-typedef ZstBundleIterator<ZstCable*> ZstCableBundleIterator;
 
 
 class ZstEntityBase : public ZstSynchronisable, public ZstSerialisable {
-public:
-	friend class ZstClient;
-	friend class ZstContainer;
+    friend class ZstEntityLiason;
 
+public:
 	//Include base class adaptors
 	using ZstSynchronisable::add_adaptor;
 	using ZstSynchronisable::remove_adaptor;
@@ -46,7 +47,7 @@ public:
 	//The parent of this entity
 	ZST_EXPORT ZstEntityBase * parent() const;
 
-	ZST_EXPORT virtual void add_child(ZstEntityBase * child);
+	ZST_EXPORT virtual void add_child(ZstEntityBase * child, bool auto_activate = true);
 	ZST_EXPORT virtual void remove_child(ZstEntityBase * child);
     
     //Entity type
@@ -56,7 +57,7 @@ public:
 	ZST_EXPORT const ZstURI & URI() const;
 
 	//Iterate
-	ZST_EXPORT virtual ZstCableBundle & get_child_cables(ZstCableBundle & bundle) const;
+	ZST_EXPORT virtual ZstCableBundle & get_child_cables(ZstCableBundle & bundle);
 	ZST_EXPORT virtual ZstEntityBundle&  get_child_entities(ZstEntityBundle & bundle, bool include_parent = true);
 	    
 	//Serialisation
@@ -65,7 +66,10 @@ public:
 
 	//Adaptors
     ZST_EXPORT void add_adaptor(ZstEntityAdaptor * adaptor);
+    ZST_EXPORT void add_adaptor(ZstSessionAdaptor * adaptor);
     ZST_EXPORT void remove_adaptor(ZstEntityAdaptor * adaptor);
+    ZST_EXPORT void remove_adaptor(ZstSessionAdaptor * adaptor);
+
 	ZST_EXPORT ZstEventDispatcher<ZstEntityAdaptor*> * entity_events();
 	
 protected:
@@ -74,9 +78,15 @@ protected:
 	ZST_EXPORT virtual void set_parent(ZstEntityBase* entity);
 	ZST_EXPORT virtual void update_URI();
 	ZST_EXPORT virtual void dispatch_destroyed() override;
+    
+    ZST_EXPORT ZstEventDispatcher<ZstSessionAdaptor*> * session_events();
+    
+    //Entity mutex
+    mutable std::mutex m_entity_mtx;
+    std::unique_ptr< ZstEventDispatcher<ZstSessionAdaptor*> > m_session_events;
+    std::unique_ptr< ZstEventDispatcher<ZstEntityAdaptor*> > m_entity_events;
 
 private:
-    ZstEventDispatcher<ZstEntityAdaptor*> * m_entity_events;
 	ZstEntityBase * m_parent;
 	std::string m_entity_type;
 	ZstURI m_uri;

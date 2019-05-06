@@ -2,9 +2,6 @@
 
 #include "ZstExports.h"
 #include "adaptors/ZstEventAdaptor.hpp"
-#include "entities/ZstPlug.h"
-#include "entities/ZstEntityBase.h"
-#include "entities/ZstPerformer.h"
 #include "ZstCable.h"
 
 class ZstSessionAdaptor : public ZstEventAdaptor {
@@ -14,4 +11,7 @@ public:
 
 	ZST_EXPORT virtual void on_cable_created(ZstCable * cable);
 	ZST_EXPORT virtual void on_cable_destroyed(ZstCable * cable);
+    
+    ZST_EXPORT virtual ZstCableBundle & get_cables(ZstCableBundle & bundle);
+    ZST_EXPORT virtual ZstCable * find_cable(const ZstCableAddress & address);
 };

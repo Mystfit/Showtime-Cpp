@@ -4,6 +4,7 @@
 #include <ShowtimeServer.h>
 #include <boost/process.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/thread/thread.hpp>
 #include <sstream>
 
 using namespace boost::process;
@@ -230,6 +231,24 @@ namespace ZstTest
 		}
 	}
 
+	void log_external(boost::process::ipstream & stream) {
+		std::string line;
+
+		while (std::getline(stream, line)){
+			try {
+				boost::this_thread::interruption_point();
+				ZstLog::app(LogLevel::debug, "\n -> {}", line.c_str());
+			}
+			catch (boost::thread_interrupted) {
+				ZstLog::server(LogLevel::debug, "External process logger thread exiting");
+				break;
+			}
+		}
+	}
+
+	boost::thread log_external_pipe(boost::process::ipstream & out_pipe) {
+		return boost::thread(boost::bind(&ZstTest::log_external, boost::ref(out_pipe)));
+	}
 
 	class TestRunner {
 	public:
@@ -272,52 +291,5 @@ namespace ZstTest
 
 	static int s_interrupted = 0;
 
-#ifdef WIN32
-	static bool s_signal_handler(DWORD signal_value)
-#else
-	static void s_signal_handler(int signal_value)
-#endif
-	{
-		ZstLog::app(LogLevel::debug, "Caught signal {}", signal_value);
-		switch (signal_value) {
-#ifdef WIN32
-		case CTRL_C_EVENT:
-			s_interrupted = 1;
-			return true;
-		case CTRL_CLOSE_EVENT:
-			s_interrupted = 1;
-			return true;
-		default:
-			break;
-		}
-		return false;
-#else
-		case SIGINT:
-			s_interrupted = 1;
-		case SIGTERM:
-			s_interrupted = 1;
-		case SIGKILL:
-			s_interrupted = 1;
-		case SIGABRT:
-			s_interrupted = 1;
-		default:
-			break;
-	}
-#endif
-	}
 
-	static void s_catch_signals() {
-#ifdef WIN32
-		if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)s_signal_handler, TRUE)) {
-			ZstLog::app(LogLevel::error, "Unable to register Control Handler");
-		}
-#else
-		struct sigaction action;
-		action.sa_handler = s_signal_handler;
-		action.sa_flags = 0;
-		sigemptyset(&action.sa_mask);
-		sigaction(SIGINT, &action, NULL);
-		sigaction(SIGTERM, &action, NULL);
-#endif
-	}
 };

@@ -12,12 +12,6 @@
     $result = SWIG_NewPointerObj(SWIG_as_voidptr($1), outtype, $owner);
 }
 
-%typemap(out) ZstContainer * ZstEntityBase::as_container {
-    const std::string lookup_typename = "ZstContainer*"
-    swig_type_info * const outtype = SWIG_TypeQuery(lookup_typename.c_str());
-    $result = SWIG_NewPointerObj(SWIG_as_voidptr($1), outtype, $owner);
-}
-
 %include "../preflight.i"
 %include "ZstBundle.i"
 %include "../showtime.i"
@@ -27,9 +21,7 @@
 		_children = []
 		for i in range(self.num_children()):
 			ent = self.get_child_at(i)
-			if ent.entity_type() == CONTAINER_TYPE:
-				_children.append(cast_to_container(ent))
-			elif ent.entity_type() == COMPONENT_TYPE: 
+			if ent.entity_type() == COMPONENT_TYPE: 
 				_children.append(cast_to_component(ent))
 			elif ent.entity_type() == PERFORMER_TYPE: 
 				_children.append(cast_to_performer(ent))
@@ -37,5 +29,5 @@
 				_children.append(cast_to_plug(ent))
 		return _children
 
-	ZstContainer.children = children
+	ZstComponent.children = children
 %}

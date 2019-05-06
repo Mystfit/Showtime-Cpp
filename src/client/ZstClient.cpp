@@ -7,7 +7,7 @@
 #include "../core/transports/ZstServerSendTransport.h"
 #include "../core/ZstMessage.h"
 #include "../core/ZstPerformanceMessage.h"
-#include "../core/ZstBoostEventWakeup.hpp"
+#include "../core/ZstSemaphore.h"
 
 #include "ZstClientSession.h"
 
@@ -35,11 +35,10 @@ ZstClient::ZstClient() :
 	m_session = new ZstClientSession();
 
 	//Register module adaptors
-	m_session->module_events().add_adaptor(this);
-	m_session->hierarchy()->module_events().add_adaptor(this);
+	m_session->hierarchy()->hierarchy_events().add_adaptor(this);
 
 	//Register event conditions
-	m_event_condition = std::make_shared<ZstBoostEventWakeup>();
+	m_event_condition = std::make_shared<ZstSemaphore>();
 	m_client_transport->msg_events()->set_wake_condition(m_event_condition);
 	m_tcp_graph_transport->msg_events()->set_wake_condition(m_event_condition);
 #ifdef ZST_BUILD_DRAFT_API
@@ -78,7 +77,7 @@ void ZstClient::destroy() {
 
 	//Stop threads
 	m_client_event_thread.interrupt();
-	m_event_condition->wake();
+	m_event_condition->notify();
 	m_client_event_thread.try_join_for(boost::chrono::milliseconds(250));
 
 	//Destroy transports
@@ -172,29 +171,18 @@ void ZstClient::init_file_logging(const char * log_file_path)
 
 void ZstClient::process_events()
 {
-	//Lock the event loop so the calling thread can process all events
-	//std::unique_lock<std::mutex> lock(m_event_loop_mutex, std::defer_lock);
-	//lock.lock();
-
-	//Sanity checks
 	if (!is_init_complete() || m_is_destroyed || m_is_ending) {
 		ZstLog::net(LogLevel::debug, "Can't process events until the library is ready");
 		return;
 	}
 
-	//ZstLog::net(LogLevel::debug, "In process_events() - Submodule events");
 	m_session->process_events();
-
-	//Reapers are updated last in case entities still need to be queried beforehand
-	m_session->reaper().reap_all();
-	m_session->hierarchy()->reaper().reap_all();
-	//lock.unlock();
 }
 
 void ZstClient::flush()
 {
     ZstEventDispatcher<ZstTransportAdaptor*>::flush();
-	m_session->flush();
+	m_session->flush_events();
 }
 
 // -----------------------
@@ -459,6 +447,7 @@ void ZstClient::start_connection_broadcast(const ZstURI & remote_client_path)
 
 void ZstClient::send_connection_broadcast(boost::asio::deadline_timer * t, ZstClient * client, const ZstURI & to, const ZstURI & from, boost::posix_time::milliseconds duration)
 {
+	ZstLog::net(LogLevel::debug, "Sending connection handshake. From: {}, To: {}", from.path(), to.path());
 	client->m_tcp_graph_transport->on_send_msg(ZstMsgKind::CONNECTION_HANDSHAKE, { { get_msg_arg_name(ZstMsgArg::PATH), from.path() } });
 
 	if (client->m_connection_timers->find(to) != client->m_connection_timers->end()) {
@@ -502,6 +491,8 @@ void ZstClient::transport_event_loop()
 		try {
 			boost::this_thread::interruption_point();
 			m_event_condition->wait();
+            if(this->m_is_destroyed)
+                break;
 			m_client_transport->process_events();
 #ifdef ZST_BUILD_DRAFT_API
 			m_udp_graph_transport->process_events();

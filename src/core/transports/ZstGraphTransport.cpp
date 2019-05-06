@@ -44,7 +44,6 @@ const std::string & ZstGraphTransport::get_graph_out_address() const
 void ZstGraphTransport::send_message_impl(ZstMessage * msg)
 {
 	ZstPerformanceMessage * perf_msg = static_cast<ZstPerformanceMessage*>(msg);
-
 	auto data = perf_msg->to_msgpack();
 	std::string buffer(data.begin(), data.end());
 	zframe_t * payload_frame = zframe_new(buffer.c_str(), buffer.size());

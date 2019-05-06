@@ -5,6 +5,9 @@
 #include "ZstCable.h"
 #include "entities/ZstEntityBase.h"
 
+#include <set>
+#include <mutex>
+
 #define PLUG_TYPE "plug"
 
 //Forward declarations
@@ -43,8 +46,8 @@ public:
 	ZST_EXPORT const size_t size_at(const size_t position) const;
 
 	//Serialisation
-	ZST_EXPORT void write_json(json & buffer) const override;
-	ZST_EXPORT void read_json(const json & buffer) override;
+	ZST_EXPORT virtual void write_json(json & buffer) const override;
+	ZST_EXPORT virtual void read_json(const json & buffer) override;
 
 	//Properties
 	ZST_EXPORT ZstPlugDirection direction();
@@ -53,7 +56,7 @@ public:
 	ZST_EXPORT size_t num_cables();
 	ZST_EXPORT size_t max_connected_cables();
 	ZST_EXPORT bool is_connected_to(ZstPlug * plug);
-	ZST_EXPORT ZstCableBundle & get_child_cables(ZstCableBundle & bundle) const override;
+	ZST_EXPORT virtual ZstCableBundle & get_child_cables(ZstCableBundle & bundle) override;
 
 	//Values
 	ZST_EXPORT ZstValue * raw_value();
@@ -66,8 +69,8 @@ protected:
 private:
 	ZST_EXPORT void add_cable(ZstCable * cable);
 	ZST_EXPORT void remove_cable(ZstCable * cable);
-
-	ZstCableList m_cables;
+    
+    std::set<ZstCableAddress> m_cables;
 };
 
 

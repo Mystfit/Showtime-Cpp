@@ -1,5 +1,8 @@
 #pragma once
 
+#include <memory>
+#include <mutex>
+
 #include "ZstExports.h"
 #include "ZstConstants.h"
 #include "adaptors/ZstSynchronisableAdaptor.hpp"
@@ -13,7 +16,7 @@ class ZstEventDispatcher;
 class ZstSynchronisable
 {
 	friend class ZstSynchronisableLiason;
-
+    friend class ZstClient;
 public:
 	ZST_EXPORT ZstSynchronisable();
 	ZST_EXPORT ZstSynchronisable(const ZstSynchronisable & other);
@@ -53,7 +56,8 @@ private:
 	ZstSyncStatus m_sync_status;
 	ZstSyncError m_sync_error;
 	bool m_is_proxy;
-	ZstEventDispatcher<ZstSynchronisableAdaptor*> * m_synchronisable_events;
+    std::unique_ptr< ZstEventDispatcher<ZstSynchronisableAdaptor*> > m_synchronisable_events;
 	unsigned int m_instance_id;
 	static unsigned int s_instance_id_counter;
+    std::mutex m_sync_lock;
 };

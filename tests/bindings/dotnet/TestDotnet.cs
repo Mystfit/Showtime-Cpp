@@ -56,26 +56,38 @@ public class TestHierarchyAdaptor : ZstHierarchyAdaptor
 
     public override void on_entity_arriving(ZstEntityBase entity)
     {
-        last_arrived_entity = entity.URI().ToString();
-        ent_wait.Set();
+        if (entity != null)
+        {
+            last_arrived_entity = entity.URI().ToString();
+            ent_wait.Set();
+        }
     }
 
     public override void on_entity_leaving(ZstEntityBase entity)
     {
-        last_left_entity = entity.URI().ToString();
-        ent_wait.Set();
+        if (entity != null)
+        {
+            last_left_entity = entity.URI().ToString();
+            ent_wait.Set();
+        }
     }
 
     public override void on_performer_arriving(ZstPerformer performer)
     {
-        last_arrived_performer = performer.URI().ToString();
-        perf_wait.Set();
+        if (performer != null)
+        {
+            last_arrived_performer = performer.URI().ToString();
+            perf_wait.Set();
+        }
     }
 
     public override void on_performer_leaving(ZstPerformer performer)
     {
-        last_left_performer = performer.URI().ToString();
-        perf_wait.Set();
+        if (performer != null)
+        {
+            last_left_performer = performer.URI().ToString();
+            perf_wait.Set();
+        }
     }
 }
 
@@ -102,11 +114,11 @@ public class Program
         var input_comp = new TestInputComponent("test_input_comp");
         var output_comp = new TestOutputComponent("test_output_comp");
 
-        //Activate input component
-        showtime.activate_entity(input_comp);
+        //Parent input component
+        showtime.get_root().add_child(input_comp);
 
-        //Activate output component
-        showtime.activate_entity(output_comp);
+        //Parent output component
+        showtime.get_root().add_child(output_comp);
 
         //Connect cable
         var cable = showtime.connect_cable(input_comp.input, output_comp.output);
@@ -119,10 +131,6 @@ public class Program
         input_comp.wait.WaitOne();
         Debug.Assert(input_comp.last_val_received == send_val);
         input_comp.wait.Reset();
-
-        //Clean up entities
-        showtime.deactivate_entity(input_comp);
-        showtime.deactivate_entity(output_comp);
     }
     static void TestExternalEntities()
     {
@@ -131,7 +139,7 @@ public class Program
         showtime.add_hierarchy_adaptor(adp);
 
         TestOutputComponent output = new TestOutputComponent("sink_comm_out");
-        showtime.activate_entity(output);
+        showtime.get_root().add_child(output);
         
         //Create sink process
         ProcessStartInfo sink_startInfo = new ProcessStartInfo();
@@ -162,7 +170,9 @@ public class Program
 
         //Wait for incoming entity events
         showtime.app(LogLevel.notification, "Waiting for entity to arrive");
-        adp.ent_wait.WaitOne();
+        int count = 5;
+        while(adp.last_arrived_entity != "sink/sink_ent" && --count > 0)
+            adp.ent_wait.WaitOne();
         Debug.Assert(adp.last_arrived_entity == "sink/sink_ent");
         adp.ent_wait.Reset();
         ZstEntityBase sink_in_ent = showtime.find_entity(new ZstURI("sink/sink_ent/in"));
@@ -206,10 +216,6 @@ public class Program
         Debug.Assert(adp.last_left_performer == "sink");
         Debug.Assert(showtime.find_entity(new ZstURI("sink")) == null);
         adp.perf_wait.Reset();
-
-        //Cleanup
-        showtime.deactivate_entity(output);
-        showtime.remove_hierarchy_adaptor(adp);
     }
 
     static int Main(string[] args)

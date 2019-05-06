@@ -62,6 +62,8 @@ ZstURI & ZstURI::operator=(ZstURI && source)
 ZstURI::ZstURI(const char * path)
 {
 	m_original_path = create_pstr(path);
+    assert(m_original_path.length == strlen(path));
+    assert(strlen(m_original_path.cstr) == strlen(path));
 	init();
 }
 
@@ -96,9 +98,10 @@ void ZstURI::init()
 	}
 
 	//Add last component
-	m_components[m_component_count].length = len-1;		//Don't include trailing 0 in component length
-	m_components[m_component_count].cstr = (char*)malloc(len);
+	m_components[m_component_count].length = len;		//Don't include trailing 0 in component length
+	m_components[m_component_count].cstr = (char*)malloc(len+1);
 	memcpy(m_components[m_component_count].cstr, &m_original_path.cstr[word_offset], len);
+    m_components[m_component_count].cstr[len] = '\0';
 	m_component_count++;
 }
 
@@ -158,6 +161,8 @@ ZstURI ZstURI::range(size_t start, size_t end) const
 	size_t length = 0;
 	for (index = start; index <= end; index++)
 		length += m_components[index].length;
+    
+    //Add seperators to length
 	length += end - start;
 
 	char * start_s = &m_original_path.cstr[start_position];
@@ -225,7 +230,8 @@ bool ZstURI::operator!=(const ZstURI & other) const
 
 bool ZstURI::operator<(const ZstURI & b) const
 {
-	return std::lexicographical_compare(m_original_path.cstr, m_original_path.cstr+m_original_path.length, b.m_original_path.cstr, b.m_original_path.cstr+b.m_original_path.length);
+    bool result = std::lexicographical_compare(m_original_path.cstr, m_original_path.cstr+m_original_path.length, b.m_original_path.cstr, b.m_original_path.cstr+b.m_original_path.length);
+    return result;
 }
 
 bool ZstURI::is_empty() const
@@ -241,11 +247,10 @@ ZstURI::pstr ZstURI::create_pstr(const char * p)
 ZstURI::pstr ZstURI::create_pstr(const char * p, size_t l)
 {
 	pstr result;
-	result.length = l + 1;
-	result.cstr = (char*)malloc(result.length);
-	memcpy(result.cstr, p, result.length-1);
-	result.cstr[result.length-1] = '\0';
-
+	result.length = l;
+	result.cstr = (char*)malloc(result.length + 1);
+	memcpy(result.cstr, p, result.length);
+	result.cstr[result.length] = '\0';
 	return result;
 }
 
@@ -288,9 +293,7 @@ void ZstURI::self_test()
 	//Test comparisons
 	assert(ZstURI::equal(uri_equal1, uri_equal1));
 	assert(!ZstURI::equal(uri_equal1, uri_notequal));
-	assert(ZstURI::equal(ZstURI("root_entity/filter"), ZstURI("root_entity/filter")));
-	assert(!(ZstURI::equal(ZstURI("root_entity"), ZstURI("root_entity/filter"))));
-	assert(!(ZstURI::equal(ZstURI("root_entity"), ZstURI("root_entity/filter"))));
+    assert(ZstURI::equal(ZstURI("inplace"), ZstURI("inplace")));
 	assert(ZstURI("b") < ZstURI("c"));
 	assert(ZstURI("a") < ZstURI("b"));
 	assert(ZstURI("a") < ZstURI("c"));
@@ -301,11 +304,22 @@ void ZstURI::self_test()
 	assert(!uri_equal1.contains(ZstURI("nomatch")));
 
 	//Test slicing
-	assert(ZstURI::equal(uri_equal1.range(0, 1), ZstURI("ins/someplug")));
-	assert(ZstURI::equal(uri_equal1.range(1, 1), ZstURI("someplug")));
-	assert(ZstURI::equal(uri_equal1.range(0, 0), ZstURI("ins")));
-	assert(ZstURI::equal(uri_equal1.parent(), ZstURI("ins")));
-	assert(ZstURI::equal(uri_equal1.first(), ZstURI("ins")));
+    auto sliceA = uri_equal1.range(0, 1);
+    auto cmpA = ZstURI("ins/someplug");
+	assert(ZstURI::equal(sliceA, cmpA));
+    
+    auto sliceB = uri_equal1.range(1, 1);
+    auto cmpB = ZstURI("someplug");
+	assert(ZstURI::equal(sliceB, cmpB));
+    
+    auto sliceC = uri_equal1.range(0, 0);
+    auto cmpC = ZstURI("ins");
+	assert(ZstURI::equal(sliceC, cmpC));
+    
+    //Test parents
+    auto parent = ZstURI("ins");
+	assert(ZstURI::equal(uri_equal1.parent(), parent));
+	assert(ZstURI::equal(uri_equal1.first(), parent));
 
 	bool thrown_URI_range_error = false;
 	try {

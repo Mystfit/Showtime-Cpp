@@ -23,8 +23,8 @@ extern "C" {
 	ZST_CLIENT_EXPORT void zst_remove_hierarchy_adaptor(ZstHierarchyAdaptor * adaptor);
 	
 	//Entity activation/deactivation
-	ZST_CLIENT_EXPORT void zst_activate_entity(ZstEntityBase * entity);
-    ZST_CLIENT_EXPORT void zst_activate_entity_async(ZstEntityBase * entity);
+//    ZST_CLIENT_EXPORT void zst_activate_entity(ZstEntityBase * entity);
+//    ZST_CLIENT_EXPORT void zst_activate_entity_async(ZstEntityBase * entity);
 	ZST_CLIENT_EXPORT void zst_deactivate_entity(ZstEntityBase * entity);
     ZST_CLIENT_EXPORT void zst_deactivate_entity_async(ZstEntityBase * entity);
 	ZST_CLIENT_EXPORT void zst_observe_entity(ZstEntityBase * entity);

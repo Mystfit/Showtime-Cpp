@@ -42,7 +42,7 @@ const ZstMsgArgs & ZstPerformanceMessage::payload() const
 	auto j_it = m_args.find(get_msg_arg_name(ZstMsgArg::PAYLOAD_SHORT));
 	if (j_it != m_args.end())
 		return *j_it;
-    return std::move(json::object());
+    return std::move(json());
 }
 
 std::string ZstPerformanceMessage::sender() const

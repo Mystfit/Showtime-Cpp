@@ -6,11 +6,11 @@
 #include "ZstConstants.h"
 #include "ZstURI.h"
 #include "entities/ZstEntityFactory.h"
-#include "entities/ZstContainer.h"
+#include "entities/ZstComponent.h"
 
 #define PERFORMER_TYPE "prf"
 
-class ZstPerformer : public ZstContainer {
+class ZstPerformer : public ZstComponent {
 public:
 	ZST_EXPORT ZstPerformer();
 	ZST_EXPORT ZstPerformer(const char * name);
@@ -29,7 +29,7 @@ public:
 
 	//Hierarchy
 
-	ZST_EXPORT void add_child(ZstEntityBase * entity) override;
+	ZST_EXPORT void add_child(ZstEntityBase * entity, bool auto_activate = true) override;
 	ZST_EXPORT void remove_child(ZstEntityBase * entity) override;
 	ZST_EXPORT void add_factory(ZstEntityFactory * factory);
 	ZST_EXPORT void remove_factory(ZstEntityFactory * factory);

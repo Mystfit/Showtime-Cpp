@@ -1,6 +1,7 @@
 #include <map>
 #include <string>
 
+#include "../core/ZstSemaphore.h"
 #include "../core/ZstHierarchy.h"
 #include "../core/ZstStageMessage.h"
 #include "ZstPerformerStageProxy.h"
@@ -16,7 +17,8 @@ class ZstStageHierarchy :
 public:
 	~ZstStageHierarchy();
 	void destroy() override;
-	
+    virtual void set_wake_condition(std::weak_ptr<ZstSemaphore> condition) override;
+
 
 	// ---------------------------
 	// Hierarchy adaptor overrides
@@ -31,7 +33,7 @@ public:
 
 	ZstMsgKind create_client_handler(std::string sender_identity, ZstStageMessage * msg);
 	ZstMsgKind destroy_client_handler(ZstPerformer * performer);
-	void broadcast_message(const ZstMsgKind & msg_kind, const ZstMsgArgs & args, const ZstMsgArgs & payload = json::object());
+	void broadcast_message(const ZstMsgKind & msg_kind, const ZstMsgArgs & args, const ZstMsgArgs & payload = json());
 
 	// ----------------
 	// Proxies

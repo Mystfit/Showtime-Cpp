@@ -43,11 +43,8 @@ class EventLoop(threading.Thread):
             time.sleep(0.001)
 
 
-if __name__ == "__main__":
-
-    server = None
-    
-    ZST.create_server("python_server", ZST.STAGE_ROUTER_PORT);
+if __name__ == "__main__":    
+    server = ZST.create_server("python_server", ZST.STAGE_ROUTER_PORT);
     
     # Start client
     ZST.init("python_test", True)
@@ -62,8 +59,8 @@ if __name__ == "__main__":
     sink = SinkComponent("sink")
 
     # Activate entities
-    ZST.activate_entity(push)
-    ZST.activate_entity(sink)
+    ZST.get_root().add_child(push)
+    ZST.get_root().add_child(sink)
 
     # Connect cables
     ZST.connect_cable(sink.plug, push.plug)
@@ -83,12 +80,8 @@ if __name__ == "__main__":
 
     # Cleanup
     event_loop.stop()
-    ZST.deactivate_entity(push)
-    ZST.deactivate_entity(sink)
+    ZST.destroy_server(server)
     ZST.destroy()
-
-    if server:
-        ZST.destroy_server(server)
     
     print("Python test finished with status {}".format(status))
     if(status):
