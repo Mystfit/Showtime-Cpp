@@ -1,0 +1,85 @@
+# SWIG bindings
+
+# Dotnet bindings
+option(BINDINGS_DOTNET "Generate bindings for C#" OFF)
+option(BINDINGS_PYTHON "Generate bindings for Python" OFF)
+option(BINDINGS_UNITY "Generate bindings for Unity" OFF)
+option(BINDINGS_RUBY "Generate bindings for ruby" OFF)
+option(BINDINGS_JAVA "Generate bindings for java" OFF)
+option(BINDINGS_JRUBY "Generate bindings for JRuby" OFF)
+
+if(BINDINGS_DOTNET OR BINDINGS_UNITY)
+    set(BINDINGS_DOTNET_FRAMEWORK_VERSION v4.7.2 CACHE STRING "dotnet Framework version")
+    set(DOTNET_FRAMEWORK_VERSIONS
+        v3.5 
+        v4 
+        v4.5 
+        v4.5.1 
+        v4.5.2 
+        v4.6 
+        v4.6.1 
+        v4.7.1 
+        v4.7.2
+        netstandard1.0 
+        netstandard2.0
+    )
+    set_property(CACHE BINDINGS_DOTNET_FRAMEWORK_VERSION PROPERTY STRINGS ${DOTNET_FRAMEWORK_VERSIONS})
+    set(BINDINGS_DOTNET ON)
+    set(DOTNET_GENERATED_BINDINGS)
+    set(DOTNET_TARGET ${PROJECT_NAME}Dotnet)
+    set(DOTNET_STAMP ${CMAKE_CURRENT_BINARY_DIR}/bindings/dotnet/dotnet.stamp)
+    set(DOTNET_OUTPUT_FILE ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${DOTNET_TARGET}.dll)
+
+    if(WIN32)
+        enable_language(CSharp)
+        add_library(${DOTNET_TARGET} SHARED "")
+    else()
+        add_custom_target(${DOTNET_TARGET} ALL DEPENDS ${DOTNET_OUTPUT_FILE})
+    endif()
+    include(bindings/dotnet/CMakeLists.txt)
+endif()
+
+if(BINDINGS_JRUBY)
+    find_package(JRuby REQUIRED)
+
+    # JRuby bindings require 
+    if(NOT BINDINGS_JAVA)
+        message(FATAL_ERROR "JRuby bindings require BINDINGS_JAVA to be enabled")
+    endif()
+endif()
+
+if(BINDINGS_JAVA)
+    set(JAVA_TARGET ${PROJECT_NAME}Java)
+    find_package(Java REQUIRED)
+    find_package(JNI REQUIRED)
+    include(UseJava)
+    include(bindings/java/CMakeLists.txt)
+endif()
+
+
+if(BINDINGS_UNITY)
+    set(UNITY_TARGET ${PROJECT_NAME}Unity)
+    include(bindings/unity/CMakeLists.txt)
+endif()
+
+if(BINDINGS_PYTHON)
+    set(PYTHON_TARGET ${PROJECT_NAME}Python)
+    option(BINDINGS_PYTHON_LINK_AT_RUNTIME "Link against Python at runtime" OFF)
+    set(BINDINGS_PYTHON_VERSION_MAJOR 3 CACHE STRING "Python major version")
+    set(BINDINGS_PYTHON_VERSION_MINOR 7 CACHE STRING "Python minor version")
+    set(BINDINGS_PYTHON_VERSION_PATH 0 CACHE STRING "Python patch version")
+    set(BINDINGS_PYTHON_VERSION ${BINDINGS_PYTHON_VERSION_MAJOR}.${BINDINGS_PYTHON_VERSION_MINOR}.${BINDINGS_PYTHON_VERSION_PATCH})
+    find_package(Python${BINDINGS_PYTHON_VERSION_MAJOR} ${BINDINGS_PYTHON_VERSION} COMPONENTS Interpreter Development REQUIRED)
+    set(Python_EXECUTABLE ${Python${BINDINGS_PYTHON_VERSION_MAJOR}_EXECUTABLE})
+    set(PYTHON_LIB_TARGET Python${BINDINGS_PYTHON_VERSION_MAJOR}::Python)
+    set(PYTHON_INCLUDE_DIR ${Python${BINDINGS_PYTHON_VERSION_MAJOR}_INCLUDE_DIR})
+    add_custom_target(${PYTHON_TARGET} ALL)
+    include(bindings/python/CMakeLists.txt)
+endif()
+
+if(BINDINGS_RUBY)
+    set(RUBY_TARGET ${PROJECT_NAME}Ruby)
+    set(RUBY_VERSION 2.5 CACHE STRING "Ruby version to search for")
+    find_package(Ruby ${RUBY_VERSION} REQUIRED)
+    include(bindings/ruby/CMakeLists.txt)
+endif()

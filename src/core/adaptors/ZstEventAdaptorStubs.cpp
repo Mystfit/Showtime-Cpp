@@ -56,7 +56,7 @@ void ZstSessionAdaptor::on_disconnected_from_stage() {};
 void ZstSessionAdaptor::on_cable_created(ZstCable * cable) {}
 void ZstSessionAdaptor::on_cable_destroyed(ZstCable * cable) {}
 
-ZstCableBundle & ZstSessionAdaptor::get_cables(ZstCableBundle & bundle) { return ZstCableBundle(); };
+ZstCableBundle & ZstSessionAdaptor::get_cables(ZstCableBundle & bundle) { return bundle; };
 ZstCable * ZstSessionAdaptor::find_cable(const ZstCableAddress & address) { return NULL; };
 
 
