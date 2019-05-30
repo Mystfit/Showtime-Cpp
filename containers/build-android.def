@@ -1,0 +1,252 @@
+Bootstrap: docker
+From: amd64/ubuntu:18.04
+
+# Version: 1.0
+
+# Singularity recipe for building boost for android
+# https://github.com/dec1/Boost-for-Android
+# creates docker container with all tools, libraries and sources required to build boost for android.
+
+# Author: Declan Moran
+# www.silverglint.com
+
+%post
+	# Build vars
+	# ----------
+
+	# Android home
+	ANDROID_HOME=/home/android
+	INSTALL_PREFIX=$ANDROID_HOME/install
+	ANDROID_ABI=arm64-v8a
+
+	# Showtime build dir
+	SHOWTIME_BUILD=$ANDROID_HOME/showtime-build
+
+	# (1) BOOST
+	BOOST_VER_BASE=1_69
+	BOOST_FILE_BASE=boost_1_69_0
+	BOOST_FILE=$BOOST_FILE_BASE.tar.gz
+	BOOST_VER=1.69.0
+	BOOST_ROOT=$INSTALL_PREFIX/$ANDROID_ABI
+	BOOST_INCLUDEDIR=$INSTALL_PREFIX/$ANDROID_ABI/include
+	BOOST_LIBRARYDIR=$INSTALL_PREFIX/$ANDROID_ABI/lib
+
+	BOOST_URL_BASE=https://dl.bintray.com/boostorg/release
+
+	# this is where boost src will be extracted to
+	BOOST_SRC_DIR_BASE=$ANDROID_HOME/boost-src
+	BOOST_SRC_DIR=$BOOST_SRC_DIR_BASE
+
+	# (2) Android SDK
+	# https://developer.android.com/studio#downloads
+	SDK_URL_BASE=https://dl.google.com/android/repository
+	SDK_FILE=sdk-tools-linux-4333796.zip
+
+	# the sdk platform to use 
+	# https://developer.android.com/guide/topics/manifest/uses-sdk-element
+	ANDROID_PLATFORM=25
+	ANDROID_SDK_PATH=$ANDROID_HOME/android-sdk
+	ANDROID_SDK_PLATFORM_VERS="platforms;android-$ANDROID_PLATFORM"
+
+	# (3) Android NDK
+	# https://developer.android.com/ndk/downloads
+	NDK_URL_BASE=https://dl.google.com/android/repository
+	NDK_FILE=android-ndk-r19c-linux-x86_64.zip
+	ANDROID_NDK_PATH=$ANDROID_HOME/android-ndk
+	ANDROID_NDK_ROOT=$ANDROID_NDK_PATH/android-ndk-r19c
+
+	# this is where the boost for android repo is mounted/shared to
+	BOOST_FOR_ANDROID_PATH=$ANDROID_HOME/boost-for-android
+
+	# Add Android tools and install prefix to path
+	# export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools:$INSTALL_PREFIX/bin
+
+
+	# Environment variables
+	# -----------------------------
+	LIBZMQ_SOURCE=$ANDROID_HOME/libzmq
+	CZMQ_SOURCE=$ANDROID_HOME/czmq
+	MSGPACK_SOURCE=$ANDROID_HOME/msgpack
+
+	echo "export ANDROID_HOME=$ANDROID_HOME" >>$SINGULARITY_ENVIRONMENT
+	echo "export INSTALL_PREFIX=$INSTALL_PREFIX" >>$SINGULARITY_ENVIRONMENT
+	echo "export ANDROID_PLATFORM=$ANDROID_PLATFORM" >>$SINGULARITY_ENVIRONMENT
+	echo "export ANDROID_ABI=$ANDROID_ABI" >>$SINGULARITY_ENVIRONMENT
+	echo "export ANDROID_NDK_ROOT=$ANDROID_NDK_ROOT" >>$SINGULARITY_ENVIRONMENT
+	echo "export BOOST_VER=$BOOST_VER" >>$SINGULARITY_ENVIRONMENT
+	echo "export BOOST_ROOT=$BOOST_ROOT" >>$SINGULARITY_ENVIRONMENT
+	echo "export BOOST_INCLUDEDIR=$BOOST_INCLUDE_DIR" >>$SINGULARITY_ENVIRONMENT
+	echo "export BOOST_LIBRARYDIR=$BOOST_LIB_DIR" >>$SINGULARITY_ENVIRONMENT
+	echo "export BOOST_SRC_DIR=$BOOST_SRC_DIR" >>$SINGULARITY_ENVIRONMENT
+	echo "export BOOST_FOR_ANDROID_PATH=$BOOST_FOR_ANDROID_PATH" >>$SINGULARITY_ENVIRONMENT
+	echo "export SHOWTIME_BUILD=$SHOWTIME_BUILD" >>$SINGULARITY_ENVIRONMENT	
+	echo "export LIBZMQ_SOURCE=$LIBZMQ_SOURCE" >>$SINGULARITY_ENVIRONMENT	
+	echo "export CZMQ_SOURCE=$CZMQ_SOURCE" >>$SINGULARITY_ENVIRONMENT	
+	echo "export MSGPACK_SOURCE=$MSGPACK_SOURCE" >>$SINGULARITY_ENVIRONMENT	
+
+	# -----------------------------
+
+
+	# Packages
+	# --------
+	# Microsoft package sources
+	apt-get update
+
+	apt-get install -y software-properties-common
+
+	# for downloading archives
+	apt-get -y install wget
+
+	wget -q https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb
+	dpkg -i packages-microsoft-prod.deb
+	add-apt-repository universe
+	apt-get -y install apt-transport-https
+
+	# Update packages
+	apt-get update
+	apt-get -y dist-upgrade
+	
+	apt-get -y install git
+
+	# for unzipping downloaded android archives
+	apt-get -y install zip
+
+	# Java for ...something?
+	apt-get -y install openjdk-8-jdk
+
+	# need this this to install some (32 bit) prerequisites for android builds 
+	dpkg --add-architecture i386
+	apt-get update
+	apt-get -y dist-upgrade
+	apt-get -y install libc6:i386 libncurses5:i386 libstdc++6:i386 libbz2-1.0:i386
+
+	# need c compiler to set up create boost build system (before building boost with it and android toolchain)
+	apt-get -y install build-essential
+	apt-get -y install libc6-dev-i386
+	apt-get -y install clang
+
+	# Packages for compiling Swig
+	apt-get -y install autoconf automake libtool
+	apt-get -y install libpcre3 libpcre3-dev
+	apt-get -y install bison flex
+
+	# Dotnet SDK for C# project bindings
+	apt-get -y install dotnet-sdk-2.2
+
+
+	# Build dirs
+	# ----------
+	mkdir $ANDROID_HOME
+	cd $ANDROID_HOME
+	mkdir $SHOWTIME_BUILD
+
+
+	# CMAKE
+	# -----
+	CMAKE_VER=3.14.4
+	CMAKE_FILE="cmake-$CMAKE_VER-Linux-x86_64.sh"
+	wget "https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/$CMAKE_FILE"
+	chmod +x $CMAKE_FILE
+	./$CMAKE_FILE --skip-license --prefix=/usr/local
+
+
+	# Swig
+	# -----
+	SWIG_VER=4.0.0
+	wget "https://github.com/swig/swig/archive/rel-$SWIG_VER.zip"
+	unzip rel-$SWIG_VER.zip
+	cd ./swig-rel-$SWIG_VER
+	./autogen.sh
+	./configure --prefix=$INSTALL_PREFIX
+	make
+	make install
+
+
+	# Android SDK
+	# -----------
+	wget $SDK_URL_BASE/$SDK_FILE
+	unzip $SDK_FILE -d $ANDROID_SDK_PATH
+
+	yes | $ANDROID_SDK_PATH/tools/bin/sdkmanager --licenses
+
+	$ANDROID_SDK_PATH/tools/bin/sdkmanager "platform-tools" $ANDROID_SDK_PLATFORM_VERS
+
+
+	# Android NDK
+	# -----------
+	wget $NDK_URL_BASE/$NDK_FILE
+	unzip $NDK_FILE -d $ANDROID_NDK_PATH
+
+
+	# BOOST
+	# -----
+	wget $BOOST_URL_BASE/$BOOST_VER/source/$BOOST_FILE
+	mkdir -p $BOOST_SRC_DIR
+	mkdir -p $BOOST_SRC_DIR/$BOOST_VER
+
+	tar xvzf $BOOST_FILE -C $BOOST_SRC_DIR/$BOOST_VER --strip-components 1
+
+
+	# OTHER DEPENDENCIES
+	# ------------------
+
+	# Boost for Android
+	git clone https://github.com/mystfit/Boost-for-Android $BOOST_FOR_ANDROID_PATH
+
+	# ZEROMQ
+	git clone https://github.com/zeromq/libzmq.git $LIBZMQ_SOURCE
+	mkdir $LIBZMQ_SOURCE/build
+
+	# CZMQ
+	git clone https://github.com/mystfit/czmq.git $CZMQ_SOURCE
+	git -C $CZMQ_SOURCE checkout 4.2.0
+	mkdir $CZMQ_SOURCE/build
+
+	# MSGPACK
+	git clone https://github.com/msgpack/msgpack-c.git $MSGPACK_SOURCE
+	git -C $MSGPACK_SOURCE fetch --all --tags --prune
+	git -C $MSGPACK_SOURCE checkout cpp-3.1.1
+	mkdir $MSGPACK_SOURCE/build
+
+
+%runscript
+	# BOOST
+	# -----
+	cd $BOOST_FOR_ANDROID_PATH
+
+	# Possible ABI values: armeabi-v7a,arm64-v8a,x86,x86_64
+	BOOST_LIBS="log,thread,system,context,fiber,date_time,chrono,atomic,regex"
+	# ./build-android.sh --boost=$BOOST_VER --layout=system --with-libraries=$BOOST_LIBS --arch=$ANDROID_ABI --prefix=$INSTALL_PREFIX $ANDROID_NDK_ROOT 
+	./build-android.sh --boost=$BOOST_VER --layout=versioned --with-libraries=$BOOST_LIBS --arch=$ANDROID_ABI --prefix=$INSTALL_PREFIX $ANDROID_NDK_ROOT 
+
+
+	# Cmake dependencies
+	# ------------------
+	CMAKE_FLAGS="-DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake -DANDROID_STL=c++_shared -DANDROID_CPP_FEATURES=exceptions;rtti -DANDROID_PLATFORM=android-$ANDROID_PLATFORM -DANDROID_ABI=$ANDROID_ABI -DCMAKE_PREFIX_PATH=$INSTALL_PREFIX -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX"
+
+	# ZEROMQ
+	# ------
+	cd $LIBZMQ_SOURCE/build
+	cmake .. $CMAKE_FLAGS -DENABLE_DRAFTS=TRUE -DZMQ_BUILD_TESTS=OFF
+	cmake --build . --target install
+
+
+	# CZMQ
+	# ------
+	cd $CZMQ_SOURCE/build
+	cmake .. $CMAKE_FLAGS -DENABLE_DRAFTS=TRUE -DBUILD_TESTING=OFF -DLIBZMQ_FIND_USING_CMAKE_PACKAGE=ON -DZeroMQ_DIR=$INSTALL_PREFIX/share/cmake/ZeroMQ
+	cmake --build . --target install
+
+
+	# MSGPACK
+	# -------
+	cd $MSGPACK_SOURCE/build
+	cmake .. $CMAKE_FLAGS -DMSGPACK_BUILD_EXAMPLES=OFF
+	cmake --build . --target install
+
+
+	# SHOWTIME
+	# --------
+	cd $SHOWTIME_BUILD
+	cmake $SHOWTIME_SOURCE $CMAKE_FLAGS -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY -DBINDINGS_DOTNET=ON -DENABLE_DRAFTS=TRUE -DBUILD_STATIC=TRUE -DBUILD_SHARED=TRUE -DBoost_DEBUG=FALSE -DBoost_COMPILER="-clang" -DBoost_ARCHITECTURE=-a64 -DBoost_INCLUDE_DIR=$BOOST_INCLUDEDIR -DBoost_LIBRARY_DIR=$BOOST_LIBRARYDIR -DBoost_Version=$BOOST_VER_BASE -DMsgPack_DIR=$INSTALL_PREFIX/lib/cmake/msgpack -DZeroMQ_DIR=$INSTALL_PREFIX/share/cmake/ZeroMQ -Dczmq_DIR=$INSTALL_PREFIX/share/cmake/czmq
+	cmake --build . --target install

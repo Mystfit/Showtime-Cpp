@@ -1,8 +1,8 @@
 message(STATUS "Configuring ${DOTNET_TARGET} target")
 
-if(NOT BUILD_STATIC)
-    message(FATAL_ERROR "Dotnet bindings require BUILD_STATIC to be enabled")
-endif()
+# if(NOT BUILD_STATIC)
+#     message(FATAL_ERROR "Dotnet bindings require BUILD_STATIC to be enabled")
+# endif()
 
 set(DOTNET_TARGET_WRAPPER ${DOTNET_TARGET}Wrapper)
 
@@ -47,7 +47,7 @@ set(CMAKE_DEBUG_POSTFIX "")
 set(DOTNET_STAMP ${CMAKE_CURRENT_BINARY_DIR}/dotnet.stamp)
 
 # Create the swig dotnet target
-if(MACOSX)
+if(MACOSX OR LINUX OR ANDROID)
     swig_add_library(${DOTNET_TARGET_WRAPPER} 
         LANGUAGE csharp 
         TYPE MODULE 
@@ -55,6 +55,9 @@ if(MACOSX)
         OUTFILE_DIR ${CMAKE_SWIG_OUTDIR}
         SOURCES ${DOTNET_SWIG_INTERFACES}
     )
+endif()
+
+if(MACOSX)
     set_target_properties(${SWIG_MODULE_${DOTNET_TARGET_WRAPPER}_REAL_NAME} PROPERTIES BUNDLE TRUE)
     if(NOT BUILD_STATIC)
         set(DOTNET_BUNDLE_COPY_LIBS
@@ -67,14 +70,6 @@ if(MACOSX)
             VERBATIM
         )
     endif()
-else()
-    swig_add_library(${DOTNET_TARGET_WRAPPER} 
-        LANGUAGE csharp 
-        TYPE SHARED 
-        OUTPUT_DIR ${SWIG_LANGUAGE_DIR}
-        OUTFILE_DIR ${CMAKE_SWIG_OUTDIR}
-        SOURCES ${DOTNET_SWIG_INTERFACES}
-    )
 endif()
 
 # Set dependant projects

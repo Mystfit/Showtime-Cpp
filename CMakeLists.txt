@@ -35,6 +35,10 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     MESSAGE(STATUS "Platform is OSX")
 endif()
 
+if(${CMAKE_SYSTM_NAME} MATCHES "Android")
+    set(ANDROID TRUE)
+endif()
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     set(LINUX TRUE)
     MESSAGE(STATUS "Platform is Linux")
@@ -70,6 +74,8 @@ endif()
 option(BUILD_STATIC "Build static Showtime library" OFF)
 option(BUILD_SHARED "Build shared Showtime library" ON)
 option(BUILD_DRAFTS "Build with experimental draft support" OFF)
+option(BUILD_SERVER_LAUNCHER "Build server launcher program" ON)
+
 
 # Set showtime variables
 set(Showtime_COMPILED_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include/")
@@ -100,6 +106,10 @@ endif()
 set(LIBZMQ_TARGET "")
 set(CZMQ_TARGET "")
 message(STATUS "Finding packages")
+
+if(ANDROID)
+    #find_package(ndk-stl REQUIRED)
+endif()
 
 # Boost
 # --------
@@ -132,7 +142,7 @@ set(Boost_REGEX_TARGET "Boost::regex")
 # Msgpack, swig
 # ------------------------------
 find_package(MsgPack CONFIG REQUIRED)
-set(msgpackc_TARGET "msgpackc-static")
+# set(msgpackc_TARGET "msgpackc-static")
 
 if(WIN32)
     # Find swigwin downloaded using install_dependencies script
@@ -148,15 +158,8 @@ endif()
 
 # CZMQ, libZMQ
 # ----
-if(WIN32)
-    # Use cmake versions of ZeroMQ and CZMQ
-    find_package(ZeroMQ CONFIG REQUIRED)
-    find_package(czmq CONFIG REQUIRED)
-else()
-    # Use homebrew versions of libzmq and CZMQ
-    find_package(libzmq REQUIRED)
-    find_package(czmq REQUIRED)
-endif()
+find_package(ZeroMQ CONFIG REQUIRED)
+find_package(czmq CONFIG REQUIRED)
 
 # Set internal linked library lists for our targets
 set(SHOWTIME_PRIVATE_LINKED_LIBS 
@@ -202,11 +205,13 @@ set(Showtime_PRIVATE_HEADER_DEPENDENCIES
 set(SHOWTIME_PRIVATE_STATIC_LINKED_LIBS
     czmq-static 
     libzmq-static
+    msgpackc-static
 )
 
 set(SHOWTIME_PUBLIC_SHARED_LINKED_LIBS
     czmq
     libzmq
+    msgpackc
 )
 
 
@@ -261,8 +266,10 @@ if(BUILD_SHARED)
     add_library (${SERVER_TARGET} SHARED "")
     list(APPEND Showtime_LIBRARY_TARGETS ${SERVER_TARGET})
 endif()
-add_executable (${SERVER_LAUNCHER} "")
-list(APPEND Showtime_APP_TARGETS ${SERVER_LAUNCHER})
+if(BUILD_SERVER_LAUNCHER)
+    add_executable (${SERVER_LAUNCHER} "")
+    list(APPEND Showtime_APP_TARGETS ${SERVER_LAUNCHER})
+endif()
 include(src/server/CMakeLists.txt)
 
 
@@ -284,10 +291,10 @@ set(PLUGIN_TARGETS "")
 # Core entity plugin
 # -------------------
 
-set(CORE_ENTITIES_TARGET "${PROJECT_NAME}CoreEntities")
-add_library(${CORE_ENTITIES_TARGET} MODULE "")
-include(src/plugins/core_entities/CMakeLists.txt)
-list(APPEND PLUGIN_TARGETS ${CORE_ENTITIES_TARGET})
+# set(CORE_ENTITIES_TARGET "${PROJECT_NAME}CoreEntities")
+# add_library(${CORE_ENTITIES_TARGET} MODULE "")
+# include(src/plugins/core_entities/CMakeLists.txt)
+# list(APPEND PLUGIN_TARGETS ${CORE_ENTITIES_TARGET})
 
 
 option(PLUGINS_RTMIDI "Build RTMidi plugin" OFF)

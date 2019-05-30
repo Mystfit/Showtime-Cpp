@@ -1,0 +1,1 @@
+{"virtualbox":{"/vagrant-showtime-src":{"guestpath":"/vagrant-showtime-src","hostpath":"/Users/design/Code/showtime-cpp","disabled":false,"__vagrantfile":true},"/vagrant":{"guestpath":"/vagrant","hostpath":"/Users/design/Code/showtime-cpp/containers","disabled":false,"__vagrantfile":true}}}

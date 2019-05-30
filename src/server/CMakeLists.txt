@@ -77,10 +77,12 @@ foreach(TARGET ${SERVER_LIBS})
 endforeach()
 
 
-# Server launcher sources
-target_sources(${SERVER_LAUNCHER} PRIVATE ${ZST_SERVER_LAUNCHER_SRC})
+if(BUILD_SERVER_LAUNCHER)
+  # Server launcher sources
+  target_sources(${SERVER_LAUNCHER} PRIVATE ${ZST_SERVER_LAUNCHER_SRC})
 
-# Server launcher dependencies
-add_dependencies(${SERVER_LAUNCHER} ${SERVER_TARGET})
-target_link_libraries(${SERVER_LAUNCHER} PUBLIC ${SERVER_TARGET})
+  # Server launcher dependencies
+  add_dependencies(${SERVER_LAUNCHER} ${SERVER_TARGET_STATIC})
+  target_link_libraries(${SERVER_LAUNCHER} PUBLIC ${SERVER_TARGET_STATIC})
+endif()
 
