@@ -158,8 +158,15 @@ endif()
 
 # CZMQ, libZMQ
 # ----
-find_package(ZeroMQ CONFIG REQUIRED)
-find_package(czmq CONFIG REQUIRED)
+find_package(ZeroMQ CONFIG)
+if(NOT ZeroMQ_FOUND)
+    find_package(libZMQ REQUIRED)
+endif()
+
+find_package(czmq CONFIG)
+if(NOT czmq_FOUND)
+    find_package(czmq REQUIRED)
+endif()
 
 # Set internal linked library lists for our targets
 set(SHOWTIME_PRIVATE_LINKED_LIBS 

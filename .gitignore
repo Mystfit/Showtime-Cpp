@@ -1,6 +1,9 @@
 build
 .DS_Store
 
+# Containers
+containers/.vagrant
+
 # Compiled Object files
 *.slo
 *.lo

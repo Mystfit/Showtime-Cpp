@@ -88,7 +88,7 @@ void test_remote_factories(std::string external_test_path, bool launch_ext_proce
 	zst_add_hierarchy_adaptor(performerEvents);
 	
 	//Run the sink program
-	std::string prog = std::filesystem::absolute(external_test_path).parent_path().generic_string() + "/TestHelperExternalFactory";
+	std::string prog = fs::absolute(external_test_path).parent_path().generic_string() + "/TestHelperExternalFactory";
 #ifdef WIN32
 	prog += ".exe";
 #endif
