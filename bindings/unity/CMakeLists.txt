@@ -21,7 +21,7 @@ if(WIN32)
     # Copy dotnet target outputs on windows
     list(APPEND UNITY_BINARY_FILES
         $<TARGET_FILE:${CORE_TARGET}>
-        $<TARGET_FILE:${CORE_ENTITIES_TARGET}>
+        # $<TARGET_FILE:${CORE_ENTITIES_TARGET}>
         $<TARGET_FILE:${CLIENT_TARGET}>
         $<TARGET_FILE:${SERVER_TARGET}>
         $<TARGET_FILE:${DOTNET_TARGET}>
