@@ -66,7 +66,7 @@ void ZstStageHierarchy::on_receive_msg(ZstMessage * msg)
 			{ get_msg_arg_name(ZstMsgArg::MSG_ID), stage_msg->id() }
 		};
 		router_events().invoke([response, &args](ZstTransportAdaptor * adp) {
-			adp->on_send_msg(response, args);
+			adp->send_msg(response, args);
 		});
 	}
 }
@@ -174,7 +174,7 @@ void ZstStageHierarchy::broadcast_message(const ZstMsgKind & msg_kind, const Zst
 		
 		//Send message to client
 		router_events().invoke([&msg_kind, &dest_args, &payload](ZstTransportAdaptor * adp) {
-			adp->on_send_msg(msg_kind, dest_args, payload);
+			adp->send_msg(msg_kind, dest_args, payload);
 		});
 	}
 }
@@ -273,7 +273,7 @@ ZstMsgKind ZstStageHierarchy::create_entity_from_factory_handler(ZstStageMessage
 	};
 	router_events().invoke([msg, &args, factory_path](ZstTransportAdaptor * adp)
 	{
-		adp->on_send_msg(msg->kind(), ZstTransportSendType::ASYNC_REPLY, args, [factory_path](ZstMessageReceipt receipt)
+		adp->send_msg(msg->kind(), ZstTransportSendType::ASYNC_REPLY, args, [factory_path](ZstMessageReceipt receipt)
 		{
 			if (receipt.status == ZstMsgKind::ERR_ENTITY_NOT_FOUND) {
 				ZstLog::server(LogLevel::error, "Creatable request failed at origin with status {}", get_msg_name(receipt.status));

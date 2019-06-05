@@ -291,7 +291,7 @@ void ZstOutputPlug::fire()
 	m_performance_events->invoke([this](ZstTransportAdaptor * adaptor) {
 		json val_json;
 		this->raw_value()->write_json(val_json);
-		adaptor->on_send_msg(ZstMsgKind::PERFORMANCE_MSG, { { get_msg_arg_name(ZstMsgArg::PATH), this->URI().path() } }, val_json);
+		adaptor->send_msg(ZstMsgKind::PERFORMANCE_MSG, { { get_msg_arg_name(ZstMsgArg::PATH), this->URI().path() } }, val_json);
 	});
 	m_value->clear();
 }

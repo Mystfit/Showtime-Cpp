@@ -176,7 +176,7 @@ ZstCable * ZstClientSession::connect_cable(ZstInputPlug * input, ZstOutputPlug *
 	
 	if (cable) {
 		stage_events().invoke([this, sendtype, cable](ZstTransportAdaptor* adaptor) {
-			adaptor->on_send_msg(ZstMsgKind::CREATE_CABLE, sendtype, cable->get_address().as_json(), json::object(), [this, cable](ZstMessageReceipt response) {
+			adaptor->send_msg(ZstMsgKind::CREATE_CABLE, sendtype, cable->get_address().as_json(), json::object(), [this, cable](ZstMessageReceipt response) {
 				this->connect_cable_complete(response, cable);
 			});
 		});
@@ -201,7 +201,7 @@ void ZstClientSession::destroy_cable(ZstCable * cable, const ZstTransportSendTyp
 	ZstSession::destroy_cable(cable, sendtype);
 	
 	stage_events().invoke([this, cable, sendtype](ZstTransportAdaptor * adaptor) {
-		adaptor->on_send_msg(ZstMsgKind::DESTROY_CABLE, sendtype, cable->get_address().as_json(), json(), [this, cable](ZstMessageReceipt response) {
+		adaptor->send_msg(ZstMsgKind::DESTROY_CABLE, sendtype, cable->get_address().as_json(), json(), [this, cable](ZstMessageReceipt response) {
 			this->destroy_cable_complete(response, cable);
 		});
 	});
@@ -219,7 +219,7 @@ bool ZstClientSession::observe_entity(ZstEntityBase * entity, const ZstTransport
 		ZstMsgArgs args = { 
 			{ get_msg_arg_name(ZstMsgArg::OUTPUT_PATH), entity->URI().first().path() } 
 		};
-		adaptor->on_send_msg(ZstMsgKind::OBSERVE_ENTITY, sendtype, args, [this, entity](ZstMessageReceipt response) {
+		adaptor->send_msg(ZstMsgKind::OBSERVE_ENTITY, sendtype, args, [this, entity](ZstMessageReceipt response) {
 				this->observe_entity_complete(response, entity);
 			}
 		);

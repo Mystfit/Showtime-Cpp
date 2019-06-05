@@ -78,7 +78,7 @@ void ZstStageSession::on_receive_msg(ZstMessage * msg)
 	//Return response to sender
 	if (response != ZstMsgKind::EMPTY) {
 		router_events().invoke([response, &sender_identity, &stage_msg](ZstTransportAdaptor * adp) {
-			adp->on_send_msg(response, {
+			adp->send_msg(response, {
 				{ get_msg_arg_name(ZstMsgArg::DESTINATION), sender_identity },
 				{ get_msg_arg_name(ZstMsgArg::MSG_ID), stage_msg->id() }
 			});
@@ -99,7 +99,7 @@ ZstMsgKind ZstStageSession::synchronise_client_graph(ZstPerformer * client) {
 		//Only pack performers that aren't the destination client
 		if (performer->URI() != client->URI()) {
 			router_events().invoke([&performer, &args](ZstTransportAdaptor * adp) {
-				adp->on_send_msg(ZstMsgKind::CREATE_PERFORMER, args, performer->as_json());
+				adp->send_msg(ZstMsgKind::CREATE_PERFORMER, args, performer->as_json());
 			});
 		}
 	}
@@ -107,7 +107,7 @@ ZstMsgKind ZstStageSession::synchronise_client_graph(ZstPerformer * client) {
 	//Send cables
 	for (auto const & cable : m_cables) {
 		router_events().invoke([&cable, &args](ZstTransportAdaptor * adp) {
-			adp->on_send_msg(ZstMsgKind::CREATE_CABLE, args, cable->get_address().as_json());
+			adp->send_msg(ZstMsgKind::CREATE_CABLE, args, cable->get_address().as_json());
 		});
 	}
 
@@ -180,7 +180,7 @@ ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformerS
 
 			//Let caller know the operation has successfully completed
 			router_events().invoke([id, this, sender](ZstTransportAdaptor * adp) {
-				adp->on_send_msg(ZstMsgKind::OK, { 
+				adp->send_msg(ZstMsgKind::OK, { 
 					{get_msg_arg_name(ZstMsgArg::DESTINATION), this->m_hierarchy->get_socket_ID(sender)},
 					{get_msg_arg_name(ZstMsgArg::MSG_ID), id }
 				});
@@ -239,7 +239,7 @@ ZstMsgKind ZstStageSession::observe_entity_handler(ZstMessage * msg, ZstPerforme
 
 					//Let caller know the operation has successfully completed
 					router_events().invoke([id, this, sender](ZstTransportAdaptor * adp) {
-						adp->on_send_msg(ZstMsgKind::OK, {
+						adp->send_msg(ZstMsgKind::OK, {
 							{ get_msg_arg_name(ZstMsgArg::DESTINATION), this->m_hierarchy->get_socket_ID(sender) },
 							{ get_msg_arg_name(ZstMsgArg::MSG_ID), id }
 						});
@@ -334,7 +334,7 @@ void ZstStageSession::connect_clients(const ZstMsgID & response_id, ZstPerformer
 	};
 	
 	router_events().invoke([&receiver_args](ZstTransportAdaptor * adp) {
-		adp->on_send_msg(ZstMsgKind::SUBSCRIBE_TO_PERFORMER, receiver_args);
+		adp->send_msg(ZstMsgKind::SUBSCRIBE_TO_PERFORMER, receiver_args);
 	});
 
 	ZstLog::server(LogLevel::notification, "Sending P2P handshake broadcast request to {}", output_client->URI().path());
@@ -344,7 +344,7 @@ void ZstStageSession::connect_clients(const ZstMsgID & response_id, ZstPerformer
 		{ get_msg_arg_name(ZstMsgArg::INPUT_PATH), input_client->URI().path() }
 	};
 	router_events().invoke([&broadcaster_args](ZstTransportAdaptor * adp) {
-		adp->on_send_msg(ZstMsgKind::START_CONNECTION_HANDSHAKE, broadcaster_args);
+		adp->send_msg(ZstMsgKind::START_CONNECTION_HANDSHAKE, broadcaster_args);
 	});
 }
 
@@ -363,7 +363,7 @@ ZstMsgKind ZstStageSession::complete_client_connection(ZstPerformerStageProxy * 
 		{ get_msg_arg_name(ZstMsgArg::DESTINATION), m_hierarchy->get_socket_ID(output_client)}
 	};
 	router_events().invoke([&args](ZstTransportAdaptor * adp) {
-		adp->on_send_msg(ZstMsgKind::STOP_CONNECTION_HANDSHAKE, args);
+		adp->send_msg(ZstMsgKind::STOP_CONNECTION_HANDSHAKE, args);
 	});
 	return ZstMsgKind::OK;
 }

@@ -85,7 +85,7 @@ void ZstClientHierarchy::on_publish_entity_update(ZstEntityBase * entity)
 		//Factory wants to update creatables
 		ZstEntityFactory * factory = static_cast<ZstEntityFactory*>(entity);
 		stage_events().invoke([factory](ZstTransportAdaptor * adp) {
-			adp->on_send_msg(ZstMsgKind::UPDATE_ENTITY, ZstTransportSendType::PUBLISH, factory->as_json(), json(), [](ZstMessageReceipt s) {});
+			adp->send_msg(ZstMsgKind::UPDATE_ENTITY, ZstTransportSendType::PUBLISH, factory->as_json(), json(), [](ZstMessageReceipt s) {});
 		});
 	}
 }
@@ -125,7 +125,7 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 			args [get_msg_arg_name(ZstMsgArg::MSG_ID)] = request_ID;
 			ZstLog::net(LogLevel::debug, "Responding to server creatable request with id {}", request_ID);
 		}
-		adaptor->on_send_msg(ZstStageMessage::entity_kind(*entity), sendtype, entity->as_json(), args, [this, entity](ZstMessageReceipt response) {
+		adaptor->send_msg(ZstStageMessage::entity_kind(*entity), sendtype, entity->as_json(), args, [this, entity](ZstMessageReceipt response) {
 			if (response.status == ZstMsgKind::CREATE_COMPONENT ||
 				response.status == ZstMsgKind::CREATE_FACTORY ||
 				response.status == ZstMsgKind::CREATE_PERFORMER || 
@@ -155,7 +155,7 @@ void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTranspo
 	//If the entity is local, let the stage know it's leaving
 	if (!entity->is_proxy()) {
 		stage_events().invoke([this, sendtype, entity](ZstTransportAdaptor * adaptor) {
-			adaptor->on_send_msg(ZstMsgKind::DESTROY_ENTITY, sendtype, { {get_msg_arg_name(ZstMsgArg::PATH), entity->URI().path()} }, [this, entity](ZstMessageReceipt response) {
+			adaptor->send_msg(ZstMsgKind::DESTROY_ENTITY, sendtype, { {get_msg_arg_name(ZstMsgArg::PATH), entity->URI().path()} }, [this, entity](ZstMessageReceipt response) {
 				if (response.status != ZstMsgKind::OK) {
 					ZstLog::net(LogLevel::error, "Destroy entity failed with status {}", get_msg_name(response.status));
 					return;
@@ -207,7 +207,7 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
             { get_msg_arg_name(ZstMsgArg::PATH), creatable_path.path() },
             { get_msg_arg_name(ZstMsgArg::NAME), entity_name.path() }
         };
-        adaptor->on_send_msg(ZstMsgKind::CREATE_ENTITY_FROM_FACTORY, sendtype, args, [this, &entity, sendtype, creatable_path, entity_name, factory](ZstMessageReceipt response) {
+        adaptor->send_msg(ZstMsgKind::CREATE_ENTITY_FROM_FACTORY, sendtype, args, [this, &entity, sendtype, creatable_path, entity_name, factory](ZstMessageReceipt response) {
             if (response.status == ZstMsgKind::CREATE_COMPONENT ||
                 response.status == ZstMsgKind::CREATE_FACTORY)
             {
@@ -263,7 +263,7 @@ void ZstClientHierarchy::create_entity_handler(ZstMessage * msg)
 		}
 		else {
 			stage_events().invoke([msg_id](ZstTransportAdaptor * adp) {
-				adp->on_send_msg(ZstMsgKind::ERR_ENTITY_NOT_FOUND, { { get_msg_arg_name(ZstMsgArg::MSG_ID), msg_id } });
+				adp->send_msg(ZstMsgKind::ERR_ENTITY_NOT_FOUND, { { get_msg_arg_name(ZstMsgArg::MSG_ID), msg_id } });
 			});
 		}
 	});

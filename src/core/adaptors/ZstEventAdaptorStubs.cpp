@@ -81,12 +81,12 @@ void ZstHierarchyAdaptor::on_factory_leaving(ZstEntityFactory * factory) {};
 // -----------------------
 // Message adaptors
 // -----------------------
-void ZstTransportAdaptor::on_send_msg(ZstMsgKind kind) {};
-void ZstTransportAdaptor::on_send_msg(ZstMsgKind kind, const ZstMsgArgs & args) {}
-void ZstTransportAdaptor::on_send_msg(ZstMsgKind kind, const ZstMsgArgs & args, const ZstMsgArgs & payload) {}
-void ZstTransportAdaptor::on_send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const MessageReceivedAction & action){}
-void ZstTransportAdaptor::on_send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstMsgArgs & args, const MessageReceivedAction & action) {}
-void ZstTransportAdaptor::on_send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstMsgArgs & payload, const ZstMsgArgs & args, const MessageReceivedAction & action) {}
+void ZstTransportAdaptor::send_msg(ZstMsgKind kind) {};
+void ZstTransportAdaptor::send_msg(ZstMsgKind kind, const ZstMsgArgs & args) {}
+void ZstTransportAdaptor::send_msg(ZstMsgKind kind, const ZstMsgArgs & args, const ZstMsgArgs & payload) {}
+void ZstTransportAdaptor::send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const MessageReceivedAction & action){}
+void ZstTransportAdaptor::send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstMsgArgs & args, const MessageReceivedAction & action) {}
+void ZstTransportAdaptor::send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstMsgArgs & payload, const ZstMsgArgs & args, const MessageReceivedAction & action) {}
 void ZstTransportAdaptor::on_receive_msg(ZstMessage * msg) {}
 
 

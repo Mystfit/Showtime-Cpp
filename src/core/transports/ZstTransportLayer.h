@@ -31,17 +31,17 @@ public:
 	// Publish messages
 	// ----------------
 
-	void on_send_msg(ZstMsgKind kind)  override
+	void send_msg(ZstMsgKind kind)  override
 	{
 		begin_send_message(get_msg()->init(kind));
 	}
 
-	void on_send_msg(ZstMsgKind kind, const ZstMsgArgs & args)  override
+	void send_msg(ZstMsgKind kind, const ZstMsgArgs & args)  override
 	{
 		begin_send_message(get_msg()->init(kind, args));
 	}
 
-	void on_send_msg(ZstMsgKind kind, const ZstMsgArgs & args, const ZstMsgArgs& payload) override
+	void send_msg(ZstMsgKind kind, const ZstMsgArgs & args, const ZstMsgArgs& payload) override
 	{
 		begin_send_message(get_msg()->init(kind, payload, args));
 	}
@@ -51,17 +51,17 @@ public:
 	// Response messages
 	// -----------------
 	
-	void on_send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const MessageReceivedAction & action) override
+	void send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const MessageReceivedAction & action) override
 	{
 		begin_send_message(get_msg()->init(kind), sendtype, action);
 	}
 
-	void on_send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstMsgArgs & args, const MessageReceivedAction & action)  override
+	void send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstMsgArgs & args, const MessageReceivedAction & action)  override
 	{
 		begin_send_message(get_msg()->init(kind, args), sendtype, action);
 	}
 	
-	void on_send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstMsgArgs & payload, const ZstMsgArgs & args, const MessageReceivedAction & action) override
+	void send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstMsgArgs & payload, const ZstMsgArgs & args, const MessageReceivedAction & action) override
 	{
 		begin_send_message(get_msg()->init(kind, payload, args), sendtype, action);
 	}
