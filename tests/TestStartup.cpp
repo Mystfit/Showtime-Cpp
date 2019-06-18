@@ -2,6 +2,37 @@
 
 using namespace ZstTest;
 
+
+void test_stage_discovery()
+{
+    ZstLog::app(LogLevel::debug, "Testing discovery of existing servers");
+    zst_init("TestDiscovery", true);
+    WAIT_UNTIL_STAGE_TIMEOUT
+    ZstServerBundle bundle;
+    zst_get_discovered_servers(bundle);
+    assert(bundle.size() > 0);
+    assert(bundle.item_at(0).first == "TestStartup_server");
+    
+    clear_callback_queue();
+    auto discovery_adaptor = std::make_shared<TestConnectionEvents>();
+    zst_add_session_adaptor(discovery_adaptor.get());
+    
+    ZstLog::app(LogLevel::debug, "Testing server discovery event adaptor");
+    auto detected_server_name = std::string("detected_server");
+    auto detected_server = zst_create_server(detected_server_name.c_str(), STAGE_ROUTER_PORT + 10);
+    
+    wait_for_event(discovery_adaptor.get(), 1);
+    assert(discovery_adaptor->num_calls() == 1);
+    bundle.clear();
+    zst_get_discovered_servers(bundle);
+    assert(bundle.size() == 2);
+    assert(bundle.item_at(1).first == detected_server_name);
+    
+    //Cleanup
+    zst_destroy_server(detected_server);
+    zst_remove_session_adaptor(discovery_adaptor.get());
+}
+
 void test_startup()
 {
     zst_init("TestStartup", true);
@@ -12,36 +43,47 @@ void test_startup()
     ZstLog::app(LogLevel::debug, "Testing early destruction of library");
     zst_destroy();
     ZstLog::app(LogLevel::debug, "Testing aborting join before init");
-    zst_join("127.0.0.1");
+    ZstServerBundle bundle;
+    zst_get_discovered_servers(bundle);
+//    std::string server_address = bundle.item_at(0).second.c_str();
+    std::string server_address = "127.0.0.1:40004";
+    std::string server_name = "TestStartup_server";
+    zst_join(server_address.c_str());
     ZstLog::app(LogLevel::debug, "Testing double library init");
     zst_init("TestClient", true);
     zst_init("TestClient", true);
     
+    
     //--------------------
     ZstLog::app(LogLevel::debug, "Testing sync join");
-    zst_join("127.0.0.1");
+    zst_join(server_address.c_str());
     assert(zst_is_connected());
     ZstLog::app(LogLevel::debug, "Testing sync leave");
     zst_leave();
-
-    //TODO: Pause to let zmq finish disconnecting - a bit ugly
-    TAKE_A_BREATH
-    assert(!zst_is_connected());
-
+    
     //Test sync join again to verify we cleaned up properly the first time
     ZstLog::app(LogLevel::debug, "Testing sync join again");
-    zst_join("127.0.0.1");
+    zst_join(server_address.c_str());
     assert(zst_is_connected());
+    zst_leave();
+
+    // -------------------
+    ZstLog::app(LogLevel::debug, "Testing joining by name");
+    zst_join_by_name(server_name.c_str());
+    assert(zst_is_connected());
+    zst_leave();
+    
+    ZstLog::app(LogLevel::debug, "Testing autojoin");
+    zst_auto_join();
+    assert(zst_is_connected());
+    zst_leave();
 
     //Testing join not starting if we're already connected
     ZstLog::app(LogLevel::debug, "Testing abort connection start if we're already connected");
-    zst_join("127.0.0.1");
+    zst_join(server_address.c_str());
+    zst_join(server_address.c_str());
     assert(!zst_is_connecting());
     zst_leave();
-
-    //TODO: Pause to let zmq finish disconnecting - a bit ugly
-    TAKE_A_BREATH
-    assert(!zst_is_connected());
 
     //Test async join
     TestConnectionEvents * connectCallback = new TestConnectionEvents();
@@ -49,7 +91,7 @@ void test_startup()
 
     ZstLog::app(LogLevel::debug, "Testing async join");
     assert(connectCallback->num_calls() == 0);
-    zst_join_async("127.0.0.1");
+    zst_join_async(server_address.c_str());
     wait_for_event(connectCallback, 1);
     assert(connectCallback->num_calls() == 1);
     assert(zst_is_connected());
@@ -59,20 +101,20 @@ void test_startup()
 
     //Test join timeout
     ZstLog::app(LogLevel::debug, "Testing sync join timeout");
-    zst_join("255.255.255.255");
+    zst_join("255.255.255.255:1111");
     assert(!zst_is_connected());
 
     //Test async join timeout
     ZstLog::app(LogLevel::debug, "Testing async join timeout");
-    zst_join_async("255.255.255.255");
+    zst_join_async("255.255.255.255:1111");
     WAIT_UNTIL_STAGE_TIMEOUT
     assert(!zst_is_connected());
     
     //Testing abort connection start if we're already connecting
     ZstLog::app(LogLevel::debug, "Testing async abort connection start if we're already connecting");
-    zst_join_async("255.255.255.255");
+    zst_join_async("255.255.255.255:1111");
     assert(zst_is_connecting());
-    zst_join("255.255.255.255");
+    zst_join("255.255.255.255:1111");
     assert(!zst_is_connected());
     WAIT_UNTIL_STAGE_TIMEOUT
     assert(!zst_is_connecting());
@@ -94,8 +136,11 @@ void test_URI()
 void test_root_entity()
 {
     ZstLog::app(LogLevel::notification, "Running performer test");
-
-	zst_join("127.0.0.1");
+    
+    ZstServerBundle bundle;
+    zst_get_discovered_servers(bundle);
+    std::string server_address = bundle.item_at(0).second.c_str();
+	zst_join(server_address.c_str());
     
     //Test root entity is activated
     TestSynchronisableEvents * performer_activated = new TestSynchronisableEvents();
@@ -117,6 +162,7 @@ int main(int argc,char **argv)
 {
 	TestRunner runner("TestStartup", argv[0], false);
     test_URI();
+    test_stage_discovery();
     test_startup();
     test_root_entity();
 }

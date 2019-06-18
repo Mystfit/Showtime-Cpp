@@ -18,6 +18,8 @@
 #include "../core/ZstStageMessage.h"
 #include "../core/adaptors/ZstTransportAdaptor.hpp"
 #include "../core/transports/ZstServerRecvTransport.h"
+#include "../core/transports/ZstServiceDiscoveryTransport.h"
+
 
 //Stage headers
 #include "ZstStageSession.h"
@@ -56,5 +58,6 @@ private:
 	ZstStageSession * m_session;
 	
 	//Transports
-	ZstServerRecvTransport * m_router_transport;
+    std::unique_ptr<ZstServerRecvTransport> m_router_transport;
+    std::unique_ptr<ZstServiceDiscoveryTransport> m_service_broadcast_transport;
 };

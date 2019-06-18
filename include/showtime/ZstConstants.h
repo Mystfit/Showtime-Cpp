@@ -35,6 +35,7 @@ enum ZstPlugDirection {
 };
 
 //Ports
+#define STAGE_DISCOVERY_PORT 40003
 #define STAGE_ROUTER_PORT 40004
 #define CLIENT_UNRELIABLE_PORT 40006
 #define CLIENT_MULTICAST_ADDR "239.0.0.8"

@@ -58,6 +58,14 @@ void ZstClientSession::dispatch_disconnected_from_stage()
 	});
 }
 
+void ZstClientSession::dispatch_server_discovered(const ZstServerAddressPair & server)
+{
+    session_events().defer([server](ZstSessionAdaptor * adaptor) {
+        adaptor->on_server_discovered(server);
+    });
+}
+
+
 
 // ---------------------------
 // Adaptor plug send/receive

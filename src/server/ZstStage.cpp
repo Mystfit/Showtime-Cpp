@@ -13,11 +13,11 @@
 ZstStage::ZstStage() : 
 	m_is_destroyed(false),
 	m_heartbeat_timer(m_io),
-    m_session(NULL),
-    m_router_transport(NULL)
+    m_session(NULL)
 {
 	m_session = new ZstStageSession();
-	m_router_transport = new ZstServerRecvTransport();
+	m_router_transport = std::make_unique<ZstServerRecvTransport>();
+    m_service_broadcast_transport = std::make_unique<ZstServiceDiscoveryTransport>();
 
 	//Register event conditions
 	m_event_condition = std::make_shared<ZstSemaphore>();
@@ -30,13 +30,21 @@ ZstStage::~ZstStage()
 {
 	destroy();
 	delete m_session;
-	delete m_router_transport;
 }
 
 void ZstStage::init_stage(const char * stage_name, int port)
 {
 	m_session->init();
 	m_router_transport->init(port);
+    
+    //Stage discovery beacon
+    m_service_broadcast_transport->init(STAGE_DISCOVERY_PORT);
+    
+    //We start the beacon broadcast by sending a message with the intended broadcast data
+    m_service_broadcast_transport->send_msg(ZstMsgKind::SERVER_BEACON, {
+        {get_msg_arg_name(ZstMsgArg::SENDER), stage_name},
+        {get_msg_arg_name(ZstMsgArg::ADDRESS_PORT), port}
+    });
 
 	//Init timer actor for client heartbeats
 	//Create timers
@@ -46,8 +54,8 @@ void ZstStage::init_stage(const char * stage_name, int port)
 	//Attach adaptors
 	m_router_transport->msg_events()->add_adaptor(m_session);
 	m_router_transport->msg_events()->add_adaptor(m_session->hierarchy());
-	m_session->router_events().add_adaptor(m_router_transport);
-	m_session->hierarchy()->router_events().add_adaptor(m_router_transport);
+	m_session->router_events().add_adaptor(m_router_transport.get());
+	m_session->hierarchy()->router_events().add_adaptor(m_router_transport.get());
 
 	//Start event loop
 	m_stage_timer_thread = boost::thread(boost::bind(&ZstStage::timer_loop, this));
@@ -83,6 +91,9 @@ void ZstStage::destroy()
 
 	//Destroy transports
 	m_router_transport->destroy();
+    
+    m_service_broadcast_transport->stop_broadcast();
+    m_service_broadcast_transport->destroy();
 
 	//Destroy zmq context
 	//zsys_shutdown();

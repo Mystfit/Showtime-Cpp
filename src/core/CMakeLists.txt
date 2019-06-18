@@ -39,6 +39,7 @@ set(API_HEADERS
     ${Showtime_INCLUDE_DIRS}/ZstSerialisable.h
     ${Showtime_INCLUDE_DIRS}/ZstSynchronisable.h
     ${Showtime_INCLUDE_DIRS}/ZstBundle.hpp
+    ${Showtime_INCLUDE_DIRS}/ZstServerAddress.h
     ${Showtime_COMPILED_INCLUDE_DIRS}/ZstVersion.h
 )
 list(APPEND Showtime_API_INTERFACE 
@@ -76,6 +77,7 @@ set(ZST_CORE_TRANSPORT_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTCPGraphTransport.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstServerSendTransport.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstServerRecvTransport.h"
+    "${CMAKE_CURRENT_LIST_DIR}/transports/ZstServiceDiscoveryTransport.h"   
 )
 if(BUILD_DRAFTS)
     list(APPEND ZST_CORE_TRANSPORT_HEADERS
@@ -116,6 +118,8 @@ set(ZST_CORE_TRANSPORT_SRC
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTCPGraphTransport.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstServerSendTransport.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstServerRecvTransport.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/transports/ZstServiceDiscoveryTransport.cpp"   
+
 )
 if(BUILD_DRAFTS)
     list(APPEND ZST_CORE_TRANSPORT_SRC

@@ -4,6 +4,8 @@
 #include <unordered_map>
 #include <string>
 #include <mutex>
+#include <set>
+#include <memory>
 
 //Boost includes
 #include <boost/asio.hpp>
@@ -23,6 +25,7 @@
 class ZstSemaphore;
 class ZstTCPGraphTransport;
 class ZstUDPGraphTransport;
+class ZstServiceDiscoveryTransport;
 class ZstMessage;
 class ZstPerformanceMessage;
 class ZstClientSession;
@@ -68,8 +71,14 @@ public:
 	void on_receive_msg(ZstMessage * msg) override;
 	void receive_connection_handshake(ZstPerformanceMessage * msg);
 
-	//Register this endpoint to the stage
-	void join_stage(std::string stage_address, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
+    //Server discovery
+    void handle_server_discovery(const std::string & address, const std::string & server_name, int port);
+    const ZstServerList & get_discovered_servers();
+    
+    //Register this endpoint to the stage
+    void auto_join_stage(const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
+    void auto_join_stage_by_name(const std::string & name, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
+	void join_stage(const std::string & stage_address, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
 	void join_stage_complete(ZstMessageReceipt response);
 	void synchronise_graph(const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
 	void synchronise_graph_complete(ZstMessageReceipt response);
@@ -114,6 +123,12 @@ private:
 	//UUIDs
 	std::string m_assigned_uuid;
 	std::string m_client_name;
+    
+    //Server discovery
+    std::unique_ptr<ZstServiceDiscoveryTransport> m_service_broadcast_transport;
+    ZstServerList m_server_beacons;
+    bool m_auto_join_stage;
+    std::string m_auto_join_stage_name;
 
 	//P2P Connections
 	void start_connection_broadcast(const ZstURI & remote_client_path);

@@ -37,6 +37,9 @@ enum ZstMsgKind {
 	CLIENT_SYNC,
 	CLIENT_LEAVING,
 	CLIENT_HEARTBEAT,
+    
+    //Beacons
+    SERVER_BEACON,
 
 	//Entity registration
 	CREATE_ENTITY_FROM_FACTORY, //16
@@ -87,6 +90,7 @@ static ZstMsgKindMap ZstMsgNames = boost::assign::list_of<ZstMsgKindMap::relatio
 	(CLIENT_SYNC, "CLIENT_SYNC")
 	(CLIENT_LEAVING, "CLIENT_LEAVING")
 	(CLIENT_HEARTBEAT, "CLIENT_HEARTBEAT")
+    (SERVER_BEACON, "SERVER_BEACON")
 	(CREATE_ENTITY_FROM_FACTORY, "CREATE_ENTITY_FROM_FACTORY")
 	(REGISTER_COMPONENT_TEMPLATE, "REGISTER_COMPONENT_TEMPLATE")
 	(UNREGISTER_COMPONENT_TEMPLATE, "UNREGISTER_COMPONENT_TEMPLATE")
@@ -109,6 +113,8 @@ static ZstMsgKindMap ZstMsgNames = boost::assign::list_of<ZstMsgKindMap::relatio
 enum ZstMsgArg {
 	NAME = 0,
 	KIND,
+    ADDRESS,
+    ADDRESS_PORT,
 	GRAPH_RELIABLE_OUTPUT_ADDRESS,
 	GRAPH_UNRELIABLE_INPUT_ADDRESS,
 	INPUT_PATH,
@@ -129,6 +135,8 @@ typedef boost::bimaps::bimap<ZstMsgArg, std::string> ZstMsgArgMap;
 static ZstMsgArgMap ZstMsgArgNames = boost::assign::list_of<ZstMsgArgMap::relation>
 	( NAME, "name" )
 	( KIND, "kind" )
+    ( ADDRESS, "address" )
+    ( ADDRESS_PORT, "address_port" )
 	( GRAPH_RELIABLE_OUTPUT_ADDRESS, "graph_out_reliable_addr" )
 	( GRAPH_UNRELIABLE_INPUT_ADDRESS, "graph_in_unreliable_addr" )
 	( INPUT_PATH, "in_path" )

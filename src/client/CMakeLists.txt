@@ -6,6 +6,7 @@ set(ZST_CLIENT_HEADERS
 
 set(ZST_CLIENT_PRIVATE_HEADERS
   "${CMAKE_CURRENT_LIST_DIR}/ZstClient.h"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstClientCommon.hpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientModule.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientHierarchy.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientSession.h"

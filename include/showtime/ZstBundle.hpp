@@ -71,6 +71,9 @@ public:
 
 	T item_at(const size_t index) const
 	{
+        if(index >= m_bundle_items.size()){
+            throw std::out_of_range("Bundle index out of range");
+        }
 		return m_bundle_items[index];
 	}
 

@@ -8,6 +8,14 @@ extern "C" {
 	ZST_CLIENT_EXPORT void zst_start_file_logging(const char * log_file_path = "");
 	ZST_CLIENT_EXPORT void zst_join(const char * stage_address);
     ZST_CLIENT_EXPORT void zst_join_async(const char * stage_address);
+    ZST_CLIENT_EXPORT void zst_join_by_name(const char * stage_name);
+    ZST_CLIENT_EXPORT void zst_join_by_name_async(const char * stage_name);
+    ZST_CLIENT_EXPORT void zst_auto_join();
+    ZST_CLIENT_EXPORT void zst_auto_join_by_name(const char * name);
+    ZST_CLIENT_EXPORT void zst_auto_join_async();
+    ZST_CLIENT_EXPORT void zst_auto_join_by_name_async(const char * name);
+    
+    ZST_CLIENT_EXPORT void zst_get_discovered_servers(ZstServerBundle & servers);
 
 	//Cleanup
 	ZST_CLIENT_EXPORT void zst_destroy();

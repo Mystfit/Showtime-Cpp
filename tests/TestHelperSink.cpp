@@ -91,7 +91,7 @@ int main(int argc,char **argv){
 #endif
 	}
 	zst_init("sink", true);
-    zst_join("127.0.0.1");
+    zst_auto_join();
 
 	Sink * sink = new Sink("sink_ent");
 	zst_get_root()->add_child(sink);

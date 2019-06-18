@@ -23,6 +23,7 @@ using namespace boost::process;
 #define TAKE_A_SHORT_BREATH std::this_thread::sleep_for(std::chrono::milliseconds(10));
 #define TAKE_A_BREATH std::this_thread::sleep_for(std::chrono::milliseconds(100));
 #define WAIT_UNTIL_STAGE_TIMEOUT std::this_thread::sleep_for(std::chrono::milliseconds(STAGE_TIMEOUT + 1000));
+#define WAIT_UNTIL_STAGE_BEACON std::this_thread::sleep_for(std::chrono::milliseconds(3000));
 
 
 // --------------
@@ -146,6 +147,11 @@ namespace ZstTest
 			ZstLog::app(LogLevel::debug, "DISCONNECTING: {}", zst_get_root()->URI().path());
 			inc_calls();
 		}
+        
+        void on_server_discovered(const ZstServerAddressPair & server){
+            ZstLog::app(LogLevel::debug, "SERVER DISCOVERED: Name: {} Address: {}", server.first, server.second);
+            inc_calls();
+        }
 	};
 
 
@@ -271,7 +277,9 @@ namespace ZstTest
 			//Init library
 			if (init_library) {
 				zst_init(name.c_str(), true);
-				zst_join("127.0.0.1");
+				zst_auto_join_async();
+                WAIT_UNTIL_STAGE_BEACON
+                
 				if (!zst_is_connected()) {
 					ZstLog::app(LogLevel::error, "Failed to connect to launched stage");
 					assert(zst_is_connected());

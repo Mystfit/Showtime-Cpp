@@ -50,7 +50,7 @@ void ZstServerSendTransport::connect_to_stage(const std::string stage_address)
 	m_stage_addr = std::string(stage_address);
 
 	std::stringstream addr;
-	addr << "tcp://" << m_stage_addr << ":" << STAGE_ROUTER_PORT;
+    addr << "tcp://" << m_stage_addr; // << ":" << STAGE_ROUTER_PORT;
 	m_stage_router_addr = addr.str();
 
 	zsock_connect(m_stage_router, "%s", m_stage_router_addr.c_str());

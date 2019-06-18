@@ -5,9 +5,11 @@
 #include "../core/transports/ZstUDPGraphTransport.h"
 #endif
 #include "../core/transports/ZstServerSendTransport.h"
+#include "../core/transports/ZstServiceDiscoveryTransport.h"
 #include "../core/ZstMessage.h"
 #include "../core/ZstPerformanceMessage.h"
 #include "../core/ZstSemaphore.h"
+#include <fmt/format.h>
 
 #include "ZstClientSession.h"
 
@@ -19,6 +21,7 @@ ZstClient::ZstClient() :
 	m_init_completed(false),
 	m_connected_to_stage(false),
 	m_is_connecting(false),
+    m_auto_join_stage(false),
 	m_session(NULL),
 	m_heartbeat_timer(m_client_timerloop.IO_context())
 {
@@ -26,6 +29,7 @@ ZstClient::ZstClient() :
 	//These are specified by the client based on what transport type we want to use
 	m_client_transport = new ZstServerSendTransport();
 	m_tcp_graph_transport = new ZstTCPGraphTransport();
+    m_service_broadcast_transport = std::make_unique<ZstServiceDiscoveryTransport>();
 
 #ifdef ZST_BUILD_DRAFT_API
 	m_udp_graph_transport = new ZstUDPGraphTransport();
@@ -39,6 +43,7 @@ ZstClient::ZstClient() :
 
 	//Register event conditions
 	m_event_condition = std::make_shared<ZstSemaphore>();
+    m_service_broadcast_transport->msg_events()->set_wake_condition(m_event_condition);
 	m_client_transport->msg_events()->set_wake_condition(m_event_condition);
 	m_tcp_graph_transport->msg_events()->set_wake_condition(m_event_condition);
 #ifdef ZST_BUILD_DRAFT_API
@@ -86,6 +91,8 @@ void ZstClient::destroy() {
 #ifdef ZST_BUILD_DRAFT_API
 	m_udp_graph_transport->destroy();
 #endif
+    m_service_broadcast_transport->stop_listening();
+    m_service_broadcast_transport->destroy();
 
 	//Stop timers
 	m_client_timerloop.IO_context().stop();
@@ -101,6 +108,10 @@ void ZstClient::destroy() {
 	//Set last status flags
 	set_is_ending(false);
 	set_is_destroyed(true);
+    
+    //Clear autojoin values
+    m_auto_join_stage_name.clear();
+    m_auto_join_stage = false;
 
 	//All done
 	ZstLog::net(LogLevel::notification, "Showtime library destroyed");
@@ -132,10 +143,13 @@ void ZstClient::init_client(const char *client_name, bool debug)
 	m_client_timer_thread = boost::thread(boost::ref(m_client_timerloop));
 	m_connection_timers = ZstConnectionTimerMapUnique(new ZstConnectionTimerMap());
 	m_client_timerloop.IO_context().restart();
+    
+    //Transport event loops
+    m_client_event_thread = boost::thread(boost::bind(&ZstClient::transport_event_loop, this));
 	
 	//Register message dispatch as a client adaptor
 	this->add_adaptor(m_client_transport);
-
+    
 	//Register adaptors to handle outgoing events
 	m_session->init(client_name);
 	m_session->stage_events().add_adaptor(m_client_transport);
@@ -151,14 +165,17 @@ void ZstClient::init_client(const char *client_name, bool debug)
 	m_tcp_graph_transport->init();
 	m_tcp_graph_transport->msg_events()->add_adaptor(this);
 	m_tcp_graph_transport->msg_events()->add_adaptor(m_session);
+    
 #ifdef ZST_BUILD_DRAFT_API
 	m_udp_graph_transport->init();
 	m_udp_graph_transport->msg_events()->add_adaptor(this);
 	m_udp_graph_transport->msg_events()->add_adaptor(m_session);
 #endif
-
-	//Transport event loops
-	m_client_event_thread = boost::thread(boost::bind(&ZstClient::transport_event_loop, this));
+    
+    //Stage discovery beacon
+    m_service_broadcast_transport->init(STAGE_DISCOVERY_PORT);
+    m_service_broadcast_transport->start_listening();
+    m_service_broadcast_transport->msg_events()->add_adaptor(this);
 
 	//Init completed
 	set_init_completed(true);
@@ -220,6 +237,8 @@ void ZstClient::on_receive_msg(ZstMessage * msg)
 	case ZstMsgKind::SUBSCRIBE_TO_PERFORMER:
 		listen_to_client(stage_msg);
 		break;
+    case ZstMsgKind::SERVER_BEACON:
+            handle_server_discovery(stage_msg->get_arg<std::string>(ZstMsgArg::ADDRESS), stage_msg->get_arg<std::string>(ZstMsgArg::SENDER), stage_msg->get_arg<int>(ZstMsgArg::ADDRESS_PORT));
 	default:
 		break;
 	}
@@ -248,7 +267,37 @@ void ZstClient::receive_connection_handshake(ZstPerformanceMessage * msg)
 // Client join
 // -------------
 
-void ZstClient::join_stage(std::string stage_address, const ZstTransportSendType & sendtype) {
+void ZstClient::auto_join_stage(const ZstTransportSendType & sendtype)
+{
+    //If we already have a server beacon then we can pick the first one
+    if(m_server_beacons.size() > 0){
+        join_stage(m_server_beacons.begin()->second, sendtype);
+        return;
+    }
+    
+    if(sendtype == ZstTransportSendType::ASYNC_REPLY){
+        m_auto_join_stage = true;
+        m_auto_join_stage_name.clear();
+    }
+}
+
+void ZstClient::auto_join_stage_by_name(const std::string & name, const ZstTransportSendType & sendtype)
+{
+    for(auto server : m_server_beacons){
+        if(server.first == name){
+            join_stage(server.second, sendtype);
+            return;
+        }
+    }
+    
+    if(sendtype == ZstTransportSendType::ASYNC_REPLY){
+        m_auto_join_stage = true;
+        m_auto_join_stage_name = name;
+    }
+}
+
+
+void ZstClient::join_stage(const std::string & stage_address, const ZstTransportSendType & sendtype) {
 	
 	if (!m_init_completed) {
 		ZstLog::net(LogLevel::error, "Can't join the stage until the library has been initialised");
@@ -290,6 +339,40 @@ void ZstClient::join_stage(std::string stage_address, const ZstTransportSendType
 		});
 	});
 }
+
+void ZstClient::handle_server_discovery(const std::string & address, const std::string & server_name, int port)
+{
+    // Make a server address to hold our server name/address pair
+    std::string full_address = fmt::format("{}:{}", address, port);
+    ZstServerAddressPair server = std::make_pair(server_name, full_address);
+    
+    // Add server to list of discovered servers if the beacon hasn't been seen before
+    if(m_server_beacons.find(server) == m_server_beacons.end()){
+        ZstLog::net(LogLevel::debug, "Received new server beacon: {} {}", server.first, server.second);
+        
+        // Handle connecting to the stage automatically
+        if(m_auto_join_stage && !is_connected_to_stage()){
+            if(!m_auto_join_stage_name.empty()){
+                if(server_name == m_auto_join_stage_name){
+                    join_stage(full_address, ZstTransportSendType::ASYNC_REPLY);
+                }
+            } else if(m_server_beacons.size() == 0){
+                // This is the first beacon so we connect to it
+                join_stage(full_address, ZstTransportSendType::ASYNC_REPLY);
+            }
+        }
+        
+        // Store server beacon
+        m_server_beacons.insert(server);
+        m_session->dispatch_server_discovered(server);
+    }
+}
+
+const ZstServerList & ZstClient::get_discovered_servers()
+{
+    return m_server_beacons;
+}
+
 
 void ZstClient::join_stage_complete(ZstMessageReceipt response)
 {
@@ -498,6 +581,7 @@ void ZstClient::transport_event_loop()
 			m_udp_graph_transport->process_events();
 #endif
 			m_tcp_graph_transport->process_events();
+            m_service_broadcast_transport->process_events();
 		}
 		catch (boost::thread_interrupted) {
 			break;

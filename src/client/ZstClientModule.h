@@ -2,6 +2,8 @@
 
 #include <memory>
 
+#include "ZstClientCommon.hpp"
+
 #include "../core/ZstSemaphore.h"
 #include "../core/ZstEventDispatcher.hpp"
 #include "../core/adaptors/ZstTransportAdaptor.hpp"

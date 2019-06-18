@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
 	zst_register_factory(test_factory.get());
 	
 	//Connect to the stage
-	zst_join("127.0.0.1");
+	zst_auto_join();
 	assert(test_factory->is_activated());
 
 	//Start event loop
