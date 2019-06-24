@@ -13,7 +13,7 @@ namespace Showtime.Tests
         public void CreateEntitySync()
         {
             var component = new TestComponent("testComponentSync");
-            showtime.activate_entity(component);
+            showtime.get_root().add_child(component);
             Assert.IsTrue(component.is_activated());
             showtime.deactivate_entity(component);
             Assert.IsFalse(component.is_activated());
@@ -24,7 +24,7 @@ namespace Showtime.Tests
         {
             var component = new TestComponent("testComponentAsync");
 
-            showtime.activate_entity_async(component);
+            showtime.get_root().add_child(component);
             yield return new WaitUntil(() => component.is_activated());
 
             showtime.deactivate_entity_async(component);
@@ -36,9 +36,10 @@ namespace Showtime.Tests
         {
             var component = new TestComponent("testComponentAdaptor");
             var sync_adaptor = new TestSynchronisableAdaptor();
+
             component.add_adaptor(sync_adaptor);
 
-            showtime.activate_entity_async(component);
+            showtime.get_root().add_child(component);
             yield return new WaitUntil(() => sync_adaptor.activated);
 
             showtime.deactivate_entity_async(component);

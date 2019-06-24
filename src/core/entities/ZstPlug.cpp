@@ -151,7 +151,7 @@ ZstPlugDirection ZstPlug::direction()
 	return m_direction;
 }
 
-ZstCableBundle & ZstPlug::get_child_cables(ZstCableBundle & bundle)
+void ZstPlug::get_child_cables(ZstCableBundle & bundle)
 {
     std::lock_guard<std::mutex> lock(m_entity_mtx);
 	for (auto const & cable_path : m_cables) {
@@ -172,7 +172,7 @@ ZstCableBundle & ZstPlug::get_child_cables(ZstCableBundle & bundle)
         });
 	}
 
-	return ZstEntityBase::get_child_cables(bundle);
+	ZstEntityBase::get_child_cables(bundle);
 }
 
 

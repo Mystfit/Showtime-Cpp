@@ -107,10 +107,6 @@ set(LIBZMQ_TARGET "")
 set(CZMQ_TARGET "")
 message(STATUS "Finding packages")
 
-if(ANDROID)
-    #find_package(ndk-stl REQUIRED)
-endif()
-
 # Boost
 # --------
 find_package(Boost COMPONENTS
@@ -309,6 +305,19 @@ set(PLUGIN_TARGETS "")
 option(PLUGINS_RTMIDI "Build RTMidi plugin" OFF)
 if(PLUGINS_RTMIDI)
     add_subdirectory(src/plugins/rtmidi)
+endif()
+
+
+# Android container compilation
+# -----------------------------
+option(BUILD_ANDROID_LIBS "Build Android libs using Singularity" OFF)
+set(ANDROID_SINGULARITY_TARGET ShowtimeAndroid)
+set(ANDROID_OUTPUT_LIB "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Android/lib${CLIENT_TARGET}.so")
+set(ANDROID_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/android-container")
+set(ANDROID_STAMP ${ANDROID_BUILD_DIR}/android.stamp)
+if(BUILD_ANDROID_LIBS)
+    add_custom_target(${ANDROID_SINGULARITY_TARGET} ALL DEPENDS "${ANDROID_OUTPUT_LIB}")
+    include(containers/CMakeLists.txt)
 endif()
 
 

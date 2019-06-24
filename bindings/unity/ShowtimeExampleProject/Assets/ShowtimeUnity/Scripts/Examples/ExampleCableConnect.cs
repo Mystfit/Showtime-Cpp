@@ -40,7 +40,6 @@ public class ExampleCableConnect : MonoBehaviour {
     public bool is_master = true;
     private string client_name;
     private ExampleCableConnectComponent sphere_component;
-    private ZstComponent sphere_proxy;
 
     //Anim vars
     public float speed = 5.0f;
@@ -89,22 +88,22 @@ public class ExampleCableConnect : MonoBehaviour {
     {
         showtime.init(client_name, true);
         showtime.join(address);
-
+        
         if (is_master)
         {
             sphere_component = new ExampleCableConnectComponent(transform, component_name);
-            showtime.activate_entity(sphere_component);
+            showtime.get_root().add_child(sphere_component);
         }
         else
         {
             ZstComponent sphere_proxy = showtime.cast_to_component(showtime.find_entity(new ZstURI(owner_name).add(new ZstURI("sphere"))));
             Debug.Log(string.Format("Sphere proxy is {0}", sphere_proxy));
 
-            ZstOutputPlug output_p = showtime.cast_to_output_plug(sphere_proxy.get_plug_by_URI(sphere_proxy.URI().add(new ZstURI("output"))));
+            ZstOutputPlug output_p = showtime.cast_to_output_plug(sphere_proxy.get_child_by_URI(sphere_proxy.URI().add(new ZstURI("output"))));
             Debug.Log(string.Format("Output plug is {0}", output_p));
 
             sphere_component = new ExampleCableConnectComponent(transform, component_name);
-            showtime.activate_entity(sphere_component);
+            showtime.get_root().add_child(sphere_component);
 
             showtime.connect_cable(sphere_component.input, output_p);
         }
@@ -164,11 +163,11 @@ public class SessionCallback : ZstSessionAdaptor
 
     public override void on_cable_created(ZstCable cable)
     {
-        Debug.Log("Cable arriving: " + cable.get_output_URI().path() + " -> " + cable.get_input_URI().path());
+        Debug.Log("Cable arriving: " + cable.get_address().get_output_URI(). path() + " -> " + cable.get_address().get_input_URI().path());
     }
 
     public override void on_cable_destroyed(ZstCable cable)
     {
-        Debug.Log("Cable leaving: " + cable.get_output_URI().path() + " -> " + cable.get_input_URI().path());
+        Debug.Log("Cable leaving: " + cable.get_address().get_output_URI().path() + " -> " + cable.get_address().get_input_URI().path());
     }
 }

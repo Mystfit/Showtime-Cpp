@@ -3,9 +3,9 @@
   <PropertyGroup>
     <TargetFramework>${BINDINGS_DOTNET_FRAMEWORK_VERSION}</TargetFramework>
   </PropertyGroup>
-  <ItemGroup>
+  <!--<ItemGroup>
     <Reference Include="netstandard" />
-  </ItemGroup>
+  </ItemGroup>-->
   <ItemGroup>
     ${DOTNET_SRC_BLOCK}
   </ItemGroup>

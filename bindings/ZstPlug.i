@@ -2,7 +2,7 @@
 %ignore ZstPlugIterator::operator++;
 %ignore ZstPlug::begin;
 %ignore ZstPlug::end;
-%ignore Zstplug::raw_value;
+%ignore ZstPlug::raw_value;
 
 %inline %{
 	ZstOutputPlug* cast_to_output_plug(ZstSynchronisable * synchronisable){
@@ -15,7 +15,7 @@
 %}
 
 %nodefaultctor ZstPlug;
-%include "entities/ZstPlug.h"
+%include <entities/ZstPlug.h>
 
 %include "std_string.i"
 %extend ZstPlug{

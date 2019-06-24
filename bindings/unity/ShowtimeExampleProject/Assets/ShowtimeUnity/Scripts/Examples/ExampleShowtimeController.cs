@@ -48,17 +48,9 @@ public class ExampleShowtimeController : MonoBehaviour {
 
         //Entities need to be activated to become 'live' in the performance
         Debug.Log("Activating entities");
-        //showtime.activate_entity_async(add);
-        showtime.activate_entity_async(pushA);
-        showtime.activate_entity_async(pushB);
-        showtime.activate_entity_async(sink);
-
-        //yield return new WaitUntil(() => 
-        //    (add.is_activated() &&
-        //    pushA.is_activated() &&
-        //    pushB.is_activated() &&
-        //    sink.is_activated())
-        //);
+        showtime.get_root().add_child(pushA);
+        showtime.get_root().add_child(pushB);
+        showtime.get_root().add_child(sink);
 
         //Connect the plugs together with cables
         Debug.Log("Connecting cables");
@@ -176,12 +168,12 @@ public class ExampleShowtimeController : MonoBehaviour {
 
         public override void on_cable_created(ZstCable cable)
         {
-            Debug.Log("Cable arriving: " + cable.get_output_URI().path() + " -> " + cable.get_input_URI().path());
+            Debug.Log("Cable arriving: " + cable.get_address().get_output_URI().path() + " -> " + cable.get_address().get_input_URI().path());
         }
 
         public override void on_cable_destroyed(ZstCable cable)
         {
-            Debug.Log("Cable leaving: " + cable.get_output_URI().path() + " -> " + cable.get_input_URI().path());
+            Debug.Log("Cable leaving: " + cable.get_address().get_output_URI().path() + " -> " + cable.get_address().get_input_URI().path());
         }
     }
 }

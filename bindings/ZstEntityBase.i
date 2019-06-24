@@ -8,13 +8,6 @@
 %rename(destroy) ZstEntityBase::operator delete;
 %newobject ZstEntityBase::create;
 %delobject ZstEntityBase::destroy;
-
-//Declare ZstSerialisable to squash unknown class warnings
-%nodefaultctor ZstSerialisable;
-%nodefaultdtor ZstSerialisable;
-class ZstSerialisable {};
-%ignore ZstSerialisable;
-
-
 %nodefaultctor ZstEntityBase;
+
 %include <entities/ZstEntityBase.h>

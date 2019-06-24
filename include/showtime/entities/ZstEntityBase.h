@@ -35,10 +35,6 @@ class ZstEntityBase : public ZstSynchronisable, public ZstSerialisable {
     friend class ZstEntityLiason;
 
 public:
-	//Include base class adaptors
-	using ZstSynchronisable::add_adaptor;
-	using ZstSynchronisable::remove_adaptor;
-
 	//Base entity
 	ZST_EXPORT ZstEntityBase(const char * entity_name);
 	ZST_EXPORT ZstEntityBase(const ZstEntityBase & other);
@@ -57,18 +53,25 @@ public:
 	ZST_EXPORT const ZstURI & URI() const;
 
 	//Iterate
-	ZST_EXPORT virtual ZstCableBundle & get_child_cables(ZstCableBundle & bundle);
-	ZST_EXPORT virtual ZstEntityBundle&  get_child_entities(ZstEntityBundle & bundle, bool include_parent = true);
+	ZST_EXPORT virtual void get_child_cables(ZstCableBundle & bundle);
+	ZST_EXPORT virtual void get_child_entities(ZstEntityBundle & bundle, bool include_parent = true);
 	    
 	//Serialisation
 	ZST_EXPORT void write_json(json & buffer) const override;
 	ZST_EXPORT void read_json(const json & buffer) override;
 
 	//Adaptors
-    ZST_EXPORT void add_adaptor(ZstEntityAdaptor * adaptor);
-    ZST_EXPORT void add_adaptor(ZstSessionAdaptor * adaptor);
-    ZST_EXPORT void remove_adaptor(ZstEntityAdaptor * adaptor);
-    ZST_EXPORT void remove_adaptor(ZstSessionAdaptor * adaptor);
+    ZST_EXPORT virtual void add_adaptor(ZstEntityAdaptor * adaptor);
+    ZST_EXPORT virtual void add_adaptor(ZstSessionAdaptor * adaptor);
+    ZST_EXPORT virtual void remove_adaptor(ZstEntityAdaptor * adaptor);
+    ZST_EXPORT virtual void remove_adaptor(ZstSessionAdaptor * adaptor);
+    
+#ifndef SWIG
+    //Include base class adaptors
+    //Swig mistakenly adds these twice when dealing treating ZstSynchronisable as an interface (C#, Java)
+    using ZstSynchronisable::add_adaptor;
+    using ZstSynchronisable::remove_adaptor;
+#endif
 
 	ZST_EXPORT ZstEventDispatcher<ZstEntityAdaptor*> * entity_events();
 	

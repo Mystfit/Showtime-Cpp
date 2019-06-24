@@ -5,17 +5,15 @@ using UnityEngine;
 
 public class TestServerStarter
 {
-    public static showtime.ShowtimeServer server;
+    public static ServerHandle server;
 
     public void Start()
     {
-        zst_create_server("unity", 40004);
+        server = showtime.create_server("unity", showtime.STAGE_ROUTER_PORT);
     }
 
     public void Stop()
     {
-        server_process?.StandardInput.WriteLine("$TERM\n");
-        server_process?.WaitForExit();
-        server_process = null;
+        showtime.destroy_server(server);
     }
 }

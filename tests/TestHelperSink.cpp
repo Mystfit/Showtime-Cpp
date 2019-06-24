@@ -91,7 +91,7 @@ int main(int argc,char **argv){
 #endif
 	}
 	zst_init("sink", true);
-    zst_auto_join();
+    zst_auto_join_by_name("TestExternalClients_server");
 
 	Sink * sink = new Sink("sink_ent");
 	zst_get_root()->add_child(sink);

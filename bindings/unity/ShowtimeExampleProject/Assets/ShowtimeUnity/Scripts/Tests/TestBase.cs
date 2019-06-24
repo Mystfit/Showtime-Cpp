@@ -7,12 +7,12 @@ namespace Showtime.Tests
 {
     public class TestBase : IPrebuildSetup, IPostBuildCleanup
     {
-        public static Process server_process;
+        public static ServerHandle server;
         public bool autoconnect = true;
 
         public virtual void Setup()
         {
-            StartServer();
+            server = showtime.create_server("unity_server", showtime.STAGE_ROUTER_PORT);
 
             //Create event loop
             EditorApplication.update += Update;
@@ -21,29 +21,14 @@ namespace Showtime.Tests
             showtime.init("TestUnity", true);
 
             if (autoconnect)
-                showtime.join("127.0.0.1");
-        }
+                showtime.join_by_name("unity_server");
 
-        public void StartServer()
-        {
-            var server_startInfo = new ProcessStartInfo
-            {
-                //Required to redirect standard input/output
-                UseShellExecute = false,
-                RedirectStandardInput = true,
-                FileName = $"{Application.dataPath}/ShowtimeUnity/plugins/x86_64/ShowtimeServer",
-                Arguments = "-t"   // Put server into test mode
-            };
-
-            server_process = Process.Start(server_startInfo);
         }
 
         public void Cleanup()
         {
+            showtime.destroy_server(server);
             showtime.destroy();
-            server_process?.StandardInput.WriteLine("$TERM\n");
-            server_process?.WaitForExit();
-            server_process = null;
         }
 
         public void Update()

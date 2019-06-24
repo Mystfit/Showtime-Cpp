@@ -80,16 +80,14 @@ const ZstURI & ZstEntityBase::URI() const
 	return m_uri;
 }
 
-ZstCableBundle & ZstEntityBase::get_child_cables(ZstCableBundle & bundle)
+void ZstEntityBase::get_child_cables(ZstCableBundle & bundle)
 {
-	return bundle;
 }
 
-ZstEntityBundle & ZstEntityBase::get_child_entities(ZstEntityBundle & bundle, bool include_parent)
+void ZstEntityBase::get_child_entities(ZstEntityBundle & bundle, bool include_parent)
 {
 	if (include_parent) 
 		bundle.add(this);
-	return bundle;
 }
 
 ZstEventDispatcher<ZstEntityAdaptor*> * ZstEntityBase::entity_events()

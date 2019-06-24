@@ -18,6 +18,13 @@ message(STATUS "Running swig to generate dotnet wrappers")
 # Set name of dllimport library for generated cs pinvoke calls
 set(DOTNET_WRAPPER_FILENAME ${DOTNET_TARGET_WRAPPER})
 
+set(DOTNET_BINDINGS
+    "${CMAKE_CURRENT_LIST_DIR}/ZstDelegateSessionAdaptor.cs"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstDelegateHierarchyAdaptor.cs"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstDelegateSynchronisableAdaptor.cs"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstDelegateEntityAdaptor.cs"
+)
+
 foreach(SWIG_INTERFACE_FILE ${DOTNET_SWIG_INTERFACES})
     get_filename_component(OUTFILE_NAME ${SWIG_INTERFACE_FILE} NAME_WE)
     set(SWIG_ARGS
@@ -39,6 +46,10 @@ endforeach()
 
 # Group together generated binding scripts
 file(GLOB DOTNET_GENERATED_BINDINGS CONFIGURE_DEPENDS "${SWIG_LANGUAGE_DIR}/*.cs")
+# list(APPEND DOTNET_GENERATED_BINDINGS ${DOTNET_BINDINGS})
+
+# Add hand-written CS files
+list(APPEND DOTNET_GENERATED_BINDINGS ${DOTNET_BINDINGS})
 
 # Set include directories from client dependency
 include_directories(${Showtime_INCLUDE_DIRS} ${Showtime_COMPILED_INCLUDE_DIRS})
@@ -48,7 +59,7 @@ set(SWIG_MODULE_${DOTNET_TARGET_WRAPPER}_EXTRA_DEPS ${Showtime_API_INTERFACE})
 
 # Clear the debug suffix for generated files
 set(CMAKE_DEBUG_POSTFIX "")
-set(DOTNET_STAMP ${CMAKE_CURRENT_BINARY_DIR}/dotnet.stamp)
+set(DOTNET_STAMP ${CMAKE_CURRENT_BINARY_DIR}/bindings/dotnet/dotnet.stamp)
 
 # Create the swig dotnet target
 swig_add_library(${DOTNET_TARGET_WRAPPER}
@@ -60,8 +71,8 @@ swig_add_library(${DOTNET_TARGET_WRAPPER}
 )
 
 # Fix library prefixes on unix platforms
-if(LINUX OR ANDROID)
-    set_target_properties(${DOTNET_TARGET_WRAPPER} PROPERTIES 
+if(NOT WIN32)
+    set_target_properties(${DOTNET_TARGET_WRAPPER} PROPERTIES
         PREFIX "lib"
     )
 endif()
@@ -69,7 +80,6 @@ endif()
 # Enable Ahead of Time compilation on mobile platforms for swig directors
 if(ANDROID)
     set_target_properties(${DOTNET_TARGET_WRAPPER} PROPERTIES 
-        PREFIX "lib"
         SWIG_COMPILE_OPTIONS -monoaotcompat
     )
 endif()
@@ -118,6 +128,7 @@ else()
     set(CSPROJ_OUT "${SWIG_LANGUAGE_DIR}/${DOTNET_TARGET}.csproj")
     set(DOTNET_SRC_BLOCK "")
     foreach(file ${DOTNET_GENERATED_BINDINGS})
+    # foreach(file ${DOTNET_BINDINGS})
         string(APPEND DOTNET_SRC_BLOCK "<Compile\ Include=\"${file}\"\ />\n    ")
     endforeach()
     configure_file(${CSPROJ_IN} ${CSPROJ_OUT})
@@ -126,7 +137,6 @@ else()
     set(DOTNET_COMMAND dotnet CACHE FILEPATH "Path to dotnet sdk")
     set(DOTNET_ARGS 
         "build" "-o" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-        "--framework" "${BINDINGS_DOTNET_FRAMEWORK_VERSION}"
         "${CSPROJ_OUT}")
     add_custom_command(
         OUTPUT ${DOTNET_OUTPUT_FILE}

@@ -29,7 +29,7 @@ namespace Showtime.Tests
         public IEnumerator ConnectAsync()
         {
             showtime.join_async("127.0.0.1");
-            yield return new WaitUntil(() => showtime.is_connected()); 
+            yield return new WaitUntil(() => showtime.is_connected());
             Assert.IsTrue(showtime.is_connected());
             showtime.leave();
             yield return new WaitUntil(() => !showtime.is_connected());
@@ -39,26 +39,15 @@ namespace Showtime.Tests
         [UnityTest]
         public IEnumerator ConnectionWatcher()
         {
-            var watcher = new TestConnectionWatcher();
-            showtime.add_session_adaptor(watcher);
+            bool connected = false;
+            showtime.session_events().on_connected_to_stage_events += () => connected = true;
+            showtime.session_events().on_disconnected_from_stage_events += () => connected = false;
 
             showtime.join_async("127.0.0.1");
-            yield return new WaitUntil(() => watcher.connected);
+            yield return new WaitUntil(() => connected);
 
             showtime.leave();
-            yield return new WaitUntil(() => !watcher.connected);
-        }
-    }
-
-
-    class TestConnectionWatcher : ConnectionWatcher
-    {
-        public bool connected;
-
-        public TestConnectionWatcher()
-        {
-            this.on_connected += ()=> connected = true;
-            this.on_disconnected += () => connected = false;
+            yield return new WaitUntil(() => !connected);
         }
     }
 }

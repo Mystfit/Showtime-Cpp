@@ -4,8 +4,9 @@
 Vagrant.configure("2") do |config|
   config.vm.box = "sylabs/singularity-3.2-ubuntu-bionic64"
   config.vm.box_version = "20190515.0.0"
-  config.vm.synced_folder "../", "/vagrant-showtime-src"
-  config.vm.synced_folder "../build", "/vagrant-showtime-build"
+  config.vm.synced_folder "../../", "/vagrant-showtime-src"
+  config.vm.synced_folder "../", "/vagrant-showtime-output"
+  config.vm.synced_folder "container-cmake-build", "/vagrant-showtime-build"
 
   config.vm.provider "virtualbox" do |vb|
     vb.gui = false
@@ -13,8 +14,21 @@ Vagrant.configure("2") do |config|
     vb.memory = "4096"
   end
   
-  config.vm.provision "shell", env: {"SINGULARITYENV_SHOWTIME_SOURCE" => "/vagrant-showtime-src"}, inline: <<-SHELL
+  # Setup container
+  config.vm.provision :shell, env: {"SINGULARITYENV_SHOWTIME_SOURCE" => "/vagrant-showtime-src"}, inline: <<-SHELL
+    sudo apt-get install ntp
+    sudo systemctl restart ntp.service
     sudo mkdir -p /VMs
     yes | sudo singularity build /VMs/build-android.sif /vagrant/build-android.def
   SHELL
+
+  # Sync clock
+  config.vm.provision :shell, run: 'always', inline: <<-SHELL
+    sudo service ntp stop
+    sudo ntpd -gq
+    sudo service ntp start
+  SHELL
+
+  # Build android libs
+  config.vm.provision :shell, run: 'always', path: "../../containers/build_singularity_android.sh"
 end

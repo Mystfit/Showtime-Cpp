@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
 	zst_register_factory(test_factory.get());
 	
 	//Connect to the stage
-	zst_auto_join();
+    zst_auto_join_by_name("TestEntityFactories_server");
 	assert(test_factory->is_activated());
 
 	//Start event loop

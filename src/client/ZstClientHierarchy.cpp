@@ -26,7 +26,8 @@ void ZstClientHierarchy::destroy()
 	//TODO: Delete other clients
 	//Reset local performer
 	ZstEntityBundle bundle;
-	for (auto entity : m_root->get_child_entities(bundle, true)) {
+    m_root->get_child_entities(bundle, true);
+	for (auto entity : bundle) {
 		destroy_entity_complete(entity);
 	}
 
@@ -279,7 +280,8 @@ void ZstClientHierarchy::activate_entity_complete(ZstEntityBase * entity)
 	ZstHierarchy::activate_entity_complete(entity);
 
 	ZstEntityBundle bundle;
-	for (auto c : entity->get_child_entities(bundle, false)) {
+    entity->get_child_entities(bundle, false);
+	for (auto c : bundle) {
 		hierarchy_events().invoke([c](ZstHierarchyAdaptor * adp) { adp->on_entity_arriving(c); });
 	}
 }

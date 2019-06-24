@@ -228,7 +228,8 @@ void ZstSession::on_entity_arriving(ZstEntityBase * entity)
 {
     //New entities need to register the session as an adaptor to query session data
     ZstEntityBundle bundle;
-    for(auto child : entity->get_child_entities(bundle)){
+    entity->get_child_entities(bundle);
+    for(auto child : bundle){
         child->add_adaptor(static_cast<ZstSessionAdaptor*>(this));
     }
 }

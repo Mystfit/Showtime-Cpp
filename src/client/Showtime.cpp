@@ -53,10 +53,12 @@ void zst_join_by_name(const char * stage_name)
     if (!LIBRARY_INIT_GUARD()) return;
     auto servers_list = ZstClient::instance().get_discovered_servers();
     for(auto server : servers_list){
-        if(strcmp(stage_name, server.first.c_str()) == 0){
-            zst_join(server.second.c_str());
+        if(strcmp(stage_name, server.name.c_str()) == 0){
+            zst_join(server.address.c_str());
+            return;
         }
     }
+    ZstLog::net(LogLevel::error, "Could not find server {}", stage_name);
 }
 
 void zst_join_by_name_async(const char * stage_name)
@@ -64,33 +66,25 @@ void zst_join_by_name_async(const char * stage_name)
     if (!LIBRARY_INIT_GUARD()) return;
     auto servers_list = ZstClient::instance().get_discovered_servers();
     for(auto server : servers_list){
-        if(strcmp(stage_name, server.first.c_str()) == 0){
-            zst_join_async(server.second.c_str());
+        if(strcmp(stage_name, server.name.c_str()) == 0){
+            zst_join_async(server.address.c_str());
+            return;
         }
     }
-}
-
-void zst_auto_join()
-{
-    if(LIBRARY_INIT_GUARD()) ZstClient::instance().auto_join_stage(ZstTransportSendType::SYNC_REPLY);
+    ZstLog::net(LogLevel::error, "Could not find server {}", stage_name);
 }
 
 void zst_auto_join_by_name(const char * name)
 {
-    if(LIBRARY_INIT_GUARD()) ZstClient::instance().auto_join_stage_by_name(name, ZstTransportSendType::SYNC_REPLY);
-}
-
-void zst_auto_join_async()
-{
-    if(LIBRARY_INIT_GUARD()) ZstClient::instance().auto_join_stage(ZstTransportSendType::ASYNC_REPLY);
+    if(LIBRARY_INIT_GUARD()) ZstClient::instance().auto_join_stage(name, ZstTransportSendType::SYNC_REPLY);
 }
 
 void zst_auto_join_by_name_async(const char * name)
 {
-    if(LIBRARY_INIT_GUARD()) ZstClient::instance().auto_join_stage_by_name(name, ZstTransportSendType::ASYNC_REPLY);
+    if(LIBRARY_INIT_GUARD()) ZstClient::instance().auto_join_stage(name, ZstTransportSendType::ASYNC_REPLY);
 }
 
-void zst_get_discovered_servers(ZstServerBundle & servers)
+void zst_get_discovered_servers(ZstServerAddressBundle & servers)
 {
     if (!LIBRARY_INIT_GUARD()) return;
     auto servers_list = ZstClient::instance().get_discovered_servers();

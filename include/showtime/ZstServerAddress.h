@@ -5,6 +5,59 @@
 
 #include "ZstBundle.hpp"
 
-typedef std::pair<std::string, std::string> ZstServerAddressPair;
-typedef std::set<ZstServerAddressPair> ZstServerList;
-typedef ZstBundle< ZstServerAddressPair > ZstServerBundle;
+class ZstServerAddress {
+public:
+    std::string name;
+    std::string address;
+    
+    ZstServerAddress()
+    {
+    }
+    
+    ZstServerAddress(const std::string & server_name, const std::string & server_address) :
+        name(server_name),
+        address(server_address)
+    {
+    }
+    
+    ZstServerAddress(const ZstServerAddress & other) :
+        name(other.name),
+        address(other.address)
+    {
+    }
+    
+    ZstServerAddress(ZstServerAddress && source) :
+        name(source.name),
+        address(source.address)
+    {
+        source.name.clear();
+        source.address.clear();
+    }
+    
+    ZstServerAddress & operator=(const ZstServerAddress & rhs)
+    {
+        name = rhs.name;
+        address = rhs.address;
+        return *this;
+    }
+    
+    ZstServerAddress & operator=(ZstServerAddress && rhs)
+    {
+        name = std::move(rhs.name);
+        address = std::move(rhs.address);
+        return *this;
+    }
+    
+    bool operator<(const ZstServerAddress & rhs) const
+    {
+        return std::tie(name, address) < std::tie(rhs.name, rhs.address);
+    }
+
+    bool operator==(const ZstServerAddress & rhs) const
+    {
+        return std::tie(name, address) == std::tie(rhs.name, rhs.address);
+    }
+};
+
+typedef std::set<ZstServerAddress> ZstServerList;
+typedef ZstBundle< ZstServerAddress > ZstServerAddressBundle;

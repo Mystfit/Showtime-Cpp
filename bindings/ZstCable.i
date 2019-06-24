@@ -5,5 +5,6 @@
 %ignore ZstCable::read;
 %ignore ZstCableEq;
 %ignore ZstCableHash;
+%ignore ZstCableCompare;
 
 %include <ZstCable.h>

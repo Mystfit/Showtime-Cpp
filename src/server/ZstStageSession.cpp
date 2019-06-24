@@ -139,7 +139,8 @@ ZstMsgKind ZstStageSession::create_cable_handler(ZstMessage * msg, ZstPerformerS
 	if (input->num_cables() >= input->max_connected_cables()){
 		ZstLog::server(LogLevel::warn, "Too many cables in plug. Disconnecting existing cables");
 		ZstCableBundle bundle;
-		for (auto cable : input->get_child_cables(bundle)) {
+        input->get_child_cables(bundle);
+		for (auto cable : bundle) {
 			destroy_cable(cable);
 		}
 	}
@@ -302,7 +303,8 @@ void ZstStageSession::on_plug_leaving(ZstPlug * plug)
 void ZstStageSession::disconnect_cables(ZstEntityBase * entity)
 {
 	ZstCableBundle bundle;
-	for (auto cable : entity->get_child_cables(bundle)) {
+    entity->get_child_cables(bundle);
+	for (auto cable : bundle) {
 		destroy_cable(cable);
 	}
 }

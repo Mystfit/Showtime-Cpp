@@ -16,6 +16,7 @@
 
 //Showtime Core includes
 #include "../core/ZstSemaphore.h"
+#include "../core/ZstMessageSupervisor.hpp"
 #include "../core/liasons/ZstPlugLiason.hpp"
 #include "../core/liasons/ZstSynchronisableLiason.hpp"
 #include "../core/adaptors/ZstTransportAdaptor.hpp"
@@ -31,6 +32,7 @@ class ZstPerformanceMessage;
 class ZstClientSession;
 class ZstServerSendTransport;
 
+//Event loop
 struct ZstClientIOLoop {
 public:
 	ZstClientIOLoop() {};
@@ -76,8 +78,7 @@ public:
     const ZstServerList & get_discovered_servers();
     
     //Register this endpoint to the stage
-    void auto_join_stage(const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
-    void auto_join_stage_by_name(const std::string & name, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
+    void auto_join_stage(const std::string & name, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
 	void join_stage(const std::string & stage_address, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
 	void join_stage_complete(ZstMessageReceipt response);
 	void synchronise_graph(const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
@@ -128,7 +129,8 @@ private:
     std::unique_ptr<ZstServiceDiscoveryTransport> m_service_broadcast_transport;
     ZstServerList m_server_beacons;
     bool m_auto_join_stage;
-    std::string m_auto_join_stage_name;
+    std::map<std::string, ZstMsgID> m_auto_join_stage_requests;
+    ZstMessageSupervisor m_promise_supervisor;
 
 	//P2P Connections
 	void start_connection_broadcast(const ZstURI & remote_client_path);

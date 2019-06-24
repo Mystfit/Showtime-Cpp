@@ -24,7 +24,8 @@ void ZstHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportSen
 
 	//Add module adaptors to entity and children
 	ZstEntityBundle bundle;
-	for (auto c : entity->get_child_entities(bundle, true)) {
+    entity->get_child_entities(bundle, true);
+	for (auto c : bundle) {
 		synchronisable_set_activating(c);
 		c->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(this));
 		c->add_adaptor(static_cast<ZstEntityAdaptor*>(this));
@@ -179,7 +180,8 @@ ZstMsgKind ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity)
     
 	//Mirror proxy and adaptor addition to entity children
 	ZstEntityBundle bundle;
-	for (auto c : entity_proxy->get_child_entities(bundle, true)) 
+    entity_proxy->get_child_entities(bundle, true);
+    for (auto c : bundle)
 	{
 		//Set entity as a proxy so the reaper can clean it up later
 		synchronisable_set_proxy(c);
@@ -269,9 +271,9 @@ void ZstHierarchy::activate_entity_complete(ZstEntityBase * entity)
 
 	//Add entity to lookup tables
 	ZstEntityBundle bundle;
-	for (auto c : entity->get_child_entities(bundle)) {
+    entity->get_child_entities(bundle);
+	for (auto c : bundle) {
 		add_entity_to_lookup(c);
-		//synchronisable_set_activated(c);
         synchronisable_set_activating(c);
         synchronisable_enqueue_activation(c);
 	}
@@ -302,7 +304,8 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 
 	//Cleanup children
 	ZstEntityBundle bundle;
-	for (auto c : entity->get_child_entities(bundle, true)) {
+    entity->get_child_entities(bundle, true);
+	for (auto c : bundle) {
 		//Enqueue deactivation
 		synchronisable_enqueue_deactivation(c);
 		

@@ -13,8 +13,8 @@ namespace Showtime.Tests
         {
             var output = new TestGraphOutput("test_output");
             var input = new TestGraphInput("test_input");
-            showtime.activate_entity(output);
-            showtime.activate_entity(input);
+            showtime.get_root().add_child(output);
+            showtime.get_root().add_child(input);
             var cable = showtime.connect_cable(input.plug, output.plug);
             Assert.IsNotNull(cable);
 

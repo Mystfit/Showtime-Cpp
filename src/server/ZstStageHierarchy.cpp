@@ -149,7 +149,8 @@ ZstMsgKind ZstStageHierarchy::destroy_client_handler(ZstPerformer * performer)
 
 	//Add entity and children to lookup
 	ZstEntityBundle bundle;
-	for (auto c : performer->get_child_entities(bundle, true)) {
+    performer->get_child_entities(bundle, true);
+	for (auto c : bundle) {
 		remove_entity_from_lookup(c);
 	}
 

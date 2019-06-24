@@ -14,6 +14,7 @@ From: amd64/ubuntu:18.04
 
 	# Bind directories
 	SHOWTIME_SOURCE=/showtime-source
+	SHOWTIME_BUILD=/showtime-build
 	SHOWTIME_OUTPUT=/showtime-output
 
 	# (1) BOOST
@@ -67,6 +68,7 @@ From: amd64/ubuntu:18.04
 	echo "export ANDROID_PLATFORM=$ANDROID_PLATFORM" >>$SINGULARITY_ENVIRONMENT
 	echo "export ANDROID_ABI=$ANDROID_ABI" >>$SINGULARITY_ENVIRONMENT
 	echo "export SHOWTIME_SOURCE=$SHOWTIME_SOURCE" >>$SINGULARITY_ENVIRONMENT
+	echo "export SHOWTIME_BUILD=$SHOWTIME_BUILD" >>$SINGULARITY_ENVIRONMENT
 	echo "export SHOWTIME_OUTPUT=$SHOWTIME_OUTPUT" >>$SINGULARITY_ENVIRONMENT
 	echo "export ANDROID_NDK_ROOT=$ANDROID_NDK_ROOT" >>$SINGULARITY_ENVIRONMENT
 	echo "export BOOST_VER=$BOOST_VER" >>$SINGULARITY_ENVIRONMENT
@@ -215,7 +217,7 @@ From: amd64/ubuntu:18.04
 
 
 %help
-	echo "Usage: singularity run -B {SOURCE_PATH}:/showtime-source {OUTPUT_PATH}:/showtime-output"
+	echo "Usage: singularity run -B [SOURCE_PATH]:/showtime-source,[OUTPUT_PATH]:/showtime-output,[BUILD_PATH]:/showtime-build"
 
 
 %runscript
@@ -226,16 +228,16 @@ From: amd64/ubuntu:18.04
 
 	# SHOWTIME
 	# --------
-	mkdir -p /tmp/showtime_build
+	mkdir -p $SHOWTIME_BUILD
 
-	cmake -H"$SHOWTIME_SOURCE" -B"/tmp/showtime_build" $(cat "$SHOWTIME_CMAKE_FLAGS_FILE") -DBINDINGS_DOTNET=ON -DBUILD_DRAFTS=TRUE -DBUILD_STATIC=TRUE -DBUILD_SHARED=TRUE -DBoost_DEBUG=FALSE -DBoost_COMPILER="-clang" -DBoost_ARCHITECTURE=-a64 -DBoost_INCLUDE_DIR=$BOOST_INCLUDEDIR/boost-1_69 -DBoost_LIBRARY_DIR=$BOOST_LIBRARYDIR -DBoost_VERSION=$BOOST_VER_BASE -DBOOST_ROOT=$DBOOST_ROOT -DBOOST_INCLUDEDIR=$DBOOST_INCLUDEDIR/boost-1_69 -DMsgPack_DIR=$INSTALL_PREFIX/lib/cmake/msgpack -DZeroMQ_DIR=$INSTALL_PREFIX/share/cmake/ZeroMQ -Dczmq_DIR=$INSTALL_PREFIX/share/cmake/czmq -DSWIG_EXECUTABLE=$INSTALL_PREFIX/bin/swig -DBUILD_TESTING=FALSE -DBINDINGS_DOTNET_FRAMEWORK_VERSION=netstandard2.0 -DBUILD_SERVER_LAUNCHER=FALSE
-	cmake --build /tmp/showtime_build --target all
+	cmake -H"$SHOWTIME_SOURCE" -B"$SHOWTIME_BUILD" $(cat "$SHOWTIME_CMAKE_FLAGS_FILE") -DBINDINGS_DOTNET=OFF -DBUILD_DRAFTS=TRUE -DBUILD_STATIC=TRUE -DBUILD_SHARED=TRUE -DBoost_DEBUG=FALSE -DBoost_COMPILER="-clang" -DBoost_ARCHITECTURE=-a64 -DBoost_INCLUDE_DIR=$BOOST_INCLUDEDIR/boost-1_69 -DBoost_LIBRARY_DIR=$BOOST_LIBRARYDIR -DBoost_VERSION=$BOOST_VER_BASE -DBOOST_ROOT=$DBOOST_ROOT -DBOOST_INCLUDEDIR=$DBOOST_INCLUDEDIR/boost-1_69 -DMsgPack_DIR=$INSTALL_PREFIX/lib/cmake/msgpack -DZeroMQ_DIR=$INSTALL_PREFIX/share/cmake/ZeroMQ -Dczmq_DIR=$INSTALL_PREFIX/share/cmake/czmq -DSWIG_EXECUTABLE=$INSTALL_PREFIX/bin/swig -DBUILD_TESTING=FALSE -DBINDINGS_DOTNET_FRAMEWORK_VERSION=netstandard2.0 -DBUILD_SERVER_LAUNCHER=FALSE
+	cmake --build $SHOWTIME_BUILD --target all
 
-	mkdir -p $SHOWTIME_OUTPUT/bin/android
-	mkdir -p $SHOWTIME_OUTPUT/lib/android
+	mkdir -p $SHOWTIME_OUTPUT/bin/Android
+	mkdir -p $SHOWTIME_OUTPUT/lib/Android
 
 	echo "Copying binaries to $SHOWTIME_OUTPUT/bin/"
-	cp /tmp/showtime_build/bin/* $SHOWTIME_OUTPUT/bin/android
+	cp $SHOWTIME_BUILD/bin/* $SHOWTIME_OUTPUT/bin/Android
 
 	echo "Copying libraries to $SHOWTIME_OUTPUT/lib/"
-	cp /tmp/showtime_build/lib/* $SHOWTIME_OUTPUT/lib/android
+	cp $SHOWTIME_BUILD/lib/* $SHOWTIME_OUTPUT/lib/Android

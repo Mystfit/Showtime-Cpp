@@ -13,7 +13,6 @@ public class ExampleObservableManager : MonoBehaviour
     public GameObject proxy_prefab;
 
     private string m_client_name;
-    private ConnectionWatcher m_connection_watcher;
 
     //Setters
     public void SetMaster(bool val)
@@ -38,9 +37,8 @@ public class ExampleObservableManager : MonoBehaviour
 
     void Start()
     {
-        m_connection_watcher = new ConnectionWatcher();
-        m_connection_watcher.on_connected += OnConnected;
-        m_connection_watcher.on_disconnected += OnDisconnected;
+        showtime.session_events().on_connected_to_stage_events += OnConnected;
+        showtime.session_events().on_disconnected_from_stage_events += OnDisconnected;
     }
 
     void Update()
@@ -58,7 +56,6 @@ public class ExampleObservableManager : MonoBehaviour
         }
         showtime.init(m_client_name, true);
         showtime.init_file_logging("unity-showtime.log");
-        showtime.add_session_adaptor(m_connection_watcher);
         showtime.join_async(address);
     }
 
@@ -83,7 +80,6 @@ public class ExampleObservableManager : MonoBehaviour
 
     private void OnApplicationQuit()
     {
-        showtime.remove_session_adaptor(m_connection_watcher);
         showtime.destroy();
     }
 }

@@ -52,7 +52,7 @@ void ZstFactoryAdaptor::on_entity_created(ZstEntityBase * entity) {};
 
 void ZstSessionAdaptor::on_connected_to_stage() {}
 void ZstSessionAdaptor::on_disconnected_from_stage() {};
-void ZstSessionAdaptor::on_server_discovered(const ZstServerAddressPair & server){};
+void ZstSessionAdaptor::on_server_discovered(const ZstServerAddress & server){};
 
 void ZstSessionAdaptor::on_cable_created(ZstCable * cable) {}
 void ZstSessionAdaptor::on_cable_destroyed(ZstCable * cable) {}

@@ -7,6 +7,7 @@
 #include "../core/transports/ZstServerSendTransport.h"
 #include "../core/transports/ZstServiceDiscoveryTransport.h"
 #include "../core/ZstMessage.h"
+#include "../core/ZstMsgID.h"
 #include "../core/ZstPerformanceMessage.h"
 #include "../core/ZstSemaphore.h"
 #include <fmt/format.h>
@@ -22,6 +23,7 @@ ZstClient::ZstClient() :
 	m_connected_to_stage(false),
 	m_is_connecting(false),
     m_auto_join_stage(false),
+    m_promise_supervisor(ZstMessageSupervisor(std::make_shared<cf::time_watcher>(), STAGE_TIMEOUT)),
 	m_session(NULL),
 	m_heartbeat_timer(m_client_timerloop.IO_context())
 {
@@ -109,8 +111,9 @@ void ZstClient::destroy() {
 	set_is_ending(false);
 	set_is_destroyed(true);
     
-    //Clear autojoin values
-    m_auto_join_stage_name.clear();
+    //Clear server autojoin values
+    m_server_beacons.clear();
+    m_auto_join_stage_requests.clear();
     m_auto_join_stage = false;
 
 	//All done
@@ -267,32 +270,65 @@ void ZstClient::receive_connection_handshake(ZstPerformanceMessage * msg)
 // Client join
 // -------------
 
-void ZstClient::auto_join_stage(const ZstTransportSendType & sendtype)
+void ZstClient::auto_join_stage(const std::string & name, const ZstTransportSendType & sendtype)
 {
-    //If we already have a server beacon then we can pick the first one
-    if(m_server_beacons.size() > 0){
-        join_stage(m_server_beacons.begin()->second, sendtype);
-        return;
-    }
+    m_auto_join_stage = true;
     
-    if(sendtype == ZstTransportSendType::ASYNC_REPLY){
-        m_auto_join_stage = true;
-        m_auto_join_stage_name.clear();
-    }
-}
-
-void ZstClient::auto_join_stage_by_name(const std::string & name, const ZstTransportSendType & sendtype)
-{
+    // If the server beacon as already been received, join immediately
     for(auto server : m_server_beacons){
-        if(server.first == name){
-            join_stage(server.second, sendtype);
+        if(server.name == name){
+            join_stage(server.address, sendtype);
             return;
         }
     }
     
-    if(sendtype == ZstTransportSendType::ASYNC_REPLY){
-        m_auto_join_stage = true;
-        m_auto_join_stage_name = name;
+    // Create a future that let us wait until a particular server beacon arrives
+    ZstMsgID request_id = ZstMsgIDManager::next_id();
+    m_auto_join_stage_requests[name] = request_id;
+    auto future = m_promise_supervisor.register_response(request_id);
+    future.then([this, name, sendtype](ZstMessageFuture f){
+        ZstMsgKind status(ZstMsgKind::EMPTY);
+        try {
+            status = f.get();
+            
+            if(status != ZstMsgKind::OK){
+                ZstLog::net(LogLevel::error, "Did not receive a server beacon for the named server {}", name);
+                return status;
+            }
+            
+            // Only bother connecting if we're in async mode, otherwise the main thread will take care of it
+            if(sendtype == ZstTransportSendType::ASYNC_REPLY){
+                for(auto server : this->get_discovered_servers()){
+                    if(server.name == name){
+                        this->join_stage(server.address, sendtype);
+                    }
+                }
+            }
+        } catch (const ZstTimeoutException & e) {
+            ZstLog::net(LogLevel::error, "Did not receive any server beacons - {}", e.what());
+            status = ZstMsgKind::ERR_STAGE_TIMEOUT;
+        }
+        return status;
+    });
+    
+    if(sendtype == ZstTransportSendType::SYNC_REPLY){
+        // Block until beacon is received or we time out
+        auto status = future.get();
+        if(status != ZstMsgKind::OK){
+            ZstLog::net(LogLevel::error, "Server autoconnect failed. Status: {}", get_msg_name(status));
+            return;
+        }
+        
+        // Connect to available named server
+        for(auto server : this->get_discovered_servers()){
+            if(server.name == name){
+                this->join_stage(server.address, sendtype);
+                return;
+            }
+        }
+        
+        ZstLog::net(LogLevel::error, "Server autoconnect failed. Could not find server.");
+        return;
     }
 }
 
@@ -304,7 +340,7 @@ void ZstClient::join_stage(const std::string & stage_address, const ZstTransport
 		return;
 	}
 
-	if (m_is_connecting) {
+    if (m_is_connecting) {
 		ZstLog::net(LogLevel::error, "Can't connect to stage, already connecting");
 		return;
 	}
@@ -344,27 +380,23 @@ void ZstClient::handle_server_discovery(const std::string & address, const std::
 {
     // Make a server address to hold our server name/address pair
     std::string full_address = fmt::format("{}:{}", address, port);
-    ZstServerAddressPair server = std::make_pair(server_name, full_address);
+    ZstServerAddress server = ZstServerAddress(server_name, full_address);
     
     // Add server to list of discovered servers if the beacon hasn't been seen before
     if(m_server_beacons.find(server) == m_server_beacons.end()){
-        ZstLog::net(LogLevel::debug, "Received new server beacon: {} {}", server.first, server.second);
-        
-        // Handle connecting to the stage automatically
-        if(m_auto_join_stage && !is_connected_to_stage()){
-            if(!m_auto_join_stage_name.empty()){
-                if(server_name == m_auto_join_stage_name){
-                    join_stage(full_address, ZstTransportSendType::ASYNC_REPLY);
-                }
-            } else if(m_server_beacons.size() == 0){
-                // This is the first beacon so we connect to it
-                join_stage(full_address, ZstTransportSendType::ASYNC_REPLY);
-            }
-        }
+        ZstLog::net(LogLevel::debug, "Received new server beacon: {} {}", server.name, server.address);
         
         // Store server beacon
         m_server_beacons.insert(server);
         m_session->dispatch_server_discovered(server);
+        
+        // Handle connecting to the stage automatically
+        if(m_auto_join_stage && !is_connected_to_stage()){
+            auto server_search_request = m_auto_join_stage_requests.find(server.name);
+            if(server_search_request != m_auto_join_stage_requests.end()){
+                m_promise_supervisor.process_response(server_search_request->second, ZstMsgKind::OK);
+            }
+        }
     }
 }
 
@@ -582,6 +614,9 @@ void ZstClient::transport_event_loop()
 #endif
 			m_tcp_graph_transport->process_events();
             m_service_broadcast_transport->process_events();
+            
+            m_promise_supervisor.cleanup_response_messages();
+
 		}
 		catch (boost::thread_interrupted) {
 			break;

@@ -41,8 +41,8 @@ public:
 	ZST_EXPORT virtual void remove_child(ZstEntityBase * entity) override;
 
 	//Hierarchy
-	ZST_EXPORT virtual ZstCableBundle & get_child_cables(ZstCableBundle & bundle) override;
-    ZST_EXPORT virtual ZstEntityBundle & get_child_entities(ZstEntityBundle & bundle, bool include_parent = true) override;
+	ZST_EXPORT virtual void get_child_cables(ZstCableBundle & bundle) override;
+    ZST_EXPORT virtual void get_child_entities(ZstEntityBundle & bundle, bool include_parent = true) override;
     
 	//Serialisation
 	ZST_EXPORT void write_json(json & buffer) const override;

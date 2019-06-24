@@ -9,6 +9,7 @@ ZstMessageSupervisor::ZstMessageSupervisor(std::shared_ptr<cf::time_watcher> tim
 
 ZstMessageSupervisor::~ZstMessageSupervisor()
 {
+    m_response_promises.clear();
 }
 
 ZstMessageFuture ZstMessageSupervisor::register_response(ZstMsgID id)

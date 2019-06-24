@@ -8,10 +8,10 @@ void test_stage_discovery()
     ZstLog::app(LogLevel::debug, "Testing discovery of existing servers");
     zst_init("TestDiscovery", true);
     WAIT_UNTIL_STAGE_TIMEOUT
-    ZstServerBundle bundle;
+    ZstServerAddressBundle bundle;
     zst_get_discovered_servers(bundle);
     assert(bundle.size() > 0);
-    assert(bundle.item_at(0).first == "TestStartup_server");
+    assert(bundle.item_at(0).name == "TestStartup_server");
     
     clear_callback_queue();
     auto discovery_adaptor = std::make_shared<TestConnectionEvents>();
@@ -26,7 +26,7 @@ void test_stage_discovery()
     bundle.clear();
     zst_get_discovered_servers(bundle);
     assert(bundle.size() == 2);
-    assert(bundle.item_at(1).first == detected_server_name);
+    assert(bundle.item_at(1).name == detected_server_name);
     
     //Cleanup
     zst_destroy_server(detected_server);
@@ -43,7 +43,7 @@ void test_startup()
     ZstLog::app(LogLevel::debug, "Testing early destruction of library");
     zst_destroy();
     ZstLog::app(LogLevel::debug, "Testing aborting join before init");
-    ZstServerBundle bundle;
+    ZstServerAddressBundle bundle;
     zst_get_discovered_servers(bundle);
 //    std::string server_address = bundle.item_at(0).second.c_str();
     std::string server_address = "127.0.0.1:40004";
@@ -52,7 +52,6 @@ void test_startup()
     ZstLog::app(LogLevel::debug, "Testing double library init");
     zst_init("TestClient", true);
     zst_init("TestClient", true);
-    
     
     //--------------------
     ZstLog::app(LogLevel::debug, "Testing sync join");
@@ -69,13 +68,16 @@ void test_startup()
 
     // -------------------
     ZstLog::app(LogLevel::debug, "Testing joining by name");
+    WAIT_UNTIL_STAGE_BEACON
     zst_join_by_name(server_name.c_str());
     assert(zst_is_connected());
+    assert(zst_get_root()->is_activated());
     zst_leave();
     
-    ZstLog::app(LogLevel::debug, "Testing autojoin");
-    zst_auto_join();
+    ZstLog::app(LogLevel::debug, "Testing autojoin by name");
+    zst_auto_join_by_name(server_name.c_str());
     assert(zst_is_connected());
+    assert(zst_get_root()->is_activated());
     zst_leave();
 
     //Testing join not starting if we're already connected
@@ -137,9 +139,9 @@ void test_root_entity()
 {
     ZstLog::app(LogLevel::notification, "Running performer test");
     
-    ZstServerBundle bundle;
+    ZstServerAddressBundle bundle;
     zst_get_discovered_servers(bundle);
-    std::string server_address = bundle.item_at(0).second.c_str();
+    std::string server_address = bundle.item_at(0).address.c_str();
 	zst_join(server_address.c_str());
     
     //Test root entity is activated

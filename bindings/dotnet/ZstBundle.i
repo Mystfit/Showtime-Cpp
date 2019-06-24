@@ -112,6 +112,8 @@
 //Bundle template declarations
 
 %{
+#include <ZstCableAddress.h>
+#include <ZstServerAddress.h>
 #include <ZstBundle.hpp>
 #include <ZstCable.h>
 #include <entities/ZstEntityBase.h>
@@ -122,8 +124,4 @@ class ZstBundle {
     ZSTBUNDLE_MINIMUM(IEnumerable, T const&, T)
 };
 
-//Bundle instantiations
-%template(ZstEntityBundle) ZstBundle<ZstEntityBase*>;
-%template(ZstCableBundle) ZstBundle<ZstCable*>;
-%template(ZstURIBundle) ZstBundle<ZstURI>;
-%template(ZstEntityFactoryBundle) ZstBundle<ZstEntityFactory*>;
+%include "../ZstBundleTemplates.i"

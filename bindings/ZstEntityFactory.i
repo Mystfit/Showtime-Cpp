@@ -10,6 +10,9 @@
 %feature("nodirector") ZstEntityFactory::remove_adaptor;
 %ignore ZstEntityFactory::activate_entity;
 %ignore ZstEntityFactory::update_URI;
+%ignore ZstEntityFactory::factory_events;
+%ignore ZstEntityFactory::create_entity;
+
 
 %nodefaultctor ZstEntityFactory;
 %include <entities/ZstEntityFactory.h>

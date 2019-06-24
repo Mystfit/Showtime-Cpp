@@ -56,7 +56,7 @@ public:
 	ZST_EXPORT size_t num_cables();
 	ZST_EXPORT size_t max_connected_cables();
 	ZST_EXPORT bool is_connected_to(ZstPlug * plug);
-	ZST_EXPORT virtual ZstCableBundle & get_child_cables(ZstCableBundle & bundle) override;
+	ZST_EXPORT virtual void get_child_cables(ZstCableBundle & bundle) override;
 
 	//Values
 	ZST_EXPORT ZstValue * raw_value();

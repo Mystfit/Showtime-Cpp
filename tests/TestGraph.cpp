@@ -32,7 +32,8 @@ void test_connect_plugs() {
     assert(test_input->input()->is_connected_to(test_output->output()));
 
 	ZstCableBundle bundle;
-    for (auto c : test_output->output()->get_child_cables(bundle)) {
+    test_output->output()->get_child_cables(bundle);
+    for (auto c : bundle) {
         assert(c->get_address().get_input_URI() == test_input->input()->URI());
     }
 

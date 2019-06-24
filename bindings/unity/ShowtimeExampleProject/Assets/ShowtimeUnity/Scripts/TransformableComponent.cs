@@ -51,7 +51,7 @@ public class TransformableComponent : MonoBehaviour
         this.component = component;
 
         //Find the output transform plug. Since this is a proxy component, we use the Showtime API to locate it
-        ZstOutputPlug transform_plug = showtime.cast_to_output_plug(component.get_plug_by_URI(component.URI().add(new ZstURI("out_transform"))));
+        ZstOutputPlug transform_plug = showtime.cast_to_output_plug(component.get_child_by_URI(component.URI().add(new ZstURI("out_transform"))));
 
         Debug.Log($"Observing {transform_plug}");
 

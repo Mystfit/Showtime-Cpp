@@ -49,7 +49,8 @@ ZstComponent::~ZstComponent()
 {
     if (!is_proxy()) {
         ZstEntityBundle bundle;
-        for (auto child : get_child_entities(bundle, false)) {
+        get_child_entities(bundle, false);
+        for (auto child : bundle) {
             // TODO: Deleting children will crash if the host GC's them after we delete them here
             //ZstLog::entity(LogLevel::debug, "FIXME: Component {} leaking entity {} to avoid host app crashing when GCing", URI().path(), child.second->URI().path());
             //delete child;
@@ -113,7 +114,8 @@ void ZstComponent::remove_child(ZstEntityBase * entity)
     
     //Remove cables associated with this child
 	ZstCableBundle bundle;
-	for (auto cable : entity->get_child_cables(bundle)){
+    entity->get_child_cables(bundle);
+    for (auto cable : bundle){
         entity_events()->defer([cable](ZstEntityAdaptor * adp){
             adp->on_disconnect_cable(cable);
         });
@@ -135,7 +137,8 @@ void ZstComponent::set_parent(ZstEntityBase * parent)
     ZstEntityBase::set_parent(parent);
     
     ZstEntityBundle bundle;
-    for (auto child : get_child_entities(bundle, false)) {
+    get_child_entities(bundle, false);
+    for (auto child : bundle) {
         this->remove_child(child);
         this->add_child(child);
     }
@@ -205,21 +208,23 @@ void ZstComponent::set_component_type(const char * component_type, size_t len)
 	m_component_type = std::string(component_type, len);
 }
 
-ZstCableBundle & ZstComponent::get_child_cables(ZstCableBundle & bundle)
+void ZstComponent::get_child_cables(ZstCableBundle & bundle)
 {
     ZstEntityBundle entity_bundle;
-    for(auto child : get_child_entities(entity_bundle, false)){
+    get_child_entities(entity_bundle, false);
+    for(auto child : entity_bundle){
         child->get_child_cables(bundle);
     }
-	return ZstEntityBase::get_child_cables(bundle);
+    
+    ZstEntityBase::get_child_cables(bundle);
 }
 
-ZstEntityBundle & ZstComponent::get_child_entities(ZstEntityBundle & bundle, bool include_parent)
+void ZstComponent::get_child_entities(ZstEntityBundle & bundle, bool include_parent)
 {
     for (auto child : m_children) {
         child.second->get_child_entities(bundle);
     }
-    return ZstEntityBase::get_child_entities(bundle, include_parent);
+    ZstEntityBase::get_child_entities(bundle, include_parent);
 }
 
 

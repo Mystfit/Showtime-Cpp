@@ -148,8 +148,8 @@ namespace ZstTest
 			inc_calls();
 		}
         
-        void on_server_discovered(const ZstServerAddressPair & server){
-            ZstLog::app(LogLevel::debug, "SERVER DISCOVERED: Name: {} Address: {}", server.first, server.second);
+        void on_server_discovered(const ZstServerAddress & server) override {
+            ZstLog::app(LogLevel::debug, "SERVER DISCOVERED: Name: {} Address: {}", server.name, server.address);
             inc_calls();
         }
 	};
@@ -270,15 +270,17 @@ namespace ZstTest
 		TestRunner(const std::string & name, const std::string & test_path, bool init_library = true, bool run_stage = true) :
 			m_stage_server{NULL}
 		{
+            auto server_name = std::string(name + "_server");
+            
 			if (run_stage) {
-				m_stage_server = zst_create_server((name + "_server").c_str(), STAGE_ROUTER_PORT);
+				m_stage_server = zst_create_server(server_name.c_str(), STAGE_ROUTER_PORT);
 			}
 
 			//Init library
 			if (init_library) {
 				zst_init(name.c_str(), true);
-				zst_auto_join_async();
-                WAIT_UNTIL_STAGE_BEACON
+//                zst_join("127.0.0.1:40004");
+                zst_auto_join_by_name(server_name.c_str());
                 
 				if (!zst_is_connected()) {
 					ZstLog::app(LogLevel::error, "Failed to connect to launched stage");

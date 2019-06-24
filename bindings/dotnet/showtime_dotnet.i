@@ -4,19 +4,12 @@
     #include <ShowtimeServer.h>
 %}
 
-//static ZstEntityBundle get_performers();
-%typemap(cscode) showtime %{
-  public static ZstEntityBundle get_performers() {
-    ZstEntityBundle bundle = new ZstEntityBundle();
-    showtime.get_performers(bundle);
-    return bundle;
-  }
-%}
-
 %include "../preflight.i"
 %include "ZstURI.i"
 %include "ZstBundle.i"
-%include "../showtime.i"
+%include "ZstSynchronisable.i"
+%include "ZstEntityBase.i"
+%include "ZstSerialisable.i"
 
-%csmethodmodifiers ZstURI::GetHashCode() const "public override";
-%csmethodmodifiers ZstURI::ToString() const "public override";
+%include "showtime_api_extensions.i"
+%include "../showtime.i"

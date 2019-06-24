@@ -9,6 +9,7 @@
 #include "ZstSynchronisable.h"
 #include "ZstCable.h"
 #include "ZstBundle.hpp"
+#include "ZstServerAddress.h"
 #include "entities/ZstEntityFactory.h"
 #include "entities/ZstEntityBase.h"
 #include "entities/ZstComponent.h"

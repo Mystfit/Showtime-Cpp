@@ -28,7 +28,8 @@ if(BINDINGS_DOTNET OR BINDINGS_UNITY)
     set(DOTNET_GENERATED_BINDINGS)
     set(DOTNET_TARGET ${PROJECT_NAME}Dotnet)
     set(DOTNET_STAMP ${CMAKE_CURRENT_BINARY_DIR}/bindings/dotnet/dotnet.stamp)
-    set(DOTNET_OUTPUT_FILE ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${DOTNET_TARGET}.dll)
+    set(DOTNET_DLL_PREFIX "")
+    set(DOTNET_OUTPUT_FILE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${DOTNET_TARGET}.dll)
 
     if(WIN32)
         enable_language(CSharp)
@@ -55,7 +56,6 @@ if(BINDINGS_JAVA)
     include(UseJava)
     include(bindings/java/CMakeLists.txt)
 endif()
-
 
 if(BINDINGS_UNITY)
     set(UNITY_TARGET ${PROJECT_NAME}Unity)
