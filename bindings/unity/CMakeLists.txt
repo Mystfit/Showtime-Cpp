@@ -11,12 +11,12 @@ else()
     set(UNITY_BIN_DIR ${UNITY_BUILD_DIR}/Assets/${UNITY_TARGET}/Plugins/x86_64)
 endif()
 
+# Path vars
+set(UNITY_PACKAGE "${UNITY_TARGET}-${CMAKE_PROJECT_VERSION}.unitypackage")
+set(UNITY_PACKAGE_PATH "${UNITY_BUILD_DIR}/${UNITY_PACKAGE}")
+set(UNITY_TARGET_DEPENDS "")
 set(UNITY_BINARY_FILES "")
-# foreach(LIB ${SHOWTIME_PUBLIC_LINKED_LIBS})
-#     list(APPEND UNITY_BINARY_FILES $<TARGET_FILE:LIB>)
-# endforeach()
 
-set(UNITY_BINARY_FILES)
 if(WIN32)
     # Copy dotnet target outputs on windows
     list(APPEND UNITY_BINARY_FILES
@@ -34,49 +34,42 @@ else()
     )
 endif()
 
-
-set(UNITY_PACKAGE "${UNITY_TARGET}-${CMAKE_PROJECT_VERSION}.unitypackage")
-set(UNITY_PACKAGE_PATH "${UNITY_BUILD_DIR}/${UNITY_PACKAGE}")
-set(UNITY_STAMP ${CMAKE_CURRENT_BINARY_DIR}/unity.stamp)
-set(ANDROID_COPY_LIBS_STAMP ${CMAKE_CURRENT_BINARY_DIR}/android-copy-libs.stamp)
-
-
 # Bundle copying
 if(MACOSX)
+    set(UNITY_BUNDLE_PATH "${UNITY_BIN_DIR}/$<TARGET_FILE_NAME:${DOTNET_TARGET_WRAPPER}>.bundle")
+    set(UNITY_BUNDLE_STAMP ${CMAKE_CURRENT_BINARY_DIR}/unity-copy-bundle.stamp)
+
     add_custom_command(
-        OUTPUT  ${UNITY_STAMP}
+        OUTPUT  ${UNITY_BUNDLE_STAMP}
         COMMAND ${CMAKE_COMMAND} -E echo "Copying bundle to ${UNITY_BIN_DIR}"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory $<TARGET_BUNDLE_DIR:${DOTNET_TARGET_WRAPPER}> "${UNITY_BIN_DIR}/$<TARGET_FILE_NAME:${DOTNET_TARGET_WRAPPER}>.bundle"
-        COMMAND ${CMAKE_COMMAND} -E touch ${UNITY_STAMP}
+        COMMAND ${CMAKE_COMMAND} -E copy_directory $<TARGET_BUNDLE_DIR:${DOTNET_TARGET_WRAPPER}> ${UNITY_BUNDLE_PATH}
+        COMMAND ${CMAKE_COMMAND} -E touch ${UNITY_BUNDLE_STAMP}
     )
-else()
-    add_custom_command(
-        OUTPUT  ${UNITY_STAMP}
-        COMMAND ${CMAKE_COMMAND} -E touch ${UNITY_STAMP}
-    )
+    add_custom_target(UnityCopyBundle ALL DEPENDS ${UNITY_BUNDLE_STAMP})
+    add_dependencies(UnityCopyBundle ${DOTNET_TARGET_WRAPPER})
+    list(APPEND UNITY_TARGET_DEPENDS UnityCopyBundle)
 endif()
 
+# Android lib copying
 if(BUILD_ANDROID_LIBS)
     set(UNITY_ANDROID_PLUGIN_DIR ${UNITY_BUILD_DIR}/Assets/ShowtimeUnity/Plugins)
-    file(GLOB ANDROID_BINARIES CONFIGURE_DEPENDS "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Android/*.so")
+    set(UNITY_COPY_ANDROID_STAMP ${CMAKE_CURRENT_BINARY_DIR}/unity-copy-android.stamp)
+
     add_custom_command(
-        OUTPUT ${ANDROID_COPY_LIBS_STAMP}
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${UNITY_BIN_DIR}/Android
-        COMMAND ${CMAKE_COMMAND} -E echo "Copying android binaries to ${UNITY_BIN_DIR}"
-        COMMAND ${CMAKE_COMMAND} -E copy ${ANDROID_BINARIES} ${UNITY_BIN_DIR}/Android
-        COMMAND ${CMAKE_COMMAND} -E touch ${ANDROID_COPY_LIBS_STAMP}
-        DEPENDS ${UNITY_STAMP}
+        OUTPUT ${UNITY_COPY_ANDROID_STAMP}
+        COMMAND ${CMAKE_COMMAND} -E echo "Copying project to ${UNITY_BUILD_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Android ${UNITY_ANDROID_PLUGIN_DIR}/Android
+        COMMAND ${CMAKE_COMMAND} -E touch ${UNITY_COPY_ANDROID_STAMP}
     )
-else()
-    add_custom_command(
-        OUTPUT ${ANDROID_COPY_LIBS_STAMP}
-        COMMAND ${CMAKE_COMMAND} -E touch ${ANDROID_COPY_LIBS_STAMP}
-        DEPENDS ${UNITY_STAMP}
-    )
+    add_custom_target(UnityCopyAndroidLibs ALL DEPENDS ${UNITY_COPY_ANDROID_STAMP})
+    add_dependencies(UnityCopyAndroidLibs ${DOTNET_TARGET_WRAPPER} ${ANDROID_SINGULARITY_TARGET})
+    list(APPEND UNITY_TARGET_DEPENDS UnityCopyAndroidLibs)
 endif()
 
+# Unity target copy/configure assets
+set(UNITY_SETUP_PROJECT_STAMP ${CMAKE_CURRENT_BINARY_DIR}/unity-setup-project.stamp)
 add_custom_command(
-    OUTPUT ${UNITY_PACKAGE_PATH}
+    OUTPUT ${UNITY_SETUP_PROJECT_STAMP}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${UNITY_BUILD_DIR}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${UNITY_BIN_DIR}
     COMMAND ${CMAKE_COMMAND} -E echo "Copying project to ${UNITY_BUILD_DIR}"
@@ -84,17 +77,22 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E echo "Copying libraries to ${UNITY_BIN_DIR}"
     COMMAND ${CMAKE_COMMAND} -E echo "Copying ${UNITY_BINARY_FILES}"
     COMMAND ${CMAKE_COMMAND} -E copy ${UNITY_BINARY_FILES} ${UNITY_BIN_DIR}
-    COMMAND ${CMAKE_COMMAND} -E echo "Exporting Unity package"
-    COMMAND ${UNITY_EXECUTABLE} -nographics -batchmode -quit -projectPath ${UNITY_BUILD_DIR} -exportPackage Assets/${UNITY_TARGET} ${UNITY_PACKAGE_PATH}
-    COMMAND ${CMAKE_COMMAND} -E echo "...done"
-    DEPENDS ${UNITY_STAMP} ${ANDROID_COPY_LIBS_STAMP}
+    COMMAND ${UNITY_EXECUTABLE} -nographics -batchmode -noUpm -quit -projectPath ${UNITY_BUILD_DIR} -executeMethod Showtime.PluginPlatforms.RestorePluginDefaults
+    COMMAND ${CMAKE_COMMAND} -E touch ${UNITY_SETUP_PROJECT_STAMP}
 )
+add_custom_target(UnitySetupProject ALL DEPENDS ${UNITY_SETUP_PROJECT_STAMP})
+add_dependencies(UnitySetupProject ${UNITY_TARGET_DEPENDS})
+list(APPEND UNITY_TARGET_DEPENDS UnitySetupProject)
 
+
+# Unity target build package
+add_custom_command(
+    OUTPUT ${UNITY_PACKAGE_PATH}
+    COMMAND ${CMAKE_COMMAND} -E echo "Exporting Unity package"
+    COMMAND ${UNITY_EXECUTABLE} -nographics -batchmode -noUpm -quit -projectPath ${UNITY_BUILD_DIR} -exportPackage Assets/${UNITY_TARGET} ${UNITY_PACKAGE_PATH}
+    COMMAND ${CMAKE_COMMAND} -E echo "...done"
+)
 add_custom_target(${UNITY_TARGET} ALL DEPENDS ${UNITY_PACKAGE_PATH})
-add_dependencies(${UNITY_TARGET} ${DOTNET_TARGET})
-
-if(BUILD_ANDROID_LIBS)
-    add_dependencies(${UNITY_TARGET} ${ANDROID_SINGULARITY_TARGET})
-endif()
+add_dependencies(${UNITY_TARGET} ${DOTNET_TARGET} ${UNITY_TARGET_DEPENDS})
 
 #install(FILES ${UNITY_PACKAGE_PATH} DESTINATION unity)
