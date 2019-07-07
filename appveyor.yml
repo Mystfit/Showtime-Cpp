@@ -46,9 +46,10 @@ matrix:
 install:
 - ps: |-
     mkdir build
-    choco install -y python$env:PYTHON_VER -ia "CompileAll=1 Include_debug=1 Include_symbols=1"
-    choco install -y swig
-    choco install -y cmake
+    choco install -y python$env:PYTHON_VER -ia "CompileAll=1 Include_debug=1 Include_symbols=1" > $null
+    choco install -y swig > $null
+    choco install -y cmake > $null
+    refreshenv
     Install-ChocolateyPath -PathToInstall "$($env:PROGRAMFILES)\CMake\bin"
     cmd.exe /c "call $env:APPVEYOR_BUILD_FOLDER/install_dependencies.bat --build-dir $env:BUILD_FOLDER --config $env:CONFIGURATION"
 
@@ -57,7 +58,6 @@ before_build:
     $CMAKE_FLAGS = -DCMAKE_PREFIX_PATH="$env:INSTALL_DIR
     $CMAKE_FLAGS += -DBINDINGS_DOTNET=ON -DBINDINGS_DOTNET_FRAMEWORK_VERSION=v4.7.2
     $CMAKE_FLAGS += -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_VERSION_MAJOR=$env:PYTHON_VER
-    $CMAKE_FLAGS += -DCMAKE_INSTALL_PREFIX=$env:INSTALL_DIR
     $CMAKE_FLAGS += -DBUILD_SHARED=ON -DBUILD_STATIC=ON -DBUILD_DRAFTS=ON
     $CMAKE_FLAGS += -DBOOST_ROOT:PATHNAME="$env:BOOST_ROOT" -DBOOST_INCLUDEDIR:PATHNAME="$env:BOOST_ROOT" -DBOOST_LIBRARYDIR:PATHNAME="$env:BOOST_ROOT/lib64-msvc-14.1"
     cmake -H"$env:APPVEYOR_BUILD_FOLDER" -B"$env:BUILD_FOLDER" -G "$env:GENERATOR" $CMAKE_FLAGS
