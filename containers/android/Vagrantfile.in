@@ -6,6 +6,7 @@ Vagrant.configure("2") do |config|
   config.vm.box_version = "20190515.0.0"
   config.vm.synced_folder "${CMAKE_SOURCE_DIR}", "/vagrant-showtime-src"
   config.vm.synced_folder "${CMAKE_BINARY_DIR}", "/vagrant-showtime-output"
+  config.vm.define "android-builder"
 
   config.vm.provider "virtualbox" do |vb|
     vb.gui = false
@@ -22,11 +23,11 @@ Vagrant.configure("2") do |config|
   
   # Setup container
   config.vm.provision :shell, env: env_vars, inline: <<-SHELL
-    sudo apt-get install ntp
+    sudo apt-get -y install ntp
     sudo systemctl restart ntp.service
     sudo mkdir -p $VM_DIR
     sudo mkdir -p $SHOWTIME_BUILD
-    yes | sudo singularity build $VM_DIR/build-android.sif $SHOWTIME_SOURCE/containers/android/build-android.def
+    yes | sudo singularity build $VM_DIR/build-android.sif /vagrant/build-android.def
   SHELL
 
   # Sync clock

@@ -149,6 +149,10 @@ endif()
 
 # Set net framework version
 set_target_properties(${DOTNET_TARGET} PROPERTIES DOTNET_TARGET_FRAMEWORK_VERSION ${BINDINGS_DOTNET_FRAMEWORK_VERSION})
+# set_target_properties(${DOTNET_TARGET} PROPERTIES 
+#     VS_GLOBAL_LangVersion "6"
+#     VS_GLOBAL_TargetFramework ${BINDINGS_DOTNET_FRAMEWORK_VERSION}
+# )
 
 # Add dependencies
 add_dependencies(${DOTNET_TARGET} ${DOTNET_TARGET_WRAPPER})

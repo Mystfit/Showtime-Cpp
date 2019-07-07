@@ -236,8 +236,8 @@ From: amd64/ubuntu:18.04
 	mkdir -p $SHOWTIME_OUTPUT/bin/Android
 	mkdir -p $SHOWTIME_OUTPUT/lib/Android
 
-	echo "Copying binaries to $SHOWTIME_OUTPUT/bin/"
-	cp $SHOWTIME_BUILD/bin/* $SHOWTIME_OUTPUT/bin/Android
+	echo "Copying binaries to $SHOWTIME_OUTPUT/bin/Android"
+	cp "$SHOWTIME_BUILD/bin"/* "$SHOWTIME_OUTPUT/bin/Android" 2>/dev/null || :
 
-	echo "Copying libraries to $SHOWTIME_OUTPUT/lib/"
-	cp $SHOWTIME_BUILD/lib/* $SHOWTIME_OUTPUT/lib/Android
+	echo "Copying libraries to $SHOWTIME_OUTPUT/lib/Android"
+	cp "$SHOWTIME_BUILD/lib"/* $SHOWTIME_OUTPUT/lib/Android 2>/dev/null || :

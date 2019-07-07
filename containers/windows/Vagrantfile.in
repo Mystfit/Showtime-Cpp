@@ -6,6 +6,7 @@ Vagrant.configure("2") do |config|
   config.vm.box_version = "0.0.1"
   config.vm.synced_folder "${CMAKE_SOURCE_DIR}", "C:\\vagrant-showtime-src"
   config.vm.synced_folder "${CMAKE_BINARY_DIR}", "C:\\vagrant-showtime-output"
+  config.vm.define "windows-builder"
   config.vm.provider "virtualbox" do |vb|
     vb.gui = false
     vb.cpus = ${CONTAINER_CPU_COUNT}  

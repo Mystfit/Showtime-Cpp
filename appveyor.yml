@@ -21,7 +21,7 @@ cache:
 clone_folder: C:/projects/showtime-cpp
 
 image:
-- Visual Studio 2017
+- Visual Studio 2019
 
 configuration:
 - Debug
@@ -31,8 +31,8 @@ platform:
 - x64
 
 environment:
-    GENERATOR: "Visual Studio 15 2017 Win64"
-    BOOST_ROOT: "C:/Libraries/boost_1_67_0"
+    GENERATOR: "Visual Studio 16 2019 Win64"
+    BOOST_ROOT: "C:/Libraries/boost_1_69_0"
     BUILD_FOLDER: "%APPVEYOR_BUILD_FOLDER%/build"
     DEPENDENCY_DIR: "%APPVEYOR_BUILD_FOLDER%/dependencies"
     INSTALL_DIR: "%APPVEYOR_BUILD_FOLDER%/install"
@@ -46,20 +46,20 @@ matrix:
 install:
 - cmd: |-
     mkdir build
-    choco install python%PYTHON_VER% -ia "CompileAll=1 Include_debug=1 Include_symbols=1"
+    choco install -y python%PYTHON_VER% -ia "CompileAll=1 Include_debug=1 Include_symbols=1"
+    choco install -y cmake
+    choco install -y swig
     call %APPVEYOR_BUILD_FOLDER%/install_dependencies.bat --build-dir %BUILD_FOLDER% --config %CONFIGURATION%
 
 before_build:
 - cmd: |-
-    set CMAKE_FLAGS=%CMAKE_FLAGS% -DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%/install;%DEPENDENCY_DIR%/swig;${CMAKE_PREFIX_PATH}"
-    set CMAKE_BIN=%DEPENDENCY_DIR%/cmake/bin/cmake
-    set CTEST_BIN=%DEPENDENCY_DIR%/cmake/bin/ctest
-    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_DOTNET=ON -DBINDINGS_DOTNET_TESTS=ON -DBINDINGS_DOTNET_FRAMEWORK_VERSION=v4.7.2
-    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_TESTS=ON -DBINDINGS_PYTHON_VERSION_MAJOR=%PYTHON_VER%
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DCMAKE_PREFIX_PATH="%DEPENDENCY_DIR%/install
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_DOTNET=ON -DBINDINGS_DOTNET_FRAMEWORK_VERSION=v4.7.2
+    set CMAKE_FLAGS=%CMAKE_FLAGS% -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_VERSION_MAJOR=%PYTHON_VER%
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR%
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DBUILD_SHARED=ON -DBUILD_STATIC=ON -DBUILD_DRAFTS=ON
     set CMAKE_FLAGS=%CMAKE_FLAGS% -DBOOST_ROOT:PATHNAME="%BOOST_ROOT%" -DBOOST_INCLUDEDIR:PATHNAME="%BOOST_ROOT%" -DBOOST_LIBRARYDIR:PATHNAME="%BOOST_ROOT%/lib64-msvc-14.1"
-    %CMAKE_BIN% -H. -B"%BUILD_FOLDER%" -G "%GENERATOR%" %CMAKE_FLAGS%
+    cmake -H"%APPVEYOR_BUILD_FOLDER%" -B"%BUILD_FOLDER%" -G "%GENERATOR%" %CMAKE_FLAGS%
 
 build:
   parallel: true
