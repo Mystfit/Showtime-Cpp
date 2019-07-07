@@ -36,7 +36,7 @@ endif()
 
 # Bundle copying
 if(MACOSX)
-    set(UNITY_BUNDLE_PATH "${UNITY_BIN_DIR}/$<TARGET_FILE_NAME:${DOTNET_TARGET_WRAPPER}>.bundle")
+    set(UNITY_BUNDLE_PATH "${UNITY_BIN_DIR}/OSX/$<TARGET_FILE_NAME:${DOTNET_TARGET_WRAPPER}>.bundle")
     set(UNITY_BUNDLE_STAMP ${CMAKE_CURRENT_BINARY_DIR}/unity-copy-bundle.stamp)
 
     add_custom_command(
@@ -52,18 +52,34 @@ endif()
 
 # Android lib copying
 if(BUILD_ANDROID_LIBS)
-    set(UNITY_ANDROID_PLUGIN_DIR ${UNITY_BUILD_DIR}/Assets/ShowtimeUnity/Plugins)
+    set(UNITY_ANDROID_PLUGIN_DIR ${UNITY_BIN_DIR}/Android)
     set(UNITY_COPY_ANDROID_STAMP ${CMAKE_CURRENT_BINARY_DIR}/unity-copy-android.stamp)
 
     add_custom_command(
         OUTPUT ${UNITY_COPY_ANDROID_STAMP}
-        COMMAND ${CMAKE_COMMAND} -E echo "Copying project to ${UNITY_BUILD_DIR}"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Android ${UNITY_ANDROID_PLUGIN_DIR}/Android
+        COMMAND ${CMAKE_COMMAND} -E echo "Copying android files to ${UNITY_BUILD_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Android ${UNITY_ANDROID_PLUGIN_DIR}
         COMMAND ${CMAKE_COMMAND} -E touch ${UNITY_COPY_ANDROID_STAMP}
     )
     add_custom_target(UnityCopyAndroidLibs ALL DEPENDS ${UNITY_COPY_ANDROID_STAMP})
     add_dependencies(UnityCopyAndroidLibs ${DOTNET_TARGET_WRAPPER} ${ANDROID_SINGULARITY_TARGET})
     list(APPEND UNITY_TARGET_DEPENDS UnityCopyAndroidLibs)
+endif()
+
+# Android lib copying
+if(BUILD_WINDOWS_CONTAINER)
+    set(UNITY_WINDOWS_PLUGIN_DIR ${UNITY_BIN_DIR}/windows)
+    set(UNITY_COPY_WINDOWS_STAMP ${CMAKE_CURRENT_BINARY_DIR}/unity-copy-windows.stamp)
+
+    add_custom_command(
+        OUTPUT ${UNITY_COPY_WINDOWS_STAMP}
+        COMMAND ${CMAKE_COMMAND} -E echo "Copying windows files to ${UNITY_BUILD_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/windows ${UNITY_WINDOWS_PLUGIN_DIR}
+        COMMAND ${CMAKE_COMMAND} -E touch ${UNITY_COPY_WINDOWS_STAMP}
+    )
+    add_custom_target(UnityCopyWindowsLibs ALL DEPENDS ${UNITY_COPY_WINDOWS_STAMP})
+    add_dependencies(UnityCopyWindowsLibs ${DOTNET_TARGET_WRAPPER} ${WINDOWS_CONTAINER_TARGET})
+    list(APPEND UNITY_TARGET_DEPENDS UnityCopyWindowsLibs)
 endif()
 
 # Unity target copy/configure assets

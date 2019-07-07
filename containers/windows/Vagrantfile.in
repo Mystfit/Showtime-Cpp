@@ -1,0 +1,51 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "mystfit/Windows-10-x64-ssh"
+  config.vm.box_version = "0.0.1"
+  config.vm.synced_folder "${CMAKE_SOURCE_DIR}", "C:\\vagrant-showtime-src"
+  config.vm.synced_folder "${CMAKE_BINARY_DIR}", "C:\\vagrant-showtime-output"
+  config.vm.provider "virtualbox" do |vb|
+    vb.gui = false
+    vb.cpus = ${CONTAINER_CPU_COUNT}  
+    vb.memory = "${CONTAINER_MEMORY_AMOUNT}"
+  end
+
+  env_vars = {
+    "SOURCE_DIR" => "C:\\vagrant-showtime-src",
+    "BUILD_FOLDER" => "C:\\tmp\\vagrant-showtime-build",
+    "OUTPUT_FOLDER" => "C:\\vagrant-showtime-output",
+    "VAGRANT_DIR" => "C:\\vagrant-showtime-src\\containers\\windows",
+    #{}"VS_ENV_SCRIPT" =>  "$Env:PROGRAMFILES (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\Common7\\Tools\\VsDevCmd.bat",
+    #{}"VS_ENV_ARGS" => "-arch=amd64 -host_arch=amd64"
+    # "VS_ENV_SCRIPT" => "$Env:PROGRAMFILES (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat"
+  }
+  
+  config.vm.provision :shell, env: env_vars, powershell_elevated_interactive: true, inline: <<-SHELL
+    # Install chocolatey
+    Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+  SHELL
+
+  config.vm.provision :shell, env: env_vars, powershell_elevated_interactive: true, inline: <<-SHELL
+    # Install boxstarter
+    choco install -y BoxStarter
+  SHELL
+
+  config.vm.provision :shell, env: env_vars, powershell_elevated_interactive: true, inline: <<-SHELL
+    # Install packages with boxstarter
+    Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Confirm:$false
+    Install-BoxStarterPackage -PackageName $Env:VAGRANT_DIR\\BoxStarterGist.txt -DisableReboots > $null
+
+    # Installing Pscx module for the Invoke-BatchFile command
+    #Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
+    #Install-Module Pscx -Scope CurrentUser -AllowClobber
+  SHELL
+
+  config.vm.provision :shell, env: env_vars, path: "${CMAKE_SOURCE_DIR}/containers/windows/build_showtime_deps.ps1"
+  # config.vm.provision :reload
+
+  # Build windows libs
+  config.vm.provision :shell, run: 'always', env: env_vars, path: "${CMAKE_SOURCE_DIR}/containers/windows/build_showtime.bat"
+end
+

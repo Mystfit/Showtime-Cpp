@@ -24,7 +24,7 @@ namespace Showtime
                 android_plugin.SaveAndReimport();
             }
 
-            var osx_plugins = AssetDatabase.FindAssets(".bundle", new[] { "Assets/ShowtimeUnity/Plugins" });
+            var osx_plugins = AssetDatabase.FindAssets(".bundle", new[] { "Assets/ShowtimeUnity/Plugins/OSX" });
             foreach (var plugin_GUID in osx_plugins)
             {
                 string osx_plugin_path = AssetDatabase.GUIDToAssetPath(plugin_GUID);
@@ -39,12 +39,15 @@ namespace Showtime
                 osx_plugin.SaveAndReimport();
             }
 
-            var windows_plugins = AssetDatabase.FindAssets(".dll", new[] { "Assets/ShowtimeUnity/Plugins" });
+            var windows_plugins = AssetDatabase.FindAssets("Showtime", new[] { "Assets/ShowtimeUnity/Plugins/windows" });
             foreach (var plugin_GUID in windows_plugins)
             {
                 string windows_plugin_path = AssetDatabase.GUIDToAssetPath(plugin_GUID);
                 Debug.Log($"Fixing {windows_plugin_path}");
                 PluginImporter windows_plugin = AssetImporter.GetAtPath(windows_plugin_path) as PluginImporter;
+
+                if (windows_plugin == null)
+                    continue;
                 if (windows_plugin.isNativePlugin)
                 {
                     windows_plugin.SetCompatibleWithAnyPlatform(false);

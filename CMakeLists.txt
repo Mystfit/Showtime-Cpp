@@ -109,7 +109,7 @@ message(STATUS "Finding packages")
 
 # Boost
 # --------
-find_package(Boost COMPONENTS
+set(BOOST_COMPONENTS 
     log
     log_setup
     thread
@@ -120,8 +120,13 @@ find_package(Boost COMPONENTS
     chrono
     atomic
     regex
-    REQUIRED
 )
+find_package(Boost COMPONENTS ${BOOST_COMPONENTS} CONFIG)
+if(NOT Boost_FOUND)
+    message(STATUS "Searching for Boost using cmake's FindBoost")
+    find_package(Boost COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
+endif()
+
 set(Boost_HEADER_TARGET "Boost::boost")
 set(Boost_LOG_TARGET "Boost::log")
 set(Boost_LOG_SETUP_TARGET "Boost::log_setup")
@@ -308,17 +313,38 @@ if(PLUGINS_RTMIDI)
 endif()
 
 
-# Android container compilation
+# Container compilation
 # -----------------------------
 option(BUILD_ANDROID_LIBS "Build Android libs using Singularity" OFF)
-set(ANDROID_SINGULARITY_TARGET ShowtimeAndroid)
+set(ANDROID_SINGULARITY_TARGET AndroidContainerBuild)
 set(ANDROID_OUTPUT_LIB "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Android/lib${CLIENT_TARGET}.so")
-set(ANDROID_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/android-container")
-set(ANDROID_STAMP ${ANDROID_BUILD_DIR}/android.stamp)
+
+if(NOT WIN32)
+    option(BUILD_WINDOWS_CONTAINER "Build Windows libs using Vagrant" OFF)
+endif()
+set(WINDOWS_CONTAINER_OUTPUT_LIB "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Windows/${CLIENT_TARGET}.dll")
+set(WINDOWS_CONTAINER_TARGET WindowsContainerBuild)
+
+# Use Vagrant to create/run our build containers
+if(BUILD_ANDROID_LIBS OR BUILD_WINDOWS_CONTAINER)
+    find_program(VAGRANT vagrant)
+    if(VAGRANT EQUAL vagrant-NOTFOUND)
+        message(FATAL_ERROR "Could not find Vagrant")
+    endif()
+    set(CONTAINER_CPU_COUNT 4 CACHE STRING "Number of cpu cores to run build containers with")
+    set(CONTAINER_MEMORY_AMOUNT 4096 CACHE STRING "Amount of RAM to dedicate to the build containers")
+endif()
+
 if(BUILD_ANDROID_LIBS)
     add_custom_target(${ANDROID_SINGULARITY_TARGET} ALL DEPENDS "${ANDROID_OUTPUT_LIB}")
-    include(containers/CMakeLists.txt)
+    include(containers/android/CMakeLists.txt)
 endif()
+
+if(BUILD_WINDOWS_CONTAINER)
+    add_custom_target(${WINDOWS_CONTAINER_TARGET} ALL DEPENDS "${WINDOWS_CONTAINER_OUTPUT_LIB}")
+    include(containers/windows/CMakeLists.txt)
+endif()
+
 
 
 # Bindings

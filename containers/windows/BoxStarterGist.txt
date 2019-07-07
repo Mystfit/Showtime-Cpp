@@ -1,0 +1,27 @@
+chocolatey feature enable -n=allowGlobalConfirmation
+
+#choco install dotnetfx
+#choco install vcredist140
+#choco install visualstudio2019community
+#choco install visualstudio2019-workload-nativedesktop --package-parameters "--includeOptional"
+
+choco install chocolatey-visualstudio.extension
+choco install visualstudio2019buildtools
+choco install visualstudio2019-workload-vctools --params "--includeOptional"
+#choco install visualstudio2019-workload-vctools --params "--add Microsoft.Component.MSBuild --add Microsoft.VisualStudio.Component.VC.CLI.Support --add Microsoft.VisualStudio.Component.VC.CoreIde --add Microsoft.VisualStudio.Component.VC.Modules.x86.x64 --add Microsoft.VisualStudio.ComponentGroup.NativeDesktop.Core"
+choco install vswhere
+
+choco install git
+choco install 7zip
+choco install python
+choco install swig
+choco install cmake 
+
+Install-ChocolateyPath -PathToInstall "$($env:PROGRAMFILES)\CMake\bin"
+
+
+# Installing Pscx module for the Invoke-BatchFile command
+Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
+Install-Module Pscx -Scope CurrentUser -AllowClobber
+
+chocolatey feature disable -n=allowGlobalConfirmation

@@ -18,6 +18,12 @@ IF DEFINED ARG (
         SHIFT
     )
 
+    IF "%ARG%" EQU "--generator" (
+        set GENERATOR=%2
+        
+        SHIFT
+    )
+
     IF "%ARG%" EQU "--with-boost" (
         set WITH_BOOST=1
         echo With Boost
@@ -48,6 +54,11 @@ IF NOT DEFINED CONFIGURATION (
 echo Configuration=!CONFIGURATION!
 for /F %%s IN ('python -c "print(\"%CONFIGURATION%\".lower())"') DO set CONFIG_LOWER=%%s
 
+IF NOT DEFINED GENERATOR (
+    set GENERATOR=Visual Studio 16 2019
+)
+echo Generator=!GENERATOR!
+
 IF NOT DEFINED WITH_UNITY (
     set WITH_UNITY=0
 )
@@ -56,7 +67,6 @@ IF NOT DEFINED WITH_BOOST (
     set WITH_BOOST=0
 )
 
-set GENERATOR=Visual Studio 15 2017 Win64
 set DEPENDENCY_DIR=%BUILD_FOLDER%\dependencies
 IF NOT EXIST %DEPENDENCY_DIR% (
     mkdir "%DEPENDENCY_DIR%"
@@ -64,27 +74,29 @@ IF NOT EXIST %DEPENDENCY_DIR% (
 )
 
 REM CMake
-set CMAKE_VER=3.13.0
-set CMAKE_VER_FULL=cmake-%CMAKE_VER%-win64-x64
-set CMAKE_URL=https://cmake.org/files/v3.13/%CMAKE_VER_FULL%.zip
-IF EXIST %DEPENDENCY_DIR%\cmake (
-    echo Found CMake
-) ELSE (
-    echo === Downloading %CMAKE_VER_FULL% === 
-    powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest %CMAKE_URL% -OutFile %DEPENDENCY_DIR%\cmake.zip"
+rem set CMAKE_VER=3.13.0
+rem set CMAKE_VER_FULL=cmake-%CMAKE_VER%-win64-x64
+rem set CMAKE_URL=https://cmake.org/files/v3.13/%CMAKE_VER_FULL%.zip
+rem IF EXIST %DEPENDENCY_DIR%\cmake (
+rem     echo Found CMake
+rem ) ELSE (
+rem     echo === Downloading %CMAKE_VER_FULL% === 
+rem     powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest %CMAKE_URL% -OutFile %DEPENDENCY_DIR%\cmake.zip"
     
-    echo  === Unzipping CMake === 
-    7z x -y -bd -bb0 -o%DEPENDENCY_DIR% %DEPENDENCY_DIR%\cmake.zip
-    echo Renaming %DEPENDENCY_DIR%\%CMAKE_VER_FULL% to cmake
-    rename "%DEPENDENCY_DIR%\%CMAKE_VER_FULL%" cmake
-)
+rem     echo  === Unzipping CMake === 
+rem     7z x -y -bd -bb0 -o%DEPENDENCY_DIR% %DEPENDENCY_DIR%\cmake.zip
+rem     echo Renaming %DEPENDENCY_DIR%\%CMAKE_VER_FULL% to cmake
+rem     rename "%DEPENDENCY_DIR%\%CMAKE_VER_FULL%" cmake
+rem )
 
-set CMAKE_BIN=%DEPENDENCY_DIR%\cmake\bin\cmake
-set CTEST_BIN=%DEPENDENCY_DIR%\cmake\bin\ctest
+set CMAKE_BIN=cmake
+set CTEST_BIN=ctest
+rem set CMAKE_BIN=%DEPENDENCY_DIR%\cmake\bin\cmake
+rem set CTEST_BIN=%DEPENDENCY_DIR%\cmake\bin\ctest
 
 REM Set common build flags and prefixes for czmq and msgpack  
 set INSTALL_PREFIX=%DEPENDENCY_DIR%\install
-set COMMON_GENERATOR_FLAGS=-G "%GENERATOR%" -DCMAKE_INSTALL_PREFIX="%INSTALL_PREFIX%" -DCMAKE_INSTALL_MESSAGE=NEVER -DCMAKE_PREFIX_PATH="%INSTALL_PREFIX%"
+set COMMON_GENERATOR_FLAGS=-G "%GENERATOR%" -A x64 -DCMAKE_INSTALL_PREFIX="%INSTALL_PREFIX%" -DCMAKE_INSTALL_MESSAGE=NEVER -DCMAKE_PREFIX_PATH="%INSTALL_PREFIX%"
 set COMMON_BUILD_FLAGS=--config %CONFIGURATION% --target INSTALL -- /nologo /verbosity:minimal
 
 
@@ -135,43 +147,43 @@ echo === Building msgpack ===
 
 REM boost
 set BOOST_COMMON_FLAGS=--prefix=%DEPENDENCY_DIR%\install address-model=64 variant=%CONFIG_LOWER% threading=multi runtime-link=shared
-set BOOST_LIBS=--with-system --with-chrono  --with-log --with-thread --with-filesystem --with-date_time --with-atomic --with-regex --with-context --with-fiber
-set BOOST_SHARED_LIB_FLAGS= link=shared
-set BOOST_STATIC_LIB_FLAGS= link=static
+set BOOST_LIBS=--with-system --with-chrono --with-log --with-thread --with-filesystem --with-date_time --with-atomic --with-regex --with-context --with-fiber
+set BOOST_SHARED_LIB_FLAGS=link=shared
+set BOOST_STATIC_LIB_FLAGS=link=static
 
 IF %WITH_BOOST% EQU 1 (
-    IF EXIST %DEPENDENCY_DIR%\boost_1_68_0 (
+    IF EXIST %DEPENDENCY_DIR%\boost_1_70_0 (
         echo Found boost
     ) ELSE (
         echo === Downloading boost ===
-        powershell -Command "Invoke-WebRequest http://dl.bintray.com/boostorg/release/1.68.0/source/boost_1_68_0.zip -OutFile %DEPENDENCY_DIR%\boost_1.68.0.zip"
-        7z x -y -bd -bb0 -o%DEPENDENCY_DIR% %DEPENDENCY_DIR%\boost_1.68.0.zip
-        mkdir %DEPENDENCY_DIR%\boost_1_68_0\build
+        powershell -Command "Invoke-WebRequest http://dl.bintray.com/boostorg/release/1.70.0/source/boost_1_70_0.zip -OutFile %DEPENDENCY_DIR%\boost_1.70.0.zip"
+        7z x -y -bd -bb0 -o%DEPENDENCY_DIR% %DEPENDENCY_DIR%\boost_1.70.0.zip
+        mkdir %DEPENDENCY_DIR%\boost_1_70_0\build
     )
     echo === Building boost ===
-    pushd %DEPENDENCY_DIR%\boost_1_68_0
-    call %DEPENDENCY_DIR%\boost_1_68_0\bootstrap.bat
-    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe stage %BOOST_LIBS% %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_LIBS% %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe stage %BOOST_LIBS% %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
-    call %DEPENDENCY_DIR%\boost_1_68_0\b2.exe install %BOOST_LIBS% %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+    pushd %DEPENDENCY_DIR%\boost_1_70_0
+    call %DEPENDENCY_DIR%\boost_1_70_0\bootstrap.bat
+    call %DEPENDENCY_DIR%\boost_1_70_0\b2.exe stage %BOOST_LIBS% %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+    call %DEPENDENCY_DIR%\boost_1_70_0\b2.exe install %BOOST_LIBS% %BOOST_SHARED_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+    call %DEPENDENCY_DIR%\boost_1_70_0\b2.exe stage %BOOST_LIBS% %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
+    call %DEPENDENCY_DIR%\boost_1_70_0\b2.exe install %BOOST_LIBS% %BOOST_STATIC_LIB_FLAGS% %BOOST_COMMON_FLAGS%
     popd
 )
 
 
-REM swig
-set SWIG_VER=swigwin-3.0.12
-IF EXIST %INSTALL_PREFIX%\swig (
-    echo Found SWIG
-) ELSE (
-    echo === Downloading SWIG === 
-    powershell -Command "Invoke-WebRequest https://phoenixnap.dl.sourceforge.net/project/swig/swigwin/swigwin-3.0.12/%SWIG_VER%.zip -OutFile %DEPENDENCY_DIR%\%SWIG_VER%.zip"
+rem REM swig
+rem set SWIG_VER=swigwin-3.0.12
+rem IF EXIST %INSTALL_PREFIX%\swig (
+rem     echo Found SWIG
+rem ) ELSE (
+rem     echo === Downloading SWIG === 
+rem     powershell -Command "Invoke-WebRequest https://phoenixnap.dl.sourceforge.net/project/swig/swigwin/swigwin-3.0.12/%SWIG_VER%.zip -OutFile %DEPENDENCY_DIR%\%SWIG_VER%.zip"
     
-    echo === Unzipping swig === 
-    7z x -y -bd -bb0 -o%DEPENDENCY_DIR% %DEPENDENCY_DIR%\%SWIG_VER%.zip
-    echo Moving %DEPENDENCY_DIR%\%SWIG_VER% to %INSTALL_PREFIX%\swig
-    move "%DEPENDENCY_DIR%\%SWIG_VER%" "%INSTALL_PREFIX%\swig"
-)
+rem     echo === Unzipping swig === 
+rem     7z x -y -bd -bb0 -o%DEPENDENCY_DIR% %DEPENDENCY_DIR%\%SWIG_VER%.zip
+rem     echo Moving %DEPENDENCY_DIR%\%SWIG_VER% to %INSTALL_PREFIX%\swig
+rem     move "%DEPENDENCY_DIR%\%SWIG_VER%" "%INSTALL_PREFIX%\swig"
+rem )
 
 
 REM Unity

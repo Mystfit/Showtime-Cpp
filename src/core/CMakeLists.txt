@@ -249,7 +249,6 @@ set_target_properties(${CORE_TARGET_OBJECTS} PROPERTIES POSITION_INDEPENDENT_COD
 # Static/shared library specific options
 if(BUILD_STATIC)
     list(APPEND CORE_LIBS ${CORE_TARGET_STATIC})
-    #target_link_libraries(${CORE_TARGET_STATIC} PRIVATE ${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS})
 endif()
 
 if(BUILD_SHARED)
@@ -264,18 +263,7 @@ if(BUILD_SHARED)
         )
         # Use all imported object symbols
         set_target_properties(${CORE_TARGET} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
-
-        # Copy runtime dependencies
-        add_custom_command(TARGET ${CORE_TARGET} POST_BUILD
-                          COMMAND ${CMAKE_COMMAND} -E echo "Copy CZMQ runtime $<TARGET_FILE:czmq> to ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-                          COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:czmq>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-                          COMMAND ${CMAKE_COMMAND} -E echo "Copy libZMQ runtime $<TARGET_FILE:libzmq> to ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-                          COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:libzmq>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-                          VERBATIM
-        )
     endif()
-
-    #target_link_libraries(${CORE_TARGET} PRIVATE ${SHOWTIME_PUBLIC_SHARED_LINKED_LIBS})
 endif()
 
 # Options common to both static/shared libraries
