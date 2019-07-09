@@ -39,8 +39,10 @@ namespace ZstTest
 		ZstOutputPlug * m_output;
 
 	public:
-		OutputComponent(const char * name, bool reliable = true) : ZstComponent("TESTER", name) {
-			m_output = create_output_plug("out", ZstValueType::ZST_INT, reliable);
+		OutputComponent(const char * name, bool reliable = true) : 
+			ZstComponent("TESTER", name),
+			m_output(create_output_plug("out", ZstValueType::ZST_INT, reliable))
+		{
 		}
 
 		void on_activation() override {
@@ -76,11 +78,12 @@ namespace ZstTest
 		int last_received_val = 0;
 		bool log = false;
 
-		InputComponent(const char * name, int cmp_val, bool should_log=false) :
-			ZstComponent("TESTER", name), compare_val(cmp_val)
+		InputComponent(const char * name, int cmp_val=0, bool should_log=false) :
+			ZstComponent("TESTER", name),
+			compare_val(cmp_val),
+			log(should_log),
+			m_input(create_input_plug("in", ZstValueType::ZST_INT))
 		{
-			log = should_log;
-			m_input = create_input_plug("in", ZstValueType::ZST_INT);
 		}
 
 		void on_activation() override {

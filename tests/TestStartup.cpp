@@ -1,4 +1,4 @@
-#define BOOST_TEST_MODULE Test startup
+#define BOOST_TEST_MODULE Library startup and joining
 
 #include "TestCommon.hpp"
 
@@ -79,7 +79,7 @@ BOOST_FIXTURE_TEST_CASE(autojoin_by_name_async, FixtureInitAndCreateServer) {
 
 BOOST_FIXTURE_TEST_CASE(async_join_callback_adaptor, FixtureInitAndCreateServer){
 	//Test async join
-	std::unique_ptr<TestConnectionEvents> connectCallback = std::make_unique< TestConnectionEvents>();
+	auto connectCallback = std::make_shared< TestConnectionEvents>();
 	zst_add_session_adaptor(connectCallback.get());
 	zst_join_async(server_address.c_str());
 	wait_for_event(connectCallback.get(), 1);
@@ -146,9 +146,9 @@ BOOST_FIXTURE_TEST_CASE(discovered_servers_update, FixtureJoinServer) {
 
 BOOST_FIXTURE_TEST_CASE(root_performer_activate_on_join, FixtureJoinServer)
 {   
-    std::unique_ptr<TestSynchronisableEvents> performer_activated = std::make_unique<TestSynchronisableEvents>();
+    auto performer_activated = std::make_shared<TestSynchronisableEvents>();
 	zst_get_root()->add_adaptor(performer_activated.get());
 	BOOST_TEST(performer_activated->num_calls() == 1);
 	BOOST_TEST(zst_get_root()->is_activated());
-	zst_get_root()->remove_adaptor(performer_activated.get());
+	//zst_get_root()->remove_adaptor(performer_activated.get());
 }

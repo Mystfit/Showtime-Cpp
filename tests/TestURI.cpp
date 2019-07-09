@@ -1,4 +1,4 @@
-#define BOOST_TEST_MODULE Test startup
+#define BOOST_TEST_MODULE URI
 
 #include "TestCommon.hpp"
 
