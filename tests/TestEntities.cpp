@@ -116,7 +116,7 @@ void test_hierarchy() {
 
 int main(int argc,char **argv)
 {
-    TestRunner runner("TestEntities", argv[0]);
+    FixtureInit runner("TestEntities", argv[0]);
     test_create_entities();
     test_hierarchy();
     return 0;

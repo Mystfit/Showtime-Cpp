@@ -147,7 +147,7 @@ echo === Building msgpack ===
 
 REM boost
 set BOOST_COMMON_FLAGS=--prefix=%DEPENDENCY_DIR%\install address-model=64 variant=%CONFIG_LOWER% threading=multi runtime-link=shared
-set BOOST_LIBS=--with-system --with-chrono --with-log --with-thread --with-filesystem --with-date_time --with-atomic --with-regex --with-context --with-fiber
+set BOOST_LIBS=--with-system --with-chrono --with-log --with-thread --with-filesystem --with-date_time --with-atomic --with-regex --with-context --with-fiber --with-test
 set BOOST_SHARED_LIB_FLAGS=link=shared
 set BOOST_STATIC_LIB_FLAGS=link=static
 

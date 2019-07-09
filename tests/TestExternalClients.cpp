@@ -177,7 +177,7 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
 
 int main(int argc,char **argv)
 {
-	TestRunner runner("TestExternalClients", argv[0]);
+	FixtureInit runner("TestExternalClients", argv[0]);
 	zst_start_file_logging("TestExternalClients.log");
     test_external_entities(argv[0], true);
 

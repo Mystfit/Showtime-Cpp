@@ -12,6 +12,49 @@ public:
 };
 
 
+BOOST_AUTO_TEST_CASE(cable_test_function)
+{
+	auto in = ZstURI("a/1");
+	auto out = ZstURI("b/1");
+	auto less = ZstURI("a/b");
+	auto more = ZstURI("b/a");
+	auto plug_in_A = std::make_unique<ZstInputPlug>(in.path(), ZST_INT);
+	auto plug_out_A = std::make_unique<ZstOutputPlug>(out.path(), ZST_INT);
+	auto plug_in_B = std::make_unique<ZstInputPlug>(less.path(), ZST_INT);
+	auto plug_out_B = std::make_unique<ZstOutputPlug>(more.path(), ZST_INT);
+	auto plug_in_C = std::make_unique<ZstInputPlug>(more.path(), ZST_INT);
+	auto plug_out_C = std::make_unique<ZstOutputPlug>(less.path(), ZST_INT);
+
+	auto cable_a = std::make_unique<ZstCable>(plug_in_A.get(), plug_out_A.get());
+	BOOST_TEST(cable_a->get_address().get_input_URI() == in);
+	BOOST_TEST(cable_a->get_address().get_output_URI() == out);
+	BOOST_TEST(cable_a->is_attached(out));
+	BOOST_TEST(cable_a->is_attached(in));
+
+	//Test cable comparisons
+	auto cable_b = std::make_unique<ZstCable>(plug_in_A.get(), plug_out_A.get());
+	BOOST_TEST(ZstCableAddressEq{}(cable_a->get_address(), cable_b->get_address()));
+	BOOST_TEST(ZstCableAddressHash{}(cable_a->get_address()) == ZstCableAddressHash{}(cable_b->get_address()));
+
+	auto cable_c = std::make_unique<ZstCable>(plug_in_B.get(), plug_out_B.get());
+	auto cable_d = std::make_unique<ZstCable>(plug_in_C.get(), plug_out_C.get());
+
+	BOOST_TEST(ZstCableCompare{}(cable_c, cable_d));
+	BOOST_TEST(ZstCableCompare{}(cable_c->get_address(), cable_d));
+	BOOST_TEST(ZstCableCompare{}(cable_c, cable_d->get_address()));
+	BOOST_TEST(!(ZstCableCompare{}(cable_d->get_address(), cable_c)));
+	BOOST_TEST(!(ZstCableCompare{}(cable_d, cable_c->get_address())));
+
+	//Test cable sets
+	std::set<std::unique_ptr<ZstCable>, ZstCableCompare> cable_set;
+	cable_set.insert(std::move(cable_c));
+	cable_set.insert(std::move(cable_d));
+	BOOST_TEST((cable_set.find(cable_c) != cable_set.end()));
+	BOOST_TEST((cable_set.find(cable_d) != cable_set.end()));
+}
+
+
+
 void test_connect_plugs() {
     ZstLog::app(LogLevel::notification, "Running connect plugs test");
     
@@ -215,7 +258,7 @@ void test_unreliable_graph()
 
 int main(int argc,char **argv)
 {
-	TestRunner runner("TestGraph", argv[0], true);
+	FixtureInit runner("TestGraph", argv[0], true);
 
     test_connect_plugs();
     //test_add_filter();

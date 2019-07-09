@@ -34,6 +34,7 @@ void ZstClientHierarchy::destroy()
 	//Process events to make sure events are dispatched properly
 	//process_events();
 	delete m_root;
+	m_root = NULL;
 
 	ZstHierarchy::destroy();
 }

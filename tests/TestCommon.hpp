@@ -4,6 +4,7 @@
 #include <ShowtimeServer.h>
 #include <boost/process.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/test/unit_test.hpp>
 #include <sstream>
 
 #ifdef __cpp_lib_filesystem
@@ -138,20 +139,30 @@ namespace ZstTest
 	class TestConnectionEvents : public ZstSessionAdaptor, public TestAdaptor
 	{
 	public:
+		bool is_connected = false;
+		ZstServerAddress last_discovered_server;
+
 		void on_connected_to_stage() override {
 			ZstLog::app(LogLevel::debug, "CONNECTION_ESTABLISHED: {}", zst_get_root()->URI().path());
 			inc_calls();
+			is_connected = true;
 		}
 
 		void on_disconnected_from_stage() override {
 			ZstLog::app(LogLevel::debug, "DISCONNECTING: {}", zst_get_root()->URI().path());
 			inc_calls();
+
+			is_connected = false;
 		}
         
         void on_server_discovered(const ZstServerAddress & server) override {
             ZstLog::app(LogLevel::debug, "SERVER DISCOVERED: Name: {} Address: {}", server.name, server.address);
             inc_calls();
+
+			last_discovered_server = server;
         }
+
+	private:
 	};
 
 
@@ -236,7 +247,7 @@ namespace ZstTest
 		zst_poll_once();
 		while (adaptor->num_calls() < expected_messages) {
 			TAKE_A_BREATH
-				repeats++;
+			repeats++;
 			if (repeats > MAX_WAIT_LOOPS) {
 				std::ostringstream err;
 				err << "Not enough events in queue. Expecting " << expected_messages << " received " << adaptor->num_calls() << std::endl;
@@ -265,38 +276,50 @@ namespace ZstTest
 		return boost::thread(boost::bind(&ZstTest::log_external, boost::ref(out_pipe)));
 	}
 
-	class TestRunner {
+	class FixtureInit {
 	public:
-		TestRunner(const std::string & name, const std::string & test_path, bool init_library = true, bool run_stage = true) :
-			m_stage_server{NULL}
-		{
-            auto server_name = std::string(name + "_server");
-            
-			if (run_stage) {
-				m_stage_server = zst_create_server(server_name.c_str(), STAGE_ROUTER_PORT);
-			}
-
-			//Init library
-			if (init_library) {
-				zst_init(name.c_str(), true);
-//                zst_join("127.0.0.1:40004");
-                zst_auto_join_by_name(server_name.c_str());
-                
-				if (!zst_is_connected()) {
-					ZstLog::app(LogLevel::error, "Failed to connect to launched stage");
-					assert(zst_is_connected());
-				}
-			}
+		FixtureInit(){
+			zst_init("test_performer", true);
+			clear_callback_queue();
 		}
 
-		~TestRunner()
+		~FixtureInit()
 		{
-			zst_destroy_server(m_stage_server);
 			zst_destroy();
 		}
+	};
+	
 
+	class FixtureInitAndCreateServer : public FixtureInit {
+	public:
+		std::string server_name = "test_server";
+
+		FixtureInitAndCreateServer() {
+			m_stage_server = zst_create_server(server_name.c_str(), STAGE_ROUTER_PORT);
+			TAKE_A_BREATH
+			clear_callback_queue();
+		}
+
+		~FixtureInitAndCreateServer() {
+			zst_destroy_server(m_stage_server);
+		}
 	private:
 		ServerHandle m_stage_server;
+	};
+
+
+	class FixtureJoinServer : public FixtureInitAndCreateServer {
+	public:
+
+		FixtureJoinServer()
+		{
+			zst_join(("127.0.0.1:" + std::to_string(STAGE_ROUTER_PORT)).c_str());
+			clear_callback_queue();
+		}
+
+		~FixtureJoinServer()
+		{
+		}
 	};
 
 

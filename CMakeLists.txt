@@ -120,6 +120,7 @@ set(BOOST_COMPONENTS
     chrono
     atomic
     regex
+    unit_test_framework
 )
 find_package(Boost COMPONENTS ${BOOST_COMPONENTS} CONFIG)
 if(NOT Boost_FOUND)
@@ -138,17 +139,11 @@ set(Boost_DATE_TIME_TARGET "Boost::date_time")
 set(Boost_CHRONO_TARGET "Boost::chrono")
 set(Boost_ATOMIC_TARGET "Boost::atomic")
 set(Boost_REGEX_TARGET "Boost::regex")
-
+set(Boost_TEST_TARGET "Boost::unit_test_framework")
 
 # Msgpack, swig
 # ------------------------------
 find_package(MsgPack CONFIG REQUIRED)
-# set(msgpackc_TARGET "msgpackc-static")
-
-if(WIN32)
-    # Find swigwin downloaded using install_dependencies script
-    list(APPEND CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH}/swig")
-endif()
 find_package(SWIG)
 if(SWIG_FOUND)
     cmake_policy(SET CMP0078 NEW)
@@ -183,6 +178,7 @@ set(SHOWTIME_PRIVATE_LINKED_LIBS
     ${Boost_LOG_SETUP_TARGET}
     ${Boost_CONTEXT_TARGET}
     ${Boost_FIBER_TARGET}
+    ${Boost_TEST_TARGET}
     ${Boost_HEADER_TARGET}
     Boost::disable_autolinking
     ${CMAKE_THREAD_LIBS_INIT}

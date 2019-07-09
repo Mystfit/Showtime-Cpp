@@ -269,95 +269,11 @@ size_t ZstURIHash::operator()(ZstURI const & k) const
 }
 
 
-// -------------------------------
-// Testing
-// -------------------------------
+//--
 
-void ZstURI::self_test()
+
+std::ostream& std::operator<<(std::ostream& os, const ZstURI& uri)
 {
-	assert(std::is_standard_layout<ZstURI>());
-
-	//Define test URIs
-	ZstURI uri_empty = ZstURI();
-	ZstURI uri_single = ZstURI("single");
-	ZstURI uri_equal1 = ZstURI("ins/someplug");
-	ZstURI uri_notequal = ZstURI("anotherins/someplug");
-
-	//Test accessors
-	assert(strcmp(uri_equal1.segment(0), "ins") == 0);
-	assert(strcmp(uri_equal1.segment(1), "someplug") == 0);
-	assert(uri_empty.is_empty());
-	assert(uri_equal1.size() == 2);
-	assert(strcmp(uri_equal1.path(), "ins/someplug") == 0);
-
-	//Test comparisons
-	assert(ZstURI::equal(uri_equal1, uri_equal1));
-	assert(!ZstURI::equal(uri_equal1, uri_notequal));
-    assert(ZstURI::equal(ZstURI("inplace"), ZstURI("inplace")));
-	assert(ZstURI("b") < ZstURI("c"));
-	assert(ZstURI("a") < ZstURI("b"));
-	assert(ZstURI("a") < ZstURI("c"));
-	assert(!(ZstURI("c") < ZstURI("a")));
-	assert(uri_equal1.contains(ZstURI("ins")));
-	assert(!ZstURI("ins").contains(uri_equal1));
-	assert(uri_equal1.contains(ZstURI("ins/someplug")));
-	assert(!uri_equal1.contains(ZstURI("nomatch")));
-
-	//Test slicing
-    auto sliceA = uri_equal1.range(0, 1);
-    auto cmpA = ZstURI("ins/someplug");
-	assert(ZstURI::equal(sliceA, cmpA));
-    
-    auto sliceB = uri_equal1.range(1, 1);
-    auto cmpB = ZstURI("someplug");
-	assert(ZstURI::equal(sliceB, cmpB));
-    
-    auto sliceC = uri_equal1.range(0, 0);
-    auto cmpC = ZstURI("ins");
-	assert(ZstURI::equal(sliceC, cmpC));
-    
-    //Test parents
-    auto parent = ZstURI("ins");
-	assert(ZstURI::equal(uri_equal1.parent(), parent));
-	assert(ZstURI::equal(uri_equal1.first(), parent));
-
-	bool thrown_URI_range_error = false;
-	try {
-		uri_single.parent();
-	}
-	catch (std::out_of_range) {
-		thrown_URI_range_error = true;
-	}
-	assert(thrown_URI_range_error);
-	thrown_URI_range_error = false;
-
-	//Test joining
-	ZstURI joint_uri = ZstURI("a") + ZstURI("b");
-	assert(ZstURI::equal(joint_uri, ZstURI("a/b")));
-	assert(joint_uri.size() == 2);
-	assert(joint_uri.full_size() == 3);
-
-	//Test URI going out of scope
-	{
-		ZstURI stack_uri("some_entity/some_name");
-	}
-
-	//Test range exceptions
-	bool thrown_range_error = false;
-	try {
-		uri_equal1.segment(2);
-	}
-	catch (std::range_error) {
-		thrown_range_error = true;
-	}
-	assert(thrown_range_error);
-	thrown_range_error = false;
-
-	try {
-		uri_equal1.range(0, 4);
-	}
-	catch (std::range_error) {
-		thrown_range_error = true;
-	}
-	assert(thrown_range_error);
+	os << uri.path();
+	return os;
 }

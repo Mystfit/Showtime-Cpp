@@ -43,9 +43,6 @@ public:
 	ZST_EXPORT ZstInputPlug * get_input();
 	ZST_EXPORT ZstOutputPlug * get_output();
     ZST_EXPORT const ZstCableAddress & get_address() const;
-    
-	//Testing
-	ZST_EXPORT static void self_test();
 
 private:
     ZstCableAddress m_address;

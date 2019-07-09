@@ -159,7 +159,7 @@ long double test_benchmark(bool reliable, int send_rate, int send_amount)
 
 int main(int argc, char **argv)
 {
-	TestRunner runner("TestBenchmark", argv[0]);
+	FixtureInit runner("TestBenchmark", argv[0]);
 
 	//Create threaded event loop to handle polling
 	boost::thread eventloop_thread = boost::thread(BenchmarkEventLoop());
