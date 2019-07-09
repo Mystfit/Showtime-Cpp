@@ -206,6 +206,9 @@ void ZstClientSession::connect_cable_complete(ZstMessageReceipt response, ZstCab
 
 void ZstClientSession::destroy_cable(ZstCable * cable, const ZstTransportSendType & sendtype)
 {
+	if (!cable)
+		return;
+
 	ZstSession::destroy_cable(cable, sendtype);
 	
 	stage_events().invoke([this, cable, sendtype](ZstTransportAdaptor * adaptor) {
