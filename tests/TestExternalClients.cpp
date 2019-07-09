@@ -1,45 +1,39 @@
+#define BOOST_TEST_MODULE External clients
+
 #include "TestCommon.hpp"
 
 using namespace ZstTest;
 
-void test_external_entities(std::string external_test_path, bool launch_sink_process = true) {
-    ZstLog::app(LogLevel::notification, "Starting external entities test");
-
-    //Create callbacks
-    TestEntityEvents * entityEvents = new TestEntityEvents();
-    TestPerformerEvents * performerEvents = new TestPerformerEvents();
-    
-    zst_add_hierarchy_adaptor(entityEvents);
-    zst_add_hierarchy_adaptor(performerEvents);
-
-    //Create emitter
-    OutputComponent * output_ent = new OutputComponent("proxy_test_output");
-    zst_get_root()->add_child(output_ent);
-    assert(output_ent->is_activated());
-    
-    ZstURI sink_perf_uri = ZstURI("sink");
-    ZstURI sink_ent_uri = sink_perf_uri + ZstURI("sink_ent");
-    ZstURI sink_B_uri = sink_ent_uri + ZstURI("sinkB");
-    ZstURI sink_plug_uri = sink_ent_uri + ZstURI("in");
-	ZstURI sync_out_plug_uri = sink_ent_uri + ZstURI("out");
-
-
-    //Run the sink program
-    std::string prog = fs::absolute(external_test_path).parent_path().generic_string() + "/TestHelperSink";
-#ifdef WIN32
-    prog += ".exe";
-#endif
+struct FixtureExternalClient {
     boost::process::child sink_process;
-#ifdef PAUSE_SINK
-    char pause_flag = 'd';
-#else
-    char pause_flag = 'a';
+    boost::process::ipstream sink_out;
+    boost::thread sink_log_thread;
+    
+    
+    FixtureExternalClient(){
+        //Create callbacks
+        TestEntityEvents * entityEvents = new TestEntityEvents();
+        TestPerformerEvents * performerEvents = new TestPerformerEvents();
+        
+        zst_add_hierarchy_adaptor(entityEvents);
+        zst_add_hierarchy_adaptor(performerEvents);
+        
+        
+        
+        //Run the sink program
+        std::string prog = fs::absolute(external_test_path).parent_path().generic_string() + "/TestHelperSink";
+#ifdef WIN32
+        prog += ".exe";
 #endif
-	boost::process::ipstream sink_out;
-    if (launch_sink_process) {
-		//Run sink in external process so we don't share the same Showtime singleton
-		ZstLog::app(LogLevel::notification, "Starting sink process");
-
+        
+#ifdef PAUSE_SINK
+        char pause_flag = 'd';
+#else
+        char pause_flag = 'a';
+#endif
+        //Run sink in external process so we don't share the same Showtime singleton
+        ZstLog::app(LogLevel::notification, "Starting sink process");
+        
         try {
             sink_process = boost::process::child(prog, &pause_flag, boost::process::std_out > sink_out); //d flag pauses the sink process to give us time to attach a debugger
 #ifdef PAUSE_SINK
@@ -53,11 +47,31 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
             ZstLog::app(LogLevel::error, "Sink process failed to start. Code:{} Message:{}", e.code().value(), e.what());
         }
         assert(sink_process.valid());
-	}
+        
+        // Create a thread to handle reading log info from the sink process' stdout pipe
+        sink_log_thread = ZstTest::log_external_pipe(sink_out);
+    }
 
-	// Create a thread to handle reading log info from the sink process' stdout pipe
-	auto sink_log_thread = ZstTest::log_external_pipe(sink_out);
-	
+    ~FixtureExternalClient(){
+        sink_out.pipe().close();
+        sink_log_thread.join();
+    }
+}
+
+
+
+void test_external_entities(std::string external_test_path, bool launch_sink_process = true) {
+    //Create emitter
+    OutputComponent * output_ent = new OutputComponent("proxy_test_output");
+    zst_get_root()->add_child(output_ent);
+    assert(output_ent->is_activated());
+    
+    ZstURI sink_perf_uri = ZstURI("sink");
+    ZstURI sink_ent_uri = sink_perf_uri + ZstURI("sink_ent");
+    ZstURI sink_B_uri = sink_ent_uri + ZstURI("sinkB");
+    ZstURI sink_plug_uri = sink_ent_uri + ZstURI("in");
+	ZstURI sync_out_plug_uri = sink_ent_uri + ZstURI("out");
+
 	wait_for_event(performerEvents, 1);
     ZstPerformer * sink_performer = zst_get_performer_by_URI(sink_perf_uri);
     assert(sink_performer);
@@ -172,14 +186,4 @@ void test_external_entities(std::string external_test_path, bool launch_sink_pro
 	sink_out.pipe().close();
 	sink_log_thread.join();
     clear_callback_queue();
-}
-
-
-int main(int argc,char **argv)
-{
-	FixtureInit runner("TestExternalClients", argv[0]);
-	zst_start_file_logging("TestExternalClients.log");
-    test_external_entities(argv[0], true);
-
-    return 0;
 }

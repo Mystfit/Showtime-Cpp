@@ -9,6 +9,11 @@ ZstMessageSupervisor::ZstMessageSupervisor(std::shared_ptr<cf::time_watcher> tim
 
 ZstMessageSupervisor::~ZstMessageSupervisor()
 {
+    destroy();
+}
+
+void ZstMessageSupervisor::destroy()
+{
     m_response_promises.clear();
 }
 

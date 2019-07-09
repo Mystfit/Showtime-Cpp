@@ -95,6 +95,9 @@ void ZstClient::destroy() {
 #endif
     m_service_broadcast_transport->stop_listening();
     m_service_broadcast_transport->destroy();
+    
+    //Clear outstanding promises
+    m_promise_supervisor.destroy();
 
 	//Stop timers
 	m_client_timerloop.IO_context().stop();

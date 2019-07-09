@@ -38,6 +38,7 @@ void ZstServerSendTransport::init()
 void ZstServerSendTransport::destroy()
 {
 	ZstTransportLayerBase::destroy();
+    ZstMessageSupervisor::destroy();
 
 	m_client_actor.stop_loop();
 	if(m_stage_router)

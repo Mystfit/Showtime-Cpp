@@ -23,6 +23,7 @@ void ZstStageSession::destroy()
 
 	hierarchy()->destroy();
 	ZstSession::destroy();
+    m_connection_watcher.destroy();
 }
 
 void ZstStageSession::process_events()
