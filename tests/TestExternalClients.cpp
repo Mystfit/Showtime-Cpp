@@ -8,22 +8,18 @@ struct FixtureExternalClient : public FixtureJoinServer {
 	boost::process::child sink_process;
 	boost::process::ipstream sink_out;
 	boost::thread sink_log_thread;
+    
+    //Common URIs
+    ZstURI sink_perf_uri = ZstURI("sink");
+    ZstURI sink_ent_uri = sink_perf_uri + ZstURI("sink_ent");
+    ZstURI sink_plug_uri = sink_ent_uri + ZstURI("in");
+    ZstURI sync_out_plug_uri = sink_ent_uri + ZstURI("out");
+    
+    std::unique_ptr<OutputComponent> output_ent;
 
-	std::unique_ptr<OutputComponent> output_ent;
-	std::shared_ptr<TestEntityEvents> entityEvents;
-	std::shared_ptr<TestPerformerEvents> performerEvents;
-
-	FixtureExternalClient() :
-		output_ent(std::make_unique<OutputComponent>()),
-		entityEvents(std::make_shared<TestEntityEvents>()),
-		performerEvents(std::make_shared<TestPerformerEvents>())
-	{
-		zst_add_hierarchy_adaptor(entityEvents.get());
-		zst_add_hierarchy_adaptor(performerEvents.get());
-		zst_get_root()->add_child(output_ent.get());
-		clear_callback_queue();
-
-		//Run the sink program
+    FixtureExternalClient() :
+        output_ent(std::make_unique<OutputComponent>("output"))
+    {
 		std::string prog = fs::current_path().generic_string() + "/TestHelperSink";
 #ifdef WIN32
 		prog += ".exe";
@@ -62,6 +58,40 @@ struct FixtureExternalClient : public FixtureJoinServer {
 };
 
 
+struct FixtureExternalEntities : public FixtureExternalClient
+{
+    std::shared_ptr<TestPerformerEvents> performerEvents;
+    
+    ZstComponent * sink_ent;
+    ZstInputPlug * sink_plug;
+
+    FixtureExternalEntities() :
+        performerEvents(std::make_shared<TestPerformerEvents>()),
+        sink_ent(NULL),
+        sink_plug(NULL)
+    {
+        zst_add_hierarchy_adaptor(performerEvents.get());
+        wait_for_event(performerEvents.get(), 1);
+        zst_get_root()->add_child(output_ent.get());
+        clear_callback_queue();
+        performerEvents->reset_num_calls();
+        
+        sink_ent = dynamic_cast<ZstComponent*>(zst_find_entity(sink_ent_uri));
+        sink_plug = dynamic_cast<ZstInputPlug*>(sink_ent->get_child_by_URI(sink_plug_uri));
+    }
+    
+    ~FixtureExternalEntities(){}
+};
+
+
+struct FixtureExternalConnectCable : public FixtureExternalEntities
+{
+    FixtureExternalConnectCable(){
+        zst_connect_cable(sink_plug, output_ent->output());
+    }
+};
+
+
 bool found_performer(ZstURI performer_address) {
 	ZstEntityBundle bundle;
 	zst_get_performers(bundle);
@@ -74,128 +104,87 @@ bool found_performer(ZstURI performer_address) {
 }
 
 
-
-ZstURI sink_perf_uri = ZstURI("sink");
-ZstURI sink_ent_uri = sink_perf_uri + ZstURI("sink_ent");
-ZstURI sink_B_uri = sink_ent_uri + ZstURI("sinkB");
-ZstURI sink_plug_uri = sink_ent_uri + ZstURI("in");
-ZstURI sync_out_plug_uri = sink_ent_uri + ZstURI("out");
-
-
 BOOST_FIXTURE_TEST_CASE(find_performer, FixtureExternalClient) {
 	BOOST_TEST(zst_get_performer_by_URI(sink_perf_uri));
 	BOOST_TEST(found_performer(sink_perf_uri));
 }
 
 BOOST_FIXTURE_TEST_CASE(find_performer_entities, FixtureExternalClient) {
-	ZstComponent* sink_ent = dynamic_cast<ZstComponent*>(zst_find_entity(sink_ent_uri));
+	auto sink_ent = dynamic_cast<ZstComponent*>(zst_find_entity(sink_ent_uri));
 	BOOST_TEST(sink_ent);
 	BOOST_TEST(sink_ent->is_activated());
 
-	ZstInputPlug* sink_plug = dynamic_cast<ZstInputPlug*>(sink_ent->get_child_by_URI(sink_plug_uri));
+	auto sink_plug = dynamic_cast<ZstInputPlug*>(sink_ent->get_child_by_URI(sink_plug_uri));
 	BOOST_TEST(sink_plug);
 	BOOST_TEST(zst_find_entity(sink_plug->URI()));
 	BOOST_TEST(sink_plug->is_activated());
-
-	ZstOutputPlug* sync_out_plug = dynamic_cast<ZstOutputPlug*>(sink_ent->get_child_by_URI(sync_out_plug_uri));
-	assert(sync_out_plug);
-	assert(sync_out_plug->is_activated());
-}
-
-BOOST_FIXTURE_TEST_CASE(plug_sync_adaptor, FixtureExternalClient) {
-	
-}
-
-
-void test_external_entities(std::string external_test_path, bool launch_sink_process = true) {
-	//Create plug sync adaptors
-	TestPlugSync * plug_sync_adp = new TestPlugSync();
-	sync_out_plug->add_adaptor(plug_sync_adp);
-	ZstLog::app(LogLevel::notification, "Requesting observation of {}", sync_out_plug->URI().path());
-	zst_observe_entity(sync_out_plug);
-
-    //Connect cable to sink
-    ZstCable * cable = zst_connect_cable(sink_plug, output_ent->output());
-    assert(cable);
-    assert(cable->is_activated());
     
-    //Send message to sink to test entity creation
-    ZstLog::app(LogLevel::notification, "Asking sink to create an entity");
+    auto sync_out_plug = dynamic_cast<ZstOutputPlug*>(sink_ent->get_child_by_URI(sync_out_plug_uri));
+    BOOST_TEST(sync_out_plug);
+    BOOST_TEST(sync_out_plug->is_activated());
+}
+
+BOOST_FIXTURE_TEST_CASE(connect_cable, FixtureExternalEntities) {
+    auto sink_plug = dynamic_cast<ZstInputPlug*>(sink_ent->get_child_by_URI(sink_plug_uri));
+    auto cable = zst_connect_cable(sink_plug, output_ent->output());
+    BOOST_TEST(cable);
+    BOOST_TEST(cable->is_activated());
+}
+
+BOOST_FIXTURE_TEST_CASE(plug_observation, FixtureExternalConnectCable) {
+    auto sync_out_plug = dynamic_cast<ZstOutputPlug*>(sink_ent->get_child_by_URI(sync_out_plug_uri));
+    auto plug_sync_adp = std::make_shared<TestPlugSync>();
+    sync_out_plug->add_adaptor(plug_sync_adp.get());
+    zst_observe_entity(sync_out_plug);
+    
+    int echo_val = 4;
+    output_ent->send(echo_val);
+    wait_for_event(plug_sync_adp.get(), 1);
+    BOOST_TEST(zst_find_entity(sink_ent_uri + ZstURI("sinkB")));
+    BOOST_TEST(sync_out_plug->int_at(0) == echo_val);
+}
+
+BOOST_FIXTURE_TEST_CASE(entity_arriving, FixtureExternalConnectCable) {
+    auto entityEvents = std::make_shared<TestEntityEvents>();
+    zst_add_hierarchy_adaptor(entityEvents.get());
     output_ent->send(1);
-	    
-    //Test entity arriving
-	ZstLog::app(LogLevel::notification, "Checking that the remote plug synced with our proxy plug");
-    wait_for_event(entityEvents, 1);
-    assert(zst_find_entity(sink_B_uri));
+    wait_for_event(entityEvents.get(), 1);
+    BOOST_TEST(zst_find_entity(sink_ent_uri + ZstURI("sinkB")));
+}
+
+BOOST_FIXTURE_TEST_CASE(entity_leaving, FixtureExternalConnectCable) {
+    auto entityEvents = std::make_shared<TestEntityEvents>();
+    zst_add_hierarchy_adaptor(entityEvents.get());
+    output_ent->send(1);
+    wait_for_event(entityEvents.get(), 1);
     entityEvents->reset_num_calls();
-
-	//Check that the output plug published a sync message in response
-	wait_for_event(plug_sync_adp, 1);
-	assert(plug_sync_adp->num_calls() == 1);
-	assert(sync_out_plug->int_at(0) == 1);
-	plug_sync_adp->reset_num_calls();
-
-	//Test adding plugs to a remote proxy
-	ZstLog::app(LogLevel::notification, "Creating a plug on the remote performer");
-	ZstComponent * sink_b = dynamic_cast<ZstComponent*>(zst_find_entity(sink_B_uri));
-	ZstOutputPlug * remote_plug = sink_b->create_output_plug("remote_plug", ZstValueType::ZST_INT);
-    assert(entityEvents->num_calls() == 1);
-	assert(remote_plug);
-	assert(remote_plug->is_activated());
-	assert(zst_find_entity(remote_plug->URI()));
-	ZstURI remote_plug_uri = remote_plug->URI();
-    entityEvents->reset_num_calls();
-
-	//Test remote plug can send values
-	ZstLog::app(LogLevel::notification, "Testing sending values using remote plug");
-	remote_plug->append_int(27);
-	remote_plug->fire();
-
-    //Send another value to remove the child
-    //Test entity leaving
-    ZstLog::app(LogLevel::notification, "Asking sink to remove an entity");
+    
     output_ent->send(2);
-    wait_for_event(entityEvents, 1);
-    assert(!zst_find_entity(sink_B_uri));
-	assert(!zst_find_entity(remote_plug_uri));
-	assert(!remote_plug->is_activated());
-	entityEvents->reset_num_calls();
+    wait_for_event(entityEvents.get(), 1);
+    BOOST_TEST(!zst_find_entity(sink_ent_uri + ZstURI("sinkB")));
+}
 
-    //Send message to sink
-    ZstLog::app(LogLevel::notification, "Asking sink to throw an error");
+BOOST_FIXTURE_TEST_CASE(external_exception, FixtureExternalConnectCable) {
     output_ent->send(3);
-    //Not sure how to test for the error...
+    //TODO: How do we test for this error?
+}
 
-    ZstLog::app(LogLevel::debug, "Asking sink to leave");
-	ZstURI out_plug_path = sync_out_plug->URI();
-    output_ent->send(0);
+BOOST_FIXTURE_TEST_CASE(performer_arriving, FixtureExternalClient) {
+    auto performerEvents = std::make_shared<TestPerformerEvents>();
+    zst_add_hierarchy_adaptor(performerEvents.get());
+    wait_for_event(performerEvents.get(), 1);
+    BOOST_TEST(performerEvents->last_arrived_performer == sink_perf_uri);
+}
+
+
+BOOST_FIXTURE_TEST_CASE(performer_leaving, FixtureExternalClient) {
+    auto performerEvents = std::make_shared<TestPerformerEvents>();
+    zst_add_hierarchy_adaptor(performerEvents.get());
+    
+    output_ent->send(-1);
     sink_process.wait();
-    //int result = sink_process.exit_code();
-    //assert(result == 0 || result == 259);	//Exit code 259 is 'No more data is available.' on Windows. Something to do with stdin?
-
-    //Check that we received performer destruction request
-	ZstLog::app(LogLevel::debug, "Checking if sink has left the graph");
-    wait_for_event(performerEvents, 1);
-    assert(!zst_get_performer_by_URI(sink_perf_uri));
-    performerEvents->reset_num_calls();
-
-	//Check that our local adaptor is now inactive
-	zst_poll_once();
-	ZstLog::app(LogLevel::debug, "Checking if plug sync adaptor is now inactive");
-	assert(!zst_find_entity(out_plug_path));
-	assert(!sink_performer->walk_child_by_URI(out_plug_path));
-	assert(!plug_sync_adp->is_target_dispatcher_active());
-
-    //Clean up output
-    zst_deactivate_entity(output_ent);
-
-    //Cleanup
-    zst_remove_hierarchy_adaptor(entityEvents);
-    zst_remove_hierarchy_adaptor(performerEvents);
-    delete entityEvents;
-    delete performerEvents;
-    delete output_ent;
-	sink_out.pipe().close();
-	sink_log_thread.join();
-    clear_callback_queue();
+    int result = sink_process.exit_code();
+    BOOST_TEST((result == 0 || result == 259));    //Exit code 259 is 'No more data is available.' on Windows. Something to do with stdin?
+    wait_for_event(performerEvents.get(), 1);
+    BOOST_TEST(performerEvents->last_left_performer == sink_perf_uri);
 }

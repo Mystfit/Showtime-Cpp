@@ -40,6 +40,9 @@ public:
 
 		switch (request_code)
 		{
+        case 0:
+            //No-op
+            break;
 		case 1:
 			m_child_sink = new Sink("sinkB");
 			this->add_child(m_child_sink);
@@ -63,6 +66,9 @@ public:
 			break;
 		case 3:
 			throw std::runtime_error("Testing compute failure.");
+        case 4:
+            //No-op
+            break;
 		default:
 			break;
 		}
@@ -96,7 +102,7 @@ int main(int argc,char **argv){
 	Sink * sink = new Sink("sink_ent");
 	zst_get_root()->add_child(sink);
 	
-	while (sink->last_received_code != 0){
+	while (sink->last_received_code > 0){
 		zst_poll_once();
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}

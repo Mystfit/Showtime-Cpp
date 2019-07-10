@@ -192,13 +192,19 @@ namespace ZstTest
 	class TestPerformerEvents : public ZstHierarchyAdaptor, public TestAdaptor
 	{
 	public:
+        ZstURI last_arrived_performer;
+        ZstURI last_left_performer;
+
+        
 		void on_performer_arriving(ZstPerformer * performer) override {
 			ZstLog::app(LogLevel::debug, "PERFORMER_ARRIVING: {}", performer->URI().path());
+            last_arrived_performer = performer->URI();
 			inc_calls();
 		}
 
 		void on_performer_leaving(ZstPerformer * performer) override {
 			ZstLog::app(LogLevel::debug, "PERFORMER_LEAVING: {}", performer->URI().path());
+            last_left_performer = performer->URI();
 			inc_calls();
 		}
 	};
