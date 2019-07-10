@@ -325,12 +325,25 @@ endif()
 set(WINDOWS_CONTAINER_OUTPUT_LIB "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Windows/${CLIENT_TARGET}.dll")
 set(WINDOWS_CONTAINER_TARGET WindowsContainerBuild)
 
+if(NOT MACOSX)
+    option(BUILD_MACOS_CONTAINER "Build MacOS libs using Vagrant" OFF)
+endif()
+set(MACOS_CONTAINER_OUTPUT_LIB "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/MacOS/lib${CLIENT_TARGET}.dylib")
+set(MACOS_CONTAINER_TARGET MacOSContainerBuild)
+
 # Use Vagrant to create/run our build containers
-if(BUILD_ANDROID_LIBS OR BUILD_WINDOWS_CONTAINER)
-    find_program(VAGRANT vagrant)
-    if(VAGRANT EQUAL vagrant-NOTFOUND)
+if(BUILD_ANDROID_LIBS OR BUILD_WINDOWS_CONTAINER OR BUILD_MACOS_CONTAINER)
+    find_program(VAGRANTCOMMAND vagrant)
+    if(VAGRANTCOMMAND EQUAL vagrant-NOTFOUND)
         message(FATAL_ERROR "Could not find Vagrant")
     endif()
+    # Install vagrant scp plugin
+    execute_process(COMMAND "${VAGRANTCOMMAND} list" RESULT_VARIABLE VAGRANT_PLUGIN_LIST)
+    string(FIND ${VAGRANT_PLUGIN_LIST} "scp" VAGRANT_SCP_PLUGIN_FOUND)
+    if(${VAGRANT_SCP_PLUGIN_FOUND} LESS 0)
+        execute_process(COMMAND "${VAGRANTCOMMAND} plugin install vagrant-scp")
+    endif()
+    
     set(CONTAINER_CPU_COUNT 4 CACHE STRING "Number of cpu cores to run build containers with")
     set(CONTAINER_MEMORY_AMOUNT 4096 CACHE STRING "Amount of RAM to dedicate to the build containers")
 endif()
@@ -344,6 +357,13 @@ if(BUILD_WINDOWS_CONTAINER)
     add_custom_target(${WINDOWS_CONTAINER_TARGET} ALL DEPENDS "${WINDOWS_CONTAINER_OUTPUT_LIB}")
     include(containers/windows/CMakeLists.txt)
 endif()
+
+if(BUILD_MACOS_CONTAINER)
+    add_custom_target(${MACOS_CONTAINER_TARGET} ALL DEPENDS "${MACOS_CONTAINER_OUTPUT_LIB}")
+    include(containers/macos/CMakeLists.txt)
+endif()
+
+
 
 
 

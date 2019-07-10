@@ -1,0 +1,42 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  guest_source_path = "/vagrant-showtime-src"
+  guest_build_path = "${MACOS_CONTAINER_INTERNAL_BUILD_DIR}"
+
+  config.vm.box = "jhcook/macos-sierra"
+  config.vm.synced_folder "${CMAKE_SOURCE_DIR}", guest_source_path,
+    type: "rsync", 
+    rsync__exclude: ['.git/', 'build/'],
+    rsync__auto: false,
+    rsync__chown: false
+  config.vm.define "${MACOS_CONTAINER_NAME}"
+  config.vm.provider "virtualbox" do |vb|
+    # vb.gui = false
+    # vb.cpus = ${CONTAINER_CPU_COUNT}  
+    # vb.memory = "${CONTAINER_MEMORY_AMOUNT}"
+  end
+
+  env_vars = {
+    "SHOWTIME_SOURCE" => guest_source_path,
+    "SHOWTIME_BUILD" => guest_build_path
+  }
+  
+  # Setup container
+  config.vm.provision :shell, env: env_vars, privileged: false, inline: <<-SHELL
+    # Install homebrew
+    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+    # Install dependencies through homebrew
+    pushd /vagrant-showtime-src
+    brew bundle
+    popd
+
+    # Create directories
+    mkdir -p $SHOWTIME_BUILD
+  SHELL
+
+  # Build MacOS libs
+  config.vm.provision :shell, env: env_vars, run: 'always', path: "${CMAKE_SOURCE_DIR}/containers/macos/build_showtime.sh"
+end

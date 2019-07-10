@@ -11,8 +11,8 @@ configure_file(${CMAKE_CURRENT_LIST_DIR}/build-android.def.in ${ANDROID_BUILD_DI
 add_custom_command(
     OUTPUT ${ANDROID_OUTPUT_LIB}
     COMMAND ${CMAKE_COMMAND} -E echo "Building Showtime for Android using Linux container"
-    COMMAND ${VAGRANT} up
-    COMMAND ${VAGRANT} halt
+    COMMAND ${VAGRANTCOMMAND} up
+    COMMAND ${VAGRANTCOMMAND} halt
     WORKING_DIRECTORY ${ANDROID_BUILD_DIR}
     VERBATIM
 )
