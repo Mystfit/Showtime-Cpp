@@ -4,98 +4,110 @@
 
 using namespace ZstTest;
 
-struct FixtureExternalClient {
-    boost::process::child sink_process;
-    boost::process::ipstream sink_out;
-    boost::thread sink_log_thread;
-    
-    
-    FixtureExternalClient(){
-        //Create callbacks
-        TestEntityEvents * entityEvents = new TestEntityEvents();
-        TestPerformerEvents * performerEvents = new TestPerformerEvents();
-        
-        zst_add_hierarchy_adaptor(entityEvents);
-        zst_add_hierarchy_adaptor(performerEvents);
-        
-        
-        
-        //Run the sink program
-        std::string prog = fs::absolute(external_test_path).parent_path().generic_string() + "/TestHelperSink";
-#ifdef WIN32
-        prog += ".exe";
-#endif
-        
-#ifdef PAUSE_SINK
-        char pause_flag = 'd';
-#else
-        char pause_flag = 'a';
-#endif
-        //Run sink in external process so we don't share the same Showtime singleton
-        ZstLog::app(LogLevel::notification, "Starting sink process");
-        
-        try {
-            sink_process = boost::process::child(prog, &pause_flag, boost::process::std_out > sink_out); //d flag pauses the sink process to give us time to attach a debugger
-#ifdef PAUSE_SINK
-#ifdef WIN32
-            system("pause");
-#endif
-            system("read -n 1 -s -p \"Press any key to continue...\n\"");
-#endif
-        }
-        catch (boost::process::process_error e) {
-            ZstLog::app(LogLevel::error, "Sink process failed to start. Code:{} Message:{}", e.code().value(), e.what());
-        }
-        assert(sink_process.valid());
-        
-        // Create a thread to handle reading log info from the sink process' stdout pipe
-        sink_log_thread = ZstTest::log_external_pipe(sink_out);
-    }
+struct FixtureExternalClient : public FixtureJoinServer {
+	boost::process::child sink_process;
+	boost::process::ipstream sink_out;
+	boost::thread sink_log_thread;
 
-    ~FixtureExternalClient(){
-        sink_out.pipe().close();
-        sink_log_thread.join();
-    }
+	std::unique_ptr<OutputComponent> output_ent;
+	std::shared_ptr<TestEntityEvents> entityEvents;
+	std::shared_ptr<TestPerformerEvents> performerEvents;
+
+	FixtureExternalClient() :
+		output_ent(std::make_unique<OutputComponent>()),
+		entityEvents(std::make_shared<TestEntityEvents>()),
+		performerEvents(std::make_shared<TestPerformerEvents>())
+	{
+		zst_add_hierarchy_adaptor(entityEvents.get());
+		zst_add_hierarchy_adaptor(performerEvents.get());
+		zst_get_root()->add_child(output_ent.get());
+		clear_callback_queue();
+
+		//Run the sink program
+		std::string prog = fs::current_path().generic_string() + "/TestHelperSink";
+#ifdef WIN32
+		prog += ".exe";
+#endif
+
+#ifdef PAUSE_SINK
+		char pause_flag = 'd';
+#else
+		char pause_flag = 'a';
+#endif
+		//Run sink in external process so we don't share the same Showtime singleton
+		ZstLog::app(LogLevel::notification, "Starting sink process");
+
+		try {
+			sink_process = boost::process::child(prog, &pause_flag, boost::process::std_out > sink_out); //d flag pauses the sink process to give us time to attach a debugger
+#ifdef PAUSE_SINK
+#ifdef WIN32
+			system("pause");
+#endif
+			system("read -n 1 -s -p \"Press any key to continue...\n\"");
+#endif
+			TAKE_A_BREATH
+		}
+		catch (boost::process::process_error e) {
+			ZstLog::app(LogLevel::error, "Sink process failed to start. Code:{} Message:{}", e.code().value(), e.what());
+		}
+
+		// Create a thread to handle reading log info from the sink process' stdout pipe
+		sink_log_thread = ZstTest::log_external_pipe(sink_out);
+	}
+
+	~FixtureExternalClient() {
+		sink_out.pipe().close();
+		sink_log_thread.join();
+	}
+};
+
+
+bool found_performer(ZstURI performer_address) {
+	ZstEntityBundle bundle;
+	zst_get_performers(bundle);
+	for (auto p : bundle) {
+		if (p->URI() == performer_address) {
+			return true;
+		}
+	}
+	return false;
 }
 
 
 
-void test_external_entities(std::string external_test_path, bool launch_sink_process = true) {
-    //Create emitter
-    OutputComponent * output_ent = new OutputComponent("proxy_test_output");
-    zst_get_root()->add_child(output_ent);
-    assert(output_ent->is_activated());
-    
-    ZstURI sink_perf_uri = ZstURI("sink");
-    ZstURI sink_ent_uri = sink_perf_uri + ZstURI("sink_ent");
-    ZstURI sink_B_uri = sink_ent_uri + ZstURI("sinkB");
-    ZstURI sink_plug_uri = sink_ent_uri + ZstURI("in");
-	ZstURI sync_out_plug_uri = sink_ent_uri + ZstURI("out");
+ZstURI sink_perf_uri = ZstURI("sink");
+ZstURI sink_ent_uri = sink_perf_uri + ZstURI("sink_ent");
+ZstURI sink_B_uri = sink_ent_uri + ZstURI("sinkB");
+ZstURI sink_plug_uri = sink_ent_uri + ZstURI("in");
+ZstURI sync_out_plug_uri = sink_ent_uri + ZstURI("out");
 
-	wait_for_event(performerEvents, 1);
-    ZstPerformer * sink_performer = zst_get_performer_by_URI(sink_perf_uri);
-    assert(sink_performer);
-    performerEvents->reset_num_calls();
 
-	ZstEntityBundle performer_bundle;
-	zst_get_performers(performer_bundle);
-	assert(performer_bundle.size() == 2);
-    
-    //Test entity exists
-    wait_for_event(entityEvents, 2);
-    ZstComponent * sink_ent = dynamic_cast<ZstComponent*>(zst_find_entity(sink_ent_uri));
-    assert(sink_ent);
-    entityEvents->reset_num_calls();
-    
-    ZstInputPlug * sink_plug = dynamic_cast<ZstInputPlug*>(sink_ent->get_child_by_URI(sink_plug_uri));
-    assert(sink_plug);
-	assert(zst_find_entity(sink_plug->URI()));
-    assert(sink_plug->is_activated());
+BOOST_FIXTURE_TEST_CASE(find_performer, FixtureExternalClient) {
+	BOOST_TEST(zst_get_performer_by_URI(sink_perf_uri));
+	BOOST_TEST(found_performer(sink_perf_uri));
+}
 
-	ZstOutputPlug * sync_out_plug = dynamic_cast<ZstOutputPlug*>(sink_ent->get_child_by_URI(sync_out_plug_uri));
+BOOST_FIXTURE_TEST_CASE(find_performer_entities, FixtureExternalClient) {
+	ZstComponent* sink_ent = dynamic_cast<ZstComponent*>(zst_find_entity(sink_ent_uri));
+	BOOST_TEST(sink_ent);
+	BOOST_TEST(sink_ent->is_activated());
+
+	ZstInputPlug* sink_plug = dynamic_cast<ZstInputPlug*>(sink_ent->get_child_by_URI(sink_plug_uri));
+	BOOST_TEST(sink_plug);
+	BOOST_TEST(zst_find_entity(sink_plug->URI()));
+	BOOST_TEST(sink_plug->is_activated());
+
+	ZstOutputPlug* sync_out_plug = dynamic_cast<ZstOutputPlug*>(sink_ent->get_child_by_URI(sync_out_plug_uri));
 	assert(sync_out_plug);
 	assert(sync_out_plug->is_activated());
+}
 
+BOOST_FIXTURE_TEST_CASE(plug_sync_adaptor, FixtureExternalClient) {
+	
+}
+
+
+void test_external_entities(std::string external_test_path, bool launch_sink_process = true) {
 	//Create plug sync adaptors
 	TestPlugSync * plug_sync_adp = new TestPlugSync();
 	sync_out_plug->add_adaptor(plug_sync_adp);
