@@ -42,6 +42,7 @@ struct FixturePlugs : public FixtureJoinServer {
 		zst_get_root()->add_child(output_component.get());
 		zst_get_root()->add_child(input_component.get());
 	}
+
 	~FixturePlugs() {};
 };
 
@@ -56,8 +57,8 @@ struct FixtureCable : public FixturePlugs {
 		cable->add_adaptor(cable_activation_events.get());
 		cable_activation_events->reset_num_calls();
 	}
+
 	~FixtureCable() {
-		cable->remove_adaptor(cable_activation_events.get());
 	};
 };
 

@@ -41,7 +41,7 @@ ZstClient::ZstClient() :
 	m_session = new ZstClientSession();
 
 	//Register module adaptors
-	m_session->hierarchy()->hierarchy_events().add_adaptor(this);
+	m_session->hierarchy()->hierarchy_events().add_adaptor(static_cast<ZstHierarchyAdaptor*>(this));
 
 	//Register event conditions
 	m_event_condition = std::make_shared<ZstSemaphore>();
@@ -163,14 +163,14 @@ void ZstClient::init_client(const char *client_name, bool debug)
 
 	//Setup adaptors to let transports communicate with client modules
 	m_client_transport->init();
-	m_client_transport->msg_events()->add_adaptor(this);
-	m_client_transport->msg_events()->add_adaptor(m_session);
-	m_client_transport->msg_events()->add_adaptor(m_session->hierarchy());
+	m_client_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(this));
+	m_client_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(m_session));
+	m_client_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(m_session->hierarchy()));
 
 	//Setup adaptors to receive graph messages
 	m_tcp_graph_transport->init();
-	m_tcp_graph_transport->msg_events()->add_adaptor(this);
-	m_tcp_graph_transport->msg_events()->add_adaptor(m_session);
+	m_tcp_graph_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(this));
+	m_tcp_graph_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(m_session));
     
 #ifdef ZST_BUILD_DRAFT_API
 	m_udp_graph_transport->init();
@@ -181,7 +181,7 @@ void ZstClient::init_client(const char *client_name, bool debug)
     //Stage discovery beacon
     m_service_broadcast_transport->init(STAGE_DISCOVERY_PORT);
     m_service_broadcast_transport->start_listening();
-    m_service_broadcast_transport->msg_events()->add_adaptor(this);
+    m_service_broadcast_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(this));
 
 	//Init completed
 	set_init_completed(true);
