@@ -1,3 +1,5 @@
+#define BOOST_TEST_MODULE Entity factories
+
 #include "TestCommon.hpp"
 #include <string>
 #include <memory>
@@ -169,11 +171,3 @@ void test_remote_factories(std::string external_test_path, bool launch_ext_proce
 	}
 }
 
-
-int main(int argc,char **argv)
-{
-    FixtureInit runner("TestEntityFactories", argv[0]);
-    test_entity_factories();
-	test_remote_factories(argv[0]);
-    return 0;
-}

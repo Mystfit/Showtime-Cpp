@@ -26,6 +26,7 @@ using namespace boost::process;
 #define WAIT_UNTIL_STAGE_TIMEOUT std::this_thread::sleep_for(std::chrono::milliseconds(STAGE_TIMEOUT + 1000));
 #define WAIT_UNTIL_STAGE_BEACON std::this_thread::sleep_for(std::chrono::milliseconds(3000));
 
+#define TEST_SERVER_NAME "test_server"
 
 // --------------
 // Entities
@@ -301,10 +302,8 @@ namespace ZstTest
 
 	class FixtureInitAndCreateServer : public FixtureInit {
 	public:
-		std::string server_name = "test_server";
-
 		FixtureInitAndCreateServer() {
-			m_stage_server = zst_create_server(server_name.c_str(), STAGE_ROUTER_PORT);
+			m_stage_server = zst_create_server(TEST_SERVER_NAME, STAGE_ROUTER_PORT);
 			TAKE_A_BREATH
 			clear_callback_queue();
 		}
@@ -332,6 +331,59 @@ namespace ZstTest
 	};
 
 
+	class FixtureExternalClient : public FixtureJoinServer {
+	public:
+		boost::process::child external_process;
+		ZstURI external_performer_URI;
+
+		FixtureExternalClient(std::string program_name)
+		{
+			external_performer_URI = ZstURI(program_name.c_str());
+
+			auto program_path = fs::current_path().parent_path().append("bin").append(program_name);
+#ifdef WIN32
+			program_path.replace_extension("exe");
+#endif
+
+#ifdef PAUSE_SINK
+			char pause_flag = 'd';
+#else
+			char pause_flag = 'a';
+#endif
+			//Run client as an external process so we don't share the same Showtime singleton
+			ZstLog::app(LogLevel::notification, "Starting {} process", program_path.generic_string());
+			try {
+				external_process = boost::process::child(program_path.generic_string(), &pause_flag, boost::process::std_out > external_process_out); //d flag pauses the sink process to give us time to attach a debugger
+#ifdef PAUSE_SINK
+#ifdef WIN32
+				system("pause");
+#endif
+				system("read -n 1 -s -p \"Press any key to continue...\n\"");
+#endif
+				TAKE_A_BREATH
+			}
+			catch (boost::process::process_error e) {
+				ZstLog::app(LogLevel::error, "External process failed to start. Code:{} Message:{}", e.code().value(), e.what());
+			}
+
+			// Create a thread to handle reading log info from the sink process' stdout pipe
+			external_process_log_thread = ZstTest::log_external_pipe(external_process_out);
+		}
+
+		~FixtureExternalClient() {
+			external_process.terminate();
+			external_process_out.pipe().close();
+
+			external_process_log_thread.interrupt();
+			external_process_log_thread.join();
+		}
+
+	private:
+		boost::process::ipstream external_process_out;
+		boost::thread external_process_log_thread;
+	};
+
+
 	// Signal catching
 	// -----------
 
@@ -342,6 +394,4 @@ namespace ZstTest
 #endif
 
 	static int s_interrupted = 0;
-
-
 };
