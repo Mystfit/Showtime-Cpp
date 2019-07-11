@@ -18,7 +18,7 @@ public:
 		ZstComponent("SINK", name),
         m_input(NULL),
 		m_output(NULL),
-        last_received_code(-1),
+        last_received_code(0),
 		m_child_sink(NULL)
 	{
 		m_input = create_input_plug("in", ZstValueType::ZST_INT);
@@ -96,13 +96,13 @@ int main(int argc,char **argv){
 			system("read -n 1 -s -p \"Press any key to continue...\n\"");
 #endif
 	}
-	zst_init("sink", true);
-    zst_auto_join_by_name("TestExternalClients_server");
+	zst_init("TestHelperSink", true);
+    zst_auto_join_by_name(TEST_SERVER_NAME);
 
 	Sink * sink = new Sink("sink_ent");
 	zst_get_root()->add_child(sink);
 	
-	while (sink->last_received_code > 0){
+	while (sink->last_received_code >= 0){
 		zst_poll_once();
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}

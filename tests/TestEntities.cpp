@@ -55,7 +55,7 @@ BOOST_FIXTURE_TEST_CASE(async_activation_callback, FixtureOutputEntity) {
 	BOOST_TEST(!zst_find_entity(output_component->URI()));
 
 	//Cleanup
-	//output_component->remove_adaptor(entity_sync_event.get());
+	output_component->remove_adaptor(entity_sync_event.get());
 }
 
 BOOST_FIXTURE_TEST_CASE(plug_children, FixtureOutputEntity) {
@@ -97,7 +97,7 @@ BOOST_FIXTURE_TEST_CASE(child_activation_callback, FixtureParentChild) {
 	BOOST_TEST(!child->is_activated());
 
 	//Cleanup
-	//child->remove_adaptor(child_activation_event.get());
+	child->remove_adaptor(child_activation_event.get());
 }
 
 BOOST_FIXTURE_TEST_CASE(parent_deactivates_child, FixtureParentChild) {

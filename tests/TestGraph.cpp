@@ -56,7 +56,9 @@ struct FixtureCable : public FixturePlugs {
 		cable->add_adaptor(cable_activation_events.get());
 		cable_activation_events->reset_num_calls();
 	}
-	~FixtureCable() {};
+	~FixtureCable() {
+		cable->remove_adaptor(cable_activation_events.get());
+	};
 };
 
 

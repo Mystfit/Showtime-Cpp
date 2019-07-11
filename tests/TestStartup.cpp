@@ -150,5 +150,7 @@ BOOST_FIXTURE_TEST_CASE(root_performer_activate_on_join, FixtureJoinServer)
 	zst_get_root()->add_adaptor(performer_activated.get());
 	BOOST_TEST(performer_activated->num_calls() == 1);
 	BOOST_TEST(zst_get_root()->is_activated());
-	//zst_get_root()->remove_adaptor(performer_activated.get());
+
+	//Cleanup
+	zst_get_root()->remove_adaptor(performer_activated.get());
 }
