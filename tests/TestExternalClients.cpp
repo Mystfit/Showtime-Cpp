@@ -79,6 +79,7 @@ bool found_performer(ZstURI performer_address) {
 	return false;
 }
 
+
 BOOST_FIXTURE_TEST_CASE(performer_arriving, FixtureWaitForClient) {
 	BOOST_TEST(performerEvents->last_arrived_performer == external_performer_URI);
 }
@@ -125,7 +126,6 @@ BOOST_FIXTURE_TEST_CASE(plug_observation, FixtureExternalConnectCable) {
     int echo_val = 4;
     output_ent->send(echo_val);
     wait_for_event(plug_sync_adp.get(), 1);
-    BOOST_TEST(zst_find_entity(sink_ent_uri + ZstURI("sinkB")));
     BOOST_TEST(sync_out_plug->int_at(0) == echo_val);
 }
 
