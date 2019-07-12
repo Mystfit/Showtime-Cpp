@@ -159,6 +159,8 @@ long double test_benchmark(bool reliable, int send_rate, int send_amount)
 
 int main(int argc, char **argv)
 {
+	auto testrunner = FixtureJoinServer();
+
 	//Create threaded event loop to handle polling
 	boost::thread eventloop_thread = boost::thread(BenchmarkEventLoop());
 
