@@ -31,7 +31,7 @@ platform:
 - x64
 
 environment:
-    GENERATOR: "Visual Studio 16 2019 Win64"
+    GENERATOR: "Visual Studio 16 2019"
     BOOST_ROOT: "C:/Libraries/boost_1_69_0"
     BUILD_FOLDER: "%APPVEYOR_BUILD_FOLDER%/build"
     DEPENDENCY_DIR: "%APPVEYOR_BUILD_FOLDER%/dependencies"
