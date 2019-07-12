@@ -36,6 +36,7 @@ environment:
     BUILD_FOLDER: "%APPVEYOR_BUILD_FOLDER%/build"
     DEPENDENCY_DIR: "%APPVEYOR_BUILD_FOLDER%/dependencies"
     INSTALL_DIR: "%APPVEYOR_BUILD_FOLDER%/install"
+    PATH: "%PROGRAMFILES%/CMake/bin;%PATH%"
     matrix:
     - PYTHON_VER: 2
     - PYTHON_VER: 3
@@ -50,7 +51,6 @@ install:
     choco install -y swig > $null
     choco install -y cmake > $null
     refreshenv
-    Install-ChocolateyPath -PathToInstall "$($env:PROGRAMFILES)\CMake\bin"
     cmd.exe /c "call $env:APPVEYOR_BUILD_FOLDER/install_dependencies.bat --build-dir $env:BUILD_FOLDER --config $env:CONFIGURATION"
 
 before_build:
