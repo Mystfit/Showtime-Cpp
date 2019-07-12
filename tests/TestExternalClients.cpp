@@ -5,8 +5,7 @@
 using namespace ZstTest;
 
 struct FixtureSinkClient : public FixtureExternalClient {
-	//Output entity
-	std::unique_ptr<OutputComponent> output_ent;
+
 
     //Common URIs
 	ZstURI sink_ent_uri;
@@ -15,7 +14,6 @@ struct FixtureSinkClient : public FixtureExternalClient {
     
 	FixtureSinkClient() :
 		FixtureExternalClient("TestHelperSink"),
-		output_ent(std::make_unique<OutputComponent>("output")),
 		sink_ent_uri(external_performer_URI + ZstURI("sink_ent")),
 		sink_plug_uri(sink_ent_uri + ZstURI("in")),
 		sync_out_plug_uri(sink_ent_uri + ZstURI("out"))
@@ -27,27 +25,22 @@ struct FixtureSinkClient : public FixtureExternalClient {
 };
 
 
-struct FixtureWaitForClient : public FixtureSinkClient {
-	std::shared_ptr<TestPerformerEvents> performerEvents;
-
-	FixtureWaitForClient() : performerEvents(std::make_shared<TestPerformerEvents>()) {
-		zst_add_hierarchy_adaptor(performerEvents.get());
-		wait_for_event(performerEvents.get(), 1);
-		performerEvents->reset_num_calls();
-	}
-
-	~FixtureWaitForClient() {}
+struct FixtureWaitForSinkClient : public FixtureJoinServer, FixtureSinkClient, FixtureWaitForExternalClient {
+	FixtureWaitForSinkClient() {}
+	~FixtureWaitForSinkClient() {}
 };
 
 
-struct FixtureExternalEntities : public FixtureWaitForClient
+struct FixtureExternalEntities : public FixtureWaitForSinkClient
 {
     ZstComponent * sink_ent;
     ZstInputPlug * sink_plug;
+	std::unique_ptr<OutputComponent> output_ent;
 
     FixtureExternalEntities() :
         sink_ent(NULL),
-        sink_plug(NULL)
+        sink_plug(NULL),
+		output_ent(std::make_unique<OutputComponent>("output"))
     {
         zst_get_root()->add_child(output_ent.get());
         clear_callback_queue();
@@ -80,7 +73,7 @@ bool found_performer(ZstURI performer_address) {
 }
 
 
-BOOST_FIXTURE_TEST_CASE(performer_arriving, FixtureWaitForClient) {
+BOOST_FIXTURE_TEST_CASE(performer_arriving, FixtureWaitForSinkClient) {
 	BOOST_TEST(performerEvents->last_arrived_performer == external_performer_URI);
 }
 
@@ -90,12 +83,12 @@ BOOST_FIXTURE_TEST_CASE(performer_leaving, FixtureExternalConnectCable) {
 	BOOST_TEST(performerEvents->last_left_performer == external_performer_URI);
 }
 
-BOOST_FIXTURE_TEST_CASE(find_performer, FixtureWaitForClient) {
+BOOST_FIXTURE_TEST_CASE(find_performer, FixtureWaitForSinkClient) {
 	BOOST_TEST(zst_get_performer_by_URI(external_performer_URI));
 	BOOST_TEST(found_performer(external_performer_URI));
 }
 
-BOOST_FIXTURE_TEST_CASE(find_performer_entities, FixtureWaitForClient) {
+BOOST_FIXTURE_TEST_CASE(find_performer_entities, FixtureWaitForSinkClient) {
 	auto sink_ent = dynamic_cast<ZstComponent*>(zst_find_entity(sink_ent_uri));
 	BOOST_TEST(sink_ent);
 	BOOST_TEST(sink_ent->is_activated());

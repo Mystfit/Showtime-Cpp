@@ -75,16 +75,14 @@ bool found_cable(ZstCableAddress cable_address) {
 }
 
 
-BOOST_FIXTURE_TEST_CASE(cable_URIs, FixtureCableCompare)
-{
+BOOST_FIXTURE_TEST_CASE(cable_URIs, FixtureCableCompare){
 	BOOST_TEST(cable_a->get_address().get_input_URI() == in);
 	BOOST_TEST(cable_a->get_address().get_output_URI() == out);
 	BOOST_TEST(cable_a->is_attached(out));
 	BOOST_TEST(cable_a->is_attached(in));
 }
 
-BOOST_FIXTURE_TEST_CASE(cable_comparisons, FixtureCableCompare)
-{
+BOOST_FIXTURE_TEST_CASE(cable_comparisons, FixtureCableCompare){
 	//Test cable comparisons
 	BOOST_TEST(ZstCableAddressEq{}(cable_a->get_address(), cable_b->get_address()));
 	BOOST_TEST(ZstCableAddressHash{}(cable_a->get_address()) == ZstCableAddressHash{}(cable_b->get_address()));
@@ -95,8 +93,7 @@ BOOST_FIXTURE_TEST_CASE(cable_comparisons, FixtureCableCompare)
 	BOOST_TEST(!(ZstCableCompare{}(cable_d, cable_c->get_address())));
 }
 
-BOOST_FIXTURE_TEST_CASE(cable_sets, FixtureCableCompare)
-{
+BOOST_FIXTURE_TEST_CASE(cable_sets, FixtureCableCompare){
 	//Test cable sets
 	std::set<std::unique_ptr<ZstCable>, ZstCableCompare> cable_set;
 	cable_set.insert(std::move(cable_c));

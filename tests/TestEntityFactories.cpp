@@ -55,119 +55,140 @@ public:
 	}
 };
 
-void test_entity_factories(){
-	//Create the factory that will instantiate our custom entity
-	ZstLog::app(LogLevel::notification, "Test creating a local factory");
-	std::shared_ptr<TestFactory> test_factory = std::shared_ptr<TestFactory>(new TestFactory("customs"));
-	zst_register_factory(test_factory.get());
-	assert(test_factory->is_activated());
 
-	ZstURIBundle bundle;
-	ZstLog::app(LogLevel::notification, "Test getting creatables from a factory");
-	test_factory->get_creatables(bundle);
-	assert(bundle.size() == 1);
-	assert(bundle[0] == test_factory->URI() + ZstURI(CUSTOM_COMPONENT));
+struct FixtureLocalFactory : public FixtureJoinServer {
+	std::unique_ptr<TestFactory> factory;
+	ZstURI creatable_URI;
 
-	//Create an scoped entity that will be owned by the application (not the Showtime library)
+	FixtureLocalFactory() {
+		factory = std::make_unique<TestFactory>("customs");
+		zst_register_factory(factory.get());
+		creatable_URI = factory->URI() + ZstURI(CUSTOM_COMPONENT);
+	}
+};
+
+
+struct FixtureFactoryClient : public FixtureExternalClient {
+	FixtureFactoryClient() :
+		FixtureExternalClient("TestHelperExternalFactory")
 	{
-		ZstLog::app(LogLevel::notification, "Test creating an entity from a factory");
-		ZstSharedEntity entity = ZstSharedEntity(zst_create_entity(bundle[0], "brand_spanking_new"));
-		assert(entity);
-		assert(zst_find_entity(zst_get_root()->URI() + ZstURI("brand_spanking_new")));
 	}
+	~FixtureFactoryClient() {};
+};
 
-	//Test scoped entity destruction
-	assert(!zst_find_entity(bundle[0]));
+struct FixtureWaitForFactoryClient : public FixtureJoinServer, FixtureFactoryClient, FixtureWaitForExternalClient {
 
-	//Test factory destruction
-	test_factory = NULL;
+	FixtureWaitForFactoryClient() {}
+	~FixtureWaitForFactoryClient() {}
+};
+
+
+struct FixtureExternalFactory : public FixtureWaitForFactoryClient {
+	ZstEntityFactory* external_factory;
+	std::shared_ptr<TestFactoryAdaptor> factoryEvents;
+
+	FixtureExternalFactory() : factoryEvents(std::make_shared<TestFactoryAdaptor>()){
+		external_factory = dynamic_cast<ZstEntityFactory*>(zst_find_entity(ZstURI("extfactory/external_customs")));
+		external_factory->add_adaptor(factoryEvents.get());
+		factoryEvents->reset_num_calls();
+	}
+};
+
+
+BOOST_FIXTURE_TEST_CASE(create_factory, FixtureJoinServer){
+	std::unique_ptr<TestFactory> factory = std::make_unique<TestFactory>("customs");
+	zst_register_factory(factory.get());
+	BOOST_TEST(factory->is_activated());
+	ZstEntityFactoryBundle bundle;
+	zst_get_root()->get_factories(bundle);
+	BOOST_TEST(bundle.size() == 1);
+	BOOST_TEST(bundle[0]->URI() == factory->URI());
 }
 
-void test_remote_factories(std::string external_test_path, bool launch_ext_process = true)
-{
-	//Adaptors
-	TestPerformerEvents * performerEvents = new TestPerformerEvents();
-	zst_add_hierarchy_adaptor(performerEvents);
-	
-	//Run the sink program
-	std::string prog = fs::absolute(external_test_path).parent_path().generic_string() + "/TestHelperExternalFactory";
-#ifdef WIN32
-	prog += ".exe";
-#endif
-	boost::process::child ext_factory_process;
-	boost::process::pipe ext_factory_pipe;
-	boost::process::ipstream ext_factory_out;
-	boost::thread ext_factory_log_thread;
+BOOST_FIXTURE_TEST_CASE(destroy_factory, FixtureLocalFactory) {
+	TestFactory* factory = new TestFactory("customs");
+	zst_register_factory(factory);
+	delete factory;
+	ZstEntityFactoryBundle bundle;
+	zst_get_root()->get_factories(bundle);
+	BOOST_TEST(bundle.size() == 0);
+}
 
-	if (launch_ext_process) {
-		//Run external factory in external process so we don't share the same Showtime singleton
-		ZstLog::app(LogLevel::notification, "Starting external factory process");
-		try {
-			ext_factory_process = boost::process::child(prog, std_in < ext_factory_pipe, std_out > ext_factory_out);
-		}
-		catch (boost::process::process_error e) {
-			ZstLog::app(LogLevel::error, "External factory process failed to start. Code:{} Message:{}", e.code().value(), e.what());
-		}
-		assert(ext_factory_process.valid());
-		wait_for_event(performerEvents, 1);
+BOOST_FIXTURE_TEST_CASE(remove_factory, FixtureLocalFactory) {
+	zst_get_root()->remove_factory(factory.get());
+	BOOST_TEST(factory->is_activated());
+	ZstEntityFactoryBundle bundle;
+	zst_get_root()->get_factories(bundle);
+	BOOST_TEST(bundle.size() == 0);
+}
 
-		// Create a thread to handle reading log info from the external factory process' stdout pipe
-		ext_factory_log_thread = ZstTest::log_external_pipe(ext_factory_out);
+BOOST_FIXTURE_TEST_CASE(query_factory_creatables, FixtureLocalFactory) {
+	ZstURIBundle bundle;
+	factory->get_creatables(bundle);
+	BOOST_TEST(bundle.size() == 1);
+	BOOST_TEST(bundle[0] == creatable_URI);
+}
+
+BOOST_FIXTURE_TEST_CASE(create_entity_from_local_factory, FixtureLocalFactory) {
+	auto created_entity_URI = zst_get_root()->URI() + ZstURI("brand_spanking_new");
+	ZstURIBundle bundle;
+	factory->get_creatables(bundle);
+	{
+		auto entity = ZstSharedEntity(zst_create_entity(bundle[0], "brand_spanking_new"));
+		BOOST_TEST(entity);
+		BOOST_TEST(zst_find_entity(created_entity_URI));
+		BOOST_TEST_MESSAGE(fmt::format("Entity {} leaving scope", created_entity_URI.path()));
 	}
+	BOOST_TEST(!zst_find_entity(created_entity_URI));
+}
 
+BOOST_FIXTURE_TEST_CASE(find_external_factory, FixtureWaitForFactoryClient) {
+	BOOST_TEST_CHECKPOINT("Factory performer arrived");
+	BOOST_TEST(zst_find_entity(ZstURI("extfactory/external_customs")));
+}
 
-	ZstLog::app(LogLevel::notification, "Test if we can search for a remote factory");
-	ZstPerformer * ext_factory_performer = dynamic_cast<ZstPerformer*>(zst_find_entity(ZstURI("extfactory")));
-	assert(ext_factory_performer);
-	performerEvents->reset_num_calls();
+BOOST_FIXTURE_TEST_CASE(find_external_creatables, FixtureExternalFactory) {
+	ZstURIBundle bundle;
+	external_factory->get_creatables(bundle);
+	BOOST_TEST(bundle.size() == 1);
+	BOOST_TEST(bundle[0] == external_factory->URI() + ZstURI("CustomExternalComponent"));
+}
 
-	ZstEntityFactory * ext_factory = dynamic_cast<ZstEntityFactory*>(zst_find_entity(ZstURI("extfactory/external_customs")));
-	assert(ext_factory);
+BOOST_FIXTURE_TEST_CASE(create_entity_from_external_factory, FixtureExternalFactory) {
+	ZstURIBundle bundle;
+	external_factory->get_creatables(bundle);
+	auto entity = zst_create_entity(bundle[0], "brand_spanking_new_ext");
+	BOOST_TEST_REQUIRE(entity);
+	BOOST_TEST(zst_find_entity(external_factory->URI().first() + ZstURI("brand_spanking_new_ext")));
+}
+
+BOOST_FIXTURE_TEST_CASE(create_entity_from_external_factory_async, FixtureExternalFactory) {
+	auto created_entity_URI = external_factory->URI().first() + ZstURI("brand_spanking_new_ext_async");
+	ZstURIBundle bundle;
+	external_factory->get_creatables(bundle);
+	zst_create_entity_async(bundle[0], "brand_spanking_new_ext_async");
+	wait_for_event(factoryEvents.get(), 1);
+	BOOST_TEST(factoryEvents->last_created_entity == created_entity_URI);
+	BOOST_TEST(zst_find_entity(created_entity_URI));
+}
+
+BOOST_FIXTURE_TEST_CASE(updated_creatables_callback, FixtureExternalFactory)
+{
+	std::string update_creatables_msg = "update_creatables\n";
+	external_process_stdin.write(update_creatables_msg.c_str(), static_cast<int>(update_creatables_msg.size()));
+	wait_for_event(factoryEvents.get(), 1);
 
 	ZstURIBundle bundle;
-	ext_factory->get_creatables(bundle);
-	assert(bundle.size() == 1);
-	assert(bundle[0] == ext_factory->URI() + ZstURI("CustomExternalComponent"));
-
-	//Create an external entity using the external factory
-	ZstLog::app(LogLevel::notification, "Test if we can create a remote entity");
-	ZstEntityBase * entity = zst_create_entity(bundle[0], "brand_spanking_new_ext");
-	assert(entity);
-	assert(zst_find_entity(ext_factory_performer->URI() + ZstURI("brand_spanking_new_ext")));
-
-	//Test creating external entity async
-	ZstLog::app(LogLevel::notification, "Test if we can create a remote entity async");
-	std::shared_ptr<TestFactoryAdaptor> factory_adp = std::make_shared<TestFactoryAdaptor>();
-	ext_factory->add_adaptor(factory_adp.get());
-	zst_create_entity_async(bundle[0], "brand_spanking_new_ext_async");
-	wait_for_event(factory_adp.get(), 1);
-	ZstURI async_entity = ext_factory_performer->URI() + ZstURI("brand_spanking_new_ext_async");
-	assert(factory_adp->last_created_entity == async_entity);
-	assert(zst_find_entity(async_entity));
-	assert(factory_adp->num_calls() == 1);
-	factory_adp->reset_num_calls();
-
-	//Test remote factories updating entities
-	ZstLog::app(LogLevel::notification, "Test if the remote factory can update its creatable list");
-	std::string update_creatables_msg = "update_creatables\n";
-	ext_factory_pipe.write(update_creatables_msg.c_str(), static_cast<int>(update_creatables_msg.size()));
-	wait_for_event(factory_adp.get(), 1);
-
-	//Check if the remote factory updated its creatable list
-	bundle.clear();
-	ext_factory->get_creatables(bundle);
-	assert(bundle.size() == 2);
+	external_factory->get_creatables(bundle);
+	BOOST_TEST(bundle.size() == 2);
+	bool found_avocado = false;
 	for (auto c : bundle) {
-		ZstLog::app(LogLevel::debug, "Creatable: {}", c.path());
+		if (c == external_factory->URI() + ZstURI("avocado"))
+			found_avocado = true;
 	}
-
-	//Check if asking a factory to create a URI that doesn't return anything returns null
-	assert(!zst_create_entity(ext_factory->URI() + ZstURI("CustomExternalComponent") + ZstURI("avocado"), "test"));
-
-	//Quit
-	if (launch_ext_process) {
-		ext_factory_process.terminate();
-		ext_factory_log_thread.join();
-	}
+	BOOST_TEST(found_avocado);
 }
 
+BOOST_FIXTURE_TEST_CASE(bad_creatable_path_returns_null, FixtureExternalFactory) {
+	BOOST_TEST(!zst_create_entity(external_factory->URI() + ZstURI("bad_creatable_path"), "test"));
+}

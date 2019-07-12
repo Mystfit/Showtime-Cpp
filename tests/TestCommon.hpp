@@ -331,9 +331,28 @@ namespace ZstTest
 	};
 
 
-	class FixtureExternalClient : public FixtureJoinServer {
+	class FixtureWaitForExternalClient {
+	public:
+		std::shared_ptr<TestPerformerEvents> performerEvents;
+
+		FixtureWaitForExternalClient() : performerEvents(std::make_shared<TestPerformerEvents>()) {
+			zst_add_hierarchy_adaptor(performerEvents.get());
+			BOOST_TEST_CHECKPOINT("Waiting for external client performer to arrive");
+			wait_for_event(performerEvents.get(), 1);
+			performerEvents->reset_num_calls();
+		}
+
+		~FixtureWaitForExternalClient() {}
+	};
+
+
+
+	class FixtureExternalClient {
 	public:
 		boost::process::child external_process;
+		boost::process::ipstream external_process_stdout;
+		boost::process::pipe external_process_stdin;
+
 		ZstURI external_performer_URI;
 
 		FixtureExternalClient(std::string program_name)
@@ -353,7 +372,7 @@ namespace ZstTest
 			//Run client as an external process so we don't share the same Showtime singleton
 			ZstLog::app(LogLevel::notification, "Starting {} process", program_path.generic_string());
 			try {
-				external_process = boost::process::child(program_path.generic_string(), &pause_flag, boost::process::std_out > external_process_out); //d flag pauses the sink process to give us time to attach a debugger
+				external_process = boost::process::child(program_path.generic_string(), &pause_flag, boost::process::std_in < external_process_stdin, boost::process::std_out > external_process_stdout); //d flag pauses the sink process to give us time to attach a debugger
 #ifdef PAUSE_SINK
 #ifdef WIN32
 				system("pause");
@@ -367,19 +386,18 @@ namespace ZstTest
 			}
 
 			// Create a thread to handle reading log info from the sink process' stdout pipe
-			external_process_log_thread = ZstTest::log_external_pipe(external_process_out);
+			external_process_log_thread = ZstTest::log_external_pipe(external_process_stdout);
 		}
 
 		~FixtureExternalClient() {
 			external_process.terminate();
-			external_process_out.pipe().close();
+			external_process_stdout.pipe().close();
 
 			external_process_log_thread.interrupt();
 			external_process_log_thread.join();
 		}
 
 	private:
-		boost::process::ipstream external_process_out;
 		boost::thread external_process_log_thread;
 	};
 
