@@ -82,7 +82,7 @@ int main(int argc,char **argv){
 
 	ZstLog::app(LogLevel::notification, "In sink process");
 
-	bool force_launch = true;
+	bool force_launch = false;
 	if(argc < 2 && !force_launch){
 		ZstLog::app(LogLevel::warn, "Skipping sink test, command line flag not set");
 		return 0;

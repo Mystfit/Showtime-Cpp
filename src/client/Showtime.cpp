@@ -184,9 +184,9 @@ ZstEntityBase * zst_create_entity(const ZstURI & creatable_path, const char * na
 	return ZstClient::instance().session()->hierarchy()->create_entity(creatable_path, name, ZstTransportSendType::SYNC_REPLY);
 }
 
-ZstEntityBase * zst_create_entity_async(const ZstURI & creatable_path, const char * name)
+void zst_create_entity_async(const ZstURI & creatable_path, const char * name)
 {
-	return ZstClient::instance().session()->hierarchy()->create_entity(creatable_path, name, ZstTransportSendType::ASYNC_REPLY);
+	ZstClient::instance().session()->hierarchy()->create_entity(creatable_path, name, ZstTransportSendType::ASYNC_REPLY);
 }
 
 void zst_register_factory(ZstEntityFactory * factory)
