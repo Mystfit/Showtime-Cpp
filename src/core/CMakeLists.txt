@@ -139,7 +139,11 @@ set(ZST_CORE_ENTITY_SRC
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstPlug.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstPerformer.cpp"
 )
-set(ZST_CORE_ADAPTOR_SRC "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstEventAdaptorStubs.cpp")
+set(ZST_CORE_ADAPTOR_SRC 
+    "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstEventAdaptorStubs.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstEventAdaptor.cpp"
+
+)
 set(ZST_CORE_LIASON_SRC
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstSynchronisableLiason.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstEntityFactoryLiason.cpp"
@@ -203,8 +207,9 @@ endif()
 # Platform specific options
 IF(WIN32)
     list(APPEND GLOBAL_PUBLIC_DEFINES
-        _SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING
-        _SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING
+        -D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING
+        -D_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING
+        -D_SCL_SECURE_NO_WARNINGS
     )
     list(APPEND GLOBAL_PUBLIC_DEFINES
         _WIN32_WINNT=0x0601

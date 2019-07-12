@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
 
 	ZstLog::app(LogLevel::notification, "In external factory process");
 
-	bool force_launch = true;
+	bool force_launch = false;
 	if (argc < 2 && !force_launch) {
 		ZstLog::app(LogLevel::warn, "Skipping sink test, command line flag not set");
 		return 0;
@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
 	zst_register_factory(test_factory.get());
 	
 	//Connect to the stage
-    zst_auto_join_by_name("TestEntityFactories_server");
+	zst_auto_join_by_name(TEST_SERVER_NAME);
 	assert(test_factory->is_activated());
 
 	//Start event loop

@@ -12,9 +12,9 @@ public:
 	const std::string & reliable_address();
 	const std::string & unreliable_address();
 
-	void add_subscriber_peer(ZstPerformerStageProxy * client);
-	void remove_subscriber_peer(ZstPerformerStageProxy * client);
-	bool is_connected_to_subscriber_peer(ZstPerformerStageProxy * client);
+	void add_subscriber(ZstPerformerStageProxy * client);
+	void remove_subscriber(ZstPerformerStageProxy * client);
+	bool has_connected_subscriber(ZstPerformerStageProxy * client);
 
 private:
 	std::string m_reliable_address;

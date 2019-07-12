@@ -3,6 +3,7 @@ set(TEST_COMMON_HEADERS "TestCommon.hpp")
 set(HELPER_PREFIX "TestHelper")
 
 set(TESTS
+    "TestURI"
     "TestStartup"
     "TestEntities"
     "TestExternalClients"
@@ -17,6 +18,7 @@ set(TESTS
 set(TEST_DEPENDENCIES 
     ${CLIENT_TARGET}
     ${SERVER_TARGET}
+    ${Boost_TEST_TARGET}
     ${Boost_THREAD_TARGET}
     ${Boost_SYSTEM_TARGET}
     ${Boost_FILESYSTEM_TARGET}

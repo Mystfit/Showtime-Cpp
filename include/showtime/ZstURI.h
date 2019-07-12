@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <ostream>
 #include "ZstExports.h"
 
 #define MAX_PATH_LEN 255
@@ -40,10 +41,6 @@ public:
 	ZST_EXPORT bool operator< (const ZstURI& b) const;
 	ZST_EXPORT bool is_empty() const;
 
-	//Testing
-	ZST_EXPORT static void self_test();
-
-
 
 private:
 	struct pstr {
@@ -64,4 +61,9 @@ private:
 struct ZstURIHash
 {
 	ZST_EXPORT size_t operator()(ZstURI const& k) const;
+};
+
+
+namespace std {
+	ZST_EXPORT std::ostream& operator<<(std::ostream& os, const ZstURI& uri);
 };

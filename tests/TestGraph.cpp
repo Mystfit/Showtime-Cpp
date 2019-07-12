@@ -1,9 +1,10 @@
+#define BOOST_TEST_MODULE Graph
+
 #include "TestCommon.hpp"
 
 using namespace ZstTest;
 
-class LimitedConnectionInputComponent : public ZstComponent
-{
+class LimitedConnectionInputComponent : public ZstComponent {
 public:
 	LimitedConnectionInputComponent(std::string name, int max_cables) : ZstComponent("LimitedConnectionInputComponent", name.c_str()) {
 		input = create_input_plug("limited_input", ZstValueType::ZST_INT, max_cables);
@@ -12,214 +13,185 @@ public:
 };
 
 
-void test_connect_plugs() {
-    ZstLog::app(LogLevel::notification, "Running connect plugs test");
-    
-    OutputComponent * test_output = new OutputComponent("connect_test_out");
-    InputComponent * test_input = new InputComponent("connect_test_in", 0);
-    zst_get_root()->add_child(test_output);
-    zst_get_root()->add_child(test_input);
+struct FixtureCableCompare {
+	ZstURI in = ZstURI("a/1");
+	ZstURI out = ZstURI("b/1");
+	ZstURI less = ZstURI("a/b");
+	ZstURI more = ZstURI("b/a");
+	std::unique_ptr<ZstInputPlug> plug_in_A = std::make_unique<ZstInputPlug>(in.path(), ZST_INT);
+	std::unique_ptr<ZstOutputPlug> plug_out_A = std::make_unique<ZstOutputPlug>(out.path(), ZST_INT);
+	std::unique_ptr<ZstInputPlug> plug_in_B = std::make_unique<ZstInputPlug>(less.path(), ZST_INT);
+	std::unique_ptr<ZstOutputPlug> plug_out_B = std::make_unique<ZstOutputPlug>(more.path(), ZST_INT);
+	std::unique_ptr<ZstInputPlug> plug_in_C = std::make_unique<ZstInputPlug>(more.path(), ZST_INT);
+	std::unique_ptr<ZstOutputPlug> plug_out_C = std::make_unique<ZstOutputPlug>(less.path(), ZST_INT);
+	std::unique_ptr<ZstCable> cable_a = std::make_unique<ZstCable>(plug_in_A.get(), plug_out_A.get());
+	std::unique_ptr<ZstCable> cable_b = std::make_unique<ZstCable>(plug_in_A.get(), plug_out_A.get());
+	std::unique_ptr<ZstCable> cable_c = std::make_unique<ZstCable>(plug_in_B.get(), plug_out_B.get());
+	std::unique_ptr<ZstCable> cable_d = std::make_unique<ZstCable>(plug_in_C.get(), plug_out_C.get());
+};
 
-    ZstLog::app(LogLevel::notification, "Testing sync cable connection");
-    ZstCable * cable = zst_connect_cable(test_input->input(), test_output->output());
-    assert(cable);
-    assert(cable->is_activated());
-    
-    ZstLog::app(LogLevel::debug, "Verifying cable");
-    assert(cable->get_output() == test_output->output());
-    assert(cable->get_input() == test_input->input());
-    assert(test_output->output()->is_connected_to(test_input->input()));
-    assert(test_input->input()->is_connected_to(test_output->output()));
 
+struct FixturePlugs : public FixtureJoinServer {
+	std::unique_ptr<OutputComponent> output_component;
+	std::unique_ptr<InputComponent> input_component;
+
+	FixturePlugs() :
+		output_component(std::make_unique<OutputComponent>("connect_test_out")),
+		input_component(std::make_unique<InputComponent>("connect_test_in"))
+	{
+		zst_get_root()->add_child(output_component.get());
+		zst_get_root()->add_child(input_component.get());
+	}
+
+	~FixturePlugs() {};
+};
+
+
+struct FixtureCable : public FixturePlugs {
+	ZstCable* cable;
+	std::shared_ptr<TestSynchronisableEvents> cable_activation_events;
+
+	FixtureCable() : cable_activation_events(std::make_shared<TestSynchronisableEvents>())
+	{
+		cable = zst_connect_cable(input_component->input(), output_component->output());
+		cable->add_adaptor(cable_activation_events.get());
+		cable_activation_events->reset_num_calls();
+	}
+
+	~FixtureCable() {
+	};
+};
+
+
+bool found_cable(ZstCableAddress cable_address) {
 	ZstCableBundle bundle;
-    test_output->output()->get_child_cables(bundle);
-    for (auto c : bundle) {
-        assert(c->get_address().get_input_URI() == test_input->input()->URI());
-    }
+	zst_get_root()->get_child_cables(bundle);
+	for (auto c : bundle) {
+		if (c->get_address() == cable_address) {
+			return true;
+		}
+	}
+	return false;
+}
 
-    ZstLog::app(LogLevel::notification, "Testing cable disconnection");
-    zst_destroy_cable(cable);
-    assert(!test_output->output()->is_connected_to(test_input->input()));
-    assert(!test_input->input()->is_connected_to(test_output->output()));
-    
-    ZstLog::app(LogLevel::notification, "Testing async cable connection");
-    TestSynchronisableEvents * cable_activation = new TestSynchronisableEvents();
-    cable = zst_connect_cable_async(test_input->input(), test_output->output());
-    cable->add_adaptor(cable_activation);
-    wait_for_event(cable_activation, 1);
-    assert(cable_activation->num_calls() == 1);
-    cable_activation->reset_num_calls();
-        
-    zst_destroy_cable_async(cable);
-    cable = 0;
-    wait_for_event(cable_activation, 1);
-    assert(cable_activation->num_calls() == 1);
-    cable_activation->reset_num_calls();
 
-	ZstLog::app(LogLevel::notification, "Testing json serialisation of entity");
-	ZstLog::app(LogLevel::debug, "{}", zst_get_root()->as_json_str());
+BOOST_FIXTURE_TEST_CASE(cable_URIs, FixtureCableCompare){
+	BOOST_TEST(cable_a->get_address().get_input_URI() == in);
+	BOOST_TEST(cable_a->get_address().get_output_URI() == out);
+	BOOST_TEST(cable_a->is_attached(out));
+	BOOST_TEST(cable_a->is_attached(in));
+}
 
-    ZstLog::app(LogLevel::notification, "Testing cable disconnection when removing parent");
-    cable = zst_connect_cable(test_input->input(), test_output->output());
-    cable->add_adaptor(cable_activation);
-    cable_activation->reset_num_calls();
-    zst_deactivate_entity(test_output);
-    wait_for_event(cable_activation, 1);
-    assert(!test_input->input()->is_connected_to(test_output->output()));
-    assert(!test_output->output()->is_connected_to(test_input->input()));
+BOOST_FIXTURE_TEST_CASE(cable_comparisons, FixtureCableCompare){
+	//Test cable comparisons
+	BOOST_TEST(ZstCableAddressEq{}(cable_a->get_address(), cable_b->get_address()));
+	BOOST_TEST(ZstCableAddressHash{}(cable_a->get_address()) == ZstCableAddressHash{}(cable_b->get_address()));
+	BOOST_TEST(ZstCableCompare{}(cable_c, cable_d));
+	BOOST_TEST(ZstCableCompare{}(cable_c->get_address(), cable_d));
+	BOOST_TEST(ZstCableCompare{}(cable_c, cable_d->get_address()));
+	BOOST_TEST(!(ZstCableCompare{}(cable_d->get_address(), cable_c)));
+	BOOST_TEST(!(ZstCableCompare{}(cable_d, cable_c->get_address())));
+}
 
-	ZstLog::app(LogLevel::notification, "Testing setting maximum amount of cables that can be connected to an input");
-	LimitedConnectionInputComponent * test_limited_input = new LimitedConnectionInputComponent("limited_test_in", 1);
-	OutputComponent * second_output = new OutputComponent("connect_test_out2");
-    zst_get_root()->add_child(test_limited_input);
-    zst_get_root()->add_child(test_output);
-    zst_get_root()->add_child(second_output);
+BOOST_FIXTURE_TEST_CASE(cable_sets, FixtureCableCompare){
+	//Test cable sets
+	std::set<std::unique_ptr<ZstCable>, ZstCableCompare> cable_set;
+	cable_set.insert(std::move(cable_c));
+	cable_set.insert(std::move(cable_d));
+	BOOST_TEST((cable_set.find(cable_c) != cable_set.end()));
+	BOOST_TEST((cable_set.find(cable_d) != cable_set.end()));
+}
+
+BOOST_FIXTURE_TEST_CASE(sync_connect_cable, FixturePlugs) {
+	auto cable = zst_connect_cable(input_component->input(), output_component->output());
+	BOOST_TEST(cable);
+	BOOST_TEST(cable->is_activated());
+	BOOST_TEST(cable->get_output() == output_component->output());
+	BOOST_TEST(cable->get_input() == input_component->input());
+	BOOST_TEST(output_component->output()->is_connected_to(input_component->input()));
+	BOOST_TEST(input_component->input()->is_connected_to(output_component->output()));
+}
+
+BOOST_FIXTURE_TEST_CASE(async_connect_cable_callback, FixturePlugs) {
+	auto cable_activation_events = std::make_shared<TestSynchronisableEvents>();
+	auto cable = zst_connect_cable_async(input_component->input(), output_component->output());
+	cable->add_adaptor(cable_activation_events.get());
+	
+	wait_for_event(cable_activation_events.get(), 1);
+	BOOST_TEST(cable->is_activated());
+}
+
+BOOST_FIXTURE_TEST_CASE(async_destroy_cable_callback, FixtureCable) {
+	auto address_cmp = cable->get_address();
+	zst_destroy_cable_async(cable);
+	wait_for_event(cable_activation_events.get(), 1);
+	BOOST_TEST(!found_cable(address_cmp));
+}
+
+BOOST_FIXTURE_TEST_CASE(get_cable_from_plug, FixtureCable) {
+	ZstCableBundle bundle;
+	output_component->output()->get_child_cables(bundle);
+	for (auto c : bundle) {
+		BOOST_TEST(c->get_address().get_input_URI() == input_component->input()->URI());
+	}
+}
+
+BOOST_FIXTURE_TEST_CASE(disconnect_cable, FixtureCable) {
+	zst_destroy_cable(cable);
+	BOOST_TEST(!output_component->output()->is_connected_to(input_component->input()));
+	BOOST_TEST(!found_cable(ZstCableAddress(input_component->input()->URI(), output_component->output()->URI())));
+}
+
+BOOST_FIXTURE_TEST_CASE(parent_disconnects_cable, FixtureCable) {
+	auto address_cmp = cable->get_address();
+	zst_deactivate_entity(output_component.get());
+	wait_for_event(cable_activation_events.get(), 1);
+	BOOST_TEST(!output_component->output()->is_connected_to(input_component->input()));
+	BOOST_TEST(!found_cable(address_cmp));
+}
+
+
+BOOST_FIXTURE_TEST_CASE(limit_connected_cables, FixtureJoinServer) {
+	auto test_limited_input = std::make_unique<LimitedConnectionInputComponent>("limited_test_in", 1);
+	auto test_output = std::make_unique<OutputComponent>("connect_test_out1");
+	auto second_output = std::make_unique<OutputComponent>("connect_test_out2");
+    zst_get_root()->add_child(test_limited_input.get());
+    zst_get_root()->add_child(test_output.get());
+    zst_get_root()->add_child(second_output.get());
 	zst_connect_cable(test_limited_input->input, test_output->output());
 	zst_connect_cable(test_limited_input->input, second_output->output());
-	assert(!test_limited_input->input->is_connected_to(test_output->output()));
-	assert(test_limited_input->input->is_connected_to(second_output->output()));
-	assert(test_limited_input->input->num_cables() == 1);
-    
-    //Cleanup
-    zst_deactivate_entity(test_input);
-    clear_callback_queue();
-    delete test_output;
-	delete second_output;
-    delete test_input;
-    delete cable_activation;
-	delete test_limited_input;
+	BOOST_TEST(!test_limited_input->input->is_connected_to(test_output->output()));
+	BOOST_TEST(test_limited_input->input->is_connected_to(second_output->output()));
+	BOOST_TEST(test_limited_input->input->num_cables() == 1);
 }
 
-//void test_add_filter() {
-//    ZstLog::app(LogLevel::notification, "Starting addition filter test");
-//    int first_cmp_val = 4;
-//    int second_cmp_val = 30;
-//
-//    ZstLog::app(LogLevel::debug, "Creating input/output components for addition filter");
-//    OutputComponent * test_output_augend = new OutputComponent("add_test_augend");
-//    OutputComponent * test_output_addend = new OutputComponent("add_test_addend");
-//    InputComponent * test_input_sum = new InputComponent("add_test_sum", first_cmp_val, true);
-//    Adder * add_filter = new Adder("add_test");
-//    
-//    zst_activate_entity(test_output_augend);
-//    zst_activate_entity(test_output_addend);
-//    zst_activate_entity(test_input_sum);
-//    zst_activate_entity(add_filter);
-//    
-//    ZstLog::app(LogLevel::debug, "Connecting cables");
-//    zst_connect_cable(add_filter->augend(), test_output_augend->output() );
-//    zst_connect_cable(add_filter->addend(), test_output_addend->output());
-//    zst_connect_cable(test_input_sum->input(), add_filter->sum());
-//    
-//    TAKE_A_BREATH
-//
-//    //Send values
-//    ZstLog::app(LogLevel::debug, "Sending values");
-//    test_output_augend->send(2);
-//    test_output_addend->send(2);
-//
-//    TAKE_A_BREATH
-//
-//    int max_wait = 10000;
-//    int current_wait = 0;
-//
-//    //Wait for the first two input callbacks to clear before we check for the sum
-//    while(test_input_sum->num_hits < 2 && ++current_wait < max_wait){
-//        zst_poll_once();
-//    }
-//    assert(test_input_sum->last_received_val == first_cmp_val);
-//    test_input_sum->reset();
-//    test_input_sum->last_received_val = 0;
-//    current_wait = 0;
-//
-//    //Send more values
-//    test_input_sum->compare_val = second_cmp_val;
-//    test_output_augend->send(20);
-//    test_output_addend->send(10);
-//
-//    while (test_input_sum->num_hits < 2 && ++current_wait < max_wait){
-//        zst_poll_once();
-//    }
-//    assert(test_input_sum->last_received_val == second_cmp_val);
-//    ZstLog::app(LogLevel::debug, "Addition component succeeded at addition!");
-//
-//    //Cleanup
-//    zst_deactivate_entity(test_output_augend);
-//    zst_deactivate_entity(test_output_addend);
-//    zst_deactivate_entity(test_input_sum);
-//    zst_deactivate_entity(add_filter);
-//    clear_callback_queue();
-//    delete test_output_augend;
-//    delete test_output_addend;
-//    delete test_input_sum;
-//    delete add_filter;
-//}
-
-void test_reliable_graph()
-{
-	ZstLog::app(LogLevel::notification, "Starting reliable graph test");
+BOOST_FIXTURE_TEST_CASE(send_through_reliable_graph, FixtureCable) {
 	int first_cmp_val = 4;
-
-	OutputComponent * test_output = new OutputComponent("reliable_out");
-	InputComponent * test_input = new InputComponent("reliable_in", first_cmp_val, true);
-    zst_get_root()->add_child(test_output);
-    zst_get_root()->add_child(test_input);
-	zst_connect_cable(test_input->input(), test_output->output());
-	test_output->send(first_cmp_val);
-
-	int max_wait = 10000;
 	int current_wait = 0;
-	while (test_input->num_hits < 1 && ++current_wait < max_wait) {
+
+	output_component->send(first_cmp_val);
+	while (input_component->num_hits < 1 && ++current_wait < 10000) {
 		zst_poll_once();
 	}
-	assert(test_input->last_received_val == first_cmp_val);
-
-	zst_deactivate_entity(test_output);
-	zst_deactivate_entity(test_input);
-	clear_callback_queue();
-	delete test_output;
-	delete test_input;
+	BOOST_TEST(input_component->last_received_val == first_cmp_val);
 }
 
+BOOST_FIXTURE_TEST_CASE(send_through_unreliable_graph, FixturePlugs) {
+	int first_cmp_val = 4;
 
-void test_unreliable_graph()
-{
-    ZstLog::app(LogLevel::notification, "Starting unreliable graph test");
-    int first_cmp_val = 4;
-
-    OutputComponent * test_output = new OutputComponent("unreliable_out", false);
-    InputComponent * test_input = new InputComponent("reliable_in", first_cmp_val, true);
-    
+	auto unreliable_out = std::make_unique<OutputComponent>("unreliable_out", false);
 #ifndef ZST_BUILD_DRAFT_API
-    // If we don't have draft support enabled, check reliable fallback has been set
-    assert(test_output->output()->is_reliable());
+	// If we don't have draft support enabled, check reliable fallback has been set
+	BOOST_TEST(unreliable_out->output()->is_reliable());
 #else
-    zst_get_root()->add_child(test_output);
-    zst_get_root()->add_child(test_input);
-    zst_connect_cable(test_input->input(), test_output->output());
-    test_output->send(first_cmp_val);
+	zst_get_root()->add_child(unreliable_out);
+	zst_connect_cable(input_component->input(), unreliable_out->output());
+	unreliable_out->send(first_cmp_val);
 
-    int max_wait = 10000;
-    int current_wait = 0;
-    while (test_input->num_hits < 1 && ++current_wait < max_wait) {
-        zst_poll_once();
-    }
-    assert(test_input->last_received_val == first_cmp_val);
+	int current_wait = 0;
+	while (input_component->num_hits < 1 && ++current_wait < 10000) {
+		zst_poll_once();
+	}
+	BOOST_TEST(input_component->last_received_val == first_cmp_val);
 #endif
-	//Test if deleting plugs first triggers deactivation
-	delete test_output;
-	delete test_input;
-	clear_callback_queue();
-}
-
-
-int main(int argc,char **argv)
-{
-	TestRunner runner("TestGraph", argv[0], true);
-
-    test_connect_plugs();
-    //test_add_filter();
-	test_reliable_graph();
-    test_unreliable_graph();
-    return 0;
 }

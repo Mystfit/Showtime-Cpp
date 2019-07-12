@@ -37,7 +37,7 @@ extern "C" {
 
 	//Factories
 	ZST_CLIENT_EXPORT ZstEntityBase * zst_create_entity(const ZstURI & creatable_path, const char * name);
-	ZST_CLIENT_EXPORT ZstEntityBase * zst_create_entity_async(const ZstURI & creatable_path, const char * name);
+	ZST_CLIENT_EXPORT void zst_create_entity_async(const ZstURI & creatable_path, const char * name);
 	ZST_CLIENT_EXPORT void zst_register_factory(ZstEntityFactory * factory);
 	ZST_CLIENT_EXPORT void zst_register_factory_async(ZstEntityFactory * factory);
 

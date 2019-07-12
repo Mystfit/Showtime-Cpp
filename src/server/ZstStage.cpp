@@ -52,8 +52,8 @@ void ZstStage::init_stage(const char * stage_name, int port)
 	m_heartbeat_timer.async_wait(boost::bind(&ZstStage::stage_heartbeat_timer, &m_heartbeat_timer, this, boost::posix_time::milliseconds(STAGE_HEARTBEAT_CHECK)));
 
 	//Attach adaptors
-	m_router_transport->msg_events()->add_adaptor(m_session);
-	m_router_transport->msg_events()->add_adaptor(m_session->hierarchy());
+	m_router_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(m_session));
+	m_router_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(m_session->hierarchy()));
 	m_session->router_events().add_adaptor(m_router_transport.get());
 	m_session->hierarchy()->router_events().add_adaptor(m_router_transport.get());
 

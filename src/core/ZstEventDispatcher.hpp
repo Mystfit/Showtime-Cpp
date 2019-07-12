@@ -31,40 +31,44 @@ public:
 };
 
 
-template<typename T>
-class ZstEventDispatcher
-{
-	static_assert(std::is_base_of<ZstEventAdaptor, std::remove_pointer_t<T> >::value, "T must derive from ZstEventAdaptor");
+class ZstEventDispatcherBase {
 public:
-	ZstEventDispatcher(const char * name = "") : 
+	ZstEventDispatcherBase() : m_has_event(false)
+	{
+	}
+
+	ZstEventDispatcherBase(const char* name) : 
+		m_name(name),
 		m_has_event(false)
 	{
-		m_name = std::string(name);
 	}
 
-	~ZstEventDispatcher() noexcept{
-        this->remove_all_adaptors();
+	~ZstEventDispatcherBase() noexcept {
+		this->remove_all_adaptors();
 	}
 
-	void add_adaptor(T adaptor) { 
+	void add_adaptor(ZstEventAdaptor * adaptor) {
 		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		this->m_adaptors.insert(adaptor);
+		adaptor->add_event_source(this);
 	}
 
-	void remove_adaptor(T adaptor) { 
+	void remove_adaptor(ZstEventAdaptor * adaptor) {
 		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		adaptor->set_target_dispatcher_inactive();
-		this->m_adaptors.erase(adaptor); 
+		this->m_adaptors.erase(adaptor);
+		adaptor->remove_event_source(this);
 	}
-	
+
 	size_t num_adaptors() {
 		return m_adaptors.size();
 	}
 
-	void remove_all_adaptors(){
+	void remove_all_adaptors() {
 		std::lock_guard<std::recursive_mutex> lock(m_mtx);
-		for (auto adp : m_adaptors) {
-			adp->set_target_dispatcher_inactive();
+		auto adaptors = m_adaptors;
+		for (auto adp : adaptors) {
+			remove_adaptor(adp);
 		}
 		m_adaptors.clear();
 	}
@@ -73,23 +77,52 @@ public:
 		//std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		this->m_condition_wake = condition;
 	}
-	
+
+	bool has_event() {
+		return m_has_event;
+	}
+
+protected:
+	std::set<ZstEventAdaptor*> m_adaptors;
+	std::weak_ptr<ZstSemaphore> m_condition_wake;
+	std::recursive_mutex m_mtx;
+	bool m_has_event;
+private:
+	std::string m_name;
+};
+
+
+template<typename T>
+class ZstEventDispatcher : public ZstEventDispatcherBase
+{
+	static_assert(std::is_base_of<ZstEventAdaptor, std::remove_pointer_t<T> >::value, "T must derive from ZstEventAdaptor");
+public:
+	ZstEventDispatcher() :
+		ZstEventDispatcherBase("")
+	{
+	}
+
+	ZstEventDispatcher(const char* name) :
+		ZstEventDispatcherBase(name)
+	{
+	}
+
 	void flush() {
 		ZstEvent<T> e;
-        //std::lock_guard<std::recursive_mutex> lock(m_mtx);
+		//std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		while (this->m_events.try_dequeue(e)) {}
 	}
 
-	void invoke(const std::function<void(T)> & event) {
+	void invoke(const std::function<void(T)>& event) {
 		if (this->m_adaptors.size() < 1) {
 			return;
 		}
 
 		std::lock_guard<std::recursive_mutex> lock(m_mtx);
-		for (T adaptor : this->m_adaptors) {
-            if(adaptor){
-                event(adaptor);
-            }
+		for (auto adaptor : this->m_adaptors) {
+			if (adaptor) {
+				event(static_cast<T>(adaptor));
+			}
 		}
 	}
 
@@ -97,16 +130,16 @@ public:
 		ZstEvent<T> e(event, [](ZstEventStatus s) {});
 		this->m_events.enqueue(e);
 		m_has_event = true;
-		if(auto shared = m_condition_wake.lock())
-            shared->notify();
+		if (auto shared = m_condition_wake.lock())
+			shared->notify();
 	}
 
 	void defer(std::function<void(T)> event, std::function<void(ZstEventStatus)> on_complete) {
 		ZstEvent<T> e(event, on_complete);
 		this->m_events.enqueue(e);
 		m_has_event = true;
-        if(auto shared = m_condition_wake.lock())
-            shared->notify();
+		if (auto shared = m_condition_wake.lock())
+			shared->notify();
 	}
 
 	void process_events() {
@@ -116,8 +149,8 @@ public:
 			bool success = true;
 
 			std::lock_guard<std::recursive_mutex> lock(m_mtx);
-			for (T adaptor : m_adaptors) {
-				event.func(adaptor);
+			for (auto adaptor : m_adaptors) {
+				event.func(static_cast<T>(adaptor));
 				/*try {
 					event.func(adaptor);
 				}
@@ -130,16 +163,6 @@ public:
 		}
 		m_has_event = false;
 	}
-
-	bool has_event() {
-		return m_has_event;
-	}
-
 private:
-	std::set<T> m_adaptors;
 	moodycamel::ConcurrentQueue< ZstEvent<T> > m_events;
-	std::string m_name;
-	bool m_has_event;
-	std::weak_ptr<ZstSemaphore> m_condition_wake;
-	std::recursive_mutex m_mtx;
 };

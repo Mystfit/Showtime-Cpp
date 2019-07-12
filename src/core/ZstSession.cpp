@@ -29,10 +29,10 @@ void ZstSession::flush_events()
 void ZstSession::init()
 {
     //Add adaptors
-	m_compute_events.add_adaptor(this);
+	m_compute_events.add_adaptor(static_cast<ZstComputeAdaptor*>(this));
     
     //Attach session as an adaptor to the hierarchy module to handle events that will need to modify cables
-    hierarchy()->hierarchy_events().add_adaptor(this);
+    hierarchy()->hierarchy_events().add_adaptor(static_cast<ZstHierarchyAdaptor*>(this));
     
     ZstSynchronisableModule::init();
 }

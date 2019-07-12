@@ -21,6 +21,7 @@ class ZstMessageSupervisor {
 public:
 	ZST_EXPORT ZstMessageSupervisor(std::shared_ptr<time_watcher> timeout_watcher, long timeout_duration);
 	ZST_EXPORT ~ZstMessageSupervisor();
+    ZST_EXPORT void destroy();
 
 	ZST_EXPORT ZstMessageFuture register_response(ZstMsgID id);
 	ZST_EXPORT void enqueue_resolved_promise(ZstMsgID id);

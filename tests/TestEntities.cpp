@@ -1,123 +1,152 @@
+#define BOOST_TEST_MODULE Entities
+
 #include "TestCommon.hpp"
 
 using namespace ZstTest;
 
-void test_create_entities(){
-    ZstLog::app(LogLevel::notification, "Running entity creation test");
-    
-    OutputComponent * test_output_sync = new OutputComponent("entity_create_test_sync");
-    
-    ZstLog::app(LogLevel::notification, "Testing entity sync activation");
-    zst_get_root()->add_child(test_output_sync);
-    assert(test_output_sync->is_activated());
-    assert(zst_find_entity(test_output_sync->URI()));
-    
-    ZstLog::app(LogLevel::notification, "Testing entity sync deactivation");
-    zst_deactivate_entity(test_output_sync);
-    assert(!test_output_sync->is_activated());
-    assert(!zst_find_entity(test_output_sync->URI()));
-    delete test_output_sync;
-	clear_callback_queue();
-    
-    //Test async entity
-    OutputComponent * test_output_async = new OutputComponent("entity_create_test_async");
-    TestSynchronisableEvents * entity_sync = new TestSynchronisableEvents();
-    test_output_async->add_adaptor(entity_sync);
+class FixtureOutputEntity : public FixtureJoinServer {
+public:
+	FixtureOutputEntity() : output_component(std::make_unique<OutputComponent>("entity_create_test_sync")){}
+	~FixtureOutputEntity() {};
+	std::unique_ptr<OutputComponent> output_component;
+};
 
-    ZstLog::app(LogLevel::notification, "Testing entity async activation");
-    ZstLog::app(LogLevel::debug, "Pre parent num children: {}", test_output_async->num_children());
-    zst_get_root()->add_child(test_output_async);
-    ZstLog::app(LogLevel::debug, "Post parent num children: {}", test_output_async->num_children());
+class FixtureParentChild : public FixtureJoinServer {
+public:
+	FixtureParentChild() : 
+		parent(std::make_unique<OutputComponent>("parent")),
+		child(std::make_unique<OutputComponent>("child")) 
+	{
+		parent->add_child(child.get());
+	}
+	~FixtureParentChild() {};
 
-    wait_for_event(entity_sync, 1);
-    assert(entity_sync->num_calls() == 1);
-    entity_sync ->reset_num_calls();
-    assert(test_output_async->is_activated());
-    
-    //Check local client registered plugs correctly
-    auto child = test_output_async->get_child_by_URI(test_output_async->output()->URI());
-    assert(child);
-    assert(ZstURI::equal(child->URI(), test_output_async->output()->URI()));
+	std::unique_ptr<OutputComponent> parent;
+	std::unique_ptr<OutputComponent> child;
+};
 
-    ZstLog::app(LogLevel::notification, "Testing entity async deactivation");
-    zst_deactivate_entity_async(test_output_async);
-    wait_for_event(entity_sync, 1);
-    assert(entity_sync->num_calls() == 1);
-    entity_sync->reset_num_calls();
-    assert(!test_output_async->is_activated());
-    assert(!zst_find_entity(test_output_async->URI()));
-    assert(!zst_find_entity(child->URI()));
-    
-    //Cleanup
-    delete test_output_async;
-    delete entity_sync;
-	clear_callback_queue();
+
+class FixtureComponentWithAdaptor : public FixtureJoinServer {
+public:
+	TestSynchronisableEvents * entity_sync_event;
+	OutputComponent* component;
+
+	FixtureComponentWithAdaptor()
+	{
+		entity_sync_event = new TestSynchronisableEvents();
+		component = new OutputComponent("solo");
+		component->add_adaptor(entity_sync_event);
+		zst_get_root()->add_child(component);
+	}
+
+	~FixtureComponentWithAdaptor()
+	{
+		if (component) delete component;
+		if (entity_sync_event) delete entity_sync_event;
+	}
+};
+
+BOOST_FIXTURE_TEST_CASE(activation, FixtureOutputEntity) {
+	//Activate
+	zst_get_root()->add_child(output_component.get());
+	BOOST_TEST(output_component->is_activated());
+	BOOST_TEST(zst_find_entity(output_component->URI()));
+	
+	//Deactivate
+	zst_deactivate_entity(output_component.get());
+	BOOST_TEST(!output_component->is_activated());
+	BOOST_TEST(!zst_find_entity(output_component->URI()));
 }
 
-
-void test_hierarchy() {
-    ZstLog::app(LogLevel::notification, "Running hierarchy test");
-
-    //Test hierarchy
-    ZstComponent * parent = new ZstComponent("parent");
-    ZstComponent * child = new ZstComponent("child");
-    parent->add_child(child);
-
-    zst_get_root()->add_child(parent);
-    assert(zst_find_entity(parent->URI()));
-    assert(zst_find_entity(child->URI()));
-    
-    //Test child removal from parent
-    ZstLog::app(LogLevel::notification, "Testing child removal from parent");
-    ZstURI child_URI = ZstURI(child->URI());
-    zst_deactivate_entity(child);
-    assert(!parent->walk_child_by_URI(child_URI));
-    assert(!zst_find_entity(child_URI));
-
-    //Test child activation and deactivation callbacks
-    ZstLog::app(LogLevel::notification, "Test auto child activation and callback");
-    TestSynchronisableEvents * child_activation = new TestSynchronisableEvents();
-    child->add_adaptor(child_activation);
-    parent->add_child(child);
-
-	wait_for_event(child_activation, 1);
-	assert(child->is_activated());
-    assert(child_activation->num_calls() == 1);
-    child_activation->reset_num_calls();
-
-    ZstLog::app(LogLevel::notification, "Test child deactivation callback");
-    zst_deactivate_entity(child);
-    assert(child_activation->num_calls() == 1);
-    child_activation->reset_num_calls();
-    child->remove_adaptor(child_activation);
-    delete child_activation;
-    
-    //Test removing parent removes child
-    parent->add_child(child);
-    
-    ZstURI parent_URI = ZstURI(parent->URI());
-    zst_deactivate_entity(parent);
-    assert(!zst_find_entity(parent->URI()));
-    assert(!zst_find_entity(child->URI()));
-
-	//Test deleting entity removes it from the library
-    zst_get_root()->add_child(parent);
-	delete parent;
-	assert(!zst_find_entity(parent_URI));
-	assert(!zst_get_root()->num_children() );
-
-	parent = 0;
-	child = 0;
-
-	//Clear callback queue and make sure delete entities don't still have queued events
-    clear_callback_queue();
+BOOST_FIXTURE_TEST_CASE(adaptor_cleanup, FixtureComponentWithAdaptor) {
+	delete entity_sync_event;
+	entity_sync_event = NULL;
+	BOOST_TEST_CHECKPOINT("Deactivating component to make sure that the deleted adaptor has removed itself from the component first");
+	zst_deactivate_entity(component);
+	delete component;
+	component = NULL;
 }
 
+BOOST_FIXTURE_TEST_CASE(component_cleanup, FixtureComponentWithAdaptor) {
+	delete component;
+	component = NULL;
+	BOOST_TEST_CHECKPOINT("Deleting adaptor to make sure the component removed itself from the adaptor first");
+	BOOST_TEST(!entity_sync_event->is_target_dispatcher_active());
+	delete entity_sync_event;
+	entity_sync_event = NULL;
+}
 
-int main(int argc,char **argv)
-{
-    TestRunner runner("TestEntities", argv[0]);
-    test_create_entities();
-    test_hierarchy();
-    return 0;
+BOOST_FIXTURE_TEST_CASE(async_activation_callback, FixtureOutputEntity) {
+	auto entity_sync_event = std::make_shared<TestSynchronisableEvents>();
+	output_component->add_adaptor(entity_sync_event.get());
+
+	//Activate
+	zst_get_root()->add_child(output_component.get());
+	wait_for_event(entity_sync_event.get(), 1);
+	BOOST_TEST(output_component->is_activated());
+	BOOST_TEST(zst_find_entity(output_component->URI()));
+	entity_sync_event->reset_num_calls();
+
+	//Deactivate
+	zst_deactivate_entity_async(output_component.get());
+	wait_for_event(entity_sync_event.get(), 1);
+	BOOST_TEST(!output_component->is_activated());
+	BOOST_TEST(!zst_find_entity(output_component->URI()));
+}
+
+BOOST_FIXTURE_TEST_CASE(plug_children, FixtureOutputEntity) {
+	zst_get_root()->add_child(output_component.get());
+	auto plug_child = output_component->get_child_by_URI(output_component->output()->URI());
+	BOOST_TEST(plug_child);
+	BOOST_TEST(ZstURI::equal(plug_child->URI(), output_component->output()->URI()));
+}
+
+BOOST_FIXTURE_TEST_CASE(add_child, FixtureParentChild) {
+	zst_get_root()->add_child(parent.get());
+	BOOST_TEST(zst_find_entity(parent->URI()));
+	BOOST_TEST(zst_find_entity(child->URI()));
+}
+
+BOOST_FIXTURE_TEST_CASE(remove_child, FixtureParentChild) {
+	auto child_URI = child->URI();
+	zst_get_root()->add_child(parent.get());
+	zst_deactivate_entity(child.get());
+	BOOST_TEST(!parent->walk_child_by_URI(child_URI));
+	BOOST_TEST(!zst_find_entity(child_URI));
+}
+
+BOOST_FIXTURE_TEST_CASE(child_activation_callback, FixtureParentChild) {
+	zst_deactivate_entity(child.get());
+	auto child_activation_event = std::make_shared<TestSynchronisableEvents>();
+	child->add_adaptor(child_activation_event.get());
+	zst_get_root()->add_child(parent.get());
+
+	//Activation
+	parent->add_child(child.get());
+	wait_for_event(child_activation_event.get(), 1);
+	BOOST_TEST(child->is_activated());
+
+	//Deactivation
+	child_activation_event->reset_num_calls();
+	zst_deactivate_entity(child.get());
+	wait_for_event(child_activation_event.get(), 1);
+	BOOST_TEST(!child->is_activated());
+}
+
+BOOST_FIXTURE_TEST_CASE(parent_deactivates_child, FixtureParentChild) {
+	zst_get_root()->add_child(parent.get());
+	auto parent_URI = parent->URI();
+	zst_deactivate_entity(parent.get());
+	BOOST_TEST(!zst_find_entity(parent->URI()));
+	BOOST_TEST(!zst_find_entity(child->URI()));
+}
+
+BOOST_FIXTURE_TEST_CASE(deleting_entities_deactivates, FixtureParentChild) {
+	zst_get_root()->add_child(parent.get());
+	auto parent_URI = parent->URI();
+	auto child_URI = parent->URI();
+	child = NULL;
+	parent = NULL;
+	BOOST_TEST(!zst_find_entity(parent_URI));
+	BOOST_TEST(!zst_find_entity(child_URI));
 }

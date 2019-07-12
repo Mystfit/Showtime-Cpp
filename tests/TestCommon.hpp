@@ -4,6 +4,7 @@
 #include <ShowtimeServer.h>
 #include <boost/process.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/test/unit_test.hpp>
 #include <sstream>
 
 #ifdef __cpp_lib_filesystem
@@ -25,6 +26,7 @@ using namespace boost::process;
 #define WAIT_UNTIL_STAGE_TIMEOUT std::this_thread::sleep_for(std::chrono::milliseconds(STAGE_TIMEOUT + 1000));
 #define WAIT_UNTIL_STAGE_BEACON std::this_thread::sleep_for(std::chrono::milliseconds(3000));
 
+#define TEST_SERVER_NAME "test_server"
 
 // --------------
 // Entities
@@ -38,8 +40,10 @@ namespace ZstTest
 		ZstOutputPlug * m_output;
 
 	public:
-		OutputComponent(const char * name, bool reliable = true) : ZstComponent("TESTER", name) {
-			m_output = create_output_plug("out", ZstValueType::ZST_INT, reliable);
+		OutputComponent(const char * name, bool reliable = true) : 
+			ZstComponent("TESTER", name),
+			m_output(create_output_plug("out", ZstValueType::ZST_INT, reliable))
+		{
 		}
 
 		void on_activation() override {
@@ -75,11 +79,12 @@ namespace ZstTest
 		int last_received_val = 0;
 		bool log = false;
 
-		InputComponent(const char * name, int cmp_val, bool should_log=false) :
-			ZstComponent("TESTER", name), compare_val(cmp_val)
+		InputComponent(const char * name, int cmp_val=0, bool should_log=false) :
+			ZstComponent("TESTER", name),
+			compare_val(cmp_val),
+			log(should_log),
+			m_input(create_input_plug("in", ZstValueType::ZST_INT))
 		{
-			log = should_log;
-			m_input = create_input_plug("in", ZstValueType::ZST_INT);
 		}
 
 		void on_activation() override {
@@ -138,20 +143,30 @@ namespace ZstTest
 	class TestConnectionEvents : public ZstSessionAdaptor, public TestAdaptor
 	{
 	public:
+		bool is_connected = false;
+		ZstServerAddress last_discovered_server;
+
 		void on_connected_to_stage() override {
 			ZstLog::app(LogLevel::debug, "CONNECTION_ESTABLISHED: {}", zst_get_root()->URI().path());
 			inc_calls();
+			is_connected = true;
 		}
 
 		void on_disconnected_from_stage() override {
 			ZstLog::app(LogLevel::debug, "DISCONNECTING: {}", zst_get_root()->URI().path());
 			inc_calls();
+
+			is_connected = false;
 		}
         
         void on_server_discovered(const ZstServerAddress & server) override {
             ZstLog::app(LogLevel::debug, "SERVER DISCOVERED: Name: {} Address: {}", server.name, server.address);
             inc_calls();
+
+			last_discovered_server = server;
         }
+
+	private:
 	};
 
 
@@ -178,13 +193,19 @@ namespace ZstTest
 	class TestPerformerEvents : public ZstHierarchyAdaptor, public TestAdaptor
 	{
 	public:
+        ZstURI last_arrived_performer;
+        ZstURI last_left_performer;
+
+        
 		void on_performer_arriving(ZstPerformer * performer) override {
 			ZstLog::app(LogLevel::debug, "PERFORMER_ARRIVING: {}", performer->URI().path());
+            last_arrived_performer = performer->URI();
 			inc_calls();
 		}
 
 		void on_performer_leaving(ZstPerformer * performer) override {
 			ZstLog::app(LogLevel::debug, "PERFORMER_LEAVING: {}", performer->URI().path());
+            last_left_performer = performer->URI();
 			inc_calls();
 		}
 	};
@@ -236,7 +257,7 @@ namespace ZstTest
 		zst_poll_once();
 		while (adaptor->num_calls() < expected_messages) {
 			TAKE_A_BREATH
-				repeats++;
+			repeats++;
 			if (repeats > MAX_WAIT_LOOPS) {
 				std::ostringstream err;
 				err << "Not enough events in queue. Expecting " << expected_messages << " received " << adaptor->num_calls() << std::endl;
@@ -265,38 +286,119 @@ namespace ZstTest
 		return boost::thread(boost::bind(&ZstTest::log_external, boost::ref(out_pipe)));
 	}
 
-	class TestRunner {
+	class FixtureInit {
 	public:
-		TestRunner(const std::string & name, const std::string & test_path, bool init_library = true, bool run_stage = true) :
-			m_stage_server{NULL}
-		{
-            auto server_name = std::string(name + "_server");
-            
-			if (run_stage) {
-				m_stage_server = zst_create_server(server_name.c_str(), STAGE_ROUTER_PORT);
-			}
-
-			//Init library
-			if (init_library) {
-				zst_init(name.c_str(), true);
-//                zst_join("127.0.0.1:40004");
-                zst_auto_join_by_name(server_name.c_str());
-                
-				if (!zst_is_connected()) {
-					ZstLog::app(LogLevel::error, "Failed to connect to launched stage");
-					assert(zst_is_connected());
-				}
-			}
+		FixtureInit(){
+			zst_init("test_performer", true);
+			clear_callback_queue();
 		}
 
-		~TestRunner()
+		~FixtureInit()
 		{
-			zst_destroy_server(m_stage_server);
 			zst_destroy();
+		}
+	};
+	
+
+	class FixtureInitAndCreateServer : public FixtureInit {
+	public:
+		FixtureInitAndCreateServer() {
+			m_stage_server = zst_create_server(TEST_SERVER_NAME, STAGE_ROUTER_PORT);
+			TAKE_A_BREATH
+			clear_callback_queue();
+		}
+
+		~FixtureInitAndCreateServer() {
+			zst_destroy_server(m_stage_server);
+		}
+	private:
+		ServerHandle m_stage_server;
+	};
+
+
+	class FixtureJoinServer : public FixtureInitAndCreateServer {
+	public:
+
+		FixtureJoinServer()
+		{
+			zst_join(("127.0.0.1:" + std::to_string(STAGE_ROUTER_PORT)).c_str());
+			clear_callback_queue();
+		}
+
+		~FixtureJoinServer()
+		{
+		}
+	};
+
+
+	class FixtureWaitForExternalClient {
+	public:
+		std::shared_ptr<TestPerformerEvents> performerEvents;
+
+		FixtureWaitForExternalClient() : performerEvents(std::make_shared<TestPerformerEvents>()) {
+			zst_add_hierarchy_adaptor(performerEvents.get());
+			BOOST_TEST_CHECKPOINT("Waiting for external client performer to arrive");
+			wait_for_event(performerEvents.get(), 1);
+			performerEvents->reset_num_calls();
+		}
+
+		~FixtureWaitForExternalClient() {}
+	};
+
+
+
+	class FixtureExternalClient {
+	public:
+		boost::process::child external_process;
+		boost::process::ipstream external_process_stdout;
+		boost::process::pipe external_process_stdin;
+
+		ZstURI external_performer_URI;
+
+		FixtureExternalClient(std::string program_name)
+		{
+			external_performer_URI = ZstURI(program_name.c_str());
+
+			auto program_path = fs::current_path().parent_path().append("bin").append(program_name);
+#ifdef WIN32
+			program_path.replace_extension("exe");
+#endif
+
+#ifdef PAUSE_SINK
+			char pause_flag = 'd';
+#else
+			char pause_flag = 'a';
+#endif
+			//Run client as an external process so we don't share the same Showtime singleton
+			ZstLog::app(LogLevel::notification, "Starting {} process", program_path.generic_string());
+			try {
+				external_process = boost::process::child(program_path.generic_string(), &pause_flag, boost::process::std_in < external_process_stdin, boost::process::std_out > external_process_stdout); //d flag pauses the sink process to give us time to attach a debugger
+#ifdef PAUSE_SINK
+#ifdef WIN32
+				system("pause");
+#endif
+				system("read -n 1 -s -p \"Press any key to continue...\n\"");
+#endif
+				TAKE_A_BREATH
+			}
+			catch (boost::process::process_error e) {
+				ZstLog::app(LogLevel::error, "External process failed to start. Code:{} Message:{}", e.code().value(), e.what());
+			}
+
+			// Create a thread to handle reading log info from the sink process' stdout pipe
+			external_process_log_thread = ZstTest::log_external_pipe(external_process_stdout);
+		}
+
+		~FixtureExternalClient() {
+			external_process.terminate();
+			external_process_stdout.pipe().close();
+
+			external_process_log_thread.interrupt();
+			external_process_log_thread.join();
 		}
 
 	private:
-		ServerHandle m_stage_server;
+		boost::thread external_process_log_thread;
 	};
 
 
@@ -310,6 +412,4 @@ namespace ZstTest
 #endif
 
 	static int s_interrupted = 0;
-
-
 };

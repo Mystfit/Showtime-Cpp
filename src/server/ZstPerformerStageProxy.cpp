@@ -24,25 +24,24 @@ const std::string & ZstPerformerStageProxy::unreliable_address()
 	return m_unreliable_address;
 }
 
-void ZstPerformerStageProxy::add_subscriber_peer(ZstPerformerStageProxy * client)
+void ZstPerformerStageProxy::add_subscriber(ZstPerformerStageProxy * client)
 {
 	m_connected_subscriber_peers.insert(client->URI());
 }
 
-void ZstPerformerStageProxy::remove_subscriber_peer(ZstPerformerStageProxy * client)
+void ZstPerformerStageProxy::remove_subscriber(ZstPerformerStageProxy * client)
 {
 	try{
 		m_connected_subscriber_peers.erase(client->URI());
 	} catch(std::out_of_range e){
-		ZstLog::server(LogLevel::warn, "Peer {} not connected to {}", this->URI().path(), client->URI().path());
+		ZstLog::server(LogLevel::warn, "Client {} not subscribed to {}", this->URI().path(), client->URI().path());
 	}
 }
 
-bool ZstPerformerStageProxy::is_connected_to_subscriber_peer(ZstPerformerStageProxy * client)
+bool ZstPerformerStageProxy::has_connected_subscriber(ZstPerformerStageProxy * client)
 {
 	if(m_connected_subscriber_peers.find(client->URI()) != m_connected_subscriber_peers.end()){
 		return true;
 	}
 	return false;
 }
-

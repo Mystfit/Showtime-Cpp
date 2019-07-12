@@ -1,170 +1,153 @@
+#define BOOST_TEST_MODULE Library startup and joining
+
 #include "TestCommon.hpp"
 
 using namespace ZstTest;
 
+std::string performer_name = "test_performer";
+std::string server_name = "test_server";
+std::string server_address = "127.0.0.1:40004";
+std::string bad_server_address = "255.255.255.255:1111";
 
-void test_stage_discovery()
-{
-    ZstLog::app(LogLevel::debug, "Testing discovery of existing servers");
-    zst_init("TestDiscovery", true);
-    WAIT_UNTIL_STAGE_TIMEOUT
-    ZstServerAddressBundle bundle;
-    zst_get_discovered_servers(bundle);
-    assert(bundle.size() > 0);
-    assert(bundle.item_at(0).name == "TestStartup_server");
-    
-    clear_callback_queue();
-    auto discovery_adaptor = std::make_shared<TestConnectionEvents>();
-    zst_add_session_adaptor(discovery_adaptor.get());
-    
-    ZstLog::app(LogLevel::debug, "Testing server discovery event adaptor");
-    auto detected_server_name = std::string("detected_server");
-    auto detected_server = zst_create_server(detected_server_name.c_str(), STAGE_ROUTER_PORT + 10);
-    
-    wait_for_event(discovery_adaptor.get(), 1);
-    assert(discovery_adaptor->num_calls() == 1);
-    bundle.clear();
-    zst_get_discovered_servers(bundle);
-    assert(bundle.size() == 2);
-    assert(bundle.item_at(1).name == detected_server_name);
-    
-    //Cleanup
-    zst_destroy_server(detected_server);
-    zst_remove_session_adaptor(discovery_adaptor.get());
+BOOST_AUTO_TEST_CASE(early_library_destroy){
+	zst_destroy();
+	BOOST_TEST(!zst_is_init_completed());
 }
 
-void test_startup()
-{
-    zst_init("TestStartup", true);
-    //zst_start_file_logging();
+BOOST_AUTO_TEST_CASE(root_performer_exists) {
+	BOOST_TEST(!zst_get_root());
 
-    //--------------------
-    //Test destroy
-    ZstLog::app(LogLevel::debug, "Testing early destruction of library");
-    zst_destroy();
-    ZstLog::app(LogLevel::debug, "Testing aborting join before init");
-    ZstServerAddressBundle bundle;
-    zst_get_discovered_servers(bundle);
-//    std::string server_address = bundle.item_at(0).second.c_str();
-    std::string server_address = "127.0.0.1:40004";
-    std::string server_name = "TestStartup_server";
-    zst_join(server_address.c_str());
-    ZstLog::app(LogLevel::debug, "Testing double library init");
-    zst_init("TestClient", true);
-    zst_init("TestClient", true);
-    
-    //--------------------
-    ZstLog::app(LogLevel::debug, "Testing sync join");
-    zst_join(server_address.c_str());
-    assert(zst_is_connected());
-    ZstLog::app(LogLevel::debug, "Testing sync leave");
-    zst_leave();
-    
-    //Test sync join again to verify we cleaned up properly the first time
-    ZstLog::app(LogLevel::debug, "Testing sync join again");
-    zst_join(server_address.c_str());
-    assert(zst_is_connected());
-    zst_leave();
-
-    // -------------------
-    ZstLog::app(LogLevel::debug, "Testing joining by name");
-    WAIT_UNTIL_STAGE_BEACON
-    zst_join_by_name(server_name.c_str());
-    assert(zst_is_connected());
-    assert(zst_get_root()->is_activated());
-    zst_leave();
-    
-    ZstLog::app(LogLevel::debug, "Testing autojoin by name");
-    zst_auto_join_by_name(server_name.c_str());
-    assert(zst_is_connected());
-    assert(zst_get_root()->is_activated());
-    zst_leave();
-
-    //Testing join not starting if we're already connected
-    ZstLog::app(LogLevel::debug, "Testing abort connection start if we're already connected");
-    zst_join(server_address.c_str());
-    zst_join(server_address.c_str());
-    assert(!zst_is_connecting());
-    zst_leave();
-
-    //Test async join
-    TestConnectionEvents * connectCallback = new TestConnectionEvents();
-    zst_add_session_adaptor(connectCallback);
-
-    ZstLog::app(LogLevel::debug, "Testing async join");
-    assert(connectCallback->num_calls() == 0);
-    zst_join_async(server_address.c_str());
-    wait_for_event(connectCallback, 1);
-    assert(connectCallback->num_calls() == 1);
-    assert(zst_is_connected());
-    connectCallback->reset_num_calls();
-    zst_leave();
-    assert(!zst_is_connected());
-
-    //Test join timeout
-    ZstLog::app(LogLevel::debug, "Testing sync join timeout");
-    zst_join("255.255.255.255:1111");
-    assert(!zst_is_connected());
-
-    //Test async join timeout
-    ZstLog::app(LogLevel::debug, "Testing async join timeout");
-    zst_join_async("255.255.255.255:1111");
-    WAIT_UNTIL_STAGE_TIMEOUT
-    assert(!zst_is_connected());
-    
-    //Testing abort connection start if we're already connecting
-    ZstLog::app(LogLevel::debug, "Testing async abort connection start if we're already connecting");
-    zst_join_async("255.255.255.255:1111");
-    assert(zst_is_connecting());
-    zst_join("255.255.255.255:1111");
-    assert(!zst_is_connected());
-    WAIT_UNTIL_STAGE_TIMEOUT
-    assert(!zst_is_connecting());
-	
-    //Cleanup
-    zst_remove_session_adaptor(connectCallback);
-    delete connectCallback;
+	zst_init(performer_name.c_str(), true);
+	BOOST_TEST(zst_get_root());
+	zst_destroy();
 }
 
-void test_URI()
-{
-    //Run URI self test
-    ZstURI::self_test();
-
-    //RUn cable self test
-    ZstCable::self_test();
+BOOST_AUTO_TEST_CASE(double_init) {
+	zst_init(performer_name.c_str(), true);
+	zst_init("wrong_performer", true);
+	BOOST_TEST(zst_get_root()->URI().path() == performer_name.c_str());
+	zst_destroy();
 }
 
-void test_root_entity()
-{
-    ZstLog::app(LogLevel::notification, "Running performer test");
-    
-    ZstServerAddressBundle bundle;
-    zst_get_discovered_servers(bundle);
-    std::string server_address = bundle.item_at(0).address.c_str();
+BOOST_FIXTURE_TEST_CASE(single_server_connection, FixtureInitAndCreateServer){
+	//Testing abort connection if we're already connected
 	zst_join(server_address.c_str());
-    
-    //Test root entity is activated
-    TestSynchronisableEvents * performer_activated = new TestSynchronisableEvents();
-    ZstPerformer * root_entity = zst_get_root();
-    assert(root_entity);
-    
-    //This should execute immediately since we've already connected to the stage
-    root_entity->add_adaptor(performer_activated);
-    assert(performer_activated->num_calls() == 1);
-    performer_activated->reset_num_calls();
-    assert(root_entity->is_activated());
-    clear_callback_queue();
-    root_entity->remove_adaptor(performer_activated);
-    delete performer_activated;
-    ZstLog::app(LogLevel::debug, "Root performer is activated");
+	zst_join(server_address.c_str());
+	BOOST_TEST(!zst_is_connecting());
+	zst_leave();
 }
 
-int main(int argc,char **argv)
-{
-	TestRunner runner("TestStartup", argv[0], false);
-    test_URI();
-    test_stage_discovery();
-    test_startup();
-    test_root_entity();
+BOOST_FIXTURE_TEST_CASE(sync_join, FixtureInitAndCreateServer){
+	//Testing sync join by address
+	zst_join(server_address.c_str());
+	BOOST_TEST(zst_is_connected());
+
+	//Testing sync leave
+	zst_leave();
+	BOOST_TEST(!zst_is_connected());
+
+	//Test sync join again to verify we cleaned up properly the first time
+	zst_join(server_address.c_str());
+	BOOST_TEST(zst_is_connected());
+}
+
+BOOST_FIXTURE_TEST_CASE(sync_join_by_name, FixtureInitAndCreateServer){
+	//Testing joining by name
+	WAIT_UNTIL_STAGE_BEACON
+	zst_join_by_name(server_name.c_str());
+	BOOST_TEST(zst_is_connected());
+}
+
+BOOST_FIXTURE_TEST_CASE(async_join, FixtureInitAndCreateServer){
+	zst_join_async(server_address.c_str());
+	TAKE_A_BREATH
+	BOOST_TEST(zst_is_connected());
+}
+
+BOOST_FIXTURE_TEST_CASE(autojoin_by_name, FixtureInitAndCreateServer){
+	//Testing autojoin by name
+	zst_auto_join_by_name(server_name.c_str());
+	BOOST_TEST(zst_is_connected());
+}
+
+BOOST_FIXTURE_TEST_CASE(autojoin_by_name_async, FixtureInitAndCreateServer) {
+	//Testing autojoin by name
+	zst_auto_join_by_name_async(server_name.c_str());
+	WAIT_UNTIL_STAGE_BEACON
+	BOOST_TEST(zst_is_connected());
+}
+
+BOOST_FIXTURE_TEST_CASE(async_join_callback_adaptor, FixtureInitAndCreateServer){
+	//Test async join
+	auto connectCallback = std::make_shared< TestConnectionEvents>();
+	zst_add_session_adaptor(connectCallback.get());
+	zst_join_async(server_address.c_str());
+	wait_for_event(connectCallback.get(), 1);
+	BOOST_TEST_REQUIRE(zst_is_connected());
+}
+
+BOOST_FIXTURE_TEST_CASE(sync_join_bad_address, FixtureInitAndCreateServer){
+	//Testing sync join timeout
+	zst_join(bad_server_address.c_str());
+	BOOST_TEST(!zst_is_connected());
+}
+
+BOOST_FIXTURE_TEST_CASE(async_join_bad_address_timeout, FixtureInitAndCreateServer){
+	//Test async join timeout
+	zst_join_async(bad_server_address.c_str());
+	WAIT_UNTIL_STAGE_TIMEOUT
+	BOOST_TEST(!zst_is_connected());
+}
+
+BOOST_FIXTURE_TEST_CASE(double_connection, FixtureInitAndCreateServer){
+    //Testing abort connection start if we're already connecting
+    zst_join_async(bad_server_address.c_str());
+	BOOST_TEST(zst_is_connecting());
+    zst_join(bad_server_address.c_str());
+	BOOST_TEST(!zst_is_connected());
+    WAIT_UNTIL_STAGE_TIMEOUT
+	BOOST_TEST(!zst_is_connecting());
+}
+
+BOOST_FIXTURE_TEST_CASE(list_discovered_servers, FixtureInitAndCreateServer){
+	WAIT_UNTIL_STAGE_BEACON
+	ZstServerAddressBundle bundle;
+	zst_get_discovered_servers(bundle);
+	BOOST_TEST(bundle.size() > 0);
+	BOOST_TEST(bundle.item_at(0).name == server_name);
+}
+
+BOOST_FIXTURE_TEST_CASE(discovered_servers_callback_adaptor, FixtureInit){
+	//Create adaptor
+	auto discovery_adaptor = std::make_shared<TestConnectionEvents>();
+	zst_add_session_adaptor(discovery_adaptor.get());
+
+	//Create a new server for the client to discover
+	auto detected_server_name = std::string("detected_server");
+	auto detected_server = zst_create_server(detected_server_name.c_str(), STAGE_ROUTER_PORT + 10);
+	wait_for_event(discovery_adaptor.get(), 1);
+	BOOST_TEST(discovery_adaptor->last_discovered_server.name == detected_server_name);
+
+	//Cleanup
+	zst_destroy_server(detected_server);
+}
+
+BOOST_FIXTURE_TEST_CASE(discovered_servers_update, FixtureJoinServer) {
+	auto detected_server = zst_create_server("detected_server", STAGE_ROUTER_PORT + 10);
+	WAIT_UNTIL_STAGE_BEACON
+
+	ZstServerAddressBundle bundle;
+	zst_get_discovered_servers(bundle);
+	BOOST_TEST(bundle.size() == 2);
+
+	//Cleanup
+	zst_destroy_server(detected_server);
+}
+
+BOOST_FIXTURE_TEST_CASE(root_performer_activate_on_join, FixtureJoinServer)
+{   
+    auto performer_activated = std::make_shared<TestSynchronisableEvents>();
+	zst_get_root()->add_adaptor(performer_activated.get());
+	BOOST_TEST(performer_activated->num_calls() == 1);
+	BOOST_TEST(zst_get_root()->is_activated());
 }
