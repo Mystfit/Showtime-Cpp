@@ -31,11 +31,12 @@ platform:
 - x64
 
 environment:
-    GENERATOR: "Visual Studio 16 2019 Win64"
+    GENERATOR: "Visual Studio 16 2019"
     BOOST_ROOT: "C:/Libraries/boost_1_69_0"
     BUILD_FOLDER: "%APPVEYOR_BUILD_FOLDER%/build"
     DEPENDENCY_DIR: "%APPVEYOR_BUILD_FOLDER%/dependencies"
     INSTALL_DIR: "%APPVEYOR_BUILD_FOLDER%/install"
+    PATH: "%PROGRAMFILES%/CMake/bin;%PATH%"
     matrix:
     - PYTHON_VER: 2
     - PYTHON_VER: 3
@@ -50,7 +51,6 @@ install:
     choco install -y swig > $null
     choco install -y cmake > $null
     refreshenv
-    Install-ChocolateyPath -PathToInstall "$($env:PROGRAMFILES)\CMake\bin"
     cmd.exe /c "call $env:APPVEYOR_BUILD_FOLDER/install_dependencies.bat --build-dir $env:BUILD_FOLDER --config $env:CONFIGURATION"
 
 before_build:
@@ -70,7 +70,7 @@ build:
 test_script:
 - ps: |
     Push-Location -Path "$env:BUILD_FOLDER"
-    & $env:CTEST_BIN -C $env:CONFIGURATION --output-on-fail --no-compress-output -T Test -j 2 --timeout 320
+    & ctest -C $env:CONFIGURATION --output-on-fail --no-compress-output -T Test -j 2 --timeout 320
     $result = Get-Childitem -ErrorAction SilentlyContinue -Recurse –Path $env:BUILD_FOLDER/Testing/*.xml
     $XSLInputElement = New-Object System.Xml.Xsl.XslCompiledTransform
     $XSLInputElement.Load("https://raw.githubusercontent.com/rpavlik/jenkins-ctest-plugin/master/ctest-to-junit.xsl")
