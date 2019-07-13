@@ -333,11 +333,12 @@ if(BUILD_ANDROID_LIBS OR BUILD_WINDOWS_CONTAINER OR BUILD_MACOS_CONTAINER)
     if(VAGRANTCOMMAND EQUAL vagrant-NOTFOUND)
         message(FATAL_ERROR "Could not find Vagrant")
     endif()
+
     # Install vagrant scp plugin
-    execute_process(COMMAND "${VAGRANTCOMMAND} list" RESULT_VARIABLE VAGRANT_PLUGIN_LIST)
-    string(FIND ${VAGRANT_PLUGIN_LIST} "scp" VAGRANT_SCP_PLUGIN_FOUND)
+    execute_process(COMMAND ${VAGRANTCOMMAND} plugin list OUTPUT_VARIABLE VAGRANT_PLUGIN_LIST)
+    string(FIND ${VAGRANT_PLUGIN_LIST} "vagrant-scp" VAGRANT_SCP_PLUGIN_FOUND)
     if(${VAGRANT_SCP_PLUGIN_FOUND} LESS 0)
-        execute_process(COMMAND "${VAGRANTCOMMAND} plugin install vagrant-scp")
+        execute_process(COMMAND ${VAGRANTCOMMAND} plugin install vagrant-scp)
     endif()
     
     set(CONTAINER_CPU_COUNT 4 CACHE STRING "Number of cpu cores to run build containers with")

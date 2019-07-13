@@ -86,18 +86,16 @@ endif()
 
 if(MACOSX)
     set_target_properties(${SWIG_MODULE_${DOTNET_TARGET_WRAPPER}_REAL_NAME} PROPERTIES BUNDLE TRUE)
-    if(NOT BUILD_STATIC)
-        set(DOTNET_BUNDLE_COPY_LIBS
-            $<TARGET_FILE:${CORE_TARGET}>
-            $<TARGET_FILE:${SERVER_TARGET}>
-            # $<TARGET_FILE:${CORE_ENTITIES_TARGET}>
-            $<TARGET_FILE:${CLIENT_TARGET}> 
-        )
-        add_custom_command(TARGET ${DOTNET_TARGET_WRAPPER} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy ${DOTNET_BUNDLE_COPY_LIBS} $<TARGET_BUNDLE_CONTENT_DIR:${DOTNET_TARGET_WRAPPER}>/MacOS
-            VERBATIM
-        )
-    endif()
+    set(DOTNET_BUNDLE_COPY_LIBS
+        $<TARGET_FILE:${CORE_TARGET}>
+        $<TARGET_FILE:${SERVER_TARGET}>
+        # $<TARGET_FILE:${CORE_ENTITIES_TARGET}>
+        $<TARGET_FILE:${CLIENT_TARGET}> 
+    )
+    add_custom_command(TARGET ${DOTNET_TARGET_WRAPPER} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy ${DOTNET_BUNDLE_COPY_LIBS} $<TARGET_BUNDLE_CONTENT_DIR:${DOTNET_TARGET_WRAPPER}>/MacOS
+        VERBATIM
+    )
 endif()
 
 # Set dependant projects

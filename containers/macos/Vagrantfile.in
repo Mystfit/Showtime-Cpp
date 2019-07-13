@@ -31,6 +31,7 @@ Vagrant.configure("2") do |config|
     # Install dependencies through homebrew
     pushd /vagrant-showtime-src
     brew bundle
+    brew cask dotnet-sdk
     popd
 
     # Create directories
