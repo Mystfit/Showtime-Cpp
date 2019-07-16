@@ -150,7 +150,6 @@ BOOST_FIXTURE_TEST_CASE(parent_disconnects_cable, FixtureCable) {
 	BOOST_TEST(!found_cable(address_cmp));
 }
 
-
 BOOST_FIXTURE_TEST_CASE(limit_connected_cables, FixtureJoinServer) {
 	auto test_limited_input = std::make_unique<LimitedConnectionInputComponent>("limited_test_in", 1);
 	auto test_output = std::make_unique<OutputComponent>("connect_test_out1");

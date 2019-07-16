@@ -5,8 +5,6 @@
 using namespace ZstTest;
 
 struct FixtureSinkClient : public FixtureExternalClient {
-
-
     //Common URIs
 	ZstURI sink_ent_uri;
 	ZstURI sink_plug_uri;
@@ -120,6 +118,23 @@ BOOST_FIXTURE_TEST_CASE(plug_observation, FixtureExternalConnectCable) {
     output_ent->send(echo_val);
     wait_for_event(plug_sync_adp.get(), 1);
     BOOST_TEST(sync_out_plug->int_at(0) == echo_val);
+}
+
+BOOST_FIXTURE_TEST_CASE(plug_fire_control, FixtureExternalEntities) {
+    auto in_cmp = std::make_unique<InputComponent>("input_cmp");
+    zst_get_root()->add_child(in_cmp.get());
+    auto sync_out_plug = dynamic_cast<ZstOutputPlug*>(sink_ent->get_child_by_URI(sync_out_plug_uri));
+    zst_connect_cable(in_cmp->input(), sync_out_plug);
+
+    sync_out_plug->aquire_fire_control();
+    TAKE_A_BREATH
+    BOOST_TEST(sync_out_plug->get_fire_control_owner() == ZstURI("test_performer"));
+    
+    int cmp_val = 27;
+    sync_out_plug->append_int(cmp_val);
+    sync_out_plug->fire();
+    TAKE_A_BREATH
+    BOOST_TEST(in_cmp->input()->int_at(0) == cmp_val);
 }
 
 BOOST_FIXTURE_TEST_CASE(entity_arriving, FixtureExternalConnectCable) {

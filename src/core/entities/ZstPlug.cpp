@@ -255,10 +255,12 @@ ZstInputPlug::ZstInputPlug(const char * name, ZstValueType t, int max_cables) : 
 ZstOutputPlug::ZstOutputPlug() : 
 	ZstPlug(),
 	m_reliable(true),
-	m_performance_events(NULL)
+	m_performance_events(NULL),
+    m_session_events(NULL)
 {
 	m_direction = ZstPlugDirection::OUT_JACK;
 	m_performance_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
+    m_session_events = new ZstEventDispatcher<ZstSessionAdaptor*>("plug_session_events");
 	m_max_connected_cables = -1;
 }
 
@@ -267,6 +269,7 @@ ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug & other) :
 	m_reliable(other.m_reliable)
 {
 	m_performance_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
+    m_session_events = new ZstEventDispatcher<ZstSessionAdaptor*>("plug_session_events");
 }
 
 ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t, bool reliable) : 
@@ -275,6 +278,7 @@ ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t, bool reliable) :
 {
 	m_direction = ZstPlugDirection::OUT_JACK;
 	m_performance_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
+    m_session_events = new ZstEventDispatcher<ZstSessionAdaptor*>("plug_session_events");
 	m_max_connected_cables = -1;
 #ifndef ZST_BUILD_DRAFT_API
     if(!m_reliable){

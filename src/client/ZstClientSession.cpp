@@ -131,7 +131,7 @@ void ZstClientSession::aquire_plug_fire_control_handler(ZstMessage* msg)
 	if (!path.empty()) {
 		fire_control_path = stage_msg->get_arg<std::string>(ZstMsgArg::OUTPUT_PATH);
 	}
-	auto plug = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(ZstURI(path.c_str()));
+	auto plug = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(ZstURI(path.c_str())));
 	
 	output_plug_set_fire_control_owner(plug, ZstURI(fire_control_path.c_str()));
 }
