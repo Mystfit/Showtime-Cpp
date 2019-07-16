@@ -266,7 +266,7 @@ void ZstSession::remove_connected_performer(ZstPerformer * performer)
 		m_connected_performers.erase(performer->URI());
 	}
 	catch (std::out_of_range) {
-
+		ZstLog::net(LogLevel::warn, "Could not remove performer. Not found");
 	}
 }
 

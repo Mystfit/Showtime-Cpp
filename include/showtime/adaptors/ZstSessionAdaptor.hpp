@@ -16,4 +16,6 @@ public:
     
     ZST_EXPORT virtual ZstCableBundle & get_cables(ZstCableBundle & bundle);
     ZST_EXPORT virtual ZstCable * find_cable(const ZstCableAddress & address);
+	ZST_EXPORT virtual void aquire_plug_fire_control(ZstOutputPlug * plug);
+	ZST_EXPORT virtual void release_plug_fire_control(ZstOutputPlug* plug);
 };

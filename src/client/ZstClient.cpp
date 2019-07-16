@@ -665,6 +665,7 @@ void ZstClient::set_is_connecting(bool value)
 
 void ZstClient::on_entity_arriving(ZstEntityBase * entity)
 {
+	// Arriving output plugs need to register the graph transport so that they can dispatch messages
 	if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
 		ZstOutputPlug * plug = dynamic_cast<ZstOutputPlug*>(entity);
 		if (plug) {

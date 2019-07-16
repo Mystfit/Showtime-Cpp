@@ -4,15 +4,31 @@
 
 void ZstPlugLiason::plug_remove_cable(ZstPlug * plug, ZstCable * cable)
 {
+	if (!plug || !cable) return;
 	plug->remove_cable(cable);
 }
 
 void ZstPlugLiason::plug_add_cable(ZstPlug * plug, ZstCable * cable)
 {
+	if (!plug || !cable) return;
 	plug->add_cable(cable);
+}
+
+void ZstPlugLiason::output_plug_set_fire_control_owner(ZstOutputPlug* plug, const ZstURI& owner)
+{
+	if (!plug) return;
+	plug->set_fire_control_owner(owner);
 }
 
 void ZstPlugLiason::output_plug_set_transport(ZstOutputPlug * plug, ZstTransportAdaptor * transport)
 {
+	if (!plug || !transport) return;
 	plug->m_performance_events->add_adaptor(transport);
 }
+
+void ZstPlugLiason::output_plug_set_session(ZstOutputPlug* plug, ZstSessionAdaptor* session)
+{
+	if (!plug || !session) return;
+	plug->m_session_events->add_adaptor(session);
+}
+

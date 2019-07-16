@@ -60,6 +60,8 @@ public:
 
 	void on_receive_msg(ZstMessage * msg) override;
 	void on_receive_graph_msg(ZstPerformanceMessage * msg);
+	virtual void aquire_plug_fire_control(ZstOutputPlug* plug) override;
+	void aquire_plug_fire_control_handler(ZstMessage* msg);
 
 
 	// ---------------------------

@@ -18,6 +18,7 @@ using namespace std;
 
 ZstPlug::ZstPlug() :
 	ZstEntityBase(""),
+	m_direction(ZstPlugDirection::NONE),
 	m_max_connected_cables(-1)
 {
 	set_entity_type(PLUG_TYPE);
@@ -26,6 +27,7 @@ ZstPlug::ZstPlug() :
 
 ZstPlug::ZstPlug(const char * name, ZstValueType t) : 
 	ZstEntityBase(name),
+	m_direction(ZstPlugDirection::NONE),
 	m_max_connected_cables(-1)
 {
 	set_entity_type(PLUG_TYPE);
@@ -226,7 +228,8 @@ void ZstPlug::remove_cable(ZstCable * cable)
 //ZstInputPlug
 //------------
 
-ZstInputPlug::ZstInputPlug() : ZstPlug()
+ZstInputPlug::ZstInputPlug() : 
+	ZstPlug()
 {
 	m_direction = ZstPlugDirection::IN_JACK;
 }
@@ -251,6 +254,7 @@ ZstInputPlug::ZstInputPlug(const char * name, ZstValueType t, int max_cables) : 
 
 ZstOutputPlug::ZstOutputPlug() : 
 	ZstPlug(),
+	m_reliable(true),
 	m_performance_events(NULL)
 {
 	m_direction = ZstPlugDirection::OUT_JACK;
@@ -258,10 +262,11 @@ ZstOutputPlug::ZstOutputPlug() :
 	m_max_connected_cables = -1;
 }
 
-ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug & other) : ZstPlug(other)
+ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug & other) : 
+	ZstPlug(other),
+	m_reliable(other.m_reliable)
 {
 	m_performance_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
-	m_max_connected_cables = other.m_max_connected_cables;
 }
 
 ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t, bool reliable) : 
@@ -301,4 +306,26 @@ bool ZstOutputPlug::is_reliable()
 	return m_reliable;
 }
 
-//MSGPACK_ADD_ENUM(ZstPlugDirection);
+const ZstURI& ZstOutputPlug::get_fire_control_owner()
+{
+	return m_fire_control_owner;
+}
+
+bool ZstOutputPlug::aquire_fire_control()
+{
+	m_session_events->invoke([this](ZstSessionAdaptor* adaptor) {
+		adaptor->aquire_plug_fire_control(this);
+	});
+}
+
+bool ZstOutputPlug::release_fire_control()
+{
+	m_session_events->invoke([this](ZstSessionAdaptor* adaptor) {
+		adaptor->release_plug_fire_control(this);
+	});
+}
+
+void ZstOutputPlug::set_fire_control_owner(const ZstURI& fire_owner)
+{
+	m_fire_control_owner = fire_owner;
+}

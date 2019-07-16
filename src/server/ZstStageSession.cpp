@@ -68,6 +68,12 @@ void ZstStageSession::on_receive_msg(ZstMessage * msg)
 	case ZstMsgKind::OBSERVE_ENTITY:
 		response = observe_entity_handler(msg, sender);
 		break;
+	case ZstMsgKind::AQUIRE_PLUG_FIRE_CONTROL:
+		response = aquire_plug_fire_control_handler(msg, sender);
+		break;
+	case ZstMsgKind::RELEASE_PLUG_FIRE_CONTROL:
+		response = release_plug_fire_control_handler(msg, sender);
+		break;
 	case ZstMsgKind::CLIENT_HEARTBEAT:
 		sender->set_heartbeat_active();
 		response = ZstMsgKind::OK;
@@ -266,8 +272,98 @@ ZstMsgKind ZstStageSession::observe_entity_handler(ZstMessage * msg, ZstPerforme
 }
 
 
-//---------------------
+ZstMsgKind ZstStageSession::aquire_plug_fire_control_handler(ZstMessage* msg, ZstPerformerStageProxy* sender)
+{
+	ZstStageMessage* stage_msg = static_cast<ZstStageMessage*>(msg);
+	auto plug_path = ZstURI(stage_msg->get_arg<std::string>(ZstMsgArg::PATH).c_str());
+	ZstOutputPlug* plug = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(plug_path));
 
+	if (!plug) {
+		ZstLog::server(LogLevel::warn, "Could not aquire plug fire control - plug {}, not found {}", plug_path.path());
+		return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
+	}
+
+	//Prepare connection promises
+	ZstMsgID id = stage_msg->id();
+	auto future = m_connection_watcher.register_response(id);
+
+	// We need to connect downstream plugs to the new sender
+	ZstCableBundle bundle;
+	get_cables(bundle);
+
+	std::unordered_map<ZstURI, ZstPerformerStageProxy*, ZstURIHash> performers;
+	
+	//Find all performers that have input connections to this output plug
+	for (auto c : bundle) {
+		if (c->get_output()->URI() == plug->URI()) {
+			auto receiver = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->get_performer_by_URI(c->get_input()->URI().first()));
+			performers[receiver->URI()] = receiver;
+		}
+	}
+
+	for (auto receiver : performers) {
+		//Check to see if one client is already connected to the other
+		if (sender->has_connected_subscriber(receiver.second)) {
+			continue;
+		}
+
+		//Create future action to run when the client responds
+		future.then([this, plug, sender, receiver, id](ZstMessageFuture f) {
+			ZstMsgKind status(ZstMsgKind::EMPTY);
+			try {
+				ZstMsgKind status = f.get();
+				if (status == ZstMsgKind::OK) {
+					ZstLog::server(LogLevel::notification, "aquire_plug_fire_control request completed. Requester: {}, Observed: {} completed", sender->URI().path(), receiver.second->URI().path());
+
+					//Finish connection setup
+					complete_client_connection(receiver.second, sender);
+
+					//Let caller know the operation has successfully completed
+					router_events().invoke([id, this, sender](ZstTransportAdaptor* adp) {
+						adp->send_msg(ZstMsgKind::OK, {
+							{ get_msg_arg_name(ZstMsgArg::DESTINATION), this->m_hierarchy->get_socket_ID(sender) },
+							{ get_msg_arg_name(ZstMsgArg::MSG_ID), id }
+							});
+						});
+				}
+				return status;
+			}
+			catch (const ZstTimeoutException& e) {
+				ZstLog::server(LogLevel::error, "Client connection async response timed out - {}", e.what());
+			}
+			return status;
+			});
+
+		//Start the client connection
+		connect_clients(id, receiver.second, sender);
+	}
+
+	//Broadcast change in plug fire control
+	ZstMsgArgs args {
+		{ get_msg_arg_name(ZstMsgArg::PATH), plug->URI().path() },
+		{ get_msg_arg_name(ZstMsgArg::OUTPUT_PATH), sender->URI().path() }
+	};
+	m_hierarchy->broadcast_message(ZstMsgKind::AQUIRE_PLUG_FIRE_CONTROL, args);
+
+	return ZstMsgKind::OK;
+}
+
+ZstMsgKind ZstStageSession::release_plug_fire_control_handler(ZstMessage* msg, ZstPerformerStageProxy* sender)
+{
+	ZstStageMessage* stage_msg = static_cast<ZstStageMessage*>(msg);
+	auto plug_path = ZstURI(stage_msg->get_arg<std::string>(ZstMsgArg::PATH).c_str());
+	ZstOutputPlug* plug = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(plug_path));
+
+	if (!plug) {
+		ZstLog::server(LogLevel::warn, "Could not release plug fire control - plug {}, not found {}", plug_path.path());
+		return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
+	}
+
+	//Broadcast an empty path for the fire control owner to reset ownership to the creator of the plug
+	m_hierarchy->broadcast_message(ZstMsgKind::AQUIRE_PLUG_FIRE_CONTROL, {{ get_msg_arg_name(ZstMsgArg::PATH), "" }});
+}
+
+//---------------------
 
 
 ZstMsgKind ZstStageSession::create_cable_complete_handler(ZstCable * cable)

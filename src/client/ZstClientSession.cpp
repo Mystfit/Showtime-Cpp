@@ -105,9 +105,35 @@ void ZstClientSession::on_receive_msg(ZstMessage * msg)
 		}
 		break;
 	}
+	case ZstMsgKind::AQUIRE_PLUG_FIRE_CONTROL:
+		aquire_plug_fire_control_handler(stage_msg);
+		break;
 	default:
 		break;
 	}
+}
+
+void ZstClientSession::aquire_plug_fire_control(ZstOutputPlug* plug)
+{
+	stage_events().invoke([this, plug](ZstTransportAdaptor* adaptor) {
+		ZstMsgArgs args;
+		adaptor->send_msg(ZstMsgKind::AQUIRE_PLUG_FIRE_CONTROL, ZstTransportSendType::ASYNC_REPLY, { { get_msg_arg_name(ZstMsgArg::PATH), plug->URI().path() } }, [this, plug](ZstMessageReceipt response) {
+			ZstLog::net(LogLevel::debug, "Ack from server");
+		});
+	});	
+}
+
+void ZstClientSession::aquire_plug_fire_control_handler(ZstMessage* msg)
+{
+	auto stage_msg = static_cast<ZstStageMessage*>(msg);
+	std::string path = stage_msg->get_arg<std::string>(ZstMsgArg::PATH);
+	std::string fire_control_path = "";
+	if (!path.empty()) {
+		fire_control_path = stage_msg->get_arg<std::string>(ZstMsgArg::OUTPUT_PATH);
+	}
+	auto plug = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(ZstURI(path.c_str()));
+	
+	output_plug_set_fire_control_owner(plug, ZstURI(fire_control_path.c_str()));
 }
 
 void ZstClientSession::on_receive_graph_msg(ZstPerformanceMessage * msg)
@@ -149,12 +175,10 @@ void ZstClientSession::on_receive_graph_msg(ZstPerformanceMessage * msg)
 	}
 }
 
-
 void ZstClientSession::on_performer_leaving(ZstPerformer * performer)
 {
 	remove_connected_performer(performer);
 }
-
 
 void ZstClientSession::plug_received_value(ZstInputPlug * plug)
 {

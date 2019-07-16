@@ -96,8 +96,15 @@ public:
 	ZST_EXPORT ~ZstOutputPlug();
 	ZST_EXPORT void fire();
 	ZST_EXPORT bool is_reliable();
+	ZST_EXPORT const ZstURI & get_fire_control_owner();
+	ZST_EXPORT bool aquire_fire_control();
+	ZST_EXPORT bool release_fire_control();
 
 private:
+	void set_fire_control_owner(const ZstURI & fire_owner);
 	ZstEventDispatcher<ZstTransportAdaptor*> * m_performance_events;
+	ZstEventDispatcher<ZstSessionAdaptor*>* m_session_events;
+
 	bool m_reliable;
+	ZstURI m_fire_control_owner;
 };

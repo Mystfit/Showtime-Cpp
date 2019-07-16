@@ -22,17 +22,17 @@ void ZstSynchronisableAdaptor::on_synchronisable_has_event(ZstSynchronisable * s
 void ZstSynchronisableAdaptor::on_synchronisable_activated(ZstSynchronisable * synchronisable) {}
 void ZstSynchronisableAdaptor::on_synchronisable_deactivated(ZstSynchronisable * synchronisable) {}
 void ZstSynchronisableAdaptor::on_synchronisable_destroyed(ZstSynchronisable * synchronisable) {}
-void ZstSynchronisableAdaptor::on_synchronisable_updated(ZstSynchronisable * synchronisable) {};
+void ZstSynchronisableAdaptor::on_synchronisable_updated(ZstSynchronisable * synchronisable) {}
 
 
 // ---------------
 // Entity adaptors
 // ---------------
 
-void ZstEntityAdaptor::on_publish_entity_update(ZstEntityBase * entity) {};
-void ZstEntityAdaptor::on_register_entity(ZstEntityBase * entity){};
-void ZstEntityAdaptor::on_request_entity_activation(ZstEntityBase * entity) {};
-void ZstEntityAdaptor::on_disconnect_cable(ZstCable * cable) {};
+void ZstEntityAdaptor::on_publish_entity_update(ZstEntityBase * entity) {}
+void ZstEntityAdaptor::on_register_entity(ZstEntityBase * entity){}
+void ZstEntityAdaptor::on_request_entity_activation(ZstEntityBase * entity) {}
+void ZstEntityAdaptor::on_disconnect_cable(ZstCable * cable) {}
 
 //void ZstEntityAdaptor::on_entity_destroyed(ZstEntityBase * entity){};
 
@@ -41,8 +41,8 @@ void ZstEntityAdaptor::on_disconnect_cable(ZstCable * cable) {};
 // Factory adaptors
 // ----------------
 
-void ZstFactoryAdaptor::on_creatables_updated(ZstEntityFactory * factory) {};
-void ZstFactoryAdaptor::on_entity_created(ZstEntityBase * entity) {};
+void ZstFactoryAdaptor::on_creatables_updated(ZstEntityFactory * factory) {}
+void ZstFactoryAdaptor::on_entity_created(ZstEntityBase * entity) {}
 //void ZstEntityAdaptor::on_entity_destroyed(ZstEntityBase * entity){};
 
 
@@ -51,15 +51,17 @@ void ZstFactoryAdaptor::on_entity_created(ZstEntityBase * entity) {};
 // -----------------------
 
 void ZstSessionAdaptor::on_connected_to_stage() {}
-void ZstSessionAdaptor::on_disconnected_from_stage() {};
-void ZstSessionAdaptor::on_server_discovered(const ZstServerAddress & server){};
+void ZstSessionAdaptor::on_disconnected_from_stage() {}
+void ZstSessionAdaptor::on_server_discovered(const ZstServerAddress & server){}
 
 void ZstSessionAdaptor::on_cable_created(ZstCable * cable) {}
 void ZstSessionAdaptor::on_cable_destroyed(ZstCable * cable) {}
 
-ZstCableBundle & ZstSessionAdaptor::get_cables(ZstCableBundle & bundle) { return bundle; };
-ZstCable * ZstSessionAdaptor::find_cable(const ZstCableAddress & address) { return NULL; };
+ZstCableBundle & ZstSessionAdaptor::get_cables(ZstCableBundle & bundle) { return bundle; }
+ZstCable * ZstSessionAdaptor::find_cable(const ZstCableAddress & address) { return NULL; }
 
+void ZstSessionAdaptor::aquire_plug_fire_control(ZstOutputPlug* plug) {}
+void ZstSessionAdaptor::release_plug_fire_control(ZstOutputPlug* plug) {}
 
 
 // -----------------------
@@ -75,14 +77,14 @@ void ZstHierarchyAdaptor::on_entity_leaving(ZstEntityBase * entity) {}
 void ZstHierarchyAdaptor::on_plug_arriving(ZstPlug * plug) {}
 void ZstHierarchyAdaptor::on_plug_leaving(ZstPlug * plug) {}
 
-void ZstHierarchyAdaptor::on_factory_arriving(ZstEntityFactory * factory) {};
-void ZstHierarchyAdaptor::on_factory_leaving(ZstEntityFactory * factory) {};
+void ZstHierarchyAdaptor::on_factory_arriving(ZstEntityFactory * factory) {}
+void ZstHierarchyAdaptor::on_factory_leaving(ZstEntityFactory * factory) {}
 
 
 // -----------------------
 // Message adaptors
 // -----------------------
-void ZstTransportAdaptor::send_msg(ZstMsgKind kind) {};
+void ZstTransportAdaptor::send_msg(ZstMsgKind kind) {}
 void ZstTransportAdaptor::send_msg(ZstMsgKind kind, const ZstMsgArgs & args) {}
 void ZstTransportAdaptor::send_msg(ZstMsgKind kind, const ZstMsgArgs & args, const ZstMsgArgs & payload) {}
 void ZstTransportAdaptor::send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const MessageReceivedAction & action){}
