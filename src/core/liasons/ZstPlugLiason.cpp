@@ -23,12 +23,5 @@ void ZstPlugLiason::output_plug_set_fire_control_owner(ZstOutputPlug* plug, cons
 void ZstPlugLiason::output_plug_set_transport(ZstOutputPlug * plug, ZstTransportAdaptor * transport)
 {
 	if (!plug || !transport) return;
-	plug->m_performance_events->add_adaptor(transport);
+	plug->add_adaptor(transport);
 }
-
-void ZstPlugLiason::output_plug_set_session(ZstOutputPlug* plug, ZstSessionAdaptor* session)
-{
-	if (!plug || !session) return;
-	plug->m_session_events->add_adaptor(session);
-}
-

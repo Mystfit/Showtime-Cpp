@@ -282,6 +282,8 @@ ZstMsgKind ZstStageSession::aquire_plug_fire_control_handler(ZstMessage* msg, Zs
 		ZstLog::server(LogLevel::warn, "Could not aquire plug fire control - plug {}, not found {}", plug_path.path());
 		return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
 	}
+    
+    ZstLog::server(LogLevel::notification, "Received plug fire control aquistion request - {} wants to control {}", sender->URI().path(), plug->URI().path());
 
 	//Prepare connection promises
 	ZstMsgID id = stage_msg->id();
@@ -343,6 +345,8 @@ ZstMsgKind ZstStageSession::aquire_plug_fire_control_handler(ZstMessage* msg, Zs
 		{ get_msg_arg_name(ZstMsgArg::PATH), plug->URI().path() },
 		{ get_msg_arg_name(ZstMsgArg::OUTPUT_PATH), sender->URI().path() }
 	};
+    
+    ZstLog::server(LogLevel::notification, "Broadcasting plug fire control owner - {} controls {}", sender->URI().path(), plug->URI().path());
 	m_hierarchy->broadcast_message(ZstMsgKind::AQUIRE_PLUG_FIRE_CONTROL, args);
 
 	return ZstMsgKind::OK;
@@ -361,6 +365,8 @@ ZstMsgKind ZstStageSession::release_plug_fire_control_handler(ZstMessage* msg, Z
 
 	//Broadcast an empty path for the fire control owner to reset ownership to the creator of the plug
 	m_hierarchy->broadcast_message(ZstMsgKind::AQUIRE_PLUG_FIRE_CONTROL, {{ get_msg_arg_name(ZstMsgArg::PATH), "" }});
+    
+    return ZstMsgKind::OK;
 }
 
 //---------------------

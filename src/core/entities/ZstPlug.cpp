@@ -255,12 +255,10 @@ ZstInputPlug::ZstInputPlug(const char * name, ZstValueType t, int max_cables) : 
 ZstOutputPlug::ZstOutputPlug() : 
 	ZstPlug(),
 	m_reliable(true),
-	m_performance_events(NULL),
-    m_session_events(NULL)
+	m_graph_out_events(NULL)
 {
 	m_direction = ZstPlugDirection::OUT_JACK;
-	m_performance_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
-    m_session_events = new ZstEventDispatcher<ZstSessionAdaptor*>("plug_session_events");
+	m_graph_out_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
 	m_max_connected_cables = -1;
 }
 
@@ -268,8 +266,7 @@ ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug & other) :
 	ZstPlug(other),
 	m_reliable(other.m_reliable)
 {
-	m_performance_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
-    m_session_events = new ZstEventDispatcher<ZstSessionAdaptor*>("plug_session_events");
+	m_graph_out_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
 }
 
 ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t, bool reliable) : 
@@ -277,8 +274,7 @@ ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t, bool reliable) :
 	m_reliable(reliable)
 {
 	m_direction = ZstPlugDirection::OUT_JACK;
-	m_performance_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
-    m_session_events = new ZstEventDispatcher<ZstSessionAdaptor*>("plug_session_events");
+	m_graph_out_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
 	m_max_connected_cables = -1;
 #ifndef ZST_BUILD_DRAFT_API
     if(!m_reliable){
@@ -290,14 +286,14 @@ ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t, bool reliable) :
 
 ZstOutputPlug::~ZstOutputPlug()
 {
-	m_performance_events->flush();
-	m_performance_events->remove_all_adaptors();
-	delete m_performance_events;
+	m_graph_out_events->flush();
+	m_graph_out_events->remove_all_adaptors();
+	delete m_graph_out_events;
 }
 
 void ZstOutputPlug::fire()
 {
-	m_performance_events->invoke([this](ZstTransportAdaptor * adaptor) {
+	m_graph_out_events->invoke([this](ZstTransportAdaptor * adaptor) {
 		json val_json;
 		this->raw_value()->write_json(val_json);
 		adaptor->send_msg(ZstMsgKind::PERFORMANCE_MSG, { { get_msg_arg_name(ZstMsgArg::PATH), this->URI().path() } }, val_json);
@@ -315,14 +311,14 @@ const ZstURI& ZstOutputPlug::get_fire_control_owner()
 	return m_fire_control_owner;
 }
 
-bool ZstOutputPlug::aquire_fire_control()
+void ZstOutputPlug::aquire_fire_control()
 {
 	m_session_events->invoke([this](ZstSessionAdaptor* adaptor) {
 		adaptor->aquire_plug_fire_control(this);
 	});
 }
 
-bool ZstOutputPlug::release_fire_control()
+void ZstOutputPlug::release_fire_control()
 {
 	m_session_events->invoke([this](ZstSessionAdaptor* adaptor) {
 		adaptor->release_plug_fire_control(this);
@@ -332,4 +328,14 @@ bool ZstOutputPlug::release_fire_control()
 void ZstOutputPlug::set_fire_control_owner(const ZstURI& fire_owner)
 {
 	m_fire_control_owner = fire_owner;
+}
+
+void ZstOutputPlug::add_adaptor(ZstTransportAdaptor* adaptor)
+{
+    m_graph_out_events->add_adaptor(adaptor);
+}
+
+void ZstOutputPlug::remove_adaptor(ZstTransportAdaptor* adaptor)
+{
+    m_graph_out_events->remove_adaptor(adaptor);
 }

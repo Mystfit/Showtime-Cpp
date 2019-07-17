@@ -117,7 +117,7 @@ void ZstClientSession::aquire_plug_fire_control(ZstOutputPlug* plug)
 {
 	stage_events().invoke([this, plug](ZstTransportAdaptor* adaptor) {
 		ZstMsgArgs args;
-		adaptor->send_msg(ZstMsgKind::AQUIRE_PLUG_FIRE_CONTROL, ZstTransportSendType::ASYNC_REPLY, { { get_msg_arg_name(ZstMsgArg::PATH), plug->URI().path() } }, [this, plug](ZstMessageReceipt response) {
+		adaptor->send_msg(ZstMsgKind::AQUIRE_PLUG_FIRE_CONTROL, ZstTransportSendType::ASYNC_REPLY, { { get_msg_arg_name(ZstMsgArg::PATH), plug->URI().path() } }, [this](ZstMessageReceipt response) {
 			ZstLog::net(LogLevel::debug, "Ack from server");
 		});
 	});	

@@ -90,20 +90,25 @@ public:
 class ZstOutputPlug : public ZstPlug {
 	friend class ZstPlugLiason;
 public:
+    using ZstEntityBase::add_adaptor;
+    using ZstEntityBase::remove_adaptor;
+    
 	ZST_EXPORT ZstOutputPlug();
 	ZST_EXPORT ZstOutputPlug(const ZstOutputPlug & other);
 	ZST_EXPORT ZstOutputPlug(const char * name, ZstValueType t, bool reliable = true);
 	ZST_EXPORT ~ZstOutputPlug();
+
 	ZST_EXPORT void fire();
 	ZST_EXPORT bool is_reliable();
 	ZST_EXPORT const ZstURI & get_fire_control_owner();
-	ZST_EXPORT bool aquire_fire_control();
-	ZST_EXPORT bool release_fire_control();
-
+	ZST_EXPORT void aquire_fire_control();
+	ZST_EXPORT void release_fire_control();
 private:
+    ZST_EXPORT virtual void add_adaptor(ZstTransportAdaptor* adaptor);
+    ZST_EXPORT virtual void remove_adaptor(ZstTransportAdaptor* adaptor);
+    
 	void set_fire_control_owner(const ZstURI & fire_owner);
-	ZstEventDispatcher<ZstTransportAdaptor*> * m_performance_events;
-	ZstEventDispatcher<ZstSessionAdaptor*>* m_session_events;
+	ZstEventDispatcher<ZstTransportAdaptor*> * m_graph_out_events;
 
 	bool m_reliable;
 	ZstURI m_fire_control_owner;
