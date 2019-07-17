@@ -97,24 +97,20 @@ public:
 	ZST_EXPORT ZstOutputPlug(const ZstOutputPlug & other);
 	ZST_EXPORT ZstOutputPlug(const char * name, ZstValueType t, bool reliable = true);
 	ZST_EXPORT ~ZstOutputPlug();
-
 	ZST_EXPORT bool can_fire();
 	ZST_EXPORT void fire();
 	ZST_EXPORT bool is_reliable();
-	ZST_EXPORT const ZstURI & get_fire_control_owner();
-	ZST_EXPORT void aquire_fire_control();
-	ZST_EXPORT void release_fire_control();
+    
+protected:
+    ZST_EXPORT virtual void set_owner(const ZstURI & fire_owner) override;
 
 private:
     ZST_EXPORT virtual void add_adaptor(ZstTransportAdaptor* adaptor);
     ZST_EXPORT virtual void remove_adaptor(ZstTransportAdaptor* adaptor);
-    
-	void set_fire_control_owner(const ZstURI & fire_owner);
-	void set_can_fire(bool can_fire);
+	ZST_EXPORT void set_can_fire(bool can_fire);
 
 	ZstEventDispatcher<ZstTransportAdaptor*> * m_graph_out_events;
 
 	bool m_reliable;
-	ZstURI m_fire_control_owner;
 	bool m_can_fire;
 };

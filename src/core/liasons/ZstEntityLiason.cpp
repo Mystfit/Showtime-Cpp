@@ -1,6 +1,8 @@
 #include "ZstEntityLiason.hpp"
 
-ZstEventDispatcher<ZstSessionAdaptor*> * ZstEntityLiason::entity_session_events(ZstEntityBase * entity)
+void ZstEntityLiason::entity_set_owner(ZstEntityBase * entity, const ZstURI & owner)
 {
-    return entity->session_events();
+    if(!entity)
+        return;
+    entity->set_owner(owner);
 }

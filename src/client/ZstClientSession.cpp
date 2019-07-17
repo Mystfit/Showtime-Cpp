@@ -105,45 +105,52 @@ void ZstClientSession::on_receive_msg(ZstMessage * msg)
 		}
 		break;
 	}
-	case ZstMsgKind::AQUIRE_PLUG_FIRE_CONTROL:
-		aquire_plug_fire_control_handler(stage_msg);
+	case ZstMsgKind::AQUIRE_ENTITY_OWNERSHIP:
+		aquire_entity_ownership_handler(stage_msg);
 		break;
 	default:
 		break;
 	}
 }
 
-void ZstClientSession::aquire_plug_fire_control(ZstOutputPlug* plug)
+void ZstClientSession::aquire_entity_ownership(ZstEntityBase* entity)
 {
-	stage_events().invoke([this, plug](ZstTransportAdaptor* adaptor) {
+	stage_events().invoke([entity](ZstTransportAdaptor* adaptor) {
 		ZstMsgArgs args;
-		adaptor->send_msg(ZstMsgKind::AQUIRE_PLUG_FIRE_CONTROL, ZstTransportSendType::ASYNC_REPLY, { { get_msg_arg_name(ZstMsgArg::PATH), plug->URI().path() } }, [this](ZstMessageReceipt response) {
+		adaptor->send_msg(ZstMsgKind::AQUIRE_ENTITY_OWNERSHIP, ZstTransportSendType::ASYNC_REPLY, { { get_msg_arg_name(ZstMsgArg::PATH), entity->URI().path() } }, [](ZstMessageReceipt response) {
 			ZstLog::net(LogLevel::debug, "Ack from server");
 		});
 	});	
 }
 
-void ZstClientSession::aquire_plug_fire_control_handler(ZstMessage* msg)
+void ZstClientSession::release_entity_ownership(ZstEntityBase* entity)
+{
+    stage_events().invoke([entity](ZstTransportAdaptor* adaptor) {
+        ZstMsgArgs args;
+        adaptor->send_msg(ZstMsgKind::RELEASE_ENTITY_OWNERSHIP, ZstTransportSendType::ASYNC_REPLY, { { get_msg_arg_name(ZstMsgArg::PATH), entity->URI().path() } }, [](ZstMessageReceipt response) {
+            ZstLog::net(LogLevel::debug, "Ack from server");
+        });
+    });
+}
+
+void ZstClientSession::aquire_entity_ownership_handler(ZstMessage* msg)
 {
 	auto stage_msg = static_cast<ZstStageMessage*>(msg);
 	std::string path = stage_msg->get_arg<std::string>(ZstMsgArg::PATH);
-	std::string fire_control_path = "";
+	std::string owner_path = "";
 	if (!path.empty()) {
-		fire_control_path = stage_msg->get_arg<std::string>(ZstMsgArg::OUTPUT_PATH);
+		owner_path = stage_msg->get_arg<std::string>(ZstMsgArg::OUTPUT_PATH);
 	}
-	auto plug = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(ZstURI(path.c_str())));
-	auto fire_control_owner = ZstURI(fire_control_path.c_str(), fire_control_path.size());
+	auto entity = hierarchy()->find_entity(ZstURI(path.c_str()));
+	auto owner = ZstURI(owner_path.c_str(), owner_path.size());
 	
-	// Check if we own the fire control for this plug and set appropriate flags
-	if (fire_control_owner.first() == hierarchy()->get_local_performer()->URI()) {
-		output_plug_set_can_fire(plug, true);
-	}
-	else {
-		output_plug_set_can_fire(plug, false);
-	}
-	
-	// Store the fire control owner
-	output_plug_set_fire_control_owner(plug, fire_control_owner);
+
+	// Set the owner
+    ZstEntityBundle bundle;
+    entity->get_child_entities(bundle);
+    for(auto child : bundle){
+        entity_set_owner(child, owner);
+    }
 }
 
 void ZstClientSession::on_receive_graph_msg(ZstPerformanceMessage * msg)

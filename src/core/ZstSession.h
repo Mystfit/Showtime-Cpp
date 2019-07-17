@@ -63,7 +63,6 @@ public:
 
 	ZST_EXPORT virtual ZstHierarchy * hierarchy() = 0;
 
-
 	// -------------------------------
 	// Syncronisable adaptor overrides
 	// -------------------------------

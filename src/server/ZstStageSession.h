@@ -26,8 +26,8 @@ public:
 	ZstMsgKind create_cable_complete_handler(ZstCable * cable);
 	ZstMsgKind destroy_cable_handler(ZstMessage * msg);
 	ZstMsgKind observe_entity_handler(ZstMessage * msg, ZstPerformerStageProxy * sender);
-	ZstMsgKind aquire_plug_fire_control_handler(ZstMessage* msg, ZstPerformerStageProxy* sender);
-	ZstMsgKind release_plug_fire_control_handler(ZstMessage* msg, ZstPerformerStageProxy* sender);
+	ZstMsgKind aquire_entity_ownership_handler(ZstMessage* msg, ZstPerformerStageProxy* sender);
+	ZstMsgKind release_entity_ownership_handler(ZstMessage* msg, ZstPerformerStageProxy* sender);
 
 	//Adapter overrides
 	void on_performer_leaving(ZstPerformer * performer) override;

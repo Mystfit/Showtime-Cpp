@@ -60,15 +60,17 @@ public:
 
 	void on_receive_msg(ZstMessage * msg) override;
 	void on_receive_graph_msg(ZstPerformanceMessage * msg);
-	virtual void aquire_plug_fire_control(ZstOutputPlug* plug) override;
-	void aquire_plug_fire_control_handler(ZstMessage* msg);
+	virtual void aquire_entity_ownership(ZstEntityBase* entity) override;
+    virtual void release_entity_ownership(ZstEntityBase* entity) override;
+
+	void aquire_entity_ownership_handler(ZstMessage* msg);
 
 
 	// ---------------------------
 	// Hierarchy adaptor overrides
 	// ---------------------------
 	void on_performer_leaving(ZstPerformer * performer) override;
-
+    
 
 	// ------------------
 	// Cable creation
@@ -80,10 +82,10 @@ public:
 
 
 	// -----------------
-	// Submodules
+	// Submodules access
 	// -----------------
 
-	ZstClientHierarchy * hierarchy() override;
+	virtual ZstClientHierarchy * hierarchy() override;
 
 
 private:

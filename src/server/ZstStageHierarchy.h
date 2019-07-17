@@ -17,7 +17,9 @@ class ZstStageHierarchy :
 public:
 	~ZstStageHierarchy();
 	void destroy() override;
+    
     virtual void set_wake_condition(std::weak_ptr<ZstSemaphore> condition) override;
+    ZstPerformer * get_local_performer() const override;
 
 
 	// ---------------------------
@@ -35,9 +37,11 @@ public:
 	ZstMsgKind destroy_client_handler(ZstPerformer * performer);
 	void broadcast_message(const ZstMsgKind & msg_kind, const ZstMsgArgs & args, const ZstMsgArgs & payload = json());
 
+    
 	// ----------------
 	// Proxies
 	// ----------------
+    
 	virtual ZstMsgKind add_proxy_entity(const ZstEntityBase & entity, ZstMsgID request_ID, ZstPerformer * sender);
 	ZstMsgKind update_proxy_entity(const ZstEntityBase & entity, ZstMsgID request_ID);
 	ZstMsgKind remove_proxy_entity(ZstEntityBase * entity) override;

@@ -8,5 +8,5 @@
 
 class ZstEntityLiason {
 public:
-    ZST_EXPORT ZstEventDispatcher<ZstSessionAdaptor*> * entity_session_events(ZstEntityBase * entity);
+    ZST_EXPORT void entity_set_owner(ZstEntityBase * entity, const ZstURI & owner);
 };

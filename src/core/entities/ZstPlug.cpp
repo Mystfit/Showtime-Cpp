@@ -9,6 +9,7 @@
 #include "../ZstValue.h"
 #include "../ZstEventDispatcher.hpp"
 #include "../adaptors/ZstTransportAdaptor.hpp"
+#include "../ZstHierarchy.h"
 
 using namespace std;
 
@@ -317,28 +318,15 @@ bool ZstOutputPlug::is_reliable()
 	return m_reliable;
 }
 
-const ZstURI& ZstOutputPlug::get_fire_control_owner()
+void ZstOutputPlug::set_owner(const ZstURI & owner)
 {
-	return m_fire_control_owner;
-}
-
-void ZstOutputPlug::aquire_fire_control()
-{
-	m_session_events->invoke([this](ZstSessionAdaptor* adaptor) {
-		adaptor->aquire_plug_fire_control(this);
-	});
-}
-
-void ZstOutputPlug::release_fire_control()
-{
-	m_session_events->invoke([this](ZstSessionAdaptor* adaptor) {
-		adaptor->release_plug_fire_control(this);
-	});
-}
-
-void ZstOutputPlug::set_fire_control_owner(const ZstURI& fire_owner)
-{
-	m_fire_control_owner = fire_owner;
+    session_events()->invoke([this, &owner](ZstSessionAdaptor* adaptor){
+        if(adaptor->hierarchy()->get_local_performer()->URI() == owner){
+            set_can_fire(true);
+        } else {
+            set_can_fire(false);
+        }
+    });
 }
 
 void ZstOutputPlug::set_can_fire(bool can_fire)

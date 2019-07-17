@@ -127,6 +127,30 @@ void ZstEntityBase::remove_adaptor(ZstSessionAdaptor * adaptor)
     this->m_session_events->remove_adaptor(adaptor);
 }
 
+const ZstURI& ZstEntityBase::get_owner()
+{
+    return m_current_owner;
+}
+
+void ZstEntityBase::set_owner(const ZstURI& owner)
+{
+    m_current_owner = owner;
+}
+
+void ZstEntityBase::aquire_ownership()
+{
+    m_session_events->invoke([this](ZstSessionAdaptor* adaptor) {
+        adaptor->aquire_entity_ownership(this);
+    });
+}
+
+void ZstEntityBase::release_ownership()
+{
+    m_session_events->invoke([this](ZstSessionAdaptor* adaptor) {
+        adaptor->release_entity_ownership(this);
+    });
+}
+
 void ZstEntityBase::set_entity_type(const char * entity_type) {
 	m_entity_type = std::string(entity_type);
 }
@@ -155,3 +179,4 @@ ZstEventDispatcher<ZstSessionAdaptor*> * ZstEntityBase::session_events()
 {
     return m_session_events.get();
 }
+

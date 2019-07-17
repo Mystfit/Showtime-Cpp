@@ -66,6 +66,10 @@ public:
     ZST_EXPORT virtual void remove_adaptor(ZstEntityAdaptor * adaptor);
     ZST_EXPORT virtual void remove_adaptor(ZstSessionAdaptor * adaptor);
     
+    //Ownership
+    ZST_EXPORT const ZstURI & get_owner();
+    ZST_EXPORT void aquire_ownership();
+    ZST_EXPORT void release_ownership();
 #ifndef SWIG
     //Include base class adaptors
     //Swig mistakenly adds these twice when dealing treating ZstSynchronisable as an interface (C#, Java)
@@ -79,9 +83,11 @@ protected:
 	//Set entity status
 	ZST_EXPORT void set_entity_type(const char * entity_type);
 	ZST_EXPORT virtual void set_parent(ZstEntityBase* entity);
+    ZST_EXPORT virtual void set_owner(const ZstURI & fire_owner);
 	ZST_EXPORT virtual void update_URI();
 	ZST_EXPORT virtual void dispatch_destroyed() override;
     
+    //Event dispatchers
     ZST_EXPORT ZstEventDispatcher<ZstSessionAdaptor*> * session_events();
     
     //Entity mutex
@@ -93,4 +99,5 @@ private:
 	ZstEntityBase * m_parent;
 	std::string m_entity_type;
 	ZstURI m_uri;
+    ZstURI m_current_owner;
 };

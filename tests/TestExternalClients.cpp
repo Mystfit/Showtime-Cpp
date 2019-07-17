@@ -52,6 +52,22 @@ struct FixtureExternalEntities : public FixtureWaitForSinkClient
 };
 
 
+struct FixtureExternalEntitysWithLocalInput : public FixtureExternalEntities{
+    std::unique_ptr<InputComponent> input_component;
+    ZstOutputPlug * sync_out_plug;
+    
+    FixtureExternalEntitysWithLocalInput() :
+        input_component(std::make_unique<InputComponent>("input_cmp")),
+        sync_out_plug(NULL)
+    {
+        zst_get_root()->add_child(input_component.get());
+        sync_out_plug = dynamic_cast<ZstOutputPlug*>(sink_ent->get_child_by_URI(sync_out_plug_uri));
+        zst_connect_cable(input_component->input(), sync_out_plug);
+    }
+    ~FixtureExternalEntitysWithLocalInput(){}
+};
+
+
 struct FixtureExternalConnectCable : public FixtureExternalEntities
 {
     FixtureExternalConnectCable(){
@@ -121,25 +137,45 @@ BOOST_FIXTURE_TEST_CASE(plug_observation, FixtureExternalConnectCable) {
     BOOST_TEST(sync_out_plug->int_at(0) == echo_val);
 }
 
-BOOST_FIXTURE_TEST_CASE(plug_fire_control, FixtureExternalEntities) {
-    auto in_cmp = std::make_unique<InputComponent>("input_cmp");
-    zst_get_root()->add_child(in_cmp.get());
-    auto sync_out_plug = dynamic_cast<ZstOutputPlug*>(sink_ent->get_child_by_URI(sync_out_plug_uri));
-    zst_connect_cable(in_cmp->input(), sync_out_plug);
+BOOST_FIXTURE_TEST_CASE(aquire_entity_ownership, FixtureExternalEntitysWithLocalInput) {
+    BOOST_TEST(sync_out_plug->get_owner().is_empty());
+    sync_out_plug->aquire_ownership();
+    TAKE_A_BREATH
+    BOOST_TEST(sync_out_plug->get_owner() == zst_get_root()->URI());
+}
 
-	BOOST_TEST(!sync_out_plug->can_fire());
-	BOOST_TEST(sync_out_plug->get_fire_control_owner().is_empty());
-    sync_out_plug->aquire_fire_control();
+BOOST_FIXTURE_TEST_CASE(release_entity_ownership, FixtureExternalEntitysWithLocalInput) {
+    sync_out_plug->aquire_ownership();
+    TAKE_A_BREATH
+    sync_out_plug->release_ownership();
+    BOOST_TEST(sync_out_plug->get_owner().is_empty());
+}
+
+BOOST_FIXTURE_TEST_CASE(ownership_grants_plug_fire_permission, FixtureExternalEntitysWithLocalInput) {
+    BOOST_TEST(!sync_out_plug->can_fire());
+    sync_out_plug->aquire_ownership();
+    TAKE_A_BREATH
+    BOOST_TEST(sync_out_plug->can_fire());
+}
+
+BOOST_FIXTURE_TEST_CASE(release_ownship_removes_plug_fire_permission, FixtureExternalEntitysWithLocalInput) {
+    sync_out_plug->aquire_ownership();
+    TAKE_A_BREATH
+    sync_out_plug->release_ownership();
+    TAKE_A_BREATH
+    BOOST_TEST(!sync_out_plug->can_fire());
+}
+
+BOOST_FIXTURE_TEST_CASE(ownership_plug_fire_check, FixtureExternalEntitysWithLocalInput) {
+    sync_out_plug->aquire_ownership();
 	TAKE_A_BREATH
-	BOOST_TEST(sync_out_plug->can_fire());
-    BOOST_TEST(sync_out_plug->get_fire_control_owner() == ZstURI("test_performer"));
     
     int cmp_val = 27;
     sync_out_plug->append_int(cmp_val);
     sync_out_plug->fire();
 	TAKE_A_BREATH
-	BOOST_TEST(in_cmp->input()->size() > 0);
-    BOOST_TEST(in_cmp->input()->int_at(0) == cmp_val);
+	BOOST_TEST(input_component->input()->size() > 0);
+    BOOST_TEST(input_component->input()->int_at(0) == cmp_val);
 }
 
 BOOST_FIXTURE_TEST_CASE(entity_arriving, FixtureExternalConnectCable) {

@@ -76,7 +76,7 @@ public:
 	bool path_is_local(const ZstURI & path);
 	virtual ZstMsgKind add_proxy_entity(const ZstEntityBase & entity) override;
 	virtual ZstMsgKind update_proxy_entity(const ZstEntityBase & entity) override;
-	ZstPerformer * get_local_performer() const;
+	ZstPerformer * get_local_performer() const override;
 
 
 private:

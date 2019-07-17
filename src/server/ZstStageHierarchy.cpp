@@ -20,6 +20,9 @@ void ZstStageHierarchy::set_wake_condition(std::weak_ptr<ZstSemaphore> condition
     synchronisable_events().set_wake_condition(condition);
 }
 
+ZstPerformer * ZstStageHierarchy::get_local_performer() const {
+    return NULL;
+}
 
 void ZstStageHierarchy::on_receive_msg(ZstMessage * msg)
 {

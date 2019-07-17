@@ -68,11 +68,11 @@ void ZstStageSession::on_receive_msg(ZstMessage * msg)
 	case ZstMsgKind::OBSERVE_ENTITY:
 		response = observe_entity_handler(msg, sender);
 		break;
-	case ZstMsgKind::AQUIRE_PLUG_FIRE_CONTROL:
-		response = aquire_plug_fire_control_handler(msg, sender);
+	case ZstMsgKind::AQUIRE_ENTITY_OWNERSHIP:
+		response = aquire_entity_ownership_handler(msg, sender);
 		break;
-	case ZstMsgKind::RELEASE_PLUG_FIRE_CONTROL:
-		response = release_plug_fire_control_handler(msg, sender);
+	case ZstMsgKind::RELEASE_ENTITY_OWNERSHIP:
+		response = release_entity_ownership_handler(msg, sender);
 		break;
 	case ZstMsgKind::CLIENT_HEARTBEAT:
 		sender->set_heartbeat_active();
@@ -272,18 +272,18 @@ ZstMsgKind ZstStageSession::observe_entity_handler(ZstMessage * msg, ZstPerforme
 }
 
 
-ZstMsgKind ZstStageSession::aquire_plug_fire_control_handler(ZstMessage* msg, ZstPerformerStageProxy* sender)
+ZstMsgKind ZstStageSession::aquire_entity_ownership_handler(ZstMessage* msg, ZstPerformerStageProxy* sender)
 {
 	ZstStageMessage* stage_msg = static_cast<ZstStageMessage*>(msg);
-	auto plug_path = ZstURI(stage_msg->get_arg<std::string>(ZstMsgArg::PATH).c_str());
-	ZstOutputPlug* plug = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(plug_path));
+	auto entity_path = ZstURI(stage_msg->get_arg<std::string>(ZstMsgArg::PATH).c_str());
+	ZstEntityBase* entity = hierarchy()->find_entity(entity_path);
 
-	if (!plug) {
-		ZstLog::server(LogLevel::warn, "Could not aquire plug fire control - plug {}, not found {}", plug_path.path());
+	if (!entity) {
+		ZstLog::server(LogLevel::warn, "Could not aquire entity ownership - entity {}, not found", entity_path.path());
 		return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
 	}
     
-    ZstLog::server(LogLevel::notification, "Received plug fire control aquistion request - {} wants to control {}", sender->URI().path(), plug->URI().path());
+    ZstLog::server(LogLevel::notification, "Received entity ownership aquistion request - {} wants to control {}", sender->URI().path(), entity->URI().path());
 
 	//Prepare connection promises
 	ZstMsgID id = stage_msg->id();
@@ -297,7 +297,7 @@ ZstMsgKind ZstStageSession::aquire_plug_fire_control_handler(ZstMessage* msg, Zs
 	
 	//Find all performers that have input connections to this output plug
 	for (auto c : bundle) {
-		if (c->get_output()->URI() == plug->URI()) {
+		if (c->get_output()->URI() == entity->URI()) {
 			auto receiver = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->get_performer_by_URI(c->get_input()->URI().first()));
 			performers[receiver->URI()] = receiver;
 		}
@@ -310,12 +310,12 @@ ZstMsgKind ZstStageSession::aquire_plug_fire_control_handler(ZstMessage* msg, Zs
 		}
 
 		//Create future action to run when the client responds
-		future.then([this, plug, sender, receiver, id](ZstMessageFuture f) {
+		future.then([this, entity, sender, receiver, id](ZstMessageFuture f) {
 			ZstMsgKind status(ZstMsgKind::EMPTY);
 			try {
 				ZstMsgKind status = f.get();
 				if (status == ZstMsgKind::OK) {
-					ZstLog::server(LogLevel::notification, "aquire_plug_fire_control request completed. Requester: {}, Observed: {} completed", sender->URI().path(), receiver.second->URI().path());
+					ZstLog::server(LogLevel::notification, "aquire_entity_ownership request completed. Requester: {}, Observed: {} completed", sender->URI().path(), receiver.second->URI().path());
 
 					//Finish connection setup
 					complete_client_connection(receiver.second, sender);
@@ -342,29 +342,29 @@ ZstMsgKind ZstStageSession::aquire_plug_fire_control_handler(ZstMessage* msg, Zs
 
 	//Broadcast change in plug fire control
 	ZstMsgArgs args {
-		{ get_msg_arg_name(ZstMsgArg::PATH), plug->URI().path() },
+		{ get_msg_arg_name(ZstMsgArg::PATH), entity->URI().path() },
 		{ get_msg_arg_name(ZstMsgArg::OUTPUT_PATH), sender->URI().path() }
 	};
     
-    ZstLog::server(LogLevel::notification, "Broadcasting plug fire control owner - {} controls {}", sender->URI().path(), plug->URI().path());
-	m_hierarchy->broadcast_message(ZstMsgKind::AQUIRE_PLUG_FIRE_CONTROL, args);
+    ZstLog::server(LogLevel::notification, "Broadcasting entity ownership - {} controls {}", sender->URI().path(), entity->URI().path());
+	m_hierarchy->broadcast_message(ZstMsgKind::AQUIRE_ENTITY_OWNERSHIP, args);
 
 	return ZstMsgKind::OK;
 }
 
-ZstMsgKind ZstStageSession::release_plug_fire_control_handler(ZstMessage* msg, ZstPerformerStageProxy* sender)
+ZstMsgKind ZstStageSession::release_entity_ownership_handler(ZstMessage* msg, ZstPerformerStageProxy* sender)
 {
 	ZstStageMessage* stage_msg = static_cast<ZstStageMessage*>(msg);
-	auto plug_path = ZstURI(stage_msg->get_arg<std::string>(ZstMsgArg::PATH).c_str());
-	ZstOutputPlug* plug = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(plug_path));
+	auto entity_path = ZstURI(stage_msg->get_arg<std::string>(ZstMsgArg::PATH).c_str());
+	ZstEntityBase* entity = hierarchy()->find_entity(entity_path);
 
-	if (!plug) {
-		ZstLog::server(LogLevel::warn, "Could not release plug fire control - plug {}, not found {}", plug_path.path());
+	if (!entity) {
+		ZstLog::server(LogLevel::warn, "Could not release entity ownership - entity {}, not found", entity_path.path());
 		return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
 	}
 
-	//Broadcast an empty path for the fire control owner to reset ownership to the creator of the plug
-	m_hierarchy->broadcast_message(ZstMsgKind::AQUIRE_PLUG_FIRE_CONTROL, {{ get_msg_arg_name(ZstMsgArg::PATH), "" }});
+	//Broadcast an empty path for the entity owner to reset ownership to the creator of the entity
+	m_hierarchy->broadcast_message(ZstMsgKind::AQUIRE_ENTITY_OWNERSHIP, {{ get_msg_arg_name(ZstMsgArg::PATH), "" }});
     
     return ZstMsgKind::OK;
 }

@@ -7,7 +7,7 @@
 #include "adaptors/ZstSessionAdaptor.hpp"
 #include "adaptors/ZstEntityAdaptor.hpp"
 #include "ZstTransportAdaptor.hpp"
-
+#include "../ZstHierarchy.h"
 #include "ZstSynchronisable.h"
 #include "entities/ZstEntityFactory.h"
 #include "entities/ZstPlug.h"
@@ -60,8 +60,11 @@ void ZstSessionAdaptor::on_cable_destroyed(ZstCable * cable) {}
 ZstCableBundle & ZstSessionAdaptor::get_cables(ZstCableBundle & bundle) { return bundle; }
 ZstCable * ZstSessionAdaptor::find_cable(const ZstCableAddress & address) { return NULL; }
 
-void ZstSessionAdaptor::aquire_plug_fire_control(ZstOutputPlug* plug) {}
-void ZstSessionAdaptor::release_plug_fire_control(ZstOutputPlug* plug) {}
+void ZstSessionAdaptor::aquire_entity_ownership(ZstEntityBase* entity) {}
+void ZstSessionAdaptor::release_entity_ownership(ZstEntityBase* entity) {}
+
+ZstHierarchy * ZstSessionAdaptor::hierarchy() {};
+
 
 
 // -----------------------
