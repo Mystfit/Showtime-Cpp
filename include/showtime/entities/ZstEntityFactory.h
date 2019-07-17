@@ -19,6 +19,9 @@ class ZstEntityFactory : public ZstEntityBase
 {
 	friend class ZstEntityFactoryLiason;
 public:
+    using ZstEntityBase::add_adaptor;
+    using ZstEntityBase::remove_adaptor;
+
 	ZST_EXPORT ZstEntityFactory();
 	ZST_EXPORT ZstEntityFactory(const char * name);
 	ZST_EXPORT ZstEntityFactory(const ZstEntityFactory & other);

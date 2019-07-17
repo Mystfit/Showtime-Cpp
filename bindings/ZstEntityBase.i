@@ -3,6 +3,7 @@
 %ignore ZstEntityBase::acquire_cable_bundle;
 %ignore ZstEntityBase::release_cable_bundle;
 %ignore ZstEntityBase::update_URI;
+%ignore ZstEntityBase::set_owner;
 
 %rename(create) ZstEntityBase::operator new;
 %rename(destroy) ZstEntityBase::operator delete;

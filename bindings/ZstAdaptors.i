@@ -6,6 +6,7 @@
 %feature("director") ZstFactoryAdaptor;
 
 %ignore ZstSessionAdaptor::get_cables;
+%ignore ZstSessionAdaptor::hierarchy;
 %ignore ZstSessionAdaptor::find_cable;
 
 %include <adaptors/ZstEventAdaptor.hpp> 

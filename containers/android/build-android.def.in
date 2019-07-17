@@ -56,6 +56,8 @@ From: amd64/ubuntu:18.04
 	# Add Android tools and install prefix to path
 	# export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools:$INSTALL_PREFIX/bin
 
+	# Make package manager non-interactive
+	export DEBIAN_FRONTEND=noninteractive
 
 	# Environment variables
 	# -----------------------------
@@ -82,7 +84,6 @@ From: amd64/ubuntu:18.04
 	echo "export LIBZMQ_SOURCE=$LIBZMQ_SOURCE" >>$SINGULARITY_ENVIRONMENT	
 	echo "export CZMQ_SOURCE=$CZMQ_SOURCE" >>$SINGULARITY_ENVIRONMENT	
 	echo "export MSGPACK_SOURCE=$MSGPACK_SOURCE" >>$SINGULARITY_ENVIRONMENT	
-
 	# -----------------------------
 
 
@@ -211,7 +212,7 @@ From: amd64/ubuntu:18.04
 	# Boost for Android
 	git clone https://github.com/mystfit/Boost-for-Android $BOOST_FOR_ANDROID_PATH
 	cd $BOOST_FOR_ANDROID_PATH
-	BOOST_LIBS="log,thread,system,context,fiber,date_time,chrono,atomic,regex"
+	BOOST_LIBS="log,thread,system,context,fiber,date_time,chrono,atomic,regex,test"
 	./build-android.sh --boost=$BOOST_VER --layout=versioned --with-libraries=$BOOST_LIBS --arch=$ANDROID_ABI --prefix=$INSTALL_PREFIX $ANDROID_NDK_ROOT >/dev/null
 	cd ..
 
@@ -230,7 +231,7 @@ From: amd64/ubuntu:18.04
 	# --------
 	mkdir -p $SHOWTIME_BUILD
 
-	cmake -H"$SHOWTIME_SOURCE" -B"$SHOWTIME_BUILD" $(cat "$SHOWTIME_CMAKE_FLAGS_FILE") -DBINDINGS_DOTNET=OFF -DBUILD_DRAFTS=TRUE -DBUILD_STATIC=TRUE -DBUILD_SHARED=TRUE -DBoost_DEBUG=FALSE -DBoost_COMPILER="-clang" -DBoost_ARCHITECTURE=-a64 -DBoost_INCLUDE_DIR=$BOOST_INCLUDEDIR/boost-1_69 -DBoost_LIBRARY_DIR=$BOOST_LIBRARYDIR -DBoost_VERSION=$BOOST_VER_BASE -DBOOST_ROOT=$DBOOST_ROOT -DBOOST_INCLUDEDIR=$DBOOST_INCLUDEDIR/boost-1_69 -DMsgPack_DIR=$INSTALL_PREFIX/lib/cmake/msgpack -DZeroMQ_DIR=$INSTALL_PREFIX/share/cmake/ZeroMQ -Dczmq_DIR=$INSTALL_PREFIX/share/cmake/czmq -DSWIG_EXECUTABLE=$INSTALL_PREFIX/bin/swig -DBUILD_TESTING=FALSE -DBINDINGS_DOTNET_FRAMEWORK_VERSION=netstandard2.0 -DBUILD_SERVER_LAUNCHER=FALSE
+	cmake -H"$SHOWTIME_SOURCE" -B"$SHOWTIME_BUILD" $(cat "$SHOWTIME_CMAKE_FLAGS_FILE") -DBINDINGS_DOTNET=OFF -DBUILD_DRAFTS=TRUE -DBUILD_STATIC=TRUE -DBUILD_SHARED=TRUE -DBoost_DEBUG=FALSE -DBoost_COMPILER="-clang" -DBoost_ARCHITECTURE=-a64 -DBoost_INCLUDE_DIR=$BOOST_INCLUDEDIR/boost-$BOOST_VER_BASE -DBoost_LIBRARY_DIR=$BOOST_LIBRARYDIR -DBoost_VERSION=$BOOST_VER_BASE -DBOOST_ROOT=$BOOST_ROOT -DBOOST_INCLUDEDIR=$BOOST_INCLUDEDIR/boost-$BOOST_VER_BASE -DMsgPack_DIR=$INSTALL_PREFIX/lib/cmake/msgpack -DZeroMQ_DIR=$INSTALL_PREFIX/share/cmake/ZeroMQ -Dczmq_DIR=$INSTALL_PREFIX/share/cmake/czmq -DSWIG_EXECUTABLE=$INSTALL_PREFIX/bin/swig -DBUILD_TESTING=FALSE -DBINDINGS_DOTNET_FRAMEWORK_VERSION=netstandard2.0 -DBUILD_SERVER_LAUNCHER=FALSE
 	cmake --build $SHOWTIME_BUILD --target all
 
 	mkdir -p $SHOWTIME_OUTPUT/bin/Android

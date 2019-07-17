@@ -11,8 +11,8 @@ Vagrant.configure("2") do |config|
   config.vm.box = "mystfit/Windows-10-x64-ssh"
   config.vm.box_version = "0.0.1"
   config.vm.synced_folder "${CMAKE_SOURCE_DIR}", guest_source_path
-  config.vm.synced_folder "${NATIVE_BINARY_PATH}", guest_bin_path,
-  config.vm.synced_folder "${NATIVE_LIBRARY_PATH}", guest_lib_path,
+  config.vm.synced_folder "${NATIVE_BINARY_PATH}", guest_bin_path
+  config.vm.synced_folder "${NATIVE_LIBRARY_PATH}", guest_lib_path
   config.vm.define "${WINDOWS_CONTAINER_NAME}"
   config.vm.provider "virtualbox" do |vb|
     vb.gui = false

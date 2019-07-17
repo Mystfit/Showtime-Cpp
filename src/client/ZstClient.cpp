@@ -174,8 +174,8 @@ void ZstClient::init_client(const char *client_name, bool debug)
     
 #ifdef ZST_BUILD_DRAFT_API
 	m_udp_graph_transport->init();
-	m_udp_graph_transport->msg_events()->add_adaptor(this);
-	m_udp_graph_transport->msg_events()->add_adaptor(m_session);
+	m_udp_graph_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(this));
+	m_udp_graph_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(m_session));
 #endif
     
     //Stage discovery beacon
