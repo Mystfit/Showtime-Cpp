@@ -63,7 +63,7 @@ ZstCable * ZstSessionAdaptor::find_cable(const ZstCableAddress & address) { retu
 void ZstSessionAdaptor::aquire_entity_ownership(ZstEntityBase* entity) {}
 void ZstSessionAdaptor::release_entity_ownership(ZstEntityBase* entity) {}
 
-ZstHierarchy * ZstSessionAdaptor::hierarchy() {};
+ZstHierarchy* ZstSessionAdaptor::hierarchy() { return NULL; };
 
 
 

@@ -285,6 +285,9 @@ ZstMsgKind ZstStageSession::aquire_entity_ownership_handler(ZstMessage* msg, Zst
     
     ZstLog::server(LogLevel::notification, "Received entity ownership aquistion request - {} wants to control {}", sender->URI().path(), entity->URI().path());
 
+	//Set owner
+	entity_set_owner(entity, sender->URI());
+
 	//Prepare connection promises
 	ZstMsgID id = stage_msg->id();
 	auto future = m_connection_watcher.register_response(id);
@@ -363,8 +366,17 @@ ZstMsgKind ZstStageSession::release_entity_ownership_handler(ZstMessage* msg, Zs
 		return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
 	}
 
+	ZstLog::server(LogLevel::notification, "Received entity ownership release request - {} wants to release ownership", sender->URI().path());
+
+	//Reset owner
+	entity_set_owner(entity, "");
+
 	//Broadcast an empty path for the entity owner to reset ownership to the creator of the entity
-	m_hierarchy->broadcast_message(ZstMsgKind::AQUIRE_ENTITY_OWNERSHIP, {{ get_msg_arg_name(ZstMsgArg::PATH), "" }});
+	ZstMsgArgs args{ 
+		{ get_msg_arg_name(ZstMsgArg::PATH), entity->URI().path() },
+		{ get_msg_arg_name(ZstMsgArg::OUTPUT_PATH), entity->get_owner().path() }
+	};
+	m_hierarchy->broadcast_message(ZstMsgKind::AQUIRE_ENTITY_OWNERSHIP, args);
     
     return ZstMsgKind::OK;
 }

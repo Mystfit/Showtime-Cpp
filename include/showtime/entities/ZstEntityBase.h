@@ -67,7 +67,7 @@ public:
     ZST_EXPORT virtual void remove_adaptor(ZstSessionAdaptor * adaptor);
     
     //Ownership
-    ZST_EXPORT const ZstURI & get_owner();
+    ZST_EXPORT const ZstURI & get_owner() const;
     ZST_EXPORT void aquire_ownership();
     ZST_EXPORT void release_ownership();
 #ifndef SWIG

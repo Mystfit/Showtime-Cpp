@@ -320,13 +320,24 @@ bool ZstOutputPlug::is_reliable()
 
 void ZstOutputPlug::set_owner(const ZstURI & owner)
 {
-    session_events()->invoke([this, &owner](ZstSessionAdaptor* adaptor){
-        if(adaptor->hierarchy()->get_local_performer()->URI() == owner){
-            set_can_fire(true);
-        } else {
-            set_can_fire(false);
-        }
+	ZstEntityBase::set_owner(owner);
+
+	ZstPerformer* performer = NULL;
+    session_events()->invoke([this, &performer](ZstSessionAdaptor* adaptor){
+		performer = adaptor->hierarchy()->get_local_performer();
     });
+
+	if (!performer) {
+		set_can_fire(false);
+		return;
+	}
+
+	if (performer->URI() == owner) {
+		set_can_fire(true);
+	}
+	else {
+		set_can_fire(false);
+	}
 }
 
 void ZstOutputPlug::set_can_fire(bool can_fire)

@@ -137,18 +137,14 @@ BOOST_FIXTURE_TEST_CASE(plug_observation, FixtureExternalConnectCable) {
     BOOST_TEST(sync_out_plug->int_at(0) == echo_val);
 }
 
-BOOST_FIXTURE_TEST_CASE(aquire_entity_ownership, FixtureExternalEntitysWithLocalInput) {
+BOOST_FIXTURE_TEST_CASE(aquire_and_release_entity_ownership, FixtureExternalEntitysWithLocalInput) {
     BOOST_TEST(sync_out_plug->get_owner().is_empty());
     sync_out_plug->aquire_ownership();
     TAKE_A_BREATH
     BOOST_TEST(sync_out_plug->get_owner() == zst_get_root()->URI());
-}
-
-BOOST_FIXTURE_TEST_CASE(release_entity_ownership, FixtureExternalEntitysWithLocalInput) {
-    sync_out_plug->aquire_ownership();
-    TAKE_A_BREATH
-    sync_out_plug->release_ownership();
-    BOOST_TEST(sync_out_plug->get_owner().is_empty());
+	sync_out_plug->release_ownership();
+	TAKE_A_BREATH
+	BOOST_TEST(sync_out_plug->get_owner().is_empty());
 }
 
 BOOST_FIXTURE_TEST_CASE(ownership_grants_plug_fire_permission, FixtureExternalEntitysWithLocalInput) {
@@ -156,20 +152,14 @@ BOOST_FIXTURE_TEST_CASE(ownership_grants_plug_fire_permission, FixtureExternalEn
     sync_out_plug->aquire_ownership();
     TAKE_A_BREATH
     BOOST_TEST(sync_out_plug->can_fire());
-}
-
-BOOST_FIXTURE_TEST_CASE(release_ownship_removes_plug_fire_permission, FixtureExternalEntitysWithLocalInput) {
-    sync_out_plug->aquire_ownership();
-    TAKE_A_BREATH
-    sync_out_plug->release_ownership();
-    TAKE_A_BREATH
-    BOOST_TEST(!sync_out_plug->can_fire());
+	sync_out_plug->release_ownership();
+	TAKE_A_BREATH
+	BOOST_TEST(!sync_out_plug->can_fire());
 }
 
 BOOST_FIXTURE_TEST_CASE(ownership_plug_fire_check, FixtureExternalEntitysWithLocalInput) {
     sync_out_plug->aquire_ownership();
 	TAKE_A_BREATH
-    
     int cmp_val = 27;
     sync_out_plug->append_int(cmp_val);
     sync_out_plug->fire();

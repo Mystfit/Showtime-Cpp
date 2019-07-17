@@ -136,14 +136,10 @@ void ZstClientSession::release_entity_ownership(ZstEntityBase* entity)
 void ZstClientSession::aquire_entity_ownership_handler(ZstMessage* msg)
 {
 	auto stage_msg = static_cast<ZstStageMessage*>(msg);
-	std::string path = stage_msg->get_arg<std::string>(ZstMsgArg::PATH);
-	std::string owner_path = "";
-	if (!path.empty()) {
-		owner_path = stage_msg->get_arg<std::string>(ZstMsgArg::OUTPUT_PATH);
-	}
-	auto entity = hierarchy()->find_entity(ZstURI(path.c_str()));
+	auto entity_path = stage_msg->get_arg<std::string>(ZstMsgArg::PATH);
+	auto owner_path = stage_msg->get_arg<std::string>(ZstMsgArg::OUTPUT_PATH);
+	auto entity = hierarchy()->find_entity(ZstURI(entity_path.c_str(), entity_path.size()));
 	auto owner = ZstURI(owner_path.c_str(), owner_path.size());
-	
 
 	// Set the owner
     ZstEntityBundle bundle;
