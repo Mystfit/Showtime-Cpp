@@ -20,6 +20,11 @@ void ZstPlugLiason::output_plug_set_fire_control_owner(ZstOutputPlug* plug, cons
 	plug->set_fire_control_owner(owner);
 }
 
+void ZstPlugLiason::output_plug_set_can_fire(ZstOutputPlug* plug, bool can_fire)
+{
+	plug->set_can_fire(can_fire);
+}
+
 void ZstPlugLiason::output_plug_set_transport(ZstOutputPlug * plug, ZstTransportAdaptor * transport)
 {
 	if (!plug || !transport) return;

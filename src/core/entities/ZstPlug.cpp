@@ -255,6 +255,7 @@ ZstInputPlug::ZstInputPlug(const char * name, ZstValueType t, int max_cables) : 
 ZstOutputPlug::ZstOutputPlug() : 
 	ZstPlug(),
 	m_reliable(true),
+	m_can_fire(false),
 	m_graph_out_events(NULL)
 {
 	m_direction = ZstPlugDirection::OUT_JACK;
@@ -264,14 +265,16 @@ ZstOutputPlug::ZstOutputPlug() :
 
 ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug & other) : 
 	ZstPlug(other),
-	m_reliable(other.m_reliable)
+	m_reliable(other.m_reliable),
+	m_can_fire(other.m_can_fire)
 {
 	m_graph_out_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
 }
 
 ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t, bool reliable) : 
 	ZstPlug(name, t),
-	m_reliable(reliable)
+	m_reliable(reliable),
+	m_can_fire(false)
 {
 	m_direction = ZstPlugDirection::OUT_JACK;
 	m_graph_out_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
@@ -291,8 +294,16 @@ ZstOutputPlug::~ZstOutputPlug()
 	delete m_graph_out_events;
 }
 
+bool ZstOutputPlug::can_fire()
+{
+	return m_can_fire;
+}
+
 void ZstOutputPlug::fire()
 {
+	if (!can_fire())
+		return;
+
 	m_graph_out_events->invoke([this](ZstTransportAdaptor * adaptor) {
 		json val_json;
 		this->raw_value()->write_json(val_json);
@@ -328,6 +339,11 @@ void ZstOutputPlug::release_fire_control()
 void ZstOutputPlug::set_fire_control_owner(const ZstURI& fire_owner)
 {
 	m_fire_control_owner = fire_owner;
+}
+
+void ZstOutputPlug::set_can_fire(bool can_fire)
+{
+	m_can_fire = can_fire;
 }
 
 void ZstOutputPlug::add_adaptor(ZstTransportAdaptor* adaptor)

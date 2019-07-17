@@ -102,6 +102,10 @@ BOOST_FIXTURE_TEST_CASE(cable_sets, FixtureCableCompare){
 	BOOST_TEST((cable_set.find(cable_d) != cable_set.end()));
 }
 
+BOOST_FIXTURE_TEST_CASE(output_can_fire, FixturePlugs) {
+	BOOST_TEST(output_component->output()->can_fire());
+}
+
 BOOST_FIXTURE_TEST_CASE(sync_connect_cable, FixturePlugs) {
 	auto cable = zst_connect_cable(input_component->input(), output_component->output());
 	BOOST_TEST(cable);

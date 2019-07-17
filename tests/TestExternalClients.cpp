@@ -1,3 +1,4 @@
+#define BOOST_TEST_TOOLS_DEBUGGABLE
 #define BOOST_TEST_MODULE External clients
 
 #include "TestCommon.hpp"
@@ -126,14 +127,18 @@ BOOST_FIXTURE_TEST_CASE(plug_fire_control, FixtureExternalEntities) {
     auto sync_out_plug = dynamic_cast<ZstOutputPlug*>(sink_ent->get_child_by_URI(sync_out_plug_uri));
     zst_connect_cable(in_cmp->input(), sync_out_plug);
 
+	BOOST_TEST(!sync_out_plug->can_fire());
+	BOOST_TEST(sync_out_plug->get_fire_control_owner().is_empty());
     sync_out_plug->aquire_fire_control();
-    TAKE_A_BREATH
+	TAKE_A_BREATH
+	BOOST_TEST(sync_out_plug->can_fire());
     BOOST_TEST(sync_out_plug->get_fire_control_owner() == ZstURI("test_performer"));
     
     int cmp_val = 27;
     sync_out_plug->append_int(cmp_val);
     sync_out_plug->fire();
-    TAKE_A_BREATH
+	TAKE_A_BREATH
+	BOOST_TEST(in_cmp->input()->size() > 0);
     BOOST_TEST(in_cmp->input()->int_at(0) == cmp_val);
 }
 

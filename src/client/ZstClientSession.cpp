@@ -132,8 +132,18 @@ void ZstClientSession::aquire_plug_fire_control_handler(ZstMessage* msg)
 		fire_control_path = stage_msg->get_arg<std::string>(ZstMsgArg::OUTPUT_PATH);
 	}
 	auto plug = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(ZstURI(path.c_str())));
+	auto fire_control_owner = ZstURI(fire_control_path.c_str(), fire_control_path.size());
 	
-	output_plug_set_fire_control_owner(plug, ZstURI(fire_control_path.c_str()));
+	// Check if we own the fire control for this plug and set appropriate flags
+	if (fire_control_owner.first() == hierarchy()->get_local_performer()->URI()) {
+		output_plug_set_can_fire(plug, true);
+	}
+	else {
+		output_plug_set_can_fire(plug, false);
+	}
+	
+	// Store the fire control owner
+	output_plug_set_fire_control_owner(plug, fire_control_owner);
 }
 
 void ZstClientSession::on_receive_graph_msg(ZstPerformanceMessage * msg)

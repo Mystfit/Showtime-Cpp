@@ -665,24 +665,44 @@ void ZstClient::set_is_connecting(bool value)
 
 void ZstClient::on_entity_arriving(ZstEntityBase * entity)
 {
-	// Arriving output plugs need to register the graph transport so that they can dispatch messages
-	if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
-		ZstOutputPlug * plug = dynamic_cast<ZstOutputPlug*>(entity);
-		if (plug) {
-			ZstGraphTransport * transport = NULL;
-			if (plug->is_reliable()){
-				transport = m_tcp_graph_transport;
-			}
-#ifdef ZST_BUILD_DRAFT_API
-			else {
-				transport = m_udp_graph_transport;
-			}
-#endif
-			output_plug_set_transport(plug, transport);
+	ZstEntityBundle bundle;
+	entity->get_child_entities(bundle);
+
+	for (auto child : bundle) {
+		// Arriving output plugs need to register the graph transport so that they can dispatch messages
+		if (strcmp(child->entity_type(), PLUG_TYPE) == 0) {
+			init_arriving_plug(static_cast<ZstPlug*>(child));
 		}
 	}
 }
 
+void ZstClient::on_performer_arriving(ZstPerformer* performer)
+{
+	on_entity_arriving(performer);
+}
+
+void ZstClient::init_arriving_plug(ZstPlug* plug)
+{
+	ZstOutputPlug* output_plug = dynamic_cast<ZstOutputPlug*>(plug);
+	if (output_plug) {
+		ZstGraphTransport* transport = NULL;
+		if (output_plug->is_reliable()) {
+			transport = m_tcp_graph_transport;
+		}
+#ifdef ZST_BUILD_DRAFT_API
+		else {
+			transport = m_udp_graph_transport;
+		}
+#endif
+		// Setup plug as fireable if we own it
+		if (session()->hierarchy()->get_local_performer()->URI() == plug->URI().first()) {
+			output_plug_set_can_fire(output_plug, true);
+		}
+
+		// Attach plug transport so output plugs can send messages to the graph
+		output_plug_set_transport(output_plug, transport);
+	}
+}
 
 // -------------------
 

@@ -120,6 +120,10 @@ private:
 
 	//Module adaptor overrides
 	virtual void on_entity_arriving(ZstEntityBase * entity) override;
+	virtual void on_performer_arriving(ZstPerformer* performer) override;
+	
+	// Plug initialization
+	void init_arriving_plug(ZstPlug* plug);
 
 	//UUIDs
 	std::string m_assigned_uuid;
