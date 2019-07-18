@@ -17,10 +17,10 @@ typedef std::shared_ptr<ZstEntityBase> ZstSharedEntity;
 
 class ZstEntityFactory : public ZstEntityBase
 {
+	using ZstEntityBase::add_adaptor;
+	using ZstEntityBase::remove_adaptor;
 	friend class ZstEntityFactoryLiason;
 public:
-    using ZstEntityBase::add_adaptor;
-    using ZstEntityBase::remove_adaptor;
 
 	ZST_EXPORT ZstEntityFactory();
 	ZST_EXPORT ZstEntityFactory(const char * name);
