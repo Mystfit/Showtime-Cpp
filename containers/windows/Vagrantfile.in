@@ -40,15 +40,11 @@ Vagrant.configure("2") do |config|
     # Install packages with boxstarter
     Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Confirm:$false
     Install-BoxStarterPackage -PackageName $Env:VAGRANT_DIR\\BoxStarterGist.txt -DisableReboots > $null
-
-    # Installing Pscx module for the Invoke-BatchFile command
-    #Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
-    #Install-Module Pscx -Scope CurrentUser -AllowClobber
   SHELL
 
   config.vm.provision :shell, env: env_vars, path: "${CMAKE_SOURCE_DIR}/containers/windows/build_showtime_deps.ps1"
 
   # Build windows libs
-  config.vm.provision :shell, run: 'always', env: env_vars, path: "${CMAKE_SOURCE_DIR}/containers/windows/build_showtime.bat"
+  config.vm.provision :shell, env: env_vars, run: 'always', path: "${CMAKE_SOURCE_DIR}/containers/windows/build_showtime.ps1"
 end
 
