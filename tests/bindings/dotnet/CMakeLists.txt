@@ -1,18 +1,65 @@
 # Build dotnet tests
 set(DOTNET_TEST_TARGET TestDotNet)
 set(DOTNET_TEST_SRC
-    "TestDotnet.cs"
+    "${CMAKE_CURRENT_LIST_DIR}/TestDotnet.cs"
 )
-
+set(DOTNET_TEST_COMMAND "")
 message(STATUS "Adding test ${DOTNET_TEST_TARGET}")
 
-add_executable(${DOTNET_TEST_TARGET} ${DOTNET_TEST_SRC})
-set_target_properties(${DOTNET_TEST_TARGET} PROPERTIES 
-    VS_DOTNET_REFERENCE_System ON 
-    DOTNET_TARGET_FRAMEWORK_VERSION ${BINDINGS_DOTNET_FRAMEWORK_VERSION}
-)
-add_dependencies(${DOTNET_TEST_TARGET} ${DOTNET_TARGET} ${SERVER_TARGET})
-if(WIN32)
-	target_link_libraries(${DOTNET_TEST_TARGET} ${DOTNET_TARGET})
+if(NOT WIN32)
+    # Find and set references
+    string(FIND ${BINDINGS_DOTNET_FRAMEWORK_VERSION} "netstandard" FOUND_NETSTANDARD)
+    set(DOTNET_TEST_REFERENCES ${DOTNET_CSPROJ_OUT})
+    set(DOTNET_TEST_PACKAGES "Microsoft.NETCore.App")
+    if(${FOUND_NETSTANDARD} GREATER -1)
+        # list(APPEND DOTNET_TEST_REFERENCES "netstandard")
+    endif()
+
+    # Configure project file
+    set(DOTNET_TEST_OUTPUT ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${DOTNET_TEST_TARGET}.dll)
+    set(DOTNET_TEST_CSPROJ_IN ${CMAKE_CURRENT_LIST_DIR}/${DOTNET_TEST_TARGET}.csproj.in)
+    set(DOTNET_TEST_CSPROJ_OUT ${CMAKE_CURRENT_BINARY_DIR}/${DOTNET_TEST_TARGET}.csproj)
+
+    set(DOTNET_TEST_SOURCE_BLOCK "")
+    foreach(file ${DOTNET_TEST_SRC})
+        string(APPEND DOTNET_TEST_SOURCE_BLOCK "<Compile\ Include=\"${file}\"\ />\n    ")
+    endforeach()
+    configure_file(${DOTNET_TEST_CSPROJ_IN} ${DOTNET_TEST_CSPROJ_OUT})
+    configure_file(${CMAKE_CURRENT_LIST_DIR}/${DOTNET_TEST_TARGET}.runtimeconfig.json.in ${CMAKE_CURRENT_BINARY_DIR}/${DOTNET_TEST_TARGET}.runtimeconfig.json COPYONLY)
+
+    set(DOTNET_TEST_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/build)
+    file(MAKE_DIRECTORY ${DOTNET_TEST_BINARY_DIR}) 
+    # Build arguments
+    set(DOTNET_ARGS 
+        "build"
+        "-o" "${DOTNET_TEST_BINARY_DIR}"
+        "${DOTNET_TEST_CSPROJ_OUT}"
+    )
+
+    # Build the csproj
+    add_custom_command(
+        OUTPUT ${DOTNET_TEST_OUTPUT}
+        COMMAND ${CMAKE_COMMAND} -E echo "Building Dotnet test"
+        COMMAND ${DOTNETCOMMAND} add reference ${DOTNET_TEST_REFERENCES}
+        COMMAND ${DOTNETCOMMAND} ${DOTNET_ARGS}
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${DOTNET_TEST_BINARY_DIR} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+        DEPENDS ${DOTNET_TEST_CSPROJ_OUT}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        VERBATIM
+    )
+    add_custom_target(${DOTNET_TEST_TARGET} ALL DEPENDS ${DOTNET_TEST_OUTPUT})
+    set(DOTNET_TEST_COMMAND "${DOTNETCOMMAND}" "${DOTNET_TEST_OUTPUT}")
+else()
+    add_executable(${DOTNET_TEST_TARGET} ${DOTNET_TEST_SRC})
+    set_target_properties(${DOTNET_TEST_TARGET} PROPERTIES 
+        VS_DOTNET_REFERENCE_System ON 
+        DOTNET_TARGET_FRAMEWORK_VERSION ${BINDINGS_DOTNET_FRAMEWORK_VERSION}
+    )
+    if(WIN32)
+        target_link_libraries(${DOTNET_TEST_TARGET} ${DOTNET_TARGET})
+    endif()
+    set(DOTNET_TEST_COMMAND "${DOTNET_TEST_TARGET}")
 endif()
-add_test(NAME ${DOTNET_TEST_TARGET} COMMAND ${DOTNET_TEST_TARGET} WORKING_DIRECTORY $<TARGET_FILE_DIR:${DOTNET_TEST_TARGET}>)
+
+add_dependencies(${DOTNET_TEST_TARGET} ${DOTNET_TARGET})
+add_test(NAME ${DOTNET_TEST_TARGET} COMMAND ${DOTNET_TEST_COMMAND} WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})

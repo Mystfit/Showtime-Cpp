@@ -1,6 +1,15 @@
 cmake_minimum_required(VERSION 3.13.0)
 
 project(Showtime VERSION 0.21.0)
+set(AUTHORS "Byron Mallett")
+set(COMPANY "Victoria University of Wellington")
+set(DESCRIPTION "Showtime dataflow network library")
+set(REPO_URL "https://github.com/mystfit/Showtime-cpp.git")
+set(LICENSE_FILE "${CMAKE_SOURCE_DIR}/LICENSE.md")
+set(TAGS 
+    dataflow
+    network
+)
 set(SHOWTIME_NAMESPACE "${PROJECT_NAME}::")
 
 # Use C17
@@ -330,7 +339,7 @@ set(MACOS_CONTAINER_TARGET MacOSContainerBuild)
 # Use Vagrant to create/run our build containers
 if(BUILD_ANDROID_LIBS OR BUILD_WINDOWS_CONTAINER OR BUILD_MACOS_CONTAINER)
     find_program(VAGRANTCOMMAND vagrant)
-    if(VAGRANTCOMMAND EQUAL vagrant-NOTFOUND)
+    if(${VAGRANTCOMMAND} EQUAL vagrant-NOTFOUND)
         message(FATAL_ERROR "Could not find Vagrant")
     endif()
 

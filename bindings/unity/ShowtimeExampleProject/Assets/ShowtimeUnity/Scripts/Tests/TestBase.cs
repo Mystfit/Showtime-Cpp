@@ -27,8 +27,8 @@ namespace Showtime.Tests
 
         public void Cleanup()
         {
-            showtime.destroy_server(server);
             showtime.destroy();
+            showtime.destroy_server(server);
         }
 
         public void Update()

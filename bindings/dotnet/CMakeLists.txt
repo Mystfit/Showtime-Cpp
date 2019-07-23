@@ -10,6 +10,10 @@ set(DOTNET_TARGET_WRAPPER ${DOTNET_TARGET}Wrapper)
 set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR}/dotnet)
 set(SWIG_LANGUAGE_DIR ${CMAKE_SWIG_ROOT_OUTDIR}/dotnet)
 
+# Custom .csproj project files
+set(DOTNET_CSPROJ_IN "${CMAKE_CURRENT_LIST_DIR}/${DOTNET_TARGET}.csproj.in")
+set(DOTNET_CSPROJ_OUT "${SWIG_LANGUAGE_DIR}/${DOTNET_TARGET}.csproj")
+
 # Define language root interface file
 set(DOTNET_SWIG_INTERFACES "${CMAKE_CURRENT_LIST_DIR}/showtime_dotnet.i")
 set_source_files_properties(${DOTNET_SWIG_INTERFACES} PROPERTIES CPLUSPLUS ON)
@@ -46,7 +50,6 @@ endforeach()
 
 # Group together generated binding scripts
 file(GLOB DOTNET_GENERATED_BINDINGS CONFIGURE_DEPENDS "${SWIG_LANGUAGE_DIR}/*.cs")
-# list(APPEND DOTNET_GENERATED_BINDINGS ${DOTNET_BINDINGS})
 
 # Add hand-written CS files
 list(APPEND DOTNET_GENERATED_BINDINGS ${DOTNET_BINDINGS})
@@ -60,6 +63,12 @@ set(SWIG_MODULE_${DOTNET_TARGET_WRAPPER}_EXTRA_DEPS ${Showtime_API_INTERFACE})
 # Clear the debug suffix for generated files
 set(CMAKE_DEBUG_POSTFIX "")
 set(DOTNET_STAMP ${CMAKE_CURRENT_BINARY_DIR}/bindings/dotnet/dotnet.stamp)
+
+# Get the library output directory
+get_filename_component(DOTNET_OUTPUT_DIR ${DOTNET_OUTPUT_FILE} DIRECTORY)
+
+file(MAKE_DIRECTORY ${DOTNET_BINARY_DIR})
+
 
 # Create the swig dotnet target
 swig_add_library(${DOTNET_TARGET_WRAPPER}
@@ -119,28 +128,58 @@ if(WIN32)
 
     target_sources(${DOTNET_TARGET} PRIVATE ${DOTNET_GENERATED_BINDINGS})
 else()
-    message(STATUS "Configuring Dotnet unix project")
-
-    # Create custom .csproj file for unix platforms
-    set(CSPROJ_IN "${CMAKE_CURRENT_LIST_DIR}/${DOTNET_TARGET}.csproj.in")
-    set(CSPROJ_OUT "${SWIG_LANGUAGE_DIR}/${DOTNET_TARGET}.csproj")
+    message(STATUS "Configuring Dotnet project")
     set(DOTNET_SRC_BLOCK "")
     foreach(file ${DOTNET_GENERATED_BINDINGS})
-    # foreach(file ${DOTNET_BINDINGS})
         string(APPEND DOTNET_SRC_BLOCK "<Compile\ Include=\"${file}\"\ />\n    ")
     endforeach()
-    configure_file(${CSPROJ_IN} ${CSPROJ_OUT})
 
-    # Build the project using the dotnet sdk
-    set(DOTNET_COMMAND dotnet CACHE FILEPATH "Path to dotnet sdk")
+    set(DOTNET_NATIVE_RUNTIMES_BLOCK "")
+    set(DOTNET_RUNTIME_BLOCK_TEMPLATE "")
+    string(CONCAT DOTNET_RUNTIME_BLOCK_TEMPLATE
+            "<Content Include=\"@runtime_path@\">\n"
+            "   <PackagePath>lib/runtimes/@runtime@/native/@runtime_extension@</PackagePath>\n"
+            "   <Pack>true</Pack>\n"
+            "   <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>\n"
+            "</Content>"
+    )
+    if(WIN32 OR BUILD_WINDOWS_CONTAINER)
+        set(runtime "win-64")
+        set(runtime_extension ".dll")
+        set(runtime "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/windows/${runtime_extension}")
+        string(CONFIGURE ${DOTNET_RUNTIME_BLOCK_TEMPLATE} runtime_block @ONLY)
+        string(APPEND DOTNET_NATIVE_RUNTIMES_BLOCK ${runtime_block})
+    endif()
+    if(MACOSX OR BUILD_MACOS_CONTAINER)
+        set(runtime "osx.10-11-x64")
+        set(runtime_extension ".bundle")
+        set(runtime_path "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/macOS/${runtime_extension}")
+        string(CONFIGURE ${DOTNET_RUNTIME_BLOCK_TEMPLATE} runtime_block @ONLY)
+        string(APPEND DOTNET_NATIVE_RUNTIMES_BLOCK ${runtime_block})
+    endif()
+    if(LINUX)
+        set(runtime "debian-x64")
+        set(runtime_extension ".so")
+        set(runtime_path "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/linux/${runtime_extension}")
+        string(CONFIGURE ${DOTNET_RUNTIME_BLOCK_TEMPLATE} runtime_block @ONLY)
+        string(APPEND DOTNET_NATIVE_RUNTIMES_BLOCK ${runtime_block})
+    endif()
+
+    configure_file(${DOTNET_CSPROJ_IN} ${DOTNET_CSPROJ_OUT})
+
     set(DOTNET_ARGS 
-        "build" "-o" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-        "${CSPROJ_OUT}")
+        "build" 
+        "-o" "${DOTNET_BINARY_DIR}"
+        "${DOTNET_CSPROJ_OUT}"
+    )
+
     add_custom_command(
         OUTPUT ${DOTNET_OUTPUT_FILE}
-        COMMAND ${CMAKE_COMMAND} -E echo "Building Dotnet unix dll"
-        COMMAND ${DOTNET_COMMAND} ${DOTNET_ARGS}
+        COMMAND ${CMAKE_COMMAND} -E echo "Building Dotnet dll"
+        COMMAND ${DOTNETCOMMAND} ${DOTNET_ARGS}
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${DOTNET_BINARY_DIR} ${DOTNET_OUTPUT_DIR}
         DEPENDS ${CSPROJ_OUT}
+        WORKING_DIRECTORY ${SWIG_LANGUAGE_DIR}
         VERBATIM
     )
 endif()

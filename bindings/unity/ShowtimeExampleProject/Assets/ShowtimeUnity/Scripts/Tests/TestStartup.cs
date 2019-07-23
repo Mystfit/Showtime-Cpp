@@ -19,7 +19,7 @@ namespace Showtime.Tests
         [Test]
         public void ConnectSync()
         {
-            showtime.join("127.0.0.1");
+            showtime.join($"127.0.0.1:{showtime.STAGE_ROUTER_PORT}");
             Assert.IsTrue(showtime.is_connected());
             showtime.leave();
             Assert.IsFalse(showtime.is_connected());
@@ -28,7 +28,7 @@ namespace Showtime.Tests
         [UnityTest]
         public IEnumerator ConnectAsync()
         {
-            showtime.join_async("127.0.0.1");
+            showtime.join_async($"127.0.0.1:{showtime.STAGE_ROUTER_PORT}");
             yield return new WaitUntil(() => showtime.is_connected());
             Assert.IsTrue(showtime.is_connected());
             showtime.leave();
@@ -43,7 +43,7 @@ namespace Showtime.Tests
             showtime.session_events().on_connected_to_stage_events += () => connected = true;
             showtime.session_events().on_disconnected_from_stage_events += () => connected = false;
 
-            showtime.join_async("127.0.0.1");
+            showtime.join_async($"127.0.0.1:{showtime.STAGE_ROUTER_PORT}");
             yield return new WaitUntil(() => connected);
 
             showtime.leave();

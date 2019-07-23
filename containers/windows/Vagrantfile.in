@@ -2,10 +2,10 @@
 # vi: set ft=ruby :
 
 Vagrant.configure("2") do |config|
-  guest_source_path = "C:\\vagrant-showtime-src"
-  guest_bin_path = "C:\\vagrant-showtime-bin"
-  guest_lib_path = "C:\\vagrant-showtime-lib"
-  guest_vagrant_path = "C:\\vagrant-showtime-src\\containers\\windows"
+  guest_source_path = "C:/vagrant-showtime-src"
+  guest_bin_path = "C:/vagrant-showtime-bin"
+  guest_lib_path = "C:/vagrant-showtime-lib"
+  guest_vagrant_path = "C:/vagrant-showtime-src/containers/windows"
   guest_build_path = "${WINDOWS_CONTAINER_INTERNAL_BUILD_DIR}"
 
   config.vm.box = "mystfit/Windows-10-x64-ssh"
@@ -39,7 +39,7 @@ Vagrant.configure("2") do |config|
   config.vm.provision :shell, env: env_vars, powershell_elevated_interactive: true, inline: <<-SHELL
     # Install packages with boxstarter
     Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Confirm:$false
-    Install-BoxStarterPackage -PackageName $Env:VAGRANT_DIR\\BoxStarterGist.txt -DisableReboots > $null
+    Install-BoxStarterPackage -PackageName $Env:VAGRANT_DIR/BoxStarterGist.txt -DisableReboots > $null
   SHELL
 
   config.vm.provision :shell, env: env_vars, path: "${CMAKE_SOURCE_DIR}/containers/windows/build_showtime_deps.ps1"

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+  </PropertyGroup>
+  <!--<ItemGroup>
+    ${DOTNET_CSPROJ_INCLUDE_NETSTANDARD}
+  </ItemGroup>-->
+  <ItemGroup>
+    ${DOTNET_TEST_SOURCE_BLOCK}
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="NUnit" Version="3.12.0" />
+  </ItemGroup>
+</Project>

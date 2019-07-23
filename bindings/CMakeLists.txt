@@ -9,6 +9,7 @@ option(BINDINGS_JAVA "Generate bindings for java" OFF)
 option(BINDINGS_JRUBY "Generate bindings for JRuby" OFF)
 
 if(BINDINGS_DOTNET OR BINDINGS_UNITY)
+    set(BUILD_DOTNET_CSPROJ)
     set(BINDINGS_DOTNET_FRAMEWORK_VERSION v4.7.2 CACHE STRING "dotnet Framework version")
     set(DOTNET_FRAMEWORK_VERSIONS
         v3.5 
@@ -27,7 +28,8 @@ if(BINDINGS_DOTNET OR BINDINGS_UNITY)
     set(BINDINGS_DOTNET ON)
     set(DOTNET_GENERATED_BINDINGS)
     set(DOTNET_TARGET ${PROJECT_NAME}Dotnet)
-    set(DOTNET_STAMP ${CMAKE_CURRENT_BINARY_DIR}/bindings/dotnet/dotnet.stamp)
+    set(DOTNET_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/bindings/dotnet/build)
+    set(DOTNET_STAMP ${DOTNET_BINARY_DIR}/dotnet.stamp)
     set(DOTNET_DLL_PREFIX "")
     set(DOTNET_OUTPUT_FILE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${DOTNET_TARGET}.dll)
 
@@ -35,7 +37,14 @@ if(BINDINGS_DOTNET OR BINDINGS_UNITY)
         enable_language(CSharp)
         add_library(${DOTNET_TARGET} SHARED "")
     else()
+        find_program(DOTNETCOMMAND dotnet)
+        # Build the project using the dotnet sdk
+        if(${DOTNETCOMMAND} EQUAL dotnet-NOTFOUND)
+            message(FATAL_ERROR "Could not find dotnet sdk")
+        endif()
         add_custom_target(${DOTNET_TARGET} ALL DEPENDS ${DOTNET_OUTPUT_FILE})
+        add_custom_target(${DOTNET_NUGET_TARGET} ALL DEPENDS ${DOTNET_OUTPUT_FILE})
+
     endif()
     include(bindings/dotnet/CMakeLists.txt)
 endif()

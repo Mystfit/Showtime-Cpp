@@ -6,6 +6,7 @@ using UnityEngine;
 public class ExampleShowtimeController : MonoBehaviour {
 
     public string stageAddress = "127.0.0.1";
+    public int stagePort = showtime.STAGE_ROUTER_PORT;
     public string localPerformerName = "unity_performer";
 
     //Entities
@@ -31,7 +32,7 @@ public class ExampleShowtimeController : MonoBehaviour {
    private IEnumerator TestLibrary()
     {
         //Join the performance
-        showtime.join_async(stageAddress);
+        showtime.join_async($"{stageAddress}:{stagePort}");
 
         yield return new WaitUntil(() => showtime.is_connected());
 
