@@ -1,18 +1,33 @@
-message(STATUS "Configuring ${ANDROID_SINGULARITY_TARGET} target")
+message(STATUS "Configuring ${ANDROID_CONTAINER_TARGET} target")
 
 # Folder and file vars
-set(ANDROID_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/android-container")
-set(ANDROID_STAMP ${ANDROID_BUILD_DIR}/android.stamp)
+set(ANDROID_CONTAINER_NAME "android-builder")
+set(ANDROID_BUILD_DIR "${CONTAINER_DIR}/android")
+set(ANDROID_CONTAINER_BUILD_DIR_NAME vagrant-showtime-build)
+set(ANDROID_CONTAINER_INTERNAL_BUILD_DIR "/${ANDROID_CONTAINER_BUILD_DIR_NAME}")
+set(ANDROID_CONTAINER_RELATIVE_BIN_PATH "${ANDROID_CONTAINER_INTERNAL_BUILD_DIR}/bin/Android")
+set(ANDROID_CONTAINER_RELATIVE_LIB_PATH "${ANDROID_CONTAINER_INTERNAL_BUILD_DIR}/lib/Android")
+
+# Create native paths
+file(TO_NATIVE_PATH ${ANDROID_BIN_DIR} NATIVE_BINARY_PATH)
+file(TO_NATIVE_PATH ${ANDROID_LIB_DIR} NATIVE_LIBRARY_PATH)
+
+# Create output directories
+file(MAKE_DIRECTORY ${ANDROID_BIN_DIR})
+file(MAKE_DIRECTORY ${ANDROID_LIB_DIR})
 
 # Copy vagrantfile to build dir so we don't pollute the source tree with Vagrant images
 configure_file(${CMAKE_CURRENT_LIST_DIR}/Vagrantfile.in ${ANDROID_BUILD_DIR}/Vagrantfile)
-configure_file(${CMAKE_CURRENT_LIST_DIR}/build-android.def.in ${ANDROID_BUILD_DIR}/build-android.def)
 
 add_custom_command(
     OUTPUT ${ANDROID_OUTPUT_LIB}
     COMMAND ${CMAKE_COMMAND} -E echo "Building Showtime for Android using Linux container"
     COMMAND ${VAGRANTCOMMAND} up
+    COMMAND ${CMAKE_COMMAND} -E echo "Copying files from container"
+    COMMAND ${VAGRANTCOMMAND} scp ${ANDROID_CONTAINER_NAME}:${ANDROID_CONTAINER_RELATIVE_BIN_PATH}/* ${NATIVE_BINARY_PATH}
+    COMMAND ${VAGRANTCOMMAND} scp ${ANDROID_CONTAINER_NAME}:${ANDROID_CONTAINER_RELATIVE_LIB_PATH}/* ${NATIVE_LIBRARY_PATH}
     COMMAND ${VAGRANTCOMMAND} halt
     WORKING_DIRECTORY ${ANDROID_BUILD_DIR}
+    DEPENDS	${CLIENT_TARGET} ${SERVER_TARGET}
     VERBATIM
 )

@@ -51,7 +51,7 @@ if(MACOSX)
 endif()
 
 # Android lib copying
-if(BUILD_ANDROID_LIBS)
+if(BUILD_ANDROID_CONTAINER)
     set(UNITY_ANDROID_PLUGIN_DIR ${UNITY_BIN_DIR}/Android)
     set(UNITY_COPY_ANDROID_STAMP ${CMAKE_CURRENT_BINARY_DIR}/unity-copy-android.stamp)
 
@@ -62,7 +62,7 @@ if(BUILD_ANDROID_LIBS)
         COMMAND ${CMAKE_COMMAND} -E touch ${UNITY_COPY_ANDROID_STAMP}
     )
     add_custom_target(UnityCopyAndroidLibs ALL DEPENDS ${UNITY_COPY_ANDROID_STAMP})
-    add_dependencies(UnityCopyAndroidLibs ${DOTNET_TARGET_WRAPPER} ${ANDROID_SINGULARITY_TARGET})
+    add_dependencies(UnityCopyAndroidLibs ${DOTNET_TARGET_WRAPPER} ${ANDROID_CONTAINER_TARGET})
     list(APPEND UNITY_TARGET_DEPENDS UnityCopyAndroidLibs)
 endif()
 

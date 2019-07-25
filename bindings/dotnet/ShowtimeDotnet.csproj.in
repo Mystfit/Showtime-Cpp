@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <PackageId>${DOTNET_TARGET}</PackageId>
+    <PackageId>${PROJECT_NAME}</PackageId>
     <Title>${CMAKE_PROJECT_NAME}</Title>
     <Authors>${AUTHORS}</Authors>
     <Company>${COMPANY}</Company>
@@ -9,9 +9,10 @@
     <Tags>${TAGS}</Tags>
     <RepositoryUrl>${REPO_URL}</RepositoryUrl>
     <TargetFramework>${BINDINGS_DOTNET_FRAMEWORK_VERSION}</TargetFramework>
-    <RuntimeIdentifiers>win-x64;debian-x64;osx-10-11-x64</RuntimeIdentifiers>
+    <RuntimeIdentifiers>${ALL_RIDS}</RuntimeIdentifiers>
     <Version>${CMAKE_PROJECT_VERSION}</Version>
     <AssemblyVersion>${CMAKE_PROJECT_VERSION}</AssemblyVersion>
+    <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
   </PropertyGroup>
   <ItemGroup>
     ${DOTNET_SRC_BLOCK}
@@ -20,5 +21,6 @@
     <None Include="${LICENSE_FILE}" Pack="true" PackagePath="$(PackageLicenseFile)"/>
   </ItemGroup>
   <ItemGroup>
-  ${DOTNET_NATIVE_RUNTIMES_BLOCK}
+    ${DOTNET_NATIVE_RUNTIMES_BLOCK}
+  </ItemGroup>
 </Project>

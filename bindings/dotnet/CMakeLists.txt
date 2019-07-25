@@ -67,8 +67,9 @@ set(DOTNET_STAMP ${CMAKE_CURRENT_BINARY_DIR}/bindings/dotnet/dotnet.stamp)
 # Get the library output directory
 get_filename_component(DOTNET_OUTPUT_DIR ${DOTNET_OUTPUT_FILE} DIRECTORY)
 
-file(MAKE_DIRECTORY ${DOTNET_BINARY_DIR})
-
+# Create output directories
+file(MAKE_DIRECTORY ${DOTNET_OUTPUT_DIR})
+# file(MAKE_DIRECTORY ${DOTNET_BINARY_DIR})
 
 # Create the swig dotnet target
 swig_add_library(${DOTNET_TARGET_WRAPPER}
@@ -79,18 +80,14 @@ swig_add_library(${DOTNET_TARGET_WRAPPER}
     SOURCES ${DOTNET_SWIG_INTERFACES}
 )
 
-# Fix library prefixes on unix platforms
+# Fix library prefixes on non-windows platforms
 if(NOT WIN32)
-    set_target_properties(${DOTNET_TARGET_WRAPPER} PROPERTIES
-        PREFIX "lib"
-    )
+    set_target_properties(${DOTNET_TARGET_WRAPPER} PROPERTIES PREFIX "lib")
 endif()
 
 # Enable Ahead of Time compilation on mobile platforms for swig directors
 if(ANDROID)
-    set_target_properties(${DOTNET_TARGET_WRAPPER} PROPERTIES 
-        SWIG_COMPILE_OPTIONS -monoaotcompat
-    )
+    set_target_properties(${DOTNET_TARGET_WRAPPER} PROPERTIES SWIG_COMPILE_OPTIONS -monoaotcompat)
 endif()
 
 if(MACOSX)
@@ -98,7 +95,6 @@ if(MACOSX)
     set(DOTNET_BUNDLE_COPY_LIBS
         $<TARGET_FILE:${CORE_TARGET}>
         $<TARGET_FILE:${SERVER_TARGET}>
-        # $<TARGET_FILE:${CORE_ENTITIES_TARGET}>
         $<TARGET_FILE:${CLIENT_TARGET}> 
     )
     add_custom_command(TARGET ${DOTNET_TARGET_WRAPPER} POST_BUILD
@@ -120,66 +116,86 @@ swig_link_libraries(${DOTNET_TARGET_WRAPPER}
     ${SERVER_TARGET}
 )
 
-if(WIN32)
+if(WIN32 AND NOT BINDINGS_DOTNET_CSPROJ)
     # Make sure all included C# files are set to compile
     foreach(file ${DOTNET_GENERATED_BINDINGS})
         set_source_files_properties(${file} PROPERTIES VS_TOOL_OVERRIDE "Compile")
     endforeach()
-
+    set_target_properties(${DOTNET_TARGET} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${DOTNET_OUTPUT_DIR})
     target_sources(${DOTNET_TARGET} PRIVATE ${DOTNET_GENERATED_BINDINGS})
 else()
     message(STATUS "Configuring Dotnet project")
     set(DOTNET_SRC_BLOCK "")
-    foreach(file ${DOTNET_GENERATED_BINDINGS})
-        string(APPEND DOTNET_SRC_BLOCK "<Compile\ Include=\"${file}\"\ />\n    ")
+    foreach(file ${DOTNET_BINDINGS})
+        string(APPEND DOTNET_SRC_BLOCK "    <Compile\ Include=\"${file}\"\ />\n")
     endforeach()
 
     set(DOTNET_NATIVE_RUNTIMES_BLOCK "")
     set(DOTNET_RUNTIME_BLOCK_TEMPLATE "")
     string(CONCAT DOTNET_RUNTIME_BLOCK_TEMPLATE
-            "<Content Include=\"@runtime_path@\">\n"
-            "   <PackagePath>lib/runtimes/@runtime@/native/@runtime_extension@</PackagePath>\n"
-            "   <Pack>true</Pack>\n"
-            "   <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>\n"
-            "</Content>"
+            "<Content\ Include=\"@runtime_path@\">\n"
+            "      <PackagePath>runtimes/@runtime@/native/@runtime_file@</PackagePath>\n"
+            "      <Pack>true</Pack>\n"
+            "      <PackageCopyToOutput>true</PackageCopyToOutput>\n"
+            "    </Content>\n"
     )
+
+    set(RID_Windows "win-x64")
+    set(RID_Darwin "osx-x64")
+    set(RID_Linux "linux-x64")
+    set(RID_Android "android-arm64")
+    set(ALL_RIDS
+        ${RID_Windows}
+        ${RID_Darwin}
+        ${RID_Linux}
+        ${RID_Android}
+    )
+
     if(WIN32 OR BUILD_WINDOWS_CONTAINER)
-        set(runtime "win-64")
-        set(runtime_extension ".dll")
-        set(runtime "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/windows/${runtime_extension}")
-        string(CONFIGURE ${DOTNET_RUNTIME_BLOCK_TEMPLATE} runtime_block @ONLY)
-        string(APPEND DOTNET_NATIVE_RUNTIMES_BLOCK ${runtime_block})
+        set(runtime ${RID_Windows})
+        set(runtime_file "${DOTNET_TARGET_WRAPPER}.dll")
+        set(runtime_path "${WINDOWS_LIB_DIR}/${runtime_file}")
+        string(CONFIGURE ${DOTNET_RUNTIME_BLOCK_TEMPLATE} runtime_block_win @ONLY)
+        string(APPEND DOTNET_NATIVE_RUNTIMES_BLOCK ${runtime_block_win}${runtime_block_wrapper})
     endif()
     if(MACOSX OR BUILD_MACOS_CONTAINER)
-        set(runtime "osx.10-11-x64")
-        set(runtime_extension ".bundle")
-        set(runtime_path "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/macOS/${runtime_extension}")
+        set(runtime ${RID_Darwin})
+        set(runtime_file "${DOTNET_TARGET_WRAPPER}.bundle")
+        set(runtime_path "${MACOS_LIB_DIR}/${runtime_file}/**")
         string(CONFIGURE ${DOTNET_RUNTIME_BLOCK_TEMPLATE} runtime_block @ONLY)
         string(APPEND DOTNET_NATIVE_RUNTIMES_BLOCK ${runtime_block})
     endif()
-    if(LINUX)
-        set(runtime "debian-x64")
-        set(runtime_extension ".so")
-        set(runtime_path "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/linux/${runtime_extension}")
+    if(ANDROID OR BUILD_ANDROID_CONTAINER)
+        set(runtime ${RID_Android})
+        set(runtime_file "lib${DOTNET_TARGET_WRAPPER}.so")
+        set(runtime_path "${ANDROID_LIB_DIR}/${runtime_file}")
         string(CONFIGURE ${DOTNET_RUNTIME_BLOCK_TEMPLATE} runtime_block @ONLY)
         string(APPEND DOTNET_NATIVE_RUNTIMES_BLOCK ${runtime_block})
     endif()
-
+    if(LINUX OR BUILD_LINUX_CONTAINER)
+        set(runtime ${RID_Linux})
+        set(runtime_file "lib${DOTNET_TARGET_WRAPPER}.so")
+        set(runtime_path "${LINUX_LIB_DIR}/${runtime_file}")
+        string(CONFIGURE ${DOTNET_RUNTIME_BLOCK_TEMPLATE} runtime_block @ONLY)
+        string(APPEND DOTNET_NATIVE_RUNTIMES_BLOCK ${runtime_block})
+    endif()
     configure_file(${DOTNET_CSPROJ_IN} ${DOTNET_CSPROJ_OUT})
 
     set(DOTNET_ARGS 
-        "build" 
-        "-o" "${DOTNET_BINARY_DIR}"
+        "pack" 
+        "-o" "${DOTNET_OUTPUT_DIR}"
+        "--include-source"
+        "--include-symbols"
         "${DOTNET_CSPROJ_OUT}"
     )
 
+    # Build csproj
     add_custom_command(
         OUTPUT ${DOTNET_OUTPUT_FILE}
         COMMAND ${CMAKE_COMMAND} -E echo "Building Dotnet dll"
         COMMAND ${DOTNETCOMMAND} ${DOTNET_ARGS}
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${DOTNET_BINARY_DIR} ${DOTNET_OUTPUT_DIR}
-        DEPENDS ${CSPROJ_OUT}
         WORKING_DIRECTORY ${SWIG_LANGUAGE_DIR}
+        DEPENDS ${CSPROJ_OUT} ${PLATFORM_TARGETS} ${CLIENT_TARGET} ${SERVER_TARGET}
         VERBATIM
     )
 endif()
