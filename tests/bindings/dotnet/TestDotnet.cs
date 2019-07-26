@@ -234,7 +234,7 @@ public class Program
         eventloop.Start();
 
         //Join the stage
-        showtime.join("127.0.0.1");
+        showtime.auto_join_by_name("dotnet_server");
 
         //Run tests
         TestGraph();

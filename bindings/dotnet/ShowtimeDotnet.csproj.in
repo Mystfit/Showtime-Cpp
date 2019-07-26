@@ -13,6 +13,7 @@
     <Version>${CMAKE_PROJECT_VERSION}</Version>
     <AssemblyVersion>${CMAKE_PROJECT_VERSION}</AssemblyVersion>
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
   <ItemGroup>
     ${DOTNET_SRC_BLOCK}

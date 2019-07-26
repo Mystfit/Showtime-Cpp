@@ -136,6 +136,7 @@ else()
             "<Content\ Include=\"@runtime_path@\">\n"
             "      <PackagePath>runtimes/@runtime@/native/@runtime_file@</PackagePath>\n"
             "      <Pack>true</Pack>\n"
+            #"      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>"
             "      <PackageCopyToOutput>true</PackageCopyToOutput>\n"
             "    </Content>\n"
     )

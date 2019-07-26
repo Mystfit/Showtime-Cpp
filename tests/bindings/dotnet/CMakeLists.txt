@@ -7,14 +7,6 @@ set(DOTNET_TEST_COMMAND "")
 message(STATUS "Adding test ${DOTNET_TEST_TARGET}")
 
 if(NOT WIN32)
-    # Find and set references
-    string(FIND ${BINDINGS_DOTNET_FRAMEWORK_VERSION} "netstandard" FOUND_NETSTANDARD)
-    set(DOTNET_TEST_REFERENCES ${DOTNET_CSPROJ_OUT})
-    set(DOTNET_TEST_PACKAGES "Microsoft.NETCore.App")
-    if(${FOUND_NETSTANDARD} GREATER -1)
-        # list(APPEND DOTNET_TEST_REFERENCES "netstandard")
-    endif()
-
     # Configure project file
     set(DOTNET_TEST_OUTPUT ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${DOTNET_TEST_TARGET}.dll)
     set(DOTNET_TEST_CSPROJ_IN ${CMAKE_CURRENT_LIST_DIR}/${DOTNET_TEST_TARGET}.csproj.in)
@@ -25,24 +17,16 @@ if(NOT WIN32)
         string(APPEND DOTNET_TEST_SOURCE_BLOCK "<Compile\ Include=\"${file}\"\ />\n    ")
     endforeach()
     configure_file(${DOTNET_TEST_CSPROJ_IN} ${DOTNET_TEST_CSPROJ_OUT})
-    configure_file(${CMAKE_CURRENT_LIST_DIR}/${DOTNET_TEST_TARGET}.runtimeconfig.json.in ${CMAKE_CURRENT_BINARY_DIR}/${DOTNET_TEST_TARGET}.runtimeconfig.json COPYONLY)
 
     set(DOTNET_TEST_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/build)
     file(MAKE_DIRECTORY ${DOTNET_TEST_BINARY_DIR}) 
-    # Build arguments
-    set(DOTNET_ARGS 
-        "build"
-        "-o" "${DOTNET_TEST_BINARY_DIR}"
-        "${DOTNET_TEST_CSPROJ_OUT}"
-    )
 
     # Build the csproj
     add_custom_command(
         OUTPUT ${DOTNET_TEST_OUTPUT}
-        COMMAND ${CMAKE_COMMAND} -E echo "Building Dotnet test"
-        COMMAND ${DOTNETCOMMAND} add reference ${DOTNET_TEST_REFERENCES}
-        COMMAND ${DOTNETCOMMAND} ${DOTNET_ARGS}
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${DOTNET_TEST_BINARY_DIR} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+        COMMAND ${DOTNETCOMMAND} "new" "sln" "-n" "${DOTNET_TEST_TARGET}" "--force"
+        COMMAND ${DOTNETCOMMAND} "sln" "add" "${DOTNET_TEST_CSPROJ_OUT}" #"${DOTNET_CSPROJ_OUT}"
+        COMMAND ${DOTNETCOMMAND} "build" "-o" "${DOTNET_TEST_BINARY_DIR}" "${DOTNET_TEST_CSPROJ_OUT}"
         DEPENDS ${DOTNET_TEST_CSPROJ_OUT}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         VERBATIM
