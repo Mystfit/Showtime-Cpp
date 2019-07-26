@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
@@ -132,7 +133,7 @@ public class Program
         Debug.Assert(input_comp.last_val_received == send_val);
         input_comp.wait.Reset();
     }
-    static void TestExternalEntities()
+    static void TestExternalEntities(string sink_path)
     {
         //Create adaptors and entities
         TestHierarchyAdaptor adp = new TestHierarchyAdaptor();
@@ -145,7 +146,7 @@ public class Program
         ProcessStartInfo sink_startInfo = new ProcessStartInfo();
         sink_startInfo.UseShellExecute = false;
         sink_startInfo.RedirectStandardInput = true;
-        sink_startInfo.FileName = "TestHelperSink.exe";
+        sink_startInfo.FileName = sink_path;
         sink_startInfo.Arguments = "a";   // Put sink into test mode
 
         Process sink_process = new Process();
@@ -236,9 +237,13 @@ public class Program
         //Join the stage
         showtime.auto_join_by_name("dotnet_server");
 
+        //Sink path
+        var sink_path = args[0];
+        Console.WriteLine($"Sink path is {sink_path}");
+
         //Run tests
         TestGraph();
-        TestExternalEntities();
+        TestExternalEntities(sink_path);
 
         //Stop the event loop
         _cancelationTokenSource.Cancel();
