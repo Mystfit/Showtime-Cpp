@@ -1,16 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.2</TargetFramework>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
     ${DOTNET_TEST_SOURCE_BLOCK}
   </ItemGroup>
   <PropertyGroup>
-    <RestoreSources>$(RestoreSources);${DOTNET_OUTPUT_FOLDER};https://api.nuget.org/v3/index.json</RestoreSources>
+    <RestoreSources>$(RestoreSources);${DOTNET_OUTPUT_FOLDER}</RestoreSources>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Showtime" Version="${CMAKE_PROJECT_VERSION}" />
     <PackageReference Include="NUnit" Version="3.12.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.13.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.2.0" />
   </ItemGroup>
 </Project>
