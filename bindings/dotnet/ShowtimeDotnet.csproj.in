@@ -14,6 +14,7 @@
     <AssemblyVersion>${CMAKE_PROJECT_VERSION}</AssemblyVersion>
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <OutputPath>${DOTNET_OUTPUT_FOLDER}</OutputPath>
   </PropertyGroup>
   <ItemGroup>
     ${DOTNET_SRC_BLOCK}

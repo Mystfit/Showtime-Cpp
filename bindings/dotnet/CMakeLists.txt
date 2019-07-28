@@ -1,8 +1,8 @@
 message(STATUS "Configuring ${DOTNET_TARGET} target")
 
-# if(NOT BUILD_STATIC)
-#     message(FATAL_ERROR "Dotnet bindings require BUILD_STATIC to be enabled")
-# endif()
+if(NOT BUILD_STATIC)
+    message(FATAL_ERROR "Dotnet bindings require BUILD_STATIC to be enabled")
+endif()
 
 set(DOTNET_TARGET_WRAPPER ${DOTNET_TARGET}Wrapper)
 
@@ -71,6 +71,9 @@ get_filename_component(DOTNET_OUTPUT_DIR ${DOTNET_OUTPUT_FILE} DIRECTORY)
 file(MAKE_DIRECTORY ${DOTNET_OUTPUT_DIR})
 # file(MAKE_DIRECTORY ${DOTNET_BINARY_DIR})
 
+# Dependant projects
+set(DOTNET_DEPENDENCIES ${CLIENT_TARGET_STATIC} ${SERVER_TARGET_STATIC})
+
 # Create the swig dotnet target
 swig_add_library(${DOTNET_TARGET_WRAPPER}
     LANGUAGE csharp
@@ -92,36 +95,33 @@ endif()
 
 if(MACOSX)
     set_target_properties(${SWIG_MODULE_${DOTNET_TARGET_WRAPPER}_REAL_NAME} PROPERTIES BUNDLE TRUE)
-    set(DOTNET_BUNDLE_COPY_LIBS
-        $<TARGET_FILE:${CORE_TARGET}>
-        $<TARGET_FILE:${SERVER_TARGET}>
-        $<TARGET_FILE:${CLIENT_TARGET}> 
-    )
-    add_custom_command(TARGET ${DOTNET_TARGET_WRAPPER} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy ${DOTNET_BUNDLE_COPY_LIBS} $<TARGET_BUNDLE_CONTENT_DIR:${DOTNET_TARGET_WRAPPER}>/MacOS
-        VERBATIM
-    )
+    # set(DOTNET_BUNDLE_COPY_LIBS
+    #     $<TARGET_FILE:${CORE_TARGET}>
+    #     $<TARGET_FILE:${SERVER_TARGET}>
+    #     $<TARGET_FILE:${CLIENT_TARGET}> 
+    # )
+    # add_custom_command(TARGET ${DOTNET_TARGET_WRAPPER} POST_BUILD
+    #     COMMAND ${CMAKE_COMMAND} -E copy ${DOTNET_BUNDLE_COPY_LIBS} $<TARGET_BUNDLE_CONTENT_DIR:${DOTNET_TARGET_WRAPPER}>/MacOS
+    #     VERBATIM
+    # )
 endif()
 
 # Set dependant projects
-add_dependencies(${DOTNET_TARGET_WRAPPER} 
-    ${CLIENT_TARGET}
-    ${SERVER_TARGET}
-)
+add_dependencies(${DOTNET_TARGET_WRAPPER} ${DOTNET_DEPENDENCIES})
 
 # Link libraries to swig target
-swig_link_libraries(${DOTNET_TARGET_WRAPPER} 
-    PUBLIC
-    ${CLIENT_TARGET} 
-    ${SERVER_TARGET}
-)
+swig_link_libraries(${DOTNET_TARGET_WRAPPER} PUBLIC ${DOTNET_DEPENDENCIES})
 
 if(WIN32 AND NOT BINDINGS_DOTNET_CSPROJ)
     # Make sure all included C# files are set to compile
+    message(STATUS "BEEP")
     foreach(file ${DOTNET_GENERATED_BINDINGS})
         set_source_files_properties(${file} PROPERTIES VS_TOOL_OVERRIDE "Compile")
     endforeach()
-    set_target_properties(${DOTNET_TARGET} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${DOTNET_OUTPUT_DIR})
+    set_target_properties(${DOTNET_TARGET} PROPERTIES 
+        RUNTIME_OUTPUT_DIRECTORY ${DOTNET_OUTPUT_DIR}
+        DOTNET_TARGET_FRAMEWORK_VERSION ${BINDINGS_DOTNET_FRAMEWORK_VERSION}
+    )
     target_sources(${DOTNET_TARGET} PRIVATE ${DOTNET_GENERATED_BINDINGS})
 else()
     message(STATUS "Configuring Dotnet project")
@@ -136,7 +136,7 @@ else()
             "<Content\ Include=\"@runtime_path@\">\n"
             "      <PackagePath>runtimes/@runtime@/native/@runtime_file@</PackagePath>\n"
             "      <Pack>true</Pack>\n"
-            #"      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>"
+            "      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>"
             "      <PackageCopyToOutput>true</PackageCopyToOutput>\n"
             "    </Content>\n"
     )
@@ -182,9 +182,11 @@ else()
     endif()
     configure_file(${DOTNET_CSPROJ_IN} ${DOTNET_CSPROJ_OUT})
 
-    set(DOTNET_ARGS 
-        "pack" 
-        "-o" "${DOTNET_OUTPUT_DIR}"
+    if(MSVC_IDE)
+        include_external_msproject(${DOTNET_TARGET} ${DOTNET_CSPROJ_OUT})
+    endif()
+
+     set(DOTNET_PACK_ARGS 
         "--include-source"
         "--include-symbols"
         "${DOTNET_CSPROJ_OUT}"
@@ -193,20 +195,22 @@ else()
     # Build csproj
     add_custom_command(
         OUTPUT ${DOTNET_OUTPUT_FILE}
-        COMMAND ${CMAKE_COMMAND} -E echo "Building Dotnet dll"
-        COMMAND ${DOTNETCOMMAND} ${DOTNET_ARGS}
+        COMMAND ${CMAKE_COMMAND} -E echo "Building Dotnet package"
+        COMMAND ${DOTNETCOMMAND} build ${DOTNET_CSPROJ_OUT}
+        COMMAND ${DOTNETCOMMAND} pack ${DOTNET_ARGS}
         WORKING_DIRECTORY ${SWIG_LANGUAGE_DIR}
-        DEPENDS ${CSPROJ_OUT} ${PLATFORM_TARGETS} ${CLIENT_TARGET} ${SERVER_TARGET}
+        DEPENDS ${CSPROJ_OUT} ${PLATFORM_TARGETS} ${DOTNET_DEPENDENCIES}
         VERBATIM
     )
+    # add_custom_command(
+    #     TARGET ${DOTNET_TARGET}
+    #     POST_BUILD
+    #     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/bin/$<CONFIG>/${DOTNET_OUTPUT_FILENAME} ${DOTNET_OUTPUT_FILE}
+    #     WORKING_DIRECTORY ${SWIG_LANGUAGE_DIR}
+    #     DEPENDS ${DOTNET_OUTPUT_FILE}
+    #     VERBATIM
+    # )
 endif()
-
-# Set net framework version
-set_target_properties(${DOTNET_TARGET} PROPERTIES DOTNET_TARGET_FRAMEWORK_VERSION ${BINDINGS_DOTNET_FRAMEWORK_VERSION})
-# set_target_properties(${DOTNET_TARGET} PROPERTIES 
-#     VS_GLOBAL_LangVersion "6"
-#     VS_GLOBAL_TargetFramework ${BINDINGS_DOTNET_FRAMEWORK_VERSION}
-# )
 
 # Add dependencies
 add_dependencies(${DOTNET_TARGET} ${DOTNET_TARGET_WRAPPER})
