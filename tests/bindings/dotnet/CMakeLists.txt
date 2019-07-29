@@ -37,12 +37,13 @@ else()
     # Create custom target to build our test
     add_custom_target(${DOTNET_TEST_TARGET} ALL DEPENDS ${DOTNET_TEST_OUTPUT})
 
-    if(MSVC_IDE)
+    if(ADD_GENERATED_MSVC_PROJECTS)
         include_external_msproject(${DOTNET_TEST_TARGET} ${DOTNET_TEST_CSPROJ_OUT})
     else()
         execute_process(
-            COMMAND ${DOTNETCOMMAND} "new" "sln" "-n" "${DOTNET_TEST_TARGET}" "--force"
-            COMMAND ${DOTNETCOMMAND} "sln" "add" "${DOTNET_TEST_CSPROJ_OUT}"
+            COMMAND ${DOTNETCOMMAND} "new" "sln" "-n" "${DOTNET_TEST_TARGET}" "-o" "${CMAKE_CURRENT_BINARY_DIR}" "--force"
+            COMMAND ${DOTNETCOMMAND} "sln" "${CMAKE_CURRENT_BINARY_DIR}/${DOTNET_TEST_TARGET}.sln" "add" "${DOTNET_TEST_CSPROJ_OUT}"
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         )
     endif()
 
@@ -55,9 +56,9 @@ else()
         VERBATIM
     )
 
-    set(DOTNET_TEST_COMMAND "${DOTNETCOMMAND}" "${DOTNET_TEST_OUTPUT}")
+    set(DOTNET_TEST_COMMAND "${DOTNETCOMMAND}" "test")
 endif()
 
 add_dependencies(${DOTNET_TEST_TARGET} ${DOTNET_TARGET})
 
-add_test(NAME ${DOTNET_TEST_TARGET} COMMAND ${DOTNET_TEST_COMMAND} WORKING_DIRECTORY ${DOTNET_TEST_BINARY_DIR})
+add_test(NAME ${DOTNET_TEST_TARGET} COMMAND ${DOTNET_TEST_COMMAND} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})

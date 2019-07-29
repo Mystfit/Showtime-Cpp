@@ -3,6 +3,7 @@ chocolatey feature enable -n=allowGlobalConfirmation
 choco install chocolatey-visualstudio.extension
 choco install visualstudio2019buildtools
 choco install visualstudio2019-workload-vctools --params "--includeOptional"
+choco install visualstudio2019-workload-netcorebuildtools
 choco install vswhere
 choco install git
 choco install swig

@@ -13,7 +13,8 @@ $CMAKE_FLAGS= @(
     "-DBINDINGS_DOTNET=ON",
     "-DBINDINGS_DOTNET_CSPROJ=ON",
     "-DBINDINGS_DOTNET_FRAMEWORK_VERSION=netstandard2.0"
+    "-DADD_GENERATED_MSVC_PROJECTS=OFF"
 )
 
 cmake @CMAKE_FLAGS
-cmake --build "$env:BUILD_FOLDER" --config Release --target ALL_BUILD
+cmake --build "$env:BUILD_FOLDER" --config Release

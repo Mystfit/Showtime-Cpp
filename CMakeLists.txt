@@ -62,6 +62,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
         set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
         set(Boost_USE_STATIC_RUNTIME ON)
     endif()
+    if(MSVC)
+        option(ADD_GENERATED_MSVC_PROJECTS "Add generated projects to the CMake solution" ON)
+    endif()
 endif()
 
 # Set build locations

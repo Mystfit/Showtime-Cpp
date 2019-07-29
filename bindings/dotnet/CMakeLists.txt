@@ -4,6 +4,10 @@ if(NOT BUILD_STATIC)
     message(FATAL_ERROR "Dotnet bindings require BUILD_STATIC to be enabled")
 endif()
 
+
+# ShowtimeDotnetWrapper
+# ---------------------
+
 set(DOTNET_TARGET_WRAPPER ${DOTNET_TARGET}Wrapper)
 
 # Save original swig output dir
@@ -64,13 +68,6 @@ set(SWIG_MODULE_${DOTNET_TARGET_WRAPPER}_EXTRA_DEPS ${Showtime_API_INTERFACE})
 set(CMAKE_DEBUG_POSTFIX "")
 set(DOTNET_STAMP ${CMAKE_CURRENT_BINARY_DIR}/bindings/dotnet/dotnet.stamp)
 
-# Get the library output directory
-get_filename_component(DOTNET_OUTPUT_DIR ${DOTNET_OUTPUT_FILE} DIRECTORY)
-
-# Create output directories
-file(MAKE_DIRECTORY ${DOTNET_OUTPUT_DIR})
-# file(MAKE_DIRECTORY ${DOTNET_BINARY_DIR})
-
 # Dependant projects
 set(DOTNET_DEPENDENCIES ${CLIENT_TARGET_STATIC} ${SERVER_TARGET_STATIC})
 
@@ -112,9 +109,18 @@ add_dependencies(${DOTNET_TARGET_WRAPPER} ${DOTNET_DEPENDENCIES})
 # Link libraries to swig target
 swig_link_libraries(${DOTNET_TARGET_WRAPPER} PUBLIC ${DOTNET_DEPENDENCIES})
 
+
+# ShowtimeDotnet 
+# --------------
+
+# Get the library output directory
+get_filename_component(DOTNET_OUTPUT_DIR ${DOTNET_OUTPUT_FILE} DIRECTORY)
+
+# Create output directories
+file(MAKE_DIRECTORY ${DOTNET_OUTPUT_DIR})
+
 if(WIN32 AND NOT BINDINGS_DOTNET_CSPROJ)
     # Make sure all included C# files are set to compile
-    message(STATUS "BEEP")
     foreach(file ${DOTNET_GENERATED_BINDINGS})
         set_source_files_properties(${file} PROPERTIES VS_TOOL_OVERRIDE "Compile")
     endforeach()
@@ -136,7 +142,7 @@ else()
             "<Content\ Include=\"@runtime_path@\">\n"
             "      <PackagePath>runtimes/@runtime@/native/@runtime_file@</PackagePath>\n"
             "      <Pack>true</Pack>\n"
-            "      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>"
+            #"      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>"
             "      <PackageCopyToOutput>true</PackageCopyToOutput>\n"
             "    </Content>\n"
     )
@@ -161,8 +167,8 @@ else()
     endif()
     if(MACOSX OR BUILD_MACOS_CONTAINER)
         set(runtime ${RID_Darwin})
-        set(runtime_file "${DOTNET_TARGET_WRAPPER}.bundle")
-        set(runtime_path "${MACOS_LIB_DIR}/${runtime_file}/**")
+        set(runtime_file "${DOTNET_TARGET_WRAPPER}.bundle/")
+        set(runtime_path "${MACOS_LIB_DIR}/${runtime_file}**")
         string(CONFIGURE ${DOTNET_RUNTIME_BLOCK_TEMPLATE} runtime_block @ONLY)
         string(APPEND DOTNET_NATIVE_RUNTIMES_BLOCK ${runtime_block})
     endif()
@@ -182,7 +188,7 @@ else()
     endif()
     configure_file(${DOTNET_CSPROJ_IN} ${DOTNET_CSPROJ_OUT})
 
-    if(MSVC_IDE)
+    if(ADD_GENERATED_MSVC_PROJECTS)
         include_external_msproject(${DOTNET_TARGET} ${DOTNET_CSPROJ_OUT})
     endif()
 
@@ -195,6 +201,7 @@ else()
     # Build csproj
     add_custom_command(
         OUTPUT ${DOTNET_OUTPUT_FILE}
+        COMMAND ${DOTNETCOMMAND} restore
         COMMAND ${CMAKE_COMMAND} -E echo "Building Dotnet package"
         COMMAND ${DOTNETCOMMAND} build ${DOTNET_CSPROJ_OUT}
         COMMAND ${DOTNETCOMMAND} pack ${DOTNET_ARGS}
