@@ -39,12 +39,6 @@ else()
 
     if(ADD_GENERATED_MSVC_PROJECTS)
         include_external_msproject(${DOTNET_TEST_TARGET} ${DOTNET_TEST_CSPROJ_OUT})
-    else()
-        execute_process(
-            COMMAND ${DOTNETCOMMAND} "new" "sln" "-n" "${DOTNET_TEST_TARGET}" "-o" "${CMAKE_CURRENT_BINARY_DIR}" "--force"
-            COMMAND ${DOTNETCOMMAND} "sln" "${CMAKE_CURRENT_BINARY_DIR}/${DOTNET_TEST_TARGET}.sln" "add" "${DOTNET_TEST_CSPROJ_OUT}"
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        )
     endif()
 
     # Create command to build the csproj
