@@ -24,7 +24,7 @@ namespace Showtime
                 android_plugin.SaveAndReimport();
             }
 
-            var osx_plugins = AssetDatabase.FindAssets(".bundle", new[] { "Assets/ShowtimeUnity/Plugins/OSX" });
+            var osx_plugins = AssetDatabase.FindAssets(".bundle", new[] { "Assets/ShowtimeUnity/Plugins/Darwin" });
             foreach (var plugin_GUID in osx_plugins)
             {
                 string osx_plugin_path = AssetDatabase.GUIDToAssetPath(plugin_GUID);
@@ -39,7 +39,7 @@ namespace Showtime
                 osx_plugin.SaveAndReimport();
             }
 
-            var windows_plugins = AssetDatabase.FindAssets("Showtime", new[] { "Assets/ShowtimeUnity/Plugins/windows" });
+            var windows_plugins = AssetDatabase.FindAssets("Showtime", new[] { "Assets/ShowtimeUnity/Plugins/Windows" });
             foreach (var plugin_GUID in windows_plugins)
             {
                 string windows_plugin_path = AssetDatabase.GUIDToAssetPath(plugin_GUID);

@@ -6,21 +6,21 @@ using UnityEngine.TestTools;
 
 namespace Showtime.Tests
 {
-    public class TestGraph : TestBase, IPrebuildSetup, IPostBuildCleanup
+    public class TestGraph
     {
         [UnityTest]
+        [PrebuildSetup(typeof(FixtureJoinServer))]
         public IEnumerator SendIntValue()
         {
             var output = new TestGraphOutput("test_output");
             var input = new TestGraphInput("test_input");
             showtime.get_root().add_child(output);
             showtime.get_root().add_child(input);
-            var cable = showtime.connect_cable(input.plug, output.plug);
-            Assert.IsNotNull(cable);
-
+            showtime.connect_cable(input.plug, output.plug);
+    
             var val = 42;
             output.send(val);
-            yield return new WaitUntil(() => input.dirty);
+            yield return null;
             Assert.IsTrue(input.plug.int_at(0) == val);
         }
     }

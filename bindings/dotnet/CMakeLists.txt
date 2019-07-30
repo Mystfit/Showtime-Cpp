@@ -114,7 +114,7 @@ swig_link_libraries(${DOTNET_TARGET_WRAPPER} PUBLIC ${DOTNET_DEPENDENCIES})
 # --------------
 
 # Get the library output directory
-get_filename_component(DOTNET_OUTPUT_DIR ${DOTNET_OUTPUT_FILE} DIRECTORY)
+get_filename_component(DOTNET_OUTPUT_DIR ${DOTNET_OUTPUT_PACKAGE} DIRECTORY)
 
 # Create output directories
 file(MAKE_DIRECTORY ${DOTNET_OUTPUT_DIR})
@@ -200,7 +200,7 @@ else()
 
     # Build csproj
     add_custom_command(
-        OUTPUT ${DOTNET_OUTPUT_FILE}
+        OUTPUT ${DOTNET_OUTPUT_PACKAGE}
         COMMAND ${DOTNETCOMMAND} restore
         COMMAND ${CMAKE_COMMAND} -E echo "Building Dotnet package"
         COMMAND ${DOTNETCOMMAND} build ${DOTNET_CSPROJ_OUT}
@@ -212,9 +212,9 @@ else()
     # add_custom_command(
     #     TARGET ${DOTNET_TARGET}
     #     POST_BUILD
-    #     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/bin/$<CONFIG>/${DOTNET_OUTPUT_FILENAME} ${DOTNET_OUTPUT_FILE}
+    #     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/bin/$<CONFIG>/${DOTNET_OUTPUT_PACKAGENAME} ${DOTNET_OUTPUT_PACKAGE}
     #     WORKING_DIRECTORY ${SWIG_LANGUAGE_DIR}
-    #     DEPENDS ${DOTNET_OUTPUT_FILE}
+    #     DEPENDS ${DOTNET_OUTPUT_PACKAGE}
     #     VERBATIM
     # )
 endif()
