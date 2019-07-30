@@ -131,11 +131,23 @@ if(WIN32 AND NOT BINDINGS_DOTNET_CSPROJ)
     target_sources(${DOTNET_TARGET} PRIVATE ${DOTNET_GENERATED_BINDINGS})
 else()
     message(STATUS "Configuring Dotnet project")
+    # Add source files
     set(DOTNET_SRC_BLOCK "")
     foreach(file ${DOTNET_BINDINGS})
         string(APPEND DOTNET_SRC_BLOCK "    <Compile\ Include=\"${file}\"\ />\n")
     endforeach()
 
+    # Add project references
+    set(DOTNET_PROJECT_REFERENCES_BLOCK "")
+    set(DOTNET_PROJECT_REFERENCES "")
+    #if(MSVC)
+        list(APPEND DOTNET_PROJECT_REFERENCES ${DOTNET_CSPROJ_OUT})
+    #endif()
+    foreach(project ${DOTNET_PROJECT_REFERENCES})
+        string(APPEND DOTNET_PROJECT_REFERENCES_BLOCK "  <ProjectReference Include=\"${project}\" />\n")
+    endforeach()
+
+    # Add native runtime wrappers
     set(DOTNET_NATIVE_RUNTIMES_BLOCK "")
     set(DOTNET_RUNTIME_BLOCK_TEMPLATE "")
     string(CONCAT DOTNET_RUNTIME_BLOCK_TEMPLATE

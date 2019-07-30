@@ -16,6 +16,6 @@
     <PackageReference Include="Showtime" Version="${CMAKE_PROJECT_VERSION}" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="${DOTNET_CSPROJ_OUT}" />
+  ${DOTNET_PROJECT_REFERENCES_BLOCK}
   </ItemGroup>
 </Project>
