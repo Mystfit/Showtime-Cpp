@@ -15,4 +15,7 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.2.0" />
     <PackageReference Include="Showtime" Version="${CMAKE_PROJECT_VERSION}" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="${DOTNET_CSPROJ_OUT}" />
+  </ItemGroup>
 </Project>
