@@ -12,6 +12,13 @@ ZstHierarchy::~ZstHierarchy()
 
 void ZstHierarchy::destroy()
 {
+    ZstEntityBundle bundle;
+    get_performers(bundle);
+    for(auto performer : bundle){
+        delete performer;
+    }
+    m_clients.clear();
+    
 	m_hierarchy_events.remove_all_adaptors();
     ZstSynchronisableModule::destroy();
 }
