@@ -47,16 +47,14 @@ ZstComponent::ZstComponent(const ZstComponent & other) : ZstEntityBase(other)
 
 ZstComponent::~ZstComponent()
 {
-    if (!is_proxy()) {
-        ZstEntityBundle bundle;
-        get_child_entities(bundle, false);
-        for (auto child : bundle) {
-            // TODO: Deleting children will crash if the host GC's them after we delete them here
-            //ZstLog::entity(LogLevel::debug, "FIXME: Component {} leaking entity {} to avoid host app crashing when GCing", URI().path(), child.second->URI().path());
-            //delete child;
-        }
-        m_children.clear();
+    ZstEntityBundle bundle;
+    get_child_entities(bundle, false);
+    for (auto child : bundle) {
+        // We only delete proxy entities, since they are owned by this library
+        if(child->is_proxy())
+            delete child;
     }
+    m_children.clear();
 }
 
 ZstInputPlug * ZstComponent::create_input_plug(const char * name, ZstValueType val_type)

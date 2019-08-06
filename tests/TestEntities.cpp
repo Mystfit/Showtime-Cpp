@@ -150,3 +150,11 @@ BOOST_FIXTURE_TEST_CASE(deleting_entities_deactivates, FixtureParentChild) {
 	BOOST_TEST(!zst_find_entity(parent_URI));
 	BOOST_TEST(!zst_find_entity(child_URI));
 }
+
+BOOST_FIXTURE_TEST_CASE(child_deletion_removes_from_parent, FixtureParentChild) {
+    zst_get_root()->add_child(parent.get());
+    auto child_URI = child->URI();
+    child = NULL;
+    BOOST_TEST(!parent->get_child_by_URI(child_URI));
+    BOOST_TEST(!zst_find_entity(child_URI));
+}

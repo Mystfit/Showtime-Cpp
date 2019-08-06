@@ -100,4 +100,5 @@ private:
 	std::string m_entity_type;
 	ZstURI m_uri;
     ZstURI m_current_owner;
+    std::mutex m_entity_lock;
 };

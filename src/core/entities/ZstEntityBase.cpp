@@ -28,8 +28,12 @@ ZstEntityBase::ZstEntityBase(const ZstEntityBase & other) : ZstSynchronisable(ot
 
 ZstEntityBase::~ZstEntityBase()
 {
-	//Let owner know this entity is going away
+	//Let others know this entity is going away
 	dispatch_destroyed();
+    
+    if(parent()){
+        parent()->remove_child(this);
+    }
 
     m_entity_events->remove_all_adaptors();
     m_session_events->remove_all_adaptors();
@@ -54,6 +58,7 @@ void ZstEntityBase::remove_child(ZstEntityBase * child)
     if(!child)
         return;
     
+    std::lock_guard<std::mutex> lock(m_entity_lock);
 	child->m_parent = NULL;
 }
 
@@ -86,8 +91,10 @@ void ZstEntityBase::get_child_cables(ZstCableBundle & bundle)
 
 void ZstEntityBase::get_child_entities(ZstEntityBundle & bundle, bool include_parent)
 {
-	if (include_parent) 
+    if (include_parent){
+        std::lock_guard<std::mutex> lock(m_entity_lock);
 		bundle.add(this);
+    }
 }
 
 ZstEventDispatcher<ZstEntityAdaptor*> * ZstEntityBase::entity_events()
@@ -137,6 +144,7 @@ const ZstURI& ZstEntityBase::get_owner() const
 void ZstEntityBase::set_owner(const ZstURI& owner)
 {
 	ZstLog::net(LogLevel::debug, "Setting entity {} owner to {}", URI().path(), owner.path());
+    std::lock_guard<std::mutex> lock(m_entity_lock);
     m_current_owner = owner;
 }
 
@@ -155,10 +163,12 @@ void ZstEntityBase::release_ownership()
 }
 
 void ZstEntityBase::set_entity_type(const char * entity_type) {
+    std::lock_guard<std::mutex> lock(m_entity_lock);
 	m_entity_type = std::string(entity_type);
 }
 
 void ZstEntityBase::set_parent(ZstEntityBase *entity) {
+    std::lock_guard<std::mutex> lock(m_entity_lock);
 	m_parent = entity;
 	this->update_URI();
 }
