@@ -38,8 +38,8 @@ public:
 	}
 
 	ZstEventDispatcherBase(const char* name) : 
-		m_name(name),
-		m_has_event(false)
+		m_has_event(false),
+        m_name(name)
 	{
 	}
 

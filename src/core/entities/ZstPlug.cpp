@@ -255,9 +255,9 @@ ZstInputPlug::ZstInputPlug(const char * name, ZstValueType t, int max_cables) : 
 
 ZstOutputPlug::ZstOutputPlug() : 
 	ZstPlug(),
+    m_graph_out_events(NULL),
 	m_reliable(true),
-	m_can_fire(false),
-	m_graph_out_events(NULL)
+    m_can_fire(false)
 {
 	m_direction = ZstPlugDirection::OUT_JACK;
 	m_graph_out_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");

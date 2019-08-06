@@ -56,13 +56,7 @@ public:
 	ZST_EXPORT virtual ZstCable * find_cable(ZstInputPlug * input, ZstOutputPlug * output);
 	ZST_EXPORT virtual ZstCableBundle & get_cables(ZstCableBundle & bundle) override;
 	
-
-	// -------------
-	// Modules
-	// -------------
-
-	ZST_EXPORT virtual ZstHierarchy * hierarchy() = 0;
-
+    
 	// -------------------------------
 	// Syncronisable adaptor overrides
 	// -------------------------------
