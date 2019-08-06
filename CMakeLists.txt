@@ -169,7 +169,7 @@ endif()
 find_package(ZeroMQ CONFIG)
 if(NOT ZeroMQ_FOUND)
     message(STATUS "Searching for libzmq using fallback Findlibzmq.cmake")
-    find_package(libZMQ REQUIRED)
+    find_package(libzmq REQUIRED)
 endif()
 
 find_package(czmq CONFIG)
