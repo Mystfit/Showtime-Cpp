@@ -18,14 +18,14 @@ public sealed class ZstDelegateEntityAdaptor : ZstEntityAdaptor
     }
 
     public override void on_publish_entity_update(ZstEntityBase entity){
-        m_events.on_publish_entity_update_events(entity);
+        m_events?.on_publish_entity_update_events(entity);
     }
 
     public override void on_register_entity(ZstEntityBase entity){
-        m_events.on_register_entity_events(entity);
+        m_events?.on_register_entity_events(entity);
     }
 
     public override void on_disconnect_cable(ZstCable cable){
-        m_events.on_disconnect_cable_events(cable);
+        m_events?.on_disconnect_cable_events(cable);
     }
 }

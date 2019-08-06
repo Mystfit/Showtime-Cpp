@@ -9,50 +9,70 @@ using System.Threading.Tasks;
 using System.Collections;
 using NUnit.Framework;
 
-
-public class TestOutputComponent : ZstComponent
-{
-    public ZstOutputPlug output;
-
-    public TestOutputComponent(string path) : base(path)
-    {
-        output = create_output_plug("out", ZstValueType.ZST_INT);
-    }
-
-    public void send(int val)
-    {
-        output.append_int(val);
-        output.fire();
-    }
-}
-
-public class TestInputComponent : ZstComponent
-{
-    public ZstInputPlug input;
-    public readonly EventWaitHandle wait = new AutoResetEvent(false);
-    public float last_val_received = 0.0f;
-
-    public TestInputComponent(string path) : base(path)
-    {
-        input = create_input_plug("in", ZstValueType.ZST_INT);
-    }
-
-    public override void compute(ZstInputPlug plug)
-    {
-        //showtime.app(LogLevel.notification, String.Format("Received plug hit from {0} with value {1}", plug.URI().path(), plug.float_at(0)));
-        Console.WriteLine(String.Format("Received plug hit from {0} with value {1}", plug.URI().path(), plug.float_at(0)));
-        last_val_received = plug.int_at(0);
-        wait.Set();
-    }
-}
-
-
 namespace Showtime.Tests
 {
+    public class TestOutputComponent : ZstComponent
+    {
+        public ZstOutputPlug output;
+
+        public TestOutputComponent(string path) : base(path)
+        {
+            output = create_output_plug("out", ZstValueType.ZST_INT);
+        }
+
+        public void send(int val)
+        {
+            output.append_int(val);
+            Console.WriteLine("===Sending val===");
+            output.fire();
+        }
+    }
+
+    public class TestInputComponent : ZstComponent
+    {
+        public ZstInputPlug input;
+        public readonly EventWaitHandle wait = new AutoResetEvent(false);
+        public float last_val_received = 0.0f;
+
+        public TestInputComponent(string path) : base(path)
+        {
+            input = create_input_plug("in", ZstValueType.ZST_INT);
+        }
+
+        public override void compute(ZstInputPlug plug)
+        {
+            //showtime.app(LogLevel.notification, String.Format("Received plug hit from {0} with value {1}", plug.URI().path(), plug.float_at(0)));
+            showtime.app(LogLevel.debug, String.Format("Received plug hit from {0} with value {1}", plug.URI().path(), plug.float_at(0)));
+            last_val_received = plug.int_at(0);
+            wait.Set();
+        }
+    }
+
     [TestFixture]
-    public class Graph
+    [NonParallelizable]
+    public class FixtureCreateServer
     {
         private static ServerHandle m_server;
+
+        [SetUp]
+        public void SetupServer()
+        {
+            Console.WriteLine("===CREATE SERVER===");
+            m_server = showtime.create_server("test_server", showtime.STAGE_ROUTER_PORT);
+        }
+
+        [TearDown]
+        public void CleanupServer()
+        {
+            Console.WriteLine("===DESTROY SERVER===");
+            showtime.destroy_server(m_server);
+        }
+    }
+
+    [TestFixture]
+    [NonParallelizable]
+    public class FixtureInitLibrary : FixtureCreateServer
+    {
         private static Task m_eventloop;
         private static CancellationTokenSource m_cancelationTokenSource;
 
@@ -61,13 +81,14 @@ namespace Showtime.Tests
             while (!m_cancelationTokenSource.Token.IsCancellationRequested)
             {
                 showtime.poll_once();
+                Thread.Sleep(10);
             }
         }
 
         [SetUp]
-        public void Setup()
+        public void SetupLibrary()
         {
-            m_server = showtime.create_server("test_server", showtime.STAGE_ROUTER_PORT);
+            Console.WriteLine("===INIT LIBRARY===");
 
             //Start the library
             showtime.init("TestDotnet", true);
@@ -77,15 +98,12 @@ namespace Showtime.Tests
             m_cancelationTokenSource = new CancellationTokenSource();
             m_eventloop = new Task(() => event_loop(), m_cancelationTokenSource.Token, TaskCreationOptions.AttachedToParent);
             m_eventloop.Start();
-
-            //Join the server
-            showtime.auto_join_by_name("test_server");
         }
 
         [TearDown]
-        public void Cleanup()
+        public void CleanupLibrary()
         {
-            showtime.destroy_server(m_server);
+            Console.WriteLine("===DESTROY LIBRARY===");
 
             //Stop the event loop
             m_cancelationTokenSource.Cancel();
@@ -94,7 +112,25 @@ namespace Showtime.Tests
             //Destroy the library
             showtime.destroy();
         }
+    }
 
+    [TestFixture]
+    [NonParallelizable]
+    public class FixtureJoinServer : FixtureInitLibrary
+    {
+        [SetUp]
+        public void JoinServer()
+        {
+            //Join the server
+            Console.WriteLine("===JOIN SERVER===");
+
+            showtime.auto_join_by_name("test_server");
+        }
+    }
+
+
+    public class Graph : FixtureJoinServer
+    {
         [Test]
         public void SentThroughReliableGraph()
         {
@@ -116,8 +152,24 @@ namespace Showtime.Tests
             output_comp.send(send_val);
 
             //Wait for value to be received
-            input_comp.wait.WaitOne();
-            Assert.AreEqual(input_comp.last_val_received, send_val);
+            input_comp.wait.WaitOne(1000);
+            Assert.AreEqual(send_val, input_comp.last_val_received);
+        }
+    }
+
+    public class Connection : FixtureInitLibrary
+    {
+        [Test]
+        public void ConnectionEvents()
+        {
+            EventWaitHandle wait = new AutoResetEvent(false);
+            bool connected = false;
+            showtime.session_events().on_connected_to_stage_events += () => { connected = true; wait.Set(); };
+            showtime.session_events().on_disconnected_from_stage_events += () => { connected = false; wait.Set(); };
+            showtime.join_async($"127.0.0.1:{showtime.STAGE_ROUTER_PORT}");
+
+            wait.WaitOne(1000);
+            Assert.IsTrue(connected);
         }
     }
 }

@@ -19,18 +19,18 @@ public sealed class ZstDelegateSynchronisableAdaptor : ZstSynchronisableAdaptor
     }
 
     public override void on_synchronisable_activated(ZstSynchronisable synchronisable){
-        m_events.on_synchronisable_activated_events(synchronisable);
+        m_events?.on_synchronisable_activated_events(synchronisable);
     }
 
     public override void on_synchronisable_deactivated(ZstSynchronisable synchronisable){
-        m_events.on_synchronisable_deactivated_events(synchronisable);
+        m_events?.on_synchronisable_deactivated_events(synchronisable);
     }
 
     public override void on_synchronisable_destroyed(ZstSynchronisable synchronisable){
-        m_events.on_synchronisable_destroyed_events(synchronisable);
+        m_events?.on_synchronisable_destroyed_events(synchronisable);
     }
 
     public override void on_synchronisable_updated(ZstSynchronisable synchronisable){
-        m_events.on_synchronisable_updated_events(synchronisable);
+        m_events?.on_synchronisable_updated_events(synchronisable);
     }
 }
