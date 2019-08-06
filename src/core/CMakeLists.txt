@@ -1,8 +1,22 @@
 message(STATUS "Configuring ${CORE_TARGET} target")
 
-# Write version info into header file
-set(VERSION_FILE "${Showtime_COMPILED_INCLUDE_DIRS}/ZstVersion.h")
-FILE(WRITE ${VERSION_FILE} "#define SHOWTIME_VERSION \"${CMAKE_PROJECT_VERSION}\"")
+# Generate version info header file
+set(VERSION_FILE_IN "${CMAKE_CURRENT_LIST_DIR}/ZstVersion.h.in")
+set(VERSION_FILE_OUT "${Showtime_COMPILED_INCLUDE_DIRS}/ZstVersion.h")
+configure_file(${VERSION_FILE_IN} ${VERSION_FILE_OUT})
+set_source_files_properties(${VERSION_FILE_OUT} PROPERTIES GENERATED ON)
+
+# Generate empty source file to force some targets to compile
+file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp CONTENT "")
+
+# Generated sources
+set(GENERATED_SOURCES 
+    ${VERSION_FILE_OUT}
+    ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp
+)
+
+# Set generated sources property
+set_source_files_properties(${GENERATED_SOURCES} PROPERTIES GENERATED ON)
 
 # Public include files
 set(ENTITY_HEADERS
@@ -40,7 +54,7 @@ set(API_HEADERS
     ${Showtime_INCLUDE_DIRS}/ZstSynchronisable.h
     ${Showtime_INCLUDE_DIRS}/ZstBundle.hpp
     ${Showtime_INCLUDE_DIRS}/ZstServerAddress.h
-    ${Showtime_COMPILED_INCLUDE_DIRS}/ZstVersion.h
+    ${VERSION_FILE_OUT}
 )
 list(APPEND Showtime_API_INTERFACE 
     ${API_HEADERS}
@@ -274,9 +288,6 @@ endif()
 # Options common to both static/shared libraries
 foreach(TARGET ${CORE_LIBS})
     set_target_properties(${TARGET} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION})
-
-    # Add a dummy source file to force our target to compile
-    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp)
     target_sources(${TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp)
 
     # Target link libs again to link actual libraries

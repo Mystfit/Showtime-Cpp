@@ -73,7 +73,7 @@ static void s_catch_signals(){
 
 int main(int argc, char **argv)
 {
-	ZstLog::server(LogLevel::notification, "Starting Showtime v{} stage server", SHOWTIME_VERSION);
+	ZstLog::server(LogLevel::notification, "Starting Showtime v{} stage server", SHOWTIME_VERSION_STRING);
 	ZstLog::init_logger("stage", LogLevel::debug);
 	ZstLog::init_file_logging("server.log");
 

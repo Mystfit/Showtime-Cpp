@@ -138,7 +138,7 @@ void ZstClient::init_client(const char *client_name, bool debug)
 		level = LogLevel::debug;
 
 	ZstLog::init_logger(client_name, level);
-	ZstLog::net(LogLevel::notification, "Starting Showtime v{}", SHOWTIME_VERSION);
+	ZstLog::net(LogLevel::notification, "Starting Showtime v{}", SHOWTIME_VERSION_STRING);
 
 	m_client_name = client_name;
 
