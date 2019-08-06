@@ -359,7 +359,8 @@ namespace ZstTest
 		{
 			external_performer_URI = ZstURI(program_name.c_str());
 
-			auto program_path = fs::current_path().parent_path().append("bin").append(program_name);
+            ZstLog::app(LogLevel::debug, "Current path is{}", fs::current_path().generic_string());
+            auto program_path = fs::path(boost::unit_test::framework::master_test_suite().argv[0]).parent_path().append(program_name);
 #ifdef WIN32
 			program_path.replace_extension("exe");
 #endif
