@@ -13,7 +13,7 @@
 }
 
 %include "../preflight.i"
-%include "ZstBundle.i"
+%include "../ZstBundle.i"
 %include "../showtime.i"
 
 %pythoncode %{

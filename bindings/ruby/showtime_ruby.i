@@ -4,5 +4,7 @@
     #include <ShowtimeServer.h>
 %}
 
-%include "../showtime.i"
+%include "../preflight.i"
+
 %include "../ZstBundle.i"
+%include "../showtime.i"
