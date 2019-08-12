@@ -1,28 +1,31 @@
 #include <czmq.h>
 #include <sstream>
 
-#include "ZstServerSendTransport.h"
+#include "../core/ZstZMQRefCounter.h"
+#include "ZstZMQClientTransport.h"
 #include "nlohmann/json.hpp"
 
-ZstServerSendTransport::ZstServerSendTransport() : ZstMessageSupervisor(std::make_shared<cf::time_watcher>(), STAGE_TIMEOUT)
+ZstZMQClientTransport::ZstZMQClientTransport() : 
+	ZstMessageSupervisor(std::make_shared<cf::time_watcher>(), STAGE_TIMEOUT),
+	m_server_sock(NULL)
 {
 }
 
-ZstServerSendTransport::~ZstServerSendTransport()
+ZstZMQClientTransport::~ZstZMQClientTransport()
 {
 }
 
-void ZstServerSendTransport::init()
+void ZstZMQClientTransport::init()
 {
 	ZstTransportLayerBase::init();
 
 	m_client_actor.init("client_actor");
 
 	//Local dealer socket for receiving messages forwarded from other performers
-	m_stage_router = zsock_new(ZMQ_DEALER);
-	if (m_stage_router) {
-		zsock_set_linger(m_stage_router, 0);
-		m_client_actor.attach_pipe_listener(m_stage_router, s_handle_stage_router, this);
+	m_server_sock = zsock_new(ZMQ_DEALER);
+	if (m_server_sock) {
+		zsock_set_linger(m_server_sock, 0);
+		m_client_actor.attach_pipe_listener(m_server_sock, s_handle_stage_router, this);
 	}
 
 	//Set up outgoing sockets
@@ -31,22 +34,26 @@ void ZstServerSendTransport::init()
 	zuuid_destroy(&startup_uuid);
 	ZstLog::net(LogLevel::notification, "Setting socket identity to {}. Length {}", identity, identity.size());
 
-	zsock_set_identity(m_stage_router, identity.c_str());
+	zsock_set_identity(m_server_sock, identity.c_str());
 	m_client_actor.start_loop();
+
+	zst_zmq_inc_ref_count();
 }
 
-void ZstServerSendTransport::destroy()
+void ZstZMQClientTransport::destroy()
 {
 	ZstTransportLayerBase::destroy();
     ZstMessageSupervisor::destroy();
 
 	m_client_actor.stop_loop();
-	if(m_stage_router)
-		zsock_destroy(&m_stage_router);
+	if(m_server_sock)
+		zsock_destroy(&m_server_sock);
 	m_client_actor.destroy();
+
+	zst_zmq_dec_ref_count();
 }
 
-void ZstServerSendTransport::connect_to_stage(const std::string stage_address)
+void ZstZMQClientTransport::connect_to_stage(const std::string stage_address)
 {
 	m_stage_addr = std::string(stage_address);
 
@@ -54,21 +61,21 @@ void ZstServerSendTransport::connect_to_stage(const std::string stage_address)
     addr << "tcp://" << m_stage_addr; // << ":" << STAGE_ROUTER_PORT;
 	m_stage_router_addr = addr.str();
 
-	zsock_connect(m_stage_router, "%s", m_stage_router_addr.c_str());
+	zsock_connect(m_server_sock, "%s", m_stage_router_addr.c_str());
 }
 
-void ZstServerSendTransport::disconnect_from_stage()
+void ZstZMQClientTransport::disconnect_from_stage()
 {
-	zsock_disconnect(m_stage_router, "%s", m_stage_router_addr.c_str());
+	zsock_disconnect(m_server_sock, "%s", m_stage_router_addr.c_str());
 }
 
-void ZstServerSendTransport::process_events()
+void ZstZMQClientTransport::process_events()
 {
 	ZstTransportLayerBase::process_events();
 	ZstMessageSupervisor::cleanup_response_messages();
 }
 
-void ZstServerSendTransport::begin_send_message(ZstMessage * msg, const ZstTransportSendType & sendtype, const MessageReceivedAction & action)
+void ZstZMQClientTransport::begin_send_message(ZstMessage * msg, const ZstTransportSendType & sendtype, const MessageReceivedAction & action)
 {
 	if (!msg) return;
 	ZstStageMessage * stage_msg = static_cast<ZstStageMessage*>(msg);
@@ -89,22 +96,23 @@ void ZstServerSendTransport::begin_send_message(ZstMessage * msg, const ZstTrans
 	}
 }
 
-void ZstServerSendTransport::send_message_impl(ZstMessage * msg)
+void ZstZMQClientTransport::send_message_impl(ZstMessage * msg)
 {
+	ZstStageMessage* stage_msg = static_cast<ZstStageMessage*>(msg);
 	zmsg_t * m = zmsg_new();
 
 	//Insert empty frame at front of message to seperate between router sender hops and payloads
 	zframe_t * spacer = zframe_new_empty();
 	zmsg_prepend(m, &spacer);
 
-	ZstStageMessage * stage_msg = static_cast<ZstStageMessage*>(msg);
+	//Encode message as json
 	zmsg_addstr(m, stage_msg->as_json_str().c_str());
-	zmsg_send(&m, m_stage_router);
+	zmsg_send(&m, m_server_sock);
 
 	release_msg(stage_msg);
 }
 
-void ZstServerSendTransport::sock_recv(zsock_t* socket, bool pop_first)
+void ZstZMQClientTransport::sock_recv(zsock_t* socket, bool pop_first)
 {
 	if (!is_active())
 		return;
@@ -125,14 +133,14 @@ void ZstServerSendTransport::sock_recv(zsock_t* socket, bool pop_first)
 	}
 }
 
-int ZstServerSendTransport::s_handle_stage_router(zloop_t * loop, zsock_t * sock, void * arg)
+int ZstZMQClientTransport::s_handle_stage_router(zloop_t * loop, zsock_t * sock, void * arg)
 {
-	ZstServerSendTransport * transport = (ZstServerSendTransport*)arg;
+	ZstZMQClientTransport * transport = (ZstZMQClientTransport*)arg;
 	transport->sock_recv(sock, true);
 	return 0;
 }
 
-void ZstServerSendTransport::on_receive_msg(ZstMessage * msg)
+void ZstZMQClientTransport::on_receive_msg(ZstMessage * msg)
 {
 	//Publish message to other modules
 	msg_events()->defer([msg](ZstTransportAdaptor * adaptor) { 
@@ -146,7 +154,7 @@ void ZstServerSendTransport::on_receive_msg(ZstMessage * msg)
 	});
 }
 
-ZstMessageReceipt ZstServerSendTransport::send_sync_message(ZstStageMessage * msg)
+ZstMessageReceipt ZstZMQClientTransport::send_sync_message(ZstStageMessage * msg)
 {
 	auto future = register_response(msg->id());
 	ZstMessageReceipt msg_response{ ZstMsgKind::EMPTY, ZstTransportSendType::SYNC_REPLY };
@@ -164,7 +172,7 @@ ZstMessageReceipt ZstServerSendTransport::send_sync_message(ZstStageMessage * ms
 	return msg_response;
 }
 
-void ZstServerSendTransport::send_async_message(ZstStageMessage * msg, const MessageReceivedAction & completed_action)
+void ZstZMQClientTransport::send_async_message(ZstStageMessage * msg, const MessageReceivedAction & completed_action)
 {
 	auto future = register_response(msg->id());
 

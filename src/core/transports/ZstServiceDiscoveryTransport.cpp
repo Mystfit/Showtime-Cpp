@@ -23,7 +23,7 @@ void ZstServiceDiscoveryTransport::init(int port)
     m_beacon = zactor_new(zbeacon, NULL);
     
     if (m_beacon) {
-        zst_zmq_inc_ref();
+        zst_zmq_inc_ref_count();
         zsock_send(m_beacon, "si", "CONFIGURE", port);
         char * hostname = zstr_recv(m_beacon);
         ZstLog::net(LogLevel::debug, "Beacon running at {}:{}", hostname, port);
@@ -47,7 +47,7 @@ void ZstServiceDiscoveryTransport::destroy()
     stop_broadcast();
     stop_listening();
     zactor_destroy(&m_beacon);
-    zst_zmq_dec_ref();
+    zst_zmq_dec_ref_count();
     m_beacon_actor.destroy();
 }
 

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../liasons/ZstPlugLiason.hpp"
 #include "../ZstPerformanceMessage.h"
 #include "ZstTransportLayer.h"
 #include "ZstExports.h"
@@ -13,8 +12,7 @@
 
 
 class ZstGraphTransport : 
-	public ZstTransportLayer<ZstPerformanceMessage>,
-	public ZstPlugLiason
+	public ZstTransportLayer<ZstPerformanceMessage>
 {
 public:
 	ZST_EXPORT ZstGraphTransport();

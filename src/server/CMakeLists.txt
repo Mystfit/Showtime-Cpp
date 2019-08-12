@@ -10,6 +10,7 @@ set(ZST_SERVER_PRIVATE_HEADERS
   "${CMAKE_CURRENT_LIST_DIR}/ZstStageSession.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstStageHierarchy.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstPerformerStageProxy.h"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstZMQServerTransport.h"
 )
 
 set(ZST_SERVER_SRC
@@ -19,6 +20,7 @@ set(ZST_SERVER_SRC
   "${CMAKE_CURRENT_LIST_DIR}/ZstStageModule.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstStageHierarchy.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstStageSession.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstZMQServerTransport.cpp"
 )
 
 set(ZST_SERVER_LAUNCHER_SRC
@@ -50,7 +52,12 @@ if(BUILD_SHARED)
       )
   endif(WIN32)
 
-  target_link_libraries(${SERVER_TARGET} PUBLIC ${CORE_TARGET})
+  target_link_libraries(${SERVER_TARGET} 
+    PUBLIC 
+    ${CORE_TARGET}
+    PRIVATE
+    ${SHOWTIME_PRIVATE_SHARED_LINKED_LIBS}
+  )
 
   add_dependencies(${SERVER_TARGET} ${CORE_TARGET})
   list(APPEND SERVER_LIBS ${SERVER_TARGET})

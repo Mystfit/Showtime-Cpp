@@ -39,10 +39,12 @@ public:
 	ZST_EXPORT virtual void destroy();
 	ZST_EXPORT virtual void process_events();
 
+	ZST_EXPORT void begin_send_message(ZstMessage* msg);
+	ZST_EXPORT virtual void begin_send_message(ZstMessage* msg, const ZstTransportSendType& sendtype, const MessageReceivedAction& action);
+	ZST_EXPORT virtual void on_receive_msg(ZstMessage* msg);
+
+	//Message sending implementation for the transport
 	ZST_EXPORT virtual void send_message_impl(ZstMessage * msg) = 0;
-	ZST_EXPORT void begin_send_message(ZstMessage * msg);
-	ZST_EXPORT virtual void begin_send_message(ZstMessage * msg, const ZstTransportSendType & sendtype, const MessageReceivedAction & action);
-	ZST_EXPORT virtual void on_receive_msg(ZstMessage * msg);
 
 	ZST_EXPORT ZstEventDispatcher<ZstTransportAdaptor*> * msg_events();
 	ZST_EXPORT bool is_active();

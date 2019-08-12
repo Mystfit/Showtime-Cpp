@@ -14,7 +14,7 @@ ZstActor::~ZstActor()
 
 void ZstActor::destroy()
 {
-	zst_zmq_dec_ref();
+	zst_zmq_dec_ref_count();
 }
 
 void ZstActor::init(const char * name)
@@ -23,7 +23,7 @@ void ZstActor::init(const char * name)
 	m_loop = zloop_new();
 	zloop_set_verbose(m_loop, false);
 	zloop_set_nonstop(m_loop, true);
-	zst_zmq_inc_ref();
+	zst_zmq_inc_ref_count();
 }
 
 void ZstActor::start_loop()

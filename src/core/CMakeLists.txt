@@ -89,8 +89,6 @@ set(ZST_CORE_TRANSPORT_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayerBase.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstGraphTransport.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTCPGraphTransport.h"
-    "${CMAKE_CURRENT_LIST_DIR}/transports/ZstServerSendTransport.h"
-    "${CMAKE_CURRENT_LIST_DIR}/transports/ZstServerRecvTransport.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstServiceDiscoveryTransport.h"   
 )
 if(BUILD_DRAFTS)
@@ -130,8 +128,6 @@ set(ZST_CORE_TRANSPORT_SRC
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayerBase.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstGraphTransport.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTCPGraphTransport.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/transports/ZstServerSendTransport.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/transports/ZstServerRecvTransport.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstServiceDiscoveryTransport.cpp"   
 
 )
@@ -280,6 +276,14 @@ if(BUILD_SHARED)
             INTERFACE
             ZST_IMPORT_CORE_API
         )
+
+        # Copy runtime dependencies
+        add_custom_command(TARGET ${CORE_TARGET} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:czmq>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+            COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:libzmq>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+            VERBATIM
+        )
+
         # Use all imported object symbols
         set_target_properties(${CORE_TARGET} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
     endif()

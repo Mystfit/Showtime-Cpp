@@ -1,53 +1,58 @@
 #include <czmq.h>
 #include <sstream>
 
-#include "ZstServerRecvTransport.h"
+#include "../core/ZstZMQRefCounter.h"
+#include "ZstZMQServerTransport.h"
 
-ZstServerRecvTransport::ZstServerRecvTransport()
+ZstZMQServerTransport::ZstZMQServerTransport()
 {
 }
 
-ZstServerRecvTransport::~ZstServerRecvTransport()
+ZstZMQServerTransport::~ZstZMQServerTransport()
 {
 }
 
-void ZstServerRecvTransport::init(int port)
+void ZstZMQServerTransport::init(int port)
 {
 	ZstTransportLayerBase::init();
-	m_router_actor.init("stage_router");
+	m_server_actor.init("stage_router");
 
 	std::stringstream addr;
-	m_performer_router = zsock_new(ZMQ_ROUTER);
-	zsock_set_linger(m_performer_router, 0);
-	zsock_set_router_mandatory(m_performer_router, 1);
-	m_router_actor.attach_pipe_listener(m_performer_router, s_handle_router, this);
+	m_clients_sock = zsock_new(ZMQ_ROUTER);
+	zsock_set_linger(m_clients_sock, 0);
+	zsock_set_router_mandatory(m_clients_sock, 1);
+	m_server_actor.attach_pipe_listener(m_clients_sock, s_handle_router, this);
 
 	addr << "tcp://*:" << port;
-	zsock_bind(m_performer_router, "%s", addr.str().c_str());
-	if (!m_performer_router) {
+	zsock_bind(m_clients_sock, "%s", addr.str().c_str());
+	if (!m_clients_sock) {
 		ZstLog::net(LogLevel::notification, "Could not bind stage router socket to {}", addr.str());
 		return;
 	}
 	
 	ZstLog::net(LogLevel::notification, "Stage router listening on address {}", addr.str());
-	m_router_actor.start_loop();
+	m_server_actor.start_loop();
+
+	//Increase the zmq context reference count
+	zst_zmq_inc_ref_count();
 }
 
-void ZstServerRecvTransport::init()
+void ZstZMQServerTransport::init()
 {
 	static_assert(true, "Removed: Use init(int port) instead");
 }
 
-void ZstServerRecvTransport::destroy()
+void ZstZMQServerTransport::destroy()
 {
 	ZstTransportLayerBase::destroy();
 
-	m_router_actor.stop_loop();
+	m_server_actor.stop_loop();
+	if(m_clients_sock)
+		zsock_destroy(&m_clients_sock);
+	m_server_actor.destroy();
 
-	if(m_performer_router)
-		zsock_destroy(&m_performer_router);
-
-	m_router_actor.destroy();
+	//Decrease the zmq context reference count
+	zst_zmq_dec_ref_count();
 }
 
 
@@ -55,9 +60,9 @@ void ZstServerRecvTransport::destroy()
 //Incoming socket handlers
 //------------------------
 
-int ZstServerRecvTransport::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
+int ZstZMQServerTransport::s_handle_router(zloop_t * loop, zsock_t * socket, void * arg)
 {
-	ZstServerRecvTransport * transport = (ZstServerRecvTransport*)arg;
+	ZstZMQServerTransport * transport = (ZstZMQServerTransport*)arg;
 	zmsg_t * recv_msg = zmsg_recv(socket);
 	if (recv_msg) {
 		//Get identity of sender from first frame
@@ -89,27 +94,33 @@ int ZstServerRecvTransport::s_handle_router(zloop_t * loop, zsock_t * socket, vo
 	return 0;
 }
 
-void ZstServerRecvTransport::send_message_impl(ZstMessage * msg)
+void ZstZMQServerTransport::send_message_impl(ZstMessage * msg)
 {
 	ZstStageMessage * stage_msg = static_cast<ZstStageMessage*>(msg);
 	zmsg_t * m = zmsg_new();
+
+	//Add destination frame at beginning to route our message to the correct destination
 	zmsg_addstr(m, stage_msg->get_arg<std::string>(ZstMsgArg::DESTINATION).c_str());
+
+	//Spacer frame between destination and data
 	zframe_t * empty = zframe_new_empty();
 	zmsg_append(m, &empty);
+
+	//Encode message as json
 	zmsg_addstr(m, stage_msg->as_json_str().c_str());
-	zmsg_send(&m, m_performer_router);
-	zmsg_send(&m, m_performer_router);
+	zmsg_send(&m, m_clients_sock);
+
 	int err = zmq_errno();
 	if (err > 0) {
 		if(err == EHOSTUNREACH)
 			ZstLog::net(LogLevel::error, "Could not reach host");
-		/*else
-			ZstLog::net(LogLevel::error, "Message sending result code: {}", err);*/
+		else
+			ZstLog::net(LogLevel::error, "Message sending error: {}", zmq_strerror(err));
 	}
 	release_msg(stage_msg);
 }
 
-void ZstServerRecvTransport::on_receive_msg(ZstMessage * msg)
+void ZstZMQServerTransport::on_receive_msg(ZstMessage * msg)
 {
 	//Process response messages first
 	this->ZstTransportLayerBase::on_receive_msg(msg);

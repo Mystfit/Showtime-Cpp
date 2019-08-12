@@ -16,7 +16,7 @@ ZstStage::ZstStage() :
     m_session(NULL)
 {
 	m_session = new ZstStageSession();
-	m_router_transport = std::make_unique<ZstServerRecvTransport>();
+	m_router_transport = std::make_unique<ZstZMQServerTransport>();
     m_service_broadcast_transport = std::make_unique<ZstServiceDiscoveryTransport>();
 
 	//Register event conditions

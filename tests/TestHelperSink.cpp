@@ -84,18 +84,18 @@ int main(int argc,char **argv){
 
 	bool force_launch = false;
 	if(argc < 2 && !force_launch){
-		ZstLog::app(LogLevel::warn, "Skipping sink test, command line flag not set");
-		return 0;
+		bool skip = true;
+		for (int i = 0; i < argc; ++i) {
+			if (strcmp(argv[i], "t") == 0) {
+				skip = false;
+			}
+		}
+		if (skip) {
+			ZstLog::app(LogLevel::warn, "Skipping, 't' command line flag not set");
+			return 0;
+		}
 	}
 
-	if (argc >= 2) {
-		if (argv[1][0] == 'd')
-#ifdef WIN32
-			system("pause");
-#else
-			system("read -n 1 -s -p \"Press any key to continue...\n\"");
-#endif
-	}
 	zst_init("TestHelperSink", true);
     zst_auto_join_by_name(TEST_SERVER_NAME);
 

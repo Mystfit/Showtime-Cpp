@@ -4,7 +4,7 @@
 #ifdef ZST_BUILD_DRAFT_API
 #include "../core/transports/ZstUDPGraphTransport.h"
 #endif
-#include "../core/transports/ZstServerSendTransport.h"
+#include "ZstZMQClientTransport.h"
 #include "../core/transports/ZstServiceDiscoveryTransport.h"
 #include "../core/ZstMessage.h"
 #include "../core/ZstMsgID.h"
@@ -29,7 +29,7 @@ ZstClient::ZstClient() :
 {
 	//Message and transport modules
 	//These are specified by the client based on what transport type we want to use
-	m_client_transport = new ZstServerSendTransport();
+	m_client_transport = new ZstZMQClientTransport();
 	m_tcp_graph_transport = new ZstTCPGraphTransport();
     m_service_broadcast_transport = std::make_unique<ZstServiceDiscoveryTransport>();
 

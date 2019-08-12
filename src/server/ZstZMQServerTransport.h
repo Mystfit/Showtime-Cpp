@@ -1,16 +1,15 @@
 #pragma once
 
-#include "../ZstActor.h"
-#include "../ZstStageMessage.h"
-#include "ZstTransportLayer.h"
-#include "entities/ZstPerformer.h"
+#include "../core/ZstActor.h"
+#include "../core/ZstStageMessage.h"
+#include "../core/transports/ZstTransportLayer.h"
 
-class ZstServerRecvTransport :
+class ZstZMQServerTransport :
 	public ZstTransportLayer<ZstStageMessage>
 {
 public:
-	ZstServerRecvTransport();
-	~ZstServerRecvTransport();
+	ZstZMQServerTransport();
+	~ZstZMQServerTransport();
 	void init(int port);
 	void destroy() override;
 
@@ -22,6 +21,6 @@ public:
 
 private:
 	void init() override;
-	ZstActor m_router_actor;
-	zsock_t * m_performer_router;
+	ZstActor m_server_actor;
+	zsock_t * m_clients_sock;
 };

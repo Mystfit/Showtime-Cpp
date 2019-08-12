@@ -10,6 +10,9 @@ set(ZST_CLIENT_PRIVATE_HEADERS
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientModule.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientHierarchy.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientSession.h"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstZMQClientTransport.h"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstWebsocketClientTransport.h"
+
   #"${CMAKE_CURRENT_LIST_DIR}/ZstHTTPTransport.h"
 )
 
@@ -19,6 +22,8 @@ set(ZST_CLIENT_SRC
   "${CMAKE_CURRENT_LIST_DIR}/ZstClient.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientHierarchy.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientSession.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstZMQClientTransport.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstWebsocketClientTransport.cpp"
   #"${CMAKE_CURRENT_LIST_DIR}/ZstHTTPTransport.cpp"
 )
 
@@ -48,7 +53,12 @@ if(BUILD_SHARED)
       )
   endif(WIN32)
 
-  target_link_libraries(${CLIENT_TARGET} PUBLIC ${CORE_TARGET})
+  target_link_libraries(${CLIENT_TARGET} 
+    PUBLIC 
+    ${CORE_TARGET}
+    PRIVATE
+    ${SHOWTIME_PRIVATE_SHARED_LINKED_LIBS}
+  )
 
   add_dependencies(${CLIENT_TARGET} ${CORE_TARGET})
   list(APPEND CLIENT_LIBS ${CLIENT_TARGET})

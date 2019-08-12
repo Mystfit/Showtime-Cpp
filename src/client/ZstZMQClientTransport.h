@@ -1,18 +1,18 @@
 #pragma once
 
-#include "../ZstEventDispatcher.hpp"
-#include "../adaptors/ZstTransportAdaptor.hpp"
-#include "../ZstStageMessage.h"
-#include "../ZstMessageSupervisor.hpp"
-#include "ZstTransportLayer.h"
+#include "../core/ZstEventDispatcher.hpp"
+#include "../core/adaptors/ZstTransportAdaptor.hpp"
+#include "../core/ZstStageMessage.h"
+#include "../core/ZstMessageSupervisor.hpp"
+#include "../core/transports/ZstTransportLayer.h"
 
-class ZstServerSendTransport : 
+class ZstZMQClientTransport : 
 	public ZstTransportLayer<ZstStageMessage>,
 	public ZstMessageSupervisor
 {
 public:
-	ZstServerSendTransport();
-	~ZstServerSendTransport();
+	ZstZMQClientTransport();
+	~ZstZMQClientTransport();
 	virtual void init() override;
 	virtual void destroy() override;
 	void connect_to_stage(const std::string stage_address);
@@ -31,7 +31,7 @@ private:
 	virtual void send_async_message(ZstStageMessage * msg, const MessageReceivedAction & completed_action);
 
 	//Sockets
-	zsock_t * m_stage_router;
+	zsock_t * m_server_sock;
 
 	//Addresses
 	std::string m_stage_addr;

@@ -223,13 +223,13 @@ set(Showtime_PRIVATE_HEADER_DEPENDENCIES
 set(SHOWTIME_PRIVATE_STATIC_LINKED_LIBS
     czmq-static 
     libzmq-static
-    msgpackc-static
+    # msgpackc-static
 )
 
-set(SHOWTIME_PUBLIC_SHARED_LINKED_LIBS
+set(SHOWTIME_PRIVATE_SHARED_LINKED_LIBS
     czmq
     libzmq
-    msgpackc
+    # msgpackc
 )
 
 
