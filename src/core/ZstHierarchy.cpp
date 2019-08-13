@@ -15,7 +15,8 @@ void ZstHierarchy::destroy()
     ZstEntityBundle bundle;
     get_performers(bundle);
     for(auto performer : bundle){
-        delete performer;
+		//TODO: Leaking performers
+        //delete performer;
     }
     m_clients.clear();
     

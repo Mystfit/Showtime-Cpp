@@ -17,6 +17,10 @@ public:
 	ZST_EXPORT virtual ZstMessage * init(ZstMsgKind kind, const ZstMsgArgs & payload, const ZstMsgArgs & args) override;
 	
 	ZST_EXPORT void reset() override;
+	
+	ZST_EXPORT virtual const ZstMsgKind& kind() const override;
+	ZST_EXPORT virtual ZstMsgID id() const override;
+	ZST_EXPORT virtual void set_id(const ZstMsgID& id) override;
 
 	ZST_EXPORT static ZstMsgKind entity_kind(const ZstEntityBase & entity);
 	ZST_EXPORT void unpack(const json & data);
@@ -40,10 +44,7 @@ public:
 		m_msg_args[key] = val;
 	}
 
-	ZST_EXPORT const ZstMsgKind & kind() const;
 	ZST_EXPORT virtual const ZstMsgArgs & payload() const override;
-	ZST_EXPORT ZstMsgID id() const;
-	ZST_EXPORT void set_id(const ZstMsgID & id);
 	ZST_EXPORT std::string as_json_str() const;
 
 private:

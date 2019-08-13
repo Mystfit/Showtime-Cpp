@@ -355,7 +355,7 @@ void ZstClient::join_stage(const std::string & stage_address, const ZstTransport
 	set_is_connecting(true);
 		
 	ZstLog::net(LogLevel::notification, "Connecting to stage {}", stage_address);
-	m_client_transport->connect_to_stage(stage_address);
+	m_client_transport->connect(stage_address);
 
 	//Acquire our output graph address to send to the stage
 	std::string reliable_graph_addr = m_tcp_graph_transport->get_graph_out_address();
@@ -499,7 +499,7 @@ void ZstClient::leave_stage_complete()
 
 	//Disconnect rest of sockets and timers
 	m_heartbeat_timer.cancel();
-	m_client_transport->disconnect_from_stage();
+	m_client_transport->disconnect_from_server();
 	
 	//Enqueue event for adaptors
 	m_session->dispatch_disconnected_from_stage();

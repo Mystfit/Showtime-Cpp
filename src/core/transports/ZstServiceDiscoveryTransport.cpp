@@ -59,9 +59,9 @@ void ZstServiceDiscoveryTransport::send_message_impl(ZstMessage * msg)
     release_msg(stage_msg);
 }
 
-void ZstServiceDiscoveryTransport::on_receive_msg(ZstMessage * msg)
+void ZstServiceDiscoveryTransport::receive_msg(ZstMessage * msg)
 {
-    this->ZstTransportLayerBase::on_receive_msg(msg);
+    this->ZstTransportLayerBase::receive_msg(msg);
     
     //Publish message to other modules
     msg_events()->defer([msg](ZstTransportAdaptor * adaptor) {
@@ -82,7 +82,7 @@ int ZstServiceDiscoveryTransport::s_handle_beacon(zloop_t * loop, zsock_t * sock
         auto data = std::string((char*)zframe_data(beacon_content), zframe_size(beacon_content));
         msg->unpack(json::parse(data));
         msg->set_arg(get_msg_arg_name(ZstMsgArg::ADDRESS), ipaddress);
-        transport->on_receive_msg(msg);
+        transport->receive_msg(msg);
         zframe_destroy(&beacon_content);
     }
     

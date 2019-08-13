@@ -12,6 +12,10 @@ public:
 
 	ZST_EXPORT virtual void reset() override;
 
+	ZST_EXPORT virtual const ZstMsgKind& kind() const override;
+	ZST_EXPORT virtual ZstMsgID id() const override;
+	ZST_EXPORT virtual void set_id(const ZstMsgID& id) override;
+
 	ZST_EXPORT virtual void unpack(const char * data, const size_t & size);
 
 	ZST_EXPORT virtual const ZstMsgArgs & payload() const override;

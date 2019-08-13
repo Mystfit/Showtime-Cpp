@@ -35,7 +35,8 @@ ZstStage::~ZstStage()
 void ZstStage::init_stage(const char * stage_name, int port)
 {
 	m_session->init();
-	m_router_transport->init(port);
+	m_router_transport->init();
+	m_router_transport->bind(fmt::format("*:{}", port));
     
     //Stage discovery beacon
     m_service_broadcast_transport->init(STAGE_DISCOVERY_PORT);

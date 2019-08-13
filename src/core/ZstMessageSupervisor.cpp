@@ -54,11 +54,10 @@ void ZstMessageSupervisor::process_response(ZstMsgID id, ZstMsgKind response)
 	auto promise = m_response_promises.find(id);
 	if (promise != m_response_promises.end()) {
 		try {
-			//ZstLog::net(LogLevel::warn, "Resolving promise {}", id);
 			promise->second.set_value(response);
 		}
 		catch (cf::future_error e) {
-			//ZstLog::net(LogLevel::warn, "Promise error {}", e.what());
+			ZstLog::net(LogLevel::warn, "Promise error {}", e.what());
 		}
 		enqueue_resolved_promise(id);
 	}

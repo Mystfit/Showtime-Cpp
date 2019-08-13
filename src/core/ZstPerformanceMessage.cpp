@@ -32,6 +32,20 @@ void ZstPerformanceMessage::reset()
 	m_args.clear();
 }
 
+const ZstMsgKind& ZstPerformanceMessage::kind() const
+{
+	return ZstMsgKind::PERFORMANCE_MSG;
+}
+
+ZstMsgID ZstPerformanceMessage::id() const
+{
+	return 0;
+}
+
+void ZstPerformanceMessage::set_id(const ZstMsgID& id)
+{
+}
+
 void ZstPerformanceMessage::unpack(const char * data, const size_t & size)
 {
 	m_args = json::from_msgpack(data, size);

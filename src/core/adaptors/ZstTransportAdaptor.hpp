@@ -10,7 +10,12 @@ class ZstMessage;
 class ZstTransportAdaptor : public ZstEventAdaptor
 {
 public:
+	//Outgoing Events
 	ZST_EXPORT virtual void on_receive_msg(ZstMessage * msg);
+
+	//Incoming events
+	ZST_EXPORT virtual void connect(const std::string & address);
+	ZST_EXPORT virtual void bind(const std::string& address);
 	ZST_EXPORT virtual void send_msg(ZstMsgKind kind);
 	ZST_EXPORT virtual void send_msg(ZstMsgKind kind, const ZstMsgArgs & args);
 	ZST_EXPORT virtual void send_msg(ZstMsgKind kind, const ZstMsgArgs & args, const ZstMsgArgs & payload);

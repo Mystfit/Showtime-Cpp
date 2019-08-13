@@ -18,7 +18,7 @@ public:
     void destroy() override;
     
     void send_message_impl(ZstMessage * msg) override;
-    void on_receive_msg(ZstMessage * msg) override;
+    void receive_msg(ZstMessage * msg) override;
     
     //Handle incoming zbeacon messages
     static int s_handle_beacon(zloop_t * loop, zsock_t * socket, void * arg);

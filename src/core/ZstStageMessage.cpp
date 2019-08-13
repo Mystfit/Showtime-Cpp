@@ -111,7 +111,7 @@ const ZstMsgArgs & ZstStageMessage::payload() const
 
 ZstMsgID ZstStageMessage::id() const
 {
-	return	m_msg_args[get_msg_arg_name(ZstMsgArg::MSG_ID)].get<ZstMsgID>();
+	return m_msg_args[get_msg_arg_name(ZstMsgArg::MSG_ID)].get<ZstMsgID>();
 }
 
 void ZstStageMessage::set_id(const ZstMsgID & id)

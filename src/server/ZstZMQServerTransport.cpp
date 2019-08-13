@@ -1,10 +1,12 @@
 #include <czmq.h>
 #include <sstream>
+#include <fmt/format.h>
 
 #include "../core/ZstZMQRefCounter.h"
 #include "ZstZMQServerTransport.h"
 
-ZstZMQServerTransport::ZstZMQServerTransport()
+ZstZMQServerTransport::ZstZMQServerTransport() :
+	m_clients_sock(NULL)
 {
 }
 
@@ -12,34 +14,22 @@ ZstZMQServerTransport::~ZstZMQServerTransport()
 {
 }
 
-void ZstZMQServerTransport::init(int port)
+void ZstZMQServerTransport::init()
 {
 	ZstTransportLayerBase::init();
-	m_server_actor.init("stage_router");
 
-	std::stringstream addr;
+	//Socket
 	m_clients_sock = zsock_new(ZMQ_ROUTER);
 	zsock_set_linger(m_clients_sock, 0);
 	zsock_set_router_mandatory(m_clients_sock, 1);
-	m_server_actor.attach_pipe_listener(m_clients_sock, s_handle_router, this);
 
-	addr << "tcp://*:" << port;
-	zsock_bind(m_clients_sock, "%s", addr.str().c_str());
-	if (!m_clients_sock) {
-		ZstLog::net(LogLevel::notification, "Could not bind stage router socket to {}", addr.str());
-		return;
-	}
-	
-	ZstLog::net(LogLevel::notification, "Stage router listening on address {}", addr.str());
+	//Actor
+	m_server_actor.init("stage_router");
+	m_server_actor.attach_pipe_listener(m_clients_sock, s_handle_router, this);
 	m_server_actor.start_loop();
 
 	//Increase the zmq context reference count
 	zst_zmq_inc_ref_count();
-}
-
-void ZstZMQServerTransport::init()
-{
-	static_assert(true, "Removed: Use init(int port) instead");
 }
 
 void ZstZMQServerTransport::destroy()
@@ -55,6 +45,16 @@ void ZstZMQServerTransport::destroy()
 	zst_zmq_dec_ref_count();
 }
 
+void ZstZMQServerTransport::bind(const std::string& address)
+{
+	auto addr = fmt::format("tcp://{}", address);
+	zsock_bind(m_clients_sock, "%s", addr.c_str());
+	if (!m_clients_sock) {
+		ZstLog::net(LogLevel::notification, "Could not bind stage router socket to {}", addr);
+		return;
+	}
+	ZstLog::net(LogLevel::notification, "Stage router listening on address {}", addr);
+}
 
 //------------------------
 //Incoming socket handlers
@@ -78,7 +78,7 @@ int ZstZMQServerTransport::s_handle_router(zloop_t * loop, zsock_t * socket, voi
 
 			//Save sender as a local argument
 			msg->set_arg<std::string, std::string>(get_msg_arg_name(ZstMsgArg::SENDER), std::string((char*)zframe_data(identity_frame), zframe_size(identity_frame)));
-			transport->on_receive_msg(msg);
+			transport->receive_msg(msg);
 		}
 		else {
 			ZstLog::net(LogLevel::warn, "Received message with no payload data. Can't unpack.");
@@ -110,25 +110,17 @@ void ZstZMQServerTransport::send_message_impl(ZstMessage * msg)
 	zmsg_addstr(m, stage_msg->as_json_str().c_str());
 	zmsg_send(&m, m_clients_sock);
 
+	//Errors
 	int err = zmq_errno();
 	if (err > 0) {
-		if(err == EHOSTUNREACH)
-			ZstLog::net(LogLevel::error, "Could not reach host");
-		else
-			ZstLog::net(LogLevel::error, "Message sending error: {}", zmq_strerror(err));
+		ZstLog::net(LogLevel::error, "Message sending error: {}", zmq_strerror(err));
 	}
 	release_msg(stage_msg);
 }
 
-void ZstZMQServerTransport::on_receive_msg(ZstMessage * msg)
+void ZstZMQServerTransport::receive_msg(ZstMessage * msg)
 {
-	//Process response messages first
-	this->ZstTransportLayerBase::on_receive_msg(msg);
-
-	//Publish message to other modules
-	msg_events()->defer([msg](ZstTransportAdaptor * adaptor) {
-		adaptor->on_receive_msg(msg);
-	}, [msg, this](ZstEventStatus status) {
+	ZstTransportLayer::receive_msg(msg, [msg, this](ZstEventStatus status) {
 		this->release_msg(static_cast<ZstStageMessage*>(msg));
 	});
 }

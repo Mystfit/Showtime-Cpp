@@ -18,16 +18,19 @@ enum ZstEventStatus {
 };
 
 
+typedef std::function<void(ZstEventStatus)> ZstEventCallback;
+
+
 template<typename T>
 class ZstEvent 
 {
 	static_assert(std::is_base_of<ZstEventAdaptor, std::remove_pointer_t<T> >::value, "T must derive from ZstEventAdaptor");
 public:
 	ZstEvent() : func([](T adp) {}), completed_func([](ZstEventStatus) {}) {}
-	ZstEvent(std::function<void(T)> f, std::function<void(ZstEventStatus)> cf) : func(f), completed_func(cf) {};
+	ZstEvent(std::function<void(T)> f, ZstEventCallback cf) : func(f), completed_func(cf) {};
 	
 	std::function<void(T)> func;
-	std::function<void(ZstEventStatus)> completed_func;
+	ZstEventCallback completed_func;
 };
 
 
@@ -134,7 +137,7 @@ public:
 			shared->notify();
 	}
 
-	void defer(std::function<void(T)> event, std::function<void(ZstEventStatus)> on_complete) {
+	void defer(std::function<void(T)> event, ZstEventCallback on_complete) {
 		ZstEvent<T> e(event, on_complete);
 		this->m_events.enqueue(e);
 		m_has_event = true;
