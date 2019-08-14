@@ -19,8 +19,10 @@ public:
 	ZST_EXPORT ~ZstGraphTransport();
 	ZST_EXPORT virtual void init() override;
 	ZST_EXPORT virtual void destroy() override;
-	ZST_EXPORT virtual void connect_to_client(const char * endpoint) = 0;
-	ZST_EXPORT virtual void disconnect_from_client() = 0;
+
+	ZST_EXPORT virtual void connect(const std::string & address) = 0;
+	ZST_EXPORT virtual void bind(const std::string& address) = 0;
+	ZST_EXPORT virtual void disconnect() = 0;
 
 	ZST_EXPORT const std::string & get_graph_in_address() const;
 	ZST_EXPORT const std::string & get_graph_out_address() const;

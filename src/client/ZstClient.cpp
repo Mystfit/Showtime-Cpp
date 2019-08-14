@@ -228,7 +228,7 @@ void ZstClient::on_receive_msg(ZstMessage * msg)
 	case ZstMsgKind::START_CONNECTION_HANDSHAKE:
 	{
 #ifdef ZST_BUILD_DRAFT_API
-		m_udp_graph_transport->connect_to_client(stage_msg->get_arg<std::string>(ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS).c_str());
+		m_udp_graph_transport->connect(stage_msg->get_arg<std::string>(ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS));
 #endif
 		std::string input_path_str = stage_msg->get_arg<std::string>(ZstMsgArg::INPUT_PATH);
 		start_connection_broadcast(ZstURI(input_path_str.c_str(), input_path_str.size()));
@@ -244,7 +244,7 @@ void ZstClient::on_receive_msg(ZstMessage * msg)
 		listen_to_client(stage_msg);
 		break;
     case ZstMsgKind::SERVER_BEACON:
-            handle_server_discovery(stage_msg->get_arg<std::string>(ZstMsgArg::ADDRESS), stage_msg->get_arg<std::string>(ZstMsgArg::SENDER), stage_msg->get_arg<int>(ZstMsgArg::ADDRESS_PORT));
+        handle_server_discovery(stage_msg->get_arg<std::string>(ZstMsgArg::ADDRESS), stage_msg->get_arg<std::string>(ZstMsgArg::SENDER), stage_msg->get_arg<int>(ZstMsgArg::ADDRESS_PORT));
 	default:
 		break;
 	}
@@ -499,7 +499,7 @@ void ZstClient::leave_stage_complete()
 
 	//Disconnect rest of sockets and timers
 	m_heartbeat_timer.cancel();
-	m_client_transport->disconnect_from_server();
+	m_client_transport->disconnect();
 	
 	//Enqueue event for adaptors
 	m_session->dispatch_disconnected_from_stage();
@@ -600,7 +600,7 @@ void ZstClient::listen_to_client(ZstMessage * msg)
 	std::string graph_out_addr = stage_msg->get_arg<std::string>(ZstMsgArg::GRAPH_RELIABLE_OUTPUT_ADDRESS);
 
 	m_pending_peer_connections[ZstURI(output_path_str.c_str(), output_path_str.size())] = msg_id;
-	m_tcp_graph_transport->connect_to_client(graph_out_addr.c_str());
+	m_tcp_graph_transport->connect(graph_out_addr);
 }
 
 void ZstClient::transport_event_loop()

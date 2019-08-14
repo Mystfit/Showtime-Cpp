@@ -10,15 +10,20 @@ ZstUDPGraphTransport::~ZstUDPGraphTransport()
 {
 }
 
-void ZstUDPGraphTransport::connect_to_client(const char * endpoint)
+void ZstUDPGraphTransport::connect(const std::string & address)
 {
 	if (output_graph_socket()) {
-		ZstLog::net(LogLevel::notification, "Connecting to {}", endpoint);
-		zsock_connect(output_graph_socket(), "%s", endpoint);
+		ZstLog::net(LogLevel::notification, "Connecting to {}", address);
+		zsock_connect(output_graph_socket(), "%s", address);
 	}
 }
 
-void ZstUDPGraphTransport::disconnect_from_client()
+void ZstUDPGraphTransport::bind(const std::string & address)
+{
+	throw(std::runtime_error("bind(): Not implemented"));
+}
+
+void ZstUDPGraphTransport::disconnect()
 {
 	throw(std::runtime_error("disconnect_from_client(): Not implemented"));
 }

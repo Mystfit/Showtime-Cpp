@@ -1,6 +1,7 @@
 #include <czmq.h>
 #include <sstream>
 
+#include "../core/ZstEventDispatcher.hpp"
 #include "../core/ZstZMQRefCounter.h"
 #include "ZstZMQClientTransport.h"
 #include "nlohmann/json.hpp"
@@ -51,9 +52,9 @@ void ZstZMQClientTransport::destroy()
 	zst_zmq_dec_ref_count();
 }
 
-void ZstZMQClientTransport::connect(const std::string & stage_address)
+void ZstZMQClientTransport::connect(const std::string & address)
 {
-	m_stage_addr = std::string(stage_address);
+	m_stage_addr = std::string(address);
 
 	std::stringstream addr;
     addr << "tcp://" << m_stage_addr; // << ":" << STAGE_ROUTER_PORT;
@@ -62,7 +63,7 @@ void ZstZMQClientTransport::connect(const std::string & stage_address)
 	zsock_connect(m_server_sock, "%s", m_server_addr.c_str());
 }
 
-void ZstZMQClientTransport::disconnect_from_server()
+void ZstZMQClientTransport::disconnect()
 {
 	zsock_disconnect(m_server_sock, "%s", m_server_addr.c_str());
 }

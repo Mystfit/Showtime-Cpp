@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../core/ZstEventDispatcher.hpp"
 #include "../core/adaptors/ZstTransportAdaptor.hpp"
 #include "../core/ZstStageMessage.h"
 #include "../core/transports/ZstTransportLayer.h"
@@ -14,7 +13,7 @@ public:
 	virtual void init() override;
 	virtual void destroy() override;
 	virtual void connect(const std::string & stage_address) override;
-	void disconnect_from_server();
+	virtual void disconnect() override;
 	void process_events() override;
 
 private:
