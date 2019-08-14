@@ -29,14 +29,13 @@ ZstClient::ZstClient() :
 {
 	//Message and transport modules
 	//These are specified by the client based on what transport type we want to use
-	m_client_transport = new ZstZMQClientTransport();
-	m_tcp_graph_transport = new ZstTCPGraphTransport();
+	m_client_transport = std::make_unique<ZstZMQClientTransport>();
+
+	m_tcp_graph_transport = std::make_unique < ZstTCPGraphTransport>();
     m_service_broadcast_transport = std::make_unique<ZstServiceDiscoveryTransport>();
 
 #ifdef ZST_BUILD_DRAFT_API
-	m_udp_graph_transport = new ZstUDPGraphTransport();
-#else
-	m_udp_graph_transport = NULL;
+	m_udp_graph_transport = std::make_unique<ZstUDPGraphTransport>();
 #endif
 	m_session = new ZstClientSession();
 
@@ -55,12 +54,6 @@ ZstClient::ZstClient() :
 
 ZstClient::~ZstClient() {
 	delete m_session;
-	delete m_client_transport;
-	delete m_tcp_graph_transport;
-
-#ifdef ZST_BUILD_DRAFT_API
-	delete m_udp_graph_transport;
-#endif
 }
 
 ZstClient & ZstClient::instance()
@@ -108,7 +101,7 @@ void ZstClient::destroy() {
 	m_session->destroy();
 
 	//Remove adaptors
-	this->remove_adaptor(m_client_transport);
+	this->remove_adaptor(m_client_transport.get());
 
 	//Set last status flags
 	set_is_ending(false);
@@ -154,12 +147,12 @@ void ZstClient::init_client(const char *client_name, bool debug)
     m_client_event_thread = boost::thread(boost::bind(&ZstClient::transport_event_loop, this));
 	
 	//Register message dispatch as a client adaptor
-	this->add_adaptor(m_client_transport);
+	this->add_adaptor(m_client_transport.get());
     
 	//Register adaptors to handle outgoing events
 	m_session->init(client_name);
-	m_session->stage_events().add_adaptor(m_client_transport);
-	m_session->hierarchy()->stage_events().add_adaptor(m_client_transport);
+	m_session->stage_events().add_adaptor(m_client_transport.get());
+	m_session->hierarchy()->stage_events().add_adaptor(m_client_transport.get());
 
 	//Setup adaptors to let transports communicate with client modules
 	m_client_transport->init();
@@ -687,7 +680,7 @@ void ZstClient::init_arriving_plug(ZstPlug* plug)
 	if (output_plug) {
 		ZstGraphTransport* transport = NULL;
 		if (output_plug->is_reliable()) {
-			transport = m_tcp_graph_transport;
+			transport = m_tcp_graph_transport.get();
 		}
 #ifdef ZST_BUILD_DRAFT_API
 		else {
@@ -707,18 +700,3 @@ void ZstClient::init_arriving_plug(ZstPlug* plug)
 // -------------------
 
 
-void ZstClientIOLoop::operator()()
-{
-	boost::this_thread::interruption_point(); 
-
-	//Give the event loop some work to do so it doesn't insta-quit
-	boost::asio::io_service::work work(m_io);
-
-	//Run the event loop (blocks this thread)
-	m_io.run();
-}
-
-boost::asio::io_service & ZstClientIOLoop::IO_context()
-{
-	return m_io;
-}

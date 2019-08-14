@@ -12,24 +12,23 @@
 
 ZstStage::ZstStage() : 
 	m_is_destroyed(false),
-	m_heartbeat_timer(m_io),
-    m_session(NULL)
-{
-	m_session = new ZstStageSession();
-	m_router_transport = std::make_unique<ZstZMQServerTransport>();
-    m_service_broadcast_transport = std::make_unique<ZstServiceDiscoveryTransport>();
-
+	m_heartbeat_timer(m_io.IO_context()),
+	m_event_condition(std::make_shared<ZstSemaphore>()),
+    m_session(std::make_unique<ZstStageSession>()),
+    m_router_transport(std::make_unique<ZstZMQServerTransport>()),
+    m_websocket_transport(std::make_shared<ZstWebsocketServerTransport>(m_io)),
+    m_service_broadcast_transport(std::make_unique<ZstServiceDiscoveryTransport>())
+{	
 	//Register event conditions
-	m_event_condition = std::make_shared<ZstSemaphore>();
 	m_session->set_wake_condition(m_event_condition);
 	m_router_transport->msg_events()->set_wake_condition(m_event_condition);
+	m_websocket_transport->msg_events()->set_wake_condition(m_event_condition);
 	this->set_wake_condition(m_event_condition);
 }
 
 ZstStage::~ZstStage()
 {
 	destroy();
-	delete m_session;
 }
 
 void ZstStage::init_stage(const char * stage_name, int port)
@@ -37,6 +36,8 @@ void ZstStage::init_stage(const char * stage_name, int port)
 	m_session->init();
 	m_router_transport->init();
 	m_router_transport->bind(fmt::format("*:{}", port));
+	m_websocket_transport->init();
+	m_websocket_transport->bind("127.0.0.1");
     
     //Stage discovery beacon
     m_service_broadcast_transport->init(STAGE_DISCOVERY_PORT);
@@ -53,10 +54,14 @@ void ZstStage::init_stage(const char * stage_name, int port)
 	m_heartbeat_timer.async_wait(boost::bind(&ZstStage::stage_heartbeat_timer, &m_heartbeat_timer, this, boost::posix_time::milliseconds(STAGE_HEARTBEAT_CHECK)));
 
 	//Attach adaptors
-	m_router_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(m_session));
+	m_router_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(m_session.get()));
 	m_router_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(m_session->hierarchy()));
 	m_session->router_events().add_adaptor(m_router_transport.get());
 	m_session->hierarchy()->router_events().add_adaptor(m_router_transport.get());
+	m_websocket_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(m_session.get()));
+	m_websocket_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(m_session->hierarchy()));
+	m_session->router_events().add_adaptor(m_websocket_transport.get());
+	m_session->hierarchy()->router_events().add_adaptor(m_websocket_transport.get());
 
 	//Start event loop
 	m_stage_timer_thread = boost::thread(boost::bind(&ZstStage::timer_loop, this));
@@ -87,12 +92,12 @@ void ZstStage::destroy()
 	m_event_condition->notify();
     m_stage_eventloop_thread.try_join_for(boost::chrono::milliseconds(250));
 	m_stage_timer_thread.interrupt();
-	m_io.stop();
+	m_io.IO_context().stop();
 	m_stage_timer_thread.join();
 
 	//Destroy transports
 	m_router_transport->destroy();
-    
+    m_websocket_transport->destroy();
     m_service_broadcast_transport->stop_broadcast();
     m_service_broadcast_transport->destroy();
 
@@ -109,10 +114,7 @@ void ZstStage::process_events()
 {
 	m_session->process_events();
 	m_router_transport->process_events();
-
-	//Reapers are updated last in case entities still need to be queried beforehand
-//    m_session->reaper().reap_all();
-//    m_session->hierarchy()->reaper().reap_all();
+	m_websocket_transport->process_events();
 }
 
 
@@ -173,10 +175,10 @@ void ZstStage::timer_loop()
 		boost::this_thread::interruption_point();
 
 		//Give the event loop some work to do so it doesn't insta-quit
-		boost::asio::io_context::work work(m_io);
+		boost::asio::io_context::work work(m_io.IO_context());
 
 		//Run the event loop (blocks this thread)
-		this->m_io.run();
+		this->m_io.IO_context().run();
 	}
 	catch (boost::thread_interrupted) {
 		ZstLog::server(LogLevel::debug, "Stage timer event loop exiting.");

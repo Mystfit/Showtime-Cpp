@@ -78,6 +78,7 @@ set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstSemaphore.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessageSupervisor.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstIOLoop.h"
 )
 set(ZST_CORE_MODULE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstSession.h"
@@ -123,6 +124,7 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstPerformanceMessage.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessageSupervisor.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstIOLoop.cpp"
 )
 set(ZST_CORE_TRANSPORT_SRC
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayerBase.cpp"

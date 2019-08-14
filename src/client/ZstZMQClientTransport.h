@@ -26,8 +26,8 @@ private:
 	zsock_t * m_server_sock;
 
 	//Addresses
-	std::string m_stage_addr;
 	std::string m_server_addr;
 
+	//Actor
 	ZstActor m_client_actor;
 };

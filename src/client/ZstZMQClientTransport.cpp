@@ -54,10 +54,8 @@ void ZstZMQClientTransport::destroy()
 
 void ZstZMQClientTransport::connect(const std::string & address)
 {
-	m_stage_addr = std::string(address);
-
 	std::stringstream addr;
-    addr << "tcp://" << m_stage_addr; // << ":" << STAGE_ROUTER_PORT;
+    addr << "tcp://" << address; // << ":" << STAGE_ROUTER_PORT;
 	m_server_addr = addr.str();
 
 	zsock_connect(m_server_sock, "%s", m_server_addr.c_str());

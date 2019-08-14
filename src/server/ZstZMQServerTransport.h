@@ -1,5 +1,6 @@
 #pragma once
 
+#include <mutex>
 #include "../core/ZstActor.h"
 #include "../core/ZstStageMessage.h"
 #include "../core/transports/ZstTransportLayer.h"
@@ -21,6 +22,7 @@ public:
 	void receive_msg(ZstMessage * msg) override;
 
 private:
+	mutable std::mutex m_transport_mtx;
 	ZstActor m_server_actor;
 	zsock_t * m_clients_sock;
 };

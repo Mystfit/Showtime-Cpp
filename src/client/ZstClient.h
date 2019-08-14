@@ -15,6 +15,7 @@
 #include <ZstCore.h>
 
 //Showtime Core includes
+#include "../core/ZstIOLoop.h"
 #include "../core/ZstSemaphore.h"
 #include "../core/ZstMessageSupervisor.hpp"
 #include "../core/liasons/ZstPlugLiason.hpp"
@@ -31,18 +32,7 @@ class ZstMessage;
 class ZstPerformanceMessage;
 class ZstClientSession;
 class ZstZMQClientTransport;
-
-//Event loop
-struct ZstClientIOLoop {
-public:
-	ZstClientIOLoop() {};
-	void operator()();
-	boost::asio::io_service & IO_context();
-
-private:
-	boost::asio::io_service m_io;
-};
-
+class ZstWebsocketClientTransport;
 
 //Typedefs
 typedef std::unordered_map<ZstURI, boost::asio::deadline_timer, ZstURIHash> ZstConnectionTimerMap;
@@ -146,13 +136,15 @@ private:
 	
 	//Client modules
 	ZstClientSession * m_session;
-	ZstTCPGraphTransport * m_tcp_graph_transport;
-	ZstUDPGraphTransport * m_udp_graph_transport;
-	ZstZMQClientTransport * m_client_transport;
+	std::unique_ptr<ZstTCPGraphTransport> m_tcp_graph_transport;
+#ifdef ZST_BUILD_DRAFT_API
+	std::unique_ptr<ZstUDPGraphTransport> m_udp_graph_transport;
+#endif
+	std::unique_ptr<ZstZMQClientTransport> m_client_transport;
 
 	//Timers
 	boost::thread m_client_timer_thread;
-	ZstClientIOLoop m_client_timerloop;
+	ZstIOLoop m_client_timerloop;
 	boost::asio::deadline_timer m_heartbeat_timer;
 	ZstConnectionTimerMapUnique m_connection_timers;
 

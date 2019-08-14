@@ -108,6 +108,8 @@ void ZstZMQServerTransport::send_message_impl(ZstMessage * msg)
 
 	//Encode message as json
 	zmsg_addstr(m, stage_msg->as_json_str().c_str());
+
+	std::lock_guard<std::mutex> lock(m_transport_mtx);
 	zmsg_send(&m, m_clients_sock);
 
 	//Errors

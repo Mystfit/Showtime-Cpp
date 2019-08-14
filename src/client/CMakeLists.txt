@@ -11,9 +11,6 @@ set(ZST_CLIENT_PRIVATE_HEADERS
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientHierarchy.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientSession.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstZMQClientTransport.h"
-  "${CMAKE_CURRENT_LIST_DIR}/ZstWebsocketClientTransport.h"
-
-  #"${CMAKE_CURRENT_LIST_DIR}/ZstHTTPTransport.h"
 )
 
 set(ZST_CLIENT_SRC
@@ -23,8 +20,6 @@ set(ZST_CLIENT_SRC
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientHierarchy.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientSession.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstZMQClientTransport.cpp"
-  "${CMAKE_CURRENT_LIST_DIR}/ZstWebsocketClientTransport.cpp"
-  #"${CMAKE_CURRENT_LIST_DIR}/ZstHTTPTransport.cpp"
 )
 
 

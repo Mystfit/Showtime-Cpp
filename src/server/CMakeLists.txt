@@ -11,6 +11,7 @@ set(ZST_SERVER_PRIVATE_HEADERS
   "${CMAKE_CURRENT_LIST_DIR}/ZstStageHierarchy.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstPerformerStageProxy.h"
   "${CMAKE_CURRENT_LIST_DIR}/ZstZMQServerTransport.h"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstWebsocketServerTransport.h"
 )
 
 set(ZST_SERVER_SRC
@@ -21,6 +22,7 @@ set(ZST_SERVER_SRC
   "${CMAKE_CURRENT_LIST_DIR}/ZstStageHierarchy.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstStageSession.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstZMQServerTransport.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstWebsocketServerTransport.cpp"
 )
 
 set(ZST_SERVER_LAUNCHER_SRC

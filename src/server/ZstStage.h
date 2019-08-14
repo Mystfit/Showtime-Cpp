@@ -22,6 +22,7 @@
 //Stage headers
 #include "ZstStageSession.h"
 #include "ZstZMQServerTransport.h"
+#include "ZstWebsocketServerTransport.h"
 
 
 //Forwards
@@ -44,7 +45,9 @@ private:
 	bool m_is_destroyed;
 	boost::thread m_stage_eventloop_thread;
 	boost::thread m_stage_timer_thread;
-	boost::asio::io_context m_io;
+
+	ZstIOLoop m_io;
+	//boost::asio::io_context m_io;
 	void process_events();
 	void timer_loop();
 	void event_loop();
@@ -55,9 +58,10 @@ private:
 	boost::asio::deadline_timer m_heartbeat_timer;
 
 	//Modules
-	ZstStageSession * m_session;
+	std::unique_ptr<ZstStageSession> m_session;
 	
 	//Transports
     std::unique_ptr<ZstZMQServerTransport> m_router_transport;
+    std::shared_ptr<ZstWebsocketServerTransport> m_websocket_transport;
     std::unique_ptr<ZstServiceDiscoveryTransport> m_service_broadcast_transport;
 };
