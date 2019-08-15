@@ -3,8 +3,10 @@
 <title>WebSocket Test</title>
 <script language="javascript" type="text/javascript">
 
-var wsUri = "ws:/127.0.0.1/";
+var wsUri = "ws://127.0.0.1:40005";
 var output;
+
+var join_msg = JSON.stringify({"kind":"CLIENT_JOIN", "msg_id":42, "payload":{"URI":"websocket_test","entity_type":"prf"}});
 
 function init()
 {
@@ -24,7 +26,7 @@ function testWebSocket()
 function onOpen(evt)
 {
   writeToScreen("CONNECTED");
-  doSend("WebSocket rocks");
+  doSend(join_msg);
 }
 
 function onClose(evt)
@@ -35,7 +37,7 @@ function onClose(evt)
 function onMessage(evt)
 {
   writeToScreen('<span style="color: blue;">RESPONSE: ' + evt.data+'</span>');
-  websocket.close();
+  // websocket.close();
 }
 
 function onError(evt)

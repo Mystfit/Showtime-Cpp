@@ -365,15 +365,12 @@ namespace ZstTest
 			program_path.replace_extension("exe");
 #endif
 
-#ifdef PAUSE_SINK
-			char pause_flag = 'd';
-#else
-			char pause_flag = 'a';
-#endif
+			std::string test_flag = "test";
+
 			//Run client as an external process so we don't share the same Showtime singleton
 			ZstLog::app(LogLevel::notification, "Starting {} process", program_path.generic_string());
 			try {
-				external_process = boost::process::child(program_path.generic_string(), &pause_flag, boost::process::std_in < external_process_stdin, boost::process::std_out > external_process_stdout); //d flag pauses the sink process to give us time to attach a debugger
+				external_process = boost::process::child(program_path.generic_string(), test_flag.c_str(), boost::process::std_in < external_process_stdin, boost::process::std_out > external_process_stdout); //d flag pauses the sink process to give us time to attach a debugger
 #ifdef PAUSE_SINK
 #ifdef WIN32
 				system("pause");

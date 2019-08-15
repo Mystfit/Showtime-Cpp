@@ -26,7 +26,7 @@ void ZstServiceDiscoveryTransport::init(int port)
         zst_zmq_inc_ref_count();
         zsock_send(m_beacon, "si", "CONFIGURE", port);
         char * hostname = zstr_recv(m_beacon);
-        ZstLog::net(LogLevel::debug, "Beacon running at {}:{}", hostname, port);
+        ZstLog::net(LogLevel::notification, "Beacon transport broadcasting on port {}", port);
         
         m_beacon_actor.attach_pipe_listener(zactor_sock(m_beacon), s_handle_beacon, this);
     }

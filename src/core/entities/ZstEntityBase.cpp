@@ -113,7 +113,9 @@ void ZstEntityBase::read_json(const json & buffer)
 {
 	m_uri = ZstURI(buffer["URI"].get<std::string>().c_str(), buffer["URI"].get<std::string>().size());
 	m_entity_type = buffer["entity_type"].get<std::string>();
-	m_current_owner = ZstURI(buffer["owner"].get<std::string>().c_str(), buffer["owner"].get<std::string>().size());
+
+	if(buffer.find("owner") != buffer.end())
+		m_current_owner = ZstURI(buffer["owner"].get<std::string>().c_str(), buffer["owner"].get<std::string>().size());
 }
 
 void ZstEntityBase::add_adaptor(ZstEntityAdaptor * adaptor)
@@ -143,7 +145,6 @@ const ZstURI& ZstEntityBase::get_owner() const
 
 void ZstEntityBase::set_owner(const ZstURI& owner)
 {
-	ZstLog::net(LogLevel::debug, "Setting entity {} owner to {}", URI().path(), owner.path());
     std::lock_guard<std::mutex> lock(m_entity_lock);
     m_current_owner = owner;
 }

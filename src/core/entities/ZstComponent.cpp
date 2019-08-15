@@ -163,9 +163,13 @@ void ZstComponent::read_json(const json & buffer)
 	ZstEntityBase::read_json(buffer);
 
 	//Unpack component type
-    set_component_type(buffer["component_type"].get<std::string>().c_str(),  buffer["component_type"].get<std::string>().size());
+	if(buffer.find("component_type") != buffer.end())
+		set_component_type(buffer["component_type"].get<std::string>().c_str(),  buffer["component_type"].get<std::string>().size());
 
     //Unpack children
+	if (buffer.find("children") == buffer.end())
+		return;
+
     for (auto c : buffer["children"]) {
         ZstEntityBase * child = NULL;
         

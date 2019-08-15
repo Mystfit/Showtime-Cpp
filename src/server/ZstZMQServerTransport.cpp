@@ -53,7 +53,7 @@ void ZstZMQServerTransport::bind(const std::string& address)
 		ZstLog::net(LogLevel::notification, "Could not bind stage router socket to {}", addr);
 		return;
 	}
-	ZstLog::net(LogLevel::notification, "Stage router listening on address {}", addr);
+	ZstLog::net(LogLevel::notification, "Stage router listening at address {}", addr);
 }
 
 //------------------------
@@ -70,7 +70,6 @@ int ZstZMQServerTransport::s_handle_router(zloop_t * loop, zsock_t * socket, voi
 		zframe_t * empty = zmsg_pop(recv_msg);
 
 		//Unpack message
-		
 		char * payload_data = zmsg_popstr(recv_msg);
 		if (payload_data) {
 			ZstStageMessage * msg = transport->get_msg();

@@ -138,6 +138,9 @@ void ZstPerformer::read_json(const json & buffer)
 {
 	ZstComponent::read_json(buffer);
 
+	if (buffer.find("factories") == buffer.end())
+		return;
+
 	//Unpack factories
 	for (auto f : buffer["factories"]) {
 		ZstEntityFactory * factory = new ZstEntityFactory();

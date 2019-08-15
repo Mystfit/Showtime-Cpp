@@ -110,15 +110,15 @@ int main(int argc, char **argv) {
 	ZstLog::app(LogLevel::notification, "In external factory process");
 
 	bool force_launch = false;
-	if (argc < 2 && !force_launch) {
+	if (!force_launch) {
 		bool skip = true;
 		for (int i = 0; i < argc; ++i) {
-			if (strcmp(argv[i], "t") == 0) {
+			if (strcmp(argv[i], "test") == 0) {
 				skip = false;
 			}
 		}
 		if (skip) {
-			ZstLog::app(LogLevel::warn, "Skipping, 't' command line flag not set");
+			ZstLog::app(LogLevel::warn, "Skipping, 'test' command line flag not set");
 			return 0;
 		}
 	}

@@ -91,10 +91,17 @@ ZstMsgKind ZstStageHierarchy::create_client_handler(std::string sender_identity,
 	std::string unreliable_address = "";
 	try {
 		reliable_address = msg->get_arg<std::string>(ZstMsgArg::GRAPH_RELIABLE_OUTPUT_ADDRESS);
+	}
+	catch (nlohmann::detail::out_of_range) {
+		ZstLog::server(LogLevel::warn, "No reliable graph address found in performer");
+		//return ZstMsgKind::ERR_STAGE_REQUEST_MISSING_ARG;
+	}
+
+	try {
 		unreliable_address = msg->get_arg<std::string>(ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS);
 	}
-	catch (std::out_of_range) {
-		ZstLog::server(LogLevel::warn, "Client sent message with unexpected argument");
+	catch (nlohmann::detail::out_of_range) {
+		ZstLog::server(LogLevel::debug, "No unreliable graph address found in performer");
 	}
 
 	//Copy streamable so we have a local ptr for the client

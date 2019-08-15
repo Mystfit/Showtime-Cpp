@@ -36,7 +36,7 @@ public:
 
 	template<typename T>
 	T get_arg(ZstMsgArg key) const {
-		return m_msg_args[get_msg_arg_name(key)].get<T>();
+		return m_msg_args.at(get_msg_arg_name(key)).get<T>();
 	}
 
 	template<typename K, typename T>
