@@ -101,7 +101,7 @@ void ZstClientSession::on_receive_msg(ZstMessage * msg)
 		auto cable_address = stage_msg->unpack_payload_serialisable<ZstCableAddress>();
 		ZstCable * cable_ptr = find_cable(cable_address);
 		if (cable_ptr) {
-			destroy_cable_complete(ZstMessageReceipt{ ZstMsgKind::OK, ZstTransportSendType::SYNC_REPLY }, cable_ptr);
+			destroy_cable_complete(ZstMessageReceipt{ ZstMsgKind::OK, ZstTransportRequestBehaviour::SYNC_REPLY }, cable_ptr);
 		}
 		break;
 	}
@@ -116,20 +116,26 @@ void ZstClientSession::on_receive_msg(ZstMessage * msg)
 void ZstClientSession::aquire_entity_ownership(ZstEntityBase* entity)
 {
 	stage_events().invoke([entity](ZstTransportAdaptor* adaptor) {
-		ZstMsgArgs args;
-		adaptor->send_msg(ZstMsgKind::AQUIRE_ENTITY_OWNERSHIP, ZstTransportSendType::ASYNC_REPLY, { { get_msg_arg_name(ZstMsgArg::PATH), entity->URI().path() } }, [](ZstMessageReceipt response) {
+		ZstTransportArgs args;
+		args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
+		args.msg_args = { { get_msg_arg_name(ZstMsgArg::PATH), entity->URI().path() } };
+		args.msg_receive_action = [](ZstMessageReceipt) {
 			ZstLog::net(LogLevel::debug, "Ack from server");
-		});
+		};
+		adaptor->send_msg(ZstMsgKind::AQUIRE_ENTITY_OWNERSHIP, args);
 	});	
 }
 
 void ZstClientSession::release_entity_ownership(ZstEntityBase* entity)
 {
     stage_events().invoke([entity](ZstTransportAdaptor* adaptor) {
-        ZstMsgArgs args;
-        adaptor->send_msg(ZstMsgKind::RELEASE_ENTITY_OWNERSHIP, ZstTransportSendType::ASYNC_REPLY, { { get_msg_arg_name(ZstMsgArg::PATH), entity->URI().path() } }, [](ZstMessageReceipt response) {
-            ZstLog::net(LogLevel::debug, "Ack from server");
-        });
+        ZstTransportArgs args;
+		args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
+		args.msg_args = { { get_msg_arg_name(ZstMsgArg::PATH), entity->URI().path() } };
+		args.msg_receive_action = [](ZstMessageReceipt){
+			ZstLog::net(LogLevel::debug, "Ack from server");
+		};
+        adaptor->send_msg(ZstMsgKind::RELEASE_ENTITY_OWNERSHIP, args);
     });
 }
 
@@ -214,7 +220,7 @@ void ZstClientSession::plug_received_value(ZstInputPlug * plug)
 // Cable creation API
 // ------------------
 
-ZstCable * ZstClientSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * output, const ZstTransportSendType & sendtype)
+ZstCable * ZstClientSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * output, const ZstTransportRequestBehaviour & sendtype)
 {
 	ZstCable * cable = NULL;
 	cable = ZstSession::connect_cable(input, output, sendtype);
@@ -227,7 +233,7 @@ ZstCable * ZstClientSession::connect_cable(ZstInputPlug * input, ZstOutputPlug *
 		});
 	}
 
-	if (sendtype == ZstTransportSendType::SYNC_REPLY) process_events();
+	if (sendtype == ZstTransportRequestBehaviour::SYNC_REPLY) process_events();
 
 	return cable;
 }
@@ -241,7 +247,7 @@ void ZstClientSession::connect_cable_complete(ZstMessageReceipt response, ZstCab
 	}
 }
 
-void ZstClientSession::destroy_cable(ZstCable * cable, const ZstTransportSendType & sendtype)
+void ZstClientSession::destroy_cable(ZstCable * cable, const ZstTransportRequestBehaviour & sendtype)
 {
 	if (!cable)
 		return;
@@ -254,10 +260,10 @@ void ZstClientSession::destroy_cable(ZstCable * cable, const ZstTransportSendTyp
 		});
 	});
 
-	if (sendtype == ZstTransportSendType::SYNC_REPLY) process_events();
+	if (sendtype == ZstTransportRequestBehaviour::SYNC_REPLY) process_events();
 }
 
-bool ZstClientSession::observe_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
+bool ZstClientSession::observe_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype)
 {
 	if (!ZstSession::observe_entity(entity, sendtype)) {
 		return false;

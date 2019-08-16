@@ -35,9 +35,9 @@ public:
 	// Activations
 	// ------------------------------
 
-	ZST_EXPORT virtual void activate_entity(ZstEntityBase* entity, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
-	ZST_EXPORT virtual void destroy_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
-	ZST_EXPORT virtual ZstEntityBase * create_entity(const ZstURI & creatable_path, const char * name, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
+	ZST_EXPORT virtual void activate_entity(ZstEntityBase* entity, const ZstTransportRequestBehaviour & sendtype = ZstTransportRequestBehaviour::SYNC_REPLY);
+	ZST_EXPORT virtual void destroy_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype = ZstTransportRequestBehaviour::SYNC_REPLY);
+	ZST_EXPORT virtual ZstEntityBase * create_entity(const ZstURI & creatable_path, const char * name, const ZstTransportRequestBehaviour & sendtype = ZstTransportRequestBehaviour::SYNC_REPLY);
 
 	// ------------------------------
 	// Performers

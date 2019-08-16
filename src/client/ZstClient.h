@@ -68,10 +68,10 @@ public:
     const ZstServerList & get_discovered_servers();
     
     //Register this endpoint to the stage
-    void auto_join_stage(const std::string & name, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
-	void join_stage(const std::string & stage_address, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
+    void auto_join_stage(const std::string & name, const ZstTransportRequestBehaviour & sendtype = ZstTransportRequestBehaviour::SYNC_REPLY);
+	void join_stage(const std::string & stage_address, const ZstTransportRequestBehaviour & sendtype = ZstTransportRequestBehaviour::SYNC_REPLY);
 	void join_stage_complete(ZstMessageReceipt response);
-	void synchronise_graph(const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
+	void synchronise_graph(const ZstTransportRequestBehaviour & sendtype = ZstTransportRequestBehaviour::SYNC_REPLY);
 	void synchronise_graph_complete(ZstMessageReceipt response);
 
 	//Leave the stage

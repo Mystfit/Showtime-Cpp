@@ -1,8 +1,12 @@
 #include "ZstStageHierarchy.h"
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/nil_generator.hpp>
+
+using namespace boost::uuids;
 
 ZstStageHierarchy::~ZstStageHierarchy()
 {
-	m_client_socket_index.clear();
+	m_client_endpoint_UUIDS.clear();
 }
 
 void ZstStageHierarchy::destroy() {
@@ -28,15 +32,16 @@ void ZstStageHierarchy::on_receive_msg(ZstMessage * msg)
 {
 	ZstStageMessage * stage_msg = static_cast<ZstStageMessage*>(msg);
 	ZstMsgKind response(ZstMsgKind::EMPTY);
-	std::string sender_identity = stage_msg->get_arg<std::string>(ZstMsgArg::SENDER);
-	ZstPerformerStageProxy * sender = get_client_from_socket_id(sender_identity);
+
+	uuid sender_identity = stage_msg->endpoint_UUID();
+	ZstPerformerStageProxy * sender = get_client_from_endpoint_UUID(sender_identity);
 
 	switch (stage_msg->kind()) {
 	case ZstMsgKind::CLIENT_LEAVING:
-		response = destroy_client_handler(get_client_from_socket_id(sender_identity));
+		response = destroy_client_handler(get_client_from_endpoint_UUID(sender_identity));
 		break;
 	case ZstMsgKind::CLIENT_JOIN:
-		response = create_client_handler(sender_identity, stage_msg);
+		response = create_client_handler(stage_msg);
 		break;
 	case ZstMsgKind::CREATE_COMPONENT:
 		response = add_proxy_entity(stage_msg->unpack_payload_serialisable<ZstComponent>(), stage_msg->id(), sender);
@@ -74,7 +79,7 @@ void ZstStageHierarchy::on_receive_msg(ZstMessage * msg)
 	}
 }
 
-ZstMsgKind ZstStageHierarchy::create_client_handler(std::string sender_identity, ZstStageMessage * msg)
+ZstMsgKind ZstStageHierarchy::create_client_handler(ZstStageMessage * msg)
 {
 	//Copy the id of the message so the sender will eventually match the response to a message promise
 	ZstPerformer client = msg->unpack_payload_serialisable<ZstPerformer>();
@@ -113,7 +118,7 @@ ZstMsgKind ZstStageHierarchy::create_client_handler(std::string sender_identity,
 
 	//Save our new client
 	m_clients[client_proxy->URI()] = client_proxy;
-	m_client_socket_index[std::string(sender_identity)] = client_proxy;
+	m_client_endpoint_UUIDS[msg->endpoint_UUID()] = client_proxy;
 	
 	//Cache new client and its contents
 	ZstEntityBundle bundle;
@@ -181,7 +186,7 @@ void ZstStageHierarchy::broadcast_message(const ZstMsgKind & msg_kind, const Zst
 
 		//Copy args
 		ZstMsgArgs dest_args = args;
-		dest_args[get_msg_arg_name(ZstMsgArg::DESTINATION)] = get_socket_ID(performer);
+		dest_args[get_msg_arg_name(ZstMsgArg::DESTINATION)] = get_endpoint_UUID_from_client(performer);
 		
 		//Send message to client
 		router_events().invoke([&msg_kind, &dest_args, &payload](ZstTransportAdaptor * adp) {
@@ -279,12 +284,12 @@ ZstMsgKind ZstStageHierarchy::create_entity_from_factory_handler(ZstStageMessage
 	ZstMsgArgs args{ 
 		{ get_msg_arg_name(ZstMsgArg::NAME) , msg->get_arg<std::string>(ZstMsgArg::NAME) },
 		{ get_msg_arg_name(ZstMsgArg::PATH) , msg->get_arg<std::string>(ZstMsgArg::PATH) },
-		{ get_msg_arg_name(ZstMsgArg::DESTINATION), get_socket_ID(factory_performer) },
+		{ get_msg_arg_name(ZstMsgArg::DESTINATION), get_endpoint_UUID_from_client(factory_performer) },
 		{ get_msg_arg_name(ZstMsgArg::MSG_ID), request_id }
 	};
 	router_events().invoke([msg, &args, factory_path](ZstTransportAdaptor * adp)
 	{
-		adp->send_msg(msg->kind(), ZstTransportSendType::ASYNC_REPLY, args, [factory_path](ZstMessageReceipt receipt)
+		adp->send_msg(msg->kind(), ZstTransportRequestBehaviour::ASYNC_REPLY, args, [factory_path](ZstMessageReceipt receipt)
 		{
 			if (receipt.status == ZstMsgKind::ERR_ENTITY_NOT_FOUND) {
 				ZstLog::server(LogLevel::error, "Creatable request failed at origin with status {}", get_msg_name(receipt.status));
@@ -297,21 +302,20 @@ ZstMsgKind ZstStageHierarchy::create_entity_from_factory_handler(ZstStageMessage
 	return ZstMsgKind::EMPTY;
 }
 
-ZstPerformerStageProxy * ZstStageHierarchy::get_client_from_socket_id(const std::string & socket_id)
+ZstPerformerStageProxy * ZstStageHierarchy::get_client_from_endpoint_UUID(const uuid & endpoint_UUID)
 {
-	ZstPerformerStageProxy * performer = NULL;
-	if (m_client_socket_index.find(socket_id) != m_client_socket_index.end()) {
-		performer = m_client_socket_index[socket_id];
-	}
-	return performer;
+	try { 
+		return  m_client_endpoint_UUIDS.at(endpoint_UUID);
+	} catch (std::out_of_range) {}
+	return NULL;
 }
 
-std::string ZstStageHierarchy::get_socket_ID(const ZstPerformer * performer)
+uuid ZstStageHierarchy::get_endpoint_UUID_from_client(const ZstPerformer * performer)
 {
-	for (auto client : m_client_socket_index) {
+	for (auto client : m_client_endpoint_UUIDS) {
 		if (client.second == performer) {
 			return client.first;
 		}
 	}
-	return "";
+	return nil_generator()();
 }

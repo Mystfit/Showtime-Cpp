@@ -86,22 +86,25 @@ void ZstClientHierarchy::on_publish_entity_update(ZstEntityBase * entity)
 		//Factory wants to update creatables
 		ZstEntityFactory * factory = static_cast<ZstEntityFactory*>(entity);
 		stage_events().invoke([factory](ZstTransportAdaptor * adp) {
-			adp->send_msg(ZstMsgKind::UPDATE_ENTITY, ZstTransportSendType::PUBLISH, factory->as_json(), json(), [](ZstMessageReceipt s) {});
+			ZstTransportArgs args;
+			args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
+			factory->write_json(args.msg_payload);
+			adp->send_msg(ZstMsgKind::UPDATE_ENTITY, args);
 		});
 	}
 }
 
 void ZstClientHierarchy::on_request_entity_activation(ZstEntityBase * entity)
 {
-	activate_entity(entity, ZstTransportSendType::SYNC_REPLY, 0);
+	activate_entity(entity, ZstTransportRequestBehaviour::SYNC_REPLY, 0);
 }
 
-void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
+void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype)
 {
 	activate_entity(entity, sendtype, 0);
 }
 
-void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype, ZstMsgID request_ID)
+void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype, ZstMsgID request_ID)
 {
 	if(!entity){
 		ZstLog::net(LogLevel::error, "Can't activate a null entity");
@@ -142,12 +145,12 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 		});
 	});
 
-	if (sendtype == ZstTransportSendType::SYNC_REPLY)
+	if (sendtype == ZstTransportRequestBehaviour::SYNC_REPLY)
 		process_events();
 }
 
 
-void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
+void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype)
 {
 	if (!entity) return;
 
@@ -164,7 +167,7 @@ void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTranspo
 				this->destroy_entity_complete(entity);
 			});
 			
-			if (sendtype == ZstTransportSendType::PUBLISH) {
+			if (sendtype == ZstTransportRequestBehaviour::PUBLISH) {
 				this->destroy_entity_complete(entity);
 			}
 		});
@@ -173,17 +176,17 @@ void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTranspo
 		destroy_entity_complete(entity);
 	}
 
-	if (sendtype == ZstTransportSendType::SYNC_REPLY) {
+	if (sendtype == ZstTransportRequestBehaviour::SYNC_REPLY) {
 		process_events();
 	}
 }
 
 ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path, const char * name)
 {
-	return create_entity(creatable_path, name, ZstTransportSendType::ASYNC_REPLY);
+	return create_entity(creatable_path, name, ZstTransportRequestBehaviour::ASYNC_REPLY);
 }
 
-ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path, const char * name, const ZstTransportSendType & sendtype)
+ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path, const char * name, const ZstTransportRequestBehaviour & sendtype)
 {
 	ZstEntityBase * entity = NULL;
 	//Find the factory associated with this creatable path
@@ -213,11 +216,11 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
                 response.status == ZstMsgKind::CREATE_FACTORY)
             {
                 ZstLog::net(LogLevel::notification, "Created entity from {}", creatable_path.path());
-                if (sendtype == ZstTransportSendType::SYNC_REPLY) {
+                if (sendtype == ZstTransportRequestBehaviour::SYNC_REPLY) {
                     //Can return the entity since the pointer reference will still be on the stack
                     entity = find_entity(creatable_path.first() + ZstURI(entity_name));
                 }
-                if (sendtype == ZstTransportSendType::ASYNC_REPLY) {
+                if (sendtype == ZstTransportRequestBehaviour::ASYNC_REPLY) {
                     ZstEntityBase * late_entity = find_entity(creatable_path.first() + ZstURI(entity_name));
                     if (late_entity) {
                         factory->factory_events()->defer([late_entity](ZstFactoryAdaptor * adp) { adp->on_entity_created(late_entity); });
@@ -260,7 +263,7 @@ void ZstClientHierarchy::create_entity_handler(ZstMessage * msg)
             this->get_local_performer()->add_child(entity, false);
             
             //Activate entity separately
-            this->activate_entity(entity, ZstTransportSendType::ASYNC_REPLY, msg_id);
+            this->activate_entity(entity, ZstTransportRequestBehaviour::ASYNC_REPLY, msg_id);
 		}
 		else {
 			stage_events().invoke([msg_id](ZstTransportAdaptor * adp) {

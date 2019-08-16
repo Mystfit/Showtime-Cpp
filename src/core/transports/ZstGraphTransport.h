@@ -27,7 +27,7 @@ public:
 	ZST_EXPORT const std::string & get_graph_in_address() const;
 	ZST_EXPORT const std::string & get_graph_out_address() const;
 
-	ZST_EXPORT void send_message_impl(ZstMessage * msg) override;
+	ZST_EXPORT void send_message_impl(ZstMessage * msg, const ZstTransportArgs& args) override;
 
 protected:
 	ZST_EXPORT ZstActor & actor();

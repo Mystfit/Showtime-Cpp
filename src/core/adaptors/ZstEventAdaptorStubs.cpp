@@ -93,11 +93,7 @@ void ZstTransportAdaptor::connect(const std::string& address) {}
 void ZstTransportAdaptor::bind(const std::string& address) {}
 void ZstTransportAdaptor::disconnect() {}
 void ZstTransportAdaptor::send_msg(ZstMsgKind kind) {}
-void ZstTransportAdaptor::send_msg(ZstMsgKind kind, const ZstMsgArgs & args) {}
-void ZstTransportAdaptor::send_msg(ZstMsgKind kind, const ZstMsgArgs & args, const ZstMsgArgs & payload) {}
-void ZstTransportAdaptor::send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const MessageReceivedAction & action){}
-void ZstTransportAdaptor::send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstMsgArgs & args, const MessageReceivedAction & action) {}
-void ZstTransportAdaptor::send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstMsgArgs & payload, const ZstMsgArgs & args, const MessageReceivedAction & action) {}
+void ZstTransportAdaptor::send_msg(ZstMsgKind kind, const ZstTransportArgs& args) {}
 
 
 // -----------------------

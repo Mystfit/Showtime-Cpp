@@ -27,12 +27,12 @@ void ZstTransportLayerBase::init()
 	m_is_active = true;
 }
 
-ZstMessageReceipt ZstTransportLayerBase::send_sync_message(ZstMessage* msg)
+ZstMessageReceipt ZstTransportLayerBase::send_sync_message(ZstMessage* msg, const ZstTransportArgs& args)
 {
 	auto future = register_response(msg->id());
-	ZstMessageReceipt msg_response{ ZstMsgKind::EMPTY, ZstTransportSendType::SYNC_REPLY };
+	ZstMessageReceipt msg_response{ ZstMsgKind::EMPTY, ZstTransportRequestBehaviour::SYNC_REPLY };
 
-	send_message_impl(msg);
+	send_message_impl(msg, args);
 	try {
 		msg_response.status = future.get();
 	}
@@ -45,16 +45,19 @@ ZstMessageReceipt ZstTransportLayerBase::send_sync_message(ZstMessage* msg)
 	return msg_response;
 }
 
-void ZstTransportLayerBase::send_async_message(ZstMessage* msg, const MessageReceivedAction& completed_action)
+void ZstTransportLayerBase::send_async_message(ZstMessage* msg, const ZstTransportArgs& args)
 {
 	auto future = register_response(msg->id());
 
 	//Hold on to the message id so we can clean up the promise in case we time out
 	ZstMsgID id = msg->id();
 
+	//Copy receive action so the lambda can reference it when the response arrives
+	auto completed_action = args.msg_receive_action;
+
 	future.then([this, id, completed_action](ZstMessageFuture f) {
 		ZstMsgKind status(ZstMsgKind::EMPTY);
-		ZstMessageReceipt msg_response{ status, ZstTransportSendType::ASYNC_REPLY };
+		ZstMessageReceipt msg_response{ status, ZstTransportRequestBehaviour::ASYNC_REPLY };
 		try {
 			ZstMsgKind status = f.get();
 			msg_response.status = status;
@@ -70,7 +73,7 @@ void ZstTransportLayerBase::send_async_message(ZstMessage* msg, const MessageRec
 		return status;
 		});
 
-	send_message_impl(msg);
+	send_message_impl(msg, args);
 }
 
 ZstEventDispatcher<ZstTransportAdaptor*>* ZstTransportLayerBase::msg_events()
@@ -91,25 +94,25 @@ void ZstTransportLayerBase::process_events()
 void ZstTransportLayerBase::begin_send_message(ZstMessage * msg)
 {
 	if (!msg) return;
-	send_message_impl(msg);
+	send_message_impl(msg, ZstTransportArgs());
 }
 
-void ZstTransportLayerBase::begin_send_message(ZstMessage * msg, const ZstTransportSendType & sendtype, const MessageReceivedAction & action)
+void ZstTransportLayerBase::begin_send_message(ZstMessage * msg, const ZstTransportArgs& args)
 {
 	if (!msg) return;
 
-	switch (sendtype) {
-	case ZstTransportSendType::ASYNC_REPLY:
-		send_async_message(msg, action);
+	switch (args.msg_send_behaviour) {
+	case ZstTransportRequestBehaviour::ASYNC_REPLY:
+		send_async_message(msg, args);
 		break;
-	case ZstTransportSendType::SYNC_REPLY:
-		action(send_sync_message(msg));
+	case ZstTransportRequestBehaviour::SYNC_REPLY:
+		args.msg_receive_action(send_sync_message(msg, args));
 		break;
-	case ZstTransportSendType::PUBLISH:
-		send_message_impl(msg);
+	case ZstTransportRequestBehaviour::PUBLISH:
+		send_message_impl(msg, args);
 		break;
 	default:
-		ZstTransportLayerBase::begin_send_message(msg, sendtype, action);
+		ZstTransportLayerBase::begin_send_message(msg, args);
 		break;
 	}
 }

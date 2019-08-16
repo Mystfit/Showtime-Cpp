@@ -266,7 +266,7 @@ void ZstClient::receive_connection_handshake(ZstPerformanceMessage * msg)
 // Client join
 // -------------
 
-void ZstClient::auto_join_stage(const std::string & name, const ZstTransportSendType & sendtype)
+void ZstClient::auto_join_stage(const std::string & name, const ZstTransportRequestBehaviour & sendtype)
 {
     m_auto_join_stage = true;
     
@@ -293,7 +293,7 @@ void ZstClient::auto_join_stage(const std::string & name, const ZstTransportSend
             }
             
             // Only bother connecting if we're in async mode, otherwise the main thread will take care of it
-            if(sendtype == ZstTransportSendType::ASYNC_REPLY){
+            if(sendtype == ZstTransportRequestBehaviour::ASYNC_REPLY){
                 for(auto server : this->get_discovered_servers()){
                     if(server.name == name){
                         this->join_stage(server.address, sendtype);
@@ -307,7 +307,7 @@ void ZstClient::auto_join_stage(const std::string & name, const ZstTransportSend
         return status;
     });
     
-    if(sendtype == ZstTransportSendType::SYNC_REPLY){
+    if(sendtype == ZstTransportRequestBehaviour::SYNC_REPLY){
         // Block until beacon is received or we time out
         auto status = future.get();
         if(status != ZstMsgKind::OK){
@@ -329,7 +329,7 @@ void ZstClient::auto_join_stage(const std::string & name, const ZstTransportSend
 }
 
 
-void ZstClient::join_stage(const std::string & stage_address, const ZstTransportSendType & sendtype) {
+void ZstClient::join_stage(const std::string & stage_address, const ZstTransportRequestBehaviour & sendtype) {
 	
 	if (!m_init_completed) {
 		ZstLog::net(LogLevel::error, "Can't join the stage until the library has been initialised");
@@ -438,11 +438,11 @@ void ZstClient::join_stage_complete(ZstMessageReceipt response)
 	m_session->dispatch_connected_to_stage();
 
 	//If we are sync, we can dispatch events immediately
-	if (response.sendtype == ZstTransportSendType::SYNC_REPLY)
+	if (response.sendtype == ZstTransportRequestBehaviour::SYNC_REPLY)
 		process_events();
 }
 
-void ZstClient::synchronise_graph(const ZstTransportSendType & sendtype)
+void ZstClient::synchronise_graph(const ZstTransportRequestBehaviour & sendtype)
 {
 	//Ask the stage to send us a full snapshot
 	ZstLog::net(LogLevel::notification, "Requesting stage snapshot");
@@ -523,7 +523,7 @@ void ZstClient::heartbeat_timer(boost::asio::deadline_timer * t, ZstClient * cli
 
 	client->invoke([client](ZstTransportAdaptor * adaptor) {
 		std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
-		adaptor->send_msg(ZstMsgKind::CLIENT_HEARTBEAT, ZstTransportSendType::ASYNC_REPLY, [client, start](ZstMessageReceipt response) {
+		adaptor->send_msg(ZstMsgKind::CLIENT_HEARTBEAT, ZstTransportRequestBehaviour::ASYNC_REPLY, [client, start](ZstMessageReceipt response) {
 			if (response.status != ZstMsgKind::OK) {
 				ZstLog::net(LogLevel::warn, "Server ping timed out");
 				client->leave_stage_complete();

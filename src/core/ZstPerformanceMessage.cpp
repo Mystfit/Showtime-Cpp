@@ -19,7 +19,7 @@ ZstPerformanceMessage * ZstPerformanceMessage::init(ZstMsgKind kind, const ZstMs
 	return this;
 }
 
-ZstPerformanceMessage * ZstPerformanceMessage::init(ZstMsgKind kind, const ZstMsgArgs & payload, const ZstMsgArgs & args)
+ZstPerformanceMessage * ZstPerformanceMessage::init(ZstMsgKind kind, const ZstMsgArgs & args, const ZstMsgPayload& payload)
 {
 	reset();
 	set_sender(args.at(get_msg_arg_name(ZstMsgArg::PATH)));

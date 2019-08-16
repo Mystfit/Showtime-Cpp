@@ -36,36 +36,10 @@ public:
 		begin_send_message(get_msg()->init(kind));
 	}
 
-	void send_msg(ZstMsgKind kind, const ZstMsgArgs & args)  override
+	void send_msg(ZstMsgKind kind, const ZstTransportArgs& args)  override
 	{
-		begin_send_message(get_msg()->init(kind, args));
+		begin_send_message(get_msg()->init(kind, args.msg_args, args.msg_payload), args);
 	}
-
-	void send_msg(ZstMsgKind kind, const ZstMsgArgs & args, const ZstMsgArgs& payload) override
-	{
-		begin_send_message(get_msg()->init(kind, payload, args));
-	}
-
-
-	// -----------------
-	// Response messages
-	// -----------------
-	
-	void send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const MessageReceivedAction & action) override
-	{
-		begin_send_message(get_msg()->init(kind), sendtype, action);
-	}
-
-	void send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstMsgArgs & args, const MessageReceivedAction & action)  override
-	{
-		begin_send_message(get_msg()->init(kind, args), sendtype, action);
-	}
-	
-	void send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstMsgArgs & payload, const ZstMsgArgs & args, const MessageReceivedAction & action) override
-	{
-		begin_send_message(get_msg()->init(kind, payload, args), sendtype, action);
-	}
-
 protected:
 	ZstMessagePool<T> m_msg_pool;
 };

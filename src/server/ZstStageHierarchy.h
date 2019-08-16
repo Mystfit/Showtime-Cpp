@@ -1,5 +1,6 @@
 #include <map>
 #include <string>
+#include <boost/uuid/uuid.hpp>
 
 #include "../core/ZstSemaphore.h"
 #include "../core/ZstHierarchy.h"
@@ -7,7 +8,7 @@
 #include "ZstPerformerStageProxy.h"
 #include "ZstStageModule.h"
 
-typedef std::unordered_map<std::string, ZstPerformerStageProxy*> ZstClientSocketMap;
+typedef std::unordered_map<boost::uuids::uuid, ZstPerformerStageProxy*> ZstClientEndpointMap;
 
 class ZstStageHierarchy : 
 	public ZstHierarchy,
@@ -33,7 +34,7 @@ public:
 	// Clients
 	// ----------------
 
-	ZstMsgKind create_client_handler(std::string sender_identity, ZstStageMessage * msg);
+	ZstMsgKind create_client_handler(ZstStageMessage * msg);
 	ZstMsgKind destroy_client_handler(ZstPerformer * performer);
 	void broadcast_message(const ZstMsgKind & msg_kind, const ZstMsgArgs & args, const ZstMsgArgs & payload = json());
 
@@ -58,9 +59,9 @@ public:
 	// Socket IDs
 	// ---------------------
 
-	ZstPerformerStageProxy * get_client_from_socket_id(const std::string & socket_id);
-	std::string get_socket_ID(const ZstPerformer * performer);
+	ZstPerformerStageProxy * get_client_from_endpoint_UUID(const uuid & endpoint_UUID);
+	boost::uuids::uuid get_endpoint_UUID_from_client(const ZstPerformer * performer);
 
 private:
-	ZstClientSocketMap m_client_socket_index;
+	ZstClientEndpointMap m_client_endpoint_UUIDS;
 };

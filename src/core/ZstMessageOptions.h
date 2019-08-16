@@ -129,9 +129,9 @@ enum ZstMsgArg {
 	UNRELIABLE,
 	REQUEST_ID,
 	MSG_ID,
-	SENDER,
+	//SENDER,
 	SENDER_SHORT,
-	DESTINATION,
+	//DESTINATION,
 	PAYLOAD,
 	PAYLOAD_SHORT,
 	UNKNOWN
@@ -150,9 +150,9 @@ static ZstMsgArgMap ZstMsgArgNames = boost::assign::list_of<ZstMsgArgMap::relati
 	( PATH, "path" )
 	( REQUEST_ID, "request_id" )
 	( MSG_ID, "msg_id" )
-	( SENDER, "sender" )
+	//( SENDER, "sender" )
 	( SENDER_SHORT, "s")
-	( DESTINATION , "destination" )
+	//( DESTINATION , "destination" )
 	( PAYLOAD , "payload" )
 	( PAYLOAD_SHORT, "p");
 
@@ -173,3 +173,4 @@ static inline const ZstMsgArg & get_msg_arg(const std::string & msg_arg_str) {
 }
 
 typedef json ZstMsgArgs;
+typedef json ZstMsgPayload;

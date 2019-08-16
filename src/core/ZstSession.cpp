@@ -52,10 +52,10 @@ void ZstSession::destroy()
 }
 
 ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * output) {
-	return connect_cable(input, output, ZstTransportSendType::SYNC_REPLY);
+	return connect_cable(input, output, ZstTransportRequestBehaviour::SYNC_REPLY);
 }
 
-ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * output, const ZstTransportSendType & sendtype)
+ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * output, const ZstTransportRequestBehaviour & sendtype)
 {
 	ZstCable * cable = NULL;
 
@@ -98,11 +98,11 @@ ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * outpu
 
 void ZstSession::destroy_cable(ZstCable * cable)
 {
-	return destroy_cable(cable, ZstTransportSendType::SYNC_REPLY);
+	return destroy_cable(cable, ZstTransportRequestBehaviour::SYNC_REPLY);
 }
 
 
-void ZstSession::destroy_cable(ZstCable * cable, const ZstTransportSendType & sendtype)
+void ZstSession::destroy_cable(ZstCable * cable, const ZstTransportRequestBehaviour & sendtype)
 {
 }
 
@@ -234,7 +234,7 @@ void ZstSession::on_entity_arriving(ZstEntityBase * entity)
     }
 }
 
-bool ZstSession::observe_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
+bool ZstSession::observe_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype)
 {
 	if (!entity->is_proxy()) {
 		ZstLog::net(LogLevel::warn, "Can't observe local entity {}", entity->URI().path());

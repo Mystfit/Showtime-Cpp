@@ -6,8 +6,14 @@
 #include "ZstZMQClientTransport.h"
 #include "nlohmann/json.hpp"
 
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/random_generator.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/lexical_cast.hpp>
+
 ZstZMQClientTransport::ZstZMQClientTransport() : 
-	m_server_sock(NULL)
+	m_server_sock(NULL),
+	m_endpoint_UUID(random_generator()())
 {
 }
 
@@ -19,23 +25,27 @@ void ZstZMQClientTransport::init()
 {
 	ZstTransportLayerBase::init();
 
+	//Init actor before attaching sockets
 	m_client_actor.init("client_actor");
 
-	//Local dealer socket for receiving messages forwarded from other performers
+	//Dealer socket for server comms
 	m_server_sock = zsock_new(ZMQ_DEALER);
 	if (m_server_sock) {
 		zsock_set_linger(m_server_sock, 0);
 		m_client_actor.attach_pipe_listener(m_server_sock, s_handle_stage_router, this);
 	}
+	else {
+		ZstLog::net(LogLevel::error, "Could not create client socket. Reason: {}", zmq_strerror(zmq_errno()));
+		return;
+	}
 
-	//Set up outgoing sockets
-	zuuid_t * startup_uuid = zuuid_new();
-	std::string identity = std::string(zuuid_str_canonical(startup_uuid));
-	zuuid_destroy(&startup_uuid);
+	//Set socket ID to identify socket with receivers
+	zsock_set_identity(m_server_sock, boost::lexical_cast<std::string>(m_endpoint_UUID).c_str());
 
-	zsock_set_identity(m_server_sock, identity.c_str());
+	//IO loop
 	m_client_actor.start_loop();
 
+	//Since we create a ZMQ socket, we need to ref count zmq
 	zst_zmq_inc_ref_count();
 }
 
@@ -72,7 +82,7 @@ void ZstZMQClientTransport::process_events()
 	ZstMessageSupervisor::cleanup_response_messages();
 }
 
-void ZstZMQClientTransport::send_message_impl(ZstMessage * msg)
+void ZstZMQClientTransport::send_message_impl(ZstMessage * msg, const ZstTransportArgs& args)
 {
 	ZstStageMessage* stage_msg = static_cast<ZstStageMessage*>(msg);
 	zmsg_t * m = zmsg_new();

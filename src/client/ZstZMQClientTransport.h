@@ -4,6 +4,10 @@
 #include "../core/ZstStageMessage.h"
 #include "../core/transports/ZstTransportLayer.h"
 
+#include <boost/uuid/uuid.hpp>
+
+using namespace boost::uuids;
+
 class ZstZMQClientTransport : 
 	public ZstTransportLayer<ZstStageMessage>
 {
@@ -17,7 +21,7 @@ public:
 	void process_events() override;
 
 private:
-	void send_message_impl(ZstMessage * msg) override;
+	void send_message_impl(ZstMessage * msg, const ZstTransportArgs& args) override;
 	void sock_recv(zsock_t* socket, bool pop_first);
 	static int s_handle_stage_router(zloop_t *loop, zsock_t *sock, void *arg);
 	void receive_msg(ZstMessage * msg) override;
@@ -30,4 +34,7 @@ private:
 
 	//Actor
 	ZstActor m_client_actor;
+
+	//Id
+	boost::uuids::uuid m_endpoint_UUID;
 };

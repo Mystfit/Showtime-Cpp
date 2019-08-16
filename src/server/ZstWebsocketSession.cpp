@@ -1,15 +1,14 @@
 #pragma once
 
 #include "ZstWebsocketSession.h"
-#include <czmq.h>
+#include <boost/uuid/random_generator.hpp>
+
 
 ZstWebsocketSession::ZstWebsocketSession(tcp::socket&& socket, std::shared_ptr<ZstWebsocketServerTransport> transport) :
 	m_ws(std::move(socket)),
 	m_transport(transport)
 {
-	zuuid_t* uuid = zuuid_new();
-	m_socket_id = std::string(zuuid_str_canonical(uuid));
-	zuuid_destroy(&uuid);
+	m_endpoint_UUID = random_generator()();
 }
 
 ZstWebsocketSession::~ZstWebsocketSession()
@@ -79,7 +78,7 @@ void ZstWebsocketSession::on_read(beast::error_code ec, std::size_t bytes_transf
 	//Unpack message
 	if (!msg_json.empty()) {
 		msg->unpack(msg_json);
-		msg->set_arg<std::string, std::string>(get_msg_arg_name(ZstMsgArg::SENDER), m_socket_id);
+		msg->set_endpoint_UUID(m_endpoint_UUID);
 		m_transport->receive_msg(msg);
 	}
 
@@ -124,7 +123,7 @@ void ZstWebsocketSession::on_write(beast::error_code ec, std::size_t bytes_trans
 	}
 }
 
-const std::string& ZstWebsocketSession::get_id()
+const uuid& ZstWebsocketSession::endpoint_UUID()
 {
-	return m_socket_id;
+	return m_endpoint_UUID;
 }

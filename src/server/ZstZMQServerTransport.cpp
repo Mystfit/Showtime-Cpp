@@ -1,6 +1,8 @@
 #include <czmq.h>
 #include <sstream>
 #include <fmt/format.h>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include "../core/ZstZMQRefCounter.h"
 #include "ZstZMQServerTransport.h"
@@ -76,7 +78,7 @@ int ZstZMQServerTransport::s_handle_router(zloop_t * loop, zsock_t * socket, voi
 			msg->unpack(json::parse(payload_data));
 
 			//Save sender as a local argument
-			msg->set_arg<std::string, std::string>(get_msg_arg_name(ZstMsgArg::SENDER), std::string((char*)zframe_data(identity_frame), zframe_size(identity_frame)));
+			msg->set_endpoint_UUID(uuid(boost::lexical_cast<uuid>((char*)zframe_data(identity_frame))));
 			transport->receive_msg(msg);
 		}
 		else {
@@ -93,13 +95,13 @@ int ZstZMQServerTransport::s_handle_router(zloop_t * loop, zsock_t * socket, voi
 	return 0;
 }
 
-void ZstZMQServerTransport::send_message_impl(ZstMessage * msg)
+void ZstZMQServerTransport::send_message_impl(ZstMessage * msg, const ZstTransportArgs& args)
 {
 	ZstStageMessage * stage_msg = static_cast<ZstStageMessage*>(msg);
 	zmsg_t * m = zmsg_new();
 
 	//Add destination frame at beginning to route our message to the correct destination
-	zmsg_addstr(m, stage_msg->get_arg<std::string>(ZstMsgArg::DESTINATION).c_str());
+	zmsg_addstr(m, to_string(args.target_endpoint_UUID).c_str());
 
 	//Spacer frame between destination and data
 	zframe_t * empty = zframe_new_empty();
