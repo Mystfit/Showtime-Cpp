@@ -104,7 +104,9 @@ void ZstStageMessage::set_payload(const ZstMsgPayload& payload)
 
 void ZstStageMessage::set_args(const ZstMsgArgs& args)
 {
-	m_msg_args = args;
+	if (!args.is_object())
+		return;
+	m_msg_args.update(args);
 }
 
 void ZstStageMessage::set_kind(const ZstMsgKind &  k)
@@ -117,7 +119,7 @@ bool ZstStageMessage::has_arg(const ZstMsgArg & key) const
 	return m_msg_args.find(get_msg_arg_name(key)) != m_msg_args.end();
 }
 
-const ZstMsgKind & ZstStageMessage::kind() const
+ZstMsgKind ZstStageMessage::kind() const
 {
 	return get_msg_kind(m_msg_args.at(get_msg_arg_name(ZstMsgArg::KIND)).get<std::string>());
 }

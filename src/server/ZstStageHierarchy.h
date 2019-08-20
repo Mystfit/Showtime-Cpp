@@ -1,6 +1,7 @@
 #include <map>
 #include <string>
 #include <boost/uuid/uuid.hpp>
+#include <boost/container_hash/hash.hpp>
 
 #include "../core/ZstSemaphore.h"
 #include "../core/ZstHierarchy.h"
@@ -8,7 +9,7 @@
 #include "ZstPerformerStageProxy.h"
 #include "ZstStageModule.h"
 
-typedef std::unordered_map<boost::uuids::uuid, ZstPerformerStageProxy*> ZstClientEndpointMap;
+typedef std::unordered_map<boost::uuids::uuid, ZstPerformerStageProxy*, boost::hash<boost::uuids::uuid> > ZstClientEndpointMap;
 
 class ZstStageHierarchy : 
 	public ZstHierarchy,
@@ -21,7 +22,7 @@ public:
     
     virtual void set_wake_condition(std::weak_ptr<ZstSemaphore> condition) override;
     ZstPerformer * get_local_performer() const override;
-
+	virtual void process_events() override;
 
 	// ---------------------------
 	// Hierarchy adaptor overrides
@@ -36,7 +37,8 @@ public:
 
 	ZstMsgKind create_client_handler(ZstStageMessage * msg);
 	ZstMsgKind destroy_client_handler(ZstPerformer * performer);
-	void broadcast_message(const ZstMsgKind & msg_kind, const ZstMsgArgs & args, const ZstMsgArgs & payload = json());
+	void broadcast_message(const ZstMsgKind & msg_kind, const ZstTransportArgs& args);
+	void whisper_message(ZstPerformer * performer, const ZstMsgKind& msg_kind, const ZstTransportArgs& args);
 
     
 	// ----------------

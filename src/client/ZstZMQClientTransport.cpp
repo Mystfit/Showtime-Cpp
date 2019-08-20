@@ -85,6 +85,8 @@ void ZstZMQClientTransport::process_events()
 void ZstZMQClientTransport::send_message_impl(ZstMessage * msg, const ZstTransportArgs& args)
 {
 	ZstStageMessage* stage_msg = static_cast<ZstStageMessage*>(msg);
+	ZstLog::net(LogLevel::debug, "Client sending message. Msg id {}", stage_msg->as_json_str());
+
 	zmsg_t * m = zmsg_new();
 
 	//Insert empty frame at front of message to seperate between router sender hops and payloads
@@ -93,12 +95,14 @@ void ZstZMQClientTransport::send_message_impl(ZstMessage * msg, const ZstTranspo
 
 	//Encode message as json
 	zmsg_addstr(m, stage_msg->as_json_str().c_str());
-	zmsg_send(&m, m_server_sock);
 
-	//Errors
-	int err = zmq_errno();
-	if (err > 0) {
-		ZstLog::net(LogLevel::error, "Message sending error: {}", zmq_strerror(err));
+	//Sending and errors
+	int result = m_client_actor.send_to_socket(m_server_sock, m);
+	if (result != 0) {
+		int err = zmq_errno();
+		if (err > 0) {
+			ZstLog::net(LogLevel::error, "Client message sending error: {}", zmq_strerror(err));
+		}
 	}
 
 	release_msg(stage_msg);
@@ -119,6 +123,7 @@ void ZstZMQClientTransport::sock_recv(zsock_t* socket, bool pop_first)
 
 		ZstStageMessage * stage_msg = get_msg();
 		stage_msg->unpack(json::parse(msg_data_c));
+		ZstLog::net(LogLevel::debug, "Client receiving message. Msg id {}", stage_msg->as_json_str());
 		zstr_free(&msg_data_c);
 		receive_msg(stage_msg);
 		zmsg_destroy(&recv_msg);

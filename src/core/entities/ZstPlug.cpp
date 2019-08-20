@@ -308,9 +308,7 @@ void ZstOutputPlug::fire()
 	m_graph_out_events->invoke([this](ZstTransportAdaptor * adaptor) {		
 		ZstTransportArgs args;
 		args.msg_args[get_msg_arg_name(ZstMsgArg::PATH)] = this->URI().path();
-
-		ZstMsgPayload payload;
-		this->raw_value()->write_json(payload);
+		this->raw_value()->write_json(args.msg_payload);
 		adaptor->send_msg(ZstMsgKind::PERFORMANCE_MSG, args);
 	});
 	m_value->clear();

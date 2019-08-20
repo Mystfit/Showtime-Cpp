@@ -48,7 +48,6 @@ class ZstClient :
 {
 public:
 	ZstClient();
-	~ZstClient();
 	void init_client(const char * client_name, bool debug);
 	void init_file_logging(const char * log_file_path);
 	void destroy();
@@ -115,8 +114,7 @@ private:
 	// Plug initialization
 	void init_arriving_plug(ZstPlug* plug);
 
-	//UUIDs
-	std::string m_assigned_uuid;
+	//Names
 	std::string m_client_name;
     
     //Server discovery
@@ -135,7 +133,7 @@ private:
 	std::unordered_map<ZstURI, ZstMsgID, ZstURIHash> m_pending_peer_connections;
 	
 	//Client modules
-	ZstClientSession * m_session;
+	std::unique_ptr<ZstClientSession> m_session;
 	std::unique_ptr<ZstTCPGraphTransport> m_tcp_graph_transport;
 #ifdef ZST_BUILD_DRAFT_API
 	std::unique_ptr<ZstUDPGraphTransport> m_udp_graph_transport;

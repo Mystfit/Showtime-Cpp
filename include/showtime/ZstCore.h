@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ZstExports.h"
+#include "ZstExceptions.h"
 #include "ZstVersion.h"
 #include "ZstConstants.h"
 #include "ZstLogging.h"

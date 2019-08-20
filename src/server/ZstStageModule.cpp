@@ -1,5 +1,10 @@
 #include "ZstStageModule.h"
 
+void ZstStageModule::process_events()
+{
+	m_router_events.process_events();
+}
+
 void ZstStageModule::set_wake_condition(std::weak_ptr<ZstSemaphore> condition)
 {
 	m_router_events.set_wake_condition(condition);

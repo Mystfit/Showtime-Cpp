@@ -127,11 +127,9 @@ enum ZstMsgArg {
 	OUTPUT_PATH,
 	PATH,
 	UNRELIABLE,
-	REQUEST_ID,
+	CONNECTION_ID,
 	MSG_ID,
-	//SENDER,
 	SENDER_SHORT,
-	//DESTINATION,
 	PAYLOAD,
 	PAYLOAD_SHORT,
 	UNKNOWN
@@ -148,11 +146,9 @@ static ZstMsgArgMap ZstMsgArgNames = boost::assign::list_of<ZstMsgArgMap::relati
 	( INPUT_PATH, "in_path" )
 	( OUTPUT_PATH, "out_path" )
 	( PATH, "path" )
-	( REQUEST_ID, "request_id" )
+	( CONNECTION_ID, "request_id" )
 	( MSG_ID, "msg_id" )
-	//( SENDER, "sender" )
 	( SENDER_SHORT, "s")
-	//( DESTINATION , "destination" )
 	( PAYLOAD , "payload" )
 	( PAYLOAD_SHORT, "p");
 

@@ -106,7 +106,7 @@ void ZstWebsocketServerTransport::on_accept(beast::error_code ec, tcp::socket so
 		// Create the session and run it
 		auto session = std::make_shared<ZstWebsocketSession>(std::move(socket), shared_from_this());
 		session->run();
-		m_sessions.insert(std::pair<std::string, ZstWebsocketSessionPtr>(session->get_id(), session));
+		m_sessions.insert(std::pair<uuid, ZstWebsocketSessionPtr>(session->endpoint_UUID(), session));
 	}
 
 	// Accept another connection

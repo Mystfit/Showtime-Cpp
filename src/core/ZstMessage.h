@@ -16,7 +16,7 @@ public:
 
     ZST_EXPORT virtual void reset() = 0;
 
-	ZST_EXPORT virtual const ZstMsgKind& kind() const = 0;
+	ZST_EXPORT virtual ZstMsgKind kind() const = 0;
 	ZST_EXPORT virtual ZstMsgID id() const = 0;
 	ZST_EXPORT virtual const uuid& endpoint_UUID() const = 0;
     ZST_EXPORT virtual const ZstMsgArgs & payload() const = 0;

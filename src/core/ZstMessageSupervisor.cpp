@@ -1,5 +1,6 @@
 #include "ZstMessageSupervisor.hpp"
 #include "ZstLogging.h"
+#include "ZstExceptions.h"
 
 ZstMessageSupervisor::ZstMessageSupervisor(std::shared_ptr<cf::time_watcher> timeout_watcher, long timeout_duration) :
 	m_timeout_watcher(timeout_watcher),
@@ -19,8 +20,8 @@ void ZstMessageSupervisor::destroy()
 
 ZstMessageFuture ZstMessageSupervisor::register_response(ZstMsgID id)
 {
-	m_response_promises.emplace(id, promise<ZstMsgKind>());
-	future<ZstMsgKind> future = m_response_promises[id].get_future();
+	m_response_promises.emplace(id, ZstMessagePromise());
+	auto future = m_response_promises[id].get_future();
 	future = future.timeout(std::chrono::milliseconds(m_timeout_duration), ZstTimeoutException("Connect timeout"), *m_timeout_watcher);
 	return future;
 }
@@ -49,14 +50,14 @@ void ZstMessageSupervisor::remove_response_promise(ZstMsgID id)
 	}
 }
 
-void ZstMessageSupervisor::process_response(ZstMsgID id, ZstMsgKind response)
+void ZstMessageSupervisor::process_response(ZstMsgID id, ZstMessageReceipt response)
 {
 	auto promise = m_response_promises.find(id);
 	if (promise != m_response_promises.end()) {
 		try {
 			promise->second.set_value(response);
 		}
-		catch (cf::future_error e) {
+		catch (future_error e) {
 			ZstLog::net(LogLevel::warn, "Promise error {}", e.what());
 		}
 		enqueue_resolved_promise(id);

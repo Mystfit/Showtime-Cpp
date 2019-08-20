@@ -12,6 +12,7 @@
 #include <boost/asio.hpp>
 #include <boost/beast/websocket.hpp>
 #include <boost/asio/strand.hpp>
+#include <boost/container_hash/hash.hpp>
 
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
@@ -52,5 +53,5 @@ private:
 	boost::thread m_io_thread;
 	tcp::acceptor m_acceptor;
 	boost::asio::io_context& m_ioc;
-	std::unordered_map< uuid, std::shared_ptr<ZstWebsocketSession> > m_sessions;
+	std::unordered_map< uuid, std::shared_ptr<ZstWebsocketSession>, boost::hash<boost::uuids::uuid> > m_sessions;
 };

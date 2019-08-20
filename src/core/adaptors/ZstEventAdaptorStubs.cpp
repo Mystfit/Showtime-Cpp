@@ -52,6 +52,7 @@ void ZstFactoryAdaptor::on_entity_created(ZstEntityBase * entity) {}
 
 void ZstSessionAdaptor::on_connected_to_stage() {}
 void ZstSessionAdaptor::on_disconnected_from_stage() {}
+void ZstSessionAdaptor::on_synchronised_with_stage() {}
 void ZstSessionAdaptor::on_server_discovered(const ZstServerAddress & server){}
 
 void ZstSessionAdaptor::on_cable_created(ZstCable * cable) {}
@@ -92,8 +93,8 @@ void ZstTransportAdaptor::on_receive_msg(ZstMessage* msg) {}
 void ZstTransportAdaptor::connect(const std::string& address) {}
 void ZstTransportAdaptor::bind(const std::string& address) {}
 void ZstTransportAdaptor::disconnect() {}
-void ZstTransportAdaptor::send_msg(ZstMsgKind kind) {}
-void ZstTransportAdaptor::send_msg(ZstMsgKind kind, const ZstTransportArgs& args) {}
+ZstMessageReceipt ZstTransportAdaptor::send_msg(ZstMsgKind kind) { return ZstMessageReceipt{ZstMsgKind::EMPTY}; }
+ZstMessageReceipt ZstTransportAdaptor::send_msg(ZstMsgKind kind, const ZstTransportArgs& args) { return ZstMessageReceipt{ ZstMsgKind::EMPTY }; }
 
 
 // -----------------------

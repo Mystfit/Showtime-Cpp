@@ -1,4 +1,5 @@
 #include "ZstCableAddress.h"
+#include <fmt/format.h>
 
 ZstCableAddress::ZstCableAddress() :
     m_input_URI(),
@@ -76,6 +77,11 @@ void ZstCableAddress::read_json(const json & buffer)
 {
     m_output_URI = ZstURI(buffer["output_uri"].get<std::string>().c_str(), buffer["output_uri"].get<std::string>().size());
     m_input_URI = ZstURI(buffer["input_uri"].get<std::string>().c_str(), buffer["input_uri"].get<std::string>().size());
+}
+
+std::string ZstCableAddress::to_string() const
+{
+	return fmt::format("{} :~~> {}", get_output_URI().path(), get_input_URI().path());
 }
 
 size_t ZstCableAddressHash::operator()(ZstCableAddress const& k) const

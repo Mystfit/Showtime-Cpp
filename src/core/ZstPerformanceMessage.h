@@ -10,6 +10,7 @@ using namespace boost::uuids;
 
 class ZstPerformanceMessage : public ZstMessage {
 public:
+	ZST_EXPORT ZstPerformanceMessage();
     ZST_EXPORT virtual ~ZstPerformanceMessage();
 	ZST_EXPORT virtual ZstPerformanceMessage * init(ZstMsgKind kind) override;
 	ZST_EXPORT virtual ZstPerformanceMessage * init(ZstMsgKind kind, const ZstMsgArgs & args) override;
@@ -17,7 +18,7 @@ public:
 
 	ZST_EXPORT virtual void reset() override;
 
-	ZST_EXPORT virtual const ZstMsgKind& kind() const override;
+	ZST_EXPORT virtual ZstMsgKind kind() const override;
 	ZST_EXPORT virtual ZstMsgID id() const override;
 	ZST_EXPORT virtual void set_id(const ZstMsgID& id);
 
@@ -27,10 +28,10 @@ public:
 	ZST_EXPORT std::string sender() const;
 	ZST_EXPORT std::vector<uint8_t> to_msgpack() const;
 
-	ZST_EXPORT const uuid& endpoint_UUID() const override { return nil_generator()(); }
+	ZST_EXPORT const uuid& endpoint_UUID() const override;
 private:
 	void set_payload(const ZstMsgArgs & payload);
 	void set_sender(const std::string & sender);
-
+	boost::uuids::uuid m_endpoint_UUID;
 	json m_args;
 };

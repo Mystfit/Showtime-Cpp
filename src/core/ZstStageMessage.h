@@ -19,7 +19,7 @@ public:
 
 	ZST_EXPORT void reset() override;
 	
-	ZST_EXPORT virtual const ZstMsgKind& kind() const override;
+	ZST_EXPORT virtual ZstMsgKind kind() const override;
 	ZST_EXPORT virtual ZstMsgID id() const override;
 	ZST_EXPORT virtual void set_id(const ZstMsgID& id);
 

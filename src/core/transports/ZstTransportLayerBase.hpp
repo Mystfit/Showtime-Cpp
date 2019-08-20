@@ -6,44 +6,15 @@
 #include <boost/uuid/nil_generator.hpp>
 
 #include "ZstExports.h"
+#include "ZstTransportHelpers.h"
+
 #include "../ZstEventDispatcher.hpp"
 #include "../ZstActor.h"
 #include "../ZstMessage.h"
 #include "../ZstMessageSupervisor.hpp"
 
-
-
 //Forwards
 class ZstTransportAdaptor;
-
-enum ZstTransportRequestBehaviour
-{
-	SYNC_REPLY = 0,
-	ASYNC_REPLY,
-	PUBLISH
-};
-
-/**
-* Struct:	ZstMessageReceipt
-*
-* Summary:	Message response from a message sent to the server.
-*/
-struct ZstMessageReceipt {
-	ZstMsgKind status;
-	ZstTransportRequestBehaviour sendtype;
-};
-
-typedef std::function<void(ZstMessageReceipt)> ZstMessageReceivedAction;
-
-struct ZstTransportArgs {
-	boost::uuids::uuid target_endpoint_UUID = boost::uuids::nil_generator()();
-	ZstTransportRequestBehaviour msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
-	ZstMsgID msg_ID = 0;
-	ZstMsgArgs msg_args;
-	ZstMsgArgs msg_payload;
-	ZstMessageReceivedAction msg_receive_action = [](ZstMessageReceipt receipt) {};
-};
-
 
 class ZstTransportLayerBase : public ZstMessageSupervisor {
 public:
@@ -54,8 +25,8 @@ public:
 	ZST_EXPORT virtual void destroy();
 	ZST_EXPORT virtual void process_events();
 
-	ZST_EXPORT virtual void begin_send_message(ZstMessage* msg);
-	ZST_EXPORT virtual void begin_send_message(ZstMessage* msg, const ZstTransportArgs & args);
+	ZST_EXPORT virtual ZstMessageReceipt begin_send_message(ZstMessage* msg);
+	ZST_EXPORT virtual ZstMessageReceipt begin_send_message(ZstMessage* msg, const ZstTransportArgs & args);
 	ZST_EXPORT virtual void receive_msg(ZstMessage* msg);
 	ZST_EXPORT virtual void receive_msg(ZstMessage* msg, ZstEventCallback on_complete);
 
@@ -64,7 +35,7 @@ public:
 
 	//Message supervision
 	ZST_EXPORT virtual ZstMessageReceipt send_sync_message(ZstMessage* msg, const ZstTransportArgs& args);
-	ZST_EXPORT virtual void send_async_message(ZstMessage* msg, const ZstTransportArgs& args);
+	ZST_EXPORT virtual ZstMessageReceipt send_async_message(ZstMessage* msg, const ZstTransportArgs& args);
 
 	ZST_EXPORT ZstEventDispatcher<ZstTransportAdaptor*> * msg_events();
 	ZST_EXPORT bool is_active();
