@@ -19,7 +19,7 @@
 #include "adaptors/ZstTransportAdaptor.hpp"
 
 
-class ZstHierarchy : 
+class ZST_EXPORT ZstHierarchy : 
 	public ZstSynchronisableModule,
 	public ZstPlugLiason,
 	public ZstEntityFactoryLiason,

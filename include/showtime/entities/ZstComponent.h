@@ -9,7 +9,7 @@
 
 #define COMPONENT_TYPE "cmp"
 
-class ZstComponent : public ZstEntityBase {
+class ZST_EXPORT ZstComponent : public ZstEntityBase {
 public:
 	ZST_EXPORT ZstComponent();
 	ZST_EXPORT ZstComponent(const char * path);

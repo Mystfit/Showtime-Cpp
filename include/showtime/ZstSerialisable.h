@@ -7,7 +7,7 @@ using nlohmann::json;
 //using json = nlohmann::json;
 #include "ZstExports.h"
 
-class ZstSerialisable {
+class ZST_EXPORT ZstSerialisable {
 public:
 	ZST_EXPORT virtual json as_json() const;
 	ZST_EXPORT std::string as_json_str() const;

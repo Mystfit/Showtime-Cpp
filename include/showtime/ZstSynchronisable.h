@@ -13,7 +13,7 @@ class ZstINetworkInteractor;
 template<typename T>
 class ZstEventDispatcher;
 
-class ZstSynchronisable
+class ZST_EXPORT ZstSynchronisable
 {
 	friend class ZstSynchronisableLiason;
     friend class ZstClient;

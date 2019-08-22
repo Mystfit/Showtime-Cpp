@@ -48,14 +48,6 @@ if(BUILD_STATIC)
 endif()
 
 if(BUILD_SHARED)
-  # Platform specific definitions
-  if(WIN32)
-      target_compile_definitions(${SERVER_TARGET} 
-        PRIVATE ZST_EXPORT_SERVER_API
-        INTERFACE ZST_IMPORT_SERVER_API
-      )
-  endif(WIN32)
-
   target_link_libraries(${SERVER_TARGET} 
     PUBLIC 
     ${CORE_TARGET}
@@ -69,6 +61,11 @@ endif()
 
 foreach(TARGET ${SERVER_LIBS})
   set_target_properties(${TARGET} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION})
+
+  target_compile_definitions(${TARGET} 
+    PRIVATE ZST_EXPORT_SERVER_API
+    INTERFACE ZST_IMPORT_SERVER_API
+  )
 
   # Server lib sources
   target_sources(${TARGET} PRIVATE 

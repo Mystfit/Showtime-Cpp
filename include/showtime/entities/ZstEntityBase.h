@@ -31,7 +31,7 @@ typedef ZstBundle<ZstEntityFactory*> ZstEntityFactoryBundle;
 typedef ZstBundleIterator<ZstEntityBase*> ZstEntityBundleIterator;
 
 
-class ZstEntityBase : public ZstSynchronisable, public ZstSerialisable {
+class ZST_EXPORT ZstEntityBase : public ZstSynchronisable, public ZstSerialisable {
     friend class ZstEntityLiason;
 
 public:

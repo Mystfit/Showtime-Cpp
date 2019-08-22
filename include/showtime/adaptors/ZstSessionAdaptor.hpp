@@ -8,7 +8,7 @@
 //Forwards
 class ZstHierarchy;
 
-class ZstSessionAdaptor : public ZstEventAdaptor {
+class ZST_EXPORT ZstSessionAdaptor : public ZstEventAdaptor {
 public:
 	ZST_EXPORT virtual void on_connected_to_stage();
 	ZST_EXPORT virtual void on_disconnected_from_stage();

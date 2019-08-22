@@ -18,7 +18,7 @@ class ZstTransportAdaptor;
 template<typename T>
 class ZstEventDispatcher;
 
-class ZstPlug : public ZstEntityBase {
+class ZST_EXPORT ZstPlug : public ZstEntityBase {
 public:
 	friend class ZstPlugLiason;
     friend class ZstComponent;
@@ -77,7 +77,7 @@ private:
 // --------------------
 // Derived plug classes
 // --------------------
-class ZstInputPlug : public ZstPlug {
+class ZST_EXPORT ZstInputPlug : public ZstPlug {
 public:
 	friend class ZstPlugLiason;
 	ZST_EXPORT ZstInputPlug();
@@ -87,7 +87,7 @@ public:
 };
 
 
-class ZstOutputPlug : public ZstPlug {
+class ZST_EXPORT ZstOutputPlug : public ZstPlug {
 	friend class ZstPlugLiason;
 public:
     using ZstEntityBase::add_adaptor;

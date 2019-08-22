@@ -28,6 +28,11 @@ list(APPEND Showtime_API_INTERFACE ${ZST_CLIENT_HEADERS})
 
 set(CLIENT_LIBS "")
 
+target_compile_definitions(${CLIENT_TARGET} 
+  PRIVATE ZST_EXPORT_CLIENT_API
+  INTERFACE ZST_IMPORT_CLIENT_API
+)
+
 if(BUILD_STATIC)
   target_link_libraries(${CLIENT_TARGET_STATIC} 
     PUBLIC
@@ -39,15 +44,7 @@ if(BUILD_STATIC)
   list(APPEND CLIENT_LIBS ${CLIENT_TARGET_STATIC})
 endif()
 
-if(BUILD_SHARED)
-  # Platform specific definitions
-  if(WIN32)
-      target_compile_definitions(${CLIENT_TARGET} 
-        PRIVATE ZST_EXPORT_CLIENT_API
-        INTERFACE ZST_IMPORT_CLIENT_API
-      )
-  endif(WIN32)
-
+if(BUILD_SHARED) 
   target_link_libraries(${CLIENT_TARGET} 
     PUBLIC 
     ${CORE_TARGET}

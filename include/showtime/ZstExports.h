@@ -1,7 +1,22 @@
 #pragma once
 
-#define ZST_API_EXPORTED __declspec(dllexport)
-#define ZST_API_IMPORTED __declspec(dllimport)
+#if defined _WIN32 || defined __CYGWIN__
+    #ifdef __GNUC__
+        #define ZST_API_EXPORTED __attribute__ ((dllexport))
+        #define ZST_API_IMPORTED __attribute__ ((dllimport))
+    #else
+        #define ZST_API_EXPORTED __declspec(dllexport)
+        #define ZST_API_IMPORTED __declspec(dllimport)
+    #endif
+#else
+    #if __GNUC__ >= 4
+        #define ZST_API_EXPORTED __attribute__ ((visibility ("default")))
+        #define ZST_API_IMPORTED
+    #else
+        #define ZST_API_EXPORTED
+        #define ZST_API_IMPORTED
+    #endif
+#endif
 
 #ifdef ZST_EXPORT_CORE_API
 #define ZST_EXPORT ZST_API_EXPORTED

@@ -5,13 +5,13 @@
 
 class ZstCableAddress : public ZstSerialisable {
 public:
-    ZstCableAddress();
-    ZstCableAddress(const ZstURI & input_URI, const ZstURI & output_URI);
-    ZstCableAddress(const ZstCableAddress & other);
-    ZstCableAddress(ZstCableAddress&& source);
-    ZstCableAddress& operator=(const ZstCableAddress& other);
-    ZstCableAddress& operator=(ZstCableAddress&& source);
-    ~ZstCableAddress();
+    ZST_EXPORT ZstCableAddress();
+    ZST_EXPORT ZstCableAddress(const ZstURI & input_URI, const ZstURI & output_URI);
+    ZST_EXPORT ZstCableAddress(const ZstCableAddress & other);
+    ZST_EXPORT ZstCableAddress(ZstCableAddress&& source);
+    ZST_EXPORT ZstCableAddress& operator=(const ZstCableAddress& other);
+    ZST_EXPORT ZstCableAddress& operator=(ZstCableAddress&& source);
+    ZST_EXPORT ~ZstCableAddress();
     
     //Comparison Operators
     

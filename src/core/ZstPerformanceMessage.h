@@ -3,7 +3,7 @@
 #include <vector>
 #include "ZstMessage.h"
 
-class ZstPerformanceMessage : public ZstMessage {
+class ZST_EXPORT ZstPerformanceMessage : public ZstMessage {
 public:
     ZST_EXPORT virtual ~ZstPerformanceMessage();
 	ZST_EXPORT virtual ZstPerformanceMessage * init(ZstMsgKind kind) override;

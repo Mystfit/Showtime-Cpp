@@ -15,7 +15,7 @@ class ZstEventDispatcher;
 //Typedefs
 typedef std::shared_ptr<ZstEntityBase> ZstSharedEntity;
 
-class ZstEntityFactory : public ZstEntityBase
+class ZST_EXPORT ZstEntityFactory : public ZstEntityBase
 {
 	using ZstEntityBase::add_adaptor;
 	using ZstEntityBase::remove_adaptor;

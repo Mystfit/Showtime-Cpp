@@ -13,10 +13,10 @@ ZstSynchronisable::ZstSynchronisable() :
 	m_is_destroyed(false),
 	m_sync_status(ZstSyncStatus::DEACTIVATED),
     m_sync_error(ZstSyncError::NO_ERR),
-	m_is_proxy(false)
+	m_is_proxy(false),
+    m_synchronisable_events(std::make_unique< ZstEventDispatcher<ZstSynchronisableAdaptor*> >("synchronisable"))
 {
 	m_instance_id = ++ZstSynchronisable::s_instance_id_counter;
-    m_synchronisable_events = std::make_unique< ZstEventDispatcher<ZstSynchronisableAdaptor*> >("synchronisable");
 }
 
 ZstSynchronisable::ZstSynchronisable(const ZstSynchronisable & other) : ZstSynchronisable()

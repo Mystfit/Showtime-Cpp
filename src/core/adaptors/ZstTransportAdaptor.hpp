@@ -7,7 +7,7 @@
 //Forwards
 class ZstMessage;
 
-class ZstTransportAdaptor : public ZstEventAdaptor
+class ZST_EXPORT ZstTransportAdaptor : public ZstEventAdaptor
 {
 public:
 	//Outgoing Events

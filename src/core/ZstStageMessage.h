@@ -1,12 +1,13 @@
 #pragma once
 
+#include "ZstExports.h"
 #include "ZstMessage.h"
 #include <nlohmann/json.hpp>
 #include "entities/ZstEntityBase.h"
 
 using nlohmann::json;
 
-class ZstStageMessage : public ZstMessage {
+class ZST_EXPORT ZstStageMessage : public ZstMessage {
 public:
     ZST_EXPORT ZstStageMessage();
     ZST_EXPORT ZstStageMessage(const ZstStageMessage & other);

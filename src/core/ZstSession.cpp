@@ -48,6 +48,9 @@ void ZstSession::destroy()
 	//Clear connected performers - they'll remove us when we leave the graph
 	m_connected_performers.clear();
     
+    ///Clear cables
+    m_cables.clear();
+    
     ZstSynchronisableModule::destroy();
 }
 

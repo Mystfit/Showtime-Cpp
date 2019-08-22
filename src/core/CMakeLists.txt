@@ -263,6 +263,14 @@ target_compile_definitions(${CORE_TARGET_OBJECTS}
 # Make sure core objects are position independent for shared libs
 set_target_properties(${CORE_TARGET_OBJECTS} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
+# API exports
+target_compile_definitions(${CORE_TARGET_OBJECTS} 
+    PRIVATE 
+    ZST_EXPORT_CORE_API
+    INTERFACE
+    ZST_IMPORT_CORE_API
+)
+
 # Static/shared library specific options
 if(BUILD_STATIC)
     list(APPEND CORE_LIBS ${CORE_TARGET_STATIC})
@@ -272,13 +280,6 @@ if(BUILD_SHARED)
     list(APPEND CORE_LIBS ${CORE_TARGET})
 
     if(WIN32)
-        target_compile_definitions(${CORE_TARGET} 
-            PRIVATE 
-            ZST_EXPORT_CORE_API
-            INTERFACE
-            ZST_IMPORT_CORE_API
-        )
-
         # Copy runtime dependencies
         add_custom_command(TARGET ${CORE_TARGET} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:czmq>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"

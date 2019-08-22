@@ -18,7 +18,7 @@
 #include "ZstEventDispatcher.hpp"
 
 
-class ZstSession : 
+class ZST_EXPORT ZstSession : 
 	public ZstSynchronisableModule,
 	public ZstTransportAdaptor,
 	public ZstComputeAdaptor,

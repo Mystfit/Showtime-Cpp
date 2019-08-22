@@ -7,7 +7,7 @@
 #include "adaptors/ZstSynchronisableAdaptor.hpp"
 #include "liasons/ZstSynchronisableLiason.hpp"
 
-class ZstSynchronisableModule :
+class ZST_EXPORT ZstSynchronisableModule :
     public ZstSynchronisableAdaptor,
     public ZstSynchronisableLiason
 {
