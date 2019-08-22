@@ -63,10 +63,10 @@ void ZstWebsocketServerTransport::bind(const std::string& address)
 	do_accept();
 }
 
-void ZstWebsocketServerTransport::send_message_impl(ZstMessage* msg)
+void ZstWebsocketServerTransport::send_message_impl(ZstMessage* msg, const ZstTransportArgs& args)
 {
 	ZstStageMessage* stage_msg = static_cast<ZstStageMessage*>(msg);
-	auto session = m_sessions.find(stage_msg->get_arg<std::string>(ZstMsgArg::DESTINATION));
+	auto session = m_sessions.find(stage_msg->endpoint_UUID());
 	if (session != m_sessions.end()) {
 		session->second->do_write(stage_msg->as_json_str());
 	}
@@ -106,7 +106,7 @@ void ZstWebsocketServerTransport::on_accept(beast::error_code ec, tcp::socket so
 		// Create the session and run it
 		auto session = std::make_shared<ZstWebsocketSession>(std::move(socket), shared_from_this());
 		session->run();
-		m_sessions.insert(std::pair<std::string, ZstWebsocketSessionPtr>(session->get_id(), session));
+		m_sessions.insert(std::pair<uuid, ZstWebsocketSessionPtr>(session->endpoint_UUID(), session));
 	}
 
 	// Accept another connection

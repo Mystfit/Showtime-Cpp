@@ -1,4 +1,5 @@
 #include "ZstGraphTransport.h"
+#include "../ZstZMQRefCounter.h"
 #include <zmq.h>
 #include <czmq.h>
 #include <msgpack.hpp>
@@ -20,6 +21,7 @@ void ZstGraphTransport::init()
 	m_graph_actor.init("graph");
 	init_graph_sockets();
 	m_graph_actor.start_loop();
+	zst_zmq_inc_ref_count();
 }
 
 void ZstGraphTransport::destroy()
@@ -29,6 +31,7 @@ void ZstGraphTransport::destroy()
 	m_graph_actor.stop_loop();
 	destroy_graph_sockets();
 	m_graph_actor.destroy();
+	zst_zmq_dec_ref_count();
 }
 
 const std::string & ZstGraphTransport::get_graph_in_address() const
@@ -41,7 +44,7 @@ const std::string & ZstGraphTransport::get_graph_out_address() const
 	return m_graph_out_addr;
 }
 
-void ZstGraphTransport::send_message_impl(ZstMessage * msg)
+void ZstGraphTransport::send_message_impl(ZstMessage * msg, const ZstTransportArgs& args)
 {
 	ZstPerformanceMessage * perf_msg = static_cast<ZstPerformanceMessage*>(msg);
 	auto data = perf_msg->to_msgpack();
@@ -108,6 +111,7 @@ void ZstGraphTransport::destroy_graph_sockets()
 		zsock_destroy(&m_graph_in);
 	if (m_graph_out)
 		zsock_destroy(&m_graph_out);
+
 }
 
 std::string ZstGraphTransport::first_available_ext_ip() const

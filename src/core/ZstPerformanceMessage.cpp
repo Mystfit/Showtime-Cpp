@@ -2,6 +2,10 @@
 #include <msgpack.hpp>
 #include <exception>
 
+ZstPerformanceMessage::ZstPerformanceMessage() : m_endpoint_UUID(nil_generator()())
+{
+}
+
 ZstPerformanceMessage::~ZstPerformanceMessage()
 {
 }
@@ -19,7 +23,7 @@ ZstPerformanceMessage * ZstPerformanceMessage::init(ZstMsgKind kind, const ZstMs
 	return this;
 }
 
-ZstPerformanceMessage * ZstPerformanceMessage::init(ZstMsgKind kind, const ZstMsgArgs & payload, const ZstMsgArgs & args)
+ZstPerformanceMessage * ZstPerformanceMessage::init(ZstMsgKind kind, const ZstMsgArgs & args, const ZstMsgPayload& payload)
 {
 	reset();
 	set_sender(args.at(get_msg_arg_name(ZstMsgArg::PATH)));
@@ -32,7 +36,7 @@ void ZstPerformanceMessage::reset()
 	m_args.clear();
 }
 
-const ZstMsgKind& ZstPerformanceMessage::kind() const
+ZstMsgKind ZstPerformanceMessage::kind() const
 {
 	return ZstMsgKind::PERFORMANCE_MSG;
 }
@@ -67,6 +71,11 @@ std::string ZstPerformanceMessage::sender() const
 std::vector<uint8_t> ZstPerformanceMessage::to_msgpack() const
 {
 	return json::to_msgpack(m_args);
+}
+
+const uuid& ZstPerformanceMessage::endpoint_UUID() const
+{
+	return m_endpoint_UUID;
 }
 
 void ZstPerformanceMessage::set_payload(const ZstMsgArgs & payload)

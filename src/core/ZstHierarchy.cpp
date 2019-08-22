@@ -24,7 +24,7 @@ void ZstHierarchy::destroy()
     ZstSynchronisableModule::destroy();
 }
 
-void ZstHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
+void ZstHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype)
 {
 	//If this is not a local entity, we can't activate it
 	if (entity->is_proxy())
@@ -40,7 +40,7 @@ void ZstHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportSen
 	}
 }
 
-ZstEntityBase * ZstHierarchy::create_entity(const ZstURI & creatable_path, const char * name, const ZstTransportSendType & sendtype)
+ZstEntityBase * ZstHierarchy::create_entity(const ZstURI & creatable_path, const char * name, const ZstTransportRequestBehaviour & sendtype)
 {
 	ZstEntityBase * entity = NULL;
 	
@@ -52,7 +52,7 @@ ZstEntityBase * ZstHierarchy::create_entity(const ZstURI & creatable_path, const
 	return entity;
 }
 
-void ZstHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
+void ZstHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype)
 {
 	if (!entity) return;
 	if(entity->activation_status() != ZstSyncStatus::DESTROYED)
@@ -371,7 +371,7 @@ void ZstHierarchy::on_synchronisable_destroyed(ZstSynchronisable * synchronisabl
 {
 	//Synchronisable is going away and the stage needs to know
 	if (synchronisable->is_activated() || synchronisable->activation_status() == ZstSyncStatus::DESTROYED) {
-		destroy_entity(dynamic_cast<ZstEntityBase*>(synchronisable), ZstTransportSendType::PUBLISH);
+		destroy_entity(dynamic_cast<ZstEntityBase*>(synchronisable), ZstTransportRequestBehaviour::PUBLISH);
 	}
 
 	if (synchronisable->is_proxy())

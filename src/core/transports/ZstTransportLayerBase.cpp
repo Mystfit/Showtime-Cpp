@@ -1,6 +1,7 @@
 #include "ZstTransportLayerBase.hpp"
 #include "../adaptors/ZstTransportAdaptor.hpp"
 #include "ZstConstants.h"
+#include "ZstExceptions.h"
 
 ZstTransportLayerBase::ZstTransportLayerBase() :
 	ZstMessageSupervisor(std::make_shared<cf::time_watcher>(), STAGE_TIMEOUT),
@@ -27,14 +28,15 @@ void ZstTransportLayerBase::init()
 	m_is_active = true;
 }
 
-ZstMessageReceipt ZstTransportLayerBase::send_sync_message(ZstMessage* msg)
+ZstMessageReceipt ZstTransportLayerBase::send_sync_message(ZstMessage* msg, const ZstTransportArgs& args)
 {
 	auto future = register_response(msg->id());
-	ZstMessageReceipt msg_response{ ZstMsgKind::EMPTY, ZstTransportSendType::SYNC_REPLY };
+	ZstMessageReceipt msg_response{ ZstMsgKind::EMPTY };
 
-	send_message_impl(msg);
+	send_message_impl(msg, args);
 	try {
-		msg_response.status = future.get();
+		//Blocking call on get
+		msg_response = future.get();
 	}
 	catch (const ZstTimeoutException& e) {
 		ZstLog::net(LogLevel::error, "Server response timed out", e.what());
@@ -42,22 +44,27 @@ ZstMessageReceipt ZstTransportLayerBase::send_sync_message(ZstMessage* msg)
 	}
 
 	enqueue_resolved_promise(msg->id());
+	msg_response.request_behaviour = ZstTransportRequestBehaviour::SYNC_REPLY;
 	return msg_response;
 }
 
-void ZstTransportLayerBase::send_async_message(ZstMessage* msg, const MessageReceivedAction& completed_action)
+ZstMessageReceipt ZstTransportLayerBase::send_async_message(ZstMessage* msg, const ZstTransportArgs& args)
 {
 	auto future = register_response(msg->id());
 
 	//Hold on to the message id so we can clean up the promise in case we time out
 	ZstMsgID id = msg->id();
 
+	//Copy receive action so the lambda can reference it when the response arrives
+	auto completed_action = args.on_recv_response;
+
 	future.then([this, id, completed_action](ZstMessageFuture f) {
 		ZstMsgKind status(ZstMsgKind::EMPTY);
-		ZstMessageReceipt msg_response{ status, ZstTransportSendType::ASYNC_REPLY };
+		ZstMessageReceipt msg_response{ status };
 		try {
-			ZstMsgKind status = f.get();
+			ZstMsgKind status = f.get().status;
 			msg_response.status = status;
+			msg_response.request_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
 			completed_action(msg_response);
 			return status;
 		}
@@ -70,7 +77,8 @@ void ZstTransportLayerBase::send_async_message(ZstMessage* msg, const MessageRec
 		return status;
 		});
 
-	send_message_impl(msg);
+	send_message_impl(msg, args);
+	return ZstMessageReceipt{ ZstMsgKind::OK, ZstTransportRequestBehaviour::ASYNC_REPLY };
 }
 
 ZstEventDispatcher<ZstTransportAdaptor*>* ZstTransportLayerBase::msg_events()
@@ -88,30 +96,35 @@ void ZstTransportLayerBase::process_events()
 	m_dispatch_events->process_events();
 }
 
-void ZstTransportLayerBase::begin_send_message(ZstMessage * msg)
+ZstMessageReceipt ZstTransportLayerBase::begin_send_message(ZstMessage * msg)
 {
-	if (!msg) return;
-	send_message_impl(msg);
+	send_message_impl(msg, ZstTransportArgs());
+	return ZstMessageReceipt{ ZstMsgKind::OK, ZstTransportRequestBehaviour::PUBLISH };
 }
 
-void ZstTransportLayerBase::begin_send_message(ZstMessage * msg, const ZstTransportSendType & sendtype, const MessageReceivedAction & action)
+ZstMessageReceipt ZstTransportLayerBase::begin_send_message(ZstMessage * msg, const ZstTransportArgs& args)
 {
-	if (!msg) return;
-
-	switch (sendtype) {
-	case ZstTransportSendType::ASYNC_REPLY:
-		send_async_message(msg, action);
+	switch (args.msg_send_behaviour) {
+	case ZstTransportRequestBehaviour::ASYNC_REPLY:
+		return send_async_message(msg, args);
 		break;
-	case ZstTransportSendType::SYNC_REPLY:
-		action(send_sync_message(msg));
-		break;
-	case ZstTransportSendType::PUBLISH:
-		send_message_impl(msg);
-		break;
-	default:
-		ZstTransportLayerBase::begin_send_message(msg, sendtype, action);
+	case ZstTransportRequestBehaviour::SYNC_REPLY:
+	{
+		auto receipt = send_sync_message(msg, args);
+		args.on_recv_response(receipt);
+		return receipt;
 		break;
 	}
+	case ZstTransportRequestBehaviour::PUBLISH: {
+		send_message_impl(msg, args);
+		return ZstMessageReceipt{ ZstMsgKind::OK, ZstTransportRequestBehaviour::PUBLISH };
+		break;
+	}
+	default:
+		ZstLog::net(LogLevel::error, "Can't send message. Unknown message request behaviour");
+		break;
+	}
+	return ZstMessageReceipt{ ZstMsgKind::EMPTY };
 }
 
 void ZstTransportLayerBase::receive_msg(ZstMessage * msg)
@@ -119,7 +132,7 @@ void ZstTransportLayerBase::receive_msg(ZstMessage * msg)
 	msg_events()->defer([msg](ZstTransportAdaptor* adaptor) {
 		adaptor->on_receive_msg(msg);
 	}, [this, msg](ZstEventStatus status) {
-		process_response(msg->id(), msg->kind());
+		process_response(msg->id(), ZstMessageReceipt{ msg->kind() });
 	});
 }
 
@@ -128,7 +141,7 @@ void ZstTransportLayerBase::receive_msg(ZstMessage* msg, ZstEventCallback on_com
 	msg_events()->defer([msg](ZstTransportAdaptor* adaptor) { 
 		adaptor->on_receive_msg(msg); 
 	}, [this, msg, on_complete](ZstEventStatus status) {
-		process_response(msg->id(), msg->kind());
+		process_response(msg->id(), ZstMessageReceipt{ msg->kind() });
 		on_complete(status);
 	});
 }

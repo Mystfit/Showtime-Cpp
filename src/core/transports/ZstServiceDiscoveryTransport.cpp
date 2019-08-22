@@ -51,7 +51,7 @@ void ZstServiceDiscoveryTransport::destroy()
     m_beacon_actor.destroy();
 }
 
-void ZstServiceDiscoveryTransport::send_message_impl(ZstMessage * msg)
+void ZstServiceDiscoveryTransport::send_message_impl(ZstMessage * msg, const ZstTransportArgs& args)
 {
     ZstStageMessage * stage_msg = static_cast<ZstStageMessage*>(msg);
     auto data = stage_msg->as_json_str();

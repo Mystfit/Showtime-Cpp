@@ -76,9 +76,9 @@ public:
 	// Cable creation
 	// ------------------
 
-	ZstCable * connect_cable(ZstInputPlug * input, ZstOutputPlug * output, const ZstTransportSendType & sendtype) override;
-	void destroy_cable(ZstCable * cable, const ZstTransportSendType & sendtype) override;
-	bool observe_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype) override;
+	ZstCable * connect_cable(ZstInputPlug * input, ZstOutputPlug * output, const ZstTransportRequestBehaviour & sendtype) override;
+	void destroy_cable(ZstCable * cable, const ZstTransportRequestBehaviour & sendtype) override;
+	bool observe_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype) override;
 
 
 	// -----------------

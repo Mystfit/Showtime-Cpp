@@ -41,11 +41,11 @@ void zst_start_file_logging(const char * log_file_path)
 }
 
 void zst_join(const char * stage_address){
-	if(LIBRARY_INIT_GUARD()) ZstClient::instance().join_stage(stage_address, ZstTransportSendType::SYNC_REPLY);
+	if(LIBRARY_INIT_GUARD()) ZstClient::instance().join_stage(stage_address, ZstTransportRequestBehaviour::SYNC_REPLY);
 }
 
 void zst_join_async(const char * stage_address){
-	if (LIBRARY_INIT_GUARD()) ZstClient::instance().join_stage(stage_address, ZstTransportSendType::ASYNC_REPLY);
+	if (LIBRARY_INIT_GUARD()) ZstClient::instance().join_stage(stage_address, ZstTransportRequestBehaviour::ASYNC_REPLY);
 }
 
 void zst_join_by_name(const char * stage_name)
@@ -76,12 +76,12 @@ void zst_join_by_name_async(const char * stage_name)
 
 void zst_auto_join_by_name(const char * name)
 {
-    if(LIBRARY_INIT_GUARD()) ZstClient::instance().auto_join_stage(name, ZstTransportSendType::SYNC_REPLY);
+    if(LIBRARY_INIT_GUARD()) ZstClient::instance().auto_join_stage(name, ZstTransportRequestBehaviour::SYNC_REPLY);
 }
 
 void zst_auto_join_by_name_async(const char * name)
 {
-    if(LIBRARY_INIT_GUARD()) ZstClient::instance().auto_join_stage(name, ZstTransportSendType::ASYNC_REPLY);
+    if(LIBRARY_INIT_GUARD()) ZstClient::instance().auto_join_stage(name, ZstTransportRequestBehaviour::ASYNC_REPLY);
 }
 
 void zst_get_discovered_servers(ZstServerAddressBundle & servers)
@@ -151,27 +151,27 @@ void zst_remove_hierarchy_adaptor(ZstHierarchyAdaptor * adaptor)
 
 void zst_activate_entity_async(ZstEntityBase * entity)
 {
-	if (LIBRARY_CONNECTED_GUARD()) ZstClient::instance().session()->hierarchy()->activate_entity(entity, ZstTransportSendType::ASYNC_REPLY);
+	if (LIBRARY_CONNECTED_GUARD()) ZstClient::instance().session()->hierarchy()->activate_entity(entity, ZstTransportRequestBehaviour::ASYNC_REPLY);
 }
 
 void zst_deactivate_entity(ZstEntityBase * entity)
 {
-	if (LIBRARY_CONNECTED_GUARD()) ZstClient::instance().session()->hierarchy()->destroy_entity(entity, ZstTransportSendType::SYNC_REPLY);
+	if (LIBRARY_CONNECTED_GUARD()) ZstClient::instance().session()->hierarchy()->destroy_entity(entity, ZstTransportRequestBehaviour::SYNC_REPLY);
 }
 
 void zst_deactivate_entity_async(ZstEntityBase * entity)
 {
-	if (LIBRARY_CONNECTED_GUARD()) ZstClient::instance().session()->hierarchy()->destroy_entity(entity, ZstTransportSendType::ASYNC_REPLY);
+	if (LIBRARY_CONNECTED_GUARD()) ZstClient::instance().session()->hierarchy()->destroy_entity(entity, ZstTransportRequestBehaviour::ASYNC_REPLY);
 }
 
 void zst_observe_entity(ZstEntityBase * entity)
 {
-	if (LIBRARY_CONNECTED_GUARD()) ZstClient::instance().session()->observe_entity(entity, ZstTransportSendType::SYNC_REPLY);
+	if (LIBRARY_CONNECTED_GUARD()) ZstClient::instance().session()->observe_entity(entity, ZstTransportRequestBehaviour::SYNC_REPLY);
 }
 
 void zst_observe_entity_async(ZstEntityBase * entity)
 {
-	if (LIBRARY_CONNECTED_GUARD()) ZstClient::instance().session()->observe_entity(entity, ZstTransportSendType::ASYNC_REPLY);
+	if (LIBRARY_CONNECTED_GUARD()) ZstClient::instance().session()->observe_entity(entity, ZstTransportRequestBehaviour::ASYNC_REPLY);
 }
 
 
@@ -181,12 +181,12 @@ void zst_observe_entity_async(ZstEntityBase * entity)
 
 ZstEntityBase * zst_create_entity(const ZstURI & creatable_path, const char * name)
 {
-	return ZstClient::instance().session()->hierarchy()->create_entity(creatable_path, name, ZstTransportSendType::SYNC_REPLY);
+	return ZstClient::instance().session()->hierarchy()->create_entity(creatable_path, name, ZstTransportRequestBehaviour::SYNC_REPLY);
 }
 
 void zst_create_entity_async(const ZstURI & creatable_path, const char * name)
 {
-	ZstClient::instance().session()->hierarchy()->create_entity(creatable_path, name, ZstTransportSendType::ASYNC_REPLY);
+	ZstClient::instance().session()->hierarchy()->create_entity(creatable_path, name, ZstTransportRequestBehaviour::ASYNC_REPLY);
 }
 
 void zst_register_factory(ZstEntityFactory * factory)
@@ -196,7 +196,7 @@ void zst_register_factory(ZstEntityFactory * factory)
 	//Add the factory to the root performer first to allow for offline factory registration
 	zst_get_root()->add_child(factory);
 
-	if (LIBRARY_CONNECTED_GUARD()) ZstClient::instance().session()->hierarchy()->activate_entity(factory, ZstTransportSendType::SYNC_REPLY);
+	if (LIBRARY_CONNECTED_GUARD()) ZstClient::instance().session()->hierarchy()->activate_entity(factory, ZstTransportRequestBehaviour::SYNC_REPLY);
 }
 
 void zst_register_factory_async(ZstEntityFactory * factory)
@@ -206,7 +206,7 @@ void zst_register_factory_async(ZstEntityFactory * factory)
 	//Add the factory to the root performer first to allow for offline factory registration
 	zst_get_root()->add_child(factory);
 
-	if (LIBRARY_CONNECTED_GUARD()) ZstClient::instance().session()->hierarchy()->activate_entity(factory, ZstTransportSendType::ASYNC_REPLY);
+	if (LIBRARY_CONNECTED_GUARD()) ZstClient::instance().session()->hierarchy()->activate_entity(factory, ZstTransportRequestBehaviour::ASYNC_REPLY);
 }
 
 // -------------
@@ -270,21 +270,21 @@ int zst_ping()
 ZstCable * zst_connect_cable(ZstInputPlug * input, ZstOutputPlug * output)
 {
 	if (!LIBRARY_CONNECTED_GUARD()) return NULL;
-	return ZstClient::instance().session()->connect_cable(input, output, ZstTransportSendType::SYNC_REPLY);
+	return ZstClient::instance().session()->connect_cable(input, output, ZstTransportRequestBehaviour::SYNC_REPLY);
 }
 
 ZstCable * zst_connect_cable_async(ZstInputPlug * input, ZstOutputPlug * output)
 {
 	if (!LIBRARY_CONNECTED_GUARD()) return NULL;
-	return ZstClient::instance().session()->connect_cable(input, output, ZstTransportSendType::ASYNC_REPLY);
+	return ZstClient::instance().session()->connect_cable(input, output, ZstTransportRequestBehaviour::ASYNC_REPLY);
 }
 
 void zst_destroy_cable(ZstCable * cable)
 {
-	if (LIBRARY_CONNECTED_GUARD()) ZstClient::instance().session()->destroy_cable(cable, ZstTransportSendType::SYNC_REPLY);
+	if (LIBRARY_CONNECTED_GUARD()) ZstClient::instance().session()->destroy_cable(cable, ZstTransportRequestBehaviour::SYNC_REPLY);
 }
 
 void zst_destroy_cable_async(ZstCable * cable)
 {
-	if (LIBRARY_CONNECTED_GUARD()) ZstClient::instance().session()->destroy_cable(cable, ZstTransportSendType::ASYNC_REPLY);
+	if (LIBRARY_CONNECTED_GUARD()) ZstClient::instance().session()->destroy_cable(cable, ZstTransportRequestBehaviour::ASYNC_REPLY);
 }

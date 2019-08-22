@@ -28,6 +28,7 @@ public:
     
     ZST_EXPORT void write_json(json & buffer) const override;
     ZST_EXPORT void read_json(const json & buffer) override;
+	ZST_EXPORT std::string to_string() const;
     
 private:
     ZstURI m_input_URI;

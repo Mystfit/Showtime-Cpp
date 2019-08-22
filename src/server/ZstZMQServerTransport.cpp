@@ -1,6 +1,8 @@
 #include <czmq.h>
 #include <sstream>
 #include <fmt/format.h>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include "../core/ZstZMQRefCounter.h"
 #include "ZstZMQServerTransport.h"
@@ -20,7 +22,9 @@ void ZstZMQServerTransport::init()
 
 	//Socket
 	m_clients_sock = zsock_new(ZMQ_ROUTER);
+	zsock_set_sndhwm(m_clients_sock, 1000);
 	zsock_set_linger(m_clients_sock, 0);
+	zsock_set_sndtimeo(m_clients_sock, 10);
 	zsock_set_router_mandatory(m_clients_sock, 1);
 
 	//Actor
@@ -76,7 +80,8 @@ int ZstZMQServerTransport::s_handle_router(zloop_t * loop, zsock_t * socket, voi
 			msg->unpack(json::parse(payload_data));
 
 			//Save sender as a local argument
-			msg->set_arg<std::string, std::string>(get_msg_arg_name(ZstMsgArg::SENDER), std::string((char*)zframe_data(identity_frame), zframe_size(identity_frame)));
+			msg->set_endpoint_UUID(uuid(boost::lexical_cast<uuid>((char*)zframe_data(identity_frame), zframe_size(identity_frame))));
+			ZstLog::net(LogLevel::debug, "Server receiving message. Msg id {}", msg->as_json_str());
 			transport->receive_msg(msg);
 		}
 		else {
@@ -93,13 +98,15 @@ int ZstZMQServerTransport::s_handle_router(zloop_t * loop, zsock_t * socket, voi
 	return 0;
 }
 
-void ZstZMQServerTransport::send_message_impl(ZstMessage * msg)
+void ZstZMQServerTransport::send_message_impl(ZstMessage * msg, const ZstTransportArgs& args)
 {
 	ZstStageMessage * stage_msg = static_cast<ZstStageMessage*>(msg);
+	ZstLog::net(LogLevel::debug, "Server sending message. Msg id {}", stage_msg->as_json_str());
+
 	zmsg_t * m = zmsg_new();
 
 	//Add destination frame at beginning to route our message to the correct destination
-	zmsg_addstr(m, stage_msg->get_arg<std::string>(ZstMsgArg::DESTINATION).c_str());
+	zmsg_addstr(m, to_string(args.target_endpoint_UUID).c_str());
 
 	//Spacer frame between destination and data
 	zframe_t * empty = zframe_new_empty();
@@ -109,12 +116,15 @@ void ZstZMQServerTransport::send_message_impl(ZstMessage * msg)
 	zmsg_addstr(m, stage_msg->as_json_str().c_str());
 
 	std::lock_guard<std::mutex> lock(m_transport_mtx);
-	zmsg_send(&m, m_clients_sock);
+	//zmsg_send(&m, m_clients_sock);
+	int result = m_server_actor.send_to_socket(m_clients_sock, m);
 
 	//Errors
-	int err = zmq_errno();
-	if (err > 0) {
-		ZstLog::net(LogLevel::error, "Message sending error: {}", zmq_strerror(err));
+	if (result != 0) {
+		int err = zmq_errno();
+		if (err > 0) {
+			ZstLog::net(LogLevel::error, "Server message sending error: {}", zmq_strerror(err));
+		}
 	}
 	release_msg(stage_msg);
 }

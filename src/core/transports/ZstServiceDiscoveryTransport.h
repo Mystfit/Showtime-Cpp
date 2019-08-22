@@ -17,7 +17,7 @@ public:
     ZST_EXPORT void init(int port);
     ZST_EXPORT void destroy() override;
     
-    void send_message_impl(ZstMessage * msg) override;
+    void send_message_impl(ZstMessage * msg, const ZstTransportArgs& args) override;
     void receive_msg(ZstMessage * msg) override;
     
     //Handle incoming zbeacon messages

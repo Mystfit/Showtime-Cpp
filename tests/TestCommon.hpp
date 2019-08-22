@@ -19,13 +19,14 @@ namespace fs = boost::filesystem;
 #endif
 
 using namespace boost::process;
+using namespace boost::unit_test;
 
 #define BOOST_THREAD_DONT_USE_DATETIME
 #define TAKE_A_SHORT_BREATH std::this_thread::sleep_for(std::chrono::milliseconds(10));
 #define TAKE_A_BREATH std::this_thread::sleep_for(std::chrono::milliseconds(100));
 #define WAIT_UNTIL_STAGE_TIMEOUT std::this_thread::sleep_for(std::chrono::milliseconds(STAGE_TIMEOUT + 1000));
 #define WAIT_UNTIL_STAGE_BEACON std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-
+#define TEST_TIMEOUT *timeout(10)
 #define TEST_SERVER_NAME "test_server"
 
 // --------------
@@ -144,6 +145,7 @@ namespace ZstTest
 	{
 	public:
 		bool is_connected = false;
+		bool is_synced = false;
 		ZstServerAddress last_discovered_server;
 
 		void on_connected_to_stage() override {
@@ -155,16 +157,20 @@ namespace ZstTest
 		void on_disconnected_from_stage() override {
 			ZstLog::app(LogLevel::debug, "DISCONNECTING: {}", zst_get_root()->URI().path());
 			inc_calls();
-
 			is_connected = false;
 		}
         
         void on_server_discovered(const ZstServerAddress & server) override {
             ZstLog::app(LogLevel::debug, "SERVER DISCOVERED: Name: {} Address: {}", server.name, server.address);
             inc_calls();
-
 			last_discovered_server = server;
         }
+
+		void on_synchronised_with_stage() override {
+			ZstLog::app(LogLevel::debug, "SERVER SYNCHRONISED");
+			inc_calls();
+			is_synced = true;
+		}
 
 	private:
 	};

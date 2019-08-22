@@ -46,6 +46,7 @@ set(API_HEADERS
     ${Showtime_INCLUDE_DIRS}/ZstCore.h
     ${Showtime_INCLUDE_DIRS}/ZstLogging.h
     ${Showtime_INCLUDE_DIRS}/ZstCable.h
+    ${Showtime_INCLUDE_DIRS}/ZstExceptions.h
     ${Showtime_INCLUDE_DIRS}/ZstCableAddress.h
     ${Showtime_INCLUDE_DIRS}/ZstConstants.h
     ${Showtime_INCLUDE_DIRS}/ZstExports.h
@@ -86,6 +87,7 @@ set(ZST_CORE_MODULE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstHierarchy.h"
 )
 set(ZST_CORE_TRANSPORT_HEADERS
+    "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportHelpers.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayer.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayerBase.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstGraphTransport.h"
@@ -204,7 +206,6 @@ message(STATUS "Setting link thread library to ${CMAKE_THREAD_LIBS_INIT}")
 set(GLOBAL_PUBLIC_DEFINES
     CZMQ_STATIC
     ZMQ_STATIC
-    #BOOST_ALL_NO_LIB
     BOOST_THREAD_USE_LIB
 )
 
@@ -219,13 +220,13 @@ endif()
 # Platform specific options
 IF(WIN32)
     list(APPEND GLOBAL_PUBLIC_DEFINES
+        _SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING
         _SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING
         _SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING
         _SCL_SECURE_NO_WARNINGS
-    )
-    list(APPEND GLOBAL_PUBLIC_DEFINES
         _WIN32_WINNT=0x0601
         BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE
+        BOOST_UUID_FORCE_AUTO_LINK
     )
 endif()
 

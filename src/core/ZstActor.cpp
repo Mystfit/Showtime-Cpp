@@ -1,5 +1,6 @@
 #include "ZstActor.h"
 #include "ZstZMQRefCounter.h"
+#include "ZstLogging.h"
 #include <czmq.h>
 
 using namespace std;
@@ -71,10 +72,15 @@ void ZstActor::actor_thread_func(zsock_t * pipe, void * args)
 
 int ZstActor::s_handle_actor_pipe(zloop_t * loop, zsock_t * sock, void * args)
 {
-	zmsg_t *msg = zmsg_recv(sock);
+	//zmsg_t *msg = zmsg_recv(sock);
 
 	//Received TERM message, this actor is going away
-	char *command = zmsg_popstr(msg);
+	//char *command = zmsg_popstr(msg);
+	char* command = "";
+	zsock_t* send_sock = NULL;
+	zmsg_t* msg = NULL;
+	zsock_recv(sock, "spm", &command, &send_sock, &msg);
+
 	if (streq(command, "$TERM")) {
 		//Signal that we finished cleaning up
 		zsock_signal(sock, 0);
@@ -82,8 +88,22 @@ int ZstActor::s_handle_actor_pipe(zloop_t * loop, zsock_t * sock, void * args)
 		//Return -1 to exit the zloop
 		return -1;
 	}
+	else if (streq(command, "s")) {
+		if (!send_sock) {
+			ZstLog::net(LogLevel::error, "Actor received send request but no socket was sent");
+			return 0;
+		}
+		if (!msg) {
+			ZstLog::net(LogLevel::error, "Actor received send request but no msg was sent");
+			return 0;
+		}
+		zmsg_send(&msg , send_sock);
+	}
 	else if (streq(command, "PING")) {
 		zstr_send(sock, "PONG");
+	}
+	else {
+		ZstLog::net(LogLevel::error, "Actor command not recognized: {}", command);
 	}
 	return 0;
 }
@@ -103,6 +123,11 @@ void ZstActor::self_test()
 void ZstActor::attach_pipe_listener(zsock_t * sock, zloop_reader_fn handler, void * args)
 {
 	zloop_reader(m_loop, sock, handler, args);
+}
+
+int ZstActor::send_to_socket(zsock_t* sock, zmsg_t* msg)
+{
+	return zsock_send(m_loop_actor, "spm", "s", sock, msg);
 }
 
 int ZstActor::attach_timer(int delay, std::function<void()> timer_func)

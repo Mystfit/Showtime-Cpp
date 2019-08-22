@@ -48,7 +48,6 @@ class ZstClient :
 {
 public:
 	ZstClient();
-	~ZstClient();
 	void init_client(const char * client_name, bool debug);
 	void init_file_logging(const char * log_file_path);
 	void destroy();
@@ -68,10 +67,10 @@ public:
     const ZstServerList & get_discovered_servers();
     
     //Register this endpoint to the stage
-    void auto_join_stage(const std::string & name, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
-	void join_stage(const std::string & stage_address, const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
+    void auto_join_stage(const std::string & name, const ZstTransportRequestBehaviour & sendtype = ZstTransportRequestBehaviour::SYNC_REPLY);
+	void join_stage(const std::string & stage_address, const ZstTransportRequestBehaviour & sendtype = ZstTransportRequestBehaviour::SYNC_REPLY);
 	void join_stage_complete(ZstMessageReceipt response);
-	void synchronise_graph(const ZstTransportSendType & sendtype = ZstTransportSendType::SYNC_REPLY);
+	void synchronise_graph(const ZstTransportRequestBehaviour & sendtype = ZstTransportRequestBehaviour::SYNC_REPLY);
 	void synchronise_graph_complete(ZstMessageReceipt response);
 
 	//Leave the stage
@@ -115,8 +114,7 @@ private:
 	// Plug initialization
 	void init_arriving_plug(ZstPlug* plug);
 
-	//UUIDs
-	std::string m_assigned_uuid;
+	//Names
 	std::string m_client_name;
     
     //Server discovery
@@ -135,7 +133,7 @@ private:
 	std::unordered_map<ZstURI, ZstMsgID, ZstURIHash> m_pending_peer_connections;
 	
 	//Client modules
-	ZstClientSession * m_session;
+	std::unique_ptr<ZstClientSession> m_session;
 	std::unique_ptr<ZstTCPGraphTransport> m_tcp_graph_transport;
 #ifdef ZST_BUILD_DRAFT_API
 	std::unique_ptr<ZstUDPGraphTransport> m_udp_graph_transport;

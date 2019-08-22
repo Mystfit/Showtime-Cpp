@@ -3,6 +3,7 @@
 #include "ZstExports.h"
 #include "adaptors/ZstEventAdaptor.hpp"
 #include "../transports/ZstTransportLayerBase.hpp"
+#include "../ZstMessageSupervisor.hpp"
 
 //Forwards
 class ZstMessage;
@@ -17,10 +18,6 @@ public:
 	ZST_EXPORT virtual void connect(const std::string & address);
 	ZST_EXPORT virtual void disconnect();
 	ZST_EXPORT virtual void bind(const std::string& address);
-	ZST_EXPORT virtual void send_msg(ZstMsgKind kind);
-	ZST_EXPORT virtual void send_msg(ZstMsgKind kind, const ZstMsgArgs & args);
-	ZST_EXPORT virtual void send_msg(ZstMsgKind kind, const ZstMsgArgs & args, const ZstMsgArgs & payload);
-	ZST_EXPORT virtual void send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const MessageReceivedAction & action);
-	ZST_EXPORT virtual void send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstMsgArgs & args, const MessageReceivedAction & action);
-	ZST_EXPORT virtual void send_msg(ZstMsgKind kind, const ZstTransportSendType & sendtype, const ZstMsgArgs & payload, const ZstMsgArgs & args, const MessageReceivedAction & action);
+	ZST_EXPORT virtual ZstMessageReceipt send_msg(ZstMsgKind kind);
+	ZST_EXPORT virtual ZstMessageReceipt send_msg(ZstMsgKind kind, const ZstTransportArgs& args);
 };

@@ -31,13 +31,13 @@ void ZstClientSession::destroy()
 void ZstClientSession::process_events()
 {
 	ZstSession::process_events();
-	stage_events().process_events();
+	ZstClientModule::process_events();
 }
 
 void ZstClientSession::flush_events()
 {
 	ZstSession::flush_events();
-	stage_events().flush();
+	ZstClientModule::flush_events();
 }
 
 void ZstClientSession::dispatch_connected_to_stage()
@@ -101,7 +101,7 @@ void ZstClientSession::on_receive_msg(ZstMessage * msg)
 		auto cable_address = stage_msg->unpack_payload_serialisable<ZstCableAddress>();
 		ZstCable * cable_ptr = find_cable(cable_address);
 		if (cable_ptr) {
-			destroy_cable_complete(ZstMessageReceipt{ ZstMsgKind::OK, ZstTransportSendType::SYNC_REPLY }, cable_ptr);
+			destroy_cable_complete(ZstMessageReceipt{ ZstMsgKind::OK }, cable_ptr); 
 		}
 		break;
 	}
@@ -116,20 +116,26 @@ void ZstClientSession::on_receive_msg(ZstMessage * msg)
 void ZstClientSession::aquire_entity_ownership(ZstEntityBase* entity)
 {
 	stage_events().invoke([entity](ZstTransportAdaptor* adaptor) {
-		ZstMsgArgs args;
-		adaptor->send_msg(ZstMsgKind::AQUIRE_ENTITY_OWNERSHIP, ZstTransportSendType::ASYNC_REPLY, { { get_msg_arg_name(ZstMsgArg::PATH), entity->URI().path() } }, [](ZstMessageReceipt response) {
+		ZstTransportArgs args;
+		args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
+		args.msg_args = { { get_msg_arg_name(ZstMsgArg::PATH), entity->URI().path() } };
+		args.on_recv_response = [](ZstMessageReceipt) {
 			ZstLog::net(LogLevel::debug, "Ack from server");
-		});
+		};
+		adaptor->send_msg(ZstMsgKind::AQUIRE_ENTITY_OWNERSHIP, args);
 	});	
 }
 
 void ZstClientSession::release_entity_ownership(ZstEntityBase* entity)
 {
     stage_events().invoke([entity](ZstTransportAdaptor* adaptor) {
-        ZstMsgArgs args;
-        adaptor->send_msg(ZstMsgKind::RELEASE_ENTITY_OWNERSHIP, ZstTransportSendType::ASYNC_REPLY, { { get_msg_arg_name(ZstMsgArg::PATH), entity->URI().path() } }, [](ZstMessageReceipt response) {
-            ZstLog::net(LogLevel::debug, "Ack from server");
-        });
+        ZstTransportArgs args;
+		args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
+		args.msg_args = { { get_msg_arg_name(ZstMsgArg::PATH), entity->URI().path() } };
+		args.on_recv_response = [](ZstMessageReceipt){
+			ZstLog::net(LogLevel::debug, "Ack from server");
+		};
+        adaptor->send_msg(ZstMsgKind::RELEASE_ENTITY_OWNERSHIP, args);
     });
 }
 
@@ -214,20 +220,22 @@ void ZstClientSession::plug_received_value(ZstInputPlug * plug)
 // Cable creation API
 // ------------------
 
-ZstCable * ZstClientSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * output, const ZstTransportSendType & sendtype)
+ZstCable * ZstClientSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * output, const ZstTransportRequestBehaviour & sendtype)
 {
 	ZstCable * cable = NULL;
 	cable = ZstSession::connect_cable(input, output, sendtype);
 	
 	if (cable) {
 		stage_events().invoke([this, sendtype, cable](ZstTransportAdaptor* adaptor) {
-			adaptor->send_msg(ZstMsgKind::CREATE_CABLE, sendtype, cable->get_address().as_json(), json::object(), [this, cable](ZstMessageReceipt response) {
-				this->connect_cable_complete(response, cable);
-			});
+			ZstTransportArgs args;
+			args.msg_send_behaviour = sendtype;
+			args.on_recv_response = [this, cable](ZstMessageReceipt response) { this->connect_cable_complete(response, cable); };
+			cable->get_address().write_json(args.msg_payload);
+			adaptor->send_msg(ZstMsgKind::CREATE_CABLE, args);
 		});
 	}
 
-	if (sendtype == ZstTransportSendType::SYNC_REPLY) process_events();
+	if (sendtype == ZstTransportRequestBehaviour::SYNC_REPLY) process_events();
 
 	return cable;
 }
@@ -241,7 +249,7 @@ void ZstClientSession::connect_cable_complete(ZstMessageReceipt response, ZstCab
 	}
 }
 
-void ZstClientSession::destroy_cable(ZstCable * cable, const ZstTransportSendType & sendtype)
+void ZstClientSession::destroy_cable(ZstCable * cable, const ZstTransportRequestBehaviour & sendtype)
 {
 	if (!cable)
 		return;
@@ -249,28 +257,28 @@ void ZstClientSession::destroy_cable(ZstCable * cable, const ZstTransportSendTyp
 	ZstSession::destroy_cable(cable, sendtype);
 	
 	stage_events().invoke([this, cable, sendtype](ZstTransportAdaptor * adaptor) {
-		adaptor->send_msg(ZstMsgKind::DESTROY_CABLE, sendtype, cable->get_address().as_json(), json(), [this, cable](ZstMessageReceipt response) {
-			this->destroy_cable_complete(response, cable);
-		});
+		ZstTransportArgs args;
+		args.msg_send_behaviour = sendtype;
+		args.on_recv_response = [this, cable](ZstMessageReceipt response) { this->destroy_cable_complete(response, cable); };
+		cable->get_address().write_json(args.msg_payload);
+		adaptor->send_msg(ZstMsgKind::DESTROY_CABLE, args);
 	});
 
-	if (sendtype == ZstTransportSendType::SYNC_REPLY) process_events();
+	if (sendtype == ZstTransportRequestBehaviour::SYNC_REPLY) process_events();
 }
 
-bool ZstClientSession::observe_entity(ZstEntityBase * entity, const ZstTransportSendType & sendtype)
+bool ZstClientSession::observe_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype)
 {
 	if (!ZstSession::observe_entity(entity, sendtype)) {
 		return false;
 	}
 
 	stage_events().invoke([this, entity, sendtype](ZstTransportAdaptor * adaptor) {
-		ZstMsgArgs args = { 
-			{ get_msg_arg_name(ZstMsgArg::OUTPUT_PATH), entity->URI().first().path() } 
-		};
-		adaptor->send_msg(ZstMsgKind::OBSERVE_ENTITY, sendtype, args, [this, entity](ZstMessageReceipt response) {
-				this->observe_entity_complete(response, entity);
-			}
-		);
+		ZstTransportArgs args;
+		args.msg_send_behaviour = sendtype;
+		args.msg_args = { { get_msg_arg_name(ZstMsgArg::OUTPUT_PATH), entity->URI().first().path() } };
+		args.on_recv_response = [this, entity](ZstMessageReceipt response) { this->observe_entity_complete(response, entity); };
+		adaptor->send_msg(ZstMsgKind::OBSERVE_ENTITY, args);
 	});
 
 	return true;

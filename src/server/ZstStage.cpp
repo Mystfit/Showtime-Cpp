@@ -43,21 +43,25 @@ void ZstStage::init_stage(const char * stage_name, int port)
     m_service_broadcast_transport->init(STAGE_DISCOVERY_PORT);
     
     //We start the beacon broadcast by sending a message with the intended broadcast data
-    m_service_broadcast_transport->send_msg(ZstMsgKind::SERVER_BEACON, {
-        {get_msg_arg_name(ZstMsgArg::SENDER), stage_name},
-        {get_msg_arg_name(ZstMsgArg::ADDRESS_PORT), port}
-    });
+	ZstTransportArgs args;
+	args.msg_args = {
+		{get_msg_arg_name(ZstMsgArg::NAME), stage_name},
+		{get_msg_arg_name(ZstMsgArg::ADDRESS_PORT), port}
+	};
+    m_service_broadcast_transport->send_msg(ZstMsgKind::SERVER_BEACON, args);
 
 	//Init timer actor for client heartbeats
 	//Create timers
 	m_heartbeat_timer.expires_from_now(boost::posix_time::milliseconds(STAGE_HEARTBEAT_CHECK));
 	m_heartbeat_timer.async_wait(boost::bind(&ZstStage::stage_heartbeat_timer, &m_heartbeat_timer, this, boost::posix_time::milliseconds(STAGE_HEARTBEAT_CHECK)));
 
-	//Attach adaptors
+	//Attach tcp transport adaptors
 	m_router_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(m_session.get()));
 	m_router_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(m_session->hierarchy()));
 	m_session->router_events().add_adaptor(m_router_transport.get());
 	m_session->hierarchy()->router_events().add_adaptor(m_router_transport.get());
+	
+	//Attach websocket transport adaptors
 	m_websocket_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(m_session.get()));
 	m_websocket_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(m_session->hierarchy()));
 	m_session->router_events().add_adaptor(m_websocket_transport.get());

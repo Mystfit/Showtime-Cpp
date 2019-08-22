@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_CASE(double_init) {
 	zst_destroy();
 }
 
-BOOST_FIXTURE_TEST_CASE(single_server_connection, FixtureInitAndCreateServer){
+BOOST_FIXTURE_TEST_CASE(single_server_connection, FixtureInitAndCreateServer, TEST_TIMEOUT){
 	//Testing abort connection if we're already connected
 	zst_join(server_address.c_str());
 	zst_join(server_address.c_str());
@@ -37,7 +37,7 @@ BOOST_FIXTURE_TEST_CASE(single_server_connection, FixtureInitAndCreateServer){
 	zst_leave();
 }
 
-BOOST_FIXTURE_TEST_CASE(sync_join, FixtureInitAndCreateServer){
+BOOST_FIXTURE_TEST_CASE(sync_join, FixtureInitAndCreateServer, TEST_TIMEOUT){
 	//Testing sync join by address
 	zst_join(server_address.c_str());
 	BOOST_TEST(zst_is_connected());
@@ -51,55 +51,51 @@ BOOST_FIXTURE_TEST_CASE(sync_join, FixtureInitAndCreateServer){
 	BOOST_TEST(zst_is_connected());
 }
 
-BOOST_FIXTURE_TEST_CASE(sync_join_by_name, FixtureInitAndCreateServer){
+BOOST_FIXTURE_TEST_CASE(sync_join_by_name, FixtureInitAndCreateServer, TEST_TIMEOUT){
 	//Testing joining by name
 	WAIT_UNTIL_STAGE_BEACON
 	zst_join_by_name(server_name.c_str());
 	BOOST_TEST(zst_is_connected());
 }
 
-BOOST_FIXTURE_TEST_CASE(async_join, FixtureInitAndCreateServer){
+BOOST_FIXTURE_TEST_CASE(async_join, FixtureInitAndCreateServer, TEST_TIMEOUT){
+	auto connectCallback = std::make_shared< TestConnectionEvents>();
+	zst_add_session_adaptor(connectCallback.get());
 	zst_join_async(server_address.c_str());
-	TAKE_A_BREATH
+	wait_for_event(connectCallback.get(), 2);
 	BOOST_TEST(zst_is_connected());
+	BOOST_TEST_REQUIRE(connectCallback->is_synced);
 }
 
-BOOST_FIXTURE_TEST_CASE(autojoin_by_name, FixtureInitAndCreateServer){
+BOOST_FIXTURE_TEST_CASE(autojoin_by_name, FixtureInitAndCreateServer, TEST_TIMEOUT){
 	//Testing autojoin by name
 	zst_auto_join_by_name(server_name.c_str());
 	BOOST_TEST(zst_is_connected());
 }
 
-BOOST_FIXTURE_TEST_CASE(autojoin_by_name_async, FixtureInitAndCreateServer) {
-	//Testing autojoin by name
+BOOST_FIXTURE_TEST_CASE(autojoin_by_name_async, FixtureInitAndCreateServer, TEST_TIMEOUT) {
+	//Testing autojoin by name async
+	auto connectCallback = std::make_shared< TestConnectionEvents>();
+	zst_add_session_adaptor(connectCallback.get());
 	zst_auto_join_by_name_async(server_name.c_str());
-	WAIT_UNTIL_STAGE_BEACON
+	wait_for_event(connectCallback.get(), 2);
 	BOOST_TEST(zst_is_connected());
 }
 
-BOOST_FIXTURE_TEST_CASE(async_join_callback_adaptor, FixtureInitAndCreateServer){
-	//Test async join
-	auto connectCallback = std::make_shared< TestConnectionEvents>();
-	zst_add_session_adaptor(connectCallback.get());
-	zst_join_async(server_address.c_str());
-	wait_for_event(connectCallback.get(), 1);
-	BOOST_TEST_REQUIRE(zst_is_connected());
-}
-
-BOOST_FIXTURE_TEST_CASE(sync_join_bad_address, FixtureInitAndCreateServer){
+BOOST_FIXTURE_TEST_CASE(sync_join_bad_address, FixtureInitAndCreateServer, TEST_TIMEOUT){
 	//Testing sync join timeout
 	zst_join(bad_server_address.c_str());
 	BOOST_TEST(!zst_is_connected());
 }
 
-BOOST_FIXTURE_TEST_CASE(async_join_bad_address_timeout, FixtureInitAndCreateServer){
+BOOST_FIXTURE_TEST_CASE(async_join_bad_address_timeout, FixtureInitAndCreateServer, TEST_TIMEOUT){
 	//Test async join timeout
 	zst_join_async(bad_server_address.c_str());
 	WAIT_UNTIL_STAGE_TIMEOUT
 	BOOST_TEST(!zst_is_connected());
 }
 
-BOOST_FIXTURE_TEST_CASE(double_connection, FixtureInitAndCreateServer){
+BOOST_FIXTURE_TEST_CASE(double_connection, FixtureInitAndCreateServer, TEST_TIMEOUT){
     //Testing abort connection start if we're already connecting
     zst_join_async(bad_server_address.c_str());
 	BOOST_TEST(zst_is_connecting());
@@ -109,7 +105,7 @@ BOOST_FIXTURE_TEST_CASE(double_connection, FixtureInitAndCreateServer){
 	BOOST_TEST(!zst_is_connecting());
 }
 
-BOOST_FIXTURE_TEST_CASE(list_discovered_servers, FixtureInitAndCreateServer){
+BOOST_FIXTURE_TEST_CASE(list_discovered_servers, FixtureInitAndCreateServer, TEST_TIMEOUT){
 	WAIT_UNTIL_STAGE_BEACON
 	ZstServerAddressBundle bundle;
 	zst_get_discovered_servers(bundle);
@@ -117,7 +113,7 @@ BOOST_FIXTURE_TEST_CASE(list_discovered_servers, FixtureInitAndCreateServer){
 	BOOST_TEST(bundle.item_at(0).name == server_name);
 }
 
-BOOST_FIXTURE_TEST_CASE(discovered_servers_callback_adaptor, FixtureInit){
+BOOST_FIXTURE_TEST_CASE(discovered_servers_callback_adaptor, FixtureInit, TEST_TIMEOUT){
 	//Create adaptor
 	auto discovery_adaptor = std::make_shared<TestConnectionEvents>();
 	zst_add_session_adaptor(discovery_adaptor.get());
@@ -132,7 +128,7 @@ BOOST_FIXTURE_TEST_CASE(discovered_servers_callback_adaptor, FixtureInit){
 	zst_destroy_server(detected_server);
 }
 
-BOOST_FIXTURE_TEST_CASE(discovered_servers_update, FixtureJoinServer) {
+BOOST_FIXTURE_TEST_CASE(discovered_servers_update, FixtureJoinServer, TEST_TIMEOUT) {
 	auto detected_server = zst_create_server("detected_server", STAGE_ROUTER_PORT + 10);
 	WAIT_UNTIL_STAGE_BEACON
 
@@ -144,7 +140,7 @@ BOOST_FIXTURE_TEST_CASE(discovered_servers_update, FixtureJoinServer) {
 	zst_destroy_server(detected_server);
 }
 
-BOOST_FIXTURE_TEST_CASE(root_performer_activate_on_join, FixtureJoinServer)
+BOOST_FIXTURE_TEST_CASE(root_performer_activate_on_join, FixtureJoinServer, TEST_TIMEOUT)
 {   
     auto performer_activated = std::make_shared<TestSynchronisableEvents>();
 	zst_get_root()->add_adaptor(performer_activated.get());

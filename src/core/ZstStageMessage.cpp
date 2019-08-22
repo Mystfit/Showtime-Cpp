@@ -1,3 +1,5 @@
+#include <boost/uuid/nil_generator.hpp>
+
 #include "ZstStageMessage.h"
 
 #include "entities/ZstEntityBase.h"
@@ -6,13 +8,16 @@
 #include "entities/ZstPlug.h"
 #include "entities/ZstEntityFactory.h"
 
-ZstStageMessage::ZstStageMessage()
+
+ZstStageMessage::ZstStageMessage() :
+	m_endpoint_UUID(nil_generator()())
 {
 }
 
-ZstStageMessage::ZstStageMessage(const ZstStageMessage & other)
+ZstStageMessage::ZstStageMessage(const ZstStageMessage & other) : 
+	m_msg_args(other.m_msg_args),
+	m_endpoint_UUID(other.m_endpoint_UUID)
 {
-	m_msg_args = other.m_msg_args;
 }
 
 ZstStageMessage::~ZstStageMessage()
@@ -26,7 +31,7 @@ ZstMessage * ZstStageMessage::init(ZstMsgKind kind)
 	return this;
 }
 
-ZstMessage * ZstStageMessage::init(ZstMsgKind kind, const ZstMsgArgs & args)
+ZstMessage * ZstStageMessage::init(ZstMsgKind kind, const ZstMsgArgs& args)
 {
 	reset();
 	set_kind(kind);
@@ -34,7 +39,7 @@ ZstMessage * ZstStageMessage::init(ZstMsgKind kind, const ZstMsgArgs & args)
 	return this;
 }
 
-ZstMessage * ZstStageMessage::init(ZstMsgKind kind, const ZstMsgArgs & payload, const ZstMsgArgs & args)
+ZstMessage* ZstStageMessage::init(ZstMsgKind kind, const ZstMsgArgs& args, const ZstMsgPayload & payload)
 {
 	reset();
 	set_kind(kind);
@@ -43,14 +48,24 @@ ZstMessage * ZstStageMessage::init(ZstMsgKind kind, const ZstMsgArgs & payload, 
 	return this;
 }
 
+
 void ZstStageMessage::reset() {
-	m_msg_args.clear();
+	m_msg_args = ZstMsgArgs();
+	m_payload = ZstMsgPayload();
+	m_endpoint_UUID = nil_generator()();
 	set_id(ZstMsgIDManager::next_id());
 }
 
 void ZstStageMessage::unpack(const json & data)
 {
 	m_msg_args = data;
+	try {
+		m_payload = data.at(get_msg_arg_name(ZstMsgArg::PAYLOAD)).get<ZstMsgPayload>();
+	}
+	catch (nlohmann::detail::out_of_range) {}
+
+	//Remove duplicate payload key
+	m_msg_args.erase(get_msg_arg_name(ZstMsgArg::PAYLOAD));
 }
 
 ZstMsgKind ZstStageMessage::entity_kind(const ZstEntityBase & entity)
@@ -72,21 +87,26 @@ ZstMsgKind ZstStageMessage::entity_kind(const ZstEntityBase & entity)
 	return kind;
 }
 
-
-void ZstStageMessage::set_payload(const ZstMsgArgs & payload)
+void ZstStageMessage::set_endpoint_UUID(const uuid& uuid)
 {
-	m_msg_args[get_msg_arg_name(ZstMsgArg::PAYLOAD)] = payload;
+	m_endpoint_UUID = boost::uuids::uuid(uuid);
 }
 
-void ZstStageMessage::set_payload(const std::string & payload)
+const uuid& ZstStageMessage::endpoint_UUID() const
 {
-	m_msg_args[get_msg_arg_name(ZstMsgArg::PAYLOAD)] = payload;
+	return m_endpoint_UUID;
 }
 
-void ZstStageMessage::set_args(const ZstMsgArgs & args)
+void ZstStageMessage::set_payload(const ZstMsgPayload& payload)
 {
-	if(args.is_object())
-		m_msg_args.update(args);
+	m_payload = payload;
+}
+
+void ZstStageMessage::set_args(const ZstMsgArgs& args)
+{
+	if (!args.is_object())
+		return;
+	m_msg_args.update(args);
 }
 
 void ZstStageMessage::set_kind(const ZstMsgKind &  k)
@@ -99,19 +119,19 @@ bool ZstStageMessage::has_arg(const ZstMsgArg & key) const
 	return m_msg_args.find(get_msg_arg_name(key)) != m_msg_args.end();
 }
 
-const ZstMsgKind & ZstStageMessage::kind() const
+ZstMsgKind ZstStageMessage::kind() const
 {
 	return get_msg_kind(m_msg_args.at(get_msg_arg_name(ZstMsgArg::KIND)).get<std::string>());
 }
 
-const ZstMsgArgs & ZstStageMessage::payload() const
+const ZstMsgPayload& ZstStageMessage::payload() const
 {
-	return m_msg_args[get_msg_arg_name(ZstMsgArg::PAYLOAD)];
+	return m_payload;
 }
 
 ZstMsgID ZstStageMessage::id() const
 {
-	return m_msg_args[get_msg_arg_name(ZstMsgArg::MSG_ID)].get<ZstMsgID>();
+	return m_msg_args.at(get_msg_arg_name(ZstMsgArg::MSG_ID)).get<ZstMsgID>();
 }
 
 void ZstStageMessage::set_id(const ZstMsgID & id)
@@ -121,6 +141,7 @@ void ZstStageMessage::set_id(const ZstMsgID & id)
 
 std::string ZstStageMessage::as_json_str() const
 {
-	return m_msg_args.dump();
+	json with_payload = m_msg_args;
+	with_payload[get_msg_arg_name(ZstMsgArg::PAYLOAD)] = m_payload;
+	return with_payload.dump();
 }
-

@@ -6,8 +6,10 @@
 #include <unordered_map>
 #include <functional>
 #include <concurrentqueue.h>
-#include "ZstLogging.h"
 #include <mutex>
+
+#include "ZstLogging.h"
+#include "ZstConstants.h"
 #include "adaptors/ZstEventAdaptor.hpp"
 
 #include "ZstSemaphore.h"
@@ -120,7 +122,6 @@ public:
 		if (this->m_adaptors.size() < 1) {
 			return;
 		}
-
 		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		for (auto adaptor : this->m_adaptors) {
 			if (adaptor) {
