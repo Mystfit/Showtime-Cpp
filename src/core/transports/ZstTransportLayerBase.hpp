@@ -16,7 +16,7 @@
 //Forwards
 class ZstTransportAdaptor;
 
-class ZstTransportLayerBase : public ZstMessageSupervisor {
+class ZST_EXPORT ZstTransportLayerBase : public ZstMessageSupervisor {
 public:
 	ZST_EXPORT ZstTransportLayerBase();
 	ZST_EXPORT virtual ~ZstTransportLayerBase();
