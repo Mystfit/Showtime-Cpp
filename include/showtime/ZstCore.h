@@ -16,5 +16,6 @@
 #include "entities/ZstComponent.h"
 #include "entities/ZstPlug.h"
 #include "entities/ZstPerformer.h"
+#include "adaptors/ZstConnectionAdaptor.hpp"
 #include "adaptors/ZstSessionAdaptor.hpp"
 #include "adaptors/ZstHierarchyAdaptor.hpp"

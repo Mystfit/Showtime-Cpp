@@ -50,7 +50,6 @@ public:
 
 	void dispatch_connected_to_stage();
 	void dispatch_disconnected_from_stage();
-    void dispatch_server_discovered(const ZstServerAddress & server);
 	void plug_received_value(ZstInputPlug * plug);
 
 

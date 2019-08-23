@@ -44,27 +44,13 @@ void ZstClientSession::dispatch_connected_to_stage()
 {
 	//Activate all owned entities
 	synchronisable_enqueue_activation(static_cast<ZstClientHierarchy*>(hierarchy())->get_local_performer());
-	session_events().defer([](ZstSessionAdaptor * adaptor) {
-		adaptor->on_connected_to_stage();
-	});
 }
 
 void ZstClientSession::dispatch_disconnected_from_stage()
 {
 	//Deactivate all owned entities
 	synchronisable_enqueue_deactivation(static_cast<ZstClientHierarchy*>(hierarchy())->get_local_performer());
-	session_events().defer([](ZstSessionAdaptor * adaptor) {
-		adaptor->on_disconnected_from_stage();
-	});
 }
-
-void ZstClientSession::dispatch_server_discovered(const ZstServerAddress & server)
-{
-    session_events().defer([server](ZstSessionAdaptor * adaptor) {
-        adaptor->on_server_discovered(server);
-    });
-}
-
 
 
 // ---------------------------

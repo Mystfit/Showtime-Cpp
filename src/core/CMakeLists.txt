@@ -28,6 +28,7 @@ set(ENTITY_HEADERS
 )
 set(ADAPTOR_HEADERS 
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstEventAdaptor.hpp
+    ${Showtime_INCLUDE_DIRS}/adaptors/ZstConnectionAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstComputeAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstSynchronisableAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstFactoryAdaptor.hpp

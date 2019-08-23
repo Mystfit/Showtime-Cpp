@@ -15,8 +15,10 @@
 
 #include "ZstClientSession.h"
 
+using namespace Showtime::detail;
 
-ZstClient::ZstClient() :
+
+ZstClient::ZstClient(ShowtimeClient* api) :
 	m_ping(-1),
 	m_is_ending(false),
 	m_is_destroyed(false),
@@ -26,7 +28,8 @@ ZstClient::ZstClient() :
     m_auto_join_stage(false),
     m_promise_supervisor(ZstMessageSupervisor(std::make_shared<cf::time_watcher>(), STAGE_TIMEOUT)),
 	m_session(std::make_unique<ZstClientSession>()),
-	m_heartbeat_timer(m_client_timerloop.IO_context())
+	m_heartbeat_timer(m_client_timerloop.IO_context()),
+    m_api(api)
 {
 	//Message and transport modules
 	//These are specified by the client based on what transport type we want to use
@@ -52,10 +55,7 @@ ZstClient::ZstClient() :
 #endif
 }
 
-ZstClient & ZstClient::instance()
-{
-	static ZstClient client_singleton;
-	return client_singleton;
+ZstClient::~ZstClient() {
 }
 
 void ZstClient::destroy() {
@@ -97,7 +97,7 @@ void ZstClient::destroy() {
 	m_session->destroy();
 
 	//Remove adaptors
-	this->remove_adaptor(m_client_transport.get());
+    this->ZstEventDispatcher<ZstTransportAdaptor*>::remove_adaptor(m_client_transport.get());
 
 	//Set last status flags
 	set_is_ending(false);
@@ -145,7 +145,7 @@ void ZstClient::init_client(const char *client_name, bool debug)
     m_client_event_thread = boost::thread(boost::bind(&ZstClient::transport_event_loop, this));
 	
 	//Register message dispatch as a client adaptor
-	this->add_adaptor(m_client_transport.get());
+    this->ZstEventDispatcher<ZstTransportAdaptor*>::add_adaptor(m_client_transport.get());
     
 	//Register adaptors to handle outgoing events
 	m_session->init(client_name);
@@ -258,7 +258,7 @@ void ZstClient::receive_connection_handshake(ZstPerformanceMessage * msg)
 		ZstLog::net(LogLevel::debug, "Received connection handshake. Msg id {}", m_pending_peer_connections[output_path]);
 		ZstTransportArgs args;
 		args.msg_args = { {get_msg_arg_name(ZstMsgArg::MSG_ID), m_pending_peer_connections[output_path]} };
-		invoke([args](ZstTransportAdaptor* adaptor) { adaptor->send_msg(ZstMsgKind::OK, args); });
+		this->ZstEventDispatcher<ZstTransportAdaptor*>::invoke([args](ZstTransportAdaptor* adaptor) { adaptor->send_msg(ZstMsgKind::OK, args); });
 		m_pending_peer_connections.erase(output_path);
 	}
 }
@@ -275,7 +275,7 @@ void ZstClient::auto_join_stage(const std::string & name, const ZstTransportRequ
     // If the server beacon as already been received, join immediately
     for(auto server : m_server_beacons){
         if(server.name == name){
-            join_stage(server.address, sendtype);
+            join_stage(server, sendtype);
             return;
         }
     }
@@ -298,7 +298,7 @@ void ZstClient::auto_join_stage(const std::string & name, const ZstTransportRequ
             if(sendtype == ZstTransportRequestBehaviour::ASYNC_REPLY){
                 for(auto server : this->get_discovered_servers()){
                     if(server.name == name){
-                        this->join_stage(server.address, sendtype);
+                        this->join_stage(server, sendtype);
                     }
                 }
             }
@@ -320,7 +320,7 @@ void ZstClient::auto_join_stage(const std::string & name, const ZstTransportRequ
         // Connect to available named server
         for(auto server : this->get_discovered_servers()){
             if(server.name == name){
-                this->join_stage(server.address, sendtype);
+                this->join_stage(server, sendtype);
                 return;
             }
         }
@@ -331,7 +331,7 @@ void ZstClient::auto_join_stage(const std::string & name, const ZstTransportRequ
 }
 
 
-void ZstClient::join_stage(const std::string & stage_address, const ZstTransportRequestBehaviour & sendtype) {
+void ZstClient::join_stage(const ZstServerAddress & stage_address, const ZstTransportRequestBehaviour & sendtype) {
 	
 	if (!m_init_completed) {
 		ZstLog::net(LogLevel::error, "Can't join the stage until the library has been initialised");
@@ -349,8 +349,8 @@ void ZstClient::join_stage(const std::string & stage_address, const ZstTransport
 	}
 	set_is_connecting(true);
 		
-	ZstLog::net(LogLevel::notification, "Connecting to stage {}", stage_address);
-	m_client_transport->connect(stage_address);
+	ZstLog::net(LogLevel::notification, "Connecting to stage {}", stage_address.address);
+	m_client_transport->connect(stage_address.address);
 
 	//Acquire our output graph address to send to the stage
 	std::string reliable_graph_addr = m_tcp_graph_transport->get_graph_out_address();
@@ -370,11 +370,11 @@ void ZstClient::join_stage(const std::string & stage_address, const ZstTransport
 		{ get_msg_arg_name(ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS), unreliable_graph_addr }
 	};
 	args.msg_send_behaviour = sendtype;
-	args.on_recv_response = [this](ZstMessageReceipt response) { this->join_stage_complete(response); };
+	args.on_recv_response = [this, stage_address](ZstMessageReceipt response) { this->join_stage_complete(stage_address, response); };
 	root->write_json(args.msg_payload);
 
 	//Send message
-	invoke([this, sendtype, &args, root](ZstTransportAdaptor * adaptor) {
+	this->ZstEventDispatcher<ZstTransportAdaptor*>::invoke([this, args, stage_address](ZstTransportAdaptor * adaptor) {
 		adaptor->send_msg(ZstMsgKind::CLIENT_JOIN, args);
 	});
 }
@@ -390,7 +390,9 @@ void ZstClient::handle_server_discovery(const std::string & address, const std::
         
         // Store server beacon
         m_server_beacons.insert(server);
-        m_session->dispatch_server_discovered(server);
+        this->ZstEventDispatcher<ZstConnectionAdaptor*>::defer([this, server](ZstConnectionAdaptor * adaptor) {
+            adaptor->on_server_discovered(this->m_api, server);
+        });
         
         // Handle connecting to the stage automatically
         if(m_auto_join_stage && !is_connected_to_stage()){
@@ -408,10 +410,11 @@ const ZstServerList & ZstClient::get_discovered_servers()
 }
 
 
-void ZstClient::join_stage_complete(ZstMessageReceipt response)
+void ZstClient::join_stage_complete(const ZstServerAddress & server_address, ZstMessageReceipt response)
 {
 	set_is_connecting(false);
 	set_connected_to_stage(true);
+    m_connected_server = server_address;
 
 	//If we didn't receive a OK signal, something went wrong
 	if (response.status != ZstMsgKind::OK) {
@@ -430,7 +433,7 @@ void ZstClient::join_stage_complete(ZstMessageReceipt response)
 		c->synchronisable_events()->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(m_session->hierarchy()));
 		c->entity_events()->add_adaptor(static_cast<ZstEntityAdaptor*>(m_session->hierarchy()));
 		synchronisable_set_activating(c);
-		c->enqueue_activation();
+        synchronisable_enqueue_activation(c);
 	}
 
 	//Enqueue connection events
@@ -442,6 +445,12 @@ void ZstClient::join_stage_complete(ZstMessageReceipt response)
 	
 	//Ask the stage to send us the current session
 	synchronise_graph(response.request_behaviour);
+
+	//Enqueue connection events
+    m_session->dispatch_connected_to_stage();
+    this->ZstEventDispatcher<ZstConnectionAdaptor*>::defer([this, server_address](ZstConnectionAdaptor * adp) {
+        adp->on_connected_to_stage(this->m_api, server_address);
+    });
 
 	//If we are sync, we can dispatch events immediately
 	if (response.request_behaviour == ZstTransportRequestBehaviour::SYNC_REPLY)
@@ -464,7 +473,7 @@ void ZstClient::synchronise_graph(const ZstTransportRequestBehaviour & sendtype)
 	};
 
 	//Send message
-	invoke([&args](ZstTransportAdaptor * adaptor) { 
+	this->ZstEventDispatcher<ZstTransportAdaptor*>::invoke([&args](ZstTransportAdaptor * adaptor) { 
 		adaptor->send_msg(ZstMsgKind::CLIENT_SYNC, args);
 	});
 }
@@ -472,8 +481,8 @@ void ZstClient::synchronise_graph(const ZstTransportRequestBehaviour & sendtype)
 void ZstClient::synchronise_graph_complete(ZstMessageReceipt response)
 {
 	ZstLog::net(LogLevel::notification, "Graph sync completed");
-	m_session->session_events().defer([](ZstSessionAdaptor* adp) {
-		adp->on_synchronised_with_stage();
+	this->ZstEventDispatcher<ZstConnectionAdaptor*>::defer([this](ZstConnectionAdaptor* adp) {
+		adp->on_synchronised_with_stage(this->m_api, this->connected_server());
 	});
 }
 
@@ -486,7 +495,7 @@ void ZstClient::leave_stage()
 		this->set_is_connecting(false);
 		this->set_connected_to_stage(false);
 
-		invoke([](ZstTransportAdaptor * adaptor) { adaptor->send_msg(ZstMsgKind::CLIENT_LEAVING); });
+		this->ZstEventDispatcher<ZstTransportAdaptor*>::invoke([](ZstTransportAdaptor * adaptor) { adaptor->send_msg(ZstMsgKind::CLIENT_LEAVING); });
     } else {
         ZstLog::net(LogLevel::debug, "Not connected to stage. Skipping to cleanup. {}");
     }
@@ -514,6 +523,16 @@ void ZstClient::leave_stage_complete()
 	
 	//Enqueue event for adaptors
 	m_session->dispatch_disconnected_from_stage();
+    this->ZstEventDispatcher<ZstConnectionAdaptor*>::invoke([this](ZstConnectionAdaptor * adp) {
+        adp->on_disconnected_from_stage(this->m_api, this->m_connected_server);
+    });
+    
+    m_connected_server = ZstServerAddress();
+}
+
+const ZstServerAddress & ZstClient::connected_server()
+{
+    return m_connected_server;
 }
 
 bool ZstClient::is_connected_to_stage()
@@ -555,7 +574,7 @@ void ZstClient::heartbeat_timer(boost::asio::deadline_timer * t, ZstClient * cli
 	};
 
 	//Send message
-	client->invoke([client, args](ZstTransportAdaptor * adaptor) { adaptor->send_msg(ZstMsgKind::CLIENT_HEARTBEAT, args); });
+	client->ZstEventDispatcher<ZstTransportAdaptor*>::invoke([client, args](ZstTransportAdaptor * adaptor) { adaptor->send_msg(ZstMsgKind::CLIENT_HEARTBEAT, args); });
 	
 	//Loop timer
 	t->expires_at(t->expires_at() + duration);
