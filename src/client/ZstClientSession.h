@@ -31,8 +31,6 @@ class ZstClientSession :
 	friend class ZstClient;
 public:
 	ZstClientSession();
-	virtual ~ZstClientSession();
-
 
 	// ------------------------------
 	// Delegator overrides
@@ -96,5 +94,5 @@ private:
 	void destroy_cable_complete(ZstMessageReceipt response, ZstCable * cable);
 	void observe_entity_complete(ZstMessageReceipt response, ZstEntityBase * entity);
 	
-	ZstClientHierarchy * m_hierarchy;
+    std::shared_ptr<ZstClientHierarchy> m_hierarchy;
 };

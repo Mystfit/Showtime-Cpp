@@ -2,15 +2,9 @@
 #include "../core/ZstValue.h"
 #include "../core/ZstPerformanceMessage.h"
 
-ZstClientSession::ZstClientSession()
+ZstClientSession::ZstClientSession() : m_hierarchy(std::make_shared<ZstClientHierarchy>())
 {
-	m_hierarchy = new ZstClientHierarchy();
 }
-
-ZstClientSession::~ZstClientSession() {
-	delete m_hierarchy;
-}
-
 
 // ------------------------------
 // Delegator overrides
@@ -24,8 +18,6 @@ void ZstClientSession::init(std::string client_name)
 
 void ZstClientSession::destroy()
 {
-	ZstSession::destroy();
-	m_hierarchy->destroy();
 }
 
 void ZstClientSession::process_events()
@@ -297,5 +289,5 @@ void ZstClientSession::observe_entity_complete(ZstMessageReceipt response, ZstEn
 
 ZstClientHierarchy * ZstClientSession::hierarchy()
 {
-	return m_hierarchy;
+	return m_hierarchy.get();
 }

@@ -7,6 +7,14 @@ ZstClientHierarchy::ZstClientHierarchy() :
 
 ZstClientHierarchy::~ZstClientHierarchy()
 {
+    //Reset local performer
+    if(m_root){
+        ZstEntityBundle bundle;
+        m_root->get_child_entities(bundle, true);
+        for (auto entity : bundle) {
+            destroy_entity_complete(entity);
+        }
+    }
 }
 
 void ZstClientHierarchy::init(std::string name)
@@ -15,27 +23,12 @@ void ZstClientHierarchy::init(std::string name)
 
 	//Create a root entity to hold our local entity hierarchy
 	//Sets the name of our performer and the address of our graph output
-	m_root = new ZstPerformer(name.c_str());
+    m_root = std::make_shared<ZstPerformer>(name.c_str());
 	m_root->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(this));
 }
 
 void ZstClientHierarchy::destroy()
 {
-	stage_events().remove_all_adaptors();
-
-	//Reset local performer
-	ZstEntityBundle bundle;
-    m_root->get_child_entities(bundle, true);
-	for (auto entity : bundle) {
-		destroy_entity_complete(entity);
-	}
-
-	//Process events to make sure events are dispatched properly
-	//process_events();
-	delete m_root;
-	m_root = NULL;
-
-	ZstHierarchy::destroy();
 }
 
 void ZstClientHierarchy::process_events()
@@ -319,7 +312,7 @@ void ZstClientHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 ZstEntityBase * ZstClientHierarchy::find_entity(const ZstURI & path) const
 {
 	if (m_root->URI() == path) {
-		return m_root;
+		return m_root.get();
 	}
 	return ZstHierarchy::find_entity(path);
 }
@@ -358,7 +351,7 @@ ZstMsgKind ZstClientHierarchy::update_proxy_entity(const ZstEntityBase & entity)
 
 ZstPerformer * ZstClientHierarchy::get_local_performer() const
 {
-	return m_root;
+	return m_root.get();
 }
 
 void ZstClientHierarchy::add_performer(const ZstPerformer & performer)
@@ -382,14 +375,14 @@ ZstEntityBundle & ZstClientHierarchy::get_performers(ZstEntityBundle & bundle) c
 {
 	//TODO: Add local performer to the main client list?
 	//Join local performer to the performer list since it lives outside the main list
-	bundle.add(m_root);
+	bundle.add(m_root.get());
 	return ZstHierarchy::get_performers(bundle);
 }
 
 ZstPerformer * ZstClientHierarchy::get_performer_by_URI(const ZstURI & uri) const
 {
 	if (uri.first() == m_root->URI()) {
-		return m_root;
+		return m_root.get();
 	}
 	return ZstHierarchy::get_performer_by_URI(uri);
 }

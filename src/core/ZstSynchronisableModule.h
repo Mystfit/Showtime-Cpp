@@ -12,6 +12,7 @@ class ZST_EXPORT ZstSynchronisableModule :
     public ZstSynchronisableLiason
 {
 public:
+    ZST_EXPORT ~ZstSynchronisableModule();
 	ZST_EXPORT virtual void init();
 	ZST_EXPORT virtual void destroy();
     

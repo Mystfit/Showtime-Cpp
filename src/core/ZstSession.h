@@ -30,6 +30,7 @@ class ZST_EXPORT ZstSession :
 {
 public:
 	ZST_EXPORT ZstSession();
+    ZST_EXPORT ~ZstSession();
 	ZST_EXPORT virtual void process_events() override;
 	ZST_EXPORT virtual void flush_events() override;
 	ZST_EXPORT virtual void init() override;

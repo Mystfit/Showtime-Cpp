@@ -9,6 +9,15 @@ ZstSession::ZstSession() :
 {
 }
 
+ZstSession::~ZstSession()
+{
+    //Clear connected performers - they'll remove us when we leave the graph
+    m_connected_performers.clear();
+    
+    ///Clear cables
+    m_cables.clear();
+}
+
 void ZstSession::process_events()
 {
 	hierarchy()->process_events();
@@ -22,6 +31,7 @@ void ZstSession::flush_events()
 {
 	hierarchy()->flush_events();
 	m_session_events.flush();
+    m_compute_events.flush();
     
     ZstSynchronisableModule::flush_events();
 }
@@ -39,19 +49,6 @@ void ZstSession::init()
 
 void ZstSession::destroy()
 {
-	//Clear events
-	m_compute_events.flush();
-	m_compute_events.remove_all_adaptors();
-	m_session_events.flush();
-	m_session_events.remove_all_adaptors();
-
-	//Clear connected performers - they'll remove us when we leave the graph
-	m_connected_performers.clear();
-    
-    ///Clear cables
-    m_cables.clear();
-    
-    ZstSynchronisableModule::destroy();
 }
 
 ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * output) {

@@ -5,26 +5,20 @@
 
 using namespace boost::uuids;
 
-ZstStageSession::ZstStageSession() :
-    m_hierarchy(NULL)
+ZstStageSession::ZstStageSession() : m_hierarchy(std::make_shared<ZstStageHierarchy>())
 {
-	m_hierarchy = new ZstStageHierarchy();
 }
 
 ZstStageSession::~ZstStageSession()
 {
-	delete m_hierarchy;
+    ZstCableBundle bundle;
+    for (auto cable : get_cables(bundle)) {
+        destroy_cable(cable);
+    }
 }
 
 void ZstStageSession::destroy()
 {
-	ZstCableBundle bundle;
-	for (auto cable : get_cables(bundle)) {
-		destroy_cable(cable);
-	}
-
-	hierarchy()->destroy();
-	ZstSession::destroy();
 }
 
 void ZstStageSession::process_events()
@@ -392,5 +386,5 @@ ZstMsgKind ZstStageSession::complete_client_connection(ZstPerformerStageProxy * 
 
 ZstStageHierarchy * ZstStageSession::hierarchy()
 {
-	return m_hierarchy;
+	return m_hierarchy.get();
 }

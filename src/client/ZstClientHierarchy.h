@@ -80,7 +80,7 @@ public:
 
 
 private:
-	ZstPerformer * m_root;
+    std::shared_ptr<ZstPerformer> m_root;
 
 	// ----------------
 	// Event completion

@@ -12,6 +12,7 @@ ZstWebsocketServerTransport::ZstWebsocketServerTransport(ZstIOLoop& io) :
 
 ZstWebsocketServerTransport::~ZstWebsocketServerTransport()
 {
+    m_sessions.clear();
 }
 
 void ZstWebsocketServerTransport::init()
@@ -20,7 +21,6 @@ void ZstWebsocketServerTransport::init()
 
 void ZstWebsocketServerTransport::destroy()
 {
-	m_sessions.clear();
 }
 
 void ZstWebsocketServerTransport::bind(const std::string& address)

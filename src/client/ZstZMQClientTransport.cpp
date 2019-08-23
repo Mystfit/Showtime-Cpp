@@ -19,6 +19,11 @@ ZstZMQClientTransport::ZstZMQClientTransport() :
 
 ZstZMQClientTransport::~ZstZMQClientTransport()
 {
+    m_client_actor.stop_loop();
+    if(m_server_sock){
+        zsock_destroy(&m_server_sock);
+        zst_zmq_dec_ref_count();
+    }
 }
 
 void ZstZMQClientTransport::init()
@@ -51,15 +56,6 @@ void ZstZMQClientTransport::init()
 
 void ZstZMQClientTransport::destroy()
 {
-	ZstTransportLayerBase::destroy();
-    ZstMessageSupervisor::destroy();
-
-	m_client_actor.stop_loop();
-	if(m_server_sock)
-		zsock_destroy(&m_server_sock);
-	m_client_actor.destroy();
-
-	zst_zmq_dec_ref_count();
 }
 
 void ZstZMQClientTransport::connect(const std::string & address)

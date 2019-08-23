@@ -80,30 +80,20 @@ void ZstStage::destroy()
 
 	m_is_destroyed = true;
 
-	//Clear adaptors and events
-	this->remove_all_adaptors();
-	this->flush();
-
 	//Remove timers
 	m_heartbeat_timer.cancel();
 	m_heartbeat_timer.wait();
-    
-    //Destroy modules
-    m_session->destroy();
-
-	//Stop threads
-	m_stage_eventloop_thread.interrupt();
-	m_event_condition->notify();
-    m_stage_eventloop_thread.try_join_for(boost::chrono::milliseconds(250));
-	m_stage_timer_thread.interrupt();
-	m_io.IO_context().stop();
-	m_stage_timer_thread.join();
 
 	//Destroy transports
-	m_router_transport->destroy();
-    m_websocket_transport->destroy();
     m_service_broadcast_transport->stop_broadcast();
-    m_service_broadcast_transport->destroy();
+    
+    //Stop threads
+    m_stage_eventloop_thread.interrupt();
+    m_event_condition->notify();
+    m_stage_eventloop_thread.try_join_for(boost::chrono::milliseconds(250));
+    m_stage_timer_thread.interrupt();
+    m_io.IO_context().stop();
+    m_stage_timer_thread.join();
 
 	//Destroy zmq context
 	//zsys_shutdown();

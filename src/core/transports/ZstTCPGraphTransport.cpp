@@ -8,6 +8,7 @@ ZstTCPGraphTransport::ZstTCPGraphTransport()
 
 ZstTCPGraphTransport::~ZstTCPGraphTransport()
 {
+    destroy_graph_sockets();
 }
 
 void ZstTCPGraphTransport::connect(const std::string& address)

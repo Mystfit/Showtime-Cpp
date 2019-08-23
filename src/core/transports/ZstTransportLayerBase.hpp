@@ -44,5 +44,5 @@ public:
 private:
 	bool m_is_active;
 
-	ZstEventDispatcher<ZstTransportAdaptor*> * m_dispatch_events;
+    std::shared_ptr<ZstEventDispatcher<ZstTransportAdaptor*> > m_dispatch_events;
 };

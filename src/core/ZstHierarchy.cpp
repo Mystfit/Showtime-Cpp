@@ -8,20 +8,17 @@ ZstHierarchy::ZstHierarchy() :
 
 ZstHierarchy::~ZstHierarchy()
 {
+    ZstEntityBundle bundle;
+    get_performers(bundle);
+    for(auto performer : bundle){
+        //TODO: Leaking performers
+        //delete performer;
+    }
+    m_clients.clear();
 }
 
 void ZstHierarchy::destroy()
 {
-    ZstEntityBundle bundle;
-    get_performers(bundle);
-    for(auto performer : bundle){
-		//TODO: Leaking performers
-        //delete performer;
-    }
-    m_clients.clear();
-    
-	m_hierarchy_events.remove_all_adaptors();
-    ZstSynchronisableModule::destroy();
 }
 
 void ZstHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype)

@@ -14,6 +14,11 @@ ZstZMQServerTransport::ZstZMQServerTransport() :
 
 ZstZMQServerTransport::~ZstZMQServerTransport()
 {
+    m_server_actor.stop_loop();
+    if(m_clients_sock){
+        zsock_destroy(&m_clients_sock);
+        zst_zmq_dec_ref_count();
+    }
 }
 
 void ZstZMQServerTransport::init()
@@ -38,15 +43,7 @@ void ZstZMQServerTransport::init()
 
 void ZstZMQServerTransport::destroy()
 {
-	ZstTransportLayerBase::destroy();
-
-	m_server_actor.stop_loop();
-	if(m_clients_sock)
-		zsock_destroy(&m_clients_sock);
-	m_server_actor.destroy();
-
-	//Decrease the zmq context reference count
-	zst_zmq_dec_ref_count();
+	
 }
 
 void ZstZMQServerTransport::bind(const std::string& address)

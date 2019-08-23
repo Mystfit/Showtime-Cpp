@@ -12,6 +12,8 @@ ZstGraphTransport::ZstGraphTransport() :
 
 ZstGraphTransport::~ZstGraphTransport()
 {
+    m_graph_actor.stop_loop();
+    destroy_graph_sockets();
 }
 
 void ZstGraphTransport::init()
@@ -27,11 +29,6 @@ void ZstGraphTransport::init()
 void ZstGraphTransport::destroy()
 {
 	ZstTransportLayerBase::destroy();
-
-	m_graph_actor.stop_loop();
-	destroy_graph_sockets();
-	m_graph_actor.destroy();
-	zst_zmq_dec_ref_count();
 }
 
 const std::string & ZstGraphTransport::get_graph_in_address() const
@@ -107,11 +104,17 @@ void ZstGraphTransport::graph_recv(zframe_t * frame)
 
 void ZstGraphTransport::destroy_graph_sockets()
 {
-	if (m_graph_in)
+    bool deref = false;
+    if (m_graph_in){
 		zsock_destroy(&m_graph_in);
-	if (m_graph_out)
+        deref = true;
+    }
+    if (m_graph_out){
 		zsock_destroy(&m_graph_out);
-
+        deref = true;
+    }
+    if(deref)
+        zst_zmq_dec_ref_count();
 }
 
 std::string ZstGraphTransport::first_available_ext_ip() const

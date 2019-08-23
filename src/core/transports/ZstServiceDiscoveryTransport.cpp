@@ -2,14 +2,20 @@
 #include "../ZstZMQRefCounter.h"
 #include <czmq.h>
 
-ZstServiceDiscoveryTransport::ZstServiceDiscoveryTransport()
+ZstServiceDiscoveryTransport::ZstServiceDiscoveryTransport() : m_beacon(NULL)
 {
     
 }
 
 ZstServiceDiscoveryTransport::~ZstServiceDiscoveryTransport()
 {
-    
+    stop_broadcast();
+    stop_listening();
+    m_beacon_actor.stop_loop();
+    if(m_beacon){
+        zactor_destroy(&m_beacon);
+        zst_zmq_dec_ref_count();
+    }
 }
 
 void ZstServiceDiscoveryTransport::init(int port)
@@ -29,9 +35,8 @@ void ZstServiceDiscoveryTransport::init(int port)
         ZstLog::net(LogLevel::notification, "Beacon transport broadcasting on port {}", port);
         
         m_beacon_actor.attach_pipe_listener(zactor_sock(m_beacon), s_handle_beacon, this);
+        m_beacon_actor.start_loop();
     }
-    
-    m_beacon_actor.start_loop();
 }
 
 void ZstServiceDiscoveryTransport::init()
@@ -42,13 +47,6 @@ void ZstServiceDiscoveryTransport::init()
 void ZstServiceDiscoveryTransport::destroy()
 {
     ZstTransportLayerBase::destroy();
-    
-    m_beacon_actor.stop_loop();
-    stop_broadcast();
-    stop_listening();
-    zactor_destroy(&m_beacon);
-    zst_zmq_dec_ref_count();
-    m_beacon_actor.destroy();
 }
 
 void ZstServiceDiscoveryTransport::send_message_impl(ZstMessage * msg, const ZstTransportArgs& args)
@@ -92,20 +90,24 @@ int ZstServiceDiscoveryTransport::s_handle_beacon(zloop_t * loop, zsock_t * sock
 
 void ZstServiceDiscoveryTransport::start_broadcast(const char * message, size_t size, int interval)
 {
-    zsock_send(m_beacon, "sbi", "PUBLISH", message, size, interval);
+    if(m_beacon)
+        zsock_send(m_beacon, "sbi", "PUBLISH", message, size, interval);
 }
 
 void ZstServiceDiscoveryTransport::stop_broadcast()
 {
-    zstr_sendx(m_beacon, "SILENCE", NULL);
+    if(m_beacon)
+        zstr_sendx(m_beacon, "SILENCE", NULL);
 }
 
 void ZstServiceDiscoveryTransport::start_listening()
 {
-    zsock_send (m_beacon, "sb", "SUBSCRIBE", "", 0);
+    if(m_beacon)
+        zsock_send (m_beacon, "sb", "SUBSCRIBE", "", 0);
 }
 
 void ZstServiceDiscoveryTransport::stop_listening()
 {
-    zstr_sendx(m_beacon, "UNSUBSCRIBE", NULL);
+    if(m_beacon)
+        zstr_sendx(m_beacon, "UNSUBSCRIBE", NULL);
 }

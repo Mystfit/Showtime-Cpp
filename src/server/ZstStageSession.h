@@ -58,5 +58,5 @@ public:
 	ZstStageHierarchy * hierarchy() override;
 
 private:
-	ZstStageHierarchy * m_hierarchy;
+    std::shared_ptr<ZstStageHierarchy> m_hierarchy;
 };

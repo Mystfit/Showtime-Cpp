@@ -6,21 +6,17 @@
 ZstTransportLayerBase::ZstTransportLayerBase() :
 	ZstMessageSupervisor(std::make_shared<cf::time_watcher>(), STAGE_TIMEOUT),
 	m_is_active(false),
-    m_dispatch_events(NULL)
+    m_dispatch_events(std::make_shared<ZstEventDispatcher<ZstTransportAdaptor*> >("transport events"))
 {
-	m_dispatch_events = new ZstEventDispatcher<ZstTransportAdaptor*>("transport events");
 }
 
 ZstTransportLayerBase::~ZstTransportLayerBase()
 {
-	delete m_dispatch_events;
 }
 
 void ZstTransportLayerBase::destroy()
 {
-	m_is_active = false;
-	m_dispatch_events->flush();
-	m_dispatch_events->remove_all_adaptors();
+	
 }
 
 void ZstTransportLayerBase::init()
@@ -83,7 +79,7 @@ ZstMessageReceipt ZstTransportLayerBase::send_async_message(ZstMessage* msg, con
 
 ZstEventDispatcher<ZstTransportAdaptor*>* ZstTransportLayerBase::msg_events()
 {
-	return m_dispatch_events;
+	return m_dispatch_events.get();
 }
 
 bool ZstTransportLayerBase::is_active()

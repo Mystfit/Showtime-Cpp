@@ -7,13 +7,14 @@ using namespace boost::uuids;
 ZstStageHierarchy::~ZstStageHierarchy()
 {
 	m_client_endpoint_UUIDS.clear();
+    ZstEntityBundle bundle;
+    for (auto p : get_performers(bundle)) {
+        destroy_client_handler(dynamic_cast<ZstPerformer*>(p));
+    }
 }
 
 void ZstStageHierarchy::destroy() {
-	ZstEntityBundle bundle;
-	for (auto p : get_performers(bundle)) {
-		destroy_client_handler(dynamic_cast<ZstPerformer*>(p));
-	}
+	
 	ZstHierarchy::destroy();
 }
 
@@ -168,7 +169,7 @@ ZstMsgKind ZstStageHierarchy::destroy_client_handler(ZstPerformer * performer)
 		m_clients.erase(client_it);
 	}
 
-	//Add entity and children to lookup
+	//Remove entity and children from lookup
 	ZstEntityBundle bundle;
     performer->get_child_entities(bundle, true);
 	for (auto c : bundle) {

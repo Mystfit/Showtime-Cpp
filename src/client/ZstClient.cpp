@@ -56,62 +56,38 @@ ZstClient::ZstClient(ShowtimeClient* api) :
 }
 
 ZstClient::~ZstClient() {
+    //Only need to call cleanup once
+    if (m_is_ending || m_is_destroyed)
+        return;
+    set_init_completed(false);
+    
+    //Let stage know we are leaving
+    if(is_connected_to_stage())
+        leave_stage();
+    
+    //Since we've sent the leave request, we can flag that we are in the leave process
+    set_is_ending(true);
+
+    //Set last status flags
+    set_is_ending(false);
+    set_is_destroyed(true);
+    
+    //Stop timers
+    m_client_timerloop.IO_context().stop();
+    m_client_timer_thread.interrupt();
+    m_client_timer_thread.join();
+    
+    //Stop threads
+    m_client_event_thread.interrupt();
+    m_event_condition->notify();
+    m_client_event_thread.try_join_for(boost::chrono::milliseconds(250));
+    m_api = NULL;
+    
+    //All done
+    ZstLog::net(LogLevel::notification, "Showtime library destroyed");
 }
 
 void ZstClient::destroy() {
-	//Only need to call cleanup once
-	if (m_is_ending || m_is_destroyed)
-		return;
-	set_init_completed(false);
-    
-    //Let stage know we are leaving
-	if(is_connected_to_stage())
-		leave_stage();
-
-	//Since we've sent the leave request, we can flag that we are in the leave process
-	set_is_ending(true);
-
-	//Stop threads
-	m_client_event_thread.interrupt();
-	m_event_condition->notify();
-	m_client_event_thread.try_join_for(boost::chrono::milliseconds(250));
-
-	//Destroy transports
-	m_client_transport->destroy();
-	m_tcp_graph_transport->destroy();
-#ifdef ZST_BUILD_DRAFT_API
-	m_udp_graph_transport->destroy();
-#endif
-    m_service_broadcast_transport->stop_listening();
-    m_service_broadcast_transport->destroy();
-    
-    //Clear outstanding promises
-    m_promise_supervisor.destroy();
-
-	//Stop timers
-	m_client_timerloop.IO_context().stop();
-	m_client_timer_thread.interrupt();
-	m_client_timer_thread.join();
-
-	//Destroy modules
-	m_session->destroy();
-
-	//Remove adaptors
-    this->ZstEventDispatcher<ZstTransportAdaptor*>::remove_adaptor(m_client_transport.get());
-
-	//Set last status flags
-	set_is_ending(false);
-	set_is_destroyed(true);
-    
-    //Clear server autojoin values
-    m_server_beacons.clear();
-    m_auto_join_stage_requests.clear();
-    m_auto_join_stage = false;
-
-	assert(zst_zmq_ref_count() == 0);
-
-	//All done
-	ZstLog::net(LogLevel::notification, "Showtime library destroyed");
 }
 
 void ZstClient::init_client(const char *client_name, bool debug)
@@ -518,8 +494,12 @@ void ZstClient::leave_stage_complete()
 	}
 
 	//Disconnect rest of sockets and timers
-	m_heartbeat_timer.cancel();
-	m_client_transport->disconnect();
+    boost::system::error_code ec;
+    m_heartbeat_timer.cancel(ec);
+    m_heartbeat_timer.wait();
+    ZstLog::net(LogLevel::debug, "Timer cancel status: {}", ec.message());
+    if(m_client_transport)
+        m_client_transport->disconnect();
 	
 	//Enqueue event for adaptors
 	m_session->dispatch_disconnected_from_stage();
@@ -563,6 +543,9 @@ void ZstClient::heartbeat_timer(boost::asio::deadline_timer * t, ZstClient * cli
 	ZstTransportArgs args;
 	args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
 	args.on_recv_response = [client, start](ZstMessageReceipt response) {
+        if(!client)
+            return;
+        
 		if (response.status != ZstMsgKind::OK) {
 			ZstLog::net(LogLevel::warn, "Server ping timed out");
 			client->leave_stage_complete();

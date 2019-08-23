@@ -1,5 +1,9 @@
 #include "ZstSynchronisableModule.h"
 
+ZstSynchronisableModule::~ZstSynchronisableModule()
+{
+}
+
 void ZstSynchronisableModule::init()
 {
     m_synchronisable_events.add_adaptor(this);
@@ -7,8 +11,6 @@ void ZstSynchronisableModule::init()
 
 void ZstSynchronisableModule::destroy()
 {
-    m_synchronisable_events.flush();
-    m_synchronisable_events.remove_all_adaptors();
 }
 
 void ZstSynchronisableModule::process_events()

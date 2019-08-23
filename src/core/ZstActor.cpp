@@ -5,17 +5,19 @@
 
 using namespace std;
 
-ZstActor::ZstActor()
+ZstActor::ZstActor() :
+    m_loop(NULL),
+    m_loop_actor(NULL)
 {
 }
 
 ZstActor::~ZstActor()
 {
+    stop_loop();
 }
 
 void ZstActor::destroy()
 {
-	zst_zmq_dec_ref_count();
 }
 
 void ZstActor::init(const char * name)
@@ -35,7 +37,10 @@ void ZstActor::start_loop()
 
 void ZstActor::stop_loop()
 {
-	zactor_destroy(&m_loop_actor);
+    if(m_loop_actor){
+        zactor_destroy(&m_loop_actor);
+        zst_zmq_dec_ref_count();
+    }
 	m_loop_actor = NULL;
 	m_is_running = false;
 }
