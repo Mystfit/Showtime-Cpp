@@ -39,8 +39,8 @@ struct FixturePlugs : public FixtureJoinServer {
 		output_component(std::make_unique<OutputComponent>("connect_test_out")),
 		input_component(std::make_unique<InputComponent>("connect_test_in"))
 	{
-		zst_get_root()->add_child(output_component.get());
-		zst_get_root()->add_child(input_component.get());
+		client->get_root()->add_child(output_component.get());
+		client->get_root()->add_child(input_component.get());
 	}
 
 	~FixturePlugs() {};
@@ -53,7 +53,7 @@ struct FixtureCable : public FixturePlugs {
 
 	FixtureCable() : cable_activation_events(std::make_shared<TestSynchronisableEvents>())
 	{
-		cable = zst_connect_cable(input_component->input(), output_component->output());
+		cable = client->connect_cable(input_component->input(), output_component->output());
 		cable->add_adaptor(cable_activation_events.get());
 		cable_activation_events->reset_num_calls();
 	}
@@ -63,9 +63,9 @@ struct FixtureCable : public FixturePlugs {
 };
 
 
-bool found_cable(ZstCableAddress cable_address) {
+bool found_cable(std::shared_ptr<ShowtimeClient> client, ZstCableAddress cable_address) {
 	ZstCableBundle bundle;
-	zst_get_root()->get_child_cables(bundle);
+	client->get_root()->get_child_cables(bundle);
 	for (auto c : bundle) {
 		if (c->get_address() == cable_address) {
 			return true;
@@ -107,7 +107,7 @@ BOOST_FIXTURE_TEST_CASE(output_can_fire, FixturePlugs) {
 }
 
 BOOST_FIXTURE_TEST_CASE(sync_connect_cable, FixturePlugs) {
-	auto cable = zst_connect_cable(input_component->input(), output_component->output());
+	auto cable = client->connect_cable(input_component->input(), output_component->output());
 	BOOST_TEST(cable);
 	BOOST_TEST(cable->is_activated());
 	BOOST_TEST(cable->get_output() == output_component->output());
@@ -118,18 +118,18 @@ BOOST_FIXTURE_TEST_CASE(sync_connect_cable, FixturePlugs) {
 
 BOOST_FIXTURE_TEST_CASE(async_connect_cable_callback, FixturePlugs) {
 	auto cable_activation_events = std::make_shared<TestSynchronisableEvents>();
-	auto cable = zst_connect_cable_async(input_component->input(), output_component->output());
+	auto cable = client->connect_cable_async(input_component->input(), output_component->output());
 	cable->add_adaptor(cable_activation_events.get());
 	
-	wait_for_event(cable_activation_events.get(), 1);
+	wait_for_event(client, cable_activation_events.get(), 1);
 	BOOST_TEST(cable->is_activated());
 }
 
 BOOST_FIXTURE_TEST_CASE(async_destroy_cable_callback, FixtureCable) {
 	auto address_cmp = cable->get_address();
-	zst_destroy_cable_async(cable);
-	wait_for_event(cable_activation_events.get(), 1);
-	BOOST_TEST(!found_cable(address_cmp));
+	client->destroy_cable_async(cable);
+	wait_for_event(client, cable_activation_events.get(), 1);
+	BOOST_TEST(!found_cable(client, address_cmp));
 }
 
 BOOST_FIXTURE_TEST_CASE(get_cable_from_plug, FixtureCable) {
@@ -141,28 +141,28 @@ BOOST_FIXTURE_TEST_CASE(get_cable_from_plug, FixtureCable) {
 }
 
 BOOST_FIXTURE_TEST_CASE(disconnect_cable, FixtureCable) {
-	zst_destroy_cable(cable);
+	client->destroy_cable(cable);
 	BOOST_TEST(!output_component->output()->is_connected_to(input_component->input()));
-	BOOST_TEST(!found_cable(ZstCableAddress(input_component->input()->URI(), output_component->output()->URI())));
+	BOOST_TEST(!found_cable(client, ZstCableAddress(input_component->input()->URI(), output_component->output()->URI())));
 }
 
 BOOST_FIXTURE_TEST_CASE(parent_disconnects_cable, FixtureCable) {
 	auto address_cmp = cable->get_address();
-	zst_deactivate_entity(output_component.get());
-	wait_for_event(cable_activation_events.get(), 1);
+	client->deactivate_entity(output_component.get());
+	wait_for_event(client, cable_activation_events.get(), 1);
 	BOOST_TEST(!output_component->output()->is_connected_to(input_component->input()));
-	BOOST_TEST(!found_cable(address_cmp));
+	BOOST_TEST(!found_cable(client, address_cmp));
 }
 
 BOOST_FIXTURE_TEST_CASE(limit_connected_cables, FixtureJoinServer) {
 	auto test_limited_input = std::make_unique<LimitedConnectionInputComponent>("limited_test_in", 1);
 	auto test_output = std::make_unique<OutputComponent>("connect_test_out1");
 	auto second_output = std::make_unique<OutputComponent>("connect_test_out2");
-    zst_get_root()->add_child(test_limited_input.get());
-    zst_get_root()->add_child(test_output.get());
-    zst_get_root()->add_child(second_output.get());
-	zst_connect_cable(test_limited_input->input, test_output->output());
-	zst_connect_cable(test_limited_input->input, second_output->output());
+    client->get_root()->add_child(test_limited_input.get());
+    client->get_root()->add_child(test_output.get());
+    client->get_root()->add_child(second_output.get());
+	client->connect_cable(test_limited_input->input, test_output->output());
+	client->connect_cable(test_limited_input->input, second_output->output());
 	BOOST_TEST(!test_limited_input->input->is_connected_to(test_output->output()));
 	BOOST_TEST(test_limited_input->input->is_connected_to(second_output->output()));
 	BOOST_TEST(test_limited_input->input->num_cables() == 1);
@@ -174,7 +174,7 @@ BOOST_FIXTURE_TEST_CASE(send_through_reliable_graph, FixtureCable) {
 
 	output_component->send(first_cmp_val);
 	while (input_component->num_hits < 1 && ++current_wait < 10000) {
-		zst_poll_once();
+		client->poll_once();
 	}
 	BOOST_TEST(input_component->last_received_val == first_cmp_val);
 }
@@ -187,13 +187,13 @@ BOOST_FIXTURE_TEST_CASE(send_through_unreliable_graph, FixturePlugs) {
 	// If we don't have draft support enabled, check reliable fallback has been set
 	BOOST_TEST(unreliable_out->output()->is_reliable());
 #else
-	zst_get_root()->add_child(unreliable_out);
-	zst_connect_cable(input_component->input(), unreliable_out->output());
+	client->get_root()->add_child(unreliable_out);
+	client->connect_cable(input_component->input(), unreliable_out->output());
 	unreliable_out->send(first_cmp_val);
 
 	int current_wait = 0;
 	while (input_component->num_hits < 1 && ++current_wait < 10000) {
-		zst_poll_once();
+		client->poll_once();
 	}
 	BOOST_TEST(input_component->last_received_val == first_cmp_val);
 #endif

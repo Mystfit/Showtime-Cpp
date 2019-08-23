@@ -79,6 +79,14 @@ public:
 	// -----------------
 	ZST_EXPORT void on_synchronisable_destroyed(ZstSynchronisable * synchronisable) override;
 	ZST_EXPORT virtual void on_register_entity(ZstEntityBase * entity) override;
+    
+    
+    // ------------------------------
+    // Entity lookups
+    // ------------------------------
+    
+    ZST_EXPORT virtual void add_entity_to_lookup(ZstEntityBase * entity);
+    ZST_EXPORT virtual void remove_entity_from_lookup(ZstEntityBase * entity);
 
 protected:
 	// ------------------------------
@@ -89,15 +97,6 @@ protected:
 	ZST_EXPORT virtual void destroy_entity_complete(ZstEntityBase * entity);
     ZST_EXPORT void dispatch_entity_arrived_event(ZstEntityBase * entity);
 
-
-
-	// ------------------------------
-	// Entity lookups
-	// ------------------------------
-
-	ZST_EXPORT virtual void add_entity_to_lookup(ZstEntityBase * entity);
-	ZST_EXPORT virtual void remove_entity_from_lookup(ZstEntityBase * entity);
-	
 	//Client map
 	ZstPerformerMap m_clients;
 

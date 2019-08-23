@@ -81,9 +81,9 @@ namespace ZstTest
 
 		InputComponent(const char * name, int cmp_val=0, bool should_log=false) :
 			ZstComponent("TESTER", name),
+            m_input(create_input_plug("in", ZstValueType::ZST_INT)),
 			compare_val(cmp_val),
-			log(should_log),
-			m_input(create_input_plug("in", ZstValueType::ZST_INT))
+            log(should_log)
 		{
 		}
 
@@ -140,34 +140,35 @@ namespace ZstTest
 	};
 
 
-	class TestConnectionEvents : public ZstSessionAdaptor, public TestAdaptor
+	class TestConnectionEvents : public ZstConnectionAdaptor, public TestAdaptor
 	{
 	public:
 		bool is_connected = false;
 		ZstServerAddress last_discovered_server;
 
-		void on_connected_to_stage() override {
-			ZstLog::app(LogLevel::debug, "CONNECTION_ESTABLISHED: {}", zst_get_root()->URI().path());
+		void on_connected_to_stage(ShowtimeClient * client, const ZstServerAddress & server_address) override {
+			ZstLog::app(LogLevel::debug, "CONNECTION_ESTABLISHED: {}", client->get_root()->URI().path());
 			inc_calls();
 			is_connected = true;
 		}
 
-		void on_disconnected_from_stage() override {
-			ZstLog::app(LogLevel::debug, "DISCONNECTING: {}", zst_get_root()->URI().path());
+		void on_disconnected_from_stage(ShowtimeClient * client, const ZstServerAddress & server_address) override {
+			ZstLog::app(LogLevel::debug, "DISCONNECTING: {}", client->get_root()->URI().path());
 			inc_calls();
 
 			is_connected = false;
 		}
         
-        void on_server_discovered(const ZstServerAddress & server) override {
-            ZstLog::app(LogLevel::debug, "SERVER DISCOVERED: Name: {} Address: {}", server.name, server.address);
+        void on_server_discovered(ShowtimeClient * client, const ZstServerAddress & server_address) override {
+            ZstLog::app(LogLevel::debug, "SERVER DISCOVERED: Name: {} Address: {}", server_address.name, server_address.address);
             inc_calls();
 
-			last_discovered_server = server;
+			last_discovered_server = server_address;
         }
 
 	private:
 	};
+    
 
 
 	class TestEntityEvents : public ZstHierarchyAdaptor, public TestAdaptor
@@ -245,16 +246,11 @@ namespace ZstTest
 	// Events and polling
 	// ------------------
 
-	inline void clear_callback_queue()
-	{
-		zst_poll_once();
-	}
-
-#define MAX_WAIT_LOOPS 50
-	void wait_for_event(TestAdaptor * adaptor, int expected_messages)
+    #define MAX_WAIT_LOOPS 50
+    void wait_for_event(std::shared_ptr<ShowtimeClient> client, TestAdaptor * adaptor, int expected_messages)
 	{
 		int repeats = 0;
-		zst_poll_once();
+		client->poll_once();
 		while (adaptor->num_calls() < expected_messages) {
 			TAKE_A_BREATH
 			repeats++;
@@ -263,7 +259,7 @@ namespace ZstTest
 				err << "Not enough events in queue. Expecting " << expected_messages << " received " << adaptor->num_calls() << std::endl;
 				throw std::runtime_error(err.str());
 			}
-			zst_poll_once();
+			client->poll_once();
 		}
 	}
 
@@ -288,14 +284,16 @@ namespace ZstTest
 
 	class FixtureInit {
 	public:
-		FixtureInit(){
-			zst_init("test_performer", true);
-			clear_callback_queue();
+        std::shared_ptr<ShowtimeClient> client;
+
+        FixtureInit() : client(std::make_shared<ShowtimeClient>()){
+			client->init("test_performer", true);
+            client->poll_once();
 		}
 
 		~FixtureInit()
 		{
-			zst_destroy();
+			client->destroy();
 		}
 	};
 	
@@ -305,7 +303,8 @@ namespace ZstTest
 		FixtureInitAndCreateServer() {
 			m_stage_server = zst_create_server(TEST_SERVER_NAME, STAGE_ROUTER_PORT);
 			TAKE_A_BREATH
-			clear_callback_queue();
+			            client->poll_once();
+client->poll_once();
 		}
 
 		~FixtureInitAndCreateServer() {
@@ -321,8 +320,8 @@ namespace ZstTest
 
 		FixtureJoinServer()
 		{
-			zst_join(("127.0.0.1:" + std::to_string(STAGE_ROUTER_PORT)).c_str());
-			clear_callback_queue();
+			client->join(("127.0.0.1:" + std::to_string(STAGE_ROUTER_PORT)).c_str());
+            client->poll_once();
 		}
 
 		~FixtureJoinServer()
@@ -331,19 +330,19 @@ namespace ZstTest
 	};
 
 
-	class FixtureWaitForExternalClient {
-	public:
-		std::shared_ptr<TestPerformerEvents> performerEvents;
-
-		FixtureWaitForExternalClient() : performerEvents(std::make_shared<TestPerformerEvents>()) {
-			zst_add_hierarchy_adaptor(performerEvents.get());
-			BOOST_TEST_CHECKPOINT("Waiting for external client performer to arrive");
-			wait_for_event(performerEvents.get(), 1);
-			performerEvents->reset_num_calls();
-		}
-
-		~FixtureWaitForExternalClient() {}
-	};
+//    class FixtureWaitForExternalClient {
+//    public:
+//        std::shared_ptr<TestPerformerEvents> performerEvents;
+//
+//        FixtureWaitForExternalClient() : performerEvents(std::make_shared<TestPerformerEvents>()) {
+//            client->add_hierarchy_adaptor(performerEvents.get());
+//            BOOST_TEST_CHECKPOINT("Waiting for external client performer to arrive");
+//            wait_for_event(client, performerEvents.get(), 1);
+//            performerEvents->reset_num_calls();
+//        }
+//
+//        ~FixtureWaitForExternalClient() {}
+//    };
 
 
 

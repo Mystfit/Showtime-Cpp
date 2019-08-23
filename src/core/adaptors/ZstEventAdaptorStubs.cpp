@@ -34,8 +34,6 @@ void ZstEntityAdaptor::on_register_entity(ZstEntityBase * entity){}
 void ZstEntityAdaptor::on_request_entity_activation(ZstEntityBase * entity) {}
 void ZstEntityAdaptor::on_disconnect_cable(ZstCable * cable) {}
 
-//void ZstEntityAdaptor::on_entity_destroyed(ZstEntityBase * entity){};
-
 
 // ----------------
 // Factory adaptors
@@ -43,16 +41,11 @@ void ZstEntityAdaptor::on_disconnect_cable(ZstCable * cable) {}
 
 void ZstFactoryAdaptor::on_creatables_updated(ZstEntityFactory * factory) {}
 void ZstFactoryAdaptor::on_entity_created(ZstEntityBase * entity) {}
-//void ZstEntityAdaptor::on_entity_destroyed(ZstEntityBase * entity){};
 
 
 // -----------------------
 // Session adaptors
 // -----------------------
-
-void ZstSessionAdaptor::on_connected_to_stage() {}
-void ZstSessionAdaptor::on_disconnected_from_stage() {}
-void ZstSessionAdaptor::on_server_discovered(const ZstServerAddress & server){}
 
 void ZstSessionAdaptor::on_cable_created(ZstCable * cable) {}
 void ZstSessionAdaptor::on_cable_destroyed(ZstCable * cable) {}

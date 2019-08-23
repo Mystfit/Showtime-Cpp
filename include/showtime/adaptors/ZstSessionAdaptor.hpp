@@ -10,10 +10,6 @@ class ZstHierarchy;
 
 class ZstSessionAdaptor : public ZstEventAdaptor {
 public:
-	ZST_EXPORT virtual void on_connected_to_stage();
-	ZST_EXPORT virtual void on_disconnected_from_stage();
-    ZST_EXPORT virtual void on_server_discovered(const ZstServerAddress & server);
-
 	ZST_EXPORT virtual void on_cable_created(ZstCable * cable);
 	ZST_EXPORT virtual void on_cable_destroyed(ZstCable * cable);
     
