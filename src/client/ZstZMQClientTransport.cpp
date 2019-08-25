@@ -19,11 +19,8 @@ ZstZMQClientTransport::ZstZMQClientTransport() :
 
 ZstZMQClientTransport::~ZstZMQClientTransport()
 {
-    m_client_actor.stop_loop();
-    if(m_server_sock){
-        zsock_destroy(&m_server_sock);
-        zst_zmq_dec_ref_count();
-    }
+    //m_client_actor.stop_loop();
+	destroy();
 }
 
 void ZstZMQClientTransport::init()
@@ -56,6 +53,12 @@ void ZstZMQClientTransport::init()
 
 void ZstZMQClientTransport::destroy()
 {
+	if (m_server_sock) {
+		//m_client_actor.remove_pipe_listener(m_server_sock);
+		zsock_destroy(&m_server_sock);
+		m_server_sock = NULL;
+		zst_zmq_dec_ref_count();
+	}
 }
 
 void ZstZMQClientTransport::connect(const std::string & address)

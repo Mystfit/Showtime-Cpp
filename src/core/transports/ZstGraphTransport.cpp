@@ -12,7 +12,7 @@ ZstGraphTransport::ZstGraphTransport() :
 
 ZstGraphTransport::~ZstGraphTransport()
 {
-    m_graph_actor.stop_loop();
+    //m_graph_actor.stop_loop();
     destroy_graph_sockets();
 }
 
@@ -92,7 +92,7 @@ void ZstGraphTransport::graph_recv(zframe_t * frame)
 	
 	//Publish message to other modules
 	if (this->is_active()) {
-		msg_events()->invoke([perf_msg](ZstTransportAdaptor* adaptor) {
+		msg_events()->invoke([perf_msg](std::shared_ptr<ZstTransportAdaptor> adaptor) {
 			adaptor->on_receive_msg(perf_msg);
 		});
 	}
@@ -106,11 +106,15 @@ void ZstGraphTransport::destroy_graph_sockets()
 {
     bool deref = false;
     if (m_graph_in){
+		//m_graph_actor.remove_pipe_listener(m_graph_in);
 		zsock_destroy(&m_graph_in);
+		m_graph_in = NULL;
         deref = true;
     }
     if (m_graph_out){
+		//m_graph_actor.remove_pipe_listener(m_graph_out);
 		zsock_destroy(&m_graph_out);
+		m_graph_out = NULL;
         deref = true;
     }
     if(deref)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <set>
+#include <memory>
 
 #include "ZstExports.h"
 #include "entities/ZstEntityBase.h"
@@ -15,7 +16,7 @@ class ZstEventDispatcher;
 //Typedefs
 typedef std::shared_ptr<ZstEntityBase> ZstSharedEntity;
 
-class ZST_EXPORT ZstEntityFactory : public ZstEntityBase
+class ZST_CLASS_EXPORTED ZstEntityFactory : public ZstEntityBase
 {
 	using ZstEntityBase::add_adaptor;
 	using ZstEntityBase::remove_adaptor;
@@ -48,9 +49,9 @@ public:
 
 	//Events
 
-	ZST_EXPORT void add_adaptor(ZstFactoryAdaptor * adaptor);
-	ZST_EXPORT void remove_adaptor(ZstFactoryAdaptor * adaptor);
-	ZST_EXPORT ZstEventDispatcher<ZstFactoryAdaptor*> * factory_events();
+	ZST_EXPORT void add_adaptor(std::shared_ptr<ZstFactoryAdaptor> & adaptor);
+	ZST_EXPORT void remove_adaptor(std::shared_ptr<ZstFactoryAdaptor> & adaptor);
+	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > > & factory_events();
 
 protected:
 	ZST_EXPORT virtual ZstEntityBase * activate_entity(ZstEntityBase * entity);
@@ -60,5 +61,5 @@ protected:
 private:
 	void update_createable_URIs();
 	std::set<ZstURI> m_creatables;
-	ZstEventDispatcher<ZstFactoryAdaptor*> * m_factory_events;
+	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > > m_factory_events;
 };

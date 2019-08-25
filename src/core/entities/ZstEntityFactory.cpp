@@ -9,29 +9,29 @@
 template class ZstEventDispatcher<ZstFactoryAdaptor*>;
 
 
-ZstEntityFactory::ZstEntityFactory() : ZstEntityBase("")
+ZstEntityFactory::ZstEntityFactory() : 
+	ZstEntityBase(""),
+	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >("factory events"))
 {
-	m_factory_events = new ZstEventDispatcher<ZstFactoryAdaptor*>();
 	set_entity_type(FACTORY_TYPE);
 }
 
-ZstEntityFactory::ZstEntityFactory(const char * name) : ZstEntityBase(name)
+ZstEntityFactory::ZstEntityFactory(const char * name) : 
+	ZstEntityBase(name),
+	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >("factory events"))
 {
-	m_factory_events = new ZstEventDispatcher<ZstFactoryAdaptor*>();
 	set_entity_type(FACTORY_TYPE);
 }
 
-ZstEntityFactory::ZstEntityFactory(const ZstEntityFactory & other) : ZstEntityBase(other)
+ZstEntityFactory::ZstEntityFactory(const ZstEntityFactory & other) : 
+	ZstEntityBase(other),
+	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >("factory events"))
 {
-	m_factory_events = new ZstEventDispatcher<ZstFactoryAdaptor*>();
 	m_creatables = other.m_creatables;
 }
 
 ZstEntityFactory::~ZstEntityFactory()
 {
-	m_factory_events->flush();
-	m_factory_events->remove_all_adaptors();
-	delete m_factory_events;
 }
 
 void ZstEntityFactory::add_creatable(const ZstURI & creatable_path)
@@ -49,11 +49,17 @@ void ZstEntityFactory::update_creatables()
 	//Alert stage
 	if (!is_proxy()) {
 		this->update_createable_URIs();
-		entity_events()->invoke([this](ZstEntityAdaptor* adp) {adp->on_publish_entity_update(this); });
+		entity_events()->invoke([this](std::shared_ptr<ZstEntityAdaptor> adaptor) {
+			adaptor->on_publish_entity_update(this);
+		});
 	} 
 
-	factory_events()->defer([this](ZstFactoryAdaptor * dlg) { dlg->on_creatables_updated(this); });
-	synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * adp) {adp->on_synchronisable_has_event(this); });
+	factory_events()->defer([this](std::shared_ptr<ZstFactoryAdaptor> adaptor) {
+		adaptor->on_creatables_updated(this);
+	});
+	synchronisable_events()->invoke([this](std::shared_ptr<ZstSynchronisableAdaptor>  adaptor) {
+		adaptor->on_synchronisable_has_event(this);
+	});
 }
 
 void ZstEntityFactory::remove_creatable(const ZstURI & creatable_path)
@@ -92,17 +98,17 @@ ZstEntityBase * ZstEntityFactory::create_entity(const ZstURI & creatable_path, c
 	return NULL;
 }
 
-void ZstEntityFactory::add_adaptor(ZstFactoryAdaptor * adaptor)
+void ZstEntityFactory::add_adaptor(std::shared_ptr<ZstFactoryAdaptor>& adaptor)
 {
 	m_factory_events->add_adaptor(adaptor);
 }
 
-void ZstEntityFactory::remove_adaptor(ZstFactoryAdaptor * adaptor)
+void ZstEntityFactory::remove_adaptor(std::shared_ptr<ZstFactoryAdaptor>& adaptor)
 {
 	m_factory_events->remove_adaptor(adaptor);
 }
 
-ZstEventDispatcher<ZstFactoryAdaptor*>* ZstEntityFactory::factory_events()
+std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > > & ZstEntityFactory::factory_events()
 {
 	return m_factory_events;
 }
@@ -116,7 +122,9 @@ ZstEntityBase * ZstEntityFactory::activate_entity(ZstEntityBase * entity)
 	}
 
 	//Activate entity and attach listeners
-	entity_events()->invoke([entity](ZstEntityAdaptor * adp) { adp->on_register_entity(entity); });
+	entity_events()->invoke([entity](std::shared_ptr<ZstEntityAdaptor> adaptor) {
+		adaptor->on_register_entity(entity);
+	});
 	return entity;
 }
 

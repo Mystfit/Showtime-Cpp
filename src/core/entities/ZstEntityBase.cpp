@@ -11,19 +11,19 @@ ZstEntityBase::ZstEntityBase(const char * name) :
 	ZstSynchronisable(),
 	m_parent(NULL),
 	m_entity_type(""),
-	m_uri(name)
+	m_uri(name),
+	m_entity_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstEntityAdaptor > > >()),
+	m_session_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstSessionAdaptor> > >())
 {
-    m_entity_events = std::make_unique< ZstEventDispatcher<ZstEntityAdaptor*> >();
-    m_session_events = std::make_unique< ZstEventDispatcher<ZstSessionAdaptor*> >();
 }
 
-ZstEntityBase::ZstEntityBase(const ZstEntityBase & other) : ZstSynchronisable(other)
+ZstEntityBase::ZstEntityBase(const ZstEntityBase & other) : 
+	m_parent(other.m_parent),
+	m_entity_type(other.m_entity_type),
+	m_uri(ZstURI(other.m_uri)),
+	m_entity_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstEntityAdaptor> > >()),
+	m_session_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstSessionAdaptor> > >())
 {
-	m_parent = other.m_parent;
-	m_entity_type = other.m_entity_type;
-	m_uri = ZstURI(other.m_uri);
-	m_entity_events = std::make_unique< ZstEventDispatcher<ZstEntityAdaptor*> >();
-    m_session_events = std::make_unique< ZstEventDispatcher<ZstSessionAdaptor*> >();
 }
 
 ZstEntityBase::~ZstEntityBase()
@@ -97,9 +97,9 @@ void ZstEntityBase::get_child_entities(ZstEntityBundle & bundle, bool include_pa
     }
 }
 
-ZstEventDispatcher<ZstEntityAdaptor*> * ZstEntityBase::entity_events()
+std::shared_ptr< ZstEventDispatcher< std::shared_ptr<ZstEntityAdaptor> > > & ZstEntityBase::entity_events()
 {
-    return m_entity_events.get();
+    return m_entity_events;
 }
 
 void ZstEntityBase::write_json(json & buffer) const
@@ -118,22 +118,22 @@ void ZstEntityBase::read_json(const json & buffer)
 		m_current_owner = ZstURI(buffer["owner"].get<std::string>().c_str(), buffer["owner"].get<std::string>().size());
 }
 
-void ZstEntityBase::add_adaptor(ZstEntityAdaptor * adaptor)
+void ZstEntityBase::add_adaptor(std::shared_ptr<ZstEntityAdaptor> & adaptor)
 {
     this->m_entity_events->add_adaptor(adaptor);
 }
 
-void ZstEntityBase::add_adaptor(ZstSessionAdaptor * adaptor)
+void ZstEntityBase::add_adaptor(std::shared_ptr<ZstSessionAdaptor> & adaptor)
 {
     this->m_session_events->add_adaptor(adaptor);
 }
 
-void ZstEntityBase::remove_adaptor(ZstEntityAdaptor * adaptor)
+void ZstEntityBase::remove_adaptor(std::shared_ptr<ZstEntityAdaptor> & adaptor)
 {
 	this->m_entity_events->remove_adaptor(adaptor);
 }
 
-void ZstEntityBase::remove_adaptor(ZstSessionAdaptor * adaptor)
+void ZstEntityBase::remove_adaptor(std::shared_ptr<ZstSessionAdaptor> & adaptor)
 {
     this->m_session_events->remove_adaptor(adaptor);
 }
@@ -151,15 +151,17 @@ void ZstEntityBase::set_owner(const ZstURI& owner)
 
 void ZstEntityBase::aquire_ownership()
 {
-    m_session_events->invoke([this](ZstSessionAdaptor* adaptor) {
-        adaptor->aquire_entity_ownership(this);
+    m_session_events->invoke([this](std::weak_ptr<ZstSessionAdaptor> adaptor) {
+		if(auto adp = adaptor.lock())
+			adp->aquire_entity_ownership(this);
     });
 }
 
 void ZstEntityBase::release_ownership()
 {
-    m_session_events->invoke([this](ZstSessionAdaptor* adaptor) {
-        adaptor->release_entity_ownership(this);
+    m_session_events->invoke([this](std::weak_ptr<ZstSessionAdaptor> adaptor) {
+		if (auto adp = adaptor.lock())
+			adp->release_entity_ownership(this);
     });
 }
 
@@ -185,12 +187,15 @@ void ZstEntityBase::dispatch_destroyed()
 			c->set_activation_status(ZstSyncStatus::DESTROYED);
 		}
 
-		synchronisable_events()->invoke([this](ZstSynchronisableAdaptor * adp) { adp->on_synchronisable_destroyed(this); });
+		synchronisable_events()->invoke([this](std::weak_ptr<ZstSynchronisableAdaptor> adaptor) { 
+			if(auto adp = adaptor.lock())
+				adp->on_synchronisable_destroyed(this); 
+		});
 	}
 }
 
-ZstEventDispatcher<ZstSessionAdaptor*> * ZstEntityBase::session_events()
+std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstSessionAdaptor> > > & ZstEntityBase::session_events()
 {
-    return m_session_events.get();
+    return m_session_events;
 }
 

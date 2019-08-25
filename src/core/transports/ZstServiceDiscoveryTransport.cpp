@@ -11,7 +11,7 @@ ZstServiceDiscoveryTransport::~ZstServiceDiscoveryTransport()
 {
     stop_broadcast();
     stop_listening();
-    m_beacon_actor.stop_loop();
+    //m_beacon_actor.stop_loop();
     if(m_beacon){
         zactor_destroy(&m_beacon);
         zst_zmq_dec_ref_count();
@@ -62,8 +62,8 @@ void ZstServiceDiscoveryTransport::receive_msg(ZstMessage * msg)
     this->ZstTransportLayerBase::receive_msg(msg);
     
     //Publish message to other modules
-    msg_events()->defer([msg](ZstTransportAdaptor * adaptor) {
-        adaptor->on_receive_msg(msg);
+    msg_events()->defer([msg](std::shared_ptr<ZstTransportAdaptor> adaptor) {
+		adaptor->on_receive_msg(msg);
     }, [msg, this](ZstEventStatus status) {
         this->release_msg(static_cast<ZstStageMessage*>(msg));
     });

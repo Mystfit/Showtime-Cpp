@@ -1,12 +1,17 @@
 #pragma once
 #include "ZstLogging.h"
-#include <vector>
+#include "ZstPointerUtils.h"
+#include <unordered_set>
+#include <memory>
 #include <mutex>
+
 
 //Forwards
 class ZstEventDispatcherBase;
 
-class ZST_EXPORT ZstEventAdaptor {
+
+class ZST_CLASS_EXPORTED ZstEventAdaptor : public inheritable_enable_shared_from_this<ZstEventAdaptor>
+{
 	friend class ZstEventDispatcherBase;
 public:
 	ZST_EXPORT ZstEventAdaptor();
@@ -16,11 +21,11 @@ public:
 	ZST_EXPORT void set_target_dispatcher_inactive();
 
 private:
-	ZST_EXPORT void add_event_source(ZstEventDispatcherBase* event_source);
-	ZST_EXPORT void remove_event_source(ZstEventDispatcherBase* event_source);
+	ZST_EXPORT void add_event_source(std::shared_ptr<ZstEventDispatcherBase> event_source);
+	ZST_EXPORT void remove_event_source(std::shared_ptr<ZstEventDispatcherBase> event_source);
 
 	bool m_is_target_dispatcher_active;
-	std::vector<ZstEventDispatcherBase*> m_event_sources;
+	std::unordered_set< std::shared_ptr<ZstEventDispatcherBase> > m_event_sources;
 
 	std::recursive_mutex m_mtx;
 };

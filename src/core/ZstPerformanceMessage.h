@@ -6,7 +6,7 @@
 
 #include "ZstMessage.h"
 
-class ZST_EXPORT ZstPerformanceMessage : public ZstMessage {
+class ZST_CLASS_EXPORTED ZstPerformanceMessage : public ZstMessage {
 public:
 	ZST_EXPORT ZstPerformanceMessage();
     ZST_EXPORT virtual ~ZstPerformanceMessage();

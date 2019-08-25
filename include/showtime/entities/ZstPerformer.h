@@ -10,7 +10,7 @@
 
 #define PERFORMER_TYPE "prf"
 
-class ZST_EXPORT ZstPerformer : public ZstComponent {
+class ZST_CLASS_EXPORTED ZstPerformer : public ZstComponent {
 public:
 	ZST_EXPORT ZstPerformer();
 	ZST_EXPORT ZstPerformer(const char * name);

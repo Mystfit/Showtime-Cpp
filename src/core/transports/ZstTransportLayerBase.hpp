@@ -16,7 +16,7 @@
 //Forwards
 class ZstTransportAdaptor;
 
-class ZST_EXPORT ZstTransportLayerBase : public ZstMessageSupervisor {
+class ZST_CLASS_EXPORTED ZstTransportLayerBase : public ZstMessageSupervisor {
 public:
 	ZST_EXPORT ZstTransportLayerBase();
 	ZST_EXPORT virtual ~ZstTransportLayerBase();
@@ -37,12 +37,12 @@ public:
 	ZST_EXPORT virtual ZstMessageReceipt send_sync_message(ZstMessage* msg, const ZstTransportArgs& args);
 	ZST_EXPORT virtual ZstMessageReceipt send_async_message(ZstMessage* msg, const ZstTransportArgs& args);
 
-	ZST_EXPORT ZstEventDispatcher<ZstTransportAdaptor*> * msg_events();
+	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstTransportAdaptor> > > & msg_events();
 	ZST_EXPORT bool is_active();
 
 
 private:
 	bool m_is_active;
 
-    std::shared_ptr<ZstEventDispatcher<ZstTransportAdaptor*> > m_dispatch_events;
+    std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstTransportAdaptor> > > m_dispatch_events;
 };

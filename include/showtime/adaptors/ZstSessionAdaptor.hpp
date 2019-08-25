@@ -8,7 +8,9 @@
 //Forwards
 class ZstHierarchy;
 
-class ZST_EXPORT ZstSessionAdaptor : public ZstEventAdaptor {
+class ZST_CLASS_EXPORTED ZstSessionAdaptor : 
+	public ZstEventAdaptor
+{
 public:
 	ZST_EXPORT virtual void on_cable_created(ZstCable * cable);
 	ZST_EXPORT virtual void on_cable_destroyed(ZstCable * cable);

@@ -16,11 +16,12 @@ void ZstPlugLiason::plug_add_cable(ZstPlug * plug, ZstCable * cable)
 
 void ZstPlugLiason::output_plug_set_can_fire(ZstOutputPlug* plug, bool can_fire)
 {
+	if (!plug) return;
 	plug->set_can_fire(can_fire);
 }
 
-void ZstPlugLiason::output_plug_set_transport(ZstOutputPlug * plug, ZstTransportAdaptor * transport)
+void ZstPlugLiason::output_plug_set_transport(ZstOutputPlug * plug, std::shared_ptr<ZstTransportAdaptor> & transport)
 {
-	if (!plug || !transport) return;
+	if (!plug) return;
 	plug->add_adaptor(transport);
 }

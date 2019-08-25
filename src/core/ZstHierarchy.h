@@ -19,12 +19,14 @@
 #include "adaptors/ZstTransportAdaptor.hpp"
 
 
-class ZST_EXPORT ZstHierarchy : 
+class ZST_CLASS_EXPORTED ZstHierarchy :
 	public ZstSynchronisableModule,
 	public ZstPlugLiason,
 	public ZstEntityFactoryLiason,
 	public ZstEntityAdaptor
 {
+	using ZstEntityAdaptor::weak_from_this;
+	using ZstSynchronisableAdaptor::weak_from_this;
 public:
 	ZST_EXPORT ZstHierarchy();
 	ZST_EXPORT ~ZstHierarchy();
@@ -70,7 +72,7 @@ public:
 	// Event dispatchers
 	// -----------------
 	
-	ZST_EXPORT ZstEventDispatcher<ZstHierarchyAdaptor*> & hierarchy_events();
+	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstHierarchyAdaptor> > > & hierarchy_events();
 	ZST_EXPORT virtual void process_events() override;
 	ZST_EXPORT virtual void flush_events() override;
 
@@ -101,8 +103,7 @@ protected:
 	ZstPerformerMap m_clients;
 
 private:
-	ZstEventDispatcher<ZstSynchronisableAdaptor*> m_synchronisable_events;
-	ZstEventDispatcher<ZstHierarchyAdaptor*> m_hierarchy_events;
+	std::shared_ptr<ZstEventDispatcher< std::shared_ptr<ZstHierarchyAdaptor> > > m_hierarchy_events;
 	std::mutex m_hierarchy_mutex;
 	ZstEntityMap m_entity_lookup;
 };

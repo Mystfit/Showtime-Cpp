@@ -299,7 +299,6 @@ namespace ZstTest
 
 		~FixtureInit()
 		{
-			client->destroy();
 		}
 	};
 	

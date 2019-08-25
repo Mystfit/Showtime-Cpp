@@ -8,7 +8,7 @@
 
 using nlohmann::json;
 
-class ZST_EXPORT ZstStageMessage : public ZstMessage {
+class ZST_CLASS_EXPORTED ZstStageMessage : public ZstMessage {
 public:
     ZST_EXPORT ZstStageMessage();
     ZST_EXPORT ZstStageMessage(const ZstStageMessage & other);

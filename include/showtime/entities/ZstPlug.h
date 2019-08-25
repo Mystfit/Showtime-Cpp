@@ -7,6 +7,7 @@
 
 #include <set>
 #include <mutex>
+#include <memory>
 
 #define PLUG_TYPE "plug"
 
@@ -18,7 +19,7 @@ class ZstTransportAdaptor;
 template<typename T>
 class ZstEventDispatcher;
 
-class ZST_EXPORT ZstPlug : public ZstEntityBase {
+class ZST_CLASS_EXPORTED ZstPlug : public ZstEntityBase {
 public:
 	friend class ZstPlugLiason;
     friend class ZstComponent;
@@ -77,7 +78,7 @@ private:
 // --------------------
 // Derived plug classes
 // --------------------
-class ZST_EXPORT ZstInputPlug : public ZstPlug {
+class ZST_CLASS_EXPORTED ZstInputPlug : public ZstPlug {
 public:
 	friend class ZstPlugLiason;
 	ZST_EXPORT ZstInputPlug();
@@ -87,7 +88,7 @@ public:
 };
 
 
-class ZST_EXPORT ZstOutputPlug : public ZstPlug {
+class ZST_CLASS_EXPORTED ZstOutputPlug : public ZstPlug {
 	friend class ZstPlugLiason;
 public:
     using ZstEntityBase::add_adaptor;
@@ -105,11 +106,11 @@ protected:
     ZST_EXPORT virtual void set_owner(const ZstURI & fire_owner) override;
 
 private:
-    ZST_EXPORT virtual void add_adaptor(ZstTransportAdaptor* adaptor);
-    ZST_EXPORT virtual void remove_adaptor(ZstTransportAdaptor* adaptor);
+    ZST_EXPORT virtual void add_adaptor(std::shared_ptr<ZstTransportAdaptor>& adaptor);
+    ZST_EXPORT virtual void remove_adaptor(std::shared_ptr<ZstTransportAdaptor>& adaptor);
 	ZST_EXPORT void set_can_fire(bool can_fire);
 
-	ZstEventDispatcher<ZstTransportAdaptor*> * m_graph_out_events;
+	std::shared_ptr< ZstEventDispatcher< std::shared_ptr<ZstTransportAdaptor> > > m_graph_out_events;
 
 	bool m_reliable;
 	bool m_can_fire;

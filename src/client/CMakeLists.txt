@@ -20,6 +20,7 @@ set(ZST_CLIENT_SRC
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientHierarchy.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientSession.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstZMQClientTransport.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/ZstClientAdaptors.cpp"
 )
 
 

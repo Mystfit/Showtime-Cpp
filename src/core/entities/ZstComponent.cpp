@@ -101,7 +101,9 @@ void ZstComponent::add_child(ZstEntityBase * entity, bool auto_activate)
     m_children[entity->URI()] = entity;
     
     if (is_activated() && !entity->is_proxy() && auto_activate) {
-        entity_events()->invoke([entity](ZstEntityAdaptor * adp) { adp->on_request_entity_activation(entity); });
+        entity_events()->invoke([entity](std::shared_ptr<ZstEntityAdaptor> adaptor) { 
+			adaptor->on_request_entity_activation(entity);
+		});
     }
 }
 
@@ -114,8 +116,8 @@ void ZstComponent::remove_child(ZstEntityBase * entity)
 	ZstCableBundle bundle;
     entity->get_child_cables(bundle);
     for (auto cable : bundle){
-        entity_events()->defer([cable](ZstEntityAdaptor * adp){
-            adp->on_disconnect_cable(cable);
+        entity_events()->defer([cable](std::shared_ptr<ZstEntityAdaptor> adaptor){
+			adaptor->on_disconnect_cable(cable);
         });
 	}
     

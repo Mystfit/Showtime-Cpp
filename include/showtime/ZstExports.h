@@ -4,17 +4,21 @@
     #ifdef __GNUC__
         #define ZST_API_EXPORTED __attribute__ ((dllexport))
         #define ZST_API_IMPORTED __attribute__ ((dllimport))
+		#define ZST_CLASS_EXPORTED ZST_API_EXPORTED		
     #else
         #define ZST_API_EXPORTED __declspec(dllexport)
         #define ZST_API_IMPORTED __declspec(dllimport)
+		#define ZST_CLASS_EXPORTED
     #endif
 #else
     #if __GNUC__ >= 4
         #define ZST_API_EXPORTED __attribute__ ((visibility ("default")))
         #define ZST_API_IMPORTED
+		#define ZST_CLASS_EXPORTED ZST_API_EXPORTED
     #else
         #define ZST_API_EXPORTED
         #define ZST_API_IMPORTED
+		#define ZST_CLASS_EXPORTED
     #endif
 #endif
 

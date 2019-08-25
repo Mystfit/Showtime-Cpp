@@ -10,7 +10,7 @@ namespace Showtime {
     }
 }
 
-class ZST_CLIENT_EXPORT ShowtimeClient : std::enable_shared_from_this<ShowtimeClient>
+class ZST_CLASS_EXPORTED ShowtimeClient : std::enable_shared_from_this<ShowtimeClient>
 {
 public:
     ZST_CLIENT_EXPORT ShowtimeClient();

@@ -18,7 +18,7 @@
 #include "ZstEventDispatcher.hpp"
 
 
-class ZST_EXPORT ZstSession : 
+class ZST_CLASS_EXPORTED ZstSession :
 	public ZstSynchronisableModule,
 	public ZstTransportAdaptor,
 	public ZstComputeAdaptor,
@@ -30,7 +30,7 @@ class ZST_EXPORT ZstSession :
 {
 public:
 	ZST_EXPORT ZstSession();
-    ZST_EXPORT ~ZstSession();
+    ZST_EXPORT virtual ~ZstSession();
 	ZST_EXPORT virtual void process_events() override;
 	ZST_EXPORT virtual void flush_events() override;
 	ZST_EXPORT virtual void init() override;
@@ -90,8 +90,8 @@ public:
 	// Event dispatchers
 	// -----------------
 
-	ZST_EXPORT ZstEventDispatcher<ZstSessionAdaptor*> & session_events();
-	ZST_EXPORT ZstEventDispatcher<ZstComputeAdaptor*> & compute_events();
+	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstSessionAdaptor> > > & session_events();
+	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstComputeAdaptor> > > & compute_events();
 
 protected:
 	// --------------------------
@@ -108,7 +108,7 @@ private:
 	// -----------------
 	// Event dispatchers
 	// -----------------
-	ZstEventDispatcher<ZstSessionAdaptor*> m_session_events;
-	ZstEventDispatcher<ZstComputeAdaptor*> m_compute_events;
+	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstSessionAdaptor> > > m_session_events;
+	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstComputeAdaptor> > > m_compute_events;
 	ZstPerformerMap m_connected_performers;
 };

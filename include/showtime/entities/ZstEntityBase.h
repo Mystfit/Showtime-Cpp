@@ -31,7 +31,7 @@ typedef ZstBundle<ZstEntityFactory*> ZstEntityFactoryBundle;
 typedef ZstBundleIterator<ZstEntityBase*> ZstEntityBundleIterator;
 
 
-class ZST_EXPORT ZstEntityBase : public ZstSynchronisable, public ZstSerialisable {
+class ZST_CLASS_EXPORTED ZstEntityBase : public ZstSynchronisable, public ZstSerialisable {
     friend class ZstEntityLiason;
 
 public:
@@ -61,10 +61,10 @@ public:
 	ZST_EXPORT void read_json(const json & buffer) override;
 
 	//Adaptors
-    ZST_EXPORT virtual void add_adaptor(ZstEntityAdaptor * adaptor);
-    ZST_EXPORT virtual void add_adaptor(ZstSessionAdaptor * adaptor);
-    ZST_EXPORT virtual void remove_adaptor(ZstEntityAdaptor * adaptor);
-    ZST_EXPORT virtual void remove_adaptor(ZstSessionAdaptor * adaptor);
+    ZST_EXPORT virtual void add_adaptor(std::shared_ptr<ZstEntityAdaptor>& adaptor);
+    ZST_EXPORT virtual void add_adaptor(std::shared_ptr<ZstSessionAdaptor>& adaptor);
+    ZST_EXPORT virtual void remove_adaptor(std::shared_ptr<ZstEntityAdaptor>& adaptor);
+    ZST_EXPORT virtual void remove_adaptor(std::shared_ptr<ZstSessionAdaptor>& adaptor);
     
     //Ownership
     ZST_EXPORT const ZstURI & get_owner() const;
@@ -77,7 +77,7 @@ public:
     using ZstSynchronisable::remove_adaptor;
 #endif
 
-	ZST_EXPORT ZstEventDispatcher<ZstEntityAdaptor*> * entity_events();
+	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstEntityAdaptor> > > & entity_events();
 	
 protected:
 	//Set entity status
@@ -88,12 +88,12 @@ protected:
 	ZST_EXPORT virtual void dispatch_destroyed() override;
     
     //Event dispatchers
-    ZST_EXPORT ZstEventDispatcher<ZstSessionAdaptor*> * session_events();
+    ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstSessionAdaptor> > > & session_events();
     
     //Entity mutex
     mutable std::mutex m_entity_mtx;
-    std::unique_ptr< ZstEventDispatcher<ZstSessionAdaptor*> > m_session_events;
-    std::unique_ptr< ZstEventDispatcher<ZstEntityAdaptor*> > m_entity_events;
+	std::shared_ptr<ZstEventDispatcher< std::shared_ptr< ZstSessionAdaptor> > > m_session_events;
+	std::shared_ptr<ZstEventDispatcher< std::shared_ptr< ZstEntityAdaptor> > > m_entity_events;
 
 private:
 	ZstEntityBase * m_parent;

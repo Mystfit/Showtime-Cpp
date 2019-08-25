@@ -5,7 +5,8 @@
 // ------------------
 
 ZstSession::ZstSession() : 
-	m_session_events("session")
+	m_session_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstSessionAdaptor> > >()),
+	m_compute_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstComputeAdaptor> > >())
 {
 }
 
@@ -21,8 +22,8 @@ ZstSession::~ZstSession()
 void ZstSession::process_events()
 {
 	hierarchy()->process_events();
-	m_session_events.process_events();
-	m_compute_events.process_events();
+	m_session_events->process_events();
+	m_compute_events->process_events();
     
     ZstSynchronisableModule::process_events();
 }
@@ -30,8 +31,8 @@ void ZstSession::process_events()
 void ZstSession::flush_events()
 {
 	hierarchy()->flush_events();
-	m_session_events.flush();
-    m_compute_events.flush();
+	m_session_events->flush();
+    m_compute_events->flush();
     
     ZstSynchronisableModule::flush_events();
 }
@@ -39,10 +40,10 @@ void ZstSession::flush_events()
 void ZstSession::init()
 {
     //Add adaptors
-	m_compute_events.add_adaptor(static_cast<ZstComputeAdaptor*>(this));
+	m_compute_events->add_adaptor(ZstComputeAdaptor::shared_from_this());
     
     //Attach session as an adaptor to the hierarchy module to handle events that will need to modify cables
-    hierarchy()->hierarchy_events().add_adaptor(static_cast<ZstHierarchyAdaptor*>(this));
+    hierarchy()->hierarchy_events()->add_adaptor(ZstHierarchyAdaptor::downcasted_shared_from_this<ZstHierarchyAdaptor>());
     
     ZstSynchronisableModule::init();
 }
@@ -124,7 +125,9 @@ void ZstSession::destroy_cable_complete(ZstCable * cable)
 	}
 
     //Dispatch events
-    session_events().defer([cable](ZstSessionAdaptor * dlg) { dlg->on_cable_destroyed(cable); });
+    session_events()->defer([cable](std::shared_ptr<ZstSessionAdaptor> adaptor) {
+		adaptor->on_cable_destroyed(cable);
+	});
     
     //Deactivate the cable
     synchronisable_enqueue_deactivation(cable);
@@ -198,14 +201,16 @@ ZstCable * ZstSession::create_cable(ZstInputPlug * input, ZstOutputPlug * output
 	cable_ptr->set_output(output);
 
 	//Add synchronisable adaptor to cable to handle activation
-	cable_ptr->add_adaptor(this);
+	cable_ptr->add_adaptor(ZstSynchronisableAdaptor::downcasted_shared_from_this<ZstSynchronisableAdaptor>());
         
 	//Cables are always local so they can be cleaned up by the reaper when deactivated
 	synchronisable_set_proxy(cable_ptr.get());
 
 	//Enqueue events
 	synchronisable_set_activation_status(cable_ptr.get(), ZstSyncStatus::ACTIVATED);
-	m_session_events.defer([&cable_ptr](ZstSessionAdaptor * dlg) { dlg->on_cable_created(cable_ptr.get()); });
+	m_session_events->defer([&cable_ptr](std::shared_ptr<ZstSessionAdaptor> adaptor) {
+		adaptor->on_cable_created(cable_ptr.get());
+	});
 
 	return cable_ptr.get();
 }
@@ -230,7 +235,7 @@ void ZstSession::on_entity_arriving(ZstEntityBase * entity)
     ZstEntityBundle bundle;
     entity->get_child_entities(bundle);
     for(auto child : bundle){
-        child->add_adaptor(static_cast<ZstSessionAdaptor*>(this));
+        child->add_adaptor(ZstSessionAdaptor::downcasted_shared_from_this<ZstSessionAdaptor>());
     }
 }
 
@@ -301,12 +306,12 @@ void ZstSession::on_synchronisable_destroyed(ZstSynchronisable * synchronisable)
     }
 }
 
-ZstEventDispatcher<ZstSessionAdaptor*> & ZstSession::session_events()
+std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstSessionAdaptor> > >& ZstSession::session_events()
 {
 	return m_session_events;
 }
 
-ZstEventDispatcher<ZstComputeAdaptor*>& ZstSession::compute_events()
+std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstComputeAdaptor> > >& ZstSession::compute_events()
 {
 	return m_compute_events;
 }

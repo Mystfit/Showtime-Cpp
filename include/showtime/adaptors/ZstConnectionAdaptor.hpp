@@ -7,10 +7,12 @@
 //Forwards
 class ShowtimeClient;
 
-class ZstConnectionAdaptor : public ZstEventAdaptor {
+class ZST_CLASS_EXPORTED ZstConnectionAdaptor : 
+	public ZstEventAdaptor
+{
 public:
-    ZST_EXPORT virtual void on_connected_to_stage(ShowtimeClient* client, const ZstServerAddress & server){};
-    ZST_EXPORT virtual void on_disconnected_from_stage(ShowtimeClient* client, const ZstServerAddress & server){};
-    ZST_EXPORT virtual void on_server_discovered(ShowtimeClient* client, const ZstServerAddress & server){};
-    ZST_EXPORT virtual void on_synchronised_with_stage(ShowtimeClient* client, const ZstServerAddress & server){};
+    ZST_CLIENT_EXPORT virtual void on_connected_to_stage(ShowtimeClient* client, const ZstServerAddress & server);
+	ZST_CLIENT_EXPORT virtual void on_disconnected_from_stage(ShowtimeClient* client, const ZstServerAddress & server);
+	ZST_CLIENT_EXPORT virtual void on_server_discovered(ShowtimeClient* client, const ZstServerAddress & server);
+	ZST_CLIENT_EXPORT virtual void on_synchronised_with_stage(ShowtimeClient* client, const ZstServerAddress & server);
 };

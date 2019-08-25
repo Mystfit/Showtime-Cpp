@@ -86,6 +86,7 @@ void ZstStage::destroy()
 
 	//Destroy transports
     m_service_broadcast_transport->stop_broadcast();
+	m_router_transport->destroy();
     
     //Stop threads
     m_stage_eventloop_thread.interrupt();

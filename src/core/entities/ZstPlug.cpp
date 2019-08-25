@@ -158,8 +158,10 @@ void ZstPlug::get_child_cables(ZstCableBundle & bundle)
 {
     std::lock_guard<std::mutex> lock(m_entity_mtx);
 	for (auto const & cable_path : m_cables) {
-        m_session_events->invoke([&cable_path, &bundle](ZstSessionAdaptor* adp){
-            auto cable = adp->find_cable(cable_path);
+        m_session_events->invoke([&cable_path, &bundle](std::shared_ptr<ZstSessionAdaptor> adaptor){
+			ZstCable* cable = NULL;
+			cable = adaptor->find_cable(cable_path);
+				 
 			if (!cable) {
 				ZstLog::entity(LogLevel::error, "No cable found for address {}<-{}", cable_path.get_input_URI().path(), cable_path.get_output_URI().path());
 				return;
@@ -255,30 +257,29 @@ ZstInputPlug::ZstInputPlug(const char * name, ZstValueType t, int max_cables) : 
 
 ZstOutputPlug::ZstOutputPlug() : 
 	ZstPlug(),
-    m_graph_out_events(NULL),
 	m_reliable(true),
-    m_can_fire(false)
+    m_can_fire(false),
+	m_graph_out_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstTransportAdaptor> > >("plug_out_events"))
 {
 	m_direction = ZstPlugDirection::OUT_JACK;
-	m_graph_out_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
 	m_max_connected_cables = -1;
 }
 
-ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug & other) : 
+ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug& other) :
 	ZstPlug(other),
 	m_reliable(other.m_reliable),
-	m_can_fire(other.m_can_fire)
+	m_can_fire(other.m_can_fire),
+	m_graph_out_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstTransportAdaptor> > > ("plug_out_events"))
 {
-	m_graph_out_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
 }
 
 ZstOutputPlug::ZstOutputPlug(const char * name, ZstValueType t, bool reliable) : 
 	ZstPlug(name, t),
 	m_reliable(reliable),
-	m_can_fire(false)
+	m_can_fire(false),
+	m_graph_out_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstTransportAdaptor> > >("plug_out_events"))
 {
 	m_direction = ZstPlugDirection::OUT_JACK;
-	m_graph_out_events = new ZstEventDispatcher<ZstTransportAdaptor*>("plug_out_events");
 	m_max_connected_cables = -1;
 #ifndef ZST_BUILD_DRAFT_API
     if(!m_reliable){
@@ -292,7 +293,6 @@ ZstOutputPlug::~ZstOutputPlug()
 {
 	m_graph_out_events->flush();
 	m_graph_out_events->remove_all_adaptors();
-	delete m_graph_out_events;
 }
 
 bool ZstOutputPlug::can_fire()
@@ -305,7 +305,7 @@ void ZstOutputPlug::fire()
 	if (!can_fire())
 		return;
 
-	m_graph_out_events->invoke([this](ZstTransportAdaptor * adaptor) {		
+	m_graph_out_events->invoke([this](std::shared_ptr<ZstTransportAdaptor> adaptor) {
 		ZstTransportArgs args;
 		args.msg_args[get_msg_arg_name(ZstMsgArg::PATH)] = this->URI().path();
 		this->raw_value()->write_json(args.msg_payload);
@@ -324,7 +324,7 @@ void ZstOutputPlug::set_owner(const ZstURI & owner)
 	ZstEntityBase::set_owner(owner);
 
 	ZstPerformer* performer = NULL;
-    session_events()->invoke([this, &performer](ZstSessionAdaptor* adaptor){
+    session_events()->invoke([this, &performer](std::shared_ptr<ZstSessionAdaptor> adaptor){
 		performer = adaptor->hierarchy()->get_local_performer();
     });
 
@@ -346,12 +346,12 @@ void ZstOutputPlug::set_can_fire(bool can_fire)
 	m_can_fire = can_fire;
 }
 
-void ZstOutputPlug::add_adaptor(ZstTransportAdaptor* adaptor)
+void ZstOutputPlug::add_adaptor(std::shared_ptr<ZstTransportAdaptor> & adaptor)
 {
     m_graph_out_events->add_adaptor(adaptor);
 }
 
-void ZstOutputPlug::remove_adaptor(ZstTransportAdaptor* adaptor)
+void ZstOutputPlug::remove_adaptor(std::shared_ptr<ZstTransportAdaptor> & adaptor)
 {
     m_graph_out_events->remove_adaptor(adaptor);
 }

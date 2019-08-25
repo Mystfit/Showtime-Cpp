@@ -2,7 +2,7 @@
 #include "ZstHierarchy.h"
 
 ZstHierarchy::ZstHierarchy() :
-    m_hierarchy_events("hierarchy")
+	m_hierarchy_events(std::make_shared<ZstEventDispatcher< std::shared_ptr<ZstHierarchyAdaptor> > >("hierarchy_events"))
 {
 }
 
@@ -31,9 +31,9 @@ void ZstHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportReq
 	ZstEntityBundle bundle;
     entity->get_child_entities(bundle, true);
 	for (auto c : bundle) {
-		synchronisable_set_activating(c);
-		c->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(this));
-		c->add_adaptor(static_cast<ZstEntityAdaptor*>(this));
+		synchronisable_set_activating(c);//ZstSynchronisableAdaptor
+		c->add_adaptor(ZstSynchronisableAdaptor::downcasted_shared_from_this<ZstSynchronisableAdaptor>());
+		c->add_adaptor(ZstEntityAdaptor::downcasted_shared_from_this<ZstEntityAdaptor>());
 	}
 }
 
@@ -76,15 +76,17 @@ void ZstHierarchy::add_performer(const ZstPerformer & performer)
 		add_entity_to_lookup(c);
 
 		//Add adaptors to performer so we can clean it up later
-		c->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(this));
-		c->add_adaptor(static_cast<ZstEntityAdaptor*>(this));
+		c->add_adaptor(ZstSynchronisableAdaptor::downcasted_shared_from_this<ZstSynchronisableAdaptor>());
+		c->add_adaptor(ZstEntityAdaptor::downcasted_shared_from_this<ZstEntityAdaptor>());
 	}
 
 	//Store performer
 	m_clients[performer_proxy->URI()] = performer_proxy;
 
 	//Dispatch events
-	m_hierarchy_events.defer([performer_proxy](ZstHierarchyAdaptor * adp) {adp->on_performer_arriving(performer_proxy); });
+	m_hierarchy_events->defer([performer_proxy](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+		adaptor->on_performer_arriving(performer_proxy);
+	});
 }
 
 ZstPerformer * ZstHierarchy::get_performer_by_URI(const ZstURI & uri) const
@@ -195,8 +197,8 @@ ZstMsgKind ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity)
 		add_entity_to_lookup(c);
 
 		//Add adaptors to entities
-		c->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(this));
-		c->add_adaptor(static_cast<ZstEntityAdaptor*>(this));
+		c->add_adaptor(ZstSynchronisableAdaptor::downcasted_shared_from_this<ZstSynchronisableAdaptor>());
+		c->add_adaptor(ZstEntityAdaptor::downcasted_shared_from_this<ZstEntityAdaptor>());
 
 		//Activate entity
 		synchronisable_set_activation_status(c, ZstSyncStatus::ACTIVATED);
@@ -211,10 +213,14 @@ void ZstHierarchy::dispatch_entity_arrived_event(ZstEntityBase * entity){
     
     //Only dispatch events once all entities have been activated and registered
     if (strcmp(entity->entity_type(), COMPONENT_TYPE) == 0 || strcmp(entity->entity_type(), PLUG_TYPE) == 0)  {
-        m_hierarchy_events.defer([entity](ZstHierarchyAdaptor * adp) {adp->on_entity_arriving(entity); });
+        m_hierarchy_events->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+			adaptor->on_entity_arriving(entity);
+		});
     }
     else if (strcmp(entity->entity_type(), FACTORY_TYPE) == 0) {
-        m_hierarchy_events.defer([entity](ZstHierarchyAdaptor * adp) {adp->on_factory_arriving(static_cast<ZstEntityFactory*>(entity)); });
+        m_hierarchy_events->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+			adaptor->on_factory_arriving(static_cast<ZstEntityFactory*>(entity));
+		});
     }
 }
 
@@ -320,47 +326,44 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 
 	//Dispatch events depending on entity type
 	if (strcmp(entity->entity_type(), PLUG_TYPE) == 0) {
-		hierarchy_events().defer([entity](ZstHierarchyAdaptor * dlg) {
-			dlg->on_plug_leaving(static_cast<ZstPlug*>(entity));
+		hierarchy_events()->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+			adaptor->on_plug_leaving(static_cast<ZstPlug*>(entity));
 		});
 	}
 	else if (strcmp(entity->entity_type(), PERFORMER_TYPE) == 0)
 	{
-		hierarchy_events().defer([entity](ZstHierarchyAdaptor * adp) {
-			adp->on_performer_leaving(static_cast<ZstPerformer*>(entity));
+		hierarchy_events()->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+			adaptor->on_performer_leaving(static_cast<ZstPerformer*>(entity));
 		});
 	}
 	else if (strcmp(entity->entity_type(), FACTORY_TYPE) == 0)
 	{
-		hierarchy_events().defer([entity](ZstHierarchyAdaptor * adp) {
-			adp->on_factory_leaving(static_cast<ZstEntityFactory*>(entity));
+		hierarchy_events()->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+			adaptor->on_factory_leaving(static_cast<ZstEntityFactory*>(entity));
 		});
 	}
 	else
 	{
-		hierarchy_events().defer([entity](ZstHierarchyAdaptor * dlg) {
-			dlg->on_entity_leaving(entity);
+		hierarchy_events()->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+			adaptor->on_entity_leaving(entity);
 		});
 	}
 }
 
-ZstEventDispatcher<ZstHierarchyAdaptor*> & ZstHierarchy::hierarchy_events()
+std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstHierarchyAdaptor> > > & ZstHierarchy::hierarchy_events()
 {
 	return m_hierarchy_events;
 }
 
  void ZstHierarchy::process_events()
 {
-	m_synchronisable_events.process_events();
-	m_hierarchy_events.process_events();
-    
+	m_hierarchy_events->process_events();    
     ZstSynchronisableModule::process_events();
 }
 
  void ZstHierarchy::flush_events()
  {
-	m_hierarchy_events.flush();
-     
+	m_hierarchy_events->flush();
     ZstSynchronisableModule::flush_events();
  }
 

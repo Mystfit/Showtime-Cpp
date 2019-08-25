@@ -6,7 +6,7 @@
 ZstTransportLayerBase::ZstTransportLayerBase() :
 	ZstMessageSupervisor(std::make_shared<cf::time_watcher>(), STAGE_TIMEOUT),
 	m_is_active(false),
-    m_dispatch_events(std::make_shared<ZstEventDispatcher<ZstTransportAdaptor*> >("transport events"))
+    m_dispatch_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstTransportAdaptor> > >("transport events"))
 {
 }
 
@@ -77,9 +77,9 @@ ZstMessageReceipt ZstTransportLayerBase::send_async_message(ZstMessage* msg, con
 	return ZstMessageReceipt{ ZstMsgKind::OK, ZstTransportRequestBehaviour::ASYNC_REPLY };
 }
 
-ZstEventDispatcher<ZstTransportAdaptor*>* ZstTransportLayerBase::msg_events()
+std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstTransportAdaptor> > > & ZstTransportLayerBase::msg_events()
 {
-	return m_dispatch_events.get();
+	return m_dispatch_events;
 }
 
 bool ZstTransportLayerBase::is_active()
@@ -125,7 +125,7 @@ ZstMessageReceipt ZstTransportLayerBase::begin_send_message(ZstMessage * msg, co
 
 void ZstTransportLayerBase::receive_msg(ZstMessage * msg)
 {
-	msg_events()->defer([msg](ZstTransportAdaptor* adaptor) {
+	msg_events()->defer([msg](std::shared_ptr<ZstTransportAdaptor> adaptor) {
 		adaptor->on_receive_msg(msg);
 	}, [this, msg](ZstEventStatus status) {
 		process_response(msg->id(), ZstMessageReceipt{ msg->kind() });
@@ -134,8 +134,8 @@ void ZstTransportLayerBase::receive_msg(ZstMessage * msg)
 
 void ZstTransportLayerBase::receive_msg(ZstMessage* msg, ZstEventCallback on_complete)
 {
-	msg_events()->defer([msg](ZstTransportAdaptor* adaptor) { 
-		adaptor->on_receive_msg(msg); 
+	msg_events()->defer([msg](std::shared_ptr<ZstTransportAdaptor> adaptor) {
+		adaptor->on_receive_msg(msg);
 	}, [this, msg, on_complete](ZstEventStatus status) {
 		process_response(msg->id(), ZstMessageReceipt{ msg->kind() });
 		on_complete(status);

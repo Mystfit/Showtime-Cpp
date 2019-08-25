@@ -6,7 +6,7 @@ ZstSynchronisableModule::~ZstSynchronisableModule()
 
 void ZstSynchronisableModule::init()
 {
-    m_synchronisable_events.add_adaptor(this);
+    m_synchronisable_events->add_adaptor(ZstSynchronisableModule::downcasted_shared_from_this<ZstSynchronisableModule>());
 }
 
 void ZstSynchronisableModule::destroy()
@@ -15,7 +15,7 @@ void ZstSynchronisableModule::destroy()
 
 void ZstSynchronisableModule::process_events()
 {
-    m_synchronisable_events.process_events();
+    m_synchronisable_events->process_events();
     
     //Reap objects last
     m_reaper.reap_all();
@@ -23,17 +23,17 @@ void ZstSynchronisableModule::process_events()
 
 void ZstSynchronisableModule::flush_events()
 {
-    m_synchronisable_events.flush();
+    m_synchronisable_events->flush();
 }
 
 void ZstSynchronisableModule::on_synchronisable_has_event(ZstSynchronisable * synchronisable)
 {
-    m_synchronisable_events.defer([this, synchronisable](ZstSynchronisableAdaptor * dlg) {
-        this->synchronisable_process_events(synchronisable);
+    m_synchronisable_events->defer([this, synchronisable](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
+		this->synchronisable_process_events(synchronisable);
     });
 }
 
-ZstEventDispatcher<ZstSynchronisableAdaptor*> & ZstSynchronisableModule::synchronisable_events()
+std::shared_ptr < ZstEventDispatcher<std::shared_ptr<ZstSynchronisableAdaptor> > > & ZstSynchronisableModule::synchronisable_events()
 {
     return m_synchronisable_events;
 }

@@ -1,12 +1,13 @@
 #pragma once
 
-#include <set>
+#include <unordered_set>
 #include <type_traits>
 #include <tuple>
 #include <unordered_map>
 #include <functional>
 #include <concurrentqueue.h>
 #include <mutex>
+#include <memory>
 
 #include "ZstLogging.h"
 #include "ZstConstants.h"
@@ -26,7 +27,8 @@ typedef std::function<void(ZstEventStatus)> ZstEventCallback;
 template<typename T>
 class ZstEvent 
 {
-	static_assert(std::is_base_of<ZstEventAdaptor, std::remove_pointer_t<T> >::value, "T must derive from ZstEventAdaptor");
+	static_assert(std::is_base_of<ZstEventAdaptor, std::pointer_traits<T>::element_type >::value, "T must derive from ZstEventAdaptor");
+	//static_assert(std::is_base_of<ZstEventAdaptor, std::remove_pointer_t< std::weak_ptr<T> > >::value, "T must derive from ZstEventAdaptor");
 public:
 	ZstEvent() : func([](T adp) {}), completed_func([](ZstEventStatus) {}) {}
 	ZstEvent(std::function<void(T)> f, ZstEventCallback cf) : func(f), completed_func(cf) {};
@@ -36,7 +38,7 @@ public:
 };
 
 
-class ZstEventDispatcherBase {
+class ZstEventDispatcherBase : public std::enable_shared_from_this<ZstEventDispatcherBase>{
 public:
 	ZstEventDispatcherBase() : m_has_event(false)
 	{
@@ -52,17 +54,17 @@ public:
 		this->remove_all_adaptors();
 	}
 
-	void add_adaptor(ZstEventAdaptor * adaptor) {
-		std::lock_guard<std::recursive_mutex> lock(m_mtx);
+	void add_adaptor(std::shared_ptr<ZstEventAdaptor> adaptor) {
+		//std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		this->m_adaptors.insert(adaptor);
-		adaptor->add_event_source(this);
+		adaptor->add_event_source(shared_from_this());
 	}
 
-	void remove_adaptor(ZstEventAdaptor * adaptor) {
-		std::lock_guard<std::recursive_mutex> lock(m_mtx);
+	void remove_adaptor(std::shared_ptr<ZstEventAdaptor> adaptor) {
+		//std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		adaptor->set_target_dispatcher_inactive();
+		adaptor->remove_event_source(shared_from_this());
 		this->m_adaptors.erase(adaptor);
-		adaptor->remove_event_source(this);
 	}
 
 	size_t num_adaptors() {
@@ -70,10 +72,10 @@ public:
 	}
 
 	void remove_all_adaptors() {
-		std::lock_guard<std::recursive_mutex> lock(m_mtx);
+		//std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		auto adaptors = m_adaptors;
-		for (auto adp : adaptors) {
-			remove_adaptor(adp);
+		for (auto adaptor : adaptors) {
+			remove_adaptor(adaptor);
 		}
 		m_adaptors.clear();
 	}
@@ -88,7 +90,7 @@ public:
 	}
 
 protected:
-	std::set<ZstEventAdaptor*> m_adaptors;
+	std::unordered_set< std::shared_ptr<ZstEventAdaptor> > m_adaptors;
 	std::weak_ptr<ZstSemaphore> m_condition_wake;
 	std::recursive_mutex m_mtx;
 	bool m_has_event;
@@ -100,7 +102,7 @@ private:
 template<typename T>
 class ZstEventDispatcher : public ZstEventDispatcherBase
 {
-	static_assert(std::is_base_of<ZstEventAdaptor, std::remove_pointer_t<T> >::value, "T must derive from ZstEventAdaptor");
+	static_assert(std::is_base_of<ZstEventAdaptor, std::pointer_traits<T>::element_type >::value, "T must derive from ZstEventAdaptor");
 public:
 	ZstEventDispatcher() :
 		ZstEventDispatcherBase("")
@@ -124,9 +126,8 @@ public:
 		}
 		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		for (auto adaptor : this->m_adaptors) {
-			if (adaptor) {
-				event(static_cast<T>(adaptor));
-			}
+			event(std::static_pointer_cast<T>(adaptor));
+			//event(static_cast<T>(adp));
 		}
 	}
 
@@ -154,8 +155,9 @@ public:
 
 			std::lock_guard<std::recursive_mutex> lock(m_mtx);
 			for (auto adaptor : m_adaptors) {
-				event.func(static_cast<T>(adaptor));
-				/*try {
+				event.func(std::static_pointer_cast<T>(adaptor));
+				/*event.func(static_cast<T>(adp));
+				try {
 					event.func(adaptor);
 				}
 				catch (std::exception e) {

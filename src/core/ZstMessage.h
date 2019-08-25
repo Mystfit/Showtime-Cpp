@@ -8,7 +8,7 @@
 
 using namespace boost::uuids;
 
-class ZST_EXPORT ZstMessage {
+class ZST_CLASS_EXPORTED ZstMessage {
 public:
     ZST_EXPORT virtual ZstMessage * init(ZstMsgKind kind) = 0;
     ZST_EXPORT virtual ZstMessage * init(ZstMsgKind kind, const ZstMsgArgs& args) = 0;

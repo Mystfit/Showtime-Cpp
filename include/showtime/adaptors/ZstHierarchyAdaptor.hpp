@@ -6,7 +6,9 @@
 #include "entities/ZstEntityFactory.h"
 #include "adaptors/ZstEventAdaptor.hpp"
 
-class ZST_EXPORT ZstHierarchyAdaptor : public ZstEventAdaptor {
+class ZST_CLASS_EXPORTED ZstHierarchyAdaptor : 
+	public ZstEventAdaptor
+{
 public:
 	ZST_EXPORT virtual void on_performer_arriving(ZstPerformer * performer);
 	ZST_EXPORT virtual void on_performer_leaving(ZstPerformer * performer);

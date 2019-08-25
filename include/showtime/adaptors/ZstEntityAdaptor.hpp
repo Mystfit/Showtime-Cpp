@@ -5,7 +5,8 @@
 
 class ZstEntityBase;
 
-class ZST_EXPORT ZstEntityAdaptor : public ZstEventAdaptor
+class ZST_CLASS_EXPORTED ZstEntityAdaptor : 
+	public ZstEventAdaptor
 {
 public:
 	ZST_EXPORT virtual void on_publish_entity_update(ZstEntityBase * entity);
