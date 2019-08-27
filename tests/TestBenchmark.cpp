@@ -7,11 +7,13 @@ using namespace ZstTest;
 
 struct BenchmarkEventLoop {
 public:
+	BenchmarkEventLoop(std::shared_ptr<ShowtimeClient> client) : m_client(client) {}
+
 	void operator()() {
 		while (1) {
 			try {
 				boost::this_thread::interruption_point();
-				zst_poll_once();
+				m_client->poll_once();
 				std::this_thread::sleep_for(std::chrono::milliseconds(0));
 			}
 			catch (boost::thread_interrupted) {
@@ -20,18 +22,20 @@ public:
 			}
 		}
 	}
+private:
+	std::shared_ptr<ShowtimeClient> m_client;
 };
 
 
-long double test_benchmark(bool reliable, int send_rate, int send_amount)
+long double test_benchmark(std::shared_ptr<ShowtimeClient> client, bool reliable, int send_rate, int send_amount)
 {
 	ZstLog::app(LogLevel::debug, "Creating entities and cables");
 
-	OutputComponent * test_output = new OutputComponent("bench_test_out", reliable);
-	InputComponent * test_input = new InputComponent("bench_test_in", 10, false);
-	zst_get_root()->add_child(test_output);
-	zst_get_root()->add_child(test_input);
-	zst_connect_cable(test_input->input(), test_output->output());
+	auto test_output = std::make_unique<OutputComponent>("bench_test_out", reliable);
+	auto test_input = std::make_unique<InputComponent>("bench_test_in", 10, false);
+	client->get_root()->add_child(test_output.get());
+	client->get_root()->add_child(test_input.get());
+	client->connect_cable(test_input->input(), test_output->output());
 
 	int count = send_amount;
 
@@ -149,10 +153,6 @@ long double test_benchmark(bool reliable, int send_rate, int send_amount)
 		ZstLog::app(LogLevel::debug, "Unreliable messages. Sent: {}, Received: {}, Lost: {}", count, test_input->num_hits, count - test_input->num_hits);
 	}
 
-	//Cleanup
-	delete test_output;
-	delete test_input;
-
 	return totalmps / samples;
 }
 
@@ -161,16 +161,22 @@ int main(int argc, char **argv)
 {
 	auto testrunner = FixtureJoinServer();
 
+	std::string server_name = "benchmark_server";
+	auto client = std::make_shared<ShowtimeClient>();
+	auto server = std::make_shared<ShowtimeServer>(server_name);
+	client->init("test_benchmark", true);
+	client->auto_join_by_name(server_name.c_str());
+
 	//Create threaded event loop to handle polling
-	boost::thread eventloop_thread = boost::thread(BenchmarkEventLoop());
+	boost::thread eventloop_thread = boost::thread(BenchmarkEventLoop(client));
 
 	ZstLog::app(LogLevel::notification, "Starting reliable benchmark test");
-	long double mps_reliable = test_benchmark(true, 0, 200000);
+	long double mps_reliable = test_benchmark(client, true, 0, 200000);
 	ZstLog::app(LogLevel::notification, "Reliable avg mps: {}", mps_reliable);
 
 #ifdef ZST_BUILD_DRAFT_API
 	ZstLog::app(LogLevel::notification, "Starting unreliable benchmark test");
-	long double mps_unreliable = test_benchmark(false, 1, 10000);
+	long double mps_unreliable = test_benchmark(client, false, 1, 10000);
 	ZstLog::app(LogLevel::notification, "Unreliable avg mps: {}", mps_unreliable);
 #endif
 

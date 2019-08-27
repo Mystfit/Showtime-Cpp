@@ -294,19 +294,25 @@ ZstMsgKind ZstStageHierarchy::create_entity_from_factory_handler(ZstStageMessage
 	}
 
 	//Send creatable message to the performer that owns the factory
+	ZstMsgID id = msg->id();
 	ZstTransportArgs args;
 	args.msg_args = {
 		{ get_msg_arg_name(ZstMsgArg::NAME) , msg->get_arg<std::string>(ZstMsgArg::NAME) },
-		{ get_msg_arg_name(ZstMsgArg::PATH) , msg->get_arg<std::string>(ZstMsgArg::PATH) },
-		{ get_msg_arg_name(ZstMsgArg::MSG_ID), msg->id() }
+		{ get_msg_arg_name(ZstMsgArg::PATH) , msg->get_arg<std::string>(ZstMsgArg::PATH) }
+		//{ get_msg_arg_name(ZstMsgArg::MSG_ID), id}
 	};
 	args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
-	args.on_recv_response = [factory_path](ZstMessageReceipt receipt){
+	args.on_recv_response = [this, factory_performer, sender, factory_path, id](ZstMessageReceipt receipt){
 		if (receipt.status == ZstMsgKind::ERR_ENTITY_NOT_FOUND) {
 			ZstLog::server(LogLevel::error, "Creatable request failed at origin with status {}", get_msg_name(receipt.status));
 			return;
 		}
 		ZstLog::server(LogLevel::notification, "Remote factory created entity {}", factory_path.path());
+
+		//Ack response
+		ZstTransportArgs create_args;
+		create_args.msg_args = { {get_msg_arg_name(ZstMsgArg::MSG_ID), id} };
+		whisper_message(sender, ZstMsgKind::OK, create_args);
 	};
 
 	//Send 

@@ -295,22 +295,27 @@ namespace Showtime::detail
 				receipt.status = ZstMsgKind::ERR_STAGE_TIMEOUT;
 			}
 			return receipt;
-			});
+		});
 
 		if (sendtype == ZstTransportRequestBehaviour::SYNC_REPLY) {
 			// Block until beacon is received or we time out
-			auto receipt = future.get();
-			if (receipt.status != ZstMsgKind::OK) {
-				ZstLog::net(LogLevel::error, "Server autoconnect failed. Status: {}", get_msg_name(receipt.status));
-				return;
-			}
-
-			// Connect to available named server
-			for (auto server : this->get_discovered_servers()) {
-				if (server.name == name) {
-					this->join_stage(server, sendtype);
+			try {
+				auto receipt = future.get();
+				if (receipt.status != ZstMsgKind::OK) {
+					ZstLog::net(LogLevel::error, "Server autoconnect failed. Status: {}", get_msg_name(receipt.status));
 					return;
 				}
+
+				// Connect to available named server
+				for (auto server : this->get_discovered_servers()) {
+					if (server.name == name) {
+						this->join_stage(server, sendtype);
+						return;
+					}
+				}
+			}
+			catch (ZstTimeoutException) {
+				ZstLog::net(LogLevel::error, "Server autoconnect failed. Could not find server.");
 			}
 
 			ZstLog::net(LogLevel::error, "Server autoconnect failed. Could not find server.");

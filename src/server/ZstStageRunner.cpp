@@ -77,7 +77,7 @@ int main(int argc, char **argv)
 	ZstLog::init_logger("stage", LogLevel::debug);
 	ZstLog::init_file_logging("server.log");
 
-	auto stage = zst_create_server("stage");
+	auto stage = std::make_shared<ShowtimeServer>("stage"); 
 
 	if (argc < 2) {
 		ZstLog::server(LogLevel::notification, "Stage running in standalone mode. Press Ctrl+C to exit");
@@ -100,7 +100,7 @@ int main(int argc, char **argv)
 	}
 
 	std::cout << "Showtime Stage shutting down" << std::endl;
-	zst_destroy_server(stage);
+	stage->destroy();
 
 	return 0;
 }

@@ -32,6 +32,7 @@ public:
 
 	virtual ZstEntityBase * create_entity(const ZstURI & creatable_path, const char * name) override
 	{
+		ZstLog::entity(LogLevel::notification, "External factory received create request for {}", creatable_path.path());
 		CustomExternalComponent * entity = NULL;
 		if (creatable_path == this->URI() + ZstURI(CUSTOM_EXT_COMPONENT)) {
 			entity = new CustomExternalComponent(name);
@@ -131,7 +132,7 @@ int main(int argc, char **argv) {
 	client->init("extfactory", true);
 
 	//Create the factory that will instantiate our custom entity
-	std::shared_ptr<TestExternalFactory> test_factory = std::make_shared<TestExternalFactory>("external_customs");
+	auto test_factory = std::make_shared<TestExternalFactory>("external_customs");
 	client->register_factory(test_factory.get());
 	
 	//Connect to the stage

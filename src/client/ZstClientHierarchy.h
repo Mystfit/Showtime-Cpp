@@ -51,7 +51,7 @@ public:
 	// Entity activation/deactivation
 	// ------------------------------
 	
-	void activate_entity(ZstEntityBase* entity, const ZstTransportRequestBehaviour & sendtype, ZstMsgID request_ID);
+	void activate_entity(ZstEntityBase* entity, const ZstTransportRequestBehaviour & sendtype, ZstMessageReceivedAction callback);
 	void activate_entity(ZstEntityBase* entity, const ZstTransportRequestBehaviour & sendtype) override;
 	void destroy_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype) override;
 	ZstEntityBase * create_entity(const ZstURI & creatable_path, const char * name);
