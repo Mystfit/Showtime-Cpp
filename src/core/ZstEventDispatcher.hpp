@@ -52,23 +52,30 @@ public:
 	}
 
 	~ZstEventDispatcherBase() noexcept {
-		this->remove_all_adaptors();
+
+		auto adaptors = m_adaptors;
+		for (auto adaptor : adaptors) {
+			if (auto adp = adaptor.lock())
+				adp->prune_dispatchers();
+		}
 	}
 
-	void add_adaptor(std::shared_ptr<ZstEventAdaptor> adaptor) {
+	void add_adaptor(std::weak_ptr<ZstEventAdaptor> adaptor) {
 		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		this->m_adaptors.insert(adaptor);
-		adaptor->add_event_source(ZstEventDispatcherBase::downcasted_shared_from_this<ZstEventDispatcherBase>());
+		if(auto adp = adaptor.lock())
+			adp->add_event_source(ZstEventDispatcherBase::downcasted_shared_from_this<ZstEventDispatcherBase>());
 	}
 
-	void remove_adaptor(std::shared_ptr<ZstEventAdaptor> adaptor) {
+	void remove_adaptor(std::weak_ptr<ZstEventAdaptor> adaptor) {
 		std::lock_guard<std::recursive_mutex> lock(m_mtx);
-		adaptor->set_target_dispatcher_inactive();
-		adaptor->remove_event_source(ZstEventDispatcherBase::downcasted_shared_from_this<ZstEventDispatcherBase>());
+		if (auto adp = adaptor.lock()) {
+			adp->remove_event_source(ZstEventDispatcherBase::downcasted_shared_from_this<ZstEventDispatcherBase>());
+		}
 		this->m_adaptors.erase(adaptor);
 	}
 
-	bool contains_adaptor(std::shared_ptr<ZstEventAdaptor> adaptor)
+	bool contains_adaptor(std::weak_ptr<ZstEventAdaptor> adaptor)
 	{
 		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		return (this->m_adaptors.find(adaptor) != this->m_adaptors.end()) ? true : false;
@@ -87,6 +94,15 @@ public:
 		m_adaptors.clear();
 	}
 
+	void prune_missing_adaptors() {
+		std::lock_guard<std::recursive_mutex> lock(m_mtx);
+		auto adaptors = m_adaptors;
+		for (auto adaptor : adaptors) {
+			if (adaptor.expired())
+				m_adaptors.erase(adaptor);
+		}
+	}
+
 	void set_wake_condition(std::weak_ptr<ZstSemaphore> condition) {
 		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		this->m_condition_wake = condition;
@@ -97,7 +113,7 @@ public:
 	}
 
 protected:
-	std::unordered_set< std::shared_ptr<ZstEventAdaptor> > m_adaptors;
+	std::set< std::weak_ptr<ZstEventAdaptor>, std::owner_less< std::weak_ptr<ZstEventAdaptor> > > m_adaptors;
 	std::weak_ptr<ZstSemaphore> m_condition_wake;
 	std::recursive_mutex m_mtx;
 	bool m_has_event;
@@ -133,7 +149,8 @@ public:
 		}
 		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		for (auto adaptor : this->m_adaptors) {
-			event(std::static_pointer_cast<std::pointer_traits<T>::element_type>(adaptor));
+			if(auto adp = adaptor.lock())
+				event(std::static_pointer_cast<std::pointer_traits<T>::element_type>(adp));
 		}
 	}
 
@@ -161,7 +178,8 @@ public:
 
 			std::lock_guard<std::recursive_mutex> lock(m_mtx);
 			for (auto adaptor : m_adaptors) {
-				event.func(std::static_pointer_cast<std::pointer_traits<T>::element_type>(adaptor));
+				if(auto adp = adaptor.lock())
+					event.func(std::static_pointer_cast<std::pointer_traits<T>::element_type>(adp));
 				/*event.func(static_cast<T>(adp));
 				try {
 					event.func(adaptor);

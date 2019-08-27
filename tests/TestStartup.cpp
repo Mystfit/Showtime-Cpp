@@ -71,7 +71,7 @@ BOOST_FIXTURE_TEST_CASE(async_join, FixtureInitAndCreateServer, TEST_TIMEOUT){
 	auto connectCallback = std::make_shared< TestConnectionEvents>();
 	client->add_connection_adaptor(connectCallback);
 	client->join_async(server_address.c_str());
-	wait_for_event(client, connectCallback.get(), 2);
+	wait_for_event(client, connectCallback, 2);
 	BOOST_TEST(client->is_connected());
 	BOOST_TEST_REQUIRE(connectCallback->is_synced);
 }
@@ -94,7 +94,7 @@ BOOST_FIXTURE_TEST_CASE(async_join_callback_adaptor, FixtureInitAndCreateServer)
 	auto connectCallback = std::make_shared< TestConnectionEvents>();
 	client->add_connection_adaptor(connectCallback);
 	client->join_async(server_address.c_str());
-	wait_for_event(client, connectCallback.get(), 1);
+	wait_for_event(client, connectCallback, 1);
 	BOOST_TEST_REQUIRE(client->is_connected());
 }
 
@@ -140,7 +140,7 @@ BOOST_FIXTURE_TEST_CASE(discovered_servers_callback_adaptor, FixtureInit){
 	//Create a new server for the client to discover
 	auto detected_server_name = std::string("detected_server");
 	auto detected_server = std::make_shared< ShowtimeServer>(detected_server_name.c_str(), STAGE_ROUTER_PORT + 10);
-	wait_for_event(client, discovery_adaptor.get(), 1);
+	wait_for_event(client, discovery_adaptor, 1);
 	BOOST_TEST(discovery_adaptor->last_discovered_server.name == detected_server_name);
 	detected_server->destroy();
 }

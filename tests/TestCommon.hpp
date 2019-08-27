@@ -253,7 +253,7 @@ namespace ZstTest
 	// ------------------
 
 #define MAX_WAIT_LOOPS 50
-    void wait_for_event(std::shared_ptr<ShowtimeClient> client, TestAdaptor * adaptor, int expected_messages)
+    void wait_for_event(std::shared_ptr<ShowtimeClient> client, std::shared_ptr<TestAdaptor> adaptor, int expected_messages)
 	{
 		int repeats = 0;
 		client->poll_once();
@@ -336,22 +336,6 @@ namespace ZstTest
 		{
 		}
 	};
-
-
-//    class FixtureWaitForExternalClient {
-//    public:
-//        std::shared_ptr<TestPerformerEvents> performerEvents;
-//
-//        FixtureWaitForExternalClient() : performerEvents(std::make_shared<TestPerformerEvents>()) {
-//            client->add_hierarchy_adaptor(performerEvents.get());
-//            BOOST_TEST_CHECKPOINT("Waiting for external client performer to arrive");
-//            wait_for_event(client, performerEvents.get(), 1);
-//            performerEvents->reset_num_calls();
-//        }
-//
-//        ~FixtureWaitForExternalClient() {}
-//    };
-
 
 
 	class FixtureExternalClient {

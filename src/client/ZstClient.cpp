@@ -138,24 +138,24 @@ namespace Showtime::detail
 		//Setup adaptors to let transports communicate with client modules
 		m_client_transport->init();
 		m_client_transport->msg_events()->add_adaptor(ZstTransportAdaptor::downcasted_shared_from_this< ZstTransportAdaptor>());
-		m_client_transport->msg_events()->add_adaptor(static_cast<std::shared_ptr<ZstTransportAdaptor> >(m_session));
-		m_client_transport->msg_events()->add_adaptor(static_cast<std::shared_ptr<ZstTransportAdaptor> >(std::static_pointer_cast<ZstClientHierarchy>(m_session->hierarchy())));
+		m_client_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstTransportAdaptor>(m_session));
+		m_client_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstTransportAdaptor>(std::static_pointer_cast<ZstClientHierarchy>(m_session->hierarchy())));
 
 		//Setup adaptors to receive graph messages
 		m_tcp_graph_transport->init();
-		m_tcp_graph_transport->msg_events()->add_adaptor(static_cast<std::shared_ptr<ZstTransportAdaptor> >(this));
-		m_tcp_graph_transport->msg_events()->add_adaptor(static_cast<std::shared_ptr<ZstTransportAdaptor> >(m_session.get()));
+		m_tcp_graph_transport->msg_events()->add_adaptor(ZstTransportAdaptor::downcasted_shared_from_this< ZstTransportAdaptor>());
+		m_tcp_graph_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstTransportAdaptor>(m_session));
 
 #ifdef ZST_BUILD_DRAFT_API
 		m_udp_graph_transport->init();
-		m_udp_graph_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(this));
+		m_udp_graph_transport->msg_events()->add_adaptor(ZstTransportAdaptor::downcasted_shared_from_this< ZstTransportAdaptor>());
 		m_udp_graph_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(m_session.get()));
 #endif
 
 		//Stage discovery beacon
 		m_service_broadcast_transport->init(STAGE_DISCOVERY_PORT);
 		m_service_broadcast_transport->start_listening();
-		m_service_broadcast_transport->msg_events()->add_adaptor(static_cast<std::shared_ptr<ZstTransportAdaptor> >(this));
+		m_service_broadcast_transport->msg_events()->add_adaptor(ZstTransportAdaptor::downcasted_shared_from_this< ZstTransportAdaptor>());
 
 		//Init completed
 		set_init_completed(true);

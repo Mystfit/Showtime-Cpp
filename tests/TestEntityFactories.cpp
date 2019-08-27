@@ -62,7 +62,7 @@ struct FixtureLocalFactory : public FixtureJoinServer {
 
 	FixtureLocalFactory() {
 		factory = std::make_unique<TestFactory>("customs");
-		zst_register_factory(factory.get());
+		client->register_factory(factory.get());
 		creatable_URI = factory->URI() + ZstURI(CUSTOM_COMPONENT);
 	}
 };
@@ -76,9 +76,17 @@ struct FixtureFactoryClient : public FixtureExternalClient {
 	~FixtureFactoryClient() {};
 };
 
-struct FixtureWaitForFactoryClient : public FixtureJoinServer, FixtureFactoryClient, FixtureWaitForExternalClient {
+struct FixtureWaitForFactoryClient : public FixtureJoinServer, FixtureFactoryClient {
 
-	FixtureWaitForFactoryClient() {}
+	std::shared_ptr<TestPerformerEvents> performerEvents;
+
+	FixtureWaitForFactoryClient() : performerEvents(std::make_shared<TestPerformerEvents>())
+	{
+		client->add_hierarchy_adaptor(performerEvents);
+		BOOST_TEST_CHECKPOINT("Waiting for external client performer to arrive");
+		wait_for_event(client, performerEvents, 1);
+		performerEvents->reset_num_calls();
+	}
 	~FixtureWaitForFactoryClient() {}
 };
 
@@ -88,8 +96,8 @@ struct FixtureExternalFactory : public FixtureWaitForFactoryClient {
 	std::shared_ptr<TestFactoryAdaptor> factoryEvents;
 
 	FixtureExternalFactory() : factoryEvents(std::make_shared<TestFactoryAdaptor>()){
-		external_factory = dynamic_cast<ZstEntityFactory*>(zst_find_entity(ZstURI("extfactory/external_customs")));
-		external_factory->add_adaptor(factoryEvents.get());
+		external_factory = dynamic_cast<ZstEntityFactory*>(client->find_entity(ZstURI("extfactory/external_customs")));
+		external_factory->add_adaptor(factoryEvents);
 		factoryEvents->reset_num_calls();
 	}
 };
@@ -97,28 +105,28 @@ struct FixtureExternalFactory : public FixtureWaitForFactoryClient {
 
 BOOST_FIXTURE_TEST_CASE(create_factory, FixtureJoinServer){
 	std::unique_ptr<TestFactory> factory = std::make_unique<TestFactory>("customs");
-	zst_register_factory(factory.get());
+	client->register_factory(factory.get());
 	BOOST_TEST(factory->is_activated());
 	ZstEntityFactoryBundle bundle;
-	zst_get_root()->get_factories(bundle);
+	client->get_root()->get_factories(bundle);
 	BOOST_TEST(bundle.size() == 1);
 	BOOST_TEST(bundle[0]->URI() == factory->URI());
 }
 
 BOOST_FIXTURE_TEST_CASE(destroy_factory, FixtureLocalFactory) {
 	TestFactory* factory = new TestFactory("customs");
-	zst_register_factory(factory);
+	client->register_factory(factory);
 	delete factory;
 	ZstEntityFactoryBundle bundle;
-	zst_get_root()->get_factories(bundle);
+	client->get_root()->get_factories(bundle);
 	BOOST_TEST(bundle.size() == 0);
 }
 
 BOOST_FIXTURE_TEST_CASE(remove_factory, FixtureLocalFactory) {
-	zst_get_root()->remove_factory(factory.get());
+	client->get_root()->remove_factory(factory.get());
 	BOOST_TEST(factory->is_activated());
 	ZstEntityFactoryBundle bundle;
-	zst_get_root()->get_factories(bundle);
+	client->get_root()->get_factories(bundle);
 	BOOST_TEST(bundle.size() == 0);
 }
 
@@ -130,21 +138,21 @@ BOOST_FIXTURE_TEST_CASE(query_factory_creatables, FixtureLocalFactory) {
 }
 
 BOOST_FIXTURE_TEST_CASE(create_entity_from_local_factory, FixtureLocalFactory) {
-	auto created_entity_URI = zst_get_root()->URI() + ZstURI("brand_spanking_new");
+	auto created_entity_URI = client->get_root()->URI() + ZstURI("brand_spanking_new");
 	ZstURIBundle bundle;
 	factory->get_creatables(bundle);
 	{
-		auto entity = ZstSharedEntity(zst_create_entity(bundle[0], "brand_spanking_new"));
+		auto entity = ZstSharedEntity(client->create_entity(bundle[0], "brand_spanking_new"));
 		BOOST_TEST(entity);
-		BOOST_TEST(zst_find_entity(created_entity_URI));
+		BOOST_TEST(client->find_entity(created_entity_URI));
 		BOOST_TEST_MESSAGE(fmt::format("Entity {} leaving scope", created_entity_URI.path()));
 	}
-	BOOST_TEST(!zst_find_entity(created_entity_URI));
+	BOOST_TEST(!client->find_entity(created_entity_URI));
 }
 
 BOOST_FIXTURE_TEST_CASE(find_external_factory, FixtureWaitForFactoryClient) {
 	BOOST_TEST_CHECKPOINT("Factory performer arrived");
-	BOOST_TEST(zst_find_entity(ZstURI("extfactory/external_customs")));
+	BOOST_TEST(client->find_entity(ZstURI("extfactory/external_customs")));
 }
 
 BOOST_FIXTURE_TEST_CASE(find_external_creatables, FixtureExternalFactory) {
@@ -157,26 +165,26 @@ BOOST_FIXTURE_TEST_CASE(find_external_creatables, FixtureExternalFactory) {
 BOOST_FIXTURE_TEST_CASE(create_entity_from_external_factory, FixtureExternalFactory) {
 	ZstURIBundle bundle;
 	external_factory->get_creatables(bundle);
-	auto entity = zst_create_entity(bundle[0], "brand_spanking_new_ext");
+	auto entity = client->create_entity(bundle[0], "brand_spanking_new_ext");
 	BOOST_TEST_REQUIRE(entity);
-	BOOST_TEST(zst_find_entity(external_factory->URI().first() + ZstURI("brand_spanking_new_ext")));
+	BOOST_TEST(client->find_entity(external_factory->URI().first() + ZstURI("brand_spanking_new_ext")));
 }
 
 BOOST_FIXTURE_TEST_CASE(create_entity_from_external_factory_async, FixtureExternalFactory) {
 	auto created_entity_URI = external_factory->URI().first() + ZstURI("brand_spanking_new_ext_async");
 	ZstURIBundle bundle;
 	external_factory->get_creatables(bundle);
-	zst_create_entity_async(bundle[0], "brand_spanking_new_ext_async");
-	wait_for_event(factoryEvents.get(), 1);
+	client->create_entity_async(bundle[0], "brand_spanking_new_ext_async");
+	wait_for_event(client, factoryEvents, 1);
 	BOOST_TEST(factoryEvents->last_created_entity == created_entity_URI);
-	BOOST_TEST(zst_find_entity(created_entity_URI));
+	BOOST_TEST(client->find_entity(created_entity_URI));
 }
 
 BOOST_FIXTURE_TEST_CASE(updated_creatables_callback, FixtureExternalFactory)
 {
 	std::string update_creatables_msg = "update_creatables\n";
 	external_process_stdin.write(update_creatables_msg.c_str(), static_cast<int>(update_creatables_msg.size()));
-	wait_for_event(factoryEvents.get(), 1);
+	wait_for_event(client, factoryEvents, 1);
 
 	ZstURIBundle bundle;
 	external_factory->get_creatables(bundle);
@@ -190,5 +198,5 @@ BOOST_FIXTURE_TEST_CASE(updated_creatables_callback, FixtureExternalFactory)
 }
 
 BOOST_FIXTURE_TEST_CASE(bad_creatable_path_returns_null, FixtureExternalFactory) {
-	BOOST_TEST(!zst_create_entity(external_factory->URI() + ZstURI("bad_creatable_path"), "test"));
+	BOOST_TEST(!client->create_entity(external_factory->URI() + ZstURI("bad_creatable_path"), "test"));
 }

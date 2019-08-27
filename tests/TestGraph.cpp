@@ -54,7 +54,7 @@ struct FixtureCable : public FixturePlugs {
 	FixtureCable() : cable_activation_events(std::make_shared<TestSynchronisableEvents>())
 	{
 		cable = client->connect_cable(input_component->input(), output_component->output());
-		cable->add_adaptor(cable_activation_events.get());
+		cable->add_adaptor(cable_activation_events);
 		cable_activation_events->reset_num_calls();
 	}
 
@@ -119,16 +119,16 @@ BOOST_FIXTURE_TEST_CASE(sync_connect_cable, FixturePlugs) {
 BOOST_FIXTURE_TEST_CASE(async_connect_cable_callback, FixturePlugs) {
 	auto cable_activation_events = std::make_shared<TestSynchronisableEvents>();
 	auto cable = client->connect_cable_async(input_component->input(), output_component->output());
-	cable->add_adaptor(cable_activation_events.get());
+	cable->add_adaptor(cable_activation_events);
 	
-	wait_for_event(client, cable_activation_events.get(), 1);
+	wait_for_event(client, cable_activation_events, 1);
 	BOOST_TEST(cable->is_activated());
 }
 
 BOOST_FIXTURE_TEST_CASE(async_destroy_cable_callback, FixtureCable) {
 	auto address_cmp = cable->get_address();
 	client->destroy_cable_async(cable);
-	wait_for_event(client, cable_activation_events.get(), 1);
+	wait_for_event(client, cable_activation_events, 1);
 	BOOST_TEST(!found_cable(client, address_cmp));
 }
 
@@ -149,7 +149,7 @@ BOOST_FIXTURE_TEST_CASE(disconnect_cable, FixtureCable) {
 BOOST_FIXTURE_TEST_CASE(parent_disconnects_cable, FixtureCable) {
 	auto address_cmp = cable->get_address();
 	client->deactivate_entity(output_component.get());
-	wait_for_event(client, cable_activation_events.get(), 1);
+	wait_for_event(client, cable_activation_events, 1);
 	BOOST_TEST(!output_component->output()->is_connected_to(input_component->input()));
 	BOOST_TEST(!found_cable(client, address_cmp));
 }

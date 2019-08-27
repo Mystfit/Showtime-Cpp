@@ -35,8 +35,6 @@ public:
 		entity_sync_event(std::make_shared<TestSynchronisableEvents>()),
 		component(std::make_unique<OutputComponent>("solo"))
 	{
-		entity_sync_event = new TestSynchronisableEvents();
-		component = new OutputComponent();
 		component->add_adaptor(entity_sync_event);
 		client->get_root()->add_child(component.get());
 	}
@@ -60,41 +58,44 @@ BOOST_FIXTURE_TEST_CASE(activation, FixtureOutputEntity) {
 
 BOOST_FIXTURE_TEST_CASE(adaptor_cleanup, FixtureJoinServer) {
 	//Test that entities remove themselves from adaptors when they leave
-	auto entity_sync_event = std::make_shared<TestSynchronisableEvents>());
+	BOOST_TEST_CHECKPOINT("Deactivating component to make sure that the deleted adaptor has removed itself from the component first");
 	{
 		auto component = std::make_unique<OutputComponent>("solo");
-		component->add_adaptor(entity_sync_event);
-
-		client->get_root()->add_child(component.get());
-		client->deactivate_entity(component.get());
+		{
+			auto entity_sync_event = std::make_shared<TestSynchronisableEvents>();
+			component->add_adaptor(entity_sync_event);
+			client->get_root()->add_child(component.get());
+		}
 	}
-
-	BOOST_TEST_CHECKPOINT("Deactivating component to make sure that the deleted adaptor has removed itself from the component first");
 }
 
-BOOST_FIXTURE_TEST_CASE(component_cleanup, FixtureComponentWithAdaptor) {
-	delete component;
-	component = NULL;
+BOOST_FIXTURE_TEST_CASE(component_cleanup, FixtureJoinServer) {
+
 	BOOST_TEST_CHECKPOINT("Deleting adaptor to make sure the component removed itself from the adaptor first");
-	BOOST_TEST(!entity_sync_event->is_target_dispatcher_active());
-	delete entity_sync_event;
-	entity_sync_event = NULL;
+	{
+		auto entity_sync_event = std::make_shared<TestSynchronisableEvents>();
+		{
+			auto component = std::make_unique<OutputComponent>("solo");
+			component->add_adaptor(entity_sync_event);
+			client->get_root()->add_child(component.get());
+		}
+	}
 }
 
 BOOST_FIXTURE_TEST_CASE(async_activation_callback, FixtureOutputEntity) {
 	auto entity_sync_event = std::make_shared<TestSynchronisableEvents>();
-	output_component->add_adaptor(entity_sync_event.get());
+	output_component->add_adaptor(entity_sync_event);
 
 	//Activate
 	client->get_root()->add_child(output_component.get());
-	wait_for_event(entity_sync_event.get(), 1);
+	wait_for_event(client, entity_sync_event, 1);
 	BOOST_TEST(output_component->is_activated());
 	BOOST_TEST(client->find_entity(output_component->URI()));
 	entity_sync_event->reset_num_calls();
 
 	//Deactivate
 	client->deactivate_entity_async(output_component.get());
-	wait_for_event(entity_sync_event.get(), 1);
+	wait_for_event(client, entity_sync_event, 1);
 	BOOST_TEST(!output_component->is_activated());
 	BOOST_TEST(!client->find_entity(output_component->URI()));
 }
@@ -123,18 +124,18 @@ BOOST_FIXTURE_TEST_CASE(remove_child, FixtureParentChild) {
 BOOST_FIXTURE_TEST_CASE(child_activation_callback, FixtureParentChild) {
 	client->deactivate_entity(child.get());
 	auto child_activation_event = std::make_shared<TestSynchronisableEvents>();
-	child->add_adaptor(child_activation_event.get());
+	child->add_adaptor(child_activation_event);
 	client->get_root()->add_child(parent.get());
 
 	//Activation
 	parent->add_child(child.get());
-	wait_for_event(child_activation_event.get(), 1);
+	wait_for_event(client, child_activation_event, 1);
 	BOOST_TEST(child->is_activated());
 
 	//Deactivation
 	child_activation_event->reset_num_calls();
 	client->deactivate_entity(child.get());
-	wait_for_event(child_activation_event.get(), 1);
+	wait_for_event(client, child_activation_event, 1);
 	BOOST_TEST(!child->is_activated());
 }
 

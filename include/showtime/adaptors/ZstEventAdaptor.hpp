@@ -1,7 +1,7 @@
 #pragma once
 #include "ZstLogging.h"
 #include "ZstPointerUtils.h"
-#include <unordered_set>
+#include <set>
 #include <memory>
 #include <mutex>
 
@@ -17,16 +17,14 @@ public:
 	ZST_EXPORT ZstEventAdaptor();
 	ZST_EXPORT virtual ~ZstEventAdaptor();
 
-	ZST_EXPORT bool is_target_dispatcher_active();
-	ZST_EXPORT void set_target_dispatcher_inactive();
-	ZST_EXPORT bool contains_event_source(std::shared_ptr<ZstEventDispatcherBase> event_source);
+	ZST_EXPORT bool contains_event_source(std::weak_ptr<ZstEventDispatcherBase> event_source);
+	ZST_EXPORT void prune_dispatchers();
 
 private:
-	ZST_EXPORT void add_event_source(std::shared_ptr<ZstEventDispatcherBase> event_source);
-	ZST_EXPORT void remove_event_source(std::shared_ptr<ZstEventDispatcherBase> event_source);
+	ZST_EXPORT void add_event_source(std::weak_ptr<ZstEventDispatcherBase> event_source);
+	ZST_EXPORT void remove_event_source(std::weak_ptr<ZstEventDispatcherBase> event_source);
 
-	bool m_is_target_dispatcher_active;
-	std::unordered_set< std::shared_ptr<ZstEventDispatcherBase> > m_event_sources;
+	std::set< std::weak_ptr<ZstEventDispatcherBase>, std::owner_less<std::weak_ptr<ZstEventDispatcherBase> > > m_event_sources;
 
 	std::recursive_mutex m_mtx;
 };

@@ -98,12 +98,12 @@ ZstEntityBase * ZstEntityFactory::create_entity(const ZstURI & creatable_path, c
 	return NULL;
 }
 
-void ZstEntityFactory::add_adaptor(std::shared_ptr<ZstFactoryAdaptor>& adaptor)
+void ZstEntityFactory::add_adaptor(std::shared_ptr<ZstFactoryAdaptor> adaptor)
 {
 	m_factory_events->add_adaptor(adaptor);
 }
 
-void ZstEntityFactory::remove_adaptor(std::shared_ptr<ZstFactoryAdaptor>& adaptor)
+void ZstEntityFactory::remove_adaptor(std::shared_ptr<ZstFactoryAdaptor> adaptor)
 {
 	m_factory_events->remove_adaptor(adaptor);
 }

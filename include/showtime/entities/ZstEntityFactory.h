@@ -49,8 +49,8 @@ public:
 
 	//Events
 
-	ZST_EXPORT void add_adaptor(std::shared_ptr<ZstFactoryAdaptor> & adaptor);
-	ZST_EXPORT void remove_adaptor(std::shared_ptr<ZstFactoryAdaptor> & adaptor);
+	ZST_EXPORT void add_adaptor(std::shared_ptr<ZstFactoryAdaptor> adaptor);
+	ZST_EXPORT void remove_adaptor(std::shared_ptr<ZstFactoryAdaptor> adaptor);
 	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > > & factory_events();
 
 protected:

@@ -4,6 +4,8 @@
 
 #include "TestCommon.hpp"
 
+std::shared_ptr<ShowtimeClient> client;
+
 
 class Sink : public ZstComponent {
 private:
@@ -59,7 +61,7 @@ public:
 			if (!m_child_sink->is_activated())
 				throw std::runtime_error("Child entity is not activated");
 			
-			zst_deactivate_entity(m_child_sink);
+			client->deactivate_entity(m_child_sink);
 			ZstLog::entity(LogLevel::debug, "Finished sync deactivate");
 			delete m_child_sink;
 			m_child_sink = NULL;
@@ -76,7 +78,6 @@ public:
 		last_received_code = request_code;
 	}
 };
-
 
 int main(int argc,char **argv){
 
@@ -96,18 +97,19 @@ int main(int argc,char **argv){
 		}
 	}
 
-	zst_init("TestHelperSink", true);
-    zst_auto_join_by_name(TEST_SERVER_NAME);
+	client = std::make_shared<ShowtimeClient>();
+	client->init("TestHelperSink", true);
+    client->auto_join_by_name(TEST_SERVER_NAME);
 
 	Sink * sink = new Sink("sink_ent");
-	zst_get_root()->add_child(sink);
+	client->get_root()->add_child(sink);
 	
 	while (sink->last_received_code >= 0){
-		zst_poll_once();
+		client->poll_once();
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
     
 	ZstLog::app(LogLevel::notification, "Sink is leaving");
-	zst_destroy();
+	client->destroy();
 	return 0;
 }
