@@ -52,20 +52,20 @@ namespace Showtime.Tests
     [NonParallelizable]
     public class FixtureCreateServer
     {
-        private static ServerHandle m_server;
+        private ShowtimeServer m_server;
 
         [SetUp]
         public void SetupServer()
         {
             Console.WriteLine("===CREATE SERVER===");
-            m_server = showtime.create_server("test_server", showtime.STAGE_ROUTER_PORT);
+            m_server = new ShowtimeServer("test_server");
         }
 
         [TearDown]
         public void CleanupServer()
         {
             Console.WriteLine("===DESTROY SERVER===");
-            showtime.destroy_server(m_server);
+            m_server.destroy();
         }
     }
 
@@ -75,12 +75,13 @@ namespace Showtime.Tests
     {
         private static Task m_eventloop;
         private static CancellationTokenSource m_cancelationTokenSource;
+        public ShowtimeClient client;
 
-        public static void event_loop()
+        public static void event_loop(ShowtimeClient client)
         {
             while (!m_cancelationTokenSource.Token.IsCancellationRequested)
             {
-                showtime.poll_once();
+                client.poll_once();
                 Thread.Sleep(10);
             }
         }
@@ -91,12 +92,13 @@ namespace Showtime.Tests
             Console.WriteLine("===INIT LIBRARY===");
 
             //Start the library
-            showtime.init("TestDotnet", true);
-            showtime.init_file_logging("showtime.log");
+            client = new ShowtimeClient();
+            client.init("TestDotnet", true);
+            //client.init_file_logging("showtime.log");
 
             //Create the event loop
             m_cancelationTokenSource = new CancellationTokenSource();
-            m_eventloop = new Task(() => event_loop(), m_cancelationTokenSource.Token, TaskCreationOptions.AttachedToParent);
+            m_eventloop = new Task(() => event_loop(client), m_cancelationTokenSource.Token, TaskCreationOptions.AttachedToParent);
             m_eventloop.Start();
         }
 
@@ -110,7 +112,7 @@ namespace Showtime.Tests
             m_eventloop.Wait();
 
             //Destroy the library
-            showtime.destroy();
+            client.destroy();
         }
     }
 
@@ -124,7 +126,7 @@ namespace Showtime.Tests
             //Join the server
             Console.WriteLine("===JOIN SERVER===");
 
-            showtime.auto_join_by_name("test_server");
+            client.auto_join_by_name("test_server");
         }
     }
 
@@ -139,13 +141,13 @@ namespace Showtime.Tests
             var output_comp = new TestOutputComponent("test_output_comp");
 
             //Parent input component
-            showtime.get_root().add_child(input_comp);
+            client.get_root().add_child(input_comp);
 
             //Parent output component
-            showtime.get_root().add_child(output_comp);
+            client.get_root().add_child(output_comp);
 
             //Connect cable
-            var cable = showtime.connect_cable(input_comp.input, output_comp.output);
+            var cable = client.connect_cable(input_comp.input, output_comp.output);
 
             //Send values
             int send_val = 42;
@@ -164,9 +166,9 @@ namespace Showtime.Tests
         {
             EventWaitHandle wait = new AutoResetEvent(false);
             bool connected = false;
-            showtime.session_events().on_connected_to_stage_events += () => { connected = true; wait.Set(); };
-            showtime.session_events().on_disconnected_from_stage_events += () => { connected = false; wait.Set(); };
-            showtime.join_async($"127.0.0.1:{showtime.STAGE_ROUTER_PORT}");
+            client.connection_events().on_connected_to_stage_events += (client, server) => { connected = true; wait.Set(); };
+            client.connection_events().on_disconnected_from_stage_events += (client, server) => { connected = false; wait.Set(); };
+            client.join_async($"127.0.0.1:{showtime.STAGE_ROUTER_PORT}");
 
             wait.WaitOne(1000);
             Assert.IsTrue(connected);

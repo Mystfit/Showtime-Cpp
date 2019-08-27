@@ -28,6 +28,7 @@ set(DOTNET_WRAPPER_FILENAME ${DOTNET_TARGET_WRAPPER})
 
 set(DOTNET_BINDINGS
     "${CMAKE_CURRENT_LIST_DIR}/ZstDelegateSessionAdaptor.cs"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstDelegateConnectionAdaptor.cs"
     "${CMAKE_CURRENT_LIST_DIR}/ZstDelegateHierarchyAdaptor.cs"
     "${CMAKE_CURRENT_LIST_DIR}/ZstDelegateSynchronisableAdaptor.cs"
     "${CMAKE_CURRENT_LIST_DIR}/ZstDelegateEntityAdaptor.cs"
@@ -204,7 +205,7 @@ else()
         include_external_msproject(${DOTNET_TARGET} ${DOTNET_CSPROJ_OUT})
     endif()
 
-     set(DOTNET_PACK_ARGS 
+    set(DOTNET_PACK_ARGS 
         "--include-source"
         "--include-symbols"
         "${DOTNET_CSPROJ_OUT}"

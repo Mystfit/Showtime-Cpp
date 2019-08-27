@@ -55,17 +55,17 @@ if(BUILD_SHARED)
     ${SHOWTIME_PRIVATE_SHARED_LINKED_LIBS}
   )
 
+  target_compile_definitions(${SERVER_TARGET} 
+    PRIVATE ZST_EXPORT_SERVER_API
+    INTERFACE ZST_IMPORT_SERVER_API
+  )
+
   add_dependencies(${SERVER_TARGET} ${CORE_TARGET_STATIC})
   list(APPEND SERVER_LIBS ${SERVER_TARGET})
 endif()
 
 foreach(TARGET ${SERVER_LIBS})
   set_target_properties(${TARGET} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION})
-
-  target_compile_definitions(${TARGET} 
-    PRIVATE ZST_EXPORT_SERVER_API
-    INTERFACE ZST_IMPORT_SERVER_API
-  )
 
   # Server lib sources
   target_sources(${TARGET} PRIVATE 

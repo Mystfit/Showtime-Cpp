@@ -89,7 +89,7 @@ protected:
     
     //Event dispatchers
     ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstSessionAdaptor> > > & session_events();
-    
+
     //Entity mutex
     mutable std::mutex m_entity_mtx;
 	std::shared_ptr<ZstEventDispatcher< std::shared_ptr< ZstSessionAdaptor> > > m_session_events;

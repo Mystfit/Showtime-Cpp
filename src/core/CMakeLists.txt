@@ -293,20 +293,20 @@ if(BUILD_SHARED)
 
         target_link_libraries(${CORE_TARGET} PRIVATE ${SHOWTIME_PRIVATE_SHARED_LINKED_LIBS})
     endif()
+
+    # Library API exports
+    target_compile_definitions(${CORE_TARGET} 
+        PRIVATE
+        ZST_EXPORT_CORE_API
+        INTERFACE
+        ZST_IMPORT_CORE_API
+    )
 endif()
 
 # Options common to both static/shared libraries
 foreach(TARGET ${CORE_LIBS})
     set_target_properties(${TARGET} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION})
     target_sources(${TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp)
-
-    # Library API exports
-    target_compile_definitions(${CORE_TARGET_OBJECTS} 
-        PRIVATE
-        ZST_EXPORT_CORE_API
-        INTERFACE
-        ZST_IMPORT_CORE_API
-    )
 
     # Target link libs again to link actual libraries
     target_link_libraries(${TARGET}

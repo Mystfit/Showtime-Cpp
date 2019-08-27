@@ -1,0 +1,6 @@
+%shared_ptr(ZstConnectionAdaptor)
+%shared_ptr(ZstEntityAdaptor)
+%shared_ptr(ZstFactoryAdaptor)
+%shared_ptr(ZstHierarchyAdaptor)
+%shared_ptr(ZstSessionAdaptor)
+%shared_ptr(ZstSynchronisableAdaptor)

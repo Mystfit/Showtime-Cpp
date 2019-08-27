@@ -48,6 +48,11 @@ if(BUILD_SHARED)
     ${SHOWTIME_PRIVATE_SHARED_LINKED_LIBS}
   )
 
+  target_compile_definitions(${CLIENT_TARGET} 
+    PRIVATE ZST_EXPORT_CLIENT_API
+    INTERFACE ZST_IMPORT_CLIENT_API
+  )
+
   if(WIN32)
     # Copy runtime dependencies
     add_custom_command(TARGET ${CLIENT_TARGET} POST_BUILD
@@ -69,11 +74,6 @@ foreach(TARGET ${CLIENT_LIBS})
     ${ZST_CLIENT_HEADERS}
     ${ZST_CLIENT_PRIVATE_HEADERS}
     ${ZST_CLIENT_SRC}
-  )
-
-  target_compile_definitions(${CLIENT_TARGET} 
-    PRIVATE ZST_EXPORT_CLIENT_API
-    INTERFACE ZST_IMPORT_CLIENT_API
   )
 
   target_link_libraries(${TARGET} PRIVATE ${SHOWTIME_PRIVATE_LINKED_LIBS})
