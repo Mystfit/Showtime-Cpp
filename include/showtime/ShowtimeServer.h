@@ -6,12 +6,23 @@
 #include "ZstConstants.h"
 #include "ZstExports.h"
 
-extern "C" {
-	struct ZST_SERVER_EXPORT ServerHandle {
-	public:
-		void * server_ptr;
-	};
-    
-	ZST_SERVER_EXPORT ServerHandle zst_create_server(const char * server_name, int port = STAGE_ROUTER_PORT);
-	ZST_SERVER_EXPORT void zst_destroy_server(const ServerHandle & server);
+//Forwards
+namespace Showtime {
+	namespace detail {
+		class ZstStage;
+	}
 }
+
+class ZST_CLASS_EXPORTED ShowtimeServer : std::enable_shared_from_this<ShowtimeServer>
+{
+public:
+	ZST_SERVER_EXPORT ShowtimeServer(const std::string & name, int port = STAGE_ROUTER_PORT);
+
+	//Disable copying
+	ZST_SERVER_EXPORT ShowtimeServer(const ShowtimeServer& other) = delete;
+
+	ZST_SERVER_EXPORT void destroy();
+
+private:
+	std::shared_ptr<Showtime::detail::ZstStage> m_server;
+};

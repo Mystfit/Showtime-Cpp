@@ -53,12 +53,14 @@ void ZstZMQClientTransport::init()
 
 void ZstZMQClientTransport::destroy()
 {
+	m_client_actor.stop_loop();
 	if (m_server_sock) {
 		//m_client_actor.remove_pipe_listener(m_server_sock);
 		zsock_destroy(&m_server_sock);
 		m_server_sock = NULL;
 		zst_zmq_dec_ref_count();
 	}
+	ZstTransportLayerBase::destroy();
 }
 
 void ZstZMQClientTransport::connect(const std::string & address)
@@ -67,12 +69,14 @@ void ZstZMQClientTransport::connect(const std::string & address)
     addr << "tcp://" << address; // << ":" << STAGE_ROUTER_PORT;
 	m_server_addr = addr.str();
 
-	zsock_connect(m_server_sock, "%s", m_server_addr.c_str());
+	if(m_server_sock)
+		zsock_connect(m_server_sock, "%s", m_server_addr.c_str());
 }
 
 void ZstZMQClientTransport::disconnect()
 {
-	zsock_disconnect(m_server_sock, "%s", m_server_addr.c_str());
+	if (m_server_sock)
+		zsock_disconnect(m_server_sock, "%s", m_server_addr.c_str());
 }
 
 void ZstZMQClientTransport::process_events()

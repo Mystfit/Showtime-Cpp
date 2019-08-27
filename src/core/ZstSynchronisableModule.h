@@ -13,6 +13,7 @@ class ZST_CLASS_EXPORTED ZstSynchronisableModule :
     public ZstSynchronisableLiason
 {
 public:
+	ZST_EXPORT ZstSynchronisableModule();
     ZST_EXPORT ~ZstSynchronisableModule();
 	ZST_EXPORT virtual void init();
 	ZST_EXPORT virtual void destroy();

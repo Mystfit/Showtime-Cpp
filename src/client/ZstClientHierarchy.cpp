@@ -24,7 +24,7 @@ void ZstClientHierarchy::init(std::string name)
 	//Create a root entity to hold our local entity hierarchy
 	//Sets the name of our performer and the address of our graph output
     m_root = std::make_shared<ZstPerformer>(name.c_str());
-	m_root->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(this));
+	m_root->add_adaptor(ZstSynchronisableAdaptor::downcasted_shared_from_this<ZstSynchronisableAdaptor>());
 }
 
 void ZstClientHierarchy::destroy()
@@ -78,11 +78,11 @@ void ZstClientHierarchy::on_publish_entity_update(ZstEntityBase * entity)
 	if (strcmp(entity->entity_type(), FACTORY_TYPE) == 0) {
 		//Factory wants to update creatables
 		ZstEntityFactory * factory = static_cast<ZstEntityFactory*>(entity);
-		stage_events().invoke([factory](ZstTransportAdaptor * adp) {
+		stage_events()->invoke([factory](std::shared_ptr<ZstTransportAdaptor> adaptor) {
 			ZstTransportArgs args;
 			args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
 			factory->write_json(args.msg_payload);
-			adp->send_msg(ZstMsgKind::UPDATE_ENTITY, args);
+			adaptor->send_msg(ZstMsgKind::UPDATE_ENTITY, args);
 		});
 	}
 }
@@ -137,7 +137,9 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 	entity->write_json(args.msg_payload);
 
 	//Send message
-	stage_events().invoke([kind, args](ZstTransportAdaptor * adaptor){ adaptor->send_msg(kind, args); });
+	stage_events()->invoke([kind, args](std::shared_ptr<ZstTransportAdaptor> adaptor){ 
+		adaptor->send_msg(kind, args); 
+	});
 
 	if (sendtype == ZstTransportRequestBehaviour::SYNC_REPLY)
 		process_events();
@@ -165,7 +167,7 @@ void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTranspo
 		};
 
 		//Send message
-		stage_events().invoke([this, &args, entity](ZstTransportAdaptor * adaptor) {
+		stage_events()->invoke([this, &args, entity](std::shared_ptr<ZstTransportAdaptor> adaptor) {
 			adaptor->send_msg(ZstMsgKind::DESTROY_ENTITY, args);
 			if (args.msg_send_behaviour == ZstTransportRequestBehaviour::PUBLISH) {
 				this->destroy_entity_complete(entity);
@@ -206,7 +208,7 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
     }
     
     //External factory
-    stage_events().invoke([this, sendtype, creatable_path, &entity, entity_name, factory](ZstTransportAdaptor * adaptor) {
+    stage_events()->invoke([this, sendtype, creatable_path, &entity, entity_name, factory](std::shared_ptr<ZstTransportAdaptor> adaptor) {
 		ZstTransportArgs args;
 		args.msg_args = {
             { get_msg_arg_name(ZstMsgArg::PATH), creatable_path.path() },
@@ -224,8 +226,12 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
 				if (sendtype == ZstTransportRequestBehaviour::ASYNC_REPLY) {
 					ZstEntityBase* late_entity = find_entity(creatable_path.first() + ZstURI(entity_name));
 					if (late_entity) {
-						factory->factory_events()->defer([late_entity](ZstFactoryAdaptor* adp) { adp->on_entity_created(late_entity); });
-						factory->synchronisable_events()->invoke([factory](ZstSynchronisableAdaptor* adp) { adp->on_synchronisable_has_event(factory); });
+						factory->factory_events()->defer([late_entity](std::shared_ptr<ZstFactoryAdaptor> adaptor) { 
+							adaptor->on_entity_created(late_entity);
+						});
+						factory->synchronisable_events()->invoke([factory](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
+							adaptor->on_synchronisable_has_event(factory);
+						});
 					}
 				}
 			}
@@ -259,7 +265,7 @@ void ZstClientHierarchy::create_entity_handler(ZstMessage * msg)
 		ZstLog::net(LogLevel::warn, "Could not find factory to create entity {}", creatable_path.path());
 		return;
 	}
-	factory->synchronisable_events()->defer([this, creatable_path, name, factory, msg_id](ZstSynchronisableAdaptor * adp) {
+	factory->synchronisable_events()->defer([this, creatable_path, name, factory, msg_id](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
 		ZstEntityBase * entity = factory->create_entity(creatable_path, name.c_str());
 		if (entity) {
             //Add entity to local performer
@@ -269,17 +275,17 @@ void ZstClientHierarchy::create_entity_handler(ZstMessage * msg)
             this->activate_entity(entity, ZstTransportRequestBehaviour::ASYNC_REPLY, msg_id);
 		}
 		else {
-			stage_events().invoke([msg_id](ZstTransportAdaptor * adp) {
+			stage_events()->invoke([msg_id](std::shared_ptr<ZstTransportAdaptor> adaptor) {
 				ZstTransportArgs args;
 				args.msg_args = { { get_msg_arg_name(ZstMsgArg::MSG_ID), msg_id } };
-				adp->send_msg(ZstMsgKind::ERR_ENTITY_NOT_FOUND, args);
+				adaptor->send_msg(ZstMsgKind::ERR_ENTITY_NOT_FOUND, args);
 			});
 		}
 	});
 
 	//Signal main event loop that the factory has an event waiting
-	factory->synchronisable_events()->invoke([factory](ZstSynchronisableAdaptor* adp) { 
-		adp->on_synchronisable_has_event(factory); 
+	factory->synchronisable_events()->invoke([factory](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) { 
+		adaptor->on_synchronisable_has_event(factory);
 	});
 }
 
@@ -290,7 +296,9 @@ void ZstClientHierarchy::activate_entity_complete(ZstEntityBase * entity)
 	ZstEntityBundle bundle;
     entity->get_child_entities(bundle, false);
 	for (auto c : bundle) {
-		hierarchy_events().invoke([c](ZstHierarchyAdaptor * adp) { adp->on_entity_arriving(c); });
+		hierarchy_events()->invoke([c](std::shared_ptr<ZstHierarchyAdaptor> adaptor) { 
+			adaptor->on_entity_arriving(c); 
+		});
 	}
 }
 

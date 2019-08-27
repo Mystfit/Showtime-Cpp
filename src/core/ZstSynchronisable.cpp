@@ -32,7 +32,7 @@ ZstSynchronisable::~ZstSynchronisable()
 {
 }
 
-void ZstSynchronisable::add_adaptor(std::shared_ptr<ZstSynchronisableAdaptor> & adaptor)
+void ZstSynchronisable::add_adaptor(std::shared_ptr<ZstSynchronisableAdaptor> adaptor)
 {
 	m_synchronisable_events->add_adaptor(adaptor);
 
@@ -45,7 +45,7 @@ void ZstSynchronisable::add_adaptor(std::shared_ptr<ZstSynchronisableAdaptor> & 
 	}
 }
 
-void ZstSynchronisable::remove_adaptor(std::shared_ptr<ZstSynchronisableAdaptor> & adaptor)
+void ZstSynchronisable::remove_adaptor(std::shared_ptr<ZstSynchronisableAdaptor> adaptor)
 {
 	this->synchronisable_events()->remove_adaptor(adaptor);
 }

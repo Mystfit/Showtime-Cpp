@@ -9,6 +9,13 @@ std::string server_name = "test_server";
 std::string server_address = "127.0.0.1:40004";
 std::string bad_server_address = "255.255.255.255:1111";
 
+BOOST_AUTO_TEST_CASE(init) {
+	auto client = std::make_shared<ShowtimeClient>();
+	client->init("test", true);
+	BOOST_TEST(client->is_init_completed());
+	client->destroy();
+}
+
 BOOST_AUTO_TEST_CASE(early_library_destroy){
     auto client = std::make_shared<ShowtimeClient>();
 	client->destroy();
@@ -37,7 +44,6 @@ BOOST_FIXTURE_TEST_CASE(single_server_connection, FixtureInitAndCreateServer){
 	client->join(server_address.c_str());
 	client->join(server_address.c_str());
 	BOOST_TEST(!client->is_connecting());
-	client->leave();
 }
 
 BOOST_FIXTURE_TEST_CASE(sync_join, FixtureInitAndCreateServer){
@@ -63,13 +69,12 @@ BOOST_FIXTURE_TEST_CASE(sync_join_by_name, FixtureInitAndCreateServer){
 
 BOOST_FIXTURE_TEST_CASE(async_join, FixtureInitAndCreateServer, TEST_TIMEOUT){
 	auto connectCallback = std::make_shared< TestConnectionEvents>();
-	client->add_connection_adaptor(connectCallback.get());
+	client->add_connection_adaptor(connectCallback);
 	client->join_async(server_address.c_str());
 	wait_for_event(client, connectCallback.get(), 2);
 	BOOST_TEST(client->is_connected());
 	BOOST_TEST_REQUIRE(connectCallback->is_synced);
 }
-
 
 BOOST_FIXTURE_TEST_CASE(autojoin_by_name, FixtureInitAndCreateServer){
 	//Testing autojoin by name
@@ -87,7 +92,7 @@ BOOST_FIXTURE_TEST_CASE(autojoin_by_name_async, FixtureInitAndCreateServer) {
 BOOST_FIXTURE_TEST_CASE(async_join_callback_adaptor, FixtureInitAndCreateServer){
 	//Test async join
 	auto connectCallback = std::make_shared< TestConnectionEvents>();
-	client->add_connection_adaptor(connectCallback.get());
+	client->add_connection_adaptor(connectCallback);
 	client->join_async(server_address.c_str());
 	wait_for_event(client, connectCallback.get(), 1);
 	BOOST_TEST_REQUIRE(client->is_connected());
@@ -116,45 +121,43 @@ BOOST_FIXTURE_TEST_CASE(double_connection, FixtureInitAndCreateServer){
 	BOOST_TEST(!client->is_connecting());
 }
 
-BOOST_FIXTURE_TEST_CASE(list_discovered_servers, FixtureInitAndCreateServer){
+BOOST_FIXTURE_TEST_CASE(list_discovered_servers, FixtureInit){
+	auto detected_server_name = std::string("detected_server");
+	auto detected_server = std::make_shared< ShowtimeServer>(detected_server_name.c_str(), STAGE_ROUTER_PORT + 10);
 	WAIT_UNTIL_STAGE_BEACON
 	ZstServerAddressBundle bundle;
 	client->get_discovered_servers(bundle);
 	BOOST_TEST(bundle.size() > 0);
-	BOOST_TEST(bundle.item_at(0).name == server_name);
+	BOOST_TEST(bundle.item_at(0).name == detected_server_name);
+	detected_server->destroy();
 }
 
 BOOST_FIXTURE_TEST_CASE(discovered_servers_callback_adaptor, FixtureInit){
 	//Create adaptor
 	auto discovery_adaptor = std::make_shared<TestConnectionEvents>();
-	client->add_connection_adaptor(discovery_adaptor.get());
+	client->add_connection_adaptor(discovery_adaptor);
 
 	//Create a new server for the client to discover
 	auto detected_server_name = std::string("detected_server");
-	auto detected_server = zst_create_server(detected_server_name.c_str(), STAGE_ROUTER_PORT + 10);
+	auto detected_server = std::make_shared< ShowtimeServer>(detected_server_name.c_str(), STAGE_ROUTER_PORT + 10);
 	wait_for_event(client, discovery_adaptor.get(), 1);
 	BOOST_TEST(discovery_adaptor->last_discovered_server.name == detected_server_name);
-
-	//Cleanup
-	zst_destroy_server(detected_server);
+	detected_server->destroy();
 }
 
 BOOST_FIXTURE_TEST_CASE(discovered_servers_update, FixtureJoinServer) {
-	auto detected_server = zst_create_server("detected_server", STAGE_ROUTER_PORT + 10);
+	auto detected_server = std::make_shared< ShowtimeServer>("detected_server", STAGE_ROUTER_PORT + 10);
 	WAIT_UNTIL_STAGE_BEACON
-
 	ZstServerAddressBundle bundle;
 	client->get_discovered_servers(bundle);
 	BOOST_TEST(bundle.size() == 2);
-
-	//Cleanup
-	zst_destroy_server(detected_server);
+	detected_server->destroy();
 }
 
 BOOST_FIXTURE_TEST_CASE(root_performer_activate_on_join, FixtureJoinServer)
 {   
     auto performer_activated = std::make_shared<TestSynchronisableEvents>();
-	client->get_root()->add_adaptor(performer_activated.get());
+	client->get_root()->add_adaptor(performer_activated);
 	BOOST_TEST(performer_activated->num_calls() == 1);
 	BOOST_TEST(client->get_root()->is_activated());
 }

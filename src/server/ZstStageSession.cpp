@@ -32,8 +32,8 @@ void ZstStageSession::set_wake_condition(std::weak_ptr<ZstSemaphore> condition)
 {
     ZstStageModule::set_wake_condition(condition);
     m_hierarchy->set_wake_condition(condition);
-    session_events().set_wake_condition(condition);
-    synchronisable_events().set_wake_condition(condition);
+    session_events()->set_wake_condition(condition);
+    synchronisable_events()->set_wake_condition(condition);
 }
 
 void ZstStageSession::on_receive_msg(ZstMessage * msg)
@@ -79,7 +79,9 @@ void ZstStageSession::on_receive_msg(ZstMessage * msg)
 		ZstTransportArgs args;
 		args.target_endpoint_UUID = msg->endpoint_UUID();
 		args.msg_args = { { get_msg_arg_name(ZstMsgArg::MSG_ID), stage_msg->id() } };
-		router_events().defer([response, args](ZstTransportAdaptor * adp) { adp->send_msg(response, args); });
+		router_events()->defer([response, args](std::shared_ptr<ZstTransportAdaptor> adaptor) { 
+			adaptor->send_msg(response, args);
+		});
 	}
 }
 
@@ -94,7 +96,7 @@ ZstMsgKind ZstStageSession::synchronise_client_graph_handler(ZstStageMessage * m
 		if (performer->URI() != sender->URI()) {
 			ZstTransportArgs args;
 			performer->write_json(args.msg_payload);
-			hierarchy()->whisper_message(static_cast<ZstPerformer*>(sender), ZstMsgKind::CREATE_PERFORMER, args);
+			stage_hierarchy()->whisper_message(static_cast<ZstPerformer*>(sender), ZstMsgKind::CREATE_PERFORMER, args);
 		}
 	}
 
@@ -102,7 +104,7 @@ ZstMsgKind ZstStageSession::synchronise_client_graph_handler(ZstStageMessage * m
 	for (auto const & cable : m_cables) {
 		ZstTransportArgs args;
 		cable->get_address().write_json(args.msg_payload);
-		hierarchy()->whisper_message(static_cast<ZstPerformer*>(sender), ZstMsgKind::CREATE_CABLE, args);
+		stage_hierarchy()->whisper_message(static_cast<ZstPerformer*>(sender), ZstMsgKind::CREATE_CABLE, args);
 	}
 
 	return ZstMsgKind::OK;
@@ -152,7 +154,7 @@ ZstMsgKind ZstStageSession::create_cable_handler(ZstStageMessage* msg, ZstPerfor
 		if (receipt.status == ZstMsgKind::OK) {
 			create_cable_complete_handler(cable);
 		}
-		hierarchy()->whisper_message(sender, receipt.status, args);
+		stage_hierarchy()->whisper_message(sender, receipt.status, args);
 	});
 
 	return ZstMsgKind::EMPTY;
@@ -187,7 +189,7 @@ ZstMsgKind ZstStageSession::observe_entity_handler(ZstStageMessage * msg, ZstPer
 	ZstTransportArgs args;
 	args.msg_ID = msg->id();
 	connect_clients(observed_performer, sender, [this, observed_performer, sender, &args](ZstMessageReceipt receipt) {
-		hierarchy()->whisper_message(sender, receipt.status, args);
+		stage_hierarchy()->whisper_message(sender, receipt.status, args);
 	});
 
 	return ZstMsgKind::EMPTY;
@@ -235,7 +237,7 @@ ZstMsgKind ZstStageSession::aquire_entity_ownership_handler(ZstStageMessage* msg
 		{ get_msg_arg_name(ZstMsgArg::PATH), entity->URI().path() },
 		{ get_msg_arg_name(ZstMsgArg::OUTPUT_PATH), sender->URI().path() }
 	};
-	hierarchy()->broadcast_message(ZstMsgKind::AQUIRE_ENTITY_OWNERSHIP, args);
+	stage_hierarchy()->broadcast_message(ZstMsgKind::AQUIRE_ENTITY_OWNERSHIP, args);
 
 	return ZstMsgKind::OK;
 }
@@ -261,7 +263,7 @@ ZstMsgKind ZstStageSession::release_entity_ownership_handler(ZstStageMessage* ms
 		{ get_msg_arg_name(ZstMsgArg::PATH), entity->URI().path() },
 		{ get_msg_arg_name(ZstMsgArg::OUTPUT_PATH), entity->get_owner().path() }
 	};
-	hierarchy()->broadcast_message(ZstMsgKind::AQUIRE_ENTITY_OWNERSHIP, args);
+	stage_hierarchy()->broadcast_message(ZstMsgKind::AQUIRE_ENTITY_OWNERSHIP, args);
     
     return ZstMsgKind::OK;
 }
@@ -271,7 +273,7 @@ ZstMsgKind ZstStageSession::create_cable_complete_handler(ZstCable * cable)
 	ZstLog::server(LogLevel::notification, "Client connection complete. Publishing cable {}", cable->get_address().to_string());
 	ZstTransportArgs args;
 	cable->get_address().write_json(args.msg_payload);
-	hierarchy()->broadcast_message(ZstMsgKind::CREATE_CABLE, args);
+	stage_hierarchy()->broadcast_message(ZstMsgKind::CREATE_CABLE, args);
 	return ZstMsgKind::OK;
 }
 
@@ -320,7 +322,7 @@ void ZstStageSession::destroy_cable(ZstCable * cable) {
 	//Update rest of network
 	ZstTransportArgs args;
 	cable->get_address().write_json(args.msg_payload);
-	hierarchy()->broadcast_message(ZstMsgKind::DESTROY_CABLE, args);
+	stage_hierarchy()->broadcast_message(ZstMsgKind::DESTROY_CABLE, args);
 
 	//Remove cable
 	ZstSession::destroy_cable_complete(cable);
@@ -364,8 +366,8 @@ void ZstStageSession::connect_clients(ZstPerformerStageProxy * output_client, Zs
 	};
 
 	//Send messages
-	hierarchy()->whisper_message(input_client, ZstMsgKind::SUBSCRIBE_TO_PERFORMER, receiver_args);
-	hierarchy()->whisper_message(output_client, ZstMsgKind::START_CONNECTION_HANDSHAKE, broadcaster_args);
+	stage_hierarchy()->whisper_message(input_client, ZstMsgKind::SUBSCRIBE_TO_PERFORMER, receiver_args);
+	stage_hierarchy()->whisper_message(output_client, ZstMsgKind::START_CONNECTION_HANDSHAKE, broadcaster_args);
 }
 
 
@@ -380,11 +382,16 @@ ZstMsgKind ZstStageSession::complete_client_connection(ZstPerformerStageProxy * 
 	ZstLog::server(LogLevel::notification, "Stopping P2P handshake broadcast from client {}", output_client->URI().path());
 	ZstTransportArgs args;
 	args.msg_args = { { get_msg_arg_name(ZstMsgArg::INPUT_PATH), input_client->URI().path()} };
-	hierarchy()->whisper_message(output_client, ZstMsgKind::STOP_CONNECTION_HANDSHAKE, args);
+	stage_hierarchy()->whisper_message(output_client, ZstMsgKind::STOP_CONNECTION_HANDSHAKE, args);
 	return ZstMsgKind::OK;
 }
 
-ZstStageHierarchy * ZstStageSession::hierarchy()
+std::shared_ptr<ZstHierarchy> ZstStageSession::hierarchy()
 {
-	return m_hierarchy.get();
+	return m_hierarchy;
+}
+
+std::shared_ptr<ZstStageHierarchy> ZstStageSession::stage_hierarchy()
+{
+	return m_hierarchy;
 }

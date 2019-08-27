@@ -12,6 +12,7 @@
 #include "../core/ZstSemaphore.h"
 #include "../core/ZstZMQRefCounter.h"
 #include <fmt/format.h>
+#include <czmq.h>
 
 #include "ZstClientSession.h"
 
@@ -25,27 +26,23 @@ namespace Showtime::detail
 		m_connected_to_stage(false),
 		m_is_connecting(false),
 		m_auto_join_stage(false),
-		m_promise_supervisor(ZstMessageSupervisor(std::make_shared<cf::time_watcher>(), STAGE_TIMEOUT)),
-		m_session(std::make_unique<ZstClientSession>()),
+
+		//Modules
+		m_session(std::make_shared<ZstClientSession>()),
 		m_heartbeat_timer(m_client_timerloop.IO_context()),
-		m_api(api)
-	{
-		//Message and transport modules
-		//These are specified by the client based on what transport type we want to use
-		m_client_transport = std::make_unique<ZstZMQClientTransport>();
+		m_promise_supervisor(ZstMessageSupervisor(std::make_shared<cf::time_watcher>(), STAGE_TIMEOUT)),
+		m_event_condition(std::make_shared<ZstSemaphore>()),
+		m_api(api),
 
-		m_tcp_graph_transport = std::make_unique < ZstTCPGraphTransport>();
-		m_service_broadcast_transport = std::make_unique<ZstServiceDiscoveryTransport>();
-
+		//Transports
+		m_client_transport(std::make_shared<ZstZMQClientTransport>()),
+		m_tcp_graph_transport(std::make_shared<ZstTCPGraphTransport>()),
 #ifdef ZST_BUILD_DRAFT_API
-		m_udp_graph_transport = std::make_unique<ZstUDPGraphTransport>();
+		m_udp_graph_transport(std::make_shared<ZstUDPGraphTransport>());
 #endif
-
-		//Register module adaptors
-		m_session->hierarchy()->hierarchy_events().add_adaptor(static_cast<ZstHierarchyAdaptor*>(this));
-
+		m_service_broadcast_transport(std::make_shared<ZstServiceDiscoveryTransport>())
+	{
 		//Register event conditions
-		m_event_condition = std::make_shared<ZstSemaphore>();
 		m_service_broadcast_transport->msg_events()->set_wake_condition(m_event_condition);
 		m_client_transport->msg_events()->set_wake_condition(m_event_condition);
 		m_tcp_graph_transport->msg_events()->set_wake_condition(m_event_condition);
@@ -55,6 +52,10 @@ namespace Showtime::detail
 	}
 
 	ZstClient::~ZstClient() {
+		destroy();
+	}
+
+	void ZstClient::destroy() {
 		//Only need to call cleanup once
 		if (m_is_ending || m_is_destroyed)
 			return;
@@ -82,17 +83,15 @@ namespace Showtime::detail
 		m_client_event_thread.try_join_for(boost::chrono::milliseconds(250));
 		m_api = NULL;
 
-		//All done
-		ZstLog::net(LogLevel::notification, "Showtime library destroyed");
-	}
-
-	void ZstClient::destroy() {
 		m_service_broadcast_transport->destroy();
 		m_client_transport->destroy();
 		m_tcp_graph_transport->destroy();
 #ifdef ZST_BUILD_DRAFT_API
 		m_udp_graph_transport->destroy();
 #endif
+
+		//All done
+		ZstLog::net(LogLevel::notification, "Showtime library destroyed");
 	}
 
 	void ZstClient::init_client(const char* client_name, bool debug)
@@ -126,23 +125,26 @@ namespace Showtime::detail
 		m_client_event_thread = boost::thread(boost::bind(&ZstClient::transport_event_loop, this));
 
 		//Register message dispatch as a client adaptor
-		this->ZstEventDispatcher<ZstTransportAdaptor*>::add_adaptor(m_client_transport.get());
+		ZstEventDispatcher<std::shared_ptr<ZstTransportAdaptor> >::add_adaptor(m_client_transport);
 
 		//Register adaptors to handle outgoing events
 		m_session->init(client_name);
-		m_session->stage_events().add_adaptor(m_client_transport.get());
-		m_session->hierarchy()->stage_events().add_adaptor(m_client_transport.get());
+		m_session->stage_events()->add_adaptor(m_client_transport);
+		std::static_pointer_cast<ZstClientHierarchy>(m_session->hierarchy())->stage_events()->add_adaptor(m_client_transport);
+
+		//Register module adaptors
+		m_session->hierarchy()->hierarchy_events()->add_adaptor(ZstHierarchyAdaptor::downcasted_shared_from_this<ZstHierarchyAdaptor>());
 
 		//Setup adaptors to let transports communicate with client modules
 		m_client_transport->init();
-		m_client_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(this));
-		m_client_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(m_session.get()));
-		m_client_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(m_session->hierarchy()));
+		m_client_transport->msg_events()->add_adaptor(ZstTransportAdaptor::downcasted_shared_from_this< ZstTransportAdaptor>());
+		m_client_transport->msg_events()->add_adaptor(static_cast<std::shared_ptr<ZstTransportAdaptor> >(m_session));
+		m_client_transport->msg_events()->add_adaptor(static_cast<std::shared_ptr<ZstTransportAdaptor> >(std::static_pointer_cast<ZstClientHierarchy>(m_session->hierarchy())));
 
 		//Setup adaptors to receive graph messages
 		m_tcp_graph_transport->init();
-		m_tcp_graph_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(this));
-		m_tcp_graph_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(m_session.get()));
+		m_tcp_graph_transport->msg_events()->add_adaptor(static_cast<std::shared_ptr<ZstTransportAdaptor> >(this));
+		m_tcp_graph_transport->msg_events()->add_adaptor(static_cast<std::shared_ptr<ZstTransportAdaptor> >(m_session.get()));
 
 #ifdef ZST_BUILD_DRAFT_API
 		m_udp_graph_transport->init();
@@ -153,7 +155,7 @@ namespace Showtime::detail
 		//Stage discovery beacon
 		m_service_broadcast_transport->init(STAGE_DISCOVERY_PORT);
 		m_service_broadcast_transport->start_listening();
-		m_service_broadcast_transport->msg_events()->add_adaptor(static_cast<ZstTransportAdaptor*>(this));
+		m_service_broadcast_transport->msg_events()->add_adaptor(static_cast<std::shared_ptr<ZstTransportAdaptor> >(this));
 
 		//Init completed
 		set_init_completed(true);
@@ -172,11 +174,13 @@ namespace Showtime::detail
 		}
 
 		m_session->process_events();
+		ZstEventDispatcher< std::shared_ptr<ZstConnectionAdaptor> >::process_events();
+		ZstEventDispatcher< std::shared_ptr<ZstTransportAdaptor> >::process_events();
 	}
 
 	void ZstClient::flush()
 	{
-		ZstEventDispatcher<ZstTransportAdaptor*>::flush();
+		ZstEventDispatcher< std::shared_ptr<ZstTransportAdaptor >>::flush();
 		m_session->flush_events();
 	}
 
@@ -239,7 +243,9 @@ namespace Showtime::detail
 			ZstLog::net(LogLevel::debug, "Received connection handshake. Msg id {}", m_pending_peer_connections[output_path]);
 			ZstTransportArgs args;
 			args.msg_args = { {get_msg_arg_name(ZstMsgArg::MSG_ID), m_pending_peer_connections[output_path]} };
-			this->ZstEventDispatcher<ZstTransportAdaptor*>::invoke([args](ZstTransportAdaptor* adaptor) { adaptor->send_msg(ZstMsgKind::OK, args); });
+			ZstEventDispatcher<std::shared_ptr<ZstTransportAdaptor> >::invoke([args](std::shared_ptr<ZstTransportAdaptor> adaptor) {
+				adaptor->send_msg(ZstMsgKind::OK, args); 
+			});
 			m_pending_peer_connections.erase(output_path);
 		}
 	}
@@ -356,9 +362,9 @@ namespace Showtime::detail
 		root->write_json(args.msg_payload);
 
 		//Send message
-		this->ZstEventDispatcher<ZstTransportAdaptor*>::invoke([this, args, stage_address](ZstTransportAdaptor* adaptor) {
+		ZstEventDispatcher<std::shared_ptr<ZstTransportAdaptor>>::invoke([this, args, stage_address](std::shared_ptr<ZstTransportAdaptor> adaptor) {
 			adaptor->send_msg(ZstMsgKind::CLIENT_JOIN, args);
-			});
+		});
 	}
 
 	void ZstClient::handle_server_discovery(const std::string& address, const std::string& server_name, int port)
@@ -372,9 +378,9 @@ namespace Showtime::detail
 
 			// Store server beacon
 			m_server_beacons.insert(server);
-			this->ZstEventDispatcher<ZstConnectionAdaptor*>::defer([this, server](ZstConnectionAdaptor* adaptor) {
+			ZstEventDispatcher<std::shared_ptr<ZstConnectionAdaptor>>::defer([this, server](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
 				adaptor->on_server_discovered(this->m_api, server);
-				});
+			});
 
 			// Handle connecting to the stage automatically
 			if (m_auto_join_stage && !is_connected_to_stage()) {
@@ -412,8 +418,8 @@ namespace Showtime::detail
 		m_session->hierarchy()->get_local_performer()->get_factories(bundle);
 		m_session->hierarchy()->get_local_performer()->get_child_entities(bundle, true);
 		for (auto c : bundle) {
-			c->synchronisable_events()->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(m_session->hierarchy()));
-			c->entity_events()->add_adaptor(static_cast<ZstEntityAdaptor*>(m_session->hierarchy()));
+			c->synchronisable_events()->add_adaptor(static_cast<std::shared_ptr< ZstSynchronisableAdaptor> >(m_session->hierarchy()));
+			c->entity_events()->add_adaptor(static_cast<std::shared_ptr<ZstEntityAdaptor> >(m_session->hierarchy()));
 			synchronisable_set_activating(c);
 			synchronisable_enqueue_activation(c);
 		}
@@ -430,9 +436,9 @@ namespace Showtime::detail
 
 		//Enqueue connection events
 		m_session->dispatch_connected_to_stage();
-		this->ZstEventDispatcher<ZstConnectionAdaptor*>::defer([this, server_address](ZstConnectionAdaptor* adp) {
-			adp->on_connected_to_stage(this->m_api, server_address);
-			});
+		ZstEventDispatcher<std::shared_ptr<ZstConnectionAdaptor> >::defer([this, server_address](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
+			adaptor->on_connected_to_stage(this->m_api, server_address);
+		});
 
 		//If we are sync, we can dispatch events immediately
 		if (response.request_behaviour == ZstTransportRequestBehaviour::SYNC_REPLY)
@@ -455,17 +461,17 @@ namespace Showtime::detail
 		};
 
 		//Send message
-		this->ZstEventDispatcher<ZstTransportAdaptor*>::invoke([&args](ZstTransportAdaptor* adaptor) {
+		ZstEventDispatcher<std::shared_ptr<ZstTransportAdaptor>>::invoke([&args](std::shared_ptr<ZstTransportAdaptor> adaptor) {
 			adaptor->send_msg(ZstMsgKind::CLIENT_SYNC, args);
-			});
+		});
 	}
 
 	void ZstClient::synchronise_graph_complete(ZstMessageReceipt response)
 	{
 		ZstLog::net(LogLevel::notification, "Graph sync completed");
-		this->ZstEventDispatcher<ZstConnectionAdaptor*>::defer([this](ZstConnectionAdaptor* adp) {
+		ZstEventDispatcher<std::shared_ptr<ZstConnectionAdaptor>>::defer([this](std::shared_ptr<ZstConnectionAdaptor> adp) {
 			adp->on_synchronised_with_stage(this->m_api, this->connected_server());
-			});
+		});
 	}
 
 	void ZstClient::leave_stage()
@@ -477,7 +483,9 @@ namespace Showtime::detail
 			this->set_is_connecting(false);
 			this->set_connected_to_stage(false);
 
-			this->ZstEventDispatcher<ZstTransportAdaptor*>::invoke([](ZstTransportAdaptor* adaptor) { adaptor->send_msg(ZstMsgKind::CLIENT_LEAVING); });
+			ZstEventDispatcher<std::shared_ptr<ZstTransportAdaptor>>::invoke([](std::shared_ptr<ZstTransportAdaptor> adaptor) {
+				adaptor->send_msg(ZstMsgKind::CLIENT_LEAVING); 
+			});
 		}
 		else {
 			ZstLog::net(LogLevel::debug, "Not connected to stage. Skipping to cleanup. {}");
@@ -503,16 +511,17 @@ namespace Showtime::detail
 		//Disconnect rest of sockets and timers
 		boost::system::error_code ec;
 		m_heartbeat_timer.cancel(ec);
-		m_heartbeat_timer.wait();
+		//m_heartbeat_timer.wait();
 		ZstLog::net(LogLevel::debug, "Timer cancel status: {}", ec.message());
 		if (m_client_transport)
 			m_client_transport->disconnect();
 
 		//Enqueue event for adaptors
 		m_session->dispatch_disconnected_from_stage();
-		this->ZstEventDispatcher<ZstConnectionAdaptor*>::invoke([this](ZstConnectionAdaptor* adp) {
-			adp->on_disconnected_from_stage(this->m_api, this->m_connected_server);
-			});
+		ZstEventDispatcher<std::shared_ptr<ZstConnectionAdaptor>>::invoke([this](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
+			if(m_api)
+				adaptor->on_disconnected_from_stage(this->m_api, this->m_connected_server);
+		});
 
 		m_connected_server = ZstServerAddress();
 	}
@@ -564,7 +573,9 @@ namespace Showtime::detail
 		};
 
 		//Send message
-		client->ZstEventDispatcher<ZstTransportAdaptor*>::invoke([client, args](ZstTransportAdaptor* adaptor) { adaptor->send_msg(ZstMsgKind::CLIENT_HEARTBEAT, args); });
+		client->ZstEventDispatcher<std::shared_ptr<ZstTransportAdaptor>>::invoke([client, args](std::shared_ptr<ZstTransportAdaptor> adaptor) {
+			adaptor->send_msg(ZstMsgKind::CLIENT_HEARTBEAT, args); 
+		});
 
 		//Loop timer
 		t->expires_at(t->expires_at() + duration);
@@ -655,7 +666,7 @@ namespace Showtime::detail
 				m_service_broadcast_transport->process_events();
 
 				// Process events to transports
-				ZstEventDispatcher<ZstTransportAdaptor*>::process_events();
+				ZstEventDispatcher<std::shared_ptr<ZstTransportAdaptor> >::process_events();
 
 				// Process promise responses
 				m_promise_supervisor.cleanup_response_messages();
@@ -666,9 +677,9 @@ namespace Showtime::detail
 		}
 	}
 
-	ZstClientSession* ZstClient::session()
+	std::shared_ptr<ZstClientSession> ZstClient::session()
 	{
-		return m_session.get();
+		return m_session;
 	}
 
 	void ZstClient::set_is_ending(bool value)
@@ -724,9 +735,9 @@ namespace Showtime::detail
 	{
 		ZstOutputPlug* output_plug = dynamic_cast<ZstOutputPlug*>(plug);
 		if (output_plug) {
-			ZstGraphTransport* transport = NULL;
+			std::shared_ptr<ZstGraphTransport> transport = NULL;
 			if (output_plug->is_reliable()) {
-				transport = m_tcp_graph_transport.get();
+				transport = std::static_pointer_cast<ZstGraphTransport>(m_tcp_graph_transport);
 			}
 #ifdef ZST_BUILD_DRAFT_API
 			else {
@@ -739,7 +750,7 @@ namespace Showtime::detail
 			}
 
 			// Attach plug transport so output plugs can send messages to the graph
-			output_plug_set_transport(output_plug, transport);
+			output_plug_set_transport(output_plug, std::static_pointer_cast<ZstTransportAdaptor>(transport));
 		}
 	}
 }

@@ -19,6 +19,7 @@ public:
 
 	ZST_EXPORT bool is_target_dispatcher_active();
 	ZST_EXPORT void set_target_dispatcher_inactive();
+	ZST_EXPORT bool contains_event_source(std::shared_ptr<ZstEventDispatcherBase> event_source);
 
 private:
 	ZST_EXPORT void add_event_source(std::shared_ptr<ZstEventDispatcherBase> event_source);

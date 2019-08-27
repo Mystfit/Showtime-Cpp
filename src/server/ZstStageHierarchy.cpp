@@ -21,8 +21,8 @@ void ZstStageHierarchy::destroy() {
 void ZstStageHierarchy::set_wake_condition(std::weak_ptr<ZstSemaphore> condition)
 {
     ZstStageModule::set_wake_condition(condition);
-    hierarchy_events().set_wake_condition(condition);
-    synchronisable_events().set_wake_condition(condition);
+    hierarchy_events()->set_wake_condition(condition);
+    synchronisable_events()->set_wake_condition(condition);
 }
 
 ZstPerformer * ZstStageHierarchy::get_local_performer() const {
@@ -79,8 +79,8 @@ void ZstStageHierarchy::on_receive_msg(ZstMessage * msg)
 		ZstTransportArgs args;
 		args.target_endpoint_UUID = sender_identity;
 		args.msg_args = {{ get_msg_arg_name(ZstMsgArg::MSG_ID), stage_msg->id() }};
-		router_events().defer([response, args](ZstTransportAdaptor * adp) {
-			adp->send_msg(response, args);
+		router_events()->defer([response, args](std::shared_ptr<ZstTransportAdaptor> adaptor) {
+			adaptor->send_msg(response, args);
 		});
 	}
 }
@@ -119,7 +119,7 @@ ZstMsgKind ZstStageHierarchy::create_client_handler(ZstStageMessage * msg)
 	ZstPerformerStageProxy * client_proxy = new ZstPerformerStageProxy(client, reliable_address, unreliable_address);
 	synchronisable_set_proxy(client_proxy);
 	synchronisable_set_activation_status(client_proxy, ZstSyncStatus::ACTIVATED);
-	client_proxy->add_adaptor(static_cast<ZstSynchronisableAdaptor*>(this));
+	client_proxy->add_adaptor(ZstSynchronisableAdaptor::downcasted_shared_from_this<ZstSynchronisableAdaptor>());
 
 	//Save our new client
 	m_clients[client_proxy->URI()] = client_proxy;
@@ -200,8 +200,8 @@ void ZstStageHierarchy::whisper_message(ZstPerformer* performer, const ZstMsgKin
 {
 	ZstTransportArgs endpoint_args = args;
 	endpoint_args.target_endpoint_UUID = get_endpoint_UUID_from_client(performer);
-	router_events().defer([this, msg_kind, endpoint_args, performer](ZstTransportAdaptor* adp) {
-		adp->send_msg(msg_kind, endpoint_args);
+	router_events()->defer([this, msg_kind, endpoint_args, performer](std::shared_ptr<ZstTransportAdaptor> adaptor) {
+		adaptor->send_msg(msg_kind, endpoint_args);
 	});
 }
 

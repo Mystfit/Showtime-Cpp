@@ -6,7 +6,7 @@
 #include "adaptors/ZstSynchronisableAdaptor.hpp"
 
 //Template instatiations
-template class ZstEventDispatcher<ZstFactoryAdaptor*>;
+//template class ZstEventDispatcher<ZstFactoryAdaptor*>;
 
 
 ZstEntityFactory::ZstEntityFactory() : 

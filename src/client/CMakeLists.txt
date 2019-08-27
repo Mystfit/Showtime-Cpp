@@ -48,7 +48,16 @@ if(BUILD_SHARED)
     ${SHOWTIME_PRIVATE_SHARED_LINKED_LIBS}
   )
 
-  add_dependencies(${CLIENT_TARGET} ${CORE_TARGET})
+  if(WIN32)
+    # Copy runtime dependencies
+    add_custom_command(TARGET ${CLIENT_TARGET} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:czmq>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+        COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:libzmq>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+        VERBATIM
+    )
+  endif()
+
+  add_dependencies(${CLIENT_TARGET} ${CORE_TARGET_STATIC})
   list(APPEND CLIENT_LIBS ${CLIENT_TARGET})
 endif()
 

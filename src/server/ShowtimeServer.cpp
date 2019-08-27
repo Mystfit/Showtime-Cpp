@@ -2,21 +2,12 @@
 #include "ZstLogging.h"
 #include "ZstStage.h"
 
-ServerHandle zst_create_server(const char * server_name, int port)
+ShowtimeServer::ShowtimeServer(const std::string& name, int port) : m_server(std::make_shared<Showtime::detail::ZstStage>())
 {
-	if(strlen(server_name) < 1){
-		ZstLog::server(LogLevel::error, "Server name is empty");
-		return ServerHandle{ NULL };
-	}
-
-	auto stage = new ZstStage();
-	stage->init_stage(server_name, port);
-	return ServerHandle{ stage };
+	m_server->init(name.c_str(), port);
 }
 
-void zst_destroy_server(const ServerHandle & server)
+void ShowtimeServer::destroy()
 {
-	ZstStage * server_cast = (ZstStage*)server.server_ptr;
-	server_cast->destroy();
-	delete server_cast;
+	m_server->destroy();
 }

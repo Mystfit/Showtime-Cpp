@@ -5,8 +5,7 @@
 class MultipleInheritableEnableSharedFromThis : public std::enable_shared_from_this<MultipleInheritableEnableSharedFromThis>
 {
 public:
-	virtual ~MultipleInheritableEnableSharedFromThis()
-	{}
+	virtual ~MultipleInheritableEnableSharedFromThis() {}
 };
 
 template <class T>
@@ -32,5 +31,11 @@ public:
 	template <class Down>
 	std::weak_ptr<Down> downcasted_weak_from_this() {
 		return std::dynamic_pointer_cast<Down>(MultipleInheritableEnableSharedFromThis::weak_from_this());
+	}
+
+	template <class Derived>
+	std::shared_ptr<Derived> shared_from_base()
+	{
+		return std::static_pointer_cast<Derived>(shared_from_this());
 	}
 };

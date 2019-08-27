@@ -31,8 +31,7 @@ typedef std::shared_ptr<ZstWebsocketSession> ZstWebsocketSessionPtr;
 
 
 class ZstWebsocketServerTransport :
-	public ZstTransportLayer<ZstStageMessage>,
-	public std::enable_shared_from_this<ZstWebsocketServerTransport>
+	public ZstTransportLayer<ZstStageMessage>
 {
 public:
 	ZstWebsocketServerTransport(ZstIOLoop & io);

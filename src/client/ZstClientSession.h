@@ -82,7 +82,7 @@ public:
 	// Submodules access
 	// -----------------
 
-	virtual ZstClientHierarchy * hierarchy() override;
+	virtual std::shared_ptr<ZstHierarchy> hierarchy() override;
 
 
 private:

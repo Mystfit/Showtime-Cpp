@@ -8,10 +8,11 @@
 
 class ZstStageModule {
 public:
+	ZstStageModule();
 	virtual void process_events();
 	virtual void set_wake_condition(std::weak_ptr<ZstSemaphore> condition);
-	ZstEventDispatcher<ZstTransportAdaptor*> & router_events();
+	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstTransportAdaptor> > >& router_events();
 
 private:
-	ZstEventDispatcher<ZstTransportAdaptor*> m_router_events;
+	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstTransportAdaptor> > > m_router_events;
 };

@@ -9,6 +9,7 @@
 #include <mutex>
 #include <memory>
 
+#include "ZstPointerUtils.h"
 #include "ZstLogging.h"
 #include "ZstConstants.h"
 #include "adaptors/ZstEventAdaptor.hpp"
@@ -38,7 +39,7 @@ public:
 };
 
 
-class ZstEventDispatcherBase : public std::enable_shared_from_this<ZstEventDispatcherBase>{
+class ZstEventDispatcherBase : public inheritable_enable_shared_from_this<ZstEventDispatcherBase> {
 public:
 	ZstEventDispatcherBase() : m_has_event(false)
 	{
@@ -55,16 +56,22 @@ public:
 	}
 
 	void add_adaptor(std::shared_ptr<ZstEventAdaptor> adaptor) {
-		//std::lock_guard<std::recursive_mutex> lock(m_mtx);
+		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		this->m_adaptors.insert(adaptor);
-		adaptor->add_event_source(shared_from_this());
+		adaptor->add_event_source(ZstEventDispatcherBase::downcasted_shared_from_this<ZstEventDispatcherBase>());
 	}
 
 	void remove_adaptor(std::shared_ptr<ZstEventAdaptor> adaptor) {
-		//std::lock_guard<std::recursive_mutex> lock(m_mtx);
+		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		adaptor->set_target_dispatcher_inactive();
-		adaptor->remove_event_source(shared_from_this());
+		adaptor->remove_event_source(ZstEventDispatcherBase::downcasted_shared_from_this<ZstEventDispatcherBase>());
 		this->m_adaptors.erase(adaptor);
+	}
+
+	bool contains_adaptor(std::shared_ptr<ZstEventAdaptor> adaptor)
+	{
+		std::lock_guard<std::recursive_mutex> lock(m_mtx);
+		return (this->m_adaptors.find(adaptor) != this->m_adaptors.end()) ? true : false;
 	}
 
 	size_t num_adaptors() {
@@ -72,7 +79,7 @@ public:
 	}
 
 	void remove_all_adaptors() {
-		//std::lock_guard<std::recursive_mutex> lock(m_mtx);
+		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		auto adaptors = m_adaptors;
 		for (auto adaptor : adaptors) {
 			remove_adaptor(adaptor);
@@ -81,7 +88,7 @@ public:
 	}
 
 	void set_wake_condition(std::weak_ptr<ZstSemaphore> condition) {
-		//std::lock_guard<std::recursive_mutex> lock(m_mtx);
+		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		this->m_condition_wake = condition;
 	}
 
@@ -126,8 +133,7 @@ public:
 		}
 		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		for (auto adaptor : this->m_adaptors) {
-			event(std::static_pointer_cast<T>(adaptor));
-			//event(static_cast<T>(adp));
+			event(std::static_pointer_cast<std::pointer_traits<T>::element_type>(adaptor));
 		}
 	}
 
@@ -155,7 +161,7 @@ public:
 
 			std::lock_guard<std::recursive_mutex> lock(m_mtx);
 			for (auto adaptor : m_adaptors) {
-				event.func(std::static_pointer_cast<T>(adaptor));
+				event.func(std::static_pointer_cast<std::pointer_traits<T>::element_type>(adaptor));
 				/*event.func(static_cast<T>(adp));
 				try {
 					event.func(adaptor);

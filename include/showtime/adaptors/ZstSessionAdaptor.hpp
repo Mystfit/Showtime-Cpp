@@ -21,5 +21,5 @@ public:
     ZST_EXPORT virtual void aquire_entity_ownership(ZstEntityBase * entity);
 	ZST_EXPORT virtual void release_entity_ownership(ZstEntityBase * entity);
     
-    ZST_EXPORT virtual ZstHierarchy * hierarchy();
+    ZST_EXPORT virtual std::shared_ptr<ZstHierarchy> hierarchy();
 };

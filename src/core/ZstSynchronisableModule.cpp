@@ -1,5 +1,10 @@
 #include "ZstSynchronisableModule.h"
 
+ZstSynchronisableModule::ZstSynchronisableModule() : 
+	m_synchronisable_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstSynchronisableAdaptor> > >())
+{
+}
+
 ZstSynchronisableModule::~ZstSynchronisableModule()
 {
 }

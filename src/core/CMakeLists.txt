@@ -1,4 +1,4 @@
-message(STATUS "Configuring ${CORE_TARGET} target")
+message(STATUS "Configuring ${CORE_TARGET_STATIC} target")
 
 # Generate version info header file
 set(VERSION_FILE_IN "${CMAKE_CURRENT_LIST_DIR}/ZstVersion.h.in")
@@ -233,9 +233,12 @@ IF(WIN32)
 endif()
 
 # Object target includes
+
+get_target_property(CZMQ_INCLUDE_DIR czmq INTERFACE_INCLUDE_DIRECTORIES)
 target_include_directories(${CORE_TARGET_OBJECTS} 
     PRIVATE
     ${Showtime_PRIVATE_HEADER_DEPENDENCIES}
+    ${CZMQ_INCLUDE_DIR}
     PUBLIC
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${Showtime_INCLUDE_DIRS}>
@@ -254,7 +257,6 @@ target_link_libraries(${CORE_TARGET_OBJECTS}
     PRIVATE 
     ${${CORE_TARGET}_PRIVATE_LINKED_LIBS}
     ${SHOWTIME_PRIVATE_LINKED_LIBS}
-    ${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS}
 )
 
 # Object compile definitions
@@ -275,6 +277,7 @@ target_compile_definitions(${CORE_TARGET_OBJECTS}
 # Static/shared library specific options
 if(BUILD_STATIC)
     list(APPEND CORE_LIBS ${CORE_TARGET_STATIC})
+    target_link_libraries(${CORE_TARGET_STATIC} PRIVATE ${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS})
 endif()
 
 if(BUILD_SHARED)
@@ -282,14 +285,13 @@ if(BUILD_SHARED)
 
     if(WIN32)
         # Copy runtime dependencies
-        add_custom_command(TARGET ${CORE_TARGET} POST_BUILD
+        add_custom_command(TARGET ${CORE_TARGET_STATIC} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:czmq>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
             COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:libzmq>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
             VERBATIM
         )
 
-        # Use all imported object symbols
-        set_target_properties(${CORE_TARGET} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+        target_link_libraries(${CORE_TARGET} PRIVATE ${SHOWTIME_PRIVATE_SHARED_LINKED_LIBS})
     endif()
 endif()
 
@@ -313,6 +315,5 @@ foreach(TARGET ${CORE_LIBS})
         PRIVATE
         ${${CORE_TARGET}_PRIVATE_LINKED_LIBS}
         ${SHOWTIME_PRIVATE_LINKED_LIBS}
-        ${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS}
     )
 endforeach()

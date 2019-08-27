@@ -29,39 +29,42 @@
 class ZstSemaphore;
 
 
-
-class ZstStage : 
-	public ZstTransportAdaptor,
-	public ZstEventDispatcher<ZstTransportAdaptor*>
-{
-public:
-	ZstStage();
-	~ZstStage();
-	void init_stage(const char * stage_name, int port);
-	void destroy();
-	bool is_destroyed();
+namespace Showtime {
+	namespace detail {
+		class ZstStage : 
+			public ZstTransportAdaptor,
+			public ZstEventDispatcher<ZstTransportAdaptor*>
+		{
+		public:
+			ZstStage();
+			~ZstStage();
+			void init(const char * stage_name, int port);
+			void destroy();
+			bool is_destroyed();
 	
-private:
-	bool m_is_destroyed;
-	boost::thread m_stage_eventloop_thread;
-	boost::thread m_stage_timer_thread;
+		private:
+			bool m_is_destroyed;
+			boost::thread m_stage_eventloop_thread;
+			boost::thread m_stage_timer_thread;
 
-	ZstIOLoop m_io;
-	//boost::asio::io_context m_io;
-	void process_events();
-	void timer_loop();
-	void event_loop();
-	std::shared_ptr<ZstSemaphore> m_event_condition;
+			ZstIOLoop m_io;
+			//boost::asio::io_context m_io;
+			void process_events();
+			void timer_loop();
+			void event_loop();
+			std::shared_ptr<ZstSemaphore> m_event_condition;
 
-	//Timers
-	static void stage_heartbeat_timer(boost::asio::deadline_timer * t, ZstStage * stage, boost::posix_time::milliseconds duration);
-	boost::asio::deadline_timer m_heartbeat_timer;
+			//Timers
+			static void stage_heartbeat_timer(boost::asio::deadline_timer * t, ZstStage * stage, boost::posix_time::milliseconds duration);
+			boost::asio::deadline_timer m_heartbeat_timer;
 
-	//Modules
-	std::unique_ptr<ZstStageSession> m_session;
+			//Modules
+			std::shared_ptr<ZstStageSession> m_session;
 	
-	//Transports
-    std::unique_ptr<ZstZMQServerTransport> m_router_transport;
-    std::shared_ptr<ZstWebsocketServerTransport> m_websocket_transport;
-    std::unique_ptr<ZstServiceDiscoveryTransport> m_service_broadcast_transport;
-};
+			//Transports
+			std::shared_ptr<ZstZMQServerTransport> m_router_transport;
+			std::shared_ptr<ZstWebsocketServerTransport> m_websocket_transport;
+			std::shared_ptr<ZstServiceDiscoveryTransport> m_service_broadcast_transport;
+		};
+	}
+}

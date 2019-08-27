@@ -41,8 +41,8 @@ typedef std::unique_ptr<ZstConnectionTimerMap> ZstConnectionTimerMapUnique;
 namespace Showtime {
     namespace detail {
         class ZstClient :
-            public ZstEventDispatcher<ZstTransportAdaptor*>,
-            public ZstEventDispatcher<ZstConnectionAdaptor*>,
+			public ZstEventDispatcher< std::shared_ptr<ZstTransportAdaptor> >,
+            public ZstEventDispatcher< std::shared_ptr<ZstConnectionAdaptor> >,
             public ZstTransportAdaptor,
             public ZstHierarchyAdaptor,
             public ZstPlugLiason,
@@ -85,7 +85,7 @@ namespace Showtime {
             long ping();
             
             //Client modules
-            ZstClientSession * session();
+			std::shared_ptr<ZstClientSession> session();
 
         private:
             //Heartbeat timer
@@ -119,7 +119,7 @@ namespace Showtime {
             std::string m_client_name;
             
             //Server discovery
-            std::unique_ptr<ZstServiceDiscoveryTransport> m_service_broadcast_transport;
+            std::shared_ptr<ZstServiceDiscoveryTransport> m_service_broadcast_transport;
             ZstServerList m_server_beacons;
             bool m_auto_join_stage;
             std::map<std::string, ZstMsgID> m_auto_join_stage_requests;
@@ -135,14 +135,14 @@ namespace Showtime {
             std::unordered_map<ZstURI, ZstMsgID, ZstURIHash> m_pending_peer_connections;
             
             //Client modules
-            std::unique_ptr<ZstClientSession> m_session;
+            std::shared_ptr<ZstClientSession> m_session;
 
             //Transports
-            std::unique_ptr<ZstTCPGraphTransport> m_tcp_graph_transport;
+            std::shared_ptr<ZstTCPGraphTransport> m_tcp_graph_transport;
         #ifdef ZST_BUILD_DRAFT_API
-            std::unique_ptr<ZstUDPGraphTransport> m_udp_graph_transport;
+            std::shared_ptr<ZstUDPGraphTransport> m_udp_graph_transport;
         #endif
-            std::unique_ptr<ZstZMQClientTransport> m_client_transport;
+            std::shared_ptr<ZstZMQClientTransport> m_client_transport;
 
             //Timers
             boost::thread m_client_timer_thread;

@@ -292,30 +292,34 @@ namespace ZstTest
 	public:
         std::shared_ptr<ShowtimeClient> client;
         
-        FixtureInit() : client(std::make_shared<ShowtimeClient>()){
+        FixtureInit() : client(std::make_shared<ShowtimeClient>())
+		{
 			client->init("test_performer", true);
             client->poll_once();
 		}
 
 		~FixtureInit()
 		{
+			client->destroy();
 		}
 	};
 	
 
 	class FixtureInitAndCreateServer : public FixtureInit {
 	public:
-		FixtureInitAndCreateServer() {
-			m_stage_server = zst_create_server(TEST_SERVER_NAME, STAGE_ROUTER_PORT);
+		FixtureInitAndCreateServer() 
+		{
+			m_stage_server = std::make_shared< ShowtimeServer>(TEST_SERVER_NAME, STAGE_ROUTER_PORT);
 			TAKE_A_BREATH
 			client->poll_once();
 		}
 
-		~FixtureInitAndCreateServer() {
-			zst_destroy_server(m_stage_server);
+		~FixtureInitAndCreateServer() 
+		{
+			m_stage_server->destroy();
 		}
 	private:
-		ServerHandle m_stage_server;
+		std::shared_ptr<ShowtimeServer> m_stage_server;
 	};
 
 

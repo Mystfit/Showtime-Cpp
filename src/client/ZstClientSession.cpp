@@ -35,13 +35,13 @@ void ZstClientSession::flush_events()
 void ZstClientSession::dispatch_connected_to_stage()
 {
 	//Activate all owned entities
-	synchronisable_enqueue_activation(static_cast<ZstClientHierarchy*>(hierarchy())->get_local_performer());
+	synchronisable_enqueue_activation(hierarchy()->get_local_performer());
 }
 
 void ZstClientSession::dispatch_disconnected_from_stage()
 {
 	//Deactivate all owned entities
-	synchronisable_enqueue_deactivation(static_cast<ZstClientHierarchy*>(hierarchy())->get_local_performer());
+	synchronisable_enqueue_deactivation(hierarchy()->get_local_performer());
 }
 
 
@@ -93,7 +93,7 @@ void ZstClientSession::on_receive_msg(ZstMessage * msg)
 
 void ZstClientSession::aquire_entity_ownership(ZstEntityBase* entity)
 {
-	stage_events().invoke([entity](ZstTransportAdaptor* adaptor) {
+	stage_events()->invoke([entity](std::shared_ptr<ZstTransportAdaptor> adaptor) {
 		ZstTransportArgs args;
 		args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
 		args.msg_args = { { get_msg_arg_name(ZstMsgArg::PATH), entity->URI().path() } };
@@ -106,7 +106,7 @@ void ZstClientSession::aquire_entity_ownership(ZstEntityBase* entity)
 
 void ZstClientSession::release_entity_ownership(ZstEntityBase* entity)
 {
-    stage_events().invoke([entity](ZstTransportAdaptor* adaptor) {
+    stage_events()->invoke([entity](std::shared_ptr<ZstTransportAdaptor> adaptor) {
         ZstTransportArgs args;
 		args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
 		args.msg_args = { { get_msg_arg_name(ZstMsgArg::PATH), entity->URI().path() } };
@@ -184,7 +184,7 @@ void ZstClientSession::plug_received_value(ZstInputPlug * plug)
 		throw std::runtime_error("Could not find parent of input plug");
 	}
 	ZstURI plug_path = plug->URI();
-	compute_events().defer([this, parent, plug_path](ZstComputeAdaptor * adaptor) {
+	compute_events()->defer([this, parent, plug_path](std::shared_ptr<ZstComputeAdaptor> adaptor) {
 		//Make sure the entity still exists before running 
 		ZstInputPlug * plug = static_cast<ZstInputPlug*>(this->hierarchy()->find_entity(plug_path));
 		if(plug)
@@ -204,10 +204,12 @@ ZstCable * ZstClientSession::connect_cable(ZstInputPlug * input, ZstOutputPlug *
 	cable = ZstSession::connect_cable(input, output, sendtype);
 	
 	if (cable) {
-		stage_events().invoke([this, sendtype, cable](ZstTransportAdaptor* adaptor) {
+		stage_events()->invoke([this, sendtype, cable](std::shared_ptr<ZstTransportAdaptor> adaptor) {
 			ZstTransportArgs args;
 			args.msg_send_behaviour = sendtype;
-			args.on_recv_response = [this, cable](ZstMessageReceipt response) { this->connect_cable_complete(response, cable); };
+			args.on_recv_response = [this, cable](ZstMessageReceipt response) { 
+				this->connect_cable_complete(response, cable); 
+			};
 			cable->get_address().write_json(args.msg_payload);
 			adaptor->send_msg(ZstMsgKind::CREATE_CABLE, args);
 		});
@@ -234,7 +236,7 @@ void ZstClientSession::destroy_cable(ZstCable * cable, const ZstTransportRequest
 
 	ZstSession::destroy_cable(cable, sendtype);
 	
-	stage_events().invoke([this, cable, sendtype](ZstTransportAdaptor * adaptor) {
+	stage_events()->invoke([this, cable, sendtype](std::shared_ptr<ZstTransportAdaptor> adaptor) {
 		ZstTransportArgs args;
 		args.msg_send_behaviour = sendtype;
 		args.on_recv_response = [this, cable](ZstMessageReceipt response) { this->destroy_cable_complete(response, cable); };
@@ -251,7 +253,7 @@ bool ZstClientSession::observe_entity(ZstEntityBase * entity, const ZstTransport
 		return false;
 	}
 
-	stage_events().invoke([this, entity, sendtype](ZstTransportAdaptor * adaptor) {
+	stage_events()->invoke([this, entity, sendtype](std::shared_ptr<ZstTransportAdaptor> adaptor) {
 		ZstTransportArgs args;
 		args.msg_send_behaviour = sendtype;
 		args.msg_args = { { get_msg_arg_name(ZstMsgArg::OUTPUT_PATH), entity->URI().first().path() } };
@@ -287,7 +289,7 @@ void ZstClientSession::observe_entity_complete(ZstMessageReceipt response, ZstEn
 // Submodules
 // -----------------
 
-ZstClientHierarchy * ZstClientSession::hierarchy()
+std::shared_ptr<ZstHierarchy> ZstClientSession::hierarchy()
 {
-	return m_hierarchy.get();
+	return m_hierarchy;
 }

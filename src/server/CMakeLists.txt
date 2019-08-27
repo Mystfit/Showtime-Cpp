@@ -55,7 +55,7 @@ if(BUILD_SHARED)
     ${SHOWTIME_PRIVATE_SHARED_LINKED_LIBS}
   )
 
-  add_dependencies(${SERVER_TARGET} ${CORE_TARGET})
+  add_dependencies(${SERVER_TARGET} ${CORE_TARGET_STATIC})
   list(APPEND SERVER_LIBS ${SERVER_TARGET})
 endif()
 

@@ -21,6 +21,7 @@ void ZstWebsocketServerTransport::init()
 
 void ZstWebsocketServerTransport::destroy()
 {
+	ZstTransportLayerBase::destroy();
 }
 
 void ZstWebsocketServerTransport::bind(const std::string& address)
@@ -89,7 +90,7 @@ void ZstWebsocketServerTransport::do_accept()
 	// The new connection gets its own strand
 	m_acceptor.async_accept(
 		net::make_strand(m_ioc),
-		beast::bind_front_handler(&ZstWebsocketServerTransport::on_accept, shared_from_this())
+		beast::bind_front_handler(&ZstWebsocketServerTransport::on_accept, ZstWebsocketServerTransport::downcasted_shared_from_this<ZstWebsocketServerTransport>())
 	);
 }
 
@@ -104,7 +105,7 @@ void ZstWebsocketServerTransport::on_accept(beast::error_code ec, tcp::socket so
 		ZstLog::net(LogLevel::debug, "Websocket received new connection from {}", socket.remote_endpoint().address().to_string());
 
 		// Create the session and run it
-		auto session = std::make_shared<ZstWebsocketSession>(std::move(socket), shared_from_this());
+		auto session = std::make_shared<ZstWebsocketSession>(std::move(socket), ZstWebsocketServerTransport::downcasted_shared_from_this<ZstWebsocketServerTransport>());
 		session->run();
 		m_sessions.insert(std::pair<uuid, ZstWebsocketSessionPtr>(session->endpoint_UUID(), session));
 	}

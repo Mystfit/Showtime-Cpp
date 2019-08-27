@@ -39,12 +39,12 @@ public:
 	ZST_CLIENT_EXPORT void poll_once();
 
 	//Adaptors
-    ZST_CLIENT_EXPORT void add_connection_adaptor(ZstConnectionAdaptor * adaptor);
-	ZST_CLIENT_EXPORT void add_session_adaptor(ZstSessionAdaptor * adaptor);
-	ZST_CLIENT_EXPORT void add_hierarchy_adaptor(ZstHierarchyAdaptor * adaptor);
-    ZST_CLIENT_EXPORT void remove_connection_adaptor(ZstConnectionAdaptor * adaptor);
-	ZST_CLIENT_EXPORT void remove_session_adaptor(ZstSessionAdaptor * adaptor);
-	ZST_CLIENT_EXPORT void remove_hierarchy_adaptor(ZstHierarchyAdaptor * adaptor);
+    ZST_CLIENT_EXPORT void add_connection_adaptor(std::shared_ptr<ZstConnectionAdaptor> adaptor);
+	ZST_CLIENT_EXPORT void add_session_adaptor(std::shared_ptr<ZstSessionAdaptor> adaptor);
+	ZST_CLIENT_EXPORT void add_hierarchy_adaptor(std::shared_ptr<ZstHierarchyAdaptor> adaptor);
+    ZST_CLIENT_EXPORT void remove_connection_adaptor(std::shared_ptr<ZstConnectionAdaptor> adaptor);
+	ZST_CLIENT_EXPORT void remove_session_adaptor(std::shared_ptr<ZstSessionAdaptor> adaptor);
+	ZST_CLIENT_EXPORT void remove_hierarchy_adaptor(std::shared_ptr<ZstHierarchyAdaptor> adaptor);
 	
 	//Entity activation/deactivation
 	ZST_CLIENT_EXPORT void deactivate_entity(ZstEntityBase * entity);

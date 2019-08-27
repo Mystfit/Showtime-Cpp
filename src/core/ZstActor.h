@@ -3,6 +3,8 @@
 #include <iostream>
 #include <unordered_map>
 #include <functional>
+#include <mutex>
+#include <boost/thread.hpp>
 #include "ZstExports.h"
 
 //Forward declared typedefs from CZMQ
@@ -29,6 +31,7 @@ public:
 	ZST_EXPORT int attach_timer(int delay, std::function<void()> timer_func);
 	ZST_EXPORT void detach_timer(int timer_id);
 	ZST_EXPORT void attach_pipe_listener(zsock_t* sock, zloop_reader_fn handler, void *args);
+	ZST_EXPORT void remove_pipe_listener(zsock_t* sock);
 	ZST_EXPORT int send_to_socket(zsock_t* sock, zmsg_t* msg);
 
 	ZST_EXPORT void self_test();
@@ -39,7 +42,13 @@ private:
 	//Loop
 	zloop_t * m_loop;
 	bool m_is_running;
-	void start_polling(zsock_t * pipe);
+
+	//Synchronisation
+	std::mutex m_mtx;
+
+	//Thread
+	void actor_loop_func();
+	boost::thread m_loop_thread;
 
 	//CZMQ Actor
 	zactor_t *m_loop_actor;

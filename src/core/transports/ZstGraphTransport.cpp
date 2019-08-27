@@ -28,6 +28,8 @@ void ZstGraphTransport::init()
 
 void ZstGraphTransport::destroy()
 {
+	m_graph_actor.stop_loop();
+	destroy_graph_sockets();
 	ZstTransportLayerBase::destroy();
 }
 

@@ -55,7 +55,8 @@ public:
 	// Modules
 	// -------
 
-	ZstStageHierarchy * hierarchy() override;
+	std::shared_ptr<ZstHierarchy> hierarchy() override;
+	std::shared_ptr<ZstStageHierarchy> stage_hierarchy();
 
 private:
     std::shared_ptr<ZstStageHierarchy> m_hierarchy;

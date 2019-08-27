@@ -36,3 +36,9 @@ void ZstEventAdaptor::remove_event_source(std::shared_ptr<ZstEventDispatcherBase
 	std::lock_guard<std::recursive_mutex> lock(m_mtx);
 	m_event_sources.erase(event_source);
 }
+
+bool ZstEventAdaptor::contains_event_source(std::shared_ptr<ZstEventDispatcherBase> event_source)
+{
+	std::lock_guard<std::recursive_mutex> lock(m_mtx);
+	return (m_event_sources.find(event_source) != m_event_sources.end()) ? true : false;
+}

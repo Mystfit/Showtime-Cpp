@@ -9,13 +9,7 @@ ZstServiceDiscoveryTransport::ZstServiceDiscoveryTransport() : m_beacon(NULL)
 
 ZstServiceDiscoveryTransport::~ZstServiceDiscoveryTransport()
 {
-    stop_broadcast();
-    stop_listening();
-    //m_beacon_actor.stop_loop();
-    if(m_beacon){
-        zactor_destroy(&m_beacon);
-        zst_zmq_dec_ref_count();
-    }
+	destroy();
 }
 
 void ZstServiceDiscoveryTransport::init(int port)
@@ -46,6 +40,13 @@ void ZstServiceDiscoveryTransport::init()
 
 void ZstServiceDiscoveryTransport::destroy()
 {
+	stop_broadcast();
+	stop_listening();
+	m_beacon_actor.stop_loop();
+	if (m_beacon) {
+		zactor_destroy(&m_beacon);
+		zst_zmq_dec_ref_count();
+	}
     ZstTransportLayerBase::destroy();
 }
 

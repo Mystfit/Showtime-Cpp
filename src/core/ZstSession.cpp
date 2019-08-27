@@ -40,7 +40,7 @@ void ZstSession::flush_events()
 void ZstSession::init()
 {
     //Add adaptors
-	m_compute_events->add_adaptor(ZstComputeAdaptor::shared_from_this());
+	m_compute_events->add_adaptor(ZstComputeAdaptor::downcasted_shared_from_this<ZstComputeAdaptor>());
     
     //Attach session as an adaptor to the hierarchy module to handle events that will need to modify cables
     hierarchy()->hierarchy_events()->add_adaptor(ZstHierarchyAdaptor::downcasted_shared_from_this<ZstHierarchyAdaptor>());

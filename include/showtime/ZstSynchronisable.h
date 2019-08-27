@@ -22,8 +22,8 @@ public:
 	ZST_EXPORT ZstSynchronisable(const ZstSynchronisable & other);
     ZST_EXPORT virtual ~ZstSynchronisable();
     
-    ZST_EXPORT virtual void add_adaptor(std::shared_ptr<ZstSynchronisableAdaptor> & adaptor);
-    ZST_EXPORT virtual void remove_adaptor(std::shared_ptr<ZstSynchronisableAdaptor> & adaptor);
+    ZST_EXPORT virtual void add_adaptor(std::shared_ptr<ZstSynchronisableAdaptor> adaptor);
+    ZST_EXPORT virtual void remove_adaptor(std::shared_ptr<ZstSynchronisableAdaptor> adaptor);
 	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstSynchronisableAdaptor> > > & synchronisable_events();
 
     ZST_EXPORT virtual void on_activation(){};

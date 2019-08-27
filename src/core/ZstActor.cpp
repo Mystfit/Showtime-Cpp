@@ -22,27 +22,35 @@ void ZstActor::destroy()
 
 void ZstActor::init(const char * name)
 {
+	std::lock_guard<std::mutex> lock(m_mtx);
 	m_actor_name = std::string(name);
 	m_loop = zloop_new();
-	zloop_set_verbose(m_loop, false);
+	//zloop_set_verbose(m_loop, true);
 	zloop_set_nonstop(m_loop, true);
 	zst_zmq_inc_ref_count();
 }
 
 void ZstActor::start_loop()
 {
+	std::lock_guard<std::mutex> lock(m_mtx);
 	m_is_running = true;
 	m_loop_actor = zactor_new(actor_thread_func, this);
+	//m_loop_thread = boost::thread(boost::bind(&ZstActor::actor_loop_func, this));
 }
 
 void ZstActor::stop_loop()
 {
-    if(m_loop_actor){
-        zactor_destroy(&m_loop_actor);
-        zst_zmq_dec_ref_count();
-    }
-	m_loop_actor = NULL;
-	m_is_running = false;
+	std::lock_guard<std::mutex> lock(m_mtx);
+	if (m_is_running) {
+		if (m_loop_actor) {
+			zactor_destroy(&m_loop_actor);
+			zst_zmq_dec_ref_count();
+		}
+
+		m_loop = NULL;
+		m_loop_actor = NULL;
+		m_is_running = false;
+	}
 }
 
 bool ZstActor::is_running()
@@ -55,25 +63,31 @@ const char * ZstActor::name() const
 	return m_actor_name.c_str();
 }
 
-void ZstActor::start_polling(zsock_t * pipe)
-{
-	zloop_reader(m_loop, pipe, s_handle_actor_pipe, this);
-	zloop_start(m_loop);
-}
-
 void ZstActor::actor_thread_func(zsock_t * pipe, void * args)
 {
 	//We need to signal the actor pipe to get things going
 	zsock_signal(pipe, 0);
 
 	ZstActor* actor = (ZstActor*)args;
-	actor->start_polling(pipe);
-	
-	zloop_t * loop = actor->m_loop;
-	zloop_destroy(&loop);
-	actor->m_loop = NULL;
+
+	//Register actor to the loop it controls so it can respond to incoming messages
+	zloop_reader(actor->m_loop, pipe, s_handle_actor_pipe, actor);
+
+	//Blocking loop start
+	zloop_start(actor->m_loop);
+
+	//Cleanup when loop returns
+	zloop_destroy(&actor->m_loop);
 }
 
+void ZstActor::actor_loop_func()
+{
+	////Blocking loop start
+	//zloop_start(m_loop);
+
+	////Cleanup when loop returns
+	//zloop_destroy(&m_loop);
+}
 
 int ZstActor::s_handle_actor_pipe(zloop_t * loop, zsock_t * sock, void * args)
 {
@@ -130,13 +144,22 @@ void ZstActor::attach_pipe_listener(zsock_t * sock, zloop_reader_fn handler, voi
 	zloop_reader(m_loop, sock, handler, args);
 }
 
+void ZstActor::remove_pipe_listener(zsock_t* sock)
+{
+	zloop_reader_end(m_loop, sock);
+}
+
 int ZstActor::send_to_socket(zsock_t* sock, zmsg_t* msg)
 {
-	return zsock_send(m_loop_actor, "spm", "s", sock, msg);
+	int result = -1;
+	if(m_loop_actor)
+		result = zsock_send(m_loop_actor, "spm", "s", sock, msg);
+	return result;
 }
 
 int ZstActor::attach_timer(int delay, std::function<void()> timer_func)
 {
+	std::lock_guard<std::mutex> lock(m_mtx);
 	int timer_id = zloop_timer(m_loop, delay, 0, ZstActor::s_handle_timer, this);
 	m_timers[timer_id] = timer_func;
 	return timer_id;
