@@ -285,7 +285,7 @@ if(BUILD_SHARED)
 
     if(WIN32)
         # Copy runtime dependencies
-        add_custom_command(TARGET ${CORE_TARGET_STATIC} POST_BUILD
+        add_custom_command(TARGET ${CORE_TARGET} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:czmq>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
             COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:libzmq>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
             VERBATIM

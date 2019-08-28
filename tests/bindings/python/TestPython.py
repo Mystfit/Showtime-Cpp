@@ -1,10 +1,13 @@
+import unittest
 import time
 import os
 import sys
 import threading
 import subprocess
 import showtime.showtime as ZST
-from showtime.showtime import ZstComponent
+from showtime.showtime import ZstComponent, ShowtimeClient, ShowtimeServer
+
+print(dir(ZstComponent))
 
 
 class SinkComponent(ZstComponent):
@@ -12,10 +15,14 @@ class SinkComponent(ZstComponent):
         ZstComponent.__init__(self, name)
         self.plug = self.create_input_plug("in", ZST.ZST_INT)
         self.last_received_value = 0
+        self.cv = threading.Condition()
 
     def compute(self, plug):
         self.last_received_value = plug.int_at(0)
-        ZST.app(ZST.notification, "Sink received value: {}".format(self.last_received_value))
+        ZST.app(showtime.notification, "Sink received value: {}".format(self.last_received_value))
+        self.cv.acquire()
+        self.cv.notify()
+        self.cv.release()
 
 
 class PushComponent(ZstComponent):
@@ -29,8 +36,9 @@ class PushComponent(ZstComponent):
 
 
 class EventLoop(threading.Thread):
-    def __init__(self):
+    def __init__(self, client):
         threading.Thread.__init__(self)
+        self.client = client
         self.setDaemon(True)
         self.is_running = True
 
@@ -39,51 +47,59 @@ class EventLoop(threading.Thread):
 
     def run(self):
         while self.is_running:
-            ZST.poll_once()
+            self.client.poll_once()
             time.sleep(0.001)
 
 
-if __name__ == "__main__":    
-    server = ZST.create_server("python_server", ZST.STAGE_ROUTER_PORT);
-    
-    # Start client
-    ZST.init("python_test", True)
-    ZST.join("127.0.0.1")
-    
-    # Set up event loop
-    event_loop = EventLoop()
-    event_loop.start()
+class Test_LibraryStart(unittest.TestCase):
+    def setUp(self):
+        # Client/server
+        server_name = "python_server"
+        self.server = ShowtimeServer(server_name)
+        self.client = ShowtimeClient()
 
-    # Create components
-    push = PushComponent("push")
-    sink = SinkComponent("sink")
+        # Set up event loop
+        self.event_loop = EventLoop(self.client)
+        self.event_loop.start()
 
-    # Activate entities
-    ZST.get_root().add_child(push)
-    ZST.get_root().add_child(sink)
+        # Join server
+        self.client.init("test_python", True)
+        self.client.auto_join_by_name(server_name)
 
-    # Connect cables
-    ZST.connect_cable(sink.plug, push.plug)
-    
-    # Send values
-    sending_val = 42
-    push.send(42)
+    def tearDown(self):
+        self.event_loop.stop()
+        self.client.destroy()
+        self.server.destroy()
 
-    # Wait until sink receives value
-    max_loops = 100
-    loops = 0
-    while sink.last_received_value != sending_val and loops < max_loops:
-        time.sleep(0.01)
-        loops += 1
-    status = 0 if sink.last_received_value == sending_val else 1
-    print("Looped {} times. Last received value: {}".format(loops, sink.last_received_value))
+    def test_send_graph_message(self):
+        push = PushComponent("push")
+        sink = SinkComponent("sink")
+        ZST.app(ZST.warn, "Created entites")
 
-    # Cleanup
-    event_loop.stop()
-    ZST.destroy_server(server)
-    ZST.destroy()
-    
-    print("Python test finished with status {}".format(status))
-    if(status):
-        sys.exit(status)
-    
+        # Activate entities
+        self.client.get_root().add_child(push)
+        ZST.app(ZST.warn, "Push activated")
+
+        self.client.get_root().add_child(sink)
+        ZST.app(ZST.warn, "Sink activated")
+
+        # Connect cables
+        cable = self.client.connect_cable(sink.plug, push.plug)
+        ZST.app(ZST.notification, "Created cable")
+        self.assertIsNotNone(cable)
+        
+        # Send values
+        sending_val = 42
+        push.send(42)
+
+        # Wait for value
+        sink.cv.acquire()
+        sink.cv.wait(5.0)
+        sink.cv.release()
+
+        # Check value
+        self.assertIsEqual(sink.last_received_value, sending_val)
+
+
+if __name__ == '__main__':
+    unittest.main()

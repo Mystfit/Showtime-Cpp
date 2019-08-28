@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <!--<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>-->
+    <SchemaVersion>2.0</SchemaVersion>
+    <!--<ProjectGuid>{6bc1ff07-e3aa-44ed-9ad6-ab9200d46c92}</ProjectGuid>-->
+    <ProjectHome />
+    <StartupFile>${CMAKE_CURRENT_LIST_DIR}/TestPython.py</StartupFile>
+    <SearchPath>${CMAKE_SWIG_ROOT_OUTDIR}/python</SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <InterpreterId>Global|PythonCore|${BINDINGS_PYTHON_VERSION_MAJOR}.${BINDINGS_PYTHON_VERSION_MINOR}</InterpreterId>
+  </PropertyGroup>
+  <!--<PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <PropertyGroup>
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
+  </PropertyGroup>-->
+  <ItemGroup>
+    <Compile Include="${CMAKE_CURRENT_LIST_DIR}/TestPython.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="${CMAKE_BINARY_DIR}/ShowtimePython.vcxproj">
+      <Name>ShowtimePython</Name>
+      <Project>{00000000-0000-0000-0000-000000000000}</Project>
+      <!--<Project>{e3ff3729-ab20-3f4d-a074-764a074442bf}</Project>-->
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="Global|PythonCore|${BINDINGS_PYTHON_VERSION_MAJOR}.${BINDINGS_PYTHON_VERSION_MINOR}" />
+  </ItemGroup>
+  <!--<Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />-->
+</Project>
