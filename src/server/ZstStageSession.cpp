@@ -188,7 +188,7 @@ ZstMsgKind ZstStageSession::observe_entity_handler(ZstStageMessage * msg, ZstPer
 	//Start the client connection
 	ZstTransportArgs args;
 	args.msg_ID = msg->id();
-	connect_clients(observed_performer, sender, [this, observed_performer, sender, &args](ZstMessageReceipt receipt) {
+	connect_clients(observed_performer, sender, [this, sender, args](ZstMessageReceipt receipt) {
 		stage_hierarchy()->whisper_message(sender, receipt.status, args);
 	});
 
