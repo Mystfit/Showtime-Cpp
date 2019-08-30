@@ -84,12 +84,12 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTE
 set(CMAKE_SWIG_ROOT_OUTDIR ${CMAKE_BINARY_DIR}/bindings)
 set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR})
 
-# Set shared and static library flags
+# Set build flags
 option(BUILD_STATIC "Build static Showtime library" OFF)
 option(BUILD_SHARED "Build shared Showtime library" ON)
 option(BUILD_DRAFTS "Build with experimental draft support" OFF)
 option(BUILD_SERVER_LAUNCHER "Build server launcher program" ON)
-
+option(BUILD_FLATBUFFERS "Build with flatbuffer support" ON)
 
 # Set showtime variables
 set(Showtime_COMPILED_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include/")
@@ -142,18 +142,6 @@ if(NOT Boost_FOUND)
     find_package(Boost COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
 endif()
 
-set(Boost_HEADER_TARGET "Boost::boost")
-set(Boost_LOG_TARGET "Boost::log")
-set(Boost_LOG_SETUP_TARGET "Boost::log_setup")
-set(Boost_THREAD_TARGET "Boost::thread")
-set(Boost_SYSTEM_TARGET "Boost::system")
-set(Boost_CONTEXT_TARGET "Boost::context")
-set(Boost_FIBER_TARGET "Boost::fiber")
-set(Boost_DATE_TIME_TARGET "Boost::date_time")
-set(Boost_CHRONO_TARGET "Boost::chrono")
-set(Boost_ATOMIC_TARGET "Boost::atomic")
-set(Boost_REGEX_TARGET "Boost::regex")
-set(Boost_TEST_TARGET "Boost::unit_test_framework")
 
 # Msgpack, swig
 # ------------------------------
@@ -180,27 +168,37 @@ if(NOT czmq_FOUND)
     find_package(czmq REQUIRED)
 endif()
 
+if(BUILD_FLATBUFFERS)
+    cmake_policy(SET CMP0048 NEW)
+    add_subdirectory(
+        ${Showtime_HEADER_DEPENDENCIES_DIR}/flatbuffers 
+        ${CMAKE_CURRENT_BINARY_DIR}/flatbuffers-build
+        EXCLUDE_FROM_ALL
+    )
+endif()
+
 # Set internal linked library lists for our targets
 set(SHOWTIME_PRIVATE_LINKED_LIBS 
-    ${Boost_SYSTEM_TARGET}
-    ${Boost_THREAD_TARGET}
-    ${Boost_DATE_TIME_TARGET}
-    ${Boost_CHRONO_TARGET}
-    ${Boost_ATOMIC_TARGET}
-    ${Boost_REGEX_TARGET}
-    ${Boost_LOG_TARGET}
-    ${Boost_LOG_SETUP_TARGET}
-    ${Boost_CONTEXT_TARGET}
-    ${Boost_FIBER_TARGET}
-    ${Boost_TEST_TARGET}
-    ${Boost_HEADER_TARGET}
+    Boost::system
+    Boost::thread
+    Boost::date_time
+    Boost::chrono
+    Boost::atomic
+    Boost::regex
+    Boost::log
+    Boost::log_setup
+    Boost::context
+    Boost::fiber
+    Boost::unit_test_framework
+    Boost::boost
     Boost::disable_autolinking
+    flatbuffers
     ${CMAKE_THREAD_LIBS_INIT}
 )
 
 # Boost libraries that MUST be linked shared
 set(Showtime_PUBLIC_SHARED_BOOST_LINKED_LIBS
-    ${Boost_CONTEXT_LIBRARY_DEBUG}
+    #${Boost_CONTEXT_LIBRARY_DEBUG}
 )
 
 # Boost shared DLLs
