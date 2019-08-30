@@ -1,0 +1,9 @@
+[submodule "submodules/flatbuffers"]
+	path = submodules/flatbuffers
+	url = https://github.com/google/flatbuffers.git
+[submodule "submodules/cf"]
+	path = submodules/cf
+	url = https://github.com/rpz80/cf.git
+[submodule "submodules/concurrentqueue"]
+	path = submodules/concurrentqueue
+	url = https://github.com/cameron314/concurrentqueue.git
