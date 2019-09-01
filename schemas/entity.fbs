@@ -1,0 +1,45 @@
+namespace showtime;
+
+enum EntityType : byte {
+    COMPONENT = 0,
+    PERFORMER,
+    PLUG,
+    FACTORY
+}
+
+enum PlugDirection : byte {
+    NONE = 0,
+    IN_JACK,
+    OUT_JACK
+}
+
+enum ZstValueType : byte {
+    NONE = 0,
+    INT,
+    FLOAT,
+    STRING
+}
+
+table Entity {
+    //Entity
+    URI:string;
+    entity_type:EntityType;
+    owner:string;
+
+    //Component
+    component_type:string;
+
+    //Plug
+    plug_direction: PlugDirection;
+}
+
+table EntityHierarchy {
+    root:Entity;
+    children:[Entity];
+}
+
+
+table Cable {
+    input_URI:string;
+    output_URI:string;
+}

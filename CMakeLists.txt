@@ -95,7 +95,7 @@ option(BUILD_FLATBUFFERS "Build with flatbuffer support" ON)
 set(Showtime_COMPILED_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include/")
 set(Showtime_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/include/showtime/")
 set(Showtime_ALL_INCLUDE_DIRS ${Showtime_COMPILED_INCLUDE_DIRS} ${Showtime_INCLUDE_DIRS})
-set(Showtime_HEADER_DEPENDENCIES_DIR "${CMAKE_SOURCE_DIR}/src/dependencies")
+set(Showtime_SUBMODULE_DEPENDENCIES_DIR "${CMAKE_SOURCE_DIR}/submodules")
 
 set(Showtime_API_INTERFACE "")
 set(Showtime_LIBRARY_TARGETS "")
@@ -143,9 +143,8 @@ if(NOT Boost_FOUND)
 endif()
 
 
-# Msgpack, swig
+# swig
 # ------------------------------
-find_package(MsgPack CONFIG REQUIRED)
 find_package(SWIG)
 if(SWIG_FOUND)
     cmake_policy(SET CMP0078 NEW)
@@ -170,11 +169,22 @@ endif()
 
 if(BUILD_FLATBUFFERS)
     cmake_policy(SET CMP0048 NEW)
-    add_subdirectory(
-        ${Showtime_HEADER_DEPENDENCIES_DIR}/flatbuffers 
-        ${CMAKE_CURRENT_BINARY_DIR}/flatbuffers-build
-        EXCLUDE_FROM_ALL
+    find_package(flatbuffers REQUIRED)
+    if(NOT FLATBUFFERS_FLATC_EXECUTABLE)
+        find_program(FLATBUFFERS_FLATC_EXECUTABLE flatc)
+    endif()
+    set(FLATBUFFER_HEADER_OUTPUT 
+        "${CMAKE_CURRENT_BINARY_DIR}/schemas/stage_message_generated.h"
+        "${CMAKE_CURRENT_BINARY_DIR}/schemas/entity_generated.h"
     )
+    set(FLATC_ARGS 
+        "-c"
+        "-o" "${CMAKE_CURRENT_BINARY_DIR}/schemas/"
+        "-I" "${CMAKE_SOURCE_DIR}/schemas/"
+        "${CMAKE_SOURCE_DIR}/schemas/stage_message.fbs"
+        "${CMAKE_SOURCE_DIR}/schemas/entity.fbs"
+    )
+    execute_process(COMMAND ${FLATBUFFERS_FLATC_EXECUTABLE} ${FLATC_ARGS})
 endif()
 
 # Set internal linked library lists for our targets
@@ -215,21 +225,19 @@ if(WIN32)
 endif()
 
 set(Showtime_PRIVATE_HEADER_DEPENDENCIES
-    $<BUILD_INTERFACE:${Showtime_HEADER_DEPENDENCIES_DIR}>
-    $<BUILD_INTERFACE:${Showtime_HEADER_DEPENDENCIES_DIR}/cf>
-    $<BUILD_INTERFACE:${Showtime_HEADER_DEPENDENCIES_DIR}/concurrentqueue> 
+    $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}>
+    $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/cf>
+    $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/concurrentqueue> 
 )
 
 set(SHOWTIME_PRIVATE_STATIC_LINKED_LIBS
     czmq-static 
     libzmq-static
-    # msgpackc-static
 )
 
 set(SHOWTIME_PRIVATE_SHARED_LINKED_LIBS
     czmq
     libzmq
-    # msgpackc
 )
 
 

@@ -1,0 +1,103 @@
+include "entity.fbs";
+
+namespace showtime;
+
+enum Signal : byte {
+    EMPTY = 0,
+    OK,
+    CLIENT_SYNC,
+    CLIENT_LEAVING,
+    CLIENT_HEARTBEAT,
+
+    //Error signals
+    ERR_MSG_TYPE_UNKNOWN,
+    ERR_STAGE_BAD_CABLE_DISCONNECT_REQUEST,
+    ERR_STAGE_BAD_CABLE_CONNECT_REQUEST,
+    ERR_STAGE_PERFORMER_NOT_FOUND,
+    ERR_STAGE_PERFORMER_ALREADY_EXISTS,
+    ERR_STAGE_PERFORMER_ALREADY_CONNECTED,
+    ERR_STAGE_REQUEST_MISSING_ARG,
+    ERR_ENTITY_NOT_FOUND,
+    ERR_ENTITY_ALREADY_EXISTS,
+    ERR_CABLE_PLUGS_NOT_FOUND,
+    ERR_STAGE_TIMEOUT
+}
+
+
+table SignalMessage {
+    signal:Signal;
+}
+
+table ClientJoinRequest {
+    performer:EntityHierarchy;
+    graph_reliable_address:string;
+    graph_unreliable_address:string;
+}
+
+table EntityRequest {
+    entities:[EntityHierarchy];
+    update:bool = false;
+}
+
+
+enum EntityAction : byte {
+    DESTROY = 0,
+    TAKE_OWNERSHIP,
+    RELEASE_OWNERSHIP,
+    OBSERVE
+}
+
+table EntityActionRequest {
+    URI:string;
+    action:EntityAction;
+}
+
+
+table CreateEntityRequest {
+    factory_URI:string;
+    name:string;
+}
+
+
+enum CableAction : byte{
+    CREATE = 0,
+    DESTROY
+}
+
+table CableRequest {
+    address:Cable;
+    action:CableAction;
+}
+
+
+enum ConnectionAction : byte {
+    START_BROADCAST = 0,
+    STOP_BROADCAST,
+    LISTEN_FOR_BROADCAST
+}
+
+table ConnectionRequest {
+    action:ConnectionAction;
+    sender_URI:string;
+    sender_address:string;
+    receiver_URI:string;
+    receiver_address:string;
+}
+
+
+union Content {
+    SignalMessage,
+    ClientJoinRequest,
+    EntityRequest,
+    EntityActionRequest,
+    CreateEntityRequest,
+    CableRequest,
+    ConnectionRequest
+}
+
+table StageMessage {
+    content:Content;
+    id:uint64;
+}
+
+root_type StageMessage;

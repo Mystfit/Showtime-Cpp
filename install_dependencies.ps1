@@ -4,7 +4,7 @@ param(
     [string]$install_prefix="$dependency_dir/install",
     [string]$config="release",
     [string]$generator="Visual Studio 16 2019",
-    [switch]$with_boost = $true,
+    [switch]$without_boost = $false,
     [string]$boost_version = "1.70.0"
 )
 
@@ -40,21 +40,23 @@ md -Force "$install_prefix"
 function Build-CmakeFromGit{
     Param($name, $url, $branch, $flags)
 
-    if (Test-Path $dependency_dir/$name/build) {
+    $build_dir = "$dependency_dir/$name/build_dir"
+
+    if (Test-Path $build_dir) {
         Write-Output "Found $name"
     } else {
         Write-Output "Cloning $name"
         git clone $url "$dependency_dir/$name"
         git -C "$dependency_dir/$name" checkout $branch
-        md -Force "$dependency_dir/$name/build"
+        md -Force $build_dir
     }
     Write-Output "Building $name"
     $cmake_flags = $generator_flags + $flags + @(
         "-S", "`"$dependency_dir/$name`"",
-        "-B", "`"$dependency_dir/$name/build`""
+        "-B", "`"$build_dir`""
     ) 
     & "cmake" @cmake_flags | out-null
-    & "cmake" $(@("--build", "`"$dependency_dir/$name/build`"") + $build_flags) | out-null
+    & "cmake" $(@("--build", "`"$build_dir`"") + $build_flags) | out-null
     Write-Output "Built $name"
 }
 
@@ -67,14 +69,12 @@ Build-CmakeFromGit -name "czmq" -url "https://github.com/mystfit/czmq.git" -bran
     "-DBUILD_TESTING=OFF",
     "-DLIBZMQ_FIND_USING_CMAKE_PACKAGE=ON"
 )
-Build-CmakeFromGit -name "msgpack" -url "https://github.com/msgpack/msgpack-c.git" -branch "cpp-3.0.1" -flags @(
-    "-DMSGPACK_BUILD_EXAMPLES=OFF"
-)
+Build-CmakeFromGit -name "flatbuffers" -url "https://github.com/google/flatbuffers.git" -branch "master" -flags @()
 
 
 # Boost
 # -----
-if($with_boost -eq $true){
+if($without_boost -ne $true){
     $boost_flags = @(
         "--prefix=$install_prefix",
         "address-model=64",

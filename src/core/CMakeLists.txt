@@ -15,6 +15,13 @@ set(GENERATED_SOURCES
     ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp
 )
 
+
+# Generated flatbuffer schemas
+if(BUILD_FLATBUFFERS)
+    list(APPEND GENERATED_SOURCES ${FLATBUFFER_HEADER_OUTPUT})
+endif()
+
+
 # Set generated sources property
 set_source_files_properties(${GENERATED_SOURCES} PROPERTIES GENERATED ON)
 
@@ -101,6 +108,12 @@ if(BUILD_DRAFTS)
         "${CMAKE_CURRENT_LIST_DIR}/transports/ZstUDPGraphTransport.h"
     )
 endif()
+
+set(ZST_CORE_SCHEMA_HEADERS "")
+if(BUILD_FLATBUFFERS)
+    list(APPEND ZST_CORE_SCHEMA_HEADERS ${FLATBUFFER_HEADER_OUTPUT})
+endif()
+
 set(ZST_CORE_LIASON_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstSynchronisableLiason.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstEntityFactoryLiason.hpp"
@@ -143,6 +156,7 @@ if(BUILD_DRAFTS)
     )
 endif()
 
+
 set(ZST_CORE_MODULE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstSession.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstHierarchy.cpp"
@@ -177,6 +191,7 @@ source_group( "showtime\\source" FILES ${ZST_CORE_SRC})
 source_group( "showtime\\modules" FILES ${ZST_CORE_MODULE_HEADERS} ${ZST_CORE_MODULE_SRC})
 source_group( "showtime\\transports" FILES ${ZST_CORE_TRANSPORT_HEADERS} ${ZST_CORE_TRANSPORT_SRC})
 source_group( "showtime\\liasons" FILES ${ZST_CORE_LIASON_HEADERS} ${ZST_CORE_LIASON_SRC})
+source_group( "showtime\\schemas" FILES ${ZST_CORE_SCHEMA_HEADERS})
 
 # Add sources to object library so that we don't have to recompile shared and static libs
 target_sources(${CORE_TARGET_OBJECTS} PRIVATE 
@@ -191,6 +206,7 @@ target_sources(${CORE_TARGET_OBJECTS} PRIVATE
     ${ZST_CORE_ADAPTOR_HEADERS}
     ${ZST_CORE_ADAPTOR_SRC}
     ${ZST_CORE_ENTITY_SRC}
+    ${ZST_CORE_SCHEMA_HEADERS}
     ${Showtime_API_INTERFACE}
 )
 
@@ -247,7 +263,6 @@ target_include_directories(${CORE_TARGET_OBJECTS}
 
 # Object private link libraries
 set(${CORE_TARGET}_PRIVATE_LINKED_LIBS 
-    ${msgpackc_TARGET}
 )
 
 # Link libs object target to pull in includes

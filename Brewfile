@@ -1,5 +1,5 @@
 brew "cmake"
-brew "msgpack"
 brew "czmq"
 brew "swig"
 brew "boost"
+brew "flatbuffers"
