@@ -1,4 +1,4 @@
-include "entity.fbs";
+include "graph_types.fbs";
 
 namespace showtime;
 

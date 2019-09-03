@@ -173,16 +173,18 @@ if(BUILD_FLATBUFFERS)
     if(NOT FLATBUFFERS_FLATC_EXECUTABLE)
         find_program(FLATBUFFERS_FLATC_EXECUTABLE flatc)
     endif()
+
+    set(FLATBUFFFER_OUTPUT_DIR "${Showtime_COMPILED_INCLUDE_DIRS}/schemas")
     set(FLATBUFFER_HEADER_OUTPUT 
-        "${CMAKE_CURRENT_BINARY_DIR}/schemas/stage_message_generated.h"
-        "${CMAKE_CURRENT_BINARY_DIR}/schemas/entity_generated.h"
+        "${FLATBUFFFER_OUTPUT_DIR}/stage_message_generated.h"
+        "${FLATBUFFFER_OUTPUT_DIR}/graph_types_generated.h"
     )
     set(FLATC_ARGS 
         "-c"
-        "-o" "${CMAKE_CURRENT_BINARY_DIR}/schemas/"
+        "-o" "${FLATBUFFFER_OUTPUT_DIR}/"
         "-I" "${CMAKE_SOURCE_DIR}/schemas/"
         "${CMAKE_SOURCE_DIR}/schemas/stage_message.fbs"
-        "${CMAKE_SOURCE_DIR}/schemas/entity.fbs"
+        "${CMAKE_SOURCE_DIR}/schemas/graph_types.fbs"
     )
     execute_process(COMMAND ${FLATBUFFERS_FLATC_EXECUTABLE} ${FLATC_ARGS})
 endif()

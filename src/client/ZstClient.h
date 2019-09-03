@@ -21,6 +21,7 @@
 #include "../core/ZstMessageSupervisor.hpp"
 #include "../core/adaptors/ZstTransportAdaptor.hpp"
 #include "../core/transports/ZstTransportHelpers.h"
+#include "stage_message_generated.h";
 
 //Forwards
 class ZstSemaphore;

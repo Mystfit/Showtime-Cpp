@@ -50,7 +50,6 @@ set(FMT_HEADERS
     ${Showtime_INCLUDE_DIRS}/fmt/core.h
 )
 set(API_HEADERS
-    ${VERSION_FILE}
     ${Showtime_INCLUDE_DIRS}/ZstCore.h
     ${Showtime_INCLUDE_DIRS}/ZstLogging.h
     ${Showtime_INCLUDE_DIRS}/ZstCable.h
