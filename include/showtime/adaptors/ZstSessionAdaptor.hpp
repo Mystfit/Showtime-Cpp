@@ -5,6 +5,8 @@
 #include "ZstCable.h"
 #include "ZstServerAddress.h"
 
+namespace showtime {
+
 //Forwards
 class ZstHierarchy;
 
@@ -23,3 +25,5 @@ public:
     
     ZST_EXPORT virtual std::shared_ptr<ZstHierarchy> hierarchy();
 };
+
+}

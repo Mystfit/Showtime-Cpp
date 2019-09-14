@@ -1,18 +1,18 @@
 #pragma once
 
-#ifndef SWIG
-#include "nlohmann/json.hpp"
-#endif
-using nlohmann::json;
-//using json = nlohmann::json;
+#include <flatbuffers/flatbuffers.h>
+#include "schemas/graph_types_generated.h"
+
 #include "ZstExports.h"
 
-class ZST_CLASS_EXPORTED ZstSerialisable {
-public:
-	ZST_EXPORT virtual json as_json() const;
-	ZST_EXPORT std::string as_json_str() const;
-	ZST_EXPORT void from_json_str(std::string & str);
-	ZST_EXPORT void from_json_str(const char * str);
-	ZST_EXPORT virtual void write_json(json & buffer) const = 0;
-	ZST_EXPORT virtual void read_json(const json & buffer) = 0;
-};
+namespace showtime {
+    
+    typedef uint8_t BufferPtr;
+    
+    template<typename T>
+    class ZST_CLASS_EXPORTED ZstSerialisable {
+    public:
+        ZST_EXPORT virtual void serialize(flatbuffers::Offset<T> & serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const = 0;
+        ZST_EXPORT virtual void deserialize(const T* buffer) = 0;
+    };
+}

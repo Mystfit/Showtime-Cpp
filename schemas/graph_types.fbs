@@ -1,7 +1,42 @@
 namespace showtime;
 
+
+// Values
+// ------
+
+enum ValueType : byte {
+    NONE = 0,
+    INT,
+    FLOAT,
+    STRING
+}
+
+table IntList {
+    val:[int];
+}
+
+table FloatList {
+    val:[float];
+}
+
+table StrList {
+    val:[string];
+}
+
+union ValueTypes {
+    IntList,
+    FloatList,
+    StrList
+} 
+
+
+
+// Entities
+// --------
+
 enum EntityType : byte {
-    COMPONENT = 0,
+    UNKNOWN = 0,
+    COMPONENT,
     PERFORMER,
     PLUG,
     FACTORY
@@ -13,33 +48,58 @@ enum PlugDirection : byte {
     OUT_JACK
 }
 
-enum ZstValueType : byte {
-    NONE = 0,
-    INT,
-    FLOAT,
-    STRING
-}
 
 table Entity {
-    //Entity
     URI:string;
     entity_type:EntityType;
     owner:string;
+}
 
-    //Component
+table Component {
+    entity:Entity;
     component_type:string;
+}
 
-    //Plug
+table Plug {
+    entity:Entity;
     plug_direction: PlugDirection;
+    max_cables: int;
+    values: [ValueTypes];
 }
 
-table EntityHierarchy {
-    root:Entity;
-    children:[Entity];
+table Factory {
+    creatables: [string];
+    entity:Entity;
 }
 
+union ChildEntityTypes{
+    Component,
+    Plug,
+    Factory
+}
+
+
+// Performer
+// ---------
+
+table Performer {
+    component:Component;
+    children: [ChildEntityTypes];
+}
+
+union AllEntityTypes {
+    Component,
+    Plug,
+    Factory,
+    Performer
+}
+
+
+// Cables
+// ------
 
 table Cable {
     input_URI:string;
     output_URI:string;
 }
+

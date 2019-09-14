@@ -2,6 +2,8 @@
 #include "../ZstZMQRefCounter.h"
 #include <czmq.h>
 
+namespace showtime {
+
 ZstServiceDiscoveryTransport::ZstServiceDiscoveryTransport() : m_beacon(NULL)
 {
     
@@ -111,4 +113,6 @@ void ZstServiceDiscoveryTransport::stop_listening()
 {
     if(m_beacon)
         zstr_sendx(m_beacon, "UNSUBSCRIBE", NULL);
+}
+
 }

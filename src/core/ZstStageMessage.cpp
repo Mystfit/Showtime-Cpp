@@ -8,6 +8,7 @@
 #include "entities/ZstPlug.h"
 #include "entities/ZstEntityFactory.h"
 
+namespace showtime {
 
 ZstStageMessage::ZstStageMessage() :
 	m_endpoint_UUID(nil_generator()())
@@ -72,16 +73,16 @@ ZstMsgKind ZstStageMessage::entity_kind(const ZstEntityBase & entity)
 {
 	//TODO: Replace with single CREATE_COMPONENT
 	ZstMsgKind kind(ZstMsgKind::EMPTY);
-	if (strcmp(entity.entity_type(), COMPONENT_TYPE) == 0) {
+	if (entity.entity_type() == EntityType_COMPONENT) {
 		kind = ZstMsgKind::CREATE_COMPONENT;
 	}
-	else if (strcmp(entity.entity_type(), PERFORMER_TYPE) == 0) {
+	else if (entity.entity_type() == EntityType_PERFORMER) {
 		kind = ZstMsgKind::CREATE_PERFORMER;
 	}
-	else if (strcmp(entity.entity_type(), PLUG_TYPE) == 0) {
+	else if (entity.entity_type() == EntityType_PLUG) {
 		kind = ZstMsgKind::CREATE_PLUG;
 	}
-	else if (strcmp(entity.entity_type(), FACTORY_TYPE) == 0) {
+	else if (entity.entity_type() == EntityType_FACTORY) {
 		kind = ZstMsgKind::CREATE_FACTORY;
 	}
 	return kind;
@@ -144,4 +145,6 @@ std::string ZstStageMessage::as_json_str() const
 	json with_payload = m_msg_args;
 	with_payload[get_msg_arg_name(ZstMsgArg::PAYLOAD)] = m_payload;
 	return with_payload.dump();
+}
+
 }

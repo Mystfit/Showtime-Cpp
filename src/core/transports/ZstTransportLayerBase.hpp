@@ -13,6 +13,8 @@
 #include "../ZstMessage.h"
 #include "../ZstMessageSupervisor.hpp"
 
+namespace showtime {
+
 //Forwards
 class ZstTransportAdaptor;
 
@@ -46,3 +48,5 @@ private:
 
     std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstTransportAdaptor> > > m_dispatch_events;
 };
+
+}

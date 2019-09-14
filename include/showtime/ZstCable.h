@@ -11,10 +11,13 @@
 #include "ZstSynchronisable.h"
 #include "ZstBundle.hpp"
 
+namespace showtime {
+
 //Forwards
 class ZstInputPlug;
 class ZstOutputPlug;
 class ZstPlug;
+
 
 class ZstCable : public ZstSynchronisable {
 public:
@@ -84,3 +87,6 @@ typedef std::set< std::unique_ptr<ZstCable>, ZstCableCompare > ZstCableSet;
 typedef ZstBundle<ZstCable*> ZstCableBundle;
 typedef ZstBundle<ZstCableAddress> ZstCableAddressBundle;
 typedef ZstBundleIterator<ZstCable*> ZstCableBundleIterator;
+    
+}
+

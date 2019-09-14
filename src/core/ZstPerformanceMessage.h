@@ -6,6 +6,8 @@
 
 #include "ZstMessage.h"
 
+namespace showtime {
+
 class ZST_CLASS_EXPORTED ZstPerformanceMessage : public ZstMessage {
 public:
 	ZST_EXPORT ZstPerformanceMessage();
@@ -33,3 +35,5 @@ private:
 	boost::uuids::uuid m_endpoint_UUID;
 	json m_args;
 };
+
+}

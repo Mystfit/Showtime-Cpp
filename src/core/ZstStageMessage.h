@@ -2,11 +2,10 @@
 
 #include "ZstExports.h"
 #include "ZstMessage.h"
-#include <nlohmann/json.hpp>
 #include "entities/ZstEntityBase.h"
 #include "transports/ZstTransportLayerBase.hpp"
 
-using nlohmann::json;
+namespace showtime {
 
 class ZST_CLASS_EXPORTED ZstStageMessage : public ZstMessage {
 public:
@@ -63,3 +62,5 @@ private:
 
 	boost::uuids::uuid m_endpoint_UUID;
 };
+
+}

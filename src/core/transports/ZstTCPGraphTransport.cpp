@@ -2,6 +2,8 @@
 #include <czmq.h>
 #include <sstream>
 
+namespace showtime {
+
 ZstTCPGraphTransport::ZstTCPGraphTransport()
 {
 }
@@ -49,4 +51,6 @@ void ZstTCPGraphTransport::init_graph_sockets()
 
 	set_graph_addresses("", zsock_last_endpoint(graph_out));
 	attach_graph_sockets(graph_in, graph_out);
+}
+
 }

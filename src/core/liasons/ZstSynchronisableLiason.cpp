@@ -1,6 +1,8 @@
 #include "ZstSynchronisableLiason.hpp"
 #include <ZstSynchronisable.h>
 
+namespace showtime {
+
 void ZstSynchronisableLiason::synchronisable_enqueue_activation(ZstSynchronisable * synchronisable)
 {
 	synchronisable->enqueue_activation();
@@ -54,4 +56,6 @@ void ZstSynchronisableLiason::synchronisable_process_events(ZstSynchronisable * 
 void ZstSynchronisableLiason::synchronisable_annouce_update(ZstSynchronisable * synchronisable)
 {
 	synchronisable->announce_update();
+}
+
 }

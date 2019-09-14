@@ -3,6 +3,8 @@
 #include "ZstExports.h"
 #include <ZstConstants.h>
 
+namespace showtime {
+    
 //Forwards
 class ZstSynchronisable;
 
@@ -20,3 +22,5 @@ public:
 	ZST_EXPORT void synchronisable_process_events(ZstSynchronisable * synchronisable);
 	ZST_EXPORT void synchronisable_annouce_update(ZstSynchronisable * synchronisable);
 };
+
+}

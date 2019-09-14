@@ -16,6 +16,8 @@
 
 #include "ZstSemaphore.h"
 
+namespace showtime {
+
 enum ZstEventStatus {
 	FAILED = 0,
 	SUCCESS
@@ -28,7 +30,7 @@ typedef std::function<void(ZstEventStatus)> ZstEventCallback;
 template<typename T>
 class ZstEvent 
 {
-	static_assert(std::is_base_of<ZstEventAdaptor, std::pointer_traits<T>::element_type >::value, "T must derive from ZstEventAdaptor");
+    static_assert(std::is_base_of<ZstEventAdaptor, typename std::pointer_traits<T>::element_type >::value, "T must derive from ZstEventAdaptor");
 	//static_assert(std::is_base_of<ZstEventAdaptor, std::remove_pointer_t< std::weak_ptr<T> > >::value, "T must derive from ZstEventAdaptor");
 public:
 	ZstEvent() : func([](T adp) {}), completed_func([](ZstEventStatus) {}) {}
@@ -125,7 +127,7 @@ private:
 template<typename T>
 class ZstEventDispatcher : public ZstEventDispatcherBase
 {
-	static_assert(std::is_base_of<ZstEventAdaptor, std::pointer_traits<T>::element_type >::value, "T must derive from ZstEventAdaptor");
+    static_assert(std::is_base_of<ZstEventAdaptor, typename std::pointer_traits<T>::element_type >::value, "T must derive from ZstEventAdaptor");
 public:
 	ZstEventDispatcher() :
 		ZstEventDispatcherBase("")
@@ -150,7 +152,7 @@ public:
 		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		for (auto adaptor : this->m_adaptors) {
 			if(auto adp = adaptor.lock())
-				event(std::static_pointer_cast<std::pointer_traits<T>::element_type>(adp));
+				event(std::static_pointer_cast< typename std::pointer_traits<T>::element_type>(adp));
 		}
 	}
 
@@ -179,7 +181,7 @@ public:
 			std::lock_guard<std::recursive_mutex> lock(m_mtx);
 			for (auto adaptor : m_adaptors) {
 				if(auto adp = adaptor.lock())
-					event.func(std::static_pointer_cast<std::pointer_traits<T>::element_type>(adp));
+                    event.func(std::static_pointer_cast< typename std::pointer_traits<T>::element_type >(adp));
 				/*event.func(static_cast<T>(adp));
 				try {
 					event.func(adaptor);
@@ -196,3 +198,5 @@ public:
 private:
 	moodycamel::ConcurrentQueue< ZstEvent<T> > m_events;
 };
+
+}

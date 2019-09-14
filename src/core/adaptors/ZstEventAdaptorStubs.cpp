@@ -13,10 +13,13 @@
 #include "entities/ZstPlug.h"
 #include "ZstCable.h"
 
+namespace showtime {
+
 
 // --------------------------------------
 // Synchronisable adaptor stub functions
 // --------------------------------------
+
 
 void ZstSynchronisableAdaptor::on_synchronisable_has_event(ZstSynchronisable * synchronisable) {}
 void ZstSynchronisableAdaptor::on_synchronisable_activated(ZstSynchronisable * synchronisable) {}
@@ -56,7 +59,7 @@ ZstCable * ZstSessionAdaptor::find_cable(const ZstCableAddress & address) { retu
 void ZstSessionAdaptor::aquire_entity_ownership(ZstEntityBase* entity) {}
 void ZstSessionAdaptor::release_entity_ownership(ZstEntityBase* entity) {}
 
-std::shared_ptr<ZstHierarchy> ZstSessionAdaptor::hierarchy() { return NULL; };
+std::shared_ptr<ZstHierarchy> ZstSessionAdaptor::hierarchy() { return NULL; }
 
 
 // -----------------------
@@ -94,3 +97,5 @@ ZstMessageReceipt ZstTransportAdaptor::send_msg(ZstMsgKind kind, const ZstTransp
 // -----------------------
 
 void ZstComputeAdaptor::on_compute(ZstComponent * component, ZstInputPlug * plug) {}
+
+}

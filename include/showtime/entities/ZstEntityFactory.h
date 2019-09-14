@@ -7,7 +7,7 @@
 #include "entities/ZstEntityBase.h"
 #include "adaptors/ZstFactoryAdaptor.hpp"
 
-#define FACTORY_TYPE "fac"
+namespace showtime {
 
 //Forwards
 template<typename T>
@@ -16,7 +16,9 @@ class ZstEventDispatcher;
 //Typedefs
 typedef std::shared_ptr<ZstEntityBase> ZstSharedEntity;
 
-class ZST_CLASS_EXPORTED ZstEntityFactory : public ZstEntityBase
+class ZST_CLASS_EXPORTED ZstEntityFactory :
+    public ZstEntityBase,
+    virtual ZstSerialisable<Factory>
 {
 	using ZstEntityBase::add_adaptor;
 	using ZstEntityBase::remove_adaptor;
@@ -41,12 +43,14 @@ public:
 	ZST_EXPORT virtual ZstEntityBase * create_entity(const ZstURI & creatable_path, const char * name);
 
 	
-	//Serialisation
-
-	ZST_EXPORT void write_json(json & buffer) const override;
-	ZST_EXPORT void read_json(const json & buffer) override;
-
-
+    //Serialisation
+    
+    using ZstEntityBase::serialize;
+    using ZstEntityBase::deserialize;
+    ZST_EXPORT void serialize(flatbuffers::Offset<Factory> & serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
+    ZST_EXPORT void deserialize(const Factory* buffer) override;
+    
+    
 	//Events
 
 	ZST_EXPORT void add_adaptor(std::shared_ptr<ZstFactoryAdaptor> adaptor);
@@ -63,3 +67,5 @@ private:
 	std::set<ZstURI> m_creatables;
 	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > > m_factory_events;
 };
+
+}

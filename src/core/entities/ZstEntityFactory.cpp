@@ -7,20 +7,20 @@
 
 //Template instatiations
 //template class ZstEventDispatcher<ZstFactoryAdaptor*>;
-
+namespace showtime {
 
 ZstEntityFactory::ZstEntityFactory() : 
 	ZstEntityBase(""),
 	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >("factory events"))
 {
-	set_entity_type(FACTORY_TYPE);
+	set_entity_type(EntityType_FACTORY);
 }
 
 ZstEntityFactory::ZstEntityFactory(const char * name) : 
 	ZstEntityBase(name),
 	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >("factory events"))
 {
-	set_entity_type(FACTORY_TYPE);
+	set_entity_type(EntityType_FACTORY);
 }
 
 ZstEntityFactory::ZstEntityFactory(const ZstEntityFactory & other) : 
@@ -154,21 +154,49 @@ void ZstEntityFactory::update_createable_URIs()
 	}
 }
 
-void ZstEntityFactory::write_json(json & buffer) const
+//void ZstEntityFactory::write_json(json & buffer) const
+//{
+//    //Pack creatables
+//    ZstEntityBase::write_json(buffer);
+//    buffer["creatables"] = json::array();
+//    for (auto creatable : m_creatables) {
+//        buffer["creatables"].push_back(creatable.path());
+//    }
+//}
+//
+//void ZstEntityFactory::read_json(const json & buffer)
+//{
+//    ZstEntityBase::read_json(buffer);
+//    for (auto creatable : buffer["creatables"]) {
+//        m_creatables.emplace(creatable.get<std::string>().c_str(), creatable.get<std::string>().size());
+//    }
+//}
+    
+void ZstEntityFactory::serialize(flatbuffers::Offset<Factory> & serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const
 {
-	//Pack creatables
-	ZstEntityBase::write_json(buffer);
-	buffer["creatables"] = json::array();
-	for (auto creatable : m_creatables) {
-		buffer["creatables"].push_back(creatable.path());
-	}
+    auto factory_builder = FactoryBuilder(buffer_builder);
+    
+    // Sereialize creatables
+    std::vector<std::string> creatables;
+    for(auto c : m_creatables){
+        creatables.push_back(c.path());
+    }
+    factory_builder.add_creatables(buffer_builder.CreateVectorOfStrings(creatables));
+    
+    // Serialize entity
+    flatbuffers::Offset<Entity> entity_offset;
+    ZstEntityBase::serialize(entity_offset, buffer_builder);
+    factory_builder.add_entity(entity_offset);
+    
+    serialized_offset = factory_builder.Finish();
+}
+    
+void ZstEntityFactory::deserialize(const Factory* buffer)
+{
+    for(auto c : *buffer->creatables()){
+        m_creatables.emplace(c->c_str(), c->size());
+    }
+    ZstEntityBase::deserialize(buffer->entity());
 }
 
-void ZstEntityFactory::read_json(const json & buffer)
-{
-	ZstEntityBase::read_json(buffer);
-	for (auto creatable : buffer["creatables"]) {
-		m_creatables.emplace(creatable.get<std::string>().c_str(), creatable.get<std::string>().size());
-	}
-	
 }

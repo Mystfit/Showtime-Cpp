@@ -5,6 +5,8 @@
 #include "../ZstActor.h"
 #include "ZstTransportLayer.h"
 
+namespace showtime {
+
 //Forwards
 typedef struct _zactor_t zactor_t;
 typedef struct _zloop_t zloop_t;
@@ -34,3 +36,5 @@ private:
     ZstActor m_beacon_actor;
     zactor_t * m_beacon;
 };
+
+}

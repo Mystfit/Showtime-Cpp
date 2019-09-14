@@ -6,6 +6,8 @@
 #include "entities/ZstEntityFactory.h"
 #include "adaptors/ZstEventAdaptor.hpp"
 
+namespace showtime {
+
 class ZST_CLASS_EXPORTED ZstHierarchyAdaptor : 
 	public ZstEventAdaptor
 {
@@ -22,3 +24,5 @@ public:
 	ZST_EXPORT virtual void on_factory_arriving(ZstEntityFactory * factory);
 	ZST_EXPORT virtual void on_factory_leaving(ZstEntityFactory * factory);
 };
+
+}

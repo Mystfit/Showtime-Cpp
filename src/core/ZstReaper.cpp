@@ -1,6 +1,8 @@
 #include "ZstLogging.h"
 #include "ZstReaper.h"
 
+namespace showtime {
+
 void ZstReaper::add(ZstSynchronisable * synchronisable)
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
@@ -31,4 +33,6 @@ void ZstReaper::reap_all()
     }
     
     m_items_to_reap.clear();
+}
+
 }

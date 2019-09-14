@@ -23,76 +23,109 @@ enum Signal : byte {
     ERR_STAGE_TIMEOUT
 }
 
-
 table SignalMessage {
     signal:Signal;
 }
 
+// ---
+
 table ClientJoinRequest {
-    performer:EntityHierarchy;
+    performer:Performer;
     graph_reliable_address:string;
     graph_unreliable_address:string;
 }
 
-table EntityRequest {
-    entities:[EntityHierarchy];
-    update:bool = false;
-}
-
-
-enum EntityAction : byte {
-    DESTROY = 0,
-    TAKE_OWNERSHIP,
-    RELEASE_OWNERSHIP,
-    OBSERVE
-}
-
-table EntityActionRequest {
-    URI:string;
-    action:EntityAction;
-}
-
-
-table CreateEntityRequest {
-    factory_URI:string;
-    name:string;
-}
-
-
-enum CableAction : byte{
-    CREATE = 0,
-    DESTROY
-}
-
-table CableRequest {
-    address:Cable;
-    action:CableAction;
-}
-
-
-enum ConnectionAction : byte {
-    START_BROADCAST = 0,
-    STOP_BROADCAST,
-    LISTEN_FOR_BROADCAST
-}
-
-table ConnectionRequest {
-    action:ConnectionAction;
-    sender_URI:string;
-    sender_address:string;
+table ClientGraphHandshakeStart {
     receiver_URI:string;
     receiver_address:string;
 }
 
+table ClientGraphHandshakeStop {
+    receiver_URI:string;
+}
+
+table ClientGraphHandshakeListen {
+    sender_URI:string;
+    sender_address:string;
+}
+
+// ---
+
+table EntityCreateRequest {
+    entities:[AllEntityTypes];
+}
+
+table EntityReadRequest {
+    URI:string;
+}
+
+table EntityUpdateRequest {
+    entities:[AllEntityTypes];
+}
+
+table EntityDestroyRequest {
+    URI:string;
+}
+
+table EntityTakeOwnershipRequest {
+    URI:string;
+}
+
+table EntityReleaseOwnershipRequest {
+    URI:string;
+}
+
+table EntityObserveRequest {
+    URI:string;
+}
+
+// ---
+
+table FactoryCreateEntityRequest {
+    creatable_entity_URI:string;
+    name:string;
+}
+
+// ---
+
+table CableCreateRequest {
+    address:Cable;
+}
+
+table CableReadRequest {
+    address:Cable;
+}
+
+table CableUpdateRequest {
+    old_address:Cable;
+    new_address:Cable;
+}
+
+table CableDestroyRequest {
+    address:Cable;
+}
+
+// ---
 
 union Content {
     SignalMessage,
+
     ClientJoinRequest,
-    EntityRequest,
-    EntityActionRequest,
-    CreateEntityRequest,
-    CableRequest,
-    ConnectionRequest
+    ClientGraphHandshakeStart,
+    ClientGraphHandshakeStop,
+    ClientGraphHandshakeListen,
+
+    EntityCreateRequest,
+    EntityReadRequest,
+    EntityUpdateRequest,
+    EntityDestroyRequest,
+
+    FactoryCreateEntityRequest,
+
+    CableCreateRequest,
+    CableReadRequest,
+    CableUpdateRequest,
+    CableDestroyRequest
 }
 
 table StageMessage {

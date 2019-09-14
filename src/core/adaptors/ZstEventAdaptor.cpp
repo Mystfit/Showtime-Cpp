@@ -1,6 +1,9 @@
 #include "../ZstEventDispatcher.hpp"
 #include "adaptors/ZstEventAdaptor.hpp"
 
+namespace showtime {
+
+
 ZstEventAdaptor::ZstEventAdaptor()
 {
 };
@@ -41,4 +44,6 @@ void ZstEventAdaptor::prune_dispatchers()
 		if (src.expired())
 			m_event_sources.erase(src);
 	}
+}
+
 }

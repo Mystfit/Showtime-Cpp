@@ -7,12 +7,14 @@
 #include "ZstConstants.h"
 #include "adaptors/ZstSynchronisableAdaptor.hpp"
 
-//Forwards
-class ZstINetworkInteractor;
+namespace showtime {
 
+    
+//Forwards
 template<typename T>
 class ZstEventDispatcher;
 
+    
 class ZST_CLASS_EXPORTED ZstSynchronisable
 {
 	friend class ZstSynchronisableLiason;
@@ -61,3 +63,5 @@ private:
 	static unsigned int s_instance_id_counter;
     std::mutex m_sync_lock;
 };
+
+}

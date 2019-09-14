@@ -3,7 +3,9 @@
 #include "ZstURI.h"
 #include "ZstSerialisable.h"
 
-class ZstCableAddress : public ZstSerialisable {
+namespace showtime {
+
+class ZstCableAddress : public ZstSerialisable<Cable> {
 public:
     ZST_EXPORT ZstCableAddress();
     ZST_EXPORT ZstCableAddress(const ZstURI & input_URI, const ZstURI & output_URI);
@@ -26,8 +28,8 @@ public:
     
     //Serialisation
     
-    ZST_EXPORT void write_json(json & buffer) const override;
-    ZST_EXPORT void read_json(const json & buffer) override;
+    ZST_EXPORT void serialize(flatbuffers::Offset<Cable> & serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const;
+    ZST_EXPORT void deserialize(const Cable* buffer);
 	ZST_EXPORT std::string to_string() const;
     
 private:
@@ -43,3 +45,5 @@ struct ZstCableAddressHash
 struct ZstCableAddressEq {
     ZST_EXPORT bool operator()(ZstCableAddress const & lhs, ZstCableAddress const & rhs) const;
 };
+
+}

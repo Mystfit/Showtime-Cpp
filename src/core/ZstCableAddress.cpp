@@ -1,6 +1,8 @@
 #include "ZstCableAddress.h"
 #include <fmt/format.h>
 
+namespace showtime {
+
 ZstCableAddress::ZstCableAddress() :
     m_input_URI(),
     m_output_URI()
@@ -67,16 +69,21 @@ const ZstURI & ZstCableAddress::get_output_URI() const
     return m_output_URI;
 }
 
-void ZstCableAddress::write_json(json & buffer) const
+void ZstCableAddress::serialize(flatbuffers::Offset<Cable> & serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const
 {
-    buffer["output_uri"] = m_output_URI.path();
-    buffer["input_uri"] = m_input_URI.path();
+    auto cable_builder = CableBuilder(buffer_builder);
+    auto input_URI = buffer_builder.CreateString(m_input_URI.path(), m_input_URI.full_size());
+    auto output_URI = buffer_builder.CreateString(m_output_URI.path(), m_output_URI.full_size());
+    cable_builder.add_input_URI(input_URI);
+    cable_builder.add_output_URI(output_URI);
+    
+    serialized_offset = cable_builder.Finish();
 }
 
-void ZstCableAddress::read_json(const json & buffer)
+void ZstCableAddress::deserialize(const Cable* buffer)
 {
-    m_output_URI = ZstURI(buffer["output_uri"].get<std::string>().c_str(), buffer["output_uri"].get<std::string>().size());
-    m_input_URI = ZstURI(buffer["input_uri"].get<std::string>().c_str(), buffer["input_uri"].get<std::string>().size());
+    m_output_URI = ZstURI(buffer->input_URI()->c_str(), buffer->input_URI()->size());
+    m_input_URI = ZstURI(buffer->output_URI()->c_str(), buffer->output_URI()->size());
 }
 
 std::string ZstCableAddress::to_string() const
@@ -94,4 +101,6 @@ size_t ZstCableAddressHash::operator()(ZstCableAddress const& k) const
 bool ZstCableAddressEq::operator()(const ZstCableAddress & lhs, const ZstCableAddress & rhs) const
 {
     return lhs == rhs;
+}
+
 }

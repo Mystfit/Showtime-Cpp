@@ -2,6 +2,8 @@
 #include <msgpack.hpp>
 #include <exception>
 
+namespace showtime {
+
 ZstPerformanceMessage::ZstPerformanceMessage() : m_endpoint_UUID(nil_generator()())
 {
 }
@@ -86,4 +88,6 @@ void ZstPerformanceMessage::set_payload(const ZstMsgArgs & payload)
 void ZstPerformanceMessage::set_sender(const std::string & sender)
 {
 	m_args[get_msg_arg_name(ZstMsgArg::SENDER_SHORT)] = sender;
+}
+    
 }

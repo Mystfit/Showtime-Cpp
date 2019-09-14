@@ -7,6 +7,7 @@
 #include <iostream>
 #include <ZstConstants.h>
 #include <ZstSerialisable.h>
+#include <schemas/graph_types_generated.h>
 #include "ZstExports.h"
 #include <mutex>
 
@@ -17,6 +18,8 @@
 
 
 //Typedefs
+
+namespace showtime {
 
 typedef boost::variant<int, float, std::string> ZstValueVariant;
 
@@ -45,36 +48,17 @@ namespace ZstValueDetails {
 		std::string operator()(float f) const;
 		std::string operator()(const std::string & str) const;
 	};
-
-	enum ZstValueFields {
-		VALUES,
-		DEFAULT_TYPE
-	};
-
-	typedef boost::bimaps::bimap<ZstValueFields, std::string> ZstValueFieldsMap;
-	static ZstValueFieldsMap ZstValueFieldNames = boost::assign::list_of<ZstValueFieldsMap::relation>
-		(DEFAULT_TYPE, "d")
-		(VALUES, "v");
-
-	static inline const std::string & get_value_field_name(const ZstValueFields & field) {
-		return ZstValueFieldNames.left.at(field);
-	}
-
-	static inline const ZstValueFields & get_value_field(const std::string field_str) {
-		return ZstValueFieldNames.right.at(field_str);
-	}
 }
 
 
-class ZstValue : public ZstSerialisable {
+class ZstValue : public ZstSerialisable< std::vector<flatbuffers::Offset<ValueTypes> > > {
 public:
 	ZST_EXPORT ZstValue();
 	ZST_EXPORT ZstValue(const ZstValue & other);
-
-	ZST_EXPORT ZstValue(ZstValueType t);
+	ZST_EXPORT ZstValue(ValueType t);
 	ZST_EXPORT virtual ~ZstValue();
 
-	ZST_EXPORT ZstValueType get_default_type() const;
+	ZST_EXPORT ValueType get_default_type() const;
 	
 	ZST_EXPORT void copy(const ZstValue & other);
 	
@@ -90,15 +74,15 @@ public:
 	ZST_EXPORT const size_t size_at(const size_t position) const;
 
 	//Serialisation
-	ZST_EXPORT void write_json(json & buffer) const override;
-	ZST_EXPORT void read_json(const json & buffer) override;
+    ZST_EXPORT void serialize(flatbuffers::Offset< std::vector<flatbuffers::Offset<ValueTypes> > > & serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
+    ZST_EXPORT void deserialize(const std::vector<flatbuffers::Offset<ValueTypes> > * buffer) override;
 
 protected:
 	std::vector<ZstValueVariant> m_values;
-	ZstValueType m_default_type;
+	ValueType m_default_type;
 
 private:
 	std::mutex m_lock;
 };
 
-
+}

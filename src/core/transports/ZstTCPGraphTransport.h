@@ -3,6 +3,8 @@
 #include "ZstExports.h"
 #include "ZstGraphTransport.h"
 
+namespace showtime {
+
 class ZstTCPGraphTransport : 
 	public ZstGraphTransport
 {
@@ -16,3 +18,5 @@ public:
 protected:
 	ZST_EXPORT virtual void init_graph_sockets() override;
 };
+
+}

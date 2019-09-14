@@ -2,6 +2,11 @@
 #include "ZstLogging.h"
 #include "ZstExceptions.h"
 
+using namespace cf;
+using namespace moodycamel;
+
+namespace showtime {
+
 ZstMessageSupervisor::ZstMessageSupervisor(std::shared_ptr<cf::time_watcher> timeout_watcher, long timeout_duration) :
 	m_timeout_watcher(timeout_watcher),
 	m_timeout_duration(timeout_duration)
@@ -61,4 +66,6 @@ void ZstMessageSupervisor::process_response(ZstMsgID id, ZstMessageReceipt respo
 		}
 		enqueue_resolved_promise(id);
 	}
+}
+
 }

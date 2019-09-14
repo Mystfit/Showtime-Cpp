@@ -6,6 +6,8 @@
 #include "liasons/ZstPlugLiason.hpp"
 #include "ZstEventDispatcher.hpp"
 
+namespace showtime {
+
 ZstCable::ZstCable() : 
 	ZstSynchronisable(),
     m_address(),
@@ -89,4 +91,6 @@ ZstOutputPlug * ZstCable::get_output()
 const ZstCableAddress & ZstCable::get_address() const
 {
     return m_address;
+}
+
 }

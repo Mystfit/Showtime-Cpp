@@ -8,6 +8,8 @@
 
 using namespace boost::uuids;
 
+namespace showtime {
+
 class ZST_CLASS_EXPORTED ZstMessage {
 public:
     ZST_EXPORT virtual ZstMessage * init(ZstMsgKind kind) = 0;
@@ -21,3 +23,5 @@ public:
     ZST_EXPORT virtual const uuid& endpoint_UUID() const = 0;
     ZST_EXPORT virtual const ZstMsgArgs & payload() const = 0;
 };
+    
+}

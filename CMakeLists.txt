@@ -159,12 +159,14 @@ find_package(ZeroMQ CONFIG)
 if(NOT ZeroMQ_FOUND)
     message(STATUS "Searching for libzmq using fallback Findlibzmq.cmake")
     find_package(libzmq REQUIRED)
+    message(STATUS "libZMQ found status: ${libzmq_FOUND}")
 endif()
 
 find_package(czmq CONFIG)
 if(NOT czmq_FOUND)
     message(STATUS "Searching for czmq using fallback Findczmq.cmake")
     find_package(czmq REQUIRED)
+    message(STATUS "CZMQ found status: ${czmq_FOUND}")
 endif()
 
 if(BUILD_FLATBUFFERS)
@@ -177,6 +179,7 @@ if(BUILD_FLATBUFFERS)
     set(FLATBUFFFER_OUTPUT_DIR "${Showtime_COMPILED_INCLUDE_DIRS}/schemas")
     set(FLATBUFFER_HEADER_OUTPUT 
         "${FLATBUFFFER_OUTPUT_DIR}/stage_message_generated.h"
+        "${FLATBUFFFER_OUTPUT_DIR}/graph_message_generated.h"
         "${FLATBUFFFER_OUTPUT_DIR}/graph_types_generated.h"
     )
     set(FLATC_ARGS 
@@ -184,6 +187,7 @@ if(BUILD_FLATBUFFERS)
         "-o" "${FLATBUFFFER_OUTPUT_DIR}/"
         "-I" "${CMAKE_SOURCE_DIR}/schemas/"
         "${CMAKE_SOURCE_DIR}/schemas/stage_message.fbs"
+        "${CMAKE_SOURCE_DIR}/schemas/graph_message.fbs"
         "${CMAKE_SOURCE_DIR}/schemas/graph_types.fbs"
     )
     execute_process(COMMAND ${FLATBUFFERS_FLATC_EXECUTABLE} ${FLATC_ARGS})
@@ -204,7 +208,7 @@ set(SHOWTIME_PRIVATE_LINKED_LIBS
     Boost::unit_test_framework
     Boost::boost
     Boost::disable_autolinking
-    flatbuffers
+    # flatbuffers
     ${CMAKE_THREAD_LIBS_INIT}
 )
 

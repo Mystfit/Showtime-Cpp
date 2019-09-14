@@ -5,10 +5,9 @@
 #include <nlohmann/json.hpp>
 #include "ZstValue.h"
 
-using namespace ZstValueDetails;
+namespace showtime {
 
-
-ZstValue::ZstValue() : m_default_type(ZstValueType::ZST_NONE)
+ZstValue::ZstValue() : m_default_type(ValueType::ValueType_INT)
 {
 }
 
@@ -18,7 +17,7 @@ ZstValue::ZstValue(const ZstValue & other)
 	m_values = other.m_values;
 }
 
-ZstValue::ZstValue(ZstValueType t) : m_default_type(t)
+ZstValue::ZstValue(ValueType t) : m_default_type(t)
 {
 }
 
@@ -26,7 +25,7 @@ ZstValue::~ZstValue()
 {
 }
 
-ZstValueType ZstValue::get_default_type() const
+ValueType ZstValue::get_default_type() const
 {
 	return m_default_type;
 }
@@ -69,14 +68,14 @@ const size_t ZstValue::size() const
 const int ZstValue::int_at(const size_t position) const
 {
 	auto val = m_values.at(position);
-	int result = boost::apply_visitor(ZstValueIntVisitor(), val);
+    int result = boost::apply_visitor(ZstValueDetails::ZstValueIntVisitor(), val);
 	return result;
 }
 
 const float ZstValue::float_at(const size_t position) const
 {
 	auto val = m_values.at(position);
-	float result = boost::apply_visitor(ZstValueFloatVisitor(), val);
+    float result = boost::apply_visitor(ZstValueDetails::ZstValueFloatVisitor(), val);
 	return result;
 }
 
@@ -86,63 +85,88 @@ void ZstValue::char_at(char * buf, const size_t position) const
 		return;
 
 	auto val = m_values.at(position);
-	std::string val_s = boost::apply_visitor(ZstValueStrVisitor(), val);
+    std::string val_s = boost::apply_visitor(ZstValueDetails::ZstValueStrVisitor(), val);
 	memcpy(buf, val_s.c_str(), val_s.size());
 }
 
 const size_t ZstValue::size_at(const size_t position) const {
     auto val = m_values.at(position);
     
-    if (m_default_type == ZstValueType::ZST_INT) {
+    if (m_default_type == ValueType::ValueType_INT) {
         return sizeof(int);
     }
-    else if (m_default_type == ZstValueType::ZST_FLOAT) {
+    else if (m_default_type == ValueType::ValueType_FLOAT) {
         return sizeof(float);
     }
-    else if (m_default_type == ZstValueType::ZST_STRING) {
-        std::string val_s = boost::apply_visitor(ZstValueStrVisitor(), val);
+    else if (m_default_type == ValueType::ValueType_FLOAT) {
+        std::string val_s = boost::apply_visitor(ZstValueDetails::ZstValueStrVisitor(), val);
         return val_s.size();
     } 
     return 0;
 }
 
-void ZstValue::write_json(json & buffer) const
+//void ZstValue::write_json(json & buffer) const
+//{
+//    buffer[get_value_field_name(ZstValueFields::DEFAULT_TYPE)] = get_default_type();
+//    buffer[get_value_field_name(ZstValueFields::VALUES)] = json::array();
+//    for (auto val : m_values) {
+//        if (get_default_type() == ZstValueType::ZST_INT) {
+//            buffer[get_value_field_name(ZstValueFields::VALUES)].push_back(boost::apply_visitor(ZstValueIntVisitor(), val));
+//        } else if (get_default_type() == ZstValueType::ZST_FLOAT) {
+//            buffer[get_value_field_name(ZstValueFields::VALUES)].push_back(boost::apply_visitor(ZstValueFloatVisitor(), val));
+//        } else if (get_default_type() == ZstValueType::ZST_STRING) {
+//            buffer[get_value_field_name(ZstValueFields::VALUES)].push_back(boost::apply_visitor(ZstValueStrVisitor(), val));
+//        } else {
+//            //Unknown value type
+//        }
+//    }
+//}
+//
+//void ZstValue::read_json(const json & buffer)
+//{
+//    m_default_type = buffer[get_value_field_name(ZstValueFields::DEFAULT_TYPE)];
+//    m_values.clear();
+//
+//    //Unpack values
+//    for (auto v : buffer[get_value_field_name(ZstValueFields::VALUES)]) {
+//        if (v.is_number_integer()) {
+//            m_values.emplace_back(v.get<int>());
+//        }
+//        else if (v.is_number_float()) {
+//            m_values.emplace_back(v.get<float>());
+//        }
+//        else if (v.is_string()) {
+//            m_values.emplace_back(v.get<std::string>());
+//        }
+//    }
+//}
+//
+
+void ZstValue::serialize(flatbuffers::Offset< std::vector<flatbuffers::Offset<ValueTypes> > > & serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const
 {
-	buffer[get_value_field_name(ZstValueFields::DEFAULT_TYPE)] = get_default_type();
-	buffer[get_value_field_name(ZstValueFields::VALUES)] = json::array();
-	for (auto val : m_values) {
-		if (get_default_type() == ZstValueType::ZST_INT) {
-			buffer[get_value_field_name(ZstValueFields::VALUES)].push_back(boost::apply_visitor(ZstValueIntVisitor(), val));
-		} else if (get_default_type() == ZstValueType::ZST_FLOAT) {
-			buffer[get_value_field_name(ZstValueFields::VALUES)].push_back(boost::apply_visitor(ZstValueFloatVisitor(), val));
-		} else if (get_default_type() == ZstValueType::ZST_STRING) {
-			buffer[get_value_field_name(ZstValueFields::VALUES)].push_back(boost::apply_visitor(ZstValueStrVisitor(), val));
-		} else {
-			//Unknown value type
-		}
-	}
+    
+    std::vector<flatbuffers::Offset<ValueTypes>> value_builder;
+    for(auto value : m_values){
+        switch(m_default_type){
+            case ValueType_INT:
+                break;
+            case ValueType_FLOAT:
+                break;
+            case ValueType_STRING:
+                break;
+            case ValueType_NONE:
+                break;
+        }
+        
+    }
 }
 
-void ZstValue::read_json(const json & buffer)
+void ZstValue::deserialize(const std::vector<flatbuffers::Offset<ValueTypes> >* buffer)
 {
-	m_default_type = buffer[get_value_field_name(ZstValueFields::DEFAULT_TYPE)];
-	m_values.clear();
-
-	//Unpack values
-	for (auto v : buffer[get_value_field_name(ZstValueFields::VALUES)]) {
-		if (v.is_number_integer()) {
-			m_values.emplace_back(v.get<int>());
-		}
-		else if (v.is_number_float()) {
-			m_values.emplace_back(v.get<float>());
-		}
-		else if (v.is_string()) {
-			m_values.emplace_back(v.get<std::string>());
-		}
-	}
+    m_values.clear();
 }
-
-
+    
+namespace ZstValueDetails {
 
 // ----------------
 // Variant visitors
@@ -190,4 +214,7 @@ std::string ZstValueStrVisitor::operator()(float f) const
 std::string ZstValueStrVisitor::operator()(const std::string & str) const
 {
 	return str;
+}
+
+}
 }

@@ -3,6 +3,8 @@
 #include <ZstSynchronisable.h>
 #include "ZstEventDispatcher.hpp"
 
+namespace showtime {
+
 // Template Z
 //template class ZstEventDispatcher<std::weak_ptr<ZstSynchronisableAdaptor> >;
 
@@ -19,12 +21,12 @@ ZstSynchronisable::ZstSynchronisable() :
 	m_instance_id = ++ZstSynchronisable::s_instance_id_counter;
 }
 
-ZstSynchronisable::ZstSynchronisable(const ZstSynchronisable & other) : 
+ZstSynchronisable::ZstSynchronisable(const ZstSynchronisable & other) :
+    m_is_destroyed(other.m_is_destroyed),
 	m_sync_status(other.m_sync_status),
-	m_is_destroyed(other.m_is_destroyed),
 	m_is_proxy(other.m_is_proxy),
-	m_instance_id(++ZstSynchronisable::s_instance_id_counter),
-	m_synchronisable_events(std::make_shared< ZstEventDispatcher<std::shared_ptr<ZstSynchronisableAdaptor> > >("synchronisable"))
+	m_synchronisable_events(std::make_shared< ZstEventDispatcher<std::shared_ptr<ZstSynchronisableAdaptor> > >("synchronisable")),
+    m_instance_id(++ZstSynchronisable::s_instance_id_counter)
 {
 }
 
@@ -222,4 +224,6 @@ void ZstSynchronisable::dispatch_destroyed()
 std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstSynchronisableAdaptor> > > & ZstSynchronisable::synchronisable_events()
 {
     return m_synchronisable_events;
+}
+
 }

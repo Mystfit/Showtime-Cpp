@@ -304,9 +304,10 @@ if(BUILD_SHARED)
             COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:libzmq>" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
             VERBATIM
         )
-
-        target_link_libraries(${CORE_TARGET} PRIVATE ${SHOWTIME_PRIVATE_SHARED_LINKED_LIBS})
     endif()
+
+    target_link_libraries(${CORE_TARGET} PRIVATE ${SHOWTIME_PRIVATE_SHARED_LINKED_LIBS})
+
 
     # Library API exports
     target_compile_definitions(${CORE_TARGET} 

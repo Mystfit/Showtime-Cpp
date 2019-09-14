@@ -2,6 +2,8 @@
 #include "../adaptors/ZstTransportAdaptor.hpp"
 #include "../ZstEventDispatcher.hpp"
 
+namespace showtime {
+
 void ZstPlugLiason::plug_remove_cable(ZstPlug * plug, ZstCable * cable)
 {
 	if (!plug || !cable) return;
@@ -24,4 +26,6 @@ void ZstPlugLiason::output_plug_set_transport(ZstOutputPlug * plug, std::shared_
 {
 	if (!plug) return;
 	plug->add_adaptor(transport);
+}
+
 }

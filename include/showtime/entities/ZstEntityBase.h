@@ -15,6 +15,11 @@
 #include "../adaptors/ZstEntityAdaptor.hpp"
 #include "../adaptors/ZstSessionAdaptor.hpp"
 
+using namespace flatbuffers;
+
+namespace showtime
+{
+
 //Forwards
 template<typename T>
 class ZstEventDispatcher;
@@ -31,36 +36,39 @@ typedef ZstBundle<ZstEntityFactory*> ZstEntityFactoryBundle;
 typedef ZstBundleIterator<ZstEntityBase*> ZstEntityBundleIterator;
 
 
-class ZST_CLASS_EXPORTED ZstEntityBase : public ZstSynchronisable, public ZstSerialisable {
+class ZST_CLASS_EXPORTED ZstEntityBase :
+    public ZstSynchronisable,
+    virtual ZstSerialisable<Entity>
+{
     friend class ZstEntityLiason;
 
 public:
-	//Base entity
-	ZST_EXPORT ZstEntityBase(const char * entity_name);
-	ZST_EXPORT ZstEntityBase(const ZstEntityBase & other);
-	ZST_EXPORT virtual ~ZstEntityBase();
-    	
-	//The parent of this entity
-	ZST_EXPORT ZstEntityBase * parent() const;
+    //Base entity
+    ZST_EXPORT ZstEntityBase(const char * entity_name);
+    ZST_EXPORT ZstEntityBase(const ZstEntityBase & other);
+    ZST_EXPORT virtual ~ZstEntityBase();
+    
+    //The parent of this entity
+    ZST_EXPORT ZstEntityBase * parent() const;
 
-	ZST_EXPORT virtual void add_child(ZstEntityBase * child, bool auto_activate = true);
-	ZST_EXPORT virtual void remove_child(ZstEntityBase * child);
+    ZST_EXPORT virtual void add_child(ZstEntityBase * child, bool auto_activate = true);
+    ZST_EXPORT virtual void remove_child(ZstEntityBase * child);
     
     //Entity type
-	ZST_EXPORT const char * entity_type() const;
+    ZST_EXPORT const EntityType entity_type() const;
     
     //URI for this entity
-	ZST_EXPORT const ZstURI & URI() const;
+    ZST_EXPORT const ZstURI & URI() const;
 
-	//Iterate
-	ZST_EXPORT virtual void get_child_cables(ZstCableBundle & bundle);
-	ZST_EXPORT virtual void get_child_entities(ZstEntityBundle & bundle, bool include_parent = true);
-	    
-	//Serialisation
-	ZST_EXPORT void write_json(json & buffer) const override;
-	ZST_EXPORT void read_json(const json & buffer) override;
+    //Iterate
+    ZST_EXPORT virtual void get_child_cables(ZstCableBundle & bundle);
+    ZST_EXPORT virtual void get_child_entities(ZstEntityBundle & bundle, bool include_parent = true);
+    
+    //Serialisation
+    ZST_EXPORT void serialize(flatbuffers::Offset<Entity> & serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
+    ZST_EXPORT void deserialize(const Entity* buffer) override;
 
-	//Adaptors
+    //Adaptors
     ZST_EXPORT virtual void add_adaptor(std::shared_ptr<ZstEntityAdaptor>& adaptor);
     ZST_EXPORT virtual void add_adaptor(std::shared_ptr<ZstSessionAdaptor>& adaptor);
     ZST_EXPORT virtual void remove_adaptor(std::shared_ptr<ZstEntityAdaptor>& adaptor);
@@ -77,28 +85,29 @@ public:
     using ZstSynchronisable::remove_adaptor;
 #endif
 
-	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstEntityAdaptor> > > & entity_events();
-	
+    ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstEntityAdaptor> > > & entity_events();
+    
 protected:
-	//Set entity status
-	ZST_EXPORT void set_entity_type(const char * entity_type);
-	ZST_EXPORT virtual void set_parent(ZstEntityBase* entity);
+    //Set entity status
+    ZST_EXPORT void set_entity_type(EntityType entity_type);
+    ZST_EXPORT virtual void set_parent(ZstEntityBase* entity);
     ZST_EXPORT virtual void set_owner(const ZstURI & fire_owner);
-	ZST_EXPORT virtual void update_URI();
-	ZST_EXPORT virtual void dispatch_destroyed() override;
+    ZST_EXPORT virtual void update_URI();
+    ZST_EXPORT virtual void dispatch_destroyed() override;
     
     //Event dispatchers
     ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstSessionAdaptor> > > & session_events();
 
     //Entity mutex
     mutable std::mutex m_entity_mtx;
-	std::shared_ptr<ZstEventDispatcher< std::shared_ptr< ZstSessionAdaptor> > > m_session_events;
-	std::shared_ptr<ZstEventDispatcher< std::shared_ptr< ZstEntityAdaptor> > > m_entity_events;
+    std::shared_ptr<ZstEventDispatcher< std::shared_ptr< ZstSessionAdaptor> > > m_session_events;
+    std::shared_ptr<ZstEventDispatcher< std::shared_ptr< ZstEntityAdaptor> > > m_entity_events;
 
 private:
-	ZstEntityBase * m_parent;
-	std::string m_entity_type;
-	ZstURI m_uri;
+    ZstEntityBase * m_parent;
+    EntityType m_entity_type;
+    ZstURI m_uri;
     ZstURI m_current_owner;
     std::mutex m_entity_lock;
 };
+}

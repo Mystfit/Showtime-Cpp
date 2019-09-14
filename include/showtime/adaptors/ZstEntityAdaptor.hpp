@@ -3,6 +3,8 @@
 #include "ZstExports.h"
 #include "adaptors/ZstEventAdaptor.hpp"
 
+namespace showtime {
+    
 class ZstEntityBase;
 
 class ZST_CLASS_EXPORTED ZstEntityAdaptor : 
@@ -14,3 +16,5 @@ public:
 	ZST_EXPORT virtual void on_request_entity_activation(ZstEntityBase * entity);
     ZST_EXPORT virtual void on_disconnect_cable(ZstCable * cable);
 };
+
+}

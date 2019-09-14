@@ -9,6 +9,7 @@
 #include "../ZstMessagePool.hpp"
 #include "../adaptors/ZstTransportAdaptor.hpp"
 
+namespace showtime {
 
 template<typename T>
 class ZstTransportLayer : 
@@ -43,3 +44,5 @@ public:
 protected:
 	ZstMessagePool<T> m_msg_pool;
 };
+
+}

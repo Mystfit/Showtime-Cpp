@@ -3,6 +3,8 @@
 #include "ZstConstants.h"
 #include "ZstExceptions.h"
 
+namespace showtime {
+
 ZstTransportLayerBase::ZstTransportLayerBase() :
 	ZstMessageSupervisor(std::make_shared<cf::time_watcher>(), STAGE_TIMEOUT),
 	m_is_active(false),
@@ -140,4 +142,6 @@ void ZstTransportLayerBase::receive_msg(ZstMessage* msg, ZstEventCallback on_com
 		process_response(msg->id(), ZstMessageReceipt{ msg->kind() });
 		on_complete(status);
 	});
+}
+
 }

@@ -10,6 +10,7 @@
 #define SOCK_BUFFER 10000000
 #define HWM 2000
 
+namespace showtime {
 
 class ZstGraphTransport : 
 	public ZstTransportLayer<ZstPerformanceMessage>
@@ -58,3 +59,5 @@ private:
 	zsock_t * m_graph_in;
 	zsock_t * m_graph_out;
 };
+
+}

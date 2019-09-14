@@ -3,6 +3,8 @@
 #include "ZstExports.h"
 #include "adaptors/ZstEventAdaptor.hpp"
 
+namespace showtime {
+
 //Forwards
 class ZstSynchronisable;
 
@@ -16,3 +18,5 @@ public:
 	ZST_EXPORT virtual void on_synchronisable_updated(ZstSynchronisable * synchronisable);
 	ZST_EXPORT virtual void on_synchronisable_has_event(ZstSynchronisable * synchronisable);
 };
+
+}

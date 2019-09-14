@@ -4,6 +4,8 @@
 #include <czmq.h>
 #include <msgpack.hpp>
 
+namespace showtime {
+
 ZstGraphTransport::ZstGraphTransport() :
 	m_graph_in(NULL),
 	m_graph_out(NULL)
@@ -143,4 +145,6 @@ zsock_t * ZstGraphTransport::input_graph_socket()
 zsock_t * ZstGraphTransport::output_graph_socket()
 {
 	return m_graph_out;
+}
+
 }

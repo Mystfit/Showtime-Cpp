@@ -5,14 +5,14 @@
 #include <memory>
 #include <mutex>
 
+namespace showtime {
 
 //Forwards
 class ZstEventDispatcherBase;
 
-
 class ZST_CLASS_EXPORTED ZstEventAdaptor : public inheritable_enable_shared_from_this<ZstEventAdaptor>
 {
-	friend class ZstEventDispatcherBase;
+    friend class ZstEventDispatcherBase;
 public:
 	ZST_EXPORT ZstEventAdaptor();
 	ZST_EXPORT virtual ~ZstEventAdaptor();
@@ -28,3 +28,5 @@ private:
 
 	std::recursive_mutex m_mtx;
 };
+
+}

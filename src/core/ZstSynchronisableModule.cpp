@@ -1,5 +1,7 @@
 #include "ZstSynchronisableModule.h"
 
+namespace showtime {
+
 ZstSynchronisableModule::ZstSynchronisableModule() : 
 	m_synchronisable_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstSynchronisableAdaptor> > >())
 {
@@ -45,4 +47,6 @@ std::shared_ptr < ZstEventDispatcher<std::shared_ptr<ZstSynchronisableAdaptor> >
 
 ZstReaper & ZstSynchronisableModule::reaper() {
 	return m_reaper;
+}
+
 }

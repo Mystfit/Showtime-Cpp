@@ -95,7 +95,7 @@ int ZstActor::s_handle_actor_pipe(zloop_t * loop, zsock_t * sock, void * args)
 
 	//Received TERM message, this actor is going away
 	//char *command = zmsg_popstr(msg);
-	char* command = "";
+    char command[] = "";
 	zsock_t* send_sock = NULL;
 	zmsg_t* msg = NULL;
 	zsock_recv(sock, "spm", &command, &send_sock, &msg);

@@ -5,6 +5,8 @@
 #include "../transports/ZstTransportLayerBase.hpp"
 #include "../ZstMessageSupervisor.hpp"
 
+namespace showtime {
+
 //Forwards
 class ZstMessage;
 
@@ -22,3 +24,5 @@ public:
 	ZST_EXPORT virtual ZstMessageReceipt send_msg(ZstMsgKind kind);
 	ZST_EXPORT virtual ZstMessageReceipt send_msg(ZstMsgKind kind, const ZstTransportArgs& args);
 };
+
+}

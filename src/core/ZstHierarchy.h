@@ -18,6 +18,7 @@
 #include "liasons/ZstSynchronisableLiason.hpp"
 #include "adaptors/ZstTransportAdaptor.hpp"
 
+namespace showtime {
 
 class ZST_CLASS_EXPORTED ZstHierarchy :
 	public ZstSynchronisableModule,
@@ -107,3 +108,5 @@ private:
 	std::mutex m_hierarchy_mutex;
 	ZstEntityMap m_entity_lookup;
 };
+
+}

@@ -17,6 +17,7 @@
 #include "adaptors/ZstTransportAdaptor.hpp"
 #include "ZstEventDispatcher.hpp"
 
+namespace showtime {
 
 class ZST_CLASS_EXPORTED ZstSession :
 	public ZstSynchronisableModule,
@@ -112,3 +113,5 @@ private:
 	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstComputeAdaptor> > > m_compute_events;
 	ZstPerformerMap m_connected_performers;
 };
+
+}

@@ -8,6 +8,8 @@
 #include "entities/ZstEntityBase.h"
 #include "ZstExports.h"
 
+namespace showtime {
+
 class ZstReaper {
 public:
 	ZST_EXPORT void add(ZstSynchronisable * synchronisable);
@@ -18,3 +20,5 @@ private:
 	std::unordered_set<ZstSynchronisable*> m_items_to_reap;
     moodycamel::ConcurrentQueue< std::function<void()> > m_cleanup_callbacks;
 };
+
+}

@@ -4,6 +4,8 @@
 // Cable creation API
 // ------------------
 
+namespace showtime {
+
 ZstSession::ZstSession() : 
 	m_session_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstSessionAdaptor> > >()),
 	m_compute_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstComputeAdaptor> > >())
@@ -75,7 +77,7 @@ ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * outpu
 		return NULL;
 	}
 
-	if (input->direction() != ZstPlugDirection::IN_JACK || output->direction() != ZstPlugDirection::OUT_JACK) {
+	if (input->direction() != PlugDirection_IN_JACK || output->direction() != PlugDirection_OUT_JACK) {
 		ZstLog::net(LogLevel::notification, "Cable order incorrect");
 		return NULL;
 	}
@@ -235,7 +237,8 @@ void ZstSession::on_entity_arriving(ZstEntityBase * entity)
     ZstEntityBundle bundle;
     entity->get_child_entities(bundle);
     for(auto child : bundle){
-        child->add_adaptor(ZstSessionAdaptor::downcasted_shared_from_this<ZstSessionAdaptor>());
+        auto adp = ZstSessionAdaptor::downcasted_shared_from_this<ZstSessionAdaptor>();
+        child->add_adaptor(adp);
     }
 }
 
@@ -314,4 +317,6 @@ std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstSessionAdaptor> > >& ZstSe
 std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstComputeAdaptor> > >& ZstSession::compute_events()
 {
 	return m_compute_events;
+}
+
 }

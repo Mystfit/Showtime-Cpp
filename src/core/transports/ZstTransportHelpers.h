@@ -4,6 +4,8 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/nil_generator.hpp>
 
+namespace showtime {
+
 enum ZstTransportRequestBehaviour
 {
 	PUBLISH = 0,
@@ -34,3 +36,5 @@ struct ZstTransportArgs {
 	ZstMsgPayload msg_payload;
 	ZstMessageReceivedAction on_recv_response = [](ZstMessageReceipt receipt) {};
 };
+
+}

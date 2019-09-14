@@ -8,6 +8,8 @@
 #include "adaptors/ZstSynchronisableAdaptor.hpp"
 #include "liasons/ZstSynchronisableLiason.hpp"
 
+namespace showtime {
+
 class ZST_CLASS_EXPORTED ZstSynchronisableModule :
     public ZstSynchronisableAdaptor,
     public ZstSynchronisableLiason
@@ -29,3 +31,5 @@ private:
 	ZstReaper m_reaper;
     std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstSynchronisableAdaptor> > > m_synchronisable_events;
 };
+
+}
