@@ -104,6 +104,34 @@ const size_t ZstValue::size_at(const size_t position) const {
     } 
     return 0;
 }
+    
+std::vector<int> ZstValue::as_int_vector() const
+{
+    std::vector<int> ivec;
+    for(auto val : m_values){
+        ivec.push_back(boost::apply_visitor(ZstValueDetails::ZstValueIntVisitor(), val));
+    }
+    return ivec;
+}
+
+std::vector<float> ZstValue::as_float_vector() const
+{
+    std::vector<float> fvec;
+    for(auto val : m_values){
+        fvec.push_back(boost::apply_visitor(ZstValueDetails::ZstValueFloatVisitor(), val));
+    }
+    return fvec;
+}
+
+std::vector<std::string> ZstValue::as_string_vector() const
+{
+    std::vector<std::string> svec;
+    for(auto val : m_values){
+        svec.push_back(boost::apply_visitor(ZstValueDetails::ZstValueStrVisitor(), val));
+    }
+    return svec;
+}
+
 
 //void ZstValue::write_json(json & buffer) const
 //{
@@ -142,28 +170,28 @@ const size_t ZstValue::size_at(const size_t position) const {
 //}
 //
 
-void ZstValue::serialize(flatbuffers::Offset< std::vector<flatbuffers::Offset<ValueTypes> > > & serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const
+void ZstValue::serialize(flatbuffers::Offset<void> & serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const
 {
-    
-    std::vector<flatbuffers::Offset<ValueTypes>> value_builder;
-    for(auto value : m_values){
-        switch(m_default_type){
-            case ValueType_INT:
-                break;
-            case ValueType_FLOAT:
-                break;
-            case ValueType_STRING:
-                break;
-            case ValueType_NONE:
-                break;
-        }
-        
+    switch(m_default_type){
+        case ValueType_INT:
+            serialized_offset = buffer_builder.CreateVector(as_int_vector()).Union();
+            break;
+        case ValueType_FLOAT:
+            serialized_offset = buffer_builder.CreateVector(as_float_vector()).Union();
+            break;
+        case ValueType_STRING:
+            serialized_offset = buffer_builder.CreateVector(as_string_vector()).Union();
+            break;
+        case ValueType_NONE:
+            break;
     }
+
 }
 
-void ZstValue::deserialize(const std::vector<flatbuffers::Offset<ValueTypes> >* buffer)
+void ZstValue::deserialize(const void* buffer)
 {
     m_values.clear();
+    
 }
     
 namespace ZstValueDetails {

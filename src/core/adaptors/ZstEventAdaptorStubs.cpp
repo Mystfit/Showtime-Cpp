@@ -88,8 +88,7 @@ void ZstTransportAdaptor::on_receive_msg(ZstMessage* msg) {}
 void ZstTransportAdaptor::connect(const std::string& address) {}
 void ZstTransportAdaptor::bind(const std::string& address) {}
 void ZstTransportAdaptor::disconnect() {}
-ZstMessageReceipt ZstTransportAdaptor::send_msg(ZstMsgKind kind) { return ZstMessageReceipt{ZstMsgKind::EMPTY}; }
-ZstMessageReceipt ZstTransportAdaptor::send_msg(ZstMsgKind kind, const ZstTransportArgs& args) { return ZstMessageReceipt{ ZstMsgKind::EMPTY }; }
+ZstMessageReceipt ZstTransportAdaptor::send_msg(StageMessageBuilder & message, const ZstTransportArgs& args){ return ZstMessageReceipt{}; }
 
 
 // -----------------------

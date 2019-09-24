@@ -51,7 +51,7 @@ namespace ZstValueDetails {
 }
 
 
-class ZstValue : public ZstSerialisable< std::vector<flatbuffers::Offset<ValueTypes> > > {
+class ZstValue : public ZstSerialisable< flatbuffers::Offset<void> > {
 public:
 	ZST_EXPORT ZstValue();
 	ZST_EXPORT ZstValue(const ZstValue & other);
@@ -72,10 +72,14 @@ public:
 	ZST_EXPORT const float float_at(const size_t position) const;
 	ZST_EXPORT void char_at(char * buf, const size_t position) const;
 	ZST_EXPORT const size_t size_at(const size_t position) const;
+    
+    ZST_EXPORT std::vector<int> as_int_vector() const;
+    ZST_EXPORT std::vector<float> as_float_vector() const;
+    ZST_EXPORT std::vector<std::string> as_string_vector() const;
 
 	//Serialisation
-    ZST_EXPORT void serialize(flatbuffers::Offset< std::vector<flatbuffers::Offset<ValueTypes> > > & serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
-    ZST_EXPORT void deserialize(const std::vector<flatbuffers::Offset<ValueTypes> > * buffer) override;
+    ZST_EXPORT void serialize(flatbuffers::Offset< void > & serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
+    ZST_EXPORT void deserialize(const void * buffer) override;
 
 protected:
 	std::vector<ZstValueVariant> m_values;

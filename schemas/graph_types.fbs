@@ -23,7 +23,7 @@ table StrList {
     val:[string];
 }
 
-union ValueTypes {
+union ValueLists {
     IntList,
     FloatList,
     StrList
@@ -64,7 +64,7 @@ table Plug {
     entity:Entity;
     plug_direction: PlugDirection;
     max_cables: int;
-    values: [ValueTypes];
+    values: ValueLists;
 }
 
 table Factory {

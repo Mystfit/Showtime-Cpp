@@ -150,25 +150,25 @@ ZstEntityBase * ZstHierarchy::walk_to_entity(const ZstURI & path) const
 	return result;
 }
 
-ZstMsgKind ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity)
+void ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity)
 {
 	// All entities need a parent unless they are a performer 
 	ZstURI parent_URI = entity.URI().parent();
 	if (!parent_URI.size()) {
 		ZstLog::net(LogLevel::error, "Entity {} has no parent", entity.URI().path());
-		return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
+		return;
 	}
 
     //Check if the entity already exists in the hierarchy
 	if (find_entity(entity.URI())) {
 		ZstLog::net(LogLevel::error, "Can't create entity {}, it already exists", entity.URI().path());
-		return ZstMsgKind::ERR_ENTITY_ALREADY_EXISTS;
+		return;
 	}
     
     ZstEntityBase * parent = find_entity(parent_URI);
 	if (!parent) {
 		ZstLog::net(LogLevel::error, "Could not find parent {} for entity {}", parent_URI.path(), entity.URI().path());
-		return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
+		return;
 	}
 
     ZstEntityBase * entity_proxy = NULL;
@@ -184,7 +184,7 @@ ZstMsgKind ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity)
 	}
 	else {
 		ZstLog::net(LogLevel::notification, "Can't create unknown proxy entity type {}", entity.entity_type());
-		return ZstMsgKind::ERR_MSG_TYPE_UNKNOWN;
+		return;
 	}
     
     //Set the entity as a proxy early to avoid accidental auto-activation
@@ -211,8 +211,6 @@ ZstMsgKind ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity)
 		//Activate entity
 		synchronisable_set_activation_status(c, ZstSyncStatus::ACTIVATED);
 	}
-
-	return ZstMsgKind::OK;
 }
 
 void ZstHierarchy::dispatch_entity_arrived_event(ZstEntityBase * entity){
@@ -232,7 +230,7 @@ void ZstHierarchy::dispatch_entity_arrived_event(ZstEntityBase * entity){
     }
 }
 
-ZstMsgKind ZstHierarchy::update_proxy_entity(const ZstEntityBase & entity)
+void ZstHierarchy::update_proxy_entity(const ZstEntityBase & entity)
 {
 	if (entity.entity_type() == EntityType_FACTORY) {
 		ZstLog::net(LogLevel::notification, "Factory {} received an update", entity.URI().path());
@@ -248,13 +246,13 @@ ZstMsgKind ZstHierarchy::update_proxy_entity(const ZstEntityBase & entity)
 			local_factory->update_creatables();
 		}
 		else {
-			return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
+			ZstLog::net(LogLevel::warn, "Could not find local proxy instance of remote factory {}", entity.URI().path());
+			return;
 		}
 	}
-	return ZstMsgKind::OK;
 }
 
-ZstMsgKind ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
+void ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 {
 	if (entity) {
 		if (entity->is_proxy()) {
@@ -262,8 +260,6 @@ ZstMsgKind ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 			destroy_entity_complete(entity);
 		}
 	}
-
-	return ZstMsgKind::OK;
 }
 
 void ZstHierarchy::add_entity_to_lookup(ZstEntityBase * entity)

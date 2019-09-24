@@ -64,9 +64,9 @@ public:
 	// Hierarchy manipulation
 	// ------------------------------
 
-	ZST_EXPORT virtual ZstMsgKind add_proxy_entity(const ZstEntityBase & entity);
-	ZST_EXPORT virtual ZstMsgKind update_proxy_entity(const ZstEntityBase & entity);
-	ZST_EXPORT virtual ZstMsgKind remove_proxy_entity(ZstEntityBase * entity);
+	ZST_EXPORT virtual void add_proxy_entity(const ZstEntityBase & entity);
+	ZST_EXPORT virtual void update_proxy_entity(const ZstEntityBase & entity);
+	ZST_EXPORT virtual void remove_proxy_entity(ZstEntityBase * entity);
 
 	
 	// -----------------

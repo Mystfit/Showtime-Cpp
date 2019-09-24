@@ -77,7 +77,6 @@ set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstActor.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstZMQRefCounter.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessage.h"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstMessageOptions.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMsgID.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstValue.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessagePool.hpp"
@@ -96,7 +95,6 @@ set(ZST_CORE_MODULE_HEADERS
 )
 set(ZST_CORE_TRANSPORT_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportHelpers.h"
-    "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayer.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayerBase.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstGraphTransport.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTCPGraphTransport.h"
@@ -122,6 +120,8 @@ set(ZST_CORE_LIASON_HEADERS
 )
 set(ZST_CORE_ADAPTOR_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstTransportAdaptor.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstGraphTransportAdaptor.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstStageTransportAdaptor.hpp"
 )
 
 # Core cpp files

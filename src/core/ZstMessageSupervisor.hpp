@@ -3,8 +3,9 @@
 #include <cf/cfuture.h>
 #include <cf/time_watcher.h>
 #include <concurrentqueue.h>
+#include <unordered_map>
+
 #include "ZstExports.h"
-#include "ZstMessageOptions.h"
 #include "transports/ZstTransportHelpers.h"
 #include "ZstMsgID.h"
 

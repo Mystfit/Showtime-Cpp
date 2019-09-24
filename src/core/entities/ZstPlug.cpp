@@ -1,14 +1,13 @@
 #include <memory>
 #include <mutex>
 #include <msgpack.hpp>
-#include <nlohmann/json.hpp>
 
 #include "entities/ZstPlug.h"
 #include "ZstCable.h"
 
 #include "../ZstValue.h"
 #include "../ZstEventDispatcher.hpp"
-#include "../adaptors/ZstTransportAdaptor.hpp"
+#include "../adaptors/ZstGraphTransportAdaptor.hpp"
 #include "../ZstHierarchy.h"
 
 namespace showtime
@@ -251,7 +250,7 @@ ZstInputPlug::ZstInputPlug(const char * name, ValueType t, int max_cables) :
 
 ZstOutputPlug::ZstOutputPlug() :
     ZstPlug("", ValueType_NONE, PlugDirection_OUT_JACK, -1),
-    m_graph_out_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstTransportAdaptor> > >("plug_out_events")),
+    m_graph_out_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstGraphTransportAdaptor> > >("plug_out_events")),
     m_reliable(true),
     m_can_fire(false)
 {
@@ -259,7 +258,7 @@ ZstOutputPlug::ZstOutputPlug() :
 
 ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug& other) :
     ZstPlug(other),
-    m_graph_out_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstTransportAdaptor> > > ("plug_out_events")),
+    m_graph_out_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstGraphTransportAdaptor> > > ("plug_out_events")),
     m_reliable(other.m_reliable),
     m_can_fire(other.m_can_fire)
 {
@@ -267,7 +266,7 @@ ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug& other) :
 
 ZstOutputPlug::ZstOutputPlug(const char * name, ValueType t, bool reliable) :
     ZstPlug(name, t, PlugDirection_OUT_JACK, -1),
-    m_graph_out_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstTransportAdaptor> > >("plug_out_events")),
+    m_graph_out_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstGraphTransportAdaptor> > >("plug_out_events")),
     m_reliable(reliable),
     m_can_fire(false)
 {
@@ -295,11 +294,18 @@ void ZstOutputPlug::fire()
     if (!can_fire())
         return;
 
-    m_graph_out_events->invoke([this](std::shared_ptr<ZstTransportAdaptor> adaptor) {
-        ZstTransportArgs args;
-        args.msg_args[get_msg_arg_name(ZstMsgArg::PATH)] = this->URI().path();
+    m_graph_out_events->invoke([](std::shared_ptr<ZstGraphTransportAdaptor> adaptor) {
+        //ZstTransportArgs args;
+        //args.msg_args[get_msg_arg_name(ZstMsgArg::PATH)] = this->URI().path();
         //this->raw_value()->write_json(args.msg_payload);
-        adaptor->send_msg(ZstMsgKind::PERFORMANCE_MSG, args);
+        //adaptor->send_msg(ZstMsgKind::PERFORMANCE_MSG, args);
+
+        //TODO: Finish graph message flatbuffer implementation
+        
+        GraphMessageBuilder builder;
+        adaptor->send_message(builder);
+        
+        static_assert(false);
     });
     m_value->clear();
 }

@@ -1,6 +1,6 @@
 #pragma once
 #include "../ZstMsgID.h"
-#include "../ZstMessageOptions.h"
+#include <schemas/stage_message_generated.h>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/nil_generator.hpp>
 
@@ -15,7 +15,7 @@ enum ZstTransportRequestBehaviour
 
 
 struct ZstMessageReceipt {
-	ZstMsgKind status = ZstMsgKind::EMPTY;
+	Signal status = Signal_EMPTY;
 	ZstTransportRequestBehaviour request_behaviour = ZstTransportRequestBehaviour::PUBLISH;
 };
 
@@ -32,8 +32,6 @@ struct ZstTransportArgs {
 	boost::uuids::uuid target_endpoint_UUID = boost::uuids::nil_generator()();
 	ZstTransportRequestBehaviour msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
 	ZstMsgID msg_ID = 0;
-	ZstMsgArgs msg_args;
-	ZstMsgPayload msg_payload;
 	ZstMessageReceivedAction on_recv_response = [](ZstMessageReceipt receipt) {};
 };
 
