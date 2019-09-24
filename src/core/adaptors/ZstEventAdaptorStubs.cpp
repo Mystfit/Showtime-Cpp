@@ -6,7 +6,9 @@
 #include "adaptors/ZstFactoryAdaptor.hpp"
 #include "adaptors/ZstSessionAdaptor.hpp"
 #include "adaptors/ZstEntityAdaptor.hpp"
-#include "ZstTransportAdaptor.hpp"
+#include "ZstStageTransportAdaptor.hpp"
+#include "ZstGraphTransportAdaptor.hpp"
+
 #include "../ZstHierarchy.h"
 #include "ZstSynchronisable.h"
 #include "entities/ZstEntityFactory.h"
@@ -83,12 +85,20 @@ void ZstHierarchyAdaptor::on_factory_leaving(ZstEntityFactory * factory) {}
 // Message adaptors
 // -----------------------
 
-void ZstTransportAdaptor::on_receive_msg(ZstMessage* msg) {}
+void ZstStageTransportAdaptor::on_receive_msg(ZstStageMessage* msg) {};
+void ZstGraphTransportAdaptor::on_receive_msg(ZstPerformanceMessage* msg) {};
 
 void ZstTransportAdaptor::connect(const std::string& address) {}
 void ZstTransportAdaptor::bind(const std::string& address) {}
 void ZstTransportAdaptor::disconnect() {}
-ZstMessageReceipt ZstTransportAdaptor::send_msg(StageMessageBuilder & message, const ZstTransportArgs& args){ return ZstMessageReceipt{}; }
+
+ZstMessageReceipt ZstStageTransportAdaptor::send_msg(Content message_type, flatbuffers::Offset<void>& message_content, flatbuffers::FlatBufferBuilder& buffer_builder, const ZstTransportArgs& args) {
+	return ZstMessageReceipt{}; 
+}
+ZstMessageReceipt ZstGraphTransportAdaptor::send_msg(flatbuffers::Offset<GraphMessage>& message_content, flatbuffers::FlatBufferBuilder& buffer_builder, const ZstTransportArgs& args) {
+	return ZstMessageReceipt{};
+}
+
 
 
 // -----------------------

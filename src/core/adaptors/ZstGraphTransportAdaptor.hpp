@@ -10,8 +10,8 @@
 #include <schemas/graph_message_generated.h>
 
 #include "ZstExports.h"
-#include "ZstPerformanceMessage.h"
 #include "adaptors/ZstEventAdaptor.hpp"
+#include "../ZstPerformanceMessage.h"
 #include "../transports/ZstTransportLayerBase.hpp"
 
 namespace showtime {
@@ -20,6 +20,6 @@ namespace showtime {
     {
     public:
         ZST_EXPORT virtual void on_receive_msg(ZstPerformanceMessage * msg);
-        ZST_EXPORT virtual ZstMessageReceipt send_msg(GraphMessageBuilder & message, const ZstTransportArgs& args = {});
+        ZST_EXPORT virtual ZstMessageReceipt send_msg(flatbuffers::Offset<GraphMessage>& message_content, flatbuffers::FlatBufferBuilder& buffer_builder, const ZstTransportArgs& args = {});
     };
 }

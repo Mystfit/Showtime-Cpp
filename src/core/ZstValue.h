@@ -51,7 +51,7 @@ namespace ZstValueDetails {
 }
 
 
-class ZstValue : public ZstSerialisable< flatbuffers::Offset<void> > {
+class ZstValue : virtual ZstSerialisable<void> {
 public:
 	ZST_EXPORT ZstValue();
 	ZST_EXPORT ZstValue(const ZstValue & other);

@@ -294,18 +294,22 @@ void ZstOutputPlug::fire()
     if (!can_fire())
         return;
 
-    m_graph_out_events->invoke([](std::shared_ptr<ZstGraphTransportAdaptor> adaptor) {
-        //ZstTransportArgs args;
-        //args.msg_args[get_msg_arg_name(ZstMsgArg::PATH)] = this->URI().path();
-        //this->raw_value()->write_json(args.msg_payload);
-        //adaptor->send_msg(ZstMsgKind::PERFORMANCE_MSG, args);
+    m_graph_out_events->invoke([this](std::shared_ptr<ZstGraphTransportAdaptor> adaptor) {       
+		// Buffer
+		auto buffer_builder = flatbuffers::FlatBufferBuilder();
 
-        //TODO: Finish graph message flatbuffer implementation
-        
-        GraphMessageBuilder builder;
-        adaptor->send_message(builder);
-        
-        static_assert(false);
+		// Serialize values
+		auto value_offset = flatbuffers::Offset<void>();
+		this->raw_value()->serialize(value_offset, buffer_builder);
+
+		// Create graph mesage
+		auto graph_msg_builder = GraphMessageBuilder(buffer_builder);
+		graph_msg_builder.add_values_type(this->raw_value()->get_default_type());
+		graph_msg_builder.add_values(value_offset);
+		graph_msg_builder.add_sender(buffer_builder.CreateString(this->URI().path()));
+
+		// Send message
+		adaptor->send_msg(graph_msg_builder.Finish(), buffer_builder);
     });
     m_value->clear();
 }
@@ -342,12 +346,12 @@ void ZstOutputPlug::set_can_fire(bool can_fire)
     m_can_fire = can_fire;
 }
 
-void ZstOutputPlug::add_adaptor(std::shared_ptr<ZstTransportAdaptor> & adaptor)
+void ZstOutputPlug::add_adaptor(std::shared_ptr<ZstGraphTransportAdaptor> & adaptor)
 {
     m_graph_out_events->add_adaptor(adaptor);
 }
 
-void ZstOutputPlug::remove_adaptor(std::shared_ptr<ZstTransportAdaptor> & adaptor)
+void ZstOutputPlug::remove_adaptor(std::shared_ptr<ZstGraphTransportAdaptor> & adaptor)
 {
     m_graph_out_events->remove_adaptor(adaptor);
 }

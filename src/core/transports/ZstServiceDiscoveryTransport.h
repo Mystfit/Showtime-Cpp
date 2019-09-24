@@ -3,7 +3,6 @@
 #include "ZstExports.h"
 #include "../ZstStageMessage.h"
 #include "../ZstActor.h"
-#include "ZstTransportLayer.h"
 
 namespace showtime {
 
@@ -12,7 +11,7 @@ typedef struct _zactor_t zactor_t;
 typedef struct _zloop_t zloop_t;
 typedef struct _zsock_t zsock_t;
 
-class ZstServiceDiscoveryTransport : public ZstTransportLayer<ZstStageMessage> {
+class ZstServiceDiscoveryTransport : public ZstTransportLayerBase {
 public:
     ZST_EXPORT ZstServiceDiscoveryTransport();
     ZST_EXPORT ~ZstServiceDiscoveryTransport();

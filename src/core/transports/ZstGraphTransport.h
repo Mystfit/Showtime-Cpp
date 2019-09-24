@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../ZstPerformanceMessage.h"
-#include "ZstTransportLayer.h"
+#include "ZstTransportLayerBase.hpp"
 #include "ZstExports.h"
 
 #define PERFORMANCE_GROUP "p"
@@ -12,8 +12,7 @@
 
 namespace showtime {
 
-class ZstGraphTransport : 
-	public ZstTransportLayer<ZstPerformanceMessage>
+class ZstGraphTransport : public ZstTransportLayerBase
 {
 public:
 	ZST_EXPORT ZstGraphTransport();

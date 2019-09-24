@@ -113,8 +113,8 @@ protected:
     ZST_EXPORT virtual void set_owner(const ZstURI & fire_owner) override;
 
 private:
-    ZST_EXPORT virtual void add_adaptor(std::shared_ptr<ZstTransportAdaptor>& adaptor);
-    ZST_EXPORT virtual void remove_adaptor(std::shared_ptr<ZstTransportAdaptor>& adaptor);
+    ZST_EXPORT virtual void add_adaptor(std::shared_ptr<ZstGraphTransportAdaptor>& adaptor);
+    ZST_EXPORT virtual void remove_adaptor(std::shared_ptr<ZstGraphTransportAdaptor>& adaptor);
     ZST_EXPORT void set_can_fire(bool can_fire);
 
     std::shared_ptr< ZstEventDispatcher< std::shared_ptr<ZstGraphTransportAdaptor> > > m_graph_out_events;

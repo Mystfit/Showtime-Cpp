@@ -18,6 +18,7 @@ namespace showtime {
     {
     public:
         ZST_EXPORT virtual void on_receive_msg(ZstStageMessage * msg);
-        ZST_EXPORT virtual ZstMessageReceipt send_msg(StageMessageBuilder & message, const ZstTransportArgs& args = {});
+
+        ZST_EXPORT virtual ZstMessageReceipt send_msg(Content message_type, flatbuffers::Offset<void> & message_content, flatbuffers::FlatBufferBuilder & buffer_builder, const ZstTransportArgs& args = {});
     };
 }
