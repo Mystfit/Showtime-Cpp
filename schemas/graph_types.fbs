@@ -23,11 +23,15 @@ table StrList {
     val:[string];
 }
 
-union ValueLists {
+union ValueList {
     IntList,
     FloatList,
     StrList
 } 
+
+table PlugValue {
+    values: ValueList;
+}
 
 
 
@@ -53,45 +57,20 @@ table Entity {
     URI:string;
     entity_type:EntityType;
     owner:string;
-}
 
-table Component {
-    entity:Entity;
+    // Component
     component_type:string;
-}
 
-table Plug {
-    entity:Entity;
+    // Plug
     plug_direction: PlugDirection;
     max_cables: int;
-    values: ValueLists;
-}
+    value: PlugValue;
 
-table Factory {
+    // Factory
     creatables: [string];
-    entity:Entity;
-}
 
-union ChildEntityTypes{
-    Component,
-    Plug,
-    Factory
-}
-
-
-// Performer
-// ---------
-
-table Performer {
-    component:Component;
-    children: [ChildEntityTypes];
-}
-
-union AllEntityTypes {
-    Component,
-    Plug,
-    Factory,
-    Performer
+    // Performer
+    // - empty
 }
 
 
@@ -103,3 +82,4 @@ table Cable {
     output_URI:string;
 }
 
+        

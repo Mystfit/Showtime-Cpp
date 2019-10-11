@@ -46,7 +46,7 @@ public:
 	// Performers
 	// ------------------------------
     
-	ZST_EXPORT virtual void add_performer(const ZstPerformer & performer);
+	ZST_EXPORT virtual void add_performer(const Entity* performer);
 	ZST_EXPORT virtual ZstPerformer * get_performer_by_URI(const ZstURI & uri) const;
 	ZST_EXPORT virtual ZstEntityBundle & get_performers(ZstEntityBundle & bundle) const;
     ZST_EXPORT virtual ZstPerformer * get_local_performer() const = 0;
@@ -64,9 +64,10 @@ public:
 	// Hierarchy manipulation
 	// ------------------------------
 
-	ZST_EXPORT virtual void add_proxy_entity(const ZstEntityBase & entity);
-	ZST_EXPORT virtual void update_proxy_entity(const ZstEntityBase & entity);
+	ZST_EXPORT virtual void add_proxy_entity(const Entity* entity);
+	ZST_EXPORT virtual void update_proxy_entity(const Entity* entity);
 	ZST_EXPORT virtual void remove_proxy_entity(ZstEntityBase * entity);
+    ZST_EXPORT std::shared_ptr<ZstEntityBase> unpack_entity(const Entity* buffer);
 
 	
 	// -----------------
@@ -89,7 +90,7 @@ public:
     // ------------------------------
     
     ZST_EXPORT virtual void add_entity_to_lookup(ZstEntityBase * entity);
-    ZST_EXPORT virtual void remove_entity_from_lookup(ZstEntityBase * entity);
+    ZST_EXPORT virtual void remove_entity_from_lookup(const ZstURI & entity);
 
 protected:
 	// ------------------------------

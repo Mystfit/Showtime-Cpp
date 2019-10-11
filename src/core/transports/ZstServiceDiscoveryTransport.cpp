@@ -26,9 +26,11 @@ void ZstServiceDiscoveryTransport::init(int port)
     
     if (m_beacon) {
         zst_zmq_inc_ref_count();
+        
         zsock_send(m_beacon, "si", "CONFIGURE", port);
-        char * hostname = zstr_recv(m_beacon);
-        ZstLog::net(LogLevel::notification, "Beacon transport broadcasting on port {}", port);
+        char* hostname = zstr_recv(m_beacon);
+        ZstLog::net(LogLevel::notification, "Beacon transport broadcasting on port {}. Hostname is {}", port, hostname);
+        zstr_free(&hostname);
         
         m_beacon_actor.attach_pipe_listener(zactor_sock(m_beacon), s_handle_beacon, this);
         m_beacon_actor.start_loop();
@@ -51,25 +53,18 @@ void ZstServiceDiscoveryTransport::destroy()
 	}
     ZstTransportLayerBase::destroy();
 }
-
-void ZstServiceDiscoveryTransport::send_message_impl(ZstMessage * msg, const ZstTransportArgs& args)
+    
+ZstMessageReceipt ZstServiceDiscoveryTransport::send_msg(Content message_type, flatbuffers::Offset<void> message_content, flatbuffers::FlatBufferBuilder & buffer_builder, const ZstTransportArgs& args)
 {
-    ZstStageMessage * stage_msg = static_cast<ZstStageMessage*>(msg);
-    auto data = stage_msg->as_json_str();
-    start_broadcast(data.c_str(), data.size(), 1000);
-    release_msg(stage_msg);
+    flatbuffers::Offset<StageMessage> msg_offset;
+    buffer_builder.Finish(msg_offset);
+    send_message_impl(buffer_builder.GetBufferPointer(), buffer_builder.GetSize(), args);
+    return ZstMessageReceipt{Signal_OK};
 }
 
-void ZstServiceDiscoveryTransport::receive_msg(ZstMessage * msg)
+void ZstServiceDiscoveryTransport::send_message_impl(const uint8_t * msg_buffer, size_t msg_buffer_size, const ZstTransportArgs & args) const
 {
-    this->ZstTransportLayerBase::receive_msg(msg);
-    
-    //Publish message to other modules
-    msg_events()->defer([msg](std::shared_ptr<ZstTransportAdaptor> adaptor) {
-		adaptor->on_receive_msg(msg);
-    }, [msg, this](ZstEventStatus status) {
-        this->release_msg(static_cast<ZstStageMessage*>(msg));
-    });
+    start_broadcast(msg_buffer, msg_buffer_size, 1000);
 }
 
 int ZstServiceDiscoveryTransport::s_handle_beacon(zloop_t * loop, zsock_t * socket, void * arg)
@@ -77,39 +72,39 @@ int ZstServiceDiscoveryTransport::s_handle_beacon(zloop_t * loop, zsock_t * sock
     ZstServiceDiscoveryTransport * transport = (ZstServiceDiscoveryTransport*)arg;
     char * ipaddress = zstr_recv(socket);
     if (ipaddress) {
-        zframe_t * beacon_content = zframe_recv(socket);
-        
+        auto beacon_content = zframe_recv(socket);
         auto msg = transport->get_msg();
-        auto data = std::string((char*)zframe_data(beacon_content), zframe_size(beacon_content));
-        msg->unpack(json::parse(data));
-        msg->set_arg(get_msg_arg_name(ZstMsgArg::ADDRESS), ipaddress);
-        transport->receive_msg(msg);
-        zframe_destroy(&beacon_content);
+        msg->init(GetStageMessage(zframe_data(beacon_content)));
+        
+        //msg->set_arg(get_msg_arg_name(ZstMsgArg::ADDRESS), ipaddress);
+        transport->dispatch_receive_event(msg, [beacon_content](ZstEventStatus status){
+            zframe_t * b = beacon_content;
+            zframe_destroy(&b);
+        });
     }
     
     return 0;
 }
 
-
-void ZstServiceDiscoveryTransport::start_broadcast(const char * message, size_t size, int interval)
+void ZstServiceDiscoveryTransport::start_broadcast(const uint8_t*  message, size_t size, int interval) const
 {
     if(m_beacon)
         zsock_send(m_beacon, "sbi", "PUBLISH", message, size, interval);
 }
 
-void ZstServiceDiscoveryTransport::stop_broadcast()
+void ZstServiceDiscoveryTransport::stop_broadcast() const
 {
     if(m_beacon)
         zstr_sendx(m_beacon, "SILENCE", NULL);
 }
 
-void ZstServiceDiscoveryTransport::start_listening()
+void ZstServiceDiscoveryTransport::start_listening() const
 {
     if(m_beacon)
         zsock_send (m_beacon, "sb", "SUBSCRIBE", "", 0);
 }
 
-void ZstServiceDiscoveryTransport::stop_listening()
+void ZstServiceDiscoveryTransport::stop_listening() const
 {
     if(m_beacon)
         zstr_sendx(m_beacon, "UNSUBSCRIBE", NULL);

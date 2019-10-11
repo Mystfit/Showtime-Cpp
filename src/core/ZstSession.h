@@ -21,7 +21,6 @@ namespace showtime {
 
 class ZST_CLASS_EXPORTED ZstSession :
 	public ZstSynchronisableModule,
-	public ZstTransportAdaptor,
 	public ZstComputeAdaptor,
     public ZstHierarchyAdaptor,
     public ZstSessionAdaptor,

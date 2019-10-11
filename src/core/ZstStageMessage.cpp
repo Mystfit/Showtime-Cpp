@@ -14,8 +14,13 @@ ZstStageMessage::ZstStageMessage() :
 	m_endpoint_UUID(nil_generator()())
 {
 }
+    
+ZstStageMessage::~ZstStageMessage(){
+    if(m_buffer)
+        delete m_buffer;
+}
  
-void ZstStageMessage::init(StageMessage * buffer)
+void ZstStageMessage::init(const StageMessage * buffer)
 {
 	reset();
 	m_buffer = buffer;
@@ -42,6 +47,14 @@ const uuid& ZstStageMessage::endpoint_UUID() const
 ZstMsgID ZstStageMessage::id() const
 {
 	return m_buffer->id();
+}
+    
+Content ZstStageMessage::type() const {
+    return m_buffer->content_type();
+}
+    
+const StageMessage* ZstStageMessage::buffer() const {
+    return m_buffer;
 }
 
 }

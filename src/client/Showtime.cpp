@@ -2,8 +2,12 @@
 #include "ZstClient.h"
 #include "ZstClientSession.h"
 #include "adaptors/ZstSessionAdaptor.hpp"
+#include "../core/ZstEventDispatcher.hpp"
 
 using namespace std;
+using namespace showtime::client;
+
+namespace showtime {
 
 inline bool ShowtimeClient::library_init_guard() {
 	if (!m_client->is_init_complete()) {
@@ -26,7 +30,7 @@ inline bool ShowtimeClient::library_connected_guard() {
 }
 
 
-ShowtimeClient::ShowtimeClient() : m_client(std::make_shared<Showtime::detail::ZstClient>(this))
+ShowtimeClient::ShowtimeClient() : m_client(std::make_shared<showtime::client::ZstClient>(this))
 {
 }
 
@@ -301,4 +305,6 @@ void ShowtimeClient::destroy_cable(ZstCable * cable)
 void ShowtimeClient::destroy_cable_async(ZstCable * cable)
 {
 	if (library_connected_guard()) m_client->session()->destroy_cable(cable, ZstTransportRequestBehaviour::ASYNC_REPLY);
+}
+
 }

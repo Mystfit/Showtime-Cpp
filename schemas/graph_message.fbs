@@ -4,7 +4,7 @@ namespace showtime;
 
 table GraphMessage {
     sender:string;
-    values: ValueLists;
+    value: PlugValue;
 }
 
 root_type GraphMessage;

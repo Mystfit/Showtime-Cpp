@@ -143,7 +143,6 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstIOLoop.cpp"
 )
 set(ZST_CORE_TRANSPORT_SRC
-    "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayerBase.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstGraphTransport.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTCPGraphTransport.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstServiceDiscoveryTransport.cpp"   

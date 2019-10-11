@@ -60,11 +60,10 @@ void ZstHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTransportRequ
 		synchronisable_set_deactivating(entity);
 }
 
-void ZstHierarchy::add_performer(const ZstPerformer & performer)
+void ZstHierarchy::add_performer(const Entity* performer)
 {
 	//Copy streamable so we have a local ptr for the performer
 	ZstPerformer * performer_proxy = new ZstPerformer(performer);
-	assert(performer_proxy);
 	ZstLog::net(LogLevel::notification, "Adding new performer {}", performer_proxy->URI().path());
 
 	//Populate bundle with factory and child entities
@@ -150,48 +149,35 @@ ZstEntityBase * ZstHierarchy::walk_to_entity(const ZstURI & path) const
 	return result;
 }
 
-void ZstHierarchy::add_proxy_entity(const ZstEntityBase & entity)
+void ZstHierarchy::add_proxy_entity(const Entity* entity)
 {
+    // Check if the entity already exists in the hierarchy
+    if (find_entity(ZstURI(entity->URI()->c_str()))) {
+        ZstLog::net(LogLevel::error, "Can't create entity {}, it already exists", entity->URI()->str());
+        return;
+    }
+    
 	// All entities need a parent unless they are a performer 
-	ZstURI parent_URI = entity.URI().parent();
+	auto parent_URI = ZstURI(entity->URI()->c_str(), entity->URI()->size()).parent();
 	if (!parent_URI.size()) {
-		ZstLog::net(LogLevel::error, "Entity {} has no parent", entity.URI().path());
-		return;
-	}
-
-    //Check if the entity already exists in the hierarchy
-	if (find_entity(entity.URI())) {
-		ZstLog::net(LogLevel::error, "Can't create entity {}, it already exists", entity.URI().path());
+		ZstLog::net(LogLevel::error, "Entity {} has no parent", entity->URI()->str());
 		return;
 	}
     
     ZstEntityBase * parent = find_entity(parent_URI);
 	if (!parent) {
-		ZstLog::net(LogLevel::error, "Could not find parent {} for entity {}", parent_URI.path(), entity.URI().path());
-		return;
-	}
-
-    ZstEntityBase * entity_proxy = NULL;
-
-	if (entity.entity_type() == EntityType_COMPONENT) {
-		entity_proxy = new ZstComponent(static_cast<const ZstComponent&>(entity));
-	}
-	else if (entity.entity_type() == EntityType_PLUG) {
-		entity_proxy = new ZstPlug(static_cast<const ZstPlug&>(entity));
-	}
-	else if (entity.entity_type() == EntityType_FACTORY) {
-		entity_proxy = new ZstEntityFactory(static_cast<const ZstEntityFactory&>(entity));
-	}
-	else {
-		ZstLog::net(LogLevel::notification, "Can't create unknown proxy entity type {}", entity.entity_type());
+		ZstLog::net(LogLevel::error, "Could not find parent {} for entity {}", parent_URI.path(), entity->URI()->str());
 		return;
 	}
     
-    //Set the entity as a proxy early to avoid accidental auto-activation
-    synchronisable_set_proxy(entity_proxy);
-    dynamic_cast<ZstComponent*>(parent)->add_child(entity_proxy);
+    // Create the entity proxy
+    auto entity_proxy = unpack_entity(entity);
     
-	//Mirror proxy and adaptor addition to entity children
+    // Set the entity as a proxy early to avoid accidental auto-activation
+    synchronisable_set_proxy(entity_proxy.get());
+    dynamic_cast<ZstComponent*>(parent)->add_child(entity_proxy.get());
+    
+	// Mirror proxy and adaptor addition to entity children
 	ZstEntityBundle bundle;
     entity_proxy->get_child_entities(bundle, true);
     for (auto c : bundle)
@@ -230,12 +216,14 @@ void ZstHierarchy::dispatch_entity_arrived_event(ZstEntityBase * entity){
     }
 }
 
-void ZstHierarchy::update_proxy_entity(const ZstEntityBase & entity)
+void ZstHierarchy::update_proxy_entity(const Entity* entity)
 {
-	if (entity.entity_type() == EntityType_FACTORY) {
-		ZstLog::net(LogLevel::notification, "Factory {} received an update", entity.URI().path());
+    // TODO: Make this work with ANY entity type that wants to update itself.
+    
+	if (entity->entity_type() == EntityType_FACTORY) {
+		ZstLog::net(LogLevel::notification, "Factory {} received an update", entity->URI()->str());
 
-		ZstEntityFactory remote_factory = static_cast<const ZstEntityFactory&>(entity);
+		ZstEntityFactory remote_factory = ZstEntityFactory(entity);
 		ZstEntityFactory * local_factory = dynamic_cast<ZstEntityFactory*>(find_entity(remote_factory.URI()));
 		if (local_factory) {
 			local_factory->clear_creatables();
@@ -246,7 +234,7 @@ void ZstHierarchy::update_proxy_entity(const ZstEntityBase & entity)
 			local_factory->update_creatables();
 		}
 		else {
-			ZstLog::net(LogLevel::warn, "Could not find local proxy instance of remote factory {}", entity.URI().path());
+			ZstLog::net(LogLevel::warn, "Could not find local proxy instance of remote factory {}", entity->URI()->str());
 			return;
 		}
 	}
@@ -261,16 +249,34 @@ void ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 		}
 	}
 }
+    
+std::shared_ptr<ZstEntityBase> ZstHierarchy::unpack_entity(const Entity* entity_buffer)
+{
+    switch(entity_buffer->entity_type()){
+        case EntityType_PERFORMER:
+            return std::make_unique<ZstPerformer>(entity_buffer);
+        case EntityType_COMPONENT:
+            return std::make_unique<ZstComponent>(entity_buffer);
+        case EntityType_PLUG:
+            if(entity_buffer->plug_direction() == PlugDirection_IN_JACK)
+                return std::make_unique<ZstInputPlug>(entity_buffer);
+            return std::make_unique<ZstOutputPlug>(entity_buffer);
+        case EntityType_FACTORY:
+            return std::make_unique<ZstEntityFactory>(entity_buffer);
+        case EntityType_UNKNOWN:
+            throw std::runtime_error("Can't parse unknown entity {}");
+    }
+}
 
 void ZstHierarchy::add_entity_to_lookup(ZstEntityBase * entity)
 {
 	m_entity_lookup[entity->URI()] = entity;
 }
 
-void ZstHierarchy::remove_entity_from_lookup(ZstEntityBase * entity)
+void ZstHierarchy::remove_entity_from_lookup(const ZstURI & entity)
 {
 	try {
-		m_entity_lookup.erase(entity->URI());
+		m_entity_lookup.erase(entity);
 	}
 	catch (std::out_of_range) {
 		ZstLog::net(LogLevel::warn, "Entity {} was not in the entity lookup map");
@@ -325,7 +331,7 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 		synchronisable_enqueue_deactivation(c);
 		
 		//Remove entity from quick lookup map
-		remove_entity_from_lookup(c);
+		remove_entity_from_lookup(c->URI());
 	}
 
 	//Dispatch events depending on entity type

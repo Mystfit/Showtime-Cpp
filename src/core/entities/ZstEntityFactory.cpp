@@ -22,6 +22,11 @@ ZstEntityFactory::ZstEntityFactory(const char * name) :
 {
 	set_entity_type(EntityType_FACTORY);
 }
+    
+ZstEntityFactory::ZstEntityFactory(const Entity* buffer) : ZstEntityBase(buffer)
+{
+    ZstEntityFactory::deserialize_imp(buffer);
+}
 
 ZstEntityFactory::ZstEntityFactory(const ZstEntityFactory & other) : 
 	ZstEntityBase(other),
@@ -172,31 +177,29 @@ void ZstEntityFactory::update_createable_URIs()
 //    }
 //}
     
-void ZstEntityFactory::serialize(flatbuffers::Offset<Factory> & serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const
+flatbuffers::Offset<Entity> ZstEntityFactory::serialize(EntityBuilder & buffer_builder) const
 {
-    auto factory_builder = FactoryBuilder(buffer_builder);
-    
     // Sereialize creatables
     std::vector<std::string> creatables;
     for(auto c : m_creatables){
         creatables.push_back(c.path());
     }
-    factory_builder.add_creatables(buffer_builder.CreateVectorOfStrings(creatables));
+    buffer_builder.add_creatables(buffer_builder.fbb_.CreateVectorOfStrings(creatables));
     
-    // Serialize entity
-    flatbuffers::Offset<Entity> entity_offset;
-    ZstEntityBase::serialize(entity_offset, buffer_builder);
-    factory_builder.add_entity(entity_offset);
-    
-    serialized_offset = factory_builder.Finish();
+    return ZstEntityBase::serialize(buffer_builder);
 }
     
-void ZstEntityFactory::deserialize(const Factory* buffer)
+void ZstEntityFactory::deserialize_imp(const Entity* buffer)
 {
     for(auto c : *buffer->creatables()){
         m_creatables.emplace(c->c_str(), c->size());
     }
-    ZstEntityBase::deserialize(buffer->entity());
+}
+    
+void ZstEntityFactory::deserialize(const Entity* buffer)
+{
+    ZstEntityFactory::deserialize_imp(buffer);
+    ZstEntityBase::deserialize(buffer);
 }
 
 }

@@ -4,6 +4,7 @@
 //
 //  Created by Byron Mallett on 19/09/19.
 //
+#pragma once
 
 #include <schemas/stage_message_generated.h>
 
@@ -17,8 +18,8 @@ namespace showtime {
     class ZST_CLASS_EXPORTED ZstStageTransportAdaptor : public ZstTransportAdaptor
     {
     public:
-        ZST_EXPORT virtual void on_receive_msg(ZstStageMessage * msg);
+        ZST_EXPORT virtual void on_receive_msg(const ZstStageMessage * msg);
 
-        ZST_EXPORT virtual ZstMessageReceipt send_msg(Content message_type, flatbuffers::Offset<void> & message_content, flatbuffers::FlatBufferBuilder & buffer_builder, const ZstTransportArgs& args = {});
+        ZST_EXPORT virtual ZstMessageReceipt send_msg(Content message_type, flatbuffers::Offset<void> message_content, flatbuffers::FlatBufferBuilder & buffer_builder, const ZstTransportArgs& args = {});
     };
 }

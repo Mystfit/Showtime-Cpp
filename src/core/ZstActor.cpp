@@ -149,7 +149,7 @@ void ZstActor::remove_pipe_listener(zsock_t* sock)
 	zloop_reader_end(m_loop, sock);
 }
 
-int ZstActor::send_to_socket(zsock_t* sock, zmsg_t* msg)
+int ZstActor::send_to_socket(zsock_t* sock, zmsg_t* msg) const
 {
 	int result = -1;
 	if(m_loop_actor)

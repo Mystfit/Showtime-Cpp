@@ -1,5 +1,4 @@
 #include <memory>
-#include <nlohmann/json.hpp>
 
 #include "entities/ZstComponent.h"
 #include "../ZstEventDispatcher.hpp"
@@ -25,6 +24,11 @@ namespace showtime
     {
         set_entity_type(EntityType::EntityType_COMPONENT);
         set_component_type(component_type);
+    }
+    
+    ZstComponent::ZstComponent(const Entity* buffer) : ZstEntityBase(buffer)
+    {
+        ZstComponent::deserialize_imp(buffer);
     }
 
     ZstComponent::ZstComponent(const ZstComponent & other) : ZstEntityBase(other)
@@ -59,19 +63,19 @@ namespace showtime
         m_children.clear();
     }
 
-    ZstInputPlug * ZstComponent::create_input_plug(const char * name, ValueType val_type)
+    ZstInputPlug * ZstComponent::create_input_plug(const char * name, ValueList val_type)
     {
         return create_input_plug(name, val_type, -1);
     }
 
-    ZstInputPlug * ZstComponent::create_input_plug(const char * name, ValueType val_type, int max_cable_connections)
+    ZstInputPlug * ZstComponent::create_input_plug(const char * name, ValueList val_type, int max_cable_connections)
     {
         ZstInputPlug * plug = new ZstInputPlug(name, val_type, max_cable_connections);
         add_child(plug);
         return plug;
     }
 
-    ZstOutputPlug * ZstComponent::create_output_plug(const char * name, ValueType val_type, bool reliable)
+    ZstOutputPlug * ZstComponent::create_output_plug(const char * name, ValueList val_type, bool reliable)
     {
         ZstOutputPlug * plug = new ZstOutputPlug(name, val_type, reliable);
         add_child(plug);
@@ -146,23 +150,23 @@ namespace showtime
         }
     }
 
-    void ZstComponent::serialize(flatbuffers::Offset<Component> & serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const
+    flatbuffers::Offset<Entity> ZstComponent::serialize(EntityBuilder & buffer_builder) const
     {
-        auto component_builder = ComponentBuilder(buffer_builder);
-        auto component_type_offset = buffer_builder.CreateString(m_component_type.c_str(), m_component_type.size());
-        component_builder.add_component_type(component_type_offset);
+        auto component_type_offset = buffer_builder.fbb_.CreateString(m_component_type.c_str(), m_component_type.size());
+        buffer_builder.add_component_type(component_type_offset);
         
-        flatbuffers::Offset<Entity> entity;
-        ZstEntityBase::serialize(entity, buffer_builder);
-        component_builder.add_entity(entity);
-        
-        serialized_offset = component_builder.Finish();
+        return ZstEntityBase::serialize(buffer_builder);
     }
 
-    void ZstComponent::deserialize(const Component* buffer)
+    void ZstComponent::deserialize(const Entity* buffer)
+    {
+        ZstComponent::deserialize_imp(buffer);
+        ZstEntityBase::deserialize(buffer);
+    }
+    
+    void ZstComponent::deserialize_imp(const Entity* buffer)
     {
         m_component_type = buffer->component_type()->str();
-        ZstEntityBase::deserialize(buffer->entity());
     }
 
     const char * ZstComponent::component_type() const

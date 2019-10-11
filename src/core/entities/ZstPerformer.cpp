@@ -22,6 +22,11 @@ ZstPerformer::ZstPerformer(const char * name) :
 {
     set_entity_type(EntityType_PERFORMER);
 }
+    
+ZstPerformer::ZstPerformer(const Entity* buffer) : ZstComponent(buffer)
+{
+    ZstPerformer::deserialize_imp(buffer);
+}
 
 ZstPerformer::ZstPerformer(const ZstPerformer & other) : ZstComponent(other)
 {
@@ -124,19 +129,19 @@ ZstEntityFactoryBundle & ZstPerformer::get_factories(ZstEntityFactoryBundle & bu
     return bundle;
 }
 
-void ZstPerformer::serialize(flatbuffers::Offset<Performer> & serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const
+flatbuffers::Offset<Entity> ZstPerformer::serialize(EntityBuilder & buffer_builder) const
 {
-    auto builder = PerformerBuilder(buffer_builder);
-    flatbuffers::Offset<Component> component;
-    ZstComponent::serialize(component, buffer_builder);
-    builder.add_component(component);
-    
-    serialized_offset = builder.Finish();
+    return ZstComponent::serialize(buffer_builder);
 }
 
-void ZstPerformer::deserialize(const Performer* buffer)
+void ZstPerformer::deserialize(const Entity* buffer)
 {
-    ZstComponent::deserialize(buffer->component());
+    ZstPerformer::deserialize_imp(buffer);
+    ZstComponent::deserialize(buffer);
 }
     
+void ZstPerformer::deserialize_imp(const Entity* buffer)
+{
+}
+
 }

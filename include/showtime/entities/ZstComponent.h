@@ -12,13 +12,13 @@
 namespace showtime
 {
 class ZST_CLASS_EXPORTED ZstComponent :
-    public ZstEntityBase,
-    virtual ZstSerialisable<Component>
+    public ZstEntityBase
 {
 public:
     ZST_EXPORT ZstComponent();
     ZST_EXPORT ZstComponent(const char * path);
     ZST_EXPORT ZstComponent(const char * component_type, const char * path);
+    ZST_EXPORT ZstComponent(const Entity* buffer);
     ZST_EXPORT ZstComponent(const ZstComponent & other);
 
     ZST_EXPORT virtual ~ZstComponent();
@@ -33,11 +33,11 @@ public:
     ZST_EXPORT virtual void compute(ZstInputPlug * plug) {};
     
     //Create and attach a new input plug to this component
-    ZST_EXPORT ZstInputPlug * create_input_plug(const char* name, ValueType val_type);
-    ZST_EXPORT ZstInputPlug * create_input_plug(const char* name, ValueType val_type, int max_cable_connections);
+    ZST_EXPORT ZstInputPlug * create_input_plug(const char* name, ValueList val_type);
+    ZST_EXPORT ZstInputPlug * create_input_plug(const char* name, ValueList val_type, int max_cable_connections);
 
     //Create and attach a new output plug to this component
-    ZST_EXPORT ZstOutputPlug * create_output_plug(const char* name, ValueType val_type, bool reliable = true);
+    ZST_EXPORT ZstOutputPlug * create_output_plug(const char* name, ValueList val_type, bool reliable = true);
 
     //Transfer plug ownership to this component
     //ZST_EXPORT int add_plug(ZstPlug * plug);
@@ -51,10 +51,8 @@ public:
     ZST_EXPORT virtual void get_child_entities(ZstEntityBundle & bundle, bool include_parent = true) override;
     
     //Serialisation
-    using ZstEntityBase::serialize;
-    using ZstEntityBase::deserialize;
-    ZST_EXPORT void serialize(flatbuffers::Offset<Component> & serialize_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
-    ZST_EXPORT void deserialize(const Component* buffer) override;
+    ZST_EXPORT flatbuffers::Offset<Entity> serialize(EntityBuilder & buffer_builder) const override;
+    ZST_EXPORT void deserialize(const Entity* buffer) override;
 
     //Specific component type
     ZST_EXPORT const char * component_type() const;
@@ -83,6 +81,8 @@ protected:
     ZST_EXPORT virtual void set_parent(ZstEntityBase * parent) override;
     
 private:
+    void deserialize_imp(const Entity* buffer);
+
     ZstEntityMap m_children;
     std::string m_component_type;
 };

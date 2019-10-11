@@ -8,7 +8,11 @@ ZstPerformanceMessage::ZstPerformanceMessage() : m_endpoint_UUID(nil_generator()
 {
 }
 
-void ZstPerformanceMessage::init(GraphMessage * buffer)
+ZstPerformanceMessage::~ZstPerformanceMessage()
+{    
+}
+
+void ZstPerformanceMessage::init(const GraphMessage * buffer)
 {
 	reset();
     m_buffer = buffer;
@@ -44,5 +48,9 @@ const std::string & ZstPerformanceMessage::sender() const
     return m_sender;
 }
 
+const GraphMessage* ZstPerformanceMessage::buffer() const
+{
+    return m_buffer;
+}
     
 }

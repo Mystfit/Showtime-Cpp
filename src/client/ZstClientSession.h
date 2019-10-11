@@ -10,6 +10,8 @@
 #include "../core/ZstStageMessage.h"
 #include "../core/ZstMessage.h"
 #include "../core/ZstSession.h"
+#include "../core/ZstStageMessage.h"
+#include "../core/ZstPerformanceMessage.h"
 
 //Client modules
 #include "ZstClientModule.h"
@@ -21,12 +23,19 @@
 #include "../core/liasons/ZstSynchronisableLiason.hpp"
 
 //Adaptors
+#include "../core/adaptors/ZstGraphTransportAdaptor.hpp"
+#include "../core/adaptors/ZstStageTransportAdaptor.hpp"
+
 #include "adaptors/ZstSessionAdaptor.hpp"
 #include "adaptors/ZstSynchronisableAdaptor.hpp"
 
+namespace showtime::client {
+
 class ZstClientSession : 
 	public ZstSession,
-	public ZstClientModule
+	public ZstClientModule,
+    public ZstStageTransportAdaptor,
+    public ZstGraphTransportAdaptor
 {
 	friend class ZstClient;
 public:
@@ -55,14 +64,19 @@ public:
 	// Adaptor plug send/receive
 	// ---------------------------
 
-	void on_receive_msg(ZstMessage * msg) override;
-	void on_receive_graph_msg(ZstPerformanceMessage * msg);
-	virtual void aquire_entity_ownership(ZstEntityBase* entity) override;
-    virtual void release_entity_ownership(ZstEntityBase* entity) override;
+	virtual void on_receive_msg(const ZstStageMessage * msg) override;
+    virtual void on_receive_msg(const ZstPerformanceMessage * msg) override;
+    
+    
+    // ----------------
+    // Message handlers
+    // ----------------
+    
+    void cable_create_handler(const CableCreateRequest* request);
+    void cable_destroy_handler(const CableDestroyRequest* request);
+    void aquire_entity_ownership_handler(const EntityTakeOwnershipRequest* request);
 
-	void aquire_entity_ownership_handler(ZstMessage* msg);
-
-
+    
 	// ---------------------------
 	// Hierarchy adaptor overrides
 	// ---------------------------
@@ -76,6 +90,14 @@ public:
 	ZstCable * connect_cable(ZstInputPlug * input, ZstOutputPlug * output, const ZstTransportRequestBehaviour & sendtype) override;
 	void destroy_cable(ZstCable * cable, const ZstTransportRequestBehaviour & sendtype) override;
 	bool observe_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype) override;
+    
+    
+    // ---------------------------
+    // Ownership
+    // ---------------------------
+    
+    virtual void aquire_entity_ownership(ZstEntityBase* entity) override;
+    virtual void release_entity_ownership(ZstEntityBase* entity) override;
 
 
 	// -----------------
@@ -96,3 +118,5 @@ private:
 	
     std::shared_ptr<ZstClientHierarchy> m_hierarchy;
 };
+
+}

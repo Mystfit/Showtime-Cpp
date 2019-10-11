@@ -11,6 +11,9 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/lexical_cast.hpp>
 
+namespace showtime {
+
+
 ZstZMQClientTransport::ZstZMQClientTransport() : 
 	m_server_sock(NULL),
 	m_endpoint_UUID(random_generator()())
@@ -78,18 +81,23 @@ void ZstZMQClientTransport::disconnect()
 	if (m_server_sock)
 		zsock_disconnect(m_server_sock, "%s", m_server_addr.c_str());
 }
-
-void ZstZMQClientTransport::process_events()
+    
+ZstMessageReceipt ZstZMQClientTransport::send_msg(Content message_type, flatbuffers::Offset<void> message_content, flatbuffers::FlatBufferBuilder & buffer_builder, const ZstTransportArgs& args)
 {
-	ZstTransportLayerBase::process_events();
-	ZstMessageSupervisor::cleanup_response_messages();
+    // Make a copy of the transport args so we can generate a new message ID if required
+    auto copy_args = args;
+    copy_args.msg_ID = (args.msg_ID > 0) ? args.msg_ID : ZstMsgIDManager::next_id();
+    
+    // Create the stage message
+    auto stage_msg = CreateStageMessage(buffer_builder, message_type, message_content, copy_args.msg_ID);
+    FinishStageMessageBuffer(buffer_builder, stage_msg);
+    
+    begin_send_message(buffer_builder.GetBufferPointer(), buffer_builder.GetSize(), args);
 }
 
-void ZstZMQClientTransport::send_message_impl(ZstMessage * msg, const ZstTransportArgs& args)
-{
-	ZstStageMessage* stage_msg = static_cast<ZstStageMessage*>(msg);
-	ZstLog::net(LogLevel::debug, "Client sending message. Msg id {}", stage_msg->as_json_str());
 
+void ZstZMQClientTransport::send_message_impl(const uint8_t * msg_buffer, size_t msg_buffer_size, const ZstTransportArgs & args) const
+{
 	zmsg_t * m = zmsg_new();
 
 	//Insert empty frame at front of message to seperate between router sender hops and payloads
@@ -97,7 +105,7 @@ void ZstZMQClientTransport::send_message_impl(ZstMessage * msg, const ZstTranspo
 	zmsg_prepend(m, &spacer);
 
 	//Encode message as json
-	zmsg_addstr(m, stage_msg->as_json_str().c_str());
+    zmsg_addmem(m, msg_buffer, msg_buffer_size);
 
 	//Sending and errors
 	int result = m_client_actor.send_to_socket(m_server_sock, m);
@@ -107,8 +115,6 @@ void ZstZMQClientTransport::send_message_impl(ZstMessage * msg, const ZstTranspo
 			ZstLog::net(LogLevel::error, "Client message sending error: {}", zmq_strerror(err));
 		}
 	}
-
-	release_msg(stage_msg);
 }
 
 void ZstZMQClientTransport::sock_recv(zsock_t* socket, bool pop_first)
@@ -119,16 +125,24 @@ void ZstZMQClientTransport::sock_recv(zsock_t* socket, bool pop_first)
 	zmsg_t * recv_msg = zmsg_recv(socket);
 	if (recv_msg) {
 		if (pop_first) {
-			zframe_t * empty = zmsg_pop(recv_msg);
+			auto empty = zmsg_pop(recv_msg);
 			zframe_destroy(&empty);
 		}
-		char * msg_data_c = zmsg_popstr(recv_msg);
+        auto msg_data = zmsg_pop(recv_msg);
 
-		ZstStageMessage * stage_msg = get_msg();
-		stage_msg->unpack(json::parse(msg_data_c));
-		ZstLog::net(LogLevel::debug, "Client receiving message. Msg id {}", stage_msg->as_json_str());
-		zstr_free(&msg_data_c);
-		receive_msg(stage_msg);
+        if(msg_data){
+            ZstStageMessage * stage_msg = get_msg();
+            stage_msg->init(GetStageMessage(zframe_data(msg_data)));
+            
+            // Send message to submodules
+            dispatch_receive_event(stage_msg, [this, stage_msg, msg_data](ZstEventStatus s){
+                // Frame cleanup
+                zframe_destroy(&msg_data);
+                this->release(stage_msg);
+            });
+        }
+        
+        // Message Cleanup
 		zmsg_destroy(&recv_msg);
 	}
 }
@@ -140,9 +154,4 @@ int ZstZMQClientTransport::s_handle_stage_router(zloop_t * loop, zsock_t * sock,
 	return 0;
 }
 
-void ZstZMQClientTransport::receive_msg(ZstMessage * msg)
-{
-	ZstTransportLayer::receive_msg(msg, [msg, this](ZstEventStatus status) {
-		this->release_msg(static_cast<ZstStageMessage*>(msg));
-	});
 }

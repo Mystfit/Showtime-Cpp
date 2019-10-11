@@ -15,36 +15,39 @@
 #include <ZstCore.h>
 
 //Showtime Core includes
+#include <schemas/stage_message_generated.h>
+#include "../core/ZstSemaphore.h"
+#include "../core/ZstZMQRefCounter.h"
 #include "../core/ZstIOLoop.h"
+#include "../core/ZstMessageSupervisor.hpp"
 #include "../core/liasons/ZstSynchronisableLiason.hpp"
 #include "../core/liasons/ZstPlugLiason.hpp"
-#include "../core/ZstMessageSupervisor.hpp"
-#include "../core/adaptors/ZstTransportAdaptor.hpp"
+#include "../core/adaptors/ZstStageTransportAdaptor.hpp"
+#include "../core/adaptors/ZstGraphTransportAdaptor.hpp"
 #include "../core/transports/ZstTransportHelpers.h"
-#include "stage_message_generated.h";
 
-//Forwards
-class ZstSemaphore;
-class ZstTCPGraphTransport;
-class ZstUDPGraphTransport;
-class ZstServiceDiscoveryTransport;
-class ZstMessage;
-class ZstPerformanceMessage;
-class ZstClientSession;
-class ZstZMQClientTransport;
-class ZstWebsocketClientTransport;
+#include "ZstZMQClientTransport.h"
+#include "../core/transports/ZstServiceDiscoveryTransport.h"
+#include "../core/transports/ZstTCPGraphTransport.h"
+#ifdef ZST_BUILD_DRAFT_API
+#include "../core/transports/ZstUDPGraphTransport.h"
+#endif
+
+//Showtime client includes
+#include "ZstClientSession.h"
 
 //Typedefs
 typedef std::unordered_map<ZstURI, boost::asio::deadline_timer, ZstURIHash> ZstConnectionTimerMap;
 typedef std::unique_ptr<ZstConnectionTimerMap> ZstConnectionTimerMapUnique;
 
 
-namespace Showtime {
-    namespace detail {
+namespace showtime {
+    namespace client {
         class ZstClient :
-			public ZstEventDispatcher< std::shared_ptr<ZstTransportAdaptor> >,
+			public ZstEventDispatcher< std::shared_ptr<ZstStageTransportAdaptor> >,
             public ZstEventDispatcher< std::shared_ptr<ZstConnectionAdaptor> >,
-            public ZstTransportAdaptor,
+            public ZstStageTransportAdaptor,
+            public ZstGraphTransportAdaptor,
             public ZstHierarchyAdaptor,
             public ZstPlugLiason,
             public ZstSynchronisableLiason
@@ -60,8 +63,10 @@ namespace Showtime {
             void flush();
 
             //Stage adaptor overrides
-            void on_receive_msg(ZstMessage * msg) override;
-            void receive_connection_handshake(ZstPerformanceMessage * msg);
+            void on_receive_msg(const ZstStageMessage * msg) override;
+            void on_receive_msg(const ZstPerformanceMessage * msg) override;
+
+            void connection_handshake_handler(const ZstPerformanceMessage * msg);
 
             //Server discovery
             void handle_server_discovery(const std::string & address, const std::string & server_name, int port);
@@ -127,11 +132,13 @@ namespace Showtime {
             ZstMessageSupervisor m_promise_supervisor;
             ZstServerAddress m_connected_server;
 
-            //P2P Connections
-            void start_connection_broadcast(const ZstURI & remote_client_path);
+            // Message handlers
+            void start_connection_broadcast_handler(const ClientGraphHandshakeStart* request);
+            void stop_connection_broadcast_handler(const ClientGraphHandshakeStop* request);
+            void listen_to_client_handler(const ClientGraphHandshakeListen* request);
+            void server_discovery_handler(const ServerBeacon* request);
+
             static void send_connection_broadcast(boost::asio::deadline_timer * t, ZstClient * client, const ZstURI & to, const ZstURI & from, boost::posix_time::milliseconds duration);
-            void stop_connection_broadcast(const ZstURI & remote_client_path);
-            void listen_to_client(ZstMessage * msg);
             ZstPerformerMap m_active_peer_connections;
             std::unordered_map<ZstURI, ZstMsgID, ZstURIHash> m_pending_peer_connections;
             

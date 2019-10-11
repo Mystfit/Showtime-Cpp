@@ -4,11 +4,11 @@
 #include <memory>
 
 //Forwards
-namespace Showtime {
-    namespace detail {
+namespace showtime {
+    namespace client {
         class ZstClient;
     }
-}
+
 
 class ZST_CLASS_EXPORTED ShowtimeClient : std::enable_shared_from_this<ShowtimeClient>
 {
@@ -79,5 +79,7 @@ public:
 private:
     bool library_init_guard();
     bool library_connected_guard();
-    std::shared_ptr<Showtime::detail::ZstClient> m_client;
+    std::shared_ptr<client::ZstClient> m_client;
 };
+
+}

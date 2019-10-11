@@ -27,7 +27,7 @@ class ZstEntityBase;
 class ZstEntityFactory;
 
 //Typedefs
-typedef std::unordered_map<ZstURI, ZstEntityBase*, ZstURIHash> ZstEntityMap;
+    typedef std::unordered_map<ZstURI, ZstEntityBase*, ZstURIHash> ZstEntityMap;
 
 //Common entity bundle types
 typedef ZstBundle<ZstURI> ZstURIBundle;
@@ -38,13 +38,15 @@ typedef ZstBundleIterator<ZstEntityBase*> ZstEntityBundleIterator;
 
 class ZST_CLASS_EXPORTED ZstEntityBase :
     public ZstSynchronisable,
-    virtual ZstSerialisable<Entity>
+    virtual ZstSerialisable<Entity, EntityBuilder>
 {
     friend class ZstEntityLiason;
 
 public:
     //Base entity
+    ZST_EXPORT ZstEntityBase();
     ZST_EXPORT ZstEntityBase(const char * entity_name);
+    ZST_EXPORT ZstEntityBase(const Entity* buffer);
     ZST_EXPORT ZstEntityBase(const ZstEntityBase & other);
     ZST_EXPORT virtual ~ZstEntityBase();
     
@@ -65,8 +67,8 @@ public:
     ZST_EXPORT virtual void get_child_entities(ZstEntityBundle & bundle, bool include_parent = true);
     
     //Serialisation
-    ZST_EXPORT void serialize(flatbuffers::Offset<Entity> & serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
-    ZST_EXPORT void deserialize(const Entity* buffer) override;
+    ZST_EXPORT virtual flatbuffers::Offset<Entity> serialize(EntityBuilder & buffer_builder) const override;
+    ZST_EXPORT virtual void deserialize(const Entity* buffer) override;
 
     //Adaptors
     ZST_EXPORT virtual void add_adaptor(std::shared_ptr<ZstEntityAdaptor>& adaptor);
@@ -104,6 +106,8 @@ protected:
     std::shared_ptr<ZstEventDispatcher< std::shared_ptr< ZstEntityAdaptor> > > m_entity_events;
 
 private:
+    void deserialize_imp(const Entity* buffer);
+    
     ZstEntityBase * m_parent;
     EntityType m_entity_type;
     ZstURI m_uri;

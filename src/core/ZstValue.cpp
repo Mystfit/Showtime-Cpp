@@ -7,7 +7,7 @@
 
 namespace showtime {
 
-ZstValue::ZstValue() : m_default_type(ValueType::ValueType_INT)
+ZstValue::ZstValue() : m_default_type(ValueList_IntList)
 {
 }
 
@@ -17,7 +17,7 @@ ZstValue::ZstValue(const ZstValue & other)
 	m_values = other.m_values;
 }
 
-ZstValue::ZstValue(ValueType t) : m_default_type(t)
+ZstValue::ZstValue(ValueList t) : m_default_type(t)
 {
 }
 
@@ -25,7 +25,7 @@ ZstValue::~ZstValue()
 {
 }
 
-ValueType ZstValue::get_default_type() const
+ValueList ZstValue::get_default_type() const
 {
 	return m_default_type;
 }
@@ -92,13 +92,13 @@ void ZstValue::char_at(char * buf, const size_t position) const
 const size_t ZstValue::size_at(const size_t position) const {
     auto val = m_values.at(position);
     
-    if (m_default_type == ValueType::ValueType_INT) {
+    if (m_default_type == ValueList_IntList) {
         return sizeof(int);
     }
-    else if (m_default_type == ValueType::ValueType_FLOAT) {
+    else if (m_default_type == ValueList_FloatList) {
         return sizeof(float);
     }
-    else if (m_default_type == ValueType::ValueType_FLOAT) {
+    else if (m_default_type == ValueList_StrList) {
         std::string val_s = boost::apply_visitor(ZstValueDetails::ZstValueStrVisitor(), val);
         return val_s.size();
     } 
@@ -170,25 +170,26 @@ std::vector<std::string> ZstValue::as_string_vector() const
 //}
 //
 
-void ZstValue::serialize(flatbuffers::Offset<void> & serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const
+flatbuffers::Offset<PlugValue> ZstValue::serialize(PlugValueBuilder & buffer_builder) const
 {
     switch(m_default_type){
-        case ValueType_INT:
-            serialized_offset = buffer_builder.CreateVector(as_int_vector()).Union();
+        case ValueList_IntList:
+            buffer_builder.add_values(buffer_builder.fbb_.CreateVector(as_int_vector()).Union());
             break;
-        case ValueType_FLOAT:
-            serialized_offset = buffer_builder.CreateVector(as_float_vector()).Union();
+        case ValueList_FloatList:
+            buffer_builder.add_values(buffer_builder.fbb_.CreateVector(as_float_vector()).Union());
             break;
-        case ValueType_STRING:
-            serialized_offset = buffer_builder.CreateVector(as_string_vector()).Union();
+        case ValueList_StrList:
+            buffer_builder.add_values(buffer_builder.fbb_.CreateVectorOfStrings(as_string_vector()).Union());
             break;
-        case ValueType_NONE:
+        case ValueList_NONE:
             break;
     }
-
+    
+    return buffer_builder.Finish();
 }
 
-void ZstValue::deserialize(const void* buffer)
+void ZstValue::deserialize(const PlugValue* buffer)
 {
     m_values.clear();
     

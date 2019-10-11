@@ -1,15 +1,18 @@
 #pragma once
 
-#include "../core/adaptors/ZstTransportAdaptor.hpp"
+#include "../core/adaptors/ZstStageTransportAdaptor.hpp"
 #include "../core/ZstStageMessage.h"
-#include "../core/transports/ZstTransportLayer.h"
+#include "../core/transports/ZstTransportLayerBase.hpp"
 
 #include <boost/uuid/uuid.hpp>
 
 using namespace boost::uuids;
 
+namespace showtime {
+
 class ZstZMQClientTransport : 
-	public ZstTransportLayer<ZstStageMessage>
+    public ZstTransportLayerBase<ZstStageMessage, ZstStageTransportAdaptor>,
+    public ZstStageTransportAdaptor
 {
 public:
 	ZstZMQClientTransport();
@@ -18,13 +21,13 @@ public:
 	virtual void destroy() override;
 	virtual void connect(const std::string & stage_address) override;
 	virtual void disconnect() override;
-	void process_events() override;
+    
+    ZstMessageReceipt send_msg(Content message_type, flatbuffers::Offset<void> message_content, flatbuffers::FlatBufferBuilder & buffer_builder, const ZstTransportArgs& args) override;
 
 private:
-	void send_message_impl(ZstMessage * msg, const ZstTransportArgs& args) override;
+	void send_message_impl(const uint8_t * msg_buffer, size_t msg_buffer_size, const ZstTransportArgs & args) const override;
 	void sock_recv(zsock_t* socket, bool pop_first);
 	static int s_handle_stage_router(zloop_t *loop, zsock_t *sock, void *arg);
-	void receive_msg(ZstMessage * msg) override;
 	
 	//Sockets
 	zsock_t * m_server_sock;
@@ -38,3 +41,5 @@ private:
 	//Id
 	boost::uuids::uuid m_endpoint_UUID;
 };
+
+}

@@ -26,7 +26,7 @@ ZstPlug::ZstPlug() :
     set_entity_type(EntityType_PLUG);
 }
 
-ZstPlug::ZstPlug(const char * name, ValueType t, PlugDirection direction, int max_cables) :
+ZstPlug::ZstPlug(const char * name, ValueList t, PlugDirection direction, int max_cables) :
     ZstEntityBase(name),
     m_value(std::make_unique<ZstValue>(t)),
     m_direction(direction),
@@ -34,6 +34,13 @@ ZstPlug::ZstPlug(const char * name, ValueType t, PlugDirection direction, int ma
 {
     set_entity_type(EntityType_PLUG);
 }
+    
+ZstPlug::ZstPlug(const Entity* buffer) :
+    ZstEntityBase(buffer)
+{
+    ZstPlug::deserialize_imp(buffer);
+}
+
 
 ZstPlug::ZstPlug(const ZstPlug & other) :
     ZstEntityBase(other),
@@ -114,30 +121,30 @@ ZstValue * ZstPlug::raw_value()
 // Serialisation
 //--------------------
 
-void ZstPlug::serialize(flatbuffers::Offset<Plug> & serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const
+flatbuffers::Offset<Entity> ZstPlug::serialize(EntityBuilder & buffer_builder) const
 {
 //    //Pack value
 //    buffer["value"] = m_value->as_json();
 //
-    auto plug_builder = PlugBuilder(buffer_builder);
-    plug_builder.add_plug_direction(m_direction);
+    buffer_builder.add_plug_direction(m_direction);
     
     if(m_max_connected_cables >= 0)
-        plug_builder.add_max_cables(m_max_connected_cables);
+        buffer_builder.add_max_cables(m_max_connected_cables);
     
-    flatbuffers::Offset<Entity> entity;
-    ZstEntityBase::serialize(entity, buffer_builder);
-    plug_builder.add_entity(entity);
-    
-    serialized_offset = plug_builder.Finish();
+    return ZstEntityBase::serialize(buffer_builder);
 }
-
-void ZstPlug::deserialize(const Plug* buffer)
+    
+void ZstPlug::deserialize_imp(const Entity* buffer)
 {
     m_direction = buffer->plug_direction();
     m_max_connected_cables = buffer->max_cables();
-    ZstEntityBase::deserialize(buffer->entity());
 }
+
+void ZstPlug::deserialize(const Entity* buffer)
+{
+    ZstPlug::deserialize_imp(buffer);
+    ZstEntityBase::deserialize(buffer);
+};
 
 
 //--------------------
@@ -227,7 +234,11 @@ void ZstPlug::remove_cable(ZstCable * cable)
 //------------
 
 ZstInputPlug::ZstInputPlug() :
-    ZstPlug("", ValueType_NONE)
+    ZstPlug("", ValueList_NONE)
+{
+}
+    
+ZstInputPlug::ZstInputPlug(const Entity* buffer) : ZstPlug(buffer)
 {
 }
 
@@ -239,7 +250,7 @@ ZstInputPlug::~ZstInputPlug()
 {
 }
 
-ZstInputPlug::ZstInputPlug(const char * name, ValueType t, int max_cables) :
+ZstInputPlug::ZstInputPlug(const char * name, ValueList t, int max_cables) :
     ZstPlug(name, t, PlugDirection_IN_JACK, max_cables)
 {
 }
@@ -249,12 +260,17 @@ ZstInputPlug::ZstInputPlug(const char * name, ValueType t, int max_cables) :
 //-------------
 
 ZstOutputPlug::ZstOutputPlug() :
-    ZstPlug("", ValueType_NONE, PlugDirection_OUT_JACK, -1),
+    ZstPlug("", ValueList_NONE, PlugDirection_OUT_JACK, -1),
     m_graph_out_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstGraphTransportAdaptor> > >("plug_out_events")),
     m_reliable(true),
     m_can_fire(false)
 {
 }
+    
+ZstOutputPlug::ZstOutputPlug(const Entity* buffer) : ZstPlug(buffer)
+{
+}
+
 
 ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug& other) :
     ZstPlug(other),
@@ -264,7 +280,7 @@ ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug& other) :
 {
 }
 
-ZstOutputPlug::ZstOutputPlug(const char * name, ValueType t, bool reliable) :
+ZstOutputPlug::ZstOutputPlug(const char * name, ValueList t, bool reliable) :
     ZstPlug(name, t, PlugDirection_OUT_JACK, -1),
     m_graph_out_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstGraphTransportAdaptor> > >("plug_out_events")),
     m_reliable(reliable),
@@ -299,17 +315,16 @@ void ZstOutputPlug::fire()
 		auto buffer_builder = flatbuffers::FlatBufferBuilder();
 
 		// Serialize values
-		auto value_offset = flatbuffers::Offset<void>();
-		this->raw_value()->serialize(value_offset, buffer_builder);
+        PlugValueBuilder value_builder(buffer_builder);
 
 		// Create graph mesage
 		auto graph_msg_builder = GraphMessageBuilder(buffer_builder);
-		graph_msg_builder.add_values_type(this->raw_value()->get_default_type());
-		graph_msg_builder.add_values(value_offset);
+		graph_msg_builder.add_value(this->raw_value()->serialize(value_builder));
 		graph_msg_builder.add_sender(buffer_builder.CreateString(this->URI().path()));
 
 		// Send message
-		adaptor->send_msg(graph_msg_builder.Finish(), buffer_builder);
+        auto graph_msg_offset = graph_msg_builder.Finish();
+		adaptor->send_msg(graph_msg_offset, buffer_builder);
     });
     m_value->clear();
 }
@@ -324,7 +339,7 @@ void ZstOutputPlug::set_owner(const ZstURI & owner)
     ZstEntityBase::set_owner(owner);
 
     ZstPerformer* performer = NULL;
-    session_events()->invoke([this, &performer](std::shared_ptr<ZstSessionAdaptor> adaptor){
+    session_events()->invoke([&performer](std::shared_ptr<ZstSessionAdaptor> adaptor){
         performer = adaptor->hierarchy()->get_local_performer();
     });
 

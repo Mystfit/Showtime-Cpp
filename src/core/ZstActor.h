@@ -32,7 +32,7 @@ public:
 	ZST_EXPORT void detach_timer(int timer_id);
 	ZST_EXPORT void attach_pipe_listener(zsock_t* sock, zloop_reader_fn handler, void *args);
 	ZST_EXPORT void remove_pipe_listener(zsock_t* sock);
-	ZST_EXPORT int send_to_socket(zsock_t* sock, zmsg_t* msg);
+	ZST_EXPORT int send_to_socket(zsock_t* sock, zmsg_t* msg) const;
 
 	ZST_EXPORT void self_test();
 

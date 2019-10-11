@@ -2,6 +2,8 @@ include "graph_types.fbs";
 
 namespace showtime;
 
+// Signal messages
+// ---------------
 enum Signal : byte {
     EMPTY = 0,
     OK,
@@ -27,10 +29,11 @@ table SignalMessage {
     signal:Signal;
 }
 
-// ---
 
+// Client connection messages
+// --------------------------
 table ClientJoinRequest {
-    performer:Performer;
+    performer:Entity;
     graph_reliable_address:string;
     graph_unreliable_address:string;
 }
@@ -49,10 +52,11 @@ table ClientGraphHandshakeListen {
     sender_address:string;
 }
 
-// ---
 
+// Hierarchy messages
+// ------------------
 table EntityCreateRequest {
-    entities:[AllEntityTypes];
+    entities:[Entity];
 }
 
 table EntityReadRequest {
@@ -60,7 +64,7 @@ table EntityReadRequest {
 }
 
 table EntityUpdateRequest {
-    entities:[AllEntityTypes];
+    entities:[Entity];
 }
 
 table EntityDestroyRequest {
@@ -79,15 +83,17 @@ table EntityObserveRequest {
     URI:string;
 }
 
-// ---
 
+// Factory and entity creation messages
+// ------------------------------------
 table FactoryCreateEntityRequest {
     creatable_entity_URI:string;
     name:string;
 }
 
-// ---
 
+// Cable messages
+// --------------
 table CableCreateRequest {
     address:Cable;
 }
@@ -105,29 +111,45 @@ table CableDestroyRequest {
     address:Cable;
 }
 
-// ---
+// Server messages
+// ---------------
 
+table ServerBeacon {
+    address:string;
+}
+
+
+// Unions
+// ------
 union Content {
     SignalMessage,
-
+    // ----------
     ClientJoinRequest,
     ClientGraphHandshakeStart,
     ClientGraphHandshakeStop,
     ClientGraphHandshakeListen,
-
+    // ----------
     EntityCreateRequest,
     EntityReadRequest,
     EntityUpdateRequest,
     EntityDestroyRequest,
-
+    EntityTakeOwnershipRequest,
+    EntityReleaseOwnershipRequest,
+    EntityObserveRequest,
+    // ----------
     FactoryCreateEntityRequest,
-
+    // ----------
     CableCreateRequest,
     CableReadRequest,
     CableUpdateRequest,
-    CableDestroyRequest
+    CableDestroyRequest,
+    // ----------
+    ServerBeacon
 }
 
+
+// Message envelope
+// ----------------
 table StageMessage {
     content:Content;
     id:uint64;
