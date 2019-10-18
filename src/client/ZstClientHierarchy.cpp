@@ -264,14 +264,16 @@ void ZstClientHierarchy::create_proxy_entity_handler(const EntityCreateRequest *
     }
 }
     
-void ZstClientHierarchy::update_proxy_entity_handler(const EntityDestroyRequest * request)
+void ZstClientHierarchy::update_proxy_entity_handler(const EntityUpdateRequest * request)
 {
-    update_proxy_entity();
+    throw std::runtime_error("Updating proxy entity not implemented");
+    //update_proxy_entity();
 }
     
 void ZstClientHierarchy::destroy_entity_handler(const EntityDestroyRequest * request)
 {
-    destroy_entity_complete();
+    auto entity = find_entity(ZstURI(request->URI()->c_str(), request->URI()->size()));
+    destroy_entity_complete(entity);
 }
 
 

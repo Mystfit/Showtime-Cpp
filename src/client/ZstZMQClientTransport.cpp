@@ -1,4 +1,3 @@
-#include <czmq.h>
 #include <sstream>
 
 #include "../core/ZstEventDispatcher.hpp"
@@ -135,7 +134,7 @@ void ZstZMQClientTransport::sock_recv(zsock_t* socket, bool pop_first)
             stage_msg->init(GetStageMessage(zframe_data(msg_data)));
             
             // Send message to submodules
-            dispatch_receive_event(stage_msg, [this, stage_msg, msg_data](ZstEventStatus s){
+            dispatch_receive_event(stage_msg, [this, stage_msg, msg_data](ZstEventStatus s) mutable{
                 // Frame cleanup
                 zframe_destroy(&msg_data);
                 this->release(stage_msg);

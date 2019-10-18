@@ -151,7 +151,7 @@ ZstMsgKind ZstStageHierarchy::create_client_handler(ZstStageMessage * msg)
 	client_proxy->write_json(args.msg_payload);
 	broadcast_message(ZstMsgKind::CREATE_PERFORMER, args);
 
-	return ZstMsgKind::OK;
+	return Signal_OK;
 }
 
 ZstMsgKind ZstStageHierarchy::destroy_client_handler(ZstPerformer * performer)
@@ -240,7 +240,7 @@ ZstMsgKind ZstStageHierarchy::update_proxy_entity(const ZstEntityBase & entity, 
 	ZstMsgKind msg_status = ZstHierarchy::update_proxy_entity(entity);
 
 	//Update rest of network
-	if (msg_status == ZstMsgKind::OK) {
+	if (msg_status == Signal_OK) {
 		ZstTransportArgs args;
 		args.msg_ID = request_ID;
 		entity.write_json(args.msg_payload);
@@ -266,7 +266,7 @@ ZstMsgKind ZstStageHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 	//Finally, remove the entity
 	ZstHierarchy::remove_proxy_entity(entity);
 	
-	return ZstMsgKind::OK;
+	return Signal_OK;
 }
 
 ZstMsgKind ZstStageHierarchy::create_entity_from_factory_handler(ZstStageMessage * msg, ZstPerformerStageProxy * sender)
@@ -312,7 +312,7 @@ ZstMsgKind ZstStageHierarchy::create_entity_from_factory_handler(ZstStageMessage
 		//Ack response
 		ZstTransportArgs create_args;
 		create_args.msg_args = { {get_msg_arg_name(ZstMsgArg::MSG_ID), id} };
-		whisper_message(sender, ZstMsgKind::OK, create_args);
+		whisper_message(sender, Signal_OK, create_args);
 	};
 
 	//Send 

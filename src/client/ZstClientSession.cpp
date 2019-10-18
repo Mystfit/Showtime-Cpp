@@ -71,7 +71,7 @@ void ZstClientSession::on_receive_msg(const ZstStageMessage * msg)
 //        auto cable_address = stage_msg->unpack_payload_serialisable<ZstCableAddress>();
 //        ZstCable * cable_ptr = find_cable(cable_address);
 //        if (cable_ptr) {
-//            destroy_cable_complete(ZstMessageReceipt{ ZstMsgKind::OK }, cable_ptr);
+//            destroy_cable_complete(ZstMessageReceipt{ Signal_OK }, cable_ptr);
 //        }
 //        break;
 //    }
@@ -146,17 +146,13 @@ void ZstClientSession::cable_destroy_handler(const CableDestroyRequest* request)
 
 void ZstClientSession::aquire_entity_ownership_handler(const EntityTakeOwnershipRequest* request)
 {
-    
-    auto entity_path = stage_msg->get_arg<std::string>(ZstMsgArg::PATH);
-    auto owner_path = stage_msg->get_arg<std::string>(ZstMsgArg::OUTPUT_PATH);
-    auto entity = hierarchy()->find_entity(ZstURI(entity_path.c_str(), entity_path.size()));
-    auto owner = ZstURI(owner_path.c_str(), owner_path.size());
+    auto entity = hierarchy()->find_entity(ZstURI(request->URI()->c_str(), request->URI()->size()));
     
     // Set the owner
     ZstEntityBundle bundle;
     entity->get_child_entities(bundle);
     for(auto child : bundle){
-        entity_set_owner(child, owner);
+        entity_set_owner(child, hierarchy()->get_local_performer()->URI());
     }
 }
 

@@ -4,6 +4,7 @@
 #include "../core/ZstStageMessage.h"
 #include "../core/transports/ZstTransportLayerBase.hpp"
 
+#include <czmq.h>
 #include <boost/uuid/uuid.hpp>
 
 using namespace boost::uuids;

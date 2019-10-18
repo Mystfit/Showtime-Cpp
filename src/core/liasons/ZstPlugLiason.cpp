@@ -22,7 +22,7 @@ void ZstPlugLiason::output_plug_set_can_fire(ZstOutputPlug* plug, bool can_fire)
 	plug->set_can_fire(can_fire);
 }
 
-void ZstPlugLiason::output_plug_set_transport(ZstOutputPlug* plug, std::shared_ptr<ZstGraphTransportAdaptor>& transport)
+void ZstPlugLiason::output_plug_set_transport(ZstOutputPlug* plug, std::shared_ptr<ZstGraphTransportAdaptor> transport)
 {
 	if (!plug) return;
 	plug->add_adaptor(transport);

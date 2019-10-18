@@ -115,6 +115,7 @@ table CableDestroyRequest {
 // ---------------
 
 table ServerBeacon {
+    name:string;
     address:string;
 }
 

@@ -135,7 +135,7 @@ namespace showtime {
             // Message handlers
             void start_connection_broadcast_handler(const ClientGraphHandshakeStart* request);
             void stop_connection_broadcast_handler(const ClientGraphHandshakeStop* request);
-            void listen_to_client_handler(const ClientGraphHandshakeListen* request);
+            void listen_to_client_handler(const ClientGraphHandshakeListen* request, const ZstMsgID & request_id);
             void server_discovery_handler(const ServerBeacon* request);
 
             static void send_connection_broadcast(boost::asio::deadline_timer * t, ZstClient * client, const ZstURI & to, const ZstURI & from, boost::posix_time::milliseconds duration);
