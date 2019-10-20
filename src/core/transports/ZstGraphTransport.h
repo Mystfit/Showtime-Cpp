@@ -3,6 +3,7 @@
 #include "../ZstPerformanceMessage.h"
 #include "../adaptors/ZstGraphTransportAdaptor.hpp"
 #include "../ZstMessagePool.hpp"
+#include "../ZstActor.h"
 #include "ZstTransportLayerBase.hpp"
 #include "ZstExports.h"
 

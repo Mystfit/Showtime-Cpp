@@ -38,7 +38,7 @@ typedef ZstBundleIterator<ZstEntityBase*> ZstEntityBundleIterator;
 
 class ZST_CLASS_EXPORTED ZstEntityBase :
     public ZstSynchronisable,
-    virtual ZstSerialisable<Entity, EntityBuilder>
+    public virtual ZstSerialisable<Entity, EntityBuilder>
 {
     friend class ZstEntityLiason;
 

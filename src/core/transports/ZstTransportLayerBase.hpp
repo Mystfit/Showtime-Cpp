@@ -1,18 +1,12 @@
 #pragma once
 
 #include <string>
-#include <functional>
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/nil_generator.hpp>
 
 #include "ZstExports.h"
 #include "ZstTransportHelpers.h"
 #include "ZstExceptions.h"
 
 #include "../ZstEventDispatcher.hpp"
-#include "../ZstActor.h"
-#include "../ZstStageMessage.h"
-#include "../ZstPerformanceMessage.h"
 #include "../ZstMessageSupervisor.hpp"
 #include "../ZstMessagePool.hpp"
 

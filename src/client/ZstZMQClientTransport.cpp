@@ -3,7 +3,6 @@
 #include "../core/ZstEventDispatcher.hpp"
 #include "../core/ZstZMQRefCounter.h"
 #include "ZstZMQClientTransport.h"
-#include "nlohmann/json.hpp"
 
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/random_generator.hpp>
@@ -92,6 +91,7 @@ ZstMessageReceipt ZstZMQClientTransport::send_msg(Content message_type, flatbuff
     FinishStageMessageBuffer(buffer_builder, stage_msg);
     
     begin_send_message(buffer_builder.GetBufferPointer(), buffer_builder.GetSize(), args);
+	return ZstMessageReceipt{ Signal_OK };
 }
 
 

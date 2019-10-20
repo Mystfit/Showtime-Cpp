@@ -2,7 +2,8 @@
 
 #include "../core/adaptors/ZstStageTransportAdaptor.hpp"
 #include "../core/ZstStageMessage.h"
-#include "../core/transports/ZstTransportLayerBase.hpp"
+#include "../core/transports/ZstStageTransport.h"
+#include "../core/ZstActor.h"
 
 #include <czmq.h>
 #include <boost/uuid/uuid.hpp>
@@ -12,8 +13,7 @@ using namespace boost::uuids;
 namespace showtime {
 
 class ZstZMQClientTransport : 
-    public ZstTransportLayerBase<ZstStageMessage, ZstStageTransportAdaptor>,
-    public ZstStageTransportAdaptor
+	public ZstStageTransport
 {
 public:
 	ZstZMQClientTransport();
@@ -23,7 +23,7 @@ public:
 	virtual void connect(const std::string & stage_address) override;
 	virtual void disconnect() override;
     
-    ZstMessageReceipt send_msg(Content message_type, flatbuffers::Offset<void> message_content, flatbuffers::FlatBufferBuilder & buffer_builder, const ZstTransportArgs& args) override;
+    virtual ZstMessageReceipt send_msg(Content message_type, flatbuffers::Offset<void> message_content, flatbuffers::FlatBufferBuilder & buffer_builder, const ZstTransportArgs& args) override;
 
 private:
 	void send_message_impl(const uint8_t * msg_buffer, size_t msg_buffer_size, const ZstTransportArgs & args) const override;

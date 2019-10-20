@@ -1,5 +1,4 @@
 #include <msgpack.hpp>
-#include <nlohmann/json.hpp>
 
 #include "ZstCable.h"
 #include "entities/ZstPlug.h"

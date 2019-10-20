@@ -44,10 +44,9 @@ set(ADAPTOR_HEADERS
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstEntityAdaptor.hpp
 )
 set(FMT_HEADERS 
-    ${Showtime_INCLUDE_DIRS}/fmt/format.hpp
-    ${Showtime_INCLUDE_DIRS}/fmt/format.h
-    ${Showtime_INCLUDE_DIRS}/fmt/format-inl.h
-    ${Showtime_INCLUDE_DIRS}/fmt/core.h
+    ${Showtime_SUBMODULE_DEPENDENCIES_DIR}/fmt/include/fmt/format.h
+    ${Showtime_SUBMODULE_DEPENDENCIES_DIR}/fmt/include/fmt/format-inl.h
+    ${Showtime_SUBMODULE_DEPENDENCIES_DIR}/fmt/include/fmt/core.h
 )
 set(API_HEADERS
     ${Showtime_INCLUDE_DIRS}/ZstCore.h
@@ -96,6 +95,7 @@ set(ZST_CORE_MODULE_HEADERS
 set(ZST_CORE_TRANSPORT_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportHelpers.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayerBase.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/transports/ZstStageTransport.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstGraphTransport.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTCPGraphTransport.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstServiceDiscoveryTransport.h"   
@@ -143,6 +143,7 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstIOLoop.cpp"
 )
 set(ZST_CORE_TRANSPORT_SRC
+    "${CMAKE_CURRENT_LIST_DIR}/transports/ZstStageTransport.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstGraphTransport.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTCPGraphTransport.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstServiceDiscoveryTransport.cpp"   
@@ -285,6 +286,9 @@ set_target_properties(${CORE_TARGET_OBJECTS} PROPERTIES POSITION_INDEPENDENT_COD
 target_compile_definitions(${CORE_TARGET_OBJECTS} 
     PRIVATE 
     ZST_EXPORT_CORE_API
+    PUBLIC
+    FMT_HEADER_ONLY
+    FMT_USE_WINDOWS_H=0
 )
 
 # Static/shared library specific options
