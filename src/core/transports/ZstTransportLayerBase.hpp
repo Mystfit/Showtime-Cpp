@@ -18,40 +18,40 @@ class ZST_CLASS_EXPORTED ZstTransportLayerBase :
     public ZstMessagePool<Message_T>
 {
 public:
-	ZST_EXPORT ZstTransportLayerBase() :
+	ZstTransportLayerBase() :
 		ZstMessageSupervisor(std::make_shared<cf::time_watcher>(), STAGE_TIMEOUT),
 		m_is_active(false),
 		m_dispatch_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<Adaptor_T> > >("transport events")){
 	}
-	ZST_EXPORT virtual ~ZstTransportLayerBase() {}
+	virtual ~ZstTransportLayerBase() {}
 
-	ZST_EXPORT virtual void init() {
+	virtual void init() {
 		m_is_active = true;
 	}
 
-	ZST_EXPORT virtual void destroy() {}
+	virtual void destroy() {}
 
-	ZST_EXPORT virtual void process_events(){
+	virtual void process_events(){
 		m_dispatch_events->process_events();
         this->cleanup_response_messages();
 	}
 
-	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<Adaptor_T> > >& msg_events() {
+	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<Adaptor_T> > >& msg_events() {
 		return m_dispatch_events;
 	}
 	
-	ZST_EXPORT bool is_active() {
+	bool is_active() {
 		return m_is_active;
 	}
     
 protected:
-    ZST_EXPORT ZstMessageReceipt begin_send_message(const uint8_t * msg_buffer, size_t msg_buffer_size)
+    ZstMessageReceipt begin_send_message(const uint8_t * msg_buffer, size_t msg_buffer_size)
     {
         send_message_impl(msg_buffer, msg_buffer_size, ZstTransportArgs());
         return ZstMessageReceipt{ Signal_OK, ZstTransportRequestBehaviour::PUBLISH };
     }
     
-    ZST_EXPORT ZstMessageReceipt begin_send_message(const uint8_t * msg_buffer, size_t msg_buffer_size, const ZstTransportArgs& args)
+    ZstMessageReceipt begin_send_message(const uint8_t * msg_buffer, size_t msg_buffer_size, const ZstTransportArgs& args)
     {
         switch (args.msg_send_behaviour) {
             case ZstTransportRequestBehaviour::ASYNC_REPLY:
@@ -77,9 +77,9 @@ protected:
     }
     
     //Message sending implementation for the transport
-    ZST_EXPORT virtual void send_message_impl(const uint8_t * msg_buffer, size_t msg_buffer_size, const ZstTransportArgs & args) const = 0;
+    virtual void send_message_impl(const uint8_t * msg_buffer, size_t msg_buffer_size, const ZstTransportArgs & args) const = 0;
     
-    ZST_EXPORT virtual void dispatch_receive_event(Message_T* msg){
+    virtual void dispatch_receive_event(Message_T* msg){
         m_dispatch_events->defer([msg](std::shared_ptr<Adaptor_T> adaptor) {
             adaptor->on_receive_msg(msg);
         }, [this, msg](ZstEventStatus status) {
@@ -88,7 +88,7 @@ protected:
         });
     }
     
-    ZST_EXPORT virtual void dispatch_receive_event(Message_T* msg, ZstEventCallback on_complete) {
+    virtual void dispatch_receive_event(Message_T* msg, ZstEventCallback on_complete) {
         m_dispatch_events->defer([msg](std::shared_ptr<Adaptor_T> adaptor) {
             adaptor->on_receive_msg(msg);
         }, [this, msg, on_complete](ZstEventStatus status) {

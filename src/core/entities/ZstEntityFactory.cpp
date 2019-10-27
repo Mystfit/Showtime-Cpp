@@ -1,5 +1,4 @@
 #include <exception>
-#include <nlohmann/json.hpp>
 #include <msgpack.hpp>
 #include "entities/ZstEntityFactory.h"
 #include "../ZstEventDispatcher.hpp"

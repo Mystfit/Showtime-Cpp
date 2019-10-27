@@ -36,12 +36,12 @@
 //Showtime client includes
 #include "ZstClientSession.h"
 
-//Typedefs
-typedef std::unordered_map<ZstURI, boost::asio::deadline_timer, ZstURIHash> ZstConnectionTimerMap;
-typedef std::unique_ptr<ZstConnectionTimerMap> ZstConnectionTimerMapUnique;
-
-
 namespace showtime {
+
+	//Typedefs
+	typedef std::unordered_map<ZstURI, boost::asio::deadline_timer, ZstURIHash> ZstConnectionTimerMap;
+	typedef std::unique_ptr<ZstConnectionTimerMap> ZstConnectionTimerMapUnique;
+
     namespace client {
         class ZstClient :
 			public ZstEventDispatcher< std::shared_ptr<ZstStageTransportAdaptor> >,
