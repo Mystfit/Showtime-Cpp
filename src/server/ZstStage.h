@@ -29,7 +29,7 @@
 class ZstSemaphore;
 
 
-namespace Showtime {
+namespace showtime {
 	namespace detail {
 		class ZstStage : 
 			public ZstTransportAdaptor,

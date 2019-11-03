@@ -21,6 +21,7 @@ namespace net = boost::asio;            // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 using namespace boost::uuids;
 
+namespace showtime {
 
 //Forwards
 class ZstWebsocketSession;
@@ -54,3 +55,5 @@ private:
 	boost::asio::io_context& m_ioc;
 	std::unordered_map< uuid, std::shared_ptr<ZstWebsocketSession>, boost::hash<boost::uuids::uuid> > m_sessions;
 };
+
+}

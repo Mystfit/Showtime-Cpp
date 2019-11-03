@@ -4,6 +4,8 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <nlohmann/json.hpp>
 
+namespace showtime {
+
 ZstWebsocketServerTransport::ZstWebsocketServerTransport(ZstIOLoop& io) :
 	m_ioc(io.IO_context()),
 	m_acceptor(io.IO_context())
@@ -12,7 +14,7 @@ ZstWebsocketServerTransport::ZstWebsocketServerTransport(ZstIOLoop& io) :
 
 ZstWebsocketServerTransport::~ZstWebsocketServerTransport()
 {
-    m_sessions.clear();
+	m_sessions.clear();
 }
 
 void ZstWebsocketServerTransport::init()
@@ -28,7 +30,7 @@ void ZstWebsocketServerTransport::bind(const std::string& address)
 {
 	beast::error_code ec;
 
-	auto endpoint = tcp::endpoint{ net::ip::make_address(address), 40005};
+	auto endpoint = tcp::endpoint{ net::ip::make_address(address), 40005 };
 
 	// Open the acceptor
 	m_acceptor.open(endpoint.protocol(), ec);
@@ -77,7 +79,7 @@ void ZstWebsocketServerTransport::receive_msg(ZstMessage* msg)
 {
 	ZstTransportLayer::receive_msg(msg, [msg, this](ZstEventStatus status) {
 		this->release_msg(static_cast<ZstStageMessage*>(msg));
-	});
+		});
 }
 
 void ZstWebsocketServerTransport::fail(beast::error_code ec, char const* what)
@@ -112,4 +114,6 @@ void ZstWebsocketServerTransport::on_accept(beast::error_code ec, tcp::socket so
 
 	// Accept another connection
 	do_accept();
+}
+
 }

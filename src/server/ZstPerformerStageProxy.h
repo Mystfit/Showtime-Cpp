@@ -4,17 +4,19 @@
 #include <unordered_set>
 #include "entities/ZstPerformer.h"
 
+namespace showtime {
+
 class ZstPerformerStageProxy : public ZstPerformer {
 public:
-	ZstPerformerStageProxy(const std::string & name, const std::string & reliable_address, const std::string & unreliable_address);
-	ZstPerformerStageProxy(const ZstPerformer & other, const std::string & reliable_address, const std::string & unreliable_address);
+	ZstPerformerStageProxy(const std::string& name, const std::string& reliable_address, const std::string& unreliable_address);
+	ZstPerformerStageProxy(const ZstPerformer& other, const std::string& reliable_address, const std::string& unreliable_address);
 
-	const std::string & reliable_address();
-	const std::string & unreliable_address();
+	const std::string& reliable_address();
+	const std::string& unreliable_address();
 
-	void add_subscriber(ZstPerformerStageProxy * client);
-	void remove_subscriber(ZstPerformerStageProxy * client);
-	bool has_connected_subscriber(ZstPerformerStageProxy * client);
+	void add_subscriber(ZstPerformerStageProxy* client);
+	void remove_subscriber(ZstPerformerStageProxy* client);
+	bool has_connected_subscriber(ZstPerformerStageProxy* client);
 
 private:
 	std::string m_reliable_address;
@@ -22,3 +24,5 @@ private:
 
 	std::unordered_set<ZstURI, ZstURIHash> m_connected_subscriber_peers;
 };
+
+}

@@ -6,6 +6,8 @@
 
 using namespace boost::uuids;
 
+namespace showtime {
+
 class ZstWebsocketSession : public std::enable_shared_from_this<ZstWebsocketSession> {
 public:
 	// Take ownership of the socket and the owning transport
@@ -20,7 +22,7 @@ public:
 	void on_read(beast::error_code ec, std::size_t bytes_transferred);
 	void on_write(beast::error_code ec, std::size_t bytes_transferred);
 
-	const uuid & endpoint_UUID();
+	const uuid& endpoint_UUID();
 private:
 	websocket::stream<beast::tcp_stream> m_ws;
 	std::string m_socket_id;
@@ -29,3 +31,5 @@ private:
 	std::shared_ptr<ZstWebsocketServerTransport> m_transport;
 	uuid m_endpoint_UUID;
 };
+
+}

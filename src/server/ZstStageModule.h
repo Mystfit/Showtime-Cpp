@@ -5,7 +5,7 @@
 #include "../core/adaptors/ZstTransportAdaptor.hpp"
 #include <memory>
 
-
+namespace showtime {
 class ZstStageModule {
 public:
 	ZstStageModule();
@@ -16,3 +16,4 @@ public:
 private:
 	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstTransportAdaptor> > > m_router_events;
 };
+}

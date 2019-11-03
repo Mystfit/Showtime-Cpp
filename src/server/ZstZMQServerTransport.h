@@ -3,10 +3,11 @@
 #include <mutex>
 #include "../core/ZstActor.h"
 #include "../core/ZstStageMessage.h"
-#include "../core/transports/ZstTransportLayer.h"
+#include "../core/transports/ZstStageTransport.h"
 
-class ZstZMQServerTransport :
-	public ZstTransportLayer<ZstStageMessage>
+namespace showtime {
+
+class ZstZMQServerTransport : public ZstStageTransport
 {
 public:
 	ZstZMQServerTransport();
@@ -17,12 +18,14 @@ public:
 
 	//Incoming socket handlers
 	static int s_handle_router(zloop_t *loop, zsock_t *sock, void *arg);
+	void sock_recv(zsock_t* socket);
 
-	void send_message_impl(ZstMessage * msg, const ZstTransportArgs& args) override;
-	void receive_msg(ZstMessage * msg) override;
+	void send_message_impl(const uint8_t* msg_buffer, size_t msg_buffer_size, const ZstTransportArgs& args) const override;
 
 private:
 	mutable std::mutex m_transport_mtx;
 	ZstActor m_server_actor;
 	zsock_t * m_clients_sock;
 };
+
+}

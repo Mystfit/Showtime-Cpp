@@ -3,6 +3,7 @@
 #include "ZstWebsocketSession.h"
 #include <boost/uuid/random_generator.hpp>
 
+namespace showtime {
 
 ZstWebsocketSession::ZstWebsocketSession(tcp::socket&& socket, std::shared_ptr<ZstWebsocketServerTransport> transport) :
 	m_ws(std::move(socket)),
@@ -74,7 +75,7 @@ void ZstWebsocketSession::on_read(beast::error_code ec, std::size_t bytes_transf
 	catch (nlohmann::detail::parse_error) {
 		ZstLog::net(LogLevel::debug, "Could not parse json message '{}'", msg_str);
 	}
-	
+
 	//Unpack message
 	if (!msg_json.empty()) {
 		msg->unpack(msg_json);
@@ -89,7 +90,7 @@ void ZstWebsocketSession::on_read(beast::error_code ec, std::size_t bytes_transf
 	do_read();
 }
 
-void ZstWebsocketSession::do_write(const std::string& data) 
+void ZstWebsocketSession::do_write(const std::string& data)
 {
 	std::shared_ptr<std::string const> msg_data(std::make_shared<std::string const>(data));
 	net::post(m_ws.get_executor(), beast::bind_front_handler(&ZstWebsocketSession::on_send, shared_from_this(), msg_data));
@@ -104,7 +105,7 @@ void ZstWebsocketSession::on_send(std::shared_ptr<std::string const> const& msg_
 		return;
 
 	// We are not currently writing, so send this immediately
-	m_ws.async_write(net::buffer(*m_out_messages.front()),beast::bind_front_handler(&ZstWebsocketSession::on_write, shared_from_this()));
+	m_ws.async_write(net::buffer(*m_out_messages.front()), beast::bind_front_handler(&ZstWebsocketSession::on_write, shared_from_this()));
 }
 
 void ZstWebsocketSession::on_write(beast::error_code ec, std::size_t bytes_transferred)
@@ -126,4 +127,6 @@ void ZstWebsocketSession::on_write(beast::error_code ec, std::size_t bytes_trans
 const uuid& ZstWebsocketSession::endpoint_UUID()
 {
 	return m_endpoint_UUID;
+}
+
 }

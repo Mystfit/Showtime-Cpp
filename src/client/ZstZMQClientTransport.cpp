@@ -116,17 +116,15 @@ void ZstZMQClientTransport::send_message_impl(const uint8_t * msg_buffer, size_t
 	}
 }
 
-void ZstZMQClientTransport::sock_recv(zsock_t* socket, bool pop_first)
+void ZstZMQClientTransport::sock_recv(zsock_t* socket)
 {
 	if (!is_active())
 		return;
 
 	zmsg_t * recv_msg = zmsg_recv(socket);
 	if (recv_msg) {
-		if (pop_first) {
-			auto empty = zmsg_pop(recv_msg);
-			zframe_destroy(&empty);
-		}
+		// Pop spacer frame off
+		auto empty = zmsg_pop(recv_msg);
         auto msg_data = zmsg_pop(recv_msg);
 
         if(msg_data){
@@ -136,12 +134,13 @@ void ZstZMQClientTransport::sock_recv(zsock_t* socket, bool pop_first)
             // Send message to submodules
             dispatch_receive_event(stage_msg, [this, stage_msg, msg_data](ZstEventStatus s) mutable{
                 // Frame cleanup
+				this->release(stage_msg);
                 zframe_destroy(&msg_data);
-                this->release(stage_msg);
             });
         }
         
         // Message Cleanup
+		zframe_destroy(&empty);
 		zmsg_destroy(&recv_msg);
 	}
 }

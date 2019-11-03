@@ -12,7 +12,7 @@
 
 #include <czmq.h>
 
-namespace Showtime::detail
+namespace showtime::detail
 {
 	ZstStage::ZstStage() :
 		m_is_destroyed(false),
