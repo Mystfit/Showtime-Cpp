@@ -79,7 +79,7 @@ void ZstWebsocketServerTransport::receive_msg(ZstMessage* msg)
 {
 	ZstTransportLayer::receive_msg(msg, [msg, this](ZstEventStatus status) {
 		this->release_msg(static_cast<ZstStageMessage*>(msg));
-		});
+	});
 }
 
 void ZstWebsocketServerTransport::fail(beast::error_code ec, char const* what)

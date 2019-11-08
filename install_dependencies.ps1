@@ -21,6 +21,9 @@ $build_flags = (
 $generator_flags = @(
     "-G", "`"$generator`""
     "-DCMAKE_INSTALL_PREFIX=`"$install_prefix`"",
+    "-DCMAKE_INSTALL_INCLUDEDIR=`"$install_prefix/include`"",
+    "-DCMAKE_INSTALL_LIBDIR=`"$install_prefix/lib`"",
+    "-DCMAKE_INSTALL_BINDIR=`"$install_prefix/bin`"",
     "-DCMAKE_INSTALL_MESSAGE=NEVER",
     "-DCMAKE_PREFIX_PATH=`"$install_prefix`""
 )
@@ -55,8 +58,8 @@ function Build-CmakeFromGit{
         "-S", "`"$dependency_dir/$name`"",
         "-B", "`"$build_dir`""
     ) 
-    & "cmake" @cmake_flags | out-null
-    & "cmake" $(@("--build", "`"$build_dir`"") + $build_flags) | out-null
+    & "cmake" @cmake_flags
+    & "cmake" $(@("--build", "`"$build_dir`"") + $build_flags)
     Write-Output "Built $name"
 }
 
@@ -69,7 +72,7 @@ Build-CmakeFromGit -name "czmq" -url "https://github.com/mystfit/czmq.git" -bran
     "-DBUILD_TESTING=OFF",
     "-DLIBZMQ_FIND_USING_CMAKE_PACKAGE=ON"
 )
-Build-CmakeFromGit -name "flatbuffers" -url "https://github.com/google/flatbuffers.git" -branch "master" -flags @()
+Build-CmakeFromGit -name "flatbuffers" -url "https://github.com/google/flatbuffers.git" -branch "master" -flags @("-DFLATBUFFERS_INSTALL=ON")
 
 
 # Boost

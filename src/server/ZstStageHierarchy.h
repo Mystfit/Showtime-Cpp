@@ -6,6 +6,7 @@
 #include "../core/ZstSemaphore.h"
 #include "../core/ZstHierarchy.h"
 #include "../core/ZstStageMessage.h"
+#include "../core/adaptors/ZstStageTransportAdaptor.hpp"
 #include "ZstPerformerStageProxy.h"
 #include "ZstStageModule.h"
 
@@ -15,7 +16,7 @@ typedef std::unordered_map<boost::uuids::uuid, ZstPerformerStageProxy*, boost::h
 
 class ZstStageHierarchy :
 	public ZstHierarchy,
-	public ZstTransportAdaptor,
+	public ZstStageTransportAdaptor,
 	public ZstStageModule
 {
 public:
@@ -30,33 +31,34 @@ public:
 	// Hierarchy adaptor overrides
 	// ---------------------------
 
-	void on_receive_msg(ZstMessage* msg) override;
+	void on_receive_msg(const ZstStageMessage* msg) override;
 
 
 	// ----------------
-	// Clients
+	// Message handlers
 	// ----------------
 
-	ZstMsgKind create_client_handler(ZstStageMessage* msg);
-	ZstMsgKind destroy_client_handler(ZstPerformer* performer);
-	void broadcast_message(const ZstMsgKind& msg_kind, const ZstTransportArgs& args);
-	void whisper_message(ZstPerformer* performer, const ZstMsgKind& msg_kind, const ZstTransportArgs& args);
+	Signal signal_handler(const SignalMessage* request, ZstPerformerStageProxy* sender);
+	Signal create_client_handler(const ClientJoinRequest * request, uuid endpoint_UUID);
+	Signal create_entity_handler(const StageMessage* request, ZstPerformerStageProxy* sender);
+	Signal factory_create_entity_handler(const StageMessage* request, ZstPerformerStageProxy* sender);
+	Signal update_entity_handler(const EntityUpdateRequest* request);
+	Signal destroy_entity_handler(const EntityDestroyRequest* request);
+
+
+	// ----------------
+	// Messaging
+	// ----------------
+	
+	void broadcast_message(Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder> & buffer_builder, const ZstTransportArgs& args);
+	void whisper_message(ZstPerformerStageProxy* performer, Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs& args);
 
 
 	// ----------------
 	// Proxies
 	// ----------------
 
-	virtual ZstMsgKind add_proxy_entity(const ZstEntityBase& entity, ZstMsgID request_ID, ZstPerformer* sender);
-	ZstMsgKind update_proxy_entity(const ZstEntityBase& entity, ZstMsgID request_ID);
-	ZstMsgKind remove_proxy_entity(ZstEntityBase* entity) override;
-
-
-	// ------------------------
-	// Factories and creatables
-	// ------------------------
-
-	ZstMsgKind create_entity_from_factory_handler(ZstStageMessage* msg, ZstPerformerStageProxy* sender);
+	Signal ZstStageHierarchy::destroy_client(ZstPerformerStageProxy* performer);
 
 
 	// ---------------------
@@ -64,10 +66,7 @@ public:
 	// ---------------------
 
 	ZstPerformerStageProxy* get_client_from_endpoint_UUID(const uuid& endpoint_UUID);
-	boost::uuids::uuid get_endpoint_UUID_from_client(const ZstPerformer* performer);
 
-private:
-	ZstClientEndpointMap m_client_endpoint_UUIDS;
 };
 
 }

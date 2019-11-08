@@ -16,7 +16,7 @@
 #include "../core/ZstActor.h"
 #include "../core/ZstSemaphore.h"
 #include "../core/ZstStageMessage.h"
-#include "../core/adaptors/ZstTransportAdaptor.hpp"
+#include "../core/adaptors/ZstStageTransportAdaptor.hpp"
 #include "../core/transports/ZstServiceDiscoveryTransport.h"
 
 //Stage headers
@@ -32,7 +32,7 @@ class ZstSemaphore;
 namespace showtime {
 	namespace detail {
 		class ZstStage : 
-			public ZstTransportAdaptor,
+			public ZstStageTransportAdaptor,
 			public ZstEventDispatcher<ZstTransportAdaptor*>
 		{
 		public:

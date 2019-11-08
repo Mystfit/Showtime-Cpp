@@ -2,7 +2,7 @@
 
 #include "../core/ZstEventDispatcher.hpp"
 #include "../core/ZstSemaphore.h"
-#include "../core/adaptors/ZstTransportAdaptor.hpp"
+#include "../core/adaptors/ZstStageTransportAdaptor.hpp"
 #include <memory>
 
 namespace showtime {
@@ -11,9 +11,9 @@ public:
 	ZstStageModule();
 	virtual void process_events();
 	virtual void set_wake_condition(std::weak_ptr<ZstSemaphore> condition);
-	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstTransportAdaptor> > >& router_events();
+	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstStageTransportAdaptor> > >& router_events();
 
 private:
-	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstTransportAdaptor> > > m_router_events;
+	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstStageTransportAdaptor> > > m_router_events;
 };
 }

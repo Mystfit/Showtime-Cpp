@@ -1,19 +1,30 @@
+#include <boost/uuid/nil_generator.hpp>
+
 #include "ZstPerformerStageProxy.h"
 #include "ZstLogging.h"
 
+using namespace boost::uuids;
+
 namespace showtime {
 
-ZstPerformerStageProxy::ZstPerformerStageProxy(const std::string& name, const std::string& reliable_address, const std::string& unreliable_address) :
-	ZstPerformer(name.c_str()),
+ZstPerformerStageProxy::ZstPerformerStageProxy(const Entity* performer, const std::string& reliable_address, const std::string& unreliable_address, const uuid& endpoint_UUID) :
+	ZstPerformer(performer),
 	m_reliable_address(reliable_address),
-	m_unreliable_address(unreliable_address)
+	m_unreliable_address(unreliable_address),
+	m_endpoint_UUID(endpoint_UUID)
 {
+	this->set_activated();
+	this->set_proxy();
 }
 
-ZstPerformerStageProxy::ZstPerformerStageProxy(const ZstPerformer& other, const std::string& reliable_address, const std::string& unreliable_address) : ZstPerformer(other)
+ZstPerformerStageProxy::ZstPerformerStageProxy(const ZstPerformerStageProxy& other) :
+	ZstPerformer(other),
+	m_reliable_address(other.m_reliable_address),
+	m_unreliable_address(other.m_unreliable_address),
+	m_endpoint_UUID(other.m_endpoint_UUID)
 {
-	m_reliable_address = reliable_address;
-	m_unreliable_address = unreliable_address;
+	this->set_activated();
+	this->set_proxy();
 }
 
 const std::string& ZstPerformerStageProxy::reliable_address()
@@ -47,6 +58,11 @@ bool ZstPerformerStageProxy::has_connected_subscriber(ZstPerformerStageProxy* cl
 		return true;
 	}
 	return false;
+}
+
+const boost::uuids::uuid & ZstPerformerStageProxy::endpoint_UUID()
+{
+	return m_endpoint_UUID;
 }
 
 }

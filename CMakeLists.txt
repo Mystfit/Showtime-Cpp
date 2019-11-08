@@ -89,7 +89,6 @@ option(BUILD_STATIC "Build static Showtime library" OFF)
 option(BUILD_SHARED "Build shared Showtime library" ON)
 option(BUILD_DRAFTS "Build with experimental draft support" OFF)
 option(BUILD_SERVER_LAUNCHER "Build server launcher program" ON)
-option(BUILD_FLATBUFFERS "Build with flatbuffer support" ON)
 
 # Set showtime variables
 set(Showtime_COMPILED_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include/")
@@ -169,29 +168,30 @@ if(NOT czmq_FOUND)
     message(STATUS "CZMQ found status: ${czmq_FOUND}")
 endif()
 
-if(BUILD_FLATBUFFERS)
-    cmake_policy(SET CMP0048 NEW)
-    find_package(flatbuffers REQUIRED)
+cmake_policy(SET CMP0048 NEW)
+find_package(flatbuffers REQUIRED)
+if(NOT FLATBUFFERS_FLATC_EXECUTABLE)
+    find_program(FLATBUFFERS_FLATC_EXECUTABLE flatc)
     if(NOT FLATBUFFERS_FLATC_EXECUTABLE)
-        find_program(FLATBUFFERS_FLATC_EXECUTABLE flatc)
+        message(FATAL_ERROR "Could not find flatc compiler!")
     endif()
-
-    set(FLATBUFFFER_OUTPUT_DIR "${Showtime_COMPILED_INCLUDE_DIRS}/schemas")
-    set(FLATBUFFER_HEADER_OUTPUT 
-        "${FLATBUFFFER_OUTPUT_DIR}/stage_message_generated.h"
-        "${FLATBUFFFER_OUTPUT_DIR}/graph_message_generated.h"
-        "${FLATBUFFFER_OUTPUT_DIR}/graph_types_generated.h"
-    )
-    set(FLATC_ARGS 
-        "-c"
-        "-o" "${FLATBUFFFER_OUTPUT_DIR}/"
-        "-I" "${CMAKE_SOURCE_DIR}/schemas/"
-        "${CMAKE_SOURCE_DIR}/schemas/stage_message.fbs"
-        "${CMAKE_SOURCE_DIR}/schemas/graph_message.fbs"
-        "${CMAKE_SOURCE_DIR}/schemas/graph_types.fbs"
-    )
-    execute_process(COMMAND ${FLATBUFFERS_FLATC_EXECUTABLE} ${FLATC_ARGS})
 endif()
+
+set(FLATBUFFFER_OUTPUT_DIR "${Showtime_COMPILED_INCLUDE_DIRS}/schemas")
+set(FLATBUFFER_HEADER_OUTPUT 
+    "${FLATBUFFFER_OUTPUT_DIR}/stage_message_generated.h"
+    "${FLATBUFFFER_OUTPUT_DIR}/graph_message_generated.h"
+    "${FLATBUFFFER_OUTPUT_DIR}/graph_types_generated.h"
+)
+set(FLATC_ARGS 
+    "-c"
+    "-o" "${FLATBUFFFER_OUTPUT_DIR}/"
+    "-I" "${CMAKE_SOURCE_DIR}/schemas/"
+    "${CMAKE_SOURCE_DIR}/schemas/stage_message.fbs"
+    "${CMAKE_SOURCE_DIR}/schemas/graph_message.fbs"
+    "${CMAKE_SOURCE_DIR}/schemas/graph_types.fbs"
+)
+execute_process(COMMAND ${FLATBUFFERS_FLATC_EXECUTABLE} ${FLATC_ARGS})
 
 # Set internal linked library lists for our targets
 set(SHOWTIME_PRIVATE_LINKED_LIBS 

@@ -2,7 +2,7 @@
 
 #include "../core/ZstIOLoop.h"
 #include "../core/ZstStageMessage.h"
-#include "../core/transports/ZstTransportLayer.h"
+#include "../core/transports/ZstStageTransport.h"
 
 #include <memory>
 #include <unordered_map>
@@ -31,8 +31,7 @@ class ZstWebsocketSession;
 typedef std::shared_ptr<ZstWebsocketSession> ZstWebsocketSessionPtr;
 
 
-class ZstWebsocketServerTransport :
-	public ZstTransportLayer<ZstStageMessage>
+class ZstWebsocketServerTransport : public ZstStageTransport
 {
 public:
 	ZstWebsocketServerTransport(ZstIOLoop & io);
@@ -41,12 +40,13 @@ public:
 	void destroy() override;
 	virtual void bind(const std::string& address) override;
 
-	void send_message_impl(ZstMessage* msg, const ZstTransportArgs& args) override;
 	void receive_msg(ZstMessage* msg) override;
 
 	static void fail(beast::error_code ec, char const* what);
 
 private:
+	void send_message_impl(const uint8_t* msg_buffer, size_t msg_buffer_size, const ZstTransportArgs& args) const override;
+
 	void do_accept();
 	void on_accept(beast::error_code ec, tcp::socket socket);
 

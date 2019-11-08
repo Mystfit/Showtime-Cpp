@@ -39,7 +39,8 @@ namespace showtime::detail
 	{
 		m_session->init();
 		m_router_transport->init();
-		m_router_transport->bind(fmt::format("*:{}", port));
+		std::string address = fmt::format("*:{}", port);
+		m_router_transport->bind(address);
 		m_websocket_transport->init();
 		m_websocket_transport->bind("127.0.0.1");
 
@@ -48,11 +49,9 @@ namespace showtime::detail
 
 		//We start the beacon broadcast by sending a message with the intended broadcast data
 		ZstTransportArgs args;
-		args.msg_args = {
-			{get_msg_arg_name(ZstMsgArg::NAME), stage_name},
-			{get_msg_arg_name(ZstMsgArg::ADDRESS_PORT), port}
-		};
-		m_service_broadcast_transport->send_msg(ZstMsgKind::SERVER_BEACON, args);
+		auto builder = FlatBufferBuilder();
+		auto beacon_offset = CreateServerBeacon(builder, builder.CreateString(stage_name), builder.CreateString(address));
+		m_service_broadcast_transport->send_msg(Content_ServerBeacon, beacon_offset.Union(), builder, args);
 
 		//Init timer actor for client heartbeats
 		//Create timers

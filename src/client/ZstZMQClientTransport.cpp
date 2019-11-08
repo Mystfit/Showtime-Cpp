@@ -148,7 +148,7 @@ void ZstZMQClientTransport::sock_recv(zsock_t* socket)
 int ZstZMQClientTransport::s_handle_stage_router(zloop_t * loop, zsock_t * sock, void * arg)
 {
 	ZstZMQClientTransport * transport = (ZstZMQClientTransport*)arg;
-	transport->sock_recv(sock, true);
+	transport->sock_recv(sock);
 	return 0;
 }
 

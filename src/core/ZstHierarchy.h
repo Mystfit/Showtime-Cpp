@@ -102,7 +102,7 @@ protected:
     ZST_EXPORT void dispatch_entity_arrived_event(ZstEntityBase * entity);
 
 	//Client map
-	ZstPerformerMap m_clients;
+	std::unordered_map<ZstURI, std::unique_ptr<ZstPerformer>, ZstURIHash> m_clients;
 
 private:
 	std::shared_ptr<ZstEventDispatcher< std::shared_ptr<ZstHierarchyAdaptor> > > m_hierarchy_events;

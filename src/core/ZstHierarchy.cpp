@@ -63,7 +63,7 @@ void ZstHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTransportRequ
 void ZstHierarchy::add_performer(const Entity* performer)
 {
 	//Copy streamable so we have a local ptr for the performer
-	ZstPerformer * performer_proxy = new ZstPerformer(performer);
+	auto performer_proxy = std::make_unique<ZstPerformer>(performer);
 	ZstLog::net(LogLevel::notification, "Adding new performer {}", performer_proxy->URI().path());
 
 	//Populate bundle with factory and child entities
@@ -86,11 +86,11 @@ void ZstHierarchy::add_performer(const Entity* performer)
 	}
 
 	//Store performer
-	m_clients[performer_proxy->URI()] = performer_proxy;
+	m_clients[performer_proxy->URI()] = std::move(performer_proxy);
 
 	//Dispatch events
-	m_hierarchy_events->defer([performer_proxy](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
-		adaptor->on_performer_arriving(performer_proxy);
+	m_hierarchy_events->defer([&performer_proxy](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+		adaptor->on_performer_arriving(performer_proxy.get());
 	});
 }
 
@@ -101,7 +101,7 @@ ZstPerformer * ZstHierarchy::get_performer_by_URI(const ZstURI & uri) const
 
 	auto entity_iter = m_clients.find(performer_URI);
 	if (entity_iter != m_clients.end()) {
-		result = entity_iter->second;
+		result = entity_iter->second.get();
 	}
 
 	return result;
@@ -109,8 +109,8 @@ ZstPerformer * ZstHierarchy::get_performer_by_URI(const ZstURI & uri) const
 
 ZstEntityBundle & ZstHierarchy::get_performers(ZstEntityBundle & bundle) const
 {
-	for (auto performer : m_clients) {
-		bundle.add(performer.second);
+	for (auto&& performer : m_clients) {
+		bundle.add(performer.second.get());
 	}
 	return bundle;
 }
