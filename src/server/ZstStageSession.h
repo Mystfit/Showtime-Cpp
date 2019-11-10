@@ -28,7 +28,7 @@ public:
 	// Message handlers
 	// ----------------
 	Signal signal_handler(const SignalMessage* request, ZstPerformerStageProxy* sender);
-	Signal synchronise_client_graph_handler(ZstPerformer* sender);
+	Signal synchronise_client_graph_handler(ZstPerformerStageProxy* sender);
 	Signal create_cable_handler(const CableCreateRequest* request, ZstPerformerStageProxy* sender);
 	Signal destroy_cable_handler(const CableDestroyRequest* request);
 	Signal observe_entity_handler(const EntityObserveRequest* request, ZstPerformerStageProxy* sender);

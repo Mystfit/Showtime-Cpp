@@ -95,7 +95,7 @@ table FactoryCreateEntityRequest {
 // Cable messages
 // --------------
 table CableCreateRequest {
-    address:Cable;
+    cables:[Cable];
 }
 
 table CableReadRequest {
