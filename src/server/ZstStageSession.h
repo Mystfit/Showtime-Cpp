@@ -31,9 +31,8 @@ public:
 	Signal synchronise_client_graph_handler(ZstPerformerStageProxy* sender);
 	Signal create_cable_handler(const CableCreateRequest* request, ZstPerformerStageProxy* sender);
 	Signal destroy_cable_handler(const CableDestroyRequest* request);
-	Signal observe_entity_handler(const EntityObserveRequest* request, ZstPerformerStageProxy* sender);
+	Signal observe_entity_handler(const StageMessage* request, ZstPerformerStageProxy* sender);
 	Signal aquire_entity_ownership_handler(const EntityTakeOwnershipRequest* request, ZstPerformerStageProxy* sender);
-	Signal release_entity_ownership_handler(const EntityReleaseOwnershipRequest* request, ZstPerformerStageProxy* sender);
 
 	// Adapter overrides
 	void on_performer_leaving(ZstPerformer* performer) override;

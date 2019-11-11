@@ -73,10 +73,7 @@ table EntityDestroyRequest {
 
 table EntityTakeOwnershipRequest {
     URI:string;
-}
-
-table EntityReleaseOwnershipRequest {
-    URI:string;
+    new_owner:string;
 }
 
 table EntityObserveRequest {
@@ -113,7 +110,6 @@ table CableDestroyRequest {
 
 // Server messages
 // ---------------
-
 table ServerBeacon {
     name:string;
     address:string;
@@ -135,7 +131,6 @@ union Content {
     EntityUpdateRequest,
     EntityDestroyRequest,
     EntityTakeOwnershipRequest,
-    EntityReleaseOwnershipRequest,
     EntityObserveRequest,
     // ----------
     FactoryCreateEntityRequest,

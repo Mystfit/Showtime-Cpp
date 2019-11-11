@@ -103,7 +103,7 @@ void ZstZMQClientTransport::send_message_impl(const uint8_t * msg_buffer, size_t
 	zframe_t * spacer = zframe_new_empty();
 	zmsg_prepend(m, &spacer);
 
-	//Encode message as json
+	//Encode message from flatbuffers to bytes
     zmsg_addmem(m, msg_buffer, msg_buffer_size);
 
 	//Sending and errors

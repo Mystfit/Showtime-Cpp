@@ -21,6 +21,7 @@ namespace fs = boost::filesystem;
 
 using namespace boost::process;
 using namespace boost::unit_test;
+using namespace showtime;
 
 #define BOOST_THREAD_DONT_USE_DATETIME
 #define TAKE_A_SHORT_BREATH std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -44,7 +45,7 @@ namespace ZstTest
 	public:
 		OutputComponent(const char * name, bool reliable = true) : 
 			ZstComponent("TESTER", name),
-			m_output(create_output_plug("out", ZstValueType::ZST_INT, reliable))
+			m_output(create_output_plug("out", ValueList_IntList, reliable))
 		{
 		}
 
@@ -85,7 +86,7 @@ namespace ZstTest
 			ZstComponent("TESTER", name),
 			compare_val(cmp_val),
 			log(should_log),
-			m_input(create_input_plug("in", ZstValueType::ZST_INT))
+			m_input(create_input_plug("in", ValueList_IntList))
 		{
 		}
 

@@ -82,10 +82,10 @@ void ZstZMQServerTransport::sock_recv(zsock_t* socket)
 		zframe_t* empty = zmsg_pop(recv_msg);
 
 		//Unpack message
-		char* payload_data = zmsg_popstr(recv_msg);
+		auto payload_data = zmsg_pop(recv_msg);
 		if (payload_data) {
 			ZstStageMessage* msg = get_msg();
-			msg->unpack(json::parse(payload_data));
+			msg->init(GetStageMessage(zframe_data(payload_data)));
 
 			//Save sender as a local argument
 			msg->set_endpoint_UUID(uuid(boost::lexical_cast<uuid>((char*)zframe_data(identity_frame), zframe_size(identity_frame))));
@@ -93,9 +93,9 @@ void ZstZMQServerTransport::sock_recv(zsock_t* socket)
 			// Send message to submodules
 			dispatch_receive_event(msg, [this, msg, identity_frame, payload_data](ZstEventStatus s) mutable {
 				// Frame cleanup
+				this->release(msg);
 				zframe_destroy(&payload_data);
 				zframe_destroy(&identity_frame);
-				this->release(msg);
 			});
 		}
 		else {
@@ -110,9 +110,6 @@ void ZstZMQServerTransport::sock_recv(zsock_t* socket)
 
 void ZstZMQServerTransport::send_message_impl(const uint8_t* msg_buffer, size_t msg_buffer_size, const ZstTransportArgs& args) const
 {
-	ZstStageMessage* stage_msg = static_cast<ZstStageMessage*>(msg);
-	ZstLog::net(LogLevel::debug, "Server sending message. Msg id {}", stage_msg->as_json_str());
-
 	zmsg_t* m = zmsg_new();
 
 	//Add destination frame at beginning to route our message to the correct destination
@@ -122,8 +119,8 @@ void ZstZMQServerTransport::send_message_impl(const uint8_t* msg_buffer, size_t 
 	zframe_t* empty = zframe_new_empty();
 	zmsg_append(m, &empty);
 
-	//Encode message as json
-	zmsg_addstr(m, stage_msg->as_json_str().c_str());
+	//Encode message from flatbuffers to bytes
+	zmsg_addmem(m, msg_buffer, msg_buffer_size);
 
 	std::lock_guard<std::mutex> lock(m_transport_mtx);
 	//zmsg_send(&m, m_clients_sock);
@@ -136,7 +133,6 @@ void ZstZMQServerTransport::send_message_impl(const uint8_t* msg_buffer, size_t 
 			ZstLog::net(LogLevel::error, "Server message sending error: {}", zmq_strerror(err));
 		}
 	}
-	release_msg(stage_msg);
 }
 
 }

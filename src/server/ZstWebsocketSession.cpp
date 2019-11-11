@@ -28,6 +28,8 @@ void ZstWebsocketSession::run()
 		res.set(http::field::server, std::string(BOOST_BEAST_VERSION_STRING) + " websocket-server-async");
 		}));
 
+	m_ws.binary(true);
+
 	// Accept the websocket handshake
 	m_ws.async_accept(beast::bind_front_handler(&ZstWebsocketSession::on_accept, shared_from_this()));
 }
@@ -44,6 +46,7 @@ void ZstWebsocketSession::on_accept(beast::error_code ec)
 void ZstWebsocketSession::do_read()
 {
 	// Read a message into our buffer
+	//TODO: Create a pool of buffer objects
 	m_ws.async_read(m_recv_buffer, beast::bind_front_handler(&ZstWebsocketSession::on_read, shared_from_this()));
 }
 
@@ -62,41 +65,37 @@ void ZstWebsocketSession::on_read(beast::error_code ec, std::size_t bytes_transf
 		return;
 	}
 
+	if (!m_ws.got_binary()) {
+		ZstWebsocketServerTransport::fail(ec, "Websocket received non-binary message");
+		return;
+	}
+
 	ZstLog::net(LogLevel::debug, "Websocket received message '{}'", beast::buffers_to_string(m_recv_buffer.data()));
 
 	//Parse message
 	ZstStageMessage* msg = m_transport->get_msg();
-	std::string msg_str = beast::buffers_to_string(m_recv_buffer.data());
-	json msg_json;
+	msg->init(GetStageMessage(m_recv_buffer.data().data()));
+	msg->set_endpoint_UUID(m_endpoint_UUID);
 
-	try {
-		msg_json = json::parse(msg_str);
-	}
-	catch (nlohmann::detail::parse_error) {
-		ZstLog::net(LogLevel::debug, "Could not parse json message '{}'", msg_str);
-	}
+	// Send message to other modules
+	m_transport->dispatch_receive_event(msg, [this](ZstEventStatus e) {
+		//Clear the buffer
+		m_recv_buffer.consume(m_recv_buffer.size());
 
-	//Unpack message
-	if (!msg_json.empty()) {
-		msg->unpack(msg_json);
-		msg->set_endpoint_UUID(m_endpoint_UUID);
-		m_transport->receive_msg(msg);
-	}
-
-	//Clear the buffer
-	m_recv_buffer.consume(m_recv_buffer.size());
-
-	//Read another
-	do_read();
+		//Read another
+		do_read();
+	});
 }
 
-void ZstWebsocketSession::do_write(const std::string& data)
+void ZstWebsocketSession::do_write(const uint8_t* msg_buffer, size_t msg_buffer_size)
 {
-	std::shared_ptr<std::string const> msg_data(std::make_shared<std::string const>(data));
-	net::post(m_ws.get_executor(), beast::bind_front_handler(&ZstWebsocketSession::on_send, shared_from_this(), msg_data));
+	// Copy the message contents since we don't want to lose hem if the flatbuffer builder disappears
+	// TODO: Replace with detatchedbuffer?
+	auto pair = std::make_shared<std::pair<std::unique_ptr<uint8_t>, size_t > >(std::make_unique<uint8_t>(*msg_buffer), msg_buffer_size);
+	net::post(m_ws.get_executor(), beast::bind_front_handler(&ZstWebsocketSession::on_send, shared_from_this(), pair));
 }
 
-void ZstWebsocketSession::on_send(std::shared_ptr<std::string const> const& msg_data) {
+void ZstWebsocketSession::on_send(std::shared_ptr< std::pair<std::unique_ptr<uint8_t>, size_t > const > const& msg_data) {
 	// Always add to queue
 	m_out_messages.push_back(msg_data);
 
@@ -105,7 +104,7 @@ void ZstWebsocketSession::on_send(std::shared_ptr<std::string const> const& msg_
 		return;
 
 	// We are not currently writing, so send this immediately
-	m_ws.async_write(net::buffer(*m_out_messages.front()), beast::bind_front_handler(&ZstWebsocketSession::on_write, shared_from_this()));
+	m_ws.async_write(net::buffer(m_out_messages.front()->first.get(), m_out_messages.front()->second), beast::bind_front_handler(&ZstWebsocketSession::on_write, shared_from_this()));
 }
 
 void ZstWebsocketSession::on_write(beast::error_code ec, std::size_t bytes_transferred)
@@ -115,12 +114,12 @@ void ZstWebsocketSession::on_write(beast::error_code ec, std::size_t bytes_trans
 	if (ec)
 		return ZstWebsocketServerTransport::fail(ec, "write");
 
-	// Remove the string from the queue
+	// Remove the message from the queue
 	m_out_messages.erase(m_out_messages.begin());
 
 	// Send the next message if any
 	if (!m_out_messages.empty()) {
-		m_ws.async_write(net::buffer(*m_out_messages.front()), beast::bind_front_handler(&ZstWebsocketSession::on_write, shared_from_this()));
+		m_ws.async_write(net::buffer(m_out_messages.front()->first.get(), m_out_messages.front()->second), beast::bind_front_handler(&ZstWebsocketSession::on_write, shared_from_this()));
 	}
 }
 

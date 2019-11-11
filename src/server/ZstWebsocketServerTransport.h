@@ -33,15 +33,13 @@ typedef std::shared_ptr<ZstWebsocketSession> ZstWebsocketSessionPtr;
 
 class ZstWebsocketServerTransport : public ZstStageTransport
 {
+	friend class ZstWebsocketSession;
 public:
 	ZstWebsocketServerTransport(ZstIOLoop & io);
 	~ZstWebsocketServerTransport();
 	void init() override;
 	void destroy() override;
 	virtual void bind(const std::string& address) override;
-
-	void receive_msg(ZstMessage* msg) override;
-
 	static void fail(beast::error_code ec, char const* what);
 
 private:

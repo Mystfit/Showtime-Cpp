@@ -66,25 +66,17 @@ void ZstWebsocketServerTransport::bind(const std::string& address)
 	do_accept();
 }
 
-void ZstWebsocketServerTransport::send_message_impl(ZstMessage* msg, const ZstTransportArgs& args)
-{
-	ZstStageMessage* stage_msg = static_cast<ZstStageMessage*>(msg);
-	auto session = m_sessions.find(stage_msg->endpoint_UUID());
-	if (session != m_sessions.end()) {
-		session->second->do_write(stage_msg->as_json_str());
-	}
-}
-
-void ZstWebsocketServerTransport::receive_msg(ZstMessage* msg)
-{
-	ZstTransportLayer::receive_msg(msg, [msg, this](ZstEventStatus status) {
-		this->release_msg(static_cast<ZstStageMessage*>(msg));
-	});
-}
-
 void ZstWebsocketServerTransport::fail(beast::error_code ec, char const* what)
 {
 	ZstLog::server(LogLevel::error, "Websocket transport error: {} {}", what, ec.message());
+}
+
+void ZstWebsocketServerTransport::send_message_impl(const uint8_t* msg_buffer, size_t msg_buffer_size, const ZstTransportArgs& args) const
+{
+	auto session = m_sessions.find(args.target_endpoint_UUID);
+	if (session != m_sessions.end()) {
+		session->second->do_write(msg_buffer, msg_buffer_size);
+	}
 }
 
 void ZstWebsocketServerTransport::do_accept()

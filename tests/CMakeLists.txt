@@ -18,10 +18,10 @@ set(TESTS
 set(TEST_DEPENDENCIES 
     ${CLIENT_TARGET}
     ${SERVER_TARGET}
-    ${Boost_TEST_TARGET}
-    ${Boost_THREAD_TARGET}
-    ${Boost_SYSTEM_TARGET}
-    ${Boost_FILESYSTEM_TARGET}
+    Boost::unit_test_framework
+    Boost::thread
+    Boost::system
+    Boost::filesystem
 )
 
 foreach(test ${TESTS})

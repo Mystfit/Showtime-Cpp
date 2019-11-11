@@ -15,12 +15,33 @@ set(GENERATED_SOURCES
     ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp
 )
 
-
 # Generated flatbuffer schemas
 if(BUILD_FLATBUFFERS)
     list(APPEND GENERATED_SOURCES ${FLATBUFFER_HEADER_OUTPUT})
 endif()
 
+# Copy fmt headers
+file(GLOB FMT_HEADER_SRC CONFIGURE_DEPENDS "${Showtime_SUBMODULE_DEPENDENCIES_DIR}/fmt/include/fmt/*.h")
+file(MAKE_DIRECTORY ${Showtime_COMPILED_INCLUDE_DIRS}/fmt)
+set(FMT_HEADERS "")
+foreach(FILE ${FMT_HEADER_SRC})
+    get_filename_component(FILE_N ${FILE} NAME)
+    set(DEST_F "${Showtime_COMPILED_INCLUDE_DIRS}/fmt/${FILE_N}")
+    configure_file(${FILE} ${DEST_F} COPYONLY)
+    list(APPEND FMT_HEADERS ${DEST_F})
+endforeach()
+
+# Copy flatbuffers headers
+get_target_property(FLATBUFFERS_INCLUDE_DIR flatbuffers::flatbuffers INTERFACE_INCLUDE_DIRECTORIES)
+file(GLOB FLATBUFFER_HEADER_SRC CONFIGURE_DEPENDS "${FLATBUFFERS_INCLUDE_DIR}/flatbuffers/*.h")
+file(MAKE_DIRECTORY ${Showtime_COMPILED_INCLUDE_DIRS}/flatbuffers)
+set(FLATBUFFER_HEADERS "")
+foreach(FILE ${FLATBUFFER_HEADER_SRC})
+    get_filename_component(FILE_N ${FILE} NAME)
+    set(DEST_F "${Showtime_COMPILED_INCLUDE_DIRS}/flatbuffers/${FILE_N}")
+    configure_file(${FILE} ${DEST_F} COPYONLY)
+    list(APPEND FLATBUFFER_HEADERS ${DEST_F})
+endforeach()
 
 # Set generated sources property
 set_source_files_properties(${GENERATED_SOURCES} PROPERTIES GENERATED ON)
@@ -43,11 +64,7 @@ set(ADAPTOR_HEADERS
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstHierarchyAdaptor.hpp
     ${Showtime_INCLUDE_DIRS}/adaptors/ZstEntityAdaptor.hpp
 )
-set(FMT_HEADERS 
-    ${Showtime_SUBMODULE_DEPENDENCIES_DIR}/fmt/include/fmt/format.h
-    ${Showtime_SUBMODULE_DEPENDENCIES_DIR}/fmt/include/fmt/format-inl.h
-    ${Showtime_SUBMODULE_DEPENDENCIES_DIR}/fmt/include/fmt/core.h
-)
+
 set(API_HEADERS
     ${Showtime_INCLUDE_DIRS}/ZstCore.h
     ${Showtime_INCLUDE_DIRS}/ZstLogging.h
@@ -69,6 +86,7 @@ list(APPEND Showtime_API_INTERFACE
     ${ENTITY_HEADERS}
     ${ADAPTOR_HEADERS}
     ${FMT_HEADERS}
+    ${FLATBUFFER_HEADERS}
 )
 
 # Private headers, only accessible within the Showtime library

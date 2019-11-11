@@ -205,10 +205,8 @@ set(SHOWTIME_PRIVATE_LINKED_LIBS
     Boost::log_setup
     Boost::context
     Boost::fiber
-    Boost::unit_test_framework
     Boost::boost
     Boost::disable_autolinking
-    # flatbuffers
     ${CMAKE_THREAD_LIBS_INIT}
 )
 
@@ -232,7 +230,6 @@ endif()
 
 set(Showtime_PRIVATE_HEADER_DEPENDENCIES
     $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}>
-    $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/fmt/include> 
     $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/cf>
     $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/concurrentqueue> 
 )

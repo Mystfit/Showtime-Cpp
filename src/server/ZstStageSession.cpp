@@ -58,13 +58,10 @@ void ZstStageSession::on_receive_msg(const ZstStageMessage* msg)
 		response = destroy_cable_handler(msg->buffer()->content_as_CableDestroyRequest());
 		break;
 	case Content_EntityObserveRequest:
-		response = observe_entity_handler(msg->buffer()->content_as_EntityObserveRequest(), sender);
+		response = observe_entity_handler(msg->buffer(), sender);
 		break;
 	case Content_EntityTakeOwnershipRequest:
 		response = aquire_entity_ownership_handler(msg->buffer()->content_as_EntityTakeOwnershipRequest(), sender);
-		break;
-	case Content_EntityReleaseOwnershipRequest:
-		response = release_entity_ownership_handler(msg->buffer()->content_as_EntityReleaseOwnershipRequest(), sender);
 		break;
 	default:
 		break;
@@ -209,61 +206,78 @@ Signal ZstStageSession::create_cable_handler(const CableCreateRequest* request, 
 
 //---------------------
 
-Signal ZstStageSession::observe_entity_handler(const EntityObserveRequest* request, ZstPerformerStageProxy* sender)
+Signal ZstStageSession::observe_entity_handler(const StageMessage* request, ZstPerformerStageProxy* sender)
 {
 	//Get target performer
-	std::string performer_path_str = msg->get_arg<std::string>(ZstMsgArg::OUTPUT_PATH);
-	ZstURI performer_path(performer_path_str.c_str(), performer_path_str.size());
-	ZstPerformerStageProxy* observed_performer = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(performer_path));
+	auto observe_request = request->content_as_EntityObserveRequest();
+	auto performer_path = ZstURI(observe_request->URI()->c_str(), observe_request->URI()->size());
+	ZstPerformerStageProxy* observed_performer = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(performer_path.first()));
 	if (!observed_performer) {
-		return ZstMsgKind::ERR_STAGE_PERFORMER_NOT_FOUND;
+		return Signal_ERR_STAGE_PERFORMER_NOT_FOUND;
 	}
 
 	ZstLog::server(LogLevel::notification, "Received observation request. Requestor: {}, Observed: {}", sender->URI().path(), observed_performer->URI().path());
 	if (sender == observed_performer) {
 		ZstLog::server(LogLevel::warn, "Client attempting to observe itself");
-		return ZstMsgKind::ERR_STAGE_PERFORMER_ALREADY_CONNECTED;
+		return Signal_ERR_STAGE_PERFORMER_ALREADY_CONNECTED;
 	}
 
 	//Check to see if one client is already connected to the other
 	if (observed_performer->has_connected_subscriber(sender)) {
 		ZstLog::server(LogLevel::warn, "Client {} already observing {}", sender->URI().path(), observed_performer->URI().path());
-		return ZstMsgKind::ERR_STAGE_PERFORMER_ALREADY_CONNECTED;
+		return Signal_ERR_STAGE_PERFORMER_ALREADY_CONNECTED;
 	}
 
 	//Start the client connection
 	ZstTransportArgs args;
-	args.msg_ID = msg->id();
+	args.msg_ID = request->id();
 	connect_clients(observed_performer, sender, [this, sender, args](ZstMessageReceipt receipt) {
-		stage_hierarchy()->whisper(sender, receipt.status, args);
-		});
+		auto builder = std::make_shared<FlatBufferBuilder>();
+		auto signal_offset = CreateSignalMessage(*builder, receipt.status);
+		stage_hierarchy()->whisper(sender, Content_SignalMessage, signal_offset.Union(), builder, args);
+	});
 
-	return ZstMsgKind::EMPTY;
+	return Signal_EMPTY;
 }
 
 
 Signal ZstStageSession::aquire_entity_ownership_handler(const EntityTakeOwnershipRequest* request, ZstPerformerStageProxy* sender)
 {
-	auto entity_path = ZstURI(msg->get_arg<std::string>(ZstMsgArg::PATH).c_str());
+	auto entity_path = ZstURI(request->URI()->c_str(), request->URI()->size());
 	ZstEntityBase* entity = hierarchy()->find_entity(entity_path);
 
 	if (!entity) {
 		ZstLog::server(LogLevel::warn, "Could not aquire entity ownership - entity {}, not found", entity_path.path());
-		return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
+		return Signal_ERR_ENTITY_NOT_FOUND;
 	}
 
-	ZstLog::server(LogLevel::notification, "Received entity ownership aquistion request - {} wants to control {}", sender->URI().path(), entity->URI().path());
+	auto new_owner_path = ZstURI(request->new_owner()->c_str(), request->new_owner()->size());
+	ZstPerformerStageProxy* new_owner = NULL;
 
-	//Set owner
-	entity_set_owner(entity, sender->URI());
+	if (new_owner_path.is_empty()) {
+		//Reset owner
+		entity_set_owner(entity, "");
+	}
+	else {
+		new_owner = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(new_owner_path));
+		if (!new_owner) {
+			ZstLog::server(LogLevel::warn, "Could not aquire entity ownership - could not find new owner {}", new_owner_path.path());
+			return Signal_ERR_STAGE_PERFORMER_NOT_FOUND;
+		}
+
+		ZstLog::server(LogLevel::notification, "Received entity ownership aquistion request - {} wants to control {}", new_owner_path.path(), entity->URI().path());
+
+		//Set owner
+		entity_set_owner(entity, new_owner->URI());
+	}
 
 	// We need to connect downstream plugs to the new sender
 	ZstCableBundle bundle;
 	get_cables(bundle);
 
-	std::unordered_map<ZstURI, ZstPerformerStageProxy*, ZstURIHash> performers;
 
 	//Find all performers that have input connections to this output plug
+	std::unordered_map<ZstURI, ZstPerformerStageProxy*, ZstURIHash> performers;
 	for (auto c : bundle) {
 		if (c->get_output()->URI() == entity->URI()) {
 			auto receiver = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->get_performer_by_URI(c->get_input()->URI().first()));
@@ -273,51 +287,24 @@ Signal ZstStageSession::aquire_entity_ownership_handler(const EntityTakeOwnershi
 
 	//Connect performers together that will have to update their subscriptions
 	for (auto receiver : performers) {
-		connect_clients(receiver.second, sender);
+		if (!new_owner_path.is_empty()) {
+			connect_clients(receiver.second, new_owner);
+		}
 	}
 
 	//Broadcast change in plug fire control
-	ZstLog::server(LogLevel::notification, "Broadcasting entity ownership - {} controls {}", sender->URI().path(), entity->URI().path());
+	ZstLog::server(LogLevel::notification, "Broadcasting entity ownership - {} controls {}", new_owner_path.path(), entity->URI().path());
 	ZstTransportArgs args;
-	args.msg_args = {
-		{ get_msg_arg_name(ZstMsgArg::PATH), entity->URI().path() },
-		{ get_msg_arg_name(ZstMsgArg::OUTPUT_PATH), sender->URI().path() }
-	};
-	stage_hierarchy()->broadcast(ZstMsgKind::AQUIRE_ENTITY_OWNERSHIP, args);
-
-	return Signal_OK;
-}
-
-Signal ZstStageSession::release_entity_ownership_handler(const EntityReleaseOwnershipRequest* request, ZstPerformerStageProxy* sender)
-{
-	auto entity_path = ZstURI(msg->get_arg<std::string>(ZstMsgArg::PATH).c_str());
-	ZstEntityBase* entity = hierarchy()->find_entity(entity_path);
-
-	if (!entity) {
-		ZstLog::server(LogLevel::warn, "Could not release entity ownership - entity {}, not found", entity_path.path());
-		return ZstMsgKind::ERR_ENTITY_NOT_FOUND;
-	}
-
-	ZstLog::server(LogLevel::notification, "Received entity ownership release request - {} wants to release ownership", sender->URI().path());
-
-	//Reset owner
-	entity_set_owner(entity, "");
-
-	//Broadcast an empty path for the entity owner to reset ownership to the creator of the entity
-	ZstTransportArgs args;
-	args.msg_args = {
-		{ get_msg_arg_name(ZstMsgArg::PATH), entity->URI().path() },
-		{ get_msg_arg_name(ZstMsgArg::OUTPUT_PATH), entity->get_owner().path() }
-	};
-	stage_hierarchy()->broadcast(ZstMsgKind::AQUIRE_ENTITY_OWNERSHIP, args);
+	auto builder = std::make_shared<FlatBufferBuilder>();
+	auto ownership_offset = CreateEntityTakeOwnershipRequest(*builder, builder->CreateString(entity->URI().path()), builder->CreateString(new_owner_path.path()));
+	stage_hierarchy()->broadcast(Content_EntityTakeOwnershipRequest, ownership_offset.Union(), builder, args);
 
 	return Signal_OK;
 }
 
 Signal ZstStageSession::destroy_cable_handler(const CableDestroyRequest* request)
 {
-	ZstStageMessage* stage_msg = static_cast<ZstStageMessage*>(msg);
-	auto cable_path = stage_msg->unpack_payload_serialisable<ZstCableAddress>();
+	auto cable_path = ZstCableAddress(request->address());
 	ZstLog::server(LogLevel::notification, "Received destroy cable connection request");
 
 	ZstCable* cable_ptr = find_cable(cable_path);
@@ -358,8 +345,10 @@ void ZstStageSession::destroy_cable(ZstCable* cable) {
 
 	//Update rest of network
 	ZstTransportArgs args;
-	cable->get_address().write_json(args.msg_payload);
-	stage_hierarchy()->broadcast(ZstMsgKind::DESTROY_CABLE, args);
+	auto builder = std::make_shared<FlatBufferBuilder>();
+	auto destroy_cable_path = CreateCable(*builder, builder->CreateString(cable->get_input()->URI().path()), builder->CreateString(cable->get_output()->URI().path()));
+	auto destroy_cable_offset = CreateCableDestroyRequest(*builder, destroy_cable_path);
+	stage_hierarchy()->broadcast(Content_CableDestroyRequest, destroy_cable_offset.Union(), builder, args);
 
 	//Remove cable
 	ZstSession::destroy_cable_complete(cable);
@@ -389,22 +378,16 @@ void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, Zst
 			on_msg_received(receipt);
 		}
 	};
-	receiver_args.msg_args = {
-		{ get_msg_arg_name(ZstMsgArg::OUTPUT_PATH), output_client->URI().path() },
-		{ get_msg_arg_name(ZstMsgArg::GRAPH_RELIABLE_OUTPUT_ADDRESS), output_client->reliable_address() },
-	};
+	auto builder = std::make_shared<FlatBufferBuilder>();
+	auto subscribe_offset = CreateClientGraphHandshakeListen(*builder, builder->CreateString(output_client->URI().path()), builder->CreateString(output_client->reliable_address()));
+	stage_hierarchy()->whisper(input_client, Content_ClientGraphHandshakeListen, subscribe_offset.Union(), builder, receiver_args);
 
-	//Create request for broadcaster
-	ZstLog::server(LogLevel::notification, "Sending P2P handshake broadcast request to {}", output_client->URI().path());
+	//Create request for broadcaster - needs a new buffer builder
+	builder = std::make_shared<FlatBufferBuilder>();
+	auto broadcast_offset = CreateClientGraphHandshakeStart(*builder, builder->CreateString(input_client->URI().path()), builder->CreateString(input_client->reliable_address()));
+	ZstLog::server(LogLevel::notification, "Sending P2P handshake broadcast request to {}", input_client->URI().path());
 	ZstTransportArgs broadcaster_args;
-	broadcaster_args.msg_args = {
-		{ get_msg_arg_name(ZstMsgArg::INPUT_PATH), input_client->URI().path() },
-		{ get_msg_arg_name(ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS), input_client->unreliable_address() },
-	};
-
-	//Send messages
-	stage_hierarchy()->whisper(input_client, ZstMsgKind::SUBSCRIBE_TO_PERFORMER, receiver_args);
-	stage_hierarchy()->whisper(output_client, ZstMsgKind::START_CONNECTION_HANDSHAKE, broadcaster_args);
+	stage_hierarchy()->whisper(output_client, Content_ClientGraphHandshakeStart, subscribe_offset.Union(), builder, broadcaster_args);
 }
 
 
@@ -418,8 +401,10 @@ Signal ZstStageSession::complete_client_connection(ZstPerformerStageProxy* outpu
 	//Let the broadcaster know it can stop publishing messages
 	ZstLog::server(LogLevel::notification, "Stopping P2P handshake broadcast from client {}", output_client->URI().path());
 	ZstTransportArgs args;
-	args.msg_args = { { get_msg_arg_name(ZstMsgArg::INPUT_PATH), input_client->URI().path()} };
-	stage_hierarchy()->whisper(output_client, ZstMsgKind::STOP_CONNECTION_HANDSHAKE, args);
+	auto builder = std::make_shared<FlatBufferBuilder>();
+	auto stop_offset = CreateClientGraphHandshakeStop(*builder, builder->CreateString(input_client->URI().path()) );
+	stage_hierarchy()->whisper(output_client, Content_ClientGraphHandshakeStop, stop_offset.Union(), builder, args);
+
 	return Signal_OK;
 }
 
