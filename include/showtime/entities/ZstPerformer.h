@@ -12,12 +12,13 @@
 namespace showtime
 {
 class ZST_CLASS_EXPORTED ZstPerformer :
+	public virtual ZstSerialisable<Performer>,
     public ZstComponent
 {
 public:
     ZST_EXPORT ZstPerformer();
     ZST_EXPORT ZstPerformer(const char * name);
-    ZST_EXPORT ZstPerformer(const Entity* buffer);
+    ZST_EXPORT ZstPerformer(const Performer* buffer);
     ZST_EXPORT ZstPerformer(const ZstPerformer & other);
     ZST_EXPORT ~ZstPerformer();
     
@@ -41,14 +42,14 @@ public:
     ZST_EXPORT ZstEntityFactoryBundle & get_factories(ZstEntityFactoryBundle & bundle);
     
 
-    //Serialisation
-    
+	// Serialisation
+	// -------------
 
-    ZST_EXPORT flatbuffers::Offset<Entity> serialize(EntityBuilder & buffer_builder) const override;
-    ZST_EXPORT void deserialize(const Entity* buffer) override;
+	ZST_EXPORT virtual void serialize(flatbuffers::Offset<Performer> & dest, flatbuffers::FlatBufferBuilder& buffer_builder) const override;
+	ZST_EXPORT virtual void deserialize(const Performer* buffer) override;
 
 private:
-    void deserialize_imp(const Entity* buffer);
+    void deserialize_imp(const Performer* buffer);
 
     //Heartbeat status
 

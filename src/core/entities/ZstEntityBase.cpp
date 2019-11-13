@@ -5,13 +5,15 @@
 #include "ZstCable.h"
 #include "../ZstEventDispatcher.hpp"
 
+using namespace flatbuffers;
+
 namespace showtime
 {
     ZstEntityBase::ZstEntityBase() :
         m_session_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstSessionAdaptor> > >()),
         m_entity_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstEntityAdaptor > > >()),
         m_parent(NULL),
-        m_entity_type(EntityType_UNKNOWN),
+        m_entity_type(EntityTypes_NONE),
         m_uri(""),
         m_current_owner("")
     {
@@ -22,7 +24,7 @@ namespace showtime
         m_session_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstSessionAdaptor> > >()),
         m_entity_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstEntityAdaptor > > >()),
         m_parent(NULL),
-        m_entity_type(EntityType_UNKNOWN),
+        m_entity_type(EntityTypes_NONE),
         m_uri(name),
         m_current_owner("")
     {
@@ -32,7 +34,7 @@ namespace showtime
         m_session_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstSessionAdaptor> > >()),
         m_entity_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstEntityAdaptor > > >()),
         m_parent(NULL),
-        m_entity_type(EntityType_UNKNOWN),
+        m_entity_type(EntityTypes_NONE),
         m_uri(""),
         m_current_owner("")
     {
@@ -97,7 +99,7 @@ namespace showtime
         }
     }
 
-    const EntityType ZstEntityBase::entity_type() const
+    const EntityTypes ZstEntityBase::entity_type() const
     {
         return m_entity_type;
     }
@@ -124,22 +126,16 @@ namespace showtime
         return m_entity_events;
     }
 
-    flatbuffers::Offset<Entity> ZstEntityBase::serialize(EntityBuilder & buffer_builder) const
+    void ZstEntityBase::serialize(flatbuffers::Offset<Entity>& serialized_offset, FlatBufferBuilder& buffer_builder) const
     {
-        auto URI_offset = buffer_builder.fbb_.CreateString(URI().path(), URI().full_size());
-        auto owner_offset = buffer_builder.fbb_.CreateString(get_owner().path(), get_owner().size());
-        
-        buffer_builder.add_URI(URI_offset);
-        buffer_builder.add_owner(owner_offset);
-        buffer_builder.add_entity_type(m_entity_type);
-        
-        return buffer_builder.Finish();
+        auto URI_offset = buffer_builder.CreateString(URI().path(), URI().full_size());
+        auto owner_offset = buffer_builder.CreateString(get_owner().path(), get_owner().size());
+		serialized_offset = CreateEntity(buffer_builder, URI_offset, owner_offset);
     }
 
     void ZstEntityBase::deserialize_imp(const Entity* buffer)
     {
         m_uri = ZstURI(buffer->URI()->c_str(), buffer->URI()->size());
-        m_entity_type = buffer->entity_type();
         m_current_owner = ZstURI(buffer->owner()->c_str(), buffer->owner()->size());
     }
     
@@ -195,7 +191,7 @@ namespace showtime
         });
     }
 
-    void ZstEntityBase::set_entity_type(EntityType entity_type) {
+    void ZstEntityBase::set_entity_type(EntityTypes entity_type) {
         std::lock_guard<std::mutex> lock(m_entity_lock);
         m_entity_type = entity_type;
     }

@@ -22,7 +22,6 @@ public:
     ZST_EXPORT void init(int port);
     ZST_EXPORT virtual void destroy() override;
     
-    ZST_EXPORT ZstMessageReceipt send_msg(Content message_type, flatbuffers::Offset<void> message_content, flatbuffers::FlatBufferBuilder & buffer_builder, const ZstTransportArgs& args) override;
     ZST_EXPORT void send_message_impl(const uint8_t * msg_buffer, size_t msg_buffer_size, const ZstTransportArgs & args) const override;
     
         

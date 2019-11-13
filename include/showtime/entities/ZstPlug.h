@@ -21,6 +21,7 @@ class ZstEventDispatcher;
 
 
 class ZST_CLASS_EXPORTED ZstPlug :
+	public virtual ZstSerialisable<Plug>,
     public ZstEntityBase
 {
 public:
@@ -30,7 +31,7 @@ public:
     
     //Initialisation
     ZST_EXPORT ZstPlug();
-    ZST_EXPORT ZstPlug(const Entity* buffer);
+    ZST_EXPORT ZstPlug(const Plug* buffer);
     ZST_EXPORT ZstPlug(const char * name, ValueList t, PlugDirection direction = PlugDirection_NONE, int max_cables = -1);
     ZST_EXPORT ZstPlug(const ZstPlug & other);
 
@@ -50,10 +51,11 @@ public:
     ZST_EXPORT void char_at(char * buf, const size_t position) const;
     ZST_EXPORT const size_t size_at(const size_t position) const;
 
-    //Serialisation
-    
-    ZST_EXPORT flatbuffers::Offset<Entity> serialize(EntityBuilder & buffer_builder) const override;
-    ZST_EXPORT void deserialize(const Entity* buffer) override;
+	// Serialisation
+	// -------------
+
+	ZST_EXPORT virtual void serialize(flatbuffers::Offset<Plug> & dest, flatbuffers::FlatBufferBuilder& buffer_builder) const override;
+	ZST_EXPORT virtual void deserialize(const Plug* buffer) override;
 
     //Properties
     ZST_EXPORT PlugDirection direction();
@@ -73,7 +75,7 @@ protected:
     int m_max_connected_cables;
 
 private:
-    void deserialize_imp(const Entity* buffer);
+    void deserialize_imp(const Plug* buffer);
 
     ZST_EXPORT void add_cable(ZstCable * cable);
     ZST_EXPORT void remove_cable(ZstCable * cable);
@@ -89,7 +91,7 @@ class ZST_CLASS_EXPORTED ZstInputPlug : public ZstPlug {
 public:
     friend class ZstPlugLiason;
     ZST_EXPORT ZstInputPlug();
-    ZST_EXPORT ZstInputPlug(const Entity* buffer);
+    ZST_EXPORT ZstInputPlug(const Plug* buffer);
     ZST_EXPORT ZstInputPlug(const ZstInputPlug & other);
     ZST_EXPORT ZstInputPlug(const char * name, ValueList t, int max_connected_cables = -1);
     ZST_EXPORT ~ZstInputPlug();
@@ -103,7 +105,7 @@ public:
     using ZstEntityBase::remove_adaptor;
     
     ZST_EXPORT ZstOutputPlug();
-    ZST_EXPORT ZstOutputPlug(const Entity* buffer);
+    ZST_EXPORT ZstOutputPlug(const Plug* buffer);
     ZST_EXPORT ZstOutputPlug(const ZstOutputPlug & other);
     ZST_EXPORT ZstOutputPlug(const char * name, ValueList t, bool reliable = true);
     ZST_EXPORT ~ZstOutputPlug();

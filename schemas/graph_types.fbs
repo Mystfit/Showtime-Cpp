@@ -38,39 +38,43 @@ table PlugValue {
 // Entities
 // --------
 
-enum EntityType : byte {
-    UNKNOWN = 0,
-    COMPONENT,
-    PERFORMER,
-    PLUG,
-    FACTORY
-}
-
 enum PlugDirection : byte {
     NONE = 0,
     IN_JACK,
     OUT_JACK
 }
 
-
 table Entity {
     URI:string;
-    entity_type:EntityType;
     owner:string;
+}
 
-    // Component
+table Component {
     component_type:string;
+    entity:Entity;
+}
 
-    // Plug
+table Performer {
+    component: Component;
+}
+
+table Plug {
+    entity:Entity;
     plug_direction: PlugDirection;
     max_cables: int;
     value: PlugValue;
+}
 
-    // Factory
+table Factory {
+    entity:Entity;
     creatables: [string];
+}
 
-    // Performer
-    // - empty
+union EntityTypes {
+    Component,
+    Performer,
+    Plug,
+    Factory
 }
 
 

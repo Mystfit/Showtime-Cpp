@@ -4,6 +4,8 @@
 #include "ZstLogging.h"
 #include "ZstValue.h"
 
+using namespace flatbuffers;
+
 namespace showtime {
 
 ZstValue::ZstValue() : m_default_type(ValueList_IntList)
@@ -169,23 +171,25 @@ std::vector<std::string> ZstValue::as_string_vector() const
 //}
 //
 
-flatbuffers::Offset<PlugValue> ZstValue::serialize(PlugValueBuilder & buffer_builder) const
+void ZstValue::serialize(flatbuffers::Offset<PlugValue>& dest, flatbuffers::FlatBufferBuilder& buffer_builder) const
 {
+	auto plug_builder = PlugValueBuilder(buffer_builder);
+
     switch(m_default_type){
         case ValueList_IntList:
-            buffer_builder.add_values(buffer_builder.fbb_.CreateVector(as_int_vector()).Union());
+			plug_builder.add_values(buffer_builder.CreateVector(as_int_vector()).Union());
             break;
         case ValueList_FloatList:
-            buffer_builder.add_values(buffer_builder.fbb_.CreateVector(as_float_vector()).Union());
+			plug_builder.add_values(buffer_builder.CreateVector(as_float_vector()).Union());
             break;
         case ValueList_StrList:
-            buffer_builder.add_values(buffer_builder.fbb_.CreateVectorOfStrings(as_string_vector()).Union());
+			plug_builder.add_values(buffer_builder.CreateVectorOfStrings(as_string_vector()).Union());
             break;
         case ValueList_NONE:
             break;
     }
     
-    return buffer_builder.Finish();
+	dest = plug_builder.Finish();
 }
 
 void ZstValue::deserialize(const PlugValue* buffer)

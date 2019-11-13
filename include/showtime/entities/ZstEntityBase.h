@@ -15,7 +15,6 @@
 #include "../adaptors/ZstEntityAdaptor.hpp"
 #include "../adaptors/ZstSessionAdaptor.hpp"
 
-using namespace flatbuffers;
 
 namespace showtime
 {
@@ -38,7 +37,7 @@ typedef ZstBundleIterator<ZstEntityBase*> ZstEntityBundleIterator;
 
 class ZST_CLASS_EXPORTED ZstEntityBase :
     public ZstSynchronisable,
-    public virtual ZstSerialisable<Entity, EntityBuilder>
+    public virtual ZstSerialisable<Entity>
 {
     friend class ZstEntityLiason;
 
@@ -57,7 +56,7 @@ public:
     ZST_EXPORT virtual void remove_child(ZstEntityBase * child);
     
     //Entity type
-    ZST_EXPORT const EntityType entity_type() const;
+    ZST_EXPORT const EntityTypes entity_type() const;
     
     //URI for this entity
     ZST_EXPORT const ZstURI & URI() const;
@@ -67,7 +66,7 @@ public:
     ZST_EXPORT virtual void get_child_entities(ZstEntityBundle & bundle, bool include_parent = true);
     
     //Serialisation
-    ZST_EXPORT virtual flatbuffers::Offset<Entity> serialize(EntityBuilder & buffer_builder) const override;
+    ZST_EXPORT virtual void serialize(flatbuffers::Offset<Entity>& serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
     ZST_EXPORT virtual void deserialize(const Entity* buffer) override;
 
     //Adaptors
@@ -91,7 +90,7 @@ public:
     
 protected:
     //Set entity status
-    ZST_EXPORT void set_entity_type(EntityType entity_type);
+    ZST_EXPORT void set_entity_type(EntityTypes entity_type);
     ZST_EXPORT virtual void set_parent(ZstEntityBase* entity);
     ZST_EXPORT virtual void set_owner(const ZstURI & fire_owner);
     ZST_EXPORT virtual void update_URI();
@@ -109,7 +108,7 @@ private:
     void deserialize_imp(const Entity* buffer);
     
     ZstEntityBase * m_parent;
-    EntityType m_entity_type;
+    EntityTypes m_entity_type;
     ZstURI m_uri;
     ZstURI m_current_owner;
     std::mutex m_entity_lock;

@@ -11,6 +11,7 @@
 namespace showtime {
 
 ZstStageMessage::ZstStageMessage() :
+	m_buffer(NULL),
 	m_endpoint_UUID(nil_generator()())
 {
 }

@@ -4,6 +4,8 @@
 #include "../ZstEventDispatcher.hpp"
 #include "adaptors/ZstSynchronisableAdaptor.hpp"
 
+using namespace flatbuffers;
+
 //Template instatiations
 //template class ZstEventDispatcher<ZstFactoryAdaptor*>;
 namespace showtime {
@@ -12,17 +14,17 @@ ZstEntityFactory::ZstEntityFactory() :
 	ZstEntityBase(""),
 	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >("factory events"))
 {
-	set_entity_type(EntityType_FACTORY);
+	set_entity_type(EntityTypes_Factory);
 }
 
 ZstEntityFactory::ZstEntityFactory(const char * name) : 
 	ZstEntityBase(name),
 	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >("factory events"))
 {
-	set_entity_type(EntityType_FACTORY);
+	set_entity_type(EntityTypes_Factory);
 }
     
-ZstEntityFactory::ZstEntityFactory(const Entity* buffer) : ZstEntityBase(buffer)
+ZstEntityFactory::ZstEntityFactory(const Factory* buffer) : ZstEntityBase(buffer->entity())
 {
     ZstEntityFactory::deserialize_imp(buffer);
 }
@@ -157,48 +159,30 @@ void ZstEntityFactory::update_createable_URIs()
 		m_creatables.insert(c);
 	}
 }
-
-//void ZstEntityFactory::write_json(json & buffer) const
-//{
-//    //Pack creatables
-//    ZstEntityBase::write_json(buffer);
-//    buffer["creatables"] = json::array();
-//    for (auto creatable : m_creatables) {
-//        buffer["creatables"].push_back(creatable.path());
-//    }
-//}
-//
-//void ZstEntityFactory::read_json(const json & buffer)
-//{
-//    ZstEntityBase::read_json(buffer);
-//    for (auto creatable : buffer["creatables"]) {
-//        m_creatables.emplace(creatable.get<std::string>().c_str(), creatable.get<std::string>().size());
-//    }
-//}
-    
-flatbuffers::Offset<Entity> ZstEntityFactory::serialize(EntityBuilder & buffer_builder) const
+ 
+void ZstEntityFactory::serialize(flatbuffers::Offset<Factory> & dest, FlatBufferBuilder & buffer_builder) const
 {
     // Sereialize creatables
     std::vector<std::string> creatables;
     for(auto c : m_creatables){
         creatables.push_back(c.path());
     }
-    buffer_builder.add_creatables(buffer_builder.fbb_.CreateVectorOfStrings(creatables));
-    
-    return ZstEntityBase::serialize(buffer_builder);
+	Offset<Entity> entity_offset;
+	ZstEntityBase::serialize(entity_offset, buffer_builder);
+	dest = CreateFactory(buffer_builder, entity_offset, buffer_builder.CreateVectorOfStrings(creatables));
 }
     
-void ZstEntityFactory::deserialize_imp(const Entity* buffer)
+void ZstEntityFactory::deserialize_imp(const Factory* buffer)
 {
     for(auto c : *buffer->creatables()){
         m_creatables.emplace(c->c_str(), c->size());
     }
 }
     
-void ZstEntityFactory::deserialize(const Entity* buffer)
+void ZstEntityFactory::deserialize(const Factory* buffer)
 {
     ZstEntityFactory::deserialize_imp(buffer);
-    ZstEntityBase::deserialize(buffer);
+    ZstEntityBase::deserialize(buffer->entity());
 }
 
 }

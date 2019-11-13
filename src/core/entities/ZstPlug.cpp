@@ -10,6 +10,8 @@
 #include "../adaptors/ZstGraphTransportAdaptor.hpp"
 #include "../ZstHierarchy.h"
 
+using namespace flatbuffers;
+
 namespace showtime
 {
 
@@ -23,7 +25,7 @@ ZstPlug::ZstPlug() :
     m_direction(PlugDirection_NONE),
     m_max_connected_cables(-1)
 {
-    set_entity_type(EntityType_PLUG);
+    set_entity_type(EntityTypes_Plug);
 }
 
 ZstPlug::ZstPlug(const char * name, ValueList t, PlugDirection direction, int max_cables) :
@@ -32,11 +34,10 @@ ZstPlug::ZstPlug(const char * name, ValueList t, PlugDirection direction, int ma
     m_direction(direction),
     m_max_connected_cables(max_cables)
 {
-    set_entity_type(EntityType_PLUG);
+    set_entity_type(EntityTypes_Plug);
 }
     
-ZstPlug::ZstPlug(const Entity* buffer) :
-    ZstEntityBase(buffer)
+ZstPlug::ZstPlug(const Plug* buffer) : ZstEntityBase(buffer->entity())
 {
     ZstPlug::deserialize_imp(buffer);
 }
@@ -121,29 +122,26 @@ ZstValue * ZstPlug::raw_value()
 // Serialisation
 //--------------------
 
-flatbuffers::Offset<Entity> ZstPlug::serialize(EntityBuilder & buffer_builder) const
+void ZstPlug::serialize(flatbuffers::Offset<Plug>& dest, FlatBufferBuilder& buffer_builder) const
 {
 //    //Pack value
 //    buffer["value"] = m_value->as_json();
 //
-    buffer_builder.add_plug_direction(m_direction);
-    
-    if(m_max_connected_cables >= 0)
-        buffer_builder.add_max_cables(m_max_connected_cables);
-    
-    return ZstEntityBase::serialize(buffer_builder);
+	Offset<Entity> entity_offset;
+	ZstEntityBase::serialize(entity_offset, buffer_builder);
+	dest = CreatePlug(buffer_builder, entity_offset, m_direction, m_max_connected_cables);
 }
     
-void ZstPlug::deserialize_imp(const Entity* buffer)
+void ZstPlug::deserialize_imp(const Plug* buffer)
 {
     m_direction = buffer->plug_direction();
     m_max_connected_cables = buffer->max_cables();
 }
 
-void ZstPlug::deserialize(const Entity* buffer)
+void ZstPlug::deserialize(const Plug* buffer)
 {
     ZstPlug::deserialize_imp(buffer);
-    ZstEntityBase::deserialize(buffer);
+    ZstEntityBase::deserialize(buffer->entity());
 };
 
 
@@ -238,7 +236,7 @@ ZstInputPlug::ZstInputPlug() :
 {
 }
     
-ZstInputPlug::ZstInputPlug(const Entity* buffer) : ZstPlug(buffer)
+ZstInputPlug::ZstInputPlug(const Plug* buffer) : ZstPlug(buffer)
 {
 }
 
@@ -267,7 +265,7 @@ ZstOutputPlug::ZstOutputPlug() :
 {
 }
     
-ZstOutputPlug::ZstOutputPlug(const Entity* buffer) : ZstPlug(buffer)
+ZstOutputPlug::ZstOutputPlug(const Plug* buffer) : ZstPlug(buffer)
 {
 }
 
@@ -315,11 +313,12 @@ void ZstOutputPlug::fire()
 		auto buffer_builder = flatbuffers::FlatBufferBuilder();
 
 		// Serialize values
-        PlugValueBuilder value_builder(buffer_builder);
+		Offset<PlugValue> plugval_offset;
+		this->raw_value()->serialize(plugval_offset, buffer_builder);
 
 		// Create graph mesage
 		auto graph_msg_builder = GraphMessageBuilder(buffer_builder);
-		graph_msg_builder.add_value(this->raw_value()->serialize(value_builder));
+		graph_msg_builder.add_value(plugval_offset);
 		graph_msg_builder.add_sender(buffer_builder.CreateString(this->URI().path()));
 
 		// Send message

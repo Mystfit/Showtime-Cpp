@@ -53,14 +53,6 @@ void ZstServiceDiscoveryTransport::destroy()
 	}
     ZstTransportLayerBase::destroy();
 }
-    
-ZstMessageReceipt ZstServiceDiscoveryTransport::send_msg(Content message_type, flatbuffers::Offset<void> message_content, flatbuffers::FlatBufferBuilder & buffer_builder, const ZstTransportArgs& args)
-{
-    flatbuffers::Offset<StageMessage> msg_offset;
-    buffer_builder.Finish(msg_offset);
-    send_message_impl(buffer_builder.GetBufferPointer(), buffer_builder.GetSize(), args);
-    return ZstMessageReceipt{Signal_OK};
-}
 
 void ZstServiceDiscoveryTransport::send_message_impl(const uint8_t * msg_buffer, size_t msg_buffer_size, const ZstTransportArgs & args) const
 {

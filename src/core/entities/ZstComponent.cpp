@@ -3,30 +3,32 @@
 #include "entities/ZstComponent.h"
 #include "../ZstEventDispatcher.hpp"
 
+using namespace flatbuffers;
+
 namespace showtime
 {
     ZstComponent::ZstComponent() :
         ZstEntityBase("")
     {
-        set_entity_type(EntityType::EntityType_COMPONENT);
+        set_entity_type(EntityTypes_Component);
         set_component_type("");
     }
 
     ZstComponent::ZstComponent(const char * path) :
         ZstEntityBase(path)
     {
-        set_entity_type(EntityType::EntityType_COMPONENT);
+        set_entity_type(EntityTypes_Component);
         set_component_type("");
     }
 
     ZstComponent::ZstComponent(const char * component_type, const char * path)
         : ZstEntityBase(path)
     {
-        set_entity_type(EntityType::EntityType_COMPONENT);
+        set_entity_type(EntityTypes_Component);
         set_component_type(component_type);
     }
     
-    ZstComponent::ZstComponent(const Entity* buffer) : ZstEntityBase(buffer)
+    ZstComponent::ZstComponent(const Component* buffer) : ZstEntityBase(buffer->entity())
     {
         ZstComponent::deserialize_imp(buffer);
     }
@@ -35,10 +37,10 @@ namespace showtime
     {
         for (auto c : other.m_children) {
             
-            if (c.second->entity_type() == EntityType_COMPONENT) {
+            if (c.second->entity_type() == EntityTypes_Component) {
                 add_child(new ZstComponent(*dynamic_cast<ZstComponent*>(c.second)));
             }
-            else if(c.second->entity_type() == EntityType_PLUG) {
+            else if(c.second->entity_type() == EntityTypes_Plug) {
                 ZstPlug * plug = dynamic_cast<ZstPlug*>(c.second);
                 if (plug->direction() == PlugDirection_IN_JACK) {
                     add_child(new ZstInputPlug(*dynamic_cast<ZstInputPlug*>(plug)));
@@ -85,7 +87,7 @@ namespace showtime
     ZstEntityBundle & ZstComponent::get_plugs(ZstEntityBundle & bundle) const
     {
         for(auto entity : m_children){
-            if(entity.second->entity_type() ==EntityType_PLUG)
+            if(entity.second->entity_type() ==EntityTypes_Plug)
                 bundle.add(entity.second);
         }
         return bundle;
@@ -150,21 +152,21 @@ namespace showtime
         }
     }
 
-    flatbuffers::Offset<Entity> ZstComponent::serialize(EntityBuilder & buffer_builder) const
+	void ZstComponent::serialize(flatbuffers::Offset<Component>& dest, FlatBufferBuilder & buffer_builder) const
     {
-        auto component_type_offset = buffer_builder.fbb_.CreateString(m_component_type.c_str(), m_component_type.size());
-        buffer_builder.add_component_type(component_type_offset);
-        
-        return ZstEntityBase::serialize(buffer_builder);
+        auto component_type_offset = buffer_builder.CreateString(m_component_type.c_str(), m_component_type.size());
+		Offset<Entity> entity_offset;
+		ZstEntityBase::serialize(entity_offset, buffer_builder);
+		dest = CreateComponent(buffer_builder, component_type_offset, entity_offset);
     }
 
-    void ZstComponent::deserialize(const Entity* buffer)
+    void ZstComponent::deserialize(const Component* buffer)
     {
         ZstComponent::deserialize_imp(buffer);
-        ZstEntityBase::deserialize(buffer);
+        ZstEntityBase::deserialize(buffer->entity());
     }
     
-    void ZstComponent::deserialize_imp(const Entity* buffer)
+    void ZstComponent::deserialize_imp(const Component* buffer)
     {
         m_component_type = buffer->component_type()->str();
     }

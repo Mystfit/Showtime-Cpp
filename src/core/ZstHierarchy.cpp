@@ -204,12 +204,12 @@ void ZstHierarchy::dispatch_entity_arrived_event(ZstEntityBase * entity){
         return;
     
     //Only dispatch events once all entities have been activated and registered
-    if (entity->entity_type() == EntityType_COMPONENT || entity->entity_type() == EntityType_PLUG)  {
+    if (entity->entity_type() == EntityTypes_Component || entity->entity_type() == EntityTypes_Plug)  {
         m_hierarchy_events->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
 			adaptor->on_entity_arriving(entity);
 		});
     }
-    else if (entity->entity_type() == EntityType_FACTORY) {
+    else if (entity->entity_type() == EntityTypes_Factory) {
         m_hierarchy_events->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
 			adaptor->on_factory_arriving(static_cast<ZstEntityFactory*>(entity));
 		});
@@ -219,8 +219,11 @@ void ZstHierarchy::dispatch_entity_arrived_event(ZstEntityBase * entity){
 void ZstHierarchy::update_proxy_entity(const Entity* entity)
 {
     // TODO: Make this work with ANY entity type that wants to update itself.
-    
-	if (entity->entity_type() == EntityType_FACTORY) {
+	throw(std::runtime_error("Not implemented"));
+
+
+
+	/*if (entity->entity_type() == EntityTypes_Factory) {
 		ZstLog::net(LogLevel::notification, "Factory {} received an update", entity->URI()->str());
 
 		ZstEntityFactory remote_factory = ZstEntityFactory(entity);
@@ -237,7 +240,7 @@ void ZstHierarchy::update_proxy_entity(const Entity* entity)
 			ZstLog::net(LogLevel::warn, "Could not find local proxy instance of remote factory {}", entity->URI()->str());
 			return;
 		}
-	}
+	}*/
 }
 
 void ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
@@ -253,17 +256,17 @@ void ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 std::shared_ptr<ZstEntityBase> ZstHierarchy::unpack_entity(const Entity* entity_buffer)
 {
     switch(entity_buffer->entity_type()){
-        case EntityType_PERFORMER:
+        case EntityTypes_Performer:
             return std::make_unique<ZstPerformer>(entity_buffer);
-        case EntityType_COMPONENT:
+        case EntityTypes_Component:
             return std::make_unique<ZstComponent>(entity_buffer);
-        case EntityType_PLUG:
+        case EntityTypes_Plug:
             if(entity_buffer->plug_direction() == PlugDirection_IN_JACK)
                 return std::make_unique<ZstInputPlug>(entity_buffer);
             return std::make_unique<ZstOutputPlug>(entity_buffer);
-        case EntityType_FACTORY:
+        case EntityTypes_Factory:
             return std::make_unique<ZstEntityFactory>(entity_buffer);
-        case EntityType_UNKNOWN:
+        case EntityTypes_NONE:
             throw std::runtime_error("Can't parse unknown entity {}");
     }
 }
@@ -335,18 +338,18 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 	}
 
 	//Dispatch events depending on entity type
-	if (entity->entity_type() == EntityType_PLUG) {
+	if (entity->entity_type() == EntityTypes_Plug) {
 		hierarchy_events()->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
 			adaptor->on_plug_leaving(static_cast<ZstPlug*>(entity));
 		});
 	}
-	else if (entity->entity_type() == EntityType_PERFORMER)
+	else if (entity->entity_type() == EntityTypes_Performer)
 	{
 		hierarchy_events()->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
 			adaptor->on_performer_leaving(static_cast<ZstPerformer*>(entity));
 		});
 	}
-	else if (entity->entity_type() == EntityType_FACTORY)
+	else if (entity->entity_type() == EntityTypes_Factory)
 	{
 		hierarchy_events()->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
 			adaptor->on_factory_leaving(static_cast<ZstEntityFactory*>(entity));

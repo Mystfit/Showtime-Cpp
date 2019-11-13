@@ -1,6 +1,8 @@
 #include "ZstCableAddress.h"
 #include <fmt/format.h>
 
+using namespace flatbuffers;
+
 namespace showtime {
 
 ZstCableAddress::ZstCableAddress() :
@@ -74,14 +76,11 @@ const ZstURI & ZstCableAddress::get_output_URI() const
     return m_output_URI;
 }
 
-flatbuffers::Offset<Cable> ZstCableAddress::serialize(CableBuilder & buffer_builder) const
+void ZstCableAddress::serialize(flatbuffers::Offset<Cable> & dest, flatbuffers::FlatBufferBuilder & buffer_builder) const
 {
-    auto input_URI = buffer_builder.fbb_.CreateString(m_input_URI.path(), m_input_URI.full_size());
-    auto output_URI = buffer_builder.fbb_.CreateString(m_output_URI.path(), m_output_URI.full_size());
-    buffer_builder.add_input_URI(input_URI);
-    buffer_builder.add_output_URI(output_URI);
-    
-    return buffer_builder.Finish();
+    auto input_URI = buffer_builder.CreateString(m_input_URI.path(), m_input_URI.full_size());
+    auto output_URI = buffer_builder.CreateString(m_output_URI.path(), m_output_URI.full_size());
+	dest = CreateCable(buffer_builder, input_URI, output_URI);
 }
 
 void ZstCableAddress::deserialize(const Cable* buffer)

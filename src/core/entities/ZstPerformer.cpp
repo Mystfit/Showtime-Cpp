@@ -3,6 +3,7 @@
 #include "../ZstEventDispatcher.hpp"
 
 using namespace std;
+using namespace flatbuffers;
 
 namespace showtime
 {
@@ -11,7 +12,7 @@ ZstPerformer::ZstPerformer() :
     m_heartbeat_active(false),
     m_missed_heartbeats(0)
 {
-    set_entity_type(EntityType_PERFORMER);
+    set_entity_type(EntityTypes_Performer);
 }
 
 ZstPerformer::ZstPerformer(const char * name) :
@@ -19,10 +20,10 @@ ZstPerformer::ZstPerformer(const char * name) :
     m_heartbeat_active(false),
     m_missed_heartbeats(0)
 {
-    set_entity_type(EntityType_PERFORMER);
+    set_entity_type(EntityTypes_Performer);
 }
     
-ZstPerformer::ZstPerformer(const Entity* buffer) : ZstComponent(buffer)
+ZstPerformer::ZstPerformer(const Performer* buffer) : ZstComponent(buffer->component())
 {
     ZstPerformer::deserialize_imp(buffer);
 }
@@ -76,7 +77,7 @@ int ZstPerformer::get_missed_heartbeats()
 
 void ZstPerformer::add_child(ZstEntityBase * entity, bool auto_activate)
 {
-    if (entity->entity_type() == EntityType_FACTORY) {
+    if (entity->entity_type() == EntityTypes_Factory) {
         add_factory(static_cast<ZstEntityFactory*>(entity));
     }
     else {
@@ -86,7 +87,7 @@ void ZstPerformer::add_child(ZstEntityBase * entity, bool auto_activate)
 
 void ZstPerformer::remove_child(ZstEntityBase * entity)
 {
-    if (entity->entity_type() == EntityType_FACTORY) {
+    if (entity->entity_type() == EntityTypes_Factory) {
         remove_factory(static_cast<ZstEntityFactory*>(entity));
     }
     else {
@@ -127,19 +128,20 @@ ZstEntityFactoryBundle & ZstPerformer::get_factories(ZstEntityFactoryBundle & bu
     }
     return bundle;
 }
-
-flatbuffers::Offset<Entity> ZstPerformer::serialize(EntityBuilder & buffer_builder) const
+void ZstPerformer::serialize(flatbuffers::Offset<Performer>& dest, FlatBufferBuilder& buffer_builder) const
 {
-    return ZstComponent::serialize(buffer_builder);
+	Offset<Component> component_offset;
+	ZstComponent::serialize(component_offset, buffer_builder);
+	dest = CreatePerformer(buffer_builder, component_offset);
 }
 
-void ZstPerformer::deserialize(const Entity* buffer)
+void ZstPerformer::deserialize(const Performer* buffer)
 {
     ZstPerformer::deserialize_imp(buffer);
-    ZstComponent::deserialize(buffer);
+    ZstComponent::deserialize(buffer->component());
 }
     
-void ZstPerformer::deserialize_imp(const Entity* buffer)
+void ZstPerformer::deserialize_imp(const Performer* buffer)
 {
 }
 

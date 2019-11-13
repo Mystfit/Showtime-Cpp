@@ -11,5 +11,6 @@ namespace showtime
 		public ZstTransportLayerBase<ZstStageMessage, ZstStageTransportAdaptor>,
 		public ZstStageTransportAdaptor
 	{
+		ZST_EXPORT virtual ZstMessageReceipt send_msg(Content message_type, flatbuffers::Offset<void> message_content, flatbuffers::FlatBufferBuilder& buffer_builder, const ZstTransportArgs& args) override;
 	};
 }

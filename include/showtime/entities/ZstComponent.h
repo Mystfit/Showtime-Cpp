@@ -12,13 +12,14 @@
 namespace showtime
 {
 class ZST_CLASS_EXPORTED ZstComponent :
+	public virtual ZstSerialisable<Component>,
     public ZstEntityBase
 {
 public:
     ZST_EXPORT ZstComponent();
     ZST_EXPORT ZstComponent(const char * path);
     ZST_EXPORT ZstComponent(const char * component_type, const char * path);
-    ZST_EXPORT ZstComponent(const Entity* buffer);
+    ZST_EXPORT ZstComponent(const Component* buffer);
     ZST_EXPORT ZstComponent(const ZstComponent & other);
 
     ZST_EXPORT virtual ~ZstComponent();
@@ -40,7 +41,6 @@ public:
     ZST_EXPORT ZstOutputPlug * create_output_plug(const char* name, ValueList val_type, bool reliable = true);
 
     //Transfer plug ownership to this component
-    //ZST_EXPORT int add_plug(ZstPlug * plug);
     ZST_EXPORT virtual void add_child(ZstEntityBase * entity, bool auto_activate = true) override;
 
     //Remove a plug from this component
@@ -50,16 +50,20 @@ public:
     ZST_EXPORT virtual void get_child_cables(ZstCableBundle & bundle) override;
     ZST_EXPORT virtual void get_child_entities(ZstEntityBundle & bundle, bool include_parent = true) override;
     
-    //Serialisation
-    ZST_EXPORT flatbuffers::Offset<Entity> serialize(EntityBuilder & buffer_builder) const override;
-    ZST_EXPORT void deserialize(const Entity* buffer) override;
-
     //Specific component type
     ZST_EXPORT const char * component_type() const;
+
+
+	// Serialisation
+	// -------------
+
+	ZST_EXPORT virtual void serialize(flatbuffers::Offset<Component> & dest, flatbuffers::FlatBufferBuilder& buffer_builder) const override;
+	ZST_EXPORT virtual void deserialize(const Component* buffer) override;
     
     
     // Children
     // --------
+
     //Find a child in this entity by a URI
     ZST_EXPORT ZstEntityBase * walk_child_by_URI(const ZstURI & path);
     
@@ -81,7 +85,7 @@ protected:
     ZST_EXPORT virtual void set_parent(ZstEntityBase * parent) override;
     
 private:
-    void deserialize_imp(const Entity* buffer);
+    void deserialize_imp(const Component* buffer);
 
     ZstEntityMap m_children;
     std::string m_component_type;
