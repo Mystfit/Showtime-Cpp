@@ -51,11 +51,13 @@ namespace ZstValueDetails {
 }
 
 
-class ZstValue : virtual ZstSerialisable<PlugValue> {
+class ZstValue : virtual ZstSerialisable<PlugValue, PlugValue> {
 public:
 	ZST_EXPORT ZstValue();
 	ZST_EXPORT ZstValue(const ZstValue & other);
 	ZST_EXPORT ZstValue(ValueList t);
+	ZST_EXPORT ZstValue(const PlugValue* buffer);
+
 	ZST_EXPORT virtual ~ZstValue();
 
 	ZST_EXPORT ValueList get_default_type() const;
@@ -79,7 +81,10 @@ public:
 
 	//Serialisation
     ZST_EXPORT void serialize(flatbuffers::Offset<PlugValue> & dest, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
-    ZST_EXPORT void deserialize(const PlugValue* buffer) override;
+	ZST_EXPORT void serialize_partial(flatbuffers::Offset<PlugValue>& dest, flatbuffers::FlatBufferBuilder& buffer_builder) const override;
+	ZST_EXPORT void deserialize(const PlugValue* buffer) override;
+	ZST_EXPORT void deserialize_partial(const PlugValue* buffer) override;
+
 
 protected:
 	std::vector<ZstValueVariant> m_values;

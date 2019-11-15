@@ -267,11 +267,13 @@ void ZstClientHierarchy::create_proxy_entity_handler(const EntityCreateRequest *
                 add_performer(request->entities()->GetAs<Performer>(index));
                 break;
             case EntityTypes_Component:
-                add_proxy_entity();
+                add_proxy_entity(entity_type, request->entities()->GetAs<Component>(index)->entity(), request->entities()->Get(index));
                 break;
             case EntityTypes_Factory:
+				add_proxy_entity(entity_type, request->entities()->GetAs<Factory>(index)->entity(), request->entities()->Get(index));
                 break;
             case EntityTypes_Plug:
+				add_proxy_entity(entity_type, request->entities()->GetAs<Plug>(index)->entity(), request->entities()->Get(index));
                 break;
             case EntityTypes_NONE:
                 break;
@@ -386,25 +388,25 @@ bool ZstClientHierarchy::path_is_local(const ZstURI & path) {
 	return path.contains(m_root->URI());
 }
 
-void ZstClientHierarchy::add_proxy_entity(const Entity* entity) {
+void ZstClientHierarchy::add_proxy_entity(const EntityTypes entity_type, const EntityData* entity_data, const void* payload) {
 
 	// Don't need to activate local entities, they will auto-activate when the stage responds with an OK
 	// Also, we can't rely on the proxy flag here as it won't have been set yet
-    auto entity_path = ZstURI(entity->URI()->c_str(), entity->URI()->size());
+    auto entity_path = ZstURI(entity_data->URI()->c_str(), entity_data->URI()->size());
 	if (path_is_local(entity_path)) {
 		ZstLog::net(LogLevel::debug, "Received local entity {}. Ignoring", entity_path.path());
 		return;
     } else {
-        ZstHierarchy::add_proxy_entity(entity);
+        ZstHierarchy::add_proxy_entity(entity_type, entity_data, payload);
     }
     
     //Dispatch entity arrived event regardless if the entity is local or remote
     dispatch_entity_arrived_event(find_entity(entity_path));
 }
 
-void ZstClientHierarchy::update_proxy_entity(const Entity* entity)
+void ZstClientHierarchy::update_proxy_entity(const EntityTypes entity_type, const EntityData* entity_data, const void* payload)
 {
-    auto entity_path = ZstURI(entity->URI()->c_str(), entity->URI()->size());
+    auto entity_path = ZstURI(entity_data->URI()->c_str(), entity_data->URI()->size());
     
 	//Don't need to update local entities, they should have published the update
 	if (path_is_local(entity_path)) {
@@ -412,7 +414,7 @@ void ZstClientHierarchy::update_proxy_entity(const Entity* entity)
 		return;
 	}
     
-	ZstHierarchy::update_proxy_entity(entity);
+	ZstHierarchy::update_proxy_entity(entity_type, entity_data, payload);
 }
 
 ZstPerformer * ZstClientHierarchy::get_local_performer() const
@@ -422,7 +424,7 @@ ZstPerformer * ZstClientHierarchy::get_local_performer() const
 
 void ZstClientHierarchy::add_performer(const Performer* entity)
 {
-    auto performer_path = ZstURI(entity->URI()->c_str(), entity->URI()->size());
+    auto performer_path = ZstURI(entity->entity->URI()->c_str(), entity->entity->URI()->size());
     
 	if (performer_path == m_root->URI()) {
 		//If we received ourselves as a performer, then we are now activated and can be added to the entity lookup map

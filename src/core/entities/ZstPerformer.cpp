@@ -23,9 +23,11 @@ ZstPerformer::ZstPerformer(const char * name) :
     set_entity_type(EntityTypes_Performer);
 }
     
-ZstPerformer::ZstPerformer(const Performer* buffer) : ZstComponent(buffer->component())
+ZstPerformer::ZstPerformer(const Performer* buffer)
 {
-    ZstPerformer::deserialize(buffer);
+    ZstPerformer::deserialize_partial(buffer->performer());
+	ZstComponent::deserialize_partial(buffer->component());
+	ZstEntityBase::deserialize_partial(buffer->entity());
 }
 
 ZstPerformer::ZstPerformer(const ZstPerformer & other) : ZstComponent(other)

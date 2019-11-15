@@ -149,29 +149,30 @@ ZstEntityBase * ZstHierarchy::walk_to_entity(const ZstURI & path) const
 	return result;
 }
 
-void ZstHierarchy::add_proxy_entity(const Entity* entity)
+void ZstHierarchy::add_proxy_entity(const EntityTypes entity_type, const EntityData* entity_data, const void* payload)
 {
     // Check if the entity already exists in the hierarchy
-    if (find_entity(ZstURI(entity->URI()->c_str()))) {
-        ZstLog::net(LogLevel::error, "Can't create entity {}, it already exists", entity->URI()->str());
+	auto entity_path = ZstURI(entity_data->URI()->c_str(), entity_data->URI()->size());
+    if (find_entity(entity_path)) {
+        ZstLog::net(LogLevel::error, "Can't create entity {}, it already exists", entity_path.path());
         return;
     }
     
 	// All entities need a parent unless they are a performer 
-	auto parent_URI = ZstURI(entity->URI()->c_str(), entity->URI()->size()).parent();
-	if (!parent_URI.size()) {
-		ZstLog::net(LogLevel::error, "Entity {} has no parent", entity->URI()->str());
+	auto parent_path = entity_path.parent();
+	if (!parent_path.size()) {
+		ZstLog::net(LogLevel::error, "Entity {} has no parent", entity_path.path());
 		return;
 	}
     
-    ZstEntityBase * parent = find_entity(parent_URI);
+    ZstEntityBase * parent = find_entity(parent_path);
 	if (!parent) {
-		ZstLog::net(LogLevel::error, "Could not find parent {} for entity {}", parent_URI.path(), entity->URI()->str());
+		ZstLog::net(LogLevel::error, "Could not find parent {} for entity {}", parent_path.path(), entity_path.path());
 		return;
 	}
     
     // Create the entity proxy
-    auto entity_proxy = unpack_entity(entity);
+    auto entity_proxy = unpack_entity(entity_type, payload);
     
     // Set the entity as a proxy early to avoid accidental auto-activation
     synchronisable_set_proxy(entity_proxy.get());
@@ -216,7 +217,7 @@ void ZstHierarchy::dispatch_entity_arrived_event(ZstEntityBase * entity){
     }
 }
 
-void ZstHierarchy::update_proxy_entity(const Entity* entity)
+void ZstHierarchy::update_proxy_entity(const EntityTypes entity_type, const EntityData* entity_data, const void* payload)
 {
     // TODO: Make this work with ANY entity type that wants to update itself.
 	throw(std::runtime_error("Not implemented"));
@@ -253,25 +254,23 @@ void ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 	}
 }
     
-std::shared_ptr<ZstEntityBase> ZstHierarchy::unpack_entity(EntityTypes entity_type, const void* entity_data)
+std::unique_ptr<ZstEntityBase> ZstHierarchy::unpack_entity(EntityTypes entity_type, const void* entity_data)
 {
-    
-    
-    
-    switch(entity_buffer->entity_type()){
+    switch(entity_type){
         case EntityTypes_Performer:
-            return std::make_unique<ZstPerformer>(entity_buffer);
+            return std::make_unique<ZstPerformer>(static_cast<const Performer*>(entity_data));
         case EntityTypes_Component:
-            return std::make_unique<ZstComponent>(entity_buffer);
+            return std::make_unique<ZstComponent>(static_cast<const Component*>(entity_data));
         case EntityTypes_Plug:
-            if(entity_buffer->plug_direction() == PlugDirection_IN_JACK)
-                return std::make_unique<ZstInputPlug>(entity_buffer);
-            return std::make_unique<ZstOutputPlug>(entity_buffer);
+            if(static_cast<const Plug*>(entity_data)->plug()->plug_direction() == PlugDirection_IN_JACK)
+                return std::make_unique<ZstInputPlug>(static_cast<const Plug*>(entity_data));
+            return std::make_unique<ZstOutputPlug>(static_cast<const Plug*>(entity_data));
         case EntityTypes_Factory:
-            return std::make_unique<ZstEntityFactory>(entity_buffer);
+            return std::make_unique<ZstEntityFactory>(static_cast<const Factory*>(entity_data));
         case EntityTypes_NONE:
             throw std::runtime_error("Can't parse unknown entity {}");
     }
+	return NULL;
 }
 
 void ZstHierarchy::add_entity_to_lookup(ZstEntityBase * entity)

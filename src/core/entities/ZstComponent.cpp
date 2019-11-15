@@ -28,9 +28,10 @@ namespace showtime
         set_component_type(component_type);
     }
     
-    ZstComponent::ZstComponent(const Component* buffer) : ZstEntityBase(buffer->entity())
+    ZstComponent::ZstComponent(const Component* buffer)
     {
-        ZstComponent::deserialize_partial(buffer->entity());
+        ZstEntityBase::deserialize_partial(buffer->entity());
+		ZstComponent::deserialize_partial(buffer->component());
     }
 
     ZstComponent::ZstComponent(const ZstComponent & other) : ZstEntityBase(other)

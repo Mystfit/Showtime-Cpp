@@ -37,9 +37,10 @@ ZstPlug::ZstPlug(const char * name, ValueList t, PlugDirection direction, int ma
     set_entity_type(EntityTypes_Plug);
 }
     
-ZstPlug::ZstPlug(const Plug* buffer) : ZstEntityBase(buffer->entity())
+ZstPlug::ZstPlug(const Plug* buffer)
 {
-    ZstPlug::deserialize_imp(buffer);
+    ZstPlug::deserialize_partial(buffer->plug());
+	ZstEntityBase::deserialize_partial(buffer->entity());
 }
 
 

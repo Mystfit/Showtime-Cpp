@@ -79,8 +79,8 @@ public:
 	
 	virtual ZstEntityBase * find_entity(const ZstURI & path) const override;
 	bool path_is_local(const ZstURI & path);
-	virtual void add_proxy_entity(const Entity* entity) override;
-	virtual void update_proxy_entity(const Entity* entity) override;
+	virtual void add_proxy_entity(const EntityTypes entity_type, const EntityData* entity_data, const void* payload) override;
+	virtual void update_proxy_entity(const EntityTypes entity_type, const EntityData* entity_data, const void* payload) override;
 	ZstPerformer * get_local_performer() const override;
 
 

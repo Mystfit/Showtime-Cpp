@@ -22,6 +22,11 @@ ZstValue::ZstValue(ValueList t) : m_default_type(t)
 {
 }
 
+ZstValue::ZstValue(const PlugValue* buffer)
+{
+	deserialize_partial(buffer);
+}
+
 ZstValue::~ZstValue()
 {
 }
@@ -173,29 +178,56 @@ std::vector<std::string> ZstValue::as_string_vector() const
 
 void ZstValue::serialize(flatbuffers::Offset<PlugValue>& dest, flatbuffers::FlatBufferBuilder& buffer_builder) const
 {
+	serialize_partial(dest, buffer_builder);
+}
+
+void ZstValue::serialize_partial(flatbuffers::Offset<PlugValue>& dest, flatbuffers::FlatBufferBuilder& buffer_builder) const
+{
 	auto plug_builder = PlugValueBuilder(buffer_builder);
 
-    switch(m_default_type){
-        case ValueList_IntList:
-			plug_builder.add_values(buffer_builder.CreateVector(as_int_vector()).Union());
-            break;
-        case ValueList_FloatList:
-			plug_builder.add_values(buffer_builder.CreateVector(as_float_vector()).Union());
-            break;
-        case ValueList_StrList:
-			plug_builder.add_values(buffer_builder.CreateVectorOfStrings(as_string_vector()).Union());
-            break;
-        case ValueList_NONE:
-            break;
-    }
-    
+	switch (m_default_type) {
+	case ValueList_IntList:
+		plug_builder.add_values(buffer_builder.CreateVector(as_int_vector()).Union());
+		break;
+	case ValueList_FloatList:
+		plug_builder.add_values(buffer_builder.CreateVector(as_float_vector()).Union());
+		break;
+	case ValueList_StrList:
+		plug_builder.add_values(buffer_builder.CreateVectorOfStrings(as_string_vector()).Union());
+		break;
+	case ValueList_NONE:
+		break;
+	}
+
 	dest = plug_builder.Finish();
 }
 
 void ZstValue::deserialize(const PlugValue* buffer)
 {
-    m_values.clear();
-    
+	deserialize(buffer);
+}
+
+void ZstValue::deserialize_partial(const PlugValue* buffer)
+{
+	switch (buffer->values_type()) {
+	case ValueList_IntList:
+		for (auto v : *buffer->values_as_IntList()->val()) {
+			m_values.push_back(v);
+		}
+		break;
+	case ValueList_FloatList:
+		for (auto v : *buffer->values_as_FloatList()->val()) {
+			m_values.push_back(v);
+		}
+		break;
+	case ValueList_StrList:
+		for (auto v : *buffer->values_as_StrList()->val()) {
+			m_values.push_back(v->str());
+		}
+		break;
+	case ValueList_NONE:
+		break;
+	}
 }
     
 namespace ZstValueDetails {

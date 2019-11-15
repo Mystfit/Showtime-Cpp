@@ -24,9 +24,10 @@ ZstEntityFactory::ZstEntityFactory(const char * name) :
 	set_entity_type(EntityTypes_Factory);
 }
     
-ZstEntityFactory::ZstEntityFactory(const Factory* buffer) : ZstEntityBase(buffer->entity())
+ZstEntityFactory::ZstEntityFactory(const Factory* buffer)
 {
     ZstEntityFactory::deserialize_partial(buffer->factory());
+	ZstEntityBase::deserialize_partial(buffer->entity());
 }
 
 ZstEntityFactory::ZstEntityFactory(const ZstEntityFactory & other) : 
