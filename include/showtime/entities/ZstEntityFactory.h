@@ -18,7 +18,7 @@ typedef std::shared_ptr<ZstEntityBase> ZstSharedEntity;
 
 class ZST_CLASS_EXPORTED ZstEntityFactory :
 	public ZstEntityBase,
-	public virtual ZstSerialisable<Factory>
+	public virtual ZstSerialisable<Factory, FactoryData>
 {
 	using ZstEntityBase::add_adaptor;
 	using ZstEntityBase::remove_adaptor;
@@ -46,8 +46,13 @@ public:
 	
 	// Serialisation
 	// -------------
-
+    using ZstEntityBase::deserialize;
+    using ZstEntityBase::serialize;
+    using ZstEntityBase::serialize_partial;
+    using ZstEntityBase::deserialize_partial;
+    ZST_EXPORT virtual void serialize_partial(flatbuffers::Offset<FactoryData> & serialized_offset, flatbuffers::FlatBufferBuilder& buffer_builder) const override;
 	ZST_EXPORT virtual void serialize(flatbuffers::Offset<Factory> & dest, flatbuffers::FlatBufferBuilder& buffer_builder) const override;
+    ZST_EXPORT virtual void deserialize_partial(const FactoryData* buffer) override;
 	ZST_EXPORT virtual void deserialize(const Factory* buffer) override;
     
     
@@ -63,8 +68,6 @@ protected:
 	ZST_EXPORT virtual void process_events() override;
 
 private:
-    void deserialize_imp(const Factory* buffer);
-
 	void update_createable_URIs();
 	std::set<ZstURI> m_creatables;
 	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > > m_factory_events;

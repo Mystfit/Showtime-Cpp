@@ -127,12 +127,20 @@ void ZstPlug::serialize(flatbuffers::Offset<Plug>& dest, FlatBufferBuilder& buff
 //    //Pack value
 //    buffer["value"] = m_value->as_json();
 //
-	Offset<Entity> entity_offset;
-	ZstEntityBase::serialize(entity_offset, buffer_builder);
-	dest = CreatePlug(buffer_builder, entity_offset, m_direction, m_max_connected_cables);
+    Offset<PlugData> plug_offset;
+    serialize_partial(plug_offset, buffer_builder);
+    
+	Offset<EntityData> entity_offset;
+	ZstEntityBase::serialize_partial(entity_offset, buffer_builder);
+	dest = CreatePlug(buffer_builder, entity_offset, plug_offset);
 }
     
-void ZstPlug::deserialize_imp(const Plug* buffer)
+    void ZstPlug::serialize_partial(flatbuffers::Offset<PlugData> & serialized_offset, flatbuffers::FlatBufferBuilder& buffer_builder) const
+{
+    serialized_offset = CreatePlugData(buffer_builder, m_direction, m_max_connected_cables);
+}
+    
+void ZstPlug::deserialize_partial(const PlugData* buffer)
 {
     m_direction = buffer->plug_direction();
     m_max_connected_cables = buffer->max_cables();
@@ -140,8 +148,8 @@ void ZstPlug::deserialize_imp(const Plug* buffer)
 
 void ZstPlug::deserialize(const Plug* buffer)
 {
-    ZstPlug::deserialize_imp(buffer);
-    ZstEntityBase::deserialize(buffer->entity());
+    ZstPlug::deserialize_partial(buffer->plug());
+    ZstEntityBase::deserialize_partial(buffer->entity());
 };
 
 

@@ -12,7 +12,7 @@
 namespace showtime
 {
 class ZST_CLASS_EXPORTED ZstComponent :
-	public virtual ZstSerialisable<Component>,
+	public virtual ZstSerialisable<Component, ComponentData>,
     public ZstEntityBase
 {
 public:
@@ -56,10 +56,15 @@ public:
 
 	// Serialisation
 	// -------------
-
+    using ZstEntityBase::serialize;
+    using ZstEntityBase::serialize_partial;
+    using ZstEntityBase::deserialize;
+    using ZstEntityBase::deserialize_partial;
+    ZST_EXPORT virtual void serialize_partial(flatbuffers::Offset<ComponentData>& destination_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
 	ZST_EXPORT virtual void serialize(flatbuffers::Offset<Component> & dest, flatbuffers::FlatBufferBuilder& buffer_builder) const override;
+    ZST_EXPORT virtual void deserialize_partial(const ComponentData* buffer) override;
 	ZST_EXPORT virtual void deserialize(const Component* buffer) override;
-    
+
     
     // Children
     // --------
@@ -85,8 +90,6 @@ protected:
     ZST_EXPORT virtual void set_parent(ZstEntityBase * parent) override;
     
 private:
-    void deserialize_imp(const Component* buffer);
-
     ZstEntityMap m_children;
     std::string m_component_type;
 };

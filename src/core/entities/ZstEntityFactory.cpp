@@ -26,7 +26,7 @@ ZstEntityFactory::ZstEntityFactory(const char * name) :
     
 ZstEntityFactory::ZstEntityFactory(const Factory* buffer) : ZstEntityBase(buffer->entity())
 {
-    ZstEntityFactory::deserialize_imp(buffer);
+    ZstEntityFactory::deserialize_partial(buffer->factory());
 }
 
 ZstEntityFactory::ZstEntityFactory(const ZstEntityFactory & other) : 
@@ -159,20 +159,31 @@ void ZstEntityFactory::update_createable_URIs()
 		m_creatables.insert(c);
 	}
 }
- 
-void ZstEntityFactory::serialize(flatbuffers::Offset<Factory> & dest, FlatBufferBuilder & buffer_builder) const
+    
+void ZstEntityFactory::serialize_partial(flatbuffers::Offset<FactoryData> & serialized_offset, flatbuffers::FlatBufferBuilder& buffer_builder) const
 {
     // Sereialize creatables
     std::vector<std::string> creatables;
     for(auto c : m_creatables){
         creatables.push_back(c.path());
     }
-	Offset<Entity> entity_offset;
-	ZstEntityBase::serialize(entity_offset, buffer_builder);
-	dest = CreateFactory(buffer_builder, entity_offset, buffer_builder.CreateVectorOfStrings(creatables));
+    
+    serialized_offset = CreateFactoryData(buffer_builder, buffer_builder.CreateVectorOfStrings(creatables));
+}
+
+ 
+void ZstEntityFactory::serialize(flatbuffers::Offset<Factory> & dest, FlatBufferBuilder & buffer_builder) const
+{
+    Offset<EntityData> entity_offset;
+	ZstEntityBase::serialize_partial(entity_offset, buffer_builder);
+    
+    Offset<FactoryData> factory_offset;
+    serialize_partial(factory_offset, buffer_builder);
+    
+	dest = CreateFactory(buffer_builder, entity_offset, factory_offset);
 }
     
-void ZstEntityFactory::deserialize_imp(const Factory* buffer)
+void ZstEntityFactory::deserialize_partial(const FactoryData* buffer)
 {
     for(auto c : *buffer->creatables()){
         m_creatables.emplace(c->c_str(), c->size());
@@ -181,8 +192,8 @@ void ZstEntityFactory::deserialize_imp(const Factory* buffer)
     
 void ZstEntityFactory::deserialize(const Factory* buffer)
 {
-    ZstEntityFactory::deserialize_imp(buffer);
-    ZstEntityBase::deserialize(buffer->entity());
+    ZstEntityFactory::deserialize_partial(buffer->factory());
+    ZstEntityBase::deserialize_partial(buffer->entity());
 }
 
 }

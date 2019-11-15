@@ -68,7 +68,7 @@ public:
 	// Performers
 	// ------------------------------
 
-	virtual void add_performer(const Entity* entity) override;
+	virtual void add_performer(const Performer* entity) override;
 	virtual ZstEntityBundle & get_performers(ZstEntityBundle & bundle) const override;
 	virtual ZstPerformer * get_performer_by_URI(const ZstURI & uri) const override;
 	

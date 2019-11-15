@@ -25,7 +25,7 @@ ZstPerformer::ZstPerformer(const char * name) :
     
 ZstPerformer::ZstPerformer(const Performer* buffer) : ZstComponent(buffer->component())
 {
-    ZstPerformer::deserialize_imp(buffer);
+    ZstPerformer::deserialize(buffer);
 }
 
 ZstPerformer::ZstPerformer(const ZstPerformer & other) : ZstComponent(other)
@@ -128,20 +128,34 @@ ZstEntityFactoryBundle & ZstPerformer::get_factories(ZstEntityFactoryBundle & bu
     }
     return bundle;
 }
+    
+void ZstPerformer::serialize_partial(flatbuffers::Offset<PerformerData>& serialized_offset, FlatBufferBuilder& buffer_builder) const
+{
+    serialized_offset = CreatePerformerData(buffer_builder);
+}
+
 void ZstPerformer::serialize(flatbuffers::Offset<Performer>& dest, FlatBufferBuilder& buffer_builder) const
 {
-	Offset<Component> component_offset;
-	ZstComponent::serialize(component_offset, buffer_builder);
-	dest = CreatePerformer(buffer_builder, component_offset);
+	Offset<ComponentData> component_offset;
+	ZstComponent::serialize_partial(component_offset, buffer_builder);
+    
+    Offset<EntityData> entity_offset;
+    ZstEntityBase::serialize_partial(entity_offset, buffer_builder);
+    
+    Offset<PerformerData> performer_offset;
+    serialize_partial(performer_offset, buffer_builder);
+    
+	dest = CreatePerformer(buffer_builder, entity_offset, component_offset, performer_offset);
 }
 
 void ZstPerformer::deserialize(const Performer* buffer)
 {
-    ZstPerformer::deserialize_imp(buffer);
-    ZstComponent::deserialize(buffer->component());
+    ZstPerformer::deserialize_partial(buffer->performer());
+    ZstComponent::deserialize_partial(buffer->component());
+    ZstEntityBase::deserialize_partial(buffer->entity());
 }
     
-void ZstPerformer::deserialize_imp(const Performer* buffer)
+void ZstPerformer::deserialize_partial(const PerformerData* buffer)
 {
 }
 

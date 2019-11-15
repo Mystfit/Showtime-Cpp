@@ -30,7 +30,7 @@ namespace showtime
     {
     }
     
-    ZstEntityBase::ZstEntityBase(const Entity* buffer) :
+    ZstEntityBase::ZstEntityBase(const EntityData* buffer) :
         m_session_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstSessionAdaptor> > >()),
         m_entity_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstEntityAdaptor > > >()),
         m_parent(NULL),
@@ -38,6 +38,7 @@ namespace showtime
         m_uri(""),
         m_current_owner("")
     {
+        deserialize_partial(buffer);
     }
 
     ZstEntityBase::ZstEntityBase(const ZstEntityBase & other) :
@@ -125,15 +126,22 @@ namespace showtime
     {
         return m_entity_events;
     }
-
-    void ZstEntityBase::serialize(flatbuffers::Offset<Entity>& serialized_offset, FlatBufferBuilder& buffer_builder) const
+    
+    void ZstEntityBase::serialize_partial(flatbuffers::Offset<EntityData>& serialized_offset, FlatBufferBuilder& buffer_builder) const
     {
         auto URI_offset = buffer_builder.CreateString(URI().path(), URI().full_size());
         auto owner_offset = buffer_builder.CreateString(get_owner().path(), get_owner().size());
-		serialized_offset = CreateEntity(buffer_builder, URI_offset, owner_offset);
+        serialized_offset = CreateEntityData(buffer_builder, URI_offset, owner_offset);
     }
 
-    void ZstEntityBase::deserialize_imp(const Entity* buffer)
+    void ZstEntityBase::serialize(flatbuffers::Offset<Entity>& serialized_offset, FlatBufferBuilder& buffer_builder) const
+    {
+        auto entity_offset = Offset<EntityData>();
+        serialize_partial(entity_offset, buffer_builder);
+		serialized_offset = CreateEntity(buffer_builder, entity_offset);
+    }
+
+    void ZstEntityBase::deserialize_partial(const EntityData* buffer)
     {
         m_uri = ZstURI(buffer->URI()->c_str(), buffer->URI()->size());
         m_current_owner = ZstURI(buffer->owner()->c_str(), buffer->owner()->size());
@@ -141,7 +149,7 @@ namespace showtime
     
     void ZstEntityBase::deserialize(const Entity* buffer)
     {
-        ZstEntityBase::deserialize_imp(buffer);
+        deserialize_partial(buffer->entity());
     }
 
     void ZstEntityBase::add_adaptor(std::shared_ptr<ZstEntityAdaptor> & adaptor)

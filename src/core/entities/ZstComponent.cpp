@@ -30,7 +30,7 @@ namespace showtime
     
     ZstComponent::ZstComponent(const Component* buffer) : ZstEntityBase(buffer->entity())
     {
-        ZstComponent::deserialize_imp(buffer);
+        ZstComponent::deserialize_partial(buffer->entity());
     }
 
     ZstComponent::ZstComponent(const ZstComponent & other) : ZstEntityBase(other)
@@ -154,19 +154,28 @@ namespace showtime
 
 	void ZstComponent::serialize(flatbuffers::Offset<Component>& dest, FlatBufferBuilder & buffer_builder) const
     {
+        Offset<ComponentData> component_offset;
+        serialize_partial(component_offset, buffer_builder);
+        
+		Offset<EntityData> entity_offset;
+		ZstEntityBase::serialize_partial(entity_offset, buffer_builder);
+		
+        dest = CreateComponent(buffer_builder, entity_offset, component_offset);
+    }
+    
+    void ZstComponent::serialize_partial(flatbuffers::Offset<ComponentData>& serialized_offset, FlatBufferBuilder& buffer_builder) const
+    {
         auto component_type_offset = buffer_builder.CreateString(m_component_type.c_str(), m_component_type.size());
-		Offset<Entity> entity_offset;
-		ZstEntityBase::serialize(entity_offset, buffer_builder);
-		dest = CreateComponent(buffer_builder, component_type_offset, entity_offset);
+        serialized_offset = CreateComponentData(buffer_builder, component_type_offset);
     }
 
     void ZstComponent::deserialize(const Component* buffer)
     {
-        ZstComponent::deserialize_imp(buffer);
-        ZstEntityBase::deserialize(buffer->entity());
+        ZstComponent::deserialize_partial(buffer->component());
+        ZstEntityBase::deserialize_partial(buffer->entity());
     }
     
-    void ZstComponent::deserialize_imp(const Component* buffer)
+    void ZstComponent::deserialize_partial(const ComponentData* buffer)
     {
         m_component_type = buffer->component_type()->str();
     }

@@ -60,7 +60,7 @@ void ZstHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTransportRequ
 		synchronisable_set_deactivating(entity);
 }
 
-void ZstHierarchy::add_performer(const Entity* performer)
+void ZstHierarchy::add_performer(const Performer* performer)
 {
 	//Copy streamable so we have a local ptr for the performer
 	auto performer_proxy = std::make_unique<ZstPerformer>(performer);
@@ -253,8 +253,11 @@ void ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 	}
 }
     
-std::shared_ptr<ZstEntityBase> ZstHierarchy::unpack_entity(const Entity* entity_buffer)
+std::shared_ptr<ZstEntityBase> ZstHierarchy::unpack_entity(EntityTypes entity_type, const void* entity_data)
 {
+    
+    
+    
     switch(entity_buffer->entity_type()){
         case EntityTypes_Performer:
             return std::make_unique<ZstPerformer>(entity_buffer);

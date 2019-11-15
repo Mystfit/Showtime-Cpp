@@ -17,9 +17,9 @@ ZstCableAddress::ZstCableAddress(const ZstURI & input_URI, const ZstURI & output
 {
 }
     
-ZstCableAddress::ZstCableAddress(const Cable* address)
+ZstCableAddress::ZstCableAddress(const Cable* buffer)
 {
-    deserialize_imp(address);
+    deserialize_partial(buffer->address());
 }
 
 ZstCableAddress::ZstCableAddress(const ZstCableAddress & other) :
@@ -78,17 +78,27 @@ const ZstURI & ZstCableAddress::get_output_URI() const
 
 void ZstCableAddress::serialize(flatbuffers::Offset<Cable> & dest, flatbuffers::FlatBufferBuilder & buffer_builder) const
 {
+    Offset<CableData> cable_offset;
+    serialize_partial(cable_offset, buffer_builder);
+    
+    dest = CreateCable(buffer_builder, cable_offset);
+}
+    
+void ZstCableAddress::serialize_partial(flatbuffers::Offset<CableData> & serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const
+{
     auto input_URI = buffer_builder.CreateString(m_input_URI.path(), m_input_URI.full_size());
     auto output_URI = buffer_builder.CreateString(m_output_URI.path(), m_output_URI.full_size());
-	dest = CreateCable(buffer_builder, input_URI, output_URI);
+    
+    serialized_offset = CreateCableData(buffer_builder, input_URI, output_URI);
 }
+
 
 void ZstCableAddress::deserialize(const Cable* buffer)
 {
-    deserialize_imp(buffer);
+    deserialize_partial(buffer->address());
 }
 
-void ZstCableAddress::deserialize_imp(const Cable* buffer)
+void ZstCableAddress::deserialize_partial(const CableData* buffer)
 {
     m_output_URI = ZstURI(buffer->input_URI()->c_str(), buffer->input_URI()->size());
     m_input_URI = ZstURI(buffer->output_URI()->c_str(), buffer->output_URI()->size());

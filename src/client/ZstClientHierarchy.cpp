@@ -1,5 +1,7 @@
 #include "ZstClientHierarchy.h"
 
+using namespace flatbuffers;
+
 namespace showtime::client {
 
 ZstClientHierarchy::ZstClientHierarchy() :
@@ -255,11 +257,24 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
     
 void ZstClientHierarchy::create_proxy_entity_handler(const EntityCreateRequest * request)
 {
-    for(auto entity : *request->entities()){
-        if(entity->entity_type() == EntityType_PERFORMER){
-            add_performer(entity);
-        } else {
-            add_proxy_entity(entity);
+    for (auto it = request->entities_type()->begin(); it != request->entities_type()->end();  ++it )
+    {
+        auto index = it - request->entities_type()->begin();
+        auto entity_type = static_cast<EntityTypes>(*it);
+        
+        switch(entity_type){
+            case EntityTypes_Performer:
+                add_performer(request->entities()->GetAs<Performer>(index));
+                break;
+            case EntityTypes_Component:
+                add_proxy_entity();
+                break;
+            case EntityTypes_Factory:
+                break;
+            case EntityTypes_Plug:
+                break;
+            case EntityTypes_NONE:
+                break;
         }
     }
 }
@@ -405,7 +420,7 @@ ZstPerformer * ZstClientHierarchy::get_local_performer() const
 	return m_root.get();
 }
 
-void ZstClientHierarchy::add_performer(const Entity* entity)
+void ZstClientHierarchy::add_performer(const Performer* entity)
 {
     auto performer_path = ZstURI(entity->URI()->c_str(), entity->URI()->size());
     

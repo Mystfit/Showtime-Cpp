@@ -37,7 +37,7 @@ typedef ZstBundleIterator<ZstEntityBase*> ZstEntityBundleIterator;
 
 class ZST_CLASS_EXPORTED ZstEntityBase :
     public ZstSynchronisable,
-    public virtual ZstSerialisable<Entity>
+    public virtual ZstSerialisable<Entity, EntityData>
 {
     friend class ZstEntityLiason;
 
@@ -45,7 +45,7 @@ public:
     //Base entity
     ZST_EXPORT ZstEntityBase();
     ZST_EXPORT ZstEntityBase(const char * entity_name);
-    ZST_EXPORT ZstEntityBase(const Entity* buffer);
+    ZST_EXPORT ZstEntityBase(const EntityData* buffer);
     ZST_EXPORT ZstEntityBase(const ZstEntityBase & other);
     ZST_EXPORT virtual ~ZstEntityBase();
     
@@ -66,7 +66,9 @@ public:
     ZST_EXPORT virtual void get_child_entities(ZstEntityBundle & bundle, bool include_parent = true);
     
     //Serialisation
+    ZST_EXPORT virtual void serialize_partial(flatbuffers::Offset<EntityData>& destination_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
     ZST_EXPORT virtual void serialize(flatbuffers::Offset<Entity>& serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
+    ZST_EXPORT virtual void deserialize_partial(const EntityData* buffer) override;
     ZST_EXPORT virtual void deserialize(const Entity* buffer) override;
 
     //Adaptors
@@ -105,8 +107,6 @@ protected:
     std::shared_ptr<ZstEventDispatcher< std::shared_ptr< ZstEntityAdaptor> > > m_entity_events;
 
 private:
-    void deserialize_imp(const Entity* buffer);
-    
     ZstEntityBase * m_parent;
     EntityTypes m_entity_type;
     ZstURI m_uri;

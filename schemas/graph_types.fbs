@@ -44,30 +44,53 @@ enum PlugDirection : byte {
     OUT_JACK
 }
 
-table Entity {
+table EntityData {
     URI:string;
     owner:string;
 }
 
-table Component {
+table ComponentData {
     component_type:string;
-    entity:Entity;
 }
 
-table Performer {
-    component: Component;
+table PerformerData {
 }
 
-table Plug {
-    entity:Entity;
+table PlugData {
     plug_direction: PlugDirection;
     max_cables: int;
     value: PlugValue;
 }
 
-table Factory {
-    entity:Entity;
+table FactoryData {
     creatables: [string];
+}
+
+// -------
+
+table Entity {
+    entity: EntityData;
+}
+
+table Component {
+    entity: EntityData;
+    component: ComponentData;
+}
+
+table Performer {
+    entity: EntityData;
+    component: ComponentData;
+    performer: PerformerData;
+}
+
+table Plug {
+    entity: EntityData;
+    plug: PlugData;
+}
+
+table Factory {
+    entity: EntityData;
+    factory: FactoryData;
 }
 
 union EntityTypes {
@@ -81,9 +104,13 @@ union EntityTypes {
 // Cables
 // ------
 
-table Cable {
+table CableData {
     input_URI:string;
     output_URI:string;
+}
+
+table Cable {
+    address: CableData;
 }
 
         
