@@ -24,6 +24,7 @@
 #include "../core/liasons/ZstPlugLiason.hpp"
 #include "../core/adaptors/ZstStageTransportAdaptor.hpp"
 #include "../core/adaptors/ZstGraphTransportAdaptor.hpp"
+#include "../core/adaptors/ZstServiceDiscoveryAdaptor.hpp"
 #include "../core/transports/ZstTransportHelpers.h"
 
 #include "ZstZMQClientTransport.h"
@@ -46,8 +47,9 @@ namespace showtime {
         class ZstClient :
 			public ZstEventDispatcher< std::shared_ptr<ZstStageTransportAdaptor> >,
             public ZstEventDispatcher< std::shared_ptr<ZstConnectionAdaptor> >,
-            public ZstStageTransportAdaptor,
-            public ZstGraphTransportAdaptor,
+			public virtual ZstStageTransportAdaptor,
+			public virtual ZstGraphTransportAdaptor,
+			public virtual ZstServiceDiscoveryAdaptor,
             public ZstHierarchyAdaptor,
             public ZstPlugLiason,
             public ZstSynchronisableLiason
@@ -63,13 +65,11 @@ namespace showtime {
             void flush();
 
             //Stage adaptor overrides
-            void on_receive_msg(const ZstStageMessage * msg) override;
-            void on_receive_msg(const ZstPerformanceMessage * msg) override;
-
-            void connection_handshake_handler(const ZstPerformanceMessage * msg);
+            void on_receive_msg(std::shared_ptr<ZstStageMessage> msg) override;
+            void on_receive_msg(std::shared_ptr<ZstPerformanceMessage> msg) override;
+			void on_receive_msg(std::shared_ptr<ZstServerBeaconMessage> msg) override;
 
             //Server discovery
-            void handle_server_discovery(const std::string & address, const std::string & server_name, int port);
             const ZstServerList & get_discovered_servers();
             
             //Register this endpoint to the stage
@@ -127,7 +127,9 @@ namespace showtime {
             //Server discovery
             std::shared_ptr<ZstServiceDiscoveryTransport> m_service_broadcast_transport;
             ZstServerList m_server_beacons;
-            bool m_auto_join_stage;
+            
+			void auto_join_stage_complete();
+			bool m_auto_join_stage;
             std::map<std::string, ZstMsgID> m_auto_join_stage_requests;
             ZstMessageSupervisor m_promise_supervisor;
             ZstServerAddress m_connected_server;
@@ -136,7 +138,8 @@ namespace showtime {
             void start_connection_broadcast_handler(const ClientGraphHandshakeStart* request);
             void stop_connection_broadcast_handler(const ClientGraphHandshakeStop* request);
             void listen_to_client_handler(const ClientGraphHandshakeListen* request, const ZstMsgID & request_id);
-            void server_discovery_handler(const ServerBeacon* request);
+            void server_discovery_handler(const ZstServerBeaconMessage* msg);
+			void connection_handshake_handler(std::shared_ptr<ZstPerformanceMessage> msg);
 
             static void send_connection_broadcast(boost::asio::deadline_timer * t, ZstClient * client, const ZstURI & to, const ZstURI & from, boost::posix_time::milliseconds duration);
             ZstPerformerMap m_active_peer_connections;

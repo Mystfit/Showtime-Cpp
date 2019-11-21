@@ -79,19 +79,19 @@ protected:
     //Message sending implementation for the transport
     virtual void send_message_impl(const uint8_t * msg_buffer, size_t msg_buffer_size, const ZstTransportArgs & args) const = 0;
     
-    virtual void dispatch_receive_event(Message_T* msg){
+    virtual void dispatch_receive_event(std::shared_ptr<Message_T> msg){
         m_dispatch_events->defer([msg](std::shared_ptr<Adaptor_T> adaptor) {
-            adaptor->on_receive_msg(msg);
+			std::static_pointer_cast<Adaptor_T>(adaptor)->on_receive_msg(msg);
         }, [this, msg](ZstEventStatus status) {
             process_response(msg->id(), ZstMessageReceipt{ Signal::Signal_OK });
             this->release(msg);
         });
     }
     
-    virtual void dispatch_receive_event(Message_T* msg, ZstEventCallback on_complete) {
+    virtual void dispatch_receive_event(std::shared_ptr<Message_T> msg, ZstEventCallback on_complete) {
         m_dispatch_events->defer([msg](std::shared_ptr<Adaptor_T> adaptor) {
-            adaptor->on_receive_msg(msg);
-        }, [this, msg, on_complete](ZstEventStatus status) {
+			std::static_pointer_cast<Adaptor_T>(adaptor)->on_receive_msg(msg);
+		}, [this, msg, on_complete](ZstEventStatus status) {
             process_response(msg->id(), ZstMessageReceipt{ Signal::Signal_OK });
             on_complete(status);
             this->release(msg);

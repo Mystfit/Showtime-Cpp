@@ -67,6 +67,8 @@ public:
 	ZST_EXPORT virtual void add_proxy_entity(const EntityTypes entity_type, const EntityData* entity_data, const void* payload);
 	ZST_EXPORT virtual void update_proxy_entity(const EntityTypes entity_type, const EntityData* entity_data, const void* payload);
 	ZST_EXPORT virtual void remove_proxy_entity(ZstEntityBase * entity);
+
+	ZST_EXPORT const EntityData* get_entity_field(EntityTypes entity_type, const void* data);
     ZST_EXPORT std::unique_ptr<ZstEntityBase> unpack_entity(EntityTypes entity_type, const void* entity_data);
 
 	
@@ -88,7 +90,6 @@ public:
     // ------------------------------
     // Entity lookups
     // ------------------------------
-    
     ZST_EXPORT virtual void add_entity_to_lookup(ZstEntityBase * entity);
     ZST_EXPORT virtual void remove_entity_from_lookup(const ZstURI & entity);
 
@@ -108,6 +109,7 @@ private:
 	std::shared_ptr<ZstEventDispatcher< std::shared_ptr<ZstHierarchyAdaptor> > > m_hierarchy_events;
 	std::mutex m_hierarchy_mutex;
 	ZstEntityMap m_entity_lookup;
+	std::set< std::unique_ptr<ZstSynchronisable> > m_proxies;
 };
 
 }

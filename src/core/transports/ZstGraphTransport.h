@@ -43,12 +43,12 @@ protected:
 
 	ZST_EXPORT zsock_t * input_graph_socket() const;
 	ZST_EXPORT zsock_t * output_graph_socket() const;
+	ZST_EXPORT virtual void dispatch_receive_event(std::shared_ptr<ZstPerformanceMessage> msg, ZstEventCallback on_complete) override;
 	
 private:
+	void sock_recv(zsock_t* socket);
 	static int s_handle_graph_in(zloop_t *loop, zsock_t *sock, void *arg);
 	
-	void graph_recv(zframe_t * msg);
-
 	//Actors
 	ZstActor m_graph_actor;
 

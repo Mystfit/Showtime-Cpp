@@ -4,6 +4,7 @@
 #include <boost/uuid/uuid_generators.hpp>
 
 using namespace boost::uuids;
+using namespace flatbuffers;
 
 namespace showtime {
 
@@ -38,7 +39,7 @@ void ZstStageSession::set_wake_condition(std::weak_ptr<ZstSemaphore> condition)
 	synchronisable_events()->set_wake_condition(condition);
 }
 
-void ZstStageSession::on_receive_msg(const ZstStageMessage* msg)
+void ZstStageSession::on_receive_msg(std::shared_ptr<ZstStageMessage> msg)
 {
 	Signal response = Signal_EMPTY;
 	ZstPerformerStageProxy* sender = m_hierarchy->get_client_from_endpoint_UUID(msg->endpoint_UUID());
@@ -52,7 +53,7 @@ void ZstStageSession::on_receive_msg(const ZstStageMessage* msg)
 		response = signal_handler(msg->buffer()->content_as_SignalMessage(), sender);
 		break;
 	case Content_CableCreateRequest:
-		response = create_cable_handler(msg->buffer()->content_as_CableCreateRequest(), sender);
+		response = create_cable_handler(msg->buffer(), sender);
 		break;
 	case Content_CableDestroyRequest:
 		response = destroy_cable_handler(msg->buffer()->content_as_CableDestroyRequest());
@@ -102,8 +103,9 @@ Signal ZstStageSession::synchronise_client_graph_handler(ZstPerformerStageProxy*
 
 	// For serialisation later
 	auto builder = std::make_shared<FlatBufferBuilder>();
-	EntityBuilder entity_builder(*builder);
-	std::vector< flatbuffers::Offset<Entity> > entity_vec;
+	std::vector< flatbuffers::Offset<void> > entity_vec;
+	std::vector< uint8_t> entity_types_vec;
+
 	ZstEntityBundle performer_bundle;
 	ZstEntityBundle entity_bundle;
 
@@ -116,9 +118,11 @@ Signal ZstStageSession::synchronise_client_graph_handler(ZstPerformerStageProxy*
 	}
 
 	for (auto entity : entity_bundle) {
-		entity_vec.push_back(entity->serialize(entity_builder));
+		entity_types_vec.push_back(entity->entity_type());
+		entity_vec.push_back(Offset<void>(entity->serialize(*builder)));
 	}
-	auto batch_entity_offset = CreateEntityCreateRequest(*builder, builder->CreateVector(entity_vec));
+
+	auto batch_entity_offset = CreateEntityCreateRequest(*builder, builder->CreateVector(entity_types_vec), builder->CreateVector(entity_vec));
 	ZstTransportArgs args;
 	stage_hierarchy()->whisper(sender, Content_EntityCreateRequest, batch_entity_offset.Union(), builder, args);
 
@@ -127,21 +131,23 @@ Signal ZstStageSession::synchronise_client_graph_handler(ZstPerformerStageProxy*
 	builder = std::make_shared<FlatBufferBuilder>();
 	std::vector< flatbuffers::Offset<Cable> > cable_vec;
 	for (auto const& cable : m_cables) {
-		auto cable_builder = CableBuilder(*builder);
-		cable_vec.push_back(cable->get_address().serialize(cable_builder));
+		cable_vec.push_back(cable->get_address().serialize(*builder));
 	}
-	auto batch_cable_offset = CreateEntityCreateRequest(*builder, builder->CreateVector(entity_vec));
+	auto batch_cable_offset = CreateCableCreateRequest(*builder, builder->CreateVector(cable_vec));
 	stage_hierarchy()->whisper(sender, Content_CableCreateRequest, batch_cable_offset.Union(), builder, args);
 
 	return Signal_OK;
 }
 
-Signal ZstStageSession::create_cable_handler(const CableCreateRequest* request, ZstPerformerStageProxy* sender)
+Signal ZstStageSession::create_cable_handler(const StageMessage* request, ZstPerformerStageProxy* sender)
 {
+	auto cable_request = request->content_as_CableCreateRequest();
+	auto id = request->id();
+
 	//Unpack cable from message
-	for (auto cable : *request->cables()) {
-		auto input_path = ZstURI(cable->input_URI()->c_str(), cable->input_URI()->size());
-		auto output_path = ZstURI(cable->output_URI()->c_str(), cable->output_URI()->size());
+	for (auto cable : *cable_request->cables()) {
+		auto input_path = ZstURI(cable->address()->input_URI()->c_str(), cable->address()->input_URI()->size());
+		auto output_path = ZstURI(cable->address()->output_URI()->c_str(), cable->address()->output_URI()->size());
 		auto cable_path = ZstCableAddress(input_path, output_path);
 		ZstLog::server(LogLevel::notification, "Received connect cable request for In:{} and Out:{}", cable_path.get_input_URI().path(), cable_path.get_output_URI().path());
 
@@ -177,25 +183,20 @@ Signal ZstStageSession::create_cable_handler(const CableCreateRequest* request, 
 		//Start the client connection
 		auto input_perf = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(input->URI().first()));
 		auto output_perf = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(output->URI().first()));
-		connect_clients(output_perf, input_perf, [this, cable, sender](ZstMessageReceipt receipt) {
+		connect_clients(output_perf, input_perf, [this, cable, sender, id](ZstMessageReceipt receipt) {
 			if (receipt.status == Signal_OK) {
 				ZstLog::server(LogLevel::notification, "Client connection complete. Publishing cable {}", cable->get_address().to_string());
 				ZstTransportArgs args;
 				auto builder = std::make_shared<FlatBufferBuilder>();
 
-				// Publish the new cable
-				auto cable_builder = CableBuilder(*builder);
-				std::vector< flatbuffers::Offset<Cable> > cable_vec{ cable->get_address().serialize(cable_builder) };
-
+				// Publish cable
+				std::vector< flatbuffers::Offset<Cable> > cable_vec{ cable->get_address().serialize(*builder) };
 				auto cable_create_offset = CreateCableCreateRequest(*builder, builder->CreateVector(cable_vec));
 				stage_hierarchy()->broadcast(Content_CableCreateRequest, cable_create_offset.Union(), builder, args);
 			}
 
-			// Send Ok to cable creator
-			ZstTransportArgs args;
-			auto builder = std::make_shared<FlatBufferBuilder>();
-			auto signal_offset = CreateSignalMessage(*builder, receipt.status);
-			stage_hierarchy()->whisper(sender, Content_SignalMessage, signal_offset.Union(), builder, args);
+			// Let original requestor know the request was completed
+			stage_hierarchy()->reply_with_signal(sender, receipt.status, id);
 		});
 
 	}
@@ -229,12 +230,9 @@ Signal ZstStageSession::observe_entity_handler(const StageMessage* request, ZstP
 	}
 
 	//Start the client connection
-	ZstTransportArgs args;
-	args.msg_ID = request->id();
-	connect_clients(observed_performer, sender, [this, sender, args](ZstMessageReceipt receipt) {
-		auto builder = std::make_shared<FlatBufferBuilder>();
-		auto signal_offset = CreateSignalMessage(*builder, receipt.status);
-		stage_hierarchy()->whisper(sender, Content_SignalMessage, signal_offset.Union(), builder, args);
+	ZstMsgID response_id = request->id();
+	connect_clients(observed_performer, sender, [this, sender, response_id](ZstMessageReceipt receipt) {
+		stage_hierarchy()->reply_with_signal(sender, Signal_OK, response_id);
 	});
 
 	return Signal_EMPTY;
@@ -304,11 +302,13 @@ Signal ZstStageSession::aquire_entity_ownership_handler(const EntityTakeOwnershi
 
 Signal ZstStageSession::destroy_cable_handler(const CableDestroyRequest* request)
 {
-	auto cable_path = ZstCableAddress(request->address());
-	ZstLog::server(LogLevel::notification, "Received destroy cable connection request");
+	for (auto address : *request->cables()) {
+		auto cable_path = ZstCableAddress(address);
+		ZstLog::server(LogLevel::notification, "Received destroy cable connection request");
 
-	ZstCable* cable_ptr = find_cable(cable_path);
-	destroy_cable(cable_ptr);
+		ZstCable* cable_ptr = find_cable(cable_path);
+		destroy_cable(cable_ptr);
+	}
 
 	return Signal_OK;
 }
@@ -346,8 +346,9 @@ void ZstStageSession::destroy_cable(ZstCable* cable) {
 	//Update rest of network
 	ZstTransportArgs args;
 	auto builder = std::make_shared<FlatBufferBuilder>();
-	auto destroy_cable_path = CreateCable(*builder, builder->CreateString(cable->get_input()->URI().path()), builder->CreateString(cable->get_output()->URI().path()));
-	auto destroy_cable_offset = CreateCableDestroyRequest(*builder, destroy_cable_path);
+	auto destroy_cable_data_offset = CreateCableData(*builder, builder->CreateString(cable->get_input()->URI().path()), builder->CreateString(cable->get_output()->URI().path()));
+	std::vector<Offset<Cable> > cable_vec{ CreateCable(*builder, destroy_cable_data_offset) };
+	auto destroy_cable_offset = CreateCableDestroyRequest(*builder, builder->CreateVector(cable_vec));
 	stage_hierarchy()->broadcast(Content_CableDestroyRequest, destroy_cable_offset.Union(), builder, args);
 
 	//Remove cable
@@ -375,8 +376,11 @@ void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, Zst
 	receiver_args.on_recv_response = [this, output_client, input_client, on_msg_received](ZstMessageReceipt receipt) {
 		if (receipt.status == Signal_OK) {
 			complete_client_connection(output_client, input_client);
-			on_msg_received(receipt);
 		}
+		else {
+			ZstLog::server(LogLevel::warn, "Connection between {} and {} failed: Reason {}", output_client->URI().path(), input_client->URI().path(), EnumNameSignal(receipt.status));
+		}
+		on_msg_received(receipt);
 	};
 	auto builder = std::make_shared<FlatBufferBuilder>();
 	auto subscribe_offset = CreateClientGraphHandshakeListen(*builder, builder->CreateString(output_client->URI().path()), builder->CreateString(output_client->reliable_address()));

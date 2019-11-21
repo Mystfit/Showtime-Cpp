@@ -20,7 +20,6 @@ ZstZMQClientTransport::ZstZMQClientTransport() :
 
 ZstZMQClientTransport::~ZstZMQClientTransport()
 {
-    //m_client_actor.stop_loop();
 	destroy();
 }
 
@@ -56,11 +55,12 @@ void ZstZMQClientTransport::destroy()
 {
 	m_client_actor.stop_loop();
 	if (m_server_sock) {
-		//m_client_actor.remove_pipe_listener(m_server_sock);
+		m_client_actor.remove_pipe_listener(m_server_sock);
 		zsock_destroy(&m_server_sock);
-		m_server_sock = NULL;
 		zst_zmq_dec_ref_count();
+		m_server_sock = NULL;
 	}
+
 	ZstTransportLayerBase::destroy();
 }
 
@@ -113,13 +113,14 @@ void ZstZMQClientTransport::sock_recv(zsock_t* socket)
         auto msg_data = zmsg_pop(recv_msg);
 
         if(msg_data){
-            ZstStageMessage * stage_msg = get_msg();
+            auto stage_msg = get_msg();
             stage_msg->init(GetStageMessage(zframe_data(msg_data)));
+
+			//ZstLog::net(LogLevel::debug, "Receiving msg with ID: {}", stage_msg->id());
             
             // Send message to submodules
             dispatch_receive_event(stage_msg, [this, stage_msg, msg_data](ZstEventStatus s) mutable{
                 // Frame cleanup
-				this->release(stage_msg);
                 zframe_destroy(&msg_data);
             });
         }

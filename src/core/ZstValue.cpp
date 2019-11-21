@@ -115,7 +115,7 @@ std::vector<int> ZstValue::as_int_vector() const
 {
     std::vector<int> ivec;
     for(auto val : m_values){
-        ivec.push_back(boost::apply_visitor(ZstValueDetails::ZstValueIntVisitor(), val));
+		ivec.emplace_back(boost::apply_visitor(ZstValueDetails::ZstValueIntVisitor(), val));
     }
     return ivec;
 }
@@ -124,7 +124,7 @@ std::vector<float> ZstValue::as_float_vector() const
 {
     std::vector<float> fvec;
     for(auto val : m_values){
-        fvec.push_back(boost::apply_visitor(ZstValueDetails::ZstValueFloatVisitor(), val));
+        fvec.emplace_back(boost::apply_visitor(ZstValueDetails::ZstValueFloatVisitor(), val));
     }
     return fvec;
 }
@@ -133,78 +133,38 @@ std::vector<std::string> ZstValue::as_string_vector() const
 {
     std::vector<std::string> svec;
     for(auto val : m_values){
-        svec.push_back(boost::apply_visitor(ZstValueDetails::ZstValueStrVisitor(), val));
+        svec.emplace_back(boost::apply_visitor(ZstValueDetails::ZstValueStrVisitor(), val));
     }
     return svec;
 }
 
-
-//void ZstValue::write_json(json & buffer) const
-//{
-//    buffer[get_value_field_name(ZstValueFields::DEFAULT_TYPE)] = get_default_type();
-//    buffer[get_value_field_name(ZstValueFields::VALUES)] = json::array();
-//    for (auto val : m_values) {
-//        if (get_default_type() == ZstValueType::ZST_INT) {
-//            buffer[get_value_field_name(ZstValueFields::VALUES)].push_back(boost::apply_visitor(ZstValueIntVisitor(), val));
-//        } else if (get_default_type() == ZstValueType::ZST_FLOAT) {
-//            buffer[get_value_field_name(ZstValueFields::VALUES)].push_back(boost::apply_visitor(ZstValueFloatVisitor(), val));
-//        } else if (get_default_type() == ZstValueType::ZST_STRING) {
-//            buffer[get_value_field_name(ZstValueFields::VALUES)].push_back(boost::apply_visitor(ZstValueStrVisitor(), val));
-//        } else {
-//            //Unknown value type
-//        }
-//    }
-//}
-//
-//void ZstValue::read_json(const json & buffer)
-//{
-//    m_default_type = buffer[get_value_field_name(ZstValueFields::DEFAULT_TYPE)];
-//    m_values.clear();
-//
-//    //Unpack values
-//    for (auto v : buffer[get_value_field_name(ZstValueFields::VALUES)]) {
-//        if (v.is_number_integer()) {
-//            m_values.emplace_back(v.get<int>());
-//        }
-//        else if (v.is_number_float()) {
-//            m_values.emplace_back(v.get<float>());
-//        }
-//        else if (v.is_string()) {
-//            m_values.emplace_back(v.get<std::string>());
-//        }
-//    }
-//}
-//
-
-void ZstValue::serialize(flatbuffers::Offset<PlugValue>& dest, flatbuffers::FlatBufferBuilder& buffer_builder) const
+uoffset_t ZstValue::serialize(flatbuffers::FlatBufferBuilder& buffer_builder) const
 {
+	Offset<PlugValue> dest;
 	serialize_partial(dest, buffer_builder);
+	return dest.o;
 }
 
-void ZstValue::serialize_partial(flatbuffers::Offset<PlugValue>& dest, flatbuffers::FlatBufferBuilder& buffer_builder) const
+void ZstValue::serialize_partial(Offset<PlugValue>& dest, flatbuffers::FlatBufferBuilder& buffer_builder) const
 {
-	auto plug_builder = PlugValueBuilder(buffer_builder);
-
 	switch (m_default_type) {
 	case ValueList_IntList:
-		plug_builder.add_values(buffer_builder.CreateVector(as_int_vector()).Union());
+		dest = CreatePlugValue(buffer_builder, ValueList_IntList, CreateIntList(buffer_builder, buffer_builder.CreateVector(as_int_vector())).Union());
 		break;
 	case ValueList_FloatList:
-		plug_builder.add_values(buffer_builder.CreateVector(as_float_vector()).Union());
+		dest = CreatePlugValue(buffer_builder, ValueList_FloatList, CreateFloatList(buffer_builder, buffer_builder.CreateVector(as_float_vector())).Union());
 		break;
 	case ValueList_StrList:
-		plug_builder.add_values(buffer_builder.CreateVectorOfStrings(as_string_vector()).Union());
+		dest = CreatePlugValue(buffer_builder, ValueList_StrList, CreateStrList(buffer_builder, buffer_builder.CreateVectorOfStrings(as_string_vector())).Union());
 		break;
 	case ValueList_NONE:
 		break;
 	}
-
-	dest = plug_builder.Finish();
 }
 
 void ZstValue::deserialize(const PlugValue* buffer)
 {
-	deserialize(buffer);
+	deserialize_partial(buffer);
 }
 
 void ZstValue::deserialize_partial(const PlugValue* buffer)
@@ -216,12 +176,12 @@ void ZstValue::deserialize_partial(const PlugValue* buffer)
 		}
 		break;
 	case ValueList_FloatList:
-		for (auto v : *buffer->values_as_FloatList()->val()) {
+		for (auto v : *(buffer->values_as_FloatList()->val())) {
 			m_values.push_back(v);
 		}
 		break;
 	case ValueList_StrList:
-		for (auto v : *buffer->values_as_StrList()->val()) {
+		for (auto v : *(buffer->values_as_StrList()->val())) {
 			m_values.push_back(v->str());
 		}
 		break;
@@ -229,7 +189,7 @@ void ZstValue::deserialize_partial(const PlugValue* buffer)
 		break;
 	}
 }
-    
+  
 namespace ZstValueDetails {
 
 // ----------------

@@ -11,7 +11,7 @@ using namespace flatbuffers;
 namespace showtime {
 
 ZstEntityFactory::ZstEntityFactory() : 
-	ZstEntityBase(""),
+	ZstEntityBase(),
 	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >("factory events"))
 {
 	set_entity_type(EntityTypes_Factory);
@@ -24,8 +24,10 @@ ZstEntityFactory::ZstEntityFactory(const char * name) :
 	set_entity_type(EntityTypes_Factory);
 }
     
-ZstEntityFactory::ZstEntityFactory(const Factory* buffer)
+ZstEntityFactory::ZstEntityFactory(const Factory* buffer) : 
+	ZstEntityBase()
 {
+	set_entity_type(EntityTypes_Factory);
     ZstEntityFactory::deserialize_partial(buffer->factory());
 	ZstEntityBase::deserialize_partial(buffer->entity());
 }
@@ -173,7 +175,7 @@ void ZstEntityFactory::serialize_partial(flatbuffers::Offset<FactoryData> & seri
 }
 
  
-void ZstEntityFactory::serialize(flatbuffers::Offset<Factory> & dest, FlatBufferBuilder & buffer_builder) const
+uoffset_t ZstEntityFactory::serialize(FlatBufferBuilder & buffer_builder) const
 {
     Offset<EntityData> entity_offset;
 	ZstEntityBase::serialize_partial(entity_offset, buffer_builder);
@@ -181,7 +183,7 @@ void ZstEntityFactory::serialize(flatbuffers::Offset<Factory> & dest, FlatBuffer
     Offset<FactoryData> factory_offset;
     serialize_partial(factory_offset, buffer_builder);
     
-	dest = CreateFactory(buffer_builder, entity_offset, factory_offset);
+	return CreateFactory(buffer_builder, entity_offset, factory_offset).o;
 }
     
 void ZstEntityFactory::deserialize_partial(const FactoryData* buffer)

@@ -47,10 +47,8 @@ const std::string & ZstGraphTransport::get_graph_out_address() const
     
 ZstMessageReceipt ZstGraphTransport::send_msg(flatbuffers::Offset<GraphMessage> message_content, flatbuffers::FlatBufferBuilder& buffer_builder, const ZstTransportArgs& args)
 {
-    flatbuffers::Offset<GraphMessage> msg_offset;
-    buffer_builder.Finish(msg_offset);
+    buffer_builder.Finish(message_content);
     send_message_impl(buffer_builder.GetBufferPointer(), buffer_builder.GetSize(), args);
-    
     return ZstMessageReceipt{Signal_OK};
 }
 
@@ -65,10 +63,7 @@ void ZstGraphTransport::send_message_impl(const uint8_t * msg_buffer, size_t msg
 	if (result < 0) {
 		ZstLog::net(LogLevel::warn, "Message failed to send with status {}", result);
 	}
-
-    delete msg_buffer;
 }
-
 ZstActor & ZstGraphTransport::actor()
 {
 	return m_graph_actor;
@@ -90,26 +85,24 @@ void ZstGraphTransport::set_graph_addresses(const std::string & in_addr, const s
 
 int ZstGraphTransport::s_handle_graph_in(zloop_t * loop, zsock_t * sock, void * arg)
 {
-	((ZstGraphTransport*)arg)->graph_recv(zframe_recv(sock));
+	ZstGraphTransport* transport = (ZstGraphTransport*)arg;
+	transport->sock_recv(sock);
 	return 0;
 }
 
-void ZstGraphTransport::graph_recv(zframe_t * frame)
+void ZstGraphTransport::sock_recv(zsock_t* socket)
 {
+	auto frame = zframe_recv(socket);
 	//Unpack the frame into a message
-	ZstPerformanceMessage * perf_msg = this->get_msg();
+
+	auto perf_msg = this->get_msg();
     perf_msg->init(GetGraphMessage(zframe_data(frame)));
 	
 	//Publish message to other modules
-	if (this->is_active()) {
-		msg_events()->invoke([perf_msg](std::shared_ptr<ZstGraphTransportAdaptor> adaptor) {
-			adaptor->on_receive_msg(perf_msg);
-		});
-	}
-
-	//Clean up resources once other modules have finished with this message
-	this->release(perf_msg);
-	zframe_destroy(&frame);
+	dispatch_receive_event(perf_msg, [this, perf_msg, frame](ZstEventStatus s) mutable {
+		// Cleanup
+		zframe_destroy(&frame);
+	});
 }
 
 void ZstGraphTransport::destroy_graph_sockets()
@@ -139,7 +132,7 @@ std::string ZstGraphTransport::first_available_ext_ip() const
 	if (ziflist_first(interfaces) != NULL) {
 		interface_ip_str = std::string(ziflist_address(interfaces));
 	}
-
+	ziflist_destroy(&interfaces);
 	return interface_ip_str;
 }
 
@@ -151,6 +144,18 @@ zsock_t * ZstGraphTransport::input_graph_socket() const
 zsock_t * ZstGraphTransport::output_graph_socket() const
 {
 	return m_graph_out;
+}
+
+void ZstGraphTransport::dispatch_receive_event(std::shared_ptr<ZstPerformanceMessage> msg, ZstEventCallback on_complete)
+{
+	ZstTransportLayerBase::dispatch_receive_event(msg, on_complete);
+	/*msg_events()->defer([msg](std::shared_ptr<ZstGraphTransportAdaptor> adaptor) {
+		adaptor->on_receive_msg(msg);
+	}, [this, msg, on_complete](ZstEventStatus status) {
+		process_response(msg->id(), ZstMessageReceipt{ Signal::Signal_OK });
+		on_complete(status);
+		this->release(msg);
+	});*/
 }
 
 }

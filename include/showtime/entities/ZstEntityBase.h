@@ -26,7 +26,7 @@ class ZstEntityBase;
 class ZstEntityFactory;
 
 //Typedefs
-    typedef std::unordered_map<ZstURI, ZstEntityBase*, ZstURIHash> ZstEntityMap;
+typedef std::unordered_map<ZstURI, ZstEntityBase*, ZstURIHash> ZstEntityMap;
 
 //Common entity bundle types
 typedef ZstBundle<ZstURI> ZstURIBundle;
@@ -67,9 +67,9 @@ public:
     
     //Serialisation
     ZST_EXPORT virtual void serialize_partial(flatbuffers::Offset<EntityData>& destination_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
-    ZST_EXPORT virtual void serialize(flatbuffers::Offset<Entity>& serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
+    ZST_EXPORT virtual flatbuffers::uoffset_t serialize(flatbuffers::FlatBufferBuilder & buffer_builder) const override;
     ZST_EXPORT virtual void deserialize_partial(const EntityData* buffer) override;
-    ZST_EXPORT virtual void deserialize(const Entity* buffer) override;
+	ZST_EXPORT virtual void deserialize(const Entity* buffer) override;
 
     //Adaptors
     ZST_EXPORT virtual void add_adaptor(std::shared_ptr<ZstEntityAdaptor>& adaptor);

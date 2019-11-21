@@ -14,22 +14,22 @@ public:
 	}
 
 	~ZstMessagePool() {
-		T* msg = NULL;
+		std::shared_ptr<T> msg = NULL;
 		while (this->m_message_pool.try_dequeue(msg)) {
-			delete msg;
+			//delete msg;
 		}
 	}
 
 	virtual void populate(int size)
 	{
 		for(size_t i = 0; i < size; ++i){
-			m_message_pool.enqueue(new T());
+			m_message_pool.enqueue(std::make_shared<T>());
 		}
 	}
 
-	virtual T* get_msg()
+	virtual std::shared_ptr<T> get_msg()
 	{
-		T* msg = NULL;
+		std::shared_ptr<T> msg = NULL;
 		this->m_message_pool.try_dequeue(msg);
 		if (!msg) {
 			populate(MESSAGE_POOL_BLOCK);
@@ -40,12 +40,12 @@ public:
 	}
 	
 	//Release and reset a message
-	void release(T* message)
+	void release(std::shared_ptr<T> message)
 	{
 		message->reset();
 		m_message_pool.enqueue(message);
 	}
 
 protected:
-	moodycamel::ConcurrentQueue<T*> m_message_pool;
+	moodycamel::ConcurrentQueue< std::shared_ptr<T> > m_message_pool;
 };

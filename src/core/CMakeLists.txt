@@ -16,9 +16,7 @@ set(GENERATED_SOURCES
 )
 
 # Generated flatbuffer schemas
-if(BUILD_FLATBUFFERS)
-    list(APPEND GENERATED_SOURCES ${FLATBUFFER_HEADER_OUTPUT})
-endif()
+list(APPEND GENERATED_SOURCES ${FLATBUFFER_HEADER_OUTPUT})
 
 # Copy fmt headers
 file(GLOB FMT_HEADER_SRC CONFIGURE_DEPENDS "${Showtime_SUBMODULE_DEPENDENCIES_DIR}/fmt/include/fmt/*.h")
@@ -98,6 +96,7 @@ set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstValue.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessagePool.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstStageMessage.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstServerBeaconMessage.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstPerformanceMessage.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstEventDispatcher.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.h"
@@ -140,6 +139,7 @@ set(ZST_CORE_ADAPTOR_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstTransportAdaptor.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstGraphTransportAdaptor.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstStageTransportAdaptor.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/adaptors/ZstServiceDiscoveryAdaptor.hpp"
 )
 
 # Core cpp files
@@ -155,6 +155,7 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstSynchronisable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstValue.cpp"    
     "${CMAKE_CURRENT_LIST_DIR}/ZstStageMessage.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstServerBeaconMessage.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstPerformanceMessage.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstReaper.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessageSupervisor.cpp"

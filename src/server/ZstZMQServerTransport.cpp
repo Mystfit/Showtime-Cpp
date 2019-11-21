@@ -84,7 +84,7 @@ void ZstZMQServerTransport::sock_recv(zsock_t* socket)
 		//Unpack message
 		auto payload_data = zmsg_pop(recv_msg);
 		if (payload_data) {
-			ZstStageMessage* msg = get_msg();
+			auto msg = get_msg();
 			msg->init(GetStageMessage(zframe_data(payload_data)));
 
 			//Save sender as a local argument
@@ -93,7 +93,6 @@ void ZstZMQServerTransport::sock_recv(zsock_t* socket)
 			// Send message to submodules
 			dispatch_receive_event(msg, [this, msg, identity_frame, payload_data](ZstEventStatus s) mutable {
 				// Frame cleanup
-				this->release(msg);
 				zframe_destroy(&payload_data);
 				zframe_destroy(&identity_frame);
 			});

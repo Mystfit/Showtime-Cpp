@@ -12,6 +12,8 @@
 
 #include <czmq.h>
 
+using namespace flatbuffers;
+
 namespace showtime::detail
 {
 	ZstStage::ZstStage() :
@@ -48,11 +50,8 @@ namespace showtime::detail
 		m_service_broadcast_transport->init(STAGE_DISCOVERY_PORT);
 
 		//We start the beacon broadcast by sending a message with the intended broadcast data
-		ZstTransportArgs args;
-		auto builder = FlatBufferBuilder();
-		auto beacon_offset = CreateServerBeacon(builder, builder.CreateString(stage_name), builder.CreateString(address));
-		m_service_broadcast_transport->send_msg(Content_ServerBeacon, beacon_offset.Union(), builder, args);
-
+		m_service_broadcast_transport->start_broadcast(stage_name, port, 1000);
+		
 		//Init timer actor for client heartbeats
 		//Create timers
 		m_heartbeat_timer.expires_from_now(boost::posix_time::milliseconds(STAGE_HEARTBEAT_CHECK));

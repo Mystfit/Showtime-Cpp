@@ -97,6 +97,7 @@ namespace showtime {
 
 		//Received TERM message, this actor is going away
 		//char *command = zmsg_popstr(msg);
+		int status = 0;
 		char* command = "";
 		zsock_t* send_sock = NULL;
 		zmsg_t* msg = NULL;
@@ -107,16 +108,14 @@ namespace showtime {
 			zsock_signal(sock, 0);
 
 			//Return -1 to exit the zloop
-			return -1;
+			status = -1;
 		}
 		else if (streq(command, "s")) {
 			if (!send_sock) {
 				ZstLog::net(LogLevel::error, "Actor received send request but no socket was sent");
-				return 0;
 			}
 			if (!msg) {
 				ZstLog::net(LogLevel::error, "Actor received send request but no msg was sent");
-				return 0;
 			}
 			zmsg_send(&msg, send_sock);
 		}
@@ -126,7 +125,9 @@ namespace showtime {
 		else {
 			ZstLog::net(LogLevel::error, "Actor command not recognized: {}", command);
 		}
-		return 0;
+
+		zstr_free(&command);
+		return status;
 	}
 
 	void ZstActor::self_test()
@@ -148,7 +149,8 @@ namespace showtime {
 
 	void ZstActor::remove_pipe_listener(zsock_t* sock)
 	{
-		zloop_reader_end(m_loop, sock);
+		if(m_loop && sock)
+			zloop_reader_end(m_loop, sock);
 	}
 
 	int ZstActor::send_to_socket(zsock_t* sock, zmsg_t* msg) const

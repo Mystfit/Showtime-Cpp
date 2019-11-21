@@ -1,10 +1,12 @@
 #include "ZstClient.h"
 
+using namespace flatbuffers;
+
 namespace showtime::client
 {
 
 ZstClient::ZstClient(ShowtimeClient* api) :
-    m_ping(-1),
+	m_ping(-1),
     m_is_ending(false),
     m_is_destroyed(false),
     m_init_completed(false),
@@ -37,7 +39,7 @@ ZstClient::ZstClient(ShowtimeClient* api) :
 }
 
 ZstClient::~ZstClient() {
-    destroy();
+	destroy();
 }
 
 void ZstClient::destroy() {
@@ -86,16 +88,18 @@ void ZstClient::init_client(const char* client_name, bool debug)
         return;
     }
 
+	// Set flags
     set_is_destroyed(false);
     set_is_ending(false);
 
+	// Setup logging
     LogLevel level = LogLevel::notification;
     if (debug)
         level = LogLevel::debug;
-
     ZstLog::init_logger(client_name, level);
     ZstLog::net(LogLevel::notification, "Starting Showtime v{}", SHOWTIME_VERSION_STRING);
 
+	// Set the name of this client
     m_client_name = client_name;
 
     //Todo: init IDs again after stage has responded
@@ -173,7 +177,7 @@ void ZstClient::flush()
 // Stage adaptor overrides
 // -----------------------
 
-void ZstClient::on_receive_msg(const ZstStageMessage * msg)
+void ZstClient::on_receive_msg(std::shared_ptr<ZstStageMessage> msg)
 {
     switch (msg->type()){
     case Content_ClientGraphHandshakeStart:
@@ -189,31 +193,31 @@ void ZstClient::on_receive_msg(const ZstStageMessage * msg)
     case Content_ClientGraphHandshakeListen:
         listen_to_client_handler(msg->buffer()->content_as_ClientGraphHandshakeListen(), msg->id());
         break;
-    case Content_ServerBeacon:
-        server_discovery_handler(msg->buffer()->content_as_ServerBeacon());
-        break;
     default:
         break;
     }
 }
 
-void ZstClient::on_receive_msg(const ZstPerformanceMessage * msg)
+void ZstClient::on_receive_msg(std::shared_ptr<ZstPerformanceMessage> msg)
 {
     connection_handshake_handler(msg);
 }
 
+void ZstClient::on_receive_msg(std::shared_ptr<ZstServerBeaconMessage> msg)
+{
+	server_discovery_handler(msg.get());
+}
 
 // ------------------------------
 // Performance dispatch overrides
 // ------------------------------
 
-void ZstClient::connection_handshake_handler(const ZstPerformanceMessage* msg)
+void ZstClient::connection_handshake_handler(std::shared_ptr<ZstPerformanceMessage> msg)
 {
     if(m_pending_peer_connections.size() < 1)
         return;
     
-    std::string output_path_str = msg->sender();
-    ZstURI output_path(output_path_str.c_str(), output_path_str.size());
+    ZstURI output_path(msg->buffer()->sender()->c_str(), msg->buffer()->sender()->size());
     if (m_pending_peer_connections.find(output_path) != m_pending_peer_connections.end()) {
         ZstLog::net(LogLevel::debug, "Received connection handshake. Msg id {}", m_pending_peer_connections[output_path]);
         
@@ -347,18 +351,17 @@ void ZstClient::join_stage(const ZstServerAddress& stage_address, const ZstTrans
         args.msg_send_behaviour = sendtype;
         args.on_recv_response = [this, stage_address](ZstMessageReceipt response) { this->join_stage_complete(stage_address, response); };
         
-        auto entity_builder = EntityBuilder(builder);
-        auto entity_offset = root->serialize(entity_builder);
-        auto join_msg = CreateClientJoinRequest(builder, entity_offset, builder.CreateString(reliable_graph_addr), builder.CreateString(unreliable_graph_addr));
+		Offset<Performer> root_offset = root->serialize(builder);
+        auto join_msg = CreateClientJoinRequest(builder, root_offset, builder.CreateString(reliable_graph_addr), builder.CreateString(unreliable_graph_addr));
         
         adaptor->send_msg(Content_ClientJoinRequest, join_msg.Union(), builder, args);
     });
 }
 
-void ZstClient::server_discovery_handler(const ServerBeacon* request)
+void ZstClient::server_discovery_handler(const ZstServerBeaconMessage* msg)
 {
     // Make a server address to hold our server name/address pair
-    ZstServerAddress server = ZstServerAddress(request->name()->str(), request->address()->str());
+    ZstServerAddress server = ZstServerAddress(msg->buffer()->name()->str(), fmt::format("{}:{}", msg->address(), msg->buffer()->port()));
 
     // Add server to list of discovered servers if the beacon hasn't been seen before
     if (m_server_beacons.find(server) == m_server_beacons.end()) {
@@ -579,6 +582,10 @@ void ZstClient::heartbeat_timer(boost::asio::deadline_timer* t, ZstClient* clien
     t->async_wait(boost::bind(&ZstClient::heartbeat_timer, t, client, duration));
 }
 
+void ZstClient::auto_join_stage_complete()
+{
+}
+
 void ZstClient::start_connection_broadcast_handler(const ClientGraphHandshakeStart* request)
 {
     auto remote_client_path = ZstURI(request->receiver_URI()->c_str());
@@ -612,7 +619,7 @@ void ZstClient::send_connection_broadcast(boost::asio::deadline_timer* t, ZstCli
     args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
 
     auto builder = FlatBufferBuilder();
-    auto conn_msg = CreateGraphMessage(builder, builder.CreateString(from.path()));
+    auto conn_msg = CreateGraphMessage(builder, builder.CreateString(from.path(), from.full_size()));
     client->m_tcp_graph_transport->send_msg(conn_msg, builder, args);
     
     if (client->m_connection_timers->find(to) != client->m_connection_timers->end()) {
@@ -721,7 +728,7 @@ void ZstClient::on_entity_arriving(ZstEntityBase* entity)
 
     for (auto child : bundle) {
         // Arriving output plugs need to register the graph transport so that they can dispatch messages
-        if (child->entity_type() == EntityType_PLUG) {
+        if (child->entity_type() == EntityTypes_Plug) {
             init_arriving_plug(static_cast<ZstPlug*>(child));
         }
     }

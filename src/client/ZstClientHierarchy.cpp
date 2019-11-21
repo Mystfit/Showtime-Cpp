@@ -47,7 +47,7 @@ void ZstClientHierarchy::flush_events()
 	ZstClientModule::flush_events();
 }
 
-void ZstClientHierarchy::on_receive_msg(const ZstStageMessage * stage_msg)
+void ZstClientHierarchy::on_receive_msg(std::shared_ptr<ZstStageMessage> stage_msg)
 {
     switch (stage_msg->type()) {
         case Content_EntityCreateRequest:
@@ -69,7 +69,7 @@ void ZstClientHierarchy::on_receive_msg(const ZstStageMessage * stage_msg)
 
 void ZstClientHierarchy::on_publish_entity_update(ZstEntityBase * entity)
 {
-	if (entity->entity_type(), EntityType_FACTORY) {
+	if (entity->entity_type(), EntityTypes_Factory) {
 		//Factory wants to update creatables
 		ZstEntityFactory * factory = static_cast<ZstEntityFactory*>(entity);
         
@@ -80,17 +80,14 @@ void ZstClientHierarchy::on_publish_entity_update(ZstEntityBase * entity)
             
             // Serialize factory into buffer
             FlatBufferBuilder builder;
-            EntityBuilder entity_builder(builder);
-            auto factory_offset = factory->serialize(entity_builder);
-            std::vector< flatbuffers::Offset<Entity> > factory_vec{ factory_offset };
+			std::vector<uint8_t> factory_type_vec{ EntityTypes_Factory };
+            std::vector<flatbuffers::Offset<void>> factory_vec{ Offset<void>(factory->serialize(builder)) };
             
             // Create message
-            auto update_builder = EntityUpdateRequestBuilder(builder);
-            update_builder.add_entities(builder.CreateVector(factory_vec));
-            auto update_msg = update_builder.Finish();
+			auto update_offset = CreateEntityUpdateRequest(builder, builder.CreateVector(factory_type_vec), builder.CreateVector(factory_vec));
             
             // Send message
-            adaptor->send_msg(Content_EntityUpdateRequest, update_msg.Union(), builder);
+            adaptor->send_msg(Content_EntityUpdateRequest, update_offset.Union(), builder, args);
 		});
 	}
 }
@@ -138,16 +135,20 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 	//Send message
 	stage_events()->invoke([args, entity](std::shared_ptr<ZstStageTransportAdaptor> adaptor){
         auto builder = FlatBufferBuilder();
-        
-        // Serialize entity
-        auto entity_builder = EntityBuilder(builder);
-        auto entity_vec = builder.CreateVector(std::vector<flatbuffers::Offset<Entity> >{entity->serialize(entity_builder)});
+		auto entity_type_vec = std::vector<uint8_t>();
+		auto entity_vec = std::vector<flatbuffers::Offset<void> >();
+		ZstEntityBundle bundle;
+		entity->get_child_entities(bundle);
+		for (auto c : bundle) {
+			entity_type_vec.push_back(c->entity_type());
+			entity_vec.push_back(Offset<void>(c->serialize(builder)));
+		}
 
         // Create content message
-        auto content_message = CreateEntityCreateRequest(builder, entity_vec);
+        auto content_message = CreateEntityCreateRequest(builder, builder.CreateVector(entity_type_vec), builder.CreateVector(entity_vec));
         
         // Send message
-        adaptor->send_msg(Content_EntityCreateRequest, content_message.Union(), builder);
+        adaptor->send_msg(Content_EntityCreateRequest, content_message.Union(), builder, args);
 	});
 
 	if (sendtype == ZstTransportRequestBehaviour::SYNC_REPLY)
@@ -179,7 +180,7 @@ void ZstClientHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTranspo
             
             FlatBufferBuilder builder;
             auto content_message = CreateEntityDestroyRequest(builder, builder.CreateString(entity->URI().path(), entity->URI().full_size()));
-            adaptor->send_msg(Content_EntityDestroyRequest, content_message.Union(), builder);
+            adaptor->send_msg(Content_EntityDestroyRequest, content_message.Union(), builder, args);
             
 			if (args.msg_send_behaviour == ZstTransportRequestBehaviour::PUBLISH) {
 				this->destroy_entity_complete(entity);
@@ -422,9 +423,9 @@ ZstPerformer * ZstClientHierarchy::get_local_performer() const
 	return m_root.get();
 }
 
-void ZstClientHierarchy::add_performer(const Performer* entity)
+void ZstClientHierarchy::add_performer(const Performer* performer)
 {
-    auto performer_path = ZstURI(entity->entity->URI()->c_str(), entity->entity->URI()->size());
+    auto performer_path = ZstURI(performer->entity()->URI()->c_str(), performer->entity()->URI()->size());
     
 	if (performer_path == m_root->URI()) {
 		//If we received ourselves as a performer, then we are now activated and can be added to the entity lookup map
@@ -438,7 +439,7 @@ void ZstClientHierarchy::add_performer(const Performer* entity)
 		return;
 	}
 
-	ZstHierarchy::add_performer(entity);
+	ZstHierarchy::add_performer(performer);
 }
 
 ZstEntityBundle & ZstClientHierarchy::get_performers(ZstEntityBundle & bundle) const

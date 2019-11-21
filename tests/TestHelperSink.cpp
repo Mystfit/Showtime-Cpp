@@ -4,7 +4,7 @@
 
 #include "TestCommon.hpp"
 
-std::shared_ptr<ShowtimeClient> client;
+std::shared_ptr<ShowtimeClient> test_client;
 
 
 class Sink : public ZstComponent {
@@ -23,8 +23,8 @@ public:
         last_received_code(0),
 		m_child_sink(NULL)
 	{
-		m_input = create_input_plug("in", ZstValueType::ZST_INT);
-		m_output = create_output_plug("out", ZstValueType::ZST_INT);
+		m_input = create_input_plug("in", ValueList_IntList);
+		m_output = create_output_plug("out", ValueList_FloatList);
 	}
 
 	~Sink() {
@@ -61,7 +61,7 @@ public:
 			if (!m_child_sink->is_activated())
 				throw std::runtime_error("Child entity is not activated");
 			
-			client->deactivate_entity(m_child_sink);
+			test_client->deactivate_entity(m_child_sink);
 			ZstLog::entity(LogLevel::debug, "Finished sync deactivate");
 			delete m_child_sink;
 			m_child_sink = NULL;
@@ -97,19 +97,19 @@ int main(int argc,char **argv){
 		}
 	}
 
-	client = std::make_shared<ShowtimeClient>();
-	client->init("TestHelperSink", true);
-    client->auto_join_by_name(TEST_SERVER_NAME);
+	test_client = std::make_shared<ShowtimeClient>();
+	test_client->init("TestHelperSink", true);
+    test_client->auto_join_by_name(TEST_SERVER_NAME);
 
 	Sink * sink = new Sink("sink_ent");
-	client->get_root()->add_child(sink);
+	test_client->get_root()->add_child(sink);
 	
 	while (sink->last_received_code >= 0){
-		client->poll_once();
+		test_client->poll_once();
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
     
 	ZstLog::app(LogLevel::notification, "Sink is leaving");
-	client->destroy();
+	test_client->destroy();
 	return 0;
 }

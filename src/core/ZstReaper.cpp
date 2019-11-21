@@ -28,7 +28,7 @@ void ZstReaper::reap_all()
     
     // Remove objects
     for (auto synchronisable : m_items_to_reap) {
-        ZstLog::net(LogLevel::debug, "Reaper removing instance {}", synchronisable->instance_id());
+        //ZstLog::net(LogLevel::debug, "Reaper removing instance {}", synchronisable->instance_id());
         delete synchronisable;
     }
     

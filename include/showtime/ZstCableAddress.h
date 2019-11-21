@@ -29,7 +29,7 @@ public:
     
     //Serialisation
     
-    ZST_EXPORT virtual void serialize(flatbuffers::Offset<Cable> & dest, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
+    ZST_EXPORT virtual flatbuffers::uoffset_t serialize(flatbuffers::FlatBufferBuilder & buffer_builder) const override;
     ZST_EXPORT virtual void serialize_partial(flatbuffers::Offset<CableData> & serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
 
     ZST_EXPORT virtual void deserialize(const Cable* buffer) override;

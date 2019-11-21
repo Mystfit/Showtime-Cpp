@@ -19,6 +19,8 @@ class ZstGraphTransportAdaptor;
 template<typename T>
 class ZstEventDispatcher;
 
+#define PLUG_DEFAULT_MAX_CABLES -1
+
 
 class ZST_CLASS_EXPORTED ZstPlug :
 	public virtual ZstSerialisable<Plug, PlugData>,
@@ -58,7 +60,7 @@ public:
     using ZstEntityBase::serialize;
     using ZstEntityBase::deserialize;
     ZST_EXPORT virtual void serialize_partial(flatbuffers::Offset<PlugData> & serialized_offset, flatbuffers::FlatBufferBuilder& buffer_builder) const override;
-	ZST_EXPORT virtual void serialize(flatbuffers::Offset<Plug> & dest, flatbuffers::FlatBufferBuilder& buffer_builder) const override;
+	ZST_EXPORT virtual flatbuffers::uoffset_t serialize(flatbuffers::FlatBufferBuilder& buffer_builder) const override;
     ZST_EXPORT virtual void deserialize_partial(const PlugData* buffer) override;
 	ZST_EXPORT virtual void deserialize(const Plug* buffer) override;
 

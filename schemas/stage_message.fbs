@@ -105,14 +105,7 @@ table CableUpdateRequest {
 }
 
 table CableDestroyRequest {
-    address:Cable;
-}
-
-// Server messages
-// ---------------
-table ServerBeacon {
-    name:string;
-    address:string;
+    cables:[Cable];
 }
 
 
@@ -139,8 +132,6 @@ union Content {
     CableReadRequest,
     CableUpdateRequest,
     CableDestroyRequest,
-    // ----------
-    ServerBeacon
 }
 
 

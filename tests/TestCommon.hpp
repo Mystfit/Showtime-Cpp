@@ -19,6 +19,13 @@ namespace fs = std::experimental::filesystem;
 namespace fs = boost::filesystem;
 #endif
 
+// Visual studio debugging
+#ifdef WIN32
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+#endif
+
 using namespace boost::process;
 using namespace boost::unit_test;
 using namespace showtime;
@@ -291,17 +298,20 @@ namespace ZstTest
 
 	class FixtureInit {
 	public:
-        std::shared_ptr<ShowtimeClient> client;
+        std::shared_ptr<ShowtimeClient> test_client;
         
-        FixtureInit() : client(std::make_shared<ShowtimeClient>())
+        FixtureInit() : test_client(std::make_shared<ShowtimeClient>())
 		{
-			client->init("test_performer", true);
-            client->poll_once();
+#ifdef WIN32
+			_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
+			test_client->init("test_performer", true);
+            test_client->poll_once();
 		}
 
 		~FixtureInit()
 		{
-			client->destroy();
+			test_client->destroy();
 		}
 	};
 	
@@ -312,7 +322,7 @@ namespace ZstTest
 		{
 			m_stage_server = std::make_shared< ShowtimeServer>(TEST_SERVER_NAME, STAGE_ROUTER_PORT);
 			TAKE_A_BREATH
-			client->poll_once();
+			test_client->poll_once();
 		}
 
 		~FixtureInitAndCreateServer() 
@@ -329,8 +339,8 @@ namespace ZstTest
 
 		FixtureJoinServer()
 		{
-			client->join(("127.0.0.1:" + std::to_string(STAGE_ROUTER_PORT)).c_str());
-			client->poll_once();
+			test_client->join(("127.0.0.1:" + std::to_string(STAGE_ROUTER_PORT)).c_str());
+			test_client->poll_once();
 		}
 
 		~FixtureJoinServer()

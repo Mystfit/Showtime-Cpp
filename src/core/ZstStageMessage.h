@@ -15,14 +15,14 @@ public:
     ZST_EXPORT virtual ~ZstStageMessage();
 	
 	ZST_EXPORT void init(const StageMessage * buffer);
-	ZST_EXPORT void reset() override;
+	ZST_EXPORT void reset();
 	
-	ZST_EXPORT virtual ZstMsgID id() const override;
+	ZST_EXPORT virtual ZstMsgID id() const;
     ZST_EXPORT Content type() const;
     ZST_EXPORT const StageMessage* buffer() const;
 
 	ZST_EXPORT void set_endpoint_UUID(const uuid&);
-	ZST_EXPORT const uuid& endpoint_UUID() const override;
+	ZST_EXPORT const uuid& endpoint_UUID() const;
 
 private:
 	boost::uuids::uuid m_endpoint_UUID;

@@ -8,7 +8,7 @@ using namespace ZstTest;
 #define CUSTOM_EXT_COMPONENT "CustomExternalComponent"
 
 
-std::shared_ptr<ShowtimeClient> client;
+std::shared_ptr<ShowtimeClient> test_client;
 
 
 class CustomExternalComponent : public ZstComponent
@@ -48,7 +48,7 @@ void event_loop()
 	while (1) {
 		try {
 			boost::this_thread::interruption_point();
-			client->poll_once();
+			test_client->poll_once();
 			boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
 		}
 		catch (boost::thread_interrupted) {
@@ -128,15 +128,15 @@ int main(int argc, char **argv) {
 		}
 	}
 	
-	client = std::make_shared<ShowtimeClient>();
-	client->init("extfactory", true);
+	test_client = std::make_shared<ShowtimeClient>();
+	test_client->init("extfactory", true);
 
 	//Create the factory that will instantiate our custom entity
 	auto test_factory = std::make_shared<TestExternalFactory>("external_customs");
-	client->register_factory(test_factory.get());
+	test_client->register_factory(test_factory.get());
 	
 	//Connect to the stage
-	client->auto_join_by_name(TEST_SERVER_NAME);
+	test_client->auto_join_by_name(TEST_SERVER_NAME);
 	assert(test_factory->is_activated());
 
 	//Start event loop
@@ -160,6 +160,6 @@ int main(int argc, char **argv) {
 	event_thread.interrupt();
 	event_thread.join();
 
-	client->destroy();
+	test_client->destroy();
 	return 0;
 }

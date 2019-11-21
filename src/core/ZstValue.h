@@ -80,7 +80,7 @@ public:
     ZST_EXPORT std::vector<std::string> as_string_vector() const;
 
 	//Serialisation
-    ZST_EXPORT void serialize(flatbuffers::Offset<PlugValue> & dest, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
+    ZST_EXPORT flatbuffers::uoffset_t serialize(flatbuffers::FlatBufferBuilder & buffer_builder) const override;
 	ZST_EXPORT void serialize_partial(flatbuffers::Offset<PlugValue>& dest, flatbuffers::FlatBufferBuilder& buffer_builder) const override;
 	ZST_EXPORT void deserialize(const PlugValue* buffer) override;
 	ZST_EXPORT void deserialize_partial(const PlugValue* buffer) override;

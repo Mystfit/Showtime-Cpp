@@ -7,11 +7,13 @@ namespace showtime
 		auto copy_args = args;
 		copy_args.msg_ID = (args.msg_ID > 0) ? args.msg_ID : ZstMsgIDManager::next_id();
 
+		//ZstLog::net(LogLevel::debug, "Sending stage message with ID: {}", copy_args.msg_ID);
+
 		// Create the stage message
 		auto stage_msg = CreateStageMessage(buffer_builder, message_type, message_content, copy_args.msg_ID);
 		FinishStageMessageBuffer(buffer_builder, stage_msg);
 
-		begin_send_message(buffer_builder.GetBufferPointer(), buffer_builder.GetSize(), args);
+		begin_send_message(buffer_builder.GetBufferPointer(), buffer_builder.GetSize(), copy_args);
 		return ZstMessageReceipt{ Signal_OK };
 	}
 }

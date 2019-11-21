@@ -17,8 +17,10 @@ ZstStageMessage::ZstStageMessage() :
 }
     
 ZstStageMessage::~ZstStageMessage(){
-    if(m_buffer)
-        delete m_buffer;
+    /*if(m_buffer)
+        delete m_buffer;*/
+	m_buffer = NULL;
+	m_endpoint_UUID = nil_generator()();
 }
  
 void ZstStageMessage::init(const StageMessage * buffer)
@@ -30,8 +32,8 @@ void ZstStageMessage::init(const StageMessage * buffer)
 void ZstStageMessage::reset() {
 	m_endpoint_UUID = nil_generator()();
     
-    if(m_buffer)
-        delete m_buffer;
+    //if(m_buffer)
+    //    delete m_buffer;
 	m_buffer = NULL;
 }
 

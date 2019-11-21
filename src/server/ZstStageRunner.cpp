@@ -4,15 +4,14 @@
 #include <ShowtimeServer.h>
 #include "ZstLogging.h"
 
+using namespace showtime;
+
 #ifdef WIN32
 #include <windows.h>
 #else
 #include <unistd.h>
 #include <signal.h>
 #endif
-
-//Standalone stage runner
-//-----------------------
 
 #ifdef WIN32
 #define TAKE_A_BREATH Sleep(100);

@@ -34,8 +34,8 @@ namespace showtime::client {
 class ZstClientSession : 
 	public ZstSession,
 	public ZstClientModule,
-    public ZstStageTransportAdaptor,
-    public ZstGraphTransportAdaptor
+    public virtual ZstStageTransportAdaptor,
+	public virtual ZstGraphTransportAdaptor
 {
 	friend class ZstClient;
 public:
@@ -64,8 +64,8 @@ public:
 	// Adaptor plug send/receive
 	// ---------------------------
 
-	virtual void on_receive_msg(const ZstStageMessage * msg) override;
-    virtual void on_receive_msg(const ZstPerformanceMessage * msg) override;
+	virtual void on_receive_msg(std::shared_ptr<ZstStageMessage> msg) override;
+    virtual void on_receive_msg(std::shared_ptr<ZstPerformanceMessage> msg) override;
     
     
     // ----------------

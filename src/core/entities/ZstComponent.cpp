@@ -8,7 +8,7 @@ using namespace flatbuffers;
 namespace showtime
 {
     ZstComponent::ZstComponent() :
-        ZstEntityBase("")
+        ZstEntityBase()
     {
         set_entity_type(EntityTypes_Component);
         set_component_type("");
@@ -28,8 +28,10 @@ namespace showtime
         set_component_type(component_type);
     }
     
-    ZstComponent::ZstComponent(const Component* buffer)
+    ZstComponent::ZstComponent(const Component* buffer) : 
+		ZstEntityBase()
     {
+		set_entity_type(EntityTypes_Component);
         ZstEntityBase::deserialize_partial(buffer->entity());
 		ZstComponent::deserialize_partial(buffer->component());
     }
@@ -60,8 +62,10 @@ namespace showtime
         get_child_entities(bundle, false);
         for (auto child : bundle) {
             // We only delete proxy entities, since they are owned by this library
-            if(child->is_proxy())
-                delete child;
+			if (child->is_proxy()) {
+				ZstLog::entity(LogLevel::warn, "Leaking component children");
+				//delete child;
+			}
         }
         m_children.clear();
     }
@@ -153,7 +157,7 @@ namespace showtime
         }
     }
 
-	void ZstComponent::serialize(flatbuffers::Offset<Component>& dest, FlatBufferBuilder & buffer_builder) const
+	uoffset_t ZstComponent::serialize(FlatBufferBuilder & buffer_builder) const
     {
         Offset<ComponentData> component_offset;
         serialize_partial(component_offset, buffer_builder);
@@ -161,7 +165,7 @@ namespace showtime
 		Offset<EntityData> entity_offset;
 		ZstEntityBase::serialize_partial(entity_offset, buffer_builder);
 		
-        dest = CreateComponent(buffer_builder, entity_offset, component_offset);
+        return CreateComponent(buffer_builder, entity_offset, component_offset).o;
     }
     
     void ZstComponent::serialize_partial(flatbuffers::Offset<ComponentData>& serialized_offset, FlatBufferBuilder& buffer_builder) const
@@ -209,10 +213,14 @@ namespace showtime
 
     void ZstComponent::get_child_entities(ZstEntityBundle & bundle, bool include_parent)
     {
+		// Add the root object first so the bundle preserves ancestor-first order
+		if (include_parent)
+			bundle.add(this);
+
         for (auto child : m_children) {
             child.second->get_child_entities(bundle);
         }
-        ZstEntityBase::get_child_entities(bundle, include_parent);
+        ZstEntityBase::get_child_entities(bundle, false);
     }
 
 

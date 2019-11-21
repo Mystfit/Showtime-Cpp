@@ -10,7 +10,7 @@ namespace showtime {
 
 class ZstPerformerStageProxy : public ZstPerformer {
 public:
-	ZstPerformerStageProxy(const Entity* performer, const std::string& reliable_address, const std::string& unreliable_address, const boost::uuids::uuid& endpoint_UUID);
+	ZstPerformerStageProxy(const Performer* performer, const std::string& reliable_address, const std::string& unreliable_address, const boost::uuids::uuid& endpoint_UUID);
 	ZstPerformerStageProxy(const ZstPerformerStageProxy& other);
 
 	const std::string& reliable_address();

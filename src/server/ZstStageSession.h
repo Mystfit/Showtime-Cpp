@@ -21,7 +21,7 @@ public:
 	virtual void process_events() override;
 	virtual void set_wake_condition(std::weak_ptr<ZstSemaphore> condition) override;
 
-	void on_receive_msg(const ZstStageMessage* msg) override;
+	void on_receive_msg(std::shared_ptr<ZstStageMessage> msg) override;
 
 
 	// ----------------
@@ -29,7 +29,7 @@ public:
 	// ----------------
 	Signal signal_handler(const SignalMessage* request, ZstPerformerStageProxy* sender);
 	Signal synchronise_client_graph_handler(ZstPerformerStageProxy* sender);
-	Signal create_cable_handler(const CableCreateRequest* request, ZstPerformerStageProxy* sender);
+	Signal create_cable_handler(const StageMessage* request, ZstPerformerStageProxy* sender);
 	Signal destroy_cable_handler(const CableDestroyRequest* request);
 	Signal observe_entity_handler(const StageMessage* request, ZstPerformerStageProxy* sender);
 	Signal aquire_entity_ownership_handler(const EntityTakeOwnershipRequest* request, ZstPerformerStageProxy* sender);

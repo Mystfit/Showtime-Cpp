@@ -61,7 +61,7 @@ public:
     using ZstEntityBase::deserialize;
     using ZstEntityBase::deserialize_partial;
     ZST_EXPORT virtual void serialize_partial(flatbuffers::Offset<ComponentData>& destination_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
-	ZST_EXPORT virtual void serialize(flatbuffers::Offset<Component> & dest, flatbuffers::FlatBufferBuilder& buffer_builder) const override;
+	ZST_EXPORT virtual flatbuffers::uoffset_t serialize(flatbuffers::FlatBufferBuilder& buffer_builder) const override;
     ZST_EXPORT virtual void deserialize_partial(const ComponentData* buffer) override;
 	ZST_EXPORT virtual void deserialize(const Component* buffer) override;
 

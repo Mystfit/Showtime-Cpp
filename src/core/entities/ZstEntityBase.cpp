@@ -134,11 +134,11 @@ namespace showtime
         serialized_offset = CreateEntityData(buffer_builder, URI_offset, owner_offset);
     }
 
-    void ZstEntityBase::serialize(flatbuffers::Offset<Entity>& serialized_offset, FlatBufferBuilder& buffer_builder) const
+	uoffset_t ZstEntityBase::serialize(flatbuffers::FlatBufferBuilder & buffer_builder) const
     {
         auto entity_offset = Offset<EntityData>();
         serialize_partial(entity_offset, buffer_builder);
-		serialized_offset = CreateEntity(buffer_builder, entity_offset);
+		return CreateEntity(buffer_builder, entity_offset).o;
     }
 
     void ZstEntityBase::deserialize_partial(const EntityData* buffer)
@@ -149,7 +149,7 @@ namespace showtime
     
     void ZstEntityBase::deserialize(const Entity* buffer)
     {
-        deserialize_partial(buffer->entity());
+		throw(std::runtime_error("Can't deserialize a ZstEntityBase: Class is abstract"));
     }
 
     void ZstEntityBase::add_adaptor(std::shared_ptr<ZstEntityAdaptor> & adaptor)
@@ -212,7 +212,8 @@ namespace showtime
 
     void ZstEntityBase::dispatch_destroyed()
     {
-        if (activation_status() != ZstSyncStatus::DESTROYED) {
+        if (activation_status() != ZstSyncStatus::DESTROYED && 
+			activation_status() != ZstSyncStatus::DEACTIVATION_QUEUED ) {
             
             //Set child entities and this entity as destroyed so they won't queue destruction events later
             ZstEntityBundle bundle;

@@ -141,7 +141,7 @@ public:
 
 	void flush() {
 		ZstEvent<T> e;
-		//std::lock_guard<std::recursive_mutex> lock(m_mtx);
+		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		while (this->m_events.try_dequeue(e)) {}
 	}
 
@@ -180,8 +180,9 @@ public:
 
 			std::lock_guard<std::recursive_mutex> lock(m_mtx);
 			for (auto adaptor : m_adaptors) {
-				if(auto adp = adaptor.lock())
-                    event.func(std::static_pointer_cast< typename std::pointer_traits<T>::element_type >(adp));
+				if (auto adp = adaptor.lock()) {
+					event.func(std::dynamic_pointer_cast<typename std::pointer_traits<T>::element_type>(adp));
+				}
 				/*event.func(static_cast<T>(adp));
 				try {
 					event.func(adaptor);

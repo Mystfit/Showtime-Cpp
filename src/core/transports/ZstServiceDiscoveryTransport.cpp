@@ -1,6 +1,9 @@
 #include "ZstServiceDiscoveryTransport.h"
 #include "../ZstZMQRefCounter.h"
+#include "schemas/stage_beacon_message_generated.h"
 #include <czmq.h>
+
+using namespace flatbuffers;
 
 namespace showtime {
 
@@ -54,11 +57,6 @@ void ZstServiceDiscoveryTransport::destroy()
     ZstTransportLayerBase::destroy();
 }
 
-void ZstServiceDiscoveryTransport::send_message_impl(const uint8_t * msg_buffer, size_t msg_buffer_size, const ZstTransportArgs & args) const
-{
-    start_broadcast(msg_buffer, msg_buffer_size, 1000);
-}
-
 int ZstServiceDiscoveryTransport::s_handle_beacon(zloop_t * loop, zsock_t * socket, void * arg)
 {
     ZstServiceDiscoveryTransport * transport = (ZstServiceDiscoveryTransport*)arg;
@@ -66,7 +64,7 @@ int ZstServiceDiscoveryTransport::s_handle_beacon(zloop_t * loop, zsock_t * sock
     if (ipaddress) {
         auto beacon_content = zframe_recv(socket);
         auto msg = transport->get_msg();
-        msg->init(GetStageMessage(zframe_data(beacon_content)));
+        msg->init(GetStageBeaconMessage(zframe_data(beacon_content)), ipaddress);
         
         //msg->set_arg(get_msg_arg_name(ZstMsgArg::ADDRESS), ipaddress);
         transport->dispatch_receive_event(msg, [beacon_content](ZstEventStatus status){
@@ -78,10 +76,15 @@ int ZstServiceDiscoveryTransport::s_handle_beacon(zloop_t * loop, zsock_t * sock
     return 0;
 }
 
-void ZstServiceDiscoveryTransport::start_broadcast(const uint8_t*  message, size_t size, int interval) const
+void ZstServiceDiscoveryTransport::start_broadcast(const std::string& name, int port, int interval) const
 {
-    if(m_beacon)
-        zsock_send(m_beacon, "sbi", "PUBLISH", message, size, interval);
+	if (!m_beacon)
+		return;
+
+	auto builder = FlatBufferBuilder();
+	auto beacon_msg = CreateStageBeaconMessage(builder, builder.CreateString(name), port);
+	builder.Finish(beacon_msg);
+    zsock_send(m_beacon, "sbi", "PUBLISH", builder.GetBufferPointer(), builder.GetSize(), interval);
 }
 
 void ZstServiceDiscoveryTransport::stop_broadcast() const

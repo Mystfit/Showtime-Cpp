@@ -73,7 +73,7 @@ void ZstWebsocketSession::on_read(beast::error_code ec, std::size_t bytes_transf
 	ZstLog::net(LogLevel::debug, "Websocket received message '{}'", beast::buffers_to_string(m_recv_buffer.data()));
 
 	//Parse message
-	ZstStageMessage* msg = m_transport->get_msg();
+	auto msg = m_transport->get_msg();
 	msg->init(GetStageMessage(m_recv_buffer.data().data()));
 	msg->set_endpoint_UUID(m_endpoint_UUID);
 

@@ -179,6 +179,7 @@ endif()
 
 set(FLATBUFFFER_OUTPUT_DIR "${Showtime_COMPILED_INCLUDE_DIRS}/schemas")
 set(FLATBUFFER_HEADER_OUTPUT 
+    "${FLATBUFFFER_OUTPUT_DIR}/stage_beacon_message_generated.h"
     "${FLATBUFFFER_OUTPUT_DIR}/stage_message_generated.h"
     "${FLATBUFFFER_OUTPUT_DIR}/graph_message_generated.h"
     "${FLATBUFFFER_OUTPUT_DIR}/graph_types_generated.h"
@@ -188,6 +189,7 @@ set(FLATC_ARGS
     "-o" "${FLATBUFFFER_OUTPUT_DIR}/"
     "-I" "${CMAKE_SOURCE_DIR}/schemas/"
     "${CMAKE_SOURCE_DIR}/schemas/stage_message.fbs"
+    "${CMAKE_SOURCE_DIR}/schemas/stage_beacon_message.fbs"
     "${CMAKE_SOURCE_DIR}/schemas/graph_message.fbs"
     "${CMAKE_SOURCE_DIR}/schemas/graph_types.fbs"
 )

@@ -3,7 +3,7 @@ include "graph_types.fbs";
 namespace showtime;
 
 table GraphMessage {
-    sender:string;
+    sender: string;
     value: PlugValue;
 }
 

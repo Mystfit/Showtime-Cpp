@@ -44,7 +44,7 @@ public:
 	// Adaptor behaviours
 	// --------------------
 	
-	virtual void on_receive_msg(const ZstStageMessage * stage_msg) override;
+	virtual void on_receive_msg(std::shared_ptr<ZstStageMessage> stage_msg) override;
 	void on_publish_entity_update(ZstEntityBase * entity) override;
 	void on_request_entity_activation(ZstEntityBase * entity) override;
 	
@@ -68,7 +68,7 @@ public:
 	// Performers
 	// ------------------------------
 
-	virtual void add_performer(const Performer* entity) override;
+	virtual void add_performer(const Performer* performer) override;
 	virtual ZstEntityBundle & get_performers(ZstEntityBundle & bundle) const override;
 	virtual ZstPerformer * get_performer_by_URI(const ZstURI & uri) const override;
 	

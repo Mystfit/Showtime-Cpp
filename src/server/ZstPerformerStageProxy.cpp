@@ -7,7 +7,7 @@ using namespace boost::uuids;
 
 namespace showtime {
 
-ZstPerformerStageProxy::ZstPerformerStageProxy(const Entity* performer, const std::string& reliable_address, const std::string& unreliable_address, const uuid& endpoint_UUID) :
+ZstPerformerStageProxy::ZstPerformerStageProxy(const Performer* performer, const std::string& reliable_address, const std::string& unreliable_address, const uuid& endpoint_UUID) :
 	ZstPerformer(performer),
 	m_reliable_address(reliable_address),
 	m_unreliable_address(unreliable_address),

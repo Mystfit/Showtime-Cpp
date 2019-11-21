@@ -31,7 +31,7 @@ public:
 	// Hierarchy adaptor overrides
 	// ---------------------------
 
-	void on_receive_msg(const ZstStageMessage* msg) override;
+	void on_receive_msg(std::shared_ptr<ZstStageMessage> msg) override;
 
 
 	// ----------------
@@ -40,7 +40,7 @@ public:
 
 	Signal signal_handler(const SignalMessage* request, ZstPerformerStageProxy* sender);
 	Signal create_client_handler(const ClientJoinRequest * request, uuid endpoint_UUID);
-	Signal create_entity_handler(const StageMessage* request, ZstPerformerStageProxy* sender);
+	Signal create_entity_handler(const EntityCreateRequest* request, ZstPerformerStageProxy* sender);
 	Signal factory_create_entity_handler(const StageMessage* request, ZstPerformerStageProxy* sender);
 	Signal update_entity_handler(const EntityUpdateRequest* request);
 	Signal destroy_entity_handler(const EntityDestroyRequest* request);
@@ -49,7 +49,7 @@ public:
 	// ----------------
 	// Messaging
 	// ----------------
-	
+	void reply_with_signal(ZstPerformerStageProxy* performer, Signal signal, ZstMsgID request_id);
 	void broadcast(Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder> & buffer_builder, const ZstTransportArgs& args);
 	void whisper(ZstPerformerStageProxy* performer, Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs& args);
 

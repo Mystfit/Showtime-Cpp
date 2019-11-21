@@ -162,16 +162,16 @@ int main(int argc, char **argv)
 	auto testrunner = FixtureJoinServer();
 
 	std::string server_name = "benchmark_server";
-	auto client = std::make_shared<ShowtimeClient>();
+	auto test_client = std::make_shared<ShowtimeClient>();
 	auto server = std::make_shared<ShowtimeServer>(server_name);
-	client->init("test_benchmark", true);
-	client->auto_join_by_name(server_name.c_str());
+	test_client->init("test_benchmark", true);
+	test_client->auto_join_by_name(server_name.c_str());
 
 	//Create threaded event loop to handle polling
-	boost::thread eventloop_thread = boost::thread(BenchmarkEventLoop(client));
+	boost::thread eventloop_thread = boost::thread(BenchmarkEventLoop(test_client));
 
 	ZstLog::app(LogLevel::notification, "Starting reliable benchmark test");
-	long double mps_reliable = test_benchmark(client, true, 0, 200000);
+	long double mps_reliable = test_benchmark(test_client, true, 0, 200000);
 	ZstLog::app(LogLevel::notification, "Reliable avg mps: {}", mps_reliable);
 
 #ifdef ZST_BUILD_DRAFT_API

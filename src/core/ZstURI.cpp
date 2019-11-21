@@ -190,6 +190,8 @@ ZstURI ZstURI::first() const
 
 ZstURI ZstURI::last() const
 {
+	if (size() < 1)
+		throw std::out_of_range("URI is empty");
 	return ZstURI(m_components[size() - 1].cstr);
 }
 
