@@ -64,8 +64,6 @@ ZstURI& ZstURI::operator=(ZstURI&& source)
 ZstURI::ZstURI(const char* path)
 {
 	m_original_path = create_pstr(path);
-	assert(m_original_path.length == strlen(path));
-	assert(strlen(m_original_path.cstr) == strlen(path));
 	init();
 }
 

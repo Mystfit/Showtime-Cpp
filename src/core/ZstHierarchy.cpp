@@ -10,12 +10,9 @@ ZstHierarchy::ZstHierarchy() :
 
 ZstHierarchy::~ZstHierarchy()
 {
-    /*ZstEntityBundle bundle;
-    get_performers(bundle);
-    for(auto performer : bundle){*/
-        //TODO: Leaking performers
-        //delete performer;
-    //}
+    ZstEntityBundle bundle;
+	m_clients.clear();
+	m_proxies.clear();
     //m_clients.clear();
 }
 

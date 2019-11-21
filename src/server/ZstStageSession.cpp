@@ -249,14 +249,15 @@ Signal ZstStageSession::aquire_entity_ownership_handler(const EntityTakeOwnershi
 		return Signal_ERR_ENTITY_NOT_FOUND;
 	}
 
-	auto new_owner_path = ZstURI(request->new_owner()->c_str(), request->new_owner()->size());
+	ZstURI new_owner_path;
 	ZstPerformerStageProxy* new_owner = NULL;
 
-	if (new_owner_path.is_empty()) {
+	if (!request->new_owner()->size()){
 		//Reset owner
 		entity_set_owner(entity, "");
 	}
 	else {
+		new_owner_path = ZstURI(request->new_owner()->c_str(), request->new_owner()->size());
 		new_owner = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(new_owner_path));
 		if (!new_owner) {
 			ZstLog::server(LogLevel::warn, "Could not aquire entity ownership - could not find new owner {}", new_owner_path.path());
@@ -272,7 +273,6 @@ Signal ZstStageSession::aquire_entity_ownership_handler(const EntityTakeOwnershi
 	// We need to connect downstream plugs to the new sender
 	ZstCableBundle bundle;
 	get_cables(bundle);
-
 
 	//Find all performers that have input connections to this output plug
 	std::unordered_map<ZstURI, ZstPerformerStageProxy*, ZstURIHash> performers;

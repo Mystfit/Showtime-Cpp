@@ -132,7 +132,7 @@ void ZstClientSession::aquire_entity_ownership_handler(const EntityTakeOwnership
     ZstEntityBundle bundle;
     entity->get_child_entities(bundle);
     for(auto child : bundle){
-        entity_set_owner(child, hierarchy()->get_local_performer()->URI());
+        entity_set_owner(child, ZstURI(request->new_owner()->c_str(), request->new_owner()->size()));
     }
 }
 
@@ -284,7 +284,7 @@ void ZstClientSession::release_entity_ownership(ZstEntityBase* entity)
         
 		// Sending an empty string for the owner will release entity ownership back to the original owner
 		FlatBufferBuilder builder;
-        auto release_ownership_msg = CreateEntityTakeOwnershipRequest(builder);
+        auto release_ownership_msg = CreateEntityTakeOwnershipRequest(builder, builder.CreateString(entity->URI().path()), builder.CreateString(""));
         adaptor->send_msg(Content_EntityTakeOwnershipRequest, release_ownership_msg.Union(), builder, args);
     });
 }
