@@ -2,6 +2,7 @@
 
 #include "entities/ZstComponent.h"
 #include "../ZstEventDispatcher.hpp"
+#include "../ZstHierarchy.h"
 
 using namespace flatbuffers;
 
@@ -39,12 +40,13 @@ namespace showtime
     ZstComponent::ZstComponent(const ZstComponent & other) : ZstEntityBase(other)
     {
         for (auto c : other.m_children) {
-            
-            if (c.second->entity_type() == EntityTypes_Component) {
-                add_child(new ZstComponent(*dynamic_cast<ZstComponent*>(c.second)));
+			auto entity = get_child_by_URI(c);
+
+            if (entity->entity_type() == EntityTypes_Component) {
+                add_child(new ZstComponent(*dynamic_cast<ZstComponent*>(entity)));
             }
-            else if(c.second->entity_type() == EntityTypes_Plug) {
-                ZstPlug * plug = dynamic_cast<ZstPlug*>(c.second);
+            else if(entity->entity_type() == EntityTypes_Plug) {
+                ZstPlug * plug = dynamic_cast<ZstPlug*>(entity);
                 if (plug->direction() == PlugDirection_IN_JACK) {
                     add_child(new ZstInputPlug(*dynamic_cast<ZstInputPlug*>(plug)));
                 } else if (plug->direction() == PlugDirection_OUT_JACK){
@@ -91,9 +93,12 @@ namespace showtime
 
     ZstEntityBundle & ZstComponent::get_plugs(ZstEntityBundle & bundle) const
     {
-        for(auto entity : m_children){
-            if(entity.second->entity_type() ==EntityTypes_Plug)
-                bundle.add(entity.second);
+        for(auto entity_path : m_children){
+			auto entity = get_child_by_URI(entity_path);
+			if (!entity)
+				continue;
+            if(entity->entity_type() ==EntityTypes_Plug)
+                bundle.add(entity);
         }
         return bundle;
     }
@@ -111,7 +116,7 @@ namespace showtime
         ZstEntityBase::add_child(entity);
         
         //Store the entity in our child list
-        m_children[entity->URI()] = entity;
+		m_children.emplace(entity->URI());
         
         if (is_activated() && !entity->is_proxy() && auto_activate) {
             entity_events()->invoke([entity](std::shared_ptr<ZstEntityAdaptor> adaptor) {
@@ -217,8 +222,10 @@ namespace showtime
 		if (include_parent)
 			bundle.add(this);
 
-        for (auto child : m_children) {
-            child.second->get_child_entities(bundle);
+        for (auto child_path : m_children) {
+			auto entity = get_child_by_URI(child_path);
+			if(entity)
+				entity->get_child_entities(bundle);
         }
         ZstEntityBase::get_child_entities(bundle, false);
     }
@@ -227,10 +234,10 @@ namespace showtime
 
     //--------------
 
-    ZstEntityBase * ZstComponent::walk_child_by_URI(const ZstURI & path)
+    ZstEntityBase * ZstComponent::walk_child_by_URI(const ZstURI & path) const
     {
         ZstEntityBase * result = NULL;
-        ZstEntityBase * previous = NULL;
+        const ZstEntityBase * previous = NULL;
         
         if (this->URI().size() >= path.size() || !path.contains(URI())) {
             return result;
@@ -248,7 +255,7 @@ namespace showtime
             }
             
             //Check if the parent is a container
-            ZstComponent * prev_container = dynamic_cast<ZstComponent*>(previous);
+            const ZstComponent * prev_container = dynamic_cast<const ZstComponent*>(previous);
             if (prev_container) {
                 result = prev_container->get_child_by_URI(next);
             }
@@ -264,28 +271,13 @@ namespace showtime
         return result;
     }
 
-    ZstEntityBase * ZstComponent::get_child_by_URI(const ZstURI & path)
+    ZstEntityBase * ZstComponent::get_child_by_URI(const ZstURI & path) const
     {
         ZstEntityBase * result = NULL;
-        ZstEntityMap::iterator it = m_children.find(path);
+		m_session_events->invoke([this, &result, &path](std::shared_ptr<ZstSessionAdaptor> adaptor) {
+			result = adaptor->hierarchy()->find_entity(path);
+		});
         
-        if (it != m_children.end())
-            result = it->second;
-        
-        return result;
-    }
-
-    ZstEntityBase * ZstComponent::get_child_at(size_t index) const
-    {
-        ZstEntityBase * result = NULL;
-        int i = 0;
-        for (auto it : m_children) {
-            if (i == index) {
-                result = it.second;
-                break;
-            }
-            i++;
-        }
         return result;
     }
 

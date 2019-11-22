@@ -63,13 +63,21 @@ ZstURI& ZstURI::operator=(ZstURI&& source)
 
 ZstURI::ZstURI(const char* path)
 {
-	m_original_path = create_pstr(path);
+	if (path)
+		m_original_path = create_pstr(path);
+	else
+		m_original_path = create_pstr("");
+
 	init();
 }
 
 ZstURI::ZstURI(const char* path, size_t len)
 {
-	m_original_path = create_pstr(path, len);
+	if (path)
+		m_original_path = create_pstr(path, len);
+	else
+		m_original_path = create_pstr("");
+
 	init();
 }
 

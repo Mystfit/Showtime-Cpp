@@ -4,6 +4,7 @@
 #include "entities/ZstEntityFactory.h"
 #include "ZstCable.h"
 #include "../ZstEventDispatcher.hpp"
+#include "../ZstHierarchy.h"
 
 using namespace flatbuffers;
 
@@ -12,7 +13,7 @@ namespace showtime
     ZstEntityBase::ZstEntityBase() :
         m_session_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstSessionAdaptor> > >()),
         m_entity_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstEntityAdaptor > > >()),
-        m_parent(NULL),
+        m_parent(),
         m_entity_type(EntityTypes_NONE),
         m_uri(""),
         m_current_owner("")
@@ -23,7 +24,7 @@ namespace showtime
     ZstEntityBase::ZstEntityBase(const char * name) :
         m_session_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstSessionAdaptor> > >()),
         m_entity_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstEntityAdaptor > > >()),
-        m_parent(NULL),
+        m_parent(),
         m_entity_type(EntityTypes_NONE),
         m_uri(name),
         m_current_owner("")
@@ -33,7 +34,7 @@ namespace showtime
     ZstEntityBase::ZstEntityBase(const EntityData* buffer) :
         m_session_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstSessionAdaptor> > >()),
         m_entity_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstEntityAdaptor > > >()),
-        m_parent(NULL),
+        m_parent(),
         m_entity_type(EntityTypes_NONE),
         m_uri(""),
         m_current_owner("")
@@ -66,8 +67,17 @@ namespace showtime
 
     ZstEntityBase * ZstEntityBase::parent() const
     {
-        return m_parent;
+		ZstEntityBase* parent = NULL;
+		m_session_events->invoke([&parent, this](std::shared_ptr<ZstSessionAdaptor> adaptor) {
+			parent = adaptor->hierarchy()->find_entity(m_parent);
+		});
+        return parent;
     }
+
+	const ZstURI& ZstEntityBase::parent_address() const
+	{
+		return m_parent;
+	}
 
     void ZstEntityBase::add_child(ZstEntityBase * child, bool auto_activate)
     {
@@ -206,7 +216,7 @@ namespace showtime
 
     void ZstEntityBase::set_parent(ZstEntityBase *entity) {
         std::lock_guard<std::mutex> lock(m_entity_lock);
-        m_parent = entity;
+        m_parent = entity->URI();
         this->update_URI();
     }
 

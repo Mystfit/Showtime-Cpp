@@ -51,6 +51,7 @@ public:
     
     //The parent of this entity
     ZST_EXPORT ZstEntityBase * parent() const;
+	ZST_EXPORT const ZstURI& parent_address() const;
 
     ZST_EXPORT virtual void add_child(ZstEntityBase * child, bool auto_activate = true);
     ZST_EXPORT virtual void remove_child(ZstEntityBase * child);
@@ -107,7 +108,7 @@ protected:
     std::shared_ptr<ZstEventDispatcher< std::shared_ptr< ZstEntityAdaptor> > > m_entity_events;
 
 private:
-    ZstEntityBase * m_parent;
+    ZstURI m_parent;
     EntityTypes m_entity_type;
     ZstURI m_uri;
     ZstURI m_current_owner;

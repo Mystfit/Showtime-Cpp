@@ -109,8 +109,8 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 		return;
 	}
 
-	//If the entity doesn't have a parent, put it under the root container
-	if (!entity->parent()) {
+	// Entities need a parent before they can be activated
+	if (entity->parent_address().is_empty()) {
         ZstLog::net(LogLevel::warn, "{} has no parent", entity->URI().path());
         return;
 	}

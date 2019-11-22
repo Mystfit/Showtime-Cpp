@@ -70,14 +70,11 @@ public:
     // --------
 
     //Find a child in this entity by a URI
-    ZST_EXPORT ZstEntityBase * walk_child_by_URI(const ZstURI & path);
+    ZST_EXPORT ZstEntityBase * walk_child_by_URI(const ZstURI & path) const;
     
     //Get a child entity at a specific URI
-    ZST_EXPORT ZstEntityBase * get_child_by_URI(const ZstURI & path);
-    
-    //Get a child by index
-    ZST_EXPORT ZstEntityBase * get_child_at(size_t index) const;
-    
+    ZST_EXPORT ZstEntityBase * get_child_by_URI(const ZstURI & path) const;
+        
     //Number of children owned by this entity
     ZST_EXPORT const size_t num_children() const;
 
@@ -90,7 +87,8 @@ protected:
     ZST_EXPORT virtual void set_parent(ZstEntityBase * parent) override;
     
 private:
-    ZstEntityMap m_children;
+	//std::unordered_map<ZstURI, ZstEntityBase*, ZstURIHash> m_children;
+	std::set<ZstURI> m_children;
     std::string m_component_type;
 };
 }
