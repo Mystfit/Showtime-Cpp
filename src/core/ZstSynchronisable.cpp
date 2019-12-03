@@ -62,6 +62,7 @@ void ZstSynchronisable::enqueue_activation()
 		synchronisable_events()->defer([this](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
 			this->set_activation_status(ZstSyncStatus::ACTIVATED);
 			adaptor->on_synchronisable_activated(this);
+		}, [this](ZstEventStatus status) {
 			this->on_activation();
 		});
 
@@ -85,15 +86,14 @@ void ZstSynchronisable::enqueue_deactivation()
 		synchronisable_events()->defer([this](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
 			this->set_activation_status(ZstSyncStatus::DEACTIVATED);
 			adaptor->on_synchronisable_deactivated(this);
+		}, [this](ZstEventStatus status) {
 			this->on_deactivation();
 		});
 
 		//Notify adaptors that this syncronisable needs to be cleaned up -- proxies only
-		if (this->is_proxy()) {
-			synchronisable_events()->defer([this](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
-				adaptor->on_synchronisable_destroyed(this);
-            });
-		}
+		synchronisable_events()->defer([this](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
+			adaptor->on_synchronisable_destroyed(this);
+        });
 
 		//Notify adaptors that we have a queued event
 		synchronisable_events()->invoke([this](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {

@@ -14,6 +14,7 @@
 #include "../ZstBundle.hpp"
 #include "../adaptors/ZstEntityAdaptor.hpp"
 #include "../adaptors/ZstSessionAdaptor.hpp"
+#include "../adaptors/ZstHierarchyAdaptor.hpp"
 
 
 namespace showtime
@@ -75,13 +76,20 @@ public:
     //Adaptors
     ZST_EXPORT virtual void add_adaptor(std::shared_ptr<ZstEntityAdaptor>& adaptor);
     ZST_EXPORT virtual void add_adaptor(std::shared_ptr<ZstSessionAdaptor>& adaptor);
+	ZST_EXPORT virtual void add_adaptor(std::shared_ptr<ZstHierarchyAdaptor>& adaptor);
     ZST_EXPORT virtual void remove_adaptor(std::shared_ptr<ZstEntityAdaptor>& adaptor);
     ZST_EXPORT virtual void remove_adaptor(std::shared_ptr<ZstSessionAdaptor>& adaptor);
+	ZST_EXPORT virtual void remove_adaptor(std::shared_ptr<ZstHierarchyAdaptor>& adaptor);
     
     //Ownership
     ZST_EXPORT const ZstURI & get_owner() const;
     ZST_EXPORT void aquire_ownership();
     ZST_EXPORT void release_ownership();
+
+	//Registration
+	ZST_EXPORT virtual void on_registered() {};
+	ZST_EXPORT bool is_registered() const;
+
 #ifndef SWIG
     //Include base class adaptors
     //Swig mistakenly adds these twice when dealing treating ZstSynchronisable as an interface (C#, Java)
@@ -101,17 +109,21 @@ protected:
     
     //Event dispatchers
     ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstSessionAdaptor> > > & session_events();
+	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstHierarchyAdaptor> > >& hierarchy_events();
 
     //Entity mutex
     mutable std::mutex m_entity_mtx;
     std::shared_ptr<ZstEventDispatcher< std::shared_ptr< ZstSessionAdaptor> > > m_session_events;
+	std::shared_ptr<ZstEventDispatcher< std::shared_ptr< ZstHierarchyAdaptor> > > m_hierarchy_events;
     std::shared_ptr<ZstEventDispatcher< std::shared_ptr< ZstEntityAdaptor> > > m_entity_events;
 
 private:
+	void set_registered(bool registered);
     ZstURI m_parent;
     EntityTypes m_entity_type;
     ZstURI m_uri;
     ZstURI m_current_owner;
     std::mutex m_entity_lock;
+	bool m_registered;
 };
 }

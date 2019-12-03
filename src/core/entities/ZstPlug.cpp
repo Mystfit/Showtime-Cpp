@@ -343,8 +343,8 @@ void ZstOutputPlug::set_owner(const ZstURI & owner)
     ZstEntityBase::set_owner(owner);
 
     ZstPerformer* performer = NULL;
-    session_events()->invoke([&performer](std::shared_ptr<ZstSessionAdaptor> adaptor){
-        performer = adaptor->hierarchy()->get_local_performer();
+    hierarchy_events()->invoke([&performer](std::shared_ptr<ZstHierarchyAdaptor> adaptor){
+        performer = adaptor->get_local_performer();
     });
 
     if (!performer) {

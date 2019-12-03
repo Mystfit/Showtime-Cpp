@@ -47,6 +47,7 @@ public:
 	ZST_CLIENT_EXPORT void remove_hierarchy_adaptor(std::shared_ptr<ZstHierarchyAdaptor> adaptor);
 	
 	//Entity activation/deactivation
+	ZST_CLIENT_EXPORT void register_entity(ZstEntityBase* entity);
 	ZST_CLIENT_EXPORT void deactivate_entity(ZstEntityBase * entity);
     ZST_CLIENT_EXPORT void deactivate_entity_async(ZstEntityBase * entity);
 	ZST_CLIENT_EXPORT void observe_entity(ZstEntityBase * entity);

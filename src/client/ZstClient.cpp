@@ -116,13 +116,16 @@ void ZstClient::init_client(const char* client_name, bool debug)
     //Register message dispatch as a client adaptor
     ZstEventDispatcher<std::shared_ptr<ZstStageTransportAdaptor> >::add_adaptor(m_client_transport);
 
-    //Register adaptors to handle outgoing events
-    m_session->init(client_name);
-    m_session->stage_events()->add_adaptor(m_client_transport);
-    std::static_pointer_cast<ZstClientHierarchy>(m_session->hierarchy())->stage_events()->add_adaptor(m_client_transport);
+	// Create session module
+	m_session->init(client_name);
+	m_session->register_entity(m_session->hierarchy()->get_local_performer());
 
-    //Register module adaptors
-    m_session->hierarchy()->hierarchy_events()->add_adaptor(ZstHierarchyAdaptor::downcasted_shared_from_this<ZstHierarchyAdaptor>());
+    //Register session adaptors to hierarchy
+	m_session->hierarchy()->hierarchy_events()->add_adaptor(ZstHierarchyAdaptor::downcasted_shared_from_this<ZstHierarchyAdaptor>());
+
+	// Register client transport adaptors to session
+	m_session->stage_events()->add_adaptor(m_client_transport);
+    std::static_pointer_cast<ZstClientHierarchy>(m_session->hierarchy())->stage_events()->add_adaptor(m_client_transport);
 
     //Setup adaptors to let transports communicate with client modules
     m_client_transport->init();

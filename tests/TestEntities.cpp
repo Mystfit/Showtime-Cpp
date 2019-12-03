@@ -6,7 +6,10 @@ using namespace ZstTest;
 
 class FixtureOutputEntity : public FixtureJoinServer {
 public:
-	FixtureOutputEntity() : output_component(std::make_unique<OutputComponent>("entity_create_test_sync")){}
+	FixtureOutputEntity() : output_component(std::make_unique<OutputComponent>("entity_create_test_sync"))
+	{
+		test_client->register_entity(output_component.get());
+	}
 	~FixtureOutputEntity() {};
 	std::unique_ptr<OutputComponent> output_component;
 };
@@ -17,6 +20,7 @@ public:
 		parent(std::make_unique<OutputComponent>("parent")),
 		child(std::make_unique<OutputComponent>("child")) 
 	{
+		test_client->register_entity(parent.get());
 		parent->add_child(child.get());
 	}
 	~FixtureParentChild() {};
@@ -44,14 +48,24 @@ public:
 	}
 };
 
-BOOST_FIXTURE_TEST_CASE(activation, FixtureOutputEntity) {
-	//Activate
-	ZstLog::app(LogLevel::debug, "activating entity");
+
+BOOST_FIXTURE_TEST_CASE(register_entity, FixtureJoinServer) {
+	//Register entity
+	auto component = std::make_unique<OutputComponent>("entity_register");
+	test_client->register_entity(component.get());
+	BOOST_TEST(component->is_registered());
+	BOOST_TEST(test_client->find_entity(component->URI()));
+}
+
+
+BOOST_FIXTURE_TEST_CASE(activate_entity, FixtureOutputEntity) {
 	test_client->get_root()->add_child(output_component.get());
 	BOOST_TEST(output_component->is_activated());
 	BOOST_TEST(test_client->find_entity(output_component->URI()));
-	
-	//Deactivate
+}
+
+BOOST_FIXTURE_TEST_CASE(deactivate_entity, FixtureOutputEntity) {
+	test_client->get_root()->add_child(output_component.get());
 	test_client->deactivate_entity(output_component.get());
 	BOOST_TEST(!output_component->is_activated());
 	BOOST_TEST(!test_client->find_entity(output_component->URI()));
@@ -101,15 +115,50 @@ BOOST_FIXTURE_TEST_CASE(async_activation_callback, FixtureOutputEntity) {
 	BOOST_TEST(!test_client->find_entity(output_component->URI()));
 }
 
-BOOST_FIXTURE_TEST_CASE(plug_children, FixtureOutputEntity) {
-	test_client->get_root()->add_child(output_component.get());
-	auto plug_child = output_component->get_child_by_URI(output_component->output()->URI());
+BOOST_FIXTURE_TEST_CASE(plug_children, FixtureJoinServer) {
+	auto component = std::make_unique<ZstComponent>("component");
+	auto plug = std::make_unique<ZstOutputPlug>("plug", ValueList_FloatList);
+	
+	test_client->register_entity(component.get());
+	component->add_child(plug.get());
+	test_client->get_root()->add_child(component.get());
+	
+	BOOST_TEST(plug->is_activated());
+	auto plug_child = component->get_child_by_URI(plug->URI());
 	BOOST_TEST(plug_child);
-	BOOST_TEST(ZstURI::equal(plug_child->URI(), output_component->output()->URI()));
+	BOOST_TEST(plug_child == plug.get());
 }
 
-BOOST_FIXTURE_TEST_CASE(add_child, FixtureParentChild) {
+BOOST_FIXTURE_TEST_CASE(add_child, FixtureJoinServer) {
+	auto parent = std::make_unique<OutputComponent>("test_parent");
+	auto child = std::make_unique<OutputComponent>("test_child");
+	auto child_path = ZstURI("test_performer/test_parent/test_child");
+	
 	test_client->get_root()->add_child(parent.get());
+	BOOST_TEST(parent->is_activated());
+	BOOST_TEST(test_client->find_entity(parent->URI()));
+	parent->add_child(child.get());
+	
+	BOOST_TEST(child->is_activated());
+	BOOST_TEST(child->URI() == child_path);
+	BOOST_TEST(test_client->find_entity(child->URI()));
+
+	ZstEntityBundle bundle;
+	test_client->get_root()->get_child_entities(bundle, true);
+	BOOST_TEST(bundle.size() == 5);
+}
+
+BOOST_FIXTURE_TEST_CASE(parent_activates_child, FixtureJoinServer) {
+	auto parent = std::make_unique<OutputComponent>("test_parent");
+	test_client->register_entity(parent.get());
+
+	auto child = std::make_unique<OutputComponent>("test_child");
+	parent->add_child(child.get());
+	BOOST_TEST(child->is_registered());
+
+	test_client->get_root()->add_child(parent.get());
+	BOOST_TEST(parent->is_activated());
+	BOOST_TEST(child->is_activated());
 	BOOST_TEST(test_client->find_entity(parent->URI()));
 	BOOST_TEST(test_client->find_entity(child->URI()));
 }
@@ -118,6 +167,10 @@ BOOST_FIXTURE_TEST_CASE(remove_child, FixtureParentChild) {
 	auto child_URI = child->URI();
 	test_client->get_root()->add_child(parent.get());
 	test_client->deactivate_entity(child.get());
+	
+	ZstEntityBundle bundle;
+	parent->get_child_entities(bundle, false);
+	BOOST_TEST(bundle.size() == 1);
 	BOOST_TEST(!parent->walk_child_by_URI(child_URI));
 	BOOST_TEST(!test_client->find_entity(child_URI));
 }

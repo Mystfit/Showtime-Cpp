@@ -58,6 +58,7 @@ public:
 	// Proxies
 	// ----------------
 
+	virtual void on_request_entity_registration(ZstEntityBase* entity) override;
 	Signal ZstStageHierarchy::destroy_client(ZstPerformerStageProxy* performer);
 
 

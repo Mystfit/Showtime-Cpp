@@ -9,8 +9,8 @@ std::shared_ptr<ShowtimeClient> test_client;
 
 class Sink : public ZstComponent {
 private:
-    ZstInputPlug * m_input;
-	ZstOutputPlug * m_output;
+    std::unique_ptr<ZstInputPlug> m_input;
+	std::unique_ptr<ZstOutputPlug> m_output;
 
 public:
 	int last_received_code;
@@ -18,19 +18,22 @@ public:
 
 	Sink(const char * name) : 
 		ZstComponent("SINK", name),
-        m_input(NULL),
-		m_output(NULL),
+        m_input(std::make_unique<ZstInputPlug>("in", ValueList_IntList)),
+		m_output(std::make_unique<ZstOutputPlug>("out", ValueList_FloatList)),
         last_received_code(0),
 		m_child_sink(NULL)
 	{
-		m_input = create_input_plug("in", ValueList_IntList);
-		m_output = create_output_plug("out", ValueList_FloatList);
 	}
 
 	~Sink() {
 		//Plug is automatically deleted by owning component
 		m_input = NULL;
 		m_child_sink = NULL;
+	}
+
+	virtual void on_registered() override {
+		add_child(m_input.get());
+		add_child(m_output.get());
 	}
 	
 	virtual void compute(ZstInputPlug * plug) override {

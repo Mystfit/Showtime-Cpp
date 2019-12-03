@@ -117,14 +117,14 @@ void ZstSession::destroy_cable_complete(ZstCable * cable)
 	std::lock_guard<std::mutex> lock(m_session_mtex);
     
     //Remove cable from plugs
-	ZstInputPlug * input = dynamic_cast<ZstInputPlug*>(hierarchy()->walk_to_entity(cable->get_address().get_input_URI()));
-	if (input) {
+	ZstInputPlug* input = dynamic_cast<ZstInputPlug*>(hierarchy()->find_entity(cable->get_address().get_input_URI()));
+	ZstOutputPlug* output = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(cable->get_address().get_output_URI()));
+
+	if (input) 
 		ZstPlugLiason().plug_remove_cable(input, cable);
-	}
-	ZstOutputPlug * output = dynamic_cast<ZstOutputPlug*>(hierarchy()->walk_to_entity(cable->get_address().get_output_URI()));
-	if (output) {
+	
+	if (output) 
 		ZstPlugLiason().plug_remove_cable(output, cable);
-	}
 
     //Dispatch events
     session_events()->defer([cable](std::shared_ptr<ZstSessionAdaptor> adaptor) {
@@ -228,18 +228,29 @@ void ZstSession::on_compute(ZstComponent * component, ZstInputPlug * plug) {
 
 void ZstSession::on_performer_arriving(ZstPerformer * performer)
 {
-	on_entity_arriving(performer);
+	register_entity(performer);
 }
 
 void ZstSession::on_entity_arriving(ZstEntityBase * entity)
 {
-    //New entities need to register the session as an adaptor to query session data
-    ZstEntityBundle bundle;
-    entity->get_child_entities(bundle);
-    for(auto child : bundle){
-        auto adp = ZstSessionAdaptor::downcasted_shared_from_this<ZstSessionAdaptor>();
-        child->add_adaptor(adp);
-    }
+	register_entity(entity);
+}
+
+void ZstSession::on_request_entity_registration(ZstEntityBase* entity)
+{
+	register_entity(entity);
+}
+
+void ZstSession::register_entity(ZstEntityBase* entity)
+{
+	//New entities need to register the session as an adaptor to query session data
+	ZstEntityBundle bundle;
+	entity->get_child_entities(bundle);
+	for (auto child : bundle) {
+		child->add_adaptor(ZstSessionAdaptor::downcasted_shared_from_this<ZstSessionAdaptor>());
+		child->add_adaptor(ZstEntityAdaptor::downcasted_shared_from_this<ZstEntityAdaptor>());
+	}
+	
 }
 
 bool ZstSession::observe_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype)
@@ -249,42 +260,46 @@ bool ZstSession::observe_entity(ZstEntityBase * entity, const ZstTransportReques
 		return false;
 	}
 
-	if (listening_to_performer(dynamic_cast<ZstPerformer*>(hierarchy()->find_entity(entity->URI().first()))))
+	auto performer_path = entity->URI().first();
+	if (listening_to_performer(performer_path))
 	{
-		ZstLog::net(LogLevel::warn, "Already observing performer {}", entity->URI().first().path());
+		ZstLog::net(LogLevel::warn, "Already observing performer {}", performer_path.path());
 		return false;
 	}
 	
 	return true;
 }
 
-void ZstSession::add_connected_performer(ZstPerformer * performer)
+void ZstSession::add_connected_performer(const ZstURI& performer_path)
 {
-	if (!performer)
+	if (performer_path.is_empty())
 		return;
-	m_connected_performers[performer->URI()] = performer;
+	m_connected_performers.emplace(performer_path);
 }
 
-void ZstSession::remove_connected_performer(ZstPerformer * performer)
+void ZstSession::remove_connected_performer(const ZstURI& performer_path)
 {
-	if (!performer)
+	if (performer_path.is_empty())
 		return;
 
 	try {
-		m_connected_performers.erase(performer->URI());
+		m_connected_performers.erase(performer_path);
 	}
 	catch (std::out_of_range) {
 		ZstLog::net(LogLevel::warn, "Could not remove performer. Not found");
 	}
 }
 
-bool ZstSession::listening_to_performer(ZstPerformer * performer)
+bool ZstSession::listening_to_performer(const ZstURI& performer_path)
 {
-	return m_connected_performers.find(performer->URI()) != m_connected_performers.end();
+	return m_connected_performers.find(performer_path) != m_connected_performers.end();
 }
 
-void ZstSession::on_synchronisable_destroyed(ZstSynchronisable * synchronisable)
+void ZstSession::on_synchronisable_destroyed(ZstSynchronisable * synchronisable, bool already_removed)
 {
+	if (already_removed)
+		return;
+
     //Check if synchronisable is a cable
     ZstCable * cable = dynamic_cast<ZstCable*>(synchronisable);
     if(cable){

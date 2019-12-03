@@ -10,45 +10,53 @@ using namespace flatbuffers;
 
 namespace showtime
 {
-    ZstEntityBase::ZstEntityBase() :
-        m_session_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstSessionAdaptor> > >()),
-        m_entity_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstEntityAdaptor > > >()),
-        m_parent(),
-        m_entity_type(EntityTypes_NONE),
-        m_uri(""),
-        m_current_owner("")
+	ZstEntityBase::ZstEntityBase() :
+		m_session_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstSessionAdaptor> > >()),
+		m_hierarchy_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstHierarchyAdaptor> > >()),
+		m_entity_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstEntityAdaptor > > >()),
+		m_parent(),
+		m_entity_type(EntityTypes_NONE),
+		m_uri(""),
+		m_current_owner(""),
+		m_registered(false)
     {
     }
     
     
     ZstEntityBase::ZstEntityBase(const char * name) :
         m_session_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstSessionAdaptor> > >()),
+		m_hierarchy_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstHierarchyAdaptor> > >()),
         m_entity_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstEntityAdaptor > > >()),
         m_parent(),
         m_entity_type(EntityTypes_NONE),
         m_uri(name),
-        m_current_owner("")
+        m_current_owner(""),
+		m_registered(false)
     {
     }
     
     ZstEntityBase::ZstEntityBase(const EntityData* buffer) :
         m_session_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstSessionAdaptor> > >()),
+		m_hierarchy_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstHierarchyAdaptor> > >()),
         m_entity_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstEntityAdaptor > > >()),
         m_parent(),
         m_entity_type(EntityTypes_NONE),
         m_uri(""),
-        m_current_owner("")
+        m_current_owner(""),
+		m_registered(false)
     {
         deserialize_partial(buffer);
     }
 
     ZstEntityBase::ZstEntityBase(const ZstEntityBase & other) :
         m_session_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstSessionAdaptor> > >()),
+		m_hierarchy_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstHierarchyAdaptor> > >()),
         m_entity_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstEntityAdaptor> > >()),
         m_parent(other.m_parent),
         m_entity_type(other.m_entity_type),
         m_uri(ZstURI(other.m_uri)),
-        m_current_owner(other.m_current_owner)
+        m_current_owner(other.m_current_owner),
+		m_registered(other.m_registered)
     {
     }
 
@@ -68,8 +76,13 @@ namespace showtime
     ZstEntityBase * ZstEntityBase::parent() const
     {
 		ZstEntityBase* parent = NULL;
-		m_session_events->invoke([&parent, this](std::shared_ptr<ZstSessionAdaptor> adaptor) {
-			parent = adaptor->hierarchy()->find_entity(m_parent);
+
+		if (!is_registered()) {
+			ZstLog::entity(LogLevel::warn, "Entity {} not registered. Can't look up parent entity.", URI().path());
+		}
+
+		m_hierarchy_events->invoke([&parent, this](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+			parent = adaptor->find_entity(m_parent);
 		});
         return parent;
     }
@@ -84,8 +97,16 @@ namespace showtime
         if(!child)
             return;
         
-        if (is_destroyed()) return;
+        if (is_destroyed()) 
+			return;
+
+		auto orig_path = child->URI();
         child->set_parent(this);
+
+		// Update path in entity lookup
+		m_hierarchy_events->invoke([child, &orig_path](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+			adaptor->update_entity_URI(child, orig_path);
+		});
     }
 
     void ZstEntityBase::remove_child(ZstEntityBase * child)
@@ -98,15 +119,16 @@ namespace showtime
     }
 
     void ZstEntityBase::update_URI()
-    {
-        if (!parent()) {
+    {		
+		std::lock_guard<std::mutex> lock(m_entity_mtx);
+
+        if (m_parent.is_empty()) {
             m_uri = m_uri.last();
             return;
         }
         
-        bool path_contains_parent = URI().contains(parent()->URI());
-        if (!path_contains_parent) {
-            m_uri = parent()->URI() + m_uri.last();
+        if (!URI().contains(m_parent)) {
+            m_uri = m_parent + m_uri.last();
         }
     }
 
@@ -139,6 +161,7 @@ namespace showtime
     
     void ZstEntityBase::serialize_partial(flatbuffers::Offset<EntityData>& serialized_offset, FlatBufferBuilder& buffer_builder) const
     {
+		std::lock_guard<std::mutex> lock(m_entity_mtx);
         auto URI_offset = buffer_builder.CreateString(URI().path(), URI().full_size());
         auto owner_offset = buffer_builder.CreateString(get_owner().path(), get_owner().size());
         serialized_offset = CreateEntityData(buffer_builder, URI_offset, owner_offset);
@@ -172,6 +195,11 @@ namespace showtime
         this->m_session_events->add_adaptor(adaptor);
     }
 
+	void ZstEntityBase::add_adaptor(std::shared_ptr<ZstHierarchyAdaptor>& adaptor)
+	{
+		this->m_hierarchy_events->add_adaptor(adaptor);
+	}
+
     void ZstEntityBase::remove_adaptor(std::shared_ptr<ZstEntityAdaptor> & adaptor)
     {
         this->m_entity_events->remove_adaptor(adaptor);
@@ -181,6 +209,11 @@ namespace showtime
     {
         this->m_session_events->remove_adaptor(adaptor);
     }
+
+	void ZstEntityBase::remove_adaptor(std::shared_ptr<ZstHierarchyAdaptor>& adaptor)
+	{
+		this->m_hierarchy_events->remove_adaptor(adaptor);
+	}
 
     const ZstURI& ZstEntityBase::get_owner() const
     {
@@ -195,6 +228,10 @@ namespace showtime
 
     void ZstEntityBase::aquire_ownership()
     {
+		if (!is_registered()) {
+			ZstLog::entity(LogLevel::warn, "Entity {} not registered. Can't aquire ownership.", URI().path());
+		}
+
         m_session_events->invoke([this](std::weak_ptr<ZstSessionAdaptor> adaptor) {
             if(auto adp = adaptor.lock())
                 adp->aquire_entity_ownership(this);
@@ -203,11 +240,20 @@ namespace showtime
 
     void ZstEntityBase::release_ownership()
     {
+		if (!is_registered()) {
+			ZstLog::entity(LogLevel::warn, "Entity {} not registered. Can't release ownership.", URI().path());
+		}
+
         m_session_events->invoke([this](std::weak_ptr<ZstSessionAdaptor> adaptor) {
             if (auto adp = adaptor.lock())
                 adp->release_entity_ownership(this);
         });
     }
+
+	bool ZstEntityBase::is_registered() const
+	{
+		return m_registered;
+	}
 
     void ZstEntityBase::set_entity_type(EntityTypes entity_type) {
         std::lock_guard<std::mutex> lock(m_entity_lock);
@@ -222,19 +268,19 @@ namespace showtime
 
     void ZstEntityBase::dispatch_destroyed()
     {
-        if (activation_status() != ZstSyncStatus::DESTROYED && 
-			activation_status() != ZstSyncStatus::DEACTIVATION_QUEUED ) {
-            
-            //Set child entities and this entity as destroyed so they won't queue destruction events later
-            ZstEntityBundle bundle;
-            get_child_entities(bundle);
-            for (auto c : bundle) {
-                c->set_activation_status(ZstSyncStatus::DESTROYED);
-            }
+		if (activation_status() != ZstSyncStatus::DESTROYED &&
+			activation_status() != ZstSyncStatus::DEACTIVATION_QUEUED) {
+
+			// Set child entities and this entity as destroyed so they won't queue destruction events later
+			ZstEntityBundle bundle;
+			get_child_entities(bundle);
+			for (auto child : bundle) {
+				child->set_activation_status(ZstSyncStatus::DESTROYED);
+			}
 
             synchronisable_events()->invoke([this](std::weak_ptr<ZstSynchronisableAdaptor> adaptor) {
                 if(auto adp = adaptor.lock())
-                    adp->on_synchronisable_destroyed(this);
+                    adp->on_synchronisable_destroyed(this, true);
             });
         }
     }
@@ -243,4 +289,26 @@ namespace showtime
     {
         return m_session_events;
     }
+
+	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstHierarchyAdaptor>>>& ZstEntityBase::hierarchy_events()
+	{
+		return m_hierarchy_events;
+	}
+
+	void ZstEntityBase::set_registered(bool registered)
+	{
+		std::lock_guard<std::mutex> lock(m_entity_mtx);
+		m_registered = registered;
+
+		if (registered) {
+			entity_events()->invoke([this](std::shared_ptr<ZstEntityAdaptor> adaptor) {
+				adaptor->on_entity_registered(this);
+			});
+			this->on_registered();
+
+			//synchronisable_events()->invoke([this](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
+			//	adaptor->on_synchronisable_has_event(this);
+			//});
+		}
+	}
 }

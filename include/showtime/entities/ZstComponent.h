@@ -32,13 +32,6 @@ public:
 
     //Overridable compute function that will process input plug events
     ZST_EXPORT virtual void compute(ZstInputPlug * plug) {};
-    
-    //Create and attach a new input plug to this component
-    ZST_EXPORT ZstInputPlug * create_input_plug(const char* name, ValueList val_type);
-    ZST_EXPORT ZstInputPlug * create_input_plug(const char* name, ValueList val_type, int max_cable_connections);
-
-    //Create and attach a new output plug to this component
-    ZST_EXPORT ZstOutputPlug * create_output_plug(const char* name, ValueList val_type, bool reliable = true);
 
     //Transfer plug ownership to this component
     ZST_EXPORT virtual void add_child(ZstEntityBase * entity, bool auto_activate = true) override;

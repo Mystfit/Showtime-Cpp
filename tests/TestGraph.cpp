@@ -6,10 +6,17 @@ using namespace ZstTest;
 
 class LimitedConnectionInputComponent : public ZstComponent {
 public:
-	LimitedConnectionInputComponent(std::string name, int max_cables) : ZstComponent("LimitedConnectionInputComponent", name.c_str()) {
-		input = create_input_plug("limited_input", ValueList_IntList, max_cables);
+	std::unique_ptr<ZstInputPlug> input;
+
+	LimitedConnectionInputComponent(std::string name, int max_cables) : 
+		ZstComponent("LimitedConnectionInputComponent", name.c_str()),
+		input(std::make_unique<ZstInputPlug>("limited_input", ValueList_IntList, max_cables))
+	{
 	}
-	ZstInputPlug * input;
+
+	virtual void on_registered() override {
+		add_child(input.get());
+	}
 };
 
 
@@ -108,7 +115,7 @@ BOOST_FIXTURE_TEST_CASE(output_can_fire, FixturePlugs) {
 
 BOOST_FIXTURE_TEST_CASE(sync_connect_cable, FixturePlugs) {
 	auto cable = test_client->connect_cable(input_component->input(), output_component->output());
-	BOOST_TEST(cable);
+	BOOST_REQUIRE(cable);
 	BOOST_TEST(cable->is_activated());
 	BOOST_TEST(cable->get_output() == output_component->output());
 	BOOST_TEST(cable->get_input() == input_component->input());
@@ -161,8 +168,8 @@ BOOST_FIXTURE_TEST_CASE(limit_connected_cables, FixtureJoinServer) {
     test_client->get_root()->add_child(test_limited_input.get());
     test_client->get_root()->add_child(test_output.get());
     test_client->get_root()->add_child(second_output.get());
-	test_client->connect_cable(test_limited_input->input, test_output->output());
-	test_client->connect_cable(test_limited_input->input, second_output->output());
+	test_client->connect_cable(test_limited_input->input.get(), test_output->output());
+	test_client->connect_cable(test_limited_input->input.get(), second_output->output());
 	BOOST_TEST(!test_limited_input->input->is_connected_to(test_output->output()));
 	BOOST_TEST(test_limited_input->input->is_connected_to(second_output->output()));
 	BOOST_TEST(test_limited_input->input->num_cables() == 1);
@@ -176,6 +183,7 @@ BOOST_FIXTURE_TEST_CASE(send_through_reliable_graph, FixtureCable) {
 	while (input_component->num_hits < 1 && ++current_wait < 10000) {
 		test_client->poll_once();
 	}
+	BOOST_TEST(input_component->num_hits);
 	BOOST_TEST(input_component->last_received_val == first_cmp_val);
 }
 

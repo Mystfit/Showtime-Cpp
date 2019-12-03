@@ -14,7 +14,15 @@ std::shared_ptr<ShowtimeClient> test_client;
 class CustomExternalComponent : public ZstComponent
 {
 public:
-	CustomExternalComponent(const char * name) : ZstComponent(CUSTOM_EXT_COMPONENT, name) {}
+	std::unique_ptr<ZstInputPlug> input;
+	CustomExternalComponent(const char* name) :
+		ZstComponent(CUSTOM_EXT_COMPONENT, name),
+		input(std::make_unique <ZstInputPlug>("input", ValueList_IntList)){}
+
+	virtual void on_registered() override {
+		add_child(input.get());
+	}
+
 protected:
 	void compute(ZstInputPlug * plug) override {
 		ZstLog::entity(LogLevel::notification, "Custom external component {} received a value", this->URI().path());
@@ -35,6 +43,9 @@ public:
 		ZstLog::entity(LogLevel::notification, "External factory received create request for {}", creatable_path.path());
 		CustomExternalComponent * entity = NULL;
 		if (creatable_path == this->URI() + ZstURI(CUSTOM_EXT_COMPONENT)) {
+
+			//TODO: Factory created entity leakages
+			ZstLog::entity(LogLevel::error, "New factory created entity will leak - replace with smart pointer!");
 			entity = new CustomExternalComponent(name);
 		}
 		return entity;

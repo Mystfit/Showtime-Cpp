@@ -47,6 +47,7 @@ public:
 	virtual void on_receive_msg(std::shared_ptr<ZstStageMessage> stage_msg) override;
 	void on_publish_entity_update(ZstEntityBase * entity) override;
 	void on_request_entity_activation(ZstEntityBase * entity) override;
+	void on_request_entity_registration(ZstEntityBase * entity) override;
 	
 
 	// ------------------------------
@@ -77,6 +78,7 @@ public:
 	// Hierarchy queries
 	// ------------------------------
 	
+	virtual void update_entity_URI(ZstEntityBase* entity, const ZstURI& original_path) override;
 	virtual ZstEntityBase * find_entity(const ZstURI & path) const override;
 	bool path_is_local(const ZstURI & path);
 	virtual void add_proxy_entity(const EntityTypes entity_type, const EntityData* entity_data, const void* payload) override;

@@ -47,17 +47,21 @@ namespace ZstTest
 	class OutputComponent : public ZstComponent
 	{
 	private:
-		ZstOutputPlug * m_output;
+		std::unique_ptr<ZstOutputPlug> m_output;
 
 	public:
 		OutputComponent(const char * name, bool reliable = true) : 
 			ZstComponent("TESTER", name),
-			m_output(create_output_plug("out", ValueList_IntList, reliable))
+			m_output(std::make_unique<ZstOutputPlug>("out", ValueList_IntList, reliable))
 		{
 		}
 
 		void on_activation() override {
 			ZstLog::app(LogLevel::debug, "{} on_activation()", URI().path());
+		}
+
+		virtual void on_registered() override {
+			add_child(m_output.get());
 		}
 
 		void on_deactivation() override {
@@ -72,7 +76,7 @@ namespace ZstTest
 		}
 
 		ZstOutputPlug * output() {
-			return m_output;
+			return m_output.get();
 		}
 	};
 
@@ -81,7 +85,7 @@ namespace ZstTest
 	class InputComponent : public ZstComponent
 	{
 	private:
-		ZstInputPlug * m_input;
+		std::unique_ptr<ZstInputPlug> m_input;
 
 	public:
 		int num_hits = 0;
@@ -93,12 +97,16 @@ namespace ZstTest
 			ZstComponent("TESTER", name),
 			compare_val(cmp_val),
 			log(should_log),
-			m_input(create_input_plug("in", ValueList_IntList))
+			m_input(std::make_unique<ZstInputPlug>("in", ValueList_IntList))
 		{
 		}
 
 		void on_activation() override {
 			ZstLog::app(LogLevel::debug, "{} on_activation()", URI().path());
+		}
+
+		virtual void on_registered() override {
+			add_child(m_input.get());
 		}
 
 		void on_deactivation() override {
@@ -115,7 +123,7 @@ namespace ZstTest
 		}
 
 		ZstInputPlug * input() {
-			return m_input;
+			return m_input.get();
 		}
 
 		void reset() {

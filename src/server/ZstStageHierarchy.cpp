@@ -99,7 +99,7 @@ Signal ZstStageHierarchy::create_client_handler(const ClientJoinRequest * reques
 {
 	auto client_URI = ZstURI(request->performer()->entity()->URI()->c_str(), request->performer()->entity()->URI()->size());
 
-	//Only one client with this UUID at a time
+	// Only one client with this UUID at a time
 	if (find_entity(client_URI)) {
 		ZstLog::server(LogLevel::warn, "Client already exists ", client_URI.path());
 		return Signal_ERR_STAGE_PERFORMER_ALREADY_EXISTS;
@@ -108,28 +108,7 @@ Signal ZstStageHierarchy::create_client_handler(const ClientJoinRequest * reques
 
 	// Create proxy
 	auto client_proxy = std::make_unique<ZstPerformerStageProxy>(request->performer(), request->graph_reliable_address()->str(), request->graph_unreliable_address()->str(), endpoint_UUID);
-	client_proxy->add_adaptor(ZstSynchronisableAdaptor::downcasted_shared_from_this<ZstSynchronisableAdaptor>());
-
-	// Cache new client and its contents
-	ZstEntityBundle bundle;
-	client_proxy->get_child_entities(bundle, true);
-	ZstLog::server(LogLevel::debug, "New performer {} contains:", client_proxy->URI().path());
-	for (auto c : bundle) {
-		add_entity_to_lookup(c);
-		ZstLog::server(LogLevel::debug, " - Entity: {}", c->URI().path());
-	}
-
-	// Cache factories
-	bundle.clear();
-	client_proxy->get_factories(bundle);
-	for (auto f : bundle) {
-		add_entity_to_lookup(f);
-		ZstLog::server(LogLevel::debug, " - Factory: {}", f->URI().path());
-		ZstURIBundle creatables;
-		for (auto c : static_cast<ZstEntityFactory*>(f)->get_creatables(creatables)) {
-			ZstLog::server(LogLevel::debug, "   - Creatable: {}", c.path());
-		}
-	}
+	ZstHierarchy::add_performer(client_proxy.get());
 
 	// Update rest of network
 	ZstTransportArgs args;
@@ -140,7 +119,7 @@ Signal ZstStageHierarchy::create_client_handler(const ClientJoinRequest * reques
 	auto content_message = CreateEntityCreateRequest(*builder, builder->CreateVector(entity_type_vec), builder->CreateVector(entity_vec));
 	broadcast(Content_EntityCreateRequest, content_message.Union(), builder, args);
 	
-	// Move performer
+	// Store performer
 	m_clients[client_proxy->URI()] = std::move(client_proxy);
 
 	return Signal_OK;
@@ -161,7 +140,7 @@ Signal ZstStageHierarchy::create_entity_handler(const EntityCreateRequest* reque
 		const EntityData* entity_field = get_entity_field(entity_type, request->entities()->Get(index));
 		auto entity_path = ZstURI(entity_field->URI()->c_str(), entity_field->URI()->size());
 
-		ZstLog::server(LogLevel::notification, "Registering new proxy entity {}", entity_path.path());
+		ZstLog::server(LogLevel::notification, "Activating new proxy entity {}", entity_path.path());
 		if (sender->URI().first() != entity_path.first()) {
 			//A performer is requesting this entity be attached to another performer
 			ZstLog::server(LogLevel::warn, "TODO: Performer requesting new entity to be attached to another performer", entity_path.path());
@@ -293,6 +272,11 @@ Signal ZstStageHierarchy::destroy_entity_handler(const EntityDestroyRequest* req
 	broadcast(Content_EntityDestroyRequest, destroy_msg_offset.Union(), builder, args);
 
 	return Signal_OK;
+}
+
+void ZstStageHierarchy::on_request_entity_registration(ZstEntityBase* entity)
+{
+	register_entity(entity);
 }
 
 Signal ZstStageHierarchy::destroy_client(ZstPerformerStageProxy* performer)

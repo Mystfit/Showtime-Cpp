@@ -72,25 +72,6 @@ namespace showtime
         m_children.clear();
     }
 
-    ZstInputPlug * ZstComponent::create_input_plug(const char * name, ValueList val_type)
-    {
-        return create_input_plug(name, val_type, -1);
-    }
-
-    ZstInputPlug * ZstComponent::create_input_plug(const char * name, ValueList val_type, int max_cable_connections)
-    {
-        ZstInputPlug * plug = new ZstInputPlug(name, val_type, max_cable_connections);
-        add_child(plug);
-        return plug;
-    }
-
-    ZstOutputPlug * ZstComponent::create_output_plug(const char * name, ValueList val_type, bool reliable)
-    {
-        ZstOutputPlug * plug = new ZstOutputPlug(name, val_type, reliable);
-        add_child(plug);
-        return plug;
-    }
-
     ZstEntityBundle & ZstComponent::get_plugs(ZstEntityBundle & bundle) const
     {
         for(auto entity_path : m_children){
@@ -117,6 +98,12 @@ namespace showtime
         
         //Store the entity in our child list
 		m_children.emplace(entity->URI());
+
+		if (is_registered() && !entity->is_registered()) {
+			entity_events()->invoke([entity](std::shared_ptr<ZstEntityAdaptor> adaptor) {
+				adaptor->on_request_entity_registration(entity);
+			});
+		}
         
         if (is_activated() && !entity->is_proxy() && auto_activate) {
             entity_events()->invoke([entity](std::shared_ptr<ZstEntityAdaptor> adaptor) {
@@ -274,8 +261,13 @@ namespace showtime
     ZstEntityBase * ZstComponent::get_child_by_URI(const ZstURI & path) const
     {
         ZstEntityBase * result = NULL;
-		m_session_events->invoke([this, &result, &path](std::shared_ptr<ZstSessionAdaptor> adaptor) {
-			result = adaptor->hierarchy()->find_entity(path);
+
+		if (!is_registered()) {
+			ZstLog::entity(LogLevel::warn, "Entity {} not registered. Can't look up child entity.", URI().path());
+		}
+
+		m_hierarchy_events->invoke([this, &result, &path](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+			result = adaptor->find_entity(path);
 		});
         
         return result;

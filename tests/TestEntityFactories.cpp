@@ -11,7 +11,16 @@ using namespace ZstTest;
 class CustomComponent : public ZstComponent 
 {
 public:
-    CustomComponent(const char * name) : ZstComponent(CUSTOM_COMPONENT, name) {}
+	std::unique_ptr<ZstInputPlug> input;
+
+    CustomComponent(const char * name) : 
+		ZstComponent(CUSTOM_COMPONENT, name),
+		input(std::make_unique <ZstInputPlug>("input", ValueList_IntList)) {}
+
+	virtual void on_registered() override {
+		add_child(input.get());
+	}
+
 protected:
     void compute(ZstInputPlug * plug) override {
         ZstLog::entity(LogLevel::notification, "Custom component {} received a value", this->URI().path());
@@ -31,6 +40,9 @@ public:
 		CustomComponent * entity = NULL;
 		if (creatable_path == this->URI() + ZstURI(CUSTOM_COMPONENT)) {
 			entity = new CustomComponent(name);
+
+			//TODO: Factory created entity leakages
+			ZstLog::entity(LogLevel::error, "New factory created entity will leak - replace with smart pointer!");
 		}
 		return entity;
 	}

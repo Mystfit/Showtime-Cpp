@@ -4,6 +4,7 @@
 
 #include "ZstExports.h"
 #include "entities/ZstEntityFactory.h"
+#include "adaptors/ZstEntityAdaptor.hpp"
 #include "adaptors/ZstHierarchyAdaptor.hpp"
 #include "adaptors/ZstSessionAdaptor.hpp"
 #include "adaptors/ZstEntityAdaptor.hpp"
@@ -23,6 +24,7 @@ class ZST_CLASS_EXPORTED ZstSession :
 	public ZstSynchronisableModule,
 	public ZstComputeAdaptor,
     public ZstHierarchyAdaptor,
+	public ZstEntityAdaptor,
     public ZstSessionAdaptor,
 	protected ZstCableLiason,
 	protected ZstPlugLiason,
@@ -42,7 +44,7 @@ public:
 
 	ZST_EXPORT virtual ZstCable * connect_cable(ZstInputPlug * input, ZstOutputPlug * output);
 	ZST_EXPORT virtual ZstCable * connect_cable(ZstInputPlug * input, ZstOutputPlug * output, const ZstTransportRequestBehaviour & sendtype);
-	ZST_EXPORT virtual void destroy_cable(ZstCable * cable);
+	ZST_EXPORT virtual void destroy_cable(ZstCable * cable) override;
 	ZST_EXPORT virtual void destroy_cable(ZstCable * cable, const ZstTransportRequestBehaviour & sendtype);
 	ZST_EXPORT void destroy_cable_complete(ZstCable * cable);
 	ZST_EXPORT virtual void disconnect_plugs(ZstInputPlug * input_plug, ZstOutputPlug * output_plug);
@@ -62,7 +64,7 @@ public:
 	// Syncronisable adaptor overrides
 	// -------------------------------
 	
-	ZST_EXPORT void on_synchronisable_destroyed(ZstSynchronisable * synchronisable) override;
+	ZST_EXPORT void on_synchronisable_destroyed(ZstSynchronisable * synchronisable, bool already_removed) override;
 
 	// -------------
 	// Compute adaptor overrides
@@ -76,14 +78,16 @@ public:
     
 	ZST_EXPORT virtual void on_performer_arriving(ZstPerformer * performer) override;
     ZST_EXPORT virtual void on_entity_arriving(ZstEntityBase * entity) override;
+	ZST_EXPORT virtual void on_request_entity_registration(ZstEntityBase* entity) override;
     
 	// ------------------
 	// Entity observation
 	// ------------------
+	ZST_EXPORT void register_entity(ZstEntityBase* entity);
 	ZST_EXPORT virtual bool observe_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype);
-	ZST_EXPORT void add_connected_performer(ZstPerformer * performer);
-	ZST_EXPORT void remove_connected_performer(ZstPerformer * performer);
-	ZST_EXPORT bool listening_to_performer(ZstPerformer * performer);
+	ZST_EXPORT void add_connected_performer(const ZstURI& performer_path);
+	ZST_EXPORT void remove_connected_performer(const ZstURI& performer_path);
+	ZST_EXPORT bool listening_to_performer(const ZstURI& performer_path);
 
 
 	// -----------------
@@ -92,6 +96,14 @@ public:
 
 	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstSessionAdaptor> > > & session_events();
 	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstComputeAdaptor> > > & compute_events();
+
+
+	// -------
+	// Modules
+	// -------
+
+	virtual std::shared_ptr<ZstHierarchy> hierarchy() = 0;
+
 
 protected:
 	// --------------------------
@@ -110,7 +122,7 @@ private:
 	// -----------------
 	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstSessionAdaptor> > > m_session_events;
 	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstComputeAdaptor> > > m_compute_events;
-	ZstPerformerMap m_connected_performers;
+	std::set<ZstURI> m_connected_performers;
 };
 
 }

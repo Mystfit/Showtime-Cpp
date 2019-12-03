@@ -14,6 +14,7 @@
 #include "ZstEventDispatcher.hpp"
 #include "ZstSynchronisableModule.h"
 #include "liasons/ZstEntityFactoryLiason.hpp"
+#include "liasons/ZstEntityLiason.hpp"
 #include "liasons/ZstPlugLiason.hpp"
 #include "liasons/ZstSynchronisableLiason.hpp"
 #include "adaptors/ZstTransportAdaptor.hpp"
@@ -23,6 +24,8 @@ namespace showtime {
 class ZST_CLASS_EXPORTED ZstHierarchy :
 	public ZstSynchronisableModule,
 	public ZstPlugLiason,
+	public ZstEntityLiason,
+	public ZstHierarchyAdaptor,
 	public ZstEntityFactoryLiason,
 	public ZstEntityAdaptor
 {
@@ -37,7 +40,7 @@ public:
 	// ------------------------------
 	// Activations
 	// ------------------------------
-
+	ZST_EXPORT void register_entity(ZstEntityBase* entity);
 	ZST_EXPORT virtual void activate_entity(ZstEntityBase* entity, const ZstTransportRequestBehaviour & sendtype = ZstTransportRequestBehaviour::SYNC_REPLY);
 	ZST_EXPORT virtual void destroy_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype = ZstTransportRequestBehaviour::SYNC_REPLY);
 	ZST_EXPORT virtual ZstEntityBase * create_entity(const ZstURI & creatable_path, const char * name, const ZstTransportRequestBehaviour & sendtype = ZstTransportRequestBehaviour::SYNC_REPLY);
@@ -47,6 +50,7 @@ public:
 	// ------------------------------
     
 	ZST_EXPORT virtual void add_performer(const Performer* performer);
+	ZST_EXPORT virtual void add_performer(ZstPerformer* performer);
 	ZST_EXPORT virtual ZstPerformer * get_performer_by_URI(const ZstURI & uri) const;
 	ZST_EXPORT virtual ZstEntityBundle & get_performers(ZstEntityBundle & bundle) const;
     ZST_EXPORT virtual ZstPerformer * get_local_performer() const = 0;
@@ -56,7 +60,8 @@ public:
 	// Hierarchy queries
 	// ------------------------------
 
-	ZST_EXPORT virtual ZstEntityBase * find_entity(const ZstURI & path) const;
+	ZST_EXPORT virtual void update_entity_URI(ZstEntityBase* entity, const ZstURI& original_path) override;
+	ZST_EXPORT virtual ZstEntityBase * find_entity(const ZstURI & path) const override;
 	ZST_EXPORT virtual ZstEntityBase * walk_to_entity(const ZstURI & path) const;
 
 
@@ -83,7 +88,7 @@ public:
 	// -----------------
 	// Adaptor overrides
 	// -----------------
-	ZST_EXPORT void on_synchronisable_destroyed(ZstSynchronisable * synchronisable) override;
+	ZST_EXPORT void on_synchronisable_destroyed(ZstSynchronisable * synchronisable, bool already_removed) override;
 	ZST_EXPORT virtual void on_register_entity(ZstEntityBase * entity) override;
     
     
@@ -92,6 +97,8 @@ public:
     // ------------------------------
     ZST_EXPORT virtual void add_entity_to_lookup(ZstEntityBase * entity);
     ZST_EXPORT virtual void remove_entity_from_lookup(const ZstURI & entity);
+	ZST_EXPORT virtual void update_entity_in_lookup(ZstEntityBase* entity, const ZstURI& new_path);
+	
 
 protected:
 	// ------------------------------
@@ -107,7 +114,7 @@ protected:
 
 private:
 	std::shared_ptr<ZstEventDispatcher< std::shared_ptr<ZstHierarchyAdaptor> > > m_hierarchy_events;
-	std::mutex m_hierarchy_mutex;
+	std::recursive_mutex m_hierarchy_mutex;
 	ZstEntityMap m_entity_lookup;
 	std::set< std::unique_ptr<ZstSynchronisable> > m_proxies;
 };

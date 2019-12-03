@@ -172,6 +172,16 @@ void ShowtimeClient::remove_hierarchy_adaptor(std::shared_ptr < ZstHierarchyAdap
 //    if (library_connected_guard()) m_client->session()->hierarchy()->activate_entity(entity, ZstTransportRequestBehaviour::ASYNC_REPLY);
 //}
 
+void ShowtimeClient::register_entity(ZstEntityBase* entity)
+{
+	if (library_init_guard()) {
+		if (!entity->is_registered()) {
+			m_client->session()->register_entity(entity);
+			m_client->session()->hierarchy()->register_entity(entity);
+		}
+	}
+}
+
 void ShowtimeClient::deactivate_entity(ZstEntityBase * entity)
 {
 	if (library_connected_guard()) m_client->session()->hierarchy()->destroy_entity(entity, ZstTransportRequestBehaviour::SYNC_REPLY);

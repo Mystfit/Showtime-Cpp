@@ -26,9 +26,10 @@ void ZstClientHierarchy::init(std::string name)
 	ZstHierarchy::init();
 
 	//Create a root entity to hold our local entity hierarchy
-	//Sets the name of our performer and the address of our graph output
     m_root = std::make_shared<ZstPerformer>(name.c_str());
-	m_root->add_adaptor(ZstSynchronisableAdaptor::downcasted_shared_from_this<ZstSynchronisableAdaptor>());
+
+	// Make sure the root performer registers our hierarchy adaptors
+	register_entity(m_root.get());
 }
 
 void ZstClientHierarchy::destroy()
@@ -95,6 +96,11 @@ void ZstClientHierarchy::on_publish_entity_update(ZstEntityBase * entity)
 void ZstClientHierarchy::on_request_entity_activation(ZstEntityBase * entity)
 {
 	activate_entity(entity, ZstTransportRequestBehaviour::SYNC_REPLY, [](ZstMessageReceipt receipt) {});
+}
+
+void ZstClientHierarchy::on_request_entity_registration(ZstEntityBase* entity)
+{
+	register_entity(entity);
 }
 
 void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype)
@@ -376,6 +382,11 @@ void ZstClientHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 	ZstHierarchy::destroy_entity_complete(entity);
 }
 
+
+void ZstClientHierarchy::update_entity_URI(ZstEntityBase* entity, const ZstURI& original_path)
+{
+	ZstHierarchy::update_entity_URI(entity, original_path);
+}
 
 ZstEntityBase * ZstClientHierarchy::find_entity(const ZstURI & path) const
 {
