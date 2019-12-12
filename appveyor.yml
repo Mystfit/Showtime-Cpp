@@ -51,7 +51,7 @@ install:
     choco install -y swig > $null
     choco install -y cmake > $null
     refreshenv
-    & "$Env:APPVEYOR_BUILD_FOLDER/install_dependencies.ps1" -build_dir $Env:BUILD_FOLDER -config $Env:CONFIGURATION -without_boost $true
+    & "$Env:APPVEYOR_BUILD_FOLDER/install_dependencies.ps1" -build_dir $Env:BUILD_FOLDER -config $Env:CONFIGURATION -without_boost
 
 
 before_build:
