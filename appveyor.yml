@@ -77,7 +77,7 @@ before_build:
         "-DBOOST_LIBRARYDIR:PATHNAME=$env:BOOST_ROOT/lib64-msvc-14.1"
     )
     cmake @CMAKE_FLAGS
-    cmake --build "$env:BUILD_FOLDER" --config Release
+    cmake --build "$env:BUILD_FOLDER" --config $Env:CONFIGURATION
 
 build:
   parallel: true
