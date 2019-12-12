@@ -32,7 +32,7 @@ platform:
 
 environment:
     GENERATOR: "Visual Studio 16 2019"
-    BOOST_ROOT: "C:/Libraries/boost_1_69_0"
+    BOOST_ROOT: "C:/Libraries/boost_1_70_0"
     BUILD_FOLDER: "%APPVEYOR_BUILD_FOLDER%/build"
     DEPENDENCY_DIR: "%APPVEYOR_BUILD_FOLDER%/dependencies"
     INSTALL_DIR: "%APPVEYOR_BUILD_FOLDER%/install"
@@ -51,16 +51,33 @@ install:
     choco install -y swig > $null
     choco install -y cmake > $null
     refreshenv
-    cmd.exe /c "call $env:APPVEYOR_BUILD_FOLDER/install_dependencies.bat --build-dir $env:BUILD_FOLDER --config $env:CONFIGURATION"
+    & "$Env:APPVEYOR_BUILD_FOLDER/install_dependencies.ps1" -build_dir $Env:BUILD_FOLDER -config $Env:CONFIGURATION -without_boost $true
+
 
 before_build:
 - ps: |-
-    $CMAKE_FLAGS = -DCMAKE_PREFIX_PATH="$env:INSTALL_DIR
-    $CMAKE_FLAGS += -DBINDINGS_DOTNET=ON -DBINDINGS_DOTNET_FRAMEWORK_VERSION=v4.7.2
-    $CMAKE_FLAGS += -DBINDINGS_PYTHON=ON -DBINDINGS_PYTHON_VERSION_MAJOR=$env:PYTHON_VER
-    $CMAKE_FLAGS += -DBUILD_SHARED=ON -DBUILD_STATIC=ON -DBUILD_DRAFTS=ON
-    $CMAKE_FLAGS += -DBOOST_ROOT:PATHNAME="$env:BOOST_ROOT" -DBOOST_INCLUDEDIR:PATHNAME="$env:BOOST_ROOT" -DBOOST_LIBRARYDIR:PATHNAME="$env:BOOST_ROOT/lib64-msvc-14.1"
-    cmake -H"$env:APPVEYOR_BUILD_FOLDER" -B"$env:BUILD_FOLDER" -G "$env:GENERATOR" $CMAKE_FLAGS
+    $CMAKE_FLAGS= @(
+        "-S", "$env:APPVEYOR_BUILD_FOLDER",
+        "-B", "$env:BUILD_FOLDER" 
+        "-G", "Visual Studio 16 2019",
+        "-A", "x64",
+        "-DCMAKE_PREFIX_PATH=$env:INSTALL_DIR",
+        "-DBUILD_SHARED=ON",
+        "-DBUILD_STATIC=ON",
+        "-DBUILD_DRAFTS=OFF",
+        "-DBUILD_TESTING=ON",
+        "-DBINDINGS_DOTNET=ON",
+        "-DBINDINGS_DOTNET_CSPROJ=ON",
+        "-DBINDINGS_DOTNET_FRAMEWORK_VERSION=netstandard2.0",
+        "-DBINDINGS_PYTHON=ON",
+        "-DBINDINGS_PYTHON_VERSION_MAJOR=$env:PYTHON_VER",
+        "-DADD_GENERATED_MSVC_PROJECTS=OFF",
+        "-DBOOST_ROOT:PATHNAME=$env:BOOST_ROOT",
+        "-DBOOST_INCLUDEDIR:PATHNAME=$env:BOOST_ROOT",
+        "-DBOOST_LIBRARYDIR:PATHNAME=$env:BOOST_ROOT/lib64-msvc-14.1"
+    )
+    cmake @CMAKE_FLAGS
+    cmake --build "$env:BUILD_FOLDER" --config Release
 
 build:
   parallel: true
