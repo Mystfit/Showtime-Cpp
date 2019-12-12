@@ -1,17 +1,11 @@
 #pragma once
 #include "../ZstMsgID.h"
+#include "ZstConstants.h"
 #include <schemas/stage_message_generated.h>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/nil_generator.hpp>
 
 namespace showtime {
-
-enum ZstTransportRequestBehaviour
-{
-	PUBLISH = 0,
-	SYNC_REPLY,
-	ASYNC_REPLY
-};
 
 
 struct ZstMessageReceipt {

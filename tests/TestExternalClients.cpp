@@ -5,18 +5,23 @@
 
 using namespace ZstTest;
 
-struct FixtureSinkClient : public FixtureExternalClient {
+
+
+struct FixtureSinkClient : public FixtureLocalClient {
     //Common URIs
 	ZstURI sink_ent_uri;
 	ZstURI sink_plug_uri;
 	ZstURI sync_out_plug_uri;
+	std::unique_ptr<Sink> sink;
 
 	FixtureSinkClient() : 
-		FixtureExternalClient("TestHelperSink"),
-		sink_ent_uri(external_performer_URI + ZstURI("sink_ent")),
+		FixtureLocalClient("TestHelperSink"),
+		sink(std::make_unique<Sink>("sink_ent")),
+		sink_ent_uri(local_client->get_root()->URI() + ZstURI("sink_ent")),
 		sink_plug_uri(sink_ent_uri + ZstURI("in")),
 		sync_out_plug_uri(sink_ent_uri + ZstURI("out"))
     {
+		local_client->get_root()->add_child(sink.get());
 	}
 
 	~FixtureSinkClient() {
@@ -97,18 +102,37 @@ bool found_performer(std::shared_ptr<ShowtimeClient> client, ZstURI performer_ad
 	return false;
 }
 
+BOOST_FIXTURE_TEST_CASE(multiple_clients, FixtureJoinServer) {
+	auto remote_client = std::make_unique<ShowtimeClient>();
+	remote_client->init("remote_client", true);
+	remote_client->auto_join_by_name(TEST_SERVER_NAME);
+	
+	BOOST_TEST(remote_client->is_connected());
+	ZstEntityBundle performers;
+	test_client->get_performers(performers);
+	BOOST_TEST(performers.size() == 2);
+	performers.clear();
+
+	remote_client->destroy();
+	TAKE_A_BREATH
+	test_client->poll_once();
+	BOOST_TEST(!remote_client->is_connected());
+	test_client->get_performers(performers);
+	BOOST_TEST(performers.size() == 1);
+}
+
 BOOST_FIXTURE_TEST_CASE(performer_arriving, FixtureWaitForSinkClient) {
 	BOOST_TEST(performerEvents->last_arrived_performer == external_performer_URI);
 }
 
-BOOST_FIXTURE_TEST_CASE(performer_leaving, FixtureExternalConnectCable) {
-	output_ent->send(-1);
+BOOST_FIXTURE_TEST_CASE(performer_leaving, FixtureWaitForSinkClient) {
+	local_client->leave();
 	wait_for_event(test_client, performerEvents, 1);
 	BOOST_TEST(performerEvents->last_left_performer == external_performer_URI);
 }
 
 BOOST_FIXTURE_TEST_CASE(find_performer, FixtureWaitForSinkClient) {
-	BOOST_TEST(test_client->get_performer_by_URI(external_performer_URI));
+	BOOST_TEST(test_client->find_entity(external_performer_URI));
 	BOOST_TEST(found_performer(test_client, external_performer_URI));
 }
 
@@ -140,8 +164,9 @@ BOOST_FIXTURE_TEST_CASE(plug_observation, FixtureExternalConnectCable) {
     sync_out_plug->add_adaptor(plug_sync_adp);
     test_client->observe_entity(sync_out_plug);
     
-    int echo_val = 4;
-    output_ent->send(echo_val);
+	int echo_val = 4;
+	sink->output->append_int(echo_val);
+	sink->output->fire();
     wait_for_event(test_client, plug_sync_adp, 1);
     BOOST_TEST(sync_out_plug->int_at(0) == echo_val);
 }
@@ -181,6 +206,8 @@ BOOST_FIXTURE_TEST_CASE(entity_arriving, FixtureExternalConnectCable) {
     auto entityEvents = std::make_shared<TestEntityEvents>();
     test_client->add_hierarchy_adaptor(entityEvents);
     output_ent->send(1);
+	TAKE_A_BREATH
+	local_client->poll_once();
     wait_for_event(test_client, entityEvents, 1);
     BOOST_TEST(test_client->find_entity(sink_ent_uri + ZstURI("sinkB")));
 }
@@ -189,15 +216,22 @@ BOOST_FIXTURE_TEST_CASE(entity_leaving, FixtureExternalConnectCable) {
     auto entityEvents = std::make_shared<TestEntityEvents>();
     test_client->add_hierarchy_adaptor(entityEvents);
     output_ent->send(1);
+	TAKE_A_BREATH
+	local_client->poll_once();
     wait_for_event(test_client, entityEvents, 1);
     entityEvents->reset_num_calls();
     
     output_ent->send(2);
+	TAKE_A_BREATH
+	local_client->poll_once();
+
     wait_for_event(test_client, entityEvents, 1);
     BOOST_TEST(!test_client->find_entity(sink_ent_uri + ZstURI("sinkB")));
 }
 
 BOOST_FIXTURE_TEST_CASE(external_exception, FixtureExternalConnectCable) {
     output_ent->send(3);
+	TAKE_A_BREATH
+	local_client->poll_once();
     //TODO: How do we test for this error?
 }

@@ -57,18 +57,24 @@ BOOST_FIXTURE_TEST_CASE(register_entity, FixtureJoinServer) {
 	BOOST_TEST(test_client->find_entity(component->URI()));
 }
 
-
 BOOST_FIXTURE_TEST_CASE(activate_entity, FixtureOutputEntity) {
-	test_client->get_root()->add_child(output_component.get());
+	test_client->get_root()->add_child(output_component.get(), false);
+	output_component->activate();
 	BOOST_TEST(output_component->is_activated());
 	BOOST_TEST(test_client->find_entity(output_component->URI()));
 }
 
-BOOST_FIXTURE_TEST_CASE(deactivate_entity, FixtureOutputEntity) {
+BOOST_FIXTURE_TEST_CASE(deactivate_entity_via_client, FixtureOutputEntity) {
 	test_client->get_root()->add_child(output_component.get());
 	test_client->deactivate_entity(output_component.get());
 	BOOST_TEST(!output_component->is_activated());
 	BOOST_TEST(!test_client->find_entity(output_component->URI()));
+}
+
+BOOST_FIXTURE_TEST_CASE(deactivate_entity, FixtureOutputEntity) {
+	test_client->get_root()->add_child(output_component.get());
+	output_component->deactivate();
+	BOOST_TEST(!output_component->is_activated());
 }
 
 BOOST_FIXTURE_TEST_CASE(adaptor_cleanup, FixtureJoinServer) {

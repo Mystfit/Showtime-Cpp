@@ -61,14 +61,10 @@ namespace showtime
     ZstComponent::~ZstComponent()
     {
         ZstEntityBundle bundle;
-        get_child_entities(bundle, false);
+        /*get_child_entities(bundle, false);
         for (auto child : bundle) {
-            // We only delete proxy entities, since they are owned by this library
-			if (child->is_proxy()) {
-				ZstLog::entity(LogLevel::warn, "Leaking component children");
-				//delete child;
-			}
-        }
+			child->deactivate();
+        }*/
         m_children.clear();
     }
 

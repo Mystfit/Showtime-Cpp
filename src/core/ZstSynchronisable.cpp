@@ -191,6 +191,11 @@ void ZstSynchronisable::set_activation_status(ZstSyncStatus status)
 	}
 }
 
+void ZstSynchronisable::set_deactivated()
+{
+	set_activation_status(ZstSyncStatus::DEACTIVATED);
+}
+
 void ZstSynchronisable::set_destroyed()
 {
 	set_activation_status(ZstSyncStatus::DESTROYED);

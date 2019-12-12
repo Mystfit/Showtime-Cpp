@@ -80,11 +80,17 @@ struct FixtureLocalFactory : public FixtureJoinServer {
 };
 
 
-struct FixtureFactoryClient : public FixtureExternalClient {
-	FixtureFactoryClient() :
-		FixtureExternalClient("TestHelperExternalFactory")
+struct FixtureFactoryClient : public FixtureLocalClient {
+
+	std::unique_ptr<TestFactory> ext_factory;
+
+	FixtureFactoryClient() : 
+		FixtureLocalClient("extfactory"),
+		ext_factory(std::make_unique<TestFactory>("external_customs"))
 	{
+		local_client->register_factory(ext_factory.get());
 	}
+
 	~FixtureFactoryClient() {};
 };
 
@@ -112,6 +118,31 @@ struct FixtureExternalFactory : public FixtureWaitForFactoryClient {
 		external_factory->add_adaptor(factoryEvents);
 		factoryEvents->reset_num_calls();
 	}
+};
+
+
+struct FixtureExternalFactoryEventLoop : public FixtureExternalFactory {
+public:
+	FixtureExternalFactoryEventLoop() : m_event_loop(boost::bind(&FixtureExternalFactoryEventLoop::event_loop, this)){}
+
+	~FixtureExternalFactoryEventLoop() {
+		m_event_loop.interrupt();
+		m_event_loop.join();
+	}
+
+	void event_loop() {
+		while (true) {
+			try {
+				boost::this_thread::interruption_point();
+				this->local_client->poll_once();
+			}
+			catch (boost::thread_interrupted) {
+				break;
+			}
+		}
+	}
+private:
+	boost::thread m_event_loop;
 };
 
 
@@ -171,12 +202,13 @@ BOOST_FIXTURE_TEST_CASE(find_external_creatables, FixtureExternalFactory) {
 	ZstURIBundle bundle;
 	external_factory->get_creatables(bundle);
 	BOOST_TEST(bundle.size() == 1);
-	BOOST_TEST(bundle[0] == external_factory->URI() + ZstURI("CustomExternalComponent"));
+	BOOST_TEST(bundle[0] == external_factory->URI() + ZstURI("CustomComponent"));
 }
 
-BOOST_FIXTURE_TEST_CASE(create_entity_from_external_factory, FixtureExternalFactory) {
+BOOST_FIXTURE_TEST_CASE(create_entity_from_external_factory, FixtureExternalFactoryEventLoop) {
 	ZstURIBundle bundle;
 	external_factory->get_creatables(bundle);
+	auto client = local_client.get();
 	auto entity = test_client->create_entity(bundle[0], "brand_spanking_new_ext");
 	BOOST_TEST_REQUIRE(entity);
 	BOOST_TEST(test_client->find_entity(external_factory->URI().first() + ZstURI("brand_spanking_new_ext")));
@@ -187,6 +219,8 @@ BOOST_FIXTURE_TEST_CASE(create_entity_from_external_factory_async, FixtureExtern
 	ZstURIBundle bundle;
 	external_factory->get_creatables(bundle);
 	test_client->create_entity_async(bundle[0], "brand_spanking_new_ext_async");
+	TAKE_A_BREATH
+	local_client->poll_once();
 	wait_for_event(test_client, factoryEvents, 1);
 	BOOST_TEST(factoryEvents->last_created_entity == created_entity_URI);
 	BOOST_TEST(test_client->find_entity(created_entity_URI));
@@ -194,8 +228,9 @@ BOOST_FIXTURE_TEST_CASE(create_entity_from_external_factory_async, FixtureExtern
 
 BOOST_FIXTURE_TEST_CASE(updated_creatables_callback, FixtureExternalFactory)
 {
-	std::string update_creatables_msg = "update_creatables\n";
-	external_process_stdin.write(update_creatables_msg.c_str(), static_cast<int>(update_creatables_msg.size()));
+	ext_factory->add_creatable(ZstURI("avocado"));
+	ext_factory->update_creatables();
+
 	wait_for_event(test_client, factoryEvents, 1);
 
 	ZstURIBundle bundle;

@@ -70,14 +70,23 @@ void ZstZMQClientTransport::connect(const std::string & address)
     addr << "tcp://" << address; // << ":" << STAGE_ROUTER_PORT;
 	m_server_addr = addr.str();
 
-	if(m_server_sock)
-		zsock_connect(m_server_sock, "%s", m_server_addr.c_str());
+	if (m_server_sock) {
+		auto result = zsock_connect(m_server_sock, "%s", m_server_addr.c_str());
+		if (result == 0) {
+			set_connected(true);
+		}
+		else {
+			ZstLog::net(LogLevel::error, "Client connection error: {}", zmq_strerror(result));
+		}
+	}
 }
 
 void ZstZMQClientTransport::disconnect()
 {
-	if (m_server_sock)
+	if (m_server_sock) {
 		zsock_disconnect(m_server_sock, "%s", m_server_addr.c_str());
+		set_connected(false);
+	}
 }
 
 void ZstZMQClientTransport::send_message_impl(const uint8_t * msg_buffer, size_t msg_buffer_size, const ZstTransportArgs & args) const

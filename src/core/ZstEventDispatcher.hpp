@@ -63,14 +63,14 @@ public:
 	}
 
 	void add_adaptor(std::weak_ptr<ZstEventAdaptor> adaptor) {
-		std::lock_guard<std::recursive_mutex> lock(m_mtx);
+		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		this->m_adaptors.insert(adaptor);
 		if(auto adp = adaptor.lock())
 			adp->add_event_source(ZstEventDispatcherBase::downcasted_shared_from_this<ZstEventDispatcherBase>());
 	}
 
 	void remove_adaptor(std::weak_ptr<ZstEventAdaptor> adaptor) {
-		std::lock_guard<std::recursive_mutex> lock(m_mtx);
+		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		if (auto adp = adaptor.lock()) {
 			adp->remove_event_source(ZstEventDispatcherBase::downcasted_shared_from_this<ZstEventDispatcherBase>());
 		}
@@ -79,7 +79,7 @@ public:
 
 	bool contains_adaptor(std::weak_ptr<ZstEventAdaptor> adaptor)
 	{
-		std::lock_guard<std::recursive_mutex> lock(m_mtx);
+		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		return (this->m_adaptors.find(adaptor) != this->m_adaptors.end()) ? true : false;
 	}
 
@@ -88,7 +88,7 @@ public:
 	}
 
 	void remove_all_adaptors() {
-		std::lock_guard<std::recursive_mutex> lock(m_mtx);
+		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		auto adaptors = m_adaptors;
 		for (auto adaptor : adaptors) {
 			remove_adaptor(adaptor);
@@ -97,7 +97,7 @@ public:
 	}
 
 	void prune_missing_adaptors() {
-		std::lock_guard<std::recursive_mutex> lock(m_mtx);
+		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		auto adaptors = m_adaptors;
 		for (auto adaptor : adaptors) {
 			if (adaptor.expired())
@@ -106,7 +106,7 @@ public:
 	}
 
 	void set_wake_condition(std::weak_ptr<ZstSemaphore> condition) {
-		std::lock_guard<std::recursive_mutex> lock(m_mtx);
+		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		this->m_condition_wake = condition;
 	}
 
@@ -117,7 +117,7 @@ public:
 protected:
 	std::set< std::weak_ptr<ZstEventAdaptor>, std::owner_less< std::weak_ptr<ZstEventAdaptor> > > m_adaptors;
 	std::weak_ptr<ZstSemaphore> m_condition_wake;
-	std::recursive_mutex m_mtx;
+	std::recursive_timed_mutex m_mtx;
 	bool m_has_event;
 private:
 	std::string m_name;
@@ -141,7 +141,7 @@ public:
 
 	void flush() {
 		ZstEvent<T> e;
-		std::lock_guard<std::recursive_mutex> lock(m_mtx);
+		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		while (this->m_events.try_dequeue(e)) {}
 	}
 
@@ -149,7 +149,7 @@ public:
 		if (this->m_adaptors.size() < 1) {
 			return;
 		}
-		std::lock_guard<std::recursive_mutex> lock(m_mtx);
+		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		for (auto adaptor : this->m_adaptors) {
 			if(auto adp = adaptor.lock())
 				event(std::static_pointer_cast< typename std::pointer_traits<T>::element_type>(adp));
@@ -178,8 +178,20 @@ public:
 		while (this->m_events.try_dequeue(event)) {
 			bool success = true;
 
-			std::lock_guard<std::recursive_mutex> lock(m_mtx);
-			for (auto adaptor : m_adaptors) {
+			std::set< std::weak_ptr<ZstEventAdaptor>, std::owner_less< std::weak_ptr<ZstEventAdaptor> > > adaptors;
+			auto now = std::chrono::steady_clock::now();
+			auto lock = m_mtx.try_lock_until(now + std::chrono::milliseconds(1000));
+			if (lock) {
+				adaptors = m_adaptors;
+			}
+			else {
+				ZstLog::net(LogLevel::warn, "Could not aquire attached adaptors lock");
+				return;
+			}
+			
+			m_mtx.unlock();
+
+			for (auto adaptor : adaptors) {
 				if (auto adp = adaptor.lock()) {
 					event.func(std::dynamic_pointer_cast<typename std::pointer_traits<T>::element_type>(adp));
 				}

@@ -11,9 +11,7 @@ ZstHierarchy::ZstHierarchy() :
 ZstHierarchy::~ZstHierarchy()
 {
     ZstEntityBundle bundle;
-	m_clients.clear();
 	m_proxies.clear();
-    //m_clients.clear();
 }
 
 void ZstHierarchy::destroy()
@@ -65,65 +63,27 @@ ZstEntityBase * ZstHierarchy::create_entity(const ZstURI & creatable_path, const
 	return entity;
 }
 
-void ZstHierarchy::destroy_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype)
+void ZstHierarchy::deactivate_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype)
 {
 	if (!entity) return;
 	if(entity->activation_status() != ZstSyncStatus::DESTROYED)
 		synchronisable_set_deactivating(entity);
 }
 
-void ZstHierarchy::add_performer(const Performer* performer)
-{
-	auto performer_proxy = std::make_unique<ZstPerformer>(performer);
-	add_performer(performer_proxy.get());
-	
-	//Store performer
-	auto performer_path = ZstURI(performer_proxy->URI());
-	m_clients[performer_path] = std::move(performer_proxy);
-}
-
-void ZstHierarchy::add_performer(ZstPerformer* performer) {
-	ZstLog::net(LogLevel::notification, "Adding new performer {}", performer->URI().path());
-
-	//Register adaptors
-	register_entity(performer);
-
-	//Populate bundle with factory and child entities
-	ZstEntityBundle bundle;
-	performer->get_factories(bundle);
-	performer->get_child_entities(bundle, true);
-
-	//Activate all entities in bundle
-	for (auto c : bundle) {
-		//Since this is a proxy entity, it should be activated immediately.
-		synchronisable_set_activation_status(c, ZstSyncStatus::ACTIVATED);
-		synchronisable_set_proxy(c);
-	}
-
-	//Dispatch events
-	m_hierarchy_events->defer([performer](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
-		adaptor->on_performer_arriving(performer);
-	});
-}
-
-ZstPerformer * ZstHierarchy::get_performer_by_URI(const ZstURI & uri) const
-{
-	ZstPerformer * result = NULL;
-	ZstURI performer_URI = uri.first();
-
-	auto entity_iter = m_clients.find(performer_URI);
-	if (entity_iter != m_clients.end()) {
-		result = entity_iter->second.get();
-	}
-
-	return result;
-}
-
 ZstEntityBundle & ZstHierarchy::get_performers(ZstEntityBundle & bundle) const
 {
-	for (auto&& performer : m_clients) {
-		bundle.add(performer.second.get());
+	// Add local performer
+	auto local_performer = get_local_performer();
+	if(local_performer)
+		bundle.add(get_local_performer());
+
+	// Only add performers to the bundle
+	for (auto&& entity : m_proxies) {
+		auto performer = dynamic_cast<ZstPerformer*>(entity.get());
+		if (performer)
+			bundle.add(performer);
 	}
+
 	return bundle;
 }
 
@@ -148,7 +108,7 @@ ZstEntityBase * ZstHierarchy::find_entity(const ZstURI & path) const
 ZstEntityBase * ZstHierarchy::walk_to_entity(const ZstURI & path) const
 {
 	ZstEntityBase * result = NULL;
-	ZstPerformer * root = get_performer_by_URI(path);
+	ZstPerformer* root = dynamic_cast<ZstPerformer*>(find_entity(path.first()));
 
 	if (!root)
 		return result;
@@ -166,49 +126,67 @@ ZstEntityBase * ZstHierarchy::walk_to_entity(const ZstURI & path) const
 	return result;
 }
 
-void ZstHierarchy::add_proxy_entity(const EntityTypes entity_type, const EntityData* entity_data, const void* payload)
+std::unique_ptr<ZstEntityBase> ZstHierarchy::create_proxy_entity(const EntityTypes entity_type, const EntityData* entity_data, const void* payload)
 {
-    // Check if the entity already exists in the hierarchy
+	// Check if the entity already exists in the hierarchy
 	auto entity_path = ZstURI(entity_data->URI()->c_str(), entity_data->URI()->size());
-    if (find_entity(entity_path)) {
-        ZstLog::net(LogLevel::error, "Can't create entity {}, it already exists", entity_path.path());
-        return;
-    }
-    
+	if (find_entity(entity_path)) {
+		ZstLog::net(LogLevel::error, "Can't create entity {}, it already exists", entity_path.path());
+		return NULL;
+	}
+
 	// All entities need a parent unless they are a performer 
 	auto parent_path = entity_path.parent();
-	if (!parent_path.size()) {
-		ZstLog::net(LogLevel::error, "Entity {} has no parent", entity_path.path());
-		return;
+	ZstEntityBase* parent = NULL;
+
+	if (entity_type != EntityTypes_Performer) {
+		if (parent_path.is_empty()) {
+			ZstLog::net(LogLevel::error, "Entity {} has no parent", entity_path.path());
+			return NULL;
+		}
 	}
-    
-    ZstEntityBase * parent = find_entity(parent_path);
-	if (!parent) {
-		ZstLog::net(LogLevel::error, "Could not find parent {} for entity {}", parent_path.path(), entity_path.path());
-		return;
-	}
-    
+
 	// Create proxy
-	auto entity_proxy = unpack_entity(entity_type, payload);
+	return unpack_entity(entity_type, payload);
+}
+
+void ZstHierarchy::add_proxy_entity(std::unique_ptr<ZstEntityBase> entity)
+{
+	if (!entity)
+		return;
+
+	auto parent = find_entity(entity->URI().parent());
 
     // Set the entity as a proxy early to avoid accidental auto-activation
-    synchronisable_set_proxy(entity_proxy.get());
-    dynamic_cast<ZstComponent*>(parent)->add_child(entity_proxy.get());
+    synchronisable_set_proxy(entity.get());
+
+	// Add the child to its parent (if it has one)
+	if(parent)
+		dynamic_cast<ZstComponent*>(parent)->add_child(entity.get());
 
 	//Register entity adaptors
-	register_entity(entity_proxy.get());
+	register_entity(entity.get());
     
 	// Propagate proxy properties to children of this proxy
 	ZstEntityBundle bundle;
-    entity_proxy->get_child_entities(bundle, true);
+	entity->get_child_entities(bundle, true);
+	if (entity->entity_type() == EntityTypes_Performer) {
+		dynamic_cast<ZstPerformer*>(entity.get())->get_factories(bundle);
+	}
+
     for (auto c : bundle){
 		//Set entity as a proxy so the reaper can clean it up later
 		synchronisable_set_proxy(c);
 		synchronisable_set_activation_status(c, ZstSyncStatus::ACTIVATED);
 	}
+
+	auto entity_ptr = entity.get();
 	
 	// Move entity into hierarchy to manage its lifetime
-	m_proxies.insert(std::move(entity_proxy));
+	m_proxies.insert(std::move(entity));
+
+	//Dispatch entity arrived event regardless if the entity is local or remote
+	dispatch_entity_arrived_event(entity_ptr);
 }
 
 void ZstHierarchy::dispatch_entity_arrived_event(ZstEntityBase * entity){
@@ -226,33 +204,38 @@ void ZstHierarchy::dispatch_entity_arrived_event(ZstEntityBase * entity){
 			adaptor->on_factory_arriving(static_cast<ZstEntityFactory*>(entity));
 		});
     }
+	else if (entity->entity_type() == EntityTypes_Performer) {
+		//Dispatch events
+		m_hierarchy_events->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+			adaptor->on_performer_arriving(static_cast<ZstPerformer*>(entity));
+		});
+	}
 }
 
 void ZstHierarchy::update_proxy_entity(const EntityTypes entity_type, const EntityData* entity_data, const void* payload)
 {
     // TODO: Make this work with ANY entity type that wants to update itself.
-	throw(std::runtime_error("Not implemented"));
+	//throw(std::runtime_error("Not implemented"));
 
+	if (entity_type == EntityTypes_Factory) {
+		auto entity_path = ZstURI(entity_data->URI()->c_str(), entity_data->URI()->size());
+		auto factory_data = static_cast<const Factory*>(payload);
 
+		ZstLog::net(LogLevel::notification, "Factory {} received an update", entity_path.path());
 
-	/*if (entity->entity_type() == EntityTypes_Factory) {
-		ZstLog::net(LogLevel::notification, "Factory {} received an update", entity->URI()->str());
-
-		ZstEntityFactory remote_factory = ZstEntityFactory(entity);
-		ZstEntityFactory * local_factory = dynamic_cast<ZstEntityFactory*>(find_entity(remote_factory.URI()));
+		ZstEntityFactory * local_factory = dynamic_cast<ZstEntityFactory*>(find_entity(entity_path));
 		if (local_factory) {
 			local_factory->clear_creatables();
-			ZstURIBundle updated_creatables;
-			for (auto c : remote_factory.get_creatables(updated_creatables)) {
-				local_factory->add_creatable(c);
+			for (auto c : *factory_data->factory()->creatables()) {
+				local_factory->add_creatable(ZstURI(c->c_str(), c->size()));
 			}
 			local_factory->update_creatables();
 		}
 		else {
-			ZstLog::net(LogLevel::warn, "Could not find local proxy instance of remote factory {}", entity->URI()->str());
+			ZstLog::net(LogLevel::warn, "Could not find local proxy instance of remote factory {}", entity_path.path());
 			return;
 		}
-	}*/
+	}
 }
 
 void ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
@@ -279,6 +262,7 @@ ZST_EXPORT const EntityData* ZstHierarchy::get_entity_field(EntityTypes entity_t
 	case EntityTypes_NONE:
 		throw std::runtime_error("Can't parse unknown entity {}");
 	}
+	return NULL;
 }
 
 std::unique_ptr<ZstEntityBase> ZstHierarchy::unpack_entity(EntityTypes entity_type, const void* entity_data)
@@ -415,7 +399,7 @@ void ZstHierarchy::on_synchronisable_destroyed(ZstSynchronisable * synchronisabl
 {
 	//Synchronisable is going away and the stage needs to know
 	if (synchronisable->is_activated() || synchronisable->activation_status() == ZstSyncStatus::DESTROYED) {
-		destroy_entity(dynamic_cast<ZstEntityBase*>(synchronisable), ZstTransportRequestBehaviour::PUBLISH);
+		deactivate_entity(dynamic_cast<ZstEntityBase*>(synchronisable), ZstTransportRequestBehaviour::PUBLISH);
 	}
 
 	if (already_removed) {

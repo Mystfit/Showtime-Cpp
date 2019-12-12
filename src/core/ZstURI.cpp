@@ -182,7 +182,8 @@ ZstURI ZstURI::parent() const
 	int s = static_cast<int>(this->size());
 	int parent_index = s - 2;
 	if (parent_index < 0) {
-		throw std::out_of_range("URI has no parent");
+		return ZstURI();
+		//throw std::out_of_range("URI has no parent");
 	}
 	return range(0, parent_index);
 }

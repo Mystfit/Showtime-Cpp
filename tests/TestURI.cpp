@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE(parents) {
 	auto parent = ZstURI("ins");
 	BOOST_TEST(ZstURI::equal(uri_equal1.parent(), parent));
 	BOOST_TEST(ZstURI::equal(uri_equal1.first(), parent));
-	BOOST_CHECK_THROW(uri_single.parent(), std::out_of_range);
+	BOOST_TEST(uri_single.parent().is_empty());
 }
 
 BOOST_AUTO_TEST_CASE(joins) {

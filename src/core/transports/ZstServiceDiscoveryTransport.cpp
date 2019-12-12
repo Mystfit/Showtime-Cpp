@@ -37,6 +37,7 @@ void ZstServiceDiscoveryTransport::init(int port)
         
         m_beacon_actor.attach_pipe_listener(zactor_sock(m_beacon), s_handle_beacon, this);
         m_beacon_actor.start_loop();
+		set_connected(true);
     }
 }
 
@@ -54,6 +55,7 @@ void ZstServiceDiscoveryTransport::destroy()
 		zactor_destroy(&m_beacon);
 		zst_zmq_dec_ref_count();
 	}
+	set_connected(false);
     ZstTransportLayerBase::destroy();
 }
 

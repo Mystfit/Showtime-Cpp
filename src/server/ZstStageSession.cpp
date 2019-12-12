@@ -106,11 +106,12 @@ Signal ZstStageSession::synchronise_client_graph_handler(ZstPerformerStageProxy*
 	std::vector< flatbuffers::Offset<void> > entity_vec;
 	std::vector< uint8_t> entity_types_vec;
 
-	ZstEntityBundle performer_bundle;
 	ZstEntityBundle entity_bundle;
+	ZstEntityBundle performer_bundle;
+	hierarchy()->get_performers(performer_bundle);
 
 	// Pack all entities
-	for (auto performer : hierarchy()->get_performers(performer_bundle)) {
+	for (auto performer : performer_bundle) {
 		//Only pack performers that aren't the destination client
 		if (performer->URI() != sender->URI()) {
 			performer->get_child_entities(entity_bundle);
@@ -278,7 +279,7 @@ Signal ZstStageSession::aquire_entity_ownership_handler(const EntityTakeOwnershi
 	std::unordered_map<ZstURI, ZstPerformerStageProxy*, ZstURIHash> performers;
 	for (auto c : bundle) {
 		if (c->get_output()->URI() == entity->URI()) {
-			auto receiver = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->get_performer_by_URI(c->get_input()->URI().first()));
+			auto receiver = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(c->get_input()->URI().first()));
 			performers[receiver->URI()] = receiver;
 		}
 	}

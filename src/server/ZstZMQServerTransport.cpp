@@ -35,6 +35,9 @@ void ZstZMQServerTransport::init()
 	m_server_actor.attach_pipe_listener(m_clients_sock, s_handle_router, this);
 	m_server_actor.start_loop();
 
+	//Allow this transport to send messages
+	set_connected(true);
+
 	//Increase the zmq context reference count
 	zst_zmq_inc_ref_count();
 }
@@ -48,6 +51,8 @@ void ZstZMQServerTransport::destroy()
 		m_clients_sock = NULL;
 		zst_zmq_dec_ref_count();
 	}
+
+	set_connected(false);
 	ZstTransportLayerBase::destroy();
 }
 

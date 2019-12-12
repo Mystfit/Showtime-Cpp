@@ -90,6 +90,12 @@ public:
 	ZST_EXPORT virtual void on_registered() {};
 	ZST_EXPORT bool is_registered() const;
 
+	//Activation
+	ZST_EXPORT virtual void activate();
+	ZST_EXPORT virtual void activate_async();
+	ZST_EXPORT virtual void deactivate();
+	ZST_EXPORT virtual void deactivate_async();
+
 #ifndef SWIG
     //Include base class adaptors
     //Swig mistakenly adds these twice when dealing treating ZstSynchronisable as an interface (C#, Java)

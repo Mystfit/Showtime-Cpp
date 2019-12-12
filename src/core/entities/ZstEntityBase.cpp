@@ -100,13 +100,7 @@ namespace showtime
         if (is_destroyed()) 
 			return;
 
-		auto orig_path = child->URI();
         child->set_parent(this);
-
-		// Update path in entity lookup
-		m_hierarchy_events->invoke([child, &orig_path](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
-			adaptor->update_entity_URI(child, orig_path);
-		});
     }
 
     void ZstEntityBase::remove_child(ZstEntityBase * child)
@@ -232,9 +226,8 @@ namespace showtime
 			ZstLog::entity(LogLevel::warn, "Entity {} not registered. Can't aquire ownership.", URI().path());
 		}
 
-        m_session_events->invoke([this](std::weak_ptr<ZstSessionAdaptor> adaptor) {
-            if(auto adp = adaptor.lock())
-                adp->aquire_entity_ownership(this);
+        m_session_events->invoke([this](std::shared_ptr<ZstSessionAdaptor> adaptor) {
+			adaptor->aquire_entity_ownership(this);
         });
     }
 
@@ -242,17 +235,65 @@ namespace showtime
     {
 		if (!is_registered()) {
 			ZstLog::entity(LogLevel::warn, "Entity {} not registered. Can't release ownership.", URI().path());
+			return;
 		}
 
-        m_session_events->invoke([this](std::weak_ptr<ZstSessionAdaptor> adaptor) {
-            if (auto adp = adaptor.lock())
-                adp->release_entity_ownership(this);
+        m_session_events->invoke([this](std::shared_ptr<ZstSessionAdaptor> adaptor) {
+			adaptor->release_entity_ownership(this);
         });
     }
 
 	bool ZstEntityBase::is_registered() const
 	{
 		return m_registered;
+	}
+
+	void ZstEntityBase::activate()
+	{
+		if (!is_registered()) {
+			ZstLog::entity(LogLevel::warn, "Entity {} not registered. Can't activate.", URI().path());
+			return;
+		}
+
+		m_hierarchy_events->invoke([this](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+			adaptor->activate_entity(this, ZstTransportRequestBehaviour::SYNC_REPLY);
+		});
+	}
+
+	void ZstEntityBase::activate_async()
+	{
+		if (!is_registered()) {
+			ZstLog::entity(LogLevel::warn, "Entity {} not registered. Can't deactivate.", URI().path());
+			return;
+		}
+		
+		m_hierarchy_events->invoke([this](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+			adaptor->activate_entity(this, ZstTransportRequestBehaviour::ASYNC_REPLY);
+		});
+	}
+
+	void ZstEntityBase::deactivate()
+	{
+		if (!is_registered()) {
+			ZstLog::entity(LogLevel::warn, "Entity {} not registered. Can't deactivate.", URI().path());
+			return;
+		}
+
+		m_hierarchy_events->invoke([this](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+			adaptor->deactivate_entity(this, ZstTransportRequestBehaviour::SYNC_REPLY);
+		});
+	}
+
+	void ZstEntityBase::deactivate_async()
+	{
+		if (!is_registered()) {
+			ZstLog::entity(LogLevel::warn, "Entity {} not registered. Can't asynchronously deactivate.", URI().path());
+			return;
+		}
+
+		m_hierarchy_events->invoke([this](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+			adaptor->deactivate_entity(this, ZstTransportRequestBehaviour::ASYNC_REPLY);
+		});
 	}
 
     void ZstEntityBase::set_entity_type(EntityTypes entity_type) {
@@ -262,8 +303,15 @@ namespace showtime
 
     void ZstEntityBase::set_parent(ZstEntityBase *entity) {
         std::lock_guard<std::mutex> lock(m_entity_lock);
+
+		auto orig_path = this->URI();
         m_parent = entity->URI();
         this->update_URI();
+
+		// Update path in entity lookup
+		m_hierarchy_events->invoke([this, &orig_path](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+			adaptor->update_entity_URI(this, orig_path);
+		});
     }
 
     void ZstEntityBase::dispatch_destroyed()

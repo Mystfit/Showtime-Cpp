@@ -18,7 +18,7 @@ void ZstReaper::add_cleanup_op(std::function<void()> cleanup_cb)
 
 void ZstReaper::reap_all()
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    //std::lock_guard<std::mutex> lock(m_mutex);
     
     // Process cleanup callbacks
     std::function<void()> cb;

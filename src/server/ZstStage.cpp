@@ -127,16 +127,18 @@ namespace showtime::detail
 		ZstEntityBundle bundle;
 		for (auto entity : stage->m_session->hierarchy()->get_performers(bundle)) {
 			ZstPerformer* performer = dynamic_cast<ZstPerformer*>(entity);
-			if (performer->get_active_heartbeat()) {
-				performer->clear_active_hearbeat();
-			}
-			else {
-				ZstLog::server(LogLevel::warn, "Client {} missed a heartbeat. {} remaining", performer->URI().path(), MAX_MISSED_HEARTBEATS - performer->get_missed_heartbeats());
-				performer->set_heartbeat_inactive();
-			}
+			if (performer){
+				if (performer->get_active_heartbeat()) {
+					performer->clear_active_hearbeat();
+				}
+				else {
+					ZstLog::server(LogLevel::warn, "Client {} missed a heartbeat. {} remaining", performer->URI().path(), MAX_MISSED_HEARTBEATS - performer->get_missed_heartbeats());
+					performer->set_heartbeat_inactive();
+				}
 
-			if (performer->get_missed_heartbeats() > MAX_MISSED_HEARTBEATS) {
-				removed_clients.push_back(performer);
+				if (performer->get_missed_heartbeats() > MAX_MISSED_HEARTBEATS) {
+					removed_clients.push_back(performer);
+				}
 			}
 		}
 

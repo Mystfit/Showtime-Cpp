@@ -8,7 +8,6 @@ enum Signal : byte {
     EMPTY = 0,
     OK,
     CLIENT_SYNC,
-    CLIENT_LEAVING,
     CLIENT_HEARTBEAT,
 
     //Error signals
@@ -22,7 +21,14 @@ enum Signal : byte {
     ERR_ENTITY_NOT_FOUND,
     ERR_ENTITY_ALREADY_EXISTS,
     ERR_CABLE_PLUGS_NOT_FOUND,
-    ERR_STAGE_TIMEOUT
+    ERR_STAGE_TIMEOUT,
+    ERR_NOT_CONNECTED
+}
+
+enum ClientLeaveReason : byte {
+    QUIT = 0,
+    TIMEOUT,
+    CRASH
 }
 
 table SignalMessage {
@@ -50,6 +56,11 @@ table ClientGraphHandshakeStop {
 table ClientGraphHandshakeListen {
     sender_URI:string;
     sender_address:string;
+}
+
+table ClientLeaveRequest {
+    performer_URI:string;
+    reason:ClientLeaveReason;
 }
 
 
@@ -115,6 +126,7 @@ union Content {
     SignalMessage,
     // ----------
     ClientJoinRequest,
+    ClientLeaveRequest,
     ClientGraphHandshakeStart,
     ClientGraphHandshakeStop,
     ClientGraphHandshakeListen,

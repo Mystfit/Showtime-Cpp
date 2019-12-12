@@ -82,6 +82,8 @@ void ZstHierarchyAdaptor::on_plug_leaving(ZstPlug * plug) {}
 void ZstHierarchyAdaptor::on_factory_arriving(ZstEntityFactory * factory) {}
 void ZstHierarchyAdaptor::on_factory_leaving(ZstEntityFactory * factory) {}
 
+void ZstHierarchyAdaptor::activate_entity(ZstEntityBase* entity, const ZstTransportRequestBehaviour& sendtype){}
+void ZstHierarchyAdaptor::deactivate_entity(ZstEntityBase* entity, const ZstTransportRequestBehaviour& sendtype){}
 ZstEntityBase* ZstHierarchyAdaptor::find_entity(const ZstURI& path) const { return NULL; }
 void ZstHierarchyAdaptor::update_entity_URI(ZstEntityBase* entity, const ZstURI& original_path) {}
 ZstPerformer* ZstHierarchyAdaptor::get_local_performer() const { return NULL; }

@@ -61,7 +61,6 @@ public:
 
 	//Hierarchy
 	ZST_CLIENT_EXPORT ZstPerformer* get_root();
-	ZST_CLIENT_EXPORT ZstPerformer* get_performer_by_URI(const ZstURI & path);
 	ZST_CLIENT_EXPORT ZstEntityBase* find_entity(const ZstURI & path);
 	ZST_CLIENT_EXPORT void get_performers(ZstEntityBundle & bundle);
 

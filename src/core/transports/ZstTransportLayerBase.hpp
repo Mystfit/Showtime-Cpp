@@ -21,6 +21,7 @@ public:
 	ZstTransportLayerBase() :
 		ZstMessageSupervisor(std::make_shared<cf::time_watcher>(), STAGE_TIMEOUT),
 		m_is_active(false),
+		m_is_connected(false),
 		m_dispatch_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<Adaptor_T> > >("transport events")){
 	}
 	virtual ~ZstTransportLayerBase() {}
@@ -43,16 +44,26 @@ public:
 	bool is_active() {
 		return m_is_active;
 	}
+
+	bool is_connected() {
+		return m_is_connected;
+	}
     
 protected:
     ZstMessageReceipt begin_send_message(const uint8_t * msg_buffer, size_t msg_buffer_size)
     {
+		if (!is_connected())
+			return ZstMessageReceipt{ Signal_ERR_STAGE_TIMEOUT };
+
         send_message_impl(msg_buffer, msg_buffer_size, ZstTransportArgs());
         return ZstMessageReceipt{ Signal_OK, ZstTransportRequestBehaviour::PUBLISH };
     }
     
     ZstMessageReceipt begin_send_message(const uint8_t * msg_buffer, size_t msg_buffer_size, const ZstTransportArgs& args)
     {
+		if (!is_connected())
+			return ZstMessageReceipt{Signal_ERR_STAGE_TIMEOUT};
+
         switch (args.msg_send_behaviour) {
             case ZstTransportRequestBehaviour::ASYNC_REPLY:
                 return send_async_message(msg_buffer, msg_buffer_size, args);
@@ -97,6 +108,10 @@ protected:
             this->release(msg);
         });
     }
+
+	void set_connected(bool state) {
+		m_is_connected = state;
+	}
 
 private:
     //Message supervision
@@ -149,6 +164,7 @@ private:
     }
     
 	bool m_is_active;
+	bool m_is_connected;
     std::shared_ptr<ZstEventDispatcher<std::shared_ptr<Adaptor_T> > > m_dispatch_events;
 };
 

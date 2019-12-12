@@ -44,6 +44,7 @@ protected:
     ZST_EXPORT virtual void enqueue_deactivation();
     ZST_EXPORT virtual void set_activated();
     ZST_EXPORT virtual void set_activating();
+	ZST_EXPORT virtual void set_deactivated();
     ZST_EXPORT virtual void set_activation_status(ZstSyncStatus status);
     ZST_EXPORT void set_deactivating();
     ZST_EXPORT void set_error(ZstSyncError e);

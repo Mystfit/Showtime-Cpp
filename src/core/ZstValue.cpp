@@ -170,21 +170,33 @@ void ZstValue::deserialize(const PlugValue* buffer)
 void ZstValue::deserialize_partial(const PlugValue* buffer)
 {
 	switch (buffer->values_type()) {
-	case ValueList_IntList:
-		for (auto v : *buffer->values_as_IntList()->val()) {
-			m_values.push_back(v);
+	case ValueList_IntList: {
+		auto list = buffer->values_as_IntList();
+		m_values.resize(list->val()->size());
+		for (auto it = list->val()->begin(); it != list->val()->end(); ++it) {
+			auto index = it - list->val()->begin();
+			m_values[index] = *it;
 		}
 		break;
-	case ValueList_FloatList:
-		for (auto v : *(buffer->values_as_FloatList()->val())) {
-			m_values.push_back(v);
+	}
+	case ValueList_FloatList: {
+		auto list = buffer->values_as_FloatList();
+		m_values.resize(list->val()->size());
+		for (auto it = list->val()->begin(); it != list->val()->end(); ++it) {
+			auto index = it - list->val()->begin();
+			m_values[index] = *it;
 		}
 		break;
-	case ValueList_StrList:
-		for (auto v : *(buffer->values_as_StrList()->val())) {
-			m_values.push_back(v->str());
+	}
+	case ValueList_StrList: {
+		auto list = buffer->values_as_StrList();
+		m_values.resize(list->val()->size());
+		for (auto it = list->val()->begin(); it != list->val()->end(); ++it) {
+			auto index = it - list->val()->begin();
+			m_values[index] = it->str();
 		}
 		break;
+	}
 	case ValueList_NONE:
 		break;
 	}

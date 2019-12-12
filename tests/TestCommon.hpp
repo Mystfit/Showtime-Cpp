@@ -132,6 +132,81 @@ namespace ZstTest
 	};
 
 
+	class Sink : public ZstComponent {
+	public:
+		std::unique_ptr<ZstInputPlug> input;
+		std::unique_ptr<ZstOutputPlug> output;
+
+		int last_received_code;
+		Sink* m_child_sink;
+
+		Sink(const char* name) :
+			ZstComponent("SINK", name),
+			input(std::make_unique<ZstInputPlug>("in", ValueList_IntList)),
+			output(std::make_unique<ZstOutputPlug>("out", ValueList_FloatList)),
+			last_received_code(0),
+			m_child_sink(NULL)
+		{
+		}
+
+		~Sink() {
+			//Plug is automatically deleted by owning component
+			input = NULL;
+			m_child_sink = NULL;
+		}
+
+		virtual void on_registered() override {
+			add_child(input.get());
+			add_child(output.get());
+		}
+
+		virtual void compute(ZstInputPlug* plug) override {
+			ZstLog::entity(LogLevel::debug, "In sink compute");
+			int request_code = plug->int_at(0);
+			ZstLog::entity(LogLevel::notification, "Sink received code {}. Echoing over output", request_code);
+			output->append_int(request_code);
+			output->fire();
+
+			switch (request_code)
+			{
+			case 0:
+				//No-op
+				break;
+			case 1:
+				m_child_sink = new Sink("sinkB");
+				this->add_child(m_child_sink);
+				ZstLog::entity(LogLevel::debug, "Sink about to sync activate child entity", m_child_sink->URI().path());
+				if (!m_child_sink->is_activated())
+					throw std::runtime_error("Child entity failed to activate");
+				ZstLog::entity(LogLevel::debug, "Finished sync activate");
+				break;
+			case 2:
+				ZstLog::entity(LogLevel::debug, "Sink about to sync deactivate child entity", m_child_sink->URI().path());
+				if (!m_child_sink)
+					throw std::runtime_error("Child entity is null");
+
+				if (!m_child_sink->is_activated())
+					throw std::runtime_error("Child entity is not activated");
+
+				m_child_sink->deactivate();
+				ZstLog::entity(LogLevel::debug, "Finished sync deactivate");
+				delete m_child_sink;
+				m_child_sink = NULL;
+				break;
+			case 3:
+				throw std::runtime_error("Testing compute failure.");
+			case 4:
+				//No-op
+				break;
+			default:
+				break;
+			}
+
+			last_received_code = request_code;
+		}
+	};
+
+
 	// -----------------
 	// Adaptors
 	// -----------------
@@ -255,6 +330,7 @@ namespace ZstTest
 
 	class TestPlugSync : public ZstSynchronisableAdaptor, public TestAdaptor
 	{
+		int last_val_received = 0;
 		void on_synchronisable_updated(ZstSynchronisable * synchronisable) override {
 			ZstPlug * plug = dynamic_cast<ZstPlug*>(synchronisable);
 			ZstLog::app(LogLevel::debug, "SYNCHRONISABLE_UPDATED: Plug {} updated: {}", plug->URI().path(), plug->int_at(0));
@@ -320,6 +396,7 @@ namespace ZstTest
 		~FixtureInit()
 		{
 			test_client->destroy();
+			ZstLog::app(LogLevel::notification, "-------------------------------------------------------------------");
 		}
 	};
 	
@@ -409,6 +486,23 @@ namespace ZstTest
 		boost::thread external_process_log_thread;
 	};
 
+
+	struct FixtureLocalClient {
+		ZstURI external_performer_URI;
+		std::shared_ptr<ShowtimeClient> local_client;
+
+		FixtureLocalClient(std::string client_name) :
+			local_client(std::make_shared<ShowtimeClient>()),
+			external_performer_URI(client_name.c_str())
+		{
+			local_client->init(client_name.c_str(), true);
+			local_client->auto_join_by_name(TEST_SERVER_NAME);
+		}
+
+		~FixtureLocalClient() {
+			local_client->destroy();
+		}
+	};
 
 	// Signal catching
 	// -----------

@@ -40,6 +40,7 @@ public:
 
 	Signal signal_handler(const SignalMessage* request, ZstPerformerStageProxy* sender);
 	Signal create_client_handler(const ClientJoinRequest * request, uuid endpoint_UUID);
+	Signal client_leaving_handler(const ClientLeaveRequest* request, ZstPerformerStageProxy* sender);
 	Signal create_entity_handler(const EntityCreateRequest* request, ZstPerformerStageProxy* sender);
 	Signal factory_create_entity_handler(const StageMessage* request, ZstPerformerStageProxy* sender);
 	Signal update_entity_handler(const EntityUpdateRequest* request);

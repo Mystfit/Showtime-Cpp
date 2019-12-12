@@ -24,7 +24,9 @@ ZstPerformer::ZstPerformer(const char * name) :
 }
     
 ZstPerformer::ZstPerformer(const Performer* buffer) : 
-	ZstComponent()
+	ZstComponent(),
+	m_missed_heartbeats(0)
+
 {
 	set_entity_type(EntityTypes_Performer);
 	ZstPerformer::deserialize_partial(buffer->performer());

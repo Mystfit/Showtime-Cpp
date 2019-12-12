@@ -2,7 +2,7 @@
 
 #include "ZstExports.h"
 #include "ZstEventAdaptor.hpp"
-
+#include "ZstConstants.h"
 
 namespace showtime {
 
@@ -28,6 +28,8 @@ namespace showtime {
 		ZST_EXPORT virtual void on_factory_arriving(ZstEntityFactory * factory);
 		ZST_EXPORT virtual void on_factory_leaving(ZstEntityFactory * factory);
 
+		ZST_EXPORT virtual void activate_entity(ZstEntityBase* entity, const ZstTransportRequestBehaviour& sendtype);
+		ZST_EXPORT virtual void deactivate_entity(ZstEntityBase* entity, const ZstTransportRequestBehaviour& sendtype);
 		ZST_EXPORT virtual ZstEntityBase* find_entity(const ZstURI& path) const;
 		ZST_EXPORT virtual void update_entity_URI(ZstEntityBase* entity, const ZstURI& original_path);
 

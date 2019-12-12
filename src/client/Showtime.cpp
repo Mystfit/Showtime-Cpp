@@ -184,12 +184,12 @@ void ShowtimeClient::register_entity(ZstEntityBase* entity)
 
 void ShowtimeClient::deactivate_entity(ZstEntityBase * entity)
 {
-	if (library_connected_guard()) m_client->session()->hierarchy()->destroy_entity(entity, ZstTransportRequestBehaviour::SYNC_REPLY);
+	if (library_connected_guard()) m_client->session()->hierarchy()->deactivate_entity(entity, ZstTransportRequestBehaviour::SYNC_REPLY);
 }
 
 void ShowtimeClient::deactivate_entity_async(ZstEntityBase * entity)
 {
-	if (library_connected_guard()) m_client->session()->hierarchy()->destroy_entity(entity, ZstTransportRequestBehaviour::ASYNC_REPLY);
+	if (library_connected_guard()) m_client->session()->hierarchy()->deactivate_entity(entity, ZstTransportRequestBehaviour::ASYNC_REPLY);
 }
 
 void ShowtimeClient::observe_entity(ZstEntityBase * entity)
@@ -244,12 +244,6 @@ void ShowtimeClient::register_factory_async(ZstEntityFactory * factory)
 ZstPerformer * ShowtimeClient::get_root()
 {
 	return m_client->session()->hierarchy()->get_local_performer();
-}
-
-ZstPerformer * ShowtimeClient::get_performer_by_URI(const ZstURI & path)
-{
-	if (!library_init_guard()) return NULL;
-    return m_client->session()->hierarchy()->get_performer_by_URI(path);
 }
 
 ZstEntityBase* ShowtimeClient::find_entity(const ZstURI & path)

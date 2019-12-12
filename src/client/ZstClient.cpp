@@ -472,20 +472,19 @@ void ZstClient::synchronise_graph_complete(ZstMessageReceipt response)
 
 void ZstClient::leave_stage()
 {
-    if (m_connected_to_stage) {
+    if (is_connected_to_stage()) {
         ZstLog::net(LogLevel::notification, "Leaving stage");
 
         //Set flags early to avoid double leaving shenanigans
         this->set_is_connecting(false);
         this->set_connected_to_stage(false);
 
-        ZstEventDispatcher<std::shared_ptr<ZstStageTransportAdaptor>>::invoke([](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
+        ZstEventDispatcher<std::shared_ptr<ZstStageTransportAdaptor>>::invoke([this](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
             ZstTransportArgs args;
-            args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
-            
-            auto builder = FlatBufferBuilder();
-            auto sync_signal = CreateSignalMessage(builder, Signal_CLIENT_LEAVING);
-            adaptor->send_msg(Content_SignalMessage, sync_signal.Union(), builder, args);
+			args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
+			auto builder = FlatBufferBuilder();
+			auto leave_msg_offset = CreateClientLeaveRequest(builder, builder.CreateString(session()->hierarchy()->get_local_performer()->URI().path()), ClientLeaveReason_QUIT);
+			adaptor->send_msg(Content_ClientLeaveRequest , leave_msg_offset.Union(), builder, args);
         });
     }
     else {
@@ -501,21 +500,32 @@ void ZstClient::leave_stage_complete()
     //Set stage as disconnected again - just to make sure
     set_connected_to_stage(false);
 
-    //Remove root performer from entity lookup
+	//Disconnect sockets and timers
+	boost::system::error_code ec;
+	m_heartbeat_timer.cancel(ec);
+	//m_heartbeat_timer.wait();
+	ZstLog::net(LogLevel::debug, "Timer cancel status: {}", ec.message());
+	if (m_client_transport)
+		m_client_transport->disconnect();
+
+	if (m_tcp_graph_transport)
+		m_tcp_graph_transport->disconnect();
+
+#ifdef ZST_BUILD_DRAFT_API
+	if (m_udp_graph_transport)
+		m_udp_graph_transport->disconnect();
+#endif
+
+    //Mark all locally registered entites as deactivated
     ZstEntityBundle bundle;
     m_session->hierarchy()->get_local_performer()->get_factories(bundle);
     m_session->hierarchy()->get_local_performer()->get_child_entities(bundle, true);
     for (auto c : bundle) {
-        m_session->hierarchy()->remove_entity_from_lookup(c->URI());
+		synchronisable_enqueue_deactivation(c);
     }
 
-    //Disconnect rest of sockets and timers
-    boost::system::error_code ec;
-    m_heartbeat_timer.cancel(ec);
-    //m_heartbeat_timer.wait();
-    ZstLog::net(LogLevel::debug, "Timer cancel status: {}", ec.message());
-    if (m_client_transport)
-        m_client_transport->disconnect();
+	//Remove entities immediately
+	process_events();
 
     //Enqueue event for adaptors
     m_session->dispatch_disconnected_from_stage();

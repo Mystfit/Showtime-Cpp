@@ -12,6 +12,13 @@ enum ZstSyncStatus {
 	ERR
 };
 
+enum ZstTransportRequestBehaviour
+{
+	PUBLISH = 0,
+	SYNC_REPLY,
+	ASYNC_REPLY
+};
+
 // ZstSynchronisable errors
 enum ZstSyncError {
 	NO_ERR,

@@ -25,7 +25,8 @@ ZstEntityFactory::ZstEntityFactory(const char * name) :
 }
     
 ZstEntityFactory::ZstEntityFactory(const Factory* buffer) : 
-	ZstEntityBase()
+	ZstEntityBase(),
+	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >("factory events"))
 {
 	set_entity_type(EntityTypes_Factory);
     ZstEntityFactory::deserialize_partial(buffer->factory());

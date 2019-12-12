@@ -18,10 +18,12 @@ ZstWebsocketServerTransport::~ZstWebsocketServerTransport()
 
 void ZstWebsocketServerTransport::init()
 {
+	set_connected(true);
 }
 
 void ZstWebsocketServerTransport::destroy()
 {
+	set_connected(false);
 	ZstTransportLayerBase::destroy();
 }
 

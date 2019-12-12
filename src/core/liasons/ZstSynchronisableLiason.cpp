@@ -28,6 +28,11 @@ void ZstSynchronisableLiason::synchronisable_set_deactivating(ZstSynchronisable 
 	synchronisable->set_deactivating();
 }
 
+void ZstSynchronisableLiason::synchronisable_set_deactivated(ZstSynchronisable* synchronisable)
+{
+	synchronisable->set_deactivated();
+}
+
 void ZstSynchronisableLiason::synchronisable_set_activation_status(ZstSynchronisable * synchronisable, ZstSyncStatus status)
 {
 	synchronisable->set_activation_status(status);
