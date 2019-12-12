@@ -34,8 +34,8 @@ environment:
     GENERATOR: "Visual Studio 16 2019"
     BOOST_ROOT: "C:/Libraries/boost_1_71_0"
     BUILD_FOLDER: "%APPVEYOR_BUILD_FOLDER%/build"
-    DEPENDENCY_DIR: "%APPVEYOR_BUILD_FOLDER%/dependencies"
-    INSTALL_DIR: "%APPVEYOR_BUILD_FOLDER%/install"
+    DEPENDENCY_DIR: "%APPVEYOR_BUILD_FOLDER%/build/dependencies"
+    INSTALL_DIR: "%APPVEYOR_BUILD_FOLDER%/build/dependencies/install"
     PATH: "%PROGRAMFILES%/CMake/bin;%PATH%"
     matrix:
     - PYTHON_VER: 2
@@ -46,13 +46,19 @@ matrix:
 
 install:
 - ps: |-
-    mkdir build
+    mkdir $Env:BUILD_FOLDER
+    mkdir $Env:DEPENDENCY_DIR
+    mkdir $Env:INSTALL_DIR
+
+    git submodule init
+    git submodule update
+
     choco install -y python$env:PYTHON_VER -ia "CompileAll=1 Include_debug=1 Include_symbols=1" > $null
     choco install -y swig > $null
     choco install -y cmake > $null
     refreshenv
-    & "$Env:APPVEYOR_BUILD_FOLDER/install_dependencies.ps1" -build_dir $Env:BUILD_FOLDER -config $Env:CONFIGURATION -without_boost
 
+    & "$Env:APPVEYOR_BUILD_FOLDER/install_dependencies.ps1" -build_dir $Env:BUILD_FOLDER -config $Env:CONFIGURATION -without_boost
 
 before_build:
 - ps: |-
