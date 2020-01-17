@@ -32,7 +32,10 @@ configure_file(${MANIFEST_IN_IN} ${MANIFEST_IN_PARTIAL})
 
 # Define language root interface file
 set(PYTHON_SWIG_INTERFACES "${CMAKE_CURRENT_LIST_DIR}/showtime_python.i")
-set_source_files_properties(${PYTHON_SWIG_INTERFACES} PROPERTIES CPLUSPLUS ON)
+set_source_files_properties(${PYTHON_SWIG_INTERFACES} PROPERTIES 
+    CPLUSPLUS ON
+    SWIG_COMPILE_OPTIONS "-directors"
+)
 
 # Create the swig PYTHON target
 swig_add_library(${PYTHON_TARGET_WRAPPER} 

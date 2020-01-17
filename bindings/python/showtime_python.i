@@ -2,11 +2,17 @@
 %{
 	#include <Showtime.h>
 	#include <ShowtimeServer.h>
+	#include <schemas/graph_types_generated.h>
+	using namespace showtime;
 %}
 
-%include <std_string.i>
+%begin %{
+	#ifdef _MSC_VER
+	#define SWIG_PYTHON_INTERPRETER_NO_DEBUG
+	#endif
+%}
 
-%typemap(out) ZstComponent * ZstEntityBase::as_component {
+%typemap(out) showtime::ZstComponent * showtime::ZstEntityBase::as_component {
     const std::string lookup_typename = "ZstComponent*";
     swig_type_info * const outtype = SWIG_TypeQuery(lookup_typename.c_str());
     $result = SWIG_NewPointerObj(SWIG_as_voidptr($1), outtype, $owner);

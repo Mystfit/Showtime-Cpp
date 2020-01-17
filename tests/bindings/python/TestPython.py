@@ -5,21 +5,22 @@ import sys
 import threading
 import subprocess
 import showtime.showtime as ZST
-from showtime.showtime import ZstComponent, ShowtimeClient, ShowtimeServer
-
-print(dir(ZstComponent))
+from showtime.showtime import ZstComponent, ZstOutputPlug, ZstInputPlug, ShowtimeClient, ShowtimeServer
 
 
 class SinkComponent(ZstComponent):
     def __init__(self, name):
         ZstComponent.__init__(self, name)
-        self.plug = self.create_input_plug("in", ZST.ZST_INT)
         self.last_received_value = 0
         self.cv = threading.Condition()
 
+    def on_registered(self):
+        self.plug = ZstInputPlug("in", ZST.ValueList_IntList)
+        self.add_child(self.plug)
+
     def compute(self, plug):
         self.last_received_value = plug.int_at(0)
-        ZST.app(showtime.notification, "Sink received value: {}".format(self.last_received_value))
+        ZST.app(ZST.notification, "Sink received value: {}".format(self.last_received_value))
         self.cv.acquire()
         self.cv.notify()
         self.cv.release()
@@ -28,7 +29,10 @@ class SinkComponent(ZstComponent):
 class PushComponent(ZstComponent):
     def __init__(self, name):
         ZstComponent.__init__(self, name)
-        self.plug = self.create_output_plug("out", ZST.ZST_INT)
+
+    def on_registered(self):
+        self.plug = ZstOutputPlug("out", ZST.ValueList_IntList)
+        self.add_child(self.plug)
 
     def send(self, val):
         self.plug.append_int(val)
@@ -75,6 +79,8 @@ class Test_LibraryStart(unittest.TestCase):
         push = PushComponent("push")
         sink = SinkComponent("sink")
         ZST.app(ZST.warn, "Created entites")
+
+        #raw_input("Attach debugger now")
 
         # Activate entities
         self.client.get_root().add_child(push)

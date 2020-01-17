@@ -1,4 +1,6 @@
-%ignore ZstLog::LoggerInfo;
+namespace showtime {
+	%ignore ZstLog::LoggerInfo;
+	%feature("director") ZstLog::ExtLog;
+}
 
-%feature("director") ZstLog::ExtLog;
 %include <ZstLogging.h>

@@ -1,28 +1,27 @@
 %include "std_string.i"
-%include "std_shared_ptr.i"
 
 %ignore std::stringstream;
-%ignore ZstLog::LoggerInfo;
 %ignore std::enable_shared_from_this;
+%ignore std::enable_shared_from_this<ShowtimeClient>;
+%ignore std::enable_shared_from_this<ShowtimeServer>;
 %ignore inheritable_enable_shared_from_this;
 
+%include "ZstSerialisable.i"
 %include "ZstLogging.i"
 %include "ZstURI.i"
-%include "ZstAdaptorPointers.i"
 
 %include "ZstSynchronisable.i"
-%include "ZstSerialisable.i"
 %include "ZstEntityBase.i"
 %include "ZstPlug.i"
+%include "ZstCableAddress.i"
 %include "ZstCable.i"
 
-%include "ZstAdaptors.i"
+%include "ZstAdaptorPointers.i"
 %include "ZstComponent.i"
 %include "ZstPerformer.i"
 %include "ZstEntityFactory.i"
-
 %include "ZstServerAddress.i"
-%include "ZstCableAddress.i"
+%include "ZstAdaptors.i"
 
 %rename("%(strip:[zst_])s") "";
 

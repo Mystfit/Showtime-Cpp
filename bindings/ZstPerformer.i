@@ -1,12 +1,13 @@
-%ignore ZstPerformer::read;
-%ignore ZstPerformer::write;
+namespace showtime {
+	%ignore ZstPerformer::read;
+	%ignore ZstPerformer::write;
+	%nodefaultctor ZstPerformer;
+}
 
 %inline %{
-	ZstPerformer* cast_to_performer(ZstSynchronisable * synchronisable){
-		return dynamic_cast<ZstPerformer*>(synchronisable);
+	showtime::ZstPerformer* cast_to_performer(showtime::ZstSynchronisable * synchronisable){
+		return dynamic_cast<showtime::ZstPerformer*>(synchronisable);
 	}
 %}
 
-
-%nodefaultctor ZstPerformer;
 %include <entities/ZstPerformer.h>
