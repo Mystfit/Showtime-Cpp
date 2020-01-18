@@ -1,6 +1,0 @@
-table StageBeaconMessage {
-	name: string;
-	port: int;
-}
-
-root_type StageBeaconMessage;
