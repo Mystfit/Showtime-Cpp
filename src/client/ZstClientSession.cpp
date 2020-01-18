@@ -127,7 +127,9 @@ void ZstClientSession::cable_destroy_handler(const CableDestroyRequest* request)
 void ZstClientSession::aquire_entity_ownership_handler(const EntityTakeOwnershipRequest* request)
 {
     auto entity = hierarchy()->find_entity(ZstURI(request->URI()->c_str(), request->URI()->size()));
-    
+	if (!entity)
+		return;
+
     // Set the owner
     ZstEntityBundle bundle;
     entity->get_child_entities(bundle);

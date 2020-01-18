@@ -7,3 +7,6 @@
 [submodule "submodules/fmt"]
 	path = submodules/fmt
 	url = https://github.com/fmtlib/fmt.git
+[submodule "schemas"]
+	path = schemas
+	url = https://github.com/mystfit/showtime-schemas.git

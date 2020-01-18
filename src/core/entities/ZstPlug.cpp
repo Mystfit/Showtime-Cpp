@@ -1,6 +1,5 @@
 #include <memory>
 #include <mutex>
-#include <msgpack.hpp>
 
 #include "entities/ZstPlug.h"
 #include "ZstCable.h"

@@ -179,19 +179,19 @@ endif()
 
 set(FLATBUFFFER_OUTPUT_DIR "${Showtime_COMPILED_INCLUDE_DIRS}/schemas")
 set(FLATBUFFER_HEADER_OUTPUT 
-    "${FLATBUFFFER_OUTPUT_DIR}/stage_beacon_message_generated.h"
-    "${FLATBUFFFER_OUTPUT_DIR}/stage_message_generated.h"
-    "${FLATBUFFFER_OUTPUT_DIR}/graph_message_generated.h"
-    "${FLATBUFFFER_OUTPUT_DIR}/graph_types_generated.h"
+    "${FLATBUFFFER_OUTPUT_DIR}/messaging/stage_beacon_message_generated.h"
+    "${FLATBUFFFER_OUTPUT_DIR}/messaging/stage_message_generated.h"
+    "${FLATBUFFFER_OUTPUT_DIR}/messaging/graph_message_generated.h"
+    "${FLATBUFFFER_OUTPUT_DIR}/messaging/graph_types_generated.h"
 )
 set(FLATC_ARGS 
     "-c"
     "-o" "${FLATBUFFFER_OUTPUT_DIR}/"
-    "-I" "${CMAKE_SOURCE_DIR}/schemas/"
-    "${CMAKE_SOURCE_DIR}/schemas/stage_message.fbs"
-    "${CMAKE_SOURCE_DIR}/schemas/stage_beacon_message.fbs"
-    "${CMAKE_SOURCE_DIR}/schemas/graph_message.fbs"
-    "${CMAKE_SOURCE_DIR}/schemas/graph_types.fbs"
+    "-I" "${CMAKE_SOURCE_DIR}/schemas/messaging"
+    "${CMAKE_SOURCE_DIR}/schemas/messaging/stage_message.fbs"
+    "${CMAKE_SOURCE_DIR}/schemas/messaging/stage_beacon_message.fbs"
+    "${CMAKE_SOURCE_DIR}/schemas/messaging/graph_message.fbs"
+    "${CMAKE_SOURCE_DIR}/schemas/messaging/graph_types.fbs"
 )
 execute_process(COMMAND ${FLATBUFFERS_FLATC_EXECUTABLE} ${FLATC_ARGS})
 

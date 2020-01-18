@@ -1,5 +1,4 @@
 #include "ZstPerformanceMessage.h"
-#include <msgpack.hpp>
 #include <exception>
 
 namespace showtime {

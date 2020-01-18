@@ -2,7 +2,6 @@
 #include "../ZstZMQRefCounter.h"
 #include <zmq.h>
 #include <czmq.h>
-#include <msgpack.hpp>
 
 namespace showtime {
 
