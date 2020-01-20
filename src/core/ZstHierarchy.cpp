@@ -412,8 +412,14 @@ void ZstHierarchy::on_synchronisable_destroyed(ZstSynchronisable * synchronisabl
 		std::lock_guard<std::recursive_mutex> lock(m_hierarchy_mutex);
 		
 		auto entity = dynamic_cast<ZstEntityBase*>(synchronisable);
-		if(entity)
+		if (entity) {
+			auto p = entity->parent();
+			if (p) {
+				p->remove_child(entity->parent());
+			}
+
 			remove_entity_from_lookup(entity->URI());
+		}
 
 		if (synchronisable->is_proxy()) {
 			auto it = std::find_if(m_proxies.begin(), m_proxies.end(), [synchronisable](const std::unique_ptr<ZstSynchronisable>& item) {

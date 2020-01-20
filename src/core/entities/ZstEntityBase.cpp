@@ -64,11 +64,6 @@ namespace showtime
     {
         //Let others know this entity is going away
         dispatch_destroyed();
-        
-        if(parent()){
-            parent()->remove_child(this);
-        }
-
         m_entity_events->remove_all_adaptors();
         m_session_events->remove_all_adaptors();
     }
