@@ -1,12 +1,9 @@
 #pragma once
 
 #include "../core/adaptors/ZstStageTransportAdaptor.hpp"
-#include "../core/ZstStageMessage.h"
-#include "../core/transports/ZstStageTransport.h"
 #include "../core/ZstActor.h"
-
-#include <czmq.h>
 #include <boost/uuid/uuid.hpp>
+#include "../core/transports/ZstStageTransport.h"
 
 using namespace boost::uuids;
 

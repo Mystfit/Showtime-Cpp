@@ -504,14 +504,5 @@ namespace ZstTest
 		}
 	};
 
-	// Signal catching
-	// -----------
-
-#ifdef WIN32
-#include <windows.h>
-#else
-#include <signal.h>
-#endif
-
 	static int s_interrupted = 0;
 };

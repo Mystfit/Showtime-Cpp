@@ -1,6 +1,6 @@
 #pragma once
-#include "ZstLogging.h"
 #include "ZstPointerUtils.h"
+#include "ZstExports.h"
 #include <set>
 #include <memory>
 #include <mutex>

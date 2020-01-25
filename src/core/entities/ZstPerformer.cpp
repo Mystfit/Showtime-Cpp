@@ -1,6 +1,7 @@
 #include <exception>
 #include "entities/ZstPerformer.h"
 #include "../ZstEventDispatcher.hpp"
+#include "ZstLogging.h"
 
 using namespace std;
 using namespace flatbuffers;

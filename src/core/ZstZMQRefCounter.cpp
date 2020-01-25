@@ -1,6 +1,6 @@
 #include "ZstZMQRefCounter.h"
-#include "ZstLogging.h"
 #include <czmq.h>
+#include "ZstLogging.h"
 
 static int s_ref_count = 0;
 

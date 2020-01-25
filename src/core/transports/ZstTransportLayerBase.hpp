@@ -9,6 +9,7 @@
 #include "../ZstEventDispatcher.hpp"
 #include "../ZstMessageSupervisor.hpp"
 #include "../ZstMessagePool.hpp"
+#include "ZstLogging.h"
 
 namespace showtime {
 

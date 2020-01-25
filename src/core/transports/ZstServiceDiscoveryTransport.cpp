@@ -1,7 +1,9 @@
-#include "ZstServiceDiscoveryTransport.h"
 #include "../ZstZMQRefCounter.h"
 #include "schemas/stage_beacon_message_generated.h"
+
 #include <czmq.h>
+#include "ZstLogging.h"
+#include "ZstServiceDiscoveryTransport.h"
 
 using namespace flatbuffers;
 

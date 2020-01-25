@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ZstLogging.h"
-
 #include "ZstExports.h"
 #include "entities/ZstEntityFactory.h"
 #include "adaptors/ZstEntityAdaptor.hpp"

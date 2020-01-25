@@ -11,10 +11,10 @@
 #include <boost/log/expressions.hpp>
 #include <boost/core/null_deleter.hpp>
 #include <fstream>
+#include "ZstLogging.h"
 #ifdef WIN32
 #include <windows.h>
 #endif
-#include "ZstLogging.h"
 
 // Boost namespaces 
 namespace logging = boost::log;

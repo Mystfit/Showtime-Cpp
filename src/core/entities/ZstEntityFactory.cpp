@@ -2,6 +2,7 @@
 #include "entities/ZstEntityFactory.h"
 #include "../ZstEventDispatcher.hpp"
 #include "adaptors/ZstSynchronisableAdaptor.hpp"
+#include "ZstLogging.h"
 
 using namespace flatbuffers;
 

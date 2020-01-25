@@ -9,8 +9,8 @@
 #include <mutex>
 #include <memory>
 
-#include "ZstPointerUtils.h"
 #include "ZstLogging.h"
+#include "ZstPointerUtils.h"
 #include "ZstConstants.h"
 #include "adaptors/ZstEventAdaptor.hpp"
 
@@ -193,16 +193,14 @@ public:
 
 			for (auto adaptor : adaptors) {
 				if (auto adp = adaptor.lock()) {
-					event.func(std::dynamic_pointer_cast<typename std::pointer_traits<T>::element_type>(adp));
+					try {
+						event.func(std::dynamic_pointer_cast<typename std::pointer_traits<T>::element_type>(adp));
+					}
+					catch (std::exception e) {
+						ZstLog::net(LogLevel::error, "Event dispatcher failed to run an event on a adaptor. Reason: {}", e.what());
+						success = false;
+					}
 				}
-				/*event.func(static_cast<T>(adp));
-				try {
-					event.func(adaptor);
-				}
-				catch (std::exception e) {
-					ZstLog::net(LogLevel::error, "Event dispatcher failed to run an event on a adaptor. Reason: {}", e.what());
-					success = false;
-				}*/
 			}
 			event.completed_func((success) ? ZstEventStatus::SUCCESS : ZstEventStatus::FAILED);
 		}

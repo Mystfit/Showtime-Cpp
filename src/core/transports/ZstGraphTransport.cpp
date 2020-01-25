@@ -1,7 +1,8 @@
-#include "ZstGraphTransport.h"
 #include "../ZstZMQRefCounter.h"
-#include <zmq.h>
+
 #include <czmq.h>
+#include "ZstLogging.h"
+#include "ZstGraphTransport.h"
 
 namespace showtime {
 
