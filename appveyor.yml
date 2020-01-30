@@ -38,6 +38,7 @@ environment:
     INSTALL_DIR: "%APPVEYOR_BUILD_FOLDER%/build/dependencies/install"
     PATH: "%PROGRAMFILES%/CMake/bin;%PATH%"
     matrix:
+    - NATIVE: true
     - PYTHON_VER: 2
     - PYTHON_VER: 3
     - DOTNET_VER: v4.7.2
