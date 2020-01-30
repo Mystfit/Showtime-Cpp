@@ -40,6 +40,9 @@ environment:
     matrix:
     - PYTHON_VER: 2
     - PYTHON_VER: 3
+    - DOTNET_VER: v4.7.2
+    - DOTNET_VER: netstandard2.0
+    - DOTNET_VER: netstandard2.1
 
 matrix:
     fast_finish: true
@@ -53,7 +56,13 @@ install:
     git -C $Env:APPVEYOR_BUILD_FOLDER submodule init
     git -C $Env:APPVEYOR_BUILD_FOLDER submodule update
 
-    choco install -y python$env:PYTHON_VER -ia "CompileAll=1 Include_debug=1 Include_symbols=1" > $null
+    if($Env:PYTHON_VER -ne $null){
+        choco install -y python$env:PYTHON_VER -ia "CompileAll=1 Include_debug=1 Include_symbols=1" > $null
+    }
+    if($Env:DOTNET_VER -ne $null){
+        choco install -y dotnetcoresdk > $null
+    }
+
     choco install -y swig > $null
     choco install -y cmake > $null
     refreshenv
@@ -72,16 +81,26 @@ before_build:
         "-DBUILD_STATIC=ON",
         "-DBUILD_DRAFTS=OFF",
         "-DBUILD_TESTING=ON",
-        "-DBINDINGS_DOTNET=ON",
-        "-DBINDINGS_DOTNET_CSPROJ=ON",
-        "-DBINDINGS_DOTNET_FRAMEWORK_VERSION=netstandard2.0",
-        "-DBINDINGS_PYTHON=ON",
-        "-DBINDINGS_PYTHON_VERSION_MAJOR=$env:PYTHON_VER",
-        "-DADD_GENERATED_MSVC_PROJECTS=OFF",
         "-DBOOST_ROOT:PATHNAME=$env:BOOST_ROOT",
         "-DBOOST_INCLUDEDIR:PATHNAME=$env:BOOST_ROOT",
         "-DBOOST_LIBRARYDIR:PATHNAME=$env:BOOST_ROOT/lib64-msvc-14.1"
     )
+
+    if($Env:PYTHON_VER -ne $null){
+        $CMAKE_FLAGS += @(
+            "-DBINDINGS_PYTHON=ON",
+            "-DBINDINGS_PYTHON_VERSION_MAJOR=$env:PYTHON_VER"
+        )
+    }
+     if($Env:DOTNET_VER -ne $null){
+        $CMAKE_FLAGS += @(
+            "-DBINDINGS_DOTNET=ON",
+            "-DBINDINGS_DOTNET_CSPROJ=ON",
+            "-DBINDINGS_DOTNET_FRAMEWORK_VERSION=$Env:DOTNET_VER",
+            "-DADD_GENERATED_MSVC_PROJECTS=OFF"
+        )
+    }
+
     cmake @CMAKE_FLAGS
     cmake --build "$env:BUILD_FOLDER" --config $Env:CONFIGURATION
 

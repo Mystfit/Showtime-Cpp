@@ -23,6 +23,7 @@ if(BINDINGS_DOTNET OR BINDINGS_UNITY)
         v4.7.2
         netstandard1.0 
         netstandard2.0
+        netstandard2.1
     )
     set_property(CACHE BINDINGS_DOTNET_FRAMEWORK_VERSION PROPERTY STRINGS ${DOTNET_FRAMEWORK_VERSIONS})
     set(BINDINGS_DOTNET ON)
