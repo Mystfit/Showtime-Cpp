@@ -19,16 +19,10 @@ set(GENERATED_SOURCES
 list(APPEND GENERATED_SOURCES ${FLATBUFFER_HEADER_OUTPUT})
 
 # Copy fmt headers
-file(GLOB FMT_HEADER_SRC CONFIGURE_DEPENDS "${Showtime_SUBMODULE_DEPENDENCIES_DIR}/fmt/include/fmt/*.h")
-file(GLOB FMT_SRC CONFIGURE_DEPENDS "${Showtime_SUBMODULE_DEPENDENCIES_DIR}/fmt/src/*.cc")
-file(MAKE_DIRECTORY ${Showtime_COMPILED_INCLUDE_DIRS}/fmt)
-set(FMT_HEADERS "")
-foreach(FILE ${FMT_HEADER_SRC})
-    get_filename_component(FILE_N ${FILE} NAME)
-    set(DEST_F "${Showtime_COMPILED_INCLUDE_DIRS}/fmt/${FILE_N}")
-    configure_file(${FILE} ${DEST_F} COPYONLY)
-    list(APPEND FMT_HEADERS ${DEST_F})
-endforeach()
+get_target_property(FMT_INCLUDE_DIR fmt::fmt INTERFACE_INCLUDE_DIRECTORIES)
+file(MAKE_DIRECTORY ${Showtime_COMPILED_INCLUDE_DIRS})
+file(COPY ${FMT_INCLUDE_DIR}/fmt DESTINATION ${Showtime_COMPILED_INCLUDE_DIRS})
+file(GLOB FMT_HEADERS CONFIGURE_DEPENDS "${FMT_INCLUDE_DIR}/fmt/*.h")
 
 # Copy flatbuffers headers
 get_target_property(FLATBUFFERS_INCLUDE_DIR flatbuffers::flatbuffers INTERFACE_INCLUDE_DIRECTORIES)
@@ -204,7 +198,7 @@ set(ZST_CORE_LIASON_SRC
 # Source groups
 source_group( "showtime\\entities" FILES ${ENTITY_HEADERS} ${ZST_CORE_ENTITY_SRC})
 source_group( "showtime\\adaptors" FILES ${ADAPTOR_HEADERS} ${ZST_CORE_ADAPTOR_HEADERS} ${ZST_CORE_ADAPTOR_SRC})
-source_group( "showtime\\fmt" FILES ${FMT_HEADERS} ${FMT_SRC})
+source_group( "showtime\\fmt" FILES ${FMT_HEADERS})
 source_group( "showtime\\headers" FILES ${ZST_CORE_HEADERS} ${API_HEADERS})
 source_group( "showtime\\source" FILES ${ZST_CORE_SRC})
 source_group( "showtime\\modules" FILES ${ZST_CORE_MODULE_HEADERS} ${ZST_CORE_MODULE_SRC})
@@ -226,7 +220,6 @@ target_sources(${CORE_TARGET_OBJECTS} PRIVATE
     ${ZST_CORE_ADAPTOR_SRC}
     ${ZST_CORE_ENTITY_SRC}
     ${ZST_CORE_SCHEMA_HEADERS}
-    ${FMT_SRC}
     ${Showtime_API_INTERFACE}
 )
 
@@ -307,10 +300,7 @@ set_target_properties(${CORE_TARGET_OBJECTS} PROPERTIES POSITION_INDEPENDENT_COD
 target_compile_definitions(${CORE_TARGET_OBJECTS} 
     PRIVATE 
     ZST_EXPORT_CORE_API
-    FMT_EXPORT
     PUBLIC
-    #FMT_HEADER_ONLY
-    FMT_USE_WINDOWS_H
 )
 
 # Static/shared library specific options
@@ -338,10 +328,8 @@ if(BUILD_SHARED)
     target_compile_definitions(${CORE_TARGET} 
         PRIVATE
         ZST_EXPORT_CORE_API
-        FMT_EXPORT
         INTERFACE
         ZST_IMPORT_CORE_API
-        FMT_SHARED
     )
 endif()
 

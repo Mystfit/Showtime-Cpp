@@ -50,8 +50,7 @@ void ZstWebsocketSession::do_read()
 	m_ws.async_read(m_recv_buffer, beast::bind_front_handler(&ZstWebsocketSession::on_read, shared_from_this()));
 }
 
-void ZstWebsocketSession::on_read(beast::error_code ec, std::size_t bytes_transferred)
-{
+void ZstWebsocketSession::on_read(beast::error_code ec, std::size_t bytes_transferred){
 	boost::ignore_unused(bytes_transferred);
 
 	// This indicates that the session was closed
@@ -65,12 +64,14 @@ void ZstWebsocketSession::on_read(beast::error_code ec, std::size_t bytes_transf
 		return;
 	}
 
+	ZstLog::net(LogLevel::debug, "Websocket received message '{}'", beast::buffers_to_string(m_recv_buffer.data()));
+
 	if (!m_ws.got_binary()) {
 		ZstWebsocketServerTransport::fail(ec, "Websocket received non-binary message");
+
+		do_read();
 		return;
 	}
-
-	ZstLog::net(LogLevel::debug, "Websocket received message '{}'", beast::buffers_to_string(m_recv_buffer.data()));
 
 	//Parse message
 	auto msg = m_transport->get_msg();
@@ -87,8 +88,7 @@ void ZstWebsocketSession::on_read(beast::error_code ec, std::size_t bytes_transf
 	});
 }
 
-void ZstWebsocketSession::do_write(const uint8_t* msg_buffer, size_t msg_buffer_size)
-{
+void ZstWebsocketSession::do_write(const uint8_t* msg_buffer, size_t msg_buffer_size){
 	// Copy the message contents since we don't want to lose hem if the flatbuffer builder disappears
 	// TODO: Replace with detatchedbuffer?
 	auto pair = std::make_shared<std::pair<std::unique_ptr<uint8_t>, size_t > >(std::make_unique<uint8_t>(*msg_buffer), msg_buffer_size);
@@ -107,8 +107,7 @@ void ZstWebsocketSession::on_send(std::shared_ptr< std::pair<std::unique_ptr<uin
 	m_ws.async_write(net::buffer(m_out_messages.front()->first.get(), m_out_messages.front()->second), beast::bind_front_handler(&ZstWebsocketSession::on_write, shared_from_this()));
 }
 
-void ZstWebsocketSession::on_write(beast::error_code ec, std::size_t bytes_transferred)
-{
+void ZstWebsocketSession::on_write(beast::error_code ec, std::size_t bytes_transferred){
 	boost::ignore_unused(bytes_transferred);
 
 	if (ec)

@@ -177,6 +177,8 @@ if(NOT FLATBUFFERS_FLATC_EXECUTABLE)
     endif()
 endif()
 
+find_package(fmt)
+
 set(FLATBUFFFER_OUTPUT_DIR "${Showtime_COMPILED_INCLUDE_DIRS}/schemas")
 set(FLATBUFFER_HEADER_OUTPUT 
     "${FLATBUFFFER_OUTPUT_DIR}/messaging/stage_beacon_message_generated.h"
@@ -209,6 +211,7 @@ set(SHOWTIME_PRIVATE_LINKED_LIBS
     Boost::fiber
     Boost::boost
     Boost::disable_autolinking
+    fmt::fmt
     ${CMAKE_THREAD_LIBS_INIT}
 )
 

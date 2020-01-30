@@ -2,7 +2,7 @@ param(
     [string]$build_dir="$PSScriptRoot/build",
     [string]$dependency_dir="$build_dir/dependencies",
     [string]$install_prefix="$dependency_dir/install",
-    [string]$config="release",
+    [string[]]$config=@("release"),
     [string]$generator="Visual Studio 16 2019",
     [switch]$without_boost = $false,
     [string]$boost_version = "1.70.0"
@@ -12,11 +12,6 @@ param(
 # Setup
 # -----
 $env:GIT_REDIRECT_STDERR = "2>&1"
-
-$build_flags = (
-  "--config", "$config",
-  "--target", "INSTALL"
-)
 
 $generator_flags = @(
     "-G", "`"$generator`""
@@ -41,7 +36,7 @@ md -Force "$install_prefix"
 # CMake Libraries
 # ---------------
 function Build-CmakeFromGit{
-    Param($name, $url, $branch, $flags)
+    Param($name, $url, $branch, $config, $flags)
 
     $build_dir = "$dependency_dir/$name/build_dir"
 
@@ -59,25 +54,13 @@ function Build-CmakeFromGit{
         "-B", "`"$build_dir`""
     ) 
     & "cmake" @cmake_flags
-    & "cmake" $(@("--build", "`"$build_dir`"") + $build_flags)
+    & "cmake" $(@("--build", "`"$build_dir`"", "--config", "$config", "--target", "INSTALL"))
     Write-Output "Built $name"
 }
 
-Build-CmakeFromGit -name "libzmq" -url "https://github.com/mystfit/libzmq.git" -branch "4.2.5-drafts-fixed" -flags @(
-    "-DENABLE_DRAFTS=TRUE",
-    "-DZMQ_BUILD_TESTS=OFF"
-)
-Build-CmakeFromGit -name "czmq" -url "https://github.com/mystfit/czmq.git" -branch "4.2.0" -flags @(
-    "-DENABLE_DRAFTS=TRUE",
-    "-DBUILD_TESTING=OFF",
-    "-DLIBZMQ_FIND_USING_CMAKE_PACKAGE=ON"
-)
-Build-CmakeFromGit -name "flatbuffers" -url "https://github.com/google/flatbuffers.git" -branch "master" -flags @("-DFLATBUFFERS_INSTALL=ON")
+function Build-Boost{
+    Param($version, $config, $libraries)
 
-
-# Boost
-# -----
-if($without_boost -ne $true){
     $boost_flags = @(
         "--prefix=$install_prefix",
         "address-model=64",
@@ -85,11 +68,11 @@ if($without_boost -ne $true){
         "threading=multi",
         "runtime-link=shared"
     )
-    $boost_libs = @("system","chrono","log","thread","filesystem","date_time","atomic","regex","context","fiber","test")
+    $boost_libs = $libraries
     $boost_libs = $boost_libs | ForEach-Object {"--with-$_"}
     $boost_shared_lib_flags = @("link=shared")
     $boost_static_lib_flags = @("link=static")
-    $boost_ver_scored = $boost_version.Replace(".", "_")
+    $boost_ver_scored = $version.Replace(".", "_")
     $boost_file = "$dependency_dir/boost_$boost_ver_scored.7z"
     $b2 = "$dependency_dir/boost_$boost_ver_scored/b2.exe"
 
@@ -97,10 +80,11 @@ if($without_boost -ne $true){
         Write-Output "Found Boost"
     } else {
         Write-Output "Downloading boost"
-        Invoke-WebRequest "http://dl.bintray.com/boostorg/release/$boost_version/source/boost_$boost_ver_scored.7z" -OutFile "$boost_file"
+        Invoke-WebRequest "http://dl.bintray.com/boostorg/release/$version/source/boost_$boost_ver_scored.7z" -OutFile "$boost_file"
         Write-Output "Extracting boost"
         Push-Location $dependency_dir
         7z x -y -bd -bb0 $boost_file
+        Remove-Item $boost_file
         Pop-Location
     }
     Write-Output "Building boost"
@@ -113,5 +97,30 @@ if($without_boost -ne $true){
     ./b2.exe $(@("install") + $boost_libs + $boost_static_lib_flags + $boost_flags)
     Pop-Location
 }
+
+
+foreach ($c in $config){
+    $c_titled = $(Get-Culture).textinfo.totitlecase($c)
+    Write-Output "Building config: $c_titled"
+    Build-CmakeFromGit -name "libzmq" -url "https://github.com/zeromq/libzmq.git" -branch "master" -config $c_titled -flags @(
+        "-DENABLE_DRAFTS=TRUE",
+        "-DZMQ_BUILD_TESTS=OFF"
+    )
+    Build-CmakeFromGit -name "czmq" -url "https://github.com/zeromq/czmq.git" -branch "master" -config $c_titled -flags @(
+        "-DENABLE_DRAFTS=TRUE",
+        "-DBUILD_TESTING=OFF",
+        "-DCMAKE_DEBUG_POSTFIX=d"
+    )
+    Build-CmakeFromGit -name "flatbuffers" -url "https://github.com/google/flatbuffers.git" -branch "master" -config $c_titled -flags @(
+        "-DFLATBUFFERS_INSTALL=ON"
+    )
+    Build-CmakeFromGit -name "fmt" -url "https://github.com/fmtlib/fmt.git" -branch "master" -config $c_titled -flags @()
+
+    if($without_boost -ne $true){
+        $libraries = @("system","chrono","log","thread","filesystem","date_time","atomic","regex","context","fiber","test")
+        Build-Boost -version $boost_version -config $c $libraries
+    }
+}
+
 
 Write-Output "Done"
