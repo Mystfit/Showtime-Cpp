@@ -113,7 +113,7 @@ build:
 test_script:
 - ps: |
     Push-Location -Path "$env:BUILD_FOLDER"
-    & ctest -C $env:CONFIGURATION --output-on-fail --no-compress-output -T Test -j 2 --timeout 320
+    & ctest -C $env:CONFIGURATION --output-on-fail --no-compress-output -T Test --timeout 320
     $result = Get-Childitem -ErrorAction SilentlyContinue -Recurse –Path $env:BUILD_FOLDER/Testing/*.xml
     $XSLInputElement = New-Object System.Xml.Xsl.XslCompiledTransform
     $XSLInputElement.Load("https://raw.githubusercontent.com/rpavlik/jenkins-ctest-plugin/master/ctest-to-junit.xsl")
