@@ -14,10 +14,6 @@ ZstHierarchy::~ZstHierarchy()
 	m_proxies.clear();
 }
 
-void ZstHierarchy::destroy()
-{
-}
-
 void ZstHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype)
 {
 	////If this is not a local entity, we can't activate it

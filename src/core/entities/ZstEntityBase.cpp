@@ -165,8 +165,11 @@ namespace showtime
 
     void ZstEntityBase::deserialize_partial(const EntityData* buffer)
     {
+        if (!buffer) return;
+
         m_uri = ZstURI(buffer->URI()->c_str(), buffer->URI()->size());
-        m_current_owner = ZstURI(buffer->owner()->c_str(), buffer->owner()->size());
+        if(buffer->owner())
+            m_current_owner = ZstURI(buffer->owner()->c_str(), buffer->owner()->size());
     }
     
     void ZstEntityBase::deserialize(const Entity* buffer)

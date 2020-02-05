@@ -7,17 +7,9 @@ ZstSynchronisableModule::ZstSynchronisableModule() :
 {
 }
 
-ZstSynchronisableModule::~ZstSynchronisableModule()
-{
-}
-
-void ZstSynchronisableModule::init()
+void ZstSynchronisableModule::init_adaptors()
 {
     m_synchronisable_events->add_adaptor(ZstSynchronisableModule::downcasted_shared_from_this<ZstSynchronisableModule>());
-}
-
-void ZstSynchronisableModule::destroy()
-{
 }
 
 void ZstSynchronisableModule::process_events()

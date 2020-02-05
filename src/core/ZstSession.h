@@ -31,10 +31,9 @@ class ZST_CLASS_EXPORTED ZstSession :
 public:
 	ZST_EXPORT ZstSession();
     ZST_EXPORT virtual ~ZstSession();
+	ZST_EXPORT virtual void init_adaptors() override;
 	ZST_EXPORT virtual void process_events() override;
 	ZST_EXPORT virtual void flush_events() override;
-	ZST_EXPORT virtual void init() override;
-	ZST_EXPORT virtual void destroy() override;
 
 	// ------------------
 	// Cable creation

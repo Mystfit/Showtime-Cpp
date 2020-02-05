@@ -16,9 +16,8 @@ class ZST_CLASS_EXPORTED ZstSynchronisableModule :
 {
 public:
 	ZST_EXPORT ZstSynchronisableModule();
-    ZST_EXPORT ~ZstSynchronisableModule();
-	ZST_EXPORT virtual void init();
-	ZST_EXPORT virtual void destroy();
+    ZST_EXPORT ~ZstSynchronisableModule() {};
+    ZST_EXPORT virtual void init_adaptors();
     
     ZST_EXPORT virtual void process_events();
     ZST_EXPORT virtual void flush_events();

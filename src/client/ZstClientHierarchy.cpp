@@ -23,17 +23,13 @@ ZstClientHierarchy::~ZstClientHierarchy()
 
 void ZstClientHierarchy::init(std::string name)
 {
-	ZstHierarchy::init();
+	init_adaptors();
 
 	//Create a root entity to hold our local entity hierarchy
     m_root = std::make_shared<ZstPerformer>(name.c_str());
 
 	// Make sure the root performer registers our hierarchy adaptors
 	register_entity(m_root.get());
-}
-
-void ZstClientHierarchy::destroy()
-{
 }
 
 void ZstClientHierarchy::process_events()

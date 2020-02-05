@@ -17,7 +17,6 @@ class ZstStageSession :
 public:
 	ZstStageSession();
 	~ZstStageSession();
-	void destroy() override;
 	virtual void process_events() override;
 	virtual void set_wake_condition(std::weak_ptr<ZstSemaphore> condition) override;
 

@@ -14,20 +14,16 @@ ZstStageSession::ZstStageSession() : m_hierarchy(std::make_shared<ZstStageHierar
 
 ZstStageSession::~ZstStageSession()
 {
-	ZstCableBundle bundle;
-	for (auto cable : get_cables(bundle)) {
-		destroy_cable(cable);
-	}
-}
-
-void ZstStageSession::destroy()
-{
+	//ZstCableBundle bundle;
+	//for (auto cable : get_cables(bundle)) {
+	//	destroy_cable(cable);
+	//}
 }
 
 void ZstStageSession::process_events()
 {
-	ZstStageModule::process_events();
 	ZstSession::process_events();
+	ZstStageModule::process_events();
 	hierarchy()->process_events();
 }
 

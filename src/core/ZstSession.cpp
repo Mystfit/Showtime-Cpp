@@ -21,6 +21,12 @@ ZstSession::~ZstSession()
     m_cables.clear();
 }
 
+void ZstSession::init_adaptors()
+{
+	m_compute_events->add_adaptor(ZstComputeAdaptor::downcasted_shared_from_this<ZstComputeAdaptor>());
+	ZstSynchronisableModule::init_adaptors();
+}
+
 void ZstSession::process_events()
 {
 	hierarchy()->process_events();
@@ -37,21 +43,6 @@ void ZstSession::flush_events()
     m_compute_events->flush();
     
     ZstSynchronisableModule::flush_events();
-}
-
-void ZstSession::init()
-{
-    //Add adaptors
-	m_compute_events->add_adaptor(ZstComputeAdaptor::downcasted_shared_from_this<ZstComputeAdaptor>());
-    
-    //Attach session as an adaptor to the hierarchy module to handle events that will need to modify cables
-    hierarchy()->hierarchy_events()->add_adaptor(ZstHierarchyAdaptor::downcasted_shared_from_this<ZstHierarchyAdaptor>());
-    
-    ZstSynchronisableModule::init();
-}
-
-void ZstSession::destroy()
-{
 }
 
 ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * output) {
@@ -250,7 +241,6 @@ void ZstSession::register_entity(ZstEntityBase* entity)
 		child->add_adaptor(ZstSessionAdaptor::downcasted_shared_from_this<ZstSessionAdaptor>());
 		child->add_adaptor(ZstEntityAdaptor::downcasted_shared_from_this<ZstEntityAdaptor>());
 	}
-	
 }
 
 bool ZstSession::observe_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype)

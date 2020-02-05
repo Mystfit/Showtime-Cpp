@@ -100,6 +100,8 @@ void ZstCableAddress::deserialize(const Cable* buffer)
 
 void ZstCableAddress::deserialize_partial(const CableData* buffer)
 {
+    if (!buffer) return;
+
 	m_input_URI = ZstURI(buffer->input_URI()->c_str(), buffer->input_URI()->size());
 	m_output_URI = ZstURI(buffer->output_URI()->c_str(), buffer->output_URI()->size());
 }

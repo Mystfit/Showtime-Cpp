@@ -26,7 +26,7 @@ void ZstWebsocketSession::run()
 	// Set a decorator to change the Server of the handshake
 	m_ws.set_option(websocket::stream_base::decorator([](websocket::response_type& res) {
 		res.set(http::field::server, std::string(BOOST_BEAST_VERSION_STRING) + " websocket-server-async");
-		}));
+	}));
 
 	m_ws.binary(true);
 
@@ -91,11 +91,13 @@ void ZstWebsocketSession::on_read(beast::error_code ec, std::size_t bytes_transf
 void ZstWebsocketSession::do_write(const uint8_t* msg_buffer, size_t msg_buffer_size){
 	// Copy the message contents since we don't want to lose hem if the flatbuffer builder disappears
 	// TODO: Replace with detatchedbuffer?
-	auto pair = std::make_shared<std::pair<std::unique_ptr<uint8_t>, size_t > >(std::make_unique<uint8_t>(*msg_buffer), msg_buffer_size);
+	auto data = std::make_unique<uint8_t[]>(msg_buffer_size);
+	std::copy(msg_buffer, msg_buffer + msg_buffer_size, data.get());
+	auto pair = std::make_shared<std::pair<std::unique_ptr<uint8_t[]>, size_t > >(std::move(data), msg_buffer_size);
 	net::post(m_ws.get_executor(), beast::bind_front_handler(&ZstWebsocketSession::on_send, shared_from_this(), pair));
 }
 
-void ZstWebsocketSession::on_send(std::shared_ptr< std::pair<std::unique_ptr<uint8_t>, size_t > const > const& msg_data) {
+void ZstWebsocketSession::on_send(std::shared_ptr< std::pair<std::unique_ptr<uint8_t[]>, size_t > const > const& msg_data) {
 	// Always add to queue
 	m_out_messages.push_back(msg_data);
 

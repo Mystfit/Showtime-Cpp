@@ -46,7 +46,6 @@ public:
 	// ------------------------------
 
 	void init(std::string name);
-	void destroy() override;
 	void process_events() override;
 	void flush_events() override;
 

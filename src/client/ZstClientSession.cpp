@@ -16,12 +16,8 @@ ZstClientSession::ZstClientSession() : m_hierarchy(std::make_shared<ZstClientHie
 
 void ZstClientSession::init(std::string client_name)
 {
+    init_adaptors();
 	m_hierarchy->init(client_name);
-    ZstSession::init();
-}
-
-void ZstClientSession::destroy()
-{
 }
 
 void ZstClientSession::process_events()

@@ -122,6 +122,7 @@ void ZstClient::init_client(const char* client_name, bool debug)
 
     //Register session adaptors to hierarchy
 	m_session->hierarchy()->hierarchy_events()->add_adaptor(ZstHierarchyAdaptor::downcasted_shared_from_this<ZstHierarchyAdaptor>());
+    m_session->hierarchy()->hierarchy_events()->add_adaptor(std::static_pointer_cast<ZstHierarchyAdaptor>(m_session));
 
 	// Register client transport adaptors to session
 	m_session->stage_events()->add_adaptor(m_client_transport);

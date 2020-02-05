@@ -11,11 +11,6 @@ ZstStageHierarchy::~ZstStageHierarchy()
 {
 }
 
-void ZstStageHierarchy::destroy() {
-
-	ZstHierarchy::destroy();
-}
-
 void ZstStageHierarchy::set_wake_condition(std::weak_ptr<ZstSemaphore> condition)
 {
 	ZstStageModule::set_wake_condition(condition);
@@ -110,7 +105,12 @@ Signal ZstStageHierarchy::create_client_handler(const ClientJoinRequest * reques
 	ZstLog::server(LogLevel::notification, "Registering new client {}", client_URI.path());
 
 	// Create proxy
-	ZstHierarchy::add_proxy_entity(std::make_unique<ZstPerformerStageProxy>(request->performer(), request->graph_reliable_address()->str(), request->graph_unreliable_address()->str(), endpoint_UUID));
+	ZstHierarchy::add_proxy_entity(std::make_unique<ZstPerformerStageProxy>(
+		request->performer(), 
+		(request->graph_reliable_address()) ? request->graph_reliable_address()->str() : "", 
+		(request->graph_unreliable_address()) ? request->graph_unreliable_address()->str() : "", 
+		endpoint_UUID
+	));
 	
 	ZstEntityBase* client_proxy = find_entity(client_URI);
 	if (!client_proxy) {
@@ -135,7 +135,6 @@ Signal ZstStageHierarchy::create_client_handler(const ClientJoinRequest * reques
 
 Signal ZstStageHierarchy::client_leaving_handler(const ClientLeaveRequest* request, ZstPerformerStageProxy* sender)
 {
-	
 	if (request->reason() == ClientLeaveReason_QUIT) {
 		ZstLog::server(LogLevel::notification, "Performer {} leaving", sender->URI().path());
 	}
@@ -148,7 +147,7 @@ Signal ZstStageHierarchy::client_leaving_handler(const ClientLeaveRequest* reque
 	ZstTransportArgs args;
 	args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
 	auto builder = std::make_shared<FlatBufferBuilder>();
-	auto destroy_msg_offset = CreateClientLeaveRequest(*builder, builder->CreateString(request->performer_URI()->str()), request->reason());
+	auto destroy_msg_offset = CreateClientLeaveRequest(*builder, builder->CreateString(sender->URI().path()), request->reason());
 	broadcast(Content_ClientLeaveRequest, destroy_msg_offset.Union(), builder, args);
 
 	return Signal_OK;

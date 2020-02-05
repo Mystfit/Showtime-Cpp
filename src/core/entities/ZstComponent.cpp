@@ -170,7 +170,8 @@ namespace showtime
     
     void ZstComponent::deserialize_partial(const ComponentData* buffer)
     {
-        m_component_type = buffer->component_type()->str();
+        if (!buffer) return;
+        m_component_type = (buffer->component_type()) ? buffer->component_type()->str() : "";
     }
 
     const char * ZstComponent::component_type() const

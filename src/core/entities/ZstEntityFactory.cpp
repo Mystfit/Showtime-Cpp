@@ -189,6 +189,8 @@ uoffset_t ZstEntityFactory::serialize(FlatBufferBuilder & buffer_builder) const
     
 void ZstEntityFactory::deserialize_partial(const FactoryData* buffer)
 {
+	if (!buffer) return;
+
     for(auto c : *buffer->creatables()){
         m_creatables.emplace(c->c_str(), c->size());
     }

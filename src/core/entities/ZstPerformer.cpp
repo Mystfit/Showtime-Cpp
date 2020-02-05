@@ -30,8 +30,8 @@ ZstPerformer::ZstPerformer(const Performer* buffer) :
 
 {
 	set_entity_type(EntityTypes_Performer);
-	ZstPerformer::deserialize_partial(buffer->performer());
-	ZstComponent::deserialize_partial(buffer->component());
+	ZstPerformer::deserialize_partial((buffer->performer()) ? buffer->performer() : NULL);
+	ZstComponent::deserialize_partial((buffer->component()) ? buffer->component() : NULL);
 	ZstEntityBase::deserialize_partial(buffer->entity());
 }
 
@@ -157,6 +157,8 @@ uoffset_t ZstPerformer::serialize(FlatBufferBuilder& buffer_builder) const
 
 void ZstPerformer::deserialize(const Performer* buffer)
 {
+    if (!buffer) return;
+
     ZstPerformer::deserialize_partial(buffer->performer());
     ZstComponent::deserialize_partial(buffer->component());
     ZstEntityBase::deserialize_partial(buffer->entity());

@@ -38,6 +38,7 @@ ZstPlug::ZstPlug(const char * name, ValueList t, PlugDirection direction, int ma
     
 ZstPlug::ZstPlug(const Plug* buffer) : 
 	ZstEntityBase(),
+    m_value(std::make_unique<ZstValue>()),
 	m_direction(PlugDirection_NONE),
 	m_max_connected_cables(PLUG_DEFAULT_MAX_CABLES)
 {
@@ -143,7 +144,8 @@ void ZstPlug::serialize_partial(flatbuffers::Offset<PlugData> & serialized_offse
     
 void ZstPlug::deserialize_partial(const PlugData* buffer)
 {
-	m_value = std::make_unique<ZstValue>();
+    if (!buffer) return;
+
 	m_value->deserialize(buffer->value());
     m_direction = buffer->plug_direction();
     m_max_connected_cables = buffer->max_cables();

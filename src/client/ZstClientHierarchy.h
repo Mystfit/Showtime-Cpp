@@ -28,8 +28,6 @@ public:
 	virtual ~ZstClientHierarchy();
 	
 	void init(std::string name);
-	void init() override {};
-	void destroy() override;
 	
 
 	// --------------------------

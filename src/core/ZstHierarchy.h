@@ -34,8 +34,6 @@ class ZST_CLASS_EXPORTED ZstHierarchy :
 public:
 	ZST_EXPORT ZstHierarchy();
 	ZST_EXPORT ~ZstHierarchy();
-	ZST_EXPORT virtual void destroy() override;
-
 
 	// ------------------------------
 	// Activations

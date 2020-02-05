@@ -21,7 +21,6 @@ class ZstStageHierarchy :
 {
 public:
 	~ZstStageHierarchy();
-	void destroy() override;
 
 	virtual void set_wake_condition(std::weak_ptr<ZstSemaphore> condition) override;
 	ZstPerformer* get_local_performer() const override;

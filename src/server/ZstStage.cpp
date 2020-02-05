@@ -39,12 +39,15 @@ namespace showtime::detail
 
 	void ZstStage::init(const char* stage_name, int port)
 	{
-		m_session->init();
 		m_router_transport->init();
 		std::string address = fmt::format("*:{}", port);
 		m_router_transport->bind(address);
 		m_websocket_transport->init();
 		m_websocket_transport->bind("127.0.0.1");
+
+		//Set up module adaptors
+		m_session->init_adaptors();
+		m_session->hierarchy()->init_adaptors();
 
 		//Stage discovery beacon
 		m_service_broadcast_transport->init(STAGE_DISCOVERY_PORT);

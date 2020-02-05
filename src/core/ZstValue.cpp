@@ -167,7 +167,9 @@ void ZstValue::deserialize(const PlugValue* buffer)
 }
 
 void ZstValue::deserialize_partial(const PlugValue* buffer)
-{
+{	
+	if (!buffer) return;
+
 	switch (buffer->values_type()) {
 	case ValueList_IntList: {
 		auto list = buffer->values_as_IntList();
