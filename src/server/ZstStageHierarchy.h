@@ -30,6 +30,9 @@ public:
 	// Hierarchy adaptor overrides
 	// ---------------------------
 
+	virtual void on_entity_arriving(ZstEntityBase* entity) override;
+	virtual void on_factory_arriving(ZstEntityFactory* factory) override;
+	virtual void on_performer_arriving(ZstPerformer* performer) override;
 	void on_receive_msg(std::shared_ptr<ZstStageMessage> msg) override;
 
 
@@ -59,7 +62,6 @@ public:
 	// ----------------
 
 	virtual void on_request_entity_registration(ZstEntityBase* entity) override;
-	Signal ZstStageHierarchy::destroy_client(ZstPerformerStageProxy* performer);
 
 
 	// ---------------------

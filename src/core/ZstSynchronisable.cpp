@@ -172,19 +172,19 @@ void ZstSynchronisable::set_activation_status(ZstSyncStatus status)
 	m_sync_status = status;
 	switch (m_sync_status)
 	{
-	case DEACTIVATED:
+	case ZstSyncStatus::DEACTIVATED:
 		break;
-	case ACTIVATING:
+	case ZstSyncStatus::ACTIVATING:
 		break;
-	case ACTIVATION_QUEUED:
+	case ZstSyncStatus::ACTIVATION_QUEUED:
 		break;
-	case ACTIVATED:
+	case ZstSyncStatus::ACTIVATED:
 		break;
-	case DEACTIVATING:
+	case ZstSyncStatus::DEACTIVATING:
 		break;
-	case DEACTIVATION_QUEUED:
+	case ZstSyncStatus::DEACTIVATION_QUEUED:
 		break;
-	case ERR:
+	case ZstSyncStatus::ERR:
 		break;
 	default:
 		break;

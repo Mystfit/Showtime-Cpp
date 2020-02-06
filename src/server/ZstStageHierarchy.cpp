@@ -28,6 +28,28 @@ void ZstStageHierarchy::process_events()
 	ZstHierarchy::process_events();
 }
 
+void ZstStageHierarchy::on_entity_arriving(ZstEntityBase* entity)
+{
+	// Update rest of network
+	ZstTransportArgs args;
+	args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
+	auto builder = std::make_shared<FlatBufferBuilder>();
+	auto entity_type_vec = std::vector<uint8_t>{ static_cast<uint8_t>(entity->entity_type()) };
+	auto entity_vec = std::vector<flatbuffers::Offset<void> >{ entity->serialize(*builder) };
+	auto content_message = CreateEntityCreateRequest(*builder, builder->CreateVector(entity_type_vec), builder->CreateVector(entity_vec));
+	broadcast(Content_EntityCreateRequest, content_message.Union(), builder, args);
+}
+
+void ZstStageHierarchy::on_factory_arriving(ZstEntityFactory* factory)
+{
+	on_entity_arriving(factory);
+}
+
+void ZstStageHierarchy::on_performer_arriving(ZstPerformer* performer)
+{
+	on_entity_arriving(performer);
+}
+
 void ZstStageHierarchy::on_receive_msg(std::shared_ptr<ZstStageMessage> msg)
 {
 	Signal response = Signal_EMPTY;
@@ -121,15 +143,6 @@ Signal ZstStageHierarchy::create_client_handler(const ClientJoinRequest * reques
 	//Dispatch internal module events
 	dispatch_entity_arrived_event(client_proxy);
 
-	// Update rest of network
-	ZstTransportArgs args;
-	args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
-	auto builder = std::make_shared<FlatBufferBuilder>();
-	auto entity_type_vec = std::vector<uint8_t>{ static_cast<uint8_t>(client_proxy->entity_type()) };
-	auto entity_vec = std::vector<flatbuffers::Offset<void> >{ client_proxy->serialize(*builder) };
-	auto content_message = CreateEntityCreateRequest(*builder, builder->CreateVector(entity_type_vec), builder->CreateVector(entity_vec));
-	broadcast(Content_EntityCreateRequest, content_message.Union(), builder, args);
-
 	return Signal_OK;
 }
 
@@ -156,11 +169,6 @@ Signal ZstStageHierarchy::client_leaving_handler(const ClientLeaveRequest* reque
 
 Signal ZstStageHierarchy::create_entity_handler(const EntityCreateRequest* request, ZstPerformerStageProxy* sender)
 {
-	// For serialisation later
-	auto builder = std::make_shared<FlatBufferBuilder>();
-	std::vector< uint8_t> entity_type_vec;
-	std::vector< flatbuffers::Offset<void> > entity_vec;
-
 	for (auto it = request->entities_type()->begin(); it != request->entities_type()->end(); ++it)
 	{
 		auto index = it - request->entities_type()->begin();
@@ -184,19 +192,6 @@ Signal ZstStageHierarchy::create_entity_handler(const EntityCreateRequest* reque
 
 		//Dispatch internal module events
 		dispatch_entity_arrived_event(proxy);
-
-		// Serialize new entity
-		entity_type_vec.push_back(proxy->entity_type());
-		entity_vec.push_back(proxy->serialize(*builder));
-	}
-
-	//Update rest of network
-	if (entity_vec.size()) {
-		ZstTransportArgs args;
-		args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
-
-		auto entity_msg = CreateEntityCreateRequest(*builder, builder->CreateVector(entity_type_vec), builder->CreateVector(entity_vec));
-		broadcast(Content_EntityCreateRequest, entity_msg.Union(), builder, args);
 	}
 
 	return Signal_OK;

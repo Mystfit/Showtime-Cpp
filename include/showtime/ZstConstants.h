@@ -1,7 +1,7 @@
 #pragma once
 
 // ZstSynchronisable activation status
-enum ZstSyncStatus {
+enum class ZstSyncStatus {
 	DEACTIVATED = 0,
 	ACTIVATING,
 	ACTIVATION_QUEUED,
@@ -12,7 +12,7 @@ enum ZstSyncStatus {
 	ERR
 };
 
-enum ZstTransportRequestBehaviour
+enum class ZstTransportRequestBehaviour
 {
 	PUBLISH = 0,
 	SYNC_REPLY,

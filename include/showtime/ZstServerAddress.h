@@ -26,7 +26,7 @@ public:
     {
     }
     
-    ZstServerAddress(ZstServerAddress && source) :
+    ZstServerAddress(ZstServerAddress && source) noexcept :
         name(source.name),
         address(source.address)
     {
