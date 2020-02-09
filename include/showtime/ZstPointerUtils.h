@@ -1,15 +1,16 @@
 #pragma once
 
 #include <memory>
+#include "ZstExports.h"
 
-class MultipleInheritableEnableSharedFromThis : public std::enable_shared_from_this<MultipleInheritableEnableSharedFromThis>
+class ZST_CLASS_EXPORTED MultipleInheritableEnableSharedFromThis : public std::enable_shared_from_this<MultipleInheritableEnableSharedFromThis>
 {
 public:
 	virtual ~MultipleInheritableEnableSharedFromThis() {}
 };
 
 template <class T>
-class inheritable_enable_shared_from_this : virtual public MultipleInheritableEnableSharedFromThis
+class ZST_CLASS_EXPORTED inheritable_enable_shared_from_this : virtual public MultipleInheritableEnableSharedFromThis
 {
 public:
 	std::shared_ptr<T> shared_from_this() {

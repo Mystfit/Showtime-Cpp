@@ -177,32 +177,32 @@ namespace showtime
 		throw(std::runtime_error("Can't deserialize a ZstEntityBase: Class is abstract"));
     }
 
-    void ZstEntityBase::add_adaptor(std::shared_ptr<ZstEntityAdaptor> & adaptor)
+    void ZstEntityBase::add_adaptor(std::shared_ptr<ZstEntityAdaptor> adaptor)
     {
         this->m_entity_events->add_adaptor(adaptor);
     }
 
-    void ZstEntityBase::add_adaptor(std::shared_ptr<ZstSessionAdaptor> & adaptor)
+    void ZstEntityBase::add_adaptor(std::shared_ptr<ZstSessionAdaptor> adaptor)
     {
         this->m_session_events->add_adaptor(adaptor);
     }
 
-	void ZstEntityBase::add_adaptor(std::shared_ptr<ZstHierarchyAdaptor>& adaptor)
+	void ZstEntityBase::add_adaptor(std::shared_ptr<ZstHierarchyAdaptor> adaptor)
 	{
 		this->m_hierarchy_events->add_adaptor(adaptor);
 	}
 
-    void ZstEntityBase::remove_adaptor(std::shared_ptr<ZstEntityAdaptor> & adaptor)
+    void ZstEntityBase::remove_adaptor(std::shared_ptr<ZstEntityAdaptor> adaptor)
     {
         this->m_entity_events->remove_adaptor(adaptor);
     }
 
-    void ZstEntityBase::remove_adaptor(std::shared_ptr<ZstSessionAdaptor> & adaptor)
+    void ZstEntityBase::remove_adaptor(std::shared_ptr<ZstSessionAdaptor> adaptor)
     {
         this->m_session_events->remove_adaptor(adaptor);
     }
 
-	void ZstEntityBase::remove_adaptor(std::shared_ptr<ZstHierarchyAdaptor>& adaptor)
+	void ZstEntityBase::remove_adaptor(std::shared_ptr<ZstHierarchyAdaptor> adaptor)
 	{
 		this->m_hierarchy_events->remove_adaptor(adaptor);
 	}

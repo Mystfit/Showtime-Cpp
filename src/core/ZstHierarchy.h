@@ -49,7 +49,7 @@ public:
 	// ------------------------------
     
 	ZST_EXPORT virtual ZstEntityBundle & get_performers(ZstEntityBundle & bundle) const;
-    ZST_EXPORT virtual ZstPerformer * get_local_performer() const = 0;
+    ZST_EXPORT virtual ZstPerformer * get_local_performer() const override = 0;
 
 
 	// ------------------------------

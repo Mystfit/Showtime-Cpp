@@ -263,7 +263,7 @@ namespace showtime
 			ZstLog::entity(LogLevel::warn, "Entity {} not registered. Can't look up child entity.", URI().path());
 		}
 
-		m_hierarchy_events->invoke([this, &result, &path](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+        m_hierarchy_events->invoke([&result, &path](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
 			result = adaptor->find_entity(path);
 		});
         

@@ -8,7 +8,7 @@ namespace showtime {
 	public:
 		ZST_EXPORT void init(const StageBeaconMessage* buffer, const std::string & address);
 		ZST_EXPORT const std::string& address() const;
-		ZST_EXPORT const StageBeaconMessage* ZstServerBeaconMessage::buffer() const;
+		ZST_EXPORT const StageBeaconMessage* buffer() const;
 
 		ZST_EXPORT virtual void reset() override;
 		ZST_EXPORT virtual ZstMsgID id() const override;

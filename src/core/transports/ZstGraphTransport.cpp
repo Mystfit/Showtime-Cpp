@@ -99,7 +99,7 @@ void ZstGraphTransport::sock_recv(zsock_t* socket)
     perf_msg->init(GetGraphMessage(zframe_data(frame)));
 	
 	//Publish message to other modules
-	dispatch_receive_event(perf_msg, [this, perf_msg, frame](ZstEventStatus s) mutable {
+    dispatch_receive_event(perf_msg, [perf_msg, frame](ZstEventStatus s) mutable {
 		// Cleanup
 		zframe_destroy(&frame);
 	});

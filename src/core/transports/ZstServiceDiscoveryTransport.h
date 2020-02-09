@@ -34,7 +34,7 @@ public:
     ZST_EXPORT void stop_listening() const;
     
 private:
-	virtual void send_message_impl(const uint8_t* msg_buffer, size_t msg_buffer_size, const ZstTransportArgs& args) const {};
+	virtual void send_message_impl(const uint8_t* msg_buffer, size_t msg_buffer_size, const ZstTransportArgs& args) const override {};
 
     void init() override;
     ZstActor m_beacon_actor;

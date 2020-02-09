@@ -403,7 +403,7 @@ void ZstHierarchy::on_synchronisable_destroyed(ZstSynchronisable * synchronisabl
 		return;
 	}
 
-	reaper().add_cleanup_op([this, already_removed, synchronisable]() {
+    reaper().add_cleanup_op([this, synchronisable]() {
 		//Remove entity from quick lookup map
 		std::lock_guard<std::recursive_mutex> lock(m_hierarchy_mutex);
 		

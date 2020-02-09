@@ -131,7 +131,7 @@ void ZstZMQClientTransport::sock_recv(zsock_t* socket)
 			//ZstLog::net(LogLevel::debug, "Receiving msg with ID: {}", stage_msg->id());
             
             // Send message to submodules
-            dispatch_receive_event(stage_msg, [this, stage_msg, msg_data](ZstEventStatus s) mutable{
+            dispatch_receive_event(stage_msg, [stage_msg, msg_data](ZstEventStatus s) mutable{
                 // Frame cleanup
                 zframe_destroy(&msg_data);
             });

@@ -7,7 +7,7 @@
 
 namespace showtime 
 {
-	ZST_CLASS_EXPORTED class ZstStageTransport : 
+    class ZST_CLASS_EXPORTED ZstStageTransport : 
 		public ZstTransportLayerBase<ZstStageMessage, ZstStageTransportAdaptor>,
 		public ZstStageTransportAdaptor
 	{

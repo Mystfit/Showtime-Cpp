@@ -74,12 +74,12 @@ public:
 	ZST_EXPORT virtual void deserialize(const Entity* buffer) override;
 
     //Adaptors
-    ZST_EXPORT virtual void add_adaptor(std::shared_ptr<ZstEntityAdaptor>& adaptor);
-    ZST_EXPORT virtual void add_adaptor(std::shared_ptr<ZstSessionAdaptor>& adaptor);
-	ZST_EXPORT virtual void add_adaptor(std::shared_ptr<ZstHierarchyAdaptor>& adaptor);
-    ZST_EXPORT virtual void remove_adaptor(std::shared_ptr<ZstEntityAdaptor>& adaptor);
-    ZST_EXPORT virtual void remove_adaptor(std::shared_ptr<ZstSessionAdaptor>& adaptor);
-	ZST_EXPORT virtual void remove_adaptor(std::shared_ptr<ZstHierarchyAdaptor>& adaptor);
+    ZST_EXPORT virtual void add_adaptor(std::shared_ptr<ZstEntityAdaptor> adaptor);
+    ZST_EXPORT virtual void add_adaptor(std::shared_ptr<ZstSessionAdaptor> adaptor);
+	ZST_EXPORT virtual void add_adaptor(std::shared_ptr<ZstHierarchyAdaptor> adaptor);
+    ZST_EXPORT virtual void remove_adaptor(std::shared_ptr<ZstEntityAdaptor> adaptor);
+    ZST_EXPORT virtual void remove_adaptor(std::shared_ptr<ZstSessionAdaptor> adaptor);
+	ZST_EXPORT virtual void remove_adaptor(std::shared_ptr<ZstHierarchyAdaptor> adaptor);
     
     //Ownership
     ZST_EXPORT const ZstURI & get_owner() const;
