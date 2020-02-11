@@ -139,7 +139,8 @@ Signal ZstStageSession::synchronise_client_graph_handler(ZstPerformerStageProxy*
 Signal ZstStageSession::create_cable_handler(const StageMessage* request, ZstPerformerStageProxy* sender)
 {
 	auto cable_request = request->content_as_CableCreateRequest();
-	auto id = request->id();
+    ZstMsgID id;
+    memcpy(&id, request->id()->data(), request->id()->size());
 
 	//Unpack cable from message
 	for (auto cable : *cable_request->cables()) {
@@ -227,7 +228,9 @@ Signal ZstStageSession::observe_entity_handler(const StageMessage* request, ZstP
 	}
 
 	//Start the client connection
-	ZstMsgID response_id = request->id();
+    ZstMsgID response_id;
+    memcpy(&response_id, request->id()->data(), request->id()->size());
+    
 	connect_clients(observed_performer, sender, [this, sender, response_id](ZstMessageReceipt receipt) {
 		stage_hierarchy()->reply_with_signal(sender, Signal_OK, response_id);
 	});

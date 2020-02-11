@@ -25,7 +25,7 @@ typedef std::function<void(ZstMessageReceipt)> ZstMessageReceivedAction;
 struct ZstTransportArgs {
 	boost::uuids::uuid target_endpoint_UUID = boost::uuids::nil_generator()();
 	ZstTransportRequestBehaviour msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
-	ZstMsgID msg_ID = 0;
+    ZstMsgID msg_ID = boost::uuids::nil_uuid();
 	ZstMessageReceivedAction on_recv_response = [](ZstMessageReceipt receipt) {};
 };
 

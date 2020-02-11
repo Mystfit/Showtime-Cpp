@@ -1,4 +1,5 @@
 #include <boost/uuid/nil_generator.hpp>
+#include <memory>
 
 #include "ZstStageMessage.h"
 
@@ -49,7 +50,10 @@ const uuid& ZstStageMessage::endpoint_UUID() const
 
 ZstMsgID ZstStageMessage::id() const
 {
-	return m_buffer->id();
+    boost::uuids::uuid id;
+    
+    memcpy(&id, m_buffer->id()->data(), m_buffer->id()->size());
+	return id;
 }
     
 Content ZstStageMessage::type() const {

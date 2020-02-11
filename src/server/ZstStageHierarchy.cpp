@@ -203,7 +203,7 @@ Signal ZstStageHierarchy::factory_create_entity_handler(const StageMessage* requ
 	auto creatable_path = ZstURI(create_request->creatable_entity_URI()->c_str(), create_request->creatable_entity_URI()->size());
 	auto factory_path = creatable_path.parent();
 	
-	ZstLog::server(LogLevel::notification, "Forwarding creatable entity request {} with id {}", creatable_path.path(), request->id());
+	ZstLog::server(LogLevel::notification, "Forwarding creatable entity request {}", creatable_path.path());
 
 	ZstEntityFactory* factory = dynamic_cast<ZstEntityFactory*>(find_entity(factory_path));
 	if (!factory) {
@@ -221,10 +221,12 @@ Signal ZstStageHierarchy::factory_create_entity_handler(const StageMessage* requ
 	}
 
 	//Send creatable message to the performer that owns the factory
-	ZstMsgID response_id = request->id();
-	ZstTransportArgs args;
+    ZstMsgID response_id;
+    memcpy(&response_id, request->id()->data(), request->id()->size());
+    
+    ZstTransportArgs args;
 	args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
-	args.on_recv_response = [this, factory_performer, sender, factory_path, response_id](ZstMessageReceipt receipt) {
+    args.on_recv_response = [this, sender, factory_path, response_id](ZstMessageReceipt receipt) {
 		if (receipt.status == Signal_ERR_ENTITY_NOT_FOUND) {
 			ZstLog::server(LogLevel::error, "Creatable request failed at origin with status {}", EnumNameSignal(receipt.status));
 			return;

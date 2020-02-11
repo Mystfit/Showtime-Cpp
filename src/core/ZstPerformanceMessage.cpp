@@ -1,4 +1,5 @@
 #include "ZstPerformanceMessage.h"
+#include <boost/uuid/nil_generator.hpp>
 #include <exception>
 
 namespace showtime {
@@ -29,7 +30,7 @@ void ZstPerformanceMessage::reset()
 
 ZstMsgID ZstPerformanceMessage::id() const
 {
-	return 0;
+	return nil_generator()();
 }
     
 const uuid& ZstPerformanceMessage::endpoint_UUID() const

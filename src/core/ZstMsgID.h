@@ -2,9 +2,11 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <boost/uuid/uuid.hpp>
+
 #include "ZstExports.h"
 
-typedef uint64_t ZstMsgID;
+typedef boost::uuids::uuid ZstMsgID;
 
 class ZstMsgIDManager {
 public:

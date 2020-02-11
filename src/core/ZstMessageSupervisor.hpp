@@ -4,6 +4,7 @@
 #include <cf/time_watcher.h>
 #include <concurrentqueue.h>
 #include <unordered_map>
+#include <boost/functional/hash.hpp>
 
 #include "ZstExports.h"
 #include "transports/ZstTransportHelpers.h"
@@ -27,7 +28,7 @@ public:
     ZST_EXPORT void process_response(ZstMsgID id, ZstMessageReceipt response);
 
 private:
-    std::unordered_map< ZstMsgID, ZstMessagePromise > m_response_promises;
+    std::unordered_map< ZstMsgID, ZstMessagePromise, boost::hash<boost::uuids::uuid> > m_response_promises;
     std::shared_ptr<cf::time_watcher> m_timeout_watcher;
     long m_timeout_duration;
     moodycamel::ConcurrentQueue<ZstMsgID> m_dead_promises;

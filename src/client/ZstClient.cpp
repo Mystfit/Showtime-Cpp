@@ -1,4 +1,5 @@
 #include "ZstClient.h"
+#include <boost/uuid/uuid_io.hpp>
 
 using namespace flatbuffers;
 
@@ -223,7 +224,7 @@ void ZstClient::connection_handshake_handler(std::shared_ptr<ZstPerformanceMessa
     
     ZstURI output_path(msg->buffer()->sender()->c_str(), msg->buffer()->sender()->size());
     if (m_pending_peer_connections.find(output_path) != m_pending_peer_connections.end()) {
-        ZstLog::net(LogLevel::debug, "Received connection handshake. Msg id {}", m_pending_peer_connections[output_path]);
+        ZstLog::net(LogLevel::debug, "Received connection handshake. Msg id {}", boost::to_string(m_pending_peer_connections[output_path]));
         
         auto id = m_pending_peer_connections[output_path];
         

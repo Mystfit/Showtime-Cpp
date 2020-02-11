@@ -20,7 +20,7 @@ namespace showtime {
 
 	ZstMsgID ZstServerBeaconMessage::id() const
 	{
-		return 0;
+		return nil_generator()();
 	}
 
 	const uuid& ZstServerBeaconMessage::endpoint_UUID() const
