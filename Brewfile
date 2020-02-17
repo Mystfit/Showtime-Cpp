@@ -1,4 +1,5 @@
 brew "cmake"
+brew "zeromq"
 brew "czmq"
 brew "swig"
 brew "boost"
