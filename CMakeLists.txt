@@ -169,7 +169,7 @@ if(NOT czmq_FOUND)
 endif()
 
 cmake_policy(SET CMP0048 NEW)
-find_package(flatbuffers REQUIRED)
+find_package(flatbuffers CONFIG REQUIRED)
 if(NOT FLATBUFFERS_FLATC_EXECUTABLE)
     find_program(FLATBUFFERS_FLATC_EXECUTABLE flatc)
     if(NOT FLATBUFFERS_FLATC_EXECUTABLE)
