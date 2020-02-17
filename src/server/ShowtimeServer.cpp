@@ -8,6 +8,11 @@ namespace showtime {
 		m_server->init(name.c_str(), port);
 	}
 
+	int ShowtimeServer::port()
+	{
+		return m_server->port();
+	}
+
 	void ShowtimeServer::destroy()
 	{
 		m_server->destroy();

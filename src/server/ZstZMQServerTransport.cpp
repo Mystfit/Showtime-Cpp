@@ -57,15 +57,16 @@ void ZstZMQServerTransport::destroy()
 	ZstTransportLayerBase::destroy();
 }
 
-void ZstZMQServerTransport::bind(const std::string& address)
+int ZstZMQServerTransport::bind(const std::string& address)
 {
 	auto addr = fmt::format("tcp://{}", address);
-	zsock_bind(m_clients_sock, "%s", addr.c_str());
+	int port = zsock_bind(m_clients_sock, "%s", addr.c_str());
 	if (!m_clients_sock) {
 		ZstLog::net(LogLevel::notification, "Could not bind stage router socket to {}", addr);
-		return;
+		return port;
 	}
 	ZstLog::net(LogLevel::notification, "Stage router listening at address {}", addr);
+	return port;
 }
 
 //------------------------

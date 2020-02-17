@@ -10,7 +10,7 @@ public:
 
 	LimitedConnectionInputComponent(std::string name, int max_cables) : 
 		ZstComponent("LimitedConnectionInputComponent", name.c_str()),
-		input(std::make_unique<ZstInputPlug>("limited_input", ValueList_IntList, max_cables))
+		input(std::make_unique<ZstInputPlug>("limited_input", PlugValueData_IntList, max_cables))
 	{
 	}
 
@@ -25,12 +25,12 @@ struct FixtureCableCompare {
 	ZstURI out = ZstURI("b/1");
 	ZstURI less = ZstURI("a/b");
 	ZstURI more = ZstURI("b/a");
-	std::unique_ptr<ZstInputPlug> plug_in_A = std::make_unique<ZstInputPlug>(in.path(), ValueList_IntList);
-	std::unique_ptr<ZstOutputPlug> plug_out_A = std::make_unique<ZstOutputPlug>(out.path(), ValueList_IntList);
-	std::unique_ptr<ZstInputPlug> plug_in_B = std::make_unique<ZstInputPlug>(less.path(), ValueList_IntList);
-	std::unique_ptr<ZstOutputPlug> plug_out_B = std::make_unique<ZstOutputPlug>(more.path(), ValueList_IntList);
-	std::unique_ptr<ZstInputPlug> plug_in_C = std::make_unique<ZstInputPlug>(more.path(), ValueList_IntList);
-	std::unique_ptr<ZstOutputPlug> plug_out_C = std::make_unique<ZstOutputPlug>(less.path(), ValueList_IntList);
+	std::unique_ptr<ZstInputPlug> plug_in_A = std::make_unique<ZstInputPlug>(in.path(), PlugValueData_IntList);
+	std::unique_ptr<ZstOutputPlug> plug_out_A = std::make_unique<ZstOutputPlug>(out.path(), PlugValueData_IntList);
+	std::unique_ptr<ZstInputPlug> plug_in_B = std::make_unique<ZstInputPlug>(less.path(), PlugValueData_IntList);
+	std::unique_ptr<ZstOutputPlug> plug_out_B = std::make_unique<ZstOutputPlug>(more.path(), PlugValueData_IntList);
+	std::unique_ptr<ZstInputPlug> plug_in_C = std::make_unique<ZstInputPlug>(more.path(), PlugValueData_IntList);
+	std::unique_ptr<ZstOutputPlug> plug_out_C = std::make_unique<ZstOutputPlug>(less.path(), PlugValueData_IntList);
 	std::unique_ptr<ZstCable> cable_a = std::make_unique<ZstCable>(plug_in_A.get(), plug_out_A.get());
 	std::unique_ptr<ZstCable> cable_b = std::make_unique<ZstCable>(plug_in_A.get(), plug_out_A.get());
 	std::unique_ptr<ZstCable> cable_c = std::make_unique<ZstCable>(plug_in_B.get(), plug_out_B.get());

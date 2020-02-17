@@ -99,7 +99,7 @@ void ZstGraphTransportAdaptor::on_receive_msg(std::shared_ptr<ZstPerformanceMess
 void ZstServiceDiscoveryAdaptor::on_receive_msg(std::shared_ptr<ZstServerBeaconMessage> msg) {};
 
 void ZstTransportAdaptor::connect(const std::string& address) {}
-void ZstTransportAdaptor::bind(const std::string& address) {}
+int ZstTransportAdaptor::bind(const std::string& address) { return -1; }
 void ZstTransportAdaptor::disconnect() {}
 ZstMessageReceipt ZstStageTransportAdaptor::send_msg(Content message_type, flatbuffers::Offset<void> message_content, flatbuffers::FlatBufferBuilder& buffer_builder, const ZstTransportArgs& args) {
 	return ZstMessageReceipt{}; 

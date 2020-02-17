@@ -40,8 +40,7 @@ namespace showtime::detail
 	void ZstStage::init(const char* stage_name, int port)
 	{
 		m_router_transport->init();
-		std::string address = fmt::format("*:{}", port);
-		m_router_transport->bind(address);
+		m_port = m_router_transport->bind(fmt::format("*:{}", (port > 0) ? std::to_string(port) : "*"));
 		m_websocket_transport->init();
 		m_websocket_transport->bind("127.0.0.1");
 
@@ -50,10 +49,10 @@ namespace showtime::detail
 		m_session->hierarchy()->init_adaptors();
 
 		//Stage discovery beacon
-		m_service_broadcast_transport->init(STAGE_DISCOVERY_PORT);
+		m_service_broadcast_transport->init(STAGE_DISCOVERY_PORT); 
 
 		//We start the beacon broadcast by sending a message with the intended broadcast data
-		m_service_broadcast_transport->start_broadcast(stage_name, port, 1000);
+		m_service_broadcast_transport->start_broadcast(stage_name, m_port, 1000);
 		
 		//Init timer actor for client heartbeats
 		//Create timers
@@ -110,6 +109,11 @@ namespace showtime::detail
 	bool ZstStage::is_destroyed()
 	{
 		return m_is_destroyed;
+	}
+
+	int ZstStage::port()
+	{
+		return m_port;
 	}
 
 	void ZstStage::process_events()

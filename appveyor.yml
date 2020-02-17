@@ -88,6 +88,7 @@ before_build:
     )
 
     if($Env:PYTHON_VER -ne $null){
+        pip install wheel
         $CMAKE_FLAGS += @(
             "-DBINDINGS_PYTHON=ON",
             "-DBINDINGS_PYTHON_VERSION_MAJOR=$env:PYTHON_VER"

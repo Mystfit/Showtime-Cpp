@@ -56,27 +56,29 @@ void ZstClient::destroy() {
     //Since we've sent the leave request, we can flag that we are in the leave process
     set_is_ending(true);
 
-    //Set last status flags
-    set_is_ending(false);
-    set_is_destroyed(true);
-
     //Stop timers
     m_client_timerloop.IO_context().stop();
     m_client_timer_thread.interrupt();
     m_client_timer_thread.join();
 
-    //Stop threads
-    m_client_event_thread.interrupt();
-    m_event_condition->notify();
-    m_client_event_thread.try_join_for(boost::chrono::milliseconds(250));
-    m_api = NULL;
-
+    //Stop transports
     m_service_broadcast_transport->destroy();
     m_client_transport->destroy();
     m_tcp_graph_transport->destroy();
 #ifdef ZST_BUILD_DRAFT_API
     m_udp_graph_transport->destroy();
 #endif
+
+    //Stop threads
+    m_client_event_thread.interrupt();
+    m_event_condition->notify();
+    m_client_event_thread.join();
+    //m_client_event_thread.try_join_for(boost::chrono::milliseconds(250));
+    m_api = NULL;
+
+    //Set last status flags
+    set_is_ending(false);
+    set_is_destroyed(true);
 
     //All done
     ZstLog::net(LogLevel::notification, "Showtime library destroyed");
@@ -121,9 +123,8 @@ void ZstClient::init_client(const char* client_name, bool debug)
 	m_session->init(client_name);
 	m_session->register_entity(m_session->hierarchy()->get_local_performer());
 
-    //Register session adaptors to hierarchy
-	m_session->hierarchy()->hierarchy_events()->add_adaptor(ZstHierarchyAdaptor::downcasted_shared_from_this<ZstHierarchyAdaptor>());
-    m_session->hierarchy()->hierarchy_events()->add_adaptor(std::static_pointer_cast<ZstHierarchyAdaptor>(m_session));
+    // Register client module to hierarchy to handle incoming events
+    m_session->hierarchy()->hierarchy_events()->add_adaptor(ZstHierarchyAdaptor::downcasted_shared_from_this<ZstHierarchyAdaptor>());
 
 	// Register client transport adaptors to session
 	m_session->stage_events()->add_adaptor(m_client_transport);
@@ -219,6 +220,10 @@ void ZstClient::on_receive_msg(std::shared_ptr<ZstServerBeaconMessage> msg)
 
 void ZstClient::connection_handshake_handler(std::shared_ptr<ZstPerformanceMessage> msg)
 {
+    if (msg->buffer()->value()->values_type() != PlugValueData_PlugHandshake) {
+        return;
+    }
+
     if(m_pending_peer_connections.size() < 1)
         return;
     
@@ -634,7 +639,8 @@ void ZstClient::send_connection_broadcast(boost::asio::deadline_timer* t, ZstCli
     args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
 
     auto builder = FlatBufferBuilder();
-    auto conn_msg = CreateGraphMessage(builder, builder.CreateString(from.path(), from.full_size()));
+    auto plugval_offset = CreatePlugValue(builder, PlugValueData_PlugHandshake, CreatePlugHandshake(builder).Union());
+    auto conn_msg = CreateGraphMessage(builder, builder.CreateString(from.path(), from.full_size()), plugval_offset);
     client->m_tcp_graph_transport->send_msg(conn_msg, builder, args);
     
     if (client->m_connection_timers->find(to) != client->m_connection_timers->end()) {
@@ -677,8 +683,8 @@ void ZstClient::transport_event_loop()
         try {
             boost::this_thread::interruption_point();
             m_event_condition->wait();
-            if (this->m_is_destroyed)
-                break;
+            if (this->m_is_destroyed || this->m_is_ending)
+                continue;
 
             // Process events from transports
             m_client_transport->process_events();

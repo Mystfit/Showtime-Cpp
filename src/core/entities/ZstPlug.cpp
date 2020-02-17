@@ -27,7 +27,7 @@ ZstPlug::ZstPlug() :
     set_entity_type(EntityTypes_Plug);
 }
 
-ZstPlug::ZstPlug(const char * name, ValueList t, PlugDirection direction, int max_cables) :
+ZstPlug::ZstPlug(const char * name, const PlugValueData & t, const PlugDirection & direction, int max_cables) :
     ZstEntityBase(name),
     m_value(std::make_unique<ZstValue>(t)),
     m_direction(direction),
@@ -245,7 +245,7 @@ void ZstPlug::remove_cable(ZstCable * cable)
 //------------
 
 ZstInputPlug::ZstInputPlug() :
-    ZstPlug("", ValueList_NONE)
+    ZstPlug("", PlugValueData_NONE)
 {
 }
     
@@ -261,7 +261,7 @@ ZstInputPlug::~ZstInputPlug()
 {
 }
 
-ZstInputPlug::ZstInputPlug(const char * name, ValueList t, int max_cables) :
+ZstInputPlug::ZstInputPlug(const char * name, const PlugValueData & t, int max_cables) :
     ZstPlug(name, t, PlugDirection_IN_JACK, max_cables)
 {
 }
@@ -271,7 +271,7 @@ ZstInputPlug::ZstInputPlug(const char * name, ValueList t, int max_cables) :
 //-------------
 
 ZstOutputPlug::ZstOutputPlug() :
-    ZstPlug("", ValueList_NONE, PlugDirection_OUT_JACK, -1),
+    ZstPlug("", PlugValueData_NONE, PlugDirection_OUT_JACK, -1),
     m_graph_out_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstGraphTransportAdaptor> > >("plug_out_events")),
     m_reliable(true),
     m_can_fire(false)
@@ -295,7 +295,7 @@ ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug& other) :
 {
 }
 
-ZstOutputPlug::ZstOutputPlug(const char * name, ValueList t, bool reliable) :
+ZstOutputPlug::ZstOutputPlug(const char * name, const PlugValueData & t, bool reliable) :
     ZstPlug(name, t, PlugDirection_OUT_JACK, -1),
     m_graph_out_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstGraphTransportAdaptor> > >("plug_out_events")),
     m_reliable(reliable),

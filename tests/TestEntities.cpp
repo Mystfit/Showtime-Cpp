@@ -123,7 +123,7 @@ BOOST_FIXTURE_TEST_CASE(async_activation_callback, FixtureOutputEntity) {
 
 BOOST_FIXTURE_TEST_CASE(plug_children, FixtureJoinServer) {
 	auto component = std::make_unique<ZstComponent>("component");
-	auto plug = std::make_unique<ZstOutputPlug>("plug", ValueList_FloatList);
+	auto plug = std::make_unique<ZstOutputPlug>("plug", PlugValueData_FloatList);
 	
 	test_client->register_entity(component.get());
 	component->add_child(plug.get());

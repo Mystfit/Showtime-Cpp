@@ -52,7 +52,7 @@ namespace ZstTest
 	public:
 		OutputComponent(const char * name, bool reliable = true) : 
 			ZstComponent("TESTER", name),
-			m_output(std::make_unique<ZstOutputPlug>("out", ValueList_IntList, reliable))
+			m_output(std::make_unique<ZstOutputPlug>("out", PlugValueData_IntList, reliable))
 		{
 		}
 
@@ -97,7 +97,7 @@ namespace ZstTest
 			ZstComponent("TESTER", name),
 			compare_val(cmp_val),
 			log(should_log),
-			m_input(std::make_unique<ZstInputPlug>("in", ValueList_IntList))
+			m_input(std::make_unique<ZstInputPlug>("in", PlugValueData_IntList))
 		{
 		}
 
@@ -142,8 +142,8 @@ namespace ZstTest
 
 		Sink(const char* name) :
 			ZstComponent("SINK", name),
-			input(std::make_unique<ZstInputPlug>("in", ValueList_IntList)),
-			output(std::make_unique<ZstOutputPlug>("out", ValueList_FloatList)),
+			input(std::make_unique<ZstInputPlug>("in", PlugValueData_IntList)),
+			output(std::make_unique<ZstOutputPlug>("out", PlugValueData_FloatList)),
 			last_received_code(0),
 			m_child_sink(NULL)
 		{
@@ -238,7 +238,7 @@ namespace ZstTest
 	public:
 		bool is_connected = false;
 		bool is_synced = false;
-		ZstServerAddress last_discovered_server;
+		std::vector<ZstServerAddress> discovered_servers;
 
 		void on_connected_to_stage(ShowtimeClient* client, const ZstServerAddress & stage_address) override {
 			ZstLog::app(LogLevel::debug, "CONNECTION_ESTABLISHED: {}", client->get_root()->URI().path());
@@ -255,7 +255,7 @@ namespace ZstTest
         void on_server_discovered(ShowtimeClient* client, const ZstServerAddress & stage_address) override {
             ZstLog::app(LogLevel::debug, "SERVER DISCOVERED: Name: {} Address: {}", stage_address.name, stage_address.address);
             inc_calls();
-			last_discovered_server = stage_address;
+			discovered_servers.push_back(stage_address);
         }
 
 		void on_synchronised_with_stage(ShowtimeClient* client, const ZstServerAddress & stage_address) override {
@@ -271,18 +271,18 @@ namespace ZstTest
 	class TestEntityEvents : public ZstHierarchyAdaptor, public TestAdaptor
 	{
 	public:
-		std::string last_entity_arriving;
-		std::string last_entity_leaving;
+		ZstURI last_entity_arriving;
+		ZstURI last_entity_leaving;
 
 		void on_entity_arriving(ZstEntityBase * entity) override {
 			ZstLog::app(LogLevel::debug, "ENTITY_ARRIVING: {}", entity->URI().path());
-			last_entity_arriving = std::string(entity->URI().path());
+			last_entity_arriving = entity->URI();
 			inc_calls();
 		}
 
 		void on_entity_leaving(ZstEntityBase * entity) override {
 			ZstLog::app(LogLevel::debug, "ENTITY_LEAVING: {}", entity->URI().path());
-			last_entity_leaving = std::string(entity->URI().path());
+			last_entity_leaving = entity->URI();
 			inc_calls();
 		}
 	};
@@ -399,32 +399,38 @@ namespace ZstTest
 			ZstLog::app(LogLevel::notification, "-------------------------------------------------------------------");
 		}
 	};
-	
 
-	class FixtureInitAndCreateServer : public FixtureInit {
+	class FixtureInitAndCreateServerWithEpheremalPort : public FixtureInit {
 	public:
-		FixtureInitAndCreateServer() 
+		std::string server_name;
+		std::string server_address;
+		int server_port;
+
+		FixtureInitAndCreateServerWithEpheremalPort()
 		{
-			m_stage_server = std::make_shared< ShowtimeServer>(TEST_SERVER_NAME, STAGE_ROUTER_PORT);
+			server_name = boost::unit_test::framework::current_test_case().full_name();
+			m_server = std::make_unique<ShowtimeServer>(server_name);
+			server_port = m_server->port();
+			server_address = fmt::format("127.0.0.1:{}", server_port);
+
 			TAKE_A_BREATH
 			test_client->poll_once();
 		}
 
-		~FixtureInitAndCreateServer() 
+		~FixtureInitAndCreateServerWithEpheremalPort()
 		{
-			m_stage_server->destroy();
+			m_server->destroy();
 		}
 	private:
-		std::shared_ptr<ShowtimeServer> m_stage_server;
+		std::shared_ptr<ShowtimeServer> m_server;
 	};
 
 
-	class FixtureJoinServer : public FixtureInitAndCreateServer {
+	class FixtureJoinServer : public FixtureInitAndCreateServerWithEpheremalPort {
 	public:
-
 		FixtureJoinServer()
 		{
-			test_client->join(("127.0.0.1:" + std::to_string(STAGE_ROUTER_PORT)).c_str());
+			test_client->auto_join_by_name(server_name.c_str());
 			test_client->poll_once();
 		}
 
@@ -491,12 +497,12 @@ namespace ZstTest
 		ZstURI external_performer_URI;
 		std::shared_ptr<ShowtimeClient> local_client;
 
-		FixtureLocalClient(std::string client_name) :
+		FixtureLocalClient(std::string client_name, std::string server_name) :
 			local_client(std::make_shared<ShowtimeClient>()),
 			external_performer_URI(client_name.c_str())
 		{
 			local_client->init(client_name.c_str(), true);
-			local_client->auto_join_by_name(TEST_SERVER_NAME);
+			local_client->auto_join_by_name(server_name.c_str());
 		}
 
 		~FixtureLocalClient() {

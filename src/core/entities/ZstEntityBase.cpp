@@ -344,6 +344,9 @@ namespace showtime
 	void ZstEntityBase::set_registered(bool registered)
 	{
 		std::lock_guard<std::mutex> lock(m_entity_mtx);
+        if (m_registered)
+            return;
+
 		m_registered = registered;
 
 		if (registered) {

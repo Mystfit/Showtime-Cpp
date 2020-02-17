@@ -14,7 +14,7 @@ public:
 	~ZstZMQServerTransport();
 	void init() override;
 	void destroy() override;
-	virtual void bind(const std::string& address) override;
+	virtual int bind(const std::string& address) override;
 
 	//Incoming socket handlers
 	static int s_handle_router(zloop_t *loop, zsock_t *sock, void *arg);

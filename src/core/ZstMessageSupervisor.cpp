@@ -64,7 +64,8 @@ void ZstMessageSupervisor::process_response(ZstMsgID id, ZstMessageReceipt respo
 		catch (future_error e) {
 			ZstLog::net(LogLevel::warn, "Promise error {}", e.what());
 		}
-		enqueue_resolved_promise(id);
+		//enqueue_resolved_promise(id);
+		remove_response_promise(id);
 	}
 }
 

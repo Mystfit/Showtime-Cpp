@@ -23,7 +23,12 @@ ZstSession::~ZstSession()
 
 void ZstSession::init_adaptors()
 {
+	//Let this session respond to incoming entities
+	hierarchy()->hierarchy_events()->add_adaptor(ZstHierarchyAdaptor::downcasted_shared_from_this<ZstHierarchyAdaptor>());
+	
+	//Let this session handle incoming graph compute events
 	m_compute_events->add_adaptor(ZstComputeAdaptor::downcasted_shared_from_this<ZstComputeAdaptor>());
+	
 	ZstSynchronisableModule::init_adaptors();
 }
 
@@ -239,7 +244,7 @@ void ZstSession::register_entity(ZstEntityBase* entity)
 	entity->get_child_entities(bundle);
 	for (auto child : bundle) {
 		child->add_adaptor(ZstSessionAdaptor::downcasted_shared_from_this<ZstSessionAdaptor>());
-		child->add_adaptor(ZstEntityAdaptor::downcasted_shared_from_this<ZstEntityAdaptor>());
+		//child->add_adaptor(ZstEntityAdaptor::downcasted_shared_from_this<ZstEntityAdaptor>());
 	}
 }
 

@@ -119,6 +119,9 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
         ZstLog::net(LogLevel::warn, "{} has no parent", entity->URI().path());
         return;
 	}
+
+	if (entity->is_activated())
+		return;
 	 
     //Super activation
 	ZstHierarchy::activate_entity(entity, sendtype);
@@ -422,8 +425,10 @@ std::unique_ptr<ZstEntityBase> ZstClientHierarchy::create_proxy_entity(const Ent
     auto entity_path = ZstURI(entity_data->URI()->c_str(), entity_data->URI()->size());
 	auto local_path = get_local_performer()->URI();
 
+	ZstLog::net(LogLevel::debug, "{}: Received proxy entity {}", get_local_performer()->URI().path(), entity_path.path());
+
 	if (entity_path.contains(get_local_performer()->URI())) {
-		ZstLog::net(LogLevel::debug, "Received local entity {}. Ignoring", entity_path.path());
+		ZstLog::net(LogLevel::debug, "Proxy entity {} is local . Ignoring", entity_path.path());
 		return NULL;
     }
 	return ZstHierarchy::create_proxy_entity(entity_type, entity_data, payload);

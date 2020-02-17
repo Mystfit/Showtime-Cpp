@@ -18,7 +18,7 @@ public:
 	//Incoming events
 	ZST_EXPORT virtual void connect(const std::string & address);
 	ZST_EXPORT virtual void disconnect();
-	ZST_EXPORT virtual void bind(const std::string& address);
+	ZST_EXPORT virtual int bind(const std::string& address);
 };
 
 }

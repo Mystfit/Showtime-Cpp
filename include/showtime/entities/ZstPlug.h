@@ -34,7 +34,7 @@ public:
     //Initialisation
     ZST_EXPORT ZstPlug();
     ZST_EXPORT ZstPlug(const Plug* buffer);
-    ZST_EXPORT ZstPlug(const char * name, ValueList t, PlugDirection direction = PlugDirection_NONE, int max_cables = -1);
+    ZST_EXPORT ZstPlug(const char * name, const PlugValueData & t, const PlugDirection & direction = PlugDirection_NONE, int max_cables = -1);
     ZST_EXPORT ZstPlug(const ZstPlug & other);
 
     //Destruction
@@ -100,7 +100,7 @@ public:
     ZST_EXPORT ZstInputPlug();
     ZST_EXPORT ZstInputPlug(const Plug* buffer);
     ZST_EXPORT ZstInputPlug(const ZstInputPlug & other);
-    ZST_EXPORT ZstInputPlug(const char * name, ValueList t, int max_connected_cables = -1);
+    ZST_EXPORT ZstInputPlug(const char * name, const PlugValueData & t, int max_connected_cables = -1);
     ZST_EXPORT ~ZstInputPlug();
 };
 
@@ -114,7 +114,7 @@ public:
     ZST_EXPORT ZstOutputPlug();
     ZST_EXPORT ZstOutputPlug(const Plug* buffer);
     ZST_EXPORT ZstOutputPlug(const ZstOutputPlug & other);
-    ZST_EXPORT ZstOutputPlug(const char * name, ValueList t, bool reliable = true);
+    ZST_EXPORT ZstOutputPlug(const char * name, const PlugValueData & t, bool reliable = true);
     ZST_EXPORT ~ZstOutputPlug();
     ZST_EXPORT bool can_fire();
     ZST_EXPORT void fire();

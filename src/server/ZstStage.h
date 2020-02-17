@@ -41,11 +41,13 @@ namespace showtime {
 			void init(const char * stage_name, int port);
 			void destroy();
 			bool is_destroyed();
+			int port();
 	
 		private:
 			bool m_is_destroyed;
 			boost::thread m_stage_eventloop_thread;
 			boost::thread m_stage_timer_thread;
+			int m_port;
 
 			ZstIOLoop m_io;
 			//boost::asio::io_context m_io;

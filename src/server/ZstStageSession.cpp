@@ -114,25 +114,27 @@ Signal ZstStageSession::synchronise_client_graph_handler(ZstPerformerStageProxy*
 		}
 	}
 
-	for (auto entity : entity_bundle) {
-		entity_types_vec.push_back(entity->entity_type());
-		entity_vec.push_back(Offset<void>(entity->serialize(*builder)));
-	}
+	if (entity_bundle.size()) {
+		for (auto entity : entity_bundle) {
+			entity_types_vec.push_back(entity->entity_type());
+			entity_vec.push_back(Offset<void>(entity->serialize(*builder)));
+		}
 
-	auto batch_entity_offset = CreateEntityCreateRequest(*builder, builder->CreateVector(entity_types_vec), builder->CreateVector(entity_vec));
-	ZstTransportArgs args;
-	stage_hierarchy()->whisper(sender, Content_EntityCreateRequest, batch_entity_offset.Union(), builder, args);
+		auto batch_entity_offset = CreateEntityCreateRequest(*builder, builder->CreateVector(entity_types_vec), builder->CreateVector(entity_vec));
+		stage_hierarchy()->whisper(sender, Content_EntityCreateRequest, batch_entity_offset.Union(), builder, ZstTransportArgs());
+	}
 
 	// Pack all cables
 	// Create a new buffer builder
-	builder = std::make_shared<FlatBufferBuilder>();
-	std::vector< flatbuffers::Offset<Cable> > cable_vec;
-	for (auto const& cable : m_cables) {
-		cable_vec.push_back(cable->get_address().serialize(*builder));
+	if (m_cables.size()) {
+		builder = std::make_shared<FlatBufferBuilder>();
+		std::vector< flatbuffers::Offset<Cable> > cable_vec;
+		for (auto const& cable : m_cables) {
+			cable_vec.push_back(cable->get_address().serialize(*builder));
+		}
+		auto batch_cable_offset = CreateCableCreateRequest(*builder, builder->CreateVector(cable_vec));
+		stage_hierarchy()->whisper(sender, Content_CableCreateRequest, batch_cable_offset.Union(), builder, ZstTransportArgs());
 	}
-	auto batch_cable_offset = CreateCableCreateRequest(*builder, builder->CreateVector(cable_vec));
-	stage_hierarchy()->whisper(sender, Content_CableCreateRequest, batch_cable_offset.Union(), builder, args);
-
 	return Signal_OK;
 }
 

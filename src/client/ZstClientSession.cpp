@@ -68,8 +68,13 @@ void ZstClientSession::on_receive_msg(std::shared_ptr<ZstStageMessage> msg)
     
 void ZstClientSession::on_receive_msg(std::shared_ptr<ZstPerformanceMessage> msg)
 {
+    
+    if (msg->buffer()->value()->values_type() == PlugValueData_PlugHandshake) {
+        ZstLog::net(LogLevel::warn, "Received handshake graph message from {}", msg->buffer()->sender()->c_str());
+        return;
+    }
+
     //Find local proxy for the sending plug
-	
 	auto sender = ZstURI(msg->buffer()->sender()->c_str(), msg->buffer()->sender()->size());
     ZstOutputPlug * sending_plug = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(sender));
     

@@ -15,7 +15,7 @@ public:
 
     CustomComponent(const char * name) : 
 		ZstComponent(CUSTOM_COMPONENT, name),
-		input(std::make_unique <ZstInputPlug>("input", ValueList_IntList)) {}
+		input(std::make_unique <ZstInputPlug>("input", PlugValueData_IntList)) {}
 
 	virtual void on_registered() override {
 		add_child(input.get());
@@ -68,6 +68,29 @@ public:
 };
 
 
+class TestFactoryCreationAdaptor : public ZstHierarchyAdaptor, public TestAdaptor
+{
+public:
+	ZstURI last_arrived_factory;
+	ZstURI last_left_factory;
+
+	void on_factory_arriving(ZstEntityFactory* factory) override
+	{
+		ZstLog::app(LogLevel::debug, "FACTORY_ARRIVING: {}", factory->URI().path());
+		last_arrived_factory = factory->URI();
+		inc_calls();
+	}
+
+	void on_factory_leaving(ZstEntityFactory* factory) override
+	{
+		ZstLog::app(LogLevel::debug, "FACTORY_LEAVING: {}", factory->URI().path());
+		last_left_factory = factory->URI();
+		inc_calls();
+	}
+};
+
+
+
 struct FixtureLocalFactory : public FixtureJoinServer {
 	std::unique_ptr<TestFactory> factory;
 	ZstURI creatable_URI;
@@ -84,8 +107,8 @@ struct FixtureFactoryClient : public FixtureLocalClient {
 
 	std::unique_ptr<TestFactory> ext_factory;
 
-	FixtureFactoryClient() : 
-		FixtureLocalClient("extfactory"),
+	FixtureFactoryClient(std::string server_name) : 
+		FixtureLocalClient("extfactory", server_name),
 		ext_factory(std::make_unique<TestFactory>("external_customs"))
 	{
 		local_client->register_factory(ext_factory.get());
@@ -98,7 +121,10 @@ struct FixtureWaitForFactoryClient : public FixtureJoinServer, FixtureFactoryCli
 
 	std::shared_ptr<TestPerformerEvents> performerEvents;
 
-	FixtureWaitForFactoryClient() : performerEvents(std::make_shared<TestPerformerEvents>())
+	FixtureWaitForFactoryClient() : 
+		FixtureJoinServer(),
+		FixtureFactoryClient(server_name),
+		performerEvents(std::make_shared<TestPerformerEvents>())
 	{
 		test_client->add_hierarchy_adaptor(performerEvents);
 		BOOST_TEST_CHECKPOINT("Waiting for external client performer to arrive");
@@ -114,7 +140,12 @@ struct FixtureExternalFactory : public FixtureWaitForFactoryClient {
 	std::shared_ptr<TestFactoryAdaptor> factoryEvents;
 
 	FixtureExternalFactory() : factoryEvents(std::make_shared<TestFactoryAdaptor>()){
-		external_factory = dynamic_cast<ZstEntityFactory*>(test_client->find_entity(ZstURI("extfactory/external_customs")));
+		auto factory_path = ZstURI("extfactory/external_customs");
+		auto factory_events = std::make_shared<TestFactoryCreationAdaptor>();
+		test_client->add_hierarchy_adaptor(factory_events);
+		wait_for_event(test_client, factory_events, 1);
+
+		external_factory = dynamic_cast<ZstEntityFactory*>(test_client->find_entity(factory_path));
 		external_factory->add_adaptor(factoryEvents);
 		factoryEvents->reset_num_calls();
 	}
@@ -191,11 +222,6 @@ BOOST_FIXTURE_TEST_CASE(create_entity_from_local_factory, FixtureLocalFactory) {
 		BOOST_TEST_MESSAGE(fmt::format("Entity {} leaving scope", created_entity_URI.path()));
 	}
 	BOOST_TEST(!test_client->find_entity(created_entity_URI));
-}
-
-BOOST_FIXTURE_TEST_CASE(find_external_factory, FixtureWaitForFactoryClient) {
-	BOOST_TEST_CHECKPOINT("Factory performer arrived");
-	BOOST_TEST(test_client->find_entity(ZstURI("extfactory/external_customs")));
 }
 
 BOOST_FIXTURE_TEST_CASE(find_external_creatables, FixtureExternalFactory) {

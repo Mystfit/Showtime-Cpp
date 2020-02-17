@@ -11,6 +11,11 @@ ZstStageHierarchy::~ZstStageHierarchy()
 {
 }
 
+void ZstStageHierarchy::init_adaptors()
+{
+	ZstHierarchy::init_adaptors();
+}
+
 void ZstStageHierarchy::set_wake_condition(std::weak_ptr<ZstSemaphore> condition)
 {
 	ZstStageModule::set_wake_condition(condition);
@@ -37,6 +42,7 @@ void ZstStageHierarchy::on_entity_arriving(ZstEntityBase* entity)
 	auto entity_type_vec = std::vector<uint8_t>{ static_cast<uint8_t>(entity->entity_type()) };
 	auto entity_vec = std::vector<flatbuffers::Offset<void> >{ entity->serialize(*builder) };
 	auto content_message = CreateEntityCreateRequest(*builder, builder->CreateVector(entity_type_vec), builder->CreateVector(entity_vec));
+	ZstLog::server(LogLevel::debug, "Broadcasting entity {}", entity->URI().path());
 	broadcast(Content_EntityCreateRequest, content_message.Union(), builder, args);
 }
 
@@ -133,15 +139,6 @@ Signal ZstStageHierarchy::create_client_handler(const ClientJoinRequest * reques
 		(request->graph_unreliable_address()) ? request->graph_unreliable_address()->str() : "", 
 		endpoint_UUID
 	));
-	
-	ZstEntityBase* client_proxy = find_entity(client_URI);
-	if (!client_proxy) {
-		ZstLog::server(LogLevel::warn, "No proxy entity found");
-		return Signal_ERR_ENTITY_NOT_FOUND;
-	}
-
-	//Dispatch internal module events
-	dispatch_entity_arrived_event(client_proxy);
 
 	return Signal_OK;
 }
@@ -189,9 +186,6 @@ Signal ZstStageHierarchy::create_entity_handler(const EntityCreateRequest* reque
 			ZstLog::server(LogLevel::warn, "No proxy entity found");
 			return Signal_ERR_ENTITY_NOT_FOUND;
 		}
-
-		//Dispatch internal module events
-		dispatch_entity_arrived_event(proxy);
 	}
 
 	return Signal_OK;
@@ -314,6 +308,7 @@ void ZstStageHierarchy::reply_with_signal(ZstPerformerStageProxy* performer, Sig
 
 void ZstStageHierarchy::broadcast(Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder> & buffer_builder, const ZstTransportArgs& args)
 {
+	//ZstLog::server(LogLevel::debug, "Broadcasting {} message", EnumNameContent(message_type));
 	ZstEntityBundle bundle;
 	for (auto entity : get_performers(bundle))
 	{

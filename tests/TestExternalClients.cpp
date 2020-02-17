@@ -14,8 +14,8 @@ struct FixtureSinkClient : public FixtureLocalClient {
 	ZstURI sync_out_plug_uri;
 	std::unique_ptr<Sink> sink;
 
-	FixtureSinkClient() : 
-		FixtureLocalClient("TestHelperSink"),
+	FixtureSinkClient(std::string server_name) : 
+		FixtureLocalClient("TestHelperSink", server_name),
 		sink(std::make_unique<Sink>("sink_ent")),
 		sink_ent_uri(local_client->get_root()->URI() + ZstURI("sink_ent")),
 		sink_plug_uri(sink_ent_uri + ZstURI("in")),
@@ -32,7 +32,10 @@ struct FixtureSinkClient : public FixtureLocalClient {
 struct FixtureWaitForSinkClient : public FixtureJoinServer, FixtureSinkClient {
 	std::shared_ptr<TestPerformerEvents> performerEvents;
 
-	FixtureWaitForSinkClient() : performerEvents(std::make_shared<TestPerformerEvents>())
+	FixtureWaitForSinkClient() : 
+		FixtureJoinServer(),
+		FixtureSinkClient(server_name),
+		performerEvents(std::make_shared<TestPerformerEvents>())
 	{
 		test_client->add_hierarchy_adaptor(performerEvents);
 		BOOST_TEST_CHECKPOINT("Waiting for external client performer to arrive");
@@ -103,19 +106,25 @@ bool found_performer(std::shared_ptr<ShowtimeClient> client, ZstURI performer_ad
 }
 
 BOOST_FIXTURE_TEST_CASE(multiple_clients, FixtureJoinServer) {
+	auto perf_event = std::make_shared<TestPerformerEvents>();
+	test_client->add_hierarchy_adaptor(perf_event);
+
 	auto remote_client = std::make_unique<ShowtimeClient>();
 	remote_client->init("remote_client", true);
-	remote_client->auto_join_by_name(TEST_SERVER_NAME);
-	
+	remote_client->auto_join_by_name(server_name.c_str());
 	BOOST_TEST(remote_client->is_connected());
+
 	ZstEntityBundle performers;
+	BOOST_TEST_CHECKPOINT("Waiting for remote client performer to arrive");
+	wait_for_event(test_client, perf_event, 1);
 	test_client->get_performers(performers);
 	BOOST_TEST(performers.size() == 2);
 	performers.clear();
+	perf_event->reset_num_calls();
 
 	remote_client->destroy();
-	TAKE_A_BREATH
-	test_client->poll_once();
+	BOOST_TEST_CHECKPOINT("Waiting for external client performer to leave");
+	wait_for_event(test_client, perf_event, 1);
 	BOOST_TEST(!remote_client->is_connected());
 	test_client->get_performers(performers);
 	BOOST_TEST(performers.size() == 1);
@@ -137,30 +146,32 @@ BOOST_FIXTURE_TEST_CASE(find_performer, FixtureWaitForSinkClient) {
 }
 
 BOOST_FIXTURE_TEST_CASE(find_performer_entities, FixtureWaitForSinkClient) {
+	TAKE_A_BREATH
 	auto sink_ent = dynamic_cast<ZstComponent*>(test_client->find_entity(sink_ent_uri));
-	BOOST_TEST(sink_ent);
+	BOOST_TEST_REQUIRE(sink_ent);
 	BOOST_TEST(sink_ent->is_activated());
 
 	auto sink_plug = dynamic_cast<ZstInputPlug*>(sink_ent->get_child_by_URI(sink_plug_uri));
-	BOOST_TEST(sink_plug);
+	BOOST_TEST_REQUIRE(sink_plug);
 	BOOST_TEST(test_client->find_entity(sink_plug->URI()));
 	BOOST_TEST(sink_plug->is_activated());
     
     auto sync_out_plug = dynamic_cast<ZstOutputPlug*>(sink_ent->get_child_by_URI(sync_out_plug_uri));
-    BOOST_TEST(sync_out_plug);
+	BOOST_TEST_REQUIRE(sync_out_plug);
     BOOST_TEST(sync_out_plug->is_activated());
 }
 
 BOOST_FIXTURE_TEST_CASE(connect_cable, FixtureExternalEntities) {
     auto sink_plug = dynamic_cast<ZstInputPlug*>(sink_ent->get_child_by_URI(sink_plug_uri));
     auto cable = test_client->connect_cable(sink_plug, output_ent->output());
-    BOOST_TEST(cable);
+	BOOST_TEST_REQUIRE(cable);
     BOOST_TEST(cable->is_activated());
 }
 
 BOOST_FIXTURE_TEST_CASE(plug_observation, FixtureExternalConnectCable) {
     auto sync_out_plug = dynamic_cast<ZstOutputPlug*>(sink_ent->get_child_by_URI(sync_out_plug_uri));
-    auto plug_sync_adp = std::make_shared<TestPlugSync>();
+	BOOST_TEST_REQUIRE(sync_out_plug);
+	auto plug_sync_adp = std::make_shared<TestPlugSync>();
     sync_out_plug->add_adaptor(plug_sync_adp);
     test_client->observe_entity(sync_out_plug);
     
@@ -172,7 +183,8 @@ BOOST_FIXTURE_TEST_CASE(plug_observation, FixtureExternalConnectCable) {
 }
 
 BOOST_FIXTURE_TEST_CASE(aquire_and_release_entity_ownership, FixtureExternalEntitysWithLocalInput) {
-    BOOST_TEST(sync_out_plug->get_owner().is_empty());
+	BOOST_TEST_REQUIRE(sync_out_plug);
+	BOOST_TEST(sync_out_plug->get_owner().is_empty());
     sync_out_plug->aquire_ownership();
     TAKE_A_BREATH
     BOOST_TEST(sync_out_plug->get_owner() == test_client->get_root()->URI());
@@ -182,7 +194,8 @@ BOOST_FIXTURE_TEST_CASE(aquire_and_release_entity_ownership, FixtureExternalEnti
 }
 
 BOOST_FIXTURE_TEST_CASE(ownership_grants_plug_fire_permission, FixtureExternalEntitysWithLocalInput) {
-    BOOST_TEST(!sync_out_plug->can_fire());
+	BOOST_TEST_REQUIRE(sync_out_plug);
+	BOOST_TEST(!sync_out_plug->can_fire());
     sync_out_plug->aquire_ownership();
     TAKE_A_BREATH
     BOOST_TEST(sync_out_plug->can_fire());
@@ -192,7 +205,8 @@ BOOST_FIXTURE_TEST_CASE(ownership_grants_plug_fire_permission, FixtureExternalEn
 }
 
 BOOST_FIXTURE_TEST_CASE(ownership_plug_fire_check, FixtureExternalEntitysWithLocalInput) {
-    sync_out_plug->aquire_ownership();
+	BOOST_TEST_REQUIRE(sync_out_plug);
+	sync_out_plug->aquire_ownership();
 	TAKE_A_BREATH
     int cmp_val = 27;
     sync_out_plug->append_int(cmp_val);
@@ -202,31 +216,33 @@ BOOST_FIXTURE_TEST_CASE(ownership_plug_fire_check, FixtureExternalEntitysWithLoc
     BOOST_TEST(input_component->input()->int_at(0) == cmp_val);
 }
 
-BOOST_FIXTURE_TEST_CASE(entity_arriving, FixtureExternalConnectCable) {
+BOOST_FIXTURE_TEST_CASE(entity_arriving, FixtureWaitForSinkClient) {
     auto entityEvents = std::make_shared<TestEntityEvents>();
     test_client->add_hierarchy_adaptor(entityEvents);
-    output_ent->send(1);
-	TAKE_A_BREATH
-	local_client->poll_once();
+    
+	auto remote_ent = std::make_unique<InputComponent>("remote_input");
+	local_client->get_root()->add_child(remote_ent.get());
+
+	BOOST_TEST_CHECKPOINT("Waiting for remote entity to arrive");
     wait_for_event(test_client, entityEvents, 1);
-    BOOST_TEST(test_client->find_entity(sink_ent_uri + ZstURI("sinkB")));
+    BOOST_TEST_REQUIRE(test_client->find_entity(remote_ent->URI()));
 }
 
 BOOST_FIXTURE_TEST_CASE(entity_leaving, FixtureExternalConnectCable) {
     auto entityEvents = std::make_shared<TestEntityEvents>();
     test_client->add_hierarchy_adaptor(entityEvents);
-    output_ent->send(1);
-	TAKE_A_BREATH
-	local_client->poll_once();
+	
+	auto remote_ent = std::make_unique<InputComponent>("remote_input");
+	local_client->get_root()->add_child(remote_ent.get());
+
+	BOOST_TEST_CHECKPOINT("Waiting for remote entity to leave");
     wait_for_event(test_client, entityEvents, 1);
     entityEvents->reset_num_calls();
     
-    output_ent->send(2);
 	TAKE_A_BREATH
-	local_client->poll_once();
-
+	local_client->deactivate_entity(remote_ent.get());
     wait_for_event(test_client, entityEvents, 1);
-    BOOST_TEST(!test_client->find_entity(sink_ent_uri + ZstURI("sinkB")));
+	BOOST_TEST_REQUIRE(!test_client->find_entity(remote_ent->URI()));
 }
 
 BOOST_FIXTURE_TEST_CASE(external_exception, FixtureExternalConnectCable) {

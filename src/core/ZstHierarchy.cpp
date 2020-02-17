@@ -16,12 +16,14 @@ ZstHierarchy::~ZstHierarchy()
 
 void ZstHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype)
 {
-	////If this is not a local entity, we can't activate it
-	//if (entity->is_proxy() || 
-	//	entity->is_activated() || 
-	//	entity->activation_status() == ZstSyncStatus::ACTIVATING)
-	//	return;
 	register_entity(entity);
+}
+
+void ZstHierarchy::init_adaptors()
+{
+	//Add self as an adaptor for processing deferred events
+	hierarchy_events()->add_adaptor(ZstHierarchyAdaptor::downcasted_shared_from_this<ZstHierarchyAdaptor>());
+	ZstSynchronisableModule::init_adaptors();
 }
 
 void ZstHierarchy::register_entity(ZstEntityBase* entity)
@@ -30,15 +32,6 @@ void ZstHierarchy::register_entity(ZstEntityBase* entity)
 	entity->add_adaptor(ZstHierarchyAdaptor::downcasted_shared_from_this<ZstHierarchyAdaptor>());
 	entity->add_adaptor(ZstSynchronisableAdaptor::downcasted_shared_from_this<ZstSynchronisableAdaptor>());
 	entity->add_adaptor(ZstEntityAdaptor::downcasted_shared_from_this<ZstEntityAdaptor>());
-
-	//ZstEntityBundle bundle;
-	//entity->get_child_entities(bundle, true);
-	//for (auto c : bundle) {
-	//	synchronisable_set_activating(c);//ZstSynchronisableAdaptor
-	//	c->add_adaptor(ZstHierarchyAdaptor::downcasted_shared_from_this<ZstHierarchyAdaptor>());
-	//	c->add_adaptor(ZstSynchronisableAdaptor::downcasted_shared_from_this<ZstSynchronisableAdaptor>());
-	//	c->add_adaptor(ZstEntityAdaptor::downcasted_shared_from_this<ZstEntityAdaptor>());
-	//}
 
 	//Store entity in lookup table
 	add_entity_to_lookup(entity);

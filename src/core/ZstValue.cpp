@@ -7,7 +7,7 @@ using namespace flatbuffers;
 
 namespace showtime {
 
-ZstValue::ZstValue() : m_default_type(ValueList_IntList)
+ZstValue::ZstValue() : m_default_type(PlugValueData_IntList)
 {
 }
 
@@ -17,7 +17,7 @@ ZstValue::ZstValue(const ZstValue & other)
 	m_values = other.m_values;
 }
 
-ZstValue::ZstValue(ValueList t) : m_default_type(t)
+ZstValue::ZstValue(PlugValueData t) : m_default_type(t)
 {
 }
 
@@ -30,7 +30,7 @@ ZstValue::~ZstValue()
 {
 }
 
-ValueList ZstValue::get_default_type() const
+PlugValueData ZstValue::get_default_type() const
 {
 	return m_default_type;
 }
@@ -97,13 +97,13 @@ void ZstValue::char_at(char * buf, const size_t position) const
 const size_t ZstValue::size_at(const size_t position) const {
     auto val = m_values.at(position);
     
-    if (m_default_type == ValueList_IntList) {
+    if (m_default_type == PlugValueData_IntList) {
         return sizeof(int);
     }
-    else if (m_default_type == ValueList_FloatList) {
+    else if (m_default_type == PlugValueData_FloatList) {
         return sizeof(float);
     }
-    else if (m_default_type == ValueList_StrList) {
+    else if (m_default_type == PlugValueData_StrList) {
         std::string val_s = boost::apply_visitor(ZstValueDetails::ZstValueStrVisitor(), val);
         return val_s.size();
     } 
@@ -147,16 +147,18 @@ uoffset_t ZstValue::serialize(flatbuffers::FlatBufferBuilder& buffer_builder) co
 void ZstValue::serialize_partial(Offset<PlugValue>& dest, flatbuffers::FlatBufferBuilder& buffer_builder) const
 {
 	switch (m_default_type) {
-	case ValueList_IntList:
-		dest = CreatePlugValue(buffer_builder, ValueList_IntList, CreateIntList(buffer_builder, buffer_builder.CreateVector(as_int_vector())).Union());
+	case PlugValueData_IntList:
+		dest = CreatePlugValue(buffer_builder, PlugValueData_IntList, CreateIntList(buffer_builder, buffer_builder.CreateVector(as_int_vector())).Union());
 		break;
-	case ValueList_FloatList:
-		dest = CreatePlugValue(buffer_builder, ValueList_FloatList, CreateFloatList(buffer_builder, buffer_builder.CreateVector(as_float_vector())).Union());
+	case PlugValueData_FloatList:
+		dest = CreatePlugValue(buffer_builder, PlugValueData_FloatList, CreateFloatList(buffer_builder, buffer_builder.CreateVector(as_float_vector())).Union());
 		break;
-	case ValueList_StrList:
-		dest = CreatePlugValue(buffer_builder, ValueList_StrList, CreateStrList(buffer_builder, buffer_builder.CreateVectorOfStrings(as_string_vector())).Union());
+	case PlugValueData_StrList:
+		dest = CreatePlugValue(buffer_builder, PlugValueData_StrList, CreateStrList(buffer_builder, buffer_builder.CreateVectorOfStrings(as_string_vector())).Union());
 		break;
-	case ValueList_NONE:
+	case PlugValueData_PlugHandshake:
+		break;
+	case PlugValueData_NONE:
 		break;
 	}
 }
@@ -171,7 +173,7 @@ void ZstValue::deserialize_partial(const PlugValue* buffer)
 	if (!buffer) return;
 
 	switch (buffer->values_type()) {
-	case ValueList_IntList: {
+	case PlugValueData_IntList: {
 		auto list = buffer->values_as_IntList();
 		m_values.resize(list->val()->size());
 		for (auto it = list->val()->begin(); it != list->val()->end(); ++it) {
@@ -180,7 +182,7 @@ void ZstValue::deserialize_partial(const PlugValue* buffer)
 		}
 		break;
 	}
-	case ValueList_FloatList: {
+	case PlugValueData_FloatList: {
 		auto list = buffer->values_as_FloatList();
 		m_values.resize(list->val()->size());
 		for (auto it = list->val()->begin(); it != list->val()->end(); ++it) {
@@ -189,7 +191,7 @@ void ZstValue::deserialize_partial(const PlugValue* buffer)
 		}
 		break;
 	}
-	case ValueList_StrList: {
+	case PlugValueData_StrList: {
 		auto list = buffer->values_as_StrList();
 		m_values.resize(list->val()->size());
 		for (auto it = list->val()->begin(); it != list->val()->end(); ++it) {
@@ -198,7 +200,9 @@ void ZstValue::deserialize_partial(const PlugValue* buffer)
 		}
 		break;
 	}
-	case ValueList_NONE:
+	case PlugValueData_PlugHandshake:
+		break;
+	case PlugValueData_NONE:
 		break;
 	}
 }

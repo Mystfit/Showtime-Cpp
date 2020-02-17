@@ -55,12 +55,12 @@ class ZstValue : virtual ZstSerialisable<PlugValue, PlugValue> {
 public:
 	ZST_EXPORT ZstValue();
 	ZST_EXPORT ZstValue(const ZstValue & other);
-	ZST_EXPORT ZstValue(ValueList t);
+	ZST_EXPORT ZstValue(PlugValueData t);
 	ZST_EXPORT ZstValue(const PlugValue* buffer);
 
 	ZST_EXPORT virtual ~ZstValue();
 
-	ZST_EXPORT ValueList get_default_type() const;
+	ZST_EXPORT PlugValueData get_default_type() const;
 	
 	ZST_EXPORT void copy(const ZstValue & other);
 	
@@ -88,7 +88,7 @@ public:
 
 protected:
 	std::vector<ZstValueVariant> m_values;
-	ValueList m_default_type;
+	PlugValueData m_default_type;
 
 private:
 	std::mutex m_lock;

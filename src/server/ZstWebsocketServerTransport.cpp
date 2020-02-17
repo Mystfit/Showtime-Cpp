@@ -1,5 +1,6 @@
 #include "ZstWebsocketServerTransport.h"
 #include "ZstWebsocketSession.h"
+#include "ZstConstants.h"
 
 #include <boost/asio/ip/tcp.hpp>
 
@@ -27,44 +28,47 @@ void ZstWebsocketServerTransport::destroy()
 	ZstTransportLayerBase::destroy();
 }
 
-void ZstWebsocketServerTransport::bind(const std::string& address)
+int ZstWebsocketServerTransport::bind(const std::string& address)
 {
 	beast::error_code ec;
+	int port = STAGE_WEBSOCKET_PORT;
 
-	auto endpoint = tcp::endpoint{ net::ip::make_address(address), 40005 };
+	auto endpoint = tcp::endpoint{ net::ip::make_address(address), static_cast<unsigned short>(port) };
 
 	// Open the acceptor
 	m_acceptor.open(endpoint.protocol(), ec);
 	if (ec) {
 		ZstWebsocketServerTransport::fail(ec, "open");
-		return;
+		return -1;
 	}
 
 	// Bind to the server address
 	m_acceptor.bind(endpoint, ec);
 	if (ec) {
 		ZstWebsocketServerTransport::fail(ec, "bind");
-		return;
+		return -1;
 	}
 
 	// Allow address reuse
 	m_acceptor.set_option(net::socket_base::reuse_address(true), ec);
 	if (ec) {
 		ZstWebsocketServerTransport::fail(ec, "set_option");
-		return;
+		return -1;
 	}
 
 	// Start listening for connections
 	m_acceptor.listen(net::socket_base::max_listen_connections, ec);
 	if (ec) {
 		ZstWebsocketServerTransport::fail(ec, "listen");
-		return;
+		return -1;
 	}
 
 	ZstLog::server(LogLevel::notification, "Websocket transport listening on port {}", endpoint.port());
 
 	//Start accepting sockets
 	do_accept();
+
+	return port;
 }
 
 void ZstWebsocketServerTransport::fail(beast::error_code ec, char const* what)
