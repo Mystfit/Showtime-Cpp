@@ -34,24 +34,31 @@ set(DOTNET_BINDINGS
     "${CMAKE_CURRENT_LIST_DIR}/ZstDelegateEntityAdaptor.cs"
 )
 
-foreach(SWIG_INTERFACE_FILE ${DOTNET_SWIG_INTERFACES})
-    get_filename_component(OUTFILE_NAME ${SWIG_INTERFACE_FILE} NAME_WE)
-    set(SWIG_ARGS
-        "-c++"
-        "-csharp"
-        "-I${Showtime_INCLUDE_DIRS}"
-        "-dllimport" "${DOTNET_WRAPPER_FILENAME}"
-        "-outdir" "${SWIG_LANGUAGE_DIR}"
-        "-o" "${CMAKE_SWIG_OUTDIR}/${OUTFILE_NAME}CSHARP_wrap.cxx"
-    )
-    if(ANDROID)
-        list(APPEND SWIG_ARGS "-monoaotcompat")
-    endif()
-    list(APPEND SWIG_ARGS "${SWIG_INTERFACE_FILE}")
+if(NOT BINDINGS_DOTNET_CSPROJ)
+    foreach(SWIG_INTERFACE_FILE ${DOTNET_SWIG_INTERFACES})
+        get_filename_component(OUTFILE_NAME ${SWIG_INTERFACE_FILE} NAME_WE)
+        set(SWIG_ARGS
+            "-c++"
+            "-csharp"
+            "-I${Showtime_INCLUDE_DIRS}"
+            "-dllimport" "${DOTNET_WRAPPER_FILENAME}"
+            "-outdir" "${SWIG_LANGUAGE_DIR}"
+            "-o" "${CMAKE_SWIG_OUTDIR}/${OUTFILE_NAME}CSHARP_wrap.cxx"
+            "-v"
+        )
+        if(ANDROID)
+            list(APPEND SWIG_ARGS "-monoaotcompat")
+        endif()
+        list(APPEND SWIG_ARGS "${SWIG_INTERFACE_FILE}")
+        message(STATUS "${SWIG_ARGS}")
 
-    file(MAKE_DIRECTORY ${SWIG_LANGUAGE_DIR})
-    execute_process(COMMAND ${SWIG_EXECUTABLE} ${SWIG_ARGS} RESULT_VARIABLE SWIG_OUTPUT)
-endforeach()
+        file(MAKE_DIRECTORY ${SWIG_LANGUAGE_DIR})
+        execute_process(COMMAND ${SWIG_EXECUTABLE} ${SWIG_ARGS} OUTPUT_VARIABLE SWIG_STATUS ERROR_VARIABLE SWIG_ERROR RESULT_VARIABLE SWIG_OUTPUT)
+        if(NOT ${SWIG_OUTPUT} EQUAL 0)
+            message(FATAL_ERROR "Swig error: ${SWIG_ERROR}")
+        endif()
+    endforeach()
+endif()
 
 # Group together generated binding scripts
 file(GLOB DOTNET_GENERATED_BINDINGS CONFIGURE_DEPENDS "${SWIG_LANGUAGE_DIR}/*.cs")

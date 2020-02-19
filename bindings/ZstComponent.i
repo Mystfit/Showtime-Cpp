@@ -10,6 +10,8 @@ namespace showtime {
 	%feature("nodirector") ZstComponent::deserialize_partial;
 	%nodefaultctor ZstComponent;
 	%ignore Component;
+
+	%template(ZstSerialisableComponent) ZstSerialisable<Component, ComponentData>;
 }
 
 %inline %{

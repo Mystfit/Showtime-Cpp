@@ -15,6 +15,8 @@ namespace showtime{
 
 	%nodefaultctor ZstEntityFactory;
 	%ignore Factory;
+
+	%template(ZstSerialisableFactory) ZstSerialisable<Factory, FactoryData>;
 }
 
 %inline %{

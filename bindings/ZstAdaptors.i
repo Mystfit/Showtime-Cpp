@@ -16,5 +16,4 @@ namespace showtime {
 %include <adaptors/ZstSessionAdaptor.hpp> 
 %include <adaptors/ZstSynchronisableAdaptor.hpp> 
 %include <adaptors/ZstEntityAdaptor.hpp> 
-%include <adaptors/ZstFactoryAdaptor.hpp> 
-
+%include <adaptors/ZstFactoryAdaptor.hpp>

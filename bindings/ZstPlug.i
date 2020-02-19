@@ -6,14 +6,16 @@ namespace showtime {
     %ignore ZstPlug::raw_value;
     %nodefaultctor ZstPlug;
 
-    enum ValueList {
+    /*enum ValueList {
         ValueList_NONE = 0,
         ValueList_IntList = 1,
         ValueList_FloatList = 2,
         ValueList_StrList = 3,
         ValueList_MIN = ValueList_NONE,
         ValueList_MAX = ValueList_StrList
-    };
+    };*/
+
+    %template(ZstSerialisableCable) ZstSerialisable<Plug, PlugData>;
 }
 
 %inline %{

@@ -44,16 +44,7 @@ public:
 
 	// Serialisation
 	// -------------
-    using ZstEntityBase::serialize;
-    using ZstEntityBase::serialize_partial;
-    using ZstEntityBase::deserialize;
-    using ZstEntityBase::deserialize_partial;
-    using ZstComponent::serialize;
-    using ZstComponent::serialize_partial;
-    using ZstComponent::deserialize;
-    using ZstComponent::deserialize_partial;
     ZST_EXPORT virtual void serialize_partial(flatbuffers::Offset<PerformerData>& destination_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
-
 	ZST_EXPORT virtual flatbuffers::uoffset_t serialize(flatbuffers::FlatBufferBuilder& buffer_builder) const override;
     ZST_EXPORT virtual void deserialize_partial(const PerformerData* buffer) override;
 	ZST_EXPORT virtual void deserialize(const Performer* buffer) override;

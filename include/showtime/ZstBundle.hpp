@@ -4,96 +4,98 @@
 //---------------------
 //Bundle iterator
 //---------------------
-template<typename T>
-class ZstBundleIterator 
-{
-public:
-	ZstBundleIterator(typename std::vector<T>::iterator it) :
-		m_it(it)
+namespace showtime {
+	template<typename T>
+	class ZstBundleIterator
 	{
-	}
+	public:
+		ZstBundleIterator(typename std::vector<T>::iterator it) :
+			m_it(it)
+		{
+		}
 
-	bool operator!=(const ZstBundleIterator & other)
+		bool operator!=(const ZstBundleIterator& other)
+		{
+			return (m_it != other.m_it);
+		}
+
+		const ZstBundleIterator& operator++()
+		{
+			m_it++;
+			return *this;
+		}
+
+		T operator*() const
+		{
+			return *m_it;
+		}
+
+	private:
+		typename std::vector<T>::iterator m_it;
+	};
+
+
+	//---------------------
+	//Bundle
+	//---------------------
+
+	template<typename T>
+	class ZstBundle
 	{
-		return (m_it != other.m_it);
-	}
+	public:
+		ZstBundle()
+		{
+		}
 
-	const ZstBundleIterator & operator++()
-	{
-		m_it++;
-		return *this;
-	}
+		~ZstBundle()
+		{
+		}
 
-	T operator*() const
-	{
-		return *m_it;
-	}
+		ZstBundle(const ZstBundle& other)
+		{
+			m_bundle_items = other.m_bundle_items;
+		}
 
-private:
-	typename std::vector<T>::iterator m_it;
-};
+		ZstBundleIterator<T> begin()
+		{
+			return ZstBundleIterator<T>(m_bundle_items.begin());
+		}
 
+		ZstBundleIterator<T> end()
+		{
+			return ZstBundleIterator<T>(m_bundle_items.end());
+		}
 
-//---------------------
-//Bundle
-//---------------------
+		void add(T bundle_item)
+		{
+			m_bundle_items.push_back(bundle_item);
+		}
 
-template<typename T>
-class ZstBundle
-{
-public:
-	ZstBundle()
-	{
-	}
+		T item_at(const size_t index) const
+		{
+			if (index >= m_bundle_items.size()) {
+				throw std::out_of_range("Bundle index out of range");
+			}
+			return m_bundle_items[index];
+		}
 
-	~ZstBundle()
-	{
-	}
+		size_t size() const
+		{
+			return m_bundle_items.size();
+		}
 
-	ZstBundle(const ZstBundle & other) 
-	{
-		m_bundle_items = other.m_bundle_items;
-	}
+		T operator[](const size_t& index) const
+		{
+			return item_at(index);
+		}
 
-	ZstBundleIterator<T> begin()
-	{
-		return ZstBundleIterator<T>(m_bundle_items.begin());
-	}
+		void clear()
+		{
+			m_bundle_items.clear();
+		}
 
-	ZstBundleIterator<T> end()
-	{
-		return ZstBundleIterator<T>(m_bundle_items.end());
-	}
+	private:
+		typename std::vector<T> m_bundle_items;
+	};
 
-	void add(T bundle_item)
-	{
-		m_bundle_items.push_back(bundle_item);
-	}
-
-	T item_at(const size_t index) const
-	{
-        if(index >= m_bundle_items.size()){
-            throw std::out_of_range("Bundle index out of range");
-        }
-		return m_bundle_items[index];
-	}
-
-	size_t size() const
-	{
-		return m_bundle_items.size();
-	}
-
-	T operator[](const size_t & index) const
-	{
-		return item_at(index);
-	}
-
-	void clear()
-	{
-		m_bundle_items.clear();
-	}
-
-private:
-	typename std::vector<T> m_bundle_items;
-};
-
+}

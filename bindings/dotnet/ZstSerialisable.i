@@ -1,2 +1,5 @@
 %include <swiginterface.i>
-%interface_impl(ZstSerialisable);
+
+namespace showtime {
+	%interface_impl(ZstSerialisable);
+}

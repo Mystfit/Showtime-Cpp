@@ -6,6 +6,9 @@
 %ignore std::enable_shared_from_this<ShowtimeServer>;
 %ignore inheritable_enable_shared_from_this;
 
+%include "ZstAdaptorPointers.i"
+%include "ZstAdaptors.i"
+
 %include "ZstSerialisable.i"
 %include "ZstLogging.i"
 %include "ZstURI.i"
@@ -16,12 +19,10 @@
 %include "ZstCableAddress.i"
 %include "ZstCable.i"
 
-%include "ZstAdaptorPointers.i"
 %include "ZstComponent.i"
 %include "ZstPerformer.i"
 %include "ZstEntityFactory.i"
 %include "ZstServerAddress.i"
-%include "ZstAdaptors.i"
 
 %rename("%(strip:[zst_])s") "";
 

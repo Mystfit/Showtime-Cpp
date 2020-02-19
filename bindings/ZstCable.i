@@ -7,6 +7,8 @@ namespace showtime {
 	%ignore ZstCableEq;
 	%ignore ZstCableHash;
 	%ignore ZstCableCompare;
+
+	%template(ZstSerialisableCable) ZstSerialisable<Cable, CableData>;
 }
 
 %include <ZstCable.h>

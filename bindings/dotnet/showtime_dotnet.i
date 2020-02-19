@@ -1,11 +1,12 @@
 %module(directors="1") showtime
 %{
-    #include <Showtime.h>
-    #include <ShowtimeServer.h>
+	#include <Showtime.h>
+	#include <ShowtimeServer.h>
+	#include <schemas/graph_types_generated.h>
+	using namespace showtime;
 %}
 
 %include "../preflight.i"
-%include "ZstURI.i"
 %include "ZstBundle.i"
 %include "ZstSynchronisable.i"
 %include "ZstEntityBase.i"
@@ -13,3 +14,4 @@
 
 %include "showtime_api_extensions.i"
 %include "../showtime.i"
+%include "ZstURI.i"

@@ -1,13 +1,15 @@
 #pragma once
 
-#include <vector>
-#include <flatbuffers/flatbuffers.h>
+// #include <vector>
+// #include <flatbuffers/flatbuffers.h>
 #include <schemas/graph_types_generated.h>
 
 #include "ZstExports.h"
 #include "entities/ZstEntityBase.h"
+#include "ZstSerialisable.h"
 #include "entities/ZstPlug.h"
 #include "ZstCable.h"
+#include "ZstBundle.hpp"
 
 namespace showtime
 {
@@ -40,19 +42,17 @@ public:
     ZST_EXPORT virtual void remove_child(ZstEntityBase * entity) override;
 
     //Hierarchy
+#ifndef SWIG
     ZST_EXPORT virtual void get_child_cables(ZstCableBundle & bundle) override;
+#endif
     ZST_EXPORT virtual void get_child_entities(ZstEntityBundle & bundle, bool include_parent = true) override;
     
     //Specific component type
     ZST_EXPORT const char * component_type() const;
 
 
-	// Serialisation
-	// -------------
-    using ZstEntityBase::serialize;
-    using ZstEntityBase::serialize_partial;
-    using ZstEntityBase::deserialize;
-    using ZstEntityBase::deserialize_partial;
+// 	// Serialisation
+// 	// -------------
     ZST_EXPORT virtual void serialize_partial(flatbuffers::Offset<ComponentData>& destination_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
 	ZST_EXPORT virtual flatbuffers::uoffset_t serialize(flatbuffers::FlatBufferBuilder& buffer_builder) const override;
     ZST_EXPORT virtual void deserialize_partial(const ComponentData* buffer) override;

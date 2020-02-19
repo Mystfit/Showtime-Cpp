@@ -1,15 +1,18 @@
-%csmethodmodifiers ZstURI::GetHashCode "public override";
-%csmethodmodifiers ZstURI::ToString "public override";
+namespace showtime {
 
-%extend ZstURI
-{
-    const int ZstURI::GetHashCode() const
-    {
-        return static_cast<int>(ZstURIHash{}(*self));
-    }
+	%csmethodmodifiers ZstURI::GetHashCode "public override";
+	%csmethodmodifiers ZstURI::ToString "public override";
 
-    const char * ZstURI::ToString() const
-    {
-        return (self->path()) ? self->path() : "";
-    }
-};
+	%extend ZstURI
+	{
+	    const int ZstURI::GetHashCode() const
+	    {
+	        return static_cast<int>(ZstURIHash{}(*self));
+	    }
+
+	    const char * ZstURI::ToString() const
+	    {
+	        return (self->path()) ? self->path() : "";
+	    }
+	};
+}

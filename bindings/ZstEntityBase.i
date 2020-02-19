@@ -6,6 +6,8 @@ namespace showtime {
 	%ignore ZstEntityBase::update_URI;
 	%ignore ZstEntityBase::set_owner;
 	%nodefaultctor ZstEntityBase;
+
+	%template(ZstSerialisableEntity) ZstSerialisable<Entity, EntityData>;
 }
 
 %include <entities/ZstEntityBase.h>

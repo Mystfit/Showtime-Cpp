@@ -5,6 +5,8 @@
 
 #include "ZstBundle.hpp"
 
+namespace showtime {
+
 class ZstServerAddress {
 public:
     std::string name;
@@ -61,3 +63,5 @@ public:
 
 typedef std::set<ZstServerAddress> ZstServerList;
 typedef ZstBundle< ZstServerAddress > ZstServerAddressBundle;
+
+}

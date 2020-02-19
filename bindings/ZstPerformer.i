@@ -2,6 +2,8 @@ namespace showtime {
 	%ignore ZstPerformer::read;
 	%ignore ZstPerformer::write;
 	%nodefaultctor ZstPerformer;
+
+	%template(ZstSerialisablePerformer) ZstSerialisable<Performer, PerformerData>;
 }
 
 %inline %{
