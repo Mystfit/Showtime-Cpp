@@ -1,10 +1,11 @@
 #pragma once
-
 #include <vector>
 
 //---------------------
 //Bundle iterator
 //---------------------
+namespace showtime {
+
 template<typename T>
 class ZstBundleIterator {
 public:
@@ -13,12 +14,12 @@ public:
 	{
 	}
 
-	bool ZstBundleIterator::operator!=(const ZstBundleIterator & other)
+	bool ZstBundleIterator::operator!=(const ZstBundleIterator& other)
 	{
 		return (m_it != other.m_it);
 	}
 
-	const ZstBundleIterator & ZstBundleIterator::operator++()
+	const ZstBundleIterator& ZstBundleIterator::operator++()
 	{
 		m_it++;
 		return *this;
@@ -75,3 +76,4 @@ public:
 private:
 	std::vector<T> m_bundle_items;
 };
+}
