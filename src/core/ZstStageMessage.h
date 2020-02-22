@@ -26,6 +26,7 @@ public:
 
 private:
 	boost::uuids::uuid m_endpoint_UUID;
+	boost::uuids::uuid m_id;
 	const StageMessage * m_buffer;
 };
 

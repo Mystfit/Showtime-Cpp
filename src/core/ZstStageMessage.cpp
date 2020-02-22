@@ -13,7 +13,8 @@ namespace showtime {
 
 ZstStageMessage::ZstStageMessage() :
 	m_endpoint_UUID(nil_generator()()),
-    m_buffer(NULL)
+    m_buffer(NULL),
+    m_id(nil_generator()())
 {
 }
     
@@ -28,6 +29,11 @@ void ZstStageMessage::init(const StageMessage * buffer)
 {
 	reset();
 	m_buffer = buffer;
+
+    if (m_buffer->id())
+        memcpy(&m_id, m_buffer->id()->data(), m_buffer->id()->size());
+    else
+        m_id = nil_generator()();
 }
 
 void ZstStageMessage::reset() {
@@ -50,10 +56,7 @@ const uuid& ZstStageMessage::endpoint_UUID() const
 
 ZstMsgID ZstStageMessage::id() const
 {
-    boost::uuids::uuid id;
-    
-    memcpy(&id, m_buffer->id()->data(), m_buffer->id()->size());
-	return id;
+	return m_id;
 }
     
 Content ZstStageMessage::type() const {
