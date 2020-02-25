@@ -80,11 +80,7 @@ void ZstClientHierarchy::on_publish_entity_update(ZstEntityBase * entity)
             
             // Serialize factory into buffer
             FlatBufferBuilder builder;
-			std::vector<uint8_t> factory_type_vec{ EntityTypes_Factory };
-            std::vector<flatbuffers::Offset<void>> factory_vec{ Offset<void>(factory->serialize(builder)) };
-            
-            // Create message
-			auto update_offset = CreateEntityUpdateRequest(builder, builder.CreateVector(factory_type_vec), builder.CreateVector(factory_vec));
+			auto update_offset = CreateEntityUpdateRequest(builder, EntityTypes_Factory, factory->serialize(builder));
             
             // Send message
             adaptor->send_msg(Content_EntityUpdateRequest, update_offset.Union(), builder, args);
@@ -143,20 +139,12 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 	//Send message
 	stage_events()->invoke([args, entity](std::shared_ptr<ZstStageTransportAdaptor> adaptor){
         auto builder = FlatBufferBuilder();
-		auto entity_type_vec = std::vector<uint8_t>();
-		auto entity_vec = std::vector<flatbuffers::Offset<void> >();
 		ZstEntityBundle bundle;
 		entity->get_child_entities(bundle);
 		for (auto c : bundle) {
-			entity_type_vec.push_back(c->entity_type());
-			entity_vec.push_back(Offset<void>(c->serialize(builder)));
+			auto content_message = CreateEntityCreateRequest(builder, c->entity_type(), c->serialize(builder));
+			adaptor->send_msg(Content_EntityCreateRequest, content_message.Union(), builder, args);
 		}
-
-        // Create content message
-        auto content_message = CreateEntityCreateRequest(builder, builder.CreateVector(entity_type_vec), builder.CreateVector(entity_vec));
-        
-        // Send message
-        adaptor->send_msg(Content_EntityCreateRequest, content_message.Union(), builder, args);
 	});
 
 	if (sendtype == ZstTransportRequestBehaviour::SYNC_REPLY)
@@ -277,38 +265,12 @@ void ZstClientHierarchy::client_leaving_handler(const ClientLeaveRequest* reques
 
 void ZstClientHierarchy::create_proxy_entity_handler(const EntityCreateRequest * request)
 {
-    for (auto it = request->entities_type()->begin(); it != request->entities_type()->end();  ++it )
-    {
-        auto index = it - request->entities_type()->begin();
-        auto entity_type = static_cast<EntityTypes>(*it);
-        
-        switch(entity_type){
-            case EntityTypes_Performer:
-				add_proxy_entity(create_proxy_entity(entity_type, request->entities()->GetAs<Performer>(index)->entity(), request->entities()->Get(index)));
-                break;
-            case EntityTypes_Component:
-                add_proxy_entity(create_proxy_entity(entity_type, request->entities()->GetAs<Component>(index)->entity(), request->entities()->Get(index)));
-                break;
-            case EntityTypes_Factory:
-				add_proxy_entity(create_proxy_entity(entity_type, request->entities()->GetAs<Factory>(index)->entity(), request->entities()->Get(index)));
-                break;
-            case EntityTypes_Plug:
-				add_proxy_entity(create_proxy_entity(entity_type, request->entities()->GetAs<Plug>(index)->entity(), request->entities()->Get(index)));
-                break;
-            case EntityTypes_NONE:
-                break;
-        }
-    }
+	add_proxy_entity(create_proxy_entity(request->entity_type(), get_entity_field(request->entity_type(), request->entity()), request->entity()));
 }
     
 void ZstClientHierarchy::update_proxy_entity_handler(const EntityUpdateRequest * request)
 {
-	for (auto it = request->entities_type()->begin(); it != request->entities_type()->end(); ++it) {
-		auto index = it - request->entities_type()->begin();
-		auto entity_type = static_cast<EntityTypes>(*it);
-		auto entity_field = get_entity_field(entity_type, request->entities()->Get(index));
-		update_proxy_entity(entity_type, entity_field, request->entities()->Get(index));
-	}
+	update_proxy_entity(request->entity_type(), get_entity_field(request->entity_type(), request->entity()), request->entity());
 }
     
 void ZstClientHierarchy::destroy_entity_handler(const EntityDestroyRequest * request)

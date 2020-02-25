@@ -105,24 +105,20 @@ void ZstClientSession::on_receive_msg(std::shared_ptr<ZstPerformanceMessage> msg
     
 void ZstClientSession::cable_create_handler(const CableCreateRequest* request){
     
-	for (auto cable : *request->cables()) {
-		auto address = ZstCableAddress(cable);
-		auto input = dynamic_cast<ZstInputPlug*>(hierarchy()->find_entity(address.get_input_URI()));
-		auto output = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(address.get_output_URI()));
-		auto cable_proxy = create_cable(input, output);
+	auto address = ZstCableAddress(request->cable());
+	auto input = dynamic_cast<ZstInputPlug*>(hierarchy()->find_entity(address.get_input_URI()));
+	auto output = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(address.get_output_URI()));
+	auto cable_proxy = create_cable(input, output);
 
-		if (cable_proxy)
-			ZstLog::net(LogLevel::debug, "Received cable from server {}", cable_proxy->get_address().to_string());
-	}
+	if (cable_proxy)
+		ZstLog::net(LogLevel::debug, "Received cable from server {}", cable_proxy->get_address().to_string());
 }
     
 void ZstClientSession::cable_destroy_handler(const CableDestroyRequest* request)
 {
-	for (auto address : *request->cables()) {
-		ZstCable* cable_ptr = find_cable(ZstCableAddress(address));
-		if (cable_ptr)
-			destroy_cable_complete(ZstMessageReceipt{ Signal_OK }, cable_ptr);
-	}
+	ZstCable* cable_ptr = find_cable(ZstCableAddress(request->cable()));
+	if (cable_ptr)
+		destroy_cable_complete(ZstMessageReceipt{ Signal_OK }, cable_ptr);
 }
 
 void ZstClientSession::aquire_entity_ownership_handler(const EntityTakeOwnershipRequest* request)
@@ -184,9 +180,14 @@ ZstCable * ZstClientSession::connect_cable(ZstInputPlug * input, ZstOutputPlug *
             
 			auto builder = FlatBufferBuilder();
 			auto cable_vec = std::vector<Offset<Cable> >{ 
-				CreateCable(builder, CreateCableData(builder, builder.CreateString(cable->get_input()->URI().path()), builder.CreateString(cable->get_output()->URI().path())))
+				
 			};
-            auto cable_msg = CreateCableCreateRequest(builder, builder.CreateVector(cable_vec));
+            auto cable_msg = CreateCableCreateRequest(builder,
+                CreateCable(builder,
+                    CreateCableData(builder,
+                        builder.CreateString(cable->get_input()->URI().path()), 
+                        builder.CreateString(cable->get_output()->URI().path())
+                    )));
             adaptor->send_msg(Content_CableCreateRequest, cable_msg.Union(), builder, args);
 		});
 	}
@@ -214,9 +215,11 @@ void ZstClientSession::destroy_cable(ZstCable * cable, const ZstTransportRequest
 		args.on_recv_response = [this, cable](ZstMessageReceipt response) { this->destroy_cable_complete(response, cable); };
         
         FlatBufferBuilder builder;
-        auto address_offset =  CreateCableData(builder, builder.CreateString(cable->get_input()->URI().path()), builder.CreateString(cable->get_output()->URI().path()));
-		std::vector<Offset<Cable > > cable_vec{ CreateCable(builder, address_offset) };
-		auto destroy_cable_msg = CreateCableDestroyRequest(builder, builder.CreateVector(cable_vec));
+        auto address_offset =  CreateCableData(builder,
+            builder.CreateString(cable->get_input()->URI().path()),
+            builder.CreateString(cable->get_output()->URI().path())
+        );
+		auto destroy_cable_msg = CreateCableDestroyRequest(builder, CreateCable(builder, address_offset));
         adaptor->send_msg(Content_CableDestroyRequest, destroy_cable_msg.Union(), builder, args);
 	});
 

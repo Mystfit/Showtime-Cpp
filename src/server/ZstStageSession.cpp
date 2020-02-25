@@ -116,24 +116,20 @@ Signal ZstStageSession::synchronise_client_graph_handler(ZstPerformerStageProxy*
 
 	if (entity_bundle.size()) {
 		for (auto entity : entity_bundle) {
-			entity_types_vec.push_back(entity->entity_type());
-			entity_vec.push_back(Offset<void>(entity->serialize(*builder)));
+			auto batch_entity_offset = CreateEntityCreateRequest(*builder, entity->entity_type(), entity->serialize(*builder));
+			stage_hierarchy()->whisper(sender, Content_EntityCreateRequest, batch_entity_offset.Union(), builder, ZstTransportArgs());
 		}
-
-		auto batch_entity_offset = CreateEntityCreateRequest(*builder, builder->CreateVector(entity_types_vec), builder->CreateVector(entity_vec));
-		stage_hierarchy()->whisper(sender, Content_EntityCreateRequest, batch_entity_offset.Union(), builder, ZstTransportArgs());
 	}
 
 	// Pack all cables
 	// Create a new buffer builder
 	if (m_cables.size()) {
 		builder = std::make_shared<FlatBufferBuilder>();
-		std::vector< flatbuffers::Offset<Cable> > cable_vec;
 		for (auto const& cable : m_cables) {
-			cable_vec.push_back(cable->get_address().serialize(*builder));
+			auto batch_cable_offset = CreateCableCreateRequest(*builder, cable->get_address().serialize(*builder));
+			stage_hierarchy()->whisper(sender, Content_CableCreateRequest, batch_cable_offset.Union(), builder, ZstTransportArgs());
 		}
-		auto batch_cable_offset = CreateCableCreateRequest(*builder, builder->CreateVector(cable_vec));
-		stage_hierarchy()->whisper(sender, Content_CableCreateRequest, batch_cable_offset.Union(), builder, ZstTransportArgs());
+		
 	}
 	return Signal_OK;
 }
@@ -145,61 +141,59 @@ Signal ZstStageSession::create_cable_handler(const StageMessage* request, ZstPer
     memcpy(&id, request->id()->data(), request->id()->size());
 
 	//Unpack cable from message
-	for (auto cable : *cable_request->cables()) {
-		auto input_path = ZstURI(cable->address()->input_URI()->c_str(), cable->address()->input_URI()->size());
-		auto output_path = ZstURI(cable->address()->output_URI()->c_str(), cable->address()->output_URI()->size());
-		auto cable_path = ZstCableAddress(input_path, output_path);
-		ZstLog::server(LogLevel::notification, "Received connect cable request for In:{} and Out:{}", cable_path.get_input_URI().path(), cable_path.get_output_URI().path());
+	auto input_path = ZstURI(cable_request->cable()->address()->input_URI()->c_str(), cable_request->cable()->address()->input_URI()->size());
+	auto output_path = ZstURI(cable_request->cable()->address()->output_URI()->c_str(), cable_request->cable()->address()->output_URI()->size());
+	auto cable_path = ZstCableAddress(input_path, output_path);
+	ZstLog::server(LogLevel::notification, "Received connect cable request for In:{} and Out:{}", cable_path.get_input_URI().path(), cable_path.get_output_URI().path());
 
-		//Make sure cable doesn't already exist
-		if (find_cable(cable_path)) {
-			ZstLog::server(LogLevel::warn, "Cable {}<-{} already exists", input_path.path(), output_path.path());
-			return Signal_ERR_STAGE_BAD_CABLE_CONNECT_REQUEST;
-		}
-
-		//Verify plugs will accept cable
-		ZstInputPlug* input = dynamic_cast<ZstInputPlug*>(hierarchy()->find_entity(input_path));
-		ZstOutputPlug* output = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(output_path));
-		if (!input || !output) {
-			return Signal_ERR_CABLE_PLUGS_NOT_FOUND;
-		}
-
-		//Unplug existing cables if we hit max cables in an input plug
-		if (input->num_cables() >= input->max_connected_cables()) {
-			ZstLog::server(LogLevel::warn, "Too many cables in plug. Disconnecting existing cables");
-			ZstCableBundle bundle;
-			input->get_child_cables(bundle);
-			for (auto cable : bundle) {
-				destroy_cable(cable);
-			}
-		}
-
-		//Create our local cable ptr
-		auto cable_ptr = create_cable(input, output);
-		if (!cable_ptr) {
-			return Signal_ERR_STAGE_BAD_CABLE_CONNECT_REQUEST;
-		}
-
-		//Start the client connection
-		auto input_perf = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(input->URI().first()));
-		auto output_perf = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(output->URI().first()));
-		connect_clients(output_perf, input_perf, [this, cable_ptr, sender, id](ZstMessageReceipt receipt) {
-			if (receipt.status == Signal_OK) {
-				ZstLog::server(LogLevel::notification, "Client connection complete. Publishing cable {}", cable_ptr->get_address().to_string());
-				ZstTransportArgs args;
-				auto builder = std::make_shared<FlatBufferBuilder>();
-
-				// Publish cable
-				std::vector< flatbuffers::Offset<Cable> > cable_vec{ cable_ptr->get_address().serialize(*builder) };
-				auto cable_create_offset = CreateCableCreateRequest(*builder, builder->CreateVector(cable_vec));
-				stage_hierarchy()->broadcast(Content_CableCreateRequest, cable_create_offset.Union(), builder, args);
-			}
-
-			// Let original requestor know the request was completed
-			stage_hierarchy()->reply_with_signal(sender, receipt.status, id);
-		});
-
+	//Make sure cable doesn't already exist
+	if (find_cable(cable_path)) {
+		ZstLog::server(LogLevel::warn, "Cable {}<-{} already exists", input_path.path(), output_path.path());
+		return Signal_ERR_STAGE_BAD_CABLE_CONNECT_REQUEST;
 	}
+
+	//Verify plugs will accept cable
+	ZstInputPlug* input = dynamic_cast<ZstInputPlug*>(hierarchy()->find_entity(input_path));
+	ZstOutputPlug* output = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(output_path));
+	if (!input || !output) {
+		return Signal_ERR_CABLE_PLUGS_NOT_FOUND;
+	}
+
+	//Unplug existing cables if we hit max cables in an input plug
+	if (input->num_cables() >= input->max_connected_cables()) {
+		ZstLog::server(LogLevel::warn, "Too many cables in plug. Disconnecting existing cables");
+		ZstCableBundle bundle;
+		input->get_child_cables(bundle);
+		for (auto cable : bundle) {
+			destroy_cable(cable);
+		}
+	}
+
+	//Create our local cable ptr
+	auto cable_ptr = create_cable(input, output);
+	if (!cable_ptr) {
+		return Signal_ERR_STAGE_BAD_CABLE_CONNECT_REQUEST;
+	}
+
+	//Start the client connection
+	auto input_perf = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(input->URI().first()));
+	auto output_perf = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(output->URI().first()));
+	connect_clients(output_perf, input_perf, [this, cable_ptr, sender, id](ZstMessageReceipt receipt) {
+		if (receipt.status == Signal_OK) {
+			ZstLog::server(LogLevel::notification, "Client connection complete. Publishing cable {}", cable_ptr->get_address().to_string());
+			ZstTransportArgs args;
+			auto builder = std::make_shared<FlatBufferBuilder>();
+
+			// Publish cable
+			auto cable_create_offset = CreateCableCreateRequest(*builder, cable_ptr->get_address().serialize(*builder));
+			stage_hierarchy()->broadcast(Content_CableCreateRequest, cable_create_offset.Union(), builder, args);
+		}
+
+		// Let original requestor know the request was completed
+		stage_hierarchy()->reply_with_signal(sender, receipt.status, id);
+	});
+
+	
 
 	return Signal_EMPTY;
 }
@@ -304,14 +298,12 @@ Signal ZstStageSession::aquire_entity_ownership_handler(const EntityTakeOwnershi
 
 Signal ZstStageSession::destroy_cable_handler(const CableDestroyRequest* request)
 {
-	for (auto address : *request->cables()) {
-		auto cable_path = ZstCableAddress(address);
-		ZstLog::server(LogLevel::notification, "Received destroy cable connection request");
+	auto cable_path = ZstCableAddress(request->cable());
+	ZstLog::server(LogLevel::notification, "Received destroy cable connection request");
 
-		ZstCable* cable_ptr = find_cable(cable_path);
-		destroy_cable(cable_ptr);
-	}
-
+	ZstCable* cable_ptr = find_cable(cable_path);
+	destroy_cable(cable_ptr);
+	
 	return Signal_OK;
 }
 
@@ -349,8 +341,7 @@ void ZstStageSession::destroy_cable(ZstCable* cable) {
 	ZstTransportArgs args;
 	auto builder = std::make_shared<FlatBufferBuilder>();
 	auto destroy_cable_data_offset = CreateCableData(*builder, builder->CreateString(cable->get_input()->URI().path()), builder->CreateString(cable->get_output()->URI().path()));
-	std::vector<Offset<Cable> > cable_vec{ CreateCable(*builder, destroy_cable_data_offset) };
-	auto destroy_cable_offset = CreateCableDestroyRequest(*builder, builder->CreateVector(cable_vec));
+	auto destroy_cable_offset = CreateCableDestroyRequest(*builder, CreateCable(*builder, destroy_cable_data_offset));
 	stage_hierarchy()->broadcast(Content_CableDestroyRequest, destroy_cable_offset.Union(), builder, args);
 
 	//Remove cable
