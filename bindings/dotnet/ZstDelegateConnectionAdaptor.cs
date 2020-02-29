@@ -10,14 +10,15 @@ public class ZstConnectionEvents
 
 public sealed class ZstDelegateConnectionAdaptor : ZstConnectionAdaptor
 {
-    private ZstConnectionEvents m_events;
+    private readonly ZstConnectionEvents m_events;
 
     public ZstDelegateConnectionAdaptor(ZstConnectionEvents events)
     {
         m_events = events;
     }
 
-    public override void on_connected_to_stage(ShowtimeClient client, ZstServerAddress server){
+    public override void on_connected_to_stage(ShowtimeClient client, ZstServerAddress server)
+    {
         m_events?.on_connected_to_stage_events(client, server);
     }
 

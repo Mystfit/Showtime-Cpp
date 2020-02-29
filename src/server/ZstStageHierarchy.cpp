@@ -35,13 +35,16 @@ void ZstStageHierarchy::process_events()
 
 void ZstStageHierarchy::on_entity_arriving(ZstEntityBase* entity)
 {
+	//Don't send the proxy entity back to its origin client
+	auto excluded = std::vector<ZstPerformer*>{ dynamic_cast<ZstPerformerStageProxy*>(find_entity(entity->URI().first())) };
+
 	// Update rest of network
 	ZstTransportArgs args;
 	args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
 	auto builder = std::make_shared<FlatBufferBuilder>();
 	auto content_message = CreateEntityCreateRequest(*builder, entity->entity_type(), entity->serialize(*builder));
 	ZstLog::server(LogLevel::debug, "Broadcasting entity {}", entity->URI().path());
-	broadcast(Content_EntityCreateRequest, content_message.Union(), builder, args);
+	broadcast(Content_EntityCreateRequest, content_message.Union(), builder, args, excluded);
 }
 
 void ZstStageHierarchy::on_factory_arriving(ZstEntityFactory* factory)
@@ -79,10 +82,10 @@ void ZstStageHierarchy::on_receive_msg(std::shared_ptr<ZstStageMessage> msg)
 		response = factory_create_entity_handler(msg->buffer(), sender);
 		break;
 	case Content_EntityUpdateRequest:
-		response = update_entity_handler(msg->buffer()->content_as_EntityUpdateRequest());
+		response = update_entity_handler(msg->buffer()->content_as_EntityUpdateRequest(), sender);
 		break;
 	case Content_EntityDestroyRequest:
-		response = destroy_entity_handler(msg->buffer()->content_as_EntityDestroyRequest());
+		response = destroy_entity_handler(msg->buffer()->content_as_EntityDestroyRequest(), sender);
 		break;
 	default:
 		break;
@@ -152,6 +155,8 @@ Signal ZstStageHierarchy::client_leaving_handler(const ClientLeaveRequest* reque
 	remove_proxy_entity(sender);
 
 	//Update rest of network
+	auto excluded = std::vector<ZstPerformer*>{ sender };
+
 	ZstTransportArgs args;
 	args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
 	auto builder = std::make_shared<FlatBufferBuilder>();
@@ -230,7 +235,7 @@ Signal ZstStageHierarchy::factory_create_entity_handler(const StageMessage* requ
 	return Signal_EMPTY;
 }
 
-Signal ZstStageHierarchy::update_entity_handler(const EntityUpdateRequest* request)
+Signal ZstStageHierarchy::update_entity_handler(const EntityUpdateRequest* request, ZstPerformerStageProxy* sender)
 {
 	// For serialisation later
 	auto builder = std::make_shared<FlatBufferBuilder>();
@@ -242,16 +247,18 @@ Signal ZstStageHierarchy::update_entity_handler(const EntityUpdateRequest* reque
 	
 	if (proxy) {
 		ZstHierarchy::update_proxy_entity(request->entity_type(), entity_field, request->entity());
+
+		auto excluded = std::vector<ZstPerformer*>{ sender };
 		ZstTransportArgs args;
 		args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
 		auto entity_msg = CreateEntityCreateRequest(*builder, request->entity_type(), proxy->serialize(*builder));
-		broadcast(Content_EntityUpdateRequest, entity_msg.Union(), builder, args);
+		broadcast(Content_EntityUpdateRequest, entity_msg.Union(), builder, args, excluded);
 	}
 	
 	return Signal_OK;
 }
 
-Signal ZstStageHierarchy::destroy_entity_handler(const EntityDestroyRequest* request)
+Signal ZstStageHierarchy::destroy_entity_handler(const EntityDestroyRequest* request, ZstPerformerStageProxy* sender)
 {
 	auto entity_path = ZstURI(request->URI()->c_str(), request->URI()->size());
 	auto entity = find_entity(entity_path);
@@ -264,6 +271,7 @@ Signal ZstStageHierarchy::destroy_entity_handler(const EntityDestroyRequest* req
 	ZstHierarchy::remove_proxy_entity(entity);
 
 	//Update rest of network first
+	auto excluded = std::vector<ZstPerformer*>{ sender };
 	ZstTransportArgs args;
 	args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
 	auto builder = std::make_shared<FlatBufferBuilder>();
@@ -287,7 +295,7 @@ void ZstStageHierarchy::reply_with_signal(ZstPerformerStageProxy* performer, Sig
 	whisper(performer, Content_SignalMessage, signal_offset.Union(), builder, args);
 }
 
-void ZstStageHierarchy::broadcast(Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder> & buffer_builder, const ZstTransportArgs& args)
+void ZstStageHierarchy::broadcast(Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder> & buffer_builder, const ZstTransportArgs& args, const std::vector<ZstPerformer*> & excluded)
 {
 	//ZstLog::server(LogLevel::debug, "Broadcasting {} message", EnumNameContent(message_type));
 	ZstEntityBundle bundle;
@@ -295,7 +303,7 @@ void ZstStageHierarchy::broadcast(Content message_type, flatbuffers::Offset<void
 	{
 		//Can only send messages to performers
 		ZstPerformerStageProxy* performer = dynamic_cast<ZstPerformerStageProxy*>(entity);
-		if (!performer) {
+		if (!performer || std::find(excluded.begin(), excluded.end(), performer) != excluded.end()) {
 			ZstLog::server(LogLevel::error, "Not a performer");
 			continue;
 		}
