@@ -1,5 +1,3 @@
-#pragma once
-
 #include "ZstWebsocketSession.h"
 #include <boost/uuid/random_generator.hpp>
 

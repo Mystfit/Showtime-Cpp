@@ -16,6 +16,45 @@ file(TO_NATIVE_PATH ${ANDROID_LIB_DIR} NATIVE_LIBRARY_PATH)
 file(MAKE_DIRECTORY ${ANDROID_BIN_DIR})
 file(MAKE_DIRECTORY ${ANDROID_LIB_DIR})
 
+# Android build options
+set(ANDROID_PLATFORM_VERSIONS
+	"29"
+	"28"
+	"27"
+	"26"
+	"25"
+	"24"
+)
+
+set(ANDROID_NDK_VERSIONS
+	"r21"
+	"r20b"
+	"r19c"
+	"r18b"
+	"r17c"
+)
+
+set(ANDROID_BOOST_VERSIONS
+	"1.72.0"
+	"1.70.0"
+	"1.69.0"
+)
+
+set(ANDROID_ABI_VERSIONS
+	"arm64-v8a"
+	"x86_64"
+)
+set(ANDROID_PLATFORM "29" CACHE STRING "Android platform version")
+set(ANDROID_NDK_VERSION "r21" CACHE STRING "Android NDK version")
+set(ANDROID_BOOST_VERSION "1.72.0" CACHE STRING "Boost version")
+set(ANDROID_ABI "arm64-v8a" CACHE STRING "Android ABI type")
+
+set_property(CACHE ANDROID_PLATFORM PROPERTY STRINGS ${ANDROID_PLATFORM_VERSIONS})
+set_property(CACHE ANDROID_NDK_VERSION PROPERTY STRINGS ${ANDROID_NDK_VERSIONS})
+set_property(CACHE ANDROID_BOOST_VERSION PROPERTY STRINGS ${ANDROID_BOOST_VERSIONS})
+set_property(CACHE ANDROID_ABI PROPERTY STRINGS ${ANDROID_ABI_VERSIONS})
+
+
 # Copy vagrantfile to build dir so we don't pollute the source tree with Vagrant images
 configure_file(${CMAKE_CURRENT_LIST_DIR}/Vagrantfile.in ${ANDROID_BUILD_DIR}/Vagrantfile)
 

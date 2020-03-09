@@ -43,7 +43,7 @@ void ZstTCPGraphTransport::connect(const std::string& address)
 void ZstTCPGraphTransport::disconnect()
 {
 	for (auto address : m_connected_addresses)
-		zsock_disconnect(input_graph_socket(), address.c_str());
+		zsock_disconnect(input_graph_socket(), "%s", address.c_str());
 
 	m_connected_addresses.clear();
 }

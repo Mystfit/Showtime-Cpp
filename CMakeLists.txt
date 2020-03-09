@@ -25,6 +25,19 @@ set(CMAKE_DEBUG_POSTFIX d)
 set(CMAKE_SUPPRESS_REGENERATION true)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+# Search packages for host system instead of packages for target system
+# in case of cross compilation these macro should be defined by toolchain file
+if(NOT COMMAND find_host_package)
+  macro(find_host_package)
+    find_package(${ARGN})
+  endmacro()
+endif()
+if(NOT COMMAND find_host_program)
+  macro(find_host_program)
+    find_program(${ARGN})
+  endmacro()
+endif()
+
 # Set platform flags
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(MACOSX TRUE)
@@ -144,7 +157,7 @@ endif()
 
 # swig
 # ------------------------------
-find_package(SWIG)
+find_host_package(SWIG)
 if(SWIG_FOUND)
     cmake_policy(SET CMP0078 NEW)
     cmake_policy(SET CMP0086 NEW)
@@ -169,15 +182,15 @@ if(NOT czmq_FOUND)
 endif()
 
 cmake_policy(SET CMP0048 NEW)
-find_package(flatbuffers CONFIG REQUIRED)
+find_host_package(Flatbuffers CONFIG REQUIRED)
 if(NOT FLATBUFFERS_FLATC_EXECUTABLE)
-    find_program(FLATBUFFERS_FLATC_EXECUTABLE flatc)
+    find_host_program(FLATBUFFERS_FLATC_EXECUTABLE flatc)
     if(NOT FLATBUFFERS_FLATC_EXECUTABLE)
         message(FATAL_ERROR "Could not find flatc compiler!")
     endif()
 endif()
 
-find_package(fmt)
+find_package(fmt CONFIG REQUIRED)
 
 set(FLATBUFFFER_OUTPUT_DIR "${Showtime_COMPILED_INCLUDE_DIRS}/schemas")
 set(FLATBUFFER_HEADER_OUTPUT 
@@ -373,6 +386,13 @@ if(BUILD_ANDROID_CONTAINER OR BUILD_WINDOWS_CONTAINER OR BUILD_MACOS_CONTAINER)
     string(FIND ${VAGRANT_PLUGIN_LIST} "vagrant-scp" VAGRANT_SCP_PLUGIN_FOUND)
     if(${VAGRANT_SCP_PLUGIN_FOUND} LESS 0)
         execute_process(COMMAND ${VAGRANTCOMMAND} plugin install vagrant-scp)
+    endif()
+
+    # Install vagrant disksize plugin
+    execute_process(COMMAND ${VAGRANTCOMMAND} plugin list OUTPUT_VARIABLE VAGRANT_PLUGIN_LIST)
+    string(FIND ${VAGRANT_PLUGIN_LIST} "vagrant-disksize" VAGRANT_DISK_PLUGIN_FOUND)
+    if(${VAGRANT_DISK_PLUGIN_FOUND} LESS 0)
+        execute_process(COMMAND ${VAGRANTCOMMAND} plugin install vagrant-disksize)
     endif()
     
     # Set container VM properties
