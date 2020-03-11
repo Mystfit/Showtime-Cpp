@@ -14,8 +14,8 @@ namespace showtime {
   %}
 
   %rename(entity_event_dispatcher) ZstEntityBase::entity_events;
-  %ignore ZstEntityBase::entity_event_dispatcher;
+  %ignore ZstEntityBase::entity_events;
 
   %rename(session_event_dispatcher) ZstEntityBase::session_events;
-  %ignore ZstEntityBase::session_event_dispatcher;
+  %ignore ZstEntityBase::session_events;
 }

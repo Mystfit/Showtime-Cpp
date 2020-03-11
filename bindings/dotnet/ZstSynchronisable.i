@@ -18,5 +18,5 @@ namespace showtime {
   %}
 
   %rename(synchronisable_event_dispatcher) ZstSynchronisable::synchronisable_events;
-  %ignore ZstEntityBase::synchronisable_event_dispatcher;
+  %ignore ZstSynchronisable::synchronisable_events;
 }

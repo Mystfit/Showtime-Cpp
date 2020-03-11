@@ -7,17 +7,23 @@ namespace showtime{
 	%feature("nodirector") ZstEntityFactory::activate_entity;
 	%feature("nodirector") ZstEntityFactory::update_URI;
 	%feature("nodirector") ZstEntityFactory::factory_events;
+	%ignore ZstEntityFactory::factory_events;
 	%feature("nodirector") ZstEntityFactory::create_entity;
-	%feature("nodirector") ZstEntityFactory::serialize_partial const;
-	%feature("nodirector") ZstEntityFactory::serialize const;
+	%feature("nodirector") ZstEntityFactory::serialize_partial;
+	%feature("nodirector") ZstEntityFactory::serialize;
 	%feature("nodirector") ZstEntityFactory::deserialize;
 	%feature("nodirector") ZstEntityFactory::deserialize_partial;
 
 	%nodefaultctor ZstEntityFactory;
-	%ignore Factory;
-
 	%template(ZstSerialisableFactory) ZstSerialisable<Factory, FactoryData>;
+
+	%ignore ZstEntityFactory::ZstEntityFactory(Factory);
+	%ignore ZstEntityFactory::serialize;
+	%ignore ZstEntityFactory::deserialize;
+	%ignore ZstEntityFactory::serialize_partial;
+	%ignore ZstEntityFactory::deserialize_partial;
 }
+
 
 %inline %{
 	showtime::ZstEntityFactory* cast_to_factory(showtime::ZstSynchronisable * synchronisable){

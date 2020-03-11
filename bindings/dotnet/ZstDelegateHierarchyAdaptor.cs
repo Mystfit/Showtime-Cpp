@@ -11,40 +11,46 @@ public class ZstHierarchyEvents
     public EntityDlg on_entity_leaving_events;
 
     public FactoryDlg on_factory_arriving_events;
-    public FactoryDlg on_factory_leaving_events; 
+    public FactoryDlg on_factory_leaving_events;
 }
 
 
 public sealed class ZstDelegateHierarchyAdaptor : ZstHierarchyAdaptor
 {
-    private ZstHierarchyEvents m_events;
+    private readonly ZstHierarchyEvents m_events;
 
     public ZstDelegateHierarchyAdaptor(ZstHierarchyEvents events)
     {
         m_events = events;
     }
 
-    public override void on_performer_arriving(ZstPerformer performer){
+    public override void on_performer_arriving(ZstPerformer performer)
+    {
         m_events?.on_performer_arriving_events(performer);
     }
 
-    public override void on_performer_leaving(ZstPerformer performer){
+    public override void on_performer_leaving(ZstPerformer performer)
+    {
         m_events?.on_performer_arriving_events(performer);
     }
 
-    public override void on_entity_arriving(ZstEntityBase entity){
+    public override void on_entity_arriving(ZstEntityBase entity)
+    {
         m_events?.on_entity_arriving_events(entity);
     }
 
-    public override void on_entity_leaving(ZstEntityBase entity){
+    public override void on_entity_leaving(ZstEntityBase entity)
+    {
         m_events?.on_entity_leaving_events(entity);
     }
 
-    public override void on_factory_arriving(ZstEntityFactory factory){
+    public override void on_factory_arriving(ZstEntityFactory factory)
+    {
         m_events?.on_factory_arriving_events(factory);
     }
 
-    public override void on_factory_leaving(ZstEntityFactory factory){
+    public override void on_factory_leaving(ZstEntityFactory factory)
+    {
         m_events?.on_factory_leaving_events(factory);
     }
 }

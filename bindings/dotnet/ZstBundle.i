@@ -1,12 +1,3 @@
-//Bundle template declarations
-%{
-  #include <ZstCableAddress.h>
-  #include <ZstServerAddress.h>
-  #include <ZstBundle.hpp>
-  #include <ZstCable.h>
-  #include <entities/ZstEntityBase.h>
-%}
-
 namespace showtime {
   // MACRO for use within the ZstBundle class body
   %define ZSTBUNDLE_MINIMUM(CSINTERFACE, CONST_REFERENCE, CTYPE...)
@@ -125,5 +116,3 @@ namespace showtime {
       ZSTBUNDLE_MINIMUM(IEnumerable, T const&, T)
   };
 }
-
-%include "../ZstBundleTemplates.i"

@@ -10,7 +10,7 @@ option(BINDINGS_JRUBY "Generate bindings for JRuby" OFF)
 
 if(BINDINGS_DOTNET OR BINDINGS_UNITY)
     set(BINDINGS_DOTNET_CSPROJ CACHE BOOL ON)
-    set(BINDINGS_DOTNET_FRAMEWORK_VERSION v4.7.2 CACHE STRING "dotnet Framework version")
+    set(BINDINGS_DOTNET_FRAMEWORK_VERSION netstandard2.0 CACHE STRING "dotnet Framework version")
     set(DOTNET_FRAMEWORK_VERSIONS
         v3.5 
         v4 

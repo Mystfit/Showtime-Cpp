@@ -20,6 +20,7 @@ set(DOTNET_CSPROJ_OUT "${SWIG_LANGUAGE_DIR}/${DOTNET_TARGET}.csproj")
 
 # Define language root interface file
 set(DOTNET_SWIG_INTERFACES "${CMAKE_CURRENT_LIST_DIR}/showtime_dotnet.i")
+
 set_source_files_properties(${DOTNET_SWIG_INTERFACES} PROPERTIES CPLUSPLUS ON)
 message(STATUS "Running swig to generate dotnet wrappers")
 
@@ -80,12 +81,30 @@ set(DOTNET_STAMP ${CMAKE_CURRENT_BINARY_DIR}/bindings/dotnet/dotnet.stamp)
 set(DOTNET_DEPENDENCIES ${CLIENT_TARGET_STATIC} ${SERVER_TARGET_STATIC})
 
 # Create the swig dotnet target
+set(CMAKE_SWIG_FLAGS "-v")
+
+# Pass active compiler to Swig for flatbuffer macros
+set(COMPILER_DEF "")
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  set(COMPILER_DEF "__clang__")
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  set(COMPILER_DEF "__GNUC__")
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+  set(COMPILER_DEF "_MSVC_VER=${MSVC_VERSION}")
+endif()
+message(STATUS ${COMPILER_DEF})
+
 swig_add_library(${DOTNET_TARGET_WRAPPER}
     LANGUAGE csharp
     TYPE MODULE
     OUTPUT_DIR ${SWIG_LANGUAGE_DIR}
     OUTFILE_DIR ${CMAKE_SWIG_OUTDIR}
     SOURCES ${DOTNET_SWIG_INTERFACES}
+)
+
+set_target_properties(${DOTNET_TARGET_WRAPPER} PROPERTIES 
+    SWIG_USE_TARGET_INCLUDE_DIRECTORIES TRUE  # Make sure to pull in headers from inherited targets
+    SWIG_COMPILE_DEFINITIONS ${COMPILER_DEF}
 )
 
 # Fix library prefixes on non-windows platforms

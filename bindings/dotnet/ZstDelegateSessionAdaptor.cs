@@ -1,4 +1,4 @@
-public class ZstSessionEvents 
+public class ZstSessionEvents
 {
     public delegate void CableDlg(ZstCable cable);
 
@@ -8,18 +8,20 @@ public class ZstSessionEvents
 
 public sealed class ZstDelegateSessionAdaptor : ZstSessionAdaptor
 {
-    private ZstSessionEvents m_events;
+    private readonly ZstSessionEvents m_events;
 
     public ZstDelegateSessionAdaptor(ZstSessionEvents events)
     {
         m_events = events;
     }
 
-    public override void on_cable_created(ZstCable cable){
+    public override void on_cable_created(ZstCable cable)
+    {
         m_events?.on_cable_created_events(cable);
     }
 
-    public override void on_cable_destroyed(ZstCable cable){
+    public override void on_cable_destroyed(ZstCable cable)
+    {
         m_events?.on_cable_destroyed_events(cable);
     }
 }
