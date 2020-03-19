@@ -4,7 +4,6 @@
 #include "ZstExports.h"
 #include "ZstCable.h"
 #include "entities/ZstPlug.h"
-#include "../ZstValue.h"
 #include "../adaptors/ZstGraphTransportAdaptor.hpp"
 
 namespace showtime {

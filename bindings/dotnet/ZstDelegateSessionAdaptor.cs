@@ -17,11 +17,11 @@ public sealed class ZstDelegateSessionAdaptor : ZstSessionAdaptor
 
     public override void on_cable_created(ZstCable cable)
     {
-        m_events?.on_cable_created_events(cable);
+        m_events?.on_cable_created_events?.Invoke(cable);
     }
 
     public override void on_cable_destroyed(ZstCable cable)
     {
-        m_events?.on_cable_destroyed_events(cable);
+        m_events?.on_cable_destroyed_events?.Invoke(cable);
     }
 }

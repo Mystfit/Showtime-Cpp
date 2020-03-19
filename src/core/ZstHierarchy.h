@@ -66,9 +66,9 @@ public:
 	// Hierarchy manipulation
 	// ------------------------------
 
-	ZST_EXPORT virtual std::unique_ptr<ZstEntityBase> create_proxy_entity(const EntityTypes entity_type, const EntityData* entity_data, const void* payload);
+	ZST_EXPORT virtual std::unique_ptr<ZstEntityBase> create_proxy_entity(EntityTypes entity_type, const EntityData* entity_data, const void* payload);
 	ZST_EXPORT virtual void add_proxy_entity(std::unique_ptr<ZstEntityBase> entity);
-	ZST_EXPORT virtual void update_proxy_entity(const EntityTypes entity_type, const EntityData* entity_data, const void* payload);
+	ZST_EXPORT virtual void update_proxy_entity(EntityTypes entity_type, const EntityData* entity_data, const void* payload);
 	ZST_EXPORT virtual void remove_proxy_entity(ZstEntityBase * entity);
 	ZST_EXPORT const EntityData* get_entity_field(EntityTypes entity_type, const void* data);
     ZST_EXPORT std::unique_ptr<ZstEntityBase> unpack_entity(EntityTypes entity_type, const void* entity_data);

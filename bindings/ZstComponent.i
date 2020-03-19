@@ -10,7 +10,7 @@ namespace showtime {
 	%nodefaultctor ZstComponent;
 	%template(ZstSerialisableComponent) ZstSerialisable<Component, ComponentData>;
 
-	%ignore ZstComponent::ZstComponent(Component);
+	//%ignore ZstComponent::ZstComponent(Component);
 	%ignore ZstComponent::serialize;
 	%ignore ZstComponent::deserialize;
 	%ignore ZstComponent::serialize_partial;

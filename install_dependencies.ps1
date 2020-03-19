@@ -5,7 +5,7 @@ param(
     [string[]]$config=@("release"),
     [string]$generator="Visual Studio 16 2019",
     [switch]$without_boost = $false,
-    [string]$boost_version = "1.70.0"
+    [string]$boost_version = "1.72.0"
 )
 
 

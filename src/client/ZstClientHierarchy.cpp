@@ -69,7 +69,7 @@ void ZstClientHierarchy::on_receive_msg(std::shared_ptr<ZstStageMessage> stage_m
 
 void ZstClientHierarchy::on_publish_entity_update(ZstEntityBase * entity)
 {
-	if (entity->entity_type(), EntityTypes_Factory) {
+	if (entity->entity_type() == ZstEntityType::FACTORY) {
 		//Factory wants to update creatables
 		ZstEntityFactory * factory = static_cast<ZstEntityFactory*>(entity);
         
@@ -142,7 +142,7 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 		ZstEntityBundle bundle;
 		entity->get_child_entities(bundle);
 		for (auto c : bundle) {
-			auto content_message = CreateEntityCreateRequest(builder, c->entity_type(), c->serialize(builder));
+			auto content_message = CreateEntityCreateRequest(builder, c->serialized_entity_type(), c->serialize(builder));
 			adaptor->send_msg(Content_EntityCreateRequest, content_message.Union(), builder, args);
 		}
 	});

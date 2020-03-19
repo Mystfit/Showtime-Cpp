@@ -6,14 +6,12 @@
 #include <vector>
 #include <iostream>
 #include <ZstConstants.h>
+#include <ZstExports.h>
 #include <ZstSerialisable.h>
-#include <schemas/graph_types_generated.h>
 #include "ZstExports.h"
+#include "ZstConstants.h"
 #include <mutex>
 
-#include <boost/bimap/bimap.hpp>
-#include <boost/bimap/list_of.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/variant.hpp>
 
 
@@ -23,44 +21,16 @@ namespace showtime {
 
 typedef boost::variant<int, float, std::string> ZstValueVariant;
 
-
-namespace ZstValueDetails {
-	class ZstValueIntVisitor : public boost::static_visitor<int>
-	{
-	public:
-		int operator()(int i) const;
-		int operator()(float f) const;
-		int operator()(const std::string & str) const;
-	};
-
-	class ZstValueFloatVisitor : public boost::static_visitor<float>
-	{
-	public:
-		float operator()(int i) const;
-		float operator()(float f) const;
-		float operator()(const std::string & str) const;
-	};
-
-	class ZstValueStrVisitor : public boost::static_visitor<std::string>
-	{
-	public:
-		std::string operator()(int i) const;
-		std::string operator()(float f) const;
-		std::string operator()(const std::string & str) const;
-	};
-}
-
-
 class ZstValue : virtual ZstSerialisable<PlugValue, PlugValue> {
 public:
 	ZST_EXPORT ZstValue();
 	ZST_EXPORT ZstValue(const ZstValue & other);
-	ZST_EXPORT ZstValue(PlugValueData t);
+	ZST_EXPORT ZstValue(ZstValueType t);
 	ZST_EXPORT ZstValue(const PlugValue* buffer);
 
 	ZST_EXPORT virtual ~ZstValue();
 
-	ZST_EXPORT PlugValueData get_default_type() const;
+	ZST_EXPORT ZstValueType get_default_type() const;
 	
 	ZST_EXPORT void copy(const ZstValue & other);
 	
@@ -88,7 +58,7 @@ public:
 
 protected:
 	std::vector<ZstValueVariant> m_values;
-	PlugValueData m_default_type;
+	ZstValueType m_default_type;
 
 private:
 	std::mutex m_lock;

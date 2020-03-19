@@ -36,6 +36,15 @@ typedef ZstBundle<ZstEntityFactory*> ZstEntityFactoryBundle;
 typedef ZstBundleIterator<ZstEntityBase*> ZstEntityBundleIterator;
 
 
+enum class ZstEntityType {
+    NONE = 0,
+    COMPONENT,
+    PERFORMER,
+    PLUG,
+    FACTORY
+};
+
+
 class ZST_CLASS_EXPORTED ZstEntityBase :
     public ZstSynchronisable,
     public virtual ZstSerialisable<Entity, EntityData>
@@ -58,7 +67,8 @@ public:
     ZST_EXPORT virtual void remove_child(ZstEntityBase * child);
     
     //Entity type
-    ZST_EXPORT const EntityTypes entity_type() const;
+    ZST_EXPORT const ZstEntityType entity_type() const;
+    ZST_EXPORT EntityTypes serialized_entity_type();
     
     //URI for this entity
     ZST_EXPORT const ZstURI & URI() const;
@@ -87,7 +97,7 @@ public:
     ZST_EXPORT void release_ownership();
 
 	//Registration
-	ZST_EXPORT virtual void on_registered() {};
+    ZST_EXPORT virtual void on_registered();
 	ZST_EXPORT bool is_registered() const;
 
 	//Activation
@@ -107,7 +117,7 @@ public:
     
 protected:
     //Set entity status
-    ZST_EXPORT void set_entity_type(EntityTypes entity_type);
+    ZST_EXPORT void set_entity_type(ZstEntityType entity_type);
     ZST_EXPORT virtual void set_parent(ZstEntityBase* entity);
     ZST_EXPORT virtual void set_owner(const ZstURI & fire_owner);
     ZST_EXPORT virtual void update_URI();
@@ -126,7 +136,7 @@ protected:
 private:
 	void set_registered(bool registered);
     ZstURI m_parent;
-    EntityTypes m_entity_type;
+    ZstEntityType m_entity_type;
     ZstURI m_uri;
     ZstURI m_current_owner;
     std::mutex m_entity_lock;

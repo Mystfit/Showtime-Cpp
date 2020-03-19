@@ -42,7 +42,7 @@ void ZstStageHierarchy::on_entity_arriving(ZstEntityBase* entity)
 	ZstTransportArgs args;
 	args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
 	auto builder = std::make_shared<FlatBufferBuilder>();
-	auto content_message = CreateEntityCreateRequest(*builder, entity->entity_type(), entity->serialize(*builder));
+	auto content_message = CreateEntityCreateRequest(*builder, entity->serialized_entity_type(), entity->serialize(*builder));
 	ZstLog::server(LogLevel::debug, "Broadcasting entity {}", entity->URI().path());
 	broadcast(Content_EntityCreateRequest, content_message.Union(), builder, args, excluded);
 }
@@ -304,7 +304,6 @@ void ZstStageHierarchy::broadcast(Content message_type, flatbuffers::Offset<void
 		//Can only send messages to performers
 		ZstPerformerStageProxy* performer = dynamic_cast<ZstPerformerStageProxy*>(entity);
 		if (!performer || std::find(excluded.begin(), excluded.end(), performer) != excluded.end()) {
-			ZstLog::server(LogLevel::error, "Not a performer");
 			continue;
 		}
 

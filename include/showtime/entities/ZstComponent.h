@@ -47,6 +47,12 @@ public:
     ZST_EXPORT const char * component_type() const;
 
 
+    // Overriden Events for SWIG
+    ZST_EXPORT virtual void on_registered() override;
+    ZST_EXPORT virtual void on_activation() override;
+    ZST_EXPORT virtual void on_deactivation() override;
+
+
 	// Serialisation
 	// -------------
     ZST_EXPORT virtual void serialize_partial(flatbuffers::Offset<ComponentData>& destination_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const override;

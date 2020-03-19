@@ -12,6 +12,3 @@ namespace showtime {
 	class Plug;
 	class PlugData;
 }
-
-//%import <flatbuffers/flatbuffers.h>
-%include <schemas/graph_types_generated.h>

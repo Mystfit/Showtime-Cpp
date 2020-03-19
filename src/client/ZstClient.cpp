@@ -749,7 +749,7 @@ void ZstClient::on_entity_arriving(ZstEntityBase* entity)
 
     for (auto child : bundle) {
         // Arriving output plugs need to register the graph transport so that they can dispatch messages
-        if (child->entity_type() == EntityTypes_Plug) {
+        if (child->entity_type() == ZstEntityType::PLUG) {
             init_arriving_plug(static_cast<ZstPlug*>(child));
         }
     }

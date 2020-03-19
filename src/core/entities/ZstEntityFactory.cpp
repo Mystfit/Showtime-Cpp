@@ -14,21 +14,21 @@ ZstEntityFactory::ZstEntityFactory() :
 	ZstEntityBase(),
 	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >("factory events"))
 {
-	set_entity_type(EntityTypes_Factory);
+	set_entity_type(ZstEntityType::FACTORY);
 }
 
 ZstEntityFactory::ZstEntityFactory(const char * name) : 
 	ZstEntityBase(name),
 	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >("factory events"))
 {
-	set_entity_type(EntityTypes_Factory);
+	set_entity_type(ZstEntityType::FACTORY);
 }
     
 ZstEntityFactory::ZstEntityFactory(const Factory* buffer) : 
 	ZstEntityBase(),
 	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >("factory events"))
 {
-	set_entity_type(EntityTypes_Factory);
+	set_entity_type(ZstEntityType::FACTORY);
     ZstEntityFactory::deserialize_partial(buffer->factory());
 	ZstEntityBase::deserialize_partial(buffer->entity());
 }

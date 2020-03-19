@@ -3,6 +3,7 @@
 #include "ZstExports.h"
 #include "ZstConstants.h"
 #include "ZstCable.h"
+#include "ZstConstants.h"
 #include "entities/ZstEntityBase.h"
 
 #include <set>
@@ -13,7 +14,6 @@ namespace showtime {
 
 //Forward declarations
 class ZstValue;
-class ZstPlug;
 class ZstGraphTransportAdaptor;
 
 template<typename T>
@@ -21,6 +21,12 @@ class ZstEventDispatcher;
 
 #define PLUG_DEFAULT_MAX_CABLES -1
 
+
+enum ZST_CLASS_EXPORTED class ZstPlugDirection {
+    NONE = 0,
+    IN_JACK = 1,
+    OUT_JACK = 2
+};
 
 class ZST_CLASS_EXPORTED ZstPlug :
 	public virtual ZstSerialisable<Plug, PlugData>,
@@ -34,7 +40,7 @@ public:
     //Initialisation
     ZST_EXPORT ZstPlug();
     ZST_EXPORT ZstPlug(const Plug* buffer);
-    ZST_EXPORT ZstPlug(const char * name, const PlugValueData & t, const PlugDirection & direction = PlugDirection_NONE, int max_cables = -1);
+    ZST_EXPORT ZstPlug(const char * name, const ZstValueType& t, const ZstPlugDirection& direction = ZstPlugDirection::NONE, int max_cables = -1);
     ZST_EXPORT ZstPlug(const ZstPlug & other);
 
     //Destruction
@@ -61,7 +67,7 @@ public:
 	ZST_EXPORT virtual void deserialize(const Plug* buffer) override;
 
     //Properties
-    ZST_EXPORT PlugDirection direction();
+    ZST_EXPORT ZstPlugDirection direction();
 
     //Cables
     ZST_EXPORT size_t num_cables();
@@ -74,12 +80,10 @@ public:
 
 protected:
     std::unique_ptr<ZstValue> m_value;
-    PlugDirection m_direction;
+    ZstPlugDirection m_direction;
     int m_max_connected_cables;
 
 private:
-    void deserialize_imp(const Plug* buffer);
-
     ZST_EXPORT void add_cable(ZstCable * cable);
     ZST_EXPORT void remove_cable(ZstCable * cable);
     
@@ -96,7 +100,7 @@ public:
     ZST_EXPORT ZstInputPlug();
     ZST_EXPORT ZstInputPlug(const Plug* buffer);
     ZST_EXPORT ZstInputPlug(const ZstInputPlug & other);
-    ZST_EXPORT ZstInputPlug(const char * name, const PlugValueData & t, int max_connected_cables = -1);
+    ZST_EXPORT ZstInputPlug(const char * name, const ZstValueType& t, int max_connected_cables = -1);
     ZST_EXPORT ~ZstInputPlug();
 };
 
@@ -110,7 +114,7 @@ public:
     ZST_EXPORT ZstOutputPlug();
     ZST_EXPORT ZstOutputPlug(const Plug* buffer);
     ZST_EXPORT ZstOutputPlug(const ZstOutputPlug & other);
-    ZST_EXPORT ZstOutputPlug(const char * name, const PlugValueData & t, bool reliable = true);
+    ZST_EXPORT ZstOutputPlug(const char * name, const ZstValueType& t, bool reliable = true);
     ZST_EXPORT ~ZstOutputPlug();
     ZST_EXPORT bool can_fire();
     ZST_EXPORT void fire();

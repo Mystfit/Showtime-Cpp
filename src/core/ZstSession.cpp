@@ -73,7 +73,7 @@ ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * outpu
 		return NULL;
 	}
 
-	if (input->direction() != PlugDirection_IN_JACK || output->direction() != PlugDirection_OUT_JACK) {
+	if (input->direction() != ZstPlugDirection::IN_JACK || output->direction() != ZstPlugDirection::OUT_JACK) {
 		ZstLog::net(LogLevel::notification, "Cable order incorrect");
 		return NULL;
 	}

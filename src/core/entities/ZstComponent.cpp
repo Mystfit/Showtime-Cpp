@@ -11,28 +11,28 @@ namespace showtime
     ZstComponent::ZstComponent() :
         ZstEntityBase()
     {
-        set_entity_type(EntityTypes_Component);
+        set_entity_type(ZstEntityType::COMPONENT);
         set_component_type("");
     }
 
     ZstComponent::ZstComponent(const char * path) :
         ZstEntityBase(path)
     {
-        set_entity_type(EntityTypes_Component);
+        set_entity_type(ZstEntityType::COMPONENT);
         set_component_type("");
     }
 
     ZstComponent::ZstComponent(const char * component_type, const char * path)
         : ZstEntityBase(path)
     {
-        set_entity_type(EntityTypes_Component);
+        set_entity_type(ZstEntityType::COMPONENT);
         set_component_type(component_type);
     }
     
     ZstComponent::ZstComponent(const Component* buffer) : 
 		ZstEntityBase()
     {
-		set_entity_type(EntityTypes_Component);
+		set_entity_type(ZstEntityType::COMPONENT);
         ZstEntityBase::deserialize_partial(buffer->entity());
 		ZstComponent::deserialize_partial(buffer->component());
     }
@@ -42,14 +42,14 @@ namespace showtime
         for (auto c : other.m_children) {
 			auto entity = get_child_by_URI(c);
 
-            if (entity->entity_type() == EntityTypes_Component) {
+            if (entity->entity_type() == ZstEntityType::COMPONENT) {
                 add_child(new ZstComponent(*dynamic_cast<ZstComponent*>(entity)));
             }
-            else if(entity->entity_type() == EntityTypes_Plug) {
+            else if(entity->entity_type() == ZstEntityType::PLUG) {
                 ZstPlug * plug = dynamic_cast<ZstPlug*>(entity);
-                if (plug->direction() == PlugDirection_IN_JACK) {
+                if (plug->direction() == ZstPlugDirection::IN_JACK) {
                     add_child(new ZstInputPlug(*dynamic_cast<ZstInputPlug*>(plug)));
-                } else if (plug->direction() == PlugDirection_OUT_JACK){
+                } else if (plug->direction() == ZstPlugDirection::OUT_JACK){
                     add_child(new ZstOutputPlug(*dynamic_cast<ZstOutputPlug*>(plug)));
                 }
             }
@@ -74,7 +74,7 @@ namespace showtime
 			auto entity = get_child_by_URI(entity_path);
 			if (!entity)
 				continue;
-            if(entity->entity_type() ==EntityTypes_Plug)
+            if(entity->entity_type() ==ZstEntityType::PLUG)
                 bundle.add(entity);
         }
         return bundle;
@@ -177,6 +177,18 @@ namespace showtime
     const char * ZstComponent::component_type() const
     {
         return m_component_type.c_str();
+    }
+
+    void ZstComponent::on_registered()
+    {
+    }
+
+    void ZstComponent::on_activation()
+    {
+    }
+
+    void ZstComponent::on_deactivation()
+    {
     }
 
     void ZstComponent::set_component_type(const char * component_type)

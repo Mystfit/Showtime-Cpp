@@ -253,7 +253,7 @@ set(Showtime_PRIVATE_HEADER_DEPENDENCIES
 )
 
 set(SHOWTIME_PRIVATE_STATIC_LINKED_LIBS
-    czmq-static 
+    czmq-static
     libzmq-static
 )
 

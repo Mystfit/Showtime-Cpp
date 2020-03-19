@@ -1,8 +1,4 @@
 namespace showtime {
-
-  //%include <swiginterface.i>
-  //%interface_impl(ZstSynchronisable);
-
   %typemap(cscode) ZstSynchronisable %{
     private ZstSynchronisableEvents m_synchronisable_events = null;
     private ZstDelegateSynchronisableAdaptor m_synchronisable_adaptor = null;

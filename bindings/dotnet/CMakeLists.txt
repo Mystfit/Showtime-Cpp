@@ -83,17 +83,6 @@ set(DOTNET_DEPENDENCIES ${CLIENT_TARGET_STATIC} ${SERVER_TARGET_STATIC})
 # Create the swig dotnet target
 set(CMAKE_SWIG_FLAGS "-v")
 
-# Pass active compiler to Swig for flatbuffer macros
-set(COMPILER_DEF "")
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-  set(COMPILER_DEF "__clang__")
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  set(COMPILER_DEF "__GNUC__")
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-  set(COMPILER_DEF "_MSVC_VER=${MSVC_VERSION}")
-endif()
-message(STATUS ${COMPILER_DEF})
-
 swig_add_library(${DOTNET_TARGET_WRAPPER}
     LANGUAGE csharp
     TYPE MODULE
@@ -102,10 +91,8 @@ swig_add_library(${DOTNET_TARGET_WRAPPER}
     SOURCES ${DOTNET_SWIG_INTERFACES}
 )
 
-set_target_properties(${DOTNET_TARGET_WRAPPER} PROPERTIES 
-    SWIG_USE_TARGET_INCLUDE_DIRECTORIES TRUE  # Make sure to pull in headers from inherited targets
-    SWIG_COMPILE_DEFINITIONS ${COMPILER_DEF}
-)
+# Make sure to pull in headers from inherited targets)
+#set_target_properties(${DOTNET_TARGET_WRAPPER} PROPERTIES SWIG_USE_TARGET_INCLUDE_DIRECTORIES TRUE  
 
 # Fix library prefixes on non-windows platforms
 if(NOT WIN32)
@@ -134,8 +121,7 @@ endif()
 add_dependencies(${DOTNET_TARGET_WRAPPER} ${DOTNET_DEPENDENCIES})
 
 # Link libraries to swig target
-swig_link_libraries(${DOTNET_TARGET_WRAPPER} PUBLIC ${DOTNET_DEPENDENCIES})
-
+target_link_libraries(${DOTNET_TARGET_WRAPPER} PRIVATE ${DOTNET_DEPENDENCIES})
 
 # ShowtimeDotnet 
 # --------------
@@ -162,16 +148,6 @@ else()
     set(DOTNET_SRC_BLOCK "")
     foreach(file ${DOTNET_BINDINGS})
         string(APPEND DOTNET_SRC_BLOCK "    <Compile\ Include=\"${file}\"\ />\n")
-    endforeach()
-
-    # Add project references
-    set(DOTNET_PROJECT_REFERENCES_BLOCK "")
-    set(DOTNET_PROJECT_REFERENCES "")
-    #if(MSVC)
-        list(APPEND DOTNET_PROJECT_REFERENCES ${DOTNET_CSPROJ_OUT})
-    #endif()
-    foreach(project ${DOTNET_PROJECT_REFERENCES})
-        string(APPEND DOTNET_PROJECT_REFERENCES_BLOCK "  <ProjectReference Include=\"${project}\" />\n")
     endforeach()
 
     # Add native runtime wrappers

@@ -16,6 +16,7 @@ namespace showtime {
     %ignore ZstPlug::deserialize;
     %ignore ZstPlug::serialize_partial;
     %ignore ZstPlug::deserialize_partial;
+    %ignore PlugValueData;
 }
 
 %inline %{

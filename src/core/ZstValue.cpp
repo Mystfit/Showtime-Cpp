@@ -1,5 +1,8 @@
 #include <string>
 #include <sstream>
+#include <schemas/graph_types_generated.h>
+#include <boost/bimap.hpp>
+#include <boost/assign/list_of.hpp>
 #include "ZstLogging.h"
 #include "ZstValue.h"
 
@@ -7,7 +10,41 @@ using namespace flatbuffers;
 
 namespace showtime {
 
-ZstValue::ZstValue() : m_default_type(PlugValueData_IntList)
+	namespace ZstValueDetails {
+		class ZstValueIntVisitor : public boost::static_visitor<int>
+		{
+		public:
+			int operator()(int i) const;
+			int operator()(float f) const;
+			int operator()(const std::string& str) const;
+		};
+
+		class ZstValueFloatVisitor : public boost::static_visitor<float>
+		{
+		public:
+			float operator()(int i) const;
+			float operator()(float f) const;
+			float operator()(const std::string& str) const;
+		};
+
+		class ZstValueStrVisitor : public boost::static_visitor<std::string>
+		{
+		public:
+			std::string operator()(int i) const;
+			std::string operator()(float f) const;
+			std::string operator()(const std::string& str) const;
+		};
+	}
+
+typedef boost::bimap<ZstValueType, PlugValueData> FlatbuffersEnityTypeMap;
+static const FlatbuffersEnityTypeMap value_type_lookup = boost::assign::list_of< FlatbuffersEnityTypeMap::relation >
+	(ZstValueType::NONE, PlugValueData_NONE)
+	(ZstValueType::IntList, PlugValueData_IntList)
+	(ZstValueType::FloatList, PlugValueData_FloatList)
+	(ZstValueType::StrList, PlugValueData_StrList)
+	(ZstValueType::PlugHandshake, PlugValueData_PlugHandshake);
+
+ZstValue::ZstValue() : m_default_type(ZstValueType::IntList)
 {
 }
 
@@ -17,7 +54,7 @@ ZstValue::ZstValue(const ZstValue & other)
 	m_values = other.m_values;
 }
 
-ZstValue::ZstValue(PlugValueData t) : m_default_type(t)
+ZstValue::ZstValue(ZstValueType t) : m_default_type(t)
 {
 }
 
@@ -30,7 +67,7 @@ ZstValue::~ZstValue()
 {
 }
 
-PlugValueData ZstValue::get_default_type() const
+ZstValueType ZstValue::get_default_type() const
 {
 	return m_default_type;
 }
@@ -97,13 +134,13 @@ void ZstValue::char_at(char * buf, const size_t position) const
 const size_t ZstValue::size_at(const size_t position) const {
     auto val = m_values.at(position);
     
-    if (m_default_type == PlugValueData_IntList) {
+    if (m_default_type == ZstValueType::IntList) {
         return sizeof(int);
     }
-    else if (m_default_type == PlugValueData_FloatList) {
+    else if (m_default_type == ZstValueType::FloatList) {
         return sizeof(float);
     }
-    else if (m_default_type == PlugValueData_StrList) {
+    else if (m_default_type == ZstValueType::StrList) {
         std::string val_s = boost::apply_visitor(ZstValueDetails::ZstValueStrVisitor(), val);
         return val_s.size();
     } 
@@ -147,18 +184,18 @@ uoffset_t ZstValue::serialize(flatbuffers::FlatBufferBuilder& buffer_builder) co
 void ZstValue::serialize_partial(Offset<PlugValue>& dest, flatbuffers::FlatBufferBuilder& buffer_builder) const
 {
 	switch (m_default_type) {
-	case PlugValueData_IntList:
+	case ZstValueType::IntList:
 		dest = CreatePlugValue(buffer_builder, PlugValueData_IntList, CreateIntList(buffer_builder, buffer_builder.CreateVector(as_int_vector())).Union());
 		break;
-	case PlugValueData_FloatList:
+	case ZstValueType::FloatList:
 		dest = CreatePlugValue(buffer_builder, PlugValueData_FloatList, CreateFloatList(buffer_builder, buffer_builder.CreateVector(as_float_vector())).Union());
 		break;
-	case PlugValueData_StrList:
+	case ZstValueType::StrList:
 		dest = CreatePlugValue(buffer_builder, PlugValueData_StrList, CreateStrList(buffer_builder, buffer_builder.CreateVectorOfStrings(as_string_vector())).Union());
 		break;
-	case PlugValueData_PlugHandshake:
+	case ZstValueType::PlugHandshake:
 		break;
-	case PlugValueData_NONE:
+	case ZstValueType::NONE:
 		break;
 	}
 }
@@ -171,6 +208,8 @@ void ZstValue::deserialize(const PlugValue* buffer)
 void ZstValue::deserialize_partial(const PlugValue* buffer)
 {	
 	if (!buffer) return;
+
+	m_default_type = value_type_lookup.right.at(buffer->values_type());
 
 	switch (buffer->values_type()) {
 	case PlugValueData_IntList: {
