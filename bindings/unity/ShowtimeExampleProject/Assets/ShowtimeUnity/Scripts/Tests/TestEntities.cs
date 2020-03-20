@@ -7,47 +7,56 @@ using NUnit.Framework;
 namespace Showtime.Tests
 {
 
-    public class TestEntities
+    public class TestEntities : IPrebuildSetup, IPostBuildCleanup
     {
+        public static FixtureJoinServer fixture;
+
+        public void Setup()
+        {
+            fixture = new FixtureJoinServer("entities");
+        }
+
+        public void Cleanup()
+        {
+            fixture.Cleanup();
+        }
+
         [Test]
-        [PrebuildSetup(typeof(FixtureJoinServer))]
         public void CreateEntitySync()
         {
             var component = new TestComponent("testComponentSync");
-            showtime.get_root().add_child(component);
+            fixture.client.get_root().add_child(component);
             Assert.IsTrue(component.is_activated());
-            showtime.deactivate_entity(component);
+            fixture.client.deactivate_entity(component);
             Assert.IsFalse(component.is_activated());
         }
 
         [UnityTest]
-        [PrebuildSetup(typeof(FixtureJoinServer))]
         public IEnumerator CreateEntityAsync()
         {
             var component = new TestComponent("testComponentAsync");
 
-            showtime.get_root().add_child(component);
+            fixture.client.get_root().add_child(component);
             yield return null;
             Assert.IsTrue(component.is_activated());
 
-            showtime.deactivate_entity_async(component);
+            fixture.client.deactivate_entity_async(component);
             yield return null;
             Assert.IsFalse(component.is_activated());
         }
 
         [UnityTest]
-        [PrebuildSetup(typeof(FixtureJoinServer))]
         public IEnumerator SynchronisableAdaptor()
         {
             var component = new TestComponent("testComponentAdaptor");
             var sync_adaptor = new TestSynchronisableAdaptor();
             component.add_adaptor(sync_adaptor);
 
-            showtime.get_root().add_child(component);
+            fixture.client.get_root().add_child(component);
             yield return null;
             Assert.IsTrue(component.is_activated());
 
-            showtime.deactivate_entity_async(component);
+            fixture.client.deactivate_entity_async(component);
             yield return null;
             Assert.IsFalse(component.is_activated());
         }

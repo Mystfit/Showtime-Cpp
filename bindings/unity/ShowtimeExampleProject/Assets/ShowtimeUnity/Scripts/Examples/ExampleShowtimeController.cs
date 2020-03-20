@@ -18,13 +18,15 @@ public class ExampleShowtimeController : MonoBehaviour {
     //Callbacks
     private EntityCallback entityCallback;
     private SessionCallback sessionCallback;
+    private ShowtimeClient m_client;
 
     // Use this for initialization
     void Start () {
 
+        m_client = new ShowtimeClient();
         //Initialise Showtime
-        showtime.init("unity_test", true);
-        showtime.init_file_logging("unity_showtime.log");
+        m_client.init("unity_test", true);
+        //m_client.init_file_logging("unity_showtime.log");
 
         StartCoroutine(TestLibrary());
     }
@@ -32,15 +34,15 @@ public class ExampleShowtimeController : MonoBehaviour {
    private IEnumerator TestLibrary()
     {
         //Join the performance
-        showtime.join_async($"{stageAddress}:{stagePort}");
+        m_client.join_async($"{stageAddress}:{stagePort}");
 
-        yield return new WaitUntil(() => showtime.is_connected());
+        yield return new WaitUntil(() => m_client.is_connected());
 
         //Create and attach callbacks for Showtime events
         entityCallback = new EntityCallback();
         sessionCallback = new SessionCallback();
-        showtime.add_session_adaptor(sessionCallback);
-        showtime.add_hierarchy_adaptor(entityCallback);
+        m_client.add_session_adaptor(sessionCallback);
+        m_client.add_hierarchy_adaptor(entityCallback);
 
         //add = new AddFilter("adder");
         pushA = new Push("addend");
@@ -49,15 +51,15 @@ public class ExampleShowtimeController : MonoBehaviour {
 
         //Entities need to be activated to become 'live' in the performance
         Debug.Log("Activating entities");
-        showtime.get_root().add_child(pushA);
-        showtime.get_root().add_child(pushB);
-        showtime.get_root().add_child(sink);
+        m_client.get_root().add_child(pushA);
+        m_client.get_root().add_child(pushB);
+        m_client.get_root().add_child(sink);
 
         //Connect the plugs together with cables
         Debug.Log("Connecting cables");
-        //ZstCable augend_cable = showtime.connect_cable_async(add.augend(), pushA.plug);
-        //ZstCable addend_cable = showtime.connect_cable_async(add.addend(), pushB.plug);
-        //ZstCable sum_cable = showtime.connect_cable_async(sink.plug, add.sum());
+        //ZstCable augend_cable = m_client.connect_cable_async(add.augend(), pushA.plug);
+        //ZstCable addend_cable = m_client.connect_cable_async(add.addend(), pushB.plug);
+        //ZstCable sum_cable = m_client.connect_cable_async(sink.plug, add.sum());
         
         //yield return new WaitUntil(() => 
         //    (augend_cable.is_activated() && 
@@ -72,21 +74,21 @@ public class ExampleShowtimeController : MonoBehaviour {
     }
     
     void Update () {
-        if (showtime.is_connected())
-            showtime.poll_once();
+        if (m_client.is_connected())
+            m_client.poll_once();
     }
 
     //Clean up on exit. 
     void OnApplicationQuit(){
         Debug.Log ("Leaving performance");
         //showtime.deactivate_entity(add);
-        showtime.deactivate_entity(pushA);
-        showtime.deactivate_entity(pushB);
-        showtime.deactivate_entity(sink);
+        m_client.deactivate_entity(pushA);
+        m_client.deactivate_entity(pushB);
+        m_client.deactivate_entity(sink);
 
         //We don't have to tear down the library at this point unless we want to run init() again.
         //The showtime singleton will take care of itself on program exit, but we still need to leave
-        showtime.leave();
+        m_client.leave();
     }
     
     // Entities
@@ -97,7 +99,12 @@ public class ExampleShowtimeController : MonoBehaviour {
 
         public Sink(string name) : base(name)
         {
-            plug = create_input_plug("push_in", ZstValueType.ZST_INT);
+            plug = new ZstInputPlug("push_in", ZstValueType.IntList);
+        }
+
+        public override void on_registered()
+        {
+            add_child(plug);
         }
 
         public override void compute(ZstInputPlug plug)
@@ -119,7 +126,12 @@ public class ExampleShowtimeController : MonoBehaviour {
 
         public Push(string name) : base(name)
         {
-            plug = create_output_plug("push_out", ZstValueType.ZST_INT);
+            plug = new ZstOutputPlug("push_out", ZstValueType.IntList);
+        }
+
+        public override void on_registered()
+        {
+            add_child(plug);
         }
 
         public void send(int val)
@@ -157,16 +169,6 @@ public class ExampleShowtimeController : MonoBehaviour {
 
     public class SessionCallback : ZstSessionAdaptor
     {
-        public override void on_connected_to_stage()
-        {
-            Debug.Log("Connected to stage");
-        }
-
-        public override void on_disconnected_from_stage()
-        {
-            Debug.Log("Disconnected from stage");
-        }
-
         public override void on_cable_created(ZstCable cable)
         {
             Debug.Log("Cable arriving: " + cable.get_address().get_output_URI().path() + " -> " + cable.get_address().get_input_URI().path());

@@ -12,6 +12,7 @@ public class ExampleObservableManager : MonoBehaviour
     public bool is_master = true;
     public GameObject proxy_prefab;
 
+    public ShowtimeClient client;
     private string m_client_name;
 
     //Setters
@@ -37,15 +38,16 @@ public class ExampleObservableManager : MonoBehaviour
 
     void Start()
     {
-        showtime.session_events().on_connected_to_stage_events += OnConnected;
-        showtime.session_events().on_disconnected_from_stage_events += OnDisconnected;
+        client = new ShowtimeClient();
+        client.connection_events().on_connected_to_stage_events += OnConnected;
+        client.connection_events().on_disconnected_from_stage_events += OnDisconnected;
     }
 
     void Update()
     {
-        if (showtime.is_connected())
+        if (client.is_connected())
         {
-            showtime.poll_once();
+            client.poll_once();
         }
     }
 
@@ -54,19 +56,19 @@ public class ExampleObservableManager : MonoBehaviour
         if(m_client_name == null){
             throw new System.NullReferenceException("Showtime performer name was null");
         }
-        showtime.init(m_client_name, true);
-        showtime.init_file_logging("unity-showtime.log");
-        showtime.join_async(address);
+        client.init(m_client_name, true);
+        //m_client.init_file_logging("unity-showtime.log");
+        client.join_async(address);
     }
 
-    public void OnConnected()
+    public void OnConnected(ShowtimeClient client, ZstServerAddress server)
     {
         Debug.Log("Connected to stage");
         TransformableEntityWatcher entity_watcher = gameObject.AddComponent<TransformableEntityWatcher>();
         entity_watcher.transformable_prefab = proxy_prefab;
     }
 
-    public void OnDisconnected()
+    public void OnDisconnected(ShowtimeClient client, ZstServerAddress server)
     {
         TransformableEntityWatcher watcher = GetComponent< TransformableEntityWatcher>();
         if(watcher != null)
@@ -75,11 +77,11 @@ public class ExampleObservableManager : MonoBehaviour
 
     public void Disconnect()
     {
-        showtime.leave();
+        client.leave();
     }
 
     private void OnApplicationQuit()
     {
-        showtime.destroy();
+        client.destroy();
     }
 }

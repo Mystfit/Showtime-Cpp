@@ -9,6 +9,7 @@ public class BallSpawner : MonoBehaviour {
     public float spawn_bounds_x = 4.4f;
     public float spawn_bounds_y = 5.0f;
     public float spawn_bounds_z = 4.4f;
+    public ExampleObservableManager manager;
     private Queue<GameObject> balls;
 
 	// Use this for initialization
@@ -29,7 +30,7 @@ public class BallSpawner : MonoBehaviour {
         balls.Enqueue(ball);
         //Create unity wrapper for ZST component
         TransformableComponent visual_component = ball.AddComponent<TransformableComponent>();
-        visual_component.Init("ball" + transform.childCount);
+        visual_component.Init("ball" + transform.childCount, manager.client);
     }
 
     public void DestroyBall()

@@ -67,6 +67,7 @@ endif()
 
 if(BINDINGS_UNITY)
     set(UNITY_TARGET ${PROJECT_NAME}Unity)
+    set(BINDINGS_UNITY_EXPORT_PACKAGE CACHE BOOL ON)
     include(bindings/unity/CMakeLists.txt)
 endif()
 

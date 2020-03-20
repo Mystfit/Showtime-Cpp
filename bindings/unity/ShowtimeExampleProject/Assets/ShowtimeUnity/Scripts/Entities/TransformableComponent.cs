@@ -7,11 +7,18 @@ public class TransformableComponent : MonoBehaviour
 {
     public ZstComponent component;
     private ZstObservedTransformAdaptor transform_observer;
-
+    private ShowtimeClient m_client;
     public float UpdateRate = 0.2f;
 
-    public void Init(string name)
+    public void Start()
     {
+        
+    }
+
+    public void Init(string name, ShowtimeClient client)
+    {
+        m_client = client;
+
         //Create component
         ZstTransformableComponent transform_comp = new ZstTransformableComponent(name);
 
@@ -28,7 +35,7 @@ public class TransformableComponent : MonoBehaviour
     public ZstOutputPlug OutputTransform()
     {
         ZstURI plug_path = component.URI().add(new ZstURI("out_transform"));
-        ZstEntityBase entity = showtime.find_entity(plug_path);
+        ZstEntityBase entity = m_client.find_entity(plug_path);
         ZstOutputPlug plug = showtime.cast_to_output_plug(entity);
         return plug;
     }
@@ -36,7 +43,7 @@ public class TransformableComponent : MonoBehaviour
     public ZstInputPlug InputTransform()
     {
         ZstURI plug_path = component.URI().add(new ZstURI("in_transform"));
-        ZstEntityBase entity = showtime.find_entity(plug_path);
+        ZstEntityBase entity = m_client.find_entity(plug_path);
         ZstInputPlug plug = showtime.cast_to_input_plug(entity);
         return plug;
     }
@@ -56,7 +63,7 @@ public class TransformableComponent : MonoBehaviour
         Debug.Log($"Observing {transform_plug}");
 
         //Let the position plug know that we care about its values
-        showtime.observe_entity(transform_plug);
+        m_client.observe_entity(transform_plug);
 
         //Create ObservedPositionAdaptor to watch for updates on the position plug
         transform_observer = new ZstObservedTransformAdaptor
@@ -86,7 +93,7 @@ public class TransformableComponent : MonoBehaviour
         if (!component?.is_proxy() ?? false)
         {
             StopCoroutine("NetworkUpdate");
-            showtime.deactivate_entity(component);
+            m_client.deactivate_entity(component);
         }
     }
 
@@ -144,8 +151,14 @@ public class ZstTransformableComponent : ZstComponent
 
     public ZstTransformableComponent(string name) : base(typeof(ZstTransformableComponent).ToString(), name)
     {
-        out_transform = create_output_plug("out_transform", ZstValueType.ZST_FLOAT);
-        in_transform = create_input_plug("in_transform", ZstValueType.ZST_FLOAT);
+        out_transform = new ZstOutputPlug("out_transform", ZstValueType.FloatList);
+        in_transform = new ZstInputPlug("in_transform", ZstValueType.FloatList);
+    }
+
+    public override void on_registered()
+    {
+        add_child(out_transform);
+        add_child(in_transform);
     }
 
     public override void compute(ZstInputPlug plug)

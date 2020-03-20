@@ -6,6 +6,7 @@ public class TransformableEntityWatcher : MonoBehaviour {
 
     public GameObject transformable_prefab;
     private ZstuTransformableWatcherAdaptor adaptor;
+    public ShowtimeClient client;
 
     // Use this for initialization
     void Start () {
@@ -15,8 +16,8 @@ public class TransformableEntityWatcher : MonoBehaviour {
             component_leave_dlg = TransformableLeaving
         };
 
-        //Library must be initialised
-        showtime.add_hierarchy_adaptor(adaptor);
+        if(client != null)
+            client.add_hierarchy_adaptor(adaptor);
     }
 
     // Update is called once per frame
