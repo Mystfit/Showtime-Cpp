@@ -243,7 +243,9 @@ if(WIN32)
         string(REPLACE "libboost" "boost" BOOST_DLL_NAME ${BOOST_LIB_NAME})
         list(APPEND Showtime_SHARED_BOOST_LIBS ${BOOST_LIB_DIR}/${BOOST_DLL_NAME}.dll)
     endforeach()
-    message(STATUS "Additional Boost DLLs that need to be copied: ${Showtime_SHARED_BOOST_LIBS}")
+    if(${Showtime_SHARED_BOOST_LIBS})
+        message(STATUS "Additional Boost DLLs that need to be copied: ${Showtime_SHARED_BOOST_LIBS}")
+    endif()
 endif()
 
 set(Showtime_PRIVATE_HEADER_DEPENDENCIES

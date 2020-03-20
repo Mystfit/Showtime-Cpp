@@ -37,7 +37,7 @@ $ANDROID_HOME/tools/bin/sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "pl
 
 # Android NDK
 # -----------
-echo "Installating Android NDK"
+echo "Installing Android NDK"
 wget -q -O android_ndk.zip https://dl.google.com/android/repository/android-ndk-r21-linux-x86_64.zip > /dev/null
 unzip -q android_ndk.zip -d $ANDROID_NDK_HOME < /dev/null > /dev/null
 
@@ -45,13 +45,12 @@ unzip -q android_ndk.zip -d $ANDROID_NDK_HOME < /dev/null > /dev/null
 # ----
 apt-get -y install -qq autoconf automake libtool libpcre3 libpcre3-dev bison flex < /dev/null > /dev/null
 
-echo "Installating swig"
-SWIG_VER=4.0.1
-wget -q "https://github.com/swig/swig/archive/rel-$SWIG_VER.zip"
-unzip rel-$SWIG_VER.zip < /dev/null > /dev/null
-cd ./swig-rel-$SWIG_VER
-./autogen.sh
-./configure --prefix=$INSTALL_PREFIX  >/dev/null
-make  >/dev/null
-make install  >/dev/null
+echo "Installing monoaot Swig"
+git clone https://github.com/mystfit/swig.git
+cd ./swig
+git checkout monoaot
+./autogen.sh >/dev/null
+./configure --prefix=$INSTALL_PREFIX >/dev/null
+make >/dev/null
+make install >/dev/null
 cd ..

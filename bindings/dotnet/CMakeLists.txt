@@ -22,7 +22,6 @@ set(DOTNET_CSPROJ_OUT "${SWIG_LANGUAGE_DIR}/${DOTNET_TARGET}.csproj")
 set(DOTNET_SWIG_INTERFACES "${CMAKE_CURRENT_LIST_DIR}/showtime_dotnet.i")
 
 set_source_files_properties(${DOTNET_SWIG_INTERFACES} PROPERTIES CPLUSPLUS ON)
-message(STATUS "Running swig to generate dotnet wrappers")
 
 # Set name of dllimport library for generated cs pinvoke calls
 set(DOTNET_WRAPPER_FILENAME ${DOTNET_TARGET_WRAPPER})
@@ -36,6 +35,7 @@ set(DOTNET_BINDINGS
 )
 
 if(NOT BINDINGS_DOTNET_CSPROJ)
+    message(STATUS "Invoking swig directly to generate dotnet wrappers")
     foreach(SWIG_INTERFACE_FILE ${DOTNET_SWIG_INTERFACES})
         get_filename_component(OUTFILE_NAME ${SWIG_INTERFACE_FILE} NAME_WE)
         set(SWIG_ARGS
@@ -51,9 +51,9 @@ if(NOT BINDINGS_DOTNET_CSPROJ)
             list(APPEND SWIG_ARGS "-monoaotcompat")
         endif()
         list(APPEND SWIG_ARGS "${SWIG_INTERFACE_FILE}")
-        message(STATUS "${SWIG_ARGS}")
 
         file(MAKE_DIRECTORY ${SWIG_LANGUAGE_DIR})
+        
         execute_process(COMMAND ${SWIG_EXECUTABLE} ${SWIG_ARGS} OUTPUT_VARIABLE SWIG_STATUS ERROR_VARIABLE SWIG_ERROR RESULT_VARIABLE SWIG_OUTPUT)
         if(NOT ${SWIG_OUTPUT} EQUAL 0)
             message(FATAL_ERROR "Swig error: ${SWIG_ERROR}")
@@ -123,7 +123,12 @@ add_dependencies(${DOTNET_TARGET_WRAPPER} ${DOTNET_DEPENDENCIES})
 # Link libraries to swig target
 target_link_libraries(${DOTNET_TARGET_WRAPPER} PRIVATE ${DOTNET_DEPENDENCIES})
 
+# Add dependencies
+add_dependencies(${DOTNET_TARGET} ${DOTNET_TARGET_WRAPPER})
+
+
 # ShowtimeDotnet 
+# Target that gathers generated C# files together
 # --------------
 
 # Get the library output directory
@@ -144,6 +149,9 @@ if(WIN32 AND NOT BINDINGS_DOTNET_CSPROJ)
     target_sources(${DOTNET_TARGET} PRIVATE ${DOTNET_GENERATED_BINDINGS})
 else()
     message(STATUS "Configuring Dotnet project")
+
+    find_program(DOTNETCOMMAND dotnet)
+
     # Add source files
     set(DOTNET_SRC_BLOCK "")
     foreach(file ${DOTNET_BINDINGS})
@@ -214,28 +222,19 @@ else()
     )
 
     # Build csproj
-    add_custom_command(
-        OUTPUT ${DOTNET_OUTPUT_PACKAGE}
-        COMMAND ${DOTNETCOMMAND} restore
-        COMMAND ${CMAKE_COMMAND} -E echo "Building Dotnet package"
-        COMMAND ${DOTNETCOMMAND} build ${DOTNET_CSPROJ_OUT}
-        COMMAND ${DOTNETCOMMAND} pack ${DOTNET_ARGS}
-        WORKING_DIRECTORY ${SWIG_LANGUAGE_DIR}
-        DEPENDS ${CSPROJ_OUT} ${PLATFORM_TARGETS} ${DOTNET_DEPENDENCIES}
-        VERBATIM
-    )
-    # add_custom_command(
-    #     TARGET ${DOTNET_TARGET}
-    #     POST_BUILD
-    #     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/bin/$<CONFIG>/${DOTNET_OUTPUT_PACKAGENAME} ${DOTNET_OUTPUT_PACKAGE}
-    #     WORKING_DIRECTORY ${SWIG_LANGUAGE_DIR}
-    #     DEPENDS ${DOTNET_OUTPUT_PACKAGE}
-    #     VERBATIM
-    # )
+    if(BINDINGS_DOTNET_BUILD_PACKAGE)
+        add_custom_command(
+            OUTPUT ${DOTNET_OUTPUT_PACKAGE}
+            COMMAND ${DOTNETCOMMAND} restore
+            COMMAND ${CMAKE_COMMAND} -E echo "Building Dotnet package"
+            COMMAND ${DOTNETCOMMAND} build ${DOTNET_CSPROJ_OUT}
+            COMMAND ${DOTNETCOMMAND} pack ${DOTNET_ARGS}
+            WORKING_DIRECTORY ${SWIG_LANGUAGE_DIR}
+            DEPENDS ${CSPROJ_OUT} ${PLATFORM_TARGETS} ${DOTNET_DEPENDENCIES}
+            VERBATIM
+        )
+    endif()
 endif()
-
-# Add dependencies
-add_dependencies(${DOTNET_TARGET} ${DOTNET_TARGET_WRAPPER})
 
 # Restore original swig output dir
 set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR})

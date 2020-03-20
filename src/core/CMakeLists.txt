@@ -231,7 +231,6 @@ if(CMAKE_USE_WIN32_THREADS_INIT)
 elseif(CMAKE_USE_PTHREADS_INIT)
     message(STATUS "Using posix threads")
 endif()
-message(STATUS "Setting link thread library to ${CMAKE_THREAD_LIBS_INIT}")
 
 # Target definitions
 set(GLOBAL_PUBLIC_DEFINES
@@ -315,7 +314,6 @@ if(BUILD_SHARED)
         )
     endif()
 
-    message(STATUS ${SHOWTIME_PRIVATE_SHARED_LINKED_LIBS})
     target_link_libraries(${CORE_TARGET} PRIVATE ${SHOWTIME_PRIVATE_SHARED_LINKED_LIBS})
 
     # Library API exports

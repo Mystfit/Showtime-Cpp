@@ -10,6 +10,7 @@ option(BINDINGS_JRUBY "Generate bindings for JRuby" OFF)
 
 if(BINDINGS_DOTNET OR BINDINGS_UNITY)
     set(BINDINGS_DOTNET_CSPROJ CACHE BOOL ON)
+    set(BINDINGS_DOTNET_BUILD_PACKAGE CACHE BOOL ON)
     set(BINDINGS_DOTNET_FRAMEWORK_VERSION netstandard2.0 CACHE STRING "dotnet Framework version")
     set(DOTNET_FRAMEWORK_VERSIONS
         v3.5 
@@ -42,10 +43,6 @@ if(BINDINGS_DOTNET OR BINDINGS_UNITY)
         add_library(${DOTNET_TARGET} SHARED "")
     else()
         message(STATUS "Using C# project generated from .csproj template")
-        find_program(DOTNETCOMMAND dotnet)
-        if(${DOTNETCOMMAND} EQUAL dotnet-NOTFOUND)
-            message(FATAL_ERROR "Could not find dotnet sdk")
-        endif()
         add_custom_target(${DOTNET_TARGET} ALL DEPENDS ${DOTNET_OUTPUT_PACKAGE})
     endif()
     include(bindings/dotnet/CMakeLists.txt)
