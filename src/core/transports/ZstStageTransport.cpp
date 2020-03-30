@@ -16,6 +16,6 @@ namespace showtime
 		FinishStageMessageBuffer(buffer_builder, stage_msg);
 
 		begin_send_message(buffer_builder.GetBufferPointer(), buffer_builder.GetSize(), copy_args);
-		return ZstMessageReceipt{ Signal_OK };
+		return ZstMessageReceipt(Signal_OK);
 	}
 }

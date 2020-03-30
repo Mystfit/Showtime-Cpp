@@ -17,7 +17,7 @@ ZstClient::ZstClient(ShowtimeClient* api) :
     m_auto_join_stage(false),
 
     //Modules
-    m_promise_supervisor(ZstMessageSupervisor(std::make_shared<cf::time_watcher>(), STAGE_TIMEOUT)),
+    m_promise_supervisor(std::make_shared<cf::time_watcher>(), STAGE_TIMEOUT),
     m_session(std::make_shared<ZstClientSession>()),
 
     //Transports
