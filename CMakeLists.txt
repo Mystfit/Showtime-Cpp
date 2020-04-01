@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13.0)
 
-project(Showtime VERSION 0.24.0)
+project(Showtime VERSION 0.24.1)
 set(AUTHORS "Byron Mallett")
 set(COMPANY "Victoria University of Wellington")
 set(DESCRIPTION "Showtime dataflow network library")

@@ -80,7 +80,6 @@ if(BINDINGS_PYTHON)
     set(BINDINGS_PYTHON_VERSION ${BINDINGS_PYTHON_VERSION_MAJOR}.${BINDINGS_PYTHON_VERSION_MINOR}.${BINDINGS_PYTHON_VERSION_PATCH})
     
     find_package(Python${BINDINGS_PYTHON_VERSION_MAJOR} ${BINDINGS_PYTHON_VERSION} COMPONENTS Interpreter Development REQUIRED)
-    set(PYTHON_WHEEL "dummy.whl")
     set(Python_EXECUTABLE ${Python${BINDINGS_PYTHON_VERSION_MAJOR}_EXECUTABLE})
     set(PYTHON_LIB_TARGET Python${BINDINGS_PYTHON_VERSION_MAJOR}::Python)
     set(PYTHON_INCLUDE_DIR ${Python${BINDINGS_PYTHON_VERSION_MAJOR}_INCLUDE_DIR})
@@ -94,6 +93,12 @@ if(BINDINGS_PYTHON)
         execute_process(COMMAND ${PIP_COMMAND} install wheel)
     endif()
 
+    execute_process(COMMAND ${Python_EXECUTABLE} -c "import wheel.pep425tags; print('-'.join(wheel.pep425tags.get_supported()[0]))" 
+                    OUTPUT_VARIABLE WHEEL_PLATFORM_TAG 
+                    ERROR_QUIET
+                    OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    set(PYTHON_WHEEL "${CMAKE_SWIG_ROOT_OUTDIR}/python/dist/${PROJECT_NAME}Python-${CMAKE_PROJECT_VERSION}-${WHEEL_PLATFORM_TAG}.whl")
     add_custom_target(${PYTHON_TARGET} ALL DEPENDS ${PYTHON_WHEEL})
     include(bindings/python/CMakeLists.txt)
 endif()

@@ -13,6 +13,6 @@
 %include "ZstEntityBase.i"
 %include "ZstComponent.i"
 
-%include "showtime_api_extensions.i"
+%include "api_extensions.i"
 %include "../showtime.i"
 %include "ZstURI.i"

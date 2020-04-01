@@ -15,7 +15,7 @@ class SinkComponent(ZstComponent):
         self.cv = threading.Condition()
 
     def on_registered(self):
-        self.plug = ZstInputPlug("in", ZST.ValueList_IntList)
+        self.plug = ZstInputPlug("in", ZST.ZstValueType_IntList)
         self.add_child(self.plug)
 
     def compute(self, plug):
@@ -31,7 +31,7 @@ class PushComponent(ZstComponent):
         ZstComponent.__init__(self, name)
 
     def on_registered(self):
-        self.plug = ZstOutputPlug("out", ZST.ValueList_IntList)
+        self.plug = ZstOutputPlug("out", ZST.ZstValueType_IntList)
         self.add_child(self.plug)
 
     def send(self, val):
@@ -55,25 +55,31 @@ class EventLoop(threading.Thread):
             time.sleep(0.001)
 
 
-class Test_LibraryStart(unittest.TestCase):
+class Test_PythonExtensions(unittest.TestCase):
     def setUp(self):
         # Client/server
         server_name = "python_server"
         self.server = ShowtimeServer(server_name)
         self.client = ShowtimeClient()
+        self.client.init("test_python", True)
 
         # Set up event loop
         self.event_loop = EventLoop(self.client)
         self.event_loop.start()
 
         # Join server
-        self.client.init("test_python", True)
         self.client.auto_join_by_name(server_name)
 
     def tearDown(self):
         self.event_loop.stop()
         self.client.destroy()
         self.server.destroy()
+
+    def test_get_children(self):
+        component = PushComponent("component")
+        self.client.get_root().add_child(component)
+        children = component.get_child_entities()
+        self.assertEqual(len(children), 2)
 
     def test_send_graph_message(self):
         push = PushComponent("push")
@@ -104,7 +110,7 @@ class Test_LibraryStart(unittest.TestCase):
         sink.cv.release()
 
         # Check value
-        self.assertIsEqual(sink.last_received_value, sending_val)
+        self.assertEqual(sink.last_received_value, sending_val)
 
 
 if __name__ == '__main__':
