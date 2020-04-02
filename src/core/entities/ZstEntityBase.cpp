@@ -152,7 +152,7 @@ namespace showtime
     {
     }
 
-    void ZstEntityBase::get_child_entities(ZstEntityBundle & bundle, bool include_parent)
+    void ZstEntityBase::get_child_entities(ZstEntityBundle & bundle, bool include_parent, bool recursive)
     {
         if (include_parent){
             std::lock_guard<std::mutex> lock(m_entity_lock);

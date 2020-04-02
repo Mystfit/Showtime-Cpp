@@ -204,7 +204,7 @@ namespace showtime
     void ZstComponent::get_child_cables(ZstCableBundle & bundle)
     {
         ZstEntityBundle entity_bundle;
-        get_child_entities(entity_bundle, false);
+        get_child_entities(entity_bundle, false, true);
         for(auto child : entity_bundle){
             child->get_child_cables(bundle);
         }
@@ -212,18 +212,20 @@ namespace showtime
         ZstEntityBase::get_child_cables(bundle);
     }
 
-    void ZstComponent::get_child_entities(ZstEntityBundle & bundle, bool include_parent)
+    void ZstComponent::get_child_entities(ZstEntityBundle & bundle, bool include_parent, bool recursive)
     {
 		// Add the root object first so the bundle preserves ancestor-first order
-		if (include_parent)
-			bundle.add(this);
+        ZstEntityBase::get_child_entities(bundle, include_parent, false);
 
         for (auto child_path : m_children) {
 			auto entity = get_child_by_URI(child_path);
-			if(entity)
-				entity->get_child_entities(bundle);
+            if (entity) {
+                if (recursive)
+                    entity->get_child_entities(bundle, true, recursive);
+                else
+                    entity->ZstEntityBase::get_child_entities(bundle, true);
+            }
         }
-        ZstEntityBase::get_child_entities(bundle, false);
     }
 
 

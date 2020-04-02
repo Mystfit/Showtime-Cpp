@@ -129,7 +129,7 @@ void ZstClientSession::aquire_entity_ownership_handler(const EntityTakeOwnership
 
     // Set the owner
     ZstEntityBundle bundle;
-    entity->get_child_entities(bundle);
+    entity->get_child_entities(bundle, true, true);
     for(auto child : bundle){
         entity_set_owner(child, ZstURI(request->new_owner()->c_str(), request->new_owner()->size()));
     }

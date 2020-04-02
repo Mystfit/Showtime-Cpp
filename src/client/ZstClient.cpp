@@ -745,7 +745,7 @@ void ZstClient::set_is_connecting(bool value)
 void ZstClient::on_entity_arriving(ZstEntityBase* entity)
 {
     ZstEntityBundle bundle;
-    entity->get_child_entities(bundle);
+    entity->get_child_entities(bundle, true, true);
 
     for (auto child : bundle) {
         // Arriving output plugs need to register the graph transport so that they can dispatch messages

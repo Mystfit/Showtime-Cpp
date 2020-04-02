@@ -75,7 +75,7 @@ public:
 
     //Iterate
     ZST_EXPORT virtual void get_child_cables(ZstCableBundle & bundle);
-    ZST_EXPORT virtual void get_child_entities(ZstEntityBundle & bundle, bool include_parent = true);
+    ZST_EXPORT virtual void get_child_entities(ZstEntityBundle & bundle, bool include_parent = false, bool recursive = false);
     
     //Serialisation
     ZST_EXPORT virtual void serialize_partial(flatbuffers::Offset<EntityData>& destination_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const override;

@@ -241,7 +241,7 @@ void ZstSession::register_entity(ZstEntityBase* entity)
 {
 	//New entities need to register the session as an adaptor to query session data
 	ZstEntityBundle bundle;
-	entity->get_child_entities(bundle);
+	entity->get_child_entities(bundle, true, true);
 	for (auto child : bundle) {
 		child->add_adaptor(ZstSessionAdaptor::downcasted_shared_from_this<ZstSessionAdaptor>());
 		//child->add_adaptor(ZstEntityAdaptor::downcasted_shared_from_this<ZstEntityAdaptor>());

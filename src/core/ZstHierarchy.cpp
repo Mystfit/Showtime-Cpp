@@ -158,7 +158,7 @@ void ZstHierarchy::add_proxy_entity(std::unique_ptr<ZstEntityBase> entity)
     
 	// Propagate proxy properties to children of this proxy
 	ZstEntityBundle bundle;
-	entity->get_child_entities(bundle, true);
+	entity->get_child_entities(bundle, true, true);
 	if (entity->entity_type() == ZstEntityType::PERFORMER) {
 		dynamic_cast<ZstPerformer*>(entity.get())->get_factories(bundle);
 	}
@@ -311,7 +311,7 @@ void ZstHierarchy::activate_entity_complete(ZstEntityBase * entity)
 
 	//Add entity to lookup tables
 	ZstEntityBundle bundle;
-    entity->get_child_entities(bundle);
+	entity->get_child_entities(bundle, true, true);
 	for (auto c : bundle) {
 		add_entity_to_lookup(c);
         synchronisable_set_activating(c);
@@ -360,7 +360,7 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 
 	//Cleanup children
 	ZstEntityBundle bundle;
-	entity->get_child_entities(bundle, true);
+	entity->get_child_entities(bundle, true, true);
 	for (auto c : bundle) {
 		//Enqueue deactivation
 		synchronisable_enqueue_deactivation(c);
