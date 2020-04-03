@@ -85,18 +85,13 @@ class Test_PythonExtensions(unittest.TestCase):
     def test_send_graph_message(self):
         push = PushComponent("push")
         sink = SinkComponent("sink")
-        ZST.app(ZST.warn, "Created entites")
 
         # Activate entities
         self.client.get_root().add_child(push)
-        ZST.app(ZST.warn, "Push activated")
-
         self.client.get_root().add_child(sink)
-        ZST.app(ZST.warn, "Sink activated")
 
         # Connect cables
         cable = self.client.connect_cable(sink.plug, push.plug)
-        ZST.app(ZST.notification, "Created cable")
         self.assertIsNotNone(cable)
         
         # Send values
