@@ -352,10 +352,13 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 	}
 
 	//Remove entity from parent
-	if (entity->parent()) {
-		ZstComponent* parent = dynamic_cast<ZstComponent*>(entity->parent());
-		if (parent)
-			parent->remove_child(entity);
+	if (!entity->parent_address().is_empty()) {
+		auto parent = entity->parent();
+		if (parent) {
+			ZstComponent* parent_c = dynamic_cast<ZstComponent*>(parent);
+			if (parent_c)
+				parent_c->remove_child(entity);
+		}
 	}
 
 	//Cleanup children

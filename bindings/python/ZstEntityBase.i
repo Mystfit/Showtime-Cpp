@@ -4,13 +4,15 @@ namespace showtime {
 
 	%extend ZstEntityBase {
 		%insert("python") %{
-			def get_child_entities(self, include_parent=True, recursive=True):
+			def get_child_entities(self, include_parent=False, recursive=False):
 				bundle = ZstEntityBundle()
-				return entity_bundle_to_list(self.get_child_bundle(bundle, include_parent))
+				self.get_child_bundle(bundle, include_parent, recursive)
+				return entity_bundle_to_list(bundle)
 
 			def get_child_cables(self):
 				bundle = ZstCableBundle()
-				return bundle_to_list(self.get_child_cables(bundle, include_parent))
+				self.get_child_cables(bundle)
+				return bundle_to_list(bundle)
 		%}
 	}
 }

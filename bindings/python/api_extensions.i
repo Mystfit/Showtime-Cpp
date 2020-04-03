@@ -8,18 +8,17 @@
 def entity_bundle_to_list(bundle):
 	list = []
 	for entity in bundle.items():
-		if item.entity_type() == COMPONENT: 
+		if entity.entity_type() == ZstEntityType_COMPONENT: 
 			list.append(cast_to_component(entity))
-		elif item.entity_type() == PERFORMER: 
+		elif entity.entity_type() == ZstEntityType_PERFORMER: 
 			list.append(cast_to_performer(entity))
-		elif item.entity_type() == PLUG: 
+		elif entity.entity_type() == ZstEntityType_PLUG: 
 			plug = cast_to_input_plug(entity)
 			if not plug:
 				plug = cast_to_output_plug(entity)
 			list.append(plug)
-		elif item.entity_type() == FACTORY: 
+		elif entity.entity_type() == ZstEntityType_FACTORY: 
 			list.append(cast_to_factory(entity))
-		list.append(entity)
 	return list
 
 def bundle_to_list(bundle):

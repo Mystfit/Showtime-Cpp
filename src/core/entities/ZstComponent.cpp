@@ -61,10 +61,11 @@ namespace showtime
     ZstComponent::~ZstComponent()
     {
         ZstEntityBundle bundle;
-        /*get_child_entities(bundle, false);
+        get_child_entities(bundle, false, true);
         for (auto child : bundle) {
-			child->deactivate();
-        }*/
+            ZstEntityLiason().entity_set_parent(child, NULL);
+			//child->deactivate();
+        }
         m_children.clear();
     }
 

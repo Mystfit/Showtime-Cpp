@@ -93,12 +93,12 @@ if(BINDINGS_PYTHON)
         execute_process(COMMAND ${PIP_COMMAND} install wheel)
     endif()
 
-    execute_process(COMMAND ${Python_EXECUTABLE} -c "import wheel.pep425tags; print('-'.join(wheel.pep425tags.get_supported()[0]))" 
+    execute_process(COMMAND ${Python_EXECUTABLE} -c "import wheel.pep425tags; print('-'.join(wheel.pep425tags.get_supported('')[0]))" 
                     OUTPUT_VARIABLE WHEEL_PLATFORM_TAG 
                     ERROR_QUIET
                     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
-    set(PYTHON_WHEEL "${CMAKE_SWIG_ROOT_OUTDIR}/python/dist/${PROJECT_NAME}Python-${CMAKE_PROJECT_VERSION}-${WHEEL_PLATFORM_TAG}.whl")
+    set(PYTHON_WHEEL "${CMAKE_SWIG_ROOT_OUTDIR}/python/dist/${PROJECT_NAME}Python-${CMAKE_PROJECT_VERSION}-${WHEEL_PLATFORM_TAG}.whl" CACHE PATH "Generated Python wheel")
     add_custom_target(${PYTHON_TARGET} ALL DEPENDS ${PYTHON_WHEEL})
     include(bindings/python/CMakeLists.txt)
 endif()

@@ -14,4 +14,9 @@ void ZstEntityLiason::entity_set_registered(ZstEntityBase* entity, bool register
 	entity->set_registered(true);
 }
 
+void ZstEntityLiason::entity_set_parent(ZstEntityBase* entity, ZstEntityBase* parent)
+{
+    entity->set_parent(parent);
+}
+
 }

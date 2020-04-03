@@ -78,15 +78,14 @@ class Test_PythonExtensions(unittest.TestCase):
     def test_get_children(self):
         component = PushComponent("component")
         self.client.get_root().add_child(component)
-        children = component.get_child_entities()
-        self.assertEqual(len(children), 2)
+        self.assertEqual(len(component.get_child_entities()), 1)
+        self.assertEqual(len(component.get_child_entities(include_parent=True)), 2)
+        self.assertEqual(len(self.client.get_root().get_child_entities(recursive=True)), 2)
 
     def test_send_graph_message(self):
         push = PushComponent("push")
         sink = SinkComponent("sink")
         ZST.app(ZST.warn, "Created entites")
-
-        #raw_input("Attach debugger now")
 
         # Activate entities
         self.client.get_root().add_child(push)

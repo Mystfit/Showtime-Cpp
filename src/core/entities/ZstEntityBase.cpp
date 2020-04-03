@@ -114,7 +114,7 @@ namespace showtime
             return;
         
         std::lock_guard<std::mutex> lock(m_entity_lock);
-        child->m_parent = NULL;
+        child->m_parent = ZstURI();
     }
 
     void ZstEntityBase::update_URI()
@@ -324,7 +324,12 @@ namespace showtime
         std::lock_guard<std::mutex> lock(m_entity_lock);
 
 		auto orig_path = this->URI();
-        m_parent = entity->URI();
+
+        if (entity)
+            m_parent = entity->URI();
+        else
+            m_parent = ZstURI();
+
         this->update_URI();
 
 		// Update path in entity lookup

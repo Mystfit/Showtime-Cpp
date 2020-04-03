@@ -3,15 +3,11 @@ namespace showtime {
 		%insert("python") %{
 			def get_plugs(self):
 				bundle = ZstEntityBundle()
-				return entity_bundle_to_list(self.get_plugs(bundle, include_parent))
+				self.get_plugs(bundle, include_parent)
+				return entity_bundle_to_list(bundle)
 		%}
 	}
 
-	%feature("nodirector") ZstComponent::get_child_entities;
-	%ignore ZstComponent::get_child_entities;
-	//%ignore ZstComponent::get_child_bundle;
-
 	%feature("nodirector") ZstComponent::get_child_cables;
 	%ignore ZstComponent::get_child_cables;
-	//%ignore ZstComponent::get_cable_bundle;
 }

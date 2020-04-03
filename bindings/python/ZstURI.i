@@ -1,10 +1,8 @@
 namespace showtime {
-	%extend ZstPerformer {
+	%extend ZstURI {
 		%insert("python") %{
-			def get_factories(self):
-				bundle = ZstEntityFactoryBundle()
-				self.get_factories(bundle)
-				return entity_bundle_to_list(bundle)
+			def __str__(self):
+				return str(self.path())
 		%}
 	}
 
