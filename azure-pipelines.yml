@@ -14,16 +14,6 @@ variables:
   cmake_prefix: '$(build_dir)/dependencies/install/$(toolset)'
 
 steps:
-- task: PowerShell@2
-  displayName: Build dependencies
-  inputs:
-    filePath: 'install_dependencies.ps1'
-    arguments: '-config $(buildConfiguration) -build_dir $(build_dir) -toolset $(toolset)'
-    errorActionPreference: 'continue'
-    ignoreLASTEXITCODE: true
-    pwsh: true
-    workingDirectory: '$(System.DefaultWorkingDirectory)'
-
 - task: Cache@2
   displayName: Cache dependencies
   inputs:
@@ -32,7 +22,19 @@ steps:
        dependencies | "$(Agent.OS)"
        dependencies
     path: $(cmake_prefix)
-  
+    cacheHitVar: DEPENDENCIES_RESTORED
+
+- task: PowerShell@2
+  displayName: Build dependencies
+  condition: ne(variables.DEPENDENCIES_RESTORED, 'true')
+  inputs:
+    filePath: 'install_dependencies.ps1'
+    arguments: '-config $(buildConfiguration) -build_dir $(build_dir) -toolset $(toolset)'
+    errorActionPreference: 'continue'
+    ignoreLASTEXITCODE: true
+    pwsh: true
+    workingDirectory: '$(System.DefaultWorkingDirectory)'
+
 - task: CMake@1
   displayName: Generate CMake project
   inputs:
