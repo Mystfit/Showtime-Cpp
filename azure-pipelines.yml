@@ -14,6 +14,7 @@ variables:
 
 steps:
 - task: PowerShell@2
+  displayName: Build dependencies
   inputs:
     filePath: 'install_dependencies.ps1'
     arguments: '-config $(buildConfiguration) -build_dir $(build_dir) -toolset $(toolset)'
@@ -23,15 +24,16 @@ steps:
     workingDirectory: '$(System.DefaultWorkingDirectory)'
 
 - task: Cache@2
+  displayName: Cache dependencies
   inputs:
     key: 'dependencies | "$(Agent.OS)"'
     restoreKeys: |
        dependencies | "$(Agent.OS)"
        dependencies
     path: $(cmake_prefix)
-  displayName: Cache dependencies
-
+  
 - task: CMake@1
+  displayName: Generate CMake project
   inputs:
     workingDirectory: '$(build_dir)'
     cmakeArgs: >-
@@ -46,12 +48,14 @@ steps:
       -DBUILD_TESTING=ON
 
 - task: VSBuild@1
+  displayName: Compile solution
   inputs:
     solution: '$(solution)'
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
 - task: VSTest@2
+  displayName: Test solution
   inputs:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
