@@ -1,0 +1,42 @@
+trigger:
+- master
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  solution: '**/*.sln'
+  buildPlatform: 'x64'
+  buildConfiguration: 'Release'
+  platform: 'msvc-14.2'
+
+steps:
+
+- task: PowerShell@2
+  inputs:
+    filePath: 'install_dependencies.ps1'
+    arguments: '-config $(buildConfiguration)'
+
+- task: CMake@1
+  inputs:
+    cmakeArgs: >-
+      -S $(System.DefaultWorkingDirectory) 
+      -B $(Agent.BuildDirectory) 
+      -G "Visual Studio 16 2019" 
+      -A $(buildPlatform) 
+      -DCMAKE_PREFIX_PATH=$(Agent.BuildDirectory)/dependencies/install/$(platform) 
+      -DBUILD_SHARED=ON 
+      -DBUILD_STATIC=ON 
+      -DBUILD_DRAFTS=OFF 
+      -DBUILD_TESTING=ON
+
+- task: VSBuild@1
+  inputs:
+    solution: '$(solution)'
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
+
+- task: VSTest@2
+  inputs:
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
