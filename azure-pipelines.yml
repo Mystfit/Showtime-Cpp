@@ -1,5 +1,9 @@
 trigger:
-- master
+  branches:
+    include:
+      - master
+      - develop
+      - azure
 
 pool:
   vmImage: 'windows-latest'
@@ -14,6 +18,10 @@ variables:
   cmake_prefix: '$(build_dir)/dependencies/install/$(toolset)'
 
 steps:
+- checkout: self
+  clean: true
+  submodules: recursive
+
 - task: Cache@2
   displayName: Cache dependencies
   inputs:
