@@ -9,13 +9,13 @@ pool:
   vmImage: 'windows-latest'
 
 variables:
-  solution: '**/Showtime.sln'
   buildPlatform: 'x64'
   buildConfiguration: 'Release'
   toolset: 'msvc-14.2'
   toolset-platform: 'v142'
   build_dir: '$(Build.ArtifactStagingDirectory)/build'
   cmake_prefix: '$(build_dir)/dependencies/install/$(toolset)'
+  solution: '$(build_dir)/Showtime.sln'
 
 steps:
 - checkout: self
