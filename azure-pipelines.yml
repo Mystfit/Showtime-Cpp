@@ -9,6 +9,7 @@ variables:
   buildPlatform: 'x64'
   buildConfiguration: 'Release'
   toolset: 'msvc-14.2'
+  toolset-platform: 'v142'
   build_dir: '$(Build.ArtifactStagingDirectory)/build'
   cmake_prefix: '$(build_dir)/dependencies/install/$(toolset)'
 
@@ -37,7 +38,7 @@ steps:
   inputs:
     workingDirectory: '$(build_dir)'
     cmakeArgs: >-
-      -T $(toolset)
+      -T $(toolset-platform)
       -S $(Build.SourcesDirectory) 
       -G "Visual Studio 16 2019" 
       -A $(buildPlatform) 
