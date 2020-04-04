@@ -9,7 +9,7 @@ pool:
   vmImage: 'windows-latest'
 
 variables:
-  solution: '**/*.sln'
+  solution: '**/Showtime.sln'
   buildPlatform: 'x64'
   buildConfiguration: 'Release'
   toolset: 'msvc-14.2'
