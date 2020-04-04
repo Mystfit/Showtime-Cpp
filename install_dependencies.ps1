@@ -65,8 +65,8 @@ function Build-CmakeFromGit{
         "-S", "`"$dependency_dir/$name`"",
         "-B", "`"$build_dir`""
     ) 
-    & "cmake" @cmake_flags
-    & "cmake" $(@("--build", "`"$build_dir`"", "--config", "$config", "--target", "INSTALL"))
+    & "cmake" @cmake_flags 2>&1 | %{ "$_" }
+    & "cmake" $(@("--build", "`"$build_dir`"", "--config", "$config", "--target", "INSTALL")) 2>&1 | %{ "$_" }
     Write-Output "Built $name"
 }
 
