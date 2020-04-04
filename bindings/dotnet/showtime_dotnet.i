@@ -9,9 +9,10 @@
 %include "../preflight.i"
 %include "ZstBundle.i"
 %include "ZstSynchronisable.i"
-%include "ZstEntityBase.i"
 %include "ZstSerialisable.i"
+%include "ZstEntityBase.i"
+%include "ZstComponent.i"
 
-%include "showtime_api_extensions.i"
+%include "api_extensions.i"
 %include "../showtime.i"
 %include "ZstURI.i"

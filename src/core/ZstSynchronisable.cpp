@@ -231,4 +231,12 @@ std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstSynchronisableAdaptor> > >
     return m_synchronisable_events;
 }
 
+void ZstSynchronisable::on_activation()
+{
+}
+
+void ZstSynchronisable::on_deactivation()
+{
+}
+
 }

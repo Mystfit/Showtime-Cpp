@@ -1,9 +1,9 @@
 namespace showtime { 
 	class ZstSerialisable;
-	%ignore serialize_partial;
-	%ignore serialize;
-	%ignore deserialize;
-	%ignore deserialize_partial;
+	%ignore ZstSerialisable::serialize_partial;
+	%ignore ZstSerialisable::serialize;
+	%ignore ZstSerialisable::deserialize;
+	%ignore ZstSerialisable::deserialize_partial;
 	%ignore ZstSerialisable;
 }
 

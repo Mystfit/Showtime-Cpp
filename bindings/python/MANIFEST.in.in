@@ -1,2 +1,2 @@
-include ${SHOWTIME_WRAPPER_LIB}
-recursive-include *.py
+recursive-include showtime *.pyd
+recursive-include showtime *.py

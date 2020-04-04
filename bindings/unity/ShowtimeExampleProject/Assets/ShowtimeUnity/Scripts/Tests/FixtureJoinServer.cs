@@ -5,48 +5,38 @@ using UnityEngine.TestTools;
 
 namespace Showtime.Tests
 {
-    public class FixtureJoinServer : FixtureCreateServer
+    public class FixtureJoinServer
     {
         public const int test_timeout = 1000;
-        public string server_address = $"127.0.0.1:{showtime.STAGE_ROUTER_PORT}";
-        public bool autoconnect = true;
-        public bool join_by_name = true;
 
-        public override void Setup()
+        public ShowtimeClient client;
+        public ShowtimeServer server;
+
+        public FixtureJoinServer(string test_name)
         {
-            base.Setup();
+            server = new ShowtimeServer(test_name);
+            client = new ShowtimeClient();
 
             //Create event loop
             EditorApplication.update += Update;
 
             //Start library
-            showtime.init("TestUnity", true);
-
-            if (!autoconnect)
-                return;
-
-            if (join_by_name)
-            {
-                showtime.join_by_name(server_name);
-            } else
-            {
-                showtime.join(server_address);
-            }
-
+            client.init("TestUnity", true);
+            client.auto_join_by_name(test_name);
         }
 
-        public override void Cleanup()
+        public void Cleanup()
         {
             EditorApplication.update -= Update;
-            showtime.destroy();
-            base.Cleanup();
+            client.destroy();
+            server.destroy();
         }
 
         public void Update()
         {
-            if (showtime.is_connected())
+            if (client.is_connected())
                 UnityEngine.Debug.Log("In update");
-                showtime.poll_once();
+            client.poll_once();
         }
     }
 }

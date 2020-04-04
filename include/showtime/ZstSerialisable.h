@@ -1,5 +1,6 @@
 #pragma once
 
+#include <flatbuffers/flatbuffers.h>
 #include "schemas/graph_types_generated.h"
 
 #include "ZstExports.h"

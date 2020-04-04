@@ -1,9 +1,13 @@
 namespace showtime {
-	%ignore ZstPerformer::read;
-	%ignore ZstPerformer::write;
 	%nodefaultctor ZstPerformer;
 
 	%template(ZstSerialisablePerformer) ZstSerialisable<Performer, PerformerData>;
+
+	%ignore ZstPerformer::ZstPerformer(Performer);
+	%ignore ZstPerformer::serialize;
+	%ignore ZstPerformer::deserialize;
+	%ignore ZstPerformer::serialize_partial;
+	%ignore ZstPerformer::deserialize_partial;
 }
 
 %inline %{

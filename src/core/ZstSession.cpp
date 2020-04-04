@@ -73,7 +73,7 @@ ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * outpu
 		return NULL;
 	}
 
-	if (input->direction() != PlugDirection_IN_JACK || output->direction() != PlugDirection_OUT_JACK) {
+	if (input->direction() != ZstPlugDirection::IN_JACK || output->direction() != ZstPlugDirection::OUT_JACK) {
 		ZstLog::net(LogLevel::notification, "Cable order incorrect");
 		return NULL;
 	}
@@ -241,7 +241,7 @@ void ZstSession::register_entity(ZstEntityBase* entity)
 {
 	//New entities need to register the session as an adaptor to query session data
 	ZstEntityBundle bundle;
-	entity->get_child_entities(bundle);
+	entity->get_child_entities(bundle, true, true);
 	for (auto child : bundle) {
 		child->add_adaptor(ZstSessionAdaptor::downcasted_shared_from_this<ZstSessionAdaptor>());
 		//child->add_adaptor(ZstEntityAdaptor::downcasted_shared_from_this<ZstEntityAdaptor>());

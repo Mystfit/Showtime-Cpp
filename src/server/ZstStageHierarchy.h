@@ -45,15 +45,15 @@ public:
 	Signal client_leaving_handler(const ClientLeaveRequest* request, ZstPerformerStageProxy* sender);
 	Signal create_entity_handler(const EntityCreateRequest* request, ZstPerformerStageProxy* sender);
 	Signal factory_create_entity_handler(const StageMessage* request, ZstPerformerStageProxy* sender);
-	Signal update_entity_handler(const EntityUpdateRequest* request);
-	Signal destroy_entity_handler(const EntityDestroyRequest* request);
+	Signal update_entity_handler(const EntityUpdateRequest* request, ZstPerformerStageProxy* sender);
+	Signal destroy_entity_handler(const EntityDestroyRequest* request, ZstPerformerStageProxy* sender);
 
 
 	// ----------------
 	// Messaging
 	// ----------------
 	void reply_with_signal(ZstPerformerStageProxy* performer, Signal signal, ZstMsgID request_id);
-	void broadcast(Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder> & buffer_builder, const ZstTransportArgs& args);
+	void broadcast(Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder> & buffer_builder, const ZstTransportArgs& args, const std::vector<ZstPerformer*> & excluded = std::vector<ZstPerformer*>());
 	void whisper(ZstPerformerStageProxy* performer, Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs& args);
 
 

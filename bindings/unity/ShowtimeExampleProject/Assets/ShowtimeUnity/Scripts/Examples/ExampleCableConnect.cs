@@ -10,9 +10,15 @@ public class ExampleCableConnectComponent : ZstComponent
 
     public ExampleCableConnectComponent(Transform sphere, string name) : base(name)
     {
-        input = create_input_plug("input", ZstValueType.ZST_FLOAT);
-        output = create_output_plug("output", ZstValueType.ZST_FLOAT);
+        input = new ZstInputPlug("input", ZstValueType.FloatList);
+        output = new ZstOutputPlug("output", ZstValueType.FloatList);
         m_sphere = sphere;
+    }
+
+    public override void on_registered()
+    {
+        add_child(input);
+        add_child(output);
     }
 
     public void set_position(Vector3 position)
@@ -40,10 +46,16 @@ public class ExampleCableConnect : MonoBehaviour {
     public bool is_master = true;
     private string client_name;
     private ExampleCableConnectComponent sphere_component;
+    private ShowtimeClient m_client;
 
     //Anim vars
     public float speed = 5.0f;
     public float amount = 5.0f;
+
+    public void Start()
+    {
+        m_client = new ShowtimeClient();
+    }
 
     //Setters
     public void SetMaster(bool val)
@@ -73,9 +85,9 @@ public class ExampleCableConnect : MonoBehaviour {
     	
 	void Update () {
 
-        if (showtime.is_connected())
+        if (m_client.is_connected())
         {
-            showtime.poll_once();
+            m_client.poll_once();
             if (is_master)
             {
                 transform.position = new Vector3(0.0f, Mathf.Sin(Time.time * speed) * amount, 0.0f);
@@ -86,40 +98,40 @@ public class ExampleCableConnect : MonoBehaviour {
 
     public void Connect()
     {
-        showtime.init(client_name, true);
-        showtime.join(address);
+        m_client.init(client_name, true);
+        m_client.join(address);
         
         if (is_master)
         {
             sphere_component = new ExampleCableConnectComponent(transform, component_name);
-            showtime.get_root().add_child(sphere_component);
+            m_client.get_root().add_child(sphere_component);
         }
         else
         {
-            ZstComponent sphere_proxy = showtime.cast_to_component(showtime.find_entity(new ZstURI(owner_name).add(new ZstURI("sphere"))));
+            ZstComponent sphere_proxy = showtime.cast_to_component(m_client.find_entity(new ZstURI(owner_name).add(new ZstURI("sphere"))));
             Debug.Log(string.Format("Sphere proxy is {0}", sphere_proxy));
 
             ZstOutputPlug output_p = showtime.cast_to_output_plug(sphere_proxy.get_child_by_URI(sphere_proxy.URI().add(new ZstURI("output"))));
             Debug.Log(string.Format("Output plug is {0}", output_p));
 
             sphere_component = new ExampleCableConnectComponent(transform, component_name);
-            showtime.get_root().add_child(sphere_component);
+            m_client.get_root().add_child(sphere_component);
 
-            showtime.connect_cable(sphere_component.input, output_p);
+            m_client.connect_cable(sphere_component.input, output_p);
         }
     }
 
     public void Disconnect()
     {
-        showtime.leave();
+        m_client.leave();
     }
 
     private void OnApplicationQuit()
     {
-        if (showtime.is_connected())
+        if (m_client.is_connected())
         {
-            showtime.deactivate_entity(sphere_component);
-            showtime.destroy();
+            m_client.deactivate_entity(sphere_component);
+            m_client.destroy();
         }
     }
 }
@@ -151,16 +163,6 @@ public class EntityCallback : ZstHierarchyAdaptor
 
 public class SessionCallback : ZstSessionAdaptor
 {
-    public override void on_connected_to_stage()
-    {
-        Debug.Log("Connected to stage");
-    }
-
-    public override void on_disconnected_from_stage()
-    {
-        Debug.Log("Disconnected from stage");
-    }
-
     public override void on_cable_created(ZstCable cable)
     {
         Debug.Log("Cable arriving: " + cable.get_address().get_output_URI(). path() + " -> " + cable.get_address().get_input_URI().path());

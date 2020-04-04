@@ -1,13 +1,7 @@
-﻿using System;
-using System.IO;
-using System.Diagnostics;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using NUnit.Framework;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections;
-using NUnit.Framework;
 
 namespace Showtime.Tests
 {
@@ -17,7 +11,13 @@ namespace Showtime.Tests
 
         public TestOutputComponent(string path) : base(path)
         {
-            output = create_output_plug("out", ZstValueType.ZST_INT);
+            output = new ZstOutputPlug("out", ZstValueType.IntList);
+        }
+
+        public override void on_registered()
+        {
+            add_child(output);
+            Assert.IsTrue(output.is_registered());
         }
 
         public void send(int val)
@@ -36,13 +36,18 @@ namespace Showtime.Tests
 
         public TestInputComponent(string path) : base(path)
         {
-            input = create_input_plug("in", ZstValueType.ZST_INT);
+            input = new ZstInputPlug("in", ZstValueType.IntList);
+        }
+        public override void on_registered()
+        {
+            add_child(input);
+            Assert.IsTrue(input.is_registered());
         }
 
         public override void compute(ZstInputPlug plug)
         {
             //showtime.app(LogLevel.notification, String.Format("Received plug hit from {0} with value {1}", plug.URI().path(), plug.float_at(0)));
-            showtime.app(LogLevel.debug, String.Format("Received plug hit from {0} with value {1}", plug.URI().path(), plug.float_at(0)));
+            showtime.app(LogLevel.debug, string.Format("Received plug hit from {0} with value {1}", plug.URI().path(), plug.float_at(0)));
             last_val_received = plug.int_at(0);
             wait.Set();
         }
@@ -58,7 +63,7 @@ namespace Showtime.Tests
         public void SetupServer()
         {
             Console.WriteLine("===CREATE SERVER===");
-            m_server = new ShowtimeServer("test_server");
+            m_server = new ShowtimeServer(NUnit.Framework.TestContext.CurrentContext.Test.Name);
         }
 
         [TearDown]
@@ -126,7 +131,7 @@ namespace Showtime.Tests
             //Join the server
             Console.WriteLine("===JOIN SERVER===");
 
-            client.auto_join_by_name("test_server");
+            client.auto_join_by_name(NUnit.Framework.TestContext.CurrentContext.Test.Name);
         }
     }
 
@@ -137,8 +142,8 @@ namespace Showtime.Tests
         public void SentThroughReliableGraph()
         {
             //Create entities
-            var input_comp = new TestInputComponent("test_input_comp");
-            var output_comp = new TestOutputComponent("test_output_comp");
+            TestInputComponent input_comp = new TestInputComponent("test_input_comp");
+            TestOutputComponent output_comp = new TestOutputComponent("test_output_comp");
 
             //Parent input component
             client.get_root().add_child(input_comp);
@@ -146,8 +151,15 @@ namespace Showtime.Tests
             //Parent output component
             client.get_root().add_child(output_comp);
 
+            Assert.IsTrue(input_comp.is_activated());
+            Assert.IsTrue(input_comp.input.is_registered());
+            Assert.IsTrue(input_comp.input.is_activated());
+            Assert.IsTrue(output_comp.is_activated());
+            Assert.IsTrue(output_comp.output.is_activated());
+
             //Connect cable
-            var cable = client.connect_cable(input_comp.input, output_comp.output);
+            ZstCable cable = client.connect_cable(input_comp.input, output_comp.output);
+            Assert.IsNotNull(cable);
 
             //Send values
             int send_val = 42;
@@ -168,7 +180,7 @@ namespace Showtime.Tests
             bool connected = false;
             client.connection_events().on_connected_to_stage_events += (client, server) => { connected = true; wait.Set(); };
             client.connection_events().on_disconnected_from_stage_events += (client, server) => { connected = false; wait.Set(); };
-            client.join_async($"127.0.0.1:{showtime.STAGE_ROUTER_PORT}");
+            client.auto_join_by_name(NUnit.Framework.TestContext.CurrentContext.Test.Name);
 
             wait.WaitOne(1000);
             Assert.IsTrue(connected);

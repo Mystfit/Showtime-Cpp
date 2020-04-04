@@ -102,10 +102,10 @@ void ZstTransportAdaptor::connect(const std::string& address) {}
 int ZstTransportAdaptor::bind(const std::string& address) { return -1; }
 void ZstTransportAdaptor::disconnect() {}
 ZstMessageReceipt ZstStageTransportAdaptor::send_msg(Content message_type, flatbuffers::Offset<void> message_content, flatbuffers::FlatBufferBuilder& buffer_builder, const ZstTransportArgs& args) {
-	return ZstMessageReceipt{}; 
+	return ZstMessageReceipt(Signal_OK);
 }
 ZstMessageReceipt ZstGraphTransportAdaptor::send_msg(flatbuffers::Offset<GraphMessage> message_content, flatbuffers::FlatBufferBuilder& buffer_builder, const ZstTransportArgs& args) {
-	return ZstMessageReceipt{};
+	return ZstMessageReceipt(Signal_OK);
 }
 
 

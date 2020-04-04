@@ -1,8 +1,10 @@
 #include <memory>
 #include <mutex>
+#include <boost/bimap.hpp>
 
 #include "entities/ZstPlug.h"
 #include "ZstCable.h"
+#include <boost/assign/list_of.hpp>
 
 #include "../ZstValue.h"
 #include "../ZstEventDispatcher.hpp"
@@ -14,6 +16,12 @@ using namespace flatbuffers;
 namespace showtime
 {
 
+typedef boost::bimap<ZstPlugDirection, PlugDirection> FlatbuffersPlugDirectionMap;
+static const FlatbuffersPlugDirectionMap plug_direction_lookup = boost::assign::list_of< FlatbuffersPlugDirectionMap::relation >
+    (ZstPlugDirection::NONE, PlugDirection_NONE)
+    (ZstPlugDirection::IN_JACK, PlugDirection_IN_JACK)
+    (ZstPlugDirection::OUT_JACK, PlugDirection_OUT_JACK);
+
 //--------------------
 // ZstPlug
 //--------------------
@@ -21,28 +29,28 @@ namespace showtime
 ZstPlug::ZstPlug() :
     ZstEntityBase(),
     m_value(std::make_unique<ZstValue>()),
-    m_direction(PlugDirection_NONE),
+    m_direction(ZstPlugDirection::NONE),
     m_max_connected_cables(PLUG_DEFAULT_MAX_CABLES)
 {
-    set_entity_type(EntityTypes_Plug);
+    set_entity_type(ZstEntityType::PLUG);
 }
 
-ZstPlug::ZstPlug(const char * name, const PlugValueData & t, const PlugDirection & direction, int max_cables) :
+ZstPlug::ZstPlug(const char * name, const ZstValueType& t, const ZstPlugDirection& direction, int max_cables) :
     ZstEntityBase(name),
     m_value(std::make_unique<ZstValue>(t)),
     m_direction(direction),
     m_max_connected_cables(max_cables)
 {
-    set_entity_type(EntityTypes_Plug);
+    set_entity_type(ZstEntityType::PLUG);
 }
     
 ZstPlug::ZstPlug(const Plug* buffer) : 
 	ZstEntityBase(),
     m_value(std::make_unique<ZstValue>()),
-	m_direction(PlugDirection_NONE),
+	m_direction(ZstPlugDirection::NONE),
 	m_max_connected_cables(PLUG_DEFAULT_MAX_CABLES)
 {
-	set_entity_type(EntityTypes_Plug);
+	set_entity_type(ZstEntityType::PLUG);
 	ZstEntityBase::deserialize_partial(buffer->entity());
     ZstPlug::deserialize_partial(buffer->plug());
 }
@@ -139,7 +147,7 @@ flatbuffers::uoffset_t ZstPlug::serialize(FlatBufferBuilder& buffer_builder) con
     
 void ZstPlug::serialize_partial(flatbuffers::Offset<PlugData> & serialized_offset, flatbuffers::FlatBufferBuilder& buffer_builder) const
 {
-    serialized_offset = CreatePlugData(buffer_builder, m_direction, m_max_connected_cables, m_value->serialize(buffer_builder));
+    serialized_offset = CreatePlugData(buffer_builder, plug_direction_lookup.left.at(m_direction), m_max_connected_cables, m_value->serialize(buffer_builder));
 }
     
 void ZstPlug::deserialize_partial(const PlugData* buffer)
@@ -147,7 +155,7 @@ void ZstPlug::deserialize_partial(const PlugData* buffer)
     if (!buffer) return;
 
 	m_value->deserialize(buffer->value());
-    m_direction = buffer->plug_direction();
+    m_direction = plug_direction_lookup.right.at(buffer->plug_direction());
     m_max_connected_cables = buffer->max_cables();
 }
 
@@ -162,7 +170,7 @@ void ZstPlug::deserialize(const Plug* buffer)
 // Properties
 //--------------------
 
-PlugDirection ZstPlug::direction()
+ZstPlugDirection ZstPlug::direction()
 {
     return m_direction;
 }
@@ -245,7 +253,7 @@ void ZstPlug::remove_cable(ZstCable * cable)
 //------------
 
 ZstInputPlug::ZstInputPlug() :
-    ZstPlug("", PlugValueData_NONE)
+    ZstPlug("", ZstValueType::NONE)
 {
 }
     
@@ -261,8 +269,8 @@ ZstInputPlug::~ZstInputPlug()
 {
 }
 
-ZstInputPlug::ZstInputPlug(const char * name, const PlugValueData & t, int max_cables) :
-    ZstPlug(name, t, PlugDirection_IN_JACK, max_cables)
+ZstInputPlug::ZstInputPlug(const char * name, const ZstValueType& t, int max_cables) :
+    ZstPlug(name, t, ZstPlugDirection::IN_JACK, max_cables)
 {
 }
 
@@ -271,7 +279,7 @@ ZstInputPlug::ZstInputPlug(const char * name, const PlugValueData & t, int max_c
 //-------------
 
 ZstOutputPlug::ZstOutputPlug() :
-    ZstPlug("", PlugValueData_NONE, PlugDirection_OUT_JACK, -1),
+    ZstPlug("", ZstValueType::NONE, ZstPlugDirection::OUT_JACK, -1),
     m_graph_out_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstGraphTransportAdaptor> > >("plug_out_events")),
     m_reliable(true),
     m_can_fire(false)
@@ -295,8 +303,8 @@ ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug& other) :
 {
 }
 
-ZstOutputPlug::ZstOutputPlug(const char * name, const PlugValueData & t, bool reliable) :
-    ZstPlug(name, t, PlugDirection_OUT_JACK, -1),
+ZstOutputPlug::ZstOutputPlug(const char * name, const ZstValueType& t, bool reliable) :
+    ZstPlug(name, t, ZstPlugDirection::OUT_JACK, -1),
     m_graph_out_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstGraphTransportAdaptor> > >("plug_out_events")),
     m_reliable(reliable),
     m_can_fire(false)
@@ -377,3 +385,5 @@ void ZstOutputPlug::remove_adaptor(std::shared_ptr<ZstGraphTransportAdaptor> & a
 }
 
 }
+
+

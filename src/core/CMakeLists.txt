@@ -231,12 +231,9 @@ if(CMAKE_USE_WIN32_THREADS_INIT)
 elseif(CMAKE_USE_PTHREADS_INIT)
     message(STATUS "Using posix threads")
 endif()
-message(STATUS "Setting link thread library to ${CMAKE_THREAD_LIBS_INIT}")
 
 # Target definitions
 set(GLOBAL_PUBLIC_DEFINES
-    CZMQ_STATIC
-    ZMQ_STATIC
     BOOST_THREAD_USE_LIB
 )
 
@@ -263,19 +260,13 @@ endif()
 
 # Object target includes
 
-get_target_property(CZMQ_INCLUDE_DIR czmq INTERFACE_INCLUDE_DIRECTORIES)
 target_include_directories(${CORE_TARGET_OBJECTS} 
     PRIVATE
     ${Showtime_PRIVATE_HEADER_DEPENDENCIES}
-    ${CZMQ_INCLUDE_DIR}
     PUBLIC
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${Showtime_INCLUDE_DIRS}>
     $<BUILD_INTERFACE:${Showtime_COMPILED_INCLUDE_DIRS}>
-)
-
-# Object private link libraries
-set(${CORE_TARGET}_PRIVATE_LINKED_LIBS 
 )
 
 # Link libs object target to pull in includes
@@ -283,7 +274,6 @@ target_link_libraries(${CORE_TARGET_OBJECTS}
     PUBLIC
     ${SHOWTIME_PUBLIC_LINKED_LIBS}
     PRIVATE 
-    ${${CORE_TARGET}_PRIVATE_LINKED_LIBS}
     ${SHOWTIME_PRIVATE_LINKED_LIBS}
 )
 
@@ -291,22 +281,25 @@ target_link_libraries(${CORE_TARGET_OBJECTS}
 target_compile_definitions(${CORE_TARGET_OBJECTS} 
     PUBLIC 
     ${GLOBAL_PUBLIC_DEFINES}
+    PRIVATE 
+    ZST_EXPORT_CORE_API
+    CZMQ_STATIC
+    ZMQ_STATIC
 )
 
 # Make sure core objects are position independent for shared libs
 set_target_properties(${CORE_TARGET_OBJECTS} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-# Object API exports
-target_compile_definitions(${CORE_TARGET_OBJECTS} 
-    PRIVATE 
-    ZST_EXPORT_CORE_API
-    PUBLIC
-)
-
 # Static/shared library specific options
 if(BUILD_STATIC)
     list(APPEND CORE_LIBS ${CORE_TARGET_STATIC})
     target_link_libraries(${CORE_TARGET_STATIC} PRIVATE ${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS})
+    target_compile_definitions(${CORE_TARGET_STATIC} 
+        PUBLIC
+        CZMQ_STATIC
+        ZMQ_STATIC
+    )
+        
 endif()
 
 if(BUILD_SHARED)
@@ -322,7 +315,6 @@ if(BUILD_SHARED)
     endif()
 
     target_link_libraries(${CORE_TARGET} PRIVATE ${SHOWTIME_PRIVATE_SHARED_LINKED_LIBS})
-
 
     # Library API exports
     target_compile_definitions(${CORE_TARGET} 
@@ -343,7 +335,6 @@ foreach(TARGET ${CORE_LIBS})
         PUBLIC
         ${CORE_TARGET_OBJECTS} 
         PRIVATE
-        ${${CORE_TARGET}_PRIVATE_LINKED_LIBS}
         ${SHOWTIME_PRIVATE_LINKED_LIBS}
     )
 endforeach()

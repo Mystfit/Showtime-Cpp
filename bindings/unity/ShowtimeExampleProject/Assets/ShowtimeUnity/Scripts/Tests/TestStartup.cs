@@ -10,47 +10,62 @@ namespace Showtime.Tests
 {
     public class TestStartup
     {
-
         [Test]
         public void ConnectSync()
         {
-            showtime.init("TestUnity", true);
-            showtime.join($"127.0.0.1:{showtime.STAGE_ROUTER_PORT}");
-            Assert.IsTrue(showtime.is_connected());
-            showtime.leave();
-            Assert.IsFalse(showtime.is_connected());
+            ShowtimeServer server = new ShowtimeServer("ConnectSync");
+            ShowtimeClient client = new ShowtimeClient();
+
+            client.init("TestUnity", true);
+            client.auto_join_by_name(TestContext.CurrentContext.Test.Name);
+            Assert.IsTrue(client.is_connected());
+            client.leave();
+            Assert.IsFalse(client.is_connected());
+
+            client.destroy();
+            server.destroy();
         }
 
         [UnityTest]
-        [PrebuildSetup(typeof(FixtureJoinServer))]
         public IEnumerator ConnectAsync()
         {
-            showtime.init("TestUnity", true);
-            showtime.join_async($"127.0.0.1:{showtime.STAGE_ROUTER_PORT}");
-            yield return new WaitUntil(() => showtime.is_connected());
-            Assert.IsTrue(showtime.is_connected());
-            showtime.leave();
+            ShowtimeServer server = new ShowtimeServer("ConnectAsync");
+            ShowtimeClient client = new ShowtimeClient();
+
+            client.init("TestUnity", true);
+            client.join_async($"127.0.0.1:{server.port()}");
+            yield return new WaitUntil(() => client.is_connected());
+            Assert.IsTrue(client.is_connected());
+            client.leave();
             yield return null;
-            Assert.IsFalse(showtime.is_connected());
+            Assert.IsFalse(client.is_connected());
+
+            client.destroy();
+            server.destroy();
         }
 
         [UnityTest]
-        [PrebuildSetup(typeof(FixtureJoinServer))]
         public IEnumerator ConnectionWatcher()
         {
-            showtime.init("TestUnity", true);
+            ShowtimeServer server = new ShowtimeServer("ConnectionWatcher");
+            ShowtimeClient client = new ShowtimeClient();
+
+            client.init("TestUnity", true);
 
             bool connected = false;
-            showtime.session_events().on_connected_to_stage_events += () => connected = true;
-            showtime.session_events().on_disconnected_from_stage_events += () => connected = false;
+            client.connection_events().on_connected_to_stage_events += (target_client, server_address) => connected = true;
+            client.connection_events().on_disconnected_from_stage_events += (target_client, server_address) => connected = false;
 
-            showtime.join_async($"127.0.0.1:{showtime.STAGE_ROUTER_PORT}");
-            yield return new WaitUntil(()=>showtime.is_connected());
+            client.join_async($"127.0.0.1:{server.port()}");
+            yield return new WaitUntil(()=>client.is_connected());
             Assert.IsTrue(connected);
 
-            showtime.leave();
+            client.leave();
             yield return null;
             Assert.IsFalse(connected);
+
+            client.destroy();
+            server.destroy();
         }
     }
 }

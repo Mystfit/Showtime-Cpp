@@ -110,13 +110,13 @@ Signal ZstStageSession::synchronise_client_graph_handler(ZstPerformerStageProxy*
 	for (auto performer : performer_bundle) {
 		//Only pack performers that aren't the destination client
 		if (performer->URI() != sender->URI()) {
-			performer->get_child_entities(entity_bundle);
+			performer->get_child_entities(entity_bundle, true, true);
 		}
 	}
 
 	if (entity_bundle.size()) {
 		for (auto entity : entity_bundle) {
-			auto batch_entity_offset = CreateEntityCreateRequest(*builder, entity->entity_type(), entity->serialize(*builder));
+			auto batch_entity_offset = CreateEntityCreateRequest(*builder, entity->serialized_entity_type(), entity->serialize(*builder));
 			stage_hierarchy()->whisper(sender, Content_EntityCreateRequest, batch_entity_offset.Union(), builder, ZstTransportArgs());
 		}
 	}

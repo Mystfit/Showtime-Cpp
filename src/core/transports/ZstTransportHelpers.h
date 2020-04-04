@@ -9,8 +9,15 @@ namespace showtime {
 
 
 struct ZstMessageReceipt {
-	Signal status = Signal_EMPTY;
-	ZstTransportRequestBehaviour request_behaviour = ZstTransportRequestBehaviour::PUBLISH;
+	ZstMessageReceipt() : 
+		status(Signal_EMPTY),
+		request_behaviour(ZstTransportRequestBehaviour::PUBLISH) {}
+	ZstMessageReceipt(Signal status, ZstTransportRequestBehaviour request_behaviour = ZstTransportRequestBehaviour::PUBLISH) : 
+		status(status),
+		request_behaviour(request_behaviour){}
+	
+	Signal status;
+	ZstTransportRequestBehaviour request_behaviour;
 };
 
 

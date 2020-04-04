@@ -115,7 +115,7 @@ ZstEntityBase * ZstHierarchy::walk_to_entity(const ZstURI & path) const
 	return result;
 }
 
-std::unique_ptr<ZstEntityBase> ZstHierarchy::create_proxy_entity(const EntityTypes entity_type, const EntityData* entity_data, const void* payload)
+std::unique_ptr<ZstEntityBase> ZstHierarchy::create_proxy_entity(EntityTypes entity_type, const EntityData* entity_data, const void* payload)
 {
 	// Check if the entity already exists in the hierarchy
 	auto entity_path = ZstURI(entity_data->URI()->c_str(), entity_data->URI()->size());
@@ -158,8 +158,8 @@ void ZstHierarchy::add_proxy_entity(std::unique_ptr<ZstEntityBase> entity)
     
 	// Propagate proxy properties to children of this proxy
 	ZstEntityBundle bundle;
-	entity->get_child_entities(bundle, true);
-	if (entity->entity_type() == EntityTypes_Performer) {
+	entity->get_child_entities(bundle, true, true);
+	if (entity->entity_type() == ZstEntityType::PERFORMER) {
 		dynamic_cast<ZstPerformer*>(entity.get())->get_factories(bundle);
 	}
 
@@ -183,17 +183,17 @@ void ZstHierarchy::dispatch_entity_arrived_event(ZstEntityBase * entity){
         return;
     
     //Only dispatch events once all entities have been activated and registered
-    if (entity->entity_type() == EntityTypes_Component || entity->entity_type() == EntityTypes_Plug)  {
+    if (entity->entity_type() == ZstEntityType::COMPONENT || entity->entity_type() == ZstEntityType::PLUG)  {
         m_hierarchy_events->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
 			adaptor->on_entity_arriving(entity);
 		});
     }
-    else if (entity->entity_type() == EntityTypes_Factory) {
+    else if (entity->entity_type() == ZstEntityType::FACTORY) {
         m_hierarchy_events->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
 			adaptor->on_factory_arriving(static_cast<ZstEntityFactory*>(entity));
 		});
     }
-	else if (entity->entity_type() == EntityTypes_Performer) {
+	else if (entity->entity_type() == ZstEntityType::PERFORMER) {
 		//Dispatch events
 		m_hierarchy_events->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
 			adaptor->on_performer_arriving(static_cast<ZstPerformer*>(entity));
@@ -311,7 +311,7 @@ void ZstHierarchy::activate_entity_complete(ZstEntityBase * entity)
 
 	//Add entity to lookup tables
 	ZstEntityBundle bundle;
-    entity->get_child_entities(bundle);
+	entity->get_child_entities(bundle, true, true);
 	for (auto c : bundle) {
 		add_entity_to_lookup(c);
         synchronisable_set_activating(c);
@@ -327,24 +327,24 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 	}
 
 	//Dispatch events depending on entity type
-	if (entity->entity_type() == EntityTypes_Plug) {
+	if (entity->entity_type() == ZstEntityType::PLUG) {
 		hierarchy_events()->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
 			adaptor->on_plug_leaving(static_cast<ZstPlug*>(entity));
 			});
 	}
-	else if (entity->entity_type() == EntityTypes_Performer)
+	else if (entity->entity_type() == ZstEntityType::PERFORMER)
 	{
 		hierarchy_events()->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
 			adaptor->on_performer_leaving(static_cast<ZstPerformer*>(entity));
 			});
 	}
-	else if (entity->entity_type() == EntityTypes_Factory)
+	else if (entity->entity_type() == ZstEntityType::FACTORY)
 	{
 		hierarchy_events()->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
 			adaptor->on_factory_leaving(static_cast<ZstEntityFactory*>(entity));
 			});
 	}
-	else if (entity->entity_type() == EntityTypes_Component)
+	else if (entity->entity_type() == ZstEntityType::COMPONENT)
 	{
 		hierarchy_events()->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
 			adaptor->on_entity_leaving(entity);
@@ -352,15 +352,18 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 	}
 
 	//Remove entity from parent
-	if (entity->parent()) {
-		ZstComponent* parent = dynamic_cast<ZstComponent*>(entity->parent());
-		if (parent)
-			parent->remove_child(entity);
+	if (!entity->parent_address().is_empty()) {
+		auto parent = entity->parent();
+		if (parent) {
+			ZstComponent* parent_c = dynamic_cast<ZstComponent*>(parent);
+			if (parent_c)
+				parent_c->remove_child(entity);
+		}
 	}
 
 	//Cleanup children
 	ZstEntityBundle bundle;
-	entity->get_child_entities(bundle, true);
+	entity->get_child_entities(bundle, true, true);
 	for (auto c : bundle) {
 		//Enqueue deactivation
 		synchronisable_enqueue_deactivation(c);

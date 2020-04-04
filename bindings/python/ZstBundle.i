@@ -1,13 +1,10 @@
 namespace showtime {
-	%ignore ZstBundleIterator;
-	%ignore ZstCableBundleIterator;
-	%ignore ZstEntityBundleIterator;
-	%ignore ZstBundle::begin;
-	%ignore ZstBundle::end;
+	%extend ZstBundle {
+		%insert("python") %{
+			def items(self):
+				for i in range(0, self.size()):
+					yield self.item_at(i)
+		%}
+	}
 }
 
-%include <ZstBundle.hpp>
-
-using namespace showtime;
-%template(ZstEntityBundle) ZstBundle<ZstEntityBase*>;
-%template(ZstCableBundle) ZstBundle<ZstCable*>;

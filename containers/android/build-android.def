@@ -9,7 +9,7 @@ From: amd64/ubuntu:18.04
 
 	# Android home
 	ANDROID_HOME=/home/android
-	INSTALL_PREFIX=/usr/local #$ANDROID_HOME/install
+	INSTALL_PREFIX=$ANDROID_HOME/install #/usr/local
 	ANDROID_ABI=arm64-v8a
 
 	# Bind directories
@@ -18,22 +18,7 @@ From: amd64/ubuntu:18.04
 	SHOWTIME_BIN_OUTPUT=/showtime-bin-output
 	SHOWTIME_LIB_OUTPUT=/showtime-lib-output
 
-	# (1) BOOST
-	BOOST_VER_BASE=1_70
-	BOOST_FILE_BASE=boost_1_70_0
-	BOOST_FILE=$BOOST_FILE_BASE.tar.gz
-	BOOST_VER=1.70.0
-	BOOST_ROOT=$INSTALL_PREFIX/$ANDROID_ABI
-	BOOST_INCLUDEDIR=$INSTALL_PREFIX/$ANDROID_ABI/include
-	BOOST_LIBRARYDIR=$INSTALL_PREFIX/$ANDROID_ABI/lib
-
-	BOOST_URL_BASE=https://dl.bintray.com/boostorg/release
-
-	# this is where boost src will be extracted to
-	BOOST_SRC_DIR_BASE=$ANDROID_HOME/boost-src
-	BOOST_SRC_DIR=$BOOST_SRC_DIR_BASE
-
-	# (2) Android SDK
+	# (1) Android SDK
 	# https://developer.android.com/studio#downloads
 	SDK_URL_BASE=https://dl.google.com/android/repository
 	SDK_FILE=sdk-tools-linux-4333796.zip
@@ -44,12 +29,31 @@ From: amd64/ubuntu:18.04
 	ANDROID_SDK_PATH=$ANDROID_HOME/android-sdk
 	ANDROID_SDK_PLATFORM_VERS="platforms;android-$ANDROID_PLATFORM"
 
-	# (3) Android NDK
+	# (2) Android NDK
 	# https://developer.android.com/ndk/downloads
 	NDK_URL_BASE=https://dl.google.com/android/repository
 	NDK_FILE=android-ndk-r19c-linux-x86_64.zip
 	ANDROID_NDK_PATH=$ANDROID_HOME/android-ndk
 	ANDROID_NDK_ROOT=$ANDROID_NDK_PATH/android-ndk-r19c
+	ANDROID_NDK_SYSROOT=$ANDROID_NDK_ROOT/sysroot
+
+	# (3) BOOST
+	BOOST_VER_BASE=1_72
+	BOOST_FILE_BASE=boost_1_72_0
+	BOOST_FILE=$BOOST_FILE_BASE.tar.gz
+	BOOST_VER=1.72.0
+	BOOST_ROOT=$ANDROID_NDK_SYSROOT/$ANDROID_ABI
+	BOOST_INCLUDEDIR=$ANDROID_NDK_SYSROOT/$ANDROID_ABI/include
+	BOOST_LIBRARYDIR=$ANDROID_NDK_SYSROOT/$ANDROID_ABI/lib
+
+	BOOST_URL_BASE=https://dl.bintray.com/boostorg/release
+	BOOST_URL="$BOOST_URL_BASE/$BOOST_VER/source/$BOOST_FILE"
+	BOOST_URL_MIRROR_BASE=https://versaweb.dl.sourceforge.net/project/boost/boost
+	BOOST_URL_MIRROR="$BOOST_URL_MIRROR_BASE/$BOOST_VER/$BOOST_FILE"
+
+	# this is where boost src will be extracted to
+	BOOST_SRC_DIR_BASE=$ANDROID_HOME/boost-src
+	BOOST_SRC_DIR=$BOOST_SRC_DIR_BASE
 
 	# this is where the boost for android repo is mounted/shared to
 	BOOST_FOR_ANDROID_PATH=$ANDROID_HOME/boost-for-android
@@ -64,7 +68,8 @@ From: amd64/ubuntu:18.04
 	# -----------------------------
 	LIBZMQ_SOURCE=$ANDROID_HOME/libzmq
 	CZMQ_SOURCE=$ANDROID_HOME/czmq
-	MSGPACK_SOURCE=$ANDROID_HOME/msgpack
+	FLATBUFFERS_SOURCE=$ANDROID_HOME/flatbuffers
+	FMT_SOURCE=$ANDROID_HOME/fmt
 
 	echo "export ANDROID_HOME=$ANDROID_HOME" >>$SINGULARITY_ENVIRONMENT
 	echo "export INSTALL_PREFIX=$INSTALL_PREFIX" >>$SINGULARITY_ENVIRONMENT
@@ -85,27 +90,22 @@ From: amd64/ubuntu:18.04
 	echo "export SHOWTIME_BUILD=$SHOWTIME_BUILD" >>$SINGULARITY_ENVIRONMENT	
 	echo "export LIBZMQ_SOURCE=$LIBZMQ_SOURCE" >>$SINGULARITY_ENVIRONMENT	
 	echo "export CZMQ_SOURCE=$CZMQ_SOURCE" >>$SINGULARITY_ENVIRONMENT	
-	echo "export MSGPACK_SOURCE=$MSGPACK_SOURCE" >>$SINGULARITY_ENVIRONMENT	
+	echo "export FLATBUFFERS_SOURCE=$FLATBUFFERS_SOURCE" >>$SINGULARITY_ENVIRONMENT	
+	echo "export FMT_SOURCE=$FMT_SOURCE" >>$SINGULARITY_ENVIRONMENT	
 	# -----------------------------
 
 
 	# Packages
 	# --------
-	# Microsoft package sources
 	apt-get update
 	apt-get -y install -qq wget git zip software-properties-common < /dev/null > /dev/null
-
-	wget -q https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb
-	dpkg -i packages-microsoft-prod.deb
-	add-apt-repository universe
 	apt-get -y install -qq apt-transport-https < /dev/null > /dev/null
 
 	# Update packages
-	apt-get update
 	apt-get -y install --no-install-recommends apt-utils
 	apt-get -y dist-upgrade
 
-	# Java for ...something?
+	# Java for Android SDK
 	apt-get -y install -qq openjdk-8-jdk < /dev/null > /dev/null
 
 	# need this this to install some (32 bit) prerequisites for android builds 
@@ -115,13 +115,10 @@ From: amd64/ubuntu:18.04
 	apt-get -y install -qq libc6:i386 libncurses5:i386 libstdc++6:i386 libbz2-1.0:i386 < /dev/null > /dev/null
 
 	# need c compiler to set up create boost build system (before building boost with it and android toolchain)
-	apt-get -y install -qq build-essential libc6-dev-i386 clang < /dev/null > /dev/null
+	apt-get -y install -qq build-essential libc6-dev-i386 clang pkg-config < /dev/null > /dev/null
 
 	# Packages for compiling Swig
 	apt-get -y install -qq autoconf automake libtool libpcre3 libpcre3-dev bison flex < /dev/null > /dev/null
-
-	# Dotnet SDK for C# project bindings
-	apt-get -y install -qq dotnet-sdk-2.2 < /dev/null > /dev/null
 
 
 	# Output dirs
@@ -139,7 +136,7 @@ From: amd64/ubuntu:18.04
 
 	# CMAKE
 	# -----
-	CMAKE_VER=3.14.4
+	CMAKE_VER=3.16.4
 	CMAKE_FILE="cmake-$CMAKE_VER-Linux-x86_64.sh"
 	wget -q "https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/$CMAKE_FILE"
 	chmod +x $CMAKE_FILE
@@ -179,51 +176,50 @@ From: amd64/ubuntu:18.04
 
 
 	# Common CMake flags
-	SHOWTIME_CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake -DANDROID_STL=c++_static -DANDROID_CPP_FEATURES=exceptions;rtti -DANDROID_PLATFORM=android-$ANDROID_PLATFORM -DANDROID_ABI=$ANDROID_ABI -DCMAKE_PREFIX_PATH=$INSTALL_PREFIX"
-	SHOWTIME_CMAKE_FLAGS_FILE=$ANDROID_HOME/common_cmake_flags.txt
+	ANDROID_BUILD_FLAGS="-DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake -DANDROID_STL=c++_static -DANDROID_CPP_FEATURES=exceptions;rtti -DANDROID_PLATFORM=android-$ANDROID_PLATFORM -DANDROID_ABI=$ANDROID_ABI -DCMAKE_INSTALL_PREFIX=$ANDROID_NDK_SYSROOT -DCMAKE_PREFIX_PATH=$ANDROID_NDK_SYSROOT"
+	HOST_BUILD_FLAGS="-DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX"
+	COMMON_BUILD_FLAGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$INSTALL_PREFIX;$ANDROID_NDK_SYSROOT"
+	SHOWTIME_CMAKE_FLAGS_FILE=$ANDROID_HOME/showtime_cmake_flags.txt
 	touch $SHOWTIME_CMAKE_FLAGS_FILE
-	echo $SHOWTIME_CMAKE_FLAGS >>$SHOWTIME_CMAKE_FLAGS_FILE
+	echo $ANDROID_BUILD_FLAGS >>$SHOWTIME_CMAKE_FLAGS_FILE
+	echo $COMMON_BUILD_FLAGS >>$SHOWTIME_CMAKE_FLAGS_FILE
 	echo "export SHOWTIME_CMAKE_FLAGS_FILE=$SHOWTIME_CMAKE_FLAGS_FILE" >>$SINGULARITY_ENVIRONMENT	
-
 
 	# ZEROMQ
 	# ------
-	git clone https://github.com/mystfit/libzmq.git $LIBZMQ_SOURCE
-	git -C $LIBZMQ_SOURCE checkout 4.2.5-drafts-fixed
+	git clone https://github.com/zeromq/libzmq.git $LIBZMQ_SOURCE
 	mkdir -p $LIBZMQ_SOURCE/build
-	cmake -H"$LIBZMQ_SOURCE" -B"$LIBZMQ_SOURCE/build" $SHOWTIME_CMAKE_FLAGS -DENABLE_DRAFTS=TRUE -DZMQ_BUILD_TESTS=OFF
+	cmake -H"$LIBZMQ_SOURCE" -B"$LIBZMQ_SOURCE/build" $ANDROID_BUILD_FLAGS $COMMON_BUILD_FLAGS -DENABLE_DRAFTS=TRUE -DZMQ_BUILD_TESTS=OFF
 	cmake --build $LIBZMQ_SOURCE/build --target install
 
 	# CZMQ
 	# ----
 	git clone https://github.com/mystfit/czmq.git $CZMQ_SOURCE
-	git -C $CZMQ_SOURCE checkout 4.2.0
+	git -C $CZMQ_SOURCE checkout android-fixes
 	mkdir -p $CZMQ_SOURCE/build
-	cmake -H"$CZMQ_SOURCE" -B"$CZMQ_SOURCE/build" $SHOWTIME_CMAKE_FLAGS -DENABLE_DRAFTS=TRUE -DBUILD_TESTING=OFF -DLIBZMQ_FIND_USING_CMAKE_PACKAGE=ON -DZeroMQ_DIR=$INSTALL_PREFIX/share/cmake/ZeroMQ
+	cmake -H"$CZMQ_SOURCE" -B"$CZMQ_SOURCE/build" $ANDROID_BUILD_FLAGS $COMMON_BUILD_FLAGS -DENABLE_DRAFTS=TRUE -DBUILD_TESTING=OFF
 	cmake --build $CZMQ_SOURCE/build --target install
 
-	# MSGPACK
-	# -------
-	git clone https://github.com/msgpack/msgpack-c.git $MSGPACK_SOURCE
-	git -C $MSGPACK_SOURCE fetch --all --tags --prune
-	git -C $MSGPACK_SOURCE checkout cpp-3.1.1
-	mkdir -p $MSGPACK_SOURCE/build
-	cmake -H"$MSGPACK_SOURCE" -B"$MSGPACK_SOURCE/build" $SHOWTIME_CMAKE_FLAGS -DMSGPACK_BUILD_EXAMPLES=OFF
-	cmake --build $MSGPACK_SOURCE/build --target install
+	# Flatbuffers
+	git clone https://github.com/google/flatbuffers.git $FLATBUFFERS_SOURCE
+	mkdir -p $FLATBUFFERS_SOURCE/build
+	cmake -H"$FLATBUFFERS_SOURCE" -B"$FLATBUFFERS_SOURCE/build" $HOST_BUILD_FLAGS $COMMON_BUILD_FLAGS -DFLATBUFFERS_BUILD_TESTS=FALSE -DFLATBUFFERS_BUILD_LIB=FALSE
+	cmake --build $FLATBUFFERS_SOURCE/build --target install
+
+	# FMT
+	git clone https://github.com/fmtlib/fmt.git $FMT_SOURCE
+	mkdir -p $FMT_SOURCE/build
+	cmake -H"$FMT_SOURCE" -B"$FMT_SOURCE/build" $ANDROID_BUILD_FLAGS $COMMON_BUILD_FLAGS -DFMT_TEST=FALSE
+	cmake --build $FMT_SOURCE/build --target install
 
 
 	# BOOST
 	# -----
-	wget -q $BOOST_URL_BASE/$BOOST_VER/source/$BOOST_FILE
-	mkdir -p $BOOST_SRC_DIR
-	mkdir -p $BOOST_SRC_DIR/$BOOST_VER
-	tar xzf $BOOST_FILE -C $BOOST_SRC_DIR/$BOOST_VER --strip-components 1
-
 	# Boost for Android
-	git clone https://github.com/mystfit/Boost-for-Android $BOOST_FOR_ANDROID_PATH
+	git clone https://github.com/mystfit/Boost-for-Android.git $BOOST_FOR_ANDROID_PATH
 	cd $BOOST_FOR_ANDROID_PATH
 	BOOST_LIBS="log,thread,system,context,fiber,date_time,chrono,atomic,regex,test"
-	./build-android.sh --boost=$BOOST_VER --layout=versioned --with-libraries=$BOOST_LIBS --arch=$ANDROID_ABI --prefix=$INSTALL_PREFIX $ANDROID_NDK_ROOT >/dev/null
+	./build-android.sh --boost=$BOOST_VER --layout=versioned --with-libraries=$BOOST_LIBS --arch=$ANDROID_ABI --prefix=$ANDROID_NDK_SYSROOT $ANDROID_NDK_ROOT
 	cd ..
 
 
@@ -236,8 +232,10 @@ From: amd64/ubuntu:18.04
     	echo "Could not find CMakeLists.txt in bound directory $SHOWTIME_SOURCE"
     	exit
 	fi
+	
+	CMAKE_ANDROID_BOOST_FLAGS="-DBoost_DEBUG=TRUE -DBoost_COMPILER=clang -DBoost_ARCHITECTURE=-a64 -DBoost_INCLUDE_DIR=$BOOST_INCLUDEDIR/boost-$BOOST_VER_BASE -DBoost_LIBRARY_DIR=$BOOST_LIBRARYDIR -DBoost_VERSION=$BOOST_VER_BASE -DBOOST_ROOT=$BOOST_ROOT -DBOOST_DEBUG=TRUE -DBOOST_INCLUDEDIR=$BOOST_INCLUDEDIR/boost-$BOOST_VER_BASE"
 
-	cmake -H"$SHOWTIME_SOURCE" -B"$SHOWTIME_BUILD" $(cat "$SHOWTIME_CMAKE_FLAGS_FILE") -DBUILD_DRAFTS=TRUE -DBUILD_STATIC=TRUE -DBUILD_SHARED=TRUE -DBoost_DEBUG=FALSE -DBoost_COMPILER="-clang" -DBoost_ARCHITECTURE=-a64 -DBoost_INCLUDE_DIR=$BOOST_INCLUDEDIR/boost-$BOOST_VER_BASE -DBoost_LIBRARY_DIR=$BOOST_LIBRARYDIR -DBoost_VERSION=$BOOST_VER_BASE -DBOOST_ROOT=$BOOST_ROOT -DBOOST_INCLUDEDIR=$BOOST_INCLUDEDIR/boost-$BOOST_VER_BASE -DMsgPack_DIR=$INSTALL_PREFIX/lib/cmake/msgpack -DZeroMQ_DIR=$INSTALL_PREFIX/share/cmake/ZeroMQ -Dczmq_DIR=$INSTALL_PREFIX/share/cmake/czmq -DSWIG_EXECUTABLE=$INSTALL_PREFIX/bin/swig -DBUILD_TESTING=FALSE -DBINDINGS_DOTNET=ON -DBINDINGS_DOTNET_FRAMEWORK_VERSION=netstandard2.0 -DBINDINGS_DOTNET_CSPROJ=ON -DBUILD_SERVER_LAUNCHER=FALSE
+	cmake -H"$SHOWTIME_SOURCE" -B"$SHOWTIME_BUILD" $(cat "$SHOWTIME_CMAKE_FLAGS_FILE") $CMAKE_ANDROID_BOOST_FLAGS -DBUILD_DRAFTS=TRUE -DBUILD_STATIC=TRUE -DBUILD_SHARED=TRUE -DBUILD_TESTING=FALSE -DBUILD_SERVER_LAUNCHER=FALSE
 	cmake --build $SHOWTIME_BUILD --target all
 
 	echo "Copying binaries to $SHOWTIME_BIN_OUTPUT"

@@ -1,4 +1,6 @@
 #include <memory>
+#include <boost/bimap.hpp>
+#include <boost/assign/list_of.hpp>
 
 #include "entities/ZstEntityBase.h"
 #include "entities/ZstEntityFactory.h"
@@ -10,25 +12,33 @@ using namespace flatbuffers;
 
 namespace showtime
 {
+    typedef boost::bimap<ZstEntityType, EntityTypes> FlatbuffersEnityTypeMap;
+    static const FlatbuffersEnityTypeMap entity_type_lookup = boost::assign::list_of< FlatbuffersEnityTypeMap::relation >
+        (ZstEntityType::NONE, EntityTypes_NONE)
+        (ZstEntityType::COMPONENT, EntityTypes_Component)
+        (ZstEntityType::PERFORMER, EntityTypes_Performer)
+        (ZstEntityType::PLUG, EntityTypes_Plug)
+        (ZstEntityType::FACTORY, EntityTypes_Factory);
+
+
 	ZstEntityBase::ZstEntityBase() :
 		m_session_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstSessionAdaptor> > >()),
 		m_hierarchy_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstHierarchyAdaptor> > >()),
 		m_entity_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstEntityAdaptor > > >()),
 		m_parent(),
-		m_entity_type(EntityTypes_NONE),
+		m_entity_type(ZstEntityType::NONE),
 		m_uri(""),
 		m_current_owner(""),
 		m_registered(false)
     {
     }
     
-    
     ZstEntityBase::ZstEntityBase(const char * name) :
         m_session_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstSessionAdaptor> > >()),
 		m_hierarchy_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstHierarchyAdaptor> > >()),
         m_entity_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstEntityAdaptor > > >()),
         m_parent(),
-        m_entity_type(EntityTypes_NONE),
+        m_entity_type(ZstEntityType::NONE),
         m_uri(name),
         m_current_owner(""),
 		m_registered(false)
@@ -40,7 +50,7 @@ namespace showtime
 		m_hierarchy_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstHierarchyAdaptor> > >()),
         m_entity_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstEntityAdaptor > > >()),
         m_parent(),
-        m_entity_type(EntityTypes_NONE),
+        m_entity_type(ZstEntityType::NONE),
         m_uri(""),
         m_current_owner(""),
 		m_registered(false)
@@ -104,7 +114,7 @@ namespace showtime
             return;
         
         std::lock_guard<std::mutex> lock(m_entity_lock);
-        child->m_parent = NULL;
+        child->m_parent = ZstURI();
     }
 
     void ZstEntityBase::update_URI()
@@ -121,9 +131,16 @@ namespace showtime
         }
     }
 
-    const EntityTypes ZstEntityBase::entity_type() const
+    const ZstEntityType ZstEntityBase::entity_type() const
     {
         return m_entity_type;
+    }
+
+    EntityTypes ZstEntityBase::serialized_entity_type()
+    {
+        try {return entity_type_lookup.left.at(entity_type());}
+        catch (std::out_of_range) {}
+        return EntityTypes_NONE;
     }
 
     const ZstURI & ZstEntityBase::URI() const
@@ -135,7 +152,7 @@ namespace showtime
     {
     }
 
-    void ZstEntityBase::get_child_entities(ZstEntityBundle & bundle, bool include_parent)
+    void ZstEntityBase::get_child_entities(ZstEntityBundle & bundle, bool include_parent, bool recursive)
     {
         if (include_parent){
             std::lock_guard<std::mutex> lock(m_entity_lock);
@@ -241,7 +258,11 @@ namespace showtime
         });
     }
 
-	bool ZstEntityBase::is_registered() const
+    void ZstEntityBase::on_registered()
+    {
+    }
+
+    bool ZstEntityBase::is_registered() const
 	{
 		return m_registered;
 	}
@@ -294,7 +315,7 @@ namespace showtime
 		});
 	}
 
-    void ZstEntityBase::set_entity_type(EntityTypes entity_type) {
+    void ZstEntityBase::set_entity_type(ZstEntityType entity_type) {
         std::lock_guard<std::mutex> lock(m_entity_lock);
         m_entity_type = entity_type;
     }
@@ -303,7 +324,12 @@ namespace showtime
         std::lock_guard<std::mutex> lock(m_entity_lock);
 
 		auto orig_path = this->URI();
-        m_parent = entity->URI();
+
+        if (entity)
+            m_parent = entity->URI();
+        else
+            m_parent = ZstURI();
+
         this->update_URI();
 
 		// Update path in entity lookup

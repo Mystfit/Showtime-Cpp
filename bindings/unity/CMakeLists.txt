@@ -25,23 +25,12 @@ file(MAKE_DIRECTORY ${UNITY_BIN_DIR})
 # Unity target build package
 add_custom_target(${UNITY_TARGET} ALL DEPENDS ${UNITY_PACKAGE_PATH})
 
-# Unity target copy/configure assets
+# Unity project template
 add_custom_command(
     PRE_BUILD
     TARGET ${UNITY_TARGET}
     COMMAND ${CMAKE_COMMAND} -E echo "Copying project to ${UNITY_BUILD_DIR}"
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${UNITY_SRC_DIR} ${UNITY_BUILD_DIR}
-    COMMAND ${CMAKE_COMMAND} -E echo "Copying libraries to ${UNITY_BIN_DIR}"
-    COMMAND ${CMAKE_COMMAND} -E echo "Copying ${UNITY_MANAGED_ASSEMBLIES}"
-    COMMAND ${CMAKE_COMMAND} -E copy ${UNITY_MANAGED_ASSEMBLIES} ${UNITY_BIN_DIR}
-    COMMAND ${UNITY_EXECUTABLE} -nographics -batchmode -noUpm -quit -projectPath ${UNITY_BUILD_DIR} -executeMethod Showtime.PluginPlatforms.RestorePluginDefaults
-)
-
-add_custom_command(
-    OUTPUT ${UNITY_PACKAGE_PATH}
-    COMMAND ${CMAKE_COMMAND} -E echo "Exporting Unity package"
-    COMMAND ${UNITY_EXECUTABLE} -nographics -batchmode -noUpm -quit -projectPath ${UNITY_BUILD_DIR} -exportPackage Assets/${UNITY_TARGET} ${UNITY_PACKAGE_PATH}
-    COMMAND ${CMAKE_COMMAND} -E echo "...done"
 )
 
 # Bundle copying
@@ -50,7 +39,7 @@ if(MACOSX OR BUILD_MACOS_CONTAINER)
     add_custom_command(
         PRE_BUILD
         TARGET  ${UNITY_TARGET}
-        COMMAND ${CMAKE_COMMAND} -E echo "Copying bundle to ${UNITY_BIN_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E echo "Copying MacOS bundle to ${UNITY_BIN_DIR}"
         COMMAND ${CMAKE_COMMAND} -E copy_directory $<TARGET_BUNDLE_DIR:${DOTNET_TARGET_WRAPPER}> ${UNITY_BUNDLE_PATH}
         DEPENDS ${MACOS_CONTAINER_TARGET}
     )
@@ -62,7 +51,7 @@ if(ANDROID OR BUILD_ANDROID_CONTAINER)
     add_custom_command(
         PRE_BUILD
         TARGET ${UNITY_TARGET}
-        COMMAND ${CMAKE_COMMAND} -E echo "Copying android files to ${UNITY_BUILD_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E echo "Copying Android libraries to ${UNITY_BUILD_DIR}"
         COMMAND ${CMAKE_COMMAND} -E copy ${ANDROID_LIB_DIR}/libShowtimeDotnetWrapper.so ${UNITY_ANDROID_PLUGIN_DIR}/libShowtimeDotnetWrapper.so
         DEPENDS ${ANDROID_CONTAINER_TARGET}
     )
@@ -74,12 +63,31 @@ if(WIN32 OR BUILD_WINDOWS_CONTAINER)
     add_custom_command(
         PRE_BUILD
         TARGET ${UNITY_TARGET}
-        COMMAND ${CMAKE_COMMAND} -E echo "Copying windows files to ${UNITY_BUILD_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E echo "Copying Windows libraries to ${UNITY_BUILD_DIR}"
         COMMAND ${CMAKE_COMMAND} -E copy ${WINDOWS_LIB_DIR}/ShowtimeDotnetWrapper.dll ${UNITY_WINDOWS_PLUGIN_DIR}/ShowtimeDotnetWrapper.dll
         DEPENDS ${WINDOWS_CONTAINER_TARGET}
     )
 endif()
 
-add_dependencies(${UNITY_TARGET} ${DOTNET_TARGET})
+# Unity copy/configure libraries
+add_custom_command(
+    PRE_BUILD
+    TARGET ${UNITY_TARGET}
+    COMMAND ${CMAKE_COMMAND} -E echo "Copying ${UNITY_MANAGED_ASSEMBLIES}"
+    COMMAND ${CMAKE_COMMAND} -E copy ${UNITY_MANAGED_ASSEMBLIES} ${UNITY_BIN_DIR}
+    COMMAND ${CMAKE_COMMAND} -E echo "Fixing plugins"
+    COMMAND ${UNITY_EXECUTABLE} -nographics -batchmode -noUpm -quit -projectPath ${UNITY_BUILD_DIR} -executeMethod Showtime.PluginPlatforms.RestorePluginDefaults
+)
 
+# Unity export package
+if(BINDINGS_UNITY_EXPORT_PACKAGE)
+    add_custom_command(
+        OUTPUT ${UNITY_PACKAGE_PATH}
+        COMMAND ${CMAKE_COMMAND} -E echo "Exporting Unity package"
+        COMMAND ${UNITY_EXECUTABLE} -nographics -batchmode -noUpm -quit -projectPath ${UNITY_BUILD_DIR} -exportPackage Assets/${UNITY_TARGET} ${UNITY_PACKAGE_PATH}
+        COMMAND ${CMAKE_COMMAND} -E echo "...done"
+    )
+endif()
+
+add_dependencies(${UNITY_TARGET} ${DOTNET_TARGET})
 #install(FILES ${UNITY_PACKAGE_PATH} DESTINATION unity)

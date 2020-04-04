@@ -52,7 +52,7 @@ namespace ZstTest
 	public:
 		OutputComponent(const char * name, bool reliable = true) : 
 			ZstComponent("TESTER", name),
-			m_output(std::make_unique<ZstOutputPlug>("out", PlugValueData_IntList, reliable))
+			m_output(std::make_unique<ZstOutputPlug>("out", ZstValueType::IntList, reliable))
 		{
 		}
 
@@ -97,7 +97,7 @@ namespace ZstTest
 			ZstComponent("TESTER", name),
 			compare_val(cmp_val),
 			log(should_log),
-			m_input(std::make_unique<ZstInputPlug>("in", PlugValueData_IntList))
+			m_input(std::make_unique<ZstInputPlug>("in", ZstValueType::IntList))
 		{
 		}
 
@@ -142,8 +142,8 @@ namespace ZstTest
 
 		Sink(const char* name) :
 			ZstComponent("SINK", name),
-			input(std::make_unique<ZstInputPlug>("in", PlugValueData_IntList)),
-			output(std::make_unique<ZstOutputPlug>("out", PlugValueData_FloatList)),
+			input(std::make_unique<ZstInputPlug>("in", ZstValueType::IntList)),
+			output(std::make_unique<ZstOutputPlug>("out", ZstValueType::FloatList)),
 			last_received_code(0),
 			m_child_sink(NULL)
 		{

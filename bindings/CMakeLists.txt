@@ -10,7 +10,8 @@ option(BINDINGS_JRUBY "Generate bindings for JRuby" OFF)
 
 if(BINDINGS_DOTNET OR BINDINGS_UNITY)
     set(BINDINGS_DOTNET_CSPROJ CACHE BOOL ON)
-    set(BINDINGS_DOTNET_FRAMEWORK_VERSION v4.7.2 CACHE STRING "dotnet Framework version")
+    set(BINDINGS_DOTNET_BUILD_PACKAGE CACHE BOOL ON)
+    set(BINDINGS_DOTNET_FRAMEWORK_VERSION netstandard2.0 CACHE STRING "dotnet Framework version")
     set(DOTNET_FRAMEWORK_VERSIONS
         v3.5 
         v4 
@@ -42,10 +43,6 @@ if(BINDINGS_DOTNET OR BINDINGS_UNITY)
         add_library(${DOTNET_TARGET} SHARED "")
     else()
         message(STATUS "Using C# project generated from .csproj template")
-        find_program(DOTNETCOMMAND dotnet)
-        if(${DOTNETCOMMAND} EQUAL dotnet-NOTFOUND)
-            message(FATAL_ERROR "Could not find dotnet sdk")
-        endif()
         add_custom_target(${DOTNET_TARGET} ALL DEPENDS ${DOTNET_OUTPUT_PACKAGE})
     endif()
     include(bindings/dotnet/CMakeLists.txt)
@@ -70,6 +67,7 @@ endif()
 
 if(BINDINGS_UNITY)
     set(UNITY_TARGET ${PROJECT_NAME}Unity)
+    set(BINDINGS_UNITY_EXPORT_PACKAGE CACHE BOOL ON)
     include(bindings/unity/CMakeLists.txt)
 endif()
 
@@ -82,7 +80,6 @@ if(BINDINGS_PYTHON)
     set(BINDINGS_PYTHON_VERSION ${BINDINGS_PYTHON_VERSION_MAJOR}.${BINDINGS_PYTHON_VERSION_MINOR}.${BINDINGS_PYTHON_VERSION_PATCH})
     
     find_package(Python${BINDINGS_PYTHON_VERSION_MAJOR} ${BINDINGS_PYTHON_VERSION} COMPONENTS Interpreter Development REQUIRED)
-    set(PYTHON_WHEEL "dummy.whl")
     set(Python_EXECUTABLE ${Python${BINDINGS_PYTHON_VERSION_MAJOR}_EXECUTABLE})
     set(PYTHON_LIB_TARGET Python${BINDINGS_PYTHON_VERSION_MAJOR}::Python)
     set(PYTHON_INCLUDE_DIR ${Python${BINDINGS_PYTHON_VERSION_MAJOR}_INCLUDE_DIR})
@@ -96,6 +93,12 @@ if(BINDINGS_PYTHON)
         execute_process(COMMAND ${PIP_COMMAND} install wheel)
     endif()
 
+    execute_process(COMMAND ${Python_EXECUTABLE} -c "import wheel.pep425tags; print('-'.join(wheel.pep425tags.get_supported('')[0]))" 
+                    OUTPUT_VARIABLE WHEEL_PLATFORM_TAG 
+                    ERROR_QUIET
+                    OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    set(PYTHON_WHEEL "${CMAKE_SWIG_ROOT_OUTDIR}/python/dist/${PROJECT_NAME}Python-${CMAKE_PROJECT_VERSION}-${WHEEL_PLATFORM_TAG}.whl" CACHE PATH "Generated Python wheel")
     add_custom_target(${PYTHON_TARGET} ALL DEPENDS ${PYTHON_WHEEL})
     include(bindings/python/CMakeLists.txt)
 endif()

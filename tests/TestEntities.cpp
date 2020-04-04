@@ -123,7 +123,7 @@ BOOST_FIXTURE_TEST_CASE(async_activation_callback, FixtureOutputEntity) {
 
 BOOST_FIXTURE_TEST_CASE(plug_children, FixtureJoinServer) {
 	auto component = std::make_unique<ZstComponent>("component");
-	auto plug = std::make_unique<ZstOutputPlug>("plug", PlugValueData_FloatList);
+	auto plug = std::make_unique<ZstOutputPlug>("plug", ZstValueType::FloatList);
 	
 	test_client->register_entity(component.get());
 	component->add_child(plug.get());
@@ -141,17 +141,36 @@ BOOST_FIXTURE_TEST_CASE(add_child, FixtureJoinServer) {
 	auto child_path = ZstURI("test_performer/test_parent/test_child");
 	
 	test_client->get_root()->add_child(parent.get());
-	BOOST_TEST(parent->is_activated());
-	BOOST_TEST(test_client->find_entity(parent->URI()));
 	parent->add_child(child.get());
 	
 	BOOST_TEST(child->is_activated());
 	BOOST_TEST(child->URI() == child_path);
 	BOOST_TEST(test_client->find_entity(child->URI()));
+}
+
+BOOST_FIXTURE_TEST_CASE(get_children, FixtureJoinServer) {
+	auto parent = std::make_unique<ZstComponent>("test_parent");
+	auto child = std::make_unique<ZstComponent>("test_child");
+	test_client->register_entity(parent.get());
+	parent->add_child(child.get());
+	test_client->get_root()->add_child(parent.get());
 
 	ZstEntityBundle bundle;
-	test_client->get_root()->get_child_entities(bundle, true);
-	BOOST_TEST(bundle.size() == 5);
+	// Get a flat list of all entities
+	test_client->get_root()->get_child_entities(bundle, true, true);
+	BOOST_TEST(bundle.size() == 3);
+	BOOST_TEST(bundle[0]->URI() == test_client->get_root()->URI());
+	bundle.clear();
+
+	// Get a list of all recursive children
+	test_client->get_root()->get_child_entities(bundle, false , true);
+	BOOST_TEST(bundle.size() == 2);
+	BOOST_TEST(bundle[0]->URI() == parent->URI());
+	bundle.clear();
+
+	// Get immediate children only
+	parent->get_child_entities(bundle);
+	BOOST_TEST(bundle.size() == 1);
 }
 
 BOOST_FIXTURE_TEST_CASE(parent_activates_child, FixtureJoinServer) {

@@ -2,38 +2,62 @@
 # vi: set ft=ruby :
 
 Vagrant.configure("2") do |config|
-  
-  guest_source_path = "/vagrant-showtime-src"
-
-  config.vm.box = "sylabs/singularity-3.2-ubuntu-bionic64"
-  config.vm.box_version = "20190515.0.0"
-  config.vm.synced_folder "${CMAKE_SOURCE_DIR}", guest_source_path
-  config.vm.synced_folder "${ANDROID_BINARY_PATH}", "/vagrant-showtime-bin-output"
-  config.vm.synced_folder "${ANDROID_LIBRARY_PATH}", "/vagrant-showtime-lib-output"
+  config.vm.box = "ubuntu/bionic64"
+  config.vm.synced_folder "${CMAKE_SOURCE_DIR}", "/vagrant-showtime-src"
+  config.vm.synced_folder "${ANDROID_BIN_DIR}", "/vagrant-showtime-bin-output"
+  config.vm.synced_folder "${ANDROID_LIB_DIR}", "/vagrant-showtime-lib-output"
   config.vm.define "${ANDROID_CONTAINER_NAME}"
+  config.disksize.size = '20GB'
 
   config.vm.provider "virtualbox" do |vb|
     vb.gui = false
-    vb.cpus = ${CONTAINER_CPU_COUNT}  
+    vb.cpus = ${CONTAINER_CPU_COUNT}
     vb.memory = "${CONTAINER_MEMORY_AMOUNT}"
   end
 
-  env_vars = {
+  ndk_home_path = "/opt/local/android-ndk"
+  ndk_version = "android-ndk-${ANDROID_NDK_VERSION}"
+  boost_ver = "${ANDROID_BOOST_VERSION}"
+  boost_ver_scored = boost_ver.gsub ".", "_"
+  boost_ver_maj = boost_ver_scored[0...-2]
+
+  env = {
     "SHOWTIME_SOURCE" => "/vagrant-showtime-src",
     "SHOWTIME_BUILD" => "/vagrant-showtime-build",
     "SHOWTIME_BIN_OUTPUT" => "/vagrant-showtime-bin-output",
     "SHOWTIME_LIB_OUTPUT" => "/vagrant-showtime-lib-output",
-    "VM_DIR" => "/VMs"
+    "ANDROID_HOME" => "/opt/local/android-sdk",
+    "ANDROID_ABI" => "${ANDROID_ABI}",
+    "ANDROID_PLATFORM" => "${ANDROID_PLATFORM}",
+    "ANDROID_NDK_VERSION" => ndk_version,
+    "ANDROID_NDK_HOME" => ndk_home_path,
+    "ANDROID_NDK_ROOT" => "#{ndk_home_path}/#{ndk_version}",
+    "ANDROID_NDK_SYSROOT" => "#{ndk_home_path}/#{ndk_version}/sysroot",
+    "INSTALL_PREFIX" => "/usr/local",
+    "ANDROID_BOOST_VER" => boost_ver,
+    "ANDROID_BOOST_VER_SCORED" => boost_ver_scored,
+    "ANDROID_BOOST_VER_BASE" => boost_ver_maj
   }
+
+  # Common CMake flags
+  env["ANDROID_BUILD_FLAGS"] = "-DCMAKE_TOOLCHAIN_FILE=#{env["ANDROID_NDK_ROOT"]}/build/cmake/android.toolchain.cmake "         \
+                                    "-DANDROID_STL=c++_static "                                                                 \
+                                    "-DANDROID_CPP_FEATURES=exceptions;rtti "                                                   \
+                                    "-DANDROID_PLATFORM=android-#{env["ANDROID_PLATFORM"]} "                                    \
+                                    "-DANDROID_ABI=#{env["ANDROID_ABI"]} "                                                      \
+                                    "-DCMAKE_INSTALL_PREFIX=#{env["ANDROID_NDK_SYSROOT"]} "                                     \
+                                    "-DCMAKE_PREFIX_PATH=#{env["ANDROID_NDK_SYSROOT"]} "
+  env["HOST_BUILD_FLAGS"]= "-DCMAKE_INSTALL_PREFIX=#{env["INSTALL_PREFIX"]}"
+  env["COMMON_BUILD_FLAGS"]= "-DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=#{env["INSTALL_PREFIX"]};#{env["ANDROID_NDK_SYSROOT"]}"
   
   # Setup container
-  config.vm.provision :shell, env: env_vars, inline: <<-SHELL
-    sudo mkdir -p $VM_DIR
+  config.vm.provision :shell, env: env, privileged: false, inline: <<-SHELL
     sudo mkdir -p $SHOWTIME_BUILD
-    yes | sudo singularity build $VM_DIR/build-android.sif $SHOWTIME_SOURCE/containers/android/build-android.def
+    sudo chown vagrant $SHOWTIME_BUILD
+    sudo mkdir -p $ANDROID_HOME
   SHELL
-
-  # Build android libs
-  config.vm.provision :shell, env: env_vars, run: 'always', path: "${CMAKE_SOURCE_DIR}/containers/android/build_singularity_android.sh"
+  config.vm.provision :shell, env: env, path: "${CMAKE_SOURCE_DIR}/containers/android/install_packages.sh"
+  config.vm.provision :shell, env: env, path: "${CMAKE_SOURCE_DIR}/containers/android/install_dependencies.sh"
+  config.vm.provision :shell, env: env, run: 'always', path: "${CMAKE_SOURCE_DIR}/containers/android/build_showtime.sh"
 end
 

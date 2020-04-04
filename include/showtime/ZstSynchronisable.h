@@ -28,8 +28,8 @@ public:
     ZST_EXPORT virtual void remove_adaptor(std::shared_ptr<ZstSynchronisableAdaptor> adaptor);
 	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstSynchronisableAdaptor> > > & synchronisable_events();
 
-    ZST_EXPORT virtual void on_activation(){};
-    ZST_EXPORT virtual void on_deactivation(){};
+    ZST_EXPORT virtual void on_activation();
+    ZST_EXPORT virtual void on_deactivation();
 
 	ZST_EXPORT bool is_activated();
 	ZST_EXPORT bool is_deactivated();

@@ -20,11 +20,20 @@ enum class ZstTransportRequestBehaviour
 };
 
 // ZstSynchronisable errors
-enum ZstSyncError {
+enum class ZstSyncError {
 	NO_ERR,
 	PERFORMER_NOT_FOUND,
 	PARENT_NOT_FOUND,
 	ENTITY_ALREADY_EXISTS
+};
+
+//ZstValue Types
+enum class ZstValueType {
+	NONE = 0,
+	IntList = 1,
+	FloatList = 2,
+	StrList = 3,
+	PlugHandshake = 4
 };
 
 //Ports

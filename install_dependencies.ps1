@@ -4,16 +4,34 @@ param(
     [string]$install_prefix="$dependency_dir/install",
     [string[]]$config=@("release"),
     [string]$generator="Visual Studio 16 2019",
+    [string]$toolset="msvc-14.2",
     [switch]$without_boost = $false,
-    [string]$boost_version = "1.70.0"
+    [string]$boost_version = "1.72.0"
 )
 
+$msvc_toolset_versions = @{
+    "msvc-14.0" = "v140";
+    "msvc-14.1" = "v141";
+    "msvc-14.2" = "v142";
+}
+
+$toolset_ver = $toolset
+$install_prefix += "/$toolset" 
 
 # Setup
 # -----
 $env:GIT_REDIRECT_STDERR = "2>&1"
 
-$generator_flags = @(
+$generator_flags = @()
+if($generator.indexOf("Visual Studio") -gt -1){
+    $vs_ver = [convert]::ToInt32($generator.trim("Visual Studio").split()[0])
+    $toolset_ver = $msvc_toolset_versions[$toolset]
+    if($vs_ver -ge 16){
+        $generator_flags += @("-A", "x64")
+    }
+}
+
+$generator_flags += @(
     "-G", "`"$generator`""
     "-DCMAKE_INSTALL_PREFIX=`"$install_prefix`"",
     "-DCMAKE_INSTALL_INCLUDEDIR=`"$install_prefix/include`"",
@@ -23,20 +41,13 @@ $generator_flags = @(
     "-DCMAKE_PREFIX_PATH=`"$install_prefix`""
 )
 
-if($generator.indexOf("Visual Studio") -gt -1){
-    $vs_ver = [convert]::ToInt32($generator.trim("Visual Studio").split()[0])
-    if($vs_ver -ge 16){
-        $generator_flags += @("-A", "x64")
-    }
-}
-
 md -Force "$install_prefix"
 
 
 # CMake Libraries
 # ---------------
 function Build-CmakeFromGit{
-    Param($name, $url, $branch, $config, $flags)
+    Param($name, $url, $branch, $config, $toolset, $flags)
 
     $build_dir = "$dependency_dir/$name/build_dir"
 
@@ -50,23 +61,25 @@ function Build-CmakeFromGit{
     }
     Write-Output "Building $name"
     $cmake_flags = $generator_flags + $flags + @(
+        "-T", $toolset
         "-S", "`"$dependency_dir/$name`"",
         "-B", "`"$build_dir`""
     ) 
-    & "cmake" @cmake_flags
-    & "cmake" $(@("--build", "`"$build_dir`"", "--config", "$config", "--target", "INSTALL"))
+    & "cmake" @cmake_flags 2>&1 | %{ "$_" }
+    & "cmake" $(@("--build", "`"$build_dir`"", "--config", "$config", "--target", "INSTALL")) 2>&1 | %{ "$_" }
     Write-Output "Built $name"
 }
 
 function Build-Boost{
-    Param($version, $config, $libraries)
+    Param($version, $config, $toolset, $libraries)
 
     $boost_flags = @(
         "--prefix=$install_prefix",
         "address-model=64",
         "variant=$($config.ToLower())",
         "threading=multi",
-        "runtime-link=shared"
+        "runtime-link=shared",
+        "toolset=$toolset"
     )
     $boost_libs = $libraries
     $boost_libs = $boost_libs | ForEach-Object {"--with-$_"}
@@ -100,25 +113,26 @@ function Build-Boost{
 
 
 foreach ($c in $config){
-    $c_titled = $(Get-Culture).textinfo.totitlecase($c)
-    Write-Output "Building config: $c_titled"
-    Build-CmakeFromGit -name "libzmq" -url "https://github.com/zeromq/libzmq.git" -branch "master" -config $c_titled -flags @(
+    $config_titled = $(Get-Culture).textinfo.totitlecase($c)
+    Write-Output "Building config: $config_titled"
+    Build-CmakeFromGit -name "libzmq" -url "https://github.com/zeromq/libzmq.git" -branch "master" -config $config_titled -toolset $toolset_ver -flags @(
         "-DENABLE_DRAFTS=TRUE",
         "-DZMQ_BUILD_TESTS=OFF"
     )
-    Build-CmakeFromGit -name "czmq" -url "https://github.com/zeromq/czmq.git" -branch "master" -config $c_titled -flags @(
+    Build-CmakeFromGit -name "czmq" -url "https://github.com/Mystfit/czmq.git" -branch "android_fixes" -config $config_titled -toolset $toolset_ver -flags @(
         "-DENABLE_DRAFTS=TRUE",
         "-DBUILD_TESTING=OFF",
         "-DCMAKE_DEBUG_POSTFIX=d"
     )
-    Build-CmakeFromGit -name "flatbuffers" -url "https://github.com/google/flatbuffers.git" -branch "master" -config $c_titled -flags @(
+    Build-CmakeFromGit -name "flatbuffers" -url "https://github.com/google/flatbuffers.git" -branch "master" -config $config_titled -toolset $toolset_ver -flags @(
         "-DFLATBUFFERS_INSTALL=ON"
+        "-DCMAKE_DEBUG_POSTFIX=d"
     )
-    Build-CmakeFromGit -name "fmt" -url "https://github.com/fmtlib/fmt.git" -branch "master" -config $c_titled -flags @()
+    Build-CmakeFromGit -name "fmt" -url "https://github.com/fmtlib/fmt.git" -branch "master" -config $config_titled -toolset $toolset_ver -flags @()
 
     if($without_boost -ne $true){
         $libraries = @("system","chrono","log","thread","filesystem","date_time","atomic","regex","context","fiber","test")
-        Build-Boost -version $boost_version -config $c $libraries
+        Build-Boost -version $boost_version -config $c $toolset $libraries
     }
 }
 

@@ -54,14 +54,14 @@ set_target_properties(${PYTHON_TARGET_WRAPPER} PROPERTIES
 )
 
 if(BINDINGS_PYTHON_LINK_AT_RUNTIME)
+    # Since we don't link against the Python libs we need to explicitly add the python include dir
+    target_include_directories(${PYTHON_TARGET_WRAPPER} PRIVATE ${PYTHON_INCLUDE_DIR})
     if(MACOSX OR LINUX)
-        # Since we don't link agains the Python libs we need to explicitly add the python include dir
-        target_include_directories(${PYTHON_TARGET_WRAPPER} PRIVATE ${PYTHON_INCLUDE_DIR})
-
         # Compiler option to ignore unresolved externals, resolve at runtime
         target_link_options(${PYTHON_TARGET_WRAPPER} PRIVATE -undefined dynamic_lookup)
     elseif(WIN32)
         message(WARNING "Windows runtime linking not implemented")
+        target_link_options(${PYTHON_TARGET_WRAPPER} PRIVATE -undefined dynamic_lookup)
     endif()
 else()
     list(APPEND PYTHON_LINK_LIBS ${PYTHON_LIB_TARGET})
@@ -78,13 +78,15 @@ add_dependencies(${PYTHON_TARGET} ${PYTHON_TARGET_WRAPPER})
 swig_link_libraries(${PYTHON_TARGET_WRAPPER} PUBLIC ${PYTHON_LINK_LIBS})
 
 # Copy files to build tree
-add_custom_command(TARGET ${PYTHON_TARGET} POST_BUILD
+add_custom_command(TARGET ${PYTHON_TARGET} PRE_BUILD
                     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/showtime ${CMAKE_SWIG_OUTDIR}/showtime
                     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PYTHON_TARGET_WRAPPER}> ${CMAKE_SWIG_OUTDIR}/showtime
                     VERBATIM
 )
 
 # Run setuptools to build wheels
+message(STATUS "${CMAKE_SWIG_OUTDIR}")
+message(STATUS "${Python_EXECUTABLE} ${SETUP_PY} bdist_wheel")
 add_custom_command(OUTPUT ${PYTHON_WHEEL}
                     COMMAND ${CMAKE_COMMAND} 
                         "-DSUBST_SOURCE=${MANIFEST_IN_PARTIAL}"
@@ -97,7 +99,8 @@ add_custom_command(OUTPUT ${PYTHON_WHEEL}
 )
 
 # Install library
-install(CODE "execute_process(WORKING_DIRECTORY ${CMAKE_SWIG_OUTDIR} COMMAND ${Python_EXECUTABLE} ${SETUP_PY} install)")
+message(STATUS "${PIP_COMMAND} install ${PYTHON_WHEEL}")
+install(CODE "execute_process(COMMAND ${PIP_COMMAND} install --ignore-installed ${PYTHON_WHEEL})")
 
 # Restore binding output dir
 set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR}/python)

@@ -15,7 +15,7 @@ public:
 
     CustomComponent(const char * name) : 
 		ZstComponent(CUSTOM_COMPONENT, name),
-		input(std::make_unique <ZstInputPlug>("input", PlugValueData_IntList)) {}
+		input(std::make_unique <ZstInputPlug>("input", ZstValueType::IntList)) {}
 
 	virtual void on_registered() override {
 		add_child(input.get());

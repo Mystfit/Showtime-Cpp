@@ -28,6 +28,16 @@ else()
         string(APPEND DOTNET_TEST_SOURCE_BLOCK "<Compile\ Include=\"${file}\"\ />\n    ")
     endforeach()
 
+    # Add project references
+    set(DOTNET_PROJECT_REFERENCES_BLOCK "")
+    set(DOTNET_PROJECT_REFERENCES "")
+    if(MSVC)
+        list(APPEND DOTNET_PROJECT_REFERENCES ${DOTNET_CSPROJ_OUT})
+    endif()
+    foreach(project ${DOTNET_PROJECT_REFERENCES})
+        string(APPEND DOTNET_PROJECT_REFERENCES_BLOCK "  <ProjectReference Include=\"${project}\" />\n")
+    endforeach()
+
     # Generate csproj file
     configure_file(${DOTNET_TEST_CSPROJ_IN} ${DOTNET_TEST_CSPROJ_OUT})
 
@@ -50,7 +60,7 @@ else()
         VERBATIM
     )
 
-    set(DOTNET_TEST_COMMAND "${DOTNETCOMMAND}" "test")
+    set(DOTNET_TEST_COMMAND "${DOTNETCOMMAND}" "test" "${CMAKE_CURRENT_BINARY_DIR}/${DOTNET_TEST_TARGET}.csproj")
 endif()
 
 add_dependencies(${DOTNET_TEST_TARGET} ${DOTNET_TARGET})

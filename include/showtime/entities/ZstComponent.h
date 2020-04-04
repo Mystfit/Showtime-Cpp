@@ -41,10 +41,16 @@ public:
 
     //Hierarchy
     ZST_EXPORT virtual void get_child_cables(ZstCableBundle & bundle) override;
-    ZST_EXPORT virtual void get_child_entities(ZstEntityBundle & bundle, bool include_parent = true) override;
+    ZST_EXPORT virtual void get_child_entities(ZstEntityBundle & bundle, bool include_parent = false, bool recursive = false) override;
     
     //Specific component type
     ZST_EXPORT const char * component_type() const;
+
+
+    // Overriden Events for SWIG
+    ZST_EXPORT virtual void on_registered() override;
+    ZST_EXPORT virtual void on_activation() override;
+    ZST_EXPORT virtual void on_deactivation() override;
 
 
 	// Serialisation

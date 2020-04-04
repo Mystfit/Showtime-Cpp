@@ -13,7 +13,7 @@ ZstPerformer::ZstPerformer() :
     m_heartbeat_active(false),
     m_missed_heartbeats(0)
 {
-    set_entity_type(EntityTypes_Performer);
+    set_entity_type(ZstEntityType::PERFORMER);
 }
 
 ZstPerformer::ZstPerformer(const char * name) :
@@ -21,7 +21,7 @@ ZstPerformer::ZstPerformer(const char * name) :
     m_heartbeat_active(false),
     m_missed_heartbeats(0)
 {
-    set_entity_type(EntityTypes_Performer);
+    set_entity_type(ZstEntityType::PERFORMER);
 }
     
 ZstPerformer::ZstPerformer(const Performer* buffer) : 
@@ -29,7 +29,7 @@ ZstPerformer::ZstPerformer(const Performer* buffer) :
 	m_missed_heartbeats(0)
 
 {
-	set_entity_type(EntityTypes_Performer);
+	set_entity_type(ZstEntityType::PERFORMER);
 	ZstPerformer::deserialize_partial((buffer->performer()) ? buffer->performer() : NULL);
 	ZstComponent::deserialize_partial((buffer->component()) ? buffer->component() : NULL);
 	ZstEntityBase::deserialize_partial(buffer->entity());
@@ -84,7 +84,7 @@ int ZstPerformer::get_missed_heartbeats()
 
 void ZstPerformer::add_child(ZstEntityBase * entity, bool auto_activate)
 {
-    if (entity->entity_type() == EntityTypes_Factory) {
+    if (entity->entity_type() == ZstEntityType::FACTORY) {
         add_factory(static_cast<ZstEntityFactory*>(entity));
     }
     else {
@@ -94,7 +94,7 @@ void ZstPerformer::add_child(ZstEntityBase * entity, bool auto_activate)
 
 void ZstPerformer::remove_child(ZstEntityBase * entity)
 {
-    if (entity->entity_type() == EntityTypes_Factory) {
+    if (entity->entity_type() == ZstEntityType::FACTORY) {
         remove_factory(static_cast<ZstEntityFactory*>(entity));
     }
     else {
