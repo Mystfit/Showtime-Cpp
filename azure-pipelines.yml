@@ -8,26 +8,38 @@ variables:
   solution: '**/*.sln'
   buildPlatform: 'x64'
   buildConfiguration: 'Release'
-  platform: 'msvc-14.2'
+  toolset: 'msvc-14.2'
+  build_dir: '$(Build.ArtifactStagingDirectory)/build'
+  cmake_prefix: '$(build_dir)/dependencies/install/$(toolset)'
 
 steps:
 - task: PowerShell@2
   inputs:
     filePath: 'install_dependencies.ps1'
-    arguments: '-config $(buildConfiguration)'
+    arguments: '-config $(buildConfiguration) -build_dir $(build_dir) -toolset $(toolset)'
     errorActionPreference: 'continue'
     ignoreLASTEXITCODE: true
     pwsh: true
     workingDirectory: '$(System.DefaultWorkingDirectory)'
 
+- task: Cache@2
+  inputs:
+    key: 'dependencies | "$(Agent.OS)"'
+    restoreKeys: |
+       dependencies | "$(Agent.OS)"
+       dependencies
+    path: $(cmake_prefix)
+  displayName: Cache dependencies
+
 - task: CMake@1
   inputs:
+    workingDirectory: '$(build_dir)'
     cmakeArgs: >-
-      -S $(System.DefaultWorkingDirectory) 
-      -B $(Agent.BuildDirectory) 
+      -T $(toolset)
+      -S $(Build.SourcesDirectory) 
       -G "Visual Studio 16 2019" 
       -A $(buildPlatform) 
-      -DCMAKE_PREFIX_PATH=$(Agent.BuildDirectory)/dependencies/install/$(platform) 
+      -DCMAKE_PREFIX_PATH=$(cmake_prefix) 
       -DBUILD_SHARED=ON 
       -DBUILD_STATIC=ON 
       -DBUILD_DRAFTS=OFF 
