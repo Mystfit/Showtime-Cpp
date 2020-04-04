@@ -6,6 +6,16 @@
 	using namespace showtime;
 %}
 
+%feature("director:except") {
+    if( $error != NULL ) {
+        PyObject *ptype, *pvalue, *ptraceback;
+        PyErr_Fetch( &ptype, &pvalue, &ptraceback );
+        PyErr_Restore( ptype, pvalue, ptraceback );
+        PyErr_Print();
+        //Py_Exit(1);
+    }
+}
+
 %begin %{
 	#ifdef _MSC_VER
 	// Force MSVC to not link against the debug python lib since it's not included in binary python installs

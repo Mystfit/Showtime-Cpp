@@ -23,7 +23,7 @@ def entity_bundle_to_list(bundle):
 
 def bundle_to_list(bundle):
 	list = []
-	for item in bundle:
+	for item in bundle.items():
 		list.append(item)
 	return list
 %}
