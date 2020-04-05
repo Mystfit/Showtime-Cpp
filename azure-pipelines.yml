@@ -28,8 +28,9 @@ steps:
     targetType: 'inline'
     script: |
       choco install visualstudio2019-workload-vctools --params "--includeOptional"
+      $VS_path = $(vswhere -format value -property installationPath)
       Write-Host "##vso[task.setvariable variable=VS_path;]$(vswhere -format value -property installationPath)"
-      ls $(VS_path)\Common7\IDE\Extensions
+      ls $VS_path\Common7\IDE\Extensions
 
 - task: Cache@2
   displayName: Cache dependencies
