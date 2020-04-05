@@ -13,16 +13,20 @@ variables:
   buildConfiguration: 'Release'
   toolset: 'msvc-14.2'
   toolset-platform: 'v142'
-  build_dir: '$(Build.ArtifactStagingDirectory)/build'
-  cmake_prefix: '$(build_dir)/dependencies/install/$(toolset)'
-  solution: '$(build_dir)/Showtime.sln'
+  build_dir: '$(Build.ArtifactStagingDirectory)\build'
+  cmake_prefix: '$(build_dir)\dependencies\install\$(toolset)'
+  solution: '$(build_dir)\Showtime.sln'
 
 steps:
 - checkout: self
   clean: true
   submodules: recursive
 
-- task: VisualStudioTestPlatformInstaller@1
+- task: PowerShell@2
+  displayName: Install Visual Studio C++ Desktop workload
+  inputs:
+    targetType: 'inline'
+    script: 'choco install visualstudio2019-workload-vctools --params "--includeOptional"'
 
 - task: Cache@2
   displayName: Cache dependencies
@@ -72,3 +76,5 @@ steps:
   inputs:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
+    testAssemblyVer2: '**\*Test*.exe'
+    searchFolder: '$(build_dir)'
