@@ -26,7 +26,13 @@ steps:
   displayName: Install Visual Studio C++ Desktop workload
   inputs:
     targetType: 'inline'
-    script: 'choco install visualstudio2019-workload-vctools --params "--includeOptional"'
+    script: |
+      choco install visualstudio2019-workload-vctools --params "--includeOptional"
+      choco install vswhere
+      refreshenv
+      VS_path = $(vswhere -format value -property installationPath)
+      Write-Host "##vso[task.setvariable variable=VS_path;]$VS_path"
+      ls $(VS_path)\Common7\IDE\Extensions
 
 - task: Cache@2
   displayName: Cache dependencies
@@ -79,4 +85,4 @@ steps:
     testAssemblyVer2: '**\*Test*.exe'
     searchFolder: '$(build_dir)'
     runInParallel: True
-    pathtoCustomTestAdapters: 'C:\Program Files(x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\Extensions\em3ozjcu.15r'
+    pathtoCustomTestAdapters: '$(VS_path)\Common7\IDE\Extensions\em3ozjcu.15r'
