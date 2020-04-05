@@ -23,13 +23,15 @@ steps:
   submodules: recursive
 
 - task: PowerShell@2
-  displayName: Install Visual Studio C++ Desktop workload
+  displayName: Install tools
   inputs:
     targetType: 'inline'
     script: |
       choco install visualstudio2019-workload-nativedesktop --params "--includeRecommended"
       $VS_path = $(vswhere -format value -property installationPath)
       Write-Host "##vso[task.setvariable variable=VS_path;]$(vswhere -format value -property installationPath)"
+      choco install procdump
+      Write-Host "##vso[task.setvariable variable=PROCDUMP_PATH ;]%ProgramData%\chocolatey\bin\"
 
 - task: Cache@2
   displayName: Cache dependencies
@@ -86,9 +88,16 @@ steps:
 - task: VSTest@2
   displayName: Test solution
   inputs:
+    testSelector: 'testAssemblies'
+    runSettingsFile: '$(System.DefaultWorkingDirectory)/azure_test.runsettings'
+    testAssemblyVer2: |
+      bin\Windows\Test*.exe
+      !**\*TestAdapter.dll
+      !**\obj\**
+    searchFolder: '$(build_dir)'
+    pathtoCustomTestAdapters: '$(VS_path)\Common7\IDE\Extensions\em3ozjcu.15r'
+    testRunTitle: 'Native tests'
     platform: '$(buildPlatform)'
     configuration: 'Debug'
-    testAssemblyVer2: 'bin\Windows\Test*.exe'
-    searchFolder: '$(build_dir)'
-    runInParallel: True
-    pathtoCustomTestAdapters: '$(VS_path)\Common7\IDE\Extensions\em3ozjcu.15r'
+    diagnosticsEnabled: true
+    collectDumpOn: 'always'
