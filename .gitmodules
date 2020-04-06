@@ -10,3 +10,4 @@
 [submodule "submodules/cxxopts"]
 	path = submodules/cxxopts
 	url = https://github.com/jarro2783/cxxopts.git
+	branch = v2.2.0
