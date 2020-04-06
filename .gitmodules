@@ -7,3 +7,6 @@
 [submodule "schemas"]
 	path = schemas
 	url = https://github.com/mystfit/showtime-schemas.git
+[submodule "submodules/cxxopts"]
+	path = submodules/cxxopts
+	url = https://github.com/jarro2783/cxxopts.git
