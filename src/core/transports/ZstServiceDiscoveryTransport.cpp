@@ -91,7 +91,7 @@ void ZstServiceDiscoveryTransport::start_broadcast(const std::string& name, int 
     m_port = port;
 
 	auto builder = FlatBufferBuilder();
-	auto beacon_msg = CreateStageBeaconMessage(builder, builder.CreateString(name), m_port, false);
+	auto beacon_msg = CreateStageBeaconMessage(builder, builder.CreateString(name), m_port);
 	builder.Finish(beacon_msg);
     zsock_send(m_beacon, "sbi", "PUBLISH", builder.GetBufferPointer(), builder.GetSize(), interval);
 }
