@@ -392,14 +392,8 @@ void ZstClient::server_discovery_handler(const ZstServerBeaconMessage* msg)
 {
     // Make a server address to hold our server name/address pair
     ZstServerAddress server = ZstServerAddress(msg->buffer()->name()->str(), fmt::format("{}:{}", msg->address(), msg->buffer()->port()));
-    auto server_it = m_server_beacons.find(server);
-
-    if (server_it != m_server_beacons.end()) {
-        if (msg->buffer()->leaving()) {
-            lost_server_beacon(*server_it);
-            return;
-        }
-
+    
+    if (m_server_beacons.find(server) != m_server_beacons.end()) {
         // Reset beacon timeout
         m_server_beacon_timestamps[server] = std::chrono::system_clock::now();
         return;
