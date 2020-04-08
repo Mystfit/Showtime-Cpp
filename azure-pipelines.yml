@@ -5,6 +5,7 @@ trigger:
       - develop
       - azure
 
+
 pool:
   vmImage: 'windows-latest'
 
@@ -17,87 +18,94 @@ variables:
   cmake_prefix: '$(build_dir)\dependencies\install\$(toolset)'
   solution: '$(build_dir)\Showtime.sln'
 
-steps:
-- checkout: self
-  clean: true
-  submodules: recursive
+jobs:
+- job: setup
+  steps:
+  - checkout: self
+    clean: true
+    submodules: recursive
 
-- task: PowerShell@2
-  displayName: Install tools
-  inputs:
-    targetType: 'inline'
-    script: |
-      choco install visualstudio2019-workload-nativedesktop --params "--includeRecommended"
-      $VS_path = $(vswhere -format value -property installationPath)
-      Write-Host "##vso[task.setvariable variable=VS_path;]$(vswhere -format value -property installationPath)"
-      choco install procdump
-      Write-Host "##vso[task.setvariable variable=PROCDUMP_PATH ;]%ProgramData%\chocolatey\bin\"
+  - task: PowerShell@2
+    displayName: Install tools
+    inputs:
+      targetType: 'inline'
+      script: |
+        choco install visualstudio2019-workload-nativedesktop --params "--includeRecommended"
+        $VS_path = $(vswhere -format value -property installationPath)
+        Write-Host "##vso[task.setvariable variable=VS_path;]$(vswhere -format value -property installationPath)"
+        choco install procdump
+        Write-Host "##vso[task.setvariable variable=PROCDUMP_PATH ;]%ProgramData%\chocolatey\bin\"
 
-- task: Cache@2
-  displayName: Cache dependencies
-  inputs:
-    key: 'dependencies2 | "$(Agent.OS)"'
-    restoreKeys: |
-       dependencies2 | "$(Agent.OS)"
-       dependencies2
-    path: $(cmake_prefix)
-    cacheHitVar: DEPENDENCIES_RESTORED
+  - task: Cache@2
+    displayName: Cache dependencies
+    inputs:
+      key: 'dependencies2 | "$(Agent.OS)"'
+      restoreKeys: |
+        dependencies2 | "$(Agent.OS)"
+        dependencies2
+      path: $(cmake_prefix)
+      cacheHitVar: DEPENDENCIES_RESTORED
 
-- task: PowerShell@2
-  displayName: Build dependencies
-  condition: ne(variables.DEPENDENCIES_RESTORED, 'true')
-  inputs:
-    filePath: 'install_dependencies.ps1'
-    arguments: '-config debug,release -build_dir $(build_dir) -toolset $(toolset)'
-    errorActionPreference: 'continue'
-    ignoreLASTEXITCODE: true
-    pwsh: true
-    workingDirectory: '$(System.DefaultWorkingDirectory)'
+  - task: PowerShell@2
+    displayName: Build dependencies
+    condition: ne(variables.DEPENDENCIES_RESTORED, 'true')
+    inputs:
+      filePath: 'install_dependencies.ps1'
+      arguments: '-config debug,release -build_dir $(build_dir) -toolset $(toolset)'
+      errorActionPreference: 'continue'
+      ignoreLASTEXITCODE: true
+      pwsh: true
+      workingDirectory: '$(System.DefaultWorkingDirectory)'
+  
+  - task: CMake@1
+    displayName: Generate CMake project
+    inputs:
+      workingDirectory: '$(build_dir)'
+      cmakeArgs: >-
+        -T $(toolset-platform)
+        -S $(Build.SourcesDirectory) 
+        -G "Visual Studio 16 2019" 
+        -A $(buildPlatform) 
+        -DCMAKE_PREFIX_PATH=$(cmake_prefix) 
+        -DBUILD_SHARED=ON 
+        -DBUILD_STATIC=ON 
+        -DBUILD_DRAFTS=OFF 
+        -DBUILD_TESTING=ON
 
-- task: CMake@1
-  displayName: Generate CMake project
-  inputs:
-    workingDirectory: '$(build_dir)'
-    cmakeArgs: >-
-      -T $(toolset-platform)
-      -S $(Build.SourcesDirectory) 
-      -G "Visual Studio 16 2019" 
-      -A $(buildPlatform) 
-      -DCMAKE_PREFIX_PATH=$(cmake_prefix) 
-      -DBUILD_SHARED=ON 
-      -DBUILD_STATIC=ON 
-      -DBUILD_DRAFTS=OFF 
-      -DBUILD_TESTING=ON
+- job: build
+  dependsOn: setup
+  strategy:
+    maxParallel: 2
+    matrix:
+      debug:
+        config: 'debug'
+      release:
+        config: 'release'
+  steps:  
+  - task: VSBuild@1
+    displayName: Compile solution
+    inputs:
+      solution: '$(solution)'
+      platform: '$(buildPlatform)'
+      configuration: '$(config)'
+      maximumCpuCount: true
 
-- task: VSBuild@1
-  displayName: Compile solution (debug)
-  inputs:
-    solution: '$(solution)'
-    platform: '$(buildPlatform)'
-    configuration: 'Debug'
-    maximumCpuCount: true
-    
-- task: VSBuild@1
-  displayName: Compile solution (release)
-  inputs:
-    solution: '$(solution)'
-    platform: '$(buildPlatform)'
-    configuration: 'Release'
-    maximumCpuCount: true
-
-- task: VSTest@2
-  displayName: Test solution
-  inputs:
-    testSelector: 'testAssemblies'
-    runSettingsFile: '$(System.DefaultWorkingDirectory)/azure_test.runsettings'
-    testAssemblyVer2: |
-      bin\Windows\Test*.exe
-      !**\*TestAdapter.dll
-      !**\obj\**
-    searchFolder: '$(build_dir)'
-    pathtoCustomTestAdapters: '$(VS_path)\Common7\IDE\Extensions\em3ozjcu.15r'
-    testRunTitle: 'Native tests'
-    platform: '$(buildPlatform)'
-    configuration: 'Debug'
-    diagnosticsEnabled: true
-    collectDumpOn: 'always'
+- job: test
+  dependsOn: build
+  steps:
+  - task: VSTest@2
+    displayName: Test solution
+    inputs:
+      testSelector: 'testAssemblies'
+      runSettingsFile: '$(System.DefaultWorkingDirectory)/azure_test.runsettings'
+      testAssemblyVer2: |
+        bin\Windows\Test*.exe
+        !**\*TestAdapter.dll
+        !**\obj\**
+      searchFolder: '$(build_dir)'
+      pathtoCustomTestAdapters: '$(VS_path)\Common7\IDE\Extensions\em3ozjcu.15r'
+      testRunTitle: 'Native tests'
+      platform: '$(buildPlatform)'
+      configuration: 'Debug'
+      diagnosticsEnabled: true
+      collectDumpOn: 'always'
