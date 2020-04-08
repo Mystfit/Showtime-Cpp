@@ -82,14 +82,16 @@ BOOST_FIXTURE_TEST_CASE(autojoin_by_name, FixtureInitAndCreateServerWithEpherema
 	BOOST_TEST(test_client->is_connected());
 }
 
-BOOST_FIXTURE_TEST_CASE(server_stopped_events, FixtureInitAndCreateServerWithEpheremalPort) {
-	test_client->auto_join_by_name(server_name.c_str());
-	auto server_address = test_client->get_discovered_server(server_name.c_str());
-
+BOOST_FIXTURE_TEST_CASE(server_beacon_lost, FixtureInitAndCreateServerWithEpheremalPort) {
 	auto connectCallback = std::make_shared<TestConnectionEvents>();
 	test_client->add_connection_adaptor(connectCallback);
+	//wait_for_event(test_client, connectCallback, 1);
+	auto server_address = test_client->get_discovered_server(server_name.c_str());
+	connectCallback->reset_num_calls();
+
 	test_server->destroy();
-	wait_for_event(test_client, connectCallback, 2);
+	WAIT_UNTIL_STAGE_TIMEOUT
+	wait_for_event(test_client, connectCallback, 1);
 	auto lost_server = (connectCallback->lost_servers.end() != std::find_if(
 		connectCallback->lost_servers.begin(),
 		connectCallback->lost_servers.end(),
@@ -98,6 +100,16 @@ BOOST_FIXTURE_TEST_CASE(server_stopped_events, FixtureInitAndCreateServerWithEph
 		}
 	));
 	BOOST_TEST(lost_server);
+}
+
+BOOST_FIXTURE_TEST_CASE(server_shutdown_disconnects_client, FixtureJoinServer) {
+	auto connectCallback = std::make_shared<TestConnectionEvents>();
+	test_client->add_connection_adaptor(connectCallback);
+	connectCallback->reset_num_calls();
+
+	test_server->destroy();
+	wait_for_event(test_client, connectCallback, 1);
+	
 	BOOST_TEST(!connectCallback->is_connected);
 	BOOST_TEST(!test_client->is_connected());
 }

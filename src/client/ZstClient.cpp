@@ -26,6 +26,9 @@ ZstClient::ZstClient(ShowtimeClient* api) :
     m_udp_graph_transport(std::make_shared<ZstUDPGraphTransport>());
 #endif
     m_client_transport(std::make_shared<ZstZMQClientTransport>()),
+
+    //Timers
+    m_beaconcheck_timer(m_client_timerloop.IO_context()),
     m_heartbeat_timer(m_client_timerloop.IO_context()),
     m_event_condition(std::make_shared<ZstSemaphore>()),
     m_api(api)
@@ -37,6 +40,10 @@ ZstClient::ZstClient(ShowtimeClient* api) :
 #ifdef ZST_BUILD_DRAFT_API
     m_udp_graph_transport->msg_events()->set_wake_condition(m_event_condition);
 #endif
+
+    //Set up beaconcheck timer
+    m_beaconcheck_timer.expires_from_now(boost::posix_time::milliseconds(HEARTBEAT_DURATION));
+    m_beaconcheck_timer.async_wait(boost::bind(&ZstClient::beaconcheck_timer, &m_beaconcheck_timer, this, boost::posix_time::milliseconds(HEARTBEAT_DURATION)));
 }
 
 ZstClient::~ZstClient() {
@@ -57,6 +64,8 @@ void ZstClient::destroy() {
     set_is_ending(true);
 
     //Stop timers
+    boost::system::error_code ec;
+    m_beaconcheck_timer.cancel(ec);
     m_client_timerloop.IO_context().stop();
     m_client_timer_thread.interrupt();
     m_client_timer_thread.join();
@@ -385,30 +394,32 @@ void ZstClient::server_discovery_handler(const ZstServerBeaconMessage* msg)
     ZstServerAddress server = ZstServerAddress(msg->buffer()->name()->str(), fmt::format("{}:{}", msg->address(), msg->buffer()->port()));
     auto server_it = m_server_beacons.find(server);
 
-    if (msg->buffer()->leaving() && server_it != m_server_beacons.end()) {
-        ZstEventDispatcher<std::shared_ptr<ZstConnectionAdaptor> >::defer([this, server](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
-            adaptor->on_server_lost(m_api, server);
-        });
-        m_server_beacons.erase(server_it);
+    if (server_it != m_server_beacons.end()) {
+        if (msg->buffer()->leaving()) {
+            lost_server_beacon(*server_it);
+            return;
+        }
+
+        // Reset beacon timeout
+        m_server_beacon_timestamps[server] = std::chrono::system_clock::now();
         return;
     }
 
     // Add server to list of discovered servers if the beacon hasn't been seen before
-    if(server_it == m_server_beacons.end()){
-        ZstLog::net(LogLevel::debug, "Received new server beacon: {} {}", server.name, server.address);
+    ZstLog::net(LogLevel::debug, "Received new server beacon: {} {}", server.name, server.address);
 
-        // Store server beacon
-        m_server_beacons.insert(server);
-        ZstEventDispatcher<std::shared_ptr<ZstConnectionAdaptor>>::defer([this, server](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
-            adaptor->on_server_discovered(this->m_api, server);
-        });
+    // Store server beacon
+    m_server_beacons.insert(server);
+    m_server_beacon_timestamps.emplace(server, std::chrono::system_clock::now());
+    ZstEventDispatcher<std::shared_ptr<ZstConnectionAdaptor>>::defer([this, server](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
+        adaptor->on_server_discovered(this->m_api, server);
+    });
 
-        // Handle connecting to the stage automatically
-        if (m_auto_join_stage && !is_connected_to_stage()) {
-            auto server_search_request = m_auto_join_stage_requests.find(server.name);
-            if (server_search_request != m_auto_join_stage_requests.end()) {
-                m_promise_supervisor.process_response(server_search_request->second, ZstMessageReceipt{ Signal_OK });
-            }
+    // Handle connecting to the stage automatically
+    if (m_auto_join_stage && !is_connected_to_stage()) {
+        auto server_search_request = m_auto_join_stage_requests.find(server.name);
+        if (server_search_request != m_auto_join_stage_requests.end()) {
+            m_promise_supervisor.process_response(server_search_request->second, ZstMessageReceipt{ Signal_OK });
         }
     }
 }
@@ -625,6 +636,43 @@ void ZstClient::heartbeat_timer(boost::asio::deadline_timer* t, ZstClient* clien
     //Loop timer
     t->expires_at(t->expires_at() + duration);
     t->async_wait(boost::bind(&ZstClient::heartbeat_timer, t, client, duration));
+}
+
+void ZstClient::beaconcheck_timer(boost::asio::deadline_timer* t, ZstClient* client, boost::posix_time::milliseconds duration)
+{
+    auto now = std::chrono::system_clock::now();
+
+    std::vector<ZstServerAddress> removed_beacons;
+    for(auto server : client->m_server_beacon_timestamps){
+        auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(now - server.second);
+        if (delta > std::chrono::milliseconds(STAGE_TIMEOUT)) {
+            removed_beacons.push_back(server.first);
+        }
+    }
+    for (auto server : removed_beacons) {
+        client->lost_server_beacon(server);
+    }
+
+    t->expires_at(t->expires_at() + duration);
+    t->async_wait(boost::bind(&ZstClient::beaconcheck_timer, t, client, duration));
+}
+
+void ZstClient::lost_server_beacon(const ZstServerAddress& server)
+{   
+    // Remove server address
+    auto server_it = m_server_beacons.find(server);
+    if(server_it != m_server_beacons.end())
+        m_server_beacons.erase(m_server_beacons.find(server));
+
+    // Remove server timestamp
+    auto server_timestamp_it = m_server_beacon_timestamps.find(server);
+    if (server_timestamp_it != m_server_beacon_timestamps.end())
+        m_server_beacon_timestamps.erase(m_server_beacon_timestamps.find(server));
+
+    // Broadcast events
+    ZstEventDispatcher<std::shared_ptr<ZstConnectionAdaptor> >::defer([this, server](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
+        adaptor->on_server_lost(m_api, server);
+    });
 }
 
 void ZstClient::auto_join_stage_complete()

@@ -98,7 +98,7 @@ if(BINDINGS_PYTHON)
                     ERROR_QUIET
                     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
-    set(PYTHON_WHEEL "${CMAKE_SWIG_ROOT_OUTDIR}/python/dist/${PROJECT_NAME}Python-${CMAKE_PROJECT_VERSION}-${WHEEL_PLATFORM_TAG}.whl" CACHE PATH "Generated Python wheel")
+    set(PYTHON_WHEEL "${CMAKE_SWIG_ROOT_OUTDIR}/python/dist/${PROJECT_NAME}Python-${CMAKE_PROJECT_VERSION}-${WHEEL_PLATFORM_TAG}.whl")
     add_custom_target(${PYTHON_TARGET} ALL DEPENDS ${PYTHON_WHEEL})
     include(bindings/python/CMakeLists.txt)
 endif()

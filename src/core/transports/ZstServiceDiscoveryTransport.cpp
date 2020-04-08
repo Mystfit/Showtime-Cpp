@@ -72,8 +72,7 @@ int ZstServiceDiscoveryTransport::s_handle_beacon(zloop_t * loop, zsock_t * sock
         auto beacon_content = zframe_recv(socket);
         auto msg = transport->get_msg();
         msg->init(GetStageBeaconMessage(zframe_data(beacon_content)), ipaddress);
-        
-        //msg->set_arg(get_msg_arg_name(ZstMsgArg::ADDRESS), ipaddress);
+
         transport->dispatch_receive_event(msg, [beacon_content](ZstEventStatus status){
             zframe_t * b = beacon_content;
             zframe_destroy(&b);
@@ -100,11 +99,6 @@ void ZstServiceDiscoveryTransport::start_broadcast(const std::string& name, int 
 void ZstServiceDiscoveryTransport::stop_broadcast() const
 {
     if (m_beacon) {
-        zstr_sendx(m_beacon, "SILENCE", NULL);
-        auto builder = FlatBufferBuilder();
-        auto beacon_msg = CreateStageBeaconMessage(builder, builder.CreateString(m_name), m_port, true);
-        builder.Finish(beacon_msg);
-        zsock_send(m_beacon, "sbi", "PUBLISH", builder.GetBufferPointer(), builder.GetSize(), 0);
         zstr_sendx(m_beacon, "SILENCE", NULL);
     }
 }
