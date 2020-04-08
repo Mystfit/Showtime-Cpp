@@ -11,7 +11,8 @@
 namespace showtime {
 
 ZstZMQServerTransport::ZstZMQServerTransport() :
-	m_clients_sock(NULL)
+	m_clients_sock(NULL),
+	m_port(-1)
 {
 }
 
@@ -53,6 +54,7 @@ void ZstZMQServerTransport::destroy()
 		zst_zmq_dec_ref_count();
 	}
 
+	m_port = -1;
 	set_connected(false);
 	ZstTransportLayerBase::destroy();
 }
@@ -60,13 +62,18 @@ void ZstZMQServerTransport::destroy()
 int ZstZMQServerTransport::bind(const std::string& address)
 {
 	auto addr = fmt::format("tcp://{}", address);
-	int port = zsock_bind(m_clients_sock, "%s", addr.c_str());
+	m_port = zsock_bind(m_clients_sock, "%s", addr.c_str());
 	if (!m_clients_sock) {
 		ZstLog::net(LogLevel::notification, "Could not bind stage router socket to {}", addr);
-		return port;
+		return m_port;
 	}
-	ZstLog::net(LogLevel::notification, "Stage router listening at address {}", addr);
-	return port;
+	ZstLog::net(LogLevel::notification, "Stage router listening on port {}", m_port);
+	return m_port;
+}
+
+int ZstZMQServerTransport::port()
+{
+	return m_port;
 }
 
 //------------------------

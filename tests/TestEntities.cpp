@@ -226,7 +226,16 @@ BOOST_FIXTURE_TEST_CASE(parent_deactivates_child, FixtureParentChild) {
 	BOOST_TEST(!test_client->find_entity(child->URI()));
 }
 
-BOOST_FIXTURE_TEST_CASE(deleting_entities_deactivates, FixtureParentChild) {
+BOOST_FIXTURE_TEST_CASE(deleting_parent_deactivates_child, FixtureParentChild) {
+	test_client->get_root()->add_child(parent.get());
+	auto parent_URI = parent->URI();
+	parent = NULL;
+	BOOST_TEST(!test_client->find_entity(parent_URI));
+	BOOST_TEST(!test_client->find_entity(child->URI()));
+	BOOST_TEST(!child->is_activated());
+}
+
+BOOST_FIXTURE_TEST_CASE(deleting_entities, FixtureParentChild) {
 	test_client->get_root()->add_child(parent.get());
 	auto parent_URI = parent->URI();
 	auto child_URI = parent->URI();

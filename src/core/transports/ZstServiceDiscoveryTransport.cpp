@@ -9,7 +9,10 @@ using namespace flatbuffers;
 
 namespace showtime {
 
-ZstServiceDiscoveryTransport::ZstServiceDiscoveryTransport() : m_beacon(NULL)
+ZstServiceDiscoveryTransport::ZstServiceDiscoveryTransport() : 
+    m_beacon(NULL),
+    m_name(""),
+    m_port(0)
 {
     
 }
@@ -34,7 +37,7 @@ void ZstServiceDiscoveryTransport::init(int port)
         
         zsock_send(m_beacon, "si", "CONFIGURE", port);
         char* hostname = zstr_recv(m_beacon);
-        ZstLog::net(LogLevel::notification, "Beacon transport broadcasting on port {}. Hostname is {}", port, hostname);
+        ZstLog::net(LogLevel::debug, "Beacon transport broadcasting on port {}. Hostname is {}", port, hostname);
         zstr_free(&hostname);
         
         m_beacon_actor.attach_pipe_listener(zactor_sock(m_beacon), s_handle_beacon, this);
@@ -80,21 +83,30 @@ int ZstServiceDiscoveryTransport::s_handle_beacon(zloop_t * loop, zsock_t * sock
     return 0;
 }
 
-void ZstServiceDiscoveryTransport::start_broadcast(const std::string& name, int port, int interval) const
+void ZstServiceDiscoveryTransport::start_broadcast(const std::string& name, int port, int interval)
 {
 	if (!m_beacon)
 		return;
 
+    m_name = name;
+    m_port = port;
+
 	auto builder = FlatBufferBuilder();
-	auto beacon_msg = CreateStageBeaconMessage(builder, builder.CreateString(name), port);
+	auto beacon_msg = CreateStageBeaconMessage(builder, builder.CreateString(name), m_port, false);
 	builder.Finish(beacon_msg);
     zsock_send(m_beacon, "sbi", "PUBLISH", builder.GetBufferPointer(), builder.GetSize(), interval);
 }
 
 void ZstServiceDiscoveryTransport::stop_broadcast() const
 {
-    if(m_beacon)
+    if (m_beacon) {
         zstr_sendx(m_beacon, "SILENCE", NULL);
+        auto builder = FlatBufferBuilder();
+        auto beacon_msg = CreateStageBeaconMessage(builder, builder.CreateString(m_name), m_port, true);
+        builder.Finish(beacon_msg);
+        zsock_send(m_beacon, "sbi", "PUBLISH", builder.GetBufferPointer(), builder.GetSize(), 0);
+        zstr_sendx(m_beacon, "SILENCE", NULL);
+    }
 }
 
 void ZstServiceDiscoveryTransport::start_listening() const

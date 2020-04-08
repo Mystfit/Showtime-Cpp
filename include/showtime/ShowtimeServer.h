@@ -16,7 +16,7 @@ namespace showtime {
 	class ZST_CLASS_EXPORTED ShowtimeServer : private std::enable_shared_from_this<ShowtimeServer>
 	{
 	public:
-		ZST_SERVER_EXPORT ShowtimeServer(const std::string & name, int port = -1);
+		ZST_SERVER_EXPORT ShowtimeServer(const std::string & name, int port = -1, bool unlisted=false);
 
 		ZST_SERVER_EXPORT int port();
 

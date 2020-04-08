@@ -22,12 +22,14 @@ public:
     ZST_EXPORT virtual void process_events();
     ZST_EXPORT virtual void flush_events();
 
+    ZST_EXPORT void add_dead_synchronisable_ID(unsigned int syncronisable_ID);
     ZST_EXPORT virtual void on_synchronisable_has_event(ZstSynchronisable * synchronisable) override;
     ZST_EXPORT std::shared_ptr < ZstEventDispatcher<std::shared_ptr<ZstSynchronisableAdaptor> > > & synchronisable_events();
 	ZST_EXPORT ZstReaper & reaper();
 
 private:
 	ZstReaper m_reaper;
+    std::set<unsigned int> m_dead_syncronisable_IDS;
     std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstSynchronisableAdaptor> > > m_synchronisable_events;
 };
 

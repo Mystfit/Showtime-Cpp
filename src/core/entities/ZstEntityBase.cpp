@@ -293,7 +293,7 @@ namespace showtime
 
 	void ZstEntityBase::deactivate()
 	{
-		if (!is_registered()) {
+		if (!is_registered() || !is_activated()) {
 			ZstLog::entity(LogLevel::warn, "Entity {} not registered. Can't deactivate.", URI().path());
 			return;
 		}
@@ -340,8 +340,7 @@ namespace showtime
 
     void ZstEntityBase::dispatch_destroyed()
     {
-		if (activation_status() != ZstSyncStatus::DESTROYED &&
-			activation_status() != ZstSyncStatus::DEACTIVATION_QUEUED) {
+		if (activation_status() != ZstSyncStatus::DESTROYED && is_registered()) {
 
 			// Set child entities and this entity as destroyed so they won't queue destruction events later
 			ZstEntityBundle bundle;

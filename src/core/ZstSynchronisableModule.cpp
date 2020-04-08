@@ -18,6 +18,9 @@ void ZstSynchronisableModule::process_events()
     
     //Reap objects last
     m_reaper.reap_all();
+
+    //The event queue is clear so remove dead IDs
+    m_dead_syncronisable_IDS.clear();
 }
 
 void ZstSynchronisableModule::flush_events()
@@ -25,10 +28,19 @@ void ZstSynchronisableModule::flush_events()
     m_synchronisable_events->flush();
 }
 
+void ZstSynchronisableModule::add_dead_synchronisable_ID(unsigned int syncronisable_ID)
+{
+    m_dead_syncronisable_IDS.insert(syncronisable_ID);
+}
+
 void ZstSynchronisableModule::on_synchronisable_has_event(ZstSynchronisable * synchronisable)
 {
-    m_synchronisable_events->defer([this, synchronisable](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
-		this->synchronisable_process_events(synchronisable);
+    auto id = synchronisable->instance_id();
+    m_synchronisable_events->defer([this, synchronisable, id](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
+        // Make sure the synchronisable object hasn't gone away
+        if (m_dead_syncronisable_IDS.find(id) == m_dead_syncronisable_IDS.end()) {
+            this->synchronisable_process_events(synchronisable);
+        }
     });
 }
 

@@ -82,6 +82,26 @@ BOOST_FIXTURE_TEST_CASE(autojoin_by_name, FixtureInitAndCreateServerWithEpherema
 	BOOST_TEST(test_client->is_connected());
 }
 
+BOOST_FIXTURE_TEST_CASE(server_stopped_events, FixtureInitAndCreateServerWithEpheremalPort) {
+	test_client->auto_join_by_name(server_name.c_str());
+	auto server_address = test_client->get_discovered_server(server_name.c_str());
+
+	auto connectCallback = std::make_shared<TestConnectionEvents>();
+	test_client->add_connection_adaptor(connectCallback);
+	test_server->destroy();
+	wait_for_event(test_client, connectCallback, 2);
+	auto lost_server = (connectCallback->lost_servers.end() != std::find_if(
+		connectCallback->lost_servers.begin(),
+		connectCallback->lost_servers.end(),
+		[&server_address](const ZstServerAddress& server) {
+			return server.name == server_address.name;
+		}
+	));
+	BOOST_TEST(lost_server);
+	BOOST_TEST(!connectCallback->is_connected);
+	BOOST_TEST(!test_client->is_connected());
+}
+
 BOOST_FIXTURE_TEST_CASE(autojoin_by_name_async, FixtureInitAndCreateServerWithEpheremalPort) {
 	//Testing autojoin by name
 	test_client->auto_join_by_name_async(server_name.c_str());

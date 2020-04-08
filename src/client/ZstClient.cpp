@@ -199,6 +199,9 @@ void ZstClient::on_receive_msg(std::shared_ptr<ZstStageMessage> msg)
     case Content_ClientGraphHandshakeListen:
         listen_to_client_handler(msg->buffer()->content_as_ClientGraphHandshakeListen(), msg->id());
         break;
+    case Content_ServerStatusMessage:
+        server_status_handler(msg->buffer()->content_as_ServerStatusMessage());
+        break;
     default:
         break;
     }
@@ -243,6 +246,14 @@ void ZstClient::connection_handshake_handler(std::shared_ptr<ZstPerformanceMessa
             adaptor->send_msg(Content_SignalMessage, ok_msg.Union(), builder, args);
         });
         m_pending_peer_connections.erase(output_path);
+    }
+}
+
+void ZstClient::server_status_handler(const ServerStatusMessage* request)
+{
+    ZstLog::net(LogLevel::debug, "Received a server status update: {}", EnumNameServerStatus(request->status()));
+    if (request->status() == ServerStatus_QUIT) {
+        leave_stage_complete(ZstMessageReceipt(Signal_OK, ZstTransportRequestBehaviour::PUBLISH));
     }
 }
 
@@ -372,9 +383,18 @@ void ZstClient::server_discovery_handler(const ZstServerBeaconMessage* msg)
 {
     // Make a server address to hold our server name/address pair
     ZstServerAddress server = ZstServerAddress(msg->buffer()->name()->str(), fmt::format("{}:{}", msg->address(), msg->buffer()->port()));
+    auto server_it = m_server_beacons.find(server);
+
+    if (msg->buffer()->leaving() && server_it != m_server_beacons.end()) {
+        ZstEventDispatcher<std::shared_ptr<ZstConnectionAdaptor> >::defer([this, server](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
+            adaptor->on_server_lost(m_api, server);
+        });
+        m_server_beacons.erase(server_it);
+        return;
+    }
 
     // Add server to list of discovered servers if the beacon hasn't been seen before
-    if (m_server_beacons.find(server) == m_server_beacons.end()) {
+    if(server_it == m_server_beacons.end()){
         ZstLog::net(LogLevel::debug, "Received new server beacon: {} {}", server.name, server.address);
 
         // Store server beacon
@@ -408,7 +428,7 @@ void ZstClient::join_stage_complete(const ZstServerAddress& server_address, ZstM
     //If we didn't receive a OK signal, something went wrong
     if (response.status != Signal_OK) {
         ZstLog::net(LogLevel::error, "Stage connection failed with with status: {}", EnumNameSignal(response.status));
-        leave_stage_complete();
+        leave_stage_complete(response);
         return;
     }
 
@@ -497,15 +517,19 @@ void ZstClient::leave_stage()
     else {
         ZstLog::net(LogLevel::debug, "Not connected to stage. Skipping to cleanup. {}");
     }
-
-    this->leave_stage_complete();
+    
+    this->leave_stage_complete(ZstMessageReceipt(Signal_OK, ZstTransportRequestBehaviour::SYNC_REPLY));
     this->process_events();
 }
 
-void ZstClient::leave_stage_complete()
+void ZstClient::leave_stage_complete(ZstMessageReceipt response)
 {
+    if (!is_connected_to_stage())
+        return;
+
     //Set stage as disconnected again - just to make sure
     set_connected_to_stage(false);
+    set_is_connecting(false);
 
 	//Disconnect sockets and timers
 	boost::system::error_code ec;
@@ -532,7 +556,8 @@ void ZstClient::leave_stage_complete()
     }
 
 	//Remove entities immediately
-	process_events();
+    if(response.request_behaviour == ZstTransportRequestBehaviour::SYNC_REPLY)
+	    process_events();
 
     //Enqueue event for adaptors
     m_session->dispatch_disconnected_from_stage();
@@ -582,7 +607,7 @@ void ZstClient::heartbeat_timer(boost::asio::deadline_timer* t, ZstClient* clien
 
         if (response.status != Signal_OK) {
             ZstLog::net(LogLevel::warn, "Server ping timed out");
-            client->leave_stage_complete();
+            client->leave_stage_complete(ZstMessageReceipt(Signal_OK, ZstTransportRequestBehaviour::PUBLISH));
             return;
         }
         std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();

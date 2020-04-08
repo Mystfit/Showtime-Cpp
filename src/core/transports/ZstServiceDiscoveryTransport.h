@@ -27,7 +27,7 @@ public:
     //Handle incoming zbeacon messages
     static int s_handle_beacon(zloop_t * loop, zsock_t * socket, void * arg);
 
-    ZST_EXPORT void start_broadcast(const std::string & name, int port, int interval) const;
+    ZST_EXPORT void start_broadcast(const std::string & name, int port, int interval);
     ZST_EXPORT void stop_broadcast() const;
     
     ZST_EXPORT void start_listening() const;
@@ -39,6 +39,8 @@ private:
     void init() override;
     ZstActor m_beacon_actor;
     zactor_t * m_beacon;
+    std::string m_name;
+    int m_port;
 };
 
 }

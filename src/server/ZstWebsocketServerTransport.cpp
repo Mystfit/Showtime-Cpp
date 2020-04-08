@@ -63,7 +63,7 @@ int ZstWebsocketServerTransport::bind(const std::string& address)
 		return -1;
 	}
 
-	ZstLog::server(LogLevel::notification, "Websocket transport listening on port {}", endpoint.port());
+	ZstLog::server(LogLevel::debug, "Websocket transport listening on port {}", endpoint.port());
 
 	//Start accepting sockets
 	do_accept();

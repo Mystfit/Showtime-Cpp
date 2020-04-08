@@ -77,7 +77,6 @@ foreach(TARGET ${SERVER_LIBS})
   # Server lib includes
   target_include_directories(${TARGET} PRIVATE
     ${Showtime_SOURCE_DEPENDENCIES}
-    ${Showtime_PRIVATE_HEADER_DEPENDENCIES}
   )
 
   # Link libraries

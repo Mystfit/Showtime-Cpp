@@ -101,6 +101,16 @@ void ShowtimeClient::get_discovered_servers(ZstServerAddressBundle & servers)
     }
 }
 
+ZstServerAddress ShowtimeClient::get_discovered_server(const char* server_name)
+{
+	ZstServerAddressBundle bundle;
+	this->get_discovered_servers(bundle);
+	auto server_address = std::find_if(bundle.begin(), bundle.end(), [server_name](const ZstServerAddress& server) {
+		return strcmp(server.name.c_str(), server_name) == 0;
+	});
+	return (bundle.begin() != bundle.end()) ? *server_address : ZstServerAddress();
+}
+
 
 // -----------------
 // Cleanup

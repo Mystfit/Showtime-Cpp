@@ -81,6 +81,5 @@ foreach(TARGET ${CLIENT_LIBS})
   # Include source dependencies in client target
   target_include_directories(${TARGET} PRIVATE 
     ${Showtime_SOURCE_DEPENDENCIES}
-    ${Showtime_PRIVATE_HEADER_DEPENDENCIES}
   )
 endforeach()

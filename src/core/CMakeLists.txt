@@ -261,10 +261,9 @@ endif()
 # Object target includes
 
 target_include_directories(${CORE_TARGET_OBJECTS} 
-    PRIVATE
-    ${Showtime_PRIVATE_HEADER_DEPENDENCIES}
     PUBLIC
     $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${Showtime_HEADER_DEPENDENCIES}>
     $<BUILD_INTERFACE:${Showtime_INCLUDE_DIRS}>
     $<BUILD_INTERFACE:${Showtime_COMPILED_INCLUDE_DIRS}>
 )

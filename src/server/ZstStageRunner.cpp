@@ -1,6 +1,8 @@
 #include "ZstVersion.h"
 #include <stdio.h>
+#include <stdint.h>
 #include <iostream>
+#include <cxxopts.hpp>
 #include <ShowtimeServer.h>
 #include "ZstLogging.h"
 
@@ -72,11 +74,40 @@ static void s_catch_signals(){
 
 int main(int argc, char **argv)
 {
-	ZstLog::server(LogLevel::notification, "Starting Showtime v{} stage server", SHOWTIME_VERSION_STRING);
-	ZstLog::init_logger("stage", LogLevel::debug);
-	ZstLog::init_file_logging("server.log");
+	// CLI options
+	cxxopts::Options options("ShowtimeServer", "Standalone Showtime server for hosting a performance");
+	options.add_options()
+		("v,verbose", "Verbose logging")
+		("l,log_file", "Log to file", cxxopts::value<std::string>())
+		("n,name", "Server name", cxxopts::value<std::string>())
+		("unlisted", "Disable server address broadcasting")
+		("p,port", "Port", cxxopts::value<int>());
+	auto opts = options.parse(argc, argv);
 
-	auto stage = std::make_shared<ShowtimeServer>("stage"); 
+	std::string server_name = "stage";
+	int server_port = -1;
+	LogLevel server_log_level = LogLevel::notification;
+	bool server_unlisted = false;
+	try {
+		if (opts["name"].count() > 0)
+			server_name = opts["name"].as<std::string>();
+		if (opts["port"].count() > 0)
+			server_port = opts["port"].as<int>();
+		if ((opts["v"].count() > 0))
+			server_log_level = LogLevel::debug;
+		if ((opts["unlisted"].count() > 0))
+			server_unlisted = true;
+		if ((opts["log_file"].count() > 0))
+			ZstLog::init_file_logging(opts["log_file"].as<std::string>().c_str());
+	}
+	catch (cxxopts::OptionParseException) {
+		std::cout << "Could not parse arguments" << std::endl;
+		return 1;
+	}
+
+	ZstLog::server(LogLevel::notification, "Starting Showtime v{} stage server", SHOWTIME_VERSION_STRING);
+	ZstLog::init_logger(server_name.c_str(), server_log_level);
+	auto server = std::make_shared<ShowtimeServer>(server_name, server_port, server_unlisted);
 
 	if (argc < 2) {
 		ZstLog::server(LogLevel::notification, "Stage running in standalone mode. Press Ctrl+C to exit");
@@ -98,8 +129,8 @@ int main(int argc, char **argv)
 		}
 	}
 
-	std::cout << "Showtime Stage shutting down" << std::endl;
-	stage->destroy();
+	ZstLog::app(LogLevel::notification, "Server shutting down");
+	server->destroy();
 
 	return 0;
 }

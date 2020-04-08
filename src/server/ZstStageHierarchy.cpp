@@ -316,7 +316,7 @@ void ZstStageHierarchy::whisper(ZstPerformerStageProxy* performer, Content messa
 {
 	ZstTransportArgs endpoint_args = args;
 	endpoint_args.target_endpoint_UUID = performer->endpoint_UUID();
-	router_events()->defer([this, message_type, message_content, buffer_builder, endpoint_args](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
+	router_events()->invoke([this, message_type, message_content, buffer_builder, endpoint_args](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
 		adaptor->send_msg(message_type, message_content, *buffer_builder, endpoint_args);
 	});
 }

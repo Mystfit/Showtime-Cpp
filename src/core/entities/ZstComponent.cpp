@@ -64,7 +64,7 @@ namespace showtime
         get_child_entities(bundle, false, true);
         for (auto child : bundle) {
             ZstEntityLiason().entity_set_parent(child, NULL);
-			//child->deactivate();
+			child->deactivate();
         }
         m_children.clear();
     }

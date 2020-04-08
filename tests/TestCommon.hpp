@@ -239,6 +239,7 @@ namespace ZstTest
 		bool is_connected = false;
 		bool is_synced = false;
 		std::vector<ZstServerAddress> discovered_servers;
+		std::vector<ZstServerAddress> lost_servers;
 
 		void on_connected_to_stage(ShowtimeClient* client, const ZstServerAddress & stage_address) override {
 			ZstLog::app(LogLevel::debug, "CONNECTION_ESTABLISHED: {}", client->get_root()->URI().path());
@@ -264,7 +265,11 @@ namespace ZstTest
 			is_synced = true;
 		}
 
-	private:
+		void on_server_lost(ShowtimeClient* client, const ZstServerAddress& stage_address) override {
+			ZstLog::app(LogLevel::debug, "SERVER LOST: Name: {} Address: {}", stage_address.name, stage_address.address);
+			inc_calls();
+			lost_servers.push_back(stage_address);
+		}
 	};
 
 
@@ -404,13 +409,14 @@ namespace ZstTest
 	public:
 		std::string server_name;
 		std::string server_address;
+		std::shared_ptr<ShowtimeServer> test_server;
 		int server_port;
 
 		FixtureInitAndCreateServerWithEpheremalPort()
 		{
 			server_name = boost::unit_test::framework::current_test_case().full_name();
-			m_server = std::make_unique<ShowtimeServer>(server_name);
-			server_port = m_server->port();
+			test_server = std::make_unique<ShowtimeServer>(server_name);
+			server_port = test_server->port();
 			server_address = fmt::format("127.0.0.1:{}", server_port);
 
 			TAKE_A_BREATH
@@ -419,10 +425,8 @@ namespace ZstTest
 
 		~FixtureInitAndCreateServerWithEpheremalPort()
 		{
-			m_server->destroy();
+			test_server->destroy();
 		}
-	private:
-		std::shared_ptr<ShowtimeServer> m_server;
 	};
 
 

@@ -81,7 +81,7 @@ namespace showtime {
 
             //Leave the stage
             void leave_stage();
-            void leave_stage_complete();
+            void leave_stage_complete(ZstMessageReceipt response);
             
             //Stage connection status
             const ZstServerAddress & connected_server();
@@ -140,6 +140,7 @@ namespace showtime {
             void listen_to_client_handler(const ClientGraphHandshakeListen* request, const ZstMsgID & request_id);
             void server_discovery_handler(const ZstServerBeaconMessage* msg);
 			void connection_handshake_handler(std::shared_ptr<ZstPerformanceMessage> msg);
+            void server_status_handler(const ServerStatusMessage* request);
 
             static void send_connection_broadcast(boost::asio::deadline_timer * t, ZstClient * client, const ZstURI & to, const ZstURI & from, boost::posix_time::milliseconds duration);
             ZstPerformerMap m_active_peer_connections;

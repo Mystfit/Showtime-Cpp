@@ -395,6 +395,8 @@ void ZstHierarchy::on_synchronisable_destroyed(ZstSynchronisable * synchronisabl
 	}
 
 	if (already_removed) {
+		// Make sure that we don't call this synchronisable object in the future
+		add_dead_synchronisable_ID(synchronisable->instance_id());
 		remove_entity_from_lookup((dynamic_cast<ZstEntityBase*>(synchronisable)) ? dynamic_cast<ZstEntityBase*>(synchronisable)->URI() : ZstURI());
 		return;
 	}

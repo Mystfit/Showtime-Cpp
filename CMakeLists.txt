@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13.0)
 
-project(Showtime VERSION 0.24.1)
+project(Showtime VERSION 0.24.2)
 set(AUTHORS "Byron Mallett")
 set(COMPANY "Victoria University of Wellington")
 set(DESCRIPTION "Showtime dataflow network library")
@@ -248,10 +248,10 @@ if(WIN32)
     endif()
 endif()
 
-set(Showtime_PRIVATE_HEADER_DEPENDENCIES
-    $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}>
+set(Showtime_HEADER_DEPENDENCIES 
     $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/cf>
-    $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/concurrentqueue> 
+    $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/concurrentqueue>
+    $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/cxxopts/include>
 )
 
 set(SHOWTIME_PRIVATE_STATIC_LINKED_LIBS

@@ -30,6 +30,7 @@ public:
     ZST_CLIENT_EXPORT void auto_join_by_name(const char * name);
     ZST_CLIENT_EXPORT void auto_join_by_name_async(const char * name);
     ZST_CLIENT_EXPORT void get_discovered_servers(ZstServerAddressBundle & servers);
+	ZST_CLIENT_EXPORT ZstServerAddress get_discovered_server(const char * server_name);
 
 	//Cleanup
 	ZST_CLIENT_EXPORT void destroy();

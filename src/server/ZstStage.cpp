@@ -37,10 +37,10 @@ namespace showtime::detail
 		destroy();
 	}
 
-	void ZstStage::init(const char* stage_name, int port)
+	void ZstStage::init(int port)
 	{
 		m_router_transport->init();
-		m_port = m_router_transport->bind(fmt::format("*:{}", (port > 0) ? std::to_string(port) : "*"));
+		m_router_transport->bind(fmt::format("*:{}", (port > 0) ? std::to_string(port) : "*"));
 		m_websocket_transport->init();
 		m_websocket_transport->bind("127.0.0.1");
 
@@ -50,9 +50,6 @@ namespace showtime::detail
 
 		//Stage discovery beacon
 		m_service_broadcast_transport->init(STAGE_DISCOVERY_PORT); 
-
-		//We start the beacon broadcast by sending a message with the intended broadcast data
-		m_service_broadcast_transport->start_broadcast(stage_name, m_port, 1000);
 		
 		//Init timer actor for client heartbeats
 		//Create timers
@@ -84,6 +81,9 @@ namespace showtime::detail
 
 		m_is_destroyed = true;
 
+		//Let clients know the server is shutting down
+		send_shutdown_signal();
+
 		//Remove timers
 		m_heartbeat_timer.cancel();
 		m_heartbeat_timer.wait();
@@ -101,9 +101,6 @@ namespace showtime::detail
 		m_stage_timer_thread.interrupt();
 		m_io.IO_context().stop();
 		m_stage_timer_thread.join();
-
-		//Destroy zmq context
-		//zsys_shutdown();
 	}
 
 	bool ZstStage::is_destroyed()
@@ -111,9 +108,30 @@ namespace showtime::detail
 		return m_is_destroyed;
 	}
 
+	void ZstStage::start_broadcasting(const char* stage_name)
+	{
+		//Broadcast the server details to the local network
+		m_service_broadcast_transport->start_broadcast(stage_name, m_router_transport->port(), 1000);
+	}
+
+	void ZstStage::stop_broadcasting()
+	{
+		m_service_broadcast_transport->stop_broadcast();
+	}
+
+	void ZstStage::send_shutdown_signal() {
+		auto builder = std::make_shared<FlatBufferBuilder>();
+		m_session->stage_hierarchy()->broadcast(
+			Content_ServerStatusMessage, 
+			CreateServerStatusMessage(*builder, ServerStatus_QUIT).Union(), 
+			builder, 
+			ZstTransportArgs()
+		);
+	}
+
 	int ZstStage::port()
 	{
-		return m_port;
+		return m_router_transport->port();
 	}
 
 	void ZstStage::process_events()
