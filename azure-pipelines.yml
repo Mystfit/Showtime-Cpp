@@ -101,7 +101,7 @@ steps:
     configuration: 'Debug'
     diagnosticsEnabled: true
     runInParallel: true
-    collectDumpOn: 'onAbortOnly'
+    collectDumpOn: 'always'
     rerunFailedTests: True
     rerunFailedThreshold: '30'
     rerunFailedTestCasesMaxLimit: '5'
