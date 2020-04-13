@@ -89,7 +89,7 @@ steps:
   displayName: Test solution
   inputs:
     testSelector: 'testAssemblies'
-    runSettingsFile: '$(System.DefaultWorkingDirectory)/azure_test.runsettings'
+    runSettingsFile: '$(Build.SourcesDirectory)/azure_test.runsettings'
     testAssemblyVer2: |
       bin\Windows\Test*.exe
       !**\*TestAdapter.dll
@@ -101,7 +101,7 @@ steps:
     configuration: 'Debug'
     diagnosticsEnabled: true
     runInParallel: true
-    collectDumpOn: 'always'
+    collectDumpOn: 'onAbortOnly'
     rerunFailedTests: True
     rerunFailedThreshold: '30'
     rerunFailedTestCasesMaxLimit: '5'
