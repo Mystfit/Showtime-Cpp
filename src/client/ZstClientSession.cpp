@@ -70,7 +70,7 @@ void ZstClientSession::on_receive_msg(std::shared_ptr<ZstPerformanceMessage> msg
 {
     
     if (msg->buffer()->value()->values_type() == PlugValueData_PlugHandshake) {
-        ZstLog::net(LogLevel::warn, "Received handshake graph message from {}", msg->buffer()->sender()->c_str());
+        ZstLog::net(LogLevel::debug, "Received handshake graph message from {}", msg->buffer()->sender()->c_str());
         return;
     }
 

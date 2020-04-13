@@ -241,17 +241,23 @@ Signal ZstStageHierarchy::update_entity_handler(const EntityUpdateRequest* reque
 	auto builder = std::make_shared<FlatBufferBuilder>();
 	auto entity_field = get_entity_field(request->entity_type(), request->entity());
 	auto entity_path = ZstURI(entity_field->URI()->c_str(), entity_field->URI()->size());
+	auto original_path = ZstURI(request->original_path()->c_str(), request->original_path()->size());
 
 	ZstLog::server(LogLevel::notification, "Updating proxy entity {}", entity_path.path());
-	auto proxy = find_entity(entity_path);
+	auto proxy = find_entity(original_path);
 	
 	if (proxy) {
-		ZstHierarchy::update_proxy_entity(request->entity_type(), entity_field, request->entity());
+		ZstHierarchy::update_proxy_entity(proxy, request->entity_type(), entity_field, request->entity());
 
 		auto excluded = std::vector<ZstPerformer*>{ sender };
 		ZstTransportArgs args;
 		args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
-		auto entity_msg = CreateEntityCreateRequest(*builder, request->entity_type(), proxy->serialize(*builder));
+		auto entity_msg = CreateEntityUpdateRequest(
+			*builder, 
+			request->entity_type(), 
+			proxy->serialize(*builder), 
+			builder->CreateString(request->original_path()->c_str(), request->original_path()->size())
+		);
 		broadcast(Content_EntityUpdateRequest, entity_msg.Union(), builder, args, excluded);
 	}
 	

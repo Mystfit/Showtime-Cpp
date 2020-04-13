@@ -68,7 +68,7 @@ public:
 
 	ZST_EXPORT virtual std::unique_ptr<ZstEntityBase> create_proxy_entity(EntityTypes entity_type, const EntityData* entity_data, const void* payload);
 	ZST_EXPORT virtual void add_proxy_entity(std::unique_ptr<ZstEntityBase> entity);
-	ZST_EXPORT virtual void update_proxy_entity(EntityTypes entity_type, const EntityData* entity_data, const void* payload);
+	ZST_EXPORT virtual void update_proxy_entity(ZstEntityBase * original, EntityTypes entity_type, const EntityData* entity_data, const void* payload);
 	ZST_EXPORT virtual void remove_proxy_entity(ZstEntityBase * entity);
 	ZST_EXPORT const EntityData* get_entity_field(EntityTypes entity_type, const void* data);
     ZST_EXPORT std::unique_ptr<ZstEntityBase> unpack_entity(EntityTypes entity_type, const void* entity_data);
@@ -110,6 +110,7 @@ protected:
     ZST_EXPORT void dispatch_entity_arrived_event(ZstEntityBase * entity);
 
 private:
+	void reaper_cleanup_entity(ZstEntityBase* entity);
 	std::shared_ptr<ZstEventDispatcher< std::shared_ptr<ZstHierarchyAdaptor> > > m_hierarchy_events;
 	std::recursive_mutex m_hierarchy_mutex;
 	ZstEntityMap m_entity_lookup;

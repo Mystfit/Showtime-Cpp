@@ -65,6 +65,7 @@ public:
 
     ZST_EXPORT virtual void add_child(ZstEntityBase * child, bool auto_activate = true);
     ZST_EXPORT virtual void remove_child(ZstEntityBase * child);
+    //ZST_EXPORT virtual void move_child();
     
     //Entity type
     ZST_EXPORT const ZstEntityType entity_type() const;
@@ -72,6 +73,7 @@ public:
     
     //URI for this entity
     ZST_EXPORT const ZstURI & URI() const;
+    ZST_EXPORT virtual void set_name(const char* name);
 
     //Iterate
     ZST_EXPORT virtual void get_child_cables(ZstCableBundle & bundle);
@@ -120,7 +122,7 @@ protected:
     ZST_EXPORT void set_entity_type(ZstEntityType entity_type);
     ZST_EXPORT virtual void set_parent(ZstEntityBase* entity);
     ZST_EXPORT virtual void set_owner(const ZstURI & fire_owner);
-    ZST_EXPORT virtual void update_URI();
+    ZST_EXPORT virtual void update_URI(const ZstURI& original_path);
     ZST_EXPORT virtual void dispatch_destroyed() override;
     
     //Event dispatchers

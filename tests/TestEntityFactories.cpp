@@ -103,15 +103,15 @@ struct FixtureLocalFactory : public FixtureJoinServer {
 };
 
 
-struct FixtureFactoryClient : public FixtureLocalClient {
+struct FixtureFactoryClient : public FixtureRemoteClient {
 
 	std::unique_ptr<TestFactory> ext_factory;
 
 	FixtureFactoryClient(std::string server_name) : 
-		FixtureLocalClient("extfactory", server_name),
+		FixtureRemoteClient("extfactory", server_name),
 		ext_factory(std::make_unique<TestFactory>("external_customs"))
 	{
-		local_client->register_factory(ext_factory.get());
+		remote_client->register_factory(ext_factory.get());
 	}
 
 	~FixtureFactoryClient() {};
@@ -165,7 +165,7 @@ public:
 		while (true) {
 			try {
 				boost::this_thread::interruption_point();
-				this->local_client->poll_once();
+				this->remote_client->poll_once();
 			}
 			catch (boost::thread_interrupted) {
 				break;
@@ -234,7 +234,7 @@ BOOST_FIXTURE_TEST_CASE(find_external_creatables, FixtureExternalFactory) {
 BOOST_FIXTURE_TEST_CASE(create_entity_from_external_factory, FixtureExternalFactoryEventLoop) {
 	ZstURIBundle bundle;
 	external_factory->get_creatables(bundle);
-	auto client = local_client.get();
+	auto client = remote_client.get();
 	auto entity = test_client->create_entity(bundle[0], "brand_spanking_new_ext");
 	BOOST_TEST_REQUIRE(entity);
 	BOOST_TEST(test_client->find_entity(external_factory->URI().first() + ZstURI("brand_spanking_new_ext")));
@@ -246,7 +246,7 @@ BOOST_FIXTURE_TEST_CASE(create_entity_from_external_factory_async, FixtureExtern
 	external_factory->get_creatables(bundle);
 	test_client->create_entity_async(bundle[0], "brand_spanking_new_ext_async");
 	TAKE_A_BREATH
-	local_client->poll_once();
+	remote_client->poll_once();
 	wait_for_event(test_client, factoryEvents, 1);
 	BOOST_TEST(factoryEvents->last_created_entity == created_entity_URI);
 	BOOST_TEST(test_client->find_entity(created_entity_URI));

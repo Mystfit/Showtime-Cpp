@@ -42,6 +42,7 @@ ZstEntityFactory::ZstEntityFactory(const ZstEntityFactory & other) :
 
 ZstEntityFactory::~ZstEntityFactory()
 {
+	ZstLog::entity(LogLevel::debug, "In factory {} destructor", this->URI().path());
 }
 
 void ZstEntityFactory::add_creatable(const ZstURI & creatable_path)
@@ -60,7 +61,7 @@ void ZstEntityFactory::update_creatables()
 	if (!is_proxy()) {
 		this->update_createable_URIs();
 		entity_events()->invoke([this](std::shared_ptr<ZstEntityAdaptor> adaptor) {
-			adaptor->on_publish_entity_update(this);
+			adaptor->publish_entity_update(this, this->URI());
 		});
 	} 
 
@@ -138,9 +139,9 @@ ZstEntityBase * ZstEntityFactory::activate_entity(ZstEntityBase * entity)
 	return entity;
 }
 
-void ZstEntityFactory::update_URI()
+void ZstEntityFactory::update_URI(const ZstURI& original_path)
 {
-	ZstEntityBase::update_URI();
+	ZstEntityBase::update_URI(original_path);
 	this->update_createable_URIs();
 }
 

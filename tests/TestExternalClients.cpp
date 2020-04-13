@@ -7,7 +7,7 @@ using namespace ZstTest;
 
 
 
-struct FixtureSinkClient : public FixtureLocalClient {
+struct FixtureSinkClient : public FixtureRemoteClient {
     //Common URIs
 	ZstURI sink_ent_uri;
 	ZstURI sink_plug_uri;
@@ -15,13 +15,13 @@ struct FixtureSinkClient : public FixtureLocalClient {
 	std::unique_ptr<Sink> sink;
 
 	FixtureSinkClient(std::string server_name) : 
-		FixtureLocalClient("TestHelperSink", server_name),
+		FixtureRemoteClient("TestHelperSink", server_name),
 		sink(std::make_unique<Sink>("sink_ent")),
-		sink_ent_uri(local_client->get_root()->URI() + ZstURI("sink_ent")),
+		sink_ent_uri(remote_client->get_root()->URI() + ZstURI("sink_ent")),
 		sink_plug_uri(sink_ent_uri + ZstURI("in")),
 		sync_out_plug_uri(sink_ent_uri + ZstURI("out"))
     {
-		local_client->get_root()->add_child(sink.get());
+		remote_client->get_root()->add_child(sink.get());
 	}
 
 	~FixtureSinkClient() {
@@ -135,7 +135,7 @@ BOOST_FIXTURE_TEST_CASE(performer_arriving, FixtureWaitForSinkClient) {
 }
 
 BOOST_FIXTURE_TEST_CASE(performer_leaving, FixtureWaitForSinkClient) {
-	local_client->leave();
+	remote_client->leave();
 	wait_for_event(test_client, performerEvents, 1);
 	BOOST_TEST(performerEvents->last_left_performer == external_performer_URI);
 }
@@ -221,7 +221,7 @@ BOOST_FIXTURE_TEST_CASE(entity_arriving, FixtureWaitForSinkClient) {
     test_client->add_hierarchy_adaptor(entityEvents);
     
 	auto remote_ent = std::make_unique<InputComponent>("remote_input");
-	local_client->get_root()->add_child(remote_ent.get());
+	remote_client->get_root()->add_child(remote_ent.get());
 
 	BOOST_TEST_CHECKPOINT("Waiting for remote entity to arrive");
     wait_for_event(test_client, entityEvents, 1);
@@ -233,14 +233,14 @@ BOOST_FIXTURE_TEST_CASE(entity_leaving, FixtureExternalConnectCable) {
     test_client->add_hierarchy_adaptor(entityEvents);
 	
 	auto remote_ent = std::make_unique<InputComponent>("remote_input");
-	local_client->get_root()->add_child(remote_ent.get());
+	remote_client->get_root()->add_child(remote_ent.get());
 
 	BOOST_TEST_CHECKPOINT("Waiting for remote entity to leave");
     wait_for_event(test_client, entityEvents, 1);
     entityEvents->reset_num_calls();
     
 	TAKE_A_BREATH
-	local_client->deactivate_entity(remote_ent.get());
+	remote_client->deactivate_entity(remote_ent.get());
     wait_for_event(test_client, entityEvents, 1);
 	BOOST_TEST_REQUIRE(!test_client->find_entity(remote_ent->URI()));
 }
@@ -248,6 +248,39 @@ BOOST_FIXTURE_TEST_CASE(entity_leaving, FixtureExternalConnectCable) {
 BOOST_FIXTURE_TEST_CASE(external_exception, FixtureExternalConnectCable) {
     output_ent->send(3);
 	TAKE_A_BREATH
-	local_client->poll_once();
+	remote_client->poll_once();
     //TODO: How do we test for this error?
+}
+
+BOOST_FIXTURE_TEST_CASE(set_name_updates_proxy, FixtureWaitForSinkClient) {
+	auto entityEvents = std::make_shared<TestEntityEvents>();
+	test_client->add_hierarchy_adaptor(entityEvents);
+	auto remote_ent = std::make_unique<ZstComponent>("remote");
+	remote_client->get_root()->add_child(remote_ent.get());
+
+	wait_for_event(test_client, entityEvents, 1);
+	auto proxy = test_client->find_entity(remote_ent->URI());
+	entityEvents->reset_num_calls();
+
+	remote_ent->set_name("renamed");
+	wait_for_event(test_client, entityEvents, 1);
+	BOOST_TEST(remote_ent->URI() == proxy->URI());
+	BOOST_TEST(entityEvents->last_entity_updated == remote_ent->URI());
+	BOOST_TEST(test_client->find_entity(remote_ent->URI()));
+
+	/*auto hierarchy_events = std::make_shared<TestEntityEvents>();
+	test_client->add_hierarchy_adaptor(hierarchy_events);
+	hierarchy_events->reset_num_calls();
+
+	auto entity = std::make_unique<ZstComponent>("named");
+	remote_client->get_root()->add_child(entity.get());
+	wait_for_event(test_client, hierarchy_events, 1);
+	auto proxy_entity = test_client->find_entity(entity->URI());
+	hierarchy_events->reset_num_calls();
+
+	entity->set_name("renamed");
+	wait_for_event(test_client, hierarchy_events, 1);
+	BOOST_TEST(entity->URI() == proxy_entity->URI());
+	BOOST_TEST(hierarchy_events->last_entity_updated == entity->URI());
+	BOOST_TEST(test_client->find_entity(entity->URI()));*/
 }

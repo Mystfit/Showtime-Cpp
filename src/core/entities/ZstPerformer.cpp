@@ -1,5 +1,6 @@
 #include <exception>
 #include "entities/ZstPerformer.h"
+#include "../liasons/ZstEntityLiason.hpp"
 #include "../ZstEventDispatcher.hpp"
 #include "ZstLogging.h"
 
@@ -50,8 +51,9 @@ ZstPerformer::~ZstPerformer()
     if (!is_proxy()){
         for (auto f : m_factories) {
             // TODO: Deleting factories will crash the host if it GC's factories after the performer has been freed
-            ZstLog::entity(LogLevel::debug, "FIXME: Performer {} leaking factory {} to avoid host app crashing when GCing", URI().path(), f.second->URI().path());
             //delete f.second;
+            ZstEntityLiason().entity_set_parent(f.second, NULL);
+            f.second->deactivate();
         }
         m_factories.clear();
     }

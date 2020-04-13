@@ -147,11 +147,12 @@ ZstCable * ZstSession::find_cable(const ZstURI & input_path, const ZstURI & outp
     std::lock_guard<std::mutex> lock(m_session_mtex);
     
     auto search_cable = ZstCableAddress(input_path, output_path);
-    for(auto const & c : m_cables){
-        if(search_cable == c.get()->get_address()){
-            return c.get();
-        }
-    }
+	auto cable_it = std::find_if(m_cables.begin(), m_cables.end(), [&search_cable](auto& val) { 
+		return val.get()->get_address() == search_cable; 
+	});
+	if (cable_it != m_cables.end()) {
+		return cable_it->get();
+	}
 	return NULL;
 }
 

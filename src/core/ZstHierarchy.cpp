@@ -201,19 +201,18 @@ void ZstHierarchy::dispatch_entity_arrived_event(ZstEntityBase * entity){
 	}
 }
 
-void ZstHierarchy::update_proxy_entity(const EntityTypes entity_type, const EntityData* entity_data, const void* payload)
+void ZstHierarchy::update_proxy_entity(ZstEntityBase* original, const EntityTypes entity_type, const EntityData* entity_data, const void* payload)
 {
-    // TODO: Make this work with ANY entity type that wants to update itself.
-	//throw(std::runtime_error("Not implemented"));
+	if (!original)
+		return;
+
+	auto entity_path = ZstURI(entity_data->URI()->c_str(), entity_data->URI()->size());
+	ZstLog::net(LogLevel::notification, "Entity {} received an update", entity_path.path());
 
 	if (entity_type == EntityTypes_Factory) {
-		auto entity_path = ZstURI(entity_data->URI()->c_str(), entity_data->URI()->size());
-		auto factory_data = static_cast<const Factory*>(payload);
-
-		ZstLog::net(LogLevel::notification, "Factory {} received an update", entity_path.path());
-
-		ZstEntityFactory * local_factory = dynamic_cast<ZstEntityFactory*>(find_entity(entity_path));
+		auto local_factory = dynamic_cast<ZstEntityFactory*>(original);
 		if (local_factory) {
+			auto factory_data = static_cast<const Factory*>(payload);
 			local_factory->clear_creatables();
 			for (auto c : *factory_data->factory()->creatables()) {
 				local_factory->add_creatable(ZstURI(c->c_str(), c->size()));
@@ -224,6 +223,19 @@ void ZstHierarchy::update_proxy_entity(const EntityTypes entity_type, const Enti
 			ZstLog::net(LogLevel::warn, "Could not find local proxy instance of remote factory {}", entity_path.path());
 			return;
 		}
+	}
+
+	// A rename occured if the original and new paths don't match up
+	if (original->URI() != entity_path) {
+		if (original->parent_address() != entity_path.parent()) {
+			ZstLog::net(LogLevel::warn, "Move operations not implemented yet");
+			return;
+		}
+		original->set_name(entity_path.last().path());
+
+		hierarchy_events()->defer([original](std::shared_ptr<ZstHierarchyAdaptor> adp) {
+			adp->on_entity_updated(original);
+		});
 	}
 }
 
@@ -299,6 +311,12 @@ void ZstHierarchy::update_entity_in_lookup(ZstEntityBase* entity, const ZstURI& 
 	catch (std::out_of_range) {
 		ZstLog::net(LogLevel::warn, "Entity {} was not in the entity lookup map");
 	}
+
+	if (entity->parent_address().is_empty()) {
+		// Entity has no parent - don't add to lookup
+	}
+
+
 	m_entity_lookup[entity->URI()] = entity;
 }
 
@@ -342,7 +360,7 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 	{
 		hierarchy_events()->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
 			adaptor->on_factory_leaving(static_cast<ZstEntityFactory*>(entity));
-			});
+		});
 	}
 	else if (entity->entity_type() == ZstEntityType::COMPONENT)
 	{
@@ -352,14 +370,14 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 	}
 
 	//Remove entity from parent
-	if (!entity->parent_address().is_empty()) {
-		auto parent = entity->parent();
-		if (parent) {
-			ZstComponent* parent_c = dynamic_cast<ZstComponent*>(parent);
-			if (parent_c)
-				parent_c->remove_child(entity);
-		}
-	}
+	//if (!entity->parent_address().is_empty()) {
+	//	auto parent = entity->parent();
+	//	if (parent) {
+	//		ZstComponent* parent_c = dynamic_cast<ZstComponent*>(parent);
+	//		if (parent_c)
+	//			parent_c->remove_child(entity);
+	//	}
+	//}
 
 	//Cleanup children
 	ZstEntityBundle bundle;
@@ -396,24 +414,15 @@ void ZstHierarchy::on_synchronisable_destroyed(ZstSynchronisable * synchronisabl
 
 	if (already_removed) {
 		// Make sure that we don't call this synchronisable object in the future
-		add_dead_synchronisable_ID(synchronisable->instance_id());
-		remove_entity_from_lookup((dynamic_cast<ZstEntityBase*>(synchronisable)) ? dynamic_cast<ZstEntityBase*>(synchronisable)->URI() : ZstURI());
+		add_dead_synchronisable_ID(synchronisable->instance_id());	
+		reaper_cleanup_entity(dynamic_cast<ZstEntityBase*>(synchronisable));
 		return;
 	}
 
     reaper().add_cleanup_op([this, synchronisable]() {
 		//Remove entity from quick lookup map
 		std::lock_guard<std::recursive_mutex> lock(m_hierarchy_mutex);
-		
-		auto entity = dynamic_cast<ZstEntityBase*>(synchronisable);
-		if (entity) {
-			auto p = entity->parent();
-			if (p) {
-				p->remove_child(entity->parent());
-			}
-
-			remove_entity_from_lookup(entity->URI());
-		}
+		reaper_cleanup_entity(dynamic_cast<ZstEntityBase*>(synchronisable));
 
 		if (synchronisable->is_proxy()) {
 			auto it = std::find_if(m_proxies.begin(), m_proxies.end(), [synchronisable](const std::unique_ptr<ZstSynchronisable>& item) {
@@ -427,6 +436,18 @@ void ZstHierarchy::on_synchronisable_destroyed(ZstSynchronisable * synchronisabl
 	
 	//reaper().add(synchronisable);
 	synchronisable_set_destroyed(synchronisable);
+}
+
+void ZstHierarchy::reaper_cleanup_entity(ZstEntityBase * entity) {
+	if (!entity)
+		return;
+
+	auto parent = entity->parent();
+	if (parent) {
+		parent->remove_child(entity);
+	}
+
+	this->remove_entity_from_lookup(entity->URI());
 }
 
 void ZstHierarchy::on_register_entity(ZstEntityBase * entity)

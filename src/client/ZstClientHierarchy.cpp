@@ -67,20 +67,22 @@ void ZstClientHierarchy::on_receive_msg(std::shared_ptr<ZstStageMessage> stage_m
 	}
 }
 
-void ZstClientHierarchy::on_publish_entity_update(ZstEntityBase * entity)
+void ZstClientHierarchy::publish_entity_update(ZstEntityBase * entity, const ZstURI & original_path)
 {
-	if (entity->entity_type() == ZstEntityType::FACTORY) {
-		//Factory wants to update creatables
-		ZstEntityFactory * factory = static_cast<ZstEntityFactory*>(entity);
-        
-		stage_events()->invoke([factory](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
+	if (!entity->is_proxy()) {        
+		stage_events()->invoke([entity, &original_path](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
             // Create transport args
 			ZstTransportArgs args;
 			args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
             
-            // Serialize factory into buffer
+            // Serialize entity into buffer
             FlatBufferBuilder builder;
-			auto update_offset = CreateEntityUpdateRequest(builder, EntityTypes_Factory, factory->serialize(builder));
+			auto update_offset = CreateEntityUpdateRequest(
+				builder,
+				entity->serialized_entity_type(),
+				entity->serialize(builder),
+				builder.CreateString(original_path.path(), original_path.full_size())
+			);
             
             // Send message
             adaptor->send_msg(Content_EntityUpdateRequest, update_offset.Union(), builder, args);
@@ -270,7 +272,9 @@ void ZstClientHierarchy::create_proxy_entity_handler(const EntityCreateRequest *
     
 void ZstClientHierarchy::update_proxy_entity_handler(const EntityUpdateRequest * request)
 {
-	update_proxy_entity(request->entity_type(), get_entity_field(request->entity_type(), request->entity()), request->entity());
+	auto original_path = ZstURI(request->original_path()->c_str(), request->original_path()->size());
+	auto proxy = find_entity(original_path);
+	update_proxy_entity(proxy, request->entity_type(), get_entity_field(request->entity_type(), request->entity()), request->entity());
 }
     
 void ZstClientHierarchy::destroy_entity_handler(const EntityDestroyRequest * request)
@@ -361,7 +365,6 @@ void ZstClientHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 	ZstHierarchy::destroy_entity_complete(entity);
 }
 
-
 void ZstClientHierarchy::update_entity_URI(ZstEntityBase* entity, const ZstURI& original_path)
 {
 	ZstHierarchy::update_entity_URI(entity, original_path);
@@ -396,7 +399,7 @@ std::unique_ptr<ZstEntityBase> ZstClientHierarchy::create_proxy_entity(const Ent
 	return ZstHierarchy::create_proxy_entity(entity_type, entity_data, payload);
 }
 
-void ZstClientHierarchy::update_proxy_entity(const EntityTypes entity_type, const EntityData* entity_data, const void* payload)
+void ZstClientHierarchy::update_proxy_entity(ZstEntityBase* original, const EntityTypes entity_type, const EntityData* entity_data, const void* payload)
 {
     auto entity_path = ZstURI(entity_data->URI()->c_str(), entity_data->URI()->size());
     
@@ -406,7 +409,7 @@ void ZstClientHierarchy::update_proxy_entity(const EntityTypes entity_type, cons
 		return;
 	}
     
-	ZstHierarchy::update_proxy_entity(entity_type, entity_data, payload);
+	ZstHierarchy::update_proxy_entity(original, entity_type, entity_data, payload);
 }
 
 ZstPerformer * ZstClientHierarchy::get_local_performer() const

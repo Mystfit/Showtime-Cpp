@@ -21,14 +21,14 @@ public:
 	//Init the library
 	ZST_CLIENT_EXPORT void init(const char * performer, bool debug);
 	ZST_CLIENT_EXPORT void start_file_logging(const char * log_file_path = "");
-    
+
     //Connect to servers
-	ZST_CLIENT_EXPORT void join(const char * stage_address);
-    ZST_CLIENT_EXPORT void join_async(const char * stage_address);
-    ZST_CLIENT_EXPORT void join_by_name(const char * stage_name);
-    ZST_CLIENT_EXPORT void join_by_name_async(const char * stage_name);
-    ZST_CLIENT_EXPORT void auto_join_by_name(const char * name);
-    ZST_CLIENT_EXPORT void auto_join_by_name_async(const char * name);
+	ZST_CLIENT_EXPORT void join(const char * server_address);
+    ZST_CLIENT_EXPORT void join_async(const char * server_address);
+    ZST_CLIENT_EXPORT void join_by_name(const char * server_name);
+    ZST_CLIENT_EXPORT void join_by_name_async(const char * server_name);
+    ZST_CLIENT_EXPORT void auto_join_by_name(const char * server_name);
+    ZST_CLIENT_EXPORT void auto_join_by_name_async(const char * server_name);
     ZST_CLIENT_EXPORT void get_discovered_servers(ZstServerAddressBundle & servers);
 	ZST_CLIENT_EXPORT ZstServerAddress get_discovered_server(const char * server_name);
 

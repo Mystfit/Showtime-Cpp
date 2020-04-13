@@ -46,7 +46,9 @@ BOOST_FIXTURE_TEST_CASE(single_server_connection, FixtureInitAndCreateServerWith
 	BOOST_TEST(!test_client->is_connecting());
 }
 
-BOOST_FIXTURE_TEST_CASE(sync_join, FixtureInitAndCreateServerWithEpheremalPort){
+BOOST_FIXTURE_TEST_CASE(sync_join, FixtureInit){
+	auto test_server = std::make_unique<ShowtimeServer>("sync_join", STAGE_ROUTER_PORT);
+	auto server_address = fmt::format("127.0.0.1:{}", STAGE_ROUTER_PORT);
 	//Testing sync join by address
 	test_client->join(server_address.c_str());
 	BOOST_TEST(test_client->is_connected());
@@ -54,6 +56,9 @@ BOOST_FIXTURE_TEST_CASE(sync_join, FixtureInitAndCreateServerWithEpheremalPort){
 	//Testing sync leave
 	test_client->leave();
 	BOOST_TEST(!test_client->is_connected());
+
+	// TODO: Reconnecting immediately will indefinitely hang the program
+	TAKE_A_BREATH
 
 	//Test sync join again to verify we cleaned up properly the first time
 	test_client->join(server_address.c_str());
@@ -206,3 +211,4 @@ BOOST_FIXTURE_TEST_CASE(root_performer_activate_on_join, FixtureJoinServer)
 	BOOST_TEST(performer_activated->num_calls() == 1);
 	BOOST_TEST(test_client->get_root()->is_activated());
 }
+

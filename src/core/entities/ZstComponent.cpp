@@ -132,6 +132,25 @@ namespace showtime
         ZstEntityBase::remove_child(entity);
     }
 
+	void ZstComponent::set_name(const char* name)
+	{
+        if (is_destroyed())
+            return;
+
+        // Grab child entities first before the parent entity name change
+        ZstEntityBundle bundle;
+        get_child_entities(bundle, false, false);
+
+        // Set name of root object
+        ZstEntityBase::set_name(name);
+
+        // Update child entity paths by reparenting
+        for (auto child : bundle) {
+            this->remove_child(child);
+            this->add_child(child);
+        }
+	}
+
     void ZstComponent::set_parent(ZstEntityBase * parent)
     {
         if(is_destroyed()) return;
@@ -139,7 +158,7 @@ namespace showtime
         ZstEntityBase::set_parent(parent);
         
         ZstEntityBundle bundle;
-        get_child_entities(bundle, false);
+        get_child_entities(bundle, false, false);
         for (auto child : bundle) {
             this->remove_child(child);
             this->add_child(child);

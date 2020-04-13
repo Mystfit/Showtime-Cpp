@@ -39,6 +39,8 @@ public:
     //Remove a plug from this component
     ZST_EXPORT virtual void remove_child(ZstEntityBase * entity) override;
 
+    ZST_EXPORT virtual void set_name(const char * name) override;
+
     //Hierarchy
     ZST_EXPORT virtual void get_child_cables(ZstCableBundle & bundle) override;
     ZST_EXPORT virtual void get_child_entities(ZstEntityBundle & bundle, bool include_parent = false, bool recursive = false) override;

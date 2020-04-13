@@ -21,6 +21,7 @@ namespace showtime {
 
 		ZST_EXPORT virtual void on_entity_arriving(ZstEntityBase * entity);
 		ZST_EXPORT virtual void on_entity_leaving(ZstEntityBase * entity);
+		ZST_EXPORT virtual void on_entity_updated(ZstEntityBase* entity);
 
 		ZST_EXPORT virtual void on_plug_arriving(ZstPlug * plug);
 		ZST_EXPORT virtual void on_plug_leaving(ZstPlug * plug);

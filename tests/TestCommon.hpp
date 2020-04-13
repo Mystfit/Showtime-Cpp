@@ -278,6 +278,7 @@ namespace ZstTest
 	public:
 		ZstURI last_entity_arriving;
 		ZstURI last_entity_leaving;
+		ZstURI last_entity_updated;
 
 		void on_entity_arriving(ZstEntityBase * entity) override {
 			ZstLog::app(LogLevel::debug, "ENTITY_ARRIVING: {}", entity->URI().path());
@@ -288,6 +289,12 @@ namespace ZstTest
 		void on_entity_leaving(ZstEntityBase * entity) override {
 			ZstLog::app(LogLevel::debug, "ENTITY_LEAVING: {}", entity->URI().path());
 			last_entity_leaving = entity->URI();
+			inc_calls();
+		}
+
+		void on_entity_updated(ZstEntityBase* entity) override {
+			ZstLog::app(LogLevel::debug, "ENTITY_UPDATED: {}", entity->URI().path());
+			last_entity_updated = entity->URI();
 			inc_calls();
 		}
 	};
@@ -497,20 +504,20 @@ namespace ZstTest
 	};
 
 
-	struct FixtureLocalClient {
+	struct FixtureRemoteClient {
 		ZstURI external_performer_URI;
-		std::shared_ptr<ShowtimeClient> local_client;
+		std::shared_ptr<ShowtimeClient> remote_client;
 
-		FixtureLocalClient(std::string client_name, std::string server_name) :
-			local_client(std::make_shared<ShowtimeClient>()),
+		FixtureRemoteClient(std::string client_name, std::string server_name) :
+			remote_client(std::make_shared<ShowtimeClient>()),
 			external_performer_URI(client_name.c_str())
 		{
-			local_client->init(client_name.c_str(), true);
-			local_client->auto_join_by_name(server_name.c_str());
+			remote_client->init(client_name.c_str(), true);
+			remote_client->auto_join_by_name(server_name.c_str());
 		}
 
-		~FixtureLocalClient() {
-			local_client->destroy();
+		~FixtureRemoteClient() {
+			remote_client->destroy();
 		}
 	};
 

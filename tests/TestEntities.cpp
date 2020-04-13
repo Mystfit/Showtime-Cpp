@@ -201,7 +201,6 @@ BOOST_FIXTURE_TEST_CASE(remove_child, FixtureParentChild) {
 }
 
 BOOST_FIXTURE_TEST_CASE(child_activation_callback, FixtureParentChild) {
-	test_client->deactivate_entity(child.get());
 	auto child_activation_event = std::make_shared<TestSynchronisableEvents>();
 	child->add_adaptor(child_activation_event);
 	test_client->get_root()->add_child(parent.get());
@@ -251,4 +250,22 @@ BOOST_FIXTURE_TEST_CASE(child_deletion_removes_from_parent, FixtureParentChild) 
     child = NULL;
     BOOST_TEST(!parent->get_child_by_URI(child_URI));
     BOOST_TEST(!test_client->find_entity(child_URI));
+}
+
+BOOST_FIXTURE_TEST_CASE(rename_entity, FixtureParentChild) {
+	test_client->get_root()->add_child(parent.get());
+	auto orig_path = parent->URI();
+	parent->set_name("renamed_parent");
+	BOOST_TEST(!test_client->find_entity(orig_path));
+	BOOST_TEST(!test_client->get_root()->walk_child_by_URI(orig_path));
+	BOOST_TEST(test_client->find_entity(test_client->get_root()->URI() + ZstURI("renamed_parent")));
+	BOOST_TEST(test_client->find_entity(test_client->get_root()->URI() + ZstURI("renamed_parent/child")));
+}
+
+BOOST_FIXTURE_TEST_CASE(rename_performer_before_join, FixtureInit) {
+	auto child = std::make_unique<ZstComponent>("child");
+	test_client->get_root()->add_child(child.get());
+	test_client->get_root()->set_name("renamed_client");
+	BOOST_TEST(test_client->get_root()->URI() == ZstURI("renamed_client"));
+	BOOST_TEST(test_client->find_entity(ZstURI("renamed_client/child")));
 }

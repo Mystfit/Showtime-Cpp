@@ -40,7 +40,7 @@ void ZstSynchronisableAdaptor::on_synchronisable_updated(ZstSynchronisable * syn
 // ---------------
 
 void ZstEntityAdaptor::on_entity_registered(ZstEntityBase* entity){}
-void ZstEntityAdaptor::on_publish_entity_update(ZstEntityBase * entity) {}
+void ZstEntityAdaptor::publish_entity_update(ZstEntityBase * entity, const ZstURI& original_path) {}
 void ZstEntityAdaptor::on_register_entity(ZstEntityBase * entity){}
 void ZstEntityAdaptor::on_request_entity_registration(ZstEntityBase* entity) {}
 void ZstEntityAdaptor::on_request_entity_activation(ZstEntityBase * entity) {}
@@ -77,6 +77,7 @@ void ZstHierarchyAdaptor::on_performer_arriving(ZstPerformer * performer) {}
 void ZstHierarchyAdaptor::on_performer_leaving(ZstPerformer * performer) {}
 void ZstHierarchyAdaptor::on_entity_arriving(ZstEntityBase * entity) {}
 void ZstHierarchyAdaptor::on_entity_leaving(ZstEntityBase * entity) {}
+void ZstHierarchyAdaptor::on_entity_updated(ZstEntityBase* entity){}
 void ZstHierarchyAdaptor::on_plug_arriving(ZstPlug * plug) {}
 void ZstHierarchyAdaptor::on_plug_leaving(ZstPlug * plug) {}
 void ZstHierarchyAdaptor::on_factory_arriving(ZstEntityFactory * factory) {}

@@ -113,22 +113,15 @@ namespace showtime
         if(!child)
             return;
         
-        std::lock_guard<std::mutex> lock(m_entity_lock);
-        child->m_parent = ZstURI();
+        child->set_parent(NULL);
     }
 
-    void ZstEntityBase::update_URI()
+    void ZstEntityBase::update_URI(const ZstURI& original_path)
     {		
-		std::lock_guard<std::mutex> lock(m_entity_mtx);
-
-        if (m_parent.is_empty()) {
-            m_uri = m_uri.last();
-            return;
-        }
-        
-        if (!URI().contains(m_parent)) {
-            m_uri = m_parent + m_uri.last();
-        }
+        // Update path in entity lookup
+        hierarchy_events()->invoke([this, &original_path](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+            adaptor->update_entity_URI(this, original_path);
+        });
     }
 
     const ZstEntityType ZstEntityBase::entity_type() const
@@ -147,6 +140,31 @@ namespace showtime
     {
         return m_uri;
     }
+
+	void ZstEntityBase::set_name(const char* name)
+	{
+        auto orig_path = URI();
+        {
+            std::lock_guard<std::mutex> lock(m_entity_lock);
+            if (parent())
+                m_uri = m_uri.parent() + name;
+            else
+                m_uri = ZstURI(name);
+        }
+        this->update_URI(orig_path);
+
+        // Refresh URI in parent child lists
+        if (this->parent()) {
+            auto p = parent();
+            p->remove_child(this);
+            p->add_child(this);
+        }
+
+        // Update new URI across the performance
+        entity_events()->invoke([this, orig_path](std::shared_ptr<ZstEntityAdaptor> adaptor) {
+            adaptor->publish_entity_update(this, orig_path);
+        });
+	}
 
     void ZstEntityBase::get_child_cables(ZstCableBundle & bundle)
     {
@@ -293,6 +311,9 @@ namespace showtime
 
 	void ZstEntityBase::deactivate()
 	{
+        if (is_destroyed())
+            return;
+
 		if (!is_registered() || !is_activated()) {
 			ZstLog::entity(LogLevel::warn, "Entity {} not registered. Can't deactivate.", URI().path());
 			return;
@@ -321,21 +342,22 @@ namespace showtime
     }
 
     void ZstEntityBase::set_parent(ZstEntityBase *entity) {
-        std::lock_guard<std::mutex> lock(m_entity_lock);
+        auto orig_path = URI();
+        {
+            std::lock_guard<std::mutex> lock(m_entity_lock);
+            if (entity)
+                m_parent = entity->URI();
+            else
+                m_parent = ZstURI();
 
-		auto orig_path = this->URI();
-
-        if (entity)
-            m_parent = entity->URI();
-        else
-            m_parent = ZstURI();
-
-        this->update_URI();
-
-		// Update path in entity lookup
-		m_hierarchy_events->invoke([this, &orig_path](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
-			adaptor->update_entity_URI(this, orig_path);
-		});
+            if (m_parent.is_empty()) {
+                m_uri = m_uri.last();
+            }
+            else if (!URI().contains(m_parent)) {
+                m_uri = m_parent + m_uri.last();
+            }
+        }
+        this->update_URI(orig_path);
     }
 
     void ZstEntityBase::dispatch_destroyed()
