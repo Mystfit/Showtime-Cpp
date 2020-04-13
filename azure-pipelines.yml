@@ -100,4 +100,10 @@ steps:
     platform: '$(buildPlatform)'
     configuration: 'Debug'
     diagnosticsEnabled: true
+    runInParallel: true
     collectDumpOn: 'always'
+    rerunFailedTests: True
+    rerunFailedThreshold: '30'
+    rerunFailedTestCasesMaxLimit: '5'
+    rerunMaxAttempts: '3'
+    
