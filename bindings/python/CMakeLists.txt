@@ -85,8 +85,6 @@ add_custom_command(TARGET ${PYTHON_TARGET} PRE_BUILD
 )
 
 # Run setuptools to build wheels
-message(STATUS "${CMAKE_SWIG_OUTDIR}")
-message(STATUS "${Python_EXECUTABLE} ${SETUP_PY} bdist_wheel")
 add_custom_command(OUTPUT ${PYTHON_WHEEL}
                     COMMAND ${CMAKE_COMMAND} 
                         "-DSUBST_SOURCE=${MANIFEST_IN_PARTIAL}"
@@ -99,7 +97,6 @@ add_custom_command(OUTPUT ${PYTHON_WHEEL}
 )
 
 # Install library
-message(STATUS "${PIP_COMMAND} install ${PYTHON_WHEEL}")
 install(CODE "execute_process(COMMAND ${PIP_COMMAND} install --ignore-installed ${PYTHON_WHEEL})")
 
 # Restore binding output dir
