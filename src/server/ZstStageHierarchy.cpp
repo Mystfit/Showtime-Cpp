@@ -287,7 +287,7 @@ Signal ZstStageHierarchy::destroy_entity_handler(const EntityDestroyRequest* req
 	return Signal_OK;
 }
 
-void ZstStageHierarchy::on_request_entity_registration(ZstEntityBase* entity)
+void ZstStageHierarchy::request_entity_registration(ZstEntityBase* entity)
 {
 	register_entity(entity);
 }

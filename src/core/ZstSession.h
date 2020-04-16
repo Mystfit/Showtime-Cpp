@@ -75,7 +75,7 @@ public:
     
 	ZST_EXPORT virtual void on_performer_arriving(ZstPerformer * performer) override;
     ZST_EXPORT virtual void on_entity_arriving(ZstEntityBase * entity) override;
-	ZST_EXPORT virtual void on_request_entity_registration(ZstEntityBase* entity) override;
+	ZST_EXPORT virtual void request_entity_registration(ZstEntityBase* entity) override;
     
 	// ------------------
 	// Entity observation

@@ -14,5 +14,7 @@ namespace showtime {
 				self.get_child_cables(bundle)
 				return bundle_to_list(bundle)
 		%}
+
+		GEN_ADAPTOR_WRAPPERS(entity_events, add_entity_adaptor, ZstEntityAdaptor)
 	}
 }

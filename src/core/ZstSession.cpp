@@ -233,7 +233,7 @@ void ZstSession::on_entity_arriving(ZstEntityBase * entity)
 	register_entity(entity);
 }
 
-void ZstSession::on_request_entity_registration(ZstEntityBase* entity)
+void ZstSession::request_entity_registration(ZstEntityBase* entity)
 {
 	register_entity(entity);
 }

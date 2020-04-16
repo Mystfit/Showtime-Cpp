@@ -61,7 +61,7 @@ public:
 	// Proxies
 	// ----------------
 
-	virtual void on_request_entity_registration(ZstEntityBase* entity) override;
+	virtual void request_entity_registration(ZstEntityBase* entity) override;
 
 
 	// ---------------------

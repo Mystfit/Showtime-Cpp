@@ -98,13 +98,13 @@ namespace showtime
 
 		if (is_registered() && !entity->is_registered()) {
 			entity_events()->invoke([entity](std::shared_ptr<ZstEntityAdaptor> adaptor) {
-				adaptor->on_request_entity_registration(entity);
+				adaptor->request_entity_registration(entity);
 			});
 		}
         
         if (is_activated() && !entity->is_proxy() && auto_activate) {
             entity_events()->invoke([entity](std::shared_ptr<ZstEntityAdaptor> adaptor) {
-                adaptor->on_request_entity_activation(entity);
+                adaptor->request_entity_activation(entity);
             });
         }
     }

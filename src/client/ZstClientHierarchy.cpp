@@ -90,12 +90,12 @@ void ZstClientHierarchy::publish_entity_update(ZstEntityBase * entity, const Zst
 	}
 }
 
-void ZstClientHierarchy::on_request_entity_activation(ZstEntityBase * entity)
+void ZstClientHierarchy::request_entity_activation(ZstEntityBase * entity)
 {
 	activate_entity(entity, ZstTransportRequestBehaviour::SYNC_REPLY, [](ZstMessageReceipt receipt) {});
 }
 
-void ZstClientHierarchy::on_request_entity_registration(ZstEntityBase* entity)
+void ZstClientHierarchy::request_entity_registration(ZstEntityBase* entity)
 {
 	register_entity(entity);
 }

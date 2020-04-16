@@ -1,11 +1,17 @@
 import unittest
+
+try:
+    from unittest.mock import Mock
+except ImportError:
+    from mock import Mock
+
 import time
 import os
 import sys
 import threading
 import subprocess
 import showtime.showtime as ZST
-from showtime.showtime import ZstComponent, ZstOutputPlug, ZstInputPlug, ShowtimeClient, ShowtimeServer
+from showtime.showtime import ZstComponent, ZstOutputPlug, ZstInputPlug, ShowtimeClient, ShowtimeServer, ZstServerAddress
 
 
 class SinkComponent(ZstComponent):
@@ -105,7 +111,69 @@ class Test_PythonExtensions(unittest.TestCase):
 
         # Check value
         self.assertEqual(sink.last_received_value, sending_val)
+    
 
+class Test_PythonCallbacks(unittest.TestCase):
+
+    def setUp(self):
+        # Client/server
+        self.server_name = "python_server"
+        self.server = ShowtimeServer(self.server_name)
+        self.client = ShowtimeClient()
+        self.client.init("test_python", True)
+
+        time.sleep(1)
+        self.server_address = self.client.get_discovered_server(self.server_name)
+
+        # Set up event loop
+        self.event_loop = EventLoop(self.client)
+        self.event_loop.start()
+
+    def tearDown(self):
+        self.event_loop.stop()
+        self.client.destroy()
+        self.server.destroy()
+
+    def test_connected_callbacks(self):
+        connected_handler = Mock()
+        disconnected_handler = Mock()
+        self.client.connection_events().connected_to_stage.add(connected_handler)
+        self.client.connection_events().disconnected_from_stage.add(disconnected_handler)
+        self.client.auto_join_by_name(self.server_name)
+        self.assertTrue(connected_handler.called) 
+        self.client.leave()
+        self.assertTrue(disconnected_handler.called)
+
+    def test_server_discovery_callbacks(self):
+        discovered_handler = Mock()
+        lost_handler = Mock()
+        self.client.connection_events().server_discovered.add(discovered_handler)
+        self.client.connection_events().server_lost.add(lost_handler)
+        second_server = ZST.ShowtimeServer("discovery_server")
+        time.sleep(1)
+        self.assertTrue(discovered_handler.called)
+        second_server.destroy()
+        time.sleep(6)
+        self.assertTrue(lost_handler.called)
+    
+    #def test_hierarchy_callbacks(self):
+    #    pass
+
+    #def test_session_callbacks(self):
+    #    pass
+
+    def test_entity_callbacks(self):
+        registered_handler = Mock()
+        entity = ZstComponent("test_entity")
+        entity.entity_events().entity_registered.add(registered_handler)
+        self.client.get_root().add_child(entity)
+        self.assertTrue(registered_handler.called)
+
+    #def test_synchronisable_callbacks(self):
+    #    pass
+
+    #def test_factory_callbacks(self):
+    #    pass
 
 if __name__ == '__main__':
     unittest.main()

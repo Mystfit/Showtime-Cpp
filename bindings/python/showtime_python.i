@@ -27,6 +27,7 @@
 %include "../preflight.i"
 %include "api_extensions.i"
 %include "ZstBundle.i"
+%include "ZstSynchronisable.i"
 %include "ZstEntityBase.i"
 %include "ZstComponent.i"
 %include "ZstEntityFactory.i"
