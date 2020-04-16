@@ -47,7 +47,7 @@ public:
 private:
 	struct pstr {
 		size_t length;
-		char* cstr;
+		char* cstr = NULL;
 	};
 
 	void init();

@@ -509,7 +509,7 @@ void ZstClient::leave_stage()
 
         //Set flags early to avoid double leaving shenanigans
         this->set_is_connecting(false);
-        this->set_connected_to_stage(false);
+        //this->set_connected_to_stage(false);
 
         ZstEventDispatcher<std::shared_ptr<ZstStageTransportAdaptor>>::invoke([this](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
             ZstTransportArgs args;
@@ -566,10 +566,13 @@ void ZstClient::leave_stage_complete(ZstMessageReceipt response)
 
     //Enqueue event for adaptors
     m_session->dispatch_disconnected_from_stage();
-    ZstEventDispatcher<std::shared_ptr<ZstConnectionAdaptor>>::invoke([this](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
+    ZstEventDispatcher<std::shared_ptr<ZstConnectionAdaptor>>::defer([this](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
         if(m_api)
             adaptor->on_disconnected_from_stage(this->m_api, this->m_connected_server);
     });
+
+    if (response.request_behaviour == ZstTransportRequestBehaviour::SYNC_REPLY)
+        process_events();
 
     m_connected_server = ZstServerAddress();
 }

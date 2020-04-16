@@ -77,6 +77,8 @@ int ZstServiceDiscoveryTransport::s_handle_beacon(zloop_t * loop, zsock_t * sock
             zframe_t * b = beacon_content;
             zframe_destroy(&b);
         });
+
+        zstr_free(&ipaddress);
     }
     
     return 0;

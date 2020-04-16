@@ -107,6 +107,17 @@ BOOST_FIXTURE_TEST_CASE(server_beacon_lost, FixtureInitAndCreateServerWithEphere
 	BOOST_TEST(lost_server);
 }
 
+BOOST_FIXTURE_TEST_CASE(leave_server_event, FixtureJoinServer) {
+	auto connectCallback = std::make_shared<TestConnectionEvents>();
+	test_client->add_connection_adaptor(connectCallback);
+	connectCallback->reset_num_calls();
+
+	test_client->leave();
+	wait_for_event(test_client, connectCallback, 1);
+	BOOST_TEST(!connectCallback->is_connected);
+}
+
+
 BOOST_FIXTURE_TEST_CASE(server_shutdown_disconnects_client, FixtureJoinServer) {
 	auto connectCallback = std::make_shared<TestConnectionEvents>();
 	test_client->add_connection_adaptor(connectCallback);

@@ -65,7 +65,10 @@ void ZstTCPGraphTransport::init_graph_sockets()
 	int port = zsock_bind(graph_out, "%s", addr.str().c_str());
 	ZstLog::net(LogLevel::debug, "Bound port: {}", port);
 
-	set_graph_addresses("", zsock_last_endpoint(graph_out));
+	auto last_endpoint = zsock_last_endpoint(graph_out);
+	set_graph_addresses("", last_endpoint);
+	zstr_free(&last_endpoint);
+
 	attach_graph_sockets(graph_in, graph_out);
 }
 

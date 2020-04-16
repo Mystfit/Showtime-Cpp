@@ -111,7 +111,7 @@ namespace showtime::detail
 	void ZstStage::start_broadcasting(const char* stage_name)
 	{
 		//Broadcast the server details to the local network
-		m_service_broadcast_transport->start_broadcast(stage_name, m_router_transport->port(), 1000);
+		m_service_broadcast_transport->start_broadcast(stage_name, m_router_transport->port(), HEARTBEAT_DURATION);
 	}
 
 	void ZstStage::stop_broadcasting()

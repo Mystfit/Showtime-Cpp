@@ -126,7 +126,9 @@ namespace showtime {
 			ZstLog::net(LogLevel::error, "Actor command not recognized: {}", command);
 		}
 
+		// Cleanup
 		zstr_free(&command);
+		zmsg_destroy(&msg);
 		return status;
 	}
 
@@ -158,6 +160,7 @@ namespace showtime {
 		int result = -1;
 		if (m_loop_actor)
 			result = zsock_send(m_loop_actor, "spm", "s", sock, msg);
+		zmsg_destroy(&msg);
 		return result;
 	}
 
