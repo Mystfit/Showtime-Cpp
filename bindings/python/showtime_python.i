@@ -5,7 +5,7 @@
 	#include <schemas/graph_types_generated.h>
 	using namespace showtime;
 %}
-
+%feature("autodoc", "1");
 %feature("director:except") {
     if( $error != NULL ) {
         PyObject *ptype, *pvalue, *ptraceback;
