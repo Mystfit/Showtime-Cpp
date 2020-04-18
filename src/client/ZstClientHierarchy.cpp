@@ -240,7 +240,7 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
 						adaptor->on_entity_created(late_entity);
 					});
 					factory->synchronisable_events()->invoke([factory](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
-						adaptor->on_synchronisable_has_event(factory);
+						adaptor->synchronisable_has_event(factory);
 					});
 				}
 			}
@@ -334,7 +334,7 @@ void ZstClientHierarchy::factory_create_entity_handler(const FactoryCreateEntity
 
 	// Signal main event loop that the factory has an event waiting
 	factory->synchronisable_events()->invoke([factory](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) { 
-		adaptor->on_synchronisable_has_event(factory);
+		adaptor->synchronisable_has_event(factory);
 	});
 }
 

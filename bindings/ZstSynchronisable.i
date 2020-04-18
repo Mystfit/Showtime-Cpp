@@ -1,3 +1,5 @@
+%include "ZstAdaptorPointers.i"
+
 namespace showtime {
 	%feature("director") ZstSynchronisable;
 	%ignore ZstSynchronisable::enqueue_activation;
@@ -12,5 +14,10 @@ namespace showtime {
 	%ignore ZstSynchronisable::dispatch_destroyed;
 	%ignore ZstSynchronisable::set_proxy;
 }
+
+%feature("nodirector") showtime::ZstSynchronisable::add_adaptor;
+%feature("nodirector") showtime::ZstSynchronisable::remove_adaptor;
+%rename(add_synchronisable_adaptor) showtime::ZstSynchronisable::add_adaptor(std::shared_ptr<ZstSynchronisableAdaptor>);
+%rename(remove_synchronisable_adaptor) showtime::ZstSynchronisable::remove_adaptor(std::shared_ptr<ZstSynchronisableAdaptor>);
 
 %include <ZstSynchronisable.h>

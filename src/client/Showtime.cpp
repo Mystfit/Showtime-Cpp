@@ -138,32 +138,32 @@ void ShowtimeClient::poll_once()
 
 void ShowtimeClient::add_connection_adaptor(std::shared_ptr < ZstConnectionAdaptor > adaptor)
 {
-    if (library_init_guard()) m_client->ZstEventDispatcher<std::shared_ptr < ZstConnectionAdaptor >>::add_adaptor(adaptor);
+    m_client->ZstEventDispatcher<std::shared_ptr < ZstConnectionAdaptor >>::add_adaptor(adaptor);
 }
 
 void ShowtimeClient::add_session_adaptor(std::shared_ptr < ZstSessionAdaptor > adaptor)
 {
-	if (library_init_guard()) m_client->session()->session_events()->add_adaptor(adaptor);
+	m_client->session()->session_events()->add_adaptor(adaptor);
 }
 
 void ShowtimeClient::add_hierarchy_adaptor(std::shared_ptr < ZstHierarchyAdaptor > adaptor)
 {
-	if (library_init_guard()) m_client->session()->hierarchy()->hierarchy_events()->add_adaptor(adaptor);
+	m_client->session()->hierarchy()->hierarchy_events()->add_adaptor(adaptor);
 }
 
 void ShowtimeClient::remove_connection_adaptor(std::shared_ptr < ZstConnectionAdaptor > adaptor)
 {
-    if (library_init_guard()) m_client->ZstEventDispatcher<std::shared_ptr < ZstConnectionAdaptor >>::remove_adaptor(adaptor);
+    m_client->ZstEventDispatcher<std::shared_ptr < ZstConnectionAdaptor >>::remove_adaptor(adaptor);
 }
 
 void ShowtimeClient::remove_session_adaptor(std::shared_ptr < ZstSessionAdaptor > adaptor)
 {
-	if (library_init_guard()) m_client->session()->session_events()->remove_adaptor(adaptor);
+	m_client->session()->session_events()->remove_adaptor(adaptor);
 }
 
 void ShowtimeClient::remove_hierarchy_adaptor(std::shared_ptr < ZstHierarchyAdaptor > adaptor)
 {
-	if (library_init_guard()) m_client->session()->hierarchy()->hierarchy_events()->remove_adaptor(adaptor);
+	m_client->session()->hierarchy()->hierarchy_events()->remove_adaptor(adaptor);
 }
 
 

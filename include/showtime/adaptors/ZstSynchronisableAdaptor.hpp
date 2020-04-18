@@ -16,7 +16,8 @@ public:
 	ZST_EXPORT virtual void on_synchronisable_deactivated(ZstSynchronisable * synchronisable);
 	ZST_EXPORT virtual void on_synchronisable_destroyed(ZstSynchronisable * synchronisable, bool already_removed = false);
 	ZST_EXPORT virtual void on_synchronisable_updated(ZstSynchronisable * synchronisable);
-	ZST_EXPORT virtual void on_synchronisable_has_event(ZstSynchronisable * synchronisable);
+	
+	ZST_EXPORT virtual void synchronisable_has_event(ZstSynchronisable * synchronisable);
 };
 
 }

@@ -69,7 +69,7 @@ void ZstEntityFactory::update_creatables()
 		adaptor->on_creatables_updated(this);
 	});
 	synchronisable_events()->invoke([this](std::shared_ptr<ZstSynchronisableAdaptor>  adaptor) {
-		adaptor->on_synchronisable_has_event(this);
+		adaptor->synchronisable_has_event(this);
 	});
 }
 

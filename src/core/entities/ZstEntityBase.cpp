@@ -403,7 +403,7 @@ namespace showtime
 			this->on_registered();
 
 			//synchronisable_events()->invoke([this](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
-			//	adaptor->on_synchronisable_has_event(this);
+			//	adaptor->synchronisable_has_event(this);
 			//});
 		}
 	}

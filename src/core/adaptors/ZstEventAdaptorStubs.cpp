@@ -28,7 +28,7 @@ namespace showtime {
 // --------------------------------------
 
 
-void ZstSynchronisableAdaptor::on_synchronisable_has_event(ZstSynchronisable * synchronisable) {}
+void ZstSynchronisableAdaptor::synchronisable_has_event(ZstSynchronisable * synchronisable) {}
 void ZstSynchronisableAdaptor::on_synchronisable_activated(ZstSynchronisable * synchronisable) {}
 void ZstSynchronisableAdaptor::on_synchronisable_deactivated(ZstSynchronisable * synchronisable) {}
 void ZstSynchronisableAdaptor::on_synchronisable_destroyed(ZstSynchronisable * synchronisable, bool already_removed) {}

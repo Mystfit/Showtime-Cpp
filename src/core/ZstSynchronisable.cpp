@@ -68,7 +68,7 @@ void ZstSynchronisable::enqueue_activation()
 
 		//Notify adaptors that we have a queued event
 		synchronisable_events()->invoke([this](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
-			adaptor->on_synchronisable_has_event(this);
+			adaptor->synchronisable_has_event(this);
 		});
 	}
 }
@@ -97,7 +97,7 @@ void ZstSynchronisable::enqueue_deactivation()
 
 		//Notify adaptors that we have a queued event
 		synchronisable_events()->invoke([this](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
-			adaptor->on_synchronisable_has_event(this);
+			adaptor->synchronisable_has_event(this);
         });
     }
 }
@@ -218,7 +218,7 @@ void ZstSynchronisable::announce_update()
 		adaptor->on_synchronisable_updated(this);
 	});
 	synchronisable_events()->invoke([this](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
-		adaptor->on_synchronisable_has_event(this);
+		adaptor->synchronisable_has_event(this);
 	});
 }
 

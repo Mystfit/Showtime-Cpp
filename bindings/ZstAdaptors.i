@@ -25,12 +25,8 @@ namespace showtime {
 	%ignore ZstSessionAdaptor::find_cable(Cable);
 
 	%feature("director") ZstSynchronisableAdaptor;
-
 	%feature("director") ZstEntityAdaptor;
-
 	%feature("director") ZstFactoryAdaptor;
-
-
 }
 
 %include <adaptors/ZstEventAdaptor.hpp> 

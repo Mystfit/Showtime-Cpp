@@ -33,7 +33,7 @@ void ZstSynchronisableModule::add_dead_synchronisable_ID(unsigned int syncronisa
     m_dead_syncronisable_IDS.insert(syncronisable_ID);
 }
 
-void ZstSynchronisableModule::on_synchronisable_has_event(ZstSynchronisable * synchronisable)
+void ZstSynchronisableModule::synchronisable_has_event(ZstSynchronisable * synchronisable)
 {
     auto id = synchronisable->instance_id();
     m_synchronisable_events->defer([this, synchronisable, id](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
