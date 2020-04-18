@@ -1,6 +1,7 @@
+#include "TestCommon.hpp"
+
 #define BOOST_TEST_MODULE Entity factories
 
-#include "TestCommon.hpp"
 #include <string>
 #include <memory>
 

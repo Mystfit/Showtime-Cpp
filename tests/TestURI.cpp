@@ -1,6 +1,7 @@
+#include "TestCommon.hpp"
+
 #define BOOST_TEST_MODULE URI
 
-#include "TestCommon.hpp"
 
 using namespace ZstTest;
 

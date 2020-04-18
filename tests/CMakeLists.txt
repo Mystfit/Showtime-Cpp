@@ -11,8 +11,8 @@ set(TESTS
     "TestPlugins"
     "TestGraph"
     "TestBenchmark"
-    "TestHelperSink"
-    "TestHelperExternalFactory"
+    #"TestHelperSink"
+    # "TestHelperExternalFactory"
 )
 
 set(TEST_DEPENDENCIES 
@@ -38,8 +38,8 @@ foreach(test ${TESTS})
 endforeach()
 
 # Test helper dependencies
-add_dependencies(TestEntityFactories TestHelperExternalFactory)
-add_dependencies(TestExternalClients TestHelperSink)
+# add_dependencies(TestEntityFactories TestHelperExternalFactory)
+# add_dependencies(TestExternalClients TestHelperSink)
 
 
 # -------------

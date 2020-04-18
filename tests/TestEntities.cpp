@@ -1,6 +1,6 @@
-#define BOOST_TEST_MODULE Entities
-
 #include "TestCommon.hpp"
+
+#define BOOST_TEST_MODULE Entities
 
 using namespace ZstTest;
 

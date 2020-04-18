@@ -1,10 +1,12 @@
 #pragma once
+
 #include <string>
 #include <Showtime.h>
 #include <ShowtimeServer.h>
 #include <boost/process.hpp>
+#include <boost/stacktrace.hpp>
 #include <boost/thread/thread.hpp>
-#include <boost/test/unit_test.hpp>
+#include <boost/dll.hpp>
 #include <memory>
 #include <sstream>
 
@@ -25,7 +27,15 @@ namespace fs = boost::filesystem;
 #include <stdlib.h>
 #include <crtdbg.h>
 #endif
+#include <signal.h>
 
+// Test includes
+#define BOOST_TEST_NO_MAIN
+#define BOOST_TEST_ALTERNATIVE_INIT_API
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/unit_test.hpp>
+
+namespace utf = boost::unit_test;
 using namespace boost::process;
 using namespace boost::unit_test;
 using namespace showtime;
@@ -521,5 +531,68 @@ namespace ZstTest
 		}
 	};
 
-	static int s_interrupted = 0;
 };
+
+int s_interrupted = 0;
+typedef void (*SignalHandlerPointer)(int);
+
+void s_signal_handler(int signal_value){
+	switch (signal_value) {
+	case SIGINT:
+		s_interrupted = 1;
+	case SIGTERM:
+		s_interrupted = 1;
+	case SIGABRT:
+		s_interrupted = 1;
+	case SIGSEGV:
+		s_interrupted = 1;
+		signal(signal_value, SIG_DFL);
+		boost::stacktrace::safe_dump_to("./backtrace.dump");
+		raise(SIGABRT);
+	default:
+		break;
+	}
+}
+
+void s_catch_signals(){
+#ifdef WIN32
+	SignalHandlerPointer previousHandler;
+	previousHandler = signal(SIGSEGV, &s_signal_handler);
+#else
+	struct sigaction action;
+	action.sa_handler = s_signal_handler;
+	action.sa_flags = 0;
+	sigemptyset(&action.sa_mask);
+	sigaction(SIGINT, &action, NULL);
+	sigaction(SIGTERM, &action, NULL);
+	sigaction(SIGSEGV, &action, NULL);
+#endif
+}
+
+bool init_unit_test()
+{
+	return true;
+}
+
+void read_stacktrace() {
+	auto dumpfile = "./backtrace.dump";
+//	auto dumpfile = fmt::format("./{}.dump", boost::dll::program_location().filename().string());
+	if (boost::filesystem::exists(dumpfile)) {
+		// there is a backtrace
+		std::ifstream ifs(dumpfile);
+
+		boost::stacktrace::stacktrace st = boost::stacktrace::stacktrace::from_dump(ifs);
+		std::cout << "Previous run crashed:\n" << st << std::endl;
+
+		// cleaning up
+		ifs.close();
+		boost::filesystem::remove(dumpfile);
+	}
+}
+
+int main(int argc, char* argv[])
+{
+	read_stacktrace();
+	s_catch_signals();
+	return utf::unit_test_main(&init_unit_test, argc, argv);
+}

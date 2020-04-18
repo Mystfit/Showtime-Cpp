@@ -1,10 +1,9 @@
+#include "TestCommon.hpp"
+
 #define BOOST_TEST_TOOLS_DEBUGGABLE
 #define BOOST_TEST_MODULE External clients
 
-#include "TestCommon.hpp"
-
 using namespace ZstTest;
-
 
 
 struct FixtureSinkClient : public FixtureRemoteClient {
@@ -261,6 +260,7 @@ BOOST_FIXTURE_TEST_CASE(set_name_updates_proxy, FixtureWaitForSinkClient) {
 	wait_for_event(test_client, entityEvents, 1);
 	auto proxy = test_client->find_entity(remote_ent->URI());
 	entityEvents->reset_num_calls();
+	BOOST_REQUIRE(proxy);
 
 	remote_ent->set_name("renamed");
 	wait_for_event(test_client, entityEvents, 1);

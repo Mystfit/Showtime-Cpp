@@ -1,6 +1,6 @@
-#define BOOST_TEST_MODULE Graph
-
 #include "TestCommon.hpp"
+
+#define BOOST_TEST_MODULE Graph
 
 using namespace ZstTest;
 

@@ -1,7 +1,7 @@
-#define BOOST_TEST_MODULE Library startup and joining
-
-#include <boost/test/framework.hpp>
 #include "TestCommon.hpp"
+
+#define BOOST_TEST_MODULE Library startup
+
 #include "fmt/format.h"
 
 using namespace ZstTest;
