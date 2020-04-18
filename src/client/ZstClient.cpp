@@ -678,7 +678,12 @@ void ZstClient::auto_join_stage_complete()
 
 void ZstClient::start_connection_broadcast_handler(const ClientGraphHandshakeStart* request)
 {
-    auto remote_client_path = ZstURI(request->receiver_URI()->c_str());
+    auto path = request->receiver_URI();
+    if (!path) {
+        ZstLog::net(LogLevel::warn, "Received malformed ClientGraphHandshakeStart message");
+        return;
+    }
+    auto remote_client_path = ZstURI(path->c_str(), path->size());
     
     ZstPerformer* local_client = session()->hierarchy()->get_local_performer();
     ZstPerformer* remote_client = dynamic_cast<ZstPerformer*>(session()->hierarchy()->find_entity(remote_client_path));

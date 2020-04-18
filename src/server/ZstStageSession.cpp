@@ -381,10 +381,14 @@ void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, Zst
 
 	//Create request for broadcaster - needs a new buffer builder
 	builder = std::make_shared<FlatBufferBuilder>();
-	auto broadcast_offset = CreateClientGraphHandshakeStart(*builder, builder->CreateString(input_client->URI().path()), builder->CreateString(input_client->reliable_address()));
+	auto broadcast_offset = CreateClientGraphHandshakeStart(
+		*builder, 
+		builder->CreateString(input_client->URI().path(), input_client->URI().full_size()),
+		builder->CreateString(input_client->reliable_address())
+	);
 	ZstLog::server(LogLevel::notification, "Sending P2P handshake broadcast request to {}", input_client->URI().path());
 	ZstTransportArgs broadcaster_args;
-	stage_hierarchy()->whisper(output_client, Content_ClientGraphHandshakeStart, subscribe_offset.Union(), builder, broadcaster_args);
+	stage_hierarchy()->whisper(output_client, Content_ClientGraphHandshakeStart, broadcast_offset.Union(), builder, broadcaster_args);
 }
 
 
