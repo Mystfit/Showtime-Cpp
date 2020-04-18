@@ -36,7 +36,6 @@ public:
 	// Adapter overrides
 	void on_performer_leaving(ZstPerformer* performer) override;
 	void on_entity_leaving(ZstEntityBase* entity) override;
-	void on_plug_leaving(ZstPlug* plug) override;
 
 	// Cables
 	void disconnect_cables(ZstEntityBase* entity);

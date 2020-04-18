@@ -345,16 +345,11 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 	}
 
 	//Dispatch events depending on entity type
-	if (entity->entity_type() == ZstEntityType::PLUG) {
-		hierarchy_events()->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
-			adaptor->on_plug_leaving(static_cast<ZstPlug*>(entity));
-			});
-	}
-	else if (entity->entity_type() == ZstEntityType::PERFORMER)
+	if (entity->entity_type() == ZstEntityType::PERFORMER)
 	{
 		hierarchy_events()->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
 			adaptor->on_performer_leaving(static_cast<ZstPerformer*>(entity));
-			});
+		});
 	}
 	else if (entity->entity_type() == ZstEntityType::FACTORY)
 	{

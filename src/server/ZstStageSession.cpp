@@ -317,11 +317,6 @@ void ZstStageSession::on_entity_leaving(ZstEntityBase* entity)
 	disconnect_cables(entity);
 }
 
-void ZstStageSession::on_plug_leaving(ZstPlug* plug)
-{
-	disconnect_cables(plug);
-}
-
 void ZstStageSession::disconnect_cables(ZstEntityBase* entity)
 {
 	ZstCableBundle bundle;
@@ -364,14 +359,16 @@ void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, Zst
 	}
 
 	//Create request for receiver
+	auto output_address = output_client->URI();
+	auto input_address = input_client->URI();
 	ZstTransportArgs receiver_args;
 	receiver_args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
-	receiver_args.on_recv_response = [this, output_client, input_client, on_msg_received](ZstMessageReceipt receipt) {
+	receiver_args.on_recv_response = [this, output_client, output_address, input_client, input_address, on_msg_received](ZstMessageReceipt receipt) {
 		if (receipt.status == Signal_OK) {
 			complete_client_connection(output_client, input_client);
 		}
 		else {
-			ZstLog::server(LogLevel::warn, "Connection between {} and {} failed: Reason {}", output_client->URI().path(), input_client->URI().path(), EnumNameSignal(receipt.status));
+			ZstLog::server(LogLevel::warn, "Connection between clients failed: Reason {}", output_address.path(), input_address.path(), EnumNameSignal(receipt.status));
 		}
 		on_msg_received(receipt);
 	};

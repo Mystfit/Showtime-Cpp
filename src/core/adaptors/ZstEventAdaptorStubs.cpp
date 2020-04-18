@@ -78,8 +78,8 @@ void ZstHierarchyAdaptor::on_performer_leaving(ZstPerformer * performer) {}
 void ZstHierarchyAdaptor::on_entity_arriving(ZstEntityBase * entity) {}
 void ZstHierarchyAdaptor::on_entity_leaving(ZstEntityBase * entity) {}
 void ZstHierarchyAdaptor::on_entity_updated(ZstEntityBase* entity){}
-void ZstHierarchyAdaptor::on_plug_arriving(ZstPlug * plug) {}
-void ZstHierarchyAdaptor::on_plug_leaving(ZstPlug * plug) {}
+//void ZstHierarchyAdaptor::on_plug_arriving(ZstPlug * plug) {}
+//void ZstHierarchyAdaptor::on_plug_leaving(ZstPlug * plug) {}
 void ZstHierarchyAdaptor::on_factory_arriving(ZstEntityFactory * factory) {}
 void ZstHierarchyAdaptor::on_factory_leaving(ZstEntityFactory * factory) {}
 
