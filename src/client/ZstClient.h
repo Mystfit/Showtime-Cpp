@@ -10,6 +10,7 @@
 
 //Boost includes
 #include <boost/asio.hpp>
+#include <boost/asio/thread_pool.hpp>
 #include <boost/thread.hpp>
 
 //Showtime API includes
@@ -66,23 +67,24 @@ namespace showtime {
             void flush();
 
             //Stage adaptor overrides
-            void on_receive_msg(std::shared_ptr<ZstStageMessage> msg) override;
-            void on_receive_msg(std::shared_ptr<ZstPerformanceMessage> msg) override;
-			void on_receive_msg(std::shared_ptr<ZstServerBeaconMessage> msg) override;
+            void on_receive_msg(const std::shared_ptr<ZstStageMessage>& msg) override;
+            void on_receive_msg(const std::shared_ptr<ZstPerformanceMessage>& msg) override;
+			void on_receive_msg(const std::shared_ptr<ZstServerBeaconMessage>& msg) override;
 
             //Server discovery
-            const ZstServerList & get_discovered_servers();
+            const ZstServerList & get_discovered_servers() const;
+            ZstServerAddress get_discovered_server(const std::string& server_name) const;
             
             //Register this endpoint to the stage
             void auto_join_stage(const std::string & name, const ZstTransportRequestBehaviour & sendtype = ZstTransportRequestBehaviour::SYNC_REPLY);
             void join_stage(const ZstServerAddress & stage_address, const ZstTransportRequestBehaviour & sendtype = ZstTransportRequestBehaviour::SYNC_REPLY);
-            void join_stage_complete(const ZstServerAddress & server_address, ZstMessageReceipt response);
+            void join_stage_complete(const ZstServerAddress & server_address, ZstMessageResponse response);
             void synchronise_graph(const ZstTransportRequestBehaviour & sendtype = ZstTransportRequestBehaviour::SYNC_REPLY);
-            void synchronise_graph_complete(ZstMessageReceipt response);
+            void synchronise_graph_complete(ZstMessageResponse response);
 
             //Leave the stage
             void leave_stage();
-            void leave_stage_complete(ZstMessageReceipt response);
+            void leave_stage_complete(ZstTransportRequestBehaviour sendtype);
             
             //Stage connection status
             const ZstServerAddress & connected_server();
@@ -131,20 +133,22 @@ namespace showtime {
             std::map<ZstServerAddress, std::chrono::system_clock::time_point> m_server_beacon_timestamps;
             static void beaconcheck_timer(boost::asio::deadline_timer* t, ZstClient* client, boost::posix_time::milliseconds duration);
             void lost_server_beacon(const ZstServerAddress& server);
+            void join_on_beacon(const std::string& server_name, ZstTransportRequestBehaviour sendtype);
+            ZstServerAddress server_beacon_to_address(const std::shared_ptr<ZstServerBeaconMessage>& msg);
 
 			void auto_join_stage_complete();
 			bool m_auto_join_stage;
-            std::map<std::string, ZstMsgID> m_auto_join_stage_requests;
-            ZstMessageSupervisor m_promise_supervisor;
+            std::map<std::string, std::promise<ZstMessageResponse> > m_auto_join_stage_requests;
+            
             ZstServerAddress m_connected_server;
 
             // Message handlers
-            void start_connection_broadcast_handler(const ClientGraphHandshakeStart* request);
-            void stop_connection_broadcast_handler(const ClientGraphHandshakeStop* request);
-            void listen_to_client_handler(const ClientGraphHandshakeListen* request, const ZstMsgID & request_id);
-            void server_discovery_handler(const ZstServerBeaconMessage* msg);
+            void start_connection_broadcast_handler(const std::shared_ptr<ZstStageMessage>& msg);
+            void stop_connection_broadcast_handler(const std::shared_ptr<ZstStageMessage>& msg);
+            void listen_to_client_handler(const std::shared_ptr<ZstStageMessage>& msg);
+            void server_discovery_handler(const std::shared_ptr<ZstServerBeaconMessage>& msg);
 			void connection_handshake_handler(std::shared_ptr<ZstPerformanceMessage> msg);
-            void server_status_handler(const ServerStatusMessage* request);
+            void server_status_handler(const std::shared_ptr<ZstStageMessage>& msg);
 
             // P2P connections
             static void send_connection_broadcast(boost::asio::deadline_timer * t, ZstClient * client, const ZstURI & to, const ZstURI & from, boost::posix_time::milliseconds duration);
@@ -171,6 +175,9 @@ namespace showtime {
             boost::thread m_client_event_thread;
             std::shared_ptr<ZstSemaphore> m_event_condition;
             void transport_event_loop();
+
+            //Threads
+            boost::asio::thread_pool m_thread_pool;
             
             //Api object
             ShowtimeClient* m_api;

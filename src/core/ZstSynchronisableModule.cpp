@@ -20,6 +20,7 @@ void ZstSynchronisableModule::process_events()
     m_reaper.reap_all();
 
     //The event queue is clear so remove dead IDs
+    std::lock_guard<std::mutex> lock(m_mtx);
     m_dead_syncronisable_IDS.clear();
 }
 
@@ -30,8 +31,15 @@ void ZstSynchronisableModule::flush_events()
 
 void ZstSynchronisableModule::add_dead_synchronisable_ID(unsigned int syncronisable_ID)
 {
+    std::lock_guard<std::mutex> lock(m_mtx);
     m_dead_syncronisable_IDS.insert(syncronisable_ID);
 }
+
+bool ZstSynchronisableModule::already_removed_synchronisable(unsigned int syncronisable_ID)
+{
+    return (m_dead_syncronisable_IDS.find(syncronisable_ID) != m_dead_syncronisable_IDS.end());
+}
+
 
 void ZstSynchronisableModule::synchronisable_has_event(ZstSynchronisable * synchronisable)
 {

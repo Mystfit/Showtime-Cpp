@@ -95,17 +95,17 @@ ZstPerformer* ZstHierarchyAdaptor::get_local_performer() const { return NULL; }
 // Message adaptors
 // -----------------------
 
-void ZstStageTransportAdaptor::on_receive_msg(std::shared_ptr<ZstStageMessage> msg) {};
-void ZstGraphTransportAdaptor::on_receive_msg(std::shared_ptr<ZstPerformanceMessage> msg) {};
-void ZstServiceDiscoveryAdaptor::on_receive_msg(std::shared_ptr<ZstServerBeaconMessage> msg) {};
+void ZstStageTransportAdaptor::on_receive_msg(const std::shared_ptr<ZstStageMessage>& msg) {};
+void ZstGraphTransportAdaptor::on_receive_msg(const std::shared_ptr<ZstPerformanceMessage>& msg) {};
+void ZstServiceDiscoveryAdaptor::on_receive_msg(const std::shared_ptr<ZstServerBeaconMessage>& msg) {};
 
 void ZstTransportAdaptor::connect(const std::string& address) {}
 int ZstTransportAdaptor::bind(const std::string& address) { return -1; }
 void ZstTransportAdaptor::disconnect() {}
-ZstMessageReceipt ZstStageTransportAdaptor::send_msg(Content message_type, flatbuffers::Offset<void> message_content, flatbuffers::FlatBufferBuilder& buffer_builder, const ZstTransportArgs& args) {
+ZstMessageReceipt ZstStageTransportAdaptor::send_msg(Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder>& buffer_builder, const ZstTransportArgs& args) {
 	return ZstMessageReceipt(Signal_OK);
 }
-ZstMessageReceipt ZstGraphTransportAdaptor::send_msg(flatbuffers::Offset<GraphMessage> message_content, flatbuffers::FlatBufferBuilder& buffer_builder, const ZstTransportArgs& args) {
+ZstMessageReceipt ZstGraphTransportAdaptor::send_msg(flatbuffers::Offset<GraphMessage> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder>& buffer_builder, const ZstTransportArgs& args) {
 	return ZstMessageReceipt(Signal_OK);
 }
 

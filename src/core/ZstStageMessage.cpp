@@ -1,8 +1,9 @@
 #include <boost/uuid/nil_generator.hpp>
 #include <memory>
-
+#include "transports/ZstStageTransport.h"
 #include "ZstStageMessage.h"
 
+#include "adaptors/ZstTransportAdaptor.hpp"
 #include "entities/ZstEntityBase.h"
 #include "entities/ZstComponent.h"
 #include "entities/ZstPerformer.h"
@@ -12,20 +13,17 @@
 namespace showtime {
 
 ZstStageMessage::ZstStageMessage() :
-	m_endpoint_UUID(nil_generator()()),
+	m_origin_endpoint_UUID(nil_generator()()),
     m_buffer(NULL),
-    m_id(nil_generator()())
+    m_id(nil_generator()()),
+    m_transport_endpoint_UUID(nil_generator()())
 {
 }
     
 ZstStageMessage::~ZstStageMessage(){
-    /*if(m_buffer)
-        delete m_buffer;*/
-	m_buffer = NULL;
-	m_endpoint_UUID = nil_generator()();
 }
  
-void ZstStageMessage::init(const StageMessage * buffer)
+void ZstStageMessage::init(const StageMessage * buffer, uuid& origin_uuid, std::shared_ptr<ZstStageTransport>& owning_transport)
 {
 	reset();
 	m_buffer = buffer;
@@ -33,25 +31,21 @@ void ZstStageMessage::init(const StageMessage * buffer)
     if (m_buffer->id())
         memcpy(&m_id, m_buffer->id()->data(), m_buffer->id()->size());
     else
-        m_id = nil_generator()();
+        m_id = nil_generator()();    
+
+    m_origin_endpoint_UUID = origin_uuid;
+    m_owning_transport = owning_transport;
 }
 
 void ZstStageMessage::reset() {
-	m_endpoint_UUID = nil_generator()();
-    
-    //if(m_buffer)
-    //    delete m_buffer;
+	m_origin_endpoint_UUID = nil_generator()();
 	m_buffer = NULL;
+    m_owning_transport.reset();
 }
 
-void ZstStageMessage::set_endpoint_UUID(const uuid& uuid)
+const uuid& ZstStageMessage::origin_endpoint_UUID() const
 {
-	m_endpoint_UUID = boost::uuids::uuid(uuid);
-}
-
-const uuid& ZstStageMessage::endpoint_UUID() const
-{
-	return m_endpoint_UUID;
+	return m_origin_endpoint_UUID;
 }
 
 ZstMsgID ZstStageMessage::id() const
@@ -65,6 +59,13 @@ Content ZstStageMessage::type() const {
     
 const StageMessage* ZstStageMessage::buffer() const {
     return m_buffer;
+}
+
+std::shared_ptr<ZstTransportLayerBase> ZstStageMessage::owning_transport() const
+{
+    auto transport = m_owning_transport.lock();
+    auto cast = std::static_pointer_cast<ZstTransportLayerBase>(transport);
+    return cast;
 }
 
 }

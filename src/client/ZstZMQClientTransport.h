@@ -34,7 +34,7 @@ private:
 	ZstActor m_client_actor;
 
 	//Id
-	boost::uuids::uuid m_endpoint_UUID;
+	boost::uuids::uuid m_origin_endpoint_UUID;
 };
 
 }

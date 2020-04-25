@@ -12,7 +12,9 @@ public:
     std::string name;
     std::string address;
     
-    ZstServerAddress()
+    ZstServerAddress() : 
+        name(""),
+        address("")
     {
     }
     

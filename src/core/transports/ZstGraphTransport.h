@@ -16,7 +16,7 @@
 namespace showtime {
 
 class ZstGraphTransport :
-    public ZstTransportLayerBase<ZstPerformanceMessage, ZstGraphTransportAdaptor>,
+    public ZstTransportLayer<ZstPerformanceMessage, ZstGraphTransportAdaptor>,
     public ZstGraphTransportAdaptor
 {
 public:
@@ -28,7 +28,7 @@ public:
 	ZST_EXPORT const std::string & get_graph_in_address() const;
 	ZST_EXPORT const std::string & get_graph_out_address() const;
 
-    ZST_EXPORT virtual ZstMessageReceipt send_msg(flatbuffers::Offset<GraphMessage> message_content, flatbuffers::FlatBufferBuilder& buffer_builder, const ZstTransportArgs& args) override;
+    ZST_EXPORT virtual ZstMessageReceipt send_msg(flatbuffers::Offset<GraphMessage> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder>& buffer_builder, const ZstTransportArgs& args) override;
 	ZST_EXPORT void send_message_impl(const uint8_t * msg_buffer, size_t msg_buffer_size, const ZstTransportArgs & args) const override;
 
 protected:
@@ -43,7 +43,6 @@ protected:
 
 	ZST_EXPORT zsock_t * input_graph_socket() const;
 	ZST_EXPORT zsock_t * output_graph_socket() const;
-	ZST_EXPORT virtual void dispatch_receive_event(std::shared_ptr<ZstPerformanceMessage> msg, ZstEventCallback on_complete) override;
 	
 private:
 	void sock_recv(zsock_t* socket);

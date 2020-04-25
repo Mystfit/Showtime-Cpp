@@ -2,6 +2,7 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_generators.hpp>
+#include "../core/transports/ZstStageTransport.h"
 
 using namespace boost::uuids;
 using namespace flatbuffers;
@@ -35,10 +36,10 @@ void ZstStageSession::set_wake_condition(std::weak_ptr<ZstSemaphore> condition)
 	synchronisable_events()->set_wake_condition(condition);
 }
 
-void ZstStageSession::on_receive_msg(std::shared_ptr<ZstStageMessage> msg)
+void ZstStageSession::on_receive_msg(const std::shared_ptr<ZstStageMessage>& msg)
 {
 	Signal response = Signal_EMPTY;
-	ZstPerformerStageProxy* sender = m_hierarchy->get_client_from_endpoint_UUID(msg->endpoint_UUID());
+	ZstPerformerStageProxy* sender = m_hierarchy->get_client_from_endpoint_UUID(msg->origin_endpoint_UUID());
 
 	//Check client hasn't finished joining yet
 	if (!sender)
@@ -67,14 +68,14 @@ void ZstStageSession::on_receive_msg(std::shared_ptr<ZstStageMessage> msg)
 	//Return response to sender
 	if (response != Signal_EMPTY) {
 		ZstTransportArgs args;
-		args.target_endpoint_UUID = msg->endpoint_UUID();
+		args.target_endpoint_UUID = msg->origin_endpoint_UUID();
 		args.msg_ID = msg->id();
+		ZstLog::server(LogLevel::warn, "ZstStageSession replying to {} message with {}", boost::uuids::to_string(args.msg_ID), EnumNameSignal(response));
 
-		router_events()->defer([response, args](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
-			FlatBufferBuilder builder;
-			auto signal_offset = CreateSignalMessage(builder, response);
-			adaptor->send_msg(Content_SignalMessage, signal_offset.Union(), builder, args);
-		});
+		auto builder = std::make_shared< FlatBufferBuilder>();
+		auto signal_offset = CreateSignalMessage(*builder, response);
+		if (auto transport = std::dynamic_pointer_cast<ZstStageTransport>(msg->owning_transport()))
+			transport->send_msg(Content_SignalMessage, signal_offset.Union(), builder, args);
 	}
 }
 
@@ -90,7 +91,7 @@ Signal ZstStageSession::signal_handler(const SignalMessage* request, ZstPerforme
 		break;
 	}
 
-	return Signal_OK;
+	return Signal_EMPTY;
 }
 
 Signal ZstStageSession::synchronise_client_graph_handler(ZstPerformerStageProxy* sender) 
@@ -178,8 +179,9 @@ Signal ZstStageSession::create_cable_handler(const StageMessage* request, ZstPer
 	//Start the client connection
 	auto input_perf = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(input->URI().first()));
 	auto output_perf = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(output->URI().first()));
-	connect_clients(output_perf, input_perf, [this, cable_ptr, sender, id](ZstMessageReceipt receipt) {
-		if (receipt.status == Signal_OK) {
+	connect_clients(output_perf, input_perf, [this, cable_ptr, sender, id](ZstMessageResponse response) {
+		auto signal = ZstStageTransport::get_signal(response.response);
+		if (signal == Signal_OK) {
 			ZstLog::server(LogLevel::notification, "Client connection complete. Publishing cable {}", cable_ptr->get_address().to_string());
 			ZstTransportArgs args;
 			auto builder = std::make_shared<FlatBufferBuilder>();
@@ -190,7 +192,7 @@ Signal ZstStageSession::create_cable_handler(const StageMessage* request, ZstPer
 		}
 
 		// Let original requestor know the request was completed
-		stage_hierarchy()->reply_with_signal(sender, receipt.status, id);
+		stage_hierarchy()->reply_with_signal(sender, signal, id);
 	});
 
 	
@@ -226,12 +228,17 @@ Signal ZstStageSession::observe_entity_handler(const StageMessage* request, ZstP
 	//Start the client connection
     ZstMsgID response_id;
     memcpy(&response_id, request->id()->data(), request->id()->size());
-    
-	connect_clients(observed_performer, sender, [this, sender, response_id](ZstMessageReceipt receipt) {
-		stage_hierarchy()->reply_with_signal(sender, Signal_OK, response_id);
-	});
 
-	return Signal_EMPTY;
+	//Check to see if one client is already connected to the other
+	if (!observed_performer->has_connected_subscriber(sender)) {
+		connect_clients(observed_performer, sender, [this, sender, response_id](ZstMessageResponse response) {
+			auto signal = ZstStageTransport::get_signal(response.response);
+			stage_hierarchy()->reply_with_signal(sender, signal, response_id);
+		});
+		return Signal_EMPTY;
+	}
+
+	return Signal_OK;
 }
 
 
@@ -345,7 +352,7 @@ void ZstStageSession::destroy_cable(ZstCable* cable) {
 
 void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, ZstPerformerStageProxy* input_client)
 {
-	connect_clients(output_client, input_client, [](ZstMessageReceipt receipt) {});
+	connect_clients(output_client, input_client, [](ZstMessageResponse response) {});
 }
 
 void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, ZstPerformerStageProxy* input_client, const ZstMessageReceivedAction& on_msg_received)
@@ -354,7 +361,6 @@ void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, Zst
 
 	//Check to see if one client is already connected to the other
 	if (output_client->has_connected_subscriber(input_client)) {
-		on_msg_received(ZstMessageReceipt{ Signal_OK });
 		return;
 	}
 
@@ -363,29 +369,28 @@ void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, Zst
 	auto input_address = input_client->URI();
 	ZstTransportArgs receiver_args;
 	receiver_args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
-	receiver_args.on_recv_response = [this, output_client, output_address, input_client, input_address, on_msg_received](ZstMessageReceipt receipt) {
-		if (receipt.status == Signal_OK) {
+	receiver_args.on_recv_response = [this, output_client, output_address, input_client, input_address, on_msg_received](ZstMessageResponse response) {
+		if (ZstStageTransport::verify_signal(response.response, Signal_OK, fmt::format("P2P client connection ({} --> {})", output_address.path(), input_address.path()))) {
 			complete_client_connection(output_client, input_client);
+			on_msg_received(response);
 		}
-		else {
-			ZstLog::server(LogLevel::warn, "Connection between clients failed: Reason {}", output_address.path(), input_address.path(), EnumNameSignal(receipt.status));
-		}
-		on_msg_received(receipt);
 	};
+
 	auto builder = std::make_shared<FlatBufferBuilder>();
 	auto subscribe_offset = CreateClientGraphHandshakeListen(*builder, builder->CreateString(output_client->URI().path()), builder->CreateString(output_client->reliable_address()));
+
+	ZstLog::net(LogLevel::debug, "Sending Content_ClientGraphHandshakeListen whisper to {}", input_client->URI().path());
 	stage_hierarchy()->whisper(input_client, Content_ClientGraphHandshakeListen, subscribe_offset.Union(), builder, receiver_args);
 
 	//Create request for broadcaster - needs a new buffer builder
-	builder = std::make_shared<FlatBufferBuilder>();
+	auto broadcaster_builder = std::make_shared<FlatBufferBuilder>();
 	auto broadcast_offset = CreateClientGraphHandshakeStart(
-		*builder, 
-		builder->CreateString(input_client->URI().path(), input_client->URI().full_size()),
-		builder->CreateString(input_client->reliable_address())
+		*broadcaster_builder,
+		broadcaster_builder->CreateString(input_client->URI().path(), input_client->URI().full_size()),
+		broadcaster_builder->CreateString(input_client->reliable_address())
 	);
-	ZstLog::server(LogLevel::notification, "Sending P2P handshake broadcast request to {}", input_client->URI().path());
 	ZstTransportArgs broadcaster_args;
-	stage_hierarchy()->whisper(output_client, Content_ClientGraphHandshakeStart, broadcast_offset.Union(), builder, broadcaster_args);
+	stage_hierarchy()->whisper(output_client, Content_ClientGraphHandshakeStart, broadcast_offset.Union(), broadcaster_builder, broadcaster_args);
 }
 
 

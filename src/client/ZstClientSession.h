@@ -63,8 +63,8 @@ public:
 	// Adaptor plug send/receive
 	// ---------------------------
 
-	virtual void on_receive_msg(std::shared_ptr<ZstStageMessage> msg) override;
-    virtual void on_receive_msg(std::shared_ptr<ZstPerformanceMessage> msg) override;
+	virtual void on_receive_msg(const std::shared_ptr<ZstStageMessage>& msg) override;
+    virtual void on_receive_msg(const std::shared_ptr<ZstPerformanceMessage>& msg) override;
     
     
     // ----------------
@@ -111,9 +111,9 @@ private:
 	// Event completion
 	// ----------------
 
-	void connect_cable_complete(ZstMessageReceipt response, ZstCable * cable);
-	void destroy_cable_complete(ZstMessageReceipt response, ZstCable * cable);
-	void observe_entity_complete(ZstMessageReceipt response, ZstEntityBase * entity);
+	void connect_cable_complete(ZstMessageResponse response, ZstCable * cable);
+	void destroy_cable_complete(ZstMessageResponse response, ZstCable * cable);
+	void observe_entity_complete(ZstMessageResponse response, ZstEntityBase * entity);
 	
     std::shared_ptr<ZstClientHierarchy> m_hierarchy;
 };

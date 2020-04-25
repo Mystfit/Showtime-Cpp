@@ -17,7 +17,7 @@ namespace showtime {
 
 ZstZMQClientTransport::ZstZMQClientTransport() : 
 	m_server_sock(NULL),
-	m_endpoint_UUID(random_generator()())
+	m_origin_endpoint_UUID(random_generator()())
 {
 }
 
@@ -28,7 +28,7 @@ ZstZMQClientTransport::~ZstZMQClientTransport()
 
 void ZstZMQClientTransport::init()
 {
-	ZstTransportLayerBase::init();
+	ZstTransportLayer::init();
 
 	//Init actor before attaching sockets
 	m_client_actor.init("client_actor");
@@ -45,7 +45,9 @@ void ZstZMQClientTransport::init()
 	}
 
 	//Set socket ID to identify socket with receivers
-	zsock_set_identity(m_server_sock, boost::lexical_cast<std::string>(m_endpoint_UUID).c_str());
+	auto uuid = boost::uuids::random_generator()();
+
+	zsock_set_identity(m_server_sock, boost::lexical_cast<std::string>(m_origin_endpoint_UUID).c_str());
 
 	//IO loop
 	m_client_actor.start_loop();
@@ -64,7 +66,7 @@ void ZstZMQClientTransport::destroy()
 		m_server_sock = NULL;
 	}
 
-	ZstTransportLayerBase::destroy();
+	ZstTransportLayer::destroy();
 }
 
 void ZstZMQClientTransport::connect(const std::string & address)
@@ -125,16 +127,27 @@ void ZstZMQClientTransport::sock_recv(zsock_t* socket)
         auto msg_data = zmsg_pop(recv_msg);
 
         if(msg_data){
-            auto stage_msg = get_msg();
-            stage_msg->init(GetStageMessage(zframe_data(msg_data)));
+			if(VerifyStageMessageBuffer(flatbuffers::Verifier(zframe_data(msg_data), zframe_size(msg_data)))) {
+				auto stage_msg = get_msg();
+				stage_msg->init(
+					GetStageMessage(zframe_data(msg_data)),
+					boost::uuids::nil_generator()(),
+					std::static_pointer_cast<ZstStageTransport>(ZstTransportLayer::shared_from_this())
+				);
+				//ZstLog::net(LogLevel::debug, "Client received message {} {}", EnumNameContent(stage_msg->buffer()->content_type()), boost::uuids::to_string(stage_msg->id()));
+				//if (stage_msg->buffer()->content_type() != Content_SignalMessage) {
+				//	ZstLog::net(LogLevel::debug, "Client received message {} {}", EnumNameContent(stage_msg->buffer()->content_type()), boost::uuids::to_string(stage_msg->id()));
+				//}
 
-			//ZstLog::net(LogLevel::debug, "Receiving msg with ID: {}", stage_msg->id());
-            
-            // Send message to submodules
-            dispatch_receive_event(stage_msg, [stage_msg, msg_data](ZstEventStatus s) mutable{
-                // Frame cleanup
-                zframe_destroy(&msg_data);
-            });
+				// Send message to submodules
+				dispatch_receive_event(stage_msg, [stage_msg, msg_data](ZstEventStatus s) mutable {
+					// Frame cleanup
+					zframe_destroy(&msg_data);
+				});
+			}
+			else {
+				ZstLog::net(LogLevel::warn, "Received malformed message. Ignoring"); 
+			} 
         }
         
         // Message Cleanup

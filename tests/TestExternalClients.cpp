@@ -162,6 +162,7 @@ BOOST_FIXTURE_TEST_CASE(find_performer_entities, FixtureWaitForSinkClient) {
 
 BOOST_FIXTURE_TEST_CASE(connect_cable, FixtureExternalEntities) {
     auto sink_plug = dynamic_cast<ZstInputPlug*>(sink_ent->get_child_by_URI(sink_plug_uri));
+	BOOST_TEST_REQUIRE(sink_plug);
     auto cable = test_client->connect_cable(sink_plug, output_ent->output());
 	BOOST_TEST_REQUIRE(cable);
     BOOST_TEST(cable->is_activated());
@@ -220,6 +221,7 @@ BOOST_FIXTURE_TEST_CASE(entity_arriving, FixtureWaitForSinkClient) {
     test_client->add_hierarchy_adaptor(entityEvents);
     
 	auto remote_ent = std::make_unique<InputComponent>("remote_input");
+	BOOST_TEST_REQUIRE(remote_client->get_root()->is_activated());
 	remote_client->get_root()->add_child(remote_ent.get());
 
 	BOOST_TEST_CHECKPOINT("Waiting for remote entity to arrive");

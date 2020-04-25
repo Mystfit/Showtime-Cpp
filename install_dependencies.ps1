@@ -96,6 +96,7 @@ function Build-Boost{
         Invoke-WebRequest "http://dl.bintray.com/boostorg/release/$version/source/boost_$boost_ver_scored.7z" -OutFile "$boost_file"
         Write-Output "Extracting boost"
         Push-Location $dependency_dir
+        # TODO: Use platform native zip util!
         7z x -y -bd -bb0 $boost_file
         Remove-Item $boost_file
         Pop-Location

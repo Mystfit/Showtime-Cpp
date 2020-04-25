@@ -22,14 +22,14 @@ public:
 	void on_read(beast::error_code ec, std::size_t bytes_transferred);
 	void on_write(beast::error_code ec, std::size_t bytes_transferred);
 
-	const uuid& endpoint_UUID();
+	const uuid& origin_endpoint_UUID();
 private:
 	websocket::stream<beast::tcp_stream> m_ws;
 	std::string m_socket_id;
 	beast::flat_buffer m_recv_buffer;
 	std::vector<std::shared_ptr< std::pair< std::unique_ptr<uint8_t[]>, size_t > const> > m_out_messages;
 	std::shared_ptr<ZstWebsocketServerTransport> m_transport;
-	uuid m_endpoint_UUID;
+	uuid m_origin_endpoint_UUID;
 };
 
 }

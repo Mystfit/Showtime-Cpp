@@ -7,7 +7,7 @@ ZstWebsocketSession::ZstWebsocketSession(tcp::socket&& socket, std::shared_ptr<Z
 	m_ws(std::move(socket)),
 	m_transport(transport)
 {
-	m_endpoint_UUID = random_generator()();
+	m_origin_endpoint_UUID = random_generator()();
 }
 
 ZstWebsocketSession::~ZstWebsocketSession()
@@ -73,8 +73,11 @@ void ZstWebsocketSession::on_read(beast::error_code ec, std::size_t bytes_transf
 
 	//Parse message
 	auto msg = m_transport->get_msg();
-	msg->init(GetStageMessage(m_recv_buffer.data().data()));
-	msg->set_endpoint_UUID(m_endpoint_UUID);
+	msg->init(GetStageMessage(
+		m_recv_buffer.data().data()),
+		m_origin_endpoint_UUID,
+		std::dynamic_pointer_cast<ZstStageTransport>(m_transport->ZstTransportLayer::shared_from_this())
+	);
 
 	// Send message to other modules
 	m_transport->dispatch_receive_event(msg, [this](ZstEventStatus e) {
@@ -122,9 +125,9 @@ void ZstWebsocketSession::on_write(beast::error_code ec, std::size_t bytes_trans
 	}
 }
 
-const uuid& ZstWebsocketSession::endpoint_UUID()
+const uuid& ZstWebsocketSession::origin_endpoint_UUID()
 {
-	return m_endpoint_UUID;
+	return m_origin_endpoint_UUID;
 }
 
 }

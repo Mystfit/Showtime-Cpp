@@ -24,7 +24,7 @@ ZstServiceDiscoveryTransport::~ZstServiceDiscoveryTransport()
 
 void ZstServiceDiscoveryTransport::init(int port)
 {
-    ZstTransportLayerBase::init();
+    ZstTransportLayer::init();
 
     //Create an actor to handle our zloop
     m_beacon_actor.init("beacon_actor");
@@ -61,7 +61,7 @@ void ZstServiceDiscoveryTransport::destroy()
 		zst_zmq_dec_ref_count();
 	}
 	set_connected(false);
-    ZstTransportLayerBase::destroy();
+    ZstTransportLayer::destroy();
 }
 
 int ZstServiceDiscoveryTransport::s_handle_beacon(zloop_t * loop, zsock_t * socket, void * arg)
@@ -71,7 +71,9 @@ int ZstServiceDiscoveryTransport::s_handle_beacon(zloop_t * loop, zsock_t * sock
     if (ipaddress) {
         auto beacon_content = zframe_recv(socket);
         auto msg = transport->get_msg();
-        msg->init(GetStageBeaconMessage(zframe_data(beacon_content)), ipaddress);
+        
+        auto shared_transport = std::static_pointer_cast<ZstServiceDiscoveryTransport>(transport->shared_from_this());
+        msg->init(GetStageBeaconMessage(zframe_data(beacon_content)), ipaddress, shared_transport);
 
         transport->dispatch_receive_event(msg, [beacon_content](ZstEventStatus status){
             zframe_t * b = beacon_content;

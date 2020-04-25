@@ -39,6 +39,19 @@ BOOST_AUTO_TEST_CASE(double_init) {
 	test_client->destroy();
 }
 
+BOOST_FIXTURE_TEST_CASE(auto_join_timeout, FixtureInit) {
+	//Testing abort connection if we're already connected
+	ZstLog::app(LogLevel::debug, "before autojoin");
+	test_client->auto_join_by_name("fakeserver");
+	BOOST_TEST(!test_client->is_connecting());
+
+	ZstLog::app(LogLevel::debug, "before asyncautojoin");
+	test_client->auto_join_by_name_async("fakeserver");
+	WAIT_UNTIL_STAGE_TIMEOUT
+	ZstLog::app(LogLevel::debug, "before asyncautojoin check");
+	BOOST_TEST(!test_client->is_connecting());
+}
+
 BOOST_FIXTURE_TEST_CASE(single_server_connection, FixtureInitAndCreateServerWithEpheremalPort){
 	//Testing abort connection if we're already connected
 	test_client->join(server_address.c_str());
@@ -76,9 +89,9 @@ BOOST_FIXTURE_TEST_CASE(async_join, FixtureInitAndCreateServerWithEpheremalPort,
 	auto connectCallback = std::make_shared< TestConnectionEvents>();
 	test_client->add_connection_adaptor(connectCallback);
 	test_client->join_async(server_address.c_str());
-	wait_for_event(test_client, connectCallback, 2);
+	wait_for_event(test_client, connectCallback, 1);
 	BOOST_TEST(test_client->is_connected());
-	BOOST_TEST_REQUIRE(connectCallback->is_synced);
+	BOOST_TEST_REQUIRE(connectCallback->is_connected);
 }
 
 BOOST_FIXTURE_TEST_CASE(autojoin_by_name, FixtureInitAndCreateServerWithEpheremalPort){
@@ -130,11 +143,15 @@ BOOST_FIXTURE_TEST_CASE(server_shutdown_disconnects_client, FixtureJoinServer) {
 	BOOST_TEST(!test_client->is_connected());
 }
 
-BOOST_FIXTURE_TEST_CASE(autojoin_by_name_async, FixtureInitAndCreateServerWithEpheremalPort) {
+BOOST_FIXTURE_TEST_CASE(autojoin_by_name_async, FixtureInit) {
 	//Testing autojoin by name
-	test_client->auto_join_by_name_async(server_name.c_str());
+	std::string delayed_server_name = "delayed_server";
+	test_client->auto_join_by_name_async(delayed_server_name.c_str());
+	WAIT_UNTIL_STAGE_BEACON
+	auto delayed_server = std::make_unique<ShowtimeServer>(delayed_server_name);
 	WAIT_UNTIL_STAGE_BEACON
 	BOOST_TEST(test_client->is_connected());
+	delayed_server->destroy();
 }
 
 BOOST_FIXTURE_TEST_CASE(async_join_callback_adaptor, FixtureInitAndCreateServerWithEpheremalPort){
@@ -155,6 +172,7 @@ BOOST_FIXTURE_TEST_CASE(sync_join_bad_address, FixtureInit){
 BOOST_FIXTURE_TEST_CASE(async_join_bad_address_timeout, FixtureInit){
 	//Test async join timeout
 	test_client->join_async(bad_server_address.c_str());
+	ZstLog::app(LogLevel::notification, "Make sure that we didn't block");
 	WAIT_UNTIL_STAGE_TIMEOUT
 	BOOST_TEST(!test_client->is_connected());
 }

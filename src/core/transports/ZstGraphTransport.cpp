@@ -20,7 +20,7 @@ ZstGraphTransport::~ZstGraphTransport()
 
 void ZstGraphTransport::init()
 {
-	ZstTransportLayerBase::init();
+	ZstTransportLayer::init();
 
 	m_graph_actor.init("graph");
 	init_graph_sockets();
@@ -32,7 +32,7 @@ void ZstGraphTransport::destroy()
 {
 	m_graph_actor.stop_loop();
 	destroy_graph_sockets();
-	ZstTransportLayerBase::destroy();
+	ZstTransportLayer::destroy();
 }
 
 const std::string & ZstGraphTransport::get_graph_in_address() const
@@ -45,10 +45,10 @@ const std::string & ZstGraphTransport::get_graph_out_address() const
 	return m_graph_out_addr;
 }
     
-ZstMessageReceipt ZstGraphTransport::send_msg(flatbuffers::Offset<GraphMessage> message_content, flatbuffers::FlatBufferBuilder& buffer_builder, const ZstTransportArgs& args)
+ZstMessageReceipt ZstGraphTransport::send_msg(flatbuffers::Offset<GraphMessage> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder>& buffer_builder, const ZstTransportArgs& args)
 {
-    buffer_builder.Finish(message_content);
-    send_message_impl(buffer_builder.GetBufferPointer(), buffer_builder.GetSize(), args);
+    buffer_builder->Finish(message_content);
+    send_message_impl(buffer_builder->GetBufferPointer(), buffer_builder->GetSize(), args);
     return ZstMessageReceipt{Signal_OK};
 }
 
@@ -96,7 +96,7 @@ void ZstGraphTransport::sock_recv(zsock_t* socket)
 	//Unpack the frame into a message
 
 	auto perf_msg = this->get_msg();
-    perf_msg->init(GetGraphMessage(zframe_data(frame)));
+    perf_msg->init(GetGraphMessage(zframe_data(frame)), std::static_pointer_cast<ZstGraphTransport>(ZstTransportLayer::shared_from_this()));
 	
 	//Publish message to other modules
     dispatch_receive_event(perf_msg, [perf_msg, frame](ZstEventStatus s) mutable {
@@ -144,18 +144,6 @@ zsock_t * ZstGraphTransport::input_graph_socket() const
 zsock_t * ZstGraphTransport::output_graph_socket() const
 {
 	return m_graph_out;
-}
-
-void ZstGraphTransport::dispatch_receive_event(std::shared_ptr<ZstPerformanceMessage> msg, ZstEventCallback on_complete)
-{
-	ZstTransportLayerBase::dispatch_receive_event(msg, on_complete);
-	/*msg_events()->defer([msg](std::shared_ptr<ZstGraphTransportAdaptor> adaptor) {
-		adaptor->on_receive_msg(msg);
-	}, [this, msg, on_complete](ZstEventStatus status) {
-		process_response(msg->id(), ZstMessageReceipt{ Signal::Signal_OK });
-		on_complete(status);
-		this->release(msg);
-	});*/
 }
 
 }

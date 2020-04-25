@@ -16,7 +16,7 @@ typedef struct _zsock_t zsock_t;
 
 class ZstServiceDiscoveryTransport : 
 	//public ZstStageTransport
-    public ZstTransportLayerBase<ZstServerBeaconMessage, ZstServiceDiscoveryAdaptor>
+    public ZstTransportLayer<ZstServerBeaconMessage, ZstServiceDiscoveryAdaptor>
 {
 public:
     ZST_EXPORT ZstServiceDiscoveryTransport();

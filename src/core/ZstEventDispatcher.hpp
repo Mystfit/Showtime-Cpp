@@ -149,7 +149,7 @@ public:
 		if (this->m_adaptors.size() < 1) {
 			return;
 		}
-		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
+		//std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		for (auto adaptor : this->m_adaptors) {
 			if(auto adp = adaptor.lock())
 				event(std::static_pointer_cast< typename std::pointer_traits<T>::element_type>(adp));
@@ -175,7 +175,16 @@ public:
 	void process_events() {
 		ZstEvent<T> event;
 
+		std::vector< ZstEvent<T> > events;
 		while (this->m_events.try_dequeue(event)) {
+		/*	events.push_back(event);
+		}
+
+		if (events.size()) {
+			ZstLog::net(LogLevel::debug, "Queued events: {}", events.size());
+		}
+
+		for(auto event : events){*/ 
 			bool success = true;
 
 			std::set< std::weak_ptr<ZstEventAdaptor>, std::owner_less< std::weak_ptr<ZstEventAdaptor> > > adaptors;

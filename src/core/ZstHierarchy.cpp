@@ -409,14 +409,16 @@ void ZstHierarchy::on_synchronisable_destroyed(ZstSynchronisable * synchronisabl
 
 	if (already_removed) {
 		// Make sure that we don't call this synchronisable object in the future
-		add_dead_synchronisable_ID(synchronisable->instance_id());	
+		add_dead_synchronisable_ID(synchronisable->instance_id());
 		reaper_cleanup_entity(dynamic_cast<ZstEntityBase*>(synchronisable));
 		return;
 	}
+	auto synchronisable_id = synchronisable->instance_id();
+    reaper().add_cleanup_op([this, synchronisable, synchronisable_id]() {
+		if (already_removed_synchronisable(synchronisable_id))
+			return;
 
-    reaper().add_cleanup_op([this, synchronisable]() {
 		//Remove entity from quick lookup map
-		std::lock_guard<std::recursive_mutex> lock(m_hierarchy_mutex);
 		reaper_cleanup_entity(dynamic_cast<ZstEntityBase*>(synchronisable));
 
 		if (synchronisable->is_proxy()) {
@@ -424,8 +426,10 @@ void ZstHierarchy::on_synchronisable_destroyed(ZstSynchronisable * synchronisabl
 				return(item.get() == synchronisable) ? true : false;
 			});
 
-			if (it != m_proxies.end())
+			if (it != m_proxies.end()) {
+				std::lock_guard<std::recursive_mutex> lock(m_hierarchy_mutex);
 				m_proxies.erase(it);
+			}
 		}
 	});
 	

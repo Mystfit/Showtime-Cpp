@@ -58,28 +58,28 @@ void ShowtimeClient::join_async(const char * stage_address){
 
 void ShowtimeClient::join_by_name(const char * stage_name)
 {
-    if (!library_init_guard()) return;
-    auto servers_list = m_client->get_discovered_servers();
-    for(auto server : servers_list){
-        if(strcmp(stage_name, server.name.c_str()) == 0){
-            join(server.address.c_str());
-            return;
-        }
-    }
-    ZstLog::net(LogLevel::error, "Could not find server {}", stage_name);
+	if (!library_init_guard()) return;
+	auto discovered_server = m_client->get_discovered_server(stage_name);
+
+	if (strcmp(discovered_server.name.c_str(), stage_name) != 0) {
+		ZstLog::net(LogLevel::error, "Could not find server {}", stage_name);
+		return;
+	}
+	join(discovered_server.address.c_str());
+	return;
 }
 
 void ShowtimeClient::join_by_name_async(const char * stage_name)
 {
     if (!library_init_guard()) return;
-    auto servers_list = m_client->get_discovered_servers();
-    for(auto server : servers_list){
-        if(strcmp(stage_name, server.name.c_str()) == 0){
-            join_async(server.address.c_str());
-            return;
-        }
-    }
-    ZstLog::net(LogLevel::error, "Could not find server {}", stage_name);
+	auto discovered_server = m_client->get_discovered_server(stage_name);
+
+	if (strcmp(discovered_server.name.c_str(), stage_name) != 0) {
+		ZstLog::net(LogLevel::error, "Could not find server {}", stage_name);
+		return;
+	}
+	join_async(discovered_server.address.c_str());
+	return;
 }
 
 void ShowtimeClient::auto_join_by_name(const char * name)
@@ -103,12 +103,7 @@ void ShowtimeClient::get_discovered_servers(ZstServerAddressBundle & servers)
 
 ZstServerAddress ShowtimeClient::get_discovered_server(const char* server_name)
 {
-	ZstServerAddressBundle bundle;
-	this->get_discovered_servers(bundle);
-	auto server_address = std::find_if(bundle.begin(), bundle.end(), [server_name](const ZstServerAddress& server) {
-		return strcmp(server.name.c_str(), server_name) == 0;
-	});
-	return (bundle.begin() != bundle.end()) ? *server_address : ZstServerAddress();
+	return m_client->get_discovered_server(server_name);
 }
 
 

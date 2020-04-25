@@ -8,6 +8,7 @@
 #include <boost/log/sources/record_ostream.hpp>
 #include <boost/log/sources/global_logger_storage.hpp>
 #include <boost/log/sources/severity_channel_logger.hpp>
+#include <boost/log/attributes/scoped_attribute.hpp>
 #include <boost/log/expressions.hpp>
 #include <boost/core/null_deleter.hpp>
 #include <fstream>
@@ -29,6 +30,8 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(line_id, "LineID", unsigned int)
 BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", LogLevel)
 BOOST_LOG_ATTRIBUTE_KEYWORD(channel, "Channel", std::string)
 BOOST_LOG_ATTRIBUTE_KEYWORD(process_name, "ProcessName", std::string)
+BOOST_LOG_ATTRIBUTE_KEYWORD(thread_id, "ThreadID", attrs::current_thread_id::value_type)
+//BOOST_LOG_ATTRIBUTE_KEYWORD(thread_id, "Thread", std::string)
 
 // Global logger
 typedef src::severity_channel_logger_mt<LogLevel, std::string> ZstLogger_mt;
@@ -57,8 +60,9 @@ using namespace ZstLog;
 void my_formatter(logging::record_view const& rec, logging::formatting_ostream& strm)
 {
     //expr::stream << "[" << process_name << "] " << line_id << ": <" << severity << "> [" << channel << "] " << expr::smessage
+	strm << logging::extract< unsigned int >("LineID", rec) << ": ";
     strm << "[" << logging::extract<std::string>("ProcessName", rec) << "] ";
-    strm << logging::extract< unsigned int >("LineID", rec) << ": ";
+	strm << "[" << rec[thread_id] << "] ";
     strm << "[" << logging::extract<std::string>("Channel", rec) << "] ";
     strm << "<" << get_severity_str(logging::extract<LogLevel>("Severity", rec).get()) << "> ";
     strm << rec[expr::smessage];
@@ -88,12 +92,12 @@ void ZstLog::init_logger(const char * logger_name, LogLevel level)
 	min_severity[ZST_LOG_NET_CHANNEL] = level;
     min_severity[ZST_LOG_SERVER_CHANNEL] = level;
 	min_severity[ZST_LOG_APP_CHANNEL] = level;
+	logging::add_common_attributes();
 	logging::core::get()->add_global_attribute("ProcessName", attrs::current_process_name());
-    
+
 	sink->set_formatter(&my_formatter);
 	sink->set_filter(min_severity || severity >= error);
 	logging::core::get()->add_sink(sink);
-	logging::add_common_attributes();
 }
 
 void ZstLog::init_file_logging(const char * log_file_path)

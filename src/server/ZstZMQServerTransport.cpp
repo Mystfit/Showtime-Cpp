@@ -23,7 +23,7 @@ ZstZMQServerTransport::~ZstZMQServerTransport()
 
 void ZstZMQServerTransport::init()
 {
-	ZstTransportLayerBase::init();
+	ZstTransportLayer::init();
 
 	//Socket
 	m_clients_sock = zsock_new(ZMQ_ROUTER);
@@ -56,7 +56,7 @@ void ZstZMQServerTransport::destroy()
 
 	m_port = -1;
 	set_connected(false);
-	ZstTransportLayerBase::destroy();
+	ZstTransportLayer::destroy();
 }
 
 int ZstZMQServerTransport::bind(const std::string& address)
@@ -98,21 +98,31 @@ void ZstZMQServerTransport::sock_recv(zsock_t* socket)
 		//Unpack message
 		auto payload_data = zmsg_pop(recv_msg);
 		if (payload_data) {
-			auto msg = get_msg();
-			msg->init(GetStageMessage(zframe_data(payload_data)));
+			if (VerifyStageMessageBuffer(flatbuffers::Verifier(zframe_data(payload_data), zframe_size(payload_data)))) {
+				auto msg = get_msg();
+				msg->init(
+					GetStageMessage(zframe_data(payload_data)),
+					uuid(boost::lexical_cast<uuid>((char*)zframe_data(identity_frame), zframe_size(identity_frame))),
+					std::dynamic_pointer_cast<ZstStageTransport>(ZstTransportLayer::shared_from_this())
+				);
 
-			//Save sender as a local argument
-			msg->set_endpoint_UUID(uuid(boost::lexical_cast<uuid>((char*)zframe_data(identity_frame), zframe_size(identity_frame))));
-		
-			// Send message to submodules
-			dispatch_receive_event(msg, [this, msg, identity_frame, payload_data](ZstEventStatus s) mutable {
-				// Frame cleanup
-				zframe_destroy(&payload_data);
-				zframe_destroy(&identity_frame);
-			});
+				if (msg->buffer()->content_type() != Content_SignalMessage) {
+					//ZstLog::net(LogLevel::debug, "Server received message {} {}", EnumNameContent(msg->buffer()->content_type()), boost::uuids::to_string(msg->id()));
+				}
+
+				// Send message to submodules
+				dispatch_receive_event(msg, [this, msg, identity_frame, payload_data](ZstEventStatus s) mutable {
+					// Frame cleanup
+					zframe_destroy(&payload_data);
+					zframe_destroy(&identity_frame);
+				});
+			}
+			else {
+				ZstLog::server(LogLevel::warn, "Received malformed message. Ignoring");
+			}
 		}
 		else {
-			ZstLog::net(LogLevel::warn, "Received message with no payload data. Can't unpack.");
+			ZstLog::server(LogLevel::warn, "Received message with no payload data. Can't unpack.");
 		}
 
 		//Cleanup resources
@@ -123,6 +133,9 @@ void ZstZMQServerTransport::sock_recv(zsock_t* socket)
 
 void ZstZMQServerTransport::send_message_impl(const uint8_t* msg_buffer, size_t msg_buffer_size, const ZstTransportArgs& args) const
 {
+	if(!VerifyStageMessageBuffer(flatbuffers::Verifier(msg_buffer, msg_buffer_size)))
+		throw;
+
 	zmsg_t* m = zmsg_new();
 
 	//Add destination frame at beginning to route our message to the correct destination
@@ -137,8 +150,8 @@ void ZstZMQServerTransport::send_message_impl(const uint8_t* msg_buffer, size_t 
 
 	std::lock_guard<std::mutex> lock(m_transport_mtx);
 	//zmsg_send(&m, m_clients_sock);
-	int result = m_server_actor.send_to_socket(m_clients_sock, m);
-
+	//int result = m_server_actor.send_to_socket(m_clients_sock, m);
+	int result = zmsg_send(&m, m_clients_sock);
 	//Errors
 	if (result != 0) {
 		int err = zmq_errno();

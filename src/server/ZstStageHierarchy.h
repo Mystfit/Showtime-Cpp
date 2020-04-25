@@ -33,20 +33,20 @@ public:
 	virtual void on_entity_arriving(ZstEntityBase* entity) override;
 	virtual void on_factory_arriving(ZstEntityFactory* factory) override;
 	virtual void on_performer_arriving(ZstPerformer* performer) override;
-	void on_receive_msg(std::shared_ptr<ZstStageMessage> msg) override;
+	void on_receive_msg(const std::shared_ptr<ZstStageMessage>& msg) override;
 
 
 	// ----------------
 	// Message handlers
 	// ----------------
 
-	Signal signal_handler(const SignalMessage* request, ZstPerformerStageProxy* sender);
-	Signal create_client_handler(const ClientJoinRequest * request, uuid endpoint_UUID);
-	Signal client_leaving_handler(const ClientLeaveRequest* request, ZstPerformerStageProxy* sender);
-	Signal create_entity_handler(const EntityCreateRequest* request, ZstPerformerStageProxy* sender);
-	Signal factory_create_entity_handler(const StageMessage* request, ZstPerformerStageProxy* sender);
-	Signal update_entity_handler(const EntityUpdateRequest* request, ZstPerformerStageProxy* sender);
-	Signal destroy_entity_handler(const EntityDestroyRequest* request, ZstPerformerStageProxy* sender);
+	Signal signal_handler(const std::shared_ptr<ZstStageMessage>& request, ZstPerformerStageProxy* sender);
+	Signal create_client_handler(const std::shared_ptr<ZstStageMessage>& request);
+	Signal client_leaving_handler(const std::shared_ptr<ZstStageMessage>& request, ZstPerformerStageProxy* sender);
+	Signal create_entity_handler(const std::shared_ptr<ZstStageMessage>& request, ZstPerformerStageProxy* sender);
+	Signal factory_create_entity_handler(const std::shared_ptr<ZstStageMessage>& request, ZstPerformerStageProxy* sender);
+	Signal update_entity_handler(const std::shared_ptr<ZstStageMessage>& request, ZstPerformerStageProxy* sender);
+	Signal destroy_entity_handler(const std::shared_ptr<ZstStageMessage>& request, ZstPerformerStageProxy* sender);
 
 
 	// ----------------
@@ -54,7 +54,7 @@ public:
 	// ----------------
 	void reply_with_signal(ZstPerformerStageProxy* performer, Signal signal, ZstMsgID request_id);
 	void broadcast(Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder> & buffer_builder, const ZstTransportArgs& args, const std::vector<ZstPerformer*> & excluded = std::vector<ZstPerformer*>());
-	void whisper(ZstPerformerStageProxy* performer, Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs& args);
+	void whisper(ZstPerformerStageProxy* performer, Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder>& buffer_builder, const ZstTransportArgs& args);
 
 
 	// ----------------
@@ -68,8 +68,7 @@ public:
 	// Socket IDs
 	// ---------------------
 
-	ZstPerformerStageProxy* get_client_from_endpoint_UUID(const uuid& endpoint_UUID);
-
+	ZstPerformerStageProxy* get_client_from_endpoint_UUID(const uuid& origin_endpoint_UUID);
 };
 
 }

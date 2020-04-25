@@ -315,7 +315,6 @@ namespace ZstTest
 	public:
         ZstURI last_arrived_performer;
         ZstURI last_left_performer;
-
         
 		void on_performer_arriving(ZstPerformer * performer) override {
 			ZstLog::app(LogLevel::debug, "PERFORMER_ARRIVING: {}", performer->URI().path());
@@ -402,6 +401,28 @@ namespace ZstTest
 		return boost::thread(boost::bind(&ZstTest::log_external, boost::ref(out_pipe)));
 	}
 
+	class EventLoop {
+	public:
+		EventLoop(std::shared_ptr<ShowtimeClient> client) : m_client(client) {}
+
+		void operator()() {
+			while (1) {
+				try {
+					boost::this_thread::interruption_point();
+					m_client->poll_once();
+					std::this_thread::sleep_for(std::chrono::milliseconds(0));
+				}
+				catch (boost::thread_interrupted) {
+					ZstLog::net(LogLevel::debug, "Benchmark event loop exiting.");
+					break;
+				}
+			}
+		}
+	private:
+		std::shared_ptr<ShowtimeClient> m_client;
+	};
+
+
 	class FixtureInit {
 	public:
         std::shared_ptr<ShowtimeClient> test_client;
@@ -458,6 +479,31 @@ namespace ZstTest
 		~FixtureJoinServer()
 		{
 		}
+	};
+
+
+	class FixtureEventLoop {
+	public:
+		FixtureEventLoop(std::shared_ptr<ShowtimeClient> client) : 
+			m_eventloop_thread(boost::thread(EventLoop(client))) 
+		{
+		}
+
+		~FixtureEventLoop() {
+			m_eventloop_thread.interrupt();
+			m_eventloop_thread.join();
+		}
+	private:
+		boost::thread m_eventloop_thread;
+	};
+
+
+	class FixtureJoinEventLoop : 
+		public FixtureJoinServer, 
+		public FixtureEventLoop 
+	{
+	public:
+		FixtureJoinEventLoop() : FixtureEventLoop(test_client) {}
 	};
 
 

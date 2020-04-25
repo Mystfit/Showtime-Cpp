@@ -58,8 +58,13 @@ ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * outpu
 {
 	ZstCable * cable = NULL;
 
-	if (!input || !output) {
-		ZstLog::net(LogLevel::notification, "Can't connect cable, plug missing.");
+	if (!input) {
+		ZstLog::net(LogLevel::notification, "Can't connect cable, input plug missing.");
+		return NULL;
+	}
+
+	if (!output) {
+		ZstLog::net(LogLevel::notification, "Can't connect cable, output plug missing.");
 		return NULL;
 	}
 
@@ -129,6 +134,10 @@ void ZstSession::destroy_cable_complete(ZstCable * cable)
     
     //Deactivate the cable
     synchronisable_enqueue_deactivation(cable);
+
+	ZstLog::net(LogLevel::debug, "Destroy cable ({}-->{}) completed",
+		cable->get_address().get_output_URI().path(),
+		cable->get_address().get_input_URI().path());
 }
 
 void ZstSession::disconnect_plugs(ZstInputPlug * input_plug, ZstOutputPlug * output_plug)

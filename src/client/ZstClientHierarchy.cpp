@@ -1,4 +1,5 @@
 #include "ZstClientHierarchy.h"
+#include "../core/transports/ZstStageTransport.h"
 
 using namespace flatbuffers;
 
@@ -44,7 +45,7 @@ void ZstClientHierarchy::flush_events()
 	ZstClientModule::flush_events();
 }
 
-void ZstClientHierarchy::on_receive_msg(std::shared_ptr<ZstStageMessage> stage_msg)
+void ZstClientHierarchy::on_receive_msg(const std::shared_ptr<ZstStageMessage>& stage_msg)
 {
     switch (stage_msg->type()) {
 		case Content_ClientLeaveRequest:
@@ -76,12 +77,12 @@ void ZstClientHierarchy::publish_entity_update(ZstEntityBase * entity, const Zst
 			args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
             
             // Serialize entity into buffer
-            FlatBufferBuilder builder;
+            auto builder = std::make_shared< FlatBufferBuilder>();
 			auto update_offset = CreateEntityUpdateRequest(
-				builder,
+				*builder,
 				entity->serialized_entity_type(),
-				entity->serialize(builder),
-				builder.CreateString(original_path.path(), original_path.full_size())
+				entity->serialize(*builder),
+				builder->CreateString(original_path.path(), original_path.full_size())
 			);
             
             // Send message
@@ -92,7 +93,7 @@ void ZstClientHierarchy::publish_entity_update(ZstEntityBase * entity, const Zst
 
 void ZstClientHierarchy::request_entity_activation(ZstEntityBase * entity)
 {
-	activate_entity(entity, ZstTransportRequestBehaviour::SYNC_REPLY, [](ZstMessageReceipt receipt) {});
+	activate_entity(entity, ZstTransportRequestBehaviour::SYNC_REPLY, [](const ZstMessageResponse& r) {});
 }
 
 void ZstClientHierarchy::request_entity_registration(ZstEntityBase* entity)
@@ -102,7 +103,7 @@ void ZstClientHierarchy::request_entity_registration(ZstEntityBase* entity)
 
 void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype)
 {
-	activate_entity(entity, sendtype, [](ZstMessageReceipt receipt) {});
+	activate_entity(entity, sendtype, [](const ZstMessageResponse& r) {});
 }
 
 void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype, ZstMessageReceivedAction callback)
@@ -127,24 +128,28 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 	//Build message
 	ZstTransportArgs args;
 	args.msg_send_behaviour = sendtype;
-	args.on_recv_response = [this, entity, callback](ZstMessageReceipt response) {
-		if (response.status == Signal_OK){
-			this->activate_entity_complete(entity);
-			callback(response);
-		}
-		else {
-			ZstLog::net(LogLevel::error, "Activate entity {} failed with status {}", entity->URI().path(), EnumNameSignal(response.status));
-			return;
+	args.on_recv_response = [this, entity, callback](const ZstMessageResponse& response) {
+		auto stage_response = std::static_pointer_cast<ZstStageMessage>(response.response);
+		if (stage_response->buffer()->content_type() == Content_SignalMessage) {
+			auto signal = stage_response->buffer()->content_as_SignalMessage()->signal();
+			if (signal == Signal_OK) {
+				this->activate_entity_complete(entity);
+				callback(response);
+			}
+			else {
+				ZstLog::net(LogLevel::error, "Activate entity {} failed with status {}", entity->URI().path(), EnumNameSignal(signal));
+				return;
+			}
 		}
 	};
 
 	//Send message
 	stage_events()->invoke([args, entity](std::shared_ptr<ZstStageTransportAdaptor> adaptor){
-        auto builder = FlatBufferBuilder();
+		auto builder = std::make_shared< FlatBufferBuilder>();
 		ZstEntityBundle bundle;
 		entity->get_child_entities(bundle, true, true);
 		for (auto c : bundle) {
-			auto content_message = CreateEntityCreateRequest(builder, c->serialized_entity_type(), c->serialize(builder));
+			auto content_message = CreateEntityCreateRequest(*builder, c->serialized_entity_type(), c->serialize(*builder));
 			adaptor->send_msg(Content_EntityCreateRequest, content_message.Union(), builder, args);
 		}
 	});
@@ -165,19 +170,15 @@ void ZstClientHierarchy::deactivate_entity(ZstEntityBase * entity, const ZstTran
 		//Build message
 		ZstTransportArgs args;
 		args.msg_send_behaviour = sendtype;
-		args.on_recv_response = [this, entity](ZstMessageReceipt response) {
-			if (response.status != Signal_OK) {
-				ZstLog::net(LogLevel::error, "Destroy entity failed with status {}", EnumNameSignal(response.status));
-				return;
-			}
-			this->destroy_entity_complete(entity);
+		args.on_recv_response = [this, entity](ZstMessageResponse response) {
+			if (ZstStageTransport::verify_signal(response.response, Signal_OK, "Destroy entity"))
+				this->destroy_entity_complete(entity);
 		};
 
 		//Send message
 		stage_events()->invoke([this, &args, entity](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
-            
-            FlatBufferBuilder builder;
-            auto content_message = CreateEntityDestroyRequest(builder, builder.CreateString(entity->URI().path(), entity->URI().full_size()));
+			auto builder = std::make_shared< FlatBufferBuilder>();
+            auto content_message = CreateEntityDestroyRequest(*builder, builder->CreateString(entity->URI().path(), entity->URI().full_size()));
             adaptor->send_msg(Content_EntityDestroyRequest, content_message.Union(), builder, args);
             
 			if (args.msg_send_behaviour == ZstTransportRequestBehaviour::PUBLISH) {
@@ -222,11 +223,9 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
     stage_events()->invoke([this, sendtype, creatable_path, &entity, entity_name, factory](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
 		ZstTransportArgs args;
 		args.msg_send_behaviour = sendtype;
-		args.on_recv_response = [this, &entity, sendtype, creatable_path, entity_name, factory](ZstMessageReceipt response) {
-			if (response.status != Signal_OK) {
-				ZstLog::net(LogLevel::error, "Creating remote entity from factory failed with status {}", EnumNameSignal(response.status));
+		args.on_recv_response = [this, &entity, sendtype, creatable_path, entity_name, factory](ZstMessageResponse response) {
+			if (!ZstStageTransport::verify_signal(response.response, Signal_OK, "Creating remote entity from factory"))
 				return;
-			}
 
 			ZstLog::net(LogLevel::notification, "Created entity from {}", creatable_path.path());
 			if (sendtype == ZstTransportRequestBehaviour::SYNC_REPLY) {
@@ -246,8 +245,8 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
 			}
 		};
         
-        FlatBufferBuilder builder;
-        auto content_msg = CreateFactoryCreateEntityRequest(builder, builder.CreateString(creatable_path.path(), creatable_path.full_size()),  builder.CreateString(entity_name.path(), entity_name.full_size()));
+		auto builder = std::make_shared< FlatBufferBuilder>();
+        auto content_msg = CreateFactoryCreateEntityRequest(*builder, builder->CreateString(creatable_path.path(), creatable_path.full_size()),  builder->CreateString(entity_name.path(), entity_name.full_size()));
         adaptor->send_msg(Content_FactoryCreateEntityRequest, content_msg.Union(), builder, args);
     });
 
@@ -305,16 +304,18 @@ void ZstClientHierarchy::factory_create_entity_handler(const FactoryCreateEntity
 			ZstLog::net(LogLevel::notification, "Activating creatable {} ", entity->URI().path());
             
             // Activate entity separately
-			this->activate_entity(entity, ZstTransportRequestBehaviour::ASYNC_REPLY, [this, entity, request_id](ZstMessageReceipt receipt) {
-				ZstLog::net(LogLevel::notification, "Creatable {} activated", entity->URI().path());
+			this->activate_entity(entity, ZstTransportRequestBehaviour::ASYNC_REPLY, [this, entity, request_id](ZstMessageResponse response) {
+				if (!ZstStageTransport::verify_signal(response.response, Signal_OK, fmt::format("Creatable {} activation request timed out", entity->URI().path())))
+					return;
 
+				ZstLog::net(LogLevel::notification, "Creatable {} activated", entity->URI().path());
 				stage_events()->invoke([request_id](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
 					ZstTransportArgs args;
                     args.msg_ID = request_id;
                     
                     // Send signal
-                    auto builder = FlatBufferBuilder();
-                    auto signal = CreateSignalMessage(builder, Signal_OK);
+					auto builder = std::make_shared< FlatBufferBuilder>();
+                    auto signal = CreateSignalMessage(*builder, Signal_OK);
                     adaptor->send_msg(Content_SignalMessage, signal.Union(), builder, args);
 				});
 			});
@@ -325,8 +326,8 @@ void ZstClientHierarchy::factory_create_entity_handler(const FactoryCreateEntity
                 args.msg_ID = request_id;
                 
                 // Send signals
-                auto builder = FlatBufferBuilder();
-                auto signal = CreateSignalMessage(builder, Signal_ERR_ENTITY_NOT_FOUND);
+				auto builder = std::make_shared< FlatBufferBuilder>();
+                auto signal = CreateSignalMessage(*builder, Signal_ERR_ENTITY_NOT_FOUND);
                 adaptor->send_msg(Content_SignalMessage, signal.Union(), builder, args);
 			});
 		}

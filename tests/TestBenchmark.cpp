@@ -5,37 +5,35 @@
 
 using namespace ZstTest;
 
-struct BenchmarkEventLoop {
-public:
-	BenchmarkEventLoop(std::shared_ptr<ShowtimeClient> client) : m_client(client) {}
-
-	void operator()() {
-		while (1) {
-			try {
-				boost::this_thread::interruption_point();
-				m_client->poll_once();
-				std::this_thread::sleep_for(std::chrono::milliseconds(0));
-			}
-			catch (boost::thread_interrupted) {
-				ZstLog::net(LogLevel::debug, "Benchmark event loop exiting.");
-				break;
-			}
-		}
-	}
-private:
-	std::shared_ptr<ShowtimeClient> m_client;
-};
-
-
-long double test_benchmark(std::shared_ptr<ShowtimeClient> client, bool reliable, int send_rate, int send_amount)
+long double test_benchmark(std::string& server_name, std::shared_ptr<ShowtimeClient> client, bool reliable, int send_rate, int send_amount)
 {
+
 	ZstLog::app(LogLevel::debug, "Creating entities and cables");
 
-	auto test_output = std::make_unique<OutputComponent>("bench_test_out", reliable);
+	// Create listeners
+	auto hierarchy_events = std::make_shared<TestEntityEvents>();
+	client->add_hierarchy_adaptor(hierarchy_events);
+	hierarchy_events->reset_num_calls();
+
+	// Create remote input
+	auto remote_client = std::make_shared<ShowtimeClient>();
+	remote_client->init("remote", true);
+	auto remote_eventloop = FixtureEventLoop(remote_client);
+	remote_client->auto_join_by_name(server_name.c_str());
+	BOOST_TEST_REQUIRE(remote_client->is_connected());
+
 	auto test_input = std::make_unique<InputComponent>("bench_test_in", 10, false);
+	remote_client->get_root()->add_child(test_input.get());
+	BOOST_TEST_REQUIRE(test_input->input()->is_activated());
+	wait_for_event(client, hierarchy_events, 1);
+	auto proxy_input_plug = dynamic_cast<ZstInputPlug*>(client->find_entity(test_input->input()->URI()));
+
+	// Create local output
+	auto test_output = std::make_unique<OutputComponent>("bench_test_out", reliable);
 	client->get_root()->add_child(test_output.get());
-	client->get_root()->add_child(test_input.get());
-	client->connect_cable(test_input->input(), test_output->output());
+
+	auto cable = client->connect_cable(proxy_input_plug, test_output->output());
+	BOOST_TEST_REQUIRE(cable);
 
 	int count = send_amount;
 
@@ -153,35 +151,22 @@ long double test_benchmark(std::shared_ptr<ShowtimeClient> client, bool reliable
 		ZstLog::app(LogLevel::debug, "Unreliable messages. Sent: {}, Received: {}, Lost: {}", count, test_input->num_hits, count - test_input->num_hits);
 	}
 
-	return totalmps / samples;
+	auto mps_avg = totalmps / samples;
+	ZstLog::app(LogLevel::notification, "Reliable avg mps: {}", mps_avg);
+
+	return mps_avg;
 }
 
 
-int main(int argc, char **argv)
-{
-	auto testrunner = FixtureJoinServer();
+BOOST_FIXTURE_TEST_CASE(benchmark_reliable, FixtureJoinEventLoop) {
 
-	std::string server_name = "benchmark_server";
-	auto test_client = std::make_shared<ShowtimeClient>();
-	auto server = std::make_shared<ShowtimeServer>(server_name);
-	test_client->init("test_benchmark", true);
-	test_client->auto_join_by_name(server_name.c_str());
-
-	//Create threaded event loop to handle polling
-	boost::thread eventloop_thread = boost::thread(BenchmarkEventLoop(test_client));
-
-	ZstLog::app(LogLevel::notification, "Starting reliable benchmark test");
-	long double mps_reliable = test_benchmark(test_client, true, 0, 200000);
-	ZstLog::app(LogLevel::notification, "Reliable avg mps: {}", mps_reliable);
+	BOOST_CHECK_NO_THROW(test_benchmark(server_name, test_client, true, 0, 200000));
+}
 
 #ifdef ZST_BUILD_DRAFT_API
-	ZstLog::app(LogLevel::notification, "Starting unreliable benchmark test");
-	long double mps_unreliable = test_benchmark(client, false, 1, 10000);
-	ZstLog::app(LogLevel::notification, "Unreliable avg mps: {}", mps_unreliable);
-#endif
-
-	eventloop_thread.interrupt();
-	eventloop_thread.join();
-
-	return 0;
+BOOST_FIXTURE_TEST_CASE(benchmark_reliable, FixtureJoinEventLoop) {
+	//Create threaded event loop to handle polling
+	boost::thread eventloop_thread = boost::thread(BenchmarkEventLoop(test_client));
+	BOOST_CHECK_NO_THROW(test_benchmark(server_name, test_client, false, 1, 10000));
 }
+#endif

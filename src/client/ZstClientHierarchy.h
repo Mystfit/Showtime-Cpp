@@ -42,7 +42,7 @@ public:
 	// Adaptor behaviours
 	// --------------------
 	
-	virtual void on_receive_msg(std::shared_ptr<ZstStageMessage> stage_msg) override;
+	virtual void on_receive_msg(const std::shared_ptr<ZstStageMessage>& stage_msg) override;
 	void publish_entity_update(ZstEntityBase * entity, const ZstURI& original_path) override;
 	void request_entity_activation(ZstEntityBase * entity) override;
 	void request_entity_registration(ZstEntityBase * entity) override;

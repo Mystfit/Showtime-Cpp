@@ -1,5 +1,6 @@
 #include <boost/uuid/nil_generator.hpp>
 
+#include "../core/transports/ZstStageTransport.h"
 #include "ZstPerformerStageProxy.h"
 #include "ZstLogging.h"
 
@@ -7,11 +8,12 @@ using namespace boost::uuids;
 
 namespace showtime {
 
-ZstPerformerStageProxy::ZstPerformerStageProxy(const Performer* performer, const std::string& reliable_address, const std::string& unreliable_address, const uuid& endpoint_UUID) :
+ZstPerformerStageProxy::ZstPerformerStageProxy(const Performer* performer, const std::string& reliable_address, const std::string& unreliable_address, const uuid& origin_endpoint_UUID, const std::weak_ptr<ZstStageTransport>& origin_transport) :
 	ZstPerformer(performer),
 	m_reliable_address(reliable_address),
 	m_unreliable_address(unreliable_address),
-	m_endpoint_UUID(endpoint_UUID)
+	m_origin_endpoint_UUID(origin_endpoint_UUID),
+	m_origin_transport(origin_transport)
 {
 	this->set_activated();
 	this->set_proxy();
@@ -21,7 +23,9 @@ ZstPerformerStageProxy::ZstPerformerStageProxy(const ZstPerformerStageProxy& oth
 	ZstPerformer(other),
 	m_reliable_address(other.m_reliable_address),
 	m_unreliable_address(other.m_unreliable_address),
-	m_endpoint_UUID(other.m_endpoint_UUID)
+	m_origin_endpoint_UUID(other.m_origin_endpoint_UUID),
+	m_origin_transport(other.m_origin_transport)
+
 {
 	this->set_activated();
 	this->set_proxy();
@@ -60,9 +64,14 @@ bool ZstPerformerStageProxy::has_connected_subscriber(ZstPerformerStageProxy* cl
 	return false;
 }
 
-const boost::uuids::uuid & ZstPerformerStageProxy::endpoint_UUID()
+const boost::uuids::uuid & ZstPerformerStageProxy::origin_endpoint_UUID()
 {
-	return m_endpoint_UUID;
+	return m_origin_endpoint_UUID;
+}
+
+const std::weak_ptr<ZstStageTransport>& ZstPerformerStageProxy::origin_transport()
+{
+	return m_origin_transport;
 }
 
 }

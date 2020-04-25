@@ -1,4 +1,5 @@
 #include "ZstClientSession.h"
+#include "../core/transports/ZstStageTransport.h"
 #include "../core/ZstPerformanceMessage.h"
 #include "../core/ZstValue.h"
 
@@ -49,7 +50,7 @@ void ZstClientSession::dispatch_disconnected_from_stage()
 // Adaptor plug send/receive
 // ---------------------------
 
-void ZstClientSession::on_receive_msg(std::shared_ptr<ZstStageMessage> msg)
+void ZstClientSession::on_receive_msg(const std::shared_ptr<ZstStageMessage>& msg)
 {
     switch (msg->type()) {
         case Content_CableCreateRequest:
@@ -66,9 +67,8 @@ void ZstClientSession::on_receive_msg(std::shared_ptr<ZstStageMessage> msg)
     }
 }
     
-void ZstClientSession::on_receive_msg(std::shared_ptr<ZstPerformanceMessage> msg)
+void ZstClientSession::on_receive_msg(const std::shared_ptr<ZstPerformanceMessage>& msg)
 {
-    
     if (msg->buffer()->value()->values_type() == PlugValueData_PlugHandshake) {
         ZstLog::net(LogLevel::debug, "Received handshake graph message from {}", msg->buffer()->sender()->c_str());
         return;
@@ -117,8 +117,7 @@ void ZstClientSession::cable_create_handler(const CableCreateRequest* request){
 void ZstClientSession::cable_destroy_handler(const CableDestroyRequest* request)
 {
 	ZstCable* cable_ptr = find_cable(ZstCableAddress(request->cable()));
-	if (cable_ptr)
-		destroy_cable_complete(ZstMessageReceipt{ Signal_OK }, cable_ptr);
+    ZstSession::destroy_cable_complete(cable_ptr);
 }
 
 void ZstClientSession::aquire_entity_ownership_handler(const EntityTakeOwnershipRequest* request)
@@ -170,23 +169,25 @@ ZstCable * ZstClientSession::connect_cable(ZstInputPlug * input, ZstOutputPlug *
 		stage_events()->invoke([this, sendtype, cable](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
 			ZstTransportArgs args;
 			args.msg_send_behaviour = sendtype;
-			args.on_recv_response = [this, cable](ZstMessageReceipt response) { 
-				if (response.status == Signal_OK) {
-					this->connect_cable_complete(response, cable);
-				} else {
-					ZstLog::net(LogLevel::notification, "Cable connect for {}-{} failed with status {}", cable->get_address().get_input_URI().path(), cable->get_address().get_output_URI().path(), EnumNameSignal(response.status));
-				}
+			args.on_recv_response = [this, cable](ZstMessageResponse response) { 
+                if (ZstStageTransport::verify_signal(response.response, Signal_OK, 
+                    fmt::format("Cable connect ({}-->{})", 
+                                cable->get_address().get_output_URI().path(), 
+                                cable->get_address().get_input_URI().path())
+                )) {
+                    this->connect_cable_complete(response, cable);
+                }
 			};
             
-			auto builder = FlatBufferBuilder();
+            auto builder = std::make_shared< FlatBufferBuilder>();
 			auto cable_vec = std::vector<Offset<Cable> >{ 
 				
 			};
-            auto cable_msg = CreateCableCreateRequest(builder,
-                CreateCable(builder,
-                    CreateCableData(builder,
-                        builder.CreateString(cable->get_input()->URI().path()), 
-                        builder.CreateString(cable->get_output()->URI().path())
+            auto cable_msg = CreateCableCreateRequest(*builder,
+                CreateCable(*builder,
+                    CreateCableData(*builder,
+                        builder->CreateString(cable->get_input()->URI().path()), 
+                        builder->CreateString(cable->get_output()->URI().path())
                     )));
             adaptor->send_msg(Content_CableCreateRequest, cable_msg.Union(), builder, args);
 		});
@@ -197,7 +198,7 @@ ZstCable * ZstClientSession::connect_cable(ZstInputPlug * input, ZstOutputPlug *
 	return cable;
 }
 
-void ZstClientSession::connect_cable_complete(ZstMessageReceipt response, ZstCable * cable) {
+void ZstClientSession::connect_cable_complete(ZstMessageResponse response, ZstCable * cable) {
 	
 	synchronisable_enqueue_activation(cable);
 }
@@ -212,28 +213,25 @@ void ZstClientSession::destroy_cable(ZstCable * cable, const ZstTransportRequest
 	stage_events()->invoke([this, cable, sendtype](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
 		ZstTransportArgs args;
 		args.msg_send_behaviour = sendtype;
-		args.on_recv_response = [this, cable](ZstMessageReceipt response) { this->destroy_cable_complete(response, cable); };
+		args.on_recv_response = [this, cable](ZstMessageResponse response) { this->destroy_cable_complete(response, cable); };
         
-        FlatBufferBuilder builder;
-        auto address_offset =  CreateCableData(builder,
-            builder.CreateString(cable->get_input()->URI().path()),
-            builder.CreateString(cable->get_output()->URI().path())
+        auto builder = std::make_shared< FlatBufferBuilder>();
+        auto address_offset =  CreateCableData(*builder,
+            builder->CreateString(cable->get_input()->URI().path()),
+            builder->CreateString(cable->get_output()->URI().path())
         );
-		auto destroy_cable_msg = CreateCableDestroyRequest(builder, CreateCable(builder, address_offset));
+		auto destroy_cable_msg = CreateCableDestroyRequest(*builder, CreateCable(*builder, address_offset));
         adaptor->send_msg(Content_CableDestroyRequest, destroy_cable_msg.Union(), builder, args);
 	});
 
 	if (sendtype == ZstTransportRequestBehaviour::SYNC_REPLY) process_events();
 }
 
-void ZstClientSession::destroy_cable_complete(ZstMessageReceipt response, ZstCable * cable)
+void ZstClientSession::destroy_cable_complete(ZstMessageResponse response, ZstCable * cable)
 {
-    ZstSession::destroy_cable_complete(cable);
-    if (response.status != Signal_OK) {
-        ZstLog::net(LogLevel::error, "Destroy cable failed with status {}", EnumNameSignal(response.status));
+    if (!ZstStageTransport::verify_signal(response.response, Signal_OK, "Destroy cable"))
         return;
-    }
-    ZstLog::net(LogLevel::debug, "Destroy cable completed with status {}", EnumNameSignal(response.status));
+    ZstSession::destroy_cable_complete(cable);
 }
 
 bool ZstClientSession::observe_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype)
@@ -245,23 +243,20 @@ bool ZstClientSession::observe_entity(ZstEntityBase * entity, const ZstTransport
 	stage_events()->invoke([this, entity, sendtype](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
 		ZstTransportArgs args;
 		args.msg_send_behaviour = sendtype;
-		args.on_recv_response = [this, entity](ZstMessageReceipt response) { this->observe_entity_complete(response, entity); };
+		args.on_recv_response = [this, entity](ZstMessageResponse response) { this->observe_entity_complete(response, entity); };
         
-        FlatBufferBuilder builder;
-        auto observe_msg = CreateEntityObserveRequest(builder, builder.CreateString(entity->URI().path()));
+        auto builder = std::make_shared< FlatBufferBuilder>();
+        auto observe_msg = CreateEntityObserveRequest(*builder, builder->CreateString(entity->URI().path()));
 		adaptor->send_msg(Content_EntityObserveRequest, observe_msg.Union(), builder, args);
 	});
 
 	return true;
 }
     
-void ZstClientSession::observe_entity_complete(ZstMessageReceipt response, ZstEntityBase * entity)
+void ZstClientSession::observe_entity_complete(ZstMessageResponse response, ZstEntityBase * entity)
 {
-    if (response.status == Signal_OK) {
-        ZstLog::net(LogLevel::debug, "Observing entity {}", entity->URI().path());
-        return;
-    }
-    ZstLog::net(LogLevel::error, "Observe entity {} failed with status {}", entity->URI().path(), EnumNameSignal(response.status));
+    if (ZstStageTransport::verify_signal(response.response, Signal_OK, fmt::format("Observer entity {}", entity->URI().path())))
+        ZstLog::net(LogLevel::debug, "Observing entity {} completed successfully", entity->URI().path());
 }
 
 void ZstClientSession::aquire_entity_ownership(ZstEntityBase* entity)
@@ -269,12 +264,12 @@ void ZstClientSession::aquire_entity_ownership(ZstEntityBase* entity)
     stage_events()->invoke([entity, this](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
         ZstTransportArgs args;
         args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
-        args.on_recv_response = [](ZstMessageReceipt) {
+        args.on_recv_response = [](ZstMessageResponse response) {
             ZstLog::net(LogLevel::debug, "Ack from server");
         };
         
-        FlatBufferBuilder builder;
-        auto entity_own_msg = CreateEntityTakeOwnershipRequest(builder, builder.CreateString(entity->URI().path()), builder.CreateString(hierarchy()->get_local_performer()->URI().path()));
+        auto builder = std::make_shared< FlatBufferBuilder>();
+        auto entity_own_msg = CreateEntityTakeOwnershipRequest(*builder, builder->CreateString(entity->URI().path()), builder->CreateString(hierarchy()->get_local_performer()->URI().path()));
         adaptor->send_msg(Content_EntityTakeOwnershipRequest, entity_own_msg.Union(), builder, args);
     });
 }
@@ -284,13 +279,13 @@ void ZstClientSession::release_entity_ownership(ZstEntityBase* entity)
     stage_events()->invoke([entity](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
         ZstTransportArgs args;
         args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
-        args.on_recv_response = [](ZstMessageReceipt){
+        args.on_recv_response = [](ZstMessageResponse){
             ZstLog::net(LogLevel::debug, "Ack from server");
         };
         
 		// Sending an empty string for the owner will release entity ownership back to the original owner
-		FlatBufferBuilder builder;
-        auto release_ownership_msg = CreateEntityTakeOwnershipRequest(builder, builder.CreateString(entity->URI().path()), builder.CreateString(""));
+        auto builder = std::make_shared< FlatBufferBuilder>();
+        auto release_ownership_msg = CreateEntityTakeOwnershipRequest(*builder, builder->CreateString(entity->URI().path()), builder->CreateString(""));
         adaptor->send_msg(Content_EntityTakeOwnershipRequest, release_ownership_msg.Union(), builder, args);
     });
 }
