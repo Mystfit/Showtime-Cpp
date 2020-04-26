@@ -345,23 +345,27 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 	}
 
 	//Dispatch events depending on entity type
-	if (entity->entity_type() == ZstEntityType::PERFORMER)
-	{
-		hierarchy_events()->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
-			adaptor->on_performer_leaving(static_cast<ZstPerformer*>(entity));
-		});
-	}
-	else if (entity->entity_type() == ZstEntityType::FACTORY)
-	{
-		hierarchy_events()->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
-			adaptor->on_factory_leaving(static_cast<ZstEntityFactory*>(entity));
-		});
-	}
-	else if (entity->entity_type() == ZstEntityType::COMPONENT)
-	{
-		hierarchy_events()->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
-			adaptor->on_entity_leaving(entity);
-		});
+	// We only need to dispatch events for proxy entities since we would have initiated
+	// entity removal locally otherwise
+	if (entity->is_proxy()) {
+		if (entity->entity_type() == ZstEntityType::PERFORMER)
+		{
+			hierarchy_events()->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+				adaptor->on_performer_leaving(static_cast<ZstPerformer*>(entity));
+				});
+		}
+		else if (entity->entity_type() == ZstEntityType::FACTORY)
+		{
+			hierarchy_events()->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+				adaptor->on_factory_leaving(static_cast<ZstEntityFactory*>(entity));
+				});
+		}
+		else if (entity->entity_type() == ZstEntityType::COMPONENT)
+		{
+			hierarchy_events()->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+				adaptor->on_entity_leaving(entity);
+				});
+		}
 	}
 
 	//Remove entity from parent
@@ -404,7 +408,10 @@ void ZstHierarchy::on_synchronisable_destroyed(ZstSynchronisable * synchronisabl
 {
 	//Synchronisable is going away and the stage needs to know
 	if (synchronisable->is_activated() || synchronisable->activation_status() == ZstSyncStatus::DESTROYED) {
-		deactivate_entity(dynamic_cast<ZstEntityBase*>(synchronisable), ZstTransportRequestBehaviour::PUBLISH);
+		auto sendtype = ZstTransportRequestBehaviour::SYNC_REPLY;
+		if (already_removed)
+			sendtype = ZstTransportRequestBehaviour::PUBLISH;
+		deactivate_entity(dynamic_cast<ZstEntityBase*>(synchronisable), sendtype);
 	}
 
 	if (already_removed) {
@@ -441,12 +448,12 @@ void ZstHierarchy::reaper_cleanup_entity(ZstEntityBase * entity) {
 	if (!entity)
 		return;
 
+	this->remove_entity_from_lookup(entity->URI());
+
 	auto parent = entity->parent();
 	if (parent) {
 		parent->remove_child(entity);
 	}
-
-	this->remove_entity_from_lookup(entity->URI());
 }
 
 void ZstHierarchy::on_register_entity(ZstEntityBase * entity)

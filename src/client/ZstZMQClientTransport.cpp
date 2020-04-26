@@ -134,10 +134,8 @@ void ZstZMQClientTransport::sock_recv(zsock_t* socket)
 					boost::uuids::nil_generator()(),
 					std::static_pointer_cast<ZstStageTransport>(ZstTransportLayer::shared_from_this())
 				);
-				//ZstLog::net(LogLevel::debug, "Client received message {} {}", EnumNameContent(stage_msg->buffer()->content_type()), boost::uuids::to_string(stage_msg->id()));
-				//if (stage_msg->buffer()->content_type() != Content_SignalMessage) {
-				//	ZstLog::net(LogLevel::debug, "Client received message {} {}", EnumNameContent(stage_msg->buffer()->content_type()), boost::uuids::to_string(stage_msg->id()));
-				//}
+
+				//ZstLog::net(LogLevel::debug, "ZstZMQClientTransport received {}", boost::uuids::to_string(stage_msg->id()));
 
 				// Send message to submodules
 				dispatch_receive_event(stage_msg, [stage_msg, msg_data](ZstEventStatus s) mutable {

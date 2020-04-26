@@ -7,7 +7,6 @@ using namespace ZstTest;
 
 long double test_benchmark(std::string& server_name, std::shared_ptr<ShowtimeClient> client, bool reliable, int send_rate, int send_amount)
 {
-
 	ZstLog::app(LogLevel::debug, "Creating entities and cables");
 
 	// Create listeners
@@ -25,7 +24,7 @@ long double test_benchmark(std::string& server_name, std::shared_ptr<ShowtimeCli
 	auto test_input = std::make_unique<InputComponent>("bench_test_in", 10, false);
 	remote_client->get_root()->add_child(test_input.get());
 	BOOST_TEST_REQUIRE(test_input->input()->is_activated());
-	wait_for_event(client, hierarchy_events, 1);
+	wait_for_event(client, hierarchy_events, 2);
 	auto proxy_input_plug = dynamic_cast<ZstInputPlug*>(client->find_entity(test_input->input()->URI()));
 
 	// Create local output
@@ -59,7 +58,7 @@ long double test_benchmark(std::string& server_name, std::shared_ptr<ShowtimeCli
 	for (int i = 0; i < count; ++i) {
 		test_output->send(i);
 		num_sent++;
-		std::this_thread::sleep_for(std::chrono::milliseconds(send_rate));
+		//std::this_thread::sleep_for(std::chrono::milliseconds(send_rate));
 
 		if (num_sent % alert_rate == 0) {
 			ZstLog::app(LogLevel::debug, "Sent {} messages. Remaining: {}. Last received val: {}", num_sent, count - num_sent, test_input->last_received_val);

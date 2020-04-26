@@ -334,10 +334,10 @@ void ZstOutputPlug::fire()
         return;
 
     m_graph_out_events->invoke([this](std::shared_ptr<ZstGraphTransportAdaptor> adaptor) {       
-		auto buffer_builder = std::make_shared<flatbuffers::FlatBufferBuilder>();
-		auto plugval_offset = this->raw_value()->serialize(*buffer_builder);
-		auto graph_msg_offset = CreateGraphMessage(*buffer_builder, buffer_builder->CreateString(this->URI().path()), plugval_offset);
-		adaptor->send_msg(graph_msg_offset, buffer_builder);
+        auto builder = std::make_shared<flatbuffers::FlatBufferBuilder>();
+		auto plugval_offset = this->raw_value()->serialize(*builder);
+		auto graph_msg_offset = CreateGraphMessage(*builder, builder->CreateString(this->URI().path()), plugval_offset);
+		adaptor->send_msg(graph_msg_offset, builder);
     });
     m_value->clear();
 }

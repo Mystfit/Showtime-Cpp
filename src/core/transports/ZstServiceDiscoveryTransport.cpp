@@ -75,10 +75,19 @@ int ZstServiceDiscoveryTransport::s_handle_beacon(zloop_t * loop, zsock_t * sock
         auto shared_transport = std::static_pointer_cast<ZstServiceDiscoveryTransport>(transport->shared_from_this());
         msg->init(GetStageBeaconMessage(zframe_data(beacon_content)), ipaddress, shared_transport);
 
-        transport->dispatch_receive_event(msg, [beacon_content](ZstEventStatus status){
-            zframe_t * b = beacon_content;
+        // Set the beacon as having a promise (even if it doesn't) to make sure that the release
+        // happens AFTER the beacon has finished processing
+        auto cleanup_func = [beacon_content](ZstEventStatus status) {
+            zframe_t* b = beacon_content;
             zframe_destroy(&b);
-        });
+        };
+
+        // Set the has_promise flag to avoid early cleanup
+        msg->set_has_promise();
+        transport->take_message_ownership(std::static_pointer_cast<ZstMessage>(msg), cleanup_func);
+
+        // Dispatch the message into the event system
+        transport->dispatch_receive_event(msg, cleanup_func);
 
         zstr_free(&ipaddress);
     }

@@ -10,6 +10,7 @@
 #include <boost/asio/post.hpp>
 #include <boost/asio/thread_pool.hpp>
 #include <boost/bind.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 #include "../ZstEventDispatcher.hpp"
 #include "../ZstMessageSupervisor.hpp"
@@ -34,6 +35,7 @@ public:
 
     virtual void destroy() {
         m_async_pool->join();
+        m_is_active = false;
     }
 
     bool is_active() {
@@ -47,6 +49,9 @@ public:
     void set_connected(bool state) {
         m_is_connected = state;
     }
+
+    // Transport events
+    virtual void process_events() = 0;
 
 protected:
     ZstMessageReceipt begin_send_message(std::shared_ptr<flatbuffers::FlatBufferBuilder>& buffer)
@@ -88,6 +93,7 @@ protected:
     //Message sending implementation for the transport
     virtual void send_message_impl(const uint8_t* msg_buffer, size_t msg_buffer_size, const ZstTransportArgs& args) const = 0;
 
+
 private:
     void blocking_send(const uint8_t* msg_buffer, size_t msg_buffer_size, ZstTransportArgs args) {
         // Register message response
@@ -101,10 +107,10 @@ private:
 
         // Wait for message promise to be fulfilled
         auto status = msg_future.wait_for(std::chrono::milliseconds(STAGE_TIMEOUT));
-
         auto msg = (status == std::future_status::ready) ? msg_future.get() : NULL;
 
         // Callbacks
+        assert(args.msg_send_behaviour != ZstTransportRequestBehaviour::PUBLISH);
         args.on_recv_response(ZstMessageResponse{ msg, args.msg_send_behaviour });
 
         if (msg) {
@@ -145,30 +151,20 @@ public:
      *        manage the lifetime of a message.
      */
     virtual void dispatch_receive_event(std::shared_ptr<Message_T>& msg, ZstEventCallback on_complete) {
-        m_dispatch_events->defer([msg](std::shared_ptr<Adaptor_T> adaptor) {
+        m_dispatch_events->defer([msg](std::shared_ptr<Adaptor_T>& adaptor) {
             std::static_pointer_cast<Adaptor_T>(adaptor)->on_receive_msg(std::static_pointer_cast<Message_T>(msg));
-            }, [this, msg, on_complete](ZstEventStatus status) mutable {
+            }, [this, msg, on_complete](ZstEventStatus status) {
                 auto base_msg = std::static_pointer_cast<ZstMessage>(msg);
 
                 // If the has_promise flag is set early then someone else wants to take ownership of the message
                 if (msg->has_promise()) {
-                    // Skip promise lookup since we already have it
-                    this->take_message_ownership(base_msg, on_complete);
+                    // Skip promise resolution - used for autojoin beacon promises
                     return;
                 }
 
                 try {
-                    // Flag message as a response message so it won't get cleaned up until the response has finished processing
-                    msg->set_has_promise();
-                    this->take_message_ownership(base_msg, on_complete);
-
-                    // Unblock the message send
-                    try {
-                        get_response_promise(base_msg).set_value(msg);
-                    }
-                    catch (std::future_error e) {
-                        ZstLog::net(LogLevel::error, "Future failed with {}", e.what());
-                    }
+                    // Process the message
+                    process_message_response(base_msg, on_complete);
                 }
                 catch (std::out_of_range) {
                     // No promise for message - can release message
@@ -178,7 +174,7 @@ public:
             });
     }
 
-    virtual void process_events() {
+    virtual void process_events() override{
         this->cleanup_response_messages();
         m_dispatch_events->process_events();
     }

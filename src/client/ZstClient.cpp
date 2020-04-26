@@ -69,7 +69,6 @@ void ZstClient::destroy() {
     m_client_timerloop.IO_context().stop();
     m_client_timer_thread.interrupt();
     m_client_timer_thread.join();
-    m_thread_pool.join();
 
     //Stop transports
     m_service_broadcast_transport->destroy();
@@ -80,9 +79,10 @@ void ZstClient::destroy() {
 #endif
 
     //Stop threads
-    m_client_event_thread.interrupt();
+    //m_client_event_thread.interrupt();
     m_event_condition->notify();
-    m_client_event_thread.join();
+    //m_client_event_thread.join();
+    m_thread_pool.join();
     m_thread_pool.stop();
     //m_client_event_thread.try_join_for(boost::chrono::milliseconds(250));
     m_api = NULL;
@@ -124,9 +124,6 @@ void ZstClient::init_client(const char* client_name, bool debug)
     m_connection_timers = ZstConnectionTimerMapUnique(new ZstConnectionTimerMap());
     m_client_timerloop.IO_context().restart();
 
-    //Transport event loops
-    m_client_event_thread = boost::thread(boost::bind(&ZstClient::transport_event_loop, this));
-
     //Register message dispatch as a client adaptor
     ZstEventDispatcher<std::shared_ptr<ZstStageTransportAdaptor> >::add_adaptor(m_client_transport);
 
@@ -146,22 +143,26 @@ void ZstClient::init_client(const char* client_name, bool debug)
     m_client_transport->msg_events()->add_adaptor(ZstStageTransportAdaptor::downcasted_shared_from_this< ZstStageTransportAdaptor>());
     m_client_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstStageTransportAdaptor>(m_session));
     m_client_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstStageTransportAdaptor>(std::static_pointer_cast<ZstClientHierarchy>(m_session->hierarchy())));
+    boost::asio::post(m_thread_pool, boost::bind(&ZstClient::transport_event_loop, this, m_client_transport));
 
     //Setup adaptors to receive graph messages
     m_tcp_graph_transport->init();
     m_tcp_graph_transport->msg_events()->add_adaptor(ZstStageTransportAdaptor::downcasted_shared_from_this< ZstStageTransportAdaptor>());
     m_tcp_graph_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstStageTransportAdaptor>(m_session));
+    boost::asio::post(m_thread_pool, boost::bind(&ZstClient::transport_event_loop, this, m_tcp_graph_transport));
 
 #ifdef ZST_BUILD_DRAFT_API
     m_udp_graph_transport->init();
     m_udp_graph_transport->msg_events()->add_adaptor(ZstStageTransportAdaptor::downcasted_shared_from_this< ZstStageTransportAdaptor>());
     m_udp_graph_transport->msg_events()->add_adaptor(static_cast<ZstStageTransportAdaptor*>(m_session);
+    boost::asio::post(m_thread_pool, boost::bind(&ZstClient::transport_event_loop, this, m_udp_graph_transport);
 #endif
 
     //Stage discovery beacon
     m_service_broadcast_transport->init(STAGE_DISCOVERY_PORT);
     m_service_broadcast_transport->start_listening();
     m_service_broadcast_transport->msg_events()->add_adaptor(ZstStageTransportAdaptor::downcasted_shared_from_this< ZstStageTransportAdaptor>());
+    boost::asio::post(m_thread_pool, boost::bind(&ZstClient::transport_event_loop, this, m_service_broadcast_transport));
 
     //Init completed
     set_init_completed(true);
@@ -503,7 +504,7 @@ void ZstClient::synchronise_graph(const ZstTransportRequestBehaviour& sendtype)
 
 void ZstClient::synchronise_graph_complete(ZstMessageResponse response)
 {
-    ZstLog::net(LogLevel::notification, "Graph sync completed");
+    ZstLog::net(LogLevel::notification, "Graph sync for {} completed", session()->hierarchy()->get_local_performer()->URI().path());
     ZstEventDispatcher<std::shared_ptr<ZstConnectionAdaptor>>::defer([this](std::shared_ptr<ZstConnectionAdaptor> adp) {
         adp->on_synchronised_with_stage(this->m_api, this->connected_server());
     });
@@ -632,7 +633,7 @@ void ZstClient::heartbeat_timer(boost::asio::deadline_timer* t, ZstClient* clien
     };
 
     //Send message
-    client->ZstEventDispatcher<std::shared_ptr<ZstStageTransportAdaptor>>::invoke([args](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
+    client->ZstEventDispatcher<std::shared_ptr<ZstStageTransportAdaptor>>::invoke([client, args](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
         auto builder = std::make_shared< FlatBufferBuilder>();
         auto heartbeat_signal = CreateSignalMessage(*builder, Signal_CLIENT_HEARTBEAT);
         adaptor->send_msg(Content_SignalMessage, heartbeat_signal.Union(), builder, args);
@@ -763,25 +764,20 @@ void ZstClient::listen_to_client_handler(const std::shared_ptr<ZstStageMessage>&
     m_tcp_graph_transport->connect(request->sender_address()->str());
 }
 
-void ZstClient::transport_event_loop()
+void ZstClient::transport_event_loop(std::shared_ptr<ZstTransportLayerBase> transport)
 {
-    while (1) {
+    while (transport->is_active()) {
         try {
             boost::this_thread::interruption_point();
-            m_event_condition->wait();
+            //m_event_condition->wait();
             if (this->m_is_destroyed || this->m_is_ending)
                 continue;
 
             // Process events from transports
-            m_client_transport->process_events();
-#ifdef ZST_BUILD_DRAFT_API
-            m_udp_graph_transport->process_events();
-#endif
-            m_tcp_graph_transport->process_events();
-            m_service_broadcast_transport->process_events();
+            transport->process_events();
 
             // Process events to transports
-            ZstEventDispatcher<std::shared_ptr<ZstStageTransportAdaptor> >::process_events();
+            this->ZstEventDispatcher<std::shared_ptr<ZstStageTransportAdaptor> >::process_events();
         }
         catch (boost::thread_interrupted) {
             break;

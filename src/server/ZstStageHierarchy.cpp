@@ -18,7 +18,7 @@ void ZstStageHierarchy::init_adaptors()
 	ZstHierarchy::init_adaptors();
 }
 
-void ZstStageHierarchy::set_wake_condition(std::weak_ptr<ZstSemaphore> condition)
+void ZstStageHierarchy::set_wake_condition(std::shared_ptr<ZstSemaphore>& condition)
 {
 	ZstStageModule::set_wake_condition(condition);
 	hierarchy_events()->set_wake_condition(condition);
@@ -97,7 +97,6 @@ void ZstStageHierarchy::on_receive_msg(const std::shared_ptr<ZstStageMessage>& m
 		ZstTransportArgs args;
 		args.target_endpoint_UUID = msg->origin_endpoint_UUID();
 		args.msg_ID = msg->id();
-
 		auto builder = std::make_shared< FlatBufferBuilder>();
 		auto signal_offset = CreateSignalMessage(*builder, response);
 		if(auto transport = std::dynamic_pointer_cast<ZstStageTransport>(msg->owning_transport()))
@@ -110,6 +109,8 @@ Signal ZstStageHierarchy::signal_handler(const std::shared_ptr<ZstStageMessage>&
 	if (!sender) {
 		return Signal_ERR_STAGE_PERFORMER_NOT_FOUND;
 	}
+
+	//ZstLog::server(LogLevel::debug, "Server received heartbeat from {} {}", sender->URI().path(), boost::uuids::to_string(request->id()));
 
 	if (ZstStageTransport::get_signal(request) == Signal_CLIENT_HEARTBEAT) {
 		sender->set_heartbeat_active();

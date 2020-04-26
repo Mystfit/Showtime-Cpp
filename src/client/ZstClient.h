@@ -172,9 +172,9 @@ namespace showtime {
             boost::asio::deadline_timer m_beaconcheck_timer;
             ZstConnectionTimerMapUnique m_connection_timers;
 
-            boost::thread m_client_event_thread;
+            /*boost::thread m_client_event_thread;*/
             std::shared_ptr<ZstSemaphore> m_event_condition;
-            void transport_event_loop();
+            void transport_event_loop(std::shared_ptr<ZstTransportLayerBase> transport);
 
             //Threads
             boost::asio::thread_pool m_thread_pool;

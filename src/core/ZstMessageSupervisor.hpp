@@ -30,7 +30,7 @@ public:
     ZST_EXPORT void release_owned_message(std::shared_ptr<ZstMessage>& msg);
 
     ZST_EXPORT void remove_response_promise(ZstMsgID id);
-    ZST_EXPORT std::promise< std::shared_ptr<ZstMessage> >& get_response_promise(std::shared_ptr<ZstMessage> message);
+    ZST_EXPORT void process_message_response(std::shared_ptr<ZstMessage>& message, ZstEventCallback on_complete);
 
 private:
     std::unordered_map< ZstMsgID, ZstMessagePromise, boost::hash<boost::uuids::uuid> > m_response_promises;

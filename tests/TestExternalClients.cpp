@@ -111,7 +111,7 @@ BOOST_FIXTURE_TEST_CASE(multiple_clients, FixtureJoinServer) {
 	auto remote_client = std::make_unique<ShowtimeClient>();
 	remote_client->init("remote_client", true);
 	remote_client->auto_join_by_name(server_name.c_str());
-	BOOST_TEST(remote_client->is_connected());
+	BOOST_REQUIRE(remote_client->is_connected());
 
 	ZstEntityBundle performers;
 	BOOST_TEST_CHECKPOINT("Waiting for remote client performer to arrive");
@@ -128,6 +128,19 @@ BOOST_FIXTURE_TEST_CASE(multiple_clients, FixtureJoinServer) {
 	test_client->get_performers(performers);
 	BOOST_TEST(performers.size() == 1);
 }
+
+BOOST_FIXTURE_TEST_CASE(multiple_client_heartbeats, FixtureJoinServer) {
+	auto remote_client = std::make_unique<ShowtimeClient>();
+	remote_client->init("remote_client", true);
+	remote_client->auto_join_by_name(server_name.c_str());
+	BOOST_REQUIRE(remote_client->is_connected());
+	BOOST_REQUIRE(test_client->is_connected());
+	WAIT_UNTIL_STAGE_TIMEOUT
+	WAIT_UNTIL_STAGE_TIMEOUT
+	BOOST_TEST(remote_client->is_connected());
+	BOOST_TEST(test_client->is_connected());
+}
+
 
 BOOST_FIXTURE_TEST_CASE(performer_arriving, FixtureWaitForSinkClient) {
 	BOOST_TEST(performerEvents->last_arrived_performer == external_performer_URI);
@@ -256,10 +269,11 @@ BOOST_FIXTURE_TEST_CASE(external_exception, FixtureExternalConnectCable) {
 BOOST_FIXTURE_TEST_CASE(set_name_updates_proxy, FixtureWaitForSinkClient) {
 	auto entityEvents = std::make_shared<TestEntityEvents>();
 	test_client->add_hierarchy_adaptor(entityEvents);
+	entityEvents->reset_num_calls();
 	auto remote_ent = std::make_unique<ZstComponent>("remote");
 	remote_client->get_root()->add_child(remote_ent.get());
 
-	wait_for_event(test_client, entityEvents, 1);
+	wait_for_event(test_client, entityEvents, 2);
 	auto proxy = test_client->find_entity(remote_ent->URI());
 	entityEvents->reset_num_calls();
 	BOOST_REQUIRE(proxy);

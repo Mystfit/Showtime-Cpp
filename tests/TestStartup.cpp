@@ -183,8 +183,6 @@ BOOST_FIXTURE_TEST_CASE(double_connection, FixtureInitAndCreateServerWithEpherem
 	BOOST_TEST(test_client->is_connecting());
     test_client->join(bad_server_address.c_str());
 	BOOST_TEST(!test_client->is_connected());
-    WAIT_UNTIL_STAGE_TIMEOUT
-	BOOST_TEST(!test_client->is_connecting());
 }
 
 BOOST_FIXTURE_TEST_CASE(list_discovered_servers, FixtureInit){

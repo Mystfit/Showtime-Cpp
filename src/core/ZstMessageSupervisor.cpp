@@ -1,5 +1,6 @@
 #include "ZstMessageSupervisor.hpp"
 #include "ZstLogging.h"
+#include <boost/uuid/uuid_io.hpp>
 #include "ZstExceptions.h"
 #include "ZstEventDispatcher.hpp"
 
@@ -58,13 +59,19 @@ void ZstMessageSupervisor::remove_response_promise(ZstMsgID id)
 	}
 }
 
-std::promise< std::shared_ptr<ZstMessage> >& ZstMessageSupervisor::get_response_promise(std::shared_ptr<ZstMessage> message)
+void ZstMessageSupervisor::process_message_response(std::shared_ptr<ZstMessage>& message, ZstEventCallback on_complete)
 {
+	if (!m_response_promises.size()) {
+		throw std::out_of_range("No promises available");
+		return;
+	}
 	auto promise = m_response_promises.find(message->id());
 	if (promise != m_response_promises.end()) {
-		//message->set_has_promise();
-		//promise->second.set_value(message);
-		return promise->second;
+		// Flag message as a response message so it won't get cleaned up until the response has finished processing
+		message->set_has_promise();
+		this->take_message_ownership(message, on_complete);
+		promise->second.set_value(message);
+		return;
 	}
 	throw std::out_of_range("Could not find promise for message ID");
 }

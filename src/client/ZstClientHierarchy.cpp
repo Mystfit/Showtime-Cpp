@@ -168,22 +168,25 @@ void ZstClientHierarchy::deactivate_entity(ZstEntityBase * entity, const ZstTran
 	//If the entity is local, let the stage know it's leaving
 	if (!entity->is_proxy()) {
 		//Build message
-		ZstTransportArgs args;
-		args.msg_send_behaviour = sendtype;
-		args.on_recv_response = [this, entity](ZstMessageResponse response) {
-			if (ZstStageTransport::verify_signal(response.response, Signal_OK, "Destroy entity"))
-				this->destroy_entity_complete(entity);
-		};
+		
 
 		//Send message
-		stage_events()->invoke([this, &args, entity](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
-			auto builder = std::make_shared< FlatBufferBuilder>();
-            auto content_message = CreateEntityDestroyRequest(*builder, builder->CreateString(entity->URI().path(), entity->URI().full_size()));
-            adaptor->send_msg(Content_EntityDestroyRequest, content_message.Union(), builder, args);
-            
+		stage_events()->invoke([this, entity, sendtype](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
+			ZstTransportArgs args;
+			args.msg_send_behaviour = sendtype;
+
 			if (args.msg_send_behaviour == ZstTransportRequestBehaviour::PUBLISH) {
 				this->destroy_entity_complete(entity);
 			}
+			else {
+				args.on_recv_response = [this, entity](ZstMessageResponse response) {
+					if (ZstStageTransport::verify_signal(response.response, Signal_OK, "Destroy entity"))
+						this->destroy_entity_complete(entity);
+				};
+			}
+			auto builder = std::make_shared< FlatBufferBuilder>();
+            auto content_message = CreateEntityDestroyRequest(*builder, builder->CreateString(entity->URI().path(), entity->URI().full_size()));
+            adaptor->send_msg(Content_EntityDestroyRequest, content_message.Union(), builder, args);
 		});
 	}
 	else {

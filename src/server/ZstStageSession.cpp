@@ -28,7 +28,7 @@ void ZstStageSession::process_events()
 	hierarchy()->process_events();
 }
 
-void ZstStageSession::set_wake_condition(std::weak_ptr<ZstSemaphore> condition)
+void ZstStageSession::set_wake_condition(std::shared_ptr<ZstSemaphore>& condition)
 {
 	ZstStageModule::set_wake_condition(condition);
 	m_hierarchy->set_wake_condition(condition);
@@ -70,8 +70,6 @@ void ZstStageSession::on_receive_msg(const std::shared_ptr<ZstStageMessage>& msg
 		ZstTransportArgs args;
 		args.target_endpoint_UUID = msg->origin_endpoint_UUID();
 		args.msg_ID = msg->id();
-		ZstLog::server(LogLevel::warn, "ZstStageSession replying to {} message with {}", boost::uuids::to_string(args.msg_ID), EnumNameSignal(response));
-
 		auto builder = std::make_shared< FlatBufferBuilder>();
 		auto signal_offset = CreateSignalMessage(*builder, response);
 		if (auto transport = std::dynamic_pointer_cast<ZstStageTransport>(msg->owning_transport()))

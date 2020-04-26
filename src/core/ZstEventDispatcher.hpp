@@ -105,7 +105,7 @@ public:
 		}
 	}
 
-	void set_wake_condition(std::weak_ptr<ZstSemaphore> condition) {
+	void set_wake_condition(std::shared_ptr<ZstSemaphore> condition) {
 		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		this->m_condition_wake = condition;
 	}
@@ -116,7 +116,7 @@ public:
 
 protected:
 	std::set< std::weak_ptr<ZstEventAdaptor>, std::owner_less< std::weak_ptr<ZstEventAdaptor> > > m_adaptors;
-	std::weak_ptr<ZstSemaphore> m_condition_wake;
+	std::shared_ptr<ZstSemaphore> m_condition_wake;
 	std::recursive_timed_mutex m_mtx;
 	bool m_has_event;
 private:
@@ -160,47 +160,36 @@ public:
 		ZstEvent<T> e(event, [](ZstEventStatus s) {});
 		this->m_events.enqueue(e);
 		m_has_event = true;
-		if (auto shared = m_condition_wake.lock())
-			shared->notify();
+		if(m_condition_wake)
+			m_condition_wake->notify();
 	}
 
 	void defer(std::function<void(T)> event, ZstEventCallback on_complete) {
 		ZstEvent<T> e(event, on_complete);
 		this->m_events.enqueue(e);
 		m_has_event = true;
-		if (auto shared = m_condition_wake.lock())
-			shared->notify();
+		if(m_condition_wake)
+			m_condition_wake->notify();
 	}
 
 	void process_events() {
 		ZstEvent<T> event;
-
-		std::vector< ZstEvent<T> > events;
 		while (this->m_events.try_dequeue(event)) {
-		/*	events.push_back(event);
-		}
-
-		if (events.size()) {
-			ZstLog::net(LogLevel::debug, "Queued events: {}", events.size());
-		}
-
-		for(auto event : events){*/ 
 			bool success = true;
+			//std::set< std::weak_ptr<ZstEventAdaptor>, std::owner_less< std::weak_ptr<ZstEventAdaptor> > > adaptors;
+			//auto now = std::chrono::steady_clock::now();
+			//auto lock = m_mtx.try_lock_until(now + std::chrono::milliseconds(1000));
+			//if (lock) {
+			//	adaptors = m_adaptors;
+			//}
+			//else {
+			//	ZstLog::net(LogLevel::warn, "Could not aquire attached adaptors lock");
+			//	return;
+			//}
+			//
+			//m_mtx.unlock();
 
-			std::set< std::weak_ptr<ZstEventAdaptor>, std::owner_less< std::weak_ptr<ZstEventAdaptor> > > adaptors;
-			auto now = std::chrono::steady_clock::now();
-			auto lock = m_mtx.try_lock_until(now + std::chrono::milliseconds(1000));
-			if (lock) {
-				adaptors = m_adaptors;
-			}
-			else {
-				ZstLog::net(LogLevel::warn, "Could not aquire attached adaptors lock");
-				return;
-			}
-			
-			m_mtx.unlock();
-
-			for (auto adaptor : adaptors) {
+			for (auto adaptor : m_adaptors) {
 				if (auto adp = adaptor.lock()) {
 					try {
 						event.func(std::dynamic_pointer_cast<typename std::pointer_traits<T>::element_type>(adp));
