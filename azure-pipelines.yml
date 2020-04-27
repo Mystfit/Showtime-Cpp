@@ -10,7 +10,7 @@ pool:
 
 variables:
   buildPlatform: 'x64'
-  buildConfiguration: 'Release'
+  buildConfiguration: 'Debug'
   toolset: 'msvc-14.2'
   toolset-platform: 'v142'
   build_dir: '$(Build.ArtifactStagingDirectory)\build'
@@ -48,7 +48,7 @@ steps:
   condition: ne(variables.DEPENDENCIES_RESTORED, 'true')
   inputs:
     filePath: 'install_dependencies.ps1'
-    arguments: '-config debug,release -build_dir $(build_dir) -toolset $(toolset)'
+    arguments: '-config $(buildConfiguration) -build_dir $(build_dir) -toolset $(toolset)'
     errorActionPreference: 'continue'
     ignoreLASTEXITCODE: true
     pwsh: true
@@ -74,15 +74,7 @@ steps:
   inputs:
     solution: '$(solution)'
     platform: '$(buildPlatform)'
-    configuration: 'Debug'
-    maximumCpuCount: true
-    
-- task: VSBuild@1
-  displayName: Compile solution (release)
-  inputs:
-    solution: '$(solution)'
-    platform: '$(buildPlatform)'
-    configuration: 'Release'
+    configuration: '$(buildConfiguration)'
     maximumCpuCount: true
 
 - task: VSTest@2
@@ -98,12 +90,11 @@ steps:
     pathtoCustomTestAdapters: '$(VS_path)\Common7\IDE\Extensions\em3ozjcu.15r'
     testRunTitle: 'Native tests'
     platform: '$(buildPlatform)'
-    configuration: 'Debug'
+    configuration: '$(buildConfiguration)'
     diagnosticsEnabled: true
     runInParallel: true
-    collectDumpOn: 'always'
+    collectDumpOn: 'onAbortOnly'
     rerunFailedTests: True
     rerunFailedThreshold: '30'
     rerunFailedTestCasesMaxLimit: '5'
     rerunMaxAttempts: '3'
-    
