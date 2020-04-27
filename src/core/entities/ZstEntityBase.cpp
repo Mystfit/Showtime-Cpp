@@ -81,9 +81,12 @@ namespace showtime
     ZstEntityBase * ZstEntityBase::parent() const
     {
 		ZstEntityBase* parent = NULL;
+        if (parent_address().is_empty())
+            return parent;
 
 		if (!is_registered()) {
 			ZstLog::entity(LogLevel::warn, "Entity {} not registered. Can't look up parent entity.", URI().path());
+            return parent;
 		}
 
 		m_hierarchy_events->invoke([&parent, this](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {

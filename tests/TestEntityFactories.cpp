@@ -235,10 +235,11 @@ BOOST_FIXTURE_TEST_CASE(find_external_creatables, FixtureExternalFactory) {
 BOOST_FIXTURE_TEST_CASE(create_entity_from_external_factory, FixtureExternalFactoryEventLoop) {
 	ZstURIBundle bundle;
 	external_factory->get_creatables(bundle);
-	auto client = remote_client.get();
 	auto entity = test_client->create_entity(bundle[0], "brand_spanking_new_ext");
 	BOOST_TEST_REQUIRE(entity);
 	BOOST_TEST(test_client->find_entity(external_factory->URI().first() + ZstURI("brand_spanking_new_ext")));
+	BOOST_TEST(remote_client->find_entity(entity->URI()));
+
 }
 
 BOOST_FIXTURE_TEST_CASE(create_entity_from_external_factory_async, FixtureExternalFactory) {

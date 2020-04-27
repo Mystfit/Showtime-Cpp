@@ -310,6 +310,26 @@ namespace ZstTest
 	};
 
 
+	class TestSessionEvents : public ZstSessionAdaptor, public TestAdaptor
+	{
+	public:
+		ZstCableAddress last_cable_arrived;
+		ZstCableAddress last_cable_left;
+
+		void on_cable_created(ZstCable* cable) override {
+			ZstLog::app(LogLevel::debug, "CABLE_ARRIVING: {}", cable->get_address().to_string());
+			last_cable_arrived = cable->get_address();
+			inc_calls();
+		}
+
+		void on_cable_destroyed(ZstCable* cable) override {
+			ZstLog::app(LogLevel::debug, "CABLE_LEAVING: {}", cable->get_address().to_string());
+			last_cable_left = cable->get_address();
+			inc_calls();
+		}
+	};
+
+
 	class TestPerformerEvents : public ZstHierarchyAdaptor, public TestAdaptor
 	{
 	public:

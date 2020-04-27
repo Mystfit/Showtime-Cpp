@@ -63,7 +63,7 @@ namespace showtime
         ZstEntityBundle bundle;
         get_child_entities(bundle, false, true);
         for (auto child : bundle) {
-            ZstEntityLiason().entity_set_parent(child, NULL);
+            //ZstEntityLiason().entity_set_parent(child, NULL);
 			child->deactivate();
         }
         m_children.clear();
@@ -115,13 +115,13 @@ namespace showtime
             return;
         
         //Remove cables associated with this child
-        ZstCableBundle bundle;
-        entity->get_child_cables(bundle);
-        for (auto cable : bundle){
-            entity_events()->defer([cable](std::shared_ptr<ZstEntityAdaptor> adaptor){
-                adaptor->on_disconnect_cable(cable);
-            });
-        }
+        //ZstCableBundle bundle;
+        //entity->get_child_cables(bundle);
+        //for (auto cable : bundle){
+        //    entity_events()->defer([cable](std::shared_ptr<ZstEntityAdaptor> adaptor){
+        //        adaptor->on_disconnect_cable(cable);
+        //    });
+        //}
         
         //Clear child from maps
         auto c = m_children.find(entity->URI());

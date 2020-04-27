@@ -123,6 +123,20 @@ BOOST_FIXTURE_TEST_CASE(sync_connect_cable, FixturePlugs) {
 	BOOST_TEST(input_component->input()->is_connected_to(output_component->output()));
 }
 
+
+BOOST_FIXTURE_TEST_CASE(local_cable_events, FixturePlugs) {
+	auto cable_events = std::make_shared<TestSessionEvents>();
+	test_client->add_session_adaptor(cable_events);
+
+	auto cable = test_client->connect_cable(input_component->input(), output_component->output());
+	BOOST_REQUIRE(cable);
+	auto cable_address = cable->get_address();
+
+	BOOST_TEST((cable_events->last_cable_arrived == cable_address));
+	test_client->destroy_cable(cable);
+	BOOST_TEST((cable_events->last_cable_left == cable_address));
+}
+
 BOOST_FIXTURE_TEST_CASE(async_connect_cable_callback, FixturePlugs) {
 	auto cable_activation_events = std::make_shared<TestSynchronisableEvents>();
 	auto cable = test_client->connect_cable_async(input_component->input(), output_component->output());
@@ -154,11 +168,16 @@ BOOST_FIXTURE_TEST_CASE(disconnect_cable, FixtureCable) {
 }
 
 BOOST_FIXTURE_TEST_CASE(parent_disconnects_cable, FixtureCable) {
+	auto cable_events = std::make_shared<TestSessionEvents>();
+	test_client->add_session_adaptor(cable_events);
+	cable_events->reset_num_calls();
 	auto address_cmp = cable->get_address();
+
 	test_client->deactivate_entity(output_component.get());
-	wait_for_event(test_client, cable_activation_events, 1);
+	wait_for_event(test_client, cable_events, 1);
 	BOOST_TEST(!output_component->output()->is_connected_to(input_component->input()));
 	BOOST_TEST(!found_cable(test_client, address_cmp));
+	BOOST_TEST((cable_events->last_cable_left == address_cmp));
 }
 
 BOOST_FIXTURE_TEST_CASE(limit_connected_cables, FixtureJoinServer) {

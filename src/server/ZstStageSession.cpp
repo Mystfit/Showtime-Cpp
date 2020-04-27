@@ -340,7 +340,7 @@ void ZstStageSession::destroy_cable(ZstCable* cable) {
 	//Update rest of network
 	ZstTransportArgs args;
 	auto builder = std::make_shared<FlatBufferBuilder>();
-	auto destroy_cable_data_offset = CreateCableData(*builder, builder->CreateString(cable->get_input()->URI().path()), builder->CreateString(cable->get_output()->URI().path()));
+	auto destroy_cable_data_offset = CreateCableData(*builder, builder->CreateString(cable->get_address().get_input_URI().path()), builder->CreateString(cable->get_address().get_output_URI().path()));
 	auto destroy_cable_offset = CreateCableDestroyRequest(*builder, CreateCable(*builder, destroy_cable_data_offset));
 	stage_hierarchy()->broadcast(Content_CableDestroyRequest, destroy_cable_offset.Union(), builder, args);
 

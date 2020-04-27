@@ -129,18 +129,10 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 	ZstTransportArgs args;
 	args.msg_send_behaviour = sendtype;
 	args.on_recv_response = [this, entity, callback](const ZstMessageResponse& response) {
-		auto stage_response = std::static_pointer_cast<ZstStageMessage>(response.response);
-		if (stage_response->buffer()->content_type() == Content_SignalMessage) {
-			auto signal = stage_response->buffer()->content_as_SignalMessage()->signal();
-			if (signal == Signal_OK) {
-				this->activate_entity_complete(entity);
-				callback(response);
-			}
-			else {
-				ZstLog::net(LogLevel::error, "Activate entity {} failed with status {}", entity->URI().path(), EnumNameSignal(signal));
-				return;
-			}
-		}
+		if (!ZstStageTransport::verify_signal(response.response, Signal_OK, "Activate entity"))
+			return;
+		this->activate_entity_complete(entity);
+		callback(response);
 	};
 
 	//Send message

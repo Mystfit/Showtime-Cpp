@@ -287,7 +287,7 @@ Signal ZstStageHierarchy::destroy_entity_handler(const std::shared_ptr<ZstStageM
 	args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
 	auto builder = std::make_shared<FlatBufferBuilder>();
 	auto destroy_msg_offset = CreateEntityDestroyRequest(*builder, builder->CreateString(content->URI()->str()));
-	broadcast(Content_EntityDestroyRequest, destroy_msg_offset.Union(), builder, args);
+	broadcast(Content_EntityDestroyRequest, destroy_msg_offset.Union(), builder, args, excluded);
 
 	return Signal_OK;
 }
@@ -308,7 +308,7 @@ void ZstStageHierarchy::reply_with_signal(ZstPerformerStageProxy* performer, Sig
 
 void ZstStageHierarchy::broadcast(Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder> & buffer_builder, const ZstTransportArgs& args, const std::vector<ZstPerformer*> & excluded)
 {
-	ZstLog::server(LogLevel::debug, "Broadcasting {} message {}", EnumNameContent(message_type), boost::uuids::to_string(args.msg_ID));
+	//ZstLog::server(LogLevel::debug, "Broadcasting {} message {}", EnumNameContent(message_type), boost::uuids::to_string(args.msg_ID));
 	ZstEntityBundle bundle;
 	for (auto entity : get_performers(bundle))
 	{
@@ -327,7 +327,7 @@ void ZstStageHierarchy::whisper(ZstPerformerStageProxy* performer, Content messa
 {
 	ZstTransportArgs endpoint_args = args;
 	endpoint_args.target_endpoint_UUID = performer->origin_endpoint_UUID();
-	ZstLog::server(LogLevel::debug, "Whispering {} message {} to {}", EnumNameContent(message_type), boost::uuids::to_string(args.msg_ID), boost::uuids::to_string(performer->origin_endpoint_UUID()));
+	/*ZstLog::server(LogLevel::debug, "Whispering {} message {} to {}", EnumNameContent(message_type), boost::uuids::to_string(args.msg_ID), boost::uuids::to_string(performer->origin_endpoint_UUID()));*/
 
 	if (auto transport = performer->origin_transport().lock())
 		transport->send_msg(message_type, message_content, buffer_builder, endpoint_args);

@@ -368,15 +368,11 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 		}
 	}
 
-	//Remove entity from parent
-	//if (!entity->parent_address().is_empty()) {
-	//	auto parent = entity->parent();
-	//	if (parent) {
-	//		ZstComponent* parent_c = dynamic_cast<ZstComponent*>(parent);
-	//		if (parent_c)
-	//			parent_c->remove_child(entity);
-	//	}
-	//}
+	// Remove child from parent
+	auto parent = entity->parent();
+	if (parent) {
+		parent->remove_child(entity);
+	}
 
 	//Cleanup children
 	ZstEntityBundle bundle;
@@ -449,11 +445,6 @@ void ZstHierarchy::reaper_cleanup_entity(ZstEntityBase * entity) {
 		return;
 
 	this->remove_entity_from_lookup(entity->URI());
-
-	auto parent = entity->parent();
-	if (parent) {
-		parent->remove_child(entity);
-	}
 }
 
 void ZstHierarchy::on_register_entity(ZstEntityBase * entity)

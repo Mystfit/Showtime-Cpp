@@ -70,7 +70,12 @@ void ZstMessageSupervisor::process_message_response(std::shared_ptr<ZstMessage>&
 		// Flag message as a response message so it won't get cleaned up until the response has finished processing
 		message->set_has_promise();
 		this->take_message_ownership(message, on_complete);
-		promise->second.set_value(message);
+		try {
+			promise->second.set_value(message);
+		}
+		catch (std::future_error e) {
+			ZstLog::net(LogLevel::error, "Promise error! {}", e.what());
+		}
 		return;
 	}
 	throw std::out_of_range("Could not find promise for message ID");
