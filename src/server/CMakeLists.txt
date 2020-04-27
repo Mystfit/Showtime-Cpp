@@ -56,8 +56,11 @@ if(BUILD_SHARED)
   )
 
   target_compile_definitions(${SERVER_TARGET} 
-    PRIVATE ZST_EXPORT_SERVER_API
-    INTERFACE ZST_IMPORT_SERVER_API
+    INTERFACE 
+    ZST_IMPORT_SERVER_API
+    PRIVATE 
+    ZST_EXPORT_SERVER_API
+    $<$<CONFIG:Release>:${SHOWTIME_RELEASE_PDB_COMPILE_DEFINITIONS}>
   )
 
   add_dependencies(${SERVER_TARGET} ${CORE_TARGET_STATIC})
@@ -65,8 +68,11 @@ if(BUILD_SHARED)
 endif()
 
 foreach(TARGET ${SERVER_LIBS})
+  # Generate PDB files for release
+  target_compile_options(${TARGET} PRIVATE ${SHOWTIME_RELEASE_PDB_COMPILE_DEFINITIONS})
+  target_link_options(${TARGET} PRIVATE ${SHOWTIME_RELEASE_PDB_LINK_FLAGS})
+  
   set_target_properties(${TARGET} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION})
-
   # Server lib sources
   target_sources(${TARGET} PRIVATE 
     ${ZST_SERVER_HEADERS}

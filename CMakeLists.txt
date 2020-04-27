@@ -264,6 +264,14 @@ set(SHOWTIME_PRIVATE_SHARED_LINKED_LIBS
     libzmq
 )
 
+# Flags to allow for PDB files in release builds
+set(SHOWTIME_RELEASE_PDB_COMPILE_DEFINITIONS)
+set(SHOWTIME_RELEASE_PDB_LINK_FLAGS)
+if(MSVC)
+    list(APPEND SHOWTIME_RELEASE_PDB_COMPILE_DEFINITIONS $<$<CONFIG:Release>:/Zi>)
+    list(APPEND SHOWTIME_RELEASE_PDB_LINK_FLAGS $<$<CONFIG:Release>:/INCREMENTAL:NO;/DEBUG;/OPT:REF;/OPT:ICF>)
+endif()
+
 
 # ----------------
 # Showtime targets

@@ -49,8 +49,10 @@ if(BUILD_SHARED)
   )
 
   target_compile_definitions(${CLIENT_TARGET} 
-    PRIVATE ZST_EXPORT_CLIENT_API
-    INTERFACE ZST_IMPORT_CLIENT_API
+    INTERFACE 
+    ZST_IMPORT_CLIENT_API
+    PRIVATE 
+    ZST_EXPORT_CLIENT_API
   )
 
   if(WIN32)
@@ -67,6 +69,10 @@ if(BUILD_SHARED)
 endif()
 
 foreach(TARGET ${CLIENT_LIBS})
+  # Generate PDB files for release
+  target_compile_options(${TARGET} PRIVATE ${SHOWTIME_RELEASE_PDB_COMPILE_DEFINITIONS})
+  target_link_options(${TARGET} PRIVATE ${SHOWTIME_RELEASE_PDB_LINK_FLAGS})
+
   set_target_properties(${TARGET} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION})
 
   # Include files in client target

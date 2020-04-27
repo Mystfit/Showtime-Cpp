@@ -287,6 +287,11 @@ target_compile_definitions(${CORE_TARGET_OBJECTS}
     ZMQ_STATIC
 )
 
+# Generate PDB files for release
+target_compile_options(${CORE_TARGET_OBJECTS} 
+    PRIVATE ${SHOWTIME_RELEASE_PDB_COMPILE_DEFINITIONS}
+)
+
 # Make sure core objects are position independent for shared libs
 set_target_properties(${CORE_TARGET_OBJECTS} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
@@ -327,8 +332,12 @@ endif()
 
 # Options common to both static/shared libraries
 foreach(TARGET ${CORE_LIBS})
-    set_target_properties(${TARGET} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION})
+    # Generate PDB files for release
+    target_compile_options(${TARGET} PRIVATE ${SHOWTIME_RELEASE_PDB_COMPILE_DEFINITIONS})
+    target_link_options(${TARGET} PRIVATE ${SHOWTIME_RELEASE_PDB_LINK_FLAGS})
+
     target_sources(${TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp)
+    set_target_properties(${TARGET} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION})
 
     # Target link libs again to link actual libraries
     target_link_libraries(${TARGET}

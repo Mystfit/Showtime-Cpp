@@ -35,6 +35,10 @@ foreach(test ${TESTS})
         message(STATUS "Adding test ${test}")
         add_test(NAME ${test} COMMAND ${test} WORKING_DIRECTORY $<TARGET_FILE_DIR:${test}>)
     endif()
+
+    # Generate PDB files for release
+    target_compile_options(${test} PRIVATE ${SHOWTIME_RELEASE_PDB_COMPILE_DEFINITIONS})
+    target_link_options(${test} PRIVATE ${SHOWTIME_RELEASE_PDB_LINK_FLAGS})
 endforeach()
 
 # Test helper dependencies

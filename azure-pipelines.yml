@@ -10,7 +10,7 @@ pool:
 
 variables:
   buildPlatform: 'x64'
-  buildConfiguration: 'Debug'
+  buildConfiguration: 'Release'
   toolset: 'msvc-14.2'
   toolset-platform: 'v142'
   build_dir: '$(Build.ArtifactStagingDirectory)\build'
@@ -70,7 +70,7 @@ steps:
       -DBUILD_TESTING=ON
 
 - task: VSBuild@1
-  displayName: Compile solution (debug)
+  displayName: Compile solution
   inputs:
     solution: '$(solution)'
     platform: '$(buildPlatform)'
