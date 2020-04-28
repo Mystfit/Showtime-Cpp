@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <functional>
 #include <concurrentqueue.h>
+#include <blockingconcurrentqueue.h>
+//#include <readerwriterqueue.h>
 #include <mutex>
 #include <memory>
 
@@ -15,6 +17,8 @@
 #include "adaptors/ZstEventAdaptor.hpp"
 
 #include "ZstSemaphore.h"
+
+#define EVENT_QUEUE_BLOCK 100
 
 namespace showtime {
 
@@ -43,18 +47,12 @@ public:
 
 class ZstEventDispatcherBase : public inheritable_enable_shared_from_this<ZstEventDispatcherBase> {
 public:
-	ZstEventDispatcherBase() : m_has_event(false)
-	{
-	}
-
-	ZstEventDispatcherBase(const char* name) : 
-		m_has_event(false),
-        m_name(name)
+	ZstEventDispatcherBase() : 
+		m_has_event(false)
 	{
 	}
 
 	~ZstEventDispatcherBase() noexcept {
-
 		auto adaptors = m_adaptors;
 		for (auto adaptor : adaptors) {
 			if (auto adp = adaptor.lock())
@@ -119,44 +117,56 @@ protected:
 	std::shared_ptr<ZstSemaphore> m_condition_wake;
 	std::recursive_timed_mutex m_mtx;
 	bool m_has_event;
-private:
-	std::string m_name;
 };
 
 
 template<typename T>
-class ZstEventDispatcher : public ZstEventDispatcherBase
-{
-    static_assert(std::is_base_of<ZstEventAdaptor, typename std::pointer_traits<T>::element_type >::value, "T must derive from ZstEventAdaptor");
+class ZstEventDispatcherTyped : public ZstEventDispatcherBase {
+	static_assert(std::is_base_of<ZstEventAdaptor, typename std::pointer_traits<T>::element_type >::value, "T must derive from ZstEventAdaptor");
 public:
-	ZstEventDispatcher() :
-		ZstEventDispatcherBase("")
-	{
-	}
-
-	ZstEventDispatcher(const char* name) :
-		ZstEventDispatcherBase(name)
-	{
-	}
-
-	void flush() {
-		ZstEvent<T> e;
-		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
-		while (this->m_events.try_dequeue(e)) {}
-	}
-
 	void invoke(const std::function<void(T)>& event) {
 		if (this->m_adaptors.size() < 1) {
 			return;
 		}
 		//std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		for (auto adaptor : this->m_adaptors) {
-			if(auto adp = adaptor.lock())
-				event(std::static_pointer_cast< typename std::pointer_traits<T>::element_type>(adp));
+			if (auto adp = adaptor.lock())
+				event(std::static_pointer_cast<typename std::pointer_traits<T>::element_type>(adp));
 		}
 	}
+	virtual void process_events() = 0;
+	virtual void defer(std::function<void(T)> event) = 0;
+	virtual void defer(std::function<void(T)> event, ZstEventCallback on_complete) = 0;
 
-	void defer(std::function<void(T)> event) {
+protected:
+	void process(ZstEvent<T>& event) {
+		bool success = true;
+		for (auto adaptor : m_adaptors) {
+			if (auto adp = adaptor.lock()) {
+				try {
+					event.func(std::dynamic_pointer_cast<typename std::pointer_traits<T>::element_type>(adp));
+				}
+				catch (std::exception e) {
+					ZstLog::net(LogLevel::error, "Event dispatcher failed to run an event on a adaptor. Reason: {}", e.what());
+					success = false;
+				}
+			}
+		}
+		event.completed_func((success) ? ZstEventStatus::SUCCESS : ZstEventStatus::FAILED);
+	}
+};
+
+
+template<typename T>
+class ZstEventDispatcher : public ZstEventDispatcherTyped<T>
+{
+public:
+	ZstEventDispatcher() :
+		m_events(MESSAGE_POOL_BLOCK)
+	{
+	}
+
+	virtual void defer(std::function<void(T)> event) {
 		ZstEvent<T> e(event, [](ZstEventStatus s) {});
 		this->m_events.enqueue(e);
 		m_has_event = true;
@@ -164,7 +174,7 @@ public:
 			m_condition_wake->notify();
 	}
 
-	void defer(std::function<void(T)> event, ZstEventCallback on_complete) {
+	virtual void defer(std::function<void(T)> event, ZstEventCallback on_complete) {
 		ZstEvent<T> e(event, on_complete);
 		this->m_events.enqueue(e);
 		m_has_event = true;
@@ -172,40 +182,48 @@ public:
 			m_condition_wake->notify();
 	}
 
-	void process_events() {
+	virtual void process_events() override {
 		ZstEvent<T> event;
 		while (this->m_events.try_dequeue(event)) {
-			bool success = true;
-			//std::set< std::weak_ptr<ZstEventAdaptor>, std::owner_less< std::weak_ptr<ZstEventAdaptor> > > adaptors;
-			//auto now = std::chrono::steady_clock::now();
-			//auto lock = m_mtx.try_lock_until(now + std::chrono::milliseconds(1000));
-			//if (lock) {
-			//	adaptors = m_adaptors;
-			//}
-			//else {
-			//	ZstLog::net(LogLevel::warn, "Could not aquire attached adaptors lock");
-			//	return;
-			//}
-			//
-			//m_mtx.unlock();
-
-			for (auto adaptor : m_adaptors) {
-				if (auto adp = adaptor.lock()) {
-					try {
-						event.func(std::dynamic_pointer_cast<typename std::pointer_traits<T>::element_type>(adp));
-					}
-					catch (std::exception e) {
-						ZstLog::net(LogLevel::error, "Event dispatcher failed to run an event on a adaptor. Reason: {}", e.what());
-						success = false;
-					}
-				}
-			}
-			event.completed_func((success) ? ZstEventStatus::SUCCESS : ZstEventStatus::FAILED);
+			process(event);
 		}
 		m_has_event = false;
 	}
+
 private:
 	moodycamel::ConcurrentQueue< ZstEvent<T> > m_events;
+};
+
+
+template<typename T>
+class ZstBlockingEventDispatcher : public ZstEventDispatcherTyped<T>
+{
+public:
+	ZstBlockingEventDispatcher() :
+		m_events(EVENT_QUEUE_BLOCK)
+	{
+	}
+
+	virtual void process_events() override {
+		ZstEvent<T> event;
+		if (m_events.wait_dequeue_timed(event, std::chrono::milliseconds(500)))
+			process(event);
+	}
+
+	virtual void defer(std::function<void(T)> event) override {
+		ZstEvent<T> e(event, [](ZstEventStatus s) {});
+		this->m_events.enqueue(e);
+		m_has_event = true;
+	}
+
+	virtual void defer(std::function<void(T)> event, ZstEventCallback on_complete) override {
+		ZstEvent<T> e(event, on_complete);
+		this->m_events.enqueue(e);
+		m_has_event = true;
+	}
+
+private:
+	moodycamel::BlockingConcurrentQueue< ZstEvent<T> > m_events;
 };
 
 }

@@ -16,7 +16,7 @@ ZstSynchronisable::ZstSynchronisable() :
 	m_sync_status(ZstSyncStatus::DEACTIVATED),
     m_sync_error(ZstSyncError::NO_ERR),
 	m_is_proxy(false),
-    m_synchronisable_events(std::make_shared< ZstEventDispatcher<std::shared_ptr<ZstSynchronisableAdaptor> > >("synchronisable"))
+    m_synchronisable_events(std::make_shared< ZstEventDispatcher<std::shared_ptr<ZstSynchronisableAdaptor> > >())
 {
 	m_instance_id = ++ZstSynchronisable::s_instance_id_counter;
 }
@@ -25,7 +25,7 @@ ZstSynchronisable::ZstSynchronisable(const ZstSynchronisable & other) :
     m_is_destroyed(other.m_is_destroyed),
 	m_sync_status(other.m_sync_status),
 	m_is_proxy(other.m_is_proxy),
-	m_synchronisable_events(std::make_shared< ZstEventDispatcher<std::shared_ptr<ZstSynchronisableAdaptor> > >("synchronisable")),
+	m_synchronisable_events(std::make_shared< ZstEventDispatcher<std::shared_ptr<ZstSynchronisableAdaptor> > >()),
     m_instance_id(++ZstSynchronisable::s_instance_id_counter)
 {
 }

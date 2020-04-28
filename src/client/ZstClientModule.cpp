@@ -24,7 +24,6 @@ void ZstClientModule::process_events()
 
 void ZstClientModule::flush_events()
 {
-	m_stage_events->flush();
 }
 
 }

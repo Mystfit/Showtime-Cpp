@@ -26,7 +26,6 @@ void ZstSynchronisableModule::process_events()
 
 void ZstSynchronisableModule::flush_events()
 {
-    m_synchronisable_events->flush();
 }
 
 void ZstSynchronisableModule::add_dead_synchronisable_ID(unsigned int syncronisable_ID)

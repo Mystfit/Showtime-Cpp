@@ -46,7 +46,7 @@ enum class ZstValueType {
 //Heartbeats
 #define HEARTBEAT_DURATION 1000
 #define MAX_MISSED_HEARTBEATS 10
-#define MESSAGE_POOL_BLOCK 1024
+#define MESSAGE_POOL_BLOCK 4096
 
 // Number of milliseconds to wait until a timeout is called on a stage operation
 #define STAGE_TIMEOUT 5000

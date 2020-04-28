@@ -44,9 +44,6 @@ void ZstSession::process_events()
 void ZstSession::flush_events()
 {
 	hierarchy()->flush_events();
-	m_session_events->flush();
-    m_compute_events->flush();
-    
     ZstSynchronisableModule::flush_events();
 }
 

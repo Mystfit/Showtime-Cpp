@@ -12,21 +12,21 @@ namespace showtime {
 
 ZstEntityFactory::ZstEntityFactory() : 
 	ZstEntityBase(),
-	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >("factory events"))
+	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >())
 {
 	set_entity_type(ZstEntityType::FACTORY);
 }
 
 ZstEntityFactory::ZstEntityFactory(const char * name) : 
 	ZstEntityBase(name),
-	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >("factory events"))
+	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >())
 {
 	set_entity_type(ZstEntityType::FACTORY);
 }
     
 ZstEntityFactory::ZstEntityFactory(const Factory* buffer) : 
 	ZstEntityBase(),
-	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >("factory events"))
+	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >())
 {
 	set_entity_type(ZstEntityType::FACTORY);
     ZstEntityFactory::deserialize_partial(buffer->factory());
@@ -35,14 +35,13 @@ ZstEntityFactory::ZstEntityFactory(const Factory* buffer) :
 
 ZstEntityFactory::ZstEntityFactory(const ZstEntityFactory & other) : 
 	ZstEntityBase(other),
-	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >("factory events"))
+	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >())
 {
 	m_creatables = other.m_creatables;
 }
 
 ZstEntityFactory::~ZstEntityFactory()
 {
-	ZstLog::entity(LogLevel::debug, "In factory {} destructor", this->URI().path());
 }
 
 void ZstEntityFactory::add_creatable(const ZstURI & creatable_path)

@@ -10,6 +10,7 @@
 #include <boost/asio/post.hpp>
 #include <boost/asio/thread_pool.hpp>
 #include <boost/bind.hpp>
+#include <boost/thread.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
 #include "../ZstEventDispatcher.hpp"
@@ -25,15 +26,20 @@ public:
     ZstTransportLayerBase() : 
         m_is_active(false),
         m_is_connected(false),
-        m_async_pool(std::make_unique<boost::asio::thread_pool>(4))
+        m_async_pool(std::make_unique<boost::asio::thread_pool>(4)),
+        m_event_condition(std::make_shared<ZstSemaphore>())
     {
     }
 
     virtual void init() {
         m_is_active = true;
+        m_event_thread = boost::thread(boost::bind(&ZstTransportLayerBase::event_loop, this));
     }
 
     virtual void destroy() {
+        m_event_thread.interrupt();
+        m_event_condition->notify();
+        m_event_thread.join();
         m_async_pool->join();
         m_is_active = false;
     }
@@ -93,6 +99,8 @@ protected:
     //Message sending implementation for the transport
     virtual void send_message_impl(const uint8_t* msg_buffer, size_t msg_buffer_size, const ZstTransportArgs& args) const = 0;
 
+protected:
+    std::shared_ptr<ZstSemaphore> m_event_condition;
 
 private:
     void blocking_send(const uint8_t* msg_buffer, size_t msg_buffer_size, ZstTransportArgs args) {
@@ -127,8 +135,25 @@ private:
         this->enqueue_resolved_promise(args.msg_ID);
     }
 
+    void event_loop()
+    {
+        while (this->is_active()) {
+            try {
+                boost::this_thread::interruption_point();
+               // m_event_condition->wait();
+
+                // Process events from transports
+                this->process_events();
+            }
+            catch (boost::thread_interrupted) {
+                break;
+            }
+        }
+    }
+
     bool m_is_active;
     bool m_is_connected;
+    boost::thread m_event_thread;
 
     std::unique_ptr<boost::asio::thread_pool> m_async_pool;
 };
@@ -141,8 +166,9 @@ class ZST_CLASS_EXPORTED ZstTransportLayer :
 {
 public:
     ZstTransportLayer() :
-        m_dispatch_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<Adaptor_T> > >("transport events"))
+        m_dispatch_events(std::make_shared<ZstBlockingEventDispatcher<std::shared_ptr<Adaptor_T> > >())
     {
+        //m_dispatch_events->set_wake_condition(m_event_condition);
     }
     virtual ~ZstTransportLayer() {}
 
@@ -153,25 +179,25 @@ public:
     virtual void dispatch_receive_event(std::shared_ptr<Message_T>& msg, ZstEventCallback on_complete) {
         m_dispatch_events->defer([msg](std::shared_ptr<Adaptor_T>& adaptor) {
             std::static_pointer_cast<Adaptor_T>(adaptor)->on_receive_msg(std::static_pointer_cast<Message_T>(msg));
-            }, [this, msg, on_complete](ZstEventStatus status) {
-                auto base_msg = std::static_pointer_cast<ZstMessage>(msg);
+        }, [this, msg, on_complete](ZstEventStatus status) {
+            auto base_msg = std::static_pointer_cast<ZstMessage>(msg);
 
-                // If the has_promise flag is set early then someone else wants to take ownership of the message
-                if (msg->has_promise()) {
-                    // Skip promise resolution - used for autojoin beacon promises
-                    return;
-                }
+            // If the has_promise flag is set early then someone else wants to take ownership of the message
+            if (msg->has_promise()) {
+                // Skip promise resolution - used for autojoin beacon promises
+                return;
+            }
 
-                try {
-                    // Process the message
-                    process_message_response(base_msg, on_complete);
-                }
-                catch (std::out_of_range) {
-                    // No promise for message - can release message
-                    on_complete(status);
-                    this->release(msg);
-                }
-            });
+            try {
+                // Process the message
+                process_message_response(base_msg, on_complete);
+            }
+            catch (std::out_of_range) {
+                // No promise for message - can release message
+                on_complete(status);
+                this->release(msg);
+            }
+        });
     }
 
     virtual void process_events() override{
@@ -179,12 +205,12 @@ public:
         m_dispatch_events->process_events();
     }
 
-    std::shared_ptr<ZstEventDispatcher<std::shared_ptr<Adaptor_T> > >& msg_events() {
+    std::shared_ptr<ZstBlockingEventDispatcher<std::shared_ptr<Adaptor_T> > >& msg_events() {
         return m_dispatch_events;
     }
 
 private:
-    std::shared_ptr<ZstEventDispatcher<std::shared_ptr<Adaptor_T> > > m_dispatch_events;
+    std::shared_ptr<ZstBlockingEventDispatcher<std::shared_ptr<Adaptor_T> > > m_dispatch_events;
 };
 
 

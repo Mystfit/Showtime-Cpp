@@ -32,8 +32,8 @@ class ZstSemaphore;
 namespace showtime {
 	namespace detail {
 		class ZstStage : 
-			public ZstStageTransportAdaptor,
-			public ZstEventDispatcher<ZstTransportAdaptor*>
+			public ZstStageTransportAdaptor
+			//public ZstEventDispatcher<ZstTransportAdaptor*>
 		{
 		public:
 			ZstStage();

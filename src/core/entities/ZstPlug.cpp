@@ -280,7 +280,7 @@ ZstInputPlug::ZstInputPlug(const char * name, const ZstValueType& t, int max_cab
 
 ZstOutputPlug::ZstOutputPlug() :
     ZstPlug("", ZstValueType::NONE, ZstPlugDirection::OUT_JACK, -1),
-    m_graph_out_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstGraphTransportAdaptor> > >("plug_out_events")),
+    m_graph_out_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstGraphTransportAdaptor> > >()),
     m_reliable(true),
     m_can_fire(false)
 {
@@ -288,7 +288,7 @@ ZstOutputPlug::ZstOutputPlug() :
     
 ZstOutputPlug::ZstOutputPlug(const Plug* buffer) : 
 	ZstPlug(buffer),
-	m_graph_out_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstGraphTransportAdaptor> > >("plug_out_events")),
+	m_graph_out_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstGraphTransportAdaptor> > >()),
 	m_reliable(true),
 	m_can_fire(false)
 {
@@ -297,7 +297,7 @@ ZstOutputPlug::ZstOutputPlug(const Plug* buffer) :
 
 ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug& other) :
     ZstPlug(other),
-    m_graph_out_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstGraphTransportAdaptor> > > ("plug_out_events")),
+    m_graph_out_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstGraphTransportAdaptor> > > ()),
     m_reliable(other.m_reliable),
     m_can_fire(other.m_can_fire)
 {
@@ -305,7 +305,7 @@ ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug& other) :
 
 ZstOutputPlug::ZstOutputPlug(const char * name, const ZstValueType& t, bool reliable) :
     ZstPlug(name, t, ZstPlugDirection::OUT_JACK, -1),
-    m_graph_out_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstGraphTransportAdaptor> > >("plug_out_events")),
+    m_graph_out_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstGraphTransportAdaptor> > >()),
     m_reliable(reliable),
     m_can_fire(false)
 {
@@ -319,7 +319,7 @@ ZstOutputPlug::ZstOutputPlug(const char * name, const ZstValueType& t, bool reli
 
 ZstOutputPlug::~ZstOutputPlug()
 {
-    m_graph_out_events->flush();
+    //m_graph_out_events->flush();
     m_graph_out_events->remove_all_adaptors();
 }
 

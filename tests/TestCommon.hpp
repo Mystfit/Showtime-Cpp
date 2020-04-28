@@ -430,7 +430,7 @@ namespace ZstTest
 				try {
 					boost::this_thread::interruption_point();
 					m_client->poll_once();
-					std::this_thread::sleep_for(std::chrono::milliseconds(1));
+					//std::this_thread::sleep_for(std::chrono::milliseconds(1));
 				}
 				catch (boost::thread_interrupted) {
 					ZstLog::net(LogLevel::debug, "Benchmark event loop exiting.");

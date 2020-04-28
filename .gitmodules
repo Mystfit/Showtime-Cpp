@@ -11,3 +11,6 @@
 	path = submodules/cxxopts
 	url = https://github.com/jarro2783/cxxopts.git
 	branch = v2.2.0
+[submodule "submodules/readerwriterqueue"]
+	path = submodules/readerwriterqueue
+	url = https://github.com/cameron314/readerwriterqueue.git

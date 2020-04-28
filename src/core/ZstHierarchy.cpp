@@ -4,7 +4,7 @@
 namespace showtime {
 
 ZstHierarchy::ZstHierarchy() :
-	m_hierarchy_events(std::make_shared<ZstEventDispatcher< std::shared_ptr<ZstHierarchyAdaptor> > >("hierarchy_events"))
+	m_hierarchy_events(std::make_shared<ZstEventDispatcher< std::shared_ptr<ZstHierarchyAdaptor> > >())
 {
 }
 
@@ -396,7 +396,6 @@ std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstHierarchyAdaptor> > > & Zs
 
  void ZstHierarchy::flush_events()
  {
-	m_hierarchy_events->flush();
     ZstSynchronisableModule::flush_events();
  }
 

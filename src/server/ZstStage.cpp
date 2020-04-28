@@ -27,9 +27,6 @@ namespace showtime::detail
 	{
 		//Register event conditions
 		m_session->set_wake_condition(m_event_condition);
-		m_router_transport->msg_events()->set_wake_condition(m_event_condition);
-		m_websocket_transport->msg_events()->set_wake_condition(m_event_condition);
-		this->set_wake_condition(m_event_condition);
 	}
 
 	ZstStage::~ZstStage()
@@ -137,8 +134,6 @@ namespace showtime::detail
 	void ZstStage::process_events()
 	{
 		m_session->process_events();
-		m_router_transport->process_events();
-		m_websocket_transport->process_events();
 	}
 
 
