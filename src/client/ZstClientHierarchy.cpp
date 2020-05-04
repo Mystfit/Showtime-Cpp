@@ -167,15 +167,13 @@ void ZstClientHierarchy::deactivate_entity(ZstEntityBase * entity, const ZstTran
 			ZstTransportArgs args;
 			args.msg_send_behaviour = sendtype;
 
-			if (args.msg_send_behaviour == ZstTransportRequestBehaviour::PUBLISH) {
-				this->destroy_entity_complete(entity);
-			}
-			else {
+			if (args.msg_send_behaviour != ZstTransportRequestBehaviour::PUBLISH) {
 				args.on_recv_response = [this, entity](ZstMessageResponse response) {
 					if (ZstStageTransport::verify_signal(response.response, Signal_OK, "Destroy entity"))
 						this->destroy_entity_complete(entity);
 				};
 			}
+			
 			auto builder = std::make_shared< FlatBufferBuilder>();
             auto content_message = CreateEntityDestroyRequest(*builder, builder->CreateString(entity->URI().path(), entity->URI().full_size()));
             adaptor->send_msg(Content_EntityDestroyRequest, content_message.Union(), builder, args);
@@ -185,6 +183,10 @@ void ZstClientHierarchy::deactivate_entity(ZstEntityBase * entity, const ZstTran
 		destroy_entity_complete(entity);
 	}
 
+	// We can immediately clear this entity if we were triggered from a destructor
+	if (sendtype != ZstTransportRequestBehaviour::PUBLISH) {
+		this->destroy_entity_complete(entity);
+	}
 	if (sendtype == ZstTransportRequestBehaviour::SYNC_REPLY) {
 		process_events();
 	}

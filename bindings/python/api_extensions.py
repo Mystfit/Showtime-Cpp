@@ -36,7 +36,7 @@ def generate_event_wrapper(adaptor):
     def generate_callback(name):
         cb_name = name.replace('on_', '')
         def callback(self, *args):
-            getattr(self, cb_name).fire(self, *args)
+            getattr(self, cb_name).fire(*args)
         return callback
 
     def generate_init(adaptor, callbacks):

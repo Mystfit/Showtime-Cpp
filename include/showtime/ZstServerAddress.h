@@ -45,7 +45,7 @@ public:
         return *this;
     }
     
-    ZstServerAddress & operator=(ZstServerAddress && rhs)
+    ZstServerAddress & operator=(ZstServerAddress && rhs) noexcept
     {
         name = std::move(rhs.name);
         address = std::move(rhs.address);

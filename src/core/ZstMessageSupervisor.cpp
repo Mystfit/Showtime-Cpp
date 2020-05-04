@@ -14,14 +14,14 @@ void ZstMessageSupervisor::destroy()
 
 ZstMessageFuture ZstMessageSupervisor::register_response(ZstMsgID id)
 {
-	std::lock_guard<std::mutex> lock();
+	std::lock_guard<std::mutex> lock(m_mtx);
 	m_response_promises.emplace(id, ZstMessagePromise());
 	return m_response_promises[id].get_future();
 }
 
 void ZstMessageSupervisor::enqueue_resolved_promise(ZstMsgID id)
 {
-	std::lock_guard<std::mutex> lock();
+	std::lock_guard<std::mutex> lock(m_mtx);
 	m_dead_promises.enqueue(id);
 }
 
@@ -35,7 +35,7 @@ void ZstMessageSupervisor::cleanup_response_messages()
 
 void ZstMessageSupervisor::take_message_ownership(std::shared_ptr<ZstMessage>& msg, ZstEventCallback cleanup_func)
 {
-	std::lock_guard<std::mutex> lock();
+	std::lock_guard<std::mutex> lock(m_mtx);
 	m_owned_messages[msg->id()] = { msg, cleanup_func };
 }
 
@@ -54,7 +54,7 @@ void ZstMessageSupervisor::remove_response_promise(ZstMsgID id)
 	//Clear completed promise when finished
 	auto promise = m_response_promises.find(id);
 	if (promise != m_response_promises.end()) {
-		std::lock_guard<std::mutex> lock();
+		std::lock_guard<std::mutex> lock(m_mtx);
 		m_response_promises.erase(id);
 	}
 }

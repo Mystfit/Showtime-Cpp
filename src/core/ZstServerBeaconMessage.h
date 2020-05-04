@@ -20,7 +20,7 @@ namespace showtime {
 
 	private:
 		std::string m_address;
-		const StageBeaconMessage* m_buffer;
+		const StageBeaconMessage* m_buffer = NULL;
 		std::weak_ptr<ZstServiceDiscoveryTransport> m_owning_transport;
 	};
 }

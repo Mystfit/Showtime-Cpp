@@ -107,9 +107,6 @@ private:
         // Register message response
         auto msg_future = register_response(args.msg_ID);
 
-        if (!VerifyStageMessageBuffer(flatbuffers::Verifier(msg_buffer, msg_buffer_size)))
-            throw;
-
         // Send message
         this->send_message_impl(msg_buffer, msg_buffer_size, args);
 

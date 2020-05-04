@@ -260,19 +260,23 @@ class Test_DualClientEvents(unittest.TestCase):
         # Create component
         component = ZST.ZstComponent("child")
         self.remote_client.get_root().add_child(component)
+        self.assertTrue(component.is_registered())
 
         # Wait for entity arrived event
         time.sleep(0.1)
         self.client.poll_once()
         self.assertTrue(arrived.called)
+        #self.assertTrue(ZST.ZstURI.equals(component.URI(), ZstURI("test_python/child")))
 
         # Remove component
         del component
 
         # Wait for entity left event
-        time.sleep(0.1)
+        time.sleep(0.5)
         self.client.poll_once()
         self.assertTrue(left.called)
+        time.sleep(0.5)
+
 
     def test_entity_renamed(self):
         # Register event callbacks
