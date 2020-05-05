@@ -162,7 +162,7 @@ class ZstEventDispatcher : public ZstEventDispatcherTyped<T>
 {
 public:
 	ZstEventDispatcher() :
-		m_events(MESSAGE_POOL_BLOCK)
+		m_events()
 	{
 	}
 
