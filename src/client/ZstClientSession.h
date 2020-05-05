@@ -79,7 +79,7 @@ public:
 	// ---------------------------
 	// Hierarchy adaptor overrides
 	// ---------------------------
-	void on_performer_leaving(ZstPerformer * performer) override;
+	void on_performer_leaving(const ZstURI& performer_path) override;
     
 
 	// ------------------

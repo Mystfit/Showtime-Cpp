@@ -82,10 +82,10 @@ public:
 		inc_calls();
 	}
 
-	void on_factory_leaving(ZstEntityFactory* factory) override
+	void on_factory_leaving(const ZstURI& factory_path) override
 	{
-		ZstLog::app(LogLevel::debug, "FACTORY_LEAVING: {}", factory->URI().path());
-		last_left_factory = factory->URI();
+		ZstLog::app(LogLevel::debug, "FACTORY_LEAVING: {}", factory_path.path());
+		last_left_factory = factory_path;
 		inc_calls();
 	}
 };
@@ -184,8 +184,8 @@ BOOST_FIXTURE_TEST_CASE(create_factory, FixtureJoinServer){
 	BOOST_TEST(factory->is_activated());
 	ZstEntityFactoryBundle bundle;
 	test_client->get_root()->get_factories(bundle);
-	BOOST_TEST(bundle.size() == 1);
-	BOOST_TEST(bundle[0]->URI() == factory->URI());
+	bool found = std::find_if(bundle.begin(), bundle.end(), [path = factory->URI()](auto it) { return it->URI() == path; }) != bundle.end();
+	BOOST_TEST(found);
 }
 
 BOOST_FIXTURE_TEST_CASE(destroy_factory, FixtureLocalFactory) {
@@ -194,7 +194,8 @@ BOOST_FIXTURE_TEST_CASE(destroy_factory, FixtureLocalFactory) {
 	delete factory;
 	ZstEntityFactoryBundle bundle;
 	test_client->get_root()->get_factories(bundle);
-	BOOST_TEST(bundle.size() == 0);
+	bool found = std::find_if(bundle.begin(), bundle.end(), [path = factory->URI()](auto it) { return it->URI() == path; }) == bundle.end();
+	BOOST_TEST(found);
 }
 
 BOOST_FIXTURE_TEST_CASE(remove_factory, FixtureLocalFactory) {
@@ -249,6 +250,7 @@ BOOST_FIXTURE_TEST_CASE(create_entity_from_external_factory_async, FixtureExtern
 	test_client->create_entity_async(bundle[0], "brand_spanking_new_ext_async");
 	TAKE_A_BREATH
 	remote_client->poll_once();
+	BOOST_TEST_CHECKPOINT("Waiting for factory event");
 	wait_for_event(test_client, factoryEvents, 1);
 	BOOST_TEST(factoryEvents->last_created_entity == created_entity_URI);
 	BOOST_TEST(test_client->find_entity(created_entity_URI));

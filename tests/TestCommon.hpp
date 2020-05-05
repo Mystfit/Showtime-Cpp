@@ -296,9 +296,9 @@ namespace ZstTest
 			inc_calls();
 		}
 
-		void on_entity_leaving(ZstEntityBase * entity) override {
-			ZstLog::app(LogLevel::debug, "ENTITY_LEAVING: {}", entity->URI().path());
-			last_entity_leaving = entity->URI();
+		void on_entity_leaving(const ZstURI& entity_path) override {
+			ZstLog::app(LogLevel::debug, "ENTITY_LEAVING: {}", entity_path.path());
+			last_entity_leaving = entity_path;
 			inc_calls();
 		}
 
@@ -322,9 +322,9 @@ namespace ZstTest
 			inc_calls();
 		}
 
-		void on_cable_destroyed(ZstCable* cable) override {
-			ZstLog::app(LogLevel::debug, "CABLE_LEAVING: {}", cable->get_address().to_string());
-			last_cable_left = cable->get_address();
+		void on_cable_destroyed(const ZstCableAddress& cable_address) override {
+			ZstLog::app(LogLevel::debug, "CABLE_LEAVING: {}", cable_address.to_string());
+			last_cable_left = cable_address;
 			inc_calls();
 		}
 	};
@@ -342,9 +342,9 @@ namespace ZstTest
 			inc_calls();
 		}
 
-		void on_performer_leaving(ZstPerformer * performer) override {
-			ZstLog::app(LogLevel::debug, "PERFORMER_LEAVING: {}", performer->URI().path());
-            last_left_performer = performer->URI();
+		void on_performer_leaving(const ZstURI& performer_path) override {
+			ZstLog::app(LogLevel::debug, "PERFORMER_LEAVING: {}", performer_path.path());
+            last_left_performer = performer_path;
 			inc_calls();
 		}
 	};

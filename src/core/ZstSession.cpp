@@ -125,7 +125,7 @@ void ZstSession::destroy_cable_complete(ZstCable * cable)
 		ZstPlugLiason().plug_remove_cable(output, cable);
 
     //Dispatch events
-    session_events()->defer([cable](std::shared_ptr<ZstSessionAdaptor> adaptor) {
+    session_events()->defer([cable = cable->get_address()](std::shared_ptr<ZstSessionAdaptor> adaptor) {
 		adaptor->on_cable_destroyed(cable);
 	});
     

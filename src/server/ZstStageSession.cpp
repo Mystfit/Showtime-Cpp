@@ -312,18 +312,21 @@ Signal ZstStageSession::destroy_cable_handler(const CableDestroyRequest* request
 	return Signal_OK;
 }
 
-void ZstStageSession::on_performer_leaving(ZstPerformer* performer)
+void ZstStageSession::on_performer_leaving(const ZstURI& performer_path)
 {
-	disconnect_cables(performer);
+	disconnect_cables(find_entity(performer_path));
 }
 
-void ZstStageSession::on_entity_leaving(ZstEntityBase* entity)
+void ZstStageSession::on_entity_leaving(const ZstURI& entity_path)
 {
-	disconnect_cables(entity);
+	disconnect_cables(find_entity(entity_path));
 }
 
 void ZstStageSession::disconnect_cables(ZstEntityBase* entity)
 {
+	if (!entity)
+		return;
+
 	ZstCableBundle bundle;
  	entity->get_child_cables(bundle);
 	for (auto cable : bundle) {

@@ -13,7 +13,7 @@ class ZST_CLASS_EXPORTED ZstEntityAdaptor :
 public:
 	ZST_EXPORT virtual void on_entity_registered(ZstEntityBase * entity);
 	ZST_EXPORT virtual void on_register_entity(ZstEntityBase* entity);
-	ZST_EXPORT virtual void on_disconnect_cable(ZstCable* cable);
+	ZST_EXPORT virtual void on_disconnect_cable(const ZstCableAddress& cable);
 
 	// ------
 

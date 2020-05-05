@@ -55,6 +55,7 @@ ZstEntityBase * ZstHierarchy::create_entity(const ZstURI & creatable_path, const
 void ZstHierarchy::deactivate_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype)
 {
 	if (!entity) return;
+
 	if(entity->activation_status() != ZstSyncStatus::DESTROYED)
 		synchronisable_set_deactivating(entity);
 }
@@ -350,21 +351,21 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 	if (entity->is_proxy()) {
 		if (entity->entity_type() == ZstEntityType::PERFORMER)
 		{
-			hierarchy_events()->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
-				adaptor->on_performer_leaving(static_cast<ZstPerformer*>(entity));
-				});
+			hierarchy_events()->defer([path = entity->URI()](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+				adaptor->on_performer_leaving(path);
+			});
 		}
 		else if (entity->entity_type() == ZstEntityType::FACTORY)
 		{
-			hierarchy_events()->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
-				adaptor->on_factory_leaving(static_cast<ZstEntityFactory*>(entity));
-				});
+			hierarchy_events()->defer([path = entity->URI()](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+				adaptor->on_factory_leaving(path);
+			});
 		}
 		else if (entity->entity_type() == ZstEntityType::COMPONENT)
 		{
-			hierarchy_events()->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
-				adaptor->on_entity_leaving(entity);
-				});
+			hierarchy_events()->defer([path = entity->URI()](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+				adaptor->on_entity_leaving(path);
+			});
 		}
 	}
 

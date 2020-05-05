@@ -44,7 +44,7 @@ void ZstEntityAdaptor::publish_entity_update(ZstEntityBase * entity, const ZstUR
 void ZstEntityAdaptor::on_register_entity(ZstEntityBase * entity){}
 void ZstEntityAdaptor::request_entity_registration(ZstEntityBase* entity) {}
 void ZstEntityAdaptor::request_entity_activation(ZstEntityBase * entity) {}
-void ZstEntityAdaptor::on_disconnect_cable(ZstCable * cable) {}
+void ZstEntityAdaptor::on_disconnect_cable(const ZstCableAddress& cable) {}
 
 
 // ----------------
@@ -60,7 +60,7 @@ void ZstFactoryAdaptor::on_entity_created(ZstEntityBase * entity) {}
 // -----------------------
 
 void ZstSessionAdaptor::on_cable_created(ZstCable * cable) {}
-void ZstSessionAdaptor::on_cable_destroyed(ZstCable * cable) {}
+void ZstSessionAdaptor::on_cable_destroyed(const ZstCableAddress& cable) {}
 
 ZstCableBundle & ZstSessionAdaptor::get_cables(ZstCableBundle & bundle) { return bundle; }
 ZstCable * ZstSessionAdaptor::find_cable(const ZstCableAddress & address) { return NULL; }
@@ -74,14 +74,12 @@ void ZstSessionAdaptor::release_entity_ownership(ZstEntityBase* entity) {}
 // -----------------------
 
 void ZstHierarchyAdaptor::on_performer_arriving(ZstPerformer * performer) {}
-void ZstHierarchyAdaptor::on_performer_leaving(ZstPerformer * performer) {}
+void ZstHierarchyAdaptor::on_performer_leaving(const ZstURI& performer_path) {}
 void ZstHierarchyAdaptor::on_entity_arriving(ZstEntityBase * entity) {}
-void ZstHierarchyAdaptor::on_entity_leaving(ZstEntityBase * entity) {}
+void ZstHierarchyAdaptor::on_entity_leaving(const ZstURI& entity_path) {}
 void ZstHierarchyAdaptor::on_entity_updated(ZstEntityBase* entity){}
-//void ZstHierarchyAdaptor::on_plug_arriving(ZstPlug * plug) {}
-//void ZstHierarchyAdaptor::on_plug_leaving(ZstPlug * plug) {}
 void ZstHierarchyAdaptor::on_factory_arriving(ZstEntityFactory * factory) {}
-void ZstHierarchyAdaptor::on_factory_leaving(ZstEntityFactory * factory) {}
+void ZstHierarchyAdaptor::on_factory_leaving(const ZstURI& factory_path) {}
 
 void ZstHierarchyAdaptor::activate_entity(ZstEntityBase* entity, const ZstTransportRequestBehaviour& sendtype){}
 void ZstHierarchyAdaptor::deactivate_entity(ZstEntityBase* entity, const ZstTransportRequestBehaviour& sendtype){}

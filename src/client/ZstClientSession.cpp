@@ -134,9 +134,9 @@ void ZstClientSession::aquire_entity_ownership_handler(const EntityTakeOwnership
     }
 }
 
-void ZstClientSession::on_performer_leaving(ZstPerformer * performer)
+void ZstClientSession::on_performer_leaving(const ZstURI& performer_path)
 {
-	remove_connected_performer(performer->URI());
+	remove_connected_performer(performer_path);
 }
 
 void ZstClientSession::plug_received_value(ZstInputPlug * plug)

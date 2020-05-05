@@ -34,8 +34,8 @@ public:
 	Signal aquire_entity_ownership_handler(const EntityTakeOwnershipRequest* request, ZstPerformerStageProxy* sender);
 
 	// Adapter overrides
-	void on_performer_leaving(ZstPerformer* performer) override;
-	void on_entity_leaving(ZstEntityBase* entity) override;
+	void on_performer_leaving(const ZstURI& performer_path) override;
+	void on_entity_leaving(const ZstURI& entity_path) override;
 
 	// Cables
 	void disconnect_cables(ZstEntityBase* entity);
