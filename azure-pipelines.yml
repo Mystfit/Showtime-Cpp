@@ -36,10 +36,10 @@ steps:
 - task: Cache@2
   displayName: Cache dependencies
   inputs:
-    key: 'dependencies2 | "$(Agent.OS)"'
+    key: 'dependencies | "$(Agent.OS)"'
     restoreKeys: |
-       dependencies2 | "$(Agent.OS)"
-       dependencies2
+       dependencies | "$(Agent.OS)"
+       dependencies
     path: $(cmake_prefix)
     cacheHitVar: DEPENDENCIES_RESTORED
 
@@ -79,6 +79,7 @@ steps:
 
 - task: VSTest@2
   displayName: Test solution
+  condition: eq(variables.DEPENDENCIES_RESTORED, 'true')
   inputs:
     testSelector: 'testAssemblies'
     runSettingsFile: '$(Build.SourcesDirectory)/azure_test.runsettings'
@@ -92,7 +93,7 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
     diagnosticsEnabled: true
-    runInParallel: true
+    runInParallel: false
     collectDumpOn: 'onAbortOnly'
     rerunFailedTests: True
     rerunFailedThreshold: '30'
