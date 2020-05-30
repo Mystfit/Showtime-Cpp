@@ -40,22 +40,20 @@ ZstPerformer::ZstPerformer(const ZstPerformer & other) : ZstComponent(other)
 {
     m_heartbeat_active = other.m_heartbeat_active;
     m_missed_heartbeats = other.m_missed_heartbeats;
-    
-    for (auto f : other.m_factories) {
-        add_factory(new ZstEntityFactory(*(f.second)));
-    }
 }
 
 ZstPerformer::~ZstPerformer()
 {
     if (!is_proxy()){
-        for (auto f : m_factories) {
+        /*auto bundle = ZstEntityBundle();
+        get_factories(bundle);
+        for (auto f : bundle) {*/
             // TODO: Deleting factories will crash the host if it GC's factories after the performer has been freed
             //delete f.second;
-            ZstEntityLiason().entity_set_parent(f.second, NULL);
-            f.second->deactivate();
-        }
-        m_factories.clear();
+            //ZstEntityLiason().entity_set_parent(f, NULL);
+            //f->deactivate();
+        //}
+        //m_factories.clear();
     }
 }
 
@@ -107,33 +105,21 @@ void ZstPerformer::remove_child(ZstEntityBase * entity)
 void ZstPerformer::add_factory(ZstEntityFactory * factory)
 {
     if (is_destroyed()) return;
-
-    ZstEntityBase::add_child(factory);
-    m_factories[factory->URI()] = factory;
+    ZstComponent::add_child(factory);
 }
 
 void ZstPerformer::remove_factory(ZstEntityFactory * factory)
 {
-    auto f = m_factories.find(factory->URI());
-    if (f != m_factories.end()) {
-        m_factories.erase(f);
-    }
-
-    ZstEntityBase::remove_child(factory);
-}
-
-ZstEntityBundle & ZstPerformer::get_factories(ZstEntityBundle & bundle)
-{
-    for (auto f : m_factories) {
-        bundle.add(f.second);
-    }
-    return bundle;
+    if (is_destroyed()) return;
+    ZstComponent::remove_child(factory);
 }
 
 ZstEntityFactoryBundle & ZstPerformer::get_factories(ZstEntityFactoryBundle & bundle)
 {
-    for (auto f : m_factories) {
-        bundle.add(f.second);
+    auto entity_bundle = ZstEntityBundle();
+    get_child_entities(entity_bundle, false, false, ZstEntityType::FACTORY);
+    for (auto entity : entity_bundle) {
+        bundle.add(dynamic_cast<ZstEntityFactory*>(entity));
     }
     return bundle;
 }

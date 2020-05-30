@@ -47,19 +47,19 @@ void ZstStageSession::on_receive_msg(const std::shared_ptr<ZstStageMessage>& msg
 
 	switch (msg->type()) {
 	case Content_SignalMessage:
-		response = signal_handler(msg->buffer()->content_as_SignalMessage(), sender);
+		response = signal_handler(msg, sender);
 		break;
 	case Content_CableCreateRequest:
-		response = create_cable_handler(msg->buffer(), sender);
+		response = create_cable_handler(msg, sender);
 		break;
 	case Content_CableDestroyRequest:
-		response = destroy_cable_handler(msg->buffer()->content_as_CableDestroyRequest());
+		response = destroy_cable_handler(msg);
 		break;
 	case Content_EntityObserveRequest:
-		response = observe_entity_handler(msg->buffer(), sender);
+		response = observe_entity_handler(msg, sender);
 		break;
 	case Content_EntityTakeOwnershipRequest:
-		response = aquire_entity_ownership_handler(msg->buffer()->content_as_EntityTakeOwnershipRequest(), sender);
+		response = aquire_entity_ownership_handler(msg, sender);
 		break;
 	default:
 		break;
@@ -77,8 +77,10 @@ void ZstStageSession::on_receive_msg(const std::shared_ptr<ZstStageMessage>& msg
 	}
 }
 
-Signal ZstStageSession::signal_handler(const SignalMessage* request, ZstPerformerStageProxy* sender)
+Signal ZstStageSession::signal_handler(const std::shared_ptr<ZstStageMessage>& msg, ZstPerformerStageProxy* sender)
 {
+	auto request = msg->buffer()->content_as_SignalMessage();
+
 	if (!sender) {
 		return Signal_ERR_STAGE_PERFORMER_NOT_FOUND;
 	}
@@ -133,11 +135,10 @@ Signal ZstStageSession::synchronise_client_graph_handler(ZstPerformerStageProxy*
 	return Signal_OK;
 }
 
-Signal ZstStageSession::create_cable_handler(const StageMessage* request, ZstPerformerStageProxy* sender)
+Signal ZstStageSession::create_cable_handler(const std::shared_ptr<ZstStageMessage>& msg, ZstPerformerStageProxy* sender)
 {
+	auto request = msg->buffer();
 	auto cable_request = request->content_as_CableCreateRequest();
-    ZstMsgID id;
-    memcpy(&id, request->id()->data(), request->id()->size());
 
 	//Unpack cable from message
 	auto input_path = ZstURI(cable_request->cable()->address()->input_URI()->c_str(), cable_request->cable()->address()->input_URI()->size());
@@ -177,7 +178,7 @@ Signal ZstStageSession::create_cable_handler(const StageMessage* request, ZstPer
 	//Start the client connection
 	auto input_perf = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(input->URI().first()));
 	auto output_perf = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(output->URI().first()));
-	connect_clients(output_perf, input_perf, [this, cable_ptr, sender, id](ZstMessageResponse response) {
+	connect_clients(output_perf, input_perf, [this, cable_ptr, sender, id = msg->id()](ZstMessageResponse response) {
 		auto signal = ZstStageTransport::get_signal(response.response);
 		if (signal == Signal_OK) {
 			ZstLog::server(LogLevel::notification, "Client connection complete. Publishing cable {}", cable_ptr->get_address().to_string());
@@ -201,9 +202,10 @@ Signal ZstStageSession::create_cable_handler(const StageMessage* request, ZstPer
 
 //---------------------
 
-Signal ZstStageSession::observe_entity_handler(const StageMessage* request, ZstPerformerStageProxy* sender)
+Signal ZstStageSession::observe_entity_handler(const std::shared_ptr<ZstStageMessage>& msg, ZstPerformerStageProxy* sender)
 {
 	//Get target performer
+	auto request = msg->buffer();
 	auto observe_request = request->content_as_EntityObserveRequest();
 	auto performer_path = ZstURI(observe_request->URI()->c_str(), observe_request->URI()->size());
 	ZstPerformerStageProxy* observed_performer = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(performer_path.first()));
@@ -223,13 +225,10 @@ Signal ZstStageSession::observe_entity_handler(const StageMessage* request, ZstP
 		return Signal_ERR_STAGE_PERFORMER_ALREADY_CONNECTED;
 	}
 
-	//Start the client connection
-    ZstMsgID response_id;
-    memcpy(&response_id, request->id()->data(), request->id()->size());
-
 	//Check to see if one client is already connected to the other
 	if (!observed_performer->has_connected_subscriber(sender)) {
-		connect_clients(observed_performer, sender, [this, sender, response_id](ZstMessageResponse response) {
+		//Start the client connection
+		connect_clients(observed_performer, sender, [this, sender, response_id = msg->id()](ZstMessageResponse response) {
 			auto signal = ZstStageTransport::get_signal(response.response);
 			stage_hierarchy()->reply_with_signal(sender, signal, response_id);
 		});
@@ -240,8 +239,9 @@ Signal ZstStageSession::observe_entity_handler(const StageMessage* request, ZstP
 }
 
 
-Signal ZstStageSession::aquire_entity_ownership_handler(const EntityTakeOwnershipRequest* request, ZstPerformerStageProxy* sender)
+Signal ZstStageSession::aquire_entity_ownership_handler(const std::shared_ptr<ZstStageMessage>& msg, ZstPerformerStageProxy* sender)
 {
+	auto request = msg->buffer()->content_as_EntityTakeOwnershipRequest();
 	auto entity_path = ZstURI(request->URI()->c_str(), request->URI()->size());
 	ZstEntityBase* entity = hierarchy()->find_entity(entity_path);
 
@@ -301,8 +301,10 @@ Signal ZstStageSession::aquire_entity_ownership_handler(const EntityTakeOwnershi
 	return Signal_OK;
 }
 
-Signal ZstStageSession::destroy_cable_handler(const CableDestroyRequest* request)
+Signal ZstStageSession::destroy_cable_handler(const std::shared_ptr<ZstStageMessage>& msg)
 {
+	auto request = msg->buffer()->content_as_CableDestroyRequest();
+
 	auto cable_path = ZstCableAddress(request->cable());
 	ZstLog::server(LogLevel::notification, "Received destroy cable connection request");
 
@@ -314,12 +316,12 @@ Signal ZstStageSession::destroy_cable_handler(const CableDestroyRequest* request
 
 void ZstStageSession::on_performer_leaving(const ZstURI& performer_path)
 {
-	disconnect_cables(find_entity(performer_path));
+	disconnect_cables(m_hierarchy->find_entity(performer_path));
 }
 
 void ZstStageSession::on_entity_leaving(const ZstURI& entity_path)
 {
-	disconnect_cables(find_entity(entity_path));
+	disconnect_cables(m_hierarchy->find_entity(entity_path));
 }
 
 void ZstStageSession::disconnect_cables(ZstEntityBase* entity)

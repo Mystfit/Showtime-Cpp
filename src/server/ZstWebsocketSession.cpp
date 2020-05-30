@@ -76,6 +76,7 @@ void ZstWebsocketSession::on_read(beast::error_code ec, std::size_t bytes_transf
 	msg->init(GetStageMessage(
 		m_recv_buffer.data().data()),
 		m_origin_endpoint_UUID,
+		boost::uuids::nil_uuid(),
 		std::dynamic_pointer_cast<ZstStageTransport>(m_transport->ZstTransportLayer::shared_from_this())
 	);
 

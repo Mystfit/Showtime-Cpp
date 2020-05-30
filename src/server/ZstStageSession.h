@@ -26,12 +26,12 @@ public:
 	// ----------------
 	// Message handlers
 	// ----------------
-	Signal signal_handler(const SignalMessage* request, ZstPerformerStageProxy* sender);
+	Signal signal_handler(const std::shared_ptr<ZstStageMessage>& msg, ZstPerformerStageProxy* sender);
 	Signal synchronise_client_graph_handler(ZstPerformerStageProxy* sender);
-	Signal create_cable_handler(const StageMessage* request, ZstPerformerStageProxy* sender);
-	Signal destroy_cable_handler(const CableDestroyRequest* request);
-	Signal observe_entity_handler(const StageMessage* request, ZstPerformerStageProxy* sender);
-	Signal aquire_entity_ownership_handler(const EntityTakeOwnershipRequest* request, ZstPerformerStageProxy* sender);
+	Signal create_cable_handler(const std::shared_ptr<ZstStageMessage>& msg, ZstPerformerStageProxy* sender);
+	Signal destroy_cable_handler(const std::shared_ptr<ZstStageMessage>& msg);
+	Signal observe_entity_handler(const std::shared_ptr<ZstStageMessage>& msg, ZstPerformerStageProxy* sender);
+	Signal aquire_entity_ownership_handler(const std::shared_ptr<ZstStageMessage>& msg, ZstPerformerStageProxy* sender);
 
 	// Adapter overrides
 	void on_performer_leaving(const ZstURI& performer_path) override;

@@ -112,6 +112,12 @@ BOOST_FIXTURE_TEST_CASE(async_activation_callback, FixtureOutputEntity) {
 	wait_for_event(test_client, entity_sync_event, 1);
 	BOOST_TEST(output_component->is_activated());
 	BOOST_TEST(test_client->find_entity(output_component->URI()));
+}
+
+BOOST_FIXTURE_TEST_CASE(async_deactivation_callback, FixtureOutputEntity) {
+	test_client->get_root()->add_child(output_component.get());
+	auto entity_sync_event = std::make_shared<TestSynchronisableEvents>();
+	output_component->add_adaptor(entity_sync_event);
 	entity_sync_event->reset_num_calls();
 
 	//Deactivate
@@ -182,6 +188,22 @@ BOOST_FIXTURE_TEST_CASE(parent_activates_child, FixtureJoinServer) {
 	BOOST_TEST(child->is_registered());
 
 	test_client->get_root()->add_child(parent.get());
+	BOOST_TEST(parent->is_activated());
+	BOOST_TEST(child->is_activated());
+	BOOST_TEST(test_client->find_entity(parent->URI()));
+	BOOST_TEST(test_client->find_entity(child->URI()));
+}
+
+
+BOOST_FIXTURE_TEST_CASE(performer_activates_children, FixtureInitAndCreateServerWithEpheremalPort) {
+	auto parent = std::make_unique<OutputComponent>("test_parent");
+	test_client->register_entity(parent.get());
+	auto child = std::make_unique<OutputComponent>("test_child");
+	parent->add_child(child.get());
+	BOOST_TEST(child->is_registered());
+	test_client->get_root()->add_child(parent.get());
+	test_client->auto_join_by_name(server_name.c_str());
+
 	BOOST_TEST(parent->is_activated());
 	BOOST_TEST(child->is_activated());
 	BOOST_TEST(test_client->find_entity(parent->URI()));

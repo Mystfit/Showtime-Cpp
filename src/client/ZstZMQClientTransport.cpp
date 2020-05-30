@@ -102,6 +102,9 @@ void ZstZMQClientTransport::send_message_impl(const uint8_t * msg_buffer, size_t
 	zframe_t * spacer = zframe_new_empty();
 	zmsg_prepend(m, &spacer);
 
+	//Add message UUID frame
+	zmsg_addmem(m, args.msg_ID.data, 16);
+
 	//Encode message from flatbuffers to bytes
     zmsg_addmem(m, msg_buffer, msg_buffer_size);
 
@@ -124,7 +127,13 @@ void ZstZMQClientTransport::sock_recv(zsock_t* socket)
 	if (recv_msg) {
 		// Pop spacer frame off
 		auto empty = zmsg_pop(recv_msg);
+		auto id_data = zmsg_pop(recv_msg);
         auto msg_data = zmsg_pop(recv_msg);
+		
+		// Copy msg id to UUID
+		ZstMsgID msg_id;
+		int s = zframe_size(id_data);
+		memcpy(&msg_id, zframe_data(id_data), zframe_size(id_data));
 
         if(msg_data){
 			if(VerifyStageMessageBuffer(flatbuffers::Verifier(zframe_data(msg_data), zframe_size(msg_data)))) {
@@ -132,6 +141,7 @@ void ZstZMQClientTransport::sock_recv(zsock_t* socket)
 				stage_msg->init(
 					GetStageMessage(zframe_data(msg_data)),
 					boost::uuids::nil_generator()(),
+					msg_id,
 					std::static_pointer_cast<ZstStageTransport>(ZstTransportLayer::shared_from_this())
 				);
 

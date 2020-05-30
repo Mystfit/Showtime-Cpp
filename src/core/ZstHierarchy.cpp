@@ -160,9 +160,6 @@ void ZstHierarchy::add_proxy_entity(std::unique_ptr<ZstEntityBase> entity)
 	// Propagate proxy properties to children of this proxy
 	ZstEntityBundle bundle;
 	entity->get_child_entities(bundle, true, true);
-	if (entity->entity_type() == ZstEntityType::PERFORMER) {
-		dynamic_cast<ZstPerformer*>(entity.get())->get_factories(bundle);
-	}
 
     for (auto c : bundle){
 		//Set entity as a proxy so the reaper can clean it up later
@@ -345,6 +342,12 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 		return;
 	}
 
+	// Remove child from parent
+	auto parent = entity->parent();
+	if (parent) {
+		parent->remove_child(entity);
+	}
+
 	//Dispatch events depending on entity type
 	// We only need to dispatch events for proxy entities since we would have initiated
 	// entity removal locally otherwise
@@ -367,12 +370,6 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 				adaptor->on_entity_leaving(path);
 			});
 		}
-	}
-
-	// Remove child from parent
-	auto parent = entity->parent();
-	if (parent) {
-		parent->remove_child(entity);
 	}
 
 	//Cleanup children

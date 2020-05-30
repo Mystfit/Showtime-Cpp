@@ -28,7 +28,7 @@ namespace showtime {
 
 	const uuid& ZstServerBeaconMessage::origin_endpoint_UUID() const
 	{
-		return nil_generator()();
+		return boost::uuids::nil_uuid();
 	}
 
 	std::shared_ptr<ZstTransportLayerBase> ZstServerBeaconMessage::owning_transport() const

@@ -92,23 +92,28 @@ void ZstZMQServerTransport::sock_recv(zsock_t* socket)
 	zmsg_t* recv_msg = zmsg_recv(socket);
 	if (recv_msg) {
 		//Get identity of sender from first frame
-		zframe_t* identity_frame = zmsg_pop(recv_msg);
-		zframe_t* empty = zmsg_pop(recv_msg);
+		auto identity_frame = zmsg_pop(recv_msg);
+		auto empty = zmsg_pop(recv_msg);
+		auto id_frame = zmsg_pop(recv_msg);
+		auto payload_data = zmsg_pop(recv_msg);
+
+		// Copy msg id to UUID
+		ZstMsgID msg_id;
+		memcpy(&msg_id, zframe_data(id_frame), zframe_size(id_frame));
+
+		// Get client UUID
+		auto client_uuid = uuid(boost::lexical_cast<uuid>((char*)zframe_data(identity_frame), zframe_size(identity_frame)));
 
 		//Unpack message
-		auto payload_data = zmsg_pop(recv_msg);
 		if (payload_data) {
 			if (VerifyStageMessageBuffer(flatbuffers::Verifier(zframe_data(payload_data), zframe_size(payload_data)))) {
 				auto msg = get_msg();
 				msg->init(
 					GetStageMessage(zframe_data(payload_data)),
-					uuid(boost::lexical_cast<uuid>((char*)zframe_data(identity_frame), zframe_size(identity_frame))),
+					client_uuid,
+					msg_id,
 					std::dynamic_pointer_cast<ZstStageTransport>(ZstTransportLayer::shared_from_this())
 				);
-
-				if (msg->buffer()->content_type() != Content_SignalMessage) {
-					//ZstLog::net(LogLevel::debug, "Server received message {} {}", EnumNameContent(msg->buffer()->content_type()), boost::uuids::to_string(msg->id()));
-				}
 
 				// Send message to submodules
 				dispatch_receive_event(msg, [this, msg, identity_frame, payload_data](ZstEventStatus s) mutable {
@@ -118,7 +123,8 @@ void ZstZMQServerTransport::sock_recv(zsock_t* socket)
 				});
 			}
 			else {
-				ZstLog::server(LogLevel::warn, "Received malformed message. Ignoring");
+				ZstLog::server(LogLevel::warn, "Received malformed message. Alerting client!");
+				signal_client_direct(Signal_ERR_MSG_MALFORMED, msg_id, client_uuid);
 			}
 		}
 		else {
@@ -133,7 +139,7 @@ void ZstZMQServerTransport::sock_recv(zsock_t* socket)
 
 void ZstZMQServerTransport::send_message_impl(const uint8_t* msg_buffer, size_t msg_buffer_size, const ZstTransportArgs& args) const
 {
-	if(!VerifyStageMessageBuffer(flatbuffers::Verifier(msg_buffer, msg_buffer_size)))
+	if (!VerifyStageMessageBuffer(flatbuffers::Verifier(msg_buffer, msg_buffer_size)))
 		throw;
 
 	zmsg_t* m = zmsg_new();
@@ -145,13 +151,19 @@ void ZstZMQServerTransport::send_message_impl(const uint8_t* msg_buffer, size_t 
 	zframe_t* empty = zframe_new_empty();
 	zmsg_append(m, &empty);
 
+	// Add message ID
+	zmsg_addmem(m, args.msg_ID.data, 16);
+
 	//Encode message from flatbuffers to bytes
 	zmsg_addmem(m, msg_buffer, msg_buffer_size);
 
-	std::lock_guard<std::mutex> lock(m_transport_mtx);
-	//zmsg_send(&m, m_clients_sock);
-	//int result = m_server_actor.send_to_socket(m_clients_sock, m);
-	int result = zmsg_send(&m, m_clients_sock);
+	int result = 0;
+	{
+		std::lock_guard<std::mutex> lock(m_transport_mtx);
+		//int result = m_server_actor.send_to_socket(m_clients_sock, m);
+		result = zmsg_send(&m, m_clients_sock);
+	}
+
 	//Errors
 	if (result != 0) {
 		int err = zmq_errno();
@@ -159,6 +171,19 @@ void ZstZMQServerTransport::send_message_impl(const uint8_t* msg_buffer, size_t 
 			ZstLog::net(LogLevel::error, "Server message sending error: {}", zmq_strerror(err));
 		}
 	}
+}
+
+void ZstZMQServerTransport::signal_client_direct(Signal signal, ZstMsgID msg_id, const boost::uuids::uuid& client)
+{
+	flatbuffers::FlatBufferBuilder builder;
+	auto signal_offset = CreateSignalMessage(builder, signal);
+	auto msg_offset = CreateStageMessage(builder, Content_SignalMessage, signal_offset.Union());
+	FinishStageMessageBuffer(builder, msg_offset);
+	
+	ZstTransportArgs args;
+	args.target_endpoint_UUID = client;
+	args.msg_ID = msg_id;
+	send_message_impl(builder.GetBufferPointer(), builder.GetSize(), args);
 }
 
 }

@@ -28,7 +28,7 @@ public:
     ZST_EXPORT virtual void create(const char * name, ZstEntityBase* parent) {};
     
     //Find a plug in this component by its URI
-    ZST_EXPORT ZstEntityBundle & get_plugs(ZstEntityBundle & bundle) const;
+    ZST_EXPORT ZstEntityBundle & get_plugs(ZstEntityBundle & bundle);
 
     //Overridable compute function that will process input plug events
     ZST_EXPORT virtual void compute(ZstInputPlug * plug) {};
@@ -43,7 +43,7 @@ public:
 
     //Hierarchy
     ZST_EXPORT virtual void get_child_cables(ZstCableBundle & bundle) override;
-    ZST_EXPORT virtual void get_child_entities(ZstEntityBundle & bundle, bool include_parent = false, bool recursive = false) override;
+    ZST_EXPORT virtual void get_child_entities(ZstEntityBundle & bundle, bool include_parent = false, bool recursive = false, ZstEntityType filter = ZstEntityType::NONE) override;
     
     //Specific component type
     ZST_EXPORT const char * component_type() const;

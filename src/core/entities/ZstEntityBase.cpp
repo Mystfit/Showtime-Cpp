@@ -173,11 +173,13 @@ namespace showtime
     {
     }
 
-    void ZstEntityBase::get_child_entities(ZstEntityBundle & bundle, bool include_parent, bool recursive)
+    void ZstEntityBase::get_child_entities(ZstEntityBundle & bundle, bool include_parent, bool recursive, ZstEntityType filter)
     {
         if (include_parent){
-            std::lock_guard<std::mutex> lock(m_entity_lock);
-            bundle.add(this);
+            if (filter == ZstEntityType::NONE || this->entity_type() == filter) {
+                //std::lock_guard<std::mutex> lock(m_entity_lock);
+                bundle.add(this);
+            }
         }
     }
 

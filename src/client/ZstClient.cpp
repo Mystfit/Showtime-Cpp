@@ -426,7 +426,6 @@ void ZstClient::join_stage_complete(const ZstServerAddress& server_address, ZstM
 
     //Add local entities to entity lookup and attach adaptors only if we've connected to the stage
     ZstEntityBundle bundle;
-    m_session->hierarchy()->get_local_performer()->get_factories(bundle);
     m_session->hierarchy()->get_local_performer()->get_child_entities(bundle, true);
     for (auto c : bundle) {
         c->synchronisable_events()->add_adaptor(static_cast<std::shared_ptr< ZstSynchronisableAdaptor> >(m_session->hierarchy()));
@@ -444,6 +443,13 @@ void ZstClient::join_stage_complete(const ZstServerAddress& server_address, ZstM
 
     //Ask the stage to send us the current session
     synchronise_graph(response.send_behaviour);
+
+    // Activate all child entities that were added before we joined
+    bundle.clear();
+    session()->hierarchy()->get_local_performer()->get_child_entities(bundle, false, true);
+    for (auto c : bundle) {
+        session()->hierarchy()->activate_entity(c, response.send_behaviour);
+    }
 
     //Enqueue connection events
     m_session->dispatch_connected_to_stage();
@@ -463,7 +469,7 @@ void ZstClient::synchronise_graph(const ZstTransportRequestBehaviour& sendtype)
     //Build message
     ZstTransportArgs args;
     args.msg_send_behaviour = sendtype;
-    args.on_recv_response = [this](ZstMessageResponse response) {
+    args.on_recv_response = [this, sendtype](ZstMessageResponse response) {
         if (!ZstStageTransport::verify_signal(response.response, Signal_OK, "Synchronise client with server")) {
             return;
         }
@@ -534,7 +540,6 @@ void ZstClient::leave_stage_complete(ZstTransportRequestBehaviour sendtype)
 
     //Mark all locally registered entites as deactivated
     ZstEntityBundle bundle;
-    m_session->hierarchy()->get_local_performer()->get_factories(bundle);
     m_session->hierarchy()->get_local_performer()->get_child_entities(bundle, true);
     for (auto c : bundle) {
 		synchronisable_enqueue_deactivation(c);
@@ -763,7 +768,6 @@ void ZstClient::set_is_connecting(bool value)
     m_is_connecting = value;
 }
 
-
 void ZstClient::on_entity_arriving(ZstEntityBase* entity)
 {
     ZstEntityBundle bundle;
@@ -807,6 +811,3 @@ void ZstClient::init_arriving_plug(ZstPlug* plug)
 }
 
 }
-// -------------------
-
-

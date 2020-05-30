@@ -24,6 +24,8 @@ public:
 	void send_message_impl(const uint8_t* msg_buffer, size_t msg_buffer_size, const ZstTransportArgs& args) const override;
 
 private:
+	void signal_client_direct(Signal signal, ZstMsgID msg_id, const boost::uuids::uuid& client);
+
 	int m_port;
 	mutable std::mutex m_transport_mtx;
 	ZstActor m_server_actor;

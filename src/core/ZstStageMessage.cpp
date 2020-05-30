@@ -23,16 +23,12 @@ ZstStageMessage::ZstStageMessage() :
 ZstStageMessage::~ZstStageMessage(){
 }
  
-void ZstStageMessage::init(const StageMessage * buffer, uuid& origin_uuid, std::shared_ptr<ZstStageTransport>& owning_transport)
+void ZstStageMessage::init(const StageMessage * buffer, uuid& origin_uuid, uuid& msg_id, std::shared_ptr<ZstStageTransport>& owning_transport)
 {
 	reset();
 	m_buffer = buffer;
 
-    if (m_buffer->id())
-        memcpy(&m_id, m_buffer->id()->data(), m_buffer->id()->size());
-    else
-        m_id = nil_generator()();    
-
+    m_id = msg_id;
     m_origin_endpoint_UUID = origin_uuid;
     m_owning_transport = owning_transport;
 }

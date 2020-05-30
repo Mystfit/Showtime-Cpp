@@ -19,6 +19,11 @@ namespace showtime {
 			return (m_it != other.m_it);
 		}
 
+		bool operator==(const ZstBundleIterator& other)
+		{
+			return (m_it == other.m_it);
+		}
+
 		const ZstBundleIterator& operator++()
 		{
 			m_it++;
@@ -68,7 +73,7 @@ namespace showtime {
 
 		void add(T bundle_item)
 		{
-			m_bundle_items.push_back(bundle_item);
+			m_bundle_items.emplace_back(bundle_item);
 		}
 
 		T item_at(const size_t index) const

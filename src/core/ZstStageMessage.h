@@ -18,7 +18,7 @@ public:
     ZST_EXPORT ZstStageMessage(const ZstStageMessage & other) = delete;
     ZST_EXPORT virtual ~ZstStageMessage();
 	
-	ZST_EXPORT void init(const StageMessage * buffer, uuid& origin_uuid, std::shared_ptr<ZstStageTransport>& owning_transport);
+	ZST_EXPORT void init(const StageMessage * buffer, uuid& origin_uuid, uuid& msg_id, std::shared_ptr<ZstStageTransport>& owning_transport);
 	ZST_EXPORT virtual void reset() override;
 	
 	ZST_EXPORT virtual ZstMsgID id() const override;

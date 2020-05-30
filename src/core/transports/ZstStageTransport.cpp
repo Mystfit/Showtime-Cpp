@@ -13,11 +13,7 @@ namespace showtime
         copy_args.msg_ID = (args.msg_ID.is_nil()) ? ZstMsgIDManager::next_id() : args.msg_ID ;
 
 		// Create the stage message
-        auto msg_id_data = buffer_builder->CreateVector(std::vector<uint8_t>(copy_args.msg_ID.begin(), copy_args.msg_ID.end()));
-		auto stage_msg = CreateStageMessage(*buffer_builder, message_type, message_content, msg_id_data);
-		
-		/*if(message_type != Content_SignalMessage)
-			ZstLog::net(LogLevel::debug, "ZstStageTransport::send_msg {} {}", EnumNameContent(message_type), boost::uuids::to_string(copy_args.msg_ID));*/
+		auto stage_msg = CreateStageMessage(*buffer_builder, message_type, message_content);
 		FinishStageMessageBuffer(*buffer_builder, stage_msg);
 
 		if (!VerifyStageMessageBuffer(flatbuffers::Verifier(buffer_builder->GetBufferPointer(), buffer_builder->GetSize())))

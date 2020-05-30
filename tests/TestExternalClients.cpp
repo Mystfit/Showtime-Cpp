@@ -273,11 +273,13 @@ BOOST_FIXTURE_TEST_CASE(set_name_updates_proxy, FixtureWaitForSinkClient) {
 	auto remote_ent = std::make_unique<ZstComponent>("remote");
 	remote_client->get_root()->add_child(remote_ent.get());
 
-	wait_for_event(test_client, entityEvents, 2);
+	BOOST_TEST_CHECKPOINT("Waiting for remote entity to arrive");
+	wait_for_event(test_client, entityEvents, 1);
 	auto proxy = test_client->find_entity(remote_ent->URI());
 	entityEvents->reset_num_calls();
 	BOOST_REQUIRE(proxy);
 
+	BOOST_TEST_CHECKPOINT("Renaming entity");
 	remote_ent->set_name("renamed");
 	wait_for_event(test_client, entityEvents, 1);
 	BOOST_TEST(remote_ent->URI() == proxy->URI());

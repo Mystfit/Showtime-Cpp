@@ -217,20 +217,25 @@ Signal ZstStageHierarchy::factory_create_entity_handler(const std::shared_ptr<Zs
 	}
 
 	//Send creatable message to the performer that owns the factory
-    ZstMsgID response_id;
-    memcpy(&response_id, request->buffer()->id()->data(), request->buffer()->id()->size());
-    
     ZstTransportArgs args;
 	args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
-    args.on_recv_response = [this, sender, factory_path, response_id](ZstMessageResponse response) {
-		if (!ZstStageTransport::verify_signal(response.response, Signal_OK, "Creatable request at origin"))
-			return;
+    args.on_recv_response = [this, sender, factory_path, response_id = request->id()](ZstMessageResponse response) {
+		if (!ZstStageTransport::verify_signal(response.response, Signal_OK, "Creatable request at origin")) {
+			reply_with_signal(sender, ZstStageTransport::get_signal(response.response), response_id);
+			return Signal_EMPTY;
+		}
 		
 		ZstLog::server(LogLevel::notification, "Remote factory created entity {}", factory_path.path());
-		reply_with_signal(sender, Signal_OK, response_id);
+
+		// Send ACK to original sender with the path of our new entity
+		ZstTransportArgs ack_args;
+		ack_args.msg_ID = response_id;
+		auto builder = std::make_shared<FlatBufferBuilder>();
+		auto create_entity_ACK = CreateFactoryCreateEntityACK(*builder, builder->CreateString(factory_path.path()));
+		whisper(sender, Content_FactoryCreateEntityACK, create_entity_ACK.Union(), builder, ack_args);
 	};
 
-	//Send 
+	//Send creation request to owning factory
 	auto builder = std::make_shared<FlatBufferBuilder>();
 	auto create_entity_request = CreateFactoryCreateEntityRequest(*builder, builder->CreateString(content->creatable_entity_URI()->str()), builder->CreateString(content->name()->str()));
 	whisper(factory_performer, Content_FactoryCreateEntityRequest, create_entity_request.Union(), builder, args);
@@ -327,14 +332,9 @@ void ZstStageHierarchy::whisper(ZstPerformerStageProxy* performer, Content messa
 {
 	ZstTransportArgs endpoint_args = args;
 	endpoint_args.target_endpoint_UUID = performer->origin_endpoint_UUID();
-	/*ZstLog::server(LogLevel::debug, "Whispering {} message {} to {}", EnumNameContent(message_type), boost::uuids::to_string(args.msg_ID), boost::uuids::to_string(performer->origin_endpoint_UUID()));*/
 
 	if (auto transport = performer->origin_transport().lock())
 		transport->send_msg(message_type, message_content, buffer_builder, endpoint_args);
-
-	//router_events()->defer([this, message_type, message_content, buffer_builder, endpoint_args](std::shared_ptr<ZstStageTransportAdaptor> adaptor) mutable {
-	//	adaptor->send_msg(message_type, message_content, buffer_builder, endpoint_args);
-	//});
 }
 
 ZstPerformerStageProxy* ZstStageHierarchy::get_client_from_endpoint_UUID(const uuid& origin_endpoint_UUID)
@@ -348,15 +348,6 @@ ZstPerformerStageProxy* ZstStageHierarchy::get_client_from_endpoint_UUID(const u
 				return performer_proxy;
 		}
 	}
-	//auto client_it = m_clients.find(origin_endpoint_UUID);
-	//if (client_it != m_clients.end())
-	//	return client_it->second;
 	return NULL;
 }
-
-//ZstPerformerStageProxy* ZstStageHierarchy::get_endpoint(const uuid& origin_endpoint_UUID) {
-//	
-//}
-
-
 }

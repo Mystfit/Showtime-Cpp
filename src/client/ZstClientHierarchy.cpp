@@ -124,19 +124,19 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 	 
     //Super activation
 	ZstHierarchy::activate_entity(entity, sendtype);
-	
-	//Build message
-	ZstTransportArgs args;
-	args.msg_send_behaviour = sendtype;
-	args.on_recv_response = [this, entity, callback](const ZstMessageResponse& response) {
-		if (!ZstStageTransport::verify_signal(response.response, Signal_OK, "Activate entity"))
-			return;
-		this->activate_entity_complete(entity);
-		callback(response);
-	};
 
 	//Send message
-	stage_events()->invoke([args, entity](std::shared_ptr<ZstStageTransportAdaptor> adaptor){
+	stage_events()->invoke([this, entity, sendtype, callback](std::shared_ptr<ZstStageTransportAdaptor> adaptor){
+		//Build message
+		ZstTransportArgs args;
+		args.msg_send_behaviour = sendtype;
+		args.on_recv_response = [this, entity, callback](const ZstMessageResponse& response) {
+			if (!ZstStageTransport::verify_signal(response.response, Signal_OK, "Activate entity"))
+				return;
+			this->activate_entity_complete(entity);
+			callback(response);
+		};
+
 		auto builder = std::make_shared< FlatBufferBuilder>();
 		ZstEntityBundle bundle;
 		entity->get_child_entities(bundle, true, true);
@@ -159,9 +159,6 @@ void ZstClientHierarchy::deactivate_entity(ZstEntityBase * entity, const ZstTran
 
 	//If the entity is local, let the stage know it's leaving
 	if (!entity->is_proxy()) {
-		//Build message
-		
-
 		//Send message
 		stage_events()->invoke([this, entity, sendtype](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
 			ZstTransportArgs args;
@@ -184,7 +181,7 @@ void ZstClientHierarchy::deactivate_entity(ZstEntityBase * entity, const ZstTran
 	}
 
 	// We can immediately clear this entity if we were triggered from a destructor
-	if (sendtype != ZstTransportRequestBehaviour::PUBLISH) {
+	if (sendtype == ZstTransportRequestBehaviour::PUBLISH) {
 		this->destroy_entity_complete(entity);
 	}
 	if (sendtype == ZstTransportRequestBehaviour::SYNC_REPLY) {
@@ -221,23 +218,35 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
 		ZstTransportArgs args;
 		args.msg_send_behaviour = sendtype;
 		args.on_recv_response = [this, &entity, sendtype, creatable_path, entity_name, factory](ZstMessageResponse response) {
-			if (!ZstStageTransport::verify_signal(response.response, Signal_OK, "Creating remote entity from factory"))
+			// Convert messages
+			auto stage_msg = std::dynamic_pointer_cast<ZstStageMessage>(response.response);
+			if (!stage_msg)
 				return;
 
-			ZstLog::net(LogLevel::notification, "Created entity from {}", creatable_path.path());
-			if (sendtype == ZstTransportRequestBehaviour::SYNC_REPLY) {
-				//Can return the entity since the pointer reference will still be on the stack
-				entity = find_entity(creatable_path.first() + ZstURI(entity_name));
+			auto signal = ZstStageTransport::get_signal(response.response);
+			if (signal != Signal_EMPTY) {
+				ZstLog::net(LogLevel::error, "Entity creation failed with signal {}", EnumNameSignal(signal));
+				return;
 			}
-			if (sendtype == ZstTransportRequestBehaviour::ASYNC_REPLY) {
-				ZstEntityBase* late_entity = find_entity(creatable_path.first() + ZstURI(entity_name));
-				if (late_entity) {
-					factory->factory_events()->defer([late_entity](std::shared_ptr<ZstFactoryAdaptor> adaptor) { 
-						adaptor->on_entity_created(late_entity);
-					});
-					factory->synchronisable_events()->invoke([factory](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
-						adaptor->synchronisable_has_event(factory);
-					});
+
+			auto ack_msg = stage_msg->buffer()->content_as_FactoryCreateEntityACK();
+			auto created_entity_path = ZstURI(ack_msg->created_entity_URI()->c_str(), ack_msg->created_entity_URI()->size());
+			
+			// Find local entity. We would have already received this as a broadcast BEFORE the ack
+			auto created_entity = entity = find_entity(created_entity_path);
+			if (created_entity) {
+				ZstLog::net(LogLevel::notification, "Created entity from {}", created_entity_path.path());
+				// Dispatch events
+				factory->factory_events()->defer([created_entity](std::shared_ptr<ZstFactoryAdaptor> adaptor){adaptor->on_entity_created(created_entity);
+				});
+				factory->synchronisable_events()->invoke([factory](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
+					adaptor->synchronisable_has_event(factory);
+				});
+
+				if (sendtype == ZstTransportRequestBehaviour::SYNC_REPLY) {
+					// Can return the entity since the pointer reference will still be on the stack
+					entity = created_entity;
+					process_events();
 				}
 			}
 		};
@@ -293,47 +302,43 @@ void ZstClientHierarchy::factory_create_entity_handler(const FactoryCreateEntity
 		ZstLog::net(LogLevel::warn, "Could not find factory to create entity {}", creatable_path.path());
 		return;
 	}
-	factory->synchronisable_events()->defer([this, creatable_path, name, factory, request_id](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
-		ZstEntityBase * entity = factory->create_entity(creatable_path, name.c_str());
-		if (entity) {
-            // Add entity to local performer
-            this->get_local_performer()->add_child(entity, false);
-			ZstLog::net(LogLevel::notification, "Activating creatable {} ", entity->URI().path());
-            
-            // Activate entity separately
-			this->activate_entity(entity, ZstTransportRequestBehaviour::ASYNC_REPLY, [this, entity, request_id](ZstMessageResponse response) {
-				if (!ZstStageTransport::verify_signal(response.response, Signal_OK, fmt::format("Creatable {} activation request timed out", entity->URI().path())))
-					return;
 
-				ZstLog::net(LogLevel::notification, "Creatable {} activated", entity->URI().path());
-				stage_events()->invoke([request_id](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
-					ZstTransportArgs args;
-                    args.msg_ID = request_id;
-                    
-                    // Send signal
-					auto builder = std::make_shared< FlatBufferBuilder>();
-                    auto signal = CreateSignalMessage(*builder, Signal_OK);
-                    adaptor->send_msg(Content_SignalMessage, signal.Union(), builder, args);
-				});
-			});
-		}
-		else {
+	// Create entity
+	ZstEntityBase * entity = factory->create_entity(creatable_path, name.c_str());
+
+	if (entity) {
+        // Add entity to local perfofrmer
+        this->get_local_performer()->add_child(entity, false);
+            
+        // Activate entity separately
+		ZstLog::net(LogLevel::notification, "Activating creatable {} ", entity->URI().path());
+		this->activate_entity(entity, ZstTransportRequestBehaviour::ASYNC_REPLY, [this, entity, request_id](ZstMessageResponse response) {
+			if (!ZstStageTransport::verify_signal(response.response, Signal_OK, fmt::format("Creatable {} activation request timed out", entity->URI().path())))
+				return;
+
+			ZstLog::net(LogLevel::notification, "Creatable {} activated", entity->URI().path());
 			stage_events()->invoke([request_id](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
 				ZstTransportArgs args;
                 args.msg_ID = request_id;
-                
-                // Send signals
+                    
+                // Send signal
 				auto builder = std::make_shared< FlatBufferBuilder>();
-                auto signal = CreateSignalMessage(*builder, Signal_ERR_ENTITY_NOT_FOUND);
+                auto signal = CreateSignalMessage(*builder, Signal_OK);
                 adaptor->send_msg(Content_SignalMessage, signal.Union(), builder, args);
 			});
-		}
-	});
-
-	// Signal main event loop that the factory has an event waiting
-	factory->synchronisable_events()->invoke([factory](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) { 
-		adaptor->synchronisable_has_event(factory);
-	});
+		});
+	}
+	else {
+		stage_events()->invoke([request_id](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
+			ZstTransportArgs args;
+            args.msg_ID = request_id;
+                
+            // Send signals
+			auto builder = std::make_shared< FlatBufferBuilder>();
+            auto signal = CreateSignalMessage(*builder, Signal_ERR_ENTITY_NOT_FOUND);
+            adaptor->send_msg(Content_SignalMessage, signal.Union(), builder, args);
+		});
+	}
 }
 
 void ZstClientHierarchy::activate_entity_complete(ZstEntityBase * entity)
