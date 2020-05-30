@@ -137,10 +137,10 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 			callback(response);
 		};
 
-		auto builder = std::make_shared< FlatBufferBuilder>();
 		ZstEntityBundle bundle;
 		entity->get_child_entities(bundle, true, true);
 		for (auto c : bundle) {
+			auto builder = std::make_shared< FlatBufferBuilder>();
 			auto content_message = CreateEntityCreateRequest(*builder, c->serialized_entity_type(), c->serialize(*builder));
 			adaptor->send_msg(Content_EntityCreateRequest, content_message.Union(), builder, args);
 		}
