@@ -5,97 +5,124 @@ trigger:
       - develop
       - azure
 
-pool:
-  vmImage: 'windows-latest'
+strategy:
+  matrix:
+    linux:
+      imageName: 'ubuntu-16.04'
+      variables:
+        - cmake_prefix: '/usr/local'
+        - generator: 'Unix makefiles'
+        - toolset-platform: ''
+    mac:
+      imageName: 'macos-10.14'
+      variables:
+        - cmake_prefix: '/usr/local'
+        - generator: 'Unix makefiles'
+        - toolset-platform: ''
+    windows:
+      variables:
+        - imageName: 'windows-latest'
+        - toolset: 'msvc-14.2'
+        - toolset-platform: 'v142'
+        - build_dir: '$(Build.ArtifactStagingDirectory)\build'
+        - solution: '$(build_dir)\Showtime.sln'
+        - cmake_prefix: '$(build_dir)\dependencies\install\$(toolset)'
+        - generator: 'Visual Studio 16 2019'
 
 variables:
   buildPlatform: 'x64'
   buildConfiguration: 'Release'
-  toolset: 'msvc-14.2'
-  toolset-platform: 'v142'
-  build_dir: '$(Build.ArtifactStagingDirectory)\build'
-  cmake_prefix: '$(build_dir)\dependencies\install\$(toolset)'
-  solution: '$(build_dir)\Showtime.sln'
 
-steps:
-- checkout: self
-  clean: true
-  submodules: recursive
+stages:
+- stage: build
+  pool:
+    vmImage: $(imageName)
+  jobs:
+    - job:
+      steps:
+      - checkout: self
+        clean: true
+        submodules: recursive
 
-- task: PowerShell@2
-  displayName: Install tools
-  inputs:
-    targetType: 'inline'
-    script: |
-      choco install visualstudio2019-workload-nativedesktop --params "--includeRecommended"
-      $VS_path = $(vswhere -format value -property installationPath)
-      Write-Host "##vso[task.setvariable variable=VS_path;]$(vswhere -format value -property installationPath)"
-      choco install procdump
-      Write-Host "##vso[task.setvariable variable=PROCDUMP_PATH ;]%ProgramData%\chocolatey\bin\"
+      - task: PowerShell@2
+        displayName: Install tools
+        condition: eq(Agent.OS, 'Windows_NT')
+        inputs:
+          targetType: 'inline'
+          script: |
+            choco install visualstudio2019-workload-nativedesktop --params "--includeRecommended"
+            $VS_path = $(vswhere -format value -property installationPath)
+            Write-Host "##vso[task.setvariable variable=VS_path;]$(vswhere -format value -property installationPath)"
+            choco install procdump
+            Write-Host "##vso[task.setvariable variable=PROCDUMP_PATH ;]%ProgramData%\chocolatey\bin\"
 
-- task: Cache@2
-  displayName: Cache dependencies
-  inputs:
-    key: 'dependencies | "$(Agent.OS)"'
-    restoreKeys: |
-       dependencies | "$(Agent.OS)"
-       dependencies
-    path: $(cmake_prefix)
-    cacheHitVar: DEPENDENCIES_RESTORED
+      - task: Cache@2
+        displayName: Cache dependencies
+        condition: eq(Agent.OS, 'Windows_NT')
+        inputs:
+          key: 'dependencies | "$(Agent.OS)"'
+          restoreKeys: |
+             dependencies | "$(Agent.OS)"
+             dependencies
+          path: $(cmake_prefix)
+          cacheHitVar: DEPENDENCIES_RESTORED
 
-- task: PowerShell@2
-  displayName: Build dependencies
-  condition: ne(variables.DEPENDENCIES_RESTORED, 'true')
-  inputs:
-    filePath: 'install_dependencies.ps1'
-    arguments: '-config $(buildConfiguration) -build_dir $(build_dir) -toolset $(toolset)'
-    errorActionPreference: 'continue'
-    ignoreLASTEXITCODE: true
-    pwsh: true
-    workingDirectory: '$(System.DefaultWorkingDirectory)'
+      - task: PowerShell@2
+        displayName: Build dependencies
+        condition: eq(Agent.OS, 'Windows_NT')
+        condition: ne(variables.DEPENDENCIES_RESTORED, 'true')
+        inputs:
+          filePath: 'install_dependencies.ps1'
+          arguments: '-config $(buildConfiguration) -build_dir $(build_dir) -toolset $(toolset)'
+          errorActionPreference: 'continue'
+          ignoreLASTEXITCODE: true
+          pwsh: true
+          workingDirectory: '$(System.DefaultWorkingDirectory)'
 
-- task: CMake@1
-  displayName: Generate CMake project
-  inputs:
-    workingDirectory: '$(build_dir)'
-    cmakeArgs: >-
-      -T $(toolset-platform)
-      -S $(Build.SourcesDirectory) 
-      -G "Visual Studio 16 2019" 
-      -A $(buildPlatform) 
-      -DCMAKE_PREFIX_PATH=$(cmake_prefix) 
-      -DBUILD_SHARED=ON 
-      -DBUILD_STATIC=ON 
-      -DBUILD_DRAFTS=OFF 
-      -DBUILD_TESTING=ON
+      - task: CMake@1
+        displayName: Generate CMake project
+        inputs:
+          workingDirectory: '$(build_dir)'
+          cmakeArgs: >-
+            -T $(toolset-platform)
+            -S $(Build.SourcesDirectory) 
+            -G "$(generator)"
+            -A $(buildPlatform) 
+            -DCMAKE_PREFIX_PATH=$(cmake_prefix) 
+            -DBUILD_SHARED=ON 
+            -DBUILD_STATIC=ON 
+            -DBUILD_DRAFTS=OFF 
+            -DBUILD_TESTING=ON
 
-- task: VSBuild@1
-  displayName: Compile solution
-  inputs:
-    solution: '$(solution)'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
-    maximumCpuCount: true
+      - task: VSBuild@1
+        displayName: Compile solution
+        condition: eq(Agent.OS, 'Windows_NT')
+        inputs:
+          solution: '$(solution)'
+          platform: '$(buildPlatform)'
+          configuration: '$(buildConfiguration)'
+          maximumCpuCount: true
 
-- task: VSTest@2
-  displayName: Test solution
-  condition: eq(variables.DEPENDENCIES_RESTORED, 'true')
-  inputs:
-    testSelector: 'testAssemblies'
-    runSettingsFile: '$(Build.SourcesDirectory)/azure_test.runsettings'
-    testAssemblyVer2: |
-      bin\Windows\Test*.exe
-      !**\*TestAdapter.dll
-      !**\obj\**
-    searchFolder: '$(build_dir)'
-    pathtoCustomTestAdapters: '$(VS_path)\Common7\IDE\Extensions\em3ozjcu.15r'
-    testRunTitle: 'Native tests'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
-    diagnosticsEnabled: true
-    runInParallel: false
-    collectDumpOn: 'onAbortOnly'
-    rerunFailedTests: True
-    rerunFailedThreshold: '30'
-    rerunFailedTestCasesMaxLimit: '5'
-    rerunMaxAttempts: '3'
+      - task: VSTest@2
+        displayName: Test solution
+        condition: eq(Agent.OS, 'Windows_NT')
+        condition: eq(variables.DEPENDENCIES_RESTORED, 'true')
+        inputs:
+          testSelector: 'testAssemblies'
+          runSettingsFile: '$(Build.SourcesDirectory)/azure_test.runsettings'
+          testAssemblyVer2: |
+            bin\Windows\Test*.exe
+            !**\*TestAdapter.dll
+            !**\obj\**
+          searchFolder: '$(build_dir)'
+          pathtoCustomTestAdapters: '$(VS_path)\Common7\IDE\Extensions\em3ozjcu.15r'
+          testRunTitle: 'Native tests'
+          platform: '$(buildPlatform)'
+          configuration: '$(buildConfiguration)'
+          diagnosticsEnabled: true
+          runInParallel: false
+          collectDumpOn: 'onAbortOnly'
+          rerunFailedTests: True
+          rerunFailedThreshold: '30'
+          rerunFailedTestCasesMaxLimit: '5'
+          rerunMaxAttempts: '3'
