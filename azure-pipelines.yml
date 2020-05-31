@@ -19,7 +19,7 @@ stages:
           linux:
             imageName: 'ubuntu-16.04'
             cmake_prefix: '/usr/local'
-            generator: 'Unix makefiles'
+            generator: 'Unix Makefiles'
             toolset-platform: ''
           mac:
             imageName: 'macos-10.14'
@@ -52,6 +52,15 @@ stages:
             Write-Host "##vso[task.setvariable variable=VS_path;]$(vswhere -format value -property installationPath)"
             choco install procdump
             Write-Host "##vso[task.setvariable variable=PROCDUMP_PATH ;]%ProgramData%\chocolatey\bin\"
+
+      - task: Bash@3
+        displayName: Install dependencies
+        condition: ne(variables['Agent.OS'], 'Windows_NT')
+        inputs:
+          targetType: 'inline'
+          workingDirectory: '$(Build.SourcesDirectory)'
+          script: |
+            brew bundle
 
       - task: Cache@2
         displayName: Cache dependencies
