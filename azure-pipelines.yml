@@ -7,6 +7,12 @@ trigger:
 
 variables:
   buildConfiguration: 'Release'
+  common_cmake_args:
+    - '-S $(Build.SourcesDirectory)'
+    - '-DBUILD_SHARED=ON' 
+    - '-DBUILD_STATIC=ON' 
+    - '-DBUILD_DRAFTS=OFF' 
+    - '-DBUILD_TESTING=ON'
 
 stages:
 - stage: Build
@@ -19,13 +25,15 @@ stages:
           linux:
             imageName: 'ubuntu-16.04'
             cmake_prefix: '/usr/local'
-            generator: 'Unix Makefiles'
-            toolset-platform: ''
+            platform_cmake_args: 
+              - '-G "Unix Makefiles"'
+              - '-DCMAKE_PREFIX_PATH=$(cmake_prefix)'
           mac:
             imageName: 'macos-10.14'
             cmake_prefix: '/usr/local'
-            generator: 'Unix Makefiles'
-            toolset-platform: ''
+            platform_cmake_args: 
+              - '-G "Unix Makefiles"'
+              - '-DCMAKE_PREFIX_PATH=$(cmake_prefix)'
           windows:
             imageName: 'windows-latest'
             toolset: 'msvc-14.2'
@@ -33,8 +41,12 @@ stages:
             build_dir: '$(Build.ArtifactStagingDirectory)\build'
             solution: '$(build_dir)\Showtime.sln'
             cmake_prefix: '$(build_dir)\dependencies\install\$(toolset)'
-            generator: 'Visual Studio 16 2019'
             buildPlatform: 'x64'
+            platform_cmake_args: 
+              - '-G "Unix Makefiles"'
+              - '-T $(toolset-platform)'
+              - '-A $(buildPlatform)'
+              - '-DCMAKE_PREFIX_PATH=$(cmake_prefix)'
 
       steps:
       - checkout: self
@@ -89,15 +101,8 @@ stages:
         inputs:
           workingDirectory: '$(build_dir)'
           cmakeArgs: >-
-            -T $(toolset-platform)
-            -S $(Build.SourcesDirectory) 
-            -G "$(generator)"
-            -A $(buildPlatform) 
-            -DCMAKE_PREFIX_PATH=$(cmake_prefix) 
-            -DBUILD_SHARED=ON 
-            -DBUILD_STATIC=ON 
-            -DBUILD_DRAFTS=OFF 
-            -DBUILD_TESTING=ON
+            ${{join(common_cmake_args, ' ')}}
+            ${{join(platform_cmake_args, ' ')}}
 
       - task: VSBuild@1
         displayName: Compile solution
@@ -107,6 +112,14 @@ stages:
           platform: '$(buildPlatform)'
           configuration: '$(buildConfiguration)'
           maximumCpuCount: true
+
+      - task: Xcode@5
+        condition: eq(variables['Agent.OS'], 'Darwin')
+        inputs:
+          actions: 'build test'
+          packageApp: false
+          destinationPlatformOption: 'macOS'
+          publishJUnitResults: true
 
       - task: VSTest@2
         displayName: Test solution
