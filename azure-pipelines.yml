@@ -24,7 +24,7 @@ stages:
           mac:
             imageName: 'macos-10.14'
             cmake_prefix: '/usr/local'
-            generator: 'Unix makefiles'
+            generator: 'Unix Makefiles'
             toolset-platform: ''
           windows:
             imageName: 'windows-latest'
