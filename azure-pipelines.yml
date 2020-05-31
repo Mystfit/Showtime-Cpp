@@ -9,7 +9,7 @@ variables:
   buildConfiguration: 'Release'
 
 stages:
-- stage: Build $(Agent.OS)
+- stage: Build
   pool:
     vmImage: $(imageName)
   jobs:
@@ -35,7 +35,7 @@ stages:
             cmake_prefix: '$(build_dir)\dependencies\install\$(toolset)'
             generator: 'Visual Studio 16 2019'
             buildPlatform: 'x64'
-            
+
       steps:
       - checkout: self
         clean: true
