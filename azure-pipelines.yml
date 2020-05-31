@@ -101,8 +101,8 @@ stages:
         inputs:
           workingDirectory: '$(build_dir)'
           cmakeArgs: >-
-            ${{join(common_cmake_args, ' ')}}
-            ${{join(platform_cmake_args, ' ')}}
+            ${{join(variables.common_cmake_args, ' ')}}
+            ${{join(variables.platform_cmake_args, ' ')}}
 
       - task: VSBuild@1
         displayName: Compile solution
