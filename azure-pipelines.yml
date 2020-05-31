@@ -69,8 +69,7 @@ stages:
 
       - task: PowerShell@2
         displayName: Build dependencies
-        condition: eq(Agent.OS, 'Windows_NT')
-        condition: ne(variables.DEPENDENCIES_RESTORED, 'true')
+        condition: ne(variables.DEPENDENCIES_RESTORED, 'true') && eq(Agent.OS, 'Windows_NT')
         inputs:
           filePath: 'install_dependencies.ps1'
           arguments: '-config $(buildConfiguration) -build_dir $(build_dir) -toolset $(toolset)'
@@ -105,8 +104,7 @@ stages:
 
       - task: VSTest@2
         displayName: Test solution
-        condition: eq(Agent.OS, 'Windows_NT')
-        condition: eq(variables.DEPENDENCIES_RESTORED, 'true')
+        condition: eq(variables.DEPENDENCIES_RESTORED, 'true') && eq(Agent.OS, 'Windows_NT')
         inputs:
           testSelector: 'testAssemblies'
           runSettingsFile: '$(Build.SourcesDirectory)/azure_test.runsettings'
