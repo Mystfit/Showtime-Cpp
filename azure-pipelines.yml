@@ -110,7 +110,7 @@ stages:
           targetType: 'inline'
           workingDirectory: '$(build_dir)'
           script: |
-            xcodebuild -scheme -list
+            xcodebuild -list
 
       - task: VSBuild@1
         displayName: Compile solution
