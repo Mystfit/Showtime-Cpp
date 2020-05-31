@@ -104,6 +104,14 @@ stages:
           workingDirectory: '$(build_dir)'
           cmakeArgs: "$(common_cmake_args) $(platform_cmake_args)"
 
+      - task: Bash@3
+        condition: eq(variables['Agent.OS'], 'Darwin')
+        inputs:
+          targetType: 'inline'
+          workingDirectory: '$(build_dir)'
+          script: |
+            xcode -listschemas
+
       - task: VSBuild@1
         displayName: Compile solution
         condition: eq(variables['Agent.OS'], 'Windows_NT')
