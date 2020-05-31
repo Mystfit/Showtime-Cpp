@@ -7,7 +7,7 @@ trigger:
 
 variables:
   buildConfiguration: 'Release'
-  build_dir: '$(Build.ArtifactStagingDirectory)\build'
+  build_dir: '$(Build.ArtifactStagingDirectory)/build'
   common_cmake_args: >-
     -S $(Build.SourcesDirectory)
     -DBUILD_SHARED=ON 
@@ -32,7 +32,7 @@ stages:
           mac:
             imageName: 'macos-10.15'
             cmake_prefix: '/usr/local'
-            project: 'Showtime.xcodeproj'
+            project: '$(build_dir)Showtime.xcodeproj'
             platform_cmake_args: >-
               -G "Xcode" 
               -DCMAKE_PREFIX_PATH=$(cmake_prefix)
