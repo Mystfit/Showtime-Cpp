@@ -32,7 +32,7 @@ stages:
           mac:
             imageName: 'macos-10.15'
             cmake_prefix: '/usr/local'
-            project: '$(build_dir)/Showtime.xcodeproj'
+            project: 'Showtime.xcodeproj'
             platform_cmake_args: >-
               -G "Xcode" 
               -DCMAKE_PREFIX_PATH=$(cmake_prefix)
@@ -125,7 +125,7 @@ stages:
         condition: eq(variables['Agent.OS'], 'Darwin')
         inputs:
           actions: 'build test'
-          scheme: 'TestGraph'
+          scheme: 'RUN_TESTS'
           xcWorkspacePath: '$(project)'
           workingDirectory: '$(build_dir)'
           packageApp: false
