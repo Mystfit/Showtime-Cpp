@@ -7,6 +7,7 @@ trigger:
 
 variables:
   buildConfiguration: 'Release'
+  build_dir: '$(Build.ArtifactStagingDirectory)\build'
   common_cmake_args: >-
     -S $(Build.SourcesDirectory)
     -DBUILD_SHARED=ON 
@@ -38,7 +39,6 @@ stages:
             imageName: 'windows-latest'
             toolset: 'msvc-14.2'
             toolset-platform: 'v142'
-            build_dir: '$(Build.ArtifactStagingDirectory)\build'
             solution: '$(build_dir)\Showtime.sln'
             cmake_prefix: '$(build_dir)\dependencies\install\$(toolset)'
             buildPlatform: 'x64'
@@ -117,6 +117,7 @@ stages:
         condition: eq(variables['Agent.OS'], 'Darwin')
         inputs:
           actions: 'build test'
+          workingDirectory: '$(build_dir)'
           packageApp: false
           sdk: macosx10.15
           destinationPlatformOption: 'macOS'
