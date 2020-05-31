@@ -5,7 +5,12 @@ trigger:
       - develop
       - azure
 
-strategy:
+variables:
+  buildConfiguration: 'Release'
+
+stages:
+- stage: Build $(Agent.OS)
+  strategy:
   matrix:
     linux:
       imageName: 'ubuntu-16.04'
@@ -25,15 +30,11 @@ strategy:
       solution: '$(build_dir)\Showtime.sln'
       cmake_prefix: '$(build_dir)\dependencies\install\$(toolset)'
       generator: 'Visual Studio 16 2019'
+      buildPlatform: 'x64'
 
-variables:
-  buildPlatform: 'x64'
-  buildConfiguration: 'Release'
-
-stages:
-- stage: build
   pool:
     vmImage: $(imageName)
+  
   jobs:
     - job:
       steps:
