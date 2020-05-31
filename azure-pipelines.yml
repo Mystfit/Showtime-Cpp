@@ -25,15 +25,15 @@ stages:
           linux:
             imageName: 'ubuntu-16.04'
             cmake_prefix: '/usr/local'
-            platform_cmake_args: 
-              - '-G "Unix Makefiles"'
-              - '-DCMAKE_PREFIX_PATH=$(cmake_prefix)'
+            platform_cmake_args: >-
+              '-G "Unix Makefiles"'
+              '-DCMAKE_PREFIX_PATH=$(cmake_prefix)'
           mac:
             imageName: 'macos-10.14'
             cmake_prefix: '/usr/local'
-            platform_cmake_args: 
-              - '-G "Unix Makefiles"'
-              - '-DCMAKE_PREFIX_PATH=$(cmake_prefix)'
+            platform_cmake_args: >-
+              '-G "Unix Makefiles"'
+              '-DCMAKE_PREFIX_PATH=$(cmake_prefix)'
           windows:
             imageName: 'windows-latest'
             toolset: 'msvc-14.2'
@@ -42,11 +42,11 @@ stages:
             solution: '$(build_dir)\Showtime.sln'
             cmake_prefix: '$(build_dir)\dependencies\install\$(toolset)'
             buildPlatform: 'x64'
-            platform_cmake_args: 
-              - '-G "Unix Makefiles"'
-              - '-T $(toolset-platform)'
-              - '-A $(buildPlatform)'
-              - '-DCMAKE_PREFIX_PATH=$(cmake_prefix)'
+            platform_cmake_args: >-
+              '-G "Unix Makefiles"'
+              '-T $(toolset-platform)'
+              '-A $(buildPlatform)'
+              '-DCMAKE_PREFIX_PATH=$(cmake_prefix)'
 
       steps:
       - checkout: self
