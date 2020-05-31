@@ -101,7 +101,7 @@ stages:
         displayName: Generate CMake project
         inputs:
           workingDirectory: '$(build_dir)'
-          cmakeArgs: "$(join(variables.common_cmake_args, ' ')) $(join(variables.platform_cmake_args, ' '))"
+          cmakeArgs: "$(variables.common_cmake_args) $(variables.platform_cmake_args)"
 
       - task: VSBuild@1
         displayName: Compile solution
