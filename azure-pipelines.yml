@@ -125,7 +125,7 @@ stages:
         condition: eq(variables['Agent.OS'], 'Darwin')
         inputs:
           actions: 'build test'
-          scheme: 'RUN_TESTS'
+          scheme: ''
           xcWorkspacePath: '$(project)'
           workingDirectory: '$(build_dir)'
           packageApp: false
