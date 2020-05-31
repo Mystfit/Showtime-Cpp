@@ -101,7 +101,7 @@ stages:
 
       - task: VSTest@2
         displayName: Test solution
-        condition: and(eq(variables.DEPENDENCIES_RESTORED, 'true'), eq(variables['Agent.OS']s, 'Windows_NT'))
+        condition: and(eq(variables.DEPENDENCIES_RESTORED, 'true'), eq(variables['Agent.OS'], 'Windows_NT'))
         inputs:
           testSelector: 'testAssemblies'
           runSettingsFile: '$(Build.SourcesDirectory)/azure_test.runsettings'
