@@ -9,25 +9,22 @@ strategy:
   matrix:
     linux:
       imageName: 'ubuntu-16.04'
-      variables:
-        - cmake_prefix: '/usr/local'
-        - generator: 'Unix makefiles'
-        - toolset-platform: ''
+      cmake_prefix: '/usr/local'
+      generator: 'Unix makefiles'
+      toolset-platform: ''
     mac:
       imageName: 'macos-10.14'
-      variables:
-        - cmake_prefix: '/usr/local'
-        - generator: 'Unix makefiles'
-        - toolset-platform: ''
+      cmake_prefix: '/usr/local'
+      generator: 'Unix makefiles'
+      toolset-platform: ''
     windows:
-      variables:
-        - imageName: 'windows-latest'
-        - toolset: 'msvc-14.2'
-        - toolset-platform: 'v142'
-        - build_dir: '$(Build.ArtifactStagingDirectory)\build'
-        - solution: '$(build_dir)\Showtime.sln'
-        - cmake_prefix: '$(build_dir)\dependencies\install\$(toolset)'
-        - generator: 'Visual Studio 16 2019'
+      imageName: 'windows-latest'
+      toolset: 'msvc-14.2'
+      toolset-platform: 'v142'
+      build_dir: '$(Build.ArtifactStagingDirectory)\build'
+      solution: '$(build_dir)\Showtime.sln'
+      cmake_prefix: '$(build_dir)\dependencies\install\$(toolset)'
+      generator: 'Visual Studio 16 2019'
 
 variables:
   buildPlatform: 'x64'
