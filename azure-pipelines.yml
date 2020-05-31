@@ -43,7 +43,7 @@ stages:
 
       - task: PowerShell@2
         displayName: Install tools
-        condition: eq($(Agent.OS), 'Windows_NT')
+        condition: eq(Agent.OS, 'Windows_NT')
         inputs:
           targetType: 'inline'
           script: |
@@ -55,7 +55,7 @@ stages:
 
       - task: Cache@2
         displayName: Cache dependencies
-        condition: eq($(Agent.OS), 'Windows_NT')
+        condition: eq(Agent.OS, 'Windows_NT')
         inputs:
           key: 'dependencies | "$(Agent.OS)"'
           restoreKeys: |
@@ -92,7 +92,7 @@ stages:
 
       - task: VSBuild@1
         displayName: Compile solution
-        condition: eq($(Agent.OS), 'Windows_NT')
+        condition: eq(Agent.OS, 'Windows_NT')
         inputs:
           solution: '$(solution)'
           platform: '$(buildPlatform)'
@@ -101,7 +101,7 @@ stages:
 
       - task: VSTest@2
         displayName: Test solution
-        condition: and(eq(variables.DEPENDENCIES_RESTORED, 'true'), eq($(Agent.OS), 'Windows_NT'))
+        condition: and(eq(variables.DEPENDENCIES_RESTORED, 'true'), eq(Agent.OS, 'Windows_NT'))
         inputs:
           testSelector: 'testAssemblies'
           runSettingsFile: '$(Build.SourcesDirectory)/azure_test.runsettings'
