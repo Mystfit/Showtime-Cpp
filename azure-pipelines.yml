@@ -7,12 +7,12 @@ trigger:
 
 variables:
   buildConfiguration: 'Release'
-  common_cmake_args:
-    - '-S $(Build.SourcesDirectory)'
-    - '-DBUILD_SHARED=ON' 
-    - '-DBUILD_STATIC=ON' 
-    - '-DBUILD_DRAFTS=OFF' 
-    - '-DBUILD_TESTING=ON'
+  common_cmake_args: >-
+    '-S $(Build.SourcesDirectory)'
+    '-DBUILD_SHARED=ON' 
+    '-DBUILD_STATIC=ON' 
+    '-DBUILD_DRAFTS=OFF' 
+    '-DBUILD_TESTING=ON'
 
 stages:
 - stage: Build
