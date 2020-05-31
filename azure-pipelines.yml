@@ -10,33 +10,32 @@ variables:
 
 stages:
 - stage: Build $(Agent.OS)
-  strategy:
-  matrix:
-    linux:
-      imageName: 'ubuntu-16.04'
-      cmake_prefix: '/usr/local'
-      generator: 'Unix makefiles'
-      toolset-platform: ''
-    mac:
-      imageName: 'macos-10.14'
-      cmake_prefix: '/usr/local'
-      generator: 'Unix makefiles'
-      toolset-platform: ''
-    windows:
-      imageName: 'windows-latest'
-      toolset: 'msvc-14.2'
-      toolset-platform: 'v142'
-      build_dir: '$(Build.ArtifactStagingDirectory)\build'
-      solution: '$(build_dir)\Showtime.sln'
-      cmake_prefix: '$(build_dir)\dependencies\install\$(toolset)'
-      generator: 'Visual Studio 16 2019'
-      buildPlatform: 'x64'
-
   pool:
     vmImage: $(imageName)
-  
   jobs:
     - job:
+      strategy:
+        matrix:
+          linux:
+            imageName: 'ubuntu-16.04'
+            cmake_prefix: '/usr/local'
+            generator: 'Unix makefiles'
+            toolset-platform: ''
+          mac:
+            imageName: 'macos-10.14'
+            cmake_prefix: '/usr/local'
+            generator: 'Unix makefiles'
+            toolset-platform: ''
+          windows:
+            imageName: 'windows-latest'
+            toolset: 'msvc-14.2'
+            toolset-platform: 'v142'
+            build_dir: '$(Build.ArtifactStagingDirectory)\build'
+            solution: '$(build_dir)\Showtime.sln'
+            cmake_prefix: '$(build_dir)\dependencies\install\$(toolset)'
+            generator: 'Visual Studio 16 2019'
+            buildPlatform: 'x64'
+            
       steps:
       - checkout: self
         clean: true
