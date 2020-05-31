@@ -32,7 +32,7 @@ stages:
           mac:
             imageName: 'macos-10.15'
             cmake_prefix: '/usr/local'
-            project: '$(build_dir)Showtime.xcodeproj'
+            project: '$(build_dir)/Showtime.xcodeproj'
             platform_cmake_args: >-
               -G "Xcode" 
               -DCMAKE_PREFIX_PATH=$(cmake_prefix)
