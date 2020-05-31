@@ -44,7 +44,7 @@ stages:
             cmake_prefix: '$(build_dir)\dependencies\install\$(toolset)'
             buildPlatform: 'x64'
             platform_cmake_args: >-
-              -G "Unix Makefiles" 
+              -G "Visual Studio 16 2019" 
               -T $(toolset-platform) 
               -A $(buildPlatform) 
               -DCMAKE_PREFIX_PATH=$(cmake_prefix)
@@ -101,7 +101,7 @@ stages:
         displayName: Generate CMake project
         inputs:
           workingDirectory: '$(build_dir)'
-          cmakeArgs: "$(variables.common_cmake_args) $(variables.platform_cmake_args)"
+          cmakeArgs: "$(common_cmake_args) $(platform_cmake_args)"
 
       - task: VSBuild@1
         displayName: Compile solution
