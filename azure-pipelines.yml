@@ -36,6 +36,7 @@ stages:
             platform_cmake_args: >-
               -G "Xcode" 
               -DCMAKE_PREFIX_PATH=$(cmake_prefix)
+              -DCMAKE_XCODE_GENERATE_SCHEME=ON
           windows:
             imageName: 'windows-latest'
             toolset: 'msvc-14.2'
