@@ -1,15 +1,21 @@
 #include <algorithm>
-#include "ZstLogging.h"
 #include "Adder.h"
 
-using namespace std;
+using namespace showtime;
 
 Adder::Adder(const char * name) :
-	ZstComponent(ADDITION_FILTER_TYPE, name)
+	ZstComponent(ADDITION_FILTER_TYPE, name),
+	m_augend(std::make_unique<ZstInputPlug>("addend", ZstValueType::FloatList)),
+	m_addend(std::make_unique<ZstInputPlug>("augend", ZstValueType::FloatList)),
+	m_sum(std::make_unique<ZstOutputPlug>("sum", ZstValueType::FloatList))
 {
-	m_addend = create_input_plug("addend", ZstValueType::ZST_FLOAT);
-	m_augend = create_input_plug("augend", ZstValueType::ZST_FLOAT);
-	m_sum = create_output_plug("sum", ZstValueType::ZST_FLOAT);
+}
+
+void Adder::on_registered()
+{
+	add_child(m_addend.get());
+	add_child(m_augend.get());
+	add_child(m_sum.get());
 }
 
 void Adder::compute(ZstInputPlug * plug)
@@ -36,15 +42,15 @@ void Adder::compute(ZstInputPlug * plug)
 // --------------
 ZstInputPlug * Adder::augend()
 {
-	return m_augend;
+	return m_augend.get();
 }
 
 ZstInputPlug * Adder::addend()
 {
-	return m_addend;
+	return m_addend.get();
 }
 
 ZstOutputPlug * Adder::sum()
 {
-	return m_sum;
+	return m_sum.get();
 }

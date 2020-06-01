@@ -6,6 +6,7 @@
 #include "adaptors/ZstFactoryAdaptor.hpp"
 #include "adaptors/ZstSessionAdaptor.hpp"
 #include "adaptors/ZstEntityAdaptor.hpp"
+#include "adaptors/ZstPluginAdaptor.hpp"
 #include "adaptors/ZstEventAdaptor.hpp"
 
 #include "ZstServiceDiscoveryAdaptor.hpp"
@@ -113,5 +114,14 @@ ZstMessageReceipt ZstGraphTransportAdaptor::send_msg(flatbuffers::Offset<GraphMe
 // -----------------------
 
 void ZstComputeAdaptor::on_compute(ZstComponent * component, ZstInputPlug * plug) {}
+
+
+
+// -----------------------
+// Plugin adaptors
+// -----------------------
+
+void ZstPluginAdaptor::on_plugin_loaded(ZstPlugin* plugin) {}
+void ZstPluginAdaptor::on_plugin_unloaded(ZstPlugin* plugin) {}
 
 }

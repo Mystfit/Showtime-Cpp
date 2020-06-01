@@ -156,6 +156,7 @@ namespace showtime {
             
             //Client modules
             std::shared_ptr<ZstClientSession> m_session;
+            std::shared_ptr<ZstClientSession> m_plugins;
 
             //Transports
             std::shared_ptr<ZstTCPGraphTransport> m_tcp_graph_transport;

@@ -350,10 +350,10 @@ set(PLUGIN_TARGETS "")
 # Core entity plugin
 # -------------------
 
-# set(CORE_ENTITIES_TARGET "${PROJECT_NAME}CoreEntities")
-# add_library(${CORE_ENTITIES_TARGET} MODULE "")
-# include(src/plugins/core_entities/CMakeLists.txt)
-# list(APPEND PLUGIN_TARGETS ${CORE_ENTITIES_TARGET})
+set(CORE_ENTITIES_TARGET "${PROJECT_NAME}CoreEntities")
+add_library(${CORE_ENTITIES_TARGET} MODULE "")
+include(src/plugins/core_entities/CMakeLists.txt)
+list(APPEND PLUGIN_TARGETS ${CORE_ENTITIES_TARGET})
 
 
 option(PLUGINS_RTMIDI "Build RTMidi plugin" OFF)

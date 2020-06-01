@@ -2,19 +2,22 @@
 
 #include "ZstExports.h"
 #include "entities/ZstComponent.h"
+#include "entities/ZstPlug.h"
+#include <memory>
 
 #define ADDITION_FILTER_TYPE "addition"
 
-class Adder : public ZstComponent {
+class Adder : public showtime::ZstComponent {
 public:
-	ZST_ENTITY_EXPORT Adder(const char * name);
-	ZST_ENTITY_EXPORT void compute(ZstInputPlug * plug) override;
-	ZST_ENTITY_EXPORT ZstInputPlug* augend();
-	ZST_ENTITY_EXPORT ZstInputPlug* addend();
-	ZST_ENTITY_EXPORT ZstOutputPlug* sum();
+	ZST_PLUGIN_EXPORT Adder(const char * name);
+	ZST_PLUGIN_EXPORT virtual void on_registered() override;
+	ZST_PLUGIN_EXPORT virtual void compute(showtime::ZstInputPlug * plug) override;
+	ZST_PLUGIN_EXPORT showtime::ZstInputPlug* augend();
+	ZST_PLUGIN_EXPORT showtime::ZstInputPlug* addend();
+	ZST_PLUGIN_EXPORT showtime::ZstOutputPlug* sum();
 
 private:
-	ZstInputPlug * m_augend;
-	ZstInputPlug * m_addend;
-	ZstOutputPlug * m_sum;
+	std::unique_ptr<showtime::ZstInputPlug> m_augend;
+	std::unique_ptr<showtime::ZstInputPlug> m_addend;
+	std::unique_ptr<showtime::ZstOutputPlug> m_sum;
 };

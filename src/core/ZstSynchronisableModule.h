@@ -5,23 +5,24 @@
 #include "ZstExports.h"
 #include "ZstReaper.h"
 #include "ZstEventDispatcher.hpp"
-
+#include "ZstEventModule.h"
 #include "adaptors/ZstSynchronisableAdaptor.hpp"
 #include "liasons/ZstSynchronisableLiason.hpp"
 
 namespace showtime {
 
 class ZST_CLASS_EXPORTED ZstSynchronisableModule :
+    public ZstEventModule,
     public ZstSynchronisableAdaptor,
     public ZstSynchronisableLiason
 {
 public:
 	ZST_EXPORT ZstSynchronisableModule();
     ZST_EXPORT ~ZstSynchronisableModule() {};
-    ZST_EXPORT virtual void init_adaptors();
+    ZST_EXPORT virtual void init_adaptors() override;
     
-    ZST_EXPORT virtual void process_events();
-    ZST_EXPORT virtual void flush_events();
+    ZST_EXPORT virtual void process_events() override;
+    ZST_EXPORT virtual void flush_events() override;
 
     ZST_EXPORT void add_dead_synchronisable_ID(unsigned int syncronisable_ID);
     ZST_EXPORT bool already_removed_synchronisable(unsigned int syncronisable_ID);

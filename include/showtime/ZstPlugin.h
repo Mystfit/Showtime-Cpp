@@ -2,8 +2,8 @@
 
 #include <boost/config.hpp>
 #include <memory>
-
-#include "ZstCore.h"
+#include <vector>
+#include <entities/ZstEntityFactory.h>
 
 // A plugin is a collection of factories and entities that are loaded at runtime
 
@@ -15,5 +15,8 @@ public:
 	virtual int version_minor() = 0;
 	virtual int version_patch() = 0;
 
-	virtual void get_factories(ZstEntityBundle & bundle) = 0;
+	virtual void get_factories(showtime::ZstEntityBundle & bundle) = 0;
+
+private:
+	std::vector< std::unique_ptr<showtime::ZstEntityFactory> >
 };
