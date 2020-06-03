@@ -30,9 +30,10 @@ stages:
               -G "Unix Makefiles"
               -DCMAKE_PREFIX_PATH=$(cmake_prefix)
           mac:
-            imageName: 'macos-10.15'
+            imageName: 'macos-10.14'
             cmake_prefix: '/usr/local'
             project: '$(build_dir)/Showtime.xcodeproj'
+            sdk: macosx10.14
             platform_cmake_args: >-
               -G "Xcode" 
               -DCMAKE_PREFIX_PATH=$(cmake_prefix)
@@ -129,7 +130,7 @@ stages:
           xcWorkspacePath: '$(project)'
           workingDirectory: '$(build_dir)'
           packageApp: false
-          sdk: macosx10.15
+          sdk: $(sdk)
           destinationPlatformOption: 'macOS'
           publishJUnitResults: true
 
