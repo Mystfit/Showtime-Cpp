@@ -146,6 +146,11 @@ void ShowtimeClient::add_hierarchy_adaptor(std::shared_ptr < ZstHierarchyAdaptor
 	m_client->session()->hierarchy()->hierarchy_events()->add_adaptor(adaptor);
 }
 
+void ShowtimeClient::add_plugin_adaptor(std::shared_ptr<ZstPluginAdaptor> adaptor)
+{
+	m_client->plugins()->plugin_events()->add_adaptor(adaptor);
+}
+
 void ShowtimeClient::remove_connection_adaptor(std::shared_ptr < ZstConnectionAdaptor > adaptor)
 {
     m_client->ZstEventDispatcher<std::shared_ptr < ZstConnectionAdaptor >>::remove_adaptor(adaptor);
@@ -159,6 +164,11 @@ void ShowtimeClient::remove_session_adaptor(std::shared_ptr < ZstSessionAdaptor 
 void ShowtimeClient::remove_hierarchy_adaptor(std::shared_ptr < ZstHierarchyAdaptor > adaptor)
 {
 	m_client->session()->hierarchy()->hierarchy_events()->remove_adaptor(adaptor);
+}
+
+void ShowtimeClient::remove_plugin_adaptor(std::shared_ptr<ZstPluginAdaptor> adaptor)
+{
+	m_client->plugins()->plugin_events()->remove_adaptor(adaptor);
 }
 
 
@@ -314,6 +324,16 @@ void ShowtimeClient::destroy_cable(ZstCable * cable)
 void ShowtimeClient::destroy_cable_async(ZstCable * cable)
 {
 	if (library_connected_guard()) m_client->session()->destroy_cable(cable, ZstTransportRequestBehaviour::ASYNC_REPLY);
+}
+
+void ShowtimeClient::reload_plugins()
+{
+	if (!library_init_guard()) return;
+}
+
+std::vector< std::shared_ptr<ZstPlugin> > ShowtimeClient::plugins() {
+	if (!library_init_guard()) return std::vector< std::shared_ptr<ZstPlugin> >();
+	return m_client->plugins()->get_plugins();
 }
 
 }

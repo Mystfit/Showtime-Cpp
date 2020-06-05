@@ -73,6 +73,7 @@ set(API_HEADERS
     ${Showtime_INCLUDE_DIRS}/ZstBundle.hpp
     ${Showtime_INCLUDE_DIRS}/ZstServerAddress.h
     ${Showtime_INCLUDE_DIRS}/ZstPointerUtils.h
+    ${Showtime_INCLUDE_DIRS}/ZstFilesystemUtils.h
     ${VERSION_FILE_OUT}
 )
 list(APPEND Showtime_API_INTERFACE 

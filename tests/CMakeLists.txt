@@ -42,6 +42,7 @@ foreach(test ${TESTS})
 endforeach()
 
 # Test helper dependencies
+add_dependencies(TestPlugins ${CORE_ENTITIES_TARGET})
 # add_dependencies(TestEntityFactories TestHelperExternalFactory)
 # add_dependencies(TestExternalClients TestHelperSink)
 

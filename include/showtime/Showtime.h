@@ -2,6 +2,7 @@
 
 #include "ZstCore.h"
 #include <memory>
+#include <vector>
 
 //Forwards
 namespace showtime {
@@ -43,9 +44,12 @@ public:
     ZST_CLIENT_EXPORT void add_connection_adaptor(std::shared_ptr<ZstConnectionAdaptor> adaptor);
 	ZST_CLIENT_EXPORT void add_session_adaptor(std::shared_ptr<ZstSessionAdaptor> adaptor);
 	ZST_CLIENT_EXPORT void add_hierarchy_adaptor(std::shared_ptr<ZstHierarchyAdaptor> adaptor);
+	ZST_CLIENT_EXPORT void add_plugin_adaptor(std::shared_ptr<ZstPluginAdaptor> adaptor);
+
     ZST_CLIENT_EXPORT void remove_connection_adaptor(std::shared_ptr<ZstConnectionAdaptor> adaptor);
 	ZST_CLIENT_EXPORT void remove_session_adaptor(std::shared_ptr<ZstSessionAdaptor> adaptor);
 	ZST_CLIENT_EXPORT void remove_hierarchy_adaptor(std::shared_ptr<ZstHierarchyAdaptor> adaptor);
+	ZST_CLIENT_EXPORT void remove_plugin_adaptor(std::shared_ptr<ZstPluginAdaptor> adaptor);
 	
 	//Entity activation/deactivation
 	ZST_CLIENT_EXPORT void register_entity(ZstEntityBase* entity);
@@ -76,7 +80,11 @@ public:
     ZST_CLIENT_EXPORT ZstCable * connect_cable_async(ZstInputPlug * input, ZstOutputPlug * output);
 	ZST_CLIENT_EXPORT void destroy_cable(ZstCable * cable);
     ZST_CLIENT_EXPORT void destroy_cable_async(ZstCable * cable);
-    
+
+	//Plugins
+	ZST_CLIENT_EXPORT void reload_plugins();
+	ZST_CLIENT_EXPORT std::vector< std::shared_ptr<ZstPlugin> > plugins();
+
 private:
     bool library_init_guard();
     bool library_connected_guard();

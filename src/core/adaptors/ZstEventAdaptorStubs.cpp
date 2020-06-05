@@ -121,7 +121,7 @@ void ZstComputeAdaptor::on_compute(ZstComponent * component, ZstInputPlug * plug
 // Plugin adaptors
 // -----------------------
 
-void ZstPluginAdaptor::on_plugin_loaded(ZstPlugin* plugin) {}
-void ZstPluginAdaptor::on_plugin_unloaded(ZstPlugin* plugin) {}
+void ZstPluginAdaptor::on_plugin_loaded(std::shared_ptr<ZstPlugin> plugin) {}
+void ZstPluginAdaptor::on_plugin_unloaded(std::shared_ptr<ZstPlugin> plugin) {}
 
 }

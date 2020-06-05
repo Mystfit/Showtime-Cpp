@@ -5,6 +5,7 @@
 #include "ZstVersion.h"
 #include "ZstConstants.h"
 #include "ZstLogging.h"
+#include "ZstFilesystemUtils.h"
 #include "ZstURI.h"
 #include "ZstSerialisable.h"
 #include "ZstSynchronisable.h"
@@ -19,3 +20,4 @@
 #include "adaptors/ZstConnectionAdaptor.hpp"
 #include "adaptors/ZstSessionAdaptor.hpp"
 #include "adaptors/ZstHierarchyAdaptor.hpp"
+#include "adaptors/ZstPluginAdaptor.hpp"

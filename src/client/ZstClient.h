@@ -28,6 +28,7 @@
 #include "../core/adaptors/ZstGraphTransportAdaptor.hpp"
 #include "../core/adaptors/ZstServiceDiscoveryAdaptor.hpp"
 #include "../core/transports/ZstTransportHelpers.h"
+#include "../core/ZstPluginLoader.h"
 
 #include "ZstZMQClientTransport.h"
 #include "../core/transports/ZstServiceDiscoveryTransport.h"
@@ -94,6 +95,7 @@ namespace showtime {
             
             //Client modules
 			std::shared_ptr<ZstClientSession> session();
+            std::shared_ptr<ZstPluginLoader> plugins();
 
         private:
             //Heartbeat timer
@@ -156,7 +158,7 @@ namespace showtime {
             
             //Client modules
             std::shared_ptr<ZstClientSession> m_session;
-            std::shared_ptr<ZstClientSession> m_plugins;
+            std::shared_ptr<ZstPluginLoader> m_plugins;
 
             //Transports
             std::shared_ptr<ZstTCPGraphTransport> m_tcp_graph_transport;

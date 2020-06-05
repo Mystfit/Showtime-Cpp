@@ -1,8 +1,48 @@
 #include "ZstPluginLoader.h"
 
 namespace showtime {
-	std::vector<std::string> ZstPluginLoader::get_plugin_files(std::string& dir)
+	ZstPluginLoader::ZstPluginLoader() : 
+		m_plugin_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstPluginAdaptor> > >())
 	{
+	}
+
+	ZstPluginLoader::~ZstPluginLoader()
+	{
+		for (auto plugin : m_loaded_plugins) {
+			plugin.second.library.unload();
+		}
+		m_loaded_plugins.clear();
+	}
+
+	std::vector<fs::path> ZstPluginLoader::plugin_lib_paths(const fs::path& dir)
+	{
+		std::vector<fs::path> plugin_files;
+
+		if (!fs::exists(dir)) {
+			ZstLog::net(LogLevel::error, "Plugin path invalid: {}", dir.string());
+			return plugin_files;
+		}
+
+		for (auto file : fs::directory_iterator(dir)) {
+			if (!file.is_regular_file())
+				continue;
+
+			if (file.path().extension() != boost::dll::shared_library::suffix())
+				continue;
+
+			plugin_files.push_back(file.path());
+		}
+
+		return plugin_files;
+	}
+
+	std::vector<std::shared_ptr<ZstPlugin>> ZstPluginLoader::get_plugins()
+	{
+		auto plugins = std::vector < std::shared_ptr<ZstPlugin> >();
+		for (auto plugin : m_loaded_plugins) {
+			plugins.push_back(plugin.second.plugin);
+		}
+		return plugins;
 	}
 
 	void ZstPluginLoader::init_adaptors()
@@ -16,6 +56,35 @@ namespace showtime {
 
 	void ZstPluginLoader::flush_events()
 	{
+	}
+
+	void ZstPluginLoader::load(const fs::path& plugin_dir)
+	{
+		auto plugins = plugin_lib_paths(plugin_dir);
+
+		for (auto file : plugins) {
+
+			// Load plugin library
+			boost::dll::shared_library lib;
+			boost::dll::fs::error_code ec;
+			lib.load(file.string(), ec, boost::dll::load_mode::append_decorations);
+			if (ec.value() != 0) {
+				ZstLog::net(LogLevel::error, "Plugin {} load error: {}", file.filename().string(), ec.message());
+				continue;
+			}
+
+			// Create instance of plugin from the shared lib
+			auto plugin_creator = lib.get_alias<ZstPlugin_create_t>("create_plugin");
+			std::shared_ptr<ZstPlugin> plugin = plugin_creator();
+			
+			// Hold onto lib and plugin instances
+			m_loaded_plugins[plugin->name()] = ZstLoadedPlugin{lib, plugin};
+
+			m_plugin_events->defer([plugin](std::shared_ptr<ZstPluginAdaptor> adp) {
+				adp->on_plugin_loaded(plugin);
+			});
+			ZstLog::net(LogLevel::debug, "Loaded plugin {} {}.{}.{}", plugin->name(), plugin->version_major(), plugin->version_minor(), plugin->version_patch());
+		}
 	}
 
 	std::shared_ptr< ZstEventDispatcher< std::shared_ptr< ZstPluginAdaptor > > > & ZstPluginLoader::plugin_events()

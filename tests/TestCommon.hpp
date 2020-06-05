@@ -10,17 +10,6 @@
 #include <memory>
 #include <sstream>
 
-#ifdef __cpp_lib_filesystem
-#include <filesystem>
-namespace fs = std::filesystem;
-#elif __cpp_lib_experimental_filesystem
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
-#else
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-#endif
-
 // Visual studio debugging
 #ifdef WIN32
 #define _CRTDBG_MAP_ALLOC
@@ -643,7 +632,7 @@ bool init_unit_test()
 void read_stacktrace() {
 	auto dumpfile = "./backtrace.dump";
 //	auto dumpfile = fmt::format("./{}.dump", boost::dll::program_location().filename().string());
-	if (boost::filesystem::exists(dumpfile)) {
+	if (fs::exists(dumpfile)) {
 		// there is a backtrace
 		std::ifstream ifs(dumpfile);
 
@@ -652,7 +641,7 @@ void read_stacktrace() {
 
 		// cleaning up
 		ifs.close();
-		boost::filesystem::remove(dumpfile);
+		fs::remove(dumpfile);
 	}
 }
 

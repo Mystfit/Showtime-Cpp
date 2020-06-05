@@ -1,5 +1,6 @@
 #include "ZstClient.h"
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/dll.hpp>
 
 using namespace flatbuffers;
 
@@ -18,6 +19,7 @@ ZstClient::ZstClient(ShowtimeClient* api) :
 
     //Modules
     m_session(std::make_shared<ZstClientSession>()),
+    m_plugins(std::make_shared<ZstPluginLoader>()),
 
     //Transports
     m_tcp_graph_transport(std::make_shared<ZstTCPGraphTransport>()),
@@ -33,9 +35,11 @@ ZstClient::ZstClient(ShowtimeClient* api) :
     m_thread_pool(1),
     m_api(api)
 {
+    // Set up wake conditions
     m_session->session_events()->set_wake_condition(m_event_condition);
     m_session->hierarchy()->hierarchy_events()->set_wake_condition(m_event_condition);
     ZstEventDispatcher< std::shared_ptr<ZstConnectionAdaptor> >::set_wake_condition(m_event_condition);
+    m_plugins->plugin_events()->set_wake_condition(m_event_condition);
 
     //Set up beaconcheck timer
     m_beaconcheck_timer.expires_from_now(boost::posix_time::milliseconds(HEARTBEAT_DURATION));
@@ -148,6 +152,9 @@ void ZstClient::init_client(const char* client_name, bool debug)
     m_service_broadcast_transport->init(STAGE_DISCOVERY_PORT);
     m_service_broadcast_transport->start_listening();
     m_service_broadcast_transport->msg_events()->add_adaptor(ZstStageTransportAdaptor::downcasted_shared_from_this< ZstStageTransportAdaptor>());
+    
+    //Load plugins
+    m_plugins->load(fs::path(boost::dll::program_location().string()).parent_path().append("plugins"));
 
     //Init completed
     set_init_completed(true);
@@ -164,6 +171,7 @@ void ZstClient::process_events()
         ZstLog::net(LogLevel::debug, "Can't process events until the library is ready");
         return;
     }
+    m_plugins->process_events();
     m_session->process_events();
     ZstEventDispatcher< std::shared_ptr<ZstConnectionAdaptor> >::process_events();
 }
@@ -171,6 +179,7 @@ void ZstClient::process_events()
 void ZstClient::flush()
 {
     m_session->flush_events();
+    m_plugins->flush_events();
 }
 
 // -----------------------
@@ -741,6 +750,11 @@ void ZstClient::listen_to_client_handler(const std::shared_ptr<ZstStageMessage>&
 std::shared_ptr<ZstClientSession> ZstClient::session()
 {
     return m_session;
+}
+
+std::shared_ptr<ZstPluginLoader> ZstClient::plugins()
+{
+	return m_plugins;
 }
 
 void ZstClient::set_is_ending(bool value)
