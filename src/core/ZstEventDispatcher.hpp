@@ -135,6 +135,7 @@ public:
 		}
 	}
 	virtual void process_events() = 0;
+	virtual void flush_events() = 0;
 	virtual void defer(std::function<void(T)> event) = 0;
 	virtual void defer(std::function<void(T)> event, ZstEventCallback on_complete) = 0;
 
@@ -190,6 +191,12 @@ public:
 		m_has_event = false;
 	}
 
+	virtual void flush_events() override {
+		ZstEvent<T> event;
+		while (this->m_events.try_dequeue(event)) {}
+		m_has_event = false;
+	}
+
 private:
 	moodycamel::ConcurrentQueue< ZstEvent<T> > m_events;
 };
@@ -220,6 +227,12 @@ public:
 		ZstEvent<T> e(event, on_complete);
 		this->m_events.enqueue(e);
 		m_has_event = true;
+	}
+
+	virtual void flush_events() override {
+		ZstEvent<T> event;
+		while (this->m_events.try_dequeue(event)) {}
+		m_has_event = false;
 	}
 
 private:

@@ -1,4 +1,5 @@
 #pragma once
+#include <stdexcept>
 #include "../ZstMsgID.h"
 #include "../ZstMessage.h"
 #include "ZstConstants.h"

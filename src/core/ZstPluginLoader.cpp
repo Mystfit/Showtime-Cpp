@@ -8,6 +8,7 @@ namespace showtime {
 
 	ZstPluginLoader::~ZstPluginLoader()
 	{
+		m_plugin_events->flush_events();
 		for (auto plugin : m_loaded_plugins) {
 			plugin.second.library.unload();
 		}
@@ -63,7 +64,6 @@ namespace showtime {
 		auto plugins = plugin_lib_paths(plugin_dir);
 
 		for (auto file : plugins) {
-
 			// Load plugin library
 			boost::dll::shared_library lib;
 			boost::dll::fs::error_code ec;
@@ -80,6 +80,7 @@ namespace showtime {
 			// Hold onto lib and plugin instances
 			m_loaded_plugins[plugin->name()] = ZstLoadedPlugin{lib, plugin};
 
+			// Defer plugin loaded event
 			m_plugin_events->defer([plugin](std::shared_ptr<ZstPluginAdaptor> adp) {
 				adp->on_plugin_loaded(plugin);
 			});

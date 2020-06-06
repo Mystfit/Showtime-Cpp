@@ -442,7 +442,7 @@ namespace ZstTest
 			_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 			test_client->init("test_performer", true);
-            test_client->poll_once();
+            //test_client->poll_once();
 		}
 
 		~FixtureInit()

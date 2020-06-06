@@ -24,14 +24,17 @@ namespace showtime {
         ZST_EXPORT ZstPluginLoader();
         ZST_EXPORT ~ZstPluginLoader();
 
-        ZST_EXPORT std::vector<std::shared_ptr<ZstPlugin> > get_plugins();
 
+        // Module overrides
         ZST_EXPORT virtual void init_adaptors() override;
         ZST_EXPORT virtual void process_events() override;
         ZST_EXPORT virtual void flush_events() override;
 
         // Scan and load all plugins in a folder
         ZST_EXPORT void load(const fs::path& plugin_dir);
+
+        // Get all loaded plugins
+        ZST_EXPORT std::vector<std::shared_ptr<ZstPlugin> > get_plugins();
 
         // Plugin events
         ZST_EXPORT std::shared_ptr < ZstEventDispatcher<std::shared_ptr<ZstPluginAdaptor> > >& plugin_events();
