@@ -3,6 +3,7 @@
 #include <boost/dll/alias.hpp>
 #include "ZstPlugin.h"
 #include "ZstExports.h"
+#include "MathEntityFactory.h"
 
 #define PLUGIN_MAJOR_VER 0
 #define PLUGIN_MINOR_VER 0
@@ -13,16 +14,15 @@ namespace showtime {
 
 	class ZST_CLASS_EXPORTED CoreEntities : public ZstPlugin {
 	public:
-		ZST_PLUGIN_EXPORT static std::shared_ptr<CoreEntities> create();
-		ZST_PLUGIN_EXPORT virtual void init(const char* root_name);
-		ZST_PLUGIN_EXPORT virtual const char* name();
-		ZST_PLUGIN_EXPORT virtual int version_major();
-		ZST_PLUGIN_EXPORT virtual int version_minor();
-		ZST_PLUGIN_EXPORT virtual int version_patch();
-		ZST_PLUGIN_EXPORT virtual void get_factories(showtime::ZstEntityBundle& bundle);
+		ZST_PLUGIN_EXPORT CoreEntities();
+		ZST_PLUGIN_EXPORT virtual ~CoreEntities();
 
-	private:
-		std::vector< std::unique_ptr<showtime::ZstEntityFactory> > m_factories;
+		ZST_PLUGIN_EXPORT static std::shared_ptr<CoreEntities> create();
+		ZST_PLUGIN_EXPORT virtual void init() override;
+		ZST_PLUGIN_EXPORT virtual const char* name() override;
+		ZST_PLUGIN_EXPORT virtual int version_major() override;
+		ZST_PLUGIN_EXPORT virtual int version_minor() override;
+		ZST_PLUGIN_EXPORT virtual int version_patch() override;
 	};
 }
 

@@ -1,4 +1,5 @@
 #include <exception>
+#include <functional>
 #include "entities/ZstEntityFactory.h"
 #include "../ZstEventDispatcher.hpp"
 #include "adaptors/ZstSynchronisableAdaptor.hpp"
@@ -42,11 +43,7 @@ ZstEntityFactory::ZstEntityFactory(const ZstEntityFactory & other) :
 
 ZstEntityFactory::~ZstEntityFactory()
 {
-}
-
-void ZstEntityFactory::add_creatable(const ZstURI & creatable_path)
-{
-	m_creatables.insert(creatable_path);
+	m_owned_entities.clear();
 }
 
 size_t ZstEntityFactory::num_creatables()
@@ -85,7 +82,7 @@ void ZstEntityFactory::remove_creatable(const ZstURI & creatable_path)
 ZstURIBundle & ZstEntityFactory::get_creatables(ZstURIBundle & bundle)
 {
 	for (auto c : m_creatables) {
-		bundle.add(c);
+		bundle.add(c.first);
 	}
 	return bundle;
 }
@@ -94,7 +91,7 @@ const ZstURI & ZstEntityFactory::get_creatable_at(size_t index)
 {
 	if (index >= m_creatables.size())
 		throw(std::out_of_range("Creatable index out of range"));
-	return *std::next(m_creatables.begin(), index);
+	return std::next(m_creatables.begin(), index)->first;
 }
 
 void ZstEntityFactory::clear_creatables()
@@ -104,7 +101,15 @@ void ZstEntityFactory::clear_creatables()
 
 ZstEntityBase * ZstEntityFactory::create_entity(const ZstURI & creatable_path, const char * name)
 {
-	throw(std::runtime_error("ZstEntityFactory::create_entity not implemented"));
+	auto creatable_it = m_creatables.find(creatable_path);
+	if (creatable_it != m_creatables.end()) {
+		auto entity = creatable_it->second(name);
+		auto entity_ptr = entity.get();
+		m_owned_entities.push_back(std::move(entity));
+		return entity_ptr;
+	} 
+
+	ZstLog::net(LogLevel::warn, "Could not find creatable {} in factory {}", creatable_path.path(), this->URI().path());
 	return NULL;
 }
 
@@ -152,15 +157,16 @@ void ZstEntityFactory::process_events()
 
 void ZstEntityFactory::update_createable_URIs()
 {
-	std::set<ZstURI> orig_uris = std::move(m_creatables);
+	auto orig_uris = std::move(m_creatables);
 	m_creatables.clear();
 	for (auto c : orig_uris) {
 		//Update creatables to match the new factory URI
-		bool creatable_contains_path = c.contains(this->URI());
+		bool creatable_contains_path = c.first.contains(this->URI());
+		ZstURI updated_c(c.first);
 		if (!creatable_contains_path) {
-			c = this->URI() + c.last();
+			updated_c = this->URI() + c.first.last();
 		}
-		m_creatables.insert(c);
+		m_creatables.insert({ updated_c, c.second });
 	}
 }
     
@@ -169,7 +175,7 @@ void ZstEntityFactory::serialize_partial(flatbuffers::Offset<FactoryData> & seri
     // Sereialize creatables
     std::vector<std::string> creatables;
     for(auto c : m_creatables){
-        creatables.push_back(c.path());
+        creatables.push_back(c.first.path());
     }
     
     serialized_offset = CreateFactoryData(buffer_builder, buffer_builder.CreateVectorOfStrings(creatables));
@@ -192,7 +198,7 @@ void ZstEntityFactory::deserialize_partial(const FactoryData* buffer)
 	if (!buffer) return;
 
     for(auto c : *buffer->creatables()){
-        m_creatables.emplace(c->c_str(), c->size());
+		add_creatable<ZstEntityBase>(ZstURI(c->c_str(), c->size()));
     }
 }
     

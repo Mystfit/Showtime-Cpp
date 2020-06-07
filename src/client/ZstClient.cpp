@@ -127,6 +127,9 @@ void ZstClient::init_client(const char* client_name, bool debug)
     // Register client module to hierarchy to handle incoming events
     m_session->hierarchy()->hierarchy_events()->add_adaptor(ZstHierarchyAdaptor::downcasted_shared_from_this<ZstHierarchyAdaptor>());
 
+    // Register client to plugin loader to handle loaded plugin events
+    m_plugins->plugin_events()->add_adaptor(ZstPluginAdaptor::downcasted_shared_from_this<ZstPluginAdaptor>());
+
 	// Register client transport adaptors to session
 	m_session->stage_events()->add_adaptor(m_client_transport);
     std::static_pointer_cast<ZstClientHierarchy>(m_session->hierarchy())->stage_events()->add_adaptor(m_client_transport);
@@ -158,6 +161,9 @@ void ZstClient::init_client(const char* client_name, bool debug)
 
     //Init completed
     set_init_completed(true);
+
+    //Finally, process events so submodules can talk to each other at the start
+    process_events();
 }
 
 void ZstClient::init_file_logging(const char* log_file_path)
@@ -798,6 +804,18 @@ void ZstClient::on_entity_arriving(ZstEntityBase* entity)
 void ZstClient::on_performer_arriving(ZstPerformer* performer)
 {
     on_entity_arriving(performer);
+}
+
+void ZstClient::on_plugin_loaded(std::shared_ptr<ZstPlugin> plugin)
+{
+    ZstEntityFactoryBundle bundle;
+    plugin->get_factories(bundle);
+    for (auto f : bundle) {
+        // Register each factory in the plugin with the performance
+        this->session()->hierarchy()->get_local_performer()->add_child(f);
+        if(is_connected_to_stage())
+            this->session()->hierarchy()->activate_entity(f, ZstTransportRequestBehaviour::ASYNC_REPLY);
+    }
 }
 
 void ZstClient::init_arriving_plug(ZstPlug* plug)

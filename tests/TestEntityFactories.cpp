@@ -33,19 +33,7 @@ class TestFactory : public ZstEntityFactory
 public:
 	TestFactory(const char * name) : ZstEntityFactory(name) 
 	{
-		this->add_creatable(CUSTOM_COMPONENT);
-	}
-
-	virtual ZstEntityBase * create_entity(const ZstURI & creatable_path, const char * name) override
-	{
-		CustomComponent * entity = NULL;
-		if (creatable_path == this->URI() + ZstURI(CUSTOM_COMPONENT)) {
-			entity = new CustomComponent(name);
-
-			//TODO: Factory created entity leakages
-			ZstLog::entity(LogLevel::error, "New factory created entity will leak - replace with smart pointer!");
-		}
-		return entity;
+		this->add_creatable<CustomComponent>(CUSTOM_COMPONENT);
 	}
 };
 
@@ -220,13 +208,26 @@ BOOST_FIXTURE_TEST_CASE(create_entity_from_local_factory, FixtureLocalFactory) {
 	auto created_entity_URI = test_client->get_root()->URI() + ZstURI("brand_spanking_new");
 	ZstURIBundle bundle;
 	factory->get_creatables(bundle);
+	
+	auto entity = test_client->create_entity(bundle[0], "brand_spanking_new");
+	BOOST_TEST(entity);
+	BOOST_TEST(test_client->find_entity(created_entity_URI));
+	BOOST_TEST_MESSAGE(fmt::format("Entity {} leaving scope", created_entity_URI.path()));
+}
+
+BOOST_FIXTURE_TEST_CASE(factory_owned_entity_destruction, FixtureJoinServer) {
+
+	ZstURI entity_path;
 	{
-		auto entity = ZstSharedEntity(test_client->create_entity(bundle[0], "brand_spanking_new"));
-		BOOST_TEST(entity);
-		BOOST_TEST(test_client->find_entity(created_entity_URI));
-		BOOST_TEST_MESSAGE(fmt::format("Entity {} leaving scope", created_entity_URI.path()));
+		auto factory = std::make_unique<TestFactory>("customs");
+		test_client->register_factory(factory.get());
+		ZstURIBundle bundle;
+		factory->get_creatables(bundle);
+		auto entity = test_client->create_entity(bundle[0], "brand_spanking_new");
+		entity_path = entity->URI();
+		BOOST_TEST(test_client->find_entity(entity_path));
 	}
-	BOOST_TEST(!test_client->find_entity(created_entity_URI));
+	BOOST_TEST(!test_client->find_entity(entity_path));
 }
 
 BOOST_FIXTURE_TEST_CASE(find_external_creatables, FixtureExternalFactory) {

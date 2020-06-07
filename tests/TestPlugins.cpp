@@ -26,6 +26,55 @@ public:
 	}
 };
 
+struct FixtureCorePlugin : public FixtureJoinServer {
+	std::shared_ptr<ZstPlugin> plugin;
+
+	FixtureCorePlugin() {
+		auto loaded_plugins = test_client->plugins();
+		plugin = *std::find_if(loaded_plugins.begin(), loaded_plugins.end(), [](auto it) {
+			return strcmp(it->name(), "core_entities") == 0;
+		});
+	}
+};
+
+
+struct FixtureCorePluginFactory : public FixtureCorePlugin {
+	ZstEntityFactory* factory;
+
+	FixtureCorePluginFactory() {
+		ZstURI factory_path_expected = test_client->get_root()->URI() + ZstURI("math_entities");
+		ZstEntityFactoryBundle bundle;
+		plugin->get_factories(bundle);
+		factory = *std::find_if(bundle.begin(), bundle.end(), [factory_path_expected](auto it) {
+			return it->URI() == factory_path_expected;
+		});
+	}
+};
+
+struct FixtureCorePluginAdder : 
+	public FixtureCorePluginFactory
+{
+	ZstComponent* adder;
+	ZstInputPlug* augend;
+	ZstInputPlug* addend;
+	ZstOutputPlug* sum;
+
+	FixtureCorePluginAdder() {
+		ZstURI creatable_path_expected = factory->URI() + ZstURI("adder");
+		ZstURIBundle creatable_bundle;
+		auto creatables = factory->get_creatables(creatable_bundle);
+		auto creatable_path = std::find_if(creatables.begin(), creatables.end(), [creatable_path_expected](auto it) {
+			return it == creatable_path_expected;
+		});
+		auto adder = dynamic_cast<ZstComponent*>(test_client->create_entity(*creatable_path, "test_adder"));
+		augend = dynamic_cast<ZstInputPlug*>(adder->get_child_by_URI(adder->URI() + ZstURI("augend")));
+		addend = dynamic_cast<ZstInputPlug*>(adder->get_child_by_URI(adder->URI() + ZstURI("addend")));
+		sum = dynamic_cast<ZstOutputPlug*>(adder->get_child_by_URI(adder->URI() + ZstURI("sum")));
+	}
+};
+
+
+
 
 BOOST_FIXTURE_TEST_CASE(load_plugins, FixtureInit) {
 	auto loaded_plugins = test_client->plugins();
@@ -38,6 +87,53 @@ BOOST_FIXTURE_TEST_CASE(load_plugins, FixtureInit) {
 BOOST_FIXTURE_TEST_CASE(load_plugins_events, FixtureInit) {
 	auto plugin_events = std::make_shared<PluginEvents>();
 	test_client->add_plugin_adaptor(plugin_events);
-	wait_for_event(test_client, plugin_events, 1);
-	BOOST_TEST("core_entities" == plugin_events->last_loaded_plugin);
+	// TODO: Plugins are already loaded. Need to reload plugins to trigger the event.
+}
+
+BOOST_FIXTURE_TEST_CASE(plugin_factories, FixtureCorePlugin) {
+	ZstEntityFactoryBundle bundle;
+	ZstURI factory_path = test_client->get_root()->URI() + ZstURI("math_entities");
+	plugin->get_factories(bundle);
+
+	BOOST_TEST(bundle.size() > 0);
+	bool found = std::find_if(bundle.begin(), bundle.end(), [factory_path](auto it) {
+		return it->URI() == factory_path;
+	}) != bundle.end();
+	BOOST_TEST(found);
+}
+
+BOOST_FIXTURE_TEST_CASE(plugin_create_entity, FixtureCorePluginFactory) {
+	ZstURI creatable_path_expected = factory->URI() + ZstURI("adder");
+	ZstURIBundle creatable_bundle;
+	auto creatables = factory->get_creatables(creatable_bundle);
+	auto creatable_path = std::find_if(creatables.begin(), creatables.end(), [creatable_path_expected](auto it) {
+		return it == creatable_path_expected;
+	});
+	bool found = (creatable_path != creatables.end());
+	BOOST_TEST(found);
+
+	// Create entity
+	auto adder = test_client->create_entity(*creatable_path, "test_adder");
+	BOOST_REQUIRE(adder);
+}
+
+BOOST_FIXTURE_TEST_CASE(plugin_adder, FixtureCorePluginAdder) {
+	int current_wait = 0;
+	auto push_A = std::make_unique<OutputComponent>("pushA");
+	auto push_B = std::make_unique<OutputComponent>("pushB");
+	auto sink = std::make_unique<InputComponent>("sink");
+	test_client->get_root()->add_child(push_A.get());
+	test_client->get_root()->add_child(push_B.get());
+	test_client->get_root()->add_child(sink.get());
+	test_client->connect_cable(augend, push_A->output());
+	test_client->connect_cable(addend, push_B->output());
+	test_client->connect_cable(sink->input(), sum);
+	push_A->output()->append_int(2);
+	push_B->output()->append_int(5);
+	push_A->output()->fire();
+	push_B->output()->fire();
+	while (sink->num_hits < 2 && ++current_wait < 1000) {
+		test_client->poll_once();
+	}
+	BOOST_TEST(sink->input()->int_at(0) == 7);
 }

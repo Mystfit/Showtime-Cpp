@@ -1,12 +1,22 @@
 #include "plugin.h"
 
 namespace showtime {
+	CoreEntities::CoreEntities() : ZstPlugin()
+	{
+		std::unique_ptr<ZstEntityFactory> math_factory = std::make_unique<MathEntityFactory>("math_entities");
+		add_factory(math_factory);
+	}
+
+	CoreEntities::~CoreEntities()
+	{
+	}
+
 	std::shared_ptr<CoreEntities> showtime::CoreEntities::create()
 	{
 		return std::make_shared<CoreEntities>();
 	}
 
-	void showtime::CoreEntities::init(const char* root_name)
+	void showtime::CoreEntities::init()
 	{
 	}
 
@@ -28,9 +38,5 @@ namespace showtime {
 	int showtime::CoreEntities::version_patch()
 	{
 		return PLUGIN_PATCH_VER;
-	}
-
-	void showtime::CoreEntities::get_factories(showtime::ZstEntityBundle& bundle)
-	{
 	}
 }

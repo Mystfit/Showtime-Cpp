@@ -2,6 +2,8 @@
 
 #include <set>
 #include <memory>
+#include <variant>
+#include <boost/type_traits/is_base_of.hpp>
 
 #include "ZstExports.h"
 #include "entities/ZstEntityBase.h"
@@ -15,6 +17,7 @@ class ZstEventDispatcher;
 
 //Typedefs
 typedef std::shared_ptr<ZstEntityBase> ZstSharedEntity;
+typedef std::function< std::unique_ptr<ZstEntityBase>(const char*) > ZstEntityCreatorFunc;
 
 class ZST_CLASS_EXPORTED ZstEntityFactory :
 	public ZstEntityBase,
@@ -34,7 +37,10 @@ public:
 
 	//Creatables
 
-	ZST_EXPORT void add_creatable(const ZstURI & creatable_path);
+	template<typename T>
+	void add_creatable(const ZstURI& creatable_path){
+		m_creatables.insert({ creatable_path, [](const char* e_name) { return std::make_unique<T>(e_name); } });
+	}
 	ZST_EXPORT void remove_creatable(const ZstURI & creatable_path);
 	ZST_EXPORT ZstURIBundle & get_creatables(ZstURIBundle & bundle);
 	ZST_EXPORT const ZstURI & get_creatable_at(size_t index);
@@ -66,8 +72,9 @@ protected:
 
 private:
 	void update_createable_URIs();
-	std::set<ZstURI> m_creatables;
+	std::unordered_map<ZstURI, ZstEntityCreatorFunc, ZstURIHash> m_creatables;
 	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > > m_factory_events;
+	std::vector< std::unique_ptr<ZstEntityBase> > m_owned_entities;
 };
 
 }
