@@ -5,46 +5,6 @@
 
 using namespace ZstTest;
 
-
-struct FixtureSinkClient : public FixtureRemoteClient {
-    //Common URIs
-	ZstURI sink_ent_uri;
-	ZstURI sink_plug_uri;
-	ZstURI sync_out_plug_uri;
-	std::unique_ptr<Sink> sink;
-
-	FixtureSinkClient(std::string server_name) : 
-		FixtureRemoteClient("TestHelperSink", server_name),
-		sink(std::make_unique<Sink>("sink_ent")),
-		sink_ent_uri(remote_client->get_root()->URI() + ZstURI("sink_ent")),
-		sink_plug_uri(sink_ent_uri + ZstURI("in")),
-		sync_out_plug_uri(sink_ent_uri + ZstURI("out"))
-    {
-		remote_client->get_root()->add_child(sink.get());
-	}
-
-	~FixtureSinkClient() {
-	}
-};
-
-
-struct FixtureWaitForSinkClient : public FixtureJoinServer, FixtureSinkClient {
-	std::shared_ptr<TestPerformerEvents> performerEvents;
-
-	FixtureWaitForSinkClient() : 
-		FixtureJoinServer(),
-		FixtureSinkClient(server_name),
-		performerEvents(std::make_shared<TestPerformerEvents>())
-	{
-		test_client->add_hierarchy_adaptor(performerEvents);
-		BOOST_TEST_CHECKPOINT("Waiting for external client performer to arrive");
-		wait_for_event(test_client, performerEvents, 1);
-		performerEvents->reset_num_calls();
-	}
-	~FixtureWaitForSinkClient() {}
-};
-
-
 struct FixtureExternalEntities : public FixtureWaitForSinkClient
 {
     ZstComponent * sink_ent;

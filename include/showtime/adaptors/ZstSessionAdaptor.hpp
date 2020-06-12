@@ -24,6 +24,7 @@ public:
 
     ZST_EXPORT virtual void aquire_entity_ownership(ZstEntityBase * entity);
 	ZST_EXPORT virtual void release_entity_ownership(ZstEntityBase * entity);    
+	ZST_EXPORT virtual void plug_received_value(ZstInputPlug* plug);
 };
 
 }

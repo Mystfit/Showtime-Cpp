@@ -333,12 +333,33 @@ void ZstOutputPlug::fire()
     if (!can_fire())
         return;
 
-    m_graph_out_events->invoke([this](std::shared_ptr<ZstGraphTransportAdaptor> adaptor) {       
-        auto builder = std::make_shared<flatbuffers::FlatBufferBuilder>();
-		auto plugval_offset = this->raw_value()->serialize(*builder);
-		auto graph_msg_offset = CreateGraphMessage(*builder, builder->CreateString(this->URI().path()), plugval_offset);
-		adaptor->send_msg(graph_msg_offset, builder);
-    });
+    // Send message to local plugs first
+    ZstCableBundle bundle;
+    get_child_cables(bundle);
+    int num_local_cables = 0;
+    for (auto c : bundle) {
+        if (c->get_input()->URI().first() == this->URI().first()) {
+            // Copy plug value
+            c->get_input()->raw_value()->copy(*this->raw_value());
+
+            // Queue plug compute event
+            session_events()->invoke([&c](std::shared_ptr<ZstSessionAdaptor> adp) {
+                adp->plug_received_value(c->get_input());
+            });
+
+            num_local_cables++;
+        }
+    }
+
+    // Publish message to any remaining remote plugs
+    if (num_local_cables <= bundle.size()){
+        m_graph_out_events->invoke([this](std::shared_ptr<ZstGraphTransportAdaptor> adaptor) {
+            auto builder = std::make_shared<flatbuffers::FlatBufferBuilder>();
+            auto plugval_offset = this->raw_value()->serialize(*builder);
+            auto graph_msg_offset = CreateGraphMessage(*builder, builder->CreateString(this->URI().path()), plugval_offset);
+            adaptor->send_msg(graph_msg_offset, builder);
+            });
+    }
     m_value->clear();
 }
 

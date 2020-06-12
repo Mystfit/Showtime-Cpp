@@ -68,6 +68,7 @@ ZstCable * ZstSessionAdaptor::find_cable(const ZstCableAddress & address) { retu
 void ZstSessionAdaptor::destroy_cable(ZstCable* cable){}
 void ZstSessionAdaptor::aquire_entity_ownership(ZstEntityBase* entity) {}
 void ZstSessionAdaptor::release_entity_ownership(ZstEntityBase* entity) {}
+void ZstSessionAdaptor::plug_received_value(ZstInputPlug* plug){}
 
 
 // -----------------------

@@ -278,7 +278,7 @@ BOOST_FIXTURE_TEST_CASE(factory_leaving, FixtureWaitForFactoryClient) {
 
 BOOST_FIXTURE_TEST_CASE(updated_creatables_callback, FixtureExternalFactory)
 {
-	ext_factory->add_creatable(ZstURI("avocado"));
+	ext_factory->add_creatable<ZstComponent>(ZstURI("avocado"));
 	ext_factory->update_creatables();
 
 	wait_for_event(test_client, factoryEvents, 1);

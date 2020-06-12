@@ -194,7 +194,7 @@ BOOST_FIXTURE_TEST_CASE(limit_connected_cables, FixtureJoinServer) {
 	BOOST_TEST(test_limited_input->input->num_cables() == 1);
 }
 
-BOOST_FIXTURE_TEST_CASE(send_through_reliable_graph, FixtureCable) {
+BOOST_FIXTURE_TEST_CASE(send_through_local_graph, FixtureCable) {
 	int first_cmp_val = 4;
 	int current_wait = 0;
 
@@ -205,6 +205,25 @@ BOOST_FIXTURE_TEST_CASE(send_through_reliable_graph, FixtureCable) {
 	BOOST_TEST(input_component->num_hits);
 	BOOST_TEST(input_component->last_received_val == first_cmp_val);
 }
+
+BOOST_FIXTURE_TEST_CASE(send_through_remote_graph, FixtureWaitForSinkClient) {
+	int first_cmp_val = 4;
+	int current_wait = 0;
+
+	auto output_component =	std::make_unique<OutputComponent>("remote_test_out");
+	auto input_component = std::make_unique<InputComponent>("remote_test_in");
+	test_client->get_root()->add_child(output_component.get());
+	remote_client->get_root()->add_child(input_component.get());
+	test_client->connect_cable(input_component->input(), output_component->output());
+
+	output_component->send(first_cmp_val);
+	while (input_component->num_hits < 1 && ++current_wait < 10000) {
+		remote_client->poll_once();
+	}
+	BOOST_TEST(input_component->num_hits);
+	BOOST_TEST(input_component->last_received_val == first_cmp_val);
+}
+
 
 BOOST_FIXTURE_TEST_CASE(send_through_unreliable_graph, FixturePlugs) {
 	int first_cmp_val = 4;

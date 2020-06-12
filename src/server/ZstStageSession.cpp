@@ -178,8 +178,8 @@ Signal ZstStageSession::create_cable_handler(const std::shared_ptr<ZstStageMessa
 	//Start the client connection
 	auto input_perf = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(input->URI().first()));
 	auto output_perf = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(output->URI().first()));
-	connect_clients(output_perf, input_perf, [this, cable_ptr, sender, id = msg->id()](ZstMessageResponse response) {
-		auto signal = ZstStageTransport::get_signal(response.response);
+
+	auto connect_finished_cb = [this, cable_ptr, sender, id = msg->id()](Signal signal) {
 		if (signal == Signal_OK) {
 			ZstLog::server(LogLevel::notification, "Client connection complete. Publishing cable {}", cable_ptr->get_address().to_string());
 			ZstTransportArgs args;
@@ -192,9 +192,17 @@ Signal ZstStageSession::create_cable_handler(const std::shared_ptr<ZstStageMessa
 
 		// Let original requestor know the request was completed
 		stage_hierarchy()->reply_with_signal(sender, signal, id);
-	});
+	};
 
-	
+	auto connect_response_cb = [this, cable_ptr, sender, id = msg->id(), connect_finished_cb](ZstMessageResponse response) {
+		connect_finished_cb(ZstStageTransport::get_signal(response.response));
+	};
+
+	// If both the input and output performer are the same then messages will be routed internally for that client
+	if (output_perf->URI() == input_perf->URI())
+		connect_finished_cb(Signal_OK);
+	else
+		connect_clients(output_perf, input_perf, connect_response_cb);
 
 	return Signal_EMPTY;
 }
@@ -253,8 +261,8 @@ Signal ZstStageSession::aquire_entity_ownership_handler(const std::shared_ptr<Zs
 	ZstURI new_owner_path;
 	ZstPerformerStageProxy* new_owner = NULL;
 
+	// An empty owner means we return ownership back to the original owner
 	if (!request->new_owner()->size()){
-		//Reset owner
 		entity_set_owner(entity, "");
 	}
 	else {
@@ -364,6 +372,11 @@ void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, Zst
 
 	//Check to see if one client is already connected to the other
 	if (output_client->has_connected_subscriber(input_client)) {
+		return;
+	}
+
+	//If the output and input clients are the same, then plug messages will be routed internally
+	if (output_client->URI() == input_client->URI()) {
 		return;
 	}
 
