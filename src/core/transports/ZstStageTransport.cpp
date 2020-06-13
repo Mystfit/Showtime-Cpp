@@ -16,7 +16,8 @@ namespace showtime
 		auto stage_msg = CreateStageMessage(*buffer_builder, message_type, message_content);
 		FinishStageMessageBuffer(*buffer_builder, stage_msg);
 
-		if (!VerifyStageMessageBuffer(flatbuffers::Verifier(buffer_builder->GetBufferPointer(), buffer_builder->GetSize())))
+		auto verifier = flatbuffers::Verifier(buffer_builder->GetBufferPointer(), buffer_builder->GetSize());
+		if (!VerifyStageMessageBuffer(verifier))
 			throw;
 
 		begin_send_message(buffer_builder, copy_args);

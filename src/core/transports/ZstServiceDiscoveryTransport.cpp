@@ -84,7 +84,10 @@ int ZstServiceDiscoveryTransport::s_handle_beacon(zloop_t * loop, zsock_t * sock
 
         // Set the has_promise flag to avoid early cleanup
         msg->set_has_promise();
-        transport->take_message_ownership(std::static_pointer_cast<ZstMessage>(msg), cleanup_func);
+        
+        // Let the transport take ownership of cleaning up the message
+        auto base_msg = std::static_pointer_cast<ZstMessage>(msg);
+        transport->take_message_ownership(base_msg, cleanup_func);
 
         // Dispatch the message into the event system
         transport->dispatch_receive_event(msg, cleanup_func);

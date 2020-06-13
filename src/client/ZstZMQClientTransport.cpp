@@ -136,13 +136,16 @@ void ZstZMQClientTransport::sock_recv(zsock_t* socket)
 		memcpy(&msg_id, zframe_data(id_data), zframe_size(id_data));
 
         if(msg_data){
-			if(VerifyStageMessageBuffer(flatbuffers::Verifier(zframe_data(msg_data), zframe_size(msg_data)))) {
+			auto verifier = flatbuffers::Verifier(zframe_data(msg_data), zframe_size(msg_data));
+			if(VerifyStageMessageBuffer(verifier)) {
 				auto stage_msg = get_msg();
+				auto uuid = boost::uuids::nil_generator()();
+				auto owner = std::static_pointer_cast<ZstStageTransport>(ZstTransportLayer::shared_from_this());
 				stage_msg->init(
 					GetStageMessage(zframe_data(msg_data)),
-					boost::uuids::nil_generator()(),
+					uuid,
 					msg_id,
-					std::static_pointer_cast<ZstStageTransport>(ZstTransportLayer::shared_from_this())
+					owner
 				);
 
 				//ZstLog::net(LogLevel::debug, "ZstZMQClientTransport received {}", boost::uuids::to_string(stage_msg->id()));

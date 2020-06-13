@@ -112,6 +112,11 @@ public:
 		return m_has_event;
 	}
 
+	void notify(){
+		if(m_condition_wake)
+			m_condition_wake->notify();
+	}
+
 protected:
 	std::set< std::weak_ptr<ZstEventAdaptor>, std::owner_less< std::weak_ptr<ZstEventAdaptor> > > m_adaptors;
 	std::shared_ptr<ZstSemaphore> m_condition_wake;
@@ -167,34 +172,32 @@ public:
 	{
 	}
 
-	virtual void defer(std::function<void(T)> event) {
+	virtual void defer(std::function<void(T)> event) override {
 		ZstEvent<T> e(event, [](ZstEventStatus s) {});
 		this->m_events.enqueue(e);
-		m_has_event = true;
-		if(m_condition_wake)
-			m_condition_wake->notify();
+		this->m_has_event = true;
+		this->notify();
 	}
 
-	virtual void defer(std::function<void(T)> event, ZstEventCallback on_complete) {
+	virtual void defer(std::function<void(T)> event, ZstEventCallback on_complete) override {
 		ZstEvent<T> e(event, on_complete);
 		this->m_events.enqueue(e);
-		m_has_event = true;
-		if(m_condition_wake)
-			m_condition_wake->notify();
+		this->m_has_event = true;
+		this->notify();
 	}
 
 	virtual void process_events() override {
 		ZstEvent<T> event;
 		while (this->m_events.try_dequeue(event)) {
-			process(event);
+			this->process(event);
 		}
-		m_has_event = false;
+		this->m_has_event = false;
 	}
 
 	virtual void flush_events() override {
 		ZstEvent<T> event;
 		while (this->m_events.try_dequeue(event)) {}
-		m_has_event = false;
+		this->m_has_event = false;
 	}
 
 private:
@@ -213,26 +216,26 @@ public:
 
 	virtual void process_events() override {
 		ZstEvent<T> event;
-		if (m_events.wait_dequeue_timed(event, std::chrono::milliseconds(500)))
-			process(event);
+		if (this->m_events.wait_dequeue_timed(event, std::chrono::milliseconds(500)))
+			this->process(event);
 	}
 
 	virtual void defer(std::function<void(T)> event) override {
 		ZstEvent<T> e(event, [](ZstEventStatus s) {});
 		this->m_events.enqueue(e);
-		m_has_event = true;
+		this->m_has_event = true;
 	}
 
 	virtual void defer(std::function<void(T)> event, ZstEventCallback on_complete) override {
 		ZstEvent<T> e(event, on_complete);
 		this->m_events.enqueue(e);
-		m_has_event = true;
+		this->m_has_event = true;
 	}
 
 	virtual void flush_events() override {
 		ZstEvent<T> event;
 		while (this->m_events.try_dequeue(event)) {}
-		m_has_event = false;
+		this->m_has_event = false;
 	}
 
 private:

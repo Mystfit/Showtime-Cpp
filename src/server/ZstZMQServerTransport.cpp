@@ -106,13 +106,15 @@ void ZstZMQServerTransport::sock_recv(zsock_t* socket)
 
 		//Unpack message
 		if (payload_data) {
-			if (VerifyStageMessageBuffer(flatbuffers::Verifier(zframe_data(payload_data), zframe_size(payload_data)))) {
+			auto verifier = flatbuffers::Verifier(zframe_data(payload_data), zframe_size(payload_data));
+			if (VerifyStageMessageBuffer(verifier)) {
 				auto msg = get_msg();
+				auto owner = std::dynamic_pointer_cast<ZstStageTransport>(ZstTransportLayer::shared_from_this());
 				msg->init(
 					GetStageMessage(zframe_data(payload_data)),
 					client_uuid,
 					msg_id,
-					std::dynamic_pointer_cast<ZstStageTransport>(ZstTransportLayer::shared_from_this())
+					owner
 				);
 
 				// Send message to submodules
@@ -139,7 +141,8 @@ void ZstZMQServerTransport::sock_recv(zsock_t* socket)
 
 void ZstZMQServerTransport::send_message_impl(const uint8_t* msg_buffer, size_t msg_buffer_size, const ZstTransportArgs& args) const
 {
-	if (!VerifyStageMessageBuffer(flatbuffers::Verifier(msg_buffer, msg_buffer_size)))
+	auto verifier = flatbuffers::Verifier(msg_buffer, msg_buffer_size);
+	if (!VerifyStageMessageBuffer(verifier))
 		throw;
 
 	zmsg_t* m = zmsg_new();

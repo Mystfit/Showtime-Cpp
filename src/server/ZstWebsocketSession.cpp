@@ -73,11 +73,13 @@ void ZstWebsocketSession::on_read(beast::error_code ec, std::size_t bytes_transf
 
 	//Parse message
 	auto msg = m_transport->get_msg();
+	auto uuid = boost::uuids::nil_uuid();
+	auto owner = std::dynamic_pointer_cast<ZstStageTransport>(m_transport->ZstTransportLayer::shared_from_this());
 	msg->init(GetStageMessage(
 		m_recv_buffer.data().data()),
 		m_origin_endpoint_UUID,
-		boost::uuids::nil_uuid(),
-		std::dynamic_pointer_cast<ZstStageTransport>(m_transport->ZstTransportLayer::shared_from_this())
+		uuid,
+		owner
 	);
 
 	// Send message to other modules

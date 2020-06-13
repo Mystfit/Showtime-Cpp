@@ -64,7 +64,7 @@ namespace showtime {
             void init_file_logging(const char * log_file_path);
             void destroy();
             
-            void process_events();
+            void process_events() override;
             void flush();
 
             //Stage adaptor overrides

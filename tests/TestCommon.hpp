@@ -3,6 +3,8 @@
 #include <string>
 #include <Showtime.h>
 #include <ShowtimeServer.h>
+#include <ZstFilesystemUtils.h>
+
 #include <boost/process.hpp>
 #include <boost/stacktrace.hpp>
 #include <boost/thread/thread.hpp>

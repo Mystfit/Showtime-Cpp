@@ -96,7 +96,8 @@ void ZstGraphTransport::sock_recv(zsock_t* socket)
 	//Unpack the frame into a message
 
 	auto perf_msg = this->get_msg();
-    perf_msg->init(GetGraphMessage(zframe_data(frame)), std::static_pointer_cast<ZstGraphTransport>(ZstTransportLayer::shared_from_this()));
+	auto owner = std::static_pointer_cast<ZstGraphTransport>(ZstTransportLayer::shared_from_this());
+    perf_msg->init(GetGraphMessage(zframe_data(frame)), owner);
 	
 	//Publish message to other modules
     dispatch_receive_event(perf_msg, [perf_msg, frame](ZstEventStatus s) mutable {

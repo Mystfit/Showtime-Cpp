@@ -222,7 +222,6 @@ Signal ZstStageHierarchy::factory_create_entity_handler(const std::shared_ptr<Zs
     args.on_recv_response = [this, sender, factory_path, response_id = request->id()](ZstMessageResponse response) {
 		if (!ZstStageTransport::verify_signal(response.response, Signal_OK, "Creatable request at origin")) {
 			reply_with_signal(sender, ZstStageTransport::get_signal(response.response), response_id);
-			return Signal_EMPTY;
 		}
 		
 		ZstLog::server(LogLevel::notification, "Remote factory created entity {}", factory_path.path());

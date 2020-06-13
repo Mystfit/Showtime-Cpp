@@ -20,7 +20,7 @@
 
 namespace showtime {
 
-ZST_CLASS_EXPORTED class ZstTransportLayerBase : public ZstMessageSupervisor
+class ZST_CLASS_EXPORTED ZstTransportLayerBase : public ZstMessageSupervisor
 {
 public:
     ZstTransportLayerBase() : 
@@ -174,7 +174,7 @@ public:
      *        manage the lifetime of a message.
      */
     virtual void dispatch_receive_event(std::shared_ptr<Message_T>& msg, ZstEventCallback on_complete) {
-        m_dispatch_events->defer([msg](std::shared_ptr<Adaptor_T>& adaptor) {
+        m_dispatch_events->defer([msg](std::shared_ptr<Adaptor_T> adaptor) {
             std::static_pointer_cast<Adaptor_T>(adaptor)->on_receive_msg(std::static_pointer_cast<Message_T>(msg));
         }, [this, msg, on_complete](ZstEventStatus status) {
             auto base_msg = std::static_pointer_cast<ZstMessage>(msg);

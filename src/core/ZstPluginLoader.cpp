@@ -1,4 +1,5 @@
 #include "ZstPluginLoader.h"
+#include "ZstFilesystemUtils.h"
 
 namespace showtime {
 	ZstPluginLoader::ZstPluginLoader() : 
@@ -25,7 +26,7 @@ namespace showtime {
 		}
 
 		for (auto file : fs::directory_iterator(dir)) {
-			if (!file.is_regular_file())
+			if (!fs::is_regular_file(file))
 				continue;
 
 			if (file.path().extension() != boost::dll::shared_library::suffix())

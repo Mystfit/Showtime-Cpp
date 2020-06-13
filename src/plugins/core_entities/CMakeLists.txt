@@ -21,21 +21,29 @@ target_sources(${CORE_ENTITIES_TARGET} PRIVATE
 
 set(PLUGIN_LIBS Boost::boost)
 
+set(PLUGIN_DEFINITIONS_PRIVATE "-DZST_EXPORT_PLUGIN_API")
+set(PLUGIN_DEFINITIONS_INTERFACE "-DZST_IMPORT_PLUGIN_API")
+
 # Target definitions
 if(WIN32)
-    target_compile_definitions(${CORE_ENTITIES_TARGET} PRIVATE -DZST_EXPORT_PLUGIN_API)
-    target_compile_definitions(${CORE_ENTITIES_TARGET} INTERFACE -DZST_IMPORT_PLUGIN_API)
-
     # On windows we need to link against core since we can't do runtime symbol lookup
-    list(APPEND PLUGIN_LIBS ${CORE_TARGET})
+    #list(APPEND PLUGIN_LIBS ${CORE_TARGET})
 else()
     # Since we skip linking against core we need to pull in the includes and definitions
     get_target_property(CORE_COMPILE_DEFS ${CORE_TARGET_OBJECTS} INTERFACE_COMPILE_DEFINITIONS)
-    target_include_directories(${CORE_ENTITIES_TARGET} PUBLIC ${Showtime_ALL_INCLUDE_DIRS})
+    list(APPEND PLUGIN_DEFINITIONS_INTERFACE ${CORE_COMPILE_DEFS})
+
+    # target_include_directories(${CORE_ENTITIES_TARGET} PUBLIC ${Showtime_ALL_INCLUDE_DIRS})
 
     # Enable runtime symbol lookups
-    target_link_options(${PYTHON_TARGET_WRAPPER} PRIVATE -undefined dynamic_lookup)
+    # target_link_options(${CORE_ENTITIES_TARGET} PRIVATE -undefined dynamic_lookup)
 endif()
+
+list(APPEND PLUGIN_LIBS ${CORE_TARGET})
+
+# Compile definitions
+target_compile_definitions(${CORE_ENTITIES_TARGET} PRIVATE ${PLUGIN_DEFINITIONS_PRIVATE})
+target_compile_definitions(${CORE_ENTITIES_TARGET} INTERFACE ${PLUGIN_DEFINITIONS_INTERFACE})
 
 # Link against boost headers explicitly
 target_link_libraries(${CORE_ENTITIES_TARGET} PRIVATE ${PLUGIN_LIBS})

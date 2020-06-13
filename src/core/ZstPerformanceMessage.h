@@ -17,12 +17,12 @@ public:
     ZST_EXPORT virtual ~ZstPerformanceMessage();
     
     ZST_EXPORT void init(const GraphMessage * buffer, std::shared_ptr<ZstGraphTransport>& owning_transport);
-    ZST_EXPORT void reset();
+    ZST_EXPORT void reset() override;
     
-    ZST_EXPORT virtual ZstMsgID id() const;
+    ZST_EXPORT virtual ZstMsgID id() const override;
     
     ZST_EXPORT void set_origin_endpoint_UUID(const uuid&);
-    ZST_EXPORT const uuid& origin_endpoint_UUID() const;
+    ZST_EXPORT const uuid& origin_endpoint_UUID() const override;
     ZST_EXPORT const GraphMessage* buffer() const;
     ZST_EXPORT virtual std::shared_ptr<ZstTransportLayerBase> owning_transport() const override;
 
