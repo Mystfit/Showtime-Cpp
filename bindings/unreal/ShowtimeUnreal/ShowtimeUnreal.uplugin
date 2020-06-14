@@ -1,0 +1,34 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "Showtime",
+	"Description": "Showtime dataflow library for collaborative programing and communication",
+	"Category": "Other",
+	"CreatedBy": "Byron Mallett",
+	"CreatedByURL": "https://github.com/mystfit",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": true,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"SupportedTargetPlatforms": [
+		"Win64",
+		"Mac",
+		"Android"
+	],
+	"Modules": [
+		{
+			"Name": "ShowtimeRuntime",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit",
+			"WhitelistPlatforms": [
+				"Win64",
+				"Mac",
+				"Android"
+			]
+		}
+	]
+}

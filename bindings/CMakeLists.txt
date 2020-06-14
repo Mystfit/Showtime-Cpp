@@ -3,7 +3,8 @@
 # Dotnet bindings
 option(BINDINGS_DOTNET "Generate bindings for C#" OFF)
 option(BINDINGS_PYTHON "Generate bindings for Python" OFF)
-option(BINDINGS_UNITY "Generate bindings for Unity" OFF)
+option(BINDINGS_UNITY "Generate package for Unity" OFF)
+option(BINDINGS_UNREAL "Generate plugin for Unreal" OFF)
 option(BINDINGS_RUBY "Generate bindings for ruby" OFF)
 option(BINDINGS_JAVA "Generate bindings for java" OFF)
 option(BINDINGS_JRUBY "Generate bindings for JRuby" OFF)
@@ -70,6 +71,12 @@ if(BINDINGS_UNITY)
     set(BINDINGS_UNITY_EXPORT_PACKAGE CACHE BOOL ON)
     include(bindings/unity/CMakeLists.txt)
 endif()
+
+if(BINDINGS_UNREAL)
+    set(UNREAL_TARGET ${PROJECT_NAME}Unreal)
+    include(bindings/unreal/CMakeLists.txt)
+endif()
+
 
 if(BINDINGS_PYTHON)
     set(PYTHON_TARGET ${PROJECT_NAME}Python)
