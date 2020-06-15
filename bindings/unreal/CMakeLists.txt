@@ -25,14 +25,20 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${UNREAL_SRC_DIR} ${UNREAL_BUILD_DIR}
 )
 
-foreach(include_dir ${Showtime_ALL_INCLUDE_DIRS})
-    add_custom_command(
-        PRE_BUILD
-        TARGET ${UNREAL_TARGET}
-        COMMAND ${CMAKE_COMMAND} -E echo "Copying ${include_dir} to ${UNREAL_INCLUDE_DIR}"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${include_dir} ${UNREAL_INCLUDE_DIR}
-    )
-endforeach()
+add_custom_command(
+    PRE_BUILD
+    TARGET ${UNREAL_TARGET}
+    COMMAND ${CMAKE_COMMAND} -E echo "Copying ${Showtime_INCLUDE_DIRS} to ${UNREAL_INCLUDE_DIR}/showtime"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${Showtime_INCLUDE_DIRS} ${UNREAL_INCLUDE_DIR}/showtime
+)
+
+add_custom_command(
+    PRE_BUILD
+    TARGET ${UNREAL_TARGET}
+    COMMAND ${CMAKE_COMMAND} -E echo "Copying ${Showtime_COMPILED_INCLUDE_DIRS} to ${UNREAL_INCLUDE_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${Showtime_COMPILED_INCLUDE_DIRS} ${UNREAL_INCLUDE_DIR}
+)
+
 
 # Bundle copying
 if(MACOSX OR BUILD_MACOS_CONTAINER)
@@ -46,16 +52,26 @@ if(ANDROID OR BUILD_ANDROID_CONTAINER)
         "lib${CLIENT_TARGET}.so"
         "lib${SERVER_TARGET}.so"
     )
-    set(UNREAL_ANDROID_PLUGIN_DIR ${UNREAL_BIN_DIR}/Android)
+
+    # Copy libraries
     foreach( lib ${UNREAL_ANDROID_LIBS})
         add_custom_command(
             PRE_BUILD
             TARGET ${UNREAL_TARGET}
             COMMAND ${CMAKE_COMMAND} -E echo "Copying ${lib} to ${UNREAL_LIB_DIR}"
-            COMMAND ${CMAKE_COMMAND} -E copy ${ANDROID_LIB_DIR}/${lib} ${UNREAL_LIB_DIR}/arm64-v8a/${lib}
+            COMMAND ${CMAKE_COMMAND} -E copy ${ANDROID_LIB_DIR}/${lib} ${UNREAL_LIB_DIR}/Android/${lib}
             DEPENDS ${ANDROID_CONTAINER_TARGET}
         )
     endforeach()
+
+    # Copy plugins
+    add_custom_command(
+        PRE_BUILD
+        TARGET ${UNREAL_TARGET}
+        COMMAND ${CMAKE_COMMAND} -E echo "Copying plugins to ${UNREAL_BIN_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${ANDROID_BIN_DIR}/plugins ${UNREAL_BIN_DIR}/Android/plugins
+        DEPENDS ${ANDROID_CONTAINER_TARGET}
+    )
 endif()
 
 # Windows lib copying
@@ -72,7 +88,8 @@ if(WIN32 OR BUILD_WINDOWS_CONTAINER)
         "${CLIENT_TARGET}.lib"
         "${SERVER_TARGET}.lib"
     )
-    set(UNREAL_WINDOWS_PLUGIN_DIR ${UNREAL_BIN_DIR}/Win64)
+
+    # Copy libraries
     foreach( bin ${UNREAL_WIN_BINARIES})
         add_custom_command(
             PRE_BUILD
@@ -91,6 +108,15 @@ if(WIN32 OR BUILD_WINDOWS_CONTAINER)
             DEPENDS ${WINDOWS_CONTAINER_TARGET}
         )
     endforeach()
+
+    # Copy plugins
+    add_custom_command(
+        PRE_BUILD
+        TARGET ${UNREAL_TARGET}
+        COMMAND ${CMAKE_COMMAND} -E echo "Copying plugins to ${UNREAL_BIN_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${ANDROID_BIN_DIR}/plugins ${UNREAL_BIN_DIR}/Win64/plugins
+        DEPENDS ${ANDROID_CONTAINER_TARGET}
+    )
 
 endif()
 

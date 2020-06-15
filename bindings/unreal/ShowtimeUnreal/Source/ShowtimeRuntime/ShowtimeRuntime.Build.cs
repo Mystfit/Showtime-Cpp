@@ -103,21 +103,11 @@ public class ShowtimeRuntime : ModuleRules
 	private string[] get_platform_plugins()
 	{
 		string[] plugins = null;
-		string platform = "";
-		switch(Target.Platform){
-			case UnrealTargetPlatform.Win64:
-				platform = "Win64";
-				break;
-			case UnrealTargetPlatform.Mac:
-				platform = "Mac";
-				break;
-			case UnrealTargetPlatform.Android:
-				platform = "arm64-v8a";
-				break;
-			case default:
-				break;
-		}
+		string[] files = new string[] { };
+        try {
+			files = Directory.GetFiles(Path.Combine(PluginDirectory, "external", "bin", Target.Platform.ToString(), "plugins"));
+		} catch (System.IO.DirectoryNotFoundException){}
 
-		return Directory.GetFiles(Path.Combine(PluginDirectory, "external", "bin", platform, "plugins"));
+		return files;
 	}
 }
