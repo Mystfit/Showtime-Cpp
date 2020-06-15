@@ -56,33 +56,33 @@ ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * outpu
 	ZstCable * cable = NULL;
 
 	if (!input) {
-		ZstLog::net(LogLevel::notification, "Can't connect cable, input plug missing.");
+		Log::net(Log::Level::notification, "Can't connect cable, input plug missing.");
 		return NULL;
 	}
 
 	if (!output) {
-		ZstLog::net(LogLevel::notification, "Can't connect cable, output plug missing.");
+		Log::net(Log::Level::notification, "Can't connect cable, output plug missing.");
 		return NULL;
 	}
 
 	if (!input->is_activated()) {
-		ZstLog::net(LogLevel::notification, "Can't connect cable, input plug {} is not activated.", input->URI().path());
+		Log::net(Log::Level::notification, "Can't connect cable, input plug {} is not activated.", input->URI().path());
 		return NULL;
 	}
 
 	if (!output->is_activated()) {
-		ZstLog::net(LogLevel::notification, "Can't connect cable, output plug {} is not activated.", output->URI().path());
+		Log::net(Log::Level::notification, "Can't connect cable, output plug {} is not activated.", output->URI().path());
 		return NULL;
 	}
 
 	if (input->direction() != ZstPlugDirection::IN_JACK || output->direction() != ZstPlugDirection::OUT_JACK) {
-		ZstLog::net(LogLevel::notification, "Cable order incorrect");
+		Log::net(Log::Level::notification, "Cable order incorrect");
 		return NULL;
 	}
 
 	cable = create_cable(input, output);
 	if (!cable) {
-		ZstLog::net(LogLevel::notification, "Couldn't create cable, already exists!");
+		Log::net(Log::Level::notification, "Couldn't create cable, already exists!");
 		return NULL;
 	}
 
@@ -132,7 +132,7 @@ void ZstSession::destroy_cable_complete(ZstCable * cable)
     //Deactivate the cable
     synchronisable_enqueue_deactivation(cable);
 
-	ZstLog::net(LogLevel::debug, "Destroy cable ({}-->{}) completed",
+	Log::net(Log::Level::debug, "Destroy cable ({}-->{}) completed",
 		cable->get_address().get_output_URI().path(),
 		cable->get_address().get_input_URI().path());
 }
@@ -181,7 +181,7 @@ ZstCableBundle & ZstSession::get_cables(ZstCableBundle & bundle)
 ZstCable * ZstSession::create_cable(ZstInputPlug * input, ZstOutputPlug * output)
 {
     if (!input || !output) {
-        ZstLog::net(LogLevel::error, "Can't connect cable, a plug is missing.");
+        Log::net(Log::Level::error, "Can't connect cable, a plug is missing.");
         return NULL;
     }
 
@@ -225,7 +225,7 @@ void ZstSession::on_compute(ZstComponent * component, ZstInputPlug * plug) {
         component->compute(plug);
     }
     catch (std::exception e) {
-        ZstLog::net(LogLevel::error, "Compute on component {} failed. Error was: {}", component->URI().path(), e.what());
+        Log::net(Log::Level::error, "Compute on component {} failed. Error was: {}", component->URI().path(), e.what());
     }
 }
 
@@ -258,14 +258,14 @@ void ZstSession::register_entity(ZstEntityBase* entity)
 bool ZstSession::observe_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype)
 {
 	if (!entity->is_proxy()) {
-		ZstLog::net(LogLevel::warn, "Can't observe local entity {}", entity->URI().path());
+		Log::net(Log::Level::warn, "Can't observe local entity {}", entity->URI().path());
 		return false;
 	}
 
 	auto performer_path = entity->URI().first();
 	if (listening_to_performer(performer_path))
 	{
-		ZstLog::net(LogLevel::warn, "Already observing performer {}", performer_path.path());
+		Log::net(Log::Level::warn, "Already observing performer {}", performer_path.path());
 		return false;
 	}
 	
@@ -288,7 +288,7 @@ void ZstSession::remove_connected_performer(const ZstURI& performer_path)
 		m_connected_performers.erase(performer_path);
 	}
 	catch (std::out_of_range) {
-		ZstLog::net(LogLevel::warn, "Could not remove performer. Not found");
+		Log::net(Log::Level::warn, "Could not remove performer. Not found");
 	}
 }
 

@@ -20,12 +20,12 @@ void ZstTCPGraphTransport::connect(const std::string& address)
 		return;
 
 	if (std::find(m_connected_addresses.begin(), m_connected_addresses.end(), address) != m_connected_addresses.end()){
-		ZstLog::net(LogLevel::warn, "Already connected to {}", address);
+		Log::net(Log::Level::warn, "Already connected to {}", address);
 		return;
 	}
 
 	if (input_graph_socket()) {
-		ZstLog::net(LogLevel::notification, "Connecting to {}", address);
+		Log::net(Log::Level::notification, "Connecting to {}", address);
 		
 		auto result = zsock_connect(input_graph_socket(), "%s", address.c_str());
 		if (result == 0) {
@@ -33,7 +33,7 @@ void ZstTCPGraphTransport::connect(const std::string& address)
 			m_connected_addresses.insert(address);
 		}
 		else {
-			ZstLog::net(LogLevel::error, "Client graph connection error: {}", zmq_strerror(result));
+			Log::net(Log::Level::error, "Client graph connection error: {}", zmq_strerror(result));
 		}
 
 		zsock_set_subscribe(input_graph_socket(), "");
@@ -63,7 +63,7 @@ void ZstTCPGraphTransport::init_graph_sockets()
 	zsock_set_unbounded(graph_out);
 	zsock_set_linger(graph_out, 0);
 	int port = zsock_bind(graph_out, "%s", addr.str().c_str());
-	ZstLog::net(LogLevel::debug, "Bound port: {}", port);
+	Log::net(Log::Level::debug, "Bound port: {}", port);
 
 	auto last_endpoint = zsock_last_endpoint(graph_out);
 	set_graph_addresses("", last_endpoint);

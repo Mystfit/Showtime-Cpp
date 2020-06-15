@@ -89,7 +89,7 @@ ZstEntityBase * ZstHierarchy::find_entity(const ZstURI & path) const
 	try {
 		entity = m_entity_lookup.at(path);
 	} catch(std::out_of_range){
-		//ZstLog::net(LogLevel::debug, "Couldn't find entity {}", path.path());
+		//Log::net(Log::Level::debug, "Couldn't find entity {}", path.path());
 	}
 
 	return entity;
@@ -121,7 +121,7 @@ std::unique_ptr<ZstEntityBase> ZstHierarchy::create_proxy_entity(EntityTypes ent
 	// Check if the entity already exists in the hierarchy
 	auto entity_path = ZstURI(entity_data->URI()->c_str(), entity_data->URI()->size());
 	if (find_entity(entity_path)) {
-		ZstLog::net(LogLevel::error, "Can't create entity {}, it already exists", entity_path.path());
+		Log::net(Log::Level::error, "Can't create entity {}, it already exists", entity_path.path());
 		return NULL;
 	}
 
@@ -131,7 +131,7 @@ std::unique_ptr<ZstEntityBase> ZstHierarchy::create_proxy_entity(EntityTypes ent
 
 	if (entity_type != EntityTypes_Performer) {
 		if (parent_path.is_empty()) {
-			ZstLog::net(LogLevel::error, "Entity {} has no parent", entity_path.path());
+			Log::net(Log::Level::error, "Entity {} has no parent", entity_path.path());
 			return NULL;
 		}
 	}
@@ -205,7 +205,7 @@ void ZstHierarchy::update_proxy_entity(ZstEntityBase* original, const EntityType
 		return;
 
 	auto entity_path = ZstURI(entity_data->URI()->c_str(), entity_data->URI()->size());
-	ZstLog::net(LogLevel::notification, "Entity {} received an update", entity_path.path());
+	Log::net(Log::Level::notification, "Entity {} received an update", entity_path.path());
 
 	if (entity_type == EntityTypes_Factory) {
 		auto local_factory = dynamic_cast<ZstEntityFactory*>(original);
@@ -218,7 +218,7 @@ void ZstHierarchy::update_proxy_entity(ZstEntityBase* original, const EntityType
 			local_factory->update_creatables();
 		}
 		else {
-			ZstLog::net(LogLevel::warn, "Could not find local proxy instance of remote factory {}", entity_path.path());
+			Log::net(Log::Level::warn, "Could not find local proxy instance of remote factory {}", entity_path.path());
 			return;
 		}
 	}
@@ -226,7 +226,7 @@ void ZstHierarchy::update_proxy_entity(ZstEntityBase* original, const EntityType
 	// A rename occured if the original and new paths don't match up
 	if (original->URI() != entity_path) {
 		if (original->parent_address() != entity_path.parent()) {
-			ZstLog::net(LogLevel::warn, "Move operations not implemented yet");
+			Log::net(Log::Level::warn, "Move operations not implemented yet");
 			return;
 		}
 		original->set_name(entity_path.last().path());
@@ -241,7 +241,7 @@ void ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 {
 	if (entity) {
 		if (entity->is_proxy()) {
-			ZstLog::net(LogLevel::notification, "Destroying entity {}", entity->URI().path());
+			Log::net(Log::Level::notification, "Destroying entity {}", entity->URI().path());
 			destroy_entity_complete(entity);
 		}
 	}
@@ -296,7 +296,7 @@ void ZstHierarchy::remove_entity_from_lookup(const ZstURI & entity)
 		m_entity_lookup.erase(entity);
 	}
 	catch (std::out_of_range) {
-		ZstLog::net(LogLevel::warn, "Entity {} was not in the entity lookup map");
+		Log::net(Log::Level::warn, "Entity {} was not in the entity lookup map");
 	}
 }
 
@@ -307,7 +307,7 @@ void ZstHierarchy::update_entity_in_lookup(ZstEntityBase* entity, const ZstURI& 
 		m_entity_lookup.erase(original_path);
 	}
 	catch (std::out_of_range) {
-		ZstLog::net(LogLevel::warn, "Entity {} was not in the entity lookup map");
+		Log::net(Log::Level::warn, "Entity {} was not in the entity lookup map");
 	}
 
 	if (entity->parent_address().is_empty()) {
@@ -321,7 +321,7 @@ void ZstHierarchy::update_entity_in_lookup(ZstEntityBase* entity, const ZstURI& 
 void ZstHierarchy::activate_entity_complete(ZstEntityBase * entity)
 {
 	if (!entity) {
-		ZstLog::net(LogLevel::warn, "activate_entity_complete(): Entity not found");
+		Log::net(Log::Level::warn, "activate_entity_complete(): Entity not found");
 		return;
 	}
 
@@ -338,7 +338,7 @@ void ZstHierarchy::activate_entity_complete(ZstEntityBase * entity)
 void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 {
 	if (!entity) {
-		ZstLog::net(LogLevel::warn, "destroy_entity_complete(): Entity not found");
+		Log::net(Log::Level::warn, "destroy_entity_complete(): Entity not found");
 		return;
 	}
 

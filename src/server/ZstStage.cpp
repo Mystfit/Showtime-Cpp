@@ -152,7 +152,7 @@ namespace showtime::detail
 					performer->clear_active_hearbeat();
 				}
 				else {
-					ZstLog::server(LogLevel::warn, "Client {} missed a heartbeat. {} remaining", performer->URI().path(), MAX_MISSED_HEARTBEATS - performer->get_missed_heartbeats());
+					Log::server(Log::Level::warn, "Client {} missed a heartbeat. {} remaining", performer->URI().path(), MAX_MISSED_HEARTBEATS - performer->get_missed_heartbeats());
 					performer->set_heartbeat_inactive();
 				}
 
@@ -184,7 +184,7 @@ namespace showtime::detail
 				this->process_events();
 			}
 			catch (boost::thread_interrupted) {
-				ZstLog::server(LogLevel::debug, "Stage msg event loop exiting.");
+				Log::server(Log::Level::debug, "Stage msg event loop exiting.");
 				break;
 			}
 		}
@@ -202,7 +202,7 @@ namespace showtime::detail
 			this->m_io.IO_context().run();
 		}
 		catch (boost::thread_interrupted) {
-			ZstLog::server(LogLevel::debug, "Stage timer event loop exiting.");
+			Log::server(Log::Level::debug, "Stage timer event loop exiting.");
 		}
 	}
 }

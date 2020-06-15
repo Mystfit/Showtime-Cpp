@@ -61,7 +61,7 @@ void ZstGraphTransport::send_message_impl(const uint8_t * msg_buffer, size_t msg
 	zsock_t * sock = output_graph_socket();
 	int result = (sock) ? zframe_send(&payload_frame, sock, 0) : -1;
 	if (result < 0) {
-		ZstLog::net(LogLevel::warn, "Message failed to send with status {}", result);
+		Log::net(Log::Level::warn, "Message failed to send with status {}", result);
 	}
 }
 ZstActor & ZstGraphTransport::actor()
@@ -80,7 +80,7 @@ void ZstGraphTransport::set_graph_addresses(const std::string & in_addr, const s
 {
 	m_graph_out_addr = out_addr;
 	m_graph_in_addr = in_addr;
-	ZstLog::net(LogLevel::debug, "Graph transport address in: {} out: {}", m_graph_in_addr, m_graph_out_addr);
+	Log::net(Log::Level::debug, "Graph transport address in: {} out: {}", m_graph_in_addr, m_graph_out_addr);
 }
 
 int ZstGraphTransport::s_handle_graph_in(zloop_t * loop, zsock_t * sock, void * arg)

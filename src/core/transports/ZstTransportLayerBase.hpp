@@ -91,7 +91,7 @@ protected:
                 break;
             }
             default:
-                ZstLog::net(LogLevel::error, "Can't send message. Unknown message request behaviour");
+                Log::net(Log::Level::error, "Can't send message. Unknown message request behaviour");
                 break;
         }
     }
@@ -125,7 +125,7 @@ private:
             }
         }
         else {
-            ZstLog::net(LogLevel::warn, "No reply received");
+            Log::net(Log::Level::warn, "No reply received");
         }
 
         // Cleanup promises

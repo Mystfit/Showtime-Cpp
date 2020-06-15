@@ -11,7 +11,7 @@ namespace showtime {
 
 inline bool ShowtimeClient::library_init_guard() {
 	if (!m_client->is_init_complete()) {
-		ZstLog::net(LogLevel::error, "Showtime library has not been initialised."); 
+		Log::net(Log::Level::error, "Showtime library has not been initialised."); 
 		return false;
 	} 
 	return true;
@@ -23,7 +23,7 @@ inline bool ShowtimeClient::library_connected_guard() {
 	}
 
 	if (!m_client->is_connected_to_stage()) {
-		ZstLog::net(LogLevel::warn, "Not connected to a Showtime stage.");
+		Log::net(Log::Level::warn, "Not connected to a Showtime stage.");
 		return false;
 	}
 	return true;
@@ -62,7 +62,7 @@ void ShowtimeClient::join_by_name(const char * stage_name)
 	auto discovered_server = m_client->get_discovered_server(stage_name);
 
 	if (strcmp(discovered_server.name.c_str(), stage_name) != 0) {
-		ZstLog::net(LogLevel::error, "Could not find server {}", stage_name);
+		Log::net(Log::Level::error, "Could not find server {}", stage_name);
 		return;
 	}
 	join(discovered_server.address.c_str());
@@ -75,7 +75,7 @@ void ShowtimeClient::join_by_name_async(const char * stage_name)
 	auto discovered_server = m_client->get_discovered_server(stage_name);
 
 	if (strcmp(discovered_server.name.c_str(), stage_name) != 0) {
-		ZstLog::net(LogLevel::error, "Could not find server {}", stage_name);
+		Log::net(Log::Level::error, "Could not find server {}", stage_name);
 		return;
 	}
 	join_async(discovered_server.address.c_str());

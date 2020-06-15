@@ -80,7 +80,7 @@ namespace showtime
         if (is_destroyed()) return;
 
         if(m_children.find(entity->URI()) != m_children.end()){
-            ZstLog::entity(LogLevel::warn, "Entity {} is already a child of {}", entity->URI().path(), this->URI().path());
+            Log::entity(Log::Level::warn, "Entity {} is already a child of {}", entity->URI().path(), this->URI().path());
             return;
         }
         
@@ -288,7 +288,7 @@ namespace showtime
         ZstEntityBase * result = NULL;
 
 		if (!is_registered()) {
-			ZstLog::entity(LogLevel::warn, "Entity {} not registered. Can't look up child entity.", URI().path());
+			Log::entity(Log::Level::warn, "Entity {} not registered. Can't look up child entity.", URI().path());
 		}
 
         m_hierarchy_events->invoke([&result, &path](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {

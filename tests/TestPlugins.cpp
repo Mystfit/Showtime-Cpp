@@ -14,13 +14,13 @@ public:
 	std::string last_unloaded_plugin;
 
 	void on_plugin_loaded(std::shared_ptr<ZstPlugin> plugin) override {
-		ZstLog::app(LogLevel::notification, "PLUGIN_LOADED: {}", plugin->name());
+		Log::app(Log::Level::notification, "PLUGIN_LOADED: {}", plugin->name());
 		inc_calls();
 		last_loaded_plugin = plugin->name();
 	}
 
 	void on_plugin_unloaded(std::shared_ptr<ZstPlugin> plugin) override {
-		ZstLog::app(LogLevel::notification, "PLUGIN_UNLOADED: {}", plugin->name());
+		Log::app(Log::Level::notification, "PLUGIN_UNLOADED: {}", plugin->name());
 		inc_calls();
 		last_unloaded_plugin = plugin->name();
 	}

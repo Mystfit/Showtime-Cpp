@@ -85,7 +85,7 @@ namespace showtime
             return parent;
 
 		if (!is_registered()) {
-			ZstLog::entity(LogLevel::warn, "Entity {} not registered. Can't look up parent entity.", URI().path());
+			Log::entity(Log::Level::warn, "Entity {} not registered. Can't look up parent entity.", URI().path());
             return parent;
 		}
 
@@ -261,7 +261,7 @@ namespace showtime
     void ZstEntityBase::aquire_ownership()
     {
 		if (!is_registered()) {
-			ZstLog::entity(LogLevel::warn, "Entity {} not registered. Can't aquire ownership.", URI().path());
+			Log::entity(Log::Level::warn, "Entity {} not registered. Can't aquire ownership.", URI().path());
 		}
 
         m_session_events->invoke([this](std::shared_ptr<ZstSessionAdaptor> adaptor) {
@@ -272,7 +272,7 @@ namespace showtime
     void ZstEntityBase::release_ownership()
     {
 		if (!is_registered()) {
-			ZstLog::entity(LogLevel::warn, "Entity {} not registered. Can't release ownership.", URI().path());
+			Log::entity(Log::Level::warn, "Entity {} not registered. Can't release ownership.", URI().path());
 			return;
 		}
 
@@ -293,7 +293,7 @@ namespace showtime
 	void ZstEntityBase::activate()
 	{
 		if (!is_registered()) {
-			ZstLog::entity(LogLevel::warn, "Entity {} not registered. Can't activate.", URI().path());
+			Log::entity(Log::Level::warn, "Entity {} not registered. Can't activate.", URI().path());
 			return;
 		}
 
@@ -305,7 +305,7 @@ namespace showtime
 	void ZstEntityBase::activate_async()
 	{
 		if (!is_registered()) {
-			ZstLog::entity(LogLevel::warn, "Entity {} not registered. Can't deactivate.", URI().path());
+			Log::entity(Log::Level::warn, "Entity {} not registered. Can't deactivate.", URI().path());
 			return;
 		}
 		
@@ -320,7 +320,7 @@ namespace showtime
             return;
 
 		if (!is_registered() || !is_activated()) {
-			ZstLog::entity(LogLevel::warn, "Entity {} not registered. Can't deactivate.", URI().path());
+			Log::entity(Log::Level::warn, "Entity {} not registered. Can't deactivate.", URI().path());
 			return;
 		}
 
@@ -332,7 +332,7 @@ namespace showtime
 	void ZstEntityBase::deactivate_async()
 	{
 		if (!is_registered()) {
-			ZstLog::entity(LogLevel::warn, "Entity {} not registered. Can't asynchronously deactivate.", URI().path());
+			Log::entity(Log::Level::warn, "Entity {} not registered. Can't asynchronously deactivate.", URI().path());
 			return;
 		}
 

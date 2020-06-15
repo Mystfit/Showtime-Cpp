@@ -184,7 +184,7 @@ void ZstPlug::get_child_cables(ZstCableBundle & bundle)
             cable = adaptor->find_cable(cable_path);
             
             if (!cable) {
-                ZstLog::entity(LogLevel::error, "No cable found for address {}<-{}", cable_path.get_input_URI().path(), cable_path.get_output_URI().path());
+                Log::entity(Log::Level::error, "No cable found for address {}<-{}", cable_path.get_input_URI().path(), cable_path.get_output_URI().path());
                 return;
             }
 
@@ -311,7 +311,7 @@ ZstOutputPlug::ZstOutputPlug(const char * name, const ZstValueType& t, bool reli
 {
 #ifndef ZST_BUILD_DRAFT_API
     if(!m_reliable){
-        ZstLog::entity(LogLevel::warn, "Can't use plug {} in unreliable mode, Showtime not compiled with draft API support. Falling back to reliable.", name);
+        Log::entity(Log::Level::warn, "Can't use plug {} in unreliable mode, Showtime not compiled with draft API support. Falling back to reliable.", name);
         m_reliable = true;
     }
 #endif

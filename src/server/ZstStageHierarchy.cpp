@@ -45,7 +45,7 @@ void ZstStageHierarchy::on_entity_arriving(ZstEntityBase* entity)
 	args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
 	auto builder = std::make_shared<FlatBufferBuilder>();
 	auto content_message = CreateEntityCreateRequest(*builder, entity->serialized_entity_type(), entity->serialize(*builder));
-	ZstLog::server(LogLevel::debug, "Broadcasting entity {}", entity->URI().path());
+	Log::server(Log::Level::debug, "Broadcasting entity {}", entity->URI().path());
 	broadcast(Content_EntityCreateRequest, content_message.Union(), builder, args, excluded);
 }
 
@@ -64,7 +64,7 @@ void ZstStageHierarchy::on_receive_msg(const std::shared_ptr<ZstStageMessage>& m
 	Signal response = Signal_EMPTY;
 	ZstPerformerStageProxy* sender = get_client_from_endpoint_UUID(msg->origin_endpoint_UUID());
 	if (msg->type() != Content_ClientJoinRequest && !sender) {
-		ZstLog::server(LogLevel::warn, "Received {} message but the sender could not be found", EnumNameContent(msg->type()));
+		Log::server(Log::Level::warn, "Received {} message but the sender could not be found", EnumNameContent(msg->type()));
 	}
 
 	switch (msg->type()) {
@@ -110,7 +110,7 @@ Signal ZstStageHierarchy::signal_handler(const std::shared_ptr<ZstStageMessage>&
 		return Signal_ERR_STAGE_PERFORMER_NOT_FOUND;
 	}
 
-	//ZstLog::server(LogLevel::debug, "Server received heartbeat from {} {}", sender->URI().path(), boost::uuids::to_string(request->id()));
+	//Log::server(Log::Level::debug, "Server received heartbeat from {} {}", sender->URI().path(), boost::uuids::to_string(request->id()));
 
 	if (ZstStageTransport::get_signal(request) == Signal_CLIENT_HEARTBEAT) {
 		sender->set_heartbeat_active();
@@ -127,10 +127,10 @@ Signal ZstStageHierarchy::create_client_handler(const std::shared_ptr<ZstStageMe
 
 	// Only one client with this UUID at a time
 	if (find_entity(client_URI)) {
-		ZstLog::server(LogLevel::warn, "Client already exists ", client_URI.path());
+		Log::server(Log::Level::warn, "Client already exists ", client_URI.path());
 		return Signal_ERR_STAGE_PERFORMER_ALREADY_EXISTS;
 	}
-	ZstLog::server(LogLevel::notification, "Registering new client {}", client_URI.path());
+	Log::server(Log::Level::notification, "Registering new client {}", client_URI.path());
 
 	// Create proxy
 	if (auto transport = std::dynamic_pointer_cast<ZstStageTransport>(request->owning_transport())) {
@@ -150,10 +150,10 @@ Signal ZstStageHierarchy::client_leaving_handler(const std::shared_ptr<ZstStageM
 {
 	auto content = request->buffer()->content_as_ClientLeaveRequest();
 	if (content->reason() == ClientLeaveReason_QUIT) {
-		ZstLog::server(LogLevel::notification, "Performer {} leaving", sender->URI().path());
+		Log::server(Log::Level::notification, "Performer {} leaving", sender->URI().path());
 	}
 	else {
-		ZstLog::server(LogLevel::warn, "Performer {} left with reason {}", sender->URI().path(), EnumNameClientLeaveReason(content->reason()));
+		Log::server(Log::Level::warn, "Performer {} left with reason {}", sender->URI().path(), EnumNameClientLeaveReason(content->reason()));
 	}
 	remove_proxy_entity(sender);
 
@@ -176,17 +176,17 @@ Signal ZstStageHierarchy::create_entity_handler(const std::shared_ptr<ZstStageMe
 	const EntityData* entity_field = get_entity_field(content->entity_type(), content->entity());
 	auto entity_path = ZstURI(entity_field->URI()->c_str(), entity_field->URI()->size());
 
-	ZstLog::server(LogLevel::notification, "Activating new proxy entity {}", entity_path.path());
+	Log::server(Log::Level::notification, "Activating new proxy entity {}", entity_path.path());
 	if (sender->URI().first() != entity_path.first()) {
 		//A performer is requesting this entity be attached to another performer
-		ZstLog::server(LogLevel::warn, "TODO: Performer requesting new entity to be attached to another performer", entity_path.path());
+		Log::server(Log::Level::warn, "TODO: Performer requesting new entity to be attached to another performer", entity_path.path());
 		return Signal_ERR_ENTITY_NOT_FOUND;
 	}
 
 	ZstHierarchy::add_proxy_entity(create_proxy_entity(content->entity_type(), entity_field, content->entity()));
 	ZstEntityBase* proxy = find_entity(entity_path);
 	if (!proxy) {
-		ZstLog::server(LogLevel::warn, "No proxy entity found");
+		Log::server(Log::Level::warn, "No proxy entity found");
 		return Signal_ERR_ENTITY_NOT_FOUND;
 	}
 	
@@ -199,11 +199,11 @@ Signal ZstStageHierarchy::factory_create_entity_handler(const std::shared_ptr<Zs
 	auto creatable_path = ZstURI(content->creatable_entity_URI()->c_str(), content->creatable_entity_URI()->size());
 	auto factory_path = creatable_path.parent();
 	
-	ZstLog::server(LogLevel::notification, "Forwarding creatable entity request {}", creatable_path.path());
+	Log::server(Log::Level::notification, "Forwarding creatable entity request {}", creatable_path.path());
 
 	ZstEntityFactory* factory = dynamic_cast<ZstEntityFactory*>(find_entity(factory_path));
 	if (!factory) {
-		ZstLog::server(LogLevel::error, "Could not find factory {}", factory_path.path());
+		Log::server(Log::Level::error, "Could not find factory {}", factory_path.path());
 		return Signal_ERR_ENTITY_NOT_FOUND;
 	}
 
@@ -212,7 +212,7 @@ Signal ZstStageHierarchy::factory_create_entity_handler(const std::shared_ptr<Zs
 
 	//Check to see if one client is already connected to the other
 	if (!factory_performer){
-		ZstLog::server(LogLevel::error, "Could not find factory {}", factory_path.path());
+		Log::server(Log::Level::error, "Could not find factory {}", factory_path.path());
 		return Signal_ERR_STAGE_PERFORMER_NOT_FOUND;
 	}
 
@@ -224,7 +224,7 @@ Signal ZstStageHierarchy::factory_create_entity_handler(const std::shared_ptr<Zs
 			reply_with_signal(sender, ZstStageTransport::get_signal(response.response), response_id);
 		}
 		
-		ZstLog::server(LogLevel::notification, "Remote factory created entity {}", factory_path.path());
+		Log::server(Log::Level::notification, "Remote factory created entity {}", factory_path.path());
 
 		// Send ACK to original sender with the path of our new entity
 		ZstTransportArgs ack_args;
@@ -251,7 +251,7 @@ Signal ZstStageHierarchy::update_entity_handler(const std::shared_ptr<ZstStageMe
 	auto entity_path = ZstURI(entity_field->URI()->c_str(), entity_field->URI()->size());
 	auto original_path = ZstURI(content->original_path()->c_str(), content->original_path()->size());
 
-	ZstLog::server(LogLevel::notification, "Updating proxy entity {}", entity_path.path());
+	Log::server(Log::Level::notification, "Updating proxy entity {}", entity_path.path());
 	auto proxy = find_entity(original_path);
 	
 	if (proxy) {
@@ -280,7 +280,7 @@ Signal ZstStageHierarchy::destroy_entity_handler(const std::shared_ptr<ZstStageM
 	if (!entity)
 		return Signal_ERR_ENTITY_NOT_FOUND;
 
-	ZstLog::server(LogLevel::notification, "Removing proxy entity {}", entity_path.path());
+	Log::server(Log::Level::notification, "Removing proxy entity {}", entity_path.path());
 
 	//Remove the entity
 	ZstHierarchy::remove_proxy_entity(entity);
@@ -312,7 +312,7 @@ void ZstStageHierarchy::reply_with_signal(ZstPerformerStageProxy* performer, Sig
 
 void ZstStageHierarchy::broadcast(Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder> & buffer_builder, const ZstTransportArgs& args, const std::vector<ZstPerformer*> & excluded)
 {
-	//ZstLog::server(LogLevel::debug, "Broadcasting {} message {}", EnumNameContent(message_type), boost::uuids::to_string(args.msg_ID));
+	//Log::server(Log::Level::debug, "Broadcasting {} message {}", EnumNameContent(message_type), boost::uuids::to_string(args.msg_ID));
 	ZstEntityBundle bundle;
 	for (auto entity : get_performers(bundle))
 	{

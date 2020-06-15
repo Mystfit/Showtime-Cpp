@@ -63,7 +63,7 @@ int ZstWebsocketServerTransport::bind(const std::string& address)
 		return -1;
 	}
 
-	ZstLog::server(LogLevel::debug, "Websocket transport listening on port {}", endpoint.port());
+	Log::server(Log::Level::debug, "Websocket transport listening on port {}", endpoint.port());
 
 	//Start accepting sockets
 	do_accept();
@@ -73,7 +73,7 @@ int ZstWebsocketServerTransport::bind(const std::string& address)
 
 void ZstWebsocketServerTransport::fail(beast::error_code ec, char const* what)
 {
-	ZstLog::server(LogLevel::error, "Websocket transport error: {} {}", what, ec.message());
+	Log::server(Log::Level::error, "Websocket transport error: {} {}", what, ec.message());
 }
 
 void ZstWebsocketServerTransport::send_message_impl(const uint8_t* msg_buffer, size_t msg_buffer_size, const ZstTransportArgs& args) const
@@ -101,7 +101,7 @@ void ZstWebsocketServerTransport::on_accept(beast::error_code ec, tcp::socket so
 	}
 	else
 	{
-		ZstLog::net(LogLevel::debug, "Websocket received new connection from {}", socket.remote_endpoint().address().to_string());
+		Log::net(Log::Level::debug, "Websocket received new connection from {}", socket.remote_endpoint().address().to_string());
 
 		// Create the session and run it
 		auto session = std::make_shared<ZstWebsocketSession>(std::move(socket), ZstTransportLayer::downcasted_shared_from_this<ZstWebsocketServerTransport>());

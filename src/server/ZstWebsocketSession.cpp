@@ -53,7 +53,7 @@ void ZstWebsocketSession::on_read(beast::error_code ec, std::size_t bytes_transf
 
 	// This indicates that the session was closed
 	if (ec == websocket::error::closed) {
-		ZstLog::net(LogLevel::debug, "Websocket closed");
+		Log::net(Log::Level::debug, "Websocket closed");
 		return;
 	}
 
@@ -62,7 +62,7 @@ void ZstWebsocketSession::on_read(beast::error_code ec, std::size_t bytes_transf
 		return;
 	}
 
-	ZstLog::net(LogLevel::debug, "Websocket received message '{}'", beast::buffers_to_string(m_recv_buffer.data()));
+	Log::net(Log::Level::debug, "Websocket received message '{}'", beast::buffers_to_string(m_recv_buffer.data()));
 
 	if (!m_ws.got_binary()) {
 		ZstWebsocketServerTransport::fail(ec, "Websocket received non-binary message");

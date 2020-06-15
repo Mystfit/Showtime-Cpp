@@ -24,7 +24,7 @@ public:
 
 protected:
     void compute(ZstInputPlug * plug) override {
-        ZstLog::entity(LogLevel::notification, "Custom component {} received a value", this->URI().path());
+        Log::entity(Log::Level::notification, "Custom component {} received a value", this->URI().path());
     }
 };
 
@@ -44,13 +44,13 @@ public:
 
 	void on_creatables_updated(ZstEntityFactory * factory) override
 	{
-		ZstLog::app(LogLevel::debug, "FACTORY_UPDATED: Creatables list modified for factory {}", factory->URI().path());
+		Log::app(Log::Level::debug, "FACTORY_UPDATED: Creatables list modified for factory {}", factory->URI().path());
 		inc_calls();
 	}
 
 	void on_entity_created(ZstEntityBase * entity) override
 	{
-		ZstLog::app(LogLevel::debug, "FACTORY_ENTITY_CREATED: {}", entity->URI().path());
+		Log::app(Log::Level::debug, "FACTORY_ENTITY_CREATED: {}", entity->URI().path());
 		last_created_entity = entity->URI();
 		inc_calls();
 	}
@@ -65,14 +65,14 @@ public:
 
 	void on_factory_arriving(ZstEntityFactory* factory) override
 	{
-		ZstLog::app(LogLevel::debug, "FACTORY_ARRIVING: {}", factory->URI().path());
+		Log::app(Log::Level::debug, "FACTORY_ARRIVING: {}", factory->URI().path());
 		last_arrived_factory = factory->URI();
 		inc_calls();
 	}
 
 	void on_factory_leaving(const ZstURI& factory_path) override
 	{
-		ZstLog::app(LogLevel::debug, "FACTORY_LEAVING: {}", factory_path.path());
+		Log::app(Log::Level::debug, "FACTORY_LEAVING: {}", factory_path.path());
 		last_left_factory = factory_path;
 		inc_calls();
 	}

@@ -1,5 +1,5 @@
 #include "../ZstZMQRefCounter.h"
-#include "schemas/stage_beacon_message_generated.h"
+#include "showtime/schemas/stage_beacon_message_generated.h"
 
 #include <czmq.h>
 #include "ZstLogging.h"
@@ -37,7 +37,7 @@ void ZstServiceDiscoveryTransport::init(int port)
         
         zsock_send(m_beacon, "si", "CONFIGURE", port);
         char* hostname = zstr_recv(m_beacon);
-        ZstLog::net(LogLevel::debug, "Beacon transport broadcasting on port {}. Hostname is {}", port, hostname);
+        Log::net(Log::Level::debug, "Beacon transport broadcasting on port {}. Hostname is {}", port, hostname);
         zstr_free(&hostname);
         
         m_beacon_actor.attach_pipe_listener(zactor_sock(m_beacon), s_handle_beacon, this);

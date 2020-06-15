@@ -6,7 +6,7 @@ namespace showtime {
 void ZstReaper::add(ZstSynchronisable * synchronisable)
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
-	ZstLog::net(LogLevel::debug, "Adding synchronisable with id:{} to reaper", synchronisable->instance_id());
+	Log::net(Log::Level::debug, "Adding synchronisable with id:{} to reaper", synchronisable->instance_id());
 	m_items_to_reap.insert(synchronisable);
 }
 
@@ -28,7 +28,7 @@ void ZstReaper::reap_all()
     
     // Remove objects
     for (auto synchronisable : m_items_to_reap) {
-        //ZstLog::net(LogLevel::debug, "Reaper removing instance {}", synchronisable->instance_id());
+        //Log::net(Log::Level::debug, "Reaper removing instance {}", synchronisable->instance_id());
         delete synchronisable;
     }
     

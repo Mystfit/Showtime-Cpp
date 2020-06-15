@@ -7,7 +7,7 @@ using namespace ZstTest;
 
 long double test_benchmark(std::string& server_name, std::shared_ptr<ShowtimeClient> client, bool reliable, int send_rate, int send_amount)
 {
-	ZstLog::app(LogLevel::debug, "Creating entities and cables");
+	Log::app(Log::Level::debug, "Creating entities and cables");
 
 	// Create listeners
 	auto hierarchy_events = std::make_shared<TestEntityEvents>();
@@ -36,7 +36,7 @@ long double test_benchmark(std::string& server_name, std::shared_ptr<ShowtimeCli
 
 	int count = send_amount;
 
-	ZstLog::app(LogLevel::debug, "Sending {} messages", count);
+	Log::app(Log::Level::debug, "Sending {} messages", count);
 	// Wait until our message tripmeter has received all the messages
 	auto delta_time = std::chrono::milliseconds(-1);
 	std::chrono::time_point<std::chrono::system_clock> last, now;
@@ -61,7 +61,7 @@ long double test_benchmark(std::string& server_name, std::shared_ptr<ShowtimeCli
 		//std::this_thread::sleep_for(std::chrono::milliseconds(send_rate));
 
 		if (num_sent % alert_rate == 0) {
-			ZstLog::app(LogLevel::debug, "Sent {} messages. Remaining: {}. Last received val: {}", num_sent, count - num_sent, test_input->last_received_val);
+			Log::app(Log::Level::debug, "Sent {} messages. Remaining: {}. Last received val: {}", num_sent, count - num_sent, test_input->last_received_val);
 		}
 
 		if (test_input->num_hits > 0 && test_input->num_hits % alert_rate == 0) {
@@ -85,7 +85,7 @@ long double test_benchmark(std::string& server_name, std::shared_ptr<ShowtimeCli
 			hit = true;
 			totalmps += mps;
 			samples++;
-			ZstLog::app(LogLevel::debug, "Received {} messages p/s over period : {} ms", mps, (delta_time.count()));
+			Log::app(Log::Level::debug, "Received {} messages p/s over period : {} ms", mps, (delta_time.count()));
 		}
 
 		if (hit && test_input->num_hits % alert_rate != 0) {
@@ -93,7 +93,7 @@ long double test_benchmark(std::string& server_name, std::shared_ptr<ShowtimeCli
 		}
 	}
 
-	ZstLog::app(LogLevel::debug, "Sent all messages. Waiting for recv");
+	Log::app(Log::Level::debug, "Sent all messages. Waiting for recv");
 
 	int max_loops_idle = 10000;
 	int num_loops_idle = 0;
@@ -130,7 +130,7 @@ long double test_benchmark(std::string& server_name, std::shared_ptr<ShowtimeCli
 				mps = 0;
 			last_message_count = received_count;
 			hit = true;
-			ZstLog::app(LogLevel::debug, "Received {} messages p/s over period: {} ms", mps, (delta_time.count()));
+			Log::app(Log::Level::debug, "Received {} messages p/s over period: {} ms", mps, (delta_time.count()));
 			totalmps += mps;
 			samples++;
 		}
@@ -144,14 +144,14 @@ long double test_benchmark(std::string& server_name, std::shared_ptr<ShowtimeCli
 
 	if (reliable) {
 		assert(test_input->num_hits == count);
-		ZstLog::app(LogLevel::debug, "Received all messages. Sent: {}, Received:{}", count, test_input->num_hits);
+		Log::app(Log::Level::debug, "Received all messages. Sent: {}, Received:{}", count, test_input->num_hits);
 	}
 	else {
-		ZstLog::app(LogLevel::debug, "Unreliable messages. Sent: {}, Received: {}, Lost: {}", count, test_input->num_hits, count - test_input->num_hits);
+		Log::app(Log::Level::debug, "Unreliable messages. Sent: {}, Received: {}, Lost: {}", count, test_input->num_hits, count - test_input->num_hits);
 	}
 
 	auto mps_avg = totalmps / samples;
-	ZstLog::app(LogLevel::notification, "Reliable avg mps: {}", mps_avg);
+	Log::app(Log::Level::notification, "Reliable avg mps: {}", mps_avg);
 
 	return mps_avg;
 }

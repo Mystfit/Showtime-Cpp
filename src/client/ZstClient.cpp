@@ -88,13 +88,13 @@ void ZstClient::destroy() {
     set_is_destroyed(true);
 
     //All done
-    ZstLog::net(LogLevel::notification, "Showtime library destroyed");
+    Log::net(Log::Level::notification, "Showtime library destroyed");
 }
 
 void ZstClient::init_client(const char* client_name, bool debug)
 {
     if (m_is_ending || m_init_completed) {
-        ZstLog::net(LogLevel::notification, "Showtime already initialised");
+        Log::net(Log::Level::notification, "Showtime already initialised");
         return;
     }
 
@@ -103,11 +103,11 @@ void ZstClient::init_client(const char* client_name, bool debug)
     set_is_ending(false);
 
 	// Setup logging
-    LogLevel level = LogLevel::notification;
+    auto level = Log::Level::notification;
     if (debug)
-        level = LogLevel::debug;
-    ZstLog::init_logger(client_name, level);
-    ZstLog::net(LogLevel::notification, "Starting Showtime v{}", SHOWTIME_VERSION_STRING);
+        level = Log::Level::debug;
+    Log::init_logger(client_name, level);
+    Log::net(Log::Level::notification, "Starting Showtime v{}", SHOWTIME_VERSION_STRING);
 
 	// Set the name of this client
     m_client_name = client_name;
@@ -168,13 +168,13 @@ void ZstClient::init_client(const char* client_name, bool debug)
 
 void ZstClient::init_file_logging(const char* log_file_path)
 {
-    ZstLog::init_file_logging(log_file_path);
+    Log::init_file_logging(log_file_path);
 }
 
 void ZstClient::process_events()
 {
     if (!is_init_complete() || m_is_destroyed || m_is_ending) {
-        ZstLog::net(LogLevel::debug, "Can't process events until the library is ready");
+        Log::net(Log::Level::debug, "Can't process events until the library is ready");
         return;
     }
     m_plugins->process_events();
@@ -241,7 +241,7 @@ void ZstClient::connection_handshake_handler(std::shared_ptr<ZstPerformanceMessa
     
     ZstURI output_path(msg->buffer()->sender()->c_str(), msg->buffer()->sender()->size());
     if (m_pending_peer_connections.find(output_path) != m_pending_peer_connections.end()) {
-        ZstLog::net(LogLevel::debug, "Received connection handshake. Msg id {}", boost::to_string(m_pending_peer_connections[output_path]));
+        Log::net(Log::Level::debug, "Received connection handshake. Msg id {}", boost::to_string(m_pending_peer_connections[output_path]));
         
         auto id = m_pending_peer_connections[output_path];
 
@@ -259,7 +259,7 @@ void ZstClient::connection_handshake_handler(std::shared_ptr<ZstPerformanceMessa
 void ZstClient::server_status_handler(const std::shared_ptr<ZstStageMessage>& request)
 {
     auto server_status = request->buffer()->content_as_ServerStatusMessage();
-    ZstLog::net(LogLevel::debug, "Received a server status update: {}", EnumNameServerStatus(server_status->status()));
+    Log::net(Log::Level::debug, "Received a server status update: {}", EnumNameServerStatus(server_status->status()));
     if (server_status->status() == ServerStatus_QUIT) {
         leave_stage_complete(ZstTransportRequestBehaviour::PUBLISH);
     }
@@ -312,7 +312,7 @@ void ZstClient::join_on_beacon(const std::string & server_name, ZstTransportRequ
     
     // Handle timeouts
     if (response_status == std::future_status::timeout) {
-        ZstLog::net(LogLevel::warn, "Didn't receive a beacon from server {}. Can't join.", server_name);
+        Log::net(Log::Level::warn, "Didn't receive a beacon from server {}. Can't join.", server_name);
         m_auto_join_stage_requests.erase(m_auto_join_stage_requests.find(server_name));
         return;
     }
@@ -329,7 +329,7 @@ void ZstClient::join_on_beacon(const std::string & server_name, ZstTransportRequ
         m_auto_join_stage_requests.erase(m_auto_join_stage_requests.find(server_name));
 
     } catch (std::future_error e) {
-        ZstLog::net(LogLevel::error, "Promise failed with error {}", e.what());
+        Log::net(Log::Level::error, "Promise failed with error {}", e.what());
     }
 }
 
@@ -337,22 +337,22 @@ void ZstClient::join_on_beacon(const std::string & server_name, ZstTransportRequ
 void ZstClient::join_stage(const ZstServerAddress& stage_address, const ZstTransportRequestBehaviour& sendtype) {
 
     if (!m_init_completed) {
-        ZstLog::net(LogLevel::error, "Can't join the stage until the library has been initialised");
+        Log::net(Log::Level::error, "Can't join the stage until the library has been initialised");
         return;
     }
 
     if (m_is_connecting) {
-        ZstLog::net(LogLevel::error, "Can't connect to stage, already connecting");
+        Log::net(Log::Level::error, "Can't connect to stage, already connecting");
         return;
     }
 
     if (m_is_connecting || m_connected_to_stage) {
-        ZstLog::net(LogLevel::error, "Can't connect to stage, already connected");
+        Log::net(Log::Level::error, "Can't connect to stage, already connected");
         return;
     }
     set_is_connecting(true);
 
-    ZstLog::net(LogLevel::notification, "Connecting to stage {}", stage_address.address);
+    Log::net(Log::Level::notification, "Connecting to stage {}", stage_address.address);
     m_client_transport->connect(stage_address.address);
 
     //Acquire our output graph address to send to the stage
@@ -395,7 +395,7 @@ void ZstClient::server_discovery_handler(const std::shared_ptr<ZstServerBeaconMe
     }
 
     // Add server to list of discovered servers if the beacon hasn't been seen before
-    ZstLog::net(LogLevel::debug, "Received new server beacon: {} {}", server.name, server.address);
+    Log::net(Log::Level::debug, "Received new server beacon: {} {}", server.name, server.address);
 
     // Store server beacon
     m_server_beacons.insert(server);
@@ -437,7 +437,7 @@ void ZstClient::join_stage_complete(const ZstServerAddress& server_address, ZstM
         return;
     }
 
-    ZstLog::net(LogLevel::notification, "Connection to server established");
+    Log::net(Log::Level::notification, "Connection to server established");
 
     //Add local entities to entity lookup and attach adaptors only if we've connected to the stage
     ZstEntityBundle bundle;
@@ -479,7 +479,7 @@ void ZstClient::join_stage_complete(const ZstServerAddress& server_address, ZstM
 
 void ZstClient::synchronise_graph(const ZstTransportRequestBehaviour& sendtype)
 {
-    ZstLog::net(LogLevel::notification, "Requesting graph snapshot");
+    Log::net(Log::Level::notification, "Requesting graph snapshot");
 
     //Build message
     ZstTransportArgs args;
@@ -499,7 +499,7 @@ void ZstClient::synchronise_graph(const ZstTransportRequestBehaviour& sendtype)
 
 void ZstClient::synchronise_graph_complete(ZstMessageResponse response)
 {
-    ZstLog::net(LogLevel::notification, "Graph sync for {} completed", session()->hierarchy()->get_local_performer()->URI().path());
+    Log::net(Log::Level::notification, "Graph sync for {} completed", session()->hierarchy()->get_local_performer()->URI().path());
     ZstEventDispatcher<std::shared_ptr<ZstConnectionAdaptor>>::defer([this](std::shared_ptr<ZstConnectionAdaptor> adp) {
         adp->on_synchronised_with_stage(this->m_api, this->connected_server());
     });
@@ -508,7 +508,7 @@ void ZstClient::synchronise_graph_complete(ZstMessageResponse response)
 void ZstClient::leave_stage()
 {
     if (is_connected_to_stage()) {
-        ZstLog::net(LogLevel::notification, "Leaving stage");
+        Log::net(Log::Level::notification, "Leaving stage");
 
         //Set flags early to avoid double leaving shenanigans
         this->set_is_connecting(false);
@@ -520,7 +520,7 @@ void ZstClient::leave_stage()
         m_client_transport->send_msg(Content_ClientLeaveRequest, leave_msg_offset.Union(), builder, args);
     }
     else {
-        ZstLog::net(LogLevel::debug, "Not connected to stage. Skipping to cleanup. {}");
+        Log::net(Log::Level::debug, "Not connected to stage. Skipping to cleanup. {}");
     }
     
     // Don't wait for server response
@@ -541,7 +541,7 @@ void ZstClient::leave_stage_complete(ZstTransportRequestBehaviour sendtype)
 	boost::system::error_code ec;
 	m_heartbeat_timer.cancel(ec);
 	//m_heartbeat_timer.wait();
-	ZstLog::net(LogLevel::debug, "Timer cancel status: {}", ec.message());
+	Log::net(Log::Level::debug, "Timer cancel status: {}", ec.message());
 	if (m_client_transport)
 		m_client_transport->disconnect();
 
@@ -679,17 +679,17 @@ void ZstClient::start_connection_broadcast_handler(const std::shared_ptr<ZstStag
     auto request = msg->buffer()->content_as_ClientGraphHandshakeStart();
     auto path = request->receiver_URI();
     if (!path) {
-        ZstLog::net(LogLevel::warn, "Received malformed ClientGraphHandshakeStart message");
+        Log::net(Log::Level::warn, "Received malformed ClientGraphHandshakeStart message");
         return;
     }
     auto remote_client_path = ZstURI(path->c_str(), path->size());
     
     ZstPerformer* local_client = session()->hierarchy()->get_local_performer();
     ZstPerformer* remote_client = dynamic_cast<ZstPerformer*>(session()->hierarchy()->find_entity(remote_client_path));
-    ZstLog::net(LogLevel::debug, "Starting peer handshake broadcast to {}", remote_client->URI().path());
+    Log::net(Log::Level::debug, "Starting peer handshake broadcast to {}", remote_client->URI().path());
 
     if (!remote_client) {
-        ZstLog::net(LogLevel::error, "Could not find performer {}", remote_client_path.path());
+        Log::net(Log::Level::error, "Could not find performer {}", remote_client_path.path());
         return;
     }
 
@@ -707,7 +707,7 @@ void ZstClient::start_connection_broadcast_handler(const std::shared_ptr<ZstStag
 
 void ZstClient::send_connection_broadcast(boost::asio::deadline_timer* t, ZstClient* client, const ZstURI& to, const ZstURI& from, boost::posix_time::milliseconds duration)
 {
-    ZstLog::net(LogLevel::debug, "Sending connection handshake. From: {}, To: {}", from.path(), to.path());
+    Log::net(Log::Level::debug, "Sending connection handshake. From: {}, To: {}", from.path(), to.path());
 
     ZstTransportArgs args;
     args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
@@ -729,10 +729,10 @@ void ZstClient::stop_connection_broadcast_handler(const std::shared_ptr<ZstStage
     auto request = msg->buffer()->content_as_ClientGraphHandshakeStop();
     auto remote_client_path = ZstURI(request->receiver_URI()->c_str());
     ZstPerformer* remote_client = dynamic_cast<ZstPerformer*>(session()->hierarchy()->find_entity(remote_client_path));
-    ZstLog::net(LogLevel::debug, "Stopping peer handshake broadcast to {}", remote_client->URI().path());
+    Log::net(Log::Level::debug, "Stopping peer handshake broadcast to {}", remote_client->URI().path());
 
     if (!remote_client) {
-        ZstLog::net(LogLevel::error, "Could not find performer {}", remote_client_path.path());
+        Log::net(Log::Level::error, "Could not find performer {}", remote_client_path.path());
         return;
     }
 
@@ -748,7 +748,7 @@ void ZstClient::listen_to_client_handler(const std::shared_ptr<ZstStageMessage>&
     auto request = msg->buffer()->content_as_ClientGraphHandshakeListen();
     auto output_path = ZstURI(request->sender_URI()->c_str(), request->sender_URI()->size());
     
-    ZstLog::net(LogLevel::debug, "Listening to performer {}", request->sender_address()->str());
+    Log::net(Log::Level::debug, "Listening to performer {}", request->sender_address()->str());
     m_pending_peer_connections[output_path] = msg->id();
     m_tcp_graph_transport->connect(request->sender_address()->str());
 }

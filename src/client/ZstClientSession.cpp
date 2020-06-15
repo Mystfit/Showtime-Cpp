@@ -70,7 +70,7 @@ void ZstClientSession::on_receive_msg(const std::shared_ptr<ZstStageMessage>& ms
 void ZstClientSession::on_receive_msg(const std::shared_ptr<ZstPerformanceMessage>& msg)
 {
     if (msg->buffer()->value()->values_type() == PlugValueData_PlugHandshake) {
-        ZstLog::net(LogLevel::debug, "Received handshake graph message from {}", msg->buffer()->sender()->c_str());
+        Log::net(Log::Level::debug, "Received handshake graph message from {}", msg->buffer()->sender()->c_str());
         return;
     }
 
@@ -79,7 +79,7 @@ void ZstClientSession::on_receive_msg(const std::shared_ptr<ZstPerformanceMessag
     ZstOutputPlug * sending_plug = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(sender));
     
     if (!sending_plug) {
-        ZstLog::net(LogLevel::warn, "Received graph msg but could not find the sender plug. Sender: {}", sender.path());
+        Log::net(Log::Level::warn, "Received graph msg but could not find the sender plug. Sender: {}", sender.path());
         return;
     }
     
@@ -111,7 +111,7 @@ void ZstClientSession::cable_create_handler(const CableCreateRequest* request){
 	auto cable_proxy = create_cable(input, output);
 
 	if (cable_proxy)
-		ZstLog::net(LogLevel::debug, "Received cable from server {}", cable_proxy->get_address().to_string());
+		Log::net(Log::Level::debug, "Received cable from server {}", cable_proxy->get_address().to_string());
 }
     
 void ZstClientSession::cable_destroy_handler(const CableDestroyRequest* request)
@@ -256,7 +256,7 @@ bool ZstClientSession::observe_entity(ZstEntityBase * entity, const ZstTransport
 void ZstClientSession::observe_entity_complete(ZstMessageResponse response, ZstEntityBase * entity)
 {
     if (ZstStageTransport::verify_signal(response.response, Signal_OK, fmt::format("Observer entity {}", entity->URI().path())))
-        ZstLog::net(LogLevel::debug, "Observing entity {} completed successfully", entity->URI().path());
+        Log::net(Log::Level::debug, "Observing entity {} completed successfully", entity->URI().path());
 }
 
 void ZstClientSession::aquire_entity_ownership(ZstEntityBase* entity)
@@ -265,7 +265,7 @@ void ZstClientSession::aquire_entity_ownership(ZstEntityBase* entity)
         ZstTransportArgs args;
         args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
         args.on_recv_response = [](ZstMessageResponse response) {
-            ZstLog::net(LogLevel::debug, "Ack from server");
+            Log::net(Log::Level::debug, "Ack from server");
         };
         
         auto builder = std::make_shared< FlatBufferBuilder>();
@@ -280,7 +280,7 @@ void ZstClientSession::release_entity_ownership(ZstEntityBase* entity)
         ZstTransportArgs args;
         args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
         args.on_recv_response = [](ZstMessageResponse){
-            ZstLog::net(LogLevel::debug, "Ack from server");
+            Log::net(Log::Level::debug, "Ack from server");
         };
         
 		// Sending an empty string for the owner will release entity ownership back to the original owner

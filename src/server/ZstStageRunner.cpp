@@ -29,7 +29,7 @@ static bool s_signal_handler(DWORD signal_value)
 static void s_signal_handler(int signal_value)
 #endif
 {
-	ZstLog::server(LogLevel::debug, "Caught signal {}", signal_value);
+	Log::server(Log::Level::debug, "Caught signal {}", signal_value);
 	switch (signal_value) {
 #ifdef WIN32
 	case CTRL_C_EVENT:
@@ -60,7 +60,7 @@ static void s_signal_handler(int signal_value)
 static void s_catch_signals(){
 #ifdef WIN32
 	if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)s_signal_handler, TRUE)) {
-		ZstLog::server(LogLevel::error, "Unable to register Control Handler");
+		Log::server(Log::Level::error, "Unable to register Control Handler");
 	}
 #else
 	struct sigaction action;
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
 
 	std::string server_name = "stage";
 	int server_port = -1;
-	LogLevel server_log_level = LogLevel::notification;
+	auto server_log_level = Log::Level::notification;
 	bool server_unlisted = false;
 	try {
 		if (opts["name"].count() > 0)
@@ -94,23 +94,23 @@ int main(int argc, char **argv)
 		if (opts["port"].count() > 0)
 			server_port = opts["port"].as<int>();
 		if ((opts["v"].count() > 0))
-			server_log_level = LogLevel::debug;
+			server_log_level = Log::Level::debug;
 		if ((opts["unlisted"].count() > 0))
 			server_unlisted = true;
 		if ((opts["log_file"].count() > 0))
-			ZstLog::init_file_logging(opts["log_file"].as<std::string>().c_str());
+			Log::init_file_logging(opts["log_file"].as<std::string>().c_str());
 	}
 	catch (cxxopts::OptionParseException) {
 		std::cout << "Could not parse arguments" << std::endl;
 		return 1;
 	}
 
-	ZstLog::server(LogLevel::notification, "Starting Showtime v{} stage server", SHOWTIME_VERSION_STRING);
-	ZstLog::init_logger(server_name.c_str(), server_log_level);
+	Log::server(Log::Level::notification, "Starting Showtime v{} stage server", SHOWTIME_VERSION_STRING);
+	Log::init_logger(server_name.c_str(), server_log_level);
 	auto server = std::make_shared<ShowtimeServer>(server_name, server_port, server_unlisted);
 
 	if (argc < 2) {
-		ZstLog::server(LogLevel::notification, "Stage running in standalone mode. Press Ctrl+C to exit");
+		Log::server(Log::Level::notification, "Stage running in standalone mode. Press Ctrl+C to exit");
 		s_catch_signals();
 		while(!s_interrupted){
 			TAKE_A_BREATH
@@ -119,17 +119,17 @@ int main(int argc, char **argv)
 	else {
 		if (strcmp(argv[1], "-t") == 0)
 		{
-			ZstLog::server(LogLevel::notification, "Stage running in test mode. Waiting for $TERM on stdin");
+			Log::server(Log::Level::notification, "Stage running in test mode. Waiting for $TERM on stdin");
 			std::string line;
 			do {
 				std::getline(std::cin, line);
 				TAKE_A_BREATH
 			} while (line != "$TERM");
-			ZstLog::server(LogLevel::notification, "Received $TERM. Closing stage server.");
+			Log::server(Log::Level::notification, "Received $TERM. Closing stage server.");
 		}
 	}
 
-	ZstLog::app(LogLevel::notification, "Server shutting down");
+	Log::app(Log::Level::notification, "Server shutting down");
 	server->destroy();
 
 	return 0;

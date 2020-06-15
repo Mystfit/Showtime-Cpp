@@ -153,7 +153,7 @@ protected:
 					event.func(std::dynamic_pointer_cast<typename std::pointer_traits<T>::element_type>(adp));
 				}
 				catch (std::exception e) {
-					ZstLog::net(LogLevel::error, "Event dispatcher failed to run an event on a adaptor. Reason: {}", e.what());
+					Log::net(Log::Level::error, "Event dispatcher failed to run an event on a adaptor. Reason: {}", e.what());
 					success = false;
 				}
 			}

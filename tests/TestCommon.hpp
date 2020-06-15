@@ -58,7 +58,7 @@ namespace ZstTest
 		}
 
 		void on_activation() override {
-			ZstLog::app(LogLevel::debug, "{} on_activation()", URI().path());
+			Log::app(Log::Level::debug, "{} on_activation()", URI().path());
 		}
 
 		virtual void on_registered() override {
@@ -66,7 +66,7 @@ namespace ZstTest
 		}
 
 		void on_deactivation() override {
-			ZstLog::app(LogLevel::debug, "{} on_deactivation()", URI().path());
+			Log::app(Log::Level::debug, "{} on_deactivation()", URI().path());
 		}
 
 		virtual void compute(ZstInputPlug * plug) override {}
@@ -103,7 +103,7 @@ namespace ZstTest
 		}
 
 		void on_activation() override {
-			ZstLog::app(LogLevel::debug, "{} on_activation()", URI().path());
+			Log::app(Log::Level::debug, "{} on_activation()", URI().path());
 		}
 
 		virtual void on_registered() override {
@@ -111,14 +111,14 @@ namespace ZstTest
 		}
 
 		void on_deactivation() override {
-			ZstLog::app(LogLevel::debug, "{} on_deactivation()", URI().path());
+			Log::app(Log::Level::debug, "{} on_deactivation()", URI().path());
 		}
 
 		virtual void compute(ZstInputPlug * plug) override {
 
 			last_received_val = plug->int_at(0);
 			if (log) {
-				ZstLog::app(LogLevel::debug, "Input filter received value {0:d}", last_received_val);
+				Log::app(Log::Level::debug, "Input filter received value {0:d}", last_received_val);
 			}
 			num_hits++;
 		}
@@ -162,9 +162,9 @@ namespace ZstTest
 		}
 
 		virtual void compute(ZstInputPlug* plug) override {
-			ZstLog::entity(LogLevel::debug, "In sink compute");
+			Log::entity(Log::Level::debug, "In sink compute");
 			int request_code = plug->int_at(0);
-			ZstLog::entity(LogLevel::notification, "Sink received code {}. Echoing over output", request_code);
+			Log::entity(Log::Level::notification, "Sink received code {}. Echoing over output", request_code);
 			output->append_int(request_code);
 			output->fire();
 
@@ -176,13 +176,13 @@ namespace ZstTest
 			case 1:
 				m_child_sink = new Sink("sinkB");
 				this->add_child(m_child_sink);
-				ZstLog::entity(LogLevel::debug, "Sink about to sync activate child entity", m_child_sink->URI().path());
+				Log::entity(Log::Level::debug, "Sink about to sync activate child entity", m_child_sink->URI().path());
 				if (!m_child_sink->is_activated())
 					throw std::runtime_error("Child entity failed to activate");
-				ZstLog::entity(LogLevel::debug, "Finished sync activate");
+				Log::entity(Log::Level::debug, "Finished sync activate");
 				break;
 			case 2:
-				ZstLog::entity(LogLevel::debug, "Sink about to sync deactivate child entity", m_child_sink->URI().path());
+				Log::entity(Log::Level::debug, "Sink about to sync deactivate child entity", m_child_sink->URI().path());
 				if (!m_child_sink)
 					throw std::runtime_error("Child entity is null");
 
@@ -190,7 +190,7 @@ namespace ZstTest
 					throw std::runtime_error("Child entity is not activated");
 
 				m_child_sink->deactivate();
-				ZstLog::entity(LogLevel::debug, "Finished sync deactivate");
+				Log::entity(Log::Level::debug, "Finished sync deactivate");
 				delete m_child_sink;
 				m_child_sink = NULL;
 				break;
@@ -243,31 +243,31 @@ namespace ZstTest
 		std::vector<ZstServerAddress> lost_servers;
 
 		void on_connected_to_stage(ShowtimeClient* client, const ZstServerAddress & stage_address) override {
-			ZstLog::app(LogLevel::debug, "CONNECTION_ESTABLISHED: {}", client->get_root()->URI().path());
+			Log::app(Log::Level::debug, "CONNECTION_ESTABLISHED: {}", client->get_root()->URI().path());
 			inc_calls();
 			is_connected = true;
 		}
 
 		void on_disconnected_from_stage(ShowtimeClient* client, const ZstServerAddress & stage_address) override {
-			ZstLog::app(LogLevel::debug, "DISCONNECTING: {}",client->get_root()->URI().path());
+			Log::app(Log::Level::debug, "DISCONNECTING: {}",client->get_root()->URI().path());
 			inc_calls();
 			is_connected = false;
 		}
         
         void on_server_discovered(ShowtimeClient* client, const ZstServerAddress & stage_address) override {
-            ZstLog::app(LogLevel::debug, "SERVER DISCOVERED: Name: {} Address: {}", stage_address.name, stage_address.address);
+            Log::app(Log::Level::debug, "SERVER DISCOVERED: Name: {} Address: {}", stage_address.name, stage_address.address);
             inc_calls();
 			discovered_servers.push_back(stage_address);
         }
 
 		void on_synchronised_with_stage(ShowtimeClient* client, const ZstServerAddress & stage_address) override {
-			ZstLog::app(LogLevel::debug, "SERVER SYNCHRONISED");
+			Log::app(Log::Level::debug, "SERVER SYNCHRONISED");
 			inc_calls();
 			is_synced = true;
 		}
 
 		void on_server_lost(ShowtimeClient* client, const ZstServerAddress& stage_address) override {
-			ZstLog::app(LogLevel::debug, "SERVER LOST: Name: {} Address: {}", stage_address.name, stage_address.address);
+			Log::app(Log::Level::debug, "SERVER LOST: Name: {} Address: {}", stage_address.name, stage_address.address);
 			inc_calls();
 			lost_servers.push_back(stage_address);
 		}
@@ -282,19 +282,19 @@ namespace ZstTest
 		ZstURI last_entity_updated;
 
 		void on_entity_arriving(ZstEntityBase * entity) override {
-			ZstLog::app(LogLevel::debug, "ENTITY_ARRIVING: {}", entity->URI().path());
+			Log::app(Log::Level::debug, "ENTITY_ARRIVING: {}", entity->URI().path());
 			last_entity_arriving = entity->URI();
 			inc_calls();
 		}
 
 		void on_entity_leaving(const ZstURI& entity_path) override {
-			ZstLog::app(LogLevel::debug, "ENTITY_LEAVING: {}", entity_path.path());
+			Log::app(Log::Level::debug, "ENTITY_LEAVING: {}", entity_path.path());
 			last_entity_leaving = entity_path;
 			inc_calls();
 		}
 
 		void on_entity_updated(ZstEntityBase* entity) override {
-			ZstLog::app(LogLevel::debug, "ENTITY_UPDATED: {}", entity->URI().path());
+			Log::app(Log::Level::debug, "ENTITY_UPDATED: {}", entity->URI().path());
 			last_entity_updated = entity->URI();
 			inc_calls();
 		}
@@ -308,13 +308,13 @@ namespace ZstTest
 		ZstCableAddress last_cable_left;
 
 		void on_cable_created(ZstCable* cable) override {
-			ZstLog::app(LogLevel::debug, "CABLE_ARRIVING: {}", cable->get_address().to_string());
+			Log::app(Log::Level::debug, "CABLE_ARRIVING: {}", cable->get_address().to_string());
 			last_cable_arrived = cable->get_address();
 			inc_calls();
 		}
 
 		void on_cable_destroyed(const ZstCableAddress& cable_address) override {
-			ZstLog::app(LogLevel::debug, "CABLE_LEAVING: {}", cable_address.to_string());
+			Log::app(Log::Level::debug, "CABLE_LEAVING: {}", cable_address.to_string());
 			last_cable_left = cable_address;
 			inc_calls();
 		}
@@ -328,13 +328,13 @@ namespace ZstTest
         ZstURI last_left_performer;
         
 		void on_performer_arriving(ZstPerformer * performer) override {
-			ZstLog::app(LogLevel::debug, "PERFORMER_ARRIVING: {}", performer->URI().path());
+			Log::app(Log::Level::debug, "PERFORMER_ARRIVING: {}", performer->URI().path());
             last_arrived_performer = performer->URI();
 			inc_calls();
 		}
 
 		void on_performer_leaving(const ZstURI& performer_path) override {
-			ZstLog::app(LogLevel::debug, "PERFORMER_LEAVING: {}", performer_path.path());
+			Log::app(Log::Level::debug, "PERFORMER_LEAVING: {}", performer_path.path());
             last_left_performer = performer_path;
 			inc_calls();
 		}
@@ -344,17 +344,17 @@ namespace ZstTest
 	class TestSynchronisableEvents : public ZstSynchronisableAdaptor, public TestAdaptor
 	{
 		void on_synchronisable_activated(ZstSynchronisable * synchronisable) override {
-			ZstLog::app(LogLevel::debug, "SYNCHRONISABLE_ACTIVATED: {}", synchronisable->instance_id());
+			Log::app(Log::Level::debug, "SYNCHRONISABLE_ACTIVATED: {}", synchronisable->instance_id());
 			inc_calls();
 		}
 
 		void on_synchronisable_deactivated(ZstSynchronisable * synchronisable) override {
-			ZstLog::app(LogLevel::debug, "SYNCHRONISABLE_DEACTIVATED: {}", synchronisable->instance_id());
+			Log::app(Log::Level::debug, "SYNCHRONISABLE_DEACTIVATED: {}", synchronisable->instance_id());
 			inc_calls();
 		}
 
 		void on_synchronisable_updated(ZstSynchronisable * synchronisable) override {
-			ZstLog::app(LogLevel::debug, "SYNCHRONISABLE_UPDATED: {}", synchronisable->instance_id());
+			Log::app(Log::Level::debug, "SYNCHRONISABLE_UPDATED: {}", synchronisable->instance_id());
 			inc_calls();
 		}
 	};
@@ -365,7 +365,7 @@ namespace ZstTest
 		int last_val_received = 0;
 		void on_synchronisable_updated(ZstSynchronisable * synchronisable) override {
 			ZstPlug * plug = dynamic_cast<ZstPlug*>(synchronisable);
-			ZstLog::app(LogLevel::debug, "SYNCHRONISABLE_UPDATED: Plug {} updated: {}", plug->URI().path(), plug->int_at(0));
+			Log::app(Log::Level::debug, "SYNCHRONISABLE_UPDATED: Plug {} updated: {}", plug->URI().path(), plug->int_at(0));
 			inc_calls();
 		}
 	};
@@ -399,10 +399,10 @@ namespace ZstTest
 		while (std::getline(stream, line)){
 			try {
 				boost::this_thread::interruption_point();
-				ZstLog::app(LogLevel::debug, "\n -> {}", line.c_str());
+				Log::app(Log::Level::debug, "\n -> {}", line.c_str());
 			}
 			catch (boost::thread_interrupted) {
-				ZstLog::server(LogLevel::debug, "External process logger thread exiting");
+				Log::server(Log::Level::debug, "External process logger thread exiting");
 				break;
 			}
 		}
@@ -424,7 +424,7 @@ namespace ZstTest
 					//std::this_thread::sleep_for(std::chrono::milliseconds(1));
 				}
 				catch (boost::thread_interrupted) {
-					ZstLog::net(LogLevel::debug, "Benchmark event loop exiting.");
+					Log::net(Log::Level::debug, "Benchmark event loop exiting.");
 					break;
 				}
 			}
@@ -450,7 +450,7 @@ namespace ZstTest
 		~FixtureInit()
 		{
 			test_client->destroy();
-			ZstLog::app(LogLevel::notification, "-------------------------------------------------------------------");
+			Log::app(Log::Level::notification, "-------------------------------------------------------------------");
 		}
 	};
 
@@ -530,7 +530,7 @@ namespace ZstTest
 		{
 			external_performer_URI = ZstURI(program_name.c_str());
 
-            ZstLog::app(LogLevel::debug, "Current path is{}", fs::current_path().generic_string());
+            Log::app(Log::Level::debug, "Current path is{}", fs::current_path().generic_string());
             auto program_path = fs::path(boost::unit_test::framework::master_test_suite().argv[0]).parent_path().append(program_name);
 #ifdef WIN32
 			program_path.replace_extension("exe");
@@ -539,7 +539,7 @@ namespace ZstTest
 			std::string test_flag = "test";
 
 			//Run client as an external process so we don't share the same Showtime singleton
-			ZstLog::app(LogLevel::notification, "Starting {} process", program_path.generic_string());
+			Log::app(Log::Level::notification, "Starting {} process", program_path.generic_string());
 			try {
 				external_process = boost::process::child(program_path.generic_string(), test_flag.c_str(), boost::process::std_in < external_process_stdin, boost::process::std_out > external_process_stdout); //d flag pauses the sink process to give us time to attach a debugger
 #ifdef PAUSE_SINK
@@ -551,7 +551,7 @@ namespace ZstTest
 				TAKE_A_BREATH
 			}
 			catch (boost::process::process_error e) {
-				ZstLog::app(LogLevel::error, "External process failed to start. Code:{} Message:{}", e.code().value(), e.what());
+				Log::app(Log::Level::error, "External process failed to start. Code:{} Message:{}", e.code().value(), e.what());
 			}
 
 			// Create a thread to handle reading log info from the sink process' stdout pipe

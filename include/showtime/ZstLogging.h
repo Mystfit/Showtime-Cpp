@@ -12,23 +12,25 @@
 // ----------------------------------------------------------------------------
 // Logging interface
 
-enum LogLevel
-{
-	debug = 0,
-	notification,
-	warn,
-	error,
-	loglevelsize
-};
 
-namespace ZstLog {
-	namespace internals {
-		//switch (level) {
-		//case LogLevel::debug: return 0x07;
-		//case LogLevel::notification: return 0x0F;
-		//case LogLevel::warn: return 0x0D;
-		//case LogLevel::error: return 0x0E;
-		//default: return 0x0F;
+namespace showtime {
+	namespace Log {
+		enum Level
+		{
+			debug = 0,
+			notification,
+			warn,
+			error,
+			Levelsize
+		};
+
+		namespace internals {
+			//switch (level) {
+			//case Log::Level::debug: return 0x07;
+			//case Log::Level::notification: return 0x0F;
+			//case Log::Level::warn: return 0x0D;
+			//case Log::Level::error: return 0x0E;
+			//default: return 0x0F;
 
 #ifdef WIN32
 #define DEBUG_COLOUR (FOREGROUND_BLUE | FOREGROUND_GREEN)
@@ -44,59 +46,60 @@ namespace ZstLog {
 #define RESET_COLOUR \033[0m
 #endif
 
-		ZST_EXPORT void entity_sink_message(LogLevel level, const char * msg);
-		ZST_EXPORT void net_sink_message(LogLevel level, const char * msg);
-        ZST_EXPORT void server_sink_message(LogLevel level, const char * msg);
-		ZST_EXPORT void app_sink_message(LogLevel level, const char * msg);
+			ZST_EXPORT void entity_sink_message(Level level, const char* msg);
+			ZST_EXPORT void net_sink_message(Level level, const char* msg);
+			ZST_EXPORT void server_sink_message(Level level, const char* msg);
+			ZST_EXPORT void app_sink_message(Level level, const char* msg);
 
-		static bool _logging = false;
-	}
+			static bool _logging = false;
+		}
 
-	ZST_EXPORT void init_logger(const char * logger_name, LogLevel level = LogLevel::notification);
-	ZST_EXPORT void init_file_logging(const char * log_file_path = "");
-    ZST_EXPORT const char * get_severity_str(LogLevel level);
-	
-	template <typename... Args>
-	inline void net(LogLevel level, const char* msg, const Args&... vars)
-	{
-		internals::net_sink_message(level, fmt::format(msg, vars...).c_str());
-	}
+		ZST_EXPORT void init_logger(const char* logger_name, Level level = Log::Level::notification);
+		ZST_EXPORT void init_file_logging(const char* log_file_path = "");
+		ZST_EXPORT const char* get_severity_str(Level level);
 
-	inline void net(LogLevel level, const char* msg)
-	{
-		internals::net_sink_message(level, msg);
-	}
-    
-    template <typename... Args>
-    inline void server(LogLevel level, const char* msg, const Args&... vars)
-    {
-        internals::server_sink_message(level, fmt::format(msg, vars...).c_str());
-    }
-    
-    inline void server(LogLevel level, const char* msg)
-    {
-        internals::server_sink_message(level, msg);
-    }
+		template <typename... Args>
+		inline void net(Level level, const char* msg, const Args&... vars)
+		{
+			internals::net_sink_message(level, fmt::format(msg, vars...).c_str());
+		}
 
-	template <typename... Args>
-	inline void entity(LogLevel level, const char* msg, const Args&... vars)
-	{
-		internals::entity_sink_message(level, fmt::format(msg, vars...).c_str());
-	}
+		inline void net(Level level, const char* msg)
+		{
+			internals::net_sink_message(level, msg);
+		}
 
-	inline void entity(LogLevel level, const char* msg)
-	{
-		internals::entity_sink_message(level, msg);
-	}
+		template <typename... Args>
+		inline void server(Level level, const char* msg, const Args&... vars)
+		{
+			internals::server_sink_message(level, fmt::format(msg, vars...).c_str());
+		}
 
-	template <typename... Args>
-	inline void app(LogLevel level, const char* msg, const Args&... vars)
-	{
-		internals::app_sink_message(level, fmt::format(msg, vars...).c_str());
-	}
+		inline void server(Level level, const char* msg)
+		{
+			internals::server_sink_message(level, msg);
+		}
 
-	inline void app(LogLevel level, const char* msg)
-	{
-		internals::app_sink_message(level, msg);
+		template <typename... Args>
+		inline void entity(Level level, const char* msg, const Args&... vars)
+		{
+			internals::entity_sink_message(level, fmt::format(msg, vars...).c_str());
+		}
+
+		inline void entity(Level level, const char* msg)
+		{
+			internals::entity_sink_message(level, msg);
+		}
+
+		template <typename... Args>
+		inline void app(Level level, const char* msg, const Args&... vars)
+		{
+			internals::app_sink_message(level, fmt::format(msg, vars...).c_str());
+		}
+
+		inline void app(Level level, const char* msg)
+		{
+			internals::app_sink_message(level, msg);
+		}
 	}
 };

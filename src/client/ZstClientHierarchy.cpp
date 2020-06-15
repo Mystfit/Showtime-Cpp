@@ -109,13 +109,13 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype, ZstMessageReceivedAction callback)
 {
 	if(!entity){
-		ZstLog::net(LogLevel::error, "Can't activate a null entity");
+		Log::net(Log::Level::error, "Can't activate a null entity");
 		return;
 	}
 
 	// Entities need a parent before they can be activated
 	if (entity->parent_address().is_empty()) {
-        ZstLog::net(LogLevel::warn, "{} has no parent", entity->URI().path());
+        Log::net(Log::Level::warn, "{} has no parent", entity->URI().path());
         return;
 	}
 
@@ -200,7 +200,7 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
 	//Find the factory associated with this creatable path
 	ZstEntityFactory * factory = dynamic_cast<ZstEntityFactory*>(find_entity(creatable_path.parent()));
 	if (!factory) {
-		ZstLog::net(LogLevel::warn, "Could not find factory to create entity {}", creatable_path.path());
+		Log::net(Log::Level::warn, "Could not find factory to create entity {}", creatable_path.path());
 		return NULL;
 	}
 
@@ -225,7 +225,7 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
 
 			auto signal = ZstStageTransport::get_signal(response.response);
 			if (signal != Signal_EMPTY) {
-				ZstLog::net(LogLevel::error, "Entity creation failed with signal {}", EnumNameSignal(signal));
+				Log::net(Log::Level::error, "Entity creation failed with signal {}", EnumNameSignal(signal));
 				return;
 			}
 
@@ -235,7 +235,7 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
 			// Find local entity. We would have already received this as a broadcast BEFORE the ack
 			auto created_entity = entity = find_entity(created_entity_path);
 			if (created_entity) {
-				ZstLog::net(LogLevel::notification, "Created entity from {}", created_entity_path.path());
+				Log::net(Log::Level::notification, "Created entity from {}", created_entity_path.path());
 				// Dispatch events
 				factory->factory_events()->defer([created_entity](std::shared_ptr<ZstFactoryAdaptor> adaptor){adaptor->on_entity_created(created_entity);
 				});
@@ -264,7 +264,7 @@ void ZstClientHierarchy::client_leaving_handler(const ClientLeaveRequest* reques
 	auto performer_path = ZstURI(request->performer_URI()->c_str(), request->performer_URI()->size());
 
 	if (request->reason() != ClientLeaveReason_QUIT) {
-		ZstLog::net(LogLevel::warn, "Performer {} left the graph with reason {}", performer_path.path(), EnumNameClientLeaveReason(request->reason()));
+		Log::net(Log::Level::warn, "Performer {} left the graph with reason {}", performer_path.path(), EnumNameClientLeaveReason(request->reason()));
 	}
 
 	destroy_entity_complete(find_entity(performer_path));
@@ -294,12 +294,12 @@ void ZstClientHierarchy::factory_create_entity_handler(const FactoryCreateEntity
 	auto creatable_path = ZstURI(request->creatable_entity_URI()->c_str(), request->creatable_entity_URI()->size());
     auto name = std::string(request->name()->c_str(), request->name()->size());
     
-	ZstLog::net(LogLevel::notification, "Received remote request to create a {} entity with the name {} ", creatable_path.path(), name);
+	Log::net(Log::Level::notification, "Received remote request to create a {} entity with the name {} ", creatable_path.path(), name);
 
 	//Find the factory and delegate the entity creation to the main event loop thread
 	ZstEntityFactory * factory = dynamic_cast<ZstEntityFactory*>(find_entity(creatable_path.parent()));
 	if (!factory) {
-		ZstLog::net(LogLevel::warn, "Could not find factory to create entity {}", creatable_path.path());
+		Log::net(Log::Level::warn, "Could not find factory to create entity {}", creatable_path.path());
 		return;
 	}
 
@@ -311,12 +311,12 @@ void ZstClientHierarchy::factory_create_entity_handler(const FactoryCreateEntity
         this->get_local_performer()->add_child(entity, false);
             
         // Activate entity separately
-		ZstLog::net(LogLevel::notification, "Activating creatable {} ", entity->URI().path());
+		Log::net(Log::Level::notification, "Activating creatable {} ", entity->URI().path());
 		this->activate_entity(entity, ZstTransportRequestBehaviour::ASYNC_REPLY, [this, entity, request_id](ZstMessageResponse response) {
 			if (!ZstStageTransport::verify_signal(response.response, Signal_OK, fmt::format("Creatable {} activation request timed out", entity->URI().path())))
 				return;
 
-			ZstLog::net(LogLevel::notification, "Creatable {} activated", entity->URI().path());
+			Log::net(Log::Level::notification, "Creatable {} activated", entity->URI().path());
 			stage_events()->invoke([request_id](std::shared_ptr<ZstStageTransportAdaptor> adaptor) {
 				ZstTransportArgs args;
                 args.msg_ID = request_id;
@@ -357,12 +357,12 @@ void ZstClientHierarchy::activate_entity_complete(ZstEntityBase * entity)
 void ZstClientHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 {
 	if (!entity) {
-		ZstLog::net(LogLevel::warn, "destroy_entity_complete(): Entity not found");
+		Log::net(Log::Level::warn, "destroy_entity_complete(): Entity not found");
 		return;
 	}
 
 	if (entity->URI() == this->get_local_performer()->URI()) {
-		ZstLog::net(LogLevel::debug, "Destroyed entity is our own client, ignore.");
+		Log::net(Log::Level::debug, "Destroyed entity is our own client, ignore.");
 		return;
 	}
 	ZstHierarchy::destroy_entity_complete(entity);
@@ -393,10 +393,10 @@ std::unique_ptr<ZstEntityBase> ZstClientHierarchy::create_proxy_entity(const Ent
     auto entity_path = ZstURI(entity_data->URI()->c_str(), entity_data->URI()->size());
 	auto local_path = get_local_performer()->URI();
 
-	ZstLog::net(LogLevel::debug, "{}: Received proxy entity {}", get_local_performer()->URI().path(), entity_path.path());
+	Log::net(Log::Level::debug, "{}: Received proxy entity {}", get_local_performer()->URI().path(), entity_path.path());
 
 	if (entity_path.contains(get_local_performer()->URI())) {
-		ZstLog::net(LogLevel::debug, "Proxy entity {} is local . Ignoring", entity_path.path());
+		Log::net(Log::Level::debug, "Proxy entity {} is local . Ignoring", entity_path.path());
 		return NULL;
     }
 	return ZstHierarchy::create_proxy_entity(entity_type, entity_data, payload);
@@ -408,7 +408,7 @@ void ZstClientHierarchy::update_proxy_entity(ZstEntityBase* original, const Enti
     
 	//Don't need to update local entities, they should have published the update
 	if (path_is_local(entity_path)) {
-		ZstLog::net(LogLevel::debug, "Don't need to update a local entity {}. Ignoring", entity_path.path());
+		Log::net(Log::Level::debug, "Don't need to update a local entity {}. Ignoring", entity_path.path());
 		return;
 	}
     

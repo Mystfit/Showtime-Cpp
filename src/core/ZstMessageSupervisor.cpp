@@ -74,7 +74,7 @@ void ZstMessageSupervisor::process_message_response(std::shared_ptr<ZstMessage>&
 			promise->second.set_value(message);
 		}
 		catch (std::future_error e) {
-			ZstLog::net(LogLevel::error, "Promise error! {}", e.what());
+			Log::net(Log::Level::error, "Promise error! {}", e.what());
 		}
 		return;
 	}

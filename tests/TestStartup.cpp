@@ -41,14 +41,14 @@ BOOST_AUTO_TEST_CASE(double_init) {
 
 BOOST_FIXTURE_TEST_CASE(auto_join_timeout, FixtureInit) {
 	//Testing abort connection if we're already connected
-	ZstLog::app(LogLevel::debug, "before autojoin");
+	Log::app(Log::Level::debug, "before autojoin");
 	test_client->auto_join_by_name("fakeserver");
 	BOOST_TEST(!test_client->is_connecting());
 
-	ZstLog::app(LogLevel::debug, "before asyncautojoin");
+	Log::app(Log::Level::debug, "before asyncautojoin");
 	test_client->auto_join_by_name_async("fakeserver");
 	WAIT_UNTIL_STAGE_TIMEOUT
-	ZstLog::app(LogLevel::debug, "before asyncautojoin check");
+	Log::app(Log::Level::debug, "before asyncautojoin check");
 	BOOST_TEST(!test_client->is_connecting());
 }
 
@@ -172,7 +172,7 @@ BOOST_FIXTURE_TEST_CASE(sync_join_bad_address, FixtureInit){
 BOOST_FIXTURE_TEST_CASE(async_join_bad_address_timeout, FixtureInit){
 	//Test async join timeout
 	test_client->join_async(bad_server_address.c_str());
-	ZstLog::app(LogLevel::notification, "Make sure that we didn't block");
+	Log::app(Log::Level::notification, "Make sure that we didn't block");
 	WAIT_UNTIL_STAGE_TIMEOUT
 	BOOST_TEST(!test_client->is_connected());
 }

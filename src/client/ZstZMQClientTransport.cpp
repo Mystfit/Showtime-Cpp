@@ -40,7 +40,7 @@ void ZstZMQClientTransport::init()
 		m_client_actor.attach_pipe_listener(m_server_sock, s_handle_stage_router, this);
 	}
 	else {
-		ZstLog::net(LogLevel::error, "Could not create client socket. Reason: {}", zmq_strerror(zmq_errno()));
+		Log::net(Log::Level::error, "Could not create client socket. Reason: {}", zmq_strerror(zmq_errno()));
 		return;
 	}
 
@@ -81,7 +81,7 @@ void ZstZMQClientTransport::connect(const std::string & address)
 			set_connected(true);
 		}
 		else {
-			ZstLog::net(LogLevel::error, "Client connection error: {}", zmq_strerror(result));
+			Log::net(Log::Level::error, "Client connection error: {}", zmq_strerror(result));
 		}
 	}
 }
@@ -113,7 +113,7 @@ void ZstZMQClientTransport::send_message_impl(const uint8_t * msg_buffer, size_t
 	if (result != 0) {
 		int err = zmq_errno();
 		if (err > 0) {
-			ZstLog::net(LogLevel::error, "Client message sending error: {}", zmq_strerror(err));
+			Log::net(Log::Level::error, "Client message sending error: {}", zmq_strerror(err));
 		}
 	}
 }
@@ -148,7 +148,7 @@ void ZstZMQClientTransport::sock_recv(zsock_t* socket)
 					owner
 				);
 
-				//ZstLog::net(LogLevel::debug, "ZstZMQClientTransport received {}", boost::uuids::to_string(stage_msg->id()));
+				//Log::net(Log::Level::debug, "ZstZMQClientTransport received {}", boost::uuids::to_string(stage_msg->id()));
 
 				// Send message to submodules
 				dispatch_receive_event(stage_msg, [stage_msg, msg_data](ZstEventStatus s) mutable {
@@ -157,7 +157,7 @@ void ZstZMQClientTransport::sock_recv(zsock_t* socket)
 				});
 			}
 			else {
-				ZstLog::net(LogLevel::warn, "Received malformed message. Ignoring"); 
+				Log::net(Log::Level::warn, "Received malformed message. Ignoring"); 
 			} 
         }
         

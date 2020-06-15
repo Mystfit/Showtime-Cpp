@@ -112,10 +112,10 @@ namespace showtime {
 		}
 		else if (streq(command, "s")) {
 			if (!send_sock) {
-				ZstLog::net(LogLevel::error, "Actor received send request but no socket was sent");
+				Log::net(Log::Level::error, "Actor received send request but no socket was sent");
 			}
 			if (!msg) {
-				ZstLog::net(LogLevel::error, "Actor received send request but no msg was sent");
+				Log::net(Log::Level::error, "Actor received send request but no msg was sent");
 			}
 			zmsg_send(&msg, send_sock);
 		}
@@ -123,7 +123,7 @@ namespace showtime {
 			zstr_send(sock, "PONG");
 		}
 		else {
-			ZstLog::net(LogLevel::error, "Actor command not recognized: {}", command);
+			Log::net(Log::Level::error, "Actor command not recognized: {}", command);
 		}
 
 		// Cleanup

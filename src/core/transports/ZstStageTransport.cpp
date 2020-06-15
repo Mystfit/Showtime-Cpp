@@ -32,13 +32,13 @@ namespace showtime
 	Signal ZstStageTransport::get_signal(const std::shared_ptr<ZstStageMessage>& msg)
 	{
 		if (!msg) {
-			ZstLog::net(LogLevel::error, "Message is NULL");
+			Log::net(Log::Level::error, "Message is NULL");
 			return Signal_EMPTY;
 		}
 		if (msg->buffer()->content_type() == Content_SignalMessage) {
 			return msg->buffer()->content_as_SignalMessage()->signal();
 		}
-		ZstLog::net(LogLevel::error, "Can't get signal from message. Type is {}", EnumNameContent(msg->buffer()->content_type()));
+		Log::net(Log::Level::error, "Can't get signal from message. Type is {}", EnumNameContent(msg->buffer()->content_type()));
 		return Signal_EMPTY;
 	}
 
@@ -50,12 +50,12 @@ namespace showtime
 	bool ZstStageTransport::verify_signal(const std::shared_ptr<ZstStageMessage>& msg, Signal expected, const std::string& error_prefix)
 	{
 		if (!msg) {
-			ZstLog::net(LogLevel::error, "{} timed out", error_prefix);
+			Log::net(Log::Level::error, "{} timed out", error_prefix);
 			return false;
 		}
 		auto signal = ZstStageTransport::get_signal(msg);
 		if (signal != expected) {
-			ZstLog::net(LogLevel::error, "{} failed with status {}", error_prefix, EnumNameSignal(signal));
+			Log::net(Log::Level::error, "{} failed with status {}", error_prefix, EnumNameSignal(signal));
 			return false;
 		}
 		return true;

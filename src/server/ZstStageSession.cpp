@@ -96,7 +96,7 @@ Signal ZstStageSession::signal_handler(const std::shared_ptr<ZstStageMessage>& m
 
 Signal ZstStageSession::synchronise_client_graph_handler(ZstPerformerStageProxy* sender) 
 {
-	ZstLog::server(LogLevel::notification, "Sending graph snapshot to {}", sender->URI().path());
+	Log::server(Log::Level::notification, "Sending graph snapshot to {}", sender->URI().path());
 
 	// For serialisation later
 	auto builder = std::make_shared<FlatBufferBuilder>();
@@ -144,11 +144,11 @@ Signal ZstStageSession::create_cable_handler(const std::shared_ptr<ZstStageMessa
 	auto input_path = ZstURI(cable_request->cable()->address()->input_URI()->c_str(), cable_request->cable()->address()->input_URI()->size());
 	auto output_path = ZstURI(cable_request->cable()->address()->output_URI()->c_str(), cable_request->cable()->address()->output_URI()->size());
 	auto cable_path = ZstCableAddress(input_path, output_path);
-	ZstLog::server(LogLevel::notification, "Received connect cable request for In:{} and Out:{}", cable_path.get_input_URI().path(), cable_path.get_output_URI().path());
+	Log::server(Log::Level::notification, "Received connect cable request for In:{} and Out:{}", cable_path.get_input_URI().path(), cable_path.get_output_URI().path());
 
 	//Make sure cable doesn't already exist
 	if (find_cable(cable_path)) {
-		ZstLog::server(LogLevel::warn, "Cable {}<-{} already exists", input_path.path(), output_path.path());
+		Log::server(Log::Level::warn, "Cable {}<-{} already exists", input_path.path(), output_path.path());
 		return Signal_ERR_STAGE_BAD_CABLE_CONNECT_REQUEST;
 	}
 
@@ -161,7 +161,7 @@ Signal ZstStageSession::create_cable_handler(const std::shared_ptr<ZstStageMessa
 
 	//Unplug existing cables if we hit max cables in an input plug
 	if (input->num_cables() >= input->max_connected_cables()) {
-		ZstLog::server(LogLevel::warn, "Too many cables in plug. Disconnecting existing cables");
+		Log::server(Log::Level::warn, "Too many cables in plug. Disconnecting existing cables");
 		ZstCableBundle bundle;
 		input->get_child_cables(bundle);
 		for (auto cable : bundle) {
@@ -181,7 +181,7 @@ Signal ZstStageSession::create_cable_handler(const std::shared_ptr<ZstStageMessa
 
 	auto connect_finished_cb = [this, cable_ptr, sender, id = msg->id()](Signal signal) {
 		if (signal == Signal_OK) {
-			ZstLog::server(LogLevel::notification, "Client connection complete. Publishing cable {}", cable_ptr->get_address().to_string());
+			Log::server(Log::Level::notification, "Client connection complete. Publishing cable {}", cable_ptr->get_address().to_string());
 			ZstTransportArgs args;
 			auto builder = std::make_shared<FlatBufferBuilder>();
 
@@ -221,15 +221,15 @@ Signal ZstStageSession::observe_entity_handler(const std::shared_ptr<ZstStageMes
 		return Signal_ERR_STAGE_PERFORMER_NOT_FOUND;
 	}
 
-	ZstLog::server(LogLevel::notification, "Received observation request. Requestor: {}, Observed: {}", sender->URI().path(), observed_performer->URI().path());
+	Log::server(Log::Level::notification, "Received observation request. Requestor: {}, Observed: {}", sender->URI().path(), observed_performer->URI().path());
 	if (sender == observed_performer) {
-		ZstLog::server(LogLevel::warn, "Client attempting to observe itself");
+		Log::server(Log::Level::warn, "Client attempting to observe itself");
 		return Signal_ERR_STAGE_PERFORMER_ALREADY_CONNECTED;
 	}
 
 	//Check to see if one client is already connected to the other
 	if (observed_performer->has_connected_subscriber(sender)) {
-		ZstLog::server(LogLevel::warn, "Client {} already observing {}", sender->URI().path(), observed_performer->URI().path());
+		Log::server(Log::Level::warn, "Client {} already observing {}", sender->URI().path(), observed_performer->URI().path());
 		return Signal_ERR_STAGE_PERFORMER_ALREADY_CONNECTED;
 	}
 
@@ -254,7 +254,7 @@ Signal ZstStageSession::aquire_entity_ownership_handler(const std::shared_ptr<Zs
 	ZstEntityBase* entity = hierarchy()->find_entity(entity_path);
 
 	if (!entity) {
-		ZstLog::server(LogLevel::warn, "Could not aquire entity ownership - entity {}, not found", entity_path.path());
+		Log::server(Log::Level::warn, "Could not aquire entity ownership - entity {}, not found", entity_path.path());
 		return Signal_ERR_ENTITY_NOT_FOUND;
 	}
 
@@ -269,11 +269,11 @@ Signal ZstStageSession::aquire_entity_ownership_handler(const std::shared_ptr<Zs
 		new_owner_path = ZstURI(request->new_owner()->c_str(), request->new_owner()->size());
 		new_owner = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(new_owner_path));
 		if (!new_owner) {
-			ZstLog::server(LogLevel::warn, "Could not aquire entity ownership - could not find new owner {}", new_owner_path.path());
+			Log::server(Log::Level::warn, "Could not aquire entity ownership - could not find new owner {}", new_owner_path.path());
 			return Signal_ERR_STAGE_PERFORMER_NOT_FOUND;
 		}
 
-		ZstLog::server(LogLevel::notification, "Received entity ownership aquistion request - {} wants to control {}", new_owner_path.path(), entity->URI().path());
+		Log::server(Log::Level::notification, "Received entity ownership aquistion request - {} wants to control {}", new_owner_path.path(), entity->URI().path());
 
 		//Set owner
 		entity_set_owner(entity, new_owner->URI());
@@ -300,7 +300,7 @@ Signal ZstStageSession::aquire_entity_ownership_handler(const std::shared_ptr<Zs
 	}
 
 	//Broadcast change in plug fire control
-	ZstLog::server(LogLevel::notification, "Broadcasting entity ownership - {} controls {}", new_owner_path.path(), entity->URI().path());
+	Log::server(Log::Level::notification, "Broadcasting entity ownership - {} controls {}", new_owner_path.path(), entity->URI().path());
 	ZstTransportArgs args;
 	auto builder = std::make_shared<FlatBufferBuilder>();
 	auto ownership_offset = CreateEntityTakeOwnershipRequest(*builder, builder->CreateString(entity->URI().path()), builder->CreateString(new_owner_path.path()));
@@ -314,7 +314,7 @@ Signal ZstStageSession::destroy_cable_handler(const std::shared_ptr<ZstStageMess
 	auto request = msg->buffer()->content_as_CableDestroyRequest();
 
 	auto cable_path = ZstCableAddress(request->cable());
-	ZstLog::server(LogLevel::notification, "Received destroy cable connection request");
+	Log::server(Log::Level::notification, "Received destroy cable connection request");
 
 	ZstCable* cable_ptr = find_cable(cable_path);
 	destroy_cable(cable_ptr);
@@ -348,7 +348,7 @@ void ZstStageSession::destroy_cable(ZstCable* cable) {
 	if (!cable)
 		return;
 
-	ZstLog::server(LogLevel::notification, "Destroying cable {}", cable->get_address().to_string());
+	Log::server(Log::Level::notification, "Destroying cable {}", cable->get_address().to_string());
 
 	//Update rest of network
 	ZstTransportArgs args;
@@ -368,7 +368,7 @@ void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, Zst
 
 void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, ZstPerformerStageProxy* input_client, const ZstMessageReceivedAction& on_msg_received)
 {
-	ZstLog::server(LogLevel::notification, "Sending P2P subscribe request to {}", input_client->URI().path());
+	Log::server(Log::Level::notification, "Sending P2P subscribe request to {}", input_client->URI().path());
 
 	//Check to see if one client is already connected to the other
 	if (output_client->has_connected_subscriber(input_client)) {
@@ -395,7 +395,7 @@ void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, Zst
 	auto builder = std::make_shared<FlatBufferBuilder>();
 	auto subscribe_offset = CreateClientGraphHandshakeListen(*builder, builder->CreateString(output_client->URI().path()), builder->CreateString(output_client->reliable_address()));
 
-	ZstLog::net(LogLevel::debug, "Sending Content_ClientGraphHandshakeListen whisper to {}", input_client->URI().path());
+	Log::net(Log::Level::debug, "Sending Content_ClientGraphHandshakeListen whisper to {}", input_client->URI().path());
 	stage_hierarchy()->whisper(input_client, Content_ClientGraphHandshakeListen, subscribe_offset.Union(), builder, receiver_args);
 
 	//Create request for broadcaster - needs a new buffer builder
@@ -412,13 +412,13 @@ void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, Zst
 
 Signal ZstStageSession::complete_client_connection(ZstPerformerStageProxy* output_client, ZstPerformerStageProxy* input_client)
 {
-	ZstLog::server(LogLevel::notification, "Completing client handshake. Pub: {}, Sub: {}", output_client->URI().path(), input_client->URI().path());
+	Log::server(Log::Level::notification, "Completing client handshake. Pub: {}, Sub: {}", output_client->URI().path(), input_client->URI().path());
 
 	//Keep a record of which clients are connected to each other
 	output_client->add_subscriber(input_client);
 
 	//Let the broadcaster know it can stop publishing messages
-	ZstLog::server(LogLevel::notification, "Stopping P2P handshake broadcast from client {}", output_client->URI().path());
+	Log::server(Log::Level::notification, "Stopping P2P handshake broadcast from client {}", output_client->URI().path());
 	ZstTransportArgs args;
 	auto builder = std::make_shared<FlatBufferBuilder>();
 	auto stop_offset = CreateClientGraphHandshakeStop(*builder, builder->CreateString(input_client->URI().path()) );

@@ -64,10 +64,10 @@ int ZstZMQServerTransport::bind(const std::string& address)
 	auto addr = fmt::format("tcp://{}", address);
 	m_port = zsock_bind(m_clients_sock, "%s", addr.c_str());
 	if (!m_clients_sock) {
-		ZstLog::net(LogLevel::notification, "Could not bind stage router socket to {}", addr);
+		Log::net(Log::Level::notification, "Could not bind stage router socket to {}", addr);
 		return m_port;
 	}
-	ZstLog::net(LogLevel::notification, "Stage router listening on port {}", m_port);
+	Log::net(Log::Level::notification, "Stage router listening on port {}", m_port);
 	return m_port;
 }
 
@@ -125,12 +125,12 @@ void ZstZMQServerTransport::sock_recv(zsock_t* socket)
 				});
 			}
 			else {
-				ZstLog::server(LogLevel::warn, "Received malformed message. Alerting client!");
+				Log::server(Log::Level::warn, "Received malformed message. Alerting client!");
 				signal_client_direct(Signal_ERR_MSG_MALFORMED, msg_id, client_uuid);
 			}
 		}
 		else {
-			ZstLog::server(LogLevel::warn, "Received message with no payload data. Can't unpack.");
+			Log::server(Log::Level::warn, "Received message with no payload data. Can't unpack.");
 		}
 
 		//Cleanup resources
@@ -171,7 +171,7 @@ void ZstZMQServerTransport::send_message_impl(const uint8_t* msg_buffer, size_t 
 	if (result != 0) {
 		int err = zmq_errno();
 		if (err > 0) {
-			ZstLog::net(LogLevel::error, "Server message sending error: {}", zmq_strerror(err));
+			Log::net(Log::Level::error, "Server message sending error: {}", zmq_strerror(err));
 		}
 	}
 }

@@ -109,7 +109,7 @@ ZstEntityBase * ZstEntityFactory::create_entity(const ZstURI & creatable_path, c
 		return entity_ptr;
 	} 
 
-	ZstLog::net(LogLevel::warn, "Could not find creatable {} in factory {}", creatable_path.path(), this->URI().path());
+	Log::net(Log::Level::warn, "Could not find creatable {} in factory {}", creatable_path.path(), this->URI().path());
 	return NULL;
 }
 
@@ -132,7 +132,7 @@ ZstEntityBase * ZstEntityFactory::activate_entity(ZstEntityBase * entity)
 {
 	if (!entity)
 	{
-		ZstLog::net(LogLevel::error, "Factory {} can't activate a null entity", URI().path());
+		Log::net(Log::Level::error, "Factory {} can't activate a null entity", URI().path());
 		return NULL;
 	}
 

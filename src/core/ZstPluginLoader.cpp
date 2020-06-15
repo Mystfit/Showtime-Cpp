@@ -21,7 +21,7 @@ namespace showtime {
 		std::vector<fs::path> plugin_files;
 
 		if (!fs::exists(dir)) {
-			ZstLog::net(LogLevel::error, "Plugin path invalid: {}", dir.string());
+			Log::net(Log::Level::error, "Plugin path invalid: {}", dir.string());
 			return plugin_files;
 		}
 
@@ -70,7 +70,7 @@ namespace showtime {
 			boost::dll::fs::error_code ec;
 			lib.load(file.string(), ec, boost::dll::load_mode::append_decorations);
 			if (ec.value() != 0) {
-				ZstLog::net(LogLevel::error, "Plugin {} load error: {}", file.filename().string(), ec.message());
+				Log::net(Log::Level::error, "Plugin {} load error: {}", file.filename().string(), ec.message());
 				continue;
 			}
 
@@ -85,7 +85,7 @@ namespace showtime {
 			m_plugin_events->defer([plugin](std::shared_ptr<ZstPluginAdaptor> adp) {
 				adp->on_plugin_loaded(plugin);
 			});
-			ZstLog::net(LogLevel::debug, "Loaded plugin {} {}.{}.{}", plugin->name(), plugin->version_major(), plugin->version_minor(), plugin->version_patch());
+			Log::net(Log::Level::debug, "Loaded plugin {} {}.{}.{}", plugin->name(), plugin->version_major(), plugin->version_minor(), plugin->version_patch());
 		}
 	}
 

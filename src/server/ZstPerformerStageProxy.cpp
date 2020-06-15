@@ -52,7 +52,7 @@ void ZstPerformerStageProxy::remove_subscriber(ZstPerformerStageProxy* client)
 		m_connected_subscriber_peers.erase(client->URI());
 	}
 	catch (std::out_of_range e) {
-		ZstLog::server(LogLevel::warn, "Client {} not subscribed to {}", this->URI().path(), client->URI().path());
+		Log::server(Log::Level::warn, "Client {} not subscribed to {}", this->URI().path(), client->URI().path());
 	}
 }
 
