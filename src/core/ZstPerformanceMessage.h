@@ -3,7 +3,7 @@
 #include <vector>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/nil_generator.hpp>
-#include <schemas/graph_message_generated.h>
+#include "showtime/schemas/messaging/graph_message_generated.h"
 #include "ZstMessage.h"
 
 namespace showtime {

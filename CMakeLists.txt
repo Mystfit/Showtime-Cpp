@@ -192,7 +192,7 @@ endif()
 
 find_package(fmt CONFIG REQUIRED)
 
-set(FLATBUFFFER_OUTPUT_DIR "${Showtime_COMPILED_INCLUDE_DIRS}/schemas")
+set(FLATBUFFFER_OUTPUT_DIR "${Showtime_COMPILED_INCLUDE_DIRS}/showtime/schemas")
 set(FLATBUFFER_HEADER_OUTPUT 
     "${FLATBUFFFER_OUTPUT_DIR}/messaging/stage_beacon_message_generated.h"
     "${FLATBUFFFER_OUTPUT_DIR}/messaging/stage_message_generated.h"
@@ -201,7 +201,7 @@ set(FLATBUFFER_HEADER_OUTPUT
 )
 set(FLATC_ARGS 
     "-c"
-    "-o" "${FLATBUFFFER_OUTPUT_DIR}/"
+    "-o" "${FLATBUFFFER_OUTPUT_DIR}/messaging"
     "-I" "${CMAKE_SOURCE_DIR}/schemas/messaging"
     "${CMAKE_SOURCE_DIR}/schemas/messaging/stage_message.fbs"
     "${CMAKE_SOURCE_DIR}/schemas/messaging/stage_beacon_message.fbs"

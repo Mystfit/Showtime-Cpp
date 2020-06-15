@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ZstMessage.h"
-#include "schemas/stage_beacon_message_generated.h"
+#include "showtime/schemas/messaging/stage_beacon_message_generated.h"
 
 namespace showtime {
 	// Forwards

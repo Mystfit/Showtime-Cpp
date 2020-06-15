@@ -17,7 +17,7 @@
 #include <ZstCore.h>
 
 //Showtime Core includes
-#include <schemas/stage_message_generated.h>
+#include "showtime/schemas/messaging/stage_message_generated.h"
 #include "../core/ZstSemaphore.h"
 #include "../core/ZstZMQRefCounter.h"
 #include "../core/ZstIOLoop.h"

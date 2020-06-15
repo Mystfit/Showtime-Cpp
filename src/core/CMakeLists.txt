@@ -2,7 +2,7 @@ message(STATUS "Configuring ${CORE_TARGET_STATIC} target")
 
 # Generate version info header file
 set(VERSION_FILE_IN "${CMAKE_CURRENT_LIST_DIR}/ZstVersion.h.in")
-set(VERSION_FILE_OUT "${Showtime_COMPILED_INCLUDE_DIRS}/ZstVersion.h")
+set(VERSION_FILE_OUT "${Showtime_COMPILED_INCLUDE_DIRS}/showtime/ZstVersion.h")
 configure_file(${VERSION_FILE_IN} ${VERSION_FILE_OUT})
 set_source_files_properties(${VERSION_FILE_OUT} PROPERTIES GENERATED ON)
 
@@ -123,9 +123,7 @@ if(BUILD_DRAFTS)
 endif()
 
 set(ZST_CORE_SCHEMA_HEADERS "")
-if(BUILD_FLATBUFFERS)
-    list(APPEND ZST_CORE_SCHEMA_HEADERS ${FLATBUFFER_HEADER_OUTPUT})
-endif()
+list(APPEND ZST_CORE_SCHEMA_HEADERS ${FLATBUFFER_HEADER_OUTPUT})
 
 set(ZST_CORE_LIASON_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/liasons/ZstSynchronisableLiason.hpp"

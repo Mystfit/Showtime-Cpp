@@ -6,7 +6,7 @@
 //
 #pragma once
 
-#include <schemas/stage_message_generated.h>
+#include "showtime/schemas/messaging/stage_message_generated.h"
 
 #include "ZstExports.h"
 #include "ZstTransportAdaptor.hpp"

@@ -4,7 +4,7 @@
 #include "ZstStage.h"
 
 //Core headers
-#include "ZstVersion.h"
+#include "showtime/ZstVersion.h"
 #include "../core/ZstSemaphore.h"
 
 //Stage headers

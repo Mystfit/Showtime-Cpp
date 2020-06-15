@@ -2,8 +2,8 @@
 
 #include <vector>
 #include <flatbuffers/flatbuffers.h>
-#include <schemas/graph_types_generated.h>
 
+#include "showtime/schemas/messaging/graph_types_generated.h"
 #include "ZstExports.h"
 #include "entities/ZstEntityBase.h"
 #include "entities/ZstPlug.h"

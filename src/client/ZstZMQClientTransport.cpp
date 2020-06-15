@@ -132,7 +132,7 @@ void ZstZMQClientTransport::sock_recv(zsock_t* socket)
 		
 		// Copy msg id to UUID
 		ZstMsgID msg_id;
-		int s = zframe_size(id_data);
+		auto s = zframe_size(id_data);
 		memcpy(&msg_id, zframe_data(id_data), zframe_size(id_data));
 
         if(msg_data){

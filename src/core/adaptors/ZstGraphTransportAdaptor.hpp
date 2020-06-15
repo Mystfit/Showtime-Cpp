@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <schemas/graph_message_generated.h>
+#include "showtime/schemas/messaging/graph_message_generated.h"
 
 #include "ZstExports.h"
 #include "ZstTransportAdaptor.hpp"
