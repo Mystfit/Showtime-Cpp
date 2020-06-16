@@ -12,6 +12,7 @@
 	"SupportURL": "",
 	"CanContainContent": true,
 	"IsBetaVersion": true,
+	"IsEnginePlugin": true,
 	"IsExperimentalVersion": false,
 	"Installed": false,
 	"SupportedTargetPlatforms": [

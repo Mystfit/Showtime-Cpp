@@ -66,15 +66,20 @@ public class ShowtimeRuntime : ModuleRules
 		};
 
 		// Add any import libraries or static libraries
-		string[] platform_libs = null;
-		string[] platform_binaries = null;
+		string[] platform_libs = new string[]{};
+		string[] platform_binaries = new string[]{};
 
 		if (Target.Platform == UnrealTargetPlatform.Win64){
+			string binariesDir = Path.Combine(PluginDirectory, "Binaries", "Win64");
 			platform_libs = win64_libs;
+			PublicDelayLoadDLLs.AddRange(new string[] {
+				Path.Combine(binariesDir, "ShowtimeClient.dll"),
+				Path.Combine(binariesDir, "ShowtimeServer.dll"),
+				Path.Combine(binariesDir, "ShowtimeCore.dll")
+			});
 			platform_binaries = win64_binaries;
 
 			// Copy binaries to plugin binary folder for the editor
-			string binariesDir = Path.Combine(PluginDirectory, "Binaries", "Win64");
 			if (!Directory.Exists(binariesDir))
 				Directory.CreateDirectory(binariesDir);
 			foreach (var dll in platform_binaries)

@@ -68,6 +68,7 @@ set(API_HEADERS
     ${Showtime_INCLUDE_DIRS}/ZstConstants.h
     ${Showtime_INCLUDE_DIRS}/ZstExports.h
     ${Showtime_INCLUDE_DIRS}/ZstURI.h
+    ${Showtime_INCLUDE_DIRS}/ZstPlugin.h
     ${Showtime_INCLUDE_DIRS}/ZstSerialisable.h
     ${Showtime_INCLUDE_DIRS}/ZstSynchronisable.h
     ${Showtime_INCLUDE_DIRS}/ZstBundle.hpp

@@ -2,7 +2,7 @@
 
 #include <memory>
 #include <vector>
-#include <entities/ZstEntityFactory.h>
+#include "entities/ZstEntityFactory.h"
 
 // A plugin is a collection of factories and entities that are loaded at runtime
 

@@ -15,8 +15,6 @@ public:
 	/** IModuleInterface implementation */
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
-private:
-	showtime::ShowtimeClient client;
 };
 
 IMPLEMENT_MODULE(FShowtimeRuntimeModule, ShowtimeRuntime);
