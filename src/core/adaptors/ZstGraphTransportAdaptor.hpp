@@ -9,7 +9,7 @@
 
 #include "showtime/schemas/messaging/graph_message_generated.h"
 
-#include "ZstExports.h"
+#include <showtime/ZstExports.h>
 #include "ZstTransportAdaptor.hpp"
 #include "../ZstPerformanceMessage.h"
 #include "../transports/ZstTransportLayerBase.hpp"

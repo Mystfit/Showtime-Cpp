@@ -4,7 +4,7 @@
 #include <iostream>
 #include <cxxopts.hpp>
 #include <ShowtimeServer.h>
-#include "ZstLogging.h"
+#include <showtime/ZstLogging.h>
 
 using namespace showtime;
 

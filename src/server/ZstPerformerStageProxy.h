@@ -4,7 +4,7 @@
 #include <unordered_set>
 #include <boost/uuid/uuid.hpp>
 
-#include "entities/ZstPerformer.h"
+#include <showtime/entities/ZstPerformer.h>
 
 // Forwards
 class ZstStageTransport;

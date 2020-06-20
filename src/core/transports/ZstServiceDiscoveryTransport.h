@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ZstExports.h"
+#include <showtime/ZstExports.h>
 #include "ZstTransportLayerBase.hpp"
 #include "ZstStageTransport.h"
 #include "../adaptors/ZstServiceDiscoveryAdaptor.hpp"

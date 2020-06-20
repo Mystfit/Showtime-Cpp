@@ -1,7 +1,8 @@
-#include "Showtime.h"
+#include <showtime/Showtime.h>
+#include <showtime/adaptors/ZstSessionAdaptor.hpp>
+
 #include "ZstClient.h"
 #include "ZstClientSession.h"
-#include "adaptors/ZstSessionAdaptor.hpp"
 #include "../core/ZstEventDispatcher.hpp"
 
 using namespace std;

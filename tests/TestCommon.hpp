@@ -1,9 +1,9 @@
 #pragma once
 
 #include <string>
-#include <Showtime.h>
-#include <ShowtimeServer.h>
-#include <ZstFilesystemUtils.h>
+#include <showtime/Showtime.h>
+#include <showtime/ShowtimeServer.h>
+#include <showtime/ZstFilesystemUtils.h>
 
 #include <boost/process.hpp>
 #include <boost/stacktrace.hpp>

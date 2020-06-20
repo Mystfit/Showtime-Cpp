@@ -14,10 +14,10 @@
 #include <boost/thread.hpp>
 
 //Showtime API includes
-#include <ZstCore.h>
+#include <showtime/ZstCore.h>
+#include <showtime/schemas/messaging/stage_message_generated.h>
 
 //Showtime Core includes
-#include "showtime/schemas/messaging/stage_message_generated.h"
 #include "../core/ZstSemaphore.h"
 #include "../core/ZstZMQRefCounter.h"
 #include "../core/ZstIOLoop.h"
@@ -29,8 +29,6 @@
 #include "../core/adaptors/ZstServiceDiscoveryAdaptor.hpp"
 #include "../core/transports/ZstTransportHelpers.h"
 #include "../core/ZstPluginLoader.h"
-
-#include "ZstZMQClientTransport.h"
 #include "../core/transports/ZstServiceDiscoveryTransport.h"
 #include "../core/transports/ZstTCPGraphTransport.h"
 #ifdef ZST_BUILD_DRAFT_API
@@ -38,6 +36,7 @@
 #endif
 
 //Showtime client includes
+#include "ZstZMQClientTransport.h"
 #include "ZstClientSession.h"
 
 namespace showtime {

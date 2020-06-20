@@ -1,10 +1,10 @@
 #pragma once
 
-#include "ZstExports.h"
-#include "ZstConstants.h"
-#include "ZstCable.h"
-#include "ZstConstants.h"
-#include "entities/ZstEntityBase.h"
+#include <showtime/ZstExports.h>
+#include <showtime/ZstConstants.h>
+#include <showtime/ZstCable.h>
+#include <showtime/ZstConstants.h>
+#include <showtime/entities/ZstEntityBase.h>
 
 #include <set>
 #include <mutex>
@@ -61,6 +61,10 @@ public:
 
 	// Serialisation
 	// -------------
+    using ZstEntityBase::serialize;
+    using ZstEntityBase::deserialize;
+    using ZstEntityBase::serialize_partial;
+    using ZstEntityBase::deserialize_partial;
     ZST_EXPORT virtual void serialize_partial(flatbuffers::Offset<PlugData> & serialized_offset, flatbuffers::FlatBufferBuilder& buffer_builder) const override;
 	ZST_EXPORT virtual flatbuffers::uoffset_t serialize(flatbuffers::FlatBufferBuilder& buffer_builder) const override;
     ZST_EXPORT virtual void deserialize_partial(const PlugData* buffer) override;

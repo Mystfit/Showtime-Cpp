@@ -1,9 +1,9 @@
 #pragma once
 
 #include <memory>
-#include "ZstExports.h"
-#include "ZstCable.h"
-#include "entities/ZstPlug.h"
+#include <showtime/ZstExports.h>
+#include <showtime/ZstCable.h>
+#include <showtime/entities/ZstPlug.h>
 #include "../adaptors/ZstGraphTransportAdaptor.hpp"
 
 namespace showtime {

@@ -1,9 +1,8 @@
-#include "../ZstZMQRefCounter.h"
-#include "showtime/schemas/stage_beacon_message_generated.h"
-
 #include <czmq.h>
-#include "ZstLogging.h"
+#include <showtime/schemas/messaging/stage_beacon_message_generated.h>
+#include <showtime/ZstLogging.h>
 #include "ZstServiceDiscoveryTransport.h"
+#include "../ZstZMQRefCounter.h"
 
 using namespace flatbuffers;
 

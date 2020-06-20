@@ -1,7 +1,7 @@
 message(STATUS "Configuring ${SERVER_TARGET} target")
 
 set(ZST_SERVER_HEADERS
-    "${Showtime_INCLUDE_DIRS}/ShowtimeServer.h"
+    "${CORE_INCLUDE_DIR}/ShowtimeServer.h"
 )
 
 set(ZST_SERVER_PRIVATE_HEADERS
@@ -75,7 +75,7 @@ foreach(TARGET ${SERVER_LIBS})
   set_target_properties(${TARGET} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION})
   # Server lib sources
   target_sources(${TARGET} PRIVATE 
-    ${ZST_SERVER_HEADERS}
+    # ${ZST_SERVER_HEADERS}
     ${ZST_SERVER_PRIVATE_HEADERS}
     ${ZST_SERVER_SRC}
   )

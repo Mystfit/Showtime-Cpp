@@ -2,14 +2,14 @@
 
 #include <mutex>
 
-#include <ZstURI.h>
-#include "ZstExports.h"
-#include "entities/ZstEntityFactory.h"
-#include "entities/ZstEntityBase.h"
-#include "entities/ZstPlug.h"
-#include "entities/ZstPerformer.h"
-#include "adaptors/ZstHierarchyAdaptor.hpp"
-#include "adaptors/ZstEntityAdaptor.hpp"
+#include <showtime/ZstURI.h>
+#include <showtime/ZstExports.h>
+#include <showtime/entities/ZstEntityFactory.h>
+#include <showtime/entities/ZstEntityBase.h>
+#include <showtime/entities/ZstPlug.h>
+#include <showtime/entities/ZstPerformer.h>
+#include <showtime/adaptors/ZstHierarchyAdaptor.hpp>
+#include <showtime/adaptors/ZstEntityAdaptor.hpp>
 
 #include "ZstEventDispatcher.hpp"
 #include "ZstSynchronisableModule.h"

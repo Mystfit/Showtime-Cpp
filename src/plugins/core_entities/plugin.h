@@ -1,8 +1,8 @@
 #pragma once
 
 #include <boost/dll/alias.hpp>
-#include "ZstPlugin.h"
-#include "ZstExports.h"
+#include <showtime/ZstPlugin.h>
+#include <showtime/ZstExports.h>
 #include "MathEntityFactory.h"
 
 #define PLUGIN_MAJOR_VER 0

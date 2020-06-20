@@ -1,9 +1,9 @@
 #include <exception>
 #include <functional>
-#include "entities/ZstEntityFactory.h"
+#include <showtime/entities/ZstEntityFactory.h>
+#include <showtime/adaptors/ZstSynchronisableAdaptor.hpp>
+#include <showtime/ZstLogging.h>
 #include "../ZstEventDispatcher.hpp"
-#include "adaptors/ZstSynchronisableAdaptor.hpp"
-#include "ZstLogging.h"
 
 using namespace flatbuffers;
 

@@ -4,11 +4,11 @@
 #include "ZstStageMessage.h"
 
 #include "adaptors/ZstTransportAdaptor.hpp"
-#include "entities/ZstEntityBase.h"
-#include "entities/ZstComponent.h"
-#include "entities/ZstPerformer.h"
-#include "entities/ZstPlug.h"
-#include "entities/ZstEntityFactory.h"
+#include <showtime/entities/ZstEntityBase.h>
+#include <showtime/entities/ZstComponent.h>
+#include <showtime/entities/ZstPerformer.h>
+#include <showtime/entities/ZstPlug.h>
+#include <showtime/entities/ZstEntityFactory.h>
 
 namespace showtime {
 

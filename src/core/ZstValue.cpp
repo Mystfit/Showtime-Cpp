@@ -1,9 +1,9 @@
 #include <string>
 #include <sstream>
-#include <schemas/graph_types_generated.h>
+#include <showtime/schemas/messaging/graph_types_generated.h>
 #include <boost/bimap.hpp>
 #include <boost/assign/list_of.hpp>
-#include "ZstLogging.h"
+#include <showtime/ZstLogging.h>
 #include "ZstValue.h"
 
 using namespace flatbuffers;

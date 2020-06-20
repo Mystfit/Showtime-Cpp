@@ -22,11 +22,11 @@ public class ShowtimeRuntime : ModuleRules
 		bEnableExceptions = true;
 
 		// Add any include paths for the plugin
-		PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "Public"));
-		
+		PublicIncludePaths.AddRange(new string[]{
+			Path.Combine(ModuleDirectory, "Public"),
+			Path.Combine(PluginDirectory, "external", "include")
+		});
 		PrivateIncludePaths.Add(Path.Combine(ModuleDirectory, "Private"));
-		PrivateIncludePaths.Add(Path.Combine(PluginDirectory, "external", "include"));
-
 		PublicDependencyModuleNames.AddRange(
 			new string[] {
 				"Core",

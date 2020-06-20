@@ -1,5 +1,5 @@
 #include "ZstPluginLoader.h"
-#include "ZstFilesystemUtils.h"
+#include <showtime/ZstFilesystemUtils.h>
 
 namespace showtime {
 	ZstPluginLoader::ZstPluginLoader() : 

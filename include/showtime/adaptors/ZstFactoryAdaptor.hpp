@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ZstExports.h"
-#include "adaptors/ZstEventAdaptor.hpp"
+#include <showtime/ZstExports.h>
+#include <showtime/adaptors/ZstEventAdaptor.hpp>
 
 namespace showtime {
 

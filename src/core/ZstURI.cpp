@@ -2,7 +2,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <algorithm>
-#include <ZstURI.h>
+#include <showtime/ZstURI.h>
 
 namespace showtime {
 

@@ -104,8 +104,8 @@ option(BUILD_DRAFTS "Build with experimental draft support" OFF)
 option(BUILD_SERVER_LAUNCHER "Build server launcher program" ON)
 
 # Set showtime variables
-set(Showtime_COMPILED_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include/")
-set(Showtime_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/include/showtime/")
+set(Showtime_COMPILED_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include")
+set(Showtime_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/include")
 set(Showtime_ALL_INCLUDE_DIRS ${Showtime_COMPILED_INCLUDE_DIRS} ${Showtime_INCLUDE_DIRS})
 set(Showtime_SUBMODULE_DEPENDENCIES_DIR "${CMAKE_SOURCE_DIR}/submodules")
 

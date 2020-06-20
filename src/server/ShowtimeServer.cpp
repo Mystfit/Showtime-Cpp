@@ -1,5 +1,5 @@
-#include <ShowtimeServer.h>
-#include "ZstLogging.h"
+#include <showtime/ShowtimeServer.h>
+#include <showtime/ZstLogging.h>
 #include "ZstStage.h"
 
 namespace showtime { 

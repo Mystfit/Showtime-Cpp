@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-#include "ZstExports.h"
+#include <showtime/ZstExports.h>
 
 class ZST_CLASS_EXPORTED MultipleInheritableEnableSharedFromThis : public std::enable_shared_from_this<MultipleInheritableEnableSharedFromThis>
 {

@@ -2,7 +2,7 @@
 
 #include "../core/transports/ZstStageTransport.h"
 #include "ZstPerformerStageProxy.h"
-#include "ZstLogging.h"
+#include <showtime/ZstLogging.h>
 
 using namespace boost::uuids;
 

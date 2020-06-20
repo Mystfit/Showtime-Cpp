@@ -2,9 +2,9 @@
 #include <boost/bimap.hpp>
 #include <boost/assign/list_of.hpp>
 
-#include "entities/ZstEntityBase.h"
-#include "entities/ZstEntityFactory.h"
-#include "ZstCable.h"
+#include <showtime/entities/ZstEntityBase.h>
+#include <showtime/entities/ZstEntityFactory.h>
+#include <showtime/ZstCable.h>
 #include "../ZstEventDispatcher.hpp"
 #include "../ZstHierarchy.h"
 

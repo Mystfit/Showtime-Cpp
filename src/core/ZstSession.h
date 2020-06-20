@@ -1,12 +1,12 @@
 #pragma once
 
-#include "ZstExports.h"
-#include "entities/ZstEntityFactory.h"
-#include "adaptors/ZstEntityAdaptor.hpp"
-#include "adaptors/ZstHierarchyAdaptor.hpp"
-#include "adaptors/ZstSessionAdaptor.hpp"
-#include "adaptors/ZstEntityAdaptor.hpp"
-#include "adaptors/ZstComputeAdaptor.hpp"
+#include <showtime/ZstExports.h>
+#include <showtime/entities/ZstEntityFactory.h>
+#include <showtime/adaptors/ZstEntityAdaptor.hpp>
+#include <showtime/adaptors/ZstHierarchyAdaptor.hpp>
+#include <showtime/adaptors/ZstSessionAdaptor.hpp>
+#include <showtime/adaptors/ZstEntityAdaptor.hpp>
+#include <showtime/adaptors/ZstComputeAdaptor.hpp>
 
 #include "ZstSynchronisableModule.h"
 #include "ZstHierarchy.h"

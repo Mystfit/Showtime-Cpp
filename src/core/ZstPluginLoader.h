@@ -3,12 +3,11 @@
 #include <memory>
 #include <unordered_map>
 #include <boost/dll.hpp>
-
+#include <showtime/adaptors/ZstPluginAdaptor.hpp>
+#include <showtime/ZstPlugin.h>
+#include <showtime/ZstFilesystemUtils.h>
 #include "ZstEventModule.h"
 #include "ZstEventDispatcher.hpp"
-#include "adaptors/ZstPluginAdaptor.hpp"
-#include "ZstPlugin.h"
-#include "ZstFilesystemUtils.h"
 
 namespace showtime {
 

@@ -8,7 +8,7 @@
 
 #include "showtime/schemas/messaging/stage_message_generated.h"
 
-#include "ZstExports.h"
+#include <showtime/ZstExports.h>
 #include "ZstTransportAdaptor.hpp"
 #include "../ZstStageMessage.h"
 #include "../transports/ZstTransportLayerBase.hpp"

@@ -1,7 +1,7 @@
 message(STATUS "Configuring ${CLIENT_TARGET} target")
 
 set(ZST_CLIENT_HEADERS
-	"${Showtime_INCLUDE_DIRS}/Showtime.h"
+	"${CORE_INCLUDE_DIR}/Showtime.h"
 )
 
 set(ZST_CLIENT_PRIVATE_HEADERS
@@ -77,7 +77,7 @@ foreach(TARGET ${CLIENT_LIBS})
 
   # Include files in client target
   target_sources(${TARGET} PRIVATE 
-    ${ZST_CLIENT_HEADERS}
+    # ${ZST_CLIENT_HEADERS}
     ${ZST_CLIENT_PRIVATE_HEADERS}
     ${ZST_CLIENT_SRC}
   )

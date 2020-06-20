@@ -1,8 +1,8 @@
 #include <exception>
-#include "entities/ZstPerformer.h"
+#include <showtime/entities/ZstPerformer.h>
+#include <showtime/ZstLogging.h>
 #include "../liasons/ZstEntityLiason.hpp"
 #include "../ZstEventDispatcher.hpp"
-#include "ZstLogging.h"
 
 using namespace std;
 using namespace flatbuffers;

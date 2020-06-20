@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
 #include <ostream>
-#include "ZstExports.h"
+#include <showtime/ZstExports.h>
 
 #define MAX_PATH_LEN 255
 #define DELIM '/'

@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <boost/uuid/uuid.hpp>
 
-#include "ZstExports.h"
+#include <showtime/ZstExports.h>
 
 typedef boost::uuids::uuid ZstMsgID;
 

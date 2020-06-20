@@ -1,6 +1,6 @@
 #include <sstream>
 #include <czmq.h>
-#include "ZstLogging.h"
+#include <showtime/ZstLogging.h>
 #include "ZstTCPGraphTransport.h"
 
 namespace showtime {

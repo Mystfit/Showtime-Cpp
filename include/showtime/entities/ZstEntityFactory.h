@@ -3,9 +3,9 @@
 #include <set>
 #include <memory>
 
-#include "ZstExports.h"
-#include "entities/ZstEntityBase.h"
-#include "adaptors/ZstFactoryAdaptor.hpp"
+#include <showtime/ZstExports.h>
+#include <showtime/entities/ZstEntityBase.h>
+#include <showtime/adaptors/ZstFactoryAdaptor.hpp>
 
 namespace showtime {
 
@@ -50,7 +50,10 @@ public:
 	
 	// Serialisation
 	// -------------
-
+	using ZstEntityBase::serialize;
+	using ZstEntityBase::deserialize;
+	using ZstEntityBase::serialize_partial;
+	using ZstEntityBase::deserialize_partial;
     ZST_EXPORT virtual void serialize_partial(flatbuffers::Offset<FactoryData> & serialized_offset, flatbuffers::FlatBufferBuilder& buffer_builder) const override;
 	ZST_EXPORT virtual flatbuffers::uoffset_t serialize(flatbuffers::FlatBufferBuilder& buffer_builder) const override;
     ZST_EXPORT virtual void deserialize_partial(const FactoryData* buffer) override;

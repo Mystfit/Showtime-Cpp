@@ -6,8 +6,8 @@
 #include <vector>
 
 #include "ZstCableAddress.h"
-#include "ZstExports.h"
-#include "ZstURI.h"
+#include <showtime/ZstExports.h>
+#include <showtime/ZstURI.h>
 #include "ZstSynchronisable.h"
 #include "ZstBundle.hpp"
 

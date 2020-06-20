@@ -12,7 +12,7 @@
 #include <boost/log/expressions.hpp>
 #include <boost/core/null_deleter.hpp>
 #include <fstream>
-#include "ZstLogging.h"
+#include <showtime/ZstLogging.h>
 #ifdef WIN32
 #include <windows.h>
 #endif

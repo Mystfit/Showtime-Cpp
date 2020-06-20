@@ -1,6 +1,6 @@
 #include <memory>
 
-#include "entities/ZstComponent.h"
+#include <showtime/entities/ZstComponent.h>
 #include "../ZstEventDispatcher.hpp"
 #include "../ZstHierarchy.h"
 

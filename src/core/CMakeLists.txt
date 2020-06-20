@@ -40,41 +40,42 @@ endforeach()
 set_source_files_properties(${GENERATED_SOURCES} PROPERTIES GENERATED ON)
 
 # Public include files
+set(CORE_INCLUDE_DIR ${Showtime_INCLUDE_DIRS}/showtime)
 set(ENTITY_HEADERS
-    ${Showtime_INCLUDE_DIRS}/entities/ZstEntityFactory.h
-    ${Showtime_INCLUDE_DIRS}/entities/ZstEntityBase.h
-    ${Showtime_INCLUDE_DIRS}/entities/ZstComponent.h
-    ${Showtime_INCLUDE_DIRS}/entities/ZstPlug.h
-    ${Showtime_INCLUDE_DIRS}/entities/ZstPerformer.h
+    ${CORE_INCLUDE_DIR}/entities/ZstEntityFactory.h
+    ${CORE_INCLUDE_DIR}/entities/ZstEntityBase.h
+    ${CORE_INCLUDE_DIR}/entities/ZstComponent.h
+    ${CORE_INCLUDE_DIR}/entities/ZstPlug.h
+    ${CORE_INCLUDE_DIR}/entities/ZstPerformer.h
 )
 set(ADAPTOR_HEADERS 
-    ${Showtime_INCLUDE_DIRS}/adaptors/ZstEventAdaptor.hpp
-    ${Showtime_INCLUDE_DIRS}/adaptors/ZstConnectionAdaptor.hpp
-    ${Showtime_INCLUDE_DIRS}/adaptors/ZstComputeAdaptor.hpp
-    ${Showtime_INCLUDE_DIRS}/adaptors/ZstSynchronisableAdaptor.hpp
-    ${Showtime_INCLUDE_DIRS}/adaptors/ZstFactoryAdaptor.hpp
-    ${Showtime_INCLUDE_DIRS}/adaptors/ZstSessionAdaptor.hpp
-    ${Showtime_INCLUDE_DIRS}/adaptors/ZstHierarchyAdaptor.hpp
-    ${Showtime_INCLUDE_DIRS}/adaptors/ZstEntityAdaptor.hpp
-    ${Showtime_INCLUDE_DIRS}/adaptors/ZstPluginAdaptor.hpp
+    ${CORE_INCLUDE_DIR}/adaptors/ZstEventAdaptor.hpp
+    ${CORE_INCLUDE_DIR}/adaptors/ZstConnectionAdaptor.hpp
+    ${CORE_INCLUDE_DIR}/adaptors/ZstComputeAdaptor.hpp
+    ${CORE_INCLUDE_DIR}/adaptors/ZstSynchronisableAdaptor.hpp
+    ${CORE_INCLUDE_DIR}/adaptors/ZstFactoryAdaptor.hpp
+    ${CORE_INCLUDE_DIR}/adaptors/ZstSessionAdaptor.hpp
+    ${CORE_INCLUDE_DIR}/adaptors/ZstHierarchyAdaptor.hpp
+    ${CORE_INCLUDE_DIR}/adaptors/ZstEntityAdaptor.hpp
+    ${CORE_INCLUDE_DIR}/adaptors/ZstPluginAdaptor.hpp
 )
 
 set(API_HEADERS
-    ${Showtime_INCLUDE_DIRS}/ZstCore.h
-    ${Showtime_INCLUDE_DIRS}/ZstLogging.h
-    ${Showtime_INCLUDE_DIRS}/ZstCable.h
-    ${Showtime_INCLUDE_DIRS}/ZstExceptions.h
-    ${Showtime_INCLUDE_DIRS}/ZstCableAddress.h
-    ${Showtime_INCLUDE_DIRS}/ZstConstants.h
-    ${Showtime_INCLUDE_DIRS}/ZstExports.h
-    ${Showtime_INCLUDE_DIRS}/ZstURI.h
-    ${Showtime_INCLUDE_DIRS}/ZstPlugin.h
-    ${Showtime_INCLUDE_DIRS}/ZstSerialisable.h
-    ${Showtime_INCLUDE_DIRS}/ZstSynchronisable.h
-    ${Showtime_INCLUDE_DIRS}/ZstBundle.hpp
-    ${Showtime_INCLUDE_DIRS}/ZstServerAddress.h
-    ${Showtime_INCLUDE_DIRS}/ZstPointerUtils.h
-    ${Showtime_INCLUDE_DIRS}/ZstFilesystemUtils.h
+    ${CORE_INCLUDE_DIR}/ZstCore.h
+    ${CORE_INCLUDE_DIR}/ZstLogging.h
+    ${CORE_INCLUDE_DIR}/ZstCable.h
+    ${CORE_INCLUDE_DIR}/ZstExceptions.h
+    ${CORE_INCLUDE_DIR}/ZstCableAddress.h
+    ${CORE_INCLUDE_DIR}/ZstConstants.h
+    ${CORE_INCLUDE_DIR}/ZstExports.h
+    ${CORE_INCLUDE_DIR}/ZstURI.h
+    ${CORE_INCLUDE_DIR}/ZstPlugin.h
+    ${CORE_INCLUDE_DIR}/ZstSerialisable.h
+    ${CORE_INCLUDE_DIR}/ZstSynchronisable.h
+    ${CORE_INCLUDE_DIR}/ZstBundle.hpp
+    ${CORE_INCLUDE_DIR}/ZstServerAddress.h
+    ${CORE_INCLUDE_DIR}/ZstPointerUtils.h
+    ${CORE_INCLUDE_DIR}/ZstFilesystemUtils.h
     ${VERSION_FILE_OUT}
 )
 list(APPEND Showtime_API_INTERFACE 
@@ -214,7 +215,7 @@ source_group( "showtime\\schemas" FILES ${ZST_CORE_SCHEMA_HEADERS})
 
 # Add sources to object library so that we don't have to recompile shared and static libs
 target_sources(${CORE_TARGET_OBJECTS} PRIVATE 
-    ${ZST_CORE_HEADERS} 
+    # ${ZST_CORE_HEADERS} 
     ${ZST_CORE_SRC} 
     ${ZST_CORE_MODULE_HEADERS}
     ${ZST_CORE_MODULE_SRC}
@@ -222,10 +223,10 @@ target_sources(${CORE_TARGET_OBJECTS} PRIVATE
     ${ZST_CORE_TRANSPORT_SRC}
     ${ZST_CORE_LIASON_HEADERS}
     ${ZST_CORE_LIASON_SRC}
-    ${ZST_CORE_ADAPTOR_HEADERS}
+    # ${ZST_CORE_ADAPTOR_HEADERS}
     ${ZST_CORE_ADAPTOR_SRC}
     ${ZST_CORE_ENTITY_SRC}
-    ${ZST_CORE_SCHEMA_HEADERS}
+    # ${ZST_CORE_SCHEMA_HEADERS}
     ${Showtime_API_INTERFACE}
 )
 

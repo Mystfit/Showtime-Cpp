@@ -1,9 +1,9 @@
 #pragma once
 
-#include "ZstExports.h"
-#include "entities/ZstComponent.h"
-#include "entities/ZstPlug.h"
-#include "adaptors/ZstEventAdaptor.hpp"
+#include <showtime/ZstExports.h>
+#include <showtime/entities/ZstComponent.h>
+#include <showtime/entities/ZstPlug.h>
+#include <showtime/adaptors/ZstEventAdaptor.hpp>
 
 namespace showtime {
 

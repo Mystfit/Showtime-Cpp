@@ -2,11 +2,11 @@
 
 #include <memory>
 #include <mutex>
-#include "ZstExports.h"
+#include <showtime/ZstExports.h>
+#include <showtime/adaptors/ZstSynchronisableAdaptor.hpp>
 #include "ZstReaper.h"
 #include "ZstEventDispatcher.hpp"
 #include "ZstEventModule.h"
-#include "adaptors/ZstSynchronisableAdaptor.hpp"
 #include "liasons/ZstSynchronisableLiason.hpp"
 
 namespace showtime {

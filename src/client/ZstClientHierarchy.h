@@ -6,14 +6,13 @@
 
 #pragma once
 
-#include <ZstCore.h>
-#include "ZstClientModule.h"
-
-#include "adaptors/ZstSessionAdaptor.hpp"
+#include <showtime/ZstCore.h>
+#include <showtime/adaptors/ZstSessionAdaptor.hpp>
 #include "../core/ZstEventDispatcher.hpp"
 #include "../core/adaptors/ZstStageTransportAdaptor.hpp"
 #include "../core/ZstStageMessage.h"
 #include "../core/ZstHierarchy.h"
+#include "ZstClientModule.h"
 
 namespace showtime::client {
     

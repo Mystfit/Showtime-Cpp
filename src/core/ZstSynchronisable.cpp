@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <assert.h>
-#include <ZstSynchronisable.h>
+#include <showtime/ZstSynchronisable.h>
 #include "ZstEventDispatcher.hpp"
 
 namespace showtime {

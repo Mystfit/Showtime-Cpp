@@ -3,8 +3,8 @@
 #include <memory>
 #include <mutex>
 
-#include "ZstExports.h"
-#include "ZstConstants.h"
+#include <showtime/ZstExports.h>
+#include <showtime/ZstConstants.h>
 #include "adaptors/ZstSynchronisableAdaptor.hpp"
 
 namespace showtime {

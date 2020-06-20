@@ -1,5 +1,5 @@
 #include "../ZstEventDispatcher.hpp"
-#include "adaptors/ZstEventAdaptor.hpp"
+#include <showtime/adaptors/ZstEventAdaptor.hpp>
 
 namespace showtime {
 

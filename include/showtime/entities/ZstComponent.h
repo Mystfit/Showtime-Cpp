@@ -3,11 +3,11 @@
 #include <vector>
 #include <flatbuffers/flatbuffers.h>
 
-#include "showtime/schemas/messaging/graph_types_generated.h"
-#include "ZstExports.h"
-#include "entities/ZstEntityBase.h"
-#include "entities/ZstPlug.h"
-#include "ZstCable.h"
+#include <showtime/schemas/messaging/graph_types_generated.h>
+#include <showtime/ZstExports.h>
+#include <showtime/entities/ZstEntityBase.h>
+#include <showtime/entities/ZstPlug.h>
+#include <showtime/ZstCable.h>
 
 namespace showtime
 {
@@ -57,6 +57,10 @@ public:
 
 	// Serialisation
 	// -------------
+    using ZstEntityBase::serialize;
+    using ZstEntityBase::deserialize;
+    using ZstEntityBase::serialize_partial;
+    using ZstEntityBase::deserialize_partial;
     ZST_EXPORT virtual void serialize_partial(flatbuffers::Offset<ComponentData>& destination_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
 	ZST_EXPORT virtual flatbuffers::uoffset_t serialize(flatbuffers::FlatBufferBuilder& buffer_builder) const override;
     ZST_EXPORT virtual void deserialize_partial(const ComponentData* buffer) override;

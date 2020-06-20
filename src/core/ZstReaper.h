@@ -5,8 +5,8 @@
 #include <functional>
 #include <concurrentqueue.h>
 
-#include "entities/ZstEntityBase.h"
-#include "ZstExports.h"
+#include <showtime/entities/ZstEntityBase.h>
+#include <showtime/ZstExports.h>
 
 namespace showtime {
 

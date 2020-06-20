@@ -2,8 +2,8 @@
 
 #include "showtime/schemas/messaging/stage_message_generated.h"
 
-#include "ZstExports.h"
-#include "adaptors/ZstEventAdaptor.hpp"
+#include <showtime/ZstExports.h>
+#include <showtime/adaptors/ZstEventAdaptor.hpp>
 #include "../transports/ZstTransportLayerBase.hpp"
 
 namespace showtime {

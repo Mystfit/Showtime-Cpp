@@ -3,7 +3,7 @@
 //Boost includes
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
-#include "ZstExports.h"
+#include <showtime/ZstExports.h>
 
 struct ZstIOLoop {
 public:

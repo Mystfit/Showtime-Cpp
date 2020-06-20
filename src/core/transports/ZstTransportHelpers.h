@@ -2,8 +2,8 @@
 #include <stdexcept>
 #include "../ZstMsgID.h"
 #include "../ZstMessage.h"
-#include "ZstConstants.h"
-#include "showtime/schemas/messaging/stage_message_generated.h"
+#include <showtime/ZstConstants.h>
+#include <showtime/schemas/messaging/stage_message_generated.h>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/nil_generator.hpp>
 

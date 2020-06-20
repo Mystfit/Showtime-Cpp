@@ -10,7 +10,7 @@
 #include <algorithm>
 
 //Showtime API
-#include <ZstCore.h>
+#include <showtime/ZstCore.h>
 
 //Core headers
 #include "../core/ZstActor.h"

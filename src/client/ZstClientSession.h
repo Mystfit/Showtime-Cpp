@@ -5,7 +5,10 @@
 */
 
 //Core API
-#include "ZstCore.h"
+#include <showtime/ZstCore.h>
+#include <showtime/adaptors/ZstSessionAdaptor.hpp>
+#include <showtime/adaptors/ZstSynchronisableAdaptor.hpp>
+
 #include "../core/ZstPerformanceMessage.h"
 #include "../core/ZstStageMessage.h"
 #include "../core/ZstMessage.h"
@@ -26,8 +29,7 @@
 #include "../core/adaptors/ZstGraphTransportAdaptor.hpp"
 #include "../core/adaptors/ZstStageTransportAdaptor.hpp"
 
-#include "adaptors/ZstSessionAdaptor.hpp"
-#include "adaptors/ZstSynchronisableAdaptor.hpp"
+
 
 namespace showtime::client {
 

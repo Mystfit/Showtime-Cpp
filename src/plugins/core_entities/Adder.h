@@ -1,8 +1,8 @@
 #pragma once
 
-#include "ZstExports.h"
-#include "entities/ZstComponent.h"
-#include "entities/ZstPlug.h"
+#include <showtime/ZstExports.h>
+#include <showtime/entities/ZstComponent.h>
+#include <showtime/entities/ZstPlug.h>
 #include <memory>
 
 #define ADDITION_FILTER_TYPE "addition"

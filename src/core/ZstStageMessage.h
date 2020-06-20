@@ -1,10 +1,10 @@
 #pragma once
 
-#include "showtime/schemas/messaging/stage_message_generated.h"
+#include <showtime/schemas/messaging/stage_message_generated.h>
+#include <showtime/ZstExports.h>
+#include <showtime/entities/ZstEntityBase.h>
 
-#include "ZstExports.h"
 #include "ZstMessage.h"
-#include "entities/ZstEntityBase.h"
 
 
 namespace showtime {

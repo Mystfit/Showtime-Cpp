@@ -1,25 +1,22 @@
-#include "adaptors/ZstEventAdaptor.hpp"
-#include "adaptors/ZstComputeAdaptor.hpp"
-#include "adaptors/ZstSynchronisableAdaptor.hpp"
-#include "adaptors/ZstSessionAdaptor.hpp"
-#include "adaptors/ZstHierarchyAdaptor.hpp"
-#include "adaptors/ZstFactoryAdaptor.hpp"
-#include "adaptors/ZstSessionAdaptor.hpp"
-#include "adaptors/ZstEntityAdaptor.hpp"
-#include "adaptors/ZstPluginAdaptor.hpp"
-#include "adaptors/ZstEventAdaptor.hpp"
-
+#include <showtime/adaptors/ZstEventAdaptor.hpp>
+#include <showtime/adaptors/ZstComputeAdaptor.hpp>
+#include <showtime/adaptors/ZstSynchronisableAdaptor.hpp>
+#include <showtime/adaptors/ZstSessionAdaptor.hpp>
+#include <showtime/adaptors/ZstHierarchyAdaptor.hpp>
+#include <showtime/adaptors/ZstFactoryAdaptor.hpp>
+#include <showtime/adaptors/ZstSessionAdaptor.hpp>
+#include <showtime/adaptors/ZstEntityAdaptor.hpp>
+#include <showtime/adaptors/ZstPluginAdaptor.hpp>
+#include <showtime/adaptors/ZstEventAdaptor.hpp>
+#include <showtime/ZstSynchronisable.h>
+#include <showtime/ZstCable.h>
+#include <showtime/entities/ZstPerformer.h>
+#include <showtime/entities/ZstPlug.h>
+#include <showtime/entities/ZstEntityFactory.h>
 #include "ZstServiceDiscoveryAdaptor.hpp"
 #include "ZstStageTransportAdaptor.hpp"
 #include "ZstGraphTransportAdaptor.hpp"
-
 #include "../ZstHierarchy.h"
-
-#include "ZstSynchronisable.h"
-#include "ZstCable.h"
-#include "entities/ZstPerformer.h"
-#include "entities/ZstPlug.h"
-#include "entities/ZstEntityFactory.h"
 
 namespace showtime {
 

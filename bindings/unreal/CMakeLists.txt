@@ -28,8 +28,8 @@ add_custom_command(
 add_custom_command(
     PRE_BUILD
     TARGET ${UNREAL_TARGET}
-    COMMAND ${CMAKE_COMMAND} -E echo "Copying ${Showtime_INCLUDE_DIRS} to ${UNREAL_INCLUDE_DIR}/showtime"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${Showtime_INCLUDE_DIRS} ${UNREAL_INCLUDE_DIR}/showtime
+    COMMAND ${CMAKE_COMMAND} -E echo "Copying ${Showtime_INCLUDE_DIRS} to ${UNREAL_INCLUDE_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${Showtime_INCLUDE_DIRS} ${UNREAL_INCLUDE_DIR}
 )
 
 add_custom_command(

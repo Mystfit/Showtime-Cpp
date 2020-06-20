@@ -3,11 +3,11 @@
 #include <unordered_map>
 #include <memory>
 
-#include "ZstExports.h"
-#include "ZstConstants.h"
-#include "ZstURI.h"
-#include "entities/ZstEntityFactory.h"
-#include "entities/ZstComponent.h"
+#include <showtime/ZstExports.h>
+#include <showtime/ZstConstants.h>
+#include <showtime/ZstURI.h>
+#include <showtime/entities/ZstEntityFactory.h>
+#include <showtime/entities/ZstComponent.h>
 
 namespace showtime
 {
@@ -40,6 +40,14 @@ public:
     
 	// Serialisation
 
+    using ZstEntityBase::serialize;
+    using ZstEntityBase::deserialize;
+    using ZstEntityBase::serialize_partial;
+    using ZstEntityBase::deserialize_partial;
+    using ZstComponent::serialize;
+    using ZstComponent::deserialize;
+    using ZstComponent::serialize_partial;
+    using ZstComponent::deserialize_partial;
     ZST_EXPORT virtual void serialize_partial(flatbuffers::Offset<PerformerData>& destination_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
 	ZST_EXPORT virtual flatbuffers::uoffset_t serialize(flatbuffers::FlatBufferBuilder& buffer_builder) const override;
     ZST_EXPORT virtual void deserialize_partial(const PerformerData* buffer) override;

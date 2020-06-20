@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ZstExports.h"
-#include "entities/ZstEntityFactory.h"
+#include <showtime/ZstExports.h>
+#include <showtime/entities/ZstEntityFactory.h>
 #include "Adder.h"
 
 

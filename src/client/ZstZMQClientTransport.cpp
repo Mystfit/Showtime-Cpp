@@ -140,7 +140,7 @@ void ZstZMQClientTransport::sock_recv(zsock_t* socket)
 			if(VerifyStageMessageBuffer(verifier)) {
 				auto stage_msg = get_msg();
 				auto uuid = boost::uuids::nil_generator()();
-				auto owner = std::static_pointer_cast<ZstStageTransport>(ZstTransportLayer::shared_from_this());
+				auto owner = std::dynamic_pointer_cast<ZstStageTransport>(ZstTransportLayer::shared_from_this());
 				stage_msg->init(
 					GetStageMessage(zframe_data(msg_data)),
 					uuid,

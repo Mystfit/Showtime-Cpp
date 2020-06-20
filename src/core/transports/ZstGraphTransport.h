@@ -5,7 +5,7 @@
 #include "../ZstMessagePool.hpp"
 #include "../ZstActor.h"
 #include "ZstTransportLayerBase.hpp"
-#include "ZstExports.h"
+#include <showtime/ZstExports.h>
 
 #define PERFORMANCE_GROUP "p"
 #define HANDSHAKE_GROUP "h"

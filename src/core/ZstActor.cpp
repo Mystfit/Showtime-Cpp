@@ -1,7 +1,7 @@
 #include "ZstActor.h"
 #include "ZstZMQRefCounter.h"
 #include <czmq.h>
-#include "ZstLogging.h"
+#include <showtime/ZstLogging.h>
 
 using namespace std;
 

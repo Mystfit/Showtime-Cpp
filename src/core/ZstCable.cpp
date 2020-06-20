@@ -1,5 +1,5 @@
-#include "ZstCable.h"
-#include "entities/ZstPlug.h"
+#include <showtime/ZstCable.h>
+#include <showtime/entities/ZstPlug.h>
 #include "liasons/ZstPlugLiason.hpp"
 #include "ZstEventDispatcher.hpp"
 

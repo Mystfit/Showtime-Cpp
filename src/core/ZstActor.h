@@ -5,7 +5,7 @@
 #include <functional>
 #include <mutex>
 #include <boost/thread.hpp>
-#include "ZstExports.h"
+#include <showtime/ZstExports.h>
 
 //Forward declared typedefs from CZMQ
 typedef struct _zloop_t zloop_t;

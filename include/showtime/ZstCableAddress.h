@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ZstURI.h"
-#include "ZstSerialisable.h"
+#include <showtime/ZstURI.h>
+#include <showtime/ZstSerialisable.h>
 
 namespace showtime {
 

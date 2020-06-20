@@ -11,10 +11,10 @@
 #include <mutex>
 #include <memory>
 
-#include "ZstLogging.h"
-#include "ZstPointerUtils.h"
-#include "ZstConstants.h"
-#include "adaptors/ZstEventAdaptor.hpp"
+#include <showtime/ZstLogging.h>
+#include <showtime/ZstPointerUtils.h>
+#include <showtime/ZstConstants.h>
+#include <showtime/adaptors/ZstEventAdaptor.hpp>
 
 #include "ZstSemaphore.h"
 

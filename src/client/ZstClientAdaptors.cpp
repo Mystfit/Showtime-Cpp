@@ -1,4 +1,4 @@
-#include "adaptors/ZstConnectionAdaptor.hpp"
+#include <showtime/adaptors/ZstConnectionAdaptor.hpp>
 
 namespace showtime {
 
