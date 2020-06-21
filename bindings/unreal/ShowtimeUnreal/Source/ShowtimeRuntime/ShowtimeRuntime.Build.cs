@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 using UnrealBuildTool;
+using System;
 using System.IO;
 using System.Collections.Generic;
 
@@ -18,7 +19,7 @@ public class ShowtimeRuntime : ModuleRules
 		});
 
 		// C runtime flags
-		bUseRTTI = true;
+		bUseRTTI = false;
 		bEnableExceptions = true;
 
 		// Add any include paths for the plugin
@@ -58,11 +59,11 @@ public class ShowtimeRuntime : ModuleRules
 			Path.Combine(mac_lib_path, "ShowtimeServer")
 		};
 
-		var android_lib_path = Path.Combine(PluginDirectory, "external", "lib", "arm64-v8a");
+		var android_lib_path = Path.Combine(PluginDirectory, "external", "lib", "Android");
 		var android_libraries = new string[]{
-			Path.Combine(android_lib_path, "ShowtimeClient"),
-			Path.Combine(android_lib_path, "ShowtimeCore"),
-			Path.Combine(android_lib_path, "ShowtimeServer")
+			Path.Combine(android_lib_path, "libShowtimeClient.so"),
+			Path.Combine(android_lib_path, "libShowtimeCore.so"),
+			Path.Combine(android_lib_path, "libShowtimeServer.so")
 		};
 
 		// Add any import libraries or static libraries
@@ -94,15 +95,19 @@ public class ShowtimeRuntime : ModuleRules
 		if (Target.Platform == UnrealTargetPlatform.Android){
 			platform_libs = android_libraries;
 			platform_binaries = android_libraries;
+			string PluginPath = Utils.MakePathRelativeTo(ModuleDirectory, Target.RelativeEnginePath);
+			AdditionalPropertiesForReceipt.Add("AndroidPlugin", System.IO.Path.Combine(PluginPath, "ShowtimeUnreal_UPL.xml"));
 		}
 		PublicAdditionalLibraries.AddRange(platform_libs);
 
 		// Add runtime libraries that need to be bundled alongside the plugin
 		List<string> binaries = new List<string>();
 		binaries.AddRange(platform_binaries);
-		binaries.AddRange(get_platform_plugins());
-		foreach (var path in binaries)
-			RuntimeDependencies.Add(path);
+		get_platform_plugins();
+		//binaries.AddRange(get_platform_plugins());
+		foreach (var path in binaries){
+			RuntimeDependencies.Add(Path.Combine("$(TargetOutputDir)", Path.GetFileName(path)), path);
+		}
 	}
 
 	private string[] get_platform_plugins()
@@ -112,6 +117,10 @@ public class ShowtimeRuntime : ModuleRules
         try {
 			files = Directory.GetFiles(Path.Combine(PluginDirectory, "external", "bin", Target.Platform.ToString(), "plugins"));
 		} catch (System.IO.DirectoryNotFoundException){}
+
+		foreach(var path in files){
+			RuntimeDependencies.Add(Path.Combine("$(TargetOutputDir)", "plugins", Path.GetFileName(path)), path);
+		}
 
 		return files;
 	}

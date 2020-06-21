@@ -51,6 +51,8 @@ if(ANDROID OR BUILD_ANDROID_CONTAINER)
         "lib${CORE_TARGET}.so"
         "lib${CLIENT_TARGET}.so"
         "lib${SERVER_TARGET}.so"
+        "libzmq.so"
+        "libczmq.so"
     )
 
     # Copy libraries
