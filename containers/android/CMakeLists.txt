@@ -27,6 +27,8 @@ set(ANDROID_PLATFORM_VERSIONS
 )
 
 set(ANDROID_NDK_VERSIONS
+	"r21d"
+	"r21b"
 	"r21"
 	"r20b"
 	"r19c"

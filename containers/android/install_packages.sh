@@ -38,7 +38,7 @@ $ANDROID_HOME/tools/bin/sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "pl
 # Android NDK
 # -----------
 echo "Installing Android NDK"
-wget -q -O android_ndk.zip https://dl.google.com/android/repository/android-ndk-r21-linux-x86_64.zip > /dev/null
+wget -q -O android_ndk.zip https://dl.google.com/android/repository/android-ndk-r21d-linux-x86_64.zip > /dev/null
 unzip -q android_ndk.zip -d $ANDROID_NDK_HOME < /dev/null > /dev/null
 
 # SWIG

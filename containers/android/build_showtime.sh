@@ -9,7 +9,7 @@ LIBRARY_BUILD_FLAGS="-DBUILD_DRAFTS=FALSE 					\
 	 				 -DBUILD_STATIC=TRUE 					\
 	 				 -DBUILD_SHARED=TRUE 					\
 	 				 -DBUILD_TESTING=FALSE 					\
-	 				 -DBINDINGS_DOTNET=TRUE 				\
+	 				 -DBINDINGS_DOTNET=FALSE 				\
 	 				 -DBINDINGS_DOTNET_CSPROJ=TRUE 			\
 	 				 -DBINDINGS_DOTNET_BUILD_PACKAGE=FALSE 	\
 	 				 -DBUILD_SERVER_LAUNCHER=FALSE"
@@ -18,7 +18,9 @@ cmake -H"$SHOWTIME_SOURCE" -B"$SHOWTIME_BUILD" $ANDROID_BUILD_FLAGS $COMMON_BUIL
 cmake --build $SHOWTIME_BUILD -j $VM_CPU_COUNT --target all
 
 echo "Copying binaries to $SHOWTIME_BIN_OUTPUT"
-cp "$SHOWTIME_BUILD/bin/Android"/* "$SHOWTIME_BIN_OUTPUT" 2>/dev/null || :
+cp "$SHOWTIME_BUILD/bin/Android/*" "$SHOWTIME_BIN_OUTPUT" 2>/dev/null || :
 
 echo "Copying libraries to $SHOWTIME_LIB_OUTPUT"
-cp "$SHOWTIME_BUILD/lib/Android"/* "$SHOWTIME_LIB_OUTPUT" 2>/dev/null || :
+cp "$SHOWTIME_BUILD/lib/Android/*" "$SHOWTIME_LIB_OUTPUT" 2>/dev/null || :
+cp "/home/vagrant/czmq/build/libczmq.so" "$SHOWTIME_LIB_OUTPUT" 2>/dev/null || :
+cp "/home/vagrant/libzmq/build/lib/libzmq.so" "$SHOWTIME_LIB_OUTPUT" 2>/dev/null || :
