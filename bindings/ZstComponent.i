@@ -23,4 +23,4 @@ namespace showtime {
 	}
 %}
 
-%include <entities/ZstComponent.h>
+%include <showtime/entities/ZstComponent.h>

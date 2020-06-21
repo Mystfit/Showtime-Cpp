@@ -31,5 +31,5 @@
 
 %rename("%(strip:[zst_])s") "";
 
-%include <Showtime.h>
-%include <ShowtimeServer.h>
+%include <showtime/Showtime.h>
+%include <showtime/ShowtimeServer.h>

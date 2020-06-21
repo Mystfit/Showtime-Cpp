@@ -16,4 +16,4 @@ namespace showtime {
 	}
 %}
 
-%include <entities/ZstPerformer.h>
+%include <showtime/entities/ZstPerformer.h>

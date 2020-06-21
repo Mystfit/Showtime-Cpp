@@ -30,4 +30,4 @@ namespace showtime{
 		return dynamic_cast<showtime::ZstEntityFactory*>(synchronisable);
 	}
 %}
-%include <entities/ZstEntityFactory.h>
+%include <showtime/entities/ZstEntityFactory.h>

@@ -10,5 +10,5 @@ namespace showtime {
 	%ignore ZstBundle::end;
 }
 
-%include <ZstBundle.hpp>
+%include <showtime/ZstBundle.hpp>
 %include "ZstBundleTemplates.i"

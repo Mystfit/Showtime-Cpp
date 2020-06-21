@@ -32,4 +32,4 @@ namespace showtime {
 %ignore showtime::ZstEntityBase::remove_adaptor(std::shared_ptr<ZstSessionAdaptor>);
 
 
-%include <entities/ZstEntityBase.h>
+%include <showtime/entities/ZstEntityBase.h>

@@ -29,7 +29,7 @@ namespace showtime {
     }
 %}
 
-%include <entities/ZstPlug.h>
+%include <showtime/entities/ZstPlug.h>
 
 %include "std_string.i"
 %extend showtime::ZstPlug{

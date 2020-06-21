@@ -12,4 +12,4 @@ namespace showtime {
 	%ignore ZstURIHash;
 }
 
-%include <ZstURI.h>
+%include <showtime/ZstURI.h>

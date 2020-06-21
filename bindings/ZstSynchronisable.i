@@ -20,4 +20,4 @@ namespace showtime {
 %rename(add_synchronisable_adaptor) showtime::ZstSynchronisable::add_adaptor(std::shared_ptr<ZstSynchronisableAdaptor>);
 %rename(remove_synchronisable_adaptor) showtime::ZstSynchronisable::remove_adaptor(std::shared_ptr<ZstSynchronisableAdaptor>);
 
-%include <ZstSynchronisable.h>
+%include <showtime/ZstSynchronisable.h>

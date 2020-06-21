@@ -1,7 +1,8 @@
 %module(directors="1") showtime
 %{
-    #include <Showtime.h>
-    #include <ShowtimeServer.h>
+    #include <showtime/Showtime.h>
+    #include <showtime/ShowtimeServer.h>
+    using namespace showtime;
 %}
 
 %include "../showtime.i"

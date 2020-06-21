@@ -5,4 +5,4 @@ namespace showtime {
 	%ignore ZstServerAddress::ZstServerAddress(ZstServerAddress &&);
 }
 
-%include <ZstServerAddress.h>
+%include <showtime/ZstServerAddress.h>

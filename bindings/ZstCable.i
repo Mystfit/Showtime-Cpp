@@ -16,4 +16,4 @@ namespace showtime {
 	%template(ZstSerialisableCable) ZstSerialisable<Cable, CableData>;
 }
 
-%include <ZstCable.h>
+%include <showtime/ZstCable.h>

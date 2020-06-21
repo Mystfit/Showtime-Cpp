@@ -15,4 +15,4 @@ namespace showtime {
 
 }
 
-%include <ZstCableAddress.h>
+%include <showtime/ZstCableAddress.h>

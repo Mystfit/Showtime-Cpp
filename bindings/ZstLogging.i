@@ -3,4 +3,4 @@ namespace showtime {
 	%feature("director") ZstLog::ExtLog;
 }
 
-%include <ZstLogging.h>
+%include <showtime/ZstLogging.h>

@@ -7,4 +7,4 @@ namespace showtime {
 	%ignore ZstSerialisable;
 }
 
-%include <ZstSerialisable.h>
+%include <showtime/ZstSerialisable.h>

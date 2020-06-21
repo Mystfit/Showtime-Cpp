@@ -112,9 +112,9 @@
 //Bundle template declarations
 
 %{
-#include <ZstBundle.hpp>
-#include <ZstCable.h>
-#include <entities/ZstEntityBase.h>
+#include <showtime/ZstBundle.hpp>
+#include <showtime/ZstCable.h>
+#include <showtime/entities/ZstEntityBase.h>
 %}
 
 template<class T> 

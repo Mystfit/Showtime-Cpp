@@ -29,10 +29,10 @@ namespace showtime {
 	%feature("director") ZstFactoryAdaptor;
 }
 
-%include <adaptors/ZstEventAdaptor.hpp> 
-%include <adaptors/ZstConnectionAdaptor.hpp> 
-%include <adaptors/ZstHierarchyAdaptor.hpp> 
-%include <adaptors/ZstSessionAdaptor.hpp> 
-%include <adaptors/ZstSynchronisableAdaptor.hpp> 
-%include <adaptors/ZstEntityAdaptor.hpp> 
-%include <adaptors/ZstFactoryAdaptor.hpp>
+%include <showtime/adaptors/ZstEventAdaptor.hpp> 
+%include <showtime/adaptors/ZstConnectionAdaptor.hpp> 
+%include <showtime/adaptors/ZstHierarchyAdaptor.hpp> 
+%include <showtime/adaptors/ZstSessionAdaptor.hpp> 
+%include <showtime/adaptors/ZstSynchronisableAdaptor.hpp> 
+%include <showtime/adaptors/ZstEntityAdaptor.hpp> 
+%include <showtime/adaptors/ZstFactoryAdaptor.hpp>
