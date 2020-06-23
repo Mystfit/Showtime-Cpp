@@ -3,7 +3,10 @@
 #include "ZstStage.h"
 
 namespace showtime { 
-	ShowtimeServer::ShowtimeServer(const std::string& name, int port, bool unlisted) : m_server(std::make_shared<showtime::detail::ZstStage>())
+	ShowtimeServer::ShowtimeServer() : m_server(std::make_shared<showtime::detail::ZstStage>()){
+	}
+
+	void ShowtimeServer::init(const std::string & name, int port, bool unlisted)
 	{
 		m_server->init(port);
 		if (!unlisted) {

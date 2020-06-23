@@ -16,6 +16,7 @@ Vagrant.configure("2") do |config|
   end
 
   ndk_home_path = "/opt/local/android-ndk"
+  ndk_short_version="${ANDROID_NDK_VERSION}"
   ndk_version = "android-ndk-${ANDROID_NDK_VERSION}"
   boost_ver = "${ANDROID_BOOST_VERSION}"
   boost_ver_scored = boost_ver.gsub ".", "_"
@@ -29,6 +30,7 @@ Vagrant.configure("2") do |config|
     "ANDROID_HOME" => "/opt/local/android-sdk",
     "ANDROID_ABI" => "${ANDROID_ABI}",
     "ANDROID_PLATFORM" => "${ANDROID_PLATFORM}",
+    "ANDROID_NDK_SHORT_VERSION" => "${ANDROID_NDK_VERSION}",
     "ANDROID_NDK_VERSION" => ndk_version,
     "ANDROID_NDK_HOME" => ndk_home_path,
     "ANDROID_NDK_ROOT" => "#{ndk_home_path}/#{ndk_version}",
