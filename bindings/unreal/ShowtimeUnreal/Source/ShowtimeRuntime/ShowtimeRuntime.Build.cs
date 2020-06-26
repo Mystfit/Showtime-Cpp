@@ -38,31 +38,21 @@ public class ShowtimeRuntime : ModuleRules
 		var win_lib_path = Path.Combine(PluginDirectory, "external", "lib", "Win64");
 		var win_bin_path = Path.Combine(PluginDirectory, "external", "bin", "Win64");
 		var win64_libs = new string[]{
-			Path.Combine(win_lib_path, "ShowtimeCore.lib"),
-			Path.Combine(win_lib_path, "ShowtimeClient.lib"),
-			Path.Combine(win_lib_path, "ShowtimeServer.lib")
+			Path.Combine(win_lib_path, "showtime.lib")
 		};
 
 		var win64_binaries = new string[]{
-			Path.Combine(win_bin_path, "ShowtimeCore.dll"),
-			Path.Combine(win_bin_path, "ShowtimeClient.dll"),
-			Path.Combine(win_bin_path, "ShowtimeServer.dll"),
-			Path.Combine(win_bin_path, "libzmq-v142-mt-4_3_3.dll"),
-			Path.Combine(win_bin_path, "libczmq.dll")
+			Path.Combine(win_bin_path, "showtime.dll")
 		};
 
 		var mac_lib_path = Path.Combine(PluginDirectory, "external", "lib", "Mac");
 		var mac_libraries = new string[]{
-			Path.Combine(mac_lib_path, "ShowtimeClient"),
-			Path.Combine(mac_lib_path, "ShowtimeCore"),
-			Path.Combine(mac_lib_path, "ShowtimeServer")
+			Path.Combine(mac_lib_path, "libshowtime.dylib"),
 		};
 
 		var android_lib_path = Path.Combine(PluginDirectory, "external", "lib", "arm64-v8a");
 		var android_libraries = new string[]{
-			Path.Combine(android_lib_path, "ShowtimeClient"),
-			Path.Combine(android_lib_path, "ShowtimeCore"),
-			Path.Combine(android_lib_path, "ShowtimeServer")
+			Path.Combine(android_lib_path, "libshowtime.so")
 		};
 
 		// Add any import libraries or static libraries
@@ -72,11 +62,7 @@ public class ShowtimeRuntime : ModuleRules
 		if (Target.Platform == UnrealTargetPlatform.Win64){
 			string binariesDir = Path.Combine(PluginDirectory, "Binaries", "Win64");
 			platform_libs = win64_libs;
-			PublicDelayLoadDLLs.AddRange(new string[] {
-				Path.Combine(binariesDir, "ShowtimeClient.dll"),
-				Path.Combine(binariesDir, "ShowtimeServer.dll"),
-				Path.Combine(binariesDir, "ShowtimeCore.dll")
-			});
+			PublicDelayLoadDLLs.AddRange(new string[] { Path.Combine(binariesDir, "showtime.dll") });
 			platform_binaries = win64_binaries;
 
 			// Copy binaries to plugin binary folder for the editor
