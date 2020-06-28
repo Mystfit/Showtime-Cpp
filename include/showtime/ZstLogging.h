@@ -1,5 +1,7 @@
 #pragma once
 
+#include <streambuf>
+#include <ostream>
 #include <fmt/format.h>
 #include <showtime/ZstExports.h>
 
@@ -14,6 +16,13 @@
 
 
 namespace showtime {
+
+	// Forwards
+	class ZstLogAdaptor;
+
+	template<typename T>
+	class ZstEventDispatcher;
+
 	namespace Log {
 		enum Level
 		{
@@ -22,6 +31,15 @@ namespace showtime {
 			warn,
 			error,
 			Levelsize
+		};
+
+		struct Record {
+			unsigned int line_ID;
+			std::string process_name;
+			std::string threadID;
+			Level level;
+			std::string channel;
+			std::string message;
 		};
 
 		namespace internals {
@@ -50,11 +68,10 @@ namespace showtime {
 			ZST_EXPORT void net_sink_message(Level level, const char* msg);
 			ZST_EXPORT void server_sink_message(Level level, const char* msg);
 			ZST_EXPORT void app_sink_message(Level level, const char* msg);
-
 			static bool _logging = false;
-		}
+		}		
 
-		ZST_EXPORT void init_logger(const char* logger_name, Level level = Log::Level::notification);
+		ZST_EXPORT void init_logger(const char* logger_name, Level level, std::shared_ptr<ZstEventDispatcher< std::shared_ptr<ZstLogAdaptor> > >& log_events);
 		ZST_EXPORT void init_file_logging(const char* log_file_path = "");
 		ZST_EXPORT const char* get_severity_str(Level level);
 

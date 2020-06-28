@@ -97,3 +97,4 @@ public:
 		return std::static_pointer_cast<Derived>(shared_from_this());
 	}
 };
+

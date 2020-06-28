@@ -3,6 +3,7 @@
 #include <showtime/adaptors/ZstSynchronisableAdaptor.hpp>
 #include <showtime/adaptors/ZstSessionAdaptor.hpp>
 #include <showtime/adaptors/ZstHierarchyAdaptor.hpp>
+#include <showtime/adaptors/ZstLogAdaptor.hpp>
 #include <showtime/adaptors/ZstFactoryAdaptor.hpp>
 #include <showtime/adaptors/ZstSessionAdaptor.hpp>
 #include <showtime/adaptors/ZstEntityAdaptor.hpp>
@@ -121,5 +122,10 @@ void ZstComputeAdaptor::on_compute(ZstComponent * component, ZstInputPlug * plug
 
 void ZstPluginAdaptor::on_plugin_loaded(std::shared_ptr<ZstPlugin> plugin) {}
 void ZstPluginAdaptor::on_plugin_unloaded(std::shared_ptr<ZstPlugin> plugin) {}
+
+// -------------------
+// Log adaptors
+// -------------------
+void ZstLogAdaptor::on_log_record(const Log::Record& record) {}
 
 }

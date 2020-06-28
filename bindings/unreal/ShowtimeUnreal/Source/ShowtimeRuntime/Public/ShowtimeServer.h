@@ -16,10 +16,9 @@ using namespace showtime;
 /**
  *
  */
-UCLASS(CustomConstructor)
+UCLASS()
 class UShowtimeServer : public UObject, public ShowtimeServer {
 	GENERATED_BODY()
-	UShowtimeServer();
-	UShowtimeServer(const FString& name);
 public:
+	virtual void BeginDestroy() override;
 };

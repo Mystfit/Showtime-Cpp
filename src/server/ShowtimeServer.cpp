@@ -8,10 +8,7 @@ namespace showtime {
 
 	void ShowtimeServer::init(const std::string & name, int port, bool unlisted)
 	{
-		m_server->init(port);
-		if (!unlisted) {
-			m_server->start_broadcasting(name.c_str());
-		}
+		m_server->init(name.c_str(), port, unlisted);
 	}
 
 	int ShowtimeServer::port()

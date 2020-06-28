@@ -16,6 +16,7 @@
 #include <showtime/entities/ZstComponent.h>
 #include <showtime/entities/ZstPlug.h>
 #include <showtime/entities/ZstPerformer.h>
+#include <showtime/adaptors/ZstLogAdaptor.hpp>
 #include <showtime/adaptors/ZstConnectionAdaptor.hpp>
 #include <showtime/adaptors/ZstSessionAdaptor.hpp>
 #include <showtime/adaptors/ZstHierarchyAdaptor.hpp>

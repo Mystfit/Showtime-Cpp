@@ -152,6 +152,11 @@ void ShowtimeClient::add_plugin_adaptor(std::shared_ptr<ZstPluginAdaptor> adapto
 	m_client->plugins()->plugin_events()->add_adaptor(adaptor);
 }
 
+void ShowtimeClient::add_log_adaptor(std::shared_ptr<ZstLogAdaptor> adaptor)
+{
+	m_client->ZstEventDispatcher<std::shared_ptr < ZstLogAdaptor >>::add_adaptor(adaptor);
+}
+
 void ShowtimeClient::remove_connection_adaptor(std::shared_ptr < ZstConnectionAdaptor > adaptor)
 {
     m_client->ZstEventDispatcher<std::shared_ptr < ZstConnectionAdaptor >>::remove_adaptor(adaptor);
@@ -170,6 +175,11 @@ void ShowtimeClient::remove_hierarchy_adaptor(std::shared_ptr < ZstHierarchyAdap
 void ShowtimeClient::remove_plugin_adaptor(std::shared_ptr<ZstPluginAdaptor> adaptor)
 {
 	m_client->plugins()->plugin_events()->remove_adaptor(adaptor);
+}
+
+void ShowtimeClient::remove_log_adaptor(std::shared_ptr<ZstLogAdaptor> adaptor)
+{
+	m_client->ZstEventDispatcher<std::shared_ptr < ZstLogAdaptor >>::remove_adaptor(adaptor);
 }
 
 

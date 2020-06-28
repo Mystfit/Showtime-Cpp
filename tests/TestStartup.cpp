@@ -39,6 +39,31 @@ BOOST_AUTO_TEST_CASE(double_init) {
 	test_client->destroy();
 }
 
+BOOST_AUTO_TEST_CASE(log_events) {
+	
+	auto log_events = std::make_shared <TestLogEvents>();
+	auto test_client = std::make_shared<ShowtimeClient>();
+	test_client->add_log_adaptor(log_events);
+
+	test_client->init(performer_name.c_str(), true);
+	log_events->reset_num_calls();
+	std::string message = "test";
+	Log::app(Log::Level::debug, message.c_str());
+	wait_for_event(test_client, log_events, 1);
+
+	auto log_record = std::find_if(log_events->records.begin(), log_events->records.end(), [&message](const Log::Record& record) {
+		return message == record.message;
+	});
+
+	auto record_found = (log_record != log_events->records.end());
+	BOOST_REQUIRE(record_found);
+	BOOST_TEST(log_record->channel == "app");
+	BOOST_TEST(log_record->level == Log::Level::debug);
+	BOOST_TEST(log_record->message == message);
+	
+	test_client->destroy();
+}
+
 BOOST_FIXTURE_TEST_CASE(auto_join_timeout, FixtureInit) {
 	//Testing abort connection if we're already connected
 	Log::app(Log::Level::debug, "before autojoin");
@@ -60,7 +85,8 @@ BOOST_FIXTURE_TEST_CASE(single_server_connection, FixtureInitAndCreateServerWith
 }
 
 BOOST_FIXTURE_TEST_CASE(sync_join, FixtureInit){
-	auto test_server = std::make_unique<ShowtimeServer>("sync_join", STAGE_ROUTER_PORT);
+	auto test_server = std::make_unique<ShowtimeServer>();
+	test_server->init("sync_join", STAGE_ROUTER_PORT);
 	auto server_address = fmt::format("127.0.0.1:{}", STAGE_ROUTER_PORT);
 	//Testing sync join by address
 	test_client->join(server_address.c_str());
@@ -148,7 +174,8 @@ BOOST_FIXTURE_TEST_CASE(autojoin_by_name_async, FixtureInit) {
 	std::string delayed_server_name = "delayed_server";
 	test_client->auto_join_by_name_async(delayed_server_name.c_str());
 	WAIT_UNTIL_STAGE_BEACON
-	auto delayed_server = std::make_unique<ShowtimeServer>(delayed_server_name);
+	auto delayed_server = std::make_unique<ShowtimeServer>();
+	delayed_server->init(delayed_server_name);
 	WAIT_UNTIL_STAGE_BEACON
 	BOOST_TEST(test_client->is_connected());
 	delayed_server->destroy();
@@ -187,7 +214,8 @@ BOOST_FIXTURE_TEST_CASE(double_connection, FixtureInitAndCreateServerWithEpherem
 
 BOOST_FIXTURE_TEST_CASE(list_discovered_servers, FixtureInit){
 	ZstServerAddress server_address("detected_server" , "");
-	auto detected_server = std::make_shared< ShowtimeServer>(server_address.name);
+	auto detected_server = std::make_shared< ShowtimeServer>();
+	detected_server->init(server_address.name);
 	WAIT_UNTIL_STAGE_BEACON
 	ZstServerAddressBundle bundle;
 	test_client->get_discovered_servers(bundle);
@@ -207,7 +235,8 @@ BOOST_FIXTURE_TEST_CASE(discovered_servers_callback_adaptor, FixtureInit){
 	test_client->add_connection_adaptor(discovery_adaptor);
 
 	//Create a new server for the client to discover
-	auto detected_server = std::make_shared< ShowtimeServer>(server_address.name);
+	auto detected_server = std::make_shared< ShowtimeServer>();
+	detected_server->init(server_address.name);
 	WAIT_UNTIL_STAGE_BEACON
 	wait_for_event(test_client, discovery_adaptor, 1);
 	
@@ -220,7 +249,8 @@ BOOST_FIXTURE_TEST_CASE(discovered_servers_callback_adaptor, FixtureInit){
 
 BOOST_FIXTURE_TEST_CASE(discovered_servers_update, FixtureInitAndCreateServerWithEpheremalPort) {
 	ZstServerAddress server_address("detected_server", "");
-	auto detected_server = std::make_shared< ShowtimeServer>(server_address.name);
+	auto detected_server = std::make_shared< ShowtimeServer>();
+	detected_server->init(server_address.name);
 	WAIT_UNTIL_STAGE_BEACON
 	ZstServerAddressBundle bundle;
 	test_client->get_discovered_servers(bundle);

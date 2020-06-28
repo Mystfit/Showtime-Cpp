@@ -6,9 +6,6 @@
 
 #include <showtime/Showtime.h>
 
-DECLARE_LOG_CATEGORY_EXTERN(Showtime, Log, All);
-DEFINE_LOG_CATEGORY(Showtime);
-
 class FShowtimeRuntimeModule : public IModuleInterface
 {
 public:

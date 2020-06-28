@@ -1,9 +1,9 @@
-#include "showtime/ZstVersion.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <iostream>
 #include <cxxopts.hpp>
-#include <ShowtimeServer.h>
+#include "showtime/ZstVersion.h"
+#include <showtime/ShowtimeServer.h>
 #include <showtime/ZstLogging.h>
 
 using namespace showtime;
@@ -105,9 +105,8 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	Log::server(Log::Level::notification, "Starting Showtime v{} stage server", SHOWTIME_VERSION_STRING);
-	Log::init_logger(server_name.c_str(), server_log_level);
-	auto server = std::make_shared<ShowtimeServer>(server_name, server_port, server_unlisted);
+	auto server = std::make_shared<ShowtimeServer>();
+	server->init(server_name, server_port, server_unlisted);
 
 	if (argc < 2) {
 		Log::server(Log::Level::notification, "Stage running in standalone mode. Press Ctrl+C to exit");

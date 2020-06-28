@@ -50,6 +50,7 @@ set(ENTITY_HEADERS
 )
 set(ADAPTOR_HEADERS 
     ${CORE_INCLUDE_DIR}/adaptors/ZstEventAdaptor.hpp
+    ${CORE_INCLUDE_DIR}/adaptors/ZstLogAdaptor.hpp
     ${CORE_INCLUDE_DIR}/adaptors/ZstConnectionAdaptor.hpp
     ${CORE_INCLUDE_DIR}/adaptors/ZstComputeAdaptor.hpp
     ${CORE_INCLUDE_DIR}/adaptors/ZstSynchronisableAdaptor.hpp
@@ -102,6 +103,7 @@ set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstSemaphore.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessageSupervisor.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstIOLoop.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstCorePointerUtils.h"
 )
 set(ZST_CORE_MODULE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstSession.h"

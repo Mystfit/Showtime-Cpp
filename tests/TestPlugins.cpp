@@ -1,5 +1,5 @@
 #include "TestCommon.hpp"
-#include <adaptors/ZstPluginAdaptor.hpp>
+#include <showtime/adaptors/ZstPluginAdaptor.hpp>
 
 #define BOOST_TEST_MODULE Plugins
 

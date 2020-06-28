@@ -371,6 +371,17 @@ namespace ZstTest
 	};
 
 
+	class TestLogEvents : public ZstLogAdaptor, public TestAdaptor
+	{
+	public:
+		std::vector<Log::Record> records;
+		void on_log_record(const Log::Record& record) override {
+			records.push_back(record);
+			inc_calls();
+		}
+	};
+
+
 
 	// ------------------
 	// Events and polling
@@ -464,7 +475,8 @@ namespace ZstTest
 		FixtureInitAndCreateServerWithEpheremalPort()
 		{
 			server_name = boost::unit_test::framework::current_test_case().full_name();
-			test_server = std::make_unique<ShowtimeServer>(server_name);
+			test_server = std::make_unique<ShowtimeServer>();
+			test_server->init(server_name);
 			server_port = test_server->port();
 			server_address = fmt::format("127.0.0.1:{}", server_port);
 

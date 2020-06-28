@@ -1,7 +1,6 @@
 #include <sstream>
 #include <chrono>
 
-#include "ZstStage.h"
 
 //Core headers
 #include "showtime/ZstVersion.h"
@@ -9,8 +8,11 @@
 
 //Stage headers
 #include "ZstPerformerStageProxy.h"
+#include "ZstStage.h"
 
+// Include czmq last to avoid conflicts with boost::beast
 #include <czmq.h>
+
 
 using namespace flatbuffers;
 
@@ -34,8 +36,14 @@ namespace showtime::detail
 		destroy();
 	}
 
-	void ZstStage::init(int port)
+	void ZstStage::init(const char* server_name, int port, bool unlisted)
 	{
+		// Set up logging
+		auto log_events = ZstEventDispatcher< std::shared_ptr<ZstLogAdaptor> >::downcasted_shared_from_this<ZstEventDispatcher< std::shared_ptr<ZstLogAdaptor> >>();
+		Log::init_logger(server_name, Log::Level::debug, log_events);
+		Log::server(Log::Level::notification, "Starting Showtime v{} server", SHOWTIME_VERSION_STRING);
+
+		// Set up transports
 		m_router_transport->init();
 		m_router_transport->bind(fmt::format("*:{}", (port > 0) ? std::to_string(port) : "*"));
 		m_websocket_transport->init();
@@ -68,6 +76,9 @@ namespace showtime::detail
 		//Start event loop
 		m_stage_timer_thread = boost::thread(boost::bind(&ZstStage::timer_loop, this));
 		m_stage_eventloop_thread = boost::thread(boost::bind(&ZstStage::event_loop, this));
+
+		if (!unlisted)
+			start_broadcasting(server_name);
 	}
 
 
@@ -134,6 +145,7 @@ namespace showtime::detail
 	void ZstStage::process_events()
 	{
 		m_session->process_events();
+		ZstEventDispatcher< std::shared_ptr<ZstLogAdaptor> >::process_events();
 	}
 
 

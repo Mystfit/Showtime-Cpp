@@ -102,11 +102,9 @@ void ZstClient::init_client(const char* client_name, bool debug)
     set_is_destroyed(false);
     set_is_ending(false);
 
-	// Setup logging
-    auto level = Log::Level::notification;
-    if (debug)
-        level = Log::Level::debug;
-    Log::init_logger(client_name, level);
+	// Setup loggings
+    auto log_events = ZstEventDispatcher< std::shared_ptr<ZstLogAdaptor> >::downcasted_shared_from_this<ZstEventDispatcher< std::shared_ptr<ZstLogAdaptor> >>();
+    Log::init_logger(client_name, (debug) ? Log::Level::debug : Log::Level::notification, log_events);
     Log::net(Log::Level::notification, "Starting Showtime v{}", SHOWTIME_VERSION_STRING);
 
 	// Set the name of this client
@@ -180,6 +178,7 @@ void ZstClient::process_events()
     m_plugins->process_events();
     m_session->process_events();
     ZstEventDispatcher< std::shared_ptr<ZstConnectionAdaptor> >::process_events();
+    ZstEventDispatcher< std::shared_ptr<ZstLogAdaptor> >::process_events();
 }
 
 void ZstClient::flush()

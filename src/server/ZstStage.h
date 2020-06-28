@@ -15,6 +15,7 @@
 //Core headers
 #include "../core/ZstActor.h"
 #include "../core/ZstSemaphore.h"
+#include "../core/ZstEventDispatcher.hpp"
 #include "../core/ZstStageMessage.h"
 #include "../core/adaptors/ZstStageTransportAdaptor.hpp"
 #include "../core/transports/ZstServiceDiscoveryTransport.h"
@@ -32,13 +33,13 @@ class ZstSemaphore;
 namespace showtime {
 	namespace detail {
 		class ZstStage : 
-			public ZstStageTransportAdaptor
-			//public ZstEventDispatcher<ZstTransportAdaptor*>
+			public ZstStageTransportAdaptor,
+			public ZstEventDispatcher< std::shared_ptr<ZstLogAdaptor> >
 		{
 		public:
 			ZstStage();
 			~ZstStage();
-			void init(int port);
+			void init(const char* server_name = "stage", int port = -1, bool unlisted = false);
 			void destroy();
 			bool is_destroyed();
 			void start_broadcasting(const char* stage_name);
