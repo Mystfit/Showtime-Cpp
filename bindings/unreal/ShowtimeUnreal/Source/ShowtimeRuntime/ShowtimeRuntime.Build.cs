@@ -19,7 +19,7 @@ public class ShowtimeRuntime : ModuleRules
 		});
 
 		// C runtime flags
-		bUseRTTI = false;
+		bUseRTTI = true;
 		bEnableExceptions = true;
 
 		// Add any include paths for the plugin

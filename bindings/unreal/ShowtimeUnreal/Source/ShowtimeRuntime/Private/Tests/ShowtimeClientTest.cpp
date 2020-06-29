@@ -4,8 +4,6 @@
 
 using namespace showtime;
 
-#define TEST_SERVER "test_server"
-
 BEGIN_DEFINE_SPEC(ShowtimeClientSpec, "ShowtimeRuntimeModule.UShowtimeClient", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::ApplicationContextMask)
 UShowtimeClient* client;
 UShowtimeServer* server;
@@ -16,28 +14,44 @@ void ShowtimeClientSpec::Define()
 	BeforeEach([this]() {
 		client = NewObject<UShowtimeClient>();
         server = NewObject<UShowtimeServer>();
-        server->init(TEST_SERVER);
+
+        client->init("ue4_client", true);
+        server->init(TCHAR_TO_UTF8(*GetBeautifiedTestName()));
+        client->auto_join_by_name(TCHAR_TO_UTF8(*GetBeautifiedTestName()));
 	});
 	
     Describe("init()", [this](){
         It("should return true when successful", [this]()
             {
-                client->init("ue4_client", true);
-                TestTrue("Execute", client->is_init_completed());
+                TestTrue("is_init_completed", client->is_init_completed());
             });
     });
 
     Describe("auto_join_by_name()", [this]() {
         It("should connect to a broadcasting server", [this]()
-            {
-                client->init("ue4_client", true);
-                client->auto_join_by_name(TEST_SERVER);
-                TestTrue("is_connecteds", client->is_connected());
+            {                
+                TestTrue("is_connected", client->is_connected());
             });
-        });
+    });
+
+    Describe("add_log_adaptor()", [this]() {
+        LatentIt("should capture log records", [this](const FDoneDelegate& Done)
+            {
+                Log::app(Log::Level::debug, "test");
+                client->poll_once();
+                Done.Execute();
+                //BackendService->QueryItems(this, &FMyCustomSpec::HandleQueryItemComplete, Done);
+            });
+    });
 
 	AfterEach([this]() {
 		client->destroy();
         server->destroy();
 	});
 }
+
+//void ShowtimeClientSpec::HandleLogRecord(FDoneDelegate Done)
+//{
+//    TestEqual("Items.Num() == 5", Items.Num(), 5);
+//    Done.Execute();
+//}

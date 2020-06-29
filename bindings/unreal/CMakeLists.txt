@@ -96,7 +96,7 @@ if(WIN32 OR BUILD_WINDOWS_CONTAINER)
         add_custom_command(
             PRE_BUILD
             TARGET ${UNREAL_TARGET}
-            COMMAND ${CMAKE_COMMAND} -E echo "Copying ${lib} to ${UNREAL_BIN_DIR}/Win64"
+            COMMAND ${CMAKE_COMMAND} -E echo "Copying ${bin} to ${UNREAL_BIN_DIR}/Win64"
             COMMAND ${CMAKE_COMMAND} -E copy ${WINDOWS_BIN_DIR}/${bin} ${UNREAL_BIN_DIR}/Win64/${bin}
             DEPENDS ${WINDOWS_CONTAINER_TARGET}
         )
@@ -105,7 +105,7 @@ if(WIN32 OR BUILD_WINDOWS_CONTAINER)
         add_custom_command(
             PRE_BUILD
             TARGET ${UNREAL_TARGET}
-            COMMAND ${CMAKE_COMMAND} -E echo "Copying ${bin} to ${UNREAL_BIN_DIR}/Win64/lib"
+            COMMAND ${CMAKE_COMMAND} -E echo "Copying ${lib} to ${UNREAL_BIN_DIR}/Win64/lib"
             COMMAND ${CMAKE_COMMAND} -E copy ${WINDOWS_LIB_DIR}/${lib} ${UNREAL_LIB_DIR}/Win64/${lib}
             DEPENDS ${WINDOWS_CONTAINER_TARGET}
         )
@@ -116,7 +116,7 @@ if(WIN32 OR BUILD_WINDOWS_CONTAINER)
         PRE_BUILD
         TARGET ${UNREAL_TARGET}
         COMMAND ${CMAKE_COMMAND} -E echo "Copying plugins to ${UNREAL_BIN_DIR}"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${ANDROID_BIN_DIR}/plugins ${UNREAL_BIN_DIR}/Win64/plugins
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${WINDOWS_BIN_DIR}/plugins ${UNREAL_BIN_DIR}/Win64/plugins
         DEPENDS ${ANDROID_CONTAINER_TARGET}
     )
 
