@@ -13,8 +13,6 @@ UShowtimeClient::UShowtimeClient() :
 
 void UShowtimeClient::Init()
 {
-	this->add_log_adaptor(LoggerAdaptor);
-	this->add_connection_adaptor(ConnectionAdaptor);
 	this->init(TCHAR_TO_UTF8(*ClientName), true);
 }
 
@@ -37,11 +35,13 @@ void UShowtimeClient::LeaveServer()
 void UShowtimeClient::BeginPlay()
 {
 	Super::BeginPlay();
+	this->add_log_adaptor(LoggerAdaptor);
+	this->add_connection_adaptor(ConnectionAdaptor);
 }
 
 void UShowtimeClient::BeginDestroy()
 {
-	Super::BeginDestroy();s
+	Super::BeginDestroy();
 	this->destroy();
 }
 
@@ -58,28 +58,28 @@ FClientConnectionAdaptor::FClientConnectionAdaptor(UShowtimeClient* client) : Ow
 
 void FClientConnectionAdaptor::on_connected_to_stage(ShowtimeClient* client, const ZstServerAddress& server)
 {
-	OwningClient->OnConnectedToServer.Broadcast(FServerAddressFromShowtime(server));
+	OwningClient->OnConnectedToServer.Broadcast(OwningClient, FServerAddressFromShowtime(server));
 }
 
-//void FClientConnectionAdaptor::on_disconnected_from_stage(ShowtimeClient* client, const ZstServerAddress& server)
-//{
-//	OwningClient->DisconnectedFromServerEvent.Broadcast(server);
-//}
-//
-//void FClientConnectionAdaptor::on_server_discovered(ShowtimeClient* client, const ZstServerAddress& server)
-//{
-//	OwningClient->ServerDiscoveredEvent.Broadcast(server);
-//}
-//
-//void FClientConnectionAdaptor::on_server_lost(ShowtimeClient* client, const ZstServerAddress& server)
-//{
-//	OwningClient->ServerLostEvent.Broadcast(server);
-//}
-//
-//void FClientConnectionAdaptor::on_synchronised_with_stage(ShowtimeClient* client, const ZstServerAddress& server)
-//{
-//	OwningClient->GraphSynchronisedEvent.Broadcast(server);
-//}
+void FClientConnectionAdaptor::on_disconnected_from_stage(ShowtimeClient* client, const ZstServerAddress& server)
+{
+	OwningClient->OnDisconnectedFromServer.Broadcast(OwningClient, FServerAddressFromShowtime(server));
+}
+
+void FClientConnectionAdaptor::on_server_discovered(ShowtimeClient* client, const ZstServerAddress& server)
+{
+	OwningClient->OnServerDiscovered.Broadcast(OwningClient, FServerAddressFromShowtime(server));
+}
+
+void FClientConnectionAdaptor::on_server_lost(ShowtimeClient* client, const ZstServerAddress& server)
+{
+	OwningClient->OnServerLost.Broadcast(OwningClient, FServerAddressFromShowtime(server));
+}
+
+void FClientConnectionAdaptor::on_synchronised_with_stage(ShowtimeClient* client, const ZstServerAddress& server)
+{
+	OwningClient->OnGraphSynchronised.Broadcast(OwningClient, FServerAddressFromShowtime(server));
+}
 
 
 void FClientLogAdaptor::on_log_record(const Log::Record& record)

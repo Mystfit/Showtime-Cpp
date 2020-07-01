@@ -21,7 +21,11 @@ static TMap<Log::Level, ELogVerbosity::Type> LogLevel_to_ELogVerbosity = {
 	{ Log::Level::error, ELogVerbosity::Type::Error }
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FConnectedToServer, FServerAddress, ServerAddress);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FConnectedToServer, UShowtimeClient*, Client, FServerAddress, ServerAddress);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FDisconnectedFromServer, UShowtimeClient*, Client, FServerAddress, ServerAddress);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FServerDiscovered, UShowtimeClient*, Client, FServerAddress, ServerAddress);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FServerLost, UShowtimeClient*, Client, FServerAddress, ServerAddress);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FGraphSynchronised, UShowtimeClient*, Client, FServerAddress, ServerAddress);
 
 
 UCLASS(ClassGroup = (Showtime), meta = (BlueprintSpawnableComponent))
@@ -58,34 +62,18 @@ public:
 	
 	UPROPERTY(BlueprintAssignable)
 	FConnectedToServer OnConnectedToServer;
+	
+	UPROPERTY(BlueprintAssignable)
+	FDisconnectedFromServer OnDisconnectedFromServer;
 
-	//--
+	UPROPERTY(BlueprintAssignable)
+	FServerDiscovered OnServerDiscovered;
 
-	//DECLARE_EVENT_OneParam(UShowtimeClient, FDisconnectedFromServerEvent, const ZstServerAddress&)
-	//
-	//UPROPERTY(BlueprintAssignable)
-	//FDisconnectedFromServerEvent DisconnectedFromServerEvent;
-	//
-	////--
+	UPROPERTY(BlueprintAssignable)
+	FServerLost OnServerLost;
 
-	//DECLARE_EVENT_OneParam(UShowtimeClient, FServerDiscoveredEvent, const ZstServerAddress&)
-
-	//UPROPERTY(BlueprintAssignable)
-	//FServerDiscoveredEvent ServerDiscoveredEvent;
-
-	////--
-	//
-	//DECLARE_EVENT_OneParam(UShowtimeClient, FServerLostEvent, const ZstServerAddress&)
-
-	//UPROPERTY(BlueprintAssignable)
-	//FServerLostEvent ServerLostEvent;
-
-	////--
-	//
-	//DECLARE_EVENT_OneParam(UShowtimeClient, FGraphSynchronisedEvent, const ZstServerAddress&)
-
-	//UPROPERTY(BlueprintAssignable)
-	//FGraphSynchronisedEvent GraphSynchronisedEvent;
+	UPROPERTY(BlueprintAssignable)
+	FGraphSynchronised OnGraphSynchronised;
 
 	
 private:
@@ -104,10 +92,10 @@ class FClientConnectionAdaptor : public ZstConnectionAdaptor {
 public:
 	FClientConnectionAdaptor(UShowtimeClient* client);
 	virtual void on_connected_to_stage(ShowtimeClient* client, const ZstServerAddress& server) override;
-	//virtual void on_disconnected_from_stage(ShowtimeClient* client, const ZstServerAddress& server) override;
-	//virtual void on_server_discovered(ShowtimeClient* client, const ZstServerAddress& server) override;
-	//virtual void on_server_lost(ShowtimeClient* client, const ZstServerAddress& server) override;
-	//virtual void on_synchronised_with_stage(ShowtimeClient* client, const ZstServerAddress& server) override;
+	virtual void on_disconnected_from_stage(ShowtimeClient* client, const ZstServerAddress& server) override;
+	virtual void on_server_discovered(ShowtimeClient* client, const ZstServerAddress& server) override;
+	virtual void on_server_lost(ShowtimeClient* client, const ZstServerAddress& server) override;
+	virtual void on_synchronised_with_stage(ShowtimeClient* client, const ZstServerAddress& server) override;
 
 private:
 	UPROPERTY()
