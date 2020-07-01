@@ -1,4 +1,4 @@
-#include <showtime/Showtime.h>
+#include <showtime/ShowtimeClient.h>
 #include <showtime/adaptors/ZstSessionAdaptor.hpp>
 
 #include "ZstClient.h"

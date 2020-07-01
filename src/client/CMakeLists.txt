@@ -1,7 +1,7 @@
 message(STATUS "Configuring ${CLIENT_TARGET} target")
 
 set(ZST_CLIENT_HEADERS
-	"${CORE_INCLUDE_DIR}/Showtime.h"
+	"${Showtime_INCLUDE_DIRS}/showtime/ShowtimeClient.h"
 )
 
 set(ZST_CLIENT_PRIVATE_HEADERS
@@ -14,7 +14,7 @@ set(ZST_CLIENT_PRIVATE_HEADERS
 )
 
 set(ZST_CLIENT_SRC
-  "${CMAKE_CURRENT_LIST_DIR}/Showtime.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/ShowtimeClient.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientModule.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClient.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientHierarchy.cpp"
@@ -22,6 +22,9 @@ set(ZST_CLIENT_SRC
   "${CMAKE_CURRENT_LIST_DIR}/ZstZMQClientTransport.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/ZstClientAdaptors.cpp"
 )
+
+source_group( "headers" FILES ${ZST_CLIENT_HEADERS} ${ZST_CLIENT_PRIVATE_HEADERS})
+source_group( "source" FILES ${ZST_CLIENT_SRC})
 
 
 # Add our top level header to the public API

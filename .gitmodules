@@ -14,3 +14,6 @@
 [submodule "submodules/readerwriterqueue"]
 	path = submodules/readerwriterqueue
 	url = https://github.com/cameron314/readerwriterqueue.git
+[submodule "submodules/delegates"]
+	path = submodules/delegates
+	url = https://github.com/marcmo/delegates.git
