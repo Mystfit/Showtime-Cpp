@@ -64,7 +64,7 @@ endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     MESSAGE(STATUS "Platform is Windows")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP /Zc:__cplusplus")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP")
 
     option(WINDOWS_USE_DLL_RUNTIME "Use the Visual C++ DLL runtime" ON)
@@ -248,12 +248,37 @@ if(WIN32)
     endif()
 endif()
 
+# Submodule includes
 set(Showtime_HEADER_DEPENDENCIES 
     $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/cf>
     $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/readerwriterqueue>
     $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/concurrentqueue>
     $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/cxxopts/include>
+    $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/delegates/include>
 )
+
+# Copy include headers to build tree
+file(MAKE_DIRECTORY ${Showtime_COMPILED_INCLUDE_DIRS})
+
+# TODO: Copy fmt headers but replace with CMake install!
+get_target_property(FMT_INCLUDE_DIR fmt::fmt INTERFACE_INCLUDE_DIRECTORIES)
+file(COPY ${FMT_INCLUDE_DIR}/fmt DESTINATION ${Showtime_COMPILED_INCLUDE_DIRS})
+file(GLOB FMT_HEADERS CONFIGURE_DEPENDS "${FMT_INCLUDE_DIR}/fmt/*.h")
+
+# Copy flatbuffers headers but replace with CMake install!
+get_target_property(FLATBUFFERS_INCLUDE_DIR flatbuffers::flatbuffers INTERFACE_INCLUDE_DIRECTORIES)
+file(GLOB FLATBUFFER_HEADER_SRC CONFIGURE_DEPENDS "${FLATBUFFERS_INCLUDE_DIR}/flatbuffers/*.h")
+file(MAKE_DIRECTORY ${Showtime_COMPILED_INCLUDE_DIRS}/flatbuffers)
+set(FLATBUFFER_HEADERS "")
+foreach(FILE ${FLATBUFFER_HEADER_SRC})
+    get_filename_component(FILE_N ${FILE} NAME)
+    set(DEST_F "${Showtime_COMPILED_INCLUDE_DIRS}/flatbuffers/${FILE_N}")
+    configure_file(${FILE} ${DEST_F} COPYONLY)
+    list(APPEND FLATBUFFER_HEADERS ${DEST_F})
+endforeach()
+
+# Copy delegate headers
+file(COPY ${Showtime_SUBMODULE_DEPENDENCIES_DIR}/delegates/include/delegate.h DESTINATION ${Showtime_COMPILED_INCLUDE_DIRS}/showtime)
 
 set(SHOWTIME_PRIVATE_STATIC_LINKED_LIBS
     czmq-static

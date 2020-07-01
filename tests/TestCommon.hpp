@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include <showtime/Showtime.h>
+#include <showtime/ShowtimeClient.h>
 #include <showtime/ShowtimeServer.h>
 #include <showtime/ZstFilesystemUtils.h>
 

@@ -18,24 +18,6 @@ set(GENERATED_SOURCES
 # Generated flatbuffer schemas
 list(APPEND GENERATED_SOURCES ${FLATBUFFER_HEADER_OUTPUT})
 
-# Copy fmt headers
-get_target_property(FMT_INCLUDE_DIR fmt::fmt INTERFACE_INCLUDE_DIRECTORIES)
-file(MAKE_DIRECTORY ${Showtime_COMPILED_INCLUDE_DIRS})
-file(COPY ${FMT_INCLUDE_DIR}/fmt DESTINATION ${Showtime_COMPILED_INCLUDE_DIRS})
-file(GLOB FMT_HEADERS CONFIGURE_DEPENDS "${FMT_INCLUDE_DIR}/fmt/*.h")
-
-# Copy flatbuffers headers
-get_target_property(FLATBUFFERS_INCLUDE_DIR flatbuffers::flatbuffers INTERFACE_INCLUDE_DIRECTORIES)
-file(GLOB FLATBUFFER_HEADER_SRC CONFIGURE_DEPENDS "${FLATBUFFERS_INCLUDE_DIR}/flatbuffers/*.h")
-file(MAKE_DIRECTORY ${Showtime_COMPILED_INCLUDE_DIRS}/flatbuffers)
-set(FLATBUFFER_HEADERS "")
-foreach(FILE ${FLATBUFFER_HEADER_SRC})
-    get_filename_component(FILE_N ${FILE} NAME)
-    set(DEST_F "${Showtime_COMPILED_INCLUDE_DIRS}/flatbuffers/${FILE_N}")
-    configure_file(${FILE} ${DEST_F} COPYONLY)
-    list(APPEND FLATBUFFER_HEADERS ${DEST_F})
-endforeach()
-
 # Set generated sources property
 set_source_files_properties(${GENERATED_SOURCES} PROPERTIES GENERATED ON)
 
