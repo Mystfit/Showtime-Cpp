@@ -255,6 +255,7 @@ set(Showtime_HEADER_DEPENDENCIES
     $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/concurrentqueue>
     $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/cxxopts/include>
     $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/delegates/include>
+    $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/multifunction>
 )
 
 # Copy include headers to build tree
@@ -279,6 +280,7 @@ endforeach()
 
 # Copy delegate headers
 file(COPY ${Showtime_SUBMODULE_DEPENDENCIES_DIR}/delegates/include/delegate.h DESTINATION ${Showtime_COMPILED_INCLUDE_DIRS}/showtime)
+file(COPY ${Showtime_SUBMODULE_DEPENDENCIES_DIR}/multifunction/multicast.hpp DESTINATION ${Showtime_COMPILED_INCLUDE_DIRS}/showtime)
 
 set(SHOWTIME_PRIVATE_STATIC_LINKED_LIBS
     czmq-static

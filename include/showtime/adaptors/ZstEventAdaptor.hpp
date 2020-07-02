@@ -1,11 +1,24 @@
 #pragma once
 #include <showtime/ZstPointerUtils.h>
 #include <showtime/ZstExports.h>
+#include <showtime/multicast.hpp>
 #include <set>
 #include <memory>
 #include <mutex>
 
+
 namespace showtime {
+
+#define MULTICAST_DELEGATE_BODY(EventName)\
+	EventName & On##EventName##Event() { return m_##EventName;};\
+private:\
+	EventName m_##EventName;\
+public:
+#define MULTICAST_DELEGATE(EventName) typedef util::multifunction<void()> EventName; MULTICAST_DELEGATE_BODY(EventName)
+#define MULTICAST_DELEGATE_OneParam(EventName, Arg1) typedef util::multifunction<void(Arg1)> EventName; MULTICAST_DELEGATE_BODY(EventName)
+#define MULTICAST_DELEGATE_TwoParams(EventName, Arg1, Arg2) typedef util::multifunction<void(Arg1, Arg2)> EventName; MULTICAST_DELEGATE_BODY(EventName)
+
+
 
 //Forwards
 class ZstEventDispatcherBase;

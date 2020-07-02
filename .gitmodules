@@ -17,3 +17,6 @@
 [submodule "submodules/delegates"]
 	path = submodules/delegates
 	url = https://github.com/marcmo/delegates.git
+[submodule "submodules/multifunction"]
+	path = submodules/multifunction
+	url = https://github.com/klmr/multifunction.git
