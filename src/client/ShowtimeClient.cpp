@@ -183,6 +183,31 @@ void ShowtimeClient::remove_log_adaptor(std::shared_ptr<ZstLogAdaptor> adaptor)
 }
 
 
+ZstConnectionAdaptor* ShowtimeClient::connection_events()
+{
+	// TODO: insert return statement here
+}
+
+ZstSessionAdaptor* ShowtimeClient::session_events()
+{
+	// TODO: insert return statement here
+}
+
+ZstHierarchyAdaptor* ShowtimeClient::hierarchy_events()
+{
+	// TODO: insert return statement here
+}
+
+ZstPluginAdaptor* ShowtimeClient::plugin_events()
+{
+	// TODO: insert return statement here
+}
+
+ZstLogAdaptor* ShowtimeClient::log_events()
+{
+	// TODO: insert return statement here
+}
+
 
 // ------------------------------
 // Entity activation/deactivation

@@ -15,9 +15,11 @@ class ZST_CLASS_EXPORTED ZstSessionAdaptor :
 	public ZstEventAdaptor
 {
 public:
-	ZST_EXPORT virtual void on_cable_created(ZstCable * cable);
-	ZST_EXPORT virtual void on_cable_destroyed(const ZstCableAddress& cable_address);
+	MULTICAST_DELEGATE_OneParam(ZST_EXPORT, cable_created, ZstCable*, cable)
+	MULTICAST_DELEGATE_OneParam(ZST_EXPORT, cable_destroyed, const ZstCableAddress&, cable_address)
     
+	//----
+
     ZST_EXPORT virtual ZstCableBundle & get_cables(ZstCableBundle & bundle);
     ZST_EXPORT virtual ZstCable * find_cable(const ZstCableAddress & address);
 	ZST_EXPORT virtual void destroy_cable(ZstCable* cable);

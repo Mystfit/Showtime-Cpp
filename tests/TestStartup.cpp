@@ -113,7 +113,6 @@ BOOST_FIXTURE_TEST_CASE(sync_join_by_name, FixtureInitAndCreateServerWithEpherem
 
 BOOST_FIXTURE_TEST_CASE(async_join, FixtureInitAndCreateServerWithEpheremalPort, TEST_TIMEOUT){
 	auto connectCallback = std::make_shared< TestConnectionEvents>();
-	connectCallback->OnConnectedToStageEvent() += [](ShowtimeClient* client, const ZstServerAddress& address) {};
 	test_client->add_connection_adaptor(connectCallback);
 	test_client->join_async(server_address.c_str());
 	wait_for_event(test_client, connectCallback, 1);

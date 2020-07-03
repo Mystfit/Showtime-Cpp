@@ -468,7 +468,7 @@ void ZstClient::join_stage_complete(const ZstServerAddress& server_address, ZstM
     //Enqueue connection events
     m_session->dispatch_connected_to_stage();
     ZstEventDispatcher<std::shared_ptr<ZstConnectionAdaptor> >::defer([this, server_address](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
-        adaptor->on_connected_to_stage(this->m_api, server_address);
+        adaptor->on_connected_to_server(this->m_api, server_address);
     });
 
     //If we are sync, we can dispatch events immediately
@@ -500,7 +500,7 @@ void ZstClient::synchronise_graph_complete(ZstMessageResponse response)
 {
     Log::net(Log::Level::notification, "Graph sync for {} completed", session()->hierarchy()->get_local_performer()->URI().path());
     ZstEventDispatcher<std::shared_ptr<ZstConnectionAdaptor>>::defer([this](std::shared_ptr<ZstConnectionAdaptor> adp) {
-        adp->on_synchronised_with_stage(this->m_api, this->connected_server());
+        adp->on_synchronised_graph(this->m_api, this->connected_server());
     });
 }
 
@@ -567,7 +567,7 @@ void ZstClient::leave_stage_complete(ZstTransportRequestBehaviour sendtype)
     m_session->dispatch_disconnected_from_stage();
     ZstEventDispatcher<std::shared_ptr<ZstConnectionAdaptor>>::defer([this](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
         if(m_api)
-            adaptor->on_disconnected_from_stage(this->m_api, this->m_connected_server);
+            adaptor->on_disconnected_from_server(this->m_api, this->m_connected_server);
     });
 
     if (sendtype == ZstTransportRequestBehaviour::SYNC_REPLY)

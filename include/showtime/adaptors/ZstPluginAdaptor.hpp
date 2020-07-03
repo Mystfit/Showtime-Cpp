@@ -10,8 +10,8 @@ namespace showtime {
 		public ZstEventAdaptor
 	{
 	public:
-		ZST_EXPORT virtual void on_plugin_loaded(std::shared_ptr<ZstPlugin> plugin);
-		ZST_EXPORT virtual void on_plugin_unloaded(std::shared_ptr<ZstPlugin> plugin);
+		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, plugin_loaded, std::shared_ptr<ZstPlugin>, plugin)
+		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, plugin_unloaded, std::shared_ptr<ZstPlugin>, plugin)
 	};
 
 }

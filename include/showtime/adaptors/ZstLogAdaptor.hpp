@@ -11,6 +11,6 @@ namespace showtime {
 		public ZstEventAdaptor
 	{
 	public:
-		ZST_EXPORT virtual void on_log_record(const Log::Record& record);
+		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, log_record, const Log::Record&, record)
 	};
 }

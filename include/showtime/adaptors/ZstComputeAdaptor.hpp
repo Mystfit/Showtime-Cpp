@@ -10,7 +10,6 @@ namespace showtime {
 		public ZstEventAdaptor
 	{
 	public:
-		MULTICAST_DELEGATE_TwoParams(Compute, ZstComponent*, ZstInputPlug*)
-		ZST_EXPORT virtual void on_compute(ZstComponent * component, ZstInputPlug * plug);
+		MULTICAST_DELEGATE_TwoParams(ZST_EXPORT, compute, ZstComponent*, component, ZstInputPlug*, plug)
 	};
 }

@@ -19,7 +19,10 @@ namespace showtime {
     class ZST_CLASS_EXPORTED ZstGraphTransportAdaptor : public ZstTransportAdaptor
     {
     public:
-        ZST_EXPORT virtual void on_receive_msg(const std::shared_ptr<ZstPerformanceMessage>& msg);
+        MULTICAST_DELEGATE_OneParam(ZST_EXPORT, receive_msg, const std::shared_ptr<ZstPerformanceMessage>&, msg)
+        
+        // ---
+            
         ZST_EXPORT virtual ZstMessageReceipt send_msg(flatbuffers::Offset<GraphMessage> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder>& buffer_builder, const ZstTransportArgs& args = {});
     };
 }

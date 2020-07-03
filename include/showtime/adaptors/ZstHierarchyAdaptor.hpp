@@ -17,16 +17,13 @@ namespace showtime {
 	{
 	public:
 		// Outgoing events
-
-		ZST_EXPORT virtual void on_performer_arriving(ZstPerformer * performer);
-		ZST_EXPORT virtual void on_performer_leaving(const ZstURI& performer_path);
-
-		ZST_EXPORT virtual void on_entity_arriving(ZstEntityBase * entity);
-		ZST_EXPORT virtual void on_entity_leaving(const ZstURI& entity_path);
-		ZST_EXPORT virtual void on_entity_updated(ZstEntityBase* entity);
-
-		ZST_EXPORT virtual void on_factory_arriving(ZstEntityFactory * factory);
-		ZST_EXPORT virtual void on_factory_leaving(const ZstURI& factory_path);
+		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, performer_arriving, ZstPerformer*, performer)
+		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, performer_leaving, const ZstURI&, performer_path)
+		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, entity_arriving, ZstEntityBase*, entity)
+		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, entity_leaving, const ZstURI&, entity_path)
+		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, entity_updated, ZstEntityBase*, entity)
+		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, factory_arriving, ZstEntityFactory*, factory)
+		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, factory_leaving, const ZstURI&, factory_path)
 
 
 		// Interface events 

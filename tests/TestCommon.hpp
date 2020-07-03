@@ -242,13 +242,13 @@ namespace ZstTest
 		std::vector<ZstServerAddress> discovered_servers;
 		std::vector<ZstServerAddress> lost_servers;
 
-		void on_connected_to_stage(ShowtimeClient* client, const ZstServerAddress & stage_address) override {
+		void on_connected_to_server(ShowtimeClient* client, const ZstServerAddress & stage_address) override {
 			Log::app(Log::Level::debug, "CONNECTION_ESTABLISHED: {}", client->get_root()->URI().path());
 			inc_calls();
 			is_connected = true;
 		}
 
-		void on_disconnected_from_stage(ShowtimeClient* client, const ZstServerAddress & stage_address) override {
+		void on_disconnected_from_server(ShowtimeClient* client, const ZstServerAddress & stage_address) override {
 			Log::app(Log::Level::debug, "DISCONNECTING: {}",client->get_root()->URI().path());
 			inc_calls();
 			is_connected = false;
@@ -260,7 +260,7 @@ namespace ZstTest
 			discovered_servers.push_back(stage_address);
         }
 
-		void on_synchronised_with_stage(ShowtimeClient* client, const ZstServerAddress & stage_address) override {
+		void on_synchronised_graph(ShowtimeClient* client, const ZstServerAddress & stage_address) override {
 			Log::app(Log::Level::debug, "SERVER SYNCHRONISED");
 			inc_calls();
 			is_synced = true;

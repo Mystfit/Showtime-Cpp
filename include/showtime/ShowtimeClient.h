@@ -52,6 +52,12 @@ public:
 	ZST_CLIENT_EXPORT void remove_hierarchy_adaptor(std::shared_ptr<ZstHierarchyAdaptor> adaptor);
 	ZST_CLIENT_EXPORT void remove_plugin_adaptor(std::shared_ptr<ZstPluginAdaptor> adaptor);
 	ZST_CLIENT_EXPORT void remove_log_adaptor(std::shared_ptr<ZstLogAdaptor> adaptor); 
+
+	ZST_CLIENT_EXPORT ZstConnectionAdaptor* connection_events();
+	ZST_CLIENT_EXPORT ZstSessionAdaptor* session_events();
+	ZST_CLIENT_EXPORT ZstHierarchyAdaptor* hierarchy_events();
+	ZST_CLIENT_EXPORT ZstPluginAdaptor* plugin_events();
+	ZST_CLIENT_EXPORT ZstLogAdaptor* log_events();
 	
 	//Entity activation/deactivation
 	ZST_CLIENT_EXPORT void register_entity(ZstEntityBase* entity);
