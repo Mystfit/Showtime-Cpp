@@ -36,12 +36,12 @@ namespace showtime {
         ZST_EXPORT std::vector<std::shared_ptr<ZstPlugin> > get_plugins();
 
         // Plugin events
-        ZST_EXPORT std::shared_ptr < ZstEventDispatcher<std::shared_ptr<ZstPluginAdaptor> > >& plugin_events();
+        ZST_EXPORT std::shared_ptr < ZstEventDispatcher<ZstPluginAdaptor> >& plugin_events();
     
     private:
         ZST_EXPORT std::vector<fs::path> plugin_lib_paths(const fs::path& dir);
 
-        std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstPluginAdaptor> > > m_plugin_events;
+        std::shared_ptr<ZstEventDispatcher<ZstPluginAdaptor> > m_plugin_events;
 
         std::unordered_map<std::string, ZstLoadedPlugin> m_loaded_plugins;
     };

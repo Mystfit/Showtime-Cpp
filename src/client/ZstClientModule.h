@@ -14,12 +14,12 @@ class ZstClientModule {
 public:
 	ZstClientModule();
 	void set_wake_condition(std::shared_ptr<ZstSemaphore>& condition);
-	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstStageTransportAdaptor> > >& stage_events();
+	std::shared_ptr<ZstEventDispatcher<ZstStageTransportAdaptor> >& stage_events();
 	virtual void process_events();
 	virtual void flush_events();
 
 private:
-	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstStageTransportAdaptor> > > m_stage_events;
+	std::shared_ptr<ZstEventDispatcher<ZstStageTransportAdaptor> > m_stage_events;
 };
 
 }

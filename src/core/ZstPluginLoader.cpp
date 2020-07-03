@@ -3,7 +3,7 @@
 
 namespace showtime {
 	ZstPluginLoader::ZstPluginLoader() : 
-		m_plugin_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstPluginAdaptor> > >())
+		m_plugin_events(std::make_shared<ZstEventDispatcher<ZstPluginAdaptor> >())
 	{
 	}
 
@@ -82,14 +82,14 @@ namespace showtime {
 			m_loaded_plugins[plugin->name()] = ZstLoadedPlugin{lib, plugin};
 
 			// Defer plugin loaded event
-			m_plugin_events->defer([plugin](std::shared_ptr<ZstPluginAdaptor> adp) {
+			m_plugin_events->defer([plugin](std::shared_ptr<ZstPluginAdaptor>& adp) {
 				adp->on_plugin_loaded(plugin);
 			});
 			Log::net(Log::Level::debug, "Loaded plugin {} {}.{}.{}", plugin->name(), plugin->version_major(), plugin->version_minor(), plugin->version_patch());
 		}
 	}
 
-	std::shared_ptr< ZstEventDispatcher< std::shared_ptr< ZstPluginAdaptor > > > & ZstPluginLoader::plugin_events()
+	std::shared_ptr< ZstEventDispatcher<ZstPluginAdaptor > > & ZstPluginLoader::plugin_events()
 	{
 		return m_plugin_events;
 	}

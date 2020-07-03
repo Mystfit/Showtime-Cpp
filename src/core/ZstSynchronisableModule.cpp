@@ -3,7 +3,7 @@
 namespace showtime {
 
 ZstSynchronisableModule::ZstSynchronisableModule() : 
-	m_synchronisable_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstSynchronisableAdaptor> > >())
+	m_synchronisable_events(std::make_shared<ZstEventDispatcher<ZstSynchronisableAdaptor> >())
 {
 }
 
@@ -51,7 +51,7 @@ void ZstSynchronisableModule::synchronisable_has_event(ZstSynchronisable * synch
     });
 }
 
-std::shared_ptr < ZstEventDispatcher<std::shared_ptr<ZstSynchronisableAdaptor> > > & ZstSynchronisableModule::synchronisable_events()
+std::shared_ptr < ZstEventDispatcher<ZstSynchronisableAdaptor> > & ZstSynchronisableModule::synchronisable_events()
 {
     return m_synchronisable_events;
 }

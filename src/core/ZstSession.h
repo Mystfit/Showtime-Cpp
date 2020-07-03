@@ -91,8 +91,8 @@ public:
 	// Event dispatchers
 	// -----------------
 
-	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstSessionAdaptor> > > & session_events();
-	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstComputeAdaptor> > > & compute_events();
+	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<ZstSessionAdaptor> > & session_events();
+	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<ZstComputeAdaptor> > & compute_events();
 
 
 	// -------
@@ -117,8 +117,8 @@ private:
 	// -----------------
 	// Event dispatchers
 	// -----------------
-	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstSessionAdaptor> > > m_session_events;
-	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstComputeAdaptor> > > m_compute_events;
+	std::shared_ptr<ZstEventDispatcher<ZstSessionAdaptor> > m_session_events;
+	std::shared_ptr<ZstEventDispatcher<ZstComputeAdaptor> > m_compute_events;
 	std::set<ZstURI> m_connected_performers;
 };
 

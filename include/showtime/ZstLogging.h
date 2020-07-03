@@ -71,7 +71,7 @@ namespace showtime {
 			static bool _logging = false;
 		}		
 
-		ZST_EXPORT void init_logger(const char* logger_name, Level level, std::shared_ptr<ZstEventDispatcher< std::shared_ptr<ZstLogAdaptor> > >& log_events);
+		ZST_EXPORT void init_logger(const char* logger_name, Level level, std::shared_ptr<ZstEventDispatcher<ZstLogAdaptor> >& log_events);
 		ZST_EXPORT void init_file_logging(const char* log_file_path = "");
 		ZST_EXPORT const char* get_severity_str(Level level);
 

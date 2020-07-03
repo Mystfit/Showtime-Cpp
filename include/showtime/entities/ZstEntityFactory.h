@@ -64,7 +64,7 @@ public:
 
 	ZST_EXPORT void add_adaptor(std::shared_ptr<ZstFactoryAdaptor> adaptor);
 	ZST_EXPORT void remove_adaptor(std::shared_ptr<ZstFactoryAdaptor> adaptor);
-	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > > & factory_events();
+	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<ZstFactoryAdaptor> > & factory_events();
 
 protected:
 	ZST_EXPORT virtual ZstEntityBase * activate_entity(ZstEntityBase * entity);
@@ -74,7 +74,7 @@ protected:
 private:
 	void update_createable_URIs();
 	std::unordered_map<ZstURI, ZstEntityCreatorFunc, ZstURIHash> m_creatables;
-	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > > m_factory_events;
+	std::shared_ptr<ZstEventDispatcher<ZstFactoryAdaptor> > m_factory_events;
 	std::vector< std::unique_ptr<ZstEntityBase> > m_owned_entities;
 };
 

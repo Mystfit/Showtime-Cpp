@@ -59,15 +59,15 @@ namespace showtime {
 				public boost::log::sinks::text_ostream_backend
 			{
 			public:
-				SinkBackend(std::shared_ptr<ZstEventDispatcher< std::shared_ptr<ZstLogAdaptor> > >& log_events);
+				SinkBackend(std::shared_ptr<ZstEventDispatcher<ZstLogAdaptor> >& log_events);
 
 				// TODO: Does consume need to be static?
 				void consume(boost::log::record_view const& rec, string_type const& formatted_string);
 				
-				std::shared_ptr<ZstEventDispatcher< std::shared_ptr<ZstLogAdaptor> > >& log_events();
+				std::shared_ptr<ZstEventDispatcher<ZstLogAdaptor> >& log_events();
 
 			private:
-				std::shared_ptr<ZstEventDispatcher< std::shared_ptr<ZstLogAdaptor> > > m_log_events;
+				std::shared_ptr<ZstEventDispatcher<ZstLogAdaptor> > m_log_events;
 			};
 		}
 	}
@@ -83,7 +83,7 @@ namespace showtime {
 		strm << rec[expr::smessage];
 	}
 
-	void Log::init_logger(const char* logger_name, Log::Level level, std::shared_ptr<ZstEventDispatcher< std::shared_ptr<ZstLogAdaptor> > >& log_events)
+	void Log::init_logger(const char* logger_name, Log::Level level, std::shared_ptr<ZstEventDispatcher<ZstLogAdaptor> >& log_events)
 	{
 		//Flag logger as already launched
 		if (Log::internals::_logging)
@@ -177,7 +177,7 @@ namespace showtime {
 	}
 #endif
 
-	Log::internals::SinkBackend::SinkBackend(std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstLogAdaptor>>>& log_events) : m_log_events(log_events)
+	Log::internals::SinkBackend::SinkBackend(std::shared_ptr<ZstEventDispatcher<ZstLogAdaptor>>& log_events) : m_log_events(log_events)
 	{
 	}
 
@@ -220,7 +220,7 @@ namespace showtime {
 		SetConsoleTextAttribute(hstdout, csbi.wAttributes);
 #endif
 	}
-	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstLogAdaptor>>>& Log::internals::SinkBackend::log_events()
+	std::shared_ptr<ZstEventDispatcher<ZstLogAdaptor>>& Log::internals::SinkBackend::log_events()
 	{
 		return m_log_events;
 	}

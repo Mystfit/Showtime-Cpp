@@ -115,7 +115,7 @@ public:
     using ZstSynchronisable::remove_adaptor;
 #endif
 
-    ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstEntityAdaptor> > > & entity_events();
+    ZST_EXPORT std::shared_ptr<ZstEventDispatcher<ZstEntityAdaptor> > & entity_events();
     
 protected:
     //Set entity status
@@ -126,14 +126,14 @@ protected:
     ZST_EXPORT virtual void dispatch_destroyed() override;
     
     //Event dispatchers
-    ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstSessionAdaptor> > > & session_events();
-	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstHierarchyAdaptor> > >& hierarchy_events();
+    ZST_EXPORT std::shared_ptr<ZstEventDispatcher<ZstSessionAdaptor> > & session_events();
+	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<ZstHierarchyAdaptor> >& hierarchy_events();
 
     //Entity mutex
     mutable std::mutex m_entity_mtx;
-    std::shared_ptr<ZstEventDispatcher< std::shared_ptr< ZstSessionAdaptor> > > m_session_events;
-	std::shared_ptr<ZstEventDispatcher< std::shared_ptr< ZstHierarchyAdaptor> > > m_hierarchy_events;
-    std::shared_ptr<ZstEventDispatcher< std::shared_ptr< ZstEntityAdaptor> > > m_entity_events;
+    std::shared_ptr<ZstEventDispatcher<ZstSessionAdaptor> > m_session_events;
+	std::shared_ptr<ZstEventDispatcher<ZstHierarchyAdaptor> > m_hierarchy_events;
+    std::shared_ptr<ZstEventDispatcher<ZstEntityAdaptor> > m_entity_events;
 
 private:
 	void set_registered(bool registered);

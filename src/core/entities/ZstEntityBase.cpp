@@ -22,9 +22,9 @@ namespace showtime
 
 
 	ZstEntityBase::ZstEntityBase() :
-		m_session_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstSessionAdaptor> > >()),
-		m_hierarchy_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstHierarchyAdaptor> > >()),
-		m_entity_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstEntityAdaptor > > >()),
+		m_session_events(std::make_shared< ZstEventDispatcher<ZstSessionAdaptor> >()),
+		m_hierarchy_events(std::make_shared< ZstEventDispatcher<ZstHierarchyAdaptor> >()),
+		m_entity_events(std::make_shared< ZstEventDispatcher<ZstEntityAdaptor > >()),
 		m_parent(),
 		m_entity_type(ZstEntityType::NONE),
 		m_uri(""),
@@ -34,9 +34,9 @@ namespace showtime
     }
     
     ZstEntityBase::ZstEntityBase(const char * name) :
-        m_session_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstSessionAdaptor> > >()),
-		m_hierarchy_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstHierarchyAdaptor> > >()),
-        m_entity_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstEntityAdaptor > > >()),
+        m_session_events(std::make_shared< ZstEventDispatcher<ZstSessionAdaptor> >()),
+		m_hierarchy_events(std::make_shared< ZstEventDispatcher<ZstHierarchyAdaptor> >()),
+        m_entity_events(std::make_shared< ZstEventDispatcher<ZstEntityAdaptor > >()),
         m_parent(),
         m_entity_type(ZstEntityType::NONE),
         m_uri(name),
@@ -46,9 +46,9 @@ namespace showtime
     }
     
     ZstEntityBase::ZstEntityBase(const EntityData* buffer) :
-        m_session_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstSessionAdaptor> > >()),
-		m_hierarchy_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstHierarchyAdaptor> > >()),
-        m_entity_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstEntityAdaptor > > >()),
+        m_session_events(std::make_shared< ZstEventDispatcher<ZstSessionAdaptor> >()),
+		m_hierarchy_events(std::make_shared< ZstEventDispatcher<ZstHierarchyAdaptor> >()),
+        m_entity_events(std::make_shared< ZstEventDispatcher<ZstEntityAdaptor > >()),
         m_parent(),
         m_entity_type(ZstEntityType::NONE),
         m_uri(""),
@@ -59,9 +59,9 @@ namespace showtime
     }
 
     ZstEntityBase::ZstEntityBase(const ZstEntityBase & other) :
-        m_session_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstSessionAdaptor> > >()),
-		m_hierarchy_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstHierarchyAdaptor> > >()),
-        m_entity_events(std::make_shared< ZstEventDispatcher< std::shared_ptr<ZstEntityAdaptor> > >()),
+        m_session_events(std::make_shared< ZstEventDispatcher<ZstSessionAdaptor> >()),
+		m_hierarchy_events(std::make_shared< ZstEventDispatcher<ZstHierarchyAdaptor> >()),
+        m_entity_events(std::make_shared< ZstEventDispatcher<ZstEntityAdaptor> >()),
         m_parent(other.m_parent),
         m_entity_type(other.m_entity_type),
         m_uri(ZstURI(other.m_uri)),
@@ -183,7 +183,7 @@ namespace showtime
         }
     }
 
-    std::shared_ptr< ZstEventDispatcher< std::shared_ptr<ZstEntityAdaptor> > > & ZstEntityBase::entity_events()
+    std::shared_ptr< ZstEventDispatcher<ZstEntityAdaptor> > & ZstEntityBase::entity_events()
     {
         return m_entity_events;
     }
@@ -376,19 +376,18 @@ namespace showtime
 				child->set_activation_status(ZstSyncStatus::DESTROYED);
 			}
 
-            synchronisable_events()->invoke([this](std::weak_ptr<ZstSynchronisableAdaptor> adaptor) {
-                if(auto adp = adaptor.lock())
-                    adp->on_synchronisable_destroyed(this, true);
+            synchronisable_events()->invoke([this](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
+                adaptor->on_synchronisable_destroyed(this, true);
             });
         }
     }
 
-    std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstSessionAdaptor> > > & ZstEntityBase::session_events()
+    std::shared_ptr<ZstEventDispatcher<ZstSessionAdaptor> > & ZstEntityBase::session_events()
     {
         return m_session_events;
     }
 
-	std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstHierarchyAdaptor>>>& ZstEntityBase::hierarchy_events()
+	std::shared_ptr<ZstEventDispatcher<ZstHierarchyAdaptor>>& ZstEntityBase::hierarchy_events()
 	{
 		return m_hierarchy_events;
 	}

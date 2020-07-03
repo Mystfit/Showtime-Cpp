@@ -9,7 +9,7 @@
 
 namespace showtime {
 
-#define MULTICAST_DELEGATE_EVENT_BODY(EventName) EventName##_delegate & on_##EventName##_event() { return m_##EventName;};\
+#define MULTICAST_DELEGATE_EVENT_BODY(EventName) EventName##_delegate & ##EventName##() { return m_##EventName;};\
 private:\
 	EventName##_delegate m_##EventName;\
 public:

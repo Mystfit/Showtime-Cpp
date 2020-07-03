@@ -34,13 +34,22 @@ typedef std::function<void(ZstEventStatus)> ZstEventCallback;
 template<typename T>
 class ZstEvent 
 {
-    static_assert(std::is_base_of<ZstEventAdaptor, typename std::pointer_traits<T>::element_type >::value, "T must derive from ZstEventAdaptor");
+    static_assert(std::is_base_of<ZstEventAdaptor, T>::value, "T must derive from ZstEventAdaptor");
 	//static_assert(std::is_base_of<ZstEventAdaptor, std::remove_pointer_t< std::weak_ptr<T> > >::value, "T must derive from ZstEventAdaptor");
 public:
-	ZstEvent() : func([](T adp) {}), completed_func([](ZstEventStatus) {}) {}
-	ZstEvent(std::function<void(T)> f, ZstEventCallback cf) : func(f), completed_func(cf) {};
+	ZstEvent() : 
+		func([](std::shared_ptr<T> adp) {}),
+		completed_func([](ZstEventStatus s) {})
+	{
+	}
+
+	ZstEvent(std::function<void(std::shared_ptr<T>&)> f, ZstEventCallback cf) : 
+		func(f), 
+		completed_func(cf) 
+	{
+	}
 	
-	std::function<void(T)> func;
+	std::function<void(std::shared_ptr<T>&)> func;
 	ZstEventCallback completed_func;
 };
 
@@ -127,22 +136,32 @@ protected:
 
 template<typename T>
 class ZstEventDispatcherTyped : public ZstEventDispatcherBase {
-	static_assert(std::is_base_of<ZstEventAdaptor, typename std::pointer_traits<T>::element_type >::value, "T must derive from ZstEventAdaptor");
+	static_assert(std::is_base_of<ZstEventAdaptor, T>::value, "T must derive from ZstEventAdaptor");
 public:
-	void invoke(const std::function<void(T)>& event) {
+	ZstEventDispatcherTyped() : m_default_adaptor(std::make_shared<T>()) 
+	{
+		add_adaptor(m_default_adaptor);
+	}
+
+	std::shared_ptr<T> get_default_adaptor() {
+		return m_default_adaptor;
+	}
+
+	void invoke(std::function<void(std::shared_ptr<T>&)> event) {
 		if (this->m_adaptors.size() < 1) {
 			return;
 		}
 		//std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		for (auto adaptor : this->m_adaptors) {
 			if (auto adp = adaptor.lock())
-				event(std::static_pointer_cast<typename std::pointer_traits<T>::element_type>(adp));
+				event(std::static_pointer_cast<T>(adp));
 		}
 	}
+
 	virtual void process_events() = 0;
 	virtual void flush_events() = 0;
-	virtual void defer(std::function<void(T)> event) = 0;
-	virtual void defer(std::function<void(T)> event, ZstEventCallback on_complete) = 0;
+	virtual void defer(std::function<void(std::shared_ptr<T>)> event) = 0;
+	virtual void defer(std::function<void(std::shared_ptr<T>)> event, ZstEventCallback on_complete) = 0;
 
 protected:
 	void process(ZstEvent<T>& event) {
@@ -150,7 +169,7 @@ protected:
 		for (auto adaptor : m_adaptors) {
 			if (auto adp = adaptor.lock()) {
 				try {
-					event.func(std::dynamic_pointer_cast<typename std::pointer_traits<T>::element_type>(adp));
+					event.func(std::dynamic_pointer_cast<T>(adp));
 				}
 				catch (std::exception e) {
 					Log::net(Log::Level::error, "Event dispatcher failed to run an event on a adaptor. Reason: {}", e.what());
@@ -160,6 +179,9 @@ protected:
 		}
 		event.completed_func((success) ? ZstEventStatus::SUCCESS : ZstEventStatus::FAILED);
 	}
+
+private:
+	std::shared_ptr<T> m_default_adaptor;
 };
 
 
@@ -172,14 +194,14 @@ public:
 	{
 	}
 
-	virtual void defer(std::function<void(T)> event) override {
-		ZstEvent<T> e(event, [](ZstEventStatus s) {});
+	virtual void defer(std::function<void(std::shared_ptr<T>)> event) override {
+		ZstEvent<T> e(event, nullptr);
 		this->m_events.enqueue(e);
 		this->m_has_event = true;
 		this->notify();
 	}
 
-	virtual void defer(std::function<void(T)> event, ZstEventCallback on_complete) override {
+	virtual void defer(std::function<void(std::shared_ptr<T>)> event, ZstEventCallback on_complete) override {
 		ZstEvent<T> e(event, on_complete);
 		this->m_events.enqueue(e);
 		this->m_has_event = true;
@@ -220,13 +242,13 @@ public:
 			this->process(event);
 	}
 
-	virtual void defer(std::function<void(T)> event) override {
+	virtual void defer(std::function<void(std::shared_ptr<T>)> event) override {
 		ZstEvent<T> e(event, [](ZstEventStatus s) {});
 		this->m_events.enqueue(e);
 		this->m_has_event = true;
 	}
 
-	virtual void defer(std::function<void(T)> event, ZstEventCallback on_complete) override {
+	virtual void defer(std::function<void(std::shared_ptr<T>)> event, ZstEventCallback on_complete) override {
 		ZstEvent<T> e(event, on_complete);
 		this->m_events.enqueue(e);
 		this->m_has_event = true;

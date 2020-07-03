@@ -78,7 +78,7 @@ public:
 	// Event dispatchers
 	// -----------------
 	
-	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstHierarchyAdaptor> > > & hierarchy_events();
+	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<ZstHierarchyAdaptor> > & hierarchy_events();
 	ZST_EXPORT virtual void process_events() override;
 	ZST_EXPORT virtual void flush_events() override;
 
@@ -111,7 +111,7 @@ protected:
 
 private:
 	void reaper_cleanup_entity(ZstEntityBase* entity);
-	std::shared_ptr<ZstEventDispatcher< std::shared_ptr<ZstHierarchyAdaptor> > > m_hierarchy_events;
+	std::shared_ptr<ZstEventDispatcher<ZstHierarchyAdaptor> > m_hierarchy_events;
 	std::recursive_mutex m_hierarchy_mutex;
 	ZstEntityMap m_entity_lookup;
 	std::set< std::unique_ptr<ZstSynchronisable> > m_proxies;

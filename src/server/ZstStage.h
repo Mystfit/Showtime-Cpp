@@ -34,7 +34,7 @@ namespace showtime {
 	namespace detail {
 		class ZstStage : 
 			public ZstStageTransportAdaptor,
-			public ZstEventDispatcher< std::shared_ptr<ZstLogAdaptor> >
+			public ZstEventDispatcher<ZstLogAdaptor>
 		{
 		public:
 			ZstStage();

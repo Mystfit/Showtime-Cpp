@@ -120,6 +120,17 @@ BOOST_FIXTURE_TEST_CASE(async_join, FixtureInitAndCreateServerWithEpheremalPort,
 	BOOST_TEST_REQUIRE(connectCallback->is_connected);
 }
 
+BOOST_FIXTURE_TEST_CASE(async_join_event, FixtureInitAndCreateServerWithEpheremalPort, TEST_TIMEOUT) {
+	auto connectCallback = std::make_shared< TestConnectionEvents>();
+	test_client->add_connection_adaptor(connectCallback);
+	bool connected = false;
+	test_client->connection_events()->connected_to_server() += [&connected](ShowtimeClient* client, const ZstServerAddress& server) { connected = true; };
+	
+	test_client->join_async(server_address.c_str());
+	wait_for_event(test_client, connectCallback, 1);
+	BOOST_TEST(connected);
+}
+
 BOOST_FIXTURE_TEST_CASE(autojoin_by_name, FixtureInitAndCreateServerWithEpheremalPort){
 	//Testing autojoin by name
 	test_client->auto_join_by_name(server_name.c_str());

@@ -4,7 +4,7 @@
 namespace showtime {
 
 ZstHierarchy::ZstHierarchy() :
-	m_hierarchy_events(std::make_shared<ZstEventDispatcher< std::shared_ptr<ZstHierarchyAdaptor> > >())
+	m_hierarchy_events(std::make_shared<ZstEventDispatcher<ZstHierarchyAdaptor> >())
 {
 }
 
@@ -182,18 +182,18 @@ void ZstHierarchy::dispatch_entity_arrived_event(ZstEntityBase * entity){
     
     //Only dispatch events once all entities have been activated and registered
     if (entity->entity_type() == ZstEntityType::COMPONENT || entity->entity_type() == ZstEntityType::PLUG)  {
-        m_hierarchy_events->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+        m_hierarchy_events->defer([entity](std::shared_ptr<ZstHierarchyAdaptor>& adaptor) {
 			adaptor->on_entity_arriving(entity);
 		});
     }
     else if (entity->entity_type() == ZstEntityType::FACTORY) {
-        m_hierarchy_events->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+        m_hierarchy_events->defer([entity](std::shared_ptr<ZstHierarchyAdaptor>& adaptor) {
 			adaptor->on_factory_arriving(static_cast<ZstEntityFactory*>(entity));
 		});
     }
 	else if (entity->entity_type() == ZstEntityType::PERFORMER) {
 		//Dispatch events
-		m_hierarchy_events->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+		m_hierarchy_events->defer([entity](std::shared_ptr<ZstHierarchyAdaptor>& adaptor) {
 			adaptor->on_performer_arriving(static_cast<ZstPerformer*>(entity));
 		});
 	}
@@ -381,7 +381,7 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 	}
 }
 
-std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstHierarchyAdaptor> > > & ZstHierarchy::hierarchy_events()
+std::shared_ptr<ZstEventDispatcher<ZstHierarchyAdaptor> > & ZstHierarchy::hierarchy_events()
 {
 	return m_hierarchy_events;
 }

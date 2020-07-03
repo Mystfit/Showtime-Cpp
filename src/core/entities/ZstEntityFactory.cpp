@@ -13,21 +13,21 @@ namespace showtime {
 
 ZstEntityFactory::ZstEntityFactory() : 
 	ZstEntityBase(),
-	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >())
+	m_factory_events(std::make_shared<ZstEventDispatcher<ZstFactoryAdaptor> >())
 {
 	set_entity_type(ZstEntityType::FACTORY);
 }
 
 ZstEntityFactory::ZstEntityFactory(const char * name) : 
 	ZstEntityBase(name),
-	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >())
+	m_factory_events(std::make_shared<ZstEventDispatcher<ZstFactoryAdaptor> >())
 {
 	set_entity_type(ZstEntityType::FACTORY);
 }
     
 ZstEntityFactory::ZstEntityFactory(const Factory* buffer) : 
 	ZstEntityBase(),
-	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >())
+	m_factory_events(std::make_shared<ZstEventDispatcher<ZstFactoryAdaptor> >())
 {
 	set_entity_type(ZstEntityType::FACTORY);
     ZstEntityFactory::deserialize_partial(buffer->factory());
@@ -36,7 +36,7 @@ ZstEntityFactory::ZstEntityFactory(const Factory* buffer) :
 
 ZstEntityFactory::ZstEntityFactory(const ZstEntityFactory & other) : 
 	ZstEntityBase(other),
-	m_factory_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > >())
+	m_factory_events(std::make_shared<ZstEventDispatcher<ZstFactoryAdaptor> >())
 {
 	m_creatables = other.m_creatables;
 }
@@ -61,10 +61,10 @@ void ZstEntityFactory::update_creatables()
 		});
 	} 
 
-	factory_events()->defer([this](std::shared_ptr<ZstFactoryAdaptor> adaptor) {
+	factory_events()->defer([this](std::shared_ptr<ZstFactoryAdaptor>& adaptor) {
 		adaptor->on_creatables_updated(this);
 	});
-	synchronisable_events()->invoke([this](std::shared_ptr<ZstSynchronisableAdaptor>  adaptor) {
+	synchronisable_events()->invoke([this](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
 		adaptor->synchronisable_has_event(this);
 	});
 }
@@ -123,7 +123,7 @@ void ZstEntityFactory::remove_adaptor(std::shared_ptr<ZstFactoryAdaptor> adaptor
 	m_factory_events->remove_adaptor(adaptor);
 }
 
-std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstFactoryAdaptor> > > & ZstEntityFactory::factory_events()
+std::shared_ptr<ZstEventDispatcher<ZstFactoryAdaptor> > & ZstEntityFactory::factory_events()
 {
 	return m_factory_events;
 }

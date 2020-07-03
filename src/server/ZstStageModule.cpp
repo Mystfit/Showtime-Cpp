@@ -3,7 +3,7 @@
 namespace showtime {
 
 ZstStageModule::ZstStageModule() :
-	m_router_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstStageTransportAdaptor> > >())
+	m_router_events(std::make_shared<ZstEventDispatcher<ZstStageTransportAdaptor> >())
 {
 }
 
@@ -17,7 +17,7 @@ void ZstStageModule::set_wake_condition(std::shared_ptr<ZstSemaphore>& condition
 	m_router_events->set_wake_condition(condition);
 }
 
-std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstStageTransportAdaptor> > >& ZstStageModule::router_events()
+std::shared_ptr<ZstEventDispatcher<ZstStageTransportAdaptor> >& ZstStageModule::router_events()
 {
 	return m_router_events;
 }

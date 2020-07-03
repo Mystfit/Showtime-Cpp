@@ -47,8 +47,8 @@ namespace showtime {
 
     namespace client {
         class ZstClient :
-            public ZstEventDispatcher< std::shared_ptr<ZstConnectionAdaptor> >,
-            public ZstEventDispatcher< std::shared_ptr<ZstLogAdaptor> >,
+            public ZstEventDispatcher<ZstConnectionAdaptor>,
+            public ZstEventDispatcher<ZstLogAdaptor>,
 			public virtual ZstStageTransportAdaptor,
 			public virtual ZstGraphTransportAdaptor,
 			public virtual ZstServiceDiscoveryAdaptor,

@@ -39,7 +39,7 @@ namespace showtime::detail
 	void ZstStage::init(const char* server_name, int port, bool unlisted)
 	{
 		// Set up logging
-		auto log_events = ZstEventDispatcher< std::shared_ptr<ZstLogAdaptor> >::downcasted_shared_from_this<ZstEventDispatcher< std::shared_ptr<ZstLogAdaptor> >>();
+		auto log_events = ZstEventDispatcher<ZstLogAdaptor>::downcasted_shared_from_this<ZstEventDispatcher<ZstLogAdaptor>>();
 		Log::init_logger(server_name, Log::Level::debug, log_events);
 		Log::server(Log::Level::notification, "Starting Showtime v{} server", SHOWTIME_VERSION_STRING);
 
@@ -145,7 +145,7 @@ namespace showtime::detail
 	void ZstStage::process_events()
 	{
 		m_session->process_events();
-		ZstEventDispatcher< std::shared_ptr<ZstLogAdaptor> >::process_events();
+		ZstEventDispatcher<ZstLogAdaptor>::process_events();
 	}
 
 

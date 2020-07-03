@@ -16,7 +16,7 @@ ZstSynchronisable::ZstSynchronisable() :
 	m_sync_status(ZstSyncStatus::DEACTIVATED),
     m_sync_error(ZstSyncError::NO_ERR),
 	m_is_proxy(false),
-    m_synchronisable_events(std::make_shared< ZstEventDispatcher<std::shared_ptr<ZstSynchronisableAdaptor> > >())
+    m_synchronisable_events(std::make_shared< ZstEventDispatcher<ZstSynchronisableAdaptor> >())
 {
 	m_instance_id = ++ZstSynchronisable::s_instance_id_counter;
 }
@@ -25,7 +25,7 @@ ZstSynchronisable::ZstSynchronisable(const ZstSynchronisable & other) :
     m_is_destroyed(other.m_is_destroyed),
 	m_sync_status(other.m_sync_status),
 	m_is_proxy(other.m_is_proxy),
-	m_synchronisable_events(std::make_shared< ZstEventDispatcher<std::shared_ptr<ZstSynchronisableAdaptor> > >()),
+	m_synchronisable_events(std::make_shared< ZstEventDispatcher<ZstSynchronisableAdaptor> >()),
     m_instance_id(++ZstSynchronisable::s_instance_id_counter)
 {
 }
@@ -40,9 +40,8 @@ void ZstSynchronisable::add_adaptor(std::shared_ptr<ZstSynchronisableAdaptor> ad
 
 	//If we are already activated, immediately dispatch an event
 	if (this->is_activated()) {
-		this->synchronisable_events()->invoke([this](std::weak_ptr<ZstSynchronisableAdaptor> adaptor) { 
-			if(auto adp = adaptor.lock())
-				adp->on_synchronisable_activated(this); 
+		this->synchronisable_events()->invoke([this](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) { 
+			adaptor->on_synchronisable_activated(this);
 		});
 	}
 }
@@ -59,7 +58,7 @@ void ZstSynchronisable::enqueue_activation()
 		set_activation_status(ZstSyncStatus::ACTIVATION_QUEUED);
 
 		//Notify adaptors that this synchronisable is activating
-		synchronisable_events()->defer([this](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
+		synchronisable_events()->defer([this](std::shared_ptr<ZstSynchronisableAdaptor>& adaptor) {
 			this->set_activation_status(ZstSyncStatus::ACTIVATED);
 			adaptor->on_synchronisable_activated(this);
 		}, [this](ZstEventStatus status) {
@@ -226,7 +225,7 @@ void ZstSynchronisable::dispatch_destroyed()
 {
 }
 
-std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstSynchronisableAdaptor> > > & ZstSynchronisable::synchronisable_events()
+std::shared_ptr<ZstEventDispatcher<ZstSynchronisableAdaptor> > & ZstSynchronisable::synchronisable_events()
 {
     return m_synchronisable_events;
 }

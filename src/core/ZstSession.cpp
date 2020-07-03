@@ -7,8 +7,8 @@
 namespace showtime {
 
 ZstSession::ZstSession() : 
-	m_session_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstSessionAdaptor> > >()),
-	m_compute_events(std::make_shared<ZstEventDispatcher<std::shared_ptr<ZstComputeAdaptor> > >())
+	m_session_events(std::make_shared<ZstEventDispatcher<ZstSessionAdaptor> >()),
+	m_compute_events(std::make_shared<ZstEventDispatcher<ZstComputeAdaptor> >())
 {
 }
 
@@ -326,12 +326,12 @@ void ZstSession::on_synchronisable_destroyed(ZstSynchronisable * synchronisable,
     }
 }
 
-std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstSessionAdaptor> > >& ZstSession::session_events()
+std::shared_ptr<ZstEventDispatcher<ZstSessionAdaptor> >& ZstSession::session_events()
 {
 	return m_session_events;
 }
 
-std::shared_ptr<ZstEventDispatcher<std::shared_ptr<ZstComputeAdaptor> > >& ZstSession::compute_events()
+std::shared_ptr<ZstEventDispatcher<ZstComputeAdaptor> >& ZstSession::compute_events()
 {
 	return m_compute_events;
 }

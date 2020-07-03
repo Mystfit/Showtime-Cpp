@@ -38,7 +38,7 @@ ZstClient::ZstClient(ShowtimeClient* api) :
     // Set up wake conditions
     m_session->session_events()->set_wake_condition(m_event_condition);
     m_session->hierarchy()->hierarchy_events()->set_wake_condition(m_event_condition);
-    ZstEventDispatcher< std::shared_ptr<ZstConnectionAdaptor> >::set_wake_condition(m_event_condition);
+    ZstEventDispatcher<ZstConnectionAdaptor>::set_wake_condition(m_event_condition);
     m_plugins->plugin_events()->set_wake_condition(m_event_condition);
 
     //Set up beaconcheck timer
@@ -103,7 +103,7 @@ void ZstClient::init_client(const char* client_name, bool debug)
     set_is_ending(false);
 
 	// Setup loggings
-    auto log_events = ZstEventDispatcher< std::shared_ptr<ZstLogAdaptor> >::downcasted_shared_from_this<ZstEventDispatcher< std::shared_ptr<ZstLogAdaptor> >>();
+    auto log_events = ZstEventDispatcher<ZstLogAdaptor>::downcasted_shared_from_this<ZstEventDispatcher<ZstLogAdaptor>>();
     Log::init_logger(client_name, (debug) ? Log::Level::debug : Log::Level::notification, log_events);
     Log::net(Log::Level::notification, "Starting Showtime v{}", SHOWTIME_VERSION_STRING);
 
@@ -177,8 +177,8 @@ void ZstClient::process_events()
     }
     m_plugins->process_events();
     m_session->process_events();
-    ZstEventDispatcher< std::shared_ptr<ZstConnectionAdaptor> >::process_events();
-    ZstEventDispatcher< std::shared_ptr<ZstLogAdaptor> >::process_events();
+    ZstEventDispatcher<ZstConnectionAdaptor>::process_events();
+    ZstEventDispatcher<ZstLogAdaptor>::process_events();
 }
 
 void ZstClient::flush()
@@ -399,7 +399,7 @@ void ZstClient::server_discovery_handler(const std::shared_ptr<ZstServerBeaconMe
     // Store server beacon
     m_server_beacons.insert(server);
     m_server_beacon_timestamps.emplace(server, std::chrono::system_clock::now());
-    ZstEventDispatcher<std::shared_ptr<ZstConnectionAdaptor>>::defer([this, server](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
+    ZstEventDispatcher<ZstConnectionAdaptor>::defer([this, server](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
         adaptor->on_server_discovered(this->m_api, server);
     });
 
@@ -467,7 +467,7 @@ void ZstClient::join_stage_complete(const ZstServerAddress& server_address, ZstM
 
     //Enqueue connection events
     m_session->dispatch_connected_to_stage();
-    ZstEventDispatcher<std::shared_ptr<ZstConnectionAdaptor> >::defer([this, server_address](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
+    ZstEventDispatcher<ZstConnectionAdaptor>::defer([this, server_address](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
         adaptor->on_connected_to_server(this->m_api, server_address);
     });
 
@@ -499,7 +499,7 @@ void ZstClient::synchronise_graph(const ZstTransportRequestBehaviour& sendtype)
 void ZstClient::synchronise_graph_complete(ZstMessageResponse response)
 {
     Log::net(Log::Level::notification, "Graph sync for {} completed", session()->hierarchy()->get_local_performer()->URI().path());
-    ZstEventDispatcher<std::shared_ptr<ZstConnectionAdaptor>>::defer([this](std::shared_ptr<ZstConnectionAdaptor> adp) {
+    ZstEventDispatcher<ZstConnectionAdaptor>::defer([this](std::shared_ptr<ZstConnectionAdaptor> adp) {
         adp->on_synchronised_graph(this->m_api, this->connected_server());
     });
 }
@@ -565,7 +565,7 @@ void ZstClient::leave_stage_complete(ZstTransportRequestBehaviour sendtype)
 
     //Enqueue event for adaptors
     m_session->dispatch_disconnected_from_stage();
-    ZstEventDispatcher<std::shared_ptr<ZstConnectionAdaptor>>::defer([this](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
+    ZstEventDispatcher<ZstConnectionAdaptor>::defer([this](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
         if(m_api)
             adaptor->on_disconnected_from_server(this->m_api, this->m_connected_server);
     });
@@ -664,7 +664,7 @@ void ZstClient::lost_server_beacon(const ZstServerAddress& server)
         m_server_beacon_timestamps.erase(m_server_beacon_timestamps.find(server));
 
     // Broadcast events
-    ZstEventDispatcher<std::shared_ptr<ZstConnectionAdaptor> >::defer([this, server](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
+    ZstEventDispatcher<ZstConnectionAdaptor>::defer([this, server](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
         adaptor->on_server_lost(m_api, server);
     });
 }

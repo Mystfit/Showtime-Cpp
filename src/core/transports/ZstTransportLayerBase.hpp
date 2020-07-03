@@ -160,7 +160,7 @@ class ZST_CLASS_EXPORTED ZstTransportLayer :
 {
 public:
     ZstTransportLayer() :
-        m_dispatch_events(std::make_shared<ZstBlockingEventDispatcher<std::shared_ptr<Adaptor_T> > >())
+        m_dispatch_events(std::make_shared<ZstBlockingEventDispatcher<Adaptor_T> >())
     {
         //m_dispatch_events->set_wake_condition(m_event_condition);
     }
@@ -199,12 +199,12 @@ public:
         m_dispatch_events->process_events();
     }
 
-    std::shared_ptr<ZstBlockingEventDispatcher<std::shared_ptr<Adaptor_T> > >& msg_events() {
+    std::shared_ptr<ZstBlockingEventDispatcher<Adaptor_T> >& msg_events() {
         return m_dispatch_events;
     }
 
 private:
-    std::shared_ptr<ZstBlockingEventDispatcher<std::shared_ptr<Adaptor_T> > > m_dispatch_events;
+    std::shared_ptr<ZstBlockingEventDispatcher<Adaptor_T> > m_dispatch_events;
 };
 
 
