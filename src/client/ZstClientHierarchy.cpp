@@ -357,12 +357,12 @@ void ZstClientHierarchy::activate_entity_complete(ZstEntityBase * entity)
 void ZstClientHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 {
 	if (!entity) {
-		Log::net(Log::Level::warn, "destroy_entity_complete(): Entity not found");
+		//Log::net(Log::Level::warn, "destroy_entity_complete(): Entity not found");
 		return;
 	}
 
 	if (entity->URI() == this->get_local_performer()->URI()) {
-		Log::net(Log::Level::debug, "Destroyed entity is our own client, ignore.");
+		//Log::net(Log::Level::debug, "Destroyed entity is our own client, ignore.");
 		return;
 	}
 	ZstHierarchy::destroy_entity_complete(entity);

@@ -179,7 +179,8 @@ protected:
 				}
 			}
 		}
-		event.completed_func((success) ? ZstEventStatus::SUCCESS : ZstEventStatus::FAILED);
+		if(event.completed_func)
+			event.completed_func((success) ? ZstEventStatus::SUCCESS : ZstEventStatus::FAILED);
 	}
 
 private:

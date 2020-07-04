@@ -124,7 +124,9 @@ BOOST_FIXTURE_TEST_CASE(async_join_event, FixtureInitAndCreateServerWithEpherema
 	auto connectCallback = std::make_shared< TestConnectionEvents>();
 	test_client->add_connection_adaptor(connectCallback);
 	bool connected = false;
-	test_client->connection_events()->connected_to_server() += [&connected](ShowtimeClient* client, const ZstServerAddress& server) { connected = true; };
+	test_client->connection_events()->connected_to_server() += [&connected](ShowtimeClient* client, const ZstServerAddress& server) { 
+		connected = true; 
+	};
 	
 	test_client->join_async(server_address.c_str());
 	wait_for_event(test_client, connectCallback, 1);
