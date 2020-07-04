@@ -140,7 +140,9 @@ class ZstEventDispatcherTyped : public ZstEventDispatcherBase {
 public:
 	ZstEventDispatcherTyped() : m_default_adaptor(std::make_shared<T>()) 
 	{
-		add_adaptor(m_default_adaptor);
+		// Add default adaptor directly and skip add_daptor since this object will own the adaptor directly
+		// -- also avoids having to construct bad weak pointers in the constructor
+		this->m_adaptors.insert(m_default_adaptor);
 	}
 
 	std::shared_ptr<T> get_default_adaptor() {
