@@ -442,8 +442,8 @@ void ZstClient::join_stage_complete(const ZstServerAddress& server_address, ZstM
     ZstEntityBundle bundle;
     m_session->hierarchy()->get_local_performer()->get_child_entities(bundle, true);
     for (auto c : bundle) {
-        c->synchronisable_events()->add_adaptor(static_cast<std::shared_ptr< ZstSynchronisableAdaptor> >(m_session->hierarchy()));
-        c->entity_events()->add_adaptor(static_cast<std::shared_ptr<ZstEntityAdaptor> >(m_session->hierarchy()));
+        c->add_adaptor(static_cast<std::shared_ptr< ZstSynchronisableAdaptor>>(m_session->hierarchy()));
+        c->add_adaptor(static_cast<std::shared_ptr<ZstEntityAdaptor> >(m_session->hierarchy()));
         synchronisable_set_activating(c);
         synchronisable_enqueue_activation(c);
     }
@@ -462,6 +462,7 @@ void ZstClient::join_stage_complete(const ZstServerAddress& server_address, ZstM
     bundle.clear();
     session()->hierarchy()->get_local_performer()->get_child_entities(bundle, false, true);
     for (auto c : bundle) {
+        Log::net(Log::Level::notification, "Post-join activating child entity {}", c->URI().path());
         session()->hierarchy()->activate_entity(c, response.send_behaviour);
     }
 

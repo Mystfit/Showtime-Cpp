@@ -82,7 +82,7 @@ namespace showtime {
 			m_loaded_plugins[plugin->name()] = ZstLoadedPlugin{lib, plugin};
 
 			// Defer plugin loaded event
-			m_plugin_events->defer([plugin](std::shared_ptr<ZstPluginAdaptor>& adp) {
+			m_plugin_events->defer([plugin](std::shared_ptr<ZstPluginAdaptor> adp) {
 				adp->on_plugin_loaded(plugin);
 			});
 			Log::net(Log::Level::debug, "Loaded plugin {} {}.{}.{}", plugin->name(), plugin->version_major(), plugin->version_minor(), plugin->version_patch());

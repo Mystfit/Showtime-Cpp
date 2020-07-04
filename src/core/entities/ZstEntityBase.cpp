@@ -89,8 +89,10 @@ namespace showtime
             return parent;
 		}
 
-		m_hierarchy_events->invoke([&parent, this](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
-			parent = adaptor->find_entity(m_parent);
+		m_hierarchy_events->invoke([&parent, this](std::shared_ptr<ZstHierarchyAdaptor>& adaptor) {
+			auto entity = adaptor->find_entity(m_parent);
+            if (entity)
+                parent = entity;
 		});
         return parent;
     }
@@ -122,7 +124,7 @@ namespace showtime
     void ZstEntityBase::update_URI(const ZstURI& original_path)
     {		
         // Update path in entity lookup
-        hierarchy_events()->invoke([this, &original_path](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+        hierarchy_events()->invoke([this, &original_path](std::shared_ptr<ZstHierarchyAdaptor>& adaptor) {
             adaptor->update_entity_URI(this, original_path);
         });
     }
@@ -164,7 +166,7 @@ namespace showtime
         }
 
         // Update new URI across the performance
-        entity_events()->invoke([this, orig_path](std::shared_ptr<ZstEntityAdaptor> adaptor) {
+        m_entity_events->invoke([this, orig_path](std::shared_ptr<ZstEntityAdaptor>& adaptor) {
             adaptor->publish_entity_update(this, orig_path);
         });
 	}
@@ -183,9 +185,9 @@ namespace showtime
         }
     }
 
-    std::shared_ptr< ZstEventDispatcher<ZstEntityAdaptor> > & ZstEntityBase::entity_events()
+    ZstEntityAdaptor* ZstEntityBase::entity_events()
     {
-        return m_entity_events;
+        return m_entity_events->get_default_adaptor().get();
     }
     
     void ZstEntityBase::serialize_partial(flatbuffers::Offset<EntityData>& serialized_offset, FlatBufferBuilder& buffer_builder) const
@@ -264,7 +266,7 @@ namespace showtime
 			Log::entity(Log::Level::warn, "Entity {} not registered. Can't aquire ownership.", URI().path());
 		}
 
-        m_session_events->invoke([this](std::shared_ptr<ZstSessionAdaptor> adaptor) {
+        m_session_events->invoke([this](std::shared_ptr<ZstSessionAdaptor>& adaptor) {
 			adaptor->aquire_entity_ownership(this);
         });
     }
@@ -276,7 +278,7 @@ namespace showtime
 			return;
 		}
 
-        m_session_events->invoke([this](std::shared_ptr<ZstSessionAdaptor> adaptor) {
+        m_session_events->invoke([this](std::shared_ptr<ZstSessionAdaptor>& adaptor) {
 			adaptor->release_entity_ownership(this);
         });
     }
@@ -297,7 +299,7 @@ namespace showtime
 			return;
 		}
 
-		m_hierarchy_events->invoke([this](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+		m_hierarchy_events->invoke([this](std::shared_ptr<ZstHierarchyAdaptor>& adaptor) {
 			adaptor->activate_entity(this, ZstTransportRequestBehaviour::SYNC_REPLY);
 		});
 	}
@@ -309,7 +311,7 @@ namespace showtime
 			return;
 		}
 		
-		m_hierarchy_events->invoke([this](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+		m_hierarchy_events->invoke([this](std::shared_ptr<ZstHierarchyAdaptor>& adaptor) {
 			adaptor->activate_entity(this, ZstTransportRequestBehaviour::ASYNC_REPLY);
 		});
 	}
@@ -324,7 +326,7 @@ namespace showtime
 			return;
 		}
 
-		m_hierarchy_events->invoke([this](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+		m_hierarchy_events->invoke([this](std::shared_ptr<ZstHierarchyAdaptor>& adaptor) {
 			adaptor->deactivate_entity(this, ZstTransportRequestBehaviour::SYNC_REPLY);
 		});
 	}
@@ -336,7 +338,7 @@ namespace showtime
 			return;
 		}
 
-		m_hierarchy_events->invoke([this](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+		m_hierarchy_events->invoke([this](std::shared_ptr<ZstHierarchyAdaptor>& adaptor) {
 			adaptor->deactivate_entity(this, ZstTransportRequestBehaviour::ASYNC_REPLY);
 		});
 	}
@@ -376,10 +378,15 @@ namespace showtime
 				child->set_activation_status(ZstSyncStatus::DESTROYED);
 			}
 
-            synchronisable_events()->invoke([this](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
+            synchronisable_event_dispatcher()->invoke([this](std::shared_ptr<ZstSynchronisableAdaptor>& adaptor) {
                 adaptor->on_synchronisable_destroyed(this, true);
             });
         }
+    }
+
+    ZST_EXPORT std::shared_ptr<ZstEventDispatcher<ZstEntityAdaptor>>& ZstEntityBase::entity_event_dispatcher()
+    {
+        return m_entity_events;
     }
 
     std::shared_ptr<ZstEventDispatcher<ZstSessionAdaptor> > & ZstEntityBase::session_events()
@@ -401,7 +408,7 @@ namespace showtime
 		m_registered = registered;
 
 		if (registered) {
-			entity_events()->invoke([this](std::shared_ptr<ZstEntityAdaptor> adaptor) {
+            m_entity_events->invoke([this](std::shared_ptr<ZstEntityAdaptor>& adaptor) {
 				adaptor->on_entity_registered(this);
 			});
 			this->on_registered();

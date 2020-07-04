@@ -65,7 +65,6 @@ public:
 
     ZST_EXPORT virtual void add_child(ZstEntityBase * child, bool auto_activate = true);
     ZST_EXPORT virtual void remove_child(ZstEntityBase * child);
-    //ZST_EXPORT virtual void move_child();
     
     //Entity type
     ZST_EXPORT const ZstEntityType entity_type() const;
@@ -114,8 +113,7 @@ public:
     using ZstSynchronisable::add_adaptor;
     using ZstSynchronisable::remove_adaptor;
 #endif
-
-    ZST_EXPORT std::shared_ptr<ZstEventDispatcher<ZstEntityAdaptor> > & entity_events();
+    ZST_EXPORT ZstEntityAdaptor* entity_events();
     
 protected:
     //Set entity status
@@ -126,6 +124,7 @@ protected:
     ZST_EXPORT virtual void dispatch_destroyed() override;
     
     //Event dispatchers
+    ZST_EXPORT std::shared_ptr<ZstEventDispatcher<ZstEntityAdaptor> >& entity_event_dispatcher();
     ZST_EXPORT std::shared_ptr<ZstEventDispatcher<ZstSessionAdaptor> > & session_events();
 	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<ZstHierarchyAdaptor> >& hierarchy_events();
 

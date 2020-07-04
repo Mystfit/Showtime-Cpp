@@ -1,12 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "ShowtimeClient.h"
+#include <functional>
 
 DEFINE_LOG_CATEGORY(Showtime);
 
-UShowtimeClient::UShowtimeClient() : 
-	LoggerAdaptor(std::make_shared<FClientLogAdaptor>()),
-	ConnectionAdaptor(std::make_shared<FClientConnectionAdaptor>(this))
+UShowtimeClient::UShowtimeClient()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 }
@@ -35,9 +34,36 @@ void UShowtimeClient::LeaveServer()
 void UShowtimeClient::BeginPlay()
 {
 	Super::BeginPlay();
-	this->add_log_adaptor(LoggerAdaptor);
-	this->add_connection_adaptor(ConnectionAdaptor);
+	AttachEvents();
 }
+
+void UShowtimeClient::AttachEvents(){
+	this->connection_events()->connected_to_server() += [this](ShowtimeClient* client, const ZstServerAddress& server){ 
+		OnConnectedToServer.Broadcast(this, FServerAddressFromShowtime(server));
+	};
+
+	this->connection_events()->disconnected_from_server() += [this](ShowtimeClient* client, const ZstServerAddress& server){
+		OnDisconnectedFromServer.Broadcast(this, FServerAddressFromShowtime(server));
+	};
+
+	this->connection_events()->server_discovered() += [this](ShowtimeClient* client, const ZstServerAddress& server){ 
+		OnServerDiscovered.Broadcast(this, FServerAddressFromShowtime(server));
+	};
+
+	this->connection_events()->server_lost() += [this](ShowtimeClient* client, const ZstServerAddress& server){ 
+		OnServerLost.Broadcast(this, FServerAddressFromShowtime(server));
+	};
+
+	this->connection_events()->synchronised_graph() += [this](ShowtimeClient* client, const ZstServerAddress& server){ 
+		OnGraphSynchronised.Broadcast(this, FServerAddressFromShowtime(server));
+	};
+
+	this->log_events()->log_record() += std::bind(&UShowtimeClient::OnLogRecord, this, std::placeholders::_1);
+}
+
+void UShowtimeClient::RemoveEvents(){
+}
+
 
 void UShowtimeClient::BeginDestroy()
 {
@@ -52,37 +78,7 @@ void UShowtimeClient::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 }
 
 
-FClientConnectionAdaptor::FClientConnectionAdaptor(UShowtimeClient* client) : OwningClient(client)
-{
-}
-
-void FClientConnectionAdaptor::on_connected_to_stage(ShowtimeClient* client, const ZstServerAddress& server)
-{
-	OwningClient->OnConnectedToServer.Broadcast(OwningClient, FServerAddressFromShowtime(server));
-}
-
-void FClientConnectionAdaptor::on_disconnected_from_stage(ShowtimeClient* client, const ZstServerAddress& server)
-{
-	OwningClient->OnDisconnectedFromServer.Broadcast(OwningClient, FServerAddressFromShowtime(server));
-}
-
-void FClientConnectionAdaptor::on_server_discovered(ShowtimeClient* client, const ZstServerAddress& server)
-{
-	OwningClient->OnServerDiscovered.Broadcast(OwningClient, FServerAddressFromShowtime(server));
-}
-
-void FClientConnectionAdaptor::on_server_lost(ShowtimeClient* client, const ZstServerAddress& server)
-{
-	OwningClient->OnServerLost.Broadcast(OwningClient, FServerAddressFromShowtime(server));
-}
-
-void FClientConnectionAdaptor::on_synchronised_with_stage(ShowtimeClient* client, const ZstServerAddress& server)
-{
-	OwningClient->OnGraphSynchronised.Broadcast(OwningClient, FServerAddressFromShowtime(server));
-}
-
-
-void FClientLogAdaptor::on_log_record(const Log::Record& record)
+void UShowtimeClient::OnLogRecord(const Log::Record& record)
 {
 	FString message(record.message.c_str());
 	UE_LOG(Showtime, Display, TEXT("%s"), *message);

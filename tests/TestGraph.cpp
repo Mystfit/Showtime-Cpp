@@ -48,6 +48,9 @@ struct FixturePlugs : public FixtureJoinServer {
 	{
 		test_client->get_root()->add_child(output_component.get());
 		test_client->get_root()->add_child(input_component.get());
+
+		ZstEntityBundle bundle;
+		input_component->get_plugs(bundle);
 	}
 
 	~FixturePlugs() {};

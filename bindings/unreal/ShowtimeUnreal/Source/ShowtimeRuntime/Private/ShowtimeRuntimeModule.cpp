@@ -1,5 +1,4 @@
 #include "ShowtimeRuntimeModule.h"
-#include <showtime/Showtime.h>
 
 void FShowtimeRuntimeModule::StartupModule()
 {

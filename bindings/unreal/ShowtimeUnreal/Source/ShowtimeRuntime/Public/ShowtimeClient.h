@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <showtime/Showtime.h>
+#include <showtime/ShowtimeClient.h>
 //#include <Runtime/Networking/Public/Interfaces/IPv4/IPv4Address.h>
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
@@ -75,29 +75,8 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FGraphSynchronised OnGraphSynchronised;
 
-	
 private:
-	std::shared_ptr<FClientLogAdaptor> LoggerAdaptor;
-	std::shared_ptr<FClientConnectionAdaptor> ConnectionAdaptor;
-};
-
-
-class FClientLogAdaptor : public ZstLogAdaptor {
-public:
-	virtual void on_log_record(const Log::Record& record) override;
-};
-
-
-class FClientConnectionAdaptor : public ZstConnectionAdaptor {
-public:
-	FClientConnectionAdaptor(UShowtimeClient* client);
-	virtual void on_connected_to_stage(ShowtimeClient* client, const ZstServerAddress& server) override;
-	virtual void on_disconnected_from_stage(ShowtimeClient* client, const ZstServerAddress& server) override;
-	virtual void on_server_discovered(ShowtimeClient* client, const ZstServerAddress& server) override;
-	virtual void on_server_lost(ShowtimeClient* client, const ZstServerAddress& server) override;
-	virtual void on_synchronised_with_stage(ShowtimeClient* client, const ZstServerAddress& server) override;
-
-private:
-	UPROPERTY()
-	UShowtimeClient* OwningClient;
+	void AttachEvents();
+	void RemoveEvents();
+	void OnLogRecord(const Log::Record& record);
 };

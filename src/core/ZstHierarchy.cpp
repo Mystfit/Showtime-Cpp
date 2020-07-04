@@ -28,6 +28,8 @@ void ZstHierarchy::init_adaptors()
 
 void ZstHierarchy::register_entity(ZstEntityBase* entity)
 {
+	Log::entity(Log::Level::notification, "Registering entity {}", entity->URI().path());
+
 	//Add module adaptors to entity
 	entity->add_adaptor(ZstHierarchyAdaptor::downcasted_shared_from_this<ZstHierarchyAdaptor>());
 	entity->add_adaptor(ZstSynchronisableAdaptor::downcasted_shared_from_this<ZstSynchronisableAdaptor>());
@@ -182,18 +184,18 @@ void ZstHierarchy::dispatch_entity_arrived_event(ZstEntityBase * entity){
     
     //Only dispatch events once all entities have been activated and registered
     if (entity->entity_type() == ZstEntityType::COMPONENT || entity->entity_type() == ZstEntityType::PLUG)  {
-        m_hierarchy_events->defer([entity](std::shared_ptr<ZstHierarchyAdaptor>& adaptor) {
+        m_hierarchy_events->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
 			adaptor->on_entity_arriving(entity);
 		});
     }
     else if (entity->entity_type() == ZstEntityType::FACTORY) {
-        m_hierarchy_events->defer([entity](std::shared_ptr<ZstHierarchyAdaptor>& adaptor) {
+        m_hierarchy_events->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
 			adaptor->on_factory_arriving(static_cast<ZstEntityFactory*>(entity));
 		});
     }
 	else if (entity->entity_type() == ZstEntityType::PERFORMER) {
 		//Dispatch events
-		m_hierarchy_events->defer([entity](std::shared_ptr<ZstHierarchyAdaptor>& adaptor) {
+		m_hierarchy_events->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
 			adaptor->on_performer_arriving(static_cast<ZstPerformer*>(entity));
 		});
 	}

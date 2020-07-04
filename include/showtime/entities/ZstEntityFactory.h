@@ -66,6 +66,10 @@ public:
 	ZST_EXPORT void remove_adaptor(std::shared_ptr<ZstFactoryAdaptor> adaptor);
 	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<ZstFactoryAdaptor> > & factory_events();
 
+	struct detail {
+		ZST_EXPORT static void dispatch_created_entity_events(ZstEntityFactory* factory, ZstEntityBase* created_entity);
+	};
+
 protected:
 	ZST_EXPORT virtual ZstEntityBase * activate_entity(ZstEntityBase * entity);
 	ZST_EXPORT virtual void update_URI(const ZstURI & original_path) override;

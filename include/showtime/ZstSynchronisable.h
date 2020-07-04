@@ -26,7 +26,7 @@ public:
     
     ZST_EXPORT virtual void add_adaptor(std::shared_ptr<ZstSynchronisableAdaptor> adaptor);
     ZST_EXPORT virtual void remove_adaptor(std::shared_ptr<ZstSynchronisableAdaptor> adaptor);
-	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<ZstSynchronisableAdaptor> > & synchronisable_events();
+	ZST_EXPORT ZstSynchronisableAdaptor* synchronisable_events();
 
     ZST_EXPORT virtual void on_activation();
     ZST_EXPORT virtual void on_deactivation();
@@ -50,6 +50,7 @@ protected:
     ZST_EXPORT void set_error(ZstSyncError e);
 	ZST_EXPORT void set_destroyed();
 	ZST_EXPORT virtual void set_proxy();
+	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<ZstSynchronisableAdaptor> >& synchronisable_event_dispatcher();
 	ZST_EXPORT virtual void process_events();
 	ZST_EXPORT void announce_update();
 	ZST_EXPORT virtual void dispatch_destroyed();

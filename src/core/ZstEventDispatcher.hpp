@@ -155,8 +155,10 @@ public:
 		}
 		//std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		for (auto adaptor : this->m_adaptors) {
-			if (auto adp = adaptor.lock())
-				event(std::static_pointer_cast<T>(adp));
+			if (auto adp = adaptor.lock()) {
+				auto cast_adaptor = std::static_pointer_cast<T>(adp);
+				event(cast_adaptor);
+			}
 		}
 	}
 
@@ -171,7 +173,8 @@ protected:
 		for (auto adaptor : m_adaptors) {
 			if (auto adp = adaptor.lock()) {
 				try {
-					event.func(std::dynamic_pointer_cast<T>(adp));
+					auto cast_adaptor = std::dynamic_pointer_cast<T>(adp);
+					event.func(cast_adaptor);
 				}
 				catch (std::exception e) {
 					Log::net(Log::Level::error, "Event dispatcher failed to run an event on a adaptor. Reason: {}", e.what());

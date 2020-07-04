@@ -4,8 +4,6 @@
 #include "Modules/ModuleInterface.h"
 #include "Modules/ModuleManager.h"
 
-#include <showtime/Showtime.h>
-
 class FShowtimeRuntimeModule : public IModuleInterface
 {
 public:

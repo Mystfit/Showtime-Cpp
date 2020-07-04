@@ -91,13 +91,13 @@ namespace showtime
 		m_children.emplace(entity->URI());
 
 		if (is_registered() && !entity->is_registered()) {
-			entity_events()->invoke([entity](std::shared_ptr<ZstEntityAdaptor> adaptor) {
+			entity_event_dispatcher()->invoke([entity](std::shared_ptr<ZstEntityAdaptor>& adaptor) {
 				adaptor->request_entity_registration(entity);
 			});
 		}
         
         if (is_activated() && !entity->is_proxy() && auto_activate) {
-            entity_events()->invoke([entity](std::shared_ptr<ZstEntityAdaptor> adaptor) {
+            entity_event_dispatcher()->invoke([entity](std::shared_ptr<ZstEntityAdaptor>& adaptor) {
                 adaptor->request_entity_activation(entity);
             });
         }
@@ -291,8 +291,10 @@ namespace showtime
 			Log::entity(Log::Level::warn, "Entity {} not registered. Can't look up child entity.", URI().path());
 		}
 
-        m_hierarchy_events->invoke([&result, &path](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
-			result = adaptor->find_entity(path);
+        m_hierarchy_events->invoke([&result, &path](std::shared_ptr<ZstHierarchyAdaptor>& adaptor) {
+            auto entity = adaptor->find_entity(path);
+            if (entity)
+                result = entity;
 		});
         
         return result;

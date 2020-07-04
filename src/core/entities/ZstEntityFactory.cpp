@@ -56,15 +56,15 @@ void ZstEntityFactory::update_creatables()
 	//Alert stage
 	if (!is_proxy()) {
 		this->update_createable_URIs();
-		entity_events()->invoke([this](std::shared_ptr<ZstEntityAdaptor> adaptor) {
+		entity_event_dispatcher()->invoke([this](std::shared_ptr<ZstEntityAdaptor>& adaptor) {
 			adaptor->publish_entity_update(this, this->URI());
 		});
 	} 
 
-	factory_events()->defer([this](std::shared_ptr<ZstFactoryAdaptor>& adaptor) {
+	factory_events()->defer([this](std::shared_ptr<ZstFactoryAdaptor> adaptor) {
 		adaptor->on_creatables_updated(this);
 	});
-	synchronisable_events()->invoke([this](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
+	synchronisable_event_dispatcher()->invoke([this](std::shared_ptr<ZstSynchronisableAdaptor>& adaptor) {
 		adaptor->synchronisable_has_event(this);
 	});
 }
@@ -137,7 +137,7 @@ ZstEntityBase * ZstEntityFactory::activate_entity(ZstEntityBase * entity)
 	}
 
 	//Activate entity and attach listeners
-	entity_events()->invoke([entity](std::shared_ptr<ZstEntityAdaptor> adaptor) {
+	entity_event_dispatcher()->invoke([entity](std::shared_ptr<ZstEntityAdaptor>& adaptor) {
 		adaptor->on_register_entity(entity);
 	});
 	return entity;
@@ -206,6 +206,16 @@ void ZstEntityFactory::deserialize(const Factory* buffer)
 {
     ZstEntityFactory::deserialize_partial(buffer->factory());
     ZstEntityBase::deserialize_partial(buffer->entity());
+}
+
+void ZstEntityFactory::detail::dispatch_created_entity_events(ZstEntityFactory* factory, ZstEntityBase* created_entity)
+{
+	factory->m_factory_events->defer([created_entity](std::shared_ptr<ZstFactoryAdaptor> adaptor)
+		{adaptor->on_entity_created(created_entity);
+		});
+	factory->synchronisable_event_dispatcher()->invoke([factory](std::shared_ptr<ZstSynchronisableAdaptor>& adaptor) {
+		adaptor->synchronisable_has_event(factory);
+	});
 }
 
 }
