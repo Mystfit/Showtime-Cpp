@@ -5,7 +5,7 @@
 
 DEFINE_LOG_CATEGORY(Showtime);
 
-UShowtimeClient::UShowtimeClient()
+UShowtimeClient::UShowtimeClient() : client_adaptor(std::make_shared<ClientAdaptors>(this))
 {
 	PrimaryComponentTick.bCanEverTick = true;
 }
@@ -37,49 +37,25 @@ void UShowtimeClient::BeginPlay()
 	AttachEvents();
 }
 
-void UShowtimeClient::AttachEvents(){
-	this->connection_events()->connected_to_server() += [this](ShowtimeClient* client, const ZstServerAddress& server){ 
-		OnConnectedToServer.Broadcast(this, FServerAddressFromShowtime(server));
-	};
-
-	this->connection_events()->disconnected_from_server() += [this](ShowtimeClient* client, const ZstServerAddress& server){
-		OnDisconnectedFromServer.Broadcast(this, FServerAddressFromShowtime(server));
-	};
-
-	this->connection_events()->server_discovered() += [this](ShowtimeClient* client, const ZstServerAddress& server){ 
-		OnServerDiscovered.Broadcast(this, FServerAddressFromShowtime(server));
-	};
-
-	this->connection_events()->server_lost() += [this](ShowtimeClient* client, const ZstServerAddress& server){ 
-		OnServerLost.Broadcast(this, FServerAddressFromShowtime(server));
-	};
-
-	this->connection_events()->synchronised_graph() += [this](ShowtimeClient* client, const ZstServerAddress& server){ 
-		OnGraphSynchronised.Broadcast(this, FServerAddressFromShowtime(server));
-	};
-
-	this->log_events()->log_record() += std::bind(&UShowtimeClient::OnLogRecord, this, std::placeholders::_1);
-}
-
-void UShowtimeClient::RemoveEvents(){
-}
-
-
-void UShowtimeClient::BeginDestroy()
+void UShowtimeClient::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	Super::BeginDestroy();
+	Super::EndPlay(EndPlayReason);
+	RemoveEvents();
 	this->destroy();
+}
+
+void UShowtimeClient::AttachEvents(){
+	this->add_connection_adaptor(client_adaptor);
+	this->add_log_adaptor(client_adaptor);
+}
+
+void UShowtimeClient::RemoveEvents(){	this->remove_connection_adaptor(client_adaptor);
+	this->remove_connection_adaptor(client_adaptor);
+	this->remove_log_adaptor(client_adaptor);
 }
 
 void UShowtimeClient::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	this->poll_once();
-}
-
-
-void UShowtimeClient::OnLogRecord(const Log::Record& record)
-{
-	FString message(record.message.c_str());
-	UE_LOG(Showtime, Display, TEXT("%s"), *message);
 }

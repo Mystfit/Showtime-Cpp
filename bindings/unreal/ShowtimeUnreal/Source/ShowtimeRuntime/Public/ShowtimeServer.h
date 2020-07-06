@@ -9,9 +9,9 @@
 
 #include "ShowtimeServer.generated.h"
 
-using namespace showtime;
-
 #define DEFAULT_SHOWTIME_SERVER "stage"
+
+using namespace showtime;
 
 /**
  *

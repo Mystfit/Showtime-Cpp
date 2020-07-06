@@ -39,6 +39,15 @@ BOOST_AUTO_TEST_CASE(double_init) {
 	test_client->destroy();
 }
 
+BOOST_AUTO_TEST_CASE(client_destruction_cleanup) {
+	{
+		auto test_client = std::make_shared<ShowtimeClient>();
+		test_client->init(performer_name.c_str(), true);
+		test_client->log_events()->log_record() += [](const Log::Record& record) {std::cout << record.message << std::endl; };
+		test_client->destroy();
+	}
+}
+
 BOOST_AUTO_TEST_CASE(log_events) {
 	
 	auto log_events = std::make_shared <TestLogEvents>();
@@ -60,8 +69,24 @@ BOOST_AUTO_TEST_CASE(log_events) {
 	BOOST_TEST(log_record->channel == "app");
 	BOOST_TEST(log_record->level == Log::Level::debug);
 	BOOST_TEST(log_record->message == message);
-	
+
+	// Make sure we can reattach log events after destroy() was called
+	test_client->remove_log_adaptor(log_events);
 	test_client->destroy();
+	log_events->reset_num_calls();
+
+	std::string second_message = "test2";
+	test_client->init(performer_name.c_str(), true);
+	test_client->add_log_adaptor(log_events);
+	Log::app(Log::Level::debug, second_message.c_str());
+	wait_for_event(test_client, log_events, 1);
+
+	log_record = std::find_if(log_events->records.begin(), log_events->records.end(), [&second_message](const Log::Record& record) {
+		return second_message == record.message;
+	});
+
+	record_found = (log_record != log_events->records.end());
+	BOOST_REQUIRE(record_found);
 }
 
 BOOST_FIXTURE_TEST_CASE(auto_join_timeout, FixtureInit) {

@@ -22,6 +22,8 @@ public class ShowtimeRuntime : ModuleRules
 		bUseRTTI = true;
 		bEnableExceptions = true;
 
+		bool bUseDebug = false;
+
 		// Add any include paths for the plugin
 		PublicIncludePaths.AddRange(new string[]{
 			Path.Combine(ModuleDirectory, "Public"),
@@ -38,19 +40,37 @@ public class ShowtimeRuntime : ModuleRules
 
 		var win_lib_path = Path.Combine(PluginDirectory, "external", "lib", "Win64");
 		var win_bin_path = Path.Combine(PluginDirectory, "external", "bin", "Win64");
-		var win64_libs = new string[]{
-			Path.Combine(win_lib_path, "ShowtimeCore.lib"),
-			Path.Combine(win_lib_path, "ShowtimeClient.lib"),
-			Path.Combine(win_lib_path, "ShowtimeServer.lib")
-		};
+		var win64_libs = new string[]{};
+		var win64_binaries = new string[]{};
+		if(bUseDebug){
+			win64_libs = new string[]{
+				Path.Combine(win_lib_path, "ShowtimeCored.lib"),
+				Path.Combine(win_lib_path, "ShowtimeClientd.lib"),
+				Path.Combine(win_lib_path, "ShowtimeServerd.lib")
+			};
 
-		var win64_binaries = new string[]{
-			Path.Combine(win_bin_path, "ShowtimeCore.dll"),
-			Path.Combine(win_bin_path, "ShowtimeClient.dll"),
-			Path.Combine(win_bin_path, "ShowtimeServer.dll"),
-			Path.Combine(win_bin_path, "libzmq-v142-mt-4_3_3.dll"),
-			Path.Combine(win_bin_path, "libczmq.dll")
-		};
+			win64_binaries = new string[]{
+				Path.Combine(win_bin_path, "ShowtimeCored.dll"),
+				Path.Combine(win_bin_path, "ShowtimeClientd.dll"),
+				Path.Combine(win_bin_path, "ShowtimeServerd.dll"),
+				Path.Combine(win_bin_path, "libzmq-v142-mt-gd-4_3_3.dll"),
+				Path.Combine(win_bin_path, "libczmqd.dll")
+			};
+		} else {
+			win64_libs = new string[]{
+				Path.Combine(win_lib_path, "ShowtimeCore.lib"),
+				Path.Combine(win_lib_path, "ShowtimeClient.lib"),
+				Path.Combine(win_lib_path, "ShowtimeServer.lib")
+			};
+
+			win64_binaries = new string[]{
+				Path.Combine(win_bin_path, "ShowtimeCore.dll"),
+				Path.Combine(win_bin_path, "ShowtimeClient.dll"),
+				Path.Combine(win_bin_path, "ShowtimeServer.dll"),
+				Path.Combine(win_bin_path, "libzmq-v142-mt-4_3_3.dll"),
+				Path.Combine(win_bin_path, "libczmq.dll")
+			};
+		}
 
 		var mac_lib_path = Path.Combine(PluginDirectory, "external", "lib", "Mac");
 		var mac_libraries = new string[]{
@@ -73,11 +93,11 @@ public class ShowtimeRuntime : ModuleRules
 		if (Target.Platform == UnrealTargetPlatform.Win64){
 			string binariesDir = Path.Combine(PluginDirectory, "Binaries", "Win64");
 			platform_libs = win64_libs;
-			PublicDelayLoadDLLs.AddRange(new string[] {
-				Path.Combine(binariesDir, "ShowtimeClient.dll"),
-				Path.Combine(binariesDir, "ShowtimeServer.dll"),
-				Path.Combine(binariesDir, "ShowtimeCore.dll")
-			});
+			// PublicDelayLoadDLLs.AddRange(new string[] {
+			// 	Path.Combine(binariesDir, "ShowtimeClient.dll"),
+			// 	Path.Combine(binariesDir, "ShowtimeServer.dll"),
+			// 	Path.Combine(binariesDir, "ShowtimeCore.dll")
+			// });
 			platform_binaries = win64_binaries;
 
 			// Copy binaries to plugin binary folder for the editor
