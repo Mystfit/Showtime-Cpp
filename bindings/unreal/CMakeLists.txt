@@ -39,10 +39,17 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${Showtime_COMPILED_INCLUDE_DIRS} ${UNREAL_INCLUDE_DIR}
 )
 
+set(UNREAL_DEPENDENCIES "")
+
 
 # Bundle copying
 if(MACOSX OR BUILD_MACOS_CONTAINER)
     # Copy mac libs
+    # Do stuff here
+
+    if(BUILD_MACOS_CONTAINER)
+        list(APPEND UNREAL_DEPENDENCIES ${MACOS_CONTAINER_TARGET})
+    endif()
 endif()
 
 # Android lib copying
@@ -74,6 +81,9 @@ if(ANDROID OR BUILD_ANDROID_CONTAINER)
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${ANDROID_BIN_DIR}/plugins ${UNREAL_BIN_DIR}/Android/plugins
         DEPENDS ${ANDROID_CONTAINER_TARGET}
     )
+    if(BUILD_ANDROID_CONTAINER)
+        list(APPEND UNREAL_DEPENDENCIES ${ANDROID_CONTAINER_TARGET})
+    endif()
 endif()
 
 # Windows lib copying
@@ -135,7 +145,10 @@ if(WIN32 OR BUILD_WINDOWS_CONTAINER)
         DEPENDS ${ANDROID_CONTAINER_TARGET}
     )
 
+    if(BUILD_WINDOWS_CONTAINER)
+        list(APPEND UNREAL_DEPENDENCIES ${WINDOWS_CONTAINER_TARGET})
+    endif()
 endif()
 
-add_dependencies(${UNREAL_TARGET} ${CLIENT_TARGET} ${SERVER_TARGET})
+add_dependencies(${UNREAL_TARGET} ${CLIENT_TARGET} ${SERVER_TARGET} ${UNREAL_DEPENDENCIES})
 #install(FILES ${Unreal_PACKAGE_PATH} DESTINATION Unreal)
