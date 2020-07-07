@@ -19,7 +19,7 @@ public class ShowtimeRuntime : ModuleRules
 		});
 
 		// C runtime flags
-		bUseRTTI = true;
+		bUseRTTI = false;
 		bEnableExceptions = true;
 
 		bool bUseDebug = false;
