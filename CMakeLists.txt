@@ -100,6 +100,7 @@ set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR})
 # Set build flags
 option(BUILD_STATIC "Build static Showtime library" OFF)
 option(BUILD_SHARED "Build shared Showtime library" ON)
+option(BUILD_SHARED_FROM_STATIC_LIBS "Build shared Showtime library from only static libs" ON)
 option(BUILD_DRAFTS "Build with experimental draft support" OFF)
 option(BUILD_SERVER_LAUNCHER "Build server launcher program" ON)
 
@@ -359,10 +360,22 @@ endif()
 include(src/server/CMakeLists.txt)
 
 
+# Combined binary
+# -------------
+set(SHARED_FROM_STATIC_TARGET showtime)
+if(BUILD_SHARED_FROM_STATIC_LIBS)
+    add_library (${SHARED_FROM_STATIC_TARGET} SHARED "")
+    target_sources(${SHARED_FROM_STATIC_TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp)
+    target_link_libraries(${SHARED_FROM_STATIC_TARGET} PRIVATE ${CLIENT_TARGET_STATIC} ${SERVER_TARGET_STATIC})
+    add_dependencies(${SHARED_FROM_STATIC_TARGET} ${CLIENT_TARGET_STATIC} ${SERVER_TARGET_STATIC})
+    list(APPEND Showtime_LIBRARY_TARGETS ${SHARED_FROM_STATIC_TARGET})
+endif()
+
+
 # Web monitor
 # -------------
-set(MONITOR_TARGET "${PROJECT_NAME}Monitor")
-include(src/monitor/CMakeLists.txt)
+#set(MONITOR_TARGET "${PROJECT_NAME}Monitor")
+#include(src/monitor/CMakeLists.txt)
 #list(APPEND Showtime_APP_TARGETS ${MONITOR_TARGET})
 
 
