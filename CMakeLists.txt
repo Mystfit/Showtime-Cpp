@@ -279,7 +279,7 @@ foreach(FILE ${FLATBUFFER_HEADER_SRC})
 endforeach()
 
 # Copy delegate headers
-file(COPY ${Showtime_SUBMODULE_DEPENDENCIES_DIR}/delegates/include/delegate.h DESTINATION ${Showtime_COMPILED_INCLUDE_DIRS}/showtime)
+# file(COPY ${Showtime_SUBMODULE_DEPENDENCIES_DIR}/delegates/include/delegate.h DESTINATION ${Showtime_COMPILED_INCLUDE_DIRS}/showtime)
 file(COPY ${Showtime_SUBMODULE_DEPENDENCIES_DIR}/multifunction/multicast.hpp DESTINATION ${Showtime_COMPILED_INCLUDE_DIRS}/showtime)
 
 set(SHOWTIME_PRIVATE_STATIC_LINKED_LIBS
