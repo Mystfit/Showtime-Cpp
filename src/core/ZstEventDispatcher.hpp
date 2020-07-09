@@ -38,18 +38,18 @@ class ZstEvent
 	//static_assert(std::is_base_of<ZstEventAdaptor, std::remove_pointer_t< std::weak_ptr<T> > >::value, "T must derive from ZstEventAdaptor");
 public:
 	ZstEvent() : 
-		func([](std::shared_ptr<T> adp) {}),
+		func([](T* adp) {}),
 		completed_func([](ZstEventStatus s) {})
 	{
 	}
 
-	ZstEvent(std::function<void(std::shared_ptr<T>&)> f, ZstEventCallback cf) : 
+	ZstEvent(std::function<void(T*)> f, ZstEventCallback cf) : 
 		func(f), 
 		completed_func(cf) 
 	{
 	}
 	
-	std::function<void(std::shared_ptr<T>&)> func;
+	std::function<void(T*)> func;
 	ZstEventCallback completed_func;
 };
 
@@ -149,14 +149,14 @@ public:
 		return m_default_adaptor;
 	}
 
-	void invoke(std::function<void(std::shared_ptr<T>&)> event) {
+	void invoke(std::function<void(T*)> event) {
 		if (this->m_adaptors.size() < 1) {
 			return;
 		}
 		//std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		for (auto adaptor : this->m_adaptors) {
 			if (auto adp = adaptor.lock()) {
-				auto cast_adaptor = std::static_pointer_cast<T>(adp);
+				auto cast_adaptor = static_cast<T*>(adp.get());
 				event(cast_adaptor);
 			}
 		}
@@ -164,8 +164,8 @@ public:
 
 	virtual void process_events() = 0;
 	virtual void flush_events() = 0;
-	virtual void defer(std::function<void(std::shared_ptr<T>)> event) = 0;
-	virtual void defer(std::function<void(std::shared_ptr<T>)> event, ZstEventCallback on_complete) = 0;
+	virtual void defer(std::function<void(T*)> event) = 0;
+	virtual void defer(std::function<void(T*)> event, ZstEventCallback on_complete) = 0;
 
 protected:
 	void process(ZstEvent<T>& event) {
@@ -173,8 +173,10 @@ protected:
 		for (auto adaptor : m_adaptors) {
 			if (auto adp = adaptor.lock()) {
 				try {
-					auto cast_adaptor = std::dynamic_pointer_cast<T>(adp);
-					event.func(cast_adaptor);
+					// Why does this need to be dynamic_cast? Flatbuffer messages seem get corrupted with static_cast
+					auto cast_adaptor = dynamic_cast<T*>(adp.get());
+					if(cast_adaptor)
+						event.func(cast_adaptor);
 				}
 				catch (std::exception e) {
 					Log::net(Log::Level::error, "Event dispatcher failed to run an event on a adaptor. Reason: {}", e.what());
@@ -200,14 +202,14 @@ public:
 	{
 	}
 
-	virtual void defer(std::function<void(std::shared_ptr<T>)> event) override {
+	virtual void defer(std::function<void(T*)> event) override {
 		ZstEvent<T> e(event, nullptr);
 		this->m_events.enqueue(e);
 		this->m_has_event = true;
 		this->notify();
 	}
 
-	virtual void defer(std::function<void(std::shared_ptr<T>)> event, ZstEventCallback on_complete) override {
+	virtual void defer(std::function<void(T*)> event, ZstEventCallback on_complete) override {
 		ZstEvent<T> e(event, on_complete);
 		this->m_events.enqueue(e);
 		this->m_has_event = true;
@@ -248,13 +250,13 @@ public:
 			this->process(event);
 	}
 
-	virtual void defer(std::function<void(std::shared_ptr<T>)> event) override {
+	virtual void defer(std::function<void(T*)> event) override {
 		ZstEvent<T> e(event, [](ZstEventStatus s) {});
 		this->m_events.enqueue(e);
 		this->m_has_event = true;
 	}
 
-	virtual void defer(std::function<void(std::shared_ptr<T>)> event, ZstEventCallback on_complete) override {
+	virtual void defer(std::function<void(T*)> event, ZstEventCallback on_complete) override {
 		ZstEvent<T> e(event, on_complete);
 		this->m_events.enqueue(e);
 		this->m_has_event = true;

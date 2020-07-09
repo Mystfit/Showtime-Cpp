@@ -71,7 +71,7 @@ void ZstClientHierarchy::on_receive_msg(const std::shared_ptr<ZstStageMessage>& 
 void ZstClientHierarchy::publish_entity_update(ZstEntityBase * entity, const ZstURI & original_path)
 {
 	if (!entity->is_proxy()) {        
-		stage_events()->invoke([entity, &original_path](std::shared_ptr<ZstStageTransportAdaptor>& adaptor) {
+		stage_events()->invoke([entity, &original_path](ZstStageTransportAdaptor* adaptor) {
             // Create transport args
 			ZstTransportArgs args;
 			args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
@@ -126,7 +126,7 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 	ZstHierarchy::activate_entity(entity, sendtype);
 
 	//Send message
-	stage_events()->invoke([this, entity, sendtype, callback](std::shared_ptr<ZstStageTransportAdaptor>& adaptor){
+	stage_events()->invoke([this, entity, sendtype, callback](ZstStageTransportAdaptor* adaptor){
 		//Build message
 		ZstTransportArgs args;
 		args.msg_send_behaviour = sendtype;
@@ -160,7 +160,7 @@ void ZstClientHierarchy::deactivate_entity(ZstEntityBase * entity, const ZstTran
 	//If the entity is local, let the stage know it's leaving
 	if (!entity->is_proxy()) {
 		//Send message
-		stage_events()->invoke([this, entity, sendtype](std::shared_ptr<ZstStageTransportAdaptor>& adaptor) {
+		stage_events()->invoke([this, entity, sendtype](ZstStageTransportAdaptor* adaptor) {
 			ZstTransportArgs args;
 			args.msg_send_behaviour = sendtype;
 
@@ -214,7 +214,7 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
     }
     
     //External factory
-    stage_events()->invoke([this, sendtype, creatable_path, &entity, entity_name, factory](std::shared_ptr<ZstStageTransportAdaptor>& adaptor) {
+    stage_events()->invoke([this, sendtype, creatable_path, &entity, entity_name, factory](ZstStageTransportAdaptor* adaptor) {
 		ZstTransportArgs args;
 		args.msg_send_behaviour = sendtype;
 		args.on_recv_response = [this, &entity, sendtype, creatable_path, entity_name, factory](ZstMessageResponse response) {
@@ -314,7 +314,7 @@ void ZstClientHierarchy::factory_create_entity_handler(const FactoryCreateEntity
 				return;
 
 			Log::net(Log::Level::notification, "Creatable {} activated", entity->URI().path());
-			stage_events()->invoke([request_id](std::shared_ptr<ZstStageTransportAdaptor>& adaptor) {
+			stage_events()->invoke([request_id](ZstStageTransportAdaptor* adaptor) {
 				ZstTransportArgs args;
                 args.msg_ID = request_id;
                     
@@ -326,7 +326,7 @@ void ZstClientHierarchy::factory_create_entity_handler(const FactoryCreateEntity
 		});
 	}
 	else {
-		stage_events()->invoke([request_id](std::shared_ptr<ZstStageTransportAdaptor>& adaptor) {
+		stage_events()->invoke([request_id](ZstStageTransportAdaptor* adaptor) {
 			ZstTransportArgs args;
             args.msg_ID = request_id;
                 
@@ -345,7 +345,7 @@ void ZstClientHierarchy::activate_entity_complete(ZstEntityBase * entity)
 	ZstEntityBundle bundle;
     entity->get_child_entities(bundle, false, true);
 	for (auto c : bundle) {
-		hierarchy_events()->invoke([c](std::shared_ptr<ZstHierarchyAdaptor>& adaptor) { 
+		hierarchy_events()->invoke([c](ZstHierarchyAdaptor* adaptor) { 
 			adaptor->on_entity_arriving(c); 
 		});
 	}

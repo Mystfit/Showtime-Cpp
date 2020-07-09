@@ -184,18 +184,18 @@ void ZstHierarchy::dispatch_entity_arrived_event(ZstEntityBase * entity){
     
     //Only dispatch events once all entities have been activated and registered
     if (entity->entity_type() == ZstEntityType::COMPONENT || entity->entity_type() == ZstEntityType::PLUG)  {
-        m_hierarchy_events->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+        m_hierarchy_events->defer([entity](ZstHierarchyAdaptor* adaptor) {
 			adaptor->on_entity_arriving(entity);
 		});
     }
     else if (entity->entity_type() == ZstEntityType::FACTORY) {
-        m_hierarchy_events->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+        m_hierarchy_events->defer([entity](ZstHierarchyAdaptor* adaptor) {
 			adaptor->on_factory_arriving(static_cast<ZstEntityFactory*>(entity));
 		});
     }
 	else if (entity->entity_type() == ZstEntityType::PERFORMER) {
 		//Dispatch events
-		m_hierarchy_events->defer([entity](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+		m_hierarchy_events->defer([entity](ZstHierarchyAdaptor* adaptor) {
 			adaptor->on_performer_arriving(static_cast<ZstPerformer*>(entity));
 		});
 	}
@@ -233,7 +233,7 @@ void ZstHierarchy::update_proxy_entity(ZstEntityBase* original, const EntityType
 		}
 		original->set_name(entity_path.last().path());
 
-		hierarchy_events()->defer([original](std::shared_ptr<ZstHierarchyAdaptor> adp) {
+		hierarchy_events()->defer([original](ZstHierarchyAdaptor* adp) {
 			adp->on_entity_updated(original);
 		});
 	}
@@ -356,19 +356,19 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 	if (entity->is_proxy()) {
 		if (entity->entity_type() == ZstEntityType::PERFORMER)
 		{
-			hierarchy_events()->defer([path = entity->URI()](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+			hierarchy_events()->defer([path = entity->URI()](ZstHierarchyAdaptor* adaptor) {
 				adaptor->on_performer_leaving(path);
 			});
 		}
 		else if (entity->entity_type() == ZstEntityType::FACTORY)
 		{
-			hierarchy_events()->defer([path = entity->URI()](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+			hierarchy_events()->defer([path = entity->URI()](ZstHierarchyAdaptor* adaptor) {
 				adaptor->on_factory_leaving(path);
 			});
 		}
 		else if (entity->entity_type() == ZstEntityType::COMPONENT)
 		{
-			hierarchy_events()->defer([path = entity->URI()](std::shared_ptr<ZstHierarchyAdaptor> adaptor) {
+			hierarchy_events()->defer([path = entity->URI()](ZstHierarchyAdaptor* adaptor) {
 				adaptor->on_entity_leaving(path);
 			});
 		}

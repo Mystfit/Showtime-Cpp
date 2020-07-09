@@ -125,7 +125,7 @@ void ZstSession::destroy_cable_complete(ZstCable * cable)
 		ZstPlugLiason().plug_remove_cable(output, cable);
 
     //Dispatch events
-    session_events()->defer([cable = cable->get_address()](std::shared_ptr<ZstSessionAdaptor> adaptor) {
+    session_events()->defer([cable = cable->get_address()](ZstSessionAdaptor* adaptor) {
 		adaptor->on_cable_destroyed(cable);
 	});
     
@@ -213,7 +213,7 @@ ZstCable * ZstSession::create_cable(ZstInputPlug * input, ZstOutputPlug * output
 
 	//Enqueue events
 	synchronisable_set_activation_status(cable_ptr.get(), ZstSyncStatus::ACTIVATED);
-	m_session_events->defer([&cable_ptr](std::shared_ptr<ZstSessionAdaptor> adaptor) {
+	m_session_events->defer([&cable_ptr](ZstSessionAdaptor* adaptor) {
 		adaptor->on_cable_created(cable_ptr.get());
 	});
 

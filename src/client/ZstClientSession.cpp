@@ -146,7 +146,7 @@ void ZstClientSession::plug_received_value(ZstInputPlug * plug)
 		throw std::runtime_error("Could not find parent of input plug");
 	}
 	ZstURI plug_path = plug->URI();
-	compute_events()->defer([this, parent, plug_path](std::shared_ptr<ZstComputeAdaptor> adaptor) {
+	compute_events()->defer([this, parent, plug_path](ZstComputeAdaptor* adaptor) {
 		//Make sure the entity still exists before running 
 		ZstInputPlug * plug = static_cast<ZstInputPlug*>(this->hierarchy()->find_entity(plug_path));
 		if(plug)
@@ -166,7 +166,7 @@ ZstCable * ZstClientSession::connect_cable(ZstInputPlug * input, ZstOutputPlug *
 	cable = ZstSession::connect_cable(input, output, sendtype);
 	
 	if (cable) {
-		stage_events()->invoke([this, sendtype, cable](std::shared_ptr<ZstStageTransportAdaptor>& adaptor) {
+		stage_events()->invoke([this, sendtype, cable](ZstStageTransportAdaptor* adaptor) {
 			ZstTransportArgs args;
 			args.msg_send_behaviour = sendtype;
 			args.on_recv_response = [this, cable](ZstMessageResponse response) { 
@@ -210,7 +210,7 @@ void ZstClientSession::destroy_cable(ZstCable * cable, const ZstTransportRequest
 
 	ZstSession::destroy_cable(cable, sendtype);
 	
-	stage_events()->invoke([this, cable, sendtype](std::shared_ptr<ZstStageTransportAdaptor>& adaptor) {
+	stage_events()->invoke([this, cable, sendtype](ZstStageTransportAdaptor* adaptor) {
 		ZstTransportArgs args;
 		args.msg_send_behaviour = sendtype;
 		args.on_recv_response = [this, cable](ZstMessageResponse response) { this->destroy_cable_complete(response, cable); };
@@ -240,7 +240,7 @@ bool ZstClientSession::observe_entity(ZstEntityBase * entity, const ZstTransport
 		return false;
 	}
 
-	stage_events()->invoke([this, entity, sendtype](std::shared_ptr<ZstStageTransportAdaptor>& adaptor) {
+	stage_events()->invoke([this, entity, sendtype](ZstStageTransportAdaptor* adaptor) {
 		ZstTransportArgs args;
 		args.msg_send_behaviour = sendtype;
 		args.on_recv_response = [this, entity](ZstMessageResponse response) { this->observe_entity_complete(response, entity); };
@@ -261,7 +261,7 @@ void ZstClientSession::observe_entity_complete(ZstMessageResponse response, ZstE
 
 void ZstClientSession::aquire_entity_ownership(ZstEntityBase* entity)
 {
-    stage_events()->invoke([entity, this](std::shared_ptr<ZstStageTransportAdaptor>& adaptor) {
+    stage_events()->invoke([entity, this](ZstStageTransportAdaptor* adaptor) {
         ZstTransportArgs args;
         args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
         args.on_recv_response = [](ZstMessageResponse response) {
@@ -276,7 +276,7 @@ void ZstClientSession::aquire_entity_ownership(ZstEntityBase* entity)
 
 void ZstClientSession::release_entity_ownership(ZstEntityBase* entity)
 {
-    stage_events()->invoke([entity](std::shared_ptr<ZstStageTransportAdaptor>& adaptor) {
+    stage_events()->invoke([entity](ZstStageTransportAdaptor* adaptor) {
         ZstTransportArgs args;
         args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
         args.on_recv_response = [](ZstMessageResponse){

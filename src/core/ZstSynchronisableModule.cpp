@@ -43,7 +43,7 @@ bool ZstSynchronisableModule::already_removed_synchronisable(unsigned int syncro
 void ZstSynchronisableModule::synchronisable_has_event(ZstSynchronisable * synchronisable)
 {
     auto id = synchronisable->instance_id();
-    m_synchronisable_events->defer([this, synchronisable, id](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
+    m_synchronisable_events->defer([this, synchronisable, id](ZstSynchronisableAdaptor* adaptor) {
         // Make sure the synchronisable object hasn't gone away
         if (m_dead_syncronisable_IDS.find(id) == m_dead_syncronisable_IDS.end()) {
             this->synchronisable_process_events(synchronisable);

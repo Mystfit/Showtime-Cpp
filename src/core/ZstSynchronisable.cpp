@@ -40,7 +40,7 @@ void ZstSynchronisable::add_adaptor(std::shared_ptr<ZstSynchronisableAdaptor> ad
 
 	//If we are already activated, immediately dispatch an event
 	if (this->is_activated()) {
-		m_synchronisable_events->invoke([this](std::shared_ptr<ZstSynchronisableAdaptor>& adaptor) { 
+		m_synchronisable_events->invoke([this](ZstSynchronisableAdaptor* adaptor) { 
 			adaptor->on_synchronisable_activated(this);
 		});
 	}
@@ -58,7 +58,7 @@ void ZstSynchronisable::enqueue_activation()
 		set_activation_status(ZstSyncStatus::ACTIVATION_QUEUED);
 
 		//Notify adaptors that this synchronisable is activating
-		m_synchronisable_events->defer([this](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
+		m_synchronisable_events->defer([this](ZstSynchronisableAdaptor* adaptor) {
 			this->set_activation_status(ZstSyncStatus::ACTIVATED);
 			adaptor->on_synchronisable_activated(this);
 		}, [this](ZstEventStatus status) {
@@ -66,7 +66,7 @@ void ZstSynchronisable::enqueue_activation()
 		});
 
 		//Notify adaptors that we have a queued event
-		m_synchronisable_events->invoke([this](std::shared_ptr<ZstSynchronisableAdaptor>& adaptor) {
+		m_synchronisable_events->invoke([this](ZstSynchronisableAdaptor* adaptor) {
 			adaptor->synchronisable_has_event(this);
 		});
 	}
@@ -82,7 +82,7 @@ void ZstSynchronisable::enqueue_deactivation()
         set_activation_status(ZstSyncStatus::DEACTIVATION_QUEUED);
 
 		//Notify adaptors synchronisable is deactivating
-		m_synchronisable_events->defer([this](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
+		m_synchronisable_events->defer([this](ZstSynchronisableAdaptor* adaptor) {
 			this->set_activation_status(ZstSyncStatus::DEACTIVATED);
 			adaptor->on_synchronisable_deactivated(this);
 		}, [this](ZstEventStatus status) {
@@ -90,12 +90,12 @@ void ZstSynchronisable::enqueue_deactivation()
 		});
 
 		//Notify adaptors that this syncronisable needs to be cleaned up -- proxies only
-		m_synchronisable_events->defer([this](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
+		m_synchronisable_events->defer([this](ZstSynchronisableAdaptor* adaptor) {
 			adaptor->on_synchronisable_destroyed(this);
         });
 
 		//Notify adaptors that we have a queued event
-		m_synchronisable_events->invoke([this](std::shared_ptr<ZstSynchronisableAdaptor>& adaptor) {
+		m_synchronisable_events->invoke([this](ZstSynchronisableAdaptor* adaptor) {
 			adaptor->synchronisable_has_event(this);
         });
     }
@@ -218,10 +218,10 @@ void ZstSynchronisable::process_events()
 
 void ZstSynchronisable::announce_update()
 {
-	m_synchronisable_events->defer([this](std::shared_ptr<ZstSynchronisableAdaptor> adaptor) {
+	m_synchronisable_events->defer([this](ZstSynchronisableAdaptor* adaptor) {
 		adaptor->on_synchronisable_updated(this);
 	});
-	m_synchronisable_events->invoke([this](std::shared_ptr<ZstSynchronisableAdaptor>& adaptor) {
+	m_synchronisable_events->invoke([this](ZstSynchronisableAdaptor* adaptor) {
 		adaptor->synchronisable_has_event(this);
 	});
 }

@@ -399,7 +399,7 @@ void ZstClient::server_discovery_handler(const std::shared_ptr<ZstServerBeaconMe
     // Store server beacon
     m_server_beacons.insert(server);
     m_server_beacon_timestamps.emplace(server, std::chrono::system_clock::now());
-    ZstEventDispatcher<ZstConnectionAdaptor>::defer([this, server](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
+    ZstEventDispatcher<ZstConnectionAdaptor>::defer([this, server](ZstConnectionAdaptor* adaptor) {
         adaptor->on_server_discovered(this->m_api, server);
     });
 
@@ -468,7 +468,7 @@ void ZstClient::join_stage_complete(const ZstServerAddress& server_address, ZstM
 
     //Enqueue connection events
     m_session->dispatch_connected_to_stage();
-    ZstEventDispatcher<ZstConnectionAdaptor>::defer([this, server_address](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
+    ZstEventDispatcher<ZstConnectionAdaptor>::defer([this, server_address](ZstConnectionAdaptor* adaptor) {
         adaptor->on_connected_to_server(this->m_api, server_address);
     });
 
@@ -500,7 +500,7 @@ void ZstClient::synchronise_graph(const ZstTransportRequestBehaviour& sendtype)
 void ZstClient::synchronise_graph_complete(ZstMessageResponse response)
 {
     Log::net(Log::Level::notification, "Graph sync for {} completed", session()->hierarchy()->get_local_performer()->URI().path());
-    ZstEventDispatcher<ZstConnectionAdaptor>::defer([this](std::shared_ptr<ZstConnectionAdaptor> adp) {
+    ZstEventDispatcher<ZstConnectionAdaptor>::defer([this](ZstConnectionAdaptor* adp) {
         adp->on_synchronised_graph(this->m_api, this->connected_server());
     });
 }
@@ -566,7 +566,7 @@ void ZstClient::leave_stage_complete(ZstTransportRequestBehaviour sendtype)
 
     //Enqueue event for adaptors
     m_session->dispatch_disconnected_from_stage();
-    ZstEventDispatcher<ZstConnectionAdaptor>::defer([this](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
+    ZstEventDispatcher<ZstConnectionAdaptor>::defer([this](ZstConnectionAdaptor* adaptor) {
         if(m_api)
             adaptor->on_disconnected_from_server(this->m_api, this->m_connected_server);
     });
@@ -665,7 +665,7 @@ void ZstClient::lost_server_beacon(const ZstServerAddress& server)
         m_server_beacon_timestamps.erase(m_server_beacon_timestamps.find(server));
 
     // Broadcast events
-    ZstEventDispatcher<ZstConnectionAdaptor>::defer([this, server](std::shared_ptr<ZstConnectionAdaptor> adaptor) {
+    ZstEventDispatcher<ZstConnectionAdaptor>::defer([this, server](ZstConnectionAdaptor* adaptor) {
         adaptor->on_server_lost(m_api, server);
     });
 }

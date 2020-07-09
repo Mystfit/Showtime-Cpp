@@ -178,7 +178,7 @@ void ZstPlug::get_child_cables(ZstCableBundle & bundle)
 {
     std::lock_guard<std::mutex> lock(m_entity_mtx);
     for (auto const & cable_path : m_cables) {
-        m_session_events->invoke([&cable_path, &bundle](std::shared_ptr<ZstSessionAdaptor>& adaptor){
+        m_session_events->invoke([&cable_path, &bundle](ZstSessionAdaptor* adaptor){
             ZstCable* cable = NULL;
             cable = adaptor->find_cable(cable_path);
             
@@ -342,7 +342,7 @@ void ZstOutputPlug::fire()
             c->get_input()->raw_value()->copy(*this->raw_value());
 
             // Queue plug compute event
-            session_events()->invoke([&c](std::shared_ptr<ZstSessionAdaptor>& adp) {
+            session_events()->invoke([&c](ZstSessionAdaptor* adp) {
                 adp->plug_received_value(c->get_input());
             });
 
@@ -352,7 +352,7 @@ void ZstOutputPlug::fire()
 
     // Publish message to any remaining remote plugs
     if (num_local_cables <= bundle.size()){
-        m_graph_out_events->invoke([this](std::shared_ptr<ZstGraphTransportAdaptor>& adaptor) {
+        m_graph_out_events->invoke([this](ZstGraphTransportAdaptor* adaptor) {
             auto builder = std::make_shared<flatbuffers::FlatBufferBuilder>();
             auto plugval_offset = this->raw_value()->serialize(*builder);
             auto graph_msg_offset = CreateGraphMessage(*builder, builder->CreateString(this->URI().path()), plugval_offset);
@@ -372,7 +372,7 @@ void ZstOutputPlug::set_owner(const ZstURI & owner)
     ZstEntityBase::set_owner(owner);
 
     ZstPerformer* performer = NULL;
-    hierarchy_events()->invoke([&performer](std::shared_ptr<ZstHierarchyAdaptor>& adaptor){
+    hierarchy_events()->invoke([&performer](ZstHierarchyAdaptor* adaptor){
         performer = adaptor->get_local_performer();
     });
 
