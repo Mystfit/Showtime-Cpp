@@ -26,9 +26,24 @@ set(ZST_CLIENT_SRC
 source_group( "headers" FILES ${ZST_CLIENT_HEADERS} ${ZST_CLIENT_PRIVATE_HEADERS})
 source_group( "source" FILES ${ZST_CLIENT_SRC})
 
+  # Include files in client target
+target_sources(${CLIENT_TARGET_OBJECTS} PRIVATE 
+  # ${ZST_CLIENT_HEADERS}
+  ${ZST_CLIENT_PRIVATE_HEADERS}
+  ${ZST_CLIENT_SRC}
+)
 
 # Add our top level header to the public API
 list(APPEND Showtime_API_INTERFACE ${ZST_CLIENT_HEADERS})
+
+# Link libs object target to pull in includes
+target_link_libraries(${CLIENT_TARGET_OBJECTS} 
+  PRIVATE
+  ${CORE_TARGET_OBJECTS}
+  ${SHOWTIME_PRIVATE_LINKED_LIBS}
+)
+
+target_compile_definitions(${CLIENT_TARGET_OBJECTS} PRIVATE ZST_EXPORT_CLIENT_API)
 
 set(CLIENT_LIBS "")
 
@@ -67,7 +82,7 @@ if(BUILD_SHARED)
     )
   endif()
 
-  add_dependencies(${CLIENT_TARGET} ${CORE_TARGET_STATIC})
+  add_dependencies(${CLIENT_TARGET} ${CORE_TARGET})
   list(APPEND CLIENT_LIBS ${CLIENT_TARGET})
 endif()
 
@@ -81,14 +96,19 @@ foreach(TARGET ${CLIENT_LIBS})
   # Include files in client target
   target_sources(${TARGET} PRIVATE 
     # ${ZST_CLIENT_HEADERS}
-    ${ZST_CLIENT_PRIVATE_HEADERS}
-    ${ZST_CLIENT_SRC}
+    # ${ZST_CLIENT_PRIVATE_HEADERS}
+    # ${ZST_CLIENT_SRC}
+    ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp
   )
 
-  target_link_libraries(${TARGET} PRIVATE ${SHOWTIME_PRIVATE_LINKED_LIBS})
+  target_link_libraries(${TARGET} PRIVATE 
+    ${SHOWTIME_PRIVATE_LINKED_LIBS} 
+    ${CLIENT_TARGET_OBJECTS}
+  )
 
   # Include source dependencies in client target
   target_include_directories(${TARGET} PRIVATE 
+    ${CLIENT_TARGET_OBJECTS}
     ${Showtime_SOURCE_DEPENDENCIES}
   )
 endforeach()

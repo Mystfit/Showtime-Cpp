@@ -34,19 +34,25 @@ set(ZST_SERVER_LAUNCHER_SRC
 # Add our top level header to the public API
 list(APPEND Showtime_API_INTERFACE ${ZST_SERVER_HEADERS})
 
+  # Server lib sources
+target_sources(${SERVER_TARGET_OBJECTS} PRIVATE 
+  # ${ZST_SERVER_HEADERS}
+  ${ZST_SERVER_PRIVATE_HEADERS}
+  ${ZST_SERVER_SRC}
+)
+
 set(SERVER_LIBS "")
 
-if(BUILD_STATIC)
-  target_link_libraries(${SERVER_TARGET_STATIC} 
-    PUBLIC
-    ${CORE_TARGET_STATIC}
-    #PRIVATE
-    #${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS}
-  )
-  add_dependencies(${SERVER_TARGET_STATIC} ${CORE_TARGET_STATIC})
-  list(APPEND SERVER_LIBS ${SERVER_TARGET_STATIC})
-endif()
+# Link libs object target to pull in includes
+target_link_libraries(${SERVER_TARGET_OBJECTS} 
+  PRIVATE
+  ${CORE_TARGET_OBJECTS}
+  ${SHOWTIME_PRIVATE_LINKED_LIBS}
+)
 
+target_compile_definitions(${SERVER_TARGET_OBJECTS} PRIVATE ZST_EXPORT_SERVER_API)
+
+# Prefer linking against shared library if possible over static
 if(BUILD_SHARED)
   target_link_libraries(${SERVER_TARGET} 
     PUBLIC 
@@ -63,8 +69,19 @@ if(BUILD_SHARED)
     $<$<CONFIG:Release>:${SHOWTIME_RELEASE_PDB_COMPILE_DEFINITIONS}>
   )
 
-  add_dependencies(${SERVER_TARGET} ${CORE_TARGET_STATIC})
+  add_dependencies(${SERVER_TARGET} ${CORE_TARGET})
   list(APPEND SERVER_LIBS ${SERVER_TARGET})
+endif()
+
+if(BUILD_STATIC)
+  target_link_libraries(${SERVER_TARGET_STATIC} 
+    PUBLIC
+    ${CORE_TARGET_STATIC}
+    # PRIVATE
+    # ${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS}
+  )
+  add_dependencies(${SERVER_TARGET_STATIC} ${CORE_TARGET_STATIC})
+  list(APPEND SERVER_LIBS ${SERVER_TARGET_STATIC})
 endif()
 
 foreach(TARGET ${SERVER_LIBS})
@@ -73,12 +90,6 @@ foreach(TARGET ${SERVER_LIBS})
   target_link_options(${TARGET} PRIVATE ${SHOWTIME_RELEASE_PDB_LINK_FLAGS})
   
   set_target_properties(${TARGET} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION})
-  # Server lib sources
-  target_sources(${TARGET} PRIVATE 
-    # ${ZST_SERVER_HEADERS}
-    ${ZST_SERVER_PRIVATE_HEADERS}
-    ${ZST_SERVER_SRC}
-  )
 
   # Server lib includes
   target_include_directories(${TARGET} PRIVATE
@@ -86,7 +97,7 @@ foreach(TARGET ${SERVER_LIBS})
   )
 
   # Link libraries
-  target_link_libraries(${TARGET} PRIVATE ${SHOWTIME_PRIVATE_LINKED_LIBS})
+  target_link_libraries(${TARGET} PRIVATE ${SHOWTIME_PRIVATE_LINKED_LIBS} ${SERVER_TARGET_OBJECTS})
 endforeach()
 
 
@@ -95,6 +106,11 @@ if(BUILD_SERVER_LAUNCHER)
   target_sources(${SERVER_LAUNCHER} PRIVATE ${ZST_SERVER_LAUNCHER_SRC})
 
   # Server launcher dependencies
-  add_dependencies(${SERVER_LAUNCHER} ${SERVER_TARGET})
-  target_link_libraries(${SERVER_LAUNCHER} PUBLIC ${SERVER_TARGET})
+  if(BUILD_SHARED)
+    target_link_libraries(${SERVER_LAUNCHER} PUBLIC ${SERVER_TARGET})
+    add_dependencies(${SERVER_LAUNCHER} ${SERVER_TARGET})
+  else()
+    target_link_libraries(${SERVER_LAUNCHER} PUBLIC ${SERVER_TARGET_STATIC})
+    add_dependencies(${SERVER_LAUNCHER} ${SERVER_TARGET_STATIC})
+  endif()
 endif()

@@ -43,8 +43,8 @@ Vagrant.configure("2") do |config|
 
   # Common CMake flags
   env["ANDROID_BUILD_FLAGS"] = "-DCMAKE_TOOLCHAIN_FILE=#{env["ANDROID_NDK_ROOT"]}/build/cmake/android.toolchain.cmake "         \
-                                    "-DANDROID_STL=c++_static "                                                                 \
-                                    "-DANDROID_CPP_FEATURES=exceptions;rtti "                                                   \
+                                    "-DANDROID_STL=c++_shared "                                                                 \
+                                    "-DANDROID_CPP_FEATURES=exceptions;rtti "                                                 \
                                     "-DANDROID_PLATFORM=android-#{env["ANDROID_PLATFORM"]} "                                    \
                                     "-DANDROID_ABI=#{env["ANDROID_ABI"]} "                                                      \
                                     "-DCMAKE_INSTALL_PREFIX=#{env["ANDROID_NDK_SYSROOT"]} "                                     \

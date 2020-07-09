@@ -66,7 +66,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     MESSAGE(STATUS "Platform is Windows")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP /Zc:__cplusplus")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP")
-
+    # set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
     option(WINDOWS_USE_DLL_RUNTIME "Use the Visual C++ DLL runtime" ON)
     if(WINDOWS_USE_DLL_RUNTIME)
         set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
@@ -111,6 +111,7 @@ set(Showtime_ALL_INCLUDE_DIRS ${Showtime_COMPILED_INCLUDE_DIRS} ${Showtime_INCLU
 set(Showtime_SUBMODULE_DEPENDENCIES_DIR "${CMAKE_SOURCE_DIR}/submodules")
 
 set(Showtime_API_INTERFACE "")
+set(Showtime_OBJECT_TARGETS "")
 set(Showtime_LIBRARY_TARGETS "")
 set(Showtime_APP_TARGETS "")
 set(Showtime_INSTALL_TARGETS "")
@@ -310,9 +311,18 @@ endif()
 # ------------
 set(CORE_TARGET "${PROJECT_NAME}Core")
 set(CORE_TARGET_STATIC "${PROJECT_NAME}CoreStatic")
-set(CORE_TARGET_OBJECTS ${CORE_TARGET}Objects)
+set(CORE_TARGET_OBJECTS "${CORE_TARGET}Objects")
+
+# Object target includes
+set(CORE_INCLUDES
+    $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${Showtime_HEADER_DEPENDENCIES}>
+    $<BUILD_INTERFACE:${Showtime_INCLUDE_DIRS}>
+    $<BUILD_INTERFACE:${Showtime_COMPILED_INCLUDE_DIRS}>
+)
+
 add_library(${CORE_TARGET_OBJECTS} OBJECT "")
-list(APPEND Showtime_LIBRARY_TARGETS ${CORE_TARGET_OBJECTS})
+list(APPEND Showtime_OBJECT_TARGETS ${CORE_TARGET_OBJECTS})
 
 if(BUILD_STATIC)
     add_library(${CORE_TARGET_STATIC} STATIC "")
@@ -329,6 +339,10 @@ include(src/core/CMakeLists.txt)
 # --------------
 set(CLIENT_TARGET "${PROJECT_NAME}Client")
 set(CLIENT_TARGET_STATIC "${PROJECT_NAME}ClientStatic")
+set(CLIENT_TARGET_OBJECTS "${CLIENT_TARGET}Objects")
+add_library(${CLIENT_TARGET_OBJECTS} OBJECT "")
+list(APPEND Showtime_OBJECT_TARGETS ${CLIENT_TARGET_OBJECTS})
+
 if(BUILD_STATIC)
     add_library(${CLIENT_TARGET_STATIC} STATIC "")
     list(APPEND Showtime_LIBRARY_TARGETS ${CLIENT_TARGET_STATIC})
@@ -344,7 +358,11 @@ include(src/client/CMakeLists.txt)
 # -------------
 set(SERVER_TARGET "${PROJECT_NAME}Server")
 set(SERVER_TARGET_STATIC "${PROJECT_NAME}ServerStatic")
+set(SERVER_TARGET_OBJECTS ${SERVER_TARGET}Objects)
 set(SERVER_LAUNCHER "${PROJECT_NAME}ServerLauncher")
+add_library(${SERVER_TARGET_OBJECTS} OBJECT "")
+list(APPEND Showtime_OBJECT_TARGETS ${SERVER_TARGET_OBJECTS})
+
 if(BUILD_STATIC)
     add_library (${SERVER_TARGET_STATIC} STATIC "")
     list(APPEND Showtime_LIBRARY_TARGETS ${SERVER_TARGET_STATIC})
@@ -366,8 +384,47 @@ set(SHARED_FROM_STATIC_TARGET showtime)
 if(BUILD_SHARED_FROM_STATIC_LIBS)
     add_library (${SHARED_FROM_STATIC_TARGET} SHARED "")
     target_sources(${SHARED_FROM_STATIC_TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp)
-    target_link_libraries(${SHARED_FROM_STATIC_TARGET} PRIVATE ${CLIENT_TARGET_STATIC} ${SERVER_TARGET_STATIC})
-    add_dependencies(${SHARED_FROM_STATIC_TARGET} ${CLIENT_TARGET_STATIC} ${SERVER_TARGET_STATIC})
+    set(SHARED_LINK_OPTIONS "")
+    set(SHARED_LINK_OPTIONS_START "")
+    set(SHARED_LINK_OPTIONS_END "")
+    if(WIN32)
+        # set(SHARED_LINK_OPTIONS 
+        #     "/WHOLEARCHIVE:$<TARGET_FILE_NAME:${CORE_TARGET_STATIC}>"
+        #     "/WHOLEARCHIVE:$<TARGET_FILE_NAME:${CLIENT_TARGET_STATIC}>"
+        #     "/WHOLEARCHIVE:$<TARGET_FILE_NAME:${SERVER_TARGET_STATIC}>"
+        # )
+    elseif(ANDROID)
+        # set(SHARED_LINK_OPTIONS_START "-Wl,--whole-archive")
+        # set(SHARED_LINK_OPTIONS_END "-Wl,--no-whole-archive")
+    elseif(MACOSX)
+        # set(SHARED_LINK_OPTIONS "-Wl,-all_load")
+    endif()
+    target_link_libraries(${SHARED_FROM_STATIC_TARGET} 
+        PRIVATE 
+        ${SHARED_LINK_OPTIONS_START}
+        ${CORE_TARGET_OBJECTS}
+        ${CLIENT_TARGET_OBJECTS}
+        ${SERVER_TARGET_OBJECTS}
+        ${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS}
+        ${SHARED_LINK_OPTIONS_END}
+    )
+    target_include_directories(${SHARED_FROM_STATIC_TARGET} PUBLIC
+        ${CORE_INCLUDES}
+    )
+    target_compile_definitions(${SHARED_FROM_STATIC_TARGET} PUBLIC 
+        ZST_EXPORT_CLIENT_API 
+        ZST_EXPORT_CORE_API 
+        ZST_EXPORT_PLUGIN_API
+        ZST_EXPORT_SERVER_API
+    )
+    target_link_options(${SHARED_FROM_STATIC_TARGET} 
+        PRIVATE 
+        ${SHARED_LINK_OPTIONS}
+    )
+    add_dependencies(${SHARED_FROM_STATIC_TARGET} 
+        ${CLIENT_TARGET_STATIC} 
+        ${SERVER_TARGET_STATIC}
+    )
     list(APPEND Showtime_LIBRARY_TARGETS ${SHARED_FROM_STATIC_TARGET})
 endif()
 
@@ -408,7 +465,7 @@ option(BUILD_ANDROID_CONTAINER "Build Android libs using Singularity" OFF)
 set(ANDROID_CONTAINER_TARGET AndroidContainerBuild)
 set(ANDROID_LIB_DIR "${CMAKE_BINARY_DIR}/lib/Android")
 set(ANDROID_BIN_DIR "${CMAKE_BINARY_DIR}/bin/Android")
-set(ANDROID_OUTPUT_LIB "${ANDROID_LIB_DIR}/lib${CLIENT_TARGET}.so")
+set(ANDROID_OUTPUT_LIB "${ANDROID_LIB_DIR}/lib${SHARED_FROM_STATIC_TARGET}.so")
 
 option(BUILD_WINDOWS_CONTAINER "Build Windows libs using Vagrant" OFF)
 set(WINDOWS_CONTAINER_TARGET WindowsContainerBuild)
@@ -494,6 +551,7 @@ set(CMAKE_INSTALL_CMAKEDIR "lib/cmake/showtime")
 
 # Install targets
 set(Showtime_INSTALL_TARGETS 
+    ${Showtime_OBJECT_TARGETS}
     ${Showtime_LIBRARY_TARGETS} 
     ${Showtime_APP_TARGETS}
 )

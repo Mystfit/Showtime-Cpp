@@ -2,13 +2,25 @@
 
 echo "Building dependencies"
 
+#LibSodium
+echo "Building libsodium"
+git clone https://github.com/jedisct1/libsodium < /dev/null > /dev/null
+git -C ./czmq libsodium stable
+cd ./libsodium
+./configure
+make && make install
+
 # ZEROMQ
 # ------
 echo "Building libZMQ"
 git clone https://github.com/zeromq/libzmq.git < /dev/null > /dev/null
 mkdir -p ./libzmq/build
-cmake -H"./libzmq" -B"./libzmq/build" $ANDROID_BUILD_FLAGS $COMMON_BUILD_FLAGS -DENABLE_DRAFTS=TRUE -DZMQ_BUILD_TESTS=OFF > /dev/null
-cmake --build ./libzmq/build -j $VM_CPU_COUNT --target install > /dev/null
+echo "libZMQ configure command line args:"
+echo "cmake -H\"./libzmq\" -B\"./libzmq/build\" $ANDROID_BUILD_FLAGS $COMMON_BUILD_FLAGS -DBUILD_SHARED=OFF -DBUILD_STATIC=ON -DENABLE_DRAFTS=TRUE -DZMQ_BUILD_TESTS=OFF"
+cmake -H"./libzmq" -B"./libzmq/build" $ANDROID_BUILD_FLAGS $COMMON_BUILD_FLAGS -DWITH_DOCS=OFF  -DWITH_LIBSODIUM=OFF -DENABLE_CURVE=OFF -DBUILD_SHARED=OFF -DBUILD_STATIC=ON -DENABLE_DRAFTS=TRUE -DZMQ_BUILD_TESTS=OFF
+echo "libZMQ build command line args:"
+echo "cmake --build ./libzmq/build -j $VM_CPU_COUNT --target install"
+cmake --build ./libzmq/build -j $VM_CPU_COUNT --target install
 
 # CZMQ
 # ----
@@ -16,8 +28,12 @@ echo "Building CZMQ"
 git clone https://github.com/mystfit/czmq.git < /dev/null > /dev/null
 git -C ./czmq checkout android-fixes
 mkdir -p ./czmq/build
-cmake -H"./czmq" -B"./czmq/build" $ANDROID_BUILD_FLAGS $COMMON_BUILD_FLAGS -DENABLE_DRAFTS=TRUE -DBUILD_TESTING=OFF > /dev/null
-cmake --build ./czmq/build -j $VM_CPU_COUNT --target install > /dev/null
+echo "CZMQ configure command line args:"
+echo "cmake -H\"./czmq\" -B\"./czmq/build\" -DCMAKE_VERBOSE_MAKEFILE=ON $ANDROID_BUILD_FLAGS $COMMON_BUILD_FLAGS -DENABLE_DRAFTS=TRUE -DBUILD_TESTING=OFF -DCZMQ_BUILD_SHARED=OFF -DCZMQ_BUILD_STATIC=ON"
+cmake -H"./czmq" -B"./czmq/build" -DCMAKE_VERBOSE_MAKEFILE=ON $ANDROID_BUILD_FLAGS $COMMON_BUILD_FLAGS -DENABLE_DRAFTS=TRUE -DBUILD_TESTING=OFF -DCZMQ_BUILD_SHARED=OFF -DCZMQ_BUILD_STATIC=ON
+echo "CZMQ build command line args:"
+echo "cmake --build ./czmq/build -j $VM_CPU_COUNT --target install"
+cmake --build ./czmq/build -j $VM_CPU_COUNT --target install
 
 # Flatbuffers - built twice (FlatC for host and cross-compiled libs for android)
 # ----

@@ -249,15 +249,7 @@ IF(WIN32)
     )
 endif()
 
-# Object target includes
-
-target_include_directories(${CORE_TARGET_OBJECTS} 
-    PUBLIC
-    $<INSTALL_INTERFACE:include>
-    $<BUILD_INTERFACE:${Showtime_HEADER_DEPENDENCIES}>
-    $<BUILD_INTERFACE:${Showtime_INCLUDE_DIRS}>
-    $<BUILD_INTERFACE:${Showtime_COMPILED_INCLUDE_DIRS}>
-)
+target_include_directories(${CORE_TARGET_OBJECTS} PUBLIC ${CORE_INCLUDES})
 
 # Link libs object target to pull in includes
 target_link_libraries(${CORE_TARGET_OBJECTS} 
@@ -325,15 +317,14 @@ foreach(TARGET ${CORE_LIBS})
     # Generate PDB files for release
     target_compile_options(${TARGET} PRIVATE ${SHOWTIME_RELEASE_PDB_COMPILE_DEFINITIONS})
     target_link_options(${TARGET} PRIVATE ${SHOWTIME_RELEASE_PDB_LINK_FLAGS})
-
+    target_include_directories(${TARGET} PUBLIC ${CORE_INCLUDES})
     target_sources(${TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp)
     set_target_properties(${TARGET} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION})
 
     # Target link libs again to link actual libraries
     target_link_libraries(${TARGET}
-        PUBLIC
-        ${CORE_TARGET_OBJECTS} 
         PRIVATE
+        ${CORE_TARGET_OBJECTS}
         ${SHOWTIME_PRIVATE_LINKED_LIBS}
     )
 endforeach()

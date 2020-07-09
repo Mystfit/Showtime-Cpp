@@ -22,7 +22,7 @@ public class ShowtimeRuntime : ModuleRules
 		bUseRTTI = false;
 		bEnableExceptions = true;
 
-		bool bUseDebug = false;
+		bool bUseDebug = true;
 
 		// Add any include paths for the plugin
 		PublicIncludePaths.AddRange(new string[]{
@@ -44,46 +44,52 @@ public class ShowtimeRuntime : ModuleRules
 		var win64_binaries = new string[]{};
 		if(bUseDebug){
 			win64_libs = new string[]{
-				Path.Combine(win_lib_path, "ShowtimeCored.lib"),
-				Path.Combine(win_lib_path, "ShowtimeClientd.lib"),
-				Path.Combine(win_lib_path, "ShowtimeServerd.lib")
+				Path.Combine(win_lib_path, "showtimed.lib")
+				// Path.Combine(win_lib_path, "ShowtimeCored.lib"),
+				// Path.Combine(win_lib_path, "ShowtimeClientd.lib"),
+				// Path.Combine(win_lib_path, "ShowtimeServerd.lib")
 			};
 
 			win64_binaries = new string[]{
-				Path.Combine(win_bin_path, "ShowtimeCored.dll"),
-				Path.Combine(win_bin_path, "ShowtimeClientd.dll"),
-				Path.Combine(win_bin_path, "ShowtimeServerd.dll"),
-				Path.Combine(win_bin_path, "libzmq-v142-mt-gd-4_3_3.dll"),
-				Path.Combine(win_bin_path, "libczmqd.dll")
+				Path.Combine(win_bin_path, "showtimed.dll")
+				// Path.Combine(win_bin_path, "ShowtimeCored.dll"),
+				// Path.Combine(win_bin_path, "ShowtimeClientd.dll"),
+				// Path.Combine(win_bin_path, "ShowtimeServerd.dll"),
+				// Path.Combine(win_bin_path, "libzmq-v142-mt-gd-4_3_3.dll"),
+				// Path.Combine(win_bin_path, "libczmqd.dll")
 			};
 		} else {
 			win64_libs = new string[]{
-				Path.Combine(win_lib_path, "ShowtimeCore.lib"),
-				Path.Combine(win_lib_path, "ShowtimeClient.lib"),
-				Path.Combine(win_lib_path, "ShowtimeServer.lib")
+				Path.Combine(win_lib_path, "showtime.lib")
+				// Path.Combine(win_lib_path, "ShowtimeCore.lib"),
+				// Path.Combine(win_lib_path, "ShowtimeClient.lib"),
+				// Path.Combine(win_lib_path, "ShowtimeServer.lib")
 			};
 
 			win64_binaries = new string[]{
-				Path.Combine(win_bin_path, "ShowtimeCore.dll"),
-				Path.Combine(win_bin_path, "ShowtimeClient.dll"),
-				Path.Combine(win_bin_path, "ShowtimeServer.dll"),
-				Path.Combine(win_bin_path, "libzmq-v142-mt-4_3_3.dll"),
-				Path.Combine(win_bin_path, "libczmq.dll")
+				Path.Combine(win_bin_path, "showtime.dll")
+				// Path.Combine(win_bin_path, "ShowtimeCore.dll"),
+				// Path.Combine(win_bin_path, "ShowtimeClient.dll"),
+				// Path.Combine(win_bin_path, "ShowtimeServer.dll"),
+				// Path.Combine(win_bin_path, "libzmq-v142-mt-4_3_3.dll"),
+				// Path.Combine(win_bin_path, "libczmq.dll")
 			};
 		}
 
 		var mac_lib_path = Path.Combine(PluginDirectory, "external", "lib", "Mac");
 		var mac_libraries = new string[]{
-			Path.Combine(mac_lib_path, "ShowtimeClient"),
-			Path.Combine(mac_lib_path, "ShowtimeCore"),
-			Path.Combine(mac_lib_path, "ShowtimeServer")
+			Path.Combine(mac_lib_path, "showtime")
+			//Path.Combine(mac_lib_path, "ShowtimeClient"),
+			// Path.Combine(mac_lib_path, "ShowtimeCore"),
+			// Path.Combine(mac_lib_path, "ShowtimeServer")
 		};
 
 		var android_lib_path = Path.Combine(PluginDirectory, "external", "lib", "Android");
 		var android_libraries = new string[]{
-			Path.Combine(android_lib_path, "libShowtimeClient.so"),
-			Path.Combine(android_lib_path, "libShowtimeCore.so"),
-			Path.Combine(android_lib_path, "libShowtimeServer.so")
+			Path.Combine(android_lib_path, "libshowtime.so")
+			// Path.Combine(android_lib_path, "libShowtimeClient.so"),
+			// Path.Combine(android_lib_path, "libShowtimeCore.so"),
+			// Path.Combine(android_lib_path, "libShowtimeServer.so")
 		};
 
 		// Add any import libraries or static libraries

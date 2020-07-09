@@ -39,7 +39,14 @@ else()
     # target_link_options(${CORE_ENTITIES_TARGET} PRIVATE -undefined dynamic_lookup)
 endif()
 
-list(APPEND PLUGIN_LIBS ${CORE_TARGET})
+if(BUILD_SHARED)
+  list(APPEND PLUGIN_LIBS ${CORE_TARGET})
+elseif(BUILD_SHARED_FROM_STATIC_LIBS)
+  list(APPEND PLUGIN_LIBS ${SHARED_FROM_STATIC_TARGET})
+  message(STATUS "Linking ${CORE_ENTITIES_TARGET} against ${SHARED_FROM_STATIC_TARGET}")
+else()
+  list(APPEND PLUGIN_LIBS ${CORE_TARGET_STATIC})
+endif()
 
 # Compile definitions
 target_compile_definitions(${CORE_ENTITIES_TARGET} PRIVATE ${PLUGIN_DEFINITIONS_PRIVATE})
@@ -47,6 +54,8 @@ target_compile_definitions(${CORE_ENTITIES_TARGET} INTERFACE ${PLUGIN_DEFINITION
 
 # Link against boost headers explicitly
 target_link_libraries(${CORE_ENTITIES_TARGET} PRIVATE ${PLUGIN_LIBS})
+target_include_directories(${CORE_ENTITIES_TARGET} PUBLIC ${Showtime_ALL_INCLUDE_DIRS})
+
 
 # Set plugin output dir
 set_target_properties(${CORE_ENTITIES_TARGET} PROPERTIES 

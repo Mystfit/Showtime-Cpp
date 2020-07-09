@@ -1,6 +1,6 @@
 #include <showtime/ShowtimeServer.h>
-#include <showtime/ZstLogging.h>
 #include "ZstStage.h"
+#include <showtime/ZstLogging.h>
 
 namespace showtime { 
 	ShowtimeServer::ShowtimeServer() : m_server(std::make_shared<showtime::detail::ZstStage>()){

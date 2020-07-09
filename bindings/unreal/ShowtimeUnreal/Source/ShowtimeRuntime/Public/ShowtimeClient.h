@@ -62,7 +62,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCableDestroyed, const UShowtimeCabl
 
 
 UCLASS(ClassGroup = (Showtime), meta = (BlueprintSpawnableComponent))
-class UShowtimeClient : public UActorComponent, public ShowtimeClient
+class UShowtimeClient : public UActorComponent
 {
 	GENERATED_BODY()
 public:
@@ -159,10 +159,13 @@ public:
 	//UPROPERTY(BlueprintAssignable)
 	//FPluginUnloaded OnPluginUnloaded;
 
+	TSharedPtr<ShowtimeClient>& Handle();
+
 
 private:
 	void AttachEvents();
 	void RemoveEvents();
 
+	TSharedPtr<ShowtimeClient> client;
 	std::shared_ptr<ClientAdaptors> client_adaptor;
 };

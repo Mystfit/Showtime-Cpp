@@ -55,11 +55,12 @@ endif()
 # Android lib copying
 if(ANDROID OR BUILD_ANDROID_CONTAINER)
     set(UNREAL_ANDROID_LIBS
-        "lib${CORE_TARGET}.so"
-        "lib${CLIENT_TARGET}.so"
-        "lib${SERVER_TARGET}.so"
-        "libzmq.so"
-        "libczmq.so"
+        "libshowtime.so"
+        # "lib${CORE_TARGET}.so"
+        # "lib${CLIENT_TARGET}.so"
+        # "lib${SERVER_TARGET}.so"
+        # "libzmq.so"
+        # "libczmq.so"
     )
 
     # Copy libraries
@@ -89,21 +90,21 @@ endif()
 # Windows lib copying
 if(WIN32 OR BUILD_WINDOWS_CONTAINER)
     set(UNREAL_WIN_BINARIES
-        "$<TARGET_FILE:${CORE_TARGET}>"
-        "$<TARGET_FILE:${CLIENT_TARGET}>"
-        "$<TARGET_FILE:${SERVER_TARGET}>"
-        "$<TARGET_FILE:czmq>"
-        "$<TARGET_FILE:libzmq>"
+        "$<TARGET_FILE:${SHARED_FROM_STATIC_TARGET}>"
+        # "$<TARGET_FILE:${CLIENT_TARGET}>"
+        # "$<TARGET_FILE:${SERVER_TARGET}>"
+        # "$<TARGET_FILE:czmq>"
+        # "$<TARGET_FILE:libzmq>"
     )
     set(UNREAL_WIN_LIBRARIES
-        "$<TARGET_LINKER_FILE:${CORE_TARGET}>"
-        "$<TARGET_LINKER_FILE:${CLIENT_TARGET}>"
-        "$<TARGET_LINKER_FILE:${SERVER_TARGET}>"
+        "$<TARGET_LINKER_FILE:${SHARED_FROM_STATIC_TARGET}>"
+        # "$<TARGET_LINKER_FILE:${CLIENT_TARGET}>"
+        # "$<TARGET_LINKER_FILE:${SERVER_TARGET}>"
     )
     set(UNREAL_WIN_PDBS
-        "$<TARGET_PDB_FILE:${CORE_TARGET}>"
-        "$<TARGET_PDB_FILE:${CLIENT_TARGET}>"
-        "$<TARGET_PDB_FILE:${SERVER_TARGET}>"
+        "$<TARGET_PDB_FILE:${SHARED_FROM_STATIC_TARGET}>"
+        # "$<TARGET_PDB_FILE:${CLIENT_TARGET}>"
+        # "$<TARGET_PDB_FILE:${SERVER_TARGET}>"
     )
 
 
@@ -150,5 +151,9 @@ if(WIN32 OR BUILD_WINDOWS_CONTAINER)
     endif()
 endif()
 
-add_dependencies(${UNREAL_TARGET} ${CLIENT_TARGET} ${SERVER_TARGET} ${UNREAL_DEPENDENCIES})
+if(BUILD_SHARED)
+    add_dependencies(${UNREAL_TARGET} ${CLIENT_TARGET} ${SERVER_TARGET} ${UNREAL_DEPENDENCIES})
+else()
+    add_dependencies(${UNREAL_TARGET} ${CLIENT_TARGET_STATIC} ${SERVER_TARGET_STATIC} ${UNREAL_DEPENDENCIES})
+endif()
 #install(FILES ${Unreal_PACKAGE_PATH} DESTINATION Unreal)

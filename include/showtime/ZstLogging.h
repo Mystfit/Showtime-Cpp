@@ -1,8 +1,23 @@
 #pragma once
-
 #include <streambuf>
 #include <ostream>
+
+#ifndef FMT_HEADER_ONLY
+	#define FMT_HEADER_ONLY
+	#ifdef WIN32
+		#ifndef WIN32_LEAN_AND_MEAN
+			#define WIN32_LEAN_AND_MEAN
+			#include <fmt/format.h>
+			#undef WIN32_LEAN_AND_MEAN
+		#else
+			#include <fmt/format.h>
+		#endif
+	#endif
+	#undef FMT_HEADER_ONLY
+#else
 #include <fmt/format.h>
+#endif
+
 #include <showtime/ZstExports.h>
 
 #define DEFAULT_LOG_FILE "showtime.log"

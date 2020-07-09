@@ -5,19 +5,19 @@
 
 DEFINE_LOG_CATEGORY(Showtime);
 
-UShowtimeClient::UShowtimeClient() : client_adaptor(std::make_shared<ClientAdaptors>(this))
+UShowtimeClient::UShowtimeClient()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
 void UShowtimeClient::Init()
 {
-	this->init(TCHAR_TO_UTF8(*ClientName), true);
+	client->init(TCHAR_TO_UTF8(*ClientName), true);
 }
 
 void UShowtimeClient::JoinServerByName(const FString& name)
 {
-	this->auto_join_by_name_async(TCHAR_TO_UTF8(*name));
+	client->auto_join_by_name_async(TCHAR_TO_UTF8(*name));
 }
 
 //void UShowtimeClient::JoinServerByAddress(const FIPv4Address& address)
@@ -28,12 +28,13 @@ void UShowtimeClient::JoinServerByName(const FString& name)
 
 void UShowtimeClient::LeaveServer()
 {
-	this->leave();
+	client->leave();
 }
 
 void UShowtimeClient::BeginPlay()
 {
 	Super::BeginPlay();
+	client = MakeShared <ShowtimeClient>();
 	AttachEvents();
 }
 
@@ -41,21 +42,27 @@ void UShowtimeClient::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 	RemoveEvents();
-	this->destroy();
+	client->destroy();
+}
+
+TSharedPtr<ShowtimeClient>& UShowtimeClient::Handle()
+{
+	return client;
 }
 
 void UShowtimeClient::AttachEvents(){
-	this->add_connection_adaptor(client_adaptor);
-	this->add_log_adaptor(client_adaptor);
+	client_adaptor = std::make_shared<ClientAdaptors>(this);
+	client->add_connection_adaptor(client_adaptor);
+	client->add_log_adaptor(client_adaptor);
 }
 
-void UShowtimeClient::RemoveEvents(){	this->remove_connection_adaptor(client_adaptor);
-	this->remove_connection_adaptor(client_adaptor);
-	this->remove_log_adaptor(client_adaptor);
+void UShowtimeClient::RemoveEvents(){
+	client->remove_connection_adaptor(client_adaptor);
+	client->remove_log_adaptor(client_adaptor);
 }
 
 void UShowtimeClient::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	this->poll_once();
+	client->poll_once();
 }

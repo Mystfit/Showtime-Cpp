@@ -10,12 +10,12 @@ ZstEventAdaptor::ZstEventAdaptor()
 
 ZstEventAdaptor::~ZstEventAdaptor() 
 {
-	auto sources = m_event_sources;
-	for (auto source : sources) {
+	//auto sources = m_event_sources;
+	for (auto source : m_event_sources) {
 		if (auto src = source.lock())
 			src->prune_missing_adaptors();
 	}
-	m_event_sources.clear();
+	//m_event_sources.clear();
 };
 
 void ZstEventAdaptor::add_event_source(std::weak_ptr<ZstEventDispatcherBase> event_source)

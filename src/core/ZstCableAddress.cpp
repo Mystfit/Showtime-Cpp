@@ -1,5 +1,5 @@
 #include <showtime/ZstCableAddress.h>
-#include <fmt/format.h>
+#include <sstream>
 
 using namespace flatbuffers;
 
@@ -108,7 +108,9 @@ void ZstCableAddress::deserialize_partial(const CableData* buffer)
 
 std::string ZstCableAddress::to_string() const
 {
-	return fmt::format("{} :~~> {}", get_output_URI().path(), get_input_URI().path());
+    std::stringstream s;
+    s << get_output_URI().path() << " :~~> " << get_input_URI().path();
+    return s.str();
 }
 
 size_t ZstCableAddressHash::operator()(ZstCableAddress const& k) const

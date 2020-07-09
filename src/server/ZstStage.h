@@ -9,9 +9,6 @@
 #include <unordered_map>
 #include <algorithm>
 
-//Showtime API
-#include <showtime/ZstCore.h>
-
 //Core headers
 #include "../core/ZstActor.h"
 #include "../core/ZstSemaphore.h"
@@ -22,8 +19,11 @@
 
 //Stage headers
 #include "ZstStageSession.h"
-#include "ZstZMQServerTransport.h"
 #include "ZstWebsocketServerTransport.h"
+#include "ZstZMQServerTransport.h"
+
+//Showtime API
+#include <showtime/ZstCore.h>
 
 
 //Forwards

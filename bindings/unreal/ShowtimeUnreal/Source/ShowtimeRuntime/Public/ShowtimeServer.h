@@ -17,8 +17,12 @@ using namespace showtime;
  *
  */
 UCLASS()
-class UShowtimeServer : public UObject, public ShowtimeServer {
+class UShowtimeServer : public UObject{
 	GENERATED_BODY()
 public:
 	virtual void BeginDestroy() override;
+	TSharedPtr<ShowtimeServer>& Handle();
+
+private:
+	TSharedPtr<ShowtimeServer> server;
 };

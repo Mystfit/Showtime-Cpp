@@ -16,13 +16,26 @@ set(TESTS
 )
 
 set(TEST_DEPENDENCIES 
-    ${CLIENT_TARGET}
-    ${SERVER_TARGET}
     Boost::unit_test_framework
     Boost::thread
     Boost::system
     Boost::filesystem
 )
+
+# Prefer linking shared libs over static libs for tests
+if(BUILD_SHARED_FROM_STATIC_LIBS)
+    list(APPEND TEST_DEPENDENCIES ${SHARED_FROM_STATIC_TARGET})
+elseif(BUILD_SHARED)
+    list(APPEND TEST_DEPENDENCIES   
+        ${CLIENT_TARGET}
+        ${SERVER_TARGET}
+    )
+else()
+    list(APPEND TEST_DEPENDENCIES   
+        ${CLIENT_TARGET_STATIC}
+        ${SERVER_TARGET_STATIC}
+    )
+endif()
 
 foreach(test ${TESTS})
     add_executable (${test} ${TEST_COMMON_HEADERS} "${test}.cpp") 

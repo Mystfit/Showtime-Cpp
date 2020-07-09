@@ -15,22 +15,22 @@ void ShowtimeClientSpec::Define()
 		client = NewObject<UShowtimeClient>();
         server = NewObject<UShowtimeServer>();
 
-        client->init("ue4_client", true);
-        server->init(TCHAR_TO_UTF8(*GetBeautifiedTestName()));
-        client->auto_join_by_name(TCHAR_TO_UTF8(*GetBeautifiedTestName()));
+        client->Handle()->init("ue4_client", true);
+        server->Handle()->init(TCHAR_TO_UTF8(*GetBeautifiedTestName()));
+        client->Handle()->auto_join_by_name(TCHAR_TO_UTF8(*GetBeautifiedTestName()));
 	});
 	
     Describe("init()", [this](){
         It("should return true when successful", [this]()
             {
-                TestTrue("is_init_completed", client->is_init_completed());
+                TestTrue("is_init_completed", client->Handle()->is_init_completed());
             });
     });
 
     Describe("auto_join_by_name()", [this]() {
         It("should connect to a broadcasting server", [this]()
             {                
-                TestTrue("is_connected", client->is_connected());
+                TestTrue("is_connected", client->Handle()->is_connected());
             });
     });
 
@@ -38,15 +38,15 @@ void ShowtimeClientSpec::Define()
         LatentIt("should capture log records", [this](const FDoneDelegate& Done)
             {
                 Log::app(Log::Level::debug, "test");
-                client->poll_once();
+                client->Handle()->poll_once();
                 Done.Execute();
                 //BackendService->QueryItems(this, &FMyCustomSpec::HandleQueryItemComplete, Done);
             });
     });
 
 	AfterEach([this]() {
-		client->destroy();
-        server->destroy();
+		client->Handle()->destroy();
+        server->Handle()->destroy();
 	});
 }
 

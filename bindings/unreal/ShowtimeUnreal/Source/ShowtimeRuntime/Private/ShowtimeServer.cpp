@@ -3,5 +3,10 @@
 void UShowtimeServer::BeginDestroy()
 {
 	Super::BeginDestroy();
-	this->destroy();
+	server->destroy();
+}
+
+TSharedPtr<ShowtimeServer>& UShowtimeServer::Handle()
+{
+	return server;
 }

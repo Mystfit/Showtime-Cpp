@@ -6,7 +6,7 @@
 #include "ZstZMQServerTransport.h"
 
 #include <czmq.h>
-#include <fmt/format.h>
+#include <sstream>
 
 namespace showtime {
 
@@ -61,10 +61,11 @@ void ZstZMQServerTransport::destroy()
 
 int ZstZMQServerTransport::bind(const std::string& address)
 {
-	auto addr = fmt::format("tcp://{}", address);
-	m_port = zsock_bind(m_clients_sock, "%s", addr.c_str());
+	std::stringstream addr;
+	addr << "tcp://" << address;
+	m_port = zsock_bind(m_clients_sock, "%s", addr.str().c_str());
 	if (!m_clients_sock) {
-		Log::net(Log::Level::notification, "Could not bind stage router socket to {}", addr);
+		Log::net(Log::Level::notification, "Could not bind stage router socket to {}", addr.str());
 		return m_port;
 	}
 	Log::net(Log::Level::notification, "Stage router listening on port {}", m_port);
