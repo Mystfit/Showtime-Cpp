@@ -2,6 +2,7 @@
 #include <showtime/ZstPointerUtils.h>
 #include <showtime/ZstExports.h>
 #include <showtime/multicast.hpp>
+#include <showtime/ZstEventDispatcher.h>
 #include <set>
 #include <memory>
 #include <mutex>
@@ -27,26 +28,47 @@ typedef util::multifunction<void(Arg1Type, Arg2Type)> EventName##_delegate;\
 ExportPrefix MULTICAST_DELEGATE_EVENT_BODY(EventName)
 
 
-//Forwards
-class ZstEventDispatcherBase;
-
-class ZST_CLASS_EXPORTED ZstEventAdaptor : public inheritable_enable_shared_from_this<ZstEventAdaptor>
+template<typename T>
+class ZST_CLASS_EXPORTED ZstEventAdaptor : public inheritable_enable_shared_from_this< ZstEventAdaptor<T> >
 {
-    friend class ZstEventDispatcherBase;
+	//friend class ZstEventDispatcherTyped<T>;
 public:
-	ZST_EXPORT ZstEventAdaptor();
-	ZST_EXPORT virtual ~ZstEventAdaptor();
+	ZST_EXPORT ZstEventAdaptor() {}
+	ZST_EXPORT virtual ~ZstEventAdaptor() {
+		//auto sources = m_event_sources;
+		for (auto source : m_event_sources) {
+			if (auto src = source.lock())
+				src->prune_missing_adaptors();
+		}
+		//m_event_sources.clear();
+	}
 
-	ZST_EXPORT bool contains_event_source(std::weak_ptr<ZstEventDispatcherBase> event_source);
-	ZST_EXPORT void prune_dispatchers();
+	ZST_EXPORT bool contains_event_source(std::weak_ptr< IEventDispatcher > event_source) {
+		std::lock_guard<std::recursive_mutex> lock(m_mtx);
+		return (m_event_sources.find(event_source) != m_event_sources.end()) ? true : false;
+	}
+
+	ZST_EXPORT void prune_dispatchers() {
+		std::lock_guard<std::recursive_mutex> lock(m_mtx);
+		auto sources = m_event_sources;
+		for (auto src : sources) {
+			if (src.expired())
+				m_event_sources.erase(src);
+		}
+	}
+
+	ZST_EXPORT void add_event_source(std::weak_ptr< IEventDispatcher > event_source) {
+		std::lock_guard<std::recursive_mutex> lock(m_mtx);
+		m_event_sources.insert(event_source);
+	}
+
+	ZST_EXPORT void remove_event_source(std::weak_ptr< IEventDispatcher > event_source) {
+		std::lock_guard<std::recursive_mutex> lock(m_mtx);
+		m_event_sources.erase(event_source);
+	}
 
 private:
-	ZST_EXPORT void add_event_source(std::weak_ptr<ZstEventDispatcherBase> event_source);
-	ZST_EXPORT void remove_event_source(std::weak_ptr<ZstEventDispatcherBase> event_source);
-
-	std::set< std::weak_ptr<ZstEventDispatcherBase>, std::owner_less<std::weak_ptr<ZstEventDispatcherBase> > > m_event_sources;
-
+	std::set< std::weak_ptr< IEventDispatcher >, std::owner_less< std::weak_ptr< IEventDispatcher > > > m_event_sources;
 	std::recursive_mutex m_mtx;
 };
-
 }

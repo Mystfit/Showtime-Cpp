@@ -7,7 +7,7 @@
 namespace showtime {
 
 	class ZST_CLASS_EXPORTED ZstPluginAdaptor :
-		public ZstEventAdaptor
+		public ZstEventAdaptor<ZstPluginAdaptor>
 	{
 	public:
 		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, plugin_loaded, std::shared_ptr<ZstPlugin>, plugin)

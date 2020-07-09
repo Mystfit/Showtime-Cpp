@@ -140,8 +140,8 @@ void ZstClient::init_client(const char* client_name, bool debug)
 
     //Setup adaptors to receive graph messages
     m_tcp_graph_transport->init();
-    m_tcp_graph_transport->msg_events()->add_adaptor(ZstStageTransportAdaptor::downcasted_shared_from_this< ZstStageTransportAdaptor>());
-    m_tcp_graph_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstStageTransportAdaptor>(m_session));
+    m_tcp_graph_transport->msg_events()->add_adaptor(ZstGraphTransportAdaptor::downcasted_shared_from_this< ZstGraphTransportAdaptor>());
+    m_tcp_graph_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstGraphTransportAdaptor>(m_session));
 
 #ifdef ZST_BUILD_DRAFT_API
     m_udp_graph_transport->init();
@@ -152,7 +152,7 @@ void ZstClient::init_client(const char* client_name, bool debug)
     //Stage discovery beacon
     m_service_broadcast_transport->init(STAGE_DISCOVERY_PORT);
     m_service_broadcast_transport->start_listening();
-    m_service_broadcast_transport->msg_events()->add_adaptor(ZstStageTransportAdaptor::downcasted_shared_from_this< ZstStageTransportAdaptor>());
+    m_service_broadcast_transport->msg_events()->add_adaptor(ZstServiceDiscoveryAdaptor::downcasted_shared_from_this< ZstServiceDiscoveryAdaptor>());
     
     //Load plugins
     m_plugins->load(fs::path(boost::dll::program_location().string()).parent_path().append("plugins"));

@@ -8,7 +8,7 @@
 namespace showtime {
 
 	class ZST_CLASS_EXPORTED ZstLogAdaptor :
-		public ZstEventAdaptor
+		public ZstEventAdaptor<ZstLogAdaptor>
 	{
 	public:
 		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, log_record, const Log::Record&, record)

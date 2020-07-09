@@ -13,7 +13,7 @@ namespace showtime {
 	class ZstEntityFactory;
 
 	class ZST_CLASS_EXPORTED ZstHierarchyAdaptor : 
-		public ZstEventAdaptor
+		public ZstEventAdaptor<ZstHierarchyAdaptor>
 	{
 	public:
 		// Outgoing events

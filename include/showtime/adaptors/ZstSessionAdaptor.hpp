@@ -12,7 +12,7 @@ class ZstEntityBase;
 class ZstCable;
 
 class ZST_CLASS_EXPORTED ZstSessionAdaptor : 
-	public ZstEventAdaptor
+	public ZstEventAdaptor<ZstSessionAdaptor>
 {
 public:
 	MULTICAST_DELEGATE_OneParam(ZST_EXPORT, cable_created, ZstCable*, cable)

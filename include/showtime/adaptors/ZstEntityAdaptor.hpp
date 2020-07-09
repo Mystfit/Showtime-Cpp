@@ -8,7 +8,7 @@ namespace showtime {
 class ZstEntityBase;
 
 class ZST_CLASS_EXPORTED ZstEntityAdaptor : 
-	public ZstEventAdaptor
+	public ZstEventAdaptor<ZstEntityAdaptor>
 {
 public:
 	MULTICAST_DELEGATE_OneParam(ZST_CLIENT_EXPORT, entity_registered, ZstEntityBase*, entity)

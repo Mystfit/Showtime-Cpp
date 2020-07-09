@@ -10,7 +10,7 @@ namespace showtime {
 class ShowtimeClient;
 
 class ZST_CLASS_EXPORTED ZstConnectionAdaptor : 
-	public ZstEventAdaptor
+	public ZstEventAdaptor<ZstConnectionAdaptor>
 {
 public:
 	MULTICAST_DELEGATE_TwoParams(ZST_CLIENT_EXPORT, connected_to_server, ShowtimeClient*, client, const ZstServerAddress&, server)

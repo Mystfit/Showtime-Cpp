@@ -57,6 +57,7 @@ set(API_HEADERS
     ${CORE_INCLUDE_DIR}/ZstSynchronisable.h
     ${CORE_INCLUDE_DIR}/ZstBundle.hpp
     ${CORE_INCLUDE_DIR}/ZstServerAddress.h
+    ${CORE_INCLUDE_DIR}/ZstEventDispatcher.h
     ${CORE_INCLUDE_DIR}/ZstPointerUtils.h
     ${CORE_INCLUDE_DIR}/ZstFilesystemUtils.h
     ${VERSION_FILE_OUT}

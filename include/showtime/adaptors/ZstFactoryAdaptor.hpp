@@ -6,7 +6,7 @@
 namespace showtime {
 
 class ZST_CLASS_EXPORTED ZstFactoryAdaptor :
-	public ZstEventAdaptor
+	public ZstEventAdaptor<ZstFactoryAdaptor>
 {
 public:
 	MULTICAST_DELEGATE_OneParam(ZST_EXPORT, creatables_updated, ZstEntityFactory*, factory)

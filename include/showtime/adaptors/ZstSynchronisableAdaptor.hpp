@@ -9,7 +9,7 @@ namespace showtime {
 class ZstSynchronisable;
 
 class ZST_CLASS_EXPORTED ZstSynchronisableAdaptor : 
-	public ZstEventAdaptor
+	public ZstEventAdaptor<ZstSynchronisableAdaptor>
 {
 public:
 	MULTICAST_DELEGATE_OneParam(ZST_EXPORT, synchronisable_activated, ZstSynchronisable*, synchronisable)

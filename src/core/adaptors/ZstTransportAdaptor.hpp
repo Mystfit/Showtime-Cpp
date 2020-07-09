@@ -12,7 +12,7 @@ namespace showtime {
 class ZstMessage;
 
 class ZST_CLASS_EXPORTED ZstTransportAdaptor : 
-	public ZstEventAdaptor
+	public ZstEventAdaptor<ZstTransportAdaptor>
 {
 public:
 	//Incoming events

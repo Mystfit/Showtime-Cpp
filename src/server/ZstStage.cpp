@@ -62,14 +62,14 @@ namespace showtime::detail
 		m_heartbeat_timer.async_wait(boost::bind(&ZstStage::stage_heartbeat_timer, &m_heartbeat_timer, this, boost::posix_time::milliseconds(STAGE_HEARTBEAT_CHECK)));
 
 		//Attach tcp transport adaptors
-		m_router_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstTransportAdaptor>(m_session));
-		m_router_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstTransportAdaptor>(m_session->stage_hierarchy()));
-		m_session->router_events()->add_adaptor(std::static_pointer_cast<ZstTransportAdaptor>(m_router_transport));
-		m_session->stage_hierarchy()->router_events()->add_adaptor(std::static_pointer_cast<ZstTransportAdaptor>(m_router_transport));
+		m_router_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstStageTransportAdaptor>(m_session));
+		m_router_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstStageTransportAdaptor>(m_session->stage_hierarchy()));
+		m_session->router_events()->add_adaptor(std::static_pointer_cast<ZstStageTransportAdaptor>(m_router_transport));
+		m_session->stage_hierarchy()->router_events()->add_adaptor(std::static_pointer_cast<ZstStageTransportAdaptor>(m_router_transport));
 
 		//Attach websocket transport adaptors
-		m_websocket_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstTransportAdaptor>(m_session));
-		m_websocket_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstTransportAdaptor>(m_session->stage_hierarchy()));
+		m_websocket_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstStageTransportAdaptor>(m_session));
+		m_websocket_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstStageTransportAdaptor>(m_session->stage_hierarchy()));
 		m_session->router_events()->add_adaptor(m_websocket_transport);
 		m_session->stage_hierarchy()->router_events()->add_adaptor(m_websocket_transport);
 

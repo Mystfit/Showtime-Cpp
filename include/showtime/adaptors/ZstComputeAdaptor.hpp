@@ -7,7 +7,7 @@
 
 namespace showtime {
 	class ZST_CLASS_EXPORTED ZstComputeAdaptor : 
-		public ZstEventAdaptor
+		public ZstEventAdaptor<ZstComputeAdaptor>
 	{
 	public:
 		MULTICAST_DELEGATE_TwoParams(ZST_EXPORT, compute, ZstComponent*, component, ZstInputPlug*, plug)

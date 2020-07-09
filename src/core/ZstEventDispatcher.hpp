@@ -14,8 +14,8 @@
 #include <showtime/ZstLogging.h>
 #include <showtime/ZstPointerUtils.h>
 #include <showtime/ZstConstants.h>
+#include <showtime/ZstEventDispatcher.h>
 #include <showtime/adaptors/ZstEventAdaptor.hpp>
-
 #include "ZstSemaphore.h"
 
 #define EVENT_QUEUE_BLOCK 100
@@ -34,7 +34,7 @@ typedef std::function<void(ZstEventStatus)> ZstEventCallback;
 template<typename T>
 class ZstEvent 
 {
-    static_assert(std::is_base_of<ZstEventAdaptor, T>::value, "T must derive from ZstEventAdaptor");
+    //static_assert(std::is_base_of<ZstEventAdaptor, T>::value, "T must derive from ZstEventAdaptor");
 	//static_assert(std::is_base_of<ZstEventAdaptor, std::remove_pointer_t< std::weak_ptr<T> > >::value, "T must derive from ZstEventAdaptor");
 public:
 	ZstEvent() : 
@@ -54,14 +54,22 @@ public:
 };
 
 
-class ZstEventDispatcherBase : public inheritable_enable_shared_from_this<ZstEventDispatcherBase> {
+template<typename T>
+class ZstEventDispatcherTyped : 
+	public IEventDispatcher,
+	public inheritable_enable_shared_from_this< ZstEventDispatcherTyped<T> > {
+	//static_assert(std::is_base_of< ZstEventAdaptor<T>, T>::value, "T must derive from ZstEventAdaptor");
 public:
-	ZstEventDispatcherBase() : 
+	ZstEventDispatcherTyped() : 
+		m_default_adaptor(std::make_shared<T>()), 
 		m_has_event(false)
 	{
+		// Add default adaptor directly and skip add_daptor since this object will own the adaptor directly
+		// -- also avoids having to construct bad weak pointers in the constructor
+		this->m_adaptors.insert(m_default_adaptor);
 	}
 
-	~ZstEventDispatcherBase() noexcept {
+	~ZstEventDispatcherTyped() noexcept {
 		auto adaptors = m_adaptors;
 		for (auto adaptor : adaptors) {
 			if (auto adp = adaptor.lock())
@@ -69,22 +77,22 @@ public:
 		}
 	}
 
-	void add_adaptor(std::weak_ptr<ZstEventAdaptor> adaptor) {
+	void add_adaptor(std::weak_ptr<T> adaptor) {
 		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		this->m_adaptors.insert(adaptor);
-		if(auto adp = adaptor.lock())
-			adp->add_event_source(ZstEventDispatcherBase::downcasted_shared_from_this<ZstEventDispatcherBase>());
+		if (auto adp = adaptor.lock())
+			adp->add_event_source(ZstEventDispatcherTyped<T>::downcasted_shared_from_this<ZstEventDispatcherTyped<T>>());
 	}
 
-	void remove_adaptor(std::weak_ptr<ZstEventAdaptor> adaptor) {
+	void remove_adaptor(std::weak_ptr<T> adaptor) {
 		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		if (auto adp = adaptor.lock()) {
-			adp->remove_event_source(ZstEventDispatcherBase::downcasted_shared_from_this<ZstEventDispatcherBase>());
+			adp->remove_event_source(ZstEventDispatcherTyped<T>::downcasted_shared_from_this<ZstEventDispatcherTyped<T>>());
 		}
 		this->m_adaptors.erase(adaptor);
 	}
 
-	bool contains_adaptor(std::weak_ptr<ZstEventAdaptor> adaptor)
+	bool contains_adaptor(std::weak_ptr<T> adaptor)
 	{
 		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		return (this->m_adaptors.find(adaptor) != this->m_adaptors.end()) ? true : false;
@@ -103,7 +111,7 @@ public:
 		m_adaptors.clear();
 	}
 
-	void prune_missing_adaptors() {
+	void prune_missing_adaptors() override {
 		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		auto adaptors = m_adaptors;
 		for (auto adaptor : adaptors) {
@@ -121,30 +129,11 @@ public:
 		return m_has_event;
 	}
 
-	void notify(){
-		if(m_condition_wake)
+	void notify() {
+		if (m_condition_wake)
 			m_condition_wake->notify();
 	}
-
-protected:
-	std::set< std::weak_ptr<ZstEventAdaptor>, std::owner_less< std::weak_ptr<ZstEventAdaptor> > > m_adaptors;
-	std::shared_ptr<ZstSemaphore> m_condition_wake;
-	std::recursive_timed_mutex m_mtx;
-	bool m_has_event;
-};
-
-
-template<typename T>
-class ZstEventDispatcherTyped : public ZstEventDispatcherBase {
-	static_assert(std::is_base_of<ZstEventAdaptor, T>::value, "T must derive from ZstEventAdaptor");
-public:
-	ZstEventDispatcherTyped() : m_default_adaptor(std::make_shared<T>()) 
-	{
-		// Add default adaptor directly and skip add_daptor since this object will own the adaptor directly
-		// -- also avoids having to construct bad weak pointers in the constructor
-		this->m_adaptors.insert(m_default_adaptor);
-	}
-
+	
 	std::shared_ptr<T> get_default_adaptor() {
 		return m_default_adaptor;
 	}
@@ -156,8 +145,7 @@ public:
 		//std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		for (auto adaptor : this->m_adaptors) {
 			if (auto adp = adaptor.lock()) {
-				auto cast_adaptor = static_cast<T*>(adp.get());
-				event(cast_adaptor);
+				event(adp.get());
 			}
 		}
 	}
@@ -168,15 +156,17 @@ public:
 	virtual void defer(std::function<void(T*)> event, ZstEventCallback on_complete) = 0;
 
 protected:
+	std::set< std::weak_ptr<T>, std::owner_less< std::weak_ptr<T> > > m_adaptors;
+	std::shared_ptr<ZstSemaphore> m_condition_wake;
+	std::recursive_timed_mutex m_mtx;
+	bool m_has_event;
+	
 	void process(ZstEvent<T>& event) {
 		bool success = true;
 		for (auto adaptor : m_adaptors) {
 			if (auto adp = adaptor.lock()) {
 				try {
-					// Why does this need to be dynamic_cast? Flatbuffer messages seem get corrupted with static_cast
-					auto cast_adaptor = dynamic_cast<T*>(adp.get());
-					if(cast_adaptor)
-						event.func(cast_adaptor);
+					event.func(adp.get());
 				}
 				catch (std::exception e) {
 					Log::net(Log::Level::error, "Event dispatcher failed to run an event on a adaptor. Reason: {}", e.what());
