@@ -12,6 +12,8 @@ ZstURI uri_notequal = ZstURI("anotherins/someplug");
 
 BOOST_AUTO_TEST_CASE(standard_layout){
 	assert(std::is_standard_layout<ZstURI>());
+	//assert(std::is_standard_layout<Log::Record>());
+	//static_assert(std::is_standard_layout<ZstServerAddress>());
 }
 
 BOOST_AUTO_TEST_CASE(accessors) {

@@ -70,25 +70,25 @@ public:
 	}
 
 	~ZstEventDispatcherTyped() noexcept {
-		auto adaptors = m_adaptors;
+		/*auto adaptors = m_adaptors;
 		for (auto adaptor : adaptors) {
 			if (auto adp = adaptor.lock())
 				adp->prune_dispatchers();
-		}
+		}*/
 	}
 
 	void add_adaptor(std::weak_ptr<T> adaptor) {
 		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		this->m_adaptors.insert(adaptor);
-		if (auto adp = adaptor.lock())
-			adp->add_event_source(ZstEventDispatcherTyped<T>::template downcasted_shared_from_this<ZstEventDispatcherTyped<T>>());
+		/*if (auto adp = adaptor.lock())
+			adp->add_event_source(ZstEventDispatcherTyped<T>::template downcasted_shared_from_this<ZstEventDispatcherTyped<T>>());*/
 	}
 
 	void remove_adaptor(std::weak_ptr<T> adaptor) {
 		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
-		if (auto adp = adaptor.lock()) {
+		/*if (auto adp = adaptor.lock()) {
 			adp->remove_event_source(ZstEventDispatcherTyped<T>::template downcasted_shared_from_this<ZstEventDispatcherTyped<T>>());
-		}
+		}*/
 		this->m_adaptors.erase(adaptor);
 	}
 

@@ -2,66 +2,50 @@
 
 #include <set>
 #include <string>
-
-#include "ZstBundle.hpp"
+#include <showtime/ZstExports.h>
+#include <showtime/ZstURI.h>
+#include <showtime/ZstBundle.hpp>
 
 namespace showtime {
+	struct ZstServerAddress {
+		std::string name;
+		std::string address;
+		ZST_EXPORT const char* c_name() const;
+		ZST_EXPORT const char* c_address() const;
+	};
 
-class ZstServerAddress {
-public:
-    std::string name;
-    std::string address;
-    
-    ZstServerAddress() : 
-        name(""),
-        address("")
-    {
-    }
-    
-    ZstServerAddress(const std::string & server_name, const std::string & server_address) :
-        name(server_name),
-        address(server_address)
-    {
-    }
-    
-    ZstServerAddress(const ZstServerAddress & other) :
-        name(other.name),
-        address(other.address)
-    {
-    }
-    
-    ZstServerAddress(ZstServerAddress && source) noexcept :
-        name(source.name),
-        address(source.address)
-    {
-        source.name.clear();
-        source.address.clear();
-    }
-    
-    ZstServerAddress & operator=(const ZstServerAddress & rhs)
-    {
-        name = rhs.name;
-        address = rhs.address;
-        return *this;
-    }
-    
-    ZstServerAddress & operator=(ZstServerAddress && rhs) noexcept
-    {
-        name = std::move(rhs.name);
-        address = std::move(rhs.address);
-        return *this;
-    }
-    
-    bool operator<(const ZstServerAddress & rhs) const
-    {
-        return std::tie(name, address) < std::tie(rhs.name, rhs.address);
-    }
+	inline bool operator<(const ZstServerAddress& lhs, const ZstServerAddress& rhs) {
+		return std::tie(lhs.name, lhs.address) < std::tie(rhs.name, rhs.address);
+	}
 
-    bool operator==(const ZstServerAddress & rhs) const
-    {
-        return std::tie(name, address) == std::tie(rhs.name, rhs.address);
-    }
-};
+//class ZstServerAddress {
+//public:    
+//    ZST_EXPORT ZstServerAddress();
+//    
+//    ZST_EXPORT ZstServerAddress(const char* server_name, const char* server_address);
+//    
+//    ZST_EXPORT ZstServerAddress(const ZstServerAddress& other);
+//
+//    ZST_EXPORT ~ZstServerAddress();
+//    
+//    ZST_EXPORT ZstServerAddress(ZstServerAddress&& source) noexcept;
+//    
+//    ZST_EXPORT ZstServerAddress& operator=(const ZstServerAddress& rhs);
+//    
+//    ZST_EXPORT ZstServerAddress& operator=(ZstServerAddress&& rhs) noexcept;
+//    
+//    ZST_EXPORT bool operator<(const ZstServerAddress& rhs) const;
+//
+//    ZST_EXPORT bool operator==(const ZstServerAddress& rhs) const;
+//
+//    ZST_EXPORT const char* name();
+//
+//    ZST_EXPORT const char* address();
+//
+//private:
+//    pstr m_name;
+//    pstr m_address;
+//};
 
 typedef std::set<ZstServerAddress> ZstServerList;
 typedef ZstBundle< ZstServerAddress > ZstServerAddressBundle;

@@ -36,39 +36,39 @@ public:
 	ZstEventAdaptor() {}
 	virtual ~ZstEventAdaptor() {
 		//auto sources = m_event_sources;
-		for (auto source : m_event_sources) {
+		/*for (auto source : m_event_sources) {
 			if (auto src = source.lock())
 				src->prune_missing_adaptors();
-		}
+		}*/
 		//m_event_sources.clear();
 	}
 
-	bool contains_event_source(std::weak_ptr< IEventDispatcher > event_source) {
-		std::lock_guard<std::recursive_mutex> lock(m_mtx);
-		return (m_event_sources.find(event_source) != m_event_sources.end()) ? true : false;
-	}
+	//bool contains_event_source(std::weak_ptr< IEventDispatcher > event_source) {
+	//	std::lock_guard<std::recursive_mutex> lock(m_mtx);
+	//	return (m_event_sources.find(event_source) != m_event_sources.end()) ? true : false;
+	//}
 
-	void prune_dispatchers() {
-		std::lock_guard<std::recursive_mutex> lock(m_mtx);
-		auto sources = m_event_sources;
-		for (auto src : sources) {
-			if (src.expired())
-				m_event_sources.erase(src);
-		}
-	}
+	//void prune_dispatchers() {
+	//	std::lock_guard<std::recursive_mutex> lock(m_mtx);
+	//	auto sources = m_event_sources;
+	//	for (auto src : sources) {
+	//		if (src.expired())
+	//			m_event_sources.erase(src);
+	//	}
+	//}
 
-	void add_event_source(std::weak_ptr< IEventDispatcher > event_source) {
+	/*void add_event_source(std::weak_ptr< IEventDispatcher > event_source) {
 		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		m_event_sources.insert(event_source);
-	}
+	}*/
 
-	void remove_event_source(std::weak_ptr< IEventDispatcher > event_source) {
+	/*void remove_event_source(std::weak_ptr< IEventDispatcher > event_source) {
 		std::lock_guard<std::recursive_mutex> lock(m_mtx);
 		m_event_sources.erase(event_source);
-	}
+	}*/
 
 private:
-	std::set< std::weak_ptr< IEventDispatcher >, std::owner_less< std::weak_ptr< IEventDispatcher > > > m_event_sources;
-	std::recursive_mutex m_mtx;
+	//std::set< std::weak_ptr< IEventDispatcher >, std::owner_less< std::weak_ptr< IEventDispatcher > > > m_event_sources;
+	//std::recursive_mutex m_mtx;
 };
 }

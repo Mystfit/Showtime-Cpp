@@ -15,9 +15,9 @@ struct FServerAddress {
 	FString address;
 };
 
-static FServerAddress FServerAddressFromShowtime(const showtime::ZstServerAddress& server_address) {
+static FServerAddress FServerAddressFromShowtime(const showtime::ZstServerAddress* server_address) {
 	FServerAddress address;
-	address.name = UTF8_TO_TCHAR(server_address.name.c_str());
-	address.address = UTF8_TO_TCHAR(server_address.address.c_str());
+	address.name = FString(server_address->c_name());
+	address.address = FString(server_address->c_address());
 	return address;
 }

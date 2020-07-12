@@ -38,6 +38,11 @@ void UShowtimeClient::BeginPlay()
 	AttachEvents();
 }
 
+void UShowtimeClient::BeginDestroy()
+{
+	client->destroy();
+}
+
 void UShowtimeClient::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);

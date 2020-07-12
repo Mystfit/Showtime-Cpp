@@ -50,11 +50,11 @@ void ShowtimeClient::start_file_logging(const char * log_file_path)
 }
 
 void ShowtimeClient::join(const char * stage_address){
-	if(library_init_guard()) m_client->join_stage(ZstServerAddress("", stage_address), ZstTransportRequestBehaviour::SYNC_REPLY);
+	if (library_init_guard()) m_client->join_stage(ZstServerAddress{ "", stage_address }, ZstTransportRequestBehaviour::SYNC_REPLY);
 }
 
 void ShowtimeClient::join_async(const char * stage_address){
-	if (library_init_guard()) m_client->join_stage(ZstServerAddress("", stage_address), ZstTransportRequestBehaviour::ASYNC_REPLY);
+	if (library_init_guard()) m_client->join_stage(ZstServerAddress{ "", stage_address }, ZstTransportRequestBehaviour::ASYNC_REPLY);
 }
 
 void ShowtimeClient::join_by_name(const char * stage_name)

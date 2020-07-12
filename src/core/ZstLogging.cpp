@@ -212,8 +212,9 @@ namespace showtime {
 				channel.get(),
 				message
 			};
-			m_log_events->defer([event_record](ZstLogAdaptor* adp){ 
-				adp->on_log_record(event_record); 
+			m_log_events->defer([event_record, formatted_string](ZstLogAdaptor* adp){
+				adp->on_log_record(std::make_shared<Log::Record>(event_record).get());
+				adp->on_formatted_log_record(formatted_string.c_str());
 			});
 		}
 #ifdef WIN32

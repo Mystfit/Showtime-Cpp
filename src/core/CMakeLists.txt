@@ -132,6 +132,7 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstZMQRefCounter.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMsgID.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstLogging.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstServerAddress.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstCableAddress.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstCable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstURI.cpp"

@@ -242,34 +242,34 @@ namespace ZstTest
 		std::vector<ZstServerAddress> discovered_servers;
 		std::vector<ZstServerAddress> lost_servers;
 
-		void on_connected_to_server(ShowtimeClient* client, const ZstServerAddress & stage_address) override {
+		void on_connected_to_server(ShowtimeClient* client, const ZstServerAddress* stage_address) override {
 			Log::app(Log::Level::debug, "CONNECTION_ESTABLISHED: {}", client->get_root()->URI().path());
 			inc_calls();
 			is_connected = true;
 		}
 
-		void on_disconnected_from_server(ShowtimeClient* client, const ZstServerAddress & stage_address) override {
+		void on_disconnected_from_server(ShowtimeClient* client, const ZstServerAddress* stage_address) override {
 			Log::app(Log::Level::debug, "DISCONNECTING: {}",client->get_root()->URI().path());
 			inc_calls();
 			is_connected = false;
 		}
         
-        void on_server_discovered(ShowtimeClient* client, const ZstServerAddress & stage_address) override {
-            Log::app(Log::Level::debug, "SERVER DISCOVERED: Name: {} Address: {}", stage_address.name, stage_address.address);
+        void on_server_discovered(ShowtimeClient* client, const ZstServerAddress* stage_address) override {
+            Log::app(Log::Level::debug, "SERVER DISCOVERED: Name: {} Address: {}", stage_address->name, stage_address->address);
             inc_calls();
-			discovered_servers.push_back(stage_address);
+			discovered_servers.push_back(*stage_address);
         }
 
-		void on_synchronised_graph(ShowtimeClient* client, const ZstServerAddress & stage_address) override {
+		void on_synchronised_graph(ShowtimeClient* client, const ZstServerAddress* stage_address) override {
 			Log::app(Log::Level::debug, "SERVER SYNCHRONISED");
 			inc_calls();
 			is_synced = true;
 		}
 
-		void on_server_lost(ShowtimeClient* client, const ZstServerAddress& stage_address) override {
-			Log::app(Log::Level::debug, "SERVER LOST: Name: {} Address: {}", stage_address.name, stage_address.address);
+		void on_server_lost(ShowtimeClient* client, const ZstServerAddress* stage_address) override {
+			Log::app(Log::Level::debug, "SERVER LOST: Name: {} Address: {}", stage_address->name, stage_address->address);
 			inc_calls();
-			lost_servers.push_back(stage_address);
+			lost_servers.push_back(*stage_address);
 		}
 	};
 
@@ -375,8 +375,8 @@ namespace ZstTest
 	{
 	public:
 		std::vector<Log::Record> records;
-		void on_log_record(const Log::Record& record) override {
-			records.push_back(record);
+		void on_log_record(const Log::Record* record) override {
+			records.push_back(*record);
 			inc_calls();
 		}
 	};

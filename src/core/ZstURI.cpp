@@ -249,12 +249,12 @@ bool ZstURI::is_empty() const
 	return m_component_count < 1;
 }
 
-ZstURI::pstr ZstURI::create_pstr(const char* p)
+pstr create_pstr(const char* p)
 {
 	return create_pstr(p, strlen(p));
 }
 
-ZstURI::pstr ZstURI::create_pstr(const char* p, size_t l)
+pstr create_pstr(const char* p, size_t l)
 {
 	pstr result;
 	result.length = l;

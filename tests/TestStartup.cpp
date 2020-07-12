@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE(client_destruction_cleanup) {
 	{
 		auto test_client = std::make_shared<ShowtimeClient>();
 		test_client->init(performer_name.c_str(), true);
-		test_client->log_events()->log_record() += [](const Log::Record& record) {std::cout << record.message << std::endl; };
+		test_client->log_events()->log_record() += [](const Log::Record* record) {std::cout << record->message << std::endl; };
 		test_client->destroy();
 	}
 }
@@ -149,7 +149,7 @@ BOOST_FIXTURE_TEST_CASE(async_join_event, FixtureInitAndCreateServerWithEpherema
 	auto connectCallback = std::make_shared< TestConnectionEvents>();
 	test_client->add_connection_adaptor(connectCallback);
 	bool connected = false;
-	test_client->connection_events()->connected_to_server() += [&connected](ShowtimeClient* client, const ZstServerAddress& server) { 
+	test_client->connection_events()->connected_to_server() += [&connected](ShowtimeClient* client, const ZstServerAddress* server) { 
 		connected = true; 
 	};
 	
@@ -250,8 +250,9 @@ BOOST_FIXTURE_TEST_CASE(double_connection, FixtureInitAndCreateServerWithEpherem
 	BOOST_TEST(!test_client->is_connected());
 }
 
-BOOST_FIXTURE_TEST_CASE(list_discovered_servers, FixtureInit){
-	ZstServerAddress server_address("detected_server" , "");
+BOOST_FIXTURE_TEST_CASE(list_discovered_servers, FixtureInit) {
+	ZstServerAddress server_address{"detected_server", ""
+};
 	auto detected_server = std::make_shared< ShowtimeServer>();
 	detected_server->init(server_address.name);
 	WAIT_UNTIL_STAGE_BEACON
@@ -266,7 +267,7 @@ BOOST_FIXTURE_TEST_CASE(list_discovered_servers, FixtureInit){
 }
 
 BOOST_FIXTURE_TEST_CASE(discovered_servers_callback_adaptor, FixtureInit){
-	ZstServerAddress server_address("detected_server", "");
+	ZstServerAddress server_address{ "detected_server", "" };
 
 	//Create adaptor
 	auto discovery_adaptor = std::make_shared<TestConnectionEvents>();
@@ -286,7 +287,7 @@ BOOST_FIXTURE_TEST_CASE(discovered_servers_callback_adaptor, FixtureInit){
 }
 
 BOOST_FIXTURE_TEST_CASE(discovered_servers_update, FixtureInitAndCreateServerWithEpheremalPort) {
-	ZstServerAddress server_address("detected_server", "");
+	ZstServerAddress server_address{ "detected_server", "" };
 	auto detected_server = std::make_shared< ShowtimeServer>();
 	detected_server->init(server_address.name);
 	WAIT_UNTIL_STAGE_BEACON

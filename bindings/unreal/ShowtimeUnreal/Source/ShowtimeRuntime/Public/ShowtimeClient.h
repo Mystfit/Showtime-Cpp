@@ -85,6 +85,7 @@ public:
 	void LeaveServer();
 
 	virtual void BeginPlay() override;
+	virtual void BeginDestroy() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
