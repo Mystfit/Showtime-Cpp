@@ -6,12 +6,16 @@
 
 namespace showtime {
 
-	class ZST_CLASS_EXPORTED ZstPluginAdaptor :
-		public ZstEventAdaptor<ZstPluginAdaptor>
+	class ZST_CLASS_EXPORTED ZstPluginAdaptor
+#ifndef SWIG
+		: public inheritable_enable_shared_from_this< ZstPluginAdaptor >
+#endif
 	{
 	public:
 		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, plugin_loaded, std::shared_ptr<ZstPlugin>, plugin)
 		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, plugin_unloaded, std::shared_ptr<ZstPlugin>, plugin)
+
+		ZST_EXPORT virtual ~ZstPluginAdaptor() {};
 	};
 
 }

@@ -8,6 +8,7 @@ namespace showtime {
 
 	%ignore ZstBundle::begin;
 	%ignore ZstBundle::end;
+	%ignore ZstBundle::operator[];
 }
 
 %include <showtime/ZstBundle.hpp>

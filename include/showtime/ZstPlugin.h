@@ -6,8 +6,8 @@
 
 // A plugin is a collection of factories and entities that are loaded at runtime
 
-namespace showtime {
-
+namespace showtime 
+{
 	class ZST_CLASS_EXPORTED ZstPlugin {
 	public:
 		virtual void init() = 0;

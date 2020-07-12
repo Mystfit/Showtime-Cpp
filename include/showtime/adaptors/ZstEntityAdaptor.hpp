@@ -7,8 +7,10 @@ namespace showtime {
     
 class ZstEntityBase;
 
-class ZST_CLASS_EXPORTED ZstEntityAdaptor : 
-	public ZstEventAdaptor<ZstEntityAdaptor>
+class ZST_CLASS_EXPORTED ZstEntityAdaptor
+#ifndef SWIG
+	: public inheritable_enable_shared_from_this< ZstEntityAdaptor >
+#endif
 {
 public:
 	MULTICAST_DELEGATE_OneParam(ZST_CLIENT_EXPORT, entity_registered, ZstEntityBase*, entity)
@@ -16,6 +18,7 @@ public:
 	MULTICAST_DELEGATE_OneParam(ZST_CLIENT_EXPORT, disconnect_cable, const ZstCableAddress&, cable)
 
 	// ------
+	virtual ~ZstEntityAdaptor() {};
 
 	ZST_EXPORT virtual void publish_entity_update(ZstEntityBase * entity, const ZstURI & original_path);
 	ZST_EXPORT virtual void request_entity_registration(ZstEntityBase* entity);

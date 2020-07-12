@@ -49,7 +49,7 @@ swig_add_library(${PYTHON_TARGET_WRAPPER}
     SOURCES ${MASTER_PYTHON_SWIG_INTERFACE}
 )
 
-separate_arguments(SWIG_ARGS UNIX_COMMAND "-v -macroerrors -nodirprot -directors -I${CMAKE_CURRENT_LIST_DIR}")
+separate_arguments(SWIG_ARGS UNIX_COMMAND "-v -macroerrors -nodirprot -directors -Wall -I${CMAKE_CURRENT_LIST_DIR}")
 set_target_properties(${PYTHON_TARGET_WRAPPER} PROPERTIES 
     SWIG_USE_TARGET_INCLUDE_DIRECTORIES TRUE
     SWIG_SUPPORT_FILES_DIRECTORY ${SWIG_LANGUAGE_DIR}

@@ -31,5 +31,13 @@
 
 %rename("%(strip:[zst_])s") "";
 
-%include <showtime/Showtime.h>
+template <typename T>
+class std::enable_shared_from_this{};
+%template(ShowtimeClientShared) std::enable_shared_from_this<showtime::ShowtimeClient>;
+%template(ShowtimeServerShared) std::enable_shared_from_this<showtime::ShowtimeServer>;
+
+%ignore std::enable_shared_from_this<ShowtimeClient>;
+%ignore std::enable_shared_from_this<ShowtimeServer>;
+
+%include <showtime/ShowtimeClient.h>
 %include <showtime/ShowtimeServer.h>

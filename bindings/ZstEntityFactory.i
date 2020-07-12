@@ -1,5 +1,7 @@
 namespace showtime{
 	class Factory;
+	class FactoryData;
+	%template(ZstSerialisableFactory) ZstSerialisable<Factory, FactoryData>;
 
 	%feature("director") ZstEntityFactory;
 	%feature("nodirector") ZstEntityFactory::add_adaptor;
@@ -9,19 +11,19 @@ namespace showtime{
 	%feature("nodirector") ZstEntityFactory::factory_events;
 	%ignore ZstEntityFactory::factory_events;
 	%feature("nodirector") ZstEntityFactory::create_entity;
-	%feature("nodirector") ZstEntityFactory::serialize_partial;
-	%feature("nodirector") ZstEntityFactory::serialize;
-	%feature("nodirector") ZstEntityFactory::deserialize;
-	%feature("nodirector") ZstEntityFactory::deserialize_partial;
+	//%feature("nodirector") ZstEntityFactory::serialize_partial;
+	//%feature("nodirector") ZstEntityFactory::serialize;
+	//%feature("nodirector") ZstEntityFactory::deserialize;
+	//%feature("nodirector") ZstEntityFactory::deserialize_partial;
 
-	%nodefaultctor ZstEntityFactory;
-	%template(ZstSerialisableFactory) ZstSerialisable<Factory, FactoryData>;
+	//%nodefaultctor ZstEntityFactory;
+	%ignore ZstEntityFactory::detail;
 
-	%ignore ZstEntityFactory::ZstEntityFactory(Factory);
-	%ignore ZstEntityFactory::serialize;
-	%ignore ZstEntityFactory::deserialize;
-	%ignore ZstEntityFactory::serialize_partial;
-	%ignore ZstEntityFactory::deserialize_partial;
+	//%ignore ZstEntityFactory::ZstEntityFactory(Factory);
+	//%ignore ZstEntityFactory::serialize;
+	//%ignore ZstEntityFactory::deserialize;
+	//%ignore ZstEntityFactory::serialize_partial;
+	//%ignore ZstEntityFactory::deserialize_partial;
 }
 
 

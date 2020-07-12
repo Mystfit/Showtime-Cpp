@@ -29,7 +29,9 @@ enum ZST_CLASS_EXPORTED class ZstPlugDirection {
 };
 
 class ZST_CLASS_EXPORTED ZstPlug :
+#ifndef SWIG
 	public virtual ZstSerialisable<Plug, PlugData>,
+#endif
     public ZstEntityBase
 {
 public:

@@ -11,7 +11,10 @@ namespace showtime {
     }
 
 
-class ZST_CLASS_EXPORTED ShowtimeClient : private std::enable_shared_from_this<ShowtimeClient>
+class ZST_CLASS_EXPORTED ShowtimeClient 
+#ifndef SWIG
+	: public std::enable_shared_from_this<ShowtimeClient>
+#endif
 {
 public:
     ZST_CLIENT_EXPORT ShowtimeClient();

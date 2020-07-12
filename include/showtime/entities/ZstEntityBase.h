@@ -46,8 +46,10 @@ enum class ZstEntityType {
 
 
 class ZST_CLASS_EXPORTED ZstEntityBase :
-    public ZstSynchronisable,
-    public virtual ZstSerialisable<Entity, EntityData>
+#ifndef SWIG
+    public virtual ZstSerialisable<Entity, EntityData>,
+#endif
+    public ZstSynchronisable
 {
     friend class ZstEntityLiason;
 

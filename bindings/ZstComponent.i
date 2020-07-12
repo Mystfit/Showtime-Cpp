@@ -1,20 +1,22 @@
 namespace showtime {
-	%feature("director") ZstComponent;
+	class Component;
+	class ComponentData;
+	%template(ZstSerialisableComponent) ZstSerialisable<Component, ComponentData>;
 
+	%feature("director") ZstComponent;
 	%feature("nodirector") ZstComponent::add_adaptor;
 	%feature("nodirector") ZstComponent::remove_adaptor;
 	%feature("nodirector") ZstComponent::serialize_partial;
 	%feature("nodirector") ZstComponent::serialize;
 	%feature("nodirector") ZstComponent::deserialize;
 	%feature("nodirector") ZstComponent::deserialize_partial;
-	%nodefaultctor ZstComponent;
-	%template(ZstSerialisableComponent) ZstSerialisable<Component, ComponentData>;
+	//%nodefaultctor ZstComponent;
 
 	//%ignore ZstComponent::ZstComponent(Component);
-	%ignore ZstComponent::serialize;
-	%ignore ZstComponent::deserialize;
-	%ignore ZstComponent::serialize_partial;
-	%ignore ZstComponent::deserialize_partial;
+	//%ignore ZstComponent::serialize;
+	//%ignore ZstComponent::deserialize;
+	//%ignore ZstComponent::serialize_partial;
+	//%ignore ZstComponent::deserialize_partial;
 }
 
 %inline %{

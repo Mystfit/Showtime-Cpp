@@ -7,12 +7,8 @@ namespace showtime {
 	%ignore ZstCableAddressHash;
 	%ignore ZstCableAddressEq;
 
+	class Cable;
 	%ignore ZstCableAddress::ZstCableAddress(Cable);
-	%ignore ZstCableAddress::serialize;
-	%ignore ZstCableAddress::deserialize;
-	%ignore ZstCableAddress::serialize_partial;
-	%ignore ZstCableAddress::deserialize_partial;
-
 }
 
 %include <showtime/ZstCableAddress.h>

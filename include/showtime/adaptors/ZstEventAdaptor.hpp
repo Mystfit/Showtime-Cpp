@@ -33,8 +33,8 @@ class ZST_CLASS_EXPORTED ZstEventAdaptor : public inheritable_enable_shared_from
 {
 	//friend class ZstEventDispatcherTyped<T>;
 public:
-	ZstEventAdaptor() {}
-	virtual ~ZstEventAdaptor() {
+	ZST_EXPORT ZstEventAdaptor() {}
+	ZST_EXPORT virtual ~ZstEventAdaptor() {
 		//auto sources = m_event_sources;
 		/*for (auto source : m_event_sources) {
 			if (auto src = source.lock())

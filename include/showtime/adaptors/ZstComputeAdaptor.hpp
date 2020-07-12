@@ -6,10 +6,14 @@
 #include <showtime/adaptors/ZstEventAdaptor.hpp>
 
 namespace showtime {
-	class ZST_CLASS_EXPORTED ZstComputeAdaptor : 
-		public ZstEventAdaptor<ZstComputeAdaptor>
+	class ZST_CLASS_EXPORTED ZstComputeAdaptor 
+#ifndef SWIG
+		: public inheritable_enable_shared_from_this< ZstComputeAdaptor >
+#endif
 	{
 	public:
 		MULTICAST_DELEGATE_TwoParams(ZST_EXPORT, compute, ZstComponent*, component, ZstInputPlug*, plug)
+
+		virtual ~ZstComputeAdaptor() {};
 	};
 }

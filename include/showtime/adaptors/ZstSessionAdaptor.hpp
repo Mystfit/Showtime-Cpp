@@ -11,14 +11,18 @@ namespace showtime {
 class ZstEntityBase;
 class ZstCable;
 
-class ZST_CLASS_EXPORTED ZstSessionAdaptor : 
-	public ZstEventAdaptor<ZstSessionAdaptor>
+class ZST_CLASS_EXPORTED ZstSessionAdaptor
+#ifndef SWIG
+	: public inheritable_enable_shared_from_this< ZstSessionAdaptor >
+#endif
 {
 public:
 	MULTICAST_DELEGATE_OneParam(ZST_EXPORT, cable_created, ZstCable*, cable)
 	MULTICAST_DELEGATE_OneParam(ZST_EXPORT, cable_destroyed, const ZstCableAddress&, cable_address)
     
 	//----
+
+	ZST_EXPORT virtual ~ZstSessionAdaptor() {};
 
     ZST_EXPORT virtual ZstCableBundle & get_cables(ZstCableBundle & bundle);
     ZST_EXPORT virtual ZstCable * find_cable(const ZstCableAddress & address);

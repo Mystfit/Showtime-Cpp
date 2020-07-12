@@ -18,8 +18,10 @@ typedef std::shared_ptr<ZstEntityBase> ZstSharedEntity;
 typedef std::function< std::unique_ptr<ZstEntityBase>(const char*) > ZstEntityCreatorFunc;
 
 class ZST_CLASS_EXPORTED ZstEntityFactory :
-	public ZstEntityBase,
-	public virtual ZstSerialisable<Factory, FactoryData>
+#ifndef SWIG
+	public virtual ZstSerialisable<Factory, FactoryData>,
+#endif
+	public ZstEntityBase
 {
 	using ZstEntityBase::add_adaptor;
 	using ZstEntityBase::remove_adaptor;

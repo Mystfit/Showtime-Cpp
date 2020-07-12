@@ -4,10 +4,10 @@ namespace showtime {
     %ignore ZstPlug::begin;
     %ignore ZstPlug::end;
     %ignore ZstPlug::raw_value;
-    %nodefaultctor ZstPlug;
+    //%nodefaultctor ZstPlug;
 
-    %template(ZstSerialisableCable) ZstSerialisable<Plug, PlugData>;
-
+    class Plug;
+    class PlugData;
     %ignore ZstPlug::ZstPlug(Plug);
     %ignore ZstOutputPlug::ZstOutputPlug(Plug);
     %ignore ZstInputPlug::ZstInputPlug(Plug);
@@ -16,7 +16,7 @@ namespace showtime {
     %ignore ZstPlug::deserialize;
     %ignore ZstPlug::serialize_partial;
     %ignore ZstPlug::deserialize_partial;
-    %ignore PlugValueData;
+    //%ignore PlugValueData;
 }
 
 %inline %{

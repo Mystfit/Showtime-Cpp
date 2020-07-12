@@ -12,8 +12,10 @@ namespace showtime {
 	class ZstPlug;
 	class ZstEntityFactory;
 
-	class ZST_CLASS_EXPORTED ZstHierarchyAdaptor : 
-		public ZstEventAdaptor<ZstHierarchyAdaptor>
+	class ZST_CLASS_EXPORTED ZstHierarchyAdaptor
+#ifndef SWIG
+		: public inheritable_enable_shared_from_this< ZstHierarchyAdaptor >
+#endif
 	{
 	public:
 		// Outgoing events
@@ -27,6 +29,7 @@ namespace showtime {
 
 
 		// Interface events 
+		ZST_EXPORT virtual ~ZstHierarchyAdaptor() {};
 
 		ZST_EXPORT virtual void activate_entity(ZstEntityBase* entity, const ZstTransportRequestBehaviour& sendtype);
 		ZST_EXPORT virtual void deactivate_entity(ZstEntityBase* entity, const ZstTransportRequestBehaviour& sendtype);

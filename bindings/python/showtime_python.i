@@ -1,8 +1,8 @@
 %module(directors="1") showtime
 %{
-	#include <showtime/Showtime.h>
+	#include <showtime/ShowtimeClient.h>
 	#include <showtime/ShowtimeServer.h>
-	#include <showtime/schemas/graph_types_generated.h>
+	#include <showtime/schemas/messaging/graph_types_generated.h>
 	using namespace showtime;
 %}
 %feature("autodoc", "1");

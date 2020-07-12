@@ -5,7 +5,11 @@
 
 namespace showtime {
 
-class ZstCableAddress : public ZstSerialisable<Cable, CableData> {
+class ZstCableAddress
+#ifndef SWIG
+    : public ZstSerialisable<Cable, CableData>
+#endif
+{
 public:
     ZST_EXPORT ZstCableAddress();
     ZST_EXPORT ZstCableAddress(const ZstURI & input_URI, const ZstURI & output_URI);
@@ -28,12 +32,12 @@ public:
     ZST_EXPORT const ZstURI & get_output_URI() const;
     
     //Serialisation
-    
+#ifndef SWIG
     ZST_EXPORT virtual flatbuffers::uoffset_t serialize(flatbuffers::FlatBufferBuilder & buffer_builder) const override;
     ZST_EXPORT virtual void serialize_partial(flatbuffers::Offset<CableData> & serialized_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
-
     ZST_EXPORT virtual void deserialize(const Cable* buffer) override;
     ZST_EXPORT virtual void deserialize_partial(const CableData* buffer) override;
+#endif
 	ZST_EXPORT std::string to_string() const;
     
 private:

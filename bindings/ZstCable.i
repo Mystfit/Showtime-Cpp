@@ -8,12 +8,10 @@ namespace showtime {
 	%ignore ZstCableEq;
 	%ignore ZstCableHash;
 	%ignore ZstCableCompare;
-	%ignore ZstCable::serialize;
-	%ignore ZstCable::deserialize;
-	%ignore ZstCable::serialize_partial;
-	%ignore ZstCable::deserialize_partial;
-
-	%template(ZstSerialisableCable) ZstSerialisable<Cable, CableData>;
+	//%ignore ZstCable::serialize;
+	//%ignore ZstCable::deserialize;
+	//%ignore ZstCable::serialize_partial;
+	//%ignore ZstCable::deserialize_partial;
 }
 
 %include <showtime/ZstCable.h>

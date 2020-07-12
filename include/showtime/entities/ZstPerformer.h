@@ -12,7 +12,9 @@
 namespace showtime
 {
 class ZST_CLASS_EXPORTED ZstPerformer :
+#ifndef SWIG
 	public virtual ZstSerialisable<Performer, PerformerData>,
+#endif
     public ZstComponent
 {
 public:
