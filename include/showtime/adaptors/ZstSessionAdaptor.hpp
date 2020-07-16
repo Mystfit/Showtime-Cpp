@@ -22,8 +22,6 @@ public:
     
 	//----
 
-	ZST_EXPORT virtual ~ZstSessionAdaptor() {};
-
     ZST_EXPORT virtual ZstCableBundle & get_cables(ZstCableBundle & bundle);
     ZST_EXPORT virtual ZstCable * find_cable(const ZstCableAddress & address);
 	ZST_EXPORT virtual void destroy_cable(ZstCable* cable);

@@ -122,7 +122,7 @@ namespace showtime {
             //Module adaptor overrides
             virtual void on_entity_arriving(ZstEntityBase * entity) override;
             virtual void on_performer_arriving(ZstPerformer* performer) override;
-            virtual void on_plugin_loaded(std::shared_ptr<ZstPlugin> plugin) override;
+            virtual void on_plugin_loaded(ZstPlugin* plugin) override;
 
             // Plug initialization
             void init_arriving_plug(ZstPlug* plug);

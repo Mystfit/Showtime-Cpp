@@ -13,7 +13,5 @@ namespace showtime {
 	{
 	public:
 		MULTICAST_DELEGATE_TwoParams(ZST_EXPORT, compute, ZstComponent*, component, ZstInputPlug*, plug)
-
-		virtual ~ZstComputeAdaptor() {};
 	};
 }

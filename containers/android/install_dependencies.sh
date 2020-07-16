@@ -6,9 +6,10 @@ echo "Building dependencies"
 echo "Building libsodium"
 git clone https://github.com/jedisct1/libsodium < /dev/null > /dev/null
 git -C ./czmq libsodium stable
-cd ./libsodium
+pushd ./libsodium
 ./configure
 make && make install
+popd
 
 # ZEROMQ
 # ------
@@ -25,6 +26,7 @@ cmake --build ./libzmq/build -j $VM_CPU_COUNT --target install
 # CZMQ
 # ----
 echo "Building CZMQ"
+echo "Current path is $PWD"
 git clone https://github.com/mystfit/czmq.git < /dev/null > /dev/null
 git -C ./czmq checkout android-fixes
 mkdir -p ./czmq/build
@@ -61,8 +63,8 @@ cmake --build ./fmt/build -j $VM_CPU_COUNT --target install > /dev/null
 # -----
 echo "Building Boost"
 git clone https://github.com/mystfit/Boost-for-Android.git < /dev/null > /dev/null
-cd ./Boost-for-Android
+pushd ./Boost-for-Android
 BOOST_LIBS="log,thread,system,context,fiber,date_time,chrono,atomic,regex,test"
 echo "Building boost for android $ANDROID_BOOST_VER"
 ./build-android.sh --boost=$ANDROID_BOOST_VER --layout=versioned --with-libraries=$BOOST_LIBS --arch=$ANDROID_ABI --prefix=$ANDROID_NDK_SYSROOT $ANDROID_NDK_ROOT > /dev/null
-cd ..
+popd

@@ -812,7 +812,7 @@ void ZstClient::on_performer_arriving(ZstPerformer* performer)
     on_entity_arriving(performer);
 }
 
-void ZstClient::on_plugin_loaded(std::shared_ptr<ZstPlugin> plugin)
+void ZstClient::on_plugin_loaded(ZstPlugin* plugin)
 {
     ZstEntityFactoryBundle bundle;
     plugin->get_factories(bundle);

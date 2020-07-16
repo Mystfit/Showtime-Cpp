@@ -13,8 +13,6 @@ class ZST_CLASS_EXPORTED ZstFactoryAdaptor
 public:
 	MULTICAST_DELEGATE_OneParam(ZST_EXPORT, creatables_updated, ZstEntityFactory*, factory)
 	MULTICAST_DELEGATE_OneParam(ZST_EXPORT, entity_created, ZstEntityBase*, entity)
-	
-	ZST_EXPORT virtual ~ZstFactoryAdaptor() {};
 };
 
 }

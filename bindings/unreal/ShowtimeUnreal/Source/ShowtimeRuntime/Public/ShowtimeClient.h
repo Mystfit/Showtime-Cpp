@@ -78,11 +78,12 @@ public:
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime Client")
 	void JoinServerByName(const FString& name);
 
-	//UFUNCTION(BlueprintCallable, Exec, Category = "Showtime Client")
-	//void JoinServerByAddress(const FIPv4Address& address);
-
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime Client")
 	void LeaveServer();
+
+	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime Client")
+	bool IsConnected();
+
 
 	virtual void BeginPlay() override;
 	virtual void BeginDestroy() override;

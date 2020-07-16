@@ -58,9 +58,9 @@ Vagrant.configure("2") do |config|
     sudo chown vagrant $SHOWTIME_BUILD
     sudo mkdir -p $ANDROID_HOME
   SHELL
-  config.vm.provision :shell, env: env, path: "${CMAKE_SOURCE_DIR}/containers/android/install_packages.sh"
-  config.vm.provision :shell, env: env, path: "${CMAKE_SOURCE_DIR}/containers/android/install_dependencies.sh"
-  config.vm.provision :shell, env: env, path: "${CMAKE_SOURCE_DIR}/containers/android/configure_showtime.sh"
-  config.vm.provision :shell, env: env, run: 'always', path: "${CMAKE_SOURCE_DIR}/containers/android/build_showtime.sh"
+  config.vm.provision "packages", type: "shell", env: env, path: "${CMAKE_SOURCE_DIR}/containers/android/install_packages.sh"
+  config.vm.provision "dependencies", type: "shell", env: env, path: "${CMAKE_SOURCE_DIR}/containers/android/install_dependencies.sh"
+  config.vm.provision "configure", type: "shell", env: env, path: "${CMAKE_SOURCE_DIR}/containers/android/configure_showtime.sh"
+  config.vm.provision "build", type: "shell", env: env, run: 'always', path: "${CMAKE_SOURCE_DIR}/containers/android/build_showtime.sh"
 end
 

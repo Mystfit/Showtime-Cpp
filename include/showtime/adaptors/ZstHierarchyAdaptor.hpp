@@ -29,8 +29,6 @@ namespace showtime {
 
 
 		// Interface events 
-		ZST_EXPORT virtual ~ZstHierarchyAdaptor() {};
-
 		ZST_EXPORT virtual void activate_entity(ZstEntityBase* entity, const ZstTransportRequestBehaviour& sendtype);
 		ZST_EXPORT virtual void deactivate_entity(ZstEntityBase* entity, const ZstTransportRequestBehaviour& sendtype);
 		ZST_EXPORT virtual ZstEntityBase* find_entity(const ZstURI& path) const;

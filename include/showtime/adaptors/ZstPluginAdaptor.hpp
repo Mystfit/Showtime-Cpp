@@ -12,10 +12,8 @@ namespace showtime {
 #endif
 	{
 	public:
-		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, plugin_loaded, std::shared_ptr<ZstPlugin>, plugin)
-		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, plugin_unloaded, std::shared_ptr<ZstPlugin>, plugin)
-
-		ZST_EXPORT virtual ~ZstPluginAdaptor() {};
+		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, plugin_loaded, ZstPlugin*, plugin)
+		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, plugin_unloaded, ZstPlugin*, plugin)
 	};
 
 }

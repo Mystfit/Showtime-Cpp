@@ -83,7 +83,7 @@ namespace showtime {
 
 			// Defer plugin loaded event
 			m_plugin_events->defer([plugin](ZstPluginAdaptor* adp) {
-				adp->on_plugin_loaded(plugin);
+				adp->on_plugin_loaded(plugin.get());
 			});
 			Log::net(Log::Level::debug, "Loaded plugin {} {}.{}.{}", plugin->name(), plugin->version_major(), plugin->version_minor(), plugin->version_patch());
 		}

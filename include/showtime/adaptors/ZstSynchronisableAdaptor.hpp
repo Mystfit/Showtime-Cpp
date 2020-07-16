@@ -20,7 +20,6 @@ public:
 	MULTICAST_DELEGATE_OneParam(ZST_EXPORT, synchronisable_updated, ZstSynchronisable*, synchronisable)
 
 	// ------
-	ZST_EXPORT virtual ~ZstSynchronisableAdaptor() {};
 
 	ZST_EXPORT virtual void synchronisable_has_event(ZstSynchronisable * synchronisable);
 };
