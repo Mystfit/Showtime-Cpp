@@ -68,6 +68,7 @@ class UShowtimeClient : public UActorComponent
 public:
 
 	UShowtimeClient();
+	void Cleanup();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Showtime Client")
 	FString ClientName;

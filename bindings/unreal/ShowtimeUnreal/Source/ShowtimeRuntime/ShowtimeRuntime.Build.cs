@@ -29,12 +29,16 @@ public class ShowtimeRuntime : ModuleRules
 			Path.Combine(ModuleDirectory, "Public"),
 			Path.Combine(PluginDirectory, "external", "include")
 		});
-		PrivateIncludePaths.Add(Path.Combine(ModuleDirectory, "Private"));
+		PrivateIncludePaths.AddRange( new string[] {
+			//"/Source/Runtime/Launch/Private",
+			Path.Combine(ModuleDirectory, "Private")
+		});
 		PublicDependencyModuleNames.AddRange(
 			new string[] {
 				"Core",
 				"CoreUObject",
-				"Engine"
+				"Engine",
+				"Launch"
 		});
 		PrivateDependencyModuleNames.AddRange(new string[] { "Core" });
 

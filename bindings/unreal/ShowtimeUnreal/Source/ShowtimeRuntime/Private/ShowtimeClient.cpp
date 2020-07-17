@@ -1,6 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-
 #include "ShowtimeClient.h"
+
+#ifdef PLATFORM_ANDROID
+#include "MulticastAndroid.h"
+#endif
 #include <functional>
 
 DEFINE_LOG_CATEGORY(Showtime);
@@ -8,23 +11,32 @@ DEFINE_LOG_CATEGORY(Showtime);
 UShowtimeClient::UShowtimeClient()
 {
 	PrimaryComponentTick.bCanEverTick = true;
+#if PLATFORM_ANDROID
+	MulticastAndroid::InitMulticastFunctions();
+#endif
+}
+
+void UShowtimeClient::Cleanup()
+{
+	RemoveEvents();
+#if PLATFORM_ANDROID
+	MulticastAndroid::ReleaseMulticastLock();
+#endif
+	if (client) client->destroy();
 }
 
 void UShowtimeClient::Init()
 {
 	if (client) client->init(TCHAR_TO_UTF8(*ClientName), true);
+#if PLATFORM_ANDROID
+	MulticastAndroid::AcquireMulticastLock();
+#endif
 }
 
 void UShowtimeClient::JoinServerByName(const FString& name)
 {
 	if (client) client->auto_join_by_name_async(TCHAR_TO_UTF8(*name));
 }
-
-//void UShowtimeClient::JoinServerByAddress(const FIPv4Address& address)
-//{
-//	auto ip = address.ToText().ToString();
-//	this->join(TCHAR_TO_UTF8(*ip));
-//}
 
 void UShowtimeClient::LeaveServer()
 {
@@ -46,14 +58,13 @@ void UShowtimeClient::BeginPlay()
 void UShowtimeClient::BeginDestroy()
 {
 	Super::BeginDestroy();
-	if(client) client->destroy();
+	Cleanup();
 }
 
 void UShowtimeClient::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
-	RemoveEvents();
-	if (client) client->destroy();
+	Cleanup();
 }
 
 TSharedPtr<ShowtimeClient>& UShowtimeClient::Handle()

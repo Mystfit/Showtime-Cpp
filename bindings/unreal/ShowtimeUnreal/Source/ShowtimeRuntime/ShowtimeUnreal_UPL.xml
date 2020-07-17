@@ -8,13 +8,70 @@
 		<isArch arch="arm64-v8a">
 			<setBool result="bSupported" value="true"/>
 		</isArch>
-		
-		<if condition="bSupported">
-			<false>
-				<log text="WARNING: this architecture is not supported for libshowtime.so!"/>
-			</false>
-		</if>
 	</init>
+  <gameActivityImportAdditions>
+    <insert>
+      import android.net.wifi.WifiManager;
+      import android.net.wifi.WifiInfo;
+      import android.net.DhcpInfo;
+      import android.net.wifi.WifiManager.MulticastLock;
+    </insert>
+  </gameActivityImportAdditions>
+  <gameActivityClassAdditions>
+    <insert>
+      <![CDATA[
+          /**
+          * Get IP address from wifi adapter
+          */
+          public int Sockets_GetIP() {
+              final WifiManager wm = (WifiManager) getSystemService("wifi");
+              return wm.getConnectionInfo().getIpAddress();
+          }
+
+          /**
+          * Get Broadcast IP address from wifi adapter
+          */
+          public int Sockets_GetBroadcastIP() {
+              final WifiManager wm = (WifiManager) getSystemService("wifi");
+
+              DhcpInfo dhcp = wm.getDhcpInfo();
+              if(dhcp == null) return 0;
+
+              final int broadcast = (dhcp.ipAddress & dhcp.netmask) | ~dhcp.netmask;
+              return broadcast;
+          }
+
+          static MulticastLock multicastLock = null;
+
+          /**
+          * Aquire a MulticastLock
+          */
+          public void Sockets_AcquireMulticastLock() {
+              if(multicastLock == null) {
+                  /* First time initialization of lock */
+                  final WifiManager wm = (WifiManager) getSystemService("wifi");
+                  multicastLock = wm.createMulticastLock("UE4-multicastlock");
+                  multicastLock.setReferenceCounted(true);
+              }
+
+              /* Increment reference count */
+              multicastLock.acquire();
+          }
+
+          /**
+          * Release a MulticastLock
+          */
+          public void Sockets_ReleaseMulticastLock() {
+              if(multicastLock == null || !multicastLock.isHeld()) return;
+
+              /* Decrements reference count */
+              multicastLock.release();
+          }
+
+      ]]>
+    </insert>
+  </gameActivityClassAdditions>
+    
 
 	<!-- optional files or directories to copy to Intermediate/Android/APK -->
 	<resourceCopies>
