@@ -281,17 +281,20 @@ foreach(FILE ${FLATBUFFER_HEADER_SRC})
 endforeach()
 
 # Copy delegate headers
-# file(COPY ${Showtime_SUBMODULE_DEPENDENCIES_DIR}/delegates/include/delegate.h DESTINATION ${Showtime_COMPILED_INCLUDE_DIRS}/showtime)
 file(COPY ${Showtime_SUBMODULE_DEPENDENCIES_DIR}/multifunction/multicast.hpp DESTINATION ${Showtime_COMPILED_INCLUDE_DIRS}/showtime)
 
+# Set up private targets and vars
 set(SHOWTIME_PRIVATE_STATIC_LINKED_LIBS
     czmq-static
     libzmq-static
 )
-
 set(SHOWTIME_PRIVATE_SHARED_LINKED_LIBS
     czmq
     libzmq
+)
+set(SHOWTIME_PRIVATE_DEFS
+    CZMQ_BUILD_DRAFT_API
+    ZMQ_BUILD_DRAFT_API
 )
 
 # Flags to allow for PDB files in release builds
@@ -416,6 +419,7 @@ if(BUILD_SHARED_FROM_STATIC_LIBS)
         ZST_EXPORT_CORE_API 
         ZST_EXPORT_PLUGIN_API
         ZST_EXPORT_SERVER_API
+        ${SHOWTIME_PRIVATE_DEFS}
         CZMQ_STATIC
         ZMQ_STATIC
     )

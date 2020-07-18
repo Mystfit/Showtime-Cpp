@@ -15,59 +15,67 @@
       import android.net.wifi.WifiInfo;
       import android.net.DhcpInfo;
       import android.net.wifi.WifiManager.MulticastLock;
+      import android.util.Log;
     </insert>
   </gameActivityImportAdditions>
+  <androidManifestUpdates>
+    <addPermission android:name="android.permission.INTERNET"  />
+    <addPermission android:name="android.permission.ACCESS_WIFI_STATE"  />
+    <addPermission android:name="android.permission.ACCESS_NETWORK_STATE"  />
+    <addPermission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"  />
+  </androidManifestUpdates>
   <gameActivityClassAdditions>
     <insert>
       <![CDATA[
-          /**
-          * Get IP address from wifi adapter
-          */
-          public int Sockets_GetIP() {
+      /**
+      * Get IP address from wifi adapter
+      */
+      public int Sockets_GetIP() {
+          final WifiManager wm = (WifiManager) getSystemService("wifi");
+          return wm.getConnectionInfo().getIpAddress();
+      }
+
+      /**
+      * Get Broadcast IP address from wifi adapter
+      */
+      public int Sockets_GetBroadcastIP() {
+          final WifiManager wm = (WifiManager) getSystemService("wifi");
+
+          DhcpInfo dhcp = wm.getDhcpInfo();
+          if(dhcp == null) return 0;
+
+          final int broadcast = (dhcp.ipAddress & dhcp.netmask) | ~dhcp.netmask;
+          return broadcast;
+      }
+
+      static MulticastLock multicastLock = null;
+
+      /**
+      * Aquire a MulticastLock
+      */
+      public void Sockets_AcquireMulticastLock() {
+          if(multicastLock == null) {
+              /* First time initialization of lock */
               final WifiManager wm = (WifiManager) getSystemService("wifi");
-              return wm.getConnectionInfo().getIpAddress();
+              multicastLock = wm.createMulticastLock("UE4-multicastlock");
+              multicastLock.setReferenceCounted(true);
           }
+          Log.debug("Inside Java Sockets_AcquireMulticastLock");
 
-          /**
-          * Get Broadcast IP address from wifi adapter
-          */
-          public int Sockets_GetBroadcastIP() {
-              final WifiManager wm = (WifiManager) getSystemService("wifi");
+          /* Increment reference count */
+          multicastLock.acquire();
+          Log.debug("Multicast lock held? " + multicastLock.isHeld());
+      }
 
-              DhcpInfo dhcp = wm.getDhcpInfo();
-              if(dhcp == null) return 0;
+      /**
+      * Release a MulticastLock
+      */
+      public void Sockets_ReleaseMulticastLock() {
+          if(multicastLock == null || !multicastLock.isHeld()) return;
 
-              final int broadcast = (dhcp.ipAddress & dhcp.netmask) | ~dhcp.netmask;
-              return broadcast;
-          }
-
-          static MulticastLock multicastLock = null;
-
-          /**
-          * Aquire a MulticastLock
-          */
-          public void Sockets_AcquireMulticastLock() {
-              if(multicastLock == null) {
-                  /* First time initialization of lock */
-                  final WifiManager wm = (WifiManager) getSystemService("wifi");
-                  multicastLock = wm.createMulticastLock("UE4-multicastlock");
-                  multicastLock.setReferenceCounted(true);
-              }
-
-              /* Increment reference count */
-              multicastLock.acquire();
-          }
-
-          /**
-          * Release a MulticastLock
-          */
-          public void Sockets_ReleaseMulticastLock() {
-              if(multicastLock == null || !multicastLock.isHeld()) return;
-
-              /* Decrements reference count */
-              multicastLock.release();
-          }
-
+          /* Decrements reference count */
+          multicastLock.release();
+      }
       ]]>
     </insert>
   </gameActivityClassAdditions>

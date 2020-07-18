@@ -60,6 +60,9 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCableDestroyed, const UShowtimeCabl
 //DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPluginUnloaded, std::shared_ptr<ZstPlugin>, plugin)
 
 
+// Forward declarations
+class MulticastAndroid;
+
 
 UCLASS(ClassGroup = (Showtime), meta = (BlueprintSpawnableComponent))
 class UShowtimeClient : public UActorComponent
@@ -168,7 +171,9 @@ public:
 private:
 	void AttachEvents();
 	void RemoveEvents();
-
+#if PLATFORM_ANDROID
+	TSharedPtr<MulticastAndroid> multicast_manager;
+#endif
 	TSharedPtr<ShowtimeClient> client;
 	std::shared_ptr<ClientAdaptors> client_adaptor;
 };

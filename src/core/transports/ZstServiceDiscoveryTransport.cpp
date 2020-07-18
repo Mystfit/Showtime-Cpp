@@ -27,6 +27,13 @@ void ZstServiceDiscoveryTransport::init(int port)
 
     //Create an actor to handle our zloop
     m_beacon_actor.init("beacon_actor");
+
+    // Set multicast addresses
+    zsys_set_ipv4_mcast_address(CLIENT_MULTICAST_ADDR);
+    zsys_set_interface("*");
+    auto mcast_address = zsys_ipv4_mcast_address();
+    auto iface = zsys_interface();
+    Log::net(Log::Level::debug, "Beacon multicast address is {}. Interface is {}", mcast_address, iface);
     
     //Create beacon actor
     m_beacon = zactor_new(zbeacon, NULL);
@@ -36,7 +43,7 @@ void ZstServiceDiscoveryTransport::init(int port)
         
         zsock_send(m_beacon, "si", "CONFIGURE", port);
         char* hostname = zstr_recv(m_beacon);
-        Log::net(Log::Level::debug, "Beacon transport broadcasting on port {}. Hostname is {}", port, hostname);
+        Log::net(Log::Level::debug, "Beacon transport active on port {}", port, hostname);
         zstr_free(&hostname);
         
         m_beacon_actor.attach_pipe_listener(zactor_sock(m_beacon), s_handle_beacon, this);
@@ -67,12 +74,14 @@ int ZstServiceDiscoveryTransport::s_handle_beacon(zloop_t * loop, zsock_t * sock
 {
     ZstServiceDiscoveryTransport * transport = (ZstServiceDiscoveryTransport*)arg;
     char * ipaddress = zstr_recv(socket);
+    Log::net(Log::Level::debug, "ZstServiceDiscoveryTransport: Received service broadcast");
     if (ipaddress) {
         auto beacon_content = zframe_recv(socket);
         auto msg = transport->get_msg();
         
         auto shared_transport = std::static_pointer_cast<ZstServiceDiscoveryTransport>(transport->shared_from_this());
         msg->init(GetStageBeaconMessage(zframe_data(beacon_content)), ipaddress, shared_transport);
+        Log::net(Log::Level::debug, "ZstServiceDiscoveryTransport: Server is {}", msg->buffer()->name()->str());
 
         // Set the beacon as having a promise (even if it doesn't) to make sure that the release
         // happens AFTER the beacon has finished processing

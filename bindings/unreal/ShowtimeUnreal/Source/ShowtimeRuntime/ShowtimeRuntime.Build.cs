@@ -37,8 +37,7 @@ public class ShowtimeRuntime : ModuleRules
 			new string[] {
 				"Core",
 				"CoreUObject",
-				"Engine",
-				"Launch"
+				"Engine"
 		});
 		PrivateDependencyModuleNames.AddRange(new string[] { "Core" });
 
@@ -100,6 +99,7 @@ public class ShowtimeRuntime : ModuleRules
 			platform_binaries = android_libraries;
 			string PluginPath = Utils.MakePathRelativeTo(ModuleDirectory, Target.RelativeEnginePath);
 			AdditionalPropertiesForReceipt.Add("AndroidPlugin", System.IO.Path.Combine(PluginPath, "ShowtimeUnreal_UPL.xml"));
+			PublicDependencyModuleNames.AddRange(new string[] {"Launch"});
 		}
 		PublicAdditionalLibraries.AddRange(platform_libs);
 

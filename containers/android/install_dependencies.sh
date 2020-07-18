@@ -14,7 +14,7 @@ popd
 # ZEROMQ
 # ------
 echo "Building libZMQ"
-git clone https://github.com/zeromq/libzmq.git < /dev/null > /dev/null
+git clone https://github.com/mystfit/libzmq.git < /dev/null > /dev/null
 mkdir -p ./libzmq/build
 echo "libZMQ configure command line args:"
 echo "cmake -H\"./libzmq\" -B\"./libzmq/build\" $ANDROID_BUILD_FLAGS $COMMON_BUILD_FLAGS -DBUILD_SHARED=OFF -DBUILD_STATIC=ON -DENABLE_DRAFTS=TRUE -DZMQ_BUILD_TESTS=OFF"

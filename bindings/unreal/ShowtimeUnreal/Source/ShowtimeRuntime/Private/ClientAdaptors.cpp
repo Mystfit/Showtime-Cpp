@@ -1,5 +1,8 @@
 #include "ClientAdaptors.h"
 #include "ShowtimeClient.h"
+//#ifdef PLATFORM_ANDROID
+//#include "MulticastAndroid.h"
+//#endif
 
 using namespace showtime;
 
@@ -10,15 +13,22 @@ ClientAdaptors::ClientAdaptors(UShowtimeClient* owner) : Owner(owner)
 void ClientAdaptors::on_connected_to_server(ShowtimeClient* client, const ZstServerAddress* server)
 {
 	Owner->OnConnectedToServer.Broadcast(Owner, FServerAddressFromShowtime(server));
+#if PLATFORM_ANDROID
+	//MulticastAndroid::ReleaseMulticastLock();
+#endif
 }
 
 void ClientAdaptors::on_disconnected_from_server(ShowtimeClient* client, const ZstServerAddress* server)
 {
 	Owner->OnDisconnectedFromServer.Broadcast(Owner, FServerAddressFromShowtime(server));
+#if PLATFORM_ANDROID
+	//MulticastAndroid::AcquireMulticastLock();
+#endif
 }
 
 void ClientAdaptors::on_server_discovered(ShowtimeClient* client, const ZstServerAddress* server)
 {
+	UE_LOG(Showtime, Display, TEXT("Received server beacon %s"), UTF8_TO_TCHAR(server->c_name()));
 	Owner->OnServerDiscovered.Broadcast(Owner, FServerAddressFromShowtime(server));
 }
 

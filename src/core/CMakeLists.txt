@@ -269,6 +269,7 @@ target_compile_definitions(${CORE_TARGET_OBJECTS}
     ZST_EXPORT_CORE_API
     CZMQ_STATIC
     ZMQ_STATIC
+    ${SHOWTIME_PRIVATE_DEFS}
 )
 
 # Generate PDB files for release
