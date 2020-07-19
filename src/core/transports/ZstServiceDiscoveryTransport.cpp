@@ -74,14 +74,12 @@ int ZstServiceDiscoveryTransport::s_handle_beacon(zloop_t * loop, zsock_t * sock
 {
     ZstServiceDiscoveryTransport * transport = (ZstServiceDiscoveryTransport*)arg;
     char * ipaddress = zstr_recv(socket);
-    Log::net(Log::Level::debug, "ZstServiceDiscoveryTransport: Received service broadcast");
     if (ipaddress) {
         auto beacon_content = zframe_recv(socket);
         auto msg = transport->get_msg();
         
         auto shared_transport = std::static_pointer_cast<ZstServiceDiscoveryTransport>(transport->shared_from_this());
         msg->init(GetStageBeaconMessage(zframe_data(beacon_content)), ipaddress, shared_transport);
-        Log::net(Log::Level::debug, "ZstServiceDiscoveryTransport: Server is {}", msg->buffer()->name()->str());
 
         // Set the beacon as having a promise (even if it doesn't) to make sure that the release
         // happens AFTER the beacon has finished processing

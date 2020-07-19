@@ -67,7 +67,8 @@ class Test_PythonExtensions(unittest.TestCase):
     def setUp(self):
         # Client/server
         server_name = "python_server"
-        self.server = ShowtimeServer(server_name)
+        self.server = ShowtimeServer()
+        self.server.init(server_name)
         self.client = ShowtimeClient()
         self.client.init("test_python", True)
 
@@ -129,8 +130,8 @@ class Test_PythonExtensions(unittest.TestCase):
         connected = Mock()
         disconnected = Mock()
         self.client.leave()
-        self.client.connection_events().connected_to_stage.add(connected)
-        self.client.connection_events().disconnected_from_stage.add(disconnected)
+        self.client.connection_events().connected_to_server.add(connected)
+        self.client.connection_events().disconnected_from_server.add(disconnected)
 
         # Join server
         self.client.auto_join_by_name(server_name)
@@ -160,7 +161,8 @@ class Test_Client(unittest.TestCase):
         self.client.connection_events().server_lost.add(lost_handler)
         
         # Start a second server to emit a new beacon
-        server = ZST.ShowtimeServer("discovery_server")
+        server = ZST.ShowtimeServer()
+        server.init("discovery_server")
         
         # Make sure we received the beacon
         time.sleep(1)
@@ -177,7 +179,8 @@ class Test_Client(unittest.TestCase):
 class Test_PythonCallbacks(unittest.TestCase):
     def setUp(self):
         # Client/server
-        self.server = ShowtimeServer(server_name)
+        self.server = ShowtimeServer()
+        self.server.init(server_name)
         self.client = ShowtimeClient()
         self.client.init("test_python", True)
         self.client.auto_join_by_name(server_name)
@@ -216,7 +219,8 @@ class Test_DualClientEvents(unittest.TestCase):
     def setUp(self):
         # Client/server
         self.server_name = "DualClientEvents"
-        self.server = ShowtimeServer(server_name)
+        self.server = ShowtimeServer()
+        self.server.init(server_name)
         self.client = ShowtimeClient()
         self.client.init("test_python", True)
 
