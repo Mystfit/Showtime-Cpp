@@ -2,65 +2,70 @@
 #include <czmq.h>
 #include <sstream>
 
-ZstUDPGraphTransport::ZstUDPGraphTransport()
+namespace showtime 
 {
-}
-
-ZstUDPGraphTransport::~ZstUDPGraphTransport()
-{
-}
-
-void ZstUDPGraphTransport::connect(const std::string & address)
-{
-	if (output_graph_socket()) {
-		ZstLog::net(LogLevel::notification, "Connecting to {}", address);
-		zsock_connect(output_graph_socket(), "%s", address);
+	ZstUDPGraphTransport::ZstUDPGraphTransport()
+	{
 	}
-}
 
-void ZstUDPGraphTransport::bind(const std::string & address)
-{
-	throw(std::runtime_error("bind(): Not implemented"));
-}
+	ZstUDPGraphTransport::~ZstUDPGraphTransport()
+	{
+	}
 
-void ZstUDPGraphTransport::disconnect()
-{
-	throw(std::runtime_error("disconnect_from_client(): Not implemented"));
-}
+	void ZstUDPGraphTransport::connect(const std::string& address)
+	{
+		if (output_graph_socket()) {
+			Log::net(Log::Level::notification, "Connecting to {}", address);
+			zsock_connect(output_graph_socket(), "%s", address);
+		}
+	}
 
-void ZstUDPGraphTransport::init_graph_sockets()
-{
-	//UDP sockets are reversed - graph in needs to bind, graph out connects
-	std::stringstream addr;
-	std::string protocol = "udp";
+	int ZstUDPGraphTransport::bind(const std::string& address)
+	{
+		//throw(std::runtime_error("bind(): Not implemented"));
+		return -1;
+	}
 
-	//Output socket
-	addr << ">" << protocol << "://" << CLIENT_MULTICAST_ADDR << ":" << CLIENT_UNRELIABLE_PORT;
-	zsock_t * graph_out = zsock_new_radio(addr.str().c_str());
-    if(!graph_out){
-        ZstLog::net(LogLevel::error, "Could not create UDP output socket. ZMQ returned {}", std::strerror(zmq_errno()));
-        return;
-    }
-	addr.str("");
+	void ZstUDPGraphTransport::disconnect()
+	{
+		//throw(std::runtime_error("disconnect_from_client(): Not implemented"));
+	}
 
-	//Input socket
-	addr << "@" << protocol << "://" << CLIENT_MULTICAST_ADDR << ":" << CLIENT_UNRELIABLE_PORT;
-	zsock_t * graph_in = zsock_new_dish(addr.str().c_str());
-    if(!graph_in){
-        ZstLog::net(LogLevel::error, "Could not create UDP input socket. ZMQ returned {}", std::strerror(zmq_errno()));
-        return;
-    }
-    
-    zsock_set_linger(graph_out, 0);
-	zsock_set_linger(graph_in, 0);
-	attach_graph_sockets(graph_in, graph_out);
-	zsock_set_rcvbuf(graph_in, 25000000);
+	void ZstUDPGraphTransport::init_graph_sockets()
+	{
+		//UDP sockets are reversed - graph in needs to bind, graph out connects
+		std::stringstream addr;
+		std::string protocol = "udp";
 
-	//Build remote IP
-	addr.str("");
-	addr << protocol << "://" << first_available_ext_ip() << ":" << CLIENT_UNRELIABLE_PORT;
-	set_graph_addresses(addr.str(), "");
+		//Output socket
+		addr << ">" << protocol << "://" << CLIENT_MULTICAST_ADDR << ":" << CLIENT_UNRELIABLE_PORT;
+		zsock_t* graph_out = zsock_new_radio(addr.str().c_str());
+		if (!graph_out) {
+			Log::net(Log::Level::error, "Could not create UDP output socket. ZMQ returned {}", std::strerror(zmq_errno()));
+			return;
+		}
+		addr.str("");
 
-	//Join groups
-	zsock_join(graph_in, PERFORMANCE_GROUP);
+		//Input socket
+		addr << "@" << protocol << "://" << CLIENT_MULTICAST_ADDR << ":" << CLIENT_UNRELIABLE_PORT;
+		zsock_t* graph_in = zsock_new_dish(addr.str().c_str());
+		if (!graph_in) {
+			Log::net(Log::Level::error, "Could not create UDP input socket. ZMQ returned {}", std::strerror(zmq_errno()));
+			return;
+		}
+
+		zsock_set_linger(graph_out, 0);
+		zsock_set_linger(graph_in, 0);
+		attach_graph_sockets(graph_in, graph_out);
+		zsock_set_rcvbuf(graph_in, 25000000);
+
+		//Build remote IP
+		addr.str("");
+		addr << protocol << "://" << first_available_ext_ip() << ":" << CLIENT_UNRELIABLE_PORT;
+		set_graph_addresses(addr.str(), "");
+
+		//Join groups
+		zsock_join(graph_in, PERFORMANCE_GROUP);
+	}
+
 }

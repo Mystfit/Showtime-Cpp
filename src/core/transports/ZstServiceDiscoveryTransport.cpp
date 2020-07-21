@@ -30,7 +30,7 @@ void ZstServiceDiscoveryTransport::init(int port)
 
     // Set multicast addresses
     zsys_set_ipv4_mcast_address(CLIENT_MULTICAST_ADDR);
-    zsys_set_interface("*");
+    //zsys_set_interface("*");
     auto mcast_address = zsys_ipv4_mcast_address();
     auto iface = zsys_interface();
     Log::net(Log::Level::debug, "Beacon multicast address is {}. Interface is {}", mcast_address, iface);

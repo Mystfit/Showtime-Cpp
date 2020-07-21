@@ -116,7 +116,7 @@ function Build-Boost{
 foreach ($c in $config){
     $config_titled = $(Get-Culture).textinfo.totitlecase($c)
     Write-Output "Building config: $config_titled"
-    Build-CmakeFromGit -name "libzmq" -url "https://github.com/zeromq/libzmq.git" -branch "master" -config $config_titled -toolset $toolset_ver -flags @(
+    Build-CmakeFromGit -name "libzmq" -url "https://github.com/Mystfit/libzmq.git" -branch "master" -config $config_titled -toolset $toolset_ver -flags @(
         "-DENABLE_DRAFTS=TRUE",
         "-DZMQ_BUILD_TESTS=OFF"
     )

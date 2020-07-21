@@ -419,9 +419,12 @@ if(BUILD_SHARED_FROM_STATIC_LIBS)
         ZST_EXPORT_CORE_API 
         ZST_EXPORT_PLUGIN_API
         ZST_EXPORT_SERVER_API
+        PRIVATE        
+        ${GLOBAL_PUBLIC_DEFINES}
         ${SHOWTIME_PRIVATE_DEFS}
         CZMQ_STATIC
         ZMQ_STATIC
+
     )
     target_link_options(${SHARED_FROM_STATIC_TARGET} 
         PRIVATE 

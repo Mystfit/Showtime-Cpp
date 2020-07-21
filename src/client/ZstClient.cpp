@@ -24,7 +24,7 @@ ZstClient::ZstClient(ShowtimeClient* api) :
     //Transports
     m_tcp_graph_transport(std::make_shared<ZstTCPGraphTransport>()),
 #ifdef ZST_BUILD_DRAFT_API
-    m_udp_graph_transport(std::make_shared<ZstUDPGraphTransport>());
+    m_udp_graph_transport(std::make_shared<ZstUDPGraphTransport>()),
 #endif
     m_client_transport(std::make_shared<ZstZMQClientTransport>()),
 
@@ -145,8 +145,8 @@ void ZstClient::init_client(const char* client_name, bool debug)
 
 #ifdef ZST_BUILD_DRAFT_API
     m_udp_graph_transport->init();
-    m_udp_graph_transport->msg_events()->add_adaptor(ZstStageTransportAdaptor::downcasted_shared_from_this< ZstStageTransportAdaptor>());
-    m_udp_graph_transport->msg_events()->add_adaptor(static_cast<ZstStageTransportAdaptor*>(m_session);
+    m_udp_graph_transport->msg_events()->add_adaptor(ZstGraphTransportAdaptor::downcasted_shared_from_this< ZstGraphTransportAdaptor>());
+    m_udp_graph_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstGraphTransportAdaptor>(m_session));
 #endif
 
     //Stage discovery beacon
