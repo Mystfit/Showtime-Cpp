@@ -12,7 +12,7 @@ using namespace showtime;
  *
  */
 UCLASS()
-class AShowtimePerformer : public AShowtimeEntity {
+class AShowtimePerformer : public AShowtimeComponent {
 	GENERATED_BODY()
 public:
 };
