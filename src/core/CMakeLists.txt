@@ -318,11 +318,7 @@ endif()
 # Options common to both static/shared libraries
 foreach(TARGET ${CORE_LIBS})
     # Generate PDB files for release
-    target_compile_options(${TARGET} 
-        PRIVATE 
-        ${SHOWTIME_RELEASE_PDB_COMPILE_DEFINITIONS} 
-        ${SHOWTIME_PRIVATE_DEFS}
-    )
+    target_compile_options(${TARGET} PRIVATE ${SHOWTIME_RELEASE_PDB_COMPILE_DEFINITIONS})
     target_link_options(${TARGET} PRIVATE ${SHOWTIME_RELEASE_PDB_LINK_FLAGS})
     target_include_directories(${TARGET} PUBLIC ${CORE_INCLUDES})
     target_sources(${TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp)
