@@ -3,13 +3,13 @@
 echo "Building dependencies"
 
 #LibSodium
-echo "Building libsodium"
-git clone https://github.com/jedisct1/libsodium < /dev/null > /dev/null
-git -C ./czmq libsodium stable
-pushd ./libsodium
-./configure
-make && make install
-popd
+# echo "Building libsodium"
+# git clone https://github.com/jedisct1/libsodium < /dev/null > /dev/null
+# git -C ./czmq libsodium stable
+# pushd ./libsodium
+# ./configure
+# make && make install
+# popd
 
 # ZEROMQ
 # ------
@@ -28,7 +28,7 @@ cmake --build ./libzmq/build -j $VM_CPU_COUNT --target install
 echo "Building CZMQ"
 echo "Current path is $PWD"
 git clone https://github.com/mystfit/czmq.git < /dev/null > /dev/null
-git -C ./czmq checkout android-fixes
+git -C ./czmq checkout android
 mkdir -p ./czmq/build
 echo "CZMQ configure command line args:"
 echo "cmake -H\"./czmq\" -B\"./czmq/build\" -DCMAKE_VERBOSE_MAKEFILE=ON $ANDROID_BUILD_FLAGS $COMMON_BUILD_FLAGS -DENABLE_DRAFTS=TRUE -DBUILD_TESTING=OFF -DCZMQ_BUILD_SHARED=OFF -DCZMQ_BUILD_STATIC=ON"

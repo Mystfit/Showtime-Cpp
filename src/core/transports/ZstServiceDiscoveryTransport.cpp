@@ -29,6 +29,9 @@ void ZstServiceDiscoveryTransport::init(int port)
     m_beacon_actor.init("beacon_actor");
 
     // Set multicast addresses
+#ifndef CZMQ_BUILD_DRAFT_API
+    static_assert("Not built using CZMQ_BUILD_DRAFT_API flag!");
+#endif
     zsys_set_ipv4_mcast_address(CLIENT_MULTICAST_ADDR);
     //zsys_set_interface("*");
     auto mcast_address = zsys_ipv4_mcast_address();

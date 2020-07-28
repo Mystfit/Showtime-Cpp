@@ -16,7 +16,7 @@ namespace showtime
 	{
 		if (output_graph_socket()) {
 			Log::net(Log::Level::notification, "Connecting to {}", address);
-			zsock_connect(output_graph_socket(), "%s", address);
+			zsock_connect(output_graph_socket(), "%s", address.c_str());
 		}
 	}
 

@@ -120,7 +120,7 @@ foreach ($c in $config){
         "-DENABLE_DRAFTS=TRUE",
         "-DZMQ_BUILD_TESTS=OFF"
     )
-    Build-CmakeFromGit -name "czmq" -url "https://github.com/Mystfit/czmq.git" -branch "android_fixes" -config $config_titled -toolset $toolset_ver -flags @(
+    Build-CmakeFromGit -name "czmq" -url "https://github.com/Mystfit/czmq.git" -branch "android" -config $config_titled -toolset $toolset_ver -flags @(
         "-DENABLE_DRAFTS=TRUE",
         "-DBUILD_TESTING=OFF",
         "-DCMAKE_DEBUG_POSTFIX=d"
