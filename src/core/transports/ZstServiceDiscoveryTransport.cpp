@@ -25,6 +25,15 @@ void ZstServiceDiscoveryTransport::init(int port)
 {
     ZstTransportLayer::init();
 
+    //Make sure that we have a valid interface to broadcast on
+    auto iflist = ziflist_new();
+    auto first_iface = ziflist_first(iflist);
+    if (!first_iface) {
+        Log::net(Log::Level::error, "No broadcast interface available");
+        ziflist_destroy(&iflist);
+        return;
+    }
+
     //Create an actor to handle our zloop
     m_beacon_actor.init("beacon_actor");
 

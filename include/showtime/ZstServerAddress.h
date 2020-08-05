@@ -15,7 +15,7 @@ namespace showtime {
 	};
 
 	inline bool operator<(const ZstServerAddress& lhs, const ZstServerAddress& rhs) {
-		return std::tie(lhs.name, lhs.address) < std::tie(rhs.name, rhs.address);
+		return lhs.name < rhs.name;
 	}
 
 //class ZstServerAddress {
