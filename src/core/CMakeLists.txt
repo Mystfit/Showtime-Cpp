@@ -326,6 +326,8 @@ foreach(TARGET ${CORE_LIBS})
 
     # Target link libs again to link actual libraries
     target_link_libraries(${TARGET}
+        PUBLIC 
+        ${SHOWTIME_PUBLIC_LINKED_LIBS}
         PRIVATE
         ${CORE_TARGET_OBJECTS}
         ${SHOWTIME_PRIVATE_LINKED_LIBS}

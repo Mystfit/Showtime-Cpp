@@ -226,8 +226,11 @@ set(SHOWTIME_PRIVATE_LINKED_LIBS
     Boost::fiber
     Boost::boost
     Boost::disable_autolinking
-    fmt::fmt
     ${CMAKE_THREAD_LIBS_INIT}
+)
+
+set(SHOWTIME_PUBLIC_LINKED_LIBS
+    fmt::fmt
 )
 
 # Boost libraries that MUST be linked shared
@@ -264,9 +267,12 @@ set(Showtime_HEADER_DEPENDENCIES
 file(MAKE_DIRECTORY ${Showtime_COMPILED_INCLUDE_DIRS})
 
 # TODO: Copy fmt headers but replace with CMake install!
-get_target_property(FMT_INCLUDE_DIR fmt::fmt INTERFACE_INCLUDE_DIRECTORIES)
-file(COPY ${FMT_INCLUDE_DIR}/fmt DESTINATION ${Showtime_COMPILED_INCLUDE_DIRS})
-file(GLOB FMT_HEADERS CONFIGURE_DEPENDS "${FMT_INCLUDE_DIR}/fmt/*.h")
+# get_target_property(FMT_INCLUDE_DIR fmt::fmt INTERFACE_INCLUDE_DIRECTORIES)
+# get_filename_component(FMT_INCLUDE_DIR_REAL "${FMT_INCLUDE_DIR}/fmt" REALPATH)
+# get_filename_component(FMT_INCLUDE_DIR_ABS "${FMT_INCLUDE_DIR_REAL}/../" ABSOLUTE)
+# message(STATUS "fmt dir is ${FMT_INCLUDE_DIR_ABS}")
+# file(COPY ${FMT_INCLUDE_DIR_ABS} DESTINATION ${Showtime_COMPILED_INCLUDE_DIRS} FOLLOW_SYMLINK_CHAIN)
+# file(GLOB FMT_HEADERS CONFIGURE_DEPENDS "${FMT_INCLUDE_DIR}/fmt/*.h")
 
 # Copy flatbuffers headers but replace with CMake install!
 get_target_property(FLATBUFFERS_INCLUDE_DIR flatbuffers::flatbuffers INTERFACE_INCLUDE_DIRECTORIES)
