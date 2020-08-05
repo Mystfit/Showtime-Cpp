@@ -10,6 +10,9 @@
 #include "ShowtimeEntity.generated.h"
 
 using namespace showtime;
+
+// Forwards
+class UShowtimeClient;
 /**
  *
  */
@@ -17,6 +20,8 @@ UCLASS()
 class AShowtimeEntity : public AActor {
 	GENERATED_BODY()
 public:
-private:
-	ZstURI m_entity_path;
+	void init(UShowtimeClient* owner, FString entity_path);
+
+	UShowtimeClient* Owner;
+	FString EntityPath;
 };

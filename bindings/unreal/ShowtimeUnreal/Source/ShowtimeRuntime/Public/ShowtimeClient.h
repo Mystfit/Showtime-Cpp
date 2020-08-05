@@ -87,6 +87,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime Client")
 	bool IsConnected();
+	
+	// UE4 ZST Graphical wrappers
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Showtime Client")
+	TMap<FString, AShowtimeEntity*> EntityWrappers;
 
 
 	virtual void BeginPlay() override;

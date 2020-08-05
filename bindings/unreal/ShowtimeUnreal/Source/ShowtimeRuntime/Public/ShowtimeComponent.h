@@ -16,4 +16,5 @@ UCLASS()
 class AShowtimeComponent : public AShowtimeEntity {
 	GENERATED_BODY()
 public:
+	ZstComponent* GetNative();
 };

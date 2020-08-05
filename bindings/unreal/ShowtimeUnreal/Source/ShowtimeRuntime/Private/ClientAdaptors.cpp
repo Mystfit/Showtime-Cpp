@@ -69,9 +69,6 @@ void ClientAdaptors::on_entity_arriving(ZstEntityBase* entity)
 		break;
 	default:
 		break;
-	}
-	//Owner->OnEntityArriving.Broadcast(Owner->GetWorld()->SpawnActor<AShowtimeEntity>(Owner->SpawnableEntity->StaticClass()));
-	//Owner->OnEntityArriving.Broadcast(entity);
 }
 
 void ClientAdaptors::on_entity_leaving(const ZstURI& entity_path)
