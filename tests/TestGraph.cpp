@@ -50,7 +50,7 @@ struct FixturePlugs : public FixtureJoinServer {
 		test_client->get_root()->add_child(input_component.get());
 
 		ZstEntityBundle bundle;
-		input_component->get_plugs(bundle);
+		input_component->get_plugs(&bundle);
 	}
 
 	~FixturePlugs() {};
@@ -75,7 +75,7 @@ struct FixtureCable : public FixturePlugs {
 
 bool found_cable(std::shared_ptr<ShowtimeClient> client, ZstCableAddress cable_address) {
 	ZstCableBundle bundle;
-	client->get_root()->get_child_cables(bundle);
+	client->get_root()->get_child_cables(&bundle);
 	for (auto c : bundle) {
 		if (c->get_address() == cable_address) {
 			return true;
@@ -158,7 +158,7 @@ BOOST_FIXTURE_TEST_CASE(async_destroy_cable_callback, FixtureCable) {
 
 BOOST_FIXTURE_TEST_CASE(get_cable_from_plug, FixtureCable) {
 	ZstCableBundle bundle;
-	output_component->output()->get_child_cables(bundle);
+	output_component->output()->get_child_cables(&bundle);
 	for (auto c : bundle) {
 		BOOST_TEST(c->get_address().get_input_URI() == input_component->input()->URI());
 	}

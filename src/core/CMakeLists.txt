@@ -136,6 +136,7 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstCableAddress.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstCable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstURI.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstBundle.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstSerialisable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstSynchronisable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstValue.cpp"    

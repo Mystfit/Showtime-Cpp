@@ -257,7 +257,7 @@ BOOST_FIXTURE_TEST_CASE(list_discovered_servers, FixtureInit) {
 	detected_server->init(server_address.name);
 	WAIT_UNTIL_STAGE_BEACON
 	ZstServerAddressBundle bundle;
-	test_client->get_discovered_servers(bundle);
+	test_client->get_discovered_servers(&bundle);
 
 	auto found_server = (bundle.end() != std::find_if(bundle.begin(), bundle.end(), [&server_address](const ZstServerAddress& server) {
 		return server.name == server_address.name;
@@ -292,7 +292,7 @@ BOOST_FIXTURE_TEST_CASE(discovered_servers_update, FixtureInitAndCreateServerWit
 	detected_server->init(server_address.name);
 	WAIT_UNTIL_STAGE_BEACON
 	ZstServerAddressBundle bundle;
-	test_client->get_discovered_servers(bundle);
+	test_client->get_discovered_servers(&bundle);
 	auto found_server = (bundle.end() != std::find_if(bundle.begin(), bundle.end(), [&server_address](const ZstServerAddress& server) {
 		return server.name == server_address.name;
 	}));

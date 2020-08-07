@@ -15,7 +15,7 @@ ZstClientHierarchy::~ZstClientHierarchy()
     //Reset local performer
     if(m_root){
         ZstEntityBundle bundle;
-        m_root->get_child_entities(bundle, true, true);
+        m_root->get_child_entities(&bundle, true, true);
         for (auto entity : bundle) {
             destroy_entity_complete(entity);
         }
@@ -138,7 +138,7 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 		};
 
 		ZstEntityBundle bundle;
-		entity->get_child_entities(bundle, true, true);
+		entity->get_child_entities(&bundle, true, true);
 		for (auto c : bundle) {
 			auto builder = std::make_shared< FlatBufferBuilder>();
 			auto content_message = CreateEntityCreateRequest(*builder, c->serialized_entity_type(), c->serialize(*builder));
@@ -343,7 +343,7 @@ void ZstClientHierarchy::activate_entity_complete(ZstEntityBase * entity)
 	ZstHierarchy::activate_entity_complete(entity);
 
 	ZstEntityBundle bundle;
-    entity->get_child_entities(bundle, false, true);
+    entity->get_child_entities(&bundle, false, true);
 	for (auto c : bundle) {
 		hierarchy_events()->invoke([c](ZstHierarchyAdaptor* adaptor) { 
 			adaptor->on_entity_arriving(c); 

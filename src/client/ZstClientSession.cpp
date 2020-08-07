@@ -91,7 +91,7 @@ void ZstClientSession::on_receive_msg(const std::shared_ptr<ZstPerformanceMessag
     
     //Iterate over all connected cables from the sending plug
     ZstCableBundle bundle;
-    sending_plug->get_child_cables(bundle);
+    sending_plug->get_child_cables(&bundle);
     for (auto cable : bundle) {
         auto receiving_plug = cable->get_input();
         if (receiving_plug) {
@@ -128,7 +128,7 @@ void ZstClientSession::aquire_entity_ownership_handler(const EntityTakeOwnership
 
     // Set the owner
     ZstEntityBundle bundle;
-    entity->get_child_entities(bundle, true, true);
+    entity->get_child_entities(&bundle, true, true);
     for(auto child : bundle){
         entity_set_owner(child, ZstURI(request->new_owner()->c_str(), request->new_owner()->size()));
     }

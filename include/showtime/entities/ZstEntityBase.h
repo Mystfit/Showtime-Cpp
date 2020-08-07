@@ -77,9 +77,9 @@ public:
     ZST_EXPORT virtual void set_name(const char* name);
 
     //Iterate
-    ZST_EXPORT virtual void get_child_cables(ZstCableBundle & bundle);
-    ZST_EXPORT virtual void get_child_entities(ZstEntityBundle & bundle, bool include_parent = false, bool recursive = false, ZstEntityType filter = ZstEntityType::NONE);
-    
+    ZST_EXPORT virtual void get_child_cables(ZstCableBundle* bundle);
+    ZST_EXPORT virtual void get_child_entities(ZstEntityBundle* bundle, bool include_parent = false, bool recursive = false, ZstEntityType filter = ZstEntityType::NONE);
+
     //Serialisation
     ZST_EXPORT virtual void serialize_partial(flatbuffers::Offset<EntityData>& destination_offset, flatbuffers::FlatBufferBuilder & buffer_builder) const override;
     ZST_EXPORT virtual flatbuffers::uoffset_t serialize(flatbuffers::FlatBufferBuilder & buffer_builder) const override;

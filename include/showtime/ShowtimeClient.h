@@ -33,7 +33,7 @@ public:
     ZST_CLIENT_EXPORT void join_by_name_async(const char * server_name);
     ZST_CLIENT_EXPORT void auto_join_by_name(const char * server_name);
     ZST_CLIENT_EXPORT void auto_join_by_name_async(const char * server_name);
-    ZST_CLIENT_EXPORT void get_discovered_servers(ZstServerAddressBundle & servers);
+    ZST_CLIENT_EXPORT void get_discovered_servers(ZstServerAddressBundle* servers);
 	ZST_CLIENT_EXPORT ZstServerAddress get_discovered_server(const char * server_name);
 
 	//Cleanup
@@ -78,7 +78,7 @@ public:
 	//Hierarchy
 	ZST_CLIENT_EXPORT ZstPerformer* get_root();
 	ZST_CLIENT_EXPORT ZstEntityBase* find_entity(const ZstURI & path);
-	ZST_CLIENT_EXPORT void get_performers(ZstEntityBundle & bundle);
+	ZST_CLIENT_EXPORT void get_performers(ZstEntityBundle* bundle);
 
 	//Stage methods
 	ZST_CLIENT_EXPORT bool is_connected();

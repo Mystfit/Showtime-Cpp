@@ -173,7 +173,7 @@ BOOST_FIXTURE_TEST_CASE(create_factory, FixtureJoinServer){
 	test_client->register_factory(factory.get());
 	BOOST_TEST(factory->is_activated());
 	ZstEntityFactoryBundle bundle;
-	test_client->get_root()->get_factories(bundle);
+	test_client->get_root()->get_factories(&bundle);
 	bool found = std::find_if(bundle.begin(), bundle.end(), [path = factory->URI()](auto it) { return it->URI() == path; }) != bundle.end();
 	BOOST_TEST(found);
 }
@@ -184,7 +184,7 @@ BOOST_FIXTURE_TEST_CASE(destroy_factory, FixtureLocalFactory) {
 	auto factory_path = factory->URI();
 	delete factory;
 	ZstEntityFactoryBundle bundle;
-	test_client->get_root()->get_factories(bundle);
+	test_client->get_root()->get_factories(&bundle);
 	bool found = std::find_if(bundle.begin(), bundle.end(), [factory_path](auto it) { return it->URI() == factory_path; }) == bundle.end();
 	BOOST_TEST(found);
 }
@@ -193,13 +193,13 @@ BOOST_FIXTURE_TEST_CASE(remove_factory, FixtureLocalFactory) {
 	test_client->get_root()->remove_factory(factory.get());
 	BOOST_TEST(factory->is_activated());
 	ZstEntityFactoryBundle bundle;
-	test_client->get_root()->get_factories(bundle);
+	test_client->get_root()->get_factories(&bundle);
 	BOOST_TEST(bundle.size() == 0);
 }
 
 BOOST_FIXTURE_TEST_CASE(query_factory_creatables, FixtureLocalFactory) {
 	ZstURIBundle bundle;
-	factory->get_creatables(bundle);
+	factory->get_creatables(&bundle);
 	BOOST_TEST(bundle.size() == 1);
 	BOOST_TEST(bundle[0] == creatable_URI);
 }
@@ -207,7 +207,7 @@ BOOST_FIXTURE_TEST_CASE(query_factory_creatables, FixtureLocalFactory) {
 BOOST_FIXTURE_TEST_CASE(create_entity_from_local_factory, FixtureLocalFactory) {
 	auto created_entity_URI = test_client->get_root()->URI() + ZstURI("brand_spanking_new");
 	ZstURIBundle bundle;
-	factory->get_creatables(bundle);
+	factory->get_creatables(&bundle);
 	
 	auto entity = test_client->create_entity(bundle[0], "brand_spanking_new");
 	BOOST_TEST(entity);
@@ -222,7 +222,7 @@ BOOST_FIXTURE_TEST_CASE(factory_owned_entity_destruction, FixtureJoinServer) {
 		auto factory = std::make_unique<TestFactory>("customs");
 		test_client->register_factory(factory.get());
 		ZstURIBundle bundle;
-		factory->get_creatables(bundle);
+		factory->get_creatables(&bundle);
 		auto entity = test_client->create_entity(bundle[0], "brand_spanking_new");
 		entity_path = entity->URI();
 		BOOST_TEST(test_client->find_entity(entity_path));
@@ -232,14 +232,14 @@ BOOST_FIXTURE_TEST_CASE(factory_owned_entity_destruction, FixtureJoinServer) {
 
 BOOST_FIXTURE_TEST_CASE(find_external_creatables, FixtureExternalFactory) {
 	ZstURIBundle bundle;
-	external_factory->get_creatables(bundle);
+	external_factory->get_creatables(&bundle);
 	BOOST_TEST(bundle.size() == 1);
 	BOOST_TEST(bundle[0] == external_factory->URI() + ZstURI("CustomComponent"));
 }
 
 BOOST_FIXTURE_TEST_CASE(create_entity_from_external_factory, FixtureExternalFactoryEventLoop) {
 	ZstURIBundle bundle;
-	external_factory->get_creatables(bundle);
+	external_factory->get_creatables(&bundle);
 	auto entity = test_client->create_entity(bundle[0], "brand_spanking_new_ext");
 	BOOST_TEST_REQUIRE(entity);
 	BOOST_TEST(test_client->find_entity(entity->URI()));
@@ -249,7 +249,7 @@ BOOST_FIXTURE_TEST_CASE(create_entity_from_external_factory, FixtureExternalFact
 BOOST_FIXTURE_TEST_CASE(create_entity_from_external_factory_async, FixtureExternalFactory) {
 	auto created_entity_URI = external_factory->URI().first() + ZstURI("brand_spanking_new_ext_async");
 	ZstURIBundle bundle;
-	external_factory->get_creatables(bundle);
+	external_factory->get_creatables(&bundle);
 	test_client->create_entity_async(bundle[0], "brand_spanking_new_ext_async");
 	TAKE_A_BREATH
 	remote_client->poll_once();
@@ -284,7 +284,7 @@ BOOST_FIXTURE_TEST_CASE(updated_creatables_callback, FixtureExternalFactory)
 	wait_for_event(test_client, factoryEvents, 1);
 
 	ZstURIBundle bundle;
-	external_factory->get_creatables(bundle);
+	external_factory->get_creatables(&bundle);
 	BOOST_TEST(bundle.size() == 2);
 	bool found_avocado = false;
 	for (auto c : bundle) {

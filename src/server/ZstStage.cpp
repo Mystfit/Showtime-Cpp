@@ -157,7 +157,8 @@ namespace showtime::detail
 	{
 		std::vector<ZstPerformer*> removed_clients;
 		ZstEntityBundle bundle;
-		for (auto entity : stage->m_session->hierarchy()->get_performers(bundle)) {
+		stage->m_session->hierarchy()->get_performers(&bundle);
+		for (auto entity : bundle) {
 			ZstPerformer* performer = dynamic_cast<ZstPerformer*>(entity);
 			if (performer){
 				if (performer->get_active_heartbeat()) {

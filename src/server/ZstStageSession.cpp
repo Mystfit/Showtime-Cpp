@@ -111,7 +111,7 @@ Signal ZstStageSession::synchronise_client_graph_handler(ZstPerformerStageProxy*
 	for (auto performer : performer_bundle) {
 		//Only pack performers that aren't the destination client
 		if (performer->URI() != sender->URI()) {
-			performer->get_child_entities(entity_bundle, true, true);
+			performer->get_child_entities(&entity_bundle, true, true);
 		}
 	}
 
@@ -163,7 +163,7 @@ Signal ZstStageSession::create_cable_handler(const std::shared_ptr<ZstStageMessa
 	if (input->num_cables() >= input->max_connected_cables()) {
 		Log::server(Log::Level::warn, "Too many cables in plug. Disconnecting existing cables");
 		ZstCableBundle bundle;
-		input->get_child_cables(bundle);
+		input->get_child_cables(&bundle);
 		for (auto cable : bundle) {
 			destroy_cable(cable);
 		}
@@ -338,7 +338,7 @@ void ZstStageSession::disconnect_cables(ZstEntityBase* entity)
 		return;
 
 	ZstCableBundle bundle;
- 	entity->get_child_cables(bundle);
+ 	entity->get_child_cables(&bundle);
 	for (auto cable : bundle) {
 		destroy_cable(cable);
 	}

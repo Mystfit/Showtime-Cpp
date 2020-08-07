@@ -163,19 +163,19 @@ BOOST_FIXTURE_TEST_CASE(get_children, FixtureJoinServer) {
 
 	ZstEntityBundle bundle;
 	// Get a flat list of all entities
-	test_client->get_root()->get_child_entities(bundle, true, true);
+	test_client->get_root()->get_child_entities(&bundle, true, true);
 	BOOST_TEST(bundle.size() == 3);
 	BOOST_TEST(bundle[0]->URI() == test_client->get_root()->URI());
 	bundle.clear();
 
 	// Get a list of all recursive children
-	test_client->get_root()->get_child_entities(bundle, false , true);
+	test_client->get_root()->get_child_entities(&bundle, false , true);
 	BOOST_TEST(bundle.size() == 2);
 	BOOST_TEST(bundle[0]->URI() == parent->URI());
 	bundle.clear();
 
 	// Get immediate children only
-	parent->get_child_entities(bundle);
+	parent->get_child_entities(&bundle);
 	BOOST_TEST(bundle.size() == 1);
 }
 
@@ -216,7 +216,7 @@ BOOST_FIXTURE_TEST_CASE(remove_child, FixtureParentChild) {
 	test_client->deactivate_entity(child.get());
 	
 	ZstEntityBundle bundle;
-	parent->get_child_entities(bundle, false);
+	parent->get_child_entities(&bundle, false);
 	BOOST_TEST(bundle.size() == 1);
 	BOOST_TEST(!parent->walk_child_by_URI(child_URI));
 	BOOST_TEST(!test_client->find_entity(child_URI));
