@@ -23,5 +23,7 @@ public:
 	void init(UShowtimeClient* owner, FString entity_path);
 
 	UShowtimeClient* Owner;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Showtime Entity")
 	FString EntityPath;
 };

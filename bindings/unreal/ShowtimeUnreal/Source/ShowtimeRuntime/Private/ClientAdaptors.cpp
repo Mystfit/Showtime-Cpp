@@ -12,6 +12,7 @@ ClientAdaptors::ClientAdaptors(UShowtimeClient* owner) : Owner(owner)
 
 void ClientAdaptors::on_connected_to_server(ShowtimeClient* client, const ZstServerAddress* server)
 {
+	//Owner->RefreshEntityWrappers();
 	Owner->OnConnectedToServer.Broadcast(Owner, FServerAddressFromShowtime(server));
 #if PLATFORM_ANDROID
 	//MulticastAndroid::ReleaseMulticastLock();
@@ -50,7 +51,7 @@ void ClientAdaptors::on_formatted_log_record(const char* record)
 
 void ClientAdaptors::on_performer_arriving(ZstPerformer* performer)
 {
-	Owner->OnPerformerArriving.Broadcast(Owner->GetWorld()->SpawnActor<AShowtimePerformer>(Owner->SpawnablePerformer->StaticClass()));
+	Owner->OnPerformerArriving.Broadcast(Owner->SpawnPerformer(performer));
 }
 
 void ClientAdaptors::on_performer_leaving(const ZstURI& performer_path)
@@ -60,15 +61,7 @@ void ClientAdaptors::on_performer_leaving(const ZstURI& performer_path)
 
 void ClientAdaptors::on_entity_arriving(ZstEntityBase* entity)
 {
-	switch (entity->entity_type()) {
-	case ZstEntityType::PLUG:
-		Owner->OnEntityArriving.Broadcast(Owner->GetWorld()->SpawnActor<AShowtimePlug>(Owner->SpawnablePlug->StaticClass()));
-		break;
-	case ZstEntityType::COMPONENT:
-		Owner->OnEntityArriving.Broadcast(Owner->GetWorld()->SpawnActor<AShowtimeComponent>(Owner->SpawnableComponent->StaticClass()));
-		break;
-	default:
-		break;
+	Owner->OnEntityArriving.Broadcast(Owner->SpawnEntity(entity));
 }
 
 void ClientAdaptors::on_entity_leaving(const ZstURI& entity_path)

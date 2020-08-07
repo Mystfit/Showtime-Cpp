@@ -12,6 +12,7 @@
 #include "ShowtimeURI.h"
 #include "ShowtimePerformer.h"
 #include "ShowtimeEntity.h"
+#include "ShowtimeComponent.h"
 #include "ShowtimePlug.h"
 #include "ShowtimeCable.h"
 #include "ShowtimeFactory.h"
@@ -170,6 +171,15 @@ public:
 	//FPluginUnloaded OnPluginUnloaded;
 
 	TSharedPtr<ShowtimeClient>& Handle();
+
+
+	// Spawning wrappers
+	void RefreshEntityWrappers();
+	AShowtimeEntity* SpawnEntity(ZstEntityBase* entity);
+	AShowtimePerformer* SpawnPerformer(ZstPerformer* performer);
+	AShowtimeComponent* SpawnComponent(ZstComponent* component);
+	AShowtimePlug* SpawnPlug(ZstPlug* plug);
+	void RegisterSpawnedWrapper(AShowtimeEntity* wrapper, ZstEntityBase* entity);
 
 
 private:
