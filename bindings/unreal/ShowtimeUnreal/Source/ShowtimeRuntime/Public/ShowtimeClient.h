@@ -65,7 +65,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCableDestroyed, const UShowtimeCabl
 class MulticastAndroid;
 
 
-UCLASS(ClassGroup = (Showtime), meta = (BlueprintSpawnableComponent))
+UCLASS(Blueprintable, ClassGroup = (Showtime), meta = (BlueprintSpawnableComponent))
 class UShowtimeClient : public UActorComponent
 {
 	GENERATED_BODY()
@@ -179,7 +179,10 @@ public:
 	AShowtimePerformer* SpawnPerformer(ZstPerformer* performer);
 	AShowtimeComponent* SpawnComponent(ZstComponent* component);
 	AShowtimePlug* SpawnPlug(ZstPlug* plug);
-	void RegisterSpawnedWrapper(AShowtimeEntity* wrapper, ZstEntityBase* entity);
+	void RegisterSpawnedWrapper(AShowtimeEntity* wrapper, ZstEntityBase* entity); \
+
+	// Wrapper managements
+	AShowtimeEntity* GetWrapperParent(AShowtimeEntity* wrapper);
 
 
 private:

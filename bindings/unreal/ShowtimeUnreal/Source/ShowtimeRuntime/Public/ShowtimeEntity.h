@@ -22,7 +22,11 @@ class AShowtimeEntity : public AActor {
 public:
 	void init(UShowtimeClient* owner, FString entity_path);
 
-	UShowtimeClient* Owner;
+	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime Entity")
+	AShowtimeEntity* GetParent();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Showtime Entity")
+	UShowtimeClient* OwningClient;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Showtime Entity")
 	FString EntityPath;

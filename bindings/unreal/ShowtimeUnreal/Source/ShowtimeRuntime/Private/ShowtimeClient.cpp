@@ -126,6 +126,14 @@ AShowtimeComponent* UShowtimeClient::SpawnComponent(ZstComponent* component)
 {
 	auto entity_wrapper = GetWorld()->SpawnActor<AShowtimeComponent>(SpawnableComponent);
 	RegisterSpawnedWrapper(entity_wrapper, component);
+
+	//Add component to parent component
+	if (auto parent = entity_wrapper->GetParent()) {
+		if (auto parent_c = static_cast<AShowtimeComponent*>(parent)) {
+			parent_c->AttachComponent(entity_wrapper);
+		}
+	}
+
 	return entity_wrapper;
 }
 
@@ -133,6 +141,13 @@ AShowtimePlug* UShowtimeClient::SpawnPlug(ZstPlug* plug)
 {
 	auto entity_wrapper = GetWorld()->SpawnActor<AShowtimePlug>(SpawnablePlug);
 	RegisterSpawnedWrapper(entity_wrapper, plug);
+
+	//Add plug to parent component
+	if (auto parent = entity_wrapper->GetParent()) {
+		if (auto parent_c = static_cast<AShowtimeComponent*>(parent)) {
+			parent_c->AttachPlug(entity_wrapper);
+		}
+	}
 	return entity_wrapper;
 }
 
@@ -145,6 +160,22 @@ void UShowtimeClient::RegisterSpawnedWrapper(AShowtimeEntity* wrapper, ZstEntity
 	wrapper->init(this, entity_path);
 	EntityWrappers.Add(entity_path, wrapper);
 }
+
+AShowtimeEntity* UShowtimeClient::GetWrapperParent(AShowtimeEntity* wrapper)
+{
+	auto path = ZstURI(TCHAR_TO_UTF8(*wrapper->EntityPath));
+	auto parent_path = path.parent();
+	if (parent_path.is_empty())
+		return nullptr;
+
+	if (ZstEntityBase* entity = Handle()->find_entity(parent_path)) {
+		if (auto val = EntityWrappers.Find(UTF8_TO_TCHAR(parent_path.path()))) {
+			return *val;
+		}
+	}
+	return nullptr;
+}
+
 
 void UShowtimeClient::AttachEvents(){
 	if (!client)
