@@ -159,7 +159,7 @@ endif()
 
 # swig
 # ------------------------------
-find_host_package(SWIG)
+find_host_package(SWIG REQUIRED)
 if(SWIG_FOUND)
     cmake_policy(SET CMP0078 NEW)
     cmake_policy(SET CMP0086 NEW)
