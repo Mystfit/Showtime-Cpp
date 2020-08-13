@@ -76,7 +76,7 @@ void ClientAdaptors::on_entity_updated(ZstEntityBase* entity)
 
 void ClientAdaptors::on_factory_arriving(ZstEntityFactory* factory)
 {
-	Owner->OnEntityArriving.Broadcast(Owner->GetWorld()->SpawnActor<AShowtimeFactory>(Owner->SpawnableFactory->StaticClass()));
+	Owner->OnEntityArriving.Broadcast(Owner->GetWorld()->SpawnActor<UShowtimeFactory>(Owner->SpawnableFactory->StaticClass()));
 	//Owner->OnFactoryArriving.Broadcast(factory);
 }
 

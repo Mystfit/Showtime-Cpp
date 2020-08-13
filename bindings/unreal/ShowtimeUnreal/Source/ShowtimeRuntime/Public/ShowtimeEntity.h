@@ -4,7 +4,7 @@
 #include <showtime/entities/ZstEntityBase.h>
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "Components/ActorComponent.h"
 #include "UObject/NoExportTypes.h"
 
 #include "ShowtimeEntity.generated.h"
@@ -16,18 +16,23 @@ class UShowtimeClient;
 /**
  *
  */
-UCLASS()
-class AShowtimeEntity : public AActor {
+UCLASS(BlueprintType, Blueprintable, ClassGroup = (Showtime), meta = (BlueprintSpawnableComponent))
+class UShowtimeEntity : public UActorComponent {
 	GENERATED_BODY()
 public:
 	void init(UShowtimeClient* owner, FString entity_path);
 
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime Entity")
-	AShowtimeEntity* GetParent();
+	UShowtimeEntity* GetParent();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Showtime Entity")
 	UShowtimeClient* OwningClient;
+
+	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime Entity")
+	TArray<UShowtimeEntity*> GetChildren(bool recursive = false);
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Showtime Entity")
 	FString EntityPath;
+
+	ZstEntityBase* GetNativeEntity();
 };

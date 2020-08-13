@@ -11,8 +11,8 @@ using namespace showtime;
 /**
  *
  */
-UCLASS()
-class AShowtimePlug : public AShowtimeEntity {
+UCLASS(BlueprintType, Blueprintable, ClassGroup = (Showtime), meta = (BlueprintSpawnableComponent))
+class UShowtimePlug : public UShowtimeEntity {
 	GENERATED_BODY()
 public:
 };
