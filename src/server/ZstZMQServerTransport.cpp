@@ -41,7 +41,7 @@ void ZstZMQServerTransport::init()
 	set_connected(true);
 
 	//Increase the zmq context reference count
-	zst_zmq_inc_ref_count();
+	zst_zmq_inc_ref_count("server_sock");
 }
 
 void ZstZMQServerTransport::destroy()
@@ -51,7 +51,7 @@ void ZstZMQServerTransport::destroy()
 		//m_server_actor.remove_pipe_listener(m_clients_sock);
 		zsock_destroy(&m_clients_sock);
 		m_clients_sock = NULL;
-		zst_zmq_dec_ref_count();
+		zst_zmq_dec_ref_count("server_sock");
 	}
 
 	m_port = -1;
