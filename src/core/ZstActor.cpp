@@ -29,7 +29,7 @@ namespace showtime {
 		m_loop = zloop_new();
 		//zloop_set_verbose(m_loop, true);
 		zloop_set_nonstop(m_loop, true);
-		zst_zmq_inc_ref_count();
+		zst_zmq_inc_ref_count(m_actor_name.c_str());
 	}
 
 	void ZstActor::start_loop()
@@ -46,7 +46,7 @@ namespace showtime {
 		if (m_is_running) {
 			if (m_loop_actor) {
 				zactor_destroy(&m_loop_actor);
-				zst_zmq_dec_ref_count();
+				zst_zmq_dec_ref_count(m_actor_name.c_str());
 			}
 
 			m_loop = NULL;
@@ -105,6 +105,7 @@ namespace showtime {
 
 		if (streq(command, "$TERM")) {
 			//Signal that we finished cleaning up
+			zsock_set_sndtimeo(sock, 0);
 			zsock_signal(sock, 0);
 
 			//Return -1 to exit the zloop

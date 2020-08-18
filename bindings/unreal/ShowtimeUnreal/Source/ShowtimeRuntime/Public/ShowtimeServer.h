@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <showtime/ShowtimeServer.h>
-
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 
@@ -11,7 +9,13 @@
 
 #define DEFAULT_SHOWTIME_SERVER "stage"
 
+// Forwards
+namespace showtime {
+	class ShowtimeServer;
+}
+
 using namespace showtime;
+
 
 /**
  *
@@ -21,8 +25,8 @@ class UShowtimeServer : public UObject{
 	GENERATED_BODY()
 public:
 	virtual void BeginDestroy() override;
-	TSharedPtr<ShowtimeServer>& Handle();
+	TSharedPtr<showtime::ShowtimeServer>& Handle();
 
 private:
-	TSharedPtr<ShowtimeServer> server;
+	TSharedPtr<showtime::ShowtimeServer> server;
 };

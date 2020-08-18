@@ -53,7 +53,7 @@ void ZstZMQClientTransport::init()
 	m_client_actor.start_loop();
 
 	//Since we create a ZMQ socket, we need to ref count zmq
-	zst_zmq_inc_ref_count();
+	zst_zmq_inc_ref_count("client_sock");
 }
 
 void ZstZMQClientTransport::destroy()
@@ -62,7 +62,7 @@ void ZstZMQClientTransport::destroy()
 	if (m_server_sock) {
 		m_client_actor.remove_pipe_listener(m_server_sock);
 		zsock_destroy(&m_server_sock);
-		zst_zmq_dec_ref_count();
+		zst_zmq_dec_ref_count("client_sock");
 		m_server_sock = NULL;
 	}
 

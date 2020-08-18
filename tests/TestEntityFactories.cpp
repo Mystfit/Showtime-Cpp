@@ -190,11 +190,13 @@ BOOST_FIXTURE_TEST_CASE(destroy_factory, FixtureLocalFactory) {
 }
 
 BOOST_FIXTURE_TEST_CASE(remove_factory, FixtureLocalFactory) {
+	auto factory_path = factory->URI();
 	test_client->get_root()->remove_factory(factory.get());
 	BOOST_TEST(factory->is_activated());
 	ZstEntityFactoryBundle bundle;
 	test_client->get_root()->get_factories(&bundle);
-	BOOST_TEST(bundle.size() == 0);
+	bool found = std::find_if(bundle.begin(), bundle.end(), [factory_path](auto it) { return it->URI() == factory_path; }) == bundle.end();
+	BOOST_TEST(found);
 }
 
 BOOST_FIXTURE_TEST_CASE(query_factory_creatables, FixtureLocalFactory) {
