@@ -83,6 +83,7 @@ public:
 
     //Values
     ZST_EXPORT ZstValue * raw_value();
+    ZST_EXPORT ZstValueType get_default_type() const;
 
 protected:
     std::unique_ptr<ZstValue> m_value;

@@ -129,6 +129,11 @@ ZstValue * ZstPlug::raw_value()
     return m_value.get();
 }
 
+ZstValueType ZstPlug::get_default_type() const
+{
+    return m_value->get_default_type();
+}
+
 
 //--------------------
 // Serialisation
