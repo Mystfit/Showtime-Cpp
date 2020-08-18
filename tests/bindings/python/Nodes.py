@@ -2,28 +2,31 @@ import showtime
 import showtime.showtime as ZST
 import time
 
+class Plugger(ZST.ZstComponent):
+	def on_registered(self):
+		self.in_plug = ZST.ZstInputPlug("in", ZST.ZstValueType_IntList)
+		self.out_plug = ZST.ZstOutputPlug("out", ZST.ZstValueType_IntList)
+		self.add_child(self.in_plug)
+		self.add_child(self.out_plug)
+
+	def on_compute(self, plug):
+		print("Plug {} received value {}".format(plug.URI().path(), plug.int_at(0)))
+
+
 client = ZST.ShowtimeClient()
 client.init("python_nodes", True)
 client.auto_join_by_name("stage")
 
-a = ZST.ZstComponent("a_comp")
+a = Plugger("a")
+b = Plugger("b")
 client.get_root().add_child(a)
-plug1 = ZST.ZstInputPlug("plug1", ZST.ZstValueType_IntList)
-plug2 = ZST.ZstInputPlug("plug2", ZST.ZstValueType_IntList)
-a.add_child(plug1)
-a.add_child(plug2)
-
-b = ZST.ZstComponent("b_comp")
-a.add_child(b)
-plug3 = ZST.ZstInputPlug("plug3", ZST.ZstValueType_IntList)
-plug4 = ZST.ZstInputPlug("plug4", ZST.ZstValueType_IntList)
-b.add_child(plug3)
-b.add_child(plug4)
-
+client.get_root().add_child(b)
 
 try:
 	while True:
 		client.poll_once()
 		time.sleep(0.1)
 except KeyboardInterrupt:
-	pass
+	print("Received keyboard interrupt")
+
+client.destroy()

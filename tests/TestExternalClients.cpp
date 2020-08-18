@@ -185,6 +185,7 @@ BOOST_FIXTURE_TEST_CASE(ownership_plug_fire_check, FixtureExternalEntitysWithLoc
     sync_out_plug->append_int(cmp_val);
     sync_out_plug->fire();
 	TAKE_A_BREATH
+	test_client->poll_once();
 	BOOST_TEST(input_component->input()->size() > 0);
     BOOST_TEST(input_component->input()->int_at(0) == cmp_val);
 }
