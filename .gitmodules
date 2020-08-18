@@ -20,3 +20,6 @@
 [submodule "submodules/multifunction"]
 	path = submodules/multifunction
 	url = https://github.com/klmr/multifunction.git
+[submodule "submodules/uthash"]
+	path = submodules/uthash
+	url = https://github.com/troydhanson/uthash

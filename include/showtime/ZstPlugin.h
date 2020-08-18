@@ -2,12 +2,19 @@
 
 #include <memory>
 #include <vector>
+#include <uthash.h>
 #include <showtime/entities/ZstEntityFactory.h>
 
 // A plugin is a collection of factories and entities that are loaded at runtime
 
 namespace showtime 
 {
+	struct ZstPluginSetup {
+		char config_key[32];
+		char config_val[32];
+		UT_hash_handle hh;
+	};
+
 	class ZST_CLASS_EXPORTED ZstPlugin {
 	public:
 		virtual void init() = 0;
