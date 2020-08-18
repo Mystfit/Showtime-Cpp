@@ -66,33 +66,35 @@ void ClientAdaptors::on_entity_arriving(ZstEntityBase* entity)
 
 void ClientAdaptors::on_entity_leaving(const ZstURI& entity_path)
 {
-	//Owner->OnEntityLeaving.Broadcast(entity_path);
+	Owner->OnEntityUpdated.Broadcast(*Owner->EntityWrappers.Find(UTF8_TO_TCHAR(entity_path.path())));
 }
 
 void ClientAdaptors::on_entity_updated(ZstEntityBase* entity)
 {
-	//Owner->OnEntityUpdated.Broadcast(entity);
+	Owner->OnEntityUpdated.Broadcast(*Owner->EntityWrappers.Find(UTF8_TO_TCHAR(entity->URI().path())));
 }
 
 void ClientAdaptors::on_factory_arriving(ZstEntityFactory* factory)
 {
-	Owner->OnEntityArriving.Broadcast(Owner->GetWorld()->SpawnActor<UShowtimeFactory>(Owner->SpawnableFactory->StaticClass()));
-	//Owner->OnFactoryArriving.Broadcast(factory);
+	Owner->OnEntityArriving.Broadcast(Owner->SpawnFactory(factory));
 }
 
 void ClientAdaptors::on_factory_leaving(const ZstURI& factory_path)
 {
-	//Owner->OnFactoryLeaving.Broadcast(factory_path);
+	Owner->OnEntityUpdated.Broadcast(*Owner->EntityWrappers.Find(UTF8_TO_TCHAR(factory_path.path())));
 }
 
 void ClientAdaptors::on_cable_created(ZstCable* cable)
 {
-	//Owner->OnCableArriving.Broadcast(cable);
+	Owner->OnCableCreated.Broadcast(Owner->SpawnCable(cable));
 }
 
 void ClientAdaptors::on_cable_destroyed(const ZstCableAddress& cable_address)
 {
-	//Owner->OnCableDestroyed.Broadcast(cable_address);
+	FShowtimeCableAddress address{ UTF8_TO_TCHAR(cable_address.get_input_URI().path()), UTF8_TO_TCHAR(cable_address.get_output_URI().path())};
+	auto cable_wrapper = Owner->CableWrappers.Find(address);
+	if(cable_wrapper)
+		Owner->OnCableDestroyed.Broadcast(*cable_wrapper);
 }
 
 //void ClientAdaptors::on_plugin_loaded(std::shared_ptr<ZstPlugin> plugin)

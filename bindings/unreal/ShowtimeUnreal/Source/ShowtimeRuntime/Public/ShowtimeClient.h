@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <showtime/ShowtimeClient.h>
 //#include <Runtime/Networking/Public/Interfaces/IPv4/IPv4Address.h>
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
@@ -25,6 +24,9 @@ using namespace showtime;
 // --------------------
 class MulticastAndroid;
 
+namespace showtime {
+	class ShowtimeClient;
+}
 
 // Log categories
 // --------------
@@ -51,14 +53,14 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FServerDiscovered, UShowtimeClient*
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FServerLost, UShowtimeClient*, Client, FServerAddress, ServerAddress);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FGraphSynchronised, UShowtimeClient*, Client, FServerAddress, ServerAddress);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPerformerArriving, UShowtimePerformer*, performer);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPerformerLeaving, const UShowtimeURI*, performer_path);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPerformerLeaving, UShowtimePerformer*, performer);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEntityArriving, UShowtimeEntity*, entity);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEntityLeaving, const UShowtimeURI*, entity_path);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEntityLeaving, UShowtimeEntity*, entity);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEntityUpdated, UShowtimeEntity*, entity);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FFactoryArriving, UShowtimeFactory*, factory);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FFactoryLeaving, const UShowtimeURI*, factory_path);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FFactoryLeaving, UShowtimeFactory*, factory);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCableCreated, AShowtimeCable*, cable);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCableDestroyed, const UShowtimeCableAddress*, cable_address);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCableDestroyed, AShowtimeCable*, cable);
 
 
 //// Plugin delegates
@@ -80,89 +82,98 @@ public:
 	// Properties
 	// ----------
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Showtime Client")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Showtime|Client")
 	FString ClientName;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Showtime Client")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Showtime|Client")
 	TMap<FString, UShowtimeEntity*> EntityWrappers;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Showtime|Client")
+	TMap<FShowtimeCableAddress, AShowtimeCable*> CableWrappers;
 
 
 	// BP functions
 	// ------------
 
-	UFUNCTION(BlueprintCallable, Exec, Category="Showtime Client")
+	UFUNCTION(BlueprintCallable, Exec, Category="Showtime|Client")
 	void Init();
 
-	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime Client")
+	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Client")
 	void JoinServerByName(const FString& name);
 
-	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime Client")
+	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Client")
 	void LeaveServer();
 
-	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime Client")
-	bool IsConnected();
+	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Client")
+	bool IsConnected() const;
 	
-	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime Client")
-	TArray<UShowtimePerformer*> GetPerformers();
+	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Client")
+	TArray<UShowtimePerformer*> GetPerformers() const;
+
+	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Client")
+	UShowtimePerformer* GetRootPerformer() const;
+
+	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Client")
+	void ConnectCable(UShowtimePlug* InputPlug, UShowtimePlug* OutputPlug) const;
 
 
 	// Actor prototypes
 	// ----------------
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Showtime Client")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Showtime|Client")
 	TSubclassOf<AActor> SpawnablePerformer;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Showtime Client")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Showtime|Client")
 	TSubclassOf<AActor> SpawnableComponent;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Showtime Client")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Showtime|Client")
 	TSubclassOf<AActor> SpawnablePlug;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Showtime Client")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Showtime|Client")
 	TSubclassOf<AActor> SpawnableFactory;
 
 
 	// Event delegates
 	// ---------------
 	
-	UPROPERTY(BlueprintAssignable, Category = "Showtime Client")
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
 	FConnectedToServer OnConnectedToServer;
 	
-	UPROPERTY(BlueprintAssignable, Category = "Showtime Client")
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
 	FDisconnectedFromServer OnDisconnectedFromServer;
 
-	UPROPERTY(BlueprintAssignable, Category = "Showtime Client")
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
 	FServerDiscovered OnServerDiscovered;
 
-	UPROPERTY(BlueprintAssignable, Category = "Showtime Client")
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
 	FServerLost OnServerLost;
 
-	UPROPERTY(BlueprintAssignable, Category = "Showtime Client")
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
 	FGraphSynchronised OnGraphSynchronised;
 
-	UPROPERTY(BlueprintAssignable, Category = "Showtime Client")
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
 	FPerformerArriving OnPerformerArriving;
 
-	UPROPERTY(BlueprintAssignable, Category = "Showtime Client")
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
 	FPerformerLeaving OnPerformerLeaving;
 
-	UPROPERTY(BlueprintAssignable, Category = "Showtime Client")
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
 	FEntityArriving OnEntityArriving;
 
-	UPROPERTY(BlueprintAssignable, Category = "Showtime Client")
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
 	FEntityUpdated OnEntityUpdated;
 
-	UPROPERTY(BlueprintAssignable, Category = "Showtime Client")
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
 	FFactoryArriving OnFactoryArriving;
 
-	UPROPERTY(BlueprintAssignable, Category = "Showtime Client")
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
 	FFactoryLeaving OnFactoryLeaving;
 
-	UPROPERTY(BlueprintAssignable, Category = "Showtime Client")
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
 	FCableCreated OnCableCreated;
 
-	UPROPERTY(BlueprintAssignable, Category = "Showtime Client")
-	FCableDestroyed OnCableLeaving;
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
+	FCableDestroyed OnCableDestroyed;
 
 	//UPROPERTY(BlueprintAssignable)
 	//FPluginLoaded OnPluginLoaded;
@@ -174,8 +185,8 @@ public:
 	// Native access
 	// --------------
 
-	// Native handle to the Showtime client
-	TSharedPtr<ShowtimeClient>& Handle();
+	// Native handle to the Showtime|Client
+	TSharedPtr<ShowtimeClient> Handle() const;
 
 
 	// Wrapper spawning
@@ -184,11 +195,13 @@ public:
 	UShowtimeEntity* SpawnEntity(ZstEntityBase* entity);
 	UShowtimePerformer* SpawnPerformer(ZstPerformer* performer);
 	UShowtimeComponent* SpawnComponent(ZstComponent* component);
+	AShowtimeCable* SpawnCable(ZstCable* cable);
+	UShowtimeFactory* SpawnFactory(ZstEntityFactory* factory);
 	UShowtimePlug* SpawnPlug(ZstPlug* plug);
-	void RegisterSpawnedWrapper(UShowtimeEntity* wrapper, ZstEntityBase* entity); \
+	void RegisterSpawnedWrapper(UShowtimeEntity* wrapper, ZstEntityBase* entity);
 
 	// Wrapper management
-	UShowtimeEntity* GetWrapperParent(UShowtimeEntity* wrapper);
+	UShowtimeEntity* GetWrapperParent(const UShowtimeEntity* wrapper) const;
 
 
 	// Actor overrides
@@ -206,6 +219,6 @@ private:
 #if PLATFORM_ANDROID
 	TSharedPtr<MulticastAndroid> multicast_manager;
 #endif
-	TSharedPtr<ShowtimeClient> client;
+	TSharedPtr<showtime::ShowtimeClient> client;
 	std::shared_ptr<ClientAdaptors> client_adaptor;
 };

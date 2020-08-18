@@ -18,11 +18,17 @@ class UShowtimeComponent : public UShowtimeEntity {
 	GENERATED_BODY()
 public:
 
-	UFUNCTION(BlueprintImplementableEvent, Category="Showtime Component")
+	UFUNCTION(BlueprintImplementableEvent, Category= "Showtime|Component")
+	void PlugAttatched(UShowtimePlug* plug);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Showtime|Component")
+	void ComponentAttatched(UShowtimeComponent* component);
+
+	UFUNCTION(BlueprintCallable, Category = "Showtime|Component")
 	void AttachPlug(UShowtimePlug* plug);
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "Showtime Component")
+	UFUNCTION(BlueprintCallable, Category = "Showtime|Component")
 	void AttachComponent(UShowtimeComponent* component);
 
-	ZstComponent* GetNativeComponent();
+	ZstComponent* GetNativeComponent() const;
 };
