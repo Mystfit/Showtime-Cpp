@@ -33,7 +33,7 @@ public:
     ZST_EXPORT void get_plugs(ZstEntityBundle* bundle);
 
     //Overridable compute function that will process input plug events
-    ZST_EXPORT virtual void compute(ZstInputPlug * plug) {};
+    ZST_EXPORT virtual void compute(ZstInputPlug * plug);
 
     //Transfer plug ownership to this component
     ZST_EXPORT virtual void add_child(ZstEntityBase * entity, bool auto_activate = true) override;
