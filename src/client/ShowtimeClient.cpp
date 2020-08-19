@@ -93,12 +93,12 @@ void ShowtimeClient::auto_join_by_name_async(const char * name)
     if(library_init_guard()) m_client->auto_join_stage(name, ZstTransportRequestBehaviour::ASYNC_REPLY);
 }
 
-void ShowtimeClient::get_discovered_servers(ZstServerAddressBundle & servers)
+void ShowtimeClient::get_discovered_servers(ZstServerAddressBundle* servers)
 {
     if (!library_init_guard()) return;
     auto servers_list = m_client->get_discovered_servers();
     for(auto s : servers_list){
-        servers.add(s);
+        servers->add(s);
     }
 }
 
@@ -302,12 +302,11 @@ ZstEntityBase* ShowtimeClient::find_entity(const ZstURI & path)
 	return m_client->session()->hierarchy()->find_entity(path);
 }
 
-void ShowtimeClient::get_performers(ZstEntityBundle & bundle)
+void ShowtimeClient::get_performers(ZstEntityBundle* bundle)
 {
 	if (!library_init_guard()) return;
 	m_client->session()->hierarchy()->get_performers(bundle);
 }
-
 
 
 // -------------
@@ -359,6 +358,16 @@ void ShowtimeClient::destroy_cable(ZstCable * cable)
 void ShowtimeClient::destroy_cable_async(ZstCable * cable)
 {
 	if (library_connected_guard()) m_client->session()->destroy_cable(cable, ZstTransportRequestBehaviour::ASYNC_REPLY);
+}
+
+ZstCable* ShowtimeClient::find_cable(const ZstCableAddress& address)
+{
+	if (!library_init_guard()) return m_client->session()->find_cable(address);
+}
+
+ZstCable* ShowtimeClient::find_cable(const ZstURI& input, const ZstURI& output)
+{
+	if (!library_init_guard()) return m_client->session()->find_cable(input, output);
 }
 
 void ShowtimeClient::reload_plugins()

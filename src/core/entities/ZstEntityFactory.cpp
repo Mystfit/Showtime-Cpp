@@ -79,12 +79,11 @@ void ZstEntityFactory::remove_creatable(const ZstURI & creatable_path)
 	catch (std::out_of_range) {}
 }
 
-ZstURIBundle & ZstEntityFactory::get_creatables(ZstURIBundle & bundle)
+void ZstEntityFactory::get_creatables(ZstURIBundle* bundle)
 {
 	for (auto c : m_creatables) {
-		bundle.add(c.first);
+		bundle->add(c.first);
 	}
-	return bundle;
 }
 
 const ZstURI & ZstEntityFactory::get_creatable_at(size_t index)

@@ -55,7 +55,7 @@ struct FixtureExternalConnectCable : public FixtureExternalEntities
 
 bool found_performer(std::shared_ptr<ShowtimeClient> client, ZstURI performer_address) {
 	ZstEntityBundle bundle;
-	client->get_performers(bundle);
+	client->get_performers(&bundle);
 	for (auto p : bundle) {
 		if (p->URI() == performer_address) {
 			return true;
@@ -76,7 +76,7 @@ BOOST_FIXTURE_TEST_CASE(multiple_clients, FixtureJoinServer) {
 	ZstEntityBundle performers;
 	BOOST_TEST_CHECKPOINT("Waiting for remote client performer to arrive");
 	wait_for_event(test_client, perf_event, 1);
-	test_client->get_performers(performers);
+	test_client->get_performers(&performers);
 	BOOST_TEST(performers.size() == 2);
 	performers.clear();
 	perf_event->reset_num_calls();
@@ -85,7 +85,7 @@ BOOST_FIXTURE_TEST_CASE(multiple_clients, FixtureJoinServer) {
 	BOOST_TEST_CHECKPOINT("Waiting for external client performer to leave");
 	wait_for_event(test_client, perf_event, 1);
 	BOOST_TEST(!remote_client->is_connected());
-	test_client->get_performers(performers);
+	test_client->get_performers(&performers);
 	BOOST_TEST(performers.size() == 1);
 }
 
@@ -185,6 +185,7 @@ BOOST_FIXTURE_TEST_CASE(ownership_plug_fire_check, FixtureExternalEntitysWithLoc
     sync_out_plug->append_int(cmp_val);
     sync_out_plug->fire();
 	TAKE_A_BREATH
+	test_client->poll_once();
 	BOOST_TEST(input_component->input()->size() > 0);
     BOOST_TEST(input_component->input()->int_at(0) == cmp_val);
 }

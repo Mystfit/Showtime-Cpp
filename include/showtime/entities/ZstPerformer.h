@@ -38,7 +38,7 @@ public:
     ZST_EXPORT void remove_child(ZstEntityBase * entity) override;
     ZST_EXPORT void add_factory(ZstEntityFactory * factory);
     ZST_EXPORT void remove_factory(ZstEntityFactory * factory);
-    ZST_EXPORT ZstEntityFactoryBundle & get_factories(ZstEntityFactoryBundle & bundle);
+    ZST_EXPORT void get_factories(ZstEntityFactoryBundle* bundle);
     
 	// Serialisation
 

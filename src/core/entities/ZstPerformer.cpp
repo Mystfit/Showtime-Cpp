@@ -114,14 +114,13 @@ void ZstPerformer::remove_factory(ZstEntityFactory * factory)
     ZstComponent::remove_child(factory);
 }
 
-ZstEntityFactoryBundle & ZstPerformer::get_factories(ZstEntityFactoryBundle & bundle)
+void ZstPerformer::get_factories(ZstEntityFactoryBundle* bundle)
 {
     auto entity_bundle = ZstEntityBundle();
-    get_child_entities(entity_bundle, false, false, ZstEntityType::FACTORY);
+    get_child_entities(&entity_bundle, false, false, ZstEntityType::FACTORY);
     for (auto entity : entity_bundle) {
-        bundle.add(dynamic_cast<ZstEntityFactory*>(entity));
+        bundle->add(dynamic_cast<ZstEntityFactory*>(entity));
     }
-    return bundle;
 }
     
 void ZstPerformer::serialize_partial(flatbuffers::Offset<PerformerData>& serialized_offset, FlatBufferBuilder& buffer_builder) const

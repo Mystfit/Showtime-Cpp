@@ -441,7 +441,7 @@ void ZstClient::join_stage_complete(const ZstServerAddress& server_address, ZstM
 
     //Add local entities to entity lookup and attach adaptors only if we've connected to the stage
     ZstEntityBundle bundle;
-    m_session->hierarchy()->get_local_performer()->get_child_entities(bundle, true);
+    m_session->hierarchy()->get_local_performer()->get_child_entities(&bundle, true);
     for (auto c : bundle) {
         c->add_adaptor(static_cast<std::shared_ptr< ZstSynchronisableAdaptor>>(m_session->hierarchy()));
         c->add_adaptor(static_cast<std::shared_ptr<ZstEntityAdaptor> >(m_session->hierarchy()));
@@ -461,7 +461,7 @@ void ZstClient::join_stage_complete(const ZstServerAddress& server_address, ZstM
 
     // Activate all child entities that were added before we joined
     bundle.clear();
-    session()->hierarchy()->get_local_performer()->get_child_entities(bundle, false, true);
+    session()->hierarchy()->get_local_performer()->get_child_entities(&bundle, false, true);
     for (auto c : bundle) {
         Log::net(Log::Level::notification, "Post-join activating child entity {}", c->URI().path());
         session()->hierarchy()->activate_entity(c, response.send_behaviour);
@@ -558,7 +558,7 @@ void ZstClient::leave_stage_complete(ZstTransportRequestBehaviour sendtype)
 
     //Mark all locally registered entites as deactivated
     ZstEntityBundle bundle;
-    m_session->hierarchy()->get_local_performer()->get_child_entities(bundle, true);
+    m_session->hierarchy()->get_local_performer()->get_child_entities(&bundle, true);
     for (auto c : bundle) {
 		synchronisable_enqueue_deactivation(c);
     }
@@ -797,7 +797,7 @@ void ZstClient::set_is_connecting(bool value)
 void ZstClient::on_entity_arriving(ZstEntityBase* entity)
 {
     ZstEntityBundle bundle;
-    entity->get_child_entities(bundle, true, true);
+    entity->get_child_entities(&bundle, true, true);
 
     for (auto child : bundle) {
         // Arriving output plugs need to register the graph transport so that they can dispatch messages

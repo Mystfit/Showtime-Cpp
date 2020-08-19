@@ -83,7 +83,7 @@ add_dependencies(${PYTHON_TARGET_WRAPPER}
 add_dependencies(${PYTHON_TARGET} ${PYTHON_TARGET_WRAPPER})
 
 # Link libraries to swig target
-swig_link_libraries(${PYTHON_TARGET_WRAPPER} PUBLIC ${PYTHON_LINK_LIBS})
+target_link_libraries(${PYTHON_TARGET_WRAPPER} PUBLIC ${PYTHON_LINK_LIBS})
 
 # Copy files to build tree
 add_custom_command(TARGET ${PYTHON_TARGET} PRE_BUILD

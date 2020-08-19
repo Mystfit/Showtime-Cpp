@@ -61,7 +61,7 @@ namespace showtime
     ZstComponent::~ZstComponent()
     {
         ZstEntityBundle bundle;
-        get_child_entities(bundle, false, true);
+        get_child_entities(&bundle, false, true);
         for (auto child : bundle) {
             //ZstEntityLiason().entity_set_parent(child, NULL);
 			child->deactivate();
@@ -69,10 +69,9 @@ namespace showtime
         m_children.clear();
     }
 
-    ZstEntityBundle & ZstComponent::get_plugs(ZstEntityBundle & bundle)
+    void ZstComponent::get_plugs(ZstEntityBundle* bundle)
     {
         get_child_entities(bundle, false, false, ZstEntityType::PLUG);
-        return bundle;
     }
 
     void ZstComponent::add_child(ZstEntityBase * entity, bool auto_activate)
@@ -133,7 +132,7 @@ namespace showtime
 
         // Grab child entities first before the parent entity name change
         ZstEntityBundle bundle;
-        get_child_entities(bundle, false, false);
+        get_child_entities(&bundle, false, false);
 
         // Set name of root object
         ZstEntityBase::set_name(name);
@@ -152,7 +151,7 @@ namespace showtime
         ZstEntityBase::set_parent(parent);
         
         ZstEntityBundle bundle;
-        get_child_entities(bundle, false, false);
+        get_child_entities(&bundle, false, false);
         for (auto child : bundle) {
             this->remove_child(child);
             this->add_child(child);
@@ -215,18 +214,18 @@ namespace showtime
         m_component_type = std::string(component_type, len);
     }
 
-    void ZstComponent::get_child_cables(ZstCableBundle & bundle)
+    void ZstComponent::get_child_cables(ZstCableBundle* bundle)
     {
         ZstEntityBundle entity_bundle;
-        get_child_entities(entity_bundle, false, true);
-        for(auto child : entity_bundle){
+        get_child_entities(&entity_bundle, false, true);
+        for (auto child : entity_bundle) {
             child->get_child_cables(bundle);
         }
-        
+
         ZstEntityBase::get_child_cables(bundle);
     }
 
-    void ZstComponent::get_child_entities(ZstEntityBundle & bundle, bool include_parent, bool recursive, ZstEntityType filter)
+    void ZstComponent::get_child_entities(ZstEntityBundle* bundle, bool include_parent, bool recursive, ZstEntityType filter)
     {
 		// Add the root object first so the bundle preserves ancestor-first order
         ZstEntityBase::get_child_entities(bundle, include_parent, false, filter);

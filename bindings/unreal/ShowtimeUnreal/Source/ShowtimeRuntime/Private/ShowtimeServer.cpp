@@ -1,4 +1,6 @@
 #include "ShowtimeServer.h"
+#include <showtime/ShowtimeServer.h>
+
 
 void UShowtimeServer::BeginDestroy()
 {
@@ -6,7 +8,7 @@ void UShowtimeServer::BeginDestroy()
 	if(server) server->destroy();
 }
 
-TSharedPtr<ShowtimeServer>& UShowtimeServer::Handle()
+TSharedPtr<showtime::ShowtimeServer>& UShowtimeServer::Handle()
 {
 	return server;
 }

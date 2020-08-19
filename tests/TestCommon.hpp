@@ -25,6 +25,7 @@
 #define BOOST_TEST_ALTERNATIVE_INIT_API
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/unit_test.hpp>
+#include "../src/core/ZstZMQRefCounter.h"
 
 namespace utf = boost::unit_test;
 using namespace boost::process;
@@ -461,6 +462,14 @@ namespace ZstTest
 		~FixtureInit()
 		{
 			test_client->destroy();
+
+			Log::app(Log::Level::notification, "-------------------------------------------------------------------");
+			Log::app(Log::Level::warn, "Final zmq ref count: {}", zst_zmq_total_ref_count());
+
+			auto open_zmq_refs = zst_zmq_ref_counts();
+			for (auto ref : open_zmq_refs) {
+				Log::app(Log::Level::warn, "{}: {}", ref.first, ref.second);
+			}
 			Log::app(Log::Level::notification, "-------------------------------------------------------------------");
 		}
 	};

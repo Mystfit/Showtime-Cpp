@@ -62,8 +62,8 @@ struct FixtureCorePluginAdder :
 	FixtureCorePluginAdder() {
 		ZstURI creatable_path_expected = factory->URI() + ZstURI("adder");
 		ZstURIBundle creatable_bundle;
-		auto creatables = factory->get_creatables(creatable_bundle);
-		auto creatable_path = std::find_if(creatables.begin(), creatables.end(), [creatable_path_expected](auto it) {
+		factory->get_creatables(&creatable_bundle);
+		auto creatable_path = std::find_if(creatable_bundle.begin(), creatable_bundle.end(), [creatable_path_expected](auto it) {
 			return it == creatable_path_expected;
 		});
 		auto adder = dynamic_cast<ZstComponent*>(test_client->create_entity(*creatable_path, "test_adder"));
@@ -105,11 +105,11 @@ BOOST_FIXTURE_TEST_CASE(plugin_factories, FixtureCorePlugin) {
 BOOST_FIXTURE_TEST_CASE(plugin_create_entity, FixtureCorePluginFactory) {
 	ZstURI creatable_path_expected = factory->URI() + ZstURI("adder");
 	ZstURIBundle creatable_bundle;
-	auto creatables = factory->get_creatables(creatable_bundle);
-	auto creatable_path = std::find_if(creatables.begin(), creatables.end(), [creatable_path_expected](auto it) {
+	factory->get_creatables(&creatable_bundle);
+	auto creatable_path = std::find_if(creatable_bundle.begin(), creatable_bundle.end(), [creatable_path_expected](auto it) {
 		return it == creatable_path_expected;
 	});
-	bool found = (creatable_path != creatables.end());
+	bool found = (creatable_path != creatable_bundle.end());
 	BOOST_TEST(found);
 
 	// Create entity

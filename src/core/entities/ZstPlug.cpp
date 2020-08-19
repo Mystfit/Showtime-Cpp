@@ -129,6 +129,11 @@ ZstValue * ZstPlug::raw_value()
     return m_value.get();
 }
 
+ZstValueType ZstPlug::get_default_type() const
+{
+    return m_value->get_default_type();
+}
+
 
 //--------------------
 // Serialisation
@@ -174,7 +179,7 @@ ZstPlugDirection ZstPlug::direction()
     return m_direction;
 }
 
-void ZstPlug::get_child_cables(ZstCableBundle & bundle)
+void ZstPlug::get_child_cables(ZstCableBundle* bundle)
 {
     std::lock_guard<std::mutex> lock(m_entity_mtx);
     for (auto const & cable_path : m_cables) {
@@ -188,12 +193,12 @@ void ZstPlug::get_child_cables(ZstCableBundle & bundle)
             }
 
             // TODO: Replace bundles vectors with sets?
-            for (auto existing_cable : bundle) {
+            for (auto existing_cable : *bundle) {
                 if (existing_cable->get_address() == cable_path)
                     return;
             }
             
-            bundle.add(cable);
+            bundle->add(cable);
         });
     }
 
@@ -334,7 +339,7 @@ void ZstOutputPlug::fire()
 
     // Send message to local plugs first
     ZstCableBundle bundle;
-    get_child_cables(bundle);
+    get_child_cables(&bundle);
     int num_local_cables = 0;
     for (auto c : bundle) {
         if (c->get_input()->URI().first() == this->URI().first()) {

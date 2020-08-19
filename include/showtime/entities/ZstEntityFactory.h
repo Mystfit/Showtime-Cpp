@@ -42,7 +42,7 @@ public:
 		m_creatables.insert({ creatable_path, [](const char* e_name) { return std::make_unique<T>(e_name); } });
 	}
 	ZST_EXPORT void remove_creatable(const ZstURI & creatable_path);
-	ZST_EXPORT ZstURIBundle & get_creatables(ZstURIBundle & bundle);
+	ZST_EXPORT void get_creatables(ZstURIBundle* bundle);
 	ZST_EXPORT const ZstURI & get_creatable_at(size_t index);
 	ZST_EXPORT size_t num_creatables();
 	ZST_EXPORT void update_creatables();

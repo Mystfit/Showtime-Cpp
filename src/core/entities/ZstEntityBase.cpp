@@ -171,16 +171,16 @@ namespace showtime
         });
 	}
 
-    void ZstEntityBase::get_child_cables(ZstCableBundle & bundle)
+    void ZstEntityBase::get_child_cables(ZstCableBundle* bundle)
     {
     }
 
-    void ZstEntityBase::get_child_entities(ZstEntityBundle & bundle, bool include_parent, bool recursive, ZstEntityType filter)
+    void ZstEntityBase::get_child_entities(ZstEntityBundle* bundle, bool include_parent, bool recursive, ZstEntityType filter)
     {
-        if (include_parent){
+        if (include_parent) {
             if (filter == ZstEntityType::NONE || this->entity_type() == filter) {
                 //std::lock_guard<std::mutex> lock(m_entity_lock);
-                bundle.add(this);
+                bundle->add(this);
             }
         }
     }
@@ -373,7 +373,7 @@ namespace showtime
 
 			// Set child entities and this entity as destroyed so they won't queue destruction events later
 			ZstEntityBundle bundle;
-			get_child_entities(bundle);
+			get_child_entities(&bundle);
 			for (auto child : bundle) {
 				child->set_activation_status(ZstSyncStatus::DESTROYED);
 			}

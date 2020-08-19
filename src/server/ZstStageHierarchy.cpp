@@ -314,7 +314,8 @@ void ZstStageHierarchy::broadcast(Content message_type, flatbuffers::Offset<void
 {
 	//Log::server(Log::Level::debug, "Broadcasting {} message {}", EnumNameContent(message_type), boost::uuids::to_string(args.msg_ID));
 	ZstEntityBundle bundle;
-	for (auto entity : get_performers(bundle))
+	get_performers(&bundle);
+	for (auto entity : bundle)
 	{
 		//Can only send messages to performers
 		ZstPerformerStageProxy* performer = dynamic_cast<ZstPerformerStageProxy*>(entity);

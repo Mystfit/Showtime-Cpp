@@ -62,21 +62,24 @@ void ZstHierarchy::deactivate_entity(ZstEntityBase * entity, const ZstTransportR
 		synchronisable_set_deactivating(entity);
 }
 
-ZstEntityBundle & ZstHierarchy::get_performers(ZstEntityBundle & bundle) const
+void ZstHierarchy::get_performers(ZstEntityBundle & bundle) const
+{
+	get_performers(&bundle);
+}
+
+void ZstHierarchy::get_performers(ZstEntityBundle* bundle) const
 {
 	// Add local performer
 	auto local_performer = get_local_performer();
-	if(local_performer)
-		bundle.add(get_local_performer());
+	if (local_performer)
+		bundle->add(get_local_performer());
 
 	// Only add performers to the bundle
 	for (auto&& entity : m_proxies) {
 		auto performer = dynamic_cast<ZstPerformer*>(entity.get());
 		if (performer)
-			bundle.add(performer);
+			bundle->add(performer);
 	}
-
-	return bundle;
 }
 
 void ZstHierarchy::update_entity_URI(ZstEntityBase* entity, const ZstURI& original_path)
@@ -161,7 +164,7 @@ void ZstHierarchy::add_proxy_entity(std::unique_ptr<ZstEntityBase> entity)
     
 	// Propagate proxy properties to children of this proxy
 	ZstEntityBundle bundle;
-	entity->get_child_entities(bundle, true, true);
+	entity->get_child_entities(&bundle, true, true);
 
     for (auto c : bundle){
 		//Set entity as a proxy so the reaper can clean it up later
@@ -329,7 +332,7 @@ void ZstHierarchy::activate_entity_complete(ZstEntityBase * entity)
 
 	//Add entity to lookup tables
 	ZstEntityBundle bundle;
-	entity->get_child_entities(bundle, true, true);
+	entity->get_child_entities(&bundle, true, true);
 	for (auto c : bundle) {
 		add_entity_to_lookup(c);
         synchronisable_set_activating(c);
@@ -376,7 +379,7 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 
 	//Cleanup children
 	ZstEntityBundle bundle;
-	entity->get_child_entities(bundle, true, true);
+	entity->get_child_entities(&bundle, true, true);
 	for (auto c : bundle) {
 		//Enqueue deactivation
 		synchronisable_enqueue_deactivation(c);

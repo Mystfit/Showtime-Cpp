@@ -162,21 +162,43 @@ BOOST_FIXTURE_TEST_CASE(get_children, FixtureJoinServer) {
 	test_client->get_root()->add_child(parent.get());
 
 	ZstEntityBundle bundle;
-	// Get a flat list of all entities
-	test_client->get_root()->get_child_entities(bundle, true, true);
-	BOOST_TEST(bundle.size() == 3);
-	BOOST_TEST(bundle[0]->URI() == test_client->get_root()->URI());
+	// Get a flat list of all entities including root performer
+	test_client->get_root()->get_child_entities(&bundle, true, true);
+	auto compare = test_client->get_root()->URI();
+	auto entity_it = std::find_if(bundle.begin(), bundle.end(), [&compare](const ZstEntityBase* entity) {
+		return compare == entity->URI();
+	});
+	bool found = (entity_it != bundle.end());
+	BOOST_TEST(found);
 	bundle.clear();
 
 	// Get a list of all recursive children
-	test_client->get_root()->get_child_entities(bundle, false , true);
-	BOOST_TEST(bundle.size() == 2);
-	BOOST_TEST(bundle[0]->URI() == parent->URI());
+	test_client->get_root()->get_child_entities(&bundle, false , true);
+	compare = test_client->get_root()->URI();
+	entity_it = std::find_if(bundle.begin(), bundle.end(), [&compare](const ZstEntityBase* entity) {
+		return compare == entity->URI();
+	});
+	found = (entity_it != bundle.end());
+	BOOST_TEST(!found);
 	bundle.clear();
 
 	// Get immediate children only
-	parent->get_child_entities(bundle);
-	BOOST_TEST(bundle.size() == 1);
+	parent->get_child_entities(&bundle);
+	compare = child->URI();
+	entity_it = std::find_if(bundle.begin(), bundle.end(), [&compare](const ZstEntityBase* entity) {
+		return compare == entity->URI();
+		});
+	found = (entity_it != bundle.end());
+	BOOST_TEST(found);
+	bundle.clear();
+
+	// Only get children of a specified type
+	test_client->get_root()->get_child_entities(&bundle, false, true, ZstEntityType::COMPONENT);
+	BOOST_TEST(bundle.size() == 2);
+	bool type_match = (bundle.item_at(0)->entity_type() == ZstEntityType::COMPONENT);
+	BOOST_TEST(type_match);
+	type_match = (bundle.item_at(1)->entity_type() == ZstEntityType::COMPONENT);
+	BOOST_TEST(type_match);
 }
 
 BOOST_FIXTURE_TEST_CASE(parent_activates_child, FixtureJoinServer) {
@@ -216,7 +238,7 @@ BOOST_FIXTURE_TEST_CASE(remove_child, FixtureParentChild) {
 	test_client->deactivate_entity(child.get());
 	
 	ZstEntityBundle bundle;
-	parent->get_child_entities(bundle, false);
+	parent->get_child_entities(&bundle, false);
 	BOOST_TEST(bundle.size() == 1);
 	BOOST_TEST(!parent->walk_child_by_URI(child_URI));
 	BOOST_TEST(!test_client->find_entity(child_URI));
