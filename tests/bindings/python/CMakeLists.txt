@@ -10,7 +10,8 @@ if(MSVC)
     endif()
 endif()
 
-add_dependencies(${PYTHON_TEST_TARGET} ${PYTHON_TARGET})
 
 add_test(NAME ${PYTHON_TEST_TARGET} COMMAND ${Python_EXECUTABLE} -B ${CMAKE_CURRENT_LIST_DIR}/TestPython.py)
 set_tests_properties(${PYTHON_TEST_TARGET} PROPERTIES ENVIRONMENT PYTHONPATH=${CMAKE_SWIG_ROOT_OUTDIR}/python)
+
+add_dependencies(${PYTHON_TEST_TARGET} ${PYTHON_TARGET})

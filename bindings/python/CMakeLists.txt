@@ -62,6 +62,7 @@ set_target_properties(${PYTHON_TARGET_WRAPPER} PROPERTIES
 
 if(BINDINGS_PYTHON_LINK_AT_RUNTIME)
     # Since we don't link against the Python libs we need to explicitly add the python include dir
+    message(STATUS "Python include dir is ${PYTHON_INCLUDE_DIR}")
     target_include_directories(${PYTHON_TARGET_WRAPPER} PRIVATE ${PYTHON_INCLUDE_DIR})
     if(MACOSX OR LINUX)
         # Compiler option to ignore unresolved externals, resolve at runtime
@@ -87,7 +88,7 @@ swig_link_libraries(${PYTHON_TARGET_WRAPPER} PUBLIC ${PYTHON_LINK_LIBS})
 # Copy files to build tree
 add_custom_command(TARGET ${PYTHON_TARGET} PRE_BUILD
                     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/showtime ${CMAKE_SWIG_OUTDIR}/showtime
-                    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PYTHON_TARGET_WRAPPER}> ${CMAKE_SWIG_OUTDIR}/showtime
+                    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PYTHON_TARGET_WRAPPER}> ${CMAKE_SWIG_OUTDIR}/showtime/_showtime.so
                     VERBATIM
 )
 
