@@ -2,15 +2,39 @@
 #include "ShowtimeClient.h"
 
 
-ZstComponent* AShowtimeComponent::GetNative() {
-	if (!OwningClient || EntityPath.IsEmpty())
-		return nullptr;
+void UShowtimeComponent::AttachPlug(UShowtimePlug* plug)
+{
+	if (!plug)
+		return;
 
-	auto entity = OwningClient->Handle()->find_entity(ZstURI(TCHAR_TO_UTF8(*EntityPath)));
-	
-	if (entity->entity_type() == ZstEntityType::COMPONENT) {
-		return static_cast<ZstComponent*>(entity);
+	if (auto native_plug = plug->GetNativeEntity()) {
+		if (auto native_component = GetNativeComponent()) {
+			native_component->add_child(native_plug);
+			this->PlugAttatched(plug);
+		}
 	}
+}
 
+void UShowtimeComponent::AttachComponent(UShowtimeComponent* component)
+{
+	if (!component)
+		return;
+
+	if (auto native_child = component->GetNativeEntity()) {
+		if (auto native_component = GetNativeComponent()) {
+			native_component->add_child(native_child);
+			this->ComponentAttatched(component);
+		}
+	}
+}
+
+ZstComponent* UShowtimeComponent::GetNativeComponent() const
+{
+	auto entity = GetNativeEntity();
+	if (entity) {
+		if (entity->entity_type() == ZstEntityType::COMPONENT) {
+			return static_cast<ZstComponent*>(entity);
+		}
+	}
 	return nullptr;
 }

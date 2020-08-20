@@ -25,7 +25,6 @@ void ZstGraphTransport::init()
 	m_graph_actor.init("graph");
 	init_graph_sockets();
 	m_graph_actor.start_loop();
-	zst_zmq_inc_ref_count();
 }
 
 void ZstGraphTransport::destroy()
@@ -74,6 +73,12 @@ void ZstGraphTransport::attach_graph_sockets(zsock_t * in, zsock_t * out)
 	m_graph_actor.attach_pipe_listener(in, s_handle_graph_in, this);
 	m_graph_in = in;
 	m_graph_out = out;
+
+	if (in)
+		zst_zmq_inc_ref_count("graphsocket_in");
+
+	if (out)
+		zst_zmq_inc_ref_count("graphsocket_out");
 }
 
 void ZstGraphTransport::set_graph_addresses(const std::string & in_addr, const std::string & out_addr)
@@ -108,21 +113,18 @@ void ZstGraphTransport::sock_recv(zsock_t* socket)
 
 void ZstGraphTransport::destroy_graph_sockets()
 {
-    bool deref = false;
     if (m_graph_in){
 		//m_graph_actor.remove_pipe_listener(m_graph_in);
 		zsock_destroy(&m_graph_in);
 		m_graph_in = NULL;
-        deref = true;
-    }
+		zst_zmq_dec_ref_count("graphsocket_in");
+	}
     if (m_graph_out){
 		//m_graph_actor.remove_pipe_listener(m_graph_out);
 		zsock_destroy(&m_graph_out);
 		m_graph_out = NULL;
-        deref = true;
-    }
-    if(deref)
-        zst_zmq_dec_ref_count();
+		zst_zmq_dec_ref_count("graphsocket_out");
+	}
 }
 
 std::string ZstGraphTransport::first_available_ext_ip() const

@@ -91,6 +91,8 @@ public:
     ZST_CLIENT_EXPORT ZstCable * connect_cable_async(ZstInputPlug * input, ZstOutputPlug * output);
 	ZST_CLIENT_EXPORT void destroy_cable(ZstCable * cable);
     ZST_CLIENT_EXPORT void destroy_cable_async(ZstCable * cable);
+	ZST_CLIENT_EXPORT ZstCable* find_cable(const ZstCableAddress& address);
+	ZST_CLIENT_EXPORT ZstCable* find_cable(const ZstURI& input, const ZstURI& output);
 
 	//Plugins
 	ZST_CLIENT_EXPORT void reload_plugins();

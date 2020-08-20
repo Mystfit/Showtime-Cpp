@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13.0)
 
-project(Showtime VERSION 0.26.0)
+project(Showtime VERSION 0.27.0)
 set(AUTHORS "Byron Mallett")
 set(COMPANY "Victoria University of Wellington")
 set(DESCRIPTION "Showtime dataflow network library")
@@ -159,7 +159,7 @@ endif()
 
 # swig
 # ------------------------------
-find_host_package(SWIG)
+find_host_package(SWIG REQUIRED)
 if(SWIG_FOUND)
     cmake_policy(SET CMP0078 NEW)
     cmake_policy(SET CMP0086 NEW)

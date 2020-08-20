@@ -83,6 +83,7 @@ public:
 
     //Values
     ZST_EXPORT ZstValue * raw_value();
+    ZST_EXPORT ZstValueType get_default_type() const;
 
 protected:
     std::unique_ptr<ZstValue> m_value;
@@ -122,6 +123,7 @@ public:
     ZST_EXPORT ZstOutputPlug(const ZstOutputPlug & other);
     ZST_EXPORT ZstOutputPlug(const char * name, const ZstValueType& t, bool reliable = true);
     ZST_EXPORT ~ZstOutputPlug();
+    ZST_EXPORT virtual void on_activation() override;
     ZST_EXPORT bool can_fire();
     ZST_EXPORT void fire();
     ZST_EXPORT bool is_reliable();
