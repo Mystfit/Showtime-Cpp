@@ -363,11 +363,13 @@ void ShowtimeClient::destroy_cable_async(ZstCable * cable)
 ZstCable* ShowtimeClient::find_cable(const ZstCableAddress& address)
 {
 	if (!library_init_guard()) return m_client->session()->find_cable(address);
+	return NULL;
 }
 
 ZstCable* ShowtimeClient::find_cable(const ZstURI& input, const ZstURI& output)
 {
 	if (!library_init_guard()) return m_client->session()->find_cable(input, output);
+	return NULL;
 }
 
 void ShowtimeClient::reload_plugins()
