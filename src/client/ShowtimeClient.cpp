@@ -382,4 +382,20 @@ std::vector< std::shared_ptr<ZstPlugin> > ShowtimeClient::plugins() {
 	return m_client->plugins()->get_plugins();
 }
 
+void ShowtimeClient::set_plugin_path(const char* path) {
+	m_client->plugins()->set_plugin_path(path);
+}
+
+const char* ShowtimeClient::get_plugin_path() {
+	return m_client->plugins()->get_plugin_path();
+}
+
+void ShowtimeClient::set_plugin_data_path(const char* path) {
+	m_client->plugins()->set_plugin_data_path(path);
+}
+
+const char* ShowtimeClient::get_plugin_data_path() {
+	return m_client->plugins()->get_plugin_data_path();
+}
+
 }

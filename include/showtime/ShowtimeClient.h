@@ -95,6 +95,10 @@ public:
 	ZST_CLIENT_EXPORT ZstCable* find_cable(const ZstURI& input, const ZstURI& output);
 
 	//Plugins
+	ZST_CLIENT_EXPORT void set_plugin_path(const char* path);
+	ZST_CLIENT_EXPORT const char* get_plugin_path();
+	ZST_CLIENT_EXPORT void set_plugin_data_path(const char* path);
+	ZST_CLIENT_EXPORT const char* get_plugin_data_path();
 	ZST_CLIENT_EXPORT void reload_plugins();
 	ZST_CLIENT_EXPORT std::vector< std::shared_ptr<ZstPlugin> > plugins();
 

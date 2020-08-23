@@ -155,7 +155,7 @@ void ZstClient::init_client(const char* client_name, bool debug)
     m_service_broadcast_transport->msg_events()->add_adaptor(ZstServiceDiscoveryAdaptor::downcasted_shared_from_this< ZstServiceDiscoveryAdaptor>());
     
     //Load plugins
-    m_plugins->load(fs::path(boost::dll::program_location().string()).parent_path().append("plugins"));
+    m_plugins->load();
 
     //Init completed
     set_init_completed(true);

@@ -18,7 +18,7 @@ namespace showtime {
 		ZST_PLUGIN_EXPORT virtual ~CoreEntities();
 
 		ZST_PLUGIN_EXPORT static std::shared_ptr<CoreEntities> create();
-		ZST_PLUGIN_EXPORT virtual void init() override;
+		ZST_PLUGIN_EXPORT virtual void init(const char* plugin_data_path) override;
 		ZST_PLUGIN_EXPORT virtual const char* name() override;
 		ZST_PLUGIN_EXPORT virtual int version_major() override;
 		ZST_PLUGIN_EXPORT virtual int version_minor() override;

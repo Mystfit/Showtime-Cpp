@@ -29,8 +29,14 @@ namespace showtime {
         ZST_EXPORT virtual void process_events() override;
         ZST_EXPORT virtual void flush_events() override;
 
+        //Paths
+        ZST_EXPORT void set_plugin_path(const char* path);
+        ZST_EXPORT const char* get_plugin_path();
+        ZST_EXPORT void set_plugin_data_path(const char* path);
+        ZST_EXPORT const char* get_plugin_data_path();
+
         // Scan and load all plugins in a folder
-        ZST_EXPORT void load(const fs::path& plugin_dir);
+        ZST_EXPORT void load();
 
         // Get all loaded plugins
         ZST_EXPORT std::vector<std::shared_ptr<ZstPlugin> > get_plugins();
@@ -42,7 +48,10 @@ namespace showtime {
         ZST_EXPORT std::vector<fs::path> plugin_lib_paths(const fs::path& dir);
 
         std::shared_ptr<ZstEventDispatcher<ZstPluginAdaptor> > m_plugin_events;
-
         std::unordered_map<std::string, ZstLoadedPlugin> m_loaded_plugins;
+
+        //Paths
+        fs::path m_plugin_path;
+        fs::path m_plugin_data_path;
     };
 }
