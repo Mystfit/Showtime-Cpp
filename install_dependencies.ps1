@@ -130,6 +130,10 @@ foreach ($c in $config){
         "-DCMAKE_DEBUG_POSTFIX=d"
     )
     Build-CmakeFromGit -name "fmt" -url "https://github.com/fmtlib/fmt.git" -branch "master" -config $config_titled -toolset $toolset_ver -flags @()
+    Build-CmakeFromGit -name "rtmidi" -url "https://github.com/thestk/rtmidi.git" -branch "cc887191c3b4cb6697aeba5536d9f4eb423090aa" -config $config_titled -toolset $toolset_ver -flags @(
+        "-DRTMIDI_BUILD_STATIC_LIBS=ON"
+        "-DCMAKE_DEBUG_POSTFIX=d"
+    )
 
     if($without_boost -ne $true){
         $libraries = @("system","chrono","log","thread","filesystem","date_time","atomic","regex","context","fiber","test")

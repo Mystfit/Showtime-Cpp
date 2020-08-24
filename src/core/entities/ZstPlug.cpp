@@ -188,7 +188,6 @@ void ZstPlug::get_child_cables(ZstCableBundle* bundle)
             cable = adaptor->find_cable(cable_path);
             
             if (!cable) {
-                Log::entity(Log::Level::error, "No cable found for address {}<-{}", cable_path.get_input_URI().path(), cable_path.get_output_URI().path());
                 return;
             }
 
@@ -325,6 +324,16 @@ ZstOutputPlug::~ZstOutputPlug()
 {
     //m_graph_out_events->flush();
     m_graph_out_events->remove_all_adaptors();
+}
+
+void ZstOutputPlug::on_activation()
+{
+    ZstEntityBase::on_activation();
+
+    // Set local plugs as fireable by default
+    if (!this->is_proxy()) {
+        set_can_fire(true);
+    }
 }
 
 bool ZstOutputPlug::can_fire()

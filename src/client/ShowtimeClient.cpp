@@ -363,11 +363,13 @@ void ShowtimeClient::destroy_cable_async(ZstCable * cable)
 ZstCable* ShowtimeClient::find_cable(const ZstCableAddress& address)
 {
 	if (!library_init_guard()) return m_client->session()->find_cable(address);
+	return NULL;
 }
 
 ZstCable* ShowtimeClient::find_cable(const ZstURI& input, const ZstURI& output)
 {
 	if (!library_init_guard()) return m_client->session()->find_cable(input, output);
+	return NULL;
 }
 
 void ShowtimeClient::reload_plugins()
@@ -378,6 +380,22 @@ void ShowtimeClient::reload_plugins()
 std::vector< std::shared_ptr<ZstPlugin> > ShowtimeClient::plugins() {
 	if (!library_init_guard()) return std::vector< std::shared_ptr<ZstPlugin> >();
 	return m_client->plugins()->get_plugins();
+}
+
+void ShowtimeClient::set_plugin_path(const char* path) {
+	m_client->plugins()->set_plugin_path(path);
+}
+
+const char* ShowtimeClient::get_plugin_path() {
+	return m_client->plugins()->get_plugin_path();
+}
+
+void ShowtimeClient::set_plugin_data_path(const char* path) {
+	m_client->plugins()->set_plugin_data_path(path);
+}
+
+const char* ShowtimeClient::get_plugin_data_path() {
+	return m_client->plugins()->get_plugin_data_path();
 }
 
 }

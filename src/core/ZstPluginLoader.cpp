@@ -60,14 +60,42 @@ namespace showtime {
 	{
 	}
 
-	void ZstPluginLoader::load(const fs::path& plugin_dir)
+	void ZstPluginLoader::set_plugin_path(const char* path)
 	{
-		auto plugins = plugin_lib_paths(plugin_dir);
+		m_plugin_path = path;
+	}
+
+	const char* ZstPluginLoader::get_plugin_path()
+	{
+		return m_plugin_path.string().c_str();
+	}
+
+	void ZstPluginLoader::set_plugin_data_path(const char* path)
+	{
+		m_plugin_data_path = path;
+	}
+
+	const char* ZstPluginLoader::get_plugin_data_path()
+	{
+		return m_plugin_data_path.string().c_str();
+	}
+
+	void ZstPluginLoader::load()
+	{
+		if (m_plugin_path.empty()) {
+			m_plugin_path = fs::path(boost::dll::program_location().string()).parent_path().append("plugins");
+		}
+
+		auto plugins = plugin_lib_paths(m_plugin_path);
 
 		for (auto file : plugins) {
-			// Load plugin library
 			boost::dll::shared_library lib;
 			boost::dll::fs::error_code ec;
+
+			// Strip extension - let boost pick the decorators
+			file.replace_extension("");
+
+			// Load plugin library
 			lib.load(file.string(), ec, boost::dll::load_mode::append_decorations);
 			if (ec.value() != 0) {
 				Log::net(Log::Level::error, "Plugin {} load error: {}", file.filename().string(), ec.message());
@@ -77,6 +105,7 @@ namespace showtime {
 			// Create instance of plugin from the shared lib
 			auto plugin_creator = lib.get_alias<ZstPlugin_create_t>("create_plugin");
 			std::shared_ptr<ZstPlugin> plugin = plugin_creator();
+			plugin->init(m_plugin_data_path.string().c_str());
 			
 			// Hold onto lib and plugin instances
 			m_loaded_plugins[plugin->name()] = ZstLoadedPlugin{lib, plugin};

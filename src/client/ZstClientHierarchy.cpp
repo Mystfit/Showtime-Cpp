@@ -343,7 +343,7 @@ void ZstClientHierarchy::activate_entity_complete(ZstEntityBase * entity)
 	ZstHierarchy::activate_entity_complete(entity);
 
 	ZstEntityBundle bundle;
-    entity->get_child_entities(&bundle, false, true);
+    entity->get_child_entities(&bundle, true, true);
 	for (auto c : bundle) {
 		hierarchy_events()->invoke([c](ZstHierarchyAdaptor* adaptor) { 
 			adaptor->on_entity_arriving(c); 

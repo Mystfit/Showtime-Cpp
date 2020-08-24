@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13.0)
 
-project(Showtime VERSION 0.26.0)
+project(Showtime VERSION 0.27.0)
 set(AUTHORS "Byron Mallett")
 set(COMPANY "Victoria University of Wellington")
 set(DESCRIPTION "Showtime dataflow network library")
@@ -256,6 +256,7 @@ endif()
 # Submodule includes
 set(Showtime_HEADER_DEPENDENCIES 
     $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/cf>
+    $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/uthash/src>
     $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/readerwriterqueue>
     $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/concurrentqueue>
     $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/cxxopts/include>
@@ -389,7 +390,7 @@ include(src/server/CMakeLists.txt)
 
 # Combined binary
 # -------------
-set(SHARED_FROM_STATIC_TARGET showtime)
+set(SHARED_FROM_STATIC_TARGET Showtime)
 if(BUILD_SHARED_FROM_STATIC_LIBS)
     add_library (${SHARED_FROM_STATIC_TARGET} SHARED "")
     target_sources(${SHARED_FROM_STATIC_TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp)
@@ -467,16 +468,10 @@ set(PLUGIN_TARGETS "")
 # Core entity plugin
 # -------------------
 
-set(CORE_ENTITIES_TARGET "${PROJECT_NAME}CoreEntities")
+set(CORE_ENTITIES_TARGET "${PROJECT_NAME}PluginCoreEntities")
 add_library(${CORE_ENTITIES_TARGET} MODULE "")
 include(src/plugins/core_entities/CMakeLists.txt)
 list(APPEND PLUGIN_TARGETS ${CORE_ENTITIES_TARGET})
-
-
-option(PLUGINS_RTMIDI "Build RTMidi plugin" OFF)
-if(PLUGINS_RTMIDI)
-    add_subdirectory(src/plugins/rtmidi)
-endif()
 
 
 # Container options
@@ -577,7 +572,7 @@ set(Showtime_INSTALL_TARGETS
 )
 
 # Set files to copy
-install(DIRECTORY ${Showtime_ALL_INCLUDE_DIRS} DESTINATION include/showtime)
+install(DIRECTORY ${Showtime_ALL_INCLUDE_DIRS} DESTINATION ${CMAKE_INSTALL_PREFIX})
 foreach(lib ${SHOWTIME_PUBLIC_SHARED_LINKED_LIBS})
     install(FILES $<TARGET_FILE:${lib}> DESTINATION bin)
 endforeach()
@@ -590,6 +585,7 @@ if(MACOSX)
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         FRAMEWORK DESTINATION /Library/Frameworks
+        NAMESPACE ${SHOWTIME_NAMESPACE}
     )
 else()
     # Install targets
@@ -599,6 +595,7 @@ else()
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
+        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 endif()
 
@@ -614,6 +611,7 @@ endif()
 install(EXPORT showtime-targets
     FILE showtime-targets.cmake
     DESTINATION "${CMAKE_INSTALL_CMAKEDIR}"
+    NAMESPACE ${SHOWTIME_NAMESPACE}
 )
 
 # Set up CMake package

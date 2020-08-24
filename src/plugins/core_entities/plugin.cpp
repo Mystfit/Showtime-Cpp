@@ -16,7 +16,7 @@ namespace showtime {
 		return std::make_shared<CoreEntities>();
 	}
 
-	void showtime::CoreEntities::init()
+	void showtime::CoreEntities::init(const char* plugin_data_path)
 	{
 	}
 

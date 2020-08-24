@@ -74,6 +74,13 @@ namespace showtime
         get_child_entities(bundle, false, false, ZstEntityType::PLUG);
     }
 
+    void ZstComponent::compute(ZstInputPlug* plug)
+    {
+        entity_event_dispatcher()->invoke([this, plug](ZstEntityAdaptor* adaptor) {
+            adaptor->on_compute(plug);
+        });
+    }
+
     void ZstComponent::add_child(ZstEntityBase * entity, bool auto_activate)
     {
         if (is_destroyed()) return;
