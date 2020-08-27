@@ -136,7 +136,6 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstCableAddress.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstCable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstURI.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstBundle.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstSerialisable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstSynchronisable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstValue.cpp"    
@@ -327,6 +326,8 @@ foreach(TARGET ${CORE_LIBS})
 
     # Target link libs again to link actual libraries
     target_link_libraries(${TARGET}
+        PUBLIC 
+        ${SHOWTIME_PUBLIC_LINKED_LIBS}
         PRIVATE
         ${CORE_TARGET_OBJECTS}
         ${SHOWTIME_PRIVATE_LINKED_LIBS}

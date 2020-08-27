@@ -31,7 +31,7 @@ namespace showtime
 		};
 
 	protected:
-		void add_factory(std::unique_ptr<ZstEntityFactory>& factory) {
+		void add_factory(std::unique_ptr<ZstEntityFactory>&& factory) {
 			m_factories.push_back(std::move(factory));
 		}
 

@@ -4,7 +4,7 @@ namespace showtime {
 	CoreEntities::CoreEntities() : ZstPlugin()
 	{
 		std::unique_ptr<ZstEntityFactory> math_factory = std::make_unique<MathEntityFactory>("math_entities");
-		add_factory(math_factory);
+        add_factory(std::move(math_factory));
 	}
 
 	CoreEntities::~CoreEntities()

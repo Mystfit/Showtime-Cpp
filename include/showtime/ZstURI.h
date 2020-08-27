@@ -13,8 +13,8 @@ namespace showtime {
 		char* cstr = NULL;
 	};
 
-	pstr create_pstr(const char* p);
-	pstr create_pstr(const char* p, size_t l);
+	ZST_EXPORT pstr create_pstr(const char* p);
+	ZST_EXPORT pstr create_pstr(const char* p, size_t l);
 
 	class ZstURI
 	{

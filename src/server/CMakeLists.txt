@@ -94,7 +94,13 @@ foreach(TARGET ${SERVER_LIBS})
 
   # Server lib includes
   target_include_directories(${TARGET} PRIVATE
+    ${SERVER_TARGET_OBJECTS}
     ${Showtime_SOURCE_DEPENDENCIES}
+  )
+
+  # Dummy cpp file to give compiler something to do
+  target_sources(${TARGET} PRIVATE 
+    ${CMAKE_CURRENT_BINARY_DIR}/src/dummy.cpp
   )
 
   # Link libraries

@@ -1,6 +1,5 @@
 #include "ZstStageTransport.h"
 #include <boost/uuid/uuid_io.hpp>
-#include <boost/stacktrace.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/thread.hpp>
 

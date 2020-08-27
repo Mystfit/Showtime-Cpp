@@ -6,9 +6,12 @@
 #include <showtime/ZstFilesystemUtils.h>
 
 #include <boost/process.hpp>
-#include <boost/stacktrace.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/dll.hpp>
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include <boost/stacktrace.hpp>
 #include <memory>
 #include <sstream>
 
@@ -506,6 +509,7 @@ namespace ZstTest
 		{
 			test_client->auto_join_by_name(server_name.c_str());
 			test_client->poll_once();
+            BOOST_TEST_REQUIRE(test_client->is_connected());
 		}
 
 		~FixtureJoinServer()

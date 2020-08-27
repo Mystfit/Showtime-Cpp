@@ -87,11 +87,24 @@ int ZstServiceDiscoveryTransport::s_handle_beacon(zloop_t * loop, zsock_t * sock
     ZstServiceDiscoveryTransport * transport = (ZstServiceDiscoveryTransport*)arg;
     char * ipaddress = zstr_recv(socket);
     if (ipaddress) {
+        std::string address(ipaddress);
+        
+        // Get our local net interface
+        auto iflist = ziflist_new();
+        ziflist_first(iflist);
+        const char* first_iface_address = ziflist_address(iflist);
+        if(first_iface_address){
+            if(strcmp(ipaddress, first_iface_address) == 0){
+                //IP is our local machine - use localhost
+                address = "localhost";
+            }
+        }
+        ziflist_destroy(&iflist);
+
         auto beacon_content = zframe_recv(socket);
         auto msg = transport->get_msg();
-        
         auto shared_transport = std::static_pointer_cast<ZstServiceDiscoveryTransport>(transport->shared_from_this());
-        msg->init(GetStageBeaconMessage(zframe_data(beacon_content)), ipaddress, shared_transport);
+        msg->init(GetStageBeaconMessage(zframe_data(beacon_content)), address, shared_transport);
 
         // Set the beacon as having a promise (even if it doesn't) to make sure that the release
         // happens AFTER the beacon has finished processing

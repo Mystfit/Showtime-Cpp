@@ -5,7 +5,7 @@
 
 namespace showtime {
 
-class ZstCableAddress
+class ZST_CLASS_EXPORTED ZstCableAddress
 #ifndef SWIG
     : public ZstSerialisable<Cable, CableData>
 #endif

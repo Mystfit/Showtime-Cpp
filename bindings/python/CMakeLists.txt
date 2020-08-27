@@ -1,9 +1,5 @@
 message(STATUS "Configuring ${PYTHON_TARGET} target")
 
-if(NOT BUILD_STATIC)
-    message(FATAL_ERROR "Python bindings require BUILD_STATIC to be enabled")
-endif()
-
 set(PYTHON_TARGET_WRAPPER ${PYTHON_TARGET}Wrapper)
 
 # Save original swig output dir
@@ -18,10 +14,7 @@ set(MANIFEST_IN_IN          "${CMAKE_CURRENT_LIST_DIR}/MANIFEST.in.in")
 set(MANIFEST_IN_PARTIAL     "${CMAKE_SWIG_OUTDIR}/MANIFEST-partial.in")
 set(MANIFEST_IN             "${CMAKE_SWIG_OUTDIR}/MANIFEST.in")
 set(BUILD_STAMP             "${CMAKE_CURRENT_BINARY_DIR}/build/python/timestamp")
-set(PYTHON_LINK_LIBS 
-    ${CLIENT_TARGET_STATIC}
-    ${SERVER_TARGET_STATIC}
-)
+set(PYTHON_LINK_LIBS ${SHARED_FROM_STATIC_TARGET})
 
 # Create setup.py
 configure_file(${SETUP_PY_IN} ${SETUP_PY} @ONLY)
@@ -62,6 +55,7 @@ set_target_properties(${PYTHON_TARGET_WRAPPER} PROPERTIES
 
 if(BINDINGS_PYTHON_LINK_AT_RUNTIME)
     # Since we don't link against the Python libs we need to explicitly add the python include dir
+    message(STATUS "Python include dir is ${PYTHON_INCLUDE_DIR}")
     target_include_directories(${PYTHON_TARGET_WRAPPER} PRIVATE ${PYTHON_INCLUDE_DIR})
     if(MACOSX OR LINUX)
         # Compiler option to ignore unresolved externals, resolve at runtime
@@ -75,10 +69,7 @@ else()
 endif()
 
 # Set dependant projects
-add_dependencies(${PYTHON_TARGET_WRAPPER} 
-    ${CLIENT_TARGET_STATIC} 
-    ${SERVER_TARGET_STATIC}
-)
+add_dependencies(${PYTHON_TARGET_WRAPPER} ${SHARED_FROM_STATIC_TARGET})
 add_dependencies(${PYTHON_TARGET} ${PYTHON_TARGET_WRAPPER})
 
 # Link libraries to swig target
@@ -87,7 +78,7 @@ target_link_libraries(${PYTHON_TARGET_WRAPPER} PUBLIC ${PYTHON_LINK_LIBS})
 # Copy files to build tree
 add_custom_command(TARGET ${PYTHON_TARGET} PRE_BUILD
                     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/showtime ${CMAKE_SWIG_OUTDIR}/showtime
-                    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PYTHON_TARGET_WRAPPER}> ${CMAKE_SWIG_OUTDIR}/showtime
+                    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PYTHON_TARGET_WRAPPER}> ${CMAKE_SWIG_OUTDIR}/showtime/_showtime.so
                     VERBATIM
 )
 
