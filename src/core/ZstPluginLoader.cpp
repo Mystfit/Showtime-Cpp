@@ -3,7 +3,9 @@
 
 namespace showtime {
 	ZstPluginLoader::ZstPluginLoader() : 
-		m_plugin_events(std::make_shared<ZstEventDispatcher<ZstPluginAdaptor> >())
+		m_plugin_events(std::make_shared<ZstEventDispatcher<ZstPluginAdaptor> >()),
+		m_plugin_path(fs::path(boost::dll::program_location().string()).parent_path().append("plugins")),
+		m_plugin_data_path(fs::path(boost::dll::program_location().string()).parent_path().append("plugins").append("plugin_data"))
 	{
 	}
 
@@ -82,10 +84,6 @@ namespace showtime {
 
 	void ZstPluginLoader::load()
 	{
-		if (m_plugin_path.empty()) {
-			m_plugin_path = fs::path(boost::dll::program_location().string()).parent_path().append("plugins");
-		}
-
 		auto plugins = plugin_lib_paths(m_plugin_path);
 
 		for (auto file : plugins) {

@@ -456,7 +456,7 @@ endif()
 # ------
 
 set(PLUGIN_OUTPUT_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/plugins)
-set(PLUGIN_TARGETS "")
+set(Showtime_PLUGIN_TARGETS "")
 
 
 # Core entity plugin
@@ -465,7 +465,7 @@ set(PLUGIN_TARGETS "")
 set(CORE_ENTITIES_TARGET "${PROJECT_NAME}PluginCoreEntities")
 add_library(${CORE_ENTITIES_TARGET} MODULE "")
 include(src/plugins/core_entities/CMakeLists.txt)
-list(APPEND PLUGIN_TARGETS ${CORE_ENTITIES_TARGET})
+list(APPEND Showtime_PLUGIN_TARGETS ${CORE_ENTITIES_TARGET})
 
 
 # Container options
@@ -563,6 +563,7 @@ set(Showtime_INSTALL_TARGETS
     ${Showtime_OBJECT_TARGETS}
     ${Showtime_LIBRARY_TARGETS} 
     ${Showtime_APP_TARGETS}
+    # ${Showtime_PLUGIN_TARGETS}
 )
 
 # Set files to copy
