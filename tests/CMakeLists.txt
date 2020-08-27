@@ -39,7 +39,7 @@ endif()
 
 foreach(test ${TESTS})
     add_executable (${test} ${TEST_COMMON_HEADERS} "${test}.cpp") 
-    add_dependencies(${test} ${TEST_DEPENDENCIES} ${SERVER_TARGET})
+    add_dependencies(${test} ${TEST_DEPENDENCIES})
     target_link_libraries(${test} PRIVATE ${TEST_DEPENDENCIES})
     
     # Only include tests that don't have the helper prefix

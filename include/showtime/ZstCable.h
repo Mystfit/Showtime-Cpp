@@ -19,7 +19,7 @@ class ZstOutputPlug;
 class ZstPlug;
 
 
-class ZstCable : public ZstSynchronisable {
+class ZST_CLASS_EXPORTED ZstCable : public ZstSynchronisable {
 public:
 	friend class ZstCableLiason;
 	friend class ZstStage;

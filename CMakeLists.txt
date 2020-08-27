@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13.0)
 
-project(Showtime VERSION 0.27.0)
+project(Showtime VERSION 0.27.1)
 set(AUTHORS "Byron Mallett")
 set(COMPANY "Victoria University of Wellington")
 set(DESCRIPTION "Showtime dataflow network library")
@@ -276,16 +276,18 @@ file(MAKE_DIRECTORY ${Showtime_COMPILED_INCLUDE_DIRS})
 # file(GLOB FMT_HEADERS CONFIGURE_DEPENDS "${FMT_INCLUDE_DIR}/fmt/*.h")
 
 # Copy flatbuffers headers but replace with CMake install!
-get_target_property(FLATBUFFERS_INCLUDE_DIR flatbuffers::flatbuffers INTERFACE_INCLUDE_DIRECTORIES)
-file(GLOB FLATBUFFER_HEADER_SRC CONFIGURE_DEPENDS "${FLATBUFFERS_INCLUDE_DIR}/flatbuffers/*.h")
-file(MAKE_DIRECTORY ${Showtime_COMPILED_INCLUDE_DIRS}/flatbuffers)
-set(FLATBUFFER_HEADERS "")
-foreach(FILE ${FLATBUFFER_HEADER_SRC})
-    get_filename_component(FILE_N ${FILE} NAME)
-    set(DEST_F "${Showtime_COMPILED_INCLUDE_DIRS}/flatbuffers/${FILE_N}")
-    configure_file(${FILE} ${DEST_F} COPYONLY)
-    list(APPEND FLATBUFFER_HEADERS ${DEST_F})
-endforeach()
+if(WIN32)
+    get_target_property(FLATBUFFERS_INCLUDE_DIR flatbuffers::flatbuffers INTERFACE_INCLUDE_DIRECTORIES)
+    file(GLOB FLATBUFFER_HEADER_SRC CONFIGURE_DEPENDS "${FLATBUFFERS_INCLUDE_DIR}/flatbuffers/*.h")
+    file(MAKE_DIRECTORY ${Showtime_COMPILED_INCLUDE_DIRS}/flatbuffers)
+    set(FLATBUFFER_HEADERS "")
+    foreach(FILE ${FLATBUFFER_HEADER_SRC})
+        get_filename_component(FILE_N ${FILE} NAME)
+        set(DEST_F "${Showtime_COMPILED_INCLUDE_DIRS}/flatbuffers/${FILE_N}")
+        configure_file(${FILE} ${DEST_F} COPYONLY)
+        list(APPEND FLATBUFFER_HEADERS ${DEST_F})
+    endforeach()
+endif()
 
 # Copy delegate headers
 file(COPY ${Showtime_SUBMODULE_DEPENDENCIES_DIR}/multifunction/multicast.hpp DESTINATION ${Showtime_COMPILED_INCLUDE_DIRS}/showtime)
@@ -417,6 +419,8 @@ if(BUILD_SHARED_FROM_STATIC_LIBS)
         ${SERVER_TARGET_OBJECTS}
         ${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS}
         ${SHARED_LINK_OPTIONS_END}
+        PUBLIC
+        ${SHOWTIME_PUBLIC_LINKED_LIBS}
     )
     target_include_directories(${SHARED_FROM_STATIC_TARGET} PUBLIC
         ${CORE_INCLUDES}
@@ -585,7 +589,6 @@ if(MACOSX)
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         FRAMEWORK DESTINATION /Library/Frameworks
-        NAMESPACE ${SHOWTIME_NAMESPACE}
     )
 else()
     # Install targets

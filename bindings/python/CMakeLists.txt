@@ -1,9 +1,5 @@
 message(STATUS "Configuring ${PYTHON_TARGET} target")
 
-if(NOT BUILD_STATIC)
-    message(FATAL_ERROR "Python bindings require BUILD_STATIC to be enabled")
-endif()
-
 set(PYTHON_TARGET_WRAPPER ${PYTHON_TARGET}Wrapper)
 
 # Save original swig output dir
@@ -18,10 +14,7 @@ set(MANIFEST_IN_IN          "${CMAKE_CURRENT_LIST_DIR}/MANIFEST.in.in")
 set(MANIFEST_IN_PARTIAL     "${CMAKE_SWIG_OUTDIR}/MANIFEST-partial.in")
 set(MANIFEST_IN             "${CMAKE_SWIG_OUTDIR}/MANIFEST.in")
 set(BUILD_STAMP             "${CMAKE_CURRENT_BINARY_DIR}/build/python/timestamp")
-set(PYTHON_LINK_LIBS 
-    ${CLIENT_TARGET_STATIC}
-    ${SERVER_TARGET_STATIC}
-)
+set(PYTHON_LINK_LIBS ${SHARED_FROM_STATIC_TARGET})
 
 # Create setup.py
 configure_file(${SETUP_PY_IN} ${SETUP_PY} @ONLY)
@@ -76,10 +69,7 @@ else()
 endif()
 
 # Set dependant projects
-add_dependencies(${PYTHON_TARGET_WRAPPER} 
-    ${CLIENT_TARGET_STATIC} 
-    ${SERVER_TARGET_STATIC}
-)
+add_dependencies(${PYTHON_TARGET_WRAPPER} ${SHARED_FROM_STATIC_TARGET})
 add_dependencies(${PYTHON_TARGET} ${PYTHON_TARGET_WRAPPER})
 
 # Link libraries to swig target
