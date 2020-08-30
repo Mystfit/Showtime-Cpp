@@ -11,7 +11,7 @@ void UShowtimeFactory::AddSpawnableComponent(AActor* spawnable_actor)
 
 	std::shared_ptr<ZstURIBundle> bundle = std::make_shared<ZstURIBundle>();
 
-	//factory->add_creatable(creatable);
+	//factory->add_creatable();
 
 	// Get updated creatable path
 	factory->get_creatables(bundle.get());

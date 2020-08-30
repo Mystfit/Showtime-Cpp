@@ -31,6 +31,16 @@ FORCEINLINE uint32 GetTypeHash(const FShowtimeCableAddress& Other)
 	return GetTypeHash(Other.InputPath) ^ GetTypeHash(Other.OutputPath);
 }
 
+//
+//UENUM(BlueprintType)
+//enum UCableGhostStatus {
+//	CableGhostStatus_Valid,
+//	CableGhostStatus_Invalid,
+//	CableGhostStatus_Ghosting,
+//	CableGhostStatus_WaitingForServer,
+//	CableGhostStatus_Active
+//};
+
 
 UCLASS()
 class AShowtimeCable : public AActor {

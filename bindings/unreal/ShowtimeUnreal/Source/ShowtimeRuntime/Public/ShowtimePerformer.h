@@ -15,4 +15,6 @@ UCLASS(BlueprintType, Blueprintable, ClassGroup = (Showtime), meta = (BlueprintS
 class UShowtimePerformer : public UShowtimeComponent {
 	GENERATED_BODY()
 public:
+	UFUNCTION(BlueprintImplementableEvent, Category = "Showtime|Factory")
+	void FactoryAttached(UShowtimeFactory* factory);
 };

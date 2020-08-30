@@ -10,7 +10,7 @@ void UShowtimeComponent::AttachPlug(UShowtimePlug* plug)
 	if (auto native_plug = plug->GetNativeEntity()) {
 		if (auto native_component = GetNativeComponent()) {
 			native_component->add_child(native_plug);
-			this->PlugAttatched(plug);
+			this->PlugAttached(plug);
 		}
 	}
 }
@@ -23,7 +23,7 @@ void UShowtimeComponent::AttachComponent(UShowtimeComponent* component)
 	if (auto native_child = component->GetNativeEntity()) {
 		if (auto native_component = GetNativeComponent()) {
 			native_component->add_child(native_child);
-			this->ComponentAttatched(component);
+			this->ComponentAttached(component);
 		}
 	}
 }

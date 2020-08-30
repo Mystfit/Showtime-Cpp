@@ -152,6 +152,8 @@ UShowtimeEntity* UShowtimeClient::SpawnEntity(ZstEntityBase* entity)
 		return SpawnComponent(static_cast<ZstComponent*>(entity));
 	case ZstEntityType::PLUG:
 		return SpawnPlug(static_cast<ZstPlug*>(entity));
+	case ZstEntityType::FACTORY:
+		return SpawnFactory(static_cast<ZstEntityFactory*>(entity));
 	default:
 		break;
 	}
@@ -191,7 +193,7 @@ UShowtimeComponent* UShowtimeClient::SpawnComponent(ZstComponent* component)
 		auto e_type = parent->GetNativeEntity()->entity_type();
 		if (e_type == ZstEntityType::COMPONENT || e_type == ZstEntityType::PERFORMER) {
 			auto parent_c = static_cast<UShowtimeComponent*>(parent);
-			parent_c->ComponentAttatched(entity_wrapper);
+			parent_c->ComponentAttached(entity_wrapper);
 		}
 	}
 
@@ -206,15 +208,30 @@ AShowtimeCable* UShowtimeClient::SpawnCable(ZstCable* cable)
 
 UShowtimeFactory* UShowtimeClient::SpawnFactory(ZstEntityFactory* factory)
 {
+	if (auto factory_actor = GetWorld()->SpawnActor<AActor>(SpawnableFactory)){
+		auto entity_wrapper = factory_actor->FindComponentByClass<UShowtimeFactory>();
+
+		if (!entity_wrapper)
+			entity_wrapper = NewObject<UShowtimeFactory>(factory_actor);
+
+		if (auto parent = entity_wrapper->GetParent()) {
+			auto e_type = parent->GetNativeEntity()->entity_type();
+			if (e_type == ZstEntityType::PERFORMER) {
+				auto parent_c = static_cast<UShowtimePerformer*>(parent);
+				parent_c->FactoryAttached(entity_wrapper);
+			}
+		}
+
+		RegisterSpawnedWrapper(entity_wrapper, factory);
+	}
 	return nullptr;
 }
 
 UShowtimePlug* UShowtimeClient::SpawnPlug(ZstPlug* plug) 
 {
-	auto plug_actor = GetWorld()->SpawnActor<AActor>(SpawnablePlug);
 	//auto transform = FTransform();
 	//auto plug_actor =  Cast<AActor>(UGameplayStatics::BeginDeferredActorSpawnFromClass(this, SpawnablePlug->GetClass(), transform));
-	if (plug_actor)
+	if (auto plug_actor = GetWorld()->SpawnActor<AActor>(SpawnablePlug))
 	{
 		auto entity_wrapper = plug_actor->FindComponentByClass<UShowtimePlug>();
 		if (!entity_wrapper) {
@@ -230,7 +247,7 @@ UShowtimePlug* UShowtimeClient::SpawnPlug(ZstPlug* plug)
 		if (auto parent = entity_wrapper->GetParent()) {
 			if (parent->GetNativeEntity()->entity_type() == ZstEntityType::COMPONENT) {
 				auto parent_c = static_cast<UShowtimeComponent*>(parent);
-				parent_c->PlugAttatched(entity_wrapper);
+				parent_c->PlugAttached(entity_wrapper);
 			}
 		}
 		return entity_wrapper;
