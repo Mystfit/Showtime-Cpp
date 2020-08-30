@@ -65,6 +65,7 @@ steps:
       -G "Visual Studio 16 2019" 
       -A $(buildPlatform) 
       -DSWIG_EXECUTABLE=%ProgramData%\chocolatey\lib\swig\tools\install\swig.exe
+      -DSWIG_DIR=%ProgramData%\chocolatey\lib\swig\tools\install\swigwin-4.0.1\Lib
       -DCMAKE_PREFIX_PATH=$(cmake_prefix) 
       -DBUILD_SHARED=ON 
       -DBUILD_STATIC=ON 
