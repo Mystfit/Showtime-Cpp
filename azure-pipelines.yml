@@ -31,6 +31,7 @@ steps:
       $VS_path = $(vswhere -format value -property installationPath)
       Write-Host "##vso[task.setvariable variable=VS_path;]$(vswhere -format value -property installationPath)"
       choco install procdump
+      choco install swig
       Write-Host "##vso[task.setvariable variable=PROCDUMP_PATH ;]%ProgramData%\chocolatey\bin\"
 
 - task: Cache@2
