@@ -467,6 +467,7 @@ endif()
 
 set(PLUGIN_OUTPUT_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/plugins)
 set(Showtime_PLUGIN_TARGETS "")
+file(MAKE_DIRECTORY ${PLUGIN_OUTPUT_DIR})
 
 
 # Core entity plugin

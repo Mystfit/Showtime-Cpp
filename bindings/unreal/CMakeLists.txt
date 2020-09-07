@@ -89,65 +89,23 @@ endif()
 
 # Windows lib copying
 if(WIN32 OR BUILD_WINDOWS_CONTAINER)
-    set(UNREAL_WIN_BINARIES
-        "$<TARGET_FILE:${SHARED_FROM_STATIC_TARGET}>"
-        # "$<TARGET_FILE:${CLIENT_TARGET}>"
-        # "$<TARGET_FILE:${SERVER_TARGET}>"
-        # "$<TARGET_FILE:czmq>"
-        # "$<TARGET_FILE:libzmq>"
-    )
-    set(UNREAL_WIN_LIBRARIES
-        "$<TARGET_LINKER_FILE:${SHARED_FROM_STATIC_TARGET}>"
-        # "$<TARGET_LINKER_FILE:${CLIENT_TARGET}>"
-        # "$<TARGET_LINKER_FILE:${SERVER_TARGET}>"
-    )
-    set(UNREAL_WIN_PDBS
-        "$<TARGET_PDB_FILE:${SHARED_FROM_STATIC_TARGET}>"
-        # "$<TARGET_PDB_FILE:${CLIENT_TARGET}>"
-        # "$<TARGET_PDB_FILE:${SERVER_TARGET}>"
-    )
-
-
-    # Copy libraries
-    foreach( bin ${UNREAL_WIN_BINARIES})
-        add_custom_command(
-            PRE_BUILD
-            TARGET ${UNREAL_TARGET}
-            COMMAND ${CMAKE_COMMAND} -E echo "Copying ${bin} to ${UNREAL_BIN_DIR}/Win64"
-            COMMAND ${CMAKE_COMMAND} -E copy ${bin} ${UNREAL_BIN_DIR}/Win64/
-            DEPENDS ${WINDOWS_CONTAINER_TARGET}
-        )
-    endforeach()
-    foreach( pdb ${UNREAL_WIN_PDBS})
-        add_custom_command(
-            PRE_BUILD
-            TARGET ${UNREAL_TARGET}
-            COMMAND ${CMAKE_COMMAND} -E echo "Copying ${pdb} to ${UNREAL_BIN_DIR}/Win64"
-            COMMAND ${CMAKE_COMMAND} -E copy ${pdb} ${UNREAL_BIN_DIR}/Win64/
-            DEPENDS ${WINDOWS_CONTAINER_TARGET}
-        )
-    endforeach()
-    foreach( lib ${UNREAL_WIN_LIBRARIES})
-        add_custom_command(
-            PRE_BUILD
-            TARGET ${UNREAL_TARGET}
-            COMMAND ${CMAKE_COMMAND} -E echo "Copying ${lib} to ${UNREAL_BIN_DIR}/Win64/lib"
-            COMMAND ${CMAKE_COMMAND} -E copy ${lib} ${UNREAL_LIB_DIR}/Win64/
-            DEPENDS ${WINDOWS_CONTAINER_TARGET}
-        )
-    endforeach()
-
-    # Copy plugins
+    # Copy windows platform files
     add_custom_command(
         PRE_BUILD
         TARGET ${UNREAL_TARGET}
-        COMMAND ${CMAKE_COMMAND} -E echo "Copying plugins to ${UNREAL_BIN_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E echo "Copying Windows platform files to ${UNREAL_BIN_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${SHARED_FROM_STATIC_TARGET}> ${UNREAL_BIN_DIR}/Win64/$<TARGET_FILE_NAME:${SHARED_FROM_STATIC_TARGET}>
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_LINKER_FILE:${SHARED_FROM_STATIC_TARGET}> ${UNREAL_LIB_DIR}/Win64/$<TARGET_LINKER_FILE_NAME:${SHARED_FROM_STATIC_TARGET}>
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${SHARED_FROM_STATIC_TARGET}> ${UNREAL_BIN_DIR}/Win64/$<TARGET_PDB_FILE_NAME:${SHARED_FROM_STATIC_TARGET}>
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${WINDOWS_BIN_DIR}/plugins ${UNREAL_BIN_DIR}/Win64/plugins
-        DEPENDS ${ANDROID_CONTAINER_TARGET}
+        DEPENDS ${WINDOWS_CONTAINER_TARGET} ${ANDROID_CONTAINER_TARGET} ${SHARED_FROM_STATIC_TARGET}
     )
 
     if(BUILD_WINDOWS_CONTAINER)
         list(APPEND UNREAL_DEPENDENCIES ${WINDOWS_CONTAINER_TARGET})
+    endif()
+    if(BUILD_ANDROID_CONTAINER)
+        list(APPEND UNREAL_DEPENDENCIES ${ANDROID_CONTAINER_TARGET})
     endif()
 endif()
 
