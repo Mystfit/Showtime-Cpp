@@ -22,8 +22,6 @@ using namespace showtime;
 
 // Forward declarations
 // --------------------
-class MulticastAndroid;
-
 namespace showtime {
 	class ShowtimeClient;
 }
@@ -216,9 +214,6 @@ public:
 private:
 	void AttachEvents();
 	void RemoveEvents();
-#if PLATFORM_ANDROID
-	TSharedPtr<MulticastAndroid> multicast_manager;
-#endif
 	TSharedPtr<showtime::ShowtimeClient> client;
 	std::shared_ptr<ClientAdaptors> client_adaptor;
 };

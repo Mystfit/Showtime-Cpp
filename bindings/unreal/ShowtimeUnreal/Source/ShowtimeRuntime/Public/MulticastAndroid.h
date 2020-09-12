@@ -6,20 +6,33 @@
 #include "Android/AndroidApplication.h" 
 #include "Android/AndroidJNI.h" 
 #include "Android/AndroidJava.h" 
+#endif
+#include "MulticastAndroid.generated.h"
 
-class MulticastAndroid {
+UCLASS()
+class UMulticastAndroid : public UObject {
+    GENERATED_BODY()
 public:
+    virtual void BeginDestroy() override;
+
     /* Call java functions */
-    void InitMulticastFunctions();
-    void GetLocalHostAddrFixed(TSharedRef<FInternetAddr> localip);
-    void GetBroadcastAddrFixed(FInternetAddr& broadcastaddr);
-    void AcquireMulticastLock();
-    void ReleaseMulticastLock();
+    UFUNCTION(BlueprintCallable, Exec, Category = "MulticastAndroid")
+    static void InitMulticastFunctions();
+
+    static void GetLocalHostAddrFixed(TSharedRef<FInternetAddr> localip);
+    static void GetBroadcastAddrFixed(FInternetAddr& broadcastaddr);
+
+    UFUNCTION(BlueprintCallable, Exec, Category = "MulticastAndroid")
+    static void AcquireMulticastLock();
+
+    UFUNCTION(BlueprintCallable, Exec, Category = "MulticastAndroid")
+    static void ReleaseMulticastLock();
 
 private:
-    jmethodID Sockets_GetIP = NULL;
-    jmethodID Sockets_GetBroadcastIP = NULL;
-    jmethodID Sockets_AcquireMulticastLock = NULL;
-    jmethodID Sockets_ReleaseMulticastLock = NULL;
-};
+#if PLATFORM_ANDROID 
+    static jmethodID Sockets_GetIP;
+    static jmethodID Sockets_GetBroadcastIP;
+    static jmethodID Sockets_AcquireMulticastLock;
+    static jmethodID Sockets_ReleaseMulticastLock;
 #endif
+};

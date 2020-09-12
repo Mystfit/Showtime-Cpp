@@ -12,10 +12,8 @@
 
 DEFINE_LOG_CATEGORY(Showtime);
 
-UShowtimeClient::UShowtimeClient() : client(MakeShared<ShowtimeClient>())
-#if PLATFORM_ANDROID
-	: multicast_manager(MakeShared<MulticastAndroid>())
-#endif
+UShowtimeClient::UShowtimeClient() : 
+	client(MakeShared<ShowtimeClient>())
 {
 	PrimaryComponentTick.bCanEverTick = true;
 }
@@ -24,7 +22,7 @@ void UShowtimeClient::Cleanup()
 {
 	RemoveEvents();
 #if PLATFORM_ANDROID
-	multicast_manager->ReleaseMulticastLock();
+	UMulticastAndroid::ReleaseMulticastLock();
 #endif
 	if (client) client->destroy();
 }
@@ -32,8 +30,7 @@ void UShowtimeClient::Cleanup()
 void UShowtimeClient::Init()
 {
 #if PLATFORM_ANDROID
-	multicast_manager->InitMulticastFunctions();
-	multicast_manager->AcquireMulticastLock();
+	UMulticastAndroid::AcquireMulticastLock();
 #endif
 	if (client) client->init(TCHAR_TO_UTF8(*ClientName), true);
 	SpawnPerformer(Handle()->get_root());

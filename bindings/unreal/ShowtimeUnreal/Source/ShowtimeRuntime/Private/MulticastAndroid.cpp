@@ -1,36 +1,50 @@
 #include "MulticastAndroid.h"
 
+void UMulticastAndroid::BeginDestroy() {
+
+    ReleaseMulticastLock();
+    UObject::BeginDestroy();
+}
+
+
 #if PLATFORM_ANDROID 
-void MulticastAndroid::InitMulticastFunctions() {
+jmethodID UMulticastAndroid::Sockets_GetIP = NULL;
+jmethodID UMulticastAndroid::Sockets_GetBroadcastIP = NULL;
+jmethodID UMulticastAndroid::Sockets_AcquireMulticastLock = NULL;
+jmethodID UMulticastAndroid::Sockets_ReleaseMulticastLock = NULL;
+
+void UMulticastAndroid::InitMulticastFunctions() {
     if (JNIEnv* Env = FAndroidApplication::GetJavaEnv(true)) {
         UE_LOG(Showtime, Display, TEXT("Inside InitMulticastFunctions()"));
 
-        Sockets_GetIP = FJavaWrapper::FindMethod(Env,
+        UMulticastAndroid::Sockets_GetIP = FJavaWrapper::FindMethod(Env,
             FJavaWrapper::GameActivityClassID,
             "Sockets_GetIP", "()I", false);
-        check(Sockets_GetIP != NULL);
+        check(UMulticastAndroid::Sockets_GetIP != NULL);
 
-        Sockets_GetBroadcastIP = FJavaWrapper::FindMethod(Env,
+        UMulticastAndroid::Sockets_GetBroadcastIP = FJavaWrapper::FindMethod(Env,
             FJavaWrapper::GameActivityClassID,
             "Sockets_GetBroadcastIP", "()I", false);
-        check(Sockets_GetBroadcastIP != NULL);
+        check(UMulticastAndroid::Sockets_GetBroadcastIP != NULL);
 
-        Sockets_AcquireMulticastLock = FJavaWrapper::FindMethod(Env,
+        UMulticastAndroid::Sockets_AcquireMulticastLock = FJavaWrapper::FindMethod(Env,
             FJavaWrapper::GameActivityClassID,
             "Sockets_AcquireMulticastLock", "()V", false);
-        check(Sockets_AcquireMulticastLock != NULL);
+        check(UMulticastAndroid::Sockets_AcquireMulticastLock != NULL);
 
-        Sockets_AcquireMulticastLock = FJavaWrapper::FindMethod(Env,
+        UMulticastAndroid::Sockets_ReleaseMulticastLock = FJavaWrapper::FindMethod(Env,
             FJavaWrapper::GameActivityClassID,
             "Sockets_ReleaseMulticastLock", "()V", false);
-        check(Sockets_AcquireMulticastLock != NULL);
+        check(UMulticastAndroid::Sockets_AcquireMulticastLock != NULL);
     }
 }
 
-void MulticastAndroid::GetLocalHostAddrFixed(TSharedRef<FInternetAddr> localIp) {
+void UMulticastAndroid::GetLocalHostAddrFixed(TSharedRef<FInternetAddr> localIp) {
     if (JNIEnv* Env = FAndroidApplication::GetJavaEnv(true)) {
+        if (!UMulticastAndroid::Sockets_GetIP) UMulticastAndroid::InitMulticastFunctions();
+
         const int ip = FJavaWrapper::CallIntMethod(Env, FJavaWrapper::GameActivityThis,
-            Sockets_GetIP);
+            UMulticastAndroid::Sockets_GetIP);
         localIp->SetRawIp({
                 uint8(ip & 0xff),
                 uint8(ip >> 8 & 0xff),
@@ -39,10 +53,12 @@ void MulticastAndroid::GetLocalHostAddrFixed(TSharedRef<FInternetAddr> localIp) 
     }
 }
 
-void MulticastAndroid::GetBroadcastAddrFixed(FInternetAddr& broadcastAddr) {
+void UMulticastAndroid::GetBroadcastAddrFixed(FInternetAddr& broadcastAddr) {
     if (JNIEnv* Env = FAndroidApplication::GetJavaEnv(true)) {
+        if (!UMulticastAndroid::Sockets_GetBroadcastIP) UMulticastAndroid::InitMulticastFunctions();
+
         const int ip = FJavaWrapper::CallIntMethod(Env, FJavaWrapper::GameActivityThis,
-            Sockets_GetBroadcastIP);
+            UMulticastAndroid::Sockets_GetBroadcastIP);
         broadcastAddr.SetRawIp({
                 uint8(ip & 0xff),
                 uint8(ip >> 8 & 0xff),
@@ -51,8 +67,10 @@ void MulticastAndroid::GetBroadcastAddrFixed(FInternetAddr& broadcastAddr) {
     }
 }
 
-void MulticastAndroid::AcquireMulticastLock() {
+void UMulticastAndroid::AcquireMulticastLock() {
     if (JNIEnv* Env = FAndroidApplication::GetJavaEnv(true)) {
+        if (!UMulticastAndroid::Sockets_AcquireMulticastLock) UMulticastAndroid::InitMulticastFunctions();
+
         FJavaWrapper::CallVoidMethod(Env, FJavaWrapper::GameActivityThis,
             FJavaWrapper::FindMethod(Env,
                 FJavaWrapper::GameActivityClassID,
@@ -61,8 +79,10 @@ void MulticastAndroid::AcquireMulticastLock() {
     }
 }
 
-void MulticastAndroid::ReleaseMulticastLock() {
+void UMulticastAndroid::ReleaseMulticastLock() {
     if (JNIEnv* Env = FAndroidApplication::GetJavaEnv(true)) {
+        if (!UMulticastAndroid::Sockets_ReleaseMulticastLock) UMulticastAndroid::InitMulticastFunctions();
+
         FJavaWrapper::CallVoidMethod(Env, FJavaWrapper::GameActivityThis,
             FJavaWrapper::FindMethod(Env,
                 FJavaWrapper::GameActivityClassID,
@@ -70,4 +90,10 @@ void MulticastAndroid::ReleaseMulticastLock() {
         UE_LOG(Showtime, Display, TEXT("Releasing multicast lock"));
     }
 }
+#else
+void UMulticastAndroid::InitMulticastFunctions() {};
+void UMulticastAndroid::GetLocalHostAddrFixed(TSharedRef<FInternetAddr> localIp) {}
+void UMulticastAndroid::GetBroadcastAddrFixed(FInternetAddr& broadcastAddr) {}
+void UMulticastAndroid::AcquireMulticastLock() {}
+void UMulticastAndroid::ReleaseMulticastLock() {}
 #endif

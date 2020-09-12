@@ -55,7 +55,7 @@ endif()
 # Android lib copying
 if(ANDROID OR BUILD_ANDROID_CONTAINER)
     set(UNREAL_ANDROID_LIBS
-        "libshowtime.so"
+        "libShowtime.so"
         # "lib${CORE_TARGET}.so"
         # "lib${CLIENT_TARGET}.so"
         # "lib${SERVER_TARGET}.so"
