@@ -187,6 +187,7 @@ cmake_policy(SET CMP0048 NEW)
 find_host_package(Flatbuffers CONFIG REQUIRED)
 if(NOT FLATBUFFERS_FLATC_EXECUTABLE)
     find_host_program(FLATBUFFERS_FLATC_EXECUTABLE flatc)
+    message("Using host flatc at ${FLATBUFFERS_FLATC_EXECUTABLE}")
     if(NOT FLATBUFFERS_FLATC_EXECUTABLE)
         message(FATAL_ERROR "Could not find flatc compiler!")
     endif()
@@ -195,6 +196,7 @@ endif()
 find_package(fmt CONFIG REQUIRED)
 
 set(FLATBUFFFER_OUTPUT_DIR "${Showtime_COMPILED_INCLUDE_DIRS}/showtime/schemas")
+file(MAKE_DIRECTORY ${FLATBUFFFER_OUTPUT_DIR})
 set(FLATBUFFER_HEADER_OUTPUT 
     "${FLATBUFFFER_OUTPUT_DIR}/messaging/stage_beacon_message_generated.h"
     "${FLATBUFFFER_OUTPUT_DIR}/messaging/stage_message_generated.h"
@@ -210,7 +212,9 @@ set(FLATC_ARGS
     "${CMAKE_SOURCE_DIR}/schemas/messaging/graph_message.fbs"
     "${CMAKE_SOURCE_DIR}/schemas/messaging/graph_types.fbs"
 )
-execute_process(COMMAND ${FLATBUFFERS_FLATC_EXECUTABLE} ${FLATC_ARGS})
+message(STATUS "${FLATBUFFERS_FLATC_EXECUTABLE} ${FLATC_ARGS}")
+execute_process(COMMAND ${FLATBUFFERS_FLATC_EXECUTABLE} ${FLATC_ARGS} OUTPUT_VARIABLE FLATC_OUTPUT)
+message(STATUS ${FLATC_OUTPUT})
 
 # Set internal linked library lists for our targets
 set(SHOWTIME_PRIVATE_LINKED_LIBS 

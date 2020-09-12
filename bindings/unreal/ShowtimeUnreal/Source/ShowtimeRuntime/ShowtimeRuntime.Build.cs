@@ -47,30 +47,30 @@ public class ShowtimeRuntime : ModuleRules
 		var win64_binaries = new string[]{};
 		if(bUseDebug){
 			win64_libs = new string[]{
-				Path.Combine(win_lib_path, "showtimed.lib")
+				Path.Combine(win_lib_path, "Showtimed.lib")
 			};
 
 			win64_binaries = new string[]{
-				Path.Combine(win_bin_path, "showtimed.dll")
+				Path.Combine(win_bin_path, "Showtimed.dll")
 			};
 		} else {
 			win64_libs = new string[]{
-				Path.Combine(win_lib_path, "showtime.lib")
+				Path.Combine(win_lib_path, "Showtime.lib")
 			};
 
 			win64_binaries = new string[]{
-				Path.Combine(win_bin_path, "showtime.dll")
+				Path.Combine(win_bin_path, "Showtime.dll")
 			};
 		}
 
 		var mac_lib_path = Path.Combine(PluginDirectory, "external", "lib", "Mac");
 		var mac_libraries = new string[]{
-			Path.Combine(mac_lib_path, "showtime")
+			Path.Combine(mac_lib_path, "Showtime")
 		};
 
 		var android_lib_path = Path.Combine(PluginDirectory, "external", "lib", "Android");
 		var android_libraries = new string[]{
-			Path.Combine(android_lib_path, "libshowtime.so")
+			Path.Combine(android_lib_path, "libShowtime.so")
 		};
 
 		// Add any import libraries or static libraries
