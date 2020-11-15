@@ -54,32 +54,39 @@ endif()
 
 # Android lib copying
 if(ANDROID OR BUILD_ANDROID_CONTAINER)
-    set(UNREAL_ANDROID_LIBS
-        "libShowtime.so"
+    #set(UNREAL_ANDROID_LIBS
+        #"libShowtime.so"
         # "lib${CORE_TARGET}.so"
         # "lib${CLIENT_TARGET}.so"
         # "lib${SERVER_TARGET}.so"
         # "libzmq.so"
         # "libczmq.so"
-    )
+    #)
 
     # Copy libraries
-    foreach( lib ${UNREAL_ANDROID_LIBS})
-        add_custom_command(
-            PRE_BUILD
-            TARGET ${UNREAL_TARGET}
-            COMMAND ${CMAKE_COMMAND} -E echo "Copying ${lib} to ${UNREAL_LIB_DIR}"
-            COMMAND ${CMAKE_COMMAND} -E copy ${ANDROID_LIB_DIR}/${lib} ${UNREAL_LIB_DIR}/Android/${lib}
-            DEPENDS ${ANDROID_CONTAINER_TARGET}
-        )
-    endforeach()
+    #foreach( lib ${UNREAL_ANDROID_LIBS})
+        # add_custom_command(
+        #     PRE_BUILD
+        #     TARGET ${UNREAL_TARGET}
+        #     COMMAND ${CMAKE_COMMAND} -E echo "Copying ${lib} to ${UNREAL_LIB_DIR}"
+        #     COMMAND ${CMAKE_COMMAND} -E copy ${ANDROID_LIB_DIR}/${lib} ${UNREAL_LIB_DIR}/Android/${lib}
+        #     DEPENDS ${ANDROID_CONTAINER_TARGET}
+        # )
+    #endforeach()
+    add_custom_command(
+        PRE_BUILD
+        TARGET ${UNREAL_TARGET}
+        COMMAND ${CMAKE_COMMAND} -E echo "Copying ${ANDROID_LIB_DIR} to ${UNREAL_LIB_DIR}/Android/${ANDROID_ABI}"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${ANDROID_LIB_DIR} ${UNREAL_LIB_DIR}/Android/${ANDROID_ABI}
+        DEPENDS ${ANDROID_CONTAINER_TARGET}
+    )
 
     # Copy plugins
     add_custom_command(
         PRE_BUILD
         TARGET ${UNREAL_TARGET}
         COMMAND ${CMAKE_COMMAND} -E echo "Copying plugins to ${UNREAL_BIN_DIR}"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${ANDROID_BIN_DIR}/plugins ${UNREAL_BIN_DIR}/Android/plugins
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${ANDROID_BIN_DIR}/plugins ${UNREAL_BIN_DIR}/Android/${ANDROID_ABI}/plugins
         DEPENDS ${ANDROID_CONTAINER_TARGET}
     )
     if(BUILD_ANDROID_CONTAINER)

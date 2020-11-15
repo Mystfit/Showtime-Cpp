@@ -69,9 +69,17 @@ public class ShowtimeRuntime : ModuleRules
 		};
 
 		var android_lib_path = Path.Combine(PluginDirectory, "external", "lib", "Android");
-		var android_libraries = new string[]{
-			Path.Combine(android_lib_path, "libShowtime.so")
-		};
+		string[] android_libraries = new string[] { };
+		try
+		{
+			android_libraries = Directory.GetFiles(android_lib_path, "*.so", SearchOption.AllDirectories);
+			System.Console.WriteLine(android_libraries);
+		}
+		catch (System.IO.DirectoryNotFoundException) { }
+
+		//var android_libraries = new string[]{
+		//	Path.Combine(android_lib_path, "libShowtime.so")
+		//};
 
 		// Add any import libraries or static libraries
 		string[] platform_libs = new string[]{};

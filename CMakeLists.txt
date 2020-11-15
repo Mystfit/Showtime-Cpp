@@ -486,9 +486,15 @@ list(APPEND Showtime_PLUGIN_TARGETS ${CORE_ENTITIES_TARGET})
 # Container options
 # -----------------
 option(BUILD_ANDROID_CONTAINER "Build Android libs using Singularity" OFF)
+set(ANDROID_ABI_VERSIONS
+    "arm64-v8a"
+    "armeabi-v7a"
+    "x86_64"
+)
+set(ANDROID_ABI "arm64-v8a" CACHE STRING "Android ABI type")
 set(ANDROID_CONTAINER_TARGET AndroidContainerBuild)
-set(ANDROID_LIB_DIR "${CMAKE_BINARY_DIR}/lib/Android")
-set(ANDROID_BIN_DIR "${CMAKE_BINARY_DIR}/bin/Android")
+set(ANDROID_LIB_DIR "${CMAKE_BINARY_DIR}/lib/Android/${ANDROID_ABI}")
+set(ANDROID_BIN_DIR "${CMAKE_BINARY_DIR}/bin/Android/${ANDROID_ABI}")
 set(ANDROID_OUTPUT_LIB "${ANDROID_LIB_DIR}/lib${SHARED_FROM_STATIC_TARGET}.so")
 
 option(BUILD_WINDOWS_CONTAINER "Build Windows libs using Vagrant" OFF)

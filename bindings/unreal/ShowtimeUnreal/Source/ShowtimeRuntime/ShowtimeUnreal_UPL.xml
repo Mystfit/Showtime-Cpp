@@ -83,11 +83,17 @@
 
 	<!-- optional files or directories to copy to Intermediate/Android/APK -->
 	<resourceCopies>
-		<isArch arch="arm64-v8a">
-			<copyFile src="$S(PluginDir)/../../external/lib/Android/libShowtime.so"
-				dst="$S(BuildDir)/libs/arm64-v8a/libShowtime.so" />
+		<isArch arch="armeabi-v7a">
+			<copyFile src="$S(PluginDir)/../../external/lib/Android/armeabi-v7a/libShowtime.so"
+				dst="$S(BuildDir)/libs/armeabi-v7a/libShowtime.so" />
+      <copyFile src="$S(PluginDir)/../../external/bin/Android/armeabi-v7a/plugins/*.so"
+        dst="$S(BuildDir)/libs/armeabi-v7a/plugins" />
+		</isArch>
+    <isArch arch="arm64-v8a">
+      <copyFile src="$S(PluginDir)/../../external/lib/Android/libShowtime.so"
+        dst="$S(BuildDir)/libs/arm64-v8a/libShowtime.so" />
       <copyFile src="$S(PluginDir)/../../external/bin/Android/plugins/*.so"
         dst="$S(BuildDir)/libs/arm64-v8a/plugins" />
-		</isArch>
+    </isArch>
 	</resourceCopies>
 </root>
