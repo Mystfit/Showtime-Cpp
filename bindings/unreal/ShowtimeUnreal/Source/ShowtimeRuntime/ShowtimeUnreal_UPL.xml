@@ -25,6 +25,18 @@
     <addPermission android:name="android.permission.ACCESS_NETWORK_STATE"  />
     <addPermission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"  />
   </androidManifestUpdates>
+  <buildGradleAdditions>
+    <insert>
+      <![CDATA[
+android {
+  packagingOptions{
+    doNotStrip "*/arm64-v8a/libShowtime.so"
+    doNotStrip "*/arm64-v8a/libShowtimePluginCoreEntities.so"
+  }
+}
+      ]]>
+    </insert>
+  </buildGradleAdditions>
   <gameActivityClassAdditions>
     <insert>
       <![CDATA[
@@ -33,7 +45,7 @@
       * Get Showtime plugin directory
       */
       public String Showtime_GetShowtimePluginPath() {
-        return getApplicationInfo().nativeLibraryDir + "/plugins";
+        return getApplicationInfo().nativeLibraryDir;
       }
 
       /**
@@ -94,11 +106,11 @@
   <resourceCopies>
       <isArch arch="armeabi-v7a">
           <copyFile src="$S(PluginDir)/../../external/lib/Android/armeabi-v7a/libShowtime.so" dst="$S(BuildDir)/libs/armeabi-v7a/libShowtime.so" />
-          <copyDir src="$S(PluginDir)/../../external/bin/Android/armeabi-v7a/plugins" dst="$S(BuildDir)/bin/armeabi-v7a/plugins" />
+            <!-- <copyDir src="$S(PluginDir)/../../external/bin/Android/armeabi-v7a/plugins" dst="$S(BuildDir)/bin/armeabi-v7a/plugins" />-->
       </isArch>
       <isArch arch="arm64-v8a">
           <copyFile src="$S(PluginDir)/../../external/lib/Android/arm64-v8a/libShowtime.so" dst="$S(BuildDir)/libs/arm64-v8a/libShowtime.so" />
-          <copyDir src="$S(PluginDir)/../../external/bin/Android/arm64-v8a/plugins" dst="$S(BuildDir)/bin/arm64-v8a/plugins" />
+          <copyFile src="$S(PluginDir)/../../external/bin/Android/arm64-v8a/plugins/libShowtimePluginCoreEntities.so" dst="$S(BuildDir)/libs/arm64-v8a/libShowtimePluginCoreEntities.so" />
       </isArch>
   </resourceCopies>
 </root>

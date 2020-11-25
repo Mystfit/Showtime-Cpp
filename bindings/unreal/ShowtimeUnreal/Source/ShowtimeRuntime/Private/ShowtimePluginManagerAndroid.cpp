@@ -1,4 +1,5 @@
 #include "ShowtimePluginManagerAndroid.h"
+#include "Misc/LocalTimestampDirectoryVisitor.h"
 
 #if PLATFORM_ANDROID 
 jmethodID UShowtimePluginManagerAndroid::Showtime_GetShowtimePluginPath = NULL;
@@ -14,7 +15,8 @@ void UShowtimePluginManagerAndroid::InitPluginFunctions() {
 }
 
 FString UShowtimePluginManagerAndroid::GetPluginPath() {
-    FString plugin_path;
+	extern FString GExternalFilePath;
+	FString plugin_path;// = GExternalFilePath;
 
     if (JNIEnv* Env = FAndroidApplication::GetJavaEnv(true)) {
         if (!UShowtimePluginManagerAndroid::Showtime_GetShowtimePluginPath) UShowtimePluginManagerAndroid::InitPluginFunctions();
@@ -27,6 +29,7 @@ FString UShowtimePluginManagerAndroid::GetPluginPath() {
 
     return plugin_path;
 }
+
 #else
 void UShowtimePluginManagerAndroid::InitPluginFunctions() {};
 FString UShowtimePluginManagerAndroid::GetPluginPath() { return FString(); };

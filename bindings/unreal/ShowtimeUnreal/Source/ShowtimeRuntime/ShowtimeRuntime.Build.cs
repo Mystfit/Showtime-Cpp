@@ -29,8 +29,7 @@ public class ShowtimeRuntime : ModuleRules
 			Path.Combine(ModuleDirectory, "Public"),
 			Path.Combine(PluginDirectory, "external", "include")
 		});
-		PrivateIncludePaths.AddRange( new string[] {
-			//"/Source/Runtime/Launch/Private",
+		PrivateIncludePaths.AddRange(new string[] {
 			Path.Combine(ModuleDirectory, "Private")
 		});
 		PublicDependencyModuleNames.AddRange(
@@ -41,11 +40,15 @@ public class ShowtimeRuntime : ModuleRules
 		});
 		PrivateDependencyModuleNames.AddRange(new string[] { "Core" });
 
+		// Windows paths
 		var win_lib_path = Path.Combine(PluginDirectory, "external", "lib", "Win64");
 		var win_bin_path = Path.Combine(PluginDirectory, "external", "bin", "Win64");
-		var win64_libs = new string[]{};
-		var win64_binaries = new string[]{};
-		if(bUseDebug){
+		var win64_libs = new string[] { };
+		var win64_binaries = new string[] { };
+
+		// Get Win libraries
+		if (bUseDebug)
+		{
 			win64_libs = new string[]{
 				Path.Combine(win_lib_path, "Showtimed.lib")
 			};
@@ -53,7 +56,9 @@ public class ShowtimeRuntime : ModuleRules
 			win64_binaries = new string[]{
 				Path.Combine(win_bin_path, "Showtimed.dll")
 			};
-		} else {
+		}
+		else
+		{
 			win64_libs = new string[]{
 				Path.Combine(win_lib_path, "Showtime.lib")
 			};
@@ -63,32 +68,33 @@ public class ShowtimeRuntime : ModuleRules
 			};
 		}
 
+
+		// Mac paths and libraries
 		var mac_lib_path = Path.Combine(PluginDirectory, "external", "lib", "Mac");
 		var mac_libraries = new string[]{
 			Path.Combine(mac_lib_path, "Showtime")
 		};
 
+		// Android paths
 		var android_lib_path = Path.Combine(PluginDirectory, "external", "lib", "Android");
 		string[] android_libraries = new string[] { };
 		try
 		{
+			// Search for android libraries
 			android_libraries = Directory.GetFiles(android_lib_path, "*.so", SearchOption.AllDirectories);
-			System.Console.WriteLine(android_libraries);
 		}
 		catch (System.IO.DirectoryNotFoundException) { }
 
-		//var android_libraries = new string[]{
-		//	Path.Combine(android_lib_path, "libShowtime.so")
-		//};
-
 		// Add any import libraries or static libraries
-		string[] platform_libs = new string[]{};
-		string[] platform_binaries = new string[]{};
+		List<string> platform_libs = new List<string>();
+		List<string> platform_binaries = new List<string>();
 
-		if (Target.Platform == UnrealTargetPlatform.Win64){
+		// Set windows binaries
+		if (Target.Platform == UnrealTargetPlatform.Win64)
+		{
 			string binariesDir = Path.Combine(PluginDirectory, "Binaries", "Win64");
-			platform_libs = win64_libs;
-			platform_binaries = win64_binaries;
+			platform_libs.AddRange(win64_libs);
+			platform_binaries.AddRange(win64_binaries);
 
 			// Copy binaries to plugin binary folder for the editor
 			if (!Directory.Exists(binariesDir))
@@ -97,26 +103,50 @@ public class ShowtimeRuntime : ModuleRules
 				File.Copy(dll, Path.Combine(binariesDir, Path.GetFileName(dll)), true);
 		}
 
-		if (Target.Platform == UnrealTargetPlatform.Mac){
-			platform_libs = mac_libraries;
-			platform_binaries = mac_libraries;
+		// Set mac binaries
+		if (Target.Platform == UnrealTargetPlatform.Mac)
+		{
+			platform_libs.AddRange(mac_libraries);
+			platform_binaries.AddRange(mac_libraries);
 		}
 
-		if (Target.Platform == UnrealTargetPlatform.Android){
-			platform_libs = android_libraries;
-			platform_binaries = android_libraries;
+		// Set android binaries
+		if (Target.Platform == UnrealTargetPlatform.Android)
+		{
+			// Add fixed android libraries
+			platform_libs.AddRange(android_libraries);
+			platform_binaries.AddRange(android_libraries);
+
+			// Add android plugins
+			//platform_binaries.AddRange(get_platform_plugins());
+
+			// Showtime plugin path
 			string PluginPath = Utils.MakePathRelativeTo(ModuleDirectory, Target.RelativeEnginePath);
+
+			// Add UPL script
 			AdditionalPropertiesForReceipt.Add("AndroidPlugin", System.IO.Path.Combine(PluginPath, "ShowtimeUnreal_UPL.xml"));
-			PublicDependencyModuleNames.AddRange(new string[] {"Launch"});
+
+			// Public modules
+			PublicDependencyModuleNames.AddRange(new string[] { "Launch" });
+
+			// External binary source dir for plugin copying
+			string binariesDir = Path.Combine(PluginDirectory, "Binaries", "Android", "arm64-v8a");
+			
+			// Copy binaries to plugin binary folder
+			//if (!Directory.Exists(binariesDir))
+			//	Directory.CreateDirectory(binariesDir);
+			//foreach (var so in platform_binaries)
+			//	File.Copy(so, Path.Combine(binariesDir, Path.GetFileName(so)), true);
 		}
 		PublicAdditionalLibraries.AddRange(platform_libs);
 
 		// Add runtime libraries that need to be bundled alongside the plugin
 		List<string> binaries = new List<string>();
 		binaries.AddRange(platform_binaries);
-		get_platform_plugins();
-		//binaries.AddRange(get_platform_plugins());
-		foreach (var path in binaries){
+		binaries.AddRange(get_platform_plugins());
+		foreach (var path in binaries)
+		{
+			System.Console.WriteLine("Adding runtime dependency: " + path);
 			RuntimeDependencies.Add(Path.Combine("$(TargetOutputDir)", Path.GetFileName(path)), path);
 		}
 	}
@@ -125,13 +155,29 @@ public class ShowtimeRuntime : ModuleRules
 	{
 		string[] plugins = null;
 		string[] files = new string[] { };
-        try {
-			files = Directory.GetFiles(Path.Combine(PluginDirectory, "external", "bin", Target.Platform.ToString(), "plugins"));
-		} catch (System.IO.DirectoryNotFoundException){}
-
-		foreach(var path in files){
-			RuntimeDependencies.Add(Path.Combine("$(TargetOutputDir)", "plugins", Path.GetFileName(path)), path);
+		var bin_folder = Path.Combine(PluginDirectory, "external", "bin", Target.Platform.ToString());
+		if (Target.Platform == UnrealTargetPlatform.Android)
+		{
+			bin_folder = Path.Combine(bin_folder, "arm64-v8a", "plugins");
 		}
+		else
+		{
+			bin_folder = Path.Combine(bin_folder, "plugins");
+		}
+
+		try
+		{
+			files = Directory.GetFiles(bin_folder);
+			System.Console.WriteLine("Plugin files:" + string.Join("\n", files));
+		}
+		catch (System.IO.DirectoryNotFoundException) {
+			System.Console.WriteLine("Couldn't find plugin folder " + bin_folder );
+		}
+
+		//foreach (var path in files)
+		//{
+		//	RuntimeDependencies.Add(Path.Combine("$(TargetOutputDir)", "plugins", Path.GetFileName(path)), path);
+		//}
 
 		return files;
 	}
