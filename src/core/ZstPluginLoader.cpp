@@ -91,10 +91,17 @@ namespace showtime {
 			boost::dll::fs::error_code ec;
 
 			// Strip extension - let boost pick the decorators
-			file.replace_extension("");
+			//file.replace_extension("");
 
 			// Load plugin library
-			lib.load(file.string(), ec, boost::dll::load_mode::append_decorations);
+			if (file.extension().string() != boost::dll::shared_library::suffix().string() || file.filename().string().find("ShowtimePlugin") == std::string::npos) {
+				Log::net(Log::Level::debug, "Can't load plugin {}. Not a library or the name was invalid.", file.string());
+				continue;
+			}
+
+			Log::net(Log::Level::notification, "Loading plugin {}", file.string());
+
+			lib.load(file.string(), ec);//, boost::dll::load_mode::append_decorations);
 			if (ec.value() != 0) {
 				Log::net(Log::Level::error, "Plugin {} load error: {}", file.filename().string(), ec.message());
 				continue;
@@ -102,11 +109,21 @@ namespace showtime {
 
 			// Create instance of plugin from the shared lib
 			auto plugin_creator = lib.get_alias<ZstPlugin_create_t>("create_plugin");
+			if (!plugin_creator) {
+				Log::net(Log::Level::error, "Could not create plugin factory for {}", file.filename().string());
+				continue;
+			}
+
 			std::shared_ptr<ZstPlugin> plugin = plugin_creator();
+			if (!plugin) {
+				Log::net(Log::Level::error, "Failed to execute plugin factory for {}", file.filename().string());
+				continue;
+			}
+
 			plugin->init(m_plugin_data_path.string().c_str());
-			
+		
 			// Hold onto lib and plugin instances
-			m_loaded_plugins[plugin->name()] = ZstLoadedPlugin{lib, plugin};
+			m_loaded_plugins.try_emplace(plugin->name(), ZstLoadedPlugin{ std::move(lib), plugin });
 
 			// Defer plugin loaded event
 			m_plugin_events->defer([plugin](ZstPluginAdaptor* adp) {
