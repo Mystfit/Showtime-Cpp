@@ -66,5 +66,5 @@ git clone https://github.com/mystfit/Boost-for-Android.git < /dev/null > /dev/nu
 pushd ./Boost-for-Android
 BOOST_LIBS="log,thread,system,context,fiber,date_time,chrono,atomic,regex,test"
 echo "Building boost for android $ANDROID_BOOST_VER"
-./build-android.sh --boost=$ANDROID_BOOST_VER --layout=versioned --with-libraries=$BOOST_LIBS --arch=$ANDROID_ABI --prefix=$ANDROID_NDK_SYSROOT $ANDROID_NDK_ROOT > /dev/null
+./build-android.sh --boost=$ANDROID_BOOST_VER --layout=versioned --with-libraries=$BOOST_LIBS --arch=$ANDROID_ABI --prefix=$ANDROID_NDK_SYSROOT $ANDROID_NDK_ROOT
 popd

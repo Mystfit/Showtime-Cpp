@@ -19,6 +19,7 @@ set(ANDROID_PLATFORM_VERSIONS
 )
 
 set(ANDROID_NDK_VERSIONS
+	"r22"
 	"r21d"
 	"r21b"
 	"r21"
@@ -35,7 +36,7 @@ set(ANDROID_BOOST_VERSIONS
 )
 
 set(ANDROID_PLATFORM "29" CACHE STRING "Android platform version")
-set(ANDROID_NDK_VERSION "r21" CACHE STRING "Android NDK version")
+set(ANDROID_NDK_VERSION "r22" CACHE STRING "Android NDK version")
 set(ANDROID_BOOST_VERSION "1.72.0" CACHE STRING "Boost version")
 
 # Create native paths

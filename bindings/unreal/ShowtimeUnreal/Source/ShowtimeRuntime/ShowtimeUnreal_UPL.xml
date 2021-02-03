@@ -90,9 +90,9 @@
         dst="$S(BuildDir)/libs/armeabi-v7a/plugins" />
 		</isArch>
     <isArch arch="arm64-v8a">
-      <copyFile src="$S(PluginDir)/../../external/lib/Android/libShowtime.so"
+      <copyFile src="$S(PluginDir)/../../external/lib/Android/arm64-v8a/libShowtime.so"
         dst="$S(BuildDir)/libs/arm64-v8a/libShowtime.so" />
-      <copyFile src="$S(PluginDir)/../../external/bin/Android/plugins/*.so"
+      <copyFile src="$S(PluginDir)/../../external/bin/Android/arm64-v8a/plugins/*.so"
         dst="$S(BuildDir)/libs/arm64-v8a/plugins" />
     </isArch>
 	</resourceCopies>
