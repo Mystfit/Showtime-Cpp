@@ -90,6 +90,19 @@ BOOST_FIXTURE_TEST_CASE(load_plugins_events, FixtureInit) {
 	// TODO: Plugins are already loaded. Need to reload plugins to trigger the event.
 }
 
+BOOST_AUTO_TEST_CASE(set_plugin_dir) {
+	auto client = std::make_unique<ShowtimeClient>();
+	auto plugin_path = fs::path(boost::unit_test::framework::master_test_suite().argv[0]).parent_path().append("plugins");
+	client->set_plugin_path(plugin_path.string().c_str());
+	client->init("plugin_loader", true);
+
+	auto loaded_plugins = client->plugins();
+	bool found = std::find_if(loaded_plugins.begin(), loaded_plugins.end(), [](auto it) {
+		return strcmp(it->name(), "core_entities") == 0;
+		}) != loaded_plugins.end();
+	BOOST_TEST(found);
+}
+
 BOOST_FIXTURE_TEST_CASE(plugin_factories, FixtureCorePlugin) {
 	ZstEntityFactoryBundle bundle;
 	ZstURI factory_path = test_client->get_root()->URI() + ZstURI("math_entities");

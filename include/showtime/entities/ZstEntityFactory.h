@@ -36,24 +36,9 @@ public:
 
 
 	//Creatables
+	// -------------
 
-#ifndef SWIG
-	template <typename T, typename = typename std::enable_if<std::is_base_of<ZstEntityBase, T>::value>::type>
-#else // SWIG
-	template <typename T>
-#endif
-	void add_creatable(const ZstURI& creatable_path){
-		m_creatables.emplace(creatable_path, [](const char* e_name) -> std::unique_ptr<ZstEntityBase> { return std::make_unique<T>(e_name); });
-	}
-
-#ifndef SWIG
-	template <typename T, typename = typename std::enable_if<std::is_base_of<ZstEntityBase, T>::value>::type>
-#else // SWIG
-	template <typename T>
-#endif
-	void add_creatable(const ZstURI& creatable_path, ZstEntityCreatorFunc creator_func) {
-		m_creatables.emplace(creatable_path, creator_func);
-	}
+	ZST_EXPORT void add_creatable(const ZstURI& creatable_path, ZstEntityCreatorFunc creator_func);
 	ZST_EXPORT void remove_creatable(const ZstURI & creatable_path);
 	ZST_EXPORT void get_creatables(ZstURIBundle* bundle);
 	ZST_EXPORT const ZstURI & get_creatable_at(size_t index);

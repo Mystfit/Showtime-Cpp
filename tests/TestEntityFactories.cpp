@@ -33,7 +33,7 @@ class TestFactory : public ZstEntityFactory
 public:
 	TestFactory(const char * name) : ZstEntityFactory(name) 
 	{
-		this->add_creatable<CustomComponent>(CUSTOM_COMPONENT);
+		this->add_creatable(CUSTOM_COMPONENT, [](const char* name) { return std::make_unique<CustomComponent>(name); });
 	}
 };
 
@@ -280,7 +280,7 @@ BOOST_FIXTURE_TEST_CASE(factory_leaving, FixtureWaitForFactoryClient) {
 
 BOOST_FIXTURE_TEST_CASE(updated_creatables_callback, FixtureExternalFactory)
 {
-	ext_factory->add_creatable<ZstComponent>(ZstURI("avocado"));
+	ext_factory->add_creatable(ZstURI("avocado"), [](const char* name){ return std::make_unique<ZstComponent>(name); });
 	ext_factory->update_creatables();
 
 	wait_for_event(test_client, factoryEvents, 1);

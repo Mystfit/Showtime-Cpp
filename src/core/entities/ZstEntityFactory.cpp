@@ -69,6 +69,11 @@ void ZstEntityFactory::update_creatables()
 	});
 }
 
+void ZstEntityFactory::add_creatable(const ZstURI& creatable_path, ZstEntityCreatorFunc creator_func)
+{
+	m_creatables.emplace(creatable_path, creator_func);
+}
+
 void ZstEntityFactory::remove_creatable(const ZstURI & creatable_path)
 {
 	try {
@@ -156,8 +161,9 @@ void ZstEntityFactory::process_events()
 
 void ZstEntityFactory::update_createable_URIs()
 {
-	auto orig_uris = std::move(m_creatables);
+	auto orig_uris = m_creatables;
 	m_creatables.clear();
+
 	for (auto c : orig_uris) {
 		//Update creatables to match the new factory URI
 		bool creatable_contains_path = c.first.contains(this->URI());
@@ -197,7 +203,7 @@ void ZstEntityFactory::deserialize_partial(const FactoryData* buffer)
 	if (!buffer) return;
 
     for(auto c : *buffer->creatables()){
-		add_creatable<ZstEntityBase>(ZstURI(c->c_str(), c->size()));
+		add_creatable(ZstURI(c->c_str(), c->size()), [](const char* name) { return std::unique_ptr<ZstEntityBase>{}; });
     }
 }
     

@@ -218,7 +218,7 @@ void ZstHierarchy::update_proxy_entity(ZstEntityBase* original, const EntityType
 			auto factory_data = static_cast<const Factory*>(payload);
 			local_factory->clear_creatables();
 			for (auto c : *factory_data->factory()->creatables()) {
-				local_factory->add_creatable<ZstEntityBase>(ZstURI(c->c_str(), c->size()));
+				local_factory->add_creatable(ZstURI(c->c_str(), c->size()), [](const char* name) { return std::unique_ptr<ZstEntityBase>{}; });
 			}
 			local_factory->update_creatables();
 		}

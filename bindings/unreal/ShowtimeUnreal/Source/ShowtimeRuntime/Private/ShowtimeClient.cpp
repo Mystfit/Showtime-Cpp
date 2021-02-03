@@ -7,6 +7,7 @@
 
 #ifdef PLATFORM_ANDROID
 #include "MulticastAndroid.h"
+#include "ShowtimePluginManagerAndroid.h"
 #endif
 #include <functional>
 
@@ -29,10 +30,16 @@ void UShowtimeClient::Cleanup()
 
 void UShowtimeClient::Init()
 {
+	FString plugin_path;
+
 #if PLATFORM_ANDROID
 	UMulticastAndroid::AcquireMulticastLock();
+	plugin_path = UShowtimePluginManagerAndroid::GetPluginPath();
 #endif
-	if (client) client->init(TCHAR_TO_UTF8(*ClientName), true);
+	if (client) {
+		client->set_plugin_path(TCHAR_TO_UTF8(*plugin_path));
+		client->init(TCHAR_TO_UTF8(*ClientName), true);
+	}
 	SpawnPerformer(Handle()->get_root());
 }
 
