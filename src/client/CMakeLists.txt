@@ -28,7 +28,7 @@ source_group( "source" FILES ${ZST_CLIENT_SRC})
 
   # Include files in client target
 target_sources(${CLIENT_TARGET_OBJECTS} PRIVATE 
-  # ${ZST_CLIENT_HEADERS}
+  ${ZST_CLIENT_HEADERS}
   ${ZST_CLIENT_PRIVATE_HEADERS}
   ${ZST_CLIENT_SRC}
 )

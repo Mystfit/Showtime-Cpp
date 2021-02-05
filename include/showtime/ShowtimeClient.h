@@ -1,3 +1,11 @@
+/*****************************************************************//**
+ * \file   ShowtimeClient.h
+ * \brief  
+ * 
+ * \author Byron
+ * \date   February 2021
+ *********************************************************************/
+
 #pragma once
 
 #include "ZstCore.h"
@@ -10,7 +18,11 @@ namespace showtime {
         class ZstClient;
     }
 
-
+/**
+ * ShowtimeClient
+ * 
+ * 
+ */
 class ZST_CLASS_EXPORTED ShowtimeClient 
 #ifndef SWIG
 	: public std::enable_shared_from_this<ShowtimeClient>
@@ -22,7 +34,13 @@ public:
     //Disable copying
     ZST_CLIENT_EXPORT ShowtimeClient(const ShowtimeClient & other) = delete;
     
-	//Init the library
+	/**
+	 * Initialize the client before connecting to a performance. This will also create our root performer and set up all the required submodules and listeners.
+	 * 
+	 * \param performer The name of the performer we will create and own.
+	 * \param debug Enable debug logging.
+	 * \return 
+	 */
 	ZST_CLIENT_EXPORT void init(const char * performer, bool debug);
 	ZST_CLIENT_EXPORT void start_file_logging(const char * log_file_path = "");
 

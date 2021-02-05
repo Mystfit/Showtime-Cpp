@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.13.0)
 project(Showtime VERSION 0.27.1)
 set(AUTHORS "Byron Mallett")
 set(COMPANY "Victoria University of Wellington")
-set(DESCRIPTION "Showtime dataflow network library")
+set(DESCRIPTION "P2P nodegraph dataflow library")
 set(REPO_URL "https://github.com/mystfit/Showtime-cpp.git")
 set(LICENSE_FILE "${CMAKE_SOURCE_DIR}/LICENSE.md")
 set(TAGS 
@@ -109,7 +109,8 @@ set(Showtime_COMPILED_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include")
 set(Showtime_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/include")
 set(Showtime_ALL_INCLUDE_DIRS ${Showtime_COMPILED_INCLUDE_DIRS} ${Showtime_INCLUDE_DIRS})
 set(Showtime_SUBMODULE_DEPENDENCIES_DIR "${CMAKE_SOURCE_DIR}/submodules")
-
+set(Showtime_DOCS_DIR "${CMAKE_SOURCE_DIR}/docs")
+set(Showtime_COMPILED_DOCS_DIR "${CMAKE_BINARY_DIR}/docs")
 set(Showtime_API_INTERFACE "")
 set(Showtime_OBJECT_TARGETS "")
 set(Showtime_LIBRARY_TARGETS "")
@@ -572,6 +573,25 @@ include( CTest )
 if(BUILD_TESTING)
     enable_testing()
     add_subdirectory(tests)
+endif()
+
+option(BUILD_DOCS "Build documentation" ON)
+find_package(Doxygen)
+if (DOXYGEN_FOUND)
+    # set input and output files
+    set(DOXYGEN_IN ${CMAKE_SOURCE_DIR}/Doxyfile.in)
+    set(DOXYGEN_OUT ${CMAKE_BINARY_DIR}/Doxyfile)
+
+    # request to configure the file
+    configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+
+    # note the option ALL which allows to build the docs together with the application
+    add_custom_target( BuildDocs ALL
+        COMMAND ${CMAKE_COMMAND} -E echo "Building documentation with Doxygen"
+        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating API documentation with Doxygen"
+        VERBATIM )
 endif()
 
 
