@@ -13,6 +13,8 @@ set(UNREAL_TARGET_DEPENDS "")
 
 # Create destination directories
 file(MAKE_DIRECTORY ${UNREAL_BUILD_DIR})
+file(MAKE_DIRECTORY ${UNREAL_BIN_DIR})
+file(MAKE_DIRECTORY ${UNREAL_LIB_DIR})
 
 # Unreal target build package
 add_custom_target(${UNREAL_TARGET} ALL DEPENDS ${UNREAL_BUILD_DIR}/ShowtimeUnreal.uplugin)
@@ -76,6 +78,7 @@ if(ANDROID OR BUILD_ANDROID_CONTAINER)
     add_custom_command(
         PRE_BUILD
         TARGET ${UNREAL_TARGET}
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${UNREAL_LIB_DIR}/Android/${ANDROID_ABI}
         COMMAND ${CMAKE_COMMAND} -E echo "Copying ${ANDROID_LIB_DIR} to ${UNREAL_LIB_DIR}/Android/${ANDROID_ABI}"
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${ANDROID_LIB_DIR} ${UNREAL_LIB_DIR}/Android/${ANDROID_ABI}
         DEPENDS ${ANDROID_CONTAINER_TARGET}
@@ -85,6 +88,7 @@ if(ANDROID OR BUILD_ANDROID_CONTAINER)
     add_custom_command(
         PRE_BUILD
         TARGET ${UNREAL_TARGET}
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${UNREAL_BIN_DIR}/Android/${ANDROID_ABI}/plugins
         COMMAND ${CMAKE_COMMAND} -E echo "Copying plugins to ${UNREAL_BIN_DIR}"
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${ANDROID_BIN_DIR}/plugins ${UNREAL_BIN_DIR}/Android/${ANDROID_ABI}/plugins
         DEPENDS ${ANDROID_CONTAINER_TARGET}
@@ -100,6 +104,9 @@ if(WIN32 OR BUILD_WINDOWS_CONTAINER)
     add_custom_command(
         PRE_BUILD
         TARGET ${UNREAL_TARGET}
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${UNREAL_BIN_DIR}/Win64
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${UNREAL_BIN_DIR}/Win64/plugins
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${UNREAL_LIB_DIR}/Win64
         COMMAND ${CMAKE_COMMAND} -E echo "Copying Windows platform files to ${UNREAL_BIN_DIR}"
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${SHARED_FROM_STATIC_TARGET}> ${UNREAL_BIN_DIR}/Win64/$<TARGET_FILE_NAME:${SHARED_FROM_STATIC_TARGET}>
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_LINKER_FILE:${SHARED_FROM_STATIC_TARGET}> ${UNREAL_LIB_DIR}/Win64/$<TARGET_LINKER_FILE_NAME:${SHARED_FROM_STATIC_TARGET}>

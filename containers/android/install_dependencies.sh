@@ -41,9 +41,9 @@ cmake --build ./czmq/build -j $VM_CPU_COUNT --target install
 # ----
 echo "Building Flatbuffers"
 git clone https://github.com/google/flatbuffers.git < /dev/null > /dev/null
-git -C ./flatbuffers fetch 
-git -C ./flatbuffers fetch --tags 
-git -C ./flatbuffers checkout v1.12.0
+# git -C ./flatbuffers fetch 
+# git -C ./flatbuffers fetch --tags 
+# git -C ./flatbuffers checkout v1.12.0
 mkdir -p ./flatbuffers/android_build
 mkdir -p ./flatbuffers/host_build
 cmake -H"./flatbuffers" -B"./flatbuffers/android_build" $ANDROID_BUILD_FLAGS $COMMON_BUILD_FLAGS -DFLATBUFFERS_BUILD_TESTS=OFF -DFLATBUFFERS_BUILD_FLATLIB=ON > /dev/null #-DFLATBUFFERS_BUILD_FLATC=OFF -DFLATBUFFERS_BUILD_FLATHASH=OFF > /dev/null
