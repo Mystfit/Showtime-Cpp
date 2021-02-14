@@ -4,6 +4,7 @@
 #include <showtime/ShowtimeClient.h>
 
 #include "Kismet/GameplayStatics.h"
+#include "Engine/World.h"
 
 #ifdef PLATFORM_ANDROID
 #include "MulticastAndroid.h"

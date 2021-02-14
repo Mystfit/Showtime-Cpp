@@ -34,12 +34,12 @@ DECLARE_LOG_CATEGORY_EXTERN(Showtime, Display, All);
 // Enum mappings
 // -------------
 
-static TMap<showtime::Log::Level, ELogVerbosity::Type> LogLevel_to_ELogVerbosity = {
-	{ showtime::Log::Level::debug, ELogVerbosity::Type::Log },
-	{ showtime::Log::Level::notification, ELogVerbosity::Type::Log },
-	{ showtime::Log::Level::warn, ELogVerbosity::Type::Warning },
-	{ showtime::Log::Level::error, ELogVerbosity::Type::Error }
-};
+// static TMap<showtime::Log::Level, ELogVerbosity::Type> LogLevel_to_ELogVerbosity = {
+// 	{ showtime::Log::Level::debug, ELogVerbosity::Type::Log },
+// 	{ showtime::Log::Level::notification, ELogVerbosity::Type::Log },
+// 	{ showtime::Log::Level::warn, ELogVerbosity::Type::Warning },
+// 	{ showtime::Log::Level::error, ELogVerbosity::Type::Error }
+// };
 
 
 // Event delegates

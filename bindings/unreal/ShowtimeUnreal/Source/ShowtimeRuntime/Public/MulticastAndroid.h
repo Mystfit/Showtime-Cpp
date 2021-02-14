@@ -1,6 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "IPAddress.h"
+
 #if PLATFORM_ANDROID 
 #include "Android/AndroidPlatform.h" 
 #include "Android/AndroidApplication.h" 

@@ -9,8 +9,12 @@ public class ShowtimeRuntime : ModuleRules
 {
 	public ShowtimeRuntime(ReadOnlyTargetRules Target) : base(Target)
 	{
-		//Add any macros that need to be set
-		PublicDefinitions.AddRange(
+		//For C++17 support
+		PCHUsage = PCHUsageMode.NoSharedPCHs;
+        PrivatePCHHeaderFile = Path.Combine(ModuleDirectory, "Public", "ShowtimePCH.h");
+
+        //Add any macros that need to be set
+        PublicDefinitions.AddRange(
 			new string[] {
 				"ZST_IMPORT_CORE_API",
 				"ZST_IMPORT_CLIENT_API",

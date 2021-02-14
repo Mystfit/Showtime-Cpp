@@ -37,7 +37,7 @@ void ShowtimeClientSpec::Define()
     Describe("add_log_adaptor()", [this]() {
         LatentIt("should capture log records", [this](const FDoneDelegate& Done)
             {
-                Log::app(Log::Level::debug, "test");
+                // Log::app(Log::Level::debug, "test");
                 client->Handle()->poll_once();
                 Done.Execute();
                 //BackendService->QueryItems(this, &FMyCustomSpec::HandleQueryItemComplete, Done);
