@@ -56,6 +56,7 @@ function Build-CmakeFromGit{
     } else {
         Write-Output "Cloning $name"
         git clone $url "$dependency_dir/$name"
+        git -C "$dependency_dir/$name" fetch --tags
         git -C "$dependency_dir/$name" checkout $branch
         md -Force $build_dir
     }
@@ -129,7 +130,7 @@ foreach ($c in $config){
         "-DFLATBUFFERS_INSTALL=ON"
         "-DCMAKE_DEBUG_POSTFIX=d"
     )
-    Build-CmakeFromGit -name "fmt" -url "https://github.com/fmtlib/fmt.git" -branch "master" -config $config_titled -toolset $toolset_ver -flags @()
+    Build-CmakeFromGit -name "fmt" -url "https://github.com/fmtlib/fmt.git" -branch "7.1.3" -config $config_titled -toolset $toolset_ver -flags @()
     Build-CmakeFromGit -name "rtmidi" -url "https://github.com/mystfit/rtmidi.git" -branch "cmake-updates" -config $config_titled -toolset $toolset_ver -flags @(
         "-DRTMIDI_BUILD_STATIC_LIBS=ON"
         "-DCMAKE_DEBUG_POSTFIX=d"

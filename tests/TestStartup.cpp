@@ -43,7 +43,8 @@ BOOST_AUTO_TEST_CASE(client_destruction_cleanup) {
 	{
 		auto test_client = std::make_shared<ShowtimeClient>();
 		test_client->init(performer_name.c_str(), true);
-		test_client->log_events()->log_record() += [](const Log::Record* record) {std::cout << record->message << std::endl; };
+		test_client->log_events()->formatted_log_record() += [](const char* record) {std::cout << record << std::endl; };
+		//test_client->log_events()->log_record() += [](const Log::Record* record) {std::cout << record->message << std::endl; };
 		test_client->destroy();
 	}
 }
@@ -56,19 +57,22 @@ BOOST_AUTO_TEST_CASE(log_events) {
 
 	test_client->init(performer_name.c_str(), true);
 	log_events->reset_num_calls();
-	std::string message = "test";
+	std::string message = "testmessage";
 	Log::app(Log::Level::debug, message.c_str());
 	wait_for_event(test_client, log_events, 1);
 
-	auto log_record = std::find_if(log_events->records.begin(), log_events->records.end(), [&message](const Log::Record& record) {
+	/*auto log_record = std::find_if(log_events->records.begin(), log_events->records.end(), [&message](const Log::Record& record) {
 		return message == record.message;
+	});*/
+	auto log_record = std::find_if(log_events->formatted_records.begin(), log_events->formatted_records.end(), [&message](const std::string& record) {
+		return record.find(message) != record.npos;
 	});
 
-	auto record_found = (log_record != log_events->records.end());
-	BOOST_REQUIRE(record_found);
-	BOOST_TEST(log_record->channel == "app");
-	BOOST_TEST(log_record->level == Log::Level::debug);
-	BOOST_TEST(log_record->message == message);
+	auto record_found = (log_record != log_events->formatted_records.end());
+	BOOST_TEST(record_found);
+	record_found = false;
+	//BOOST_TEST(log_record->channel == "app");
+	//BOOST_TEST(log_record->level == Log::Level::debug);
 
 	// Make sure we can reattach log events after destroy() was called
 	test_client->remove_log_adaptor(log_events);
@@ -81,12 +85,17 @@ BOOST_AUTO_TEST_CASE(log_events) {
 	Log::app(Log::Level::debug, second_message.c_str());
 	wait_for_event(test_client, log_events, 1);
 
-	log_record = std::find_if(log_events->records.begin(), log_events->records.end(), [&second_message](const Log::Record& record) {
+	/*log_record = std::find_if(log_events->records.begin(), log_events->records.end(), [&second_message](const Log::Record& record) {
 		return second_message == record.message;
+	});*/
+	log_record = std::find_if(log_events->formatted_records.begin(), log_events->formatted_records.end(), [&second_message](const std::string& record) {
+		return record.find(second_message) != record.npos;
 	});
 
-	record_found = (log_record != log_events->records.end());
-	BOOST_REQUIRE(record_found);
+	record_found = (log_record != log_events->formatted_records.end());
+	BOOST_TEST(record_found);
+
+	test_client->destroy();
 }
 
 BOOST_FIXTURE_TEST_CASE(auto_join_timeout, FixtureInit) {

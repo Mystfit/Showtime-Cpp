@@ -4,7 +4,6 @@
 #include <showtime/ZstExports.h>
 #include <showtime/ZstExceptions.h>
 #include <showtime/ZstConstants.h>
-#include <showtime/ZstLogging.h>
 #include <showtime/ZstURI.h>
 #include <showtime/ZstSerialisable.h>
 #include <showtime/ZstSynchronisable.h>

@@ -3,6 +3,7 @@
 #include <string>
 #include <showtime/ShowtimeClient.h>
 #include <showtime/ShowtimeServer.h>
+#include <showtime/ZstLogging.h>
 #include <showtime/ZstFilesystemUtils.h>
 
 #include <boost/process.hpp>
@@ -378,9 +379,16 @@ namespace ZstTest
 	class TestLogEvents : public ZstLogAdaptor, public TestAdaptor
 	{
 	public:
-		std::vector<Log::Record> records;
-		void on_log_record(const Log::Record* record) override {
-			records.push_back(*record);
+		//std::vector<Log::Record> records;
+		std::vector<std::string> formatted_records;
+
+		//void on_log_record(const Log::Record* record) override {
+		//	records.push_back(*record);
+		//	inc_calls();
+		//}
+
+		void on_formatted_log_record(const char* record) override {
+			formatted_records.push_back(std::string(record));
 			inc_calls();
 		}
 	};
