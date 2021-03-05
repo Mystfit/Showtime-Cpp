@@ -4,6 +4,7 @@ param(
     [string]$install_prefix="$dependency_dir/install",
     [string[]]$config=@("release"),
     [string]$generator="Visual Studio 16 2019",
+    [string]$platform="x64",
     [string]$toolset="msvc-14.2",
     [switch]$without_boost = $false,
     [string]$boost_version = "1.72.0"
@@ -27,7 +28,7 @@ if($generator.indexOf("Visual Studio") -gt -1){
     $vs_ver = [convert]::ToInt32($generator.trim("Visual Studio").split()[0])
     $toolset_ver = $msvc_toolset_versions[$toolset]
     if($vs_ver -ge 16){
-        $generator_flags += @("-A", "x64")
+        #$generator_flags += @("-A", "x64")
     }
 }
 
@@ -47,7 +48,7 @@ md -Force "$install_prefix"
 # CMake Libraries
 # ---------------
 function Build-CmakeFromGit{
-    Param($name, $url, $branch, $config, $toolset, $flags)
+    Param($name, $url, $branch, $config, $toolset, $arch, $flags)
 
     $build_dir = "$dependency_dir/$name/build_dir"
 
@@ -62,7 +63,8 @@ function Build-CmakeFromGit{
     }
     Write-Output "Building $name"
     $cmake_flags = $generator_flags + $flags + @(
-        "-T", $toolset
+        "-T", $toolset,
+        "-A", $arch,
         "-S", "`"$dependency_dir/$name`"",
         "-B", "`"$build_dir`""
     ) 
@@ -72,13 +74,14 @@ function Build-CmakeFromGit{
 }
 
 function Build-Boost{
-    Param($version, $config, $toolset, $libraries)
+    Param($version, $config, $toolset, $arch, $libraries)
 
     $boost_flags = @(
         "--prefix=$install_prefix",
         "address-model=64",
         "variant=$($config.ToLower())",
         "threading=multi",
+        "architecture=$arch",
         "runtime-link=shared",
         "toolset=$toolset"
     )
@@ -117,28 +120,33 @@ function Build-Boost{
 foreach ($c in $config){
     $config_titled = $(Get-Culture).textinfo.totitlecase($c)
     Write-Output "Building config: $config_titled"
-    Build-CmakeFromGit -name "libzmq" -url "https://github.com/Mystfit/libzmq.git" -branch "master" -config $config_titled -toolset $toolset_ver -flags @(
+    Build-CmakeFromGit -name "libzmq" -url "https://github.com/mystfit/libzmq.git" -branch "master" -config $config_titled -toolset $toolset_ver -arch $platform -flags @(
         "-DENABLE_DRAFTS=TRUE",
         "-DZMQ_BUILD_TESTS=OFF"
     )
-    Build-CmakeFromGit -name "czmq" -url "https://github.com/Mystfit/czmq.git" -branch "android" -config $config_titled -toolset $toolset_ver -flags @(
+    Build-CmakeFromGit -name "czmq" -url "https://github.com/mystfit/czmq.git" -branch "android" -config $config_titled -toolset $toolset_ver -arch $platform -flags @(
         "-DENABLE_DRAFTS=TRUE",
         "-DBUILD_TESTING=OFF",
         "-DCMAKE_DEBUG_POSTFIX=d"
     )
-    Build-CmakeFromGit -name "flatbuffers" -url "https://github.com/google/flatbuffers.git" -branch "master" -config $config_titled -toolset $toolset_ver -flags @(
+    Build-CmakeFromGit -name "flatbuffers" -url "https://github.com/google/flatbuffers.git" -branch "master" -config $config_titled -toolset $toolset_ver -arch $platform -flags @(
         "-DFLATBUFFERS_INSTALL=ON"
         "-DCMAKE_DEBUG_POSTFIX=d"
     )
-    Build-CmakeFromGit -name "fmt" -url "https://github.com/fmtlib/fmt.git" -branch "7.1.3" -config $config_titled -toolset $toolset_ver -flags @()
-    Build-CmakeFromGit -name "rtmidi" -url "https://github.com/mystfit/rtmidi.git" -branch "cmake-updates" -config $config_titled -toolset $toolset_ver -flags @(
+    Build-CmakeFromGit -name "fmt" -url "https://github.com/fmtlib/fmt.git" -branch "7.1.3" -config $config_titled -toolset $toolset_ver -arch $platform -flags @()
+    Build-CmakeFromGit -name "rtmidi" -url "https://github.com/mystfit/rtmidi.git" -branch "cmake-updates" -config $config_titled -toolset $toolset_ver -arch $platform -flags @(
         "-DRTMIDI_BUILD_STATIC_LIBS=ON"
         "-DCMAKE_DEBUG_POSTFIX=d"
     )
 
+    $arch = $platform
+    if($platform -contains "ARM64"){
+        $arch = "arm"
+    }
+
     if($without_boost -ne $true){
         $libraries = @("system","chrono","log","thread","filesystem","date_time","atomic","regex","context","fiber","test")
-        Build-Boost -version $boost_version -config $c $toolset $libraries
+        Build-Boost -version $boost_version -config $c $toolset $arch $libraries
     }
 }
 
