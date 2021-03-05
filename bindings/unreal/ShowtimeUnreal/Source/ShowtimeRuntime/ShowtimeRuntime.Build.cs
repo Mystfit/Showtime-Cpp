@@ -44,9 +44,24 @@ public class ShowtimeRuntime : ModuleRules
 		});
 		PrivateDependencyModuleNames.AddRange(new string[] { "Core" });
 
-		// Windows paths
-		var win_lib_path = Path.Combine(PluginDirectory, "external", "lib", "Win64");
-		var win_bin_path = Path.Combine(PluginDirectory, "external", "bin", "Win64");
+		// Architecture
+		string arch = "";
+        if (Target.Platform == UnrealTargetPlatform.Win64)
+        {
+			arch = Target.WindowsPlatform.Architecture.ToString();
+        }
+		else if (Target.Platform == UnrealTargetPlatform.Android)
+		{
+			arch = Target.Architecture.ToString();
+		}
+		else if (Target.Platform == UnrealTargetPlatform.HoloLens)
+        {
+			arch = Target.HoloLensPlatform.Architecture.ToString();
+		}
+		Console.WriteLine(Target.Architecture);
+
+		var win_lib_path = Path.Combine(PluginDirectory, "external", "lib", "Win64", arch);
+		var win_bin_path = Path.Combine(PluginDirectory, "external", "bin", "Win64", arch);
 		var win64_libs = new string[] { };
 		var win64_binaries = new string[] { };
 
@@ -72,7 +87,6 @@ public class ShowtimeRuntime : ModuleRules
 			};
 		}
 
-
 		// Mac paths and libraries
 		var mac_lib_path = Path.Combine(PluginDirectory, "external", "lib", "Mac");
 		var mac_libraries = new string[]{
@@ -80,7 +94,7 @@ public class ShowtimeRuntime : ModuleRules
 		};
 
 		// Android paths
-		var android_lib_path = Path.Combine(PluginDirectory, "external", "lib", "Android");
+		var android_lib_path = Path.Combine(PluginDirectory, "external", "lib", "Android", arch);
 		string[] android_libraries = new string[] { };
 		try
 		{
@@ -94,9 +108,9 @@ public class ShowtimeRuntime : ModuleRules
 		List<string> platform_binaries = new List<string>();
 
 		// Set windows binaries
-		if (Target.Platform == UnrealTargetPlatform.Win64)
+		if (Target.Platform == UnrealTargetPlatform.Win64 || Target.Platform == UnrealTargetPlatform.HoloLens)
 		{
-			string binariesDir = Path.Combine(PluginDirectory, "Binaries", "Win64");
+			string binariesDir = Path.Combine(PluginDirectory, "Binaries", "Win64", arch);
 			platform_libs.AddRange(win64_libs);
 			platform_binaries.AddRange(win64_binaries);
 
@@ -122,7 +136,7 @@ public class ShowtimeRuntime : ModuleRules
 			platform_binaries.AddRange(android_libraries);
 
 			// Add android plugins
-			//platform_binaries.AddRange(get_platform_plugins());
+			//platform_binaries.AddRange(get_platform_plugins(arch));
 
 			// Showtime plugin path
 			string PluginPath = Utils.MakePathRelativeTo(ModuleDirectory, Target.RelativeEnginePath);
@@ -134,7 +148,7 @@ public class ShowtimeRuntime : ModuleRules
 			PublicDependencyModuleNames.AddRange(new string[] { "Launch" });
 
 			// External binary source dir for plugin copying
-			string binariesDir = Path.Combine(PluginDirectory, "Binaries", "Android", "arm64-v8a");
+			string binariesDir = Path.Combine(PluginDirectory, "Binaries", "Android", arch);
 			
 			// Copy binaries to plugin binary folder
 			//if (!Directory.Exists(binariesDir))
@@ -147,7 +161,7 @@ public class ShowtimeRuntime : ModuleRules
 		// Add runtime libraries that need to be bundled alongside the plugin
 		List<string> binaries = new List<string>();
 		binaries.AddRange(platform_binaries);
-		binaries.AddRange(get_platform_plugins());
+		binaries.AddRange(get_platform_plugins(arch));
 		foreach (var path in binaries)
 		{
 			System.Console.WriteLine("Adding runtime dependency: " + path);
@@ -155,19 +169,13 @@ public class ShowtimeRuntime : ModuleRules
 		}
 	}
 
-	private string[] get_platform_plugins()
+	private string[] get_platform_plugins(string architecture)
 	{
 		string[] plugins = null;
 		string[] files = new string[] { };
-		var bin_folder = Path.Combine(PluginDirectory, "external", "bin", Target.Platform.ToString());
-		if (Target.Platform == UnrealTargetPlatform.Android)
-		{
-			bin_folder = Path.Combine(bin_folder, "arm64-v8a", "plugins");
-		}
-		else
-		{
-			bin_folder = Path.Combine(bin_folder, "plugins");
-		}
+		var bin_folder = Path.Combine(PluginDirectory, "external", "bin", Target.Platform.ToString(), architecture);
+		bin_folder = Path.Combine(bin_folder, "plugins");
+		Console.WriteLine("Searching for Showtime plugins in: " + bin_folder);
 
 		try
 		{

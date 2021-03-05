@@ -1,7 +1,6 @@
 param(
     [string]$build_dir="$PSScriptRoot/build",
-    [string]$dependency_dir="$build_dir/dependencies",
-    [string]$install_prefix="$dependency_dir/install",
+    [string]$dependency_dir="",
     [string[]]$config=@("release"),
     [string]$generator="Visual Studio 16 2019",
     [string]$platform="x64",
@@ -10,30 +9,45 @@ param(
     [string]$boost_version = "1.72.0"
 )
 
+# Valid MSVC toolsets
 $msvc_toolset_versions = @{
     "msvc-14.0" = "v140";
     "msvc-14.1" = "v141";
     "msvc-14.2" = "v142";
 }
+$toolset_ver = $msvc_toolset_versions[$toolset]
 
-$toolset_ver = $toolset
-$install_prefix += "/$toolset" 
+
+# Setup paths
+$build_dir = Convert-Path $build_dir
+if(!$dependency_dir){
+    $dependency_dir = [IO.Path]::Combine($build_dir, "dependencies")
+} else {
+    $dependency_dir = Convert-Path $dependency_dir
+}
+$install_prefix = [IO.Path]::Combine("$dependency_dir", "install", "$toolset", "$platform")
+md -Force "$install_prefix" 
 
 # Setup
 # -----
 $env:GIT_REDIRECT_STDERR = "2>&1"
 
 $generator_flags = @()
+
+# MSVC additional flags
 if($generator.indexOf("Visual Studio") -gt -1){
     $vs_ver = [convert]::ToInt32($generator.trim("Visual Studio").split()[0])
-    $toolset_ver = $msvc_toolset_versions[$toolset]
+    # $toolset_ver = $msvc_toolset_versions[$toolset]
     if($vs_ver -ge 16){
-        #$generator_flags += @("-A", "x64")
+        # $generator_flags += @("-A", "$platform")
     }
 }
 
+# Common CMake flags
 $generator_flags += @(
-    "-G", "`"$generator`""
+    "-G", "`"$generator`"",
+    "-T", "`"$toolset_ver`"",
+    "-A", "`"$platform`"",
     "-DCMAKE_INSTALL_PREFIX=`"$install_prefix`"",
     "-DCMAKE_INSTALL_INCLUDEDIR=`"$install_prefix/include`"",
     "-DCMAKE_INSTALL_LIBDIR=`"$install_prefix/lib`"",
@@ -42,7 +56,7 @@ $generator_flags += @(
     "-DCMAKE_PREFIX_PATH=`"$install_prefix`""
 )
 
-md -Force "$install_prefix"
+
 
 
 # CMake Libraries
@@ -63,8 +77,8 @@ function Build-CmakeFromGit{
     }
     Write-Output "Building $name"
     $cmake_flags = $generator_flags + $flags + @(
-        "-T", $toolset,
-        "-A", $arch,
+        # "-T", $toolset,
+        # "-A", $arch,
         "-S", "`"$dependency_dir/$name`"",
         "-B", "`"$build_dir`""
     ) 
@@ -116,21 +130,27 @@ function Build-Boost{
     Pop-Location
 }
 
-
+# Build libraries for each specified config (Debug, Release)
 foreach ($c in $config){
     $config_titled = $(Get-Culture).textinfo.totitlecase($c)
-    Write-Output "Building config: $config_titled"
-    Build-CmakeFromGit -name "libzmq" -url "https://github.com/mystfit/libzmq.git" -branch "master" -config $config_titled -toolset $toolset_ver -arch $platform -flags @(
+    Write-Output "Building dependencies for config: $config_titled"
+    Build-CmakeFromGit -name "libzmq" -url "https://github.com/zeromq/libzmq.git" -branch "master" -config $config_titled -toolset $toolset_ver -arch $platform -flags @(
         "-DENABLE_DRAFTS=TRUE",
+        "-DCZMQ_BUILD_SHARED=OFF"
         "-DZMQ_BUILD_TESTS=OFF"
     )
-    Build-CmakeFromGit -name "czmq" -url "https://github.com/mystfit/czmq.git" -branch "android" -config $config_titled -toolset $toolset_ver -arch $platform -flags @(
+    Build-CmakeFromGit -name "czmq" -url "https://github.com/mystfit/czmq.git" -branch "libzmq-static-linking-patch" -config $config_titled -toolset $toolset_ver -arch $platform -flags @(
         "-DENABLE_DRAFTS=TRUE",
         "-DBUILD_TESTING=OFF",
+        "-DBUILD_SHARED=OFF"
         "-DCMAKE_DEBUG_POSTFIX=d"
     )
     Build-CmakeFromGit -name "flatbuffers" -url "https://github.com/google/flatbuffers.git" -branch "master" -config $config_titled -toolset $toolset_ver -arch $platform -flags @(
         "-DFLATBUFFERS_INSTALL=ON"
+        "-DFLATBUFFERS_BUILD_TESTS=OFF"
+        "-DFLATBUFFERS_BUILD_FLATC=OFF"
+        "-DFLATBUFFERS_BUILD_FLATHASH=OFF"
+        "-DFLATBUFFERS_BUILD_FLATLIB=ON"
         "-DCMAKE_DEBUG_POSTFIX=d"
     )
     Build-CmakeFromGit -name "fmt" -url "https://github.com/fmtlib/fmt.git" -branch "7.1.3" -config $config_titled -toolset $toolset_ver -arch $platform -flags @()
@@ -143,6 +163,10 @@ foreach ($c in $config){
     if($platform -contains "ARM64"){
         $arch = "arm"
     }
+    if($platform -contains "x64"){
+        $arch = "x86"
+    }
+
 
     if($without_boost -ne $true){
         $libraries = @("system","chrono","log","thread","filesystem","date_time","atomic","regex","context","fiber","test")
