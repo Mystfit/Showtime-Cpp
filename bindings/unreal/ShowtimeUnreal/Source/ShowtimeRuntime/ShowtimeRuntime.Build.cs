@@ -52,7 +52,7 @@ public class ShowtimeRuntime : ModuleRules
         }
 		else if (Target.Platform == UnrealTargetPlatform.Android)
 		{
-			arch = Target.Architecture.ToString();
+			arch = "arm64-v8a";
 		}
 		else if (Target.Platform == UnrealTargetPlatform.HoloLens)
         {
@@ -110,7 +110,7 @@ public class ShowtimeRuntime : ModuleRules
 		// Set windows binaries
 		if (Target.Platform == UnrealTargetPlatform.Win64 || Target.Platform == UnrealTargetPlatform.HoloLens)
 		{
-			string binariesDir = Path.Combine(PluginDirectory, "Binaries", "Win64", arch);
+			string binariesDir = Path.Combine(PluginDirectory, "Binaries", "Win64");
 			platform_libs.AddRange(win64_libs);
 			platform_binaries.AddRange(win64_binaries);
 
