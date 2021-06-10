@@ -1,5 +1,5 @@
 build
-build-arm
+build_arm64
 .DS_Store
 
 # Containers
