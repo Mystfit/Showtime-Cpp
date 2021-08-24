@@ -42,12 +42,18 @@ swig_add_library(${PYTHON_TARGET_WRAPPER}
     SOURCES ${MASTER_PYTHON_SWIG_INTERFACE}
 )
 
-separate_arguments(SWIG_ARGS UNIX_COMMAND "-v -macroerrors -nodirprot -directors -Wall -I${CMAKE_CURRENT_LIST_DIR}")
+set(SWIG_ARGS_IN "-v -macroerrors -nodirprot -directors -Wall -O -dirvtable -I${CMAKE_CURRENT_LIST_DIR}") #-builtin 
+if(${BINDINGS_PYTHON_VERSION_MAJOR} EQUAL "3")
+    string(APPEND SWIG_ARGS_IN " -py3")
+endif()
+message(STATUS "Python SWIG flags: ${SWIG_ARGS_IN}")
+
+separate_arguments(SWIG_ARGS UNIX_COMMAND ${SWIG_ARGS_IN})
 set_target_properties(${PYTHON_TARGET_WRAPPER} PROPERTIES 
     SWIG_USE_TARGET_INCLUDE_DIRECTORIES TRUE
     SWIG_SUPPORT_FILES_DIRECTORY ${SWIG_LANGUAGE_DIR}
     SWIG_COMPILE_OPTIONS "${SWIG_ARGS}"
-    OUTPUT_NAME showtime
+    OUTPUT_NAME showtimepy
     DEBUG_POSTFIX ""
     CXX_STANDARD 14
     SWIG_MODULE_${PYTHON_TARGET_WRAPPER}_EXTRA_DEPS "${PYTHON_SWIG_INTERFACES}"
@@ -57,15 +63,25 @@ if(BINDINGS_PYTHON_LINK_AT_RUNTIME)
     # Since we don't link against the Python libs we need to explicitly add the python include dir
     message(STATUS "Python include dir is ${PYTHON_INCLUDE_DIR}")
     target_include_directories(${PYTHON_TARGET_WRAPPER} PRIVATE ${PYTHON_INCLUDE_DIR})
+
+    # Compiler option to ignore unresolved externals, resolve at runtime instead (useful for finding embedded python symbols)
     if(MACOSX OR LINUX)
-        # Compiler option to ignore unresolved externals, resolve at runtime
-        target_link_options(${PYTHON_TARGET_WRAPPER} PRIVATE -undefined dynamic_lookup)
+        target_link_options(${PYTHON_TARGET_WRAPPER} PRIVATE "-undefined dynamic_lookup")
     elseif(WIN32)
-        message(WARNING "Windows runtime linking not implemented")
-        target_link_options(${PYTHON_TARGET_WRAPPER} PRIVATE -undefined dynamic_lookup)
+        target_link_options(${PYTHON_TARGET_WRAPPER} PRIVATE "/FORCE:UNRESOLVED")
+        # target_link_options(${PYTHON_TARGET_WRAPPER} PRIVATE "/NODEFAULTLIB:python${BINDINGS_PYTHON_VERSION_MAJOR}${BINDINGS_PYTHON_VERSION_MINOR}.lib")
+        # list(APPEND PYTHON_LINK_LIBS ${PYTHON_LIB_TARGET})
     endif()
 else()
     list(APPEND PYTHON_LINK_LIBS ${PYTHON_LIB_TARGET})
+endif()
+
+set(PYTHON_WRAPPER_FILENAME $<TARGET_FILE_PREFIX:${PYTHON_TARGET_WRAPPER}>$<TARGET_FILE_BASE_NAME:${PYTHON_TARGET_WRAPPER}>)
+if(MACOSX)
+    # Need to rename the compiled python c extension on MacOS to .so since it struggles to find dylibs
+    set(PYTHON_WRAPPER_FILENAME "${PYTHON_WRAPPER_FILENAME}.so")
+else()
+    set(PYTHON_WRAPPER_FILENAME "${PYTHON_WRAPPER_FILENAME}$<TARGET_FILE_SUFFIX:${PYTHON_TARGET_WRAPPER}>")
 endif()
 
 # Set dependant projects
@@ -78,7 +94,8 @@ target_link_libraries(${PYTHON_TARGET_WRAPPER} PUBLIC ${PYTHON_LINK_LIBS})
 # Copy files to build tree
 add_custom_command(TARGET ${PYTHON_TARGET} PRE_BUILD
                     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/showtime ${CMAKE_SWIG_OUTDIR}/showtime
-                    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PYTHON_TARGET_WRAPPER}> ${CMAKE_SWIG_OUTDIR}/showtime/_showtime.so
+                    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PYTHON_TARGET_WRAPPER}> ${CMAKE_SWIG_OUTDIR}/showtime/${PYTHON_WRAPPER_FILENAME}
+                    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${SHARED_FROM_STATIC_TARGET}> ${CMAKE_SWIG_OUTDIR}/showtime/
                     VERBATIM
 )
 

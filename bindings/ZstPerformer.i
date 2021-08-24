@@ -6,10 +6,10 @@ namespace showtime {
 	%template(ZstSerialisablePerformer) ZstSerialisable<Performer, PerformerData>;
 
 	%ignore ZstPerformer::ZstPerformer(Performer);
-	//%ignore ZstPerformer::serialize;
-	//%ignore ZstPerformer::deserialize;
-	//%ignore ZstPerformer::serialize_partial;
-	//%ignore ZstPerformer::deserialize_partial;
+	%ignore ZstPerformer::serialize;
+	%ignore ZstPerformer::deserialize;
+	%ignore ZstPerformer::serialize_partial;
+	%ignore ZstPerformer::deserialize_partial;
 }
 
 %inline %{

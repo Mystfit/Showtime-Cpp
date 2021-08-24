@@ -52,3 +52,18 @@ def generate_event_wrapper(adaptor):
         wrapper_name = adaptor.__name__.replace('Zst', '').replace('Adaptor', 'EventHandler')
     
     return type(wrapper_name, (adaptor,), attrs)
+
+''' 
+Wrap a swig builtin python class with additional python code.
+Useful when using swig's '-builtin' flag which removes proxy classes from the generated python wrapper
+'''
+from functools import wraps # This convenience func preserves name and docstring
+def add_method(cls):
+    def decorator(func):
+        @wraps(func) 
+        def wrapper(self, *args, **kwargs): 
+            return func(*args, **kwargs)
+        setattr(cls, func.__name__, wrapper)
+        # Note we are not binding func, but wrapper which accepts self but does exactly the same as func
+        return func # returning func means func can still be used normally
+    return decorator
