@@ -85,14 +85,16 @@ if(BINDINGS_PYTHON)
     set(BINDINGS_PYTHON_VERSION_MINOR 7 CACHE STRING "Python minor version")
     set(BINDINGS_PYTHON_VERSION_PATCH 0 CACHE STRING "Python patch version")
     set(BINDINGS_PYTHON_VERSION ${BINDINGS_PYTHON_VERSION_MAJOR}.${BINDINGS_PYTHON_VERSION_MINOR}.${BINDINGS_PYTHON_VERSION_PATCH})
-    
+    set(Python_FIND_ABI "OFF" "ANY" "ANY") # FORCE cmake to link against RELEASE LIBRARIES
+
     find_package(Python${BINDINGS_PYTHON_VERSION_MAJOR} ${BINDINGS_PYTHON_VERSION} COMPONENTS Interpreter Development REQUIRED)
     message(STATUS "Found Python ${Python${BINDINGS_PYTHON_VERSION_MAJOR}_FOUND}")
     message(STATUS "Python include dir ${Python${BINDINGS_PYTHON_VERSION_MAJOR}_INCLUDE_DIRS}")
     set(Python_EXECUTABLE ${Python${BINDINGS_PYTHON_VERSION_MAJOR}_EXECUTABLE})
     set(PYTHON_LIB_TARGET Python${BINDINGS_PYTHON_VERSION_MAJOR}::Python)
     set(PYTHON_INCLUDE_DIR ${Python${BINDINGS_PYTHON_VERSION_MAJOR}_INCLUDE_DIRS})
-    set(PIP_COMMAND ${Python${BINDINGS_PYTHON_VERSION_MAJOR}_INCLUDE_DIR}/../Scripts/pip)
+    set(PIP_COMMAND ${Python${BINDINGS_PYTHON_VERSION_MAJOR}_INCLUDE_DIRS}/../Scripts/pip)
+    message(STATUS "Pip command: ${PIP_COMMAND}")
     if(WIN32)
         set(PIP_COMMAND ${PIP_COMMAND}.exe)
     endif()
@@ -102,11 +104,13 @@ if(BINDINGS_PYTHON)
         execute_process(COMMAND ${PIP_COMMAND} install wheel)
     endif()
 
-    execute_process(COMMAND ${Python_EXECUTABLE} -c "import wheel.pep425tags; print('-'.join(wheel.pep425tags.get_supported('')[0]))" 
+    set(WHEEL_TAG_SCRIPT "import pip._internal; print('-'.join(pip._internal.pep425tags.get_supported()[0]))")
+    execute_process(COMMAND ${Python_EXECUTABLE} -c "${WHEEL_TAG_SCRIPT}" 
                     OUTPUT_VARIABLE WHEEL_PLATFORM_TAG 
                     ERROR_QUIET
                     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
+    message(STATUS "Wheel tag: ${WHEEL_PLATFORM_TAG}")
     set(PYTHON_WHEEL "${CMAKE_SWIG_ROOT_OUTDIR}/python/dist/${PROJECT_NAME}Python-${CMAKE_PROJECT_VERSION}-${WHEEL_PLATFORM_TAG}.whl")
     add_custom_target(${PYTHON_TARGET} ALL DEPENDS ${PYTHON_WHEEL})
     include(bindings/python/CMakeLists.txt)
