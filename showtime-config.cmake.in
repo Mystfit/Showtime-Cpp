@@ -17,6 +17,6 @@
 
 include(CMakeFindDependencyMacro)
 
-if(NOT TARGET ShowtimeCore AND NOT TARGET ShowtimeClient AND NOT ShowtimeCoreEntities)
+if(NOT TARGET showtime)
   include("${CMAKE_CURRENT_LIST_DIR}/showtime-targets.cmake")
 endif()

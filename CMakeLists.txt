@@ -240,7 +240,7 @@ set(SHOWTIME_PRIVATE_LINKED_LIBS
 )
 
 set(SHOWTIME_PUBLIC_LINKED_LIBS
-    fmt::fmt
+    fmt::fmt-header-only
 )
 
 # Boost libraries that MUST be linked shared
