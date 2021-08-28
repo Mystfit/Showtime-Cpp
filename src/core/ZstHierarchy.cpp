@@ -28,18 +28,24 @@ void ZstHierarchy::init_adaptors()
 
 void ZstHierarchy::register_entity(ZstEntityBase* entity)
 {
-	Log::entity(Log::Level::notification, "Registering entity {}", entity->URI().path());
+	if (entity) {
+		if (entity->is_registered()) {
+			return;
+		}
 
-	//Add module adaptors to entity
-	entity->add_adaptor(ZstHierarchyAdaptor::downcasted_shared_from_this<ZstHierarchyAdaptor>());
-	entity->add_adaptor(ZstSynchronisableAdaptor::downcasted_shared_from_this<ZstSynchronisableAdaptor>());
-	entity->add_adaptor(ZstEntityAdaptor::downcasted_shared_from_this<ZstEntityAdaptor>());
+		Log::entity(Log::Level::notification, "Registering entity {}", entity->URI().path());
 
-	//Store entity in lookup table
-	add_entity_to_lookup(entity);
+		//Add module adaptors to entity
+		entity->add_adaptor(ZstHierarchyAdaptor::downcasted_shared_from_this<ZstHierarchyAdaptor>());
+		entity->add_adaptor(ZstSynchronisableAdaptor::downcasted_shared_from_this<ZstSynchronisableAdaptor>());
+		entity->add_adaptor(ZstEntityAdaptor::downcasted_shared_from_this<ZstEntityAdaptor>());
 
-	//Set entity registration flag
-	entity_set_registered(entity, true);
+		//Store entity in lookup table
+		add_entity_to_lookup(entity);
+
+		//Set entity registration flag
+		entity_set_registered(entity, true);
+	}
 }
 
 ZstEntityBase * ZstHierarchy::create_entity(const ZstURI & creatable_path, const char * name, const ZstTransportRequestBehaviour & sendtype)
