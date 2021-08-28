@@ -416,6 +416,21 @@ namespace ZstTest
 		}
 	}
 
+	void wait_for_condition(std::shared_ptr<ShowtimeClient> client, const bool& predicate) {
+		int repeats = 0;
+		client->poll_once();
+		while (!predicate && repeats < MAX_WAIT_LOOPS) {
+			TAKE_A_BREATH
+				repeats++;
+			if (repeats > MAX_WAIT_LOOPS) {
+				std::ostringstream err;
+				err << "Condition never set to true" << std::endl;
+				throw std::runtime_error(err.str());
+			}
+			client->poll_once();
+		}
+	}
+
 	void log_external(boost::process::ipstream & stream) {
 		std::string line;
 

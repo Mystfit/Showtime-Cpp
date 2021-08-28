@@ -111,14 +111,32 @@ namespace showtime
 			return;
 
         child->set_parent(this);
+
+        // Dispatch event to let listeners know a new child was added
+        m_entity_events->defer([this, child](ZstEntityAdaptor* adaptor) {
+            adaptor->on_child_entity_added(child);
+        });
+        synchronisable_event_dispatcher()->invoke([this](ZstSynchronisableAdaptor* adaptor) {
+            adaptor->synchronisable_has_event(this);
+        });
     }
 
     void ZstEntityBase::remove_child(ZstEntityBase * child)
     {
         if(!child)
             return;
-        
+
+        // Copy original child path before it changes
+        ZstURI orig_child_path = child->URI();
+     
         child->set_parent(NULL);
+
+        m_entity_events->defer([this, orig_child_path](ZstEntityAdaptor* adaptor) {
+            adaptor->on_child_entity_removed(orig_child_path);
+        });
+        synchronisable_event_dispatcher()->invoke([this](ZstSynchronisableAdaptor* adaptor) {
+            adaptor->synchronisable_has_event(this);
+        });
     }
 
     void ZstEntityBase::update_URI(const ZstURI& original_path)
@@ -398,6 +416,12 @@ namespace showtime
 	{
 		return m_hierarchy_events;
 	}
+
+    void ZstEntityBase::process_events()
+    {
+        ZstSynchronisable::process_events();
+        m_entity_events->process_events();
+    }
 
 	void ZstEntityBase::set_registered(bool registered)
 	{

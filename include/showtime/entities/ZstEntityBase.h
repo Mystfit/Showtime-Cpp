@@ -130,6 +130,9 @@ protected:
     ZST_EXPORT std::shared_ptr<ZstEventDispatcher<ZstSessionAdaptor> > & session_events();
 	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<ZstHierarchyAdaptor> >& hierarchy_events();
 
+    //Events
+    ZST_EXPORT virtual void process_events();
+
     //Entity mutex
     mutable std::mutex m_entity_mtx;
     std::shared_ptr<ZstEventDispatcher<ZstSessionAdaptor> > m_session_events;

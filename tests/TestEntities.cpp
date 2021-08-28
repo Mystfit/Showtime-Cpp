@@ -313,3 +313,34 @@ BOOST_FIXTURE_TEST_CASE(rename_performer_before_join, FixtureInit) {
 	BOOST_TEST(test_client->get_root()->URI() == ZstURI("renamed_client"));
 	BOOST_TEST(test_client->find_entity(ZstURI("renamed_client/child")));
 }
+
+BOOST_FIXTURE_TEST_CASE(child_addition_callback, FixtureJoinServer) {
+	auto parent = std::make_unique<OutputComponent>("test_parent");
+	auto child = std::make_unique<OutputComponent>("test_child");
+
+	bool child_found = false;
+
+	// Test child addition
+	parent->entity_events()->child_entity_added() += [&child_found, child_ent = child.get()](ZstEntityBase* entity) {
+		if (entity == child_ent) 
+			child_found = true; 
+	};
+
+	test_client->get_root()->add_child(parent.get());
+	parent->add_child(child.get());
+	wait_for_condition(test_client, child_found);
+	BOOST_TEST(child_found);
+}
+
+BOOST_FIXTURE_TEST_CASE(child_removal_callback, FixtureParentChild) {
+	test_client->get_root()->add_child(parent.get());
+
+	bool child_removed = false;
+	parent->entity_events()->child_entity_removed() += [&child_removed, orig_path = child.get()->URI()](const ZstURI& entity_path){
+		if (entity_path == orig_path)
+			child_removed = true;
+	};
+	parent->remove_child(child.get());
+	wait_for_condition(test_client, child_removed);
+	BOOST_TEST(child_removed);
+}
