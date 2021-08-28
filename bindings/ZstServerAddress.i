@@ -1,4 +1,5 @@
 namespace showtime {
+	%copyctor ZstServerAddress;
 	%ignore ZstServerAddress::operator=;
 	%ignore ZstServerAddress::operator==;
 	%ignore ZstServerAddress::operator<;

@@ -104,7 +104,7 @@ void ZstClient::init_client(const char* client_name, bool debug)
 
 	// Setup loggings
     auto log_events = ZstEventDispatcher<ZstLogAdaptor>::downcasted_shared_from_this<ZstEventDispatcher<ZstLogAdaptor>>();
-    Log::init_logger(client_name, (debug) ? Log::Level::debug : Log::Level::notification, log_events);
+    Log::init_logger("" , (debug) ? Log::Level::debug : Log::Level::notification, log_events);
     Log::net(Log::Level::notification, "Starting Showtime v{}", SHOWTIME_VERSION_STRING);
 
 	// Set the name of this client
