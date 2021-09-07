@@ -61,6 +61,7 @@ void ZstEntityAdaptor::request_entity_activation(ZstEntityBase * entity) {}
 //void ZstSessionAdaptor::on_cable_created(ZstCable * cable) {}
 //void ZstSessionAdaptor::on_cable_destroyed(const ZstCableAddress& cable) {}
 
+ZstCable* ZstSessionAdaptor::connect_cable(ZstInputPlug* input, ZstOutputPlug* output, const ZstTransportRequestBehaviour& sendtype){ return nullptr;}
 ZstCableBundle & ZstSessionAdaptor::get_cables(ZstCableBundle & bundle) { return bundle; }
 ZstCable * ZstSessionAdaptor::find_cable(const ZstCableAddress & address) { return NULL; }
 void ZstSessionAdaptor::destroy_cable(ZstCable* cable){}

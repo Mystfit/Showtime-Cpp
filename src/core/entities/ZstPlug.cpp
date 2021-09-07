@@ -277,6 +277,28 @@ ZstInputPlug::ZstInputPlug(const char * name, const ZstValueType& t, int max_cab
 {
 }
 
+ZstCable* ZstInputPlug::connect_cable(ZstOutputPlug* output_plug)
+{
+    ZstCable* cable = nullptr;
+    session_events()->invoke([&cable, this, output_plug](ZstSessionAdaptor* adp) {
+        auto new_cable = adp->connect_cable(this, output_plug, ZstTransportRequestBehaviour::SYNC_REPLY);
+        if (new_cable)
+            cable = new_cable;
+    });
+    return cable;
+}
+
+ZstCable* ZstInputPlug::connect_cable_async(ZstOutputPlug* output_plug)
+{
+    ZstCable* cable = nullptr;
+    session_events()->invoke([&cable, this, output_plug](ZstSessionAdaptor* adp) {
+        auto new_cable = adp->connect_cable(this, output_plug, ZstTransportRequestBehaviour::ASYNC_REPLY);
+        if (new_cable)
+            cable = new_cable;
+    });
+    return cable;
+}
+
 
 //ZstOutputPlug
 //-------------
@@ -324,6 +346,28 @@ ZstOutputPlug::~ZstOutputPlug()
 {
     //m_graph_out_events->flush();
     m_graph_out_events->remove_all_adaptors();
+}
+
+ZstCable* ZstOutputPlug::connect_cable(ZstInputPlug* input_plug)
+{
+    ZstCable* cable = nullptr;
+    session_events()->invoke([&cable, this, input_plug](ZstSessionAdaptor* adp) {
+        auto new_cable = adp->connect_cable(input_plug, this, ZstTransportRequestBehaviour::SYNC_REPLY);
+        if (new_cable)
+            cable = new_cable;
+    });
+    return cable;
+}
+
+ZstCable* ZstOutputPlug::connect_cable_async(ZstInputPlug* input_plug)
+{
+    ZstCable* cable = nullptr;
+    session_events()->invoke([&cable, this, input_plug](ZstSessionAdaptor* adp) {
+        auto new_cable = adp->connect_cable(input_plug, this, ZstTransportRequestBehaviour::ASYNC_REPLY);
+        if (new_cable)
+            cable = new_cable;
+    });
+    return cable;
 }
 
 void ZstOutputPlug::on_activation()

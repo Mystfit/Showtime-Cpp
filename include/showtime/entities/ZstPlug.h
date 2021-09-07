@@ -109,6 +109,9 @@ public:
     ZST_EXPORT ZstInputPlug(const ZstInputPlug & other);
     ZST_EXPORT ZstInputPlug(const char * name, const ZstValueType& t, int max_connected_cables = -1);
     ZST_EXPORT ~ZstInputPlug();
+
+    ZST_EXPORT ZstCable* connect_cable(ZstOutputPlug* output_plug);
+    ZST_EXPORT ZstCable* connect_cable_async(ZstOutputPlug* output_plug);
 };
 
 
@@ -123,6 +126,9 @@ public:
     ZST_EXPORT ZstOutputPlug(const ZstOutputPlug & other);
     ZST_EXPORT ZstOutputPlug(const char * name, const ZstValueType& t, bool reliable = true);
     ZST_EXPORT ~ZstOutputPlug();
+
+    ZST_EXPORT ZstCable* connect_cable(ZstInputPlug* input_plug);
+    ZST_EXPORT ZstCable* connect_cable_async(ZstInputPlug* input_plug);
     ZST_EXPORT virtual void on_activation() override;
     ZST_EXPORT bool can_fire();
     ZST_EXPORT void fire();

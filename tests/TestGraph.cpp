@@ -126,6 +126,35 @@ BOOST_FIXTURE_TEST_CASE(sync_connect_cable, FixturePlugs) {
 	BOOST_TEST(input_component->input()->is_connected_to(output_component->output()));
 }
 
+BOOST_FIXTURE_TEST_CASE(input_plug_connect_cables, FixturePlugs) {
+	auto cable = input_component->input()->connect_cable(output_component->output());
+	BOOST_REQUIRE(cable);
+	BOOST_TEST(cable->is_activated());
+}
+
+BOOST_FIXTURE_TEST_CASE(output_plug_connect_cables, FixturePlugs) {
+	auto cable = output_component->output()->connect_cable(input_component->input());
+	BOOST_REQUIRE(cable);
+	BOOST_TEST(cable->is_activated());
+}
+
+BOOST_FIXTURE_TEST_CASE(input_plug_connect_cables_async, FixturePlugs) {
+	auto cable = input_component->input()->connect_cable_async(output_component->output());
+	bool cable_activated = false;
+	BOOST_REQUIRE(cable);
+	cable->synchronisable_events()->synchronisable_activated() += [&cable_activated, cable](ZstSynchronisable* synchronisable) { cable_activated = synchronisable->is_activated(); };
+	wait_for_condition(test_client, cable_activated);
+	BOOST_TEST(cable_activated);
+}
+
+BOOST_FIXTURE_TEST_CASE(output_plug_connect_cables_async, FixturePlugs) {
+	auto cable = output_component->output()->connect_cable_async(input_component->input());
+	bool cable_activated = false;
+	BOOST_REQUIRE(cable);
+	cable->synchronisable_events()->synchronisable_activated() += [&cable_activated, cable](ZstSynchronisable* synchronisable) { cable_activated = synchronisable->is_activated(); };
+	wait_for_condition(test_client, cable_activated);
+	BOOST_TEST(cable_activated);
+}
 
 BOOST_FIXTURE_TEST_CASE(local_cable_events, FixturePlugs) {
 	auto cable_events = std::make_shared<TestSessionEvents>();

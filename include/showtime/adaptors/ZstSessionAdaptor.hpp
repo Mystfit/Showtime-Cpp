@@ -19,8 +19,9 @@ class ZST_CLASS_EXPORTED ZstSessionAdaptor
 public:
 	MULTICAST_DELEGATE_OneParam(ZST_EXPORT, cable_created, ZstCable*, cable)
 	MULTICAST_DELEGATE_OneParam(ZST_EXPORT, cable_destroyed, const ZstCableAddress&, cable_address)
-    
+
 	//----
+	ZST_EXPORT virtual ZstCable* connect_cable(ZstInputPlug* input, ZstOutputPlug* output, const ZstTransportRequestBehaviour& sendtype);
 
     ZST_EXPORT virtual ZstCableBundle & get_cables(ZstCableBundle & bundle);
     ZST_EXPORT virtual ZstCable * find_cable(const ZstCableAddress & address);

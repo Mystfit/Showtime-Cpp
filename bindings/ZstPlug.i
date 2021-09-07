@@ -27,6 +27,10 @@ namespace showtime {
     showtime::ZstInputPlug* cast_to_input_plug(showtime::ZstSynchronisable * synchronisable){
         return dynamic_cast<showtime::ZstInputPlug*>(synchronisable);
     }
+
+    showtime::ZstPlug* cast_to_plug(showtime::ZstSynchronisable * synchronisable){
+        return dynamic_cast<showtime::ZstPlug*>(synchronisable);
+    }
 %}
 
 %include <showtime/entities/ZstPlug.h>

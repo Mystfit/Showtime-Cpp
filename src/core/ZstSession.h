@@ -40,7 +40,7 @@ public:
 	// ------------------
 
 	ZST_EXPORT virtual ZstCable * connect_cable(ZstInputPlug * input, ZstOutputPlug * output);
-	ZST_EXPORT virtual ZstCable * connect_cable(ZstInputPlug * input, ZstOutputPlug * output, const ZstTransportRequestBehaviour & sendtype);
+	ZST_EXPORT virtual ZstCable * connect_cable(ZstInputPlug * input, ZstOutputPlug * output, const ZstTransportRequestBehaviour & sendtype) override;
 	ZST_EXPORT virtual void destroy_cable(ZstCable * cable) override;
 	ZST_EXPORT virtual void destroy_cable(ZstCable * cable, const ZstTransportRequestBehaviour & sendtype);
 	ZST_EXPORT void destroy_cable_complete(ZstCable * cable);
