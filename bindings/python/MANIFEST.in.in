@@ -1,4 +1,5 @@
 recursive-include showtime *.so
 recursive-include showtime *.dylib
+recursive-include showtime *.dll
 recursive-include showtime *.pyd
 recursive-include showtime *.py
