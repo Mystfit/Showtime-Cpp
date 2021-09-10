@@ -203,12 +203,11 @@ ZstCable * ZstSession::create_cable(ZstInputPlug * input, ZstOutputPlug * output
 	//Set up plug and cable references
 	plug_add_cable(input, cable_ptr.get());
 	plug_add_cable(output, cable_ptr.get());
-	cable_ptr->set_input(input);
-	cable_ptr->set_output(output);
 
-	//Add synchronisable adaptor to cable to handle activation
+	//Add adaptors to cable to handle activation and session lookups of entities
 	cable_ptr->add_adaptor(ZstSynchronisableAdaptor::downcasted_shared_from_this<ZstSynchronisableAdaptor>());
-        
+	cable_ptr->add_adaptor(std::static_pointer_cast<ZstHierarchyAdaptor>(hierarchy()));
+
 	//Cables are always local so they can be cleaned up by the reaper when deactivated
 	synchronisable_set_proxy(cable_ptr.get());
 

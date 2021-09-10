@@ -180,14 +180,11 @@ ZstCable * ZstClientSession::connect_cable(ZstInputPlug * input, ZstOutputPlug *
 			};
             
             auto builder = std::make_shared< FlatBufferBuilder>();
-			auto cable_vec = std::vector<Offset<Cable> >{ 
-				
-			};
             auto cable_msg = CreateCableCreateRequest(*builder,
                 CreateCable(*builder,
                     CreateCableData(*builder,
-                        builder->CreateString(cable->get_input()->URI().path()), 
-                        builder->CreateString(cable->get_output()->URI().path())
+                        builder->CreateString(cable->get_address().get_input_URI().path()), 
+                        builder->CreateString(cable->get_address().get_output_URI().path())
                     )));
             adaptor->send_msg(Content_CableCreateRequest, cable_msg.Union(), builder, args);
 		});

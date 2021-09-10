@@ -5,9 +5,11 @@
 #include <memory>
 #include <vector>
 
-#include "ZstCableAddress.h"
 #include <showtime/ZstExports.h>
 #include <showtime/ZstURI.h>
+#include <showtime/adaptors/ZstHierarchyAdaptor.hpp>
+
+#include "ZstCableAddress.h"
 #include "ZstSynchronisable.h"
 #include "ZstBundle.hpp"
 
@@ -41,16 +43,24 @@ public:
 
 	//Plugs and addresses
     
-	ZST_EXPORT void set_input(ZstInputPlug * input);
-	ZST_EXPORT void set_output(ZstOutputPlug * output);
-	ZST_EXPORT ZstInputPlug * get_input();
-	ZST_EXPORT ZstOutputPlug * get_output();
+	ZST_EXPORT ZstInputPlug * get_input() const;
+	ZST_EXPORT ZstOutputPlug * get_output() const;
     ZST_EXPORT const ZstCableAddress & get_address() const;
+
+    // Adaptors
+#ifndef SWIG
+    //Include base class adaptors
+    //Swig mistakenly adds these twice when dealing treating ZstSynchronisable as an interface (C#, Java)
+    using ZstSynchronisable::add_adaptor;
+    using ZstSynchronisable::remove_adaptor;
+#endif
+    ZST_EXPORT virtual void add_adaptor(std::shared_ptr<ZstHierarchyAdaptor> adaptor);
+    ZST_EXPORT virtual void remove_adaptor(std::shared_ptr<ZstHierarchyAdaptor> adaptor);
+
 
 private:
     ZstCableAddress m_address;
-	ZstInputPlug * m_input;
-	ZstOutputPlug * m_output;
+    std::shared_ptr<ZstEventDispatcher<ZstHierarchyAdaptor> > m_hierarchy_events;
 };
 
 

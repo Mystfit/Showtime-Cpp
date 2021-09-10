@@ -7,32 +7,28 @@ namespace showtime {
 
 ZstCable::ZstCable() : 
 	ZstSynchronisable(),
-    m_address(),
-	m_input(NULL),
-	m_output(NULL)
+	m_hierarchy_events(std::make_shared< ZstEventDispatcher<ZstHierarchyAdaptor> >()),
+    m_address()
 {
 }
 
 ZstCable::ZstCable(const ZstCable & copy) : 
 	ZstSynchronisable(),
-    m_address(copy.m_address),
-	m_input(copy.m_input),
-	m_output(copy.m_output)
+	m_hierarchy_events(std::make_shared< ZstEventDispatcher<ZstHierarchyAdaptor> >()),
+    m_address(copy.m_address)
 {
 }
 
 ZstCable::ZstCable(ZstInputPlug * input_plug, ZstOutputPlug * output_plug) :
 	ZstSynchronisable(),
-    m_address(input_plug->URI(), output_plug->URI()),
-	m_input(input_plug),
-	m_output(output_plug)
+	m_hierarchy_events(std::make_shared< ZstEventDispatcher<ZstHierarchyAdaptor> >()),
+    m_address(input_plug->URI(), output_plug->URI())
 {
 }
 
 ZstCable::~ZstCable()
 {
-	m_input = NULL;
-	m_output = NULL;
+	m_hierarchy_events->remove_all_adaptors();
 }
 
 void ZstCable::disconnect()
@@ -53,41 +49,78 @@ bool ZstCable::is_attached(const ZstURI & uriA, const ZstURI & uriB) const
 
 bool ZstCable::is_attached(ZstPlug * plugA, ZstPlug * plugB) const 
 {
-    if(!m_input || !m_output || !plugA || !plugB)
+    if(!plugA || !plugB)
         return false;
 	return is_attached(plugA->URI(), plugB->URI());
 }
 
 bool ZstCable::is_attached(ZstPlug * plug) const 
 {
-    if(!m_input || !m_output)
+	auto input_plug = get_input();
+	auto output_plug = get_output();
+
+    if(!input_plug || !output_plug)
         return false;
-	return (ZstURI::equal(m_input->URI(), plug->URI())) || (ZstURI::equal(m_output->URI(), plug->URI()));
+	return (ZstURI::equal(input_plug->URI(), plug->URI())) || (ZstURI::equal(output_plug->URI(), plug->URI()));
 }
 
-void ZstCable::set_input(ZstInputPlug * input)
+ZstInputPlug * ZstCable::get_input() const
 {
-	m_input = input;
+	ZstInputPlug* out_input_plug = nullptr;
+
+	// Lookup entity in hierarchy so we don't have to hold onto an entity pointer
+	m_hierarchy_events->invoke([this, &out_input_plug](ZstHierarchyAdaptor* adp) {
+		auto entity = adp->find_entity(this->get_address().get_input_URI());
+		if (!entity)
+			return;
+
+		if (entity->entity_type() == ZstEntityType::PLUG) {
+			auto plug = static_cast<ZstPlug*>(entity);
+			if (plug->direction() == ZstPlugDirection::IN_JACK) {
+				auto input_plug = static_cast<ZstInputPlug*>(plug);
+				out_input_plug = input_plug;
+			}
+		}
+	});
+
+	return out_input_plug;
 }
 
-void ZstCable::set_output(ZstOutputPlug * output)
+ZstOutputPlug * ZstCable::get_output() const
 {
-	m_output = output;
-}
+	ZstOutputPlug* out_output_plug = nullptr;
 
-ZstInputPlug * ZstCable::get_input()
-{
-	return m_input;
-}
+	// Lookup entity in hierarchy so we don't have to hold onto an entity pointer
+	m_hierarchy_events->invoke([this, &out_output_plug](ZstHierarchyAdaptor* adp) {
+		auto entity = adp->find_entity(this->get_address().get_output_URI());
+		if (!entity)
+			return;
 
-ZstOutputPlug * ZstCable::get_output()
-{
-	return m_output;
+		if (entity->entity_type() == ZstEntityType::PLUG) {
+			auto plug = static_cast<ZstPlug*>(entity);
+			if (plug->direction() == ZstPlugDirection::OUT_JACK) {
+				auto output_plug = static_cast<ZstOutputPlug*>(plug);
+				out_output_plug = output_plug;
+			}
+		}
+	});
+
+	return out_output_plug;
 }
 
 const ZstCableAddress & ZstCable::get_address() const
 {
     return m_address;
+}
+
+void ZstCable::add_adaptor(std::shared_ptr<ZstHierarchyAdaptor> adaptor)
+{
+	m_hierarchy_events->add_adaptor(adaptor);
+}
+
+void ZstCable::remove_adaptor(std::shared_ptr<ZstHierarchyAdaptor> adaptor)
+{
+	m_hierarchy_events->remove_adaptor(adaptor);
 }
 
 }

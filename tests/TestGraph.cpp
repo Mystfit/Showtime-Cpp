@@ -120,6 +120,8 @@ BOOST_FIXTURE_TEST_CASE(sync_connect_cable, FixturePlugs) {
 	auto cable = test_client->connect_cable(input_component->input(), output_component->output());
 	BOOST_REQUIRE(cable);
 	BOOST_TEST(cable->is_activated());
+	BOOST_TEST(cable->get_output());
+	BOOST_TEST(cable->get_input());
 	BOOST_TEST(cable->get_output() == output_component->output());
 	BOOST_TEST(cable->get_input() == input_component->input());
 	BOOST_TEST(output_component->output()->is_connected_to(input_component->input()));
