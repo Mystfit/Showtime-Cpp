@@ -70,3 +70,10 @@ namespace showtime {
 namespace std {
 	ZST_EXPORT std::ostream& operator<<(std::ostream& os, const showtime::ZstURI& uri);
 };
+
+#include <showtime/ZstBundle.hpp>
+namespace showtime {
+	namespace URITools {
+		ZST_EXPORT void route(const ZstURI& start, const ZstURI& end, ZstBundle<ZstURI>& bundle);
+	}
+}

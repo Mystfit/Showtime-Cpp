@@ -1,4 +1,5 @@
 #include <showtime/ZstCable.h>
+#include <showtime/entities/ZstEntityBase.h>
 #include <showtime/entities/ZstPlug.h>
 #include "liasons/ZstPlugLiason.hpp"
 #include "ZstEventDispatcher.hpp"
@@ -113,6 +114,24 @@ const ZstCableAddress & ZstCable::get_address() const
     return m_address;
 }
 
+void ZstCable::get_cable_route(ZstEntityBundle& bundle) const
+{
+	auto start = get_output(); 
+	auto end = get_input();
+
+	if (!start || !end)
+		return;
+
+	ZstURIBundle URI_bundle;
+	URITools::route(start->URI(), end->URI(), URI_bundle);
+
+	for (ZstURI path : URI_bundle) {
+		if (ZstEntityBase* entity = get_entity(path)) {
+			bundle.add(entity);
+		}
+	}
+}
+
 void ZstCable::add_adaptor(std::shared_ptr<ZstHierarchyAdaptor> adaptor)
 {
 	m_hierarchy_events->add_adaptor(adaptor);
@@ -121,6 +140,21 @@ void ZstCable::add_adaptor(std::shared_ptr<ZstHierarchyAdaptor> adaptor)
 void ZstCable::remove_adaptor(std::shared_ptr<ZstHierarchyAdaptor> adaptor)
 {
 	m_hierarchy_events->remove_adaptor(adaptor);
+}
+
+ZstEntityBase* ZstCable::get_entity(const ZstURI& entity_path) const
+{
+	ZstEntityBase* out_entity = nullptr;
+
+	m_hierarchy_events->invoke([entity_path, &out_entity](ZstHierarchyAdaptor* adp) {
+		auto entity = adp->find_entity(entity_path);
+		if (!entity)
+			return;
+
+		out_entity = entity;
+	});
+
+	return out_entity;
 }
 
 }

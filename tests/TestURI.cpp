@@ -48,6 +48,21 @@ BOOST_AUTO_TEST_CASE(ranges) {
 	BOOST_TEST(ZstURI::equal(uri_equal1.range(0, 0), ZstURI("ins")));
 }
 
+BOOST_AUTO_TEST_CASE(routes) {
+	ZstURIBundle pathBundle_a;
+	ZstURI start("root/branchA/child");
+	ZstURI end("root/branchB/child");
+
+	showtime::URITools::route(start, end, pathBundle_a);
+	BOOST_TEST(pathBundle_a.size() == 5);
+	BOOST_TEST(pathBundle_a[0] == start);
+	BOOST_TEST(pathBundle_a[1] == ZstURI("root/branchA"));
+	BOOST_TEST(pathBundle_a[2] == ZstURI("root"));
+	BOOST_TEST(pathBundle_a[3] == ZstURI("root/branchB"));
+	BOOST_TEST(pathBundle_a[4] == end);
+}
+
+
 BOOST_AUTO_TEST_CASE(parents) {
 	auto parent = ZstURI("ins");
 	BOOST_TEST(ZstURI::equal(uri_equal1.parent(), parent));

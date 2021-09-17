@@ -277,7 +277,37 @@ size_t ZstURIHash::operator()(ZstURI const& k) const
 	}
 	return result;
 }
+
+void URITools::route(const ZstURI& start, const ZstURI& end, ZstBundle<ZstURI>& bundle)
+{
+	if (start.is_empty() || end.is_empty())
+		return;
+
+	size_t current_segment = 0;
+	size_t match_segment = 0;
+	bundle.add(start);
+
+	while ((match_segment < start.size() && match_segment < end.size()))
+	{
+		if (start.range(0, match_segment) != end.range(0, match_segment)) {
+			break;
+		}
+		match_segment++;
+	}
+
+	ZstURI current_path = start;
+	while (!current_path.parent().is_empty() && current_path.size() > match_segment) {
+		current_path = current_path.parent();
+		bundle.add(current_path);
+	}
+
+	current_path = end;
+	for (size_t segment = match_segment; segment < end.size(); ++segment) {
+			bundle.add(current_path.range(0, segment));
+		}
+	}
 }
+//} // end showtime namespace
 
 std::ostream& std::operator<<(std::ostream& os, const showtime::ZstURI& uri)
 {

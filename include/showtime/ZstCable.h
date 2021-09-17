@@ -19,6 +19,8 @@ namespace showtime {
 class ZstInputPlug;
 class ZstOutputPlug;
 class ZstPlug;
+class ZstEntityBase;
+typedef ZstBundle<ZstEntityBase*> ZstEntityBundle;
 
 
 class ZST_CLASS_EXPORTED ZstCable : public ZstSynchronisable {
@@ -46,6 +48,7 @@ public:
 	ZST_EXPORT ZstInputPlug * get_input() const;
 	ZST_EXPORT ZstOutputPlug * get_output() const;
     ZST_EXPORT const ZstCableAddress & get_address() const;
+    ZST_EXPORT void get_cable_route(ZstEntityBundle& bundle) const;
 
     // Adaptors
 #ifndef SWIG
@@ -59,6 +62,7 @@ public:
 
 
 private:
+    ZstEntityBase* get_entity(const ZstURI& entity_path) const;
     ZstCableAddress m_address;
     std::shared_ptr<ZstEventDispatcher<ZstHierarchyAdaptor> > m_hierarchy_events;
 };

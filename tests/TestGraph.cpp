@@ -278,3 +278,35 @@ BOOST_FIXTURE_TEST_CASE(send_through_unreliable_graph, FixturePlugs) {
 	BOOST_TEST(input_component->last_received_val == first_cmp_val);
 #endif
 }
+
+BOOST_FIXTURE_TEST_CASE(local_cable_routes, FixtureJoinServer) {
+	auto out_branch_1 = std::make_unique<ZstComponent>("a");
+	auto out_branch_2 = std::make_unique<ZstComponent>("b");
+	auto out_branch_3 = std::make_unique<OutputComponent>("c");
+	test_client->get_root()->add_child(out_branch_1.get());
+	out_branch_1->add_child(out_branch_2.get());
+	out_branch_2->add_child(out_branch_3.get());
+
+	auto in_branch_1 = std::make_unique<ZstComponent>("d");
+	out_branch_1->add_child(in_branch_1.get());
+
+	auto in_branch_2 = std::make_unique<ZstComponent>("e");
+	auto in_branch_3 = std::make_unique<InputComponent>("f");
+	in_branch_1->add_child(in_branch_2.get());
+	in_branch_2->add_child(in_branch_3.get());
+
+	auto cable = out_branch_3->output()->connect_cable(in_branch_3->input());
+
+	ZstEntityBundle bundle;
+	cable->get_cable_route(bundle);
+
+	BOOST_REQUIRE(bundle.size() == 8); // count includes both performers and plugs
+	BOOST_TEST(bundle.item_at(0) == out_branch_3->output());
+	BOOST_TEST(bundle.item_at(1) == out_branch_3.get());
+	BOOST_TEST(bundle.item_at(2) == out_branch_2.get());
+	BOOST_TEST(bundle.item_at(3) == out_branch_1.get());
+	BOOST_TEST(bundle.item_at(4) == in_branch_1.get());
+	BOOST_TEST(bundle.item_at(5) == in_branch_2.get());
+	BOOST_TEST(bundle.item_at(6) == in_branch_3.get());
+	BOOST_TEST(bundle.item_at(7) == in_branch_3->input());
+}

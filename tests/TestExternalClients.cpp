@@ -222,7 +222,7 @@ BOOST_FIXTURE_TEST_CASE(entity_leaving, FixtureExternalConnectCable) {
 
 BOOST_FIXTURE_TEST_CASE(external_exception, FixtureExternalConnectCable) {
     output_ent->send(3);
-	TAKE_A_BREATH
+	TAKE_A_BREATH 
 	remote_client->poll_once();
     //TODO: How do we test for this error?
 }
@@ -262,4 +262,39 @@ BOOST_FIXTURE_TEST_CASE(set_name_updates_proxy, FixtureWaitForSinkClient) {
 	BOOST_TEST(entity->URI() == proxy_entity->URI());
 	BOOST_TEST(hierarchy_events->last_entity_updated == entity->URI());
 	BOOST_TEST(test_client->find_entity(entity->URI()));*/
+}
+
+BOOST_FIXTURE_TEST_CASE(external_cable_routes, FixtureWaitForSinkClient) {
+	auto a_ent = std::make_unique<ZstComponent>("a");
+	auto b_ent = std::make_unique<ZstComponent>("b");
+	auto c_ent = std::make_unique<OutputComponent>("c");
+	test_client->get_root()->add_child(a_ent.get());
+	a_ent->add_child(b_ent.get());
+	b_ent->add_child(c_ent.get());
+
+	auto d_ent = std::make_unique<ZstComponent>("d");
+	auto e_ent = std::make_unique<ZstComponent>("e");
+	auto f_ent = std::make_unique<InputComponent>("f");
+	remote_client->get_root()->add_child(d_ent.get());
+	d_ent->add_child(e_ent.get());
+	e_ent->add_child(f_ent.get());
+
+	auto cable = c_ent->output()->connect_cable(f_ent->input());
+
+	ZstEntityBundle bundle;
+	cable->get_cable_route(bundle);
+
+	BOOST_REQUIRE(bundle.size() == 10); // count includes both performers and plugs
+	BOOST_TEST(bundle.item_at(0) == c_ent->output());
+	BOOST_TEST(bundle.item_at(1) == c_ent.get());
+	BOOST_TEST(bundle.item_at(2) == b_ent.get());
+	BOOST_TEST(bundle.item_at(3) == a_ent.get());
+	BOOST_TEST(bundle.item_at(4) == test_client->get_root());
+
+	// URI comparisons between proxy remote entities and local versions
+	BOOST_TEST(bundle.item_at(5)->URI() == remote_client->get_root()->URI());
+	BOOST_TEST(bundle.item_at(6)->URI() == d_ent->URI());
+	BOOST_TEST(bundle.item_at(7)->URI() == e_ent->URI());
+	BOOST_TEST(bundle.item_at(8)->URI() == f_ent->URI());
+	BOOST_TEST(bundle.item_at(9)->URI() == f_ent->input()->URI());
 }
