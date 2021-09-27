@@ -106,7 +106,7 @@ int main(int argc, char **argv)
 	}
 
 	auto server = std::make_shared<ShowtimeServer>();
-	server->init(server_name, server_port, server_unlisted);
+	server->init(server_name.c_str(), server_port, server_unlisted);
 
 	if (argc < 2) {
 		Log::server(Log::Level::notification, "Stage running in standalone mode. Press Ctrl+C to exit");

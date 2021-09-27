@@ -12,7 +12,7 @@ void ZstStageModule::process_events()
 	m_router_events->process_events();
 }
 
-void ZstStageModule::set_wake_condition(std::shared_ptr<ZstSemaphore>& condition)
+void ZstStageModule::set_wake_condition(std::shared_ptr<std::condition_variable>& condition)
 {
 	m_router_events->set_wake_condition(condition);
 }

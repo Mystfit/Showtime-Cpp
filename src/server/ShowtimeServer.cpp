@@ -6,9 +6,9 @@ namespace showtime {
 	ShowtimeServer::ShowtimeServer() : m_server(std::make_shared<showtime::detail::ZstStage>()){
 	}
 
-	void ShowtimeServer::init(const std::string & name, int port, bool unlisted)
+	void ShowtimeServer::init(const char* name, int port, bool unlisted)
 	{
-		m_server->init(name.c_str(), port, unlisted);
+		m_server->init(name, port, unlisted);
 	}
 
 	int ShowtimeServer::port()

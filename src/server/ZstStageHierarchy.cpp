@@ -18,7 +18,7 @@ void ZstStageHierarchy::init_adaptors()
 	ZstHierarchy::init_adaptors();
 }
 
-void ZstStageHierarchy::set_wake_condition(std::shared_ptr<ZstSemaphore>& condition)
+void ZstStageHierarchy::set_wake_condition(std::shared_ptr<std::condition_variable>& condition)
 {
 	ZstStageModule::set_wake_condition(condition);
 	hierarchy_events()->set_wake_condition(condition);

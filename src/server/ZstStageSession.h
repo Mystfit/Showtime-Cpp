@@ -18,7 +18,7 @@ public:
 	ZstStageSession();
 	~ZstStageSession();
 	virtual void process_events() override;
-	virtual void set_wake_condition(std::shared_ptr<ZstSemaphore>& condition) override;
+	virtual void set_wake_condition(std::shared_ptr<std::condition_variable>& condition) override;
 
 	void on_receive_msg(const std::shared_ptr<ZstStageMessage>& msg) override;
 

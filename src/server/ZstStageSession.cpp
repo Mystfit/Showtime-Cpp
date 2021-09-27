@@ -28,7 +28,7 @@ void ZstStageSession::process_events()
 	hierarchy()->process_events();
 }
 
-void ZstStageSession::set_wake_condition(std::shared_ptr<ZstSemaphore>& condition)
+void ZstStageSession::set_wake_condition(std::shared_ptr<std::condition_variable>& condition)
 {
 	ZstStageModule::set_wake_condition(condition);
 	m_hierarchy->set_wake_condition(condition);

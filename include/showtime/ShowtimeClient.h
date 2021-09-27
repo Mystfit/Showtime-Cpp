@@ -41,7 +41,7 @@ public:
 	ZST_CLIENT_EXPORT void leave();
 
 	//Poll the event queue - for runtimes that have process events from the main thread
-	ZST_CLIENT_EXPORT void poll_once();
+	ZST_CLIENT_EXPORT void poll_once(bool block = false);
 
 	//Adaptors
     ZST_CLIENT_EXPORT void add_connection_adaptor(std::shared_ptr<ZstConnectionAdaptor> adaptor);

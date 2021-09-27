@@ -222,7 +222,7 @@ BOOST_FIXTURE_TEST_CASE(autojoin_by_name_async, FixtureInit) {
 	test_client->auto_join_by_name_async(delayed_server_name.c_str());
 	WAIT_UNTIL_STAGE_BEACON
 	auto delayed_server = std::make_unique<ShowtimeServer>();
-	delayed_server->init(delayed_server_name);
+	delayed_server->init(delayed_server_name.c_str());
 	WAIT_UNTIL_STAGE_BEACON
 	BOOST_TEST(test_client->is_connected());
 	delayed_server->destroy();
@@ -263,7 +263,7 @@ BOOST_FIXTURE_TEST_CASE(list_discovered_servers, FixtureInit) {
 	ZstServerAddress server_address{"detected_server", ""
 };
 	auto detected_server = std::make_shared< ShowtimeServer>();
-	detected_server->init(server_address.name);
+	detected_server->init(server_address.name.c_str());
 	WAIT_UNTIL_STAGE_BEACON
 	ZstServerAddressBundle bundle;
 	test_client->get_discovered_servers(&bundle);
@@ -284,7 +284,7 @@ BOOST_FIXTURE_TEST_CASE(discovered_servers_callback_adaptor, FixtureInit){
 
 	//Create a new server for the client to discover
 	auto detected_server = std::make_shared< ShowtimeServer>();
-	detected_server->init(server_address.name);
+	detected_server->init(server_address.name.c_str());
 	WAIT_UNTIL_STAGE_BEACON
 	wait_for_event(test_client, discovery_adaptor, 1);
 	
@@ -298,7 +298,7 @@ BOOST_FIXTURE_TEST_CASE(discovered_servers_callback_adaptor, FixtureInit){
 BOOST_FIXTURE_TEST_CASE(discovered_servers_update, FixtureInitAndCreateServerWithEpheremalPort) {
 	ZstServerAddress server_address{ "detected_server", "" };
 	auto detected_server = std::make_shared< ShowtimeServer>();
-	detected_server->init(server_address.name);
+	detected_server->init(server_address.name.c_str());
 	WAIT_UNTIL_STAGE_BEACON
 	ZstServerAddressBundle bundle;
 	test_client->get_discovered_servers(&bundle);
@@ -317,3 +317,15 @@ BOOST_FIXTURE_TEST_CASE(root_performer_activate_on_join, FixtureJoinServer)
 	BOOST_TEST(test_client->get_root()->is_activated());
 }
 
+
+BOOST_FIXTURE_TEST_CASE(blocking_poll, FixtureInitAndCreateServerWithEpheremalPort)
+{
+	// Pump leftover events first
+	for (int i = 0; i < 20; ++i) {
+		test_client->poll_once();
+	}
+
+	test_client->join_async(server_address.c_str());
+	test_client->poll_once(true);
+	BOOST_TEST_REQUIRE(test_client->is_connected());
+}

@@ -31,13 +31,17 @@ ZstClient::ZstClient(ShowtimeClient* api) :
     //Timers
     m_beaconcheck_timer(m_client_timerloop.IO_context()),
     m_heartbeat_timer(m_client_timerloop.IO_context()),
-    m_event_condition(std::make_shared<ZstSemaphore>()),
+    m_event_condition(std::make_shared<std::condition_variable>()),
     m_thread_pool(1),
     m_api(api)
 {
     // Set up wake conditions
     m_session->session_events()->set_wake_condition(m_event_condition);
+    m_session->compute_events()->set_wake_condition(m_event_condition);
+    m_session->synchronisable_events()->set_wake_condition(m_event_condition);
     m_session->hierarchy()->hierarchy_events()->set_wake_condition(m_event_condition);
+    m_session->hierarchy()->synchronisable_events()->set_wake_condition(m_event_condition);
+
     ZstEventDispatcher<ZstConnectionAdaptor>::set_wake_condition(m_event_condition);
     m_plugins->plugin_events()->set_wake_condition(m_event_condition);
 
@@ -171,10 +175,21 @@ void ZstClient::init_file_logging(const char* log_file_path)
 
 void ZstClient::process_events()
 {
+    process_events_imp(false);
+}
+
+void ZstClient::process_events_imp(bool block)
+{
     if (!is_init_complete() || m_is_destroyed || m_is_ending) {
         Log::net(Log::Level::debug, "Can't process events until the library is ready");
         return;
     }
+
+    if (block) {
+        auto lock = std::unique_lock(m_mtx);
+        m_event_condition->wait(lock);
+    }
+
     m_plugins->process_events();
     m_session->process_events();
     ZstEventDispatcher<ZstConnectionAdaptor>::process_events();

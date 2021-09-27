@@ -127,9 +127,14 @@ void ShowtimeClient::leave()
 // Event polling
 // -----------------
 
-void ShowtimeClient::poll_once()
+void ShowtimeClient::poll_once(bool block)
 {
-	if (library_init_guard()) m_client->process_events();
+	if (library_init_guard()) {
+		if(block)
+			m_client->process_events_imp(block);
+		else
+			m_client->process_events();
+	}
 }
 
 void ShowtimeClient::add_connection_adaptor(std::shared_ptr < ZstConnectionAdaptor > adaptor)

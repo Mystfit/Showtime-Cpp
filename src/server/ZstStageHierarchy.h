@@ -22,7 +22,7 @@ class ZstStageHierarchy :
 public:
 	~ZstStageHierarchy();
 	virtual void init_adaptors() override;
-	virtual void set_wake_condition(std::shared_ptr<ZstSemaphore>& condition) override;
+	virtual void set_wake_condition(std::shared_ptr<std::condition_variable>& condition) override;
 	ZstPerformer* get_local_performer() const override;
 	virtual void process_events() override;
 

@@ -21,7 +21,7 @@ namespace showtime::detail
 	ZstStage::ZstStage() :
 		m_is_destroyed(false),
 		m_heartbeat_timer(m_io.IO_context()),
-		m_event_condition(std::make_shared<ZstSemaphore>()),
+		m_event_condition(std::make_shared<std::condition_variable>()),
 		m_session(std::make_shared<ZstStageSession>()),
 		m_router_transport(std::make_shared<ZstZMQServerTransport>()),
 		m_websocket_transport(std::make_shared<ZstWebsocketServerTransport>(m_io)),
@@ -104,7 +104,7 @@ namespace showtime::detail
 
 		//Stop threads
 		m_stage_eventloop_thread.interrupt();
-		m_event_condition->notify();
+		m_event_condition->notify_all();
 		m_stage_eventloop_thread.try_join_for(boost::chrono::milliseconds(250));
 		m_stage_timer_thread.interrupt();
 		m_io.IO_context().stop();
@@ -191,7 +191,8 @@ namespace showtime::detail
 		while (1) {
 			try {
 				boost::this_thread::interruption_point();
-				this->m_event_condition->wait();
+				auto lock = std::unique_lock(m_mtx);
+				this->m_event_condition->wait(lock);
 				if (this->is_destroyed())
 					break;
 				this->process_events();

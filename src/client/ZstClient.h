@@ -65,6 +65,7 @@ namespace showtime {
             void destroy();
             
             void process_events() override;
+            void process_events_imp(bool block = false);
             void flush();
 
             //Stage adaptor overrides
@@ -178,7 +179,8 @@ namespace showtime {
 
             //Threads
             boost::asio::thread_pool m_thread_pool;
-            std::shared_ptr<ZstSemaphore> m_event_condition;
+            std::shared_ptr<std::condition_variable> m_event_condition;
+            std::mutex m_mtx;
             
             //Api object
             ShowtimeClient* m_api;

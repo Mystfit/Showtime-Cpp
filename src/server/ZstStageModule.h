@@ -10,7 +10,7 @@ class ZstStageModule {
 public:
 	ZstStageModule();
 	virtual void process_events();
-	virtual void set_wake_condition(std::shared_ptr<ZstSemaphore>& condition);
+	virtual void set_wake_condition(std::shared_ptr<std::condition_variable>& condition);
 	std::shared_ptr<ZstEventDispatcher<ZstStageTransportAdaptor> >& router_events();
 
 private:

@@ -7,7 +7,7 @@ ZstClientModule::ZstClientModule() :
 {
 }
 
-void ZstClientModule::set_wake_condition(std::shared_ptr<ZstSemaphore>& condition)
+void ZstClientModule::set_wake_condition(std::shared_ptr<std::condition_variable>& condition)
 {
 	m_stage_events->set_wake_condition(condition);
 }

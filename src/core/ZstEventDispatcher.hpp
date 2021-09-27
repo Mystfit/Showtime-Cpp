@@ -120,7 +120,7 @@ public:
 		}
 	}
 
-	void set_wake_condition(std::shared_ptr<ZstSemaphore> condition) {
+	void set_wake_condition(std::shared_ptr<std::condition_variable> condition) {
 		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		this->m_condition_wake = condition;
 	}
@@ -131,7 +131,7 @@ public:
 
 	void notify() {
 		if (m_condition_wake)
-			m_condition_wake->notify();
+			m_condition_wake->notify_all();
 	}
 	
 	std::shared_ptr<T> get_default_adaptor() {
@@ -157,7 +157,7 @@ public:
 
 protected:
 	std::set< std::weak_ptr<T>, std::owner_less< std::weak_ptr<T> > > m_adaptors;
-	std::shared_ptr<ZstSemaphore> m_condition_wake;
+	std::shared_ptr<std::condition_variable> m_condition_wake;
 	std::recursive_timed_mutex m_mtx;
 	bool m_has_event;
 	

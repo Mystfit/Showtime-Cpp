@@ -310,3 +310,14 @@ BOOST_FIXTURE_TEST_CASE(local_cable_routes, FixtureJoinServer) {
 	BOOST_TEST(bundle.item_at(6) == in_branch_3.get());
 	BOOST_TEST(bundle.item_at(7) == in_branch_3->input());
 }
+
+BOOST_FIXTURE_TEST_CASE(renaming_entity_updates_cables, FixtureCable) {
+	auto orig_cable_address = cable->get_address();
+	cable->get_input()->set_name("renamed_input");
+	BOOST_REQUIRE(cable->get_input());
+	BOOST_REQUIRE(cable->get_output());
+	BOOST_TEST(!test_client->find_cable(orig_cable_address));
+	BOOST_TEST(test_client->find_cable(cable->get_address()));
+	BOOST_TEST(cable->get_input()->is_connected_to(cable->get_output()));
+	BOOST_TEST(cable->get_output()->is_connected_to(cable->get_input()));
+}

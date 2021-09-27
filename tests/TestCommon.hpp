@@ -511,7 +511,7 @@ namespace ZstTest
 		{
 			server_name = boost::unit_test::framework::current_test_case().full_name();
 			test_server = std::make_unique<ShowtimeServer>();
-			test_server->init(server_name);
+			test_server->init(server_name.c_str());
 			server_port = test_server->port();
 			server_address = fmt::format("127.0.0.1:{}", server_port);
 

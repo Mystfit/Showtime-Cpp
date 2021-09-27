@@ -57,7 +57,8 @@ namespace showtime {
 			void process_events();
 			void timer_loop();
 			void event_loop();
-			std::shared_ptr<ZstSemaphore> m_event_condition;
+			std::shared_ptr<std::condition_variable> m_event_condition;
+			std::mutex m_mtx;
 
 			//Timers
 			static void stage_heartbeat_timer(boost::asio::deadline_timer * t, ZstStage * stage, boost::posix_time::milliseconds duration);
