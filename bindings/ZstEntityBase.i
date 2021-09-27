@@ -11,6 +11,7 @@ namespace showtime {
 	%ignore ZstEntityBase::entity_events;
 }
 
+%feature("nodirector") showtime::ZstEntityBase::get_child_cables;
 %feature("nodirector") showtime::ZstEntityBase::add_adaptor;
 %feature("nodirector") showtime::ZstEntityBase::remove_adaptor;
 
@@ -24,3 +25,4 @@ namespace showtime {
 
 
 %include <showtime/entities/ZstEntityBase.h>
+ 

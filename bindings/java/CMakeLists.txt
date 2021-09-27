@@ -42,6 +42,7 @@ foreach(SWIG_INTERFACE_FILE ${JAVA_SWIG_INTERFACES})
         CPLUSPLUS ON
         #SWIG_MODULE_NAME ${JAVA_TARGET}
     )
+    message(STATUS "Java SWIG flags: ${SWIG_ARGS}")
     file(MAKE_DIRECTORY ${SWIG_LANGUAGE_DIR})
     execute_process(COMMAND ${SWIG_EXECUTABLE} ${SWIG_ARGS} RESULT_VARIABLE SWIG_OUTPUT)
 endforeach()
@@ -61,8 +62,10 @@ swig_add_library(${JAVA_TARGET_WRAPPER}
     OUTFILE_DIR ${CMAKE_SWIG_OUTDIR}
     SOURCES ${JAVA_SWIG_INTERFACES}
 )
+
+separate_arguments(SWIG_ARGS UNIX_COMMAND "-package ${JAVA_PACKAGE}")
 set_target_properties(${JAVA_TARGET_WRAPPER} PROPERTIES 
-    SWIG_FLAGS "-package ${JAVA_PACKAGE}"
+    SWIG_COMPILE_OPTIONS "${SWIG_ARGS}"
     SWIG_USE_TARGET_INCLUDE_DIRECTORIES TRUE
     SWIG_SUPPORT_FILES_DIRECTORY ${SWIG_LANGUAGE_DIR}
 )
@@ -80,8 +83,7 @@ add_dependencies(${JAVA_TARGET_WRAPPER}
 # Link libraries to swig target
 swig_link_libraries(${JAVA_TARGET_WRAPPER} 
     PUBLIC 
-    ${CLIENT_TARGET_STATIC}
-    ${SERVER_TARGET_STATIC}
+    ${SHARED_FROM_STATIC_TARGET}
 )
 
 # Create jar library

@@ -1,9 +1,12 @@
-%module(directors="1") ShowtimeJava
+%module(directors="1") showtime
 %{
-    #include <showtime/Showtime.h>
-    #include <showtime/ShowtimeServer.h>
-    using namespace showtime;
+  #include <showtime/ShowtimeClient.h>
+  #include <showtime/ShowtimeServer.h>
+  #include <showtime/ZstLogging.h>
+  #include <showtime/schemas/messaging/graph_types_generated.h>
+  using namespace showtime;
 %}
+%feature("autodoc", "1");
 
 //static ZstEntityBundle get_performers();
 %typemap(javacode) ShowtimeJava %{
