@@ -1,14 +1,14 @@
 #include "ShowtimeEntity.h"
 #include "ShowtimeClient.h"
 
-void UShowtimeEntity::init(UShowtimeClient* owner, FString entity_path) {
+void AShowtimeEntity::init(UShowtimeClient* owner, FString entity_path) {
 	OwningClient = owner;
 	EntityPath = entity_path;
 
 	OnInitialised.Broadcast();
 }
 
-UShowtimeEntity* UShowtimeEntity::GetParent() const
+AShowtimeEntity* AShowtimeEntity::GetParent() const
 {
 	if (!OwningClient)
 		return nullptr;
@@ -16,9 +16,9 @@ UShowtimeEntity* UShowtimeEntity::GetParent() const
 	return OwningClient->GetWrapperParent(this);
 }
 
-TArray<UShowtimeEntity*> UShowtimeEntity::GetChildren(bool recursive) const
+TArray<AShowtimeEntity*> AShowtimeEntity::GetChildren(bool recursive) const
 {
-	TArray<UShowtimeEntity*> child_wrappers;
+	TArray<AShowtimeEntity*> child_wrappers;
 
 	auto entity = GetNativeEntity();
 	if(entity){
@@ -34,7 +34,7 @@ TArray<UShowtimeEntity*> UShowtimeEntity::GetChildren(bool recursive) const
 	return child_wrappers;
 }
 
-FString UShowtimeEntity::GetName() const
+FString AShowtimeEntity::GetName() const
 {
 	auto entity = GetNativeEntity();
 	if (entity) {
@@ -43,7 +43,7 @@ FString UShowtimeEntity::GetName() const
 	return "";
 }
 
-void UShowtimeEntity::AddChild(UShowtimeEntity* entity)
+void AShowtimeEntity::AddChild(AShowtimeEntity* entity)
 {
 	if (auto native_entity = GetNativeEntity()){
 		if (auto native_child = entity->GetNativeEntity())
@@ -51,15 +51,15 @@ void UShowtimeEntity::AddChild(UShowtimeEntity* entity)
 	}
 }
 
-ZstEntityBase* UShowtimeEntity::GetNativeEntity() const {
+ZstEntityBase* AShowtimeEntity::GetNativeEntity() const {
 	if (!OwningClient || EntityPath.IsEmpty())
 		return nullptr;
 	return  OwningClient->Handle()->find_entity(ZstURI(TCHAR_TO_UTF8(*EntityPath)));
 }
 
-void UShowtimeEntity::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
+void AShowtimeEntity::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(UShowtimeEntity, EntityPath);
-	DOREPLIFETIME(UShowtimeEntity, OnInitialised);
+	DOREPLIFETIME(AShowtimeEntity, EntityPath);
+	DOREPLIFETIME(AShowtimeEntity, OnInitialised);
 }

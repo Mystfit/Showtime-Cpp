@@ -24,6 +24,8 @@ UCLASS()
 class UShowtimeServer : public UObject{
 	GENERATED_BODY()
 public:
+	UShowtimeServer();
+
 	virtual void BeginDestroy() override;
 	TSharedPtr<showtime::ShowtimeServer>& Handle();
 

@@ -13,7 +13,17 @@ struct FServerAddress {
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Showtime Server Address")
 	FString address;
+
+	bool operator==(const FServerAddress& s) const
+	{
+		return std::tie(name, address) == std::tie(s.name, s.address);
+	}
 };
+
+FORCEINLINE uint32 GetTypeHash(const FServerAddress& Other)
+{
+	return GetTypeHash(Other.name) ^ GetTypeHash(Other.address);
+}
 
 static FServerAddress FServerAddressFromShowtime(const showtime::ZstServerAddress* server_address) {
 	FServerAddress address;

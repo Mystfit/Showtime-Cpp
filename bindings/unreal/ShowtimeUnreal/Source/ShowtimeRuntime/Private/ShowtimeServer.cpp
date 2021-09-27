@@ -1,6 +1,10 @@
 #include "ShowtimeServer.h"
 #include <showtime/ShowtimeServer.h>
 
+UShowtimeServer::UShowtimeServer() :
+	server(MakeShared<ShowtimeServer>())
+{
+}
 
 void UShowtimeServer::BeginDestroy()
 {

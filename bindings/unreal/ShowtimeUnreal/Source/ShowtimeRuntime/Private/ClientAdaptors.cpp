@@ -30,12 +30,12 @@ void ClientAdaptors::on_disconnected_from_server(ShowtimeClient* client, const Z
 void ClientAdaptors::on_server_discovered(ShowtimeClient* client, const ZstServerAddress* server)
 {
 	UE_LOG(Showtime, Display, TEXT("Received server beacon %s"), UTF8_TO_TCHAR(server->c_name()));
-	Owner->OnServerDiscovered.Broadcast(Owner, FServerAddressFromShowtime(server));
+	Owner->OnServerDiscovered.Broadcast(Owner, Owner->SpawnServerBeacon(server));
 }
 
 void ClientAdaptors::on_server_lost(ShowtimeClient* client, const ZstServerAddress* server)
 {
-	Owner->OnServerLost.Broadcast(Owner, FServerAddressFromShowtime(server));
+	Owner->OnServerLost.Broadcast(Owner, *Owner->ServerBeaconWrappers.Find(FServerAddressFromShowtime(server)));
 }
 
 void ClientAdaptors::on_synchronised_graph(ShowtimeClient* client, const ZstServerAddress* server)
@@ -91,7 +91,7 @@ void ClientAdaptors::on_cable_created(ZstCable* cable)
 
 void ClientAdaptors::on_cable_destroyed(const ZstCableAddress& cable_address)
 {
-	FShowtimeCableAddress address{ UTF8_TO_TCHAR(cable_address.get_input_URI().path()), UTF8_TO_TCHAR(cable_address.get_output_URI().path())};
+	FShowtimeCableAddress address(cable_address);//{ UTF8_TO_TCHAR(cable_address.get_input_URI().path()), UTF8_TO_TCHAR(cable_address.get_output_URI().path())};
 	auto cable_wrapper = Owner->CableWrappers.Find(address);
 	if(cable_wrapper)
 		Owner->OnCableDestroyed.Broadcast(*cable_wrapper);

@@ -16,7 +16,8 @@ void ShowtimeClientSpec::Define()
         server = NewObject<UShowtimeServer>();
 
         client->Handle()->init("ue4_client", true);
-        server->Handle()->init(TCHAR_TO_UTF8(*GetBeautifiedTestName()));
+        auto servername = GetBeautifiedTestName();
+        server->Handle()->init(TCHAR_TO_UTF8(*servername));
         client->Handle()->auto_join_by_name(TCHAR_TO_UTF8(*GetBeautifiedTestName()));
 	});
 	
@@ -35,7 +36,7 @@ void ShowtimeClientSpec::Define()
     });
 
     Describe("add_log_adaptor()", [this]() {
-        LatentIt("should capture log records", [this](const FDoneDelegate& Done)
+        LatentIt("should capture log records", [this](const FDoneDelegate& Done) 
             {
                 // Log::app(Log::Level::debug, "test");
                 client->Handle()->poll_once();

@@ -1,6 +1,6 @@
 #include "ShowtimePlug.h"
 
-UShowtimePlugDirection UShowtimePlug::Direction() const {
+UShowtimePlugDirection AShowtimePlug::Direction() const {
 	auto plug = GetNativePlug();
 	if (plug) {
 		return ZstPlugDirection_to_ShowtimePlugDirection[plug->direction()];
@@ -9,7 +9,7 @@ UShowtimePlugDirection UShowtimePlug::Direction() const {
 }
 
 
-UShowtimeValueType UShowtimePlug::ValueType() const
+UShowtimeValueType AShowtimePlug::ValueType() const
 {
 	auto plug = GetNativePlug();
 	if (plug) {
@@ -18,7 +18,7 @@ UShowtimeValueType UShowtimePlug::ValueType() const
 	return UShowtimeValueType::ValueType_None;
 }
 
-void UShowtimePlug::SetIntValues(TArray<int> values)
+void AShowtimePlug::SetIntValues(TArray<int> values)
 {
 	if (auto plug = GetNativePlug()) {
 		for (auto val : values) {
@@ -27,7 +27,7 @@ void UShowtimePlug::SetIntValues(TArray<int> values)
 	}
 }
 
-void UShowtimePlug::SetFloatValues(TArray<float> values)
+void AShowtimePlug::SetFloatValues(TArray<float> values)
 {
 	if (auto plug = GetNativePlug()) {
 		for (auto val : values) {
@@ -36,7 +36,7 @@ void UShowtimePlug::SetFloatValues(TArray<float> values)
 	}
 }
 
-void UShowtimePlug::SetStringValues(TArray<FString> values)
+void AShowtimePlug::SetStringValues(TArray<FString> values)
 {
 	if (auto plug = GetNativePlug()) {
 		for (auto val : values) {
@@ -45,7 +45,7 @@ void UShowtimePlug::SetStringValues(TArray<FString> values)
 	}
 }
 
-void UShowtimePlug::Fire()
+void AShowtimePlug::Fire()
 {
 	if (auto plug = GetNativePlug()) {
 		if(plug->direction() == ZstPlugDirection::OUT_JACK)
@@ -53,7 +53,7 @@ void UShowtimePlug::Fire()
 	}
 }
 
-ZstPlug* UShowtimePlug::GetNativePlug() const
+ZstPlug* AShowtimePlug::GetNativePlug() const
 {
 	auto entity = GetNativeEntity();
 	if (entity) {

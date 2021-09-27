@@ -15,6 +15,7 @@
 #include "ShowtimePlug.h"
 #include "ShowtimeCable.h"
 #include "ShowtimeFactory.h"
+#include "ShowtimeServerBeacon.h"
 #include "ShowtimeClient.generated.h"
 
 using namespace showtime;
@@ -47,16 +48,16 @@ DECLARE_LOG_CATEGORY_EXTERN(Showtime, Display, All);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FConnectedToServer, UShowtimeClient*, Client, FServerAddress, ServerAddress);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FDisconnectedFromServer, UShowtimeClient*, Client, FServerAddress, ServerAddress);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FServerDiscovered, UShowtimeClient*, Client, FServerAddress, ServerAddress);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FServerLost, UShowtimeClient*, Client, FServerAddress, ServerAddress);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FServerDiscovered, UShowtimeClient*, Client, AShowtimeServerBeacon*, ServerBeacon);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FServerLost, UShowtimeClient*, Client, AShowtimeServerBeacon*, ServerBeacon);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FGraphSynchronised, UShowtimeClient*, Client, FServerAddress, ServerAddress);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPerformerArriving, UShowtimePerformer*, performer);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPerformerLeaving, UShowtimePerformer*, performer);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEntityArriving, UShowtimeEntity*, entity);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEntityLeaving, UShowtimeEntity*, entity);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEntityUpdated, UShowtimeEntity*, entity);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FFactoryArriving, UShowtimeFactory*, factory);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FFactoryLeaving, UShowtimeFactory*, factory);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPerformerArriving, AShowtimePerformer*, performer);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPerformerLeaving, AShowtimePerformer*, performer);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEntityArriving, AShowtimeEntity*, entity);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEntityLeaving, AShowtimeEntity*, entity);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEntityUpdated, AShowtimeEntity*, entity);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FFactoryArriving, AShowtimeFactory*, factory);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FFactoryLeaving, AShowtimeFactory*, factory);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCableCreated, AShowtimeCable*, cable);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCableDestroyed, AShowtimeCable*, cable);
 
@@ -83,10 +84,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Showtime|Client")
 	FString ClientName;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Showtime|Client")
-	TMap<FString, UShowtimeEntity*> EntityWrappers;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Showtime|Client")
+	TMap<FString, AShowtimeEntity*> EntityWrappers;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Showtime|Client")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Showtime|Client")
+	TMap<FServerAddress, AShowtimeServerBeacon*> ServerBeaconWrappers;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Showtime|Client")
 	TMap<FShowtimeCableAddress, AShowtimeCable*> CableWrappers;
 
 
@@ -106,29 +110,35 @@ public:
 	bool IsConnected() const;
 	
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Client")
-	TArray<UShowtimePerformer*> GetPerformers() const;
+	TArray<AShowtimePerformer*> GetPerformers() const;
 
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Client")
-	UShowtimePerformer* GetRootPerformer() const;
+	AShowtimePerformer* GetRootPerformer() const;
 
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Client")
-	void ConnectCable(UShowtimePlug* InputPlug, UShowtimePlug* OutputPlug) const;
+	void ConnectCable(AShowtimePlug* InputPlug, AShowtimePlug* OutputPlug) const;
 
 
 	// Actor prototypes
 	// ----------------
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Showtime|Client")
-	TSubclassOf<AActor> SpawnablePerformer;
+	TSubclassOf<AShowtimePerformer> SpawnablePerformer;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Showtime|Client")
-	TSubclassOf<AActor> SpawnableComponent;
+	TSubclassOf<AShowtimeComponent> SpawnableComponent;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Showtime|Client")
-	TSubclassOf<AActor> SpawnablePlug;
+	TSubclassOf<AShowtimePlug> SpawnablePlug;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Showtime|Client")
-	TSubclassOf<AActor> SpawnableFactory;
+	TSubclassOf<AShowtimeFactory> SpawnableFactory;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Showtime|Client")
+	TSubclassOf<AShowtimeServerBeacon> SpawnableServer;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Showtime|Client")
+	TSubclassOf<AShowtimeCable> SpawnableCable;
 
 
 	// Event delegates
@@ -187,19 +197,22 @@ public:
 	TSharedPtr<ShowtimeClient> Handle() const;
 
 
-	// Wrapper spawning
+	// Wrappers
 	// ----------------
 	void RefreshEntityWrappers();
-	UShowtimeEntity* SpawnEntity(ZstEntityBase* entity);
-	UShowtimePerformer* SpawnPerformer(ZstPerformer* performer);
-	UShowtimeComponent* SpawnComponent(ZstComponent* component);
+	AShowtimeEntity* SpawnEntity(ZstEntityBase* entity);
+	AShowtimePerformer* SpawnPerformer(ZstPerformer* performer);
+	AShowtimeComponent* SpawnComponent(ZstComponent* component);
 	AShowtimeCable* SpawnCable(ZstCable* cable);
-	UShowtimeFactory* SpawnFactory(ZstEntityFactory* factory);
-	UShowtimePlug* SpawnPlug(ZstPlug* plug);
-	void RegisterSpawnedWrapper(UShowtimeEntity* wrapper, ZstEntityBase* entity);
+	AShowtimeServerBeacon* SpawnServerBeacon(const ZstServerAddress* server);
+	AShowtimeFactory* SpawnFactory(ZstEntityFactory* factory);
+	AShowtimePlug* SpawnPlug(ZstPlug* plug);
+	void RegisterSpawnedWrapper(AShowtimeEntity* wrapper, ZstEntityBase* entity);
 
 	// Wrapper management
-	UShowtimeEntity* GetWrapperParent(const UShowtimeEntity* wrapper) const;
+	AShowtimeEntity* GetWrapperParent(const AShowtimeEntity* wrapper) const;
+	AShowtimeEntity* GetWrapper(const ZstEntityBase* entity) const;
+	AShowtimeEntity* GetWrapper(const ZstURI& URI) const;
 
 
 	// Actor overrides

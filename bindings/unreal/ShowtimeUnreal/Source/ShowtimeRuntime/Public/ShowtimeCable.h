@@ -20,6 +20,14 @@ struct FShowtimeCableAddress {
 	FString InputPath;
 	FString OutputPath;
 
+	FShowtimeCableAddress() {};
+	FShowtimeCableAddress(const ZstCableAddress& cable_address) :
+		InputPath(UTF8_TO_TCHAR(cable_address.get_input_URI().path())),
+		OutputPath(UTF8_TO_TCHAR(cable_address.get_output_URI().path())) {}
+	FShowtimeCableAddress(const ZstURI& input_path, const ZstURI& output_path) :
+		InputPath(UTF8_TO_TCHAR(input_path.path())),
+		OutputPath(UTF8_TO_TCHAR(output_path.path())){}
+
 	bool operator==(const FShowtimeCableAddress& s) const
 	{
 		return std::tie(InputPath, OutputPath) == std::tie(s.InputPath, s.OutputPath);
@@ -30,6 +38,11 @@ FORCEINLINE uint32 GetTypeHash(const FShowtimeCableAddress& Other)
 {
 	return GetTypeHash(Other.InputPath) ^ GetTypeHash(Other.OutputPath);
 }
+
+FORCEINLINE ZstCableAddress CableAddressFromUnreal(const FShowtimeCableAddress& address) {
+	return ZstCableAddress(ZstURI(TCHAR_TO_UTF8(*address.InputPath)), ZstURI(TCHAR_TO_UTF8(*address.OutputPath)));
+}
+
 
 //
 //UENUM(BlueprintType)
@@ -46,17 +59,27 @@ UCLASS()
 class AShowtimeCable : public AActor {
 	GENERATED_BODY()
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Showtime|Cable")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Showtime|Cable")
 	UShowtimeClient* OwningClient;
 
-	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Cable")
-	FShowtimeCableAddress Address() const;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Showtime|Cable")
+	FShowtimeCableAddress Address;
 
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Cable")
-	UShowtimePlug* GetInputPlug() const;
+	AShowtimePlug* GetInputPlug() const;
 
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Cable")
-	UShowtimePlug* GetOutputPlug() const;
+	AShowtimePlug* GetOutputPlug() const;
 
 	ZstCable* GetNativeCable() const;
+
+	bool operator==(const AShowtimeCable& s) const
+	{
+		return std::tie(Address) == std::tie(s.Address);
+	}
 };
+
+FORCEINLINE uint32 GetTypeHash(const AShowtimeCable& Other)
+{
+	return GetTypeHash(Other.Address);
+}

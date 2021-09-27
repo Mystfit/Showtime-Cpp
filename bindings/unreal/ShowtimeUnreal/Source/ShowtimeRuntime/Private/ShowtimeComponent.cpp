@@ -2,7 +2,7 @@
 #include "ShowtimeClient.h"
 
 
-void UShowtimeComponent::AttachPlug(UShowtimePlug* plug)
+void AShowtimeComponent::AttachPlug(AShowtimePlug* plug)
 {
 	if (!plug)
 		return;
@@ -15,7 +15,7 @@ void UShowtimeComponent::AttachPlug(UShowtimePlug* plug)
 	}
 }
 
-void UShowtimeComponent::AttachComponent(UShowtimeComponent* component)
+void AShowtimeComponent::AttachComponent(AShowtimeComponent* component)
 {
 	if (!component)
 		return;
@@ -28,7 +28,7 @@ void UShowtimeComponent::AttachComponent(UShowtimeComponent* component)
 	}
 }
 
-ZstComponent* UShowtimeComponent::GetNativeComponent() const
+ZstComponent* AShowtimeComponent::GetNativeComponent() const
 {
 	auto entity = GetNativeEntity();
 	if (entity) {

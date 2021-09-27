@@ -12,9 +12,9 @@ using namespace showtime;
  *
  */
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (Showtime), meta = (BlueprintSpawnableComponent))
-class UShowtimePerformer : public UShowtimeComponent {
+class AShowtimePerformer : public AShowtimeComponent {
 	GENERATED_BODY()
 public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Showtime|Factory")
-	void FactoryAttached(UShowtimeFactory* factory);
+	void FactoryAttached(AShowtimeFactory* factory);
 };
