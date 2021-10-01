@@ -117,7 +117,6 @@ void UShowtimeClient::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 	Cleanup();
 }
-
 TSharedPtr<ShowtimeClient> UShowtimeClient::Handle() const
 {
 	return client;
@@ -168,7 +167,11 @@ AShowtimeEntity* UShowtimeClient::SpawnEntity(ZstEntityBase* entity)
 AShowtimePerformer* UShowtimeClient::SpawnPerformer(ZstPerformer* performer)
 {
 	// Create a new performer actor from our template performer
-	if (auto entity_actor = GetWorld()->SpawnActor<AShowtimePerformer>(SpawnablePerformer)) {
+	FActorSpawnParameters params;
+	params.Name = UTF8_TO_TCHAR(performer->URI().path());
+	params.NameMode = FActorSpawnParameters::ESpawnActorNameMode::Required_ErrorAndReturnNull;
+	
+	if (auto entity_actor = GetWorld()->SpawnActor<AShowtimePerformer>(SpawnablePerformer, params)) {
 		RegisterSpawnedWrapper(entity_actor, performer);
 		return entity_actor;
 	}
@@ -177,6 +180,10 @@ AShowtimePerformer* UShowtimeClient::SpawnPerformer(ZstPerformer* performer)
 
 AShowtimeComponent* UShowtimeClient::SpawnComponent(ZstComponent* component) 
 {
+	FActorSpawnParameters params;
+	params.Name = UTF8_TO_TCHAR(component->URI().last().path());
+	params.NameMode = FActorSpawnParameters::ESpawnActorNameMode::Required_ErrorAndReturnNull;
+
 	if (auto entity_actor = GetWorld()->SpawnActor<AShowtimeComponent>(SpawnableComponent))
 	{
 		//Add component to parent component
@@ -217,6 +224,10 @@ AShowtimeServerBeacon* UShowtimeClient::SpawnServerBeacon(const ZstServerAddress
 
 AShowtimeFactory* UShowtimeClient::SpawnFactory(ZstEntityFactory* factory)
 {
+	FActorSpawnParameters params;
+	params.Name = UTF8_TO_TCHAR(factory->URI().last().path());
+	params.NameMode = FActorSpawnParameters::ESpawnActorNameMode::Required_ErrorAndReturnNull;
+
 	if (auto factory_actor = GetWorld()->SpawnActor<AShowtimeFactory>(SpawnableFactory)){
 		if (auto parent = factory_actor->GetParent()) {
 			auto e_type = parent->GetNativeEntity()->entity_type();
@@ -235,6 +246,10 @@ AShowtimePlug* UShowtimeClient::SpawnPlug(ZstPlug* plug)
 {
 	//auto transform = FTransform();
 	//auto plug_actor =  Cast<AActor>(UGameplayStatics::BeginDeferredActorSpawnFromClass(this, SpawnablePlug->GetClass(), transform));
+	FActorSpawnParameters params;
+	params.Name = UTF8_TO_TCHAR(plug->URI().last().path());
+	params.NameMode = FActorSpawnParameters::ESpawnActorNameMode::Required_ErrorAndReturnNull;
+
 	if (auto plug_actor = GetWorld()->SpawnActor<AShowtimePlug>(SpawnablePlug))
 	{
 		RegisterSpawnedWrapper(plug_actor, plug);
