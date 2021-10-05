@@ -19,20 +19,24 @@
 
 AShowtimePlug* AShowtimeCable::GetInputPlug() const
 {
-	auto plug = OwningClient->GetWrapper(ZstURI(TCHAR_TO_UTF8(*Address.InputPath)));
-	if (plug) {
-		if (plug->GetNativeEntity()->entity_type() == ZstEntityType::PLUG)
-			return static_cast<AShowtimePlug*>(plug);
+	if (auto view = OwningClient->View) {
+		auto plug = view->GetWrapper(ZstURI(TCHAR_TO_UTF8(*Address.InputPath)));
+		if (plug) {
+			if (plug->GetNativeEntity()->entity_type() == ZstEntityType::PLUG)
+				return static_cast<AShowtimePlug*>(plug);
+		}
 	}
 	return nullptr;
 }
 
 AShowtimePlug* AShowtimeCable::GetOutputPlug() const
 {
-	auto plug = OwningClient->GetWrapper(ZstURI(TCHAR_TO_UTF8(*Address.OutputPath)));
-	if (plug) {
-		if (plug->GetNativeEntity()->entity_type() == ZstEntityType::PLUG)
-			return static_cast<AShowtimePlug*>(plug);
+	if (auto view = OwningClient->View) {
+		auto plug = view->GetWrapper(ZstURI(TCHAR_TO_UTF8(*Address.OutputPath)));
+		if (plug) {
+			if (plug->GetNativeEntity()->entity_type() == ZstEntityType::PLUG)
+				return static_cast<AShowtimePlug*>(plug);
+		}
 	}
 	return nullptr;
 }
