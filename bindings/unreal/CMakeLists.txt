@@ -4,8 +4,8 @@ message(STATUS "Configuring ${UNREAL_TARGET} target")
 set(UNREAL_EXECUTABLE $ENV{PROGRAMFILES}/Unreal/Editor/Unreal.exe CACHE FILEPATH "Path to Unreal executable")
 set(UNREAL_SRC_DIR ${CMAKE_CURRENT_LIST_DIR}/ShowtimeUnreal)
 set(UNREAL_BUILD_DIR ${CMAKE_SWIG_ROOT_OUTDIR}/unreal/ShowtimeUnreal)
-set(UNREAL_BIN_DIR ${UNREAL_BUILD_DIR}/external/bin)
-set(UNREAL_LIB_DIR ${UNREAL_BUILD_DIR}/external/lib)
+set(UNREAL_BIN_DIR ${UNREAL_BUILD_DIR}/external/bin/${CMAKE_GENERATOR_PLATFORM})
+set(UNREAL_LIB_DIR ${UNREAL_BUILD_DIR}/external/lib/${CMAKE_GENERATOR_PLATFORM})
 set(UNREAL_INCLUDE_DIR ${UNREAL_BUILD_DIR}/external/include)
 
 # Path vars
