@@ -110,15 +110,18 @@ public class ShowtimeRuntime : ModuleRules
 		// Set windows binaries
 		if (Target.Platform == UnrealTargetPlatform.Win64 || Target.Platform == UnrealTargetPlatform.HoloLens)
 		{
-			string binariesDir = Path.Combine(PluginDirectory, "Binaries", "Win64");
 			platform_libs.AddRange(win64_libs);
 			platform_binaries.AddRange(win64_binaries);
 
 			// Copy binaries to plugin binary folder for the editor
-			if (!Directory.Exists(binariesDir))
-				Directory.CreateDirectory(binariesDir);
-			foreach (var dll in platform_binaries)
-				File.Copy(dll, Path.Combine(binariesDir, Path.GetFileName(dll)), true);
+			if (Target.Platform == UnrealTargetPlatform.Win64)
+			{
+				string editorBinariesDir = Path.Combine(PluginDirectory, "Binaries", "Win64");
+				if (!Directory.Exists(editorBinariesDir))
+					Directory.CreateDirectory(editorBinariesDir);
+				foreach (var dll in platform_binaries)
+					File.Copy(dll, Path.Combine(editorBinariesDir, Path.GetFileName(dll)), true);
+			}
 		}
 
 		// Set mac binaries

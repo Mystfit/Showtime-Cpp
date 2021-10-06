@@ -41,6 +41,15 @@ AShowtimeEntity* UShowtimeView::GetWrapper(const ZstURI& URI) const
 	return *EntityWrappers.Find(UTF8_TO_TCHAR(URI.path()));
 }
 
+UShowtimeClient* UShowtimeView::GetOwner()
+{
+	auto outer = GetOuter();
+	if (!outer)
+		return nullptr;
+
+	return static_cast<UShowtimeClient*>(outer);
+}
+
 AShowtimeEntity* UShowtimeView::SpawnEntity(ZstEntityBase* entity)
 {
 	switch (entity->entity_type()) {
@@ -172,12 +181,12 @@ void UShowtimeView::on_entity_arriving(ZstEntityBase* entity)
 
 void UShowtimeView::on_entity_leaving(const ZstURI& entity_path)
 {
-	OnEntityUpdated.Broadcast(*Owner->EntityWrappers.Find(UTF8_TO_TCHAR(entity_path.path())));
+	OnEntityUpdated.Broadcast(*EntityWrappers.Find(UTF8_TO_TCHAR(entity_path.path())));
 }
 
 void UShowtimeView::on_entity_updated(ZstEntityBase* entity)
 {
-	OnEntityUpdated.Broadcast(*Owner->EntityWrappers.Find(UTF8_TO_TCHAR(entity->URI().path())));
+	OnEntityUpdated.Broadcast(*EntityWrappers.Find(UTF8_TO_TCHAR(entity->URI().path())));
 }
 
 void UShowtimeView::on_factory_arriving(ZstEntityFactory* factory)
@@ -187,7 +196,7 @@ void UShowtimeView::on_factory_arriving(ZstEntityFactory* factory)
 
 void UShowtimeView::on_factory_leaving(const ZstURI& factory_path)
 {
-	OnEntityUpdated.Broadcast(*Owner->EntityWrappers.Find(UTF8_TO_TCHAR(factory_path.path())));
+	OnEntityUpdated.Broadcast(*EntityWrappers.Find(UTF8_TO_TCHAR(factory_path.path())));
 }
 
 void UShowtimeView::on_cable_created(ZstCable* cable)
@@ -198,9 +207,9 @@ void UShowtimeView::on_cable_created(ZstCable* cable)
 void UShowtimeView::on_cable_destroyed(const ZstCableAddress& cable_address)
 {
 	FShowtimeCableAddress address(cable_address);//{ UTF8_TO_TCHAR(cable_address.get_input_URI().path()), UTF8_TO_TCHAR(cable_address.get_output_URI().path())};
-	auto cable_wrapper = Owner->CableWrappers.Find(address);
+	auto cable_wrapper = CableWrappers.Find(address);
 	if (cable_wrapper)
-		Owner->OnCableDestroyed.Broadcast(*cable_wrapper);
+		OnCableDestroyed.Broadcast(*cable_wrapper);
 }
 
 //void ClientAdaptors::on_plugin_loaded(std::shared_ptr<ZstPlugin> plugin)

@@ -13,7 +13,10 @@ AShowtimeEntity* AShowtimeEntity::GetParent() const
 	if (!OwningClient)
 		return nullptr;
 
-	return OwningClient->GetWrapperParent(this);
+	if (!OwningClient->View)
+		return nullptr;
+
+	return OwningClient->View->GetWrapperParent(this);
 }
 
 TArray<AShowtimeEntity*> AShowtimeEntity::GetChildren(bool recursive) const
@@ -21,11 +24,14 @@ TArray<AShowtimeEntity*> AShowtimeEntity::GetChildren(bool recursive) const
 	TArray<AShowtimeEntity*> child_wrappers;
 
 	auto entity = GetNativeEntity();
-	if(entity){
+	if(entity && OwningClient){
+		if (!OwningClient->View)
+			return child_wrappers;
+
 		auto children = std::make_shared<ZstEntityBundle>();
 		entity->get_child_entities(children.get(), false, recursive);
 		for (int i = 0; i < children->size(); ++i) {
-			auto wrapper = OwningClient->EntityWrappers.Find(UTF8_TO_TCHAR(children->item_at(i)->URI().path()));
+			auto wrapper = OwningClient->View->EntityWrappers.Find(UTF8_TO_TCHAR(children->item_at(i)->URI().path()));
 			if (wrapper)
 				child_wrappers.Add(*wrapper);
 		}

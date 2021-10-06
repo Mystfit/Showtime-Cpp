@@ -57,8 +57,9 @@ class UShowtimeClient : public UActorComponent
 {
 	GENERATED_BODY()
 public:
+	UShowtimeClient(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
-	UShowtimeClient();
+	//UShowtimeClient();
 	void Cleanup();
 	
 
@@ -129,8 +130,11 @@ public:
 	// Native handle to the Showtime|Client
 	TSharedPtr<ShowtimeClient> Handle() const;
 
-	UPROPERTY(BlueprintReadWrite, Category = "Showtime|Client")
+	UPROPERTY(BlueprintReadWrite, Category = "Showtime|View")
 	UShowtimeView* View;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Showtime|View")
+	TSubclassOf<UShowtimeView> ViewClass;
 
 
 	// Actor overrides

@@ -129,4 +129,7 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Showtime|Entity")
 	TMap<FShowtimeCableAddress, AShowtimeCable*> CableWrappers;
+
+private:
+	UShowtimeClient* GetOwner();
 };

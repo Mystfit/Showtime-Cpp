@@ -14,10 +14,10 @@
 
 DEFINE_LOG_CATEGORY(Showtime);
 
-UShowtimeClient::UShowtimeClient() : 
-	client(MakeShared<ShowtimeClient>())
+UShowtimeClient::UShowtimeClient(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get()) : client(MakeShared<ShowtimeClient>())
 {
 	PrimaryComponentTick.bCanEverTick = true;
+	View = static_cast<UShowtimeView*>(CreateDefaultSubobject("View", ViewClass, ViewClass, /*bIsRequired =*/ true, false));
 }
 
 void UShowtimeClient::Cleanup()
