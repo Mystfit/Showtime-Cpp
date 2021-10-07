@@ -329,3 +329,14 @@ BOOST_FIXTURE_TEST_CASE(blocking_poll, FixtureInitAndCreateServerWithEpheremalPo
 	test_client->poll_once(true);
 	BOOST_TEST_REQUIRE(test_client->is_connected());
 }
+
+BOOST_FIXTURE_TEST_CASE(unmanaged_adaptors, FixtureInitAndCreateServerWithEpheremalPort, TEST_TIMEOUT) {
+	auto connectCallback = std::make_shared< TestConnectionEvents>();
+	test_client->add_connection_adaptor(connectCallback.get());
+	test_client->join_async(server_address.c_str());
+	wait_for_event(test_client, connectCallback, 1);
+	BOOST_TEST(test_client->is_connected());
+	BOOST_TEST_REQUIRE(connectCallback->is_connected);
+
+	test_client->remove_connection_adaptor(connectCallback.get());
+}

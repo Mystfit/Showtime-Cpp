@@ -84,6 +84,13 @@ public:
 			adp->add_event_source(ZstEventDispatcherTyped<T>::template downcasted_shared_from_this<ZstEventDispatcherTyped<T>>());*/
 	}
 
+	void add_adaptor(T* adaptor) {
+		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
+		this->m_unmanaged_adaptors.insert(adaptor);
+		/*if (auto adp = adaptor.lock())
+			adp->add_event_source(ZstEventDispatcherTyped<T>::template downcasted_shared_from_this<ZstEventDispatcherTyped<T>>());*/
+	}
+
 	void remove_adaptor(std::weak_ptr<T> adaptor) {
 		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		/*if (auto adp = adaptor.lock()) {
@@ -92,23 +99,44 @@ public:
 		this->m_adaptors.erase(adaptor);
 	}
 
+	void remove_adaptor(T* adaptor) {
+		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
+		/*if (auto adp = adaptor.lock()) {
+			adp->remove_event_source(ZstEventDispatcherTyped<T>::template downcasted_shared_from_this<ZstEventDispatcherTyped<T>>());
+		}*/
+		this->m_unmanaged_adaptors.erase(adaptor);
+	}
+
 	bool contains_adaptor(std::weak_ptr<T> adaptor)
 	{
 		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		return (this->m_adaptors.find(adaptor) != this->m_adaptors.end()) ? true : false;
 	}
 
+	bool contains_adaptor(T* adaptor)
+	{
+		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
+		return (this->m_unmanaged_adaptors.find(adaptor) != this->m_unmanaged_adaptors.end()) ? true : false;
+	}
+
 	size_t num_adaptors() {
-		return m_adaptors.size();
+		return m_adaptors.size() + m_unmanaged_adaptors.size();
 	}
 
 	void remove_all_adaptors() {
 		std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
+		
 		auto adaptors = m_adaptors;
 		for (auto adaptor : adaptors) {
 			remove_adaptor(adaptor);
 		}
 		m_adaptors.clear();
+
+		auto unmanaged_adaptors = m_unmanaged_adaptors;
+		for (auto adaptor : unmanaged_adaptors) {
+			remove_adaptor(adaptor);
+		}
+		m_unmanaged_adaptors.clear();
 	}
 
 	void prune_missing_adaptors() override {
@@ -142,11 +170,20 @@ public:
 		if (this->m_adaptors.size() < 1) {
 			return;
 		}
+
 		//std::lock_guard<std::recursive_timed_mutex> lock(m_mtx);
 		for (auto adaptor : this->m_adaptors) {
 			if (auto adp = adaptor.lock()) {
 				event(adp.get());
 			}
+		}
+
+		// Unmanaged adaptor invoking
+		if (this->m_unmanaged_adaptors.size() < 1) {
+			return;
+		}
+		for (auto adaptor : this->m_unmanaged_adaptors) {
+			event(adaptor);
 		}
 	}
 
@@ -157,16 +194,32 @@ public:
 
 protected:
 	std::set< std::weak_ptr<T>, std::owner_less< std::weak_ptr<T> > > m_adaptors;
+	std::set< T* > m_unmanaged_adaptors;
+
 	std::shared_ptr<std::condition_variable> m_condition_wake;
 	std::recursive_timed_mutex m_mtx;
 	bool m_has_event;
 	
 	void process(ZstEvent<T>& event) {
 		bool success = true;
-		for (auto adaptor : m_adaptors) {
-			if (auto adp = adaptor.lock()) {
+		if (m_adaptors.size() > 0) {
+			for (auto adaptor : m_adaptors) {
+				if (auto adp = adaptor.lock()) {
+					try {
+						event.func(adp.get());
+					}
+					catch (std::exception e) {
+						Log::net(Log::Level::error, "Event dispatcher failed to run an event on a adaptor. Reason: {}", e.what());
+						success = false;
+					}
+				}
+			}
+		}
+
+		if (m_unmanaged_adaptors.size() > 0) {
+			for (auto adaptor : m_unmanaged_adaptors) {
 				try {
-					event.func(adp.get());
+					event.func(adaptor);
 				}
 				catch (std::exception e) {
 					Log::net(Log::Level::error, "Event dispatcher failed to run an event on a adaptor. Reason: {}", e.what());
@@ -174,6 +227,7 @@ protected:
 				}
 			}
 		}
+
 		if(event.completed_func)
 			event.completed_func((success) ? ZstEventStatus::SUCCESS : ZstEventStatus::FAILED);
 	}

@@ -142,7 +142,17 @@ void ShowtimeClient::add_connection_adaptor(std::shared_ptr < ZstConnectionAdapt
     m_client->ZstEventDispatcher<ZstConnectionAdaptor>::add_adaptor(adaptor);
 }
 
+void ShowtimeClient::add_connection_adaptor(ZstConnectionAdaptor* adaptor)
+{
+	m_client->ZstEventDispatcher<ZstConnectionAdaptor>::add_adaptor(adaptor);
+}
+
 void ShowtimeClient::add_session_adaptor(std::shared_ptr < ZstSessionAdaptor > adaptor)
+{
+	m_client->session()->session_events()->add_adaptor(adaptor);
+}
+
+void ShowtimeClient::add_session_adaptor(ZstSessionAdaptor* adaptor)
 {
 	m_client->session()->session_events()->add_adaptor(adaptor);
 }
@@ -152,7 +162,17 @@ void ShowtimeClient::add_hierarchy_adaptor(std::shared_ptr < ZstHierarchyAdaptor
 	m_client->session()->hierarchy()->hierarchy_events()->add_adaptor(adaptor);
 }
 
+void ShowtimeClient::add_hierarchy_adaptor(ZstHierarchyAdaptor* adaptor)
+{
+	m_client->session()->hierarchy()->hierarchy_events()->add_adaptor(adaptor);
+}
+
 void ShowtimeClient::add_plugin_adaptor(std::shared_ptr<ZstPluginAdaptor> adaptor)
+{
+	m_client->plugins()->plugin_events()->add_adaptor(adaptor);
+}
+
+void ShowtimeClient::add_plugin_adaptor(ZstPluginAdaptor* adaptor)
 {
 	m_client->plugins()->plugin_events()->add_adaptor(adaptor);
 }
@@ -162,12 +182,27 @@ void ShowtimeClient::add_log_adaptor(std::shared_ptr<ZstLogAdaptor> adaptor)
 	m_client->ZstEventDispatcher<ZstLogAdaptor>::add_adaptor(adaptor);
 }
 
+void ShowtimeClient::add_log_adaptor(ZstLogAdaptor* adaptor)
+{
+	m_client->ZstEventDispatcher<ZstLogAdaptor>::add_adaptor(adaptor);
+}
+
 void ShowtimeClient::remove_connection_adaptor(std::shared_ptr < ZstConnectionAdaptor > adaptor)
 {
     m_client->ZstEventDispatcher<ZstConnectionAdaptor>::remove_adaptor(adaptor);
 }
 
+void ShowtimeClient::remove_connection_adaptor(ZstConnectionAdaptor* adaptor)
+{
+	m_client->ZstEventDispatcher<ZstConnectionAdaptor>::remove_adaptor(adaptor);
+}
+
 void ShowtimeClient::remove_session_adaptor(std::shared_ptr < ZstSessionAdaptor > adaptor)
+{
+	m_client->session()->session_events()->remove_adaptor(adaptor);
+}
+
+void ShowtimeClient::remove_session_adaptor(ZstSessionAdaptor* adaptor)
 {
 	m_client->session()->session_events()->remove_adaptor(adaptor);
 }
@@ -177,7 +212,17 @@ void ShowtimeClient::remove_hierarchy_adaptor(std::shared_ptr < ZstHierarchyAdap
 	m_client->session()->hierarchy()->hierarchy_events()->remove_adaptor(adaptor);
 }
 
+void ShowtimeClient::remove_hierarchy_adaptor(ZstHierarchyAdaptor* adaptor)
+{
+	m_client->session()->hierarchy()->hierarchy_events()->remove_adaptor(adaptor);
+}
+
 void ShowtimeClient::remove_plugin_adaptor(std::shared_ptr<ZstPluginAdaptor> adaptor)
+{
+	m_client->plugins()->plugin_events()->remove_adaptor(adaptor);
+}
+
+void ShowtimeClient::remove_plugin_adaptor(ZstPluginAdaptor* adaptor)
 {
 	m_client->plugins()->plugin_events()->remove_adaptor(adaptor);
 }
@@ -187,29 +232,40 @@ void ShowtimeClient::remove_log_adaptor(std::shared_ptr<ZstLogAdaptor> adaptor)
 	m_client->ZstEventDispatcher<ZstLogAdaptor>::remove_adaptor(adaptor);
 }
 
+void ShowtimeClient::remove_log_adaptor(ZstLogAdaptor* adaptor)
+{
+	m_client->ZstEventDispatcher<ZstLogAdaptor>::remove_adaptor(adaptor);
+}
+
+
 ZstConnectionAdaptor* ShowtimeClient::connection_events()
 {
-	return m_client->ZstEventDispatcher<ZstConnectionAdaptor>::get_default_adaptor().get();
+	auto dispatcher = m_client->ZstEventDispatcher<ZstConnectionAdaptor>::get_default_adaptor();
+	return dispatcher.get();
 }
 
 ZstSessionAdaptor* ShowtimeClient::session_events()
 {
-	return m_client->session()->session_events()->get_default_adaptor().get();
+	auto dispatcher = m_client->session()->session_events()->get_default_adaptor();
+	return dispatcher.get();
 }
 
 ZstHierarchyAdaptor* ShowtimeClient::hierarchy_events()
 {
-	return m_client->session()->hierarchy()->hierarchy_events()->get_default_adaptor().get();
+	auto dispatcher = m_client->session()->hierarchy()->hierarchy_events()->get_default_adaptor();
+	return dispatcher.get();
 }
 
 ZstPluginAdaptor* ShowtimeClient::plugin_events()
 {
-	return m_client->plugins()->plugin_events()->get_default_adaptor().get();
+	auto dispatcher = m_client->plugins()->plugin_events()->get_default_adaptor();
+	return dispatcher.get();
 }
 
 ZstLogAdaptor* ShowtimeClient::log_events()
 {
-	return m_client->ZstEventDispatcher<ZstLogAdaptor>::get_default_adaptor().get();
+	auto dispatcher = m_client->ZstEventDispatcher<ZstLogAdaptor>::get_default_adaptor();
+	return dispatcher.get();
 }
 
 
