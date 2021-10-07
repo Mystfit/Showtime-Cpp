@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 #include "ShowtimeClient.h"
 #include "ShowtimePerformer.h"
+#include "ShowtimeView.h"
 #include <showtime/ShowtimeClient.h>
 
 #include "Kismet/GameplayStatics.h"
@@ -14,9 +15,13 @@
 
 DEFINE_LOG_CATEGORY(Showtime);
 
-UShowtimeClient::UShowtimeClient(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get()) : client(MakeShared<ShowtimeClient>())
+UShowtimeClient::UShowtimeClient(const FObjectInitializer& ObjectInitializer) : 
+	client(MakeShared<ShowtimeClient>())
 {
 	PrimaryComponentTick.bCanEverTick = true;
+
+	if (!ViewClass)
+		ViewClass = UShowtimeView::StaticClass();
 	View = static_cast<UShowtimeView*>(CreateDefaultSubobject("View", ViewClass, ViewClass, /*bIsRequired =*/ true, false));
 }
 
@@ -39,9 +44,13 @@ void UShowtimeClient::Init()
 #endif
 	if (client) {
 		client->set_plugin_path(TCHAR_TO_UTF8(*plugin_path));
+		client->add_connection_adaptor(View);	// For server beacons
+		client->add_session_adaptor(View);      // For cables
+		client->add_hierarchy_adaptor(View);	// For entities
 		client->init(TCHAR_TO_UTF8(*ClientName), true);
 	}
-	SpawnPerformer(Handle()->get_root());
+
+	View->SpawnPerformer(Handle()->get_root());
 }
 
 void UShowtimeClient::JoinServerByName(const FString& name)
@@ -63,9 +72,6 @@ TArray<AShowtimePerformer*> UShowtimeClient::GetPerformers() const
 {
 	TArray<AShowtimePerformer*> performer_wrappers = TArray<AShowtimePerformer*>();
 
-	if (!View)
-		return;
-
 	auto performers = std::make_shared<ZstEntityBundle>();
 	Handle()->get_performers(performers.get());
 
@@ -86,9 +92,6 @@ TArray<AShowtimePerformer*> UShowtimeClient::GetPerformers() const
 
 AShowtimePerformer* UShowtimeClient::GetRootPerformer() const
 {
-	if (!View)
-		return;
-
 	auto wrapper = View->GetWrapper(Handle()->get_root()->URI());
 	if (wrapper) {
 		return static_cast<AShowtimePerformer*>(wrapper);
@@ -126,17 +129,6 @@ void UShowtimeClient::EndPlay(const EEndPlayReason::Type EndPlayReason)
 TSharedPtr<ShowtimeClient> UShowtimeClient::Handle() const
 {
 	return client;
-}
-
-AShowtimeServerBeacon* UShowtimeClient::SpawnServerBeacon(const ZstServerAddress* server)
-{
-	if (auto server_beacon_actor = GetWorld()->SpawnActor<AShowtimeServerBeacon>(SpawnableServer)) {
-		server_beacon_actor->OwningClient = this;
-		server_beacon_actor->Server = FServerAddressFromShowtime(server);
-		ServerBeaconWrappers.Add(server_beacon_actor->Server, server_beacon_actor);
-		return server_beacon_actor;
-	}
-	return nullptr;
 }
 
 void UShowtimeClient::AttachEvents(){

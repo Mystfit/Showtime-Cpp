@@ -27,17 +27,6 @@ void ClientAdaptors::on_disconnected_from_server(ShowtimeClient* client, const Z
 #endif
 }
 
-void ClientAdaptors::on_server_discovered(ShowtimeClient* client, const ZstServerAddress* server)
-{
-	UE_LOG(Showtime, Display, TEXT("Received server beacon %s"), UTF8_TO_TCHAR(server->c_name()));
-	Owner->OnServerDiscovered.Broadcast(Owner, Owner->SpawnServerBeacon(server));
-}
-
-void ClientAdaptors::on_server_lost(ShowtimeClient* client, const ZstServerAddress* server)
-{
-	Owner->OnServerLost.Broadcast(Owner, *Owner->ServerBeaconWrappers.Find(FServerAddressFromShowtime(server)));
-}
-
 void ClientAdaptors::on_synchronised_graph(ShowtimeClient* client, const ZstServerAddress* server)
 {
 	Owner->OnGraphSynchronised.Broadcast(Owner, FServerAddressFromShowtime(server));

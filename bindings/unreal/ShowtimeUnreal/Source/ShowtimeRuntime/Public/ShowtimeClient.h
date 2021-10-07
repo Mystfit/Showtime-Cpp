@@ -41,8 +41,6 @@ DECLARE_LOG_CATEGORY_EXTERN(Showtime, Display, All);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FConnectedToServer, UShowtimeClient*, Client, FServerAddress, ServerAddress);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FDisconnectedFromServer, UShowtimeClient*, Client, FServerAddress, ServerAddress);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FServerDiscovered, UShowtimeClient*, Client, AShowtimeServerBeacon*, ServerBeacon);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FServerLost, UShowtimeClient*, Client, AShowtimeServerBeacon*, ServerBeacon);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FGraphSynchronised, UShowtimeClient*, Client, FServerAddress, ServerAddress);
 
 
@@ -68,10 +66,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Showtime|Client")
 	FString ClientName;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Showtime|Client")
-	TMap<FServerAddress, AShowtimeServerBeacon*> ServerBeaconWrappers;
-
 
 
 
@@ -113,15 +107,7 @@ public:
 	FDisconnectedFromServer OnDisconnectedFromServer;
 
 	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
-	FServerDiscovered OnServerDiscovered;
-
-	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
-	FServerLost OnServerLost;
-
-	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
 	FGraphSynchronised OnGraphSynchronised;
-
-	AShowtimeServerBeacon* SpawnServerBeacon(const ZstServerAddress* server);
 
 
 	// Native access
@@ -133,7 +119,7 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "Showtime|View")
 	UShowtimeView* View;
 
-	UPROPERTY(BlueprintReadWrite, Category = "Showtime|View")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Showtime|View")
 	TSubclassOf<UShowtimeView> ViewClass;
 
 

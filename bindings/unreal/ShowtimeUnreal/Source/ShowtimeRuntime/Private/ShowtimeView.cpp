@@ -1,9 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
-#include "CoreMinimal.h"
-#include "Actor.h"
 #include "ShowtimeView.h"
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
 #include <Runtime/Engine/Classes/Engine/World.h>
 
 void UShowtimeView::RegisterSpawnedWrapper(AShowtimeEntity* wrapper, ZstEntityBase* entity)
@@ -12,7 +11,9 @@ void UShowtimeView::RegisterSpawnedWrapper(AShowtimeEntity* wrapper, ZstEntityBa
 		return;
 
 	FString entity_path = UTF8_TO_TCHAR(entity->URI().path());
-	wrapper->init(this, entity_path);
+	if (auto client = GetOwner()) {
+		wrapper->init(client, entity_path);
+	}
 	EntityWrappers.Add(entity_path, wrapper);
 }
 
@@ -23,11 +24,15 @@ AShowtimeEntity* UShowtimeView::GetWrapperParent(const AShowtimeEntity* wrapper)
 	if (parent_path.is_empty())
 		return nullptr;
 
-	if (ZstEntityBase* entity = Handle()->find_entity(parent_path)) {
-		if (auto val = EntityWrappers.Find(parent_path.path())) {
-			return *val;
+
+	if (auto client = GetOwner()) {
+		if (ZstEntityBase* entity = client->Handle()->find_entity(parent_path)) {
+			if (auto val = EntityWrappers.Find(parent_path.path())) {
+				return *val;
+			}
 		}
 	}
+
 	return nullptr;
 }
 
@@ -41,7 +46,7 @@ AShowtimeEntity* UShowtimeView::GetWrapper(const ZstURI& URI) const
 	return *EntityWrappers.Find(UTF8_TO_TCHAR(URI.path()));
 }
 
-UShowtimeClient* UShowtimeView::GetOwner()
+UShowtimeClient* UShowtimeView::GetOwner() const
 {
 	auto outer = GetOuter();
 	if (!outer)
@@ -109,7 +114,7 @@ AShowtimeCable* UShowtimeView::SpawnCable(ZstCable* cable)
 {
 	if (auto cable_actor = GetWorld()->SpawnActor<AShowtimeCable>(SpawnableCable)) {
 		CableWrappers.Add(cable->get_address(), cable_actor);
-		cable_actor->OwningClient = this;
+		cable_actor->OwningClient = GetOwner();
 		return cable_actor;
 	}
 	return nullptr;
@@ -164,6 +169,18 @@ AShowtimePlug* UShowtimeView::SpawnPlug(ZstPlug* plug)
 	return nullptr;
 }
 
+
+AShowtimeServerBeacon* UShowtimeView::SpawnServerBeacon(const ZstServerAddress* server)
+{
+	if (auto server_beacon_actor = GetWorld()->SpawnActor<AShowtimeServerBeacon>(SpawnableServer)) {
+		server_beacon_actor->OwningClient = GetOwner();
+		server_beacon_actor->Server = FServerAddressFromShowtime(server);
+		ServerBeaconWrappers.Add(server_beacon_actor->Server, server_beacon_actor);
+		return server_beacon_actor;
+	}
+	return nullptr;
+}
+
 void UShowtimeView::on_performer_arriving(ZstPerformer* performer)
 {
 	OnPerformerArriving.Broadcast(SpawnPerformer(performer));
@@ -171,7 +188,9 @@ void UShowtimeView::on_performer_arriving(ZstPerformer* performer)
 
 void UShowtimeView::on_performer_leaving(const ZstURI& performer_path)
 {
-	//Owner->OnPerformerLeaving.Broadcast(performer_path);
+	if (auto entity_wrapper = *PerformerWrappers.Find(UTF8_TO_TCHAR(performer_path.path()))) {
+		OnPerformerLeaving.Broadcast(entity_wrapper);
+	}
 }
 
 void UShowtimeView::on_entity_arriving(ZstEntityBase* entity)
@@ -181,7 +200,9 @@ void UShowtimeView::on_entity_arriving(ZstEntityBase* entity)
 
 void UShowtimeView::on_entity_leaving(const ZstURI& entity_path)
 {
-	OnEntityUpdated.Broadcast(*EntityWrappers.Find(UTF8_TO_TCHAR(entity_path.path())));
+	if (auto entity_wrapper = *EntityWrappers.Find(UTF8_TO_TCHAR(entity_path.path()))) {
+		OnEntityLeaving.Broadcast(*EntityWrappers.Find(UTF8_TO_TCHAR(entity_path.path())));
+	}
 }
 
 void UShowtimeView::on_entity_updated(ZstEntityBase* entity)
@@ -196,7 +217,9 @@ void UShowtimeView::on_factory_arriving(ZstEntityFactory* factory)
 
 void UShowtimeView::on_factory_leaving(const ZstURI& factory_path)
 {
-	OnEntityUpdated.Broadcast(*EntityWrappers.Find(UTF8_TO_TCHAR(factory_path.path())));
+	if (auto entity_wrapper = *EntityWrappers.Find(UTF8_TO_TCHAR(factory_path.path()))) {
+		OnEntityUpdated.Broadcast(entity_wrapper);
+	}
 }
 
 void UShowtimeView::on_cable_created(ZstCable* cable)
@@ -211,6 +234,18 @@ void UShowtimeView::on_cable_destroyed(const ZstCableAddress& cable_address)
 	if (cable_wrapper)
 		OnCableDestroyed.Broadcast(*cable_wrapper);
 }
+
+void UShowtimeView::on_server_discovered(ShowtimeClient* client, const ZstServerAddress* server)
+{
+	UE_LOG(Showtime, Display, TEXT("Received server beacon %s"), UTF8_TO_TCHAR(server->c_name()));
+	OnServerDiscovered.Broadcast(GetOwner(), SpawnServerBeacon(server));
+}
+
+void UShowtimeView::on_server_lost(ShowtimeClient* client, const ZstServerAddress* server)
+{
+	OnServerLost.Broadcast(GetOwner(), *ServerBeaconWrappers.Find(FServerAddressFromShowtime(server)));
+}
+
 
 //void ClientAdaptors::on_plugin_loaded(std::shared_ptr<ZstPlugin> plugin)
 //{

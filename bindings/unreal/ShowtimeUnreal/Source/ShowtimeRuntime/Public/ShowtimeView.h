@@ -30,13 +30,16 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FFactoryArriving, AShowtimeFactory*,
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FFactoryLeaving, AShowtimeFactory*, factory);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCableCreated, AShowtimeCable*, cable);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCableDestroyed, AShowtimeCable*, cable);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FServerDiscovered, UShowtimeClient*, Client, AShowtimeServerBeacon*, ServerBeacon);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FServerLost, UShowtimeClient*, Client, AShowtimeServerBeacon*, ServerBeacon);
 
 
 UCLASS(Blueprintable)
 class SHOWTIMERUNTIME_API UShowtimeView : 
 	public UObject, 
 	public ZstSessionAdaptor, 
-	public ZstHierarchyAdaptor
+	public ZstHierarchyAdaptor,
+	public ZstConnectionAdaptor
 {
 	GENERATED_BODY()
 public:
@@ -52,6 +55,8 @@ public:
 	void on_factory_leaving(const showtime::ZstURI& factory_path) override;
 	void on_cable_created(showtime::ZstCable* cable) override;
 	void on_cable_destroyed(const showtime::ZstCableAddress& cable_address) override;
+	void on_server_discovered(showtime::ShowtimeClient* client, const showtime::ZstServerAddress* server) override;
+	void on_server_lost(showtime::ShowtimeClient* client, const showtime::ZstServerAddress* server) override;
 	//void on_plugin_loaded(std::shared_ptr<ZstPlugin> plugin) override;
 	//void on_plugin_unloaded(std::shared_ptr<ZstPlugin> plugin) override;
 
@@ -62,7 +67,7 @@ public:
 	AShowtimeCable* SpawnCable(ZstCable* cable);
 	AShowtimeFactory* SpawnFactory(ZstEntityFactory* factory);
 	AShowtimePlug* SpawnPlug(ZstPlug* plug);
-
+	AShowtimeServerBeacon* SpawnServerBeacon(const ZstServerAddress* server);
 
 	// Wrappers
 	// ----------------
@@ -100,36 +105,52 @@ public:
 	// Event delegates
 	// ---------------
 
-	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Entity")
 	FPerformerArriving OnPerformerArriving;
 
-	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Entity")
 	FPerformerLeaving OnPerformerLeaving;
 
-	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Entity")
 	FEntityArriving OnEntityArriving;
 
-	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Entity")
 	FEntityUpdated OnEntityUpdated;
 
-	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Entity")
+	FEntityLeaving OnEntityLeaving;
+
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Entity")
 	FFactoryArriving OnFactoryArriving;
 
-	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Entity")
 	FFactoryLeaving OnFactoryLeaving;
 
-	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Entity")
 	FCableCreated OnCableCreated;
 
-	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Entity")
 	FCableDestroyed OnCableDestroyed;
+
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
+	FServerDiscovered OnServerDiscovered;
+
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Client")
+	FServerLost OnServerLost;
+
 
 	UPROPERTY(BlueprintReadOnly, Category = "Showtime|Entity")
 	TMap<FString, AShowtimeEntity*> EntityWrappers;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Showtime|Entity")
+	TMap<FString, AShowtimePerformer*> PerformerWrappers;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Showtime|Entity")
 	TMap<FShowtimeCableAddress, AShowtimeCable*> CableWrappers;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Showtime|Client")
+	TMap<FServerAddress, AShowtimeServerBeacon*> ServerBeaconWrappers;
+
 private:
-	UShowtimeClient* GetOwner();
+	UShowtimeClient* GetOwner() const;
 };
