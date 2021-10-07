@@ -13,6 +13,7 @@
 #include "ShowtimePlug.h"
 #include "ShowtimeCable.h"
 #include "ShowtimeFactory.h"
+#include "ShowtimeURI.h"
 
 #include "CoreMinimal.h"
 #include "ShowtimeView.generated.h"
@@ -45,7 +46,6 @@ class SHOWTIMERUNTIME_API UShowtimeView :
 public:
 	// Showtime events
 	// ---------------
-
 	void on_performer_arriving(showtime::ZstPerformer* performer) override;
 	void on_performer_leaving(const showtime::ZstURI& performer_path) override;
 	void on_entity_arriving(showtime::ZstEntityBase* entity) override;
@@ -62,17 +62,29 @@ public:
 
 
 	AShowtimeEntity* SpawnEntity(ZstEntityBase* entity);
-	AShowtimePerformer* SpawnPerformer(ZstPerformer* performer);
-	AShowtimeComponent* SpawnComponent(ZstComponent* component);
+
+	UFUNCTION(BlueprintNativeEvent)
+	AShowtimePerformer* SpawnPerformer(const UShowtimeURI* path);
+
+	UFUNCTION(BlueprintNativeEvent)
+	AShowtimeComponent* SpawnComponent(const UShowtimeURI* path);
+
+	//UFUNCTION(BlueprintImplementableEvent)
 	AShowtimeCable* SpawnCable(ZstCable* cable);
-	AShowtimeFactory* SpawnFactory(ZstEntityFactory* factory);
-	AShowtimePlug* SpawnPlug(ZstPlug* plug);
+
+	UFUNCTION(BlueprintNativeEvent)
+	AShowtimeFactory* SpawnFactory(const UShowtimeURI* path);
+
+	UFUNCTION(BlueprintNativeEvent)
+	AShowtimePlug* SpawnPlug(const UShowtimeURI* path);
+
+
 	AShowtimeServerBeacon* SpawnServerBeacon(const ZstServerAddress* server);
 
 	// Wrappers
 	// ----------------
 
-	void RegisterSpawnedWrapper(AShowtimeEntity* wrapper, ZstEntityBase* entity);
+	void RegisterSpawnedWrapper(AShowtimeEntity* wrapper, const UShowtimeURI* path);
 
 	// Wrapper management
 	AShowtimeEntity* GetWrapperParent(const AShowtimeEntity* wrapper) const;
@@ -148,7 +160,7 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Showtime|Entity")
 	TMap<FShowtimeCableAddress, AShowtimeCable*> CableWrappers;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Showtime|Client")
+	UPROPERTY(BlueprintReadOnly, Category = "Showtime|Client")
 	TMap<FServerAddress, AShowtimeServerBeacon*> ServerBeaconWrappers;
 
 private:

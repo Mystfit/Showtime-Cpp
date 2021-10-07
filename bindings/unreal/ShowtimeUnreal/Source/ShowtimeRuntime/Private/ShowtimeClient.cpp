@@ -50,7 +50,8 @@ void UShowtimeClient::Init()
 		client->init(TCHAR_TO_UTF8(*ClientName), true);
 	}
 
-	View->SpawnPerformer(Handle()->get_root());
+	UShowtimeURI path(Handle()->get_root()->URI());
+	View->SpawnPerformer(&path);
 }
 
 void UShowtimeClient::JoinServerByName(const FString& name)

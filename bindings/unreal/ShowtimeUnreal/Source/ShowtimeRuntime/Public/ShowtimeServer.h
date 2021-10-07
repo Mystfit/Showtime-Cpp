@@ -21,7 +21,7 @@ using namespace showtime;
  *
  */
 UCLASS()
-class UShowtimeServer : public UObject{
+class UShowtimeServer : public UObject {
 	GENERATED_BODY()
 public:
 	UShowtimeServer();
