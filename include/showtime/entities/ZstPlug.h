@@ -53,12 +53,14 @@ public:
     ZST_EXPORT void clear();
     ZST_EXPORT void append_int(int value);
     ZST_EXPORT void append_float(float value);
-    ZST_EXPORT void append_char(const char * value);
+    ZST_EXPORT void append_string(const char * value, const size_t size);
+    ZST_EXPORT void append_byte(uint8_t value);
 
     ZST_EXPORT const size_t size() const;
     ZST_EXPORT const int int_at(const size_t position) const;
     ZST_EXPORT const float float_at(const size_t position) const;
-    ZST_EXPORT void char_at(char * buf, const size_t position) const;
+    ZST_EXPORT void string_at(char * buf, const size_t position) const;
+    ZST_EXPORT const uint8_t byte_at(const size_t position) const;
     ZST_EXPORT const size_t size_at(const size_t position) const;
 
 	// Serialisation

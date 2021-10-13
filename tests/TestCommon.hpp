@@ -56,9 +56,9 @@ namespace ZstTest
 		std::unique_ptr<ZstOutputPlug> m_output;
 
 	public:
-		OutputComponent(const char * name, bool reliable = true) : 
+		OutputComponent(const char * name, bool reliable = true, ZstValueType plugtype = ZstValueType::IntList) :
 			ZstComponent("TESTER", name),
-			m_output(std::make_unique<ZstOutputPlug>("out", ZstValueType::IntList, reliable))
+			m_output(std::make_unique<ZstOutputPlug>("out", plugtype, reliable))
 		{
 		}
 
@@ -81,6 +81,21 @@ namespace ZstTest
 			m_output->fire();
 		}
 
+		void send(float val) {
+			m_output->append_float(val);
+			m_output->fire();
+		}
+
+		void send(std::string val) {
+			m_output->append_string(val.c_str(), val.size());
+			m_output->fire();
+		}
+
+		void send(uint8_t val) {
+			m_output->append_byte(val);
+			m_output->fire();
+		}
+
 		ZstOutputPlug * output() {
 			return m_output.get();
 		}
@@ -99,11 +114,11 @@ namespace ZstTest
 		int last_received_val = 0;
 		bool log = false;
 
-		InputComponent(const char * name, int cmp_val=0, bool should_log=false) :
+		InputComponent(const char * name, int cmp_val=0, bool should_log=false, ZstValueType plugtype = ZstValueType::IntList) :
 			ZstComponent("TESTER", name),
 			compare_val(cmp_val),
 			log(should_log),
-			m_input(std::make_unique<ZstInputPlug>("in", ZstValueType::IntList))
+			m_input(std::make_unique<ZstInputPlug>("in", plugtype))
 		{
 		}
 

@@ -33,7 +33,9 @@ enum class ZstValueType {
 	IntList = 1,
 	FloatList = 2,
 	StrList = 3,
-	PlugHandshake = 4
+	ByteList = 4,
+	PlugHandshake = 5,
+	ZstValueType_Size = 6
 };
 
 //Ports

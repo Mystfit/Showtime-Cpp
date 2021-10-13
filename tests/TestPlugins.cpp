@@ -73,9 +73,6 @@ struct FixtureCorePluginAdder :
 	}
 };
 
-
-
-
 BOOST_FIXTURE_TEST_CASE(load_plugins, FixtureInit) {
 	auto loaded_plugins = test_client->plugins();
 	bool found = std::find_if(loaded_plugins.begin(), loaded_plugins.end(), [](auto it) {
@@ -101,6 +98,7 @@ BOOST_AUTO_TEST_CASE(set_plugin_dir) {
 		return strcmp(it->name(), "core_entities") == 0;
 		}) != loaded_plugins.end();
 	BOOST_TEST(found);
+	client->destroy();
 }
 
 BOOST_FIXTURE_TEST_CASE(plugin_factories, FixtureCorePlugin) {

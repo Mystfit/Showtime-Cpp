@@ -94,9 +94,14 @@ void ZstPlug::append_float(float value)
     m_value->append_float(value);
 }
 
-void ZstPlug::append_char(const char * value)
+void ZstPlug::append_string(const char * value, const size_t size)
 {
-    m_value->append_char(value);
+    m_value->append_string(value, size);
+}
+
+void ZstPlug::append_byte(uint8_t value)
+{
+    m_value->append_byte(value);
 }
 
 const size_t ZstPlug::size() const
@@ -114,9 +119,14 @@ const float ZstPlug::float_at(const size_t position) const
     return m_value->float_at(position);
 }
 
-void ZstPlug::char_at(char * buf, const size_t position) const
+void ZstPlug::string_at(char * buf, const size_t position) const
 {
-    return m_value->char_at(buf, position);
+    return m_value->string_at(buf, position);
+}
+
+const uint8_t ZstPlug::byte_at(const size_t position) const
+{
+    return m_value->byte_at(position);
 }
 
 const size_t ZstPlug::size_at(const size_t position) const

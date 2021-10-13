@@ -19,7 +19,7 @@
 
 namespace showtime {
 
-typedef boost::variant<int, float, std::string> ZstValueVariant;
+typedef boost::variant<int, float, std::string, uint8_t> ZstValueVariant;
 
 class ZstValue : virtual ZstSerialisable<PlugValue, PlugValue> {
 public:
@@ -35,19 +35,22 @@ public:
 	ZST_EXPORT void copy(const ZstValue & other);
 	
 	ZST_EXPORT void clear();
-	ZST_EXPORT void append_int(int value);
-	ZST_EXPORT void append_float(float value);
-	ZST_EXPORT void append_char(const char * value);
-	
+	ZST_EXPORT void append_int(const int& value);
+	ZST_EXPORT void append_float(const float& value);
+	ZST_EXPORT void append_string(const char * value, const size_t size);
+	ZST_EXPORT void append_byte(const uint8_t& value);
+
 	ZST_EXPORT const size_t size() const;
 	ZST_EXPORT const int int_at(const size_t position) const;
 	ZST_EXPORT const float float_at(const size_t position) const;
-	ZST_EXPORT void char_at(char * buf, const size_t position) const;
+	ZST_EXPORT void string_at(char * out_string, const size_t position) const;
+	ZST_EXPORT const uint8_t byte_at(const size_t position) const;
 	ZST_EXPORT const size_t size_at(const size_t position) const;
     
     ZST_EXPORT std::vector<int> as_int_vector() const;
     ZST_EXPORT std::vector<float> as_float_vector() const;
     ZST_EXPORT std::vector<std::string> as_string_vector() const;
+	ZST_EXPORT std::vector<uint8_t> as_byte_vector() const;
 
 	//Serialisation
     ZST_EXPORT flatbuffers::uoffset_t serialize(flatbuffers::FlatBufferBuilder & buffer_builder) const override;
