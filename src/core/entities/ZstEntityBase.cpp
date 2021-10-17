@@ -310,6 +310,34 @@ namespace showtime
 		return m_registered;
 	}
 
+    void ZstEntityBase::register_tick()
+    {
+        if (is_proxy()) {
+            Log::net(Log::Level::warn, "Can't tick proxy entity {}", URI().path());
+            return;
+        }
+
+        m_hierarchy_events->invoke([this](ZstHierarchyAdaptor* adp) {
+            adp->register_entity_tick(this);
+        });
+    }
+
+    void ZstEntityBase::unregister_tick()
+    {
+        if (!is_proxy()) {
+            m_hierarchy_events->invoke([this](ZstHierarchyAdaptor* adp) {
+                adp->unregister_entity_tick(this);
+            });
+        }
+    }
+
+    void ZstEntityBase::on_tick()
+    {
+        m_entity_events->invoke([this](ZstEntityAdaptor* adp) {
+            adp->on_tick(this);
+        });
+    }
+
 	void ZstEntityBase::activate()
 	{
 		if (!is_registered()) {
@@ -423,7 +451,7 @@ namespace showtime
         m_entity_events->process_events();
     }
 
-	void ZstEntityBase::set_registered(bool registered)
+    void ZstEntityBase::set_registered(bool registered)
 	{
 		std::lock_guard<std::mutex> lock(m_entity_mtx);
         if (m_registered)

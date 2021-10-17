@@ -401,6 +401,12 @@ std::shared_ptr<ZstEventDispatcher<ZstHierarchyAdaptor> > & ZstHierarchy::hierar
 {
 	m_hierarchy_events->process_events();    
     ZstSynchronisableModule::process_events();
+
+	// Update entities on the event loop thread that need to tick
+	for (auto entity : m_ticking_entities) {
+		std::lock_guard<std::recursive_mutex> lock(m_hierarchy_mutex);
+		entity->on_tick();
+	}
 }
 
  void ZstHierarchy::flush_events()
@@ -459,6 +465,24 @@ void ZstHierarchy::on_register_entity(ZstEntityBase * entity)
 {
 	//Register entity to stage
 	activate_entity(entity);
+}
+
+void ZstHierarchy::register_entity_tick(ZstEntityBase* entity)
+{
+	if (!entity) return;
+	if (entity->is_proxy()) {
+		Log::net(Log::Level::warn, "Can't tick proxy entity {}", entity->URI().path());
+		return;
+	}
+
+	std::lock_guard<std::recursive_mutex> lock(m_hierarchy_mutex);
+	m_ticking_entities.insert(entity);
+}
+
+void ZstHierarchy::unregister_entity_tick(ZstEntityBase* entity)
+{
+	std::lock_guard<std::recursive_mutex> lock(m_hierarchy_mutex);
+	m_ticking_entities.erase(entity);
 }
 
 }

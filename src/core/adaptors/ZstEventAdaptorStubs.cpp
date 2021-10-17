@@ -87,7 +87,8 @@ void ZstHierarchyAdaptor::deactivate_entity(ZstEntityBase* entity, const ZstTran
 ZstEntityBase* ZstHierarchyAdaptor::find_entity(const ZstURI& path) const { return NULL; }
 void ZstHierarchyAdaptor::update_entity_URI(ZstEntityBase* entity, const ZstURI& original_path) {}
 ZstPerformer* ZstHierarchyAdaptor::get_local_performer() const { return NULL; }
-
+void ZstHierarchyAdaptor::register_entity_tick(ZstEntityBase* entity) {}
+void ZstHierarchyAdaptor::unregister_entity_tick(ZstEntityBase* entity){};
 
 
 // -----------------------

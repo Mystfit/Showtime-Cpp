@@ -103,6 +103,13 @@ public:
     ZST_EXPORT virtual void on_registered();
 	ZST_EXPORT bool is_registered() const;
 
+    //Selective main thread updates
+    ZST_EXPORT void register_tick();
+    ZST_EXPORT void unregister_tick();
+
+    // Implement on_tick if you need the main thread to execute per-entity event code
+    ZST_EXPORT virtual void on_tick();
+
 	//Activation
 	ZST_EXPORT virtual void activate();
 	ZST_EXPORT virtual void activate_async();

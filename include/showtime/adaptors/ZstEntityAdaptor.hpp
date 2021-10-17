@@ -17,6 +17,7 @@ public:
 	MULTICAST_DELEGATE_OneParam(ZST_CLIENT_EXPORT, register_entity, ZstEntityBase*, entity)
 	MULTICAST_DELEGATE_OneParam(ZST_CLIENT_EXPORT, disconnect_cable, const ZstCableAddress&, cable)
 	MULTICAST_DELEGATE_OneParam(ZST_CLIENT_EXPORT, compute, const ZstPlug*, plug)
+	MULTICAST_DELEGATE_OneParam(ZST_CLIENT_EXPORT, tick, ZstEntityBase*, entity)
 	MULTICAST_DELEGATE_OneParam(ZST_CLIENT_EXPORT, child_entity_added, ZstEntityBase*, entity)
 	MULTICAST_DELEGATE_OneParam(ZST_CLIENT_EXPORT, child_entity_removed, const ZstURI&, original_entity_path)
 

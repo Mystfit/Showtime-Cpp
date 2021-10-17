@@ -34,6 +34,8 @@ namespace showtime {
 		ZST_EXPORT virtual ZstEntityBase* find_entity(const ZstURI& path) const;
 		ZST_EXPORT virtual void update_entity_URI(ZstEntityBase* entity, const ZstURI& original_path);
 		ZST_EXPORT virtual ZstPerformer* get_local_performer() const;
+		ZST_EXPORT virtual void register_entity_tick(ZstEntityBase* entity);
+		ZST_EXPORT virtual void unregister_entity_tick(ZstEntityBase* entity);
 	};
 
 }

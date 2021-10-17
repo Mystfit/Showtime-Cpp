@@ -90,7 +90,9 @@ public:
 
 	ZST_EXPORT void on_synchronisable_destroyed(ZstSynchronisable * synchronisable, bool already_removed) override;
 	ZST_EXPORT virtual void on_register_entity(ZstEntityBase * entity) override;
-    
+	ZST_EXPORT virtual void register_entity_tick(ZstEntityBase* entity) override;
+	ZST_EXPORT virtual void unregister_entity_tick(ZstEntityBase* entity) override;
+
     
     // ------------------------------
     // Entity lookups
@@ -116,6 +118,7 @@ private:
 	std::recursive_mutex m_hierarchy_mutex;
 	ZstEntityMap m_entity_lookup;
 	std::set< std::unique_ptr<ZstSynchronisable> > m_proxies;
+	std::set< ZstEntityBase* > m_ticking_entities;
 };
 
 }

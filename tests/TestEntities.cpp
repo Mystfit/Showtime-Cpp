@@ -344,3 +344,15 @@ BOOST_FIXTURE_TEST_CASE(child_removal_callback, FixtureParentChild) {
 	wait_for_condition(test_client, child_removed);
 	BOOST_TEST(child_removed);
 }
+
+
+BOOST_FIXTURE_TEST_CASE(entity_tick, FixtureJoinServer) {
+	auto entity = std::make_unique<OutputComponent>("test_parent");
+	test_client->get_root()->add_child(entity.get());
+	bool did_tick = false;
+	entity->entity_events()->tick() += [&did_tick](ZstEntityBase* entity) { did_tick = true; };
+
+	entity->register_tick();
+	test_client->poll_once();
+	BOOST_TEST(did_tick);
+}
