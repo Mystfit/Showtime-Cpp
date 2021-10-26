@@ -31,7 +31,7 @@ private:
 	boost::uuids::uuid m_transport_endpoint_UUID;
 	boost::uuids::uuid m_origin_endpoint_UUID;
 	boost::uuids::uuid m_id;
-	const StageMessage * m_buffer;
+	const StageMessage * m_received_network_audio_buffer;
 	std::weak_ptr<ZstStageTransport> m_owning_transport;
 };
 

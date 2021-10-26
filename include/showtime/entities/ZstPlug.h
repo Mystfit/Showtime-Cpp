@@ -5,6 +5,7 @@
 #include <showtime/ZstCable.h>
 #include <showtime/ZstConstants.h>
 #include <showtime/entities/ZstEntityBase.h>
+#include <showtime/ZstIValue.h>
 
 #include <set>
 #include <mutex>
@@ -13,7 +14,7 @@
 namespace showtime {
 
 //Forward declarations
-class ZstValue;
+//class ZstDynamicValue;
 class ZstGraphTransportAdaptor;
 
 template<typename T>
@@ -44,6 +45,8 @@ public:
     ZST_EXPORT ZstPlug(const Plug* buffer);
     ZST_EXPORT ZstPlug(const char * name, const ZstValueType& t, const ZstPlugDirection& direction = ZstPlugDirection::NONE, int max_cables = -1);
     ZST_EXPORT ZstPlug(const ZstPlug & other);
+    ZST_EXPORT void init_value();
+    ZST_EXPORT void init_value(const ZstValueType& val_type);
 
     //Destruction
     ZST_EXPORT ~ZstPlug();
@@ -59,7 +62,7 @@ public:
     ZST_EXPORT const size_t size() const;
     ZST_EXPORT const int int_at(const size_t position) const;
     ZST_EXPORT const float float_at(const size_t position) const;
-    ZST_EXPORT void string_at(char * buf, const size_t position) const;
+    ZST_EXPORT const char* string_at(const size_t position, size_t& out_str_size) const;
     ZST_EXPORT const uint8_t byte_at(const size_t position) const;
     ZST_EXPORT const size_t size_at(const size_t position) const;
 
@@ -84,11 +87,11 @@ public:
     ZST_EXPORT virtual void get_child_cables(ZstCableBundle* bundle) override;
 
     //Values
-    ZST_EXPORT ZstValue * raw_value();
+    ZST_EXPORT ZstIValue * raw_value();
     ZST_EXPORT ZstValueType get_default_type() const;
 
 protected:
-    std::unique_ptr<ZstValue> m_value;
+    std::unique_ptr<ZstIValue> m_value;
     ZstPlugDirection m_direction;
     int m_max_connected_cables;
 

@@ -346,7 +346,7 @@ BOOST_FIXTURE_TEST_CASE(send_float, FixtureJoinServer) {
 	test_client->get_root()->add_child(output_component.get());
 	test_client->get_root()->add_child(input_component.get());
 
-	float first_cmp_val = 4;
+	float first_cmp_val = 2.7;
 	int current_wait = 0;
 
 	auto cable = test_client->connect_cable(input_component->input(), output_component->output());
@@ -355,7 +355,8 @@ BOOST_FIXTURE_TEST_CASE(send_float, FixtureJoinServer) {
 		test_client->poll_once();
 	}
 	BOOST_TEST(input_component->num_hits);
-	BOOST_TEST(input_component->last_received_val == first_cmp_val);
+	BOOST_TEST(fabs(input_component->input()->float_at(0) - first_cmp_val) < FLT_EPSILON);
+	//BOOST_TEST(input_component->last_received_val == first_cmp_val);
 }
 
 BOOST_FIXTURE_TEST_CASE(send_bytes, FixtureJoinServer) {

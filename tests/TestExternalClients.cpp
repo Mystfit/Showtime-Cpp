@@ -144,14 +144,16 @@ BOOST_FIXTURE_TEST_CASE(connect_cable, FixtureExternalEntities) {
 BOOST_FIXTURE_TEST_CASE(plug_observation, FixtureExternalConnectCable) {
     auto sync_out_plug = dynamic_cast<ZstOutputPlug*>(sink_ent->get_child_by_URI(sync_out_plug_uri));
 	BOOST_TEST_REQUIRE(sync_out_plug);
-	auto plug_sync_adp = std::make_shared<TestPlugSync>();
-    sync_out_plug->add_adaptor(plug_sync_adp);
+
+	bool plug_updated = false;
+	sync_out_plug->synchronisable_events()->synchronisable_updated() += [&plug_updated](ZstSynchronisable* sync) {plug_updated = true; };
     test_client->observe_entity(sync_out_plug);
     
 	int echo_val = 4;
 	sink->output->append_int(echo_val);
 	sink->output->fire();
-    wait_for_event(test_client, plug_sync_adp, 1);
+	wait_for_condition(test_client, plug_updated && sync_out_plug->size() > 0);
+
     BOOST_TEST(sync_out_plug->int_at(0) == echo_val);
 }
 

@@ -1,19 +1,18 @@
 #pragma once
 
-//A ZstValue is a generic value that represents some data 
+//A ZstDynamicValue is a generic value that represents some data 
 //sent from one ZstPlug to another
 
 #include <vector>
 #include <iostream>
 #include <showtime/ZstConstants.h>
 #include <showtime/ZstExports.h>
-#include <showtime/ZstSerialisable.h>
-#include <showtime/ZstExports.h>
 #include <showtime/ZstConstants.h>
+#include <showtime/ZstIValue.h>
+
 #include <mutex>
 
 #include <boost/variant.hpp>
-
 
 //Typedefs
 
@@ -21,36 +20,47 @@ namespace showtime {
 
 typedef boost::variant<int, float, std::string, uint8_t> ZstValueVariant;
 
-class ZstValue : virtual ZstSerialisable<PlugValue, PlugValue> {
+class ZstDynamicValue : public ZstIValue {
 public:
-	ZST_EXPORT ZstValue();
-	ZST_EXPORT ZstValue(const ZstValue & other);
-	ZST_EXPORT ZstValue(ZstValueType t);
-	ZST_EXPORT ZstValue(const PlugValue* buffer);
+	ZST_EXPORT ZstDynamicValue();
+	ZST_EXPORT ZstDynamicValue(const ZstDynamicValue & other);
+	ZST_EXPORT ZstDynamicValue(ZstValueType t);
+	ZST_EXPORT ZstDynamicValue(const PlugValue* buffer);
 
-	ZST_EXPORT virtual ~ZstValue();
+	ZST_EXPORT virtual ~ZstDynamicValue();
 
-	ZST_EXPORT ZstValueType get_default_type() const;
+	ZST_EXPORT ZstValueType get_default_type() const override;
+	ZST_EXPORT void clear() override;
+
+	ZST_EXPORT void assign(const int* newData, size_t count)  override;
+	ZST_EXPORT void assign(const float* newData, size_t count)  override;
+	ZST_EXPORT void assign_strings(const char** newData, size_t count) override;
+	//ZST_EXPORT void assign(const char** newData, size_t count)  override;
+	ZST_EXPORT void assign(const uint8_t* newData, size_t count)  override;
+
+	ZST_EXPORT void append(const int& value) override;
+	ZST_EXPORT void append(const float& value) override;
+	ZST_EXPORT void append(const char* value, const size_t size) override;
+	ZST_EXPORT void append(const uint8_t& value) override;
 	
-	ZST_EXPORT void copy(const ZstValue & other);
-	
-	ZST_EXPORT void clear();
-	ZST_EXPORT void append_int(const int& value);
-	ZST_EXPORT void append_float(const float& value);
-	ZST_EXPORT void append_string(const char * value, const size_t size);
-	ZST_EXPORT void append_byte(const uint8_t& value);
+	// Dynamic appends
+	ZST_EXPORT void append_int(const int& value) override;
+	ZST_EXPORT void append_float(const float& value) override;
+	ZST_EXPORT void append_string(const char * value, const size_t size) override;
+	ZST_EXPORT void append_byte(const uint8_t& value) override;
 
-	ZST_EXPORT const size_t size() const;
-	ZST_EXPORT const int int_at(const size_t position) const;
-	ZST_EXPORT const float float_at(const size_t position) const;
-	ZST_EXPORT void string_at(char * out_string, const size_t position) const;
-	ZST_EXPORT const uint8_t byte_at(const size_t position) const;
-	ZST_EXPORT const size_t size_at(const size_t position) const;
-    
-    ZST_EXPORT std::vector<int> as_int_vector() const;
-    ZST_EXPORT std::vector<float> as_float_vector() const;
-    ZST_EXPORT std::vector<std::string> as_string_vector() const;
-	ZST_EXPORT std::vector<uint8_t> as_byte_vector() const;
+	ZST_EXPORT const size_t size() const override;	
+	ZST_EXPORT const size_t size_at(const size_t position) const override;
+
+	ZST_EXPORT int* int_buffer() override;
+	ZST_EXPORT float* float_buffer() override;
+	ZST_EXPORT void string_buffer(char*** data) override;
+	ZST_EXPORT uint8_t* byte_buffer() override;
+
+	ZST_EXPORT const int int_at(const size_t position) const override;
+	ZST_EXPORT const float float_at(const size_t position) const override;
+	ZST_EXPORT const char* string_at(const size_t position, size_t& out_str_size) const override;
+	ZST_EXPORT const uint8_t byte_at(const size_t position) const override;
 
 	//Serialisation
     ZST_EXPORT flatbuffers::uoffset_t serialize(flatbuffers::FlatBufferBuilder & buffer_builder) const override;
@@ -60,7 +70,12 @@ public:
 
 
 protected:
-	std::vector<ZstValueVariant> m_values;
+	//std::vector<ZstValueVariant> m_dynamic_values;
+	std::vector<int> m_int_buffer;
+	std::vector<float> m_float_buffer;
+	std::vector<std::string> m_string_buffer;
+	std::vector<uint8_t> m_byte_buffer;
+
 	ZstValueType m_default_type;
 
 private:
