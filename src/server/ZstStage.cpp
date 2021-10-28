@@ -176,7 +176,8 @@ namespace showtime::detail
 		}
 
 		for (auto client : removed_clients) {
-			stage->m_session->hierarchy()->remove_proxy_entity(client);
+			stage->m_session->stage_hierarchy()->client_leaving(client, ClientLeaveReason::ClientLeaveReason_TIMEOUT);
+			//stage->m_session->hierarchy()->remove_proxy_entity(client);
 		}
 
 		if (!stage->is_destroyed()) {

@@ -59,6 +59,27 @@ void ZstStageHierarchy::on_performer_arriving(ZstPerformer* performer)
 	on_entity_arriving(performer);
 }
 
+void ZstStageHierarchy::client_leaving(ZstPerformer* performer, const ClientLeaveReason& reason)
+{
+	if (reason == ClientLeaveReason_QUIT) {
+		Log::server(Log::Level::notification, "Performer {} leaving", reason);
+	}
+	else {
+		Log::server(Log::Level::warn, "Performer {} left with reason {}", reason, EnumNameClientLeaveReason(reason));
+	}
+
+	remove_proxy_entity(performer);
+
+	//Update rest of network
+	auto excluded = std::vector<ZstPerformer*>{ performer };
+
+	ZstTransportArgs args;
+	args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
+	auto builder = std::make_shared<FlatBufferBuilder>();
+	auto destroy_msg_offset = CreateClientLeaveRequest(*builder, builder->CreateString(performer->URI().path()), reason);
+	broadcast(Content_ClientLeaveRequest, destroy_msg_offset.Union(), builder, args, excluded);
+}
+
 void ZstStageHierarchy::on_receive_msg(const std::shared_ptr<ZstStageMessage>& msg)
 {
 	Signal response = Signal_EMPTY;
@@ -148,24 +169,10 @@ Signal ZstStageHierarchy::create_client_handler(const std::shared_ptr<ZstStageMe
 
 Signal ZstStageHierarchy::client_leaving_handler(const std::shared_ptr<ZstStageMessage>& request, ZstPerformerStageProxy* sender)
 {
+	// Handle performer leaving broadcast
 	auto content = request->buffer()->content_as_ClientLeaveRequest();
-	if (content->reason() == ClientLeaveReason_QUIT) {
-		Log::server(Log::Level::notification, "Performer {} leaving", sender->URI().path());
-	}
-	else {
-		Log::server(Log::Level::warn, "Performer {} left with reason {}", sender->URI().path(), EnumNameClientLeaveReason(content->reason()));
-	}
-	remove_proxy_entity(sender);
-
-	//Update rest of network
-	auto excluded = std::vector<ZstPerformer*>{ sender };
-
-	ZstTransportArgs args;
-	args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
-	auto builder = std::make_shared<FlatBufferBuilder>();
-	auto destroy_msg_offset = CreateClientLeaveRequest(*builder, builder->CreateString(sender->URI().path()), content->reason());
-	broadcast(Content_ClientLeaveRequest, destroy_msg_offset.Union(), builder, args);
-
+	
+	client_leaving(sender, content->reason());
 	return Signal_OK;
 }
 

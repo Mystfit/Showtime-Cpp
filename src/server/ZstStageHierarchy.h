@@ -56,13 +56,13 @@ public:
 	void broadcast(Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder> & buffer_builder, const ZstTransportArgs& args, const std::vector<ZstPerformer*> & excluded = std::vector<ZstPerformer*>());
 	void whisper(ZstPerformerStageProxy* performer, Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder>& buffer_builder, const ZstTransportArgs& args);
 
+	void client_leaving(ZstPerformer* performer, const ClientLeaveReason& reason);
 
 	// ----------------
 	// Proxies
 	// ----------------
 
 	virtual void request_entity_registration(ZstEntityBase* entity) override;
-
 
 	// ---------------------
 	// Socket IDs
