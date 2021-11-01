@@ -73,6 +73,69 @@ struct FixtureCable : public FixturePlugs {
 };
 
 
+struct FixtureBranchingComponents : public FixtureJoinServer {
+	std::unique_ptr<ZstComponent> top_comp;
+	std::unique_ptr<ZstComponent> a_comp;
+	std::unique_ptr<ZstOutputPlug> a_out;
+
+	std::unique_ptr<ZstComponent> b_comp;
+	std::unique_ptr<ZstInputPlug> b_in;
+	std::unique_ptr<ZstOutputPlug> b_out_first;
+	std::unique_ptr<ZstOutputPlug> b_out_second;
+
+	std::unique_ptr<ZstComponent> c_comp;
+	std::unique_ptr<ZstInputPlug> c_in;
+	std::unique_ptr<ZstOutputPlug> c_out;
+
+	std::unique_ptr<ZstComponent> d_comp;
+	std::unique_ptr<ZstInputPlug> d_in_first;
+	std::unique_ptr<ZstInputPlug> d_in_second;
+
+
+	FixtureBranchingComponents() :
+		top_comp(std::make_unique<ZstComponent>("computer_node")),
+		a_comp(std::make_unique<ZstComponent>("a")),
+		b_comp(std::make_unique<ZstComponent>("b")),
+		c_comp(std::make_unique<ZstComponent>("c")),
+		d_comp(std::make_unique<ZstComponent>("d")),
+		a_out(std::make_unique<ZstOutputPlug>("out", ZstValueType::IntList)),
+		b_in(std::make_unique<ZstInputPlug>("in", ZstValueType::IntList)),
+		b_out_first(std::make_unique<ZstOutputPlug>("out1", ZstValueType::IntList)),
+		b_out_second(std::make_unique<ZstOutputPlug>("out2", ZstValueType::IntList)),
+		c_in(std::make_unique<ZstInputPlug>("in", ZstValueType::IntList)),
+		c_out(std::make_unique<ZstOutputPlug>("out", ZstValueType::IntList)),
+		d_in_first(std::make_unique<ZstInputPlug>("in1", ZstValueType::IntList)),
+		d_in_second(std::make_unique<ZstInputPlug>("in2", ZstValueType::IntList))
+	{
+		test_client->get_root()->add_child(top_comp.get());
+
+		// Out-of-order adding of children to make sure topological sort works
+		top_comp->add_child(d_comp.get());
+		top_comp->add_child(c_comp.get());
+		top_comp->add_child(a_comp.get());
+		top_comp->add_child(b_comp.get());
+
+		a_comp->add_child(a_out.get());
+		b_comp->add_child(b_out_first.get());
+		b_comp->add_child(b_out_second.get());
+		b_comp->add_child(b_in.get());
+
+		c_comp->add_child(c_in.get());
+		c_comp->add_child(c_out.get());
+		d_comp->add_child(d_in_first.get());
+		d_comp->add_child(d_in_second.get());
+
+		auto cable1 = a_out->connect_cable(b_in.get());
+		auto cable2 = b_out_first->connect_cable(c_in.get());
+		auto cable3 = b_out_second->connect_cable(d_in_first.get());
+		auto cable4 = c_out->connect_cable(d_in_second.get());
+		BOOST_TEST(true);
+	}
+
+	~FixtureBranchingComponents() {};
+};
+
+
 bool found_cable(std::shared_ptr<ShowtimeClient> client, ZstCableAddress cable_address) {
 	ZstCableBundle bundle;
 	client->get_root()->get_child_cables(&bundle);
@@ -310,6 +373,45 @@ BOOST_FIXTURE_TEST_CASE(local_cable_routes, FixtureJoinServer) {
 	BOOST_TEST(bundle.item_at(6) == in_branch_3.get());
 	BOOST_TEST(bundle.item_at(7) == in_branch_3->input());
 }
+
+BOOST_FIXTURE_TEST_CASE(get_adjacent_components, FixtureBranchingComponents) {
+	ZstEntityBundle adjacent;
+	a_comp->get_adjacent_components(&adjacent, ZstPlugDirection::OUT_JACK);
+	BOOST_TEST(adjacent.size() == 1);
+	BOOST_TEST(adjacent[0] == b_comp.get());
+	adjacent.clear();
+
+	a_comp->get_adjacent_components(&adjacent, ZstPlugDirection::IN_JACK);
+	BOOST_TEST(adjacent.size() == 0);
+	adjacent.clear();
+
+	b_comp->get_adjacent_components(&adjacent, ZstPlugDirection::IN_JACK);
+	BOOST_TEST(adjacent.size() == 1);
+	BOOST_TEST(adjacent[0] == a_comp.get());
+	adjacent.clear();
+
+	b_comp->get_adjacent_components(&adjacent, ZstPlugDirection::OUT_JACK);
+	BOOST_TEST(adjacent.size() == 2);
+	BOOST_TEST((std::find(adjacent.begin(), adjacent.end(), c_comp.get()) != adjacent.end()));
+	BOOST_TEST((std::find(adjacent.begin(), adjacent.end(), d_comp.get()) != adjacent.end()));
+	adjacent.clear();
+
+	d_comp->get_adjacent_components(&adjacent, ZstPlugDirection::IN_JACK);
+	BOOST_TEST(adjacent.size() == 2);
+	BOOST_TEST((std::find(adjacent.begin(), adjacent.end(), b_comp.get()) != adjacent.end()));
+	BOOST_TEST((std::find(adjacent.begin(), adjacent.end(), c_comp.get()) != adjacent.end()));
+}
+
+BOOST_FIXTURE_TEST_CASE(downstream_compute_order, FixtureBranchingComponents) {
+	ZstEntityBundle entities;
+	a_comp->downstream_compute_order(&entities);
+	BOOST_TEST(entities.size() == 4);
+	BOOST_TEST(entities[0] == a_comp.get());
+	BOOST_TEST(entities[1] == b_comp.get());
+	BOOST_TEST(entities[2] == c_comp.get());
+	BOOST_TEST(entities[3] == d_comp.get());
+}
+
 
 BOOST_FIXTURE_TEST_CASE(renaming_entity_updates_cables, FixtureCable) {
 	auto orig_cable_address = cable->get_address();

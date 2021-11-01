@@ -165,6 +165,27 @@ namespace showtime
         }
     }
 
+    void ZstComponent::computeTopologicalSort(ZstComponent* vertex, std::set<ZstComponent*>& visited, std::stack<ZstComponent*>& stack)
+    {
+        // Mark current entity as visited
+        visited.insert(vertex);
+
+        // Get downstream components
+        ZstEntityBundle adjacent_components;
+        vertex->get_adjacent_components(&adjacent_components, ZstPlugDirection::OUT_JACK);
+        
+        for (auto entity : adjacent_components) {
+            if (entity->entity_type() == ZstEntityType::COMPONENT) {
+                auto component = static_cast<ZstComponent*>(entity);
+                if (visited.find(component) == visited.end()) {
+                    computeTopologicalSort(component, visited, stack);
+                }
+            }
+        }
+
+        stack.push(vertex);
+    }
+
 	uoffset_t ZstComponent::serialize(FlatBufferBuilder & buffer_builder) const
     {
         Offset<ComponentData> component_offset;
@@ -248,7 +269,63 @@ namespace showtime
         }
     }
 
+    void ZstComponent::downstream_compute_order(ZstEntityBundle* out_entities)
+    {
+        auto parent_component = parent();
+        if (!parent_component)
+            return;
 
+        std::stack<ZstComponent*> stack;
+        std::set<ZstComponent*> visited;
+
+        // Add ourselves first as the root of the sort
+        computeTopologicalSort(this, visited, stack);
+
+        // Fill in the remaining children
+        ZstEntityBundle children;
+        parent_component->get_child_entities(&children, false, false, ZstEntityType::COMPONENT);
+        for (auto entity : children) {
+            auto component = static_cast<ZstComponent*>(entity);
+            if (visited.find(component) == visited.end()){
+                computeTopologicalSort(component, visited, stack);
+            }
+        }
+
+        while (!stack.empty()) {
+            out_entities->add(stack.top());
+            stack.pop();
+        }
+    }
+
+    void ZstComponent::get_adjacent_components(ZstEntityBundle* entities, ZstPlugDirection direction)
+    {
+        ZstCableBundle cables;
+        get_child_cables(&cables);
+
+        std::set<ZstURI> visited;
+        
+        // We only look for cable connections that are directly adjacent to the current component - so they should share the same parent
+        auto scope = this->parent()->URI();
+
+        for (auto cable : cables) {
+            auto address = cable->get_address();
+
+            // Get the owning components of the cable's plugs
+            auto path = (direction == ZstPlugDirection::OUT_JACK) ? address.get_input_URI().parent() : address.get_output_URI().parent();
+
+            if (!path.is_empty()) {
+                // Check if output is adjacent to this component - so should live under the the same parent and at the same depth
+                if (path != URI() && 
+                    path.contains(scope) && 
+                    path.size() == URI().size() && 
+                    visited.find(path) == visited.end()
+                ){
+                    entities->add((direction == ZstPlugDirection::OUT_JACK) ? cable->get_input()->parent() : cable->get_output()->parent());
+                    visited.insert(path);
+                }
+            }
+        }
+    }
 
     //--------------
 

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <vector>
+#include <stack>
+
 #include <flatbuffers/flatbuffers.h>
 
 #include <showtime/schemas/messaging/graph_types_generated.h>
@@ -47,11 +49,15 @@ public:
     ZST_EXPORT virtual void get_child_cables(ZstCableBundle* bundle) override;
     ZST_EXPORT virtual void get_child_entities(ZstEntityBundle* bundle, bool include_parent = false, bool recursive = false, ZstEntityType filter = ZstEntityType::NONE) override;
     
+    // Cable queries
+    ZST_EXPORT void downstream_compute_order(ZstEntityBundle* out_entities);
+    ZST_EXPORT void get_adjacent_components(ZstEntityBundle* entities, ZstPlugDirection direction);
+
     //Specific component type
     ZST_EXPORT const char * component_type() const;
 
 
-    // Overriden Events for SWIG
+    // Overidden Events for SWIG
     ZST_EXPORT virtual void on_registered() override;
     ZST_EXPORT virtual void on_activation() override;
     ZST_EXPORT virtual void on_deactivation() override;
@@ -92,5 +98,7 @@ protected:
 private:
 	std::set<ZstURI> m_children;
     std::string m_component_type;
+
+    void computeTopologicalSort(ZstComponent* vertex, std::set<ZstComponent*>& visited, std::stack<ZstComponent*>& stack);
 };
 }
