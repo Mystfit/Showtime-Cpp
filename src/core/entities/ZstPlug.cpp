@@ -147,6 +147,11 @@ const size_t ZstPlug::size_at(const size_t position) const
     return m_value->size_at(position);
 }
 
+void ZstPlug::swap_values(ZstPlug* other)
+{
+    m_value.swap(other->m_value);
+}
+
 ZstIValue * ZstPlug::raw_value()
 {
     return m_value.get();
@@ -174,7 +179,11 @@ flatbuffers::uoffset_t ZstPlug::serialize(FlatBufferBuilder& buffer_builder) con
     
 void ZstPlug::serialize_partial(flatbuffers::Offset<PlugData> & serialized_offset, flatbuffers::FlatBufferBuilder& buffer_builder) const
 {
-    serialized_offset = CreatePlugData(buffer_builder, plug_direction_lookup.left.at(m_direction), m_max_connected_cables, m_value->serialize(buffer_builder));
+    serialized_offset = CreatePlugData(buffer_builder, 
+        plug_direction_lookup.left.at(m_direction), 
+        m_max_connected_cables, 
+        m_value->serialize(buffer_builder)
+    );
 }
     
 void ZstPlug::deserialize_partial(const PlugData* buffer)
@@ -419,42 +428,22 @@ void ZstOutputPlug::fire()
     int num_local_cables = 0;
     for (auto c : bundle) {
         auto input_plug = c->get_input();
+
+        // Cable is local - this component can execute immediately
         if (input_plug->URI().first() == this->URI().first()) {
-            // Copy plug value
-            //c->get_input()->raw_value()->copy(*this->raw_value());
+            
+            //Swap plug values
+            this->swap_values(input_plug);
 
-            switch (this->raw_value()->get_default_type())
-            {
-            case ZstValueType::IntList: 
-            {
-                input_plug->raw_value()->assign(this->raw_value()->int_buffer(), this->raw_value()->size());
-                break;
-            }
-            case ZstValueType::FloatList:
-            {
-                input_plug->raw_value()->assign(this->raw_value()->float_buffer(), this->raw_value()->size());
-                break;
-            }
-            case ZstValueType::StrList:
-            {
-                char** data = nullptr;
-                this->raw_value()->string_buffer(&data);
-                input_plug->raw_value()->assign_strings(const_cast<const char**>(data), this->size());
-                break;
-            }
-            case ZstValueType::ByteList:
-            {
-                input_plug->raw_value()->assign(this->raw_value()->byte_buffer(), this->raw_value()->size());
-                break;
-            }
-            default:
-                break;
-            }
+            // TODO: Optional to copy plug value rather than swapping
+            //input_plug->raw_value()->copy(this->raw_value());
 
-            // Queue plug compute event
+            // TODO: Optionally queue plug compute event?
            /* session_events()->invoke([&c](ZstSessionAdaptor* adp) {
                 adp->plug_received_value(c->get_input());
             });*/
+
+            // Find the parent component of the input plug
             ZstComponent* parent_component = nullptr;
             hierarchy_events()->invoke([c, &parent_component](ZstHierarchyAdaptor* adp) {
                 if (auto p = adp->find_entity(c->get_address().get_input_URI().parent())) {

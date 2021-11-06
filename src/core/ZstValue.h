@@ -32,6 +32,7 @@ public:
 	ZST_EXPORT ZstValueType get_default_type() const override;
 	ZST_EXPORT void clear() override;
 
+	ZST_EXPORT void copy(const ZstIValue* from) override;
 	ZST_EXPORT void assign(const int* newData, size_t count)  override;
 	ZST_EXPORT void assign(const float* newData, size_t count)  override;
 	ZST_EXPORT void assign_strings(const char** newData, size_t count) override;
@@ -52,10 +53,10 @@ public:
 	ZST_EXPORT const size_t size() const override;	
 	ZST_EXPORT const size_t size_at(const size_t position) const override;
 
-	ZST_EXPORT int* int_buffer() override;
-	ZST_EXPORT float* float_buffer() override;
-	ZST_EXPORT void string_buffer(char*** data) override;
-	ZST_EXPORT uint8_t* byte_buffer() override;
+	ZST_EXPORT const int* int_buffer() const override;
+	ZST_EXPORT const float* float_buffer() const override;
+	ZST_EXPORT const void string_buffer(char*** data) const override;
+	ZST_EXPORT const uint8_t* byte_buffer() const override;
 
 	ZST_EXPORT const int int_at(const size_t position) const override;
 	ZST_EXPORT const float float_at(const size_t position) const override;

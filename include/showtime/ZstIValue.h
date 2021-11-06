@@ -10,6 +10,8 @@ namespace showtime {
 		ZST_EXPORT virtual ZstValueType get_default_type() const = 0;
 		ZST_EXPORT virtual void clear() = 0;
 
+		ZST_EXPORT virtual void copy(const ZstIValue* from) = 0;
+
 		ZST_EXPORT virtual void assign(const int* newData, size_t count) = 0;
 		ZST_EXPORT virtual void assign(const float* newData, size_t count) = 0;
 		//ZST_EXPORT virtual void assign(const char** newData, size_t count) = 0;
@@ -29,10 +31,10 @@ namespace showtime {
 		ZST_EXPORT virtual const size_t size() const = 0;
 		ZST_EXPORT virtual const size_t size_at(const size_t position) const = 0;
 
-		ZST_EXPORT virtual int* int_buffer() = 0;
-		ZST_EXPORT virtual float* float_buffer() = 0;
-		ZST_EXPORT virtual void string_buffer(char*** data) = 0;
-		ZST_EXPORT virtual uint8_t* byte_buffer() = 0;
+		ZST_EXPORT virtual const int* int_buffer() const = 0;
+		ZST_EXPORT virtual const float* float_buffer() const = 0;
+		ZST_EXPORT virtual const void string_buffer(char*** data) const = 0;
+		ZST_EXPORT virtual const uint8_t* byte_buffer() const = 0;
 
 		ZST_EXPORT virtual const int int_at(const size_t position) const = 0;
 		ZST_EXPORT virtual const float float_at(const size_t position) const = 0;

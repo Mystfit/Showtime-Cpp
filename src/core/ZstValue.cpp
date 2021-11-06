@@ -97,6 +97,39 @@ void ZstDynamicValue::clear()
 	m_byte_buffer.clear();
 }
 
+
+void ZstDynamicValue::copy(const ZstIValue* from)
+{
+
+	switch (get_default_type())
+	{
+	case ZstValueType::IntList:
+	{
+		assign(from->int_buffer(), from->size());
+		break;
+	}
+	case ZstValueType::FloatList:
+	{
+		assign(from->float_buffer(), from->size());
+		break;
+	}
+	case ZstValueType::StrList:
+	{
+		char** data = nullptr;
+		from->string_buffer(&data);
+		assign_strings(const_cast<const char**>(data), from->size());
+		break;
+	}
+	case ZstValueType::ByteList:
+	{
+		assign(from->byte_buffer(), from->size());
+		break;
+	}
+	default:
+		break;
+	}
+}
+
 void ZstDynamicValue::assign(const int* newData, size_t count)
 {
 	std::lock_guard<std::mutex> lock(m_lock);
@@ -243,17 +276,17 @@ const size_t ZstDynamicValue::size_at(const size_t position) const {
     return 0;
 }
 
-int* ZstDynamicValue::int_buffer()
+const int* ZstDynamicValue::int_buffer() const
 {
 	return m_int_buffer.data();
 }
 
-float* ZstDynamicValue::float_buffer()
+const float* ZstDynamicValue::float_buffer() const
 {
 	return m_float_buffer.data();
 }
 
-void ZstDynamicValue::string_buffer(char*** data)
+const void ZstDynamicValue::string_buffer(char*** data) const
 {
 	std::vector<char*> cstrings;
 	cstrings.reserve(m_string_buffer.size());
@@ -263,7 +296,7 @@ void ZstDynamicValue::string_buffer(char*** data)
 	memcpy(data, m_string_buffer.data(), m_string_buffer.size());
 }
 
-uint8_t* ZstDynamicValue::byte_buffer()
+const uint8_t* ZstDynamicValue::byte_buffer() const
 {
 	return m_byte_buffer.data();
 }

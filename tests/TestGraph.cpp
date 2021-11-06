@@ -402,16 +402,24 @@ BOOST_FIXTURE_TEST_CASE(get_adjacent_components, FixtureBranchingComponents) {
 	BOOST_TEST((std::find(adjacent.begin(), adjacent.end(), c_comp.get()) != adjacent.end()));
 }
 
-BOOST_FIXTURE_TEST_CASE(downstream_compute_order, FixtureBranchingComponents) {
+BOOST_FIXTURE_TEST_CASE(local_component_dependencies, FixtureBranchingComponents) {
 	ZstEntityBundle entities;
-	a_comp->downstream_compute_order(&entities);
+	a_comp->dependants(&entities, false);
 	BOOST_TEST(entities.size() == 4);
 	BOOST_TEST(entities[0] == a_comp.get());
 	BOOST_TEST(entities[1] == b_comp.get());
 	BOOST_TEST(entities[2] == c_comp.get());
 	BOOST_TEST(entities[3] == d_comp.get());
+	entities.clear();
+	
+	d_comp->dependencies(&entities, false);
+	BOOST_TEST(entities.size() == 4);
+	BOOST_TEST(entities[0] == a_comp.get());
+	BOOST_TEST(entities[1] == b_comp.get());
+	BOOST_TEST(entities[2] == c_comp.get());
+	BOOST_TEST(entities[3] == d_comp.get());
+	entities.clear();
 }
-
 
 BOOST_FIXTURE_TEST_CASE(renaming_entity_updates_cables, FixtureCable) {
 	auto orig_cable_address = cable->get_address();

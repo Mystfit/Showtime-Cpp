@@ -269,7 +269,17 @@ namespace showtime
         }
     }
 
-    void ZstComponent::downstream_compute_order(ZstEntityBundle* out_entities)
+    void ZstComponent::dependants(ZstEntityBundle* out_entities, bool recursive, bool local_only)
+    {
+        directed_graph(out_entities, ZstPlugDirection::OUT_JACK, recursive, local_only);
+    }
+
+    void ZstComponent::dependencies(ZstEntityBundle* out_entities, bool recursive, bool local_only)
+    {
+        directed_graph(out_entities, ZstPlugDirection::IN_JACK, recursive, local_only);
+    }
+
+    void ZstComponent::directed_graph(ZstEntityBundle* out_entities, ZstPlugDirection direction, bool recursive, bool local_only)
     {
         auto parent_component = parent();
         if (!parent_component)
@@ -286,7 +296,7 @@ namespace showtime
         parent_component->get_child_entities(&children, false, false, ZstEntityType::COMPONENT);
         for (auto entity : children) {
             auto component = static_cast<ZstComponent*>(entity);
-            if (visited.find(component) == visited.end()){
+            if (visited.find(component) == visited.end()) {
                 computeTopologicalSort(component, visited, stack);
             }
         }

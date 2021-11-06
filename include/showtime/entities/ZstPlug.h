@@ -87,6 +87,7 @@ public:
     ZST_EXPORT virtual void get_child_cables(ZstCableBundle* bundle) override;
 
     //Values
+    ZST_EXPORT void swap_values(ZstPlug* other);
     ZST_EXPORT ZstIValue * raw_value();
     ZST_EXPORT ZstValueType get_default_type() const;
 

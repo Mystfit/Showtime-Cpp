@@ -50,7 +50,9 @@ public:
     ZST_EXPORT virtual void get_child_entities(ZstEntityBundle* bundle, bool include_parent = false, bool recursive = false, ZstEntityType filter = ZstEntityType::NONE) override;
     
     // Cable queries
-    ZST_EXPORT void downstream_compute_order(ZstEntityBundle* out_entities);
+    ZST_EXPORT void dependants(ZstEntityBundle* out_entities, bool recursive = false, bool local_only = true);
+    ZST_EXPORT void dependencies(ZstEntityBundle* out_entities, bool recursive = false, bool local_only = true);
+    ZST_EXPORT void directed_graph(ZstEntityBundle* out_entities, ZstPlugDirection direction, bool recursive, bool local_only);
     ZST_EXPORT void get_adjacent_components(ZstEntityBundle* entities, ZstPlugDirection direction);
 
     //Specific component type
