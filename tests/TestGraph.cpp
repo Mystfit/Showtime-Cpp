@@ -404,7 +404,7 @@ BOOST_FIXTURE_TEST_CASE(get_adjacent_components, FixtureBranchingComponents) {
 
 BOOST_FIXTURE_TEST_CASE(local_component_dependencies, FixtureBranchingComponents) {
 	ZstEntityBundle entities;
-	a_comp->dependants(&entities, false);
+	a_comp->dependants(&entities, false, true);
 	BOOST_TEST(entities.size() == 4);
 	BOOST_TEST(entities[0] == a_comp.get());
 	BOOST_TEST(entities[1] == b_comp.get());
@@ -412,12 +412,12 @@ BOOST_FIXTURE_TEST_CASE(local_component_dependencies, FixtureBranchingComponents
 	BOOST_TEST(entities[3] == d_comp.get());
 	entities.clear();
 	
-	d_comp->dependencies(&entities, false);
+	d_comp->dependencies(&entities, false, true);
 	BOOST_TEST(entities.size() == 4);
-	BOOST_TEST(entities[0] == a_comp.get());
-	BOOST_TEST(entities[1] == b_comp.get());
-	BOOST_TEST(entities[2] == c_comp.get());
-	BOOST_TEST(entities[3] == d_comp.get());
+	BOOST_TEST(entities[0] == d_comp.get());
+	BOOST_TEST(entities[1] == c_comp.get());
+	BOOST_TEST(entities[2] == b_comp.get());
+	BOOST_TEST(entities[3] == a_comp.get());
 	entities.clear();
 }
 

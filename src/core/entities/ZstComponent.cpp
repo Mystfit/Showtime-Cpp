@@ -165,20 +165,20 @@ namespace showtime
         }
     }
 
-    void ZstComponent::computeTopologicalSort(ZstComponent* vertex, std::set<ZstComponent*>& visited, std::stack<ZstComponent*>& stack)
+    void ZstComponent::computeTopologicalSort(ZstComponent* vertex, std::set<ZstComponent*>& visited, std::stack<ZstComponent*>& stack, ZstPlugDirection direction)
     {
         // Mark current entity as visited
         visited.insert(vertex);
 
         // Get downstream components
         ZstEntityBundle adjacent_components;
-        vertex->get_adjacent_components(&adjacent_components, ZstPlugDirection::OUT_JACK);
+        vertex->get_adjacent_components(&adjacent_components, direction);
         
         for (auto entity : adjacent_components) {
             if (entity->entity_type() == ZstEntityType::COMPONENT) {
                 auto component = static_cast<ZstComponent*>(entity);
                 if (visited.find(component) == visited.end()) {
-                    computeTopologicalSort(component, visited, stack);
+                    computeTopologicalSort(component, visited, stack, direction);
                 }
             }
         }
@@ -289,7 +289,7 @@ namespace showtime
         std::set<ZstComponent*> visited;
 
         // Add ourselves first as the root of the sort
-        computeTopologicalSort(this, visited, stack);
+        computeTopologicalSort(this, visited, stack, direction);
 
         // Fill in the remaining children
         ZstEntityBundle children;
@@ -297,12 +297,21 @@ namespace showtime
         for (auto entity : children) {
             auto component = static_cast<ZstComponent*>(entity);
             if (visited.find(component) == visited.end()) {
-                computeTopologicalSort(component, visited, stack);
+                computeTopologicalSort(component, visited, stack, direction);
             }
         }
 
         while (!stack.empty()) {
-            out_entities->add(stack.top());
+            auto entity = stack.top();
+            if (local_only) {
+                if (!entity->is_proxy()) {
+                    out_entities->add(entity);
+                }
+            }
+            else {
+                out_entities->add(entity);
+            }
+         
             stack.pop();
         }
     }

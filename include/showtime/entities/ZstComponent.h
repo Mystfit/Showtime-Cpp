@@ -101,6 +101,6 @@ private:
 	std::set<ZstURI> m_children;
     std::string m_component_type;
 
-    void computeTopologicalSort(ZstComponent* vertex, std::set<ZstComponent*>& visited, std::stack<ZstComponent*>& stack);
+    void computeTopologicalSort(ZstComponent* vertex, std::set<ZstComponent*>& visited, std::stack<ZstComponent*>& stack, ZstPlugDirection direction);
 };
 }
