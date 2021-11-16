@@ -113,7 +113,7 @@ protected:
     ZST_EXPORT void dispatch_entity_arrived_event(ZstEntityBase * entity);
 
 private:
-	void reaper_cleanup_entity(ZstEntityBase* entity);
+	void reaper_cleanup_entity(const ZstURI& entity);
 	std::shared_ptr<ZstEventDispatcher<ZstHierarchyAdaptor> > m_hierarchy_events;
 	std::recursive_mutex m_hierarchy_mutex;
 	ZstEntityMap m_entity_lookup;

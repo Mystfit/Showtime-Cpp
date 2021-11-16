@@ -427,20 +427,27 @@ void ZstHierarchy::on_synchronisable_destroyed(ZstSynchronisable * synchronisabl
 	if (already_removed) {
 		// Make sure that we don't call this synchronisable object in the future
 		add_dead_synchronisable_ID(synchronisable->instance_id());
-		reaper_cleanup_entity(dynamic_cast<ZstEntityBase*>(synchronisable));
+		reaper_cleanup_entity(dynamic_cast<ZstEntityBase*>(synchronisable)->URI());
 		return;
 	}
-	auto synchronisable_id = synchronisable->instance_id();
-    reaper().add_cleanup_op([this, synchronisable, synchronisable_id]() {
+
+	reaper().add_cleanup_op([
+		this, 
+		synchronisable_id = synchronisable->instance_id(), 
+		path = dynamic_cast<ZstEntityBase*>(synchronisable)->URI(), 
+		is_proxy = synchronisable->is_proxy()
+	]() {
+		Log::net(Log::Level::debug, "on_synchronisable_destroyed cleanup: Path: {} ID: {}", path.path(), synchronisable_id);
+
 		if (already_removed_synchronisable(synchronisable_id))
 			return;
 
 		//Remove entity from quick lookup map
-		reaper_cleanup_entity(dynamic_cast<ZstEntityBase*>(synchronisable));
+		reaper_cleanup_entity(path);
 
-		if (synchronisable->is_proxy()) {
-			auto it = std::find_if(m_proxies.begin(), m_proxies.end(), [synchronisable](const std::unique_ptr<ZstSynchronisable>& item) {
-				return(item.get() == synchronisable) ? true : false;
+		if (is_proxy) {
+			auto it = std::find_if(m_proxies.begin(), m_proxies.end(), [synchronisable_id](const std::unique_ptr<ZstSynchronisable>& item) {
+				return(item.get()->instance_id() == synchronisable_id) ? true : false;
 			});
 
 			if (it != m_proxies.end()) {
@@ -454,11 +461,8 @@ void ZstHierarchy::on_synchronisable_destroyed(ZstSynchronisable * synchronisabl
 	synchronisable_set_destroyed(synchronisable);
 }
 
-void ZstHierarchy::reaper_cleanup_entity(ZstEntityBase * entity) {
-	if (!entity)
-		return;
-
-	this->remove_entity_from_lookup(entity->URI());
+void ZstHierarchy::reaper_cleanup_entity(const ZstURI& entity) {
+	this->remove_entity_from_lookup(entity);
 }
 
 void ZstHierarchy::on_register_entity(ZstEntityBase * entity)

@@ -159,7 +159,6 @@ ZstCable * ZstSession::find_cable(const ZstURI & input_path, const ZstURI & outp
 	if (cable_it != m_cables.end()) {
 		return cable_it->get();
 	}
-	Log::net(Log::Level::error, "No cable found for address {}<-{}", input_path.path(), output_path.path());
 	return NULL;
 }
 
