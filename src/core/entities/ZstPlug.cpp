@@ -288,24 +288,30 @@ void ZstPlug::remove_cable(ZstCable * cable)
 //------------
 
 ZstInputPlug::ZstInputPlug() :
-    ZstPlug("", ZstValueType::NONE)
+    ZstPlug("", ZstValueType::NONE),
+    m_triggers_compute(false)
 {
 }
     
-ZstInputPlug::ZstInputPlug(const Plug* buffer) : ZstPlug(buffer)
+ZstInputPlug::ZstInputPlug(const Plug* buffer) : 
+    ZstPlug(buffer),
+    m_triggers_compute(false)
 {
 }
 
-ZstInputPlug::ZstInputPlug(const ZstInputPlug & other) : ZstPlug(other)
+ZstInputPlug::ZstInputPlug(const ZstInputPlug & other) : 
+    ZstPlug(other),
+    m_triggers_compute(false)
+{
+}
+
+ZstInputPlug::ZstInputPlug(const char * name, const ZstValueType& t, int max_cables, bool triggers_compute) :
+    ZstPlug(name, t, ZstPlugDirection::IN_JACK, max_cables),
+    m_triggers_compute(triggers_compute)
 {
 }
 
 ZstInputPlug::~ZstInputPlug()
-{
-}
-
-ZstInputPlug::ZstInputPlug(const char * name, const ZstValueType& t, int max_cables) :
-    ZstPlug(name, t, ZstPlugDirection::IN_JACK, max_cables)
 {
 }
 
@@ -329,6 +335,11 @@ ZstCable* ZstInputPlug::connect_cable_async(ZstOutputPlug* output_plug)
             cable = new_cable;
     });
     return cable;
+}
+
+bool ZstInputPlug::triggers_compute()
+{
+    return m_triggers_compute;
 }
 
 
@@ -432,11 +443,13 @@ void ZstOutputPlug::fire()
         // Cable is local - this component can execute immediately
         if (input_plug->URI().first() == this->URI().first()) {
             
-            //Swap plug values
-            this->swap_values(input_plug);
-
-            // TODO: Optional to copy plug value rather than swapping
-            //input_plug->raw_value()->copy(this->raw_value());
+            // If we have more than one cable, we have to copy the value instead of swapping it.
+            // If the types don't match - conversion needs to bne applied during the copy
+            // TODO: Replace swap with passing a ZstValue pointer along instead
+            if (bundle.size() > 1 || input_plug->raw_value()->get_default_type() != this->raw_value()->get_default_type())
+                input_plug->raw_value()->copy(this->raw_value());
+            else
+                this->swap_values(input_plug);
 
             // TODO: Optionally queue plug compute event?
            /* session_events()->invoke([&c](ZstSessionAdaptor* adp) {
@@ -444,17 +457,18 @@ void ZstOutputPlug::fire()
             });*/
 
             // Find the parent component of the input plug
-            ZstComponent* parent_component = nullptr;
+            /*ZstComponent* parent_component = nullptr;
             hierarchy_events()->invoke([c, &parent_component](ZstHierarchyAdaptor* adp) {
                 if (auto p = adp->find_entity(c->get_address().get_input_URI().parent())) {
                     if (p->entity_type() == ZstEntityType::COMPONENT) {
                         parent_component = static_cast<ZstComponent*>(p);
                     }
                 }
-            });
+            });*/
 
-            if(parent_component)
-                parent_component->compute(input_plug);
+            // TODO: This needs to be moved out of fire - seperate plug data from computation
+            /*if(parent_component)
+                parent_component->compute(input_plug);*/
 
             num_local_cables++;
         }

@@ -9,32 +9,44 @@ using namespace flatbuffers;
 namespace showtime
 {
     ZstComponent::ZstComponent() :
-        ZstEntityBase()
+        ZstEntityBase(),
+        m_compute_incoming_plug(nullptr),
+        m_compute_outgoing_plug(nullptr)
     {
         set_entity_type(ZstEntityType::COMPONENT);
         set_component_type("");
+        init_compute_plugs();
     }
 
     ZstComponent::ZstComponent(const char * path) :
-        ZstEntityBase(path)
+        ZstEntityBase(path),
+        m_compute_incoming_plug(nullptr),
+        m_compute_outgoing_plug(nullptr)
     {
         set_entity_type(ZstEntityType::COMPONENT);
         set_component_type("");
+        init_compute_plugs();
     }
 
-    ZstComponent::ZstComponent(const char * component_type, const char * path)
-        : ZstEntityBase(path)
+    ZstComponent::ZstComponent(const char * component_type, const char * path) : 
+        ZstEntityBase(path),
+        m_compute_incoming_plug(nullptr),
+        m_compute_outgoing_plug(nullptr)
     {
         set_entity_type(ZstEntityType::COMPONENT);
         set_component_type(component_type);
+        init_compute_plugs();
     }
     
     ZstComponent::ZstComponent(const Component* buffer) : 
-		ZstEntityBase()
+		ZstEntityBase(),
+        m_compute_incoming_plug(nullptr),
+        m_compute_outgoing_plug(nullptr)
     {
 		set_entity_type(ZstEntityType::COMPONENT);
         ZstEntityBase::deserialize_partial(buffer->entity());
 		ZstComponent::deserialize_partial(buffer->component());
+        init_compute_plugs();
     }
 
     ZstComponent::ZstComponent(const ZstComponent & other) : ZstEntityBase(other)
@@ -58,6 +70,12 @@ namespace showtime
         m_component_type = other.m_component_type;
     }
 
+    void ZstComponent::init_compute_plugs()
+    {
+        m_compute_incoming_plug = std::make_shared<ZstInputPlug>("execute", ZstValueType::IntList, -1, true);
+        m_compute_outgoing_plug = std::make_shared<ZstOutputPlug>("then", ZstValueType::IntList, 1);
+    }
+
     ZstComponent::~ZstComponent()
     {
         ZstEntityBundle bundle;
@@ -74,11 +92,46 @@ namespace showtime
         get_child_entities(bundle, false, false, ZstEntityType::PLUG);
     }
 
+    void ZstComponent::execute()
+    {
+        ZstEntityBundle execution_order;
+        dependants(&execution_order, true);
+
+        // Create a random ID for this execution chain
+        m_compute_outgoing_plug->append_int(rand());
+        m_compute_outgoing_plug->fire();
+
+        for(auto entity : execution_order) {
+            auto component = static_cast<ZstComponent*>(entity);
+            component->compute(component->get_upstream_compute_plug());
+        }
+    }
+
+    ZstInputPlug* ZstComponent::get_upstream_compute_plug()
+    {
+        if (m_compute_incoming_plug)
+            return m_compute_incoming_plug.get();
+        return nullptr;
+    }
+
+    ZstOutputPlug* ZstComponent::get_downstream_compute_plug()
+    {
+        if (m_compute_outgoing_plug)
+            return m_compute_outgoing_plug.get();
+        return nullptr;
+    }
+
     void ZstComponent::compute(ZstInputPlug* plug)
     {
         entity_event_dispatcher()->invoke([this, plug](ZstEntityAdaptor* adaptor) {
             adaptor->on_compute(plug);
         });
+
+        if (plug == m_compute_incoming_plug.get()) {
+            int compute_id = (m_compute_incoming_plug->size() > 0) ? m_compute_incoming_plug->int_at(0) : -1;
+            m_compute_outgoing_plug->append_int(compute_id);
+            m_compute_outgoing_plug->fire();
+        }
     }
 
     void ZstComponent::add_child(ZstEntityBase * entity, bool auto_activate)
@@ -222,6 +275,8 @@ namespace showtime
 
     void ZstComponent::on_registered()
     {
+        add_child(m_compute_incoming_plug.get());
+        add_child(m_compute_outgoing_plug.get());
     }
 
     void ZstComponent::on_activation()

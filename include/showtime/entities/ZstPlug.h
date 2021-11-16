@@ -113,11 +113,16 @@ public:
     ZST_EXPORT ZstInputPlug();
     ZST_EXPORT ZstInputPlug(const Plug* buffer);
     ZST_EXPORT ZstInputPlug(const ZstInputPlug & other);
-    ZST_EXPORT ZstInputPlug(const char * name, const ZstValueType& t, int max_connected_cables = -1);
+    ZST_EXPORT ZstInputPlug(const char * name, const ZstValueType& t, int max_connected_cables = -1, bool triggers_compute = false);
     ZST_EXPORT ~ZstInputPlug();
 
     ZST_EXPORT ZstCable* connect_cable(ZstOutputPlug* output_plug);
     ZST_EXPORT ZstCable* connect_cable_async(ZstOutputPlug* output_plug);
+
+    ZST_EXPORT bool triggers_compute();
+
+private:
+    bool m_triggers_compute;
 };
 
 

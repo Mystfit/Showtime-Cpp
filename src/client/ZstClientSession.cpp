@@ -145,13 +145,17 @@ void ZstClientSession::plug_received_value(ZstInputPlug * plug)
 	if (!parent) {
 		throw std::runtime_error("Could not find parent of input plug");
 	}
-	ZstURI plug_path = plug->URI();
-	compute_events()->defer([this, parent, plug_path](ZstComputeAdaptor* adaptor) {
-		//Make sure the entity still exists before running 
-		ZstInputPlug * plug = static_cast<ZstInputPlug*>(this->hierarchy()->find_entity(plug_path));
-		if(plug)
-			adaptor->on_compute(parent, plug);
-	});
+    if (plug->triggers_compute()) {
+        ZstURI plug_path = plug->URI();
+        compute_events()->defer([this, parent, plug_path](ZstComputeAdaptor* adaptor) {
+            //Make sure the entity still exists before running 
+            ZstInputPlug* plug = static_cast<ZstInputPlug*>(this->hierarchy()->find_entity(plug_path));
+            if (plug) {
+
+                adaptor->on_compute(parent, plug);
+            }
+            });
+    }
 }
 
 

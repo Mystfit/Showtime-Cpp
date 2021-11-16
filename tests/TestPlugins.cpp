@@ -59,14 +59,19 @@ struct FixtureCorePluginAdder :
 	ZstInputPlug* addend;
 	ZstOutputPlug* sum;
 
-	FixtureCorePluginAdder() {
+	FixtureCorePluginAdder() :
+		adder(nullptr),
+		augend(nullptr),
+		addend(nullptr),
+		sum(nullptr)
+	{
 		ZstURI creatable_path_expected = factory->URI() + ZstURI("adder");
 		ZstURIBundle creatable_bundle;
 		factory->get_creatables(&creatable_bundle);
 		auto creatable_path = std::find_if(creatable_bundle.begin(), creatable_bundle.end(), [creatable_path_expected](auto it) {
 			return it == creatable_path_expected;
 		});
-		auto adder = dynamic_cast<ZstComponent*>(test_client->create_entity(*creatable_path, "test_adder"));
+		adder = dynamic_cast<ZstComponent*>(test_client->create_entity(*creatable_path, "test_adder"));
 		augend = dynamic_cast<ZstInputPlug*>(adder->get_child_by_URI(adder->URI() + ZstURI("augend")));
 		addend = dynamic_cast<ZstInputPlug*>(adder->get_child_by_URI(adder->URI() + ZstURI("addend")));
 		sum = dynamic_cast<ZstOutputPlug*>(adder->get_child_by_URI(adder->URI() + ZstURI("sum")));
@@ -128,7 +133,7 @@ BOOST_FIXTURE_TEST_CASE(plugin_create_entity, FixtureCorePluginFactory) {
 	BOOST_REQUIRE(adder);
 }
 
-BOOST_FIXTURE_TEST_CASE(plugin_adder, FixtureCorePluginAdder) {
+BOOST_FIXTURE_TEST_CASE(plugin_adder_ordered, FixtureCorePluginAdder) {
 	int current_wait = 0;
 	auto push_A = std::make_unique<OutputComponent>("pushA");
 	auto push_B = std::make_unique<OutputComponent>("pushB");
@@ -141,9 +146,9 @@ BOOST_FIXTURE_TEST_CASE(plugin_adder, FixtureCorePluginAdder) {
 	test_client->connect_cable(sink->input(), sum);
 	push_A->output()->append_int(2);
 	push_B->output()->append_int(5);
-	push_A->output()->fire();
-	push_B->output()->fire();
-	while (sink->num_hits < 2 && ++current_wait < 1000) {
+	push_A->execute();
+
+	while (sink->num_hits < 1 && ++current_wait < 1000) {
 		test_client->poll_once();
 	}
 	BOOST_TEST(sink->input()->int_at(0) == 7);

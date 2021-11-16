@@ -11,6 +11,11 @@ namespace showtime {
 		ZST_EXPORT virtual void clear() = 0;
 
 		ZST_EXPORT virtual void copy(const ZstIValue* from) = 0;
+		ZST_EXPORT virtual void copy_direct(const ZstIValue* from) = 0;
+		ZST_EXPORT virtual void copy_convert_from_source(const int* from, size_t size) = 0;
+		ZST_EXPORT virtual void copy_convert_from_source(const float* from, size_t size) = 0;
+		ZST_EXPORT virtual void copy_convert_from_source(const char** from, size_t size) = 0;
+		ZST_EXPORT virtual void copy_convert_from_source(const uint8_t* from, size_t size) = 0;
 
 		ZST_EXPORT virtual void assign(const int* newData, size_t count) = 0;
 		ZST_EXPORT virtual void assign(const float* newData, size_t count) = 0;

@@ -295,10 +295,10 @@ BOOST_FIXTURE_TEST_CASE(send_through_local_graph, FixtureCable) {
 	int first_cmp_val = 4;
 	int current_wait = 0;
 
+	output_component->get_downstream_compute_plug()->connect_cable(input_component->get_upstream_compute_plug());
 	output_component->send(first_cmp_val);
-	while (input_component->num_hits < 1 && ++current_wait < 10000) {
-		test_client->poll_once();
-	}
+	output_component->execute();
+
 	BOOST_TEST(input_component->num_hits);
 	BOOST_TEST(input_component->last_received_val == first_cmp_val);
 }
@@ -308,15 +308,25 @@ BOOST_FIXTURE_TEST_CASE(send_through_remote_graph, FixtureWaitForSinkClient) {
 	int current_wait = 0;
 
 	auto output_component =	std::make_unique<OutputComponent>("remote_test_out");
-	auto input_component = std::make_unique<InputComponent>("remote_test_in");
+	auto input_component = std::make_unique<InputComponent>("remote_test_in", first_cmp_val, false, ZstValueType::IntList, true);
 	test_client->get_root()->add_child(output_component.get());
 	remote_client->get_root()->add_child(input_component.get());
-	test_client->connect_cable(input_component->input(), output_component->output());
 
-	output_component->send(first_cmp_val);
+	// Connect cables
+	test_client->connect_cable(input_component->input(), output_component->output());
+	output_component->get_downstream_compute_plug()->connect_cable(input_component->get_upstream_compute_plug());
+
+	// Clear events queues
+	test_client->poll_once();
+	remote_client->poll_once();
+
+	output_component->output()->append_int(first_cmp_val);
+	output_component->output()->fire();
+
 	while (input_component->num_hits < 1 && ++current_wait < 10000) {
 		remote_client->poll_once();
 	}
+
 	BOOST_TEST(input_component->num_hits);
 	BOOST_TEST(input_component->last_received_val == first_cmp_val);
 }
@@ -424,6 +434,7 @@ BOOST_FIXTURE_TEST_CASE(local_component_dependencies, FixtureBranchingComponents
 BOOST_FIXTURE_TEST_CASE(renaming_entity_updates_cables, FixtureCable) {
 	auto orig_cable_address = cable->get_address();
 	cable->get_input()->set_name("renamed_input");
+	TAKE_A_BREATH
 	BOOST_REQUIRE(cable->get_input());
 	BOOST_REQUIRE(cable->get_output());
 	BOOST_TEST(!test_client->find_cable(orig_cable_address));
@@ -442,12 +453,13 @@ BOOST_FIXTURE_TEST_CASE(send_int, FixtureJoinServer) {
 	int current_wait = 0;
 
 	auto cable = test_client->connect_cable(input_component->input(), output_component->output());
-	output_component->send(first_cmp_val);
+	output_component->output()->append_int(first_cmp_val);
+	output_component->output()->fire();
 	while (input_component->num_hits < 1 && ++current_wait < 10000) {
 		test_client->poll_once();
 	}
-	BOOST_TEST(input_component->num_hits);
-	BOOST_TEST(input_component->input()->int_at(0) == first_cmp_val);
+	//BOOST_TEST(input_component->num_hits);
+	BOOST_TEST(input_component->input()->int_at(0) == first_cmp_val); 
 }
 
 BOOST_FIXTURE_TEST_CASE(send_float, FixtureJoinServer) {
@@ -460,14 +472,49 @@ BOOST_FIXTURE_TEST_CASE(send_float, FixtureJoinServer) {
 	int current_wait = 0;
 
 	auto cable = test_client->connect_cable(input_component->input(), output_component->output());
-	output_component->send(first_cmp_val);
+	output_component->output()->append_float(first_cmp_val);
+	output_component->output()->fire();
 	while (input_component->num_hits < 1 && ++current_wait < 10000) {
 		test_client->poll_once();
 	}
-	BOOST_TEST(input_component->num_hits);
+	//BOOST_TEST(input_component->num_hits);
 	BOOST_TEST(fabs(input_component->input()->float_at(0) - first_cmp_val) < FLT_EPSILON);
 	//BOOST_TEST(input_component->last_received_val == first_cmp_val);
 }
+
+BOOST_FIXTURE_TEST_CASE(send_string, FixtureJoinServer) {
+	std::unique_ptr<OutputComponent> output_component = std::make_unique<OutputComponent>("connect_test_out", true, ZstValueType::StrList);
+	std::unique_ptr<InputComponent> input_component = std::make_unique<InputComponent>("connect_test_in", 0, true, ZstValueType::StrList);
+	test_client->get_root()->add_child(output_component.get());
+	test_client->get_root()->add_child(input_component.get());
+
+	std::string first_cmp_val = "pineapple";
+	std::string second_cmp_val = "pen";
+
+	int current_wait = 0;
+
+	auto cable = test_client->connect_cable(input_component->input(), output_component->output());
+	output_component->output()->append_string(first_cmp_val.c_str(), first_cmp_val.size());
+	output_component->output()->append_string(second_cmp_val.c_str(), second_cmp_val.size());
+	output_component->output()->fire();
+	
+	while (input_component->num_hits < 1 && ++current_wait < 10000) {
+		test_client->poll_once();
+	}
+	
+	BOOST_REQUIRE(input_component->input()->size() == 2);
+	size_t size_a;
+	const char* first = input_component->input()->string_at(0, size_a);
+	std::string first_str(first, size_a);
+
+	size_t size_b;
+	const char* second = input_component->input()->string_at(1, size_b);
+	std::string second_str(second, size_b);
+
+	BOOST_TEST(first_str == first_cmp_val);
+	BOOST_TEST(second_str == second_cmp_val);
+}
+
 
 BOOST_FIXTURE_TEST_CASE(send_bytes, FixtureJoinServer) {
 	std::unique_ptr<OutputComponent> output_component = std::make_unique<OutputComponent>("connect_test_out", true, ZstValueType::ByteList);
@@ -483,7 +530,7 @@ BOOST_FIXTURE_TEST_CASE(send_bytes, FixtureJoinServer) {
 	for (size_t idx = 0; idx < first_cmp_val.size(); ++idx){
 		output_component->output()->append_byte(first_cmp_val[idx]);
 	}
-	output_component->output()->append_byte(0);
+	output_component->output()->append_byte(0x0);
 	output_component->output()->fire();
 
 	while (input_component->num_hits < 1 && ++current_wait < 10000) {

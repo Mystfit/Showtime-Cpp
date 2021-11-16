@@ -74,16 +74,16 @@ namespace ZstTest
 			Log::app(Log::Level::debug, "{} on_deactivation()", URI().path());
 		}
 
-		virtual void compute(ZstInputPlug * plug) override {}
+		virtual void compute(ZstInputPlug * plug) override {
+			m_output->fire();
+		}
 
 		void send(int val) {
 			m_output->append_int(val);
-			m_output->fire();
 		}
 
 		void send(float val) {
 			m_output->append_float(val);
-			m_output->fire();
 		}
 
 		void send(std::string val) {
@@ -114,11 +114,11 @@ namespace ZstTest
 		int last_received_val = 0;
 		bool log = false;
 
-		InputComponent(const char * name, int cmp_val=0, bool should_log=false, ZstValueType plugtype = ZstValueType::IntList) :
+		InputComponent(const char * name, int cmp_val=0, bool should_log=false, ZstValueType plugtype = ZstValueType::IntList, bool should_trigger = false) :
 			ZstComponent("TESTER", name),
 			compare_val(cmp_val),
 			log(should_log),
-			m_input(std::make_unique<ZstInputPlug>("in", plugtype))
+			m_input(std::make_unique<ZstInputPlug>("in", plugtype, -1, should_trigger))
 		{
 		}
 
@@ -136,7 +136,7 @@ namespace ZstTest
 
 		virtual void compute(ZstInputPlug * plug) override {
 
-			last_received_val = plug->int_at(0);
+			last_received_val = input()->int_at(0);
 			if (log) {
 				Log::app(Log::Level::debug, "Input filter received value {0:d}", last_received_val);
 			}
