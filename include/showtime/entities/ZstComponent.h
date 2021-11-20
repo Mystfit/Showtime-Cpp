@@ -37,6 +37,10 @@ public:
     // Start an execution chain to trigger compute() on each downstream component
     ZST_EXPORT void execute();
 
+    // Cache the execution order to avoid recalculation
+    ZST_EXPORT void cache_execution_order();
+    ZST_EXPORT void clear_execution_order_cache();
+
     ZST_EXPORT ZstInputPlug* get_upstream_compute_plug();
     ZST_EXPORT ZstOutputPlug* get_downstream_compute_plug();
 
@@ -49,6 +53,7 @@ public:
     //Remove a plug from this component
     ZST_EXPORT virtual void remove_child(ZstEntityBase * entity) override;
 
+    // Change and update the name of this entity
     ZST_EXPORT virtual void set_name(const char * name) override;
 
     //Hierarchy
@@ -103,10 +108,14 @@ protected:
     //Set parent of this component
     ZST_EXPORT virtual void set_parent(ZstEntityBase * parent) override;
     
+    ZST_EXPORT void set_execution_order_dirty();
+    
 private:
 	std::set<ZstURI> m_children;
     std::string m_component_type;
     bool m_triggers_compute;
+    ZstURIBundle m_cached_execution_order;
+    bool m_execution_order_dirty;
 
     // Compute chain plugs
     void init_compute_plugs();

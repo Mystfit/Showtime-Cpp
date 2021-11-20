@@ -451,6 +451,17 @@ namespace showtime
         m_entity_events->process_events();
     }
 
+    ZstEntityBase* ZstEntityBase::find_entity(const ZstURI& entity_path)
+    {
+        ZstEntityBase* result = nullptr;
+        m_hierarchy_events->invoke([&result, &entity_path](ZstHierarchyAdaptor* adaptor) {
+            auto entity = adaptor->find_entity(entity_path);
+            if (entity)
+                result = entity;
+        });
+        return result;
+    }
+
     void ZstEntityBase::set_registered(bool registered)
 	{
 		std::lock_guard<std::mutex> lock(m_entity_mtx);
