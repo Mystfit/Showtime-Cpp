@@ -18,11 +18,8 @@ DEFINE_LOG_CATEGORY(Showtime);
 UShowtimeClient::UShowtimeClient(const FObjectInitializer& ObjectInitializer) : 
 	client(MakeShared<ShowtimeClient>())
 {
-	PrimaryComponentTick.bCanEverTick = true;
-
-	if (!ViewClass)
-		ViewClass = UShowtimeView::StaticClass();
-	View = static_cast<UShowtimeView*>(CreateDefaultSubobject("View", ViewClass, ViewClass, /*bIsRequired =*/ true, false));
+	bIsCreateOnRunning = GIsRunning;
+	//View = static_cast<UShowtimeView*>(CreateDefaultSubobject("View", ViewClass, ViewClass, /*bIsRequired =*/ true, false));
 }
 
 void UShowtimeClient::Cleanup()
@@ -50,8 +47,7 @@ void UShowtimeClient::Init()
 		client->init(TCHAR_TO_UTF8(*ClientName), true);
 	}
 
-	UShowtimeURI path(Handle()->get_root()->URI());
-	View->SpawnPerformer(&path);
+	View->SpawnPerformer(Handle()->get_root());
 }
 
 void UShowtimeClient::JoinServerByName(const FString& name)
@@ -110,10 +106,27 @@ void UShowtimeClient::ConnectCable(AShowtimePlug* InputPlug, AShowtimePlug* Outp
 	Handle()->connect_cable(static_cast<ZstInputPlug*>(InputPlug->GetNativePlug()), static_cast<ZstOutputPlug*>(OutputPlug->GetNativePlug()));
 }
 
-void UShowtimeClient::BeginPlay()
+
+
+void UShowtimeClient::PostInitProperties()
+{
+	Super::PostInitProperties(); 
+
+	// Create view from class
+	if (!ViewClass)
+		ViewClass = UShowtimeView::StaticClass();
+	FString name;
+	ViewClass->GetName(name);
+	View = NewObject<UShowtimeView>(this, ViewClass, FName(*name), RF_Transient);
+	
+	// Trigger blueprint beginplay
+	if(GetOuter() && GetOuter()->GetWorld()) 
+		BeginPlay();
+}
+
+void UShowtimeClient::BeginPlay_Implementation()
 {
 	AttachEvents();
-	Super::BeginPlay();
 }
 
 void UShowtimeClient::BeginDestroy()
@@ -122,11 +135,6 @@ void UShowtimeClient::BeginDestroy()
 	Cleanup();
 }
 
-void UShowtimeClient::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	Super::EndPlay(EndPlayReason);
-	Cleanup();
-}
 TSharedPtr<ShowtimeClient> UShowtimeClient::Handle() const
 {
 	return client;
@@ -151,8 +159,17 @@ void UShowtimeClient::RemoveEvents(){
 	client->remove_log_adaptor(client_adaptor);
 }
 
-void UShowtimeClient::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UShowtimeClient::Tick_Implementation(float DeltaTime)
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	if(client) client->poll_once();
+	if (client) client->poll_once();
+}
+
+bool UShowtimeClient::IsTickable() const
+{
+	return bIsCreateOnRunning;
+}
+
+TStatId UShowtimeClient::GetStatId() const
+{
+	return UObject::GetStatID();
 }

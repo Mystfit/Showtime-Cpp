@@ -13,14 +13,19 @@
 #include "ShowtimePlug.h"
 #include "ShowtimeCable.h"
 #include "ShowtimeFactory.h"
-#include "ShowtimeURI.h"
 
 #include "CoreMinimal.h"
 #include "ShowtimeView.generated.h"
 
-/**
- * 
- */
+
+
+// Forward declarations
+
+class UShowtimeClient;
+class AShowtimeServerBeacon;
+
+
+// Event declarations
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPerformerArriving, AShowtimePerformer*, performer);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPerformerLeaving, AShowtimePerformer*, performer);
@@ -31,11 +36,11 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FFactoryArriving, AShowtimeFactory*,
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FFactoryLeaving, AShowtimeFactory*, factory);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCableCreated, AShowtimeCable*, cable);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCableDestroyed, AShowtimeCable*, cable);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FServerDiscovered, UShowtimeClient*, Client, AShowtimeServerBeacon*, ServerBeacon);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FServerLost, UShowtimeClient*, Client, AShowtimeServerBeacon*, ServerBeacon);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FServerDiscovered, AShowtimeServerBeacon*, ServerBeacon);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FServerLost, AShowtimeServerBeacon*, ServerBeacon);
 
 
-UCLASS(Blueprintable)
+UCLASS(BlueprintType, Blueprintable, ClassGroup = (Showtime))
 class SHOWTIMERUNTIME_API UShowtimeView : 
 	public UObject, 
 	public ZstSessionAdaptor, 
@@ -46,6 +51,7 @@ class SHOWTIMERUNTIME_API UShowtimeView :
 public:
 	// Showtime events
 	// ---------------
+
 	void on_performer_arriving(showtime::ZstPerformer* performer) override;
 	void on_performer_leaving(const showtime::ZstURI& performer_path) override;
 	void on_entity_arriving(showtime::ZstEntityBase* entity) override;
@@ -62,29 +68,17 @@ public:
 
 
 	AShowtimeEntity* SpawnEntity(ZstEntityBase* entity);
-
-	UFUNCTION(BlueprintNativeEvent)
-	AShowtimePerformer* SpawnPerformer(const UShowtimeURI* path);
-
-	UFUNCTION(BlueprintNativeEvent)
-	AShowtimeComponent* SpawnComponent(const UShowtimeURI* path);
-
-	//UFUNCTION(BlueprintImplementableEvent)
+	AShowtimePerformer* SpawnPerformer(ZstPerformer* performer);
+	AShowtimeComponent* SpawnComponent(ZstComponent* component);
 	AShowtimeCable* SpawnCable(ZstCable* cable);
-
-	UFUNCTION(BlueprintNativeEvent)
-	AShowtimeFactory* SpawnFactory(const UShowtimeURI* path);
-
-	UFUNCTION(BlueprintNativeEvent)
-	AShowtimePlug* SpawnPlug(const UShowtimeURI* path);
-
-
+	AShowtimeFactory* SpawnFactory(ZstEntityFactory* factory);
+	AShowtimePlug* SpawnPlug(ZstPlug* plug);
 	AShowtimeServerBeacon* SpawnServerBeacon(const ZstServerAddress* server);
 
 	// Wrappers
 	// ----------------
 
-	void RegisterSpawnedWrapper(AShowtimeEntity* wrapper, const UShowtimeURI* path);
+	void RegisterSpawnedWrapper(AShowtimeEntity* wrapper, ZstEntityBase* entity);
 
 	// Wrapper management
 	AShowtimeEntity* GetWrapperParent(const AShowtimeEntity* wrapper) const;
@@ -160,7 +154,7 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Showtime|Entity")
 	TMap<FShowtimeCableAddress, AShowtimeCable*> CableWrappers;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Showtime|Client")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Showtime|Client")
 	TMap<FServerAddress, AShowtimeServerBeacon*> ServerBeaconWrappers;
 
 private:

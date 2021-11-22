@@ -13,9 +13,6 @@ using namespace showtime;
  *
  */
 UCLASS()
-class UShowtimeURI : public UStruct, public ZstURI {
+class UShowtimeURI : public UObject, public ZstURI {
 	GENERATED_BODY()
-public:
-	UShowtimeURI();
-	UShowtimeURI(const ZstURI& uri);
 };
