@@ -145,17 +145,19 @@ message(STATUS "Finding packages")
 # --------
 set(BOOST_COMPONENTS 
     log
-    log_setup
+    # log_setup
     thread
     system
-    context
-    fiber
-    date_time
+    # context
+    # fiber
+    # date_time
     chrono
-    atomic
-    regex
+    # atomic
+    # regex
     unit_test_framework
 )
+
+
 find_package(Boost COMPONENTS ${BOOST_COMPONENTS} CONFIG)
 if(NOT Boost_FOUND)
     message(STATUS "Searching for Boost using cmake's FindBoost")
@@ -224,16 +226,16 @@ message(STATUS ${FLATC_OUTPUT})
 
 # Set internal linked library lists for our targets
 set(SHOWTIME_PRIVATE_LINKED_LIBS 
-    Boost::system
+    # Boost::system
     Boost::thread
-    Boost::date_time
+    # Boost::date_time
     Boost::chrono
-    Boost::atomic
-    Boost::regex
+    # Boost::atomic
+    # Boost::regex
     Boost::log
-    Boost::log_setup
-    Boost::context
-    Boost::fiber
+    # Boost::log_setup
+    # Boost::context
+    # Boost::fiber
     Boost::boost
     Boost::disable_autolinking
     ${CMAKE_THREAD_LIBS_INIT}
@@ -458,10 +460,44 @@ if(BUILD_SHARED_FROM_STATIC_LIBS)
         ${SERVER_TARGET_OBJECTS}
     )
     list(APPEND Showtime_LIBRARY_TARGETS ${SHARED_FROM_STATIC_TARGET})
+endif()
 
-    # Dev
-    get_target_property(SHARED_STATIC_LINKED_LIBS ${SHARED_FROM_STATIC_TARGET} LINK_LIBRARIES)
-    message(STATUS ${SHARED_STATIC_LINKED_LIBS})
+# Build Windows Universal DLL library
+set(UWP_TARGET ShowtimeUWP)
+option(BUILD_UWP_SHARED_LIB "Build UWP Store shared library" OFF)
+if(BUILD_UWP_SHARED_LIB AND WIN32)
+    add_library (${UWP_TARGET} SHARED "")
+
+    get_target_property(SHARED_TARGET_SOURCES ${SHARED_FROM_STATIC_TARGET} SOURCES)
+    target_sources(${UWP_TARGET} PRIVATE ${SHARED_TARGET_SOURCES})
+
+    get_target_property(SHARED_TARGET_LIBS ${SHARED_FROM_STATIC_TARGET} LINK_LIBRARIES)
+    target_link_libraries(${UWP_TARGET} 
+        ${SHARED_TARGET_LIBS}
+        RuntimeObject
+    )
+
+    target_include_directories(${UWP_TARGET} PUBLIC ${CORE_INCLUDES})
+
+    get_target_property(SHARED_TARGET_COMPILE_DEFS ${SHARED_FROM_STATIC_TARGET} COMPILE_DEFINITIONS)
+    target_compile_definitions(${UWP_TARGET} PUBLIC ${SHARED_TARGET_COMPILE_DEFS})
+
+    add_dependencies(${UWP_TARGET} 
+        ${CORE_TARGET_OBJECTS}
+        ${CLIENT_TARGET_OBJECTS}
+        ${SERVER_TARGET_OBJECTS}
+    )
+
+    set_target_properties(${UWP_TARGET} PROPERTIES 
+        VS_GLOBAL_AppContainerApplication "true"
+        VS_GLOBAL_ApplicationType "Windows Store"
+        VS_GLOBAL_Keyword "DynamicLibrary"
+        VS_GLOBAL_DefaultLanguage "en-US"
+        VS_GLOBAL_RootNamespace "${UWP_TARGET}"
+        VS_GLOBAL_WindowsTargetPlatformMinVersion "10.0.18362.0"
+    )
+
+    list(APPEND Showtime_LIBRARY_TARGETS ${UWP_TARGET})
 endif()
 
 
