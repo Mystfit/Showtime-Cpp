@@ -78,6 +78,9 @@ public:
 	void Init();
 
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Client")
+	void JoinServerByAddress(const FString& address);
+
+	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Client")
 	void JoinServerByName(const FString& name);
 
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Client")
@@ -139,15 +142,16 @@ public:
 	void Tick(float DeltaTime) override;
 	void Tick_Implementation(float DeltaTime);
 
+	virtual bool IsAllowedToTick() const override;
 	virtual bool IsTickable() const override;
+	virtual bool IsTickableInEditor() const override;
+	virtual bool IsTickableWhenPaused() const override;
 	virtual TStatId GetStatId() const override;
-
-	//because engine would construct inner object when game load package (before game start), so we need to add a flag to identify which one need to be constructed on game running.
-	bool bIsCreateOnRunning = false;
 
 private:
 	void AttachEvents();
 	void RemoveEvents();
 	TSharedPtr<showtime::ShowtimeClient> client;
 	std::shared_ptr<ClientAdaptors> client_adaptor;
+	bool m_shouldTick;
 };

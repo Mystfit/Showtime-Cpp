@@ -16,9 +16,9 @@
 DEFINE_LOG_CATEGORY(Showtime);
 
 UShowtimeClient::UShowtimeClient(const FObjectInitializer& ObjectInitializer) : 
-	client(MakeShared<ShowtimeClient>())
+	client(MakeShared<ShowtimeClient>()),
+	m_shouldTick(false)
 {
-	bIsCreateOnRunning = GIsRunning;
 	//View = static_cast<UShowtimeView*>(CreateDefaultSubobject("View", ViewClass, ViewClass, /*bIsRequired =*/ true, false));
 }
 
@@ -28,7 +28,7 @@ void UShowtimeClient::Cleanup()
 #if PLATFORM_ANDROID
 	UMulticastAndroid::ReleaseMulticastLock();
 #endif
-	if (client) client->destroy();
+	client->destroy();
 }
 
 void UShowtimeClient::Init()
@@ -39,30 +39,36 @@ void UShowtimeClient::Init()
 	UMulticastAndroid::AcquireMulticastLock();
 	plugin_path = UShowtimePluginManagerAndroid::GetPluginPath();
 #endif
-	if (client) {
+	if(!plugin_path.IsEmpty())
 		client->set_plugin_path(TCHAR_TO_UTF8(*plugin_path));
-		client->add_connection_adaptor(View);	// For server beacons
-		client->add_session_adaptor(View);      // For cables
-		client->add_hierarchy_adaptor(View);	// For entities
-		client->init(TCHAR_TO_UTF8(*ClientName), true);
-	}
+	client->init(TCHAR_TO_UTF8(*ClientName), true);
+
+	client->add_connection_adaptor(View);	// For server beacons
+	client->add_session_adaptor(View);      // For cables
+	client->add_hierarchy_adaptor(View);	// For entities
+	//client->start_file_logging();
 
 	View->SpawnPerformer(Handle()->get_root());
 }
 
+void UShowtimeClient::JoinServerByAddress(const FString& address)
+{
+	client->join_async(TCHAR_TO_UTF8(*address));
+}
+
 void UShowtimeClient::JoinServerByName(const FString& name)
 {
-	if (client) client->auto_join_by_name_async(TCHAR_TO_UTF8(*name));
+	client->auto_join_by_name_async(TCHAR_TO_UTF8(*name));
 }
 
 void UShowtimeClient::LeaveServer()
 {
-	if (client) client->leave();
+	client->leave();
 }
 
 bool UShowtimeClient::IsConnected() const
 {
-	return (client) ? client->is_connected() : false;
+	return client->is_connected();
 }
 
 TArray<AShowtimePerformer*> UShowtimeClient::GetPerformers() const
@@ -141,32 +147,41 @@ TSharedPtr<ShowtimeClient> UShowtimeClient::Handle() const
 }
 
 void UShowtimeClient::AttachEvents(){
-	if (!client)
-		return;
-
 	client_adaptor = std::make_shared<ClientAdaptors>(this);
-	client->add_connection_adaptor(client_adaptor);
-	client->add_hierarchy_adaptor(client_adaptor);
-	client->add_log_adaptor(client_adaptor);
+	client->add_connection_adaptor(client_adaptor.get());
+	//client->add_hierarchy_adaptor(client_adaptor);
+	client->add_log_adaptor(client_adaptor.get());
 }
 
 void UShowtimeClient::RemoveEvents(){
-	if (!client)
-		return;
-
-	client->remove_connection_adaptor(client_adaptor);
-	client->remove_hierarchy_adaptor(client_adaptor);
-	client->remove_log_adaptor(client_adaptor);
+	client->remove_connection_adaptor(client_adaptor.get());
+	//client->remove_hierarchy_adaptor(client_adaptor);
+	client->remove_log_adaptor(client_adaptor.get());
 }
 
 void UShowtimeClient::Tick_Implementation(float DeltaTime)
 {
-	if (client) client->poll_once();
+	client->poll_once();
+}
+
+bool UShowtimeClient::IsAllowedToTick() const
+{
+	return client->is_init_completed();
 }
 
 bool UShowtimeClient::IsTickable() const
 {
-	return bIsCreateOnRunning;
+	return client->is_init_completed();
+}
+
+bool UShowtimeClient::IsTickableInEditor() const
+{
+	return false;
+}
+
+bool UShowtimeClient::IsTickableWhenPaused() const
+{
+	return true;
 }
 
 TStatId UShowtimeClient::GetStatId() const
