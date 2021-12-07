@@ -111,7 +111,7 @@ function Build-Boost{
         Write-Output "Found Boost"
     } else {
         Write-Output "Downloading boost"
-        Invoke-WebRequest "http://dl.bintray.com/boostorg/release/$version/source/boost_$boost_ver_scored.7z" -OutFile "$boost_file"
+        Invoke-WebRequest "https://boostorg.jfrog.io/artifactory/main/release/$version/source/boost_$boost_ver_scored.7z" -OutFile "$boost_file"
         Write-Output "Extracting boost"
         Push-Location $dependency_dir
         # TODO: Use platform native zip util!

@@ -4,11 +4,12 @@
 
 //#include <Runtime/Networking/Public/Interfaces/IPv4/IPv4Address.h>
 #include "CoreMinimal.h"
+#include "Tickable.h"
 #include "Components/ActorComponent.h"
 #include "ServerAddress.h"
 #include "ClientAdaptors.h"
+#include "ShowtimeView.h"
 #include "ShowtimeServerBeacon.h"
-#include <ShowtimeView.h>
 #include "ShowtimeClient.generated.h"
 
 using namespace showtime;
@@ -42,7 +43,8 @@ DECLARE_LOG_CATEGORY_EXTERN(Showtime, Display, All);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FConnectedToServer, UShowtimeClient*, Client, FServerAddress, ServerAddress);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FDisconnectedFromServer, UShowtimeClient*, Client, FServerAddress, ServerAddress);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FGraphSynchronised, UShowtimeClient*, Client, FServerAddress, ServerAddress);
-
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FServerDiscovered, UShowtimeClient*, Client, AShowtimeServerBeacon*, ServerBeacon);
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FServerLost, UShowtimeClient*, Client, AShowtimeServerBeacon*, ServerBeacon);
 
 //// Plugin delegates
 
@@ -51,7 +53,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FGraphSynchronised, UShowtimeClient
 
 
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (Showtime), meta = (BlueprintSpawnableComponent))
-class UShowtimeClient : public UActorComponent
+class UShowtimeClient : public UObject, public FTickableGameObject
 {
 	GENERATED_BODY()
 public:
@@ -74,6 +76,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Exec, Category="Showtime|Client")
 	void Init();
+
+	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Client")
+	void JoinServerByAddress(const FString& address);
 
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Client")
 	void JoinServerByName(const FString& name);
@@ -116,25 +121,37 @@ public:
 	// Native handle to the Showtime|Client
 	TSharedPtr<ShowtimeClient> Handle() const;
 
-	UPROPERTY(BlueprintReadWrite, Category = "Showtime|View")
+	UPROPERTY(BlueprintReadOnly, Transient, Category = "Showtime|View")
 	UShowtimeView* View;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Showtime|View")
-	TSubclassOf<UShowtimeView> ViewClass;
+	UPROPERTY(EditDefaultsOnly, Category = "Showtime|View")
+	TSubclassOf<class UShowtimeView> ViewClass;
 
 
 	// Actor overrides
 	// ---------------
+	virtual void PostInitProperties() override; 
+	
+	UFUNCTION(BlueprintNativeEvent)
+	void BeginPlay();
+	void BeginPlay_Implementation();
 
-	virtual void BeginPlay() override;
-	virtual void BeginDestroy() override;
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	void BeginDestroy() override;
+	
+	UFUNCTION(BlueprintNativeEvent)
+	void Tick(float DeltaTime) override;
+	void Tick_Implementation(float DeltaTime);
 
+	virtual bool IsAllowedToTick() const override;
+	virtual bool IsTickable() const override;
+	virtual bool IsTickableInEditor() const override;
+	virtual bool IsTickableWhenPaused() const override;
+	virtual TStatId GetStatId() const override;
 
 private:
 	void AttachEvents();
 	void RemoveEvents();
 	TSharedPtr<showtime::ShowtimeClient> client;
 	std::shared_ptr<ClientAdaptors> client_adaptor;
+	bool m_shouldTick;
 };

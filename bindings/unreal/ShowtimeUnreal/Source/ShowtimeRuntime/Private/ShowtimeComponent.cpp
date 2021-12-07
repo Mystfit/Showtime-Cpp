@@ -2,18 +2,18 @@
 #include "ShowtimeClient.h"
 
 
-void AShowtimeComponent::AttachPlug(AShowtimePlug* plug)
-{
-	if (!plug)
-		return;
-
-	if (auto native_plug = plug->GetNativeEntity()) {
-		if (auto native_component = GetNativeComponent()) {
-			native_component->add_child(native_plug);
-			this->PlugAttached(plug);
-		}
-	}
-}
+//void AShowtimeComponent::AttachPlug(AShowtimePlug* plug)
+//{
+//	if (!plug)
+//		return;
+//
+//	if (auto native_plug = plug->GetNativeEntity()) {
+//		if (auto native_component = GetNativeComponent()) {
+//			native_component->add_child(native_plug);
+//			this->PlugAttached(plug);
+//		}
+//	}
+//}
 
 void AShowtimeComponent::AttachComponent(AShowtimeComponent* component)
 {

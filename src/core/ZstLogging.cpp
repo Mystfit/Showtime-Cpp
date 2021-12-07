@@ -4,7 +4,7 @@
 #include <boost/log/sinks/text_file_backend.hpp>
 #include <boost/log/sinks/text_ostream_backend.hpp>
 #include <boost/log/sinks/basic_sink_backend.hpp>
-#include <boost/log/attributes/current_process_name.hpp>
+//#include <boost/log/attributes/current_process_name.hpp>
 #include <boost/log/sources/record_ostream.hpp>
 #include <boost/log/sources/global_logger_storage.hpp>
 #include <boost/log/sources/severity_channel_logger.hpp>
@@ -37,7 +37,7 @@ namespace showtime {
 	BOOST_LOG_ATTRIBUTE_KEYWORD(line_id, "LineID", unsigned int)
 		BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", showtime::Log::Level)
 		BOOST_LOG_ATTRIBUTE_KEYWORD(channel, "Channel", std::string)
-		BOOST_LOG_ATTRIBUTE_KEYWORD(process_name, "ProcessName", std::string)
+		//BOOST_LOG_ATTRIBUTE_KEYWORD(process_name, "ProcessName", std::string)
 		BOOST_LOG_ATTRIBUTE_KEYWORD(thread_id, "ThreadID", attrs::current_thread_id::value_type)
 		//BOOST_LOG_ATTRIBUTE_KEYWORD(thread_id, "Thread", std::string)
 
@@ -76,7 +76,7 @@ namespace showtime {
 	{
 		//expr::stream << "[" << process_name << "] " << line_id << ": <" << severity << "> [" << channel << "] " << expr::smessage
 		strm << logging::extract< unsigned int >("LineID", rec) << ": ";
-		strm << "[" << logging::extract<std::string>("ProcessName", rec) << "] ";
+		//strm << "[" << logging::extract<std::string>("ProcessName", rec) << "] ";
 		strm << "[" << rec[thread_id] << "] ";
 		strm << "[" << logging::extract<std::string>("Channel", rec) << "] ";
 		strm << "<" << get_severity_str(logging::extract<Log::Level>("Severity", rec).get()) << "> ";
@@ -109,7 +109,7 @@ namespace showtime {
 		min_severity[ZST_LOG_SERVER_CHANNEL] = level;
 		min_severity[ZST_LOG_APP_CHANNEL] = level;
 		logging::add_common_attributes();
-		logging::core::get()->add_global_attribute("ProcessName", attrs::current_process_name());
+		//logging::core::get()->add_global_attribute("ProcessName", attrs::current_process_name());
 
 		sink->set_formatter(&my_formatter);
 		sink->set_filter(min_severity || severity >= error);
@@ -184,7 +184,7 @@ namespace showtime {
 	void Log::internals::SinkBackend::consume(boost::log::record_view const& rec, string_type const& formatted_string)
 	{
 		auto line_ID = logging::extract< unsigned int >("LineID", rec);
-		auto process_name = logging::extract<std::string>("ProcessName", rec);
+		//auto process_name = logging::extract<std::string>("ProcessName", rec);
 		
 		std::ostringstream thread_stream;
 		thread_stream << rec[thread_id];
@@ -206,7 +206,7 @@ namespace showtime {
 		if (m_log_events) {
 			Record event_record{
 				line_ID.get(),
-				process_name.get(),
+				//process_name.get(),
 				thread_stream.str(),
 				level.get(),
 				channel.get(),

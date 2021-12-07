@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE(client_destruction_cleanup) {
 	{
 		auto test_client = std::make_shared<ShowtimeClient>();
 		test_client->init(performer_name.c_str(), true);
-		test_client->log_events()->formatted_log_record() += [](const char* record) {std::cout << record << std::endl; };
+		test_client->log_events()->formatted_log_record()->add([](const char* record) {std::cout << record << std::endl; });
 		//test_client->log_events()->log_record() += [](const Log::Record* record) {std::cout << record->message << std::endl; };
 		test_client->destroy();
 	}
@@ -158,9 +158,9 @@ BOOST_FIXTURE_TEST_CASE(async_join_event, FixtureInitAndCreateServerWithEpherema
 	auto connectCallback = std::make_shared< TestConnectionEvents>();
 	test_client->add_connection_adaptor(connectCallback);
 	bool connected = false;
-	test_client->connection_events()->connected_to_server() += [&connected](ShowtimeClient* client, const ZstServerAddress* server) { 
+	test_client->connection_events()->connected_to_server()->add([&connected](ShowtimeClient* client, const ZstServerAddress* server) { 
 		connected = true; 
-	};
+	});
 	
 	test_client->join_async(server_address.c_str());
 	wait_for_event(test_client, connectCallback, 1);

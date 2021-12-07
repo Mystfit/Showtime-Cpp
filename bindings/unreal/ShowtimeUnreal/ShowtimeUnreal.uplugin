@@ -18,7 +18,8 @@
 	"SupportedTargetPlatforms": [
 		"Win64",
 		"Mac",
-		"Android"
+		"Android",
+		"Hololens"
 	],
 	"Modules": [
 		{

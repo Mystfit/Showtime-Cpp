@@ -12,6 +12,7 @@ namespace showtime {
 #endif
 	{
 	public:
+		ZST_EXPORT ZstPluginAdaptor();
 		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, plugin_loaded, ZstPlugin*, plugin)
 		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, plugin_unloaded, ZstPlugin*, plugin)
 	};

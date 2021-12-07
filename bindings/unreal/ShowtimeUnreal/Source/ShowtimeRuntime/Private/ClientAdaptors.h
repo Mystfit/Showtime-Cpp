@@ -6,9 +6,9 @@
 class UShowtimeClient;
 
 class ClientAdaptors :
-	public showtime::ZstSessionAdaptor,
-	public showtime::ZstPluginAdaptor,
-	public showtime::ZstHierarchyAdaptor,
+	//public showtime::ZstSessionAdaptor,
+	//public showtime::ZstPluginAdaptor,
+	//public showtime::ZstHierarchyAdaptor,
 	public showtime::ZstConnectionAdaptor,
 	public showtime::ZstLogAdaptor
 {

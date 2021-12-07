@@ -94,7 +94,7 @@ namespace showtime::detail
 
 		//Remove timers
 		m_heartbeat_timer.cancel();
-		m_heartbeat_timer.wait();
+		//m_heartbeat_timer.wait();
 
 		//Destroy transports
 		m_service_broadcast_transport->stop_broadcast();

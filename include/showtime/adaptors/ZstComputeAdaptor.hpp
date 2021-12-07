@@ -12,6 +12,7 @@ namespace showtime {
 #endif
 	{
 	public:
+		ZST_EXPORT ZstComputeAdaptor();
 		MULTICAST_DELEGATE_TwoParams(ZST_EXPORT, compute, ZstComponent*, component, ZstInputPlug*, plug)
 	};
 }

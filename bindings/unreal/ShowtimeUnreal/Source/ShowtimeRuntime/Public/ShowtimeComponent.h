@@ -24,8 +24,8 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Showtime|Component")
 	void ComponentAttached(AShowtimeComponent* component);
 
-	UFUNCTION(BlueprintCallable, Category = "Showtime|Component")
-	void AttachPlug(AShowtimePlug* plug);
+	//UFUNCTION(BlueprintCallable, Category = "Showtime|Component")
+	//void AttachPlug(AShowtimePlug* plug);
 
 	UFUNCTION(BlueprintCallable, Category = "Showtime|Component")
 	void AttachComponent(AShowtimeComponent* component);
