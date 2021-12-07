@@ -37,11 +37,12 @@ namespace showtime {
 
 %include "std_string.i"
 %extend showtime::ZstPlug{
-    std::string char_at(size_t position) {
-        char * buf = new char[$self->size_at(position) + 1]();
-        $self->char_at(buf,position);
-        std::string s = std::string(buf);
-        delete[] buf;
-        return s;
+    std::string string_at(size_t position) {
+        //char* buf = new char[$self->size_at(position) + 1]();
+        size_t len;
+        const char* buf = $self->string_at(position, len);
+        //std::string s = std::string(buf, len);
+        //delete[] buf;
+        return std::string(buf, len);
     }
 };

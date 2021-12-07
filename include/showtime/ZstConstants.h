@@ -27,13 +27,14 @@ enum class ZstSyncError {
 	ENTITY_ALREADY_EXISTS
 };
 
-//ZstValue Types
+//ZstDynamicValue Types
 enum class ZstValueType {
 	NONE = 0,
 	IntList = 1,
 	FloatList = 2,
 	StrList = 3,
 	ByteList = 4,
+	DynamicList = 5,
 	PlugHandshake = 5,
 	ZstValueType_Size = 6
 };

@@ -159,7 +159,6 @@ ZstCable * ZstSession::find_cable(const ZstURI & input_path, const ZstURI & outp
 	if (cable_it != m_cables.end()) {
 		return cable_it->get();
 	}
-	Log::net(Log::Level::error, "No cable found for address {}<-{}", input_path.path(), output_path.path());
 	return NULL;
 }
 
@@ -210,6 +209,13 @@ ZstCable * ZstSession::create_cable(ZstInputPlug * input, ZstOutputPlug * output
 
 	//Cables are always local so they can be cleaned up by the reaper when deactivated
 	synchronisable_set_proxy(cable_ptr.get());
+
+	//Update execution order
+	if (auto out_parent = output->parent()) {
+		if (out_parent->entity_type() == ZstEntityType::COMPONENT) {
+			static_cast<ZstComponent*>(out_parent)->clear_execution_order_cache();
+		}
+	}
 
 	//Enqueue events
 	synchronisable_set_activation_status(cable_ptr.get(), ZstSyncStatus::ACTIVATED);

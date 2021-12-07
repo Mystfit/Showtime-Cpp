@@ -1,6 +1,8 @@
 #pragma once
 
 #include <vector>
+#include <stack>
+
 #include <flatbuffers/flatbuffers.h>
 
 #include <showtime/schemas/messaging/graph_types_generated.h>
@@ -32,6 +34,16 @@ public:
     //Find a plug in this component by its URI
     ZST_EXPORT void get_plugs(ZstEntityBundle* bundle);
 
+    // Start an execution chain to trigger compute() on each downstream component
+    ZST_EXPORT void execute();
+
+    // Cache the execution order to avoid recalculation
+    ZST_EXPORT void cache_execution_order();
+    ZST_EXPORT void clear_execution_order_cache();
+
+    ZST_EXPORT ZstInputPlug* get_upstream_compute_plug();
+    ZST_EXPORT ZstOutputPlug* get_downstream_compute_plug();
+
     //Overridable compute function that will process input plug events
     ZST_EXPORT virtual void compute(ZstInputPlug * plug);
 
@@ -41,17 +53,24 @@ public:
     //Remove a plug from this component
     ZST_EXPORT virtual void remove_child(ZstEntityBase * entity) override;
 
+    // Change and update the name of this entity
     ZST_EXPORT virtual void set_name(const char * name) override;
 
     //Hierarchy
     ZST_EXPORT virtual void get_child_cables(ZstCableBundle* bundle) override;
     ZST_EXPORT virtual void get_child_entities(ZstEntityBundle* bundle, bool include_parent = false, bool recursive = false, ZstEntityType filter = ZstEntityType::NONE) override;
     
+    // Cable queries
+    ZST_EXPORT void dependants(ZstEntityBundle* out_entities, bool recursive = false, bool local_only = true);
+    ZST_EXPORT void dependencies(ZstEntityBundle* out_entities, bool recursive = false, bool local_only = true);
+    ZST_EXPORT void directed_graph(ZstEntityBundle* out_entities, ZstPlugDirection direction, bool recursive, bool local_only);
+    ZST_EXPORT void get_adjacent_components(ZstEntityBundle* entities, ZstPlugDirection direction);
+
     //Specific component type
     ZST_EXPORT const char * component_type() const;
 
 
-    // Overriden Events for SWIG
+    // Overidden Events for SWIG
     ZST_EXPORT virtual void on_registered() override;
     ZST_EXPORT virtual void on_activation() override;
     ZST_EXPORT virtual void on_deactivation() override;
@@ -89,8 +108,20 @@ protected:
     //Set parent of this component
     ZST_EXPORT virtual void set_parent(ZstEntityBase * parent) override;
     
+    ZST_EXPORT void set_execution_order_dirty();
+    
 private:
 	std::set<ZstURI> m_children;
     std::string m_component_type;
+    bool m_triggers_compute;
+    ZstURIBundle m_cached_execution_order;
+    bool m_execution_order_dirty;
+
+    // Compute chain plugs
+    void init_compute_plugs();
+    std::shared_ptr<ZstOutputPlug> m_compute_outgoing_plug;
+    std::shared_ptr<ZstInputPlug> m_compute_incoming_plug;
+
+    void computeTopologicalSort(ZstComponent* vertex, std::set<ZstComponent*>& visited, std::stack<ZstComponent*>& stack, ZstPlugDirection direction);
 };
 }

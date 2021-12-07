@@ -9,32 +9,48 @@ using namespace flatbuffers;
 namespace showtime
 {
     ZstComponent::ZstComponent() :
-        ZstEntityBase()
+        ZstEntityBase(),
+        m_compute_incoming_plug(nullptr),
+        m_compute_outgoing_plug(nullptr),
+        m_execution_order_dirty(true)
     {
         set_entity_type(ZstEntityType::COMPONENT);
         set_component_type("");
+        init_compute_plugs();
     }
 
     ZstComponent::ZstComponent(const char * path) :
-        ZstEntityBase(path)
+        ZstEntityBase(path),
+        m_compute_incoming_plug(nullptr),
+        m_compute_outgoing_plug(nullptr),
+        m_execution_order_dirty(true)
     {
         set_entity_type(ZstEntityType::COMPONENT);
         set_component_type("");
+        init_compute_plugs();
     }
 
-    ZstComponent::ZstComponent(const char * component_type, const char * path)
-        : ZstEntityBase(path)
+    ZstComponent::ZstComponent(const char * component_type, const char * path) : 
+        ZstEntityBase(path),
+        m_compute_incoming_plug(nullptr),
+        m_compute_outgoing_plug(nullptr),
+        m_execution_order_dirty(true)
     {
         set_entity_type(ZstEntityType::COMPONENT);
         set_component_type(component_type);
+        init_compute_plugs();
     }
     
     ZstComponent::ZstComponent(const Component* buffer) : 
-		ZstEntityBase()
+		ZstEntityBase(),
+        m_compute_incoming_plug(nullptr),
+        m_compute_outgoing_plug(nullptr),
+        m_execution_order_dirty(true)
     {
 		set_entity_type(ZstEntityType::COMPONENT);
         ZstEntityBase::deserialize_partial(buffer->entity());
 		ZstComponent::deserialize_partial(buffer->component());
+        init_compute_plugs();
     }
 
     ZstComponent::ZstComponent(const ZstComponent & other) : ZstEntityBase(other)
@@ -54,8 +70,14 @@ namespace showtime
                 }
             }
         }
-        
+        m_execution_order_dirty = true;
         m_component_type = other.m_component_type;
+    }
+
+    void ZstComponent::init_compute_plugs()
+    {
+        m_compute_incoming_plug = std::make_shared<ZstInputPlug>("execute", ZstValueType::IntList, -1, true);
+        m_compute_outgoing_plug = std::make_shared<ZstOutputPlug>("then", ZstValueType::IntList, 1);
     }
 
     ZstComponent::~ZstComponent()
@@ -74,11 +96,96 @@ namespace showtime
         get_child_entities(bundle, false, false, ZstEntityType::PLUG);
     }
 
+
+    void ZstComponent::cache_execution_order()
+    {
+        m_execution_order_dirty = false;
+
+        ZstEntityBundle execution_order;
+        dependants(&execution_order, true);
+
+        //std::lock_guard<std::mutex> lock(m_entity_mtx);
+        m_cached_execution_order.clear();
+        for (auto entity : execution_order) {
+            m_cached_execution_order.add(entity->URI());
+        }
+    }
+
+    void ZstComponent::clear_execution_order_cache()
+    {
+        ZstEntityBundle bundle;
+        {
+            //std::lock_guard<std::mutex> lock(m_entity_mtx);
+            for (auto entity_path : m_cached_execution_order) {
+                if (auto entity = find_entity(entity_path)) {
+                    bundle.add(entity);
+                }
+            }
+        }
+
+        for (auto entity : bundle) {
+            if (entity->entity_type() == ZstEntityType::COMPONENT) {
+                auto component = static_cast<ZstComponent*>(entity);
+                component->set_execution_order_dirty();
+            }
+        }
+
+        m_cached_execution_order.clear();
+
+    }
+
+    void ZstComponent::execute()
+    {
+        // Create a random ID for this execution chain
+        m_compute_outgoing_plug->append_int(rand());
+        m_compute_outgoing_plug->fire();
+
+        if (m_execution_order_dirty)
+            cache_execution_order();
+
+        ZstEntityBundle bundle;
+        {
+            //std::lock_guard<std::mutex> lock(m_entity_mtx);
+            for (auto entity_path : m_cached_execution_order) {
+                if (auto entity = find_entity(entity_path)) {
+                    bundle.add(entity);
+                }
+            }
+        }
+
+        for(auto entity : bundle) {
+            if (entity->entity_type() == ZstEntityType::COMPONENT) {
+                auto component = static_cast<ZstComponent*>(entity);
+                component->compute(component->get_upstream_compute_plug());
+            }
+        }
+    }
+
+    ZstInputPlug* ZstComponent::get_upstream_compute_plug()
+    {
+        if (m_compute_incoming_plug)
+            return m_compute_incoming_plug.get();
+        return nullptr;
+    }
+
+    ZstOutputPlug* ZstComponent::get_downstream_compute_plug()
+    {
+        if (m_compute_outgoing_plug)
+            return m_compute_outgoing_plug.get();
+        return nullptr;
+    }
+
     void ZstComponent::compute(ZstInputPlug* plug)
     {
         entity_event_dispatcher()->invoke([this, plug](ZstEntityAdaptor* adaptor) {
             adaptor->on_compute(plug);
         });
+
+        if (plug == m_compute_incoming_plug.get()) {
+            int compute_id = (m_compute_incoming_plug->size() > 0) ? m_compute_incoming_plug->int_at(0) : -1;
+            m_compute_outgoing_plug->append_int(compute_id);
+            m_compute_outgoing_plug->fire();
+        }
     }
 
     void ZstComponent::add_child(ZstEntityBase * entity, bool auto_activate)
@@ -165,6 +272,33 @@ namespace showtime
         }
     }
 
+    void ZstComponent::set_execution_order_dirty()
+    {
+        m_execution_order_dirty = true;
+    }
+
+
+    void ZstComponent::computeTopologicalSort(ZstComponent* vertex, std::set<ZstComponent*>& visited, std::stack<ZstComponent*>& stack, ZstPlugDirection direction)
+    {
+        // Mark current entity as visited
+        visited.insert(vertex);
+
+        // Get downstream components
+        ZstEntityBundle adjacent_components;
+        vertex->get_adjacent_components(&adjacent_components, direction);
+        
+        for (auto entity : adjacent_components) {
+            if (entity->entity_type() == ZstEntityType::COMPONENT) {
+                auto component = static_cast<ZstComponent*>(entity);
+                if (visited.find(component) == visited.end()) {
+                    computeTopologicalSort(component, visited, stack, direction);
+                }
+            }
+        }
+
+        stack.push(vertex);
+    }
+
 	uoffset_t ZstComponent::serialize(FlatBufferBuilder & buffer_builder) const
     {
         Offset<ComponentData> component_offset;
@@ -201,6 +335,8 @@ namespace showtime
 
     void ZstComponent::on_registered()
     {
+        add_child(m_compute_incoming_plug.get());
+        add_child(m_compute_outgoing_plug.get());
     }
 
     void ZstComponent::on_activation()
@@ -248,7 +384,83 @@ namespace showtime
         }
     }
 
+    void ZstComponent::dependants(ZstEntityBundle* out_entities, bool recursive, bool local_only)
+    {
+        directed_graph(out_entities, ZstPlugDirection::OUT_JACK, recursive, local_only);
+    }
 
+    void ZstComponent::dependencies(ZstEntityBundle* out_entities, bool recursive, bool local_only)
+    {
+        directed_graph(out_entities, ZstPlugDirection::IN_JACK, recursive, local_only);
+    }
+
+    void ZstComponent::directed_graph(ZstEntityBundle* out_entities, ZstPlugDirection direction, bool recursive, bool local_only)
+    {
+        auto parent_component = parent();
+        if (!parent_component)
+            return;
+
+        std::stack<ZstComponent*> stack;
+        std::set<ZstComponent*> visited;
+
+        // Add ourselves first as the root of the sort
+        computeTopologicalSort(this, visited, stack, direction);
+
+        // TODO: Add child entities to the topological sorted graph IF cables are connected!
+        // Fill in the remaining children
+        //ZstEntityBundle children;
+        //parent_component->get_child_entities(&children, false, false, ZstEntityType::COMPONENT);
+        //for (auto entity : children) {
+        //    auto component = static_cast<ZstComponent*>(entity);
+        //    if (visited.find(component) == visited.end()) {
+        //        computeTopologicalSort(component, visited, stack, direction);
+        //    }
+        //}
+
+        while (!stack.empty()) {
+            auto entity = stack.top();
+            if (local_only) {
+                if (!entity->is_proxy()) {
+                    out_entities->add(entity);
+                }
+            }
+            else {
+                out_entities->add(entity);
+            }
+         
+            stack.pop();
+        }
+    }
+
+    void ZstComponent::get_adjacent_components(ZstEntityBundle* entities, ZstPlugDirection direction)
+    {
+        ZstCableBundle cables;
+        get_child_cables(&cables);
+
+        std::set<ZstURI> visited;
+        
+        // We only look for cable connections that are directly adjacent to the current component - so they should share the same parent
+        auto scope = this->parent()->URI();
+
+        for (auto cable : cables) {
+            auto address = cable->get_address();
+
+            // Get the owning components of the cable's plugs
+            auto path = (direction == ZstPlugDirection::OUT_JACK) ? address.get_input_URI().parent() : address.get_output_URI().parent();
+
+            if (!path.is_empty()) {
+                // Check if output is adjacent to this component - so should live under the the same parent and at the same depth
+                if (path != URI() && 
+                    path.contains(scope) && 
+                    path.size() == URI().size() && 
+                    visited.find(path) == visited.end()
+                ){
+                    entities->add((direction == ZstPlugDirection::OUT_JACK) ? cable->get_input()->parent() : cable->get_output()->parent());
+                    visited.insert(path);
+                }
+            }
+        }
+    }
 
     //--------------
 

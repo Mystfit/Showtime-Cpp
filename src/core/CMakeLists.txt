@@ -60,6 +60,7 @@ set(API_HEADERS
     ${CORE_INCLUDE_DIR}/ZstEventDispatcher.h
     ${CORE_INCLUDE_DIR}/ZstPointerUtils.h
     ${CORE_INCLUDE_DIR}/ZstFilesystemUtils.h
+    ${CORE_INCLUDE_DIR}/ZstIValue.h
     ${VERSION_FILE_OUT}
 )
 list(APPEND Showtime_API_INTERFACE 

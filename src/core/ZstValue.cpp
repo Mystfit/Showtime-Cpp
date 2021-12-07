@@ -10,43 +10,7 @@ using namespace flatbuffers;
 
 namespace showtime {
 
-	namespace ZstValueDetails {
-		class ZstValueIntVisitor : public boost::static_visitor<int>
-		{
-		public:
-			int operator()(int i) const;
-			int operator()(float f) const;
-			int operator()(const std::string& str) const;
-			int operator()(const uint8_t& b) const;
-		};
-
-		class ZstValueFloatVisitor : public boost::static_visitor<float>
-		{
-		public:
-			float operator()(int i) const;
-			float operator()(float f) const;
-			float operator()(const std::string& str) const;
-			float operator()(const uint8_t& b) const;
-		};
-
-		class ZstValueStrVisitor : public boost::static_visitor<std::string>
-		{
-		public:
-			std::string operator()(int i) const;
-			std::string operator()(float f) const;
-			std::string operator()(const std::string& str) const;
-			std::string operator()(const uint8_t& b) const;
-		};
-
-		class ZstValueByteVisitor : public boost::static_visitor<uint8_t>
-		{
-		public:
-			uint8_t operator()(int i) const;
-			uint8_t operator()(float f) const;
-			uint8_t operator()(const std::string& str) const;
-			uint8_t operator()(const uint8_t& b) const;
-		};
-	}
+	
 
 typedef boost::bimap<ZstValueType, PlugValueData> FlatbuffersEnityTypeMap;
 static const FlatbuffersEnityTypeMap value_type_lookup = boost::assign::list_of< FlatbuffersEnityTypeMap::relation >
@@ -57,174 +21,392 @@ static const FlatbuffersEnityTypeMap value_type_lookup = boost::assign::list_of<
 	(ZstValueType::ByteList, PlugValueData_ByteList)
 	(ZstValueType::PlugHandshake, PlugValueData_PlugHandshake);
 
-ZstValue::ZstValue() : m_default_type(ZstValueType::IntList)
+ZstDynamicValue::ZstDynamicValue() : m_default_type(ZstValueType::IntList)
 {
 }
 
-ZstValue::ZstValue(const ZstValue & other)
+ZstDynamicValue::ZstDynamicValue(const ZstDynamicValue & other)
 {
 	m_default_type = other.m_default_type;
-	m_values = other.m_values;
+	m_int_buffer = other.m_int_buffer;
+	m_float_buffer = other.m_float_buffer;
+	m_string_buffer = other.m_string_buffer;
+	m_byte_buffer = other.m_byte_buffer;
 }
 
-ZstValue::ZstValue(ZstValueType t) : m_default_type(t)
+ZstDynamicValue::ZstDynamicValue(ZstValueType t) : m_default_type(t)
 {
 }
 
-ZstValue::ZstValue(const PlugValue* buffer)
+ZstDynamicValue::ZstDynamicValue(const PlugValue* buffer)
 {
 	deserialize_partial(buffer);
 }
 
-ZstValue::~ZstValue()
+ZstDynamicValue::~ZstDynamicValue()
 {
 }
 
-ZstValueType ZstValue::get_default_type() const
+ZstValueType ZstDynamicValue::get_default_type() const
 {
 	return m_default_type;
 }
 
-void ZstValue::copy(const ZstValue & other)
+void ZstDynamicValue::clear()
 {
 	std::lock_guard<std::mutex> lock(m_lock);
-	m_values = other.m_values;
+	m_int_buffer.clear();
+	m_float_buffer.clear();
+	m_string_buffer.clear();
+	m_byte_buffer.clear();
 }
 
-void ZstValue::clear()
+
+void ZstDynamicValue::copy(const ZstIValue* from)
+{
+	if (from->get_default_type() == get_default_type()) {
+		copy_direct(from);
+		return;
+	}
+
+	// We will need to convert the incoming value to a destination type
+	switch (from->get_default_type()) {
+	case ZstValueType::IntList:
+		copy_convert_from_source(from->int_buffer(), from->size());
+		break;
+	case ZstValueType::FloatList:
+		copy_convert_from_source(from->float_buffer(), from->size());
+		break;
+	case ZstValueType::StrList:
+	{
+		char** str_buffer = nullptr;
+		from->string_buffer(&str_buffer);
+		copy_convert_from_source(const_cast<const char**>(str_buffer), from->size());
+		break;
+	}
+	case ZstValueType::ByteList:
+		copy_convert_from_source(from->byte_buffer(), from->size());
+		break;
+	default:
+		break;
+	}
+}
+
+void ZstDynamicValue::copy_direct(const ZstIValue* from)
+{
+	switch (get_default_type())
+	{
+	case ZstValueType::IntList:
+		assign(from->int_buffer(), from->size());
+		break;
+	case ZstValueType::FloatList:
+		assign(from->float_buffer(), from->size());
+		break;
+	case ZstValueType::StrList:
+	{
+		char** data = nullptr;
+		from->string_buffer(&data);
+		assign_strings(const_cast<const char**>(data), from->size());
+		break;
+	}
+	case ZstValueType::ByteList:
+		assign(from->byte_buffer(), from->size());
+		break;
+	default:
+		break;
+	}
+}
+
+void ZstDynamicValue::copy_convert_from_source(const int* from, size_t size)
+{
+	switch (get_default_type())
+	{
+	case ZstValueType::FloatList:
+		copy_from_buffer<ZstValueDetails::ZstValueFloatVisitor>(ZstValueType::IntList, from, size, m_float_buffer);
+		break;
+	case ZstValueType::StrList:
+	{
+		copy_from_buffer<ZstValueDetails::ZstValueStrVisitor>(ZstValueType::StrList, from, size, m_string_buffer);
+		//copy_strings_from_buffer<ZstValueDetails::ZstValueStrVisitor, std::string>(ZstValueType::StrList, from, size, m_string_buffer);
+		//copy_strings_from_buffer<ZstValueDetails::ZstValueStrVisitor>(ZstValueType::StrList, from, size, m_string_buffer);
+		break;
+	}
+	case ZstValueType::ByteList:
+		copy_from_buffer<ZstValueDetails::ZstValueByteVisitor>(ZstValueType::ByteList, from, size, m_byte_buffer);
+		break;
+	default:
+		break;
+	}
+}
+
+void ZstDynamicValue::copy_convert_from_source(const float* from, size_t size)
+{
+	switch (get_default_type())
+	{
+	case ZstValueType::IntList:
+		copy_from_buffer<ZstValueDetails::ZstValueIntVisitor>(ZstValueType::IntList, from, size, m_int_buffer);
+		break;
+	case ZstValueType::StrList:
+	{
+		copy_from_buffer<ZstValueDetails::ZstValueStrVisitor>(ZstValueType::StrList, from, size, m_string_buffer);
+		//copy_strings_from_buffer<ZstValueDetails::ZstValueStrVisitor, std::string>(ZstValueType::StrList, from, size, m_string_buffer);
+		//copy_strings_from_buffer<ZstValueDetails::ZstValueStrVisitor>(ZstValueType::StrList, from, size, m_string_buffer);
+		break;
+	}
+	case ZstValueType::ByteList:
+		copy_from_buffer<ZstValueDetails::ZstValueByteVisitor>(ZstValueType::ByteList, from, size, m_byte_buffer);
+		break;
+	default:
+		break;
+	}
+}
+
+void ZstDynamicValue::copy_convert_from_source(const char** from, size_t size)
+{
+	switch (get_default_type())
+	{
+	case ZstValueType::IntList:
+		m_int_buffer.resize(size);
+		for (size_t idx = 0; idx < size; ++idx) {
+			m_int_buffer[idx] = boost::apply_visitor(ZstValueDetails::ZstValueIntVisitor(), ZstValueVariant(from[idx]));
+		}
+		break;
+	case ZstValueType::FloatList:
+		m_float_buffer.resize(size);
+		for (size_t idx = 0; idx < size; ++idx) {
+			m_float_buffer[idx] = boost::apply_visitor(ZstValueDetails::ZstValueFloatVisitor(), ZstValueVariant(from[idx]));
+		}
+		break;
+	case ZstValueType::ByteList:
+		m_byte_buffer.resize(size);
+		for (size_t idx = 0; idx < size; ++idx) {
+			m_byte_buffer[idx] = boost::apply_visitor(ZstValueDetails::ZstValueByteVisitor(), ZstValueVariant(from[idx]));
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+void ZstDynamicValue::copy_convert_from_source(const uint8_t* from, size_t size)
+{
+	switch (get_default_type())
+	{
+	case ZstValueType::IntList:
+		copy_from_buffer<ZstValueDetails::ZstValueIntVisitor>(ZstValueType::IntList, from, size, m_int_buffer);
+		break;
+	case ZstValueType::FloatList:
+		copy_from_buffer<ZstValueDetails::ZstValueFloatVisitor>(ZstValueType::FloatList, from, size, m_float_buffer);
+		break;
+	case ZstValueType::StrList:
+	{
+		copy_from_buffer<ZstValueDetails::ZstValueStrVisitor>(ZstValueType::StrList, from, size, m_string_buffer);
+		//copy_strings_from_buffer<ZstValueDetails::ZstValueStrVisitor, std::string>(ZstValueType::StrList, from, size, m_string_buffer);
+		break;
+	}
+	default:
+		break;
+	}
+}
+
+void ZstDynamicValue::assign(const int* newData, size_t count)
 {
 	std::lock_guard<std::mutex> lock(m_lock);
-	m_values.clear();
+	m_int_buffer.resize(count);
+	std::copy(newData, newData + count, m_int_buffer.begin());
 }
 
-void ZstValue::append_int(const int& value)
+void ZstDynamicValue::assign(const float* newData, size_t count)
 {
 	std::lock_guard<std::mutex> lock(m_lock);
-	m_values.push_back(value);
+	m_float_buffer.resize(count);
+	std::copy(newData, newData + count, m_float_buffer.begin());
 }
 
-void ZstValue::append_float(const float& value)
+void ZstDynamicValue::assign_strings(const char** newData, size_t count)
 {
 	std::lock_guard<std::mutex> lock(m_lock);
-	m_values.push_back(value);
+	m_string_buffer.resize(count);
+	m_string_buffer.insert(m_string_buffer.begin(), &newData[0], &newData[count]);
 }
 
-void ZstValue::append_string(const char* value, const size_t size)
+void ZstDynamicValue::assign(const uint8_t* newData, size_t count)
 {
 	std::lock_guard<std::mutex> lock(m_lock);
-	m_values.push_back(std::string(value, size));
+	m_byte_buffer.resize(count);
+	std::copy(newData, newData + count, m_byte_buffer.begin());
 }
 
-void ZstValue::append_byte(const uint8_t& value)
+void ZstDynamicValue::append(const int& value)
 {
 	std::lock_guard<std::mutex> lock(m_lock);
-	m_values.push_back(value);
+	m_int_buffer.push_back(value);
 }
 
-const size_t ZstValue::size() const
+void ZstDynamicValue::append(const float& value)
 {
-	return m_values.size();
+	std::lock_guard<std::mutex> lock(m_lock);
+	m_float_buffer.push_back(value);
 }
 
-const int ZstValue::int_at(const size_t position) const
+void ZstDynamicValue::append(const char* value, const size_t size)
 {
-	auto val = m_values.at(position);
-	return boost::apply_visitor(ZstValueDetails::ZstValueIntVisitor(), val);
+	std::lock_guard<std::mutex> lock(m_lock);
+	m_string_buffer.push_back(std::string(value, size));
 }
 
-const float ZstValue::float_at(const size_t position) const
+void ZstDynamicValue::append(const uint8_t& value)
 {
-	auto val = m_values.at(position);
-	return boost::apply_visitor(ZstValueDetails::ZstValueFloatVisitor(), val);
+	std::lock_guard<std::mutex> lock(m_lock);
+	m_byte_buffer.push_back(value);
 }
 
-void ZstValue::string_at(char * buf, const size_t position) const
+void ZstDynamicValue::append_int(const int& value)
 {
-	auto val = m_values.at(position);
-    std::string val_s = boost::apply_visitor(ZstValueDetails::ZstValueStrVisitor(), val);
-	memcpy(buf, val_s.c_str(), val_s.size());
+	append(value);
 }
 
-const uint8_t ZstValue::byte_at(const size_t position) const
+void ZstDynamicValue::append_float(const float& value)
 {
-	auto val = m_values.at(position);
-	return boost::apply_visitor(ZstValueDetails::ZstValueByteVisitor(), val);
+	append(value);
 }
 
-const size_t ZstValue::size_at(const size_t position) const {
-    auto val = m_values.at(position);
-    
-    if (m_default_type == ZstValueType::IntList) {
-        return sizeof(int);
-    }
-    else if (m_default_type == ZstValueType::FloatList) {
-        return sizeof(float);
-    }
-    else if (m_default_type == ZstValueType::StrList) {
-        std::string val_s = boost::apply_visitor(ZstValueDetails::ZstValueStrVisitor(), val);
-        return val_s.size();
-    } 
+void ZstDynamicValue::append_string(const char* value, const size_t size)
+{
+	append(value, size);
+}
+
+void ZstDynamicValue::append_byte(const uint8_t& value)
+{
+	append(value);
+}
+
+const size_t ZstDynamicValue::size() const
+{
+	switch (m_default_type) {
+	case ZstValueType::IntList:
+		return m_int_buffer.size();
+		break;
+	case ZstValueType::FloatList:
+		return m_float_buffer.size();
+		break;
+	case ZstValueType::StrList:
+		return m_string_buffer.size();
+		break;
+	case ZstValueType::ByteList:
+		return m_byte_buffer.size();
+		break;
+	}
+	return 0;
+}
+
+const int ZstDynamicValue::int_at(const size_t position) const
+{
+	if (m_default_type == ZstValueType::IntList) {
+		return m_int_buffer.at(position);
+	}
+	return 0;
+}
+
+const float ZstDynamicValue::float_at(const size_t position) const
+{
+	if(m_default_type == ZstValueType::FloatList)
+		return m_float_buffer.at(position);
+	
+	return 0.0;
+}
+
+const char* ZstDynamicValue::string_at(const size_t position, size_t& out_str_size) const
+{
+	if (m_default_type == ZstValueType::StrList) {
+		out_str_size = m_string_buffer.at(position).size();
+		return m_string_buffer.at(position).c_str();
+	}
+		
+	return nullptr;
+}
+
+const uint8_t ZstDynamicValue::byte_at(const size_t position) const
+{
+	if (m_default_type == ZstValueType::ByteList) {
+		return m_byte_buffer.at(position);
+	}
+
+	return 0;
+}
+
+const size_t ZstDynamicValue::size_at(const size_t position) const {    
+	if (m_default_type == ZstValueType::StrList) {
+		return m_string_buffer.at(position).size();
+	}
     return 0;
 }
-    
-std::vector<int> ZstValue::as_int_vector() const
+
+const int* ZstDynamicValue::int_buffer() const
 {
-    std::vector<int> ivec;
-    for(auto val : m_values){
-		ivec.emplace_back(boost::apply_visitor(ZstValueDetails::ZstValueIntVisitor(), val));
-    }
-    return ivec;
+	return m_int_buffer.data();
 }
 
-std::vector<float> ZstValue::as_float_vector() const
+const float* ZstDynamicValue::float_buffer() const
 {
-    std::vector<float> fvec;
-    for(auto val : m_values){
-        fvec.emplace_back(boost::apply_visitor(ZstValueDetails::ZstValueFloatVisitor(), val));
-    }
-    return fvec;
+	return m_float_buffer.data();
 }
 
-std::vector<std::string> ZstValue::as_string_vector() const
+const void ZstDynamicValue::string_buffer(char*** data) const
 {
-    std::vector<std::string> svec;
-    for(auto val : m_values){
-        svec.emplace_back(boost::apply_visitor(ZstValueDetails::ZstValueStrVisitor(), val));
-    }
-    return svec;
+	std::vector<char*> cstrings;
+	cstrings.reserve(m_string_buffer.size());
+	for (size_t idx = 0; idx < m_string_buffer.size(); ++idx)
+		cstrings.push_back(const_cast<char*>(m_string_buffer[idx].c_str()));
+
+	memcpy(data, m_string_buffer.data(), m_string_buffer.size());
 }
 
-std::vector<uint8_t> ZstValue::as_byte_vector() const
+const uint8_t* ZstDynamicValue::byte_buffer() const
 {
-	std::vector<uint8_t> svec;
-	for (auto val : m_values) {
-		svec.emplace_back(boost::apply_visitor(ZstValueDetails::ZstValueByteVisitor(), val));
-	}
-	return svec;
+	return m_byte_buffer.data();
 }
 
-uoffset_t ZstValue::serialize(flatbuffers::FlatBufferBuilder& buffer_builder) const
+uoffset_t ZstDynamicValue::serialize(flatbuffers::FlatBufferBuilder& buffer_builder) const
 {
 	Offset<PlugValue> dest;
 	serialize_partial(dest, buffer_builder);
 	return dest.o;
 }
 
-void ZstValue::serialize_partial(Offset<PlugValue>& dest, flatbuffers::FlatBufferBuilder& buffer_builder) const
+void ZstDynamicValue::serialize_partial(Offset<PlugValue>& dest, flatbuffers::FlatBufferBuilder& buffer_builder) const
 {
-	switch (m_default_type) {
+
+switch (m_default_type) {
 	case ZstValueType::IntList:
-		dest = CreatePlugValue(buffer_builder, PlugValueData_IntList, CreateIntList(buffer_builder, buffer_builder.CreateVector(as_int_vector())).Union());
+	{
+		int* buf = nullptr;
+		auto vec_offset = buffer_builder.CreateUninitializedVector<int>(m_int_buffer.size(), &buf);
+		memcpy(buf, m_int_buffer.data(), m_int_buffer.size() * sizeof(int));
+		dest = CreatePlugValue(buffer_builder, PlugValueData_IntList, CreateIntList(buffer_builder, vec_offset).Union());
 		break;
+	}
 	case ZstValueType::FloatList:
-		dest = CreatePlugValue(buffer_builder, PlugValueData_FloatList, CreateFloatList(buffer_builder, buffer_builder.CreateVector(as_float_vector())).Union());
+	{
+		float* buf = nullptr;
+		auto vec_offset = buffer_builder.CreateUninitializedVector<float>(m_float_buffer.size(), &buf);
+		memcpy(buf, m_float_buffer.data(), m_float_buffer.size() * sizeof(float));
+		dest = CreatePlugValue(buffer_builder, PlugValueData_IntList, CreateFloatList(buffer_builder, vec_offset).Union());
 		break;
+	}
 	case ZstValueType::StrList:
-		dest = CreatePlugValue(buffer_builder, PlugValueData_StrList, CreateStrList(buffer_builder, buffer_builder.CreateVectorOfStrings(as_string_vector())).Union());
+	{
+		dest = CreatePlugValue(buffer_builder, PlugValueData_StrList, CreateStrList(buffer_builder, buffer_builder.CreateVectorOfStrings(m_string_buffer)).Union());
 		break;
+	}
 	case ZstValueType::ByteList:
-		dest = CreatePlugValue(buffer_builder, PlugValueData_ByteList, CreateByteList(buffer_builder, buffer_builder.CreateVector(as_byte_vector())).Union());
+	{
+		uint8_t* buf = nullptr;
+		auto vec_offset = buffer_builder.CreateUninitializedVector<uint8_t>(m_byte_buffer.size(), &buf);
+		memcpy(buf, m_byte_buffer.data(), m_byte_buffer.size() * sizeof(uint8_t));
+		dest = CreatePlugValue(buffer_builder, PlugValueData_IntList, CreateByteList(buffer_builder, vec_offset).Union());
 		break;
+	}
 	case ZstValueType::PlugHandshake:
 		break;
 	case ZstValueType::NONE:
@@ -232,52 +414,37 @@ void ZstValue::serialize_partial(Offset<PlugValue>& dest, flatbuffers::FlatBuffe
 	}
 }
 
-void ZstValue::deserialize(const PlugValue* buffer)
+void ZstDynamicValue::deserialize(const PlugValue* buffer)
 {
 	deserialize_partial(buffer);
 }
 
-void ZstValue::deserialize_partial(const PlugValue* buffer)
+void ZstDynamicValue::deserialize_partial(const PlugValue* buffer)
 {	
 	if (!buffer) return;
 
-	m_default_type = value_type_lookup.right.at(buffer->values_type());
+	ZstValueType incoming_data_type = value_type_lookup.right.at(buffer->values_type());
+
+	Log::net(Log::Level::debug, "Deserializing value type {}", buffer->values_type());
+	if (incoming_data_type != m_default_type) {
+		Log::net(Log::Level::debug, "Data types don't match. Conversion required.");
+	}
 
 	switch (buffer->values_type()) {
-	case PlugValueData_IntList: {
-		auto list = buffer->values_as_IntList();
-		m_values.resize(list->val()->size());
-		for (auto it = list->val()->begin(); it != list->val()->end(); ++it) {
-			auto index = it - list->val()->begin();
-			m_values[index] = *it;
-		}
+	case PlugValueData_IntList: { 
+		copy_from_buffer<ZstValueDetails::ZstValueIntVisitor, int>(incoming_data_type, buffer->values_as_IntList()->val()->data(), buffer->values_as_IntList()->val()->size(), m_int_buffer);
 		break;
 	}
 	case PlugValueData_FloatList: {
-		auto list = buffer->values_as_FloatList();
-		m_values.resize(list->val()->size());
-		for (auto it = list->val()->begin(); it != list->val()->end(); ++it) {
-			auto index = it - list->val()->begin();
-			m_values[index] = *it;
-		}
+		copy_from_buffer<ZstValueDetails::ZstValueFloatVisitor, float>(incoming_data_type, buffer->values_as_FloatList()->val()->data(), buffer->values_as_FloatList()->val()->size(), m_float_buffer);
 		break;
 	}
 	case PlugValueData_StrList: {
-		auto list = buffer->values_as_StrList();
-		m_values.resize(list->val()->size());
-		for (auto it = list->val()->begin(); it != list->val()->end(); ++it) {
-			auto index = it - list->val()->begin();
-			m_values[index] = it->str();
-		}
+		copy_strings_from_buffer<ZstValueDetails::ZstValueStrVisitor, std::string>(incoming_data_type, buffer->values_as_StrList()->val(), buffer->values_as_StrList()->val()->size(), m_string_buffer);
 		break;
 	}
 	case PlugValueData_ByteList: {
-		auto list = buffer->values_as_ByteList();
-		m_values.resize(list->val()->size());
-		for (auto it = list->val()->begin(); it != list->val()->end(); ++it) {
-			auto index = it - list->val()->begin();
-			m_values[index] = *it;
-		}
+		copy_from_buffer<ZstValueDetails::ZstValueByteVisitor, uint8_t>(incoming_data_type, buffer->values_as_ByteList()->val()->data(), buffer->values_as_ByteList()->val()->size(), m_byte_buffer);
 		break;
 	}
 	case PlugValueData_PlugHandshake:
@@ -286,7 +453,10 @@ void ZstValue::deserialize_partial(const PlugValue* buffer)
 		break;
 	}
 }
-  
+
+
+
+
 namespace ZstValueDetails {
 
 // ----------------

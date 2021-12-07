@@ -27,28 +27,31 @@ static const FlatbuffersPlugDirectionMap plug_direction_lookup = boost::assign::
 
 ZstPlug::ZstPlug() :
     ZstEntityBase(),
-    m_value(std::make_unique<ZstValue>()),
+    m_value(nullptr),
     m_direction(ZstPlugDirection::NONE),
     m_max_connected_cables(PLUG_DEFAULT_MAX_CABLES)
 {
+    //init_value();
     set_entity_type(ZstEntityType::PLUG);
 }
 
 ZstPlug::ZstPlug(const char * name, const ZstValueType& t, const ZstPlugDirection& direction, int max_cables) :
     ZstEntityBase(name),
-    m_value(std::make_unique<ZstValue>(t)),
+    m_value(std::make_unique<ZstDynamicValue>(t)),
     m_direction(direction),
     m_max_connected_cables(max_cables)
 {
+    //init_value(t);
     set_entity_type(ZstEntityType::PLUG);
 }
     
 ZstPlug::ZstPlug(const Plug* buffer) : 
 	ZstEntityBase(),
-    m_value(std::make_unique<ZstValue>()),
+    m_value(std::make_unique<ZstDynamicValue>()),
 	m_direction(ZstPlugDirection::NONE),
 	m_max_connected_cables(PLUG_DEFAULT_MAX_CABLES)
 {
+    //init_value();
 	set_entity_type(ZstEntityType::PLUG);
 	ZstEntityBase::deserialize_partial(buffer->entity());
     ZstPlug::deserialize_partial(buffer->plug());
@@ -61,6 +64,16 @@ ZstPlug::ZstPlug(const ZstPlug & other) :
     m_direction(other.m_direction),
     m_max_connected_cables(other.m_max_connected_cables)
 {
+}
+
+void ZstPlug::init_value()
+{
+    m_value = std::make_unique<ZstDynamicValue>();
+}
+
+void ZstPlug::init_value(const ZstValueType& val_type)
+{
+    m_value = std::make_unique<ZstDynamicValue>(val_type);
 }
 
 ZstPlug::~ZstPlug() {
@@ -119,9 +132,9 @@ const float ZstPlug::float_at(const size_t position) const
     return m_value->float_at(position);
 }
 
-void ZstPlug::string_at(char * buf, const size_t position) const
+const char* ZstPlug::string_at(const size_t position, size_t& out_str_size) const
 {
-    return m_value->string_at(buf, position);
+    return m_value->string_at(position, out_str_size);
 }
 
 const uint8_t ZstPlug::byte_at(const size_t position) const
@@ -134,7 +147,12 @@ const size_t ZstPlug::size_at(const size_t position) const
     return m_value->size_at(position);
 }
 
-ZstValue * ZstPlug::raw_value()
+void ZstPlug::swap_values(ZstPlug* other)
+{
+    m_value.swap(other->m_value);
+}
+
+ZstIValue * ZstPlug::raw_value()
 {
     return m_value.get();
 }
@@ -161,7 +179,11 @@ flatbuffers::uoffset_t ZstPlug::serialize(FlatBufferBuilder& buffer_builder) con
     
 void ZstPlug::serialize_partial(flatbuffers::Offset<PlugData> & serialized_offset, flatbuffers::FlatBufferBuilder& buffer_builder) const
 {
-    serialized_offset = CreatePlugData(buffer_builder, plug_direction_lookup.left.at(m_direction), m_max_connected_cables, m_value->serialize(buffer_builder));
+    serialized_offset = CreatePlugData(buffer_builder, 
+        plug_direction_lookup.left.at(m_direction), 
+        m_max_connected_cables, 
+        m_value->serialize(buffer_builder)
+    );
 }
     
 void ZstPlug::deserialize_partial(const PlugData* buffer)
@@ -266,24 +288,30 @@ void ZstPlug::remove_cable(ZstCable * cable)
 //------------
 
 ZstInputPlug::ZstInputPlug() :
-    ZstPlug("", ZstValueType::NONE)
+    ZstPlug("", ZstValueType::NONE),
+    m_triggers_compute(false)
 {
 }
     
-ZstInputPlug::ZstInputPlug(const Plug* buffer) : ZstPlug(buffer)
+ZstInputPlug::ZstInputPlug(const Plug* buffer) : 
+    ZstPlug(buffer),
+    m_triggers_compute(false)
 {
 }
 
-ZstInputPlug::ZstInputPlug(const ZstInputPlug & other) : ZstPlug(other)
+ZstInputPlug::ZstInputPlug(const ZstInputPlug & other) : 
+    ZstPlug(other),
+    m_triggers_compute(false)
+{
+}
+
+ZstInputPlug::ZstInputPlug(const char * name, const ZstValueType& t, int max_cables, bool triggers_compute) :
+    ZstPlug(name, t, ZstPlugDirection::IN_JACK, max_cables),
+    m_triggers_compute(triggers_compute)
 {
 }
 
 ZstInputPlug::~ZstInputPlug()
-{
-}
-
-ZstInputPlug::ZstInputPlug(const char * name, const ZstValueType& t, int max_cables) :
-    ZstPlug(name, t, ZstPlugDirection::IN_JACK, max_cables)
 {
 }
 
@@ -307,6 +335,11 @@ ZstCable* ZstInputPlug::connect_cable_async(ZstOutputPlug* output_plug)
             cable = new_cable;
     });
     return cable;
+}
+
+bool ZstInputPlug::triggers_compute()
+{
+    return m_triggers_compute;
 }
 
 
@@ -405,14 +438,37 @@ void ZstOutputPlug::fire()
     get_child_cables(&bundle);
     int num_local_cables = 0;
     for (auto c : bundle) {
-        if (c->get_input()->URI().first() == this->URI().first()) {
-            // Copy plug value
-            c->get_input()->raw_value()->copy(*this->raw_value());
+        auto input_plug = c->get_input();
 
-            // Queue plug compute event
-            session_events()->invoke([&c](ZstSessionAdaptor* adp) {
+        // Cable is local - this component can execute immediately
+        if (input_plug->URI().first() == this->URI().first()) {
+            
+            // If we have more than one cable, we have to copy the value instead of swapping it.
+            // If the types don't match - conversion needs to bne applied during the copy
+            // TODO: Replace swap with passing a ZstValue pointer along instead
+            if (bundle.size() > 1 || input_plug->raw_value()->get_default_type() != this->raw_value()->get_default_type())
+                input_plug->raw_value()->copy(this->raw_value());
+            else
+                this->swap_values(input_plug);
+
+            // TODO: Optionally queue plug compute event?
+           /* session_events()->invoke([&c](ZstSessionAdaptor* adp) {
                 adp->plug_received_value(c->get_input());
-            });
+            });*/
+
+            // Find the parent component of the input plug
+            /*ZstComponent* parent_component = nullptr;
+            hierarchy_events()->invoke([c, &parent_component](ZstHierarchyAdaptor* adp) {
+                if (auto p = adp->find_entity(c->get_address().get_input_URI().parent())) {
+                    if (p->entity_type() == ZstEntityType::COMPONENT) {
+                        parent_component = static_cast<ZstComponent*>(p);
+                    }
+                }
+            });*/
+
+            // TODO: This needs to be moved out of fire - seperate plug data from computation
+            /*if(parent_component)
+                parent_component->compute(input_plug);*/
 
             num_local_cables++;
         }
@@ -456,7 +512,6 @@ void ZstOutputPlug::set_owner(const ZstURI & owner)
         set_can_fire(false);
     }
 }
-
 void ZstOutputPlug::set_can_fire(bool can_fire)
 {
     m_can_fire = can_fire;

@@ -140,6 +140,9 @@ protected:
     //Events
     ZST_EXPORT virtual void process_events();
 
+    // Helper adaptor functions
+    ZST_EXPORT ZstEntityBase* find_entity(const ZstURI& entity_path);
+
     //Entity mutex
     mutable std::mutex m_entity_mtx;
     std::shared_ptr<ZstEventDispatcher<ZstSessionAdaptor> > m_session_events;

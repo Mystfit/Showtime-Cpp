@@ -73,6 +73,69 @@ struct FixtureCable : public FixturePlugs {
 };
 
 
+struct FixtureBranchingComponents : public FixtureJoinServer {
+	std::unique_ptr<ZstComponent> top_comp;
+	std::unique_ptr<ZstComponent> a_comp;
+	std::unique_ptr<ZstOutputPlug> a_out;
+
+	std::unique_ptr<ZstComponent> b_comp;
+	std::unique_ptr<ZstInputPlug> b_in;
+	std::unique_ptr<ZstOutputPlug> b_out_first;
+	std::unique_ptr<ZstOutputPlug> b_out_second;
+
+	std::unique_ptr<ZstComponent> c_comp;
+	std::unique_ptr<ZstInputPlug> c_in;
+	std::unique_ptr<ZstOutputPlug> c_out;
+
+	std::unique_ptr<ZstComponent> d_comp;
+	std::unique_ptr<ZstInputPlug> d_in_first;
+	std::unique_ptr<ZstInputPlug> d_in_second;
+
+
+	FixtureBranchingComponents() :
+		top_comp(std::make_unique<ZstComponent>("computer_node")),
+		a_comp(std::make_unique<ZstComponent>("a")),
+		b_comp(std::make_unique<ZstComponent>("b")),
+		c_comp(std::make_unique<ZstComponent>("c")),
+		d_comp(std::make_unique<ZstComponent>("d")),
+		a_out(std::make_unique<ZstOutputPlug>("out", ZstValueType::IntList)),
+		b_in(std::make_unique<ZstInputPlug>("in", ZstValueType::IntList)),
+		b_out_first(std::make_unique<ZstOutputPlug>("out1", ZstValueType::IntList)),
+		b_out_second(std::make_unique<ZstOutputPlug>("out2", ZstValueType::IntList)),
+		c_in(std::make_unique<ZstInputPlug>("in", ZstValueType::IntList)),
+		c_out(std::make_unique<ZstOutputPlug>("out", ZstValueType::IntList)),
+		d_in_first(std::make_unique<ZstInputPlug>("in1", ZstValueType::IntList)),
+		d_in_second(std::make_unique<ZstInputPlug>("in2", ZstValueType::IntList))
+	{
+		test_client->get_root()->add_child(top_comp.get());
+
+		// Out-of-order adding of children to make sure topological sort works
+		top_comp->add_child(d_comp.get());
+		top_comp->add_child(c_comp.get());
+		top_comp->add_child(a_comp.get());
+		top_comp->add_child(b_comp.get());
+
+		a_comp->add_child(a_out.get());
+		b_comp->add_child(b_out_first.get());
+		b_comp->add_child(b_out_second.get());
+		b_comp->add_child(b_in.get());
+
+		c_comp->add_child(c_in.get());
+		c_comp->add_child(c_out.get());
+		d_comp->add_child(d_in_first.get());
+		d_comp->add_child(d_in_second.get());
+
+		auto cable1 = a_out->connect_cable(b_in.get());
+		auto cable2 = b_out_first->connect_cable(c_in.get());
+		auto cable3 = b_out_second->connect_cable(d_in_first.get());
+		auto cable4 = c_out->connect_cable(d_in_second.get());
+		BOOST_TEST(true);
+	}
+
+	~FixtureBranchingComponents() {};
+};
+
+
 bool found_cable(std::shared_ptr<ShowtimeClient> client, ZstCableAddress cable_address) {
 	ZstCableBundle bundle;
 	client->get_root()->get_child_cables(&bundle);
@@ -232,10 +295,10 @@ BOOST_FIXTURE_TEST_CASE(send_through_local_graph, FixtureCable) {
 	int first_cmp_val = 4;
 	int current_wait = 0;
 
+	output_component->get_downstream_compute_plug()->connect_cable(input_component->get_upstream_compute_plug());
 	output_component->send(first_cmp_val);
-	while (input_component->num_hits < 1 && ++current_wait < 10000) {
-		test_client->poll_once();
-	}
+	output_component->execute();
+
 	BOOST_TEST(input_component->num_hits);
 	BOOST_TEST(input_component->last_received_val == first_cmp_val);
 }
@@ -245,15 +308,25 @@ BOOST_FIXTURE_TEST_CASE(send_through_remote_graph, FixtureWaitForSinkClient) {
 	int current_wait = 0;
 
 	auto output_component =	std::make_unique<OutputComponent>("remote_test_out");
-	auto input_component = std::make_unique<InputComponent>("remote_test_in");
+	auto input_component = std::make_unique<InputComponent>("remote_test_in", first_cmp_val, false, ZstValueType::IntList, true);
 	test_client->get_root()->add_child(output_component.get());
 	remote_client->get_root()->add_child(input_component.get());
-	test_client->connect_cable(input_component->input(), output_component->output());
 
-	output_component->send(first_cmp_val);
+	// Connect cables
+	test_client->connect_cable(input_component->input(), output_component->output());
+	output_component->get_downstream_compute_plug()->connect_cable(input_component->get_upstream_compute_plug());
+
+	// Clear events queues
+	test_client->poll_once();
+	remote_client->poll_once();
+
+	output_component->output()->append_int(first_cmp_val);
+	output_component->output()->fire();
+
 	while (input_component->num_hits < 1 && ++current_wait < 10000) {
 		remote_client->poll_once();
 	}
+
 	BOOST_TEST(input_component->num_hits);
 	BOOST_TEST(input_component->last_received_val == first_cmp_val);
 }
@@ -311,9 +384,57 @@ BOOST_FIXTURE_TEST_CASE(local_cable_routes, FixtureJoinServer) {
 	BOOST_TEST(bundle.item_at(7) == in_branch_3->input());
 }
 
+BOOST_FIXTURE_TEST_CASE(get_adjacent_components, FixtureBranchingComponents) {
+	ZstEntityBundle adjacent;
+	a_comp->get_adjacent_components(&adjacent, ZstPlugDirection::OUT_JACK);
+	BOOST_TEST(adjacent.size() == 1);
+	BOOST_TEST(adjacent[0] == b_comp.get());
+	adjacent.clear();
+
+	a_comp->get_adjacent_components(&adjacent, ZstPlugDirection::IN_JACK);
+	BOOST_TEST(adjacent.size() == 0);
+	adjacent.clear();
+
+	b_comp->get_adjacent_components(&adjacent, ZstPlugDirection::IN_JACK);
+	BOOST_TEST(adjacent.size() == 1);
+	BOOST_TEST(adjacent[0] == a_comp.get());
+	adjacent.clear();
+
+	b_comp->get_adjacent_components(&adjacent, ZstPlugDirection::OUT_JACK);
+	BOOST_TEST(adjacent.size() == 2);
+	BOOST_TEST((std::find(adjacent.begin(), adjacent.end(), c_comp.get()) != adjacent.end()));
+	BOOST_TEST((std::find(adjacent.begin(), adjacent.end(), d_comp.get()) != adjacent.end()));
+	adjacent.clear();
+
+	d_comp->get_adjacent_components(&adjacent, ZstPlugDirection::IN_JACK);
+	BOOST_TEST(adjacent.size() == 2);
+	BOOST_TEST((std::find(adjacent.begin(), adjacent.end(), b_comp.get()) != adjacent.end()));
+	BOOST_TEST((std::find(adjacent.begin(), adjacent.end(), c_comp.get()) != adjacent.end()));
+}
+
+BOOST_FIXTURE_TEST_CASE(local_component_dependencies, FixtureBranchingComponents) {
+	ZstEntityBundle entities;
+	a_comp->dependants(&entities, false, true);
+	BOOST_TEST(entities.size() == 4);
+	BOOST_TEST(entities[0] == a_comp.get());
+	BOOST_TEST(entities[1] == b_comp.get());
+	BOOST_TEST(entities[2] == c_comp.get());
+	BOOST_TEST(entities[3] == d_comp.get());
+	entities.clear();
+	
+	d_comp->dependencies(&entities, false, true);
+	BOOST_TEST(entities.size() == 4);
+	BOOST_TEST(entities[0] == d_comp.get());
+	BOOST_TEST(entities[1] == c_comp.get());
+	BOOST_TEST(entities[2] == b_comp.get());
+	BOOST_TEST(entities[3] == a_comp.get());
+	entities.clear();
+}
+
 BOOST_FIXTURE_TEST_CASE(renaming_entity_updates_cables, FixtureCable) {
 	auto orig_cable_address = cable->get_address();
 	cable->get_input()->set_name("renamed_input");
+	TAKE_A_BREATH
 	BOOST_REQUIRE(cable->get_input());
 	BOOST_REQUIRE(cable->get_output());
 	BOOST_TEST(!test_client->find_cable(orig_cable_address));
@@ -332,12 +453,13 @@ BOOST_FIXTURE_TEST_CASE(send_int, FixtureJoinServer) {
 	int current_wait = 0;
 
 	auto cable = test_client->connect_cable(input_component->input(), output_component->output());
-	output_component->send(first_cmp_val);
+	output_component->output()->append_int(first_cmp_val);
+	output_component->output()->fire();
 	while (input_component->num_hits < 1 && ++current_wait < 10000) {
 		test_client->poll_once();
 	}
-	BOOST_TEST(input_component->num_hits);
-	BOOST_TEST(input_component->input()->int_at(0) == first_cmp_val);
+	//BOOST_TEST(input_component->num_hits);
+	BOOST_TEST(input_component->input()->int_at(0) == first_cmp_val); 
 }
 
 BOOST_FIXTURE_TEST_CASE(send_float, FixtureJoinServer) {
@@ -346,17 +468,53 @@ BOOST_FIXTURE_TEST_CASE(send_float, FixtureJoinServer) {
 	test_client->get_root()->add_child(output_component.get());
 	test_client->get_root()->add_child(input_component.get());
 
-	float first_cmp_val = 4;
+	float first_cmp_val = 2.7;
 	int current_wait = 0;
 
 	auto cable = test_client->connect_cable(input_component->input(), output_component->output());
-	output_component->send(first_cmp_val);
+	output_component->output()->append_float(first_cmp_val);
+	output_component->output()->fire();
 	while (input_component->num_hits < 1 && ++current_wait < 10000) {
 		test_client->poll_once();
 	}
-	BOOST_TEST(input_component->num_hits);
-	BOOST_TEST(input_component->last_received_val == first_cmp_val);
+	//BOOST_TEST(input_component->num_hits);
+	BOOST_TEST(fabs(input_component->input()->float_at(0) - first_cmp_val) < FLT_EPSILON);
+	//BOOST_TEST(input_component->last_received_val == first_cmp_val);
 }
+
+BOOST_FIXTURE_TEST_CASE(send_string, FixtureJoinServer) {
+	std::unique_ptr<OutputComponent> output_component = std::make_unique<OutputComponent>("connect_test_out", true, ZstValueType::StrList);
+	std::unique_ptr<InputComponent> input_component = std::make_unique<InputComponent>("connect_test_in", 0, true, ZstValueType::StrList);
+	test_client->get_root()->add_child(output_component.get());
+	test_client->get_root()->add_child(input_component.get());
+
+	std::string first_cmp_val = "pineapple";
+	std::string second_cmp_val = "pen";
+
+	int current_wait = 0;
+
+	auto cable = test_client->connect_cable(input_component->input(), output_component->output());
+	output_component->output()->append_string(first_cmp_val.c_str(), first_cmp_val.size());
+	output_component->output()->append_string(second_cmp_val.c_str(), second_cmp_val.size());
+	output_component->output()->fire();
+	
+	while (input_component->num_hits < 1 && ++current_wait < 10000) {
+		test_client->poll_once();
+	}
+	
+	BOOST_REQUIRE(input_component->input()->size() == 2);
+	size_t size_a;
+	const char* first = input_component->input()->string_at(0, size_a);
+	std::string first_str(first, size_a);
+
+	size_t size_b;
+	const char* second = input_component->input()->string_at(1, size_b);
+	std::string second_str(second, size_b);
+
+	BOOST_TEST(first_str == first_cmp_val);
+	BOOST_TEST(second_str == second_cmp_val);
+}
+
 
 BOOST_FIXTURE_TEST_CASE(send_bytes, FixtureJoinServer) {
 	std::unique_ptr<OutputComponent> output_component = std::make_unique<OutputComponent>("connect_test_out", true, ZstValueType::ByteList);
@@ -372,7 +530,7 @@ BOOST_FIXTURE_TEST_CASE(send_bytes, FixtureJoinServer) {
 	for (size_t idx = 0; idx < first_cmp_val.size(); ++idx){
 		output_component->output()->append_byte(first_cmp_val[idx]);
 	}
-	output_component->output()->append_byte(0);
+	output_component->output()->append_byte(0x0);
 	output_component->output()->fire();
 
 	while (input_component->num_hits < 1 && ++current_wait < 10000) {
