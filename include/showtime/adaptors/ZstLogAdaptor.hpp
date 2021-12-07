@@ -17,6 +17,7 @@ namespace showtime {
 #endif
 	{
 	public:
+		ZST_EXPORT ZstLogAdaptor();
 		//MULTICAST_DELEGATE_OneParam(ZST_EXPORT, log_record, const Log::Record*, record)
 		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, formatted_log_record, const char*, record)
 	};

@@ -2,6 +2,7 @@
 
 #include <showtime/ZstExports.h>
 #include <showtime/adaptors/ZstEventAdaptor.hpp>
+#include <memory>
 
 namespace showtime {
 
@@ -14,6 +15,7 @@ class ZST_CLASS_EXPORTED ZstSynchronisableAdaptor
 #endif
 {
 public:
+	ZST_EXPORT ZstSynchronisableAdaptor();
 	MULTICAST_DELEGATE_OneParam(ZST_EXPORT, synchronisable_activated, ZstSynchronisable*, synchronisable)
 	MULTICAST_DELEGATE_OneParam(ZST_EXPORT, synchronisable_deactivated, ZstSynchronisable*, synchronisable)
 	MULTICAST_DELEGATE_TwoParams(ZST_EXPORT, synchronisable_destroyed, ZstSynchronisable*, synchronisable, bool, already_removed = false)
@@ -21,7 +23,7 @@ public:
 
 	// ------
 
-	ZST_EXPORT virtual void synchronisable_has_event(ZstSynchronisable * synchronisable);
+	ZST_EXPORT virtual void synchronisable_has_event(ZstSynchronisable* synchronisable) {};
 };
 
 }
