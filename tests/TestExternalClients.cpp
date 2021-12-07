@@ -146,7 +146,7 @@ BOOST_FIXTURE_TEST_CASE(plug_observation, FixtureExternalConnectCable) {
 	BOOST_TEST_REQUIRE(sync_out_plug);
 
 	bool plug_updated = false;
-	sync_out_plug->synchronisable_events()->synchronisable_updated() += [&plug_updated](ZstSynchronisable* sync) {plug_updated = true; };
+	sync_out_plug->synchronisable_events()->synchronisable_updated()->add([&plug_updated](ZstSynchronisable* sync) {plug_updated = true; });
     test_client->observe_entity(sync_out_plug);
     
 	int echo_val = 4;

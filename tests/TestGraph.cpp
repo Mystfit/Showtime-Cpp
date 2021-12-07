@@ -402,14 +402,14 @@ BOOST_FIXTURE_TEST_CASE(get_adjacent_components, FixtureBranchingComponents) {
 
 	b_comp->get_adjacent_components(&adjacent, ZstPlugDirection::OUT_JACK);
 	BOOST_TEST(adjacent.size() == 2);
-	BOOST_TEST((std::find(adjacent.begin(), adjacent.end(), c_comp.get()) != adjacent.end()));
-	BOOST_TEST((std::find(adjacent.begin(), adjacent.end(), d_comp.get()) != adjacent.end()));
+	BOOST_TEST((std::find_if(adjacent.begin(), adjacent.end(), [component = c_comp.get()](ZstEntityBase* ent) {return ent->URI() == component->URI(); }) != adjacent.end()));
+	BOOST_TEST((std::find_if(adjacent.begin(), adjacent.end(), [component = d_comp.get()](ZstEntityBase* ent) {return ent->URI() == component->URI(); }) != adjacent.end()));
 	adjacent.clear();
 
 	d_comp->get_adjacent_components(&adjacent, ZstPlugDirection::IN_JACK);
 	BOOST_TEST(adjacent.size() == 2);
-	BOOST_TEST((std::find(adjacent.begin(), adjacent.end(), b_comp.get()) != adjacent.end()));
-	BOOST_TEST((std::find(adjacent.begin(), adjacent.end(), c_comp.get()) != adjacent.end()));
+	BOOST_TEST((std::find_if(adjacent.begin(), adjacent.end(), [component = b_comp.get()](ZstEntityBase* ent) {return ent->URI() == component->URI(); }) != adjacent.end()));
+	BOOST_TEST((std::find_if(adjacent.begin(), adjacent.end(), [component = c_comp.get()](ZstEntityBase* ent) {return ent->URI() == component->URI(); }) != adjacent.end()));
 }
 
 BOOST_FIXTURE_TEST_CASE(local_component_dependencies, FixtureBranchingComponents) {
@@ -468,7 +468,7 @@ BOOST_FIXTURE_TEST_CASE(send_float, FixtureJoinServer) {
 	test_client->get_root()->add_child(output_component.get());
 	test_client->get_root()->add_child(input_component.get());
 
-	float first_cmp_val = 2.7;
+	float first_cmp_val = 2.7f;
 	int current_wait = 0;
 
 	auto cable = test_client->connect_cable(input_component->input(), output_component->output());
