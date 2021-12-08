@@ -25,8 +25,8 @@ class AShowtimeEntity : public AActor {
 public:
 	// Properties
 	// ----------
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Showtime|Entity")
-	UShowtimeClient* OwningClient;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Showtime|Entity")
+	//UShowtimeClient* OwningClient;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Showtime|Entity")
 	FString EntityPath;
@@ -57,8 +57,7 @@ public:
 
 	// Native functions
 
-
-	void init(UShowtimeClient* owner, FString entity_path);
+	void init(FString entity_path);
 	ZstEntityBase* GetNativeEntity() const;
 };
 

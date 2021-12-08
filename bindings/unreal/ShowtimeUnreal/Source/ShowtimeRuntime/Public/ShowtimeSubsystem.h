@@ -10,7 +10,9 @@
 #include "ClientAdaptors.h"
 #include "ShowtimeView.h"
 #include "ShowtimeServerBeacon.h"
-#include "ShowtimeClient.generated.h"
+
+#include "Subsystems/GameInstanceSubsystem.h"
+#include "ShowtimeSubsystem.generated.h"
 
 using namespace showtime;
 
@@ -40,9 +42,9 @@ DECLARE_LOG_CATEGORY_EXTERN(Showtime, Display, All);
 // Event delegates
 // --------------------
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FConnectedToServer, UShowtimeClient*, Client, FServerAddress, ServerAddress);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FDisconnectedFromServer, UShowtimeClient*, Client, FServerAddress, ServerAddress);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FGraphSynchronised, UShowtimeClient*, Client, FServerAddress, ServerAddress);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FConnectedToServer, FServerAddress, ServerAddress);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDisconnectedFromServer, FServerAddress, ServerAddress);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FGraphSynchronised, FServerAddress, ServerAddress);
 //DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FServerDiscovered, UShowtimeClient*, Client, AShowtimeServerBeacon*, ServerBeacon);
 //DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FServerLost, UShowtimeClient*, Client, AShowtimeServerBeacon*, ServerBeacon);
 
@@ -52,12 +54,20 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FGraphSynchronised, UShowtimeClient
 //DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPluginUnloaded, std::shared_ptr<ZstPlugin>, plugin)
 
 
-UCLASS(BlueprintType, Blueprintable, ClassGroup = (Showtime), meta = (BlueprintSpawnableComponent))
-class UShowtimeClient : public UObject, public FTickableGameObject
+UCLASS(Abstract, Blueprintable, ClassGroup = (Showtime), meta = (BlueprintSpawnableComponent))
+class UShowtimeSubsystem : public UGameInstanceSubsystem, public FTickableGameObject
 {
 	GENERATED_BODY()
 public:
-	UShowtimeClient(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+	//UShowtimeClient(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+
+	// Begin Subsystem interface
+
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	virtual void Deinitialize() override;
+	
+	// End subsystem interface
+
 
 	//UShowtimeClient();
 	void Cleanup();
@@ -135,8 +145,6 @@ public:
 	UFUNCTION(BlueprintNativeEvent)
 	void BeginPlay();
 	void BeginPlay_Implementation();
-
-	void BeginDestroy() override;
 	
 	UFUNCTION(BlueprintNativeEvent)
 	void Tick(float DeltaTime) override;
@@ -153,5 +161,4 @@ private:
 	void RemoveEvents();
 	TSharedPtr<showtime::ShowtimeClient> client;
 	std::shared_ptr<ClientAdaptors> client_adaptor;
-	bool m_shouldTick;
 };

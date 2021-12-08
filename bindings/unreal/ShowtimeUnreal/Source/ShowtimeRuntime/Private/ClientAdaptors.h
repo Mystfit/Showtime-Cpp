@@ -3,7 +3,7 @@
 #include <showtime/ShowtimeClient.h>
 
 // Forwards
-class UShowtimeClient;
+class UShowtimeSubsystem;
 
 class ClientAdaptors :
 	//public showtime::ZstSessionAdaptor,
@@ -13,7 +13,7 @@ class ClientAdaptors :
 	public showtime::ZstLogAdaptor
 {
 public:
-	ClientAdaptors(UShowtimeClient* owner);
+	ClientAdaptors(UShowtimeSubsystem* owner);
 
 	// Connection adaptor overrides
 
@@ -26,5 +26,5 @@ public:
 	void on_formatted_log_record(const char* record) override;
 
 private:
-	UShowtimeClient* Owner;
+	UShowtimeSubsystem* Owner;
 };

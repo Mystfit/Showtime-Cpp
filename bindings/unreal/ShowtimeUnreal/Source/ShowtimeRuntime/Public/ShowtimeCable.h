@@ -60,9 +60,6 @@ class AShowtimeCable : public AActor {
 	GENERATED_BODY()
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Showtime|Cable")
-	UShowtimeClient* OwningClient;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Showtime|Cable")
 	FShowtimeCableAddress Address;
 
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Cable")

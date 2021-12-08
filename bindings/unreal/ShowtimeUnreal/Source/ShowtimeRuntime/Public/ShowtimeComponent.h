@@ -27,8 +27,8 @@ public:
 	//UFUNCTION(BlueprintCallable, Category = "Showtime|Component")
 	//void AttachPlug(AShowtimePlug* plug);
 
-	UFUNCTION(BlueprintCallable, Category = "Showtime|Component")
-	void AttachComponent(AShowtimeComponent* component);
+	/*UFUNCTION(BlueprintCallable, Category = "Showtime|Component")
+	void AttachComponent(AShowtimeComponent* component);*/
 
 	ZstComponent* GetNativeComponent() const;
 };

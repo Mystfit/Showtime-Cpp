@@ -40,7 +40,7 @@ void AShowtimePlug::SetStringValues(TArray<FString> values)
 {
 	if (auto plug = GetNativePlug()) {
 		for (auto val : values) {
-			plug->append_char(TCHAR_TO_UTF8(*val));
+			plug->append_string(TCHAR_TO_UTF8(*val), val.Len());
 		}
 	}
 }

@@ -1,5 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-#include "ShowtimeClient.h"
+#include "ShowtimeSubsystem.h"
 #include "ShowtimePerformer.h"
 #include "ShowtimeView.h"
 #include <showtime/ShowtimeClient.h>
@@ -15,14 +15,28 @@
 
 DEFINE_LOG_CATEGORY(Showtime);
 
-UShowtimeClient::UShowtimeClient(const FObjectInitializer& ObjectInitializer) : 
-	client(MakeShared<ShowtimeClient>()),
-	m_shouldTick(false)
+//UShowtimeSubsystem::UShowtimeSubsystem(const FObjectInitializer& ObjectInitializer) : 
+//{
+//	//View = static_cast<UShowtimeView*>(CreateDefaultSubobject("View", ViewClass, ViewClass, /*bIsRequired =*/ true, false));
+//}
+
+void UShowtimeSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
-	//View = static_cast<UShowtimeView*>(CreateDefaultSubobject("View", ViewClass, ViewClass, /*bIsRequired =*/ true, false));
+	client = MakeShared<ShowtimeClient>();
+
+	// Create view from class
+	if (!ViewClass)
+		ViewClass = UShowtimeView::StaticClass();
+	FString name;
+	ViewClass->GetName(name);
+	View = NewObject<UShowtimeView>(this, ViewClass, FName(*name), RF_Transient);
+
+	// Trigger blueprint beginplay
+	if (GetOuter() && GetOuter()->GetWorld())
+		BeginPlay();
 }
 
-void UShowtimeClient::Cleanup()
+void UShowtimeSubsystem::Deinitialize()
 {
 	RemoveEvents();
 #if PLATFORM_ANDROID
@@ -31,7 +45,11 @@ void UShowtimeClient::Cleanup()
 	client->destroy();
 }
 
-void UShowtimeClient::Init()
+void UShowtimeSubsystem::Cleanup()
+{
+}
+
+void UShowtimeSubsystem::Init()
 {
 	FString plugin_path;
 
@@ -51,27 +69,27 @@ void UShowtimeClient::Init()
 	View->SpawnPerformer(Handle()->get_root());
 }
 
-void UShowtimeClient::JoinServerByAddress(const FString& address)
+void UShowtimeSubsystem::JoinServerByAddress(const FString& address)
 {
 	client->join_async(TCHAR_TO_UTF8(*address));
 }
 
-void UShowtimeClient::JoinServerByName(const FString& name)
+void UShowtimeSubsystem::JoinServerByName(const FString& name)
 {
 	client->auto_join_by_name_async(TCHAR_TO_UTF8(*name));
 }
 
-void UShowtimeClient::LeaveServer()
+void UShowtimeSubsystem::LeaveServer()
 {
 	client->leave();
 }
 
-bool UShowtimeClient::IsConnected() const
+bool UShowtimeSubsystem::IsConnected() const
 {
 	return client->is_connected();
 }
 
-TArray<AShowtimePerformer*> UShowtimeClient::GetPerformers() const
+TArray<AShowtimePerformer*> UShowtimeSubsystem::GetPerformers() const
 {
 	TArray<AShowtimePerformer*> performer_wrappers = TArray<AShowtimePerformer*>();
 
@@ -93,7 +111,7 @@ TArray<AShowtimePerformer*> UShowtimeClient::GetPerformers() const
 	return performer_wrappers;
 }
 
-AShowtimePerformer* UShowtimeClient::GetRootPerformer() const
+AShowtimePerformer* UShowtimeSubsystem::GetRootPerformer() const
 {
 	auto wrapper = View->GetWrapper(Handle()->get_root()->URI());
 	if (wrapper) {
@@ -102,7 +120,7 @@ AShowtimePerformer* UShowtimeClient::GetRootPerformer() const
 	return nullptr;
 }
 
-void UShowtimeClient::ConnectCable(AShowtimePlug* InputPlug, AShowtimePlug* OutputPlug) const
+void UShowtimeSubsystem::ConnectCable(AShowtimePlug* InputPlug, AShowtimePlug* OutputPlug) const
 {
 	if (!InputPlug || !OutputPlug) {
 		UE_LOG(Showtime, Display, TEXT("Input or Outplug plug was null"));
@@ -114,77 +132,69 @@ void UShowtimeClient::ConnectCable(AShowtimePlug* InputPlug, AShowtimePlug* Outp
 
 
 
-void UShowtimeClient::PostInitProperties()
+void UShowtimeSubsystem::PostInitProperties()
 {
 	Super::PostInitProperties(); 
-
-	// Create view from class
-	if (!ViewClass)
-		ViewClass = UShowtimeView::StaticClass();
-	FString name;
-	ViewClass->GetName(name);
-	View = NewObject<UShowtimeView>(this, ViewClass, FName(*name), RF_Transient);
-	
-	// Trigger blueprint beginplay
-	if(GetOuter() && GetOuter()->GetWorld()) 
-		BeginPlay();
 }
 
-void UShowtimeClient::BeginPlay_Implementation()
+void UShowtimeSubsystem::BeginPlay_Implementation()
 {
 	AttachEvents();
 }
 
-void UShowtimeClient::BeginDestroy()
-{
-	Super::BeginDestroy();
-	Cleanup();
-}
+//void UShowtimeSubsystem::BeginDestroy()
+//{
+//	Super::BeginDestroy();
+//	Cleanup();
+//}
 
-TSharedPtr<ShowtimeClient> UShowtimeClient::Handle() const
+TSharedPtr<ShowtimeClient> UShowtimeSubsystem::Handle() const
 {
 	return client;
 }
 
-void UShowtimeClient::AttachEvents(){
+void UShowtimeSubsystem::AttachEvents(){
 	client_adaptor = std::make_shared<ClientAdaptors>(this);
 	client->add_connection_adaptor(client_adaptor.get());
 	//client->add_hierarchy_adaptor(client_adaptor);
 	client->add_log_adaptor(client_adaptor.get());
 }
 
-void UShowtimeClient::RemoveEvents(){
+void UShowtimeSubsystem::RemoveEvents(){
 	client->remove_connection_adaptor(client_adaptor.get());
 	//client->remove_hierarchy_adaptor(client_adaptor);
 	client->remove_log_adaptor(client_adaptor.get());
 }
 
-void UShowtimeClient::Tick_Implementation(float DeltaTime)
+void UShowtimeSubsystem::Tick_Implementation(float DeltaTime)
 {
 	client->poll_once();
 }
 
-bool UShowtimeClient::IsAllowedToTick() const
+bool UShowtimeSubsystem::IsAllowedToTick() const
 {
 	return client->is_init_completed();
 }
 
-bool UShowtimeClient::IsTickable() const
+bool UShowtimeSubsystem::IsTickable() const
 {
-	return client->is_init_completed();
+	if (client) {
+		return client->is_init_completed();
+	}
+	return false;
 }
 
-bool UShowtimeClient::IsTickableInEditor() const
+bool UShowtimeSubsystem::IsTickableInEditor() const
 {
 	return false;
 }
 
-bool UShowtimeClient::IsTickableWhenPaused() const
+bool UShowtimeSubsystem::IsTickableWhenPaused() const
 {
 	return true;
 }
 
-TStatId UShowtimeClient::GetStatId() const
+TStatId UShowtimeSubsystem::GetStatId() const
 {
 	return UObject::GetStatID();
 }

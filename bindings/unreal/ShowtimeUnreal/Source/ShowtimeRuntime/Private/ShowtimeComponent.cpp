@@ -1,5 +1,5 @@
 #include "ShowtimeComponent.h"
-#include "ShowtimeClient.h"
+#include "ShowtimeSubsystem.h"
 
 
 //void AShowtimeComponent::AttachPlug(AShowtimePlug* plug)
@@ -15,18 +15,18 @@
 //	}
 //}
 
-void AShowtimeComponent::AttachComponent(AShowtimeComponent* component)
-{
-	if (!component)
-		return;
-
-	if (auto native_child = component->GetNativeEntity()) {
-		if (auto native_component = GetNativeComponent()) {
-			native_component->add_child(native_child);
-			this->ComponentAttached(component);
-		}
-	}
-}
+//void AShowtimeComponent::AttachComponent(AShowtimeComponent* component)
+//{
+//	if (!component)
+//		return;
+//
+//	if (auto native_child = component->GetNativeEntity()) {
+//		if (auto native_component = GetNativeComponent()) {
+//			native_component->add_child(native_child);
+//			this->ComponentAttached(component);
+//		}
+//	}
+//}
 
 ZstComponent* AShowtimeComponent::GetNativeComponent() const
 {

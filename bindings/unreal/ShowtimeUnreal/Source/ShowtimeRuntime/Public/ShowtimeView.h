@@ -3,7 +3,9 @@
 #pragma once
 
 #include <showtime/adaptors/ZstSessionAdaptor.hpp>
+#include <showtime/adaptors/ZstConnectionAdaptor.hpp>
 #include <showtime/adaptors/ZstHierarchyAdaptor.hpp>
+#include <showtime/ShowtimeClient.h>
 
 #include "ShowtimeCable.h"
 #include "ShowtimeURI.h"
@@ -21,7 +23,6 @@
 
 // Forward declarations
 
-class UShowtimeClient;
 class AShowtimeServerBeacon;
 
 
@@ -49,6 +50,8 @@ class SHOWTIMERUNTIME_API UShowtimeView :
 {
 	GENERATED_BODY()
 public:
+	UShowtimeView();
+
 	// Showtime events
 	// ---------------
 
@@ -67,6 +70,9 @@ public:
 	//void on_plugin_unloaded(std::shared_ptr<ZstPlugin> plugin) override;
 
 
+	// Spawners
+	// --------
+
 	AShowtimeEntity* SpawnEntity(ZstEntityBase* entity);
 	AShowtimePerformer* SpawnPerformer(ZstPerformer* performer);
 	AShowtimeComponent* SpawnComponent(ZstComponent* component);
@@ -74,14 +80,19 @@ public:
 	AShowtimeFactory* SpawnFactory(ZstEntityFactory* factory);
 	AShowtimePlug* SpawnPlug(ZstPlug* plug);
 	AShowtimeServerBeacon* SpawnServerBeacon(const ZstServerAddress* server);
+	
+	UFUNCTION(BlueprintNativeEvent)
+	void PlaceEntity(AShowtimeEntity* entity);
+	void PlaceEntity_Implementation(AShowtimeEntity* entity);
 
-	// Wrappers
+
+	// Wrapper utilities
 	// ----------------
 
 	void RegisterSpawnedWrapper(AShowtimeEntity* wrapper, ZstEntityBase* entity);
 
 	// Wrapper management
-	AShowtimeEntity* GetWrapperParent(const AShowtimeEntity* wrapper) const;
+	//AShowtimeEntity* GetWrapperParent(const AShowtimeEntity* wrapper) const;
 	AShowtimeEntity* GetWrapper(const ZstEntityBase* entity) const;
 	AShowtimeEntity* GetWrapper(const ZstURI& URI) const;
 
@@ -156,7 +167,4 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Showtime|Client")
 	TMap<FServerAddress, AShowtimeServerBeacon*> ServerBeaconWrappers;
-
-private:
-	UShowtimeClient* GetOwner() const;
 };

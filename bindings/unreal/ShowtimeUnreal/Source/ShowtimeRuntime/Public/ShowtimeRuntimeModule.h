@@ -14,10 +14,6 @@ public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 	FShowtimeRuntimeModule* GetModule() const;
-	ShowtimeClient* GetClient() const;
-
-private:
-	std::shared_ptr<ShowtimeClient> m_client;
 };
 
 IMPLEMENT_MODULE(FShowtimeRuntimeModule, ShowtimeRuntime);

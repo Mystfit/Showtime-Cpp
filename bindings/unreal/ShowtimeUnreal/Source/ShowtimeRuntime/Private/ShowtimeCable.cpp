@@ -1,5 +1,8 @@
 #include "ShowtimeCable.h"
-#include "ShowtimeClient.h"
+
+#include "Engine/GameInstance.h"
+#include "Subsystems/GameInstanceSubsystem.h"
+#include "ShowtimeSubsystem.h"
 
 
 //FString UShowtimeCableAddress::InputPath() const {
@@ -19,7 +22,8 @@
 
 AShowtimePlug* AShowtimeCable::GetInputPlug() const
 {
-	if (auto view = OwningClient->View) {
+	auto ShowtimeSubsystem = GetGameInstance()->GetSubsystem<UShowtimeSubsystem>();
+	if (auto view = ShowtimeSubsystem->View) {
 		auto plug = view->GetWrapper(ZstURI(TCHAR_TO_UTF8(*Address.InputPath)));
 		if (plug) {
 			if (plug->GetNativeEntity()->entity_type() == ZstEntityType::PLUG)
@@ -31,7 +35,8 @@ AShowtimePlug* AShowtimeCable::GetInputPlug() const
 
 AShowtimePlug* AShowtimeCable::GetOutputPlug() const
 {
-	if (auto view = OwningClient->View) {
+	auto ShowtimeSubsystem = GetGameInstance()->GetSubsystem<UShowtimeSubsystem>();
+	if (auto view = ShowtimeSubsystem->View) {
 		auto plug = view->GetWrapper(ZstURI(TCHAR_TO_UTF8(*Address.OutputPath)));
 		if (plug) {
 			if (plug->GetNativeEntity()->entity_type() == ZstEntityType::PLUG)
@@ -43,5 +48,6 @@ AShowtimePlug* AShowtimeCable::GetOutputPlug() const
 
 ZstCable* AShowtimeCable::GetNativeCable() const
 {
-	return OwningClient->Handle()->find_cable(CableAddressFromUnreal(Address));
+	auto ShowtimeSubsystem = GetGameInstance()->GetSubsystem<UShowtimeSubsystem>();
+	return ShowtimeSubsystem->Handle()->find_cable(CableAddressFromUnreal(Address));
 }
