@@ -79,7 +79,7 @@ public:
 	AShowtimeCable* SpawnCable(ZstCable* cable);
 	AShowtimeFactory* SpawnFactory(ZstEntityFactory* factory);
 	AShowtimePlug* SpawnPlug(ZstPlug* plug);
-	AShowtimeServerBeacon* SpawnServerBeacon(const ZstServerAddress* server);
+	AShowtimeServerBeacon* SpawnServerBeacon(const FServerAddress& address);
 	
 	UFUNCTION(BlueprintNativeEvent)
 	void PlaceEntity(AShowtimeEntity* entity);

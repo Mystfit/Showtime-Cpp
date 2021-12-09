@@ -2,6 +2,7 @@
 
 #include "ShowtimeView.h"
 #include "CoreMinimal.h"
+#include "Async/Async.h"
 #include "GameFramework/Actor.h"
 #include "ShowtimeServerBeacon.h"
 #include <Runtime/Engine/Classes/Engine/World.h>
@@ -137,10 +138,10 @@ AShowtimePlug* UShowtimeView::SpawnPlug(ZstPlug* plug)
 }
 
 
-AShowtimeServerBeacon* UShowtimeView::SpawnServerBeacon(const ZstServerAddress* server)
+AShowtimeServerBeacon* UShowtimeView::SpawnServerBeacon(const FServerAddress& address)
 {
 	if (auto server_beacon_actor = GetWorld()->SpawnActor<AShowtimeServerBeacon>(SpawnableServer)) {
-		server_beacon_actor->Server = FServerAddressFromShowtime(server);
+		server_beacon_actor->Server = address;
 		ServerBeaconWrappers.Add(server_beacon_actor->Server, server_beacon_actor);
 		return server_beacon_actor;
 	}
@@ -199,11 +200,13 @@ void UShowtimeView::on_performer_leaving(const ZstURI& performer_path)
 
 void UShowtimeView::on_entity_arriving(ZstEntityBase* entity)
 {
-	auto entity_actor = SpawnEntity(entity);
-	if (entity_actor) {
-		PlaceEntity(entity_actor);
-		OnEntityArriving.Broadcast(entity_actor);
-	}
+	AsyncTask(ENamedThreads::GameThread, [this, entity]() {
+		auto entity_actor = SpawnEntity(entity);
+		if (entity_actor) {
+			PlaceEntity(entity_actor);
+			OnEntityArriving.Broadcast(entity_actor);
+		}
+	});
 }
 
 void UShowtimeView::on_entity_leaving(const ZstURI& entity_path)
@@ -220,7 +223,9 @@ void UShowtimeView::on_entity_updated(ZstEntityBase* entity)
 
 void UShowtimeView::on_factory_arriving(ZstEntityFactory* factory)
 {
-	OnEntityArriving.Broadcast(SpawnFactory(factory));
+	AsyncTask(ENamedThreads::GameThread, [this, factory]() {
+		OnEntityArriving.Broadcast(SpawnFactory(factory));
+	});
 }
 
 void UShowtimeView::on_factory_leaving(const ZstURI& factory_path)
@@ -232,7 +237,9 @@ void UShowtimeView::on_factory_leaving(const ZstURI& factory_path)
 
 void UShowtimeView::on_cable_created(ZstCable* cable)
 {
-	OnCableCreated.Broadcast(SpawnCable(cable));
+	AsyncTask(ENamedThreads::GameThread, [this, cable]() {
+		OnCableCreated.Broadcast(SpawnCable(cable));
+	});
 }
 
 void UShowtimeView::on_cable_destroyed(const ZstCableAddress& cable_address)
@@ -245,8 +252,11 @@ void UShowtimeView::on_cable_destroyed(const ZstCableAddress& cable_address)
 
 void UShowtimeView::on_server_discovered(ShowtimeClient* client, const ZstServerAddress* server)
 {
-	UE_LOG(Showtime, Display, TEXT("Received server beacon %s"), UTF8_TO_TCHAR(server->c_name()));
-	OnServerDiscovered.Broadcast(SpawnServerBeacon(server));
+	FServerAddress address = FServerAddressFromShowtime(server);
+	AsyncTask(ENamedThreads::GameThread, [this, address]() {
+		UE_LOG(Showtime, Display, TEXT("Received server beacon %s"), *address.name);
+		OnServerDiscovered.Broadcast(SpawnServerBeacon(address));
+	});
 }
 
 void UShowtimeView::on_server_lost(ShowtimeClient* client, const ZstServerAddress* server)
