@@ -13,7 +13,7 @@ using namespace showtime;
  *
  */
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (Showtime), meta = (BlueprintSpawnableComponent))
-class AShowtimeFactory : public AShowtimeEntity {
+class UShowtimeFactory : public UShowtimeEntity {
 	GENERATED_BODY()
 public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Showtime|Factory")

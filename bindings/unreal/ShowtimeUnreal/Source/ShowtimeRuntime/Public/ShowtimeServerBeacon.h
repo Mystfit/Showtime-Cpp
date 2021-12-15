@@ -9,8 +9,8 @@ using namespace showtime;
 /**
  *
  */
-UCLASS()
-class AShowtimeServerBeacon : public AActor {
+UCLASS(BlueprintType, Blueprintable, ClassGroup = (Showtime), meta = (BlueprintSpawnableComponent))
+class UShowtimeServerBeacon : public UActorComponent {
 	GENERATED_BODY()
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Showtime|Client")

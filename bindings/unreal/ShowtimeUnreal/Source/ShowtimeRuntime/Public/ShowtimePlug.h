@@ -39,7 +39,7 @@ static TMap<ZstValueType, UShowtimeValueType> ZstValueType_to_UShowtimeValueType
 
 
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (Showtime), meta = (BlueprintSpawnableComponent))
-class AShowtimePlug : public AShowtimeEntity {
+class UShowtimePlug : public UShowtimeEntity {
 	GENERATED_BODY()
 public:
 

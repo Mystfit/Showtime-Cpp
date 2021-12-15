@@ -55,28 +55,28 @@ FORCEINLINE ZstCableAddress CableAddressFromUnreal(const FShowtimeCableAddress& 
 //};
 
 
-UCLASS()
-class AShowtimeCable : public AActor {
+UCLASS(BlueprintType, Blueprintable, ClassGroup = (Showtime), meta = (BlueprintSpawnableComponent))
+class UShowtimeCable : public UActorComponent {
 	GENERATED_BODY()
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Showtime|Cable")
 	FShowtimeCableAddress Address;
 
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Cable")
-	AShowtimePlug* GetInputPlug() const;
+	UShowtimePlug* GetInputPlug() const;
 
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Cable")
-	AShowtimePlug* GetOutputPlug() const;
+	UShowtimePlug* GetOutputPlug() const;
 
 	ZstCable* GetNativeCable() const;
 
-	bool operator==(const AShowtimeCable& s) const
+	bool operator==(const UShowtimeCable& s) const
 	{
 		return std::tie(Address) == std::tie(s.Address);
 	}
 };
 
-FORCEINLINE uint32 GetTypeHash(const AShowtimeCable& Other)
+FORCEINLINE uint32 GetTypeHash(const UShowtimeCable& Other)
 {
 	return GetTypeHash(Other.Address);
 }

@@ -14,21 +14,21 @@ using namespace showtime;
  *
  */
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (Showtime), meta = (BlueprintSpawnableComponent, DisplayName="Showtime Component"))
-class AShowtimeComponent : public AShowtimeEntity {
+class UShowtimeComponent : public UShowtimeEntity {
 	GENERATED_BODY()
 public:
 
 	UFUNCTION(BlueprintImplementableEvent, Category= "Showtime|Component")
-	void PlugAttached(AShowtimePlug* plug);
+	void PlugAttached(UShowtimePlug* plug);
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Showtime|Component")
-	void ComponentAttached(AShowtimeComponent* component);
+	void ComponentAttached(UShowtimeComponent* component);
 
 	//UFUNCTION(BlueprintCallable, Category = "Showtime|Component")
 	//void AttachPlug(AShowtimePlug* plug);
 
 	/*UFUNCTION(BlueprintCallable, Category = "Showtime|Component")
-	void AttachComponent(AShowtimeComponent* component);*/
+	void AttachComponent(UShowtimeComponent* component);*/
 
 	ZstComponent* GetNativeComponent() const;
 };

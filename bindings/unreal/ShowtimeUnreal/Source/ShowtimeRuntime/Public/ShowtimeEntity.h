@@ -20,7 +20,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FInitialised);
 
 
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (Showtime), meta = (BlueprintSpawnableComponent))
-class AShowtimeEntity : public AActor {
+class UShowtimeEntity : public UActorComponent {
 	GENERATED_BODY()
 public:
 	// Properties
@@ -36,16 +36,16 @@ public:
 	// ----------------------------
 
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Entity")
-	AShowtimeEntity* GetParent() const;
+	UShowtimeEntity* GetParent() const;
 
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Entity")
-	TArray<AShowtimeEntity*> GetChildren(bool recursive = false) const;
+	TArray<UShowtimeEntity*> GetChildren(bool recursive = false) const;
 
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Entity")
 	FString GetName() const;
 
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Entity")
-	void AddChild(AShowtimeEntity* entity);
+	void AddChild(UShowtimeEntity* entity);
 
 
 	// Events
@@ -62,7 +62,7 @@ public:
 };
 
 
-FORCEINLINE uint32 GetTypeHash(const AShowtimeEntity* Other)
+FORCEINLINE uint32 GetTypeHash(const UShowtimeEntity* Other)
 {
 	return GetTypeHash(Other->EntityPath);
 }

@@ -23,22 +23,22 @@
 
 // Forward declarations
 
-class AShowtimeServerBeacon;
+class UShowtimeServerBeacon;
 
 
 // Event declarations
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPerformerArriving, AShowtimePerformer*, performer);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPerformerLeaving, AShowtimePerformer*, performer);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEntityArriving, AShowtimeEntity*, entity);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEntityLeaving, AShowtimeEntity*, entity);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEntityUpdated, AShowtimeEntity*, entity);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FFactoryArriving, AShowtimeFactory*, factory);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FFactoryLeaving, AShowtimeFactory*, factory);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCableCreated, AShowtimeCable*, cable);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCableDestroyed, AShowtimeCable*, cable);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FServerDiscovered, AShowtimeServerBeacon*, ServerBeacon);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FServerLost, AShowtimeServerBeacon*, ServerBeacon);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPerformerArriving, UShowtimePerformer*, performer);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPerformerLeaving, UShowtimePerformer*, performer);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEntityArriving, UShowtimeEntity*, entity);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEntityLeaving, UShowtimeEntity*, entity);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEntityUpdated, UShowtimeEntity*, entity);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FFactoryArriving, UShowtimeFactory*, factory);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FFactoryLeaving, UShowtimeFactory*, factory);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCableCreated, UShowtimeCable*, cable);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCableDestroyed, UShowtimeCable*, cable);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FServerDiscovered, UShowtimeServerBeacon*, ServerBeacon);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FServerLost, UShowtimeServerBeacon*, ServerBeacon);
 
 
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (Showtime))
@@ -73,50 +73,55 @@ public:
 	// Spawners
 	// --------
 
-	AShowtimeEntity* SpawnEntity(ZstEntityBase* entity);
-	AShowtimePerformer* SpawnPerformer(ZstPerformer* performer);
-	AShowtimeComponent* SpawnComponent(ZstComponent* component);
-	AShowtimeCable* SpawnCable(ZstCable* cable);
-	AShowtimeFactory* SpawnFactory(ZstEntityFactory* factory);
-	AShowtimePlug* SpawnPlug(ZstPlug* plug);
-	AShowtimeServerBeacon* SpawnServerBeacon(const FServerAddress& address);
+	
+	UShowtimeEntity* SpawnEntity(ZstEntityBase* entity);
+	
+	template<typename wrapper_t>
+	wrapper_t* SpawnEntityActorFromPrototype(ZstEntityBase* entity, TSubclassOf<AActor> prototype);
+
+	//AActor* SpawnPerformer(ZstPerformer* performer);
+	//AActor* SpawnComponent(ZstComponent* component);
+	//AActor* SpawnFactory(ZstEntityFactory* factory);
+	//AActor* SpawnPlug(ZstPlug* plug);
+	UShowtimeCable* SpawnCable(ZstCable* cable);
+	UShowtimeServerBeacon* SpawnServerBeacon(const FServerAddress& address);
 	
 	UFUNCTION(BlueprintNativeEvent)
-	void PlaceEntity(AShowtimeEntity* entity);
-	void PlaceEntity_Implementation(AShowtimeEntity* entity);
+	void PlaceEntity(UShowtimeEntity* entity);
+	void PlaceEntity_Implementation(UShowtimeEntity* entity);
 
 
 	// Wrapper utilities
 	// ----------------
 
-	void RegisterSpawnedWrapper(AShowtimeEntity* wrapper, ZstEntityBase* entity);
+	void RegisterSpawnedWrapper(UShowtimeEntity* wrapper, ZstEntityBase* entity);
 
 	// Wrapper management
-	//AShowtimeEntity* GetWrapperParent(const AShowtimeEntity* wrapper) const;
-	AShowtimeEntity* GetWrapper(const ZstEntityBase* entity) const;
-	AShowtimeEntity* GetWrapper(const ZstURI& URI) const;
+	//UShowtimeEntity* GetWrapperParent(const UShowtimeEntity* wrapper) const;
+	UShowtimeEntity* GetWrapper(const ZstEntityBase* entity) const;
+	UShowtimeEntity* GetWrapper(const ZstURI& URI) const;
 
 
 	// Actor prototypes
 	// ----------------
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Showtime|Entity")
-	TSubclassOf<AShowtimePerformer> SpawnablePerformer;
+	TSubclassOf<AActor> SpawnablePerformer;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Showtime|Entity")
-	TSubclassOf<AShowtimeComponent> SpawnableComponent;
+	TSubclassOf<AActor> SpawnableComponent;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Showtime|Entity")
-	TSubclassOf<AShowtimePlug> SpawnablePlug;
+	TSubclassOf<AActor> SpawnablePlug;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Showtime|Entity")
-	TSubclassOf<AShowtimeFactory> SpawnableFactory;
+	TSubclassOf<AActor> SpawnableFactory;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Showtime|Entity")
-	TSubclassOf<AShowtimeServerBeacon> SpawnableServer;
+	TSubclassOf<AActor> SpawnableServer;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Showtime|Entity")
-	TSubclassOf<AShowtimeCable> SpawnableCable;
+	TSubclassOf<AActor> SpawnableCable;
 
 
 	// Event delegates
@@ -157,14 +162,35 @@ public:
 
 
 	UPROPERTY(BlueprintReadOnly, Category = "Showtime|Entity")
-	TMap<FString, AShowtimeEntity*> EntityWrappers;
+	TMap<FString, UShowtimeEntity*> EntityWrappers;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Showtime|Entity")
-	TMap<FString, AShowtimePerformer*> PerformerWrappers;
+	TMap<FString, UShowtimePerformer*> PerformerWrappers;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Showtime|Entity")
-	TMap<FShowtimeCableAddress, AShowtimeCable*> CableWrappers;
+	TMap<FShowtimeCableAddress, UShowtimeCable*> CableWrappers;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Showtime|Client")
-	TMap<FServerAddress, AShowtimeServerBeacon*> ServerBeaconWrappers;
+	TMap<FServerAddress, UShowtimeServerBeacon*> ServerBeaconWrappers;
 };
+
+template<typename wrapper_t>
+inline wrapper_t* UShowtimeView::SpawnEntityActorFromPrototype(ZstEntityBase* entity, TSubclassOf<AActor> prototype)
+{
+	// Create a new performer actor from our template performer
+	FActorSpawnParameters params;
+	params.Name = UTF8_TO_TCHAR(entity->URI().path());
+	params.NameMode = FActorSpawnParameters::ESpawnActorNameMode::Requested;
+
+	if (auto entity_actor = GetWorld()->SpawnActor<AActor>(prototype, params)) {
+		entity_actor->SetActorLabel(UTF8_TO_TCHAR(entity->URI().last().path()));
+		wrapper_t* entity_comp = entity_actor->FindComponentByClass<wrapper_t>();
+		if (!entity_comp) {
+			entity_comp = NewObject<wrapper_t>(entity_actor);
+			entity_comp->RegisterComponent();
+		}
+		RegisterSpawnedWrapper(entity_comp, entity);
+		return entity_comp;
+	}
+	return nullptr;
+}

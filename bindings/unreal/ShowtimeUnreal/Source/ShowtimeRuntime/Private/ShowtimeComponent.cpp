@@ -2,7 +2,7 @@
 #include "ShowtimeSubsystem.h"
 
 
-//void AShowtimeComponent::AttachPlug(AShowtimePlug* plug)
+//void UShowtimeComponent::AttachPlug(UShowtimePlug* plug)
 //{
 //	if (!plug)
 //		return;
@@ -15,7 +15,7 @@
 //	}
 //}
 
-//void AShowtimeComponent::AttachComponent(AShowtimeComponent* component)
+//void UShowtimeComponent::AttachComponent(UShowtimeComponent* component)
 //{
 //	if (!component)
 //		return;
@@ -28,7 +28,7 @@
 //	}
 //}
 
-ZstComponent* AShowtimeComponent::GetNativeComponent() const
+ZstComponent* UShowtimeComponent::GetNativeComponent() const
 {
 	auto entity = GetNativeEntity();
 	if (entity) {

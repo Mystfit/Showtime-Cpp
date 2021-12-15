@@ -1,17 +1,18 @@
 #include "ShowtimeEntity.h"
 #include "Engine/GameInstance.h"
 #include "ShowtimeSubsystem.h"
+#include "ShowtimeConversions.h"
 
-void AShowtimeEntity::init(FString entity_path) {
+void UShowtimeEntity::init(FString entity_path) {
 	EntityPath = entity_path;
 	OnInitialised.Broadcast();
 }
 
-AShowtimeEntity* AShowtimeEntity::GetParent() const
+UShowtimeEntity* UShowtimeEntity::GetParent() const
 {
-	AShowtimeEntity* wrapper = nullptr;
+	UShowtimeEntity* wrapper = nullptr;
 	
-	auto ShowtimeSubsystem = GetGameInstance()->GetSubsystem<UShowtimeSubsystem>();
+	auto ShowtimeSubsystem = GetOwner()->GetGameInstance()->GetSubsystem<UShowtimeSubsystem>();
 	if (!ShowtimeSubsystem)
 		return nullptr;
 
@@ -28,38 +29,29 @@ AShowtimeEntity* AShowtimeEntity::GetParent() const
 	return wrapper;
 }
 
-TArray<AShowtimeEntity*> AShowtimeEntity::GetChildren(bool recursive) const
+TArray<UShowtimeEntity*> UShowtimeEntity::GetChildren(bool recursive) const
 {
-	TArray<AShowtimeEntity*> child_wrappers;
-	auto ShowtimeSubsystem = GetGameInstance()->GetSubsystem<UShowtimeSubsystem>();
-
+	TArray<UShowtimeEntity*> child_wrappers;
 	auto entity = GetNativeEntity();
-	if(entity && ShowtimeSubsystem){
-		if (!ShowtimeSubsystem->View)
-			return child_wrappers;
-
+	if(entity){
 		auto children = std::make_shared<ZstEntityBundle>();
 		entity->get_child_entities(children.get(), false, recursive);
-		for (int i = 0; i < children->size(); ++i) {
-			auto wrapper = ShowtimeSubsystem->View->EntityWrappers.Find(UTF8_TO_TCHAR(children->item_at(i)->URI().path()));
-			if (wrapper)
-				child_wrappers.Add(*wrapper);
-		}
+		child_wrappers = ShowtimeConversions::EntityBundleToWrappers(children.get());
 	}
 
 	return child_wrappers;
 }
 
-FString AShowtimeEntity::GetName() const
+FString UShowtimeEntity::GetName() const
 {
 	auto entity = GetNativeEntity();
 	if (entity) {
-		return UTF8_TO_TCHAR(entity->URI().first().path());
+		return UTF8_TO_TCHAR(entity->URI().last().path());
 	}
 	return "";
 }
 
-void AShowtimeEntity::AddChild(AShowtimeEntity* entity)
+void UShowtimeEntity::AddChild(UShowtimeEntity* entity)
 {
 	if (auto native_entity = GetNativeEntity()){
 		if (auto native_child = entity->GetNativeEntity())
@@ -67,17 +59,17 @@ void AShowtimeEntity::AddChild(AShowtimeEntity* entity)
 	}
 }
 
-ZstEntityBase* AShowtimeEntity::GetNativeEntity() const {
-	auto ShowtimeSubsystem = GetGameInstance()->GetSubsystem<UShowtimeSubsystem>();
+ZstEntityBase* UShowtimeEntity::GetNativeEntity() const {
+	auto ShowtimeSubsystem = GetOwner()->GetGameInstance()->GetSubsystem<UShowtimeSubsystem>();
 
 	if (!ShowtimeSubsystem || EntityPath.IsEmpty())
 		return nullptr;
 	return  ShowtimeSubsystem->Handle()->find_entity(ZstURI(TCHAR_TO_UTF8(*EntityPath)));
 }
 
-void AShowtimeEntity::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
+void UShowtimeEntity::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AShowtimeEntity, EntityPath);
-	DOREPLIFETIME(AShowtimeEntity, OnInitialised);
+	DOREPLIFETIME(UShowtimeEntity, EntityPath);
+	DOREPLIFETIME(UShowtimeEntity, OnInitialised);
 }

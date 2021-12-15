@@ -1,6 +1,6 @@
 #include "ShowtimeFactory.h"
 
-void AShowtimeFactory::AddSpawnableComponent(AActor* spawnable_actor)
+void UShowtimeFactory::AddSpawnableComponent(AActor* spawnable_actor)
 {
 	auto factory = GetNativeFactory();
 	if (!factory)
@@ -20,7 +20,7 @@ void AShowtimeFactory::AddSpawnableComponent(AActor* spawnable_actor)
 	SpawnableComponents.Add(FString(UTF8_TO_TCHAR(creatable.path())), spawnable_actor);
 }
 
-ZstEntityFactory* AShowtimeFactory::GetNativeFactory() const
+ZstEntityFactory* UShowtimeFactory::GetNativeFactory() const
 {
 	auto entity = GetNativeEntity();
 	if (entity) {

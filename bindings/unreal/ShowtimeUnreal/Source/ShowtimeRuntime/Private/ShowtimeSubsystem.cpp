@@ -66,7 +66,7 @@ void UShowtimeSubsystem::Init()
 	client->add_hierarchy_adaptor(View);	// For entities
 	//client->start_file_logging();
 
-	View->SpawnPerformer(Handle()->get_root());
+	View->SpawnEntity(Handle()->get_root());
 }
 
 void UShowtimeSubsystem::JoinServerByAddress(const FString& address)
@@ -89,9 +89,9 @@ bool UShowtimeSubsystem::IsConnected() const
 	return client->is_connected();
 }
 
-TArray<AShowtimePerformer*> UShowtimeSubsystem::GetPerformers() const
+TArray<UShowtimePerformer*> UShowtimeSubsystem::GetPerformers() const
 {
-	TArray<AShowtimePerformer*> performer_wrappers = TArray<AShowtimePerformer*>();
+	TArray<UShowtimePerformer*> performer_wrappers = TArray<UShowtimePerformer*>();
 
 	auto performers = std::make_shared<ZstEntityBundle>();
 	Handle()->get_performers(performers.get());
@@ -105,22 +105,22 @@ TArray<AShowtimePerformer*> UShowtimeSubsystem::GetPerformers() const
 			continue;
 
 		if (auto performer_wrapper = View->GetWrapper(entity->URI()))
-			performer_wrappers.Add(static_cast<AShowtimePerformer*>(performer_wrapper));
+			performer_wrappers.Add(static_cast<UShowtimePerformer*>(performer_wrapper));
 	}
 
 	return performer_wrappers;
 }
 
-AShowtimePerformer* UShowtimeSubsystem::GetRootPerformer() const
+UShowtimePerformer* UShowtimeSubsystem::GetRootPerformer() const
 {
 	auto wrapper = View->GetWrapper(Handle()->get_root()->URI());
 	if (wrapper) {
-		return static_cast<AShowtimePerformer*>(wrapper);
+		return static_cast<UShowtimePerformer*>(wrapper);
 	}
 	return nullptr;
 }
 
-void UShowtimeSubsystem::ConnectCable(AShowtimePlug* InputPlug, AShowtimePlug* OutputPlug) const
+void UShowtimeSubsystem::ConnectCable(UShowtimePlug* InputPlug, UShowtimePlug* OutputPlug) const
 {
 	if (!InputPlug || !OutputPlug) {
 		UE_LOG(Showtime, Display, TEXT("Input or Outplug plug was null"));
@@ -155,13 +155,13 @@ TSharedPtr<ShowtimeClient> UShowtimeSubsystem::Handle() const
 
 void UShowtimeSubsystem::AttachEvents(){
 	client_adaptor = std::make_shared<ClientAdaptors>(this);
-	client->add_connection_adaptor(client_adaptor.get());
+	//client->add_connection_adaptor(client_adaptor.get());
 	//client->add_hierarchy_adaptor(client_adaptor);
 	client->add_log_adaptor(client_adaptor.get());
 }
 
 void UShowtimeSubsystem::RemoveEvents(){
-	client->remove_connection_adaptor(client_adaptor.get());
+	//client->remove_connection_adaptor(client_adaptor.get());
 	//client->remove_hierarchy_adaptor(client_adaptor);
 	client->remove_log_adaptor(client_adaptor.get());
 }

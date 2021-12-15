@@ -100,13 +100,13 @@ public:
 	bool IsConnected() const;
 	
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Client")
-	TArray<AShowtimePerformer*> GetPerformers() const;
+	TArray<UShowtimePerformer*> GetPerformers() const;
 
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Client")
-	AShowtimePerformer* GetRootPerformer() const;
+	UShowtimePerformer* GetRootPerformer() const;
 
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Client")
-	void ConnectCable(AShowtimePlug* InputPlug, AShowtimePlug* OutputPlug) const;
+	void ConnectCable(UShowtimePlug* InputPlug, UShowtimePlug* OutputPlug) const;
 
 
 	//UPROPERTY(BlueprintAssignable)
