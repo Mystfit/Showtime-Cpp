@@ -62,6 +62,7 @@ UShowtimeCable* UShowtimeView::SpawnCable(ZstCable* cable)
 		UShowtimeCable* cable_comp = cable_actor->FindComponentByClass<UShowtimeCable>();
 		if (!cable_comp) {
 			cable_comp = NewObject<UShowtimeCable>(cable_actor);
+			cable_comp->Address = FShowtimeCableAddress(cable->get_address());
 			cable_comp->RegisterComponent();
 		}
 		CableWrappers.Add(cable->get_address(), cable_comp);
@@ -113,7 +114,7 @@ void UShowtimeView::PlaceEntity_Implementation(UShowtimeEntity* entity)
 		//}
 	
 		//if (parent->GetNativeEntity()->entity_type() == ZstEntityType::PERFORMER) {
-		//	static_cast<UShowtimePerformer*>(parent)->FactoryAttached(factory_actor);
+		//	static_cast<UShowtimePerformer*>(parent)->FactoryAtached(factory_actor);
 		//}
 
 		//auto e_type = parent->GetNativeEntity()->entity_type();
@@ -123,10 +124,22 @@ void UShowtimeView::PlaceEntity_Implementation(UShowtimeEntity* entity)
 	}
 }
 
+void UShowtimeView::PlaceCable_Implementation(UShowtimeCable* cable)
+{
+	UShowtimePlug* input_plug_entity = cable->GetInputPlug();
+	UShowtimeEntity* output_plug_entity = cable->GetOutputPlug();
+	if (input_plug_entity && output_plug_entity) {
+		// Cable already has plugs defined
+	}
+}
+
 void UShowtimeView::on_performer_arriving(ZstPerformer* performer)
 {
 	AsyncTask(ENamedThreads::GameThread, [this, performer]() {
-		OnPerformerArriving.Broadcast(SpawnEntityActorFromPrototype<UShowtimePerformer>(performer, SpawnablePerformer));
+		if (auto performer_actor = SpawnEntityActorFromPrototype<UShowtimePerformer>(performer, SpawnablePerformer)) {
+			PlaceEntity(performer_actor);
+			OnPerformerArriving.Broadcast(performer_actor);
+		}
 	});
 }
 
@@ -140,8 +153,7 @@ void UShowtimeView::on_performer_leaving(const ZstURI& performer_path)
 void UShowtimeView::on_entity_arriving(ZstEntityBase* entity)
 {
 	AsyncTask(ENamedThreads::GameThread, [this, entity]() {
-		auto entity_actor = SpawnEntity(entity);
-		if (entity_actor) {
+		if (auto entity_actor = SpawnEntity(entity)) {
 			PlaceEntity(entity_actor);
 			OnEntityArriving.Broadcast(entity_actor);
 		}
@@ -177,7 +189,10 @@ void UShowtimeView::on_factory_leaving(const ZstURI& factory_path)
 void UShowtimeView::on_cable_created(ZstCable* cable)
 {
 	AsyncTask(ENamedThreads::GameThread, [this, cable]() {
-		OnCableCreated.Broadcast(SpawnCable(cable));
+		if (auto cable_actor = SpawnCable(cable)) {
+			PlaceCable(cable_actor);
+			OnCableCreated.Broadcast(cable_actor);
+		}
 	});
 }
 

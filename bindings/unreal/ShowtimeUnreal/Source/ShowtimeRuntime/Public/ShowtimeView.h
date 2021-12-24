@@ -90,6 +90,10 @@ public:
 	void PlaceEntity(UShowtimeEntity* entity);
 	void PlaceEntity_Implementation(UShowtimeEntity* entity);
 
+	UFUNCTION(BlueprintNativeEvent)
+	void PlaceCable(UShowtimeCable* cable);
+	void PlaceCable_Implementation(UShowtimeCable* cable);
+
 
 	// Wrapper utilities
 	// ----------------
