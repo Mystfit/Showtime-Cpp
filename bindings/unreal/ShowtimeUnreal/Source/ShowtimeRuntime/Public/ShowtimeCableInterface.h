@@ -25,4 +25,7 @@ class SHOWTIMERUNTIME_API IShowtimeCableInterface
 public:
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Showtime|Interfaces")
 	UShowtimeCable* Cable();
+
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Showtime|Interfaces")
+	void ConnectCableToEndpoints(UShowtimePlug* input, UShowtimePlug* output);
 };

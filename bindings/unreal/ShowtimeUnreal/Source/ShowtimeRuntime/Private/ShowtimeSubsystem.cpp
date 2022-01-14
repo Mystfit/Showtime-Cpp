@@ -120,14 +120,17 @@ UShowtimePerformer* UShowtimeSubsystem::GetRootPerformer() const
 	return nullptr;
 }
 
-void UShowtimeSubsystem::ConnectCable(UShowtimePlug* InputPlug, UShowtimePlug* OutputPlug) const
+void UShowtimeSubsystem::ConnectCable(UShowtimeCable* pending_cable, UShowtimePlug* InputPlug, UShowtimePlug* OutputPlug) const
 {
 	if (!InputPlug || !OutputPlug) {
 		UE_LOG(Showtime, Display, TEXT("Input or Outplug plug was null"));
 		return;
 	}
 
-	Handle()->connect_cable(static_cast<ZstInputPlug*>(InputPlug->GetNativePlug()), static_cast<ZstOutputPlug*>(OutputPlug->GetNativePlug()));
+	auto cable = Handle()->connect_cable(static_cast<ZstInputPlug*>(InputPlug->GetNativePlug()), static_cast<ZstOutputPlug*>(OutputPlug->GetNativePlug()));
+	if (cable) {
+		pending_cable->Address = FShowtimeCableAddress(cable->get_address());
+	}
 }
 
 

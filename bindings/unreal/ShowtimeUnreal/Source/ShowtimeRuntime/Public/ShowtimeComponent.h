@@ -13,16 +13,29 @@ using namespace showtime;
 /**
  *
  */
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FComponentPlaced, UShowtimeComponent*, component);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPlugPlaced, UShowtimePlug*, plug);
+
+
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (Showtime), meta = (BlueprintSpawnableComponent, DisplayName="Showtime Component"))
 class UShowtimeComponent : public UShowtimeEntity {
 	GENERATED_BODY()
 public:
 
-	UFUNCTION(BlueprintImplementableEvent, Category= "Showtime|Component")
-	void PlugAttached(UShowtimePlug* plug);
+	UFUNCTION(BlueprintNativeEvent, Category= "Showtime|Component")
+	void PlugPlaced(UShowtimePlug* plug);
+	void PlugPlaced_Implementation(UShowtimePlug* plug);
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "Showtime|Component")
-	void ComponentAttached(UShowtimeComponent* component);
+	UFUNCTION(BlueprintNativeEvent, Category = "Showtime|Component")
+	void ComponentPlaced(UShowtimeComponent* component);
+	void ComponentPlaced_Implementation(UShowtimeComponent* component);
+
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Entity")
+	FComponentPlaced OnComponentPlaced;
+
+	UPROPERTY(BlueprintAssignable, Category = "Showtime|Entity")
+	FPlugPlaced OnPlugPlaced;
 
 	//UFUNCTION(BlueprintCallable, Category = "Showtime|Component")
 	//void AttachPlug(AShowtimePlug* plug);

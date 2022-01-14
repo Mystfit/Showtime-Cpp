@@ -16,5 +16,5 @@ class UShowtimePerformer : public UShowtimeComponent {
 	GENERATED_BODY()
 public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Showtime|Factory")
-	void FactoryAttached(UShowtimeFactory* factory);
+	void FactoryPlaced(UShowtimeFactory* factory);
 };

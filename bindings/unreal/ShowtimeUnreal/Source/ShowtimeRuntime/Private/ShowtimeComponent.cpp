@@ -10,7 +10,7 @@
 //	if (auto native_plug = plug->GetNativeEntity()) {
 //		if (auto native_component = GetNativeComponent()) {
 //			native_component->add_child(native_plug);
-//			this->PlugAttached(plug);
+//			this->PlugPlaced(plug);
 //		}
 //	}
 //}
@@ -23,10 +23,20 @@
 //	if (auto native_child = component->GetNativeEntity()) {
 //		if (auto native_component = GetNativeComponent()) {
 //			native_component->add_child(native_child);
-//			this->ComponentAttached(component);
+//			this->ComponentPlaced(component);
 //		}
 //	}
 //}
+
+void UShowtimeComponent::PlugPlaced_Implementation(UShowtimePlug* plug)
+{
+	OnPlugPlaced.Broadcast(plug);
+}
+
+void UShowtimeComponent::ComponentPlaced_Implementation(UShowtimeComponent* component)
+{
+	OnComponentPlaced.Broadcast(component);
+}
 
 ZstComponent* UShowtimeComponent::GetNativeComponent() const
 {

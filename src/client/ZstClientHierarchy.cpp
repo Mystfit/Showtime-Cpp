@@ -209,7 +209,8 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
 	//Internal factory
 	if (!factory->is_proxy()) {
         auto entity = ZstHierarchy::create_entity(creatable_path, name, sendtype);
-        get_local_performer()->add_child(entity);
+		if(entity)
+			get_local_performer()->add_child(entity);
         return entity;
     }
     

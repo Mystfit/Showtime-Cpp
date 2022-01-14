@@ -181,12 +181,16 @@ public:
 template<typename wrapper_t>
 inline wrapper_t* UShowtimeView::SpawnEntityActorFromPrototype(ZstEntityBase* entity, TSubclassOf<AActor> prototype)
 {
+	auto world = GetWorld();
+	if (!world)
+		return nullptr;
+
 	// Create a new performer actor from our template performer
 	FActorSpawnParameters params;
 	params.Name = UTF8_TO_TCHAR(entity->URI().path());
 	params.NameMode = FActorSpawnParameters::ESpawnActorNameMode::Requested;
 
-	if (auto entity_actor = GetWorld()->SpawnActor<AActor>(prototype, params)) {
+	if (auto entity_actor = world->SpawnActor<AActor>(prototype, params)) {
 		entity_actor->SetActorLabel(UTF8_TO_TCHAR(entity->URI().last().path()));
 		wrapper_t* entity_comp = entity_actor->FindComponentByClass<wrapper_t>();
 		if (!entity_comp) {

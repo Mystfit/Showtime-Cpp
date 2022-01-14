@@ -153,11 +153,11 @@ foreach ($c in $config){
         "-DFLATBUFFERS_BUILD_FLATLIB=ON"
         "-DCMAKE_DEBUG_POSTFIX=d"
     )
-    Build-CmakeFromGit -name "fmt" -url "https://github.com/fmtlib/fmt.git" -branch "7.1.3" -config $config_titled -toolset $toolset_ver -arch $platform -flags @()
-    Build-CmakeFromGit -name "rtmidi" -url "https://github.com/mystfit/rtmidi.git" -branch "cmake-updates" -config $config_titled -toolset $toolset_ver -arch $platform -flags @(
-        "-DRTMIDI_BUILD_STATIC_LIBS=ON"
-        "-DCMAKE_DEBUG_POSTFIX=d"
-    )
+    Build-CmakeFromGit -name "fmt" -url "https://github.com/fmtlib/fmt.git" -branch "8.1.1" -config $config_titled -toolset $toolset_ver -arch $platform -flags @()
+    # Build-CmakeFromGit -name "rtmidi" -url "https://github.com/mystfit/rtmidi.git" -branch "cmake-updates" -config $config_titled -toolset $toolset_ver -arch $platform -flags @(
+    #     "-DRTMIDI_BUILD_STATIC_LIBS=ON"
+    #     "-DCMAKE_DEBUG_POSTFIX=d"
+    # )
 
     $arch = $platform
     if($platform -contains "ARM64"){

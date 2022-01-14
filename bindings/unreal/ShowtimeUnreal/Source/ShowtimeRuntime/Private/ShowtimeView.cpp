@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "ShowtimeServerBeacon.h"
 #include <Runtime/Engine/Classes/Engine/World.h>
+#include <ShowtimeRuntime/Public/ShowtimeCableInterface.h>
 
 UShowtimeView::UShowtimeView() 
 {
@@ -24,12 +25,17 @@ void UShowtimeView::RegisterSpawnedWrapper(UShowtimeEntity* wrapper, ZstEntityBa
 
 UShowtimeEntity* UShowtimeView::GetWrapper(const ZstEntityBase* entity) const
 {
-	return *EntityWrappers.Find(UTF8_TO_TCHAR(entity->URI().path()));
+	if (!entity)
+		return nullptr;
+	return GetWrapper(entity->URI());
 }
 
 UShowtimeEntity* UShowtimeView::GetWrapper(const ZstURI& URI) const
 {
-	return *EntityWrappers.Find(UTF8_TO_TCHAR(URI.path()));
+	if (auto entity_wrapper = EntityWrappers.Find(UTF8_TO_TCHAR(URI.path()))) {
+		return *entity_wrapper;
+	}
+	return nullptr;
 }
 
 UShowtimeEntity* UShowtimeView::SpawnEntity(ZstEntityBase* entity)
@@ -62,9 +68,9 @@ UShowtimeCable* UShowtimeView::SpawnCable(ZstCable* cable)
 		UShowtimeCable* cable_comp = cable_actor->FindComponentByClass<UShowtimeCable>();
 		if (!cable_comp) {
 			cable_comp = NewObject<UShowtimeCable>(cable_actor);
-			cable_comp->Address = FShowtimeCableAddress(cable->get_address());
 			cable_comp->RegisterComponent();
 		}
+		cable_comp->Address = FShowtimeCableAddress(cable->get_address());
 		CableWrappers.Add(cable->get_address(), cable_comp);
 		return cable_comp;
 	}
@@ -73,7 +79,11 @@ UShowtimeCable* UShowtimeView::SpawnCable(ZstCable* cable)
 
 UShowtimeServerBeacon* UShowtimeView::SpawnServerBeacon(const FServerAddress& address)
 {
-	if (auto server_beacon_actor = GetWorld()->SpawnActor<AActor>(SpawnableServer)) {
+	auto world = GetWorld();
+	if (!world)
+		return nullptr;
+
+	if (auto server_beacon_actor = world->SpawnActor<AActor>(SpawnableServer)) { 
 		UShowtimeServerBeacon* beacon_comp = server_beacon_actor->FindComponentByClass<UShowtimeServerBeacon>();
 		if (!beacon_comp) {
 			beacon_comp = NewObject<UShowtimeServerBeacon>(server_beacon_actor);
@@ -94,23 +104,34 @@ void UShowtimeView::PlaceEntity_Implementation(UShowtimeEntity* entity)
 	if (!entity->GetNativeEntity())
 		return;
 
+	auto parent = entity->GetParent();
+	if (!parent)
+		return;
+
 	//Add plug to parent component
-	if (auto parent = entity->GetParent()) {
-		switch (entity->GetNativeEntity()->entity_type()) {
+	if (auto native_parent = entity->GetNativeEntity()) {
+		switch (native_parent->entity_type()) {
 		case ZstEntityType::COMPONENT:
+			static_cast<UShowtimeComponent*>(parent)->ComponentPlaced(static_cast<UShowtimeComponent*>(entity));
 			break;
 		case ZstEntityType::PERFORMER:
 			break;
 		case ZstEntityType::PLUG:
+			static_cast<UShowtimeComponent*>(parent)->PlugPlaced(static_cast<UShowtimePlug*>(entity));
 			break;
 		case ZstEntityType::FACTORY:
+			if (native_parent->entity_type() == ZstEntityType::PERFORMER) {
+				static_cast<UShowtimePerformer*>(parent)->FactoryPlaced(static_cast<UShowtimeFactory*>(entity));
+			}
 			break;
 		}
+	}
+		
 
 		// For reference only. Trigger placement events on all entities and parents affected
 		//if (parent->GetNativeEntity()->entity_type() == ZstEntityType::COMPONENT) {
 		//	auto parent_c = static_cast<UShowtimeComponent*>(parent);
-		//	parent_c->PlugAttached(plug_actor);
+		//	parent_c->PlugPlaced(plug_actor);
 		//}
 	
 		//if (parent->GetNativeEntity()->entity_type() == ZstEntityType::PERFORMER) {
@@ -119,9 +140,9 @@ void UShowtimeView::PlaceEntity_Implementation(UShowtimeEntity* entity)
 
 		//auto e_type = parent->GetNativeEntity()->entity_type();
 		//if (e_type == ZstEntityType::COMPONENT || e_type == ZstEntityType::PERFORMER) {
-		//	static_cast<UShowtimeComponent*>(parent)->ComponentAttached(entity_actor);
+		//	static_cast<UShowtimeComponent*>(parent)->ComponentPlaced(entity_actor);
 		//}
-	}
+	
 }
 
 void UShowtimeView::PlaceCable_Implementation(UShowtimeCable* cable)
@@ -145,8 +166,9 @@ void UShowtimeView::on_performer_arriving(ZstPerformer* performer)
 
 void UShowtimeView::on_performer_leaving(const ZstURI& performer_path)
 {
-	if (auto entity_wrapper = *PerformerWrappers.Find(UTF8_TO_TCHAR(performer_path.path()))) {
-		OnPerformerLeaving.Broadcast(entity_wrapper);
+	if (auto entity_wrapper = EntityWrappers.Find(UTF8_TO_TCHAR(performer_path.path()))) {
+		if(auto performer_wrapper = Cast<UShowtimePerformer>(*entity_wrapper))
+			OnPerformerLeaving.Broadcast(performer_wrapper);
 	}
 }
 
@@ -162,14 +184,19 @@ void UShowtimeView::on_entity_arriving(ZstEntityBase* entity)
 
 void UShowtimeView::on_entity_leaving(const ZstURI& entity_path)
 {
-	if (auto entity_wrapper = *EntityWrappers.Find(UTF8_TO_TCHAR(entity_path.path()))) {
-		OnEntityLeaving.Broadcast(*EntityWrappers.Find(UTF8_TO_TCHAR(entity_path.path())));
+	if (auto entity_wrapper = EntityWrappers.Find(UTF8_TO_TCHAR(entity_path.path()))) {
+		OnEntityLeaving.Broadcast(*entity_wrapper);
 	}
 }
 
 void UShowtimeView::on_entity_updated(ZstEntityBase* entity)
 {
-	OnEntityUpdated.Broadcast(*EntityWrappers.Find(UTF8_TO_TCHAR(entity->URI().path())));
+	if (!entity)
+		return;
+
+	if (auto entity_wrapper = EntityWrappers.Find(UTF8_TO_TCHAR(entity->URI().path()))) {
+		OnEntityUpdated.Broadcast(*entity_wrapper);
+	}
 }
 
 void UShowtimeView::on_factory_arriving(ZstEntityFactory* factory)
@@ -181,18 +208,29 @@ void UShowtimeView::on_factory_arriving(ZstEntityFactory* factory)
 
 void UShowtimeView::on_factory_leaving(const ZstURI& factory_path)
 {
-	if (auto entity_wrapper = *EntityWrappers.Find(UTF8_TO_TCHAR(factory_path.path()))) {
-		OnEntityUpdated.Broadcast(entity_wrapper);
+	if (auto entity_wrapper = EntityWrappers.Find(UTF8_TO_TCHAR(factory_path.path()))) {
+		OnEntityUpdated.Broadcast(*entity_wrapper);
 	}
 }
 
 void UShowtimeView::on_cable_created(ZstCable* cable)
 {
 	AsyncTask(ENamedThreads::GameThread, [this, cable]() {
-		if (auto cable_actor = SpawnCable(cable)) {
-			PlaceCable(cable_actor);
-			OnCableCreated.Broadcast(cable_actor);
+		UShowtimeCable* cable_wrapper = nullptr;
+		UShowtimeCable** cable_wrapper_it = CableWrappers.Find(FShowtimeCableAddress(cable->get_address()));
+		if (cable_wrapper_it) {
+			// Cable exists already
+			cable_wrapper = *cable_wrapper_it;
 		}
+		else {
+			cable_wrapper = SpawnCable(cable);
+			if(cable_wrapper->GetOwner()->Implements<UShowtimeCableInterface>()){
+				IShowtimeCableInterface::Execute_ConnectCableToEndpoints(cable_wrapper->GetOwner(), cable_wrapper->GetInputPlug(), cable_wrapper->GetOutputPlug());
+			}
+		}
+	
+		PlaceCable(cable_wrapper);
+		OnCableCreated.Broadcast(cable_wrapper);
 	});
 }
 

@@ -106,7 +106,7 @@ public:
 	UShowtimePerformer* GetRootPerformer() const;
 
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Client")
-	void ConnectCable(UShowtimePlug* InputPlug, UShowtimePlug* OutputPlug) const;
+	void ConnectCable(UShowtimeCable* pending_cable, UShowtimePlug* InputPlug, UShowtimePlug* OutputPlug) const;
 
 
 	//UPROPERTY(BlueprintAssignable)
