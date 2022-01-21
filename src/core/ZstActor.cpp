@@ -98,34 +98,36 @@ namespace showtime {
 		//Received TERM message, this actor is going away
 		//char *command = zmsg_popstr(msg);
 		int status = 0;
-		char* command = "";
+		char* command = nullptr;
 		zsock_t* send_sock = NULL;
 		zmsg_t* msg = NULL;
 		zsock_recv(sock, "spm", &command, &send_sock, &msg);
+        
+        if(command){
+            if (streq(command, "$TERM")) {
+                //Signal that we finished cleaning up
+                zsock_set_sndtimeo(sock, 0);
+                zsock_signal(sock, 0);
 
-		if (streq(command, "$TERM")) {
-			//Signal that we finished cleaning up
-			zsock_set_sndtimeo(sock, 0);
-			zsock_signal(sock, 0);
-
-			//Return -1 to exit the zloop
-			status = -1;
-		}
-		else if (streq(command, "s")) {
-			if (!send_sock) {
-				Log::net(Log::Level::error, "Actor received send request but no socket was sent");
-			}
-			if (!msg) {
-				Log::net(Log::Level::error, "Actor received send request but no msg was sent");
-			}
-			zmsg_send(&msg, send_sock);
-		}
-		else if (streq(command, "PING")) {
-			zstr_send(sock, "PONG");
-		}
-		else {
-			Log::net(Log::Level::error, "Actor command not recognized: {}", command);
-		}
+                //Return -1 to exit the zloop
+                status = -1;
+            }
+            else if (streq(command, "s")) {
+                if (!send_sock) {
+                    Log::net(Log::Level::error, "Actor received send request but no socket was sent");
+                }
+                if (!msg) {
+                    Log::net(Log::Level::error, "Actor received send request but no msg was sent");
+                }
+                zmsg_send(&msg, send_sock);
+            }
+            else if (streq(command, "PING")) {
+                zstr_send(sock, "PONG");
+            }
+            else {
+                Log::net(Log::Level::error, "Actor command not recognized: {}", command);
+            }
+        }
 
 		// Cleanup
 		zstr_free(&command);

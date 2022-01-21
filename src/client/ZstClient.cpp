@@ -29,10 +29,10 @@ ZstClient::ZstClient(ShowtimeClient* api) :
     m_client_transport(std::make_shared<ZstZMQClientTransport>()),
 
     //Timers
-    m_beaconcheck_timer(m_client_timerloop.IO_context()),
     m_heartbeat_timer(m_client_timerloop.IO_context()),
-    m_event_condition(std::make_shared<std::condition_variable>()),
+    m_beaconcheck_timer(m_client_timerloop.IO_context()),
     m_thread_pool(1),
+    m_event_condition(std::make_shared<std::condition_variable>()),
     m_api(api)
 {
     // Set up wake conditions
@@ -501,7 +501,7 @@ void ZstClient::synchronise_graph(const ZstTransportRequestBehaviour& sendtype)
     //Build message
     ZstTransportArgs args;
     args.msg_send_behaviour = sendtype;
-    args.on_recv_response = [this, sendtype](ZstMessageResponse response) {
+    args.on_recv_response = [this](ZstMessageResponse response) {
         if (!ZstStageTransport::verify_signal(response.response, Signal_OK, "Synchronise client with server")) {
             return;
         }

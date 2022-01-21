@@ -226,7 +226,7 @@ ZstCable * ZstSession::create_cable(ZstInputPlug * input, ZstOutputPlug * output
 	return cable_ptr.get();
 }
 
-void ZstSession::on_compute(ZstComponent * component, ZstInputPlug * plug) {
+void ZstSession::on_request_compute(ZstComponent * component, ZstInputPlug * plug) {
     try {
         component->compute(plug);
     }

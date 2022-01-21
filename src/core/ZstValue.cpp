@@ -284,19 +284,24 @@ void ZstDynamicValue::append_byte(const uint8_t& value)
 const size_t ZstDynamicValue::size() const
 {
 	switch (m_default_type) {
-	case ZstValueType::IntList:
-		return m_int_buffer.size();
-		break;
-	case ZstValueType::FloatList:
-		return m_float_buffer.size();
-		break;
-	case ZstValueType::StrList:
-		return m_string_buffer.size();
-		break;
-	case ZstValueType::ByteList:
-		return m_byte_buffer.size();
-		break;
-	}
+        case ZstValueType::IntList:
+            return m_int_buffer.size();
+            break;
+        case ZstValueType::FloatList:
+            return m_float_buffer.size();
+            break;
+        case ZstValueType::StrList:
+            return m_string_buffer.size();
+            break;
+        case ZstValueType::ByteList:
+            return m_byte_buffer.size();
+            break;
+        case ZstValueType::NONE:
+        case ZstValueType::DynamicList:
+        case ZstValueType::PlugHandshake:
+        case ZstValueType::ZstValueType_Size:
+            break;
+    }
 	return 0;
 }
 
@@ -377,7 +382,7 @@ uoffset_t ZstDynamicValue::serialize(flatbuffers::FlatBufferBuilder& buffer_buil
 void ZstDynamicValue::serialize_partial(Offset<PlugValue>& dest, flatbuffers::FlatBufferBuilder& buffer_builder) const
 {
 
-switch (m_default_type) {
+    switch (m_default_type) {
 	case ZstValueType::IntList:
 	{
 		int* buf = nullptr;
@@ -407,11 +412,12 @@ switch (m_default_type) {
 		dest = CreatePlugValue(buffer_builder, PlugValueData_IntList, CreateByteList(buffer_builder, vec_offset).Union());
 		break;
 	}
+    case ZstValueType::DynamicList:
 	case ZstValueType::PlugHandshake:
-		break;
 	case ZstValueType::NONE:
-		break;
-	}
+    case ZstValueType::ZstValueType_Size:
+        break;
+    }
 }
 
 void ZstDynamicValue::deserialize(const PlugValue* buffer)

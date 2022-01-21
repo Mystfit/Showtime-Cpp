@@ -8,22 +8,22 @@ namespace showtime {
 
 ZstCable::ZstCable() : 
 	ZstSynchronisable(),
-	m_hierarchy_events(std::make_shared< ZstEventDispatcher<ZstHierarchyAdaptor> >()),
-    m_address()
+    m_address(),
+	m_hierarchy_events(std::make_shared< ZstEventDispatcher<ZstHierarchyAdaptor> >())
 {
 }
 
 ZstCable::ZstCable(const ZstCable & copy) : 
 	ZstSynchronisable(),
-	m_hierarchy_events(std::make_shared< ZstEventDispatcher<ZstHierarchyAdaptor> >()),
-    m_address(copy.m_address)
+    m_address(copy.m_address),
+	m_hierarchy_events(std::make_shared< ZstEventDispatcher<ZstHierarchyAdaptor> >())
 {
 }
 
 ZstCable::ZstCable(ZstInputPlug * input_plug, ZstOutputPlug * output_plug) :
 	ZstSynchronisable(),
-	m_hierarchy_events(std::make_shared< ZstEventDispatcher<ZstHierarchyAdaptor> >()),
-    m_address(input_plug->URI(), output_plug->URI())
+    m_address(input_plug->URI(), output_plug->URI()),
+	m_hierarchy_events(std::make_shared< ZstEventDispatcher<ZstHierarchyAdaptor> >())
 {
 }
 

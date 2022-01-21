@@ -61,8 +61,8 @@ class ZstEventDispatcherTyped :
 	//static_assert(std::is_base_of< ZstEventAdaptor<T>, T>::value, "T must derive from ZstEventAdaptor");
 public:
 	ZstEventDispatcherTyped() : 
-		m_default_adaptor(std::make_shared<T>()), 
-		m_has_event(false)
+		m_has_event(false),
+        m_default_adaptor(std::make_shared<T>())
 	{
 		// Add default adaptor directly and skip add_daptor since this object will own the adaptor directly
 		// -- also avoids having to construct bad weak pointers in the constructor

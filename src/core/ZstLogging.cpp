@@ -34,15 +34,15 @@ namespace expr = boost::log::expressions;
 namespace showtime {
 
 	// Log attributes
-	BOOST_LOG_ATTRIBUTE_KEYWORD(line_id, "LineID", unsigned int)
-		BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", showtime::Log::Level)
-		BOOST_LOG_ATTRIBUTE_KEYWORD(channel, "Channel", std::string)
-		//BOOST_LOG_ATTRIBUTE_KEYWORD(process_name, "ProcessName", std::string)
-		BOOST_LOG_ATTRIBUTE_KEYWORD(thread_id, "ThreadID", attrs::current_thread_id::value_type)
-		//BOOST_LOG_ATTRIBUTE_KEYWORD(thread_id, "Thread", std::string)
+	//BOOST_LOG_ATTRIBUTE_KEYWORD(line_id, "LineID", unsigned int)
+    BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", showtime::Log::Level)
+    BOOST_LOG_ATTRIBUTE_KEYWORD(channel, "Channel", std::string)
+    //BOOST_LOG_ATTRIBUTE_KEYWORD(process_name, "ProcessName", std::string)
+    BOOST_LOG_ATTRIBUTE_KEYWORD(thread_id, "ThreadID", attrs::current_thread_id::value_type)
+    //BOOST_LOG_ATTRIBUTE_KEYWORD(thread_id, "Thread", std::string)
 
-		// Global logger
-		typedef src::severity_channel_logger_mt<Log::Level, std::string> ZstLogger_mt;
+    // Global logger
+    typedef src::severity_channel_logger_mt<Log::Level, std::string> ZstLogger_mt;
 	BOOST_LOG_GLOBAL_LOGGER(ZstGlobalLogger, ZstLogger_mt)
 
 		// Global logger init
@@ -183,7 +183,7 @@ namespace showtime {
 
 	void Log::internals::SinkBackend::consume(boost::log::record_view const& rec, string_type const& formatted_string)
 	{
-		auto line_ID = logging::extract< unsigned int >("LineID", rec);
+		//auto line_ID = logging::extract< unsigned int >("LineID", rec);
 		//auto process_name = logging::extract<std::string>("ProcessName", rec);
 		
 		std::ostringstream thread_stream;
@@ -205,7 +205,7 @@ namespace showtime {
 		// Queue log message to the log event dispatcher
 		if (m_log_events) {
 			Record event_record{
-				line_ID.get(),
+				//line_ID.get(),
 				//process_name.get(),
 				thread_stream.str(),
 				level.get(),

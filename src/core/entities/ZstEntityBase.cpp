@@ -113,7 +113,7 @@ namespace showtime
         child->set_parent(this);
 
         // Dispatch event to let listeners know a new child was added
-        m_entity_events->defer([this, child](ZstEntityAdaptor* adaptor) {
+        m_entity_events->defer([child](ZstEntityAdaptor* adaptor) {
             adaptor->on_child_entity_added(child);
         });
         synchronisable_event_dispatcher()->invoke([this](ZstSynchronisableAdaptor* adaptor) {
@@ -131,7 +131,7 @@ namespace showtime
      
         child->set_parent(NULL);
 
-        m_entity_events->defer([this, orig_child_path](ZstEntityAdaptor* adaptor) {
+        m_entity_events->defer([orig_child_path](ZstEntityAdaptor* adaptor) {
             adaptor->on_child_entity_removed(orig_child_path);
         });
         synchronisable_event_dispatcher()->invoke([this](ZstSynchronisableAdaptor* adaptor) {

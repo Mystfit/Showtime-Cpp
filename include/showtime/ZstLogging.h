@@ -47,7 +47,7 @@ namespace showtime {
 		};
 
 		struct Record {
-			unsigned int line_ID;
+			//unsigned int line_ID;
 			//std::string process_name;
 			std::string threadID;
 			Level level;

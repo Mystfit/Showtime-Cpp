@@ -7,8 +7,8 @@
 namespace showtime {
 
 ZstWebsocketServerTransport::ZstWebsocketServerTransport(ZstIOLoop& io) :
-	m_ioc(io.IO_context()),
-	m_acceptor(io.IO_context())
+	m_acceptor(io.IO_context()),
+    m_ioc(io.IO_context())
 {
 }
 

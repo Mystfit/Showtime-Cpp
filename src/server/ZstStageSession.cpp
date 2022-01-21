@@ -85,10 +85,8 @@ Signal ZstStageSession::signal_handler(const std::shared_ptr<ZstStageMessage>& m
 		return Signal_ERR_STAGE_PERFORMER_NOT_FOUND;
 	}
 
-	switch (request->signal()) {
-	case Signal_CLIENT_SYNC:
+	if (request->signal() == Signal_CLIENT_SYNC) {
 		return synchronise_client_graph_handler(sender);
-		break;
 	}
 
 	return Signal_EMPTY;
@@ -194,7 +192,7 @@ Signal ZstStageSession::create_cable_handler(const std::shared_ptr<ZstStageMessa
 		stage_hierarchy()->reply_with_signal(sender, signal, id);
 	};
 
-	auto connect_response_cb = [this, cable_ptr, sender, id = msg->id(), connect_finished_cb](ZstMessageResponse response) {
+	auto connect_response_cb = [id = msg->id(), connect_finished_cb](ZstMessageResponse response) {
 		connect_finished_cb(ZstStageTransport::get_signal(response.response));
 	};
 

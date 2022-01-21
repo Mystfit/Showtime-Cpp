@@ -11,8 +11,8 @@
 namespace showtime {
 
 ZstZMQServerTransport::ZstZMQServerTransport() :
-	m_clients_sock(NULL),
-	m_port(-1)
+	m_port(-1),
+    m_clients_sock(NULL)
 {
 }
 
@@ -119,7 +119,7 @@ void ZstZMQServerTransport::sock_recv(zsock_t* socket)
 				);
 
 				// Send message to submodules
-				dispatch_receive_event(msg, [this, msg, identity_frame, payload_data](ZstEventStatus s) mutable {
+				dispatch_receive_event(msg, [msg, identity_frame, payload_data](ZstEventStatus s) mutable {
 					// Frame cleanup
 					zframe_destroy(&payload_data);
 					zframe_destroy(&identity_frame);

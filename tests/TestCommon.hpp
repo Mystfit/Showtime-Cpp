@@ -116,9 +116,9 @@ namespace ZstTest
 
 		InputComponent(const char * name, int cmp_val=0, bool should_log=false, ZstValueType plugtype = ZstValueType::IntList, bool should_trigger = false) :
 			ZstComponent("TESTER", name),
-			compare_val(cmp_val),
-			log(should_log),
-			m_input(std::make_unique<ZstInputPlug>("in", plugtype, -1, should_trigger))
+			m_input(std::make_unique<ZstInputPlug>("in", plugtype, -1, should_trigger)),
+            compare_val(cmp_val),
+            log(should_log)
 		{
 		}
 
@@ -382,7 +382,6 @@ namespace ZstTest
 
 	class TestPlugSync : public ZstSynchronisableAdaptor, public TestAdaptor
 	{
-		int last_val_received = 0;
 		void on_synchronisable_updated(ZstSynchronisable * synchronisable) override {
 			ZstPlug * plug = dynamic_cast<ZstPlug*>(synchronisable);
 			Log::app(Log::Level::debug, "SYNCHRONISABLE_UPDATED: Plug {} updated: {}", plug->URI().path(), plug->int_at(0));
@@ -639,8 +638,8 @@ namespace ZstTest
 		std::shared_ptr<ShowtimeClient> remote_client;
 
 		FixtureRemoteClient(std::string client_name, std::string server_name) :
-			remote_client(std::make_shared<ShowtimeClient>()),
-			external_performer_URI(client_name.c_str())
+			external_performer_URI(client_name.c_str()),
+            remote_client(std::make_shared<ShowtimeClient>())
 		{
 			remote_client->init(client_name.c_str(), true);
 			remote_client->auto_join_by_name(server_name.c_str());
@@ -660,10 +659,10 @@ namespace ZstTest
 
 		FixtureSinkClient(std::string server_name) :
 			FixtureRemoteClient("TestHelperSink", server_name),
-			sink(std::make_unique<Sink>("sink_ent")),
 			sink_ent_uri(remote_client->get_root()->URI() + ZstURI("sink_ent")),
 			sink_plug_uri(sink_ent_uri + ZstURI("in")),
-			sync_out_plug_uri(sink_ent_uri + ZstURI("out"))
+			sync_out_plug_uri(sink_ent_uri + ZstURI("out")),
+            sink(std::make_unique<Sink>("sink_ent"))
 		{
 			remote_client->get_root()->add_child(sink.get());
 		}

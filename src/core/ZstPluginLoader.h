@@ -21,7 +21,7 @@ namespace showtime {
     {
     public:
         ZST_EXPORT ZstPluginLoader();
-        ZST_EXPORT ~ZstPluginLoader();
+        ZST_EXPORT virtual ~ZstPluginLoader();
 
 
         // Module overrides

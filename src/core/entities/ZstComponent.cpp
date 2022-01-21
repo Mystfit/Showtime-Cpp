@@ -10,9 +10,9 @@ namespace showtime
 {
     ZstComponent::ZstComponent() :
         ZstEntityBase(),
-        m_compute_incoming_plug(nullptr),
+        m_execution_order_dirty(true),
         m_compute_outgoing_plug(nullptr),
-        m_execution_order_dirty(true)
+        m_compute_incoming_plug(nullptr)
     {
         set_entity_type(ZstEntityType::COMPONENT);
         set_component_type("");
@@ -21,9 +21,9 @@ namespace showtime
 
     ZstComponent::ZstComponent(const char * path) :
         ZstEntityBase(path),
-        m_compute_incoming_plug(nullptr),
+        m_execution_order_dirty(true),
         m_compute_outgoing_plug(nullptr),
-        m_execution_order_dirty(true)
+        m_compute_incoming_plug(nullptr)
     {
         set_entity_type(ZstEntityType::COMPONENT);
         set_component_type("");
@@ -32,9 +32,9 @@ namespace showtime
 
     ZstComponent::ZstComponent(const char * component_type, const char * path) : 
         ZstEntityBase(path),
-        m_compute_incoming_plug(nullptr),
+        m_execution_order_dirty(true),
         m_compute_outgoing_plug(nullptr),
-        m_execution_order_dirty(true)
+        m_compute_incoming_plug(nullptr)
     {
         set_entity_type(ZstEntityType::COMPONENT);
         set_component_type(component_type);
@@ -43,9 +43,9 @@ namespace showtime
     
     ZstComponent::ZstComponent(const Component* buffer) : 
 		ZstEntityBase(),
-        m_compute_incoming_plug(nullptr),
+        m_execution_order_dirty(true),
         m_compute_outgoing_plug(nullptr),
-        m_execution_order_dirty(true)
+        m_compute_incoming_plug(nullptr)
     {
 		set_entity_type(ZstEntityType::COMPONENT);
         ZstEntityBase::deserialize_partial(buffer->entity());
@@ -177,7 +177,7 @@ namespace showtime
 
     void ZstComponent::compute(ZstInputPlug* plug)
     {
-        entity_event_dispatcher()->invoke([this, plug](ZstEntityAdaptor* adaptor) {
+        entity_event_dispatcher()->invoke([plug](ZstEntityAdaptor* adaptor) {
             adaptor->on_compute(plug);
         });
 

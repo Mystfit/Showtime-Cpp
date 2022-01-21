@@ -14,7 +14,7 @@
 namespace showtime {
 
 //Forward declarations
-//class ZstDynamicValue;
+class ZstDynamicValue;
 class ZstGraphTransportAdaptor;
 
 template<typename T>
@@ -92,7 +92,7 @@ public:
     ZST_EXPORT ZstValueType get_default_type() const;
 
 protected:
-    std::unique_ptr<ZstIValue> m_value;
+    std::unique_ptr<ZstDynamicValue> m_value;
     ZstPlugDirection m_direction;
     int m_max_connected_cables;
 

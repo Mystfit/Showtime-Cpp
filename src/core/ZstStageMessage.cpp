@@ -13,10 +13,10 @@
 namespace showtime {
 
 ZstStageMessage::ZstStageMessage() :
-	m_origin_endpoint_UUID(nil_generator()()),
-    m_buffer(NULL),
+    m_transport_endpoint_UUID(nil_generator()()),
+    m_origin_endpoint_UUID(nil_generator()()),
     m_id(nil_generator()()),
-    m_transport_endpoint_UUID(nil_generator()())
+    m_buffer(NULL)
 {
 }
     
