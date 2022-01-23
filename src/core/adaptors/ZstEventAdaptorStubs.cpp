@@ -88,7 +88,7 @@ ZstMessageReceipt ZstGraphTransportAdaptor::send_msg(flatbuffers::Offset<GraphMe
 // Compute adaptors
 // -----------------------
 ZstComputeAdaptor::ZstComputeAdaptor(){
-	MULTICAST_DELEGATE_INITIALIZER(compute);
+	MULTICAST_DELEGATE_INITIALIZER(request_compute);
 }
 
 

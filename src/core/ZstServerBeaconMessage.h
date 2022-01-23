@@ -9,6 +9,7 @@ namespace showtime {
 
 	class ZstServerBeaconMessage : public ZstMessage {
 	public:
+        ZST_EXPORT virtual ~ZstServerBeaconMessage();
 		ZST_EXPORT void init(const StageBeaconMessage* buffer, const std::string & address, std::shared_ptr<ZstServiceDiscoveryTransport>& owning_transport);
 		ZST_EXPORT const std::string& address() const;
 		ZST_EXPORT const StageBeaconMessage* buffer() const;

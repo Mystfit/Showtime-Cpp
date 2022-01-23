@@ -113,7 +113,6 @@ protected:
 private:
 	std::set<ZstURI> m_children;
     std::string m_component_type;
-    bool m_triggers_compute;
     ZstURIBundle m_cached_execution_order;
     bool m_execution_order_dirty;
 

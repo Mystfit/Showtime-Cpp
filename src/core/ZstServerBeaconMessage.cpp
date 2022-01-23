@@ -3,6 +3,11 @@
 #include "transports/ZstServiceDiscoveryTransport.h"
 
 namespace showtime {
+    
+    ZstServerBeaconMessage::~ZstServerBeaconMessage()
+    {
+    }
+    
 	void ZstServerBeaconMessage::init(const StageBeaconMessage* buffer, const std::string& address, std::shared_ptr<ZstServiceDiscoveryTransport>& owning_transport)
 	{
 		m_buffer = buffer;
@@ -28,7 +33,7 @@ namespace showtime {
 
 	const uuid& ZstServerBeaconMessage::origin_endpoint_UUID() const
 	{
-		return boost::uuids::nil_uuid();
+        return std::move(boost::uuids::nil_uuid());
 	}
 
 	std::shared_ptr<ZstTransportLayerBase> ZstServerBeaconMessage::owning_transport() const

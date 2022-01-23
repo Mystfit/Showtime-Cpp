@@ -1,4 +1,5 @@
 #include "TestCommon.hpp"
+#include <float.h>
 
 #define BOOST_TEST_MODULE Graph
 
@@ -95,15 +96,15 @@ struct FixtureBranchingComponents : public FixtureJoinServer {
 	FixtureBranchingComponents() :
 		top_comp(std::make_unique<ZstComponent>("computer_node")),
 		a_comp(std::make_unique<ZstComponent>("a")),
+        a_out(std::make_unique<ZstOutputPlug>("out", ZstValueType::IntList)),
 		b_comp(std::make_unique<ZstComponent>("b")),
+        b_in(std::make_unique<ZstInputPlug>("in", ZstValueType::IntList)),
+        b_out_first(std::make_unique<ZstOutputPlug>("out1", ZstValueType::IntList)),
+        b_out_second(std::make_unique<ZstOutputPlug>("out2", ZstValueType::IntList)),
 		c_comp(std::make_unique<ZstComponent>("c")),
+        c_in(std::make_unique<ZstInputPlug>("in", ZstValueType::IntList)),
+        c_out(std::make_unique<ZstOutputPlug>("out", ZstValueType::IntList)),
 		d_comp(std::make_unique<ZstComponent>("d")),
-		a_out(std::make_unique<ZstOutputPlug>("out", ZstValueType::IntList)),
-		b_in(std::make_unique<ZstInputPlug>("in", ZstValueType::IntList)),
-		b_out_first(std::make_unique<ZstOutputPlug>("out1", ZstValueType::IntList)),
-		b_out_second(std::make_unique<ZstOutputPlug>("out2", ZstValueType::IntList)),
-		c_in(std::make_unique<ZstInputPlug>("in", ZstValueType::IntList)),
-		c_out(std::make_unique<ZstOutputPlug>("out", ZstValueType::IntList)),
 		d_in_first(std::make_unique<ZstInputPlug>("in1", ZstValueType::IntList)),
 		d_in_second(std::make_unique<ZstInputPlug>("in2", ZstValueType::IntList))
 	{
@@ -125,11 +126,10 @@ struct FixtureBranchingComponents : public FixtureJoinServer {
 		d_comp->add_child(d_in_first.get());
 		d_comp->add_child(d_in_second.get());
 
-		auto cable1 = a_out->connect_cable(b_in.get());
-		auto cable2 = b_out_first->connect_cable(c_in.get());
-		auto cable3 = b_out_second->connect_cable(d_in_first.get());
-		auto cable4 = c_out->connect_cable(d_in_second.get());
-		BOOST_TEST(true);
+		a_out->connect_cable(b_in.get());
+		b_out_first->connect_cable(c_in.get());
+		b_out_second->connect_cable(d_in_first.get());
+		c_out->connect_cable(d_in_second.get());
 	}
 
 	~FixtureBranchingComponents() {};
@@ -207,7 +207,7 @@ BOOST_FIXTURE_TEST_CASE(input_plug_connect_cables_async, FixturePlugs) {
 	auto cable = input_component->input()->connect_cable_async(output_component->output());
 	bool cable_activated = false;
 	BOOST_REQUIRE(cable);
-	cable->synchronisable_events()->synchronisable_activated()->add([&cable_activated, cable](ZstSynchronisable* synchronisable) { cable_activated = synchronisable->is_activated(); });
+	cable->synchronisable_events()->synchronisable_activated()->add([&cable_activated](ZstSynchronisable* synchronisable) { cable_activated = synchronisable->is_activated(); });
 	wait_for_condition(test_client, cable_activated);
 	BOOST_TEST(cable_activated);
 }
@@ -216,7 +216,7 @@ BOOST_FIXTURE_TEST_CASE(output_plug_connect_cables_async, FixturePlugs) {
 	auto cable = output_component->output()->connect_cable_async(input_component->input());
 	bool cable_activated = false;
 	BOOST_REQUIRE(cable);
-	cable->synchronisable_events()->synchronisable_activated()->add([&cable_activated, cable](ZstSynchronisable* synchronisable) { cable_activated = synchronisable->is_activated(); });
+	cable->synchronisable_events()->synchronisable_activated()->add([&cable_activated](ZstSynchronisable* synchronisable) { cable_activated = synchronisable->is_activated(); });
 	wait_for_condition(test_client, cable_activated);
 	BOOST_TEST(cable_activated);
 }
@@ -293,7 +293,6 @@ BOOST_FIXTURE_TEST_CASE(limit_connected_cables, FixtureJoinServer) {
 
 BOOST_FIXTURE_TEST_CASE(send_through_local_graph, FixtureCable) {
 	int first_cmp_val = 4;
-	int current_wait = 0;
 
 	output_component->get_downstream_compute_plug()->connect_cable(input_component->get_upstream_compute_plug());
 	output_component->send(first_cmp_val);
@@ -339,16 +338,17 @@ BOOST_FIXTURE_TEST_CASE(send_through_unreliable_graph, FixturePlugs) {
 #ifndef ZST_BUILD_DRAFT_API
 	// If we don't have draft support enabled, check reliable fallback has been set
 	BOOST_TEST(unreliable_out->output()->is_reliable());
+    first_cmp_val = 0; // Silence unused var warning
 #else
 	client->get_root()->add_child(unreliable_out);
 	client->connect_cable(input_component->input(), unreliable_out->output());
-unreliable_out->send(first_cmp_val);
+    unreliable_out->send(first_cmp_val);
 
-int current_wait = 0;
-while (input_component->num_hits < 1 && ++current_wait < 10000) {
-	client->poll_once();
-}
-BOOST_TEST(input_component->last_received_val == first_cmp_val);
+    int current_wait = 0;
+    while (input_component->num_hits < 1 && ++current_wait < 10000) {
+        client->poll_once();
+    }
+    BOOST_TEST(input_component->last_received_val == first_cmp_val);
 #endif
 }
 
@@ -452,7 +452,7 @@ BOOST_FIXTURE_TEST_CASE(send_int, FixtureJoinServer) {
 	int first_cmp_val = 4;
 	int current_wait = 0;
 
-	auto cable = test_client->connect_cable(input_component->input(), output_component->output());
+	test_client->connect_cable(input_component->input(), output_component->output());
 	output_component->output()->append_int(first_cmp_val);
 	output_component->output()->fire();
 	while (input_component->num_hits < 1 && ++current_wait < 10000) {
@@ -471,7 +471,7 @@ BOOST_FIXTURE_TEST_CASE(send_float, FixtureJoinServer) {
 	float first_cmp_val = 2.7f;
 	int current_wait = 0;
 
-	auto cable = test_client->connect_cable(input_component->input(), output_component->output());
+	test_client->connect_cable(input_component->input(), output_component->output());
 	output_component->output()->append_float(first_cmp_val);
 	output_component->output()->fire();
 	while (input_component->num_hits < 1 && ++current_wait < 10000) {
@@ -493,7 +493,7 @@ BOOST_FIXTURE_TEST_CASE(send_string, FixtureJoinServer) {
 
 	int current_wait = 0;
 
-	auto cable = test_client->connect_cable(input_component->input(), output_component->output());
+	test_client->connect_cable(input_component->input(), output_component->output());
 	output_component->output()->append_string(first_cmp_val.c_str(), first_cmp_val.size());
 	output_component->output()->append_string(second_cmp_val.c_str(), second_cmp_val.size());
 	output_component->output()->fire();
@@ -525,7 +525,7 @@ BOOST_FIXTURE_TEST_CASE(send_bytes, FixtureJoinServer) {
 	std::string first_cmp_val = "pineapple";
 	int current_wait = 0;
 
-	auto cable = test_client->connect_cable(input_component->input(), output_component->output());
+	test_client->connect_cable(input_component->input(), output_component->output());
 
 	for (size_t idx = 0; idx < first_cmp_val.size(); ++idx){
 		output_component->output()->append_byte(first_cmp_val[idx]);

@@ -151,8 +151,7 @@ void ZstClientSession::plug_received_value(ZstInputPlug * plug)
             //Make sure the entity still exists before running 
             ZstInputPlug* plug = static_cast<ZstInputPlug*>(this->hierarchy()->find_entity(plug_path));
             if (plug) {
-
-                adaptor->on_compute(parent, plug);
+                adaptor->on_request_compute(parent, plug);
             }
             });
     }

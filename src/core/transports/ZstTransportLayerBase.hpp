@@ -21,10 +21,10 @@ class ZST_CLASS_EXPORTED ZstTransportLayerBase : public ZstMessageSupervisor
 {
 public:
     ZstTransportLayerBase() : 
+        m_event_condition(std::make_shared<ZstSemaphore>()),
         m_is_active(false),
         m_is_connected(false),
-        m_async_pool(std::make_unique<boost::asio::thread_pool>(4)),
-        m_event_condition(std::make_shared<ZstSemaphore>())
+        m_async_pool(std::make_unique<boost::asio::thread_pool>(4))
     {
     }
 

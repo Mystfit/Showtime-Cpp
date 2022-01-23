@@ -20,8 +20,8 @@ namespace showtime::detail
 {
 	ZstStage::ZstStage() :
 		m_is_destroyed(false),
-		m_heartbeat_timer(m_io.IO_context()),
 		m_event_condition(std::make_shared<std::condition_variable>()),
+        m_heartbeat_timer(m_io.IO_context()),
 		m_session(std::make_shared<ZstStageSession>()),
 		m_router_transport(std::make_shared<ZstZMQServerTransport>()),
 		m_websocket_transport(std::make_shared<ZstWebsocketServerTransport>(m_io)),

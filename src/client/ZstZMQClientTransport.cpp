@@ -45,7 +45,7 @@ void ZstZMQClientTransport::init()
 	}
 
 	//Set socket ID to identify socket with receivers
-	auto uuid = boost::uuids::random_generator()();
+	//auto uuid = boost::uuids::random_generator()();
 
 	zsock_set_identity(m_server_sock, boost::lexical_cast<std::string>(m_origin_endpoint_UUID).c_str());
 
@@ -132,7 +132,6 @@ void ZstZMQClientTransport::sock_recv(zsock_t* socket)
 		
 		// Copy msg id to UUID
 		ZstMsgID msg_id;
-		auto s = zframe_size(id_data);
 		memcpy(&msg_id, zframe_data(id_data), zframe_size(id_data));
 
         if(msg_data){

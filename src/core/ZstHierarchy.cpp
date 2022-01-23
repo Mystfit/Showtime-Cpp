@@ -138,10 +138,10 @@ std::unique_ptr<ZstEntityBase> ZstHierarchy::create_proxy_entity(EntityTypes ent
 
 	// All entities need a parent unless they are a performer 
 	auto parent_path = entity_path.parent();
-	ZstEntityBase* parent = NULL;
+	ZstEntityBase* parent = find_entity(parent_path);
 
 	if (entity_type != EntityTypes_Performer) {
-		if (parent_path.is_empty()) {
+		if (!parent) {
 			Log::net(Log::Level::error, "Entity {} has no parent", entity_path.path());
 			return NULL;
 		}

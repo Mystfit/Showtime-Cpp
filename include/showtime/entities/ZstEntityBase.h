@@ -138,7 +138,7 @@ protected:
 	ZST_EXPORT std::shared_ptr<ZstEventDispatcher<ZstHierarchyAdaptor> >& hierarchy_events();
 
     //Events
-    ZST_EXPORT virtual void process_events();
+    ZST_EXPORT virtual void process_events() override;
 
     // Helper adaptor functions
     ZST_EXPORT ZstEntityBase* find_entity(const ZstURI& entity_path);

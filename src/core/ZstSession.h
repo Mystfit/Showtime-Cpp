@@ -67,7 +67,7 @@ public:
 	// Compute adaptor overrides
 	// -------------
 
-	ZST_EXPORT virtual void on_compute(ZstComponent * component, ZstInputPlug * plug) override;
+	ZST_EXPORT virtual void on_request_compute(ZstComponent * component, ZstInputPlug * plug) override;
 
     // ---------------------------
     // Hierarchy adaptor overrides

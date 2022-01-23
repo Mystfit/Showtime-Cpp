@@ -283,7 +283,6 @@ void URITools::route(const ZstURI& start, const ZstURI& end, ZstBundle<ZstURI>& 
 	if (start.is_empty() || end.is_empty())
 		return;
 
-	size_t current_segment = 0;
 	size_t match_segment = 0;
 	bundle.add(start);
 
