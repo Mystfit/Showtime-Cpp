@@ -3,8 +3,10 @@
 #include "ShowtimeSubsystem.h"
 #include "ShowtimeConversions.h"
 
-void UShowtimeEntity::init(FString entity_path) {
-	EntityPath = entity_path;
+void UShowtimeEntity::Init(const ZstURI& entityURI) {
+	//EntityPath = entity_path;
+	URI = NewObject<UShowtimeURI>();
+	URI->Init(entityURI);
 	OnInitialised.Broadcast();
 }
 
@@ -62,14 +64,14 @@ void UShowtimeEntity::AddChild(UShowtimeEntity* entity)
 ZstEntityBase* UShowtimeEntity::GetNativeEntity() const {
 	auto ShowtimeSubsystem = GetOwner()->GetGameInstance()->GetSubsystem<UShowtimeSubsystem>();
 
-	if (!ShowtimeSubsystem || EntityPath.IsEmpty())
+	if (!URI || !ShowtimeSubsystem)
 		return nullptr;
-	return  ShowtimeSubsystem->Handle()->find_entity(ZstURI(TCHAR_TO_UTF8(*EntityPath)));
+	return  ShowtimeSubsystem->Handle()->find_entity(URI->WrappedURI());
 }
 
 void UShowtimeEntity::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(UShowtimeEntity, EntityPath);
+	//DOREPLIFETIME(UShowtimeEntity, EntityPath);
 	DOREPLIFETIME(UShowtimeEntity, OnInitialised);
 }

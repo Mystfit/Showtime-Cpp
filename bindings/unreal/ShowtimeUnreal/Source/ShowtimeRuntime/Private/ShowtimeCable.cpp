@@ -46,6 +46,24 @@ UShowtimePlug* UShowtimeCable::GetOutputPlug() const
 	return nullptr;
 }
 
+TArray<UShowtimeEntity*> UShowtimeCable::GetCableRoute() const
+{
+	TArray<UShowtimeEntity*> wrappers;
+	auto ShowtimeSubsystem = GetOwner()->GetGameInstance()->GetSubsystem<UShowtimeSubsystem>();
+
+	if (auto cable = GetNativeCable()) {
+		ZstEntityBundle bundle;
+		cable->get_cable_route(bundle);
+		for (size_t idx = 0; idx < bundle.size(); ++idx) {
+			auto entity = bundle.item_at(idx);
+			if (auto wrapper = ShowtimeSubsystem->View->GetWrapper(entity)) {
+				wrappers.Add(wrapper);
+			}
+		}
+	}
+	return wrappers;
+}
+
 ZstCable* UShowtimeCable::GetNativeCable() const
 {
 	auto ShowtimeSubsystem = GetOwner()->GetGameInstance()->GetSubsystem<UShowtimeSubsystem>();

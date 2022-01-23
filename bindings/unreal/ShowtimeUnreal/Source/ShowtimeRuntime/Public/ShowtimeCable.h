@@ -44,17 +44,6 @@ FORCEINLINE ZstCableAddress CableAddressFromUnreal(const FShowtimeCableAddress& 
 }
 
 
-//
-//UENUM(BlueprintType)
-//enum UCableGhostStatus {
-//	CableGhostStatus_Valid,
-//	CableGhostStatus_Invalid,
-//	CableGhostStatus_Ghosting,
-//	CableGhostStatus_WaitingForServer,
-//	CableGhostStatus_Active
-//};
-
-
 UCLASS(BlueprintType, Blueprintable, ClassGroup = (Showtime), meta = (BlueprintSpawnableComponent))
 class UShowtimeCable : public UActorComponent {
 	GENERATED_BODY()
@@ -67,6 +56,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Cable")
 	UShowtimePlug* GetOutputPlug() const;
+
+	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Cable")
+	TArray<UShowtimeEntity*> GetCableRoute() const;
 
 	ZstCable* GetNativeCable() const;
 

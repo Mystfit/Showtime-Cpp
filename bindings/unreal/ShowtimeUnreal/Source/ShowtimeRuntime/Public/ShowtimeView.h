@@ -166,10 +166,10 @@ public:
 
 
 	UPROPERTY(BlueprintReadOnly, Category = "Showtime|Entity")
-	TMap<FString, UShowtimeEntity*> EntityWrappers;
+	TMap<FName, UShowtimeEntity*> EntityWrappers;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Showtime|Entity")
-	TMap<FString, UShowtimePerformer*> PerformerWrappers;
+	TMap<FName, UShowtimePerformer*> PerformerWrappers;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Showtime|Entity")
 	TMap<FShowtimeCableAddress, UShowtimeCable*> CableWrappers;

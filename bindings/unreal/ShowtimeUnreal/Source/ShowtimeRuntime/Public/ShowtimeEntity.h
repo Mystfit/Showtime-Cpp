@@ -7,6 +7,7 @@
 #include "Components/ActorComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "UObject/NoExportTypes.h"
+#include <ShowtimeURI.h>
 
 #include "ShowtimeEntity.generated.h"
 
@@ -31,6 +32,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Showtime|Entity")
 	FString EntityPath;
 
+	UPROPERTY(BlueprintReadOnly, Category = "Showtime|URI")
+	UShowtimeURI* URI;
 
 	// Blueprint callable functions
 	// ----------------------------
@@ -57,12 +60,12 @@ public:
 
 	// Native functions
 
-	void init(FString entity_path);
+	void Init(const ZstURI& entityURI);
 	ZstEntityBase* GetNativeEntity() const;
 };
 
 
 FORCEINLINE uint32 GetTypeHash(const UShowtimeEntity* Other)
 {
-	return GetTypeHash(Other->EntityPath);
+	return GetTypeHash(UTF8_TO_TCHAR(Other->URI->WrappedURI().path()));
 }

@@ -18,9 +18,9 @@ void UShowtimeView::RegisterSpawnedWrapper(UShowtimeEntity* wrapper, ZstEntityBa
 	if (!wrapper)
 		return;
 
-	FString entity_path = UTF8_TO_TCHAR(entity->URI().path());
-	wrapper->init(entity_path);
-	EntityWrappers.Add(entity_path, wrapper);
+	//FString entity_path = UTF8_TO_TCHAR(entity->URI().path());
+	wrapper->Init(entity->URI());
+	EntityWrappers.Add(wrapper->URI->Path(), wrapper);
 }
 
 UShowtimeEntity* UShowtimeView::GetWrapper(const ZstEntityBase* entity) const
