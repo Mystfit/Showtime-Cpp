@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <showtime/entities/ZstComputeComponent.h>
 #include <showtime/ShowtimeClient.h>
 #include <showtime/ShowtimeServer.h>
 #include <showtime/ZstLogging.h>
@@ -50,14 +51,14 @@ using namespace showtime;
 
 namespace ZstTest
 {
-	class OutputComponent : public ZstComponent
+	class OutputComponent : public ZstComputeComponent
 	{
 	private:
 		std::unique_ptr<ZstOutputPlug> m_output;
 
 	public:
 		OutputComponent(const char * name, bool reliable = true, ZstValueType plugtype = ZstValueType::IntList) :
-			ZstComponent("TESTER", name),
+			ZstComputeComponent("TESTER", name),
 			m_output(std::make_unique<ZstOutputPlug>("out", plugtype, reliable))
 		{
 		}
@@ -103,7 +104,7 @@ namespace ZstTest
 
 
 
-	class InputComponent : public ZstComponent
+	class InputComponent : public ZstComputeComponent
 	{
 	private:
 		std::unique_ptr<ZstInputPlug> m_input;
@@ -115,7 +116,7 @@ namespace ZstTest
 		bool log = false;
 
 		InputComponent(const char * name, int cmp_val=0, bool should_log=false, ZstValueType plugtype = ZstValueType::IntList, bool should_trigger = false) :
-			ZstComponent("TESTER", name),
+			ZstComputeComponent("TESTER", name),
 			m_input(std::make_unique<ZstInputPlug>("in", plugtype, -1, should_trigger)),
             compare_val(cmp_val),
             log(should_log)
@@ -153,7 +154,7 @@ namespace ZstTest
 	};
 
 
-	class Sink : public ZstComponent {
+	class Sink : public ZstComputeComponent {
 	public:
 		std::unique_ptr<ZstInputPlug> input;
 		std::unique_ptr<ZstOutputPlug> output;
@@ -162,7 +163,7 @@ namespace ZstTest
 		Sink* m_child_sink;
 
 		Sink(const char* name) :
-			ZstComponent("SINK", name),
+			ZstComputeComponent("SINK", name),
 			input(std::make_unique<ZstInputPlug>("in", ZstValueType::IntList)),
 			output(std::make_unique<ZstOutputPlug>("out", ZstValueType::FloatList)),
 			last_received_code(0),

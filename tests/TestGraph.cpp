@@ -74,7 +74,16 @@ struct FixtureCable : public FixturePlugs {
 };
 
 
-struct FixtureBranchingComponents : public FixtureJoinServer {
+struct FixtureBranchingComponents : public FixtureJoinServer
+{
+	// Branching structure (data flow downwards):
+	// 
+	//      A
+	//      |
+	//		B
+	//	   / \
+	//	  C   D	
+
 	std::unique_ptr<ZstComponent> top_comp;
 	std::unique_ptr<ZstComponent> a_comp;
 	std::unique_ptr<ZstOutputPlug> a_out;
@@ -296,7 +305,7 @@ BOOST_FIXTURE_TEST_CASE(send_through_local_graph, FixtureCable) {
 
 	output_component->get_downstream_compute_plug()->connect_cable(input_component->get_upstream_compute_plug());
 	output_component->send(first_cmp_val);
-	output_component->execute();
+	input_component->execute_upstream();
 
 	BOOST_TEST(input_component->num_hits);
 	BOOST_TEST(input_component->last_received_val == first_cmp_val);
@@ -424,10 +433,10 @@ BOOST_FIXTURE_TEST_CASE(local_component_dependencies, FixtureBranchingComponents
 	
 	d_comp->dependencies(&entities, false, true);
 	BOOST_TEST(entities.size() == 4);
-	BOOST_TEST(entities[0] == d_comp.get());
-	BOOST_TEST(entities[1] == c_comp.get());
-	BOOST_TEST(entities[2] == b_comp.get());
-	BOOST_TEST(entities[3] == a_comp.get());
+	BOOST_TEST(entities[0] == a_comp.get());
+	BOOST_TEST(entities[1] == b_comp.get());
+	BOOST_TEST(entities[2] == c_comp.get());
+	BOOST_TEST(entities[3] == d_comp.get());
 	entities.clear();
 }
 

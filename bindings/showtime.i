@@ -26,6 +26,7 @@
 %include "ZstCable.i"
 
 %include "ZstComponent.i"
+%include "ZstComputeComponent.i"
 %include "ZstPerformer.i"
 %include "ZstEntityFactory.i"
 

@@ -2,6 +2,7 @@
 #include "../core/transports/ZstStageTransport.h"
 #include "../core/ZstPerformanceMessage.h"
 #include "../core/ZstValue.h"
+#include <showtime/entities/ZstComputeComponent.h>
 
 using namespace flatbuffers;
 
@@ -141,19 +142,28 @@ void ZstClientSession::on_performer_leaving(const ZstURI& performer_path)
 
 void ZstClientSession::plug_received_value(ZstInputPlug * plug)
 {
-	ZstComponent * parent = dynamic_cast<ZstComponent*>(plug->parent());
-	if (!parent) {
+    auto parent_ent = plug->parent();
+	if (!parent_ent) {
 		throw std::runtime_error("Could not find parent of input plug");
 	}
+
+    
     if (plug->triggers_compute()) {
         ZstURI plug_path = plug->URI();
-        compute_events()->defer([this, parent, plug_path](ZstComputeAdaptor* adaptor) {
+        compute_events()->defer([this, parent_path = parent_ent->URI(), plug_path](ZstComputeAdaptor* adaptor) {
             //Make sure the entity still exists before running 
-            ZstInputPlug* plug = static_cast<ZstInputPlug*>(this->hierarchy()->find_entity(plug_path));
-            if (plug) {
-                adaptor->on_request_compute(parent, plug);
+            if (auto entity = this->hierarchy()->find_entity(plug_path)) {
+                if (entity->entity_type() == ZstEntityType::PLUG) {
+                    auto plug = static_cast<ZstPlug*>(entity);
+                    if (plug->direction() == ZstPlugDirection::IN_JACK) {
+
+                        if (auto compute_comp = dynamic_cast<ZstComputeComponent*>(this->hierarchy()->find_entity(parent_path))) {
+                            adaptor->on_request_compute(compute_comp, static_cast<ZstInputPlug*>(plug));
+                        }
+                    }
+                }
             }
-            });
+        });
     }
 }
 

@@ -34,19 +34,6 @@ public:
     //Find a plug in this component by its URI
     ZST_EXPORT void get_plugs(ZstEntityBundle* bundle);
 
-    // Start an execution chain to trigger compute() on each downstream component
-    ZST_EXPORT void execute();
-
-    // Cache the execution order to avoid recalculation
-    ZST_EXPORT void cache_execution_order();
-    ZST_EXPORT void clear_execution_order_cache();
-
-    ZST_EXPORT ZstInputPlug* get_upstream_compute_plug();
-    ZST_EXPORT ZstOutputPlug* get_downstream_compute_plug();
-
-    //Overridable compute function that will process input plug events
-    ZST_EXPORT virtual void compute(ZstInputPlug * plug);
-
     //Transfer plug ownership to this component
     ZST_EXPORT virtual void add_child(ZstEntityBase * entity, bool auto_activate = true) override;
 
@@ -69,6 +56,9 @@ public:
     //Specific component type
     ZST_EXPORT const char * component_type() const;
 
+    // Implementable events
+    ZST_EXPORT virtual void on_child_cable_connected(ZstCable* cable);
+    ZST_EXPORT virtual void on_child_cable_disconnected(const ZstCableAddress& cable_address);
 
     // Overidden Events for SWIG
     ZST_EXPORT virtual void on_registered() override;
@@ -107,20 +97,12 @@ protected:
 
     //Set parent of this component
     ZST_EXPORT virtual void set_parent(ZstEntityBase * parent) override;
-    
-    ZST_EXPORT void set_execution_order_dirty();
+
     
 private:
 	std::set<ZstURI> m_children;
     std::string m_component_type;
-    ZstURIBundle m_cached_execution_order;
-    bool m_execution_order_dirty;
-
-    // Compute chain plugs
-    void init_compute_plugs();
-    std::shared_ptr<ZstOutputPlug> m_compute_outgoing_plug;
-    std::shared_ptr<ZstInputPlug> m_compute_incoming_plug;
-
+   
     void computeTopologicalSort(ZstComponent* vertex, std::set<ZstComponent*>& visited, std::stack<ZstComponent*>& stack, ZstPlugDirection direction);
 };
 }

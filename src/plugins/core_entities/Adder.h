@@ -1,13 +1,13 @@
 #pragma once
 
 #include <showtime/ZstExports.h>
-#include <showtime/entities/ZstComponent.h>
+#include <showtime/entities/ZstComputeComponent.h>
 #include <showtime/entities/ZstPlug.h>
 #include <memory>
 
 #define ADDITION_FILTER_TYPE "addition"
 
-class Adder : public showtime::ZstComponent {
+class Adder : public showtime::ZstComputeComponent {
 public:
 	ZST_PLUGIN_EXPORT Adder(const char * name);
 	ZST_PLUGIN_EXPORT virtual void on_registered() override;

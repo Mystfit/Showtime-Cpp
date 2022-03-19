@@ -9,13 +9,13 @@ using namespace ZstTest;
 
 #define CUSTOM_COMPONENT "CustomComponent"
 
-class CustomComponent : public ZstComponent 
+class CustomComponent : public ZstComputeComponent 
 {
 public:
 	std::unique_ptr<ZstInputPlug> input;
 
     CustomComponent(const char * name) : 
-		ZstComponent(CUSTOM_COMPONENT, name),
+		ZstComputeComponent(CUSTOM_COMPONENT, name),
 		input(std::make_unique <ZstInputPlug>("input", ZstValueType::IntList)) {}
 
 	virtual void on_registered() override {

@@ -1,5 +1,5 @@
 #pragma once
-#include <vector>
+#include <deque>
 #include <showtime/ZstExports.h>
 
 //---------------------
@@ -10,7 +10,7 @@ namespace showtime {
 	class ZstBundleIterator
 	{
 	public:
-        ZstBundleIterator(typename std::vector<T>::iterator it) : m_it(it){
+        ZstBundleIterator(typename std::deque<T>::iterator it) : m_it(it){
         }
         
         bool operator!=(const ZstBundleIterator& other){
@@ -31,7 +31,7 @@ namespace showtime {
         }
 
 	private:
-		typename std::vector<T>::iterator m_it;
+		typename std::deque<T>::iterator m_it;
 	};
 
 
@@ -62,6 +62,9 @@ namespace showtime {
         void add(T bundle_item){
             m_bundle_items.emplace_back(bundle_item);
         }
+        void add_front(T bundle_item) {
+            m_bundle_items.emplace_front(bundle_item);
+        }
 
         T item_at(const size_t index) const{
             if (index >= m_bundle_items.size()) {
@@ -81,6 +84,6 @@ namespace showtime {
         }
 
 	private:
-		typename std::vector<T> m_bundle_items;
+		typename std::deque<T> m_bundle_items;
 	};
 }

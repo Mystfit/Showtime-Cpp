@@ -146,7 +146,7 @@ BOOST_FIXTURE_TEST_CASE(plugin_adder_ordered, FixtureCorePluginAdder) {
 	test_client->connect_cable(sink->input(), sum);
 	push_A->output()->append_int(2);
 	push_B->output()->append_int(5);
-	push_A->execute();
+	sink->execute_upstream();
 
 	while (sink->num_hits < 1 && ++current_wait < 1000) {
 		test_client->poll_once();

@@ -121,8 +121,15 @@ void ZstSession::destroy_cable_complete(ZstCable * cable)
 	if (input) 
 		ZstPlugLiason().plug_remove_cable(input, cable);
 	
-	if (output) 
+	if (output) {
+		//Update execution order
+		if (auto out_parent = output->parent()) {
+			if (out_parent->entity_type() == ZstEntityType::COMPONENT) {
+				static_cast<ZstComponent*>(out_parent)->on_child_cable_disconnected(cable->get_address());
+			}
+		}
 		ZstPlugLiason().plug_remove_cable(output, cable);
+	}
 
     //Dispatch events
     session_events()->defer([cable = cable->get_address()](ZstSessionAdaptor* adaptor) {
@@ -213,7 +220,7 @@ ZstCable * ZstSession::create_cable(ZstInputPlug * input, ZstOutputPlug * output
 	//Update execution order
 	if (auto out_parent = output->parent()) {
 		if (out_parent->entity_type() == ZstEntityType::COMPONENT) {
-			static_cast<ZstComponent*>(out_parent)->clear_execution_order_cache();
+			static_cast<ZstComponent*>(out_parent)->on_child_cable_connected(cable);
 		}
 	}
 
@@ -226,12 +233,12 @@ ZstCable * ZstSession::create_cable(ZstInputPlug * input, ZstOutputPlug * output
 	return cable_ptr.get();
 }
 
-void ZstSession::on_request_compute(ZstComponent * component, ZstInputPlug * plug) {
+void ZstSession::on_request_compute(ZstComputeComponent * compute_component, ZstInputPlug * plug) {
     try {
-        component->compute(plug);
+		compute_component->compute(plug);
     }
     catch (std::exception e) {
-        Log::net(Log::Level::error, "Compute on component {} failed. Error was: {}", component->URI().path(), e.what());
+        Log::net(Log::Level::error, "Compute on component {} failed. Error was: {}", compute_component->URI().path(), e.what());
     }
 }
 

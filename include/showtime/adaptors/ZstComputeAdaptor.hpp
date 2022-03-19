@@ -1,7 +1,7 @@
 #pragma once
 
 #include <showtime/ZstExports.h>
-#include <showtime/entities/ZstComponent.h>
+#include <showtime/entities/ZstComputeComponent.h>
 #include <showtime/entities/ZstPlug.h>
 #include <showtime/adaptors/ZstEventAdaptor.hpp>
 
@@ -13,6 +13,6 @@ namespace showtime {
 	{
 	public:
 		ZST_EXPORT ZstComputeAdaptor();
-		MULTICAST_DELEGATE_TwoParams(ZST_EXPORT, request_compute, ZstComponent*, component, ZstInputPlug*, plug)
+		MULTICAST_DELEGATE_TwoParams(ZST_EXPORT, request_compute, ZstComputeComponent*, compute_component, ZstInputPlug*, plug)
 	};
 }

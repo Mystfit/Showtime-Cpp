@@ -1,6 +1,7 @@
 #pragma once
 
 #include <showtime/ZstExports.h>
+#include <showtime/entities/ZstComputeComponent.h>
 #include <showtime/entities/ZstEntityFactory.h>
 #include <showtime/adaptors/ZstEntityAdaptor.hpp>
 #include <showtime/adaptors/ZstHierarchyAdaptor.hpp>
@@ -67,7 +68,7 @@ public:
 	// Compute adaptor overrides
 	// -------------
 
-	ZST_EXPORT virtual void on_request_compute(ZstComponent * component, ZstInputPlug * plug) override;
+	ZST_EXPORT virtual void on_request_compute(ZstComputeComponent* compute_component, ZstInputPlug * plug) override;
 
     // ---------------------------
     // Hierarchy adaptor overrides

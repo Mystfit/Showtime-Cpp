@@ -27,6 +27,7 @@ set(ENTITY_HEADERS
     ${CORE_INCLUDE_DIR}/entities/ZstEntityFactory.h
     ${CORE_INCLUDE_DIR}/entities/ZstEntityBase.h
     ${CORE_INCLUDE_DIR}/entities/ZstComponent.h
+    ${CORE_INCLUDE_DIR}/entities/ZstComputeComponent.h
     ${CORE_INCLUDE_DIR}/entities/ZstPlug.h
     ${CORE_INCLUDE_DIR}/entities/ZstPerformer.h
 )
@@ -173,6 +174,7 @@ set(ZST_CORE_ENTITY_SRC
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstEntityFactory.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstEntityBase.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstComponent.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/entities/ZstComputeComponent.cpp"    
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstPlug.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/entities/ZstPerformer.cpp"
 )

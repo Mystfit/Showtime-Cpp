@@ -4,7 +4,7 @@
 using namespace showtime;
 
 Adder::Adder(const char * name) :
-	ZstComponent(ADDITION_FILTER_TYPE, name),
+	ZstComputeComponent(ADDITION_FILTER_TYPE, name),
 	m_augend(std::make_unique<ZstInputPlug>("addend", ZstValueType::FloatList)),
 	m_addend(std::make_unique<ZstInputPlug>("augend", ZstValueType::FloatList)),
 	m_sum(std::make_unique<ZstOutputPlug>("sum", ZstValueType::FloatList))
@@ -20,6 +20,7 @@ void Adder::on_registered()
 
 void Adder::compute(ZstInputPlug * plug)
 {
+	ZstComputeComponent::compute(plug);
 	auto largest_size = std::max(m_addend->size(), m_augend->size());
 
 	for (int i = 0; i < largest_size; ++i) {
