@@ -13,6 +13,7 @@
 #include <showtime/entities/ZstEntityFactory.h>
 #include <showtime/entities/ZstEntityBase.h>
 #include <showtime/entities/ZstComponent.h>
+#include <showtime/entities/ZstComputeComponent.h>
 #include <showtime/entities/ZstPlug.h>
 #include <showtime/entities/ZstPerformer.h>
 #include <showtime/adaptors/ZstLogAdaptor.hpp>

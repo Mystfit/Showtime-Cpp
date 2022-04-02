@@ -46,7 +46,7 @@ From: amd64/ubuntu:18.04
 	BOOST_INCLUDEDIR=$ANDROID_NDK_SYSROOT/$ANDROID_ABI/include
 	BOOST_LIBRARYDIR=$ANDROID_NDK_SYSROOT/$ANDROID_ABI/lib
 
-	BOOST_URL_BASE=https://dl.bintray.com/boostorg/release
+	BOOST_URL_BASE=https://boostorg.jfrog.io/artifactory/main/release
 	BOOST_URL="$BOOST_URL_BASE/$BOOST_VER/source/$BOOST_FILE"
 	BOOST_URL_MIRROR_BASE=https://versaweb.dl.sourceforge.net/project/boost/boost
 	BOOST_URL_MIRROR="$BOOST_URL_MIRROR_BASE/$BOOST_VER/$BOOST_FILE"
