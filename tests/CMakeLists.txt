@@ -17,9 +17,12 @@ set(TESTS
 
 set(TEST_DEPENDENCIES 
     Boost::unit_test_framework
+    Boost::process
     Boost::thread
     Boost::system
     Boost::filesystem
+    Boost::dll
+    Boost::stacktrace_basic
 )
 
 # Prefer linking shared libs over static libs for tests

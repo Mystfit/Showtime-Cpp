@@ -157,12 +157,22 @@ set(BOOST_COMPONENTS
     unit_test_framework
 )
 
-
-find_package(Boost COMPONENTS ${BOOST_COMPONENTS} CONFIG)
-if(NOT Boost_FOUND)
-    message(STATUS "Searching for Boost using cmake's FindBoost")
-    find_package(Boost COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
+include(FetchContent)
+set(BOOST_ENABLE_CMAKE ON)
+FetchContent_Declare(build_boost
+    GIT_REPOSITORY https://github.com/boostorg/boost.git
+    GIT_TAG boost-1.79.0.beta1
+)
+FetchContent_GetProperties(build_boost)
+if(NOT build_boost_POPULATED)
+    FetchContent_Populate(build_boost)
+    add_subdirectory(${build_boost_SOURCE_DIR} ${build_boost_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
+# find_package(Boost COMPONENTS ${BOOST_COMPONENTS} CONFIG)
+# if(NOT Boost_FOUND)
+#     message(STATUS "Searching for Boost using cmake's FindBoost")
+#     find_package(Boost COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
+# endif()
 
 
 # swig
@@ -226,18 +236,17 @@ message(STATUS ${FLATC_OUTPUT})
 
 # Set internal linked library lists for our targets
 set(SHOWTIME_PRIVATE_LINKED_LIBS 
-    # Boost::system
     Boost::thread
-    # Boost::date_time
     Boost::chrono
-    # Boost::atomic
-    # Boost::regex
     Boost::log
-    # Boost::log_setup
-    # Boost::context
-    # Boost::fiber
-    Boost::boost
-    Boost::disable_autolinking
+    Boost::asio
+    Boost::uuid
+    Boost::dll
+    Boost::bimap
+    Boost::assign
+    Boost::beast
+    #Boost::boost
+    #Boost::disable_autolinking
     ${CMAKE_THREAD_LIBS_INIT}
 )
 
@@ -624,7 +633,8 @@ set(CMAKE_INSTALL_CMAKEDIR "lib/cmake/showtime")
 
 # Install targets
 set(Showtime_INSTALL_TARGETS 
-    ${Showtime_OBJECT_TARGETS}
+    # ${SHOWTIME_PRIVATE_LINKED_LIBS}
+    # ${Showtime_OBJECT_TARGETS}
     ${Showtime_LIBRARY_TARGETS} 
     ${Showtime_APP_TARGETS}
     # ${Showtime_PLUGIN_TARGETS}

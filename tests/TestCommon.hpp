@@ -13,7 +13,7 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
-#include <boost/stacktrace.hpp>
+#include <boost/stacktrace/stacktrace.hpp>
 #include <memory>
 #include <sstream>
 
