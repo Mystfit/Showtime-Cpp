@@ -85,7 +85,7 @@ public:
 	// ------------
 
 	UFUNCTION(BlueprintCallable, Exec, Category="Showtime|Client")
-	void Init();
+	void Init(TSubclassOf<class UShowtimeView> ViewClassToSpawn);
 
 	UFUNCTION(BlueprintCallable, Exec, Category = "Showtime|Client")
 	void JoinServerByAddress(const FString& address);
@@ -134,9 +134,6 @@ public:
 	UPROPERTY(BlueprintReadOnly, Transient, Category = "Showtime|View")
 	UShowtimeView* View;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Showtime|View")
-	TSubclassOf<class UShowtimeView> ViewClass;
-
 
 	// Actor overrides
 	// ---------------
@@ -159,6 +156,9 @@ public:
 private:
 	void AttachEvents();
 	void RemoveEvents();
+	void AttachView(UShowtimeView* NewView);
+	void RemoveView();
+
 	TSharedPtr<showtime::ShowtimeClient> client;
 	std::shared_ptr<ClientAdaptors> client_adaptor;
 };

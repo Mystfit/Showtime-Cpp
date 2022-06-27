@@ -28,11 +28,12 @@ public:
 	// ----------
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Showtime|Entity")
 	//UShowtimeClient* OwningClient;
+	UShowtimeEntity(const FObjectInitializer& ObjectIn...);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Showtime|Entity")
 	FString EntityPath;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Showtime|URI")
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Showtime|URI")
 	UShowtimeURI* URI;
 
 	// Blueprint callable functions
@@ -62,10 +63,16 @@ public:
 
 	void Init(const ZstURI& entityURI);
 	ZstEntityBase* GetNativeEntity() const;
+
+
+	//
+	// Replication
+
+	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const;
 };
 
 
 FORCEINLINE uint32 GetTypeHash(const UShowtimeEntity* Other)
 {
-	return GetTypeHash(UTF8_TO_TCHAR(Other->URI->WrappedURI().path()));
+	return GetTypeHash(UTF8_TO_TCHAR(Other->URI->Native().path()));
 }

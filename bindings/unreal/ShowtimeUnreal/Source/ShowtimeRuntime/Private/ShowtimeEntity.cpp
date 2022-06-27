@@ -3,10 +3,14 @@
 #include "ShowtimeSubsystem.h"
 #include "ShowtimeConversions.h"
 
+UShowtimeEntity::UShowtimeEntity(const FObjectInitializer& ObjectIn...) : UActorComponent(ObjectIn){
+	UActorComponent::SetIsReplicatedByDefault(true);
+}
+
 void UShowtimeEntity::Init(const ZstURI& entityURI) {
 	//EntityPath = entity_path;
-	URI = NewObject<UShowtimeURI>();
-	URI->Init(entityURI);
+	//URI = NewObject<UShowtimeURI>();
+	//URI->Init(entityURI);
 	OnInitialised.Broadcast();
 }
 
@@ -66,12 +70,13 @@ ZstEntityBase* UShowtimeEntity::GetNativeEntity() const {
 
 	if (!URI || !ShowtimeSubsystem)
 		return nullptr;
-	return  ShowtimeSubsystem->Handle()->find_entity(URI->WrappedURI());
+	return  ShowtimeSubsystem->Handle()->find_entity(URI->Native());
 }
 
 void UShowtimeEntity::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	//DOREPLIFETIME(UShowtimeEntity, EntityPath);
+	DOREPLIFETIME(UShowtimeEntity, URI);
 	DOREPLIFETIME(UShowtimeEntity, OnInitialised);
 }

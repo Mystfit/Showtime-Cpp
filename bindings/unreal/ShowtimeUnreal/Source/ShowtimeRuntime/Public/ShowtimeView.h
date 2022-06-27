@@ -17,6 +17,8 @@
 #include "ShowtimeFactory.h"
 
 #include "CoreMinimal.h"
+#include "Kismet/GameplayStatics.h"
+#include "Engine/World.h"
 #include "ShowtimeView.generated.h"
 
 
@@ -189,14 +191,19 @@ inline wrapper_t* UShowtimeView::SpawnEntityActorFromPrototype(ZstEntityBase* en
 	FActorSpawnParameters params;
 	params.Name = UTF8_TO_TCHAR(entity->URI().path());
 	params.NameMode = FActorSpawnParameters::ESpawnActorNameMode::Requested;
-
-	if (auto entity_actor = world->SpawnActor<AActor>(prototype, params)) {
-		entity_actor->SetActorLabel(UTF8_TO_TCHAR(entity->URI().last().path()));
+	if (auto entity_actor = world->SpawnActorDeferred<AActor>(prototype, FTransform())) {
 		wrapper_t* entity_comp = entity_actor->FindComponentByClass<wrapper_t>();
 		if (!entity_comp) {
 			entity_comp = NewObject<wrapper_t>(entity_actor);
 			entity_comp->RegisterComponent();
 		}
+		entity_comp->URI = NewObject<UShowtimeURI>();
+		entity_comp->URI->Init(entity->URI());
+
+		UGameplayStatics::FinishSpawningActor(entity_actor, FTransform());
+#if WITH_EDITOR
+		entity_actor->SetActorLabel(UTF8_TO_TCHAR(entity->URI().last().path()), false);
+#endif
 		RegisterSpawnedWrapper(entity_comp, entity);
 		return entity_comp;
 	}

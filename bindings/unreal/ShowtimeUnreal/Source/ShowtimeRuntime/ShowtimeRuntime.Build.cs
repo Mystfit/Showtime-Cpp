@@ -69,11 +69,11 @@ public class ShowtimeRuntime : ModuleRules
 		if (bUseDebug)
 		{
 			win64_libs = new string[]{
-				Path.Combine(win_lib_path, (Target.Platform == UnrealTargetPlatform.HoloLens) ? "ShowtimeUWP.lib" : "Showtimed.lib")
+				Path.Combine(win_lib_path, (Target.Platform == UnrealTargetPlatform.HoloLens) ? "ShowtimeUWPd.lib" : "Showtimed.lib")
 			};
 
 			win64_binaries = new string[]{
-				Path.Combine(win_bin_path, (Target.Platform == UnrealTargetPlatform.HoloLens) ? "ShowtimeUWP.dll" :"Showtimed.dll")
+				Path.Combine(win_bin_path, (Target.Platform == UnrealTargetPlatform.HoloLens) ? "ShowtimeUWPd.dll" :"Showtimed.dll")
 			};
 		}
 		else

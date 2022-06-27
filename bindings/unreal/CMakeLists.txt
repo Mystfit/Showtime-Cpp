@@ -83,8 +83,14 @@ endif()
 # Windows lib copying
 if(WIN32 OR BUILD_WINDOWS_CONTAINER)
     # Copy windows platform files
-    set(WIN_UNREAL_BIN_DIR ${UNREAL_BIN_DIR}/Win64/${CMAKE_GENERATOR_PLATFORM})
-    set(WIN_UNREAL_LIB_DIR ${UNREAL_LIB_DIR}/Win64/${CMAKE_GENERATOR_PLATFORM})
+    if(${CMAKE_GENERATOR_PLATFORM})
+        set(ARCH ${CMAKE_GENERATOR_PLATFORM})
+    else()
+        set(ARCH ${CMAKE_VS_PLATFORM_NAME_DEFAULT})
+    endif()
+    
+    set(WIN_UNREAL_BIN_DIR ${UNREAL_BIN_DIR}/Win64/${ARCH})
+    set(WIN_UNREAL_LIB_DIR ${UNREAL_LIB_DIR}/Win64/${ARCH})
     add_custom_command(
         PRE_BUILD
         TARGET ${UNREAL_TARGET}

@@ -17,22 +17,17 @@ class UShowtimeURI : public UObject{
 	GENERATED_BODY()
 
 public:
+
 	//UShowtimeURI() : m_wrapped_URI() {};
 	//UShowtimeURI(const ZstURI& URI) : m_wrapped_URI(URI) 
+	void Init(const FName& URI);
 	void Init(const ZstURI& URI);
 
-	//UPROPERTY(BlueprintReadOnly, Category = "Showtime|URI")
-	UFUNCTION(BlueprintCallable, Category = "Showtime|URI")
-	int32 Size() const;
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Showtime|URI")
+	FName Path;
 
-	UFUNCTION(BlueprintCallable, Category = "Showtime|URI")
-	int32 FullSize() const;
+	ZstURI Native() const;
 
-	UFUNCTION(BlueprintCallable, Category = "Showtime|URI")
-	FName Path() const;
-
-	const ZstURI& WrappedURI() const;
-
-private:
-	ZstURI m_wrapped_URI;
+	virtual bool IsSupportedForNetworking() const override { return true; };
+	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const;
 };

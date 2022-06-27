@@ -12,6 +12,7 @@
 #include "ShowtimePluginManagerAndroid.h"
 #endif
 #include <functional>
+#include "..\Public\ShowtimeSubsystem.h"
 
 DEFINE_LOG_CATEGORY(Showtime);
 
@@ -25,11 +26,11 @@ void UShowtimeSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	client = MakeShared<ShowtimeClient>();
 
 	// Create view from class
-	if (!ViewClass)
+	/*if (!ViewClass)
 		ViewClass = UShowtimeView::StaticClass();
 	FString name;
 	ViewClass->GetName(name);
-	View = NewObject<UShowtimeView>(this, ViewClass, FName(*name), RF_Transient);
+	View = NewObject<UShowtimeView>(this, ViewClass, FName(*name), RF_Transient);*/
 
 	// Trigger blueprint beginplay
 	if (GetOuter() && GetOuter()->GetWorld())
@@ -49,9 +50,15 @@ void UShowtimeSubsystem::Cleanup()
 {
 }
 
-void UShowtimeSubsystem::Init()
+void UShowtimeSubsystem::Init(TSubclassOf<class UShowtimeView> ViewClass)
 {
 	FString plugin_path;
+
+	// Create view
+	FString name;
+	ViewClass->GetName(name);
+	auto ViewInstance = NewObject<UShowtimeView>(this, ViewClass, FName(*name), RF_Transient);
+	AttachView(ViewInstance);
 
 #if PLATFORM_ANDROID
 	UMulticastAndroid::AcquireMulticastLock();
@@ -61,10 +68,13 @@ void UShowtimeSubsystem::Init()
 		client->set_plugin_path(TCHAR_TO_UTF8(*plugin_path));
 	client->init(TCHAR_TO_UTF8(*ClientName), true);
 
-	client->add_connection_adaptor(View);	// For server beacons
-	client->add_session_adaptor(View);      // For cables
-	client->add_hierarchy_adaptor(View);	// For entities
-	//client->start_file_logging();
+	if (!View) {
+		UE_LOG(Showtime, Error, TEXT("No Showtime view class set"));
+		return;
+	}
+
+	// Additional event adaptors
+	AttachEvents();
 
 	View->SpawnEntity(Handle()->get_root());
 }
@@ -142,7 +152,6 @@ void UShowtimeSubsystem::PostInitProperties()
 
 void UShowtimeSubsystem::BeginPlay_Implementation()
 {
-	AttachEvents();
 }
 
 //void UShowtimeSubsystem::BeginDestroy()
@@ -167,6 +176,34 @@ void UShowtimeSubsystem::RemoveEvents(){
 	//client->remove_connection_adaptor(client_adaptor.get());
 	//client->remove_hierarchy_adaptor(client_adaptor);
 	client->remove_log_adaptor(client_adaptor.get());
+}
+
+void UShowtimeSubsystem::AttachView(UShowtimeView* NewView)
+{
+	if (!client)
+		return;
+
+	RemoveView();
+	View = NewView;
+
+	client->add_connection_adaptor(View);	// For server beacons
+	client->add_session_adaptor(View);      // For cables
+	client->add_hierarchy_adaptor(View);	// For entities
+}
+
+void UShowtimeSubsystem::RemoveView()
+{
+	if (!client)
+		return;
+
+	if (View) {
+		if (client->is_init_completed()) {
+			client->remove_connection_adaptor(View);	// For server beacons
+			client->remove_session_adaptor(View);      // For cables
+			client->remove_hierarchy_adaptor(View);	// For entities
+		}
+		View->ConditionalBeginDestroy();
+	}
 }
 
 void UShowtimeSubsystem::Tick_Implementation(float DeltaTime)

@@ -19,8 +19,8 @@ void UShowtimeView::RegisterSpawnedWrapper(UShowtimeEntity* wrapper, ZstEntityBa
 		return;
 
 	//FString entity_path = UTF8_TO_TCHAR(entity->URI().path());
-	wrapper->Init(entity->URI());
-	EntityWrappers.Add(wrapper->URI->Path(), wrapper);
+	//wrapper->Init(entity->URI());
+	EntityWrappers.Add(wrapper->URI->Path, wrapper);
 }
 
 UShowtimeEntity* UShowtimeView::GetWrapper(const ZstEntityBase* entity) const
@@ -157,9 +157,15 @@ void UShowtimeView::PlaceCable_Implementation(UShowtimeCable* cable)
 void UShowtimeView::on_performer_arriving(ZstPerformer* performer)
 {
 	AsyncTask(ENamedThreads::GameThread, [this, performer]() {
-		if (auto performer_actor = SpawnEntityActorFromPrototype<UShowtimePerformer>(performer, SpawnablePerformer)) {
-			PlaceEntity(performer_actor);
-			OnPerformerArriving.Broadcast(performer_actor);
+		if (auto world = GetWorld()) {
+
+			// Only servers can spawn actor representations of Showtime proxies
+			if (world->GetNetMode() != ENetMode::NM_Client) {
+				if (auto performer_actor = SpawnEntityActorFromPrototype<UShowtimePerformer>(performer, SpawnablePerformer)) {
+					PlaceEntity(performer_actor);
+					OnPerformerArriving.Broadcast(performer_actor);
+				}
+			}
 		}
 	});
 }
@@ -175,9 +181,14 @@ void UShowtimeView::on_performer_leaving(const ZstURI& performer_path)
 void UShowtimeView::on_entity_arriving(ZstEntityBase* entity)
 {
 	AsyncTask(ENamedThreads::GameThread, [this, entity]() {
-		if (auto entity_actor = SpawnEntity(entity)) {
-			PlaceEntity(entity_actor);
-			OnEntityArriving.Broadcast(entity_actor);
+		if (auto world = GetWorld()) {
+			// Only servers can spawn actor representations of Showtime proxies
+			if (world->GetNetMode() != ENetMode::NM_Client) {
+				if (auto entity_actor = SpawnEntity(entity)) {
+					PlaceEntity(entity_actor);
+					OnEntityArriving.Broadcast(entity_actor);
+				}
+			}
 		}
 	});
 }
@@ -202,7 +213,14 @@ void UShowtimeView::on_entity_updated(ZstEntityBase* entity)
 void UShowtimeView::on_factory_arriving(ZstEntityFactory* factory)
 {
 	AsyncTask(ENamedThreads::GameThread, [this, factory]() {
-		OnEntityArriving.Broadcast(SpawnEntityActorFromPrototype<UShowtimeFactory>(factory, SpawnableFactory));
+		if (auto world = GetWorld()) {
+			// Only servers can spawn actor representations of Showtime proxies
+			if (world->GetNetMode() != ENetMode::NM_Client) {
+				if (auto factory_actor = SpawnEntityActorFromPrototype<UShowtimeFactory>(factory, SpawnableFactory)) {
+					OnEntityArriving.Broadcast(factory_actor);
+				}
+			}
+		}
 	});
 }
 
@@ -216,21 +234,26 @@ void UShowtimeView::on_factory_leaving(const ZstURI& factory_path)
 void UShowtimeView::on_cable_created(ZstCable* cable)
 {
 	AsyncTask(ENamedThreads::GameThread, [this, cable]() {
-		UShowtimeCable* cable_wrapper = nullptr;
-		UShowtimeCable** cable_wrapper_it = CableWrappers.Find(FShowtimeCableAddress(cable->get_address()));
-		if (cable_wrapper_it) {
-			// Cable exists already
-			cable_wrapper = *cable_wrapper_it;
-		}
-		else {
-			cable_wrapper = SpawnCable(cable);
-			if(cable_wrapper->GetOwner()->Implements<UShowtimeCableInterface>()){
-				IShowtimeCableInterface::Execute_ConnectCableToEndpoints(cable_wrapper->GetOwner(), cable_wrapper->GetInputPlug(), cable_wrapper->GetOutputPlug());
+		if (auto world = GetWorld()) {
+			// Only servers can spawn actor representations of Showtime proxies
+			if (world->GetNetMode() != ENetMode::NM_Client) {
+				UShowtimeCable* cable_wrapper = nullptr;
+				UShowtimeCable** cable_wrapper_it = CableWrappers.Find(FShowtimeCableAddress(cable->get_address()));
+				if (cable_wrapper_it) {
+					// Cable exists already
+					cable_wrapper = *cable_wrapper_it;
+				}
+				else {
+					cable_wrapper = SpawnCable(cable);
+					if (cable_wrapper->GetOwner()->Implements<UShowtimeCableInterface>()) {
+						IShowtimeCableInterface::Execute_ConnectCableToEndpoints(cable_wrapper->GetOwner(), cable_wrapper->GetInputPlug(), cable_wrapper->GetOutputPlug());
+					}
+				}
+
+				PlaceCable(cable_wrapper);
+				OnCableCreated.Broadcast(cable_wrapper);
 			}
 		}
-	
-		PlaceCable(cable_wrapper);
-		OnCableCreated.Broadcast(cable_wrapper);
 	});
 }
 
@@ -247,7 +270,14 @@ void UShowtimeView::on_server_discovered(ShowtimeClient* client, const ZstServer
 	FServerAddress address = FServerAddressFromShowtime(server);
 	AsyncTask(ENamedThreads::GameThread, [this, address]() {
 		UE_LOG(Showtime, Display, TEXT("Received server beacon %s"), *address.name);
-		OnServerDiscovered.Broadcast(SpawnServerBeacon(address));
+		if (auto world = GetWorld()) {
+			// Only servers can spawn actor representations of Showtime proxies
+			if (world->GetNetMode() != ENetMode::NM_Client) {
+				if (auto beacon_actor = SpawnServerBeacon(address)) {
+					OnServerDiscovered.Broadcast(beacon_actor);
+				}
+			}
+		}
 	});
 }
 

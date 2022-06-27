@@ -1,26 +1,22 @@
 #include "ShowtimeURI.h"
 
-void UShowtimeURI::Init(const ZstURI& URI_to_wrap)
+void UShowtimeURI::Init(const FName& URI)
 {
-    m_wrapped_URI = URI_to_wrap;
+    Path = URI;
 }
 
-int32 UShowtimeURI::Size() const
+void UShowtimeURI::Init(const ZstURI& URI)
 {
-    return m_wrapped_URI.size();
+    Path = UTF8_TO_TCHAR(URI.path());
 }
 
-int32 UShowtimeURI::FullSize() const
+ZstURI UShowtimeURI::Native() const
 {
-    return m_wrapped_URI.full_size();
+    return ZstURI(TCHAR_TO_UTF8(*Path.ToString()));
 }
 
-FName UShowtimeURI::Path() const
+void UShowtimeURI::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-    return UTF8_TO_TCHAR(m_wrapped_URI.path());
-}
-
-const ZstURI& UShowtimeURI::WrappedURI() const
-{
-    return m_wrapped_URI;
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(UShowtimeURI, Path);
 }
