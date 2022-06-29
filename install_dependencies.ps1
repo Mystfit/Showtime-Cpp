@@ -139,11 +139,12 @@ foreach ($c in $config){
         "-DCZMQ_BUILD_SHARED=OFF"
         "-DZMQ_BUILD_TESTS=OFF"
     )
-    Build-CmakeFromGit -name "czmq" -url "https://github.com/mystfit/czmq.git" -branch "showtime" -config $config_titled -toolset $toolset_ver -arch $platform -flags @(
+    Build-CmakeFromGit -name "czmq" -url "https://github.com/mystfit/czmq.git" -branch "master" -config $config_titled -toolset $toolset_ver -arch $platform -flags @(
         "-DENABLE_DRAFTS=TRUE",
         "-DBUILD_TESTING=OFF",
         "-DBUILD_SHARED=OFF"
         "-DCMAKE_DEBUG_POSTFIX=d"
+        "-DLIBZMQ_FIND_USING_CMAKE_PACKAGE=ON"
     )
     Build-CmakeFromGit -name "flatbuffers" -url "https://github.com/google/flatbuffers.git" -branch "master" -config $config_titled -toolset $toolset_ver -arch $platform -flags @(
         "-DFLATBUFFERS_INSTALL=ON"
