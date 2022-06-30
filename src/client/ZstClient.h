@@ -33,6 +33,7 @@
 #include "../core/transports/ZstTCPGraphTransport.h"
 #ifdef ZST_BUILD_DRAFT_API
 #include "../core/transports/ZstUDPGraphTransport.h"
+#include "../core/transports/ZstSTUNService.h"
 #endif
 
 //Showtime client includes
@@ -60,7 +61,7 @@ namespace showtime {
         public:
             ZstClient(ShowtimeClient* api);
             ~ZstClient();
-            void init_client(const char * client_name, bool debug);
+            void init_client(const char * client_name, bool debug, uint16_t unreliable_port);
             void init_file_logging(const char * log_file_path);
             void destroy();
             
@@ -147,6 +148,7 @@ namespace showtime {
             ZstServerAddress m_connected_server;
 
             // Message handlers
+            void start_remote_client_connection(const std::shared_ptr<showtime::ZstStageMessage>& msg);
             void start_connection_broadcast_handler(const std::shared_ptr<ZstStageMessage>& msg);
             void stop_connection_broadcast_handler(const std::shared_ptr<ZstStageMessage>& msg);
             void listen_to_client_handler(const std::shared_ptr<ZstStageMessage>& msg);
@@ -158,6 +160,7 @@ namespace showtime {
             static void send_connection_broadcast(boost::asio::deadline_timer * t, ZstClient * client, const ZstURI & to, const ZstURI & from, boost::posix_time::milliseconds duration);
             ZstPerformerMap m_active_peer_connections;
             std::unordered_map<ZstURI, ZstMsgID, ZstURIHash> m_pending_peer_connections;
+            std::shared_ptr<ZstSTUNService> m_stun_srv;
             
             //Client modules
             std::shared_ptr<ZstClientSession> m_session;

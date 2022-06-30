@@ -98,6 +98,7 @@ set(ZST_CORE_MODULE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstEventModule.h"
 )
 set(ZST_CORE_TRANSPORT_HEADERS
+    "${CMAKE_CURRENT_LIST_DIR}/transports/ZstSTUNService.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportHelpers.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTransportLayerBase.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstStageTransport.h"
@@ -150,6 +151,7 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstIOLoop.cpp"
 )
 set(ZST_CORE_TRANSPORT_SRC
+    "${CMAKE_CURRENT_LIST_DIR}/transports/ZstSTUNService.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstStageTransport.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstGraphTransport.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTCPGraphTransport.cpp"

@@ -1,10 +1,12 @@
 #include "ZstUDPGraphTransport.h"
+#include "ZstSTUNService.h"
+#include <showtime/ZstConstants.h>
 #include <czmq.h>
 #include <sstream>
 
 namespace showtime 
 {
-	ZstUDPGraphTransport::ZstUDPGraphTransport()
+	ZstUDPGraphTransport::ZstUDPGraphTransport() : m_port(CLIENT_UNRELIABLE_PORT)
 	{
 	}
 
@@ -20,8 +22,20 @@ namespace showtime
 		}
 	}
 
+	void ZstUDPGraphTransport::set_incoming_port(uint16_t port)
+	{
+		m_port = port;
+	}
+
+	uint16_t ZstUDPGraphTransport::get_incoming_port() {
+		return m_port;
+	}
+
 	int ZstUDPGraphTransport::bind(const std::string& address)
 	{
+		std::stringstream addr;
+		addr <<  "udp://*:" << m_port;
+		zsock_bind(input_graph_socket(), addr.str().c_str());
 		//throw(std::runtime_error("bind(): Not implemented"));
 		return -1;
 	}
@@ -38,8 +52,8 @@ namespace showtime
 		std::string protocol = "udp";
 
 		//Output socket
-		addr << ">" << protocol << "://" << CLIENT_MULTICAST_ADDR << ":" << CLIENT_UNRELIABLE_PORT;
-		zsock_t* graph_out = zsock_new_radio(addr.str().c_str());
+		//addr << ">" << protocol << "://" << CLIENT_MULTICAST_ADDR << ":" << CLIENT_UNRELIABLE_PORT;
+		zsock_t* graph_out = zsock_new_radio(nullptr);// addr.str().c_str());
 		if (!graph_out) {
 			Log::net(Log::Level::error, "Could not create UDP output socket. ZMQ returned {}", std::strerror(zmq_errno()));
 			return;
@@ -47,8 +61,10 @@ namespace showtime
 		addr.str("");
 
 		//Input socket
-		addr << "@" << protocol << "://" << CLIENT_MULTICAST_ADDR << ":" << CLIENT_UNRELIABLE_PORT;
-		zsock_t* graph_in = zsock_new_dish(addr.str().c_str());
+		/*addr << "@" << protocol << "://" << "*" << ":" << m_port;*/
+		//zsock_t* graph_in = zsock_new_dish(addr.str().c_str());
+		zsock_t* graph_in = zsock_new_dish(nullptr);
+
 		if (!graph_in) {
 			Log::net(Log::Level::error, "Could not create UDP input socket. ZMQ returned {}", std::strerror(zmq_errno()));
 			return;
@@ -61,7 +77,7 @@ namespace showtime
 
 		//Build remote IP
 		addr.str("");
-		addr << protocol << "://" << first_available_ext_ip() << ":" << CLIENT_UNRELIABLE_PORT;
+		addr << protocol << "://" << ZstSTUNService::local_ip() << ":" << m_port;
 		set_graph_addresses(addr.str(), "");
 
 		//Join groups

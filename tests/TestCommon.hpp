@@ -81,10 +81,12 @@ namespace ZstTest
 
 		void send(int val) {
 			m_output->append_int(val);
+			m_output->fire();
 		}
 
 		void send(float val) {
 			m_output->append_float(val);
+			m_output->fire();
 		}
 
 		void send(std::string val) {
@@ -136,7 +138,6 @@ namespace ZstTest
 		}
 
 		virtual void compute(ZstInputPlug * plug) override {
-
 			last_received_val = input()->int_at(0);
 			if (log) {
 				Log::app(Log::Level::debug, "Input filter received value {0:d}", last_received_val);
@@ -642,7 +643,12 @@ namespace ZstTest
 			external_performer_URI(client_name.c_str()),
             remote_client(std::make_shared<ShowtimeClient>())
 		{
-			remote_client->init(client_name.c_str(), true);
+			ShowtimeOptions opts;
+			opts.debug = true;
+			opts.unreliable_port = 40010;
+			strcpy(opts.performer, client_name.c_str());
+
+			remote_client->init(opts);
 			remote_client->auto_join_by_name(server_name.c_str());
 		}
 

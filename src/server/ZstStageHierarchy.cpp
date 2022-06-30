@@ -159,6 +159,7 @@ Signal ZstStageHierarchy::create_client_handler(const std::shared_ptr<ZstStageMe
 			content->performer(),
 			(content->graph_reliable_address()) ? content->graph_reliable_address()->str() : "",
 			(content->graph_unreliable_address()) ? content->graph_unreliable_address()->str() : "",
+			(content->graph_unreliable_public_address()) ? content->graph_unreliable_public_address()->str() : "",
 			request->origin_endpoint_UUID(),
 			std::static_pointer_cast<ZstStageTransport>(transport)
 		));

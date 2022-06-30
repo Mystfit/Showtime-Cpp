@@ -391,7 +391,7 @@ void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, Zst
 	};
 
 	auto builder = std::make_shared<FlatBufferBuilder>();
-	auto subscribe_offset = CreateClientGraphHandshakeListen(*builder, builder->CreateString(output_client->URI().path()), builder->CreateString(output_client->reliable_address()));
+	auto subscribe_offset = CreateClientGraphHandshakeListen(*builder, builder->CreateString(output_client->URI().path()), builder->CreateString(output_client->reliable_address()), builder->CreateString(output_client->unreliable_address()));
 
 	Log::net(Log::Level::debug, "Sending Content_ClientGraphHandshakeListen whisper to {}", input_client->URI().path());
 	stage_hierarchy()->whisper(input_client, Content_ClientGraphHandshakeListen, subscribe_offset.Union(), builder, receiver_args);
@@ -401,7 +401,8 @@ void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, Zst
 	auto broadcast_offset = CreateClientGraphHandshakeStart(
 		*broadcaster_builder,
 		broadcaster_builder->CreateString(input_client->URI().path(), input_client->URI().full_size()),
-		broadcaster_builder->CreateString(input_client->reliable_address())
+		broadcaster_builder->CreateString(input_client->unreliable_address()),
+		broadcaster_builder->CreateString(input_client->unreliable_public_address())
 	);
 	ZstTransportArgs broadcaster_args;
 	stage_hierarchy()->whisper(output_client, Content_ClientGraphHandshakeStart, broadcast_offset.Union(), broadcaster_builder, broadcaster_args);

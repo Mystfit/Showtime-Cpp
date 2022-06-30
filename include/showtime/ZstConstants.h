@@ -45,6 +45,7 @@ enum class ZstValueType {
 #define STAGE_WEBSOCKET_PORT 40005
 #define CLIENT_UNRELIABLE_PORT 40006
 #define CLIENT_MULTICAST_ADDR "239.0.0.8"
+#define STUN_SERVER "stun.gorkblorf.com"
 
 //Heartbeats
 #define HEARTBEAT_DURATION 1000

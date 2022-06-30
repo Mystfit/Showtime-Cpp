@@ -27,6 +27,7 @@ ZstClient::ZstClient(ShowtimeClient* api) :
     m_udp_graph_transport(std::make_shared<ZstUDPGraphTransport>()),
 #endif
     m_client_transport(std::make_shared<ZstZMQClientTransport>()),
+    m_stun_srv(std::make_shared<ZstSTUNService>()),
 
     //Timers
     m_heartbeat_timer(m_client_timerloop.IO_context()),
@@ -95,7 +96,7 @@ void ZstClient::destroy() {
     Log::net(Log::Level::notification, "Showtime library destroyed");
 }
 
-void ZstClient::init_client(const char* client_name, bool debug)
+void ZstClient::init_client(const char* client_name, bool debug, uint16_t unreliable_port)
 {
     if (m_is_ending || m_init_completed) {
         Log::net(Log::Level::notification, "Showtime already initialised");
@@ -148,6 +149,7 @@ void ZstClient::init_client(const char* client_name, bool debug)
     m_tcp_graph_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstGraphTransportAdaptor>(m_session));
 
 #ifdef ZST_BUILD_DRAFT_API
+    m_udp_graph_transport->set_incoming_port(unreliable_port);
     m_udp_graph_transport->init();
     m_udp_graph_transport->msg_events()->add_adaptor(ZstGraphTransportAdaptor::downcasted_shared_from_this< ZstGraphTransportAdaptor>());
     m_udp_graph_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstGraphTransportAdaptor>(m_session));
@@ -210,11 +212,7 @@ void ZstClient::on_receive_msg(const std::shared_ptr<ZstStageMessage>& msg)
 {
     switch (msg->buffer()->content_type()) {
     case Content_ClientGraphHandshakeStart:
-
-#ifdef ZST_BUILD_DRAFT_API
-        //sm_udp_graph_transport->connect(stage_msg->get_arg<std::string>(ZstMsgArg::GRAPH_UNRELIABLE_INPUT_ADDRESS));
-#endif
-        start_connection_broadcast_handler(msg);// buffer()->content_as_ClientGraphHandshakeStart());
+        start_remote_client_connection(msg);
         break;
     case Content_ClientGraphHandshakeStop:
         stop_connection_broadcast_handler(msg);//->buffer()->content_as_ClientGraphHandshakeStop());
@@ -240,18 +238,27 @@ void ZstClient::on_receive_msg(const std::shared_ptr<ZstServerBeaconMessage>& ms
 	server_discovery_handler(msg);
 }
 
-// ------------------------------
-// Performance dispatch overrides
-// ------------------------------
+void ZstClient::start_remote_client_connection(const std::shared_ptr<showtime::ZstStageMessage>& msg)
+{
+#ifdef ZST_BUILD_DRAFT_API
+    // UDP wants to connect to the remote receiver - opposite of TCP where we bind the sender and connect from receiver
+    m_udp_graph_transport->connect(msg->buffer()->content_as_ClientGraphHandshakeStart()->receiver_unreliable_address()->str());
+    
+    // Connect to the public address incase we have to punch through our NAT
+    m_udp_graph_transport->connect(msg->buffer()->content_as_ClientGraphHandshakeStart()->receiver_unreliable_public_address()->str());
+#endif
+    start_connection_broadcast_handler(msg);// buffer()->content_as_ClientGraphHandshakeStart());
+}
 
 void ZstClient::connection_handshake_handler(std::shared_ptr<ZstPerformanceMessage> msg)
 {
     if (msg->buffer()->value()->values_type() != PlugValueData_PlugHandshake) {
         return;
     }
+    Log::net(Log::Level::debug, "{} received handshake graph message from {}", this->session()->hierarchy()->get_local_performer()->URI().path(), msg->buffer()->sender()->c_str());
 
-    if(m_pending_peer_connections.size() < 1)
-        return;
+    //if(m_pending_peer_connections.size() < 1)
+    //    return;
     
     ZstURI output_path(msg->buffer()->sender()->c_str(), msg->buffer()->sender()->size());
     if (m_pending_peer_connections.find(output_path) != m_pending_peer_connections.end()) {
@@ -373,6 +380,12 @@ void ZstClient::join_stage(const ZstServerAddress& stage_address, const ZstTrans
     std::string reliable_graph_addr = m_tcp_graph_transport->get_graph_out_address();
 #ifdef ZST_BUILD_DRAFT_API
     std::string unreliable_graph_addr = m_udp_graph_transport->get_graph_in_address();
+    auto unreliable_public_graph_addr = "udp://" + m_stun_srv->getPublicIPAddress(ZstSTUNService::STUNServer{STUN_SERVER, m_udp_graph_transport->get_incoming_port()});
+    Log::net(Log::Level::debug, "UDP public address: {}", unreliable_public_graph_addr);
+    
+    // Bind UDP after we've punched through the NAT
+    m_udp_graph_transport->bind("");
+
 #else
     std::string unreliable_graph_addr = "";
 #endif
@@ -392,7 +405,12 @@ void ZstClient::join_stage(const ZstServerAddress& stage_address, const ZstTrans
     };
 
     Offset<Performer> root_offset = root->serialize(*builder);
-    auto join_msg = CreateClientJoinRequest(*builder, root_offset, builder->CreateString(reliable_graph_addr), builder->CreateString(unreliable_graph_addr));
+    auto join_msg = CreateClientJoinRequest(*builder, 
+        root_offset, 
+        builder->CreateString(reliable_graph_addr), 
+        builder->CreateString(unreliable_graph_addr), 
+        builder->CreateString(unreliable_public_graph_addr)
+    );
 
     m_client_transport->send_msg(Content_ClientJoinRequest, join_msg.Union(), builder, args);
 }
@@ -697,23 +715,26 @@ void ZstClient::auto_join_stage_complete()
 
 void ZstClient::start_connection_broadcast_handler(const std::shared_ptr<ZstStageMessage>& msg)
 {
+    // Build request message that will be sent to the peer
     auto request = msg->buffer()->content_as_ClientGraphHandshakeStart();
     auto path = request->receiver_URI();
     if (!path) {
         Log::net(Log::Level::warn, "Received malformed ClientGraphHandshakeStart message");
         return;
     }
-    auto remote_client_path = ZstURI(path->c_str(), path->size());
-    
-    ZstPerformer* local_client = session()->hierarchy()->get_local_performer();
-    ZstPerformer* remote_client = dynamic_cast<ZstPerformer*>(session()->hierarchy()->find_entity(remote_client_path));
-    Log::net(Log::Level::debug, "Starting peer handshake broadcast to {}", remote_client->URI().path());
 
+    // Local and remote clients
+    auto remote_client_path = ZstURI(path->c_str(), path->size());
+    ZstPerformer* remote_client = dynamic_cast<ZstPerformer*>(session()->hierarchy()->find_entity(remote_client_path));
+    ZstPerformer* local_client = session()->hierarchy()->get_local_performer();
+    
+    Log::net(Log::Level::debug, "Starting peer handshake broadcast to {}", remote_client->URI().path());
     if (!remote_client) {
         Log::net(Log::Level::error, "Could not find performer {}", remote_client_path.path());
         return;
     }
 
+    // Create timer to regularly send handshake messages 
     boost::asio::deadline_timer timer(m_client_timerloop.IO_context(), boost::posix_time::milliseconds(100));
     m_connection_timers->insert({ remote_client->URI(),  std::move(timer) });
     m_connection_timers->at(remote_client->URI()).async_wait(boost::bind(
@@ -736,7 +757,7 @@ void ZstClient::send_connection_broadcast(boost::asio::deadline_timer* t, ZstCli
     auto builder = std::make_shared<FlatBufferBuilder>();
     auto plugval_offset = CreatePlugValue(*builder, PlugValueData_PlugHandshake, CreatePlugHandshake(*builder).Union());
     auto conn_msg = CreateGraphMessage(*builder, builder->CreateString(from.path(), from.full_size()), plugval_offset);
-    client->m_tcp_graph_transport->send_msg(conn_msg, builder, args);
+    client->m_udp_graph_transport->send_msg(conn_msg, builder, args);
     
     if (client->m_connection_timers->find(to) != client->m_connection_timers->end()) {
         //Loop timer if it is valid
@@ -769,9 +790,11 @@ void ZstClient::listen_to_client_handler(const std::shared_ptr<ZstStageMessage>&
     auto request = msg->buffer()->content_as_ClientGraphHandshakeListen();
     auto output_path = ZstURI(request->sender_URI()->c_str(), request->sender_URI()->size());
     
-    Log::net(Log::Level::debug, "Listening to performer {}", request->sender_address()->str());
+    Log::net(Log::Level::debug, "Listening to performer {} {}", request->sender_reliable_address()->str(), request->sender_unreliable_address()->str());
+    
+    // TODO: This needs to happen here when using TCP to detect connection status
     m_pending_peer_connections[output_path] = msg->id();
-    m_tcp_graph_transport->connect(request->sender_address()->str());
+    m_tcp_graph_transport->connect(request->sender_reliable_address()->str());
 }
 
 std::shared_ptr<ZstClientSession> ZstClient::session()

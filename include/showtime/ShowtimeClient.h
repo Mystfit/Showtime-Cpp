@@ -10,6 +10,12 @@ namespace showtime {
         class ZstClient;
     }
 
+	struct ShowtimeOptions {
+		char performer[127];
+		bool debug = true;
+		uint16_t unreliable_port = CLIENT_UNRELIABLE_PORT;
+	};
+
 
 class ZST_CLASS_EXPORTED ShowtimeClient 
 #ifndef SWIG
@@ -24,6 +30,7 @@ public:
     
 	//Init the library
 	ZST_CLIENT_EXPORT void init(const char * performer, bool debug);
+	ZST_CLIENT_EXPORT void init(const ShowtimeOptions& options);
 	ZST_CLIENT_EXPORT void start_file_logging(const char * log_file_path = "");
 
     //Connect to servers

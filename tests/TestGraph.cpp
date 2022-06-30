@@ -340,25 +340,31 @@ BOOST_FIXTURE_TEST_CASE(send_through_remote_graph, FixtureWaitForSinkClient) {
 }
 
 
-BOOST_FIXTURE_TEST_CASE(send_through_unreliable_graph, FixturePlugs) {
+BOOST_FIXTURE_TEST_CASE(send_through_unreliable_graph, FixtureWaitForSinkClient) {
 	int first_cmp_val = 4;
+	int current_wait = 0;
 
 	auto unreliable_out = std::make_unique<OutputComponent>("unreliable_out", false);
-#ifndef ZST_BUILD_DRAFT_API
-	// If we don't have draft support enabled, check reliable fallback has been set
-	BOOST_TEST(unreliable_out->output()->is_reliable());
-    first_cmp_val = 0; // Silence unused var warning
-#else
-	client->get_root()->add_child(unreliable_out);
-	client->connect_cable(input_component->input(), unreliable_out->output());
-    unreliable_out->send(first_cmp_val);
+	auto input_component = std::make_unique<InputComponent>("connect_test_in", first_cmp_val, true, ZstValueType::IntList, true);
+	test_client->get_root()->add_child(unreliable_out.get());
+	remote_client->get_root()->add_child(input_component.get());
 
-    int current_wait = 0;
-    while (input_component->num_hits < 1 && ++current_wait < 10000) {
-        client->poll_once();
-    }
-    BOOST_TEST(input_component->last_received_val == first_cmp_val);
-#endif
+	// Connect cables
+	test_client->connect_cable(input_component->input(), unreliable_out->output());
+	unreliable_out->get_downstream_compute_plug()->connect_cable(input_component->get_upstream_compute_plug());
+	
+	// Clear events queues
+	test_client->poll_once();
+	remote_client->poll_once();
+	
+	// Send
+	unreliable_out->send(first_cmp_val);
+
+	while (input_component->num_hits < 1 && ++current_wait < 10000) {
+		remote_client->poll_once();
+	}
+
+	BOOST_TEST(input_component->last_received_val == first_cmp_val);
 }
 
 BOOST_FIXTURE_TEST_CASE(local_cable_routes, FixtureJoinServer) {

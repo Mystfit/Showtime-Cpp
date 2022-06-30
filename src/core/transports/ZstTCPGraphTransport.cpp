@@ -2,6 +2,7 @@
 #include <czmq.h>
 #include <showtime/ZstLogging.h>
 #include "ZstTCPGraphTransport.h"
+#include "ZstSTUNService.h"
 
 namespace showtime {
 
@@ -59,7 +60,7 @@ void ZstTCPGraphTransport::init_graph_sockets()
 	//Out
 	zsock_t *  graph_out = zsock_new(ZMQ_PUB);
 	std::stringstream addr;
-	addr << "tcp://" << first_available_ext_ip().c_str() << ":*";
+	addr << "tcp://" << ZstSTUNService::local_ip().c_str() << ":*";
 	zsock_set_unbounded(graph_out);
 	zsock_set_linger(graph_out, 0);
 	int port = zsock_bind(graph_out, "%s", addr.str().c_str());

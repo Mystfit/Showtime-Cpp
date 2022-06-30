@@ -41,7 +41,12 @@ ShowtimeClient::ShowtimeClient() : m_client(std::make_shared<showtime::client::Z
 
 void ShowtimeClient::init(const char * performer_name, bool debug)
 {
-	m_client->init_client(performer_name, debug);
+	m_client->init_client(performer_name, debug, CLIENT_UNRELIABLE_PORT);
+}
+
+void ShowtimeClient::init(const ShowtimeOptions& options)
+{
+	m_client->init_client(options.performer, options.debug, options.unreliable_port);
 }
 
 void ShowtimeClient::start_file_logging(const char * log_file_path)

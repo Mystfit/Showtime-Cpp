@@ -1,6 +1,11 @@
 #include "../ZstZMQRefCounter.h"
 
 #include <czmq.h>
+#ifdef WIN32
+#include <winsock.h>
+#else
+#include <sys/socket.h>
+#endif
 #include <showtime/ZstLogging.h>
 #include "ZstGraphTransport.h"
 
@@ -125,18 +130,6 @@ void ZstGraphTransport::destroy_graph_sockets()
 		m_graph_out = NULL;
 		zst_zmq_dec_ref_count("graphsocket_out");
 	}
-}
-
-std::string ZstGraphTransport::first_available_ext_ip() const
-{
-	ziflist_t * interfaces = ziflist_new();
-	std::string interface_ip_str = "127.0.0.1";
-
-	if (ziflist_first(interfaces) != NULL) {
-		interface_ip_str = std::string(ziflist_address(interfaces));
-	}
-	ziflist_destroy(&interfaces);
-	return interface_ip_str;
 }
 
 zsock_t * ZstGraphTransport::input_graph_socket() const

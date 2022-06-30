@@ -15,6 +15,7 @@
 
 namespace showtime {
 
+
 class ZstGraphTransport :
     public ZstTransportLayer<ZstPerformanceMessage, ZstGraphTransportAdaptor>,
     public ZstGraphTransportAdaptor
@@ -38,8 +39,6 @@ protected:
 	ZST_EXPORT virtual void destroy_graph_sockets();
 	ZST_EXPORT void attach_graph_sockets(zsock_t * in, zsock_t * out);
 	ZST_EXPORT void set_graph_addresses(const std::string & in_addr, const std::string & out_addr);
-
-	ZST_EXPORT std::string first_available_ext_ip() const;
 
 	ZST_EXPORT zsock_t * input_graph_socket() const;
 	ZST_EXPORT zsock_t * output_graph_socket() const;

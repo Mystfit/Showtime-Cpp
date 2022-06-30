@@ -8,10 +8,17 @@ using namespace boost::uuids;
 
 namespace showtime {
 
-ZstPerformerStageProxy::ZstPerformerStageProxy(const Performer* performer, const std::string& reliable_address, const std::string& unreliable_address, const uuid& origin_endpoint_UUID, const std::weak_ptr<ZstStageTransport>& origin_transport) :
+ZstPerformerStageProxy::ZstPerformerStageProxy(
+		const Performer* performer, 
+		const std::string& reliable_address, 
+		const std::string& unreliable_address, 
+		const std::string& unreliable_public_address, 
+		const uuid& origin_endpoint_UUID, 
+		const std::weak_ptr<ZstStageTransport>& origin_transport) :
 	ZstPerformer(performer),
 	m_reliable_address(reliable_address),
 	m_unreliable_address(unreliable_address),
+	m_unreliable_public_address(unreliable_public_address),
 	m_origin_endpoint_UUID(origin_endpoint_UUID),
 	m_origin_transport(origin_transport)
 {
@@ -39,6 +46,11 @@ const std::string& ZstPerformerStageProxy::reliable_address()
 const std::string& ZstPerformerStageProxy::unreliable_address()
 {
 	return m_unreliable_address;
+}
+
+const std::string& ZstPerformerStageProxy::unreliable_public_address()
+{
+	return m_unreliable_public_address;
 }
 
 void ZstPerformerStageProxy::add_subscriber(ZstPerformerStageProxy* client)
