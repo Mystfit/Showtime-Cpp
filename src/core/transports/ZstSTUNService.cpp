@@ -39,13 +39,15 @@ namespace showtime {
         m_udp_sock->open(udp::v4());
         m_udp_sock->non_blocking(false);
         udp::endpoint local_endpoint = boost::asio::ip::udp::endpoint(udp::v4(), server.port);
-        m_udp_sock->bind(local_endpoint);
-        m_udp_sock->set_option(rcv_timeout_option{ 50 });
+        boost::system::error_code ec;
+        m_udp_sock->bind(local_endpoint, ec);
+        Log::net(Log::Level::warn, "STUN bind result: {}", ec.message());
+        //m_udp_sock->set_option(rcv_timeout_option{ 50 });
 
         // Remote Address
         // First resolve the STUN server address
         boost::asio::ip::udp::resolver resolver(m_io);
-        boost::asio::ip::udp::resolver::query query("stun.gorkblorf.com", std::to_string(server.port));
+        boost::asio::ip::udp::resolver::query query(server.address, std::to_string(server.port));
         boost::asio::ip::udp::resolver::iterator iter = resolver.resolve(query);
         udp::endpoint remote_endpoint = iter->endpoint();
 

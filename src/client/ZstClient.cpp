@@ -26,8 +26,8 @@ ZstClient::ZstClient(ShowtimeClient* api) :
 #ifdef ZST_BUILD_DRAFT_API
     m_udp_graph_transport(std::make_shared<ZstUDPGraphTransport>()),
 #endif
-    m_client_transport(std::make_shared<ZstZMQClientTransport>()),
     m_stun_srv(std::make_shared<ZstSTUNService>()),
+    m_client_transport(std::make_shared<ZstZMQClientTransport>()),
 
     //Timers
     m_heartbeat_timer(m_client_timerloop.IO_context()),

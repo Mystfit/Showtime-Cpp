@@ -1,6 +1,7 @@
 namespace showtime {
     %rename(get_child_bundle) ZstEntityBase::get_child_entities;
     %rename(get_cable_bundle) ZstEntityBase::get_child_cables;
+    %ignore ZstEntityBase::entity_events;
 
     %extend ZstEntityBase {
         %pythoncode %{

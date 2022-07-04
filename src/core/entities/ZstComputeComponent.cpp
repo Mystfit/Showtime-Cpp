@@ -60,7 +60,7 @@ namespace showtime
 
     void ZstComputeComponent::on_registered()
     {
-        ZstComputeComponent::on_registered();
+        ZstComponent::on_registered();
         add_child(m_compute_incoming_plug.get());
         add_child(m_compute_outgoing_plug.get());
     }
