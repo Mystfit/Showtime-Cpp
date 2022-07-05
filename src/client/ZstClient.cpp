@@ -801,8 +801,18 @@ void ZstClient::listen_to_client_handler(const std::shared_ptr<ZstStageMessage>&
 {
     auto request = msg->buffer()->content_as_ClientGraphHandshakeListen();
     auto output_path = ZstURI(request->sender_URI()->c_str(), request->sender_URI()->size());
-    
-    Log::net(Log::Level::debug, "Listening to performer {} {}", request->sender_reliable_address()->str(), request->sender_unreliable_address()->str());
+    Log::net(Log::Level::debug, "Listening to performer Reliable: {} Unreliable: {}", request->sender_reliable_address()->str(), request->sender_unreliable_address()->str());
+
+    // Send keepalive message to the remote client so that our Port-Restricted cone NAT will allow incoming packets from our address
+    m_udp_graph_transport->connect(request->sender_unreliable_public_address()->str());
+    ZstTransportArgs args;
+    args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
+    auto builder = std::make_shared<FlatBufferBuilder>();
+    auto plugval_offset = CreatePlugValue(*builder, PlugValueData_PlugKeepalive, CreatePlugKeepalive(*builder).Union());
+    auto from = session()->hierarchy()->get_local_performer()->URI();
+    auto conn_msg = CreateGraphMessage(*builder, builder->CreateString(from.path(), from.full_size()), plugval_offset);
+    m_udp_graph_transport->send_msg(conn_msg, builder, args);
+
     
     // TODO: This needs to happen here when using TCP to detect connection status
     m_pending_peer_connections[output_path] = msg->id();
