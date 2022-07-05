@@ -1,6 +1,9 @@
 namespace showtime {
     %rename(get_discovered_server_bundle) ShowtimeClient::get_discovered_servers;
     %rename(get_performer_bundle) ShowtimeClient::get_performers;
+    %ignore ShowtimeClient::connection_events;
+    %ignore ShowtimeClient::hierarchy_events;
+    %ignore ShowtimeClient::session_events;
 
     %extend ShowtimeClient {
         GEN_ADAPTOR_WRAPPERS(connection_events, add_connection_adaptor, ZstConnectionAdaptor)
