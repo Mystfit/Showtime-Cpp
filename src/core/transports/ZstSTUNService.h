@@ -36,7 +36,12 @@ struct STUNAttributeHeader
 #define IPv4_ADDRESS_FAMILY 0x01;
 #define IPv6_ADDRESS_FAMILY 0x02;
 
+// Socket options
 typedef boost::asio::detail::socket_option::integer<SOL_SOCKET, SO_RCVTIMEO> rcv_timeout_option; //somewhere in your headers to be used everywhere you need it
+typedef boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_BROADCAST> rcv_broadcast;
+#ifdef WIN32
+typedef boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEADDR> rcv_reuseaddr;
+#endif
 
 // RFC 5389 Section 15.2 XOR-MAPPED-ADDRESS
 struct STUNXORMappedIPv4Address

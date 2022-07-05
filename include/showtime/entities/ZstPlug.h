@@ -23,7 +23,7 @@ class ZstEventDispatcher;
 #define PLUG_DEFAULT_MAX_CABLES -1
 
 
-enum ZST_CLASS_EXPORTED class ZstPlugDirection {
+enum class ZstPlugDirection {
     NONE = 0,
     IN_JACK = 1,
     OUT_JACK = 2

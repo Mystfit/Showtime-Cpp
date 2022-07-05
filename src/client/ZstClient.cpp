@@ -386,6 +386,9 @@ void ZstClient::join_stage(const ZstServerAddress& stage_address, const ZstTrans
     // Bind UDP after we've punched through the NAT
     m_udp_graph_transport->bind("");
 
+    // Keep a connection to the STUN server open so we can send keepalive messages
+    m_udp_graph_transport->connect(fmt::format("udp://{}", STUN_SERVER));
+
 #else
     std::string unreliable_graph_addr = "";
 #endif
@@ -665,6 +668,15 @@ void ZstClient::heartbeat_timer(boost::asio::deadline_timer* t, ZstClient* clien
     auto builder = std::make_shared< FlatBufferBuilder>();
     auto heartbeat_signal = CreateSignalMessage(*builder, Signal_CLIENT_HEARTBEAT);
     client->m_client_transport->send_msg(Content_SignalMessage, heartbeat_signal.Union(), builder, args);
+
+    // Send keepalive message through UDP graph to keep punchthrough in NAT open
+    args = ZstTransportArgs();
+    args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
+    builder = std::make_shared<FlatBufferBuilder>();
+    auto plugval_offset = CreatePlugValue(*builder, PlugValueData_PlugKeepalive, CreatePlugKeepalive(*builder).Union());
+    auto from = client->session()->hierarchy()->get_local_performer()->URI();
+    auto conn_msg = CreateGraphMessage(*builder, builder->CreateString(from.path(), from.full_size()), plugval_offset);
+    client->m_udp_graph_transport->send_msg(conn_msg, builder, args);
 
     //Loop timer
     t->expires_at(t->expires_at() + duration);

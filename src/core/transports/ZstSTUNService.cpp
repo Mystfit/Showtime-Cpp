@@ -39,8 +39,12 @@ namespace showtime {
         m_udp_sock->open(udp::v4());
         m_udp_sock->non_blocking(false);
         udp::endpoint local_endpoint = boost::asio::ip::udp::endpoint(udp::v4(), server.port);
-        m_udp_sock->bind(local_endpoint);
+#ifdef WIN32
         m_udp_sock->set_option(rcv_timeout_option{ 50 });
+        m_udp_sock->set_option(rcv_reuseaddr(true));
+        m_udp_sock->set_option(rcv_broadcast(true));
+#endif
+        m_udp_sock->bind(local_endpoint);
 
         // Remote Address
         // First resolve the STUN server address

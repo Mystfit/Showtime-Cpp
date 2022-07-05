@@ -18,10 +18,10 @@
 }
 
 %begin %{
-	//#ifdef _MSC_VER
-	//// Force MSVC to not link against the debug python lib since it's not included in binary python installs
-	//#define SWIG_PYTHON_INTERPRETER_NO_DEBUG
-	//#endif
+	#ifdef _MSC_VER
+	// Force MSVC to not link against the debug python lib since it's not included in binary python installs
+	#define SWIG_PYTHON_INTERPRETER_NO_DEBUG
+	#endif
 %}
 
 
