@@ -60,6 +60,7 @@ namespace showtime {
 		{
 			std::string address;
 			uint16_t port;
+			uint16_t local_port;
 		};
 
 		ZST_EXPORT ZstSTUNService();

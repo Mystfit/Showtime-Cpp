@@ -1,24 +1,64 @@
 #include "ZstUDPGraphTransport.h"
 #include "ZstSTUNService.h"
 #include <showtime/ZstConstants.h>
-#include <czmq.h>
 #include <sstream>
+#include <regex>
+
+using namespace boost::asio::ip;
 
 namespace showtime 
 {
-	ZstUDPGraphTransport::ZstUDPGraphTransport() : m_port(CLIENT_UNRELIABLE_PORT)
+	const std::regex address_match("^([a-z]*?):\/\/([^:^/]*)+?:(\d+)?");
+
+	ZstUDPGraphTransport::ZstUDPGraphTransport() : 
+		m_port(CLIENT_UNRELIABLE_PORT)
 	{
+		m_loop_thread = boost::thread(boost::ref(m_ioloop));
+		m_udp_sock = std::make_shared<boost::asio::ip::udp::socket>(m_ioloop.IO_context());
 	}
 
 	ZstUDPGraphTransport::~ZstUDPGraphTransport()
 	{
 	}
 
+	void ZstUDPGraphTransport::destroy()
+	{
+		ZstGraphTransport::destroy();
+
+		m_udp_sock->close();
+
+		m_ioloop.IO_context().stop();
+		m_loop_thread.interrupt();
+		m_loop_thread.join();
+	}
+
 	void ZstUDPGraphTransport::connect(const std::string& address)
 	{
-		if (output_graph_socket()) {
-			Log::net(Log::Level::notification, "Connecting to {}", address);
-			zsock_connect(output_graph_socket(), "%s", address.c_str());
+		std::smatch base_match;
+		std::regex_search(address, base_match, address_match);
+		std::string proto = base_match[1].str();
+		std::string addr = base_match[2].str();
+		std::string port = base_match.suffix();
+
+		if (m_udp_sock) {
+			Log::net(Log::Level::notification, "Remembering endpoint peer {}", address);
+			//zsock_connect(output_graph_socket(), "%s", address.c_str());
+
+			// Resolve destination endpoint
+			udp::endpoint remote_endpoint;
+			try {
+				boost::asio::ip::address ip_address = boost::asio::ip::address::from_string(addr);
+				remote_endpoint = udp::endpoint(ip_address, std::stoi(port));
+			}
+			catch (std::exception e) {
+				Log::net(Log::Level::debug, "Address {} needs to be resolved first {}", addr, e.what());
+				boost::asio::ip::udp::resolver resolver(m_ioloop.IO_context());
+				boost::asio::ip::udp::resolver::query query(addr, port);
+				boost::asio::ip::udp::resolver::iterator iter = resolver.resolve(query);
+				remote_endpoint = iter->endpoint();
+			}
+
+			m_destination_endpoints.push_back(remote_endpoint);
 		}
 	}
 
@@ -33,11 +73,9 @@ namespace showtime
 
 	int ZstUDPGraphTransport::bind(const std::string& address)
 	{
-		std::stringstream addr;
-		addr <<  "udp://*:" << m_port;
-		zsock_bind(input_graph_socket(), addr.str().c_str());
-		//throw(std::runtime_error("bind(): Not implemented"));
-		return -1;
+		udp::endpoint local_endpoint = boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::any(), m_port);
+		m_udp_sock->bind(local_endpoint);
+		return m_port;
 	}
 
 	void ZstUDPGraphTransport::disconnect()
@@ -47,41 +85,66 @@ namespace showtime
 
 	void ZstUDPGraphTransport::init_graph_sockets()
 	{
-		//UDP sockets are reversed - graph in needs to bind, graph out connects
+		// Socket options
+		m_udp_sock->open(udp::v4());
+		m_udp_sock->non_blocking(true);
+
+		m_udp_sock->async_receive(boost::asio::buffer(m_recv_buf), boost::bind(
+			&ZstUDPGraphTransport::handle_receive,
+			this,
+			boost::asio::placeholders::error,
+			boost::asio::placeholders::bytes_transferred)
+		);
+
 		std::stringstream addr;
-		std::string protocol = "udp";
-
-		//Output socket
-		//addr << ">" << protocol << "://" << CLIENT_MULTICAST_ADDR << ":" << CLIENT_UNRELIABLE_PORT;
-		zsock_t* graph_out = zsock_new_radio(nullptr);// addr.str().c_str());
-		if (!graph_out) {
-			Log::net(Log::Level::error, "Could not create UDP output socket. ZMQ returned {}", std::strerror(zmq_errno()));
-			return;
-		}
-		addr.str("");
-
-		//Input socket
-		/*addr << "@" << protocol << "://" << "*" << ":" << m_port;*/
-		//zsock_t* graph_in = zsock_new_dish(addr.str().c_str());
-		zsock_t* graph_in = zsock_new_dish(nullptr);
-
-		if (!graph_in) {
-			Log::net(Log::Level::error, "Could not create UDP input socket. ZMQ returned {}", std::strerror(zmq_errno()));
-			return;
-		}
-
-		zsock_set_linger(graph_out, 0);
-		zsock_set_linger(graph_in, 0);
-		attach_graph_sockets(graph_in, graph_out);
-		zsock_set_rcvbuf(graph_in, 25000000);
-
-		//Build remote IP
-		addr.str("");
-		addr << protocol << "://" << ZstSTUNService::local_ip() << ":" << m_port;
+		addr << "udp://" << ZstSTUNService::local_ip() << ":" << m_port;
 		set_graph_addresses(addr.str(), "");
-
-		//Join groups
-		zsock_join(graph_in, PERFORMANCE_GROUP);
 	}
 
+	void ZstUDPGraphTransport::send_message_impl(const uint8_t* msg_buffer, size_t msg_buffer_size, const ZstTransportArgs& args) const
+	{
+		// Broadcast message to all connected endpoints
+		for (const auto& endpoint : m_destination_endpoints) {
+			m_udp_sock->async_send_to(boost::asio::buffer(msg_buffer, msg_buffer_size), endpoint, [this, endpoint](const boost::system::error_code& error, std::size_t length) {
+			});
+		}
+	}
+
+	void ZstUDPGraphTransport::handle_send(const boost::system::error_code& error, std::size_t length)
+	{
+	}
+
+	void ZstUDPGraphTransport::handle_receive(const boost::system::error_code& error, std::size_t length)
+	{
+		if (length <= 0) {
+			// Go back to listening
+			m_udp_sock->async_receive(boost::asio::buffer(m_recv_buf), boost::bind(
+				&ZstUDPGraphTransport::handle_receive,
+				this,
+				boost::asio::placeholders::error,
+				boost::asio::placeholders::bytes_transferred)
+			);
+			return;
+		}
+
+		// Link contents of the receive buffer into a message
+		auto perf_msg = this->get_msg();
+		auto owner = std::static_pointer_cast<ZstGraphTransport>(ZstTransportLayer::shared_from_this());
+		perf_msg->init(GetGraphMessage(m_recv_buf.data()), owner);
+
+		//Publish message to other modules
+		dispatch_receive_event(perf_msg, [perf_msg, this](ZstEventStatus s) mutable {
+			// Cleanup
+			this->release(perf_msg);
+
+			// Listen for more messages again
+			m_udp_sock->async_receive(boost::asio::buffer(m_recv_buf), boost::bind(
+				&ZstUDPGraphTransport::handle_receive,
+				this,
+				boost::asio::placeholders::error,
+				boost::asio::placeholders::bytes_transferred)
+			);
+		});
+
+	}
 }

@@ -380,14 +380,14 @@ void ZstClient::join_stage(const ZstServerAddress& stage_address, const ZstTrans
     std::string reliable_graph_addr = m_tcp_graph_transport->get_graph_out_address();
 #ifdef ZST_BUILD_DRAFT_API
     std::string unreliable_graph_addr = m_udp_graph_transport->get_graph_in_address();
-    auto unreliable_public_graph_addr = "udp://" + m_stun_srv->getPublicIPAddress(ZstSTUNService::STUNServer{STUN_SERVER, m_udp_graph_transport->get_incoming_port()});
+    auto unreliable_public_graph_addr = "udp://" + m_stun_srv->getPublicIPAddress(ZstSTUNService::STUNServer{STUN_SERVER, 40006, m_udp_graph_transport->get_incoming_port() }); //m_udp_graph_transport->get_incoming_port()
     Log::net(Log::Level::debug, "UDP public address: {}", unreliable_public_graph_addr);
     
     // Bind UDP after we've punched through the NAT
     m_udp_graph_transport->bind("");
 
     // Keep a connection to the STUN server open so we can send keepalive messages
-    m_udp_graph_transport->connect(fmt::format("udp://{}", STUN_SERVER));
+    m_udp_graph_transport->connect(fmt::format("udp://{}:{}", STUN_SERVER, 40006));
 
 #else
     std::string unreliable_graph_addr = "";
@@ -676,7 +676,7 @@ void ZstClient::heartbeat_timer(boost::asio::deadline_timer* t, ZstClient* clien
     auto plugval_offset = CreatePlugValue(*builder, PlugValueData_PlugKeepalive, CreatePlugKeepalive(*builder).Union());
     auto from = client->session()->hierarchy()->get_local_performer()->URI();
     auto conn_msg = CreateGraphMessage(*builder, builder->CreateString(from.path(), from.full_size()), plugval_offset);
-    client->m_udp_graph_transport->send_msg(conn_msg, builder, args);
+    //client->m_udp_graph_transport->send_msg(conn_msg, builder, args);
 
     //Loop timer
     t->expires_at(t->expires_at() + duration);

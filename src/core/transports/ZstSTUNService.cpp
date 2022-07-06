@@ -17,6 +17,7 @@ namespace showtime {
         }
         ziflist_destroy(&interfaces);
         return interface_ip_str;
+        //return "127.0.0.1";
     }
 
     ZstSTUNService::ZstSTUNService()
@@ -38,7 +39,7 @@ namespace showtime {
         // Bind socket that we'll be communicating with
         m_udp_sock->open(udp::v4());
         m_udp_sock->non_blocking(false);
-        udp::endpoint local_endpoint = boost::asio::ip::udp::endpoint(udp::v4(), server.port);
+        udp::endpoint local_endpoint = boost::asio::ip::udp::endpoint(udp::v4(), server.local_port);
 
 #ifdef WIN32
         m_udp_sock->set_option(rcv_timeout_option{ 50 });

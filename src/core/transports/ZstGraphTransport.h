@@ -6,6 +6,7 @@
 #include "../ZstActor.h"
 #include "ZstTransportLayerBase.hpp"
 #include <showtime/ZstExports.h>
+#include <boost/asio.hpp>
 
 #define PERFORMANCE_GROUP "p"
 #define HANDSHAKE_GROUP "h"
@@ -30,7 +31,7 @@ public:
 	ZST_EXPORT const std::string & get_graph_out_address() const;
 
     ZST_EXPORT virtual ZstMessageReceipt send_msg(flatbuffers::Offset<GraphMessage> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder>& buffer_builder, const ZstTransportArgs& args) override;
-	ZST_EXPORT void send_message_impl(const uint8_t * msg_buffer, size_t msg_buffer_size, const ZstTransportArgs & args) const override;
+	ZST_EXPORT virtual void send_message_impl(const uint8_t * msg_buffer, size_t msg_buffer_size, const ZstTransportArgs & args) const override;
 
 protected:
 	ZST_EXPORT ZstActor & actor();
