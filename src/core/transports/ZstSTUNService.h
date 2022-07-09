@@ -65,7 +65,7 @@ namespace showtime {
 
 		ZST_EXPORT ZstSTUNService();
 		ZST_EXPORT ~ZstSTUNService();
-		ZST_EXPORT std::string getPublicIPAddress(struct STUNServer server);
+		ZST_EXPORT std::string getPublicIPAddress(struct STUNServer server, std::shared_ptr<boost::asio::ip::udp::socket> sock);
 		ZST_EXPORT static std::string local_ip();
 	private:
 

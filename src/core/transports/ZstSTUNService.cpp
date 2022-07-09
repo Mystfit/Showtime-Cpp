@@ -22,20 +22,20 @@ namespace showtime {
 
     ZstSTUNService::ZstSTUNService()
     {
-        m_io.run();
-        m_udp_sock = std::make_shared<boost::asio::ip::udp::socket>(m_io);
+        //m_io.run();
+        //m_udp_sock = std::make_shared<boost::asio::ip::udp::socket>(m_io);
     }
 
     ZstSTUNService::~ZstSTUNService()
     {
-        m_io.stop();
+        //m_io.stop();
     }
 
     // Modified from https://github.com/0xFireWolf/STUNExternalIP
-    std::string ZstSTUNService::getPublicIPAddress(STUNServer server)
+    std::string ZstSTUNService::getPublicIPAddress(STUNServer server, std::shared_ptr<boost::asio::ip::udp::socket> sock)
     {
         std::string address;
-
+        /*
         // Bind socket that we'll be communicating with
         m_udp_sock->open(udp::v4());
         m_udp_sock->non_blocking(false);
@@ -49,7 +49,7 @@ namespace showtime {
         boost::system::error_code ec;
         m_udp_sock->bind(local_endpoint, ec);
         Log::net(Log::Level::warn, "STUN bind result: {}", ec.message());
-
+        */
         // Remote Address
         // First resolve the STUN server address
         boost::asio::ip::udp::resolver resolver(m_io);
@@ -71,11 +71,11 @@ namespace showtime {
 
         // Send the request
         try {
-           m_udp_sock->send_to(boost::asio::buffer(request, sizeof(struct STUNMessageHeader)), remote_endpoint);
+            sock->send_to(boost::asio::buffer(request, sizeof(struct STUNMessageHeader)), remote_endpoint);
         }
         catch(boost::exception const& ex){
             Log::net(Log::Level::debug, "Failed to send data to STUN server {}", boost::diagnostic_information(ex));
-            m_udp_sock->close();
+            //m_udp_sock->close();
             free(request);
             return "";
         }
@@ -87,7 +87,7 @@ namespace showtime {
         size_t iters = 10;
         while (reply_length <= 0 && iters > 0) {
             try {
-                reply_length = m_udp_sock->receive_from(boost::asio::buffer(reply, 1024), sender_endpoint);
+                reply_length = sock->receive_from(boost::asio::buffer(reply, 1024), sender_endpoint);
                 if (reply_length > 0) {
                     break;
                 }
@@ -99,7 +99,7 @@ namespace showtime {
 
         if (reply_length <= 0) {
             Log::net(Log::Level::debug, "No data returned from STUN server");
-            m_udp_sock->close();
+            //m_udp_sock->close();
             free(request);
             return "";
         }
@@ -114,7 +114,7 @@ namespace showtime {
             {
                 if (request->identifier[index] != response->identifier[index])
                 {
-                    m_udp_sock->close();
+                    //m_udp_sock->close();
                     free(request);
                     return "";
                 }
@@ -145,7 +145,7 @@ namespace showtime {
             }
         }
 
-        m_udp_sock->close();
+        //m_udp_sock->close();
         free(request);
         return address;
     }

@@ -19,7 +19,7 @@ input("Attach debugger now then press a key")
 
 client = ZST.ShowtimeClient()
 client.init("udpdestination", True)
-client.join("stun.gorkblorf.com:40001")
+client.join("stun.gorkblorf.com:49152")
 
 receiver = Receiver("receiver")
 client.get_root().add_child(receiver)

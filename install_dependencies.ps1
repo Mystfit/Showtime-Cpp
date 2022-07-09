@@ -170,7 +170,7 @@ foreach ($c in $config){
 
 
     if($without_boost -ne $true){
-        $libraries = @("system","chrono","log","thread","filesystem","date_time","atomic","regex","context","fiber","test")
+        $libraries = @("system","chrono","log","thread","filesystem","date_time","atomic","regex","context","fiber","test", "coroutine")
         Build-Boost -version $boost_version -config $c $toolset $arch $libraries
     }
 }

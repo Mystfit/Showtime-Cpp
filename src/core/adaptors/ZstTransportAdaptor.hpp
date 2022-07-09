@@ -17,6 +17,7 @@ class ZST_CLASS_EXPORTED ZstTransportAdaptor :
 public:
 	//Incoming events
 	ZST_EXPORT virtual void connect(const std::string& address) {};
+	ZST_EXPORT virtual void disconnect(const std::string& address) {};
 	ZST_EXPORT virtual void disconnect() {};
 	ZST_EXPORT virtual int bind(const std::string& address) { return -1; };
 };

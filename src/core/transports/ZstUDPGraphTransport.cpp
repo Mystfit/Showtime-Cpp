@@ -1,6 +1,7 @@
 #include "ZstUDPGraphTransport.h"
 #include "ZstSTUNService.h"
 #include <showtime/ZstConstants.h>
+#include <boost/thread/executor.hpp>
 #include <sstream>
 #include <regex>
 
@@ -10,11 +11,13 @@ namespace showtime
 {
 	const std::regex address_match("^([a-z]*?):\/\/([^:^/]*)+?:(\d+)?");
 
-	ZstUDPGraphTransport::ZstUDPGraphTransport() : 
+	ZstUDPGraphTransport::ZstUDPGraphTransport(boost::asio::io_context& context) :
+		m_recv_buf(),
+		m_udp_sock(std::make_shared<boost::asio::ip::udp::socket>(context)),
 		m_port(CLIENT_UNRELIABLE_PORT)
 	{
-		m_loop_thread = boost::thread(boost::ref(m_ioloop));
-		m_udp_sock = std::make_shared<boost::asio::ip::udp::socket>(m_ioloop.IO_context());
+		//m_loop_thread = boost::thread(boost::ref(m_ioloop));
+		
 	}
 
 	ZstUDPGraphTransport::~ZstUDPGraphTransport()
@@ -25,11 +28,10 @@ namespace showtime
 	{
 		ZstGraphTransport::destroy();
 
-		m_udp_sock->close();
-
-		m_ioloop.IO_context().stop();
-		m_loop_thread.interrupt();
-		m_loop_thread.join();
+		disconnect();
+		//m_ioloop.IO_context().stop();
+		//m_loop_thread.interrupt();
+		//m_loop_thread.join();
 	}
 
 	void ZstUDPGraphTransport::connect(const std::string& address)
@@ -52,14 +54,135 @@ namespace showtime
 			}
 			catch (std::exception e) {
 				Log::net(Log::Level::debug, "Address {} needs to be resolved first {}", addr, e.what());
-				boost::asio::ip::udp::resolver resolver(m_ioloop.IO_context());
+				boost::asio::ip::udp::resolver resolver(m_udp_sock->get_executor());
 				boost::asio::ip::udp::resolver::query query(addr, port);
 				boost::asio::ip::udp::resolver::iterator iter = resolver.resolve(query);
 				remote_endpoint = iter->endpoint();
 			}
 
-			m_destination_endpoints.push_back(remote_endpoint);
+			m_destination_endpoints.push_back(UDPEndpoint{ address, remote_endpoint });
 		}
+	}
+
+	std::string ZstUDPGraphTransport::getPublicIPAddress(struct STUNServer server) 
+	{
+		std::string address;
+		/*
+		// Bind socket that we'll be communicating with
+		m_udp_sock->open(udp::v4());
+		m_udp_sock->non_blocking(false);
+		udp::endpoint local_endpoint = boost::asio::ip::udp::endpoint(udp::v4(), server.local_port);
+
+#ifdef WIN32
+		m_udp_sock->set_option(rcv_timeout_option{ 50 });
+		m_udp_sock->set_option(rcv_reuseaddr(true));
+		m_udp_sock->set_option(rcv_broadcast(true));
+#endif
+		boost::system::error_code ec;
+		m_udp_sock->bind(local_endpoint, ec);
+		Log::net(Log::Level::warn, "STUN bind result: {}", ec.message());
+		*/
+		// Remote Address
+		// First resolve the STUN server address
+		
+		boost::asio::ip::udp::resolver resolver(m_udp_sock->get_executor());
+		boost::asio::ip::udp::resolver::query query(server.address, std::to_string(server.port));
+		boost::asio::ip::udp::resolver::iterator iter = resolver.resolve(query);
+		udp::endpoint remote_endpoint = iter->endpoint();
+
+		// Construct a STUN request
+		struct STUNMessageHeader* request = (STUNMessageHeader*)malloc(sizeof(struct STUNMessageHeader));
+		request->type = htons(0x0001);
+		request->length = htons(0x0000);
+		request->cookie = htonl(0x2112A442);
+
+		for (int index = 0; index < 3; index++)
+		{
+			srand((unsigned int)time(0));
+			request->identifier[index] = rand();
+		}
+
+		// Send the request
+		try {
+			m_udp_sock->non_blocking(false);
+			m_udp_sock->send_to(boost::asio::buffer(request, sizeof(struct STUNMessageHeader)), remote_endpoint);
+		}
+		catch (boost::exception const& ex) {
+			Log::net(Log::Level::debug, "Failed to send data to STUN server {}", boost::diagnostic_information(ex));
+			//m_udp_sock->close();
+			free(request);
+			return "";
+		}
+
+		// Get reply from TURN server
+		char reply[1024];
+		udp::endpoint sender_endpoint;
+		size_t reply_length = 0;
+		size_t iters = 10;
+		while (reply_length <= 0 && iters > 0) {
+			try {
+				reply_length = m_udp_sock->receive_from(boost::asio::buffer(reply, 1024), sender_endpoint);
+				if (reply_length > 0) {
+					break;
+				}
+			}
+			catch (boost::exception const& ex) {
+				iters--;
+			}
+		}
+		m_udp_sock->non_blocking(true);
+
+		if (reply_length <= 0) {
+			Log::net(Log::Level::debug, "No data returned from STUN server");
+			//m_udp_sock->close();
+			free(request);
+			return "";
+		}
+
+		// Parse STUN server reply
+		char* pointer = reply;
+		struct STUNMessageHeader* response = (struct STUNMessageHeader*)reply;
+		if (response->type == htons(0x0101))
+		{
+			// Check the identifer
+			for (int index = 0; index < 3; index++)
+			{
+				if (request->identifier[index] != response->identifier[index])
+				{
+					//m_udp_sock->close();
+					free(request);
+					return "";
+				}
+			}
+
+			pointer += sizeof(struct STUNMessageHeader);
+			while (pointer < reply + reply_length)
+			{
+				struct STUNAttributeHeader* header = (struct STUNAttributeHeader*)pointer;
+				if (header->type == htons(XOR_MAPPED_ADDRESS_TYPE))
+				{
+					pointer += sizeof(struct STUNAttributeHeader);
+					struct STUNXORMappedIPv4Address* xorAddress = (struct STUNXORMappedIPv4Address*)pointer;
+					unsigned int numAddress = htonl(xorAddress->address) ^ 0x2112A442;
+					address = fmt::format("{}.{}.{}.{}:{}",
+						(numAddress >> 24) & 0xFF,
+						(numAddress >> 16) & 0xFF,
+						(numAddress >> 8) & 0xFF,
+						numAddress & 0xFF,
+						xorAddress->port);
+
+					//m_udp_sock->close();
+					free(request);
+					return address;
+				}
+
+				pointer += (sizeof(struct STUNAttributeHeader) + ntohs(header->length));
+			}
+		}
+
+		//m_udp_sock->close();
+		free(request);
+		return address;
 	}
 
 	void ZstUDPGraphTransport::set_incoming_port(uint16_t port)
@@ -71,16 +194,41 @@ namespace showtime
 		return m_port;
 	}
 
+	void ZstUDPGraphTransport::start_listening()
+	{
+		// Only start receiving messages after we've bound the port
+		m_udp_sock->async_receive(boost::asio::buffer(m_recv_buf), boost::bind(
+			&ZstUDPGraphTransport::handle_receive,
+			this,
+			boost::asio::placeholders::error,
+			boost::asio::placeholders::bytes_transferred)
+		);
+	}
+
 	int ZstUDPGraphTransport::bind(const std::string& address)
 	{
 		udp::endpoint local_endpoint = boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::any(), m_port);
 		m_udp_sock->bind(local_endpoint);
+
 		return m_port;
 	}
 
 	void ZstUDPGraphTransport::disconnect()
 	{
-		//throw(std::runtime_error("disconnect_from_client(): Not implemented"));
+		m_udp_sock->close();
+	}
+
+	void ZstUDPGraphTransport::disconnect(const std::string& address)
+	{
+		auto endpoint_it = std::find_if(m_destination_endpoints.begin(), m_destination_endpoints.end(), [address](const UDPEndpoint& endpoint) {return address == endpoint.address; });
+		try {
+			Log::net(Log::Level::debug, "Disconnecting UDP endpoint {}", address);
+			m_destination_endpoints.erase(endpoint_it);
+		}
+		catch (std::out_of_range e) {
+			Log::net(Log::Level::warn, "Couldn't disconnect UDP endpoint {}", address);
+		}
+			//throw(std::runtime_error("disconnect_from_client(): Not implemented"));
 	}
 
 	void ZstUDPGraphTransport::init_graph_sockets()
@@ -89,12 +237,11 @@ namespace showtime
 		m_udp_sock->open(udp::v4());
 		m_udp_sock->non_blocking(true);
 
-		m_udp_sock->async_receive(boost::asio::buffer(m_recv_buf), boost::bind(
-			&ZstUDPGraphTransport::handle_receive,
-			this,
-			boost::asio::placeholders::error,
-			boost::asio::placeholders::bytes_transferred)
-		);
+#ifdef WIN32
+		m_udp_sock->set_option(rcv_timeout_option{ 50 });
+		m_udp_sock->set_option(rcv_reuseaddr(true));
+		m_udp_sock->set_option(rcv_broadcast(true));
+#endif
 
 		std::stringstream addr;
 		addr << "udp://" << ZstSTUNService::local_ip() << ":" << m_port;
@@ -105,7 +252,7 @@ namespace showtime
 	{
 		// Broadcast message to all connected endpoints
 		for (const auto& endpoint : m_destination_endpoints) {
-			m_udp_sock->async_send_to(boost::asio::buffer(msg_buffer, msg_buffer_size), endpoint, [this, endpoint](const boost::system::error_code& error, std::size_t length) {
+			m_udp_sock->async_send_to(boost::asio::buffer(msg_buffer, msg_buffer_size), endpoint.endpoint, [](const boost::system::error_code& error, std::size_t length) {
 			});
 		}
 	}
@@ -116,7 +263,8 @@ namespace showtime
 
 	void ZstUDPGraphTransport::handle_receive(const boost::system::error_code& error, std::size_t length)
 	{
-		if (length <= 0) {
+		flatbuffers::Verifier verifier((uint8_t*)m_recv_buf.data(), length);
+		if (length <= 0 || !VerifyGraphMessageBuffer(verifier)) {
 			// Go back to listening
 			m_udp_sock->async_receive(boost::asio::buffer(m_recv_buf), boost::bind(
 				&ZstUDPGraphTransport::handle_receive,
@@ -145,6 +293,5 @@ namespace showtime
 				boost::asio::placeholders::bytes_transferred)
 			);
 		});
-
 	}
 }

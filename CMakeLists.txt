@@ -148,10 +148,11 @@ set(BOOST_COMPONENTS
     # log_setup
     thread
     system
-    # context
-    # fiber
+    context
+    fiber
     # date_time
     chrono
+    coroutine
     # atomic
     # regex
     unit_test_framework
@@ -234,8 +235,9 @@ set(SHOWTIME_PRIVATE_LINKED_LIBS
     # Boost::regex
     Boost::log
     # Boost::log_setup
-    # Boost::context
-    # Boost::fiber
+    Boost::context
+    Boost::fiber
+    Boost::coroutine
     Boost::boost
     Boost::disable_autolinking
     ${CMAKE_THREAD_LIBS_INIT}

@@ -43,8 +43,18 @@
 namespace showtime {
 
 	//Typedefs
-	typedef std::unordered_map<ZstURI, boost::asio::deadline_timer, ZstURIHash> ZstConnectionTimerMap;
-	typedef std::unique_ptr<ZstConnectionTimerMap> ZstConnectionTimerMapUnique;
+    typedef std::shared_ptr<boost::asio::deadline_timer> EndpointTimer;
+    typedef std::unordered_map<std::string, EndpointTimer > ZstEndpointTimers;
+    typedef std::unordered_map<ZstURI, ZstEndpointTimers, ZstURIHash> ZstConnectionTimerMap;
+    struct EndpointHandshakeInfo {
+        ZstURI destination;
+        std::string address;
+        bool success = false;
+        bool operator<(EndpointHandshakeInfo const& comp) const {
+            return std::tie(destination, address) < std::tie(comp.destination, comp.address);
+        };
+    };
+
 
     namespace client {
         class ZstClient :
@@ -148,8 +158,7 @@ namespace showtime {
             ZstServerAddress m_connected_server;
 
             // Message handlers
-            void start_remote_client_connection(const std::shared_ptr<showtime::ZstStageMessage>& msg);
-            void start_connection_broadcast_handler(const std::shared_ptr<ZstStageMessage>& msg);
+            void start_connection_broadcast_handler(const std::shared_ptr<showtime::ZstStageMessage>& msg);
             void stop_connection_broadcast_handler(const std::shared_ptr<ZstStageMessage>& msg);
             void listen_to_client_handler(const std::shared_ptr<ZstStageMessage>& msg);
             void server_discovery_handler(const std::shared_ptr<ZstServerBeaconMessage>& msg);
@@ -157,7 +166,8 @@ namespace showtime {
             void server_status_handler(const std::shared_ptr<ZstStageMessage>& msg);
 
             // P2P connections
-            static void send_connection_broadcast(boost::asio::deadline_timer * t, ZstClient * client, const ZstURI & to, const ZstURI & from, boost::posix_time::milliseconds duration);
+            void start_connection_broadcast(const ZstURI& remote_client_path, const std::vector<std::string>& remote_client_addresses, size_t total_messages);
+            void send_connection_handshake(const ZstURI& from, const std::string& address);
             ZstPerformerMap m_active_peer_connections;
             std::unordered_map<ZstURI, ZstMsgID, ZstURIHash> m_pending_peer_connections;
             std::shared_ptr<ZstSTUNService> m_stun_srv;
@@ -178,7 +188,7 @@ namespace showtime {
             ZstIOLoop m_client_timerloop;
             boost::asio::deadline_timer m_heartbeat_timer;
             boost::asio::deadline_timer m_beaconcheck_timer;
-            ZstConnectionTimerMapUnique m_connection_timers;
+            std::set<EndpointHandshakeInfo> m_connection_timers;
 
             //Threads
             boost::asio::thread_pool m_thread_pool;

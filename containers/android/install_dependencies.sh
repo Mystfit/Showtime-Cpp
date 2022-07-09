@@ -14,7 +14,7 @@ cmake --build ./libzmq/build -j $VM_CPU_COUNT --target install
 # ----
 echo "Building CZMQ"
 git clone https://github.com/mystfit/czmq.git < /dev/null > /dev/null
-git -C ./czmq checkout showtime
+git -C ./czmq checkout master
 mkdir -p ./czmq/build
 cmake -H"./czmq" -B"./czmq/build" -DCMAKE_VERBOSE_MAKEFILE=ON $ANDROID_BUILD_FLAGS $COMMON_BUILD_FLAGS -DENABLE_DRAFTS=TRUE -DBUILD_TESTING=OFF -DCZMQ_BUILD_SHARED=OFF -DCZMQ_BUILD_STATIC=ON
 cmake --build ./czmq/build -j $VM_CPU_COUNT --target install
