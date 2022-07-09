@@ -169,7 +169,7 @@ namespace showtime
 						(numAddress >> 16) & 0xFF,
 						(numAddress >> 8) & 0xFF,
 						numAddress & 0xFF,
-						xorAddress->port ^ 0x2112);
+						ntohs(xorAddress->port) ^ 0x2112);
 
 					//m_udp_sock->close();
 					free(request);
