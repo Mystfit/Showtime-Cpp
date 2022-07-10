@@ -11,9 +11,11 @@ class Receiver(ZST.ZstComputeComponent):
 	def on_registered(self):
 		self.inplug = ZST.ZstInputPlug("in", ZST.ZstValueType_FloatList, -1, True)
 		self.add_child(self.inplug)
+		self.num_hits = 0
 
 	def compute(self, plug):
 		print("Receiver got value {0}".format(self.inplug.float_at(0)))
+		self.num_hits += 1
 
 input("Attach debugger now then press a key")
 
@@ -26,9 +28,12 @@ client.get_root().add_child(receiver)
 
 signal.signal(signal.SIGINT, sigint_handler)
 
-while True:
+starttime = time.time()
+while receiver.num_hits <= 5000 and time.time() - starttime < 10.0
 	time.sleep(0.01)
 	client.poll_once()
+
+print("Number of messages received: {}".format(receiver.num_hits))
 
 #raw_input("Press any key to exit")
 client.destroy()
