@@ -29,7 +29,7 @@ client.join_async("stun.gorkblorf.com:49152")
 
 count = 0.0
 try:
-	for i in range(5001):
+	for i in range(1001):
 		if out:
 			out.append_float(math.sin(count) * 0.5 + 0.5)
 			out.fire()
