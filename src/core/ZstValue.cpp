@@ -396,7 +396,7 @@ void ZstDynamicValue::serialize_partial(Offset<PlugValue>& dest, flatbuffers::Fl
 		float* buf = nullptr;
 		auto vec_offset = buffer_builder.CreateUninitializedVector<float>(m_float_buffer.size(), &buf);
 		memcpy(buf, m_float_buffer.data(), m_float_buffer.size() * sizeof(float));
-		dest = CreatePlugValue(buffer_builder, PlugValueData_IntList, CreateFloatList(buffer_builder, vec_offset).Union());
+		dest = CreatePlugValue(buffer_builder, PlugValueData_FloatList, CreateFloatList(buffer_builder, vec_offset).Union());
 		break;
 	}
 	case ZstValueType::StrList:
@@ -409,7 +409,7 @@ void ZstDynamicValue::serialize_partial(Offset<PlugValue>& dest, flatbuffers::Fl
 		uint8_t* buf = nullptr;
 		auto vec_offset = buffer_builder.CreateUninitializedVector<uint8_t>(m_byte_buffer.size(), &buf);
 		memcpy(buf, m_byte_buffer.data(), m_byte_buffer.size() * sizeof(uint8_t));
-		dest = CreatePlugValue(buffer_builder, PlugValueData_IntList, CreateByteList(buffer_builder, vec_offset).Union());
+		dest = CreatePlugValue(buffer_builder, PlugValueData_ByteList, CreateByteList(buffer_builder, vec_offset).Union());
 		break;
 	}
     case ZstValueType::DynamicList:

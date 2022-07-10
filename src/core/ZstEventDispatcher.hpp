@@ -205,6 +205,7 @@ protected:
 		if (m_adaptors.size() > 0) {
 			for (auto adaptor : m_adaptors) {
 				if (auto adp = adaptor.lock()) {
+					//event.func(adp.get());
 					try {
 						event.func(adp.get());
 					}
@@ -218,6 +219,7 @@ protected:
 
 		if (m_unmanaged_adaptors.size() > 0) {
 			for (auto adaptor : m_unmanaged_adaptors) {
+				//event.func(adaptor);
 				try {
 					event.func(adaptor);
 				}

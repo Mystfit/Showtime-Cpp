@@ -1,7 +1,7 @@
 import showtime.showtime as ZST
 import time, math, sys
 
-# raw_input("Attach debugger now then press a key")
+input("Attach debugger now then press a key")
 target = ZST.ZstURI("udpdestination/receiver/in")
 
 client = ZST.ShowtimeClient()

@@ -145,7 +145,6 @@ void ZstClientSession::plug_received_value(ZstInputPlug * plug)
 	if (!parent_ent) {
 		throw std::runtime_error("Could not find parent of input plug");
 	}
-
     
     if (plug->triggers_compute()) {
         ZstURI plug_path = plug->URI();

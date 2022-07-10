@@ -7,13 +7,13 @@ def sigint_handler(signal, frame):
 	client.destroy()
 	sys.exit(0)
 
-class Receiver(ZST.ZstComponent):
+class Receiver(ZST.ZstComputeComponent):
 	def on_registered(self):
-		self.inplug = ZST.ZstInputPlug("in", ZST.ZstValueType_FloatList, True)
+		self.inplug = ZST.ZstInputPlug("in", ZST.ZstValueType_FloatList, -1, True)
 		self.add_child(self.inplug)
 
-	def on_compute(self, plug):
-		print("Receiver got message")
+	def compute(self, plug):
+		print("Receiver got value {0}".format(self.inplug.float_at(0)))
 
 input("Attach debugger now then press a key")
 
