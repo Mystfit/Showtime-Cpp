@@ -166,10 +166,11 @@ namespace showtime {
             void server_status_handler(const std::shared_ptr<ZstStageMessage>& msg);
 
             // P2P connections
-            void start_connection_broadcast(const ZstURI& remote_client_path, const std::vector<std::string>& remote_client_addresses, size_t total_messages);
+            void start_connection_handshake(const ZstURI& remote_client_path, const std::vector<std::string>& remote_client_addresses, size_t total_messages);
             void send_connection_handshake(const ZstURI& from, const std::string& address);
             ZstPerformerMap m_active_peer_connections;
             std::unordered_map<ZstURI, ZstMsgID, ZstURIHash> m_pending_peer_connections;
+            std::set<EndpointHandshakeInfo> m_endpoint_handshakes;
             std::shared_ptr<ZstSTUNService> m_stun_srv;
             
             //Client modules
@@ -188,7 +189,6 @@ namespace showtime {
             ZstIOLoop m_client_timerloop;
             boost::asio::deadline_timer m_heartbeat_timer;
             boost::asio::deadline_timer m_beaconcheck_timer;
-            std::set<EndpointHandshakeInfo> m_connection_timers;
 
             //Threads
             boost::asio::thread_pool m_thread_pool;

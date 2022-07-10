@@ -258,7 +258,7 @@ void ZstClient::start_connection_broadcast_handler(const std::shared_ptr<showtim
     auto receiver_unreliable_public_address = msg->buffer()->content_as_ClientGraphHandshakeStart()->receiver_unreliable_public_address()->str();
 
     // Coroutine to wait for timers to finish
-    start_connection_broadcast(remote_path, std::vector<std::string>{receiver_unreliable_address, receiver_unreliable_public_address}, MAX_HANDSHAKE_MESSAGES);
+    start_connection_handshake(remote_path, std::vector<std::string>{receiver_unreliable_address, receiver_unreliable_public_address}, MAX_HANDSHAKE_MESSAGES);
 }
 
 void ZstClient::connection_handshake_handler(std::shared_ptr<ZstPerformanceMessage> msg)
@@ -266,25 +266,37 @@ void ZstClient::connection_handshake_handler(std::shared_ptr<ZstPerformanceMessa
     if (msg->buffer()->value()->values_type() != PlugValueData_PlugHandshake) {
         return;
     }
-    Log::net(Log::Level::debug, "{} received handshake graph message from {}", this->session()->hierarchy()->get_local_performer()->URI().path(), msg->buffer()->sender()->c_str());
 
-    //if(m_pending_peer_connections.size() < 1)
-    //    return;
+    if(m_pending_peer_connections.size() < 1)
+        return;
     
     ZstURI output_path(msg->buffer()->sender()->c_str(), msg->buffer()->sender()->size());
     if (m_pending_peer_connections.find(output_path) != m_pending_peer_connections.end()) {
         Log::net(Log::Level::debug, "Received connection handshake. Msg id {}", boost::to_string(m_pending_peer_connections[output_path]));
         
-        auto id = m_pending_peer_connections[output_path];
-
+        // Let server know we received the handshake
         ZstTransportArgs args;
         args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
-        args.msg_ID = id;
+        args.msg_ID = m_pending_peer_connections[output_path];
         auto builder = std::make_shared< FlatBufferBuilder>();
         auto ok_msg = CreateSignalMessage(*builder, Signal_OK);
         this->m_client_transport->send_msg(Content_SignalMessage, ok_msg.Union(), builder, args);
 
+        // Clear the handshake
         m_pending_peer_connections.erase(output_path);
+
+        // Stop any active handshake timers we're using to send messages for the NAT punchthrough
+        std::string remote_address = msg->buffer()->value()->values_as_PlugHandshake()->sender_address()->str();
+        auto handshake_it = std::find_if(
+            this->m_endpoint_handshakes.begin(),
+            this->m_endpoint_handshakes.end(),
+            [remote_address](const EndpointHandshakeInfo& info) {return info.address == remote_address; }
+        );      
+        if (handshake_it != m_endpoint_handshakes.end()) {
+            auto handshake = m_endpoint_handshakes.extract(handshake_it);
+            handshake.value().success = true;
+            m_endpoint_handshakes.insert(std::move(handshake));
+        }
     }
 }
 
@@ -732,8 +744,9 @@ void ZstClient::auto_join_stage_complete()
 {
 }
 
-void ZstClient::start_connection_broadcast(const ZstURI& remote_client_path, const std::vector<std::string>& remote_client_addresses, size_t total_messages)
+void ZstClient::start_connection_handshake(const ZstURI& remote_client_path, const std::vector<std::string>& remote_client_addresses, size_t total_messages)
 {
+    // Coroutine to failover from private to public addresses
    spawn(m_client_timerloop.IO_context(), [this, remote_client_path, remote_client_addresses, total_messages](boost::asio::yield_context yield) {
         for (auto address : remote_client_addresses) 
         {
@@ -741,7 +754,7 @@ void ZstClient::start_connection_broadcast(const ZstURI& remote_client_path, con
             m_udp_graph_transport->connect(address);
 
             // Hold onto the status of this handshake
-            m_connection_timers.emplace(EndpointHandshakeInfo{ remote_client_path, address, false });
+            m_endpoint_handshakes.emplace(EndpointHandshakeInfo{ remote_client_path, address, false });
 
             //Log::net(Log::Level::debug, "Sending handshake to endpoint {}", address);
 
@@ -751,11 +764,11 @@ void ZstClient::start_connection_broadcast(const ZstURI& remote_client_path, con
 
                 // Check if this connection was successful
                 auto connection_status = std::find_if(
-                    this->m_connection_timers.begin(), 
-                    this->m_connection_timers.end(), 
+                    this->m_endpoint_handshakes.begin(), 
+                    this->m_endpoint_handshakes.end(), 
                     [address](const EndpointHandshakeInfo& info) {return info.address == address; }
                 );
-                if (connection_status != this->m_connection_timers.end()){
+                if (connection_status != this->m_endpoint_handshakes.end()){
                     if (connection_status->success) {
                         success = connection_status->success;
                         Log::net(Log::Level::debug, "Endpoint {} successfully received a message from {}", address, session()->hierarchy()->get_local_performer()->URI().path());
@@ -771,7 +784,7 @@ void ZstClient::start_connection_broadcast(const ZstURI& remote_client_path, con
 
                 //Wait for a bit before we send another message
                 auto endpoint_timer = boost::asio::steady_timer(m_client_timerloop.IO_context());
-                endpoint_timer.expires_after(100ms);
+                endpoint_timer.expires_after(30ms);
                 endpoint_timer.async_wait(yield);
             }
 
@@ -810,12 +823,12 @@ void ZstClient::stop_connection_broadcast_handler(const std::shared_ptr<ZstStage
 
     // Stop and remove the message sending timer
     auto endpoint_info = std::find_if(
-        m_connection_timers.begin(), 
-        m_connection_timers.end(), 
+        m_endpoint_handshakes.begin(), 
+        m_endpoint_handshakes.end(), 
         [remote_client_path](const EndpointHandshakeInfo& info) {return info.destination == remote_client_path; }
     );
-    if (endpoint_info != m_connection_timers.end()) {
-        m_connection_timers.erase(endpoint_info);
+    if (endpoint_info != m_endpoint_handshakes.end()) {
+        m_endpoint_handshakes.erase(endpoint_info);
     }
 }
 
@@ -826,7 +839,7 @@ void ZstClient::listen_to_client_handler(const std::shared_ptr<ZstStageMessage>&
     Log::net(Log::Level::debug, "Listening to performer Reliable: {} Unreliable: {}", request->sender_reliable_address()->str(), request->sender_unreliable_address()->str());
 
     // Send keepalive message to the remote client so that our Port-Restricted cone NAT will allow incoming packets from our address
-    start_connection_broadcast(output_path, std::vector<std::string>{request->sender_unreliable_public_address()->str()}, MAX_HANDSHAKE_MESSAGES*2);
+    start_connection_handshake(output_path, std::vector<std::string>{request->sender_unreliable_public_address()->str()}, MAX_HANDSHAKE_MESSAGES*2);
     
     // TODO: This needs to happen here when using TCP to detect connection status
     m_pending_peer_connections[output_path] = msg->id();
