@@ -821,14 +821,13 @@ void ZstClient::stop_connection_broadcast_handler(const std::shared_ptr<ZstStage
         return;
     }
 
-    // Stop and remove the message sending timer
-    auto endpoint_info = std::find_if(
-        m_endpoint_handshakes.begin(), 
-        m_endpoint_handshakes.end(), 
-        [remote_client_path](const EndpointHandshakeInfo& info) {return info.destination == remote_client_path; }
-    );
-    if (endpoint_info != m_endpoint_handshakes.end()) {
-        m_endpoint_handshakes.erase(endpoint_info);
+    // Stop handshake broadcasts by setting the success flag
+    for(auto handshake_it : m_endpoint_handshakes){
+        if (handshake_it.destination == remote_client_path) {
+            auto handshake = m_endpoint_handshakes.extract(handshake_it);
+            handshake.value().success = true;
+            m_endpoint_handshakes.insert(std::move(handshake));
+        }
     }
 }
 
