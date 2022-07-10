@@ -138,11 +138,13 @@ namespace ZstTest
 		}
 
 		virtual void compute(ZstInputPlug * plug) override {
-			last_received_val = input()->int_at(0);
-			if (log) {
-				Log::app(Log::Level::debug, "Input filter received value {0:d}", last_received_val);
+			if (input()->size()) {
+				last_received_val = input()->int_at(0);
+				if (log) {
+					Log::app(Log::Level::debug, "Input filter received value {0:d}", last_received_val);
+				}
+				num_hits++;
 			}
-			num_hits++;
 		}
 
 		ZstInputPlug * input() {

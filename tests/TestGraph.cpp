@@ -304,7 +304,7 @@ BOOST_FIXTURE_TEST_CASE(send_through_local_graph, FixtureCable) {
 	int first_cmp_val = 4;
 
 	output_component->get_downstream_compute_plug()->connect_cable(input_component->get_upstream_compute_plug());
-	output_component->send(first_cmp_val);
+	output_component->output()->append_int(first_cmp_val);
 	input_component->execute_upstream();
 
 	BOOST_TEST(input_component->num_hits);

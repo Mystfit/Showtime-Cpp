@@ -158,14 +158,9 @@ long double test_benchmark(std::string& server_name, std::shared_ptr<ShowtimeCli
 
 
 BOOST_FIXTURE_TEST_CASE(benchmark_reliable, FixtureJoinEventLoop) {
-
 	BOOST_CHECK_NO_THROW(test_benchmark(server_name, test_client, true, 0, 200000));
 }
 
-#ifdef ZST_BUILD_DRAFT_API
-BOOST_FIXTURE_TEST_CASE(benchmark_reliable, FixtureJoinEventLoop) {
-	//Create threaded event loop to handle polling
-	boost::thread eventloop_thread = boost::thread(BenchmarkEventLoop(test_client));
-	BOOST_CHECK_NO_THROW(test_benchmark(server_name, test_client, false, 1, 10000));
+BOOST_FIXTURE_TEST_CASE(benchmark_unreliable, FixtureJoinEventLoop) {
+	BOOST_CHECK_NO_THROW(test_benchmark(server_name, test_client, false, 0, 200000));
 }
-#endif

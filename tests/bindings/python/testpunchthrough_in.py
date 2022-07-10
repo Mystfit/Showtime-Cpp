@@ -29,7 +29,7 @@ client.get_root().add_child(receiver)
 signal.signal(signal.SIGINT, sigint_handler)
 
 starttime = time.time()
-while receiver.num_hits <= 1000 or time.time() - starttime < 12.0:
+while receiver.num_hits <= 1000 and time.time() - starttime < 30.0:
 	time.sleep(0.01)
 	client.poll_once()
 
