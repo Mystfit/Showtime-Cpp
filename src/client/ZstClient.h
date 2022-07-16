@@ -166,8 +166,8 @@ namespace showtime {
             void server_status_handler(const std::shared_ptr<ZstStageMessage>& msg);
 
             // P2P connections
-            void start_connection_handshake(const ZstURI& remote_client_path, const std::vector<std::string>& remote_client_addresses, size_t total_messages);
-            void send_connection_handshake(const ZstURI& from, const std::string& address);
+            void start_connection_handshake(const ZstURI& remote_client_path, const std::vector<std::string>& remote_client_addresses, size_t total_messages, showtime::ConnectionType connection_type);
+            void send_connection_handshake(const ZstURI& from, const std::string& address, std::shared_ptr<ZstGraphTransport> transport);
             ZstPerformerMap m_active_peer_connections;
             std::unordered_map<ZstURI, ZstMsgID, ZstURIHash> m_pending_peer_connections;
             std::set<EndpointHandshakeInfo> m_endpoint_handshakes;
@@ -179,9 +179,7 @@ namespace showtime {
 
             //Transports
             std::shared_ptr<ZstTCPGraphTransport> m_tcp_graph_transport;
-        #ifdef ZST_BUILD_DRAFT_API
             std::shared_ptr<ZstUDPGraphTransport> m_udp_graph_transport;
-        #endif
             std::shared_ptr<ZstZMQClientTransport> m_client_transport;
 
             //Timers

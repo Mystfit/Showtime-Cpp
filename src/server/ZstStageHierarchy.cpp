@@ -158,6 +158,7 @@ Signal ZstStageHierarchy::create_client_handler(const std::shared_ptr<ZstStageMe
 		ZstHierarchy::add_proxy_entity(std::make_unique<ZstPerformerStageProxy>(
 			content->performer(),
 			(content->graph_reliable_address()) ? content->graph_reliable_address()->str() : "",
+			(content->graph_reliable_public_address()) ? content->graph_reliable_public_address()->str() : "",
 			(content->graph_unreliable_address()) ? content->graph_unreliable_address()->str() : "",
 			(content->graph_unreliable_public_address()) ? content->graph_unreliable_public_address()->str() : "",
 			request->origin_endpoint_UUID(),

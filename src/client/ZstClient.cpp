@@ -151,12 +151,10 @@ void ZstClient::init_client(const char* client_name, bool debug, uint16_t unreli
     m_tcp_graph_transport->msg_events()->add_adaptor(ZstGraphTransportAdaptor::downcasted_shared_from_this< ZstGraphTransportAdaptor>());
     m_tcp_graph_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstGraphTransportAdaptor>(m_session));
 
-#ifdef ZST_BUILD_DRAFT_API
     m_udp_graph_transport->set_incoming_port(unreliable_port);
     m_udp_graph_transport->init();
     m_udp_graph_transport->msg_events()->add_adaptor(ZstGraphTransportAdaptor::downcasted_shared_from_this< ZstGraphTransportAdaptor>());
     m_udp_graph_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstGraphTransportAdaptor>(m_session));
-#endif
 
     //Stage discovery beacon
     m_service_broadcast_transport->init(STAGE_DISCOVERY_PORT);
@@ -254,11 +252,13 @@ void ZstClient::start_connection_broadcast_handler(const std::shared_ptr<showtim
     // Create new mapping of our remote client to our broadcast timers
     ZstURI remote_path(remote_client_path->str().c_str());
 
-    auto receiver_unreliable_address = msg->buffer()->content_as_ClientGraphHandshakeStart()->receiver_unreliable_address()->str();
-    auto receiver_unreliable_public_address = msg->buffer()->content_as_ClientGraphHandshakeStart()->receiver_unreliable_public_address()->str();
+    // Get addresses and connection properties from message
+    auto connection_type = msg->buffer()->content_as_ClientGraphHandshakeStart()->connection_type();
+    auto receiver_address = msg->buffer()->content_as_ClientGraphHandshakeStart()->receiver_address()->str();
+    auto receiver_public_address = msg->buffer()->content_as_ClientGraphHandshakeStart()->receiver_public_address()->str();
 
     // Coroutine to wait for timers to finish
-    start_connection_handshake(remote_path, std::vector<std::string>{receiver_unreliable_address, receiver_unreliable_public_address}, MAX_HANDSHAKE_MESSAGES);
+    start_connection_handshake(remote_path, std::vector<std::string>{receiver_address, receiver_public_address}, MAX_HANDSHAKE_MESSAGES, connection_type);
 }
 
 void ZstClient::connection_handshake_handler(std::shared_ptr<ZstPerformanceMessage> msg)
@@ -404,8 +404,10 @@ void ZstClient::join_stage(const ZstServerAddress& stage_address, const ZstTrans
 
     //Acquire our output graph address to send to the stage
     std::string reliable_graph_addr = m_tcp_graph_transport->get_graph_out_address();
+    std::string reliable_public_graph_addr = m_tcp_graph_transport->getPublicIPAddress(STUNServer{ STUN_SERVER, 40006, m_tcp_graph_transport->get_incoming_port() });
+
     std::string unreliable_graph_addr = m_udp_graph_transport->get_graph_in_address();
-    auto unreliable_public_graph_addr = "udp://" + m_udp_graph_transport->getPublicIPAddress(ZstUDPGraphTransport::STUNServer{STUN_SERVER, 40006, m_udp_graph_transport->get_incoming_port() }); //m_udp_graph_transport->get_incoming_port()
+    auto unreliable_public_graph_addr = "udp://" + m_udp_graph_transport->getPublicIPAddress(STUNServer{STUN_SERVER, 40006, m_udp_graph_transport->get_incoming_port() }); //m_udp_graph_transport->get_incoming_port()
     Log::net(Log::Level::debug, "UDP public address: {}", unreliable_public_graph_addr);
 
     // Keep a connection to the STUN server open so we can send keepalive messages
@@ -430,6 +432,7 @@ void ZstClient::join_stage(const ZstServerAddress& stage_address, const ZstTrans
     auto join_msg = CreateClientJoinRequest(*builder, 
         root_offset, 
         builder->CreateString(reliable_graph_addr), 
+        builder->CreateString(reliable_public_graph_addr),
         builder->CreateString(unreliable_graph_addr), 
         builder->CreateString(unreliable_public_graph_addr)
     );
@@ -744,14 +747,18 @@ void ZstClient::auto_join_stage_complete()
 {
 }
 
-void ZstClient::start_connection_handshake(const ZstURI& remote_client_path, const std::vector<std::string>& remote_client_addresses, size_t total_messages)
-{
+void ZstClient::start_connection_handshake(const ZstURI& remote_client_path, const std::vector<std::string>& remote_client_addresses, size_t total_messages, showtime::ConnectionType connection_type)
+{       
+   std::shared_ptr<ZstGraphTransport> transport = (connection_type == ConnectionType::ConnectionType_UNRELIABLE)  
+       ? std::static_pointer_cast<ZstGraphTransport>(m_udp_graph_transport) 
+       : std::static_pointer_cast<ZstGraphTransport>(m_tcp_graph_transport);
+
     // Coroutine to failover from private to public addresses
-   spawn(m_client_timerloop.IO_context(), [this, remote_client_path, remote_client_addresses, total_messages](boost::asio::yield_context yield) {
+   spawn(m_client_timerloop.IO_context(), [this, remote_client_path, remote_client_addresses, total_messages, transport](boost::asio::yield_context yield) {
         for (auto address : remote_client_addresses) 
         {
             bool success = false;
-            m_udp_graph_transport->connect(address);
+            transport->connect(address);
 
             // Hold onto the status of this handshake
             m_endpoint_handshakes.emplace(EndpointHandshakeInfo{ remote_client_path, address, false });
@@ -779,7 +786,8 @@ void ZstClient::start_connection_handshake(const ZstURI& remote_client_path, con
                 // Send a handshake to the remote peer
                 send_connection_handshake(
                     session()->hierarchy()->get_local_performer()->URI(),
-                    address
+                    address,
+                    transport
                 );
 
                 //Wait for a bit before we send another message
@@ -791,14 +799,14 @@ void ZstClient::start_connection_handshake(const ZstURI& remote_client_path, con
             if (success)
                 break;
             else {
-                m_udp_graph_transport->disconnect(address);
+                transport->disconnect(address);
                 Log::net(Log::Level::warn, "No handshake response from endpoint {}", address);
             }
         }
     });
 }
 
-void ZstClient::send_connection_handshake(const ZstURI& from, const std::string& address)
+void ZstClient::send_connection_handshake(const ZstURI& from, const std::string& address, std::shared_ptr<ZstGraphTransport> transport)
 {
     ZstTransportArgs args;
     args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
@@ -806,7 +814,7 @@ void ZstClient::send_connection_handshake(const ZstURI& from, const std::string&
     auto builder = std::make_shared<FlatBufferBuilder>();
     auto plugval_offset = CreatePlugValue(*builder, PlugValueData_PlugHandshake, CreatePlugHandshake(*builder, builder->CreateString(address.c_str(), address.size())).Union());
     auto conn_msg = CreateGraphMessage(*builder, builder->CreateString(from.path(), from.full_size()), plugval_offset);
-    m_udp_graph_transport->send_msg(conn_msg, builder, args);
+    transport->send_msg(conn_msg, builder, args);
 }
 
 void ZstClient::stop_connection_broadcast_handler(const std::shared_ptr<ZstStageMessage>& msg)
@@ -835,14 +843,15 @@ void ZstClient::listen_to_client_handler(const std::shared_ptr<ZstStageMessage>&
 {
     auto request = msg->buffer()->content_as_ClientGraphHandshakeListen();
     auto output_path = ZstURI(request->sender_URI()->c_str(), request->sender_URI()->size());
-    Log::net(Log::Level::debug, "Listening to performer Reliable: {} Unreliable: {}", request->sender_reliable_address()->str(), request->sender_unreliable_address()->str());
+    auto receiver_address = request->sender_address()->str();
+    auto receiver_public_address = request->sender_public_address()->str();
+    auto connection_type = request->connection_type();
 
     // Send keepalive message to the remote client so that our Port-Restricted cone NAT will allow incoming packets from our address
-    start_connection_handshake(output_path, std::vector<std::string>{request->sender_unreliable_public_address()->str()}, MAX_HANDSHAKE_MESSAGES*2);
+    start_connection_handshake(output_path, std::vector<std::string>{receiver_address, receiver_public_address}, MAX_HANDSHAKE_MESSAGES*2, connection_type);
     
     // TODO: This needs to happen here when using TCP to detect connection status
     m_pending_peer_connections[output_path] = msg->id();
-    m_tcp_graph_transport->connect(request->sender_reliable_address()->str());
 }
 
 std::shared_ptr<ZstClientSession> ZstClient::session()

@@ -200,8 +200,8 @@ Signal ZstStageSession::create_cable_handler(const std::shared_ptr<ZstStageMessa
 	if (output_perf->URI() == input_perf->URI())
 		connect_finished_cb(Signal_OK);
 	else
-		connect_clients(output_perf, input_perf, connect_response_cb);
-
+		connect_clients(output_perf, input_perf, (output->is_reliable()) ? ConnectionType_RELIABLE : ConnectionType_UNRELIABLE, connect_response_cb);
+	
 	return Signal_EMPTY;
 }
 
@@ -213,8 +213,8 @@ Signal ZstStageSession::observe_entity_handler(const std::shared_ptr<ZstStageMes
 	//Get target performer
 	auto request = msg->buffer();
 	auto observe_request = request->content_as_EntityObserveRequest();
-	auto performer_path = ZstURI(observe_request->URI()->c_str(), observe_request->URI()->size());
-	ZstPerformerStageProxy* observed_performer = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(performer_path.first()));
+	auto entity_path = ZstURI(observe_request->URI()->c_str(), observe_request->URI()->size());
+	ZstPerformerStageProxy* observed_performer = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(entity_path.first()));
 	if (!observed_performer) {
 		return Signal_ERR_STAGE_PERFORMER_NOT_FOUND;
 	}
@@ -234,7 +234,8 @@ Signal ZstStageSession::observe_entity_handler(const std::shared_ptr<ZstStageMes
 	//Check to see if one client is already connected to the other
 	if (!observed_performer->has_connected_subscriber(sender)) {
 		//Start the client connection
-		connect_clients(observed_performer, sender, [this, sender, response_id = msg->id()](ZstMessageResponse response) {
+		// TODO: Constrain observation to output plugs only so we can infer connection type from output plug is_reliable flag
+		connect_clients(observed_performer, sender, ConnectionType_UNRELIABLE, [this, sender, response_id = msg->id()](ZstMessageResponse response) {
 			auto signal = ZstStageTransport::get_signal(response.response);
 			stage_hierarchy()->reply_with_signal(sender, signal, response_id);
 		});
@@ -282,18 +283,18 @@ Signal ZstStageSession::aquire_entity_ownership_handler(const std::shared_ptr<Zs
 	get_cables(bundle);
 
 	//Find all performers that have input connections to this output plug
-	std::unordered_map<ZstURI, ZstPerformerStageProxy*, ZstURIHash> performers;
+	std::unordered_map<ZstURI, std::pair<ZstPerformerStageProxy*, ConnectionType>, ZstURIHash> performers;
 	for (auto c : bundle) {
 		if (c->get_output()->URI() == entity->URI()) {
 			auto receiver = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(c->get_input()->URI().first()));
-			performers[receiver->URI()] = receiver;
+			performers.emplace(receiver->URI(), std::make_pair( receiver, (c->get_output()->is_reliable()) ? ConnectionType_RELIABLE : ConnectionType_UNRELIABLE ));
 		}
 	}
 
 	//Connect performers together that will have to update their subscriptions
 	for (auto receiver : performers) {
 		if (!new_owner_path.is_empty()) {
-			connect_clients(receiver.second, new_owner);
+			connect_clients(receiver.second.first, new_owner, receiver.second.second);
 		}
 	}
 
@@ -359,12 +360,12 @@ void ZstStageSession::destroy_cable(ZstCable* cable) {
 	ZstSession::destroy_cable_complete(cable);
 }
 
-void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, ZstPerformerStageProxy* input_client)
+void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, ZstPerformerStageProxy* input_client, ConnectionType connection_type)
 {
-	connect_clients(output_client, input_client, [](ZstMessageResponse response) {});
+	connect_clients(output_client, input_client, connection_type, [](ZstMessageResponse response) {});
 }
 
-void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, ZstPerformerStageProxy* input_client, const ZstMessageReceivedAction& on_msg_received)
+void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, ZstPerformerStageProxy* input_client, ConnectionType connection_type, const ZstMessageReceivedAction& on_msg_received)
 {
 	Log::server(Log::Level::notification, "Sending P2P subscribe request to {}", input_client->URI().path());
 
@@ -379,25 +380,29 @@ void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, Zst
 	}
 
 	//Create request for receiver
-	auto output_address = output_client->URI();
-	auto input_address = input_client->URI();
+	auto output_path = output_client->URI();
+	auto input_path = input_client->URI();
 	ZstTransportArgs receiver_args;
 	receiver_args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
-	receiver_args.on_recv_response = [this, output_client, output_address, input_client, input_address, on_msg_received](ZstMessageResponse response) {
-		if (ZstStageTransport::verify_signal(response.response, Signal_OK, fmt::format("P2P client connection ({} --> {})", output_address.path(), input_address.path()))) {
+	receiver_args.on_recv_response = [this, output_client, output_path, input_client, input_path, on_msg_received](ZstMessageResponse response) {
+		if (ZstStageTransport::verify_signal(response.response, Signal_OK, fmt::format("P2P client connection ({} --> {})", output_path.path(), input_path.path()))) {
 			complete_client_connection(output_client, input_client);
 			on_msg_received(response);
 		}
 	};
 
+	std::string output_address = (connection_type == showtime::ConnectionType_RELIABLE) ? output_client->reliable_address() : output_client->unreliable_address();
+	std::string output_address_public = (connection_type == showtime::ConnectionType_RELIABLE) ? output_client->reliable_public_address() : output_client->unreliable_public_address();
+	std::string input_address = (connection_type == showtime::ConnectionType_RELIABLE) ? input_client->reliable_address() : input_client->unreliable_address();
+	std::string input_address_public = (connection_type == showtime::ConnectionType_RELIABLE) ? input_client->reliable_public_address() : input_client->unreliable_public_address();
+
 	auto builder = std::make_shared<FlatBufferBuilder>();
 	auto subscribe_offset = CreateClientGraphHandshakeListen(
 		*builder, 
 		builder->CreateString(output_client->URI().path()), 
-		builder->CreateString(output_client->reliable_address()), 
-		builder->CreateString(output_client->unreliable_address()), 
-		builder->CreateString(output_client->unreliable_public_address())
-	);
+		connection_type,
+		builder->CreateString(output_address),
+		builder->CreateString(output_address_public));
 
 	Log::net(Log::Level::debug, "Sending Content_ClientGraphHandshakeListen whisper to {}", input_client->URI().path());
 	stage_hierarchy()->whisper(input_client, Content_ClientGraphHandshakeListen, subscribe_offset.Union(), builder, receiver_args);
@@ -407,8 +412,9 @@ void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, Zst
 	auto broadcast_offset = CreateClientGraphHandshakeStart(
 		*broadcaster_builder,
 		broadcaster_builder->CreateString(input_client->URI().path(), input_client->URI().full_size()),
-		broadcaster_builder->CreateString(input_client->unreliable_address()),
-		broadcaster_builder->CreateString(input_client->unreliable_public_address())
+		connection_type,
+		broadcaster_builder->CreateString(input_address),
+		broadcaster_builder->CreateString(input_address_public)
 	);
 	ZstTransportArgs broadcaster_args;
 	stage_hierarchy()->whisper(output_client, Content_ClientGraphHandshakeStart, broadcast_offset.Union(), broadcaster_builder, broadcaster_args);

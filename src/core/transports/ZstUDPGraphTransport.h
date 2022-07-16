@@ -12,13 +12,6 @@ namespace showtime {
 		public ZstGraphTransport
 	{
 	public:
-		struct STUNServer
-		{
-			std::string address;
-			uint16_t port;
-			uint16_t local_port;
-		};
-
 		struct UDPEndpoint {
 			std::string address;
 			boost::asio::ip::udp::endpoint endpoint;
@@ -28,7 +21,7 @@ namespace showtime {
 		ZST_EXPORT ~ZstUDPGraphTransport();
 		ZST_EXPORT virtual void destroy() override;
 		ZST_EXPORT virtual void connect(const std::string& address) override;
-		ZST_EXPORT std::string getPublicIPAddress(STUNServer server);
+		ZST_EXPORT virtual std::string getPublicIPAddress(STUNServer server) override;
 		ZST_EXPORT void set_incoming_port(uint16_t port);
 		ZST_EXPORT uint16_t get_incoming_port();
 		ZST_EXPORT void start_listening();
@@ -50,10 +43,5 @@ namespace showtime {
 		uint16_t m_port;
 
 		std::vector<UDPEndpoint> m_destination_endpoints;
-
-		//boost::thread m_loop_thread;
-		//ZstIOLoop m_ioloop;
-		ZstIOLoop m_handshakecontext;
-
 	};
 }

@@ -11,6 +11,7 @@ namespace showtime {
 ZstPerformerStageProxy::ZstPerformerStageProxy(
 		const Performer* performer, 
 		const std::string& reliable_address, 
+		const std::string& reliable_public_address,
 		const std::string& unreliable_address, 
 		const std::string& unreliable_public_address, 
 		const uuid& origin_endpoint_UUID, 
@@ -29,7 +30,9 @@ ZstPerformerStageProxy::ZstPerformerStageProxy(
 ZstPerformerStageProxy::ZstPerformerStageProxy(const ZstPerformerStageProxy& other) :
 	ZstPerformer(other),
 	m_reliable_address(other.m_reliable_address),
+	m_reliable_public_address(other.m_reliable_public_address),
 	m_unreliable_address(other.m_unreliable_address),
+	m_unreliable_public_address(other.m_unreliable_public_address),
 	m_origin_endpoint_UUID(other.m_origin_endpoint_UUID),
 	m_origin_transport(other.m_origin_transport)
 
@@ -41,6 +44,11 @@ ZstPerformerStageProxy::ZstPerformerStageProxy(const ZstPerformerStageProxy& oth
 const std::string& ZstPerformerStageProxy::reliable_address()
 {
 	return m_reliable_address;
+}
+
+const std::string& ZstPerformerStageProxy::reliable_public_address()
+{
+	return m_reliable_public_address;
 }
 
 const std::string& ZstPerformerStageProxy::unreliable_address()

@@ -16,6 +16,13 @@
 
 namespace showtime {
 
+	struct STUNServer
+	{
+		std::string address;
+		uint16_t port;
+		uint16_t local_port;
+	};
+
 
 class ZstGraphTransport :
     public ZstTransportLayer<ZstPerformanceMessage, ZstGraphTransportAdaptor>,
@@ -28,7 +35,10 @@ public:
 	ZST_EXPORT virtual void destroy() override;
 
 	ZST_EXPORT const std::string & get_graph_in_address() const;
+	ZST_EXPORT const std::string& get_public_graph_in_address() const;
 	ZST_EXPORT const std::string & get_graph_out_address() const;
+	ZST_EXPORT const std::string& get_public_graph_out_address() const;
+	ZST_EXPORT virtual std::string getPublicIPAddress(STUNServer server) = 0;
 
     ZST_EXPORT virtual ZstMessageReceipt send_msg(flatbuffers::Offset<GraphMessage> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder>& buffer_builder, const ZstTransportArgs& args) override;
 	ZST_EXPORT virtual void send_message_impl(const uint8_t * msg_buffer, size_t msg_buffer_size, const ZstTransportArgs & args) const override;
