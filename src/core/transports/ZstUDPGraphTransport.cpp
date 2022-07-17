@@ -194,7 +194,7 @@ namespace showtime
 		return m_port;
 	}
 
-	void ZstUDPGraphTransport::start_listening()
+	void ZstUDPGraphTransport::listen()
 	{
 		// Only start receiving messages after we've bound the port
 		m_udp_sock->async_receive(boost::asio::buffer(m_recv_buf), boost::bind(
@@ -286,12 +286,7 @@ namespace showtime
 			this->release(perf_msg);
 
 			// Listen for more messages again
-			m_udp_sock->async_receive(boost::asio::buffer(m_recv_buf), boost::bind(
-				&ZstUDPGraphTransport::handle_receive,
-				this,
-				boost::asio::placeholders::error,
-				boost::asio::placeholders::bytes_transferred)
-			);
+			listen();
 		});
 	}
 }

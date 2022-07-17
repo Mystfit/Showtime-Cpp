@@ -2,6 +2,7 @@
 #include <czmq.h>
 #include <showtime/ZstLogging.h>
 #include "ZstTCPGraphTransport.h"
+#include "ZstTCPSession.h"
 #include "ZstSTUNService.h"
 
 using namespace boost::asio::ip;
@@ -9,47 +10,50 @@ using namespace boost::asio::ip;
 namespace showtime {
 
 ZstTCPGraphTransport::ZstTCPGraphTransport(boost::asio::io_context& context) :
-	m_tcp_sock(std::make_shared<boost::asio::ip::tcp::socket>(context))
+	m_tcp_sock(std::make_shared<tcp::socket>(context))
 {
+	// We keep the TCP socket seperate to the acceptor so we can use it to talk to the STUN server
+	m_acceptor = std::make_shared<tcp::acceptor>(context, m_tcp_sock);
 }
 
 ZstTCPGraphTransport::~ZstTCPGraphTransport()
 {
     destroy_graph_sockets();
+	m_acceptor->close();
+	m_tcp_sock->close();
 }
+
+int ZstTCPGraphTransport::bind(const std::string& address)
+{
+	tcp::endpoint local_endpoint = boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::any(), m_port);
+	m_tcp_sock->bind(local_endpoint);
+}
+
+void ZstTCPGraphTransport::listen()
+{
+	// The new connection gets its own strand
+	m_acceptor->async_accept(
+		boost::asio::make_strand(m_tcp_sock->get_executor()),
+		boost::bind(
+			&ZstTCPGraphTransport::handle_accept, 
+			this, 
+			boost::asio::placeholders::error, 
+			boost::asio::placeholders::detail::placeholder<2>::get()
+		)
+	);
+}
+
 
 void ZstTCPGraphTransport::connect(const std::string& address)
 {
 	if (!input_graph_socket())
 		return;
 
-	if (std::find(m_connected_addresses.begin(), m_connected_addresses.end(), address) != m_connected_addresses.end()){
-		Log::net(Log::Level::warn, "Already connected to {}", address);
-		return;
-	}
-
-	if (input_graph_socket()) {
-		Log::net(Log::Level::notification, "Connecting to {}", address);
-		
-		auto result = zsock_connect(input_graph_socket(), "%s", address.c_str());
-		if (result == 0) {
-			set_connected(true);
-			m_connected_addresses.insert(address);
-		}
-		else {
-			Log::net(Log::Level::error, "Client graph connection error: {}", zmq_strerror(result));
-		}
-
-		zsock_set_subscribe(input_graph_socket(), "");
-	}
 }
 
 void ZstTCPGraphTransport::disconnect()
 {
-	for (auto address : m_connected_addresses)
-		zsock_disconnect(input_graph_socket(), "%s", address.c_str());
 
-	m_connected_addresses.clear();
 }
 
 std::string ZstTCPGraphTransport::getPublicIPAddress(struct STUNServer server)
@@ -176,26 +180,52 @@ std::string ZstTCPGraphTransport::getPublicIPAddress(struct STUNServer server)
 
 void ZstTCPGraphTransport::init_graph_sockets()
 {
-	//In
-	zsock_t * graph_in = zsock_new(ZMQ_SUB);
-	zsock_set_subscribe(graph_in, "");
-	zsock_set_linger(graph_in, 0);
-	zsock_set_unbounded(graph_in);
+	boost::system::error_code ec;
 
-	//Out
-	zsock_t *  graph_out = zsock_new(ZMQ_PUB);
-	std::stringstream addr;
-	addr << "tcp://" << ZstSTUNService::local_ip().c_str() << ":*";
-	zsock_set_unbounded(graph_out);
-	zsock_set_linger(graph_out, 0);
-	int port = zsock_bind(graph_out, "%s", addr.str().c_str());
-	Log::net(Log::Level::debug, "Bound port: {}", port);
+	auto endpoint = tcp::endpoint(boost::asio::ip::address_v4::any(), 0);
 
-	auto last_endpoint = zsock_last_endpoint(graph_out);
-	set_graph_addresses("", last_endpoint);
-	zstr_free(&last_endpoint);
+	// Open the acceptor
+	m_tcp_sock->open(endpoint.protocol(), ec);
+	if (ec) {
+		Log::server(Log::Level::error, "TCP transport error on open: {}", ec.message());
+		return;
+	}
 
-	attach_graph_sockets(graph_in, graph_out);
+	// Allow address reuse
+	m_tcp_sock->set_option(boost::asio::socket_base::reuse_address(true), ec);
+	if (ec) {
+		Log::server(Log::Level::error, "TCP transport error on set_option reuse_address: {}", ec.message());
+		return;
+	}
+
+	// Start listening for connections
+	m_acceptor->listen(boost::asio::socket_base::max_listen_connections, ec);
+	if (ec) {
+		Log::server(Log::Level::error, "TCP transport error on listen: {}", ec.message());
+		return;
+	}
+
+	Log::server(Log::Level::debug, "TCP transport listening on port {}", endpoint.port());
+}
+
+void ZstTCPGraphTransport::handle_accept(const boost::system::error_code& error, tcp::socket socket)
+{
+	if (error)
+	{
+		Log::net(Log::Level::error, "Error when accepting TCP connection {}", error.message());
+	}
+	else
+	{
+		Log::net(Log::Level::debug, "TCP socket received new connection from {}", socket.remote_endpoint().address().to_string());
+
+		// Create the session and run it
+		auto connection = std::make_shared<ZstTCPSession>(std::move(socket), ZstTransportLayer::downcasted_shared_from_this<ZstTCPGraphTransport>());
+		connection->run();
+		m_connections.insert(std::pair<uuid, std::shared_ptr<ZstTCPSession>>(connection->origin_endpoint_UUID(), connection));
+	}
+
+	// Accept another connection
+	listen();
 }
 
 }

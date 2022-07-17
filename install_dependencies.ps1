@@ -149,7 +149,7 @@ foreach ($c in $config){
     Build-CmakeFromGit -name "flatbuffers" -url "https://github.com/google/flatbuffers.git" -branch "master" -config $config_titled -toolset $toolset_ver -arch $platform -flags @(
         "-DFLATBUFFERS_INSTALL=ON"
         "-DFLATBUFFERS_BUILD_TESTS=OFF"
-        "-DFLATBUFFERS_BUILD_FLATC=OFF"
+        "-DFLATBUFFERS_BUILD_FLATC=ON"
         "-DFLATBUFFERS_BUILD_FLATHASH=OFF"
         "-DFLATBUFFERS_BUILD_FLATLIB=ON"
         "-DCMAKE_DEBUG_POSTFIX=d"

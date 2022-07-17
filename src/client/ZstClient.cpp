@@ -158,7 +158,7 @@ void ZstClient::init_client(const char* client_name, bool debug, uint16_t unreli
 
     //Stage discovery beacon
     m_service_broadcast_transport->init(STAGE_DISCOVERY_PORT);
-    m_service_broadcast_transport->start_listening();
+    m_service_broadcast_transport->listen();
     m_service_broadcast_transport->msg_events()->add_adaptor(ZstServiceDiscoveryAdaptor::downcasted_shared_from_this< ZstServiceDiscoveryAdaptor>());
     
     //Load plugins
@@ -407,12 +407,12 @@ void ZstClient::join_stage(const ZstServerAddress& stage_address, const ZstTrans
     std::string reliable_public_graph_addr = m_tcp_graph_transport->getPublicIPAddress(STUNServer{ STUN_SERVER, 40006, m_tcp_graph_transport->get_incoming_port() });
 
     std::string unreliable_graph_addr = m_udp_graph_transport->get_graph_in_address();
-    auto unreliable_public_graph_addr = "udp://" + m_udp_graph_transport->getPublicIPAddress(STUNServer{STUN_SERVER, 40006, m_udp_graph_transport->get_incoming_port() }); //m_udp_graph_transport->get_incoming_port()
+    std::string unreliable_public_graph_addr = "udp://" + m_udp_graph_transport->getPublicIPAddress(STUNServer{STUN_SERVER, 40006, m_udp_graph_transport->get_incoming_port() }); //m_udp_graph_transport->get_incoming_port()
     Log::net(Log::Level::debug, "UDP public address: {}", unreliable_public_graph_addr);
 
     // Keep a connection to the STUN server open so we can send keepalive messages
     //m_udp_graph_transport->connect(fmt::format("udp://{}:{}", STUN_SERVER, 40006));
-    m_udp_graph_transport->start_listening();
+    m_udp_graph_transport->listen();
 
     //Activate any child entities and factories that were added to the root performer already
     ZstPerformer* root = session()->hierarchy()->get_local_performer();
