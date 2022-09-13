@@ -43,7 +43,7 @@ public:
     //Initialisation
     ZST_EXPORT ZstPlug();
     ZST_EXPORT ZstPlug(const Plug* buffer);
-    ZST_EXPORT ZstPlug(const char * name, const ZstValueType& t, const ZstPlugDirection& direction = ZstPlugDirection::NONE, int max_cables = -1);
+    ZST_EXPORT ZstPlug(const char * name, const ZstValueType& t, const ZstPlugDirection& direction = ZstPlugDirection::NONE, int max_cables = -1, bool reliable = true);
     ZST_EXPORT ZstPlug(const ZstPlug & other);
     ZST_EXPORT void init_value();
     ZST_EXPORT void init_value(const ZstValueType& val_type);
@@ -79,6 +79,7 @@ public:
 
     //Properties
     ZST_EXPORT ZstPlugDirection direction();
+    ZST_EXPORT bool is_reliable();
 
     //Cables
     ZST_EXPORT size_t num_cables();
@@ -101,6 +102,7 @@ private:
     ZST_EXPORT void remove_cable(ZstCable * cable);
     
     std::set<ZstCableAddress> m_cables;
+    bool m_reliable;
 };
 
 
@@ -113,7 +115,7 @@ public:
     ZST_EXPORT ZstInputPlug();
     ZST_EXPORT ZstInputPlug(const Plug* buffer);
     ZST_EXPORT ZstInputPlug(const ZstInputPlug & other);
-    ZST_EXPORT ZstInputPlug(const char * name, const ZstValueType& t, int max_connected_cables = -1, bool triggers_compute = false);
+    ZST_EXPORT ZstInputPlug(const char * name, const ZstValueType& t, int max_connected_cables = -1, bool triggers_compute = false, bool reliable = true);
     ZST_EXPORT ~ZstInputPlug();
 
     ZST_EXPORT ZstCable* connect_cable(ZstOutputPlug* output_plug);
@@ -143,7 +145,6 @@ public:
     ZST_EXPORT virtual void on_activation() override;
     ZST_EXPORT bool can_fire();
     ZST_EXPORT void fire();
-    ZST_EXPORT bool is_reliable();
     
 protected:
     ZST_EXPORT virtual void set_owner(const ZstURI & fire_owner) override;
@@ -155,7 +156,6 @@ private:
 
     std::shared_ptr< ZstEventDispatcher<ZstGraphTransportAdaptor> > m_graph_out_events;
 
-    bool m_reliable;
     bool m_can_fire;
 };
 

@@ -29,16 +29,18 @@ ZstPlug::ZstPlug() :
     ZstEntityBase(),
     m_value(nullptr),
     m_direction(ZstPlugDirection::NONE),
+    m_reliable(true),
     m_max_connected_cables(PLUG_DEFAULT_MAX_CABLES)
 {
     //init_value();
     set_entity_type(ZstEntityType::PLUG);
 }
 
-ZstPlug::ZstPlug(const char * name, const ZstValueType& t, const ZstPlugDirection& direction, int max_cables) :
+ZstPlug::ZstPlug(const char * name, const ZstValueType& t, const ZstPlugDirection& direction, int max_cables, bool reliable) :
     ZstEntityBase(name),
     m_value(std::make_unique<ZstDynamicValue>(t)),
     m_direction(direction),
+    m_reliable(reliable),
     m_max_connected_cables(max_cables)
 {
     //init_value(t);
@@ -49,6 +51,7 @@ ZstPlug::ZstPlug(const Plug* buffer) :
 	ZstEntityBase(),
     m_value(std::make_unique<ZstDynamicValue>()),
 	m_direction(ZstPlugDirection::NONE),
+    m_reliable(true),
 	m_max_connected_cables(PLUG_DEFAULT_MAX_CABLES)
 {
     //init_value();
@@ -62,6 +65,7 @@ ZstPlug::ZstPlug(const ZstPlug & other) :
     ZstEntityBase(other),
     m_value(other.m_value.get()),
     m_direction(other.m_direction),
+    m_reliable(other.m_reliable),
     m_max_connected_cables(other.m_max_connected_cables)
 {
 }
@@ -181,6 +185,7 @@ void ZstPlug::serialize_partial(flatbuffers::Offset<PlugData> & serialized_offse
 {
     serialized_offset = CreatePlugData(buffer_builder, 
         plug_direction_lookup.left.at(m_direction), 
+        m_reliable,
         m_max_connected_cables, 
         m_value->serialize(buffer_builder)
     );
@@ -192,6 +197,7 @@ void ZstPlug::deserialize_partial(const PlugData* buffer)
 
 	m_value->deserialize(buffer->value());
     m_direction = plug_direction_lookup.right.at(buffer->plug_direction());
+    m_reliable = buffer->reliable();
     m_max_connected_cables = buffer->max_cables();
 }
 
@@ -209,6 +215,11 @@ void ZstPlug::deserialize(const Plug* buffer)
 ZstPlugDirection ZstPlug::direction()
 {
     return m_direction;
+}
+
+bool ZstPlug::is_reliable()
+{
+    return m_reliable;
 }
 
 void ZstPlug::get_child_cables(ZstCableBundle* bundle)
@@ -305,8 +316,8 @@ ZstInputPlug::ZstInputPlug(const ZstInputPlug & other) :
 {
 }
 
-ZstInputPlug::ZstInputPlug(const char * name, const ZstValueType& t, int max_cables, bool triggers_compute) :
-    ZstPlug(name, t, ZstPlugDirection::IN_JACK, max_cables),
+ZstInputPlug::ZstInputPlug(const char * name, const ZstValueType& t, int max_cables, bool triggers_compute, bool reliable) :
+    ZstPlug(name, t, ZstPlugDirection::IN_JACK, max_cables, reliable),
     m_triggers_compute(triggers_compute)
 {
 }
@@ -349,7 +360,6 @@ bool ZstInputPlug::triggers_compute()
 ZstOutputPlug::ZstOutputPlug() :
     ZstPlug("", ZstValueType::NONE, ZstPlugDirection::OUT_JACK, -1),
     m_graph_out_events(std::make_shared< ZstEventDispatcher<ZstGraphTransportAdaptor> >()),
-    m_reliable(true),
     m_can_fire(false)
 {
 }
@@ -357,7 +367,6 @@ ZstOutputPlug::ZstOutputPlug() :
 ZstOutputPlug::ZstOutputPlug(const Plug* buffer) : 
 	ZstPlug(buffer),
 	m_graph_out_events(std::make_shared< ZstEventDispatcher<ZstGraphTransportAdaptor> >()),
-	m_reliable(true),
 	m_can_fire(false)
 {
 }
@@ -366,15 +375,13 @@ ZstOutputPlug::ZstOutputPlug(const Plug* buffer) :
 ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug& other) :
     ZstPlug(other),
     m_graph_out_events(std::make_shared< ZstEventDispatcher<ZstGraphTransportAdaptor> > ()),
-    m_reliable(other.m_reliable),
     m_can_fire(other.m_can_fire)
 {
 }
 
 ZstOutputPlug::ZstOutputPlug(const char * name, const ZstValueType& t, bool reliable) :
-    ZstPlug(name, t, ZstPlugDirection::OUT_JACK, -1),
+    ZstPlug(name, t, ZstPlugDirection::OUT_JACK, -1, reliable),
     m_graph_out_events(std::make_shared< ZstEventDispatcher<ZstGraphTransportAdaptor> >()),
-    m_reliable(reliable),
     m_can_fire(false)
 {
 #ifndef ZST_BUILD_DRAFT_API
@@ -484,11 +491,6 @@ void ZstOutputPlug::fire()
             });
     }
     m_value->clear();
-}
-
-bool ZstOutputPlug::is_reliable()
-{
-    return m_reliable;
 }
 
 void ZstOutputPlug::set_owner(const ZstURI & owner)
