@@ -89,6 +89,8 @@ set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessageSupervisor.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstIOLoop.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstCorePointerUtils.h"
+    "${CMAKE_CURRENT_LIST_DIR}/boost_use_future.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/boost_use_future_imp.hpp"
 )
 set(ZST_CORE_MODULE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstSession.h"
