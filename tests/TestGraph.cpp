@@ -311,11 +311,11 @@ BOOST_FIXTURE_TEST_CASE(send_through_local_graph, FixtureCable) {
 	BOOST_TEST(input_component->last_received_val == first_cmp_val);
 }
 
-BOOST_FIXTURE_TEST_CASE(send_through_remote_graph, FixtureWaitForSinkClient) {
+BOOST_FIXTURE_TEST_CASE(send_through_reliable_graph, FixtureWaitForSinkClient) {
 	int first_cmp_val = 4;
 	int current_wait = 0;
 
-	auto output_component =	std::make_unique<OutputComponent>("remote_test_out");
+	auto output_component =	std::make_unique<OutputComponent>("remote_test_out", true);
 	auto input_component = std::make_unique<InputComponent>("remote_test_in", first_cmp_val, false, ZstValueType::IntList, true);
 	test_client->get_root()->add_child(output_component.get());
 	remote_client->get_root()->add_child(input_component.get());
@@ -345,7 +345,7 @@ BOOST_FIXTURE_TEST_CASE(send_through_unreliable_graph, FixtureWaitForSinkClient)
 	int current_wait = 0;
 
 	auto unreliable_out = std::make_unique<OutputComponent>("unreliable_out", false);
-	auto input_component = std::make_unique<InputComponent>("connect_test_in", first_cmp_val, true, ZstValueType::IntList, true);
+	auto input_component = std::make_unique<InputComponent>("connect_test_in", first_cmp_val, true, ZstValueType::IntList, true, false);
 	test_client->get_root()->add_child(unreliable_out.get());
 	remote_client->get_root()->add_child(input_component.get());
 
@@ -360,8 +360,9 @@ BOOST_FIXTURE_TEST_CASE(send_through_unreliable_graph, FixtureWaitForSinkClient)
 	// Send
 	unreliable_out->send(first_cmp_val);
 
-	while (input_component->num_hits < 1 && ++current_wait < 10000) {
+	while (input_component->num_hits < 1 && ++current_wait < 1000) {
 		remote_client->poll_once();
+		//TAKE_A_BREATH
 	}
 
 	BOOST_TEST(input_component->last_received_val == first_cmp_val);

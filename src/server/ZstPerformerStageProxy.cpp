@@ -18,6 +18,7 @@ ZstPerformerStageProxy::ZstPerformerStageProxy(
 		const std::weak_ptr<ZstStageTransport>& origin_transport) :
 	ZstPerformer(performer),
 	m_reliable_address(reliable_address),
+	m_reliable_public_address(reliable_public_address),
 	m_unreliable_address(unreliable_address),
 	m_unreliable_public_address(unreliable_public_address),
 	m_origin_endpoint_UUID(origin_endpoint_UUID),
@@ -35,7 +36,6 @@ ZstPerformerStageProxy::ZstPerformerStageProxy(const ZstPerformerStageProxy& oth
 	m_unreliable_public_address(other.m_unreliable_public_address),
 	m_origin_endpoint_UUID(other.m_origin_endpoint_UUID),
 	m_origin_transport(other.m_origin_transport)
-
 {
 	this->set_activated();
 	this->set_proxy();
@@ -61,25 +61,40 @@ const std::string& ZstPerformerStageProxy::unreliable_public_address()
 	return m_unreliable_public_address;
 }
 
-void ZstPerformerStageProxy::add_subscriber(ZstPerformerStageProxy* client)
+void ZstPerformerStageProxy::add_listening_performer(ZstPerformerStageProxy* client, ConnectionType connection_type)
 {
-	m_connected_subscriber_peers.insert(client->URI());
+	if(connection_type == ConnectionType::ConnectionType_UNRELIABLE)
+		m_connected_unreliable_peers.insert(client->URI());
+	else if(connection_type == ConnectionType::ConnectionType_RELIABLE)
+		m_connected_reliable_peers.insert(client->URI());
 }
 
-void ZstPerformerStageProxy::remove_subscriber(ZstPerformerStageProxy* client)
+void ZstPerformerStageProxy::remove_listening_performer(ZstPerformerStageProxy* client, ConnectionType connection_type)
 {
 	try {
-		m_connected_subscriber_peers.erase(client->URI());
+		if (connection_type == ConnectionType::ConnectionType_UNRELIABLE)
+			m_connected_unreliable_peers.erase(client->URI());
+		else if (connection_type == ConnectionType::ConnectionType_RELIABLE)
+			m_connected_reliable_peers.erase(client->URI());
 	}
 	catch (std::out_of_range e) {
 		Log::server(Log::Level::warn, "Client {} not subscribed to {}", this->URI().path(), client->URI().path());
 	}
 }
 
-bool ZstPerformerStageProxy::has_connected_subscriber(ZstPerformerStageProxy* client)
+bool ZstPerformerStageProxy::is_sending_to(ZstPerformerStageProxy* client)
 {
-	if (m_connected_subscriber_peers.find(client->URI()) != m_connected_subscriber_peers.end()) {
-		return true;
+	return is_sending_to(client, ConnectionType::ConnectionType_UNRELIABLE) || is_sending_to(client, ConnectionType::ConnectionType_RELIABLE);
+}
+
+bool ZstPerformerStageProxy::is_sending_to(ZstPerformerStageProxy* client, ConnectionType connection_type)
+{
+	if (connection_type == ConnectionType::ConnectionType_UNRELIABLE) {
+		if (m_connected_unreliable_peers.find(client->URI()) != m_connected_unreliable_peers.end())
+			return true;
+	} else if(connection_type == ConnectionType::ConnectionType_RELIABLE) {
+		if(m_connected_reliable_peers.find(client->URI()) != m_connected_reliable_peers.end())
+			return true;
 	}
 	return false;
 }

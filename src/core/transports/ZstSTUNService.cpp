@@ -7,6 +7,18 @@
 using namespace boost::asio::ip;
 
 namespace showtime {
+
+	ZstSTUNService::ZstSTUNService()
+	{
+		//m_io.run();
+		//m_udp_sock = std::make_shared<boost::asio::ip::udp::socket>(m_io);
+	}
+
+	ZstSTUNService::~ZstSTUNService()
+	{
+		//m_io.stop();
+	}
+
     std::string ZstSTUNService::local_ip()
     {
         ziflist_t* interfaces = ziflist_new();
@@ -20,133 +32,69 @@ namespace showtime {
         //return "127.0.0.1";
     }
 
-    ZstSTUNService::ZstSTUNService()
-    {
-        //m_io.run();
-        //m_udp_sock = std::make_shared<boost::asio::ip::udp::socket>(m_io);
-    }
+	STUNMessageHeader* ZstSTUNService::createSTUNRequest()
+	{
+		struct STUNMessageHeader* request = (STUNMessageHeader*)malloc(sizeof(struct STUNMessageHeader));
+		request->type = htons(STUN_ATTR_MAPPED_ADDRESS);
+		request->length = htons(0x0000);
+		request->cookie = htonl(STUN_MAGIC_COOKIE);
 
-    ZstSTUNService::~ZstSTUNService()
-    {
-        //m_io.stop();
-    }
+		for (int index = 0; index < 3; index++)
+		{
+			srand((unsigned int)time(0));
+			request->identifier[index] = rand();
+		}
+
+		return request;
+	}
 
     // Modified from https://github.com/0xFireWolf/STUNExternalIP
-    std::string ZstSTUNService::getPublicIPAddress(STUNServer server, std::shared_ptr<boost::asio::ip::udp::socket> sock)
+   STUNError ZstSTUNService::getPublicIPAddressFromResponse(std::string& out_address, const char* reply, size_t reply_length, unsigned int request_identifier)
     {
-        std::string address;
-        /*
-        // Bind socket that we'll be communicating with
-        m_udp_sock->open(udp::v4());
-        m_udp_sock->non_blocking(false);
-        udp::endpoint local_endpoint = boost::asio::ip::udp::endpoint(udp::v4(), server.local_port);
+	   if (!reply_length || !reply) {
+		   return STUNError::BAD_MESSAGE;
+	   }
 
-#ifdef WIN32
-        m_udp_sock->set_option(rcv_timeout_option{ 50 });
-        m_udp_sock->set_option(rcv_reuseaddr(true));
-        m_udp_sock->set_option(rcv_broadcast(true));
-#endif
-        boost::system::error_code ec;
-        m_udp_sock->bind(local_endpoint, ec);
-        Log::net(Log::Level::warn, "STUN bind result: {}", ec.message());
-        */
-        // Remote Address
-        // First resolve the STUN server address
-        boost::asio::ip::udp::resolver resolver(m_io);
-        boost::asio::ip::udp::resolver::query query(server.address, std::to_string(server.port));
-        boost::asio::ip::udp::resolver::iterator iter = resolver.resolve(query);
-        udp::endpoint remote_endpoint = iter->endpoint();
+		// Parse STUN server reply
+		const char* pointer = reply;
+		struct STUNMessageHeader* response = (struct STUNMessageHeader*)reply;
+		if (response->type == htons(STUN_MSG_BINDING_RESPONSE))
+		{
+			// Check the identifer
+			for (int index = 0; index < 3; index++)
+			{
+				if (request_identifier) {
+					if (request_identifier != response->identifier[index])
+					{
+						return STUNError::IDENTIFIER_MISMATCH;
+					}
+				}
+			}
 
-        // Construct a STUN request
-        struct STUNMessageHeader* request = (STUNMessageHeader*)malloc(sizeof(struct STUNMessageHeader));
-        request->type = htons(0x0001);
-        request->length = htons(0x0000);
-        request->cookie = htonl(0x2112A442);
+			pointer += sizeof(struct STUNMessageHeader);
+			while (pointer < reply + reply_length)
+			{
+				struct STUNAttributeHeader* header = (struct STUNAttributeHeader*)pointer;
+				if (header->type == htons(STUN_ATTR_XOR_MAPPED_ADDRESS))
+				{
+					pointer += sizeof(struct STUNAttributeHeader);
+					struct STUNXORMappedIPv4Address* xorAddress = (struct STUNXORMappedIPv4Address*)pointer;
+					unsigned int numAddress = htonl(xorAddress->address) ^ STUN_MAGIC_COOKIE;
+					std::string address = fmt::format("{}.{}.{}.{}:{}",
+						(numAddress >> 24) & 0xFF,
+						(numAddress >> 16) & 0xFF,
+						(numAddress >> 8) & 0xFF,
+						numAddress & 0xFF,
+						ntohs(xorAddress->port) ^ STUN_XOR_PORT_COOKIE);
 
-        for (int index = 0; index < 3; index++)
-        {
-            srand((unsigned int)time(0));
-            request->identifier[index] = rand();
-        }
+					out_address = address;
+					return STUNError::VALID;
+				}
 
-        // Send the request
-        try {
-            sock->send_to(boost::asio::buffer(request, sizeof(struct STUNMessageHeader)), remote_endpoint);
-        }
-        catch(boost::exception const& ex){
-            Log::net(Log::Level::debug, "Failed to send data to STUN server {}", boost::diagnostic_information(ex));
-            //m_udp_sock->close();
-            free(request);
-            return "";
-        }
+				pointer += (sizeof(struct STUNAttributeHeader) + ntohs(header->length));
+			}
+		}
 
-        // Get reply from TURN server
-        char reply[1024];
-        udp::endpoint sender_endpoint;
-        size_t reply_length = 0;
-        size_t iters = 10;
-        while (reply_length <= 0 && iters > 0) {
-            try {
-                reply_length = sock->receive_from(boost::asio::buffer(reply, 1024), sender_endpoint);
-                if (reply_length > 0) {
-                    break;
-                }
-            }
-            catch (boost::exception const& ex) {
-                iters--;
-            }
-        }
-
-        if (reply_length <= 0) {
-            Log::net(Log::Level::debug, "No data returned from STUN server");
-            //m_udp_sock->close();
-            free(request);
-            return "";
-        }
-
-        // Parse STUN server reply
-        char* pointer = reply;
-        struct STUNMessageHeader* response = (struct STUNMessageHeader*)reply;
-        if (response->type == htons(0x0101))
-        {
-            // Check the identifer
-            for (int index = 0; index < 3; index++)
-            {
-                if (request->identifier[index] != response->identifier[index])
-                {
-                    //m_udp_sock->close();
-                    free(request);
-                    return "";
-                }
-            }
-
-            pointer += sizeof(struct STUNMessageHeader);
-            while (pointer < reply + reply_length)
-            {
-                struct STUNAttributeHeader* header = (struct STUNAttributeHeader*)pointer;
-                if (header->type == htons(XOR_MAPPED_ADDRESS_TYPE))
-                {
-                    pointer += sizeof(struct STUNAttributeHeader);
-                    struct STUNXORMappedIPv4Address* xorAddress = (struct STUNXORMappedIPv4Address*)pointer;
-                    unsigned int numAddress = htonl(xorAddress->address) ^ 0x2112A442;
-                    address = fmt::format("{}.{}.{}.{}:{}",
-                        (numAddress >> 24) & 0xFF,
-                        (numAddress >> 16) & 0xFF,
-                        (numAddress >> 8) & 0xFF,
-                        numAddress & 0xFF,
-                        xorAddress->port);
-
-                    m_udp_sock->close();
-                    free(request);
-                    return address;
-                }
-
-                pointer += (sizeof(struct STUNAttributeHeader) + ntohs(header->length));
-            }
-        }
-
-        //m_udp_sock->close();
-        free(request);
-        return address;
+		return STUNError::NO_ADDRESS_FOUND;
     }
 }

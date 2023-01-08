@@ -140,9 +140,9 @@ void ZstZMQServerTransport::sock_recv(zsock_t* socket)
 	}
 }
 
-void ZstZMQServerTransport::send_message_impl(const uint8_t* msg_buffer, size_t msg_buffer_size, const ZstTransportArgs& args) const
+void ZstZMQServerTransport::send_message_impl(std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs& args) const
 {
-	auto verifier = flatbuffers::Verifier(msg_buffer, msg_buffer_size);
+	auto verifier = flatbuffers::Verifier(buffer_builder->GetBufferPointer(), buffer_builder->GetSize());
 	if (!VerifyStageMessageBuffer(verifier))
 		throw;
 
@@ -159,7 +159,7 @@ void ZstZMQServerTransport::send_message_impl(const uint8_t* msg_buffer, size_t 
 	zmsg_addmem(m, args.msg_ID.data, 16);
 
 	//Encode message from flatbuffers to bytes
-	zmsg_addmem(m, msg_buffer, msg_buffer_size);
+	zmsg_addmem(m, buffer_builder->GetBufferPointer(), buffer_builder->GetSize());
 
 	int result = 0;
 	{
@@ -179,15 +179,15 @@ void ZstZMQServerTransport::send_message_impl(const uint8_t* msg_buffer, size_t 
 
 void ZstZMQServerTransport::signal_client_direct(Signal signal, ZstMsgID msg_id, const boost::uuids::uuid& client)
 {
-	flatbuffers::FlatBufferBuilder builder;
-	auto signal_offset = CreateSignalMessage(builder, signal);
-	auto msg_offset = CreateStageMessage(builder, Content_SignalMessage, signal_offset.Union());
-	FinishStageMessageBuffer(builder, msg_offset);
+	std::shared_ptr<flatbuffers::FlatBufferBuilder> builder = std::make_shared<flatbuffers::FlatBufferBuilder>();
+	auto signal_offset = CreateSignalMessage(*builder.get(), signal);
+	auto msg_offset = CreateStageMessage(*builder.get(), Content_SignalMessage, signal_offset.Union());
+	FinishStageMessageBuffer(*builder.get(), msg_offset);
 	
 	ZstTransportArgs args;
 	args.target_endpoint_UUID = client;
 	args.msg_ID = msg_id;
-	send_message_impl(builder.GetBufferPointer(), builder.GetSize(), args);
+	send_message_impl(builder, args);
 }
 
 }

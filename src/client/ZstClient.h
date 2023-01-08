@@ -9,9 +9,9 @@
 #include <memory>
 
 //Boost includes
-#include <boost/asio.hpp>
 #include <boost/asio/thread_pool.hpp>
 #include <boost/thread.hpp>
+#include <boost/asio/deadline_timer.hpp>
 
 //Showtime API includes
 #include <showtime/ZstCore.h>

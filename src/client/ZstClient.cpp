@@ -25,7 +25,7 @@ ZstClient::ZstClient(ShowtimeClient* api) :
     m_plugins(std::make_shared<ZstPluginLoader>()),
 
     //Transports
-    m_tcp_graph_transport(std::make_shared<ZstTCPGraphTransport>()),
+    m_tcp_graph_transport(nullptr),
     m_udp_graph_transport(nullptr),
     m_stun_srv(std::make_shared<ZstSTUNService>()),
     m_client_transport(std::make_shared<ZstZMQClientTransport>()),
@@ -53,6 +53,7 @@ ZstClient::ZstClient(ShowtimeClient* api) :
     
     // Late setup of UDP transport since we need to pass the IO context
     m_udp_graph_transport = std::make_shared<ZstUDPGraphTransport>(m_client_timerloop.IO_context());
+    m_tcp_graph_transport = std::make_shared<ZstTCPGraphTransport>(m_client_timerloop.IO_context());
 }
 
 ZstClient::~ZstClient() {
@@ -77,7 +78,7 @@ void ZstClient::destroy() {
     m_beaconcheck_timer.cancel(ec);
     m_client_timerloop.IO_context().stop();
     m_client_timer_thread.interrupt();
-    m_client_timer_thread.join();
+    m_client_timer_thread.try_join_for(boost::chrono::milliseconds(100));
 
     //Stop transports
     m_service_broadcast_transport->destroy();
@@ -146,19 +147,21 @@ void ZstClient::init_client(const char* client_name, bool debug, uint16_t unreli
     m_client_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstStageTransportAdaptor>(m_session));
     m_client_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstStageTransportAdaptor>(std::static_pointer_cast<ZstClientHierarchy>(m_session->hierarchy())));
 
-    //Setup adaptors to receive graph messages
+    //Setup graph transports
     m_tcp_graph_transport->init();
+    m_tcp_graph_transport->bind("");
     m_tcp_graph_transport->msg_events()->add_adaptor(ZstGraphTransportAdaptor::downcasted_shared_from_this< ZstGraphTransportAdaptor>());
     m_tcp_graph_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstGraphTransportAdaptor>(m_session));
-
-    m_udp_graph_transport->set_incoming_port(unreliable_port);
+   
+    m_udp_graph_transport->set_port(unreliable_port);
     m_udp_graph_transport->init();
+    m_udp_graph_transport->bind("");
     m_udp_graph_transport->msg_events()->add_adaptor(ZstGraphTransportAdaptor::downcasted_shared_from_this< ZstGraphTransportAdaptor>());
     m_udp_graph_transport->msg_events()->add_adaptor(std::static_pointer_cast<ZstGraphTransportAdaptor>(m_session));
 
     //Stage discovery beacon
     m_service_broadcast_transport->init(STAGE_DISCOVERY_PORT);
-    m_service_broadcast_transport->listen();
+    m_service_broadcast_transport->start_listening();
     m_service_broadcast_transport->msg_events()->add_adaptor(ZstServiceDiscoveryAdaptor::downcasted_shared_from_this< ZstServiceDiscoveryAdaptor>());
     
     //Load plugins
@@ -399,27 +402,25 @@ void ZstClient::join_stage(const ZstServerAddress& stage_address, const ZstTrans
     Log::net(Log::Level::notification, "Connecting to stage {}", stage_address.address);
     m_client_transport->connect(stage_address.address);
 
-    // Bind UDP
-    m_udp_graph_transport->bind("");
-
-    //Acquire our output graph address to send to the stage
-    std::string reliable_graph_addr = m_tcp_graph_transport->get_graph_out_address();
-    std::string reliable_public_graph_addr = m_tcp_graph_transport->getPublicIPAddress(STUNServer{ STUN_SERVER, 40006, m_tcp_graph_transport->get_incoming_port() });
-
+    // Get our local/public addresses
     std::string unreliable_graph_addr = m_udp_graph_transport->get_graph_in_address();
-    std::string unreliable_public_graph_addr = "udp://" + m_udp_graph_transport->getPublicIPAddress(STUNServer{STUN_SERVER, 40006, m_udp_graph_transport->get_incoming_port() }); //m_udp_graph_transport->get_incoming_port()
+    std::string unreliable_public_graph_addr = m_udp_graph_transport->getPublicIPAddress(STUNServer{ STUN_SERVER, 40006, m_udp_graph_transport->get_port() }); //m_udp_graph_transport->get_incoming_port()
     Log::net(Log::Level::debug, "UDP public address: {}", unreliable_public_graph_addr);
 
+    std::string reliable_graph_addr = m_tcp_graph_transport->get_graph_out_address();
+    std::string reliable_public_graph_addr = m_tcp_graph_transport->getPublicIPAddress(STUNServer{ STUN_SERVER, 40006, m_tcp_graph_transport->get_port() });
+    Log::net(Log::Level::debug, "TCP public address: {}", reliable_public_graph_addr);
+
     // Keep a connection to the STUN server open so we can send keepalive messages
-    //m_udp_graph_transport->connect(fmt::format("udp://{}:{}", STUN_SERVER, 40006));
+    //m_udp_graph_transport->connect(fmt::format("{}:{}", STUN_SERVER, 40006));
     m_udp_graph_transport->listen();
+    m_tcp_graph_transport->listen();
 
     //Activate any child entities and factories that were added to the root performer already
     ZstPerformer* root = session()->hierarchy()->get_local_performer();
 
-    auto builder = std::make_shared< FlatBufferBuilder>();
-
     //Construct transport args
+    auto builder = std::make_shared< FlatBufferBuilder>();
     ZstTransportArgs args;
     args.msg_send_behaviour = sendtype;
     args.on_recv_response = [this, stage_address](ZstMessageResponse response) {
@@ -609,10 +610,8 @@ void ZstClient::leave_stage_complete(ZstTransportRequestBehaviour sendtype)
 	if (m_tcp_graph_transport)
 		m_tcp_graph_transport->disconnect();
 
-#ifdef ZST_BUILD_DRAFT_API
 	if (m_udp_graph_transport)
 		m_udp_graph_transport->disconnect();
-#endif
 
     //Mark all locally registered entites as deactivated
     ZstEntityBundle bundle;
@@ -754,11 +753,15 @@ void ZstClient::start_connection_handshake(const ZstURI& remote_client_path, con
        : std::static_pointer_cast<ZstGraphTransport>(m_tcp_graph_transport);
 
     // Coroutine to failover from private to public addresses
-   spawn(m_client_timerloop.IO_context(), [this, remote_client_path, remote_client_addresses, total_messages, transport](boost::asio::yield_context yield) {
+   spawn(m_client_timerloop.IO_context(), [this, remote_client_path, remote_client_addresses, total_messages, transport, connection_type](boost::asio::yield_context yield) {
         for (auto address : remote_client_addresses) 
         {
             bool success = false;
-            transport->connect(address);
+
+            // Only UDP transports connect (Sender->Receiver)
+            if (connection_type == ConnectionType::ConnectionType_UNRELIABLE) {
+                transport->connect(address);
+            }
 
             // Hold onto the status of this handshake
             m_endpoint_handshakes.emplace(EndpointHandshakeInfo{ remote_client_path, address, false });
@@ -846,6 +849,12 @@ void ZstClient::listen_to_client_handler(const std::shared_ptr<ZstStageMessage>&
     auto receiver_address = request->sender_address()->str();
     auto receiver_public_address = request->sender_public_address()->str();
     auto connection_type = request->connection_type();
+
+    // Only UDP transports connect (Sender->Receiver)
+    if (connection_type == ConnectionType::ConnectionType_RELIABLE) {
+        m_tcp_graph_transport->connect(receiver_address);
+        m_tcp_graph_transport->connect(receiver_public_address);
+    }
 
     // Send keepalive message to the remote client so that our Port-Restricted cone NAT will allow incoming packets from our address
     start_connection_handshake(output_path, std::vector<std::string>{receiver_address, receiver_public_address}, MAX_HANDSHAKE_MESSAGES*2, connection_type);

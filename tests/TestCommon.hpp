@@ -117,9 +117,9 @@ namespace ZstTest
 		int last_received_val = 0;
 		bool log = false;
 
-		InputComponent(const char * name, int cmp_val=0, bool should_log=false, ZstValueType plugtype = ZstValueType::IntList, bool should_trigger = false) :
+		InputComponent(const char * name, int cmp_val=0, bool should_log=false, ZstValueType plugtype = ZstValueType::IntList, bool should_trigger = false, bool reliable = true) :
 			ZstComputeComponent("TESTER", name),
-			m_input(std::make_unique<ZstInputPlug>("in", plugtype, -1, should_trigger)),
+			m_input(std::make_unique<ZstInputPlug>("in", plugtype, -1, should_trigger, reliable)),
             compare_val(cmp_val),
             log(should_log)
 		{

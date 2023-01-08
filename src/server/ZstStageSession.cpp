@@ -157,6 +157,10 @@ Signal ZstStageSession::create_cable_handler(const std::shared_ptr<ZstStageMessa
 		return Signal_ERR_CABLE_PLUGS_NOT_FOUND;
 	}
 
+	if (input->is_reliable() != output->is_reliable()) {
+		return Signal_ERR_STAGE_MISMATCHED_PLUG_RELIABILITY;
+	}
+
 	//Unplug existing cables if we hit max cables in an input plug
 	if (input->num_cables() >= input->max_connected_cables()) {
 		Log::server(Log::Level::warn, "Too many cables in plug. Disconnecting existing cables");
@@ -210,10 +214,26 @@ Signal ZstStageSession::create_cable_handler(const std::shared_ptr<ZstStageMessa
 
 Signal ZstStageSession::observe_entity_handler(const std::shared_ptr<ZstStageMessage>& msg, ZstPerformerStageProxy* sender)
 {
-	//Get target performer
+	// Get request data
 	auto request = msg->buffer();
 	auto observe_request = request->content_as_EntityObserveRequest();
+	
+	// Get plug that will be observed
 	auto entity_path = ZstURI(observe_request->URI()->c_str(), observe_request->URI()->size());
+	auto entity = hierarchy()->find_entity(entity_path);
+	if (entity->entity_type() != ZstEntityType::PLUG) {
+		Log::server(Log::Level::notification, "Can only observe output plugs. Received {}", entity->URI().path());
+		return Signal_ERR_STAGE_REQUEST_MISSING_ARG;
+	}
+	auto plug = static_cast<ZstPlug*>(entity);
+	if(plug->direction() != ZstPlugDirection::OUT_JACK) {
+		Log::server(Log::Level::notification, "Can only observe output plugs. Received {}", plug->URI().path());
+		return Signal_ERR_STAGE_REQUEST_MISSING_ARG;
+	}
+	auto output_plug = static_cast<ZstOutputPlug*>(plug);
+	auto plug_connection_type = output_plug->is_reliable() ? ConnectionType::ConnectionType_RELIABLE : ConnectionType::ConnectionType_UNRELIABLE;
+
+	// Get the performer that will be observed
 	ZstPerformerStageProxy* observed_performer = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(entity_path.first()));
 	if (!observed_performer) {
 		return Signal_ERR_STAGE_PERFORMER_NOT_FOUND;
@@ -226,16 +246,14 @@ Signal ZstStageSession::observe_entity_handler(const std::shared_ptr<ZstStageMes
 	}
 
 	//Check to see if one client is already connected to the other
-	if (observed_performer->has_connected_subscriber(sender)) {
+	if (observed_performer->is_sending_to(sender), plug_connection_type) {
 		Log::server(Log::Level::warn, "Client {} already observing {}", sender->URI().path(), observed_performer->URI().path());
 		return Signal_ERR_STAGE_PERFORMER_ALREADY_CONNECTED;
 	}
 
-	//Check to see if one client is already connected to the other
-	if (!observed_performer->has_connected_subscriber(sender)) {
+	if (!observed_performer->is_sending_to(sender), plug_connection_type) {
 		//Start the client connection
-		// TODO: Constrain observation to output plugs only so we can infer connection type from output plug is_reliable flag
-		connect_clients(observed_performer, sender, ConnectionType_UNRELIABLE, [this, sender, response_id = msg->id()](ZstMessageResponse response) {
+		connect_clients(observed_performer, sender, plug_connection_type, [this, sender, response_id = msg->id()](ZstMessageResponse response) {
 			auto signal = ZstStageTransport::get_signal(response.response);
 			stage_hierarchy()->reply_with_signal(sender, signal, response_id);
 		});
@@ -367,10 +385,8 @@ void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, Zst
 
 void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, ZstPerformerStageProxy* input_client, ConnectionType connection_type, const ZstMessageReceivedAction& on_msg_received)
 {
-	Log::server(Log::Level::notification, "Sending P2P subscribe request to {}", input_client->URI().path());
-
 	//Check to see if one client is already connected to the other
-	if (output_client->has_connected_subscriber(input_client)) {
+	if (output_client->is_sending_to(input_client, connection_type)) {
 		return;
 	}
 
@@ -379,14 +395,16 @@ void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, Zst
 		return;
 	}
 
+	Log::server(Log::Level::notification, "Sending P2P subscribe request to {}", input_client->URI().path());
+
 	//Create request for receiver
 	auto output_path = output_client->URI();
 	auto input_path = input_client->URI();
 	ZstTransportArgs receiver_args;
 	receiver_args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
-	receiver_args.on_recv_response = [this, output_client, output_path, input_client, input_path, on_msg_received](ZstMessageResponse response) {
+	receiver_args.on_recv_response = [this, output_client, output_path, input_client, input_path, on_msg_received, connection_type](ZstMessageResponse response) {
 		if (ZstStageTransport::verify_signal(response.response, Signal_OK, fmt::format("P2P client connection ({} --> {})", output_path.path(), input_path.path()))) {
-			complete_client_connection(output_client, input_client);
+			complete_client_connection(output_client, input_client, connection_type);
 			on_msg_received(response);
 		}
 	};
@@ -421,12 +439,12 @@ void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, Zst
 }
 
 
-Signal ZstStageSession::complete_client_connection(ZstPerformerStageProxy* output_client, ZstPerformerStageProxy* input_client)
+Signal ZstStageSession::complete_client_connection(ZstPerformerStageProxy* output_client, ZstPerformerStageProxy* input_client, ConnectionType connection_type)
 {
 	Log::server(Log::Level::notification, "Completing client handshake. Pub: {}, Sub: {}", output_client->URI().path(), input_client->URI().path());
 
 	//Keep a record of which clients are connected to each other
-	output_client->add_subscriber(input_client);
+	output_client->add_listening_performer(input_client, connection_type);
 
 	//Let the broadcaster know it can stop publishing messages
 	Log::server(Log::Level::notification, "Stopping P2P handshake broadcast from client {}", output_client->URI().path());

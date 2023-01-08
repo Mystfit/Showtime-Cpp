@@ -13,7 +13,8 @@ namespace showtime {
 
 ZstGraphTransport::ZstGraphTransport() :
 	m_graph_in(NULL),
-	m_graph_out(NULL)
+	m_graph_out(NULL),
+	m_port(0)
 {
 }
 
@@ -49,16 +50,16 @@ const std::string & ZstGraphTransport::get_graph_out_address() const
 	return m_graph_out_addr;
 }
     
-ZstMessageReceipt ZstGraphTransport::send_msg(flatbuffers::Offset<GraphMessage> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder>& buffer_builder, const ZstTransportArgs& args)
+ZstMessageReceipt ZstGraphTransport::send_msg(flatbuffers::Offset<GraphMessage> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs& args)
 {
     buffer_builder->Finish(message_content);
-    send_message_impl(buffer_builder->GetBufferPointer(), buffer_builder->GetSize(), args);
+    send_message_impl(buffer_builder, args);
     return ZstMessageReceipt{Signal_OK};
 }
 
-void ZstGraphTransport::send_message_impl(const uint8_t * msg_buffer, size_t msg_buffer_size, const ZstTransportArgs & args) const
+void ZstGraphTransport::send_message_impl(std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs & args) const
 {
-	zframe_t * payload_frame = zframe_new(msg_buffer, msg_buffer_size);
+	zframe_t * payload_frame = zframe_new(buffer_builder->GetBufferPointer(), buffer_builder->GetSize());
 #ifdef ZST_BUILD_DRAFT_API
 	zframe_set_group(payload_frame, PERFORMANCE_GROUP);
 #endif
@@ -140,6 +141,15 @@ zsock_t * ZstGraphTransport::input_graph_socket() const
 zsock_t * ZstGraphTransport::output_graph_socket() const
 {
 	return m_graph_out;
+}
+
+void ZstGraphTransport::set_port(uint16_t port)
+{
+	m_port = port;
+}
+
+uint16_t ZstGraphTransport::get_port() {
+	return m_port;
 }
 
 }

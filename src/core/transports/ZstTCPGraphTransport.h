@@ -1,6 +1,9 @@
 #pragma once
 
 #include <showtime/ZstExports.h>
+#include <showtime/ZstURI.h>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/ip/tcp.hpp>
 #include "ZstGraphTransport.h"
 
 namespace showtime {
@@ -18,18 +21,18 @@ public:
 	ZST_EXPORT virtual void listen() override;
 	ZST_EXPORT virtual void connect(const std::string & address) override;
 	ZST_EXPORT virtual void disconnect() override;
-	ZST_EXPORT virtual std::string getPublicIPAddress(struct STUNServer server);
+	ZST_EXPORT virtual std::string getPublicIPAddress(struct STUNServer server) override;
+	ZST_EXPORT bool is_connected_to(const ZstURI& client);
 
 protected:
 	ZST_EXPORT virtual void init_graph_sockets() override;
-	ZST_EXPORT void handle_accept(const boost::system::error_code& error, boost::asio::ip::tcp::socket socket);
+	ZST_EXPORT void handle_accept(const boost::system::error_code& error, boost::asio::ip::tcp::socket& socket);
+	ZST_EXPORT virtual void send_message_impl(std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs& args) const override;
 
 private:
-	std::shared_ptr<boost::asio::ip::tcp::acceptor> m_acceptor;
-	std::shared_ptr<boost::asio::ip::tcp::socket> m_tcp_sock;
-	std::unordered_map< uuid, std::shared_ptr<ZstTCPSession>, boost::hash<boost::uuids::uuid> > m_connections;
-
-	uint16_t m_port;
+	boost::asio::io_context& m_ctx;	
+	std::vector< std::shared_ptr<ZstTCPSession> > m_pending_graph_connections;
+	std::unordered_map<ZstURI, std::shared_ptr<ZstTCPSession>, ZstURIHash> m_graph_connections;
 };
 
 }

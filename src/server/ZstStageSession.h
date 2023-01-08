@@ -48,7 +48,7 @@ public:
 
 	void connect_clients(ZstPerformerStageProxy* output_client, ZstPerformerStageProxy* input_client, ConnectionType connection_type);
 	void connect_clients(ZstPerformerStageProxy* output_client, ZstPerformerStageProxy* input_client, ConnectionType connection_type, const ZstMessageReceivedAction& on_msg_received);
-	Signal complete_client_connection(ZstPerformerStageProxy* output_client, ZstPerformerStageProxy* input_client);
+	Signal complete_client_connection(ZstPerformerStageProxy* output_client, ZstPerformerStageProxy* input_client, ConnectionType connection_type);
 
 
 	// -------

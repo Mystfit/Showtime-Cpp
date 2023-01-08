@@ -6,7 +6,8 @@
 #include "../ZstActor.h"
 #include "ZstTransportLayerBase.hpp"
 #include <showtime/ZstExports.h>
-#include <boost/asio.hpp>
+#include <concurrentqueue.h>
+#include <regex>
 
 #define PERFORMANCE_GROUP "p"
 #define HANDSHAKE_GROUP "h"
@@ -23,12 +24,14 @@ namespace showtime {
 		uint16_t local_port;
 	};
 
+	const std::regex address_match("([^:^\/]*)+?:(\d+)?");
 
 class ZstGraphTransport :
     public ZstTransportLayer<ZstPerformanceMessage, ZstGraphTransportAdaptor>,
     public ZstGraphTransportAdaptor
 {
 public:
+
 	ZST_EXPORT ZstGraphTransport();
 	ZST_EXPORT ~ZstGraphTransport();
 	ZST_EXPORT virtual void init() override;
@@ -39,9 +42,11 @@ public:
 	ZST_EXPORT const std::string & get_graph_out_address() const;
 	ZST_EXPORT const std::string& get_public_graph_out_address() const;
 	ZST_EXPORT virtual std::string getPublicIPAddress(STUNServer server) = 0;
+	ZST_EXPORT void set_port(uint16_t port);
+	ZST_EXPORT uint16_t get_port();
 
-    ZST_EXPORT virtual ZstMessageReceipt send_msg(flatbuffers::Offset<GraphMessage> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder>& buffer_builder, const ZstTransportArgs& args) override;
-	ZST_EXPORT virtual void send_message_impl(const uint8_t * msg_buffer, size_t msg_buffer_size, const ZstTransportArgs & args) const override;
+    ZST_EXPORT virtual ZstMessageReceipt send_msg(flatbuffers::Offset<GraphMessage> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs& args) override;
+	ZST_EXPORT virtual void send_message_impl(std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs & args) const;
 
 protected:
 	ZST_EXPORT ZstActor & actor();
@@ -53,6 +58,9 @@ protected:
 
 	ZST_EXPORT zsock_t * input_graph_socket() const;
 	ZST_EXPORT zsock_t * output_graph_socket() const;
+
+	//Ports
+	uint16_t m_port;
 	
 private:
 	void sock_recv(zsock_t* socket);

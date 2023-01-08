@@ -20,7 +20,7 @@ public:
 	virtual void disconnect() override;
     
 private:
-	void send_message_impl(const uint8_t * msg_buffer, size_t msg_buffer_size, const ZstTransportArgs & args) const override;
+	void send_message_impl(std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs & args) const override;
 	static int s_handle_stage_router(zloop_t *loop, zsock_t *sock, void *arg);
 	void sock_recv(zsock_t* socket);
 

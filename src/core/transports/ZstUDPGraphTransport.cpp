@@ -168,7 +168,7 @@ namespace showtime
 			while (pointer < reply + reply_length)
 			{
 				struct STUNAttributeHeader* header = (struct STUNAttributeHeader*)pointer;
-				if (header->type == htons(XOR_MAPPED_ADDRESS_TYPE))
+				if (header->type == htons(STUN_ATTR_XOR_MAPPED_ADDRESS))
 				{
 					pointer += sizeof(struct STUNAttributeHeader);
 					struct STUNXORMappedIPv4Address* xorAddress = (struct STUNXORMappedIPv4Address*)pointer;

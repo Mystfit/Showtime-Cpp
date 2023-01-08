@@ -9,7 +9,6 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/thread.hpp>
 #include <boost/beast.hpp>
-#include <boost/asio.hpp>
 #include <boost/beast/websocket.hpp>
 #include <boost/asio/strand.hpp>
 #include <boost/container_hash/hash.hpp>
@@ -43,7 +42,7 @@ public:
 	static void fail(beast::error_code ec, char const* what);
 
 private:
-	void send_message_impl(const uint8_t* msg_buffer, size_t msg_buffer_size, const ZstTransportArgs& args) const override;
+	void send_message_impl(std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs& args) const override;
 
 	void do_accept();
 	void on_accept(beast::error_code ec, tcp::socket socket);

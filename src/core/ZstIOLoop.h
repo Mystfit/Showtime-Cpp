@@ -1,8 +1,8 @@
 #pragma once
 
 //Boost includes
-#include <boost/asio.hpp>
 #include <boost/thread.hpp>
+#include <boost/asio/io_context.hpp>
 #include <showtime/ZstExports.h>
 
 struct ZstIOLoop {

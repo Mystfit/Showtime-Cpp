@@ -76,11 +76,11 @@ void ZstWebsocketServerTransport::fail(beast::error_code ec, char const* what)
 	Log::server(Log::Level::error, "Websocket transport error: {} {}", what, ec.message());
 }
 
-void ZstWebsocketServerTransport::send_message_impl(const uint8_t* msg_buffer, size_t msg_buffer_size, const ZstTransportArgs& args) const
+void ZstWebsocketServerTransport::send_message_impl(std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs& args) const
 {
 	auto session = m_sessions.find(args.target_endpoint_UUID);
 	if (session != m_sessions.end()) {
-		session->second->do_write(msg_buffer, msg_buffer_size);
+		session->second->do_write(buffer_builder->GetBufferPointer(), buffer_builder->GetSize());
 	}
 }
 

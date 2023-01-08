@@ -62,7 +62,7 @@ protected:
         if (!is_connected())
             return ZstMessageReceipt{ Signal_ERR_STAGE_TIMEOUT };
 
-        send_message_impl(buffer->GetBufferPointer(), buffer->GetSize(), ZstTransportArgs());
+        send_message_impl(buffer, ZstTransportArgs());
         return ZstMessageReceipt{ Signal_OK, ZstTransportRequestBehaviour::PUBLISH };
     }
 
@@ -74,17 +74,17 @@ protected:
         switch (args.msg_send_behaviour) {
             case ZstTransportRequestBehaviour::ASYNC_REPLY: {
                 boost::asio::post(*m_async_pool, [this, buffer, args]() mutable {
-                    this->blocking_send(buffer->GetBufferPointer(), buffer->GetSize(), args);
+                    this->blocking_send(buffer, args);
                 });
                 break;
             }
             case ZstTransportRequestBehaviour::SYNC_REPLY:
             {
-                blocking_send(buffer->GetBufferPointer(), buffer->GetSize(), args);
+                blocking_send(buffer, args);
                 break;
             }
             case ZstTransportRequestBehaviour::PUBLISH: {
-                send_message_impl(buffer->GetBufferPointer(), buffer->GetSize(), args);
+                send_message_impl(buffer, args);
                 break;
             }
             default:
@@ -94,18 +94,18 @@ protected:
     }
 
     //Message sending implementation for the transport
-    virtual void send_message_impl(const uint8_t* msg_buffer, size_t msg_buffer_size, const ZstTransportArgs& args) const = 0;
+    virtual void send_message_impl(std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs& args) const = 0;
 
 protected:
     std::shared_ptr<ZstSemaphore> m_event_condition;
 
 private:
-    void blocking_send(const uint8_t* msg_buffer, size_t msg_buffer_size, ZstTransportArgs args) {
+    void blocking_send(std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, ZstTransportArgs args) {
         // Register message response
         auto msg_future = register_response(args.msg_ID);
 
         // Send message
-        this->send_message_impl(msg_buffer, msg_buffer_size, args);
+        this->send_message_impl(buffer_builder, args);
 
         // Wait for message promise to be fulfilled
         auto status = msg_future.wait_for(std::chrono::milliseconds(STAGE_TIMEOUT));
