@@ -2,6 +2,7 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/coroutine2/coroutine.hpp>
 #include <boost/dll.hpp>
+#include <boost/asio/steady_timer.hpp>
 #include <boost/asio/spawn.hpp>
 
 using namespace flatbuffers;
@@ -53,7 +54,7 @@ ZstClient::ZstClient(ShowtimeClient* api) :
     
     // Late setup of UDP transport since we need to pass the IO context
     m_udp_graph_transport = std::make_shared<ZstUDPGraphTransport>(m_client_timerloop.IO_context());
-    m_tcp_graph_transport = std::make_shared<ZstTCPGraphTransport>(m_client_timerloop.IO_context());
+    m_tcp_graph_transport = std::make_shared<ZstTCPGraphTransport>();
 }
 
 ZstClient::~ZstClient() {
