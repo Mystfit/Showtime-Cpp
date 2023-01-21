@@ -57,9 +57,9 @@ namespace ZstTest
 		std::unique_ptr<ZstOutputPlug> m_output;
 
 	public:
-		OutputComponent(const char * name, bool reliable = true, ZstValueType plugtype = ZstValueType::IntList) :
+		OutputComponent(const char * name, bool reliable = true, ZstValueType plugtype = ZstValueType::IntList, int fixed_size = -1) :
 			ZstComputeComponent("TESTER", name),
-			m_output(std::make_unique<ZstOutputPlug>("out", plugtype, reliable))
+			m_output(std::make_unique<ZstOutputPlug>("out", plugtype, reliable, fixed_size))
 		{
 		}
 
@@ -117,9 +117,9 @@ namespace ZstTest
 		int last_received_val = 0;
 		bool log = false;
 
-		InputComponent(const char * name, int cmp_val=0, bool should_log=false, ZstValueType plugtype = ZstValueType::IntList, bool should_trigger = false, bool reliable = true) :
+		InputComponent(const char * name, int cmp_val=0, bool should_log=false, ZstValueType plugtype = ZstValueType::IntList, bool should_trigger = false, bool reliable = true, int fixed_size = -1) :
 			ZstComputeComponent("TESTER", name),
-			m_input(std::make_unique<ZstInputPlug>("in", plugtype, -1, should_trigger, reliable)),
+			m_input(std::make_unique<ZstInputPlug>("in", plugtype, -1, should_trigger, reliable, fixed_size)),
             compare_val(cmp_val),
             log(should_log)
 		{

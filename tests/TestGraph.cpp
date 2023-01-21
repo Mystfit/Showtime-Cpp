@@ -1,5 +1,6 @@
 #include "TestCommon.hpp"
 #include <float.h>
+#include <array>
 
 #define BOOST_TEST_MODULE Graph
 
@@ -560,6 +561,34 @@ BOOST_FIXTURE_TEST_CASE(send_bytes, FixtureJoinServer) {
 }
 
 
+BOOST_FIXTURE_TEST_CASE(send_byte_fixed, FixtureJoinServer) {
+#define TEST_BUF_SIZE 4
+	size_t buffer_size = TEST_BUF_SIZE;
+	std::unique_ptr<OutputComponent> output_component = std::make_unique<OutputComponent>("connect_test_out", true, ZstValueType::ByteList, buffer_size);
+	std::unique_ptr<InputComponent> input_component = std::make_unique<InputComponent>("connect_test_in", 0, true, ZstValueType::ByteList, false, true, buffer_size);
+	test_client->get_root()->add_child(output_component.get());
+	test_client->get_root()->add_child(input_component.get());
+
+	std::array<uint8_t, TEST_BUF_SIZE> send_buffer = { 0xDE, 0xAD, 0xBE, 0xEF };
+	output_component->output()->raw_value()->assign(send_buffer.data(), send_buffer.size());
+
+	int current_wait = 0;
+
+	test_client->connect_cable(input_component->input(), output_component->output());
+	output_component->output()->fire();
+	while (input_component->num_hits < 1 && ++current_wait < 10000) {
+		test_client->poll_once();
+	}
+	//BOOST_TEST(input_component->num_hits);
+
+	std::array<uint8_t, TEST_BUF_SIZE> recv_buffer;
+	std::copy(input_component->input()->raw_value()->byte_buffer(), input_component->input()->raw_value()->byte_buffer() + input_component->input()->raw_value()->size(), &recv_buffer[0]);
+	bool equal = send_buffer == recv_buffer;
+	BOOST_TEST(equal);
+#undef TEST_BUF_SIZE
+}
+
+
 //BOOST_FIXTURE_TEST_CASE(send_string, FixtureJoinServer) {
 //	std::unique_ptr<OutputComponent> output_component = std::make_unique<OutputComponent>("connect_test_out", true, ZstValueType::FloatList);
 //	std::unique_ptr<InputComponent> input_component = std::make_unique<InputComponent>("connect_test_in", true, ZstValueType::StrList);
@@ -578,3 +607,35 @@ BOOST_FIXTURE_TEST_CASE(send_bytes, FixtureJoinServer) {
 //	char* val = "";
 //	BOOST_TEST(input_component->input()->string_at(val, 0) == first_cmp_val);
 //}
+
+BOOST_FIXTURE_TEST_CASE(buffer_ownership, FixtureJoinServer) {
+#define TEST_BUF_SIZE 4
+	size_t buffer_size = TEST_BUF_SIZE;
+	std::unique_ptr<OutputComponent> output_component = std::make_unique<OutputComponent>("connect_test_out", true, ZstValueType::ByteList, buffer_size);
+	std::unique_ptr<InputComponent> input_component = std::make_unique<InputComponent>("connect_test_in", 0, true, ZstValueType::ByteList, false, true, buffer_size);
+	test_client->get_root()->add_child(output_component.get());
+	test_client->get_root()->add_child(input_component.get());
+
+
+	auto send_cmp = std::array<uint8_t, TEST_BUF_SIZE>{ 0xDE, 0xAD, 0xBE, 0xEF };
+	uint8_t* send_buffer = new uint8_t[TEST_BUF_SIZE]{ 0xDE, 0xAD, 0xBE, 0xEF };
+	output_component->output()->raw_value()->take(send_buffer, TEST_BUF_SIZE);
+
+	int current_wait = 0;
+
+	test_client->connect_cable(input_component->input(), output_component->output());
+	output_component->output()->fire();
+	while (input_component->num_hits < 1 && ++current_wait < 10000) {
+		test_client->poll_once();
+	}
+	BOOST_TEST(send_buffer == input_component->input()->raw_value()->byte_buffer());
+	BOOST_TEST(input_component->input()->raw_value()->release() == send_buffer);
+
+	// Make sure that we can release the taken buffer
+	input_component->input()->raw_value()->clear();
+	std::array<uint8_t, TEST_BUF_SIZE> send_data;
+	std::copy(send_buffer, send_buffer + TEST_BUF_SIZE, &send_data[0]);
+	BOOST_TEST(send_cmp == send_data);
+
+#undef TEST_BUF_SIZE
+}

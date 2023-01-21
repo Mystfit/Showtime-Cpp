@@ -78,7 +78,9 @@ set(ZST_CORE_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/ZstZMQRefCounter.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessage.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMsgID.h"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstValue.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstDynamicValue.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstFixedValue.h"
+    "${CMAKE_CURRENT_LIST_DIR}/ZstValueUtils.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessagePool.hpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstStageMessage.h"
     "${CMAKE_CURRENT_LIST_DIR}/ZstServerBeaconMessage.h"
@@ -144,7 +146,8 @@ set(ZST_CORE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstURI.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstSerialisable.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstSynchronisable.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/ZstValue.cpp"    
+    "${CMAKE_CURRENT_LIST_DIR}/ZstDynamicValue.cpp"   
+    "${CMAKE_CURRENT_LIST_DIR}/ZstFixedValue.cpp"    
     "${CMAKE_CURRENT_LIST_DIR}/ZstStageMessage.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstMessage.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ZstServerBeaconMessage.cpp"
@@ -210,7 +213,7 @@ source_group( "showtime\\schemas" FILES ${ZST_CORE_SCHEMA_HEADERS})
 
 # Add sources to object library so that we don't have to recompile shared and static libs
 target_sources(${CORE_TARGET_OBJECTS} PRIVATE 
-    # ${ZST_CORE_HEADERS} 
+    ${ZST_CORE_HEADERS} 
     ${ZST_CORE_SRC} 
     ${ZST_CORE_MODULE_HEADERS}
     ${ZST_CORE_MODULE_SRC}
@@ -237,6 +240,7 @@ endif()
 # Target definitions
 set(GLOBAL_PUBLIC_DEFINES
     BOOST_THREAD_USE_LIB
+    # BOOST_THREAD_VERSION=4
 )
 
 if(BUILD_DRAFTS)

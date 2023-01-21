@@ -1,6 +1,9 @@
+#include <boost/dll/alias.hpp>
 #include "plugin.h"
 
 namespace showtime {
+	BOOST_DLL_ALIAS(CoreEntities::create, create_plugin);
+
 	CoreEntities::CoreEntities() : ZstPlugin()
 	{
 		std::unique_ptr<ZstEntityFactory> math_factory = std::make_unique<MathEntityFactory>("math_entities");

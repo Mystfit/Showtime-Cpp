@@ -1,6 +1,5 @@
 #pragma once
 
-#include <boost/dll/alias.hpp>
 #include <showtime/ZstPlugin.h>
 #include <showtime/ZstExports.h>
 #include "MathEntityFactory.h"
@@ -25,5 +24,3 @@ namespace showtime {
 		ZST_PLUGIN_EXPORT virtual int version_patch() override;
 	};
 }
-
-BOOST_DLL_ALIAS(showtime::CoreEntities::create, create_plugin);

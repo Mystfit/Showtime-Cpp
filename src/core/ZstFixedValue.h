@@ -1,72 +1,34 @@
 #pragma once
 
-//A ZstDynamicValue is a generic value that represents some data 
+//A ZstFixedValue is a generic value that represents some data 
 //sent from one ZstPlug to another
 
 #include <vector>
+#include <span>
 #include <iostream>
+#include <memory>
+#include <mutex>
+#include <boost/variant.hpp>
+
 #include <showtime/ZstConstants.h>
 #include <showtime/ZstExports.h>
 #include <showtime/ZstConstants.h>
 #include <showtime/ZstIValue.h>
 
-#include <mutex>
-
-#include <boost/variant.hpp>
 
 //Typedefs
 
 namespace showtime {
 
-	typedef boost::variant<int, float, std::string, uint8_t> ZstValueVariant;
 
-	namespace ZstValueDetails {
-		class ZstValueIntVisitor : public boost::static_visitor<int>
-		{
-		public:
-			int operator()(int i) const;
-			int operator()(float f) const;
-			int operator()(const std::string& str) const;
-			int operator()(const uint8_t& b) const;
-		};
-
-		class ZstValueFloatVisitor : public boost::static_visitor<float>
-		{
-		public:
-			float operator()(int i) const;
-			float operator()(float f) const;
-			float operator()(const std::string& str) const;
-			float operator()(const uint8_t& b) const;
-		};
-
-		class ZstValueStrVisitor : public boost::static_visitor<std::string>
-		{
-		public:
-			std::string operator()(int i) const;
-			std::string operator()(float f) const;
-			std::string operator()(const std::string& str) const;
-			std::string operator()(const uint8_t& b) const;
-		};
-
-		class ZstValueByteVisitor : public boost::static_visitor<uint8_t>
-		{
-		public:
-			uint8_t operator()(int i) const;
-			uint8_t operator()(float f) const;
-			uint8_t operator()(const std::string& str) const;
-			uint8_t operator()(const uint8_t& b) const;
-		};
-	}
-
-
-class ZstDynamicValue : public ZstIValue {
+class ZstFixedValue : public ZstIValue {
 public:
-	ZST_EXPORT ZstDynamicValue();
-	ZST_EXPORT ZstDynamicValue(const ZstDynamicValue & other);
-	ZST_EXPORT ZstDynamicValue(ZstValueType t);
-	ZST_EXPORT ZstDynamicValue(const PlugValue* buffer);
+	ZST_EXPORT ZstFixedValue();
+	ZST_EXPORT ZstFixedValue(const ZstFixedValue & other);
+	ZST_EXPORT ZstFixedValue(ZstValueType t, int fixed_size = -1);
+	ZST_EXPORT ZstFixedValue(const PlugValue* buffer);
 
-	ZST_EXPORT virtual ~ZstDynamicValue();
+	ZST_EXPORT virtual ~ZstFixedValue();
 
 	ZST_EXPORT ZstValueType get_default_type() const override;
 	ZST_EXPORT void clear() override;
@@ -84,6 +46,12 @@ public:
 	//ZST_EXPORT void assign(const char** newData, size_t count)  override;
 	ZST_EXPORT void assign(const uint8_t* newData, size_t count)  override;
 
+	ZST_EXPORT virtual void take(int* newData, size_t count) override;
+	ZST_EXPORT virtual void take(float* newData, size_t count) override;
+	ZST_EXPORT virtual void take(char** newData, size_t count) override;
+	ZST_EXPORT virtual void take(uint8_t* newData, size_t count) override;
+	ZST_EXPORT virtual void* release() override;
+
 	ZST_EXPORT void append(const int& value) override;
 	ZST_EXPORT void append(const float& value) override;
 	ZST_EXPORT void append(const char* value, const size_t size) override;
@@ -97,6 +65,7 @@ public:
 
 	ZST_EXPORT const size_t size() const override;	
 	ZST_EXPORT const size_t size_at(const size_t position) const override;
+	ZST_EXPORT virtual int fixed_size() const override;
 
 	ZST_EXPORT const int* int_buffer() const override;
 	ZST_EXPORT const float* float_buffer() const override;
@@ -114,30 +83,27 @@ public:
 	ZST_EXPORT void deserialize(const PlugValue* buffer) override;
 	ZST_EXPORT void deserialize_partial(const PlugValue* buffer) override;
 
+private:
 	template<typename Visitor_T, typename Primitive_T, typename IncomingBuffer_T>
-	void copy_from_buffer(ZstValueType incoming_type, const IncomingBuffer_T* buffer, size_t size, std::vector<Primitive_T>& destination)
+	void copy_from_buffer(ZstValueType incoming_type, const IncomingBuffer_T* buffer, size_t size, Primitive_T* destination)
 	{
-		destination.resize(size);
+		std::lock_guard<std::mutex> lock(m_lock);
 		if(incoming_type == m_default_type) {
-			std::lock_guard<std::mutex> lock(m_lock);
-			std::copy(buffer, buffer + size, destination.begin());
+			std::copy(buffer, buffer + m_fixed_size, destination);
 			return;
 		}
 
-		for (size_t idx = 0; idx < size; ++idx) {
-			//Primitive_T val = static_cast<Primitive_T>();
-			std::lock_guard<std::mutex> lock(m_lock);
+		for (size_t idx = 0; idx < m_fixed_size; ++idx) {
 			destination[idx] = boost::apply_visitor(Visitor_T(), ZstValueVariant(buffer[idx]));
 		}
 	}
 
 	template<typename Visitor_T, typename Primitive_T, typename IncomingBuffer_T>
-	void copy_strings_from_buffer(ZstValueType incoming_type, const IncomingBuffer_T* buffer, size_t size, std::vector<Primitive_T>& destination)
+	void copy_strings_from_buffer(ZstValueType incoming_type, const IncomingBuffer_T* buffer, size_t size, std::vector<Primitive_T>* destination)
 	{
-		destination.resize(size);
+		//destination.resize(size);
 
-		for (size_t idx = 0; idx < size; ++idx) {
-			std::lock_guard<std::mutex> lock(m_lock);
+		for (size_t idx = 0; idx < m_fixed_size; ++idx) {
 			if (incoming_type == m_default_type)
 				destination[idx] = buffer->GetAsString(idx)->str();
 			else
@@ -145,17 +111,20 @@ public:
 		}
 	}
 
-
 protected:
-	//std::vector<ZstValueVariant> m_dynamic_values;
-	std::vector<int> m_int_buffer;
-	std::vector<float> m_float_buffer;
-	std::vector<std::string> m_string_buffer;
-	std::vector<uint8_t> m_byte_buffer;
+	ZstValueType m_default_type = ZstValueType::IntList;
 
-	ZstValueType m_default_type;
+	int m_fixed_size = -1;
+	size_t m_append_cursor_idx = 0;
+	std::unique_ptr<int[]> m_int_fixed_data = nullptr;
+	std::unique_ptr<float[]> m_float_fixed_data = nullptr;
+	std::unique_ptr<std::vector<std::string> > m_str_fixed_data = nullptr;
+	std::unique_ptr<uint8_t[]> m_byte_fixed_data = nullptr;
+	 
 
 private:
+	void allocate_fixed_buffers();
+
 	std::mutex m_lock;
 };
 

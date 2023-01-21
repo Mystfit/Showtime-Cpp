@@ -104,8 +104,8 @@ namespace showtime
 
     void ZstComputeComponent::init_compute_plugs()
     {
-        m_compute_incoming_plug = std::make_shared<ZstInputPlug>("execute", ZstValueType::IntList, -1, true);
-        m_compute_outgoing_plug = std::make_shared<ZstOutputPlug>("then", ZstValueType::IntList, 1);
+        m_compute_incoming_plug = std::make_shared<ZstInputPlug>("execute", ZstValueType::IntList, -1, true, true, 1);
+        m_compute_outgoing_plug = std::make_shared<ZstOutputPlug>("then", ZstValueType::IntList, 1, 1);
     }
 
     void ZstComputeComponent::cache_execution_order()

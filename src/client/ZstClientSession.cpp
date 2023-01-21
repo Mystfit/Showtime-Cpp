@@ -1,7 +1,6 @@
 #include "ZstClientSession.h"
 #include "../core/transports/ZstStageTransport.h"
 #include "../core/ZstPerformanceMessage.h"
-#include "../core/ZstValue.h"
 #include <showtime/entities/ZstComputeComponent.h>
 
 using namespace flatbuffers;

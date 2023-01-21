@@ -23,6 +23,12 @@ namespace showtime {
 		ZST_EXPORT virtual void assign_strings(const char** newData, size_t count) = 0;
 		ZST_EXPORT virtual void assign(const uint8_t* newData, size_t count) = 0;
 
+		ZST_EXPORT virtual void take(int* newData, size_t count) = 0;
+		ZST_EXPORT virtual void take(float* newData, size_t count) = 0;
+		ZST_EXPORT virtual void take(char** newData, size_t count) = 0;
+		ZST_EXPORT virtual void take(uint8_t* newData, size_t count) = 0;
+		ZST_EXPORT virtual void* release() = 0;
+
 		ZST_EXPORT virtual void append(const int& value) = 0;
 		ZST_EXPORT virtual void append(const float& value) = 0;
 		ZST_EXPORT virtual void append(const char* value, const size_t size) = 0;
@@ -35,6 +41,7 @@ namespace showtime {
 
 		ZST_EXPORT virtual const size_t size() const = 0;
 		ZST_EXPORT virtual const size_t size_at(const size_t position) const = 0;
+		ZST_EXPORT virtual int fixed_size() const = 0;
 
 		ZST_EXPORT virtual const int* int_buffer() const = 0;
 		ZST_EXPORT virtual const float* float_buffer() const = 0;

@@ -50,6 +50,12 @@ target_link_libraries(${SERVER_TARGET_OBJECTS}
   ${SHOWTIME_PRIVATE_LINKED_LIBS}
 )
 
+set(PLUGIN_COMPILE_OPTS "")
+if(WIN32)
+  # Server objects are too large as of boost 1.81
+  list(APPEND PLUGIN_COMPILE_OPTS /bigobj)
+endif()
+target_compile_options(${SERVER_TARGET_OBJECTS} PRIVATE ${PLUGIN_COMPILE_OPTS})
 target_compile_definitions(${SERVER_TARGET_OBJECTS} PRIVATE ZST_EXPORT_SERVER_API)
 
 # Prefer linking against shared library if possible over static

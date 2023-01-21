@@ -5,7 +5,8 @@
 #include <showtime/entities/ZstPlug.h>
 #include <showtime/ZstCable.h>
 
-#include "../ZstValue.h"
+#include "../ZstFixedValue.h"
+#include "../ZstDynamicValue.h"
 #include "../ZstEventDispatcher.hpp"
 #include "../adaptors/ZstGraphTransportAdaptor.hpp"
 #include "../ZstHierarchy.h"
@@ -20,6 +21,15 @@ static const FlatbuffersPlugDirectionMap plug_direction_lookup = boost::assign::
     (ZstPlugDirection::NONE, PlugDirection_NONE)
     (ZstPlugDirection::IN_JACK, PlugDirection_IN_JACK)
     (ZstPlugDirection::OUT_JACK, PlugDirection_OUT_JACK);
+
+
+typedef boost::bimap<ZstValueType, PlugValueData> FlatbuffersValueMap;
+static const FlatbuffersValueMap value_type_lookup = boost::assign::list_of< FlatbuffersValueMap::relation >
+(ZstValueType::NONE, PlugValueData::PlugValueData_NONE)
+(ZstValueType::IntList, PlugValueData::PlugValueData_IntList)
+(ZstValueType::FloatList, PlugValueData::PlugValueData_FloatList)
+(ZstValueType::StrList, PlugValueData::PlugValueData_StrList)
+(ZstValueType::ByteList, PlugValueData::PlugValueData_PlugHandshake);
 
 //--------------------
 // ZstPlug
@@ -36,20 +46,25 @@ ZstPlug::ZstPlug() :
     set_entity_type(ZstEntityType::PLUG);
 }
 
-ZstPlug::ZstPlug(const char * name, const ZstValueType& t, const ZstPlugDirection& direction, int max_cables, bool reliable) :
+ZstPlug::ZstPlug(const char * name, const ZstValueType& t, const ZstPlugDirection& direction, int max_cables, bool reliable, int fixed_size) :
     ZstEntityBase(name),
-    m_value(std::make_unique<ZstDynamicValue>(t)),
+    m_value(nullptr),
     m_direction(direction),
     m_reliable(reliable),
     m_max_connected_cables(max_cables)
 {
-    //init_value(t);
+    // Create value
+    if (fixed_size > -1)
+        m_value = std::make_unique<ZstFixedValue>(t, fixed_size);
+    else 
+        m_value = std::make_unique<ZstDynamicValue>(t);
+
     set_entity_type(ZstEntityType::PLUG);
 }
     
 ZstPlug::ZstPlug(const Plug* buffer) : 
 	ZstEntityBase(),
-    m_value(std::make_unique<ZstDynamicValue>()),
+    m_value(nullptr),
 	m_direction(ZstPlugDirection::NONE),
     m_reliable(true),
 	m_max_connected_cables(PLUG_DEFAULT_MAX_CABLES)
@@ -70,15 +85,15 @@ ZstPlug::ZstPlug(const ZstPlug & other) :
 {
 }
 
-void ZstPlug::init_value()
-{
-    m_value = std::make_unique<ZstDynamicValue>();
-}
-
-void ZstPlug::init_value(const ZstValueType& val_type)
-{
-    m_value = std::make_unique<ZstDynamicValue>(val_type);
-}
+//void ZstPlug::init_value()
+//{
+//    m_value = std::make_unique<ZstDynamicValue>();
+//}
+//
+//void ZstPlug::init_value(const ZstValueType& val_type)
+//{
+//    m_value = std::make_unique<ZstDynamicValue>(val_type);
+//}
 
 ZstPlug::~ZstPlug() {
     m_cables.clear();
@@ -153,7 +168,18 @@ const size_t ZstPlug::size_at(const size_t position) const
 
 void ZstPlug::swap_values(ZstPlug* other)
 {
-    m_value.swap(other->m_value);
+    if (m_value->fixed_size() >= 0) {
+        if (m_value->size() == other->size()) {
+            m_value.swap(other->m_value);
+        }
+        else {
+            // Fixed size buffers don't match - copy
+            m_value->copy(other->m_value.get());
+        }
+    }
+    else {
+        m_value.swap(other->m_value);
+    }
 }
 
 ZstIValue * ZstPlug::raw_value()
@@ -183,11 +209,14 @@ flatbuffers::uoffset_t ZstPlug::serialize(FlatBufferBuilder& buffer_builder) con
     
 void ZstPlug::serialize_partial(flatbuffers::Offset<PlugData> & serialized_offset, flatbuffers::FlatBufferBuilder& buffer_builder) const
 {
-    serialized_offset = CreatePlugData(buffer_builder, 
-        plug_direction_lookup.left.at(m_direction), 
+    serialized_offset = CreatePlugData(
+        buffer_builder,
+        plug_direction_lookup.left.at(m_direction),
         m_reliable,
-        m_max_connected_cables, 
-        m_value->serialize(buffer_builder)
+        m_max_connected_cables,
+        m_value->serialize(buffer_builder),
+        m_value->fixed_size() > -1 ? ValueSizeType::ValueSizeType_FIXED : ValueSizeType::ValueSizeType_DYNAMIC,
+        m_value->fixed_size()
     );
 }
     
@@ -195,6 +224,14 @@ void ZstPlug::deserialize_partial(const PlugData* buffer)
 {
     if (!buffer) return;
 
+    // Create value
+    if (!m_value) {
+        if (buffer->size_type() == ValueSizeType::ValueSizeType_FIXED)
+            m_value = std::make_unique<ZstFixedValue>(value_type_lookup.right.at(buffer->value()->values_type()), buffer->fixed_size());
+        else
+            m_value = std::make_unique<ZstDynamicValue>(value_type_lookup.right.at(buffer->value()->values_type()));
+    }
+    
 	m_value->deserialize(buffer->value());
     m_direction = plug_direction_lookup.right.at(buffer->plug_direction());
     m_reliable = buffer->reliable();
@@ -316,8 +353,8 @@ ZstInputPlug::ZstInputPlug(const ZstInputPlug & other) :
 {
 }
 
-ZstInputPlug::ZstInputPlug(const char * name, const ZstValueType& t, int max_cables, bool triggers_compute, bool reliable) :
-    ZstPlug(name, t, ZstPlugDirection::IN_JACK, max_cables, reliable),
+ZstInputPlug::ZstInputPlug(const char * name, const ZstValueType& t, int max_cables, bool triggers_compute, bool reliable, int fixed_size) :
+    ZstPlug(name, t, ZstPlugDirection::IN_JACK, max_cables, reliable, fixed_size),
     m_triggers_compute(triggers_compute)
 {
 }
@@ -379,8 +416,8 @@ ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug& other) :
 {
 }
 
-ZstOutputPlug::ZstOutputPlug(const char * name, const ZstValueType& t, bool reliable) :
-    ZstPlug(name, t, ZstPlugDirection::OUT_JACK, -1, reliable),
+ZstOutputPlug::ZstOutputPlug(const char * name, const ZstValueType& t, bool reliable, int fixed_size) :
+    ZstPlug(name, t, ZstPlugDirection::OUT_JACK, -1, reliable, fixed_size),
     m_graph_out_events(std::make_shared< ZstEventDispatcher<ZstGraphTransportAdaptor> >()),
     m_can_fire(false)
 {
