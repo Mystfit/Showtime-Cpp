@@ -477,7 +477,7 @@ void ZstClient::server_discovery_handler(const std::shared_ptr<ZstServerBeaconMe
 }
 
 ZstServerAddress ZstClient::server_beacon_to_address(const std::shared_ptr<ZstServerBeaconMessage>& msg) {
-    return ZstServerAddress{ msg->buffer()->name()->str(), fmt::format("{}:{}", msg->address(), msg->buffer()->port()) };
+    return ZstServerAddress{ msg->buffer()->name()->str(), std::format("{}:{}", msg->address(), msg->buffer()->port()) };
 }
 
 const ZstServerList& ZstClient::get_discovered_servers() const

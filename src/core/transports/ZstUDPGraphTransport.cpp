@@ -6,8 +6,11 @@
 #include <boost/asio/placeholders.hpp>
 #include <boost/thread/futures/wait_for_all.hpp>
 #include <sstream>
-#include "../boost_use_future.hpp"
+#include <format>
 
+#include "../boost_use_future.hpp"
+//#include <future>
+//#include <boost/asio/use_future.hpp>
 
 using namespace boost::asio::ip;
 
@@ -173,12 +176,12 @@ namespace showtime
 					pointer += sizeof(struct STUNAttributeHeader);
 					struct STUNXORMappedIPv4Address* xorAddress = (struct STUNXORMappedIPv4Address*)pointer;
 					unsigned int numAddress = htonl(xorAddress->address) ^ 0x2112A442;
-					address = fmt::format("{}.{}.{}.{}:{}",
+					address = std::vformat("{}.{}.{}.{}:{}", std::make_format_args(
 						(numAddress >> 24) & 0xFF,
 						(numAddress >> 16) & 0xFF,
 						(numAddress >> 8) & 0xFF,
 						numAddress & 0xFF,
-						ntohs(xorAddress->port) ^ 0x2112);
+						ntohs(xorAddress->port) ^ 0x2112));
 
 					//m_udp_sock->close();
 					free(request);
@@ -277,19 +280,20 @@ namespace showtime
 
 	void ZstUDPGraphTransport::send_message_impl(std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs& args) const
 	{
-		std::vector<boost::future<size_t>> futures;
+		//std::vector<boost::future<size_t>> futures;
 
-		// Broadcast message to all connected endpoints
+		//// Broadcast message to all connected endpoints
 		for (const auto& endpoint : m_destination_endpoints) {
-			auto future = m_udp_sock->async_send_to(boost::asio::buffer(buffer_builder->GetBufferPointer(), buffer_builder->GetSize()), endpoint.endpoint, boost::asio::use_boost_future);
-			futures.push_back(std::move(future));
+			//auto future = m_udp_sock->async_send_to(boost::asio::buffer(buffer_builder->GetBufferPointer(), buffer_builder->GetSize()), endpoint.endpoint, boost::asio::use_boost_future);
+			//futures.push_back(std::move(future));
+			m_udp_sock->send_to(boost::asio::buffer(buffer_builder->GetBufferPointer(), buffer_builder->GetSize()), endpoint.endpoint);
 		}
 
-		// Release flatbuffer message by capturing it in a lambda
-		auto cleanup = boost::when_all(futures.begin(), futures.end());
-		cleanup.then([buffer_builder](decltype(cleanup)){
-			Log::net(Log::Level::debug, "");
-		});
+		//// Release flatbuffer message by capturing it in a lambda
+		//auto cleanup = boost::when_all(futures.begin(), futures.end());
+		//cleanup.then([buffer_builder](decltype(cleanup)){
+		//	Log::net(Log::Level::debug, "");
+		//});
 	}
 
 	void ZstUDPGraphTransport::handle_send(const boost::system::error_code& error, std::size_t length)

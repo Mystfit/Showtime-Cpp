@@ -214,7 +214,7 @@ BOOST_FIXTURE_TEST_CASE(create_entity_from_local_factory, FixtureLocalFactory) {
 	auto entity = test_client->create_entity(bundle[0], "brand_spanking_new");
 	BOOST_TEST(entity);
 	BOOST_TEST(test_client->find_entity(created_entity_URI));
-	BOOST_TEST_MESSAGE(fmt::format("Entity {} leaving scope", created_entity_URI.path()));
+	BOOST_TEST_MESSAGE(std::format("Entity {} leaving scope", created_entity_URI.path()));
 }
 
 BOOST_FIXTURE_TEST_CASE(factory_owned_entity_destruction, FixtureJoinServer) {

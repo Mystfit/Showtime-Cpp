@@ -1,6 +1,7 @@
 #include "ZstClientSession.h"
 #include "../core/transports/ZstStageTransport.h"
 #include "../core/ZstPerformanceMessage.h"
+#include <format>
 #include <showtime/entities/ZstComputeComponent.h>
 
 using namespace flatbuffers;
@@ -181,7 +182,7 @@ ZstCable * ZstClientSession::connect_cable(ZstInputPlug * input, ZstOutputPlug *
 			args.msg_send_behaviour = sendtype;
 			args.on_recv_response = [this, cable](ZstMessageResponse response) { 
                 if (ZstStageTransport::verify_signal(response.response, Signal_OK, 
-                    fmt::format("Cable connect ({}-->{})", 
+                    std::format("Cable connect ({}-->{})", 
                                 cable->get_address().get_output_URI().path(), 
                                 cable->get_address().get_input_URI().path())
                 )) {
@@ -262,7 +263,7 @@ bool ZstClientSession::observe_entity(ZstEntityBase * entity, const ZstTransport
     
 void ZstClientSession::observe_entity_complete(ZstMessageResponse response, ZstEntityBase * entity)
 {
-    if (ZstStageTransport::verify_signal(response.response, Signal_OK, fmt::format("Observer entity {}", entity->URI().path())))
+    if (ZstStageTransport::verify_signal(response.response, Signal_OK, std::format("Observer entity {}", entity->URI().path())))
         Log::net(Log::Level::debug, "Observing entity {} completed successfully", entity->URI().path());
 }
 

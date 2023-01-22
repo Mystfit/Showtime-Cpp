@@ -1,6 +1,7 @@
 #include "ZstSTUNService.h"
 #include <czmq.h>
 #include <memory>
+#include <format>
 #include <boost/exception/diagnostic_information.hpp>
 #include <showtime/ZstLogging.h>
 
@@ -80,12 +81,12 @@ namespace showtime {
 					pointer += sizeof(struct STUNAttributeHeader);
 					struct STUNXORMappedIPv4Address* xorAddress = (struct STUNXORMappedIPv4Address*)pointer;
 					unsigned int numAddress = htonl(xorAddress->address) ^ STUN_MAGIC_COOKIE;
-					std::string address = fmt::format("{}.{}.{}.{}:{}",
+					std::string address = std::vformat("{}.{}.{}.{}:{}", std::make_format_args(
 						(numAddress >> 24) & 0xFF,
 						(numAddress >> 16) & 0xFF,
 						(numAddress >> 8) & 0xFF,
 						numAddress & 0xFF,
-						ntohs(xorAddress->port) ^ STUN_XOR_PORT_COOKIE);
+						ntohs(xorAddress->port) ^ STUN_XOR_PORT_COOKIE));
 
 					out_address = address;
 					return STUNError::VALID;

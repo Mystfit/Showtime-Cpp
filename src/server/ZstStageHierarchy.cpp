@@ -62,10 +62,10 @@ void ZstStageHierarchy::on_performer_arriving(ZstPerformer* performer)
 void ZstStageHierarchy::client_leaving(ZstPerformer* performer, const ClientLeaveReason& reason)
 {
 	if (reason == ClientLeaveReason_QUIT) {
-		Log::server(Log::Level::notification, "Performer {} leaving", reason);
+		Log::server(Log::Level::notification, "Performer {} leaving", performer->URI().path());
 	}
 	else {
-		Log::server(Log::Level::warn, "Performer {} left with reason {}", reason, EnumNameClientLeaveReason(reason));
+		Log::server(Log::Level::warn, "Performer {} left with reason {}", performer->URI().path(), EnumNameClientLeaveReason(reason));
 	}
 
 	remove_proxy_entity(performer);

@@ -45,7 +45,7 @@ namespace showtime::detail
 
 		// Set up transports
 		m_router_transport->init();
-		m_router_transport->bind(fmt::format("*:{}", (port > 0) ? std::to_string(port) : "*"));
+		m_router_transport->bind(std::format("*:{}", (port > 0) ? std::to_string(port) : "*"));
 		m_websocket_transport->init();
 		m_websocket_transport->bind("127.0.0.1");
 

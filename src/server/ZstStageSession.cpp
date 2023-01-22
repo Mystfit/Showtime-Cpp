@@ -403,7 +403,7 @@ void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, Zst
 	ZstTransportArgs receiver_args;
 	receiver_args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
 	receiver_args.on_recv_response = [this, output_client, output_path, input_client, input_path, on_msg_received, connection_type](ZstMessageResponse response) {
-		if (ZstStageTransport::verify_signal(response.response, Signal_OK, fmt::format("P2P client connection ({} --> {})", output_path.path(), input_path.path()))) {
+		if (ZstStageTransport::verify_signal(response.response, Signal_OK, std::format("P2P client connection ({} --> {})", output_path.path(), input_path.path()))) {
 			complete_client_connection(output_client, input_client, connection_type);
 			on_msg_received(response);
 		}

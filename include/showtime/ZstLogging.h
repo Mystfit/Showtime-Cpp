@@ -1,20 +1,21 @@
 #pragma once
 #include <streambuf>
 #include <ostream>
+#include <format>
 
-#ifndef FMT_HEADER_ONLY
-	#define FMT_HEADER_ONLY
-	#if defined(WIN32) && !defined(WIN32_LEAN_AND_MEAN)
-		#define WIN32_LEAN_AND_MEAN
-		#include <fmt/format.h>
-		#undef WIN32_LEAN_AND_MEAN
-	#else
-		#include <fmt/format.h>
-	#endif
-	#undef FMT_HEADER_ONLY
-#else //FMT_HEADER_ONLY
-	#include <fmt/format.h>
-#endif
+// #ifndef FMT_HEADER_ONLY
+// 	#define FMT_HEADER_ONLY
+// 	#if defined(WIN32) && !defined(WIN32_LEAN_AND_MEAN)
+// 		#define WIN32_LEAN_AND_MEAN
+// 		#include <fmt/format.h>
+// 		#undef WIN32_LEAN_AND_MEAN
+// 	#else
+// 		#include <fmt/format.h>
+// 	#endif
+// 	#undef FMT_HEADER_ONLY
+// #else //FMT_HEADER_ONLY
+// 	#include <fmt/format.h>
+// #endif
 
 #include <showtime/ZstExports.h>
 
@@ -91,7 +92,7 @@ namespace showtime {
 		template <typename... Args>
 		inline void net(Level level, const char* msg, const Args&... vars)
 		{
-			internals::net_sink_message(level, fmt::format(msg, vars...).c_str());
+			internals::net_sink_message(level, std::vformat(std::string_view(msg), std::make_format_args(vars...)).c_str());
 		}
 
 		inline void net(Level level, const char* msg)
@@ -102,7 +103,7 @@ namespace showtime {
 		template <typename... Args>
 		inline void server(Level level, const char* msg, const Args&... vars)
 		{
-			internals::server_sink_message(level, fmt::format(msg, vars...).c_str());
+			internals::server_sink_message(level, std::vformat(std::string_view(msg), std::make_format_args(vars...)).c_str());
 		}
 
 		inline void server(Level level, const char* msg)
@@ -113,7 +114,7 @@ namespace showtime {
 		template <typename... Args>
 		inline void entity(Level level, const char* msg, const Args&... vars)
 		{
-			internals::entity_sink_message(level, fmt::format(msg, vars...).c_str());
+			internals::entity_sink_message(level, std::vformat(std::string_view(msg), std::make_format_args(vars...)).c_str());
 		}
 
 		inline void entity(Level level, const char* msg)
@@ -124,7 +125,7 @@ namespace showtime {
 		template <typename... Args>
 		inline void app(Level level, const char* msg, const Args&... vars)
 		{
-			internals::app_sink_message(level, fmt::format(msg, vars...).c_str());
+			internals::app_sink_message(level, std::vformat(std::string_view(msg), std::make_format_args(vars...)).c_str());
 		}
 
 		inline void app(Level level, const char* msg)

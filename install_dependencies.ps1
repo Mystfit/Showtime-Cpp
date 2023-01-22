@@ -2,11 +2,11 @@ param(
     [string]$build_dir="$PSScriptRoot/build",
     [string]$dependency_dir="",
     [string[]]$config=@("release"),
-    [string]$generator="Visual Studio 16 2019",
+    [string]$generator="Visual Studio 17 2022",
     [string]$platform="x64",
-    [string]$toolset="msvc-14.2",
+    [string]$toolset="msvc-14.3",
     [switch]$without_boost = $false,
-    [string]$boost_version = "1.72.0"
+    [string]$boost_version = "1.81.0"
 )
 
 # Valid MSVC toolsets
@@ -14,6 +14,7 @@ $msvc_toolset_versions = @{
     "msvc-14.0" = "v140";
     "msvc-14.1" = "v141";
     "msvc-14.2" = "v142";
+    "msvc-14.3" = "v143";
 }
 $toolset_ver = $msvc_toolset_versions[$toolset]
 

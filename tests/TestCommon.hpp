@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <format>
 #include <showtime/entities/ZstComputeComponent.h>
 #include <showtime/ShowtimeClient.h>
 #include <showtime/ShowtimeServer.h>
@@ -531,7 +532,7 @@ namespace ZstTest
 			test_server = std::make_unique<ShowtimeServer>();
 			test_server->init(server_name.c_str());
 			server_port = test_server->port();
-			server_address = fmt::format("127.0.0.1:{}", server_port);
+			server_address = std::format("127.0.0.1:{}", server_port);
 
 			TAKE_A_BREATH
 			test_client->poll_once();
@@ -740,7 +741,7 @@ bool init_unit_test()
 
 void read_stacktrace() {
 	auto dumpfile = "./backtrace.dump";
-//	auto dumpfile = fmt::format("./{}.dump", boost::dll::program_location().filename().string());
+//	auto dumpfile = std::format("./{}.dump", boost::dll::program_location().filename().string());
 	if (fs::exists(dumpfile)) {
 		// there is a backtrace
 		std::ifstream ifs(dumpfile);

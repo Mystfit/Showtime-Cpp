@@ -2,7 +2,7 @@
 // use_future.hpp
 // ~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2019 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2022 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -38,14 +38,16 @@ class packaged_handler;
 
 } // namespace detail
 
-/// Class used to specify that an asynchronous operation should return a future.
+/// A @ref completion_token type that causes an asynchronous operation to return
+/// a future.
 /**
- * The use_boost_future_t class is used to indicate that an asynchronous operation
- * should return a std::future object. A use_boost_future_t object may be passed as a
- * handler to an asynchronous operation, typically using the special value @c
- * boost::asio::use_future. For example:
+ * The use_boost_future_t class is a completion token type that is used to indicate
+ * that an asynchronous operation should return a boost::future object. A
+ * use_boost_future_t object may be passed as a completion token to an asynchronous
+ * operation, typically using the special value @c boost::asio::use_future. For
+ * example:
  *
- * @code std::future<std::size_t> my_future
+ * @code boost::future<std::size_t> my_future
  *   = my_socket.async_read_some(my_buffer, boost::asio::use_future); @endcode
  *
  * The initiating function (async_read_some in the above example) returns a
@@ -98,11 +100,11 @@ public:
   /**
    * The @c package function is used to adapt a function object as a packaged
    * task. When this adapter is passed as a completion token to an asynchronous
-   * operation, the result of the function object is retuned via a std::future.
+   * operation, the result of the function object is retuned via a boost::future.
    *
    * @par Example
    *
-   * @code std::future<std::size_t> fut =
+   * @code boost::future<std::size_t> fut =
    *   my_socket.async_read_some(buffer,
    *     use_future([](boost::system::error_code ec, std::size_t n)
    *       {
@@ -139,7 +141,8 @@ private:
     std_allocator_void, Allocator>::type allocator_;
 };
 
-/// A special value, similar to std::nothrow.
+/// A @ref completion_token object that causes an asynchronous operation to
+/// return a future.
 /**
  * See the documentation for boost::asio::use_boost_future_t for a usage example.
  */
