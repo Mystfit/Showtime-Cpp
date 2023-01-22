@@ -121,7 +121,7 @@ BOOST_FIXTURE_TEST_CASE(single_server_connection, FixtureInitAndCreateServerWith
 BOOST_FIXTURE_TEST_CASE(sync_join, FixtureInit){
 	auto test_server = std::make_unique<ShowtimeServer>();
 	test_server->init("sync_join", STAGE_ROUTER_PORT);
-	auto server_address = fmt::format("127.0.0.1:{}", STAGE_ROUTER_PORT);
+	auto server_address = std::format("127.0.0.1:{}", STAGE_ROUTER_PORT);
 	//Testing sync join by address
 	test_client->join(server_address.c_str());
 	BOOST_TEST(test_client->is_connected());

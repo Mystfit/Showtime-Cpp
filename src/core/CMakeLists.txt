@@ -68,7 +68,7 @@ list(APPEND Showtime_API_INTERFACE
     ${API_HEADERS}
     ${ENTITY_HEADERS}
     ${ADAPTOR_HEADERS}
-    ${FMT_HEADERS}
+    # ${FMT_HEADERS}
     ${FLATBUFFER_HEADERS}
 )
 
@@ -203,7 +203,7 @@ set(ZST_CORE_LIASON_SRC
 # Source groups
 source_group( "showtime\\entities" FILES ${ENTITY_HEADERS} ${ZST_CORE_ENTITY_SRC})
 source_group( "showtime\\adaptors" FILES ${ADAPTOR_HEADERS} ${ZST_CORE_ADAPTOR_HEADERS} ${ZST_CORE_ADAPTOR_SRC})
-source_group( "showtime\\fmt" FILES ${FMT_HEADERS})
+# source_group( "showtime\\fmt" FILES ${FMT_HEADERS})
 source_group( "showtime\\headers" FILES ${ZST_CORE_HEADERS} ${API_HEADERS})
 source_group( "showtime\\source" FILES ${ZST_CORE_SRC})
 source_group( "showtime\\modules" FILES ${ZST_CORE_MODULE_HEADERS} ${ZST_CORE_MODULE_SRC})

@@ -282,13 +282,13 @@ set(Showtime_HEADER_DEPENDENCIES
 file(MAKE_DIRECTORY ${Showtime_COMPILED_INCLUDE_DIRS})
 
 # TODO: Copy fmt headers but replace with CMake install!
-get_target_property(FMT_INCLUDE_DIR fmt::fmt INTERFACE_INCLUDE_DIRECTORIES)
-get_filename_component(FMT_INCLUDE_DIR_REAL "${FMT_INCLUDE_DIR}/fmt" REALPATH)
-get_filename_component(FMT_INCLUDE_DIR_ABS "${FMT_INCLUDE_DIR_REAL}/../" ABSOLUTE)
-message(STATUS "fmt real dir is ${FMT_INCLUDE_DIR_REAL}")
-message(STATUS "fmt ans dir is ${FMT_INCLUDE_DIR_ABS}")
-file(COPY ${FMT_INCLUDE_DIR_REAL} DESTINATION ${Showtime_COMPILED_INCLUDE_DIRS} FOLLOW_SYMLINK_CHAIN)
-file(GLOB FMT_HEADERS CONFIGURE_DEPENDS "${FMT_INCLUDE_DIR}/fmt/*.h")
+# get_target_property(FMT_INCLUDE_DIR fmt::fmt INTERFACE_INCLUDE_DIRECTORIES)
+# get_filename_component(FMT_INCLUDE_DIR_REAL "${FMT_INCLUDE_DIR}/fmt" REALPATH)
+# get_filename_component(FMT_INCLUDE_DIR_ABS "${FMT_INCLUDE_DIR_REAL}/../" ABSOLUTE)
+# message(STATUS "fmt real dir is ${FMT_INCLUDE_DIR_REAL}")
+# message(STATUS "fmt ans dir is ${FMT_INCLUDE_DIR_ABS}")
+# file(COPY ${FMT_INCLUDE_DIR_REAL} DESTINATION ${Showtime_COMPILED_INCLUDE_DIRS} FOLLOW_SYMLINK_CHAIN)
+# file(GLOB FMT_HEADERS CONFIGURE_DEPENDS "${FMT_INCLUDE_DIR}/fmt/*.h")
 
 # Copy flatbuffers headers but replace with CMake install!
 if(WIN32)
@@ -435,8 +435,8 @@ if(BUILD_SHARED_FROM_STATIC_LIBS)
         ${SERVER_TARGET_OBJECTS}
         ${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS}
         ${SHARED_LINK_OPTIONS_END}
-        PUBLIC
-        ${SHOWTIME_PUBLIC_LINKED_LIBS}
+        # PUBLIC
+        # ${SHOWTIME_PUBLIC_LINKED_LIBS}
     )
     target_include_directories(${SHARED_FROM_STATIC_TARGET} PUBLIC
         ${CORE_INCLUDES}
