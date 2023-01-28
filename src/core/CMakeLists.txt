@@ -108,14 +108,10 @@ set(ZST_CORE_TRANSPORT_HEADERS
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstStageTransport.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstGraphTransport.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTCPGraphTransport.h"
+    "${CMAKE_CURRENT_LIST_DIR}/transports/ZstUDPGraphTransport.h"
     #"${CMAKE_CURRENT_LIST_DIR}/transports/ZstTCPSession.h"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstServiceDiscoveryTransport.h"   
 )
-if(BUILD_DRAFTS)
-    list(APPEND ZST_CORE_TRANSPORT_HEADERS
-        "${CMAKE_CURRENT_LIST_DIR}/transports/ZstUDPGraphTransport.h"
-    )
-endif()
 
 set(ZST_CORE_SCHEMA_HEADERS "")
 list(APPEND ZST_CORE_SCHEMA_HEADERS ${FLATBUFFER_HEADER_OUTPUT})
@@ -161,16 +157,11 @@ set(ZST_CORE_TRANSPORT_SRC
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstStageTransport.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstGraphTransport.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstTCPGraphTransport.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/transports/ZstUDPGraphTransport.cpp"
     #"${CMAKE_CURRENT_LIST_DIR}/transports/ZstTCPSession.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/transports/ZstServiceDiscoveryTransport.cpp"   
 
 )
-if(BUILD_DRAFTS)
-    list(APPEND ZST_CORE_TRANSPORT_SRC
-        "${CMAKE_CURRENT_LIST_DIR}/transports/ZstUDPGraphTransport.cpp"
-    )
-endif()
-
 
 set(ZST_CORE_MODULE_SRC
     "${CMAKE_CURRENT_LIST_DIR}/ZstSession.cpp"
@@ -243,13 +234,11 @@ set(GLOBAL_PUBLIC_DEFINES
     # BOOST_THREAD_VERSION=4
 )
 
-if(BUILD_DRAFTS)
-    list(APPEND GLOBAL_PUBLIC_DEFINES
-        ZMQ_BUILD_DRAFT_API
-        CZMQ_BUILD_DRAFT_API
-        ZST_BUILD_DRAFT_API
-    )
-endif()
+list(APPEND GLOBAL_PUBLIC_DEFINES
+    ZMQ_BUILD_DRAFT_API
+    CZMQ_BUILD_DRAFT_API
+    ZST_BUILD_DRAFT_API
+)
 
 # Platform specific options
 IF(WIN32)

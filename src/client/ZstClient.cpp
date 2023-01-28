@@ -85,9 +85,7 @@ void ZstClient::destroy() {
     m_service_broadcast_transport->destroy();
     m_client_transport->destroy();
     m_tcp_graph_transport->destroy();
-#ifdef ZST_BUILD_DRAFT_API
     m_udp_graph_transport->destroy();
-#endif
 
     //Stop threads
     m_thread_pool.join();

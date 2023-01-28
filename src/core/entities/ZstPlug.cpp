@@ -421,12 +421,6 @@ ZstOutputPlug::ZstOutputPlug(const char * name, const ZstValueType& t, bool reli
     m_graph_out_events(std::make_shared< ZstEventDispatcher<ZstGraphTransportAdaptor> >()),
     m_can_fire(false)
 {
-#ifndef ZST_BUILD_DRAFT_API
-    if(!m_reliable){
-        Log::entity(Log::Level::warn, "Can't use plug {} in unreliable mode, Showtime not compiled with draft API support. Falling back to reliable.", name);
-        m_reliable = true;
-    }
-#endif
 }
 
 ZstOutputPlug::~ZstOutputPlug()

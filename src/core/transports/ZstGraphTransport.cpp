@@ -60,9 +60,7 @@ ZstMessageReceipt ZstGraphTransport::send_msg(flatbuffers::Offset<GraphMessage> 
 void ZstGraphTransport::send_message_impl(std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs & args) const
 {
 	zframe_t * payload_frame = zframe_new(buffer_builder->GetBufferPointer(), buffer_builder->GetSize());
-#ifdef ZST_BUILD_DRAFT_API
 	zframe_set_group(payload_frame, PERFORMANCE_GROUP);
-#endif
 	zsock_t * sock = output_graph_socket();
 	int result = (sock) ? zframe_send(&payload_frame, sock, 0) : -1;
 	if (result < 0) {

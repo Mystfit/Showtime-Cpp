@@ -31,10 +31,8 @@
 #include "../core/ZstPluginLoader.h"
 #include "../core/transports/ZstServiceDiscoveryTransport.h"
 #include "../core/transports/ZstTCPGraphTransport.h"
-#ifdef ZST_BUILD_DRAFT_API
 #include "../core/transports/ZstUDPGraphTransport.h"
 #include "../core/transports/ZstSTUNService.h"
-#endif
 
 //Showtime client includes
 #include "ZstZMQClientTransport.h"
