@@ -312,13 +312,13 @@ namespace ZstTest
 			inc_calls();
 		}
 
-		void on_entity_leaving(const ZstURI& entity_path) override {
-			Log::app(Log::Level::debug, "ENTITY_LEAVING: {}", entity_path.path());
-			last_entity_leaving = entity_path;
+		void on_entity_leaving(ZstEntityBase* entity) override {
+			Log::app(Log::Level::debug, "ENTITY_LEAVING: {}", entity->URI().path());
+			last_entity_leaving = entity->URI();
 			inc_calls();
 		}
 
-		void on_entity_updated(ZstEntityBase* entity) override {
+		void on_entity_updated(ZstEntityBase* entity, const ZstURI& original_path) override {
 			Log::app(Log::Level::debug, "ENTITY_UPDATED: {}", entity->URI().path());
 			last_entity_updated = entity->URI();
 			inc_calls();
@@ -358,9 +358,9 @@ namespace ZstTest
 			inc_calls();
 		}
 
-		void on_performer_leaving(const ZstURI& performer_path) override {
-			Log::app(Log::Level::debug, "PERFORMER_LEAVING: {}", performer_path.path());
-            last_left_performer = performer_path;
+		void on_performer_leaving(ZstPerformer* performer) override {
+			Log::app(Log::Level::debug, "PERFORMER_LEAVING: {}", performer->URI().path());
+            last_left_performer = performer->URI().path();
 			inc_calls();
 		}
 	};

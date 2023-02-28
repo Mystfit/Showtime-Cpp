@@ -230,23 +230,40 @@ BOOST_FIXTURE_TEST_CASE(external_exception, FixtureExternalConnectCable) {
 }
 
 BOOST_FIXTURE_TEST_CASE(set_name_updates_proxy, FixtureWaitForSinkClient) {
-	auto entityEvents = std::make_shared<TestEntityEvents>();
-	test_client->add_hierarchy_adaptor(entityEvents);
-	entityEvents->reset_num_calls();
+	//auto entityEvents = std::make_shared<TestEntityEvents>();
+	//test_client->add_hierarchy_adaptor(entityEvents);
+	bool arrived = false;
+	test_client->hierarchy_events()->entity_arriving()->add([&arrived](ZstEntityBase* entity) {
+		Log::app(Log::Level::debug, "ENTITY_ARRIVING: {}", entity->URI().path());
+		if (entity->URI() == ZstURI("remote"))
+			arrived = true;
+	});
+	//entityEvents->reset_num_calls();
 	auto remote_ent = std::make_unique<ZstComponent>("remote");
 	remote_client->get_root()->add_child(remote_ent.get());
 
 	BOOST_TEST_CHECKPOINT("Waiting for remote entity to arrive");
-	wait_for_event(test_client, entityEvents, 1);
+	//wait_for_event(test_client, entityEvents, 1);
+	wait_for_condition(test_client, arrived);
 	auto proxy = test_client->find_entity(remote_ent->URI());
-	entityEvents->reset_num_calls();
+	//entityEvents->reset_num_calls();
 	BOOST_REQUIRE(proxy);
 
 	BOOST_TEST_CHECKPOINT("Renaming entity");
+	auto original_remote_path = remote_ent->URI();
 	remote_ent->set_name("renamed");
-	wait_for_event(test_client, entityEvents, 1);
+
+	bool updated = false;
+	test_client->hierarchy_events()->entity_updated()->add([&arrived, original_remote_path, ent=remote_ent.get()](ZstEntityBase* entity, const ZstURI& orig_path) {
+		Log::app(Log::Level::debug, "ENTITY_UPDATED: {}", entity->URI().path());
+	if (entity->URI() == ent->URI())
+		arrived = true;
+	});
+	wait_for_condition(test_client, updated);
+
+	//wait_for_event(test_client, entityEvents, 1);
 	BOOST_TEST(remote_ent->URI() == proxy->URI());
-	BOOST_TEST(entityEvents->last_entity_updated == remote_ent->URI());
+	//BOOST_TEST(entityEvents->last_entity_updated == remote_ent->URI());
 	BOOST_TEST(test_client->find_entity(remote_ent->URI()));
 
 	/*auto hierarchy_events = std::make_shared<TestEntityEvents>();

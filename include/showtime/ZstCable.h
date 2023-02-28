@@ -62,6 +62,7 @@ public:
 
 
 private:
+    void update_address(const ZstCableAddress& address);
     ZstEntityBase* get_entity(const ZstURI& entity_path) const;
     ZstCableAddress m_address;
     std::shared_ptr<ZstEventDispatcher<ZstHierarchyAdaptor> > m_hierarchy_events;

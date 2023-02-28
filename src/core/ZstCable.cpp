@@ -142,6 +142,11 @@ void ZstCable::remove_adaptor(std::shared_ptr<ZstHierarchyAdaptor> adaptor)
 	m_hierarchy_events->remove_adaptor(adaptor);
 }
 
+void ZstCable::update_address(const ZstCableAddress& address)
+{
+	m_address = address;
+}
+
 ZstEntityBase* ZstCable::get_entity(const ZstURI& entity_path) const
 {
 	ZstEntityBase* out_entity = nullptr;

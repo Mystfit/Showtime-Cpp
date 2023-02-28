@@ -70,10 +70,10 @@ public:
 		inc_calls();
 	}
 
-	void on_factory_leaving(const ZstURI& factory_path) override
+	void on_factory_leaving(ZstEntityFactory* factory) override
 	{
-		Log::app(Log::Level::debug, "FACTORY_LEAVING: {}", factory_path.path());
-		last_left_factory = factory_path;
+		Log::app(Log::Level::debug, "FACTORY_LEAVING: {}", factory->URI().path());
+		last_left_factory = factory->URI();
 		inc_calls();
 	}
 };

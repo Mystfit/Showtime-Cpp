@@ -339,14 +339,14 @@ Signal ZstStageSession::destroy_cable_handler(const std::shared_ptr<ZstStageMess
 	return Signal_OK;
 }
 
-void ZstStageSession::on_performer_leaving(const ZstURI& performer_path)
+void ZstStageSession::on_performer_leaving(ZstPerformer* performer)
 {
-	disconnect_cables(m_hierarchy->find_entity(performer_path));
+	disconnect_cables(performer);
 }
 
-void ZstStageSession::on_entity_leaving(const ZstURI& entity_path)
+void ZstStageSession::on_entity_leaving(ZstEntityBase* entity)
 {
-	disconnect_cables(m_hierarchy->find_entity(entity_path));
+	disconnect_cables(entity);
 }
 
 void ZstStageSession::disconnect_cables(ZstEntityBase* entity)

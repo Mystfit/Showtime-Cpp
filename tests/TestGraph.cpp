@@ -454,8 +454,9 @@ BOOST_FIXTURE_TEST_CASE(renaming_entity_updates_cables, FixtureCable) {
 	TAKE_A_BREATH
 	BOOST_REQUIRE(cable->get_input());
 	BOOST_REQUIRE(cable->get_output());
-	BOOST_TEST(!test_client->find_cable(orig_cable_address));
-	BOOST_TEST(test_client->find_cable(cable->get_address()));
+	BOOST_TEST(!(test_client->find_cable(orig_cable_address)));
+	auto new_address = cable->get_address();
+	BOOST_TEST(test_client->find_cable(new_address));
 	BOOST_TEST(cable->get_input()->is_connected_to(cable->get_output()));
 	BOOST_TEST(cable->get_output()->is_connected_to(cable->get_input()));
 }

@@ -252,6 +252,50 @@ void ZstSession::on_entity_arriving(ZstEntityBase * entity)
 	register_entity(entity);
 }
 
+void ZstSession::update_cable_paths(ZstEntityBase* entity, const ZstURI& original_path)
+{
+	// Update cable address with the new URI
+	ZstCableBundle bundle;
+	entity->get_child_cables(&bundle);
+	for (auto cable : bundle) {
+		auto orig_cable_address = cable->get_address();
+
+		ZstPlugLiason plug_liason;
+		ZstCableLiason cable_liason;
+		if (original_path == orig_cable_address.get_input_URI()) {
+			// Renaming input
+			ZstPlug* input_plug = entity->entity_type() == ZstEntityType::PLUG ? static_cast<ZstPlug*>(entity) : nullptr;
+			ZstPlug* output_plug = cable->get_output();
+			
+			if (input_plug && output_plug) {
+				plug_liason.plug_remove_cable(input_plug, cable);
+				plug_liason.plug_remove_cable(output_plug, cable);
+				cable_liason.cable_update_address(cable, ZstCableAddress(entity->URI(), orig_cable_address.get_output_URI()));
+				plug_liason.plug_add_cable(input_plug, cable);
+				plug_liason.plug_add_cable(output_plug, cable);
+			}
+		} else if (original_path == orig_cable_address.get_output_URI()) {
+			ZstPlug* input_plug = cable->get_input();
+			ZstPlug* output_plug = entity->entity_type() == ZstEntityType::PLUG ? static_cast<ZstPlug*>(entity) : nullptr;
+
+			if (input_plug && output_plug) {
+				plug_liason.plug_remove_cable(input_plug, cable);
+				plug_liason.plug_remove_cable(output_plug, cable);
+				cable_liason.cable_update_address(cable, ZstCableAddress(orig_cable_address.get_input_URI(), entity->URI()));
+				plug_liason.plug_add_cable(input_plug, cable);
+				plug_liason.plug_add_cable(output_plug, cable);
+			}
+		}
+
+		//std::lock_guard<std::mutex> lock(m_session_mtex);
+		//auto cable_it = this->m_cables.find(cable->get_address());
+		//if (cable_it != this->m_cables.end()) {
+		//	//Erasing the unique pointer will destroy the cable
+		//	std::unique_ptr<ZstCable> moved_cable = std::move(*cable_it);
+		//}
+	}
+}
+
 void ZstSession::request_entity_registration(ZstEntityBase* entity)
 {
 	register_entity(entity);

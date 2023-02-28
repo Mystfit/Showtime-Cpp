@@ -90,6 +90,10 @@ namespace showtime
 		Log::net(Log::Level::warn, "STUN bind result: {}", ec.message());
 		*/
 
+		// Make sure UDP socket is available first before talking to the STUN server
+		if (!m_udp_sock->is_open())
+			bind("");
+
 		m_udp_sock->set_option(rcv_timeout_option{ 500 });
 
 		// Remote Address
@@ -199,6 +203,10 @@ namespace showtime
 
 	void ZstUDPGraphTransport::listen()
 	{
+		if (!m_udp_sock->is_open()) {
+			bind("");
+		}
+
 		// Only start receiving messages after we've bound the port
 		m_udp_sock->async_receive(boost::asio::buffer(m_recv_buf), boost::bind(
 			&ZstUDPGraphTransport::handle_receive,
@@ -212,7 +220,7 @@ namespace showtime
 	{
 		boost::system::error_code ec;
 
-		if (!m_udp_sock->is_open()) {
+		if (m_udp_sock && !m_udp_sock->is_open()) {
 			m_udp_sock->open(udp::v4(), ec);
 			if (ec) {
 				Log::net(Log::Level::error, "UDP transport open error: {}", ec.message());

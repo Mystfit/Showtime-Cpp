@@ -313,6 +313,7 @@ BOOST_FIXTURE_TEST_CASE(root_performer_activate_on_join, FixtureJoinServer)
 {   
     auto performer_activated = std::make_shared<TestSynchronisableEvents>();
 	test_client->get_root()->add_adaptor(performer_activated);
+	BOOST_REQUIRE(test_client->get_root()->is_activated());
 	BOOST_TEST(performer_activated->num_calls() == 1);
 	BOOST_TEST(test_client->get_root()->is_activated());
 }

@@ -364,13 +364,15 @@ ZstPerformer * ShowtimeClient::get_root()
 
 ZstEntityBase* ShowtimeClient::find_entity(const ZstURI & path)
 {
-	if (!library_init_guard()) return NULL;
+	/*if (!library_init_guard()) return NULL;
+	return m_client->session()->hierarchy()->find_entity(path);*/
 	return m_client->session()->hierarchy()->find_entity(path);
 }
 
 void ShowtimeClient::get_performers(ZstEntityBundle* bundle)
 {
-	if (!library_init_guard()) return;
+	/*if (!library_init_guard()) return;
+	m_client->session()->hierarchy()->get_performers(bundle);*/
 	m_client->session()->hierarchy()->get_performers(bundle);
 }
 
@@ -428,14 +430,17 @@ void ShowtimeClient::destroy_cable_async(ZstCable * cable)
 
 ZstCable* ShowtimeClient::find_cable(const ZstCableAddress& address)
 {
-	if (!library_init_guard()) return m_client->session()->find_cable(address);
-	return NULL;
+	/*if (!library_init_guard()) 
+		return m_client->session()->find_cable(address);
+	return NULL;*/
+	return m_client->session()->find_cable(address);
 }
 
 ZstCable* ShowtimeClient::find_cable(const ZstURI& input, const ZstURI& output)
 {
-	if (!library_init_guard()) return m_client->session()->find_cable(input, output);
-	return NULL;
+	/*if (!library_init_guard()) return m_client->session()->find_cable(input, output);
+	return NULL;*/
+	return m_client->session()->find_cable(input, output);
 }
 
 void ShowtimeClient::reload_plugins()

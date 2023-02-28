@@ -64,6 +64,12 @@ BOOST_FIXTURE_TEST_CASE(activate_entity, FixtureOutputEntity) {
 	BOOST_TEST(test_client->find_entity(output_component->URI()));
 }
 
+BOOST_FIXTURE_TEST_CASE(auto_activate_entity, FixtureOutputEntity) {
+	test_client->get_root()->add_child(output_component.get());
+	BOOST_TEST(output_component->is_activated());
+	BOOST_TEST(test_client->find_entity(output_component->URI()));
+}
+
 BOOST_FIXTURE_TEST_CASE(deactivate_entity_via_client, FixtureOutputEntity) {
 	test_client->get_root()->add_child(output_component.get());
 	test_client->deactivate_entity(output_component.get());
@@ -147,6 +153,7 @@ BOOST_FIXTURE_TEST_CASE(add_child, FixtureJoinServer) {
 	auto child_path = ZstURI("test_performer/test_parent/test_child");
 	
 	test_client->get_root()->add_child(parent.get());
+	BOOST_REQUIRE(parent->is_activated());
 	parent->add_child(child.get());
 	
 	BOOST_TEST(child->is_activated());

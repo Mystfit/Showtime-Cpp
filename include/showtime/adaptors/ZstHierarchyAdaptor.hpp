@@ -21,12 +21,12 @@ namespace showtime {
 		ZST_EXPORT ZstHierarchyAdaptor();
 		// Outgoing events
 		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, performer_arriving, ZstPerformer*, performer)
-		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, performer_leaving, const ZstURI&, performer_path)
+		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, performer_leaving, ZstPerformer*, performer)
 		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, entity_arriving, ZstEntityBase*, entity)
-		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, entity_leaving, const ZstURI&, entity_path)
-		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, entity_updated, ZstEntityBase*, entity)
+		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, entity_leaving, ZstEntityBase*, entity, entity)
+		MULTICAST_DELEGATE_TwoParams(ZST_EXPORT, entity_updated, ZstEntityBase*, entity, const ZstURI&, orig_path)
 		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, factory_arriving, ZstEntityFactory*, factory)
-		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, factory_leaving, const ZstURI&, factory_path)
+		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, factory_leaving, ZstEntityFactory*, factory)
 
 
 		// Interface events 
