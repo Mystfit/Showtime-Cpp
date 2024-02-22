@@ -240,10 +240,11 @@ void ZstHierarchy::update_proxy_entity(ZstEntityBase* original, const EntityType
 			Log::net(Log::Level::warn, "Move operations not implemented yet");
 			return;
 		}
+		ZstURI original_path = original->URI();
 		original->set_name(entity_path.last().path());
 
-		hierarchy_events()->defer([original](ZstHierarchyAdaptor* adp) {
-			adp->on_entity_updated(original);
+		hierarchy_events()->defer([original, original_path](ZstHierarchyAdaptor* adp) {
+			adp->on_entity_updated(original, original_path);
 		});
 	}
 }
@@ -365,20 +366,20 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 	if (entity->is_proxy()) {
 		if (entity->entity_type() == ZstEntityType::PERFORMER)
 		{
-			hierarchy_events()->defer([path = entity->URI()](ZstHierarchyAdaptor* adaptor) {
-				adaptor->on_performer_leaving(path);
+			hierarchy_events()->defer([entity](ZstHierarchyAdaptor* adaptor) {
+				adaptor->on_performer_leaving(static_cast<ZstPerformer*>(entity));
 			});
 		}
 		else if (entity->entity_type() == ZstEntityType::FACTORY)
 		{
-			hierarchy_events()->defer([path = entity->URI()](ZstHierarchyAdaptor* adaptor) {
-				adaptor->on_factory_leaving(path);
+			hierarchy_events()->defer([entity](ZstHierarchyAdaptor* adaptor) {
+				adaptor->on_factory_leaving(static_cast<ZstEntityFactory*>(entity));
 			});
 		}
 		else if (entity->entity_type() == ZstEntityType::COMPONENT)
 		{
-			hierarchy_events()->defer([path = entity->URI()](ZstHierarchyAdaptor* adaptor) {
-				adaptor->on_entity_leaving(path);
+			hierarchy_events()->defer([entity](ZstHierarchyAdaptor* adaptor) {
+				adaptor->on_entity_leaving(entity);
 			});
 		}
 	}

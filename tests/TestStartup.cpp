@@ -2,7 +2,7 @@
 
 #define BOOST_TEST_MODULE Library startup
 
-#include "fmt/format.h"
+#include <format>
 
 using namespace ZstTest;
 
