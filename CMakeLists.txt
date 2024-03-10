@@ -18,6 +18,7 @@ set(CXX_STANDARD_REQUIRED)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 set(CMAKE_CXX_EXTENSIONS ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Set CMake vars
 set(CMAKE_FIND_FRAMEWORKS LAST)
@@ -202,7 +203,7 @@ if(NOT FLATBUFFERS_FLATC_EXECUTABLE)
     endif()
 endif()
 
-find_package(fmt CONFIG REQUIRED)
+#find_package(fmt CONFIG REQUIRED)
 
 set(FLATBUFFFER_OUTPUT_DIR "${Showtime_COMPILED_INCLUDE_DIRS}/showtime/schemas")
 file(MAKE_DIRECTORY ${FLATBUFFFER_OUTPUT_DIR})
@@ -244,7 +245,7 @@ set(SHOWTIME_PRIVATE_LINKED_LIBS
 )
 
 set(SHOWTIME_PUBLIC_LINKED_LIBS
-    fmt::fmt-header-only
+    #fmt::fmt-header-only
 )
 
 # Boost libraries that MUST be linked shared

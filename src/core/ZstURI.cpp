@@ -3,6 +3,7 @@
 #include <iostream>
 #include <algorithm>
 #include <memory>
+#include <cstring>
 #include <showtime/ZstURI.h>
 
 namespace showtime {

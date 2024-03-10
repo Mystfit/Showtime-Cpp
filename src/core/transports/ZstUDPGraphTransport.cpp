@@ -8,9 +8,9 @@
 #include <sstream>
 #include <format>
 
-#include "../boost_use_future.hpp"
-//#include <future>
-//#include <boost/asio/use_future.hpp>
+//#include "../boost_use_future.hpp"
+#include <future>
+#include <boost/asio/use_future.hpp>
 
 using namespace boost::asio::ip;
 
@@ -94,7 +94,7 @@ namespace showtime
 		if (!m_udp_sock->is_open())
 			bind("");
 
-		m_udp_sock->set_option(rcv_timeout_option{ 500 });
+		//m_udp_sock->set_option(rcv_timeout_option{ 500 });
 
 		// Remote Address
 		// First resolve the STUN server address

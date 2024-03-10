@@ -2,7 +2,7 @@
 #include <streambuf>
 #include <ostream>
 #include <format>
-
+#include <memory>
 // #ifndef FMT_HEADER_ONLY
 // 	#define FMT_HEADER_ONLY
 // 	#if defined(WIN32) && !defined(WIN32_LEAN_AND_MEAN)

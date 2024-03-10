@@ -10,6 +10,12 @@ namespace showtime {
 	class ZstBundleIterator
 	{
 	public:
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = T;
+        using pointer = T*;
+        using reference = T&;
+        using difference_type = std::ptrdiff_t;
+
         ZstBundleIterator(typename std::deque<T>::iterator it) : m_it(it){
         }
         
