@@ -6,7 +6,7 @@ param(
     [string]$platform="x64",
     [string]$toolset="msvc-14.3",
     [switch]$without_boost = $false,
-    [string]$boost_version = "1.81.0"
+    [string]$boost_version = "1.84.0"
 )
 
 # Valid MSVC toolsets
@@ -15,6 +15,12 @@ $msvc_toolset_versions = @{
     "msvc-14.1" = "v141";
     "msvc-14.2" = "v142";
     "msvc-14.3" = "v143";
+}
+$msvc_toolset_boost_versions = @{
+    "msvc-14.0" = "vc140";
+    "msvc-14.1" = "vc141";
+    "msvc-14.2" = "vc142";
+    "msvc-14.3" = "vc143";
 }
 $toolset_ver = $msvc_toolset_versions[$toolset]
 
@@ -91,6 +97,7 @@ function Build-CmakeFromGit{
 function Build-Boost{
     Param($version, $config, $toolset, $arch, $libraries)
 
+    $toolset_ver = $msvc_toolset_boost_versions[$toolset]
     $boost_flags = @(
         "--prefix=$install_prefix",
         "address-model=64",
@@ -123,7 +130,7 @@ function Build-Boost{
     Write-Output "Building boost"
     
     Push-Location "$dependency_dir/boost_$boost_ver_scored"
-    cmd.exe /c "call bootstrap.bat"
+    cmd.exe /c "call bootstrap.bat $toolset_ver"  
     ./b2.exe $(@("stage") + $boost_libs + $boost_shared_lib_flags + $boost_flags)
     ./b2.exe $(@("install") + $boost_libs + $boost_shared_lib_flags + $boost_flags)
     ./b2.exe $(@("stage") + $boost_libs + $boost_static_lib_flags + $boost_flags)
@@ -155,7 +162,7 @@ foreach ($c in $config){
         "-DFLATBUFFERS_BUILD_FLATLIB=ON"
         "-DCMAKE_DEBUG_POSTFIX=d"
     )
-    Build-CmakeFromGit -name "fmt" -url "https://github.com/fmtlib/fmt.git" -branch "8.1.1" -config $config_titled -toolset $toolset_ver -arch $platform -flags @()
+    # Build-CmakeFromGit -name "fmt" -url "https://github.com/fmtlib/fmt.git" -branch "8.1.1" -config $config_titled -toolset $toolset_ver -arch $platform -flags @()
     # Build-CmakeFromGit -name "rtmidi" -url "https://github.com/mystfit/rtmidi.git" -branch "cmake-updates" -config $config_titled -toolset $toolset_ver -arch $platform -flags @(
     #     "-DRTMIDI_BUILD_STATIC_LIBS=ON"
     #     "-DCMAKE_DEBUG_POSTFIX=d"
