@@ -53,8 +53,9 @@ public:
 	// Messaging
 	// ----------------
 	void reply_with_signal(ZstPerformerStageProxy* performer, Signal signal, ZstMsgID request_id);
-	void broadcast(Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder> & buffer_builder, const ZstTransportArgs& args, const std::vector<ZstPerformer*> & excluded = std::vector<ZstPerformer*>());
-	void whisper(ZstPerformerStageProxy* performer, Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder>& buffer_builder, const ZstTransportArgs& args);
+	void broadcast(showtime::Content message_content_type, flatbuffers::Offset<void> message_content, flatbuffers::FlatBufferBuilder& builder, const ZstTransportArgs& args, const std::vector<ZstPerformer*> & excluded = std::vector<ZstPerformer*>());
+	void whisper(ZstPerformerStageProxy* performer, showtime::Content message_content_type, flatbuffers::Offset<void> message_content, flatbuffers::FlatBufferBuilder& builder, const ZstTransportArgs& args);
+	void whisper(ZstPerformerStageProxy* performer, flatbuffers::DetachedBuffer&& message_buffer, const ZstTransportArgs& args);
 
 	void client_leaving(ZstPerformer* performer, const ClientLeaveReason& reason);
 

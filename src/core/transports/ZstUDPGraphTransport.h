@@ -31,7 +31,7 @@ namespace showtime {
 
 	protected:
 		ZST_EXPORT virtual void init_graph_sockets() override;
-		ZST_EXPORT virtual void send_message_impl(std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs& args) const override;
+		ZST_EXPORT virtual void send_message_impl(flatbuffers::DetachedBuffer& message_buffer, const ZstTransportArgs& args) const override;
 
 	private:
 		void handle_send(const boost::system::error_code& error, std::size_t);

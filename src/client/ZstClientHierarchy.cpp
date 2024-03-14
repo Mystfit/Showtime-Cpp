@@ -77,16 +77,16 @@ void ZstClientHierarchy::publish_entity_update(ZstEntityBase * entity, const Zst
 			args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
             
             // Serialize entity into buffer
-            auto builder = std::make_shared< FlatBufferBuilder>();
+			FlatBufferBuilder builder;
 			auto update_offset = CreateEntityUpdateRequest(
-				*builder,
+				builder,
 				entity->serialized_entity_type(),
-				entity->serialize(*builder),
-				builder->CreateString(original_path.path(), original_path.full_size())
+				entity->serialize(builder),
+				builder.CreateString(original_path.path(), original_path.full_size())
 			);
             
             // Send message
-            adaptor->send_msg(Content_EntityUpdateRequest, update_offset.Union(), builder, args);
+            adaptor->send_msg(adaptor->create_msg(Content_EntityUpdateRequest, update_offset.Union(), builder), args);
 		});
 	}
 }
@@ -140,9 +140,9 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 		ZstEntityBundle bundle;
 		entity->get_child_entities(&bundle, true, true);
 		for (auto c : bundle) {
-			auto builder = std::make_shared< FlatBufferBuilder>();
-			auto content_message = CreateEntityCreateRequest(*builder, c->serialized_entity_type(), c->serialize(*builder));
-			adaptor->send_msg(Content_EntityCreateRequest, content_message.Union(), builder, args);
+			FlatBufferBuilder builder;
+			auto content_message = CreateEntityCreateRequest(builder, c->serialized_entity_type(), c->serialize(builder));
+			adaptor->send_msg(adaptor->create_msg(Content_EntityCreateRequest, content_message.Union(), builder), args);
 		}
 	});
 
@@ -171,9 +171,9 @@ void ZstClientHierarchy::deactivate_entity(ZstEntityBase * entity, const ZstTran
 				};
 			}
 			
-			auto builder = std::make_shared< FlatBufferBuilder>();
-            auto content_message = CreateEntityDestroyRequest(*builder, builder->CreateString(entity->URI().path(), entity->URI().full_size()));
-            adaptor->send_msg(Content_EntityDestroyRequest, content_message.Union(), builder, args);
+			FlatBufferBuilder builder;
+            auto content_message = CreateEntityDestroyRequest(builder, builder.CreateString(entity->URI().path(), entity->URI().full_size()));
+            adaptor->send_msg(adaptor->create_msg(Content_EntityDestroyRequest, content_message.Union(), builder), args);
 		});
 	}
 	else {
@@ -249,9 +249,9 @@ ZstEntityBase * ZstClientHierarchy::create_entity(const ZstURI & creatable_path,
 			}
 		};
         
-		auto builder = std::make_shared< FlatBufferBuilder>();
-        auto content_msg = CreateFactoryCreateEntityRequest(*builder, builder->CreateString(creatable_path.path(), creatable_path.full_size()),  builder->CreateString(entity_name.path(), entity_name.full_size()));
-        adaptor->send_msg(Content_FactoryCreateEntityRequest, content_msg.Union(), builder, args);
+		FlatBufferBuilder builder;
+        auto content_msg = CreateFactoryCreateEntityRequest(builder, builder.CreateString(creatable_path.path(), creatable_path.full_size()),  builder.CreateString(entity_name.path(), entity_name.full_size()));
+        adaptor->send_msg(adaptor->create_msg(Content_FactoryCreateEntityRequest, content_msg.Union(), builder), args);
     });
 
 	return entity;
@@ -320,9 +320,9 @@ void ZstClientHierarchy::factory_create_entity_handler(const FactoryCreateEntity
                 args.msg_ID = request_id;
                     
                 // Send signal
-				auto builder = std::make_shared< FlatBufferBuilder>();
-                auto signal = CreateSignalMessage(*builder, Signal_OK);
-                adaptor->send_msg(Content_SignalMessage, signal.Union(), builder, args);
+				FlatBufferBuilder builder;
+                auto signal = CreateSignalMessage(builder, Signal_OK);
+                adaptor->send_msg(adaptor->create_msg(Content_SignalMessage, signal.Union(), builder), args);
 			});
 		});
 	}
@@ -332,9 +332,9 @@ void ZstClientHierarchy::factory_create_entity_handler(const FactoryCreateEntity
             args.msg_ID = request_id;
                 
             // Send signals
-			auto builder = std::make_shared< FlatBufferBuilder>();
-            auto signal = CreateSignalMessage(*builder, Signal_ERR_ENTITY_NOT_FOUND);
-            adaptor->send_msg(Content_SignalMessage, signal.Union(), builder, args);
+			FlatBufferBuilder builder;
+            auto signal = CreateSignalMessage(builder, Signal_ERR_ENTITY_NOT_FOUND);
+            adaptor->send_msg(adaptor->create_msg(Content_SignalMessage, signal.Union(), builder), args);
 		});
 	}
 }

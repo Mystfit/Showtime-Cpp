@@ -190,14 +190,14 @@ ZstCable * ZstClientSession::connect_cable(ZstInputPlug * input, ZstOutputPlug *
                 }
 			};
             
-            auto builder = std::make_shared< FlatBufferBuilder>();
-            auto cable_msg = CreateCableCreateRequest(*builder,
-                CreateCable(*builder,
-                    CreateCableData(*builder,
-                        builder->CreateString(cable->get_address().get_input_URI().path()), 
-                        builder->CreateString(cable->get_address().get_output_URI().path())
+            FlatBufferBuilder builder;
+            auto cable_msg = CreateCableCreateRequest(builder,
+                CreateCable(builder,
+                    CreateCableData(builder,
+                        builder.CreateString(cable->get_address().get_input_URI().path()), 
+                        builder.CreateString(cable->get_address().get_output_URI().path())
                     )));
-            adaptor->send_msg(Content_CableCreateRequest, cable_msg.Union(), builder, args);
+            adaptor->send_msg(adaptor->create_msg(Content_CableCreateRequest, cable_msg.Union(), builder), args);
 		});
 	}
 
@@ -223,13 +223,13 @@ void ZstClientSession::destroy_cable(ZstCable * cable, const ZstTransportRequest
 		args.msg_send_behaviour = sendtype;
 		args.on_recv_response = [this, cable](ZstMessageResponse response) { this->destroy_cable_complete(response, cable); };
         
-        auto builder = std::make_shared< FlatBufferBuilder>();
-        auto address_offset =  CreateCableData(*builder,
-            builder->CreateString(cable->get_input()->URI().path()),
-            builder->CreateString(cable->get_output()->URI().path())
+        FlatBufferBuilder builder;
+        auto address_offset =  CreateCableData(builder,
+            builder.CreateString(cable->get_input()->URI().path()),
+            builder.CreateString(cable->get_output()->URI().path())
         );
-		auto destroy_cable_msg = CreateCableDestroyRequest(*builder, CreateCable(*builder, address_offset));
-        adaptor->send_msg(Content_CableDestroyRequest, destroy_cable_msg.Union(), builder, args);
+		auto destroy_cable_msg = CreateCableDestroyRequest(builder, CreateCable(builder, address_offset));
+        adaptor->send_msg(adaptor->create_msg(Content_CableDestroyRequest, destroy_cable_msg.Union(), builder), args);
 	});
 
 	if (sendtype == ZstTransportRequestBehaviour::SYNC_REPLY) process_events();
@@ -253,9 +253,9 @@ bool ZstClientSession::observe_entity(ZstEntityBase * entity, const ZstTransport
 		args.msg_send_behaviour = sendtype;
 		args.on_recv_response = [this, entity](ZstMessageResponse response) { this->observe_entity_complete(response, entity); };
         
-        auto builder = std::make_shared< FlatBufferBuilder>();
-        auto observe_msg = CreateEntityObserveRequest(*builder, builder->CreateString(entity->URI().path()));
-		adaptor->send_msg(Content_EntityObserveRequest, observe_msg.Union(), builder, args);
+        FlatBufferBuilder builder;
+        auto observe_msg = CreateEntityObserveRequest(builder, builder.CreateString(entity->URI().path()));
+		adaptor->send_msg(adaptor->create_msg(Content_EntityObserveRequest, observe_msg.Union(), builder), args);
 	});
 
 	return true;
@@ -276,9 +276,9 @@ void ZstClientSession::aquire_entity_ownership(ZstEntityBase* entity)
             Log::net(Log::Level::debug, "Ack from server");
         };
         
-        auto builder = std::make_shared< FlatBufferBuilder>();
-        auto entity_own_msg = CreateEntityTakeOwnershipRequest(*builder, builder->CreateString(entity->URI().path()), builder->CreateString(hierarchy()->get_local_performer()->URI().path()));
-        adaptor->send_msg(Content_EntityTakeOwnershipRequest, entity_own_msg.Union(), builder, args);
+        FlatBufferBuilder builder;
+        auto entity_own_msg = CreateEntityTakeOwnershipRequest(builder, builder.CreateString(entity->URI().path()), builder.CreateString(hierarchy()->get_local_performer()->URI().path()));
+        adaptor->send_msg(adaptor->create_msg(Content_EntityTakeOwnershipRequest, entity_own_msg.Union(), builder), args);
     });
 }
 
@@ -292,9 +292,9 @@ void ZstClientSession::release_entity_ownership(ZstEntityBase* entity)
         };
         
 		// Sending an empty string for the owner will release entity ownership back to the original owner
-        auto builder = std::make_shared< FlatBufferBuilder>();
-        auto release_ownership_msg = CreateEntityTakeOwnershipRequest(*builder, builder->CreateString(entity->URI().path()), builder->CreateString(""));
-        adaptor->send_msg(Content_EntityTakeOwnershipRequest, release_ownership_msg.Union(), builder, args);
+        FlatBufferBuilder builder;
+        auto release_ownership_msg = CreateEntityTakeOwnershipRequest(builder, builder.CreateString(entity->URI().path()), builder.CreateString(""));
+        adaptor->send_msg(adaptor->create_msg(Content_EntityTakeOwnershipRequest, release_ownership_msg.Union(), builder), args);
     });
 }
     

@@ -280,9 +280,9 @@ void ZstClient::connection_handshake_handler(std::shared_ptr<ZstPerformanceMessa
         ZstTransportArgs args;
         args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
         args.msg_ID = m_pending_peer_connections[output_path];
-        auto builder = std::make_shared< FlatBufferBuilder>();
-        auto ok_msg = CreateSignalMessage(*builder, Signal_OK);
-        this->m_client_transport->send_msg(Content_SignalMessage, ok_msg.Union(), builder, args);
+        FlatBufferBuilder builder;
+        auto ok_msg = CreateSignalMessage(builder, Signal_OK);
+        this->m_client_transport->send_msg(this->m_client_transport->create_msg(Content_SignalMessage, ok_msg.Union(), builder), args);
 
         // Clear the handshake
         m_pending_peer_connections.erase(output_path);
@@ -419,7 +419,7 @@ void ZstClient::join_stage(const ZstServerAddress& stage_address, const ZstTrans
     ZstPerformer* root = session()->hierarchy()->get_local_performer();
 
     //Construct transport args
-    auto builder = std::make_shared< FlatBufferBuilder>();
+    FlatBufferBuilder builder;
     ZstTransportArgs args;
     args.msg_send_behaviour = sendtype;
     args.on_recv_response = [this, stage_address](ZstMessageResponse response) {
@@ -428,16 +428,16 @@ void ZstClient::join_stage(const ZstServerAddress& stage_address, const ZstTrans
         this->join_stage_complete(stage_address, response);
     };
 
-    Offset<Performer> root_offset = root->serialize(*builder);
-    auto join_msg = CreateClientJoinRequest(*builder, 
+    Offset<Performer> root_offset = root->serialize(builder);
+    auto join_msg = CreateClientJoinRequest(builder, 
         root_offset, 
-        builder->CreateString(reliable_graph_addr), 
-        builder->CreateString(reliable_public_graph_addr),
-        builder->CreateString(unreliable_graph_addr), 
-        builder->CreateString(unreliable_public_graph_addr)
+        builder.CreateString(reliable_graph_addr), 
+        builder.CreateString(reliable_public_graph_addr),
+        builder.CreateString(unreliable_graph_addr), 
+        builder.CreateString(unreliable_public_graph_addr)
     );
 
-    m_client_transport->send_msg(Content_ClientJoinRequest, join_msg.Union(), builder, args);
+    m_client_transport->send_msg(m_client_transport->create_msg(Content_ClientJoinRequest, join_msg.Union(), builder), args);
 }
 
 void ZstClient::server_discovery_handler(const std::shared_ptr<ZstServerBeaconMessage>& msg)
@@ -552,9 +552,9 @@ void ZstClient::synchronise_graph(const ZstTransportRequestBehaviour& sendtype)
     };
 
     //Send message
-    auto builder = std::make_shared< FlatBufferBuilder>();
-    auto sync_signal = CreateSignalMessage(*builder, Signal_CLIENT_SYNC);
-    m_client_transport->send_msg(Content_SignalMessage, sync_signal.Union(), builder, args);
+    FlatBufferBuilder builder;
+    auto sync_signal = CreateSignalMessage(builder, Signal_CLIENT_SYNC);
+    m_client_transport->send_msg(m_client_transport->create_msg(Content_SignalMessage, sync_signal.Union(), builder), args);
 }
 
 void ZstClient::synchronise_graph_complete(ZstMessageResponse response)
@@ -576,9 +576,9 @@ void ZstClient::leave_stage()
 
         ZstTransportArgs args;
         args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
-        auto builder = std::make_shared< FlatBufferBuilder>();
-        auto leave_msg_offset = CreateClientLeaveRequest(*builder, builder->CreateString(session()->hierarchy()->get_local_performer()->URI().path()), ClientLeaveReason_QUIT);
-        m_client_transport->send_msg(Content_ClientLeaveRequest, leave_msg_offset.Union(), builder, args);
+        FlatBufferBuilder builder;
+        auto leave_msg_offset = CreateClientLeaveRequest(builder, builder.CreateString(session()->hierarchy()->get_local_performer()->URI().path()), ClientLeaveReason_QUIT);
+        m_client_transport->send_msg(m_client_transport->create_msg(Content_ClientLeaveRequest, leave_msg_offset.Union(), builder), args);
     }
     else {
         Log::net(Log::Level::debug, "Not connected to stage. Skipping to cleanup. {}");
@@ -685,17 +685,18 @@ void ZstClient::heartbeat_timer(boost::asio::deadline_timer* t, ZstClient* clien
     };
 
     //Send message
-    auto builder = std::make_shared< FlatBufferBuilder>();
-    auto heartbeat_signal = CreateSignalMessage(*builder, Signal_CLIENT_HEARTBEAT);
-    client->m_client_transport->send_msg(Content_SignalMessage, heartbeat_signal.Union(), builder, args);
+    FlatBufferBuilder builder;
+    auto heartbeat_signal = CreateSignalMessage(builder, Signal_CLIENT_HEARTBEAT);
+    client->m_client_transport->send_msg(client->m_client_transport->create_msg(Content_SignalMessage, heartbeat_signal.Union(), builder), args);
 
     // Send keepalive message through UDP graph to keep punchthrough in NAT open
     args = ZstTransportArgs();
     args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
-    builder = std::make_shared<FlatBufferBuilder>();
-    auto plugval_offset = CreatePlugValue(*builder, PlugValueData_PlugKeepalive, CreatePlugKeepalive(*builder).Union());
+    builder.Clear();
+    auto plugval_offset = CreatePlugValue(builder, PlugValueData_PlugKeepalive, CreatePlugKeepalive(builder).Union());
     auto from = client->session()->hierarchy()->get_local_performer()->URI();
-    auto conn_msg = CreateGraphMessage(*builder, builder->CreateString(from.path(), from.full_size()), plugval_offset);
+    auto conn_msg = CreateGraphMessage(builder, builder.CreateString(from.path(), from.full_size()), plugval_offset);
+    FinishGraphMessageBuffer(builder, conn_msg);
     //client->m_udp_graph_transport->send_msg(conn_msg, builder, args);
 
     //Loop timer
@@ -813,10 +814,11 @@ void ZstClient::send_connection_handshake(const ZstURI& from, const std::string&
     ZstTransportArgs args;
     args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
 
-    auto builder = std::make_shared<FlatBufferBuilder>();
-    auto plugval_offset = CreatePlugValue(*builder, PlugValueData_PlugHandshake, CreatePlugHandshake(*builder, builder->CreateString(address.c_str(), address.size())).Union());
-    auto conn_msg = CreateGraphMessage(*builder, builder->CreateString(from.path(), from.full_size()), plugval_offset);
-    transport->send_msg(conn_msg, builder, args);
+    FlatBufferBuilder builder;
+    auto plugval_offset = CreatePlugValue(builder, PlugValueData_PlugHandshake, CreatePlugHandshake(builder, builder.CreateString(address.c_str(), address.size())).Union());
+    auto conn_msg = CreateGraphMessage(builder, builder.CreateString(from.path(), from.full_size()), plugval_offset);
+    FinishGraphMessageBuffer(builder, conn_msg);
+    transport->send_msg(builder.Release(), args);
 }
 
 void ZstClient::stop_connection_broadcast_handler(const std::shared_ptr<ZstStageMessage>& msg)

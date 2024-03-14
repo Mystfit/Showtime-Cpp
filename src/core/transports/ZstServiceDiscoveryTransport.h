@@ -34,7 +34,7 @@ public:
     ZST_EXPORT void stop_listening() const;
     
 private:
-	virtual void send_message_impl(std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs& args) const override {};
+	virtual void send_message_impl(flatbuffers::DetachedBuffer& message_buffer, const ZstTransportArgs& args) const override {};
 
     void init() override;
     ZstActor m_beacon_actor;

@@ -92,12 +92,12 @@ void ZstWebsocketSession::on_read(beast::error_code ec, std::size_t bytes_transf
 	});
 }
 
-void ZstWebsocketSession::do_write(const uint8_t* msg_buffer, size_t msg_buffer_size){
+void ZstWebsocketSession::do_write(flatbuffers::DetachedBuffer& message_buffer){
 	// Copy the message contents since we don't want to lose hem if the flatbuffer builder disappears
 	// TODO: Replace with detatchedbuffer?
-	auto data = std::make_unique<uint8_t[]>(msg_buffer_size);
-	std::copy(msg_buffer, msg_buffer + msg_buffer_size, data.get());
-	auto pair = std::make_shared<std::pair<std::unique_ptr<uint8_t[]>, size_t > >(std::move(data), msg_buffer_size);
+	auto data = std::make_unique<uint8_t[]>(message_buffer.size());
+	std::copy(message_buffer.data(), message_buffer.data() + message_buffer.size(), data.get());
+	auto pair = std::make_shared<std::pair<std::unique_ptr<uint8_t[]>, size_t > >(std::move(data), message_buffer.size());
 	net::post(m_ws.get_executor(), beast::bind_front_handler(&ZstWebsocketSession::on_send, shared_from_this(), pair));
 }
 

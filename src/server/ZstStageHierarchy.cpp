@@ -43,9 +43,10 @@ void ZstStageHierarchy::on_entity_arriving(ZstEntityBase* entity)
 	// Update rest of network
 	ZstTransportArgs args;
 	args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
-	auto builder = std::make_shared<FlatBufferBuilder>();
-	auto content_message = CreateEntityCreateRequest(*builder, entity->serialized_entity_type(), entity->serialize(*builder));
+	FlatBufferBuilder builder;
+	auto content_message = CreateEntityCreateRequest(builder, entity->serialized_entity_type(), entity->serialize(builder));
 	Log::server(Log::Level::debug, "Broadcasting entity {}", entity->URI().path());
+
 	broadcast(Content_EntityCreateRequest, content_message.Union(), builder, args, excluded);
 }
 
@@ -75,8 +76,8 @@ void ZstStageHierarchy::client_leaving(ZstPerformer* performer, const ClientLeav
 
 	ZstTransportArgs args;
 	args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
-	auto builder = std::make_shared<FlatBufferBuilder>();
-	auto destroy_msg_offset = CreateClientLeaveRequest(*builder, builder->CreateString(performer->URI().path()), reason);
+	FlatBufferBuilder builder;
+	auto destroy_msg_offset = CreateClientLeaveRequest(builder, builder.CreateString(performer->URI().path()), reason);
 	broadcast(Content_ClientLeaveRequest, destroy_msg_offset.Union(), builder, args, excluded);
 }
 
@@ -118,10 +119,11 @@ void ZstStageHierarchy::on_receive_msg(const std::shared_ptr<ZstStageMessage>& m
 		ZstTransportArgs args;
 		args.target_endpoint_UUID = msg->origin_endpoint_UUID();
 		args.msg_ID = msg->id();
-		auto builder = std::make_shared< FlatBufferBuilder>();
-		auto signal_offset = CreateSignalMessage(*builder, response);
+		
+		FlatBufferBuilder builder;
+		auto signal_offset = CreateSignalMessage(builder, response);
 		if(auto transport = std::dynamic_pointer_cast<ZstStageTransport>(msg->owning_transport()))
-			transport->send_msg(Content_SignalMessage, signal_offset.Union(), builder, args);
+			transport->send_msg(transport->create_msg(Content_SignalMessage, signal_offset.Union(), builder), args);
 	}
 }
 
@@ -238,14 +240,14 @@ Signal ZstStageHierarchy::factory_create_entity_handler(const std::shared_ptr<Zs
 		// Send ACK to original sender with the path of our new entity
 		ZstTransportArgs ack_args;
 		ack_args.msg_ID = response_id;
-		auto builder = std::make_shared<FlatBufferBuilder>();
-		auto create_entity_ACK = CreateFactoryCreateEntityACK(*builder, builder->CreateString(factory_path.path()));
+		FlatBufferBuilder builder;
+		auto create_entity_ACK = CreateFactoryCreateEntityACK(builder, builder.CreateString(factory_path.path()));
 		whisper(sender, Content_FactoryCreateEntityACK, create_entity_ACK.Union(), builder, ack_args);
 	};
 
 	//Send creation request to owning factory
-	auto builder = std::make_shared<FlatBufferBuilder>();
-	auto create_entity_request = CreateFactoryCreateEntityRequest(*builder, builder->CreateString(content->creatable_entity_URI()->str()), builder->CreateString(content->name()->str()));
+	FlatBufferBuilder builder;
+	auto create_entity_request = CreateFactoryCreateEntityRequest(builder, builder.CreateString(content->creatable_entity_URI()->str()), builder.CreateString(content->name()->str()));
 	whisper(factory_performer, Content_FactoryCreateEntityRequest, create_entity_request.Union(), builder, args);
 
 	return Signal_EMPTY;
@@ -255,7 +257,7 @@ Signal ZstStageHierarchy::update_entity_handler(const std::shared_ptr<ZstStageMe
 {
 	auto content = request->buffer()->content_as_EntityUpdateRequest();
 	// For serialisation later
-	auto builder = std::make_shared<FlatBufferBuilder>();
+	FlatBufferBuilder builder;
 	auto entity_field = get_entity_field(content->entity_type(), content->entity());
 	auto entity_path = ZstURI(entity_field->URI()->c_str(), entity_field->URI()->size());
 	auto original_path = ZstURI(content->original_path()->c_str(), content->original_path()->size());
@@ -270,10 +272,10 @@ Signal ZstStageHierarchy::update_entity_handler(const std::shared_ptr<ZstStageMe
 		ZstTransportArgs args;
 		args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
 		auto entity_msg = CreateEntityUpdateRequest(
-			*builder, 
+			builder, 
 			content->entity_type(),
-			proxy->serialize(*builder), 
-			builder->CreateString(content->original_path()->c_str(), content->original_path()->size())
+			proxy->serialize(builder), 
+			builder.CreateString(content->original_path()->c_str(), content->original_path()->size())
 		);
 		broadcast(Content_EntityUpdateRequest, entity_msg.Union(), builder, args, excluded);
 	}
@@ -298,8 +300,8 @@ Signal ZstStageHierarchy::destroy_entity_handler(const std::shared_ptr<ZstStageM
 	auto excluded = std::vector<ZstPerformer*>{ sender };
 	ZstTransportArgs args;
 	args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
-	auto builder = std::make_shared<FlatBufferBuilder>();
-	auto destroy_msg_offset = CreateEntityDestroyRequest(*builder, builder->CreateString(content->URI()->str()));
+	FlatBufferBuilder builder;
+	auto destroy_msg_offset = CreateEntityDestroyRequest(builder, builder.CreateString(content->URI()->str()));
 	broadcast(Content_EntityDestroyRequest, destroy_msg_offset.Union(), builder, args, excluded);
 
 	return Signal_OK;
@@ -312,16 +314,19 @@ void ZstStageHierarchy::request_entity_registration(ZstEntityBase* entity)
 
 void ZstStageHierarchy::reply_with_signal(ZstPerformerStageProxy* performer, Signal signal, ZstMsgID request_id)
 {
-	auto builder = std::make_shared<FlatBufferBuilder>();
+	FlatBufferBuilder builder;
 	ZstTransportArgs args;
 	args.msg_ID = request_id;
-	auto signal_offset = CreateSignalMessage(*builder, signal);
+	auto signal_offset = CreateSignalMessage(builder, signal);
 	whisper(performer, Content_SignalMessage, signal_offset.Union(), builder, args);
 }
 
-void ZstStageHierarchy::broadcast(Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder> & buffer_builder, const ZstTransportArgs& args, const std::vector<ZstPerformer*> & excluded)
+void ZstStageHierarchy::broadcast(showtime::Content message_content_type, flatbuffers::Offset<void> message_content, flatbuffers::FlatBufferBuilder& builder, const ZstTransportArgs& args, const std::vector<ZstPerformer*> & excluded)
 {
 	//Log::server(Log::Level::debug, "Broadcasting {} message {}", EnumNameContent(message_type), boost::uuids::to_string(args.msg_ID));
+	std::unordered_map<ZstStageTransport*, flatbuffers::DetachedBuffer> cached_messages;
+
+	// Get every performer that we're going to broadcast to
 	ZstEntityBundle bundle;
 	get_performers(&bundle);
 	for (auto entity : bundle)
@@ -332,19 +337,41 @@ void ZstStageHierarchy::broadcast(Content message_type, flatbuffers::Offset<void
 			continue;
 		}
 
-		//Send message to client
-		whisper(performer, message_type, message_content, buffer_builder, args);
+		// Each performer might have a different transport type so we have to cache different message buffers 
+		if (auto transport = performer->origin_transport().lock()) {
+			flatbuffers::DetachedBuffer message_buffer;
+
+			// Retrieve cached message for our transport type or create if missing
+			auto msg = cached_messages.find(transport.get());
+			if (msg != cached_messages.end()) {
+				whisper(performer, std::forward<flatbuffers::DetachedBuffer>(msg->second), args);
+			}
+			else {
+				cached_messages[transport.get()] = transport->create_msg(message_content_type, message_content, builder);
+				whisper(performer, std::forward<flatbuffers::DetachedBuffer>(cached_messages[transport.get()]), args);
+			}
+		}		
 	}
 }
 
-void ZstStageHierarchy::whisper(ZstPerformerStageProxy* performer, Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder>& buffer_builder, const ZstTransportArgs& args)
+void ZstStageHierarchy::whisper(ZstPerformerStageProxy* performer, showtime::Content message_content_type, flatbuffers::Offset<void> message_content, flatbuffers::FlatBufferBuilder& builder, const ZstTransportArgs& args)
 {
 	ZstTransportArgs endpoint_args = args;
 	endpoint_args.target_endpoint_UUID = performer->origin_endpoint_UUID();
 
 	if (auto transport = performer->origin_transport().lock())
-		transport->send_msg(message_type, message_content, buffer_builder, endpoint_args);
+		transport->send_msg(std::forward<flatbuffers::DetachedBuffer>(transport->create_msg(message_content_type, message_content, builder)), endpoint_args);
 }
+
+void ZstStageHierarchy::whisper(ZstPerformerStageProxy* performer, flatbuffers::DetachedBuffer&& message_buffer, const ZstTransportArgs& args)
+{
+	ZstTransportArgs endpoint_args = args;
+	endpoint_args.target_endpoint_UUID = performer->origin_endpoint_UUID();
+
+	if (auto transport = performer->origin_transport().lock())
+		transport->send_msg(std::forward<flatbuffers::DetachedBuffer>(message_buffer), endpoint_args);
+}
+
 
 ZstPerformerStageProxy* ZstStageHierarchy::get_client_from_endpoint_UUID(const uuid& origin_endpoint_UUID)
 {

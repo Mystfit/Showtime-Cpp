@@ -5,21 +5,26 @@
 
 namespace showtime
 {
-	ZstMessageReceipt ZstStageTransport::send_msg(Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder>& buffer_builder, const ZstTransportArgs& args)
+	flatbuffers::DetachedBuffer ZstStageTransport::create_msg(Content message_type, flatbuffers::Offset<void> message_content, flatbuffers::FlatBufferBuilder& buffer_builder) 
 	{
-		// Make a copy of the transport args so we can generate a new message ID if required
-		auto copy_args = args;
-        copy_args.msg_ID = (args.msg_ID.is_nil()) ? ZstMsgIDManager::next_id() : args.msg_ID ;
-
 		// Create the stage message
-		auto stage_msg = CreateStageMessage(*buffer_builder, message_type, message_content);
-		FinishStageMessageBuffer(*buffer_builder, stage_msg);
+		auto stage_msg = CreateStageMessage(buffer_builder, message_type, message_content);
+		FinishStageMessageBuffer(buffer_builder, stage_msg);
 
-		auto verifier = flatbuffers::Verifier(buffer_builder->GetBufferPointer(), buffer_builder->GetSize());
+		auto verifier = flatbuffers::Verifier(buffer_builder.GetBufferPointer(), buffer_builder.GetSize());
 		if (!VerifyStageMessageBuffer(verifier))
 			throw;
 
-		begin_send_message(buffer_builder, copy_args);
+		return buffer_builder.Release();
+	}
+
+	ZstMessageReceipt ZstStageTransport::send_msg(flatbuffers::DetachedBuffer&& message_buffer, const ZstTransportArgs& args)
+	{
+		// Make a copy of the transport args so we can generate a new message ID if required
+		auto copy_args = args;
+		copy_args.msg_ID = (args.msg_ID.is_nil()) ? ZstMsgIDManager::next_id() : args.msg_ID;
+
+		begin_send_message(std::forward<flatbuffers::DetachedBuffer>(message_buffer), copy_args);
 		return ZstMessageReceipt(Signal_OK);
 	}
 

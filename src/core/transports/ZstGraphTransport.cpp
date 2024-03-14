@@ -49,17 +49,29 @@ const std::string & ZstGraphTransport::get_graph_out_address() const
 {
 	return m_graph_out_addr;
 }
+
+//flatbuffers::DetachedBuffer ZstGraphTransport::create_msg(Content message_type, flatbuffers::Offset<void> message_content, flatbuffers::FlatBufferBuilder& buffer_builder)
+//{
+//	// Create the stage message
+//	auto graph_msg = CreateGraphMessage(buffer_builder, );
+//	FinishGraphMessageBuffer(buffer_builder, graph_msg);
+//
+//	/*auto verifier = flatbuffers::Verifier(buffer_builder.GetBufferPointer(), buffer_builder.GetSize());
+//	if (!VerifyStageMessageBuffer(verifier))
+//		throw;*/
+//
+//	return buffer_builder.Release();
+//}
     
-ZstMessageReceipt ZstGraphTransport::send_msg(flatbuffers::Offset<GraphMessage> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs& args)
+ZstMessageReceipt ZstGraphTransport::send_msg(flatbuffers::DetachedBuffer&& message_buffer, const ZstTransportArgs& args)
 {
-    buffer_builder->Finish(message_content);
-    send_message_impl(buffer_builder, args);
+    send_message_impl(message_buffer, args);
     return ZstMessageReceipt{Signal_OK};
 }
 
-void ZstGraphTransport::send_message_impl(std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs & args) const
+void ZstGraphTransport::send_message_impl(flatbuffers::DetachedBuffer& message_buffer, const ZstTransportArgs & args) const
 {
-	zframe_t * payload_frame = zframe_new(buffer_builder->GetBufferPointer(), buffer_builder->GetSize());
+	zframe_t * payload_frame = zframe_new(message_buffer.data(), message_buffer.size());
 	zframe_set_group(payload_frame, PERFORMANCE_GROUP);
 	zsock_t * sock = output_graph_socket();
 	int result = (sock) ? zframe_send(&payload_frame, sock, 0) : -1;

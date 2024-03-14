@@ -128,10 +128,10 @@ namespace showtime::detail
 	}
 
 	void ZstStage::send_shutdown_signal() {
-		auto builder = std::make_shared<FlatBufferBuilder>();
+		FlatBufferBuilder builder;
 		m_session->stage_hierarchy()->broadcast(
 			Content_ServerStatusMessage, 
-			CreateServerStatusMessage(*builder, ServerStatus_QUIT).Union(), 
+			CreateServerStatusMessage(builder, ServerStatus_QUIT).Union(), 
 			builder, 
 			ZstTransportArgs()
 		);

@@ -140,12 +140,8 @@ void ZstZMQServerTransport::sock_recv(zsock_t* socket)
 	}
 }
 
-void ZstZMQServerTransport::send_message_impl(std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs& args) const
+void ZstZMQServerTransport::send_message_impl(flatbuffers::DetachedBuffer& message_buffer, const ZstTransportArgs& args) const
 {
-	auto verifier = flatbuffers::Verifier(buffer_builder->GetBufferPointer(), buffer_builder->GetSize());
-	if (!VerifyStageMessageBuffer(verifier))
-		throw;
-
 	zmsg_t* m = zmsg_new();
 
 	//Add destination frame at beginning to route our message to the correct destination
@@ -156,10 +152,10 @@ void ZstZMQServerTransport::send_message_impl(std::shared_ptr<flatbuffers::FlatB
 	zmsg_append(m, &empty);
 
 	// Add message ID
-	zmsg_addmem(m, args.msg_ID.data, 16);
+	zmsg_addmem(m, args.msg_ID.data, sizeof(args.msg_ID.data));
 
 	//Encode message from flatbuffers to bytes
-	zmsg_addmem(m, buffer_builder->GetBufferPointer(), buffer_builder->GetSize());
+	zmsg_addmem(m, message_buffer.data(), message_buffer.size());
 
 	int result = 0;
 	{
@@ -179,15 +175,18 @@ void ZstZMQServerTransport::send_message_impl(std::shared_ptr<flatbuffers::FlatB
 
 void ZstZMQServerTransport::signal_client_direct(Signal signal, ZstMsgID msg_id, const boost::uuids::uuid& client)
 {
-	std::shared_ptr<flatbuffers::FlatBufferBuilder> builder = std::make_shared<flatbuffers::FlatBufferBuilder>();
-	auto signal_offset = CreateSignalMessage(*builder.get(), signal);
-	auto msg_offset = CreateStageMessage(*builder.get(), Content_SignalMessage, signal_offset.Union());
-	FinishStageMessageBuffer(*builder.get(), msg_offset);
+	flatbuffers::FlatBufferBuilder builder;
+	auto signal_offset = CreateSignalMessage(builder, signal);
+
+	auto msg_offset = CreateStageMessage(builder, Content_SignalMessage, signal_offset.Union());
+	FinishStageMessageBuffer(builder, msg_offset);
 	
 	ZstTransportArgs args;
 	args.target_endpoint_UUID = client;
 	args.msg_ID = msg_id;
-	send_message_impl(builder, args);
+	args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
+	send_msg(builder.Release(), args);
+	//send_message_impl(builder.Release(), args);
 }
 
 }

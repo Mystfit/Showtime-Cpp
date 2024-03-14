@@ -45,8 +45,9 @@ public:
 	ZST_EXPORT void set_port(uint16_t port);
 	ZST_EXPORT uint16_t get_port();
 
-    ZST_EXPORT virtual ZstMessageReceipt send_msg(flatbuffers::Offset<GraphMessage> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs& args) override;
-	ZST_EXPORT virtual void send_message_impl(std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs & args) const;
+	//ZST_EXPORT virtual flatbuffers::DetachedBuffer create_msg(Content message_type, flatbuffers::Offset<void> message_content, flatbuffers::FlatBufferBuilder& buffer_builder) override;
+    ZST_EXPORT virtual ZstMessageReceipt send_msg(flatbuffers::DetachedBuffer&& message_buffer, const ZstTransportArgs& args) override;
+	ZST_EXPORT virtual void send_message_impl(flatbuffers::DetachedBuffer& message_buffer, const ZstTransportArgs & args) const;
 
 protected:
 	ZST_EXPORT ZstActor & actor();

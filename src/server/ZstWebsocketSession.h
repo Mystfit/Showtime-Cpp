@@ -17,7 +17,7 @@ public:
 
 	void on_accept(beast::error_code ec);
 	void do_read();
-	void do_write(const uint8_t* msg_buffer, size_t msg_buffer_size);
+	void do_write(flatbuffers::DetachedBuffer& message_buffer);
 	void on_send(std::shared_ptr<std::pair< std::unique_ptr<uint8_t[]>, size_t > const> const& msg_data);
 	void on_read(beast::error_code ec, std::size_t bytes_transferred);
 	void on_write(beast::error_code ec, std::size_t bytes_transferred);

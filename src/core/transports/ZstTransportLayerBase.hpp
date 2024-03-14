@@ -57,34 +57,34 @@ public:
     virtual void process_events() = 0;
 
 protected:
-    ZstMessageReceipt begin_send_message(std::shared_ptr<flatbuffers::FlatBufferBuilder>& buffer)
+    ZstMessageReceipt begin_send_message(flatbuffers::DetachedBuffer&& message_buffer)
     {
         if (!is_connected())
             return ZstMessageReceipt{ Signal_ERR_STAGE_TIMEOUT };
 
-        send_message_impl(buffer, ZstTransportArgs());
+        send_message_impl(message_buffer, ZstTransportArgs());
         return ZstMessageReceipt{ Signal_OK, ZstTransportRequestBehaviour::PUBLISH };
     }
 
-    void begin_send_message(std::shared_ptr<flatbuffers::FlatBufferBuilder>& buffer, const ZstTransportArgs& args)
+    void begin_send_message(flatbuffers::DetachedBuffer&& message_buffer, const ZstTransportArgs& args)
     {
         if (!is_connected())
             return;
 
         switch (args.msg_send_behaviour) {
             case ZstTransportRequestBehaviour::ASYNC_REPLY: {
-                boost::asio::post(*m_async_pool, [this, buffer, args]() mutable {
-                    this->blocking_send(buffer, args);
+                boost::asio::post(*m_async_pool, [this, message_buffer = std::move(message_buffer), args]() mutable {
+                    this->blocking_send(message_buffer, args);
                 });
                 break;
             }
             case ZstTransportRequestBehaviour::SYNC_REPLY:
             {
-                blocking_send(buffer, args);
+                blocking_send(message_buffer, args);
                 break;
             }
             case ZstTransportRequestBehaviour::PUBLISH: {
-                send_message_impl(buffer, args);
+                send_message_impl(message_buffer, args);
                 break;
             }
             default:
@@ -94,18 +94,18 @@ protected:
     }
 
     //Message sending implementation for the transport
-    virtual void send_message_impl(std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs& args) const = 0;
+    virtual void send_message_impl(flatbuffers::DetachedBuffer& message_buffer, const ZstTransportArgs& args) const = 0;
 
 protected:
     std::shared_ptr<ZstSemaphore> m_event_condition;
 
 private:
-    void blocking_send(std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, ZstTransportArgs args) {
+    void blocking_send(flatbuffers::DetachedBuffer& message_buffer, ZstTransportArgs args) {
         // Register message response
         auto msg_future = register_response(args.msg_ID);
 
         // Send message
-        this->send_message_impl(buffer_builder, args);
+        this->send_message_impl(message_buffer, args);
 
         // Wait for message promise to be fulfilled
         auto status = msg_future.wait_for(std::chrono::milliseconds(STAGE_TIMEOUT));

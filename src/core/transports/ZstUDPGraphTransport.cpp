@@ -94,7 +94,12 @@ namespace showtime
 		if (!m_udp_sock->is_open())
 			bind("");
 
-		//m_udp_sock->set_option(rcv_timeout_option{ 500 });
+		try {
+			m_udp_sock->set_option(rcv_timeout_option{ 500 });
+		}
+		catch (boost::system::system_error e) {
+			Log::net(Log::Level::warn, "Could not set timeout for STUN socket. Error was {0}", e.what());
+		}
 
 		// Remote Address
 		// First resolve the STUN server address
@@ -286,7 +291,7 @@ namespace showtime
 
 	}
 
-	void ZstUDPGraphTransport::send_message_impl(std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs& args) const
+	void ZstUDPGraphTransport::send_message_impl(flatbuffers::DetachedBuffer& message_buffer, const ZstTransportArgs& args) const
 	{
 		//std::vector<boost::future<size_t>> futures;
 
@@ -294,7 +299,7 @@ namespace showtime
 		for (const auto& endpoint : m_destination_endpoints) {
 			//auto future = m_udp_sock->async_send_to(boost::asio::buffer(buffer_builder->GetBufferPointer(), buffer_builder->GetSize()), endpoint.endpoint, boost::asio::use_boost_future);
 			//futures.push_back(std::move(future));
-			m_udp_sock->send_to(boost::asio::buffer(buffer_builder->GetBufferPointer(), buffer_builder->GetSize()), endpoint.endpoint);
+			m_udp_sock->send_to(boost::asio::buffer(message_buffer.data(), message_buffer.size()), endpoint.endpoint);
 		}
 
 		//// Release flatbuffer message by capturing it in a lambda

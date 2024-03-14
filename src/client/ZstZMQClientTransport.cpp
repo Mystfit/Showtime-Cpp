@@ -94,7 +94,7 @@ void ZstZMQClientTransport::disconnect()
 	}
 }
 
-void ZstZMQClientTransport::send_message_impl(std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs & args) const
+void ZstZMQClientTransport::send_message_impl(flatbuffers::DetachedBuffer& message_buffer, const ZstTransportArgs & args) const
 {
 	zmsg_t * m = zmsg_new();
 
@@ -106,7 +106,7 @@ void ZstZMQClientTransport::send_message_impl(std::shared_ptr<flatbuffers::FlatB
 	zmsg_addmem(m, args.msg_ID.data, 16);
 
 	//Encode message from flatbuffers to bytes
-    zmsg_addmem(m, buffer_builder->GetBufferPointer(), buffer_builder->GetSize());
+    zmsg_addmem(m, message_buffer.data(), message_buffer.size());
 
 	//Sending and errors
 	int result = m_client_actor.send_to_socket(m_server_sock, m);

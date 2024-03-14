@@ -42,7 +42,7 @@ public:
 	static void fail(beast::error_code ec, char const* what);
 
 private:
-	void send_message_impl(std::shared_ptr<flatbuffers::FlatBufferBuilder> buffer_builder, const ZstTransportArgs& args) const override;
+	void send_message_impl(flatbuffers::DetachedBuffer& message_buffer, const ZstTransportArgs& args) const override;
 
 	void do_accept();
 	void on_accept(beast::error_code ec, tcp::socket socket);

@@ -12,7 +12,8 @@ namespace showtime
 		public ZstStageTransportAdaptor
 	{
 	public:
-		ZST_EXPORT virtual ZstMessageReceipt send_msg(Content message_type, flatbuffers::Offset<void> message_content, std::shared_ptr<flatbuffers::FlatBufferBuilder>& buffer_builder, const ZstTransportArgs& args) override;
+		ZST_EXPORT virtual flatbuffers::DetachedBuffer create_msg(Content message_type, flatbuffers::Offset<void> message_content, flatbuffers::FlatBufferBuilder& buffer_builder) override;
+		ZST_EXPORT virtual ZstMessageReceipt send_msg(flatbuffers::DetachedBuffer&& message_buffer, const ZstTransportArgs& args = {}) override;
 
 		ZST_EXPORT static Signal get_signal(const std::shared_ptr<ZstMessage>& msg);
 		ZST_EXPORT static Signal get_signal(const std::shared_ptr<ZstStageMessage>& msg);

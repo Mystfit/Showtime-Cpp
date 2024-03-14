@@ -515,11 +515,12 @@ void ZstOutputPlug::fire()
     // Publish message to any remaining remote plugs
     if (num_local_cables <= bundle.size()){
         m_graph_out_events->invoke([this](ZstGraphTransportAdaptor* adaptor) {
-            auto builder = std::make_shared<flatbuffers::FlatBufferBuilder>();
-            auto plugval_offset = this->raw_value()->serialize(*builder);
-            auto graph_msg_offset = CreateGraphMessage(*builder, builder->CreateString(this->URI().path()), plugval_offset);
-            adaptor->send_msg(graph_msg_offset, builder);
-            });
+            FlatBufferBuilder builder;
+            auto plugval_offset = this->raw_value()->serialize(builder);
+            auto graph_msg_offset = CreateGraphMessage(builder, builder.CreateString(this->URI().path()), plugval_offset);
+            FinishGraphMessageBuffer(builder, graph_msg_offset);
+            adaptor->send_msg(builder.Release());
+        });
     }
     m_value->clear();
 }

@@ -70,10 +70,10 @@ void ZstStageSession::on_receive_msg(const std::shared_ptr<ZstStageMessage>& msg
 		ZstTransportArgs args;
 		args.target_endpoint_UUID = msg->origin_endpoint_UUID();
 		args.msg_ID = msg->id();
-		auto builder = std::make_shared< FlatBufferBuilder>();
-		auto signal_offset = CreateSignalMessage(*builder, response);
+		FlatBufferBuilder builder;
+		auto signal_offset = CreateSignalMessage(builder, response);
 		if (auto transport = std::dynamic_pointer_cast<ZstStageTransport>(msg->owning_transport()))
-			transport->send_msg(Content_SignalMessage, signal_offset.Union(), builder, args);
+			transport->send_msg(transport->create_msg(Content_SignalMessage, signal_offset.Union(), builder), args);
 	}
 }
 
@@ -97,7 +97,6 @@ Signal ZstStageSession::synchronise_client_graph_handler(ZstPerformerStageProxy*
 	Log::server(Log::Level::notification, "Sending graph snapshot to {}", sender->URI().path());
 
 	// For serialisation later
-	auto builder = std::make_shared<FlatBufferBuilder>();
 	std::vector< flatbuffers::Offset<void> > entity_vec;
 	std::vector< uint8_t> entity_types_vec;
 
@@ -113,9 +112,11 @@ Signal ZstStageSession::synchronise_client_graph_handler(ZstPerformerStageProxy*
 		}
 	}
 
+	FlatBufferBuilder builder;
 	if (entity_bundle.size()) {
 		for (auto entity : entity_bundle) {
-			auto batch_entity_offset = CreateEntityCreateRequest(*builder, entity->serialized_entity_type(), entity->serialize(*builder));
+			builder.Reset();
+			auto batch_entity_offset = CreateEntityCreateRequest(builder, entity->serialized_entity_type(), entity->serialize(builder));
 			stage_hierarchy()->whisper(sender, Content_EntityCreateRequest, batch_entity_offset.Union(), builder, ZstTransportArgs());
 		}
 	}
@@ -123,9 +124,9 @@ Signal ZstStageSession::synchronise_client_graph_handler(ZstPerformerStageProxy*
 	// Pack all cables
 	// Create a new buffer builder
 	if (m_cables.size()) {
-		builder = std::make_shared<FlatBufferBuilder>();
 		for (auto const& cable : m_cables) {
-			auto batch_cable_offset = CreateCableCreateRequest(*builder, cable->get_address().serialize(*builder));
+			builder.Reset();
+			auto batch_cable_offset = CreateCableCreateRequest(builder, cable->get_address().serialize(builder));
 			stage_hierarchy()->whisper(sender, Content_CableCreateRequest, batch_cable_offset.Union(), builder, ZstTransportArgs());
 		}
 		
@@ -185,10 +186,10 @@ Signal ZstStageSession::create_cable_handler(const std::shared_ptr<ZstStageMessa
 		if (signal == Signal_OK) {
 			Log::server(Log::Level::notification, "Client connection complete. Publishing cable {}", cable_ptr->get_address().to_string());
 			ZstTransportArgs args;
-			auto builder = std::make_shared<FlatBufferBuilder>();
+			FlatBufferBuilder builder;
 
 			// Publish cable
-			auto cable_create_offset = CreateCableCreateRequest(*builder, cable_ptr->get_address().serialize(*builder));
+			auto cable_create_offset = CreateCableCreateRequest(builder, cable_ptr->get_address().serialize(builder));
 			stage_hierarchy()->broadcast(Content_CableCreateRequest, cable_create_offset.Union(), builder, args);
 		}
 
@@ -319,8 +320,8 @@ Signal ZstStageSession::aquire_entity_ownership_handler(const std::shared_ptr<Zs
 	//Broadcast change in plug fire control
 	Log::server(Log::Level::notification, "Broadcasting entity ownership - {} controls {}", new_owner_path.path(), entity->URI().path());
 	ZstTransportArgs args;
-	auto builder = std::make_shared<FlatBufferBuilder>();
-	auto ownership_offset = CreateEntityTakeOwnershipRequest(*builder, builder->CreateString(entity->URI().path()), builder->CreateString(new_owner_path.path()));
+	FlatBufferBuilder builder;
+	auto ownership_offset = CreateEntityTakeOwnershipRequest(builder, builder.CreateString(entity->URI().path()), builder.CreateString(new_owner_path.path()));
 	stage_hierarchy()->broadcast(Content_EntityTakeOwnershipRequest, ownership_offset.Union(), builder, args);
 
 	return Signal_OK;
@@ -369,9 +370,9 @@ void ZstStageSession::destroy_cable(ZstCable* cable) {
 
 	//Update rest of network
 	ZstTransportArgs args;
-	auto builder = std::make_shared<FlatBufferBuilder>();
-	auto destroy_cable_data_offset = CreateCableData(*builder, builder->CreateString(cable->get_address().get_input_URI().path()), builder->CreateString(cable->get_address().get_output_URI().path()));
-	auto destroy_cable_offset = CreateCableDestroyRequest(*builder, CreateCable(*builder, destroy_cable_data_offset));
+	FlatBufferBuilder builder;
+	auto destroy_cable_data_offset = CreateCableData(builder, builder.CreateString(cable->get_address().get_input_URI().path()), builder.CreateString(cable->get_address().get_output_URI().path()));
+	auto destroy_cable_offset = CreateCableDestroyRequest(builder, CreateCable(builder, destroy_cable_data_offset));
 	stage_hierarchy()->broadcast(Content_CableDestroyRequest, destroy_cable_offset.Union(), builder, args);
 
 	//Remove cable
@@ -414,28 +415,28 @@ void ZstStageSession::connect_clients(ZstPerformerStageProxy* output_client, Zst
 	std::string input_address = (connection_type == showtime::ConnectionType_RELIABLE) ? input_client->reliable_address() : input_client->unreliable_address();
 	std::string input_address_public = (connection_type == showtime::ConnectionType_RELIABLE) ? input_client->reliable_public_address() : input_client->unreliable_public_address();
 
-	auto builder = std::make_shared<FlatBufferBuilder>();
+	FlatBufferBuilder builder;
 	auto subscribe_offset = CreateClientGraphHandshakeListen(
-		*builder, 
-		builder->CreateString(output_client->URI().path()), 
+		builder, 
+		builder.CreateString(output_client->URI().path()), 
 		connection_type,
-		builder->CreateString(output_address),
-		builder->CreateString(output_address_public));
+		builder.CreateString(output_address),
+		builder.CreateString(output_address_public));
 
 	Log::net(Log::Level::debug, "Sending Content_ClientGraphHandshakeListen whisper to {}", input_client->URI().path());
 	stage_hierarchy()->whisper(input_client, Content_ClientGraphHandshakeListen, subscribe_offset.Union(), builder, receiver_args);
 
 	//Create request for broadcaster - needs a new buffer builder
-	auto broadcaster_builder = std::make_shared<FlatBufferBuilder>();
+	builder.Reset();
 	auto broadcast_offset = CreateClientGraphHandshakeStart(
-		*broadcaster_builder,
-		broadcaster_builder->CreateString(input_client->URI().path(), input_client->URI().full_size()),
+		builder,
+		builder.CreateString(input_client->URI().path(), input_client->URI().full_size()),
 		connection_type,
-		broadcaster_builder->CreateString(input_address),
-		broadcaster_builder->CreateString(input_address_public)
+		builder.CreateString(input_address),
+		builder.CreateString(input_address_public)
 	);
 	ZstTransportArgs broadcaster_args;
-	stage_hierarchy()->whisper(output_client, Content_ClientGraphHandshakeStart, broadcast_offset.Union(), broadcaster_builder, broadcaster_args);
+	stage_hierarchy()->whisper(output_client, Content_ClientGraphHandshakeStart, broadcast_offset.Union(), builder, broadcaster_args);
 }
 
 
@@ -449,8 +450,8 @@ Signal ZstStageSession::complete_client_connection(ZstPerformerStageProxy* outpu
 	//Let the broadcaster know it can stop publishing messages
 	Log::server(Log::Level::notification, "Stopping P2P handshake broadcast from client {}", output_client->URI().path());
 	ZstTransportArgs args;
-	auto builder = std::make_shared<FlatBufferBuilder>();
-	auto stop_offset = CreateClientGraphHandshakeStop(*builder, builder->CreateString(input_client->URI().path()) );
+	FlatBufferBuilder builder;
+	auto stop_offset = CreateClientGraphHandshakeStop(builder, builder.CreateString(input_client->URI().path()) );
 	stage_hierarchy()->whisper(output_client, Content_ClientGraphHandshakeStop, stop_offset.Union(), builder, args);
 
 	return Signal_OK;
