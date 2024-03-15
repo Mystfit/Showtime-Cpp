@@ -4,6 +4,7 @@ echo "Building dependencies"
 
 # ZEROMQ
 # ------
+
 echo "Building libZMQ"
 git clone https://github.com/zeromq/libzmq.git < /dev/null > /dev/null
 mkdir -p ./libzmq/build
@@ -13,8 +14,9 @@ cmake --build ./libzmq/build -j $VM_CPU_COUNT --target install
 # CZMQ
 # ----
 echo "Building CZMQ"
-git clone https://github.com/mystfit/czmq.git < /dev/null > /dev/null
+git clone https://github.com/zeromq/czmq.git < /dev/null > /dev/null
 git -C ./czmq checkout master
+git -C ./czmq apply --ignore-space-change --ignore-whitespace $SHOWTIME_SOURCE/containers/android/log.patch
 mkdir -p ./czmq/build
 cmake -H"./czmq" -B"./czmq/build" -DCMAKE_VERBOSE_MAKEFILE=ON $ANDROID_BUILD_FLAGS $COMMON_BUILD_FLAGS -DENABLE_DRAFTS=TRUE -DBUILD_TESTING=OFF -DCZMQ_BUILD_SHARED=OFF -DCZMQ_BUILD_STATIC=ON
 cmake --build ./czmq/build -j $VM_CPU_COUNT --target install
@@ -38,15 +40,16 @@ cmake --build ./flatbuffers/host_build -j $VM_CPU_COUNT --target install > /dev/
 echo "Building fmt"
 git clone https://github.com/fmtlib/fmt.git < /dev/null > /dev/null
 mkdir -p ./fmt/build
-cmake -H"./fmt" -B"./fmt/build" $ANDROID_BUILD_FLAGS $COMMON_BUILD_FLAGS -DFMT_TEST=FALSE > /dev/null
-cmake --build ./fmt/build -j $VM_CPU_COUNT --target install > /dev/null
+cmake -H"./fmt" -B"./fmt/build" $ANDROID_BUILD_FLAGS $COMMON_BUILD_FLAGS -DFMT_TEST=FALSE # > /dev/null
+cmake --build ./fmt/build -j $VM_CPU_COUNT --target install # > /dev/null
 
 # BOOST
 # -----
 echo "Building Boost"
-git clone https://github.com/mystfit/Boost-for-Android.git < /dev/null > /dev/null
+git clone https://github.com/moritz-wundke/Boost-for-Android.git < /dev/null > /dev/null
 pushd ./Boost-for-Android
-BOOST_LIBS="log,thread,system,context,fiber,date_time,chrono,atomic,regex,test"
+git apply --ignore-space-change --ignore-whitespace $SHOWTIME_SOURCE/containers/android/boost.patch
+BOOST_LIBS="log,thread,system,context,fiber,date_time,chrono,atomic,regex,test,coroutine"
 echo "Building boost for android $ANDROID_BOOST_VER"
-./build-android.sh --boost=$ANDROID_BOOST_VER --layout=versioned --with-libraries=$BOOST_LIBS --arch=$ANDROID_ABI --prefix=$ANDROID_NDK_SYSROOT $ANDROID_NDK_ROOT
+./build-android.sh --boost=$ANDROID_BOOST_VER --layout=versioned --with-libraries=$BOOST_LIBS --arch=$ANDROID_ABI --prefix=$ANDROID_NDK_SYSROOT $ANDROID_NDK_ROOT #< /dev/null > /dev/null
 popd

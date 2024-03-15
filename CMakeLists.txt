@@ -13,7 +13,7 @@ set(TAGS
 set(SHOWTIME_NAMESPACE "${PROJECT_NAME}::")
 
 # Use C17
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CXX_STANDARD_REQUIRED)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
@@ -203,7 +203,10 @@ if(NOT FLATBUFFERS_FLATC_EXECUTABLE)
     endif()
 endif()
 
-#find_package(fmt CONFIG REQUIRED)
+set(BUILD_USE_STD_FORMAT ON CACHE BOOL "Use the stdlib version of format. Fallback to fmtlib if false")
+if(NOT BUILD_USE_STD_FORMAT)
+    find_package(fmt CONFIG REQUIRED)
+endif()
 
 set(FLATBUFFFER_OUTPUT_DIR "${Showtime_COMPILED_INCLUDE_DIRS}/showtime/schemas")
 file(MAKE_DIRECTORY ${FLATBUFFFER_OUTPUT_DIR})
@@ -236,17 +239,18 @@ set(SHOWTIME_PRIVATE_LINKED_LIBS
     # Boost::regex
     Boost::log
     # Boost::log_setup
-    Boost::context
     Boost::fiber
     Boost::coroutine
+    Boost::context
     Boost::boost
     Boost::disable_autolinking
     ${CMAKE_THREAD_LIBS_INIT}
 )
 
-set(SHOWTIME_PUBLIC_LINKED_LIBS
-    #fmt::fmt-header-only
-)
+set(SHOWTIME_PUBLIC_LINKED_LIBS "")
+if(NOT BUILD_USE_STD_FORMAT)
+    list(APPEND SHOWTIME_PUBLIC_LINKED_LIBS fmt::fmt-header-only)
+endif()
 
 # Boost libraries that MUST be linked shared
 set(Showtime_PUBLIC_SHARED_BOOST_LINKED_LIBS
@@ -292,18 +296,17 @@ file(MAKE_DIRECTORY ${Showtime_COMPILED_INCLUDE_DIRS})
 # file(GLOB FMT_HEADERS CONFIGURE_DEPENDS "${FMT_INCLUDE_DIR}/fmt/*.h")
 
 # Copy flatbuffers headers but replace with CMake install!
-if(WIN32)
-    get_target_property(FLATBUFFERS_INCLUDE_DIR flatbuffers::flatbuffers INTERFACE_INCLUDE_DIRECTORIES)
-    file(GLOB FLATBUFFER_HEADER_SRC CONFIGURE_DEPENDS "${FLATBUFFERS_INCLUDE_DIR}/flatbuffers/*.h")
-    file(MAKE_DIRECTORY ${Showtime_COMPILED_INCLUDE_DIRS}/flatbuffers)
-    set(FLATBUFFER_HEADERS "")
-    foreach(FILE ${FLATBUFFER_HEADER_SRC})
-        get_filename_component(FILE_N ${FILE} NAME)
-        set(DEST_F "${Showtime_COMPILED_INCLUDE_DIRS}/flatbuffers/${FILE_N}")
-        configure_file(${FILE} ${DEST_F} COPYONLY)
-        list(APPEND FLATBUFFER_HEADERS ${DEST_F})
-    endforeach()
-endif()
+get_target_property(FLATBUFFERS_INCLUDE_DIR flatbuffers::flatbuffers INTERFACE_INCLUDE_DIRECTORIES)
+file(GLOB FLATBUFFER_HEADER_SRC CONFIGURE_DEPENDS "${FLATBUFFERS_INCLUDE_DIR}/flatbuffers/*.h")
+file(MAKE_DIRECTORY ${Showtime_COMPILED_INCLUDE_DIRS}/flatbuffers)
+set(FLATBUFFER_HEADERS "")
+foreach(FILE ${FLATBUFFER_HEADER_SRC})
+    get_filename_component(FILE_N ${FILE} NAME)
+    set(DEST_F "${Showtime_COMPILED_INCLUDE_DIRS}/flatbuffers/${FILE_N}")
+    configure_file(${FILE} ${DEST_F} COPYONLY)
+    list(APPEND FLATBUFFER_HEADERS ${DEST_F})
+endforeach()
+
 
 # Copy delegate headers
 file(COPY ${Showtime_SUBMODULE_DEPENDENCIES_DIR}/multifunction/multicast.hpp DESTINATION ${Showtime_COMPILED_INCLUDE_DIRS}/showtime)
@@ -322,6 +325,12 @@ set(SHOWTIME_PRIVATE_DEFS
     ZMQ_BUILD_DRAFT_API
     BOOST_THREAD_VERSION=4
 )
+
+set(SHOWTIME_PRIVATE_INCLUDES)
+foreach(target ${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS})
+    get_target_property(PRIVATE_TARGET_INCLUDES ${target} INTERFACE_INCLUDE_DIRECTORIES)
+    list(APPEND SHOWTIME_PRIVATE_INCLUDES $<BUILD_INTERFACE:${PRIVATE_TARGET_INCLUDES}>)
+endforeach()
 
 # Flags to allow for PDB files in release builds
 set(SHOWTIME_RELEASE_PDB_COMPILE_DEFINITIONS)
@@ -425,6 +434,9 @@ if(BUILD_SHARED_FROM_STATIC_LIBS)
     elseif(ANDROID)
         # set(SHARED_LINK_OPTIONS_START "-Wl,--whole-archive")
         # set(SHARED_LINK_OPTIONS_END "-Wl,--no-whole-archive")
+            find_library(ANDROID_LOG log)
+            list(APPEND SHOWTIME_PRIVATE_STATIC_LINKED_LIBS ${ANDROID_LOG})
+            list(APPEND SHOWTIME_PRIVATE_STATIC_LINKED_LIBS ${ANDROID_LOG})
     elseif(MACOSX)
         # set(SHARED_LINK_OPTIONS "-Wl,-all_load")
     endif()

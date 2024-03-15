@@ -105,7 +105,9 @@ function Build-Boost{
         "threading=multi",
         "architecture=$arch",
         "runtime-link=shared",
-        "toolset=$toolset"
+        "toolset=$toolset",
+        "define=_WIN32_WINNT=0x0A00",
+        "define=BOOST_USE_WINAPI_VERSION=0x0A00"
     )
     $boost_libs = $libraries
     $boost_libs = $boost_libs | ForEach-Object {"--with-$_"}
@@ -131,6 +133,7 @@ function Build-Boost{
     
     Push-Location "$dependency_dir/boost_$boost_ver_scored"
     cmd.exe /c "call bootstrap.bat $toolset_ver"  
+    echo "./b2.exe $(@("stage") + $boost_libs + $boost_shared_lib_flags + $boost_flags)"
     ./b2.exe $(@("stage") + $boost_libs + $boost_shared_lib_flags + $boost_flags)
     ./b2.exe $(@("install") + $boost_libs + $boost_shared_lib_flags + $boost_flags)
     ./b2.exe $(@("stage") + $boost_libs + $boost_static_lib_flags + $boost_flags)

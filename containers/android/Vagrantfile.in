@@ -2,7 +2,7 @@
 # vi: set ft=ruby :
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "ubuntu/bionic64"
+  config.vm.box = "ubuntu/jammy64"
   config.vm.synced_folder "${CMAKE_SOURCE_DIR}", "/vagrant-showtime-src"
   config.vm.synced_folder "${ANDROID_BIN_DIR}", "/vagrant-showtime-bin-output"
   config.vm.synced_folder "${ANDROID_LIB_DIR}", "/vagrant-showtime-lib-output"
@@ -38,7 +38,8 @@ Vagrant.configure("2") do |config|
     "INSTALL_PREFIX" => "/usr/local",
     "ANDROID_BOOST_VER" => boost_ver,
     "ANDROID_BOOST_VER_SCORED" => boost_ver_scored,
-    "ANDROID_BOOST_VER_BASE" => boost_ver_maj
+    "ANDROID_BOOST_VER_BASE" => boost_ver_maj,
+    "ANDROID_USE_STD_FORMAT" => "${ANDROID_USE_STD_FORMAT}"
   }
 
   # Common CMake flags

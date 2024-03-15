@@ -1,6 +1,6 @@
 #include "ZstClientHierarchy.h"
 #include "../core/transports/ZstStageTransport.h"
-
+#include <showtime/ZstFormat.h>
 using namespace flatbuffers;
 
 namespace showtime::client {
@@ -311,7 +311,7 @@ void ZstClientHierarchy::factory_create_entity_handler(const FactoryCreateEntity
         // Activate entity separately
 		Log::net(Log::Level::notification, "Activating creatable {} ", entity->URI().path());
 		this->activate_entity(entity, ZstTransportRequestBehaviour::ASYNC_REPLY, [this, entity, request_id](ZstMessageResponse response) {
-			if (!ZstStageTransport::verify_signal(response.response, Signal_OK, std::format("Creatable {} activation request timed out", entity->URI().path())))
+			if (!ZstStageTransport::verify_signal(response.response, Signal_OK, ZSTformat("Creatable {} activation request timed out", entity->URI().path())))
 				return;
 
 			Log::net(Log::Level::notification, "Creatable {} activated", entity->URI().path());

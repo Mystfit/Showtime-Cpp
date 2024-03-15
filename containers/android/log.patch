@@ -1,0 +1,18 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index d8550e75..717811b8 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -127,6 +127,13 @@ list(APPEND CMAKE_MODULE_PATH "${SOURCE_DIR}")
+ set(OPTIONAL_LIBRARIES)
+ set(OPTIONAL_LIBRARIES_STATIC)
+ 
++if(ANDROID)
++  find_library(ANDROID_LOG log)
++  ADD_DEFINITIONS(-DCZMQ_HAVE_ANDROID)
++  list(APPEND OPTIONAL_LIBRARIES ${ANDROID_LOG})
++  list(APPEND OPTIONAL_LIBRARIES_STATIC ${ANDROID_LOG})
++endif()
++
+ ########################################################################
+ # LIBZMQ dependency
+ ########################################################################

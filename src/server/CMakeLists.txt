@@ -50,6 +50,10 @@ target_link_libraries(${SERVER_TARGET_OBJECTS}
   ${SHOWTIME_PRIVATE_LINKED_LIBS}
 )
 
+target_include_directories(${SERVER_TARGET_OBJECTS} PRIVATE
+  ${SHOWTIME_PRIVATE_INCLUDES}
+)
+
 set(PLUGIN_COMPILE_OPTS "")
 if(WIN32)
   # Server objects are too large as of boost 1.81

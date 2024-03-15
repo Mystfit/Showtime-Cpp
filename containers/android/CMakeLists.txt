@@ -10,6 +10,11 @@ set(ANDROID_CONTAINER_RELATIVE_LIB_PATH "${ANDROID_CONTAINER_INTERNAL_BUILD_DIR}
 
 # Android build options
 set(ANDROID_PLATFORM_VERSIONS
+	"34"
+	"33"
+	"32"
+	"31"
+	"30"
 	"29"
 	"28"
 	"27"
@@ -19,6 +24,10 @@ set(ANDROID_PLATFORM_VERSIONS
 )
 
 set(ANDROID_NDK_VERSIONS
+	"r26c"
+	"r26"
+	"r25c"
+	"r25b"
 	"r22"
 	"r21d"
 	"r21b"
@@ -30,14 +39,16 @@ set(ANDROID_NDK_VERSIONS
 )
 
 set(ANDROID_BOOST_VERSIONS
+    "1.84.0"
 	"1.72.0"
 	"1.70.0"
 	"1.69.0"
 )
 
-set(ANDROID_PLATFORM "29" CACHE STRING "Android platform version")
-set(ANDROID_NDK_VERSION "r22" CACHE STRING "Android NDK version")
-set(ANDROID_BOOST_VERSION "1.72.0" CACHE STRING "Boost version")
+set(ANDROID_PLATFORM "32" CACHE STRING "Android platform version")
+set(ANDROID_NDK_VERSION "r25b" CACHE STRING "Android NDK version")
+set(ANDROID_BOOST_VERSION "1.84.0" CACHE STRING "Boost version")
+set(ANDROID_USE_STD_FORMAT 1 CACHE BOOL "Use std::format instead of fmtlib")
 
 # Create native paths
 file(TO_NATIVE_PATH ${ANDROID_BIN_DIR} NATIVE_BINARY_PATH)

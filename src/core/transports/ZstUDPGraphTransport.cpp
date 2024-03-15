@@ -6,7 +6,7 @@
 #include <boost/asio/placeholders.hpp>
 #include <boost/thread/futures/wait_for_all.hpp>
 #include <sstream>
-#include <format>
+#include <showtime/ZstFormat.h>
 
 //#include "../boost_use_future.hpp"
 #include <future>
@@ -185,12 +185,12 @@ namespace showtime
 					pointer += sizeof(struct STUNAttributeHeader);
 					struct STUNXORMappedIPv4Address* xorAddress = (struct STUNXORMappedIPv4Address*)pointer;
 					unsigned int numAddress = htonl(xorAddress->address) ^ 0x2112A442;
-					address = std::vformat("{}.{}.{}.{}:{}", std::make_format_args(
+					address = ZSTformat("{}.{}.{}.{}:{}", 
 						(numAddress >> 24) & 0xFF,
 						(numAddress >> 16) & 0xFF,
 						(numAddress >> 8) & 0xFF,
 						numAddress & 0xFF,
-						ntohs(xorAddress->port) ^ 0x2112));
+						ntohs(xorAddress->port) ^ 0x2112);
 
 					//m_udp_sock->close();
 					free(request);

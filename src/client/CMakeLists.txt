@@ -43,6 +43,10 @@ target_link_libraries(${CLIENT_TARGET_OBJECTS}
   ${SHOWTIME_PRIVATE_LINKED_LIBS}
 )
 
+target_include_directories(${CLIENT_TARGET_OBJECTS} PRIVATE 
+  ${SHOWTIME_PRIVATE_INCLUDES}
+)
+
 target_compile_definitions(${CLIENT_TARGET_OBJECTS} PRIVATE ZST_EXPORT_CLIENT_API)
 
 set(CLIENT_LIBS "")

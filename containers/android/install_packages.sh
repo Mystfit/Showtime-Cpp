@@ -14,21 +14,28 @@ dpkg --add-architecture i386
 
 # CMake
 # -----
-wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | sudo apt-key add -
-sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
+# wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | sudo apt-key add -
+# sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
 apt-get update -qq
 apt-get -y dist-upgrade -qq
 apt-get -y install -qq cmake  < /dev/null > /dev/null
 
 # Compiler toolchain
-apt-get -y install -qq build-essential libc6-dev-i386 clang pkg-config < /dev/null > /dev/null
+apt-get -y install -qq build-essential libc6-dev-i386 pkg-config < /dev/null > /dev/null
 
+# Clang 17+
+wget https://apt.llvm.org/llvm.sh
+chmod u+x llvm.sh
+yes | ./llvm.sh 18
+ln -s /usr/bin/clang-18 /usr/bin/clang
+ln -s /usr/bin/clang++-18 /usr/bin/clang++
+echo "Using clang $(clang --version | head -n 1)"
 
 # Android SDK
 # -----------
 echo "Installing Android SDK"
 apt-get -y install -qq libc6:i386 libncurses5:i386 libstdc++6:i386 libbz2-1.0:i386 openjdk-8-jdk > /dev/null
-wget -q -O sdk_tools.zip https://dl.google.com/android/repository/commandlinetools-linux-6200805_latest.zip > /dev/null
+wget -q -O sdk_tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip > /dev/null
 unzip -q sdk_tools.zip -d $ANDROID_HOME < /dev/null > /dev/null
 
 yes | $ANDROID_HOME/tools/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses >/dev/null
@@ -38,19 +45,19 @@ $ANDROID_HOME/tools/bin/sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "pl
 # Android NDK
 # -----------
 echo "Installing Android NDK"
-wget -q -O android_ndk.zip https://dl.google.com/android/repository/android-ndk-$ANDROID_NDK_SHORT_VERSION-linux-x86_64.zip > /dev/null
+wget -q -O android_ndk.zip https://dl.google.com/android/repository/android-ndk-$ANDROID_NDK_SHORT_VERSION-linux.zip > /dev/null
 unzip -q android_ndk.zip -d $ANDROID_NDK_HOME < /dev/null > /dev/null
 
 # SWIG
 # ----
-apt-get -y install -qq autoconf automake libtool libpcre3 libpcre3-dev bison flex < /dev/null > /dev/null
+apt-get -y install -qq autoconf automake libtool libpcre3 libpcre3-dev bison flex swig < /dev/null > /dev/null
 
-echo "Installing monoaot Swig"
-git clone https://github.com/mystfit/swig.git
-cd ./swig
-git checkout monoaot
-./autogen.sh >/dev/null
-./configure --prefix=$INSTALL_PREFIX >/dev/null
-make >/dev/null
-make install >/dev/null
-cd ..
+# echo "Installing monoaot Swig"
+# git clone https://github.com/mystfit/swig.git
+# cd ./swig
+# git checkout monoaot
+# ./autogen.sh >/dev/null
+# ./configure --prefix=$INSTALL_PREFIX >/dev/null
+# make >/dev/null
+# make install >/dev/null
+# cd ..

@@ -1,0 +1,34 @@
+diff --git a/build-android.sh b/build-android.sh
+index c84a38e..b593e93 100755
+--- a/build-android.sh
++++ b/build-android.sh
+@@ -640,6 +640,16 @@ echo "Building boost for android for $ARCH"
+       TOOLSET_ARCH=${TOOLSET}
+       TARGET_OS=linux
+   fi
++  if [ -n "$(echo "$ARCH" | grep 'arm')" ]; then
++      echo "$ARCH falls into the category of arm"
++      PLATFORM_ARCH="arm"
++  elif [ -n "$(echo "$ARCH" | grep 'x86')" ]; then
++      echo "$ARCH falls into the category of x86"
++      PLATFORM_ARCH="x86"
++  else
++      echo "$ARCH does not fall into the category of arm or x86"
++      PLATFORM_ARCH="arm"
++  fi
+   if [ -n "$WITH_PYTHON" ]; then
+     WITHOUT_LIBRARIES=
+     PYTHON_BUILD=python=${PYTHON_VERSION}
+@@ -656,7 +666,11 @@ echo "Building boost for android for $ARCH"
+     ./b2 -q                          \
+         -d+2                         \
+         --ignore-site-config         \
+-        -j$NCPU                      \
++        -j$NCPU	                    \
++	       architecture=$PLATFORM_ARCH  \
++        abi=aapcs                    \
++        binary-format=elf            \
++        address-model=64             \
+         target-os=${TARGET_OS}       \
+         toolset=${TOOLSET_ARCH}      \
+         $cflags                      \
