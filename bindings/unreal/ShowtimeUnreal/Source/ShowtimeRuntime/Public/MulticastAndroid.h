@@ -36,5 +36,8 @@ private:
     static jmethodID Sockets_GetBroadcastIP;
     static jmethodID Sockets_AcquireMulticastLock;
     static jmethodID Sockets_ReleaseMulticastLock;
+
+    static bool bIsMulticastLockAcquired;
+
 #endif
 };

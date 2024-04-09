@@ -13,6 +13,8 @@ jmethodID UMulticastAndroid::Sockets_GetBroadcastIP = NULL;
 jmethodID UMulticastAndroid::Sockets_AcquireMulticastLock = NULL;
 jmethodID UMulticastAndroid::Sockets_ReleaseMulticastLock = NULL;
 
+bool UMulticastAndroid::bIsMulticastLockAcquired = false;
+
 void UMulticastAndroid::InitMulticastFunctions() {
     if (JNIEnv* Env = FAndroidApplication::GetJavaEnv(true)) {
         UE_LOG(Showtime, Display, TEXT("Inside InitMulticastFunctions()"));
@@ -68,7 +70,7 @@ void UMulticastAndroid::GetBroadcastAddrFixed(FInternetAddr& broadcastAddr) {
 }
 
 void UMulticastAndroid::AcquireMulticastLock() {
-    if (JNIEnv* Env = FAndroidApplication::GetJavaEnv(true)) {
+    /*if (JNIEnv* Env = FAndroidApplication::GetJavaEnv(true)) {
         if (!UMulticastAndroid::Sockets_AcquireMulticastLock) UMulticastAndroid::InitMulticastFunctions();
 
         FJavaWrapper::CallVoidMethod(Env, FJavaWrapper::GameActivityThis,
@@ -76,11 +78,20 @@ void UMulticastAndroid::AcquireMulticastLock() {
                 FJavaWrapper::GameActivityClassID,
                 "Sockets_AcquireMulticastLock", "()V", false));
         UE_LOG(Showtime, Display, TEXT("Attempting to aquire multicast lock"));
+    }*/
+    extern bool AndroidThunkCpp_AcquireWifiManagerMulticastLock();
+    if (AndroidThunkCpp_AcquireWifiManagerMulticastLock())
+    {
+        UMulticastAndroid::bIsMulticastLockAcquired = true;
+        UE_LOG(Showtime, Display, TEXT("WifiManager.MulticastLock succesfully aquired"));
+    }
+    else {
+        UE_LOG(Showtime, Display, TEXT("WifiManager.MulticastLock was not aquired"));
     }
 }
 
 void UMulticastAndroid::ReleaseMulticastLock() {
-    if (JNIEnv* Env = FAndroidApplication::GetJavaEnv(true)) {
+    /*if (JNIEnv* Env = FAndroidApplication::GetJavaEnv(true)) {
         if (!UMulticastAndroid::Sockets_ReleaseMulticastLock) UMulticastAndroid::InitMulticastFunctions();
 
         FJavaWrapper::CallVoidMethod(Env, FJavaWrapper::GameActivityThis,
@@ -88,6 +99,13 @@ void UMulticastAndroid::ReleaseMulticastLock() {
                 FJavaWrapper::GameActivityClassID,
                 "Sockets_ReleaseMulticastLock", "()V", false));
         UE_LOG(Showtime, Display, TEXT("Releasing multicast lock"));
+    }*/
+    if (UMulticastAndroid::bIsMulticastLockAcquired)
+    {
+        UE_LOG(Showtime, Display, TEXT("Releasing WifiManager.MulticastLock"));
+        extern void AndroidThunkCpp_ReleaseWifiManagerMulticastLock();
+        AndroidThunkCpp_ReleaseWifiManagerMulticastLock();
+        UMulticastAndroid::bIsMulticastLockAcquired = false;
     }
 }
 #else

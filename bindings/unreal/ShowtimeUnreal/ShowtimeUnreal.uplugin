@@ -29,7 +29,6 @@
 			"WhitelistPlatforms": [
 				"Win64",
 				"Mac",
-				"Hololens",
 				"Android"
 			]
 		}

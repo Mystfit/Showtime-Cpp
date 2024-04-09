@@ -60,21 +60,21 @@ if(ANDROID OR BUILD_ANDROID_CONTAINER)
         TARGET ${UNREAL_TARGET}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${ANDROID_UNREAL_BIN_DIR}
         COMMAND ${CMAKE_COMMAND} -E echo "Copying ${ANDROID_UNREAL_BIN_DIR}"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${ANDROID_BIN_DIR} ${ANDROID_UNREAL_BIN_DIR}
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${ANDROID_BIN_DIR}/Android ${ANDROID_UNREAL_BIN_DIR}
         COMMAND ${CMAKE_COMMAND} -E echo "Copying ${ANDROID_UNREAL_LIB_DIR}"
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${ANDROID_LIB_DIR} ${ANDROID_UNREAL_LIB_DIR}
         DEPENDS ${ANDROID_CONTAINER_TARGET}
     )
 
     # Copy plugins
-    add_custom_command(
-        PRE_BUILD
-        TARGET ${UNREAL_TARGET}
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${ANDROID_UNREAL_BIN_DIR}/plugins
-        COMMAND ${CMAKE_COMMAND} -E echo "Copying plugins to ${ANDROID_UNREAL_BIN_DIR}/plugins"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${ANDROID_BIN_DIR}/plugins ${ANDROID_UNREAL_BIN_DIR}/plugins
-        DEPENDS ${ANDROID_CONTAINER_TARGET}
-    )
+    # add_custom_command(
+    #     PRE_BUILD
+    #     TARGET ${UNREAL_TARGET}
+    #     COMMAND ${CMAKE_COMMAND} -E make_directory ${ANDROID_UNREAL_BIN_DIR}/Android/plugins
+    #     COMMAND ${CMAKE_COMMAND} -E echo "Copying plugins to ${ANDROID_UNREAL_BIN_DIR}/Android/plugins"
+    #     COMMAND ${CMAKE_COMMAND} -E copy_directory ${ANDROID_BIN_DIR}/Android/plugins ${ANDROID_UNREAL_BIN_DIR}/plugins
+    #     DEPENDS ${ANDROID_CONTAINER_TARGET}
+    # )
     if(BUILD_ANDROID_CONTAINER)
         list(APPEND UNREAL_DEPENDENCIES ${ANDROID_CONTAINER_TARGET})
     endif()

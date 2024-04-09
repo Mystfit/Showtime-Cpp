@@ -1,8 +1,8 @@
 #include "ClientAdaptors.h"
 #include "ShowtimeSubsystem.h"
-//#ifdef PLATFORM_ANDROID
-//#include "MulticastAndroid.h"
-//#endif
+#if PLATFORM_ANDROID
+#include "MulticastAndroid.h"
+#endif
 
 using namespace showtime;
 
@@ -15,7 +15,8 @@ void ClientAdaptors::on_connected_to_server(ShowtimeClient* client, const ZstSer
 	//Owner->RefreshEntityWrappers();
 	Owner->OnConnectedToServer.Broadcast(FServerAddressFromShowtime(server));
 #if PLATFORM_ANDROID
-	//MulticastAndroid::ReleaseMulticastLock();
+	// If we are connected, we don't need to receive server beacons
+	UMulticastAndroid::ReleaseMulticastLock();
 #endif
 }
 
@@ -23,7 +24,8 @@ void ClientAdaptors::on_disconnected_from_server(ShowtimeClient* client, const Z
 {
 	Owner->OnDisconnectedFromServer.Broadcast(FServerAddressFromShowtime(server));
 #if PLATFORM_ANDROID
-	//MulticastAndroid::AcquireMulticastLock();
+	// Start listening for server beacons again
+	UMulticastAndroid::AcquireMulticastLock();
 #endif
 }
 

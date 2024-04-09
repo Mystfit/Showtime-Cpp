@@ -4,14 +4,15 @@
 
 //#include <Runtime/Networking/Public/Interfaces/IPv4/IPv4Address.h>
 #include "CoreMinimal.h"
-#include "Tickable.h"
 #include "Components/ActorComponent.h"
 #include "ServerAddress.h"
 #include "ClientAdaptors.h"
 #include "ShowtimeView.h"
 #include "ShowtimeServerBeacon.h"
 
-#include "Subsystems/GameInstanceSubsystem.h"
+#include <Subsystems/GameInstanceSubsystem.h>
+#include <Tickable.h>
+
 #include "ShowtimeSubsystem.generated.h"
 
 using namespace showtime;
@@ -62,7 +63,7 @@ public:
 	//UShowtimeClient(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	// Begin Subsystem interface
-
+	virtual bool ShouldCreateSubsystem(UObject* Outer) const override;
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 	
@@ -147,11 +148,12 @@ public:
 	void Tick(float DeltaTime) override;
 	void Tick_Implementation(float DeltaTime);
 
+	virtual ETickableTickType GetTickableTickType() const override;
 	virtual bool IsAllowedToTick() const override;
 	virtual bool IsTickable() const override;
 	virtual bool IsTickableInEditor() const override;
 	virtual bool IsTickableWhenPaused() const override;
-	virtual TStatId GetStatId() const override;
+	virtual TStatId GetStatId() const override { RETURN_QUICK_DECLARE_CYCLE_STAT(UShowtimeSubsystem, STATGROUP_Tickables); }
 
 private:
 	void AttachEvents();

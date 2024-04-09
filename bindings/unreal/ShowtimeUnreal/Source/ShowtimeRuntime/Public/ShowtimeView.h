@@ -58,12 +58,12 @@ public:
 	// ---------------
 
 	void on_performer_arriving(showtime::ZstPerformer* performer) override;
-	void on_performer_leaving(const showtime::ZstURI& performer_path) override;
+	void on_performer_leaving(showtime::ZstPerformer* performer) override;
 	void on_entity_arriving(showtime::ZstEntityBase* entity) override;
-	void on_entity_leaving(const showtime::ZstURI& entity_path) override;
-	void on_entity_updated(showtime::ZstEntityBase* entity) override;
+	void on_entity_leaving(showtime::ZstEntityBase* entity) override;
+	void on_entity_updated(ZstEntityBase* entity, const ZstURI& orig_path) override;
 	void on_factory_arriving(showtime::ZstEntityFactory* factory) override;
-	void on_factory_leaving(const showtime::ZstURI& factory_path) override;
+	void on_factory_leaving(showtime::ZstEntityFactory* factory) override;
 	void on_cable_created(showtime::ZstCable* cable) override;
 	void on_cable_destroyed(const showtime::ZstCableAddress& cable_address) override;
 	void on_server_discovered(showtime::ShowtimeClient* client, const showtime::ZstServerAddress* server) override;

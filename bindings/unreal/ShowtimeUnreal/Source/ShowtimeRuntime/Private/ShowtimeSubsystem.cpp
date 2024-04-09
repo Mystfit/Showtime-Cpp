@@ -21,6 +21,11 @@ DEFINE_LOG_CATEGORY(Showtime);
 //	//View = static_cast<UShowtimeView*>(CreateDefaultSubobject("View", ViewClass, ViewClass, /*bIsRequired =*/ true, false));
 //}
 
+bool UShowtimeSubsystem::ShouldCreateSubsystem(UObject* Outer) const
+{
+	return true;
+}
+
 void UShowtimeSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	client = MakeShared<ShowtimeClient>();
@@ -64,8 +69,10 @@ void UShowtimeSubsystem::Init(TSubclassOf<class UShowtimeView> ViewClass)
 	UMulticastAndroid::AcquireMulticastLock();
 	plugin_path = UShowtimePluginManagerAndroid::GetPluginPath();
 #endif
-	if(!plugin_path.IsEmpty())
+	if (!plugin_path.IsEmpty()) {
 		client->set_plugin_path(TCHAR_TO_UTF8(*plugin_path));
+		UE_LOG(Showtime, Error, TEXT("Showtime native plugin path is %s"), *plugin_path);
+	}
 	client->init(TCHAR_TO_UTF8(*ClientName), true);
 
 	if (!View) {
@@ -76,7 +83,9 @@ void UShowtimeSubsystem::Init(TSubclassOf<class UShowtimeView> ViewClass)
 	// Additional event adaptors
 	AttachEvents();
 
-	View->SpawnEntity(Handle()->get_root());
+	// Create representation of our local root entity
+	if(client->is_init_completed())
+		View->SpawnEntity(Handle()->get_root());
 }
 
 void UShowtimeSubsystem::JoinServerByAddress(const FString& address)
@@ -208,20 +217,23 @@ void UShowtimeSubsystem::RemoveView()
 
 void UShowtimeSubsystem::Tick_Implementation(float DeltaTime)
 {
-	client->poll_once();
+	if(client)
+		client->poll_once();
+}
+
+ETickableTickType UShowtimeSubsystem::GetTickableTickType() const
+{
+	return IsTemplate() ? ETickableTickType::Never : FTickableGameObject::GetTickableTickType();
 }
 
 bool UShowtimeSubsystem::IsAllowedToTick() const
 {
-	return client->is_init_completed();
+	return (client) ? client->is_init_completed() : false;
 }
 
 bool UShowtimeSubsystem::IsTickable() const
 {
-	if (client) {
-		return client->is_init_completed();
-	}
-	return false;
+	return (client) ? client->is_init_completed() : false;
 }
 
 bool UShowtimeSubsystem::IsTickableInEditor() const
@@ -232,9 +244,4 @@ bool UShowtimeSubsystem::IsTickableInEditor() const
 bool UShowtimeSubsystem::IsTickableWhenPaused() const
 {
 	return true;
-}
-
-TStatId UShowtimeSubsystem::GetStatId() const
-{
-	return UObject::GetStatID();
 }

@@ -54,10 +54,6 @@ public class ShowtimeRuntime : ModuleRules
 		{
 			arch = "arm64-v8a";
 		}
-		else if (Target.Platform == UnrealTargetPlatform.HoloLens)
-        {
-			arch = Target.HoloLensPlatform.Architecture.ToString();
-		}
 		Console.WriteLine(Target.Architecture);
 
 		var win_lib_path = Path.Combine(PluginDirectory, "external", "lib", "Win64", arch);
@@ -69,21 +65,21 @@ public class ShowtimeRuntime : ModuleRules
 		if (bUseDebug)
 		{
 			win64_libs = new string[]{
-				Path.Combine(win_lib_path, (Target.Platform == UnrealTargetPlatform.HoloLens) ? "ShowtimeUWPd.lib" : "Showtimed.lib")
+				Path.Combine(win_lib_path, "Showtimed.lib")
 			};
 
 			win64_binaries = new string[]{
-				Path.Combine(win_bin_path, (Target.Platform == UnrealTargetPlatform.HoloLens) ? "ShowtimeUWPd.dll" :"Showtimed.dll")
+				Path.Combine(win_bin_path, "Showtimed.dll")
 			};
 		}
 		else
 		{
 			win64_libs = new string[]{
-				Path.Combine(win_lib_path, (Target.Platform == UnrealTargetPlatform.HoloLens) ? "ShowtimeUWP.lib" : "Showtime.lib")
+				Path.Combine(win_lib_path, "Showtime.lib")
 			};
 
 			win64_binaries = new string[]{
-				Path.Combine(win_bin_path, (Target.Platform == UnrealTargetPlatform.HoloLens) ? "ShowtimeUWP.dll" : "Showtime.dll")
+				Path.Combine(win_bin_path, "Showtime.dll")
 			};
 		}
 
@@ -108,7 +104,7 @@ public class ShowtimeRuntime : ModuleRules
 		List<string> platform_binaries = new List<string>();
 
 		// Set windows binaries
-		if (Target.Platform == UnrealTargetPlatform.Win64 || Target.Platform == UnrealTargetPlatform.HoloLens)
+		if (Target.Platform == UnrealTargetPlatform.Win64)
 		{
 			platform_libs.AddRange(win64_libs);
 			platform_binaries.AddRange(win64_binaries);
