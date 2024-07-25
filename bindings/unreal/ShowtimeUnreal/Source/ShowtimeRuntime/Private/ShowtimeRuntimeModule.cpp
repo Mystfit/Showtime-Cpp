@@ -1,6 +1,7 @@
 #include "Modules/ModuleManager.h"
 #include "ShowtimeRuntimeModule.h"
 #include "CoreMinimal.h"
+#include "ShowtimeLog.h"
 #include "ShowtimeSubsystem.h"
 
 void FShowtimeRuntimeModule::StartupModule()

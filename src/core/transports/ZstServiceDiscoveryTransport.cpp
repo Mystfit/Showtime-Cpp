@@ -86,6 +86,8 @@ int ZstServiceDiscoveryTransport::s_handle_beacon(zloop_t * loop, zsock_t * sock
 {
     ZstServiceDiscoveryTransport * transport = (ZstServiceDiscoveryTransport*)arg;
     char * ipaddress = zstr_recv(socket);
+
+    Log::net(Log::Level::debug, "Received beacon message from {}", ipaddress);
     if (ipaddress) {
         std::string address(ipaddress);
         
@@ -124,6 +126,9 @@ int ZstServiceDiscoveryTransport::s_handle_beacon(zloop_t * loop, zsock_t * sock
         transport->dispatch_receive_event(msg, cleanup_func);
 
         zstr_free(&ipaddress);
+    }
+    else {
+        Log::net(Log::Level::warn, "Discovery beacon message missing IP address. Ignoring");
     }
     
     return 0;

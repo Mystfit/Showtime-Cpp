@@ -2,6 +2,7 @@
 #include "ShowtimeSubsystem.h"
 #include "ShowtimePerformer.h"
 #include "ShowtimeView.h"
+#include "ShowtimeLog.h"
 #include <showtime/ShowtimeClient.h>
 
 #include "Kismet/GameplayStatics.h"
@@ -13,8 +14,6 @@
 #endif
 #include <functional>
 #include "..\Public\ShowtimeSubsystem.h"
-
-DEFINE_LOG_CATEGORY(Showtime);
 
 //UShowtimeSubsystem::UShowtimeSubsystem(const FObjectInitializer& ObjectInitializer) : 
 //{

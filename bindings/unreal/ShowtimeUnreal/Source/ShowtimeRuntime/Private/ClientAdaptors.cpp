@@ -1,5 +1,6 @@
 #include "ClientAdaptors.h"
 #include "ShowtimeSubsystem.h"
+#include "ShowtimeLog.h"
 #if PLATFORM_ANDROID
 #include "MulticastAndroid.h"
 #endif
