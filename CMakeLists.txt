@@ -478,6 +478,22 @@ if(BUILD_SHARED_FROM_STATIC_LIBS)
     list(APPEND Showtime_LIBRARY_TARGETS ${SHARED_FROM_STATIC_TARGET})
 endif()
 
+# Build server launcher
+if(BUILD_SERVER_LAUNCHER)
+  # Server launcher dependencies
+  if(BUILD_SHARED_FROM_STATIC_LIBS)
+    target_link_libraries(${SERVER_LAUNCHER} PUBLIC ${SHARED_FROM_STATIC_TARGET})
+    add_dependencies(${SERVER_LAUNCHER} ${SHARED_FROM_STATIC_TARGET})
+  elseif(BUILD_SHARED)
+    target_link_libraries(${SERVER_LAUNCHER} PUBLIC ${SERVER_TARGET})
+    add_dependencies(${SERVER_LAUNCHER} ${SERVER_TARGET})
+  else()
+    target_link_libraries(${SERVER_LAUNCHER} PUBLIC ${SERVER_TARGET_STATIC})
+    add_dependencies(${SERVER_LAUNCHER} ${SERVER_TARGET_STATIC})
+  endif()
+endif()
+
+
 # Build Windows Universal DLL library
 set(UWP_TARGET ShowtimeUWP)
 option(BUILD_UWP_SHARED_LIB "Build UWP Store shared library" OFF)

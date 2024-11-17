@@ -33,6 +33,7 @@ void ZstServiceDiscoveryTransport::init(int port)
         ziflist_destroy(&iflist);
         return;
     }
+    ziflist_destroy(&iflist);
 
     //Create an actor to handle our zloop
     m_beacon_actor.init("beacon_actor");
@@ -43,8 +44,8 @@ void ZstServiceDiscoveryTransport::init(int port)
 #endif
     zsys_set_ipv4_mcast_address(CLIENT_MULTICAST_ADDR);
     zsys_set_interface("*");
-    auto mcast_address = zsys_ipv4_mcast_address();
-    auto iface = zsys_interface();
+    std::string mcast_address = std::string(zsys_ipv4_mcast_address());
+    std::string iface = std::string(zsys_interface());
     Log::net(Log::Level::debug, "Beacon multicast address is {}. Interface is {}", mcast_address, iface);
     
     //Create beacon actor

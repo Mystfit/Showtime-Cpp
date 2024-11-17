@@ -88,8 +88,6 @@ if(BUILD_STATIC)
   target_link_libraries(${SERVER_TARGET_STATIC} 
     PUBLIC
     ${CORE_TARGET_STATIC}
-    # PRIVATE
-    # ${SHOWTIME_PRIVATE_STATIC_LINKED_LIBS}
   )
   add_dependencies(${SERVER_TARGET_STATIC} ${CORE_TARGET_STATIC})
   list(APPEND SERVER_LIBS ${SERVER_TARGET_STATIC})
@@ -121,13 +119,4 @@ endforeach()
 if(BUILD_SERVER_LAUNCHER)
   # Server launcher sources
   target_sources(${SERVER_LAUNCHER} PRIVATE ${ZST_SERVER_LAUNCHER_SRC})
-
-  # Server launcher dependencies
-  if(BUILD_SHARED)
-    target_link_libraries(${SERVER_LAUNCHER} PUBLIC ${SERVER_TARGET})
-    add_dependencies(${SERVER_LAUNCHER} ${SERVER_TARGET})
-  else()
-    target_link_libraries(${SERVER_LAUNCHER} PUBLIC ${SERVER_TARGET_STATIC})
-    add_dependencies(${SERVER_LAUNCHER} ${SERVER_TARGET_STATIC})
-  endif()
 endif()

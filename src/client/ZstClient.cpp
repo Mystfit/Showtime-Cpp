@@ -807,7 +807,7 @@ void ZstClient::start_connection_handshake(const ZstURI& remote_client_path, con
                 Log::net(Log::Level::warn, "No handshake response from endpoint {}", address);
             }
         }
-    });
+    }, boost::coroutines::attributes());
 }
 
 void ZstClient::send_connection_handshake(const ZstURI& from, const std::string& address, std::shared_ptr<ZstGraphTransport> transport)

@@ -6,7 +6,7 @@ param(
     [string]$platform="x64",
     [string]$toolset="msvc-14.3",
     [switch]$without_boost = $false,
-    [string]$boost_version = "1.84.0"
+    [string]$boost_version = "1.86.0"
 )
 
 # Valid MSVC toolsets
@@ -147,13 +147,12 @@ foreach ($c in $config){
     Write-Output "Building dependencies for config: $config_titled"
     Build-CmakeFromGit -name "libzmq" -url "https://github.com/zeromq/libzmq.git" -branch "master" -config $config_titled -toolset $toolset_ver -arch $platform -flags @(
         "-DENABLE_DRAFTS=TRUE",
-        "-DCZMQ_BUILD_SHARED=OFF"
-        "-DZMQ_BUILD_TESTS=OFF"
+        "-DBUILD_SHARED=OFF"
+        "-DBUILD_TESTS=OFF"
     )
     Build-CmakeFromGit -name "czmq" -url "https://github.com/zeromq/czmq.git" -branch "master" -config $config_titled -toolset $toolset_ver -arch $platform -flags @(
         "-DENABLE_DRAFTS=TRUE",
-        "-DBUILD_TESTING=OFF",
-        "-DBUILD_SHARED=OFF"
+        "-DCZMQ_BUILD_SHARED =OFF"
         "-DCMAKE_DEBUG_POSTFIX=d"
         "-DLIBZMQ_FIND_USING_CMAKE_PACKAGE=ON"
     )
@@ -165,11 +164,6 @@ foreach ($c in $config){
         "-DFLATBUFFERS_BUILD_FLATLIB=ON"
         "-DCMAKE_DEBUG_POSTFIX=d"
     )
-    # Build-CmakeFromGit -name "fmt" -url "https://github.com/fmtlib/fmt.git" -branch "8.1.1" -config $config_titled -toolset $toolset_ver -arch $platform -flags @()
-    # Build-CmakeFromGit -name "rtmidi" -url "https://github.com/mystfit/rtmidi.git" -branch "cmake-updates" -config $config_titled -toolset $toolset_ver -arch $platform -flags @(
-    #     "-DRTMIDI_BUILD_STATIC_LIBS=ON"
-    #     "-DCMAKE_DEBUG_POSTFIX=d"
-    # )
 
     $arch = $platform
     if($platform -contains "ARM64"){

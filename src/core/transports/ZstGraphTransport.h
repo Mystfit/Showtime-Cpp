@@ -24,7 +24,7 @@ namespace showtime {
 		uint16_t local_port;
 	};
 
-	const std::regex address_match("([^:^\/]*)+?:(\d+)?");
+	const std::regex address_match("([^:^\\/]*)+?:(\\d+)?");
 
 class ZstGraphTransport :
     public ZstTransportLayer<ZstPerformanceMessage, ZstGraphTransportAdaptor>,
@@ -38,9 +38,7 @@ public:
 	ZST_EXPORT virtual void destroy() override;
 
 	ZST_EXPORT const std::string & get_graph_in_address() const;
-	ZST_EXPORT const std::string& get_public_graph_in_address() const;
 	ZST_EXPORT const std::string & get_graph_out_address() const;
-	ZST_EXPORT const std::string& get_public_graph_out_address() const;
 	ZST_EXPORT virtual std::string getPublicIPAddress(STUNServer server) = 0;
 	ZST_EXPORT void set_port(uint16_t port);
 	ZST_EXPORT uint16_t get_port();
