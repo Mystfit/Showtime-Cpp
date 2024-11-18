@@ -24,7 +24,7 @@ namespace showtime {
 		uint16_t local_port;
 	};
 
-	const std::regex address_match("([^:^\\/]*)+?:(\\d+)?");
+	const std::regex address_match(R"(([^:^/]*)+?:(d+)?)");
 
 class ZstGraphTransport :
     public ZstTransportLayer<ZstPerformanceMessage, ZstGraphTransportAdaptor>,

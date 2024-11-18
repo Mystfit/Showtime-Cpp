@@ -597,6 +597,7 @@ if(BUILD_ANDROID_CONTAINER OR BUILD_WINDOWS_CONTAINER OR BUILD_MACOS_CONTAINER)
     # Install vagrant scp plugin
     execute_process(COMMAND ${VAGRANTCOMMAND} plugin list OUTPUT_VARIABLE VAGRANT_PLUGIN_LIST)
     string(FIND ${VAGRANT_PLUGIN_LIST} "vagrant-scp" VAGRANT_SCP_PLUGIN_FOUND)
+    message(STATUS ${VAGRANT_PLUGIN_LIST})
     if(${VAGRANT_SCP_PLUGIN_FOUND} LESS 0)
         execute_process(COMMAND ${VAGRANTCOMMAND} plugin install vagrant-scp)
     endif()

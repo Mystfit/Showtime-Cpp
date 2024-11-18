@@ -13,14 +13,6 @@ set(ANDROID_PLATFORM_VERSIONS
 	"34"
 	"33"
 	"32"
-	"31"
-	"30"
-	"29"
-	"28"
-	"27"
-	"26"
-	"25"
-	"24"
 )
 
 set(ANDROID_NDK_VERSIONS
@@ -28,21 +20,11 @@ set(ANDROID_NDK_VERSIONS
 	"r26"
 	"r25c"
 	"r25b"
-	"r22"
-	"r21d"
-	"r21b"
-	"r21"
-	"r20b"
-	"r19c"
-	"r18b"
-	"r17c"
 )
 
 set(ANDROID_BOOST_VERSIONS
+	"1.85.0"
     "1.84.0"
-	"1.72.0"
-	"1.70.0"
-	"1.69.0"
 )
 
 set(ANDROID_STL_TYPES
@@ -52,7 +34,7 @@ set(ANDROID_STL_TYPES
 
 set(ANDROID_PLATFORM "32" CACHE STRING "Android platform version")
 set(ANDROID_NDK_VERSION "r25b" CACHE STRING "Android NDK version")
-set(ANDROID_BOOST_VERSION "1.84.0" CACHE STRING "Boost version")
+set(ANDROID_BOOST_VERSION "1.85.0" CACHE STRING "Boost version")
 set(ANDROID_USE_STD_FORMAT 1 CACHE BOOL "Use std::format instead of fmtlib")
 set(ANDROID_STL "c++_static" CACHE STRING "Android STL to link against. Shared or static")
 
