@@ -6,10 +6,10 @@ index c84a38e..b593e93 100755
        TOOLSET_ARCH=${TOOLSET}
        TARGET_OS=linux
    fi
-+  if [[ "$ARCH" == *arm* ]]; then
++  if [ -n "$(echo "$ARCH" | grep 'arm')" ]; then
 +      echo "$ARCH falls into the category of arm"
 +      PLATFORM_ARCH="arm"
-+  elif [[ "$ARCH" == *x86* ]]; then
++  elif [ -n "$(echo "$ARCH" | grep 'x86')" ]; then
 +      echo "$ARCH falls into the category of x86"
 +      PLATFORM_ARCH="x86"
 +  else

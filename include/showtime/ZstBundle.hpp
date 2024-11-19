@@ -19,11 +19,11 @@ namespace showtime {
         ZstBundleIterator(typename std::deque<T>::iterator it) : m_it(it){
         }
         
-        bool operator!=(const ZstBundleIterator& other){
+        bool operator!=(const ZstBundleIterator& other) const {
             return (m_it != other.m_it);
         }
         
-        bool operator==(const ZstBundleIterator& other){
+        bool operator==(const ZstBundleIterator& other) const {
             return (m_it == other.m_it);
         }
         
@@ -31,7 +31,7 @@ namespace showtime {
             return *m_it;
         }
         
-        const ZstBundleIterator& operator++(){
+        const ZstBundleIterator& operator++() {
             m_it++;
             return *this;
         }
