@@ -19,6 +19,13 @@ void ZstHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportReq
 	register_entity(entity);
 }
 
+void ZstHierarchy::activate_entity_batched(ZstBundle<ZstEntityBase*> entities, const ZstTransportRequestBehaviour& sendtype)
+{
+	for(ZstEntityBase* entity : entities){
+		register_entity(entity);
+	}
+}
+
 void ZstHierarchy::init_adaptors()
 {
 	//Add self as an adaptor for processing deferred events
@@ -129,8 +136,14 @@ ZstEntityBase * ZstHierarchy::walk_to_entity(const ZstURI & path) const
 
 std::unique_ptr<ZstEntityBase> ZstHierarchy::create_proxy_entity(EntityTypes entity_type, const EntityData* entity_data, const void* payload)
 {
-	// Check if the entity already exists in the hierarchy
 	auto entity_path = ZstURI(entity_data->URI()->c_str(), entity_data->URI()->size());
+
+	// Don't create proxies for local entities
+	if (get_local_performer() && entity_path.first() == get_local_performer()->URI()) {
+		return NULL;
+	}
+
+	// Check if the entity already exists in the hierarchy
 	if (find_entity(entity_path)) {
 		Log::net(Log::Level::error, "Can't create entity {}, it already exists", entity_path.path());
 		return NULL;
@@ -338,13 +351,9 @@ void ZstHierarchy::activate_entity_complete(ZstEntityBase * entity)
 	}
 
 	//Add entity to lookup tables
-	ZstEntityBundle bundle;
-	entity->get_child_entities(&bundle, true, true);
-	for (auto c : bundle) {
-		add_entity_to_lookup(c);
-        synchronisable_set_activating(c);
-        synchronisable_enqueue_activation(c);
-	}
+	add_entity_to_lookup(entity);
+	synchronisable_set_activating(entity);
+	synchronisable_enqueue_activation(entity);
 }
 
 void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)

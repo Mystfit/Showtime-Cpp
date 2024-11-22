@@ -106,50 +106,68 @@ void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransp
 	activate_entity(entity, sendtype, [](const ZstMessageResponse& r) {});
 }
 
-void ZstClientHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype, ZstMessageReceivedAction callback)
+void ZstClientHierarchy::activate_entity(ZstEntityBase* entity, const ZstTransportRequestBehaviour& sendtype, ZstMessageReceivedAction callback)
 {
-	if(!entity){
+	ZstEntityBundle bundle;
+	entity->get_child_entities(&bundle, true, true);
+	activate_entity_batched(bundle, sendtype, callback);
+}
+
+void ZstClientHierarchy::activate_entity_batched(ZstBundle<ZstEntityBase*> entities, const ZstTransportRequestBehaviour& sendtype)
+{
+	activate_entity_batched(entities, sendtype, [](const ZstMessageResponse& r) {});
+}
+
+void ZstClientHierarchy::activate_entity_batched(ZstBundle<ZstEntityBase*> entities, const ZstTransportRequestBehaviour& sendtype, ZstMessageReceivedAction callback)
+{
+	if (!entities.size()) {
 		Log::net(Log::Level::error, "Can't activate a null entity");
 		return;
 	}
 
-	// Entities need a parent before they can be activated
-	if (entity->parent_address().is_empty()) {
-        Log::net(Log::Level::warn, "{} has no parent", entity->URI().path());
-        return;
-	}
-
-	if (entity->is_activated())
-		return;
-	 
-    //Super activation
-	ZstHierarchy::activate_entity(entity, sendtype);
+	//Super activation
+	ZstHierarchy::activate_entity_batched(entities, sendtype);
 
 	//Send message
-	stage_events()->invoke([this, entity, sendtype, callback](ZstStageTransportAdaptor* adaptor){
+	stage_events()->invoke([this, entities, sendtype, callback](ZstStageTransportAdaptor* adaptor) {
 		//Build message
 		ZstTransportArgs args;
 		args.msg_send_behaviour = sendtype;
-		args.on_recv_response = [this, entity, callback](const ZstMessageResponse& response) {
+		args.on_recv_response = [this, entities, callback](const ZstMessageResponse& response) {
 			if (!ZstStageTransport::verify_signal(response.response, Signal_OK, "Activate entity"))
 				return;
-			this->activate_entity_complete(entity);
+
+			for (ZstEntityBase* entity : entities) {
+				this->activate_entity_complete(entity);
+			}
 			callback(response);
 		};
 
-		ZstEntityBundle bundle;
-		entity->get_child_entities(&bundle, true, true);
-		for (auto c : bundle) {
-			FlatBufferBuilder builder;
-			auto content_message = CreateEntityCreateRequest(builder, c->serialized_entity_type(), c->serialize(builder));
-			adaptor->send_msg(adaptor->create_msg(Content_EntityCreateRequest, content_message.Union(), builder), args);
+		// Set up flatbuffer builder and temporary buffers
+		FlatBufferBuilder builder;
+		std::vector<uint8_t> entity_types;
+		std::vector<flatbuffers::Offset<void>> entities_serialized;
+		entity_types.resize(entities.size());
+		entities_serialized.resize(entities.size());
+
+		// Split bundle into entity types and serialized entities
+		for(auto i = 0; i < entities.size(); i++){
+			auto entity = entities[i];
+			entity_types[i] = static_cast<uint8_t>(entity->serialized_entity_type());
+			entities_serialized[i] = entity->serialize(builder);
 		}
+
+		// Convert vectors to flatbuffer offsets
+		flatbuffers::Offset<flatbuffers::Vector<uint8_t>> entityTypesSerialized = builder.CreateVector(entity_types);
+		auto entitiesSerializedFB = builder.CreateVector(entities_serialized);
+
+		auto content_message = CreateEntityCreateRequest(builder, entityTypesSerialized, entitiesSerializedFB);
+		adaptor->send_msg(adaptor->create_msg(Content_EntityCreateRequest, content_message.Union(), builder), args);
 	});
 
 	if (sendtype == ZstTransportRequestBehaviour::SYNC_REPLY)
 		process_events();
 }
-
 
 void ZstClientHierarchy::deactivate_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype)
 {
@@ -270,7 +288,11 @@ void ZstClientHierarchy::client_leaving_handler(const ClientLeaveRequest* reques
 
 void ZstClientHierarchy::create_proxy_entity_handler(const EntityCreateRequest * request)
 {
-	add_proxy_entity(create_proxy_entity(request->entity_type(), get_entity_field(request->entity_type(), request->entity()), request->entity()));
+	for (size_t i = 0; i < request->entity()->size(); ++i) {
+		EntityTypes entity_type = static_cast<EntityTypes>(*request->entity_type()->data());
+		const void* entity_raw = request->entity()->Get(i);
+		add_proxy_entity(create_proxy_entity(entity_type, get_entity_field(entity_type, entity_raw), entity_raw));
+	}
 }
     
 void ZstClientHierarchy::update_proxy_entity_handler(const EntityUpdateRequest * request)
@@ -345,11 +367,9 @@ void ZstClientHierarchy::activate_entity_complete(ZstEntityBase * entity)
 
 	ZstEntityBundle bundle;
     entity->get_child_entities(&bundle, true, true);
-	for (auto c : bundle) {
-		hierarchy_events()->invoke([c](ZstHierarchyAdaptor* adaptor) { 
-			adaptor->on_entity_arriving(c); 
-		});
-	}
+	hierarchy_events()->invoke([entity](ZstHierarchyAdaptor* adaptor) {
+		adaptor->on_entity_arriving(entity);
+	});
 }
 
 void ZstClientHierarchy::destroy_entity_complete(ZstEntityBase * entity)

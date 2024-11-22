@@ -51,6 +51,8 @@ public:
 	// Entity activation/deactivation
 	// ------------------------------
 	
+	void activate_entity_batched(ZstBundle<ZstEntityBase*> entities, const ZstTransportRequestBehaviour& sendtype) override;
+	void activate_entity_batched(ZstBundle<ZstEntityBase*> entities, const ZstTransportRequestBehaviour& sendtype, ZstMessageReceivedAction callback);
 	void activate_entity(ZstEntityBase* entity, const ZstTransportRequestBehaviour & sendtype, ZstMessageReceivedAction callback);
 	void activate_entity(ZstEntityBase* entity, const ZstTransportRequestBehaviour & sendtype) override;
 	void deactivate_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype) override;

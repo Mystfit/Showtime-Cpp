@@ -521,10 +521,7 @@ void ZstClient::join_stage_complete(const ZstServerAddress& server_address, ZstM
     // Activate all child entities that were added before we joined
     bundle.clear();
     session()->hierarchy()->get_local_performer()->get_child_entities(&bundle, false, true);
-    for (auto c : bundle) {
-        Log::net(Log::Level::notification, "Post-join activating child entity {}", c->URI().path());
-        session()->hierarchy()->activate_entity(c, response.send_behaviour);
-    }
+    session()->hierarchy()->activate_entity_batched(bundle, ZstTransportRequestBehaviour::SYNC_REPLY);
 
     //Enqueue connection events
     m_session->dispatch_connected_to_stage();
@@ -902,14 +899,9 @@ void ZstClient::set_is_connecting(bool value)
 
 void ZstClient::on_entity_arriving(ZstEntityBase* entity)
 {
-    ZstEntityBundle bundle;
-    entity->get_child_entities(&bundle, true, true);
-
-    for (auto child : bundle) {
-        // Arriving output plugs need to register the graph transport so that they can dispatch messages
-        if (child->entity_type() == ZstEntityType::PLUG) {
-            init_arriving_plug(static_cast<ZstPlug*>(child));
-        }
+    // Arriving output plugs need to register the graph transport so that they can dispatch messages
+    if (entity->entity_type() == ZstEntityType::PLUG) {
+        init_arriving_plug(static_cast<ZstPlug*>(entity));
     }
 }
 

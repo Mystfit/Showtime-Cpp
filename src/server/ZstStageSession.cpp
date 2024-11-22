@@ -113,17 +113,29 @@ Signal ZstStageSession::synchronise_client_graph_handler(ZstPerformerStageProxy*
 		}
 	}
 
+	// Set up flatbuffer builder and temporary buffers
 	FlatBufferBuilder builder;
-	if (entity_bundle.size()) {
-		for (auto entity : entity_bundle) {
-			builder.Reset();
-			auto batch_entity_offset = CreateEntityCreateRequest(builder, entity->serialized_entity_type(), entity->serialize(builder));
-			stage_hierarchy()->whisper(sender, Content_EntityCreateRequest, batch_entity_offset.Union(), builder, ZstTransportArgs());
-		}
+	std::vector<uint8_t> entity_types;
+	std::vector<flatbuffers::Offset<void>> entities_serialized;
+	entity_types.resize(entity_bundle.size());
+	entities_serialized.resize(entity_bundle.size());
+
+	// Split bundle into entity types and serialized entities
+	for (auto i = 0; i < entity_bundle.size(); i++) {
+		auto entity = entity_bundle[i];
+		entity_types[i] = static_cast<uint8_t>(entity->serialized_entity_type());
+		entities_serialized[i] = entity->serialize(builder);
 	}
 
+	// Convert vectors to flatbuffer offsets
+	flatbuffers::Offset<flatbuffers::Vector<uint8_t>> entityTypesSerialized = builder.CreateVector(entity_types);
+	auto entitiesSerializedFB = builder.CreateVector(entities_serialized);
+
+	// Create entity creation request
+	auto content_message = CreateEntityCreateRequest(builder, entityTypesSerialized, entitiesSerializedFB);
+	stage_hierarchy()->whisper(sender, Content_EntityCreateRequest, content_message.Union(), builder, ZstTransportArgs());
+
 	// Pack all cables
-	// Create a new buffer builder
 	if (m_cables.size()) {
 		for (auto const& cable : m_cables) {
 			builder.Reset();

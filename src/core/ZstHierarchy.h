@@ -41,6 +41,7 @@ public:
 	// ------------------------------
 
 	ZST_EXPORT void register_entity(ZstEntityBase* entity);
+	ZST_EXPORT virtual void activate_entity_batched(ZstEntityBundle, const ZstTransportRequestBehaviour& sendtype = ZstTransportRequestBehaviour::SYNC_REPLY) override;
 	ZST_EXPORT virtual void activate_entity(ZstEntityBase* entity, const ZstTransportRequestBehaviour & sendtype = ZstTransportRequestBehaviour::SYNC_REPLY) override;
 	ZST_EXPORT virtual void deactivate_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype = ZstTransportRequestBehaviour::SYNC_REPLY) override;
 	ZST_EXPORT virtual ZstEntityBase * create_entity(const ZstURI & creatable_path, const char * name, const ZstTransportRequestBehaviour & sendtype = ZstTransportRequestBehaviour::SYNC_REPLY);

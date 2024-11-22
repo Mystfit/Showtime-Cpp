@@ -44,7 +44,18 @@ void ZstStageHierarchy::on_entity_arriving(ZstEntityBase* entity)
 	ZstTransportArgs args;
 	args.msg_send_behaviour = ZstTransportRequestBehaviour::PUBLISH;
 	FlatBufferBuilder builder;
-	auto content_message = CreateEntityCreateRequest(builder, entity->serialized_entity_type(), entity->serialize(builder));
+	
+	// Convert single entity to a batched EntityCreateRequest
+	std::vector<uint8_t> entity_types;
+	std::vector<flatbuffers::Offset<void>> entities_serialized;
+	entity_types.push_back(static_cast<uint8_t>(entity->serialized_entity_type()));
+	entities_serialized.push_back(entity->serialize(builder));
+	
+	// Convert vectors to flatbuffer offsets
+	flatbuffers::Offset<flatbuffers::Vector<uint8_t>> entityTypesSerialized = builder.CreateVector(entity_types);
+	auto entitiesSerializedFB = builder.CreateVector(entities_serialized);
+
+	auto content_message = CreateEntityCreateRequest(builder, entityTypesSerialized, entitiesSerializedFB);
 	Log::server(Log::Level::debug, "Broadcasting entity {}", entity->URI().path());
 
 	broadcast(Content_EntityCreateRequest, content_message.Union(), builder, args, excluded);
@@ -184,21 +195,26 @@ Signal ZstStageHierarchy::client_leaving_handler(const std::shared_ptr<ZstStageM
 Signal ZstStageHierarchy::create_entity_handler(const std::shared_ptr<ZstStageMessage>& request, ZstPerformerStageProxy* sender)
 {
 	auto content = request->buffer()->content_as_EntityCreateRequest();
-	const EntityData* entity_field = get_entity_field(content->entity_type(), content->entity());
-	auto entity_path = ZstURI(entity_field->URI()->c_str(), entity_field->URI()->size());
 
-	Log::server(Log::Level::notification, "Activating new proxy entity {}", entity_path.path());
-	if (sender->URI().first() != entity_path.first()) {
-		//A performer is requesting this entity be attached to another performer
-		Log::server(Log::Level::warn, "TODO: Performer requesting new entity to be attached to another performer", entity_path.path());
-		return Signal_ERR_ENTITY_NOT_FOUND;
-	}
+	for(size_t i = 0; i < content->entity_type()->size(); i++){
+		EntityTypes entity_type = static_cast<EntityTypes>(content->entity_type()->Get(i));
+		const void* entity_data = content->entity()->Get(i);
+		const EntityData* entity_field = get_entity_field(entity_type, entity_data);
+		auto entity_path = ZstURI(entity_field->URI()->c_str(), entity_field->URI()->size());
 
-	ZstHierarchy::add_proxy_entity(create_proxy_entity(content->entity_type(), entity_field, content->entity()));
-	ZstEntityBase* proxy = find_entity(entity_path);
-	if (!proxy) {
-		Log::server(Log::Level::warn, "No proxy entity found");
-		return Signal_ERR_ENTITY_NOT_FOUND;
+		Log::server(Log::Level::notification, "Activating new proxy entity {}", entity_path.path());
+		if (sender->URI().first() != entity_path.first()) {
+			//A performer is requesting this entity be attached to another performer
+			Log::server(Log::Level::warn, "TODO: Performer requesting new entity to be attached to another performer", entity_path.path());
+			return Signal_ERR_ENTITY_NOT_FOUND;
+		}
+
+		ZstHierarchy::add_proxy_entity(create_proxy_entity(entity_type, entity_field, entity_data));
+		ZstEntityBase* proxy = find_entity(entity_path);
+		if (!proxy) {
+			Log::server(Log::Level::warn, "No proxy entity found");
+			return Signal_ERR_ENTITY_NOT_FOUND;
+		}
 	}
 	
 	return Signal_OK;
