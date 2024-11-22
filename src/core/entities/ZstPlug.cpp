@@ -29,7 +29,8 @@ static const FlatbuffersValueMap value_type_lookup = boost::assign::list_of< Fla
 (ZstValueType::IntList, PlugValueData::PlugValueData_IntList)
 (ZstValueType::FloatList, PlugValueData::PlugValueData_FloatList)
 (ZstValueType::StrList, PlugValueData::PlugValueData_StrList)
-(ZstValueType::ByteList, PlugValueData::PlugValueData_PlugHandshake);
+(ZstValueType::ByteList, PlugValueData::PlugValueData_ByteList)
+(ZstValueType::PlugHandshake, PlugValueData::PlugValueData_PlugHandshake);
 
 //--------------------
 // ZstPlug

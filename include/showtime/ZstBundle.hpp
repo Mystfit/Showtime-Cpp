@@ -16,7 +16,7 @@ namespace showtime {
         using reference = T&;
         using difference_type = std::ptrdiff_t;
 
-        ZstBundleIterator(typename std::deque<T>::iterator it) : m_it(it){
+        ZstBundleIterator(typename std::deque<T>::const_iterator it) : m_it(it){
         }
         
         bool operator!=(const ZstBundleIterator& other) const {
@@ -37,7 +37,7 @@ namespace showtime {
         }
 
 	private:
-		typename std::deque<T>::iterator m_it;
+		typename std::deque<T>::const_iterator m_it;
 	};
 
 
@@ -59,10 +59,16 @@ namespace showtime {
             other.m_bundle_items.clear();
         }
 
-        ZstBundleIterator<T> begin(){
+        //ZstBundleIterator<T> begin() noexcept {
+        //    return ZstBundleIterator<T>(m_bundle_items.begin());
+        //}
+        const ZstBundleIterator<T> begin() const noexcept {
             return ZstBundleIterator<T>(m_bundle_items.begin());
         }
-        ZstBundleIterator<T> end(){
+        //ZstBundleIterator<T> end() noexcept {
+        //    return ZstBundleIterator<T>(m_bundle_items.end());
+        //}
+        const ZstBundleIterator<T> end() const noexcept {
             return ZstBundleIterator<T>(m_bundle_items.end());
         }
         void add(T bundle_item){
