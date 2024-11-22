@@ -252,6 +252,11 @@ void ZstSession::on_entity_arriving(ZstEntityBase * entity)
 	register_entity(entity);
 }
 
+void ZstSession::on_entity_updated(ZstEntityBase* entity, const ZstURI& orig_path)
+{
+	update_cable_paths(entity, orig_path);
+}
+
 void ZstSession::update_cable_paths(ZstEntityBase* entity, const ZstURI& original_path)
 {
 	// Update cable address with the new URI

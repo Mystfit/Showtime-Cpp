@@ -187,6 +187,11 @@ namespace showtime
         m_entity_events->invoke([this, orig_path](ZstEntityAdaptor* adaptor) {
             adaptor->publish_entity_update(this, orig_path);
         });
+
+        // Update local cables with new path for our local entity
+        session_events()->invoke([this, &orig_path](ZstSessionAdaptor* adaptor) {
+			adaptor->update_cable_paths(this, orig_path);
+		});
 	}
 
     void ZstEntityBase::get_child_cables(ZstCableBundle* bundle)
