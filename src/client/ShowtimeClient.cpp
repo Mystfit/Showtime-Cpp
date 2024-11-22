@@ -340,7 +340,7 @@ void ShowtimeClient::register_factory(ZstEntityFactory * factory)
 	//Add the factory to the root performer first to allow for offline factory registration
 	get_root()->add_child(factory);
 
-	if (library_connected_guard()) m_client->session()->hierarchy()->activate_entity(factory, ZstTransportRequestBehaviour::SYNC_REPLY);
+	//if (library_connected_guard()) m_client->session()->hierarchy()->activate_entity(factory, ZstTransportRequestBehaviour::SYNC_REPLY);
 }
 
 void ShowtimeClient::register_factory_async(ZstEntityFactory * factory)
@@ -350,7 +350,7 @@ void ShowtimeClient::register_factory_async(ZstEntityFactory * factory)
 	//Add the factory to the root performer first to allow for offline factory registration
 	get_root()->add_child(factory);
 
-	if (library_connected_guard()) m_client->session()->hierarchy()->activate_entity(factory, ZstTransportRequestBehaviour::ASYNC_REPLY);
+	//if (library_connected_guard()) m_client->session()->hierarchy()->activate_entity(factory, ZstTransportRequestBehaviour::ASYNC_REPLY);
 }
 
 // -------------
