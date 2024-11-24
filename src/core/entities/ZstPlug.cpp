@@ -4,7 +4,7 @@
 #include <boost/assign/list_of.hpp>
 #include <showtime/entities/ZstPlug.h>
 #include <showtime/ZstCable.h>
-
+#include <showtime/ZstLogging.h>
 #include "../ZstFixedValue.h"
 #include "../ZstDynamicValue.h"
 #include "../ZstEventDispatcher.hpp"
@@ -532,7 +532,7 @@ void ZstOutputPlug::set_owner(const ZstURI & owner)
 
     ZstPerformer* performer = NULL;
     hierarchy_events()->invoke([&performer](ZstHierarchyAdaptor* adaptor){
-        performer = adaptor->get_local_performer();
+        performer = adaptor->get_local_performer() ? adaptor->get_local_performer() : performer;
     });
 
     if (!performer) {
