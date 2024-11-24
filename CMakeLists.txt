@@ -274,7 +274,6 @@ endif()
 
 # Submodule includes
 set(Showtime_HEADER_DEPENDENCIES 
-    $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/cf>
     $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/uthash/src>
     $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/readerwriterqueue>
     $<BUILD_INTERFACE:${Showtime_SUBMODULE_DEPENDENCIES_DIR}/concurrentqueue>

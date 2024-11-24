@@ -1,5 +1,3 @@
-#include <cf/cfuture.h>
-
 #include "../core/ZstSemaphore.h"
 #include "../core/adaptors/ZstTransportAdaptor.hpp"
 #include "../core/ZstSession.h"
