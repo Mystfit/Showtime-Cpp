@@ -251,10 +251,10 @@ void ZstFixedValue::assign_strings(const char** newData, size_t count)
 
 void ZstFixedValue::assign(const uint8_t* newData, size_t count)
 {
-	if (count <= m_fixed_size) {
-		std::lock_guard<std::mutex> lock(m_lock);
-		std::copy(newData, newData + count, &m_byte_fixed_data[0]);
-	}
+	size_t offset = std::min(count, m_fixed_size);
+	std::lock_guard<std::mutex> lock(m_lock);
+	std::copy(newData, newData + offset, &m_byte_fixed_data[0]);
+	
 }
 
 void ZstFixedValue::take(int* newData, size_t count)
@@ -414,7 +414,7 @@ const size_t ZstFixedValue::size_at(const size_t position) const {
     return 0;
 }
 
-int ZstFixedValue::fixed_size() const
+size_t ZstFixedValue::fixed_size() const
 {
 	return m_fixed_size;
 }

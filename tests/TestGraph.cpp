@@ -589,6 +589,30 @@ BOOST_FIXTURE_TEST_CASE(send_byte_fixed, FixtureJoinServer) {
 #undef TEST_BUF_SIZE
 }
 
+BOOST_FIXTURE_TEST_CASE(send_byte_fixed_different_sizes, FixtureJoinServer) {
+	std::unique_ptr<OutputComponent> output_component = std::make_unique<OutputComponent>("connect_test_out", true, ZstValueType::ByteList, 8);
+	std::unique_ptr<InputComponent> input_component = std::make_unique<InputComponent>("connect_test_in", 0, true, ZstValueType::ByteList, false, true, 4);
+	test_client->get_root()->add_child(output_component.get());
+	test_client->get_root()->add_child(input_component.get());
+
+	std::array<uint8_t, 8> send_buffer = { 0xDE, 0xAD, 0xBE, 0xEF, 0xAA, 0xBB, 0xCC, 0xDD };
+	output_component->output()->raw_value()->assign(send_buffer.data(), send_buffer.size());
+
+	test_client->connect_cable(input_component->input(), output_component->output());
+	output_component->output()->fire();
+
+	int current_wait = 0;
+	while (input_component->num_hits < 1 && ++current_wait < 10000) {
+		test_client->poll_once();
+	}
+
+	std::array<uint8_t, 4> recv_buffer;
+	std::copy(input_component->input()->raw_value()->byte_buffer(), input_component->input()->raw_value()->byte_buffer() + input_component->input()->raw_value()->size(), &recv_buffer[0]);
+	bool equal = recv_buffer == std::array<uint8_t, 4>{ 0xDE, 0xAD, 0xBE, 0xEF};
+	BOOST_TEST(input_component->input()->raw_value()->size() == 4);
+	BOOST_TEST(equal);
+}
+
 
 //BOOST_FIXTURE_TEST_CASE(send_string, FixtureJoinServer) {
 //	std::unique_ptr<OutputComponent> output_component = std::make_unique<OutputComponent>("connect_test_out", true, ZstValueType::FloatList);

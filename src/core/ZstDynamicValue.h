@@ -64,7 +64,7 @@ public:
 
 	ZST_EXPORT const size_t size() const override;	
 	ZST_EXPORT const size_t size_at(const size_t position) const override;
-	ZST_EXPORT virtual int fixed_size() const override;
+	ZST_EXPORT virtual size_t fixed_size() const override;
 
 	ZST_EXPORT const int* int_buffer() const override;
 	ZST_EXPORT const float* float_buffer() const override;

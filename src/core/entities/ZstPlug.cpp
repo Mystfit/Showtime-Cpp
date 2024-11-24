@@ -47,7 +47,7 @@ ZstPlug::ZstPlug() :
     set_entity_type(ZstEntityType::PLUG);
 }
 
-ZstPlug::ZstPlug(const char * name, const ZstValueType& t, const ZstPlugDirection& direction, int max_cables, bool reliable, int fixed_size) :
+ZstPlug::ZstPlug(const char * name, const ZstValueType& t, const ZstPlugDirection& direction, int max_cables, bool reliable, size_t fixed_size) :
     ZstEntityBase(name),
     m_value(nullptr),
     m_direction(direction),
@@ -55,7 +55,7 @@ ZstPlug::ZstPlug(const char * name, const ZstValueType& t, const ZstPlugDirectio
     m_max_connected_cables(max_cables)
 {
     // Create value
-    if (fixed_size > -1)
+    if (fixed_size > 0)
         m_value = std::make_unique<ZstFixedValue>(t, fixed_size);
     else 
         m_value = std::make_unique<ZstDynamicValue>(t);
@@ -169,13 +169,18 @@ const size_t ZstPlug::size_at(const size_t position) const
 
 void ZstPlug::swap_values(ZstPlug* other)
 {
-    if (m_value->fixed_size() >= 0) {
+    // We need to clear our source value after the swap or copy
+    // occurs so that we don't end up with random data saved in the source
+
+	// If the sizes match, we can swap the values directly
+    if (m_value->fixed_size() > 0) {
         if (m_value->size() == other->size()) {
             m_value.swap(other->m_value);
         }
         else {
             // Fixed size buffers don't match - copy
-            m_value->copy(other->m_value.get());
+            //m_value->copy(other->m_value.get());
+            other->m_value->copy(m_value.get());
         }
     }
     else {
@@ -216,7 +221,7 @@ void ZstPlug::serialize_partial(flatbuffers::Offset<PlugData> & serialized_offse
         m_reliable,
         m_max_connected_cables,
         m_value->serialize(buffer_builder),
-        m_value->fixed_size() > -1 ? ValueSizeType::ValueSizeType_FIXED : ValueSizeType::ValueSizeType_DYNAMIC,
+        m_value->fixed_size() > 0 ? ValueSizeType::ValueSizeType_FIXED : ValueSizeType::ValueSizeType_DYNAMIC,
         m_value->fixed_size()
     );
 }
@@ -354,7 +359,7 @@ ZstInputPlug::ZstInputPlug(const ZstInputPlug & other) :
 {
 }
 
-ZstInputPlug::ZstInputPlug(const char * name, const ZstValueType& t, int max_cables, bool triggers_compute, bool reliable, int fixed_size) :
+ZstInputPlug::ZstInputPlug(const char * name, const ZstValueType& t, int max_cables, bool triggers_compute, bool reliable, size_t fixed_size) :
     ZstPlug(name, t, ZstPlugDirection::IN_JACK, max_cables, reliable, fixed_size),
     m_triggers_compute(triggers_compute)
 {
@@ -417,7 +422,7 @@ ZstOutputPlug::ZstOutputPlug(const ZstOutputPlug& other) :
 {
 }
 
-ZstOutputPlug::ZstOutputPlug(const char * name, const ZstValueType& t, bool reliable, int fixed_size) :
+ZstOutputPlug::ZstOutputPlug(const char * name, const ZstValueType& t, bool reliable, size_t fixed_size) :
     ZstPlug(name, t, ZstPlugDirection::OUT_JACK, -1, reliable, fixed_size),
     m_graph_out_events(std::make_shared< ZstEventDispatcher<ZstGraphTransportAdaptor> >()),
     m_can_fire(false)

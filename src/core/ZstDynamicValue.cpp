@@ -376,9 +376,9 @@ namespace showtime {
 		return 0;
 	}
 
-	int ZstDynamicValue::fixed_size() const
+	size_t ZstDynamicValue::fixed_size() const
 	{
-		return -1;
+		return 0;
 	}
 
 	const int* ZstDynamicValue::int_buffer() const

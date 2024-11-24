@@ -43,7 +43,7 @@ public:
     //Initialisation
     ZST_EXPORT ZstPlug();
     ZST_EXPORT ZstPlug(const Plug* buffer);
-    ZST_EXPORT ZstPlug(const char * name, const ZstValueType& t, const ZstPlugDirection& direction = ZstPlugDirection::NONE, int max_cables = -1, bool reliable = true, int fixed_size = -1);
+    ZST_EXPORT ZstPlug(const char * name, const ZstValueType& t, const ZstPlugDirection& direction = ZstPlugDirection::NONE, int max_cables = -1, bool reliable = true, size_t fixed_size = 0);
     ZST_EXPORT ZstPlug(const ZstPlug & other);
     //ZST_EXPORT void init_value();
     //ZST_EXPORT void init_value(const ZstValueType& val_type);
@@ -115,7 +115,7 @@ public:
     ZST_EXPORT ZstInputPlug();
     ZST_EXPORT ZstInputPlug(const Plug* buffer);
     ZST_EXPORT ZstInputPlug(const ZstInputPlug & other);
-    ZST_EXPORT ZstInputPlug(const char * name, const ZstValueType& t, int max_connected_cables = -1, bool triggers_compute = false, bool reliable = true, int fixed_size = -1);
+    ZST_EXPORT ZstInputPlug(const char * name, const ZstValueType& t, int max_connected_cables = -1, bool triggers_compute = false, bool reliable = true, size_t fixed_size = 0);
     ZST_EXPORT ~ZstInputPlug();
 
     ZST_EXPORT ZstCable* connect_cable(ZstOutputPlug* output_plug);
@@ -137,7 +137,7 @@ public:
     ZST_EXPORT ZstOutputPlug();
     ZST_EXPORT ZstOutputPlug(const Plug* buffer);
     ZST_EXPORT ZstOutputPlug(const ZstOutputPlug & other);
-    ZST_EXPORT ZstOutputPlug(const char * name, const ZstValueType& t, bool reliable = true, int fixed_size = -1);
+    ZST_EXPORT ZstOutputPlug(const char * name, const ZstValueType& t, bool reliable = true, size_t fixed_size = 0);
     ZST_EXPORT ~ZstOutputPlug();
 
     ZST_EXPORT ZstCable* connect_cable(ZstInputPlug* input_plug);

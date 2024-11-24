@@ -41,7 +41,7 @@ namespace showtime {
 
 		ZST_EXPORT virtual const size_t size() const = 0;
 		ZST_EXPORT virtual const size_t size_at(const size_t position) const = 0;
-		ZST_EXPORT virtual int fixed_size() const = 0;
+		ZST_EXPORT virtual size_t fixed_size() const = 0;
 
 		ZST_EXPORT virtual const int* int_buffer() const = 0;
 		ZST_EXPORT virtual const float* float_buffer() const = 0;

@@ -65,7 +65,7 @@ public:
 
 	ZST_EXPORT const size_t size() const override;	
 	ZST_EXPORT const size_t size_at(const size_t position) const override;
-	ZST_EXPORT virtual int fixed_size() const override;
+	ZST_EXPORT virtual size_t fixed_size() const override;
 
 	ZST_EXPORT const int* int_buffer() const override;
 	ZST_EXPORT const float* float_buffer() const override;
@@ -114,7 +114,7 @@ private:
 protected:
 	ZstValueType m_default_type = ZstValueType::IntList;
 
-	int m_fixed_size = -1;
+	size_t m_fixed_size = 0;
 	size_t m_append_cursor_idx = 0;
 	std::unique_ptr<int[]> m_int_fixed_data = nullptr;
 	std::unique_ptr<float[]> m_float_fixed_data = nullptr;
