@@ -33,18 +33,16 @@ platform:
 environment:
     GENERATOR: "Visual Studio 16 2019"
     MSVC_VER: "msvc-14.2"
-    BOOST_ROOT: "C:/Libraries/boost_1_71_0"
+    BOOST_ROOT: "C:/Libraries/boost_1_86_0"
     BUILD_FOLDER: "%APPVEYOR_BUILD_FOLDER%/build"
     DEPENDENCY_DIR: "%APPVEYOR_BUILD_FOLDER%/build/dependencies"
     INSTALL_DIR: "%APPVEYOR_BUILD_FOLDER%/build/dependencies/install"
     PATH: "%PROGRAMFILES%/CMake/bin;%PATH%"
     matrix:
     - NATIVE: true
-    - PYTHON_VER: 2
     - PYTHON_VER: 3
-    - DOTNET_VER: v4.7.2
-    - DOTNET_VER: netstandard2.0
-    - DOTNET_VER: netstandard2.1
+    - PYTHON_VER: 12
+    - DOTNET_VER: netstandard3.1
 
 matrix:
     fast_finish: true
@@ -76,12 +74,9 @@ before_build:
     $CMAKE_FLAGS= @(
         "-S", "$env:APPVEYOR_BUILD_FOLDER",
         "-B", "$env:BUILD_FOLDER" 
-        "-G", "Visual Studio 16 2019",
+        "-G", "Visual Studio 17 2022",
         "-A", "x64",
         "-DCMAKE_PREFIX_PATH=$env:INSTALL_DIR/$env:MSVC_VER",
-        "-DBUILD_SHARED=ON",
-        "-DBUILD_STATIC=ON",
-        "-DBUILD_DRAFTS=OFF",
         "-DBUILD_TESTING=ON",
         "-DBOOST_ROOT:PATHNAME=$env:BOOST_ROOT",
         "-DBOOST_INCLUDEDIR:PATHNAME=$env:BOOST_ROOT",
