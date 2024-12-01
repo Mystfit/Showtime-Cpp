@@ -477,15 +477,28 @@ void ZstOutputPlug::fire()
     if (!can_fire())
         return;
 
+    // Get our local performer to check if we've taken ownership of a remote plug
+    ZstPerformer* performer = NULL;
+    hierarchy_events()->invoke([&performer](ZstHierarchyAdaptor* adaptor){
+		performer = adaptor->get_local_performer() ? adaptor->get_local_performer() : performer;
+	});
+
     // Send message to local plugs first
     ZstCableBundle bundle;
     get_child_cables(&bundle);
     int num_local_cables = 0;
     for (auto c : bundle) {
         auto input_plug = c->get_input();
+        auto output_plug = c->get_output();
+        
+        // Determine if by taking ownership of the output plug we can route the fired value locally
+        bool local_ownership = false;
+        if(performer && !output_plug->get_owner().is_empty()){
+            local_ownership = input_plug->URI().first() == performer->URI() && output_plug->get_owner().first() == performer->URI();
+        }
 
-        // Cable is local - this component can execute immediately
-        if (input_plug->URI().first() == this->URI().first()) {
+        // Cable route is local or local ownership means we can skip transports
+        if (input_plug->URI().first() == this->URI().first() || local_ownership) {
             
             // If we have more than one cable, we have to copy the value instead of swapping it.
             // If the types don't match - conversion needs to bne applied during the copy

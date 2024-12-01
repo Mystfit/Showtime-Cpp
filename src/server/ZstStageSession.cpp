@@ -325,9 +325,13 @@ Signal ZstStageSession::aquire_entity_ownership_handler(const std::shared_ptr<Zs
 	//Connect performers together that will have to update their subscriptions
 	for (auto receiver : performers) {
 		if (!new_owner_path.is_empty()) {
-			if (!new_owner->is_sending_to(receiver.second.first, receiver.second.second) && new_owner != receiver.second.first) {
+			auto receiving_path = receiver.first;
+			auto receiving_performer = receiver.second.first;
+			auto receiving_sendtype = receiver.second.second;
+
+			if (!new_owner->is_sending_to(receiving_performer, receiving_sendtype) && new_owner != receiving_performer) {
 				// COnnect clients together and wait for confirmation before returning OK to the original sender
-				connect_clients(receiver.second.first, new_owner, receiver.second.second, [this, sender, response_id = msg->id()](ZstMessageResponse response) {
+				connect_clients(receiving_performer, new_owner, receiving_sendtype, [this, sender, response_id = msg->id()](ZstMessageResponse response) {
 					auto signal = ZstStageTransport::get_signal(response.response);
 					stage_hierarchy()->reply_with_signal(sender, signal, response_id);
 				});
