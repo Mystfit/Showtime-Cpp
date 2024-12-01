@@ -27,12 +27,7 @@ steps:
   inputs:
     targetType: 'inline'
     script: |
-      choco install visualstudio2019-workload-nativedesktop --params "--includeRecommended"
-      $VS_path = $(vswhere -format value -property installationPath)
-      Write-Host "##vso[task.setvariable variable=VS_path;]$(vswhere -format value -property installationPath)"
-      choco install procdump
       choco install swig
-      Write-Host "##vso[task.setvariable variable=PROCDUMP_PATH ;]%ProgramData%\chocolatey\bin\"
 
 - task: Cache@2
   displayName: Cache dependencies
@@ -62,7 +57,7 @@ steps:
     cmakeArgs: >-
       -T $(toolset-platform)
       -S $(Build.SourcesDirectory) 
-      -G "Visual Studio 16 2019" 
+      -G "Visual Studio 17 2022" 
       -A $(buildPlatform) 
       -DSWIG_EXECUTABLE=%ProgramData%\chocolatey\lib\swig\tools\install\swig.exe
       -DSWIG_DIR=%ProgramData%\chocolatey\lib\swig\tools\install\swigwin-4.0.1\Lib
