@@ -6,7 +6,7 @@ trigger:
       - azure
 
 pool:
-  vmImage: 'windows-latest'
+  vmImage: 'windows-2022'
 
 variables:
   buildPlatform: 'x64'
@@ -27,7 +27,6 @@ steps:
   inputs:
     targetType: 'inline'
     script: |
-      choco install swig
       mkdir $(build_dir)
 
 - task: Cache@2
@@ -63,9 +62,6 @@ steps:
       -DSWIG_EXECUTABLE=%ProgramData%\chocolatey\lib\swig\tools\install\swig.exe
       -DSWIG_DIR=%ProgramData%\chocolatey\lib\swig\tools\install\swigwin-4.0.1\Lib
       -DCMAKE_PREFIX_PATH=$(cmake_prefix) 
-      -DBUILD_SHARED=ON 
-      -DBUILD_STATIC=ON 
-      -DBUILD_DRAFTS=OFF 
       -DBUILD_TESTING=ON
 
 - task: VSBuild@1
