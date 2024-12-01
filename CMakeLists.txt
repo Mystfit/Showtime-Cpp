@@ -106,7 +106,7 @@ set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR})
 
 # Set build flags
 option(BUILD_STATIC "Build static Showtime library" OFF)
-option(BUILD_SHARED "Build shared Showtime library" ON)
+option(BUILD_SHARED "Build shared Showtime library" OFF)
 option(BUILD_SHARED_FROM_STATIC_LIBS "Build shared Showtime library from only static libs" ON)
 option(BUILD_DRAFTS "Build with experimental draft support" OFF)
 option(BUILD_SERVER_LAUNCHER "Build server launcher program" ON)
