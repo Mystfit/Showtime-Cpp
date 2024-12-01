@@ -146,7 +146,9 @@ BOOST_FIXTURE_TEST_CASE(plug_observation, FixtureExternalConnectCable) {
 	BOOST_TEST_REQUIRE(sync_out_plug);
 
 	bool plug_updated = false;
-	sync_out_plug->synchronisable_events()->synchronisable_updated()->add([&plug_updated](ZstSynchronisable* sync) {plug_updated = true; });
+	sync_out_plug->synchronisable_events()->synchronisable_updated()->add([&plug_updated](ZstSynchronisable* sync) {
+		plug_updated = true; }
+	);
     test_client->observe_entity(sync_out_plug);
     
 	int echo_val = 4;
@@ -182,6 +184,8 @@ BOOST_FIXTURE_TEST_CASE(ownership_grants_plug_fire_permission, FixtureExternalEn
 BOOST_FIXTURE_TEST_CASE(ownership_plug_fire_check, FixtureExternalEntitysWithLocalInput) {
 	BOOST_TEST_REQUIRE(sync_out_plug);
 	sync_out_plug->aquire_ownership();
+	TAKE_A_BREATH
+	BOOST_TEST(sync_out_plug->can_fire());
 	TAKE_A_BREATH
     int cmp_val = 27;
     sync_out_plug->append_int(cmp_val);

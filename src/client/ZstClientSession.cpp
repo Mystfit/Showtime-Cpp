@@ -258,6 +258,8 @@ bool ZstClientSession::observe_entity(ZstEntityBase * entity, const ZstTransport
 		adaptor->send_msg(adaptor->create_msg(Content_EntityObserveRequest, observe_msg.Union(), builder), args);
 	});
 
+    if(sendtype == ZstTransportRequestBehaviour::SYNC_REPLY) process_events();
+
 	return true;
 }
     
@@ -269,17 +271,22 @@ void ZstClientSession::observe_entity_complete(ZstMessageResponse response, ZstE
 
 void ZstClientSession::aquire_entity_ownership(ZstEntityBase* entity)
 {
-    stage_events()->invoke([entity, this](ZstStageTransportAdaptor* adaptor) {
+    ZstTransportRequestBehaviour sendtype = ZstTransportRequestBehaviour::SYNC_REPLY;
+
+    stage_events()->invoke([entity, this, sendtype](ZstStageTransportAdaptor* adaptor) {
         ZstTransportArgs args;
-        args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
+        args.msg_send_behaviour = ZstTransportRequestBehaviour::SYNC_REPLY;
         args.on_recv_response = [](ZstMessageResponse response) {
-            Log::net(Log::Level::debug, "Ack from server");
+            if (ZstStageTransport::verify_signal(response.response, Signal_OK, "Failed to aquire entity ownership"))
+                Log::net(Log::Level::debug, "Entity ownership aquired successfully");
         };
         
         FlatBufferBuilder builder;
         auto entity_own_msg = CreateEntityTakeOwnershipRequest(builder, builder.CreateString(entity->URI().path()), builder.CreateString(hierarchy()->get_local_performer()->URI().path()));
         adaptor->send_msg(adaptor->create_msg(Content_EntityTakeOwnershipRequest, entity_own_msg.Union(), builder), args);
     });
+
+    if (sendtype == ZstTransportRequestBehaviour::SYNC_REPLY) process_events();
 }
 
 void ZstClientSession::release_entity_ownership(ZstEntityBase* entity)

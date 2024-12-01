@@ -26,7 +26,7 @@ void ZstTCPGraphTransport::connect(const std::string& address)
 	}
 
 	if (input_graph_socket()) {
-		Log::net(Log::Level::notification, "Connecting to {}", address);
+		Log::net(Log::Level::notification, "Connecting to graph TCP socket {}", address);
 		
 		auto result = zsock_connect(input_graph_socket(), "%s", address.c_str());
 		if (result == 0) {
@@ -44,7 +44,8 @@ void ZstTCPGraphTransport::connect(const std::string& address)
 std::string ZstTCPGraphTransport::getPublicIPAddress(STUNServer server)
 {
 	Log::net(Log::warn, "No public TCP address implemented for TCP transport");
-	return ZstSTUNService::local_ip();
+	//return ZstSTUNService::local_ip();
+	return "";
 }
 
 void ZstTCPGraphTransport::disconnect()

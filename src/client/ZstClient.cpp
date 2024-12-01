@@ -754,6 +754,8 @@ void ZstClient::start_connection_handshake(const ZstURI& remote_client_path, con
    spawn(m_client_timerloop.IO_context(), [this, remote_client_path, remote_client_addresses, total_messages, transport, connection_type](boost::asio::yield_context yield) {
         for (auto address : remote_client_addresses) 
         {
+            if (address.empty()) continue;
+            
             bool success = false;
 
             // Only UDP transports connect (Sender->Receiver)
@@ -852,7 +854,8 @@ void ZstClient::listen_to_client_handler(const std::shared_ptr<ZstStageMessage>&
     // Only UDP transports connect (Sender->Receiver)
     if (connection_type == ConnectionType::ConnectionType_RELIABLE) {
         m_tcp_graph_transport->connect(receiver_address);
-        m_tcp_graph_transport->connect(receiver_public_address);
+        Log::net(Log::Level::warn, "TODO: Can't connect to TCP clients via NAT punchthrough yet");
+        //m_tcp_graph_transport->connect(receiver_public_address);
     }
 
     // Send keepalive message to the remote client so that our Port-Restricted cone NAT will allow incoming packets from our address

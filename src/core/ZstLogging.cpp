@@ -72,7 +72,7 @@ namespace showtime {
 		}
 	}
 
-	void my_formatter(logging::record_view const& rec, logging::formatting_ostream& strm)
+	void log_formatter(logging::record_view const& rec, logging::formatting_ostream& strm)
 	{
 		//expr::stream << "[" << process_name << "] " << line_id << ": <" << severity << "> [" << channel << "] " << expr::smessage
 		strm << logging::extract< unsigned int >("LineID", rec) << ": ";
@@ -111,7 +111,7 @@ namespace showtime {
 		logging::add_common_attributes();
 		//logging::core::get()->add_global_attribute("ProcessName", attrs::current_process_name());
 
-		sink->set_formatter(&my_formatter);
+		sink->set_formatter(&log_formatter);
 		sink->set_filter(min_severity || severity >= error);
 		logging::core::get()->add_sink(sink);
 	}

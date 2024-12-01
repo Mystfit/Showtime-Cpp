@@ -229,6 +229,7 @@ Signal ZstStageSession::create_cable_handler(const std::shared_ptr<ZstStageMessa
 Signal ZstStageSession::observe_entity_handler(const std::shared_ptr<ZstStageMessage>& msg, ZstPerformerStageProxy* sender)
 {
 	// Get request data
+	Signal response;
 	auto request = msg->buffer();
 	auto observe_request = request->content_as_EntityObserveRequest();
 	
@@ -263,23 +264,21 @@ Signal ZstStageSession::observe_entity_handler(const std::shared_ptr<ZstStageMes
 	if (observed_performer->is_sending_to(sender), plug_connection_type) {
 		Log::server(Log::Level::warn, "Client {} already observing {}", sender->URI().path(), observed_performer->URI().path());
 		return Signal_ERR_STAGE_PERFORMER_ALREADY_CONNECTED;
-	}
-
-	if (!observed_performer->is_sending_to(sender), plug_connection_type) {
+	} else {
 		//Start the client connection
 		connect_clients(observed_performer, sender, plug_connection_type, [this, sender, response_id = msg->id()](ZstMessageResponse response) {
 			auto signal = ZstStageTransport::get_signal(response.response);
 			stage_hierarchy()->reply_with_signal(sender, signal, response_id);
 		});
-		return Signal_EMPTY;
 	}
 
-	return Signal_OK;
+	return Signal_EMPTY;
 }
 
 
 Signal ZstStageSession::aquire_entity_ownership_handler(const std::shared_ptr<ZstStageMessage>& msg, ZstPerformerStageProxy* sender)
 {
+	Signal response = Signal_EMPTY;
 	auto request = msg->buffer()->content_as_EntityTakeOwnershipRequest();
 	auto entity_path = ZstURI(request->URI()->c_str(), request->URI()->size());
 	ZstEntityBase* entity = hierarchy()->find_entity(entity_path);
@@ -291,6 +290,19 @@ Signal ZstStageSession::aquire_entity_ownership_handler(const std::shared_ptr<Zs
 
 	ZstURI new_owner_path;
 	ZstPerformerStageProxy* new_owner = NULL;
+
+	// We need to connect downstream plugs to the new sender
+	ZstCableBundle bundle;
+	get_cables(bundle);
+
+	//Find all performers that have input connections to this output plug
+	std::unordered_map<ZstURI, std::pair<ZstPerformerStageProxy*, ConnectionType>, ZstURIHash> performers;
+	for (auto c : bundle) {
+		if (c->get_output()->URI() == entity->URI()) {
+			auto receiver = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(c->get_input()->URI().first()));
+			performers.emplace(receiver->URI(), std::make_pair(receiver, (c->get_output()->is_reliable()) ? ConnectionType_RELIABLE : ConnectionType_UNRELIABLE));
+		}
+	}
 
 	// An empty owner means we return ownership back to the original owner
 	if (!request->new_owner()->size()){
@@ -310,23 +322,19 @@ Signal ZstStageSession::aquire_entity_ownership_handler(const std::shared_ptr<Zs
 		entity_set_owner(entity, new_owner->URI());
 	}
 
-	// We need to connect downstream plugs to the new sender
-	ZstCableBundle bundle;
-	get_cables(bundle);
-
-	//Find all performers that have input connections to this output plug
-	std::unordered_map<ZstURI, std::pair<ZstPerformerStageProxy*, ConnectionType>, ZstURIHash> performers;
-	for (auto c : bundle) {
-		if (c->get_output()->URI() == entity->URI()) {
-			auto receiver = dynamic_cast<ZstPerformerStageProxy*>(hierarchy()->find_entity(c->get_input()->URI().first()));
-			performers.emplace(receiver->URI(), std::make_pair( receiver, (c->get_output()->is_reliable()) ? ConnectionType_RELIABLE : ConnectionType_UNRELIABLE ));
-		}
-	}
-
 	//Connect performers together that will have to update their subscriptions
 	for (auto receiver : performers) {
 		if (!new_owner_path.is_empty()) {
-			connect_clients(receiver.second.first, new_owner, receiver.second.second);
+			if (!new_owner->is_sending_to(receiver.second.first, receiver.second.second) && new_owner != receiver.second.first) {
+				// COnnect clients together and wait for confirmation before returning OK to the original sender
+				connect_clients(receiver.second.first, new_owner, receiver.second.second, [this, sender, response_id = msg->id()](ZstMessageResponse response) {
+					auto signal = ZstStageTransport::get_signal(response.response);
+					stage_hierarchy()->reply_with_signal(sender, signal, response_id);
+				});
+			}
+			else {
+				response = Signal_OK;
+			}
 		}
 	}
 
@@ -337,7 +345,7 @@ Signal ZstStageSession::aquire_entity_ownership_handler(const std::shared_ptr<Zs
 	auto ownership_offset = CreateEntityTakeOwnershipRequest(builder, builder.CreateString(entity->URI().path()), builder.CreateString(new_owner_path.path()));
 	stage_hierarchy()->broadcast(Content_EntityTakeOwnershipRequest, ownership_offset.Union(), builder, args);
 
-	return Signal_OK;
+	return response;
 }
 
 Signal ZstStageSession::destroy_cable_handler(const std::shared_ptr<ZstStageMessage>& msg)

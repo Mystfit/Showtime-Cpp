@@ -169,7 +169,7 @@ namespace ZstTest
 		Sink(const char* name) :
 			ZstComputeComponent("SINK", name),
 			input(std::make_unique<ZstInputPlug>("in", ZstValueType::IntList)),
-			output(std::make_unique<ZstOutputPlug>("out", ZstValueType::FloatList)),
+			output(std::make_unique<ZstOutputPlug>("out", ZstValueType::IntList)),
 			last_received_code(0),
 			m_child_sink(NULL)
 		{
