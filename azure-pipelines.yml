@@ -11,8 +11,8 @@ pool:
 variables:
   buildPlatform: 'x64'
   buildConfiguration: 'Release'
-  toolset: 'msvc-14.2'
-  toolset-platform: 'v142'
+  toolset: 'msvc-14.3'
+  toolset-platform: 'v143'
   build_dir: '$(Build.ArtifactStagingDirectory)\build'
   cmake_prefix: '$(build_dir)\dependencies\install\$(toolset)'
   solution: '$(build_dir)\Showtime.sln'
@@ -28,6 +28,7 @@ steps:
     targetType: 'inline'
     script: |
       choco install swig
+      mkdir $(build_dir)
 
 - task: Cache@2
   displayName: Cache dependencies
