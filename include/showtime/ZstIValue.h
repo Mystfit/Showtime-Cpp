@@ -7,6 +7,7 @@
 namespace showtime {
 	class ZstIValue : public virtual ZstSerialisable<PlugValue, PlugValue> {
 	public:
+		ZST_EXPORT virtual ~ZstIValue() {}
 		ZST_EXPORT virtual ZstValueType get_default_type() const = 0;
 		ZST_EXPORT virtual void clear() = 0;
 

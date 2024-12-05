@@ -23,6 +23,7 @@ set(ANDROID_NDK_VERSIONS
 )
 
 set(ANDROID_BOOST_VERSIONS
+    "1.86.0"
 	"1.85.0"
     "1.84.0"
 )
@@ -35,7 +36,7 @@ set(ANDROID_STL_TYPES
 set(ANDROID_PLATFORM "32" CACHE STRING "Android platform version")
 set(ANDROID_NDK_VERSION "r25b" CACHE STRING "Android NDK version")
 set(ANDROID_BOOST_VERSION "1.85.0" CACHE STRING "Boost version")
-set(ANDROID_USE_STD_FORMAT 1 CACHE BOOL "Use std::format instead of fmtlib")
+set(ANDROID_USE_STD_FORMAT 0 CACHE BOOL "Use std::format instead of fmtlib")
 set(ANDROID_STL "c++_static" CACHE STRING "Android STL to link against. Shared or static")
 
 # Create native paths

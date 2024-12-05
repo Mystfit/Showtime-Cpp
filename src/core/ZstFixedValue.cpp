@@ -316,6 +316,11 @@ void* ZstFixedValue::release()
 		return m_str_fixed_data.release();
 	case ZstValueType::ByteList:
 		return m_byte_fixed_data.release();
+	// Following types contain no data
+	case ZstValueType::PlugHandshake:
+	case ZstValueType::DynamicList:
+	case ZstValueType::NONE:
+		return nullptr;
 	}
 	return nullptr;
 }
@@ -533,8 +538,9 @@ void ZstFixedValue::deserialize_partial(const PlugValue* buffer)
 		memcpy(m_byte_fixed_data.get(), buffer->values_as_ByteList()->val()->data(), buffer->values_as_ByteList()->val()->size());
 		break;
 	}
+	// Following values are not supported
 	case PlugValueData_PlugHandshake:
-		break;
+	case PlugValueData_PlugKeepalive:
 	case PlugValueData_NONE:
 		break;
 	}

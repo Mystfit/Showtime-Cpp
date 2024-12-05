@@ -13,7 +13,7 @@ public:
 	ZST_EXPORT ZstTCPGraphTransport();
 	ZST_EXPORT ~ZstTCPGraphTransport();
 	ZST_EXPORT virtual void connect(const std::string & address) override;
-	ZST_EXPORT virtual std::string getPublicIPAddress(STUNServer server);
+	ZST_EXPORT virtual std::string getPublicIPAddress(STUNServer server) override;
 	ZST_EXPORT virtual void disconnect() override;
 
 protected:

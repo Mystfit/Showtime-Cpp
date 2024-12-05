@@ -45,7 +45,7 @@ public:
 
 	//ZST_EXPORT virtual flatbuffers::DetachedBuffer create_msg(Content message_type, flatbuffers::Offset<void> message_content, flatbuffers::FlatBufferBuilder& buffer_builder) override;
     ZST_EXPORT virtual ZstMessageReceipt send_msg(flatbuffers::DetachedBuffer&& message_buffer, const ZstTransportArgs& args) override;
-	ZST_EXPORT virtual void send_message_impl(flatbuffers::DetachedBuffer& message_buffer, const ZstTransportArgs & args) const;
+	ZST_EXPORT virtual void send_message_impl(flatbuffers::DetachedBuffer& message_buffer, const ZstTransportArgs & args) const override;
 
 protected:
 	ZST_EXPORT ZstActor & actor();

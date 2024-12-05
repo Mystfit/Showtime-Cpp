@@ -486,8 +486,8 @@ namespace showtime {
 			copy_from_buffer<ZstValueDetails::ZstValueByteVisitor, uint8_t>(incoming_data_type, buffer->values_as_ByteList()->val()->data(), buffer->values_as_ByteList()->val()->size(), m_byte_buffer);
 			break;
 		}
+		case PlugValueData_PlugKeepalive:
 		case PlugValueData_PlugHandshake:
-			break;
 		case PlugValueData_NONE:
 			break;
 		}
