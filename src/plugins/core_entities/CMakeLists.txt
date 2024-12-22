@@ -4,12 +4,18 @@ message(STATUS "Configuring ${CORE_ENTITIES_TARGET} target")
 set(ZST_CORE_ENTITIES_HEADERS
   "${CMAKE_CURRENT_LIST_DIR}/plugin.h"
   "${CMAKE_CURRENT_LIST_DIR}/Adder.h"
+  "${CMAKE_CURRENT_LIST_DIR}/Multiplier.h"
+  "${CMAKE_CURRENT_LIST_DIR}/Subtractor.h"
+  "${CMAKE_CURRENT_LIST_DIR}/Divider.h"
   "${CMAKE_CURRENT_LIST_DIR}/MathEntityFactory.h"
 )
 
 set(ZST_CORE_ENTITIES_SRC
   "${CMAKE_CURRENT_LIST_DIR}/plugin.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/Adder.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/Multiplier.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/Subtractor.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/Divider.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/MathEntityFactory.cpp"
 )
 
