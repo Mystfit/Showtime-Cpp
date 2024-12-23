@@ -320,6 +320,7 @@ void* ZstFixedValue::release()
 	case ZstValueType::PlugHandshake:
 	case ZstValueType::DynamicList:
 	case ZstValueType::NONE:
+	case ZstValueType::ZstValueType_Size:
 		return nullptr;
 	}
 	return nullptr;
@@ -526,7 +527,7 @@ void ZstFixedValue::deserialize_partial(const PlugValue* buffer)
 		//destination.resize(size);
 		auto strlist = buffer->values_as_StrList()->val();
 
-		for (size_t idx = 0; idx < m_fixed_size; ++idx) {
+		for (uoffset_t idx = 0; idx < m_fixed_size; ++idx) {
 			if (incoming_data_type == m_default_type)
 				m_str_fixed_data->insert(m_str_fixed_data->begin() + idx, strlist->GetAsString(idx)->str());
 			else

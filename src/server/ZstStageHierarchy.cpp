@@ -196,7 +196,7 @@ Signal ZstStageHierarchy::create_entity_handler(const std::shared_ptr<ZstStageMe
 {
 	auto content = request->buffer()->content_as_EntityCreateRequest();
 
-	for(size_t i = 0; i < content->entity_type()->size(); i++){
+	for(uoffset_t i = 0; i < content->entity_type()->size(); i++){
 		EntityTypes entity_type = static_cast<EntityTypes>(content->entity_type()->Get(i));
 		const void* entity_data = content->entity()->Get(i);
 		const EntityData* entity_field = get_entity_field(entity_type, entity_data);

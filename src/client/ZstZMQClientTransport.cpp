@@ -157,11 +157,13 @@ void ZstZMQClientTransport::sock_recv(zsock_t* socket)
 			}
 			else {
 				Log::net(Log::Level::warn, "Received malformed message. Ignoring"); 
+				zframe_destroy(&msg_data);
 			} 
         }
         
         // Message Cleanup
 		zframe_destroy(&empty);
+		zframe_destroy(&id_data);
 		zmsg_destroy(&recv_msg);
 	}
 }

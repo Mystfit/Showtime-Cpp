@@ -288,7 +288,7 @@ void ZstClientHierarchy::client_leaving_handler(const ClientLeaveRequest* reques
 
 void ZstClientHierarchy::create_proxy_entity_handler(const EntityCreateRequest * request)
 {
-	for (size_t i = 0; i < request->entity()->size(); ++i) {
+	for (uoffset_t i = 0; i < request->entity()->size(); ++i) {
 		EntityTypes entity_type = static_cast<EntityTypes>(*request->entity_type()->data());
 		const void* entity_raw = request->entity()->Get(i);
 		add_proxy_entity(create_proxy_entity(entity_type, get_entity_field(entity_type, entity_raw), entity_raw));

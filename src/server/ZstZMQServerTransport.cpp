@@ -122,12 +122,14 @@ void ZstZMQServerTransport::sock_recv(zsock_t* socket)
 				dispatch_receive_event(msg, [msg, identity_frame, payload_data](ZstEventStatus s) mutable {
 					// Frame cleanup
 					zframe_destroy(&payload_data);
-					zframe_destroy(&identity_frame);
 				});
 			}
 			else {
 				Log::server(Log::Level::warn, "Received malformed message. Alerting client!");
 				signal_client_direct(Signal_ERR_MSG_MALFORMED, msg_id, client_uuid);
+
+				// Frame cleanup
+				zframe_destroy(&payload_data);
 			}
 		}
 		else {
@@ -136,6 +138,8 @@ void ZstZMQServerTransport::sock_recv(zsock_t* socket)
 
 		//Cleanup resources
 		zframe_destroy(&empty);
+		zframe_destroy(&identity_frame);
+		zframe_destroy(&id_frame);
 		zmsg_destroy(&recv_msg);
 	}
 }
@@ -170,6 +174,9 @@ void ZstZMQServerTransport::send_message_impl(flatbuffers::DetachedBuffer& messa
 		if (err > 0) {
 			Log::net(Log::Level::error, "Server message sending error: {}", zmq_strerror(err));
 		}
+
+		// Cleanup leftover message
+		zmsg_destroy(&m);
 	}
 }
 

@@ -104,7 +104,7 @@ private:
 	{
 		destination.resize(size);
 
-		for (size_t idx = 0; idx < size; ++idx) {
+		for (flatbuffers::uoffset_t idx = 0; idx < size; ++idx) {
 			if (incoming_type == m_default_type)
 				destination[idx] = buffer->GetAsString(idx)->str();
 			else

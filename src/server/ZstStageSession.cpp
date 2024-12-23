@@ -229,7 +229,6 @@ Signal ZstStageSession::create_cable_handler(const std::shared_ptr<ZstStageMessa
 Signal ZstStageSession::observe_entity_handler(const std::shared_ptr<ZstStageMessage>& msg, ZstPerformerStageProxy* sender)
 {
 	// Get request data
-	Signal response;
 	auto request = msg->buffer();
 	auto observe_request = request->content_as_EntityObserveRequest();
 	

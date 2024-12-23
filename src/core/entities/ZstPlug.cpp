@@ -222,7 +222,7 @@ void ZstPlug::serialize_partial(flatbuffers::Offset<PlugData> & serialized_offse
         m_max_connected_cables,
         m_value->serialize(buffer_builder),
         m_value->fixed_size() > 0 ? ValueSizeType::ValueSizeType_FIXED : ValueSizeType::ValueSizeType_DYNAMIC,
-        m_value->fixed_size()
+        static_cast<int32_t>(m_value->fixed_size())
     );
 }
     
