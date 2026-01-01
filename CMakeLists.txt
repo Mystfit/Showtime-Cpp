@@ -215,6 +215,7 @@ set(FLATBUFFER_HEADER_OUTPUT
     "${FLATBUFFFER_OUTPUT_DIR}/messaging/stage_message_generated.h"
     "${FLATBUFFFER_OUTPUT_DIR}/messaging/graph_message_generated.h"
     "${FLATBUFFFER_OUTPUT_DIR}/messaging/graph_types_generated.h"
+    "${FLATBUFFFER_OUTPUT_DIR}/messaging/session_generated.h"
 )
 set(FLATC_ARGS 
     "-c"
@@ -224,6 +225,7 @@ set(FLATC_ARGS
     "${CMAKE_SOURCE_DIR}/schemas/messaging/stage_beacon_message.fbs"
     "${CMAKE_SOURCE_DIR}/schemas/messaging/graph_message.fbs"
     "${CMAKE_SOURCE_DIR}/schemas/messaging/graph_types.fbs"
+    "${CMAKE_SOURCE_DIR}/schemas/messaging/session.fbs"
 )
 message(STATUS "${FLATBUFFERS_FLATC_EXECUTABLE} ${FLATC_ARGS}")
 execute_process(COMMAND ${FLATBUFFERS_FLATC_EXECUTABLE} ${FLATC_ARGS} OUTPUT_VARIABLE FLATC_OUTPUT)

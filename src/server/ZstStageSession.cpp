@@ -3,6 +3,12 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_generators.hpp>
+#include <boost/dll.hpp>
+#include <fstream>
+#include <showtime/ZstLogging.h>
+#include <showtime/schemas/messaging/graph_types_generated.h>
+#include <showtime/schemas/messaging/stage_message_generated.h>
+#include <showtime/schemas/messaging/session_generated.h>
 #include "../core/transports/ZstStageTransport.h"
 
 using namespace boost::uuids;
@@ -10,9 +16,163 @@ using namespace flatbuffers;
 
 namespace showtime {
 
-ZstStageSession::ZstStageSession() : m_hierarchy(std::make_shared<ZstStageHierarchy>())
+ZstStageSession::ZstStageSession() : 
+	m_hierarchy(std::make_shared<ZstStageHierarchy>()),
+	m_session_save_path(fs::path(boost::dll::program_location().string()).parent_path().append("sessions"))
 {
 }
+
+bool ZstStageSession::save_session_to_file(const std::string& filepath) {
+    try {
+        flatbuffers::FlatBufferBuilder builder;
+        uoffset_t offset = serialize(builder);
+		FinishSessionBuffer(builder, offset);
+
+		try {
+			if (!fs::exists(m_session_save_path)) {
+				if (fs::create_directory(m_session_save_path)) {
+					Log::server(Log::Level::warn, "Missing session save directory. Creating {}", m_session_save_path.string());
+				}
+			}
+		} catch (const fs::filesystem_error& e) {
+			Log::server(Log::Level::error, "Could not create session save directory at {}. Error was {}", m_session_save_path.string(), e.what());
+		}
+
+		fs::path session_path = m_session_save_path / fs::path(filepath);
+
+		// Write to file
+		std::ofstream file(session_path, std::ios::binary);
+		if (!file.is_open()) {
+			Log::server(Log::Level::error, "Failed to open file for writing: {}", filepath);
+			return false;
+		}
+
+        file.write(reinterpret_cast<const char*>(builder.GetBufferPointer()), builder.GetSize());
+        file.close();
+
+        Log::server(Log::Level::notification, "Session saved to file: {}", filepath);
+        return true;
+    } catch (const std::exception& e) {
+        Log::server(Log::Level::error, "Error saving session: {}", e.what());
+        return false;
+    }
+}
+
+bool ZstStageSession::load_session_from_file(const std::string& filepath) {
+    try {
+		fs::path session_path = m_session_save_path / fs::path(filepath);
+
+        // Read file
+        std::ifstream file(session_path, std::ios::binary | std::ios::ate);
+        if (!file.is_open()) {
+            Log::server(Log::Level::error, "Failed to open file for reading: {}", filepath);
+            return false;
+        }
+
+        // Get file size and read into buffer
+        size_t file_size = std::filesystem::file_size(session_path);
+        file.seekg(0);
+        std::vector<uint8_t> buffer(file_size);
+        file.read(reinterpret_cast<char*>(buffer.data()), file_size);
+        file.close();
+
+        // Verify buffer
+        flatbuffers::Verifier verifier(buffer.data(), file_size);
+        if (!verifier.VerifyBuffer<showtime::Session>()) {
+            Log::server(Log::Level::error, "Invalid session file format");
+            return false;
+        }
+
+        // Deserialize session
+        auto session = flatbuffers::GetRoot<showtime::Session>(buffer.data());
+        deserialize(session);
+
+		// Broadcast session restored event to all clients
+        FlatBufferBuilder builder;
+        auto signal = CreateSignalMessage(builder, Signal_SESSION_RESTORED);
+        m_hierarchy->broadcast(Content_SignalMessage, signal.Union(), builder, ZstTransportArgs());
+
+        Log::server(Log::Level::notification, "Session loaded from file: {}", filepath);
+        return true;
+    } catch (const std::exception& e) {
+        Log::server(Log::Level::error, "Error loading session: {}", e.what());
+        return false;
+    }
+}
+
+void ZstStageSession::serialize_partial(flatbuffers::Offset<void>& destination_offset, flatbuffers::FlatBufferBuilder& builder) const {
+    throw std::runtime_error("Partial serialization not supported for Session");
+}
+
+flatbuffers::uoffset_t ZstStageSession::serialize(flatbuffers::FlatBufferBuilder& builder) const {
+    // Get hierarchy
+    flatbuffers::Offset<showtime::Hierarchy> hierarchy_offset = m_hierarchy->serialize(builder);
+
+    // Get all cables
+    ZstCableBundle cable_bundle;
+    get_cables(cable_bundle);
+
+    // Serialize cables
+    std::vector<flatbuffers::Offset<Cable>> cables;
+    for (auto cable : cable_bundle) {
+        auto input_uri = builder.CreateString(cable->get_address().get_input_URI().path());
+        auto output_uri = builder.CreateString(cable->get_address().get_output_URI().path());
+        auto cable_data = CreateCableData(builder, input_uri, output_uri);
+        cables.push_back(CreateCable(builder, cable_data));
+    }
+
+    // Create session
+    auto session = CreateSession(
+        builder,
+        builder.CreateString("saved_session"),
+        hierarchy_offset,
+        builder.CreateVector(cables)
+    );
+    return session.o;
+}
+
+void ZstStageSession::deserialize_partial(const void* buffer) {
+    throw std::runtime_error("Partial deserialization not supported for Session");
+}
+
+void ZstStageSession::deserialize(const Session* session_data) {
+    if (!session_data || !session_data->hierarchy()) {
+        throw std::runtime_error("Invalid session data");
+    }
+
+	// Reset the session first
+	reset();
+
+    try {
+        // First deserialize hierarchy
+        m_hierarchy->deserialize(session_data->hierarchy());
+
+        // Then recreate all cables
+        if (session_data->cables()) {
+            for (auto cable : *session_data->cables()) {
+                auto input_path = ZstURI(cable->address()->input_URI()->c_str(), cable->address()->input_URI()->size());
+                auto output_path = ZstURI(cable->address()->output_URI()->c_str(), cable->address()->output_URI()->size());
+
+                // Find the plugs
+                auto input_plug = dynamic_cast<ZstInputPlug*>(m_hierarchy->find_entity(input_path));
+                auto output_plug = dynamic_cast<ZstOutputPlug*>(m_hierarchy->find_entity(output_path));
+
+                if (input_plug && output_plug) {
+                    // Create cable
+                    auto new_cable = create_cable(input_plug, output_plug);
+                    if (!new_cable) {
+                        Log::server(Log::Level::warn, "Failed to create cable between {} and {}", 
+                            input_path.path(), output_path.path());
+                    }
+                }
+            }
+        }
+    } catch (const std::exception& e) {
+        Log::server(Log::Level::error, "Error deserializing session: {}", e.what());
+        throw;
+    }
+}
+
 
 ZstStageSession::~ZstStageSession()
 {
@@ -62,6 +222,12 @@ void ZstStageSession::on_receive_msg(const std::shared_ptr<ZstStageMessage>& msg
 	case Content_EntityTakeOwnershipRequest:
 		response = aquire_entity_ownership_handler(msg, sender);
 		break;
+	case Content_SessionSaveRequest:
+		response = save_session_handler(msg, sender);
+		break;
+	case Content_SessionLoadRequest:
+		response = load_session_handler(msg, sender);
+		break;
 	default:
 		break;
 	}
@@ -76,6 +242,40 @@ void ZstStageSession::on_receive_msg(const std::shared_ptr<ZstStageMessage>& msg
 		if (auto transport = std::dynamic_pointer_cast<ZstStageTransport>(msg->owning_transport()))
 			transport->send_msg(transport->create_msg(Content_SignalMessage, signal_offset.Union(), builder), args);
 	}
+}
+
+Signal ZstStageSession::save_session_handler(const std::shared_ptr<ZstStageMessage>& msg, ZstPerformerStageProxy* sender) {
+    auto request = msg->buffer()->content_as<SessionSaveRequest>();
+    if (!request->filepath()) {
+        Log::server(Log::Level::error, "Session save request missing filepath");
+        return Signal_ERR_STAGE_REQUEST_MISSING_ARG;
+    }
+
+    bool success = save_session_to_file(request->filepath()->str());
+    if (success) {
+        Log::server(Log::Level::notification, "Session saved successfully to {}", request->filepath()->str());
+        return Signal_OK;
+    } else {
+        Log::server(Log::Level::error, "Failed to save session to {}", request->filepath()->str());
+        return Signal_ERR_STAGE_REQUEST_MISSING_ARG;
+    }
+}
+
+Signal ZstStageSession::load_session_handler(const std::shared_ptr<ZstStageMessage>& msg, ZstPerformerStageProxy* sender) {
+    auto request = msg->buffer()->content_as<SessionLoadRequest>();
+    if (!request->filepath()) {
+        Log::server(Log::Level::error, "Session load request missing filepath");
+        return Signal_ERR_STAGE_REQUEST_MISSING_ARG;
+    }
+
+    bool success = load_session_from_file(request->filepath()->str());
+    if (success) {
+        Log::server(Log::Level::notification, "Session loaded successfully from {}", request->filepath()->str());
+        return Signal_OK;
+    } else {
+        Log::server(Log::Level::error, "Failed to load session from {}", request->filepath()->str());
+        return Signal_ERR_STAGE_REQUEST_MISSING_ARG;
+    }
 }
 
 Signal ZstStageSession::signal_handler(const std::shared_ptr<ZstStageMessage>& msg, ZstPerformerStageProxy* sender)

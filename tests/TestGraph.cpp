@@ -633,6 +633,79 @@ BOOST_FIXTURE_TEST_CASE(send_byte_fixed_different_sizes, FixtureJoinServer) {
 //	BOOST_TEST(input_component->input()->string_at(val, 0) == first_cmp_val);
 //}
 
+BOOST_AUTO_TEST_CASE(session_serialization) {
+	// Create new stage
+    std::string server_name = boost::unit_test::framework::current_test_case().full_name();
+	std::shared_ptr<ShowtimeServer> test_server = std::make_unique<ShowtimeServer>();
+	test_server->init(server_name.c_str());
+	int server_port = test_server->port();
+	std::string server_address = std::format("127.0.0.1:{}", server_port);
+	TAKE_A_BREATH
+
+	// Create new clients
+	showtime::ShowtimeOptions local_client_options{"test_client", true, 50000};
+    std::shared_ptr<ShowtimeClient> local_client = std::make_shared<ShowtimeClient>();
+	local_client->init(local_client_options);
+	local_client->join(server_address.c_str());
+
+	showtime::ShowtimeOptions remote_client_options{"remote_client", true, 50001};
+    std::shared_ptr<ShowtimeClient> remote_client = std::make_shared<ShowtimeClient>();
+	remote_client->init(remote_client_options);
+    remote_client->join(server_address.c_str());
+
+    // Create components in both clients
+    auto output_component = std::make_unique<OutputComponent>("test_out", true);
+    auto input_component = std::make_unique<InputComponent>("test_in", 0, false, ZstValueType::IntList, true);
+    local_client->get_root()->add_child(output_component.get());
+    remote_client->get_root()->add_child(input_component.get());
+
+    // Connect cable between clients
+    auto cable = local_client->connect_cable(input_component->input(), output_component->output());
+    BOOST_REQUIRE(cable);
+    BOOST_TEST(cable->is_activated());
+
+    // Save session to file
+    local_client->save_session("test_session.zst");
+    TAKE_A_BREATH
+
+    // Destroy stage and clients
+    local_client->destroy();
+    remote_client->destroy();
+    test_server->destroy();
+
+	local_client.reset();
+	remote_client.reset();
+	test_server.reset();
+
+    // Create new stage and clients
+	test_server = std::make_unique<ShowtimeServer>();
+	test_server->init(server_name.c_str());
+	server_port = test_server->port();
+	server_address = std::format("127.0.0.1:{}", server_port);
+	TAKE_A_BREATH
+	
+    // Connect clients to stage
+    local_client = std::make_shared<ShowtimeClient>();
+	local_client->init(local_client_options);
+    local_client->join(server_address.c_str());
+
+    remote_client = std::make_shared<ShowtimeClient>();
+	remote_client->init(remote_client_options);
+    remote_client->join(server_address.c_str());
+
+    // Load session from file
+    local_client->load_session("test_session.zst");
+    TAKE_A_BREATH
+
+    // Verify cable was restored
+    ZstCableBundle bundle;
+    local_client->get_root()->get_child_cables(&bundle);
+    BOOST_TEST(bundle.size() == 1);
+    auto restored_cable = bundle[0];
+    BOOST_TEST(restored_cable->get_address().get_input_URI().path() == input_component->input()->URI().path());
+    BOOST_TEST(restored_cable->get_address().get_output_URI().path() == output_component->output()->URI().path());
+}
+
 BOOST_FIXTURE_TEST_CASE(buffer_ownership, FixtureJoinServer) {
 #define TEST_BUF_SIZE 4
 	size_t buffer_size = TEST_BUF_SIZE;

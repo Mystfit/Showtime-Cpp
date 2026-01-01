@@ -2,6 +2,7 @@
 #include <string>
 #include <boost/uuid/uuid.hpp>
 #include <boost/container_hash/hash.hpp>
+#include <showtime/schemas/messaging/session_generated.h>
 
 #include "../core/ZstSemaphore.h"
 #include "../core/ZstHierarchy.h"
@@ -17,7 +18,8 @@ typedef std::unordered_map<boost::uuids::uuid, ZstPerformerStageProxy*, boost::h
 class ZstStageHierarchy :
 	public ZstHierarchy,
 	public ZstStageTransportAdaptor,
-	public ZstStageModule
+	public ZstStageModule,
+	public ZstSerialisable<Hierarchy, void>
 {
 public:
 	~ZstStageHierarchy();
@@ -34,6 +36,14 @@ public:
 	virtual void on_factory_arriving(ZstEntityFactory* factory) override;
 	virtual void on_performer_arriving(ZstPerformer* performer) override;
 	void on_receive_msg(const std::shared_ptr<ZstStageMessage>& msg) override;
+
+	// ---------------------------
+	// Serialisable overrides
+	// ---------------------------
+	void serialize_partial(flatbuffers::Offset<void>& destination_offset, flatbuffers::FlatBufferBuilder& buffer_builder) const override;
+	flatbuffers::uoffset_t serialize(flatbuffers::FlatBufferBuilder& buffer_builder) const override;
+	void deserialize_partial(const void* buffer) override;
+	void deserialize(const Hierarchy* buffer) override;
 
 
 	// ----------------
