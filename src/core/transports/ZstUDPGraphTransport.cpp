@@ -132,7 +132,7 @@ namespace showtime
 			return "";
 		}
 
-		// Get reply from TURN server
+		// Get reply from STUN server
 		char reply[1024];
 		udp::endpoint sender_endpoint;
 		size_t reply_length = 0;
@@ -145,7 +145,7 @@ namespace showtime
 				}
 			}
 			catch (boost::system::system_error const& ex) {
-				Log::net(Log::Level::warn, "Receive err: {}", ex.what());
+				Log::net(Log::Level::warn, "STUN Receive err: {}", ex.what());
 				iters--;
 			}
 		}

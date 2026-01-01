@@ -35,6 +35,7 @@ public:
 	ZST_EXPORT virtual void init_adaptors() override;
 	ZST_EXPORT virtual void process_events() override;
 	ZST_EXPORT virtual void flush_events() override;
+	ZST_EXPORT virtual void reset();
 
 	// ------------------
 	// Cable creation
@@ -55,7 +56,7 @@ public:
     ZST_EXPORT virtual ZstCable * find_cable(const ZstCableAddress & cable_path) override;
 	ZST_EXPORT virtual ZstCable * find_cable(const ZstURI & input_path, const ZstURI & output_path);
 	ZST_EXPORT virtual ZstCable * find_cable(ZstInputPlug * input, ZstOutputPlug * output);
-	ZST_EXPORT virtual ZstCableBundle & get_cables(ZstCableBundle & bundle) override;
+	ZST_EXPORT virtual ZstCableBundle & get_cables(ZstCableBundle & bundle) const override;
 	
     
 	// -------------------------------

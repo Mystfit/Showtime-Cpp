@@ -25,7 +25,7 @@ public:
 	//----
 	ZST_EXPORT virtual ZstCable* connect_cable(ZstInputPlug* input, ZstOutputPlug* output, const ZstTransportRequestBehaviour& sendtype) { return nullptr; };
 
-	ZST_EXPORT virtual ZstCableBundle& get_cables(ZstCableBundle& bundle) { return bundle; };
+	ZST_EXPORT virtual ZstCableBundle& get_cables(ZstCableBundle& bundle) const { return bundle; };
 	ZST_EXPORT virtual ZstCable* find_cable(const ZstCableAddress& address) { return nullptr; };
 	ZST_EXPORT virtual void destroy_cable(ZstCable* cable) {};
 	ZST_EXPORT virtual void update_cable_paths(ZstEntityBase* entity, const ZstURI& original_path) {};

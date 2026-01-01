@@ -72,7 +72,7 @@ public:
     // ----------------
     // Message handlers
     // ----------------
-    
+	
     void cable_create_handler(const CableCreateRequest* request);
     void cable_destroy_handler(const CableDestroyRequest* request);
     void aquire_entity_ownership_handler(const EntityTakeOwnershipRequest* request);

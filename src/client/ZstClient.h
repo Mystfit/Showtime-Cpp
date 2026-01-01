@@ -82,9 +82,15 @@ namespace showtime {
             void on_receive_msg(const std::shared_ptr<ZstPerformanceMessage>& msg) override;
 			void on_receive_msg(const std::shared_ptr<ZstServerBeaconMessage>& msg) override;
 
+            // Message handlers
+            void signal_handler(const std::shared_ptr<ZstStageMessage>& msg);
+
             //Server discovery
             const ZstServerList & get_discovered_servers() const;
             ZstServerAddress get_discovered_server(const std::string& server_name) const;
+
+            //Addresses
+            const char* get_or_cache_public_address();
             
             //Register this endpoint to the stage
             void auto_join_stage(const std::string & name, const ZstTransportRequestBehaviour & sendtype = ZstTransportRequestBehaviour::SYNC_REPLY);
@@ -103,6 +109,10 @@ namespace showtime {
             bool is_connecting_to_stage();
             bool is_init_complete();
             long ping();
+
+            //Session methods
+            void save_session(const std::string& filepath, const ZstTransportRequestBehaviour& sendtype = ZstTransportRequestBehaviour::SYNC_REPLY);
+            void load_session(const std::string& filepath, const ZstTransportRequestBehaviour& sendtype = ZstTransportRequestBehaviour::SYNC_REPLY);
             
             //Client modules
 			std::shared_ptr<ZstClientSession> session();
@@ -154,6 +164,9 @@ namespace showtime {
             std::map<std::string, std::promise<ZstMessageResponse> > m_auto_join_stage_requests;
             
             ZstServerAddress m_connected_server;
+
+            // Addresses
+            std::string m_udp_public_address;
 
             // Message handlers
             void start_connection_broadcast_handler(const std::shared_ptr<showtime::ZstStageMessage>& msg);

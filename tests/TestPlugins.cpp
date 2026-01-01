@@ -13,8 +13,7 @@ using namespace ZstTest;
 
 struct InitLeakDetection {
     InitLeakDetection() {
-        _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-        //_CrtSetBreakAlloc(213475); // Break on this allocation number
+        //_CrtSetBreakAlloc(880247); // Break on this allocation number
 		//_CrtSetBreakAlloc(158132); // Break on this allocation number
     }
 };

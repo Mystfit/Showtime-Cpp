@@ -195,9 +195,6 @@ void ZstHierarchy::add_proxy_entity(std::unique_ptr<ZstEntityBase> entity)
 	
 	// Move entity into hierarchy to manage its lifetime
 	m_proxies.insert(std::move(entity));
-
-	//Dispatch entity arrived event regardless if the entity is local or remote
-	dispatch_entity_arrived_event(entity_ptr);
 }
 
 void ZstHierarchy::dispatch_entity_arrived_event(ZstEntityBase * entity){
@@ -307,6 +304,15 @@ std::unique_ptr<ZstEntityBase> ZstHierarchy::unpack_entity(EntityTypes entity_ty
     }
 	return NULL;
 }
+
+void ZstHierarchy::reset()
+{
+	std::lock_guard<std::recursive_mutex> lock(m_hierarchy_mutex);
+	m_entity_lookup.clear();
+	m_proxies.clear();
+	m_ticking_entities.clear();
+}
+
 
 void ZstHierarchy::add_entity_to_lookup(ZstEntityBase * entity)
 {
@@ -421,6 +427,7 @@ std::shared_ptr<ZstEventDispatcher<ZstHierarchyAdaptor> > & ZstHierarchy::hierar
 
  void ZstHierarchy::flush_events()
  {
+	m_hierarchy_events->flush_events();
     ZstSynchronisableModule::flush_events();
  }
 

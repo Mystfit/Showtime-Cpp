@@ -10,7 +10,7 @@ using namespace showtime::client;
 
 namespace showtime {
 
-inline bool ShowtimeClient::library_init_guard() {
+inline bool ShowtimeClient::library_init_guard() const{
 	if (!m_client->is_init_complete()) {
 		Log::net(Log::Level::error, "Showtime library has not been initialised."); 
 		return false;
@@ -18,7 +18,7 @@ inline bool ShowtimeClient::library_init_guard() {
 	return true;
 }
 
-inline bool ShowtimeClient::library_connected_guard() {
+inline bool ShowtimeClient::library_connected_guard() const{
 	if (!library_init_guard()) {
 		return false;
 	}
@@ -110,6 +110,18 @@ void ShowtimeClient::get_discovered_servers(ZstServerAddressBundle* servers)
 ZstServerAddress ShowtimeClient::get_discovered_server(const char* server_name)
 {
 	return m_client->get_discovered_server(server_name);
+}
+
+
+// ----------------
+// Addresses
+// ----------------
+
+const char* ShowtimeClient::get_public_address() const
+{
+	if (!library_init_guard()) return "";
+
+	return m_client->get_or_cache_public_address();
 }
 
 
@@ -467,6 +479,18 @@ void ShowtimeClient::set_plugin_data_path(const char* path) {
 
 const char* ShowtimeClient::get_plugin_data_path() {
 	return m_client->plugins()->get_plugin_data_path();
+}
+
+void ShowtimeClient::save_session(const char* filepath) {
+    if (library_connected_guard()) {
+        m_client->save_session(filepath, ZstTransportRequestBehaviour::SYNC_REPLY);
+    }
+}
+
+void ShowtimeClient::load_session(const char* filepath) {
+    if (library_connected_guard()) {
+        m_client->load_session(filepath, ZstTransportRequestBehaviour::SYNC_REPLY);
+    }
 }
 
 }

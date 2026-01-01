@@ -43,8 +43,19 @@ void ZstSession::process_events()
 
 void ZstSession::flush_events()
 {
+	m_session_events->flush_events();
+	m_compute_events->flush_events();
+
 	hierarchy()->flush_events();
     ZstSynchronisableModule::flush_events();
+}
+
+void ZstSession::reset()
+{
+	flush_events();
+	
+	std::lock_guard<std::mutex> lock(m_session_mtex);
+	m_cables.clear();
 }
 
 ZstCable * ZstSession::connect_cable(ZstInputPlug * input, ZstOutputPlug * output) {
@@ -177,8 +188,10 @@ ZstCable * ZstSession::find_cable(ZstInputPlug * input, ZstOutputPlug * output)
 	return find_cable(input->URI(), output->URI());
 }
 
-ZstCableBundle & ZstSession::get_cables(ZstCableBundle & bundle)
+ZstCableBundle & ZstSession::get_cables(ZstCableBundle & bundle) const
 {
+	//std::lock_guard<std::mutex> lock(m_session_mtex);
+
 	for (auto const & c : m_cables) {
 		bundle.add(c.get());
 	}

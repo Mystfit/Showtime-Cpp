@@ -341,3 +341,9 @@ BOOST_FIXTURE_TEST_CASE(unmanaged_adaptors, FixtureInitAndCreateServerWithEphere
 
 	test_client->remove_connection_adaptor(connectCallback.get());
 }
+
+BOOST_FIXTURE_TEST_CASE(public_address, FixtureInit, TEST_TIMEOUT) {
+	std::string address = test_client->get_public_address();
+	Log::app(Log::Level::notification, "Public address is {}", address);
+	BOOST_TEST_REQUIRE(!address.empty());
+}

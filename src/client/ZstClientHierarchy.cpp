@@ -291,7 +291,11 @@ void ZstClientHierarchy::create_proxy_entity_handler(const EntityCreateRequest *
 	for (uoffset_t i = 0; i < request->entity()->size(); ++i) {
 		EntityTypes entity_type = static_cast<EntityTypes>(*request->entity_type()->data());
 		const void* entity_raw = request->entity()->Get(i);
-		add_proxy_entity(create_proxy_entity(entity_type, get_entity_field(entity_type, entity_raw), entity_raw));
+		
+		std::unique_ptr<ZstEntityBase> entity = create_proxy_entity(entity_type, get_entity_field(entity_type, entity_raw), entity_raw);
+		ZstEntityBase* entity_ptr = entity.get();
+		add_proxy_entity(std::move(entity));
+		dispatch_entity_arrived_event(entity_ptr);
 	}
 }
     

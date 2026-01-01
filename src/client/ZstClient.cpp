@@ -215,6 +215,9 @@ void ZstClient::flush()
 void ZstClient::on_receive_msg(const std::shared_ptr<ZstStageMessage>& msg)
 {
     switch (msg->buffer()->content_type()) {
+    case Content_SignalMessage:
+        signal_handler(msg);
+        break;
     case Content_ClientGraphHandshakeStart:
         start_connection_broadcast_handler(msg);
         break;
@@ -240,6 +243,16 @@ void ZstClient::on_receive_msg(const std::shared_ptr<ZstPerformanceMessage>& msg
 void ZstClient::on_receive_msg(const std::shared_ptr<ZstServerBeaconMessage>& msg)
 {
 	server_discovery_handler(msg);
+}
+
+void ZstClient::signal_handler(const std::shared_ptr<ZstStageMessage>& msg){
+    if (ZstStageTransport::get_signal(msg) == Signal_SESSION_RESTORED) {
+        // TODO: Cherry pick which entities we need to clear after the session is loaded so we can figure out which entities need to be recreated or reattached
+        session()->reset();
+        session()->hierarchy()->reset();
+
+        synchronise_graph();
+    }
 }
 
 void ZstClient::start_connection_broadcast_handler(const std::shared_ptr<showtime::ZstStageMessage>& msg)
@@ -327,6 +340,13 @@ ZstServerAddress ZstClient::get_discovered_server(const std::string& server_name
     return (server_address != this->get_discovered_servers().end()) ? *server_address : ZstServerAddress();
 }
 
+const char* ZstClient::get_or_cache_public_address()
+{
+    if(m_udp_public_address.empty())
+        m_udp_public_address = m_udp_graph_transport->getPublicIPAddress(STUNServer{ STUN_SERVER, 40006, m_udp_graph_transport->get_port()});
+    return m_udp_public_address.c_str();
+}
+
 void ZstClient::auto_join_stage(const std::string& name, const ZstTransportRequestBehaviour& sendtype)
 {
     m_auto_join_stage = true;
@@ -404,7 +424,8 @@ void ZstClient::join_stage(const ZstServerAddress& stage_address, const ZstTrans
 
     // Get our local/public addresses
     std::string unreliable_graph_addr = m_udp_graph_transport->get_graph_in_address();
-    std::string unreliable_public_graph_addr = m_udp_graph_transport->getPublicIPAddress(STUNServer{ STUN_SERVER, 40006, m_udp_graph_transport->get_port() }); //m_udp_graph_transport->get_incoming_port()
+    
+    std::string unreliable_public_graph_addr = get_or_cache_public_address();
     Log::net(Log::Level::debug, "UDP public address: {}", unreliable_public_graph_addr);
 
     std::string reliable_graph_addr = m_tcp_graph_transport->get_graph_out_address();
@@ -658,6 +679,42 @@ bool ZstClient::is_init_complete() {
 long ZstClient::ping()
 {
     return m_ping;
+}
+
+void ZstClient::save_session(const std::string& filepath, const ZstTransportRequestBehaviour& sendtype) {
+    if (!is_connected_to_stage()) {
+        Log::net(Log::Level::warn, "Not connected to a Showtime stage.");
+        return;
+    }
+
+    flatbuffers::FlatBufferBuilder builder;
+    auto save_request = CreateSessionSaveRequest(builder, builder.CreateString(filepath));
+    
+    ZstTransportArgs args;
+    args.msg_send_behaviour = sendtype;
+    args.on_recv_response = [this, filepath](ZstMessageResponse response) {
+        if (!ZstStageTransport::verify_signal(response.response, Signal_OK, ""))
+            Log::net(Log::Level::warn, "Server failed to save the session {}", filepath);    
+    };
+    m_client_transport->send_msg(m_client_transport->create_msg(Content_SessionSaveRequest, save_request.Union(), builder), args);
+}
+
+void ZstClient::load_session(const std::string& filepath, const ZstTransportRequestBehaviour& sendtype) {
+    if (!is_connected_to_stage()) {
+        Log::net(Log::Level::warn, "Not connected to a Showtime stage.");
+        return;
+    }
+
+    flatbuffers::FlatBufferBuilder builder;
+    auto load_request = CreateSessionLoadRequest(builder, builder.CreateString(filepath));
+    
+    ZstTransportArgs args;
+    args.msg_send_behaviour = sendtype;
+    args.on_recv_response = [this, filepath](ZstMessageResponse response) {
+        if (!ZstStageTransport::verify_signal(response.response, Signal_OK, ""))
+            Log::net(Log::Level::warn, "Server failed to load the session {}", filepath);    
+    };
+    m_client_transport->send_msg(m_client_transport->create_msg(Content_SessionLoadRequest, load_request.Union(), builder), args);
 }
 
 void ZstClient::heartbeat_timer(boost::asio::deadline_timer* t, ZstClient* client, boost::posix_time::milliseconds duration) {

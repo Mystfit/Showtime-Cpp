@@ -43,6 +43,9 @@ public:
     ZST_CLIENT_EXPORT void get_discovered_servers(ZstServerAddressBundle* servers);
 	ZST_CLIENT_EXPORT ZstServerAddress get_discovered_server(const char * server_name);
 
+	//Addresses
+	ZST_CLIENT_EXPORT const char* get_public_address() const;
+
 	//Cleanup
 	ZST_CLIENT_EXPORT void destroy();
 	ZST_CLIENT_EXPORT void leave();
@@ -103,6 +106,10 @@ public:
     ZST_CLIENT_EXPORT bool is_init_completed();
 	ZST_CLIENT_EXPORT int ping();
 
+	//Session methods
+	ZST_CLIENT_EXPORT void save_session(const char* filepath);
+	ZST_CLIENT_EXPORT void load_session(const char* filepath);
+
 	//Cable management
 	ZST_CLIENT_EXPORT ZstCable * connect_cable(ZstInputPlug * input, ZstOutputPlug * output);
     ZST_CLIENT_EXPORT ZstCable * connect_cable_async(ZstInputPlug * input, ZstOutputPlug * output);
@@ -120,8 +127,8 @@ public:
 	ZST_CLIENT_EXPORT std::vector< std::shared_ptr<ZstPlugin> > plugins();
 
 private:
-    bool library_init_guard();
-    bool library_connected_guard();
+    bool library_init_guard() const;
+    bool library_connected_guard() const;
     std::shared_ptr<client::ZstClient> m_client;
 };
 

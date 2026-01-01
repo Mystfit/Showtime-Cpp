@@ -35,7 +35,13 @@ public:
 	ZST_EXPORT ZstHierarchy();
 	ZST_EXPORT ~ZstHierarchy();
 	ZST_EXPORT virtual void init_adaptors() override;
-
+	
+	// ------------------------------
+	// Internal hierarchy manipulation
+	// ------------------------------
+	
+	ZST_EXPORT virtual void reset();
+	
 	// ------------------------------
 	// Activations
 	// ------------------------------
