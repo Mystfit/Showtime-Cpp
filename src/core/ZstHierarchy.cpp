@@ -406,7 +406,7 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 
 	//Cleanup children (don't include parent entity - it's already being destroyed)
 	ZstEntityBundle bundle;
-	entity->get_child_entities(&bundle, false, true);
+	entity->get_child_entities(&bundle, true, true);
 	for (auto c : bundle) {
 		synchronisable_enqueue_deactivation(c);
 	}
