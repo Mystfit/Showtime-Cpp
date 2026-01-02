@@ -281,9 +281,9 @@ BOOST_FIXTURE_TEST_CASE(plugin_adder_ordered, FixtureCorePluginAdder) {
 
 BOOST_FIXTURE_TEST_CASE(plugin_multiplier_basic, FixtureCorePluginMultiplier) {
 	int current_wait = 0;
-	auto push_A = std::make_unique<OutputComponent>("pushA");
-	auto push_B = std::make_unique<OutputComponent>("pushB");
-	auto sink = std::make_unique<InputComponent>("sink");
+	auto push_A = std::make_unique<OutputComponent>("pushA", true, ZstValueType::FloatList);
+	auto push_B = std::make_unique<OutputComponent>("pushB", true, ZstValueType::FloatList);
+	auto sink = std::make_unique<InputComponent>("sink", 0, false, ZstValueType::FloatList);
 	auto push_A_ptr = push_A.get();
 	auto push_B_ptr = push_B.get();
 	auto sink_ptr = sink.get();
@@ -313,9 +313,9 @@ BOOST_FIXTURE_TEST_CASE(plugin_multiplier_basic, FixtureCorePluginMultiplier) {
 
 BOOST_FIXTURE_TEST_CASE(plugin_subtractor_basic, FixtureCorePluginSubtractor) {
 	int current_wait = 0;
-	auto push_A = std::make_unique<OutputComponent>("pushA");
-	auto push_B = std::make_unique<OutputComponent>("pushB");
-	auto sink = std::make_unique<InputComponent>("sink");
+	auto push_A = std::make_unique<OutputComponent>("pushA", true, ZstValueType::FloatList);
+	auto push_B = std::make_unique<OutputComponent>("pushB", true, ZstValueType::FloatList);
+	auto sink = std::make_unique<InputComponent>("sink", 0, false, ZstValueType::FloatList);
 	auto push_A_ptr = push_A.get();
 	auto push_B_ptr = push_B.get();
 	auto sink_ptr = sink.get();
@@ -346,9 +346,9 @@ BOOST_FIXTURE_TEST_CASE(plugin_subtractor_basic, FixtureCorePluginSubtractor) {
 
 BOOST_FIXTURE_TEST_CASE(plugin_divider_basic, FixtureCorePluginDivider) {
 	int current_wait = 0;
-	auto push_A = std::make_unique<OutputComponent>("pushA");
-	auto push_B = std::make_unique<OutputComponent>("pushB");
-	auto sink = std::make_unique<InputComponent>("sink");
+	auto push_A = std::make_unique<OutputComponent>("pushA", true, ZstValueType::FloatList);
+	auto push_B = std::make_unique<OutputComponent>("pushB", true, ZstValueType::FloatList);
+	auto sink = std::make_unique<InputComponent>("sink", 0, false, ZstValueType::FloatList);
 	auto push_A_ptr = push_A.get();
 	auto push_B_ptr = push_B.get();
 	auto sink_ptr = sink.get();
@@ -379,9 +379,9 @@ BOOST_FIXTURE_TEST_CASE(plugin_divider_basic, FixtureCorePluginDivider) {
 
 BOOST_FIXTURE_TEST_CASE(plugin_divider_by_zero, FixtureCorePluginDivider) {
 	int current_wait = 0;
-	auto push_A = std::make_unique<OutputComponent>("pushA");
-	auto push_B = std::make_unique<OutputComponent>("pushB");
-	auto sink = std::make_unique<InputComponent>("sink");
+	auto push_A = std::make_unique<OutputComponent>("pushA", true, ZstValueType::FloatList);
+	auto push_B = std::make_unique<OutputComponent>("pushB", true, ZstValueType::FloatList);
+	auto sink = std::make_unique<InputComponent>("sink", 0, false, ZstValueType::FloatList);
 	auto push_A_ptr = push_A.get();
 	auto push_B_ptr = push_B.get();
 	auto sink_ptr = sink.get();
@@ -413,9 +413,9 @@ BOOST_FIXTURE_TEST_CASE(plugin_divider_by_zero, FixtureCorePluginDivider) {
 BOOST_FIXTURE_TEST_CASE(plugin_math_list_operations, FixtureCorePluginMathComponent) {
 	// Test all math components with lists of different sizes
 	int current_wait = 0;
-	auto push_A = std::make_unique<OutputComponent>("pushA");
-	auto push_B = std::make_unique<OutputComponent>("pushB");
-	auto sink = std::make_unique<InputComponent>("sink");
+	auto push_A = std::make_unique<OutputComponent>("pushA", true, ZstValueType::FloatList);
+	auto push_B = std::make_unique<OutputComponent>("pushB", true, ZstValueType::FloatList);
+	auto sink = std::make_unique<InputComponent>("sink", 0, false, ZstValueType::FloatList);
 	auto push_A_ptr = push_A.get();
 	auto push_B_ptr = push_B.get();
 	auto sink_ptr = sink.get();
@@ -456,139 +456,181 @@ BOOST_FIXTURE_TEST_CASE(plugin_math_list_operations, FixtureCorePluginMathCompon
 
 BOOST_FIXTURE_TEST_CASE(plugin_math_negative_numbers, FixtureCorePluginMathComponent) {
 	int current_wait = 0;
-	auto push_A = std::make_unique<OutputComponent>("pushA");
-	auto push_B = std::make_unique<OutputComponent>("pushB");
-	auto sink = std::make_unique<InputComponent>("sink");
-	auto push_A_ptr = push_A.get();
-	auto push_B_ptr = push_B.get();
-	auto sink_ptr = sink.get();
-	test_client->get_root()->add_child(push_A_ptr);
-	test_client->get_root()->add_child(push_B_ptr);
-	test_client->get_root()->add_child(sink_ptr);
 
 	// Test subtractor with negative numbers
-	auto sub = create_math_component("subtractor", "test_sub");
-	auto minuend = dynamic_cast<ZstInputPlug*>(sub->get_child_by_URI(sub->URI() + ZstURI("minuend")));
-	auto subtrahend = dynamic_cast<ZstInputPlug*>(sub->get_child_by_URI(sub->URI() + ZstURI("subtrahend")));
-	auto difference = dynamic_cast<ZstOutputPlug*>(sub->get_child_by_URI(sub->URI() + ZstURI("difference")));
+	{
+		auto push_A = std::make_unique<OutputComponent>("pushA_sub", true, ZstValueType::FloatList);
+		auto push_B = std::make_unique<OutputComponent>("pushB_sub", true, ZstValueType::FloatList);
+		auto sink = std::make_unique<InputComponent>("sink_sub", 0, false, ZstValueType::FloatList);
+		auto push_A_ptr = push_A.get();
+		auto push_B_ptr = push_B.get();
+		auto sink_ptr = sink.get();
+		test_client->get_root()->add_child(push_A_ptr);
+		test_client->get_root()->add_child(push_B_ptr);
+		test_client->get_root()->add_child(sink_ptr);
 
-	test_client->connect_cable(minuend, push_A->output());
-	test_client->connect_cable(subtrahend, push_B->output());
-	test_client->connect_cable(sink->input(), difference);
+		auto sub = create_math_component("subtractor", "test_sub");
+		auto minuend = dynamic_cast<ZstInputPlug*>(sub->get_child_by_URI(sub->URI() + ZstURI("minuend")));
+		auto subtrahend = dynamic_cast<ZstInputPlug*>(sub->get_child_by_URI(sub->URI() + ZstURI("subtrahend")));
+		auto difference = dynamic_cast<ZstOutputPlug*>(sub->get_child_by_URI(sub->URI() + ZstURI("difference")));
 
-	push_A->output()->append_float(-5.0f);
-	push_B->output()->append_float(3.0f);
-	sink->execute_upstream();
+		test_client->connect_cable(minuend, push_A->output());
+		test_client->connect_cable(subtrahend, push_B->output());
+		test_client->connect_cable(sink->input(), difference);
 
-	while (sink->num_hits < 1 && ++current_wait < 1000) {
-		test_client->poll_once();
+		push_A->output()->append_float(-5.0f);
+		push_B->output()->append_float(3.0f);
+		sink->execute_upstream();
+
+		current_wait = 0;
+		while (sink->num_hits < 1 && ++current_wait < 1000) {
+			test_client->poll_once();
+		}
+		BOOST_TEST(sink->input()->float_at(0) == -8.0f);
+
+		// Cleanup
+		test_client->destroy_cable(test_client->find_cable(minuend->URI(), push_A->output()->URI()));
+		test_client->destroy_cable(test_client->find_cable(subtrahend->URI(), push_B->output()->URI()));
+		test_client->destroy_cable(test_client->find_cable(sink->input()->URI(), difference->URI()));
+		test_client->get_root()->remove_child(push_A_ptr);
+		test_client->get_root()->remove_child(push_B_ptr);
+		test_client->get_root()->remove_child(sink_ptr);
 	}
-	BOOST_TEST(sink->input()->float_at(0) == -8.0f);
 
 	// Test multiplier with negative numbers
-	auto mult = create_math_component("multiplier", "test_mult");
-	auto multiplicand = dynamic_cast<ZstInputPlug*>(mult->get_child_by_URI(mult->URI() + ZstURI("multiplicand")));
-	auto multiplier_input = dynamic_cast<ZstInputPlug*>(mult->get_child_by_URI(mult->URI() + ZstURI("multiplier")));
-	auto product = dynamic_cast<ZstOutputPlug*>(mult->get_child_by_URI(mult->URI() + ZstURI("product")));
+	{
+		auto push_A = std::make_unique<OutputComponent>("pushA_mult", true, ZstValueType::FloatList);
+		auto push_B = std::make_unique<OutputComponent>("pushB_mult", true, ZstValueType::FloatList);
+		auto sink = std::make_unique<InputComponent>("sink_mult", 0, false, ZstValueType::FloatList);
+		auto push_A_ptr = push_A.get();
+		auto push_B_ptr = push_B.get();
+		auto sink_ptr = sink.get();
+		test_client->get_root()->add_child(push_A_ptr);
+		test_client->get_root()->add_child(push_B_ptr);
+		test_client->get_root()->add_child(sink_ptr);
 
-	test_client->connect_cable(multiplicand, push_A->output());
-	test_client->connect_cable(multiplier_input, push_B->output());
-	test_client->connect_cable(sink->input(), product);
+		auto mult = create_math_component("multiplier", "test_mult");
+		auto multiplicand = dynamic_cast<ZstInputPlug*>(mult->get_child_by_URI(mult->URI() + ZstURI("multiplicand")));
+		auto multiplier_input = dynamic_cast<ZstInputPlug*>(mult->get_child_by_URI(mult->URI() + ZstURI("multiplier")));
+		auto product = dynamic_cast<ZstOutputPlug*>(mult->get_child_by_URI(mult->URI() + ZstURI("product")));
 
-	push_A->output()->append_float(-2.0f);
-	push_B->output()->append_float(-3.0f);
-	sink->execute_upstream();
+		test_client->connect_cable(multiplicand, push_A->output());
+		test_client->connect_cable(multiplier_input, push_B->output());
+		test_client->connect_cable(sink->input(), product);
 
-	while (sink->num_hits < 2 && ++current_wait < 1000) {
-		test_client->poll_once();
+		push_A->output()->append_float(-2.0f);
+		push_B->output()->append_float(-3.0f);
+		sink->execute_upstream();
+
+		current_wait = 0;
+		while (sink->num_hits < 1 && ++current_wait < 1000) {
+			test_client->poll_once();
+		}
+		BOOST_TEST(sink->input()->float_at(0) == 6.0f);
+
+		// Cleanup
+		test_client->destroy_cable(test_client->find_cable(multiplicand->URI(), push_A->output()->URI()));
+		test_client->destroy_cable(test_client->find_cable(multiplier_input->URI(), push_B->output()->URI()));
+		test_client->destroy_cable(test_client->find_cable(sink->input()->URI(), product->URI()));
+		test_client->get_root()->remove_child(push_A_ptr);
+		test_client->get_root()->remove_child(push_B_ptr);
+		test_client->get_root()->remove_child(sink_ptr);
 	}
-	BOOST_TEST(sink->input()->float_at(0) == 6.0f);
-
-	// Cleanup child components
-	// Cleanup cables and child components
-	test_client->destroy_cable(test_client->find_cable(minuend->URI(), push_A->output()->URI()));
-	test_client->destroy_cable(test_client->find_cable(subtrahend->URI(), push_B->output()->URI()));
-	test_client->destroy_cable(test_client->find_cable(sink->input()->URI(), difference->URI()));
-	test_client->destroy_cable(test_client->find_cable(multiplicand->URI(), push_A->output()->URI()));
-	test_client->destroy_cable(test_client->find_cable(multiplier_input->URI(), push_B->output()->URI()));
-	test_client->destroy_cable(test_client->find_cable(sink->input()->URI(), product->URI()));
-	test_client->get_root()->remove_child(push_A_ptr);
-	test_client->get_root()->remove_child(push_B_ptr);
-	test_client->get_root()->remove_child(sink_ptr);
 }
 
 BOOST_FIXTURE_TEST_CASE(plugin_math_list_operations_extended, FixtureCorePluginMathComponent) {
 	int current_wait = 0;
-	auto push_A = std::make_unique<OutputComponent>("pushA");
-	auto push_B = std::make_unique<OutputComponent>("pushB");
-	auto sink = std::make_unique<InputComponent>("sink");
-	auto push_A_ptr = push_A.get();
-	auto push_B_ptr = push_B.get();
-	auto sink_ptr = sink.get();
-	test_client->get_root()->add_child(push_A_ptr);
-	test_client->get_root()->add_child(push_B_ptr);
-	test_client->get_root()->add_child(sink_ptr);
 
 	// Test subtractor with lists
-	auto sub = create_math_component("subtractor", "test_sub");
-	auto minuend = dynamic_cast<ZstInputPlug*>(sub->get_child_by_URI(sub->URI() + ZstURI("minuend")));
-	auto subtrahend = dynamic_cast<ZstInputPlug*>(sub->get_child_by_URI(sub->URI() + ZstURI("subtrahend")));
-	auto difference = dynamic_cast<ZstOutputPlug*>(sub->get_child_by_URI(sub->URI() + ZstURI("difference")));
+	{
+		auto push_A = std::make_unique<OutputComponent>("pushA_sub", true, ZstValueType::FloatList);
+		auto push_B = std::make_unique<OutputComponent>("pushB_sub", true, ZstValueType::FloatList);
+		auto sink = std::make_unique<InputComponent>("sink_sub", 0, false, ZstValueType::FloatList);
+		auto push_A_ptr = push_A.get();
+		auto push_B_ptr = push_B.get();
+		auto sink_ptr = sink.get();
+		test_client->get_root()->add_child(push_A_ptr);
+		test_client->get_root()->add_child(push_B_ptr);
+		test_client->get_root()->add_child(sink_ptr);
 
-	test_client->connect_cable(minuend, push_A->output());
-	test_client->connect_cable(subtrahend, push_B->output());
-	test_client->connect_cable(sink->input(), difference);
+		auto sub = create_math_component("subtractor", "test_sub");
+		auto minuend = dynamic_cast<ZstInputPlug*>(sub->get_child_by_URI(sub->URI() + ZstURI("minuend")));
+		auto subtrahend = dynamic_cast<ZstInputPlug*>(sub->get_child_by_URI(sub->URI() + ZstURI("subtrahend")));
+		auto difference = dynamic_cast<ZstOutputPlug*>(sub->get_child_by_URI(sub->URI() + ZstURI("difference")));
 
-	push_A->output()->append_float(10.0f);
-	push_A->output()->append_float(20.0f);
-	push_B->output()->append_float(3.0f);
-	sink->execute_upstream();
+		test_client->connect_cable(minuend, push_A->output());
+		test_client->connect_cable(subtrahend, push_B->output());
+		test_client->connect_cable(sink->input(), difference);
 
-	while (sink->num_hits < 1 && ++current_wait < 1000) {
-		test_client->poll_once();
+		push_A->output()->append_float(10.0f);
+		push_A->output()->append_float(20.0f);
+		push_B->output()->append_float(3.0f);
+		sink->execute_upstream();
+
+		current_wait = 0;
+		while (sink->num_hits < 1 && ++current_wait < 1000) {
+			test_client->poll_once();
+		}
+		BOOST_TEST(sink->input()->float_at(0) == 7.0f);
+		BOOST_TEST(sink->input()->float_at(1) == 20.0f);
+
+		// Cleanup
+		test_client->destroy_cable(test_client->find_cable(minuend->URI(), push_A->output()->URI()));
+		test_client->destroy_cable(test_client->find_cable(subtrahend->URI(), push_B->output()->URI()));
+		test_client->destroy_cable(test_client->find_cable(sink->input()->URI(), difference->URI()));
+		test_client->get_root()->remove_child(push_A_ptr);
+		test_client->get_root()->remove_child(push_B_ptr);
+		test_client->get_root()->remove_child(sink_ptr);
 	}
-	BOOST_TEST(sink->input()->float_at(0) == 7.0f);
-	BOOST_TEST(sink->input()->float_at(1) == 20.0f);
 
 	// Test divider with lists
-	auto div = create_math_component("divider", "test_div");
-	auto dividend = dynamic_cast<ZstInputPlug*>(div->get_child_by_URI(div->URI() + ZstURI("dividend")));
-	auto divisor = dynamic_cast<ZstInputPlug*>(div->get_child_by_URI(div->URI() + ZstURI("divisor")));
-	auto quotient = dynamic_cast<ZstOutputPlug*>(div->get_child_by_URI(div->URI() + ZstURI("quotient")));
+	{
+		auto push_A = std::make_unique<OutputComponent>("pushA_div", true, ZstValueType::FloatList);
+		auto push_B = std::make_unique<OutputComponent>("pushB_div", true, ZstValueType::FloatList);
+		auto sink = std::make_unique<InputComponent>("sink_div", 0, false, ZstValueType::FloatList);
+		auto push_A_ptr = push_A.get();
+		auto push_B_ptr = push_B.get();
+		auto sink_ptr = sink.get();
+		test_client->get_root()->add_child(push_A_ptr);
+		test_client->get_root()->add_child(push_B_ptr);
+		test_client->get_root()->add_child(sink_ptr);
 
-	test_client->connect_cable(dividend, push_A->output());
-	test_client->connect_cable(divisor, push_B->output());
-	test_client->connect_cable(sink->input(), quotient);
+		auto div = create_math_component("divider", "test_div");
+		auto dividend = dynamic_cast<ZstInputPlug*>(div->get_child_by_URI(div->URI() + ZstURI("dividend")));
+		auto divisor = dynamic_cast<ZstInputPlug*>(div->get_child_by_URI(div->URI() + ZstURI("divisor")));
+		auto quotient = dynamic_cast<ZstOutputPlug*>(div->get_child_by_URI(div->URI() + ZstURI("quotient")));
 
-	push_A->output()->append_float(12.0f);
-	push_A->output()->append_float(6.0f);
-	push_B->output()->append_float(3.0f);
-	sink->execute_upstream();
+		test_client->connect_cable(dividend, push_A->output());
+		test_client->connect_cable(divisor, push_B->output());
+		test_client->connect_cable(sink->input(), quotient);
 
-	while (sink->num_hits < 2 && ++current_wait < 1000) {
-		test_client->poll_once();
+		push_A->output()->append_float(12.0f);
+		push_A->output()->append_float(6.0f);
+		push_B->output()->append_float(3.0f);
+		sink->execute_upstream();
+
+		current_wait = 0;
+		while (sink->num_hits < 1 && ++current_wait < 1000) {
+			test_client->poll_once();
+		}
+		BOOST_TEST(sink->input()->float_at(0) == 4.0f);
+		BOOST_TEST(sink->input()->float_at(1) == 6.0f);
+
+		// Cleanup
+		test_client->destroy_cable(test_client->find_cable(dividend->URI(), push_A->output()->URI()));
+		test_client->destroy_cable(test_client->find_cable(divisor->URI(), push_B->output()->URI()));
+		test_client->destroy_cable(test_client->find_cable(sink->input()->URI(), quotient->URI()));
+		test_client->get_root()->remove_child(push_A_ptr);
+		test_client->get_root()->remove_child(push_B_ptr);
+		test_client->get_root()->remove_child(sink_ptr);
 	}
-	BOOST_TEST(sink->input()->float_at(0) == 4.0f);
-	BOOST_TEST(sink->input()->float_at(1) == 6.0f);
-
-	// Cleanup child components
-	// Cleanup cables and child components
-	test_client->destroy_cable(test_client->find_cable(minuend->URI(), push_A->output()->URI()));
-	test_client->destroy_cable(test_client->find_cable(subtrahend->URI(), push_B->output()->URI()));
-	test_client->destroy_cable(test_client->find_cable(sink->input()->URI(), difference->URI()));
-	test_client->destroy_cable(test_client->find_cable(dividend->URI(), push_A->output()->URI()));
-	test_client->destroy_cable(test_client->find_cable(divisor->URI(), push_B->output()->URI()));
-	test_client->destroy_cable(test_client->find_cable(sink->input()->URI(), quotient->URI()));
-	test_client->get_root()->remove_child(push_A_ptr);
-	test_client->get_root()->remove_child(push_B_ptr);
-	test_client->get_root()->remove_child(sink_ptr);
 }
 
 BOOST_FIXTURE_TEST_CASE(plugin_math_edge_cases, FixtureCorePluginMathComponent) {
 	int current_wait = 0;
-	auto push_A = std::make_unique<OutputComponent>("pushA");
-	auto push_B = std::make_unique<OutputComponent>("pushB");
-	auto sink = std::make_unique<InputComponent>("sink");
+	auto push_A = std::make_unique<OutputComponent>("pushA", true, ZstValueType::FloatList);
+	auto push_B = std::make_unique<OutputComponent>("pushB", true, ZstValueType::FloatList);
+	auto sink = std::make_unique<InputComponent>("sink", 0, false, ZstValueType::FloatList);
 	auto push_A_ptr = push_A.get();
 	auto push_B_ptr = push_B.get();
 	auto sink_ptr = sink.get();
