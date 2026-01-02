@@ -64,11 +64,11 @@ void ZstFixedValue::clear()
 {
 	std::lock_guard<std::mutex> lock(m_lock);
 	if(m_int_fixed_data)
-		memset(m_int_fixed_data.get(), 0, sizeof m_int_fixed_data.get());
+		memset(m_int_fixed_data.get(), 0, m_fixed_size * sizeof(int));
 	if(m_float_fixed_data)
-		memset(m_float_fixed_data.get(), 0, sizeof m_float_fixed_data.get());
+		memset(m_float_fixed_data.get(), 0, m_fixed_size * sizeof(float));
 	if(m_byte_fixed_data)
-		memset(m_byte_fixed_data.get(), 0, sizeof m_byte_fixed_data.get());
+		memset(m_byte_fixed_data.get(), 0, m_fixed_size * sizeof(uint8_t));
 	if(m_str_fixed_data)
 		m_str_fixed_data->clear();
 	m_append_cursor_idx = 0;

@@ -79,11 +79,20 @@ ZstPlug::ZstPlug(const Plug* buffer) :
 
 ZstPlug::ZstPlug(const ZstPlug & other) :
     ZstEntityBase(other),
-    m_value(other.m_value.get()),
+    m_value(nullptr),
     m_direction(other.m_direction),
     m_reliable(other.m_reliable),
     m_max_connected_cables(other.m_max_connected_cables)
 {
+    // Deep copy the value to avoid double-delete
+    if (other.m_value) {
+        if (other.m_value->fixed_size() > 0) {
+            m_value = std::make_unique<ZstFixedValue>(other.m_value->get_default_type(), other.m_value->fixed_size());
+        } else {
+            m_value = std::make_unique<ZstDynamicValue>(other.m_value->get_default_type());
+        }
+        m_value->copy(other.m_value.get());
+    }
 }
 
 //void ZstPlug::init_value()
@@ -179,7 +188,6 @@ void ZstPlug::swap_values(ZstPlug* other)
         }
         else {
             // Fixed size buffers don't match - copy
-            //m_value->copy(other->m_value.get());
             other->m_value->copy(m_value.get());
         }
     }

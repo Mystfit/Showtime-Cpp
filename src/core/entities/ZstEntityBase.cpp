@@ -126,9 +126,13 @@ namespace showtime
         if(!child)
             return;
 
+        // Guard against removing a child that's already been removed
+        if (child->parent() != this)
+            return;
+
         // Copy original child path before it changes
         ZstURI orig_child_path = child->URI();
-     
+
         child->set_parent(NULL);
 
         m_entity_events->defer([orig_child_path](ZstEntityAdaptor* adaptor) {
