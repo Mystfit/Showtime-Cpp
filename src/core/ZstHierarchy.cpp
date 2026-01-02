@@ -263,7 +263,7 @@ void ZstHierarchy::remove_proxy_entity(ZstEntityBase * entity)
 {
 	if (entity) {
 		if (entity->is_proxy()) {
-			Log::net(Log::Level::notification, "Destroying entity {}", entity->URI().path());
+			Log::net(Log::Level::notification, "Destroying entity {} via remove_proxy_entity", entity->URI().path());
 			destroy_entity_complete(entity);
 		}
 	}
@@ -369,6 +369,11 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 		return;
 	}
 
+	// Guard against double-destruction
+	if (entity->is_destroyed()) {
+		return;
+	}
+
 	// Remove child from parent
 	auto parent = entity->parent();
 	if (parent) {
@@ -399,11 +404,10 @@ void ZstHierarchy::destroy_entity_complete(ZstEntityBase * entity)
 		}
 	}
 
-	//Cleanup children
+	//Cleanup children (don't include parent entity - it's already being destroyed)
 	ZstEntityBundle bundle;
-	entity->get_child_entities(&bundle, true, true);
+	entity->get_child_entities(&bundle, false, true);
 	for (auto c : bundle) {
-		//Enqueue deactivation
 		synchronisable_enqueue_deactivation(c);
 	}
 }
@@ -433,29 +437,29 @@ std::shared_ptr<ZstEventDispatcher<ZstHierarchyAdaptor> > & ZstHierarchy::hierar
 
 void ZstHierarchy::on_synchronisable_destroyed(ZstSynchronisable * synchronisable, bool already_removed)
 {
+	auto entity = dynamic_cast<ZstEntityBase*>(synchronisable);
+
 	//Synchronisable is going away and the stage needs to know
 	if (synchronisable->is_activated() || synchronisable->activation_status() == ZstSyncStatus::DESTROYED) {
 		auto sendtype = ZstTransportRequestBehaviour::SYNC_REPLY;
 		if (already_removed)
 			sendtype = ZstTransportRequestBehaviour::PUBLISH;
-		deactivate_entity(dynamic_cast<ZstEntityBase*>(synchronisable), sendtype);
+		deactivate_entity(entity, sendtype);
 	}
 
 	if (already_removed) {
 		// Make sure that we don't call this synchronisable object in the future
 		add_dead_synchronisable_ID(synchronisable->instance_id());
-		reaper_cleanup_entity(dynamic_cast<ZstEntityBase*>(synchronisable)->URI());
+		reaper_cleanup_entity(entity->URI());
 		return;
 	}
 
 	reaper().add_cleanup_op([
-		this, 
-		synchronisable_id = synchronisable->instance_id(), 
-		path = dynamic_cast<ZstEntityBase*>(synchronisable)->URI(), 
+		this,
+		synchronisable_id = synchronisable->instance_id(),
+		path = dynamic_cast<ZstEntityBase*>(synchronisable)->URI(),
 		is_proxy = synchronisable->is_proxy()
 	]() {
-		Log::net(Log::Level::debug, "on_synchronisable_destroyed cleanup: Path: {} ID: {}", path.path(), synchronisable_id);
-
 		if (already_removed_synchronisable(synchronisable_id))
 			return;
 
@@ -473,7 +477,7 @@ void ZstHierarchy::on_synchronisable_destroyed(ZstSynchronisable * synchronisabl
 			}
 		}
 	});
-	
+
 	//reaper().add(synchronisable);
 	synchronisable_set_destroyed(synchronisable);
 }

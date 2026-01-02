@@ -195,11 +195,13 @@ void ZstClientHierarchy::deactivate_entity(ZstEntityBase * entity, const ZstTran
 		});
 	}
 	else {
+		// Entity is a proxy - immediately destroy locally
 		destroy_entity_complete(entity);
 	}
 
-	// We can immediately clear this entity if we were triggered from a destructor
-	if (sendtype == ZstTransportRequestBehaviour::PUBLISH) {
+	// For local entities triggered from a destructor (PUBLISH), immediately clear
+	// Note: Proxy entities are already handled above, so only call for non-proxy entities
+	if (!entity->is_proxy() && sendtype == ZstTransportRequestBehaviour::PUBLISH) {
 		this->destroy_entity_complete(entity);
 	}
 	if (sendtype == ZstTransportRequestBehaviour::SYNC_REPLY) {
