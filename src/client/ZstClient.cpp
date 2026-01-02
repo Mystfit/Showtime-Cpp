@@ -542,7 +542,9 @@ void ZstClient::join_stage_complete(const ZstServerAddress& server_address, ZstM
     // Activate all child entities that were added before we joined
     bundle.clear();
     session()->hierarchy()->get_local_performer()->get_child_entities(&bundle, false, true);
-    session()->hierarchy()->activate_entity_batched(bundle, ZstTransportRequestBehaviour::SYNC_REPLY);
+    if (bundle.size() > 0) {
+        session()->hierarchy()->activate_entity_batched(bundle, ZstTransportRequestBehaviour::SYNC_REPLY);
+    }
 
     //Enqueue connection events
     m_session->dispatch_connected_to_stage();
