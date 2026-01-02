@@ -39,9 +39,13 @@ namespace showtime::detail
 
 	void ZstStage::init(const char* server_name, int port, bool unlisted)
 	{
-		// Set up logging
+		// Initialize logging infrastructure (only does anything on first call)
+		Log::init_logger(server_name, Log::Level::debug);
+
+		// Push this server's log context BEFORE any logging
 		auto log_events = ZstEventDispatcher<ZstLogAdaptor>::downcasted_shared_from_this<ZstEventDispatcher<ZstLogAdaptor>>();
-		Log::init_logger(server_name, Log::Level::debug, log_events);
+		Log::push_context(log_events);
+
 		Log::server(Log::Level::notification, "Starting Showtime v{} server", SHOWTIME_VERSION_STRING);
 
 		// Set up transports
@@ -74,9 +78,13 @@ namespace showtime::detail
 		m_session->router_events()->add_adaptor(m_websocket_transport);
 		m_session->stage_hierarchy()->router_events()->add_adaptor(m_websocket_transport);
 
-		//Start event loop
+		//Start event loops with log context propagation
+		m_io.set_log_context(log_events);
 		m_stage_timer_thread = boost::thread(boost::bind(&ZstStage::timer_loop, this));
-		m_stage_eventloop_thread = boost::thread(boost::bind(&ZstStage::event_loop, this));
+		m_stage_eventloop_thread = boost::thread([this, log_events]() {
+			Log::ScopedContext ctx(log_events);
+			this->event_loop();
+		});
 
 		if (!unlisted)
 			start_broadcasting(server_name);
@@ -110,6 +118,10 @@ namespace showtime::detail
 		m_stage_timer_thread.interrupt();
 		m_io.IO_context().stop();
 		m_stage_timer_thread.join();
+
+		// Pop log context as the very last action
+		auto log_events = ZstEventDispatcher<ZstLogAdaptor>::downcasted_shared_from_this<ZstEventDispatcher<ZstLogAdaptor>>();
+		Log::pop_context(log_events);
 	}
 
 	bool ZstStage::is_destroyed()
@@ -211,11 +223,8 @@ namespace showtime::detail
 		try {
 			boost::this_thread::interruption_point();
 
-			//Give the event loop some work to do so it doesn't insta-quit
-			boost::asio::io_context::work work(m_io.IO_context());
-
-			//Run the event loop (blocks this thread)
-			this->m_io.IO_context().run();
+			// Run the IO loop with log context (uses ZstIOLoop's operator() which handles context)
+			m_io();
 		}
 		catch (boost::thread_interrupted) {
 			Log::server(Log::Level::debug, "Stage timer event loop exiting.");

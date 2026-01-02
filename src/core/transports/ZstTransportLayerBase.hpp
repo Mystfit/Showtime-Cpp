@@ -20,7 +20,7 @@ namespace showtime {
 class ZST_CLASS_EXPORTED ZstTransportLayerBase : public ZstMessageSupervisor
 {
 public:
-    ZstTransportLayerBase() : 
+    ZstTransportLayerBase() :
         m_event_condition(std::make_shared<ZstSemaphore>()),
         m_is_active(false),
         m_is_connected(false),
@@ -30,6 +30,8 @@ public:
 
     virtual void init() {
         m_is_active = true;
+        // Capture current log context for the event thread
+        m_log_context = Log::current_context();
         m_event_thread = boost::thread(boost::bind(&ZstTransportLayerBase::event_loop, this));
     }
 
@@ -73,7 +75,9 @@ protected:
 
         switch (args.msg_send_behaviour) {
             case ZstTransportRequestBehaviour::ASYNC_REPLY: {
-                boost::asio::post(*m_async_pool, [this, message_buffer = std::move(message_buffer), args]() mutable {
+                auto log_ctx = Log::current_context();  // Capture current log context
+                boost::asio::post(*m_async_pool, [this, message_buffer = std::move(message_buffer), args, log_ctx]() mutable {
+                    Log::ScopedContext ctx(log_ctx);  // Restore log context in async thread
                     this->blocking_send(message_buffer, args);
                 });
                 break;
@@ -131,6 +135,9 @@ private:
 
     void event_loop()
     {
+        // Push log context for this thread
+        Log::ScopedContext log_ctx(m_log_context);
+
         while (this->is_active()) {
             try {
                 boost::this_thread::interruption_point();
@@ -150,6 +157,7 @@ private:
     boost::thread m_event_thread;
 
     std::unique_ptr<boost::asio::thread_pool> m_async_pool;
+    std::weak_ptr<ZstEventDispatcher<ZstLogAdaptor>> m_log_context;
 };
 
 template<typename Message_T, typename Adaptor_T>

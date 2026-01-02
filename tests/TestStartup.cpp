@@ -10,10 +10,6 @@ std::string performer_name = "test_performer";
 std::string server_name = "test_server";
 std::string bad_server_address = "255.255.255.255:1111";
 
-// NOTE: log_events MUST be the first test because the logging system can only be
-// initialized once per process. The first ShowtimeClient::init() binds the global
-// logger to that client's log event dispatcher. Subsequent clients' log adaptors
-// will never receive events because the logging backend is already bound.
 BOOST_AUTO_TEST_CASE(log_events) {
 
 	auto log_events = std::make_shared <TestLogEvents>();

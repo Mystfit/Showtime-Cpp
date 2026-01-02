@@ -66,6 +66,10 @@ void ZstClient::destroy() {
     //Only need to call cleanup once
     if (m_is_ending || m_is_destroyed)
         return;
+
+    // Save whether init was completed before we clear the flag
+    // We need this to know whether to pop the log context at the end
+    bool was_initialized = m_init_completed;
     set_init_completed(false);
 
     //Let stage know we are leaving
@@ -99,6 +103,13 @@ void ZstClient::destroy() {
 
     //All done
     Log::net(Log::Level::notification, "Showtime library destroyed");
+
+    // Pop log context as the very last action (only if init was actually called)
+    // push_context was called in init_client, so we only pop if we were initialized
+    if (was_initialized) {
+        auto log_events = ZstEventDispatcher<ZstLogAdaptor>::downcasted_shared_from_this<ZstEventDispatcher<ZstLogAdaptor>>();
+        Log::pop_context(log_events);
+    }
 }
 
 void ZstClient::init_client(const char* client_name, bool debug, uint16_t unreliable_port)
@@ -112,9 +123,13 @@ void ZstClient::init_client(const char* client_name, bool debug, uint16_t unreli
     set_is_destroyed(false);
     set_is_ending(false);
 
-	// Setup loggings
+	// Initialize logging infrastructure (only does anything on first call)
+    Log::init_logger("", (debug) ? Log::Level::debug : Log::Level::notification);
+
+    // Push this client's log context BEFORE any logging
     auto log_events = ZstEventDispatcher<ZstLogAdaptor>::downcasted_shared_from_this<ZstEventDispatcher<ZstLogAdaptor>>();
-    Log::init_logger("" , (debug) ? Log::Level::debug : Log::Level::notification, log_events);
+    Log::push_context(log_events);
+
     Log::net(Log::Level::notification, "Starting Showtime v{}", SHOWTIME_VERSION_STRING);
 
 	// Set the name of this client
@@ -123,7 +138,8 @@ void ZstClient::init_client(const char* client_name, bool debug, uint16_t unreli
     //Todo: init IDs again after stage has responded
     ZstMsgIDManager::init(m_client_name.c_str(), m_client_name.size());
 
-    //Create IO_context thread
+    //Create IO_context thread with log context propagation
+    m_client_timerloop.set_log_context(log_events);
     m_client_timer_thread = boost::thread(boost::ref(m_client_timerloop));
     m_client_timerloop.IO_context().restart();
 
@@ -363,7 +379,9 @@ void ZstClient::auto_join_stage(const std::string& name, const ZstTransportReque
     m_auto_join_stage_requests[name] = std::promise<ZstMessageResponse>();
 
     if (sendtype == ZstTransportRequestBehaviour::ASYNC_REPLY) {
-        boost::asio::post(m_thread_pool, [this, name, sendtype]() {
+        auto log_ctx = Log::current_context();  // Capture logging context
+        boost::asio::post(m_thread_pool, [this, name, sendtype, log_ctx]() {
+            Log::ScopedContext ctx(log_ctx);  // Restore context in async thread
             this->join_on_beacon(name, sendtype);
         });
     }

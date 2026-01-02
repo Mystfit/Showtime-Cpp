@@ -72,9 +72,29 @@ namespace showtime {
 			static bool _logging = false;
 		}		
 
-		ZST_EXPORT void init_logger(const char* logger_name, Level level, std::shared_ptr<ZstEventDispatcher<ZstLogAdaptor> >& log_events);
+		// Logger initialization (only initializes Boost.Log infrastructure once)
+		ZST_EXPORT void init_logger(const char* logger_name, Level level);
 		ZST_EXPORT void init_file_logging(const char* log_file_path = "");
 		ZST_EXPORT const char* get_severity_str(Level level);
+
+		// Context management - push/pop client's dispatcher for current thread
+		ZST_EXPORT void push_context(std::shared_ptr<ZstEventDispatcher<ZstLogAdaptor>> dispatcher);
+		ZST_EXPORT void pop_context(std::shared_ptr<ZstEventDispatcher<ZstLogAdaptor>> dispatcher);
+
+		// Get current context (for capturing in lambdas before spawning async work)
+		ZST_EXPORT std::weak_ptr<ZstEventDispatcher<ZstLogAdaptor>> current_context();
+
+		// RAII helper for scoped logging context
+		class ZST_EXPORT ScopedContext {
+		public:
+			ScopedContext(std::shared_ptr<ZstEventDispatcher<ZstLogAdaptor>> dispatcher);
+			ScopedContext(std::weak_ptr<ZstEventDispatcher<ZstLogAdaptor>> dispatcher);
+			~ScopedContext();
+			ScopedContext(const ScopedContext&) = delete;
+			ScopedContext& operator=(const ScopedContext&) = delete;
+		private:
+			std::shared_ptr<ZstEventDispatcher<ZstLogAdaptor>> m_dispatcher;
+		};
 
 		template <typename... Args>
 		inline void net(Level level, const char* msg, const Args&... vars)

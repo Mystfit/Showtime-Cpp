@@ -12,6 +12,7 @@
 #include <boost/log/expressions.hpp>
 #include <boost/core/null_deleter.hpp>
 #include <fstream>
+#include <vector>
 
 #include <showtime/ZstLogging.h>
 #include <showtime/adaptors/ZstLogAdaptor.hpp>
@@ -54,20 +55,17 @@ namespace showtime {
 	// Internal namespace extension
 	namespace Log {
 		namespace internals {
-			// Custom Windows sink
-			class SinkBackend : 
+			// Thread-local stack of active log dispatchers for context-aware logging
+			static thread_local std::vector<std::weak_ptr<ZstEventDispatcher<ZstLogAdaptor>>> s_context_stack;
+
+			// Custom sink backend that dispatches to the current thread's logging context
+			class SinkBackend :
 				public boost::log::sinks::text_ostream_backend
 			{
 			public:
-				SinkBackend(std::shared_ptr<ZstEventDispatcher<ZstLogAdaptor> >& log_events);
+				SinkBackend() = default;
 
-				// TODO: Does consume need to be static?
 				void consume(boost::log::record_view const& rec, string_type const& formatted_string);
-				
-				std::shared_ptr<ZstEventDispatcher<ZstLogAdaptor> >& log_events();
-
-			private:
-				std::shared_ptr<ZstEventDispatcher<ZstLogAdaptor> > m_log_events;
 			};
 		}
 	}
@@ -83,24 +81,24 @@ namespace showtime {
 		strm << rec[expr::smessage];
 	}
 
-	void Log::init_logger(const char* logger_name, Log::Level level, std::shared_ptr<ZstEventDispatcher<ZstLogAdaptor> >& log_events)
+	void Log::init_logger(const char* logger_name, Log::Level level)
 	{
-		//Flag logger as already launched
+		// Only initialize Boost.Log infrastructure once per process
 		if (Log::internals::_logging)
 			return;
 		Log::internals::_logging = true;
 
-		// Create backend and sink
-		auto logger_backend = boost::make_shared< showtime::Log::internals::SinkBackend >(log_events);
+		// Create backend and sink (no dispatcher binding - uses thread-local context)
+		auto logger_backend = boost::make_shared<showtime::Log::internals::SinkBackend>();
 		typedef boost::log::sinks::synchronous_sink<Log::internals::SinkBackend> SinkBackend_t;
 		auto sink = boost::make_shared<SinkBackend_t>(logger_backend);
 
 		// Set up external logging stream
 		logger_backend->add_stream(
-			boost::shared_ptr< std::ostream >(&std::clog, boost::null_deleter()));
+			boost::shared_ptr<std::ostream>(&std::clog, boost::null_deleter()));
 		logger_backend->auto_flush(true);
 
-		typedef expr::channel_severity_filter_actor< std::string, Log::Level > min_severity_filter;
+		typedef expr::channel_severity_filter_actor<std::string, Log::Level> min_severity_filter;
 		min_severity_filter min_severity = expr::channel_severity_filter(channel, severity);
 
 		// Set up the minimum severity levels for different channels
@@ -109,11 +107,63 @@ namespace showtime {
 		min_severity[ZST_LOG_SERVER_CHANNEL] = level;
 		min_severity[ZST_LOG_APP_CHANNEL] = level;
 		logging::add_common_attributes();
-		//logging::core::get()->add_global_attribute("ProcessName", attrs::current_process_name());
 
 		sink->set_formatter(&log_formatter);
 		sink->set_filter(min_severity || severity >= error);
 		logging::core::get()->add_sink(sink);
+	}
+
+	void Log::push_context(std::shared_ptr<ZstEventDispatcher<ZstLogAdaptor>> dispatcher)
+	{
+		if (dispatcher) {
+			internals::s_context_stack.push_back(dispatcher);
+		}
+	}
+
+	void Log::pop_context(std::shared_ptr<ZstEventDispatcher<ZstLogAdaptor>> dispatcher)
+	{
+		if (!internals::s_context_stack.empty() && dispatcher) {
+			// Verify we're popping the expected dispatcher
+			if (auto top = internals::s_context_stack.back().lock()) {
+				if (top == dispatcher) {
+					internals::s_context_stack.pop_back();
+				}
+			} else {
+				// Top is expired, pop it anyway
+				internals::s_context_stack.pop_back();
+			}
+		}
+	}
+
+	std::weak_ptr<ZstEventDispatcher<ZstLogAdaptor>> Log::current_context()
+	{
+		if (internals::s_context_stack.empty()) {
+			return std::weak_ptr<ZstEventDispatcher<ZstLogAdaptor>>();
+		}
+		return internals::s_context_stack.back();
+	}
+
+	Log::ScopedContext::ScopedContext(std::shared_ptr<ZstEventDispatcher<ZstLogAdaptor>> dispatcher)
+		: m_dispatcher(dispatcher)
+	{
+		if (m_dispatcher) {
+			push_context(m_dispatcher);
+		}
+	}
+
+	Log::ScopedContext::ScopedContext(std::weak_ptr<ZstEventDispatcher<ZstLogAdaptor>> dispatcher)
+		: m_dispatcher(dispatcher.lock())
+	{
+		if (m_dispatcher) {
+			push_context(m_dispatcher);
+		}
+	}
+
+	Log::ScopedContext::~ScopedContext()
+	{
+		if (m_dispatcher) {
+			pop_context(m_dispatcher);
+		}
 	}
 
 	void Log::init_file_logging(const char* log_file_path)
@@ -177,15 +227,8 @@ namespace showtime {
 	}
 #endif
 
-	Log::internals::SinkBackend::SinkBackend(std::shared_ptr<ZstEventDispatcher<ZstLogAdaptor>>& log_events) : m_log_events(log_events)
-	{
-	}
-
 	void Log::internals::SinkBackend::consume(boost::log::record_view const& rec, string_type const& formatted_string)
 	{
-		//auto line_ID = logging::extract< unsigned int >("LineID", rec);
-		//auto process_name = logging::extract<std::string>("ProcessName", rec);
-		
 		std::ostringstream thread_stream;
 		thread_stream << rec[thread_id];
 		auto level = rec.attribute_values()["Severity"].extract<Log::Level>();
@@ -199,31 +242,27 @@ namespace showtime {
 		SetConsoleTextAttribute(hstdout, get_colour(level.get()));
 #endif
 
-		// Send formatted mesage to stream
+		// Send formatted message to stream (console output always works)
 		std::cout << formatted_string << std::endl;
 
-		// Queue log message to the log event dispatcher
-		if (m_log_events) {
-			Record event_record{
-				//line_ID.get(),
-				//process_name.get(),
-				thread_stream.str(),
-				level.get(),
-				channel.get(),
-				message
-			};
-			m_log_events->defer([event_record, formatted_string=string_type(formatted_string)](ZstLogAdaptor* adp){
-				//adp->on_log_record(std::make_shared<Log::Record>(event_record).get());
-				if(adp)
-					adp->on_formatted_log_record(formatted_string.c_str());
-			});
+		// Dispatch to current context's dispatcher (top of thread-local stack)
+		if (!s_context_stack.empty()) {
+			if (auto dispatcher = s_context_stack.back().lock()) {
+				Record event_record{
+					thread_stream.str(),
+					level.get(),
+					channel.get(),
+					message
+				};
+				dispatcher->defer([event_record, formatted_string = string_type(formatted_string)](ZstLogAdaptor* adp) {
+					if (adp)
+						adp->on_formatted_log_record(formatted_string.c_str());
+				});
+			}
 		}
+
 #ifdef WIN32
 		SetConsoleTextAttribute(hstdout, csbi.wAttributes);
 #endif
-	}
-	std::shared_ptr<ZstEventDispatcher<ZstLogAdaptor>>& Log::internals::SinkBackend::log_events()
-	{
-		return m_log_events;
 	}
 }
