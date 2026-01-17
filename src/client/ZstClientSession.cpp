@@ -104,10 +104,10 @@ void ZstClientSession::on_receive_msg(const std::shared_ptr<ZstPerformanceMessag
 }
     
 void ZstClientSession::cable_create_handler(const CableCreateRequest* request){
-    
 	auto address = ZstCableAddress(request->cable());
 	auto input = dynamic_cast<ZstInputPlug*>(hierarchy()->find_entity(address.get_input_URI()));
 	auto output = dynamic_cast<ZstOutputPlug*>(hierarchy()->find_entity(address.get_output_URI()));
+
 	auto cable_proxy = create_cable(input, output);
 
 	if (cable_proxy)

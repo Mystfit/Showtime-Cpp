@@ -11,6 +11,8 @@ namespace showtime {
 	class ZstEntityBase;
 	class ZstPlug;
 	class ZstEntityFactory;
+	template<typename T> class ZstBundle;
+	typedef ZstBundle<ZstEntityBase*> ZstEntityBundle;
 
 	class ZST_CLASS_EXPORTED ZstHierarchyAdaptor
 #ifndef SWIG
@@ -27,6 +29,11 @@ namespace showtime {
 		MULTICAST_DELEGATE_TwoParams(ZST_EXPORT, entity_updated, ZstEntityBase*, entity, const ZstURI&, orig_path)
 		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, factory_arriving, ZstEntityFactory*, factory)
 		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, factory_leaving, ZstEntityFactory*, factory)
+
+		// Offline entity events (session serialization)
+		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, entity_offline, ZstEntityBase*, entity)
+		MULTICAST_DELEGATE_OneParam(ZST_EXPORT, entity_online, ZstEntityBase*, entity)
+		MULTICAST_DELEGATE_TwoParams(ZST_EXPORT, offline_entities_available, const ZstURI&, performer_uri, const ZstEntityBundle*, entities)
 
 
 		// Interface events 

@@ -118,7 +118,6 @@ BOOST_FIXTURE_TEST_CASE(find_performer, FixtureWaitForSinkClient) {
 }
 
 BOOST_FIXTURE_TEST_CASE(find_performer_entities, FixtureWaitForSinkClient) {
-	TAKE_A_BREATH
 	auto sink_ent = dynamic_cast<ZstComponent*>(test_client->find_entity(sink_ent_uri));
 	BOOST_TEST_REQUIRE(sink_ent);
 	BOOST_TEST(sink_ent->is_activated());

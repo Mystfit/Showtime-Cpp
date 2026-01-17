@@ -230,4 +230,33 @@ namespace showtime::detail
 			Log::server(Log::Level::debug, "Stage timer event loop exiting.");
 		}
 	}
+
+	// Session management
+	bool ZstStage::save_session(const std::string& filepath)
+	{
+		return m_session->save_session_to_file(filepath);
+	}
+
+	bool ZstStage::load_session(const std::string& filepath)
+	{
+		return m_session->load_session_from_file(filepath);
+	}
+
+	// Offline entity configuration
+	void ZstStage::set_preserve_entities_on_disconnect(bool preserve)
+	{
+		m_preserve_entities_on_disconnect = preserve;
+		m_session->stage_hierarchy()->set_preserve_entities_on_disconnect(preserve);
+	}
+
+	bool ZstStage::get_preserve_entities_on_disconnect() const
+	{
+		return m_preserve_entities_on_disconnect;
+	}
+
+	// Auto-load session
+	void ZstStage::set_auto_load_session(const std::string& filepath)
+	{
+		m_auto_load_session_path = filepath;
+	}
 }

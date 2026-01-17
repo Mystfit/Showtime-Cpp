@@ -683,16 +683,25 @@ namespace ZstTest
 
 	struct FixtureWaitForSinkClient : public FixtureJoinServer, FixtureSinkClient {
 		std::shared_ptr<TestPerformerEvents> performerEvents;
+		std::shared_ptr<TestEntityEvents> entityEvents;
 
 		FixtureWaitForSinkClient() :
 			FixtureJoinServer(),
 			FixtureSinkClient(server_name),
-			performerEvents(std::make_shared<TestPerformerEvents>())
+			performerEvents(std::make_shared<TestPerformerEvents>()),
+			entityEvents(std::make_shared<TestEntityEvents>())
 		{
 			test_client->add_hierarchy_adaptor(performerEvents);
+			test_client->add_hierarchy_adaptor(entityEvents);
+
 			BOOST_TEST_CHECKPOINT("Waiting for external client performer to arrive");
 			wait_for_event(test_client, performerEvents, 1);
 			performerEvents->reset_num_calls();
+
+			// Wait for Sink entity + input plug + output plug (3 entities)
+			BOOST_TEST_CHECKPOINT("Waiting for Sink entity and plugs to arrive");
+			wait_for_event(test_client, entityEvents, 3);
+			entityEvents->reset_num_calls();
 		}
 		~FixtureWaitForSinkClient() {}
 	};

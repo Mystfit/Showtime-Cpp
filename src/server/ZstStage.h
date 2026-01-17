@@ -32,7 +32,7 @@ class ZstSemaphore;
 
 namespace showtime {
 	namespace detail {
-		class ZstStage : 
+		class ZstStage :
 			public ZstStageTransportAdaptor,
 			public ZstEventDispatcher<ZstLogAdaptor>
 		{
@@ -46,9 +46,22 @@ namespace showtime {
 			void stop_broadcasting();
 			void send_shutdown_signal();
 			int port();
-	
+
+			// Session management
+			bool save_session(const std::string& filepath);
+			bool load_session(const std::string& filepath);
+
+			// Offline entity configuration
+			void set_preserve_entities_on_disconnect(bool preserve);
+			bool get_preserve_entities_on_disconnect() const;
+
+			// Auto-load session
+			void set_auto_load_session(const std::string& filepath);
+
 		private:
 			bool m_is_destroyed;
+			bool m_preserve_entities_on_disconnect = false;
+			std::string m_auto_load_session_path;
 			boost::thread m_stage_eventloop_thread;
 			boost::thread m_stage_timer_thread;
 

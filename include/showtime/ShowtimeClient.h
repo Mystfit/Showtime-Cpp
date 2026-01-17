@@ -110,6 +110,11 @@ public:
 	ZST_CLIENT_EXPORT void save_session(const char* filepath);
 	ZST_CLIENT_EXPORT void load_session(const char* filepath);
 
+	// Offline entity reclamation
+	ZST_CLIENT_EXPORT void reclaim_entity(ZstEntityBase* local_entity, const ZstURI& offline_uri);
+	ZST_CLIENT_EXPORT void reclaim_all_offline_entities();
+	ZST_CLIENT_EXPORT void get_offline_entities(ZstEntityBundle* bundle);
+
 	//Cable management
 	ZST_CLIENT_EXPORT ZstCable * connect_cable(ZstInputPlug * input, ZstOutputPlug * output);
     ZST_CLIENT_EXPORT ZstCable * connect_cable_async(ZstInputPlug * input, ZstOutputPlug * output);

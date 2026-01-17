@@ -64,6 +64,16 @@ public:
 	void factory_create_entity_handler(const FactoryCreateEntityRequest * request, ZstMsgID request_id);
     void update_proxy_entity_handler(const EntityUpdateRequest * request);
     void destroy_entity_handler(const EntityDestroyRequest * request);
+	void offline_entities_notification_handler(const OfflineEntitiesNotification* notification);
+
+
+	// ------------------------------
+	// Offline entity reclamation
+	// ------------------------------
+
+	void reclaim_entity(ZstEntityBase* local_entity, const ZstURI& offline_uri);
+	void reclaim_all_offline_entities();
+	void get_offline_entities(ZstEntityBundle& bundle) const;
 	
 
 	// ------------------------------
@@ -80,6 +90,9 @@ public:
 
 private:
     std::shared_ptr<ZstPerformer> m_root;
+
+	// Offline entity storage (URI -> proxy entity)
+	std::unordered_map<ZstURI, ZstEntityBase*, ZstURIHash> m_offline_entities;
 
 	// ----------------
 	// Event completion

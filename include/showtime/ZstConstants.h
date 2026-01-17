@@ -9,6 +9,7 @@ enum class ZstSyncStatus {
 	DEACTIVATING,
 	DEACTIVATION_QUEUED,
 	DESTROYED,
+	OFFLINE,  // Entity preserved but non-functional (owner disconnected)
 	ERR
 };
 

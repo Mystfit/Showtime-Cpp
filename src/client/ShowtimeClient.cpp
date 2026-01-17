@@ -3,6 +3,7 @@
 
 #include "ZstClient.h"
 #include "ZstClientSession.h"
+#include "ZstClientHierarchy.h"
 #include "../core/ZstEventDispatcher.hpp"
 
 using namespace std;
@@ -490,6 +491,33 @@ void ShowtimeClient::save_session(const char* filepath) {
 void ShowtimeClient::load_session(const char* filepath) {
     if (library_connected_guard()) {
         m_client->load_session(filepath, ZstTransportRequestBehaviour::SYNC_REPLY);
+    }
+}
+
+void ShowtimeClient::reclaim_entity(ZstEntityBase* local_entity, const ZstURI& offline_uri) {
+    if (library_connected_guard()) {
+        auto client_hierarchy = std::dynamic_pointer_cast<client::ZstClientHierarchy>(m_client->session()->hierarchy());
+        if (client_hierarchy) {
+            client_hierarchy->reclaim_entity(local_entity, offline_uri);
+        }
+    }
+}
+
+void ShowtimeClient::reclaim_all_offline_entities() {
+    if (library_connected_guard()) {
+        auto client_hierarchy = std::dynamic_pointer_cast<client::ZstClientHierarchy>(m_client->session()->hierarchy());
+        if (client_hierarchy) {
+            client_hierarchy->reclaim_all_offline_entities();
+        }
+    }
+}
+
+void ShowtimeClient::get_offline_entities(ZstEntityBundle* bundle) {
+    if (library_init_guard()) {
+        auto client_hierarchy = std::dynamic_pointer_cast<client::ZstClientHierarchy>(m_client->session()->hierarchy());
+        if (client_hierarchy) {
+            client_hierarchy->get_offline_entities(*bundle);
+        }
     }
 }
 

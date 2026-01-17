@@ -20,4 +20,29 @@ namespace showtime {
 	{
 		m_server->destroy();
 	}
+
+	bool ShowtimeServer::save_session(const char* filepath)
+	{
+		return m_server->save_session(filepath);
+	}
+
+	bool ShowtimeServer::load_session(const char* filepath)
+	{
+		return m_server->load_session(filepath);
+	}
+
+	void ShowtimeServer::set_preserve_entities_on_disconnect(bool preserve)
+	{
+		m_server->set_preserve_entities_on_disconnect(preserve);
+	}
+
+	bool ShowtimeServer::get_preserve_entities_on_disconnect() const
+	{
+		return m_server->get_preserve_entities_on_disconnect();
+	}
+
+	void ShowtimeServer::set_auto_load_session(const char* filepath)
+	{
+		m_server->set_auto_load_session(filepath);
+	}
 }

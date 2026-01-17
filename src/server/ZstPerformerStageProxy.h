@@ -29,6 +29,16 @@ public:
 	const boost::uuids::uuid & origin_endpoint_UUID();
 	const std::weak_ptr<ZstStageTransport>& origin_transport();
 
+	// Update transport info when a client reconnects (for offline entity reclamation)
+	void update_transport_info(
+		const std::string& reliable_address,
+		const std::string& reliable_public_address,
+		const std::string& unreliable_address,
+		const std::string& unreliable_public_address,
+		const boost::uuids::uuid& origin_endpoint_UUID,
+		const std::weak_ptr<ZstStageTransport>& origin_transport
+	);
+
 private:
 	std::string m_reliable_address;
 	std::string m_reliable_public_address;

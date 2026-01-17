@@ -16,10 +16,14 @@ using namespace flatbuffers;
 
 namespace showtime {
 
-ZstStageSession::ZstStageSession() : 
+ZstStageSession::ZstStageSession() :
 	m_hierarchy(std::make_shared<ZstStageHierarchy>()),
 	m_session_save_path(fs::path(boost::dll::program_location().string()).parent_path().append("sessions"))
 {
+	// Register callback to handle entity reclaimed events for cable synchronization
+	m_hierarchy->set_entity_reclaimed_callback([this](ZstEntityBase* entity, ZstPerformerStageProxy* owner) {
+		on_entity_reclaimed(entity, owner);
+	});
 }
 
 bool ZstStageSession::save_session_to_file(const std::string& filepath) {
@@ -149,24 +153,45 @@ void ZstStageSession::deserialize(const Session* session_data) {
 
         // Then recreate all cables
         if (session_data->cables()) {
+            Log::server(Log::Level::debug, "Loading {} cables from session", session_data->cables()->size());
             for (auto cable : *session_data->cables()) {
                 auto input_path = ZstURI(cable->address()->input_URI()->c_str(), cable->address()->input_URI()->size());
                 auto output_path = ZstURI(cable->address()->output_URI()->c_str(), cable->address()->output_URI()->size());
+
+                Log::server(Log::Level::debug, "Attempting to load cable {} :~~> {}", output_path.path(), input_path.path());
 
                 // Find the plugs
                 auto input_plug = dynamic_cast<ZstInputPlug*>(m_hierarchy->find_entity(input_path));
                 auto output_plug = dynamic_cast<ZstOutputPlug*>(m_hierarchy->find_entity(output_path));
 
                 if (input_plug && output_plug) {
+                    Log::server(Log::Level::debug, "Found both plugs, creating cable");
                     // Create cable
                     auto new_cable = create_cable(input_plug, output_plug);
                     if (!new_cable) {
-                        Log::server(Log::Level::warn, "Failed to create cable between {} and {}", 
+                        Log::server(Log::Level::warn, "Failed to create cable between {} and {}",
                             input_path.path(), output_path.path());
+                    } else {
+                        Log::server(Log::Level::notification, "Successfully loaded cable {} :~~> {}", output_path.path(), input_path.path());
+
+                        // Note: Cables are created but not yet broadcast since entities are offline
+                        // They will be broadcast when clients reconnect and entities become active
                     }
+                } else {
+                    Log::server(Log::Level::warn, "Could not find plugs for cable {} :~~> {} (input={}, output={})",
+                        output_path.path(), input_path.path(), (void*)input_plug, (void*)output_plug);
                 }
             }
+
+            // Store loaded cables for later synchronization
+            Log::server(Log::Level::debug, "Session has {} active cables after load", m_cables.size());
+        } else {
+            Log::server(Log::Level::debug, "No cables in session data");
         }
+
+        // Note: Cables are now loaded on the server between offline entities.
+        // They will be broadcast to clients when the owning performers reconnect and reactivate their entities.
+
     } catch (const std::exception& e) {
         Log::server(Log::Level::error, "Error deserializing session: {}", e.what());
         throw;
@@ -293,10 +318,8 @@ Signal ZstStageSession::signal_handler(const std::shared_ptr<ZstStageMessage>& m
 	return Signal_EMPTY;
 }
 
-Signal ZstStageSession::synchronise_client_graph_handler(ZstPerformerStageProxy* sender) 
+Signal ZstStageSession::synchronise_client_graph_handler(ZstPerformerStageProxy* sender)
 {
-	Log::server(Log::Level::notification, "Sending graph snapshot to {}", sender->URI().path());
-
 	// For serialisation later
 	std::vector< flatbuffers::Offset<void> > entity_vec;
 	std::vector< uint8_t> entity_types_vec;
@@ -305,13 +328,21 @@ Signal ZstStageSession::synchronise_client_graph_handler(ZstPerformerStageProxy*
 	ZstEntityBundle performer_bundle;
 	hierarchy()->get_performers(performer_bundle);
 
+	Log::server(Log::Level::debug, "Found {} performers for graph snapshot", performer_bundle.size());
+
 	// Pack all entities
 	for (auto performer : performer_bundle) {
 		//Only pack performers that aren't the destination client
 		if (performer->URI() != sender->URI()) {
+			Log::server(Log::Level::debug, "Getting children of performer {}", performer->URI().path());
+			size_t before = entity_bundle.size();
 			performer->get_child_entities(&entity_bundle, true, true);
+			Log::server(Log::Level::debug, "Performer {} has {} children", performer->URI().path(), entity_bundle.size() - before);
 		}
 	}
+
+	Log::server(Log::Level::notification, "Sending graph snapshot to {} ({} entities, {} cables)",
+		sender->URI().path(), entity_bundle.size(), m_cables.size());
 
 	// Set up flatbuffer builder and temporary buffers
 	FlatBufferBuilder builder;
@@ -689,6 +720,46 @@ std::shared_ptr<ZstHierarchy> ZstStageSession::hierarchy()
 std::shared_ptr<ZstStageHierarchy> ZstStageSession::stage_hierarchy()
 {
 	return m_hierarchy;
+}
+
+void ZstStageSession::on_entity_reclaimed(ZstEntityBase* entity, ZstPerformerStageProxy* owner)
+{
+	if (!entity || !owner)
+		return;
+
+	// Find all cables involving this entity and send them to the owner
+	ZstCableBundle cables_to_send;
+
+	for (auto& cable : m_cables) {
+		// Check if either end of the cable is this entity or a child of this entity
+		bool involves_entity = false;
+		ZstURI entity_uri = entity->URI();
+
+		// Check if cable's input or output plug is owned by the reclaimed entity's performer
+		ZstURI input_uri = cable->get_address().get_input_URI();
+		ZstURI output_uri = cable->get_address().get_output_URI();
+
+		// Check if this cable's plugs belong to the owner's performer tree
+		if (input_uri.first() == owner->URI() || output_uri.first() == owner->URI()) {
+			involves_entity = true;
+		}
+
+		if (involves_entity) {
+			cables_to_send.add(cable.get());
+		}
+	}
+
+	if (cables_to_send.size() > 0) {
+		Log::server(Log::Level::notification, "Sending {} cables to reclaimed entity owner {}",
+			cables_to_send.size(), owner->URI().path());
+
+		// Send cables to the owner
+		for (auto cable : cables_to_send) {
+			FlatBufferBuilder builder;
+			auto cable_create_offset = CreateCableCreateRequest(builder, cable->get_address().serialize(builder));
+			stage_hierarchy()->whisper(owner, Content_CableCreateRequest, cable_create_offset.Union(), builder, ZstTransportArgs());
+		}
+	}
 }
 
 }

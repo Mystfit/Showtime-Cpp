@@ -634,10 +634,11 @@ BOOST_FIXTURE_TEST_CASE(send_byte_fixed_different_sizes, FixtureJoinServer) {
 //}
 
 BOOST_AUTO_TEST_CASE(session_serialization) {
-	// Create new stage
+	// Create new stage with offline entity preservation enabled
     std::string server_name = boost::unit_test::framework::current_test_case().full_name();
 	std::shared_ptr<ShowtimeServer> test_server = std::make_unique<ShowtimeServer>();
 	test_server->init(server_name.c_str());
+	test_server->set_preserve_entities_on_disconnect(true);
 	int server_port = test_server->port();
 	std::string server_address = std::format("127.0.0.1:{}", server_port);
 	TAKE_A_BREATH
@@ -677,25 +678,37 @@ BOOST_AUTO_TEST_CASE(session_serialization) {
 	remote_client.reset();
 	test_server.reset();
 
-    // Create new stage and clients
+    // Create new stage with preservation and load saved session
 	test_server = std::make_unique<ShowtimeServer>();
 	test_server->init(server_name.c_str());
+	test_server->set_preserve_entities_on_disconnect(true);
+	test_server->load_session("test_session.zst");
 	server_port = test_server->port();
 	server_address = std::format("127.0.0.1:{}", server_port);
 	TAKE_A_BREATH
-	
+
     // Connect clients to stage
+	// Local client setup
     local_client = std::make_shared<ShowtimeClient>();
 	local_client->init(local_client_options);
     local_client->join(server_address.c_str());
+	TAKE_A_BREATH
 
+	// Recreate local entities - they will auto-reclaim the offline entities on server
+	output_component = std::make_unique<OutputComponent>("test_out", true);
+	local_client->get_root()->add_child(output_component.get());
+	TAKE_A_BREATH
+
+	// Remote client setup
     remote_client = std::make_shared<ShowtimeClient>();
 	remote_client->init(remote_client_options);
     remote_client->join(server_address.c_str());
-
-    // Load session from file
-    local_client->load_session("test_session.zst");
     TAKE_A_BREATH
+
+	// Recreate local entities - they will auto-reclaim the offline entities on server
+	input_component = std::make_unique<InputComponent>("test_in", 0, false, ZstValueType::IntList, true);
+	remote_client->get_root()->add_child(input_component.get());
+	TAKE_A_BREATH
 
     // Verify cable was restored
     ZstCableBundle bundle;

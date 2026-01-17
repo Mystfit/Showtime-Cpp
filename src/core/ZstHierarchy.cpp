@@ -173,17 +173,19 @@ void ZstHierarchy::add_proxy_entity(std::unique_ptr<ZstEntityBase> entity)
 
     // Set the entity as a proxy early to avoid accidental auto-activation
     synchronisable_set_proxy(entity.get());
+    synchronisable_set_activation_status(entity.get(), ZstSyncStatus::ACTIVATED);
 
 	// Add the child to its parent (if it has one)
-	if(parent)
+	if(parent) {
 		dynamic_cast<ZstComponent*>(parent)->add_child(entity.get());
+	}
 
 	//Register entity adaptors
 	register_entity(entity.get());
     
-	// Propagate proxy properties to children of this proxy
+	// Propagate proxy properties to children of this proxy (NOT including self)
 	ZstEntityBundle bundle;
-	entity->get_child_entities(&bundle, true, true);
+	entity->get_child_entities(&bundle, false, true);
 
     for (auto c : bundle){
 		//Set entity as a proxy so the reaper can clean it up later

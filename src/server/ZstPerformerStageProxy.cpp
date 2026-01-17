@@ -109,4 +109,22 @@ const std::weak_ptr<ZstStageTransport>& ZstPerformerStageProxy::origin_transport
 	return m_origin_transport;
 }
 
+void ZstPerformerStageProxy::update_transport_info(
+	const std::string& reliable_address,
+	const std::string& reliable_public_address,
+	const std::string& unreliable_address,
+	const std::string& unreliable_public_address,
+	const boost::uuids::uuid& origin_endpoint_UUID,
+	const std::weak_ptr<ZstStageTransport>& origin_transport)
+{
+	m_reliable_address = reliable_address;
+	m_reliable_public_address = reliable_public_address;
+	m_unreliable_address = unreliable_address;
+	m_unreliable_public_address = unreliable_public_address;
+	m_origin_endpoint_UUID = origin_endpoint_UUID;
+	m_origin_transport = origin_transport;
+
+	Log::server(Log::Level::debug, "Updated transport info for performer {}", URI().path());
+}
+
 }

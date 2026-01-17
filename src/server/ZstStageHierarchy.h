@@ -1,5 +1,7 @@
 #include <map>
 #include <string>
+#include <vector>
+#include <functional>
 #include <boost/uuid/uuid.hpp>
 #include <boost/container_hash/hash.hpp>
 #include <showtime/schemas/messaging/session_generated.h>
@@ -12,6 +14,10 @@
 #include "ZstStageModule.h"
 
 namespace showtime {
+
+// Callback type for entity reclaimed events
+// Parameters: reclaimed entity, owning performer
+using EntityReclaimedCallback = std::function<void(ZstEntityBase*, ZstPerformerStageProxy*)>;
 
 typedef std::unordered_map<boost::uuids::uuid, ZstPerformerStageProxy*, boost::hash<boost::uuids::uuid> > ZstClientEndpointMap;
 
@@ -70,6 +76,22 @@ public:
 	void client_leaving(ZstPerformer* performer, const ClientLeaveReason& reason);
 
 	// ----------------
+	// Offline entity management
+	// ----------------
+
+	void set_preserve_entities_on_disconnect(bool preserve);
+	bool get_preserve_entities_on_disconnect() const;
+	void mark_performer_offline(ZstPerformer* performer);
+	bool has_offline_entities(const ZstURI& performer_uri) const;
+	void get_offline_entities_for_performer(const ZstURI& performer_uri, ZstEntityBundle& bundle) const;
+	void send_offline_entities_notification(ZstPerformerStageProxy* performer);
+	void transfer_entity_to_performer(ZstEntityBase* entity, ZstPerformerStageProxy* new_owner);
+	Signal entity_reclaim_handler(const std::shared_ptr<ZstStageMessage>& request, ZstPerformerStageProxy* sender);
+
+	// Callback for when an entity is reclaimed (used by session to sync cables)
+	void set_entity_reclaimed_callback(EntityReclaimedCallback callback);
+
+	// ----------------
 	// Proxies
 	// ----------------
 
@@ -80,6 +102,28 @@ public:
 	// ---------------------
 
 	ZstPerformerStageProxy* get_client_from_endpoint_UUID(const uuid& origin_endpoint_UUID);
+
+private:
+	bool m_preserve_entities_on_disconnect = false;
+	// Storage for offline entities by original performer URI
+	std::unordered_map<ZstURI, std::vector<ZstEntityBase*>, ZstURIHash> m_offline_entities;
+
+	// Callback invoked when an entity is reclaimed
+	EntityReclaimedCallback m_entity_reclaimed_callback;
+
+	// Entity creation source tracking (entity URI -> {source, factory_path})
+	struct EntityCreationInfo {
+		EntityCreationSource source;
+		ZstURI factory_path;  // Only valid if source == FACTORY
+
+		EntityCreationInfo() : source(EntityCreationSource_MANUAL), factory_path() {}
+		EntityCreationInfo(EntityCreationSource s, const ZstURI& path = ZstURI())
+			: source(s), factory_path(path) {}
+	};
+	std::unordered_map<ZstURI, EntityCreationInfo, ZstURIHash> m_entity_creation_sources;
+
+	// Pending factory entity creations (creatable_path -> factory_path)
+	std::unordered_map<ZstURI, ZstURI, ZstURIHash> m_pending_factory_entities;
 };
 
 }

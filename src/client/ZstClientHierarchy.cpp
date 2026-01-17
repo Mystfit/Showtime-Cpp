@@ -63,6 +63,9 @@ void ZstClientHierarchy::on_receive_msg(const std::shared_ptr<ZstStageMessage>& 
         case Content_EntityDestroyRequest:
             destroy_entity_handler(stage_msg->buffer()->content_as_EntityDestroyRequest());
             break;
+		case Content_OfflineEntitiesNotification:
+			offline_entities_notification_handler(stage_msg->buffer()->content_as_OfflineEntitiesNotification());
+			break;
         default:
             break;
 	}
@@ -291,9 +294,9 @@ void ZstClientHierarchy::client_leaving_handler(const ClientLeaveRequest* reques
 void ZstClientHierarchy::create_proxy_entity_handler(const EntityCreateRequest * request)
 {
 	for (uoffset_t i = 0; i < request->entity()->size(); ++i) {
-		EntityTypes entity_type = static_cast<EntityTypes>(*request->entity_type()->data());
+		EntityTypes entity_type = static_cast<EntityTypes>(request->entity_type()->Get(i));
 		const void* entity_raw = request->entity()->Get(i);
-		
+
 		std::unique_ptr<ZstEntityBase> entity = create_proxy_entity(entity_type, get_entity_field(entity_type, entity_raw), entity_raw);
 		ZstEntityBase* entity_ptr = entity.get();
 		add_proxy_entity(std::move(entity));
@@ -442,6 +445,151 @@ void ZstClientHierarchy::update_proxy_entity(ZstEntityBase* original, const Enti
 ZstPerformer * ZstClientHierarchy::get_local_performer() const
 {
 	return m_root.get();
+}
+
+void ZstClientHierarchy::offline_entities_notification_handler(const OfflineEntitiesNotification* notification)
+{
+	auto performer_uri = ZstURI(notification->performer_URI()->c_str(), notification->performer_URI()->size());
+
+	Log::net(Log::Level::notification, "Received offline entities notification for performer {}", performer_uri.path());
+
+	// Create proxy entities from the notification
+	ZstEntityBundle bundle;
+	for (uoffset_t i = 0; i < notification->offline_entities()->size(); ++i) {
+		EntityTypes entity_type = static_cast<EntityTypes>(notification->offline_entity_types()->Get(i));
+		const void* entity_raw = notification->offline_entities()->Get(i);
+
+		std::unique_ptr<ZstEntityBase> entity = create_proxy_entity(entity_type, get_entity_field(entity_type, entity_raw), entity_raw);
+		if (entity) {
+			ZstEntityBase* entity_ptr = entity.get();
+
+			// Mark entity as OFFLINE
+			synchronisable_set_activation_status(entity_ptr, ZstSyncStatus::OFFLINE);
+
+			// Store in offline entities map
+			m_offline_entities[entity_ptr->URI()] = entity_ptr;
+
+			// Add to proxy storage
+			add_proxy_entity(std::move(entity));
+
+			// Add to bundle for event
+			bundle.add(entity_ptr);
+
+			Log::net(Log::Level::debug, "Stored offline entity {} for reclamation", entity_ptr->URI().path());
+		}
+	}
+
+	// Fire offline_entities_available event with the bundle
+	if (bundle.size() > 0) {
+		hierarchy_events()->invoke([performer_uri, &bundle](ZstHierarchyAdaptor* adaptor) {
+			adaptor->on_offline_entities_available(performer_uri, &bundle);
+		});
+	}
+}
+
+void ZstClientHierarchy::reclaim_entity(ZstEntityBase* local_entity, const ZstURI& offline_uri)
+{
+	if (!local_entity) {
+		Log::net(Log::Level::error, "Cannot reclaim with null local entity");
+		return;
+	}
+
+	// Check if the offline entity exists
+	auto it = m_offline_entities.find(offline_uri);
+	if (it == m_offline_entities.end()) {
+		Log::net(Log::Level::warn, "No offline entity found at URI {}", offline_uri.path());
+		return;
+	}
+
+	Log::net(Log::Level::notification, "Reclaiming offline entity {} with local entity {}", offline_uri.path(), local_entity->URI().path());
+
+	// Send reclaim request to server
+	stage_events()->invoke([this, offline_uri, local_entity](ZstStageTransportAdaptor* adaptor) {
+		ZstTransportArgs args;
+		args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
+		args.on_recv_response = [this, offline_uri, local_entity](const ZstMessageResponse& response) {
+			if (!ZstStageTransport::verify_signal(response.response, Signal_OK, "Reclaim entity")) {
+				Log::net(Log::Level::error, "Failed to reclaim entity {}", offline_uri.path());
+				return;
+			}
+
+			Log::net(Log::Level::notification, "Successfully reclaimed entity {}", offline_uri.path());
+
+			// Remove from offline entities map
+			m_offline_entities.erase(offline_uri);
+
+			// Fire entity_online event
+			hierarchy_events()->invoke([local_entity](ZstHierarchyAdaptor* adaptor) {
+				adaptor->on_entity_online(local_entity);
+			});
+		};
+
+		// Build message with entity URIs
+		FlatBufferBuilder builder;
+		std::vector<flatbuffers::Offset<flatbuffers::String>> uri_offsets;
+		uri_offsets.push_back(builder.CreateString(offline_uri.path(), offline_uri.full_size()));
+
+		auto content_message = CreateEntityReclaimRequest(builder, builder.CreateVector(uri_offsets));
+		adaptor->send_msg(adaptor->create_msg(Content_EntityReclaimRequest, content_message.Union(), builder), args);
+	});
+}
+
+void ZstClientHierarchy::reclaim_all_offline_entities()
+{
+	if (m_offline_entities.empty()) {
+		Log::net(Log::Level::debug, "No offline entities to reclaim");
+		return;
+	}
+
+	Log::net(Log::Level::notification, "Reclaiming {} offline entities", m_offline_entities.size());
+
+	// Build list of all offline entity URIs
+	std::vector<ZstURI> offline_uris;
+	for (const auto& pair : m_offline_entities) {
+		offline_uris.push_back(pair.first);
+	}
+
+	// Send reclaim request to server
+	stage_events()->invoke([this, offline_uris](ZstStageTransportAdaptor* adaptor) {
+		ZstTransportArgs args;
+		args.msg_send_behaviour = ZstTransportRequestBehaviour::ASYNC_REPLY;
+		args.on_recv_response = [this, offline_uris](const ZstMessageResponse& response) {
+			if (!ZstStageTransport::verify_signal(response.response, Signal_OK, "Reclaim all entities")) {
+				Log::net(Log::Level::error, "Failed to reclaim all offline entities");
+				return;
+			}
+
+			Log::net(Log::Level::notification, "Successfully reclaimed all offline entities");
+
+			// Fire entity_online events and clear offline map
+			for (const auto& uri : offline_uris) {
+				auto entity = find_entity(uri);
+				if (entity) {
+					hierarchy_events()->invoke([entity](ZstHierarchyAdaptor* adaptor) {
+						adaptor->on_entity_online(entity);
+					});
+				}
+			}
+			m_offline_entities.clear();
+		};
+
+		// Build message with all entity URIs
+		FlatBufferBuilder builder;
+		std::vector<flatbuffers::Offset<flatbuffers::String>> uri_offsets;
+		for (const auto& uri : offline_uris) {
+			uri_offsets.push_back(builder.CreateString(uri.path(), uri.full_size()));
+		}
+
+		auto content_message = CreateEntityReclaimRequest(builder, builder.CreateVector(uri_offsets));
+		adaptor->send_msg(adaptor->create_msg(Content_EntityReclaimRequest, content_message.Union(), builder), args);
+	});
+}
+
+void ZstClientHierarchy::get_offline_entities(ZstEntityBundle& bundle) const
+{
+	for (const auto& pair : m_offline_entities) {
+		bundle.add(pair.second);
+	}
 }
 
 }

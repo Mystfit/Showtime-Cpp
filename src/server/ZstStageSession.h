@@ -75,6 +75,9 @@ private:
 	std::shared_ptr<ZstStageHierarchy> m_hierarchy;
 
 	fs::path m_session_save_path;
+
+	// Called when an entity is reclaimed - broadcasts cables involving that entity
+	void on_entity_reclaimed(ZstEntityBase* entity, ZstPerformerStageProxy* owner);
 };
 
 }
