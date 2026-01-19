@@ -1,0 +1,265 @@
+{
+    "version": 6,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 21,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "base",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "BUILD_TESTING": "ON"
+            }
+        },
+        {
+            "name": "windows-msvc",
+            "inherits": "base",
+            "displayName": "Windows MSVC (Visual Studio 2022)",
+            "description": "Build for Windows using Visual Studio 2022 and MSVC",
+            "generator": "Visual Studio 17 2022",
+            "architecture": {
+                "value": "x64",
+                "strategy": "set"
+            },
+            "cacheVariables": {
+                "CMAKE_PREFIX_PATH": "${sourceDir}/build/dependencies/install/msvc-14.3/x64"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "windows-msvc-debug",
+            "inherits": "windows-msvc",
+            "displayName": "Windows MSVC Debug",
+            "description": "Debug build for Windows using Visual Studio 2022",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "windows-msvc-release",
+            "inherits": "windows-msvc",
+            "displayName": "Windows MSVC Release",
+            "description": "Release build for Windows using Visual Studio 2022",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "windows-ninja",
+            "inherits": "base",
+            "displayName": "Windows Ninja (MSVC)",
+            "description": "Build for Windows using Ninja with MSVC compiler",
+            "generator": "Ninja Multi-Config",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "cl",
+                "CMAKE_CXX_COMPILER": "cl",
+                "CMAKE_PREFIX_PATH": "${sourceDir}/build/dependencies/install/msvc-14.3/x64"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "linux-gcc",
+            "inherits": "base",
+            "displayName": "Linux GCC",
+            "description": "Build for Linux using GCC",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++",
+                "CMAKE_BUILD_TYPE": "Release"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
+        },
+        {
+            "name": "linux-clang",
+            "inherits": "base",
+            "displayName": "Linux Clang",
+            "description": "Build for Linux using Clang",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_BUILD_TYPE": "Release"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
+        },
+        {
+            "name": "macos-clang",
+            "inherits": "base",
+            "displayName": "macOS Clang",
+            "description": "Build for macOS using Apple Clang",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_BUILD_TYPE": "Release"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
+        },
+        {
+            "name": "android-arm64",
+            "inherits": "base",
+            "displayName": "Android ARM64",
+            "description": "Cross-compile for Android ARM64 (arm64-v8a)",
+            "generator": "Ninja",
+            "toolchainFile": "$env{ANDROID_NDK}/build/cmake/android.toolchain.cmake",
+            "cacheVariables": {
+                "ANDROID_ABI": "arm64-v8a",
+                "ANDROID_PLATFORM": "android-32",
+                "CMAKE_BUILD_TYPE": "Release",
+                "BUILD_TESTING": "OFF"
+            }
+        },
+        {
+            "name": "android-arm32",
+            "inherits": "base",
+            "displayName": "Android ARM32",
+            "description": "Cross-compile for Android ARM32 (armeabi-v7a)",
+            "generator": "Ninja",
+            "toolchainFile": "$env{ANDROID_NDK}/build/cmake/android.toolchain.cmake",
+            "cacheVariables": {
+                "ANDROID_ABI": "armeabi-v7a",
+                "ANDROID_PLATFORM": "android-32",
+                "CMAKE_BUILD_TYPE": "Release",
+                "BUILD_TESTING": "OFF"
+            }
+        },
+        {
+            "name": "android-x86_64",
+            "inherits": "base",
+            "displayName": "Android x86_64",
+            "description": "Cross-compile for Android x86_64",
+            "generator": "Ninja",
+            "toolchainFile": "$env{ANDROID_NDK}/build/cmake/android.toolchain.cmake",
+            "cacheVariables": {
+                "ANDROID_ABI": "x86_64",
+                "ANDROID_PLATFORM": "android-32",
+                "CMAKE_BUILD_TYPE": "Release",
+                "BUILD_TESTING": "OFF"
+            }
+        },
+        {
+            "name": "bindings-python",
+            "inherits": "windows-msvc",
+            "displayName": "Windows with Python Bindings",
+            "description": "Windows build with Python language bindings enabled",
+            "cacheVariables": {
+                "BINDINGS_PYTHON": "ON"
+            }
+        },
+        {
+            "name": "bindings-dotnet",
+            "inherits": "windows-msvc",
+            "displayName": "Windows with .NET Bindings",
+            "description": "Windows build with C#/.NET language bindings enabled",
+            "cacheVariables": {
+                "BINDINGS_DOTNET": "ON"
+            }
+        },
+        {
+            "name": "bindings-java",
+            "inherits": "windows-msvc",
+            "displayName": "Windows with Java Bindings",
+            "description": "Windows build with Java language bindings enabled",
+            "cacheVariables": {
+                "BINDINGS_JAVA": "ON",
+                "BUILD_STATIC": "ON"
+            }
+        },
+        {
+            "name": "bindings-all",
+            "inherits": "windows-msvc",
+            "displayName": "Windows with All Bindings",
+            "description": "Windows build with all language bindings enabled",
+            "cacheVariables": {
+                "BINDINGS_PYTHON": "ON",
+                "BINDINGS_DOTNET": "ON",
+                "BINDINGS_JAVA": "ON",
+                "BUILD_STATIC": "ON"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "windows-debug",
+            "displayName": "Windows Debug",
+            "configurePreset": "windows-msvc",
+            "configuration": "Debug"
+        },
+        {
+            "name": "windows-release",
+            "displayName": "Windows Release",
+            "configurePreset": "windows-msvc",
+            "configuration": "Release"
+        },
+        {
+            "name": "linux-release",
+            "displayName": "Linux Release",
+            "configurePreset": "linux-gcc",
+            "configuration": "Release"
+        },
+        {
+            "name": "macos-release",
+            "displayName": "macOS Release",
+            "configurePreset": "macos-clang",
+            "configuration": "Release"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "windows-test",
+            "displayName": "Windows Tests",
+            "configurePreset": "windows-msvc",
+            "configuration": "Release",
+            "output": {
+                "outputOnFailure": true,
+                "verbosity": "default"
+            },
+            "execution": {
+                "timeout": 120
+            }
+        },
+        {
+            "name": "linux-test",
+            "displayName": "Linux Tests",
+            "configurePreset": "linux-gcc",
+            "configuration": "Release",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "macos-test",
+            "displayName": "macOS Tests",
+            "configurePreset": "macos-clang",
+            "configuration": "Release",
+            "output": {
+                "outputOnFailure": true
+            }
+        }
+    ]
+}

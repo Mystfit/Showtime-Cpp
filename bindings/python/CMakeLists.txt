@@ -42,7 +42,7 @@ swig_add_library(${PYTHON_TARGET_WRAPPER}
     SOURCES ${MASTER_PYTHON_SWIG_INTERFACE}
 )
 
-set(SWIG_ARGS_IN "-v -macroerrors -nodirprot -directors -Wall -O -dirvtable -I${CMAKE_CURRENT_LIST_DIR}") #-builtin 
+set(SWIG_ARGS_IN "-v -macroerrors -nodirprot -directors -Wall -O -I${CMAKE_CURRENT_LIST_DIR}") # -dirvtable removed (deprecated in SWIG 4.x, now default)
 if(${BINDINGS_PYTHON_VERSION_MAJOR} EQUAL "3")
     string(APPEND SWIG_ARGS_IN " -py3")
 endif()

@@ -1,20 +1,24 @@
-cmake_minimum_required(VERSION 3.13.0)
+cmake_minimum_required(VERSION 3.21...3.31)
 
-project(Showtime VERSION 0.29.0)
+project(Showtime
+    VERSION 0.29.0
+    DESCRIPTION "Showtime dataflow network library"
+    HOMEPAGE_URL "https://github.com/mystfit/Showtime-cpp"
+    LANGUAGES CXX
+)
 set(AUTHORS "Byron Mallett")
 set(COMPANY "Victoria University of Wellington")
-set(DESCRIPTION "Showtime dataflow network library")
-set(REPO_URL "https://github.com/mystfit/Showtime-cpp.git")
+set(REPO_URL "${PROJECT_HOMEPAGE_URL}.git")
 set(LICENSE_FILE "${CMAKE_SOURCE_DIR}/LICENSE.md")
-set(TAGS 
+set(TAGS
     dataflow
     network
 )
 set(SHOWTIME_NAMESPACE "${PROJECT_NAME}::")
 
-# Use C17
+# C++ standard settings
 set(CMAKE_CXX_STANDARD 23)
-set(CXX_STANDARD_REQUIRED)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 set(CMAKE_CXX_EXTENSIONS ON)
@@ -45,8 +49,9 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     MESSAGE(STATUS "Platform is OSX")
 endif()
 
-if(${CMAKE_SYSTM_NAME} MATCHES "Android")
+if(CMAKE_SYSTEM_NAME STREQUAL "Android")
     set(ANDROID TRUE)
+    message(STATUS "Platform is Android")
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -63,42 +68,46 @@ if(LINUX OR MACOSX)
     endif() 
 endif()
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    MESSAGE(STATUS "Platform is Windows")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP /Zc:__cplusplus")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP")
-    # set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
-    option(WINDOWS_USE_DLL_RUNTIME "Use the Visual C++ DLL runtime" ON)
-    if(WINDOWS_USE_DLL_RUNTIME)
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
-        set(Boost_USE_STATIC_RUNTIME OFF)
-    else()
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
-        set(Boost_USE_STATIC_RUNTIME ON)
-    endif()
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    message(STATUS "Platform is Windows")
+
     if(MSVC)
+        # Use modern add_compile_options instead of string manipulation
+        add_compile_options(/MP /Zc:__cplusplus)
+
+        # Use CMAKE_MSVC_RUNTIME_LIBRARY (CMake 3.15+) instead of flag manipulation
+        option(WINDOWS_USE_DLL_RUNTIME "Use the Visual C++ DLL runtime" ON)
+        if(WINDOWS_USE_DLL_RUNTIME)
+            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+            set(Boost_USE_STATIC_RUNTIME OFF)
+        else()
+            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+            set(Boost_USE_STATIC_RUNTIME ON)
+        endif()
+
         option(ADD_GENERATED_MSVC_PROJECTS "Add generated projects to the CMake solution" ON)
     endif()
 endif()
 
 # Set build locations
 set(CMAKE_BASE_MODULE_PATH ${CMAKE_MODULE_PATH})
-set(ARCH_SUFFIX ${CMAKE_GENERATOR_PLATFORM})
-# if(ANDROID)
-#     set(ARCH_SUFFIX ${CMAKE_ANDROID_ARCH_ABI})
-# endif()
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake;${CMAKE_MODULE_PATH}")
+
+# Architecture suffix for output directories
+if(ANDROID)
+    set(ARCH_SUFFIX ${CMAKE_ANDROID_ARCH_ABI})
+elseif(CMAKE_GENERATOR_PLATFORM)
+    set(ARCH_SUFFIX ${CMAKE_GENERATOR_PLATFORM})
+else()
+    set(ARCH_SUFFIX "")
+endif()
+
+# Output directories - config-specific variants inherit from base automatically
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/${CMAKE_SYSTEM_NAME}/${ARCH_SUFFIX})
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/lib/${CMAKE_SYSTEM_NAME}/${ARCH_SUFFIX})
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib/${CMAKE_SYSTEM_NAME}/${ARCH_SUFFIX})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/${CMAKE_SYSTEM_NAME}/${ARCH_SUFFIX})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/lib/${CMAKE_SYSTEM_NAME}/${ARCH_SUFFIX})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib/${CMAKE_SYSTEM_NAME}/${ARCH_SUFFIX})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_NAME}/${ARCH_SUFFIX})
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_NAME}/${ARCH_SUFFIX})
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_NAME}/${ARCH_SUFFIX})
+
+# SWIG output directories
 set(CMAKE_SWIG_ROOT_OUTDIR ${CMAKE_BINARY_DIR}/bindings)
 set(CMAKE_SWIG_OUTDIR ${CMAKE_SWIG_ROOT_OUTDIR})
 
@@ -171,8 +180,7 @@ endif()
 # ------------------------------
 find_host_package(SWIG REQUIRED)
 if(SWIG_FOUND)
-    cmake_policy(SET CMP0078 NEW)
-    cmake_policy(SET CMP0086 NEW)
+    # CMP0078 and CMP0086 are NEW by default in CMake 3.21+
     include(UseSWIG)
     set(UseSWIG_MODULE_VERSION 2)
 endif()
@@ -193,7 +201,7 @@ if(NOT czmq_FOUND)
     message(STATUS "CZMQ found status: ${czmq_FOUND}")
 endif()
 
-cmake_policy(SET CMP0048 NEW)
+# CMP0048 is NEW by default in CMake 3.21+
 find_host_package(Flatbuffers CONFIG REQUIRED)
 if(NOT FLATBUFFERS_FLATC_EXECUTABLE)
     find_host_program(FLATBUFFERS_FLATC_EXECUTABLE flatc)
@@ -340,6 +348,33 @@ if(MSVC)
     list(APPEND SHOWTIME_RELEASE_PDB_COMPILE_DEFINITIONS $<$<CONFIG:Release>:/Zi>)
     list(APPEND SHOWTIME_RELEASE_PDB_LINK_FLAGS $<$<CONFIG:Release>:/INCREMENTAL:NO;/DEBUG;/OPT:REF;/OPT:ICF>)
 endif()
+
+
+# --------------------------------
+# Common settings interface library
+# --------------------------------
+# This INTERFACE library propagates common build settings to all Showtime targets
+add_library(showtime_common_settings INTERFACE)
+add_library(${PROJECT_NAME}::CommonSettings ALIAS showtime_common_settings)
+
+target_compile_features(showtime_common_settings INTERFACE cxx_std_23)
+
+target_compile_definitions(showtime_common_settings INTERFACE
+    $<$<PLATFORM_ID:Windows>:NOMINMAX>
+    $<$<PLATFORM_ID:Windows>:_WIN32_WINNT=0x0A00>
+    $<$<PLATFORM_ID:Windows>:WINVER=0x0A00>
+    $<$<PLATFORM_ID:Windows>:BOOST_USE_WINAPI_VERSION=0x0A00>
+    $<$<PLATFORM_ID:Windows>:BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE>
+    $<$<PLATFORM_ID:Windows>:BOOST_UUID_FORCE_AUTO_LINK>
+    $<$<PLATFORM_ID:Windows>:BOOST_ALL_NO_LIB>
+    $<$<PLATFORM_ID:Windows>:_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING>
+    $<$<PLATFORM_ID:Windows>:_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING>
+    $<$<PLATFORM_ID:Windows>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>
+    $<$<PLATFORM_ID:Windows>:_SCL_SECURE_NO_WARNINGS>
+    BOOST_THREAD_USE_LIB
+    ZMQ_BUILD_DRAFT_API
+    CZMQ_BUILD_DRAFT_API
+)
 
 
 # ----------------
