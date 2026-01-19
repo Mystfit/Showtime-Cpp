@@ -3,7 +3,7 @@
 #include <string>
 #include <boost/asio/post.hpp>
 #include <boost/asio/thread_pool.hpp>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/thread.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <showtime/ZstExports.h>
@@ -14,6 +14,8 @@
 #include "../ZstEventDispatcher.hpp"
 #include "../ZstMessageSupervisor.hpp"
 #include "../ZstMessagePool.hpp"
+
+using namespace boost::placeholders;
 
 namespace showtime {
 

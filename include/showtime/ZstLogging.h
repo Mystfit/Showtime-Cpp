@@ -93,7 +93,14 @@ namespace showtime {
 			ScopedContext(const ScopedContext&) = delete;
 			ScopedContext& operator=(const ScopedContext&) = delete;
 		private:
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4251) // Suppress C4251 for private member - not accessed across DLL boundary
+#endif
 			std::shared_ptr<ZstEventDispatcher<ZstLogAdaptor>> m_dispatcher;
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 		};
 
 		template <typename... Args>
