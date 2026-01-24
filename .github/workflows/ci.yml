@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [develop, master]
+  pull_request:
+    branches: [develop, master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VCPKG_BINARY_SOURCES: 'clear;x-gha,readwrite'
+
+jobs:
+  build:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.runner }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: Windows
+            runner: windows-2022
+            preset: windows-msvc-vcpkg
+            build-preset: windows-vcpkg-release
+            test-preset: windows-vcpkg-test
+
+          - os: Linux
+            runner: ubuntu-22.04
+            preset: linux-vcpkg
+            build-preset: linux-vcpkg-release
+            test-preset: linux-vcpkg-test
+
+          - os: macOS-x64
+            runner: macos-13
+            preset: macos-vcpkg
+            build-preset: macos-vcpkg-release
+            test-preset: macos-vcpkg-test
+
+          - os: macOS-arm64
+            runner: macos-14
+            preset: macos-vcpkg-arm64
+            build-preset: macos-vcpkg-arm64-release
+            test-preset: macos-vcpkg-arm64-test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # Enable vcpkg binary caching via GitHub Actions cache
+      - name: Export GitHub Actions cache variables
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build pkg-config autoconf automake libtool
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ninja pkg-config autoconf automake libtool
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+
+      - name: Configure
+        run: cmake --preset ${{ matrix.preset }}
+
+      - name: Build
+        run: cmake --build --preset ${{ matrix.build-preset }} --parallel
+
+      - name: Test
+        run: ctest --preset ${{ matrix.test-preset }} --parallel 4 --timeout 320
+
+      - name: Upload test logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-${{ matrix.os }}
+          path: build/${{ matrix.preset }}/Testing/
+          retention-days: 5
