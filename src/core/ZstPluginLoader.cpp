@@ -1,5 +1,6 @@
 #include "ZstPluginLoader.h"
 #include <showtime/ZstFilesystemUtils.h>
+#include <system_error>
 
 namespace showtime {
 	ZstPluginLoader::ZstPluginLoader() : 
@@ -88,7 +89,7 @@ namespace showtime {
 
 		for (auto file : plugins) {
 			boost::dll::shared_library lib;
-			boost::dll::fs::error_code ec;
+			std::error_code ec;
 
 			// Strip extension - let boost pick the decorators
 			//file.replace_extension("");
@@ -101,9 +102,11 @@ namespace showtime {
 
 			Log::net(Log::Level::notification, "Loading plugin {}", file.string());
 
-			lib.load(file.string(), ec);//, boost::dll::load_mode::append_decorations);
-			if (ec.value() != 0) {
-				Log::net(Log::Level::error, "Plugin {} load error: {}", file.filename().string(), ec.message());
+			lib.load(file.string(), ec);
+			if (ec || !lib.is_loaded()) {
+				Log::net(Log::Level::error, "Plugin {} load error: {}",
+					file.filename().string(),
+					ec ? ec.message() : "Library failed to load (handle is null)");
 				continue;
 			}
 
