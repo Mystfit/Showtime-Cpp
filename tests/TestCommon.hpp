@@ -1,5 +1,15 @@
 #pragma once
 
+// Visual studio debugging - MUST be before any Boost headers
+// Required for Boost.Test FPU exception constants (EM_INEXACT etc.)
+// These may be missing in newer Windows SDK versions
+#ifdef WIN32
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+#include <float.h>
+#include <cfenv>
+
 #include <string>
 #include <format>
 #include <showtime/entities/ZstComputeComponent.h>
@@ -8,9 +18,12 @@
 #include <showtime/ZstLogging.h>
 #include <showtime/ZstFilesystemUtils.h>
 
+// Boost.Process v2 API (asio-based)
 #include <boost/process.hpp>
+#include <boost/asio.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/dll.hpp>
+#include <boost/filesystem.hpp>
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -18,23 +31,19 @@
 #include <memory>
 #include <sstream>
 
-// Visual studio debugging
-#ifdef WIN32
-#define _CRTDBG_MAP_ALLOC
-#include <stdlib.h>
-#include <crtdbg.h>
-#endif
 #include <signal.h>
 
 // Test includes
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
+#include <float.h>
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/unit_test.hpp>
 #include "../src/core/ZstZMQRefCounter.h"
 
 namespace utf = boost::unit_test;
-using namespace boost::process;
+namespace bp = boost::process::v2;
+namespace asio = boost::asio;
 using namespace boost::unit_test;
 using namespace showtime;
 
@@ -450,12 +459,19 @@ namespace ZstTest
 		}
 	}
 
-	void log_external(boost::process::ipstream & stream) {
-		std::string line;
+	void log_external(asio::readable_pipe& pipe, std::atomic<bool>& running) {
+		asio::streambuf buffer;
+		boost::system::error_code ec;
 
-		while (std::getline(stream, line)){
+		while (running.load()) {
 			try {
 				boost::this_thread::interruption_point();
+				size_t n = asio::read_until(pipe, buffer, '\n', ec);
+				if (ec) break;
+
+				std::istream is(&buffer);
+				std::string line;
+				std::getline(is, line);
 				Log::app(Log::Level::debug, "\n -> {}", line.c_str());
 			}
 			catch (boost::thread_interrupted) {
@@ -465,8 +481,8 @@ namespace ZstTest
 		}
 	}
 
-	boost::thread log_external_pipe(boost::process::ipstream & out_pipe) {
-		return boost::thread(boost::bind(&ZstTest::log_external, boost::ref(out_pipe)));
+	boost::thread log_external_pipe(asio::readable_pipe& out_pipe, std::atomic<bool>& running) {
+		return boost::thread([&out_pipe, &running]() { ZstTest::log_external(out_pipe, running); });
 	}
 
 	class EventLoop {
@@ -587,13 +603,17 @@ namespace ZstTest
 
 	class FixtureExternalClient {
 	public:
-		boost::process::child external_process;
-		boost::process::ipstream external_process_stdout;
-		boost::process::pipe external_process_stdin;
+		asio::io_context io_ctx;
+		std::unique_ptr<bp::process> external_process;
+		asio::readable_pipe external_process_stdout;
+		asio::writable_pipe external_process_stdin;
+		std::atomic<bool> logger_running{true};
 
 		ZstURI external_performer_URI;
 
 		FixtureExternalClient(std::string program_name)
+			: external_process_stdout(io_ctx),
+			  external_process_stdin(io_ctx)
 		{
 			external_performer_URI = ZstURI(program_name.c_str());
 
@@ -602,13 +622,18 @@ namespace ZstTest
 #ifdef WIN32
 			program_path.replace_extension("exe");
 #endif
-
-			std::string test_flag = "test";
+			// Convert to boost::filesystem::path for Boost.Process v2 compatibility
+			boost::filesystem::path boost_program_path(program_path.string());
 
 			//Run client as an external process so we don't share the same Showtime singleton
-			Log::app(Log::Level::notification, "Starting {} process", program_path.generic_string());
+			Log::app(Log::Level::notification, "Starting {} process", boost_program_path.generic_string());
 			try {
-				external_process = boost::process::child(program_path.generic_string(), test_flag.c_str(), boost::process::std_in < external_process_stdin, boost::process::std_out > external_process_stdout); //d flag pauses the sink process to give us time to attach a debugger
+				external_process = std::make_unique<bp::process>(
+					io_ctx,
+					boost_program_path,
+					std::vector<std::string>{"test"},
+					bp::process_stdio{external_process_stdin, external_process_stdout, {}}
+				);
 #ifdef PAUSE_SINK
 #ifdef WIN32
 				system("pause");
@@ -617,17 +642,23 @@ namespace ZstTest
 #endif
 				TAKE_A_BREATH
 			}
-			catch (boost::process::process_error e) {
+			catch (boost::system::system_error& e) {
 				Log::app(Log::Level::error, "External process failed to start. Code:{} Message:{}", e.code().value(), e.what());
 			}
 
 			// Create a thread to handle reading log info from the sink process' stdout pipe
-			external_process_log_thread = ZstTest::log_external_pipe(external_process_stdout);
+			external_process_log_thread = ZstTest::log_external_pipe(external_process_stdout, logger_running);
 		}
 
 		~FixtureExternalClient() {
-			external_process.terminate();
-			external_process_stdout.pipe().close();
+			logger_running = false;
+			if (external_process && external_process->running()) {
+				external_process->terminate();
+			}
+
+			boost::system::error_code ec;
+			external_process_stdout.close(ec);
+			external_process_stdin.close(ec);
 
 			external_process_log_thread.interrupt();
 			external_process_log_thread.join();
@@ -649,7 +680,10 @@ namespace ZstTest
 			ShowtimeOptions opts;
 			opts.debug = true;
 			opts.unreliable_port = 40010;
-			strcpy(opts.performer, client_name.c_str());
+			// Safe string copy that works on all platforms
+			size_t copy_len = std::min(client_name.length(), sizeof(opts.performer) - 1);
+			std::memcpy(opts.performer, client_name.c_str(), copy_len);
+			opts.performer[copy_len] = '\0';
 
 			remote_client->init(opts);
 			remote_client->auto_join_by_name(server_name.c_str());

@@ -56,8 +56,8 @@ ZstPlug::ZstPlug(const char * name, const ZstValueType& t, const ZstPlugDirectio
 {
     // Create value
     if (fixed_size > 0)
-        m_value = std::make_unique<ZstFixedValue>(t, fixed_size);
-    else 
+        m_value = std::make_unique<ZstFixedValue>(t, static_cast<int>(fixed_size));
+    else
         m_value = std::make_unique<ZstDynamicValue>(t);
 
     set_entity_type(ZstEntityType::PLUG);
@@ -87,7 +87,7 @@ ZstPlug::ZstPlug(const ZstPlug & other) :
     // Deep copy the value to avoid double-delete
     if (other.m_value) {
         if (other.m_value->fixed_size() > 0) {
-            m_value = std::make_unique<ZstFixedValue>(other.m_value->get_default_type(), other.m_value->fixed_size());
+            m_value = std::make_unique<ZstFixedValue>(other.m_value->get_default_type(), static_cast<int>(other.m_value->fixed_size()));
         } else {
             m_value = std::make_unique<ZstDynamicValue>(other.m_value->get_default_type());
         }

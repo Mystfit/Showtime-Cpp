@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Showtime is a C++ dataflow network library for connecting performers (clients) through a central stage (server). It enables distributed entity hierarchies, plug-based data connections, and real-time message passing between networked nodes.
+Showtime is a C++23 dataflow network library for connecting performers (clients) through a central stage (server). It enables distributed entity hierarchies, plug-based data connections, and real-time message passing between networked nodes.
 
 ## Build Commands
 
@@ -16,6 +16,12 @@ Showtime is a C++ dataflow network library for connecting performers (clients) t
 # Skip boost if already installed
 ./install_dependencies.ps1 -without_boost
 ```
+
+### Installing Dependencies (Linux/macOS)
+Dependencies can be installed via package managers (vcpkg) or built from source. Required:
+- libzmq and czmq (with draft API enabled)
+- FlatBuffers
+- Boost (1.86+ recommended)
 
 ### Building
 ```bash
@@ -35,11 +41,16 @@ cmake --build . --config Release
 # Run all tests via CTest
 ctest -C Release
 
-# Run a single test directly
-./bin/<platform>/TestURI.exe
-./bin/<platform>/TestStartup.exe
-./bin/<platform>/TestEntities.exe
-./bin/<platform>/TestGraph.exe
+# Run tests matching a pattern
+ctest -C Release -R TestStartup
+
+# Run a single test directly (Windows)
+./bin/Windows/x64/TestURI.exe
+./bin/Windows/x64/TestStartup.exe
+
+# Run specific test cases within a test file (Boost.Test)
+./bin/Windows/x64/TestStartup.exe --run_test=init
+./bin/Windows/x64/TestGraph.exe --run_test=connect_cable
 ```
 
 Test files are in `tests/` and use Boost.Test framework.
@@ -105,12 +116,21 @@ Uses ZeroMQ (CZMQ) for networking:
 - `ZstUDPGraphTransport` - Unreliable plug data (UDP)
 - `ZstServiceDiscoveryTransport` - Server beacon discovery
 
+### Synchronisation Lifecycle
+
+`ZstSynchronisable` is the base class for all networked objects (entities, cables). Key states:
+- `CREATED` → `ACTIVATION_QUEUED` → `ACTIVATING` → `ACTIVATED` (registered with stage)
+- `DEACTIVATION_QUEUED` → `DEACTIVATING` → `DESTROYED` (removed from stage)
+
+Entities must be activated before they can be used. Deactivation propagates to child entities.
+
 ### Serialization
 
 FlatBuffers for message serialization. Schemas in `schemas/messaging/`:
 - `stage_message.fbs` - Client-server protocol
 - `graph_message.fbs` - Plug value transport
 - `graph_types.fbs` - Entity/plug/cable definitions
+- `session.fbs` - Session state serialization
 
 Generated headers go to `build/include/showtime/schemas/`.
 

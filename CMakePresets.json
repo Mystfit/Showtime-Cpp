@@ -16,6 +16,71 @@
             }
         },
         {
+            "name": "vcpkg-base",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+                "VCPKG_OVERLAY_PORTS": "${sourceDir}/vcpkg-overlays"
+            }
+        },
+        {
+            "name": "windows-msvc-vcpkg",
+            "inherits": ["base", "vcpkg-base"],
+            "displayName": "Windows MSVC with vcpkg",
+            "description": "Build for Windows using Visual Studio 2022 with vcpkg dependencies",
+            "generator": "Visual Studio 17 2022",
+            "architecture": {
+                "value": "x64",
+                "strategy": "set"
+            },
+            "toolset": {
+                "value": "v143,host=x64",
+                "strategy": "set"
+            },
+            "cacheVariables": {
+                "VCPKG_TARGET_TRIPLET": "x64-windows-static-md"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "linux-vcpkg",
+            "inherits": ["base", "vcpkg-base"],
+            "displayName": "Linux with vcpkg",
+            "description": "Build for Linux using GCC with vcpkg dependencies",
+            "generator": "Ninja Multi-Config",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++",
+                "VCPKG_TARGET_TRIPLET": "x64-linux"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
+        },
+        {
+            "name": "macos-vcpkg",
+            "inherits": ["base", "vcpkg-base"],
+            "displayName": "macOS with vcpkg",
+            "description": "Build for macOS using Apple Clang with vcpkg dependencies",
+            "generator": "Ninja Multi-Config",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "VCPKG_TARGET_TRIPLET": "x64-osx"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
+        },
+        {
             "name": "windows-msvc",
             "inherits": "base",
             "displayName": "Windows MSVC (Visual Studio 2022)",
@@ -217,15 +282,39 @@
             "configuration": "Release"
         },
         {
+            "name": "windows-vcpkg-debug",
+            "displayName": "Windows vcpkg Debug",
+            "configurePreset": "windows-msvc-vcpkg",
+            "configuration": "Debug"
+        },
+        {
+            "name": "windows-vcpkg-release",
+            "displayName": "Windows vcpkg Release",
+            "configurePreset": "windows-msvc-vcpkg",
+            "configuration": "Release"
+        },
+        {
             "name": "linux-release",
             "displayName": "Linux Release",
             "configurePreset": "linux-gcc",
             "configuration": "Release"
         },
         {
+            "name": "linux-vcpkg-release",
+            "displayName": "Linux vcpkg Release",
+            "configurePreset": "linux-vcpkg",
+            "configuration": "Release"
+        },
+        {
             "name": "macos-release",
             "displayName": "macOS Release",
             "configurePreset": "macos-clang",
+            "configuration": "Release"
+        },
+        {
+            "name": "macos-vcpkg-release",
+            "displayName": "macOS vcpkg Release",
+            "configurePreset": "macos-vcpkg",
             "configuration": "Release"
         }
     ],
@@ -234,6 +323,19 @@
             "name": "windows-test",
             "displayName": "Windows Tests",
             "configurePreset": "windows-msvc",
+            "configuration": "Release",
+            "output": {
+                "outputOnFailure": true,
+                "verbosity": "default"
+            },
+            "execution": {
+                "timeout": 120
+            }
+        },
+        {
+            "name": "windows-vcpkg-test",
+            "displayName": "Windows vcpkg Tests",
+            "configurePreset": "windows-msvc-vcpkg",
             "configuration": "Release",
             "output": {
                 "outputOnFailure": true,
@@ -253,9 +355,27 @@
             }
         },
         {
+            "name": "linux-vcpkg-test",
+            "displayName": "Linux vcpkg Tests",
+            "configurePreset": "linux-vcpkg",
+            "configuration": "Release",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
             "name": "macos-test",
             "displayName": "macOS Tests",
             "configurePreset": "macos-clang",
+            "configuration": "Release",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "macos-vcpkg-test",
+            "displayName": "macOS vcpkg Tests",
+            "configurePreset": "macos-vcpkg",
             "configuration": "Release",
             "output": {
                 "outputOnFailure": true

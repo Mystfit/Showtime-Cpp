@@ -1,5 +1,21 @@
 cmake_minimum_required(VERSION 3.21...3.31)
 
+# vcpkg integration (must be before project())
+if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
+endif()
+
+# Set default vcpkg triplet per platform (static libs, dynamic CRT on Windows)
+if(NOT DEFINED VCPKG_TARGET_TRIPLET)
+    if(WIN32)
+        set(VCPKG_TARGET_TRIPLET "x64-windows-static-md" CACHE STRING "")
+    elseif(APPLE)
+        set(VCPKG_TARGET_TRIPLET "x64-osx" CACHE STRING "")
+    else()
+        set(VCPKG_TARGET_TRIPLET "x64-linux" CACHE STRING "")
+    endif()
+endif()
+
 project(Showtime
     VERSION 0.29.0
     DESCRIPTION "Showtime dataflow network library"
@@ -17,7 +33,8 @@ set(TAGS
 set(SHOWTIME_NAMESPACE "${PROJECT_NAME}::")
 
 # C++ standard settings
-set(CMAKE_CXX_STANDARD 23)
+# Using C++20 for now due to Boost.Asio 1.90 compatibility issues with MSVC C++23
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
@@ -153,13 +170,15 @@ message(STATUS "Finding packages")
 
 # Boost
 # --------
-set(BOOST_COMPONENTS 
+set(BOOST_COMPONENTS
     log
     # log_setup
     thread
     system
     context
     fiber
+    filesystem
+    process
     # date_time
     chrono
     coroutine
@@ -176,9 +195,9 @@ if(NOT Boost_FOUND)
 endif()
 
 
-# swig
+# swig (optional - only needed for language bindings)
 # ------------------------------
-find_host_package(SWIG REQUIRED)
+find_host_package(SWIG)
 if(SWIG_FOUND)
     # CMP0078 and CMP0086 are NEW by default in CMake 3.21+
     include(UseSWIG)
@@ -204,8 +223,14 @@ endif()
 # CMP0048 is NEW by default in CMake 3.21+
 find_host_package(Flatbuffers CONFIG REQUIRED)
 if(NOT FLATBUFFERS_FLATC_EXECUTABLE)
-    find_host_program(FLATBUFFERS_FLATC_EXECUTABLE flatc)
-    message("Using host flatc at ${FLATBUFFERS_FLATC_EXECUTABLE}")
+    # Search in vcpkg tools directory first (vcpkg installs flatc as a host tool)
+    find_host_program(FLATBUFFERS_FLATC_EXECUTABLE flatc
+        HINTS
+            "${_VCPKG_INSTALLED_DIR}/${VCPKG_HOST_TRIPLET}/tools/flatbuffers"
+            "${VCPKG_INSTALLED_DIR}/${VCPKG_HOST_TRIPLET}/tools/flatbuffers"
+            "${CMAKE_BINARY_DIR}/vcpkg_installed/x64-windows/tools/flatbuffers"
+    )
+    message(STATUS "Using host flatc at ${FLATBUFFERS_FLATC_EXECUTABLE}")
     if(NOT FLATBUFFERS_FLATC_EXECUTABLE)
         message(FATAL_ERROR "Could not find flatc compiler!")
     endif()
@@ -241,6 +266,7 @@ message(STATUS ${FLATC_OUTPUT})
 
 # Set internal linked library lists for our targets
 set(SHOWTIME_PRIVATE_LINKED_LIBS 
+    showtime_common_settings
     # Boost::system
     Boost::thread
     # Boost::date_time
@@ -357,7 +383,7 @@ endif()
 add_library(showtime_common_settings INTERFACE)
 add_library(${PROJECT_NAME}::CommonSettings ALIAS showtime_common_settings)
 
-target_compile_features(showtime_common_settings INTERFACE cxx_std_23)
+target_compile_features(showtime_common_settings INTERFACE cxx_std_20)
 
 target_compile_definitions(showtime_common_settings INTERFACE
     $<$<PLATFORM_ID:Windows>:NOMINMAX>
@@ -375,6 +401,21 @@ target_compile_definitions(showtime_common_settings INTERFACE
     ZMQ_BUILD_DRAFT_API
     CZMQ_BUILD_DRAFT_API
 )
+
+# Workaround for Boost.Asio 1.90 bug with MSVC
+# std::strtoull/strtoll not properly exposed in <cstdlib> without these flags
+if(MSVC)
+    target_compile_options(showtime_common_settings INTERFACE
+        /Zc:preprocessor   # Use conforming preprocessor
+        /Zc:__cplusplus    # Report correct C++ version (you have this globally, but add here too)
+        # Force-include workaround header to fix Boost.Asio 1.90 std::_strtoui64/_strtoi64 issue
+        /FI${CMAKE_CURRENT_SOURCE_DIR}/cmake/boost_asio_workaround.h
+    )
+    # Force proper C runtime declarations
+    target_compile_definitions(showtime_common_settings INTERFACE
+        #_CRT_DECLARE_NONSTDC_NAMES=0
+    )
+endif()
 
 
 # ----------------
@@ -580,9 +621,22 @@ endif()
 # Plugins
 # ------
 
-set(PLUGIN_OUTPUT_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/plugins)
+# For multi-config generators (MSVC), plugins need to go in config-specific dirs
+# For single-config generators, just use the runtime output directory
+if(CMAKE_CONFIGURATION_TYPES)
+    # Multi-config generator (MSVC, Xcode, Ninja Multi-Config)
+    set(PLUGIN_OUTPUT_DIR_DEBUG ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Debug/plugins)
+    set(PLUGIN_OUTPUT_DIR_RELEASE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Release/plugins)
+    set(PLUGIN_OUTPUT_DIR_RELWITHDEBINFO ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/RelWithDebInfo/plugins)
+    set(PLUGIN_OUTPUT_DIR_MINSIZEREL ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/MinSizeRel/plugins)
+    file(MAKE_DIRECTORY ${PLUGIN_OUTPUT_DIR_DEBUG})
+    file(MAKE_DIRECTORY ${PLUGIN_OUTPUT_DIR_RELEASE})
+else()
+    # Single-config generator
+    set(PLUGIN_OUTPUT_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/plugins)
+    file(MAKE_DIRECTORY ${PLUGIN_OUTPUT_DIR})
+endif()
 set(Showtime_PLUGIN_TARGETS "")
-file(MAKE_DIRECTORY ${PLUGIN_OUTPUT_DIR})
 
 
 # Core entity plugin
@@ -693,6 +747,7 @@ set(CMAKE_INSTALL_CMAKEDIR "lib/cmake/showtime")
 
 # Install targets
 set(Showtime_INSTALL_TARGETS 
+    showtime_common_settings
     ${Showtime_OBJECT_TARGETS}
     ${Showtime_LIBRARY_TARGETS} 
     ${Showtime_APP_TARGETS}

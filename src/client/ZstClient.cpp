@@ -1,10 +1,10 @@
 #include "ZstClient.h"
 #include <showtime/ZstFormat.h>
 #include <boost/uuid/uuid_io.hpp>
-#include <boost/coroutine2/coroutine.hpp>
 #include <boost/dll.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/spawn.hpp>
+#include <boost/asio/detached.hpp>
 
 using namespace flatbuffers;
 using namespace std::chrono_literals;
@@ -828,7 +828,7 @@ void ZstClient::start_connection_handshake(const ZstURI& remote_client_path, con
        : std::static_pointer_cast<ZstGraphTransport>(m_tcp_graph_transport);
 
     // Coroutine to failover from private to public addresses
-   spawn(m_client_timerloop.IO_context(), [this, remote_client_path, remote_client_addresses, total_messages, transport, connection_type](boost::asio::yield_context yield) {
+   boost::asio::spawn(m_client_timerloop.IO_context(), [this, remote_client_path, remote_client_addresses, total_messages, transport, connection_type](boost::asio::yield_context yield) {
         for (auto address : remote_client_addresses) 
         {
             if (address.empty()) continue;
@@ -883,7 +883,7 @@ void ZstClient::start_connection_handshake(const ZstURI& remote_client_path, con
                 Log::net(Log::Level::warn, "No handshake response from endpoint {}", address);
             }
         }
-    }, boost::coroutines::attributes());
+    }, boost::asio::detached);
 }
 
 void ZstClient::send_connection_handshake(const ZstURI& from, const std::string& address, std::shared_ptr<ZstGraphTransport> transport)

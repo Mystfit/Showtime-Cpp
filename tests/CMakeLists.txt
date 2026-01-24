@@ -15,11 +15,13 @@ set(TESTS
     # "TestHelperExternalFactory"
 )
 
-set(TEST_DEPENDENCIES 
+set(TEST_DEPENDENCIES
+    showtime_common_settings  # Needed for MSVC workarounds (WinSock2, off_t, etc.)
     Boost::unit_test_framework
     Boost::thread
     Boost::system
     Boost::filesystem
+    Boost::process
 )
 
 # Prefer linking shared libs over static libs for tests

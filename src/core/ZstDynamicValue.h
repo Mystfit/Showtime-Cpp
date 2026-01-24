@@ -8,6 +8,8 @@
 #include <iostream>
 #include <memory>
 #include <mutex>
+#include <algorithm>
+#include <type_traits>
 
 #include <showtime/ZstConstants.h>
 #include <showtime/ZstExports.h>
@@ -90,12 +92,33 @@ private:
 		destination.resize(size);
 
 		if (incoming_type == m_default_type) {
-			std::copy(buffer, buffer + size, destination.begin());
+			// Types match - use direct assignment without cast warnings
+			if constexpr (std::is_same_v<Primitive_T, IncomingBuffer_T>) {
+				std::copy(buffer, buffer + size, destination.begin());
+			} else if constexpr (!std::is_same_v<Primitive_T, std::string>) {
+				// Numeric type conversion - safe to use static_cast
+				std::transform(buffer, buffer + size, destination.begin(),
+					[](const IncomingBuffer_T& val) { return static_cast<Primitive_T>(val); });
+			} else {
+				// Converting to string - use visitor pattern
+				for (size_t idx = 0; idx < size; ++idx) {
+					destination[idx] = boost::apply_visitor(Visitor_T(), ZstValueVariant(buffer[idx]));
+				}
+			}
 			return;
 		}
 
-		for (size_t idx = 0; idx < size; ++idx) {
-			destination[idx] = boost::apply_visitor(Visitor_T(), ZstValueVariant(buffer[idx]));
+		// Types don't match - use visitor for conversion
+		if constexpr (std::is_same_v<Primitive_T, std::string>) {
+			// Converting to string - visitor returns string directly
+			for (size_t idx = 0; idx < size; ++idx) {
+				destination[idx] = boost::apply_visitor(Visitor_T(), ZstValueVariant(buffer[idx]));
+			}
+		} else {
+			// Numeric conversion - cast the result
+			for (size_t idx = 0; idx < size; ++idx) {
+				destination[idx] = static_cast<Primitive_T>(boost::apply_visitor(Visitor_T(), ZstValueVariant(buffer[idx])));
+			}
 		}
 	}
 

@@ -8,6 +8,8 @@
 #include <iostream>
 #include <memory>
 #include <mutex>
+#include <algorithm>
+#include <type_traits>
 #include <boost/variant.hpp>
 
 #include <showtime/ZstConstants.h>
@@ -89,12 +91,19 @@ private:
 	{
 		std::lock_guard<std::mutex> lock(m_lock);
 		if(incoming_type == m_default_type) {
-			std::copy(buffer, buffer + m_fixed_size, destination);
+			// Types match - use direct assignment without cast warnings
+			if constexpr (std::is_same_v<Primitive_T, IncomingBuffer_T>) {
+				std::copy(buffer, buffer + m_fixed_size, destination);
+			} else {
+				// Types are semantically the same but compiler sees different types - use explicit cast
+				std::transform(buffer, buffer + m_fixed_size, destination,
+					[](const IncomingBuffer_T& val) { return static_cast<Primitive_T>(val); });
+			}
 			return;
 		}
 
 		for (size_t idx = 0; idx < m_fixed_size; ++idx) {
-			destination[idx] = boost::apply_visitor(Visitor_T(), ZstValueVariant(buffer[idx]));
+			destination[idx] = static_cast<Primitive_T>(boost::apply_visitor(Visitor_T(), ZstValueVariant(buffer[idx])));
 		}
 	}
 

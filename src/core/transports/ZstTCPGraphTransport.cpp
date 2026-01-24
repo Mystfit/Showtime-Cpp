@@ -1,4 +1,5 @@
 #include <sstream>
+#include <cstdlib>
 #include <czmq.h>
 #include <showtime/ZstLogging.h>
 #include "ZstTCPGraphTransport.h"

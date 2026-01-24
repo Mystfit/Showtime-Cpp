@@ -1,5 +1,5 @@
 #include <sstream>
-
+#include <cstdlib>
 #include "../core/ZstEventDispatcher.hpp"
 #include "../core/ZstZMQRefCounter.h"
 #include "../core/ZstStageMessage.h"

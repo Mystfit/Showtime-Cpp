@@ -56,15 +56,14 @@ namespace showtime
 			// Resolve destination endpoint
 			udp::endpoint remote_endpoint;
 			try {
-				boost::asio::ip::address ip_address = boost::asio::ip::address::from_string(addr);
+				boost::asio::ip::address ip_address = boost::asio::ip::make_address(addr);
 				remote_endpoint = udp::endpoint(ip_address, std::stoi(port));
 			}
 			catch (std::exception e) {
 				Log::net(Log::Level::debug, "Address {} needs to be resolved first {}", addr, e.what());
 				boost::asio::ip::udp::resolver resolver(m_udp_sock->get_executor());
-				boost::asio::ip::udp::resolver::query query(addr, port);
-				boost::asio::ip::udp::resolver::iterator iter = resolver.resolve(query);
-				remote_endpoint = iter->endpoint();
+				auto results = resolver.resolve(addr, port);
+				remote_endpoint = results.begin()->endpoint();
 			}
 
 			m_destination_endpoints.push_back(UDPEndpoint{ address, remote_endpoint });
@@ -104,9 +103,8 @@ namespace showtime
 		// Remote Address
 		// First resolve the STUN server address
 		boost::asio::ip::udp::resolver resolver(m_udp_sock->get_executor());
-		boost::asio::ip::udp::resolver::query query(server.address, std::to_string(server.port));
-		boost::asio::ip::udp::resolver::iterator iter = resolver.resolve(query);
-		udp::endpoint remote_endpoint = iter->endpoint();
+		auto results = resolver.resolve(server.address, std::to_string(server.port));
+		udp::endpoint remote_endpoint = results.begin()->endpoint();
 
 		// Construct a STUN request
 		struct STUNMessageHeader* request = (STUNMessageHeader*)malloc(sizeof(struct STUNMessageHeader));

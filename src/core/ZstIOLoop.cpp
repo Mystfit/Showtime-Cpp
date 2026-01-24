@@ -1,4 +1,5 @@
 #include "ZstIOLoop.h"
+#include <boost/asio/executor_work_guard.hpp>
 
 void ZstIOLoop::operator()()
 {
@@ -8,7 +9,7 @@ void ZstIOLoop::operator()()
 	showtime::Log::ScopedContext log_ctx(m_log_context);
 
 	//Give the event loop some work to do so it doesn't insta-quit
-	boost::asio::io_context::work work(m_io);
+	auto work = boost::asio::make_work_guard(m_io);
 
 	//Run the event loop (blocks this thread)
 	m_io.run();

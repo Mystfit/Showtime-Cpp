@@ -1,5 +1,6 @@
 #include "../ZstZMQRefCounter.h"
 
+#include <cstdlib>
 #include <czmq.h>
 #ifdef WIN32
 #include <winsock.h>
