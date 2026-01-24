@@ -804,3 +804,5 @@ int main(int argc, char* argv[])
 	s_catch_signals();
 	return utf::unit_test_main(&init_unit_test, argc, argv);
 }
+
+#endif // WIN32

@@ -359,10 +359,12 @@ void ZstStageHierarchy::deserialize(const Hierarchy* hierarchy_data) {
                 std::unique_ptr<ZstEntityBase> entity = create_proxy_entity(entity_type, entity_field, entity_data);
                 ZstEntityBase* entity_ptr = entity.get();
 
-                // Mark as OFFLINE since owner is not connected
-                synchronisable_set_activation_status(entity_ptr, ZstSyncStatus::OFFLINE);
-
+                // Add to hierarchy first (this sets status to ACTIVATED internally)
                 ZstHierarchy::add_proxy_entity(std::move(entity));
+
+                // Mark as OFFLINE since owner is not connected
+                // Note: This must be done AFTER add_proxy_entity which sets ACTIVATED
+                synchronisable_set_activation_status(entity_ptr, ZstSyncStatus::OFFLINE);
 
                 // Store creation source info
                 if (persisted->creation_source() == EntityCreationSource_FACTORY && persisted->factory_path()) {
@@ -391,8 +393,9 @@ void ZstStageHierarchy::deserialize(const Hierarchy* hierarchy_data) {
 
                 std::unique_ptr<ZstEntityBase> entity = create_proxy_entity(entity_type, entity_field, entity_data);
                 ZstEntityBase* entity_ptr = entity.get();
-                synchronisable_set_activation_status(entity_ptr, ZstSyncStatus::OFFLINE);
                 ZstHierarchy::add_proxy_entity(std::move(entity));
+                // Mark as OFFLINE after add_proxy_entity (which sets ACTIVATED)
+                synchronisable_set_activation_status(entity_ptr, ZstSyncStatus::OFFLINE);
 
                 // Default to MANUAL for legacy sessions
                 m_entity_creation_sources[entity_path] = EntityCreationInfo(EntityCreationSource_MANUAL);
