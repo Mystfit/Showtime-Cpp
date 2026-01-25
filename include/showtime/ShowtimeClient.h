@@ -24,7 +24,8 @@ class ZST_CLASS_EXPORTED ShowtimeClient
 {
 public:
     ZST_CLIENT_EXPORT ShowtimeClient();
-    
+    ZST_CLIENT_EXPORT ~ShowtimeClient();
+
     //Disable copying
     ZST_CLIENT_EXPORT ShowtimeClient(const ShowtimeClient & other) = delete;
     

@@ -19,6 +19,18 @@ ZstClientHierarchy::~ZstClientHierarchy()
         for (auto entity : bundle) {
             destroy_entity_complete(entity);
         }
+        // Explicitly destroy m_root while hierarchy is still valid
+        // This prevents issues from m_root's destructor being called
+        // after base class resources are destroyed
+        m_root.reset();
+    }
+
+    // Clear all adaptor registrations from the hierarchy event dispatcher
+    // This must be done before base class destructors run to prevent
+    // access to partially destroyed adaptors during event processing
+    if (hierarchy_events()) {
+        hierarchy_events()->flush_events();
+        hierarchy_events()->remove_all_adaptors();
     }
 }
 

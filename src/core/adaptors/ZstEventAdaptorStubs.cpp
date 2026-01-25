@@ -127,6 +127,10 @@ ZstHierarchyAdaptor::ZstHierarchyAdaptor() {
 	MULTICAST_DELEGATE_INITIALIZER(entity_updated);
 	MULTICAST_DELEGATE_INITIALIZER(factory_arriving);
 	MULTICAST_DELEGATE_INITIALIZER(factory_leaving);
+	// Offline entity events (session serialization)
+	MULTICAST_DELEGATE_INITIALIZER(entity_offline);
+	MULTICAST_DELEGATE_INITIALIZER(entity_online);
+	MULTICAST_DELEGATE_INITIALIZER(offline_entities_available);
 }
 
 ZstLogAdaptor::ZstLogAdaptor(){

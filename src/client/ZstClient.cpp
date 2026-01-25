@@ -60,6 +60,40 @@ ZstClient::ZstClient(ShowtimeClient* api) :
 
 ZstClient::~ZstClient() {
 	destroy();
+
+	// Explicitly reset session before base class destruction to ensure
+	// the hierarchy's adaptors are destroyed before ZstClient's base class
+	// ZstHierarchyAdaptor is destroyed. This prevents access to partially
+	// destroyed delegates during destruction.
+	if (m_session) {
+		// Clear the hierarchy's event dispatcher adaptors
+		if (m_session->hierarchy()) {
+			if (m_session->hierarchy()->hierarchy_events()) {
+				m_session->hierarchy()->hierarchy_events()->remove_all_adaptors();
+			}
+		}
+		// Reset session to trigger its destruction now, before base classes
+		m_session.reset();
+	}
+
+	// Also reset plugins
+	if (m_plugins) {
+		if (m_plugins->plugin_events()) {
+			m_plugins->plugin_events()->remove_all_adaptors();
+		}
+		m_plugins.reset();
+	}
+
+	// Also reset transports to ensure they are destroyed before base classes
+	m_service_broadcast_transport.reset();
+	m_client_transport.reset();
+	m_tcp_graph_transport.reset();
+	m_udp_graph_transport.reset();
+	m_stun_srv.reset();
+
+	// Clear base class event dispatchers to prevent access during base class destruction
+	ZstEventDispatcher<ZstConnectionAdaptor>::remove_all_adaptors();
+	ZstEventDispatcher<ZstLogAdaptor>::remove_all_adaptors();
 }
 
 void ZstClient::destroy() {
@@ -96,6 +130,36 @@ void ZstClient::destroy() {
     m_thread_pool.join();
     m_thread_pool.stop();
     m_api = NULL;
+
+    // Flush connection and log event dispatchers first (before removing adaptors)
+    ZstEventDispatcher<ZstConnectionAdaptor>::flush_events();
+    ZstEventDispatcher<ZstLogAdaptor>::flush_events();
+
+    // Remove all adaptor registrations to prevent access during destruction
+    // This must be done before the session is destroyed (which happens during member destruction)
+    if (m_session && was_initialized) {
+        // Remove this client as adaptor from hierarchy events
+        m_session->hierarchy()->hierarchy_events()->remove_adaptor(ZstHierarchyAdaptor::downcasted_shared_from_this<ZstHierarchyAdaptor>());
+
+        // Flush any pending events to prevent callbacks during destruction
+        m_session->flush_events();
+        m_session->hierarchy()->flush_events();
+
+        // Remove all adaptors from session and hierarchy event dispatchers
+        m_session->session_events()->remove_all_adaptors();
+        m_session->hierarchy()->hierarchy_events()->remove_all_adaptors();
+    }
+
+    // Remove this client as adaptor from plugin events
+    if (m_plugins && was_initialized) {
+        m_plugins->plugin_events()->remove_adaptor(ZstPluginAdaptor::downcasted_shared_from_this<ZstPluginAdaptor>());
+        m_plugins->plugin_events()->remove_all_adaptors();
+    }
+
+    // Remove all external adaptors from dispatchers to prevent access during destruction
+    ZstEventDispatcher<ZstConnectionAdaptor>::remove_all_adaptors();
+    ZstEventDispatcher<ZstLogAdaptor>::remove_all_adaptors();
+
 
     //Set last status flags
     set_is_ending(false);

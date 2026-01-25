@@ -36,6 +36,18 @@ ShowtimeClient::ShowtimeClient() : m_client(std::make_shared<showtime::client::Z
 {
 }
 
+ShowtimeClient::~ShowtimeClient()
+{
+    // Explicitly destroy the client before the destructor completes
+    // This ensures m_client is destroyed in a controlled manner while
+    // ShowtimeClient is still fully valid, preventing issues with
+    // virtual base class destruction order in ZstClient
+    if (m_client) {
+        m_client->destroy();
+        m_client.reset();
+    }
+}
+
 // -----------------
 // Initialisation
 // -----------------

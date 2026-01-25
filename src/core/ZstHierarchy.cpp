@@ -10,8 +10,16 @@ ZstHierarchy::ZstHierarchy() :
 
 ZstHierarchy::~ZstHierarchy()
 {
-    ZstEntityBundle bundle;
-	m_proxies.clear();
+    // Clear all adaptor registrations from the hierarchy event dispatcher
+    // This must be done before base class destructors run to prevent
+    // access to partially destroyed adaptors during event processing
+    if (m_hierarchy_events) {
+        m_hierarchy_events->flush_events();
+        m_hierarchy_events->remove_all_adaptors();
+    }
+
+    // Clear entity collections
+    m_proxies.clear();
 }
 
 void ZstHierarchy::activate_entity(ZstEntityBase * entity, const ZstTransportRequestBehaviour & sendtype)

@@ -70,11 +70,11 @@ public:
 	}
 
 	~ZstEventDispatcherTyped() noexcept {
-		/*auto adaptors = m_adaptors;
-		for (auto adaptor : adaptors) {
-			if (auto adp = adaptor.lock())
-				adp->prune_dispatchers();
-		}*/
+		// Clear all adaptors and reset the default adaptor before member destruction
+		// to prevent any callbacks during destruction
+		m_adaptors.clear();
+		m_unmanaged_adaptors.clear();
+		m_default_adaptor.reset();
 	}
 
 	void add_adaptor(std::weak_ptr<T> adaptor) {

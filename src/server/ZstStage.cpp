@@ -35,6 +35,21 @@ namespace showtime::detail
 	ZstStage::~ZstStage()
 	{
 		destroy();
+
+		// Explicitly reset session before base class destruction to ensure
+		// the session's adaptors are destroyed before ZstStage's base class
+		// ZstStageTransportAdaptor is destroyed.
+		if (m_session) {
+			m_session.reset();
+		}
+
+		// Also reset transports to ensure they are destroyed before base classes
+		m_router_transport.reset();
+		m_websocket_transport.reset();
+		m_service_broadcast_transport.reset();
+
+		// Clear base class event dispatchers
+		ZstEventDispatcher<ZstLogAdaptor>::remove_all_adaptors();
 	}
 
 	void ZstStage::init(const char* server_name, int port, bool unlisted)
