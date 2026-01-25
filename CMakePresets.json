@@ -19,8 +19,7 @@
             "name": "vcpkg-base",
             "hidden": true,
             "cacheVariables": {
-                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-                "VCPKG_OVERLAY_PORTS": "${sourceDir}/vcpkg-overlays"
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
             }
         },
         {
@@ -73,6 +72,23 @@
                 "CMAKE_C_COMPILER": "clang",
                 "CMAKE_CXX_COMPILER": "clang++",
                 "VCPKG_TARGET_TRIPLET": "x64-osx"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
+        },
+        {
+            "name": "macos-vcpkg-arm64",
+            "inherits": ["base", "vcpkg-base"],
+            "displayName": "macOS ARM64 with vcpkg",
+            "description": "Build for macOS ARM64 (Apple Silicon) using Apple Clang with vcpkg dependencies",
+            "generator": "Ninja Multi-Config",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "VCPKG_TARGET_TRIPLET": "arm64-osx"
             },
             "condition": {
                 "type": "equals",
@@ -316,6 +332,12 @@
             "displayName": "macOS vcpkg Release",
             "configurePreset": "macos-vcpkg",
             "configuration": "Release"
+        },
+        {
+            "name": "macos-vcpkg-arm64-release",
+            "displayName": "macOS ARM64 vcpkg Release",
+            "configurePreset": "macos-vcpkg-arm64",
+            "configuration": "Release"
         }
     ],
     "testPresets": [
@@ -376,6 +398,15 @@
             "name": "macos-vcpkg-test",
             "displayName": "macOS vcpkg Tests",
             "configurePreset": "macos-vcpkg",
+            "configuration": "Release",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "macos-vcpkg-arm64-test",
+            "displayName": "macOS ARM64 vcpkg Tests",
+            "configurePreset": "macos-vcpkg-arm64",
             "configuration": "Release",
             "output": {
                 "outputOnFailure": true
