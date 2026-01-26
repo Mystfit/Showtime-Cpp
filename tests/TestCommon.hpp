@@ -275,6 +275,9 @@ namespace ZstTest
 		bool is_synced = false;
 		std::vector<ZstServerAddress> discovered_servers;
 		std::vector<ZstServerAddress> lost_servers;
+		// Optional filter: only count events for this specific server name
+		// When empty, counts all connection events (but not discovery events)
+		std::string server_name_filter;
 
 		void on_connected_to_server(ShowtimeClient* client, const ZstServerAddress* stage_address) override {
 			Log::app(Log::Level::debug, "CONNECTION_ESTABLISHED: {}", client->get_root()->URI().path());
@@ -287,10 +290,15 @@ namespace ZstTest
 			inc_calls();
 			is_connected = false;
 		}
-        
+
         void on_server_discovered(ShowtimeClient* client, const ZstServerAddress* stage_address) override {
             Log::app(Log::Level::debug, "SERVER DISCOVERED: Name: {} Address: {}", stage_address->name, stage_address->address);
-            inc_calls();
+			// Don't increment call count for discovery events - these can come from
+			// other parallel tests and cause race conditions. Tests that need to wait
+			// for discovery should check discovered_servers directly or use the filter.
+			if (!server_name_filter.empty() && stage_address->name == server_name_filter) {
+				inc_calls();
+			}
 			discovered_servers.push_back(*stage_address);
         }
 
@@ -302,8 +310,24 @@ namespace ZstTest
 
 		void on_server_lost(ShowtimeClient* client, const ZstServerAddress* stage_address) override {
 			Log::app(Log::Level::debug, "SERVER LOST: Name: {} Address: {}", stage_address->name, stage_address->address);
-			inc_calls();
+			// Only count server_lost if it matches our filter (if set)
+			// This prevents counting lost events from other parallel tests
+			if (server_name_filter.empty() || stage_address->name == server_name_filter) {
+				inc_calls();
+			}
 			lost_servers.push_back(*stage_address);
+		}
+
+		// Check if a specific server was discovered
+		bool has_discovered_server(const std::string& name) const {
+			return std::find_if(discovered_servers.begin(), discovered_servers.end(),
+				[&name](const ZstServerAddress& addr) { return addr.name == name; }) != discovered_servers.end();
+		}
+
+		// Check if a specific server was lost
+		bool has_lost_server(const std::string& name) const {
+			return std::find_if(lost_servers.begin(), lost_servers.end(),
+				[&name](const ZstServerAddress& addr) { return addr.name == name; }) != lost_servers.end();
 		}
 	};
 
@@ -456,6 +480,67 @@ namespace ZstTest
 				throw std::runtime_error(err.str());
 			}
 			client->poll_once();
+		}
+	}
+
+	// Wait specifically for connection to be established
+	// More reliable than wait_for_event when running tests in parallel
+	void wait_for_connection(std::shared_ptr<ShowtimeClient> client, std::shared_ptr<TestConnectionEvents> adaptor) {
+		int repeats = 0;
+		client->poll_once();
+		while (!adaptor->is_connected && repeats < MAX_WAIT_LOOPS) {
+			TAKE_A_BREATH
+			repeats++;
+			client->poll_once();
+		}
+		if (!adaptor->is_connected) {
+			throw std::runtime_error("Connection was not established within timeout");
+		}
+	}
+
+	// Wait for disconnection
+	void wait_for_disconnection(std::shared_ptr<ShowtimeClient> client, std::shared_ptr<TestConnectionEvents> adaptor) {
+		int repeats = 0;
+		client->poll_once();
+		while (adaptor->is_connected && repeats < MAX_WAIT_LOOPS) {
+			TAKE_A_BREATH
+			repeats++;
+			client->poll_once();
+		}
+		if (adaptor->is_connected) {
+			throw std::runtime_error("Client did not disconnect within timeout");
+		}
+	}
+
+	// Wait for a specific server to be discovered
+	void wait_for_server_discovery(std::shared_ptr<ShowtimeClient> client, std::shared_ptr<TestConnectionEvents> adaptor, const std::string& server_name) {
+		int repeats = 0;
+		client->poll_once();
+		while (!adaptor->has_discovered_server(server_name) && repeats < MAX_WAIT_LOOPS) {
+			TAKE_A_BREATH
+			repeats++;
+			client->poll_once();
+		}
+		if (!adaptor->has_discovered_server(server_name)) {
+			std::ostringstream err;
+			err << "Server '" << server_name << "' was not discovered within timeout";
+			throw std::runtime_error(err.str());
+		}
+	}
+
+	// Wait for a specific server to be lost
+	void wait_for_server_lost(std::shared_ptr<ShowtimeClient> client, std::shared_ptr<TestConnectionEvents> adaptor, const std::string& server_name) {
+		int repeats = 0;
+		client->poll_once();
+		while (!adaptor->has_lost_server(server_name) && repeats < MAX_WAIT_LOOPS) {
+			TAKE_A_BREATH
+			repeats++;
+			client->poll_once();
+		}
+		if (!adaptor->has_lost_server(server_name)) {
+			std::ostringstream err;
+			err << "Server '" << server_name << "' lost event was not received within timeout";
+			throw std::runtime_error(err.str());
 		}
 	}
 
