@@ -25,7 +25,7 @@ namespace showtime {
 		ZST_EXPORT virtual std::string getPublicIPAddress(STUNServer server) override;
 		ZST_EXPORT virtual void listen() override;
 
-		ZST_EXPORT virtual int bind(const std::string& address) override;
+		ZST_EXPORT virtual int bind(const std::string& address, int port = 0) override;
 		ZST_EXPORT virtual void disconnect() override;
 		ZST_EXPORT virtual void disconnect(const std::string& address) override;
 

@@ -219,8 +219,9 @@ namespace showtime
 		);
 	}
 
-	int ZstUDPGraphTransport::bind(const std::string& address)
+	int ZstUDPGraphTransport::bind(const std::string& address, int port)
 	{
+		// Note: port parameter is ignored - this transport uses m_port set during construction
 		boost::system::error_code ec;
 
 		if (m_udp_sock && !m_udp_sock->is_open()) {

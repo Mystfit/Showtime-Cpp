@@ -59,8 +59,10 @@ void ZstZMQServerTransport::destroy()
 	ZstTransportLayer::destroy();
 }
 
-int ZstZMQServerTransport::bind(const std::string& address)
+int ZstZMQServerTransport::bind(const std::string& address, int port)
 {
+	// Note: port parameter is ignored - CZMQ parses port from the address string
+	// (e.g., "tcp://*:12345" or "tcp://*:*" for ephemeral)
 	std::stringstream addr;
 	addr << "tcp://" << address;
 	m_port = zsock_bind(m_clients_sock, "%s", addr.str().c_str());

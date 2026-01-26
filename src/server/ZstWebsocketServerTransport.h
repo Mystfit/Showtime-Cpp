@@ -38,7 +38,7 @@ public:
 	~ZstWebsocketServerTransport();
 	void init() override;
 	void destroy() override;
-	virtual int bind(const std::string& address) override;
+	virtual int bind(const std::string& address, int port = 0) override;
 	static void fail(beast::error_code ec, char const* what);
 
 private:

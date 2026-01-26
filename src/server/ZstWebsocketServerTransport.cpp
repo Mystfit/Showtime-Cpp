@@ -28,17 +28,26 @@ void ZstWebsocketServerTransport::destroy()
 	ZstTransportLayer::destroy();
 }
 
-int ZstWebsocketServerTransport::bind(const std::string& address)
+int ZstWebsocketServerTransport::bind(const std::string& address, int port)
 {
 	beast::error_code ec;
-	int port = STAGE_WEBSOCKET_PORT;
 
-	auto endpoint = tcp::endpoint{ net::ip::make_address(address), static_cast<unsigned short>(port) };
+	// Use provided port if positive, otherwise use 0 for ephemeral (OS-assigned) port
+	unsigned short bind_port = (port > 0) ? static_cast<unsigned short>(port) : 0;
+
+	auto endpoint = tcp::endpoint{ net::ip::make_address(address), bind_port };
 
 	// Open the acceptor
 	m_acceptor.open(endpoint.protocol(), ec);
 	if (ec) {
 		ZstWebsocketServerTransport::fail(ec, "open");
+		return -1;
+	}
+
+	// Allow address reuse (set before bind)
+	m_acceptor.set_option(net::socket_base::reuse_address(true), ec);
+	if (ec) {
+		ZstWebsocketServerTransport::fail(ec, "set_option");
 		return -1;
 	}
 
@@ -49,13 +58,6 @@ int ZstWebsocketServerTransport::bind(const std::string& address)
 		return -1;
 	}
 
-	// Allow address reuse
-	m_acceptor.set_option(net::socket_base::reuse_address(true), ec);
-	if (ec) {
-		ZstWebsocketServerTransport::fail(ec, "set_option");
-		return -1;
-	}
-
 	// Start listening for connections
 	m_acceptor.listen(net::socket_base::max_listen_connections, ec);
 	if (ec) {
@@ -63,12 +65,15 @@ int ZstWebsocketServerTransport::bind(const std::string& address)
 		return -1;
 	}
 
-	Log::server(Log::Level::debug, "Websocket transport listening on port {}", endpoint.port());
+	// Get the actual port (important for ephemeral port allocation)
+	int actual_port = m_acceptor.local_endpoint().port();
+
+	Log::server(Log::Level::debug, "Websocket transport listening on port {}", actual_port);
 
 	//Start accepting sockets
 	do_accept();
 
-	return port;
+	return actual_port;
 }
 
 void ZstWebsocketServerTransport::fail(beast::error_code ec, char const* what)
