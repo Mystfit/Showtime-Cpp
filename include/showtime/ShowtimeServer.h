@@ -20,6 +20,7 @@ namespace showtime {
 	{
 	public:
 		ZST_SERVER_EXPORT ShowtimeServer();
+		ZST_SERVER_EXPORT ~ShowtimeServer();
 		ZST_SERVER_EXPORT void init(const char* name = "stage", int port = -1, bool unlisted=false);
 
 		//Disable copying

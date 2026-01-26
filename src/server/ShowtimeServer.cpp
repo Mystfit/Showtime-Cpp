@@ -2,8 +2,19 @@
 #include "ZstStage.h"
 #include <showtime/ZstLogging.h>
 
-namespace showtime { 
+namespace showtime {
 	ShowtimeServer::ShowtimeServer() : m_server(std::make_shared<showtime::detail::ZstStage>()){
+	}
+
+	ShowtimeServer::~ShowtimeServer()
+	{
+		// Explicitly destroy the server before the destructor completes
+		// This ensures m_server is destroyed in a controlled manner while
+		// ShowtimeServer is still fully valid
+		if (m_server) {
+			m_server->destroy();
+			m_server.reset();
+		}
 	}
 
 	void ShowtimeServer::init(const char* name, int port, bool unlisted)
